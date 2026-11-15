@@ -103,10 +103,6 @@
     "version": "0.27.1",
     "recipe": "--scene 'brand-slack&brand=1' --window 1280x800 --wait 8000"
   },
-  "features/keyboard-explore": {
-    "version": "0.27.1",
-    "recipe": "--scene 'explore-drawerchanges&brand=1' --window 1500x760 --wait 8000"
-  },
   "features/keyboard-script-drawer": {
     "version": "0.27.1",
     "recipe": "--scene 'features-script-drawer&brand=1' --window 1280x800 --wait 8000"
@@ -118,10 +114,6 @@
   "features/overview-activity": {
     "version": "0.33.0",
     "recipe": "--scene 'u26-central-log&brand=1' --window 1280x900 --wait 8000"
-  },
-  "features/overview-next": {
-    "version": "0.33.0",
-    "recipe": "--scene 'c05-overview-merged-next&brand=1' --clip 499,289,725,328 --window 1280x800 --wait 8000"
   },
   "features/overview-session": {
     "version": "0.33.0",

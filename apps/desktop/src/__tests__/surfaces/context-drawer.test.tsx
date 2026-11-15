@@ -4,8 +4,7 @@ import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vite
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import type { SessionDecision } from '@goodboy/types';
 import { importStore, resetStoryStore, type StoryStore } from '../../store/storyHarness';
-import { DrawerHost } from '../../app/components/DrawerHost';
-import { SessionTools } from '../../features/session/components/SessionTools';
+import { ContextTab } from '../../features/session/components/ContextTab';
 import {
   SESSION_ID,
   seedActivityRunScene,
@@ -25,6 +24,7 @@ vi.mock('@goodboy/db', async () =>
   (await import('../../store/storyHarness')).dbModuleMock({
     setSessionContextSeenAt: h.persistRead,
     listSessionDecisions: async () => h.ledger,
+    listAskThreads: async () => [],
   }),
 );
 
@@ -41,43 +41,40 @@ beforeEach(async () => {
 });
 afterEach(cleanup);
 
-const mount = () =>
-  render(
-    <>
-      <SessionTools sessionId={SESSION_ID} />
-      <DrawerHost />
-    </>,
-  );
-const toggle = () => fireEvent.click(screen.getByTestId('pane-toggle-context'));
+const session = () => {
+  const found = store.getState().sessions.find((candidate) => candidate.id === SESSION_ID);
+  if (found === undefined) {
+    throw new Error('Missing session');
+  }
+  return found;
+};
+const mount = () => render(<ContextTab session={session()} />);
+const open = () => store.getState().openContextDrawer({ sessionId: SESSION_ID });
 
-describe('Context from the session tools', () => {
-  it('opens on Goal and keeps marks until an explicit read, including close and reopen', async () => {
-    mount();
+describe('Context tab', () => {
+  it('opens on Goal and keeps marks until an explicit read, including leave and return', async () => {
     const before = store.getState().sessionContextSeenAt[SESSION_ID];
-    toggle();
-    const drawer = await screen.findByRole('region', { name: 'Context' });
-    expect(store.getState().drawer).toMatchObject({ payload: { section: 'goal' } });
-    within(drawer).getByText('Added');
-    within(drawer).getByText('Withdrawn');
+    open();
+    const view = mount();
+    await screen.findByText('Added');
+    const tab = screen.getByTestId('context-tab');
+    within(tab).getByText('Withdrawn');
+    expect(store.getState().drawer).toBeNull();
     expect(store.getState().sessionContextSeenAt[SESSION_ID]).toBe(before);
     expect(screen.queryByRole('region', { name: 'Changed since you last looked' })).toBeNull();
-    toggle();
-    expect(screen.queryByRole('region', { name: 'Context' })).toBeNull();
-    toggle();
-    await screen.findByText('Added');
     fireEvent.click(screen.getByRole('button', { name: 'Mark as read' }));
     await waitFor(() => expect(screen.queryByText('Added')).toBeNull());
     expect(h.persistRead).toHaveBeenCalledOnce();
-    toggle();
-    toggle();
-    screen.getByRole('region', { name: 'Context' });
+    view.unmount();
+    mount();
+    screen.getByTestId('context-tab');
     expect(screen.queryByText('Added')).toBeNull();
   });
 
   it('keeps a failed read visible and retries it in place', async () => {
     h.persistRead.mockRejectedValueOnce(new Error('disk full'));
+    open();
     mount();
-    toggle();
     fireEvent.click(await screen.findByRole('button', { name: 'Mark as read' }));
     await waitFor(() =>
       expect(screen.getByRole('button', { name: 'Mark as read' }).hasAttribute('disabled')).toBe(
@@ -90,10 +87,10 @@ describe('Context from the session tools', () => {
   });
 
   it('draws State beyond the Overview sentence and keeps the complete context for copying', async () => {
+    open();
     mount();
-    toggle();
-    const drawer = await screen.findByRole('region', { name: 'Context' });
-    const summary = within(drawer).getByRole('region', { name: 'Summary' });
+    const tab = await screen.findByTestId('context-tab');
+    const summary = within(tab).getByRole('region', { name: 'Summary' });
     within(summary).getByRole('region', { name: 'State' });
     within(summary).getByRole('region', { name: 'Next' });
     within(summary).getByRole('region', { name: 'Learned' });

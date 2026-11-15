@@ -88,18 +88,10 @@ describe('the ux39 right dock scenes', () => {
     expect(rail().closest('[data-studio-motion]')).toBeNull();
   });
 
-  it('ux39-p10-session stacks the session tools above Terminal and Browser', async () => {
+  it('ux39-p10-session holds Terminal and Browser only on the rail', async () => {
     await mount('ux39-p10-session');
 
-    expect(railTools()).toEqual([
-      'pane-toggle-explore',
-      'pane-toggle-context',
-      'pane-toggle-ask',
-      'pane-toggle-spawned',
-      'pane-toggle-scripts',
-      'pane-toggle-terminal',
-      'pane-toggle-browser',
-    ]);
+    expect(railTools()).toEqual(['pane-toggle-terminal', 'pane-toggle-browser']);
   });
 
   it.each(['ux39-p11-terminal-board', 'ux39-p12-tasks-terminal'] as const)(
@@ -108,7 +100,8 @@ describe('the ux39 right dock scenes', () => {
       await mount(name);
 
       expect(useAppStore.getState().drawer).toMatchObject({ kind: 'terminal', sessionId: null });
-      screen.getByRole('button', { name: 'Open as page' });
+      vi.useRealTimers();
+      await screen.findByRole('button', { name: 'Open full page' }, { timeout: 5_000 });
       expect(screen.queryByText("Couldn't open this terminal")).toBeNull();
       expect(within(rail()).getByTestId('pane-toggle-terminal').getAttribute('aria-pressed')).toBe(
         'true',

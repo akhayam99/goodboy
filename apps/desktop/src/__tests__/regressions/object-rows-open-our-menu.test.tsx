@@ -29,7 +29,6 @@ type RowCase = {
 const ROW_CASES: ReadonlyArray<RowCase> = [
   { row: 'rail session', scene: 'rail-pinned', selector: '[data-rail-session]' },
   { row: 'project folder', scene: 'c04-session-worktrees', selector: '[data-project-row] > *' },
-  { row: 'central branch', scene: 'u27-central-branch-menu', selector: '[data-list-grid-row]' },
   {
     row: 'changed file and folder',
     scene: 'branch-files',

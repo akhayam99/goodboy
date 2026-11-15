@@ -5,17 +5,17 @@ import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ArtifactId, SessionId } from '@goodboy/types';
 import { aSession } from '@goodboy/types/testing';
 import { importStore, resetStoryStore, type StoryStore } from '../../storyHarness';
-import { selectDrawerSizing } from './selectDrawerSizing';
 import { selectOpenDrawer } from './selectOpenDrawer';
+import { selectDrawerSizing } from './testing/selectDrawerSizing';
 import type { DrawerRequest } from './state';
 
 const SESSION_ID = brandId<SessionId>({ value: 'session-1' });
 const OTHER_SESSION_ID = brandId<SessionId>({ value: 'session-2' });
 
 const GOAL_HISTORY: DrawerRequest = {
-  kind: 'context',
+  kind: 'scripts',
   sessionId: SESSION_ID,
-  payload: { section: 'goal', view: 'versions' },
+  payload: null,
 };
 
 const readmeIn = ({ sessionDir }: { readonly sessionDir: string }): DrawerRequest => ({
@@ -89,7 +89,7 @@ describe('drawer slice', () => {
     expect(selectOpenDrawer(h.get())?.kind).toBe('explore-file');
 
     h.slice.toggleDrawer(GOAL_HISTORY);
-    expect(selectOpenDrawer(h.get())?.kind).toBe('context');
+    expect(selectOpenDrawer(h.get())?.kind).toBe('scripts');
 
     h.slice.toggleDrawer(GOAL_HISTORY);
     expect(selectOpenDrawer(h.get())?.kind).toBe('explore-file');

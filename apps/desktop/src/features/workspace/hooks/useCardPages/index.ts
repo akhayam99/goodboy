@@ -1,7 +1,6 @@
 import { useMemo } from 'react';
-import type { Session, SessionId } from '@goodboy/types';
+import type { Session } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
-import { isBranchlessSession } from '../../../../shared/utils/isBranchlessSession';
 import { usePageCountFacts } from '../../../session/hooks/usePageCountFacts';
 import type { PageCountFacts } from '../../../session/pageCountWord';
 import { pagesOf, type Page } from '../../../session/pageRegistry';
@@ -16,11 +15,10 @@ export type CardPages = {
 };
 
 export const useCardPages = ({ session }: Params): CardPages => {
-  const sessionId = session.id as SessionId;
-  const isBranchless = useAppStore((state) =>
-    isBranchlessSession({ branch: state.sessionBranches[sessionId] }),
-  );
   const facts = usePageCountFacts({ session });
-  const pages = useMemo(() => pagesOf({ isBranchless, hasOpenQuestions: true }), [isBranchless]);
+  const hasOneBranch = useAppStore(
+    (state) => (state.sessionProjectMounts[session.id] ?? []).length === 1,
+  );
+  const pages = useMemo(() => pagesOf({ hasOpenQuestions: true, hasOneBranch }), [hasOneBranch]);
   return { pages, facts };
 };

@@ -41,7 +41,7 @@ export const RecommendationRow = ({
         className={cn(
           'flex w-full items-center justify-between gap-2 px-3 py-2 text-meta transition-colors',
           active
-            ? 'bg-background font-medium text-foreground'
+            ? 'bg-background text-foreground'
             : 'text-muted-foreground hover:bg-background hover:text-foreground',
         )}
       >

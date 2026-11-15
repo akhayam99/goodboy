@@ -13,7 +13,9 @@ import {
   resetStoryStore,
   type StoryStore,
 } from '../../storyHarness';
+import { sessionPlace } from '../navigation/place';
 import { askDraftKeyOf } from './askDraftKeyOf';
+import { selectIsAskOpen } from './selectIsAskOpen';
 import { askInitialState } from './state';
 
 const SESSION = 'session-ledger' as SessionId;
@@ -51,18 +53,16 @@ describe('the Ask draft', () => {
     });
   });
 
-  it('survives closing and reopening the Ask drawer', () => {
+  it('survives closing the Ask panel and opening it again', () => {
     useAppStore.getState().openAsk({ sessionId: SESSION });
     useAppStore
       .getState()
       .setAskDraft({ sessionId: SESSION, threadId: null, text: 'half a thought' });
 
-    useAppStore.getState().closeDrawer();
+    useAppStore.getState().navigate({ to: sessionPlace({ sessionId: SESSION }) });
     useAppStore.getState().openAsk({ sessionId: SESSION });
 
-    expect(useAppStore.getState().drawer).toEqual(
-      expect.objectContaining({ kind: 'ask', sessionId: SESSION }),
-    );
+    expect(selectIsAskOpen({ state: useAppStore.getState(), sessionId: SESSION })).toBe(true);
     expect(useAppStore.getState().askDrafts[`${SESSION}:new`]).toBe('half a thought');
   });
 

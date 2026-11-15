@@ -53,7 +53,7 @@ export const COMMIT_KIND: ObjectKindDefinition<CommitActionTarget, CommitFacts> 
     },
     {
       id: 'commit.foldDown',
-      label: 'Fold down',
+      label: 'Fixup down',
       icon: GitMerge,
       group: 'act',
       slot: () => 'hover',
@@ -74,7 +74,7 @@ export const COMMIT_KIND: ObjectKindDefinition<CommitActionTarget, CommitFacts> 
     },
     {
       id: 'commit.separate',
-      label: 'Separate',
+      label: 'Separate commit',
       icon: Undo2,
       group: 'act',
       description: () => 'Make it its own commit again',
@@ -101,7 +101,7 @@ export const COMMIT_KIND: ObjectKindDefinition<CommitActionTarget, CommitFacts> 
     },
     {
       id: 'commit.keep',
-      label: 'Keep',
+      label: 'Keep commit',
       icon: Undo2,
       group: 'act',
       slot: () => 'hover',

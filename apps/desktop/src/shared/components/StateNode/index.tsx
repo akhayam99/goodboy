@@ -1,4 +1,5 @@
 import {
+  StatusDot,
   WORK_NODE_SIZE_SM,
   WorkNode,
   cn,
@@ -47,13 +48,16 @@ export const StateNode = ({
       data-node-kind={node.kind}
       data-node-tone={node.tone}
     >
-      {hasEmptySlot && node.kind === 'idle' && !hasDot ? (
+      {hasEmptySlot && node.kind === 'idle' ? (
         <span
           aria-hidden
           data-testid="state-node-slot"
-          className="inline-block shrink-0"
+          data-unread-dot={hasDot ? '' : undefined}
+          className="inline-flex shrink-0 items-center justify-center"
           style={{ width: WORK_NODE_SIZE_SM, height: WORK_NODE_SIZE_SM }}
-        />
+        >
+          {hasDot ? <StatusDot tone="unread" size="sm" /> : null}
+        </span>
       ) : (
         <WorkNode
           state={node.state}

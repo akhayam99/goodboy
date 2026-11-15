@@ -474,7 +474,7 @@ describe('NotificationsStudio', () => {
     expect(state.dismissNotificationGroup).toHaveBeenCalledWith({ ids: ['bottom'] });
   });
 
-  it('leads every row with the severity glyph alone and marks unread by the title weight', () => {
+  it('leads every row with the severity glyph and marks unread by a dot, never by weight', () => {
     seedNotifications({
       notifications: [
         buildNotification({ id: 'n1', title: 'New one', coalesceKey: 'a' }),
@@ -487,7 +487,7 @@ describe('NotificationsStudio', () => {
     expect(screen.getByRole('heading', { name: 'Seen one' }).hasAttribute('data-unread')).toBe(
       false,
     );
-    expect(screen.queryByRole('img', { name: 'Unread' })).toBeNull();
+    expect(screen.getAllByRole('img', { name: 'Unread' })).toHaveLength(1);
   });
 
   it('keeps the primary verb on the opened row only, and Open in the row menu', () => {

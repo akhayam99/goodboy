@@ -60,9 +60,9 @@ const showFollow = (params: FollowParams) => {
 };
 
 const contextDrawer = (): OpenDrawer => ({
-  kind: 'context',
+  kind: 'scripts',
   sessionId,
-  payload: { section: 'goal', view: 'current' },
+  payload: null,
 });
 
 let startCount = 0;
@@ -243,7 +243,7 @@ describe('useFollowToast', () => {
       title: 'Plan approved',
       target: {
         place: sessionPlace({ sessionId }),
-        drawer: { kind: 'ask', sessionId, payload: null },
+        drawer: { kind: 'spawned', sessionId, payload: null },
       },
     });
 

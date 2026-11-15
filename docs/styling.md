@@ -167,37 +167,46 @@ size.
 The sheet is drawn by `DrawerColumn`, not by `main`: `AppShell`'s `main` is a
 plain grid cell and `DrawerColumn` with `frame="sheet"` draws the page
 container (`data-container="page"`, the sheet shape above) and, beside it, the
-drawer container (`data-container="drawer"`), 0px wide while closed. While a
-drawer pushes, the page container rounds all four corners and the drawer
-container stands 8px to its right and 8px from the window's right edge, both
-with `frame-edge` and `rounded-frame`; the drawer container takes `bg-drawer`,
-one step quieter than `bg-background`. Pushing, its aside is the container
-width plus two 8px insets; over the page it is the container width plus the 8px
-handle gutter, because the container is flush with the window's right edge. It
-opens beside the page: the pane gives up the drawer's track and the centred
-column slides left to re-centre in what is left of it (see The content
-column). The drawer pushes only while the content, excluding the session rail
-and tools, keeps 464px for a side drawer or 560px for a reader, plus 48px of
-gutters. Both tiers include two 8px insets. `drawerLayoutOf` owns this rule;
-`DrawerContentContext` supplies the whole column width and the registered
-content inset. A side drawer at 400 pushes from 928px of content-column width;
-a reader at 720 pushes from 1344px. Below its threshold it
-lies over the page, full height, with a scrim and an `inert` page, never
-squeezed. While it lies over the page, `DrawerColumn` draws an edge host
-(`data-drawer-edge`) at the right edge above the scrim and hands it to the page
-through `DrawerEdgeContext`; the right rail draws there, once: `ShellToolRail`
-portals its one tree into the edge and keeps an empty seat of the rail's width
-in place (`SessionFrame` portals a second copy in a frame without the shell
-rail), and the card sits left of it, so a tool can still switch or
-close the drawer. The host is measured after every commit (and by a
-`ResizeObserver` after that), and `drawerLayoutOf` takes its width as
-`edgeWidth`: the overlay card plus the column always fit in the sheet, so the
-column never covers the card's primary or its Close. `sizing` on `DrawerColumn` is `side` (400, drag 384 to 560), `reader`
+drawer container (`data-container="drawer"`). The drawer container holds the
+panel and the tool rail: one surface (`bg-drawer`, one step quieter than
+`bg-background`), flush with the window's right edge, rounded on its two left
+corners (`rounded-l-frame`), with a `frame-edge` border on three sides, 8px from
+the page container (the resize handle sits in that gap). The page container
+rounds all four corners whenever the rail is there. Closed, the container is the
+rail alone, 44px wide, and its aside is that plus the 8px gutter. The rail is
+the dock's left edge: `DrawerColumn` draws one rail host (`data-drawer-edge`) as
+the first child of the container and hands it to the page through
+`DrawerEdgeContext`; `ShellToolRail` (and `SessionFrame` in a frame without the
+shell rail) portals the one rail tree into it. The host is the same element
+closed, pushing, over the page and while a handle drags; the dock opens to its
+right, toward the window edge, with no gap, line or radius between them, so the
+rail rides the dock's left edge as the aside eases. The
+aside is the panel width plus the 8px gutter plus the rail (`drawerAsideWidthOf`
+takes `railWidth`). The pane gives up that width and the centred column slides
+left to re-centre in what is left of it (see The content column). The drawer
+pushes only while the content, excluding the session rail and tools, keeps 464px
+for a side drawer or 560px for a reader, plus 48px of gutters. `drawerLayoutOf`
+owns this rule and takes the measured rail width as the content inset and as
+`edgeWidth`; `DrawerContentContext` supplies the whole column width. A side
+drawer at 400 pushes from 972px of column width (928 of content plus the 44px
+rail); a reader at 720 pushes from 1388px. Below its threshold it lies over the
+page, full height, with a scrim and an `inert` page, never squeezed. Over the
+page the aside is absolute at the window edge and a spacer of the closed width
+stays in the flow, so the page does not grow; the rail sits above the scrim in
+the same container, so a tool can still switch or close the panel. The host is
+measured after every commit (and by a `ResizeObserver` after that), so the
+overlay panel plus the rail always fit in the sheet and the column never covers
+the panel's primary or its Close. Over the page the container (rail and dock)
+slides in from the right edge as one piece (`animate-drawer-dock-in`) and back
+out (`animate-drawer-dock-out`), and `useSnapAfterFloat` lands the aside at its
+closed width with no width transition, so the rail stops where it started.
+`sizing` on `DrawerColumn` is `side` (400, drag 384 to 560), `reader`
 (720, drag 480 to 1000) and `browser` (720, drag 480 to the room the session column leaves, so
-past 1000 on a wide window; it shrinks to the room on a narrower window while 720 fits); each tier
+past 1000 on a wide window; it shrinks to the room on a narrower window while 480 fits, so at
+1440 it pushes like the terminal instead of lying over the page); each tier
 has its own saved width and a handle. `placement="overlay"` skips the push
 rule for a drawer that always lies over the page; the thresholds (928 for
-`side`, 1344 for `reader`) are pinned by `drawerGeometry.test.ts`. The pure geometry lives in
+`side`, 1344 for `reader`, 1104 for `browser`) are pinned by `drawerGeometry.test.ts`. The pure geometry lives in
 `packages/ui/src/drawerGeometry.ts` (`drawerLayoutOf`, with `drawerWidthOf`,
 `drawerModeOf` and `mainWidthOf` on top of it) and `drawerGeometry.test.ts`
 sweeps every main from 600 to 2400 and runs a width matrix: 1024, 1440 and
@@ -252,11 +261,35 @@ Every main pane renders through `PaneShell`, and its crumb, header and body
 sit in one `PageColumn`. At rest the column is centred in the pane, with equal
 space either side: Overview, Runs, Agents, Artifacts, the session pages, Chat,
 Workflows, Tasks detail, settings pages, agent and pull request detail. The
-header, the back row (`Back to X` and the Ask button), the body and
-the footer share the same column edges, so moving from Overview to Runs to
-Agents to a settings page never shifts the first letter. The Ask button is the
-last item of the trail's `PageColumn`: its right edge is the column's right
-edge, the header actions' right edge. The gutter is 24px a side, 16px once the
+session head (the title row and the tabs or crumbs, drawn once by `SessionWorkspace` on
+the `column` measure), the page header, the body and the footer share the same column
+edges, so moving from Overview to Runs to Agents to a settings page never shifts the first
+letter, and the head never moves between tabs. Its actions end at the column's right edge,
+the page header actions' right edge. A detail page (an agent, a lead, a run) draws no title
+of its own: `SessionHeadFrame` hands it three slots through `SessionHeadSlotsContext`, and
+`HeadSlotPortal` puts its name in the last crumb (rename and the object menu stay on it),
+its state word and spend as one quiet line (only the dot carries the tone), then the run
+settings toggle (a sliders icon) and the more menu side by side, and run controls at the right
+end of the crumb row,
+and a side column such as the lead's Agents beside the head and the page, full height, with
+its header on the frame first row (`PANE_RHYTHM.firstRow`). The head and the page then
+centre in the space left of that column, so they keep one left edge. The frame has the same
+slot on its left (`data-session-lead`), which holds the file list of the branch Changes tab
+(`useBranchRailSlot`). Only the page on screen
+fills the slots: `HeadSlotsGate` gives a kept lens layer that is hidden (under an agent page, or
+an earlier tab) no slot, so a run page under a step page never adds its name or controls. The head sits above
+the page (`data-session-head-band`, `z-40`), and `useHeadInset` writes its height as
+`--head-inset` on the column; the page's outermost `RevealPane` (it reads
+`UnderHeadContext`, which it clears for everything inside it) reaches up by that inset
+(`relative`, `-top` and a height of 100% plus the inset, the same reach-under a
+`ScrollFade` uses, never a margin) and its `RevealRegion` pads the pinned overlay by it, so
+content scrolls under the title row, the crumbs or tabs and the pinned rows alike, behind
+one `sticky-surface-head` frost. A page that is not a `PaneShell` starts below the head as
+before. The head breathes through two tokens, never per page: `PANE_RHYTHM.head.rows`
+(12px between the title row and the tabs or crumbs) and `PANE_RHYTHM.head.under` (20px under
+the head before the page starts). Inside a page header the blocks (the title with its meta
+line, the tabs, the toolbar) sit `PANE_RHYTHM.block` (12px) apart; a title and its meta line
+stay one block. The gutter is 24px a side, 16px once the
 pane is under 720px wide. The gutter switch is a container query on the pane
 (`@container` on the `PaneShell` root, `@max-[720px]:` on the column), never a
 media query on the window, because the space that counts is the pane's.
@@ -276,7 +309,8 @@ One primitive draws the top of every page: `PageHeader`
 (`PANE_RHYTHM.headerInset`, 8px, none under a studio band), the 32px title
 row (`PaneTitleRow`, the only title row), the 8px under it (`PANE_RHYTHM.below`,
 so the band is 48px, or 64px with a meta line), a `badge` beside the title (a
-quiet count chip, as Tasks shows "1,024 open"), a `toolbar` row of 36px under
+quiet count chip, as Tasks shows "1,024 open"; `PaneTitleRow` also takes a `leading` control
+before the title, which only the session head's back button uses), a `toolbar` row of 36px under
 the band for the controls of a list (Tasks: scope, search, filters, grouping, menu;
 84px in all, no meta line), the title's left edge (its
 `PageColumn`) and the Close a studio frame hands down. `PaneShell` draws it, and a
@@ -299,14 +333,37 @@ row. `validate-scenes --only header-line` measures all four on
 session overview and the agent transcript and fails a height outside 40, 48 and
 64 (plus 36 per tab row or toolbar, which it does not count).
 
+The columns of a split page (`StudioRailLayout`) start on one row grid: the
+first row is 40px in every column (`data-grid-row="1"`: the rail toggle and the
+page toolbar, drawn with `PANE_RHYTHM.firstRow`, so its controls centre 24px
+down like a title row), the next rows are marked `data-grid-row="2"` and `"3"`
+and never take a top offset or a sibling gap of their own. The Terminal page is the
+model: toggle and folder pill with the Dock and Copy folder path actions on
+row 1, New terminal and the tab strip on row 2, the folder list and the shell
+on row 3. `validate-scenes --only row-start` measures the scenes in
+`validateScenesRowStart.mjs` at 1440 and fails a first row whose center line
+drifts over 1px between columns, a toolbar whose controls share no center line,
+a grid row whose top or bottom differs between columns, and a list heading
+(`data-list-heading`) whose left edge is more than 1px off the title row above
+it; its line names how many list headings it compared, so Runs and Questions
+cannot pass by measuring nothing. On every scene that
+renders the app frame it also runs the frame check: the main sidebar's first
+row (New session) against the page's first row (the topmost visible controls of
+`[data-studio-host]` and the controls on their line), centres within 1px and
+tops within 1px when the two rows are the same height. It waits for running
+animations to finish and skips controls hidden behind a sticky header. The
+`sidebar-frame-dark` and `sidebar-frame-light` scenes, Settings, New session, a
+session overview, Board, Tasks, Chat, Impact and Workflows are on its list.
+
 A page root names its kind (`page="overview"`, `page="terminal"`) and
 `PAGE_MEASURE` in `packages/ui/src/frameGeometry.ts` gives the column it sits on:
 
-| Measure | Pages                                                                                                                                                     |
-| ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| column  | Overview, Runs, a run, an agent, Artifacts, a plan or report, Questions, the worktree pages, Tasks, Workflows, Settings, Monitoring, Notifications, Guide |
-| measure | the chat room (header, thread, composer)                                                                                                                  |
-| full    | the Board, the Terminal                                                                                                                                   |
+| Measure | Pages                                                                                                                                           |
+| ------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| column  | Overview, Runs, a run, Artifacts, a plan or report, Questions, the worktree pages, Tasks, Workflows, Settings, Monitoring, Notifications, Guide |
+| reading | an agent and an Auto run: session head, transcript and composer                                                                                 |
+| measure | the chat room (header, thread, composer)                                                                                                        |
+| full    | the Board, the Terminal                                                                                                                         |
 
 A loading page draws `PageSkeleton` with the same kind, so its title bar and
 body start where the page will: `STUDIO_META[kind].skeleton` names the body shape
@@ -348,7 +405,11 @@ Five rules:
    that is not `StudioDetail` takes `h-full`: `flex-1` there does nothing, and an empty
    child (the Browser page's native view) measures zero high.
 2. **One page rail.** Every split page uses `StudioRailLayout` with `railWidth="standard"`
-   (288, resizable 220 to 420). No page draws a second rail column.
+   (288, resizable 220 to 420). No page draws a second rail column. The two exceptions are the
+   file list of the branch Changes tab and the Agents column of an Auto run and its agents'
+   pages (`RunAgentsRail`): each is portaled into the session frame's left slot as a full
+   height column (`railWidth="wide"`, 340, resizable to 560, folded under a 1060 frame) so
+   the session head and the page keep their centred column.
 3. **Stage pages are only the Board, the Terminal and the Browser.** Nothing else is fluid.
 4. **The page title row and the drawer header share one line.** `DrawerFrame` draws its
    header row on the page header line (`PANE_RHYTHM.headerInset` and `headerRow`: 8px
@@ -366,13 +427,17 @@ parent: Runs > Create, a run, a form, a studio's detail and its loading state
 all sit on a `PageColumn` (`FormPage` is one), and `columnContract.test.ts`
 walks every studio so a new place cannot sit on the left.
 
-Three width tiers, one rule each:
+Four width tiers, one rule each:
 
-| Tier    | Width                 | Used by                                                                                                                                                           |
-| ------- | --------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| measure | `--measure`, 720px    | prose: plan prose, comment and note bodies, a Brief, the chat room and the agent transcript with its composer (`PANE_RHYTHM.prose`, `PageColumn width="measure"`) |
-| column  | `--column-max`, 960px | the page column, centred: Overview, settings, cards, code blocks and tool output inside the transcript (`PageColumn`, `FormPage`)                                 |
-| full    | the pane, fluid       | work surfaces, from the pane's left edge: the terminal, Tasks lists, the Board (`PageColumn width="full"`)                                                        |
+| Tier    | Width                 | Used by                                                                                                                |
+| ------- | --------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| measure | `--measure`, 720px    | prose: plan prose, comment and note bodies, a Brief, the chat room (`PANE_RHYTHM.prose`, `PageColumn width="measure"`) |
+| reading | `--reading`, 880px    | an agent conversation, centred: session head, transcript and composer (`PageColumn width="reading"`)                   |
+| column  | `--column-max`, 960px | the page column, centred: Overview, settings, cards (`PageColumn`, `FormPage`)                                         |
+| full    | the pane, fluid       | work surfaces, from the pane's left edge: the terminal, Tasks lists, the Board (`PageColumn width="full"`)             |
+
+The agent page claims the reading column in the session head (`claim({ part: 'reading' })` from
+`AgentHeadSlots`), so the title row and crumbs share the transcript's left edge.
 
 A body that owns its scroll (`scroll="self"`: the agent transcript and its
 composer) puts its own `PageColumn` around the scrolling content and the
@@ -393,7 +458,8 @@ the column minimum (560px plus gutters); under that the drawer lies over the
 page. Closing the drawer slides the column back. It is one 220ms
 ease-out width transition on the drawer's track (`DURATION_BASE_MS`), so the column's centre follows
 it in the same frames; it is off under `prefers-reduced-motion`. A route change
-never moves the column, with or without a drawer. The pure geometry is
+never moves the column, with or without a drawer, except into an agent page: its
+reading column is 80px narrower, so the head moves in by 40px. The pure geometry is
 `pageBoxOf` in `packages/ui/src/drawerGeometry.ts`.
 
 No view picks its own width or its own centring. The column changes only when
@@ -402,7 +468,7 @@ Overview to Review to a chat. `app/components/StudioFrame/columnContract.test.ts
 `max-w-[Nch]`, any `max-w-[Npx]` (Search or run, the onboarding wizard and Home, on one 600px column, are the
 listed exceptions), any `max-w-[Nrem]` of 24rem or more, any `mx-auto` outside
 the Board frame and two centred empty states (centring is `PageColumn`'s job,
-and the test asserts it centres `column` and `measure` and not `full`), `PANE_RHYTHM.measure`,
+and the test asserts it centres `column`, `reading` and `measure` and not `full`), `PANE_RHYTHM.measure`,
 `DIFF_CAPPED_COLUMN_CLASS` and `max-w-xl` to `max-w-7xl` (with a narrow list
 for cards that still use `max-w-xl`), and on a lens the session workspace
 mounts without `PaneShell`, or a root that draws a crumb of its own. The
@@ -417,18 +483,19 @@ transcript or a diff, asks for `scroll="self"`.
 
 A Session page reads as one centred column: every child, banner, card and
 footer sits on the same edges. Only prose keeps the 720px measure, aligned left
-inside the column. Tables, code and cards take the whole column. An Agent page is
-the exception: it reads in the 720px measure, header to composer.
+inside the column. Tables, code and cards take the whole column.
 
-A conversation sits in the 720px measure, with no exception: the agent
-transcript, its header and its composer share one centred column (`PAGE_MEASURE.agent`),
-so a line holds about 98 characters of the 15/24 message text (`text-prose`).
+An agent conversation sits in the 880px reading column, with no exception: the session
+head, the transcript, the rows above it and its composer share one centred column
+(`PAGE_MEASURE.agent`, the `reading` width) in the space between the Agents rail and the
+tools rail, so a line holds about 115 characters of the 15/24 message text (`text-prose`).
+The chat room keeps the centred 720 `measure`.
 Tables and code scroll inside the column. A user or injected card keeps a fixed
 48px start gap (`PANE_RHYTHM.message.user`) in the agent transcript, Chat, the
 Ask panel and the fix run drawer. The rhythm is set by the parent's gap
 (`PANE_RHYTHM.transcript`): 32px between turns, 16px between the blocks of a
-turn, 12px between paragraphs of a message. The last line sits 48px above the composer
-(`TRANSCRIPT_FLOOR_PX`) and a sent message 40px
+turn, 12px between paragraphs of a message. The last line sits 32px above the composer,
+the turn gap (`TRANSCRIPT_FLOOR_PX`, 24, plus the composer's 8px top), and a sent message 40px
 under the top of the view, both in `useScrollPin`.
 
 **The Branch page** is one detail whose header, Ask button and every section body share the 960px
@@ -603,8 +670,11 @@ together), the sliding header of a `RevealRegion` and the sticky rows of a
 list take `sticky-surface`: the background at 80% with `blur(12px) saturate(1.4)`.
 A header on `subtle`, a drawer's title row and a diff file header take
 `sticky-surface-subtle`, the light frost at 90% with `blur(3px) saturate(1.2)`,
-so a row that parks under the pinned zone never stacks two strong frosts. Both
-are opaque under `prefers-reduced-transparency: reduce`. No `shadow-*`, no gradient band, no
+so a row that parks under the pinned zone never stacks two strong frosts. Under a
+session head the overlay and the sliding header take `sticky-surface-head`
+instead, the quiet frost at 86% with `blur(8px) saturate(1.2)`, and the pinned row
+adds none of its own, so the head is one frosted edge, not a band under its last
+row. All three are opaque under `prefers-reduced-transparency: reduce`. No `shadow-*`, no gradient band, no
 `bg-background` on the header itself. Its block padding leans down: the pinned zone
 is `pt-3 pb-5` (`PANE_RHYTHM.pinnedInset`), more room below than above, because
 the back row's 24px line already holds 4px above its text, and a header under or inside it adds no

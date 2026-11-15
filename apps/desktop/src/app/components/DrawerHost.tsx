@@ -1,12 +1,10 @@
 import type { ReactNode } from 'react';
 import { DrawerBackChipContext } from '@goodboy/ui';
 import { useAppStore } from '../../store';
-import { selectOpenDrawer } from '../../store/slices/drawer/selectOpenDrawer';
+import { selectSlotDrawer, type DrawerSlot } from '../../store/slices/drawer/selectSlotDrawer';
 import { selectSlotBack } from '../../store/slices/drawer/selectSlotBack';
 import { useSlotBackChip } from '../hooks/useSlotBackChip';
-import { ContextDrawer } from '../../features/session/components/ContextDrawer';
 import { ExploreFileDrawer } from '../../features/explore/components/ExploreFileDrawer';
-import { ExplorePane } from '../../features/explore/components/ExplorePane';
 import { SessionScriptsDrawer } from '../../features/scripts/components/SessionScriptsDrawer';
 import { ArtifactShellDrawer } from '../../features/artifacts/components/ArtifactShell/ArtifactShellDrawer';
 import { ArtifactDocumentDrawer } from '../../features/artifacts/components/ArtifactDocumentDrawer';
@@ -19,7 +17,6 @@ import { ReviewCommentDrawerHost } from '../../features/resolve/components/Revie
 import { FixRunTranscriptDrawer } from './FixRunTranscriptDrawer';
 import { SpawnedPanel } from './SpawnedPanel';
 import { LogDrawer } from '../../features/session/central/log/LogDrawer';
-import { ExploreAddFolder } from './ExploreAddFolder';
 import { ExploreFileChanges } from './ExploreFileChanges';
 import { ArtifactReadingDrawer } from './ArtifactReadingDrawer';
 import { readingArtifactOf } from './ArtifactReadingDrawer/readingArtifact';
@@ -27,8 +24,6 @@ import { drawerKey } from '../../store/slices/drawer/drawerKey';
 import type { DrawerRequest } from '../../store/slices/drawer/state';
 import { PanelBoundary } from './PanelBoundary';
 import { renderRegisteredDrawer } from './renderRegisteredDrawer';
-
-const NO_HIGHLIGHT: ReadonlyArray<number> = [];
 
 type RenderParams = {
   readonly drawer: DrawerRequest;
@@ -46,17 +41,6 @@ const renderDrawer = ({
   openDrawer,
 }: RenderParams): ReactNode => {
   switch (drawer.kind) {
-    case 'context':
-      return (
-        <ContextDrawer
-          key={drawer.sessionId}
-          sessionId={drawer.sessionId}
-          section={drawer.payload.section}
-          view={drawer.payload.view}
-          highlight={drawer.payload.highlight ?? NO_HIGHLIGHT}
-          onClose={closeDrawer}
-        />
-      );
     case 'explore-file':
       return (
         <ExploreFileDrawer
@@ -65,13 +49,6 @@ const renderDrawer = ({
           sessionDir={drawer.payload.sessionDir}
           entry={drawer.payload.entry}
           line={drawer.payload.line}
-          {...(drawer.payload.from === 'explore' && {
-            back: {
-              label: 'Back to Explore',
-              onBack: () =>
-                openDrawer({ kind: 'explore', sessionId: drawer.sessionId, payload: null }),
-            },
-          })}
           renderChanges={({ sessionDir, relPath, baseBranch }) => (
             <ExploreFileChanges sessionDir={sessionDir} relPath={relPath} baseBranch={baseBranch} />
           )}
@@ -118,15 +95,6 @@ const renderDrawer = ({
                 openDrawer({ kind: 'scripts', sessionId: drawer.sessionId, payload: null }),
             },
           })}
-          onClose={closeDrawer}
-        />
-      );
-    case 'explore':
-      return (
-        <ExplorePane
-          key={drawer.sessionId}
-          sessionId={drawer.sessionId}
-          noFolderAction={<ExploreAddFolder sessionId={drawer.sessionId} />}
           onClose={closeDrawer}
         />
       );
@@ -210,14 +178,26 @@ const renderDrawer = ({
   }
 };
 
-export const DrawerHost = () => {
-  const drawer = useAppStore(selectOpenDrawer);
-  const backChip = useSlotBackChip({ back: useAppStore((state) => selectSlotBack({ state })) });
-  const closeDrawer = useAppStore((s) => s.closeDrawer);
-  const closeQuestion = useAppStore((s) => s.closeQuestion);
+type Props = {
+  readonly slot?: DrawerSlot;
+};
+
+export const DrawerHost = ({ slot = 'top' }: Props) => {
+  const drawer = useAppStore((state) => selectSlotDrawer({ state, slot }));
+  const isTop = useAppStore((state) => drawer !== null && state.drawer === drawer);
+  const back = useAppStore((state) => (isTop ? selectSlotBack({ state }) : null));
+  const backChip = useSlotBackChip({ back });
+  const closeEntry = useAppStore((s) => s.closeDrawerEntry);
+  const closeTopQuestion = useAppStore((s) => s.closeQuestion);
   const openDrawer = useAppStore((s) => s.openDrawer);
+  const closeDrawer = () => {
+    if (drawer !== null) {
+      closeEntry({ entry: drawer });
+    }
+  };
+  const closeQuestion = isTop ? closeTopQuestion : closeDrawer;
   const isReading = useAppStore((s) => {
-    const open = selectOpenDrawer(s);
+    const open = selectSlotDrawer({ state: s, slot });
     return (
       open?.kind === 'artifact-document' &&
       readingArtifactOf({

@@ -46,10 +46,11 @@ const mount = ({ id }: MountParams): void => {
 };
 
 const pageLabels = async (): Promise<ReadonlyArray<string>> => {
-  const pages = await screen.findByRole('list', { name: 'Pages' }, WAIT);
-  return within(pages)
-    .getAllByRole('button')
-    .map((row) => row.textContent ?? '');
+  const lists = await screen.findAllByRole('tablist', { name: 'Session pages' }, WAIT);
+  const pages = lists.find((list) => list.querySelector('[aria-selected="true"]') !== null);
+  return within(pages ?? lists[0] ?? document.body)
+    .getAllByRole('tab')
+    .map((tab) => tab.textContent ?? '');
 };
 
 describe('the u27 one flow scenes', () => {
@@ -60,14 +61,16 @@ describe('the u27 one flow scenes', () => {
     expect(Object.keys(U27_ONE_FLOW_SCENES)).toHaveLength(12);
   });
 
-  it('keeps one session rail entry for runs, current on the run list', async () => {
+  it('keeps one session page tab for runs, selected on the run list', async () => {
     mount({ id: 'u27-one-flow-after-entry' });
 
     const labels = await pageLabels();
     expect(labels.filter((label) => /Orchestrated|Agents|Auto/.test(label))).toEqual([]);
     expect(labels.filter((label) => label.startsWith('Runs'))).toHaveLength(1);
-    const current = screen.getByRole('button', { current: 'page' });
-    expect(current.textContent?.startsWith('Runs')).toBe(true);
+    const current = screen
+      .getAllByRole('tab')
+      .find((tab) => tab.getAttribute('aria-selected') === 'true');
+    expect(current?.textContent?.startsWith('Runs')).toBe(true);
   });
 
   it('names the run kind on a chip whose popover is read-only while the run goes', async () => {

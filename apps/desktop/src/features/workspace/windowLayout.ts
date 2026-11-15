@@ -7,6 +7,7 @@ import {
   EMPTY_FOCUS,
   type Focus,
   type Location,
+  type RunGroupFocus,
   type SessionView,
 } from '../../store/slices/navigation/types';
 
@@ -65,6 +66,17 @@ const placeOf = ({ value }: PlaceParams): Location['place'] | null => {
   return { at: 'session', sessionId, view: { lens, agentId, target } };
 };
 
+const runGroupOf = ({ value }: PlaceParams): RunGroupFocus | null => {
+  if (!isRecord(value) || typeof value.groupKey !== 'string' || value.groupKey === '') {
+    return null;
+  }
+  const mountPath = value.mountPath;
+  if (mountPath !== null && typeof mountPath !== 'string') {
+    return null;
+  }
+  return { groupKey: value.groupKey, mountPath };
+};
+
 const focusOf = ({ value }: { readonly value: unknown }): Focus => {
   if (!isRecord(value)) {
     return EMPTY_FOCUS;
@@ -84,10 +96,12 @@ const focusOf = ({ value }: { readonly value: unknown }): Focus => {
         ),
       )
     : {};
+  const runGroup = runGroupOf({ value: value.runGroup });
   return {
     drawer: isDrawer(value.drawer) ? value.drawer : null,
     scroll,
     ...(Object.keys(returnRows).length > 0 ? { returnRows } : {}),
+    ...(runGroup === null ? {} : { runGroup }),
   };
 };
 

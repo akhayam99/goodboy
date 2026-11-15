@@ -114,12 +114,6 @@ const ENTRIES: ReadonlyArray<Entry> = [
     },
   },
   {
-    kind: 'ask',
-    region: 'Ask',
-    seed: seedSession,
-    drawer: { kind: 'ask', sessionId: SESSION, payload: null },
-  },
-  {
     kind: 'question',
     region: 'Question',
     seed: () => {
@@ -132,20 +126,16 @@ const ENTRIES: ReadonlyArray<Entry> = [
     drawer: { kind: 'question', sessionId: SESSION, payload: { questionId: QUESTION } },
   },
   {
+    kind: 'ask',
+    region: 'Ask',
+    seed: seedSession,
+    drawer: { kind: 'ask', sessionId: SESSION, payload: null },
+  },
+  {
     kind: 'new',
     region: 'Write a report',
     seed: seedSession,
     drawer: { kind: 'new', sessionId: SESSION, payload: { form: 'report' } },
-  },
-  {
-    kind: 'context',
-    region: 'Context',
-    seed: seedSession,
-    drawer: {
-      kind: 'context',
-      sessionId: SESSION,
-      payload: { section: 'goal', view: 'current' },
-    },
   },
   {
     kind: 'transcript',
@@ -193,12 +183,6 @@ const ENTRIES: ReadonlyArray<Entry> = [
       sessionId: SESSION,
       payload: { scriptKey: 'package:test', mountId: null },
     },
-  },
-  {
-    kind: 'explore',
-    region: 'Explore',
-    seed: seedSession,
-    drawer: { kind: 'explore', sessionId: SESSION, payload: null },
   },
   {
     kind: 'scripts',
@@ -430,38 +414,6 @@ describe('the comment drawer the Comments page portals into the host', () => {
     fireEvent.click(close);
 
     expect(useAppStore.getState().drawer).toBeNull();
-  });
-});
-
-describe('the Context drawer in its versions view', () => {
-  it('says Back to current where the others say Close', () => {
-    seedSession();
-    useAppStore.setState({
-      drawer: {
-        kind: 'context',
-        sessionId: SESSION,
-        payload: { section: 'goal', view: 'versions' },
-      },
-    });
-
-    renderHost();
-
-    const region = screen.getByRole('region', { name: 'Context' });
-    within(region).getByRole('button', { name: 'Back to current' });
-    expect(within(region).queryByRole('button', { name: 'Close' })).toBeNull();
-  });
-});
-
-describe('the Ask drawer header', () => {
-  it('reads Ask, with no session title beside it', () => {
-    seedSession();
-    useAppStore.setState({ drawer: { kind: 'ask', sessionId: SESSION, payload: null } });
-
-    renderHost();
-
-    const header = within(screen.getByRole('region', { name: 'Ask' })).getByRole('banner');
-    expect(header.textContent).not.toContain('Fix webhook retries');
-    within(header).getByRole('heading', { name: 'Ask' });
   });
 });
 

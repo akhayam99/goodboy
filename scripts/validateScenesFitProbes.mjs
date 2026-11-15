@@ -7,6 +7,7 @@ import { runQuestionCard } from './validateScenesQuestionCard.mjs';
 import { runRowAlign } from './validateScenesRowAlign.mjs';
 import { runRunTailFit } from './validateScenesRunTailFit.mjs';
 import { runPageColumn } from './validateScenesPageColumn.mjs';
+import { runRowStart } from './validateScenesRowStart.mjs';
 import { runTitleBand } from './validateScenesTitleBand.mjs';
 
 export const runFitProbes = async (context) => {
@@ -20,4 +21,5 @@ export const runFitProbes = async (context) => {
   await runRunTailFit(context);
   await runPageColumn(context);
   await runTitleBand(context);
+  await runRowStart(context);
 };

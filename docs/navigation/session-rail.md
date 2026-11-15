@@ -1,28 +1,76 @@
-# The session rail and its tools
+# The session page tabs and its tools
 
-> **Read this when** you change the rail of a session, its back row, the tools beside the page or the Scripts pane. **Not for** spacing, scroll and overlay mechanics ([styling.md](../styling.md)) or design intent and tone ([DESIGN.md](../../DESIGN.md)). The other pages are listed in [navigation.md](../navigation.md).
+> **Read this when** you change the page tabs of a session, its head and crumbs, the tools beside the page or the Scripts pane. **Not for** spacing, scroll and overlay mechanics ([styling.md](../styling.md)) or design intent and tone ([DESIGN.md](../../DESIGN.md)). The other pages are listed in [navigation.md](../navigation.md).
 
-## Session rail
+## Session page tabs
 
-**The column never changes level; the session rail does.** The column always
-shows the workspace: New session, the doors, then the Pinned and Sessions
-lists. Clicking a session row selects that row, opens the session on its
-Overview and shows the session pages at the left of the page, inside the
-content sheet. **Session pages** is the one name of this rail: the navigation
-landmark, the toggle (**Hide session pages** and **Show session pages**), the
-palette entry for ⌥⌘B and the Guide all say it. The rail has one level, the session: its Projects tree holds every
-branch, and neither the open rail nor the folded rail drills. A branch's pages are the
-tab strip of the Branch page, so the rail never repeats them. A preset run and Auto
-never drill either: what they spawned lives in the Agents panel of the session tools
-(see The session tools). The host is `SessionRail` (`app/components/SessionRail`),
-mounted once for the open session by `SessionFrame` beside the kept-alive
-session pages. The rail is 240px by
-default and resizes from 200 to 400 (`goodboy:session-rail-width:v1`); its
-rows are the column's rows (28px, `SelectableRow`, the same type roles).
-Under any page that sits over the session (Tasks, Help, What's new,
-Notifications, New workspace and the rest) the rail is inactive: the fold key
-folds the column on the left, and the open session row is not lit
-(`SessionRail/innerColumn.test.tsx`).
+**No session column.** The sidebar always shows the workspace: New session, the doors, then the
+Pinned and Sessions lists. A session row opens the session on its Overview. The session's
+pages are page tabs directly under the session title (`SessionPageTabs`, built on `PageTabs`):
+Overview, Runs, Artifacts, Questions and Context, on every session, with or without a
+branch. A session with exactly one branch adds a **Changes** shortcut last: it opens that
+branch's Changes tab on the Branch page; with no branch or more than one it is absent, since
+changes belong to a branch and its pull request. Counts sit on Runs, Artifacts and Questions
+(`pageSlotOf`, the same words as the sidebar flyout). The pages come from one list (`pagesOf`
+in `features/session/pageRegistry.ts`); the sidebar flyout of the open session
+(`SessionPages`) draws the same list.
+
+- **One session head.** `SessionFrame` hands `SessionHead` (`app/components/SessionHead`) to
+  `SessionWorkspace` through `SessionHeadContext`, and `SessionWorkspace` draws it once, above
+  every page and overlay, on the page column: the title row (the session title, renamed in
+  place, then **New**, **Ask**, Pin, Refresh and More session actions) and under it the tab
+  strip, whose bottom rule spans the column like the branch page tabs. A detail page drops More
+  session actions from the title row (`SessionHeadActions` `isDetail`), so a page shows one `⋯`,
+  the menu of what it shows (the run, the artifact, the pull request); the session menu is one
+  crumb up. Every tab shows the same head at the same top, the title row on the sidebar's first
+  row line; no tab draws a title of its own ("Runs", "Questions", "Context" are the tab
+  names), and a page intro, when kept, sits under the tabs in the muted role (the Runs lede).
+  The pages below sit under the head (`UnderTrailContext`), so their own header adds no top
+  inset and an empty one draws nothing. `SessionHead/index.test.tsx` pins one head at the
+  same top on every tab.
+- **A detail swaps the tabs for crumbs.** On an artifact, a branch or pull request, a run, an
+  agent or any place that is not a tab (`isTabView`), the head keeps its title row and draws
+  `Overview › Section › Item` in place of the tabs (`SessionCrumbs`, from `crumbsOf` in
+  the navigation store). The crumbs are the `parentPlace` chain from the session Overview to
+  the open place, one crumb per object (a branch with a file or a thread open is one crumb);
+  each crumb but the last is a link that calls `upTo` with its place, and Esc goes one crumb
+  up (`escapeLadder`, `up`). There is no `Back to` line; instead the title row starts with a
+  back button (`SessionBackButton`, an outline `ArrowLeft` icon button the size of the head's
+  other controls, its left edge on the column edge, the title shifted right by it) named
+  `Back to {parent crumb}` with Esc in its tooltip. It calls `up`, the chain Esc walks, so on
+  every page below a tab the user sees at once that the screen is secondary and how to leave
+  it. A tab draws no back button. The first crumb reads `Overview`,
+  never the session title, which the title row above it already shows. The session title in
+  the title row is the h1 on a tab and plain text on a detail, whose own title row holds the h1.
+- **Ask** in the title row opens the Ask panel as a detail panel (drawer kind `ask`, a reader
+  kind, so `DrawerHost slot="detail"` draws it between the page and the tool dock, in the
+  `DrawerFrame` the artifact detail uses), pressed while open; a second press closes it. ⌘L
+  (`ask.open`) opens it too and focuses its box (`openAsk`). Ask keeps its conversation and
+  starts no agent. The Context tab holds no Ask.
+- **The tab is the stored place.** The selected tab is read from the open lens
+  (`currentSignOf` over `useSessionPageLens`), so a reload that restores the place restores
+  the tab. A lens the tabs do not own (an integration list) selects no tab; a place that no
+  longer exists opens Overview. Pressing a tab opens that lens (`openSessionPage`) and writes
+  nothing else.
+- **A pull request page shows its own tab row.** On the Branch page the head shows the crumbs
+  and the page keeps its title and its own tabs under them (see
+  [branch-page.md](branch-page.md)). Never two tab rows.
+- **Changes is a place of a branch.** The `files` lens on a session with a branch lands on the
+  Branch page Changes tab of that branch (`canonicalLocation`); the board row's Changes door,
+  the palette and the chord go there. A branchless session's `files` place still shows its
+  file versions, as a detail under the crumbs.
+- **Context** is `ContextTab`: the Projects and Linked cards (`SessionLevel`, handed in through
+  `ContextCardsContext`), goal, decisions, summary and explanations (`ContextDrawer` in page
+  mode). `openContextDrawer` navigates to the tab and keeps the section,
+  view and highlight in the place's rows (`context.section`, `context.view`,
+  `context.highlight`, read by the tab); it does not open a drawer.
+- **No fold, no width.** The rail's fold, its width and its page-column fold key are gone with
+  it; `SessionFrame` keeps the session tools rail and its drawer inset only.
+
+## The Projects and Linked cards
+
+The text below was written for the rail. The cards it names (`SessionLevel/LevelProjects`,
+`LevelLinked`, `LevelFolder`) keep their behavior and move into the Context tab.
 
 - **Level 1 reads top to bottom:** the pages, then the Projects card and the
   Linked card, then the foot. The session level has no identity row: the
@@ -86,12 +134,13 @@ characters`, in the warning tone from 90%. A longer draft is blocked before
   which stays open; a name it refuses (empty, too long) shows the reason with no
   Retry (`useInlineRename` `canRetry`). Every one of these verbs is also in the sidebar row's right
   click menu and the palette. A title Goodboy wrote reads "Named by Goodboy" on
-  the session hover card. It has no back row: the column beside it is the way
+  the session hover card. A tab has no crumbs: the column beside it is the way
   to another place. Only one level shows, so a session never carries a nested
   card in the workspace list.
 - **The pages** come from one registry (`features/session/pageRegistry.ts`):
-  Overview, Changes (with the count of changed files) in a branchless session only, Runs,
-  Artifacts, and Questions last, always there like Artifacts: its slot
+  Overview, Runs, Artifacts, Questions and Context, and the Changes shortcut of a
+  single-branch session (its `Changed` and `All files` modes hold the files of the branch,
+  see the Changes section of branch-page.md). Questions is always there like Artifacts: its slot
   is the open count with the warning dot while a question waits on you.
   **Runs is the one entry for work** (ux27 one flow, unit 1): it folds the
   former Orchestrated, Agents and Auto agents entries. Its page lists every
@@ -109,8 +158,8 @@ characters`, in the warning tone from 90%. A longer draft is blocked before
   (`foldedLensOf`, applied by `sessionPlace`, `canonicalLocation`,
   `applyLocation` and the workspace), and a saved window that names the retired
   `agents` or `auto` lens lands on Runs through `withoutRemovedPages`, so an
-  old address or a saved window lands on Runs, and the back row of an old agent or
-  run reads `Back to runs`. An agent's home is Runs, or Comments for a resolver
+  old address or a saved window lands on Runs, the crumbs of a run read
+  `Overview › Runs › {run}` and those of a top agent `Overview › Runs › {agent}`. An agent's home is Runs, or Comments for a resolver
   (`agentHomeLens`). A row never carries a native
   `title`. The Runs page opens on the Start a run field (`StartRun`), and
   **Start a run** in the New menu (`newForm.startRun`), in a session's ⌘K
@@ -197,18 +246,7 @@ characters`, in the warning tone from 90%. A longer draft is blocked before
   row makes its branch current and opens its pages in place (`switchBranchMount`
   pushes the Branch page into the center); a click on the current row folds or
   opens its pages. Only the current branch shows pages, so the card does not grow
-  when you are busy. Folded, the
-  rail draws a pull request state icon under the page icons only for a worktree
-  that needs you (a dot) or is shown now (`RailWorktrees`), with its tooltip
-  "project, branch, state word, worst state" and the worst state dot on its corner
-  (`railBranchesSplitOf` over `useRailBranchEntries`). Every other worktree folds into
-  one branches button: the branch glyph with a neutral count badge and the label
-  "3 more branches" (`RailBranchesButton`). Its flyout (`RailFlyout`, key `branches`)
-  lists every worktree of the session with project, branch, pull request state,
-  reason and dot (`RailBranchRow`), and a row opens the branch like its icon does. One
-  quiet worktree keeps its own icon, so the button never counts one. The
-  folded rail never draws the session node, and a worktree icon there opens the
-  Branch page, whose tab strip holds the pages of the branch. **Rebase all**
+  when you are busy. **Rebase all**
   (`features/history/RebaseAllCard`) is the first line of the card: `n branches behind`
   with a Rebase all button, then, while a batch runs, `Rebasing 2 of 9` with
   Abort in the same 28px line and the same button size, and Dismiss once it
@@ -306,24 +344,14 @@ characters`, in the warning tone from 90%. A longer draft is blocked before
   rail: a thin icon toolbar at the right edge of the session content, between
   the page and the open drawer (see The session tools), the same on every
   page of the session, folded rail or not.
-- **Folded (44px).** The rail's own toggle (`SessionRailToggle`, **Hide
-  session pages** or **Show session pages**, ⌥⌘B) folds it to the current level
-  as icons with right tooltips (`SessionRailIcons`): one icon per page with its
-  dot, then the pull request number per worktree, with its state and dot reason
-  in the tooltip. At its foot the folded rail keeps **More session
-  actions** (`⋯`, the same menu as open, `data-rail-actions`), with a **Retry**
-  icon above it after a failed action. The block sits below the icons, so a fold
-  moves no page or worktree icon. Pin and Refresh show only when open;
-  ⌘⇧R and the sidebar row's right click menu keep them. The folded rail has no
-  Projects foot; the right rail beside the content stays as it is.
-  ⌘B folds the column only, which shows New, the doors and the pinned session
-  nodes on every screen. Folding the session pages leaves the diff page's file
-  rail as it is.
+- **Nothing folds.** The page tabs have no folded state. ⌘B folds the column only, which
+  shows New, the doors and the pinned session nodes on every screen. The diff page's file
+  rail keeps its own fold.
 - **A preset run keeps the rail on the session.** Opening a run with a fixed
   step list (a saved workflow or Describe steps; `executionMode` not
   `dynamic`) shows the run page in the center and leaves the rail on level 1;
-  its spawned agents are in the Agents panel (see The session tools). Esc on
-  the run page does what its back row does and lands on the Runs list, through
+  its spawned agents are in the Agents column of the run page. Esc on
+  the run page goes one crumb up and lands on the Runs list, through
   history when the list is the page below.
   An orchestrated run shows its document with **Orchestrated** selected
   ([The orchestrated document](../workflows.md#the-orchestrated-document)).
@@ -345,8 +373,8 @@ characters`, in the warning tone from 90%. A longer draft is blocked before
 - **Auto keeps the rail on the session.** An Auto row of Runs opens that
   conversation and opens no tool, and Runs stays
   selected on the rail while an Auto agent is in the center. ⌘⌥W opens Runs;
-  ⌘⌥A is the Agents tool (`session.spawned`), a palette row as well, and ⌘⌥L is
-  free. Pressed below Runs (a run,
+  ⌘⌥A (`session.spawned`), a palette row as well, opens Runs on what is running
+  (`runs.filter` in `focus.returnRows`), and ⌘⌥L is free. Pressed below Runs (a run,
   a step, an agent or an Auto conversation) ⌘⌥W lands on the Runs list, and
   pressed on the list it stays: ⌘↑ is the key that leaves. ⌘⌥P does the same
   for Artifacts (`OBJECT_PAGE_LENSES` in `useAppShortcuts`). A studio or a
@@ -360,7 +388,7 @@ characters`, in the warning tone from 90%. A longer draft is blocked before
   still in the session but whose steps did not load says "This run couldn't be
   read" with Retry (`RunMetadataMissing`), never that it is gone.
 
-The tools (Explore, Context, Ask, Agents, Scripts, Terminal, Browser) are panes, not pages:
+The tools (Terminal and Browser) are panes, not pages:
 they open from the right rail at the right of the content (see The
 session tools), never from a page header.
 The linked records keep their lenses for now and stay in the palette.
@@ -570,7 +598,7 @@ inside Ask the same chord is new chat, new terminal and New question, see
 [keyboard.md](../keyboard.md)), the board, the palette
 and the checklist open the `New session` draft (the `session-draft` place,
 address `new`). Nothing is written: no row in the database, the column or
-the board. The title says `New session`, the page draws no back row, the
+the board. The title says `New session`, the page draws no crumbs, the
 title is faint and cannot be renamed, and there is no `⋯` and no chip. The
 column's New session row stays selected while the draft is open. Each workspace
 keeps one draft in memory (`store/slices/sessionDraft/`), never on disk:
@@ -630,88 +658,92 @@ inline above the primary. A session that exists always has a real title, so
 its header never has an empty state. Sessions created elsewhere with no
 activity yet show the plain overview with its actions.
 
-## Back row
+## Board model
 
-- **Every session page below the Overview draws one `‹ Back to X` row above its title.**
-  No trail: one entry, the real parent. `SessionWorkspace` hands
-  `<SessionBackRow>` to the visible layer through `PageTrailContext`
-  (`@goodboy/ui`, the slot above the title that studio trails share), and
-  `PageHeader` draws it as a 24px line at the head of the header, above the
-  title row, in the same gap; `PaneShell` clears the context for its body, so a
-  nested header never repeats it. The row is a quiet `xs` button with a
-  `ChevronLeft`; its `aria-label` is its text. `backOf` (store, navigation)
-  names the parent from `parentPlace`: a main agent reads `Back to runs`, a sub
-  agent and a sub sub agent read `Back to {parent agent name}` (`parentPlace`
-  walks `parentAgentId` one step; a top level run step keeps its run, a sub
-  step reads `Back to {parent step name}`), a run reads `Back
-to runs`, a top level run step `Back to {run title}` (the run's title, else its
-  workflow's name, else `Back to run`), a plan or any artifact `Back to
-artifacts`, a Branch file or thread `Back to branch`, every other lens page,
-  a GitHub issue, a linked task and a Branch section `Back to overview`. The
-  name comes from `placeTitleOf` (store, navigation), the one name a place has:
-  the back row, the history arrows and their hold menu all read it. A click calls `upTo` with the parent place: a real
-  navigation, so a reload or a deep link with no history below still goes
-  there; when the entry below is that place it is a Back instead of a push.
-  The Overview draws no row (it has no parent), nor does a drawer, which keeps
-  its `DrawerFrame` back. The Branch page reads the same context through
-  `BranchDetail`, which drops it when a studio band claims the top. Each page
-  still opens with one header row from `PaneShell`: the page title, then the
-  page actions and at most one `⋯`, the page menu.
-  `every-place-has-a-way-up.test.tsx` walks one place per lens and per target
-  kind, renders `SessionWorkspace` and fails when the drawn row differs from
-  `backOf` or a breadcrumb is drawn; a place that opens a drawer or a side pane
-  is named with its reason. It also fails on a back arrow or chevron outside
-  the back row, `DrawerFrame` and the history arrows, with a named allowlist
-  for the backs that are not a way up. The history arrows in the top bar are
+- **A branch is a row by its stored mount id, in any state.** A merged branch stays a row and a removed worktree keeps its row, because the row never reads the path. Work with no known branch lands in one row, "Not on a branch".
+- **Groups are Needs you, In progress, Merged and Not on a branch.** An empty group is not drawn. Merged shows the 3 newest (`MERGED_FOLD_LIMIT`) unless it is the only group with branches. A session with one branch draws no groups.
+- **The stage of a row comes from that branch only.** `branchFactsFor` builds its facts and `deriveSessionStage` words them; the session's own error state and unread mark never reach a row.
+- **The five tiles are counted by id.** `sessionKpisOf` reads the board: Branches (merged of total), Needs you, Checks, Spend and Time. A Lead on two branches is two rows and one Lead; the rows sum to each tile.
+
+## Crumbs
+
+- **Every session place below a tab draws the crumbs in place of the tab strip.**
+  `crumbsOf` (store, navigation) walks `parentPlace` from the open place up to the session
+  and prepends the Overview, drawn as `Overview` (`NAMES.overview`). A main agent reads
+  `Overview › Runs › {agent}`, a sub agent `Overview › Runs › {parent agent} › {agent}`; an agent Auto started
+  that still has its role name reads `{Role} · {short task}` (`agentTaskLabelOf`: the role noun
+  and the first sentence of its task through `taskTitleOf`, never the raw prompt; the head
+  draws the task middle cut, the full brief one click away), a run `Overview › Runs ›
+{run title}` (the run's title, else its workflow's name, else `Run`), an Auto run and every
+  agent under it name the run through `autoRunTitleOf` (features/session: the first line of
+  the ask, else of the run's first message, else the flow word of `flowWordOf`, never a fixed
+  `Auto`), which the run page crumb and the Agents rail root row read too, a run step adds its
+  step names, an artifact `Overview › Artifacts › {artifact title}`, a branch or pull request
+  `Overview › {branch name}` (one crumb with a file or a thread open), a GitHub issue, a linked
+  task and a branchless Changes place `Overview › {page}`. Names come from `placeTitleOf`
+  (store, navigation), the one name a place has, which the history arrows and their hold menu
+  read too. A crumb is a quiet `xs` button; a click calls `upTo` with its place: a real
+  navigation, so a reload or a deep link with no history below still goes there; when the
+  entry below is that place it is a Back instead of a push. The last crumb is the page
+  (`aria-current="page"`). Five crumbs or more fold (`crumbFoldOf`): the first and the last two
+  stay, the ones between become one `…` crumb whose menu lists them (`SessionCrumbFold`), and
+  a crumb between the first and the page is capped at 192px so the page crumb keeps the room.
+  A tab (`isTabView`: the Overview, Runs, Artifacts, Questions,
+  Context, also with a question drawer open) draws the tabs, and a drawer keeps its
+  `DrawerFrame` back. `every-place-has-a-way-up.test.tsx` walks one place per lens and per
+  target kind, renders `SessionWorkspace` with the head and fails when the drawn crumbs differ
+  from `crumbsOf`, when a tab draws crumbs or a back button, when a detail draws no head back
+  button named after its parent crumb, or when a studio trail is drawn. It also fails on a
+  back arrow or chevron outside `DrawerFrame`, the head back button and the history arrows,
+  with a named allowlist for the backs that are not a way up. `no-back-glyph-in-trail.test.tsx`
+  keeps the glyph out of the crumbs themselves: on a secondary page the head holds exactly one,
+  in the back button of the title row. The history arrows in the top bar are
   memory, not a way up: the left one reads `Back: {place}` and the right one
   `Forward: {place}` (an agent's name, a run's title, a page), with the
   session's title on a second line and `Hold for history` on a third; a hold or a
-  right click opens the History menu with the same names. A way up reads
-  `Back to {place}`, so a test that wants the arrow takes
-  `[data-nav-arrow="back"]`.
-- **The header holds only its page.** `SessionWorkspace` hands no actions
-  to the page headers: the session tools live in their column at the right of
-  the content (see The session tools), so no header carries a second `⋯` (pinned by
-  `scene-primaries.test.tsx`). `PaneActionsContext` stays for a page that
-  lends its own action to a nested header (the issue detail's back word).
-  ⌘L (`ask.open`, app plane) opens Ask or, when it is open, focuses its box;
-  the key is bound once per visible session (`useAskOpenShortcut` in
-  `SessionWorkspace`), not by the row, so two mounted pages never bind it
-  twice.
-- **The Overview header** reads the session title, renamed in place
-  (`SessionOverviewPane/OverviewTitle`, see above) and on the main sidebar row; Pin and Refresh on the session rail
-  top row, Archive and Delete at its foot. The header holds
-  **New**
-  (`OverviewActions`, ⌘N on the Overview, a menu from the `newForm` kind of
-  the action registry whose pick opens its form in the New drawer; filled only
-  while nothing runs and Next holds no row) and, on an archived session,
-  Restore. Context lives in the session tools.
+  right click opens the History menu with the same names. A test that wants
+  the arrow takes `[data-nav-arrow="back"]`.
+- **The session title row holds the session's actions, once.** The page headers under the
+  head carry only their page (an artifact's Details, Edit and `⋯`; a pull request's
+  actions), so no page header carries a second session `⋯` (pinned by
+  `scene-primaries.test.tsx`). `PaneActionsContext` stays for a page that lends its own
+  action to a nested header (the issue detail's back word). ⌘L (`ask.open`, app plane) is
+  bound once per visible session (`useAskOpenShortcut` in `SessionWorkspace`), not by the
+  button, so two mounted pages never bind it twice.
+- **The title row** reads the session title, renamed in place
+  (`SessionOverviewPane/OverviewTitle`, see above) on every tab, and on the main sidebar row.
+  It holds **New** (`OverviewActions`, ⌘N, a menu from the `newForm` kind of the action
+  registry whose pick opens its form in the New drawer) and, on an archived session,
+  Restore, then Ask, Pin, Refresh and More session actions. **Archive session** is also the
+  filled button of the row when every branch is merged, no agent works and no question is
+  open (`ArchivePrimary`, `isArchivePrimaryOf`); otherwise Archive stays in the menu with
+  the same guards. Below the head the Overview is five tiles and a board with one row per
+  branch (`BranchBoard`).
 
 ## The session tools
 
-The right rail is one 44px column at the sheet's right edge on every screen of
+The right rail is one 44px column at the window's right edge on every screen of
 a workspace, `aria-label="Tools"` (`SessionTools`, drawn by `ShellToolRail` in
 the shell's `rightRail` slot, and inside their own sheet by Tasks, Chat and
-Workflows). Those three pages fade their content in and out while the rail
+Workflows). It lives in the drawer container, never in the page container, and
+every panel opens inward of it (see home-and-drawer.md, The rail is the anchor).
+Those three pages fade their content in and out while the rail
 stays still (`StudioFrame` animates its `data-studio-motion` nodes, never the
-`StudioRail`); a record panel open with the page fades in with it, and one
+rail); a record panel open with the page fades in with it, and one
 opened later keeps the drawer's own motion. Moving between the shell rail and
 a page's rail keeps keyboard focus on the same tool (`railFocusMemo`). With a
-record panel shown as an overlay the rail copies itself above that panel's
+record panel shown as an overlay the rail stays where it is, above that panel's
 scrim, as it does above the shell's. It holds two
-groups by scope. On a session page with no page open, the Session group holds
-Explore, Context, Ask, Agents and Scripts (`SESSION_TOOLS`), under the caption
-Session (`ToolGroupCaption`, `text-rail`). At its foot, on every screen, the
-Workspace group holds Terminal and Browser (`WORKSPACE_TOOLS`) with no
-caption, since a 44px column cannot fit the word; a flexible gap keeps it
-anchored to the bottom, one separator sits above it when the Session group
-shows, and the column keeps the same inset at its foot as at its top. A test
+column holds two tools, Terminal and Browser (`RAIL_TOOLS`), under the caption
+Tools (`ToolGroupCaption`, `text-rail`), on every page of the app, in a session
+or outside one. Explore, Agents, Scripts, Context and Ask have no button on it:
+they open from their pages and keyboard shortcuts. A test
 scene or frame without the shell rail keeps the column inside `SessionFrame`
 (`ShellRailContext`).
 Each tool keeps its pane id and shortcut; Terminal shows ``⌃` `` and Browser
 has no shortcut. `SessionToolButton` names every tool below its icon in the
 9px `text-rail` caption role: secondary (`TEXT_ROLE.secondary`) when closed,
-label strength when open, and the Session caption is secondary too, so every
+label strength when open, and the Tools caption is secondary too, so every
 caption keeps its contrast in light mode. On a window under 480px tall all captions hide together and the tooltips
 stay. Every icon's tooltip gives its name, shortcut and any signal reason. Ask uses its own question glyph, distinct from Chat.
 
@@ -733,7 +765,7 @@ Terminal and Browser are workspace tools: their dock opens with
 menu, ⌃`and ⌘⌥T. On a session page the dock opens on the session's terminal
 or tabs; anywhere else on the workspace's (the workspace folder terminal, or
 the session the Browser page would pick, with an empty state when there is
-none). The drawer request may carry`sessionId: null`. Open as page in the dock
+none). The drawer request may carry`sessionId: null`. Open full page in the dock
 header grows it into its page (`openTerminalOnPage`, `promoteBrowserTab`, a
 push); while that page is open the dock stays in the store but is not mounted,
 so Back brings it again on the same tab, and Dock on the page header moves it
@@ -773,12 +805,12 @@ Folding the rail leaves the column in place.
   opens it in the center, and the tool, open already, stays through the move. A row
   never opens a tool as a side effect: an Auto row of Runs opens the Auto page
   and nothing beside it. The
-  Overview's Now run header (`LiveRunBlock`) opens that exact run page,
+  Overview's run row opens that exact run page,
   including an orchestrated run, and Back returns to the Overview. Its step
   rows and status sentence are status, not parallel links to the Runs list.
   The tree reads top down, like the step list of the run page: each parent
   above its children, the first step on top, each child joined to its parent's
-  lane by the fork curve (`spawnedRailOf` lays the rows out with
+  lane by the fork curve (`spawnedRailOf` in `features/workTreeModel` lays the rows out with
   `layoutTimelineRail`, `SpawnedRailCell` draws them with `TimelineRail`; a
   queued child dashes its lane). Every reader of the order goes through
   `spawnedTreeItemsOf`, which is DOM order. A focused Auto launch is the same
@@ -836,36 +868,34 @@ Folding the rail leaves the column in place.
 - **One pane at a time.** Every toggle goes through `togglePane`
   (`features/session/panes/`): pressing the open pane's toggle closes it,
   pressing another replaces it in the one right drawer. `openPaneOf` reads the
-  open drawer's row in `DRAWER_KINDS` (its pane, or the pane that opened it), so an Explore file opened from Explore keeps
-  Explore lit, and a script output opened from Scripts keeps Scripts lit. Esc
-  closes the pane (`DrawerFrame`).
-- **Explore and Scripts are drawer kinds** (`explore`, `scripts`), not lenses.
-  `ExplorePane` and `ScriptsPanel` render in a `DrawerFrame`. A file opened
-  from Explore replaces it and shows **Back to Explore**; a script output opened
-  from Scripts replaces it and shows **Back to scripts** (`DrawerFrame`'s
-  `back`, carried by the payload's `from`); Run on a Service does not open it,
-  Run on a Command does (`NAMES.commands`, the band in `ScriptsPanel`). `openExplorePane` takes the
-  worktree to browse (the mount registry's Browse files passes it),
-  `openScriptsPane` the project to scope to (Open scripts). There is no
-  Explore or Scripts lens: the palette's Open Explore and Open Scripts, toasts
-  and stored notifications (`open-lens` scripts) open the pane through
-  `openToolPane`, which first goes to the session when another one is shown.
+  open drawer's row in `DRAWER_KINDS` (its pane, or the pane that opened it), so a script output opened from
+  Scripts keeps Scripts lit. Esc closes the pane (`DrawerFrame`).
+- **Scripts is a drawer kind** (`scripts`), not a lens, and Explore, Context and
+  Ask are no drawer kinds: Explore is **All files** on the Changes page and
+  Context and Ask are the Context tab. `ScriptsPanel` renders in a
+  `DrawerFrame`. A script output opened from Scripts replaces it and shows
+  **Back to scripts** (`DrawerFrame`'s `back`, carried by the payload's `from`);
+  Run on a Service does not open it, Run on a Command does (`NAMES.commands`,
+  the band in `ScriptsPanel`). `openExplorePane` takes the worktree to browse
+  (the mount registry's Browse files passes it), `openScriptsPane` the project
+  to scope to (Open scripts). The Scripts chord, the palette's Open Scripts,
+  toasts and stored notifications (`open-lens` scripts) go to the Terminal and
+  its **Scripts** menu through `openToolPane`, which first goes to the session
+  when another one is shown. A stored place with an `explore`, `context` or
+  `ask` drawer folds to its page (`withoutRemovedPages`).
 - **Browser opens a page beside the work** (drawer kind `browser`,
   `features/browser/`): the session's tabs and the project pins in a reader
   tier pane, so the session rail folds to icons while it is open.
   [browser.md](../browser.md#the-pane) owns its address row, its tabs and the
   rules for the native view.
-- **Context signals ride on Context.** A 6px dot in the Context tool's right
-  slot (on the folded icon, its corner) marks decisions changed since the last
-  look (info), a running summary (info, pulsing) or a failed summary (danger)
-  (`useToolSignal`, over `contextNoteOf`); the row's tooltip and accessible
-  name say why. The group loads the seen marker and the decisions once, as
-  the old chip did.
-- **Scripts and Terminal signal too.** The Scripts button shows a running dot
-  while a script of the session runs and a danger dot for a failed run nobody
-  opened (`scriptsSignalOf`; the drawer marks the run seen in `scriptRunsSeen`
-  when its output is open, so the dot clears on that run and returns on the next
-  failure). The Terminal button shows a dot when a command that ran more than
+- **Terminal holds the scripts.** The folder pill ends with "All terminals"
+  (the Terminal page). A Scripts menu ends the tab row (`TerminalScriptsMenu`):
+  a pick opens a new tab in the pill's folder and types the command
+  (`scriptCommandOf`). The panel loads on first open (`LazyTerminalDrawer`). A
+  worktree that goes away under an open terminal shows "This worktree was
+  removed" instead of closing silently. The Scripts chord still opens the old
+  drawer until it is removed.
+- **Terminal signals on its button.** The Terminal button shows a dot when a command that ran more than
   ten seconds ended while the drawer was closed (`useTerminalFinishSignal`, a
   3 second poll of `terminal_list_live` kept to the latest answer, state in
   `terminalFinishes`, cleared when the drawer opens). It says "finished", never
@@ -899,7 +929,7 @@ Folding the rail leaves the column in place.
   name through the `Trail` primitive from `@goodboy/ui`. A studio body that
   goes deeper claims the band with `StudioTrail` (the workflow editor shows
   `Workflows > Ship a fix` with its save state and actions). A session page has
-  no trail, only its back row. In a split studio (Chat, Guide, What's new, Tasks, Notifications) the band
+  no studio trail, only its own crumbs in the session head. In a split studio (Chat, Guide, What's new, Tasks, Notifications) the band
   is the first child of the detail beside the page rail, not a bar across the rail, so
   the crumb, the title and the body share one x ([frame map](../styling.md#the-frame-map)).
 - **The parent crumb is Up, and the last crumb names the kind.** A studio
@@ -917,7 +947,7 @@ Folding the rail leaves the column in place.
   the pure rule; the label closes with a 220ms width transition (120ms fade),
   and a new crumb enters from the right 60ms later. Under reduced motion only
   the opacity changes.
-- **A crumb or a back row carries no status dot.** Navigation is structure,
+- **A crumb carries no status dot.** Navigation is structure,
   movement rather than state. An agent's state is drawn once in the row node and once in the chip of
   the agent header, and the chip's tooltip (`stateDescription`) is the one place
   that explains the state words. Elapsed time shows only in the header. The Brief's
@@ -927,12 +957,12 @@ comment` for the maintainer's own comment, `Resolve: Mara Quint on index.ts`
   for another reviewer, `Resolve: 3 review comments` for a group. Rows saved with
   the lowercase `resolve: ` prefix are shown without it (`agentDisplayName` in
   `shared/utils`), so old and new rows read the same.
-- **An integration page hangs off its own tool.** Its back row uses the name
+- **An integration page hangs off its own tool.** Its crumb uses the name
   the sidebar uses (GitHub, GitLab, Jira, Linear, Slack). A studio belongs under its own tool, never under another tool's lens.
-- **Opening a child changes the back row to its parent**: a sub agent reads
-  `Back to {parent agent name}`. Selecting a sibling changes only the child
+- **Opening a child adds its parent to the crumbs**: a sub agent reads
+  `Overview › Runs › {parent agent} › {agent}`. Selecting a sibling changes only the child
   region.
-- **The back row shows the structure of the app, not the history of the
+- **The crumbs show the structure of the app, not the history of the
   session.** A parent comes from the object that is open, never from the
   surface the jump came from. Selecting an agent leaves the active lens where it
   was, so that lens only ever records where the user came from. The activity
@@ -948,11 +978,10 @@ comment` for the maintainer's own comment, `Resolve: Mara Quint on index.ts`
 still running.` on Merge, reads in the meta line as well as in the tooltip) sits
   over the section body
   (`s/{session}/branch/{tab}[:{mount}][/t/{thread}]`). A section switch and a
-  thread selection replace the entry, so Back never walks them; the back row is
-  the way back to the section. A thread or a file reads `Back to branch`, the
-  same from every door and always reading `branch`, never the branch or pull
-  request name (the header names it); a section reads `Back to overview`. The
-  branch switcher is `project · head ▾` in the
+  thread selection replace the entry, so Back never walks them; Esc is the way
+  back to the section. The crumbs of a section, a thread or a file read the same
+  `Overview › {branch name}` from every door; Esc on a thread or a file first goes
+  to its section, then to the Overview. The branch switcher is `project · head ▾` in the
   header. `layers.ts` is
   gone. The requests `pr`, `review` and `files` (a mount present) are
   rewritten to the Branch address by `canonicalLocation`, so the palette, the
@@ -960,12 +989,12 @@ still running.` on Merge, reads in the meta line as well as in the tooltip) sits
   on the same address; a saved place is rewritten the same way when it is
   restored. A GitLab or Bitbucket merge request keeps the `pr` page (the old
   studio stays reachable from its strip until the host cleanup), a session
-  without a branch keeps Changes (page id `files`).
+  without a branch keeps its file versions (page id `files`, a detail under the crumbs).
 - **A child hangs off the overview section that owns it**: a step under its
   run under Workflows, an ad-hoc agent under Agents, a resolver under its
   comment on the Branch (`s/{session}/review/t/{thread}/agent`). Back returns where
-  you were, while the back row names the parent.
-- **Segment menus.** The back row carries none: it is one link. `CrumbMenu` stays in the `Trail` primitive (`@goodboy/ui`) and comes
+  you were, while the crumbs name the parents.
+- **Segment menus.** The session crumbs carry none: each is one link. `CrumbMenu` stays in the `Trail` primitive (`@goodboy/ui`) and comes
   back per segment where a switch is missed, under one rule: its menu lists
   the siblings of what that segment names, plus at most two actions that belong
   to that thing. A segment whose menu would hold fewer than two entries, rows plus
@@ -1000,7 +1029,7 @@ still running.` on Merge, reads in the meta line as well as in the tooltip) sits
   next to Open terminal and Abort rebase. A
   branch whose pull request merged reads `Merged` even with no git ancestry
   (a squash merge), in the branch lists and in the Branch header alike
-  (`isMountRequestMerged`). The Changes tab opened without a branch lands on the active mount.
+  (`isMountRequestMerged`). Changes opened without naming a branch lands on the active mount's Branch page Changes tab.
 - **Files can reveal unchanged context.** Each hidden range offers the next 20
   lines beside either hunk, or all of its lines. Small ranges use one action.
   The file's final range stays uncounted until its sides load. Expansion stays
@@ -1034,7 +1063,7 @@ still running.` on Merge, reads in the meta line as well as in the tooltip) sits
   dropped. The commit view has no peek, because its lines are not the working
   tree's.
 - **A fix run has no page of its own.** Its transcript is a drawer on the
-  Comments tab, so the Branch page behind it keeps its own back row.
+  Comments tab, so the Branch page behind it keeps its crumbs.
 - **Settings claims its studio band** with Back to app, then Settings, the
   scope and the App section, beside the column and on Home alike. The scope
   segment lists App, the workspace, Providers and

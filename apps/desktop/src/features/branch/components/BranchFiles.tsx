@@ -1,14 +1,18 @@
+import { useContext } from 'react';
 import { EmptyState, PageColumn } from '@goodboy/ui';
 import type { Session, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../store';
+import { selectActiveMountId } from '../../../store/slices/project-mounts/selectors';
 import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
-import { SessionDiffPane } from '../../diff/components/SessionDiffPane';
+import { ChangesPage } from '../../diff/components/ChangesPage';
 import type { SessionDiff } from '../../diff/hooks/useSessionDiff';
 import { useBranchIdentity } from '../hooks/useBranchIdentity';
 import { WriteReview } from '../../review/components/WriteReview';
 import { filesHeadFactOf } from '../branchTabFactsOf';
+import { BranchRailSlotContext } from '../branchRailSlotContext';
 import { SessionMediaScope } from '../../../shared/components/SessionMediaScope';
 import { BranchBodyColumn } from './BranchBodyColumn';
+import { BranchSetupOffer } from './BranchHeader/BranchSetupOffer';
 
 type Props = {
   readonly session: Session;
@@ -30,8 +34,10 @@ export const BranchFiles = ({
   commitTotal,
 }: Props) => {
   const sessionId = session.id as SessionId;
+  const railSlot = useContext(BranchRailSlotContext);
   const identity = useBranchIdentity({ sessionId });
   const mode = useAppStore((s) => s.pullRequestModes[sessionId] ?? 'overview');
+  const activeMountId = useAppStore((state) => selectActiveMountId({ state, sessionId }));
   if (worktreePath === null) {
     return (
       <PageColumn width="column">
@@ -54,18 +60,22 @@ export const BranchFiles = ({
     );
   }
   return (
-    <BranchBodyColumn>
-      <SessionMediaScope sessionId={sessionId} mountId={identity.mount?.mountId ?? null}>
-        <SessionDiffPane
-          sessionId={sessionId}
-          workingDir={workingDir}
-          worktreePath={worktreePath}
-          diff={diff}
-          isReadOnly={isReadOnly}
-          filesFact={filesHeadFactOf({ files: diff.files })}
-          commitTotal={commitTotal}
-        />
-      </SessionMediaScope>
-    </BranchBodyColumn>
+    <SessionMediaScope sessionId={sessionId} mountId={identity.mount?.mountId ?? null}>
+      <ChangesPage
+        sessionId={sessionId}
+        workingDir={workingDir}
+        worktreePath={worktreePath}
+        diff={diff}
+        isReadOnly={isReadOnly}
+        railSlot={railSlot}
+        filesFact={filesHeadFactOf({ files: diff.files })}
+        commitTotal={commitTotal}
+        notice={
+          activeMountId === null ? null : (
+            <BranchSetupOffer sessionId={sessionId} mountId={activeMountId} layout="row" />
+          )
+        }
+      />
+    </SessionMediaScope>
   );
 };

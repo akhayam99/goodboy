@@ -238,7 +238,7 @@ describe('task link controls', () => {
     renderRow({ task: { ...TASK, projectId }, branches: [TASK.branch ?? ''] });
     const menu = openRowMenu();
     await act(async () => {
-      fireEvent.click(within(menu).getByRole('menuitem', { name: 'Take off this branch' }));
+      fireEvent.click(within(menu).getByRole('menuitem', { name: 'Remove from this branch' }));
     });
     expect(await storedLinks()).toEqual([{ scope: 'branch', branch: 'hl/notify-retry' }]);
     screen.getByText(`HBL-412 is off payments-api / ${TASK.branch}`);

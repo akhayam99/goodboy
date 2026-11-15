@@ -5,9 +5,7 @@ import { AppTopBar } from '../../../AppTopBar';
 import { ShellLeft } from '../../../SideColumn/ShellLeft';
 import { SessionFrame } from '../../../SessionRail/SessionFrame';
 import { SessionWorkspace } from '../../../../../features/session/components/SessionWorkspace';
-import { useAppStore } from '../../../../../store';
 import { useShellRight } from '../../../../hooks/useShellRight';
-import { selectDrawerSizing } from '../../../../../store/slices/drawer/selectDrawerSizing';
 import { DrawerHost } from '../../../DrawerHost';
 import { shellArrangement } from '../../../../shellArrangement';
 import { useSceneShell } from '../useSceneShell';
@@ -23,8 +21,7 @@ type Props = {
 };
 
 export const WorkspaceFrame = ({ session, main, hasRail = true }: Props) => {
-  const { rightRail, isDrawerMounted, isDrawerParked } = useShellRight({});
-  const drawerSizing = useAppStore(selectDrawerSizing);
+  const shellRight = useShellRight({});
   const rail = useSceneSidebar({ isCollapsed: sceneParam({ key: 'rail' }) === '1' });
   const arrangement = shellArrangement({
     hasWorkspace: true,
@@ -34,11 +31,15 @@ export const WorkspaceFrame = ({ session, main, hasRail = true }: Props) => {
   return (
     <>
       <AppShell
-        drawer={isDrawerMounted ? <DrawerHost /> : null}
-        isDrawerParked={isDrawerParked}
-        rightRail={rightRail}
-        drawerSizing={drawerSizing}
+        drawer={shellRight.isDrawerMounted ? <DrawerHost slot="dock" /> : null}
+        drawerSizing={shellRight.dockSizing}
+        detail={shellRight.isDetailMounted ? <DrawerHost slot="detail" /> : null}
+        detailSizing={shellRight.detailSizing}
+        isDrawerParked={shellRight.isDrawerParked}
+        isDetailParked={shellRight.isDetailParked}
+        rightRail={shellRight.rightRail}
         studio={shell.studio}
+        isDockInStudio={shellRight.isDockInStudio}
         topBar={
           <AppTopBar
             sidebar={{ isCollapsed: arrangement.isLeftRail, onToggle: rail.toggle }}

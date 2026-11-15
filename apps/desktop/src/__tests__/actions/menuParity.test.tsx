@@ -33,18 +33,8 @@ import { bindTarget } from '../../features/actions/registry';
 import { OrchestratedRunPage } from '../../features/session/components/OrchestratedRun';
 import { AgentHeaderActions } from '../../features/session/components/AgentHeaderActions';
 import { agentHeaderOmitOf } from '../../features/session/components/AgentDetailPane/agentHeaderOmitOf';
-import type {
-  ArtifactActionTarget,
-  CommitActionTarget,
-  SuggestionActionTarget,
-} from '../../features/actions/types';
-import { ActionCard } from '../../features/session/central/next/ActionCard';
-import { actionCardsOf } from '../../features/session/central/next/actionCardsOf';
-import type { SessionSuggestion } from '../../features/suggestions/types';
-import { AutoReleaseContext } from '../../features/auto/autoReleaseContext';
+import type { ArtifactActionTarget, CommitActionTarget } from '../../features/actions/types';
 import { HistoryCommitRow } from '../../features/history/components/CommitsHistory/HistoryCommitRow';
-import { NO_EXPLORE_CHANGES } from '../../features/explore/exploreChanges';
-import { ExploreTree } from '../../features/explore/components/ExplorePane/ExploreTree';
 import { PaletteOverlay } from '../../features/palette/components/PaletteOverlay';
 import { ToastProvider } from '../../shared/components/Toast';
 import { ObjectMenuArea } from '../../features/actions/components/ObjectMenuArea';
@@ -59,10 +49,8 @@ import {
   STEP_PLAN,
   WORKSPACE,
   agentFixture,
-  checkChangesSuggestion,
   mountFixture,
   runFixture,
-  rebaseSuggestion,
   seedActionState,
   sessionFixture,
   stepAgent,
@@ -569,7 +557,7 @@ describe('every ⋯ menu and its right click list the same actions in the same o
 
     expect(fromContext).toEqual([
       'Rename',
-      'Fold down',
+      'Fixup down',
       'Squash down',
       'Move up',
       'Move down',
@@ -577,149 +565,13 @@ describe('every ⋯ menu and its right click list the same actions in the same o
       'Copy subject',
       'Remove',
     ]);
-    expect(fromOverflow).toEqual(['Rename', 'Fold down', 'Squash down', 'Copy SHA', 'Remove']);
+    expect(fromOverflow).toEqual(['Rename', 'Fixup down', 'Squash down', 'Copy SHA', 'Remove']);
     expect(fromContext.filter((label) => fromOverflow.includes(label))).toEqual(fromOverflow);
     expect(screen.getByText('For this commit')).toBeDefined();
     expect(fromPalette.slice(0, fromContext.length - 1)).toEqual(
       fromContext.filter((label) => label !== 'Remove'),
     );
     expect(fromPalette).not.toContain('Remove');
-  });
-});
-
-describe('an Explore row lists the same verbs on its buttons, its right click and ⌘K', () => {
-  it('selected file row: its one menu is the right click, and ⌘K on the focused row lists them all', async () => {
-    seedActionState({ useAppStore, seed: {} });
-    withMenus(
-      <ExploreTree
-        sessionId={SESSION}
-        sessionDir="/work/harborline/settlement"
-        listing={{
-          entriesByPath: {
-            '': [
-              {
-                name: 'rounding.ts',
-                relPath: 'src/rounding.ts',
-                isDir: false,
-                sizeBytes: 4120,
-                modifiedAt: '2026-09-14T15:40:00Z',
-              },
-            ],
-          },
-          loadingByPath: {},
-          errorByPath: {},
-        }}
-        expanded={{}}
-        selectedRelPath="src/rounding.ts"
-        changes={NO_EXPLORE_CHANGES}
-        now={Date.parse('2026-09-14T16:40:00Z')}
-        onSetExpanded={vi.fn()}
-        onLoad={vi.fn()}
-        onSelectFile={vi.fn()}
-      />,
-    );
-    const row = screen.getByRole('treeitem', { name: 'rounding.ts' });
-    fireEvent.contextMenu(row);
-    const fromContext = menuLabels();
-    await closeMenus();
-    const buttons = within(row)
-      .getAllByRole('button')
-      .map((button) => button.getAttribute('aria-label'));
-    fireEvent.click(within(row).getByRole('button', { name: 'Actions for rounding.ts' }));
-    const fromOverflow = menuLabels();
-    await closeMenus();
-    act(() => row.focus());
-    render(
-      <ToastProvider>
-        <PaletteOverlay onClose={vi.fn()} />
-      </ToastProvider>,
-    );
-    const fromPalette = screen
-      .getAllByRole('option')
-      .map((option) => option.getAttribute('aria-label') ?? '')
-      .slice(0, fromContext.length);
-
-    expect(fromContext).toEqual(['Open', 'Show in Finder', 'Ask about this file', 'Copy path']);
-    expect(buttons).toEqual(['Actions for rounding.ts']);
-    expect(fromOverflow).toEqual(fromContext);
-    expect(fromPalette).toEqual(fromContext);
-    expect(screen.getByText('For this file')).toBeDefined();
-  });
-});
-
-type NextCardParams = {
-  readonly suggestion: SessionSuggestion;
-  readonly startsRole: SuggestionActionTarget['startsRole'];
-};
-
-const nextCardMenu = ({ suggestion, startsRole }: NextCardParams) => {
-  const target: SuggestionActionTarget = {
-    kind: 'suggestion',
-    sessionId: SESSION,
-    suggestion,
-    startsRole,
-    isAutoOn: true,
-  };
-  const [card] = actionCardsOf({ owners: [], suggestions: [suggestion], autoTargets: [] });
-  if (card === undefined) {
-    throw new Error('the suggestion made no card');
-  }
-  render(
-    <ToastProvider>
-      <AutoReleaseContext.Provider value>
-        <ActionCard
-          card={card}
-          isFirst
-          actions={{
-            main: null,
-            second: null,
-            failure: null,
-            isBusy: false,
-            agentKind: startsRole,
-            menu: {
-              target,
-              pendingChoiceIds: new Set(),
-              isHeld: false,
-              isDisabled: false,
-              trackChoice: async ({ task }) => task(),
-            },
-            foldedTarget: null,
-          }}
-        />
-      </AutoReleaseContext.Provider>
-    </ToastProvider>,
-  );
-  fireEvent.click(screen.getByRole('button', { name: `More options for ${suggestion.title}` }));
-  const drawn = menuLabels();
-  const registry = (bindTarget({ state: useAppStore.getState(), target })?.resolve() ?? []).map(
-    (action) => action.label,
-  );
-  return { drawn, registry };
-};
-
-describe('the ⋯ menu of a Next card lists the registry set of its suggestion, in order', () => {
-  it('check changes: the other roles, then the talk', () => {
-    seedActionState({ useAppStore, seed: {} });
-    const { drawn, registry } = nextCardMenu({
-      suggestion: checkChangesSuggestion(),
-      startsRole: 'reviewer',
-    });
-    expect(registry).toEqual([
-      'Continue with Tester',
-      'Continue with Implementer',
-      'Talk it through with Auto',
-    ]);
-    expect(drawn).toEqual(registry);
-  });
-
-  it('rebase: one item per project and no talk', () => {
-    seedActionState({ useAppStore, seed: {} });
-    const { drawn, registry } = nextCardMenu({
-      suggestion: rebaseSuggestion({ count: 3 }),
-      startsRole: null,
-    });
-    expect(registry).toEqual(['ledger-core', 'notify-relay', 'payments-api']);
-    expect(drawn).toEqual(registry);
   });
 });
 

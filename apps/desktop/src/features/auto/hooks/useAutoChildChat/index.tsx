@@ -11,6 +11,7 @@ import { useExecutedRoutingOf } from '../../useExecutedRoutingOf';
 import { AutoChildBrief } from '../../child/AutoChildBrief';
 import { AutoChildEnd } from '../../child/AutoChildEnd';
 import { briefImagesOf } from '../../child/briefImagesOf';
+import { delegationAttemptsOf } from '../../tree/delegationAttemptsOf';
 
 type Params = {
   readonly session: Session;
@@ -45,6 +46,7 @@ export const useAutoChildChat = ({ session, agent, tree }: Params): AutoChildCha
     }
     const isReplaced = isAutoDelegationReplaced({ delegation, delegations });
     const card = delegationCardOf({ delegation, childAgent: agent, isReplaced });
+    const record = delegationAttemptsOf({ agentId: agent.id, delegations });
     return {
       insertions: [
         {
@@ -54,6 +56,8 @@ export const useAutoChildChat = ({ session, agent, tree }: Params): AutoChildCha
             <AutoChildBrief
               card={card}
               images={images}
+              attempts={record.attempts}
+              attemptsNote={record.lastNote}
               routing={executedRoutingOf({
                 executed,
                 fallback: { provider: card.provider, model: card.model, effort: card.effort },

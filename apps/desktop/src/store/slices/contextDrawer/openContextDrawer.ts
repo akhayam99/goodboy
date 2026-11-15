@@ -1,6 +1,8 @@
 import type { SessionId } from '@goodboy/types';
 import type { ContextDrawerSection, ContextDrawerView } from '../drawer/state';
-import { selectOpenDrawer } from '../drawer/selectOpenDrawer';
+import { lensPlace } from '../navigation/canonicalLocation';
+import { CONTEXT_ROWS } from './contextRows';
+import { selectIsContextTabOpen } from './selectIsContextTabOpen';
 import { DEFAULT_CONTEXT_SECTION } from './state';
 import type { GetFn, SetFn } from './types';
 
@@ -15,9 +17,7 @@ export const openContextDrawer = (set: SetFn, get: GetFn) => {
   return ({ sessionId, section, view = 'current', highlight }: OpenContextDrawerParams): void => {
     const state = get();
     const nextSection = section ?? DEFAULT_CONTEXT_SECTION;
-    const current = selectOpenDrawer(state);
-    const isAlreadyOpen =
-      current !== null && current.kind === 'context' && current.sessionId === sessionId;
+    const isAlreadyOpen = selectIsContextTabOpen({ state, sessionId });
     const seenAt = state.sessionContextSeenAt[sessionId];
     set({
       ...(!isAlreadyOpen &&
@@ -25,13 +25,15 @@ export const openContextDrawer = (set: SetFn, get: GetFn) => {
           sessionDecisionsBaseline: { ...state.sessionDecisionsBaseline, [sessionId]: seenAt },
         }),
     });
-    state.openDrawer({
-      kind: 'context',
-      sessionId,
-      payload: {
-        section: nextSection,
-        view,
-        ...(highlight !== undefined && highlight.length > 0 && { highlight }),
+    state.navigate({ to: lensPlace({ state, sessionId, lens: 'context' }) });
+    get().amendFocus({
+      patch: {
+        returnRows: {
+          [CONTEXT_ROWS.section]: nextSection,
+          [CONTEXT_ROWS.view]: view,
+          ...(highlight !== undefined &&
+            highlight.length > 0 && { [CONTEXT_ROWS.highlight]: highlight.join(',') }),
+        },
       },
     });
   };

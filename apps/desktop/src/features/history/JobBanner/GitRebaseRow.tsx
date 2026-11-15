@@ -1,6 +1,7 @@
 import { Undo2 } from 'lucide-react';
 import { Button, ConfirmPopover, ICON_SIZE, Notice } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
+import { actionButtonLookOf } from '../../actions/actionButtonLookOf';
 import { useAppStore } from '../../../store';
 import type { useJobBannerActions } from '../hooks/useJobBannerActions';
 import { REBASE_ABORT_CONFIRM } from '../components/rebaseAbortConfirm';
@@ -41,7 +42,7 @@ export const GitRebaseRow = ({ sessionId, worktreePath, actions }: Props) => {
           <div className="flex flex-wrap items-center gap-2">
             <Button
               size="sm"
-              variant="primary"
+              {...actionButtonLookOf({ verb: 'Continue rebase', variant: 'primary' })}
               data-rebase-verb="continue"
               disabled={isBusy}
               isBusy={pendingKeys.has('continue')}
@@ -68,7 +69,7 @@ export const GitRebaseRow = ({ sessionId, worktreePath, actions }: Props) => {
               trigger={({ arm }) => (
                 <Button
                   size="sm"
-                  variant="ghost"
+                  {...actionButtonLookOf({ verb: 'Abort rebase', variant: 'ghost' })}
                   data-rebase-verb="abort-here"
                   disabled={isBusy}
                   isBusy={pendingKeys.has('abort-here')}

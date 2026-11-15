@@ -1,6 +1,7 @@
 import type { AutoDelegation } from '@goodboy/db';
 import type { Agent, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
+import { isAgentStopInDockOf } from '../../../chat/isAgentStopInDockOf';
 import { TailLine } from '../../../live-state/TailLine';
 import { autoChildLive } from '../../../live-state/adapters/autoChildLive';
 import type { TailActionId, TailFacts } from '../../../live-state/tailFacts';
@@ -49,12 +50,15 @@ export const AutoChildEnd = ({ sessionId, delegation, card, agent, isReplaced }:
   });
   const isHandedOn = delegation.outcome === 'blocked' && isReplaced;
   const settled = live ?? (delegation.state === 'settled' && !isHandedOn ? RETURNED : null);
+  const isStopInDock = isAgentStopInDockOf({ turn, status: agent.status });
   const facts =
-    agent.status === 'stopped'
+    agent.status === 'stopped' || settled === null
       ? null
-      : settled?.state === 'failed'
+      : settled.state === 'failed'
         ? { ...settled, actions: [] }
-        : settled;
+        : isStopInDock
+          ? { ...settled, actions: settled.actions.filter((action) => action.id !== 'stopAgent') }
+          : settled;
   const decide = ({ choice }: DecideParams): void => {
     if (decision.busyId === delegation.id) {
       return;

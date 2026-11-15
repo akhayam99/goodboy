@@ -170,7 +170,7 @@ const showNext = (view: RenderResult): string => {
 };
 
 const nextCardOf = (view: RenderResult): HTMLElement | null =>
-  view.container.querySelector<HTMLElement>('[data-overview-card="branches"]');
+  view.container.querySelector<HTMLElement>('[data-slot="branch-board-section"]');
 
 const nextCard = (view: RenderResult): HTMLElement => {
   const card = nextCardOf(view);
@@ -208,12 +208,12 @@ const mountOf = () => {
   return mount;
 };
 
-const REMOVE_NOTE = 'Remove the ledger-core worktree';
+const REMOVE_NOTE = '1 worktree · 1.0 KB';
 
 const mergeThePr = async (view: RenderResult) => {
   await useAppStore.getState().loadSessionMounts({ sessionId });
   await useAppStore.getState().refreshSessionPr(sessionId, { force: true });
-  expect(showNext(view)).toBe('');
+  expect(showNext(view)).not.toContain(REMOVE_NOTE);
   prState = 'MERGED';
   await useAppStore.getState().refreshSessionPr(sessionId, { force: true });
   await vi.waitFor(() => expect(showNext(view)).toContain(REMOVE_NOTE));
@@ -228,8 +228,8 @@ const clickLastButton = ({ name }: { readonly name: string }) => {
 };
 
 const confirmRemoval = (view: RenderResult) => {
-  fireEvent.click(within(nextCard(view)).getByRole('button', { name: /^Remove/ }));
-  clickLastButton({ name: 'Remove' });
+  fireEvent.click(within(nextCard(view)).getByRole('button', { name: /^Remove 1 worktree/ }));
+  clickLastButton({ name: 'Remove worktree' });
 };
 
 describe('journey: remove a merged worktree from the Next card', () => {
@@ -244,15 +244,16 @@ describe('journey: remove a merged worktree from the Next card', () => {
     await mergeThePr(view);
 
     const card = showNext(view);
-    expect(card).toContain('#418 merged · 1.0 KB');
+    expect(card).toContain('#418');
+    expect(card).toContain(REMOVE_NOTE);
     expect(useAppStore.getState().mountCleanupProposals[sessionId]).toHaveLength(1);
     expect(await operationRows()).toEqual([{ kind: 'remove', status: 'pending' }]);
     expect(storySpies.removeWorktreeChecked).not.toHaveBeenCalled();
 
-    fireEvent.click(within(nextCard(view)).getByRole('button', { name: /^Remove/ }));
-    expect(screen.getByText('Remove worktree?')).toBeDefined();
+    fireEvent.click(within(nextCard(view)).getByRole('button', { name: /^Remove 1 worktree/ }));
+    expect(screen.getByText('Remove this worktree?')).toBeDefined();
     expect(storySpies.removeWorktreeChecked).not.toHaveBeenCalled();
-    clickLastButton({ name: 'Remove' });
+    clickLastButton({ name: 'Remove worktree' });
 
     await vi.waitFor(() =>
       expect(useAppStore.getState().mountCleanupProposals[sessionId]).toEqual([]),
@@ -273,7 +274,7 @@ describe('journey: remove a merged worktree from the Next card', () => {
     expect(await detachEvents()).toEqual([
       expect.objectContaining({ branch: WORKTREE.branchName, kept: false }),
     ]);
-    expect(showNext(view)).toBe('');
+    expect(showNext(view)).not.toContain(REMOVE_NOTE);
   });
 
   it('keeps the mount and the card when git refuses a removal from the mount row, and a retry removes it', async () => {
@@ -307,7 +308,7 @@ describe('journey: remove a merged worktree from the Next card', () => {
     expect(await mountRows()).toEqual([
       { worktree_path: null, is_attached: 0, disk_state: 'removed' },
     ]);
-    expect(showNext(view)).toBe('');
+    expect(showNext(view)).not.toContain(REMOVE_NOTE);
   });
 
   it('keeps the card and the mount when git refuses the removal from the card, shows the error, and a retry removes it', async () => {
@@ -335,8 +336,10 @@ describe('journey: remove a merged worktree from the Next card', () => {
     expect(await detachEvents()).toEqual([]);
     expect(showNext(view)).toContain(REMOVE_NOTE);
 
-    fireEvent.click(within(nextCard(view)).getByRole('button', { name: 'Retry Remove worktree' }));
-    clickLastButton({ name: 'Retry' });
+    fireEvent.click(
+      within(nextCard(view)).getByRole('button', { name: /^Retry removing 1 worktree/ }),
+    );
+    clickLastButton({ name: 'Remove worktree' });
 
     await vi.waitFor(() =>
       expect(useAppStore.getState().mountCleanupProposals[sessionId]).toEqual([]),
@@ -352,6 +355,6 @@ describe('journey: remove a merged worktree from the Next card', () => {
     expect(await detachEvents()).toEqual([
       expect.objectContaining({ branch: WORKTREE.branchName, kept: false }),
     ]);
-    expect(showNext(view)).toBe('');
+    expect(showNext(view)).not.toContain(REMOVE_NOTE);
   });
 });

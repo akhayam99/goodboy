@@ -24,6 +24,7 @@ import {
   registerTreeRetryPort,
   type TreeRetryPort,
 } from '../../../../../features/auto/treeRetryPort';
+import { togglePane } from '../../../../../features/session/panes/togglePane';
 import { MOCK_SCENES } from '../..';
 import { U25_C07_AUTO_SCENES } from './c07-auto';
 
@@ -58,22 +59,32 @@ const mount = ({ id }: MountParams): void => {
   );
 };
 
-const levelStack = (): HTMLElement => {
-  const stack = document.querySelector<HTMLElement>('[data-level-stack]');
-  if (stack === null) {
-    throw new Error('no level stack');
+const sessionHead = (): HTMLElement => {
+  const head = document.querySelector<HTMLElement>('[data-session-head]');
+  if (head === null) {
+    throw new Error('no session head');
   }
-  return stack;
+  return head;
 };
 
-const shownLayer = (): HTMLElement => {
-  const layer = document.querySelector<HTMLElement>(
-    `[data-level-layer="${levelStack().dataset.levelStack ?? ''}"]`,
-  );
-  if (layer === null) {
-    throw new Error('no shown layer');
+const pageCrumb = async (): Promise<HTMLElement> => {
+  await screen.findByRole('button', { name: 'More agent actions' }, WAIT);
+  const crumb = sessionHead().querySelector<HTMLElement>('[data-crumb-current]');
+  if (crumb === null) {
+    throw new Error('no page crumb');
   }
-  return layer;
+  return crumb;
+};
+
+const crumbLabels = (): ReadonlyArray<string> =>
+  [...document.querySelectorAll('[data-session-crumbs] li')].map(
+    (crumb) => crumb.textContent ?? '',
+  );
+
+const homeLens = (): string | null => {
+  const state = useAppStore.getState();
+  const sessionId = state.currentSessionId;
+  return sessionId === null ? null : (state.activeLens[sessionId] ?? null);
 };
 
 const panel = async (): Promise<HTMLElement> =>
@@ -92,16 +103,17 @@ describe('c07 Auto scenes', () => {
     }
   });
 
-  it('c07-auto-working keeps the rail on the session and opens the Agents panel with the tree, the limit on the page', async () => {
+  it('c07-auto-working keeps the page tabs on the session and opens the Agents panel with the tree, the limit on the page', async () => {
     mount({ id: 'c07-auto-working' });
 
     const tree = await autoTree();
-    expect(levelStack().dataset.levelStack).toBe('session');
+    expect(homeLens()).toBe('workflows');
+    expect(sessionHead().getAttribute('data-head-nav')).toBe('crumbs');
     expect(tree.querySelectorAll('[data-agent-id]')).toHaveLength(4);
     expect(within(await panel()).queryByRole('button', { name: /^Back to / })).toBeNull();
     expect(within(await panel()).queryByRole('region', { name: 'Limit' })).toBeNull();
     expect(screen.getByRole('button', { name: /^Limit: \$10\.00/ })).toBeDefined();
-    expect(screen.getByTestId('pane-toggle-spawned').getAttribute('aria-pressed')).toBe('true');
+    expect(screen.queryByTestId('pane-toggle-spawned')).toBeNull();
   });
 
   it('c07-auto-substep draws the Scout one level under the Implementer that waits for it', async () => {
@@ -156,30 +168,30 @@ describe('c07 Auto scenes', () => {
   it('c07-auto-working opens a child on the same page as a top-level agent and keeps the tree', async () => {
     mount({ id: 'c07-auto-working' });
 
-    await screen.findByTestId('agent-header-title-row', undefined, WAIT);
+    await pageCrumb();
     fireEvent.click(await treeRow(/^Implementer, /));
 
     expect(
       await screen.findByPlaceholderText('Message Implementer', undefined, WAIT),
     ).toBeDefined();
-    screen.getByTestId('agent-header-title-row');
+    await pageCrumb();
     screen.getByText('Auto started this agent and reads your messages to it.');
     expect(screen.queryByRole('button', { name: 'Open page' })).toBeNull();
-    expect(levelStack().dataset.levelStack).toBe('session');
+    expect(sessionHead()).toBeDefined();
     expect((await treeRow(/^Implementer, /)).getAttribute('aria-selected')).toBe('true');
-    expect(screen.getByTestId('pane-toggle-spawned').getAttribute('aria-pressed')).toBe('true');
+    expect(screen.queryByTestId('pane-toggle-spawned')).toBeNull();
   });
 
-  it('u34-p20-auto-narrow keeps the title in its own heading, the glance below it and no provider mark', async () => {
+  it('u34-p20-auto-narrow keeps the title in the last crumb, the glance beside it and no provider mark', async () => {
     mount({ id: 'u34-p20-auto-narrow' });
 
-    const row = await screen.findByTestId('agent-header-title-row', undefined, WAIT);
-    const lead = within(row).getByRole('heading', { level: 1 });
-    expect(within(lead).queryByTestId('agent-header-settings')).toBeNull();
+    const crumb = await pageCrumb();
+    const head = sessionHead();
+    expect(within(crumb).queryByTestId('agent-header-settings')).toBeNull();
     expect(document.querySelector('[data-glance]')).not.toBeNull();
-    expect(within(lead).queryByRole('button', { name: 'More agent actions' })).toBeNull();
-    expect(within(row).getByRole('button', { name: 'More agent actions' })).toBeDefined();
-    expect(within(row).queryByTestId('agent-header-provider')).toBeNull();
+    expect(within(crumb).queryByRole('button', { name: 'More agent actions' })).toBeNull();
+    expect(within(head).getByRole('button', { name: 'More agent actions' })).toBeDefined();
+    expect(within(head).queryByTestId('agent-header-provider')).toBeNull();
   });
 
   it('c07-auto-working shows one glance line and Settings opens the same chips inline', async () => {
@@ -210,8 +222,7 @@ describe('c07 Auto scenes', () => {
     mount({ id: 'c07-auto-working' });
 
     await screen.findAllByRole('list', { name: 'Delegations' }, WAIT);
-    const title = screen.getByTestId('agent-header-title-row');
-    const heading = within(title).getByRole('heading', { level: 1 });
+    const heading = await pageCrumb();
     expect(within(heading).queryByText('Auto agent')).toBeNull();
     expect(within(heading).queryByText('Experimental')).toBeNull();
     expect(screen.queryByRole('article')).toBeNull();
@@ -253,9 +264,9 @@ describe('c07 Auto scenes', () => {
   it('c07-auto-idle keeps Mark finished in the menu of the header', async () => {
     mount({ id: 'c07-auto-idle' });
 
-    const title = await screen.findByTestId('agent-header-title-row', undefined, WAIT);
+    await pageCrumb();
     expect(screen.queryByRole('button', { name: 'Mark finished' })).toBeNull();
-    fireEvent.click(within(title).getByRole('button', { name: 'More agent actions' }));
+    fireEvent.click(within(sessionHead()).getByRole('button', { name: 'More agent actions' }));
     expect(await screen.findByRole('menuitem', { name: /Mark finished/ }, WAIT)).toBeDefined();
     expect(screen.getAllByRole('menuitem').length).toBeLessThanOrEqual(5);
   });
@@ -269,7 +280,11 @@ describe('c07 Auto scenes', () => {
     ).toBeDefined();
     expect(screen.getByPlaceholderText('Message Implementer')).toBeDefined();
     expect(screen.queryByPlaceholderText('Message Auto')).toBeNull();
-    expect(document.querySelector('[data-session-back]')?.textContent).toBe('Back to Auto');
+    expect(
+      sessionHead().querySelector('[data-slot="pane-title-row"] [data-session-back]'),
+    ).not.toBeNull();
+    screen.getByRole('button', { name: /^Back to Why does the ledger retry post a second credit/ });
+    expect(crumbLabels().at(-2)).toMatch(/^Why does the ledger retry post a second credit/);
     expect(screen.queryByText(/Reserved up to/)).toBeNull();
     expect(screen.queryByText('Implementer · Implementer')).toBeNull();
     expect(
@@ -289,6 +304,7 @@ describe('c07 Auto scenes', () => {
     }
     fireEvent.click(within(tester).getByRole('button', { name: /^Open / }));
     expect(await screen.findByPlaceholderText('Message Tester', undefined, WAIT)).toBeDefined();
+    expect(screen.queryByRole('complementary', { name: /^Record of/ })).toBeNull();
     expect((await treeRow(/^Tester, /)).getAttribute('aria-selected')).toBe('true');
 
     fireEvent.click(await treeRow(/^Implementer, /));
@@ -301,11 +317,11 @@ describe('c07 Auto scenes', () => {
     expect(await autoTree()).toBeDefined();
   });
 
-  it('keeps the rail on the session on a child page', async () => {
+  it('keeps the session head with its crumbs on a child page', async () => {
     mount({ id: 'c07-auto-child' });
 
     await screen.findByPlaceholderText('Message Implementer', undefined, WAIT);
-    expect(levelStack().dataset.levelStack).toBe('session');
+    expect(sessionHead().getAttribute('data-head-nav')).toBe('crumbs');
   });
 
   it('c07-auto-child-done shows what came back and says Returned to Auto', async () => {
@@ -416,44 +432,43 @@ describe('c07 Auto scenes', () => {
   it('c07-auto-working titles the Auto root with its goal and holds no Open transcript in the menu', async () => {
     mount({ id: 'c07-auto-working' });
 
-    const title = await screen.findByTestId('agent-header-title-row', undefined, WAIT);
-    expect(within(title).queryByText(/^Auto$/)).toBeNull();
+    const crumb = await pageCrumb();
+    const title = sessionHead();
+    expect(within(crumb).queryByText(/^Auto$/)).toBeNull();
     expect(within(title).queryByRole('button', { name: 'Open transcript' })).toBeNull();
     fireEvent.click(within(title).getByRole('button', { name: 'More agent actions' }));
     await screen.findByRole('menu', undefined, WAIT);
     expect(screen.queryByRole('menuitem', { name: 'Open transcript' })).toBeNull();
   });
 
-  it('closes the Agents panel and opens it again from the tools column, Runs stays selected', async () => {
+  it('closes the Agents panel and opens it again from its shortcut, Runs stays selected', async () => {
     mount({ id: 'c07-auto-working' });
 
     await autoTree();
-    const entry = within(shownLayer()).getByRole('button', { name: /^Runs/ });
-    expect(entry.getAttribute('aria-current')).toBe('page');
+    expect(homeLens()).toBe('workflows');
 
-    fireEvent.click(screen.getByTestId('pane-toggle-spawned'));
+    const sessionId = useAppStore.getState().currentSessionId;
+    if (sessionId === null) {
+      throw new Error('no current session');
+    }
+    act(() => togglePane({ sessionId, pane: 'spawned' }));
     await waitFor(() => expect(screen.queryByRole('region', { name: 'Agents' })).toBeNull(), WAIT);
-    fireEvent.click(screen.getByTestId('pane-toggle-spawned'));
+    act(() => togglePane({ sessionId, pane: 'spawned' }));
     expect(await autoTree()).toBeDefined();
   });
 
-  it('c07-auto-folded folds the rail on the session and keeps the tree in the Agents panel', async () => {
-    mount({ id: 'c07-auto-folded' });
+  it('c07-auto-working keeps the tree rows marked by their state glyph', async () => {
+    mount({ id: 'c07-auto-working' });
 
-    await waitFor(() => {
-      const found = document.querySelector<HTMLElement>('[data-session-rail]');
-      expect(found?.dataset.sessionRail).toBe('session');
-      expect(found?.hasAttribute('data-rail-folded')).toBe(true);
-    }, WAIT);
     const implementer = await treeRow(/^Implementer, .*, Running$/);
     expect(within(implementer).getByRole('img', { name: 'Running' })).toBeDefined();
     expect(await treeRow(/^Tester, .*, Queued$/)).toBeDefined();
   });
 
-  it('c07-auto-session-level keeps the Auto chat in the center with the session level shown', async () => {
+  it('c07-auto-session-level keeps the Auto chat in the center with the page tabs shown', async () => {
     mount({ id: 'c07-auto-session-level' });
 
-    await waitFor(() => expect(levelStack().dataset.levelStack).toBe('session'), WAIT);
+    await waitFor(() => expect(sessionHead()).toBeDefined(), WAIT);
     expect(document.querySelector('[data-dock-live]')?.textContent).toContain('Implementer');
   });
 
@@ -545,12 +560,12 @@ describe('c07 Auto scenes', () => {
     expect(rows).toHaveLength(2);
     expect(within(list).getByRole('button', { name: /, Agent, Idle$/ })).toBeDefined();
     expect(within(list).getByRole('button', { name: /, Agent, Done$/ })).toBeDefined();
-    expect(levelStack().dataset.levelStack).toBe('session');
+    expect(sessionHead()).toBeDefined();
 
     fireEvent.click(rows[0] ?? list);
     await waitFor(() => expect(document.querySelector('[data-auto-dock]')).not.toBeNull());
     expect(screen.queryByRole('region', { name: 'Agents' })).toBeNull();
-    expect(levelStack().dataset.levelStack).toBe('session');
+    expect(sessionHead()).toBeDefined();
   });
 
   it('c07-auto-start starts Auto from the Start a run field on the Runs page, with no Auto form', async () => {

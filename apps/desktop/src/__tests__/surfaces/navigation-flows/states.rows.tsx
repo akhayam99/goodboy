@@ -1,7 +1,16 @@
 import { expect } from 'vitest';
 import { screen } from '@testing-library/react';
 import type { AgentId, ArtifactId, IsoDateTime, ReportArtifact, SessionId } from '@goodboy/types';
-import { type Row, WAIT, click, clickButton, heading, openCrumb, useAppStore } from './harness';
+import {
+  type Row,
+  WAIT,
+  click,
+  clickButton,
+  heading,
+  openCrumb,
+  settle,
+  useAppStore,
+} from './harness';
 
 const REPORT_AT: IsoDateTime = JSON.parse(JSON.stringify('2026-09-14T16:27:00.000Z'));
 const REPORT_ID: ArtifactId = JSON.parse(JSON.stringify('states-journey-report'));
@@ -35,6 +44,7 @@ export const STATES_ROWS: ReadonlyArray<Row> = [
       useAppStore.setState({
         sessionArtifacts: { ...sessionArtifacts, [ctx.sessionId]: [reportOf(ctx)] },
       });
+      await settle();
       await openCrumb(/^Artifacts/);
       await heading('Artifacts');
       await click(await screen.findByRole('tab', { name: /^Plans/ }));

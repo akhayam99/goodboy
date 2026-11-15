@@ -53,8 +53,8 @@ afterEach(cleanup);
 
 describe('WriteFromWorkButton', () => {
   it('empties the slot with its chip when the goal is written on the page', () => {
-    store.getState().openDrawer({ kind: 'explore', sessionId: SESSION_ID, payload: null });
-    store.getState().openDrawer({ kind: 'ask', sessionId: SESSION_ID, payload: null });
+    store.getState().openDrawer({ kind: 'scripts', sessionId: SESSION_ID, payload: null });
+    store.getState().openDrawer({ kind: 'spawned', sessionId: SESSION_ID, payload: null });
     render(<WriteFromWorkButton sessionId={SESSION_ID} isLocked={false} />);
 
     fireEvent.click(screen.getByRole('button', { name: 'Write title and goal from linked work' }));

@@ -2,16 +2,9 @@
 import { describe, expect, it } from 'vitest';
 import type { PullRequestChecks } from '@goodboy/types';
 import { branchFactsOf, type BranchFacts, type BranchStatusFacts } from './branchFactsOf';
-import {
-  branchEntriesOf,
-  branchFoldOf,
-  branchSentenceOf,
-  type BranchDetailWords,
-} from './branchStoryOf';
+import { branchEntriesOf, type BranchDetailWords } from './branchStoryOf';
 import type { MountRequestView } from '../../../../store/slices/project-mounts/mountRowModel';
 import { aMountRow, aRequest } from './testing/aMountRow';
-
-const BRANCH_ROW_CAP = 8;
 
 const NOW = Date.UTC(2026, 9, 18, 10, 30, 0);
 const MINUTE_MS = 60_000;
@@ -307,7 +300,7 @@ describe('branchStoryOf, pull request', () => {
   });
 });
 
-describe('branchEntriesOf and branchFoldOf', () => {
+describe('branchEntriesOf', () => {
   const failing = factOf({ key: 'failing', request: { checks: 'failure' }, status: status({}) });
   const local = factOf({
     key: 'local',
@@ -353,24 +346,6 @@ describe('branchEntriesOf and branchFoldOf', () => {
     ]);
   });
 
-  it('does not fold up to the cap and counts what it hides past it', () => {
-    const facts = Array.from({ length: BRANCH_ROW_CAP + 3 }, (_, index) =>
-      factOf({
-        key: `b${index}`,
-        request: index < BRANCH_ROW_CAP + 1 ? { checks: 'pending' } : { state: 'merged' },
-        isFinished: index >= BRANCH_ROW_CAP + 1,
-      }),
-    );
-    const entries = allEntriesOf({ facts });
-    expect(branchFoldOf({ entries: entries.slice(0, BRANCH_ROW_CAP) }).label).toBeNull();
-    const oneOver = branchFoldOf({ entries: entries.slice(0, BRANCH_ROW_CAP + 1) });
-    expect(oneOver.label).toBeNull();
-    expect(oneOver.shown).toHaveLength(BRANCH_ROW_CAP + 1);
-    const fold = branchFoldOf({ entries });
-    expect(fold.shown).toHaveLength(BRANCH_ROW_CAP);
-    expect(fold.label).toBe('3 more branches, 2 merged');
-  });
-
   it('says one short fact per branch', () => {
     const details = [
       storyOf({ fact: factOf({ status: status({ push: { kind: 'ahead', ahead: 24 } }) }) }),
@@ -400,25 +375,7 @@ describe('branchEntriesOf and branchFoldOf', () => {
     ]);
     expect(details.every((detail) => detail.length <= 24 && !detail.includes(','))).toBe(true);
   });
-
-  it('writes the row name as a sentence that starts with the branch, without the card', () => {
-    const [entry] = allEntriesOf({ facts: [failing] });
-    if (entry === undefined) {
-      throw new Error('One fact gives one entry.');
-    }
-    expect(branchSentenceOf(entry)).toBe(
-      'ak/eng-1190-failing, payments-api, #309: Checks failing, Failed on the last push.',
-    );
-  });
 });
-
-const sentenceOf = ({ fact }: StoryParams): string => {
-  const [entry] = allEntriesOf({ facts: [fact] });
-  if (entry === undefined) {
-    throw new Error('One fact gives one entry.');
-  }
-  return branchSentenceOf(entry);
-};
 
 describe('branchStoryOf, steps that do not apply', () => {
   it('draws a dash on Checks when the host reports no checks after a fresh read', () => {
@@ -486,12 +443,16 @@ describe('branchStoryOf, steps that do not apply', () => {
   });
 
   it.each(['github', 'gitlab', 'bitbucket'] as const)(
-    'lists the skipped steps in the row name for %s',
+    'names the skipped steps for %s',
     (provider) => {
       const fact = factOf({
         request: { provider, checks: null, isChecksAbsent: true, isReviewOptional: true },
       });
-      expect(sentenceOf({ fact })).toContain('Checks skipped, Review skipped.');
+      expect(
+        storyOf({ fact })
+          .steps.filter((step) => step.state === 'skipped')
+          .map((step) => step.name),
+      ).toEqual(['Checks skipped', 'Review skipped']);
     },
   );
 });

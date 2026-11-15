@@ -6,7 +6,7 @@ vi.mock('@tauri-apps/api/core', () => ({
 vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn(async () => () => undefined) }));
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { ToastProvider } from '../../../../../shared/components/Toast';
 import {
   STORE_IMPORT_TIMEOUT_MS,
@@ -67,8 +67,9 @@ describe('the u21 page-state scenes', () => {
     expect(
       await screen.findByRole('heading', { level: 2, name: 'No artifacts yet' }),
     ).toBeDefined();
-    expect(screen.queryByRole('button', { name: 'New artifact' })).toBeNull();
-    expect(screen.getByTestId('artifact-new')).toBeDefined();
+    expect(screen.getAllByRole('button', { name: 'New artifact' })).toEqual([
+      screen.getByTestId('artifact-new'),
+    ]);
   });
 
   it('shows Artifacts filtered to nothing and clears the filter', async () => {
@@ -98,15 +99,13 @@ describe('the u21 page-state scenes', () => {
   it('shows the Questions first-time state', async () => {
     renderScene('questions-empty');
 
-    expect(
-      await screen.findByRole('heading', { level: 2, name: 'No questions yet' }),
-    ).toBeDefined();
+    expect(await screen.findByText('Nothing waits for you')).toBeDefined();
   });
 
   it('draws no work card and no placeholder on a session where nothing ran yet', async () => {
     renderScene('activity-empty');
 
-    expect(await screen.findByRole('heading', { level: 1 })).toBeDefined();
+    await waitFor(() => expect(document.querySelector('[data-slot="pane-body"]')).not.toBeNull());
     expect(
       document.querySelectorAll('[data-overview-card="needs-you"], [data-overview-card="running"]'),
     ).toHaveLength(0);

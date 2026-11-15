@@ -262,9 +262,9 @@ describe('AgentHeaderActions', () => {
         .getAllByRole('menuitem')
         .map((item) => item.getAttribute('data-menu-label'));
       const expected = {
-        plain: ['Rename', 'Let Auto take it from here', 'Copy last reply', 'Delete agent'],
-        adopted: ['Rename', 'Detach from Auto', 'Copy last reply', 'Delete agent'],
-        autoRoot: ['Rename', 'Mark finished', 'Copy last reply', 'Delete agent'],
+        plain: ['Rename', 'Let Auto take it from here', 'Delete agent'],
+        adopted: ['Rename', 'Detach from Auto', 'Delete agent'],
+        autoRoot: ['Rename', 'Mark finished', 'Delete agent'],
       } as const;
       expect(labels).toEqual(expected[state]);
     },

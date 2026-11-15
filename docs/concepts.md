@@ -268,10 +268,10 @@ and every row: **Needs you**, **Needs approval**, **Not finished**,
 a limit reads **Paused**, a hint, a stopped Auto or an agent that stopped
 unfinished reads **Needs you** with one sentence.
 
-State word tooltips follow this table. The regression guard checks the shared
-meanings and the state maps against it.
+Each state word means what this table says. The regression guard checks its own
+copy of the meanings and the state maps against it.
 
-| State word       | Meaning, also its tooltip                                     |
+| State word       | Meaning                                                       |
 | ---------------- | ------------------------------------------------------------- |
 | Needs you        | Only you can move it. The sentence says what it needs.        |
 | Needs approval   | A plan waits for your approval. Counts as Needs you.          |
@@ -291,7 +291,7 @@ meanings and the state maps against it.
 | Closed           | You closed a failed agent out.                                |
 
 Needs you counts three units, and each tooltip names its own: sessions ("2
-sessions need you") on the Board door, the dock badge and Search or run; questions ("3 questions") on the Questions entry of the session rail;
+sessions need you") on the Board door, the dock badge and Search or run; questions ("3 questions") on the Questions tab of the session;
 items ("4 items need you") on the Overview card and the Runs group. The bell is
 unchanged. `needsYouText` and `countNoun` write every one of them.
 
@@ -491,7 +491,7 @@ outside the flow (`settledRebaseStops`, written by `settleStaleRebases` from the
 `head` payload and a git read newer than the stop), while the stop's branch is still an
 open, attached row of the session (Next and Needs you only: a merged or closed pull request,
 or a branch that left the session, takes the stop out, `openMountIds` from
-`useOpenStopMountIds`; **Keep branch as it was** records `history_restored` with
+`useOpenStopMountIds`; **Abort rebase** records `history_restored` with
 `reason: 'kept'`, read as "Kept <branch> as it was", which settles it like any later
 outcome) and, for a stop that names a rewriter
 (`agentId`), while that agent still exists: delete the agent and the stop moves to the
@@ -517,8 +517,8 @@ interrupted restore; a restored marker prevents applying it twice if cleanup
 was interrupted. A pending intent with no stash is rolled back, never kept. `pending_stash` and `write_journal` own this contract.
 
 The recovery, on the banner: `Undo rewrite`
-for a rewrite, `Retry with a note` when The rebase needs you, `Bring them
-into the plan` when origin moved, `Retry rebase` when the branch moved,
+for a rewrite, `Retry with a note` when The rebase needs you, `Rebase on their
+commits` when origin moved, `Retry rebase` when the branch moved,
 `Retry push` when the push failed. In the Commits section: `Rewrite with an agent`,
 `Change the plan` and `Discard plan` for a stopped plan, `Reset branch to this
 version` for a push. A stopped rewrite waits in Needs you until a later outcome settles it. Every notification
@@ -584,14 +584,14 @@ whether you clicked it on the board or in the session overview.
   rebase title names the folder, or the branch when two or more mounts of
   the session share a folder (`mountLabelOf`); the open-pr title always
   names the branch.
-- The overview cards **Needs you** and **Next** (`features/session/central/cards/`) hold the
-  suggestions: a suggestion is not activity, it is a pointer to what activity
-  should happen next. **Needs you** holds the Decide and Fix groups, **Next**
-  the Update and Ship groups (`OVERVIEW_CARD_OF_GROUP`).
-- A Next card is an `ActionCard` (`features/session/central/next/ActionCard.tsx`): glyph, title and detail,
-  then the main verb, an optional second verb and the **⋯** menu, in the columns of
-  `ROW_COLUMNS`. Only the first card of a stack carries a filled primary; later cards
-  keep a `secondary` verb. A short visible verb (`shortLabel`: Start, Fix, Rebase) sits
+- The branch board of the overview holds the suggestions as the main verb of a
+  row (`BoardRowAction`, from `cardsByRowId`): a suggestion is not activity, it is a pointer to what
+  activity should happen next. The Decide and Fix groups come first, the Update and Ship groups after.
+- A Next suggestion shows as the verb of its row: the main verb, an optional second
+  verb and the **⋯** menu. Only the first row carries a filled primary; later rows
+  keep a `secondary` verb. The Next steps section above the board (`BoardLooseCards`)
+  follows the same rule: its first card is the lead (`isLead` on `BoardRowAction`), the
+  rest take the `secondary` look of their intent (`actionButtonLookOf`). A short visible verb (`shortLabel`: Start, Fix, Rebase) sits
   over the full `label`, which stays the accessible name ("Continue with Reviewer").
   **Not now** lives in the **⋯** menu.
 - When the primary starts an agent, its `agentKind` picks the glyph: the role icon in
@@ -599,15 +599,13 @@ whether you clicked it on the board or in the session overview.
   Suggestions that start no agent keep the `SUGGESTION_ICONS` glyph with the band tone.
   The alternatives (such as Start tester instead, or one rebase target each) are items of
   the **⋯** menu. The menu is the `suggestion` kind of the action registry
-  (`features/actions/kinds/suggestion.ts`), drawn by `SuggestionOverflowMenu`
-  from `NextStepMenu`; `useActionCardActions` builds its target from the suggestion, the
+  (`features/actions/kinds/suggestion.ts`); `useActionCardActions` builds its target from the suggestion, the
   role the primary starts (`agentKind`) and `useIsAutoOn`, so the alternatives
   come from the card and not from closures of `useSuggestionActions`. Hovering
   or focusing one shows its `preview` role on the glyph, and closing the menu
   puts the primary's role back. `useSuggestionRunner` wraps each alternative with
   `track` (the accepted outcome, a pending key per action id, the failure title
   of the primary), so the primary and the menu are held while one runs.
-  `menuParity.test.tsx` holds the menu of a Next card to the registry set of its suggestion.
 - **Not now** registers an `undoable` operation on the app undo stack
   (`useSuggestionRunner`), so the toast says Dismissed with **Undo** and the
   `app.undo` chord, and ⌘Z (Ctrl+Z off macOS) restores dismissals in reverse
@@ -772,7 +770,7 @@ time. A child that waits on a question can ask Auto for a scout or an investigat
 two at most. It is always available; there is no switch in Settings. **Start a
 run** starts it when one agent fits the ask, and `@` names a role instead. A person sees an Auto tree as one row in the
 Overview, as a row of **Runs** in the session, and as one chat with one
-line for each delegation, its tree in the Agents panel of the session tools
+line for each delegation, its tree in the Agents column of the run page
 ([auto.md](auto.md)).
 
 ### Agent kinds
@@ -1097,8 +1095,8 @@ work on one goal without mixing up their chats.
 A **turn** is one message from you and one answer from the agent, with
 everything that streams in between.
 
-**Ask** is a question about the whole session, asked from the Ask tool in the
-session tools column (`SESSION_TOOLS`, shortcut ⌘L). It is not an agent: it never lands on the board, in the agent count or in an
+**Ask** is a question about the whole session, asked from the Context tab
+(shortcut ⌘L). It is not an agent: it never lands on the board, in the agent count or in an
 agent's chat, and it never changes the work. It reads the session record, the
 agents' reports, questions, runs, review comments, branch, pull request and
 the session worktrees, read only, and answers with chips that open what it
@@ -1694,7 +1692,7 @@ suggestion, never silent. The store slice `tracker-moves` owns it:
 - **Bitbucket**: pull requests from start to finish, with description, diff,
   build results in plain words and review threads. Eight actions: approve,
   revoke, request changes, withdraw, comment, reply, merge, decline, and from the
-  Overview tab rename, edit the description, add reviewers and merge with the
+  Conversation tab rename, edit the description, add reviewers and merge with the
   strategy you pick. Its nouns are `pull request`, `PR` and `#42`, and Bitbucket
   has no draft. Issues go through Jira.
 - **Jira**: read full issues and act on them. Comment, assign, move to another
@@ -1872,7 +1870,7 @@ session up again in Goodboy.
 - No screen may use a different word for any of these. Every surface that
   creates, adds, lists or manages a repository says project: the session
   overview, Settings, Search or run labels, notices and aria-labels alike. The
-  session rail card, the Settings page and the switcher count read
+  Context tab card, the Settings page and the switcher count read
   **Projects** (`NAMES.projects`, "3 projects, 1 plain folder"), and the door
   is **Add project** (`NAMES.addProject`) beside **Add a plain folder**.
   Folder stays in the file picker and for a plain folder. The old words stay
@@ -1939,6 +1937,15 @@ session up again in Goodboy.
   from there. `names.test.ts` pins that. A word that goes away goes into
   `RETIRED_NAMES` (`__tests__/regressions/retiredNames.ts`) with the word to use
   instead, and `copy-budget.test.ts` fails on it.
+- An action label is a verb and an object in the developer's words: **Rebase on
+  their commits**, **Abort rebase**, **Restore stashed files**, never a metaphor
+  (**Bring them in**, **Take off this branch**) and never a verb alone when the
+  object is not obvious (**Keep**, **Separate**). Name the git verb the action
+  runs, and when it also pushes or rewrites history the label or its line says
+  so, and `actionIntentOf` gives it the caution intent. A copy action exists only
+  where the content is not already selectable: no **Copy last reply**, since the
+  reply is in the chat. `action-labels-say-what-they-do.test.ts` fails on the
+  phrases that went away.
 - **Run**, **Plan**, **Preset**, **Auto** and **Scout** each have one sentence in
   At a glance and in the Guide's Words chapter. A **workflow** is the saved
   definition in the Workflows library; it is called a **preset** only where a

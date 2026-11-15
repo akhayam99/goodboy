@@ -4,6 +4,7 @@ import { agentHomeFor } from './agentHomeFor';
 import { branchPlace, sessionPlace } from './place';
 import { placeBeforeDraft } from './placeBeforeDraft';
 import { runGroupFocusOf } from './runGroupFocusOf';
+import { SESSION_TAB_LENSES } from './sessionTabLenses';
 import type { LensKind } from '../session-view/types';
 import type { Place, SessionView } from './types';
 
@@ -100,10 +101,13 @@ export const parentPlace = ({ state, place }: Params): Place | null => {
   if (view.target !== null && view.target.kind !== 'diff' && view.target.kind !== 'thread') {
     return { ...place, view: { ...view, target: null } };
   }
+  if (view.target?.kind === 'diff' && view.target.focus !== null) {
+    return { ...place, view: { ...view, target: { ...view.target, focus: null } } };
+  }
   if (BRANCH_WORK_LENSES.has(view.lens) && view.target === null && fromBranch !== null) {
     return branchPlace({ sessionId, mountPath: fromBranch.mountPath, tab: 'work' });
   }
-  if (view.lens !== null) {
+  if (view.lens !== null && !SESSION_TAB_LENSES.has(view.lens)) {
     return sessionPlace({ sessionId });
   }
   return null;

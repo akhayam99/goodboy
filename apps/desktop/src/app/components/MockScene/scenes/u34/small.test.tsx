@@ -52,29 +52,28 @@ const mount = ({ name }: MountParams) => {
 };
 
 describe('the small flows scenes', () => {
-  it('keeps one question on Needs you and no needs-you label on Done', async () => {
+  it('keeps one question on the board with one Answer button', async () => {
     mount({ name: 'u34-u5-question' });
-    const done = await screen.findByRole('region', { name: 'Done' });
+    const board = await screen.findByRole('region', { name: 'Branches' });
     const state = (await importStore()).getState();
     expect(Object.values(state.sessionOpenQuestions).flat()).toHaveLength(1);
-    expect(done.textContent).not.toMatch(/needs? you/);
-    const needsYou = screen.getByRole('region', { name: 'Needs you' });
-    expect(within(needsYou).getAllByRole('button', { name: 'Answer' })).toHaveLength(1);
+    expect(within(board).getAllByRole('button', { name: 'Answer' })).toHaveLength(1);
     expect(screen.getAllByRole('button', { name: 'Answer' })).toHaveLength(1);
-    expect(within(needsYou).queryByRole('button', { name: 'See result' })).toBeNull();
+    expect(within(board).queryByRole('button', { name: 'See result' })).toBeNull();
   });
 
-  it('draws one mark per row, an empty slot at rest, and a bold title when unread', () => {
+  it('draws one mark per row, an empty slot at rest, and an unread title in foreground at one weight', () => {
     const { container } = mount({ name: 'u34-u22-row-marks' });
     const rows = [...container.querySelectorAll<HTMLElement>('[data-row-mark]')];
     expect(rows).toHaveLength(8);
     expect(container.querySelectorAll('[data-testid="state-node-slot"]')).toHaveLength(4);
-    expect(container.querySelectorAll('.bg-unread')).toHaveLength(0);
+    expect(container.querySelectorAll('[data-unread-dot]')).toHaveLength(1);
+    expect(container.querySelectorAll('.text-row-strong')).toHaveLength(0);
     for (const row of rows) {
       expect(row.querySelectorAll('[data-node-kind]')).toHaveLength(1);
     }
-    const bold = container.querySelectorAll('.text-row-strong');
-    expect([...bold].map((title) => title.textContent)).toEqual([
+    const lit = container.querySelectorAll('.text-ui.text-foreground');
+    expect([...lit].map((title) => title.textContent)).toEqual([
       'Stop retried webhooks posting twice',
       'Draft the payout delay notice',
     ]);
@@ -99,14 +98,14 @@ describe('the small flows scenes', () => {
     expect(rows.some((text) => text.includes('harborline/'))).toBe(false);
   });
 
-  it('names the run on the step back row and draws no trail', async () => {
+  it('names the run of the step in its crumbs and draws no studio trail', async () => {
     mount({ name: 'u34-u56-step' });
     await waitFor(() =>
-      expect(document.querySelector('[data-session-back]')?.textContent).toBe(
-        'Back to Speed up the export end to end',
-      ),
+      expect(
+        [...document.querySelectorAll('[data-session-crumbs] li')].map((li) => li.textContent),
+      ).toContain('Speed up the export end to end'),
     );
-    expect(screen.queryByRole('navigation', { name: 'Breadcrumb' })).toBeNull();
+    expect(document.querySelector('[data-slot="trail"]')).toBeNull();
   });
 
   it('offers provider recovery above Retry', () => {

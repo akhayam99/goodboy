@@ -12,6 +12,7 @@ import { PolicyHint } from './PolicyHint';
 import { reorderNote } from './reorderNote';
 import { PolicyDropZone } from './PolicyDropZone';
 import { ProviderPolicyRow } from './ProviderPolicyRow';
+import { actionButtonLookOf } from '../../../actions/actionButtonLookOf';
 
 type Props = {
   readonly workspaceId: WorkspaceId;
@@ -137,7 +138,7 @@ export const ProviderPolicyList = ({ workspaceId, hasReset = false }: Props) => 
         {hasReset ? (
           <Button
             size="sm"
-            variant="ghost"
+            {...actionButtonLookOf({ verb: 'providerPolicy.reset', variant: 'ghost' })}
             disabled={!policy.isCustom}
             onClick={() => {
               policy.reset();

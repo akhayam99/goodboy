@@ -103,7 +103,7 @@ describe('the Esc ladder', () => {
 
   it('leaves the page and the drawer alone while a menu or dialog is open', () => {
     useAppStore.getState().navigate({ to: RUN });
-    useAppStore.getState().openDrawer({ kind: 'ask', sessionId: SESSION, payload: null });
+    useAppStore.getState().openDrawer({ kind: 'spawned', sessionId: SESSION, payload: null });
     const dialog = document.createElement('div');
     dialog.setAttribute('role', 'dialog');
     document.body.append(dialog);
@@ -116,7 +116,7 @@ describe('the Esc ladder', () => {
 
   it('closes an open drawer before it moves the page', () => {
     useAppStore.getState().navigate({ to: RUNS });
-    useAppStore.getState().openDrawer({ kind: 'ask', sessionId: SESSION, payload: null });
+    useAppStore.getState().openDrawer({ kind: 'spawned', sessionId: SESSION, payload: null });
 
     escapeLadder({});
 
@@ -126,21 +126,30 @@ describe('the Esc ladder', () => {
 
   it('leaves a drawer parked under a page alone', () => {
     useAppStore.getState().navigate({ to: RUNS });
-    useAppStore.getState().openDrawer({ kind: 'ask', sessionId: SESSION, payload: null });
+    useAppStore.getState().openDrawer({ kind: 'spawned', sessionId: SESSION, payload: null });
     useAppStore.getState().openStudio({ studio: { kind: 'workflow' } });
 
     escapeLadder({});
 
-    expect(useAppStore.getState().drawer?.kind).toBe('ask');
+    expect(useAppStore.getState().drawer?.kind).toBe('spawned');
     expect(useAppStore.getState().appStudio?.kind).toBe('workflow');
   });
 
   it('does what the back row does on a list page', () => {
-    useAppStore.getState().navigate({ to: RUNS });
+    useAppStore.getState().navigate({ to: sessionPlace({ sessionId: SESSION, lens: 'linear' }) });
 
     escapeLadder({});
 
     expect(keyNow()).toBe(`s/${SESSION}`);
+  });
+
+  it('stays on a page tab, which has no back row', () => {
+    useAppStore.getState().navigate({ to: RUNS });
+    const before = keyNow();
+
+    escapeLadder({});
+
+    expect(keyNow()).toBe(before);
   });
 
   it('does nothing on the Overview, which has no back row', () => {

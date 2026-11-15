@@ -1,7 +1,6 @@
 import { useId, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
-import { Plus } from 'lucide-react';
 import type { SessionId } from '@goodboy/types';
-import { IconButton, ScrollFade } from '@goodboy/ui';
+import { ToolTabStrip } from '../../../../shared/components/ToolTabStrip';
 import { useTerminalPorts } from '../../../monitoring/useTerminalPorts';
 import type { TerminalTab } from '../../../../shared/types/terminal';
 import { isOverlayOpen } from '../../../../shared/keyboard/isOverlayOpen';
@@ -29,6 +28,8 @@ type Props = {
   readonly onNew: () => void;
   readonly onCloseLastIdle?: () => void;
   readonly isShortcutEnabled?: boolean;
+  readonly isUnderHead?: boolean;
+  readonly hasPorts?: boolean;
   readonly folderAction?: ReactNode;
   readonly actions?: ReactNode;
   readonly sessionId?: SessionId | null;
@@ -49,6 +50,8 @@ export const TerminalTabStrip = ({
   onNew,
   onCloseLastIdle,
   isShortcutEnabled = true,
+  isUnderHead = false,
+  hasPorts = true,
   folderAction = null,
   actions = null,
   sessionId = null,
@@ -58,7 +61,7 @@ export const TerminalTabStrip = ({
   const stripId = useId();
   const [armedId, setArmedId] = useState<string | null>(null);
   const selectedPorts =
-    (selectedId === null ? undefined : portsByTerminal.get(selectedId)) ?? NO_PORTS;
+    (selectedId === null || !hasPorts ? undefined : portsByTerminal.get(selectedId)) ?? NO_PORTS;
   const domIdOf = (tab: TerminalTab): string => `${stripId}-${tab.id}`;
 
   useShortcut(
@@ -120,53 +123,46 @@ export const TerminalTabStrip = ({
   };
 
   return (
-    <div className="flex h-10 shrink-0 items-center gap-0.5 px-3">
-      <ScrollFade
-        orientation="horizontal"
-        className="min-w-0 shrink"
-        viewportClassName="flex items-center"
-      >
-        <div ref={listRef} onKeyDown={handleKeyDown} className="flex items-center gap-0.5">
-          <div
-            role="tablist"
-            aria-label={`Terminals on ${label}`}
-            aria-owns={tabs.map(domIdOf).join(' ')}
-            className="sr-only"
-          />
-          {tabs.map((tab) => (
-            <TerminalTabItem
-              key={tab.id}
-              tab={tab}
-              domId={domIdOf(tab)}
-              isSelected={tab.id === selectedId}
-              isBusy={busyIds.has(tab.id)}
-              command={commandOf(tab)}
-              isArmed={armedId === tab.id}
-              onSelect={() => onSelect(tab)}
-              onArm={() => setArmedId(tab.id)}
-              onDisarm={() => setArmedId(null)}
-              onClose={() => onClose(tab)}
-              onRestart={() => onRestart(tab)}
-              onRename={(title) => onRename({ tab, title })}
-            />
+    <ToolTabStrip
+      newLabel={`New tab on ${label}`}
+      newShortcut="terminal.newTab"
+      onNew={onNew}
+      isUnderHead={isUnderHead}
+      trailing={
+        <>
+          {folderAction}
+          {selectedPorts.map((port) => (
+            <PortChip key={port} port={port} sessionId={sessionId} />
           ))}
-        </div>
-      </ScrollFade>
-      <IconButton
-        icon={Plus}
-        label={`New tab on ${label}`}
-        tooltip="New tab on this worktree"
-        size="sm"
-        onClick={onNew}
-      />
-      <span className="flex-1" />
-      <div className="flex shrink-0 items-center gap-1">
-        {folderAction}
-        {selectedPorts.map((port) => (
-          <PortChip key={port} port={port} sessionId={sessionId} />
+          {actions}
+        </>
+      }
+    >
+      <div ref={listRef} onKeyDown={handleKeyDown} className="flex items-center gap-1">
+        <div
+          role="tablist"
+          aria-label={`Terminals on ${label}`}
+          aria-owns={tabs.map(domIdOf).join(' ')}
+          className="sr-only"
+        />
+        {tabs.map((tab) => (
+          <TerminalTabItem
+            key={tab.id}
+            tab={tab}
+            domId={domIdOf(tab)}
+            isSelected={tab.id === selectedId}
+            isBusy={busyIds.has(tab.id)}
+            command={commandOf(tab)}
+            isArmed={armedId === tab.id}
+            onSelect={() => onSelect(tab)}
+            onArm={() => setArmedId(tab.id)}
+            onDisarm={() => setArmedId(null)}
+            onClose={() => onClose(tab)}
+            onRestart={() => onRestart(tab)}
+            onRename={(title) => onRename({ tab, title })}
+          />
         ))}
-        {actions}
       </div>
-    </div>
+    </ToolTabStrip>
   );
 };

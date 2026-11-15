@@ -2,8 +2,10 @@ import { PaneShell, Skeleton, SkeletonText } from '@goodboy/ui';
 import type { Agent, AgentId, Session, SessionId } from '@goodboy/types';
 import { AgentDetailPane } from '../../AgentDetailPane';
 import { AgentHeader } from '../../AgentDetailPane/AgentHeader';
+import { classifyAgent, resolveRootAgent } from '../../../agent-kind';
+import { LeadPage } from '../../LeadPage';
 import { WorkTimeProvider } from '../../../../workTreeModel/components/WorkTimeProvider';
-import { EMPTY_ARRAY, useAppStore } from '../../../../../store';
+import { useAppStore } from '../../../../../store';
 import { CONCEPT_ICONS } from '../../../../../shared/components/conceptIcons';
 import { GoneObject } from '../../../../../shared/components/GoneObject';
 
@@ -15,6 +17,8 @@ type Props = {
   readonly onBack: () => void;
 };
 
+const NO_AGENTS: ReadonlyArray<Agent> = [];
+
 export const AgentOverlay = ({
   session,
   sessionId,
@@ -24,10 +28,33 @@ export const AgentOverlay = ({
 }: Props) => {
   const selectedAgent = useAppStore(
     (state) =>
-      (state.sessionPhaseRuns[sessionId] ?? (EMPTY_ARRAY as ReadonlyArray<Agent>)).find(
+      (state.sessionPhaseRuns[sessionId] ?? NO_AGENTS).find(
         (agent) => agent.id === selectedAgentId,
       ) ?? null,
   );
+
+  const kindOverride = useAppStore((state) =>
+    selectedAgent === null ? null : (state.agentKindOverride[selectedAgent.id] ?? null),
+  );
+  const kind =
+    selectedAgent === null ? null : classifyAgent({ agent: selectedAgent, override: kindOverride });
+  const runRoot = useAppStore((state) =>
+    selectedAgent === null
+      ? null
+      : resolveRootAgent({
+          agents: state.sessionPhaseRuns[sessionId] ?? NO_AGENTS,
+          agentId: selectedAgent.id,
+        }),
+  );
+  const runRootOverride = useAppStore((state) =>
+    runRoot === null ? null : (state.agentKindOverride[runRoot.id] ?? null),
+  );
+  const leadRoot =
+    kind === 'auto'
+      ? selectedAgent
+      : runRoot !== null && classifyAgent({ agent: runRoot, override: runRootOverride }) === 'auto'
+        ? runRoot
+        : null;
 
   const runsLoaded = useAppStore((state) => state.sessionPhaseRuns[sessionId] !== undefined);
 
@@ -49,13 +76,24 @@ export const AgentOverlay = ({
           </PaneShell>
         ) : (
           <WorkTimeProvider sessionId={sessionId} workspaceId={session.workspaceId}>
-            <AgentDetailPane
-              key={selectedAgent.id}
-              session={session}
-              agent={selectedAgent}
-              isChatActive={isChatActive}
-              onBack={onBack}
-            />
+            {leadRoot !== null ? (
+              <LeadPage
+                key={leadRoot.id}
+                session={session}
+                agent={leadRoot}
+                shownAgent={selectedAgent}
+                isChatActive={isChatActive}
+                onBack={onBack}
+              />
+            ) : (
+              <AgentDetailPane
+                key={selectedAgent.id}
+                session={session}
+                agent={selectedAgent}
+                isChatActive={isChatActive}
+                onBack={onBack}
+              />
+            )}
           </WorkTimeProvider>
         )}
       </div>

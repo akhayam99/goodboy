@@ -10,11 +10,10 @@ import { sessionTerminalOwner } from '../../../../../store/slices/terminal/termi
 import { ActivityRunScene } from '../ActivityRunScene';
 import { SESSION_ID } from '../activityRunSeed';
 import { mockSceneIpc } from '../mockSceneIpc';
-import { useSceneRailFold } from '../useSceneRailFold';
 import { shellPromptLines, terminalSnapshotAnswer } from '../terminalSceneOutput';
 
 export type PanesSceneState =
-  ClusterPane | 'closed' | 'folded' | 'drilled' | 'explore-file' | 'script-output';
+  ClusterPane | 'ask' | 'context' | 'closed' | 'explore-file' | 'script-output';
 
 const PAYMENTS = '~/code/harborline/payments-api-backfill';
 const RELAY = '~/code/harborline/notify-relay/.goodboy/worktrees/gb-2p6w0z';
@@ -69,11 +68,29 @@ type PaneParams = {
   readonly pane: ClusterPane;
 };
 
+type TabSceneParams = {
+  readonly tab: 'ask' | 'context';
+};
+
 const openPane = ({ pane }: PaneParams): void => {
   if (openPaneOf({ state: useAppStore.getState(), sessionId: SESSION_ID }) === pane) {
     return;
   }
+  if (pane === 'scripts') {
+    useAppStore.getState().openDrawer({ kind: 'scripts', sessionId: SESSION_ID, payload: null });
+    return;
+  }
   togglePane({ sessionId: SESSION_ID, pane });
+};
+
+const openTab = ({ tab }: TabSceneParams): void => {
+  useAppStore.setState({ navigate: useAppStore.getInitialState().navigate });
+  const store = useAppStore.getState();
+  if (tab === 'ask') {
+    store.openAsk({ sessionId: SESSION_ID });
+    return;
+  }
+  store.openContextDrawer({ sessionId: SESSION_ID, section: 'goal' });
 };
 
 const seedFailedCheck = (): void => {
@@ -95,17 +112,6 @@ const openState = ({ state }: SeedParams): void => {
   seedFailedCheck();
   const store = useAppStore.getState();
   if (state === 'closed') {
-    return;
-  }
-  if (state === 'folded') {
-    openPane({ pane: 'ask' });
-    return;
-  }
-  if (state === 'drilled') {
-    useAppStore.setState((current) => ({
-      activeLens: { ...current.activeLens, [SESSION_ID]: 'branch' },
-    }));
-    openPane({ pane: 'explore' });
     return;
   }
   if (state === 'explore-file') {
@@ -155,6 +161,10 @@ const openState = ({ state }: SeedParams): void => {
     store.openDrawer({ kind: 'terminal', sessionId: SESSION_ID, payload: { terminalId: SHELL } });
     return;
   }
+  if (state === 'ask' || state === 'context') {
+    openTab({ tab: state });
+    return;
+  }
   openPane({ pane: state });
 };
 
@@ -164,7 +174,5 @@ type Props = {
 
 export const PanesScene = ({ state }: Props) => {
   const seed = useCallback(() => openState({ state }), [state]);
-  useSceneRailFold({ isFolded: state === 'folded' });
-
   return <ActivityRunScene onSeeded={seed} isPageFollowed />;
 };

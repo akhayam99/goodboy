@@ -9,6 +9,7 @@ import { START_HINT_SCOPES } from '../../../store/slices/startHints/startHintSco
 import { StartHint } from '../../../shared/components/StartHint';
 import { START_HINT_COPY } from '../../../shared/components/startHintCopy';
 import { autoUnavailableReason } from '../../auto/autoUnavailableReason';
+import { actionButtonLookOf } from '../../actions/actionButtonLookOf';
 import type { ActionConfirm, DiffActionTarget } from '../../actions/types';
 import { useActionControls } from '../../actions/useActionControls';
 import type { useJobBannerActions } from '../hooks/useJobBannerActions';
@@ -134,7 +135,7 @@ export const RebaseStopPanel = ({ sessionId, worktreePath, controls, actions }: 
             variant: 'secondary',
             run: actions.resolveMyself,
           },
-          { key: 'keep', label: 'Keep branch as it was', variant: 'ghost', run: actions.keep },
+          { key: 'keep', label: 'Abort rebase', variant: 'ghost', run: actions.keep },
         ];
       case 'rebasing-here':
         return [
@@ -214,7 +215,7 @@ export const RebaseStopPanel = ({ sessionId, worktreePath, controls, actions }: 
         return [{ key: 'dismiss', label: 'Dismiss', variant: 'ghost', run: controls.dismiss }];
       case 'origin-moved':
         return [
-          { key: 'bring-in', label: 'Bring them in', variant: 'primary', run: actions.bringIn },
+          { key: 'bring-in', label: NAMES.rebaseOnThem, variant: 'primary', run: actions.bringIn },
           {
             key: 'open-terminal',
             label: 'Resolve in terminal',
@@ -292,10 +293,8 @@ export const RebaseStopPanel = ({ sessionId, worktreePath, controls, actions }: 
       case 'no-provider':
       case 'fixing-push':
         return [];
-      default: {
-        const exhaustive: never = state;
-        return exhaustive;
-      }
+      default:
+        return state satisfies never;
     }
   })();
 
@@ -329,7 +328,7 @@ export const RebaseStopPanel = ({ sessionId, worktreePath, controls, actions }: 
           trigger={({ arm }) => (
             <Button
               size="sm"
-              variant={verb.variant}
+              {...actionButtonLookOf({ verb: verb.label, variant: verb.variant })}
               data-rebase-verb={verb.key}
               disabled={isBusy || blockedReason !== null}
               isBusy={isPending}
@@ -345,7 +344,7 @@ export const RebaseStopPanel = ({ sessionId, worktreePath, controls, actions }: 
       <Button
         key={verb.key}
         size="sm"
-        variant={verb.variant}
+        {...actionButtonLookOf({ verb: verb.label, variant: verb.variant })}
         data-rebase-verb={verb.key}
         disabled={isBusy || blockedReason !== null}
         isBusy={isPending}
@@ -422,10 +421,8 @@ export const RebaseStopPanel = ({ sessionId, worktreePath, controls, actions }: 
       case 'no-provider':
       case 'fixing-push':
         return null;
-      default: {
-        const exhaustive: never = state;
-        return exhaustive;
-      }
+      default:
+        return state satisfies never;
     }
   })();
 

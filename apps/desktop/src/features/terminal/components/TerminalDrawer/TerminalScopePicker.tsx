@@ -6,6 +6,8 @@ import { scopeLabelOf } from './terminalScope';
 
 const SESSION_FOLDER_KEY = 'session-folder';
 
+const ALL_TERMINALS_KEY = 'all-terminals';
+
 type Props = {
   readonly worktree: TerminalWorktree;
   readonly targets: ReadonlyArray<TerminalTarget>;
@@ -13,6 +15,7 @@ type Props = {
   readonly busyPaths: ReadonlySet<string>;
   readonly onPickTarget: (target: TerminalTarget) => void;
   readonly onPickSessionFolder: () => void;
+  readonly onPickAll: () => void;
 };
 
 const runningDot = <StatusDot tone="info" size="sm" ariaLabel="A shell here runs a process" />;
@@ -24,6 +27,7 @@ export const TerminalScopePicker = ({
   busyPaths,
   onPickTarget,
   onPickSessionFolder,
+  onPickAll,
 }: Props) => {
   const label = scopeLabelOf({ worktree, isBranchless });
   const options: ReadonlyArray<ListboxOption<string>> = [
@@ -33,6 +37,7 @@ export const TerminalScopePicker = ({
       ...(busyPaths.has(target.path) && { leading: runningDot }),
     })),
     ...(isBranchless ? [{ value: SESSION_FOLDER_KEY, label: 'Session folder' }] : []),
+    { value: ALL_TERMINALS_KEY, label: 'All terminals' },
   ];
   const isOnSessionFolder = isBranchless && worktree.kind === 'path';
   const current = isOnSessionFolder
@@ -64,6 +69,10 @@ export const TerminalScopePicker = ({
       anchorClassName="min-w-0"
       popupWidth="content"
       onChange={(key) => {
+        if (key === ALL_TERMINALS_KEY) {
+          onPickAll();
+          return;
+        }
         if (key === SESSION_FOLDER_KEY) {
           onPickSessionFolder();
           return;

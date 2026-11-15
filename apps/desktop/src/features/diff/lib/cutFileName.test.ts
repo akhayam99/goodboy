@@ -22,11 +22,12 @@ describe('cutFileName', () => {
     ['an empty name stays empty', '', 10, ''],
     ['one character stays whole', 'a', 1, 'a'],
     [
-      'a budget below the chain falls back to the right edge',
+      'a budget below the chain still keeps the start of the name',
       'StatementBalanceCard.test.tsx',
       8,
-      '…est.tsx',
+      'Sta….tsx',
     ],
+    ['a short stem keeps its start before the chain', 'index.module.css', 12, 'ind…dule.css'],
   ];
 
   it.each(table)('%s', (_label, name, maxLength, expected) => {

@@ -30,7 +30,6 @@ import { DEFAULT_PREFS } from '../../../../../store/slices/session-view/types';
 import { DisplayValueRow } from './DisplayValueRow';
 import { FilterCheckRow } from './FilterCheckRow';
 import { displayStateOf } from './displayStateOf';
-
 type StatusOption = {
   readonly stage: SessionStage;
   readonly label: string;
@@ -265,7 +264,7 @@ export const SessionFilterPopover = ({
         </div>
         {display.isDefault ? null : (
           <div className="flex px-1">
-            <Button size="sm" variant="ghost" onClick={reset}>
+            <Button size="sm" variant="ghost" intent="neutral" onClick={reset}>
               Reset
             </Button>
           </div>

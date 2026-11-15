@@ -30,6 +30,7 @@ import type {
 } from '@goodboy/types';
 import { SessionOverviewPane } from '../../../../features/session/components/SessionOverviewPane';
 import { useAppStore } from '../../../../store';
+import { SessionContextCards } from '../../SessionContextCards';
 import { brandedId } from '../../../../features/history/testing/brandedId';
 import {
   applyMountViews,
@@ -932,7 +933,20 @@ export const MountsScene = ({ variant = DEFAULT_VARIANT }: Props) => {
     <ShellFrame
       session={session}
       sidebar="expanded"
-      main={<SessionOverviewPane session={session} />}
+      main={
+        variant === 'branch-split' ? (
+          <SessionContextCards session={session} />
+        ) : variant === 'many-open' ? (
+          <div className="flex h-full min-h-0 flex-col">
+            <SessionContextCards session={session} />
+            <div className="min-h-0 flex-1">
+              <SessionOverviewPane session={session} />
+            </div>
+          </div>
+        ) : (
+          <SessionOverviewPane session={session} />
+        )
+      }
     />
   );
 };

@@ -20,6 +20,7 @@ import {
   stubStoryInvoke,
   type StoryStore,
 } from '../../../../store/storyHarness';
+import { selectIsContextTabOpen } from '../../../../store/slices/contextDrawer/selectIsContextTabOpen';
 import { GoalTeaser } from './GoalTeaser';
 import { GoalTab } from '../ContextDrawer/GoalTab';
 import { bindTarget, runObjectAction } from '../../../actions/registry';
@@ -115,7 +116,7 @@ afterEach(() => {
 });
 
 describe('GoalTeaser on the real store', () => {
-  it('opens the goal drawer from the current goal', () => {
+  it('opens the Context tab on the goal from the current goal', () => {
     store.setState({
       sessionSlots: {
         [session.id]: [{ key: 'goal', value: 'Credit each invoice once.', enabled: true }],
@@ -123,7 +124,7 @@ describe('GoalTeaser on the real store', () => {
     });
     mount();
     fireEvent.click(screen.getByRole('button', { name: 'Goal: Credit each invoice once.' }));
-    expect(store.getState().drawer).toEqual(expect.objectContaining({ sessionId: session.id }));
+    expect(selectIsContextTabOpen({ state: store.getState(), sessionId: session.id })).toBe(true);
   });
   it('does not repeat the goal when it equals the title shown in the header', () => {
     store.setState({

@@ -277,9 +277,8 @@ writing to it reopens it to **Deciding**.
 
 ## The chat
 
-- **The tree in the Agents panel.** What Auto spawned lives in the Agents
-  panel of the session tools ([navigation/session-rail.md](navigation/session-rail.md#the-session-tools)):
-  opening Auto agents or an Auto agent opens it, and it follows an Auto agent
+- **The tree in the Agents column.** What Auto spawned lives in the Agents
+  column of the run page ([The Lead page](#the-lead-page)): it follows an Auto agent
   or one of its children in the center. The tree reads top down
   with Auto first and one row per child under it, ordered by when Auto
   started them, in the list of launches and in a focused launch
@@ -415,16 +414,14 @@ writing to it reopens it to **Deciding**.
   maps to (`delegationReasonTextOf`, shared with the result card), else
   nothing (`delegationSentenceOf`). A done child shows the result it declared in `delegation.result`,
   then the summary Auto accepted, never the working `outputSummary`, and no
-  "Auto asked:" line (`autoGroupOf`, `autoChildCopyOf`). While a child is stuck
-  and Auto is live, Auto sits in the Needs you card as one block: the sentence,
-  **Open Auto**, **Stop** and **Retry** on its right, and its agents fold under it
-  (`AutoGroup.isStuck`), not Auto's own phase.
+  "Auto asked:" line (`autoGroupOf`). While a child is stuck
+  and Auto is live, the board row of its branch shows it as stuck (`AutoGroup.isStuck`),
+  not Auto's own phase.
 - **Stopped and replaced children are not stuck.** A delegation that settled
   `stopped` (you or Auto stopped it, or you declined its start, reason
   `declined`) is the child state `stopped`, which `autoStuckKindOf` does not
-  count: it leaves Next and the Running card's stuck actions, reads **Stopped** on the
-  rail, and shows among the latest finished items of the Done card and in
-  the full log (`doneRowsOf`). A settled
+  count: it leaves Next and the stuck actions, reads **Stopped** on the
+  rail, and shows in the full log. A settled
   child that did not complete is superseded, state `retried`, when a later
   delegation takes the same role on the same branch (`target.mountId`), with or
   without `retryOf` (`autoGroupOf`).
@@ -465,7 +462,7 @@ writing to it reopens it to **Deciding**.
   result whose delivery row is not in the transcript is not drawn, never moved
   to the end, so a late result stays with the turn that read it; a reload and a
   second window read the same rows.
-- **The glance line and the cards.** The Auto page header keeps the back row, the title
+- **The glance line and the cards.** The Auto page keeps the session head with its crumbs, then the title
   and the menu, then one glance line, the same component for every run kind
   (`RunGlanceLine`: Auto, orchestrated, preset and a plain agent): a dot, the state word (**Needs
   you**, **Running**, **Queued**, **Ready**, **Paused**, **Failed**, **Stopping**,
@@ -623,6 +620,86 @@ writing to it reopens it to **Deciding**.
   children hides the session's permission mode picker: a tree member runs
   with its role's access, not the session mode.
 
+## The agent tree model
+
+`leadTreeOf` (`apps/desktop/src/features/auto/tree/leadTreeOf.ts`) is the one
+model of the agents, notes and plans of a tree. It is a pure function over
+loaded rows: agents are numbered by launch (1, 2, 2.1), a retry folds into the
+agent it retries and keeps its number, a set of two or more settled siblings
+folds to one line until opened when the caller lets it fold (`canFold`: the
+Work tab does, the Lead page never does), and notes and plans are unnumbered
+rows placed by time among the top agents. Spend counts each agent once. The split per
+branch lives only in `leadSpendByBranchOf`: an agent's spend goes to the row of
+its own branch, the Lead's own turns to its primary branch, or to the group
+without a branch (`mountId` null), and the rows sum to the total.
+
+`LeadTree` (`features/session/components/LeadTree/index.tsx`) draws that model as
+the activity trace, in two densities. Every row is one 28px line on the trace
+rail (`spawnedRailOf` in `features/workTreeModel` lays it out, `SpawnedRailCell`
+beside `TimelineRail` draws it: the rail of the Agents drawer and the Full log): a spine through the top agents and an elbow
+for each child. The marker is the state node (a check when done, a breathing dot
+while it works, amber for Needs you, red for Failed), then the number, the role
+glyph, the role name and the title, cut in the middle with the whole title on
+hover. The state word shows only when it is neither Done nor Running. A working
+agent shows its clock, a settled one its own spend. The node and the word come
+from `delegationCardOf` (`delegationNodeOf`), the same status the Auto chat
+rail reads. A compact row drops the title and number. Arrow keys move a cursor, Enter selects an agent or toggles a fold, and
+a fold never changes the selected agent id. A queued note is a node with the
+word Queued, Edit and Remove (`noteNodesOf`, over `queuedRowsOf`); both call
+the queue functions the composer tray uses, so a failure keeps the node. A
+note that is sending has no actions and a removed one leaves no node.
+`useLeadTree` loads the delegations, mounts and costs into `leadTreeOf`.
+`LeadTree` shares the row tokens of `RunTree` but not its agent stream.
+
+The Work tab of a branch reads the same model per branch (`branchLeadsOf`, through
+`useBranchLeads`). Each Auto run of the branch group is one Lead line: glyph, the word
+Auto, title, state word, and its spend on this branch (the split of
+`leadSpendByBranchOf` for that mount). Below it the compact `LeadTree` lists only the
+agents the Lead ran on this branch, flat under the Lead. A Lead that also worked on
+another branch says `also on` with that branch, and that note opens its Work tab when
+the Branch page knows the mount. The line has no button of its own: it opens the Lead
+page, and the tree opens it too. A Lead is never listed on a branch it has no run on.
+
+### Why an agent exists
+
+The page of an agent Auto started answers why it exists at the top of its
+transcript, in the block `AutoChildBrief`
+(`apps/desktop/src/features/auto/child/AutoChildBrief.tsx`, inserted by
+`useAutoChildChat`). Every line comes from the stored delegation row through
+`delegationCardOf`: Why Auto chose the role (the stored `reason`), Why not the
+role fit when both are stored, Done when (`doneWhen`), Went in (the launch
+snapshot, `launchSnapshotOf`, as given to the agent, never as read by it; no
+line without a snapshot), the routing, and Attempt n with the last attempt's
+result when the `retryOf` chain is longer than one (`delegationAttemptsOf`). The
+brief itself is the first message of the transcript and the full brief opens from
+the page crumb (`AgentBriefCrumb`); the result is the end card (`AutoChildEnd`).
+The block is a pure function of that agent's rows, so a late result for another
+agent does not repaint it. There is no side panel for an agent's record.
+
+### The Lead page
+
+`LeadPage` (`features/session/components/LeadPage/index.tsx`) is the frame of
+an Auto run: the page of its root agent, at the address the Auto page always had
+(`s/{session}/workflows/agent/{agent}`), and the page of every agent under it.
+`AgentOverlay` draws it whenever the root of the shown agent (`resolveRootAgent`)
+is of kind `auto`, keyed by the root, and `AgentDetailPane` alone for every
+other agent. The centre is `AgentDetailPane` of the shown agent: the run's chat
+and `AutoDock` for the root, the agent's own transcript for any other.
+The Agents rail (`RunAgentsRail`) sits in the session frame's left slot
+(`data-session-lead`, the slot of the Changes files rail) with the same rules: it
+opens at 340, is resizable up to 560 and remembered (`run-agents` rail surface),
+and folds to a "Show agents" toggle when the frame is under 1060. Its header
+("Agents 15") is on the frame's first row and counts every agent. The first row
+is the run itself (`LeadTreeRootRow`, the root's title and state word from
+`autoTreeWordOf`); the agents hang under it on the trace spine. The marked row is
+the shown agent: the selection is the address, so a reload, Back and Forward
+restore it. A click or Enter on a row opens that agent's page in the centre;
+the rail is not remounted, so it keeps its scroll. A click on an agent line in
+the run's chat opens that agent's page too.
+The tree is `useLeadTree` over the composer's queued rows: `ChatInput` reports
+them through `QueuedNotesReportContext` (`useReportQueuedNotes`), so a queued note is a
+tree node whose Edit and Remove are the composer's own.
+
 ## Plans
 
 The plan a Planner writes opens in the right drawer. Its second row shows
@@ -723,7 +800,7 @@ error, a lost report, no closing), always with a sentence from
 `delegationSentenceOf`, never a reason code. **Needs you** appears on Auto only,
 when Auto asks you. The outcome stays `blocked` in SQLite; `autoSettledStateOf`
 turns it into the word, and `autoChildWordOf` is the one function the tail, the
-Agents panel, the delegation card and the Overview read. The dock draws no red
+Agents column, the delegation card and the Overview read. The dock draws no red
 recovery for a returned child, replaced or not (`useAutoChildRecovery` reads
 `autoSettledStateOf`), and the delegation card drops the **Blocked** outcome
 line and the reason sentence from a returned child's result: it reads no line
@@ -1537,7 +1614,13 @@ The Auto prompt asks for it (`READING_ORDER_RULE`, after the level rules) and
 every child kickoff asks for it in its expected output
 (`OUTCOME_EXPECTED_NOTE`). `core/auto/outcome.ts` owns the reading:
 `parseOutcomeLine` takes the last block, `stripOutcomeLine` removes the blocks
-from the prose, and `outcomeLineOf` decides the line shown. The model's words
+from the prose, and `outcomeLineOf` decides the line shown. Both read the markers
+tolerantly, because models mistype the close: any `outcome` word led by `<` or `/`
+runs (up to six) and closed by up to three `>` is a marker, a slash makes it a close, a
+second open ends the block like a close, a stray close is dropped, and an open with
+nothing after it hides the rest of the text as before. The scan is one linear walk over
+the word, with no regular expression, so `</<<outcome>>` never reaches the line or eats
+the body below it. `AssistantText` strips the outcome before the other control markers. The model's words
 never override the facts: red checks give "Checks failed: n", a failed,
 declined or put back push gives the "Not pushed" text of `publishTextOf`. A
 missing line falls back to the outcome word ("Done", "Failed: reason"), and a

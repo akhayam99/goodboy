@@ -7,7 +7,7 @@ import { ToolCountSkeleton } from './ToolCountSkeleton';
 import { ToolSignalDot } from './ToolSignalDot';
 import { ToolWaitingRing } from './ToolWaitingRing';
 import { toolStateOf } from './toolStateOf';
-import type { ToolSignal } from './useToolSignal';
+import type { ToolSignal } from './ToolSignal';
 
 type Props = {
   readonly tool: SessionTool;

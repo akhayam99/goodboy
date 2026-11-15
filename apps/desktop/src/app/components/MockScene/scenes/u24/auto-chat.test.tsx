@@ -315,29 +315,12 @@ describe('the Auto chat scenes', () => {
     expect(screen.getAllByRole('textbox')).toHaveLength(1);
   });
 
-  it('auto-overview-row draws the Auto tree once in Running, its agents under it', async () => {
+  it('auto-overview-row draws the board and no Running card', async () => {
     mount({ id: 'auto-overview-row' });
 
-    const running = await screen.findByRole('region', { name: 'Running' }, WAIT);
-    expect(within(running).getByText('Waiting for Implementer and Tester')).toBeDefined();
-    expect(within(running).getAllByRole('button', { name: 'Open Auto chat' })).toHaveLength(1);
-  });
-
-  it('auto-overview-row says Auto agent once, keeps the sentence whole and opens a menu on right click', async () => {
-    mount({ id: 'auto-overview-row' });
-
-    const running = await screen.findByRole('region', { name: 'Running' }, WAIT);
-    const row = running.querySelector<HTMLElement>('[data-live-row]');
-    expect(row?.textContent?.match(/Auto agent/g)).toHaveLength(1);
-    expect(row?.querySelector('[data-live-reason]')?.textContent).toBe(
-      'Waiting for Implementer and Tester',
-    );
-
-    fireEvent.contextMenu(row ?? running);
-
-    const menu = await screen.findByRole('menu', undefined, WAIT);
-    expect(within(menu).queryByRole('menuitem', { name: 'Mount a project' })).toBeNull();
-    expect(within(menu).getAllByRole('menuitem').length).toBeGreaterThan(0);
+    const board = await screen.findByRole('region', { name: 'Branches' }, WAIT);
+    expect(board.querySelectorAll('[data-board-row]').length).toBeGreaterThan(0);
+    expect(screen.queryByRole('region', { name: 'Running' })).toBeNull();
   });
 
   it('auto-chat-child shows a finished agent a plain composer, no Stop, Send now or Queue', async () => {
@@ -365,7 +348,7 @@ describe('the Auto chat scenes', () => {
   it('u34-p27-auto-done leaves no approval, no Start and no Continue behind', async () => {
     mount({ id: 'u34-p27-auto-done' });
 
-    await screen.findByText('Nothing needs you', undefined, WAIT);
+    await screen.findByRole('region', { name: 'Branches' }, WAIT);
     expect(screen.queryByText(/Auto needs approval/)).toBeNull();
     expect(screen.queryByText('Ready to implement')).toBeNull();
     expect(screen.queryByText(/Stopped when Goodboy closed/)).toBeNull();

@@ -16,6 +16,7 @@ type Props = {
   readonly review: { readonly run: FixRun | null; readonly lane: LaneStatus | null };
   readonly isFixRunShown: boolean;
   readonly isPushNext: boolean;
+  readonly isSetupOfferShown: boolean;
   readonly baseRow: ReactNode;
   readonly onOpenComments: () => void;
 };
@@ -28,6 +29,7 @@ export const BranchBodyTop = ({
   review,
   isFixRunShown,
   isPushNext,
+  isSetupOfferShown,
   baseRow,
   onOpenComments,
 }: Props) => (
@@ -41,7 +43,12 @@ export const BranchBodyTop = ({
       isFixRunShown={isFixRunShown}
       onOpenComments={onOpenComments}
     />
-    <BranchNotices sessionId={session.id} controls={controls} isPushNext={isPushNext} />
+    <BranchNotices
+      sessionId={session.id}
+      controls={controls}
+      isPushNext={isPushNext}
+      isSetupOfferShown={isSetupOfferShown}
+    />
     {baseRow}
   </PageColumn>
 );

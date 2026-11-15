@@ -1,8 +1,6 @@
 import { useEffect, useState } from 'react';
-import { PageTrailContext } from '@goodboy/ui';
 import { applyDocumentTheme } from '../../../../../../shared/lib/theme';
 import { ArtifactStudio } from '../../../../../../features/artifacts/components/ArtifactStudio';
-import { SessionBackRow } from '../../../../../../features/session/components/SessionWorkspace/SessionBackRow';
 import { sceneClock } from '../../../sceneClock';
 import { REPORT_ARTIFACT_ID, SESSION, SESSION_ID, seedArtifactScene } from '../../artifactSeed';
 import { ShellFrame, seedShellChrome } from '../../shellChrome';
@@ -62,14 +60,5 @@ export const ArtifactReportScrolledScene = ({ theme }: Props) => {
     return null;
   }
 
-  return (
-    <ShellFrame
-      session={SESSION}
-      main={
-        <PageTrailContext.Provider value={<SessionBackRow sessionId={SESSION_ID} />}>
-          <ArtifactStudio sessionId={SESSION_ID} />
-        </PageTrailContext.Provider>
-      }
-    />
-  );
+  return <ShellFrame session={SESSION} main={<ArtifactStudio sessionId={SESSION_ID} />} />;
 };

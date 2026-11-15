@@ -1,5 +1,5 @@
 import type { AgentId } from '@goodboy/types';
-import { parentIdsOf } from './parentIdsOf';
+import { parentIdsOf } from '../../../features/workTreeModel/parentIdsOf';
 import type { SpawnedRow } from './spawnedRow';
 
 type Params = {

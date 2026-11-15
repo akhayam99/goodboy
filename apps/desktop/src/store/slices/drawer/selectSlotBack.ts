@@ -1,4 +1,5 @@
 import type { AppState } from '../../types';
+import { isPairedSlot } from './isPairedSlot';
 import { isWorkspaceTool } from './isWorkspaceTool';
 import { selectDrawerPanel } from './selectDrawerPanel';
 import { selectOpenDrawer } from './selectOpenDrawer';
@@ -12,7 +13,7 @@ type Params = {
 export const selectSlotBack = ({ state }: Params): OpenDrawer | null => {
   const top = selectDrawerPanel(state);
   const back = state.drawerBack ?? null;
-  if (top === null || back === null) {
+  if (top === null || back === null || isPairedSlot({ top: state.drawer ?? null, back })) {
     return null;
   }
   if (isWorkspaceTool({ content: back })) {

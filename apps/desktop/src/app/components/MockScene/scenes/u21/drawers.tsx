@@ -3,11 +3,10 @@ import { DrawerColumn, UnderTrailContext } from '@goodboy/ui';
 import { SessionOverviewPane } from '../../../../../features/session/components/SessionOverviewPane';
 import { useAppStore } from '../../../../../store';
 import { selectDrawerPanel } from '../../../../../store/slices/drawer/selectDrawerPanel';
-import { selectDrawerSizing } from '../../../../../store/slices/drawer/selectDrawerSizing';
+import { selectDrawerSizing } from '../../../../../store/slices/drawer/testing/selectDrawerSizing';
 import { DrawerHost } from '../../../DrawerHost';
 import { SESSION, seedActivityRunScene } from '../activityRunSeed';
 import { PlannerTranscriptScene } from '../PlannerTranscriptScene';
-import { seedSessionAsk } from '../sessionAskSeed';
 
 const NARROW_WIDTH_PX = 1000;
 const WIDE_WIDTH_PX = 1440;
@@ -22,7 +21,7 @@ const DrawerOverlayNarrowScene = () => {
   useEffect(() => {
     seedActivityRunScene();
     useAppStore.setState({ selectedAgentId: {} });
-    seedSessionAsk({ state: 'answer' });
+    useAppStore.getState().openDrawer({ kind: 'scripts', sessionId: SESSION.id, payload: null });
     setIsReady(true);
   }, []);
 

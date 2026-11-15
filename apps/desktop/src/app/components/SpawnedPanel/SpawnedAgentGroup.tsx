@@ -8,7 +8,7 @@ import { openSpawned } from '../../../features/session/openSpawned';
 import { agentStateOf } from '../../../features/workTreeModel/agentStateOf';
 import { ObjectMenuArea } from '../../../features/actions/components/ObjectMenuArea';
 import { agentLaunchRowOf } from './agentLaunchRowOf';
-import { spawnedRailOf } from './spawnedRailOf';
+import { spawnedRailOf } from '../../../features/workTreeModel/spawnedRailOf';
 import { SpawnedTreeRow } from './SpawnedTreeRow';
 
 type Props = {

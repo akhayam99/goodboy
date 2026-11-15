@@ -1,6 +1,7 @@
 import { useId, useState } from 'react';
 import type { DiffComment, MountId } from '@goodboy/types';
 import { Button } from '@goodboy/ui';
+import { actionButtonLookOf } from '../../../actions/actionButtonLookOf';
 
 export type NoteTarget = {
   readonly mountId: MountId;
@@ -54,7 +55,11 @@ export const UnassignedNote = ({ note, targets, onMove, onDiscard }: Props) => {
               Move to
             </Button>
           )}
-          <Button size="sm" variant="ghost" onClick={onDiscard}>
+          <Button
+            size="sm"
+            {...actionButtonLookOf({ verb: 'discard', variant: 'ghost' })}
+            onClick={onDiscard}
+          >
             Discard
           </Button>
         </div>

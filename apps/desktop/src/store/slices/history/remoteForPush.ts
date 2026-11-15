@@ -52,7 +52,7 @@ export const remoteForPush = async ({
       stop: {
         reason: 'origin-moved',
         message:
-          'Origin has commits this rewrite does not include. Nothing was changed. Bring them into the plan first.',
+          'Origin has commits this rewrite does not include. Nothing was changed. Rebase on their commits first.',
         files: [],
         sha: lease.sha,
       },

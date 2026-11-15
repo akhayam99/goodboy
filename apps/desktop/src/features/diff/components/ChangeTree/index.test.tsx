@@ -56,9 +56,7 @@ const renderTree = (overrides: Partial<Parameters<typeof ChangeTree>[0]> = {}) =
       kindsOf={() => NO_KINDS}
       isReadOnly={false}
       onToggleViewed={vi.fn()}
-      onNextUnviewed={vi.fn()}
       onLeave={vi.fn()}
-      onFold={vi.fn()}
       {...overrides}
     />,
   );
@@ -142,10 +140,9 @@ describe('ChangeTree', () => {
     expect(KEY_HELP).toContain('J K move');
     expect(KEY_HELP).toContain('viewed');
     expect(KEY_HELP).toContain('/ filter');
-    expect(screen.getByRole('button', { name: 'Keyboard shortcuts' })).toBeDefined();
   });
 
-  it('shows no count or +/- on an expanded folder, and the +/- on a file only at 300 or more', () => {
+  it('shows no count or +/- on an expanded folder, and the +/- on a file only at 280 or more', () => {
     const observers = installFakeResizeObserver();
     vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue(
       new DOMRect(0, 0, 360, 600),
@@ -164,7 +161,7 @@ describe('ChangeTree', () => {
     ).toBe('diff');
 
     vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue(
-      new DOMRect(0, 0, 280, 600),
+      new DOMRect(0, 0, 260, 600),
     );
     act(() => observers.resizeAll());
 
@@ -205,17 +202,13 @@ describe('ChangeTree', () => {
     expect(deltas.map((delta) => delta?.textContent)).toEqual(['+6−2', '+3−1']);
   });
 
-  it('heads the list with Next unviewed, the keys and Fold, and Fold asks to fold', () => {
-    const onFold = vi.fn();
-    renderTree({ onFold });
+  it('heads the list with the filter, with no Next, keys or fold of its own', () => {
+    renderTree();
 
-    const head = screen
-      .getAllByRole('button')
-      .slice(0, 3)
-      .map((button) => button.getAttribute('aria-label') ?? button.textContent);
-    expect(head).toEqual(['Next unviewed file', 'Keyboard shortcuts', 'Hide file list']);
-    fireEvent.click(screen.getByRole('button', { name: 'Hide file list' }));
-    expect(onFold).toHaveBeenCalledTimes(1);
+    const first = screen.getByRole('navigation', { name: 'Changed files' }).querySelector('input');
+    expect(first?.getAttribute('aria-label')).toBe('Filter files');
+    expect(screen.queryByRole('button', { name: 'Next unviewed file' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Keyboard shortcuts' })).toBeNull();
   });
 
   it('shows files with their status letter and rename source', () => {
@@ -242,6 +235,7 @@ describe('ChangeTree', () => {
       rowById(id).querySelector<HTMLElement>('button')?.style.paddingLeft ?? '';
     expect(paddingOf({ id: 'dir:src/ledger' })).toBe('8px');
     expect(paddingOf({ id: 'dir:src/ledger/export' })).toBe('20px');
+    expect(paddingOf({ id: 'src/ledger/export/page.tsx' })).toBe('76px');
     screen.getAllByRole('treeitem').forEach((row) => {
       expect(row.querySelectorAll('i')).toHaveLength(0);
     });
@@ -278,9 +272,7 @@ describe('ChangeTree', () => {
         kindsOf={() => NO_KINDS}
         isReadOnly={false}
         onToggleViewed={vi.fn()}
-        onNextUnviewed={vi.fn()}
         onLeave={vi.fn()}
-        onFold={vi.fn()}
       />,
     );
     expect(screen.queryByRole('treeitem', { name: /page\.tsx/ })).toBeNull();
@@ -377,9 +369,7 @@ describe('ChangeTree', () => {
         kindsOf={() => NO_KINDS}
         isReadOnly={false}
         onToggleViewed={vi.fn()}
-        onNextUnviewed={vi.fn()}
         onLeave={vi.fn()}
-        onFold={vi.fn()}
       />
     );
     const { rerender } = render(view('src/ledger/export/page.tsx'));
@@ -412,9 +402,7 @@ describe('ChangeTree', () => {
         kindsOf={() => NO_KINDS}
         isReadOnly={false}
         onToggleViewed={vi.fn()}
-        onNextUnviewed={vi.fn()}
         onLeave={vi.fn()}
-        onFold={vi.fn()}
       />
     );
     const { rerender } = render(view(buildChangeTree({ files: FILES })));
@@ -444,9 +432,7 @@ describe('ChangeTree', () => {
         kindsOf={() => NO_KINDS}
         isReadOnly={false}
         onToggleViewed={vi.fn()}
-        onNextUnviewed={vi.fn()}
         onLeave={vi.fn()}
-        onFold={vi.fn()}
       />
     );
     const { rerender } = render(view(new Set(['dir:src/ledger/export', 'dir:src/ledger'])));
@@ -560,28 +546,6 @@ describe('ChangeTree', () => {
     const row = itemOf(/StatementBalanceCard\.test\.tsx/);
     expect(within(row).getByText('Statem…ceCard.test.tsx')).toBeDefined();
     expect(within(row).getByText('StatementBalanceCard.test.tsx')).toBeDefined();
-  });
-
-  it('titles the head Viewed N of M and jumps to the next unviewed file from Next', () => {
-    const onNextUnviewed = vi.fn();
-    renderTree({
-      stateOf: (file) => (file.path === 'package.json' ? 'viewed' : 'none'),
-      onNextUnviewed,
-    });
-
-    screen.getByText('Viewed 1 of 4');
-    const next = screen.getByRole('button', { name: /^Next unviewed/ });
-    expect(next.textContent).toBe('Next');
-    fireEvent.click(next);
-    expect(onNextUnviewed).toHaveBeenCalledTimes(1);
-  });
-
-  it('disables Next unviewed once every file is viewed', () => {
-    renderTree({ stateOf: () => 'viewed' });
-
-    expect(screen.getByRole('button', { name: /^Next unviewed/ }).hasAttribute('disabled')).toBe(
-      true,
-    );
   });
 
   it('keeps the counts on every file while the tree shows only the filtered ones', () => {

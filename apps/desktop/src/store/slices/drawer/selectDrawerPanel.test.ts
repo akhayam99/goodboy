@@ -5,7 +5,7 @@ import type { OpenDrawer } from './state';
 
 const SESSION_ID = brandId<SessionId>({ value: 'session-ledger-core' });
 const OTHER_ID = brandId<SessionId>({ value: 'session-notify-relay' });
-const EXPLORE: OpenDrawer = { kind: 'explore', sessionId: SESSION_ID, payload: null };
+const EXPLORE: OpenDrawer = { kind: 'scripts', sessionId: SESSION_ID, payload: null };
 
 describe('selectDrawerPanel', () => {
   it('shows the open drawer of the current session while no page is open', () => {

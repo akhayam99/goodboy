@@ -1,11 +1,12 @@
 import { expect } from 'vitest';
-import { waitFor, within } from '@testing-library/react';
+import { screen, waitFor, within } from '@testing-library/react';
 import { branchPlace } from '../../../store';
 import {
   type Row,
   WAIT,
   both,
   branchTab,
+  changesTab,
   lens,
   openCrumb,
   openPalette,
@@ -17,17 +18,9 @@ import {
 const PAGES = ['Overview', 'Runs', 'Artifacts'];
 
 const pageLabels = async (): Promise<ReadonlyArray<string>> => {
-  const list = await waitFor(() => {
-    const found = document.querySelector<HTMLElement>(
-      '[data-level-layer="session"]:not([inert]) [data-testid="session-pages"]',
-    );
-    if (found === null) {
-      throw new Error('the sidebar is not on a session level');
-    }
-    return found;
-  }, WAIT);
+  const list = await waitFor(() => screen.getByRole('tablist', { name: 'Session pages' }), WAIT);
   return within(list)
-    .getAllByRole('button')
+    .getAllByRole('tab')
     .map((row) => row.textContent ?? '');
 };
 
@@ -42,7 +35,7 @@ const startsWithInOrder = (texts: ReadonlyArray<string>, labels: ReadonlyArray<s
 
 export const REGISTRY_ROWS: ReadonlyArray<Row> = [
   {
-    name: 'session level: the pages read Overview, Runs, Artifacts, with no branch entry',
+    name: 'session tabs: the pages read Overview, Runs, Artifacts, with no branch entry',
     covers: ['sidebar:session-pages'],
     open: () => settle(),
     lands: async () => {
@@ -72,13 +65,13 @@ export const REGISTRY_ROWS: ReadonlyArray<Row> = [
     name: 'palette: Open changes finds the Changes tab',
     covers: ['navigate', 'palette:Open changes'],
     open: () => openPalette(/^Open changes/, 'Open changes'),
-    lands: branchTab('files'),
+    lands: changesTab,
   },
   {
     name: 'palette: the former name Files still finds the Changes tab',
     covers: ['navigate', 'palette:Open changes'],
     open: () => openPalette(/^Open changes/, 'Files'),
-    lands: branchTab('files'),
+    lands: changesTab,
   },
   {
     name: 'palette: the former names still find the tabs',
@@ -87,7 +80,7 @@ export const REGISTRY_ROWS: ReadonlyArray<Row> = [
     lands: branchTab('comments'),
   },
   {
-    name: 'a pull request address lands on the Overview, first of the six sections',
+    name: 'a pull request address lands on the Conversation, first of the six sections',
     covers: ['navigate', 'tab:pr'],
     open: async (ctx) => {
       useAppStore.getState().navigate({ to: branchPlace({ sessionId: ctx.sessionId, tab: 'pr' }) });
@@ -95,7 +88,7 @@ export const REGISTRY_ROWS: ReadonlyArray<Row> = [
     },
     lands: async (ctx) => {
       await branchTab('pr')(ctx);
-      await waitFor(() => expect(sectionLabels()[0]).toBe('Overview'), WAIT);
+      await waitFor(() => expect(sectionLabels()[0]).toBe('Conversation'), WAIT);
     },
   },
 ];

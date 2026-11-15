@@ -467,7 +467,7 @@ turn already carries `GOODBOY_WORKSPACE_ID`, `GOODBOY_SESSION_ID`,
   behind an inline confirm (`worktree_abort_rebase`, which refuses when no
   rebase is stopped).
 - **A worktree names its layers under its row.** The current branch row of the Projects tree in the
-  session rail holds the code host layers as entries: Pull request with its number,
+  Context tab holds the code host layers as entries: Pull request with its number,
   Files with the diff count (`useMountDiffStats`, read from
   `sessionWorktreeRecords`, which `applyMountViews` rewrites on every mount
   change, so a branch attached or forked while the session is open counts at
@@ -661,7 +661,7 @@ action the user can see, or allows one on a mount the user sees as gone.
 ## Worktree rows and the Overview notices
 
 The Overview has no Projects section. A worktree is a one line row of the
-Projects tree in the session rail (`WorktreeRow`: state glyph, the pull request
+Projects tree in the Context tab (`WorktreeRow`: state glyph, the pull request
 title or the branch, at most one chip: failing, conflict or behind). A branch
 is one row with no rows under it; its pages (Pull request, Comments, Changes,
 Commits, Checks) are the tab strip of the Branch page. Its row menu (the `⋯`, a right click, Shift+F10) holds the
@@ -712,8 +712,7 @@ the Board card and the sidebar dedupe by provider and external id
 The Now block closes with the branch facts, read by `useBranchFacts`
 (`features/session/central/branches/`) from `useMountRows` and `mountRequestOf`.
 
-- Every branch is one 32 px `ListGridRow` of the Branches `ListGrid`
-  (`BranchList`, `BranchRow`), so every column lines up: the branch name
+- Every branch is one 32 px row of the branch board, so every column lines up: the branch name
   (232 px, never the folder), the project (112 px, only when the branches span
   two or more projects), the request number (48 px), a `StageTrack` of six
   stages (Commit, Push, Pull request, Checks, Review, Merge) joined by one line
@@ -724,7 +723,7 @@ The Now block closes with the branch facts, read by `useBranchFacts`
   Branch page of that mount and holds no button: a verb lives only in Next.
 - `branchStoryOf` is the one function that turns the facts into the step word,
   the tone, the blocker and the dots. The row, its accessible name
-  (`branchSentenceOf`, which starts with the branch) and the rank all read it.
+  (which starts with the branch) and the rank all read it.
   `useBranchFacts` reads `finishedRows` too, and `branchEntriesOf` hands
   merged and closed branches back as `finished`, outside the list: the Done
   card names them in one line. The story names a `BranchState` and its tone
@@ -756,8 +755,7 @@ The Now block closes with the branch facts, read by `useBranchFacts`
   check names ("static-analysis failed") or the threads ("2 threads to
   answer").
 - `useBranchLabels({ sessionId })` gives the project and branch of a mount when
-  the session has two or more, for the branch chips on cards, groups and done
-  rows (`BranchChip`).
+  the session has two or more, for the branch chips on the board.
 - PR cards are gated per branch in every overview: `deriveNextSteps` skips fix
   checks, mark ready, merge, open PR and push on a mount only while an agent
   runs on that mount (`isMountBusyOf`, see Next steps in
@@ -789,8 +787,8 @@ The Now block closes with the branch facts, read by `useBranchFacts`
     current step.
   - Every stage names itself and its state in the shared Tooltip ("Checks
     skipped" for a dash), the track's accessible name lists every stage with
-    its state, and `branchSentenceOf` lists the skipped steps (`BranchStep.name`)
-    in the row's accessible name.
+    its state, and the skipped steps (`BranchStep.name`) are named in the row's
+    accessible name.
 - Only GitHub gets a PR card today. `useSessionSuggestions` reads
   `mountGithub` alone for the PR verbs
   (`features/suggestions/useSessionSuggestions/index.ts:447`), so a GitLab or

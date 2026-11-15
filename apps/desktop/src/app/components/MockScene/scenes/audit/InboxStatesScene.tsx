@@ -149,6 +149,7 @@ export const InboxStatesScene = () => {
   return (
     <ShellFrame
       session={SESSION}
+      hasOwnTrail
       main={
         <InboxStudio
           workspaceId={SESSION.workspaceId}

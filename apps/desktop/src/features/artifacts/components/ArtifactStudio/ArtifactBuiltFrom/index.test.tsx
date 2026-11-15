@@ -111,9 +111,7 @@ describe('ArtifactBuiltFrom', () => {
 
   it('says plainly that an older artifact recorded nothing', async () => {
     await renderWith(null);
-    expect(screen.getByTestId('built-from-missing').textContent).toContain(
-      'Nothing was recorded for this generation.',
-    );
+    expect(screen.getByTestId('built-from-missing').textContent).toContain('No build record.');
     expect(screen.queryByTestId('built-from')).toBeNull();
   });
 

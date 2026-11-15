@@ -13,22 +13,24 @@ Every place you go sits in one sidebar on the left. It looks the same on every s
 - your pinned and recent sessions
 - **Settings**, then the **Goodboy** line with the bug icon beside it. The Goodboy line opens Help and holds the version.
 
-Click a session and its row stays selected. The session opens with its own rail at the left of the page. From top to bottom:
+Click a session and its row stays selected. The session opens on its Overview, under one head that every page of the session shares:
 
-- **Pin**, **Refresh** and **⋯**
-- its pages (**Overview**, **Runs**, **Artifacts** and **Questions**) with their counts
-- a **Projects** card that folds each folder and branch. Every branch is led by its pull request icon in its color and holds its pull request, comments, changes and checks.
-- a **Linked** card with the work linked to it
+- the title, then **New**, **Ask**, **Pin**, **Refresh** and **⋯**
+- the tabs **Overview**, **Runs**, **Artifacts**, **Questions** and **Context**, with counts on Runs, Artifacts and Questions
+
+The **Context** tab holds a **Projects** card that folds each folder and branch, and a **Linked** card with the work linked to it. Every branch is led by its pull request icon in its color. Click one to open its Branch page, with the tabs **Conversation**, **Changes**, **Commits**, **Checks**, **Work** and **Comments**.
 
 The **⋯** holds **Limit**, **Archive** and **Delete** with the session's other actions.
 
-At the right of every page, a column of icons is named with its shortcut on hover. In a session, **Session** holds **Explore**, **Context**, **Ask this session**, **Agents** and **Scripts**. At the foot, on every page, **Workspace** holds **Terminal** and **Browser**. They stay open as you move between pages. **Open as page** makes either one full size. **Dock** puts the Terminal back, and **Beside the session** puts the Browser back. The active tool shows its name below its icon. A ring marks the tool waiting behind the drawer in the side slot.
+A branch, an artifact or a run keeps the head and shows crumbs such as **Overview › Artifacts › Plan** in place of the tabs. Each crumb is a link, and **Esc** goes one crumb up.
 
-A branch, a run or **Auto** steps the rail one level in. **‹** steps back out.
+**Ask** opens a detail panel beside the page. From left to right a window holds the sidebar, the page, the detail panel, the tools column and the dock. On a narrow window a panel lies over the page with a scrim.
+
+At the right of every page, a column of icons is named with its shortcut on hover. Under the caption **Tools**, on every page, it holds **Terminal** and **Browser**, each with its count. With a dock open, the column sits on the dock's left edge. They stay open as you move between pages. **Open full page** in the dock header makes either one full size, and **Dock**, last in the page's first row, puts either one back. The active tool shows its name below its icon.
 
 **⌘B**, or the sidebar button at the top left of the window, folds the sidebar into a slim bar of icons, on every page. It stays as you left it: starting a new session never unfolds it. Folded, the sidebar draws only sessions that need you, run or have unread news, each as its state node; the rest wait behind a `+N` button. Branches show the request state icon. Each tooltip names the state.
 
-**⌥⌘B** or the rail's own button folds the rail. It is the same key that folds the list beside Chat, Terminal, the Guide and Settings, and each of those lists has its Hide button at its top left. Opening a drawer folds the rail when needed; closing it restores your fold.
+**⌥⌘B** folds the list beside the page you are on, such as the files of the Changes page, Chat, Terminal, the Guide or Settings. Each of those lists has its Hide button at its top left.
 
 An amber dot on **Board** says sessions need you. A dot on **Monitoring** names the pinned port that is down.
 

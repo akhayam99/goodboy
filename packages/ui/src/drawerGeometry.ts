@@ -38,8 +38,6 @@ export const DRAWER_TIERS: Readonly<Record<DrawerSizing, TierBounds>> = {
   },
 };
 
-export const drawerTrackOf = (drawerWidthPx: number): number => drawerWidthPx + DRAWER_INSET * 2;
-
 type PushParams = {
   readonly mainWidthPx: number;
   readonly drawerWidthPx: number;
@@ -91,7 +89,7 @@ export const drawerLayoutOf = ({
   const tier = DRAWER_TIERS[sizing];
   const room = pushRoomOf({ mainWidthPx: main - contentInset, sizing });
   const pushWidth =
-    tier.isShrinkable === true && room >= tier.fallback ? Math.min(savedWidth, room) : savedWidth;
+    tier.isShrinkable === true && room >= tier.min ? Math.min(savedWidth, room) : savedWidth;
   if (placement === 'auto' && room >= pushWidth) {
     return {
       mode: 'push',
@@ -107,17 +105,99 @@ export const drawerLayoutOf = ({
   };
 };
 
+export type DrawerPanelSpec = {
+  readonly sizing: DrawerSizing;
+  readonly savedWidth: number;
+  readonly isOpen: boolean;
+};
+
+type PanelWidth = Pick<DrawerLayout, 'width' | 'dragMax'>;
+
+export type PanelPairLayout = {
+  readonly mode: DrawerLayout['mode'];
+  readonly dock: PanelWidth;
+  readonly detail: PanelWidth;
+};
+
+type PairParams = Omit<LayoutParams, 'sizing' | 'savedWidth'> & {
+  readonly dock: DrawerPanelSpec;
+  readonly detail: DrawerPanelSpec;
+};
+
+export const panelPairLayoutOf = ({
+  main,
+  dock,
+  detail,
+  placement = 'auto',
+  edgeWidth = 0,
+  contentInset = 0,
+}: PairParams): PanelPairLayout => {
+  const shared = { main, placement, edgeWidth, contentInset };
+  const dockAlone = drawerLayoutOf({ ...shared, sizing: dock.sizing, savedWidth: dock.savedWidth });
+  const detailAlone = drawerLayoutOf({
+    ...shared,
+    sizing: detail.sizing,
+    savedWidth: detail.savedWidth,
+  });
+  if (!dock.isOpen || !detail.isOpen) {
+    return {
+      mode: detail.isOpen ? detailAlone.mode : dockAlone.mode,
+      dock: dockAlone,
+      detail: detailAlone,
+    };
+  }
+  const dockTier = DRAWER_TIERS[dock.sizing];
+  const detailTier = DRAWER_TIERS[detail.sizing];
+  const sizing = dock.sizing === 'side' && detail.sizing === 'side' ? 'side' : 'reader';
+  const room = pushRoomOf({ mainWidthPx: main - contentInset, sizing }) - DRAWER_INSET;
+  const dockRoom = room - detail.savedWidth;
+  const dockWidth =
+    dockTier.isShrinkable === true && dockRoom >= dockTier.min
+      ? Math.min(dock.savedWidth, dockRoom)
+      : dock.savedWidth;
+  if (placement === 'auto' && dockRoom >= dockWidth) {
+    return {
+      mode: 'push',
+      dock: { width: dockWidth, dragMax: Math.min(dockTier.max, dockRoom) },
+      detail: { width: detail.savedWidth, dragMax: Math.min(detailTier.max, room - dockWidth) },
+    };
+  }
+  const overlayRoom = main - DRAWER_INSET * 3 - edgeWidth;
+  const detailWidth = Math.max(0, Math.min(detail.savedWidth, overlayRoom - dockTier.min));
+  const overlayDock = Math.min(dock.savedWidth, overlayRoom - detailWidth);
+  return {
+    mode: 'overlay',
+    dock: { width: overlayDock, dragMax: Math.min(dockTier.max, overlayRoom - detailWidth) },
+    detail: { width: detailWidth, dragMax: Math.min(detailTier.max, overlayRoom - overlayDock) },
+  };
+};
+
+type PairAsideParams = {
+  readonly dockWidth: number;
+  readonly detailWidth: number;
+  readonly railWidth?: number;
+};
+
+export const panelAsideWidthOf = ({
+  dockWidth,
+  detailWidth,
+  railWidth = 0,
+}: PairAsideParams): number => {
+  const container = dockWidth + railWidth;
+  return (
+    (detailWidth > 0 ? detailWidth + DRAWER_INSET : 0) +
+    (container > 0 ? container + DRAWER_INSET : 0)
+  );
+};
+
 type AsideParams = {
   readonly width: number;
   readonly mode: DrawerMode;
+  readonly railWidth?: number;
 };
 
-export const drawerAsideWidthOf = ({ width, mode }: AsideParams): number => {
-  if (mode === 'closed') {
-    return 0;
-  }
-  return mode === 'overlay' ? width + DRAWER_INSET : drawerTrackOf(width);
-};
+export const drawerAsideWidthOf = ({ width, mode, railWidth = 0 }: AsideParams): number =>
+  panelAsideWidthOf({ dockWidth: mode === 'closed' ? 0 : width, detailWidth: 0, railWidth });
 
 type SizedParams = {
   readonly sizing: DrawerSizing;
@@ -158,10 +238,21 @@ type MainParams = {
   readonly columnWidth: number;
   readonly mode: DrawerMode;
   readonly drawerWidthPx: number;
+  readonly railWidth?: number;
 };
 
-export const mainWidthOf = ({ columnWidth, mode, drawerWidthPx }: MainParams): number =>
-  mode === 'push' ? columnWidth - drawerTrackOf(drawerWidthPx) : columnWidth;
+export const mainWidthOf = ({
+  columnWidth,
+  mode,
+  drawerWidthPx,
+  railWidth = 0,
+}: MainParams): number =>
+  columnWidth -
+  drawerAsideWidthOf({
+    width: drawerWidthPx,
+    mode: mode === 'push' ? 'push' : 'closed',
+    railWidth,
+  });
 
 export const COLUMN_FRAME = 1008;
 export const MEASURE_FRAME = 768;
@@ -209,15 +300,3 @@ export const pageBoxOf = ({
   const left = (space - width) / 2;
   return { left, right: left + width, width };
 };
-
-type FoldParams = {
-  readonly mainWidthPx: number;
-  readonly drawerWidthPx?: number;
-  readonly sizing: DrawerSizing;
-};
-
-export const isRailFoldNeeded = ({
-  mainWidthPx,
-  drawerWidthPx = RIGHT_DRAWER_DEFAULT,
-  sizing,
-}: FoldParams): boolean => !canDrawerPush({ mainWidthPx, drawerWidthPx, sizing });

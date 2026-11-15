@@ -148,7 +148,7 @@ export const TASK_KIND: ObjectKindDefinition<TaskActionTarget, TaskFacts> = {
       id: 'task.takeOff',
       slot: () => 'hover',
       isUndoable: true,
-      label: 'Take off this branch',
+      label: 'Remove from this branch',
       icon: Minus,
       group: 'act',
       when: ({ facts }) => facts.branch !== null && facts.row.scope === 'branch',

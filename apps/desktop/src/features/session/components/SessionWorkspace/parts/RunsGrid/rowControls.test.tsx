@@ -28,7 +28,7 @@ import { aMountView } from '../../../../testing/aMountView';
 import { aProjectMountOf } from '../../../../testing/aProjectMountOf';
 import { sessionRunsOf, type SessionRun } from '../../../../sessionRunsOf';
 import { sessionPlace } from '../../../../../../store/slices/navigation/place';
-import { backOf } from '../../../../../../store/slices/navigation/backOf';
+import { parentPlace } from '../../../../../../store/slices/navigation/parentPlace';
 import { captureLocation } from '../../../../../../store/slices/navigation/captureLocation';
 import { openBranchWork } from '../../../../openBranchWork';
 import { RENAME_REQUEST_EVENT } from '../../../../../../shared/utils/renameRequest';
@@ -272,7 +272,8 @@ describe('from a branch to its runs', () => {
     const state = useAppStore.getState();
     const here = captureLocation({ state }).place;
     expect(here.at === 'session' ? here.view.lens : null).toBe('workflows');
-    expect(backOf({ state, place: here })?.label).toBe('Back to branch');
+    const parent = parentPlace({ state, place: here });
+    expect(parent?.at === 'session' ? parent.view.target?.kind : null).toBe('branch');
   });
 
   it('reveals and focuses a branch run past the state view cap with only one work branch', () => {
@@ -400,8 +401,7 @@ describe('from a branch to its runs', () => {
     });
     const state = useAppStore.getState();
 
-    expect(backOf({ state, place: captureLocation({ state }).place })?.label).not.toBe(
-      'Back to branch',
-    );
+    const parent = parentPlace({ state, place: captureLocation({ state }).place });
+    expect(parent?.at === 'session' ? parent.view.target?.kind : null).not.toBe('branch');
   });
 });

@@ -17,6 +17,7 @@ import { resetWorktreeStatusCache } from '../../store/runtime/worktreeStatuses/c
 import { clearSceneInvoke } from '../../test/sceneInvoke';
 import { MOCK_SCENES } from '../../app/components/MockScene';
 import { collectAskPackInput } from '../../features/session/ask/collectAskPackInput';
+import { ContextTab } from '../../features/session/components/ContextTab';
 import { seriesStripsOf } from '../../store/slices/pr-series/seriesStripsOf';
 import { MountsScene } from '../../app/components/MockScene/scenes/MountsScene';
 
@@ -65,9 +66,9 @@ const mountScene = async ({ name }: SceneParams): Promise<void> => {
 };
 
 const header = () => {
-  const node = document.querySelector<HTMLElement>('[data-slot="pane-header"]');
+  const node = document.querySelector<HTMLElement>('[data-session-head]');
   if (node === null) {
-    throw new Error('no Overview header');
+    throw new Error('no session head');
   }
   return within(node);
 };
@@ -87,13 +88,15 @@ const present = ({ value, what }: PresentParams): HTMLElement => {
 const notices = () => within(screen.getByRole('region', { name: 'Notices' }));
 
 describe('Overview capabilities from the session Overview', () => {
-  it('shows the goal as prose and opens it in the Context drawer', async () => {
+  it('shows the goal as prose and opens it in the Context tab', async () => {
     await mountScene({ name: 'c05-overview-merged-next' });
 
     expect(screen.queryByRole('button', { name: /^Goal: Split the ledger/ })).toBeNull();
     const sessionId = Object.keys(useAppStore.getState().sessionSlots)[0] ?? '';
+    const openContext = vi.fn();
     act(() => {
       useAppStore.setState((state) => ({
+        openContextDrawer: openContext,
         sessionSlots: {
           ...state.sessionSlots,
           [sessionId]: [
@@ -109,7 +112,7 @@ describe('Overview capabilities from the session Overview', () => {
     fireEvent.click(screen.getByRole('button', { name: /^Goal: Reviewers read the ledger/ }));
     await advance();
 
-    expect(useAppStore.getState().drawer?.kind).toBe('context');
+    expect(openContext).toHaveBeenCalledWith({ sessionId, section: 'goal' });
   });
 
   it('offers Add a goal and the quiet start on a blank session', async () => {
@@ -125,47 +128,41 @@ describe('Overview capabilities from the session Overview', () => {
     screen.getByRole('button', { name: /From chat: Payments retry design/ });
   });
 
-  it('keeps Write title and goal from linked work in the Context pane, opened from the session tools', async () => {
+  it('keeps Write title and goal from linked work in the Context tab', async () => {
     await mountScene({ name: 'c05-overview-merged-next' });
 
     expect(
       header().queryByRole('button', { name: 'Write title and goal from linked work' }),
     ).toBeNull();
-    fireEvent.click(
-      within(screen.getByRole('toolbar', { name: 'Tools' })).getByRole('button', {
-        name: /^Context/,
-      }),
-    );
-    await advance();
-
+    const current = useAppStore.getState().currentSessionId;
+    const session = useAppStore.getState().sessions.find((candidate) => candidate.id === current);
+    if (session === undefined) {
+      throw new Error('Missing session');
+    }
+    render(<ContextTab session={session} />);
     await advance();
     const action = screen.getByRole('button', { name: 'Write title and goal from linked work' });
     expect(action.getAttribute('data-variant')).toBe('secondary');
     expect(action.querySelector('svg')).not.toBeNull();
   });
 
-  it('turns a mount cleanup proposal into a Next row with Remove worktree and an undoable Not now', async () => {
+  it('turns a mount cleanup proposal into Remove worktree on the merged row and one button on the group', async () => {
     await mountScene({ name: 'c05-overview-merged-next' });
-    const next = present({
-      value: document.querySelector<HTMLElement>('[data-overview-card="branches"]'),
-      what: 'the Branches card',
+    const merged = present({
+      value: document.querySelector<HTMLElement>('[data-board-group="merged"]'),
+      what: 'the Merged group',
     });
-    const row =
-      Array.from(next.querySelectorAll<HTMLElement>('[data-action-card]')).find((candidate) =>
-        (candidate.textContent ?? '').includes('Remove the ledger-core worktree'),
-      ) ?? null;
-    const card = within(present({ value: row, what: 'the cleanup row' }));
-    card.getByRole('button', { name: 'Remove worktree' });
 
+    within(merged).getByRole('button', { name: /^Remove 1 worktree/ });
     fireEvent.click(
-      card.getByRole('button', { name: 'More options for Remove the ledger-core worktree' }),
+      present({
+        value: within(merged).getAllByRole('button', { expanded: false })[0],
+        what: 'the merged row',
+      }),
     );
     await advance();
-    fireEvent.click(screen.getByRole('menuitem', { name: 'Not now' }));
-    await advance();
 
-    expect(screen.queryByText('Remove the ledger-core worktree')).toBeNull();
-    screen.getByText('Dismissed');
+    within(merged).getByRole('button', { name: 'Remove worktree' });
   });
 
   it('keeps the branch drift decision in the notices slot', async () => {
@@ -290,7 +287,7 @@ describe('Overview capabilities from the session Overview', () => {
     ]);
   });
 
-  it('keeps the exact ask one press away: Answer on the Needs you card navigates to the question', async () => {
+  it('keeps the exact ask one press away: Answer on the Needs you row navigates to the question', async () => {
     await mountScene({ name: 'c05-overview-running' });
     const target = useAppStore.getState().navigate;
     const places: Array<unknown> = [];
@@ -303,8 +300,8 @@ describe('Overview capabilities from the session Overview', () => {
       });
     });
 
-    const needsYou = screen.getByRole('region', { name: 'Needs you' });
-    fireEvent.click(within(needsYou).getByRole('button', { name: 'Answer' }));
+    const board = screen.getByRole('region', { name: 'Branches' });
+    fireEvent.click(within(board).getByRole('button', { name: 'Answer' }));
     await advance();
 
     expect(places).toHaveLength(1);

@@ -356,30 +356,6 @@ const branchStoryOf = ({ fact, detail }: StoryParams): BranchStory => {
   };
 };
 
-type SentenceParams = {
-  readonly fact: BranchFacts;
-  readonly story: BranchStory;
-};
-
-type SeriesWordParams = {
-  readonly series: NonNullable<BranchFacts['series']>;
-};
-
-const seriesPartWordOf = ({ series }: SeriesWordParams): string =>
-  series.total === null
-    ? `part ${series.position} of ${series.name}`
-    : `part ${series.position} of ${series.total}, ${series.name}`;
-
-export const branchSentenceOf = ({ fact, story }: SentenceParams): string => {
-  const request = fact.request === null ? '' : `, ${fact.request.noun}${fact.request.number}`;
-  const skipped = story.steps.filter((step) => step.state === 'skipped');
-  const skippedWords =
-    skipped.length === 0 ? '' : ` ${skipped.map((step) => step.name).join(', ')}.`;
-  const reason = story.blocker === '' ? '' : `, ${story.blocker}`;
-  const series = fact.series === null ? '' : `, ${seriesPartWordOf({ series: fact.series })}`;
-  return `${fact.branch}, ${fact.projectName}${series}${request}: ${story.word}${reason}.${skippedWords}`;
-};
-
 export type BranchEntry = Readonly<{
   fact: BranchFacts;
   story: BranchStory;
@@ -410,28 +386,4 @@ export const branchEntriesOf = ({ facts, detailByMountId }: EntriesParams): Bran
     )
     .map(({ entry }) => entry);
   return { live, finished };
-};
-
-const BRANCH_ROW_CAP = 8;
-
-type FoldParams = {
-  readonly entries: ReadonlyArray<BranchEntry>;
-};
-
-export type BranchFold = Readonly<{
-  shown: ReadonlyArray<BranchEntry>;
-  hidden: ReadonlyArray<BranchEntry>;
-  label: string | null;
-}>;
-
-export const branchFoldOf = ({ entries }: FoldParams): BranchFold => {
-  const isOneOver = entries.length === BRANCH_ROW_CAP + 1;
-  const shown = isOneOver ? entries : entries.slice(0, BRANCH_ROW_CAP);
-  const hidden = isOneOver ? [] : entries.slice(BRANCH_ROW_CAP);
-  if (hidden.length === 0) {
-    return { shown, hidden, label: null };
-  }
-  const merged = hidden.filter((entry) => entry.fact.request?.state === 'merged').length;
-  const base = countNoun({ count: hidden.length, one: 'more branch', many: 'more branches' });
-  return { shown, hidden, label: merged === 0 ? base : `${base}, ${merged} merged` };
 };

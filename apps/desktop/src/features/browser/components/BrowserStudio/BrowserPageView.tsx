@@ -4,6 +4,7 @@ import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { useReloadSurface } from '../../../../shared/hooks/useReloadSurface';
 import type { BrowserTab } from '../../../../store/slices/browser/types';
+import { demoteBrowserTab } from '../../demoteBrowserTab';
 import { devicePresetOf } from '../../devicePresets';
 import { useBrowserPane } from '../../hooks/useBrowserPane';
 import { useBrowserStudioTab } from '../../hooks/useBrowserStudioTab';
@@ -100,7 +101,7 @@ export const BrowserPageView = ({ sessionId, tabId, groups }: Props) => {
         isCollapsed={fold.isCollapsed}
         rail={<BrowserPageRail groups={groups} sessionId={sessionId} model={model} onPick={pick} />}
         detail={
-          <div className="flex h-full min-h-0 min-w-0 flex-col gap-2 pb-2 pt-1">
+          <div className="flex h-full min-h-0 min-w-0 flex-col gap-2 pb-2">
             <BrowserAddressRow
               model={model}
               isAddressShortcutOn={isOnScreen}
@@ -110,6 +111,7 @@ export const BrowserPageView = ({ sessionId, tabId, groups }: Props) => {
                 onToggle: () => setIsConsoleOpen(!isConsoleOpen),
               }}
               onToggleList={toggleList}
+              onDock={() => demoteBrowserTab({ sessionId })}
             />
             {model.error === null ? null : (
               <p role="alert" className="px-4 text-meta text-danger">
@@ -127,7 +129,7 @@ export const BrowserPageView = ({ sessionId, tabId, groups }: Props) => {
                 title={title}
                 cover={cover}
                 devicePreset={model.devicePreset}
-                emptyTitle="Open a page in this session"
+                onNew={model.startDraft}
               />
               {isConsoleOpen && shownTab !== null ? (
                 <BrowserConsole model={model} title={title} log={consoleLog} />

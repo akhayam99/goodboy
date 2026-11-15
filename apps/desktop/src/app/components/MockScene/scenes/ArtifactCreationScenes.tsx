@@ -11,7 +11,7 @@ import type {
 import { DrawerColumn } from '@goodboy/ui';
 import { ArtifactStudio } from '../../../../features/artifacts/components/ArtifactStudio';
 import { selectDrawerPlacement } from '../../../../store/slices/drawer/selectDrawerPlacement';
-import { selectDrawerSizing } from '../../../../store/slices/drawer/selectDrawerSizing';
+import { selectDrawerSizing } from '../../../../store/slices/drawer/testing/selectDrawerSizing';
 import { DrawerHost } from '../../DrawerHost';
 import type { ProviderDisplayInfo } from '../../../../features/providers/providers';
 import type { GeneratedArtifactKind } from '../../../../features/artifacts/artifactCollection';

@@ -16,13 +16,13 @@ import { FILES_RAIL_ROWS } from './files-rail.rows';
 
 type ObserverCallback = (entries: ReadonlyArray<{ contentRect: { width: number } }>) => void;
 
-class BranchPaneWidth {
+class ChangesPageWidth {
   private readonly callback: ObserverCallback;
   constructor(callback: ObserverCallback) {
     this.callback = callback;
   }
   observe(target: Element) {
-    if (target.hasAttribute('data-branch-pane')) {
+    if (target.hasAttribute('data-session-head-frame') || target.hasAttribute('data-branch-pane')) {
       this.callback([{ contentRect: { width: target.getBoundingClientRect().width } }]);
     }
   }
@@ -33,7 +33,7 @@ class BranchPaneWidth {
 installNavigationHooks();
 
 beforeEach(() => {
-  vi.stubGlobal('ResizeObserver', BranchPaneWidth);
+  vi.stubGlobal('ResizeObserver', ChangesPageWidth);
 });
 
 afterEach(() => {

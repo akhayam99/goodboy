@@ -136,7 +136,7 @@ import { WorkflowStudioScene } from '../scenes/audit/WorkflowStudioScene';
 import { RulesTeleportScene } from '../scenes/audit/RulesTeleportScene';
 import { FormsAuditScene } from '../scenes/audit/FormsAuditScene';
 import { ImpactScopesScene } from '../scenes/audit/ImpactScopesScene';
-import { ExploreScene } from '../scenes/audit/ExploreScene';
+import { ActionIntentsScene } from '../scenes/ActionIntentsScene';
 import { DesignScaleScene } from '../scenes/DesignScaleScene';
 import { ListboxScene } from '../scenes/ListboxScene';
 import { FeaturesImpactOverviewScene } from '../scenes/features/ImpactOverviewScene';
@@ -452,8 +452,8 @@ export const BASE_SCENES = {
   forms: FormsAuditScene,
   'impact-scopes': ImpactScopesScene,
   'impact-deleted': ImpactDeletedScene,
-  explore: ExploreScene,
   'design-scale': DesignScaleScene,
+  'action-intents': ActionIntentsScene,
   listbox: ListboxScene,
   'features-impact-overview': FeaturesImpactOverviewScene,
   'features-newer-data': FeaturesNewerDataScene,

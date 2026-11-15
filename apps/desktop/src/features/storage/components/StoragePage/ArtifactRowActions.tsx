@@ -1,11 +1,12 @@
 import { CHECK_STATE } from '../../../../store/slices/notifications/errorRecovery';
 import { Bookmark, ChevronDown, Clock, Eye } from 'lucide-react';
-import { Button, cn, ICON_SIZE, OverflowMenu, tintClasses, type MenuEntry } from '@goodboy/ui';
+import { Button, ICON_SIZE, OverflowMenu, type MenuEntry } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
 import type { StorageArtifact } from '../../../../store/slices/storage/types';
 import { openStorageArtifact } from '../../openStorageArtifact';
 
 import { KEEP_DAYS } from '../../../actions/kinds/worktree';
+import { actionButtonLookOf } from '../../../actions/actionButtonLookOf';
 
 type Props = {
   readonly artifact: StorageArtifact;
@@ -100,11 +101,10 @@ export const ArtifactRowActions = ({ artifact, isKept, isBusy, onDelete }: Props
         />
       )}
       <Button
-        variant="ghost"
+        {...actionButtonLookOf({ verb: 'artifact.delete', variant: 'ghost' })}
         size="sm"
         disabled={isBusy}
         onClick={onDelete}
-        className={cn('text-danger hover:text-danger', tintClasses('danger').hoverBg)}
       >
         Delete
       </Button>

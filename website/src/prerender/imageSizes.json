@@ -207,14 +207,6 @@
     "width": 4080,
     "height": 2640
   },
-  "features/keyboard-explore-dark.webp": {
-    "width": 4740,
-    "height": 2520
-  },
-  "features/keyboard-explore-light.webp": {
-    "width": 4740,
-    "height": 2520
-  },
   "features/keyboard-script-drawer-dark.webp": {
     "width": 4080,
     "height": 2640
@@ -238,14 +230,6 @@
   "features/overview-activity-light.webp": {
     "width": 4080,
     "height": 2940
-  },
-  "features/overview-next-dark.webp": {
-    "width": 2415,
-    "height": 1224
-  },
-  "features/overview-next-light.webp": {
-    "width": 2415,
-    "height": 1224
   },
   "features/overview-session-dark.webp": {
     "width": 3342,

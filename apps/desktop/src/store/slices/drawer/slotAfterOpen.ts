@@ -1,3 +1,4 @@
+import { isPairedSlot } from './isPairedSlot';
 import { isWorkspaceTool } from './isWorkspaceTool';
 import { sharesSlot } from './sharesSlot';
 import { slotKey } from './slotKey';
@@ -10,6 +11,13 @@ type Params = {
 };
 
 export const slotAfterOpen = ({ drawer, back, request }: Params): DrawerSliceState => {
+  if (drawer !== null && isPairedSlot({ top: drawer, back })) {
+    const isTool = isWorkspaceTool({ content: request });
+    return {
+      drawer: request,
+      drawerBack: isWorkspaceTool({ content: drawer }) === isTool ? back : drawer,
+    };
+  }
   if (drawer === null || !sharesSlot({ top: request, back: drawer })) {
     return { drawer: request, drawerBack: null };
   }

@@ -3,6 +3,7 @@ import { PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 import { cn } from '../cn';
 import { INNER_COLUMN_SHORTCUT } from '../innerColumnStore';
 import { useInnerColumn } from '../useInnerColumn';
+import { PANE_RHYTHM } from '../paneRhythm';
 import { SHEET_CLASSES, type ResizeActivity } from '../sheet';
 import { readStoredWidth, useResizableWidth } from '../useResizableWidth';
 import { IconButton } from './IconButton';
@@ -11,6 +12,7 @@ import { ResizeHandle } from './ResizeHandle';
 export const STUDIO_RAIL_WIDTHS = {
   narrow: 256,
   standard: 288,
+  wide: 340,
 } as const satisfies Record<string, number>;
 
 export const STUDIO_RAIL_MIN = 220;
@@ -112,18 +114,17 @@ export const StudioRailLayout = ({
       className={cn('flex h-full min-h-0 flex-1', isPage ? 'bg-background' : 'bg-chrome')}
     >
       {isRailShown || onCollapsedChange === undefined || !canUnfold || rail === null ? null : (
-        <div
-          data-studio-rail-unfold=""
-          className="flex w-11 shrink-0 flex-col items-center gap-1 pt-3"
-        >
-          <IconButton
-            icon={PanelLeftOpen}
-            label={showLabel}
-            shortcut={INNER_COLUMN_SHORTCUT}
-            tooltipSide="right"
-            aria-pressed={false}
-            onClick={() => onCollapsedChange(false)}
-          />
+        <div data-studio-rail-unfold="" className="flex w-11 shrink-0 flex-col items-center">
+          <div data-grid-row="1" className={cn('flex shrink-0 items-center', PANE_RHYTHM.firstRow)}>
+            <IconButton
+              icon={PanelLeftOpen}
+              label={showLabel}
+              shortcut={INNER_COLUMN_SHORTCUT}
+              tooltipSide="right"
+              aria-pressed={false}
+              onClick={() => onCollapsedChange(false)}
+            />
+          </div>
           {foldedActions}
         </div>
       )}
@@ -134,7 +135,10 @@ export const StudioRailLayout = ({
           className="relative flex min-h-0 shrink-0 flex-col"
         >
           {hasHeaderRow ? (
-            <div className="flex shrink-0 items-center gap-2 px-2 pt-3">
+            <div
+              data-grid-row="1"
+              className={cn('flex shrink-0 items-center gap-2 px-2', PANE_RHYTHM.firstRow)}
+            >
               {onCollapsedChange === undefined ? null : (
                 <IconButton
                   icon={PanelLeftClose}
@@ -158,16 +162,18 @@ export const StudioRailLayout = ({
           </div>
         </aside>
       )}
-      <div
-        {...(!isPage && { 'data-sheet': 'wrapped', 'data-left-resize': activity })}
-        className={cn(
-          'min-h-0 min-w-0 flex-1 overflow-hidden bg-background',
-          !isPage && SHEET_CLASSES.wrapped,
-          detailClassName,
-        )}
-      >
-        {detail}
-      </div>
+      {detail === null ? null : (
+        <div
+          {...(!isPage && { 'data-sheet': 'wrapped', 'data-left-resize': activity })}
+          className={cn(
+            'min-h-0 min-w-0 flex-1 overflow-hidden bg-background',
+            !isPage && SHEET_CLASSES.wrapped,
+            detailClassName,
+          )}
+        >
+          {detail}
+        </div>
+      )}
     </div>
   );
 };

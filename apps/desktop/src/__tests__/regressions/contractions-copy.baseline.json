@@ -24,7 +24,7 @@
   "features/companion/commandExecutor.ts": 11,
   "features/companion/components/IphonePage/index.tsx": 1,
   "features/companion/mobileConfinement.ts": 1,
-  "features/explore/hooks/useExploreListing/index.ts": 1,
+  "features/diff/FilesMode/useExploreListing/index.ts": 1,
   "features/history/components/CommitsHistory/HistoryLiveNotice/index.tsx": 1,
   "features/history/hooks/useHistoryChangeReview/index.ts": 1,
   "features/history/pushErrorLine.ts": 1,

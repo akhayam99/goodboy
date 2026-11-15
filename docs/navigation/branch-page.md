@@ -12,30 +12,34 @@ Changes tab, Write review, the Bitbucket pull request changes and the
 Rust side runs git with `core.quotepath=false` and `parseUnifiedDiff` reads
 quoted headers, so a name with accents is its own file.
 
-**Frame.** The Branch page is the center of the Projects tree (Session
-rail): one detail with no rail of its own. Its sections are the underlined page tabs
+**Frame.** The Branch page is the center of the Projects tree (Context tab): one detail with no rail of its own. Its sections are the underlined page tabs
 under its title (`BranchTabStrip`, built on `PageTabs`); the page computes its counts once
 (`branchTabFactsOf`, built on `worktreeEntryFactsOf`). The tree row of the branch has no rows under it, only
-one pill. A host with no session rail (a scene, a test) shows the page alone. The
+one pill. **One tab row per page.** Inside a session the session head sits above the page
+with the crumbs `Overview › {branch name}` in place of the session tabs (see
+[session-rail.md](session-rail.md#crumbs)), so the pull request page shows only its own row.
+Every door to the session's changes (the single-branch Changes shortcut, the board row's
+Changes door, the palette, the chord) opens this page on its Changes tab. A host with no
+session (a scene, a test) shows the page alone. The
 header and every section body sit on the 960px column of the
 detail; nothing moves from one section to the next. The header holds three things,
 100px at rest with a pull request: the title row (48), one meta line (16) and the tab row (36).
 The running line, the work lines, the notices and the base branch row are the top of the body
 (`BranchBodyTop`, `BranchNotices`), above the section and out of the pinned header. The header steps aside
 while you read (`PaneShell`, `revealKey` the tab): 24px of
-scroll down keeps only the back row (`Back to overview`) pinned, and 8px up, the top of the
+scroll down keeps only the session head pinned, and 8px up, the top of the
 section, keyboard focus in the header or
 another tab brings the title, the line and the tabs back. On a
 section whose scroller does not start its body (Changes, with its toolbar above
 the diff) the toolbar rides up with
-the content and stays under the back row. Comments has one 36 toolbar (`ReviewToolbar`): Open and
+the content and stays under the session head. Comments has one 36 toolbar (`ReviewToolbar`): Open and
 Resolved, the source switch when notes and host threads both exist, and the fix run on the same row.
 
 A comment reads the same in the diff, the review pane and the page: `CommentBody` (`shared/components/CommentBody`) draws every body at `text-comment`, 14/22, and the diff sets `font-sans` once on the container that holds its threads (`DiffFile`), so a thread and a composer inside a mono row never undo it. The `diff-font-sans` guard counts `font-sans` written under `features/diff` and only falls. The review pane (`ReviewCommentDrawer`) has a 40 header, `Comment · 4 of 8`, with the menu and close; the author row (`CommentDrawerAuthor`: picture, name, age, state chip) is content, with the file and line as a mono line under it. The proposed change is a file card (`FileChangeCard`) that reuses `FileHeader` at its compact 32 height, and the verbs sit in one 32 row with one primary.
 
 **Header.** One row: the title, the one h1 (the pull request's title, or the branch name
 without a pull request; on a pull request you can edit, click it or press `E` on
-the Overview entry and it becomes an input in the same 32px row, `Enter` saves
+the Conversation entry and it becomes an input in the same 32px row, `Enter` saves
 to the host, `Esc` cancels, a failure is an inline notice with Retry), the state chip (20 high,
 the state word and its icon, `BranchStateChip`), one primary and `⋯`. The
 line under the title is the same on every tab: the number and the branch in mono, `into` the base,
@@ -125,7 +129,7 @@ confirm is an inline panel with a method picker (`ActionConfirm.choice`,
 method the repository forbids shown disabled with its reason
 (`Turned off in payments-api`). Merging raises one plain `info` toast with no
 Follow. Push, Publish and Retry go through the existing publish
-machinery: a frozen preview pinned under the back row, above the title
+machinery: a frozen preview pinned under the session head, above the title
 (`PushBanner`, the only push one, in the page's `lead`, so it never scrolls or
 steps away), drift and the result per thread. Under it sits the rebase job banner
 (`JobBanner`, `features/history/JobBanner`): one strip for a rebase
@@ -141,7 +145,7 @@ stop blocks the branch (`useJobBannerActions`, a failed verb keeps the panel wit
 Retry, kept per branch and named with the branch when the session has more than one, and a verb
 running on one branch never locks another). A rebase that is in progress in the worktree with no
 Goodboy stop (started in a terminal) draws one minimal row, `GitRebaseRow`: Continue rebase, Open
-terminal, Abort rebase. The other states keep the strip (Stash and rebase, Bring them back, Undo rewrite, Retry
+terminal, Abort rebase. The other states keep the strip (Stash and rebase, Restore stashed files, Undo rewrite, Retry
 with a note, Open providers, Open agent). A failed push after
 a rebase offers `Fix with an agent` (the primary: an Implementer on that worktree briefed with the
 command and git output, `fixPushWithAgent`; it commits the fix and never pushes, Goodboy then
@@ -233,28 +237,32 @@ branch actions (Change base branch…, only before a pull request exists, Copy p
 on a merged request); a queued request with auto-merge adds `Cancel auto-merge`. It lists the push
 whenever the header does not draw one (`branchShownIdsOf`), and it never holds more than five rows
 (`branchMenuRowsOf`): the rows with another home drop first (Edit title and description, Copy link,
-Copy patch, and Rebase and Request review have their own place on Commits and Overview).
+Copy patch, and Rebase and Request review have their own place on Commits and Conversation).
 
 **Sections and landing.** The tab strip lists the sections the state has, in this order
 (`branchTabsOf({ state, hasComments })`, `features/branch/branchTabs.ts`): with no
-pull request and no comment `Overview`, `Changes`, `Commits`, `Work`; with a local note or a thread
-and still no pull request `Comments` joins them; Draft, Open, Approved, Queued, Merged and
-Closed show all six, `Overview`, `Comments`, `Changes`, `Commits`, `Checks`, `Work`. The first is
-called `Overview` on every host (its key is ⌥⌘1,
+pull request and no comment `Conversation`, `Changes`, `Commits`, `Work`; with a local note or a thread
+and still no pull request `Comments` joins them at the end; Draft, Open, Approved, Queued, Merged and
+Closed show all six, `Conversation`, `Changes`, `Commits`, `Checks`, `Work`, `Comments`. Comments
+stays its own tab after Work instead of folding into Conversation: it holds the review flow
+(pick threads, fix them with an agent, resolve, push) and the local notes of a branch with no
+pull request, where Conversation is the start page. Conversation shows the threads in its
+activity and links to Comments. The first is
+called `Conversation` on every host, so `Overview` names only the session overview (its key is ⌥⌘1,
 Comments ⌥⌘R, Changes ⌥⌘F, shown in the row's tooltip) and Checks never appears without a pull
 request. A pick replaces the address. Every tab carries its count in faint ink, and color only for what wants you; the counts and their scope are written once, under the entry slots below. Merged and
 Closed make the page read only (`isBranchReadOnly`): Commits shows its list without editing or Rebase. Every door that means "go to the
 branch" lands through one pure rule (`branchLandingTabOf`,
 `features/branch/branchLandingTab.ts`): an explicit section in the place wins, else
-`Overview` when the active mount has a pull request, else `Changes`; then the door resolver
+`Conversation` when the active mount has a pull request, else `Changes`; then the door resolver
 above drops a section the state lacks. The
 sidebar's Branch row, the Branch crumb, `⌥⌘1`, a mount's `Open PR`, the Board's
 pull request chip, an approved or changes-requested mark and a mount's
-`Create PR` land on `Overview`; a comment, a thread, a fix run, a note, ⌥⌘R
+`Create PR` land on `Conversation`; a comment, a thread, a fix run, a note, ⌥⌘R
 (`Open Comments`) and a draft comments chip name `Comments` themselves (with no pull
 request and no comment they land on `Changes`), `Changes`
 and `Commits` doors name theirs, and a CI failure names `Checks` (with no pull request,
-`Overview`). The chosen section
+`Conversation`). The chosen section
 is stored per session and is read through `branchTabOf` (`useBranchTab` in a
 component), never from `branchTab[sessionId]` directly, so a section is only
 remembered once the person has chosen one; the page shows the section the state has
@@ -271,7 +279,7 @@ screen, whichever one chat writes to. The write destination is a separate fact: 
 Back and a reload leave it where it was, and the push confirm names the repository when the session
 has more than one.
 
-**Overview.** The pull request itself, on the 960px column
+**Conversation.** The pull request itself, on the 960px column
 (`features/branch/components/PullRequestTab`): the merge box first, then two columns, the
 reading column (the description and the Activity, at most a prose measure, `max-w-prose`) and the 224px side column;
 below an 880px page container the side column moves above the reading column as one wrapping
@@ -392,39 +400,55 @@ properties (Origin, Attempts, Fix commit) sit inline under the thread at every w
 actions of the comment sit at the end of the drawer content through `FormActions` (`CommentDrawerActions`), never in a bar pinned to the page bottom; the `⋯` in the drawer header holds the transcript, Resolve without a reply, Open on the host and Copy link, and shows only with two or more of them (one rare verb shows as a quiet button instead).
 Every Branch section sits on the 960px column (`PaneShell width="column"`, bodies in
 `PageColumn width="column"`), the header and Ask included, so nothing
-moves from one section to the next, except that Changes gives up the width of its file rail
-on the right and the column re-centres in what is left. The Comments section is one full-width
+moves from one section to the next, Changes included: the session title, its crumbs, the
+Branch header, the tabs and the diff share one left edge. The Comments section is one full-width
 list at every pane width, with no back link; the open comment is the drawer, and the last row
-opened stays marked after the drawer closes. The entry slots read nothing until the data for the current branch arrives and nothing at zero (`branchTabFactsOf`, one function for the tab and the head of its page). After a branch or mount switch a count read for the previous target is never shown: `useSessionDiff` keys its commits and status by worktree path and base, so the count stays unknown, and a failed read shows the error with no count. Pull request: `Draft`, `Merged` or `Closed`. Comments: the open ones of the branch scope, the same entries the Comments page lists (host threads and local notes, `useBranchReview().branchEntries`), in warning tone when some need you. Changes: the file count and `+added -removed` of the branch; inside Changes the Files toggle and the file rail count the files and lines of the loaded diff (`filesHeadFactOf`), the same snapshot as the listed files, while the tab keeps the polled branch summary. Commits: the branch's commit total (the ahead count), `↑N` (tooltip `N not pushed`) only when no total is known and some are unpushed; the diff selector says `All N commits` with the same total, and its list is cut against the same base as that total (`listBranchCommits` passes the mount's `baseBranch` to `worktree_commits`), `All commits` when a capped list has no total, and the picker lists `Showing latest 100` whenever the list is capped (`branchCommitsLabel`). The unpushed count is `branchPushFactsOf(...).toPush`: the history draft's unpushed commits once the branch has an upstream, else the status: the upstream's ahead count, a diverged branch included, so `2 ahead, 3 behind` reads `↑2`, and for a branch never pushed its commits over main. `branchPushFactsOf` in `shared/lib/branchPushState.ts` is the one owner of `{ state, toPush, canForce }`: the strip, the form, the header step, the action registry facts and the rail all read it, so a diverged branch never reads `Pushed`. Checks: the failing (danger) or running (info) count, else the passed count. Work: the runs that need you, the questions that wait for you and the artifacts that need you, each wait counted once (a question or artifact whose agent belongs to a run that needs you, or whose asker already counts, is the same wait, and the tooltip names it: `1 run needs you with 1 question`, from `held`), in warning, else the runs working (info), else the runs, questions and artifacts of the branch together, all from the session pages' branch group of the mount (`branchWorkCountsOf`, read once the questions and artifacts loaded, so the badge never climbs while they arrive). All three arrive without a visit: `BranchPage` loads
+opened stays marked after the drawer closes. The entry slots read nothing until the data for the current branch arrives and nothing at zero (`branchTabFactsOf`, one function for the tab and the head of its page). After a branch or mount switch a count read for the previous target is never shown: `useSessionDiff` keys its commits and status by worktree path and base, so the count stays unknown, and a failed read shows the error with no count. Pull request: `Draft`, `Merged` or `Closed`. Comments: the open ones of the branch scope, the same entries the Comments page lists (host threads and local notes, `useBranchReview().branchEntries`), in warning tone when some need you. Changes: the file count and `+added -removed` of the branch; inside Changes the rail head and `Viewed N of M` count the files and lines of the loaded diff (`filesHeadFactOf`), the same snapshot as the listed files, while the tab keeps the polled branch summary. Commits: the branch's commit total (the ahead count), `↑N` (tooltip `N not pushed`) only when no total is known and some are unpushed; the diff selector says `All N commits` with the same total, and its list is cut against the same base as that total (`listBranchCommits` passes the mount's `baseBranch` to `worktree_commits`), `All commits` when a capped list has no total, and the picker lists `Showing latest 100` whenever the list is capped (`branchCommitsLabel`). The unpushed count is `branchPushFactsOf(...).toPush`: the history draft's unpushed commits once the branch has an upstream, else the status: the upstream's ahead count, a diverged branch included, so `2 ahead, 3 behind` reads `↑2`, and for a branch never pushed its commits over main. `branchPushFactsOf` in `shared/lib/branchPushState.ts` is the one owner of `{ state, toPush, canForce }`: the strip, the form, the header step, the action registry facts and the rail all read it, so a diverged branch never reads `Pushed`. Checks: the failing (danger) or running (info) count, else the passed count. Work: the runs that need you, the questions that wait for you and the artifacts that need you, each wait counted once (a question or artifact whose agent belongs to a run that needs you, or whose asker already counts, is the same wait, and the tooltip names it: `1 run needs you with 1 question`, from `held`), in warning, else the runs working (info), else the runs, questions and artifacts of the branch together, all from the session pages' branch group of the mount (`branchWorkCountsOf`, read once the questions and artifacts loaded, so the badge never climbs while they arrive). All three arrive without a visit: `BranchPage` loads
 the mount's history draft (`loadHistoryDraft`) once when the page opens and the
 draft is not there yet, so the Commits count is a number on the Comments section too. `Fix N comments`, in the Branch header on the Comments section, is the one fix launch.
 
-**Changes.** The branch against its base, with the changed file list in a rail on the
-right of the Branch page, dedicated to the diff (`FileRail` in `features/diff/components`).
-`BranchPage` draws an empty slot (`data-slot="diff-file-rail"`) after the page column only
-while Changes is the entry and hands it, with the page element, to `SessionDiffPane` through
-`DiffRailContext` (`features/diff/diffRailHost.ts`); `SessionDiffPane` portals the rail with
-`ChangeTree` into it, so the tree and the diff still share one `useReviewState` and the keys
-stay in `useDiffKeys`. Without a slot (a test, a scene of the pane alone) the rail sits beside
-the diff inside the pane. The rail runs the full height of the page, beside the header and the
-diff, so the column re-centres in the space left of it the way it slides for a right drawer.
-It opens at 320px, its left edge resizes it from 260 to 560 (`Resize the file list`, a double
-click resets it) and the width is kept in `goodboy:diff-file-rail-width:v1`. `Fold the file
-list` in its head folds it and `goodboy:diff-file-rail-folded:v1` remembers that; folded, the
-diff toolbar starts with `Changes N`, which opens it again, and `F` or `/` open it too (`useFileRail`).
-The rail belongs to the page, not to the drawer slot: a side or reader drawer pushes or lies
-over the whole page (rail included) by the push rule of Drawers below. The rail docks while
-the page is 1224px or wider (880 for the code, the 320 rail and the gutters, so split stays open beside it); a narrower page (a pushing drawer,
-a small window) folds it without writing the saved choice, and `Changes N`, `F` or `/` then open it
-over the right edge of the diff (`data-file-rail="overlay"`) until a pick, `Esc` or Fold
-closes it. Folding and opening move like the session rail (`FileRail` over `useFoldPhase`,
-the page as its frame): the width eases on the 220ms fold token while the list, held at its
-final width, fades out (`fold-label-out`) or in (`fold-label-in`); a switch between docked and
-overlay (the page crossing 1224px) remounts the rail in place, with no move. The rail head reads `Viewed N of M` with a `Next` button, the keyboard button and Fold, then the
-filter field (`/`) with the filter menu beside it (scope and grouping), then the tree;
-a viewed file row shows a check, and the one control for Viewed is the file header.
-The toolbar on the column (36 high, the diff scrolls under it) reads `Compared with main · All 5 commits ⌄`,
-then `Display ⌄`. Folders first, then files, alphabetical,
+**Changes.** The branch against its base as one two-column page under the Branch header
+(`ChangesPage` in `features/diff/components`, mounted by `BranchFiles`, the one entry for the
+pull request page and the session's Changes shortcut). On Changes the header and the diff stay on
+the 960 column of every other section (`PAGE_MEASURE.branchChanges` is `column`), and the file
+list is its own full height column on the left of the page, the mirror of the Agents column of a
+run page: `BranchPaneRoot` reads the frame's left slot through `useBranchRailSlot`
+(`data-session-lead` of `SessionHeadFrame`, or the Branch page's own `data-branch-lead` outside a
+session frame) and hands it to `ChangesPage` (`BranchRailSlotContext`). The rail, a page
+`StudioRailLayout` (`surface` `changes-files`), is portaled there only while the page is on
+screen (`HeadSlotsGate` gives a hidden layer no left slot), with a border on its right. Its first row (Hide files, then `Changed N | All files` with
+the diff totals, `ModeControl`) sits on the session title line, and the rail and the diff scroll
+on their own. The diff column keeps the toolbar's own inset (`ToolbarRow`, 40 high), so the scope
+pill, the file headers and the Branch title start on one x. The toolbar reads the scope
+pill, `Compared with main · All 5 commits ⌄`, then `Display ⌄`, `Viewed N of M`, `Next` and
+the keyboard button (`ReviewProgress`, the viewed count from `viewedCountOf`, the same function
+the filter's Unviewed count reads); file headers stick under it. The worktree setup offer of
+the branch is a slim row under the toolbar (`WorktreeSetupOffer layout="row"`), never a card
+above the page; every other branch notice stays above the diff. The rail opens at 340px,
+resizes from 220 to 560 and remembers its width and fold per surface like every page rail (see
+Studios); Hide files folds it to the Show files strip, and `F` or `/` open it again. Under a
+frame of 1060px (the session frame, rail included) it folds without writing the saved choice, `F`, `/` or Show files open it beside
+the diff and a pick folds it again. The tree and the diff share one `useReviewState` and the
+keys stay in `useDiffKeys`. The rail lists rows in a window (`useRowWindow`), the diff mounts
+files in batches of 20 and draws a body only once it scrolls near (`content-visibility`,
+`useRequestSeenBodies`), with skeletons in both columns while the diff loads. Under the first
+row the rail holds the filter field (`/`) with the filter menu beside it (scope and grouping),
+then the tree; a viewed file row shows a check, and the one control for Viewed is the file
+header. `All files`
+swaps the list for `AllFilesTree` (`features/diff/components/ChangeTree`): the worktree in the same
+tree, 28 high rows, a changed file with its counts and status letter, an unchanged one muted with no
+counts, a deleted one struck through, a closed folder with changes its muted sum
+(`folderSumsOf`). Folders load when opened (`useExploreListing`), the switch lists only the
+root, and a deleted file or a folder that exists only in the diff comes from `allFilesListingOf`.
+A click on a changed or deleted file scrolls to its diff; a click on an unchanged file opens
+`FileReader` in place of the diff (`Unchanged against main`, the line count, `Open in editor`,
+`Back to the changes`), and a failed read says `Couldn't read this file` with Retry in place.
+The filter searches the loaded and changed files in `All files`; viewed, next and the keys count
+changed files only. The mode is kept per session and folder in `exploreChangedView` and
+`PLACE_ROWS.changesMode` opens it on `All files`. The scope pill first in the toolbar
+(`ChangesScopePill`, the project and branch chip) picks the branch on the session's Changes page and is
+a label on a pull request page. With no change, `No changes against main` offers `All files`.
+Folders first, then files, alphabetical,
 and the diff follows the same order. A chain of folders with one child is one
 row (`src/ledger/export`). A folder row holds a progress ring (empty, partial,
 or filled with a check once every file in it is viewed, tooltip `3 of 5
@@ -434,15 +458,16 @@ carry them); a file row (28 high, 8 per level with a 1px guide) leads with the v
 toggle (a checkbox button, `Viewed: <name>`; an amber dot when the file changed after
 it was viewed; none on a merged or closed pull request), then the name (a rename shows
 `from <old path>` under it, a deleted file is struck through), a comment count chip whose
-tooltip names the kinds (`2 notes, 1 on GitHub`), `+N −N` only at a rail of 300 or more, and
+tooltip names the kinds (`2 notes, 1 on GitHub`), `+N −N` only at a rail of 280 or more, and
 the status letter. `+N` and `−N` sit in two fixed right-aligned columns (`Delta`), and a closed
 folder keeps the status letter's slot empty, so every count lines up down the list. A name too long for the rail keeps its first six characters and its last
-six with the extension chain (`Statem…ceCard.test.tsx`, `cutFileName`); the full name stays
-for a screen reader. A file or folder row has no tooltip: the full path is in the file header of the diff. The tree is a `tree`: Up and Down move
+six with the extension chain (`Statem…ceCard.test.tsx`, `cutFileName`), and a name too short for
+that keeps its first three characters (`ind…dule.css`): a name is cut in the middle, never at its
+start. The full name stays for a screen reader. A file or folder row has no tooltip: the full path is in the file header of the diff. The tree is a `tree`: Up and Down move
 its cursor, Home and End go to the ends, Right and Left open, close and climb, `Enter` jumps
 the diff and keeps focus in the tree, `Space` toggles viewed (or folds a folder) and `Esc`
-returns to the diff (and closes a rail that lies over it). A keyboard button beside
-`Next` at the head of the rail carries the key hint in its tooltip and opens the full list.
+returns to the diff (and folds a rail opened on a narrow pane). A keyboard button beside
+`Next` in the diff toolbar carries the key hint in its tooltip and opens the full list.
 Under the head a filter field (`/` and `T` focus it, `Esc` clears it) matches a
 subsequence of the path, and one filter menu beside the field (`Filter and group files`,
 tinted while a scope is on) holds `Show: All | Unviewed N | Commented N`, which narrows it
@@ -539,7 +564,13 @@ fail counts as skipped; Bitbucket: its commit statuses; a token that cannot read
 notice with `Open GitLab settings`); while it is off the tab says Goodboy does
 not show that host's checks yet (`checksViewOf`).
 
-**Work.** The last tab holds what Goodboy did on the branch: `Runs`, `Questions` and `Artifacts`,
+**Work.** On a branch with an Auto run the tab opens with a story line and a `Leads` block
+(`BranchWorkLeads`, over `branchLeadsOf`): one line per Lead (glyph, `Auto`, title, state word, spend
+on this branch, and `also on` naming each other branch it worked on), with the compact `LeadTree` of the
+agents it ran here. The line opens the Lead page and has no button of its own; its `Back` leads to this tab.
+The Lead leaves the `Runs` group, which is then headed `Earlier runs`; a branch with no Auto run
+renders as before. The tab count reads `branchWorkCountsOf`, which still counts the Lead as a run, so it
+equals what the board cell of the same branch reads. The last tab holds what Goodboy did on the branch: `Runs`, `Questions` and `Artifacts`,
 each the branch group the session page draws for this mount (`branchGroupKeyOfMount`), with the same
 rows, folds (`N finished`, `N answered`, `N used`) and counts, so the two can never disagree. A fold
 owns its count: while a group folds, its header summary leaves the finished out, so `1 finished`
@@ -562,7 +593,7 @@ artifacts are read the body is a skeleton, and for artifacts also until every pr
 answered (`useArtifactBranchItems` `isSettled`). A run, an agent or an artifact opened from Work, by a
 row or by a row menu action, marks the new history entry with `Focus.runGroup`
 (`useMarkBranchWorkLeave`, written on the entry as it lands, not through `amendFocus`, which would
-sync that entry to the page still showing), so its `Back to` leads to this tab (`parentPlace`) even
+sync that entry to the page still showing), so its parent crumb and Esc lead to this tab (`parentPlace`) even
 after Back from a child agent, and under By state the Artifacts page reveals the arrived branch only
 once every provenance read has answered (`useGroupArrival` waits for `isSettled`). A
 question opens its drawer over the Questions page, whose `Close` goes back here. Back also reopens the
@@ -584,7 +615,7 @@ predicts the replay in memory; when it conflicts, the button reads
 it was and asks in the panel (`RebaseConflictPrompt` inside `RebaseStopPanel`): **Resolve with
 Auto**, **Resolve in terminal** (`resolveRebaseMyself`: `worktree_start_rebase` in the worktree, then the
 terminal; `worktree_rebase_conflicts` reads each file's markers and `worktree_continue_rebase` finishes
-it) or **Keep branch as it was** (`keepRebaseStop`: it records `history_restored`
+it) or **Abort rebase** (`keepRebaseStop`: it records `history_restored`
 with `reason: 'kept'`, which settles the stop in every window, and only then drops the run; a
 failed save changes nothing and offers Retry); no agent starts by itself. A clean rebase
 moves the branch only after the engine checks the result, with a backup ref and
@@ -661,7 +692,7 @@ on the right, because the view decides which files you see,
 not what you do to the branch. `Display` holds `Unified | Split` and `Wrap long
 lines` (on by default, saved as `goodboy:diff-wrap`; split always wraps). The
 file count and the `+N -M` sums live in the change tree only. The diff scope has its own
-keys, wired by `useDiffKeys` in `SessionDiffPane`, all in tree order (folders
+keys, wired by `useDiffKeys` in `ChangesPage`, all in tree order (folders
 first) and never while typing in a field: `J` and `K` go to the next and
 previous file and skip the files of a closed folder, `[` and `]` are aliases;
 `H` closes and `L` opens the folder of the file in view; `V` marks that file
@@ -669,7 +700,7 @@ viewed and goes to the next unviewed one; `N` goes to the next unviewed file,
 wrapping to the first; `F` puts focus on the tree; `/` and `T` are one action
 (`diff.focusFilter`, `T` is its alias) and focus the filter field, the one input
 in the tree rail that carries `data-diff-filter` (it opens the rail first when
-it is hidden behind `Sections`). The rail has no fold key. A line under the tree lists them once, from the registry (`keyHelp.ts`).
+it is folded). ⌥⌘B folds and opens the rail like every page rail. The keyboard button in the toolbar lists them once, from the registry (`keyHelp.ts`).
 
 Big and folded cases (`shared/utils/windowRows.ts`).
 Past 120 visible rows the tree draws only the rows in view plus a margin (fixed

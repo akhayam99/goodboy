@@ -13,7 +13,7 @@ import { afterEach, beforeEach, vi } from 'vitest';
 import { bridge, installNavigationHooks, runNavigationRows, type BridgeArgs } from './harness';
 import { DRAWER_ROWS } from './drawers.rows';
 
-const NARROW_COLUMN_PX = 1000;
+const NARROW_COLUMN_PX = 700;
 
 type ObserverCallback = (entries: ReadonlyArray<{ contentRect: { width: number } }>) => void;
 

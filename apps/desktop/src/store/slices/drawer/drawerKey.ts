@@ -4,8 +4,6 @@ export const drawerKey = (content: DrawerContent): string => {
   switch (content.kind) {
     case 'check-analysis':
       return `check-analysis:${content.payload.sessionId}:${content.payload.checkUrl}`;
-    case 'context':
-      return 'context';
     case 'explore-file':
       return `explore-file:${content.payload.sessionDir}:${content.payload.entry.relPath}`;
     case 'artifact':
@@ -16,8 +14,6 @@ export const drawerKey = (content: DrawerContent): string => {
       return `plan-part:${content.payload.planId}:${content.payload.index}`;
     case 'scriptRun':
       return `scriptRun:${content.payload.mountId ?? ''}:${content.payload.scriptKey}`;
-    case 'explore':
-      return 'explore';
     case 'scripts':
       return 'scripts';
     case 'conversation':

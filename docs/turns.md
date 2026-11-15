@@ -1192,9 +1192,9 @@ session lands on the bottom. A later key anchors the last `[data-turn]`
 (`applyFollow` re-reads its top on every resize, one write, held through
 `isHolding` like the answer hold) and ends at the first scroll of the reader,
 who is then pinned only when they reach the bottom again. Under the list sits
-`[data-transcript-tail]`, the one floor of the transcript: 48 px
+`[data-transcript-tail]`, the one floor of the transcript: 24 px
 (`TRANSCRIPT_FLOOR_PX`) under the last line, with no padding under the scroller.
-After a send the hook adds a spacer to it, `clientHeight - 40 - last turn - 48`
+After a send the hook adds a spacer to it, `clientHeight - 40 - last turn - 24`
 and never below zero, so a short turn can reach the 40 px line; the spacer
 shrinks as the reply grows and a different agent resets it. Content starts at
 the top and grows down, it is never piled against the composer.
@@ -1233,13 +1233,20 @@ viewed, where every row is new), and `firstUnseenRowKeyOf` puts the divider
 before the row after the last row dated at or before that moment, only when a
 later dated row exists.
 
-Every row is `content-visibility: auto`. Its `contain-intrinsic-size` is
+Every row is `content-visibility: auto` (`ChatView/rowBoxOf.ts`). Its `contain-intrinsic-size` is
 `auto <px>`: the height last measured for that agent, mode and row key
 (`ChatView/rowHeightCache.ts`, written by the anchor hook from each row's
-`data-anchor-key`), else `rowEstimatePx` (`ChatView/rowEstimatePx.ts`): a user
-message and an answer by their whole line count (no cap), an operations
+`data-anchor-key`), else `rowEstimatePx` (`ChatView/rowEstimatePx.ts`): lines wrapped
+on the 880 reading column, a blank line as the 12 px paragraph gap, a code line at 20 px;
+a finished plain answer at its 12 line clamp plus **Show more** (`answerClampOf`), a user
+message at its 8 line clamp plus **Show all**, an operations
 cluster as its 32 px header while collapsed and by every step when open (steps
-mode), a workflow rail group by its rows, any other kind 72 px. The cache is
+mode), a workflow rail group by its rows, any other kind 72 px. `useRowPreload`
+(called by `useTranscriptAnchor`) marks every row within a screen above or below the
+view with `data-row-near`, which draws it (`content-visibility: visible`), so a row is
+measured and the anchor has corrected for it before it scrolls into view: no blank
+flash and no shift when scrolling up into older turns. `ClampedText` decides its
+**Show all** before paint, so a user message never grows a row after it is drawn. The cache is
 what keeps a revisit (another agent and back, another page and back) from
 falling back to estimates. The estimates keep the scrollbar thumb steady: each
 error is a change of `scrollHeight` when the row first renders, which resizes
@@ -1829,8 +1836,7 @@ and `apps/desktop/src-tauri/src/chat.rs` spawns the CLI.
 
 ## Session Ask turns
 
-Ask answers a question about one session from the Ask tool in the session tools
-column (`SESSION_TOOLS`, `ask.open`). It reuses the
+Ask answers a question about one session from the Context tab (`ask.open`). It reuses the
 workspace chat pipeline (same hardening, same `chat_event` channel, same
 stream reader) with a session scope: `ask_turn` in
 `apps/desktop/src-tauri/src/chat.rs`.

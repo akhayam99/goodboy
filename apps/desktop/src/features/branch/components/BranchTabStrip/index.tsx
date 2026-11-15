@@ -12,6 +12,9 @@ type Props = {
 };
 
 export const BranchTabStrip = ({ tabs, facts, value, onSelect }: Props) => {
+  if (tabs.length === 0) {
+    return null;
+  }
   const options = tabs.map((entry): PageTabOption<BranchTab> => {
     const fact = facts[entry.id];
     return {

@@ -42,7 +42,7 @@ const FORBIDDEN_WIDTHS: ReadonlyArray<Forbidden> = [
   { pattern: /\bmx-auto\b/, allowed: CENTRED_ALLOWLIST },
   { pattern: /PANE_RHYTHM\.(measure|column)\b/, allowed: NO_EXCEPTION },
   {
-    pattern: /\bmax-w-\[var\(--(column-max|column-frame|measure-frame)\)\]/,
+    pattern: /\bmax-w-\[var\(--(column-max|column-frame|measure-frame|reading|reading-frame)\)\]/,
     allowed: NO_EXCEPTION,
   },
   { pattern: /DIFF_CAPPED_COLUMN_CLASS/, allowed: NO_EXCEPTION },
@@ -64,6 +64,10 @@ const LENS_ROOTS: Readonly<Record<string, Root>> = {
   SessionOverviewPane: {
     kind: 'shell',
     files: ['features/session/components/SessionOverviewPane/index.tsx'],
+  },
+  ContextTab: {
+    kind: 'shell',
+    files: ['features/session/components/ContextTab/index.tsx'],
   },
   SessionOverviewLoading: {
     kind: 'bare',
@@ -252,6 +256,8 @@ describe('content column contract', () => {
 
     expect(styles).toMatch(/--measure:\s*720px;/);
     expect(styles).toMatch(/--measure-frame:\s*calc\(var\(--measure\) \+ 48px\);/);
+    expect(styles).toMatch(/--reading:\s*880px;/);
+    expect(styles).toMatch(/--reading-frame:\s*calc\(var\(--reading\) \+ 48px\);/);
     const prose = walk(FEATURES)
       .map(toKey)
       .filter((key) => /max-w-\[var\(--measure\)\]/.test(read(key)));
@@ -266,6 +272,7 @@ describe('content column contract', () => {
 
     expect(source).toMatch(/column: `mx-auto max-w-\[var\(--column-frame\)\]/);
     expect(source).toMatch(/measure: `mx-auto max-w-\[var\(--measure-frame\)\]/);
+    expect(source).toMatch(/reading: `mx-auto max-w-\[var\(--reading-frame\)\]/);
     expect(source).toMatch(/full: GUTTER_CLASS,/);
     const centred = walk(FEATURES)
       .map(toKey)
@@ -292,14 +299,14 @@ describe('content column contract', () => {
     expect(read('features/workspace-chat/components/ChatComposer/index.tsx')).not.toMatch(/max-w-/);
   });
 
-  it('puts the agent transcript, its composer and the rows above it on the 720 measure, no exception', () => {
+  it('puts the agent transcript, its composer and the rows above it on the 880 reading column, no exception', () => {
     const files = [
       'features/chat/components/ChatView/index.tsx',
       'features/chat/components/ChatInput/index.tsx',
       'features/chat/components/ChatView/parts/WorkflowAdvanceStack/index.tsx',
     ];
 
-    expect(PAGE_MEASURE.agent).toBe('measure');
+    expect(PAGE_MEASURE.agent).toBe('reading');
     expect(read('features/chat/components/ConversationColumn.tsx')).toMatch(
       /<PageColumn\s+width=\{PAGE_MEASURE\.agent\}/,
     );
@@ -441,7 +448,11 @@ describe('content column contract', () => {
           name !== 'UnderTrailContext' &&
           name !== 'PaneBannerContext' &&
           name !== 'PageTrailContext' &&
-          name !== 'PaneActionsContext',
+          name !== 'PaneActionsContext' &&
+          name !== 'Head' &&
+          name !== 'SessionHeadFrame' &&
+          name !== 'HeadSlotsGate' &&
+          name !== 'Cards',
       );
     const unknown = [...new Set(mounted)].filter((name) => LENS_ROOTS[name] === undefined);
 

@@ -21,6 +21,7 @@ const DESTINATIONS = [
   { lens: 'review', shortcut: 'lens.review' },
   { lens: 'files', shortcut: 'lens.files' },
   { pane: 'explore', shortcut: 'lens.explore' },
+  { lens: 'context', shortcut: 'lens.context' },
   { pane: 'scripts', shortcut: 'lens.scripts' },
   { lens: 'pr', shortcut: 'lens.pr' },
   { lens: 'linear', shortcut: 'lens.linear' },
@@ -58,9 +59,6 @@ const isReachable = ({
   const lens = destination.lens ?? null;
   if (lens === null) {
     return true;
-  }
-  if (lens === 'files') {
-    return !isBranchless;
   }
   if (isArchived && isProviderListLens({ lens })) {
     return false;

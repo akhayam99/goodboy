@@ -7,7 +7,7 @@ vi.mock('@tauri-apps/api/event', async () =>
 );
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, cleanup, fireEvent, render, within } from '@testing-library/react';
+import { act, cleanup, render } from '@testing-library/react';
 import { ToastProvider } from '../../../../../shared/components/Toast';
 import {
   importStore,
@@ -55,38 +55,16 @@ const show = async () => {
   return view;
 };
 
-const rowsOf = ({ card }: { readonly card: HTMLElement }) =>
-  Array.from(card.querySelectorAll<HTMLElement>('[data-done-latest]')).map((row) => ({
-    row,
-    title: row.querySelector('.text-foreground')?.textContent ?? '',
-    meta: row.querySelector('[data-row-meta]')?.textContent ?? '',
-  }));
-
 describe('the u30 new since scene', () => {
   it('registers the scene for the capture', () => {
     expect(MOCK_SCENES['u30-new-since']).toBe(U30_NEW_SINCE_SCENES['u30-new-since']);
   });
 
-  it('folds to one row, then lists the three newest with no step list', async () => {
+  it('draws no New since bar and marks the new branch with a dot', async () => {
     const { container } = await show();
 
-    const card = container.querySelector<HTMLElement>('[data-overview-card="new-since"]');
-    if (card === null) {
-      throw new Error('no New since card');
-    }
-    expect(rowsOf({ card })).toHaveLength(0);
-    expect(card.querySelector('[data-new-since-summary]')?.textContent).toContain(
-      'new since you looked',
-    );
-    fireEvent.click(within(card).getByRole('button', { name: 'Show' }));
-    const rows = rowsOf({ card });
-    expect(rows).toHaveLength(3);
-    for (const { meta } of rows) {
-      expect(meta).not.toBe('Agent');
-      expect(meta).not.toMatch(/\d+, \d+/);
-      expect(meta).not.toMatch(/answered|decision/);
-    }
-    expect(within(card).queryByText('Agent')).toBeNull();
+    expect(container.querySelector('[data-overview-card="new-since"]')).toBeNull();
+    expect(container.querySelector('[data-slot="branch-board"]')).not.toBeNull();
   });
 
   it('has no accessibility violations', async () => {

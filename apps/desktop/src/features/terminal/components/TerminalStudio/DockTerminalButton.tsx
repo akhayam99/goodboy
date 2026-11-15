@@ -1,4 +1,4 @@
-import { Button } from '@goodboy/ui';
+import { DockButton } from '../../../../shared/components/DockButton';
 import type { TerminalTab } from '../../../../shared/types/terminal';
 import { dockEmptyTerminalPage } from '../../dockEmptyTerminalPage';
 import { dockTerminalPage } from '../../dockTerminalPage';
@@ -8,10 +8,9 @@ type Props = {
 };
 
 export const DockTerminalButton = ({ selected }: Props) => (
-  <Button
-    variant="secondary"
-    size="sm"
-    onClick={() => {
+  <DockButton
+    tooltip="Dock the terminal beside the page"
+    onDock={() => {
       if (selected === null) {
         dockEmptyTerminalPage({});
         return;
@@ -21,7 +20,5 @@ export const DockTerminalButton = ({ selected }: Props) => (
         sessionId: selected.owner.kind === 'session' ? selected.owner.sessionId : null,
       });
     }}
-  >
-    Dock
-  </Button>
+  />
 );

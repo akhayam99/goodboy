@@ -1,7 +1,7 @@
 import type { SessionId } from '@goodboy/types';
 import type { TerminalTabId } from '../../shared/types/terminal';
 import { useAppStore } from '../../store';
-import { selectDrawerPanel } from '../../store/slices/drawer/selectDrawerPanel';
+import { selectDockDrawer } from '../../store/slices/drawer/selectDockDrawer';
 
 type Params = {
   readonly terminalId: TerminalTabId;
@@ -11,8 +11,9 @@ type Params = {
 export const dockTerminalPage = ({ terminalId, sessionId }: Params): void => {
   useAppStore.getState().closeStudio();
   const state = useAppStore.getState();
-  if (selectDrawerPanel(state)?.kind === 'terminal') {
-    state.closeDrawer();
+  const shown = selectDockDrawer({ state });
+  if (shown?.kind === 'terminal') {
+    state.closeDrawerEntry({ entry: shown });
   }
   const payload = { terminalId };
   useAppStore

@@ -10,7 +10,7 @@ import type {
 } from '@goodboy/types';
 import { openQuestionFor } from '../../../features/workspace/testing/sessionColumn';
 import { pressShortcut } from '../../helpers/pressKey';
-import { type Row, WAIT, heading, lens, settle, useAppStore } from './harness';
+import { type Row, WAIT, crumbNamed, lens, settle, useAppStore } from './harness';
 
 const HELD_RUN_ID = 'sidebar-states-run-held' as WorkflowRunId;
 
@@ -122,7 +122,7 @@ export const SIDEBAR_STATE_ROWS: ReadonlyArray<Row> = [
         expect(state.focusedWorkflowRunId['sidebar-states-held' as SessionId]).toBe(HELD_RUN_ID);
       }, WAIT);
       await lens('workflows')({ sessionId: 'sidebar-states-held' as SessionId });
-      await heading('Runs');
+      await crumbNamed('Runs');
     },
   },
 ];

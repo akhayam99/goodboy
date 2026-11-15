@@ -483,30 +483,29 @@ export const clickMenuItem = async (name: RegExp | string): Promise<void> => {
   await click(await screen.findByRole('menuitem', { name }));
 };
 
-export const clickFirstButton = async (name: RegExp): Promise<void> => {
-  const [first] = await screen.findAllByRole('button', { name });
-  await click(first!);
-};
+const LEVEL = '[data-level-layer="session"]';
 
-const sessionLevel = async (): Promise<HTMLElement> => {
-  await waitFor(() =>
-    expect(document.querySelector('[data-level-layer="session"]:not([inert])')).not.toBeNull(),
-  );
-  const level = document.querySelector<HTMLElement>('[data-level-layer="session"]:not([inert])');
+const sessionTab = (label: RegExp): HTMLElement =>
+  within(screen.getByRole('tablist', { name: 'Session pages' })).getByRole('tab', { name: label });
+
+export const sessionLevel = async (): Promise<HTMLElement> => {
+  if (document.querySelector(LEVEL) === null) {
+    await click(await waitFor(() => sessionTab(/^Context/), WAIT));
+  }
+  await waitFor(() => expect(document.querySelector(LEVEL)).not.toBeNull(), WAIT);
+  const level = document.querySelector<HTMLElement>(LEVEL);
   if (level === null) {
-    throw new Error('the sidebar is not on a session level');
+    throw new Error('the session shows no Projects and Linked cards');
   }
   return level;
 };
 
 export const openCrumb = async (label: RegExp): Promise<void> => {
-  const level = within(await sessionLevel());
   if (label.test('Branch')) {
-    if (
-      document.querySelector('[data-level-layer="session"]:not([inert]) [data-worktree-current]')
-    ) {
+    if (document.querySelector(`${LEVEL} [data-worktree-current]`)) {
       return;
     }
+    const level = within(await sessionLevel());
     const projects = within(level.getByRole('group', { name: 'Projects' }));
     const [first] = projects.getAllByRole('button').filter((row) => row.closest('li') !== null);
     if (first === undefined) {
@@ -515,23 +514,7 @@ export const openCrumb = async (label: RegExp): Promise<void> => {
     await click(first);
     return;
   }
-  await click(
-    within(level.getByRole('list', { name: 'Pages' })).getByRole('button', { name: label }),
-  );
-};
-
-const worktreeLevel = async (): Promise<HTMLElement> => {
-  await openCrumb(/Branch/);
-  await waitFor(() =>
-    expect(
-      document.querySelector('[data-level-layer="session"]:not([inert]) [data-worktree-current]'),
-    ).not.toBeNull(),
-  );
-  const level = document.querySelector<HTMLElement>('[data-level-layer="session"]:not([inert])');
-  if (level === null) {
-    throw new Error('the sidebar is not on the session level');
-  }
-  return level;
+  await click(await waitFor(() => sessionTab(label), WAIT));
 };
 
 export const branchPageReady = (): Promise<void> =>
@@ -546,16 +529,14 @@ export const branchPageReady = (): Promise<void> =>
   );
 
 export const openWorktreeEntry = async (name: RegExp): Promise<void> => {
-  await worktreeLevel();
+  await openCrumb(/Branch/);
   await branchPageReady();
   await click(await findSection(name));
 };
 
 export const openWorktreeMenu = async (): Promise<void> => {
-  const level = await worktreeLevel();
-  const trigger = level.querySelector<HTMLElement>(
-    '[data-worktree-current] [data-worktree-actions] button',
-  );
+  const level = await sessionLevel();
+  const trigger = level.querySelector<HTMLElement>('[data-worktree-actions] button');
   const row = trigger?.closest('[data-worktree-actions]')?.parentElement ?? null;
   if (row === null) {
     throw new Error('the current branch row draws no menu button');
@@ -587,7 +568,36 @@ export const visible = async (role: string, name: RegExp | string): Promise<void
   expect(await screen.findByRole(role, { name }, WAIT)).toBeDefined();
 };
 
-export const heading = (name: RegExp | string): Promise<void> => visible('heading', name);
+export const crumbNamed = async (name: string): Promise<void> => {
+  await waitFor(
+    () =>
+      expect(
+        within(screen.getByRole('navigation', { name: 'Breadcrumb' })).getByRole('button', {
+          name,
+        }),
+      ).toBeDefined(),
+    WAIT,
+  );
+};
+
+const SESSION_TAB_NAMES: ReadonlySet<string> = new Set([
+  'Runs',
+  'Artifacts',
+  'Questions',
+  'Context',
+]);
+
+export const heading = (name: RegExp | string): Promise<void> =>
+  typeof name === 'string' && SESSION_TAB_NAMES.has(name)
+    ? tabSelected(name)()
+    : visible('heading', name);
+
+export const tabSelected = (label: string) => async (): Promise<void> => {
+  await waitFor(
+    () => expect(sessionTab(new RegExp(`^${label}`)).getAttribute('aria-selected')).toBe('true'),
+    WAIT,
+  );
+};
 
 export const studio = async (title: string): Promise<void> => {
   await waitFor(
@@ -634,7 +644,7 @@ export const pane = (name: PaneName) => async (ctx: Ctx) => {
 type BranchTabName = 'pr' | 'comments' | 'files' | 'commits' | 'checks';
 
 const BRANCH_TAB_LABEL: Readonly<Record<BranchTabName, RegExp>> = {
-  pr: /^Overview/,
+  pr: /^Conversation/,
   comments: /^Comments/,
   files: /^Changes/,
   commits: /^Commits/,
@@ -662,6 +672,11 @@ export const branchTab = (tab: BranchTabName) => async (ctx: Ctx) => {
     expect(useAppStore.getState().branchTab[ctx.sessionId]).toBe(tab);
     expect(getSection(BRANCH_TAB_LABEL[tab]).getAttribute('aria-selected')).toBe('true');
   }, WAIT);
+};
+
+export const changesTab = async (ctx: Ctx): Promise<void> => {
+  await branchTab('files')(ctx);
+  expect(await screen.findByRole('button', { name: /^Compared with / })).toBeDefined();
 };
 
 export const both =
@@ -710,8 +725,22 @@ const overviewLands = async (): Promise<void> =>
 export const CRUMB_ROWS: ReadonlyArray<LensRow> = [
   { label: 'Overview', lens: null, lands: overviewLands },
   { label: 'Branch', lens: 'branch', lands: branchTab('pr') },
-  { label: 'Runs', lens: 'workflows', lands: () => heading('Runs') },
-  { label: 'Artifacts', lens: 'plans', lands: () => heading('Artifacts') },
+  { label: 'Runs', lens: 'workflows', lands: tabSelected('Runs') },
+  { label: 'Artifacts', lens: 'plans', lands: tabSelected('Artifacts') },
+  {
+    label: 'Changes',
+    note: 'the shortcut of a session with one branch',
+    lens: 'branch',
+    beforeOpen: ({ sessionId }) =>
+      useAppStore.setState((state) => ({
+        sessionProjectMounts: {
+          ...state.sessionProjectMounts,
+          [sessionId]: (state.sessionProjectMounts[sessionId] ?? []).slice(0, 1),
+        },
+      })),
+    lands: changesTab,
+  },
+  { label: 'Context', lens: 'context', lands: tabSelected('Context') },
   {
     label: 'Questions',
     note: 'while one is open',
@@ -720,17 +749,17 @@ export const CRUMB_ROWS: ReadonlyArray<LensRow> = [
       useAppStore.setState({
         sessionOpenQuestions: { [sessionId]: [openQuestionFor({ sessionId })] },
       }),
-    lands: () => heading('Questions'),
+    lands: tabSelected('Questions'),
   },
 ];
 
 export const LENS_ROWS: ReadonlyArray<LensRow> = [
   { label: 'Overview', lens: null, lands: overviewLands },
-  { label: 'Runs', lens: 'workflows', lands: () => heading('Runs') },
-  { label: 'Questions', lens: 'questions', lands: () => heading('Questions') },
-  { label: 'Artifacts', lens: 'plans', lands: () => heading('Artifacts') },
+  { label: 'Runs', lens: 'workflows', lands: tabSelected('Runs') },
+  { label: 'Questions', lens: 'questions', lands: tabSelected('Questions') },
+  { label: 'Artifacts', lens: 'plans', lands: tabSelected('Artifacts') },
   { label: 'Comments', lens: 'branch', lands: branchTab('comments') },
-  { label: 'Changes', lens: 'branch', lands: branchTab('files') },
+  { label: 'Changes', lens: 'branch', lands: changesTab },
   {
     label: 'Pull request',
     lens: 'branch',

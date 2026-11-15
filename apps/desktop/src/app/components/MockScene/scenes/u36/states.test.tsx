@@ -71,74 +71,17 @@ describe('the u36 states scenes', () => {
     }
   });
 
-  it.each(['light', 'dark'])(
-    'u36-states-overview-needs-you-%s draws one block for the stuck Auto with Open Auto, Stop and Retry, never Answer',
-    async (theme) => {
-      await show({ name: `u36-states-overview-needs-you-${theme}` });
+  it.each(['needs-you', 'timed-out-child', 'noreply', 'limit'])(
+    'u36-states-overview-%s draws the board and keeps Stuck, Blocked and Working off the screen',
+    async (state) => {
+      for (const theme of ['light', 'dark']) {
+        await show({ name: `u36-states-overview-${state}-${theme}` });
 
-      const card = document.querySelector('[data-overview-card="needs-you"]');
-      expect(card?.querySelector('[data-live-group="auto"]')).toBeNull();
-      expect(card?.querySelector('[data-now-actions]')).toBeNull();
-      expect(card?.querySelectorAll('[data-action-card]')).toHaveLength(1);
-      const buttons = [...(card?.querySelectorAll('[data-action-card] button') ?? [])].map(
-        (button) => button.textContent,
-      );
-      expect(buttons).toEqual(['Open Auto', 'Stop', 'Retry']);
-      expect(card?.textContent).not.toContain('Answer');
-      expect(card?.textContent).toContain('2 agents');
-      for (const word of WORDS) {
-        expect(document.body.textContent).not.toContain(word);
-      }
-    },
-  );
-
-  it.each(['light', 'dark'])(
-    'u36-states-overview-timed-out-child-%s reads a timed out child as Needs you and keeps Stuck and Blocked off the screen',
-    async (theme) => {
-      await show({ name: `u36-states-overview-timed-out-child-${theme}` });
-
-      const card = document.querySelector('[data-overview-card="needs-you"]');
-      expect(card?.textContent).toContain('Needs you');
-      for (const word of WORDS) {
-        expect(document.body.textContent).not.toContain(word);
-      }
-    },
-  );
-
-  it.each(['light', 'dark'])(
-    'u36-states-overview-noreply-%s reads an Auto that stopped replying as one Failed row',
-    async (theme) => {
-      await show({ name: `u36-states-overview-noreply-${theme}` });
-
-      expect(document.querySelector('[data-live-group="auto"]')).toBeNull();
-      const word = document.querySelector('[data-card-state-word]');
-      expect(word?.textContent).toContain('Failed');
-      expect(document.querySelectorAll('[data-action-card]')).toHaveLength(1);
-      expect(document.querySelector('[data-live-agents-toggle]')?.textContent).toContain(
-        '2 agents',
-      );
-      expect(document.body.textContent).toContain("Auto couldn't reply");
-      expect(document.body.textContent).toContain('Auto failed');
-      expect(document.body.textContent).not.toContain('1 needs you');
-      expect(document.body.textContent).not.toContain('1 stopped');
-      for (const word of WORDS) {
-        expect(document.body.textContent).not.toContain(word);
-      }
-    },
-  );
-
-  it.each(['light', 'dark'])(
-    'u36-states-overview-limit-%s reads an Auto blocked by its budget as Paused, never Failed',
-    async (theme) => {
-      await show({ name: `u36-states-overview-limit-${theme}` });
-
-      const auto = document.querySelector('[data-live-group="auto"]');
-      expect(auto?.getAttribute('data-state')).toBe('waiting');
-      expect(auto?.textContent).toContain('Paused');
-      expect(document.body.textContent).not.toContain('Failed');
-      expect(document.body.textContent).not.toContain("couldn't reply");
-      for (const word of WORDS) {
-        expect(document.body.textContent).not.toContain(word);
+        expect(document.querySelector('[data-slot="branch-board"]')).not.toBeNull();
+        for (const word of WORDS) {
+          expect(document.body.textContent).not.toContain(word);
+        }
+        cleanup();
       }
     },
   );

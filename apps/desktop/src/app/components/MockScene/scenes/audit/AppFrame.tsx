@@ -19,7 +19,6 @@ import {
 import { DrawerHost } from '../../../DrawerHost';
 import { useShellRight } from '../../../../hooks/useShellRight';
 import { selectDrawerPlacement } from '../../../../../store/slices/drawer/selectDrawerPlacement';
-import { selectDrawerSizing } from '../../../../../store/slices/drawer/selectDrawerSizing';
 import { triggerFrameView } from './frameViews';
 import { useSceneShortcuts } from '../useSceneShortcuts';
 import { isDirectedScene } from '../../../../../shared/utils/isDirectedScene';
@@ -47,8 +46,7 @@ export const AppFrame = ({
   const isFoldLive = hasLiveToggle || isDirectedScene();
   const isMainCollapsed = isFoldLive ? isFoldPicked : isRailCollapsed;
   const toggleFold = () => setIsFoldPicked((isPicked) => !isPicked);
-  const { rightRail, isDrawerMounted, isDrawerParked } = useShellRight({});
-  const drawerSizing = useAppStore(selectDrawerSizing);
+  const shellRight = useShellRight({});
   const drawerPlacement = useAppStore(selectDrawerPlacement);
   const currentWorkspace = useCurrentWorkspace();
   const currentSession = useCurrentSession();
@@ -133,11 +131,15 @@ export const AppFrame = ({
         }
         main={<div className="relative h-full w-full">{main}</div>}
         studio={overlays.studio}
-        rightRail={rightRail}
+        rightRail={shellRight.rightRail}
         {...(hasPane && {
-          drawer: isDrawerMounted ? <DrawerHost /> : null,
-          isDrawerParked,
-          drawerSizing,
+          drawer: shellRight.isDrawerMounted ? <DrawerHost slot="dock" /> : null,
+          detail: shellRight.isDetailMounted ? <DrawerHost slot="detail" /> : null,
+          isDrawerParked: shellRight.isDrawerParked,
+          isDetailParked: shellRight.isDetailParked,
+          isDockInStudio: shellRight.isDockInStudio,
+          drawerSizing: shellRight.dockSizing,
+          detailSizing: shellRight.detailSizing,
           drawerPlacement,
         })}
       />

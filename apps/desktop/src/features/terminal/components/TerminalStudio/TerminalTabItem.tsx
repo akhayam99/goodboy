@@ -1,6 +1,7 @@
 import { RotateCcw } from 'lucide-react';
-import { Chip, IconButton, StateDot, Tooltip, cn } from '@goodboy/ui';
+import { Chip, IconButton, StateDot, Tooltip } from '@goodboy/ui';
 import type { TerminalTab } from '../../../../shared/types/terminal';
+import { toolTabClassName } from '../../../../shared/utils/toolTabClassName';
 import { CloseTerminal } from './CloseTerminal';
 import { TerminalRowName } from './TerminalRowName';
 
@@ -44,10 +45,7 @@ export const TerminalTabItem = ({
         }
         onSelect();
       }}
-      className={cn(
-        'group flex h-7 max-w-48 shrink-0 items-center gap-2 rounded-md pl-3 pr-1 text-muted-foreground hover:bg-hover',
-        isSelected && 'bg-selected text-foreground',
-      )}
+      className={toolTabClassName({ isSelected })}
     >
       {isBusyNow ? <StateDot state="running" label="Running a process" isLive /> : null}
       <TerminalRowName

@@ -4,7 +4,7 @@ import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { DRAWER_INSET, DrawerColumn, READER_DRAWER_STORAGE_KEY } from '@goodboy/ui';
 import { aSession, nextSessionId } from '@goodboy/types/testing';
 import { importStore, resetStoryStore, type StoryStore } from '../../store/storyHarness';
-import { selectDrawerSizing } from '../../store/slices/drawer/selectDrawerSizing';
+import { selectDrawerSizing } from '../../store/slices/drawer/testing/selectDrawerSizing';
 
 vi.mock('@tauri-apps/api/core', async () =>
   (await import('../../store/storyHarness')).tauriCoreModuleMock(),
@@ -58,7 +58,7 @@ const renderBrowserPane = () => {
 
 const pane = () => screen.getByRole('complementary', { name: 'Browser' });
 const handle = () => screen.getByRole('separator', { name: 'Resize browser' });
-const trackOf = (width: number): string => `${width + DRAWER_INSET * 2}px`;
+const trackOf = (width: number): string => `${width + DRAWER_INSET}px`;
 
 beforeAll(async () => {
   store = await importStore();
@@ -129,12 +129,21 @@ describe('the browser pane width', () => {
     expect(pane().style.width).toBe(trackOf(1400));
   });
 
-  it('lies over the page once even 720 does not fit', () => {
+  it('narrows toward 480 and keeps pushing while 480 fits', () => {
     localStorage.setItem(BROWSER_DRAWER_STORAGE_KEY, '1400');
     driveColumnWidth({ initial: 1200 });
     renderBrowserPane();
 
+    expect(pane().getAttribute('data-drawer-mode')).toBe('push');
+    expect(pane().style.width).toBe(trackOf(576));
+  });
+
+  it('lies over the page once even 480 does not fit', () => {
+    localStorage.setItem(BROWSER_DRAWER_STORAGE_KEY, '1400');
+    driveColumnWidth({ initial: 1000 });
+    renderBrowserPane();
+
     expect(pane().getAttribute('data-drawer-mode')).toBe('overlay');
-    expect(pane().style.width).toBe(`${1184 + DRAWER_INSET}px`);
+    expect(pane().style.width).toBe(`${984 + DRAWER_INSET}px`);
   });
 });

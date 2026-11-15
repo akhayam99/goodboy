@@ -1,5 +1,5 @@
 import type { ExploreEntry } from './explore';
-import type { ExplorePreviewState } from './hooks/useExplorePreview';
+import type { ExplorePreviewState } from '../diff/FilesMode/useExplorePreview';
 
 export type ExplorePreviewKind = 'markdown' | 'svg' | 'text' | 'image' | 'pdf' | 'binary';
 

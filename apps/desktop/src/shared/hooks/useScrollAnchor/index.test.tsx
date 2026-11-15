@@ -172,6 +172,22 @@ describe('useScrollAnchor', () => {
     expect(layout.scrollTop).toBe(550);
   });
 
+  it('keeps the reader still while rows above swap their estimates for measured heights at once', () => {
+    const layout = { heights: [200, 72, 72, 344, 100, 100], scrollTop: 700 };
+    const { getByTestId, container } = render(<Harness layout={layout} />);
+    scroll({ viewport: getByTestId('viewport') });
+    const rows = container.querySelectorAll('li');
+    const anchorTop = rows[4]!.getBoundingClientRect().top;
+
+    layout.heights[1] = 240;
+    layout.heights[2] = 40;
+    layout.heights[3] = 300;
+    resizeRows({ entries: [rows[1]!, rows[2]!, rows[3]!] });
+
+    expect(layout.scrollTop).toBe(792);
+    expect(rows[4]!.getBoundingClientRect().top).toBe(anchorTop);
+  });
+
   it('scrolls up by the shrink of a collapsed cluster above', () => {
     const layout = { heights: [400, 100, 100, 100], scrollTop: 450 };
     const { getByTestId, container } = render(<Harness layout={layout} />);

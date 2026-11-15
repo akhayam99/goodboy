@@ -95,12 +95,12 @@ describe('the long transcript scene', () => {
     expect(viewport?.style.overflowAnchor).toBe('none');
     const rows = [
       ...container.querySelectorAll<HTMLElement>('[data-find-root] > li > ul > li'),
-    ].filter((row) => row.style.contentVisibility === 'auto');
+    ].filter((row) => row.style.containIntrinsicSize.startsWith('auto '));
     expect(rows.length).toBeGreaterThanOrEqual(100);
     expect(rows.every((row) => (row.getAttribute('data-anchor-key') ?? '') !== '')).toBe(true);
   });
 
-  it('opens at the bottom on a 48px floor under the last line, with no jump to offer', async () => {
+  it('opens at the bottom on a 24px floor under the last line, with no jump to offer', async () => {
     const Scene = U25_CHAT_LONG_SCENES['transcript-long'];
     const { container } = render(
       <ToastProvider>

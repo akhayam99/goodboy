@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { brandId, type AgentId, type WorkflowRunId } from '@goodboy/types';
 import { nextSessionId } from '@goodboy/types/testing';
+import { CONTEXT_ROWS } from '../contextDrawer/contextRows';
+import { PLACE_ROWS } from './placeRows';
 import type { Location } from './types';
 import { withoutRemovedPages } from './withoutRemovedPages';
 
@@ -29,11 +31,12 @@ const storedAt = ({ lens }: LocationParams): Location => {
 };
 
 describe('withoutRemovedPages', () => {
-  it('lands a stored explore page on the overview with the Explore pane open', () => {
+  it('lands a stored explore page on Changes, All files', () => {
     const next = withoutRemovedPages({ location: storedAt({ lens: 'explore' }) });
 
-    expect(next.place).toMatchObject({ at: 'session', view: { lens: null, target: null } });
-    expect(next.focus.drawer).toEqual({ kind: 'explore', sessionId: SESSION_ID, payload: null });
+    expect(next.place).toMatchObject({ at: 'session', view: { lens: 'files', target: null } });
+    expect(next.focus.drawer).toBeNull();
+    expect(next.focus.returnRows).toEqual({ [PLACE_ROWS.changesMode]: 'all' });
   });
 
   it('lands a stored scripts page on the overview with the Scripts pane open', () => {
@@ -132,9 +135,9 @@ describe('withoutRemovedPages', () => {
 
   it('keeps a live drawer open on its page', () => {
     const drawer: Location['focus']['drawer'] = {
-      kind: 'spawned',
+      kind: 'session-log',
       sessionId: SESSION_ID,
-      payload: null,
+      payload: { focusEntryId: null },
     };
     const location: Location = {
       ...storedAt({ lens: 'questions' }),
@@ -305,18 +308,20 @@ describe('withoutRemovedPages, address parts no screen reads', () => {
 
 describe('retired Context and provider addresses', () => {
   it.each([
-    ['context', 'goal'],
     ['goal', 'goal'],
     ['decisions', 'decisions'],
     ['last_output_summary', 'summary'],
-  ])('restores %s beside the Overview on %s', (lens, section) => {
+  ])('restores %s as the Context tab on %s', (lens, section) => {
     const next = withoutRemovedPages({ location: storedAt({ lens }) });
-    expect(next.place).toMatchObject({ view: { lens: null, target: null } });
-    expect(next.focus.drawer).toEqual({
-      kind: 'context',
-      sessionId: SESSION_ID,
-      payload: { section, view: 'current' },
-    });
+    expect(next.place).toMatchObject({ view: { lens: 'context', target: null } });
+    expect(next.focus.drawer).toBeNull();
+    expect(next.focus.returnRows).toEqual({ [PLACE_ROWS.contextSection]: section });
+  });
+
+  it('keeps a stored Context tab as it was', () => {
+    const location = storedAt({ lens: 'context' });
+
+    expect(withoutRemovedPages({ location })).toBe(location);
   });
 
   it.each(['linear', 'gitlab_issues', 'jira_issues', 'slack_threads'])(
@@ -340,8 +345,31 @@ describe('retired Context and provider addresses', () => {
         payload: { tab: 'learned', view: 'current' },
       },
     });
-    expect(withoutRemovedPages({ location }).focus.drawer).toMatchObject({
-      payload: { section: 'explanations' },
+    const next = withoutRemovedPages({ location });
+
+    expect(next.place).toMatchObject({ view: { lens: 'context' } });
+    expect(next.focus.drawer).toBeNull();
+    expect(next.focus.returnRows).toMatchObject({ [PLACE_ROWS.contextSection]: 'explanations' });
+  });
+
+  it('keeps the section and the history view of a saved Context panel apart', () => {
+    const location = storedLevel({
+      lens: 'agents',
+      agentId: null,
+      target: null,
+      selection: {},
+      drawer: {
+        kind: 'context',
+        sessionId: SESSION_ID,
+        payload: { section: 'summary', view: 'versions' },
+      },
+    });
+    const next = withoutRemovedPages({ location });
+
+    expect(next.place).toMatchObject({ view: { lens: 'context' } });
+    expect(next.focus.returnRows).toMatchObject({
+      [CONTEXT_ROWS.section]: 'summary',
+      [CONTEXT_ROWS.view]: 'versions',
     });
   });
 });

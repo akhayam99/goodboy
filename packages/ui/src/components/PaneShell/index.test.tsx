@@ -5,6 +5,7 @@ import { cleanup, render, screen } from '@testing-library/react';
 import { UnderTrailContext } from './underTrailContext';
 import { PaneActionsContext } from './paneActionsContext';
 import { PaneBannerContext } from './paneBannerContext';
+import { PaneTabsContext } from './paneTabsContext';
 import { PaneShell } from '.';
 
 afterEach(cleanup);
@@ -265,5 +266,34 @@ describe('PaneShell', () => {
     expect(lead?.className.split(' ')).toContain('empty:hidden');
     expect(lead?.childElementCount).toBe(0);
     expect(pinned?.className).toContain('has-[[data-slot=pane-lead]:empty]:hidden');
+  });
+});
+
+describe('PaneShell inherited tabs', () => {
+  it('draws the tabs of its page under the title and hands none to the content', () => {
+    render(
+      <PaneTabsContext.Provider value={<nav aria-label="Session pages" />}>
+        <PaneShell title="Overview">
+          <PaneShell title="Nested">
+            <p>Body copy</p>
+          </PaneShell>
+        </PaneShell>
+      </PaneTabsContext.Provider>,
+    );
+
+    expect(screen.getAllByRole('navigation', { name: 'Session pages' })).toHaveLength(1);
+  });
+
+  it('prefers the tabs it is given over the inherited ones', () => {
+    render(
+      <PaneTabsContext.Provider value={<nav aria-label="Session pages" />}>
+        <PaneShell title="Branch" tabs={<nav aria-label="Branch pages" />}>
+          <p>Body copy</p>
+        </PaneShell>
+      </PaneTabsContext.Provider>,
+    );
+
+    expect(screen.queryByRole('navigation', { name: 'Session pages' })).toBeNull();
+    expect(screen.getByRole('navigation', { name: 'Branch pages' })).toBeTruthy();
   });
 });

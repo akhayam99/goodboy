@@ -16,6 +16,7 @@ import {
 import { STORY_NOW } from '../../../store/storyHarness';
 import { BOARD_PLACE, agentPlace, sessionPlace } from '../../../store/slices/navigation/place';
 import { openLens } from '../../../features/session/openLens';
+import { togglePane } from '../../../features/session/panes/togglePane';
 import { aPlan, aStoredPlan } from '../../../test/planFixtures';
 import userEvent from '@testing-library/user-event';
 import {
@@ -206,9 +207,8 @@ const openRunPage = async (ctx: Ctx): Promise<void> => {
   act(() => useAppStore.getState().navigate({ to: runPage(ctx) }));
   await settle();
   await screen.findByRole('region', RUN_TAIL, WAIT);
-  expect(document.querySelector('[data-session-rail]')?.getAttribute('data-session-rail')).toBe(
-    'session',
-  );
+  const crumbs = within(screen.getByRole('navigation', { name: 'Breadcrumb' }));
+  expect(crumbs.getByRole('button', { name: 'Runs' })).toBeDefined();
 };
 
 const backToTheList = async (ctx: Ctx): Promise<void> => {
@@ -244,7 +244,7 @@ export const RUN_PAGE_ROWS: ReadonlyArray<Row> = [
     lands: backToTheList,
   },
   {
-    name: 'Esc on a step page does what its back row does and lands on its run',
+    name: 'Esc on a step page goes one crumb up and lands on its run',
     covers: ['navigate', 'up'],
     open: async (ctx) => {
       await openRunPage(ctx);
@@ -270,8 +270,8 @@ export const RUN_PAGE_ROWS: ReadonlyArray<Row> = [
     },
   },
   {
-    name: 'Esc on the Runs list does what its back row does and lands on the Overview',
-    covers: ['navigate', 'up'],
+    name: 'Esc on the Runs tab stays there, since a session tab has no crumbs',
+    covers: ['navigate'],
     open: async (ctx) => {
       act(() =>
         useAppStore.getState().navigate({
@@ -284,9 +284,10 @@ export const RUN_PAGE_ROWS: ReadonlyArray<Row> = [
     },
     lands: async (ctx) => {
       await waitFor(
-        () => expect(useAppStore.getState().activeLens[ctx.sessionId] ?? null).toBeNull(),
+        () => expect(useAppStore.getState().activeLens[ctx.sessionId] ?? null).toBe('workflows'),
         WAIT,
       );
+      expect(screen.queryByRole('navigation', { name: 'Breadcrumb' })).toBeNull();
     },
   },
   {
@@ -315,7 +316,7 @@ export const RUN_PAGE_ROWS: ReadonlyArray<Row> = [
     covers: ['openDrawer'],
     open: async (ctx) => {
       await openRunPage(ctx);
-      await click(screen.getByTestId('pane-toggle-spawned'));
+      act(() => togglePane({ sessionId: ctx.sessionId, pane: 'spawned' }));
       const panel = await screen.findByRole('region', { name: 'Agents' }, WAIT);
       const tree = within(panel).getByRole('tree', { name: 'Run agents' });
       const [first] = within(tree).getAllByRole('treeitem');
@@ -326,7 +327,7 @@ export const RUN_PAGE_ROWS: ReadonlyArray<Row> = [
       await waitFor(() => {
         expect(useAppStore.getState().selectedAgentId[ctx.sessionId] ?? null).not.toBeNull();
       }, WAIT);
-      expect(screen.getByTestId('pane-toggle-spawned').getAttribute('aria-pressed')).toBe('true');
+      expect(useAppStore.getState().drawer?.kind).toBe('spawned');
     },
     lands: async () => {
       await waitFor(() => {

@@ -19,7 +19,6 @@ import {
   drawerAsideWidthOf,
   drawerLayoutOf,
   drawerModeOf,
-  drawerTrackOf,
   drawerWidthOf,
   mainWidthOf,
   pageBoxOf,
@@ -105,8 +104,18 @@ describe('the browser tier', () => {
     });
   });
 
-  it('pushes at the reader threshold: 1344 is the first main that fits 720', () => {
-    expect(drawerLayoutOf({ main: 1343, sizing: 'browser', savedWidth: 720 }).mode).toBe('overlay');
+  it('pushes like the terminal does, narrowing toward 480 before it ever lies over the page', () => {
+    expect(drawerLayoutOf({ main: 1103, sizing: 'browser', savedWidth: 720 }).mode).toBe('overlay');
+    expect(drawerLayoutOf({ main: 1104, sizing: 'browser', savedWidth: 720 })).toEqual({
+      mode: 'push',
+      width: 480,
+      dragMax: 480,
+    });
+    expect(drawerLayoutOf({ main: 1194, sizing: 'browser', savedWidth: 720 })).toEqual({
+      mode: 'push',
+      width: 570,
+      dragMax: 570,
+    });
     expect(drawerLayoutOf({ main: 1344, sizing: 'browser', savedWidth: 720 })).toEqual({
       mode: 'push',
       width: 720,
@@ -135,11 +144,11 @@ describe('the browser tier', () => {
     });
   });
 
-  it('lies over the page once even the default does not fit', () => {
-    expect(drawerLayoutOf({ main: 1200, sizing: 'browser', savedWidth: 1400 })).toEqual({
+  it('lies over the page once even the narrowest browser does not fit', () => {
+    expect(drawerLayoutOf({ main: 1100, sizing: 'browser', savedWidth: 1400 })).toEqual({
       mode: 'overlay',
-      width: 1184,
-      dragMax: 1184,
+      width: 1084,
+      dragMax: 1084,
     });
   });
 
@@ -155,7 +164,7 @@ describe('the browser tier', () => {
       drawerWidthPx: 1400,
       sizing: 'browser',
     });
-    expect(box.width).toBe(2100 - drawerTrackOf(1400));
+    expect(box.width).toBe(2100 - drawerAsideWidthOf({ width: 1400, mode: 'push' }));
   });
 });
 
@@ -332,10 +341,22 @@ describe('the named widths of the plan', () => {
 });
 
 describe('the aside of each mode', () => {
-  it('is 0 closed, the card plus both insets pushing, the card plus the handle gutter over the page', () => {
+  it('is 0 closed, the card plus the handle gutter pushing or over the page', () => {
     expect(drawerAsideWidthOf({ width: 400, mode: 'closed' })).toBe(0);
-    expect(drawerAsideWidthOf({ width: 400, mode: 'push' })).toBe(drawerTrackOf(400));
+    expect(drawerAsideWidthOf({ width: 400, mode: 'push' })).toBe(400 + DRAWER_INSET);
     expect(drawerAsideWidthOf({ width: 400, mode: 'overlay' })).toBe(400 + DRAWER_INSET);
+  });
+
+  it('adds the rail to every mode, and keeps the gutter and the rail when closed', () => {
+    expect(drawerAsideWidthOf({ width: 400, mode: 'closed', railWidth: 44 })).toBe(
+      DRAWER_INSET + 44,
+    );
+    expect(drawerAsideWidthOf({ width: 400, mode: 'push', railWidth: 44 })).toBe(
+      400 + DRAWER_INSET + 44,
+    );
+    expect(drawerAsideWidthOf({ width: 400, mode: 'overlay', railWidth: 44 })).toBe(
+      400 + DRAWER_INSET + 44,
+    );
   });
 });
 
@@ -353,7 +374,7 @@ describe('drawer geometry across the width matrix', () => {
         expect(mainPx).toBeGreaterThanOrEqual(
           (sizing === 'reader' ? 560 : COLUMN_MIN_PUSH) + COLUMN_GUTTERS,
         );
-        expect(mainPx + drawerTrackOf(drawerWidthPx)).toBe(columnWidth);
+        expect(mainPx + drawerAsideWidthOf({ width: drawerWidthPx, mode })).toBe(columnWidth);
         expect(canDrawerPush({ mainWidthPx: columnWidth, drawerWidthPx, sizing })).toBe(true);
         return;
       }
@@ -449,7 +470,7 @@ describe('page box: the centred column against the drawer', () => {
         sizing: 'side',
       });
       const open = pageBoxOf({ paneWidth, tier: 'column', drawerWidthPx });
-      const drawerLeft = paneWidth - drawerTrackOf(drawerWidthPx);
+      const drawerLeft = paneWidth - drawerAsideWidthOf({ width: drawerWidthPx, mode });
 
       if (mode === 'overlay') {
         expect(open).toEqual(rest);
@@ -472,7 +493,7 @@ describe('page box: the centred column against the drawer', () => {
         sizing: 'reader',
       });
       const open = pageBoxOf({ paneWidth, tier: 'column', drawerWidthPx, sizing: 'reader' });
-      const drawerLeft = paneWidth - drawerTrackOf(drawerWidthPx);
+      const drawerLeft = paneWidth - drawerAsideWidthOf({ width: drawerWidthPx, mode });
 
       if (mode === 'overlay') {
         expect(open).toEqual(rest);

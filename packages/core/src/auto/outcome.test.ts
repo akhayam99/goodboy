@@ -42,6 +42,40 @@ describe('reading the outcome line of a message', () => {
     expect(stripOutcomeLine({ text: 'Text <<outcome>>never closed' })).toBe('Text');
   });
 
+  it.each([
+    ['a close with a stray open', 'all pass.</<<outcome>>'],
+    ['a close written twice', 'all pass.<</<<outcome>>'],
+    ['a close missing a bracket', 'all pass.<</outcome>'],
+    ['a single bracket close', 'all pass.</outcome>'],
+    ['a second open used as the close', 'all pass.<<outcome>>'],
+    ['an upper case close', 'all pass.<</OUTCOME>>'],
+  ])('reads %s and leaves no marker in the line or the text', (_name, close) => {
+    const text = `<<outcome>>Checks green on 9aaf15c: lint, typecheck all pass.${close.slice('all pass.'.length)}\n\n- tree clean\n- lint exit 0`;
+    expect(parseOutcomeLine({ text })).toBe('Checks green on 9aaf15c: lint, typecheck all pass.');
+    expect(stripOutcomeLine({ text })).toBe('- tree clean\n- lint exit 0');
+  });
+
+  it('drops a stray close and a malformed one-bracket open alike, and keeps prose about outcomes', () => {
+    expect(stripOutcomeLine({ text: 'Done.<</outcome>>' })).toBe('Done.');
+    expect(parseOutcomeLine({ text: '<outcome>Done<</outcome>>' })).toBe('Done');
+    const prose = 'The outcome is clear and <<outcomes>> stay as written.';
+    expect(stripOutcomeLine({ text: prose })).toBe(prose);
+    expect(parseOutcomeLine({ text: prose })).toBeNull();
+  });
+
+  it('reads a long run of brackets as one marker and keeps the rest', () => {
+    const text = `${'<'.repeat(50_000)}outcome${'>'.repeat(50_000)}`;
+    expect(parseOutcomeLine({ text })).toBeNull();
+    expect(stripOutcomeLine({ text }).length).toBe(50_000 - 6);
+  });
+
+  it('keeps marker offsets when the text holds a letter whose lower case is longer', () => {
+    const text = '<<outcome>>İ fixed<</outcome>>\nDetails';
+    expect(parseOutcomeLine({ text })).toBe('İ fixed');
+    expect(stripOutcomeLine({ text })).toBe('Details');
+    expect(parseOutcomeLine({ text: 'İİ <<OUTCOME>>Done<</Outcome>>' })).toBe('Done');
+  });
+
   it('flattens lines and caps the text at 100 characters', () => {
     const long = `Updated the retry policy in payments-api ${'and checked it '.repeat(12)}`;
     const line = parseOutcomeLine({ text: `<<outcome>>${long}<</outcome>>` });

@@ -2,7 +2,10 @@ export { cn } from './cn';
 export { TYPE_ROLES } from './typeRoles';
 export { SHEET_CLASSES } from './sheet';
 export { StudioSlotContext } from './studioSlotContext';
+export { ShellDockContext } from './shellDockContext';
 export { ShellRailContext } from './shellRailContext';
+export { UnderHeadContext } from './underHeadContext';
+export { HEAD_INSET_VAR } from './headInsetVar';
 export { DrawerEdgeContext } from './drawerEdgeContext';
 export { DrawerBackChipContext } from './drawerBackChipContext';
 export type { DrawerChip } from './drawerBackChipContext';
@@ -54,11 +57,9 @@ export {
   READER_DRAWER_DEFAULT,
   READER_DRAWER_MAX,
   READER_DRAWER_MIN,
-  RIGHT_DRAWER_DEFAULT,
   RIGHT_DRAWER_MAX,
   RIGHT_DRAWER_MIN,
   canDrawerPush,
-  isRailFoldNeeded,
   drawerModeOf,
   drawerWidthOf,
   mainWidthOf,
@@ -152,7 +153,7 @@ export {
   SlackIcon,
 } from './components/brandIcons';
 export { CopilotIcon } from './components/CopilotIcon';
-export type { ButtonProps, ButtonSize, ButtonVariant } from './components/Button';
+export type { ButtonIntent, ButtonProps, ButtonSize, ButtonVariant } from './components/Button';
 export type { CardActionProps } from './components/CardAction';
 export { Checkbox } from './components/Checkbox';
 export { SelectionCheckbox } from './components/SelectionCheckbox';
@@ -273,6 +274,7 @@ export {
   PaneActionsContext,
   useInheritedPaneActions,
 } from './components/PaneShell/paneActionsContext';
+export { PaneTabsContext } from './components/PaneShell/paneTabsContext';
 export { UnderTrailContext } from './components/PaneShell/underTrailContext';
 export { PaneBannerContext } from './components/PaneShell/paneBannerContext';
 export { PageTrailContext } from './components/PaneShell/pageTrailContext';
@@ -320,7 +322,7 @@ export type { ListboxOptionRowProps } from './components/Listbox/ListboxOptionRo
 export { filterOptions } from './components/Listbox/filterOptions';
 export type { FilteredOption, ListboxMatch } from './components/Listbox/filterOptions';
 export { useListboxKeyboard } from './components/Listbox/useListboxKeyboard';
-export { TREE_INDENT_PX, treeIndentPx } from './treeIndent';
+export { treeIndentPx } from './treeIndent';
 export { Meter } from './components/Meter';
 export type { MeterProps, MeterSize } from './components/Meter';
 export { METER_TRACK } from './meterTrack';
@@ -333,8 +335,6 @@ export { useListMotion } from './useListMotion';
 export type { ListMotionEntry, ListMotionItem, ListMotionPhase } from './useListMotion';
 export { ListItemMotion } from './components/ListItemMotion';
 export { HeightMotion } from './components/HeightMotion';
-export { EntryWash } from './components/EntryWash';
-export { useEntryWash } from './useEntryWash';
 export { useScrollMemory } from './useScrollMemory';
 export { useHoldAppScroll } from './useHoldAppScroll';
 export { appScrollIntoView } from './appScrollIntoView';
@@ -402,9 +402,8 @@ export { Kbd } from './components/Kbd';
 export type { KbdLook, KbdProps } from './components/Kbd';
 export { ROW_HOVER, ROW_INTERACTIVE } from './rowInteractive';
 export { SELECTED_ROW_CLASSES } from './selectedRow';
-export { UNREAD_TITLE } from './unreadTitle';
-export { drawerAsideWidthOf, drawerLayoutOf } from './drawerGeometry';
-export type { DrawerLayout } from './drawerGeometry';
+export { drawerAsideWidthOf, panelPairLayoutOf } from './drawerGeometry';
+export type { DrawerLayout, DrawerPanelSpec, PanelPairLayout } from './drawerGeometry';
 export type { ChipKind } from './components/Chip';
 export type { IconButtonSize } from './components/IconButton';
 export { SearchField } from './components/SearchField';
@@ -451,4 +450,3 @@ export { Disclosure } from './components/Disclosure';
 export type { DisclosureProps } from './components/Disclosure';
 
 export { DrawerContentContext } from './drawerContentContext';
-export { useDrawerContentInset } from './useDrawerContentInset';

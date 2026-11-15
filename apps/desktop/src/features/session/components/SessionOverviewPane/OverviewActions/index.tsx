@@ -2,9 +2,9 @@ import { ChevronDown, Plus } from 'lucide-react';
 import { AnchoredPopover, Button, ICON_SIZE, Tooltip, useDropdown } from '@goodboy/ui';
 import type { Session } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
-import { selectOpenDrawer } from '../../../../../store/slices/drawer/selectOpenDrawer';
 
 import { useShortcut } from '../../../../../shared/keyboard/useShortcut';
+import { isFocusInsideAsk } from '../../../ask/isFocusInsideAsk';
 import { NewFormMenuList } from '../../../../actions/NewFormMenuList';
 
 type Props = {
@@ -13,11 +13,21 @@ type Props = {
 
 export const OverviewActions = ({ session }: Props) => {
   const sessionId = session.id;
-  const isAskOpen = useAppStore((state) => selectOpenDrawer(state)?.kind === 'ask');
   const isStudioOpen = useAppStore((state) => state.appStudio !== null);
   const dropdown = useDropdown({ align: 'end', width: 'min-w-50', expectedHeight: 220 });
 
-  useShortcut('overview.newHere', dropdown.toggle, !isAskOpen && !isStudioOpen);
+  useShortcut(
+    'overview.newHere',
+    () => {
+      if (isFocusInsideAsk({})) {
+        return false;
+      }
+      dropdown.toggle();
+      return true;
+    },
+    !isStudioOpen,
+    { canDecline: true },
+  );
 
   return (
     <AnchoredPopover

@@ -261,6 +261,21 @@ describe('InlineConfirm', () => {
       />,
     );
     expect(screen.getByRole('button', { name: 'Go' }).className).toContain('bg-primary');
+
+    rerender(
+      <InlineConfirm
+        role="caution"
+        icon={null}
+        title="Rebase onto main?"
+        confirmLabel="Rebase"
+        onConfirm={vi.fn()}
+        onCancel={vi.fn()}
+      />,
+    );
+    const rebase = screen.getByRole('button', { name: 'Rebase' });
+    expect(rebase.className).toContain('bg-warning');
+    expect(rebase.className).not.toContain('bg-primary');
+    expect(rebase.getAttribute('data-intent')).toBe('caution');
   });
 });
 

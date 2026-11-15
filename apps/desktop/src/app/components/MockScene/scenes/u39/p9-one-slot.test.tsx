@@ -85,9 +85,9 @@ describe('the ux39 P9 one slot scenes', () => {
 
       expect(slot()).not.toBeNull();
       expect(sidePanelMode()).toBe('closed');
-      expect(useAppStore.getState().drawer?.kind).toBe('context');
+      expect(useAppStore.getState().drawer?.kind).toBe('spawned');
       expect(
-        document.querySelector('aside[data-drawer-parked] [data-drawer-content]'),
+        document.querySelector('aside[data-drawer-parked] [data-detail-content]'),
       ).not.toBeNull();
       expect(screen.queryByText(/Cannot read properties/)).toBeNull();
     },

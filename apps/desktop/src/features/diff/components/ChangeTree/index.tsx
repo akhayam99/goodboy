@@ -5,6 +5,7 @@ import {
   useRef,
   useState,
   type KeyboardEvent,
+  type ReactNode,
   type RefObject,
 } from 'react';
 import { EmptyLine, Button, ScrollFade, useEscapeLayer } from '@goodboy/ui';
@@ -20,12 +21,13 @@ import type { CommentKinds } from '../../lib/commentKinds';
 import type { DiffFileActions } from '../DiffView/types';
 import type { ViewedState } from '../../lib/reviewedFiles';
 import { rowHeightOf } from '../../lib/rowHeightOf';
+import { viewedCountOf } from '../../lib/viewedCountOf';
 import { WINDOW_MIN_ROWS, layoutRows, windowOf } from '../../../../shared/utils/windowRows';
+import { useRowWindow } from '../../hooks/useRowWindow';
 import { FileRow } from './FileRow';
 import { revealTreeRow } from './revealTreeRow';
 import { FolderRow } from './FolderRow';
 import { TreeHead } from './TreeHead';
-import { TreeTitle } from './TreeTitle';
 import { nameLengthOf } from './nameLengthOf';
 import { treeKeyAction } from './treeKeys';
 
@@ -58,12 +60,15 @@ type Props = {
   readonly isReadOnly: boolean;
   readonly onToggleViewed: (file: FileDiff) => void;
   readonly fileActions?: DiffFileActions | null;
-  readonly onNextUnviewed: () => void;
   readonly onLeave: () => void;
-  readonly onFold: () => void;
+  readonly listSlot?: (params: ListSlotParams) => ReactNode;
 };
 
-const DELTA_MIN_RAIL_PX = 300;
+type ListSlotParams = {
+  readonly hasDelta: boolean;
+};
+
+const DELTA_MIN_RAIL_PX = 280;
 
 type RowIdParams = {
   readonly id: string;
@@ -87,9 +92,8 @@ export const ChangeTree = ({
   isReadOnly,
   onToggleViewed,
   fileActions = null,
-  onNextUnviewed,
   onLeave,
-  onFold,
+  listSlot,
 }: Props) => {
   const rows = useMemo(() => visibleRows({ rows: tree.rows, collapsed }), [tree.rows, collapsed]);
   const markedId = useMemo(
@@ -104,11 +108,10 @@ export const ChangeTree = ({
     () => new Map(allFiles.map((file) => [file.path, stateOf(file)] as const)),
     [allFiles, stateOf],
   );
-  const viewedCount = useMemo(
-    () => [...states.values()].filter((state) => state === 'viewed').length,
-    [states],
+  const unviewedCount = useMemo(
+    () => allFiles.length - viewedCountOf({ files: allFiles, stateOf }),
+    [allFiles, stateOf],
   );
-  const unviewedCount = allFiles.length - viewedCount;
   const commentedCount = useMemo(
     () => allFiles.filter((file) => commentCountOf(file.path) > 0).length,
     [allFiles, commentCountOf],
@@ -116,14 +119,12 @@ export const ChangeTree = ({
   const stage = useElementWidth();
   const railWidth = stage.width ?? 0;
   const hasDelta = railWidth >= DELTA_MIN_RAIL_PX;
-  const viewportRef = useRef<HTMLDivElement | null>(null);
   const [cursorId, setCursorId] = useState<string | null>(null);
   const [isTreeFocused, setIsTreeFocused] = useState(false);
   useEscapeLayer(onLeave, isTreeFocused);
-  const [scrollTop, setScrollTop] = useState(0);
-  const [viewport, setViewport] = useState(0);
   const layout = useMemo(() => layoutRows({ rows, heightOf: rowHeightOf }), [rows]);
   const isWindowed = rows.length > WINDOW_MIN_ROWS;
+  const { viewportRef, scrollTop, viewport } = useRowWindow({ isWindowed });
   const { start, end } = isWindowed
     ? windowOf({ layout, count: rows.length, scrollTop, viewport })
     : { start: 0, end: rows.length };
@@ -138,30 +139,11 @@ export const ChangeTree = ({
       ? trackedId
       : (rows[0]?.id ?? null);
 
-  useEffect(() => {
-    const element = viewportRef.current;
-    if (element === null || !isWindowed) {
-      return;
-    }
-    const measure = () => {
-      setScrollTop(element.scrollTop);
-      setViewport(element.clientHeight);
-    };
-    measure();
-    element.addEventListener('scroll', measure, { passive: true });
-    const observer = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(measure);
-    observer?.observe(element);
-    return () => {
-      element.removeEventListener('scroll', measure);
-      observer?.disconnect();
-    };
-  }, [isWindowed]);
-
   const reveal = useCallback(
     (id: string) => {
       revealTreeRow({ viewportRef, isWindowed, rows, layout, id, domId: domIdOf({ id }) });
     },
-    [isWindowed, layout, rows],
+    [isWindowed, layout, rows, viewportRef],
   );
 
   const revealRef = useRef(reveal);
@@ -230,7 +212,6 @@ export const ChangeTree = ({
       aria-label="Changed files"
       className="flex min-h-0 w-full min-w-0 flex-col"
     >
-      <TreeTitle viewedCount={viewedCount} total={total} onNext={onNextUnviewed} onFold={onFold} />
       <TreeHead
         total={total}
         unviewed={unviewedCount}
@@ -248,86 +229,90 @@ export const ChangeTree = ({
         isFiltering={filter.isFiltering}
         onClear={filter.onClear}
       />
-      <ScrollFade
-        className="min-h-0 flex-1"
-        fadeSize="h-6"
-        viewportRef={viewportRef}
-        isPageScroller={false}
-      >
-        {rows.length === 0 && filter.isFiltering ? (
-          <div className="flex flex-col items-start gap-2 px-3 py-2 text-meta text-muted-foreground">
-            <EmptyLine>No files match.</EmptyLine>
-            <Button size="sm" variant="ghost" onClick={filter.onClear}>
-              Clear
-            </Button>
-          </div>
-        ) : null}
-        <ul
-          role="tree"
-          aria-label="Changed files"
-          tabIndex={0}
-          aria-activedescendant={cursorRowId === null ? undefined : domIdOf({ id: cursorRowId })}
-          onKeyDown={onKeyDown}
-          onFocus={() => {
-            setIsTreeFocused(true);
-            if (cursorRowId === null) {
-              setCursorId(startCursorId);
-            }
-          }}
-          onBlur={() => setIsTreeFocused(false)}
-          className="flex min-w-0 flex-col rounded-sm px-1 pb-4 focus-visible:outline-none"
-          style={isWindowed ? { paddingTop: padTop, paddingBottom: padBottom + 16 } : undefined}
+      {listSlot !== undefined ? (
+        listSlot({ hasDelta })
+      ) : (
+        <ScrollFade
+          className="min-h-0 flex-1"
+          fadeSize="h-6"
+          viewportRef={viewportRef}
+          isPageScroller={false}
         >
-          {shownRows.map((row) => {
-            const domId = domIdOf({ id: row.id });
-            const isCursor = row.id === cursorRowId;
-            if (row.kind === 'folder') {
+          {rows.length === 0 && filter.isFiltering ? (
+            <div className="flex flex-col items-start gap-2 px-3 py-2 text-meta text-muted-foreground">
+              <EmptyLine>No files match.</EmptyLine>
+              <Button size="sm" variant="ghost" onClick={filter.onClear}>
+                Clear
+              </Button>
+            </div>
+          ) : null}
+          <ul
+            role="tree"
+            aria-label="Changed files"
+            tabIndex={0}
+            aria-activedescendant={cursorRowId === null ? undefined : domIdOf({ id: cursorRowId })}
+            onKeyDown={onKeyDown}
+            onFocus={() => {
+              setIsTreeFocused(true);
+              if (cursorRowId === null) {
+                setCursorId(startCursorId);
+              }
+            }}
+            onBlur={() => setIsTreeFocused(false)}
+            className="flex min-w-0 flex-col rounded-sm px-1 pb-4 focus-visible:outline-none"
+            style={isWindowed ? { paddingTop: padTop, paddingBottom: padBottom + 16 } : undefined}
+          >
+            {shownRows.map((row) => {
+              const domId = domIdOf({ id: row.id });
+              const isCursor = row.id === cursorRowId;
+              if (row.kind === 'folder') {
+                return (
+                  <FolderRow
+                    key={row.id}
+                    row={row}
+                    domId={domId}
+                    isOpen={!collapsed.has(row.id)}
+                    isMarked={row.id === markedId}
+                    isCursor={isCursor}
+                    isTreeFocused={isTreeFocused}
+                    viewedCount={row.paths.filter((path) => states.get(path) === 'viewed').length}
+                    hasDelta={hasDelta}
+                    onToggle={() => {
+                      setCursorId(row.id);
+                      onToggleFolder(row.id);
+                    }}
+                  />
+                );
+              }
+              const kinds = kindsOf(row.id);
               return (
-                <FolderRow
+                <FileRow
                   key={row.id}
                   row={row}
                   domId={domId}
-                  isOpen={!collapsed.has(row.id)}
-                  isMarked={row.id === markedId}
+                  isActive={row.id === activePath}
                   isCursor={isCursor}
                   isTreeFocused={isTreeFocused}
-                  viewedCount={row.paths.filter((path) => states.get(path) === 'viewed').length}
+                  state={states.get(row.id) ?? 'none'}
+                  kinds={kinds}
+                  nameLength={nameLengthOf({
+                    depth: row.depth,
+                    count: kinds.notes + kinds.host,
+                    railWidth,
+                    hasDelta,
+                  })}
                   hasDelta={hasDelta}
-                  onToggle={() => {
+                  fileActions={fileActions}
+                  onPick={() => {
                     setCursorId(row.id);
-                    onToggleFolder(row.id);
+                    onPick(row.id);
                   }}
                 />
               );
-            }
-            const kinds = kindsOf(row.id);
-            return (
-              <FileRow
-                key={row.id}
-                row={row}
-                domId={domId}
-                isActive={row.id === activePath}
-                isCursor={isCursor}
-                isTreeFocused={isTreeFocused}
-                state={states.get(row.id) ?? 'none'}
-                kinds={kinds}
-                nameLength={nameLengthOf({
-                  depth: row.depth,
-                  count: kinds.notes + kinds.host,
-                  railWidth,
-                  hasDelta,
-                })}
-                hasDelta={hasDelta}
-                fileActions={fileActions}
-                onPick={() => {
-                  setCursorId(row.id);
-                  onPick(row.id);
-                }}
-              />
-            );
-          })}
-        </ul>
-      </ScrollFade>
+            })}
+          </ul>
+        </ScrollFade>
+      )}
     </nav>
   );
 };

@@ -97,7 +97,7 @@ const NOTIFICATION = {
   agentId: IMPLEMENTER_ID,
 } as const;
 
-const DOORS: ReadonlyArray<readonly [string, () => void]> = [
+const DOORS: ReadonlyArray<readonly [string, () => void | Promise<void>]> = [
   [
     'the palette and a right click',
     () =>
@@ -124,7 +124,7 @@ const DOORS: ReadonlyArray<readonly [string, () => void]> = [
   ],
   [
     'a card row of the chat',
-    () => {
+    async () => {
       const line = screen
         .getAllByRole('list', { name: 'Delegations' })
         .flatMap((list) => within(list).getAllByRole('listitem'))
@@ -147,7 +147,9 @@ describe('one agent, one page', () => {
   it.each(DOORS)('%s lands on the agent page with one box and no panel', async (_door, open) => {
     await mountOnAuto();
 
-    act(() => open());
+    await act(async () => {
+      await open();
+    });
 
     await screen.findByPlaceholderText('Message Implementer', undefined, WAIT);
     expect(useAppStore.getState().selectedAgentId[AUTO_SESSION.id]).toBe(IMPLEMENTER_ID);
@@ -162,7 +164,9 @@ describe('one agent, one page', () => {
 
     expect(await screen.findByText('Returned to Auto', undefined, WAIT)).toBeDefined();
     screen.getByText('1 file changed');
-    expect(document.querySelector('[data-session-back]')?.textContent).toBe('Back to Auto');
+    expect([...document.querySelectorAll('[data-session-crumbs] li')].at(-2)?.textContent).toMatch(
+      /^Why does the ledger retry post a second credit/,
+    );
   });
 
   it.each(['process_error', 'no_closing_envelope'])(
@@ -279,7 +283,7 @@ describe('one agent, one page', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'Failed here' }, WAIT));
 
     await screen.findByText('Harborline provider failed.', undefined, WAIT);
-    const drawer = document.querySelector('[data-drawer-card]');
+    const drawer = document.querySelector('[data-detail-card]');
     if (!(drawer instanceof HTMLElement)) {
       throw new Error('Steps did not open');
     }

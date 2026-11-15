@@ -7,6 +7,7 @@ import { slackUserNames } from '../../../integrations/slack/nameMaps';
 import { slackThreadFirstLine } from '../../../integrations/slack/threadFormulas';
 import { useSlackThread } from '../../../integrations/slack/useSlackThread';
 import { useSlackThreadActions } from '../../../integrations/slack/useSlackThreadActions';
+import { actionButtonLookOf } from '../../../actions/actionButtonLookOf';
 import { TranscriptShell } from '../TranscriptShell';
 
 type Props = {
@@ -104,7 +105,12 @@ export const SlackDraftCard = ({ draft, sessionId }: Props) => {
         >
           Edit
         </Button>
-        <Button variant="ghost" size="sm" disabled={isSending} onClick={handleDiscard}>
+        <Button
+          {...actionButtonLookOf({ verb: 'discard', variant: 'ghost' })}
+          size="sm"
+          disabled={isSending}
+          onClick={handleDiscard}
+        >
           Discard
         </Button>
       </div>

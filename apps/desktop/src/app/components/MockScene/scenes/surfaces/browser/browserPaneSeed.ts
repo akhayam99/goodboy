@@ -82,6 +82,24 @@ const CONSOLE_READ: BrowserConsoleRead = {
       method: 'POST',
       status: 500,
     },
+    {
+      seq: 6,
+      kind: 'network',
+      level: 'info',
+      text: '/api/cart',
+      source: null,
+      method: 'GET',
+      status: 200,
+    },
+    {
+      seq: 7,
+      kind: 'network',
+      level: 'info',
+      text: '/assets/checkout.js',
+      source: null,
+      method: 'GET',
+      status: null,
+    },
   ],
 };
 
@@ -240,6 +258,7 @@ const seedPeek = ({ tabs }: PeekParams): void => {
       ),
     },
   }));
+  useAppStore.setState({ navigate: useAppStore.getInitialState().navigate });
   useAppStore.getState().openContextDrawer({ sessionId: SESSION_ID, section: 'decisions' });
 };
 

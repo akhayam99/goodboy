@@ -9,6 +9,7 @@ import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../../shared/components/co
 import { lazyNamed } from '../../../../../shared/lib/lazyNamed';
 import { openLens } from '../../../openLens';
 import type { LensSurface } from '../../../lens-surface';
+import { ContextTab } from '../../ContextTab';
 import { SessionOverviewPane } from '../../SessionOverviewPane';
 import { LinkIssueAction } from '../../SessionOverviewPane/LinkIssueAction';
 import { FilesPane } from './FilesPane';
@@ -130,6 +131,9 @@ export const SessionLensPane = ({ session, target, isShown }: Props) => {
         />
       </PaneShell>
     );
+  }
+  if (target === 'context') {
+    return <ContextTab session={session} />;
   }
   if (target === 'files') {
     return (

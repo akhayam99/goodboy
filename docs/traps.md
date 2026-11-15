@@ -49,12 +49,10 @@ The Rust files with the most comments lost them in one pass. What a reader would
   mounted (`useShellRight`) so its shortcuts never answer twice. A close path
   reads `selectDrawerPanel` (null under a studio unless a workspace tool shows
   beside it): `selectOpenDrawer` answers what the session holds, so a close that
-  reads it closes a drawer nobody sees. A toggle (`togglePane`, `toggleDrawer`,
-  `toggleContextDrawer`) leaves every stacked page first (`leaveStudio`, since
+  reads it closes a drawer nobody sees. A toggle (`togglePane`, `toggleDrawer`)
+  leaves every stacked page first (`leaveStudio`, since
   one `closeStudio` only steps back to the page below), then shows the drawer,
-  and never closes one on a page. The session rail's fold (`useShellFolds`)
-  reads `selectOpenDrawer` on purpose, so the rail keeps its fold across the
-  trip. The session itself does not keep its width: the parked aside leaves the
+  and never closes one on a page. The session itself does not keep its width: the parked aside leaves the
   flow, so the hidden session widens under the page and narrows on return, and
   its transcript re-wraps. Every Escape layer inside a parked drawer is
   suspended, not removed (`DrawerParkedContext`, read by `useEscapeLayer`), so
@@ -173,7 +171,7 @@ The Rust files with the most comments lost them in one pass. What a reader would
   through `PrWriteOptions`: a write without one lands on the active mount's repository, where
   another pull request can carry the same number. So do `requestReview`, `editPr`, the reviewer search port (`usePullRequestPort({ mountId })`), the create form's reviewer step and the Scribe settle (`work.mountId`). `refreshMountPr` keeps the known request when a poll of
   the same branch and repository answers empty.
-- The verbs of a stopped rebase (Resolve with Auto, Resolve in terminal, Keep, Bring them in, Undo rebase, Retry rebase, Fix with an agent, Retry push) are built once by `rebaseStopVerbs` and called by `useJobBannerActions` (banner and panel) and `useActionCardActions` (Next rows). A new surface calls the factory; it never rebuilds a verb, because the copy that does drops the start hint or the `adoptRebaseStop` step.
+- The verbs of a stopped rebase (Resolve with Auto, Resolve in terminal, Abort rebase, Rebase on their commits, Undo rebase, Retry rebase, Fix with an agent, Retry push) are built once by `rebaseStopVerbs` and called by `useJobBannerActions` (banner and panel) and `useActionCardActions` (Next rows). A new surface calls the factory; it never rebuilds a verb, because the copy that does drops the start hint or the `adoptRebaseStop` step.
 - There is one push verb, `pushBranch({ sessionId, mountId, mode })` (github slice):
   `plain` pushes the branch, `lease` force pushes with lease, either behind a `confirmed` guard
   (the commits the confirm listed, re-read from origin first) or an `expected` guard (the remote
@@ -181,7 +179,7 @@ The Rust files with the most comments lost them in one pass. What a reader would
   `pushWithLease` itself. A lease push that lands on a mount whose history run is waiting for its
   push (`applied`, or `stopped` on `push-failed` or `origin-moved`) also settles that run
   (`settleHistoryPush`: run `pushed`, the plan, the edited replies, the `history_pushed` event and
-  the pull request description), so the header Push, the panel Push and Bring them in leave the
+  the pull request description), so the header Push, the panel Push and Rebase on their commits leave the
   same trace. The result carries `reason: 'moved' | 'failed'`; `moved` is a stale lease. The two
   Push actions (`mount.push`, `diff.push`) are one definition, `pushAction`.
 - `pullRequestViews` holds one entry per session and mount
@@ -923,9 +921,8 @@ The hint a person types before a fix is plain text carried as a field, never re-
 - The branch story has one reader of the facts: `branchStoryOf`. Never compute a step word, a tone or a rank in `BranchRow`. A row is named by the branch (`mount.branch`), never by the folder. The per branch card gate (`isMountBusyOf`) and the branch in card titles (`mountLabelOf`) are one rule for every overview; never add a second gate keyed on `isActivityShown`.
 - A null `checks` or `reviewDecision` does not mean "not needed": it also means not read or unreadable. `branchStoryOf` skips a step only from `isChecksAbsent` and `isReviewOptional` on a fresh read, projected per host in `mountRequestOf`. Do not skip on `checks === null` alone, and a new host must set the flags only when its data proves it (see docs/mounts.md).
 - `useBranchDetails` must not depend on `mountGithub` itself: `refreshSessionPrDetail` replaces the mount entry when a read starts and when it fails, so an effect keyed on that object reruns after its own read and a failing read (403, offline, the mock bridge in scenes) loops without end and pegs the page. The effect keys on mount id, PR number and PR `fetchedAt`; the store records a failed read in `mountDetailFailures` and waits 60 s per revision. Do not add a second TTL in the hook.
-- A row title is one sentence cut by `firstSentenceOf` (first sentence, first step before an arrow, first done line of an orchestrator recap parsed by `parseRunSummaryText`). Any other structured text yields null and the kind fallback, never raw JSON. The full text of an agent summary goes in `detail.fullText`. The model in the step card of a Running row comes from `agentRanModels` (through `agentModelLineOf`), never from `modelOverride` or `effort` directly. A Running run row reads its gate from `useRunView`, the same `primary` as the run page, and `cardsOutsideRunningOf` drops that run's gate card (`workflow-next-step`, a run owner) from Needs you so it shows once. Only one button in the column is filled: the first Needs you row, else the first waiting run (`runLeadOf`), else the first Next row.
-- The State sentence under the goal (`SummaryStateLine`, `summaryStateOf`) reads the first sentence of the **State** section of the `last_output_summary` slot and dates it from the newest slot history entry of that key, never from `summarizerStatus.lastUpdate`: a round that only changed the goal or a decision moves `lastUpdate` too and would make an old sentence read fresh. It is gray after a day and when `requestChangedAtOf` (the latest `updatedAt` or `mergedAt` of any pull or merge request of the session) is more than five minutes newer, so the Branches card wins a disagreement. An archived session does not draw it.
-- The Needs you and Branches cards each draw a `NextStackView` filtered by `OVERVIEW_CARD_OF_GROUP` (decide and fix to Needs you, update and ship to Branches). Their counts come from `nextRowCountOf`, the same rows the cards draw; never count rows a second way. Only one button is filled across both cards (`canLead`, `leadRunId` for a waiting run).
+- A row title is one sentence cut by `firstSentenceOf` (first sentence, first step before an arrow, first done line of an orchestrator recap parsed by `parseRunSummaryText`). Any other structured text yields null and the kind fallback, never raw JSON. The full text of an agent summary goes in `detail.fullText`. The model of a run step comes from `agentRanModels`, never from `modelOverride` or `effort` directly. `cardsOutsideRunningOf` drops a running run's gate card (`workflow-next-step`, a run owner) from the board so the gate shows once.
+- Board row counts come from `nextRowCountOf`, the same rows the board draws; never count rows a second way. Only one button in the board is filled.
 
 ## Auto gate and screens
 

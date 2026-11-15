@@ -88,8 +88,12 @@ describe('the navigation scenes', () => {
     await mount('integration-issue-focused');
 
     expect(screen.queryByRole('button', { name: 'All issues' })).toBeNull();
-    expect(document.querySelector('[data-session-back]')?.textContent).toMatch(/^Back to /);
-    expect(screen.queryByRole('navigation', { name: 'Breadcrumb' })).toBeNull();
+    expect(
+      [...document.querySelectorAll('[data-session-back]')].filter(
+        (back) => back.closest('[data-session-head]') === null,
+      ),
+    ).toEqual([]);
+    expect(document.querySelector('[data-slot="trail"]')).toBeNull();
     expect(screen.queryByRole('button', { name: 'Unlink NW-142' })).toBeNull();
     expect(screen.getByRole('button', { name: 'More actions for NW-142' })).toBeDefined();
     const pageLinks = within(mainPane())

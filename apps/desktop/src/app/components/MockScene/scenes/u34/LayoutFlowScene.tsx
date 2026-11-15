@@ -1,13 +1,13 @@
 import { useEffect, useState } from 'react';
-import { AppShell, ScrollFade } from '@goodboy/ui';
+import { AppShell, ScrollFade, UnderTrailContext } from '@goodboy/ui';
 import { AutoReleaseContext } from '../../../../../features/auto/autoReleaseContext';
 import { SessionOverviewPane } from '../../../../../features/session/components/SessionOverviewPane';
 import { useAppStore } from '../../../../../store';
-import { selectDrawerSizing } from '../../../../../store/slices/drawer/selectDrawerSizing';
+import { selectDrawerSizing } from '../../../../../store/slices/drawer/testing/selectDrawerSizing';
 import { shellArrangement } from '../../../../shellArrangement';
-import { STORAGE_KEYS } from '../../../../../shared/lib/storage-keys';
 import { DrawerHost } from '../../../DrawerHost';
 import { SessionFrame } from '../../../SessionRail/SessionFrame';
+import { SessionHead } from '../../../SessionHead';
 import type { ColumnActions } from '../../../SideColumn/columnDoors';
 import { ShellLeft } from '../../../SideColumn/ShellLeft';
 import { SESSION } from '../activityRunSeed';
@@ -50,7 +50,6 @@ export const LayoutFlowScene = ({
   const drawer = useAppStore((state) => state.drawer);
   const sizing = useAppStore(selectDrawerSizing);
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.sessionRailCollapsed, isFolded ? '1' : '0');
     seedRunningList();
     if (isFourBranches) {
       seedFourBranches();
@@ -64,14 +63,19 @@ export const LayoutFlowScene = ({
       useAppStore.getState().openDrawer({ kind: 'spawned', sessionId: SESSION.id, payload: null });
     }
     setIsReady(true);
-  }, [isDrawerOpen, isFolded, isFourBranches]);
+  }, [isDrawerOpen, isFourBranches]);
   if (!isReady) {
     return null;
   }
   const overview = (
-    <ScrollFade className="h-full">
-      <SessionOverviewPane session={LIMITS_SESSION} />
-    </ScrollFade>
+    <div className="flex h-full min-h-0 flex-col gap-2">
+      <SessionHead session={LIMITS_SESSION} />
+      <UnderTrailContext.Provider value>
+        <ScrollFade className="min-h-0 flex-1">
+          <SessionOverviewPane session={LIMITS_SESSION} />
+        </ScrollFade>
+      </UnderTrailContext.Provider>
+    </div>
   );
   if (isNarrowRow) {
     return (

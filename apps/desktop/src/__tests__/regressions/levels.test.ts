@@ -95,20 +95,7 @@ type SourceParams = {
 const featureSource = ({ path }: SourceParams): string =>
   readFileSync(join(FEATURES, path), 'utf8');
 
-const OVERVIEW_LABEL_FILES = [
-  'session/central/cards/OverviewCard.tsx',
-  'session/central/cards/NewSinceCard.tsx',
-  'session/central/now/LiveSection.tsx',
-  'session/central/branches/BranchList/index.tsx',
-];
-
 describe('levels on the overview and the runs pages', () => {
-  it.each(OVERVIEW_LABEL_FILES)('%s labels its section at level 2, not as an eyebrow', (path) => {
-    const source = featureSource({ path });
-    expect(source).toContain('<SectionLabel');
-    expect(source).not.toContain('Eyebrow');
-  });
-
   it('weighs only the live step of a run at 600 and sets the others at 400', () => {
     const source = featureSource({
       path: 'workflows/components/RunTree/RunTreeChecklistCells.tsx',

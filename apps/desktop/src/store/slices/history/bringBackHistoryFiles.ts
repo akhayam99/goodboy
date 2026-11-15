@@ -66,6 +66,6 @@ export const bringBackHistoryFiles = ({ set, get }: DepsParams) => {
     if (outcome.kind === 'blocked') {
       throw new Error(outcome.reason);
     }
-    throw new Error("Couldn't bring your files back. They remain saved in the stash.");
+    throw new Error("Couldn't restore your stashed files. They remain saved in the stash.");
   };
 };

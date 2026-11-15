@@ -62,7 +62,13 @@ describe('readme hero scene', () => {
   it('opens the session with its projects, the shared context and runs on three providers', async () => {
     await mount();
 
-    const rail = screen.getByRole('navigation', { name: 'Session pages' });
+    const tabs = screen.getByRole('tablist', { name: 'Session pages' });
+    expect(
+      within(tabs)
+        .getByRole('tab', { name: /^Context/ })
+        .getAttribute('aria-selected'),
+    ).toBe('true');
+    const rail = document.querySelector<HTMLElement>('[data-level-layer="session"]') ?? tabs;
     const projects = within(rail).getByRole('group', { name: 'Projects' });
     const labels = [...projects.querySelectorAll('[data-worktree-entries] [data-entry-label]')].map(
       (label) => label.textContent ?? '',
@@ -70,7 +76,7 @@ describe('readme hero scene', () => {
     expect(labels).toEqual([]);
     expect(projects.querySelectorAll('[data-worktree-branch]').length).toBeGreaterThan(0);
     expect(within(rail).getByRole('group', { name: 'Linked' })).toBeDefined();
-    expect(useAppStore.getState().drawer?.kind).toBe('context');
+    expect(useAppStore.getState().drawer).toBeNull();
 
     const agents = useAppStore.getState().sessionPhaseRuns[SESSION_ID] ?? [];
     const providers = new Set(agents.map((agent) => agent.providerOverride));

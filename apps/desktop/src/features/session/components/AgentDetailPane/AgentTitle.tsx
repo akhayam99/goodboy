@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { InteractiveRow, ScrollFade, Tooltip, cn, TruncatedText } from '@goodboy/ui';
 import type { Agent, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
@@ -8,6 +8,9 @@ import { agentObjectKey } from '../../../actions/agentObjectKey';
 import { useRenameRequest } from '../../../../shared/hooks/useRenameRequest';
 import { useFixRunName } from '../../../resolve/hooks/useFixRunName';
 import { classifyAgent } from '../../agent-kind';
+import { agentTaskLabelOf } from '../../../auto/agentTaskLabelOf';
+import { autoRunTitleOf } from '../../autoRunTitleOf';
+import { AgentBriefCrumb } from './AgentBriefCrumb';
 import { agentHeadingOf } from './agentHeadingOf';
 import { firstLineOf } from './firstLineOf';
 
@@ -16,13 +19,23 @@ type Props = {
   readonly sessionId: SessionId;
   readonly brief?: string | null;
   readonly heading?: string;
+  readonly isInline?: boolean;
 };
 
-export const AgentTitle = ({ agent, sessionId, brief = null, heading }: Props) => {
+export const AgentTitle = ({
+  agent,
+  sessionId,
+  brief = null,
+  heading,
+  isInline = false,
+}: Props) => {
   const [isBriefOpen, setIsBriefOpen] = useState(false);
   const renameAgent = useAppStore((state) => state.renameAgent);
   const kindOverride = useAppStore((state) => state.agentKindOverride[agent.id] ?? null);
   const fixRunName = useFixRunName({ sessionId, agentId: agent.id });
+  const views = useAppStore((state) => state.autoTreeViews[sessionId]);
+  const task = useMemo(() => agentTaskLabelOf({ views, agentId: agent.id }), [views, agent.id]);
+  const runTitle = useAppStore((state) => autoRunTitleOf({ state, sessionId, agentId: agent.id }));
   const rename = useInlineRename({
     value: agent.name,
     onCommit: (next) => renameAgent(sessionId, agent.id, next),
@@ -45,7 +58,8 @@ export const AgentTitle = ({ agent, sessionId, brief = null, heading }: Props) =
           onBlur={rename.onBlur}
           aria-invalid={rename.error !== null}
           className={cn(
-            'w-full min-w-0 rounded-md bg-background px-2 py-0.5 text-title text-foreground outline-none ring-1',
+            'w-full min-w-0 rounded-md bg-background px-2 py-0.5 text-foreground outline-none ring-1',
+            isInline ? 'text-meta' : 'text-title',
             rename.error !== null ? 'ring-danger' : 'ring-primary',
           )}
         />
@@ -54,10 +68,15 @@ export const AgentTitle = ({ agent, sessionId, brief = null, heading }: Props) =
   }
 
   const kind = classifyAgent({ agent, override: kindOverride });
-  const displayName =
+  const fullName =
     heading ??
     (kind === 'resolver' && isAutoResolverName({ name: agent.name }) ? fixRunName : null) ??
     agentHeadingOf({ name: agentDisplayName({ name: agent.name, kind }), kind, brief });
+  const displayName = brief === null && heading === undefined ? (runTitle ?? fullName) : fullName;
+
+  if (brief !== null && displayName === brief && isInline) {
+    return <AgentBriefCrumb brief={brief} task={task} label={runTitle} onRename={rename.start} />;
+  }
 
   if (brief !== null && displayName === brief) {
     return (

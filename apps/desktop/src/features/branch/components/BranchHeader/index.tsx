@@ -7,6 +7,7 @@ import { pullRequestKindOf } from '../../../../shared/utils/pullRequestKind';
 import { usePullRequestTitleEdit } from '../../hooks/usePullRequestTitleEdit';
 import { PullRequestTitle } from '../PullRequestTab/PullRequestTitle';
 
+import { actionButtonLookOf } from '../../../actions/actionButtonLookOf';
 import { actionButtonStateOf } from '../../../actions/actionButtonStateOf';
 import type { BranchControls } from '../../hooks/useBranchControls';
 import { branchShownIdsOf, type BranchPrimary } from '../../branchPrimary';
@@ -70,11 +71,15 @@ export const BranchHeader = ({
       isBusy: action.isBusy || isPushBusy,
     });
     const tip = action.blockedReason ?? action.note;
+    const look = actionButtonLookOf({
+      verb: action.actionId,
+      variant,
+    });
     const button = (
       <Button
         size="sm"
-        variant={variant}
-        data-variant={variant}
+        variant={look.variant}
+        intent={look.intent}
         data-branch-primary={slot === 'primary' ? action.actionId : undefined}
         data-branch-secondary={slot === 'secondary' ? action.actionId : undefined}
         disabled={action.blockedReason !== null}

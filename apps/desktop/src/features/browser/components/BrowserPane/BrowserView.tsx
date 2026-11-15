@@ -1,5 +1,5 @@
 import type { RefObject } from 'react';
-import { EmptyState } from '@goodboy/ui';
+import { Button, EmptyState } from '@goodboy/ui';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { MOCK_ENABLED } from '../../../../shared/lib/mockMode';
 import type { DevicePresetId } from '../../../../store/slices/browser/types';
@@ -17,7 +17,7 @@ type Props = {
   readonly title: string;
   readonly cover: CoverReason | null;
   readonly devicePreset?: DevicePresetId;
-  readonly emptyTitle?: string;
+  readonly onNew?: () => void;
 };
 
 export const BrowserView = ({
@@ -27,7 +27,7 @@ export const BrowserView = ({
   title,
   cover,
   devicePreset = 'desktop',
-  emptyTitle = 'Open a page beside the session',
+  onNew,
 }: Props) => {
   const width = devicePresetOf({ id: devicePreset }).width;
   const page =
@@ -52,8 +52,15 @@ export const BrowserView = ({
         <div className="flex min-h-0 flex-1 items-center justify-center p-6">
           <EmptyState
             icon={CONCEPT_ICONS.browser}
-            title={emptyTitle}
+            title="No page open"
             description="A localhost address opens your dev server."
+            action={
+              onNew === undefined ? undefined : (
+                <Button size="sm" onClick={onNew}>
+                  New tab
+                </Button>
+              )
+            }
           />
         </div>
       ) : null}

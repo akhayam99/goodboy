@@ -62,12 +62,12 @@ describe('DrawerFrame head', () => {
   it('names the page button with its own words when the drawer gives them', () => {
     const onOpen = vi.fn();
     render(
-      <DrawerFrame title="Terminal" page={{ label: 'Open as page', onOpen }} onClose={vi.fn()}>
+      <DrawerFrame title="Terminal" page={{ label: 'Open full page', onOpen }} onClose={vi.fn()}>
         body
       </DrawerFrame>,
     );
 
-    fireEvent.click(screen.getByRole('button', { name: 'Open as page' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Open full page' }));
 
     expect(onOpen).toHaveBeenCalledOnce();
     expect(screen.queryByRole('button', { name: 'Open page' })).toBeNull();

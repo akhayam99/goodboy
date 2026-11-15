@@ -171,8 +171,15 @@
     seq += 1;
     entry.seq = seq;
     ring[ring.length] = entry;
-    if (ring.length > RING_SIZE) {
-      ring.splice(0, ring.length - RING_SIZE);
+    while (ring.length > RING_SIZE) {
+      let drop = 0;
+      for (let index = 0; index < ring.length; index += 1) {
+        if (ring[index].kind === entry.kind) {
+          drop = index;
+          break;
+        }
+      }
+      ring.splice(drop, 1);
     }
   };
 
@@ -214,7 +221,7 @@
     guarded(() =>
       store({
         kind: 'network',
-        level: 'error',
+        level: status !== null && (status === 0 || status >= 400) ? 'error' : 'info',
         text: pathOf(address),
         source: null,
         method: clip(toText(method).toUpperCase(), MAX_METHOD),
@@ -340,7 +347,7 @@
       return answer.then(
         (response) => {
           quietly(() => {
-            if (response != null && response.status >= 400) {
+            if (response != null) {
               recordNetwork(method, response.status, address);
             }
           });
@@ -373,9 +380,7 @@
           requests.delete(xhr);
           quietly(() => {
             xhr.addEventListener('load', () => {
-              if (xhr.status >= 400) {
-                recordNetwork(request.method, xhr.status, request.address);
-              }
+              recordNetwork(request.method, xhr.status, request.address);
             });
             xhr.addEventListener('error', () => recordNetwork(request.method, 0, request.address));
             xhr.addEventListener('timeout', () =>
@@ -386,6 +391,24 @@
         return send.apply(this, arguments);
       };
     }
+  }
+
+  const Observer = window.PerformanceObserver;
+  if (typeof Observer === 'function') {
+    quietly(() => {
+      const watch = new Observer((list) => {
+        const found = list.getEntries();
+        for (let index = 0; index < found.length; index += 1) {
+          const item = found[index];
+          const kind = item.initiatorType;
+          if (kind === 'fetch' || kind === 'xmlhttprequest' || kind === 'beacon') {
+            continue;
+          }
+          recordNetwork('GET', null, item.name);
+        }
+      });
+      watch.observe({ type: 'resource', buffered: true });
+    });
   }
 
   window.addEventListener(

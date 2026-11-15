@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { REVIEW_SOURCE_CAPABILITIES } from '@goodboy/core/review-source';
-import { PageColumn, PaneShell } from '@goodboy/ui';
+import { PANE_RHYTHM, PageColumn, PaneShell, cn } from '@goodboy/ui';
 import type { PullRequestHost, Session, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { branchGithubOf } from '../../../../store/slices/github/branchGithubOf';
@@ -9,8 +9,7 @@ import type { BranchTab } from '../../../../store/slices/navigation/types';
 import { pullRequestViewOf } from '../../../../store/slices/pull-request-view/pullRequestViewOf';
 import { refreshActiveRequest } from '../../../../store/slices/review-source/refreshActiveRequest';
 import { useSessionRepo } from '../../../../store/slices/worktrees/useSessionRepo';
-import { DiffRailContext, type DiffRailHost } from '../../../diff/diffRailHost';
-import { DiffBaseBranchRow } from '../../../diff/components/SessionDiffPane/DiffBaseBranchRow';
+import { DiffBaseBranchRow } from '../../../diff/components/ChangesPage/DiffBaseBranchRow';
 import { useSessionDiff } from '../../../diff/hooks/useSessionDiff';
 import { useGithubConnection } from '../../../integrations/github/useGithubConnection';
 import { useMountRemoteHostKind } from '../../../worktree/useMountRemoteHostKind';
@@ -19,7 +18,6 @@ import { ReviewFlowVisit } from '../../../resolve/components/ReviewFlow/ReviewFl
 import { useActiveReviewSource } from '../../../resolve/hooks/useActiveReviewSource';
 import { useBranchReview } from '../../../resolve/hooks/useBranchReview';
 import { usePushRequest } from '../../hooks/usePushRequest';
-import { BranchDiffContext } from '../../branchDiffContext';
 import { useBranchControls } from '../../hooks/useBranchControls';
 import { useBitbucketRemote } from '../../hooks/useBitbucketRemote';
 import { useBranchIdentity } from '../../hooks/useBranchIdentity';
@@ -52,7 +50,7 @@ import { BranchBodyTop } from './BranchBodyTop';
 import { BranchDetail } from './BranchDetail';
 import { BranchScroll } from './BranchScroll';
 import { BranchWorkBody } from './BranchWorkBody';
-import { TabActionsSlotContext } from '../../../../shared/components/TabActions/tabActionsSlotContext';
+import { BranchPaneRoot } from './BranchPaneRoot';
 
 const NO_PREFILL = { title: '', body: '' };
 
@@ -65,8 +63,8 @@ type Props = {
 export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
   const sessionId = session.id as SessionId;
   const identity = useBranchIdentity({ sessionId });
-  const storedTab = useBranchTab({ sessionId });
   const setPullRequestMode = useAppStore((s) => s.setPullRequestMode);
+  const isReviewWriting = useAppStore((s) => s.pullRequestModes[sessionId] === 'write_review');
   const navigate = useAppStore((s) => s.navigate);
   const diffFocus = useAppStore((s) => s.diffFocus[sessionId] ?? null);
   const historyMountId = identity.mount?.mountId ?? null;
@@ -75,8 +73,6 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
   );
   const refreshSessionPrDetail = useAppStore((s) => s.refreshSessionPrDetail);
   const [tabActionsSlot, setTabActionsSlot] = useState<HTMLElement | null>(null);
-  const [page, setPage] = useState<HTMLElement | null>(null);
-  const [fileSlot, setFileSlot] = useState<HTMLElement | null>(null);
   const historyCommits = useAppStore((s) =>
     historyMountId === null ? null : (s.historyDrafts[historyMountId]?.commits ?? null),
   );
@@ -126,7 +122,7 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
     hasComments,
   };
   const tabs = branchTabsOf(scope);
-  const tab = resolveBranchTab({ tab: storedTab, scope });
+  const tab = resolveBranchTab({ tab: useBranchTab({ sessionId }), scope });
   const isReadOnly = isBranchReadOnly(scope);
   const { hasPushFailure, isPushBusy, pushCount, review } = useBranchReviewState({
     entries: branchReview.entries,
@@ -391,12 +387,13 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
     notPushed: pushCount,
   });
   const openedAt = pullRequestView.view?.createdAt ?? null;
-  const railSlot = useMemo<DiffRailHost>(() => ({ slot: fileSlot, page }), [fileSlot, page]);
+  const isWritingReview = isReviewWriting && pr !== null && pr.state === 'open';
+  const isChanges = tab === 'files' && identity.mountPath !== null && !isWritingReview;
 
   const detail = (
     <BranchDetail>
       <PaneShell
-        page="branch"
+        page={isChanges ? 'branchChanges' : 'branch'}
         scroll="self"
         revealKey={tab}
         headerRhythm="section"
@@ -409,7 +406,7 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
           />
         }
         header={
-          <div className="flex min-w-0 flex-col">
+          <div className={cn('flex min-w-0 flex-col', PANE_RHYTHM.block)}>
             <BranchHeader
               sessionId={sessionId}
               host={host}
@@ -449,6 +446,7 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
             review={branchReview}
             isFixRunShown={tab !== 'comments' && branchReview.comments.facts.isFixRunLive}
             isPushNext={!isStepHidden && controls.primary?.actionId === 'diff.push'}
+            isSetupOfferShown={!isChanges}
             baseRow={baseRow}
             onOpenComments={() => selectTab('comments')}
           />
@@ -459,25 +457,12 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
   );
 
   return (
-    <BranchDiffContext.Provider value={identity.mountPath === null ? null : diff}>
-      <TabActionsSlotContext.Provider value={tabActionsSlot}>
-        <DiffRailContext.Provider value={railSlot}>
-          <div
-            ref={setPage}
-            data-branch-pane=""
-            className="relative flex h-full min-h-0 min-w-0 flex-1"
-          >
-            {detail}
-            {tab === 'files' ? (
-              <div
-                ref={setFileSlot}
-                data-slot="diff-file-rail"
-                className="flex h-full min-h-0 shrink-0 empty:hidden"
-              />
-            ) : null}
-          </div>
-        </DiffRailContext.Provider>
-      </TabActionsSlotContext.Provider>
-    </BranchDiffContext.Provider>
+    <BranchPaneRoot
+      isActive={isActive}
+      diff={identity.mountPath === null ? null : diff}
+      tabActionsSlot={tabActionsSlot}
+    >
+      {detail}
+    </BranchPaneRoot>
   );
 };

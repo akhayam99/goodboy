@@ -141,7 +141,7 @@ const selectedBranchTab = (ctx: Ctx): string | undefined =>
 
 export const GITLAB_PAGE_ROWS: ReadonlyArray<Row> = [
   {
-    name: 'gitlab page: a GitLab branch lands on the Overview, first of the six sections, with its number',
+    name: 'gitlab page: a GitLab branch lands on the Conversation, first of the six sections, with its number',
     covers: ['navigate', 'tab:pr', 'gitlab-page:identity'],
     seed: 'issue',
     open: openMergeRequestPage,
@@ -149,7 +149,7 @@ export const GITLAB_PAGE_ROWS: ReadonlyArray<Row> = [
       await heading(/Stop retried webhooks/);
       await waitFor(() => {
         expect(selectedBranchTab(ctx)).toBe('pr');
-        expect(sectionLabels()[0]).toBe('Overview');
+        expect(sectionLabels()[0]).toBe('Conversation');
         expect(sectionLabels()).toHaveLength(6);
       }, WAIT);
       expect((await screen.findAllByText(/MR !42/, undefined, WAIT)).length).toBeGreaterThan(0);

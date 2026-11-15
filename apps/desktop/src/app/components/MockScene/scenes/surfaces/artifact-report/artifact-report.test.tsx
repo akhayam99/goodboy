@@ -7,7 +7,7 @@ vi.mock('@tauri-apps/api/event', async () =>
 );
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, render, screen, waitFor, within } from '@testing-library/react';
 import {
   installFakeResizeObserver,
   type FakeResizeObservers,
@@ -82,10 +82,11 @@ describe('u37 artifact report scrolled', () => {
       }
       render(<Scene />);
 
-      const back = await screen.findByRole('button', { name: 'Back to artifacts' }, SCENE_WAIT);
+      const crumbs = await screen.findByRole('navigation', { name: 'Breadcrumb' }, SCENE_WAIT);
+      within(crumbs).getByRole('button', { name: 'Artifacts' });
       const header = await screen.findByTestId('artifact-shell-header', {}, SCENE_WAIT);
       const zone = closest({ node: header, selector: '[data-slot="reveal-pinned"]' });
-      expect(zone.contains(back)).toBe(true);
+      expect(zone.contains(crumbs)).toBe(false);
       const region = closest({ node: zone, selector: '[data-slot="reveal-region"]' });
       expect(region.querySelector('[data-slot="reveal-header"]')?.childElementCount).toBe(0);
 

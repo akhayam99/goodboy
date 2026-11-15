@@ -1,17 +1,33 @@
 import { useLayoutEffect, useRef, useState } from 'react';
-import { Bot } from 'lucide-react';
-import { Button, EmptyLine, ICON_SIZE, ScrollFade, SegmentedTabs } from '@goodboy/ui';
-import { useHandOutputToAgent } from '../../../../shared/hooks/useHandOutputToAgent';
+import type { SessionId } from '@goodboy/types';
+import { Button, EmptyLine, ScrollFade, SearchField, SegmentedTabs } from '@goodboy/ui';
+import { useOpenSession } from '../../../../shared/hooks/useOpenSession';
 import { consoleAttachmentOf } from '../../consoleAttachmentOf';
 import { consoleCounts } from '../../consoleCounts';
+import { consoleRowsOf, type ConsoleLevelFilter } from '../../consoleRowsOf';
+import { queueConsoleHandoff } from '../../queueConsoleHandoff';
 import type { ConsoleEntries } from '../../hooks/useConsoleEntries';
 import type { BrowserConsoleKind, BrowserPaneModel } from '../../types';
+import { BrowserConsoleLevelMenu } from './BrowserConsoleLevelMenu';
 import { BrowserConsoleRow } from './BrowserConsoleRow';
+import { BrowserConsoleSendMenu } from './BrowserConsoleSendMenu';
 
 type Props = {
   readonly model: BrowserPaneModel;
   readonly title: string;
   readonly log: ConsoleEntries;
+};
+
+type KindParams = {
+  readonly next: BrowserConsoleKind;
+};
+
+type LevelParams = {
+  readonly next: ConsoleLevelFilter;
+};
+
+type SendParams = {
+  readonly sessionId: SessionId;
 };
 
 const FOLLOW_SLACK_PX = 24;
@@ -26,20 +42,25 @@ const FAILURE_TEXT = {
 
 const EMPTY_TEXT = {
   console: 'Nothing logged since the last load',
-  network: 'No failed request since the last load',
+  network: 'No request since the last load',
 } as const satisfies Record<BrowserConsoleKind, string>;
+
+const NO_MATCH_TEXT = 'Nothing matches the filter';
 
 const AGENT_GONE_TEXT = "The agent isn't in this session anymore. Pick one and try again.";
 
 export const BrowserConsole = ({ model, title, log }: Props) => {
   const [kind, setKind] = useState<BrowserConsoleKind>('console');
+  const [level, setLevel] = useState<ConsoleLevelFilter>('all');
+  const [query, setQuery] = useState('');
   const [sendNote, setSendNote] = useState<string | null>(null);
   const viewport = useRef<HTMLDivElement | null>(null);
   const isFollowing = useRef(true);
-  const target = useHandOutputToAgent({ sessionId: model.sessionId });
+  const openSession = useOpenSession();
   const counts = consoleCounts({ entries: log.entries });
-  const rows = log.entries.filter((entry) => entry.kind === kind);
-  const canSend = target.canHandOff && target.agentId !== null && log.entries.length > 0;
+  const kindRows = log.entries.filter((entry) => entry.kind === kind);
+  const rows = consoleRowsOf({ entries: log.entries, kind, level, query });
+  const isFiltered = level !== 'all' || query.trim() !== '';
 
   useLayoutEffect(() => {
     const node = viewport.current;
@@ -56,12 +77,19 @@ export const BrowserConsole = ({ model, title, log }: Props) => {
     }
   };
 
-  const send = (): void => {
-    if (target.agentId === null) {
-      return;
-    }
+  const changeKind = ({ next }: KindParams): void => {
+    setKind(next);
+    setLevel('all');
+  };
+
+  const changeLevel = ({ next }: LevelParams): void => setLevel(next);
+
+  const send = ({ sessionId }: SendParams): void => {
     const handoff = consoleAttachmentOf({ entries: log.entries, title, url: model.address });
-    const isQueued = target.queue({ agentId: target.agentId, handoff });
+    const isQueued = queueConsoleHandoff({ sessionId, handoff });
+    if (isQueued && sessionId !== model.sessionId) {
+      openSession({ sessionId });
+    }
     setSendNote(
       isQueued
         ? `Sent as ${handoff.fileName}, a chip in the composer. Nothing goes until you send.`
@@ -77,14 +105,14 @@ export const BrowserConsole = ({ model, title, log }: Props) => {
   return (
     <section
       aria-label="Console"
-      className="flex h-40 shrink-0 flex-col gap-1 overflow-hidden rounded-lg border border-border-soft bg-background p-1"
+      className="flex h-48 shrink-0 flex-col gap-1 overflow-hidden rounded-lg border border-border-soft bg-background p-1"
     >
       <div className="flex h-8 shrink-0 items-center gap-2 px-1">
         <SegmentedTabs
           size="xs"
           ariaLabel="Console or Network"
           value={kind}
-          onChange={setKind}
+          onChange={(next) => changeKind({ next })}
           options={[
             {
               value: 'console',
@@ -98,16 +126,22 @@ export const BrowserConsole = ({ model, title, log }: Props) => {
             },
           ]}
         />
-        <span className="min-w-0 flex-1 truncate text-meta text-faint-foreground">
-          Since the last load
-        </span>
-        <Button variant="quiet" size="xs" disabled={rows.length === 0} onClick={clear}>
+        <BrowserConsoleLevelMenu kind={kind} level={level} onChange={changeLevel} />
+        <SearchField
+          ariaLabel="Search the log"
+          placeholder="Search"
+          value={query}
+          onChange={setQuery}
+          className="min-w-0 flex-1"
+        />
+        <Button variant="quiet" size="xs" disabled={kindRows.length === 0} onClick={clear}>
           Clear
         </Button>
-        <Button variant="secondary" size="xs" disabled={!canSend} onClick={send}>
-          <Bot size={ICON_SIZE.row} aria-hidden />
-          {model.pageSend.label}
-        </Button>
+        <BrowserConsoleSendMenu
+          sessionId={model.sessionId}
+          isDisabled={log.entries.length === 0}
+          onSend={send}
+        />
       </div>
       <div className="flex min-h-0 flex-1 flex-col gap-1">
         {log.failure === null ? null : (
@@ -128,11 +162,13 @@ export const BrowserConsole = ({ model, title, log }: Props) => {
         >
           <div
             role="log"
-            aria-label={kind === 'console' ? 'Console messages' : 'Failed requests'}
+            aria-label={kind === 'console' ? 'Console messages' : 'Requests'}
             className="flex flex-col gap-px"
           >
             {rows.length === 0 ? (
-              <EmptyLine className="px-2">{EMPTY_TEXT[kind]}</EmptyLine>
+              <EmptyLine className="px-2">
+                {isFiltered && kindRows.length > 0 ? NO_MATCH_TEXT : EMPTY_TEXT[kind]}
+              </EmptyLine>
             ) : (
               rows.map((entry) => <BrowserConsoleRow key={entry.seq} entry={entry} />)
             )}

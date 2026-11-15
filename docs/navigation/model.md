@@ -109,8 +109,8 @@
   (see The session tools), and the folded rail shows the same six doors. A pinned port that is down puts the warning dot on it, named "Monitoring,
   pinned port :5173 is down" (`monitoringSignal` lists the down pins,
   `doorSignalOf` names them). Inside a session the column stays the same and marks the open
-  session's row; the session's own levels live in the session rail at the left
-  of the page (see Session rail). The column is on every screen with a workspace: the board, a
+  session's row; the session's own pages are the page tabs under
+  its title (see Session page tabs). The column is on every screen with a workspace: the board, a
   session, the draft and every studio, Settings included. No page changes it:
   Settings is a page with its own scopes rail beside the live column (see
   Studios).
@@ -206,7 +206,7 @@
   nothing. Every control reads it from one place (`columnPlaceOf`, through `selectColumnPlace` and
   `useColumnPlace`), so no page leaves two lit. Inside a session no door does:
   the open session's row is the column's sign and the current page row is the
-  session rail's (see Session rail), one sign per navigation column. Under any
+  page tabs' (see Session page tabs), one sign per navigation surface. Under any
   page the session row is remembered, never current. A popover trigger that is
   not the page's own control (the Usage chips) is never selected: it only
   reports `aria-expanded`; the bell is selected only while its page is open, and
@@ -387,7 +387,8 @@ them. The navigation slice (`store/slices/navigation/`) owns both.
   drawer and the scroll. An address carries only what a screen reads: a window
   saved by an older build with an agent tab, an Explore folder, the Explore or
   Scripts lens, a selection or revealed rows still loads, and
-  `withoutRemovedPages` drops those parts (an old lens opens its pane). `locationKey` prints the text
+  `withoutRemovedPages` folds those parts to their new home (see Stored places below), and an
+  unknown lens opens the session Overview, never a blank page. `locationKey` prints the text
   form used by tests and logs: `board`, `s/{session}`, `s/{session}/branch/comments`,
   `s/{session}/branch/pr` (the Overview section, see below),
   `s/{session}/workflows/{run}`, `s/{session}/agents/agent/{agent}`,
@@ -470,16 +471,68 @@ them. The navigation slice (`store/slices/navigation/`) owns both.
 - **Up goes to the parent.** When the previous entry is the parent, Up is Back.
   Otherwise it pushes the parent (`upTo({ to })`, which `up()` and every crumb
   call). Closing an app studio is Back to the entry below it, so Up from a
-  studio and Close land in the same place. `backOf` reads `parentPlace` once
-  and names that one parent for the back row (`Back to runs`, `Back to
-{parent agent name}`, `Back to artifacts`, `Back to branch`, `Back to
-overview`); a sub agent's parent is the agent that spawned it.
+  studio and Close land in the same place. `crumbsOf` walks `parentPlace` up to
+  the session and names every step for the session crumbs, the first one reading
+  `Overview` (`Overview › Runs › {run}`,
+  `Overview › Runs › {parent agent} › {agent}`, `Overview › Artifacts › {artifact}`,
+  `Overview › {branch}`); a sub agent's parent is the agent that spawned it.
+- **An Auto run keeps one frame.** The run page and the page of every agent
+  under it draw the Agents rail in the frame's left slot (`LeadPage`,
+  `RunAgentsRail`). The marked row is the agent in the address, so a reload,
+  Back and Forward restore it; a row opens that agent's page in the centre and
+  the rail keeps its scroll. The agent's parent crumb is the agent that spawned
+  it, up to the run (`parentPlace`), and Esc walks the same way.
+- **Two Backs, and they differ.** The crumbs, Esc and ⌘↑ follow `parentPlace`: it
+  only points inside the session, never at a list outside it, and it reads
+  the same after a reload, in a second window and from a link. History Back
+  (⌘[) walks this window's stack of 50 and is empty after a reload. A top
+  agent (a root agent at `s/{session}/workflows/agent/{agent}`, the one page
+  `canonicalAgent` resolves for every door) goes back to Runs, the list that holds
+  it, so its crumbs read `Overview › Runs › {run}` like a workflow run; when an up
+  lands on the Overview, `upTo` writes the agent it left into
+  `focus.returnRows['board.lead']` so the board brings its row into view; opened from the Work tab of a pull request it goes
+  back to that tab, read from `focus.runGroup`, which the window layout saves.
+  A session tab (Overview, Runs, Artifacts, Questions, Context) is the top of
+  its session and has no crumbs; a file open in a branchless session's Changes
+  goes back to Changes, then to the Overview.
+- **Changes is a place of a branch.** On a session with a branch,
+  `canonicalLocation` turns a `files` place into the Branch page Changes tab
+  (`branchPlace` with `tab: 'files'`), on the place's mount or else the branch you
+  looked at last (`doorMountPath`), keeping its file focus; the single-branch
+  Changes shortcut, the board door, the palette and the chord all land there. A
+  folder session keeps `FilesPane` on its `files` place. A stored `diff` target
+  with `page: 'history'` still opens the pull request's Commits.
+- **Stored places.** One fold, `withoutRemovedPages`, maps every place an older
+  build saved to its new home, and `PLACE_ROWS` (`placeRows.ts`) names the
+  `focus.returnRows` keys that carry what a place needs without a new stored
+  kind:
+
+  | Stored                                                           | Opens as                                                                   |
+  | ---------------------------------------------------------------- | -------------------------------------------------------------------------- |
+  | Overview, Runs, Artifacts, Questions                             | the same place                                                             |
+  | Changes page                                                     | the Branch page Changes tab, on its branch                                 |
+  | Context panel, any section, or the Goal, Decisions, Summary lens | the Context tab, `context.section` = that section (`history` for versions) |
+  | Ask panel                                                        | unchanged, the Ask panel                                                   |
+  | An address of the old Agents drawer or Agents page               | Runs, `runs.filter` = `running`                                            |
+  | Scripts panel, a script run                                      | unchanged, the Scripts drawer                                              |
+  | An address of the old Explore drawer or page                     | the Changes tab, `changes.mode` = `all`                                    |
+  | A file opened from the old Explore tree                          | the Changes tab on that file, `changes.mode` = `all`                       |
+  | A file opened from a link, the full log, a reading panel         | unchanged                                                                  |
+  | An unknown lens                                                  | the session Overview                                                       |
+
+  The previous release must open every place this build saves: it folds a
+  stored Context tab to its Context panel and opens a stored Changes tab as
+  that branch's diff on its pull request page. `storedPlaces.test.ts` runs
+  every row through a frozen copy of that fold
+  (`testing/opensInPreviousRelease.ts`), and `navigationContract.test.ts`
+  holds the two Backs, the reload and the two windows.
+
 - **Dead entries fall out.** An archived or deleted session removes its
   entries and collapses the duplicates left behind. An agent that is gone
   falls back to its home lens.
 - **Keys.** ⌘[ and ⌘] (`nav.back`, `nav.forward`, app plane) and the mouse's
   back and forward buttons walk the stack. ⌘↑ (`nav.up`, `goUp`) is Up; on a
-  session's Overview, which has no parent, it goes to the board, while ⌘W
+  session tab, which has no parent, it goes to the board, while ⌘W
   there keeps walking history. In a studio, ⌘↑ runs the parent crumb of the
   `StudioTrail` on screen (`studioUpSlot`), so Impact › Spend › a provider goes
   to Spend and a full Tasks record goes to the list; a studio with no trail

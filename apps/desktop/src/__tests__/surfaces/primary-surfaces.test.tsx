@@ -329,6 +329,7 @@ describe('primary surfaces mount on real store selectors', () => {
       await new Promise((resolve) => setTimeout(resolve, 20));
     });
 
+    expect(useAppStore.getState().activeLens[sessionId]).toBe('branch');
     expect(useAppStore.getState().branchTab[sessionId]).toBe('files');
     expect(screen.queryByText('No branch in this session')).toBeNull();
     expectNoRenderLoop();

@@ -41,6 +41,16 @@ export const ArtifactShellHeader = ({
     viewing: viewingId === null ? null : { kind: 'artifact', id: viewingId },
   });
 
+  const metaLine =
+    meta === null ? null : (
+      <span
+        data-testid="artifact-shell-meta"
+        className="flex min-w-0 text-meta font-normal text-muted-foreground"
+      >
+        {meta}
+      </span>
+    );
+
   return (
     <ArtifactHeaderMenuContext.Provider value={register}>
       <div
@@ -63,13 +73,8 @@ export const ArtifactShellHeader = ({
               </span>
             )
           }
-          meta={
-            meta === null ? null : (
-              <div data-testid="artifact-shell-meta" className="flex min-w-0 pl-6">
-                {meta}
-              </div>
-            )
-          }
+          badge={isTitleInDocument ? metaLine : null}
+          meta={isTitleInDocument ? null : metaLine}
           actions={
             <>
               {chip}

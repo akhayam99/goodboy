@@ -2,6 +2,7 @@ import { Button } from '@goodboy/ui';
 import type { MountId, SessionId } from '@goodboy/types';
 import { HistoryChangeDiff } from '../../diff/HistoryChangeDiff';
 import { useHistoryChangeReview } from '../hooks/useHistoryChangeReview';
+import { actionButtonLookOf } from '../../actions/actionButtonLookOf';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -32,7 +33,12 @@ export const JobBannerReview = ({ sessionId, mountId }: Props) => {
         <Button size="sm" isBusy={review.isPending} onClick={review.accept}>
           Accept and apply
         </Button>
-        <Button size="sm" variant="ghost" disabled={review.isPending} onClick={review.discard}>
+        <Button
+          size="sm"
+          {...actionButtonLookOf({ verb: 'discard', variant: 'ghost' })}
+          disabled={review.isPending}
+          onClick={review.discard}
+        >
           Discard
         </Button>
       </div>

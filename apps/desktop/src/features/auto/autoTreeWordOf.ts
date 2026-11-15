@@ -5,6 +5,7 @@ import type { AutoTreeView } from '../../store/slices/auto-view/state';
 import { isAutoPausedAtLimit } from './isAutoPausedAtLimit';
 import { isAutoPlanAwaitingApproval } from './isAutoPlanAwaitingApproval';
 import { projectAskOf } from './chat/projectAskOf';
+import { needsYouRoleNouns } from './needsYouRoleNouns';
 
 export type AutoTreeState =
   'stopping' | 'stopped' | 'done' | 'failed' | 'idle' | 'asking' | 'paused' | 'running';
@@ -58,7 +59,11 @@ export const autoTreeWordOf = ({ view, rootTurn }: Params): AutoTreeWord => {
       ? RUNNING
       : { state: 'idle', word: NAMES.idle, node: 'queued', isLive: false };
   }
-  if (projectAskOf({ view }) !== null || isAutoPlanAwaitingApproval({ view })) {
+  if (
+    projectAskOf({ view }) !== null ||
+    isAutoPlanAwaitingApproval({ view }) ||
+    needsYouRoleNouns({ delegations: view.delegations }).length > 0
+  ) {
     return NEEDS_YOU;
   }
   if (isAutoPausedAtLimit({ view })) {

@@ -85,7 +85,7 @@ Only shell code that is global by nature goes here. `App.tsx`, `main.tsx` and `s
 - `app/hooks/`: hooks that wire the shell (shortcuts, overlays, session navigation, native menu policy). Same hook rule as below.
 - `app/shellArrangement/`: the pure function that decides which shell slots show.
 
-`app/components/DrawerHost.tsx` shows one drawer at a time and does not import the drawers. A feature exports a `DrawerRegistration` for its kind (type in `store/slices/drawer/drawerRegistration.ts`, file `features/<domain>/<name>DrawerRegistration.tsx`) and `app/components/renderRegisteredDrawer.tsx` calls it; the host keeps one `case` label per kind so the switch stays exhaustive. `drawer-host-imports.baseline.json` counts the feature imports the host still has and only falls: a new drawer is a registration, an old one moves over when it is touched. `SpawnedPanel`, `FixRunTranscriptDrawer`, `ArtifactReadingDrawer`, `ExploreAddFolder` and `ExploreFileChanges` stay in the shell for now because each reads components of several features, and a move would add cross-feature imports.
+`app/components/DrawerHost.tsx` shows one drawer at a time and does not import the drawers. A feature exports a `DrawerRegistration` for its kind (type in `store/slices/drawer/drawerRegistration.ts`, file `features/<domain>/<name>DrawerRegistration.tsx`) and `app/components/renderRegisteredDrawer.tsx` calls it; the host keeps one `case` label per kind so the switch stays exhaustive. `drawer-host-imports.baseline.json` counts the feature imports the host still has and only falls: a new drawer is a registration, an old one moves over when it is touched. `SpawnedPanel`, `FixRunTranscriptDrawer`, `ArtifactReadingDrawer` and `ExploreFileChanges` stay in the shell for now because each reads components of several features, and a move would add cross-feature imports.
 
 ## The folder rule
 
@@ -180,7 +180,7 @@ Rules around slices:
 
 - `components/`, `hooks/`, `types/`: shared components, hooks and types, by the rules above.
 - `utils/`: pure functions and constants. No `invoke`, no store, no React, no browser storage.
-- `lib/`: code that touches the runtime boundary: Tauri wrappers (`invokeCommand`, `db`, `dbBoot`, `editor`, `reveal`), the folder dialog (`pickFolder`), browser storage (`storage-keys`, `zoom`), theme and the feature flags. A pure function does not belong here: put it in `utils/`.
+- `lib/`: code that touches the runtime boundary: Tauri wrappers (`invokeCommand`, `db`, `dbBoot`, `editor`, `reveal`), the folder dialog (`pickFolder`), browser storage (`storage-keys`, `zoom` and the factor it last applied, `appliedZoom`), theme and the feature flags. A pure function does not belong here: put it in `utils/`.
 - `keyboard/`: the shortcut registry, its dispatcher, `useShortcut` and `isTypingTarget`.
 - `platform/`: operating system detection.
 - `detail-fields/`: the field builders the record detail panes render, one file per tracker.

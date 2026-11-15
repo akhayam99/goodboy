@@ -11,10 +11,10 @@ import {
 import {
   cn,
   DrawerColumn,
-  DrawerEdgeContext,
   PAGE_FRAME,
   readStudioRailWidth,
   SHEET_CLASSES,
+  ShellDockContext,
   StudioSlotContext,
   UnderTrailContext,
   useEscapeLayer,
@@ -33,8 +33,10 @@ import { STUDIO_META } from './studioMeta';
 import { captureStudioOpener } from './captureStudioOpener';
 import { restoreStudioOpener } from './restoreStudioOpener';
 import { StudioSkeleton } from './StudioSkeleton';
-import { StudioRail } from './StudioRail';
-import { useOneRightPanel } from '../../hooks/useOneRightPanel';
+import { ShellToolRail } from '../ShellToolRail';
+import { useAppStore } from '../../../store';
+import { selectDockDrawer } from '../../../store/slices/drawer/selectDockDrawer';
+import { drawerSizingOf } from '../../../store/slices/drawer/drawerSizingOf';
 import type { StudioPlacement } from './studioPlacement';
 
 type Props = {
@@ -97,8 +99,10 @@ export const StudioFrame = ({ kind, onClose, children, placement = 'cover' }: Pr
   const isBandDrawn = isBandClose || trailClaims > 0 || accessory !== null;
   const isUnderTrail = isBandDrawn || isOuterUnderTrail;
 
-  const isPanelShown = useOneRightPanel({ spec: drawerSpec, isActive: isDrawerHost });
-  const shellEdge = useContext(DrawerEdgeContext);
+  const dock = useContext(ShellDockContext);
+  const dockSizing = useAppStore((state) =>
+    drawerSizingOf({ drawer: selectDockDrawer({ state }) }),
+  );
   const motion = isClosing ? 'motion-safe:animate-studio-out' : 'motion-safe:animate-studio-in';
   const isSplit = meta.page !== null && PAGE_FRAME[meta.page] === 'split';
   const bandNode = isBandDrawn ? (
@@ -177,11 +181,13 @@ export const StudioFrame = ({ kind, onClose, children, placement = 'cover' }: Pr
                 >
                   {framed}
                 </div>
-                <StudioRail shellEdge={shellEdge} />
+                <ShellToolRail />
               </div>
             }
-            drawer={
-              drawerSpec?.node == null || !isPanelShown ? null : (
+            drawer={dock}
+            sizing={dockSizing}
+            detail={
+              drawerSpec?.node == null ? null : (
                 <div
                   data-studio-motion={isClosing ? 'out' : hasEntered ? 'settled' : 'in'}
                   className={cn(
@@ -196,10 +202,13 @@ export const StudioFrame = ({ kind, onClose, children, placement = 'cover' }: Pr
               )
             }
             ariaLabel={drawerSpec?.ariaLabel ?? 'Side panel'}
-            resizeLabel={drawerSpec?.resizeLabel ?? 'Resize side panel'}
-            {...(drawerSpec?.drawerKey !== undefined && { drawerKey: drawerSpec.drawerKey })}
+            resizeLabel="Resize side panel"
+            {...(drawerSpec?.resizeLabel !== undefined && {
+              detailResizeLabel: drawerSpec.resizeLabel,
+            })}
+            {...(drawerSpec?.drawerKey !== undefined && { detailKey: drawerSpec.drawerKey })}
             {...(drawerSpec?.drawerRef !== undefined && { drawerRef: drawerSpec.drawerRef })}
-            {...(drawerSpec?.sizing !== undefined && { sizing: drawerSpec.sizing })}
+            {...(drawerSpec?.sizing !== undefined && { detailSizing: drawerSpec.sizing })}
           />
         ) : (
           framed

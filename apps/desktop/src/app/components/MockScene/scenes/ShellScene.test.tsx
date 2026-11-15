@@ -31,43 +31,50 @@ afterEach(() => {
   window.history.replaceState(null, '', '/');
 });
 
-const pageRow = (label: string): HTMLElement => {
-  const row = screen
-    .getAllByRole('button')
-    .find((button) =>
-      (button.getAttribute('aria-label') ?? button.textContent ?? '').trim().startsWith(label),
-    );
-  if (row === undefined) {
-    throw new Error(`no ${label} row in the column`);
+const pageTab = (label: string): HTMLElement => {
+  const tab = screen
+    .getAllByRole('tab')
+    .find((candidate) => (candidate.textContent ?? '').trim().startsWith(label));
+  if (tab === undefined) {
+    throw new Error(`no ${label} tab in the page tabs`);
   }
-  return row;
+  return tab;
 };
 
 const renderShell = async () => {
   render(<ShellScene />);
-  await screen.findByTestId('pane-toggle-ask');
+  await screen.findByTestId('pane-toggle-terminal');
 };
 
 describe('the shell scene mounts the real session workspace', () => {
-  it('opens the step of its preset run with the rail on the session, Ask and no trail band', async () => {
+  it('opens the step of its preset run with the page tabs on the session, Ask and no trail band', async () => {
     await renderShell();
     expect(document.querySelector('[data-slot="trail-bar"]')).toBeNull();
-    expect(document.querySelector('[data-session-rail]')?.getAttribute('data-session-rail')).toBe(
-      'session',
-    );
-    expect(screen.queryByRole('button', { name: 'Back to Runs' })).toBeNull();
+    expect(screen.getAllByRole('navigation', { name: 'Breadcrumb' }).length).toBeGreaterThan(0);
+    expect(
+      [...document.querySelectorAll('[data-session-back]')].filter(
+        (back) => back.closest('[data-session-head]') === null,
+      ),
+    ).toEqual([]);
     expect(useAppStore.getState().currentSessionId).toBe(SESSION.id);
   });
 
-  it('moves to Runs and Artifacts from the session level', async () => {
+  it('moves to Runs and Artifacts from the page tabs', async () => {
     await renderShell();
+    const session = document.querySelector('[data-session-crumbs] [data-crumb="0"]');
+    if (session !== null) {
+      act(() => {
+        fireEvent.click(session);
+      });
+    }
+    await waitFor(() => expect(screen.getAllByRole('tab').length).toBeGreaterThan(0));
     const moves: ReadonlyArray<readonly [string, string]> = [
       ['Runs', 'workflows'],
       ['Artifacts', 'plans'],
     ];
     for (const [label, lens] of moves) {
       act(() => {
-        fireEvent.click(pageRow(label));
+        fireEvent.click(pageTab(label));
       });
       await waitFor(() => expect(useAppStore.getState().activeLens[SESSION.id]).toBe(lens));
     }
@@ -93,6 +100,6 @@ describe('the shell scene mounts the real session workspace', () => {
       expect(screen.queryByRole('complementary', { name: 'Settings scopes' })).toBeNull(),
     );
     expect(useAppStore.getState().appStudio).toBeNull();
-    expect(screen.getByTestId('pane-toggle-ask')).toBeDefined();
+    expect(screen.getByTestId('pane-toggle-terminal')).toBeDefined();
   });
 });

@@ -5,7 +5,7 @@ import { AutoReleaseContext } from '../../../../../features/auto/autoReleaseCont
 import { AgentDetailPane } from '../../../../../features/session/components/AgentDetailPane';
 import { applyDocumentTheme } from '../../../../../shared/lib/theme';
 import { useAppStore } from '../../../../../store';
-import { selectDrawerSizing } from '../../../../../store/slices/drawer/selectDrawerSizing';
+import { selectDrawerSizing } from '../../../../../store/slices/drawer/testing/selectDrawerSizing';
 import { DrawerHost } from '../../../DrawerHost';
 import { seedActivityRunScene } from '../activityRunSeed';
 import {

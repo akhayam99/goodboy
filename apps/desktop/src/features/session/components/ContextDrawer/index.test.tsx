@@ -14,6 +14,7 @@ import {
   SESSION_ID,
   seedActivityRunScene,
 } from '../../../../app/components/MockScene/scenes/activityRunSeed';
+import { currentStack } from '../../../../store/slices/navigation/currentStack';
 import { ContextDrawer } from '.';
 import { summarizerQueues } from '../../../../store/slices/turn/turnHelpers';
 import { contextUpdateHint } from './contextUpdateCopy';
@@ -46,6 +47,11 @@ vi.mock('@goodboy/db', async () =>
 );
 
 let store: StoryStore;
+
+const contextRows = () => {
+  const stack = currentStack(store.getState());
+  return stack.entries[stack.index]?.focus.returnRows;
+};
 
 beforeAll(async () => {
   store = await importStore();
@@ -245,13 +251,17 @@ describe('Context drawer', () => {
   });
 
   it.each(['Goal', 'Decisions', 'Summary'])(
-    'puts Edit, Versions and Who reads this in one %s menu, reachable with arrows',
+    'puts Edit, Versions and Change visibility in one %s menu, reachable with arrows',
     (label) => {
       mount();
       fireEvent.click(screen.getByRole('button', { name: `${label} actions` }));
       const menu = screen.getByRole('menu', { name: `${label} actions` });
       const items = within(menu).getAllByRole('menuitem');
-      expect(items.map((item) => item.textContent)).toEqual(['Edit', 'Versions', 'Who reads this']);
+      expect(items.map((item) => item.textContent)).toEqual([
+        'Edit',
+        'Versions',
+        'Change visibility',
+      ]);
       fireEvent.keyDown(items[0] ?? menu, { key: 'Home' });
       expect(document.activeElement).toBe(items[0]);
       fireEvent.keyDown(menu, { key: 'ArrowDown' });
@@ -273,9 +283,9 @@ describe('Context drawer', () => {
     });
     fireEvent.click(screen.getByRole('button', { name: 'Summary actions' }));
     fireEvent.click(screen.getByRole('menuitem', { name: 'Versions' }));
-    expect(store.getState().drawer).toMatchObject({
-      kind: 'context',
-      payload: { section: 'summary', view: 'versions' },
+    expect(contextRows()).toMatchObject({
+      'context.section': 'summary',
+      'context.view': 'versions',
     });
   });
 
@@ -487,9 +497,9 @@ describe('Context drawer sections', () => {
     screen.getByRole('button', { name: 'Summary' });
     fireEvent.keyDown(window, { key: 'Escape', code: 'Escape' });
     expect(onClose).not.toHaveBeenCalled();
-    expect(store.getState().drawer).toMatchObject({
-      kind: 'context',
-      payload: { section: 'summary', view: 'current' },
+    expect(contextRows()).toMatchObject({
+      'context.section': 'summary',
+      'context.view': 'current',
     });
   });
 
@@ -562,7 +572,7 @@ describe('Context drawer sections', () => {
       within(menu)
         .getAllByRole('menuitem')
         .map((item) => item.textContent),
-    ).toEqual(['Edit', 'Versions', 'Who reads this']);
+    ).toEqual(['Edit', 'Versions', 'Change visibility']);
     expect(screen.queryByText(/^All roles/)).toBeNull();
     empty.unmount();
 
@@ -578,7 +588,7 @@ describe('Context drawer sections', () => {
     expect(screen.getByRole('menuitem', { name: 'Versions' }).getAttribute('aria-disabled')).toBe(
       'true',
     );
-    fireEvent.click(screen.getByRole('menuitem', { name: 'Who reads this' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Change visibility' }));
     screen.getByText('Agents only.');
   });
 
@@ -614,7 +624,7 @@ describe('Context updates in the drawer', () => {
       'Goal, 2 decisions, Summary',
     );
     fireEvent.click(screen.getByRole('button', { name: '2 decisions' }));
-    expect(store.getState().drawer).toMatchObject({ payload: { section: 'decisions' } });
+    expect(contextRows()).toMatchObject({ 'context.section': 'decisions' });
   });
 
   it('queues Update now in the session queue and shows it as queued', () => {

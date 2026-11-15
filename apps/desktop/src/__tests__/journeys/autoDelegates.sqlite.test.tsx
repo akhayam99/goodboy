@@ -1,6 +1,13 @@
 // @vitest-environment happy-dom
 
-import { cleanup, render, screen, within, type RenderResult } from '@testing-library/react';
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  within,
+  type RenderResult,
+} from '@testing-library/react';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   getAutoTree,
@@ -24,10 +31,15 @@ import type {
 import { railRowsOf } from '../../features/auto/chat/railRowsOf';
 import { autoSpawnedRowsOf } from '../../app/components/SpawnedPanel/autoSpawnedRowsOf';
 import type { SpawnedRow } from '../../app/components/SpawnedPanel/spawnedRow';
-import { spawnedRailOf } from '../../app/components/SpawnedPanel/spawnedRailOf';
+import { spawnedRailOf } from '../../features/workTreeModel/spawnedRailOf';
 import { SpawnedTree } from '../../app/components/SpawnedPanel/SpawnedTree';
 import { SpawnedTreeRow } from '../../app/components/SpawnedPanel/SpawnedTreeRow';
 import { brandedId } from '../../features/history/testing/brandedId';
+import { resetWorktreeStatusCache } from '../../store/runtime/worktreeStatuses/cache';
+import { ToastProvider } from '../../shared/components/Toast';
+import { LeadPage } from '../../features/session/components/LeadPage';
+import { parentPlace } from '../../store/slices/navigation/parentPlace';
+import { sessionPlace } from '../../store/slices/navigation/place';
 import { stubProviderRouting } from '../helpers/journeyHarness';
 import { makeAutoRuntime } from '../../store/runtime/auto/makeAutoRuntime';
 import { runAutoCommand } from '../../store/runtime/auto/runAutoCommand';
@@ -430,5 +442,55 @@ describe('journey: Auto delegates and a child finishes', () => {
         sql: "SELECT COUNT(*) AS reserved FROM auto_reservations WHERE state = 'reserved'",
       }),
     ).toEqual([{ reserved: 0 }]);
+  });
+});
+
+describe('journey: the Lead page', () => {
+  it('opens a Lead and opens an agent from its Agents rail', async () => {
+    const db = storySqlite();
+    resetWorktreeStatusCache();
+    const status = await storySpies.worktreeStatus('/tmp/ledger-core');
+    storySpies.worktreeStatus.mockResolvedValue(
+      Object.assign({}, status, {
+        mainDistance: { kind: 'known', behind: 0, ahead: 0 },
+        upstreamDistance: { kind: 'known', behind: 0, ahead: 0 },
+      }),
+    );
+    await openTree();
+    await runtime.say({ treeId, text: 'Find who calls the ledger export' });
+    await vi.waitFor(async () => expect(await listAutoDelegations({ db, treeId })).toHaveLength(1));
+    await vi.waitFor(async () => expect(await treePhase()).toBe('waiting'));
+    await useAppStore.getState().loadAutoTrees({ sessionId });
+    const [delegation] = await listAutoDelegations({ db, treeId });
+    const childId = delegation?.childAgentId ?? '';
+    const session = useAppStore.getState().sessions.find((entry) => entry.id === sessionId);
+    const lead = useAppStore
+      .getState()
+      .sessionPhaseRuns[sessionId]?.find((agent) => agent.id === rootId);
+    if (session === undefined || lead === undefined) {
+      throw new Error('the Lead is missing');
+    }
+
+    render(
+      <ToastProvider>
+        <LeadPage session={session} agent={lead} isChatActive onBack={() => undefined} />
+      </ToastProvider>,
+    );
+
+    const tree = await screen.findByRole('tree', { name: 'Agents' });
+    expect(
+      within(tree)
+        .getByRole('treeitem', { name: /^Run, / })
+        .getAttribute('aria-selected'),
+    ).toBe('true');
+    fireEvent.click(await within(tree).findByRole('treeitem', { name: /Scout/ }));
+
+    expect(screen.queryByRole('complementary', { name: /^Record of/ })).toBeNull();
+    expect(useAppStore.getState().selectedAgentId[sessionId]).toBe(childId);
+    const parent = parentPlace({
+      state: useAppStore.getState(),
+      place: sessionPlace({ sessionId, agentId: brandedId<AgentId>({ value: childId }) }),
+    });
+    expect(parent?.at === 'session' ? parent.view.agentId : null).toBe(rootId);
   });
 });

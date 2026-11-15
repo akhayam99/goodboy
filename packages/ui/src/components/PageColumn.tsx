@@ -3,11 +3,12 @@ import { cn } from '../cn';
 
 const GUTTER_CLASS = 'w-full px-6 @max-[720px]:px-4';
 
-export type PageColumnWidth = 'column' | 'measure' | 'full';
+export type PageColumnWidth = 'column' | 'measure' | 'reading' | 'full';
 
 const WIDTH_CLASS: Readonly<Record<PageColumnWidth, string>> = {
   column: `mx-auto max-w-[var(--column-frame)] ${GUTTER_CLASS}`,
   measure: `mx-auto max-w-[var(--measure-frame)] ${GUTTER_CLASS}`,
+  reading: `mx-auto max-w-[var(--reading-frame)] ${GUTTER_CLASS}`,
   full: GUTTER_CLASS,
 };
 

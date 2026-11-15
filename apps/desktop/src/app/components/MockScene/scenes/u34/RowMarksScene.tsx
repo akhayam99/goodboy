@@ -1,4 +1,4 @@
-import { UNREAD_TITLE, cn } from '@goodboy/ui';
+import { PANE_RHYTHM, cn } from '@goodboy/ui';
 import { StateNode, type StateNodeSpec } from '../../../../../shared/components/StateNode';
 
 type Row = {
@@ -53,11 +53,16 @@ export const RowMarksScene = () => (
   <div data-shot className="flex w-[300px] flex-col gap-px bg-background p-2 text-foreground">
     {ROWS.map((row) => (
       <div key={row.title} data-row-mark className="flex h-7 items-center gap-2 px-2">
-        <StateNode node={row.node} hasEmptySlot />
         <span
-          className={cn('min-w-0 flex-1 truncate', row.node.hasUnread ? UNREAD_TITLE : 'text-ui')}
+          className={cn(
+            'min-w-0 flex-1 truncate text-ui',
+            row.node.hasUnread ? 'text-foreground' : 'text-muted-foreground',
+          )}
         >
           {row.title}
+        </span>
+        <span className={PANE_RHYTHM.navRail.mark}>
+          <StateNode node={row.node} hasEmptySlot isUnreadDot />
         </span>
       </div>
     ))}

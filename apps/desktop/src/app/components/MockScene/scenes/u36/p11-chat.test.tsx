@@ -100,7 +100,9 @@ describe('a chat you can scan', () => {
     mount({ id: `u36-p11-working-${theme}` });
     const build = await screen.findByRole('group', { name: 'Build' });
     expect(within(build).getAllByText('Running').length).toBeGreaterThan(0);
-    screen.getByRole('button', { name: 'Read full brief' });
+    fireEvent.click(screen.getByRole('button', { name: 'Read full brief' }));
+    await screen.findByRole('dialog', { name: 'Full brief' });
+    screen.getByRole('button', { name: 'Hide full brief' });
   });
   it.each(['u36-p12-step-page', 'u36-p12-orch-step-page'])(
     'renames the step from the %s menu',

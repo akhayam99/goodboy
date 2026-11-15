@@ -291,7 +291,7 @@ the workflow and budget rule lists and the unread list with an empty list, and
 `db_execute` with no rows touched, when the scene has nothing, so Settings and
 the Branch page open there too. A bare `mockIPC` answers `undefined` and the
 real code crashes on it in a browser, never in a unit test that mocks `invoke`. The `shell`
-scene mounts the real `SessionWorkspace` (back row, **Ask**, page rows that
+scene mounts the real `SessionWorkspace` (session head and crumbs, **Ask**, page rows that
 move), and a scene that opens a session seeds its agents and plans so the
 overview never stays on its loading skeleton.
 
@@ -820,9 +820,8 @@ two scenes from the desktop mock dev server (`http://localhost:5230`, or the URL
 passed as its first argument), in both themes. The `readme-hero` scene (the
 Harborline session on its Overview with the Projects card unfolded and the shared
 Context drawer open) is shot twice from the same scene. The README picture is the
-whole app window, 1680x1118 css px at scale 2, so the left rail, the header and
-the drawer all show and the columns keep their widths (a 1440 wide window folds
-the session pages column); both themes come from one frozen clock so their times
+whole app window, 1680x1118 css px at scale 2, so the sidebar, the session head and
+the drawer all show and the columns keep their widths; both themes come from one frozen clock so their times
 match, and it writes `docs/readme/readme-hero-{dark,light}.webp`. The site picture
 is shot at 1920x1200 and scale 4 and writes
 `website/public/hero/hero-{dark,light}-{1208,2416,3624}.webp`, 1, 2 and 3 times

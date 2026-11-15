@@ -23,6 +23,7 @@ import {
   type StoryStore,
 } from '../../store/storyHarness';
 import { sessionPlace } from '../../store/slices/navigation/place';
+import { selectIsContextTabOpen } from '../../store/slices/contextDrawer/selectIsContextTabOpen';
 import { ToastProvider } from '../../shared/components/Toast';
 import { KeepAliveWorkSurface } from '../../app/components/KeepAliveWorkSurface';
 import { DrawerHost } from '../../app/components/DrawerHost';
@@ -80,18 +81,20 @@ const paneToggles = (): ReadonlyArray<Element> =>
 const drawerKind = (): string | null => useAppStore.getState().drawer?.kind ?? null;
 
 describe('session tools rows stay reachable', () => {
-  it('Ask beside any page: the tools stay the same on the Overview and on Agents', async () => {
+  it('Ask is a detail panel: ask.open opens it beside the page and the tools hold no Ask button', async () => {
     const sessionId = seedSessionWithMounts({ useAppStore });
     await mountSession({ sessionId });
 
-    await press('Ask this session');
+    act(() => useAppStore.getState().openAsk({ sessionId }));
+    await settle();
     expect(drawerKind()).toBe('ask');
+    expect(selectIsContextTabOpen({ state: useAppStore.getState(), sessionId })).toBe(false);
 
     act(() => {
       useAppStore.getState().navigate({ to: sessionPlace({ sessionId, lens: 'workflows' }) });
     });
     await settle();
-    expect(within(tools()).getByRole('button', { name: 'Ask this session' })).toBeDefined();
+    expect(within(tools()).queryByRole('button', { name: 'Ask this session' })).toBeNull();
     expect(paneToggles()).toEqual([]);
   });
 
@@ -117,29 +120,29 @@ describe('session tools rows stay reachable', () => {
     expect(mounts.map((mount) => mount.worktreePath)).toContain(tab?.cwd);
   });
 
-  it('Explore lens: the Explore toggle opens the files pane', async () => {
+  it('the tools column holds Terminal and Browser only, no Explore, Agents or Scripts button', async () => {
     const sessionId = seedSessionWithMounts({ useAppStore });
     await mountSession({ sessionId });
 
-    await press('Explore');
-
-    expect(drawerKind()).toBe('explore');
-    expect(screen.getByRole('region', { name: 'Explore' })).toBeDefined();
+    expect(
+      within(tools())
+        .getAllByRole('button')
+        .map((button) => button.getAttribute('data-testid')),
+    ).toEqual(['pane-toggle-terminal', 'pane-toggle-browser']);
+    for (const name of ['Explore', 'Agents', /^Scripts/]) {
+      expect(within(tools()).queryByRole('button', { name })).toBeNull();
+    }
   });
 
-  it('Scripts lens: the Scripts row, the palette and the Open scripts toast reach the pane', async () => {
+  it('Scripts lens: the palette and the Open scripts toast reach the Terminal and its Scripts menu', async () => {
     const sessionId = seedSessionWithMounts({ useAppStore });
     await mountSession({ sessionId });
 
-    await press(/^Scripts/);
-    expect(drawerKind()).toBe('scripts');
-    expect(screen.getByRole('region', { name: 'Scripts' })).toBeDefined();
-
     act(() => {
-      useAppStore.getState().closeDrawer();
       openToolPane({ sessionId, pane: 'scripts' });
     });
     await settle();
-    expect(drawerKind()).toBe('scripts');
+
+    expect(drawerKind()).toBe('terminal');
   });
 });

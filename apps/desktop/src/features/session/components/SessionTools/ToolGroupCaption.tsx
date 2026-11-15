@@ -11,6 +11,6 @@ export const ToolGroupCaption = ({}: Props) => (
       TEXT_ROLE.secondary,
     )}
   >
-    Session
+    Tools
   </span>
 );

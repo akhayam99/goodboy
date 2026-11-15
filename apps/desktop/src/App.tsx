@@ -59,8 +59,6 @@ import { shellArrangement } from './app/shellArrangement';
 import { DrawerHost } from './app/components/DrawerHost';
 import { useShellRight } from './app/hooks/useShellRight';
 import { selectIsSessionDraftShown } from './store/slices/sessionDraft/selectIsSessionDraftShown';
-import { selectDrawerPlacement } from './store/slices/drawer/selectDrawerPlacement';
-import { selectDrawerSizing } from './store/slices/drawer/selectDrawerSizing';
 import { ReportSheetHost } from './features/bug-report/components/ReportSheetHost';
 import { LastCrashBridge } from './features/bug-report/components/LastCrashBridge';
 
@@ -71,9 +69,7 @@ export const App = () => {
   const checkForUpdates = useAppStore((s) => s.checkForUpdates);
   const hydrated = useAppStore((s) => s.hydrated);
   const isShellShown = useAppStore((s) => s.isShellReady && s.bootPhase !== 'error');
-  const drawerSizing = useAppStore(selectDrawerSizing);
-  const drawerPlacement = useAppStore(selectDrawerPlacement);
-  const { rightRail, isDrawerMounted, isDrawerParked } = useShellRight({});
+  const shellRight = useShellRight({});
   const [isSplashGone, setIsSplashGone] = useState(false);
   const removeSplash = useCallback(() => setIsSplashGone(true), []);
   const currentWorkspace = useCurrentWorkspace();
@@ -175,8 +171,7 @@ export const App = () => {
       if (prev[prev.length - 1] === id) {
         return prev;
       }
-      const filtered = prev.filter((x) => x !== id);
-      const next = [...filtered, id];
+      const next = [...prev.filter((x) => x !== id), id];
       return next.length > KEEP_ALIVE_CAP ? next.slice(next.length - KEEP_ALIVE_CAP) : next;
     });
   }, [currentSession?.id]);
@@ -290,11 +285,14 @@ export const App = () => {
               </SidebarPeekOverlay>
             ) : undefined
           }
-          drawer={isDrawerMounted ? <DrawerHost /> : null}
-          drawerSizing={drawerSizing}
-          drawerPlacement={drawerPlacement}
-          isDrawerParked={isDrawerParked}
-          rightRail={rightRail}
+          drawer={shellRight.isDrawerMounted ? <DrawerHost slot="dock" /> : null}
+          drawerSizing={shellRight.dockSizing}
+          detail={shellRight.isDetailMounted ? <DrawerHost slot="detail" /> : null}
+          detailSizing={shellRight.detailSizing}
+          drawerPlacement={shellRight.placement}
+          isDrawerParked={shellRight.isDrawerParked}
+          isDetailParked={shellRight.isDetailParked}
+          rightRail={shellRight.rightRail}
           main={
             <MainRegion
               workspaceId={currentWorkspace.id}
@@ -305,6 +303,7 @@ export const App = () => {
             />
           }
           studio={studio}
+          isDockInStudio={shellRight.isDockInStudio}
         />
         <Fragment key="layers">{layers}</Fragment>
       </ObjectMenuProvider>

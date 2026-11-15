@@ -1,13 +1,16 @@
 import { useEffect, useState } from 'react';
-import { STORAGE_KEYS } from '../../../../../shared/lib/storage-keys';
+import { studioRailFoldKey } from '@goodboy/ui';
+import { CHANGES_RAIL_SURFACE } from '../../../../../features/diff/changesRailSurface';
 
 type Params = {
   readonly isFolded: boolean;
 };
 
+const FOLD_KEY = studioRailFoldKey({ surface: CHANGES_RAIL_SURFACE });
+
 const writeFold = ({ isFolded }: Params): boolean => {
   try {
-    localStorage.setItem(STORAGE_KEYS.diffFileRailFolded, isFolded ? '1' : '0');
+    localStorage.setItem(FOLD_KEY, isFolded ? '1' : '0');
   } catch {
     return isFolded;
   }
@@ -16,7 +19,7 @@ const writeFold = ({ isFolded }: Params): boolean => {
 
 const clearFold = (): void => {
   try {
-    localStorage.removeItem(STORAGE_KEYS.diffFileRailFolded);
+    localStorage.removeItem(FOLD_KEY);
   } catch {
     return;
   }

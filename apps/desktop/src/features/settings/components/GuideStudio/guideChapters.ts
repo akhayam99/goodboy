@@ -264,19 +264,19 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Session pages',
-        desc: `Overview, Runs, Artifacts and Questions, with counts; Runs holds plans, presets, Auto and agents. Then the Projects card, one tree of folders and branches, and the Linked card. Hide session pages, or ${shortcutGlyphs('innerColumn.toggle')}, folds it to icons.`,
+        desc: 'Tabs under the title: Overview, Changes, Runs, Artifacts, Questions and Context, with counts; Runs holds plans, presets, Auto and agents. Context holds the Projects and Linked cards.',
       },
       {
         term: 'Session actions and +',
-        desc: 'The + on the Projects card adds or connects a folder. The + on a folder row starts a new branch. More session actions, next to Pin, holds Archive and Delete; folded, at the foot.',
+        desc: 'The + on the Projects card adds or connects a folder. The + on a folder row starts a new branch. More session actions, next to Pin, holds Archive and Delete.',
       },
       {
         term: 'Agents panel',
-        desc: `Agents, or ${shortcutGlyphs('session.spawned')}, shows the open run or Auto as a tree, else what is live. An agent opens beside it; j and k hop.`,
+        desc: `Agents on the right rail shows the open run or Auto as a tree, else what is live, and ${shortcutGlyphs('session.spawned')} opens Runs on what is running. An agent opens beside it; j and k hop.`,
       },
       {
         term: 'Right rail',
-        desc: 'Icons at the right of every screen. A session page adds Explore, Context, Ask, Agents and Scripts; Terminal and Browser sit at the foot and stay open as you move. Open as page grows them; Dock or Beside the session puts them back.',
+        desc: 'Icons at the right of every screen. A session page adds Explore, Context, Ask, Agents and Scripts; Terminal and Browser sit at the foot and stay open as you move. Open full page grows them; Dock puts them back.',
       },
     ],
     links: [],
@@ -371,11 +371,11 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Context pane',
-        desc: `Context, in the session tools or ${shortcutGlyphs('lens.context')}, holds the goal, decisions, summary and explanations in one column, with Copy context. Changes carry a mark until Mark as read, and Update now queues an update.`,
+        desc: `Context, a tab of the session (${shortcutGlyphs('lens.context')}), holds the goal, decisions, summary and explanations in one column, with Copy context. Changes carry a mark until Mark as read, and Update now queues an update.`,
       },
       {
         term: 'Visible to',
-        desc: 'Who reads this, in the menu of each card, says which roles receive it. Planners, implementers, reviewers, debuggers and resolvers read the decisions.',
+        desc: 'Change visibility, in the menu of each card, says which roles receive it. Planners, implementers, reviewers, debuggers and resolvers read the decisions.',
       },
       {
         term: 'Explanations',
@@ -412,7 +412,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Task links',
-        desc: `A Linked row in the rail opens its task. Its right click menu holds Move to, Take off this branch and ${NAMES.removeLinkFromSession}, each with Undo; the Log keeps Re-link.`,
+        desc: `A Linked row in the rail opens its task. Its right click menu holds Move to, Remove from this branch and ${NAMES.removeLinkFromSession}, each with Undo; the Log keeps Re-link.`,
       },
       {
         term: 'Slack',
@@ -499,7 +499,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'A rebase conflict asks',
-        desc: 'A conflict leaves the branch as it was and asks: Resolve with Auto, Resolve in terminal or Keep branch as it was, with Add a hint. Auto resolves in the worktree and never pushes; Resolve in terminal starts the rebase there.',
+        desc: 'A conflict leaves the branch as it was and asks: Resolve with Auto, Resolve in terminal or Abort rebase, with Add a hint. Auto resolves in the worktree and never pushes; Resolve in terminal starts the rebase there.',
       },
       {
         term: 'Rebase all',
@@ -765,7 +765,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Sidebar, rail and panes',
-        desc: `${shortcutGlyphs('column.toggle')} folds the sidebar, ${shortcutGlyphs('innerColumn.toggle')} the page column. ${shortcutGlyphs('nav.back')} steps the rail out or goes Back, and ${shortcutGlyphs('nav.up')} goes up. In a session, ${shortcutGlyphs('lens.explore')} opens Explore, ${shortcutGlyphs('lens.context')} Context, ${shortcutGlyphs('ask.open')} Ask, ${shortcutGlyphs('session.spawned')} Agents and ${shortcutGlyphs('lens.scripts')} Scripts. ${shortcutGlyphs('browser.address')} focuses the Browser address, ${shortcutGlyphs('browser.find')} finds in its page, ${shortcutGlyphs('slot.close')} closes the drawer.`,
+        desc: `${shortcutGlyphs('column.toggle')} folds the sidebar, ${shortcutGlyphs('innerColumn.toggle')} the page column. ${shortcutGlyphs('nav.back')} steps the rail out or goes Back, and ${shortcutGlyphs('nav.up')} goes up. In a session, ${shortcutGlyphs('lens.explore')} opens Changes on All files, ${shortcutGlyphs('lens.context')} Context, ${shortcutGlyphs('ask.open')} Ask, ${shortcutGlyphs('session.spawned')} Runs on what is running and ${shortcutGlyphs('lens.scripts')} Scripts. ${shortcutGlyphs('browser.address')} focuses the Browser address, ${shortcutGlyphs('browser.find')} finds in its page, ${shortcutGlyphs('slot.close')} closes the drawer.`,
       },
       {
         term: 'Terminal',

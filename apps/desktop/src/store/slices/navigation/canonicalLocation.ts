@@ -147,15 +147,8 @@ const formerBranchTarget = ({
   if (view.agentId !== null) {
     return null;
   }
-  const explicit = view.target?.kind === 'diff' ? view.target.mountPath : null;
-  if (view.lens === 'files' && (explicit !== null || hasMount({ state, sessionId }))) {
-    const target = view.target?.kind === 'diff' ? view.target : null;
-    return branchPlace({
-      sessionId,
-      mountPath: explicit,
-      tab: target?.page === 'history' ? 'commits' : 'files',
-      focus: target?.focus ?? null,
-    });
+  if (view.lens === 'files' && view.target?.kind === 'diff' && view.target.page === 'history') {
+    return branchPlace({ sessionId, mountPath: view.target.mountPath, tab: 'commits' });
   }
   if (view.lens === 'review') {
     const threadId = view.target?.kind === 'thread' ? view.target.threadId : null;
@@ -191,6 +184,24 @@ const formerBranchPlace = ({
   return unavailableBranchTab({ state, request: place });
 };
 
+type ChangesParams = {
+  readonly state: AppState;
+  readonly request: SessionPlace;
+};
+
+const changesOnBranch = ({ state, request }: ChangesParams): Place => {
+  const { view, sessionId } = request;
+  if (view.lens !== 'files' || view.agentId !== null || !hasMount({ state, sessionId })) {
+    return request;
+  }
+  const target = view.target?.kind === 'diff' ? view.target : null;
+  const mountPath = target?.mountPath ?? doorMountPath({ state, sessionId });
+  if (mountPath === null) {
+    return request;
+  }
+  return branchPlace({ sessionId, mountPath, tab: 'files', focus: target?.focus ?? null });
+};
+
 const canonicalPlace = ({ state, request: asked }: PlaceParams): Place => {
   if (asked.at === 'board' || asked.at === 'session-draft') {
     return asked;
@@ -207,7 +218,7 @@ const canonicalPlace = ({ state, request: asked }: PlaceParams): Place => {
   if (branch !== null) {
     return branch;
   }
-  return request;
+  return changesOnBranch({ state, request });
 };
 
 const isAskHandOver = ({ state, sessionId }: SessionParams): boolean => {
@@ -215,7 +226,7 @@ const isAskHandOver = ({ state, sessionId }: SessionParams): boolean => {
   if (drawer === null || drawer.sessionId !== sessionId) {
     return false;
   }
-  return drawer.kind === 'ask' || (drawer.kind === 'question' && drawer.payload.from === 'ask');
+  return drawer.kind === 'question' && drawer.payload.from === 'ask';
 };
 
 const canonicalQuestion = ({ state, request }: PlaceParams): CanonicalPlace | null => {

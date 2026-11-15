@@ -8,6 +8,7 @@ import {
 } from '../../../../store/slices/project-mounts/selectors';
 import { useBranchNotes } from '../../../resolve/notes/useBranchNotes';
 import { UnassignedNote, type NoteTarget } from './UnassignedNote';
+import { actionButtonLookOf } from '../../../actions/actionButtonLookOf';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -64,7 +65,7 @@ export const UnassignedNotes = ({ sessionId }: Props) => {
           unassigned.length >= 2 ? (
             <Button
               size="sm"
-              variant="ghost"
+              {...actionButtonLookOf({ verb: 'discard', variant: 'ghost' })}
               onClick={() =>
                 void discardDiffComments({ sessionId, ids: unassigned.map((note) => note.id) })
               }

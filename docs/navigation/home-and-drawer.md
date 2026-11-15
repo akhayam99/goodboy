@@ -109,11 +109,46 @@ sheet (its `bg-background`, its 1px `frame-edge` border, `data-container="page"`
 and the drawer container is its sibling (`data-container="drawer"`), each with
 its own size, drawn from the same top to the same bottom. With no drawer the
 page container is today's sheet: rounded on the left where the chrome wraps it,
-flush with the window's right edge. While a drawer pushes, the page container
-rounds all four corners (`rounded-frame`), the drawer container stands 8px to
-its right (the resize handle sits in that gap) and 8px from the window's right
-edge, with the same edge and radius, and the pair keeps an 8px inset above the
-window's bottom edge. The drawer container is one step quieter than the page
+flush with the window's right edge. Wherever the tool rail is there (every page
+of the app) the page container rounds all four corners (`rounded-frame`) and the
+drawer container stands 8px to its right (the resize handle sits in that gap),
+flush with the window's right edge and rounded on its two left corners, and the
+pair keeps an 8px inset above the window's bottom edge.
+
+**The rail is the dock's left edge, and the dock opens to its right.** The
+drawer container holds the rail and the dock: one surface, with the rail as its
+first child (`data-drawer-edge`, fed through `DrawerEdgeContext`). Closed, the
+container is the rail alone, 44px wide, on the window's right edge. A click on
+Terminal or Browser expands the dock to the right of the icon, toward the
+window edge, so the rail travels left with the opening dock and back right as
+it closes; it is the same element closed, pushing, over the page and while a
+handle drags, never a second copy. The trade: the button that closed the dock
+is no longer under the pointer after it opened, so the dock's own close (its
+header X, Esc) is the near way out, and the rail button stays one move away.
+A detail panel opens between the page and the rail.
+
+**Two panels, one order.** Left to right the frame reads: sidebar, page
+content, detail panel, rail, tool dock. The tool dock (Terminal, Browser) lives
+in the drawer container, attached to the rail with no gap, line or radius
+between them, on the rail's `bg-drawer` surface, so rail and dock read as one
+surface running to the window edge. The resize handle stays in the gap between
+the detail panel (or the page) and the rail. A detail panel (an artifact, Ask, a plan part, a check analysis, a
+transcript, a reader, every other kind) is its own container between the page
+and the dock: `data-container="detail"`, `rounded-frame`, `frame-edge` border,
+on the page's `bg-background`, 8px from the page and 8px from the drawer
+container, with its own resize handle in the left gutter. Both can be open at
+once. `DrawerColumn` takes the dock as `drawer` and the detail as `detail`
+(`detailSizing`, `isDetailParked`); `panelPairLayoutOf` in `drawerGeometry.ts`
+lays the pair out: alone, each panel follows the one push rule below; together
+they push while the page keeps its reserve beside both (the tier reserve of the
+wider kind, plus the 8px between them), and lie over the page together
+otherwise, each clamped so the pair and the rail fit. `panelAsideWidthOf` is
+the aside: the detail plus its gutter, then the dock plus the rail plus their
+gutter. A `DrawerFrame` paints `bg-panel-surface`, the surface its container
+names (`panel-on-page` for the detail, `panel-on-rail` for the dock), and its
+pinned header frosts the same surface (`sticky-surface-panel`).
+
+The drawer container is one step quieter than the page
 (`bg-drawer`, recessed between chrome and background in both themes): it reads
 as secondary, never louder, never tinted, and never a border to fake the
 difference. `AppShell` hosts it through `DrawerColumn`'s `frame="sheet"`. The
@@ -141,7 +176,7 @@ once when a drag ends; a double click on the handle resets to the tier default
 (400 or 720); the three saved widths never bleed. A saved browser width that no
 longer fits after a window resize shrinks to `room` and keeps pushing while 720
 fits; the saved value stays and comes back when the window grows. No drawer
-expands over the whole column. `selectDrawerSizing` reads the tier from the kind
+expands over the whole column. `drawerSizingOf` reads the tier from the kind
 table. The pure rule lives in `drawerLayoutOf` (`drawerGeometry.ts`).
 
 **One push rule.** The drawer uses the content width after both rails and the
@@ -161,36 +196,50 @@ other kind; the New drawer uses the `reader` tier, so it keeps the reader's save
 with a drawer open swaps the mode in place and keeps focus in the drawer; if
 focus was on the page it moves into the drawer, never to the body.
 
-**Over the page, the drawer container runs the full height of the sheet.** It
-has no inset: flush with the sheet's top, bottom and right edges, left corners
-rounded (`rounded-l-frame`), a left border only, `shadow-xl`, the same
-`bg-drawer`; the page container goes back to its resting sheet shape under it. A scrim
+**Over the page, the drawer container runs the full height of the sheet.**
+Below the push width every open panel lies over the page from the right edge
+together, detail and dock, under one scrim, and the rail stays live. Rail and
+dock slide in together from the right edge (`animate-drawer-dock-in`, the
+container translates from the dock width to 0 in `duration-base`), so the rail
+leaves the window edge with the dock behind it, and slide back out together
+(`animate-drawer-dock-out`, `duration-quick`); once the exit ends the aside
+lands in the flow at its closed width with no width transition
+(`useSnapAfterFloat`), so the rail stops on the edge where it started. The
+container has no inset: flush with the sheet's top, bottom and right edges, left corners
+rounded (`rounded-l-frame`), `shadow-xl` under the whole container (panel and
+rail), the same `bg-drawer`; a spacer of the closed width keeps the page where
+it was under it. A scrim
 (`bg-scrim`, 120ms fade, none under reduced motion) covers the page below the
 card, and the page is `inert`, so nothing under it takes a click, a Tab or a
 screen reader. A click on the scrim asks the top layer of the escape stack
 (`dismissTopEscapeLayer` in `packages/ui/src/escape.ts`), so an editor or an
 unsent draft inside the drawer answers first, exactly as it does to Esc.
 Pushing has no scrim and nothing is inert. Closed, the
-aside is 0px wide and `inert`. Opening and closing ease the track's width in
+aside is the 8px gutter plus the rail (0px with no rail) and the rail stays
+live; only the panel is `inert`. Opening and closing ease the track's width in
 220ms (`DURATION_BASE_MS`, none under reduced motion) with its right edge fixed, and the
 centred column slides with it: the card grows leftward from the window edge,
 its content held at its final width on that edge so nothing reflows, and the
 content fades in once there is room; over the page it slides in 200ms; a new kind in
-an open drawer fades its content in 120ms. It never writes the sidebar
-preference: a pane folds nothing but the session rail, and only a reader or
-browser tier pane does that (`shellFoldsOf`, see Surfaces).
+an open drawer fades its content in 120ms. The detail panel's group
+(`data-detail-group`) eases its own width with the same token while the aside
+eases the sum, so the page content slides as either panel opens or closes and
+the rail rides the dock's left edge with it, never jumping; the motion is a `transition-[width]`
+(`duration-200 ease-enter`) behind `motion-safe`, so reduced motion is instant.
+It never writes the sidebar preference: a pane folds nothing.
 
 **Closing never moves the page behind a drawer.** `DrawerColumn` remembers the
 last mode the drawer was open in (`useDrawerExit`). Closed from pushing, the
-aside stays in the flow, its width eases to 0 in 220ms and the card keeps a
-frozen copy of its content that fades in 120ms (`drawer-content-out`); with
-nothing laid out or under reduced motion it closes at once. Closed from
-over the page, the aside stays out of the flow with no width transition, so the
-page keeps its width at every frame, and the card and scrim stay mounted for
+aside stays in the flow, its width eases to the closed width in 220ms and the
+panel keeps a frozen copy of its content that fades in 120ms (`drawer-content-out`);
+with nothing laid out or under reduced motion it closes at once. Closed from
+over the page, the aside stays out of the flow with no width transition and its
+spacer holds the closed width, so the page keeps its width at every frame, and
+the panel and scrim stay mounted for
 `DRAWER_EXIT_MS` (160ms) while they fade and slide 8px right (`drawer-overlay-out`;
 only the fade, `drawer-fade-out`, under reduced motion). The exit card is a
 frozen copy of the DOM the drawer had, so its escape layers, focus and handlers
-are gone the moment it closes (a drawer that holds a `canvas`, `iframe`, `video`, `audio` or `webview`, or more than `DRAWER_EXIT_MAX_ELEMENTS` (2000) elements, is not copied and closes at once with no exit; the copy is taken during the render that closes the drawer, before React commits it, because a host that reads the same store, such as `DrawerHost`, empties itself in that same commit): the aside, the card and the scrim are `inert` or
+are gone the moment it closes (the rail is not part of the copy and never animates; a drawer that holds a `canvas`, `iframe`, `video`, `audio` or `webview`, or more than `DRAWER_EXIT_MAX_ELEMENTS` (2000) elements, is not copied and closes at once with no exit; the copy is taken during the render that closes the drawer, before React commits it, because a host that reads the same store, such as `DrawerHost`, empties itself in that same commit): the aside, the card and the scrim are `inert` or
 `pointer-events-none`, the page is not `inert`, and a click on the page behind
 works at once. Reopening during the exit cancels it and shows the drawer as it
 stands, without playing the entry again.
@@ -210,10 +259,19 @@ from another drawer keeps its quiet back row (`DrawerBackLink`, the row
 same `DrawerBackLink` above its transcript; **Back to agents** reopens the
 Agents drawer on the run it came from.
 
-One drawer at a time, per window, plus one waiting in the chip. The `drawer`
+Two slots per window. The `drawer`
 store slice holds `drawer` and `drawerBack`, each `{ kind, sessionId, payload }`
 or null; only Terminal and Browser, the workspace tools, may carry
-`sessionId: null`. `openDrawer` puts the request in the slot and what it replaced in
+`sessionId: null`. When one of the two is a workspace tool and the other is
+not (`isPairedSlot`), both are on screen: the tool in the dock
+(`selectDockDrawer`) and the other in the detail panel (`selectDetailDrawer`,
+its session only), with no chip. Opening a panel of either class then replaces
+only the panel of its class (`slotAfterOpen`), each panel's X closes only itself
+(`closeDrawerEntry`), and a rail button toggles only its own panel
+(`toggleDrawer`, `toggleTerminalDock`, `toggleBrowserDock`, `togglePane`).
+`DrawerHost` renders one slot (`slot="dock"` or `slot="detail"`; with no slot,
+the top of the store, for scenes that draw one panel). Escape and ⌘⇧W close the
+newer of the two. When both slots hold the same class, the rules below apply. `openDrawer` puts the request in the slot and what it replaced in
 `drawerBack` (`slotAfterOpen`), so a third open drops the oldest; reopening the
 drawer in the slot, an artifact on another tab included (`slotKey`), keeps the
 chip; a drawer of another session clears it, unless one of the two is a
@@ -242,12 +300,15 @@ under a tool it stays in the chip (`backAfterPlace` in `applyLocation`). Leaving
 the session empties both of its session tools, and Back brings the drawer back
 like any drawer. A
 studio over the session parks a session drawer instead: the slot and the chip keep
-it, it stays mounted but hidden and inert, no close key reaches it
+it, it stays mounted in the detail slot but hidden and inert (`isDetailParked`
+from `useShellRight`), no close key reaches it
 (`selectDrawerPanel` is null under a studio), and it shows again, as it was,
 when the studio closes. A workspace tool shows beside any studio but its own
 page; under its own page it is kept in the store and not mounted. On Tasks,
-Chat and Workflows the page's own panel and the dock replace each other,
-latest wins (`useOneRightPanel`). Its own key on the studio leaves every studio stacked
+Chat and Workflows the page's own panel and the dock stay open together: the
+page hosts both in its `DrawerColumn`, its panel in the `detail` slot and the
+dock, handed down by `AppShell` through `ShellDockContext` when `isDockInStudio`,
+in the dock slot beside the rail. Its own key on the studio leaves every studio stacked
 over the session and shows it. A reader, an item or a
 form never stays, in the slot or in the chip. `app/components/DrawerHost` turns a `kind` into its content, framed
 by `DrawerFrame` from `@goodboy/ui`: a header whose 28px row is centred on the band (icon, title, count, at most
@@ -259,12 +320,8 @@ its surface (tool, item, reader or form), its tier and the tool pane it lights.
 The build fails on a kind with no row, and `drawerKinds.test.ts` matches the rows
 to the kinds written in `state.ts`.
 
-Opening a side drawer folds the session rail when its expanded width would
-leave too little content for the push rule. A reader folds it at every width.
-Closing restores the saved fold. Unfolding by hand keeps the rail open for
-that drawer, including through resize; the drawer overlays when it cannot
-push. `shellFoldsOf` and `useSessionRailFold` own that temporary fold, and
-neither the fold nor that unfold ever writes the saved choice.
+The session has no column of its own to fold: a drawer pushes the page while the content
+keeps room for the push rule and overlays it when it cannot.
 
 **Header grammar.** The close control always reads `Close`, in every drawer: the
 region is already named by its title (`<section aria-label={title}>`), so no
@@ -408,7 +465,8 @@ The `context` kind carries `{ section, view }`: `section` is `goal`, `decisions`
 `current` or `versions` (the old versions of that slot, inside the same drawer,
 with Restore; Escape and the header's **Back to current** leave the view before the
 drawer). The **Context** tool in the session tools toggles it on any page of the
-session, and so does ⌘⌥C, the only chord left for it. The drawer opens on Goal,
+session; ⌘⌥C opens the Context tab instead, and a restored Context panel opens
+as that tab (`withoutRemovedPages`). The drawer opens on Goal,
 every time, unless the caller names a section (the Activity row of a decision
 change opens Decisions). The chip carries a quiet dot, never a count, while the
 decisions ledger holds a change you have not marked as read
@@ -433,7 +491,7 @@ Decisions, Summary and Open questions in that order (`shareableContext`).
 The drawer sits on the `subtle` panel surface, like every `DrawerFrame`.
 The pane is one scroll with Goal, Decisions, Summary and Explanations as
 sections (`ContextSection`, no tabs); opening it on a section scrolls there. Each
-card has one `⋯` menu, **Edit**, **Versions** and **Who reads this**
+card has one `⋯` menu, **Edit**, **Versions** and **Change visibility**
 (`SlotSourceActions`), and no eye or second button. **Context updates**
 (`ContextUpdates`, a `Collapsible`) sits above the cards and says `Updated 2 min ago`,
 `Queued`, `Updating…` or `Couldn't update`; open, it lists the last round
@@ -443,7 +501,7 @@ column), **Change model** (Settings, Providers, Models, scrolled to Step summari
 and **Update now**. Update now queues a consolidation pass through
 `requestContextUpdate`, behind any pass in flight and never beside it;
 `summarizerPending` holds the turns waiting and whether a requested update is queued.
-Summary draws its State block only when the State holds more than the sentence the glance line on the Overview shows (`summaryStateOf`, `stateBodyHasMore`), so the line opens onto the rest and never onto a repeat.
+Summary draws its State block only when the State holds more than its first sentence (`stateBodyHasMore`), so the block never repeats the sentence.
 
 Every card reads as labelled blocks (`ContextBlock`: a flat group with an
 eyebrow title, an icon and a count). A block shows its key line first and

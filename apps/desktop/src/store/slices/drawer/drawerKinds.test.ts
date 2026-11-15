@@ -51,7 +51,7 @@ describe('the drawer kind table', () => {
 
 describe('the pane a drawer lights', () => {
   it('lights the tool for a tool drawer', () => {
-    expect(paneOf({ kind: 'ask', sessionId: SESSION_ID, payload: null })).toBe('ask');
+    expect(paneOf({ kind: 'scripts', sessionId: SESSION_ID, payload: null })).toBe('scripts');
     expect(paneOf({ kind: 'spawned', sessionId: SESSION_ID, payload: null })).toBe('spawned');
   });
 
@@ -66,7 +66,7 @@ describe('the pane a drawer lights', () => {
         sessionId: SESSION_ID,
         payload: { questionId: question, from: 'ask' },
       }),
-    ).toBe('ask');
+    ).toBeNull();
     expect(
       paneOf({
         kind: 'scriptRun',
@@ -91,7 +91,7 @@ describe('the pane a drawer lights', () => {
       openPaneOf({
         state: {
           drawer: {
-            kind: 'ask',
+            kind: 'scripts',
             sessionId: brandId<SessionId>({ value: 'session-2' }),
             payload: null,
           },

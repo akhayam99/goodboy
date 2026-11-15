@@ -79,7 +79,10 @@ const rowOf = (title: string): HTMLElement => {
   return row;
 };
 
-const isLit = (row: HTMLElement): boolean => row.className.includes('text-row-strong');
+const isLit = (row: HTMLElement): boolean =>
+  row.hasAttribute('data-unread') &&
+  row.querySelector('[data-unread-dot], [aria-label$=", unseen"]') !== null &&
+  row.className.split(' ').includes('text-foreground');
 
 const openMenu = () => {
   fireEvent.click(screen.getByRole('button', { name: 'Filter sessions' }));
@@ -93,6 +96,19 @@ describe('Mark all as read in the Sessions options menu', () => {
     expect(isLit(rowOf('Reply to read'))).toBe(true);
     expect(isLit(rowOf('Another reply'))).toBe(true);
     expect(isLit(rowOf('Already read'))).toBe(false);
+  });
+
+  it('keeps one weight on read and unread titles and mutes only the read one', () => {
+    mount();
+
+    const weightsOf = (row: HTMLElement): ReadonlyArray<string> =>
+      row.className
+        .split(' ')
+        .filter((token) => /^(font-|text-row|text-ui$)/.test(token))
+        .sort();
+    expect(weightsOf(rowOf('Reply to read'))).toEqual(['text-ui']);
+    expect(weightsOf(rowOf('Already read'))).toEqual(['text-ui']);
+    expect(rowOf('Already read').className.split(' ')).toContain('text-muted-foreground');
   });
 
   it('clears every unread row at once', async () => {

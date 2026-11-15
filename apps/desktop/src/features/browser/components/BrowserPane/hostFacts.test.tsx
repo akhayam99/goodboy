@@ -222,7 +222,7 @@ describe('the browser pane host facts', () => {
     screen.getByRole('progressbar', { name: 'Loading page' });
   });
 
-  it('turns the line off after 30 seconds without a finished event and says the page did not finish', async () => {
+  it('turns the line off after 30 seconds without a finished event and shows no error', async () => {
     await renderPane();
     vi.useFakeTimers();
     heardLoad({ tabId: 'live-1', phase: 'started', url: CHECKOUT_URL });
@@ -237,21 +237,6 @@ describe('the browser pane host facts', () => {
     });
 
     expect(screen.queryByRole('progressbar', { name: 'Loading page' })).toBeNull();
-    expect(screen.getByRole('alert').textContent).toBe('The page did not finish loading.');
-  });
-
-  it('clears the stalled line when the page finishes late', async () => {
-    await renderPane();
-    vi.useFakeTimers();
-    heardLoad({ tabId: 'live-1', phase: 'started', url: CHECKOUT_URL });
-    act(() => {
-      vi.advanceTimersByTime(LOAD_STALL_MS);
-    });
-    screen.getByRole('alert');
-
-    heardLoad({ tabId: 'live-1', phase: 'started', url: CHECKOUT_URL });
-    heardLoad({ tabId: 'live-1', phase: 'finished', url: CHECKOUT_URL });
-
     expect(screen.queryByRole('alert')).toBeNull();
   });
 

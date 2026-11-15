@@ -26,7 +26,6 @@
   "apps/desktop/src/features/scripts/hooks/useScriptPins/index.ts": 1,
   "apps/desktop/src/features/session/central/branches/useBranchDetails/index.ts": 1,
   "apps/desktop/src/features/session/central/branches/useBranchFacts/index.ts": 3,
-  "apps/desktop/src/features/session/central/done/useDoneRows/index.ts": 1,
   "apps/desktop/src/features/session/components/AgentDetailPane/DelegationLines.tsx": 1,
   "apps/desktop/src/features/session/components/PresetRun/RunTail.tsx": 1,
   "apps/desktop/src/features/session/hooks/useJobActivity/index.ts": 2,

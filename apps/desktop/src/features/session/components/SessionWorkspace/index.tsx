@@ -1,6 +1,6 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useContext, useState } from 'react';
 import type { AgentId, Session, SessionId } from '@goodboy/types';
-import { cn, useEscapeLayer, PaneBannerContext, PageTrailContext, PaneSwap } from '@goodboy/ui';
+import { cn, useEscapeLayer, PaneBannerContext, PaneSwap, UnderTrailContext } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
 import type { LensKind } from '../../../../store';
 import { FirstLapBanner } from '../../../bootstrap/FirstLapBanner';
@@ -14,9 +14,11 @@ import { usePresetRunFocus } from '../../hooks/usePresetRunFocus';
 import { useIsBranchlessSession } from '../../hooks/useIsBranchlessSession';
 import { SIMPLE_LENSES } from '../../lens-labels';
 import { resolveLensSurface, type LensSurface } from '../../lens-surface';
-import { SessionBackRow } from './SessionBackRow';
 import { foldedLensOf } from '../../../../store/slices/navigation/foldedLensOf';
 import { escapeLadder } from '../../escapeLadder';
+import { SessionHeadContext } from '../../sessionHeadContext';
+import { SessionHeadFrame } from '../SessionHeadFrame';
+import { HeadSlotsGate } from '../HeadSlotsGate';
 
 const LENS_KEEP_ALIVE_CAP = 3;
 
@@ -28,6 +30,8 @@ export const SessionWorkspace = ({ session }: Props) => {
   const sessionId: SessionId = session.id;
   useSessionBranchSync({ session });
   useAskOpenShortcut({ sessionId });
+  const Head = useContext(SessionHeadContext);
+  const isOuterUnderTrail = useContext(UnderTrailContext);
   const storedActiveLens = useAppStore((s) => s.activeLens[sessionId]);
   const isBranchless = useIsBranchlessSession({ session });
   const activeLens =
@@ -66,19 +70,18 @@ export const SessionWorkspace = ({ session }: Props) => {
   useEscapeLayer(() => escapeLadder({}), isCurrent, true);
 
   const banner = <FirstLapBanner sessionId={sessionId} />;
-  const trail = <SessionBackRow sessionId={sessionId} />;
 
   const lensLayers = keptSurfaces.map((target) => ({
     key: target,
     content: (
-      <PageTrailContext.Provider value={showLens && target !== 'overview' ? trail : null}>
+      <HeadSlotsGate isOpen={showLens && target === surface}>
         <SessionLensPane session={session} target={target} isShown={showLens} />
-      </PageTrailContext.Provider>
+      </HeadSlotsGate>
     ),
   }));
 
-  return (
-    <div className="@container relative flex h-full w-full min-w-0 flex-col">
+  const body = (
+    <UnderTrailContext.Provider value={isOuterUnderTrail || Head !== null}>
       <div className="relative flex min-h-0 flex-1 flex-col">
         <div
           className={cn('absolute inset-0 z-0', !showLens && 'invisible pointer-events-none')}
@@ -91,27 +94,29 @@ export const SessionWorkspace = ({ session }: Props) => {
 
         {surfaceLayer === 'run' && runFocus !== null ? (
           <PaneBannerContext.Provider value={banner}>
-            <PageTrailContext.Provider value={trail}>
-              <div className="absolute inset-0 z-20 flex flex-col bg-background">
-                <PresetRunPage session={session} focus={runFocus} />
-              </div>
-            </PageTrailContext.Provider>
+            <div className="absolute inset-0 z-20 flex flex-col bg-background">
+              <PresetRunPage session={session} focus={runFocus} />
+            </div>
           </PaneBannerContext.Provider>
         ) : null}
         {showAgentOverlay ? (
           <PaneBannerContext.Provider value={banner}>
-            <PageTrailContext.Provider value={trail}>
-              <AgentOverlay
-                session={session}
-                sessionId={sessionId}
-                isChatActive={selectedAgentId != null}
-                selectedAgentId={selectedAgentId}
-                onBack={leaveAgentOverlay}
-              />
-            </PageTrailContext.Provider>
+            <AgentOverlay
+              session={session}
+              sessionId={sessionId}
+              isChatActive={selectedAgentId != null}
+              selectedAgentId={selectedAgentId}
+              onBack={leaveAgentOverlay}
+            />
           </PaneBannerContext.Provider>
         ) : null}
       </div>
-    </div>
+    </UnderTrailContext.Provider>
   );
+  if (Head === null) {
+    return (
+      <div className="@container relative flex h-full w-full min-w-0 flex-col gap-2">{body}</div>
+    );
+  }
+  return <SessionHeadFrame head={<Head session={session} />}>{body}</SessionHeadFrame>;
 };

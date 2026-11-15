@@ -13,13 +13,14 @@ import {
   type Ctx,
   type Row,
   WAIT,
+  branchPageReady,
   click,
-  clickButton,
   heading,
   openCrumb,
+  openPalette,
+  sessionLevel,
   settle,
   useAppStore,
-  findSection,
 } from './harness';
 
 const SECOND_MOUNT_ID = 'navigation-mount-sidebar-second' as MountId;
@@ -91,16 +92,10 @@ const addSecondBranch = ({ sessionId }: Ctx): void => {
 const currentSigns = (): ReadonlyArray<Element> =>
   Array.from(sessionsList().querySelectorAll('[aria-current="page"]'));
 
-const sessionLevel = (): HTMLElement => {
-  const level = document.querySelector<HTMLElement>('[data-level-layer="session"]:not([inert])');
-  if (level === null) {
-    throw new Error('the sidebar is not on a session level');
-  }
-  return level;
-};
+const sessionTabs = (): HTMLElement => screen.getByRole('tablist', { name: 'Session pages' });
 
-const levelSigns = (): ReadonlyArray<Element> =>
-  Array.from(sessionLevel().querySelectorAll('[aria-current="page"]'));
+const tabSigns = (): ReadonlyArray<Element> =>
+  Array.from(sessionTabs().querySelectorAll('[aria-selected="true"]'));
 
 const otherSessionId = (current: SessionId): string => {
   const last = rowIds()
@@ -120,7 +115,7 @@ let otherId = '';
 
 export const SIDEBAR_NAV_ROWS: ReadonlyArray<Row> = [
   {
-    name: 'sidebar: a session keeps the workspace level with its row selected beside the session rail',
+    name: 'sidebar: a session keeps the workspace level with its row selected under the session tabs',
     covers: ['navigate', 'sidebar:current-sign', 'rail:session-level'],
     open: async () => {
       await openCrumb(/^Overview/);
@@ -133,29 +128,29 @@ export const SIDEBAR_NAV_ROWS: ReadonlyArray<Row> = [
       }, WAIT);
       expect(useAppStore.getState().currentSessionId).toBe(ctx.sessionId);
       expect(document.querySelector('[data-column-layer="nav"] [data-level-layer]')).toBeNull();
-      expect(sessionLevel().closest('[data-session-rail]')).not.toBeNull();
+      expect(sessionTabs()).toBeDefined();
       expect(screen.queryByRole('button', { name: 'Back to Sessions' })).toBeNull();
     },
   },
   {
-    name: 'sidebar: on a page the session level marks that page and no other row',
+    name: 'tabs: on a page the session tabs mark that page and no other tab',
     covers: ['navigate', 'sidebar:current-sign'],
     open: async () => openCrumb(/^Artifacts/),
     lands: async () => {
       await heading('Artifacts');
       await waitFor(() => {
-        const signs = levelSigns();
+        const signs = tabSigns();
         expect(signs).toHaveLength(1);
         expect(signs[0]?.textContent ?? '').toMatch(/^Artifacts/);
       }, WAIT);
     },
   },
   {
-    name: 'sidebar: from the Branch page the Runs entry lands',
+    name: 'palette: from the Branch page Open Runs lands',
     covers: ['navigate', 'sidebar:session-pages'],
     open: async () => {
       await openCrumb(/^Branch/);
-      await openCrumb(/^Runs/);
+      await openPalette(/^Open Runs/, 'Open Runs');
     },
     lands: async (ctx) => {
       await heading('Runs');
@@ -166,17 +161,13 @@ export const SIDEBAR_NAV_ROWS: ReadonlyArray<Row> = [
     },
   },
   {
-    name: 'sidebar: two worktrees, the second one opens its Branch page on the landing tab',
+    name: 'context: two worktrees, the second one opens its Branch page on the landing tab',
     covers: ['navigate', 'sidebar:worktree-rows'],
     open: async (ctx) => {
       addSecondBranch(ctx);
-      await openCrumb(/^Branch/);
-      await click(await findSection(/^Commits/));
-      await waitFor(
-        () => expect(useAppStore.getState().branchTab[ctx.sessionId]).toBe('commits'),
-        WAIT,
+      const projects = within(
+        within(await sessionLevel()).getByRole('group', { name: 'Projects' }),
       );
-      const projects = within(within(sessionLevel()).getByRole('group', { name: 'Projects' }));
       await click(
         projects.getByRole('button', {
           name: (name) => name.startsWith(`${SECOND_BRANCH},`) || name === SECOND_BRANCH,
@@ -192,39 +183,15 @@ export const SIDEBAR_NAV_ROWS: ReadonlyArray<Row> = [
       const state = useAppStore.getState();
       expect(state.branchTab[ctx.sessionId]).toBe(branchLandingTabOf({ deepLink: null }));
       expect(state.branchThreadId[ctx.sessionId] ?? null).toBeNull();
-      await waitFor(() => {
-        const identity = document.querySelector(
-          '[data-level-layer="session"]:not([inert]) [data-worktree-current]',
-        );
-        expect(identity?.textContent ?? '').toContain(SECOND_BRANCH);
-      }, WAIT);
+      await branchPageReady();
     },
   },
   {
-    name: 'rail: with the session rail folded, its session level icons open Runs',
-    covers: ['navigate', 'rail:session-level'],
-    open: async () => {
-      await clickButton(/^Hide session pages/);
-      const rail = await waitFor(() => {
-        const found = document.querySelector<HTMLElement>('[data-session-rail="session"]');
-        expect(found?.hasAttribute('data-rail-folded')).toBe(true);
-        return found as HTMLElement;
-      }, WAIT);
-      await click(within(rail).getByRole('button', { name: /^Runs/ }));
-    },
-    lands: async (ctx) => {
-      await heading('Runs');
-      expect(useAppStore.getState().activeLens[ctx.sessionId] ?? null).toBe('workflows');
-    },
-  },
-  {
-    name: 'pins: pin from the session rail top row, Move down from the row menu, and the order survives a reload',
+    name: 'pins: pin from the page title actions, Move down from the row menu, and the order survives a reload',
     covers: ['pin:header-toggle', 'row menu: Move down'],
     open: async (ctx) => {
       otherId = otherSessionId(ctx.sessionId);
-      const top = document.querySelector<HTMLElement>('[data-rail-top] [data-session-actions]');
-      expect(top).not.toBeNull();
-      await click(within(top as HTMLElement).getByRole('button', { name: 'Pin session' }));
+      await click(await screen.findByRole('button', { name: 'Pin session' }, WAIT));
       await waitFor(() => expect(pinnedIds()).toEqual([ctx.sessionId]), WAIT);
       await useAppStore.getState().pinSession(otherId as SessionId);
       await waitFor(() => expect(pinnedIds()).toEqual([ctx.sessionId, otherId]), WAIT);

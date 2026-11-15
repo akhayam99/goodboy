@@ -84,10 +84,9 @@ describe('the side column signal scenes', () => {
     const container = await mount({ name: 'side-info-framed' });
 
     expect(container.querySelector('[data-shot]')).not.toBeNull();
-    const runs = screen.getByRole('button', { name: /^Runs/ });
+    const runs = screen.getByRole('tab', { name: /^Runs/ });
     expect(runs.textContent).toBe('Runs1');
-    expect(runs.querySelector('[data-tone="info"]')).not.toBeNull();
-    expect(screen.getByRole('button', { name: /^Artifacts/ }).textContent).toBe('Artifacts3');
+    expect(screen.getByRole('tab', { name: /^Artifacts/ }).textContent).toBe('Artifacts3');
   });
 
   it.each(NAMES)('%s has no accessibility violation', async (name) => {

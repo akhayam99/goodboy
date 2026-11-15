@@ -1,10 +1,9 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { mockIPC } from '@tauri-apps/api/mocks';
 import { AppShell } from '@goodboy/ui';
-import { ExplorePane } from '../../../../../features/explore/components/ExplorePane';
 import { useAppStore } from '../../../../../store';
 import { selectDrawerPanel } from '../../../../../store/slices/drawer/selectDrawerPanel';
-import { selectDrawerSizing } from '../../../../../store/slices/drawer/selectDrawerSizing';
+import { selectDrawerSizing } from '../../../../../store/slices/drawer/testing/selectDrawerSizing';
 import { DrawerHost } from '../../../DrawerHost';
 import { shellArrangement } from '../../../../shellArrangement';
 import { sceneClock } from '../../sceneClock';
@@ -70,7 +69,7 @@ const preparePlan = (): void => {
 const prepareContext = (): void => {
   seedActivityRunScene();
   useAppStore.setState({ selectedAgentId: {} });
-  useAppStore.getState().openContextDrawer({ sessionId: SESSION_ID, section: 'goal' });
+  useAppStore.getState().openDrawer({ kind: 'scripts', sessionId: SESSION_ID, payload: null });
 };
 
 type EntryParams = {
@@ -153,10 +152,6 @@ export const U24_DRAWERS_SCENES = {
     />
   ),
   'drawer-split-explore': () => (
-    <DrawerSplitStage
-      width={WIDE_WIDTH_PX}
-      prepare={prepareExplore}
-      main={<ExplorePane sessionId={ARTIFACT_SESSION_ID} onClose={() => undefined} />}
-    />
+    <DrawerSplitStage width={WIDE_WIDTH_PX} prepare={prepareExplore} main={<PlanDrawerRunStub />} />
   ),
 };

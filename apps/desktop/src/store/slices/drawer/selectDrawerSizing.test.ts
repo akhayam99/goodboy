@@ -9,26 +9,25 @@ import {
   LEFT_SIDEBAR_MAX,
   READER_DRAWER_DEFAULT,
   READER_DRAWER_MAX,
-  RIGHT_DRAWER_DEFAULT,
   RIGHT_DRAWER_MAX,
   canDrawerPush,
   drawerAsideWidthOf,
-  drawerLayoutOf,
   mainWidthOf,
+  panelPairLayoutOf,
   type DrawerPlacement,
   type DrawerSizing,
 } from '@goodboy/ui';
 import type { AppState } from '../../types';
 import { selectDrawerPlacement } from './selectDrawerPlacement';
-import { selectDrawerSizing } from './selectDrawerSizing';
 import type { DrawerRequest } from './state';
+import { selectDrawerSizing } from './testing/selectDrawerSizing';
 
 const MOUNT_ID: MountId = JSON.parse(JSON.stringify('mount-1'));
 const SESSION_ID = brandId<SessionId>({ value: 'session-1' });
 const WINDOWS = [1280, 1440] as const;
 const SIDEBARS = [LEFT_SIDEBAR_DEFAULT, LEFT_SIDEBAR_MAX] as const;
 const SAVED_WIDTHS: Readonly<Record<DrawerSizing, ReadonlyArray<number>>> = {
-  side: [RIGHT_DRAWER_DEFAULT, RIGHT_DRAWER_MAX],
+  side: [400, RIGHT_DRAWER_MAX],
   reader: [READER_DRAWER_DEFAULT, READER_DRAWER_MAX],
   browser: [READER_DRAWER_DEFAULT, READER_DRAWER_MAX],
 };
@@ -43,7 +42,6 @@ const EVERY_KIND: ReadonlyArray<DrawerRequest> = [
       checkUrl: 'https://github.com/harborline/payments-api/actions/runs/31/job/42',
     },
   },
-  { kind: 'context', sessionId: SESSION_ID, payload: { section: 'goal', view: 'current' } },
   {
     kind: 'explore-file',
     sessionId: SESSION_ID,
@@ -75,7 +73,7 @@ const EVERY_KIND: ReadonlyArray<DrawerRequest> = [
   },
   { kind: 'scriptRun', sessionId: SESSION_ID, payload: { scriptKey: 'test', mountId: null } },
   { kind: 'conversation', sessionId: SESSION_ID, payload: { threadId: 'thread-1' } },
-  { kind: 'ask', sessionId: SESSION_ID, payload: null },
+  { kind: 'scripts', sessionId: SESSION_ID, payload: null },
   { kind: 'new', sessionId: SESSION_ID, payload: { form: 'report' } },
   {
     kind: 'transcript',
@@ -143,14 +141,13 @@ const slideOf = (keyframes: string): number => {
 
 const SIZING_BY_KIND: ReadonlyArray<readonly [DrawerRequest['kind'], DrawerSizing]> = [
   ['check-analysis', 'side'],
-  ['context', 'side'],
   ['explore-file', 'reader'],
   ['artifact', 'side'],
   ['artifact-document', 'reader'],
   ['plan-part', 'side'],
   ['scriptRun', 'side'],
   ['conversation', 'side'],
-  ['ask', 'side'],
+  ['scripts', 'side'],
   ['new', 'reader'],
   ['transcript', 'side'],
   ['file-diff', 'reader'],
@@ -196,13 +193,13 @@ describe('the tier of every drawer', () => {
 });
 
 describe('every drawer fits inside its aside at 1280 and 1440', () => {
-  it('opens the transcript at the same sizing as Ask', () => {
-    const ask = EVERY_KIND.find((drawer) => drawer.kind === 'ask');
+  it('opens the transcript at the same sizing as Scripts', () => {
+    const scripts = EVERY_KIND.find((drawer) => drawer.kind === 'scripts');
     const transcript = EVERY_KIND.find((drawer) => drawer.kind === 'transcript');
-    if (ask === undefined || transcript === undefined) {
-      throw new Error('ask and transcript requests are listed');
+    if (scripts === undefined || transcript === undefined) {
+      throw new Error('scripts and transcript requests are listed');
     }
-    expect(sizingOf(transcript)).toBe(sizingOf(ask));
+    expect(sizingOf(transcript)).toBe(sizingOf(scripts));
     expect(sizingOf(transcript)).toBe('side');
   });
 
@@ -214,18 +211,20 @@ describe('every drawer fits inside its aside at 1280 and 1440', () => {
   it.each(CASES)(
     '$kind ($sizing, $placement) at $windowPx with a $savedPx saved width over a $columnWidth column',
     ({ sizing, placement, columnWidth, savedPx }) => {
-      const { mode, width: drawerWidthPx } = drawerLayoutOf({
+      const pair = panelPairLayoutOf({
         main: columnWidth,
-        sizing,
-        savedWidth: savedPx,
         placement,
+        dock: { sizing, savedWidth: savedPx, isOpen: true },
+        detail: { sizing: 'side', savedWidth: savedPx, isOpen: false },
       });
+      const mode = pair.mode;
+      const drawerWidthPx = pair.dock.width;
       const asidePx = drawerAsideWidthOf({ width: drawerWidthPx, mode });
       const cardRight = columnWidth - asidePx + DRAWER_INSET + drawerWidthPx;
 
       expect(asidePx).toBeLessThanOrEqual(columnWidth);
       if (mode === 'push') {
-        expect(cardRight + DRAWER_INSET).toBe(columnWidth);
+        expect(cardRight).toBe(columnWidth);
         expect(mainWidthOf({ columnWidth, mode, drawerWidthPx }) + asidePx).toBe(columnWidth);
         expect(canDrawerPush({ mainWidthPx: columnWidth, drawerWidthPx })).toBe(true);
         return;

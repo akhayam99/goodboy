@@ -12,13 +12,13 @@ skeleton: it is not true yet, no test fails on it, and the unit that makes it
 true turns it into a **holds** line and adds its guard in the same change. A
 unit that changes the skeleton edits this section first.
 
-1. **Left is where you go. Target.** Owned by The column and The session rail.
+1. **Left is where you go. Target.** Owned by The column and the session page tabs.
 2. **Right is what you hold. Holds.** The right rail sits at the sheet's right
    edge on every screen of a workspace: the session tools on a session page,
    Terminal and Browser at its foot everywhere. Terminal and Browser stay open
    across every move, and on Tasks, Chat and Workflows the page's own panel and
-   the dock replace each other (`toolsStay.test.ts`, `useOneRightPanel`,
-   `p10-right-dock.test.tsx`). Owned by The session tools
+   the dock stay open together, the panel left of the dock (`toolsStay.test.ts`,
+   `StudioFrame/panelAndDock.test.tsx`, `p10-right-dock.test.tsx`). Owned by The session tools
    ([session-rail.md](./session-rail.md)).
 3. **One home, one name. Target.** Owned by Column doors.
 4. **A page replaces the page. Target.** Owned by Surfaces.
@@ -35,9 +35,9 @@ unit that changes the skeleton edits this section first.
 What holds today and is guarded:
 
 - **One selected sign.** A control lights from `isCurrent` and never from its
-  own state, in the column, the session rail, the session list, the Goodboy row
+  own state, in the column, the page tabs, the session list, the Goodboy row
   and the bell; every one of them reads the one column place (`useColumnPlace`),
-  New session included; the session rail reads the session pages sign
+  New session included; the page tabs read the session pages sign
   (`currentSignOf`). Every page except the New workspace flow names a place, so
   exactly one control is lit, and the open session is never lit under a page. `__tests__/navigation/oneDoor.test.ts`.
 - **One door for moves.** Only `navigate`, `back`, `forward`, `up` and
@@ -68,7 +68,7 @@ never exists on one surface only.
   Frequent alternatives stay visible beside it or on the row they affect.
   `⋯` holds copy and rare actions. A linked task is one row of the session
   level's Linked group (`LinkedTaskRow`): a click opens the task, a drag moves
-  it, and Unlink, Move to and Take off this branch sit in its right click
+  it, and Unlink, Move to and Remove from this branch sit in its right click
   menu (Shift+F10), with no kebab and no hover control.
   Putting work on a branch is `Link work to this branch` (`mount.putTaskOnBranch`), on the
   Overview branch row and in the Projects tree row menu. Link work is the single entry
@@ -121,8 +121,7 @@ never exists on one surface only.
   on the Delete N confirm archives at once, with no second ask. An agent: Open agent, Show its
   changes; Message this agent (not on the agent's own page, where the composer is), Interrupt while a turn runs, Close or Reopen,
   Let Auto take it from here on an old standalone agent of a standard role,
-  Detach from Auto on an agent that was moved, Change model (one submenu); copy the last reply
-  and the name; Delete agent. A
+  Detach from Auto on an agent that was moved, Change model (one submenu); copy the name; Delete agent. A
   workflow run: Open run, View diff; Answer, Start run, Continue, Restart
   step, Start the next step, Restore; Copy run summary; Stop run, Archive
   run and Delete run, each confirmed. An artifact: the viewer's verbs by kind and status,
@@ -254,7 +253,7 @@ never exists on one surface only.
   review draft asks in a popover. Remove
   from session and a storage worktree's Remove keep their detailed confirm (the
   removal plan, the forced remove) in their own menu. A reversible verb runs at once with an Undo toast (Archive, Delete on an artifact,
-  Close agent, Unlink, Stop tracking, Take off this branch). The toast lasts
+  Close agent, Unlink, Stop tracking, Remove from this branch). The toast lasts
   about 10 seconds and Cmd+Z undoes the latest operation outside a text field.
   Reversible removals never ask for confirmation. Removing a commit on the Commits tab acts immediately with Undo.
 - **Blocked verbs stay.** A verb that cannot run now stays in the menu, dimmed,
@@ -298,9 +297,8 @@ frames. A surface that needs a different frame changes the shared one instead of
 forking a second (`app/shellArrangement`, which every shell mount, the app and
 the mock scenes alike, reads). **The column never changes; a session adds one
 rail of its own.** The column is the workspace's navigation and looks the same
-on every screen. Inside a session the session rail (see Session rail) sits at
-the left of the page, inside the content sheet on the page background, and
-has one level, the session. No other surface
+on every screen. Inside a session the pages are page tabs (see Session page tabs)
+under the page title, inside the content sheet. No other surface
 adds a navigation column: filters or a list that belong to a page sit beside
 the detail as a page rail. The right drawer is context, never navigation. The
 right drawer holds reference material beside the page and closes with the pane
@@ -326,15 +324,17 @@ store but are not mounted (`useShellRight`), so no shortcut answers twice. At
 a narrow width the dock floats over the page: the page slot lives in its own
 layer (`data-studio-host`, `isolate`), so the dock and its scrim always paint
 above the page. On
-Tasks, Chat and Workflows the page's own panel and the dock are one slot:
-opening the dock closes the panel, and opening a panel closes the workspace
-tools (`useOneRightPanel`, `closeWorkspaceTools`). Close keys
+Tasks, Chat and Workflows the page's own panel and the dock open together in
+the order content, page panel, rail, dock: `AppShell` hands the dock to the page
+through `ShellDockContext` (`isDockInStudio` from `useShellRight`), and the
+page's `DrawerColumn` puts its panel in the `detail` slot, so below the push
+width both lie over the page with a scrim. Close keys
 read `selectDrawerPanel`, which is null under a studio unless a workspace tool
 shows beside it, and the history entry keeps the drawer. A workspace switch
 empties the slot. Esc inside a parked drawer is suspended, so it reaches the
 page, and so are the list keys and the Scripts run and stop keys
 (`useIsDrawerParked`), so a hidden list never moves or runs a script. After the trip the drawer's inner step (a plan in Ask) answers first
-again. A drawer's own key (⌘⌥C, ⌘⌥X, ⌘⌥S) on a page leaves that page and every
+again. A drawer's own key (⌘⌥S) on a page leaves that page and every
 page stacked under it, and shows that drawer; it never closes a parked one,
 and an overlay drawer takes focus back. Esc in the session is one ladder: an open
 menu, popover or field takes it first, then the top of the slot closes, then
@@ -411,8 +411,8 @@ primary), Step routing (orchestrated), Save as preset, Copy
 run summary, **Stop run** (asks first), Archive run and Delete run, never
 the approve button. A failed Pause, Continue or Stop leaves the run as it was,
 reports the error and keeps the word, so pressing it again is the retry.
-The title is the only h1 of the page; the row above it says `Back to runs`, it
-or Esc (the session's one Esc ladder) goes back to the list, and no other chevron on the page does.
+The title is the only h1 of the page; the head's back button (`Back to Runs`), its crumbs
+or Esc (the session's one Esc ladder) go back to the list, and no other chevron on the page does.
 Scripts reads `[search] [New script]`. A page with no actions draws no `...`.
 
 A window is a strip, a set of columns, and a pane. Each owns one thing.
@@ -432,10 +432,7 @@ hide animation or overlay can move it.
   500 ms rest, not a one line label), then
   Settings, the bug and the Goodboy mark at the bottom. It works at rail width
   because it holds doors and a few marks, not the list; the sessions list comes
-  back through the peek. The session rail has the same one reduced state: its
-  own toggle folds it to a 44px strip of the current level's icons
-  (`SessionRailIcons`), remembered apart from the column
-  (`goodboy:session-rail-collapsed:v1`). Hiding a column
+  back through the peek. Hiding a column
   outright sets it and its handle to zero width and marks the aside `inert`: a
   zero-width column that still takes focus is a keyboard trap. The shell
   primitive can lay out more reduced states than the product uses. Which one a
@@ -446,16 +443,8 @@ hide animation or overlay can move it.
 - **The main sidebar never folds by itself; a pane folds by its tier.** Only
   its toggle folds the column: the one toggle is the first control of the top
   bar's left zone, above the column (`ColumnToggleButton` in `AppTopBar`, ⌘B),
-  and no pane, no page and no window width folds or unfolds it. `shellFoldsOf` (read through `useShellFolds`) reads the
-  open pane's tier: a reader tier pane (720: a file, a diff, a document, New)
-  or the browser pane (720, wider on a wide window) folds the session rail to
-  its 44px icons while it is open; a side tier pane
-  (416: Explore, Context, Ask, Agents, Scripts, Terminal and the transcripts
-  Agents opens) folds nothing. A fold of this kind never writes a saved
-  choice (`useSessionRailFold`), and the rail toggle opens a rail folded this
-  way for as long as the pane stays open, also without saving; the saved fold
-  comes back when the pane closes. The session rail keeps its own toggle at the
-  left of its top row.
+  and no pane, no page and no window width folds or unfolds it. A session has no
+  column of its own: its pages are the page tabs under the title, so no pane folds anything.
 - **The overlay slots sit inside the grid, not above it.** The peek spans the
   work row, so it can hover over main without taking layout space. A studio is
   a page in the one main slot: it draws inside the content sheet, over the page
@@ -471,7 +460,7 @@ hide animation or overlay can move it.
 mounts editors and takes a title.
 
 **The Projects card of the session level shows which projects a session has
-materialized.** It lives in the session rail, not on the Overview, and always has
+materialized.** It lives in the Context tab, not on the Overview, and always has
 the Add action, even before the first mount. Each mounted project is a label
 row that folds its worktrees, each worktree folds its main pages one more
 indent in; a merged or closed worktree stays a row with its pull request
@@ -554,7 +543,7 @@ covered.
   bar, in the chip or in its panel: the Board door carries the count. Needs you counts three
   units, and each tooltip names its own: sessions ("2 sessions need you") on the Board
   door, the dock badge and Search or run; questions ("3 questions") on the
-  Questions entry of the session rail; items ("4 items need you") on the Overview card and
+  Questions tab of the session; items ("4 items need you") on the Overview card and
   the Runs group. The bell is unchanged. A script row moves to its
   session and opens that run's output in the right drawer. A running session
   row opens the session hover card (facts only) after the pointer rests, the
@@ -905,9 +894,9 @@ Welcome step at Agents, and a stored tools entry counts for nothing.
 Auto is described in [auto.md](../auto.md); this is where it sits. Auto is always
 on: Settings has no Auto switch, and the **Experimental** marker sits on the
 Auto start of the New menu. An Auto conversation is a row of the one **Runs**
-entry of the session rail. The tree of an Auto agent, and of each
-child of an Auto tree, is the Agents panel of the session tools (see The session
-tools), never a second rail beside the chat. The chat of an Auto agent gets its delegation lines and its
+tab of the session. The tree of an Auto agent, and of each
+child of an Auto tree, is the Agents column of the run page (see The Lead page
+in auto.md), never a second rail beside the chat. The chat of an Auto agent gets its delegation lines and its
 tail through the `insertions` prop of `ChatView` (`useAutoChat`). The
 plan drawer swaps its toolbar for `AutoPlanToolbar` when the plan belongs to an
 Auto tree, and the Overview timeline hides the children of a tree and draws its
@@ -1003,7 +992,7 @@ hints, the Shortcuts page and the guide read the same entries. It keeps its own
 window listener because Enter must yield to a focused button (a row button of
 the list excepted). The Branch page's Select every fixable comment (⌘A,
 `review.selectAll`) sits on the same footing, and the registry test lets it
-use ⌘A because the Branch page only answers it outside a text field. The selection keys (`selection.toggle`, `selection.all`, `selection.clear`, `selection.delete`) are the same kind: `useSelectionKeys` matches the first, second and fourth against the registry, and `SelectionBar` answers Esc through the escape stack; the registry test lets `selection.all` use ⌘A because the hook yields to a text field. They sit in the registry so the list and the tooltips name them. Up one level (⌘↑, `nav.up`) carries `yieldsToText`, so the registry test lets it use a combo a text field owns.
+use ⌘A because the Branch page only answers it outside a text field. The selection keys (`selection.toggle`, `selection.all`, `selection.clear`, `selection.delete`) are the same kind: `useSelectionKeys` matches the first, second and fourth against the registry, and `SelectionBar` answers Esc through the escape stack; the registry test lets `selection.all` use ⌘A because the hook yields to a text field. They sit in the registry so the list and the tooltips name them. Up one level (⌘↑, `nav.up`) carries `yieldsToText`, so the registry test lets it use a combo a text field owns. Back one crumb in a session (Esc, `nav.crumbUp`) is the last rung of the one Esc ladder (`escapeLadder`), named in the registry so the Shortcuts page and the head back button's tooltip show it; the scoped Esc keys (`overlay.close`, `selection.clear`, `agent.stop`) answer first, which the registry test allows by name.
 The control that owns each one handles its own key event and never registers
 it with the dispatcher; the activity row matches through `eventMatches`, and so
 does Shift+F10 (`menu.open`), which opens the context menu of the focused row.

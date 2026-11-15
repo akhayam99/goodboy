@@ -30,7 +30,7 @@ Hand the next agent where things stand. After a reply the drawer shows **Next** 
 
 ### Context drawer
 
-Open goal, decisions, summary and explanations from any session page with the **Context** button, and copy them all with **Copy context**. It opens on Goal. Each card has its title and a count from two. Goal, Decisions and Summary each have one menu: **Edit**, **Versions** and **Who reads this**. **Context updates** shows the last update and its model and cost, and **Update now** runs one on demand. The Goal section can write a title and goal from linked work, and nothing changes until you apply it.
+Open goal, decisions, summary and explanations in the **Context** tab, with Projects and Linked beside them, and copy them with **Copy context**. It opens on Goal. Each card has its title and a count from two. Goal, Decisions and Summary each have one menu: **Edit**, **Versions** and **Who reads this**. **Context updates** shows the last update and its model and cost, and **Update now** runs one on demand. The Goal section can write a title and goal from linked work, and nothing changes until you apply it.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/context-drawer-dark.webp">
@@ -41,7 +41,7 @@ Open goal, decisions, summary and explanations from any session page with the **
 
 ### Who receives what
 
-See which agents read each part of the context. **Who reads this** in the card menu lists the roles that receive that part. Planners, implementers, reviewers, debuggers and resolvers get the decisions, scouts and docs agents do not, and you always see everything. Agents that Auto starts read only their brief, so the line says "Auto children read only their brief" on every part but the goal.
+See which agents read each part of the context. **Change visibility** in the card menu lists the roles that receive that part. Planners, implementers, reviewers, debuggers and resolvers get the decisions, scouts and docs agents do not, and you always see everything. Agents that Auto starts read only their brief, so the line says "Auto children read only their brief" on every part but the goal.
 
 ### Explanations
 
@@ -58,5 +58,5 @@ Hand a plan straight to the implementer. The plan goes from **Ready to run** to 
 ## Under the hood
 
 - Decision marks: `DecisionsSection` renders one list and `markContextRead` clears marks after persistence.
-- Summary: `summaryDisplayBlocks` draws State only when `stateBodyHasMore` says it exceeds the sentence, `summaryStateOf` owns its Overview sentence, and `shareableContext` keeps the complete text.
+- Summary: `summaryDisplayBlocks` draws State only when `stateBodyHasMore` says it exceeds the sentence, and `shareableContext` keeps the complete text.
 - Card controls: `SlotSourceActions` keeps the three menu entries together.

@@ -76,9 +76,9 @@ Under the graph, **Previous versions N** opens the older histories of the branch
 
 Get a commit message drafted for a reword. Scribe writes it in place, and saving the message updates the local branch.
 
-### Bring them into the plan
+### Rebase on their commits
 
-If someone pushed after you applied, Goodboy lists their new commits and offers to add them to the plan and push again.
+If someone pushed after you applied, Goodboy lists their new commits and offers to rebase on them and push again.
 
 ### Rebase on main
 
@@ -101,7 +101,7 @@ On a conflict or a commit hook, the panel does three things.
 
 - It reads **Rebase on main stopped: 2 files conflict** and **Your branch is as it was**.
 - It lists every file with **Open** (your editor).
-- It offers **Resolve with Auto**, **Resolve in terminal** and **Keep branch as it was**, with **Add a hint** for Auto.
+- It offers **Resolve with Auto**, **Resolve in terminal** and **Abort rebase**, with **Add a hint** for Auto.
 
 **Resolve with Auto**
 
@@ -124,7 +124,7 @@ On a conflict or a commit hook, the panel does three things.
 - **Push** is the force push with lease of the Branch header. The panel reads **Pushed to origin** once origin has it.
 - With or without a pull request, **Push** is the branch page's one push action. It has the same confirm, force with lease and failure line as the header. It shows while the branch has commits origin lacks.
 - When someone pushed while you rebased, the panel reads **Rebased here, but origin has 1 new commit** and names the commit. It offers three verbs.
-- **Bring them in** adds their commits to yours, then pushes with the lease of what it brought in.
+- **Rebase on their commits** puts yours on top of theirs, then pushes with the lease of what it rebased on.
 - **Resolve in terminal** opens the terminal.
 - **Undo rebase** uses the backup.
 
@@ -145,7 +145,7 @@ On a conflict or a commit hook, the panel does three things.
 - Whatever its reason, the pull request's Merge says **Conflicts with main. Resolve them in the banner.** The Branch header drops its primary and push.
 - The header, the banner, the action registry and the rail all read one test. Merge in Search or run belongs to the registry. It reads the write destination's mount when it names none.
 - The test finds a Goodboy stop in the phase stopped, or a rebase in progress in the worktree. It reads the page's live status or the status cache.
-- **Keep branch as it was** closes the panel, leaves the branch where it was and records it. The stop leaves Next in every window, and Activity reads **Kept hl/fix-duplicate-credit as it was**. A later rebase that stops again brings a new row.
+- **Abort rebase** closes the panel, leaves the branch where it was and records it. The stop leaves Next in every window, and Activity reads **Kept hl/fix-duplicate-credit as it was**. A later rebase that stops again brings a new row.
 - A stop also leaves Next once its pull request merged or closed or its branch left the session. A newer stop on the same branch replaces it, so the older History rewriter stops asking under Needs you.
 - Search or run has the same verb as **Resolve rebase conflicts with Auto**.
 - The panel does not depend on the window that ran the rebase. After a restart, a reload or in a second window, it comes back from the saved stop with the same verbs. **Resolve with Auto** reads the rebase plan again before it starts.

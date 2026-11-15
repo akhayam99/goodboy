@@ -375,7 +375,7 @@ describe('approving from the drawer', () => {
     });
     openRunPageWithDrawer();
     useAppStore.setState({
-      drawerBack: { kind: 'explore', sessionId: PLAN_FIXTURE_SESSION, payload: null },
+      drawerBack: { kind: 'scripts', sessionId: PLAN_FIXTURE_SESSION, payload: null },
     });
     renderDrawer();
 

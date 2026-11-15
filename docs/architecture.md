@@ -1189,7 +1189,8 @@ kept.
   tree (open agents with role, state and age, questions waiting, the budget) and carries each
   result's artifact text, cut when long, because a provider may not resume the session.
 - Children start in `launchChildren.ts` only once the Auto turn is over. Each child
-  gets its agent row with the preallocated id (`createAutoChild.ts`), a baseline
+  gets its agent row with the preallocated id and the provider, model and effort Auto
+  chose (`createAutoChild.ts`, `autoChildRoutingOf`), so its composer names that model, a baseline
   snapshot of its mount (`worktree_snapshot`) and a turn with `origin: 'delegation'`,
   its `confinedRole`, the frozen mount target and its attempt id as delivery id.
   `finishAttempt.ts` reads the closing line (`core/auto/closing.ts`: the `step-done` line

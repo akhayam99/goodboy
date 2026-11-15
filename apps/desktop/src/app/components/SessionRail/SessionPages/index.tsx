@@ -4,18 +4,16 @@ import { openSessionPage } from '../../../../features/session/openSessionPage';
 import type { PageCountFacts } from '../../../../features/session/pageCountWord';
 import type { Page } from '../../../../features/session/pageRegistry';
 import type { CurrentSign } from '../../../../features/workspace/components/SessionActivityBar/currentSign';
-import { SessionPageRow, type SessionPageVariant } from '../SessionPageRow';
+import { SessionPageRow } from '../SessionPageRow';
 
 type Props = {
   readonly session: Session;
   readonly pages: ReadonlyArray<Page>;
   readonly facts: PageCountFacts;
   readonly sign: CurrentSign;
-  readonly variant?: SessionPageVariant;
-  readonly onOpened?: () => void;
 };
 
-export const SessionPages = ({ session, pages, facts, sign, variant = 'row', onOpened }: Props) => {
+export const SessionPages = ({ session, pages, facts, sign }: Props) => {
   const sessionId = session.id;
 
   return (
@@ -26,11 +24,7 @@ export const SessionPages = ({ session, pages, facts, sign, variant = 'row', onO
             page={page}
             facts={facts}
             isCurrent={sign === page.id}
-            variant={variant}
-            onOpen={() => {
-              openSessionPage({ sessionId, page });
-              onOpened?.();
-            }}
+            onOpen={() => openSessionPage({ sessionId, page })}
           />
         </li>
       ))}

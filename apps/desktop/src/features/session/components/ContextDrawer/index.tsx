@@ -1,7 +1,7 @@
 import { slotValue } from './slotValue';
-import { CHECK_STATE } from '../../../../store/slices/notifications/errorRecovery';
+import { useWriteContextSlot } from './useWriteContextSlot';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { BandStack, CopyButton, DrawerFrame, ICON_SIZE, ScrollFade } from '@goodboy/ui';
+import { BandStack, DrawerFrame, ScrollFade } from '@goodboy/ui';
 import { activeDecisionsNewestFirst } from '@goodboy/core/context';
 import type { SessionId } from '@goodboy/types';
 import {
@@ -30,6 +30,8 @@ import { DecisionsSection } from './DecisionsSection';
 import { SummarySection } from './SummarySection';
 import { VersionsView } from './VersionsView';
 import { ContextUpdates } from './ContextUpdates';
+import { ContextCopyButton } from './ContextCopyButton';
+import { ContextPageFrame } from './ContextPageFrame';
 import { ContextLoadFailure } from './ContextLoadFailure';
 import { MarkContextRead } from './MarkContextRead';
 import { ContextSection } from './ContextSection';
@@ -46,15 +48,12 @@ type SectionParams = {
   readonly section: ContextSlotSection;
 };
 
-type WriteParams = SectionParams & {
-  readonly next: string;
-};
-
 type Props = {
   readonly sessionId: SessionId;
   readonly section: ContextDrawerSection;
   readonly view: ContextDrawerView;
   readonly highlight?: ReadonlyArray<number>;
+  readonly isPage?: boolean;
   readonly onClose: () => void;
 };
 
@@ -63,6 +62,7 @@ export const ContextDrawer = ({
   section,
   view,
   highlight = EMPTY_ARRAY,
+  isPage = false,
   onClose,
 }: Props) => {
   const slots = useSessionSlots(sessionId);
@@ -77,8 +77,7 @@ export const ContextDrawer = ({
   const loadSessionDecisions = useAppStore((state) => state.loadSessionDecisions);
   const loadSessionOpenQuestions = useAppStore((state) => state.loadSessionOpenQuestions);
   const loadSessionContextSeen = useAppStore((state) => state.loadSessionContextSeen);
-  const reportError = useAppStore((state) => state.reportError);
-  const upsertSessionSlot = useAppStore((state) => state.upsertSessionSlot);
+  const writeSlot = useWriteContextSlot({ sessionId });
   const versionsSection: ContextSlotSection = section === 'explanations' ? 'summary' : section;
   const learnings = useAppStore((state) => state.sessionContextItems[sessionId] ?? EMPTY_ARRAY);
   const loadSessionContextItems = useAppStore((state) => state.loadSessionContextItems);
@@ -150,21 +149,6 @@ export const ContextDrawer = ({
 
   const openVersions = ({ section }: SectionParams) =>
     openContextDrawer({ sessionId, section: section, view: 'versions' });
-
-  const writeSlot = async ({ section, next }: WriteParams): Promise<boolean> => {
-    try {
-      await upsertSessionSlot(sessionId, CONTEXT_SECTION_SLOT[section], next);
-      return true;
-    } catch (error: unknown) {
-      void reportError({
-        recovery: CHECK_STATE,
-        title: "Couldn't save the context",
-        error,
-        sessionId,
-      });
-      return false;
-    }
-  };
 
   const toggleRaw = ({ section }: SectionParams) =>
     setRawSection((current) => (current === section ? null : section));
@@ -268,6 +252,16 @@ export const ContextDrawer = ({
     );
   })();
 
+  const copy = <ContextCopyButton brief={brief} />;
+
+  if (isPage) {
+    return (
+      <ContextPageFrame sessionId={sessionId} action={copy} frameRef={scrollRef}>
+        {sections}
+      </ContextPageFrame>
+    );
+  }
+
   return (
     <DrawerFrame
       title={NAMES.context}
@@ -280,17 +274,7 @@ export const ContextDrawer = ({
           : onClose
       }
       scroll="self"
-      action={
-        brief === '' ? null : (
-          <CopyButton
-            presentation="icon"
-            value={brief}
-            label={NAMES.copyContext}
-            size={ICON_SIZE.row}
-            className="size-7 justify-center p-0"
-          />
-        )
-      }
+      action={copy}
     >
       <div className="shrink-0 px-2 pt-1">
         <ContextUpdates sessionId={sessionId} />

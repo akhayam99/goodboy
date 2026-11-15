@@ -61,13 +61,6 @@ const mount = async ({ name }: MountParams): Promise<void> => {
   expect(screen.queryByText('Something went wrong')).toBeNull();
 };
 
-type NodeParams = {
-  readonly node: HTMLElement;
-};
-
-const isChecked = ({ node }: NodeParams): boolean =>
-  node instanceof HTMLInputElement && node.checked;
-
 type NameParams = {
   readonly name: string;
 };
@@ -113,7 +106,7 @@ describe('the u26 rebase scenes', () => {
     const inPrompt = within(prompt);
     expect(inPrompt.getByRole('button', { name: 'Resolve with Auto' })).toBeDefined();
     expect(inPrompt.getByRole('button', { name: 'Resolve in terminal' })).toBeDefined();
-    expect(inPrompt.getByRole('button', { name: 'Keep branch as it was' })).toBeDefined();
+    expect(inPrompt.getByRole('button', { name: 'Abort rebase' })).toBeDefined();
     expect(inPrompt.getByRole('button', { name: /Add a hint/ })).toBeDefined();
     expect(
       prompt
@@ -155,7 +148,7 @@ describe('the u26 rebase scenes', () => {
     );
   });
 
-  it('leaves the branch as it was on Keep branch as it was and closes the prompt', async () => {
+  it('leaves the branch as it was on Abort rebase and closes the prompt', async () => {
     await mount({ name: 'u26-rebase-conflict-light' });
     const [prompt] = screen
       .getAllByRole('alert')
@@ -163,7 +156,7 @@ describe('the u26 rebase scenes', () => {
     if (prompt === undefined) {
       throw new Error('no conflict prompt');
     }
-    fireEvent.click(within(prompt).getByRole('button', { name: 'Keep branch as it was' }));
+    fireEvent.click(within(prompt).getByRole('button', { name: 'Abort rebase' }));
     await settle();
 
     expect(useAppStore.getState().historyRuns[firstMountId()]).toBeUndefined();
@@ -301,43 +294,5 @@ describe('the u26 rebase scenes', () => {
     expect(screen.queryByRole('button', { name: 'Abort' })).toBeNull();
     await setPhase({ phase: 'done' });
     expect(screen.getByRole('button', { name: 'Dismiss' })).toBeDefined();
-  });
-
-  it('opens one picker with every behind branch checked, and Rebase N after unchecking', async () => {
-    await mount({ name: 'u26-rebase-picker-dark' });
-    const rebaseAll = vi.fn<AppStore['rebaseAll']>(async () => 'handed');
-    useAppStore.setState({ rebaseAll });
-
-    const picker = within(screen.getByRole('group', { name: 'Branches to rebase' }));
-    const boxes = picker.getAllByRole('checkbox');
-    expect(boxes.map((box) => isChecked({ node: box }))).toEqual([true, true, true, false]);
-    expect(picker.getByRole('button', { name: 'Rebase all' })).toBeDefined();
-
-    fireEvent.click(picker.getByRole('checkbox', { name: /payments-api/ }));
-    expect(picker.getByRole('button', { name: 'Rebase 2' })).toBeDefined();
-
-    fireEvent.click(picker.getByRole('checkbox', { name: /Also tidy commits with Auto/ }));
-    fireEvent.click(picker.getByRole('button', { name: 'Rebase 2' }));
-    await settle();
-
-    const [ledger, relay] = REBASE_ALL_MOUNTS;
-    expect(rebaseAll).toHaveBeenCalledWith({
-      sessionId: SESSION_ID,
-      mountIds: [ledger?.mountId, relay?.mountId],
-      shouldTidy: true,
-    });
-  });
-
-  it('keeps tidy off by default and disables the start when no branch is checked', async () => {
-    await mount({ name: 'u26-rebase-picker-light' });
-    const picker = within(screen.getByRole('group', { name: 'Branches to rebase' }));
-    expect(
-      isChecked({ node: picker.getByRole('checkbox', { name: /Also tidy commits with Auto/ }) }),
-    ).toBe(false);
-    for (const name of ['ledger-core', 'notify-relay', 'payments-api']) {
-      fireEvent.click(picker.getByRole('checkbox', { name: new RegExp(name) }));
-    }
-    const start = picker.getByRole('button', { name: 'Rebase' });
-    expect(start.hasAttribute('disabled')).toBe(true);
   });
 });

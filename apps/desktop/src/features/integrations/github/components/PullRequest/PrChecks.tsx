@@ -75,7 +75,7 @@ export const PrChecks = ({
     <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_max-content_max-content] gap-x-3 gap-y-4">
       {checksGroupsOf({ checks }).map((entry) => (
         <section key={entry.group} className="col-span-full grid grid-cols-subgrid">
-          <h2 className="col-span-full flex h-7 items-center gap-2 px-2 text-row">
+          <h2 data-list-heading="" className="col-span-full flex h-7 items-center gap-2 text-row">
             <span className={TEXT_ROLE.secondary}>{entry.label}</span>{' '}
             {entry.runs.length < MIN_COUNTED_ROWS ? null : (
               <span className={cn('tabular-nums', TEXT_ROLE.hint)}>{entry.runs.length}</span>

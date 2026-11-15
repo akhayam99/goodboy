@@ -4,15 +4,16 @@
 
 ## Lens surfaces
 
-- **One header grid for every page.** A 40px band (the crumb at the column's left,
-  Ask or Close at its right edge), then one 32px title row directly under it with the
+- **One header grid for every page.** An 8px inset, then one 32px title row with the
   page's only `h1` (`text-title`) and its actions at the right, the optional meta line
-  4px under the row, and the tabs on their own row under the meta line. The title's
-  centre is 56px under the pane top and its left edge is the column's content edge on
-  every page, studio and sub-page, the Board included (it keeps an empty 40px band
-  above its title). The row is fixed (`h-8`, centred, never wraps, a long title
-  truncates), no glyph ever indents the title, and the crumb names the structure while
-  the `h1` names the object. `frameGeometryOf` (`packages/ui`) is that table.
+  under the row, and the tabs on their own row under the meta line. The title's centre is
+  24px under the pane top and its left edge is the column's content edge on every page,
+  studio and sub-page. The row is fixed (`h-8`, centred, never wraps, a long title
+  truncates), and the crumbs name the structure while the `h1` names the object. A session
+  page draws this row in the session head, where a secondary page puts its back button
+  before the title ([session-rail.md](session-rail.md#session-page-tabs)); the blocks
+  of a page header sit `PANE_RHYTHM.block` apart. `frameGeometryOf` (`packages/ui`) is that
+  table.
 - **A lens you leave stays alive.** `SessionWorkspace` gives the lens panes to one
   `PaneSwap`, keyed by surface, and keeps the last three visited (`LENS_KEEP_ALIVE_CAP`)
   mounted under `Activity`: scroll, filters and open threads come back as they were, and
@@ -90,7 +91,7 @@
   `Not now`) and the first lap Publish. Needs you follows, then Next (up to
   three rows, the first one's verb the only filled button on the page), then
   Activity. Projects, Linked work, Artifacts and Add project live on the
-  session rail's session level. Next and Unassigned comments open with `SectionHeader`
+  Context tab. Next and Unassigned comments open with `SectionHeader`
   at level 2, and Needs you opens with the same eyebrow on the quiet notice
   surface (no tone bar). Needs you is the one home of a waiting ask on the page:
   its row reads the question with the run or agent in gray after it, no totals
@@ -107,9 +108,9 @@
   second `Answer` on the timeline row.
 - **The focused issue page says where the issue lives.** The issue is an
   address (`external-task` target, `focusedExternalTask`): a card opens it
-  through `openExternalTaskLens`, so the back row reads `Back to overview`.
+  through `openExternalTaskLens`, so the crumbs read `Overview › {provider}`.
   The rail owns the linked work list and its history fold. The page draws no back
-  button of its own. `Remove link from this session` sits in the record's `⋯`, asks first and
+  button of its own: the head's back button goes one crumb up. `Remove link from this session` sits in the record's `⋯`, asks first and
   leaves an Undo toast; once the unlink lands, the address is replaced by the
   Overview, unless the user already moved on. A failure keeps the record and its error. A `Placed on` property in the Links group shows
   `This session` or the branches; its value (`TaskPlacementMenu`) opens the
@@ -146,8 +147,8 @@
   = pick one thing in ten seconds; drawer = reference next to the work; page =
   the work. The session context and the Explore file preview open there.
   Creating or configuring stays in a popover, navigating stays in the sidebar,
-  and an object you work on is a child page under one back row, not a trail
-  ([Back row](session-rail.md#back-row)). See
+  and an object you work on is a child page under the session crumbs, not a studio trail
+  ([Crumbs](session-rail.md#crumbs)). See
   [The right drawer](home-and-drawer.md#the-right-drawer).
 - **The Branch page is where the session's code is discussed and ships.** The
   contract of its header and tabs is in [The Branch page](branch-page.md#the-branch-page).
@@ -172,7 +173,7 @@ Fix N` opens the same panel, or `Apply N fixes` for comments with a fix ready. W
   [Concepts](../concepts.md). Cmd+A is not in the shortcut table:
   the system reserves it. "Resolve" names the area, never a button. The page
   exists with or without a pull request: without one the primary is `Create PR`
-  (the creation form replaces the tab body, trail `Session › Branch ▾ › New
+  (the creation form replaces the tab body, crumbs `Overview › Branch ▾ › New
 pull request`) and Comments lists the session's notes. Every door to a pull
   request lands here: the worktree row chip, the board card badge, the context
   strip and the Checks chip. Everything Comments shows comes from one durable
@@ -253,76 +254,34 @@ on you] }`. Any other agent keeps its page, one conversation with no tabs
   Up from a page reached any other way opens Review on that comment. There are
   no return pills: the Diff and a fix run transcript come back through Back.
 - **The switcher and Search or run list only destinations the session can
-  use.** One function feeds both. Context is a drawer, not a destination:
-  Search or run offers **Show context** (⌘⌥C) and neither lists a Context page.
-  Provider entries open **Link work** on that provider (the event carries the source), unfold a folded session rail first, and are not offered on an archived session; a provider list address restores to Overview.
-  Explore is always listed, opens as a pane (see The session tools), and
-  browses one project of the session at a time as a tree (`role="tree"`). It
-  draws the shared page header (`PaneShell` `page="explore"` inside the
-  drawer's `DrawerFrame isHeaderless`, which keeps Esc and focus): the title
-  with no glyph, counts on the meta line (`exploreMetaOf`: `3 folders · 4 files`
-  for the root, `7 files changed` in the Changed view, nothing while the root
-  loads or is empty), then Refresh and Close at the right of the title row. A
-  project chip on the row under the meta (`ExploreProjectChip`) names the
-  folder, `ledger-core · hl/ledger-rounding`, and with two or more mounts opens
-  a menu grouped by
-  project; a first-lap session reads `ledger-core, project folder` and a
-  session without a project reads `Session scratch folder`. Picking a row is
-  view only: it sets `exploreMountPath` in the session-view slice and never
-  calls `switchBranchMount` or `setSessionActiveMount`, and an agent run never
-  moves it. Until you pick, Explore follows the write destination
+  use.** One function feeds both. Context is a tab of every session: Search or
+  run offers **Open Context** (⌘⌥C), and Changes is listed on every session.
+  Provider entries open **Link work** on that provider (the event carries the source), open the Context tab, and are not offered on an archived session; a provider list address restores to Overview.
+  Explore has no pane of its own: **All files** on the Changes page browses
+  one project of the session at a time as a tree (`role="tree"`). The project
+  chip (`ExploreProjectChip`) in the scope pill names the folder,
+  `ledger-core · hl/ledger-rounding`, and with two or more mounts opens a menu
+  grouped by project; a first-lap session reads `ledger-core, project folder`
+  and a session without a project reads `Session scratch folder`. Picking a
+  row is view only: it sets `exploreMountPath` in the session-view slice and
+  never calls `switchBranchMount` or `setSessionActiveMount`, and an agent run
+  never moves it. Until you pick, the tree follows the write destination
   (`selectExploreMount` in `features/explore`, built on
   `resolveWriteDestination`). A pick whose worktree lost its files reads
-  "This worktree is gone", and a session with nothing to browse reads "No
-  folder to browse" with one action, Add project (`DrawerHost` hands it
-  in as `noFolderAction`, so `features/explore` does not import the session
-  feature). Every empty state is an
-  `EmptyState` at page size: a title, one line that says what fills it and at
-  most one action ("This folder is empty", "No changes against main", "Couldn't
-  read this session folder" with Retry). The `mount.browseFiles` action (Browse files) opens the
-  Explore pane on a given mount (`openExplorePane`). Opening a file or a
+  "This worktree is gone". The `mount.browseFiles` action (Browse files) opens
+  All files on the Files tab of that mount's branch page, never the first
+  branch (`openExplorePane` passes the mount to `openPlaceRows`), and an
+  `explore` target in a
+  stored place (`s/{session}/explore/{mount}`) still parses and lands on the
+  Overview. Opening a file or a
   folder from any control goes through `openTarget` (`features/open/`): the
   editor when one is set, the file drawer for a file with none, the file
-  manager for a folder with none. An `explore` target in a
-  stored place (`s/{session}/explore/{mount}`) still parses and lands on the
-  Overview with the pane open. Rows are 40px
-  high with no gap (`EXPLORE_ROW_PX`): a type glyph, the name with its
-  extension kept, a slot for change marks, the size and the age. The size
-  hides under a 520px column and the age under 440px.
-  A 16px slot before the size carries the change marks. Changed means what the
-  Changes tab means: against the base branch, with uncommitted and untracked
-  work (`worktree_changed_files`, whose `entries` give each path a status:
-  added, modified, deleted or renamed, untracked files count as added). A
-  changed file shows the diff's letter (`M`, `A`, `R`; `D` in the Changed
-  filter) in the diff's tone, named for assistive tech by the word
-  ("Modified"); names are never tinted. A closed folder holding changes shows a
-  6px dot, filled with `text-muted-foreground` and a 1px ring so it is never
-  mistaken for the diff tree's warning dot (changed since viewed), with the
-  tooltip "3 changed files"; an open folder shows none. The mark comes from
-  `useExploreChanges`, which shares one request per mount and revision with
-  `useMountDiffStats` (same 30s tick, turn finished and focus signals, no second
-  timer). The frame head says `7 changed` and never counts the root; its
-  Changed only switch shows only for a mount whose
-  git answers and that has changes (or while you are in Changed only). Changed only
-  filters the same tree to the changed paths and their folders, all open, with
-  deleted files as faint struck rows that do not open; with nothing left it
-  says "No changes against main". A changed file's drawer offers
+  manager for a folder with none. A changed file's drawer offers
   `Preview | Changes` in its toolbar: Changes is the file's diff in the peek
-  presentation with the head's Open page (tooltip Open in Changes) that opens the Changes tab on the file. The folders you opened
-  are kept per session and project in the session-view slice (`exploreExpanded`,
-  keyed by session, mount path and folder) and open again when you come back;
-  the Changed only choice and its closed folders are kept per session too
-  (`exploreChangedView`), so a drawer that replaced Explore gives them back,
-  and a file opened from elsewhere opens the folders above it. The file drawer
+  presentation with the head's Open page (tooltip Open in Changes) that opens the Changes tab on the file. The file drawer
   key holds the project (`explore-file:{mount}:{path}`), so the same relative
-  path in a second project replaces the drawer instead of closing it. The tree has one tab stop; Up and Down move, Right
-  opens a folder or enters it, Left closes it or goes to its parent, Home and
-  End jump, Enter and Space open the preview of a file or toggle a folder. Above
-  120 rows it draws only the rows near the scroll position (`shared/utils/windowRows.ts`, the
-  diff tree's math). A row's verbs come from the `exploreFile` kind, in the
-  row's `⋯` visible at rest (`ExploreFileMenu`) and its right click menu: Ask
-  an agent (files), Open in editor or Open, Show in Finder and Copy path. A folder
-  offers Open only when an editor can take it (a repository with an editor),
+  path in a second project replaces the drawer instead of closing it. A
+  folder offers Open only when an editor can take it (a repository with an editor),
   and a linked folder is listed as a folder; the Rust containment check on
   read and open stays. A file opens in a reader drawer whose header reads like
   the diff drawer's: the type glyph, the file name, the one labelled open
@@ -343,7 +302,7 @@ on you] }`. Any other agent keeps its page, one conversation with no tabs
   branch. Pull request is listed on every code host, GitHub included. A tool
   lens appears once that tool is connected.
 - **A lens surface is reached from the overview or from Search or run, never
-  from a rail, and the page it opens has one back row, no trail.** Rows and chips inside the
+  from a rail, and the page it opens has the session crumbs, no trail.** Rows and chips inside the
   overview route to it, by expanding in place or opening a side panel. Counts
   and dots are read-only signals on the row that routes there. Session
   lifecycle actions are not navigation and do not belong on those rows. A

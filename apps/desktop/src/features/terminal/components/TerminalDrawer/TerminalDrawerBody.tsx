@@ -1,5 +1,5 @@
 import { CHECK_STATE } from '../../../../store/slices/notifications/errorRecovery';
-import { useEffect, useMemo, type KeyboardEvent } from 'react';
+import { useEffect, useMemo, useRef, type KeyboardEvent } from 'react';
 import { DrawerFrame } from '@goodboy/ui';
 import type { SessionId, WorkspaceId } from '@goodboy/types';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
@@ -9,6 +9,7 @@ import { useShortcut } from '../../../../shared/keyboard/useShortcut';
 import { isBranchlessSession } from '../../../../shared/utils/isBranchlessSession';
 import { useAppStore } from '../../../../store';
 import { workspaceTerminalOwner } from '../../../../store/slices/terminal/terminalOwner';
+import { mountIdOfWorktreeKey } from '../../../../store/slices/terminal/terminalWorktree';
 import { useTerminalStudioModel } from '../../hooks/useTerminalStudioModel';
 import { openSessionFolderTerminal } from '../../openSessionFolderTerminal';
 import { openSessionTerminal } from '../../openSessionTerminal';
@@ -18,9 +19,11 @@ import { TERMINAL_PICKER_EVENTS } from '../../terminalPickerEvents';
 import type { TerminalTarget } from '../../terminalTargets';
 import { allWorktrees } from '../../terminalWorktrees';
 import { TerminalPane } from '../TerminalStudio/TerminalPane';
+import { TerminalScriptsMenu } from '../TerminalStudio/TerminalScriptsMenu';
 import { TerminalStripActions } from '../TerminalStudio/TerminalStripActions';
 import { TerminalTabStrip } from '../TerminalStudio/TerminalTabStrip';
 import { TerminalScopePicker } from './TerminalScopePicker';
+import { NAMES } from '../../../../shared/utils/names';
 
 type Props = {
   readonly workspaceId: WorkspaceId;
@@ -80,12 +83,42 @@ export const TerminalDrawerBody = ({ workspaceId, sessionId, worktreeKey, onClos
     model.newTab();
   };
 
+  const isMountRemoved = useAppStore((state) => {
+    const mountId = mountIdOfWorktreeKey({ key: worktreeKey });
+    if (mountId === null || sessionId === null) {
+      return false;
+    }
+    return !(state.sessionProjectMounts[sessionId] ?? []).some(
+      (mount) => mount.mountId === mountId,
+    );
+  });
+  const wasLive = useRef(false);
+  const isRemoved = isGone && wasLive.current && isMountRemoved;
+  if (!isGone) {
+    wasLive.current = true;
+  }
+
   useEffect(() => {
-    if (isGone) {
+    if (isGone && !isRemoved) {
       onClose();
     }
-  }, [isGone, onClose]);
+  }, [isGone, isRemoved, onClose]);
 
+  if (isRemoved) {
+    return (
+      <DrawerFrame
+        title="Terminal"
+        icon={CONCEPT_ICONS.terminal}
+        iconClassName="text-faint-foreground"
+        onClose={onClose}
+        scroll="self"
+      >
+        <p role="status" className="px-4 py-3 text-meta text-muted-foreground">
+          This worktree was removed, so its terminals ended.
+        </p>
+      </DrawerFrame>
+    );
+  }
   if (isGone) {
     return null;
   }
@@ -128,18 +161,31 @@ export const TerminalDrawerBody = ({ workspaceId, sessionId, worktreeKey, onClos
             busyPaths={busyPaths}
             onPickTarget={pickTarget}
             onPickSessionFolder={pickSessionFolder}
+            onPickAll={() => openTerminalOnPage({ terminalId: selected.id, sessionId })}
           />
         </span>
       }
+      menu={
+        <TerminalStripActions
+          worktree={worktree}
+          tab={selected}
+          handoffSessionId={sessionId}
+          canOpenSession={false}
+        />
+      }
       page={{
-        label: 'Open as page',
+        label: NAMES.openFullPage,
         onOpen: () => openTerminalOnPage({ terminalId: selected.id, sessionId }),
       }}
       onClose={onClose}
       scroll="self"
     >
-      <div onKeyDown={handleKeyDown} className="flex h-full min-h-0 flex-1 flex-col gap-2 py-2">
+      <div
+        onKeyDown={handleKeyDown}
+        className="flex h-full min-h-0 flex-1 flex-col gap-2 pb-2 pt-1"
+      >
         <TerminalTabStrip
+          isUnderHead
           label={worktree.projectName}
           tabs={model.tabs}
           selectedId={selected.id}
@@ -153,12 +199,13 @@ export const TerminalDrawerBody = ({ workspaceId, sessionId, worktreeKey, onClos
           onCloseLastIdle={onClose}
           sessionId={sessionId}
           actions={
-            <TerminalStripActions
-              worktree={worktree}
-              tab={selected}
-              handoffSessionId={sessionId}
-              canOpenSession={false}
-            />
+            sessionId === null || worktree.path === null ? null : (
+              <TerminalScriptsMenu
+                sessionId={sessionId}
+                workspaceId={workspaceId}
+                worktreePath={worktree.path}
+              />
+            )
           }
         />
         <div className="flex min-h-0 flex-1 flex-col px-2">

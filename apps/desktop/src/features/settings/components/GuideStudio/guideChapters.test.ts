@@ -258,10 +258,8 @@ describe('the shell chapter', () => {
 
   it('lists every page of the session pages by its registry label', () => {
     const rail = pointOf('shell', 'Session pages');
-    columnPagesOf({ isBranchless: false }).forEach((page) => expect(rail).toContain(page.label));
-    [NAMES.projects, 'Linked', 'Hide session pages'].forEach((word) =>
-      expect(rail).toContain(word),
-    );
+    columnPagesOf().forEach((page) => expect(rail).toContain(page.label));
+    [NAMES.projects, 'Linked'].forEach((word) => expect(rail).toContain(word));
   });
 
   it('puts both adds on the rows they act on and Archive and Delete in the session menu', () => {
@@ -333,8 +331,8 @@ describe('the start, agent and workflow chapters', () => {
 
   it('says a rebase conflict asks, and Rebase all hands the conflicts to one Auto', () => {
     const asks = pointOf('commits', 'A rebase conflict asks');
-    ['Resolve with Auto', 'Resolve in terminal', 'Keep branch as it was', 'never pushes'].forEach(
-      (word) => expect(asks).toContain(word),
+    ['Resolve with Auto', 'Resolve in terminal', 'Abort rebase', 'never pushes'].forEach((word) =>
+      expect(asks).toContain(word),
     );
     const all = pointOf('commits', 'Rebase all');
     expect(all).toContain('one Auto run');

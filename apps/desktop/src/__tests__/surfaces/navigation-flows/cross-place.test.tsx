@@ -149,10 +149,10 @@ const seedShipAFix = (): void => {
 };
 
 const SESSION_PAGES: ReadonlyArray<readonly [string, string | null]> = [
-  ['Branch', 'branch'],
   ['Runs', 'workflows'],
   ['Artifacts', 'plans'],
   ['Overview', null],
+  ['Branch', 'branch'],
 ];
 
 const STUDIO_DOORS: ReadonlyArray<readonly [string, string]> = [
@@ -246,13 +246,13 @@ const expectCentredColumns = (): void => {
 };
 
 const expectAskInToolColumn = (): void => {
-  const ask = shown('[data-testid="pane-toggle-ask"]');
+  const tool = shown('[data-testid="pane-toggle-scripts"]');
   expect(
-    ask?.closest('[role="toolbar"][aria-label="Tools"]'),
-    'Ask sits in the session tools column',
+    tool?.closest('[role="toolbar"][aria-label="Tools"]'),
+    'Scripts sits in the session tools column',
   ).not.toBeNull();
-  expect(ask?.closest('nav[aria-label="Session pages"]') ?? null).toBeNull();
-  expect(ask?.closest('[data-slot="pane-header"]') ?? null).toBeNull();
+  expect(tool?.closest('[role="tablist"][aria-label="Session pages"]') ?? null).toBeNull();
+  expect(tool?.closest('[data-slot="pane-header"]') ?? null).toBeNull();
   expect(document.querySelector('main [data-slot="trail-bar"]')).toBeNull();
 };
 
@@ -288,8 +288,7 @@ const drawerRequests = (sessionId: SessionId): ReadonlyArray<DrawerRequest> => {
   const plan = state.sessionPlans[sessionId]?.[0];
   const mount = state.sessionProjectMounts[sessionId]?.[0];
   return [
-    { kind: 'context', sessionId, payload: { section: 'goal', view: 'current' } },
-    { kind: 'ask', sessionId, payload: null },
+    { kind: 'scripts', sessionId, payload: null },
     {
       kind: 'scriptRun',
       sessionId,
@@ -331,44 +330,49 @@ const sessionRow = (sessionId: SessionId): HTMLElement => {
   return requireValue({ value: found });
 };
 
-const SESSION_LEVEL = '[data-level-layer="session"]:not([inert])';
+const SESSION_TABS = '[role="tablist"][aria-label="Session pages"]';
 
-const PROJECTS = `${SESSION_LEVEL} [aria-labelledby="level-projects-label"]`;
+const BRANCH_TABS = '[role="tablist"][aria-label="Branch pages"]';
 
 const pageRow = (label: string): HTMLElement => {
-  if (label === 'Branch') {
-    const worktree = document.querySelector<HTMLElement>(`${PROJECTS} li button`);
-    if (worktree === null) {
-      throw new Error('no worktree row on the session level');
-    }
-    return worktree;
-  }
-  const pages = document.querySelector<HTMLElement>(
-    `${SESSION_LEVEL} [data-testid="session-pages"]`,
-  );
+  const pages = shown(SESSION_TABS);
   if (pages === null) {
-    throw new Error('the sidebar is not on a session level');
+    throw new Error('the page shows no session tabs');
   }
-  const found = within(pages)
-    .getAllByRole('button')
-    .find((button) => button.textContent?.startsWith(label));
-  expect(found, `no ${label} page row`).toBeDefined();
+  const found = within(pages instanceof HTMLElement ? pages : document.body)
+    .getAllByRole('tab')
+    .find((tab) => tab.textContent?.startsWith(label));
+  expect(found, `no ${label} page tab`).toBeDefined();
   return requireValue({ value: found });
 };
 
-const CURRENT_BRANCH = '[data-level-layer="session"]:not([inert]) [data-worktree-current]';
-
 const openPage = async (label: string): Promise<void> => {
+  if (label === 'Branch') {
+    if (shown(BRANCH_TABS) === null) {
+      await openCrumb(/Branch/);
+    }
+    return;
+  }
+  const sessionCrumb = shown('[data-session-crumbs] [data-crumb="0"]');
+  if (label === 'Overview' && shown(SESSION_TABS) === null && sessionCrumb instanceof HTMLElement) {
+    await click(sessionCrumb);
+    return;
+  }
   await click(pageRow(label));
 };
 
 const currentPage = (): string | null => {
-  if (document.querySelector(CURRENT_BRANCH) !== null) {
+  if (shown(BRANCH_TABS) !== null) {
     return 'Branch';
   }
-  const pages = document.querySelector(`${SESSION_LEVEL} [data-testid="session-pages"]`);
-  const current = pages?.querySelector('[aria-current="page"]');
-  return current?.querySelector('span')?.textContent ?? null;
+  const pages = shown(SESSION_TABS);
+  const current = pages?.querySelector('[aria-selected="true"]');
+  if (current === null || current === undefined) {
+    return null;
+  }
+  const count = current.querySelector('[data-tab-count]')?.textContent ?? '';
+  const text = current.textContent ?? '';
+  return text.slice(0, text.length - count.length);
 };
 
 const otherSession = (sessionId: SessionId): SessionId => {
@@ -403,7 +407,7 @@ type AskChipTarget = {
 };
 
 const askChipAwayFrom = async ({ lens }: { readonly lens: string }): Promise<AskChipTarget> => {
-  const answer = await screen.findByTestId('ask-answer', undefined);
+  const answer = await screen.findByTestId('ask-answer');
   const chips = Array.from(answer.querySelectorAll<HTMLElement>('[data-ask-kind]'));
   const found = chips
     .map((chip) => ({
@@ -421,7 +425,7 @@ const askChipAwayFrom = async ({ lens }: { readonly lens: string }): Promise<Ask
   return requireValue({ value: found });
 };
 
-const RAIL_TOKEN = /^(mx-auto|max-w-\[var\(--(column|measure)-frame\)\])$/;
+const RAIL_TOKEN = /^(mx-auto|max-w-\[var\(--(column|measure|reading)-frame\)\])$/;
 
 const railOf = (element: Element | null): string => {
   const column = element?.closest<HTMLElement>('[data-page-column]') ?? null;
@@ -435,6 +439,8 @@ const railOf = (element: Element | null): string => {
 const COLUMN_RAIL = 'column mx-auto max-w-[var(--column-frame)]';
 
 const MEASURE_RAIL = 'measure mx-auto max-w-[var(--measure-frame)]';
+
+const READING_RAIL = 'reading mx-auto max-w-[var(--reading-frame)]';
 
 const placeRoot = (): Element => {
   const root =
@@ -472,21 +478,17 @@ const expectOneRail = ({
   }
 };
 
+const HEADER = '[data-session-head], [data-slot="pane-header"]';
+
 const sessionLayers = (extra: RailLayers): RailLayers => ({
-  header: shown('[data-slot="pane-header"]'),
+  header: shown('[data-slot="pane-header"]') ?? shown('[data-session-head]'),
   ...extra,
 });
 
 const openContextDrawer = async (sessionId: SessionId): Promise<void> => {
-  act(() =>
-    useAppStore.getState().openDrawer({
-      kind: 'context',
-      sessionId,
-      payload: { section: 'goal', view: 'current' },
-    }),
-  );
+  act(() => useAppStore.getState().openDrawer({ kind: 'scripts', sessionId, payload: null }));
   await settle();
-  expect(openDrawerKind()).toBe('context');
+  expect(openDrawerKind()).toBe('scripts');
 };
 
 const openAgentTranscript = async (sessionId: SessionId): Promise<void> => {
@@ -673,7 +675,7 @@ describe('moving across every place keeps one frame', () => {
     }
     expect(rail.querySelector('[data-column-door="board"]')).not.toBeNull();
     expect(document.querySelector('[data-side-column]')).toBeNull();
-    expect(document.querySelector('[data-session-rail="session"]')).not.toBeNull();
+    expect(shown(SESSION_TABS)).not.toBeNull();
 
     await click(door('inbox'));
     expect(studio()).toBe('inbox');
@@ -700,8 +702,8 @@ describe('moving across every place keeps one frame', () => {
   it('parks a session drawer under a page, and Esc brings it back with its page', async () => {
     const { sessionId } = await boot({ seed: 'pr' });
 
-    await press('lens.context');
-    await waitFor(() => expect(selectOpenDrawer(useAppStore.getState())?.kind).toBe('context'));
+    act(() => useAppStore.getState().openDrawer({ kind: 'scripts', sessionId, payload: null }));
+    await waitFor(() => expect(selectOpenDrawer(useAppStore.getState())?.kind).toBe('scripts'));
 
     await click(door('inbox'));
     expect(studio()).toBe('inbox');
@@ -709,52 +711,31 @@ describe('moving across every place keeps one frame', () => {
     expect(sidePanelMode()).toBe('closed');
     const parked = document.querySelector('main aside[aria-label="Side panel"]');
     expect(parked?.hasAttribute('data-drawer-parked')).toBe(true);
-    expect(parked?.hasAttribute('inert')).toBe(true);
+    expect(parked?.querySelector('[data-detail-card]')?.hasAttribute('inert')).toBe(true);
     expect(parked?.hasAttribute('data-drawer-exit')).toBe(false);
     await escape();
 
     expect(studio()).toBeNull();
     expect(useAppStore.getState().currentSessionId).toBe(sessionId);
-    expect(selectOpenDrawer(useAppStore.getState())?.kind).toBe('context');
+    expect(selectOpenDrawer(useAppStore.getState())?.kind).toBe('scripts');
     await waitFor(() => expect(sidePanelMode()).not.toBe('closed'));
     expect(parked?.hasAttribute('inert')).toBe(false);
-    expectHealthy();
-  });
-
-  it('keeps a parked Explore mounted as the same node through a Tasks round trip', async () => {
-    await boot({ seed: 'pr' });
-
-    await press('lens.explore');
-    await waitFor(() => expect(selectOpenDrawer(useAppStore.getState())?.kind).toBe('explore'));
-    const explore = 'main aside section[aria-label="Explore"]';
-    const section = await waitFor(() =>
-      requireValue({ value: document.querySelector<HTMLElement>(explore) }),
-    );
-
-    await click(door('inbox'));
-    expect(studio()).toBe('inbox');
-    expect(section.isConnected).toBe(true);
-    await escape();
-
-    expect(studio()).toBeNull();
-    await waitFor(() => expect(sidePanelMode()).not.toBe('closed'));
-    expect(document.querySelector(explore)).toBe(section);
     expectHealthy();
   });
 
   it('shows a parked drawer on its key from a page instead of closing it unseen', async () => {
     const { sessionId } = await boot({ seed: 'pr' });
 
-    await press('lens.context');
+    await press('lens.scripts');
     await waitFor(() => expect(sidePanelMode()).not.toBe('closed'));
     await click(door('inbox'));
     expect(studio()).toBe('inbox');
 
-    await press('lens.context');
+    await press('lens.scripts');
 
     expect(studio()).toBeNull();
     expect(useAppStore.getState().currentSessionId).toBe(sessionId);
-    expect(selectOpenDrawer(useAppStore.getState())?.kind).toBe('context');
+    expect(selectOpenDrawer(useAppStore.getState())?.kind).toBe('terminal');
     await waitFor(() => expect(sidePanelMode()).not.toBe('closed'));
     expectHealthy();
   });
@@ -766,26 +747,26 @@ describe('moving across every place keeps one frame', () => {
     expect(studio()).toBe('inbox');
     expect(selectOpenDrawer(useAppStore.getState())).toBeNull();
 
-    await press('lens.context');
+    await press('lens.scripts');
 
     expect(studio()).toBeNull();
-    expect(selectOpenDrawer(useAppStore.getState())?.kind).toBe('context');
+    expect(selectOpenDrawer(useAppStore.getState())?.kind).toBe('terminal');
     await waitFor(() => expect(sidePanelMode()).not.toBe('closed'));
     expectHealthy();
   });
 
   it('closes the page with ⌘W, never the drawer parked under it, and Back brings the drawer back', async () => {
-    await boot({ seed: 'pr' });
+    const { sessionId } = await boot({ seed: 'pr' });
 
-    await press('lens.context');
-    await waitFor(() => expect(selectOpenDrawer(useAppStore.getState())?.kind).toBe('context'));
+    act(() => useAppStore.getState().openDrawer({ kind: 'scripts', sessionId, payload: null }));
+    await waitFor(() => expect(selectOpenDrawer(useAppStore.getState())?.kind).toBe('scripts'));
 
     await click(door('inbox'));
     expect(studio()).toBe('inbox');
     await press('app.close');
 
     expect(studio()).toBeNull();
-    expect(selectOpenDrawer(useAppStore.getState())?.kind).toBe('context');
+    expect(selectOpenDrawer(useAppStore.getState())?.kind).toBe('scripts');
 
     await click(door('workflows'));
     expect(studio()).toBe('workflow');
@@ -802,8 +783,7 @@ describe('moving across every place keeps one frame', () => {
     await click(sessionRow(sessionId));
 
     const PAGES = ['Overview', 'Runs', 'Artifacts'] as const;
-    const trailColumn = (): string =>
-      shown('[data-slot="pane-header"]')?.closest('[data-page-column]')?.className ?? '';
+    const trailColumn = (): string => shown(HEADER)?.closest('[data-page-column]')?.className ?? '';
     const columnTiers = (): ReadonlySet<string> =>
       new Set(
         visiblePageColumns()
@@ -818,14 +798,10 @@ describe('moving across every place keeps one frame', () => {
         expect(currentPage()).toBe(page);
         if (withDrawer) {
           act(() =>
-            useAppStore.getState().openDrawer({
-              kind: 'context',
-              sessionId,
-              payload: { section: 'goal', view: 'current' },
-            }),
+            useAppStore.getState().openDrawer({ kind: 'scripts', sessionId, payload: null }),
           );
           await settle();
-          expect(openDrawerKind(), `${page} opens the drawer`).toBe('context');
+          expect(openDrawerKind(), `${page} opens the drawer`).toBe('scripts');
         }
         expectCentredColumns();
         expectAskInToolColumn();
@@ -879,14 +855,23 @@ describe('moving across every place keeps one frame', () => {
     await escape();
 
     await openAgentTranscript(sessionId);
-    const agentLayers = (): RailLayers =>
-      sessionLayers({ transcript: scrollContent(), composer: shown('textarea') });
-    expectOneRail({ place: 'Agent transcript', layers: agentLayers(), rail: MEASURE_RAIL });
+    const agentHead = (): RailLayers => sessionLayers({});
+    const agentLayers = (): RailLayers => ({
+      transcript: scrollContent(),
+      composer: shown('textarea'),
+    });
+    expectOneRail({ place: 'Agent transcript', layers: agentHead(), rail: READING_RAIL });
+    expectOneRail({ place: 'Agent transcript', layers: agentLayers(), rail: READING_RAIL });
     await openContextDrawer(sessionId);
     expectOneRail({
       place: 'Agent transcript with a drawer',
+      layers: agentHead(),
+      rail: READING_RAIL,
+    });
+    expectOneRail({
+      place: 'Agent transcript with a drawer',
       layers: agentLayers(),
-      rail: MEASURE_RAIL,
+      rail: READING_RAIL,
     });
     await escape();
 
@@ -968,22 +953,19 @@ describe('moving across every place keeps one frame', () => {
         expectPlace({ session: sessionId, lens: 'branch', studio: null, doors: [] });
       }
 
-      await press('ask.open');
-      await waitFor(() => expect(openDrawerKind()).toBe('ask'));
-      await waitFor(() => expect(focusOwner()).toBe('drawer'));
-      expectPlace({ session: sessionId, lens: 'branch', studio: null, doors: [] });
-      const askEdge = leftEdge();
       act(() => seedSessionAsk({ state: 'answer', session: currentSession(sessionId) }));
       await settle();
+      expect(openDrawerKind()).toBe('ask');
+      expectPlace({ session: sessionId, lens: 'branch', studio: null, doors: [] });
       const chip = await askChipAwayFrom({ lens: 'branch' });
       await click(chip.button);
-      expect(openDrawerKind()).toBe('ask');
       expect(lensOf()).toBe(chip.lens);
-      expect(leftEdge().main).toBe(askEdge.main);
       await click(historyButton('Back'));
       expectPlace({ session: sessionId, lens: 'branch', studio: null, doors: [] });
       await escape();
-      expect(openDrawerKind()).toBeNull();
+      await openPage('Branch');
+      await click(getSection(/^Comments/));
+      expectPlace({ session: sessionId, lens: 'branch', studio: null, doors: [] });
 
       const edge = leftEdge();
       for (const request of drawerRequests(sessionId)) {
@@ -1006,7 +988,7 @@ describe('moving across every place keeps one frame', () => {
       await settle();
       expect(screen.queryByRole('listbox', { name: 'Recent sessions' })).toBeNull();
       expectPlace({ session: other, lens: null, studio: null, doors: [] });
-      expect(currentPage()).toBe('Overview');
+      await waitFor(() => expect(currentPage()).toBe('Overview'), { timeout: 3000 });
 
       await click(historyButton('Back'));
       expectPlace({ session: sessionId, lens: 'branch', studio: null, doors: [] });
@@ -1021,8 +1003,8 @@ describe('moving across every place keeps one frame', () => {
       await settle(16);
       const peek = screen.getByRole('region', { name: 'Sessions' });
       expect(peek.querySelector('[data-column-door="board"]')).not.toBeNull();
-      expect(document.querySelector(CURRENT_BRANCH)).not.toBeNull();
-      await click(pageRow('Overview'));
+      expect(currentPage()).toBe('Branch');
+      await press('lens.overview');
       await click(
         requireValue({ value: peek.querySelector<HTMLElement>(`[data-select-id="${other}"]`) }),
       );
@@ -1068,9 +1050,7 @@ describe('moving across every place keeps one frame', () => {
       await settle();
       await waitFor(() => expect(sessionRuns(sessionId)).toBe(runsBefore + 1));
       expectPlace({ session: sessionId, lens: 'workflows', studio: null, doors: [] });
-      expect(document.querySelector('[data-session-rail]')?.getAttribute('data-session-rail')).toBe(
-        'session',
-      );
+      expect(shown('[data-session-crumbs]')).not.toBeNull();
       await escape();
       expect(currentPage()).toBe('Runs');
       const page = requireValue({

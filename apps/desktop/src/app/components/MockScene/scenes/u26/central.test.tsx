@@ -81,7 +81,7 @@ describe('the central column scenes', () => {
     await show({ name: 'u26-central-log-light' });
 
     screen.getByRole('region', { name: 'Log' });
-    screen.getByRole('region', { name: 'Running' });
+    screen.getByRole('region', { name: 'Branches' });
   });
 
   it('opens the Log drawer on the scene that follows the theme of the page', async () => {
@@ -90,7 +90,7 @@ describe('the central column scenes', () => {
       await show({ name: 'u26-central-log' });
 
       screen.getByRole('region', { name: 'Log' });
-      screen.getByRole('region', { name: 'Needs you' });
+      screen.getByRole('region', { name: 'Branches' });
       expect(document.documentElement.getAttribute('data-theme')).toBe('light');
     } finally {
       applyDocumentTheme({ theme: 'dark' });
@@ -104,43 +104,20 @@ describe('the central column scenes', () => {
     screen.getByRole('searchbox', { name: 'Search the log' });
   });
 
-  it('draws the Needs you, Running and Done cards on the mid scene, the run gate on its row', async () => {
+  it('draws the tiles and the board on the mid scene', async () => {
     await show({ name: 'u26-central-mid-light' });
 
-    for (const name of ['Needs you', 'Running', 'Done']) {
-      screen.getByRole('region', { name });
-    }
+    screen.getByRole('region', { name: 'Branches' });
+    expect(document.querySelector('[data-slot="session-kpis"]')?.children).toHaveLength(5);
     expect(screen.queryByRole('region', { name: 'Now' })).toBeNull();
   });
 
   it('keeps a child that returned to Auto out of Needs you on the blocked scene', async () => {
     await show({ name: 'u26-central-blocked-light' });
 
-    expect(screen.queryByRole('region', { name: 'Needs you' })).toBeNull();
+    expect(document.querySelector('[data-board-group="needs-you"]')).toBeNull();
     expect(document.body.textContent).not.toContain('Stuck');
     expect(document.body.textContent).not.toContain('declared_blocked');
-  });
-
-  it('leaves no empty Needs you slot between the summary and the first card on the blocked scene', async () => {
-    await show({ name: 'u26-central-blocked-light' });
-
-    const column = document.querySelector('[data-central-column]');
-    const slots = Array.from(column?.querySelectorAll(':scope > [data-height-motion]') ?? []);
-    expect(slots.length).toBeGreaterThan(0);
-    for (const slot of slots) {
-      expect(slot.getAttribute('data-height-motion')).toBe('closed');
-      expect(slot.getAttribute('aria-hidden')).toBe('true');
-      expect(slot.getAttribute('style')).toContain('height: 0px');
-      expect(slot.getAttribute('style')).toContain('margin-top: -2rem');
-      expect(slot.textContent).toBe('');
-    }
-    const children = Array.from(column?.children ?? []);
-    const rendered = children.filter(
-      (child) => child.getAttribute('data-height-motion') !== 'closed' && child.textContent !== '',
-    );
-    const status = rendered.findIndex((child) => child.hasAttribute('data-overview-status'));
-    expect(status).toBeGreaterThanOrEqual(0);
-    expect(rendered[status + 1]?.getAttribute('data-overview-card')).toBe('running');
   });
 
   it('settles when the stale branch detail read fails on the branches scene', async () => {
@@ -179,7 +156,7 @@ describe('the central column scenes', () => {
       }
 
       expect(detailReads() - before).toBe(1);
-      expect(document.querySelector('[data-overview-card="branches"]')).not.toBeNull();
+      expect(document.querySelector('[data-slot="branch-board"]')).not.toBeNull();
     } finally {
       vi.useRealTimers();
     }

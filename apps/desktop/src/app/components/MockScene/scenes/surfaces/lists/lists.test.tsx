@@ -98,7 +98,9 @@ describe('the u31 lists scenes', () => {
     const { container } = mount({ name: 'u31-questions' });
 
     await screen.findByRole('heading', { level: 2, name: /^Answered/ }, WAIT);
-    const rows = screen.getAllByRole('button', { name: /, (You|Agent): / });
+    const answered = screen.getByRole('list', { name: 'Answered questions' });
+    fireEvent.click(within(answered).getByRole('button', { name: 'Show' }));
+    const rows = await screen.findAllByRole('button', { name: /, (You|Agent): / }, WAIT);
     expect(rows.length).toBeGreaterThan(0);
     for (const row of rows) {
       const stack = row.querySelector('[data-list-grid-cell="title"]')?.firstElementChild;

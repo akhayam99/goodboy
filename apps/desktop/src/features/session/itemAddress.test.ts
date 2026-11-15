@@ -91,9 +91,9 @@ describe('an open thread is held once, by the address', () => {
   it('clears the address when a tool is pressed over the thread', () => {
     openThread();
 
-    state().openDrawer({ kind: 'explore', sessionId: SESSION, payload: null });
+    state().openDrawer({ kind: 'scripts', sessionId: SESSION, payload: null });
 
-    expect(state().drawer).toMatchObject({ kind: 'explore' });
+    expect(state().drawer).toMatchObject({ kind: 'scripts' });
     expect(threadInAddress()).toBeNull();
   });
 

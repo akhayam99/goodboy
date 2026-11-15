@@ -4,11 +4,15 @@ import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { brandId, type IsoDateTime, type SessionDecision, type SessionId } from '@goodboy/types';
 import { aSession } from '@goodboy/types/testing';
 import { aDecision } from '../../../test/aDecision';
-import { decisionChangesSince, NO_DECISION_CHANGES } from './decisionChangesSince';
-import { selectContextBaseline } from './selectContextBaseline';
-import { selectHasContextChange } from './selectHasContextChange';
-import { selectDrawerPanel } from '../drawer/selectDrawerPanel';
+import {
+  decisionChangesSince,
+  hasDecisionChanges,
+  NO_DECISION_CHANGES,
+} from './decisionChangesSince';
 import { sessionPlace } from '../navigation/place';
+import { currentStack } from '../navigation/currentStack';
+import { selectContextBaseline } from './selectContextBaseline';
+import { selectIsContextTabOpen } from './selectIsContextTabOpen';
 import { importStore, resetStoryStore, type StoryStore } from '../../storyHarness';
 
 const h = vi.hoisted(() => ({
@@ -33,6 +37,10 @@ const BEFORE = brandId<IsoDateTime>({ value: '2026-11-01T09:00:00.000Z' });
 const AFTER = brandId<IsoDateTime>({ value: '2026-11-01T10:00:00.000Z' });
 const LATER = brandId<IsoDateTime>({ value: '2026-11-01T11:00:00.000Z' });
 let store: StoryStore;
+const contextRows = () => {
+  const stack = currentStack(store.getState());
+  return stack.entries[stack.index]?.focus.returnRows;
+};
 beforeAll(async () => {
   store = await importStore();
 });
@@ -51,26 +59,26 @@ beforeEach(async () => {
 });
 
 describe('Context drawer state', () => {
-  it('opens on Goal each time, while explicit section links and versions keep their target', () => {
+  it('opens the Context tab on Goal each time, while explicit section links and versions keep their target', () => {
     store
       .getState()
       .openContextDrawer({ sessionId: SESSION_ID, section: 'summary', view: 'versions' });
-    expect(store.getState().drawer).toMatchObject({
-      payload: { section: 'summary', view: 'versions' },
+    expect(contextRows()).toMatchObject({
+      'context.section': 'summary',
+      'context.view': 'versions',
     });
-    store.getState().closeDrawer();
-    store.getState().openContextDrawer({ sessionId: SESSION_ID });
-    expect(store.getState().drawer).toMatchObject({
-      payload: { section: 'goal', view: 'current' },
-    });
-    store.getState().toggleContextDrawer({ sessionId: SESSION_ID });
     expect(store.getState().drawer).toBeNull();
+    store.getState().navigate({ to: sessionPlace({ sessionId: SESSION_ID }) });
+    store.getState().openContextDrawer({ sessionId: SESSION_ID });
+    expect(contextRows()).toMatchObject({ 'context.section': 'goal', 'context.view': 'current' });
     store
       .getState()
       .openContextDrawer({ sessionId: SESSION_ID, section: 'decisions', highlight: [5, 7] });
-    expect(store.getState().drawer).toMatchObject({
-      payload: { section: 'decisions', highlight: [5, 7] },
+    expect(contextRows()).toMatchObject({
+      'context.section': 'decisions',
+      'context.highlight': '5,7',
     });
+    expect(selectIsContextTabOpen({ state: store.getState(), sessionId: SESSION_ID })).toBe(true);
   });
 
   it('keeps the old marker while saving and moves seen and baseline after success', async () => {
@@ -115,29 +123,6 @@ describe('Context drawer state', () => {
     expect(store.getState().sessionContextSeenAt[SESSION_ID]).toBe(LATER);
   });
 
-  it('switches section instead of closing when another section is asked for', () => {
-    store.getState().openContextDrawer({ sessionId: SESSION_ID, section: 'summary' });
-    store.getState().toggleContextDrawer({ sessionId: SESSION_ID, section: 'decisions' });
-    expect(store.getState().drawer).toMatchObject({ payload: { section: 'decisions' } });
-  });
-
-  it('closes the page and shows Context parked under it instead of closing it unseen', () => {
-    store.getState().navigate({ to: sessionPlace({ sessionId: SESSION_ID }) });
-    store.getState().openContextDrawer({ sessionId: SESSION_ID });
-    store.getState().openStudio({ studio: { kind: 'impact', scope: null } });
-    store.getState().toggleContextDrawer({ sessionId: SESSION_ID });
-    expect(store.getState().appStudio).toBeNull();
-    expect(selectDrawerPanel(store.getState())?.kind).toBe('context');
-  });
-
-  it('closes the page and opens Context when nothing was parked under it', () => {
-    store.getState().navigate({ to: sessionPlace({ sessionId: SESSION_ID }) });
-    store.getState().openStudio({ studio: { kind: 'impact', scope: null } });
-    store.getState().toggleContextDrawer({ sessionId: SESSION_ID });
-    expect(store.getState().appStudio).toBeNull();
-    expect(selectDrawerPanel(store.getState())?.kind).toBe('context');
-  });
-
   it('keeps the first look as the baseline while open and takes the newer one on the next open', () => {
     store.setState({ sessionDecisionsBaseline: {} });
     store.getState().openContextDrawer({ sessionId: SESSION_ID, section: 'decisions' });
@@ -147,7 +132,7 @@ describe('Context drawer state', () => {
     store.getState().openContextDrawer({ sessionId: SESSION_ID, section: 'goal' });
     expect(store.getState().sessionDecisionsBaseline[SESSION_ID]).toBe(BEFORE);
 
-    store.getState().toggleContextDrawer({ sessionId: SESSION_ID });
+    store.getState().navigate({ to: sessionPlace({ sessionId: SESSION_ID }) });
     store.getState().openContextDrawer({ sessionId: SESSION_ID });
     expect(store.getState().sessionDecisionsBaseline[SESSION_ID]).toBe(AFTER);
   });
@@ -239,12 +224,10 @@ describe('decisionChangesSince', () => {
   it('signals a change only when one happened after the last look', () => {
     const quiet = [row({ number: 1 })];
     const changed = [...quiet, row({ number: 2, createdAt: NEWER })];
-    const state = (ledger: ReadonlyArray<SessionDecision>) => ({
-      sessionDecisions: { [SESSION_ID]: ledger },
-      sessionContextSeenAt: { [SESSION_ID]: SEEN_AT },
-    });
+    const hasChangeIn = (ledger: ReadonlyArray<SessionDecision>) =>
+      hasDecisionChanges(decisionChangesSince({ ledger, since: SEEN_AT }));
 
-    expect(selectHasContextChange({ state: state(quiet), sessionId: SESSION_ID })).toBe(false);
-    expect(selectHasContextChange({ state: state(changed), sessionId: SESSION_ID })).toBe(true);
+    expect(hasChangeIn(quiet)).toBe(false);
+    expect(hasChangeIn(changed)).toBe(true);
   });
 });

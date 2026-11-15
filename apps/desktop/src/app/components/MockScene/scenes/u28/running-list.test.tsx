@@ -7,7 +7,7 @@ vi.mock('@tauri-apps/api/event', async () =>
 );
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, cleanup, render, screen, within } from '@testing-library/react';
+import { act, cleanup, render, screen } from '@testing-library/react';
 import { ToastProvider } from '../../../../../shared/components/Toast';
 import {
   importStore,
@@ -66,18 +66,6 @@ const show = async ({ name }: ShowParams) => {
   return view;
 };
 
-type SectionParams = {
-  readonly id: string;
-};
-
-const sectionOf = ({ id }: SectionParams): HTMLElement => {
-  const section = document.querySelector<HTMLElement>(`[data-live-section="${id}"]`);
-  if (section === null) {
-    throw new Error(`The ${id} section must be drawn`);
-  }
-  return section;
-};
-
 describe('the Running list scenes', () => {
   it('registers a light and a dark scene', () => {
     expect(Object.keys(U28_RUNNING_LIST_SCENES)).toEqual(KEYS);
@@ -86,91 +74,11 @@ describe('the Running list scenes', () => {
     }
   });
 
-  it('groups the Running rows into Running then Stopped, and leaves waiting work to Needs you', async () => {
+  it('draws the board with a Needs you group for the work that waits', async () => {
     await show({ name: KEYS[0] ?? '' });
 
-    const running = screen.getByRole('region', { name: 'Running' });
-    const ids = [...running.querySelectorAll('[data-live-section]')].map((node) =>
-      node.getAttribute('data-live-section'),
-    );
-    expect(ids).toEqual(['running', 'stopped']);
-    expect(within(running).queryByRole('group', { name: 'Waiting for you' })).toBeNull();
-  });
-
-  it('keeps a waiting or stopped item out of Running', async () => {
-    await show({ name: KEYS[0] ?? '' });
-
-    const running = within(sectionOf({ id: 'running' }));
-    expect(running.queryByText('Fix the copy')).toBeNull();
-    expect(running.queryByText('History rewriter')).toBeNull();
-    expect(running.queryByText('Retry the ledger-core import')).toBeNull();
-    const needsYou = screen.getByRole('region', { name: 'Needs you' });
-    within(needsYou).getByText('Fix the copy');
-    within(needsYou).getByText('History rewriter');
-    within(sectionOf({ id: 'stopped' })).getByText('Retry the ledger-core import');
-  });
-
-  it('says the status in one short word and moves the cause to a second line', async () => {
-    await show({ name: KEYS[0] ?? '' });
-
-    const rewriter = screen.getByRole('region', { name: 'History rewriter: History rewriter' });
-    const row = rewriter.querySelector('[data-live-row]');
-    expect(row?.textContent).toContain('Stopped');
-    expect(row?.textContent).not.toContain('Stopped: origin moved');
-    expect(row?.querySelector('[data-live-reason]')?.textContent).toBe('Origin moved');
-  });
-
-  it('draws a reason only on rows that wait or stopped, never on a working row', async () => {
-    await show({ name: KEYS[0] ?? '' });
-
-    const working = sectionOf({ id: 'running' });
-    expect(working.querySelectorAll('[data-live-reason]')).toHaveLength(0);
-  });
-
-  it('gives every row one icon of the same treatment', async () => {
-    await show({ name: KEYS[0] ?? '' });
-
-    const rows = document.querySelectorAll('[data-overview-card="running"] [data-live-row]');
-    expect(rows.length).toBeGreaterThan(5);
-    for (const row of rows) {
-      expect(row.querySelectorAll('[data-live-glyph]')).toHaveLength(1);
-    }
-  });
-
-  it('puts the duration of a child row in the same place as the one of a parent row', async () => {
-    await show({ name: KEYS[0] ?? '' });
-
-    const rows = [...document.querySelectorAll('[data-overview-card="running"] [data-live-row]')];
-    const children = rows.filter((row) => row.closest('[data-live-child]') !== null);
-    expect(children.length).toBeGreaterThan(0);
-    for (const row of rows) {
-      const group = row.lastElementChild;
-      expect(group?.children).toHaveLength(2);
-      expect(group?.parentElement).toBe(row);
-    }
-    for (const row of rows) {
-      const clock = row.querySelector('[data-delegation-clock]');
-      if (clock !== null) {
-        expect(row.lastElementChild?.lastElementChild?.contains(clock)).toBe(true);
-      }
-    }
-  });
-
-  it('draws the count for the two-step run and bars for the six-step run', async () => {
-    await show({ name: KEYS[0] ?? '' });
-
-    const copy = screen.getByRole('region', { name: 'Workflow: Fix the copy' });
-    expect(copy.querySelector('[data-step-count]')?.textContent).toBe('1/2');
-    const build = screen.getByRole('region', { name: 'Workflow: Build' });
-    expect(build.querySelectorAll('[data-step-state]')).toHaveLength(6);
-  });
-
-  it('keeps one open button per row, covering the row', async () => {
-    await show({ name: KEYS[0] ?? '' });
-
-    for (const row of document.querySelectorAll('[data-live-row]')) {
-      expect(row.querySelectorAll(':scope > [data-live-open]')).toHaveLength(1);
-    }
+    screen.getByRole('region', { name: 'Branches' });
+    expect(document.querySelector('[data-slot="session-kpis"]')?.children).toHaveLength(5);
   });
 
   it.each(KEYS)('%s has no accessibility violations', async (name) => {

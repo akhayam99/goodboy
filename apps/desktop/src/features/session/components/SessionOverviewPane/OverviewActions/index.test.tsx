@@ -106,15 +106,6 @@ describe('OverviewActions', () => {
     expect(useAppStore.getState().drawer).toMatchObject({ payload: { form: 'wireframe' } });
   });
 
-  it('leaves the chord to New question while the Ask panel is open', async () => {
-    useAppStore.setState({ drawer: { kind: 'ask', sessionId: SESSION_ID, payload: null } });
-    render(<OverviewActions session={SESSION} />);
-
-    await act(async () => pressShortcut({ id: 'overview.newHere' }));
-
-    expect(openedKind()).toBe('ask');
-  });
-
   it('draws a chevron, since it opens a menu', () => {
     const { container } = render(<OverviewActions session={SESSION} />);
 

@@ -81,6 +81,7 @@ const renderRuns = () => {
         group={GROUP}
         mounts={[]}
         mountPath={DUP.worktreePath}
+        label="Runs"
         onLeave={() => markBranchWorkReturn({ groupKey: GROUP.key, mountPath: DUP.worktreePath })}
       />
     </ToastProvider>,

@@ -97,8 +97,8 @@ describe('the step verbs on the page of a subagent', () => {
   });
 
   it('empties the slot with its chip when View transcript moves to the page', async () => {
-    useAppStore.getState().openDrawer({ kind: 'explore', sessionId: SESSION, payload: null });
-    useAppStore.getState().openDrawer({ kind: 'ask', sessionId: SESSION, payload: null });
+    useAppStore.getState().openDrawer({ kind: 'scripts', sessionId: SESSION, payload: null });
+    useAppStore.getState().openDrawer({ kind: 'spawned', sessionId: SESSION, payload: null });
 
     await runObjectAction({
       target: helperPage,

@@ -28,6 +28,7 @@ import type { HeldScope } from '../../types';
 
 type CommitScope = Extract<HeldScope, { kind: 'commit' }>;
 import { tooltipTextOf } from '../../../../__tests__/helpers/tooltip';
+import { selectIsContextTabOpen } from '../../../../store/slices/contextDrawer/selectIsContextTabOpen';
 import { PaletteOverlay } from './index';
 import type { AppStore } from '../../../../store/store';
 
@@ -510,7 +511,7 @@ describe('PaletteOverlay on a focused commit row', () => {
     expect(screen.getByText('For this commit')).toBeDefined();
     expect(optionNames().slice(0, 7)).toEqual([
       'Rename',
-      'Fold down',
+      'Fixup down',
       'Squash down',
       'Move up',
       'Move down',
@@ -536,7 +537,7 @@ describe('PaletteOverlay on a focused commit row', () => {
     const release = focusCommitRow(commitScope({ isFolded: true }));
     openIn(PAYOUT);
 
-    expect(optionNames().slice(0, 3)).toEqual(['Separate', 'Copy SHA', 'Copy subject']);
+    expect(optionNames().slice(0, 3)).toEqual(['Separate commit', 'Copy SHA', 'Copy subject']);
     expect(optionNames()).not.toContain('Rename');
     release();
   });
@@ -631,11 +632,10 @@ describe('PaletteOverlay, Ask in chat', () => {
     });
 
     expect(onClose).toHaveBeenCalled();
-    expect(useAppStore.getState().drawer).toEqual({
-      kind: 'ask',
-      sessionId: PAYOUT,
-      payload: null,
-    });
+    expect(useAppStore.getState().drawer).toMatchObject({ kind: 'ask', sessionId: PAYOUT });
+    expect(selectIsContextTabOpen({ state: useAppStore.getState(), sessionId: PAYOUT })).toBe(
+      false,
+    );
     expect(sendAskQuestion).toHaveBeenCalledWith(
       expect.objectContaining({ sessionId: PAYOUT, question: 'Why did the tester fail?' }),
     );

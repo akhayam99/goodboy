@@ -3,6 +3,9 @@ import type { IsoDateTime, ProviderRunId, Session, SessionId } from '@goodboy/ty
 import { useAppStore } from '../../../../store';
 import type { ContextDrawerSection } from '../../../../store/slices/drawer/state';
 import { LogPane } from '../../../../features/session/central/log/LogPane';
+import { ContextTab } from '../../../../features/session/components/ContextTab';
+import { ContextCardsContext } from '../../../../features/session/contextCardsContext';
+import { SessionContextCards } from '../../SessionContextCards';
 import { SessionOverviewPane } from '../../../../features/session/components/SessionOverviewPane';
 import { SessionWorkspace } from '../../../../features/session/components/SessionWorkspace';
 import {
@@ -133,6 +136,7 @@ export const ActivityRunScene = ({
       finishActivityRuns();
     }
     if (contextSection !== undefined) {
+      useAppStore.setState({ navigate: useAppStore.getInitialState().navigate });
       useAppStore.getState().openContextDrawer({ sessionId: SESSION.id, section: contextSection });
     }
     if (isContextRead) {
@@ -158,7 +162,11 @@ export const ActivityRunScene = ({
       sidebar="expanded"
       hasOwnTrail={isPageFollowed}
       main={
-        isPageFollowed ? (
+        contextSection !== undefined ? (
+          <ContextCardsContext.Provider value={SessionContextCards}>
+            <ContextTab session={session} />
+          </ContextCardsContext.Provider>
+        ) : isPageFollowed ? (
           <div className="relative h-full w-full">
             <SessionWorkspace session={session} />
           </div>

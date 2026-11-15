@@ -414,7 +414,7 @@
   },
   "apps/desktop/src/__tests__/surfaces/navigation-flows/sidebar-nav.rows.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
-      "count": 9
+      "count": 7
     }
   },
   "apps/desktop/src/__tests__/surfaces/navigation-flows/sidebar-states.rows.tsx": {
@@ -1224,7 +1224,7 @@
   },
   "apps/desktop/src/app/components/MockScene/scenes/u23/drawer-chrome.test.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
-      "count": 2
+      "count": 1
     }
   },
   "apps/desktop/src/app/components/MockScene/scenes/u23/drawerChrome/FloatingSurfacesScene.tsx": {
@@ -2848,24 +2848,6 @@
       "count": 1
     },
     "react-hooks/exhaustive-deps": {
-      "count": 1
-    }
-  },
-  "apps/desktop/src/features/diff/components/SessionDiffPane/index.test.tsx": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 5
-    }
-  },
-  "apps/desktop/src/features/diff/components/SessionDiffPane/index.tsx": {
-    "@typescript-eslint/naming-convention": {
-      "count": 1
-    }
-  },
-  "apps/desktop/src/features/diff/components/SessionDiffPane/navigation.test.tsx": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 1
-    },
-    "@typescript-eslint/naming-convention": {
       "count": 1
     }
   },
@@ -4537,11 +4519,6 @@
       "count": 2
     }
   },
-  "apps/desktop/src/features/reports/components/ReportStudio/ReportProvenanceRow.tsx": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 2
-    }
-  },
   "apps/desktop/src/features/reports/components/ReportStudio/index.test.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 1
@@ -5306,9 +5283,6 @@
     }
   },
   "apps/desktop/src/features/session/components/SessionWorkspace/parts/AgentOverlay.tsx": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 1
-    },
     "@typescript-eslint/naming-convention": {
       "count": 1
     }
@@ -7000,11 +6974,6 @@
   },
   "apps/desktop/src/features/workspace/components/WorkspaceSwitcher/useWorkspaceWindowState/index.ts": {
     "@typescript-eslint/naming-convention": {
-      "count": 1
-    }
-  },
-  "apps/desktop/src/features/workspace/hooks/useCardPages/index.ts": {
-    "@typescript-eslint/consistent-type-assertions": {
       "count": 1
     }
   },

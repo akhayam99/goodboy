@@ -9,10 +9,10 @@ const LINES = Object.values(SESSION_PAGE_INTRO).flat();
 const DASH_CODES: ReadonlySet<number> = new Set([8211, 8212]);
 
 describe('SESSION_PAGE_INTRO', () => {
-  it('explains the one runs page of the session rail and no other page', () => {
-    const runPages = columnPagesOf({ isBranchless: false })
+  it('explains the one runs page of the session and no other page', () => {
+    const runPages = columnPagesOf()
       .map((page) => page.id)
-      .filter((id) => id !== 'overview' && id !== 'artifacts');
+      .filter((id) => id !== 'overview' && id !== 'artifacts' && id !== 'files');
 
     expect(Object.keys(SESSION_PAGE_INTRO)).toEqual(runPages);
   });

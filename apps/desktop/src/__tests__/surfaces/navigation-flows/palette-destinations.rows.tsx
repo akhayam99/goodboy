@@ -60,34 +60,40 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
     lands: () => visible('region', 'Previous versions'),
   },
   {
-    name: 'context drawer from the session tools',
+    name: 'Context tab from the Overview goal',
     covers: ['openContextDrawer', 'drawer:context'],
-    open: async () => click(await screen.findByTestId('pane-toggle-context')),
-    lands: () => visible('region', 'Context'),
+    open: async (ctx) => {
+      useAppStore.getState().openContextDrawer({ sessionId: ctx.sessionId });
+    },
+    lands: async () => {
+      await visible('region', 'Decision records');
+      expect(screen.queryByRole('region', { name: 'Ask' })).toBeNull();
+    },
   },
   {
-    name: 'Ask drawer from the session tools',
+    name: 'Ask as a detail panel, from its chord',
     covers: ['openAsk', 'drawer:ask'],
-    open: async () => click(await screen.findByTestId('pane-toggle-ask')),
+    open: async (ctx) => {
+      useAppStore.getState().openAsk({ sessionId: ctx.sessionId });
+    },
     lands: () => visible('region', 'Ask'),
   },
   {
-    name: 'palette: Show context',
-    covers: ['toggleContextDrawer', 'palette:Show context'],
-    open: () => openPalette(/^Show context/, 'show context'),
-    lands: () => visible('region', 'Context'),
+    name: 'palette: Open Context',
+    covers: ['navigate', 'palette:Open Context'],
+    open: () => openPalette(/^Open Context/, 'open context'),
+    lands: async (ctx) => {
+      await waitFor(
+        () => expect(useAppStore.getState().activeLens[ctx.sessionId] ?? null).toBe('context'),
+        WAIT,
+      );
+    },
   },
   {
     name: 'palette: Refresh session',
     covers: ['resyncSession', 'palette:Refresh session'],
     open: () => openPalette(/^Refresh session/, 'refresh session'),
     lands: () => visible('button', 'Refresh session'),
-  },
-  {
-    name: 'palette: Hide session pages',
-    covers: ['palette:Hide session pages'],
-    open: () => openPalette(/^Hide session pages/, 'hide session pages'),
-    lands: () => visible('button', 'Show session pages'),
   },
   {
     name: 'palette: Board',
@@ -114,7 +120,7 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
     door: 'palette',
     open: () => openPalette(/^Terminal$/),
     lands: async () => {
-      await screen.findByRole('button', { name: 'Open as page' }, WAIT);
+      await screen.findByRole('button', { name: 'Open full page' }, WAIT);
       expect(useAppStore.getState().drawer?.kind).toBe('terminal');
       expect(useAppStore.getState().appStudio).toBeNull();
     },
@@ -135,7 +141,7 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
     door: 'palette',
     open: () => openPalette(/^New terminal in this session$/),
     lands: async () => {
-      await screen.findByRole('button', { name: 'Open as page' }, WAIT);
+      await screen.findByRole('button', { name: 'Open full page' }, WAIT);
       expect(useAppStore.getState().drawer?.kind).toBe('terminal');
       expect(useAppStore.getState().appStudio).toBeNull();
     },
@@ -155,7 +161,7 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
       await settle();
     },
     lands: async () => {
-      await screen.findByRole('button', { name: 'Open as page' }, WAIT);
+      await screen.findByRole('button', { name: 'Open full page' }, WAIT);
       expect(useAppStore.getState().drawer?.kind).toBe('terminal');
       expect(useAppStore.getState().appStudio).toBeNull();
     },
@@ -193,7 +199,7 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
     },
     lands: async () => {
       await waitFor(
-        () => expect(getSection(/^Overview/).getAttribute('aria-selected')).toBe('true'),
+        () => expect(getSection(/^Conversation/).getAttribute('aria-selected')).toBe('true'),
         WAIT,
       );
       expect(opened).not.toHaveBeenCalled();

@@ -1,5 +1,8 @@
-import type { RefCallback } from 'react';
+import { useMemo, type ReactNode, type RefCallback } from 'react';
 import type { Agent, Session } from '@goodboy/types';
+import { useAppStore } from '../../../../store';
+import { autoChildStatusOf } from '../../../auto/autoChildStatusOf';
+import { delegationGlanceOf } from '../../glance/delegationGlanceOf';
 import type { useAutoChat } from '../../../auto/chat/useAutoChat';
 import { autoLimitOpenEvent } from '../../../auto/chat/autoLimitOpenEvent';
 import { useAgentSpend } from '../../hooks/useAgentSpend';
@@ -16,9 +19,18 @@ type Props = {
   readonly agent: Agent;
   readonly autoView: AutoView | null;
   readonly asksSlotRef: RefCallback<HTMLElement>;
+  readonly isInHead?: boolean;
+  readonly trailing?: ReactNode;
 };
 
-export const AgentRunSettings = ({ session, agent, autoView, asksSlotRef }: Props) => {
+export const AgentRunSettings = ({
+  session,
+  agent,
+  autoView,
+  asksSlotRef,
+  isInHead = false,
+  trailing = null,
+}: Props) => {
   const agentSpendUsd = useAgentSpend({ sessionId: session.id, agentId: agent.id });
   const line = (
     <AgentSettingsLine
@@ -33,7 +45,14 @@ export const AgentRunSettings = ({ session, agent, autoView, asksSlotRef }: Prop
     />
   );
   const budget = autoView?.budget ?? null;
-  const glance = useConversationGlance({ sessionId: session.id, agent, autoView });
+  const conversationGlance = useConversationGlance({ sessionId: session.id, agent, autoView });
+  const views = useAppStore((state) => state.autoTreeViews[session.id]);
+  const childStatus = useMemo(
+    () => (autoView === null ? autoChildStatusOf({ views, agent }) : null),
+    [autoView, views, agent],
+  );
+  const glance =
+    childStatus === null ? conversationGlance : delegationGlanceOf({ status: childStatus });
   return (
     <RunGlanceLine
       id={agent.id}
@@ -41,6 +60,8 @@ export const AgentRunSettings = ({ session, agent, autoView, asksSlotRef }: Prop
       spend={spendTextOf({ spentUsd: budget === null ? agentSpendUsd : budget.spentUsd })}
       settings={line}
       revealEvent={autoView === null ? undefined : autoLimitOpenEvent({ treeId: autoView.tree.id })}
+      isInHead={isInHead}
+      trailing={trailing}
     />
   );
 };

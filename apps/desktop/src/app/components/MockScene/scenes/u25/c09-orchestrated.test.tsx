@@ -70,8 +70,8 @@ const header = (): HTMLElement => nodeOf('[data-run-header-actions]');
 const checklist = (): HTMLElement => nodeOf('section[aria-label="Plan and progress"]');
 
 const currentPage = (): string | null =>
-  document.querySelector('[data-testid="session-pages"] [aria-current="page"]')?.textContent ??
-  null;
+  document.querySelector('[role="tablist"][aria-label="Session pages"] [aria-selected="true"]')
+    ?.textContent ?? null;
 
 describe('the c09 orchestrated scenes', () => {
   it('registers every scene in the mock registry', () => {
@@ -100,11 +100,15 @@ describe('the c09 orchestrated scenes', () => {
     expect(screen.queryByText('Workflow · Orchestrated')).toBeNull();
   });
 
-  it('c09-orch-running reads as one document with the sidebar on Runs', async () => {
+  it('c09-orch-running reads as one document under the Runs crumb', async () => {
     await mount('c09-orch-running');
 
-    expect(currentPage()).toBe('Runs1');
-    expect(screen.getByRole('heading', { name: 'Speed up the export end to end' })).toBeDefined();
+    within(screen.getByRole('navigation', { name: 'Breadcrumb' })).getByRole('button', {
+      name: 'Runs',
+    });
+    expect(document.querySelector('[data-crumb-current]')?.textContent).toBe(
+      'Speed up the export end to end',
+    );
     expect(screen.getByText(/times out over 10k rows/)).toBeDefined();
     const facts = nodeOf('[data-orchestrated-facts]');
     const settings = within(facts).getByRole('group', { name: 'Run settings' });

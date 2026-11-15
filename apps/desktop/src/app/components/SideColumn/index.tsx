@@ -40,16 +40,24 @@ export const SideColumn = ({
       <nav
         aria-label="Sidebar"
         data-column-layer="nav"
-        className="absolute inset-0 flex min-h-0 min-w-0 flex-col gap-1 pb-2 pt-1"
+        className={cn(
+          'absolute inset-0 flex min-h-0 min-w-0 flex-col gap-1 pb-2',
+          PANE_RHYTHM.navRail.edge,
+        )}
       >
         {scope === 'workspace' && workspaceId !== null ? (
-          <div className="flex min-h-0 flex-1 flex-col gap-1">
-            <div className={cn('flex shrink-0 flex-col px-2', PANE_RHYTHM.navRail.doorGap)}>
-              <NewSessionRow
-                workspaceId={workspaceId}
-                isCurrent={place === 'new'}
-                {...(onNavigate !== undefined && { onNavigate })}
-              />
+          <div className={cn('flex min-h-0 flex-1 flex-col', PANE_RHYTHM.navRail.groupGap)}>
+            <div
+              data-column-nav=""
+              className={cn('flex shrink-0 flex-col px-2', PANE_RHYTHM.navRail.doorGap)}
+            >
+              <div data-frame-row="" className={cn('flex items-center', PANE_RHYTHM.firstRow)}>
+                <NewSessionRow
+                  workspaceId={workspaceId}
+                  isCurrent={place === 'new'}
+                  {...(onNavigate !== undefined && { onNavigate })}
+                />
+              </div>
               {COLUMN_DOORS.map((door) => (
                 <Fragment key={door.id}>
                   <ColumnDoorRow

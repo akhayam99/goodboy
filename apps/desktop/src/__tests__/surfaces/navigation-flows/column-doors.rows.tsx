@@ -48,13 +48,7 @@ const DOOR_ORDER: ReadonlyArray<string> = [
 ];
 
 const railTool = (name: 'terminal' | 'browser'): HTMLElement => {
-  const [button] = screen
-    .getAllByTestId(`pane-toggle-${name}`)
-    .filter((candidate) => candidate.closest('[data-drawer-edge]') === null);
-  if (button === undefined) {
-    throw new Error(`No ${name} button on the right rail`);
-  }
-  return button;
+  return screen.getByTestId(`pane-toggle-${name}`);
 };
 
 const doorIdsInColumn = (): ReadonlyArray<string> =>
@@ -185,7 +179,7 @@ export const COLUMN_DOOR_ROWS: ReadonlyArray<Row> = [
     door: 'visible',
     open: () => click(railTool('terminal')),
     lands: both(
-      () => visible('button', 'Open as page'),
+      () => visible('button', 'Open full page'),
       async () => expect(railTool('terminal').getAttribute('aria-pressed')).toBe('true'),
       async () => expect(useAppStore.getState().appStudio).toBeNull(),
     ),
@@ -196,7 +190,7 @@ export const COLUMN_DOOR_ROWS: ReadonlyArray<Row> = [
     door: 'visible',
     open: async () => {
       await click(railTool('terminal'));
-      await clickButton(/^Open as page$/);
+      await clickButton(/^Open full page$/);
     },
     lands: both(
       () => studio('Terminal'),
@@ -222,7 +216,7 @@ export const COLUMN_DOOR_ROWS: ReadonlyArray<Row> = [
     open: async () => {
       await click(railTool('browser'));
       await clickButton('More');
-      await clickMenuItem(/^Open as page$/);
+      await clickMenuItem(/^Open full page$/);
     },
     lands: both(
       () => studio('Browser'),

@@ -7,13 +7,14 @@ import { branchPlace, sessionPlace } from '../../../../../store/slices/navigatio
 import { BranchPage } from '../../../../../features/branch/components/BranchPage';
 import { SideColumn } from '../../../SideColumn';
 import { SessionFrame } from '../../../SessionRail/SessionFrame';
-import { useSceneRailFold } from '../useSceneRailFold';
+import { SessionContextCards } from '../../../SessionContextCards';
 import { useSceneFileRailFold } from '../useSceneFileRailFold';
 import type { ColumnActions } from '../../../SideColumn/columnDoors';
 import { CTX_COMMITS, CTX_STATUS } from '../brand/contextBranch';
 import { handlersFor } from '../brand/DiffStage';
 import { APPLY_WEBHOOK_PATH, BRANCH_FILES_PATCH } from '../brand/contextDiffPatch';
 import { mockSceneIpc } from '../mockSceneIpc';
+import { c04FilesIpc } from './c04FilesListing';
 import { NOTE_IDS, resolveNotesFor, type NotePlace } from '../resolveNotesSeed';
 import { SESSION, SESSION_ID } from '../resolveSeed';
 import {
@@ -76,9 +77,8 @@ export type WorktreeSceneConfig = {
   readonly gitState?: 'level' | 'behind' | 'rebasing';
   readonly hasMoreProjects?: boolean;
   readonly hasFixableNote?: boolean;
-  readonly isMenuOpen?: boolean;
-  readonly isFolded?: boolean;
-  readonly fileRail?: 'docked' | 'folded' | 'overlay';
+  readonly fileRail?: 'docked' | 'folded' | 'narrow';
+  readonly filesMode?: 'all' | 'reading';
 };
 
 const NARROW_PAGE_PX = 820;
@@ -110,6 +110,9 @@ const installIpc = ({ gitState }: StatusParams): void => {
     }
     if (command === 'worktree_status') {
       return statusOf({ gitState });
+    }
+    if (command === 'explore_list' || command === 'explore_read') {
+      return c04FilesIpc({ command, payload });
     }
     if (command === 'worktree_remote_url') {
       return 'git@github.com:harborline/payments-api.git';
@@ -195,40 +198,30 @@ const seedFixableNote = (): void => {
   });
 };
 
-const MENU_SELECTOR = '[data-worktree-open] [data-worktree-actions] button[aria-haspopup="menu"]';
+const OPEN_ROWS_MS = 700;
 
-const MENU_POLL_MS = 100;
-
-const MENU_TRIES = 40;
-
-type OpenMenuParams = {
-  readonly triesLeft: number;
-};
-
-const openMenuWhenReady = ({ triesLeft }: OpenMenuParams): void => {
-  const trigger = document.querySelector<HTMLElement>(MENU_SELECTOR);
-  if (trigger !== null) {
-    trigger.click();
-    return;
-  }
-  if (triesLeft <= 0) {
-    return;
-  }
-  window.setTimeout(() => openMenuWhenReady({ triesLeft: triesLeft - 1 }), MENU_POLL_MS);
-};
-
-const openMenu = (): void => {
-  window.setTimeout(() => openMenuWhenReady({ triesLeft: MENU_TRIES }), MENU_POLL_MS);
-};
-
-const openFiles = (): void => {
+const openReadme = (): void => {
   window.setTimeout(() => {
-    const toolbar = document.querySelector<HTMLElement>('[data-slot="diff-toolbar"]');
-    const files = [...(toolbar?.querySelectorAll<HTMLElement>('button') ?? [])].find((button) =>
-      (button.textContent ?? '').startsWith('Files'),
-    );
-    files?.click();
-  }, 900);
+    document.querySelector<HTMLElement>('[data-tree-row="README.md"] button')?.click();
+  }, OPEN_ROWS_MS);
+};
+
+const OPEN_FILES_TRIES = 40;
+
+type TryParams = {
+  readonly left: number;
+};
+
+const openFiles = ({ left }: TryParams = { left: OPEN_FILES_TRIES }): void => {
+  window.setTimeout(() => {
+    const show = document.querySelector<HTMLElement>('button[aria-label="Show files"]');
+    if (show !== null) {
+      show.click();
+    }
+    if (left > 0) {
+      openFiles({ left: left - 1 });
+    }
+  }, 300);
 };
 
 type Props = {
@@ -239,7 +232,6 @@ type Props = {
 export const WorktreeScene = ({ config, children = null }: Props) => {
   const [isReady, setIsReady] = useState(false);
   const session = useCurrentSession();
-  useSceneRailFold({ isFolded: config.isFolded === true });
   useSceneFileRailFold({ isFolded: config.fileRail === 'folded' });
   useEffect(() => {
     applyPrPageSeed({ variant: config.variant });
@@ -251,6 +243,12 @@ export const WorktreeScene = ({ config, children = null }: Props) => {
       seedFixableNote();
     }
     const state = useAppStore.getState();
+    if (config.filesMode !== undefined) {
+      state.setExploreChangedView({
+        sessionId: SESSION_ID,
+        view: { mountPath: PR_PAGE_WORKTREE, mode: 'all', collapsed: {} },
+      });
+    }
     state.navigate({
       to:
         config.level === 'worktree'
@@ -262,11 +260,11 @@ export const WorktreeScene = ({ config, children = null }: Props) => {
           : sessionPlace({ sessionId: SESSION_ID }),
     });
     setIsReady(true);
-    if (config.isMenuOpen === true) {
-      openMenu();
-    }
-    if (config.fileRail === 'overlay') {
+    if (config.fileRail === 'narrow') {
       openFiles();
+    }
+    if (config.filesMode === 'reading') {
+      openReadme();
     }
   }, [config]);
 
@@ -287,7 +285,7 @@ export const WorktreeScene = ({ config, children = null }: Props) => {
       </div>
       <main
         className="flex min-w-0 flex-1 flex-col"
-        style={config.fileRail === 'overlay' ? { maxWidth: NARROW_PAGE_PX } : undefined}
+        style={config.fileRail === 'narrow' ? { maxWidth: NARROW_PAGE_PX } : undefined}
       >
         <SessionFrame session={session ?? SESSION}>
           {config.level === 'worktree' ? (
@@ -295,6 +293,7 @@ export const WorktreeScene = ({ config, children = null }: Props) => {
           ) : (
             <div className="flex flex-col gap-4 p-6">
               <h1 className="text-title text-foreground">{SESSION.goal}</h1>
+              <SessionContextCards session={session ?? SESSION} />
               {children}
             </div>
           )}

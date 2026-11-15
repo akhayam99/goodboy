@@ -68,14 +68,14 @@ describe('the u35 review place scenes', () => {
 
     fireEvent.click(
       await screen.findByRole('button', {
-        name: 'Back to Read retry state from the typed endpoint',
+        name: 'Read retry state from the typed endpoint',
       }),
     );
 
-    fireEvent.click(
-      await screen.findByRole('button', { name: 'Back to Add the stuck-delivery banner' }),
+    fireEvent.click(await screen.findByRole('button', { name: 'Add the stuck-delivery banner' }));
+    await waitFor(() =>
+      expect(document.querySelectorAll('[data-session-crumbs] li')).toHaveLength(3),
     );
-    await screen.findByRole('button', { name: 'Back to runs' });
   });
 
   it('u35-branch-setup-offer draws the setup offer inside the Branch page', async () => {
@@ -83,7 +83,7 @@ describe('the u35 review place scenes', () => {
 
     await screen.findByText(/is ready\./);
     await waitFor(() => {
-      screen.getByRole('button', { name: 'Back to overview' });
+      expect(document.querySelector('[data-head-nav="crumbs"]')).not.toBeNull();
     });
   });
 });

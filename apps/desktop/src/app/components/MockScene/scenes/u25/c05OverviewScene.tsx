@@ -18,9 +18,9 @@ const NOW: IsoDateTime = clock.iso({ at: '2026-09-07T09:12:00.000Z' });
 
 const SESSION_ID = brandedId<SessionId>({ value: 'mock-session-mount-rows' });
 const LEDGER_ID = brandedId<ProjectId>({ value: 'mock-project-ledger-core' });
-const RELAY_ID = brandedId<ProjectId>({ value: 'mock-project-notify-relay' });
 const ROUNDING_MOUNT = brandedId<MountId>({ value: 'mock-mount-ledger-rounding' });
 const RELAY_MOUNT = brandedId<MountId>({ value: 'mock-mount-relay-backoff' });
+const BOUNDARIES_MOUNT = brandedId<MountId>({ value: 'mock-mount-ledger-boundaries' });
 const MB = 1024 * 1024;
 
 type ProposalParams = {
@@ -58,16 +58,16 @@ const ROUNDING_PROPOSAL = proposalOf({
   projectId: LEDGER_ID,
   root: '~/code/harborline/ledger-core',
   branch: 'fix/ledger-reconciliation-rounding-drift',
-  prNumber: 418,
+  prNumber: 412,
   megabytes: 412,
 });
 
-const RELAY_PROPOSAL = proposalOf({
-  mountId: RELAY_MOUNT,
-  projectId: RELAY_ID,
-  root: '~/code/harborline/notify-relay',
-  branch: 'fix/notify-relay-webhook-rate-limit-backoff',
-  prNumber: 96,
+const BOUNDARIES_PROPOSAL = proposalOf({
+  mountId: BOUNDARIES_MOUNT,
+  projectId: LEDGER_ID,
+  root: '~/code/harborline/ledger-core',
+  branch: 'fix/ledger-reconciliation-settlement-boundaries',
+  prNumber: 415,
   megabytes: 640,
 });
 
@@ -96,7 +96,7 @@ type C05OverviewState = 'merged-next' | 'merged-group' | 'notices';
 
 const SEEDS: Readonly<Record<C05OverviewState, () => void>> = {
   'merged-next': () => seedProposals({ proposals: [ROUNDING_PROPOSAL] }),
-  'merged-group': () => seedProposals({ proposals: [ROUNDING_PROPOSAL, RELAY_PROPOSAL] }),
+  'merged-group': () => seedProposals({ proposals: [ROUNDING_PROPOSAL, BOUNDARIES_PROPOSAL] }),
   notices: () => useAppStore.setState({ mountBranchObservations: { [SESSION_ID]: [DRIFT] } }),
 };
 

@@ -1,7 +1,6 @@
 import type { ExploreEntry } from './explore';
 import type { ExploreOpenFailure } from './openFailure';
 
-export const EXPLORE_ROW_PX = 40;
 export const EXPLORE_ROOT_PATH = '';
 
 export type ExploreListing = {
@@ -129,8 +128,6 @@ export const flattenExploreRows = ({
   visit({ path: EXPLORE_ROOT_PATH, depth: 0 });
   return rows;
 };
-
-export const exploreRowHeight = (): number => EXPLORE_ROW_PX;
 
 export const entryRowsOf = (rows: ReadonlyArray<ExploreRow>): ReadonlyArray<ExploreEntryRow> =>
   rows.filter((row): row is ExploreEntryRow => row.kind === 'entry');

@@ -7,6 +7,7 @@ import { PaneTitleRow } from './PaneTitleRow';
 import { PageTrailContext } from './pageTrailContext';
 import { UnderTrailContext } from './underTrailContext';
 import { useInheritedPaneActions } from './paneActionsContext';
+import { useInheritedPaneTabs } from './paneTabsContext';
 import { pageWidthOf } from './pageWidthOf';
 
 type BaseProps = {
@@ -21,7 +22,7 @@ type BaseProps = {
 };
 
 type TitleProps = {
-  readonly title: ReactNode;
+  readonly title?: ReactNode;
   readonly badge?: ReactNode;
   readonly meta?: ReactNode;
   readonly actions?: ReactNode;
@@ -50,9 +51,10 @@ export const PageHeader = (props: PageHeaderProps) => {
     isTrailPinned = false,
     isPinned = false,
     rhythm = 'title',
-    tabs,
     animationClassName = 'motion-safe:animate-studio-in',
   } = props;
+  const inheritedTabs = useInheritedPaneTabs();
+  const tabs = props.tabs ?? inheritedTabs;
   const isUnderTrail = useContext(UnderTrailContext);
   const trail = useContext(PageTrailContext);
   const isTrailInline = trail != null && !isTrailPinned;
@@ -66,6 +68,17 @@ export const PageHeader = (props: PageHeaderProps) => {
         {inheritedActions}
       </>
     );
+  const hasTitleRow = props.title != null || titleActions != null;
+  const isEmpty =
+    props.row === undefined &&
+    !hasTitleRow &&
+    !isTrailInline &&
+    props.toolbar == null &&
+    props.subheader == null &&
+    tabs == null;
+  if (isEmpty) {
+    return null;
+  }
   const header = (
     <div
       data-slot="pane-header"
@@ -83,7 +96,7 @@ export const PageHeader = (props: PageHeaderProps) => {
       <div
         className={cn(
           'flex min-w-0 flex-col',
-          props.toolbar == null ? 'gap-2' : 'gap-0',
+          props.toolbar == null ? PANE_RHYTHM.block : 'gap-0',
           animationClassName,
         )}
       >
@@ -96,12 +109,14 @@ export const PageHeader = (props: PageHeaderProps) => {
           props.row
         ) : (
           <>
-            <PaneTitleRow
-              title={props.title}
-              badge={props.badge}
-              meta={props.meta}
-              actions={titleActions}
-            />
+            {hasTitleRow ? (
+              <PaneTitleRow
+                title={props.title}
+                badge={props.badge}
+                meta={props.meta}
+                actions={titleActions}
+              />
+            ) : null}
             {props.toolbar != null ? (
               <div data-slot="pane-toolbar" className="flex h-9 min-w-0 items-center">
                 {props.toolbar}

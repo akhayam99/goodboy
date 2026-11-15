@@ -365,7 +365,7 @@ pointer: hovering it for 450ms marks it seen when the pointer leaves, never
 while it is still on the row.
 `row-interactive-is-shared.test.ts` holds the listed rows to the shared string.
 
-A tree indents by one step. `treeIndentPx({ depth })` and `TREE_INDENT_PX` (12px a level on an 8px base) are the only source: the Changes tree sets its row padding with the first and the Files tree draws its guide spans with the second, so a user moving between them sees the same indent. Arrow keys in the Changes and Files trees are one pure function, `treeKeyMove` in `shared/utils`: Down and Up move a row, Right opens a branch and then enters its first child, Left closes an open branch and then goes to the parent, Enter and Space act on the row, Home and End jump. Each tree maps its rows to that shape and its result back to its own action. The session tree of the spawned panel keeps `treeKeyTargetOf`, because its rows run newest first. `hand-indent.test.ts` counts a `pl-5`, `pl-7` or `pl-9` and an inline `paddingLeft` that does not come from `treeIndentPx`.
+A tree indents by one step. `treeIndentPx({ depth })` (12px a level on an 8px base) is the only source: the Changes tree and the All files tree set their row padding with it, so a user moving between them sees the same indent. Arrow keys in the Changes and Files trees are one pure function, `treeKeyMove` in `shared/utils`: Down and Up move a row, Right opens a branch and then enters its first child, Left closes an open branch and then goes to the parent, Enter and Space act on the row, Home and End jump. Each tree maps its rows to that shape and its result back to its own action. The session tree of the spawned panel keeps `treeKeyTargetOf`, because its rows run newest first. `hand-indent.test.ts` counts a `pl-5`, `pl-7` or `pl-9` and an inline `paddingLeft` that does not come from `treeIndentPx`.
 
 **The rule of seen.** An agent is seen when it is open and the window is in
 front: visible and focused. Opening it (`selectAgent`) stamps it, and the agent
@@ -494,13 +494,13 @@ on a disagreement.
 | done agent or step                                     | neutral | a muted check, never green   |
 
 Green for an open pull request would make approved stop standing out, so open
-is `info`. `StepMeter` paints by state only: a done segment fills
+is `info`. The run step meter paints by state only: a done segment fills
 `muted-foreground`, the running segment `primary` with a soft pulse, a step at a
 ready gate or a question `warning`, a failed one `danger` and one not started
 `border`. The role never colors a segment, it stays on the row icon, and green
 never appears, so the bar cannot read as a passed test. A run of two steps or
 fewer draws a tiny count (`1/2`, steps started over steps) instead of bars. The children of a Running row
-hang from one 1px `border` lane with a quarter elbow each (`LiveSpine`); the
+hang from one 1px `border` lane with a quarter elbow each; the
 shared `WorkNode` done node keeps its violet disc.
 
 `StageTrack` draws where a branch stands as one 80px line of stages (Commit,
@@ -513,7 +513,7 @@ There is no ring state: a running or stale step is current, and its tone and
 word say the rest. Each stage names itself and its state in its own Tooltip
 ("Checks skipped"). The track is `role="img"` and its accessible name lists
 every stage with its state ("Commit done, Push done, Pull request current,
-Checks to do, ..."). Never use `StepMeter` (segments of a run) or `WorkNode`
+Checks to do, ..."). Never use the run step meter (segments of a run) or `WorkNode`
 (one node) for stages with connectors.
 
 The other nodes are the stage's own. Running is the ring with the centre dot,

@@ -51,7 +51,7 @@ describe('one placement frame while the page holds a long conversation and open 
     const startedAt = performance.now();
     for (let frame = 0; frame < FRAMES; frame += 1) {
       giveRect({ element: view, x: 480 + (frame % 8) });
-      viewBoundsOf({ view, overlays });
+      viewBoundsOf({ view, overlays, zoom: 1.25 });
     }
     const perFrameMs = (performance.now() - startedAt) / FRAMES;
     overlays.stop();

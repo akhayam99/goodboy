@@ -1,5 +1,5 @@
 import { Plus } from 'lucide-react';
-import { IconButton } from '@goodboy/ui';
+import { IconButton, PANE_RHYTHM } from '@goodboy/ui';
 
 type Props = {
   readonly id: string;
@@ -9,7 +9,7 @@ type Props = {
 };
 
 export const DoorCreateButton = ({ id, label, shortcut, onCreate }: Props) => (
-  <div className="absolute right-0.5 top-0.5 flex size-6 items-center justify-center">
+  <div className={PANE_RHYTHM.navRail.action}>
     <IconButton
       icon={Plus}
       label={label}

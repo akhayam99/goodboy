@@ -1,25 +1,31 @@
-import { Button, EmptyState, PAGE_MEASURE, PageColumn } from '@goodboy/ui';
+import { Button, EmptyState, PAGE_MEASURE, PANE_RHYTHM, PageColumn, cn } from '@goodboy/ui';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import type { TerminalStudioModel } from '../../hooks/useTerminalStudioModel';
 import { displayCwd } from '../../terminalTargets';
 import { ChangeFolderPicker } from './ChangeFolderPicker';
 import { DockTerminalButton } from './DockTerminalButton';
-import { LocationRow } from './LocationRow';
 import { TerminalPane } from './TerminalPane';
 import { TerminalStripActions } from './TerminalStripActions';
 import { TerminalTabStrip } from './TerminalTabStrip';
+import { TerminalToolbar } from './TerminalToolbar';
+
+const NO_PORTS: ReadonlyArray<number> = [];
 
 type Props = {
   readonly model: TerminalStudioModel;
   readonly isActive: boolean;
+  readonly portsByTerminal: ReadonlyMap<string, ReadonlyArray<number>>;
 };
 
-export const TerminalDetail = ({ model, isActive }: Props) => {
+export const TerminalDetail = ({ model, isActive, portsByTerminal }: Props) => {
   const { selected, worktree } = model;
   if (selected === null || worktree === null) {
     return (
       <div className="flex h-full min-h-0 flex-1 flex-col">
-        <div className="flex h-10 shrink-0 items-center justify-end px-3">
+        <div
+          data-grid-row="1"
+          className={cn('flex shrink-0 items-center justify-end px-3', PANE_RHYTHM.firstRow)}
+        >
           <DockTerminalButton selected={null} />
         </div>
         <PageColumn width={PAGE_MEASURE.terminal}>
@@ -41,25 +47,15 @@ export const TerminalDetail = ({ model, isActive }: Props) => {
   }
   const isIdle = selected.status !== 'exited' && !model.busyIds.has(selected.id);
   return (
-    <div className="flex h-full min-h-0 flex-1 flex-col gap-1">
+    <div className="flex h-full min-h-0 flex-1 flex-col">
       <h2 className="sr-only">{`Terminal on ${worktree.projectName}`}</h2>
-      {worktree.kind === 'mount' ? null : (
-        <LocationRow
-          cwd={displayCwd({ cwd: selected.cwd, folder: model.folder, home: model.home })}
-        />
-      )}
-      <TerminalTabStrip
-        label={worktree.projectName}
-        tabs={model.tabs}
-        selectedId={selected.id}
-        busyIds={model.busyIds}
-        commandOf={model.commandOf}
-        onSelect={model.selectTab}
-        onClose={model.closeTab}
-        onRestart={model.restartTab}
-        onRename={model.renameTab}
-        onNew={model.openDefault}
-        isShortcutEnabled={isActive}
+      <TerminalToolbar
+        cwd={
+          worktree.kind === 'mount'
+            ? null
+            : displayCwd({ cwd: selected.cwd, folder: model.folder, home: model.home })
+        }
+        ports={portsByTerminal.get(selected.id) ?? NO_PORTS}
         sessionId={worktree.sessionId}
         folderAction={
           <ChangeFolderPicker
@@ -70,16 +66,33 @@ export const TerminalDetail = ({ model, isActive }: Props) => {
         }
         actions={
           <>
-            <DockTerminalButton selected={selected} />
             <TerminalStripActions
               worktree={worktree}
               tab={selected}
               handoffSessionId={worktree.sessionId}
             />
+            <DockTerminalButton selected={selected} />
           </>
         }
       />
-      <div data-terminal-body="" className="flex min-h-0 flex-1 flex-col px-3">
+      <div data-grid-row="2" className="shrink-0">
+        <TerminalTabStrip
+          label={worktree.projectName}
+          tabs={model.tabs}
+          selectedId={selected.id}
+          busyIds={model.busyIds}
+          commandOf={model.commandOf}
+          onSelect={model.selectTab}
+          onClose={model.closeTab}
+          onRestart={model.restartTab}
+          onRename={model.renameTab}
+          onNew={model.openDefault}
+          isShortcutEnabled={isActive}
+          hasPorts={false}
+          sessionId={worktree.sessionId}
+        />
+      </div>
+      <div data-terminal-body="" data-grid-row="3" className="flex min-h-0 flex-1 flex-col px-3">
         <TerminalPane
           key={selected.id}
           tab={selected}

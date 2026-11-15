@@ -49,11 +49,8 @@ beforeEach(async () => {
 const state = () => store.getState();
 
 const TOOLS: ReadonlyArray<readonly [string, DrawerRequest]> = [
-  ['Context', { kind: 'context', sessionId: S1, payload: { section: 'goal', view: 'current' } }],
-  ['Explore', { kind: 'explore', sessionId: S1, payload: null }],
   ['Scripts', { kind: 'scripts', sessionId: S1, payload: null }],
   ['Agents', { kind: 'spawned', sessionId: S1, payload: null }],
-  ['Ask', { kind: 'ask', sessionId: S1, payload: null }],
 ];
 
 describe('a tool stays open through a move inside its session', () => {
@@ -101,8 +98,8 @@ describe('a tool stays open through a move inside its session', () => {
   });
 
   it('keeps a tool in the slot and a tool in the chip through a move', () => {
-    const explore: DrawerRequest = { kind: 'explore', sessionId: S1, payload: null };
-    const ask: DrawerRequest = { kind: 'ask', sessionId: S1, payload: null };
+    const explore: DrawerRequest = { kind: 'scripts', sessionId: S1, payload: null };
+    const ask: DrawerRequest = { kind: 'spawned', sessionId: S1, payload: null };
     state().openDrawer(explore);
     state().openDrawer(ask);
 
@@ -113,7 +110,7 @@ describe('a tool stays open through a move inside its session', () => {
   });
 
   it('closes a reader on a move and brings back the tool in its chip', () => {
-    const explore: DrawerRequest = { kind: 'explore', sessionId: S1, payload: null };
+    const explore: DrawerRequest = { kind: 'scripts', sessionId: S1, payload: null };
     state().openDrawer(explore);
     state().openDrawer({ kind: 'conversation', sessionId: S1, payload: { threadId: 't1' } });
 
@@ -124,7 +121,7 @@ describe('a tool stays open through a move inside its session', () => {
   });
 
   it('drops a reader from the chip on a move', () => {
-    const explore: DrawerRequest = { kind: 'explore', sessionId: S1, payload: null };
+    const explore: DrawerRequest = { kind: 'scripts', sessionId: S1, payload: null };
     state().openDrawer({ kind: 'conversation', sessionId: S1, payload: { threadId: 't1' } });
     state().openDrawer(explore);
 
@@ -135,8 +132,8 @@ describe('a tool stays open through a move inside its session', () => {
   });
 
   it('empties the slot and the chip on another session', () => {
-    state().openDrawer({ kind: 'explore', sessionId: S1, payload: null });
-    state().openDrawer({ kind: 'ask', sessionId: S1, payload: null });
+    state().openDrawer({ kind: 'scripts', sessionId: S1, payload: null });
+    state().openDrawer({ kind: 'spawned', sessionId: S1, payload: null });
 
     state().navigate({ to: sessionPlace({ sessionId: S2 }) });
 
@@ -187,7 +184,7 @@ describe('a workspace tool stays across every move inside the window', () => {
   });
 
   it('parks a session tool under a page and keeps Terminal in its chip', () => {
-    const explore: DrawerRequest = { kind: 'explore', sessionId: S1, payload: null };
+    const explore: DrawerRequest = { kind: 'scripts', sessionId: S1, payload: null };
     state().openDrawer(TERMINAL);
     state().openDrawer(explore);
 
@@ -201,25 +198,14 @@ describe('a workspace tool stays across every move inside the window', () => {
 
   it('brings Terminal out of the chip when a session tool parks on the Board', () => {
     state().openDrawer(TERMINAL);
-    state().openDrawer({ kind: 'ask', sessionId: S1, payload: null });
+    state().openDrawer({ kind: 'spawned', sessionId: S1, payload: null });
 
     state().navigate({ to: BOARD_PLACE });
 
     expect(state().drawer).toEqual(TERMINAL);
     expect(state().drawerBack).toBeNull();
     state().back();
-    expect(state().drawer?.kind).toBe('ask');
+    expect(state().drawer?.kind).toBe('spawned');
     expect(state().drawerBack).toEqual(TERMINAL);
-  });
-
-  it('closes only the workspace tools when a page panel takes the right side', () => {
-    const explore: DrawerRequest = { kind: 'explore', sessionId: S1, payload: null };
-    state().openDrawer(explore);
-    state().openDrawer(TERMINAL);
-
-    state().closeWorkspaceTools();
-
-    expect(state().drawer).toEqual(explore);
-    expect(state().drawerBack).toBeNull();
   });
 });

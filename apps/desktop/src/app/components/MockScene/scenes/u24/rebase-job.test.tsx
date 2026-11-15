@@ -135,13 +135,13 @@ describe('the u24 rebase job scenes', () => {
     },
   );
 
-  it('keeps the banner on the Overview section too', async () => {
+  it('keeps the banner on the Conversation section too', async () => {
     renderScene({ name: 'branch-rebase-job', query: 'state=merging&tab=pr' });
 
     const region = await screen.findByRole('region', { name: 'Rebase job' }, { timeout: 4_000 });
 
     expect(region.textContent).toContain('History rewriter is merging webhook.ts in a copy');
-    expect(stripTab({ name: /^Overview/ }).getAttribute('aria-selected')).toBe('true');
+    expect(stripTab({ name: /^Conversation/ }).getAttribute('aria-selected')).toBe('true');
   });
 
   it('draws the log rows from the jobs', async () => {

@@ -237,7 +237,7 @@ export const useTimelineOpen = ({
                 );
               return;
             }
-            store.navigate({ to: sessionPlace({ sessionId, lens: null }) });
+            store.navigate({ to: sessionPlace({ sessionId, lens: 'context' }) });
             dispatchAfterNavigation({
               name: linkIssueEventName({ sessionId }),
               detail: { query: payload?.url ?? payload?.identifier ?? '' },

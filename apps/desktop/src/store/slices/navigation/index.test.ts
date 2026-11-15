@@ -163,9 +163,9 @@ describe('restoring a saved window location', () => {
       }),
     });
     before.getState().openDrawer({
-      kind: 'context',
+      kind: 'session-log',
       sessionId: S1,
-      payload: { section: 'summary', view: 'current' },
+      payload: { focusEntryId: null },
     });
     before.getState().amendFocus({ patch: { scroll: { plans: 320 } } });
     const saved = parseLocation({
@@ -762,7 +762,7 @@ describe('navigation slice', () => {
 
   it('keeps Ask open across every page of its session', () => {
     const store = makeStore();
-    const ask: DrawerRequest = { kind: 'ask', sessionId: S1, payload: null };
+    const ask: DrawerRequest = { kind: 'spawned', sessionId: S1, payload: null };
     store.getState().navigate({ to: sessionPlace({ sessionId: S1 }) });
     store.getState().openDrawer(ask);
 
@@ -778,7 +778,7 @@ describe('navigation slice', () => {
 
   it('closes Ask when you leave its session, and Back brings it back', () => {
     const store = makeStore();
-    const ask: DrawerRequest = { kind: 'ask', sessionId: S1, payload: null };
+    const ask: DrawerRequest = { kind: 'spawned', sessionId: S1, payload: null };
     store.getState().navigate({ to: sessionPlace({ sessionId: S1, lens: 'workflows' }) });
     store.getState().openDrawer(ask);
 
@@ -795,7 +795,7 @@ describe('navigation slice', () => {
 
   it('lets a reader replace Ask, then brings Ask back from the chip on a forward move', () => {
     const store = makeStore();
-    const ask: DrawerRequest = { kind: 'ask', sessionId: S1, payload: null };
+    const ask: DrawerRequest = { kind: 'spawned', sessionId: S1, payload: null };
     store.getState().navigate({ to: sessionPlace({ sessionId: S1, lens: 'review' }) });
     store.getState().openDrawer(ask);
     store.getState().openDrawer(DRAFTS);
@@ -807,7 +807,7 @@ describe('navigation slice', () => {
   it('closes Ask from the chip when a forward move leaves its session', () => {
     const store = makeStore();
     store.getState().navigate({ to: sessionPlace({ sessionId: S1, lens: 'review' }) });
-    store.getState().openDrawer({ kind: 'ask', sessionId: S1, payload: null });
+    store.getState().openDrawer({ kind: 'spawned', sessionId: S1, payload: null });
     store.getState().openDrawer(DRAFTS);
     store.getState().navigate({ to: sessionPlace({ sessionId: S2 }) });
     expect(store.getState().drawer).toBeNull();
@@ -929,14 +929,6 @@ describe('Branch page', () => {
         request: sessionPlace({
           sessionId: S1,
           lens: 'files',
-          target: { kind: 'diff', mountPath: MOUNT, focus: null },
-        }),
-        tab: 'files',
-      },
-      {
-        request: sessionPlace({
-          sessionId: S1,
-          lens: 'files',
           target: { kind: 'diff', mountPath: MOUNT, focus: null, page: 'history' },
         }),
         tab: 'commits',
@@ -948,6 +940,19 @@ describe('Branch page', () => {
       expect(store.getState().activeLens[S1]).toBe('branch');
       expect(branchOf(store)?.tab).toBe(tab);
     }
+  });
+
+  it('keeps the Changes door on the session tab, on its branch', () => {
+    const store = makeStore();
+    store.getState().navigate({
+      to: sessionPlace({
+        sessionId: S1,
+        lens: 'files',
+        target: { kind: 'diff', mountPath: MOUNT, focus: null },
+      }),
+    });
+    expect(store.getState().activeLens[S1]).toBe('files');
+    expect(store.getState().diffMountPath[S1]).toBe(MOUNT);
   });
 
   it('lands the Branch door on the pull request once the branch has one', () => {

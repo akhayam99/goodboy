@@ -1,10 +1,7 @@
-import type { ChatId, MountId } from '@goodboy/types';
+import type { MountId } from '@goodboy/types';
 import { discoveredScriptId } from '../../../../../../features/scripts/scripts';
 import { useAppStore } from '../../../../../../store';
 import { SESSION_ID } from '../../activityRunSeed';
-import { seedSessionAsk } from '../../sessionAskSeed';
-
-const DRAFT = 'Which of these should I fix first, and what breaks if I skip it?';
 
 const LONG_TOKEN =
   'ledger-core/src/settlement/backfill/checkpoints/2026-10-05T10-00-00Z/shard-0007/part-000041.parquet.zst';
@@ -17,15 +14,8 @@ const SCRIPT_GROUP = {
   scripts: [{ name: 'test', command: 'vitest run --reporter verbose', body: '' }],
 } as const;
 
-export const prepareAskDraft = (): void => {
-  seedSessionAsk({ state: 'answer' });
-  const state = useAppStore.getState();
-  const threadId: ChatId | null = state.askThreadId[SESSION_ID] ?? null;
-  state.setAskDraft({ sessionId: SESSION_ID, threadId, text: DRAFT });
-};
-
 export const prepareToast = (): void => {
-  seedSessionAsk({ state: 'answer' });
+  useAppStore.getState().openDrawer({ kind: 'scripts', sessionId: SESSION_ID, payload: null });
 };
 
 export type HeadersSeed = {

@@ -30,13 +30,15 @@ const PENDING: Readonly<Record<string, string>> = {
 const DATA_DRIVEN: Readonly<Record<string, string>> = {
   'app/components/AppTopBar/NavCluster/HistoryArrow.tsx':
     'a radio list of the last twelve stops of the history stack, a list and not a menu of fixed rows',
+  'app/components/SessionHead/SessionCrumbFold.tsx':
+    'the middle crumbs a trail folds, at most five since crumbsOf caps the chain at eight, pinned in crumbFoldOf.test.ts',
   'features/branch/components/BranchHeader/BranchOverflow.tsx':
     'rows built from registry actions, capped by branchMenuRows.test.ts',
   'features/search/components/SearchMode/SearchHitActions.tsx':
     'registry actions of one hit, capped at two by RELATED_LIMIT and pinned in SearchMode/index.test.tsx',
   'features/chat/components/ChatInput/parts/ComposerPlusMenu.tsx':
     'one row per prefix group the composer knows',
-  'features/explore/components/ExplorePane/ExploreProjectChip.tsx':
+  'features/diff/FilesMode/ExploreProjectChip/index.tsx':
     'a picker over the projects of the workspace',
   'features/integrations/jira/AssigneePicker.tsx': 'a picker over the people of a Jira project',
   'features/integrations/jira/TransitionMenu.tsx': 'the transitions Jira offers for one issue',

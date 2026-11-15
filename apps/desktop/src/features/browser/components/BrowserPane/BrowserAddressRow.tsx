@@ -1,5 +1,15 @@
-import { ArrowLeft, ArrowRight, PanelLeft, Pin, RotateCw, Square, Terminal, X } from 'lucide-react';
-import { IconButton } from '@goodboy/ui';
+import {
+  ArrowLeft,
+  ArrowRight,
+  ArrowUpRight,
+  PanelLeft,
+  Pin,
+  RotateCw,
+  Square,
+  Terminal,
+  X,
+} from 'lucide-react';
+import { IconButton, PANE_RHYTHM, cn } from '@goodboy/ui';
 import { useShortcut } from '../../../../shared/keyboard/useShortcut';
 import { useBrowserKeys } from '../../hooks/useBrowserKeys';
 import { useCommandField } from '../../hooks/useCommandField';
@@ -10,6 +20,8 @@ import { BrowserCommandPanel } from './BrowserCommandPanel';
 import { BrowserFindBar } from './BrowserFindBar';
 import { BrowserLoadLine } from './BrowserLoadLine';
 import { BrowserMoreMenu } from './BrowserMoreMenu';
+import { NAMES } from '../../../../shared/utils/names';
+import { DockButton } from '../../../../shared/components/DockButton';
 
 type ConsoleToggle = {
   readonly isOpen: boolean;
@@ -23,6 +35,7 @@ type Props = {
   readonly consoleToggle?: ConsoleToggle;
   readonly onToggleList?: () => void;
   readonly onOpenAsPage?: () => void;
+  readonly onDock?: () => void;
   readonly onClose?: () => void;
 };
 
@@ -33,6 +46,7 @@ export const BrowserAddressRow = ({
   consoleToggle,
   onToggleList,
   onOpenAsPage,
+  onDock,
   onClose,
 }: Props) => {
   const canStep = model.shown !== null;
@@ -53,7 +67,10 @@ export const BrowserAddressRow = ({
   );
   return (
     <>
-      <div className="relative flex h-9 shrink-0 items-center gap-1 px-2">
+      <div
+        data-grid-row="1"
+        className={cn('relative flex shrink-0 items-center gap-1 px-2', PANE_RHYTHM.firstRow)}
+      >
         {onToggleList === undefined ? null : (
           <IconButton
             icon={PanelLeft}
@@ -101,7 +118,6 @@ export const BrowserAddressRow = ({
             onClick={model.togglePin}
           />
         )}
-        <BrowserMoreMenu model={model} onOpenAsPage={onOpenAsPage} />
         {consoleToggle === undefined ? null : (
           <IconButton
             icon={Terminal}
@@ -112,6 +128,18 @@ export const BrowserAddressRow = ({
             disabled={!canStep}
             onClick={consoleToggle.onToggle}
           />
+        )}
+        <BrowserMoreMenu model={model} onOpenAsPage={onOpenAsPage} />
+        {onOpenAsPage === undefined ? null : (
+          <IconButton
+            icon={ArrowUpRight}
+            label={NAMES.openFullPage}
+            tooltipSide="top"
+            onClick={onOpenAsPage}
+          />
+        )}
+        {onDock === undefined ? null : (
+          <DockButton tooltip="Dock the browser beside the session" onDock={onDock} />
         )}
         {onClose === undefined ? null : (
           <IconButton icon={X} label="Close" tooltipSide="top" onClick={onClose} />

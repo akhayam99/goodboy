@@ -1,8 +1,8 @@
 import { brandId } from '@goodboy/types';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
-import { useEffect } from 'react';
+import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { useContext, useEffect } from 'react';
 import type {
   Agent,
   AgentId,
@@ -96,6 +96,7 @@ const { store, hooks } = vi.hoisted(() => {
       agentKindOverride: {},
       sessionLoading: {},
       resolveAgentReturn: {},
+      navigation: {},
       pullRequestModes: {},
       setPullRequestMode: vi.fn(),
       navigate: vi.fn(),
@@ -168,6 +169,8 @@ vi.mock('@goodboy/ui', async (importOriginal) => {
     PaneShell: ({ title, header, meta, children }: PaneShellMockProps) => (
       <div>
         {header ?? <h1>{title}</h1>}
+        <div data-testid="pane-tabs">{useContext(actual.PaneTabsContext)}</div>
+        <div data-testid="pane-actions">{useContext(actual.PaneActionsContext)}</div>
         {meta != null && title != null ? (
           <span data-testid={`pane-meta-${title.toLowerCase()}`}>{meta}</span>
         ) : null}
@@ -203,14 +206,26 @@ vi.mock('./parts/WorkflowsPane', () => ({
     );
   },
 }));
-vi.mock('../SessionOverviewPane', () => ({
-  SessionOverviewPane: () => <div role="region" aria-label="Session overview" />,
-}));
+vi.mock('../SessionOverviewPane', async () => {
+  const { PaneShell } = await import('@goodboy/ui');
+  return {
+    SessionOverviewPane: () => (
+      <PaneShell title="Overview">
+        <div role="region" aria-label="Session overview" />
+      </PaneShell>
+    ),
+  };
+});
 vi.mock('../../../branch/components/BranchPage', async () => {
   const { useStudioBand } =
     await import('../../../../shared/components/StudioShell/studioBandContext');
+  const { PaneShell } = await import('@goodboy/ui');
   return {
-    BranchPage: () => <div data-testid="branch-page">{useStudioBand()}</div>,
+    BranchPage: () => (
+      <PaneShell title="Branch">
+        <div data-testid="branch-page">{useStudioBand()}</div>
+      </PaneShell>
+    ),
   };
 });
 vi.mock('../../../bootstrap/FirstLapBanner', () => ({ FirstLapBanner: () => null }));
@@ -234,6 +249,7 @@ vi.mock('../SessionOverviewPane/LinkIssueAction', () => ({
   ),
 }));
 import { SessionWorkspace } from './index';
+import { SessionHeadContext } from '../../sessionHeadContext';
 
 const trailBands = (): number => document.querySelectorAll('[data-slot="trail-bar"]').length;
 
@@ -804,5 +820,45 @@ describe('SessionWorkspace integration lenses', () => {
     render(<SessionWorkspace session={session} />);
 
     expect(screen.getByTestId('integration-pane').textContent).toBe(provider);
+  });
+});
+
+const FakeHead = ({ session: shown }: { readonly session: Session }) => (
+  <header data-testid="session-head">{shown.id}</header>
+);
+
+const renderWithHead = () =>
+  render(
+    <SessionHeadContext.Provider value={FakeHead}>
+      <SessionWorkspace session={session} />
+    </SessionHeadContext.Provider>,
+  );
+
+describe('SessionWorkspace session head', () => {
+  it('draws the session head once, first, above the overview', () => {
+    store.activeLens = { [SESSION_ID]: null };
+    store.selectedAgentId = {};
+
+    const { container } = renderWithHead();
+
+    expect(screen.getAllByTestId('session-head')).toHaveLength(1);
+    const frame = container.querySelector('[data-session-head-frame]');
+    expect(frame?.firstElementChild?.hasAttribute('data-session-lead')).toBe(true);
+    const band = frame?.children[1]?.firstElementChild ?? null;
+    expect(band?.hasAttribute('data-session-head-band')).toBe(true);
+    expect(band?.firstElementChild?.getAttribute('data-testid')).toBe('session-head');
+    expect(frame?.lastElementChild?.hasAttribute('data-session-aside')).toBe(true);
+    expect(within(screen.getByTestId('pane-tabs')).queryByRole('navigation')).toBeNull();
+  });
+
+  it('keeps the one head over the pull request page, with no session tabs handed to it', async () => {
+    store.activeLens = { [SESSION_ID]: 'branch' };
+    store.selectedAgentId = {};
+
+    renderWithHead();
+
+    await screen.findByTestId('branch-page');
+    expect(screen.getAllByTestId('session-head')).toHaveLength(1);
+    expect(screen.queryByRole('navigation', { name: 'Session pages' })).toBeNull();
   });
 });

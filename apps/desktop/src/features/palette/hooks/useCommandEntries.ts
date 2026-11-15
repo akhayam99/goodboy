@@ -3,7 +3,6 @@ import { CHECK_STATE } from '../../../store/slices/notifications/errorRecovery';
 import { destinationEntryOf } from '../destinationEntryOf';
 import { destinationPaletteKeyOf } from '../destinationPaletteKeyOf';
 import { footDestinationEntryOf } from '../footDestinationEntryOf';
-import { contextPaletteEntryOf } from '../contextPaletteEntryOf';
 import { useMemo } from 'react';
 import { CircleArrowUp, PanelLeft, Plus, RotateCcw, Smartphone } from 'lucide-react';
 import { useCurrentInnerColumn } from '@goodboy/ui';
@@ -51,7 +50,7 @@ import { openStartRun } from '../../session/startRun/openStartRun';
 import { openPlanAnywhere } from '../../plans/openPlanAnywhere';
 import { requestAskReset } from '../../session/ask/requestAskReset';
 import { isAskStreaming } from '../../../store/slices/ask/isAskStreaming';
-import { selectOpenDrawer } from '../../../store/slices/drawer/selectOpenDrawer';
+import { selectIsAskOpen } from '../../../store/slices/ask/selectIsAskOpen';
 import { artifactEntries } from '../sources/artifactEntries';
 import { sessionEntries } from '../sources/sessionEntries';
 import { markAllReadEntries } from '../sources/markAllReadEntries';
@@ -93,7 +92,6 @@ export const useCommandEntries = (): ReadonlyArray<PaletteEntry> => {
   const openWorkspace = useAppStore((s) => s.openWorkspace);
   const navigate = useAppStore((s) => s.navigate);
   const openStudio = useAppStore((s) => s.openStudio);
-  const toggleContextDrawer = useAppStore((s) => s.toggleContextDrawer);
   const projectPairs = useAppStore((s) =>
     Object.entries(s.sessionProjectMounts)
       .flatMap(([id, list]) => {
@@ -116,10 +114,9 @@ export const useCommandEntries = (): ReadonlyArray<PaletteEntry> => {
   );
   const plans = useSessionPlans(sessionId);
   const agentKindOverride = useAppStore((s) => s.agentKindOverride);
-  const isAskOpen = useAppStore((s) => {
-    const drawer = selectOpenDrawer(s);
-    return drawer !== null && drawer.kind === 'ask' && drawer.sessionId === sessionId;
-  });
+  const isAskOpen = useAppStore(
+    (s) => sessionId !== null && selectIsAskOpen({ state: s, sessionId }),
+  );
   const isAskReplying = useAppStore((s) =>
     sessionId === null ? false : isAskStreaming({ state: s, sessionId }),
   );
@@ -223,7 +220,6 @@ export const useCommandEntries = (): ReadonlyArray<PaletteEntry> => {
       for (const destination of destinations) {
         out.push(destinationEntryOf({ sessionId, destination }));
       }
-      out.push(contextPaletteEntryOf({ sessionId, toggle: toggleContextDrawer }));
     }
 
     out.push(...workspaceEntries({ workspaces, projects, open: openWorkspace }));
@@ -517,7 +513,6 @@ export const useCommandEntries = (): ReadonlyArray<PaletteEntry> => {
     openWorkspace,
     navigate,
     openStudio,
-    toggleContextDrawer,
     runScript,
     reportError,
     markSessionsRead,

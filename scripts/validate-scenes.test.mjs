@@ -32,6 +32,7 @@ import { listGridFitFailures } from './validateScenesListGridFit.mjs';
 import { questionCardFailures } from './validateScenesQuestionCard.mjs';
 import { rowAlignFailures, rowAlignProbe } from './validateScenesRowAlign.mjs';
 import { runTailFitFailures } from './validateScenesRunTailFit.mjs';
+import { frameRowFailures, rowStartFailures } from './validateScenesRowStart.mjs';
 import { titleBandFailures } from './validateScenesTitleBand.mjs';
 import { pageColumnFailures } from './validateScenesPageColumn.mjs';
 import { frostFailures } from './validateScenesFrost.mjs';
@@ -1798,5 +1799,152 @@ describe('questionCardFailures', () => {
       ),
       ['the scene shows question cards'],
     );
+  });
+});
+
+describe('rowStartFailures', () => {
+  const column = ({ top = 41, bottom = 81, line, rows = {} } = {}) => ({
+    label: 'col',
+    first: { label: 'first', top, bottom },
+    line: line ?? [{ label: 'first', center: (top + bottom) / 2 }],
+    rows,
+  });
+  const failuresOf = (columns) =>
+    rowStartFailures({
+      scene: 'fixture',
+      width: 1440,
+      measured: { containers: [{ kind: 'split', columns }] },
+    }).map((failure) => failure.check);
+
+  it('passes two columns whose first rows share a center line', () => {
+    assert.deepEqual(failuresOf([column(), column({ top: 53, bottom: 69 })]), []);
+  });
+
+  it('fails the terminal drift of a toggle and a tab strip', () => {
+    assert.deepEqual(
+      failuresOf([column({ top: 53, bottom: 81 }), column({ top: 53, bottom: 69 })]),
+      ['the first row of each column shares a center line'],
+    );
+  });
+
+  it('fails a toolbar whose controls sit on two center lines', () => {
+    const skewed = column({
+      line: [
+        { label: 'folder', center: 61 },
+        { label: 'Dock', center: 66 },
+      ],
+    });
+    assert.deepEqual(failuresOf([skewed]), ['the controls of a toolbar row share a center line']);
+  });
+
+  it('fails a grid row with a different top in the two columns', () => {
+    assert.deepEqual(
+      failuresOf([
+        column({ rows: { 2: { top: 81, bottom: 121 } } }),
+        column({ rows: { 2: { top: 85, bottom: 121 } } }),
+      ]),
+      ['grid row 2 has the same top and bottom in every column'],
+    );
+  });
+
+  it('fails a list heading that starts off the title row edge, as the Runs groups did', () => {
+    const measuredWith = (edges) => ({
+      containers: [{ kind: 'page', columns: [column()] }],
+      edges,
+    });
+    const checksOf = (edges) =>
+      rowStartFailures({ scene: 'c08-runs', width: 1440, measured: measuredWith(edges) }).map(
+        (failure) => failure.check,
+      );
+    assert.deepEqual(checksOf([{ label: 'Running', left: 360, head: 360 }]), []);
+    assert.deepEqual(checksOf([{ label: 'Running', left: 372, head: 360 }]), [
+      'every list heading starts on the left edge of the title row above it',
+    ]);
+  });
+
+  it('fails a scene with no page', () => {
+    assert.deepEqual(
+      rowStartFailures({ scene: 'fixture', width: 1440, measured: { containers: [] } }).map(
+        (failure) => failure.check,
+      ),
+      ['a page with columns is on screen'],
+    );
+  });
+
+  describe('the frame check', () => {
+    const FRAME_CHECK =
+      'the sidebar first row and the page first row share one top and one center line';
+    const frameOf = ({ sidebar, page }) => ({
+      sidebar: { label: 'New session', ...sidebar },
+      page: { label: 'Board', ...page },
+    });
+    const checksOf = (frame) =>
+      rowStartFailures({
+        scene: 'fixture',
+        width: 1440,
+        measured: { containers: [{ kind: 'page', columns: [column()] }], frame },
+      }).map((failure) => failure.check);
+
+    it('passes a sidebar row and a page row on one line', () => {
+      assert.deepEqual(
+        checksOf(frameOf({ sidebar: { top: 47, bottom: 75 }, page: { top: 47, bottom: 75 } })),
+        [],
+      );
+    });
+
+    it('passes a shorter page row centered on the sidebar row', () => {
+      assert.deepEqual(
+        checksOf(frameOf({ sidebar: { top: 47, bottom: 75 }, page: { top: 51, bottom: 71 } })),
+        [],
+      );
+    });
+
+    it('fails the settings drift of a sidebar row 3px above the search row', () => {
+      assert.deepEqual(
+        checksOf(frameOf({ sidebar: { top: 40, bottom: 68 }, page: { top: 43, bottom: 71 } })),
+        [FRAME_CHECK],
+      );
+    });
+
+    it('fails a session title 7px under the sidebar row', () => {
+      assert.deepEqual(
+        checksOf(frameOf({ sidebar: { top: 40, bottom: 68 }, page: { top: 47, bottom: 75 } })),
+        [FRAME_CHECK],
+      );
+    });
+
+    it('fails a 2px drift at 1px and passes it at the tolerance it is given', () => {
+      assert.deepEqual(
+        frameRowFailures({
+          scene: 'fixture',
+          width: 1440,
+          frame: frameOf({ sidebar: { top: 47, bottom: 75 }, page: { top: 49, bottom: 77 } }),
+          tolerance: 2,
+        }).length,
+        0,
+      );
+      assert.deepEqual(
+        checksOf(frameOf({ sidebar: { top: 47, bottom: 75 }, page: { top: 49, bottom: 77 } })),
+        [FRAME_CHECK],
+      );
+    });
+
+    it('skips a scene without the app sidebar', () => {
+      assert.deepEqual(checksOf(null), []);
+    });
+
+    it('reports the frame drift even when no page column is measured', () => {
+      assert.deepEqual(
+        rowStartFailures({
+          scene: 'fixture',
+          width: 1440,
+          measured: {
+            containers: [],
+            frame: frameOf({ sidebar: { top: 40, bottom: 68 }, page: { top: 47, bottom: 75 } }),
+          },
+        }).map((failure) => failure.check),
+        [FRAME_CHECK, 'a page with columns is on screen'],
+      );
+    });
   });
 });

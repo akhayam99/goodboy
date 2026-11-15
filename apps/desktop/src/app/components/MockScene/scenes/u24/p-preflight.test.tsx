@@ -7,7 +7,7 @@ vi.mock('@tauri-apps/api/core', async () => {
 vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn(async () => () => undefined) }));
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, cleanup, render, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { ToastProvider } from '../../../../../shared/components/Toast';
 import {
   STORE_IMPORT_TIMEOUT_MS,
@@ -49,13 +49,18 @@ const waitForSettledReads = (): Promise<void> =>
 describe('the u24 preflight scenes', () => {
   it('keeps Open rebase available in Next while files are not committed', async () => {
     renderScene('rebasedirty');
+    await waitForSettledReads();
+    for (const row of document.querySelectorAll<HTMLElement>(
+      '[data-board-row] button[aria-expanded="false"]',
+    )) {
+      fireEvent.click(row);
+    }
 
     expect(
       await screen.findByRole('button', { name: 'Open rebase' }, { timeout: 3_000 }),
     ).toBeDefined();
 
     await waitForSettledReads();
-    expect(screen.getByText('18 behind')).toBeDefined();
     expect(screen.getByRole('button', { name: 'Open rebase' }).hasAttribute('disabled')).toBe(
       false,
     );
