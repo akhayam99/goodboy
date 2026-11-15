@@ -1,9 +1,9 @@
-import type { Agent, SessionArtifact } from '@goodboy/types';
+import type { Agent, AgentId, ArtifactId, SessionArtifact } from '@goodboy/types';
 import { reportSourceName } from './reportSourceName';
 
 export type ReportSourceLink =
-  | Readonly<{ kind: 'agent'; id: string; label: string }>
-  | Readonly<{ kind: 'artifact'; id: string; label: string }>;
+  | Readonly<{ kind: 'agent'; id: AgentId; label: string }>
+  | Readonly<{ kind: 'artifact'; id: ArtifactId; label: string }>;
 
 export type ReportSourceLinkParams = Readonly<{
   sourceText: string;

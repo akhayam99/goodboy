@@ -1,8 +1,8 @@
 import { useState } from 'react';
-import { cn, Eyebrow, ICON_SIZE, Tooltip } from '@goodboy/ui';
+import { cn, EmptyLine, Eyebrow, ICON_SIZE, Tooltip } from '@goodboy/ui';
 import type { AgentId, ArtifactId } from '@goodboy/types';
-import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
-import type { ReportSourceLink } from '../../reportSourceLinks';
+import { CONCEPT_ICONS } from '../../../../../shared/components/conceptIcons';
+import type { ReportSourceLink } from '../../../reportSourceLinks';
 
 type Props = {
   readonly reportType: string;
@@ -28,7 +28,7 @@ export const ReportProvenanceRow = ({ reportType, links, onOpenAgent, onOpenArti
     >
       <Eyebrow label={reportType} className="shrink-0 rounded-sm bg-muted px-2 py-0.5" />
       {links.length === 0 ? (
-        <span className="shrink-0">Cites no sources</span>
+        <EmptyLine className="min-h-0 shrink-0">No sources from this session</EmptyLine>
       ) : (
         <Eyebrow label="sources" className="shrink-0" />
       )}
@@ -43,9 +43,7 @@ export const ReportProvenanceRow = ({ reportType, links, onOpenAgent, onOpenArti
               aria-label={`${hint} ${link.label}`}
               data-testid="report-source-chip"
               onClick={() =>
-                link.kind === 'agent'
-                  ? onOpenAgent(link.id as AgentId)
-                  : onOpenArtifact(link.id as ArtifactId)
+                link.kind === 'agent' ? onOpenAgent(link.id) : onOpenArtifact(link.id)
               }
             >
               <Glyph size={ICON_SIZE.row} className="shrink-0" aria-hidden />
