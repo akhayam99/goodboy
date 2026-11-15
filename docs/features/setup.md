@@ -48,7 +48,7 @@ A window with no workspace open shows Home, which lists your workspaces with the
 
 ### One page per provider
 
-Each provider has its own page in **Providers** with its usage, the models shown in the picker, its permissions and your account. Providers billed per token say so instead of showing usage windows.
+Each provider has its own page in **Connections** with its usage first, then the models shown in the picker, your account and what works with it. Providers billed per token say so instead of showing usage windows.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/setup-provider-page-dark.webp">
