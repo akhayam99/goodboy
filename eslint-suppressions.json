@@ -2751,11 +2751,6 @@
       "count": 1
     }
   },
-  "apps/desktop/src/features/context/slotRouting.ts": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 1
-    }
-  },
   "apps/desktop/src/features/conversation/chatReadPath.test.ts": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 2
@@ -5368,11 +5363,6 @@
   "apps/desktop/src/features/session/components/SessionWorkspace/parts/TimelinePane/TimelineCountRow.tsx": {
     "@typescript-eslint/naming-convention": {
       "count": 1
-    }
-  },
-  "apps/desktop/src/features/session/components/SessionWorkspace/parts/TimelinePane/TimelineEntryRow.tsx": {
-    "@typescript-eslint/naming-convention": {
-      "count": 2
     }
   },
   "apps/desktop/src/features/session/components/SessionWorkspace/parts/TimelinePane/TimelineRowLabel.test.tsx": {
