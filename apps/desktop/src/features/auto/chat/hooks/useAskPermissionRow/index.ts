@@ -3,6 +3,7 @@ import type { LeadPermissionKey } from '@goodboy/core/auto';
 import type { AutoTreeId } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
 import { useIsWorkOn } from '../../../../../shared/hooks/useIsWorkOn';
+import { flowWordOf } from '../../../../../shared/lib/flowWordOf';
 import { PERMISSION_ROWS } from '../../../permissions/permissionRows';
 
 type Params = {
@@ -14,6 +15,7 @@ const UNREAD = "Couldn't read the permission";
 
 export const useAskPermissionRow = ({ treeId, rowKey }: Params): string | null => {
   const isWorkFlowOn = useIsWorkOn();
+  const word = flowWordOf({ isWork: isWorkFlowOn });
   const readPermissions = useAppStore((state) => state.readLeadPermissions);
   const [text, setText] = useState<string | null>(null);
 
@@ -28,7 +30,7 @@ export const useAskPermissionRow = ({ treeId, rowKey }: Params): string | null =
         if (!isCurrent || copy === undefined || value === undefined) {
           return;
         }
-        const source = row.source === 'lead' ? 'This Lead' : 'Workspace default';
+        const source = row.source === 'lead' ? `This ${word}` : 'Workspace default';
         setText(`${copy.title}: ${value} · ${source}`);
       } catch {
         if (isCurrent) {
@@ -41,7 +43,7 @@ export const useAskPermissionRow = ({ treeId, rowKey }: Params): string | null =
     return () => {
       isCurrent = false;
     };
-  }, [readPermissions, isWorkFlowOn, treeId, rowKey]);
+  }, [readPermissions, isWorkFlowOn, word, treeId, rowKey]);
 
   return text;
 };

@@ -25,6 +25,7 @@ const wordsOf = ({ sessionCapUsd, capUsd }: WordsParams) =>
     sessionCapUsd,
     workspaceLimitUsd: 5,
     workspaceName: 'Harborline',
+    word: 'Auto',
   });
 
 describe('where the Auto limit comes from', () => {
@@ -70,11 +71,27 @@ describe('where the Auto limit comes from', () => {
         sessionCapUsd: null,
         workspaceLimitUsd: null,
         workspaceName: 'Harborline',
+        word: 'Auto',
       }),
     ).toEqual({
       value: 'none',
       source: '',
       chain: 'This Auto none, then session none, then Harborline none. Nothing stops this Auto.',
+    });
+  });
+
+  it('names this Lead with the Work switch on', () => {
+    expect(
+      autoLimitWordsOf({
+        facts: factsOf({ capUsd: 3 }),
+        sessionCapUsd: null,
+        workspaceLimitUsd: 5,
+        workspaceName: 'Harborline',
+        word: 'Lead',
+      }),
+    ).toMatchObject({
+      source: 'this Lead',
+      chain: 'This Lead $3.00, then session none, then Harborline $5.00. $3.00 comes first.',
     });
   });
 });

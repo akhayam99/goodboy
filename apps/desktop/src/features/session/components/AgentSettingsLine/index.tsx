@@ -5,6 +5,7 @@ import { useAppStore } from '../../../../store';
 import { AutoLevelSetting } from '../../../auto/level/AutoLevelSetting';
 import { useAutoTreeLimit } from '../../../auto/useAutoTreeLimit';
 import { pausingSessionCapOf } from '../../../budget/pausingSessionCapOf';
+import { useFlowWord } from '../../../../shared/hooks/useFlowWord';
 import { AutoLimitSetting } from './AutoLimitSetting';
 import { autoLimitWordsOf } from './autoLimitWordsOf';
 import { SessionLimitSetting } from './SessionLimitSetting';
@@ -32,6 +33,7 @@ export const AgentSettingsLine = ({ session, kind, auto, asksSlotRef }: Props) =
     pausingSessionCapOf({ budget: state.sessionBudgets[sessionId] }),
   );
   const workspaceLimitUsd = useAutoTreeLimit({ workspaceId }).view.usd;
+  const word = useFlowWord();
   return (
     <div
       role="group"
@@ -57,6 +59,7 @@ export const AgentSettingsLine = ({ session, kind, auto, asksSlotRef }: Props) =
             sessionCapUsd,
             workspaceLimitUsd,
             workspaceName,
+            word,
           })}
         />
       )}

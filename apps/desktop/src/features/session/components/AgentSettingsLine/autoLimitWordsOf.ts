@@ -1,12 +1,14 @@
 import { autoTreeLimitOf, type AutoBudgetFacts } from '@goodboy/core/auto';
 import { formatUsd } from '@goodboy/ui';
 import type { SettingWords } from '../../../../shared/components/SettingChip/settingWords';
+import type { FlowWord } from '../../../../shared/lib/flowWordOf';
 
 type Params = {
   readonly facts: AutoBudgetFacts;
   readonly sessionCapUsd: number | null;
   readonly workspaceLimitUsd: number | null;
   readonly workspaceName: string;
+  readonly word: FlowWord;
 };
 
 type AmountParams = {
@@ -18,6 +20,7 @@ type SourceParams = {
   readonly sessionCapUsd: number | null;
   readonly workspaceLimitUsd: number | null;
   readonly workspaceName: string;
+  readonly word: FlowWord;
 };
 
 const CENT = 0.005;
@@ -25,10 +28,10 @@ const CENT = 0.005;
 const amountOf = ({ amount }: AmountParams): string =>
   amount === null ? 'none' : formatUsd(amount);
 
-const sourceOf = ({ cap, sessionCapUsd, workspaceLimitUsd, workspaceName }: SourceParams) => {
+const sourceOf = ({ cap, sessionCapUsd, workspaceLimitUsd, workspaceName, word }: SourceParams) => {
   const inherited = autoTreeLimitOf({ sessionCapUsd, workspaceLimitUsd });
   if (cap === null || inherited.usd === null || Math.abs(cap - inherited.usd) >= CENT) {
-    return 'this Auto';
+    return `this ${word}`;
   }
   if (inherited.source === 'session') {
     return 'from session';
@@ -41,10 +44,11 @@ export const autoLimitWordsOf = ({
   sessionCapUsd,
   workspaceLimitUsd,
   workspaceName,
+  word,
 }: Params): SettingWords => {
   const cap = facts.capUsd;
   const workspaceUsd = autoTreeLimitOf({ sessionCapUsd: null, workspaceLimitUsd }).usd;
-  const chain = `This Auto ${amountOf({ amount: cap })}, then session ${amountOf({
+  const chain = `This ${word} ${amountOf({ amount: cap })}, then session ${amountOf({
     amount: sessionCapUsd,
   })}, then ${workspaceName} ${amountOf({ amount: workspaceUsd })}.`;
   const limits = [cap, sessionCapUsd].filter(
@@ -54,11 +58,11 @@ export const autoLimitWordsOf = ({
     return {
       value: 'none',
       source: '',
-      chain: `${chain} Nothing stops this Auto.`,
+      chain: `${chain} Nothing stops this ${word}.`,
     };
   }
   const first = Math.min(...limits);
-  const source = sourceOf({ cap, sessionCapUsd, workspaceLimitUsd, workspaceName });
+  const source = sourceOf({ cap, sessionCapUsd, workspaceLimitUsd, workspaceName, word });
   return {
     value: formatUsd(first),
     source,
