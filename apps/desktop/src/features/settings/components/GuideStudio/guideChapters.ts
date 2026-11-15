@@ -97,7 +97,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Changes',
-        desc: "Open changes on a reply, or ⌘⌥F, lists each reply's files. Restore a file or a whole reply, then Undo restore if you change your mind.",
+        desc: `Open changes on a reply, or ${shortcutGlyphs('lens.files')}, lists each reply's files. Restore a file or a whole reply, then Undo restore if you change your mind.`,
       },
       {
         term: 'Saved versions',

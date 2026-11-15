@@ -3,6 +3,7 @@ import type { AutoBudgetFacts } from '@goodboy/core/auto';
 import type { AutoTreeId, SessionId } from '@goodboy/types';
 import { NAMES } from '../../../../shared/utils/names';
 import { useFlowWord } from '../../../../shared/hooks/useFlowWord';
+import type { FlowWord } from '../../../../shared/lib/flowWordOf';
 import { undoable } from '../../../../shared/utils/undoable';
 import { useAppStore } from '../../../../store';
 import { autoLimitOpenEvent } from '../../../auto/chat/autoLimitOpenEvent';
@@ -24,6 +25,13 @@ type Props = {
 type ApplyParams = {
   readonly usd: number | null;
 };
+
+type HelpParams = {
+  readonly word: FlowWord;
+};
+
+const helpOf = ({ word }: HelpParams): string =>
+  `What this ${word} and the agents it starts may spend. The smallest limit pauses it. Applies when you press Enter or close.`;
 
 export const AutoLimitSetting = ({ sessionId, treeId, facts, sessionCapUsd, words }: Props) => {
   const word = useFlowWord();
@@ -80,7 +88,7 @@ export const AutoLimitSetting = ({ sessionId, treeId, facts, sessionCapUsd, word
       dropdown={dropdown}
       label={NAMES.spendCap}
       words={words}
-      help={`What this ${word} and the agents it starts may spend. The smallest limit pauses it. Applies when you press Enter or close.`}
+      help={helpOf({ word })}
       error={draft.error}
       onOpenSource={openRunDefaults}
     >
