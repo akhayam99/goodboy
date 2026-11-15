@@ -225,6 +225,11 @@ const treeFileOf = ({ drawer }: FilePanelParams): string | null => {
   return typeof path === 'string' && path !== '' ? path : null;
 };
 
+const treeMountOf = ({ drawer }: FilePanelParams): string | null => {
+  const sessionDir: unknown = Reflect.get(drawer.payload, 'sessionDir');
+  return typeof sessionDir === 'string' && sessionDir !== '' ? sessionDir : null;
+};
+
 const foldOfPanel = ({ drawer }: DrawerParams): PanelFold | null => {
   if (drawer === null || drawer.sessionId === null) {
     return null;
@@ -254,7 +259,11 @@ const foldOfPanel = ({ drawer }: DrawerParams): PanelFold | null => {
     place: sessionPlace({
       sessionId,
       lens: 'files',
-      target: { kind: 'diff', mountPath: null, focus: { kind: 'branch', path } },
+      target: {
+        kind: 'diff',
+        mountPath: treeMountOf({ drawer }),
+        focus: { kind: 'branch', path },
+      },
     }),
     rows: ALL_FILES,
   };

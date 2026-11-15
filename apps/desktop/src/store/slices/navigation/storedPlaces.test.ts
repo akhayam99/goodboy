@@ -125,7 +125,11 @@ const STORED_PLACES: ReadonlyArray<Row> = [
     }),
     {
       lens: 'files',
-      target: { kind: 'diff', mountPath: null, focus: { kind: 'branch', path: 'src/ledger.ts' } },
+      target: {
+        kind: 'diff',
+        mountPath: WORKTREE,
+        focus: { kind: 'branch', path: 'src/ledger.ts' },
+      },
       drawer: null,
       rows: { [PLACE_ROWS.changesMode]: 'all' },
     },
