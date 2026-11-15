@@ -16,9 +16,42 @@ const BANNED_PHRASES: ReadonlyArray<string> = [
   'Who reads this',
   'Fix it anyway',
   'Copy last reply',
+  'Fold in',
+  'Folds in',
+  'Folds into',
+  'Fold into',
+  'fold it in',
+  'Nothing below to combine with',
+  'Bring it back',
+  'Bring this run back',
+  'Brought back',
+  'Put back',
+  'Putting back',
+  'did not hear it',
+  'Telling Auto',
+  'Put on a branch',
+  'Put it back on',
+  'Done, forget it',
+  'Move aside and restart',
+  'Gone, skipped',
+  'Pick up an issue',
+  'Got it',
+  'Talk it through',
+  'Keep my reset',
+  'Move my work',
+  'Discard my comments',
+  'Learn from my replies',
+  'give it a moment',
+  'View as sent to',
+  'Go to the board',
+  'See all shortcuts',
+  'olded crumbs',
+  'Fold tab list',
+  'Jump to latest',
+  'Stop leftovers',
 ];
 
-const BANNED_LABELS: ReadonlyArray<string> = ['Keep', 'Separate', 'Stop keeping'];
+const BANNED_LABELS: ReadonlyArray<string> = ['Keep', 'Separate', 'Stop keeping', 'Remove'];
 
 type WalkParams = {
   readonly dir: string;

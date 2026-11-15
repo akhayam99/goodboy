@@ -278,8 +278,8 @@ describe('the next step card', () => {
     fireEvent.click(screen.getByRole('option', { name: /Spawn a tester first/ }));
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
 
-    await screen.findByText('Declined. Auto was not told.');
-    fireEvent.click(screen.getByRole('button', { name: 'Tell Auto' }));
+    await screen.findByText("Declined. Couldn't send it to Auto.");
+    fireEvent.click(screen.getByRole('button', { name: 'Resend answer' }));
 
     await waitFor(() => expect(sendTurn).toHaveBeenCalledTimes(2));
     expect(port).toHaveBeenCalledOnce();
@@ -288,7 +288,9 @@ describe('the next step card', () => {
       agentId: FIXTURE_ROOT,
       content: 'Next step: tester',
     });
-    await waitFor(() => expect(screen.queryByText('Declined. Auto was not told.')).toBeNull());
+    await waitFor(() =>
+      expect(screen.queryByText("Declined. Couldn't send it to Auto.")).toBeNull(),
+    );
   });
 
   it('declines for Not now and tells nothing', async () => {

@@ -266,7 +266,7 @@ export const WORKFLOW_RUN_KIND: ObjectKindDefinition<WorkflowRunActionTarget, Wo
     },
     {
       id: 'workflowRun.diff',
-      label: 'View diff',
+      label: 'Open changes',
       icon: CONCEPT_ICONS.diff,
       group: 'open',
       when: ({ facts }) => facts.hasChanges,

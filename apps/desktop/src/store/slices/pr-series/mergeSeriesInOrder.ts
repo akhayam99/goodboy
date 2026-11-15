@@ -57,7 +57,7 @@ export const mergeSeriesInOrder =
       }
       const port = portFor({ get, sessionId, mountId, prNumber: number });
       if (port === null) {
-        return stopped({ merged, part, reason: 'Goodboy cannot reach its host from here' });
+        return stopped({ merged, part, reason: "Goodboy can't reach its host from here" });
       }
       try {
         const view = await port.read();

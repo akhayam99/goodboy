@@ -240,10 +240,10 @@ describe('ScriptRunDrawer', () => {
       fireEvent.scroll(viewport);
     });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Jump to latest' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Scroll to latest' }));
 
     expect(viewport.scrollTop).toBe(1_600);
-    expect(screen.queryByRole('button', { name: 'Jump to latest' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Scroll to latest' })).toBeNull();
   });
 
   it('hands a failed run to the agent as an attachment titled with the script, exit and worktree', () => {

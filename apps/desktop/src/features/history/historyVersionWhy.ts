@@ -11,7 +11,7 @@ export const historyVersionWhy = ({ facts }: Params): string => {
     return 'Before a rebase';
   }
   if (facts.nextCommitCount < facts.commitCount) {
-    return 'Before a fold or drop';
+    return 'Before a fixup, squash or drop';
   }
   if (facts.nextCommitCount > facts.commitCount) {
     return 'Before a split';

@@ -35,7 +35,7 @@ export const MoveCard = ({ project, changedCount, isTurnRunning }: Props) => {
   };
 
   const hasWork = changedCount !== null && changedCount > 0;
-  const actionLabel = hasWork ? 'Move my work' : 'Finish';
+  const actionLabel = hasWork ? 'Move work to session' : 'Finish';
 
   return (
     <Notice

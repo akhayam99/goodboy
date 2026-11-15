@@ -1,14 +1,14 @@
 # Commits and history
 
-The Commits section of the Branch page lets you clean up a branch before it goes to review. Fold, move, reword and drop commits live, with Undo and Redo and a backup before every edit.
+The Commits section of the Branch page lets you clean up a branch before it goes to review. Fixup, squash, move, reword and drop commits live, with Undo and Redo and a backup before every edit.
 
 ### Shape the history
 
-Clean up a branch by hand in the **Commits** section. Drag a commit to move it, drop it onto another to fold it in, or rename or remove it; each edit updates the local branch immediately. Commits not yet on origin are marked **Not pushed**.
+Clean up a branch by hand in the **Commits** section. Drag a commit to move it, drop it onto another to fixup into it, or reword or drop it; each edit updates the local branch immediately. Commits not yet on origin are marked **Not pushed**.
 
 Commits use one line, grouped by Today, Yesterday or date. Your author label is hidden when it matches the repository's configured git name; if that name cannot be read, all authors show. An open editor or a history mark gives the row more room.
 
-A mark on a planned row (combines, folds into, renamed) opens a fact card on rest. The card shows the commits it takes in or the new name. A step that may conflict in two or more files lists them.
+A mark on a planned row (squash into, fixup into, reworded) opens a fact card on rest. The card shows the commits it takes in or the new message. A step that may conflict in two or more files lists them.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/history-rewrite-dark.webp">

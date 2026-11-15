@@ -266,12 +266,12 @@ describe('palette verbs follow the commit state, in the order of its ⋯ menu', 
     [
       'commit with one below',
       COMMIT,
-      ['Rename', 'Fixup down', 'Squash down', 'Move up', 'Move down', 'Copy SHA', 'Copy subject'],
+      ['Reword', 'Fixup down', 'Squash down', 'Move up', 'Move down', 'Copy SHA', 'Copy subject'],
     ],
     [
       'oldest commit that takes others in',
       { ...COMMIT, canFoldDown: false, canRemove: false },
-      ['Rename', 'Move up', 'Move down', 'Copy SHA', 'Copy subject'],
+      ['Reword', 'Move up', 'Move down', 'Copy SHA', 'Copy subject'],
     ],
     [
       'commit folded into another',
@@ -282,7 +282,7 @@ describe('palette verbs follow the commit state, in the order of its ⋯ menu', 
       'removed commit',
       { ...COMMIT, isRemoved: true },
       [
-        'Rename',
+        'Reword',
         'Fixup down',
         'Squash down',
         'Move up',
@@ -299,11 +299,9 @@ describe('palette verbs follow the commit state, in the order of its ⋯ menu', 
   it('shows a blocked verb with its reason once it is searched', () => {
     const facts = { ...COMMIT, canFoldDown: false, canRemove: false };
 
-    expect(commitView({ facts, query: 'squash' })).toEqual([
-      'Squash down (Nothing below to combine with)',
-    ]);
-    expect(commitView({ facts, query: 'remove' })).toEqual([
-      'Remove (Separate what it takes in first)',
+    expect(commitView({ facts, query: 'squash' })).toEqual(['Squash down (No commit below)']);
+    expect(commitView({ facts, query: 'drop' })).toEqual([
+      'Drop commit (Separate the commits squashed into it first)',
     ]);
   });
 });

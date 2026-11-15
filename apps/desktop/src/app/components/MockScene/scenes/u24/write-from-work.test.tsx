@@ -67,7 +67,7 @@ describe('write from work scenes', () => {
   it('explains a title-only item', async () => {
     mount({ id: 'goaltitlesonly' });
     expect(
-      await screen.findByText('Based on the titles of HL-211. Its text could not be read.'),
+      await screen.findByText("Based on the titles of HL-211. Couldn't read its text."),
     ).toBeDefined();
   });
 });

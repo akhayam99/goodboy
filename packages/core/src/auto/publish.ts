@@ -136,14 +136,14 @@ export const publishTextOf = ({ publish }: PublishTextParams): string => {
         return `Pushed ${branch} at ${short}`;
       }
       return publish.backupRef === null
-        ? `Force pushed ${branch} at ${short}, it was not online before`
-        : `Force pushed ${branch} at ${short}, the earlier online version is kept as a backup`;
+        ? `Force pushed ${branch} at ${short}, it wasn't on origin before`
+        : `Force pushed ${branch} at ${short}, the earlier origin version is kept as a backup`;
     case 'declined':
       return `Not pushed: you declined the push of ${branch}`;
     case 'put_back':
       return publish.message === null
-        ? `Put back: ${branch} is online as it was when the agent started`
-        : `Put back: ${branch} is online as it was when the agent started. ${publish.message}`;
+        ? `Force push undone: origin has ${branch} as it was before the agent started`
+        : `Force push undone: origin has ${branch} as it was before the agent started. ${publish.message}`;
     case 'failed':
       return `Not pushed: ${publish.message ?? 'the push did not finish'}`;
     default: {

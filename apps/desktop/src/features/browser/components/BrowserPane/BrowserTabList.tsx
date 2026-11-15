@@ -135,7 +135,7 @@ export const BrowserTabList = ({ model, isRail, canFold, onFold }: Props) => {
         <div className={cn('flex', isRail ? 'justify-center' : 'justify-end')}>
           <IconButton
             icon={isRail ? ChevronsRight : ChevronsLeft}
-            label={isRail ? 'Expand tab list' : 'Fold tab list'}
+            label={isRail ? 'Expand tab list' : 'Collapse tab list'}
             variant="ghost"
             size="xs"
             tooltipSide="right"

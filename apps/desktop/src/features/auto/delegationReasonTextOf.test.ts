@@ -11,7 +11,7 @@ describe('delegationReasonTextOf', () => {
       'It ended without writing its report.',
     );
     expect(delegationReasonTextOf({ reason: 'artifact_persistence_failed' })).toBe(
-      'Its result could not be saved.',
+      "Couldn't save its result.",
     );
   });
 

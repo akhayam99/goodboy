@@ -147,7 +147,7 @@ const chipsOf = ({
     if (result.publish.canPutBack && onPutBackPublish !== undefined) {
       chips.push(
         actionChip({
-          label: 'Put back',
+          label: 'Undo force push',
           isDisabled: isActingPublish,
           onClick: onPutBackPublish,
         }),

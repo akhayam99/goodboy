@@ -27,7 +27,7 @@ export const ArtifactDeleteScene = () => {
               role="danger"
               icon={<Trash2 size={ICON_SIZE.row} aria-hidden />}
               title={`Delete "${title}" for good?`}
-              description="It is removed from this device, with its run history (3 runs). This cannot be undone."
+              description="It is removed from this device, with its run history (3 runs). This can't be undone."
               confirmLabel="Delete permanently"
               returnFocusTo={{ rowSelector: '[data-artifact-row]' }}
               onConfirm={async () => {

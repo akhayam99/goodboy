@@ -85,7 +85,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
     id: 'plain-folders',
     group: 'daily',
     title: 'Folders without git',
-    lead: 'Agents edit a folder without git in place, and every change can be put back.',
+    lead: 'Agents edit a folder without git in place, and every change can be undone.',
     points: [
       {
         term: 'Code or Documents',
@@ -222,7 +222,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Done and archived',
-        desc: 'Lanes of their own, after the others. Restore brings an archived session back. Delete removes the transcript and files for good; its cost still counts in Impact.',
+        desc: 'Lanes of their own, after the others. Restore reopens an archived session. Delete removes the transcript and files for good; its cost still counts in Impact.',
       },
       {
         term: 'Archive',
@@ -241,7 +241,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
         desc: "The Now chip, providers, today's spend, theme button and bell sit on the right; spend opens Impact on Spend.",
       },
     ],
-    links: [{ label: 'Go to the board', target: { kind: 'board' } }],
+    links: [{ label: 'Open board', target: { kind: 'board' } }],
     extra: 'stages',
   },
   {
@@ -272,7 +272,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Agents panel',
-        desc: `Agents on the right rail shows the open run or Auto as a tree, else what is live, and ${shortcutGlyphs('session.spawned')} opens Runs on what is running. An agent opens beside it; j and k hop.`,
+        desc: `Agents on the right rail shows the open run or Auto as a tree, else what is live, and ${shortcutGlyphs('session.spawned')} opens Runs on what is running. An agent opens beside it; j and k move between agents.`,
       },
       {
         term: 'Right rail',
@@ -301,7 +301,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Auto',
-        desc: 'The agent behind Start a run. It answers what it can, hands the rest to child agents of the narrowest role that fits and goes on under a limit, listed under Runs. A returned child reads Idle.',
+        desc: 'The agent behind Start a run. It answers what it can, delegates the rest to child agents of the narrowest role that fits and goes on under a limit, listed under Runs. A returned child reads Idle.',
       },
       {
         term: 'Let Auto take it from here',
@@ -313,7 +313,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Next',
-        desc: `Up to three moves that unblock the session, such as Start, Analyze or Push; what follows sits on that run's Running row. Not now hides one, and ${shortcutGlyphs('app.undo')} brings it back.`,
+        desc: `Up to three moves that unblock the session, such as Start, Analyze or Push; what follows sits on that run's Running row. Not now hides one, and ${shortcutGlyphs('app.undo')} restores it.`,
       },
     ],
     links: [],
@@ -326,7 +326,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
     points: [
       {
         term: 'Built in and your own',
-        desc: 'Refactor, Plan and ship and Fix a bug come with the app, or build your own. A step follows its role or pins a model, and Restore built-in workflows brings one back.',
+        desc: 'Refactor, Plan and ship and Fix a bug come with the app, or build your own. A step follows its role or pins a model, and Restore built-in workflows restores one.',
       },
       {
         term: 'Run page',
@@ -350,7 +350,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Open questions',
-        desc: 'Each question is one card: pick an answer by its number and press Enter, or write your own. Send as message frees a blocked step, and Let an agent decide hands the question over.',
+        desc: 'Each question is one card: pick an answer by its number and press Enter, or write your own. Send as message frees a blocked step, and Let an agent decide passes the question to an agent.',
       },
     ],
     links: [{ label: 'Open Workflows', target: { kind: 'studio', studio: { kind: 'workflow' } } }],
@@ -400,7 +400,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: NAMES.tasks,
-        desc: 'Issues, pull requests, threads and errors in one list, opening on For me: assigned to you, starred or linked to your sessions. Filters narrows by source, type and folder, and a row opens in the pane on the right.',
+        desc: 'Issues, pull requests, threads and errors in one list, opening on For you: assigned to you, starred or linked to your sessions. Filters narrows by source, type and folder, and a row opens in the pane on the right.',
       },
       {
         term: 'Find any issue',
@@ -479,11 +479,11 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
     id: 'commits',
     group: 'daily',
     title: 'Commits',
-    lead: 'The Commits section of the Branch page shapes a branch before review: move, fold, reword or drop commits, each with Undo.',
+    lead: 'The Commits section of the Branch page shapes a branch before review: move, fixup, squash, reword or drop commits, each with Undo.',
     points: [
       {
         term: 'Shape the history',
-        desc: 'Drag a commit to move it, or onto another to fold it in, and reword, squash or drop it from its row. Each edit applies at once, and commits not yet online read Not pushed.',
+        desc: 'Drag a commit to move it, or onto another to fixup into it, and reword, squash or drop it from its row. Each edit applies at once, and commits not yet online read Not pushed.',
       },
       {
         term: 'Undo and versions',
@@ -503,7 +503,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Rebase all',
-        desc: "With two or more branches behind, Rebase all on the Projects card rebases the clean ones with git and hands conflicts to one Auto run. Rows show Rebasing, Queued or Conflict; the header has Abort. Next's rebase picker adds Also tidy commits with Auto.",
+        desc: "With two or more branches behind, Rebase all on the Projects card rebases the clean ones with git and sends conflicts to one Auto run. Rows show Rebasing, Queued or Conflict; the header has Abort. Next's rebase picker adds Also tidy commits with Auto.",
       },
       {
         term: 'Force push',
@@ -528,7 +528,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
     points: [
       {
         term: 'One list',
-        desc: 'All, Plans, Reports and Wireframes filter one list grouped by branch, waiting work first. Each row shows its state and one action, such as Run plan or Approve. Used rows fold into a count.',
+        desc: 'All, Plans, Reports and Wireframes filter one list grouped by branch, waiting work first. Each row shows its state and one action, such as Run plan or Approve. Used rows collapse into a count.',
       },
       {
         term: 'Plans',
@@ -614,12 +614,12 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
         desc: 'Asks first and names who loses the port. A process that does not exit offers Force stop; a refused stop keeps the row with its reason.',
       },
       {
-        term: 'Leftovers',
-        desc: 'Processes an earlier run left behind, with their age. Stop leftovers clears them.',
+        term: 'Leftover processes',
+        desc: 'Processes an earlier run left behind, with their age. Stop leftover processes ends them.',
       },
       {
         term: 'Hidden ports',
-        desc: 'Hide takes a row out of the list, and Show hidden ports brings them back.',
+        desc: 'Hide takes a row out of the list, and Show hidden ports shows them again.',
       },
     ],
     links: [
@@ -650,7 +650,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Security findings',
-        desc: 'The last section of Storage. Saving a script checks it for keys and tokens on your Mac; Not a secret dismisses a finding, and Flag again brings it back.',
+        desc: 'The last section of Storage. Saving a script checks it for keys and tokens on your Mac; Not a secret dismisses a finding, and Flag again restores it.',
       },
     ],
     links: [
@@ -678,7 +678,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
     points: [
       {
         term: 'Settings rail',
-        desc: `Settings, or ${shortcutGlyphs('settings.open')}, opens as a page beside the sidebar, on the page you used last. Its rail groups App, This workspace, ${NAMES.providers} and Integrations, and the last two fold. Search settings finds any setting, and a dot marks a page that needs you.`,
+        desc: `Settings, or ${shortcutGlyphs('settings.open')}, opens as a page beside the sidebar, on the page you used last. Its rail groups App, This workspace, ${NAMES.providers} and Integrations, and the last two collapse. Search settings finds any setting, and a dot marks a page that needs you.`,
       },
       {
         term: 'Copy and restore',
@@ -765,7 +765,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Sidebar, rail and panes',
-        desc: `${shortcutGlyphs('column.toggle')} folds the sidebar, ${shortcutGlyphs('innerColumn.toggle')} the page column. ${shortcutGlyphs('nav.back')} steps the rail out or goes Back, and ${shortcutGlyphs('nav.up')} goes up. In a session, ${shortcutGlyphs('lens.explore')} opens Changes on All files, ${shortcutGlyphs('lens.context')} Context, ${shortcutGlyphs('ask.open')} Ask, ${shortcutGlyphs('session.spawned')} Runs on what is running and ${shortcutGlyphs('lens.scripts')} Scripts. ${shortcutGlyphs('browser.address')} focuses the Browser address, ${shortcutGlyphs('browser.find')} finds in its page, ${shortcutGlyphs('slot.close')} closes the drawer.`,
+        desc: `${shortcutGlyphs('column.toggle')} collapses the sidebar, ${shortcutGlyphs('innerColumn.toggle')} the page column. ${shortcutGlyphs('nav.back')} steps the rail out or goes Back, and ${shortcutGlyphs('nav.up')} goes up. In a session, ${shortcutGlyphs('lens.explore')} opens Changes on All files, ${shortcutGlyphs('lens.context')} Context, ${shortcutGlyphs('ask.open')} Ask, ${shortcutGlyphs('session.spawned')} Runs on what is running and ${shortcutGlyphs('lens.scripts')} Scripts. ${shortcutGlyphs('browser.address')} focuses the Browser address, ${shortcutGlyphs('browser.find')} finds in its page, ${shortcutGlyphs('slot.close')} closes the drawer.`,
       },
       {
         term: 'Terminal',
@@ -783,7 +783,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
     links: [
       { label: 'Open Search or run', target: { kind: 'palette' } },
       {
-        label: 'See all shortcuts',
+        label: 'Show all shortcuts',
         target: {
           kind: 'studio',
           studio: { kind: 'settings', focus: { scope: 'app', section: 'shortcuts' } },

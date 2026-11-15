@@ -873,7 +873,7 @@ describe('InboxStudio at scale', () => {
 
     renderStudio();
 
-    expect(screen.getByRole('tab', { name: 'For me' }).getAttribute('aria-selected')).toBe('true');
+    expect(screen.getByRole('tab', { name: 'For you' }).getAttribute('aria-selected')).toBe('true');
     expect(screen.getByText('RangeError boom')).toBeDefined();
     expect(screen.getByText('Ship the inbox')).toBeDefined();
     expect(screen.queryByText('TypeError boom')).toBeNull();

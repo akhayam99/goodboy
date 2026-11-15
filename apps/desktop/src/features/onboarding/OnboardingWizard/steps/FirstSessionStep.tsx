@@ -4,6 +4,7 @@ import type { Project, ProjectId, WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { selectSessionDraft } from '../../../../store/slices/sessionDraft/selectSessionDraft';
 import { shortcutGlyphs } from '../../../../shared/keyboard/registry';
+import { NAMES } from '../../../../shared/utils/names';
 import type { IssueCandidate } from '../../../integrations/fetchIssueCandidates';
 import { StartRun } from '../../../session/startRun/StartRun';
 import { useFirstIssues } from '../useFirstIssues';
@@ -61,7 +62,7 @@ const STARTERS: ReadonlyArray<Starter> = [
 
 const TABS = [
   { value: 'ask', label: 'Ask about the code' },
-  { value: 'task', label: 'Pick up an issue' },
+  { value: 'task', label: NAMES.pickAnIssue },
 ] as const satisfies ReadonlyArray<{ readonly value: FirstSessionTab; readonly label: string }>;
 
 export const FirstSessionStep = ({

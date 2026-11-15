@@ -311,7 +311,7 @@ describe('merge in order', () => {
       kind: 'stopped',
       merged: 0,
       partLabel: '1',
-      reason: 'Goodboy cannot reach its host from here',
+      reason: "Goodboy can't reach its host from here",
     });
   });
 

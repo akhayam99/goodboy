@@ -276,7 +276,7 @@ describe('session menu in every state', () => {
       ?.resolve()
       .find((candidate) => candidate.id === 'session.delete');
     expect(action?.confirm?.description).toBe(
-      'Removed: transcript, file versions, images. Kept: cost. This cannot be undone.',
+      "Removed: transcript, file versions, images. Kept: cost. This can't be undone.",
     );
   });
 });
@@ -1422,13 +1422,13 @@ const GIT_STATES: ReadonlyArray<readonly [string, ObjectTarget, ReadonlyArray<st
     commitTarget({ canFoldDown: false, canRemove: false }),
     [
       'commit.rename',
-      'commit.foldDown (Nothing below to combine with)',
-      'commit.squashDown (Nothing below to combine with)',
+      'commit.foldDown (No commit below)',
+      'commit.squashDown (No commit below)',
       'commit.moveUp',
       'commit.moveDown',
       'commit.copySha',
       'commit.copySubject',
-      'commit.remove (Separate what it takes in first)',
+      'commit.remove (Separate the commits squashed into it first)',
     ],
   ],
   [

@@ -369,7 +369,7 @@ describe('HandoffBlock', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Expand what the agent received' }));
     fireEvent.click(screen.getByRole('button', { name: 'All' }));
-    fireEvent.click(screen.getByRole('button', { name: 'View as sent to Claude' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Show text as sent to Claude' }));
 
     screen.getByText(/System prompt/);
     screen.getByText(/Message · /);
@@ -385,7 +385,7 @@ describe('HandoffBlock', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Expand what the agent received' }));
     fireEvent.click(screen.getByRole('button', { name: 'All' }));
-    fireEvent.click(screen.getByRole('button', { name: 'View as sent to Codex' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Show text as sent to Codex' }));
 
     screen.getByText(
       'Codex has no separate system prompt, so scope, profile and role come first in the message.',

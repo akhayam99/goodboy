@@ -48,11 +48,11 @@ describe('the database recovery scene', () => {
     expect(MOCK_SCENES[SCENE]).toBe(U23P24_DATABASE_RECOVERY_SCENES[SCENE]);
   });
 
-  it('shows Retry and Move aside and restart, then the confirm', () => {
+  it('shows Retry and Start with a new database, then the confirm', () => {
     mount();
 
     screen.getByRole('button', { name: 'Retry' });
-    fireEvent.click(screen.getByRole('button', { name: 'Move aside and restart' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Start with a new database' }));
     screen.getByRole('group', { name: 'Move the database aside?' });
   });
 

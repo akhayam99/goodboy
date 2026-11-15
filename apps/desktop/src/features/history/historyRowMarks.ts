@@ -24,11 +24,11 @@ export type HistoryRowMark = {
 
 export const HISTORY_ACTION_LABEL: Readonly<Record<HistoryAction, string>> = {
   pick: 'Keep',
-  fixup: 'Fold in, keep its title',
-  squash: 'Combine, keep both messages',
+  fixup: 'Fixup, drop its message',
+  squash: 'Squash, keep both messages',
   move: 'Move',
-  reword: 'Rename',
-  drop: 'Remove',
+  reword: 'Reword',
+  drop: 'Drop',
   rebase: `${NAMES.rebaseOn} the base branch`,
 };
 

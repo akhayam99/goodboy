@@ -1,6 +1,6 @@
 export const DELETE_REMOVED_LINE = 'Removed: transcript, file versions, images.';
 
-export const DELETE_CANNOT_UNDO = 'This cannot be undone.';
+export const DELETE_CANNOT_UNDO = "This can't be undone.";
 
 type KeptLineParams = {
   readonly isBranchless: boolean;

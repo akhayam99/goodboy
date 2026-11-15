@@ -40,7 +40,7 @@ const START: MountSnapshot = { head: 'base000', entries: [], isPartial: false };
 const END: MountSnapshot = { head: 'abc123', entries: [], isPartial: false };
 const STALE = 'Origin changed. Check again before force pushing.';
 const PUSHED_LINE =
-  'Force pushed ak/ledger-export at abc123, the earlier online version is kept as a backup';
+  'Force pushed ak/ledger-export at abc123, the earlier origin version is kept as a backup';
 
 let useAppStore: StoryStore;
 let world: RuntimeWorld;
@@ -235,7 +235,9 @@ describe('the force push row, read back through the store', () => {
     await findInRow({ text: PUSHED_LINE });
     await waitFor(() => expect(screen.queryByRole('button', { name: 'Pushing' })).toBeNull());
     await waitFor(() =>
-      expect(screen.getByRole('button', { name: 'Put back' }).getAttribute('aria-busy')).toBeNull(),
+      expect(
+        screen.getByRole('button', { name: 'Undo force push' }).getAttribute('aria-busy'),
+      ).toBeNull(),
     );
     expect(world.state.ports.pushes).toHaveLength(1);
     expect(reportError).not.toHaveBeenCalled();
@@ -247,10 +249,10 @@ describe('the force push row, read back through the store', () => {
     await findInRow({ text: PUSHED_LINE });
     world.state.ports.setSnapshots(LEDGER_PATH, [END]);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Put back' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Undo force push' }));
 
     await findInRow({
-      text: 'Put back: ak/ledger-export is online as it was when the agent started',
+      text: 'Force push undone: origin has ak/ledger-export as it was before the agent started',
     });
     expect(world.state.ports.pushes.at(-1)).toMatchObject({ sha: 'remote111', isForce: true });
   });

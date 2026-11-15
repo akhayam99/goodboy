@@ -17,7 +17,7 @@ See how much of your Claude and Codex plans is left before a run stops. Each pro
 
 ### Use reset
 
-Spend a free Codex reset at the right moment. When Codex offers one, its page shows the expiry and **Use reset**, and Goodboy asks you to confirm. If spending it now would waste most of the week, **Keep my reset** is the default.
+Spend a free Codex reset at the right moment. When Codex offers one, its page shows the expiry and **Use reset**, and Goodboy asks you to confirm. If spending it now would waste most of the week, **Save reset for later** is the default.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/providers-codex-reset-dark.webp">

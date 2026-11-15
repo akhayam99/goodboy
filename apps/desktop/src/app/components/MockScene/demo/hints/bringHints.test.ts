@@ -82,7 +82,7 @@ describe('the setup copy', () => {
 
   it('ends the chapter on the issue it unlocked and leaves the bridge to the done card', () => {
     expect(BRING_HINTS.at(-1)?.result).toBe(
-      'Pick up an issue now lists HBL-412, the duplicate-credit bug.',
+      'Pick an issue now lists HBL-412, the duplicate-credit bug.',
     );
   });
 });

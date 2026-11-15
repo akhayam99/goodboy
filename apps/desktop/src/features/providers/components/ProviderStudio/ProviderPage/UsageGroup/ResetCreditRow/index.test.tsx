@@ -84,7 +84,7 @@ describe('ResetCreditRow', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Use reset' }));
     const stop = screen.getByRole('group', { name: 'You still have 82% of this week left' });
-    const keep = within(stop).getByRole('button', { name: 'Keep my reset' });
+    const keep = within(stop).getByRole('button', { name: 'Save reset for later' });
     const anyway = within(stop).getByRole('button', { name: 'Use reset anyway' });
     expect(document.activeElement).toBe(keep);
     expect(anyway.hasAttribute('disabled')).toBe(true);

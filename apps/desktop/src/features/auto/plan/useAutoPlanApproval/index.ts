@@ -174,7 +174,12 @@ export const useAutoPlanApproval = ({
       setToldFailedRevision(null);
       closeDrawer();
     } catch (error) {
-      await reportError({ recovery: CHECK_STATE, title: "Couldn't tell Auto", error, sessionId });
+      await reportError({
+        recovery: CHECK_STATE,
+        title: "Couldn't send the approval to Auto",
+        error,
+        sessionId,
+      });
     } finally {
       setIsBusy(false);
     }

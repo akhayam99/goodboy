@@ -69,7 +69,7 @@ describe('DeleteSessionConfirm', () => {
     expect(container.contains(dialog)).toBe(false);
     within(dialog).getByText('Removed: transcript, file versions, images.');
     within(dialog).getByText('Kept: branches, cost, uncommitted worktrees.');
-    within(dialog).getByText('This cannot be undone.');
+    within(dialog).getByText("This can't be undone.");
   });
 
   it('keeps only cost for a branchless session', () => {

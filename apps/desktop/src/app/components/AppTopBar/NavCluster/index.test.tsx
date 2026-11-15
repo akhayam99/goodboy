@@ -110,7 +110,7 @@ describe('NavCluster', () => {
     render(<NavCluster />);
     const live = screen.getByRole('button', { name: 'Back: Comments' });
     expect(tooltipTextOf({ element: live })).toContain('Retry failed webhook deliveries');
-    expect(tooltipTextOf({ element: live })).toContain('Hold for history');
+    expect(tooltipTextOf({ element: live })).toContain('Hold to show history');
     fireEvent.click(live);
 
     expect(indexNow()).toBe(0);

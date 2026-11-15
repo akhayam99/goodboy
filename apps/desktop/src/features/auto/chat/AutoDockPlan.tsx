@@ -67,7 +67,7 @@ export const AutoDockPlan = ({
           aria-live="polite"
           className={tintClasses(AUTO_STATE_TONE.waitingOnYou).text}
         >
-          {`Plan v${model.version} approved, ${flow} did not hear it`}
+          {`Plan v${model.version} approved. Couldn't send it to ${flow}.`}
         </span>
         <span className="flex-1" />
         {openPlan}
@@ -76,10 +76,10 @@ export const AutoDockPlan = ({
           size="sm"
           disabled={model.isBusy}
           isBusy={model.isBusy}
-          busyLabel={`Telling ${flow}`}
+          busyLabel="Sending"
           onClick={() => void model.tellAuto()}
         >
-          {`Tell ${flow}`}
+          Resend approval
         </Button>
       </div>
     );

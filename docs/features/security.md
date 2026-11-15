@@ -43,7 +43,7 @@ Update without worrying about your data. Before an update changes it, Goodboy ma
 
 Open an older Goodboy on newer data without damage. It stops before touching anything and offers **Restore backup** or **Quit**, and your current data stays in a copy next to the database.
 
-When the database cannot be opened at all, the start screen offers **Retry** first, because a locked file is often temporary. **Move aside and restart** asks once, moves the file and its journals next to it as `data.db.unopened-<time>`, and starts with an empty database. Nothing is deleted.
+When the database cannot be opened at all, the start screen offers **Retry** first, because a locked file is often temporary. **Start with a new database** asks once, moves the file and its journals next to it as `data.db.unopened-<time>`, and starts with an empty database. Nothing is deleted.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/security-newer-data-dark.webp">

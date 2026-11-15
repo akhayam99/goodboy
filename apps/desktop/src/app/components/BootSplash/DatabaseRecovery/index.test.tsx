@@ -49,18 +49,18 @@ const renderScreen = ({
 };
 
 const openConfirm = () => {
-  fireEvent.click(screen.getByRole('button', { name: 'Move aside and restart' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Start with a new database' }));
   return screen.getByRole('group', { name: 'Move the database aside?' });
 };
 
 describe('the screen for a database that did not open', () => {
-  it('offers Retry first, then Move aside and restart, then Report this', () => {
+  it('offers Retry first, then Start with a new database, then Report this', () => {
     renderScreen();
 
     const labels = within(screen.getByRole('alert'))
       .getAllByRole('button')
       .map((button) => button.textContent);
-    expect(labels).toEqual(['Retry', 'Move aside and restart', 'Report this']);
+    expect(labels).toEqual(['Retry', 'Start with a new database', 'Report this']);
     expect(screen.getByRole('button', { name: 'Retry' }).getAttribute('data-variant')).toBe(
       'primary',
     );
@@ -124,7 +124,7 @@ describe('the screen for a database that did not open', () => {
     const confirm = openConfirm();
 
     await act(async () => {
-      fireEvent.click(within(confirm).getByRole('button', { name: 'Move aside and restart' }));
+      fireEvent.click(within(confirm).getByRole('button', { name: 'Start with a new database' }));
     });
 
     expect(moveDatabaseAside).toHaveBeenCalledOnce();
@@ -139,7 +139,7 @@ describe('the screen for a database that did not open', () => {
     const confirm = openConfirm();
 
     await act(async () => {
-      fireEvent.click(within(confirm).getByRole('button', { name: 'Move aside and restart' }));
+      fireEvent.click(within(confirm).getByRole('button', { name: 'Start with a new database' }));
     });
 
     within(confirm).getByText('permission denied');

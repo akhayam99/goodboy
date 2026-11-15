@@ -118,8 +118,8 @@ describe('the Auto dock when Auto was not told', () => {
     renderDock({ view: aView({ phase: 'waiting', artifacts: [aPlanRow()] }) });
 
     fireEvent.click(screen.getByRole('button', { name: 'Approve and start Build' }));
-    const tell = await screen.findByRole('button', { name: 'Tell Auto' });
-    screen.getByText('Plan v1 approved, Auto did not hear it');
+    const tell = await screen.findByRole('button', { name: 'Resend approval' });
+    screen.getByText("Plan v1 approved. Couldn't send it to Auto.");
     expect(screen.queryByRole('button', { name: 'Approve and start Build' })).toBeNull();
     fireEvent.click(tell);
 
@@ -130,7 +130,9 @@ describe('the Auto dock when Auto was not told', () => {
         content: 'Approved plan v1.',
       }),
     );
-    await waitFor(() => expect(screen.queryByRole('button', { name: 'Tell Auto' })).toBeNull());
+    await waitFor(() =>
+      expect(screen.queryByRole('button', { name: 'Resend approval' })).toBeNull(),
+    );
   });
 
   it('keeps Tell Auto when telling fails again', async () => {
@@ -147,15 +149,18 @@ describe('the Auto dock when Auto was not told', () => {
     renderDock({ view: aView({ phase: 'waiting', artifacts: [aPlanRow()] }) });
 
     fireEvent.click(screen.getByRole('button', { name: 'Approve and start Build' }));
-    fireEvent.click(await screen.findByRole('button', { name: 'Tell Auto' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Resend approval' }));
 
     await waitFor(() =>
       expect(reportError).toHaveBeenCalledWith(
-        expect.objectContaining({ title: "Couldn't tell Auto" }),
+        expect.objectContaining({ title: "Couldn't send the approval to Auto" }),
       ),
     );
     await waitFor(() =>
-      expect(screen.getByRole('button', { name: 'Tell Auto' })).toHaveProperty('disabled', false),
+      expect(screen.getByRole('button', { name: 'Resend approval' })).toHaveProperty(
+        'disabled',
+        false,
+      ),
     );
   });
 });

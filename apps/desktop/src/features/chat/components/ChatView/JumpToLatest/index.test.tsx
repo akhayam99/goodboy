@@ -15,7 +15,7 @@ describe('JumpToLatest', () => {
     expect(host?.hasAttribute('inert')).toBe(true);
     expect(host?.getAttribute('aria-hidden')).toBe('true');
     expect(host?.getAttribute('data-visible')).toBe('false');
-    expect(screen.queryByRole('button', { name: 'Jump to latest' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Scroll to latest' })).toBeNull();
   });
 
   it('answers a click when visible and jumps once', () => {
@@ -25,7 +25,7 @@ describe('JumpToLatest', () => {
     const host = container.querySelector<HTMLElement>('[data-jump-to-latest]');
     expect(host?.hasAttribute('inert')).toBe(false);
     expect(host?.getAttribute('data-visible')).toBe('true');
-    fireEvent.click(screen.getByRole('button', { name: 'Jump to latest' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Scroll to latest' }));
     expect(onJump).toHaveBeenCalledTimes(1);
   });
 

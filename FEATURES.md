@@ -112,7 +112,7 @@ The Branch page holds one branch: its pull request, review comments, changed fil
 
 ## Commits and history
 
-The Commits section of the Branch page lets you clean up a branch before it goes to review. Fold, move, reword and drop commits live, with Undo and Redo and a backup before every edit.
+The Commits section of the Branch page lets you clean up a branch before it goes to review. Fixup, squash, move, reword and drop commits live, with Undo and Redo and a backup before every edit.
 
 - **Shape the history**: Clean up a branch by hand in the Commits section.
 - **Safe edits**: Undo and Redo, also ⌘Z and ⌘⇧Z, restore edits while the Commits page stays open.

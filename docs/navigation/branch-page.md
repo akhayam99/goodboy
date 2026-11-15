@@ -650,9 +650,9 @@ focus (`row-actions`, `HistoryRowActions`), and `Previous versions` is a fold
 row with its count at the end (`HistoryVersionsLink`). The registry verb for
 `mount.rewriteHistory` and `diff.rewriteHistory` reads `Edit commits`. There is no
 preview or Apply step. The graph shows the live branch. Drag a row between
-two others to move it, or onto another to fold it in. Focused-row keys are
-Alt with arrows to move, C to fold, S to combine both messages, R or Enter to
-rename, and Delete or Backspace to remove. Row titles and accessible names
+two others to move it, or onto another to fixup into it. Focused-row keys are
+Alt with arrows to move, C for Fixup down, S for Squash down, R or Enter to
+reword, and Delete or Backspace to drop. Row titles and accessible names
 read the refreshed commits after each successful edit.
 
 The move refuses to overwrite local or untracked work. Files move with a
@@ -671,7 +671,7 @@ uses the retained policy: the newest 20 per branch are kept, and an older one
 is dropped only while another retained ref contains its commit. The newest backup is
 never pruned. Older backups from the former naming remain read-only.
 
-`Previous versions n` under the graph (and `Previous versions…` in the page menu) opens the `Previous versions` drawer (kind `history-versions`, side tier). Each version shows when, why (`Before a rebase`, `Before a fold or drop`, `Before a reword or edit`, worked out by `history_backup_facts`), the commit count, the difference with now and an expandable commit list. `Reset branch to this version` (danger, anchored confirm) moves the branch back and the drawer offers `Undo` right after.
+`Previous versions n` under the graph (and `Previous versions…` in the page menu) opens the `Previous versions` drawer (kind `history-versions`, side tier). Each version shows when, why (`Before a rebase`, `Before a fixup, squash or drop`, `Before a reword or edit`, worked out by `history_backup_facts`), the commit count, the difference with now and an expandable commit list. `Reset branch to this version` (danger, anchored confirm) moves the branch back and the drawer offers `Undo` right after.
 
 History rewriter's writable directories
 are its copy, that copy's own git admin folder, the object store and the

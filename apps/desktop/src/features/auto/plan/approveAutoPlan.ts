@@ -46,7 +46,7 @@ const refusalText = ({ code, expectedRevision, latestRevision }: RefusalParams):
   if (code === 'stale_revision' && latestRevision !== null) {
     return `Plan v${expectedRevision} is no longer current. Review v${latestRevision} before approving.`;
   }
-  return REFUSAL_TEXT[code] ?? 'The plan could not be approved.';
+  return REFUSAL_TEXT[code] ?? "Couldn't approve the plan.";
 };
 
 export const approveAutoPlan = async ({

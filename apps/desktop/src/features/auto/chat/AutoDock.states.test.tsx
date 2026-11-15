@@ -238,7 +238,7 @@ describe('AutoDock', () => {
     expect(button.getAttribute('data-variant')).toBe('primary');
     fireEvent.click(screen.getByRole('button', { name: 'More plan actions' }));
     await screen.findByRole('menuitem', { name: 'Approve anyway' });
-    screen.getByRole('menuitem', { name: 'Discard my comments' });
+    screen.getByRole('menuitem', { name: 'Discard your comments' });
   });
 
   it('hides Approve while the next step revises that plan', () => {
@@ -307,7 +307,7 @@ describe('AutoDock', () => {
     renderDock({ view: aView({ phase: 'waiting', artifacts: [aPlanRow()] }) });
 
     fireEvent.click(screen.getByRole('button', { name: 'More plan actions' }));
-    fireEvent.click(await screen.findByRole('menuitem', { name: 'Discard my comments' }));
+    fireEvent.click(await screen.findByRole('menuitem', { name: 'Discard your comments' }));
     expect(remove).not.toHaveBeenCalled();
     screen.getByText('Discard 2 comments?');
     fireEvent.click(screen.getByRole('button', { name: 'Discard' }));
@@ -339,7 +339,7 @@ describe('AutoDock', () => {
     renderDock({ view: aView({ phase: 'waiting', artifacts: [aPlanRow()] }) });
 
     fireEvent.click(screen.getByRole('button', { name: 'More plan actions' }));
-    fireEvent.click(await screen.findByRole('menuitem', { name: 'Discard my comments' }));
+    fireEvent.click(await screen.findByRole('menuitem', { name: 'Discard your comments' }));
     fireEvent.click(screen.getByRole('button', { name: 'Discard' }));
 
     await waitFor(() =>

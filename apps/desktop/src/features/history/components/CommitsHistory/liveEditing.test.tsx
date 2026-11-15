@@ -296,14 +296,14 @@ describe('live Commits page', () => {
     await mountPage();
     fireEvent.click(within(topRow()).getByRole('button', { name: /More/ }));
     const menu = await screen.findByRole('menu');
-    expect(within(menu).getByRole('menuitem', { name: /Rename/ })).toBeDefined();
-    expect(within(menu).getByRole('menuitem', { name: /Remove/ })).toBeDefined();
+    expect(within(menu).getByRole('menuitem', { name: /Reword/ })).toBeDefined();
+    expect(within(menu).getByRole('menuitem', { name: /Drop commit/ })).toBeDefined();
   });
   it('opens the key hints beside their trigger', async () => {
     await mountPage();
     fireEvent.click(screen.getByRole('button', { name: 'Commits help' }));
     screen.getByText('Move the commit');
-    screen.getByText('Rename');
+    screen.getByText('Reword');
   });
   it('blocks inline while an agent owns the writer reservation', async () => {
     outcome = { kind: 'blocked', reason: 'Acme agent is writing here' };
@@ -466,7 +466,7 @@ describe('live Commits page', () => {
     fireEvent.keyDown(topRow(), { key: 'Delete' });
     expect(requests).toEqual([]);
     expect(screen.queryByRole('button', { name: 'Undo commit edit' })).toBeNull();
-    expect(within(topRow()).queryByRole('button', { name: 'Rename' })).toBeNull();
+    expect(within(topRow()).queryByRole('button', { name: 'Reword' })).toBeNull();
   });
   it('keeps Backups out of the header and opens previous versions under the graph', async () => {
     backups = [

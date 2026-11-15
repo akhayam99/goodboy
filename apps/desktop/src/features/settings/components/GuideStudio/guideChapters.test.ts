@@ -272,8 +272,8 @@ describe('the shell chapter', () => {
 
   it('shows what a run and Auto started in the Agents panel, with its key and no rail level', () => {
     const agents = pointOf('shell', 'Agents panel');
-    [shortcutGlyphs('session.spawned'), 'run or Auto', 'j and k hop'].forEach((entry) =>
-      expect(agents).toContain(entry),
+    [shortcutGlyphs('session.spawned'), 'run or Auto', 'j and k move between agents'].forEach(
+      (entry) => expect(agents).toContain(entry),
     );
     expect(agents).not.toContain('‹ Runs');
   });

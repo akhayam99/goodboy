@@ -476,7 +476,7 @@ const MOUNT_ACTIONS: ReadonlyArray<ActionDefinition<MountFacts>> = [
   },
   {
     id: 'mount.removeGone',
-    label: 'Remove',
+    label: NAMES.removeFromSession,
     icon: CONCEPT_ICONS.delete,
     group: 'danger',
     when: ({ facts }) => facts.isBranchGone,

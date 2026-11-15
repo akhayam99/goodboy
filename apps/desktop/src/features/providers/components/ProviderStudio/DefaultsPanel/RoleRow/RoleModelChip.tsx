@@ -50,7 +50,7 @@ export const RoleModelChip = ({ entry, position, disabled, onRemove, onMove }: P
       <span className={cn(entry.isGone && 'text-faint-foreground line-through')}>
         {entry.label}
       </span>
-      {entry.isGone ? <Chip kind="state" tone="neutral" label="Gone, skipped" /> : null}
+      {entry.isGone ? <Chip kind="state" tone="neutral" label="Not available" /> : null}
       <IconButton
         icon={X}
         label={`Remove ${entry.label}`}

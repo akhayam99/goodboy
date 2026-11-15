@@ -10,7 +10,7 @@ const REASON_TEXT: ReadonlyMap<string, string> = new Map([
   ['declined', 'You declined this step.'],
   ['process_error', 'The agent ended with an error.'],
   ['no_closing_envelope', 'It ended without saying whether the work was done.'],
-  ['artifact_persistence_failed', 'Its result could not be saved.'],
+  ['artifact_persistence_failed', "Couldn't save its result."],
   ['report_missing', 'It ended without writing its report.'],
   ['declared_blocked', "It said it can't go on."],
   ['missing_tool', 'It had no shell to run the commands of the task.'],

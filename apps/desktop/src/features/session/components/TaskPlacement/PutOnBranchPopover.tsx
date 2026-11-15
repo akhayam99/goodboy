@@ -69,7 +69,7 @@ export const PutOnBranchPopover = ({ sessionId, mountId, projectId, branch, anch
   );
   const entries = useMemo<ReadonlyArray<MenuEntry>>(() => {
     return [
-      { kind: 'header', key: 'title', label: `Put work on ${branch}` },
+      { kind: 'header', key: 'title', label: `Link work to ${branch}` },
       ...(available.length === 0
         ? [
             {
@@ -119,7 +119,7 @@ export const PutOnBranchPopover = ({ sessionId, mountId, projectId, branch, anch
     <AnchoredPopover
       dropdown={dropdown}
       role="dialog"
-      ariaLabel="Put on a branch"
+      ariaLabel="Link work to this branch"
       anchorClassName="flex shrink-0"
       trigger={
         anchor ?? (
@@ -128,11 +128,11 @@ export const PutOnBranchPopover = ({ sessionId, mountId, projectId, branch, anch
             tone="neutral"
             bordered={false}
             kind="reference"
-            ariaLabel={`Put on a branch ${branch}`}
+            ariaLabel={`Link work to ${branch}`}
             expanded={isOpen}
             hasPopup="dialog"
             onClick={dropdown.toggle}
-            title="Put on a branch"
+            title="Link work to this branch"
             icon={<Plus size={ICON_SIZE.row} aria-hidden />}
             className="w-6 justify-center px-0"
           />
@@ -141,7 +141,7 @@ export const PutOnBranchPopover = ({ sessionId, mountId, projectId, branch, anch
     >
       {worktreeTask === null ? (
         <div className="flex flex-col gap-2">
-          <MenuList label="Put on a branch" entries={entries} onClose={close} />
+          <MenuList label="Link work to this branch" entries={entries} onClose={close} />
           {groups.length === 0 ? null : (
             <div className="flex flex-col gap-1 p-2">
               {groups.map(({ task }) => (

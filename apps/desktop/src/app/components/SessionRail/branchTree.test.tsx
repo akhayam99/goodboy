@@ -273,7 +273,7 @@ describe('one tree for every branch', () => {
     fireEvent.click(await screen.findByRole('menuitem', { name: /Link work to this branch/ }));
     await settle();
 
-    expect(await screen.findByRole('dialog', { name: 'Put on a branch' })).toBeDefined();
+    expect(await screen.findByRole('dialog', { name: 'Link work to this branch' })).toBeDefined();
   });
 
   it('draws no status line under a current branch that is level with its base', async () => {

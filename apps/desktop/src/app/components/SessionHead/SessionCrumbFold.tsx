@@ -24,7 +24,7 @@ type Props = {
   readonly onOpen: (params: OpenParams) => void;
 };
 
-const FOLD_LABEL = 'Show folded crumbs';
+const FOLD_LABEL = 'Show hidden crumbs';
 const ROW_HEIGHT = 32;
 
 export const SessionCrumbFold = ({ crumbs, onOpen }: Props) => {
@@ -65,7 +65,7 @@ export const SessionCrumbFold = ({ crumbs, onOpen }: Props) => {
     >
       <PopoverBody className="max-h-full">
         <div className="flex flex-col p-1">
-          <AppMenuList label="Folded crumbs" entries={entries} onClose={dropdown.close} />
+          <AppMenuList label="Hidden crumbs" entries={entries} onClose={dropdown.close} />
         </div>
       </PopoverBody>
     </AnchoredPopover>

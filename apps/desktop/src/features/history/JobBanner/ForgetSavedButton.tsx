@@ -12,7 +12,7 @@ export const ForgetSavedButton = ({ isBusy, onConfirm }: Props) => (
     icon={<Archive size={ICON_SIZE.control} aria-hidden />}
     title="Forget the saved files?"
     description="They stay in the stash, with a safety copy for 14 days."
-    confirmLabel="Done, forget it"
+    confirmLabel="Forget saved files"
     isBusy={isBusy}
     align="start"
     onConfirm={onConfirm}
@@ -25,7 +25,7 @@ export const ForgetSavedButton = ({ isBusy, onConfirm }: Props) => (
         disabled={isBusy}
         onClick={arm}
       >
-        Done, forget it
+        Forget saved files
       </Button>
     )}
   />

@@ -27,8 +27,8 @@ export type CommitFacts = {
   readonly onMove: (direction: 'newer' | 'older') => void;
 };
 
-const NOTHING_BELOW = 'Nothing below to combine with';
-const SEPARATE_FIRST = 'Separate what it takes in first';
+const NOTHING_BELOW = 'No commit below';
+const SEPARATE_FIRST = 'Separate the commits squashed into it first';
 
 type FactsOnly = { readonly facts: CommitFacts };
 
@@ -43,11 +43,11 @@ export const COMMIT_KIND: ObjectKindDefinition<CommitActionTarget, CommitFacts> 
   actions: [
     {
       id: 'commit.rename',
-      label: 'Rename',
+      label: 'Reword',
       icon: PenLine,
       group: 'act',
       slot: () => 'hover',
-      description: () => 'Rename (reword) · R',
+      description: () => 'Edit the commit message · R',
       when: isStanding,
       run: ({ facts }) => facts.onRename(),
     },
@@ -57,7 +57,7 @@ export const COMMIT_KIND: ObjectKindDefinition<CommitActionTarget, CommitFacts> 
       icon: GitMerge,
       group: 'act',
       slot: () => 'hover',
-      description: () => 'Fold into the one below, keeping its title (fixup) · C',
+      description: () => 'Fixup into the commit below, drop this message · C',
       when: isStanding,
       blockedReason: belowBlocked,
       run: ({ facts }) => facts.onFoldDown(),
@@ -67,7 +67,7 @@ export const COMMIT_KIND: ObjectKindDefinition<CommitActionTarget, CommitFacts> 
       label: 'Squash down',
       icon: Combine,
       group: 'act',
-      description: () => 'Combine with the one below, keeping both messages (squash) · S',
+      description: () => 'Squash into the commit below, keep both messages · S',
       when: isStanding,
       blockedReason: belowBlocked,
       run: ({ facts }) => facts.onSquashDown(),
@@ -105,7 +105,7 @@ export const COMMIT_KIND: ObjectKindDefinition<CommitActionTarget, CommitFacts> 
       icon: Undo2,
       group: 'act',
       slot: () => 'hover',
-      description: () => 'Keep it',
+      description: () => 'Undo the drop',
       when: ({ facts }) => facts.isRemoved,
       run: ({ facts }) => facts.onToggleRemove(),
     },
@@ -127,11 +127,11 @@ export const COMMIT_KIND: ObjectKindDefinition<CommitActionTarget, CommitFacts> 
     },
     {
       id: 'commit.remove',
-      label: 'Remove',
+      label: 'Drop commit',
       icon: Trash2,
       group: 'danger',
       slot: () => 'hover',
-      description: () => 'Remove (drop) · Delete',
+      description: () => 'Drop it from the branch · Delete',
       isUndoable: true,
       when: ({ facts }) => !facts.isFolded && !facts.isRemoved,
       blockedReason: ({ facts }) => (facts.canRemove ? null : SEPARATE_FIRST),
