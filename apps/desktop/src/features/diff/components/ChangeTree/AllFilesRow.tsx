@@ -1,11 +1,11 @@
 import { ChevronRight, Folder } from 'lucide-react';
 import type { FileDiff } from '@goodboy/types';
-import { cn, ICON_SIZE, SelectableRow, tintClasses, treeIndentPx } from '@goodboy/ui';
+import { cn, ICON_SIZE, SelectableRow, treeIndentPx } from '@goodboy/ui';
 import { MiddleText } from '../../../../shared/components/MiddleText';
 import type { ExploreEntryRow } from '../../../explore/exploreRows';
 import { fileGlyphOf } from '../../../explore/fileGlyph';
 import { ALL_FILES_ROW_PX } from '../../lib/allFilesListing';
-import { STATUS_LETTER, STATUS_TONE, STATUS_WORD } from '../../lib/fileStatus';
+import { FileStatusMark } from '../FileStatusMark';
 import { ViewedRing } from '../ViewedRing';
 import { Delta } from './Delta';
 
@@ -95,7 +95,6 @@ export const AllFilesRow = ({
   }
   const Glyph = fileGlyphOf({ name: entry.name });
   const isDeleted = file?.status === 'deleted';
-  const tone = file === null ? null : tintClasses(STATUS_TONE[file.status]);
   return (
     <li
       id={domId}
@@ -126,14 +125,7 @@ export const AllFilesRow = ({
           {file === null || !hasDelta ? null : (
             <Delta additions={file.additions} deletions={file.deletions} />
           )}
-          {file === null || tone === null ? null : (
-            <span
-              aria-label={STATUS_WORD[file.status]}
-              className={cn('w-3 shrink-0 text-center text-chip', tone.text)}
-            >
-              {file.status === 'modified' ? '' : STATUS_LETTER[file.status]}
-            </span>
-          )}
+          {file === null ? null : <FileStatusMark status={file.status} isModifiedHidden />}
         </span>
       </SelectableRow>
     </li>

@@ -6,14 +6,14 @@ import {
   FactCard,
   ICON_SIZE,
   IconButton,
-  tintClasses,
   Tooltip,
   FOCUS_RING,
   StatusDot,
 } from '@goodboy/ui';
 import type { FileDiff } from '@goodboy/types';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
-import { STATUS_LETTER, STATUS_TONE, STATUS_WORD, splitPath } from '../../lib/fileStatus';
+import { splitPath } from '../../lib/fileStatus';
+import { FileStatusMark } from '../FileStatusMark';
 import { fileCardOf } from '../../lib/fileCardOf';
 import type { ViewedState } from '../../lib/reviewedFiles';
 import { useObjectMenuTrigger } from '../../../actions/useObjectMenuTrigger';
@@ -52,7 +52,6 @@ export const FileHeader = ({
   isCompact = false,
 }: Props) => {
   const { dir, name } = splitPath(file.path);
-  const tone = tintClasses(STATUS_TONE[file.status]);
   const isViewed = viewed === 'viewed';
   const isStale = viewed === 'stale';
   const target: DiffFileActionTarget = {
@@ -90,16 +89,7 @@ export const FileHeader = ({
             !isCollapsed && 'rotate-90',
           )}
         />
-        <span
-          aria-label={STATUS_WORD[file.status]}
-          className={cn(
-            'flex size-[18px] shrink-0 items-center justify-center rounded-sm text-chip font-semibold',
-            tone.text,
-            tone.bg,
-          )}
-        >
-          {STATUS_LETTER[file.status]}
-        </span>
+        <FileStatusMark status={file.status} />
         <FactCard card={fileCardOf({ file })}>
           <span dir="rtl" className="min-w-0 flex-1 truncate text-left text-code">
             <bdi dir="ltr">

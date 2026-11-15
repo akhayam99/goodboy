@@ -4,7 +4,6 @@ import {
   ICON_SIZE,
   ICON_STROKE,
   ROW_INTERACTIVE,
-  tintClasses,
   Tooltip,
   StatusDot,
   treeIndentPx,
@@ -13,7 +12,7 @@ import {
 import { MiddleText } from '../../../../shared/components/MiddleText';
 import { kindsLabelOf, type CommentKinds } from '../../lib/commentKinds';
 import { cutFileName } from '../../lib/cutFileName';
-import { STATUS_LETTER, STATUS_TONE, STATUS_WORD } from '../../lib/fileStatus';
+import { FileStatusMark } from '../FileStatusMark';
 import type { TreeRow } from '../../lib/changeTree';
 import type { ViewedState } from '../../lib/reviewedFiles';
 import { rowHeightOf } from '../../lib/rowHeightOf';
@@ -72,7 +71,6 @@ export const FileRow = ({
   });
   const isViewed = state === 'viewed';
   const count = kinds.notes + kinds.host;
-  const tone = tintClasses(STATUS_TONE[row.file.status]);
   const shownName =
     nameLength === null ? row.name : cutFileName({ name: row.name, maxLength: nameLength });
   return (
@@ -148,12 +146,7 @@ export const FileRow = ({
           </Tooltip>
         )}
         {hasDelta ? <Delta additions={row.file.additions} deletions={row.file.deletions} /> : null}
-        <span
-          aria-label={STATUS_WORD[row.file.status]}
-          className={cn('w-3 shrink-0 text-center text-chip', tone.text)}
-        >
-          {STATUS_LETTER[row.file.status]}
-        </span>
+        <FileStatusMark status={row.file.status} />
       </button>
       {isViewed || state === 'stale' ? (
         <div
