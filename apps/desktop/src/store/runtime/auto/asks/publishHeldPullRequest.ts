@@ -130,7 +130,7 @@ const isSettledSaved = async ({ ctx, delegation, settled }: SettleParams): Promi
           : []),
         bumpTreeStatement({ delegation, nowMs }),
       ],
-    });
+    }).catch((): boolean => false);
     if (isSaved) {
       return true;
     }

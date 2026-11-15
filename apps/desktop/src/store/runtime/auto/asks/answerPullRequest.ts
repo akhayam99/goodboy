@@ -40,6 +40,7 @@ const heldOf = async ({ ctx, grant }: HeldParams): Promise<Held | null> => {
 };
 
 const OPEN_AGAIN_STATES: ReadonlySet<ResultPullRequest['state']> = new Set([
+  'awaiting_confirm',
   'failed',
   'opening',
   'declined',

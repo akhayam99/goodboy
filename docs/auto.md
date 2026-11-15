@@ -2083,6 +2083,8 @@ names the permission row, its value and its source (read in `chat/hooks/useAskPe
 answer goes through `answerAsk` by ask id (`chat/hooks/useAnswerAsk/index.ts`): a second answer to
 the same ask is dropped, a failure or a `refused` answer (with
 `CONFIRM_REFUSED_REASON`) keeps the ask and shows the reason in the bar, and an
-ask answered anywhere else leaves the bar on the next read. `PublishRunRow`
+ask answered anywhere else leaves the bar on the next read. A pull request ask
+whose save threw after Open stays listed while its record still waits for
+confirmation, and Open again claims it once (`answerPullRequest.ts`). `PublishRunRow`
 draws a held plain push as well as a force push, with Push now after a
 declined plain push. The scenes are `work-lead-push` and `work-lead-dependency`.
