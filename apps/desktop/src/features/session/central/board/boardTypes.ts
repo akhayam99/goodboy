@@ -54,8 +54,16 @@ export type BoardGroup = Readonly<{
   hiddenCount: number;
 }>;
 
+export type BoardSettled = Readonly<{
+  spendUsd: number;
+  elapsedMs: number;
+  agentIds: ReadonlyArray<string>;
+  leadIds: ReadonlyArray<string>;
+}>;
+
 export type BranchBoard = Readonly<{
   rows: ReadonlyArray<BoardRow>;
+  settled: BoardSettled;
   groups: ReadonlyArray<BoardGroup>;
   isGrouped: boolean;
   isAlone: boolean;

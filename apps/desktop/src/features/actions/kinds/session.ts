@@ -23,6 +23,7 @@ import type { MountId, Session, SessionId, SessionProjectMount, WorkspaceId } fr
 import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
 import { isBranchlessSession } from '../../../shared/utils/isBranchlessSession';
 import { lensPlace } from '../../../store/slices/navigation/canonicalLocation';
+import { LOG_LANDING } from '../../session/central/log/logLanding';
 import { branchPlace } from '../../../store/slices/navigation/place';
 import { openSessionTerminal } from '../../terminal/openSessionTerminal';
 import { sessionTitle } from '../../../shared/utils/sessionTitle';
@@ -293,12 +294,11 @@ const SESSION_ACTIONS: ReadonlyArray<ActionDefinition<SessionFacts>> = [
     icon: CONCEPT_ICONS.timeline,
     group: 'open',
     when: () => true,
-    run: ({ facts, env }) =>
-      env.getState().openDrawer({
-        kind: 'session-log',
-        sessionId: facts.sessionId,
-        payload: { focusEntryId: null },
-      }),
+    run: ({ facts, env }) => {
+      const state = env.getState();
+      LOG_LANDING.request({ sessionId: facts.sessionId });
+      state.navigate({ to: lensPlace({ state, sessionId: facts.sessionId, lens: null }) });
+    },
   },
   {
     id: 'session.spend',

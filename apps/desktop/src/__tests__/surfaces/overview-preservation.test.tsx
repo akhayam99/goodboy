@@ -17,6 +17,7 @@ import { resetWorktreeStatusCache } from '../../store/runtime/worktreeStatuses/c
 import { clearSceneInvoke } from '../../test/sceneInvoke';
 import { MOCK_SCENES } from '../../app/components/MockScene';
 import { collectAskPackInput } from '../../features/session/ask/collectAskPackInput';
+import { LOG_LANDING } from '../../features/session/central/log/logLanding';
 import { ContextTab } from '../../features/session/components/ContextTab';
 import { seriesStripsOf } from '../../store/slices/pr-series/seriesStripsOf';
 import { MountsScene } from '../../app/components/MockScene/scenes/MountsScene';
@@ -308,30 +309,42 @@ describe('Overview capabilities from the session Overview', () => {
     expect(places[0]).toMatchObject({ at: expect.stringMatching(/^(session|agent)$/) });
   });
 
-  it('keeps the full log with its search, the session spend moved to the rail foot', async () => {
+  it('keeps the full log with its search as the last section, the session spend moved to the rail foot', async () => {
     await mountScene({ name: 'c05-overview-running' });
-    const sessionId = useAppStore.getState().currentSessionId;
-    const column = document.querySelector<HTMLElement>('[data-central-column]');
-    expect(
-      within(present({ value: column, what: 'the cards' })).queryByRole('button', {
-        name: /^Spend /,
-      }),
-    ).toBeNull();
-    act(() => {
-      if (sessionId === null) {
-        throw new Error('the scene has no current session');
-      }
-      useAppStore.getState().openDrawer({
-        kind: 'session-log',
-        sessionId,
-        payload: { focusEntryId: null },
-      });
+    const column = present({
+      value: document.querySelector<HTMLElement>('[data-central-column]'),
+      what: 'the cards',
     });
-    await advance();
+    expect(within(column).queryByRole('button', { name: /^Spend / })).toBeNull();
 
-    within(screen.getByRole('region', { name: 'Log entries' })).getByRole('searchbox', {
+    const log = present({
+      value: column.querySelector<HTMLElement>(':scope > [data-overview-log]:last-child'),
+      what: 'the log section',
+    });
+    within(within(log).getByRole('region', { name: 'Log entries' })).getByRole('searchbox', {
       name: 'Search the log',
     });
+  });
+
+  it('lands on the log section when the full log is asked for', async () => {
+    await mountScene({ name: 'c05-overview-running' });
+    const sessionId = useAppStore.getState().currentSessionId;
+    if (sessionId === null) {
+      throw new Error('the scene has no current session');
+    }
+    const log = present({
+      value: document.querySelector<HTMLElement>('[data-overview-log]'),
+      what: 'the log section',
+    });
+    const scrolled = vi.fn();
+    log.scrollIntoView = scrolled;
+
+    act(() => {
+      LOG_LANDING.request({ sessionId });
+    });
+
+    expect(scrolled).toHaveBeenCalledTimes(1);
+    expect(LOG_LANDING.take({ sessionId })).toBe(false);
   });
 
   it('keeps an archived session read only with Restore', async () => {

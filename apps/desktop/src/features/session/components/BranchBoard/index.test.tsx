@@ -190,7 +190,7 @@ describe('the branch board on the Overview', () => {
   });
 
   it('keeps a row open when it changes group', async () => {
-    seedCentralColumn({ kind: 'finished' });
+    seedCentralColumn({ kind: 'branches' });
     await show();
     const first = firstRowButton();
     fireEvent.click(first);

@@ -18,6 +18,7 @@ import { BranchBoard } from '../BranchBoard';
 import { ChatOriginRow } from './ChatOriginRow';
 import { EmptySessionStart } from './EmptySessionStart';
 import { FolderCard } from './FolderCard';
+import { OverviewLog } from './OverviewLog';
 import { OverviewNotices } from './OverviewNotices';
 import { UnassignedNotes } from './UnassignedNotes';
 import { useIsEmptySession } from './useIsEmptySession';
@@ -92,6 +93,7 @@ export const CentralColumn = ({ session }: Props) => {
         />
       )}
       {isArchived || isEmpty ? null : <FolderCard sessionId={sessionId} />}
+      {isEmpty ? null : <OverviewLog session={session} />}
     </div>
   );
 };

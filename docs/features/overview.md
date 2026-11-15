@@ -41,11 +41,13 @@ Pull requests opened outside Goodboy, by an agent or from a terminal, show up wh
 
 ### Full log
 
-Follow what happened in a session in one list. **Open the full log** in the session's **⋯** menu and in ⌘K opens it in a drawer beside the page.
+Follow what happened in a session in one list. The **Log** is the last section of the Overview, always open, and scrolls with the page. **Open the full log** in the session's **⋯** menu, in the sidebar row's menu and in ⌘K opens the Overview on that section.
 
 - One row per agent, workflow run or fix run shows its state, model, time and cost.
 - Plain facts get a row too, such as context changes, branch events and links.
 - Rows go newest first, with a search box.
+- The rail draws like the Agents column of a run: one thin line, the same nodes and elbows, the same step height. A day starts under a thin rule with its name.
+- A long log stays smooth. Rows far from the screen are skipped but keep their height. Rows a screen away are drawn before you reach them.
 - Every row carries the glyph its concept has in the sidebar and the **New** menu. A workflow run has the Workflows glyph, an orchestrated run the orchestrator glyph, and an agent its role.
 - **Mark as read** clears the unread marks.
 
@@ -70,7 +72,7 @@ The board groups the branches in this order: **Needs you**, **In progress**, **M
 - A long branch name is cut in the middle, so its end stays readable.
 - A branch with no pull request reads **No PR**. A step that does not apply is a short dash instead of a circle.
 - A row says each fact once. A column stays empty when the state already says it. A merged branch shows no checks.
-- The **Not on a branch** row holds work that has no branch. It names itself by its next step, such as the open question, and never offers a branch verb.
+- The **Not on a branch** row holds work that has no branch. It names itself by its next step, such as the open question, and never offers a branch verb. It shows only while that work runs or needs you. A finished run with no branch adds no row; its spend and time still count in the tiles.
 - With many rows, **Merged** shows the first few and **Show 4 more** opens the rest.
 
 The **Questions** tile filters the board to the branches with an open question. One line says so, with **Clear** to leave. **Branches** clears the filter. The other tiles only read.
@@ -155,6 +157,7 @@ This part is for contributors and agents who change the feature.
 - The overview draws the branch board only. `liveGroupsOf` orders the live groups that feed the board.
 - Branch board model: `branchBoardOf` builds one row per branch in any state, plus a row without a branch. It sorts them into Needs you, In progress, Merged and Not on a branch. `branchFactsFor` feeds `deriveSessionStage` the facts of one branch only, its Leads included, read through the Lead stop model of `autoTreeWordOf` in `boardInputsOf`. `runningByRowIdOf` counts the running agents and Leads of each row. A question on one branch leaves the others alone. `boardRowCellsOf` picks the words of a row and drops a word an earlier cell already said. `sessionKpisOf` reads the board for the Branches, Spend and Time tiles and counts Leads, agents and asks by id. Spend comes from `leadSpendByBranchOf`.
 - Empty session: `useIsEmptySession` is the one rule for the start form, and `CentralColumn` places `FolderCard` after the board.
+- Log section: `OverviewLog` is the last child of `CentralColumn` and wraps `LogPane`. `session.openLog` calls `LOG_LANDING.request` and navigates to the Overview; the section takes the landing once and scrolls to its start. Each row sits in a `content-visibility: auto` box sized by its laid out height. `useRowPreload` on the page scroller (`scrollParentOf`) draws the rows one screen around the view. `TimelineRail` draws every lane with one stroke (`RAIL_STROKE`). Steps and queued rows use the `sm` `WorkNode` on the 28px step grade of `TIMELINE_RHYTHM`. `TimelineDayRule` draws its hairline.
 - Notices: `overviewNoticesOf` counts them for `overviewCardsOf`. A closed notice is not counted.
 - `useOverviewNotices` holds the dismissals, keyed by `mismatchDismissalKeyOf` so a new mismatch shows again, and the stranded-branch check. A dismissal expires when its observation clears (`liveDismissalsOf`). Unchanged polls stay dismissed. `CentralColumn` draws the notices in one place above the board.
 - `overviewHasContentOf` decides when the start form leaves: a card is drawn, a branch has commits, a request or a run. A folder card, an unassigned note or a closed worktree notice also keeps it away.

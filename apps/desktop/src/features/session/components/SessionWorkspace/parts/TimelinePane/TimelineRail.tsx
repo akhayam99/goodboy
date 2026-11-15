@@ -25,8 +25,7 @@ type Props = {
   readonly lanes?: TimelineLaneControl | null;
 };
 
-const LANE_WIDTH = 2;
-const SPINE_WIDTH = 1;
+const RAIL_STROKE = 1;
 const DASH_PATTERN = '3 3';
 
 const dashArrayOf = ({ dash }: { readonly dash: RailSegment['dash'] }): string | undefined =>
@@ -37,9 +36,6 @@ const strokeOf = ({ identityIndex }: { readonly identityIndex: number | null }):
 
 const dimOf = ({ isMuted }: { readonly isMuted: boolean }): string | undefined =>
   isMuted ? TERMINAL_DIM : undefined;
-
-const strokeWidthOf = ({ identityIndex }: { readonly identityIndex: number | null }): number =>
-  identityIndex == null ? SPINE_WIDTH : LANE_WIDTH;
 
 const segmentKey = ({ segment }: { readonly segment: RailSegment }): string =>
   `${segment.column}:${segment.fromY}:${segment.toY}:${segment.dash}`;
@@ -85,7 +81,7 @@ export const TimelineRail = ({ rail, width, lanes = null }: Props) => {
             x2={railColumnX({ column: segment.column })}
             {...bleedSegmentEnds({ segment, height: rail.height })}
             stroke={strokeOf({ identityIndex: segment.identityIndex })}
-            strokeWidth={strokeWidthOf({ identityIndex: segment.identityIndex })}
+            strokeWidth={RAIL_STROKE}
             strokeDasharray={dashArrayOf({ dash: segment.dash })}
             strokeLinecap="butt"
           />
@@ -97,7 +93,7 @@ export const TimelineRail = ({ rail, width, lanes = null }: Props) => {
             d={join.path}
             fill="none"
             stroke={strokeOf({ identityIndex: join.identityIndex })}
-            strokeWidth={strokeWidthOf({ identityIndex: join.identityIndex })}
+            strokeWidth={RAIL_STROKE}
             strokeDasharray={dashArrayOf({ dash: join.dash })}
             strokeLinecap="butt"
             strokeLinejoin="round"
