@@ -74,7 +74,7 @@ describe('the safe to remove scenes', () => {
     screen.getByText(/Removed 3 folders/);
     fireEvent.click(undo);
 
-    await screen.findByText('Brought back 3 folders.', undefined, WAIT);
+    await screen.findByText('Restored 3 folders.', undefined, WAIT);
     expect(document.querySelectorAll('[data-testid="storage-folder-row"]').length).toBe(3);
   });
 });
