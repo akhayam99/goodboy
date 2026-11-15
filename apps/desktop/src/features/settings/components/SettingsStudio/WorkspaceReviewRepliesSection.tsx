@@ -24,14 +24,24 @@ import {
   VOICE_SAMPLE,
 } from '../../../resolve/replySettingsCopy';
 import { ReplyStyleNoteField } from './ReplyStyleNoteField';
-import { ReplyTemplateField } from './ReplyTemplateField';
+import { ReplyTemplatesBand, type ReplyTemplateKey } from './ReplyTemplatesBand';
 import { WorkspaceFieldRow } from './WorkspaceFieldRow';
 
 const PREVIEW_SHA = '4f21c8b9a7d3e6015482ba9c7d3e6f0158249bcd';
 const PREVIEW_PR_URL = 'https://github.com/acme/payments-api/pull/528';
 
+const TEMPLATE_DEFAULT: Readonly<Record<ReplyTemplateKey, string>> = {
+  replyTemplateFixed: REPLY_TEMPLATE_FIXED_DEFAULT,
+  replyTemplateNoChange: REPLY_TEMPLATE_NO_CHANGE_DEFAULT,
+};
+
 type Props = {
   readonly workspaceId: WorkspaceId;
+};
+
+type TemplateSaveParams = {
+  readonly key: ReplyTemplateKey;
+  readonly value: string;
 };
 
 export const WorkspaceReviewRepliesSection = ({ workspaceId }: Props) => {
@@ -77,15 +87,8 @@ export const WorkspaceReviewRepliesSection = ({ workspaceId }: Props) => {
     }
   };
 
-  const saveTemplate = ({
-    key,
-    value,
-    fallback,
-  }: {
-    readonly key: 'replyTemplateFixed' | 'replyTemplateNoChange';
-    readonly value: string;
-    readonly fallback: string;
-  }) => void persist({ patch: { [key]: value.trim() === fallback ? null : value } });
+  const saveTemplate = ({ key, value }: TemplateSaveParams) =>
+    void persist({ patch: { [key]: value.trim() === TEMPLATE_DEFAULT[key] ? null : value } });
 
   const preview = buildResolutionReplyBody({
     closure: { commitSha: PREVIEW_SHA, reply: VOICE_SAMPLE[settings.voice] },
@@ -101,13 +104,7 @@ export const WorkspaceReviewRepliesSection = ({ workspaceId }: Props) => {
   return (
     <div className="grid grid-cols-1 gap-6 @3xl:grid-cols-[minmax(0,1fr)_minmax(0,22rem)]">
       <div className="flex min-w-0 flex-col gap-4">
-        <Band
-          inset="content"
-          label="Voice"
-          ariaLabel="Voice"
-          hint="The tone every reply starts from."
-          headingLevel={2}
-        >
+        <Band inset="content" label="Replies" ariaLabel="Replies" headingLevel={2}>
           <WorkspaceFieldRow
             workspaceId={workspaceId}
             field="replyVoice"
@@ -135,38 +132,12 @@ export const WorkspaceReviewRepliesSection = ({ workspaceId }: Props) => {
             />
           )}
         </Band>
-        <Band
-          inset="content"
-          label="Templates"
-          ariaLabel="Templates"
-          hint="What a reply says around the reason."
-          headingLevel={2}
-        >
-          <ReplyTemplateField
-            label="When fixed"
-            value={settings.templateFixed}
-            isDisabled={isBusy}
-            onSave={(value) =>
-              saveTemplate({
-                key: 'replyTemplateFixed',
-                value,
-                fallback: REPLY_TEMPLATE_FIXED_DEFAULT,
-              })
-            }
-          />
-          <ReplyTemplateField
-            label="When not changing"
-            value={settings.templateNoChange}
-            isDisabled={isBusy}
-            onSave={(value) =>
-              saveTemplate({
-                key: 'replyTemplateNoChange',
-                value,
-                fallback: REPLY_TEMPLATE_NO_CHANGE_DEFAULT,
-              })
-            }
-          />
-        </Band>
+        <ReplyTemplatesBand
+          fixed={settings.templateFixed}
+          noChange={settings.templateNoChange}
+          isDisabled={isBusy}
+          onSave={saveTemplate}
+        />
         <Band
           inset="content"
           label="Threads"

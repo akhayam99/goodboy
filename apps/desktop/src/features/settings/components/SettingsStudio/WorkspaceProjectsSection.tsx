@@ -13,7 +13,6 @@ import { ProjectScriptsField } from '../../../scripts';
 import { NewWorktreesField } from '../../../worktree/NewWorktreesField';
 import { WorkspaceTerminalFolderRow } from './WorkspaceTerminalFolderRow';
 import { PlainFolderOptions } from './PlainFolderOptions';
-import { projectsCountLine } from './projectsCountLine';
 import { FolderGitCard } from '../../../workspace/folderGitCard';
 import { useFolderGitOpening } from '../../../workspace/folderGitOpening';
 
@@ -35,18 +34,6 @@ export const WorkspaceProjectsSection = ({
     (state.workspaceIntegrations[workspaceId] ?? []).some(
       (binding) => binding.provider === 'sentry',
     ),
-  );
-  const repoCount = useAppStore(
-    (state) =>
-      state.projects.filter(
-        (project) => project.workspaceId === workspaceId && project.kind === 'repo',
-      ).length,
-  );
-  const folderCount = useAppStore(
-    (state) =>
-      state.projects.filter(
-        (project) => project.workspaceId === workspaceId && project.kind === 'folder',
-      ).length,
   );
   const { openId, noticeIds } = useFolderGitOpening({
     workspaceId,
@@ -96,14 +83,7 @@ export const WorkspaceProjectsSection = ({
       <ProjectLinkList
         workspaceId={workspaceId}
         emptyHint="No projects yet"
-        heading={() => (
-          <h2 className="flex items-baseline gap-2 text-row text-foreground">
-            Projects
-            <span className="text-meta text-muted-foreground">
-              {projectsCountLine({ repoCount, folderCount })}
-            </span>
-          </h2>
-        )}
+        heading={() => <h2 className="text-row text-foreground">Projects</h2>}
         isRowInitiallyOpen={({ project }) =>
           project.id === openId || noticeIds.includes(project.id)
         }

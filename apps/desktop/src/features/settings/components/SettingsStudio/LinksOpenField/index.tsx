@@ -1,9 +1,14 @@
-import { FieldRow, SegmentedTabs, type SegmentedTabOption } from '@goodboy/ui';
+import { SegmentedTabs, type SegmentedTabOption } from '@goodboy/ui';
 import { ownBrowserClickWord } from '../../../../browser/ownBrowserClickWord';
 import { useLinksOpen } from '../../../../../shared/hooks/useLinksOpen';
 import { useAppStore } from '../../../../../store';
 import { CHECK_STATE } from '../../../../../store/slices/notifications/errorRecovery';
-import { SETTING_LINKS_OPEN, type LinksOpen } from '../../../../../shared/lib/linksOpenSetting';
+import {
+  DEFAULT_LINKS_OPEN,
+  SETTING_LINKS_OPEN,
+  type LinksOpen,
+} from '../../../../../shared/lib/linksOpenSetting';
+import { SettingRow } from '../SettingRow';
 
 const LINKS_OPTIONS: ReadonlyArray<SegmentedTabOption<LinksOpen>> = [
   { value: 'goodboy', label: 'In Goodboy' },
@@ -32,9 +37,11 @@ export const LinksOpenField = () => {
   };
 
   return (
-    <FieldRow
+    <SettingRow
       label="Links"
       help={`Click on a link, plan or report, in a session. ${ownBrowserClickWord()}: your browser.`}
+      isChanged={value !== DEFAULT_LINKS_OPEN}
+      onReset={() => void onChange({ to: DEFAULT_LINKS_OPEN })}
     >
       <SegmentedTabs
         size="sm"
@@ -43,6 +50,6 @@ export const LinksOpenField = () => {
         onChange={(to) => void onChange({ to })}
         ariaLabel="Links"
       />
-    </FieldRow>
+    </SettingRow>
   );
 };

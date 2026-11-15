@@ -1,8 +1,9 @@
 import { useEffect } from 'react';
-import { Band, FieldRow, Switch } from '@goodboy/ui';
+import { Band, Switch } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
 import { NOTHING_CHANGED, READ_FAILED } from '../../../../store/slices/notifications/errorRecovery';
 import { SETTING_TERMINAL_EXIT_STATUS } from '../../settings';
+import { SettingRow } from './SettingRow';
 
 const LABEL = 'Show if a command passed or failed';
 
@@ -45,13 +46,18 @@ export const TerminalExitStatusBand = () => {
   return (
     <Band inset="content" label="Built-in terminal" headingLevel={2}>
       <div className="flex flex-col">
-        <FieldRow label={LABEL} help="A small zsh hook; your own shell files stay untouched.">
+        <SettingRow
+          label={LABEL}
+          help="A small zsh hook; your own shell files stay untouched."
+          isChanged={raw === 'false'}
+          onReset={() => void onChange({ isOn: true })}
+        >
           <Switch
             ariaLabel={LABEL}
             checked={raw !== 'false'}
             onChange={(isOn) => void onChange({ isOn })}
           />
-        </FieldRow>
+        </SettingRow>
       </div>
     </Band>
   );

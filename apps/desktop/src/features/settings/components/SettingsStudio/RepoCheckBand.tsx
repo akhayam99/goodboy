@@ -1,8 +1,12 @@
 import { useEffect, useState } from 'react';
-import { Band, FieldRow, SegmentedTabs, type SegmentedTabOption } from '@goodboy/ui';
+import { Band, SegmentedTabs, type SegmentedTabOption } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
 import { SETTING_REPO_CHECK_MINUTES } from '../../settings';
-import { repoCheckMinutesOf } from '../../../workspace/repoCheckMinutesOf';
+import {
+  DEFAULT_REPO_CHECK_MINUTES,
+  repoCheckMinutesOf,
+} from '../../../workspace/repoCheckMinutesOf';
+import { SettingRow } from './SettingRow';
 import { NOTHING_CHANGED, READ_FAILED } from '../../../../store/slices/notifications/errorRecovery';
 
 const INTERVAL_OPTIONS: ReadonlyArray<SegmentedTabOption<string>> = [
@@ -60,7 +64,12 @@ export const RepoCheckBand = () => {
       headingLevel={2}
     >
       <div className="flex flex-col">
-        <FieldRow label="Check origin" help="How often each base branch is compared with origin.">
+        <SettingRow
+          label="Check origin"
+          help="How often each base branch is compared with origin."
+          isChanged={minutes !== DEFAULT_REPO_CHECK_MINUTES}
+          onReset={() => void choose({ next: String(DEFAULT_REPO_CHECK_MINUTES) })}
+        >
           <SegmentedTabs
             size="sm"
             ariaLabel="Check origin every"
@@ -68,7 +77,7 @@ export const RepoCheckBand = () => {
             options={INTERVAL_OPTIONS.map((option) => ({ ...option, disabled: isSaving }))}
             onChange={(next) => void choose({ next })}
           />
-        </FieldRow>
+        </SettingRow>
       </div>
     </Band>
   );

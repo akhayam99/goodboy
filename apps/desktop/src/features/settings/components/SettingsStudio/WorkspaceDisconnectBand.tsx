@@ -1,11 +1,13 @@
 import { CHECK_STATE } from '../../../../store/slices/notifications/errorRecovery';
 import { useState } from 'react';
 import type { WorkspaceId } from '@goodboy/types';
-import { Button, ConfirmPopover, FieldRow, ICON_SIZE } from '@goodboy/ui';
+import { Band, Button, ConfirmPopover, ICON_SIZE } from '@goodboy/ui';
 import { Unplug } from 'lucide-react';
 import { useAppStore } from '../../../../store';
 
 import { selectLiveWork } from '../../../../store/runtime/live-work/selectLiveWork';
+import { DANGER_ZONE } from './dangerZone';
+import { SettingRow } from './SettingRow';
 
 const DISCONNECT_NOTE =
   'Files stay on disk. Open the folder again to restore it with its sessions.';
@@ -56,8 +58,8 @@ export const WorkspaceDisconnectBand = ({ workspaceId, requestClose }: Props) =>
   };
 
   return (
-    <section aria-label="Disconnect workspace" className="flex flex-col gap-2">
-      <FieldRow label="Disconnect this workspace" help={DISCONNECT_NOTE}>
+    <Band inset="content" label={DANGER_ZONE} ariaLabel={DANGER_ZONE} headingLevel={2}>
+      <SettingRow label="Disconnect this workspace" help={DISCONNECT_NOTE}>
         <ConfirmPopover
           role="danger"
           icon={<Unplug size={ICON_SIZE.row} aria-hidden />}
@@ -74,7 +76,7 @@ export const WorkspaceDisconnectBand = ({ workspaceId, requestClose }: Props) =>
             </Button>
           )}
         />
-      </FieldRow>
-    </section>
+      </SettingRow>
+    </Band>
   );
 };

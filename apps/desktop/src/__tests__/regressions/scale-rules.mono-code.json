@@ -60,7 +60,7 @@
   "apps/desktop/src/features/settings/components/SettingsStudio/BranchTemplateField/BranchTemplateOption.tsx": "branch",
   "apps/desktop/src/features/settings/components/SettingsStudio/BranchTemplateField/BranchTemplatePreview.tsx": "branch",
   "apps/desktop/src/features/settings/components/SettingsStudio/BranchTemplateField/index.tsx": "branch",
-  "apps/desktop/src/features/settings/components/SettingsStudio/ReplyTemplateField.tsx": "code",
+  "apps/desktop/src/features/settings/components/SettingsStudio/ReplyTemplatesBand.tsx": "code",
   "apps/desktop/src/features/settings/components/SettingsStudio/SecurityFindingRow.tsx": "identifier",
   "apps/desktop/src/features/settings/components/SettingsStudio/SecurityFindingsSection.tsx": "identifier",
   "apps/desktop/src/features/settings/components/SettingsStudio/WorkspaceDefaultsGrid.tsx": "code",

@@ -1,9 +1,10 @@
-import { FieldRow, Switch } from '@goodboy/ui';
+import { Switch } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
 import { useComposerClassicKeys } from '../../../../shared/hooks/useComposerClassicKeys';
 import { shortcutGlyphs } from '../../../../shared/keyboard/registry';
 import { SETTING_COMPOSER_CLASSIC_KEYS } from '../../settings';
 import { NOTHING_CHANGED } from '../../../../store/slices/notifications/errorRecovery';
+import { SettingRow } from './SettingRow';
 
 export const ClassicComposerKeysField = () => {
   const isClassic = useComposerClassicKeys({ isEnabled: true });
@@ -23,15 +24,17 @@ export const ClassicComposerKeysField = () => {
   };
 
   return (
-    <FieldRow
+    <SettingRow
       label="Keys from before 0.15.5"
       help={`Starting an agent adds a line on ${shortcutGlyphs('composer.send')} and starts on ${shortcutGlyphs('composer.submit')}, and review replies send on ${shortcutGlyphs('composer.send')}.`}
+      isChanged={isClassic}
+      onReset={() => void onChange(false)}
     >
       <Switch
         ariaLabel="Keys from before 0.15.5"
         checked={isClassic}
         onChange={(next) => void onChange(next)}
       />
-    </FieldRow>
+    </SettingRow>
   );
 };

@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import type { OverrideSettings, WorkspaceId } from '@goodboy/types';
 import { overridesWithAttribution } from '../../../../__tests__/helpers/attributionOverrides';
 import type { WorkspaceOverridesPatch } from '../../../../store/slices/overrides/patchWorkspaceOverrides';
@@ -131,6 +131,34 @@ describe('WorkspaceReviewRepliesSection', () => {
     expect(screen.getByText('Add {reason}, where the reply goes')).toBeDefined();
     expect(screen.getByText('Unknown variable {sha}')).toBeDefined();
     expect(state.patchWorkspaceOverrides).not.toHaveBeenCalled();
+  });
+
+  it('names the voice band apart from its row', () => {
+    renderWith();
+
+    screen.getByRole('region', { name: 'Replies' });
+    expect(screen.queryByRole('region', { name: 'Voice' })).toBeNull();
+  });
+
+  it('shows the placeholders once, under both templates, and adds one to the template in focus', () => {
+    renderWith();
+
+    expect(screen.getAllByRole('button', { name: '{reason}' })).toHaveLength(1);
+    const templates = screen.getByRole('region', { name: 'Templates' });
+    const placeholders = within(templates).getByRole('group', { name: 'Placeholders' });
+    const noChange = screen.getByLabelText('When not changing');
+    expect(
+      noChange.compareDocumentPosition(placeholders) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+
+    fireEvent.focus(noChange);
+    fireEvent.blur(noChange);
+    fireEvent.click(within(placeholders).getByRole('button', { name: '{reviewer}' }));
+
+    expect(state.patchWorkspaceOverrides).toHaveBeenCalledWith({
+      workspaceId: WORKSPACE,
+      patch: { replyTemplateNoChange: '{reason}\n\nLeaving this as is. {reviewer}' },
+    });
   });
 
   it('saves a valid template and stores the default as empty', () => {

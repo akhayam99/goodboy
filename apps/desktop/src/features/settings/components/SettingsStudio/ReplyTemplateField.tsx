@@ -1,32 +1,26 @@
-import { useEffect, useId, useState } from 'react';
-import { Button, Textarea } from '@goodboy/ui';
-import {
-  REPLY_TEMPLATE_VARIABLES,
-  replyTemplateProblems,
-} from '../../../resolve/renderReplyTemplate';
+import { useId } from 'react';
+import { Textarea } from '@goodboy/ui';
+import { replyTemplateProblems } from '../../../resolve/renderReplyTemplate';
 
 type Props = {
   readonly label: string;
-  readonly value: string;
+  readonly draft: string;
   readonly isDisabled: boolean;
-  readonly onSave: (value: string) => void;
+  readonly onDraftChange: (next: string) => void;
+  readonly onFocus: () => void;
+  readonly onCommit: () => void;
 };
 
-export const ReplyTemplateField = ({ label, value, isDisabled, onSave }: Props) => {
+export const ReplyTemplateField = ({
+  label,
+  draft,
+  isDisabled,
+  onDraftChange,
+  onFocus,
+  onCommit,
+}: Props) => {
   const id = useId();
-  const [draft, setDraft] = useState(value);
   const problems = replyTemplateProblems({ template: draft });
-
-  useEffect(() => {
-    setDraft(value);
-  }, [value]);
-
-  const save = (next: string) => {
-    if (next === value || replyTemplateProblems({ template: next }).length > 0) {
-      return;
-    }
-    onSave(next);
-  };
 
   return (
     <div className="flex min-w-0 flex-col gap-2">
@@ -39,28 +33,11 @@ export const ReplyTemplateField = ({ label, value, isDisabled, onSave }: Props) 
         autoGrow
         minRows={3}
         disabled={isDisabled}
-        onChange={(event) => setDraft(event.target.value)}
-        onBlur={() => save(draft)}
+        onChange={(event) => onDraftChange(event.target.value)}
+        onFocus={onFocus}
+        onBlur={onCommit}
         className="text-code"
       />
-      <div className="flex flex-wrap gap-1">
-        {REPLY_TEMPLATE_VARIABLES.map((name) => (
-          <Button
-            key={name}
-            variant="secondary"
-            size="xs"
-            disabled={isDisabled}
-            onClick={() => {
-              const next = `${draft.trimEnd()} {${name}}`;
-              setDraft(next);
-              save(next);
-            }}
-            className="font-mono"
-          >
-            {`{${name}}`}
-          </Button>
-        ))}
-      </div>
       {problems.map((problem) => (
         <p key={problem} className="text-meta text-danger">
           {problem}

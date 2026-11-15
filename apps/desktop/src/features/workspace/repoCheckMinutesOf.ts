@@ -1,4 +1,4 @@
-const DEFAULT_MINUTES = 5;
+export const DEFAULT_REPO_CHECK_MINUTES = 5;
 const ALLOWED_MINUTES: ReadonlyArray<number> = [0, 5, 15, 30];
 
 type Params = {
@@ -7,8 +7,8 @@ type Params = {
 
 export const repoCheckMinutesOf = ({ value }: Params): number => {
   if (value === undefined) {
-    return DEFAULT_MINUTES;
+    return DEFAULT_REPO_CHECK_MINUTES;
   }
   const minutes = Number(value);
-  return ALLOWED_MINUTES.includes(minutes) ? minutes : DEFAULT_MINUTES;
+  return ALLOWED_MINUTES.includes(minutes) ? minutes : DEFAULT_REPO_CHECK_MINUTES;
 };

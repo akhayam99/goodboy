@@ -176,6 +176,7 @@ export const OpenWithBand = () => {
           label="Terminal"
           help="Opens projects, and runs provider commands."
           value={terminalApp}
+          defaultValue={DEFAULT_TERMINAL_APP}
           choices={terminalChoices}
           onChange={(id) => void onChangeTerminal({ id })}
         />
@@ -183,6 +184,7 @@ export const OpenWithBand = () => {
           label="Browser"
           help={`Your browser, for links you ${ownBrowserClickWord()}, wireframes, and anything opened outside a session.`}
           value={browserApp}
+          defaultValue={DEFAULT_BROWSER_APP}
           choices={browserChoices}
           onChange={(id) => void onChangeBrowser(id)}
         />
