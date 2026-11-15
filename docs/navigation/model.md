@@ -532,7 +532,8 @@ them. The navigation slice (`store/slices/navigation/`) owns both.
   | Scripts panel, a script run                                      | unchanged, the Scripts drawer                                              |
   | An address of the old Explore drawer or page                     | the Changes tab, `changes.mode` = `all`                                    |
   | A file opened from the old Explore tree                          | the Changes tab on that file, `changes.mode` = `all`                       |
-  | A file opened from a link, the full log, a reading panel         | unchanged                                                                  |
+  | A file opened from a link, a reading panel                       | unchanged                                                                  |
+  | The old Log panel                                                | the session Overview, its Log is the last section                          |
   | An unknown lens                                                  | the session Overview                                                       |
 
   The previous release must open every place this build saves: it folds a

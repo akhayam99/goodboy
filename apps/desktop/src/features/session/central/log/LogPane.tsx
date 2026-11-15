@@ -1,6 +1,6 @@
 import { useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { CheckCheck } from 'lucide-react';
-import { Button, ICON_SIZE, Input, tintClasses, appScrollIntoView } from '@goodboy/ui';
+import { Button, ICON_SIZE, Input } from '@goodboy/ui';
 import type { Session } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { usePendingAction } from '../../../../shared/hooks/usePendingAction';
@@ -28,11 +28,10 @@ const LOG_ROW_BOX = '[content-visibility:auto] data-row-near:[content-visibility
 
 type Props = {
   readonly session: Session;
-  readonly focusEntryId?: string | null;
   readonly hasRowActions?: boolean;
 };
 
-export const LogPane = ({ session, focusEntryId = null, hasRowActions = true }: Props) => {
+export const LogPane = ({ session, hasRowActions = true }: Props) => {
   const sessionId = session.id;
   const markAllAgentsSeen = useAppStore((s) => s.markAllAgentsSeen);
   const pending = usePendingAction({ sessionId });
@@ -78,17 +77,6 @@ export const LogPane = ({ session, focusEntryId = null, hasRowActions = true }: 
 
   const isLoading = !rows.isLoaded && entries.length === 0;
   const isSearching = query.trim() !== '';
-  const hasLaidOutRows = rows.laidOutItems.length > 0;
-
-  useLayoutEffect(() => {
-    if (focusEntryId === null || !hasLaidOutRows) {
-      return;
-    }
-    const target = Array.from(
-      listRef.current?.querySelectorAll<HTMLElement>('[data-row-id]') ?? [],
-    ).find((element) => element.dataset.rowId === focusEntryId);
-    appScrollIntoView({ element: target, block: 'center' });
-  }, [focusEntryId, hasLaidOutRows]);
 
   return (
     <ActionColumnContext.Provider value={hasRowActions && hasActionColumn}>
@@ -139,14 +127,6 @@ export const LogPane = ({ session, focusEntryId = null, hasRowActions = true }: 
                   const slot =
                     item.kind === 'row' || item.kind === 'more' ? item.explode : undefined;
                   const row = <TimelineRow {...props} />;
-                  const still =
-                    item.id === focusEntryId ? (
-                      <div data-log-focus="" className={tintClasses('primary').bgSoft}>
-                        {row}
-                      </div>
-                    ) : (
-                      row
-                    );
                   return (
                     <div
                       key={item.id}
@@ -155,7 +135,7 @@ export const LogPane = ({ session, focusEntryId = null, hasRowActions = true }: 
                       style={{ containIntrinsicSize: `auto ${item.height}px` }}
                     >
                       {slot === undefined ? (
-                        still
+                        row
                       ) : (
                         <TimelineRevealRow
                           groupId={slot.groupId}

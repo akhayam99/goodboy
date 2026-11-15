@@ -104,13 +104,15 @@ const STUDIO_BLOBS: ReadonlyArray<ExpectedBlob> = Object.entries(STUDIOS).map(([
   expected: studio,
 }));
 
-const FOLDED_DRAWER_LENSES: Readonly<Record<string, string>> = {
-  context: 'context',
-  explore: 'files',
-  spawned: 'workflows',
-};
+const FOLDED_DRAWER_LENSES: ReadonlyMap<string, string | null> = new Map<string, string | null>([
+  ['context', 'context'],
+  ['explore', 'files'],
+  ['spawned', 'workflows'],
+  ['session-log', null],
+]);
 
 type DrawerBlob = ExpectedBlob & {
+  readonly isFolded: boolean;
   readonly foldedLens: string | null;
 };
 
@@ -122,7 +124,8 @@ const DRAWER_BLOBS: ReadonlyArray<DrawerBlob> = Object.entries(DRAWERS).map(([ki
     drawer: { kind, sessionId: SESSION, payload },
   }),
   expected: { kind, sessionId: SESSION, payload },
-  foldedLens: FOLDED_DRAWER_LENSES[kind] ?? null,
+  isFolded: FOLDED_DRAWER_LENSES.has(kind),
+  foldedLens: FOLDED_DRAWER_LENSES.get(kind) ?? null,
 }));
 
 const PLACE_BLOBS: ReadonlyArray<PreviousBuildBlob> = [

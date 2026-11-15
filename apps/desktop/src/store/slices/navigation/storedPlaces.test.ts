@@ -162,10 +162,7 @@ const STORED_PLACES: ReadonlyArray<Row> = [
   [
     'the full log',
     panel({ kind: 'session-log', payload: { focusEntryId: null } }),
-    {
-      lens: 'workflows',
-      drawer: { kind: 'session-log', sessionId: S1, payload: { focusEntryId: null } },
-    },
+    { lens: null, drawer: null },
   ],
   ...(
     [

@@ -94,10 +94,6 @@ export type DrawerContent =
       readonly payload: { readonly agentId: AgentId } | null;
     }
   | {
-      readonly kind: 'session-log';
-      readonly payload: { readonly focusEntryId: string | null };
-    }
-  | {
       readonly kind: 'fix-comments';
       readonly payload: {
         readonly mountId: MountId | null;

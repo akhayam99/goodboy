@@ -28,8 +28,6 @@ export const drawerKey = (content: DrawerContent): string => {
       return `transcript:${content.payload.agentId}`;
     case 'spawned':
       return 'spawned';
-    case 'session-log':
-      return `session-log:${content.payload.focusEntryId ?? ''}`;
     case 'fix-comments':
       return `fix-comments:${content.payload.mountId ?? ''}`;
     case 'terminal':

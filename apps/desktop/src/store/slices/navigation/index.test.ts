@@ -162,11 +162,7 @@ describe('restoring a saved window location', () => {
         target: { kind: 'artifact', artifactId: ARTIFACT },
       }),
     });
-    before.getState().openDrawer({
-      kind: 'session-log',
-      sessionId: S1,
-      payload: { focusEntryId: null },
-    });
+    before.getState().openDrawer({ kind: 'ask', sessionId: S1, payload: null });
     before.getState().amendFocus({ patch: { scroll: { plans: 320 } } });
     const saved = parseLocation({
       value: JSON.parse(JSON.stringify(captureWindowLocation({ state: before.getState() }))),

@@ -87,8 +87,6 @@ export const slotChipLabelOf = ({ drawer, artifacts }: Params): SlotChipLabel =>
       return { kind: 'Comment', title: null };
     case 'transcript':
       return { kind: 'Transcript', title: null };
-    case 'session-log':
-      return { kind: 'Log', title: null };
     case 'history-versions':
       return { kind: 'Versions', title: null };
     case 'file-diff':

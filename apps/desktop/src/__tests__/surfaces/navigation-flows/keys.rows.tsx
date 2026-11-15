@@ -1616,11 +1616,7 @@ export const WORLD_ROWS: ReadonlyArray<WorldRow> = [
       if (sessionId === null) {
         throw new Error('the run world has no current session');
       }
-      useAppStore.getState().openDrawer({
-        kind: 'session-log',
-        sessionId,
-        payload: { focusEntryId: null },
-      });
+      useAppStore.getState().navigate({ to: sessionPlace({ sessionId }) });
       await settle(4);
       const lane = Array.from(
         document.querySelectorAll<HTMLElement>('button[aria-keyshortcuts="Shift+Enter"]'),

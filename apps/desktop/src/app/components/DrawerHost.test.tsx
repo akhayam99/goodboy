@@ -150,12 +150,6 @@ const ENTRIES: ReadonlyArray<Entry> = [
     drawer: { kind: 'spawned', sessionId: SESSION, payload: null },
   },
   {
-    kind: 'session-log',
-    region: 'Log',
-    seed: seedSession,
-    drawer: { kind: 'session-log', sessionId: SESSION, payload: { focusEntryId: null } },
-  },
-  {
     kind: 'explore-file',
     region: 'README.md',
     seed: seedSession,

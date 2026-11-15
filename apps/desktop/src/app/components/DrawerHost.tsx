@@ -16,7 +16,6 @@ import { FixCommentsDrawer } from '../../features/resolve/components/FixComments
 import { ReviewCommentDrawerHost } from '../../features/resolve/components/ReviewCommentDrawer/ReviewCommentDrawerHost';
 import { FixRunTranscriptDrawer } from './FixRunTranscriptDrawer';
 import { SpawnedPanel } from './SpawnedPanel';
-import { LogDrawer } from '../../features/session/central/log/LogDrawer';
 import { ExploreFileChanges } from './ExploreFileChanges';
 import { ArtifactReadingDrawer } from './ArtifactReadingDrawer';
 import { readingArtifactOf } from './ArtifactReadingDrawer/readingArtifact';
@@ -138,15 +137,6 @@ const renderDrawer = ({
     case 'spawned':
       return (
         <SpawnedPanel key={drawer.sessionId} sessionId={drawer.sessionId} onClose={closeDrawer} />
-      );
-    case 'session-log':
-      return (
-        <LogDrawer
-          key={drawerKey(drawer)}
-          sessionId={drawer.sessionId}
-          focusEntryId={drawer.payload.focusEntryId}
-          onClose={closeDrawer}
-        />
       );
     case 'fix-comments':
       return (
