@@ -765,6 +765,66 @@ where
     Ok(())
 }
 
+#[tauri::command]
+pub async fn integration_binding_replace_secret(
+    workspace_id: String,
+    provider: String,
+    credential_id: String,
+    secret: String,
+) -> Result<(), IntegrationCredentialError> {
+    tauri::async_runtime::spawn_blocking(move || {
+        let conn = open_db()?;
+        let target = BindingTarget {
+            workspace_id: &workspace_id,
+            provider: &provider,
+            credential_id: &credential_id,
+        };
+        replace_secret_with(&conn, &target, &secret, shared_cache(), secrets::set)
+    })
+    .await
+    .map_err(|e| IntegrationCredentialError::Io(std::io::Error::other(e.to_string())))?
+}
+
+struct BindingTarget<'a> {
+    workspace_id: &'a str,
+    provider: &'a str,
+    credential_id: &'a str,
+}
+
+fn replace_secret_with<S>(
+    conn: &Connection,
+    target: &BindingTarget,
+    secret: &str,
+    cache: &SecretCache,
+    set: S,
+) -> Result<(), IntegrationCredentialError>
+where
+    S: FnOnce(&str, &str) -> Result<(), secrets::SecretError>,
+{
+    if !PROVIDERS.contains(&target.provider) {
+        return Err(IntegrationCredentialError::UnknownProvider(
+            target.provider.to_string(),
+        ));
+    }
+    if target.workspace_id.is_empty() {
+        return Err(IntegrationCredentialError::MissingWorkspace);
+    }
+    let secret = secret.trim();
+    if target.credential_id.is_empty() || secret.is_empty() {
+        return Err(IntegrationCredentialError::MissingCredential);
+    }
+    let bound = credential_id_for_binding(conn, target.provider, target.workspace_id, None)?;
+    if bound.as_deref() != Some(target.credential_id) {
+        return Err(IntegrationCredentialError::UnboundValue {
+            provider: target.provider.to_string(),
+            field: "credential".to_string(),
+        });
+    }
+    set(&secret_key(target.credential_id), secret)?;
+    remember(cache, target.credential_id, secret);
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1102,6 +1162,146 @@ mod tests {
             unscoped,
             Err(IntegrationCredentialError::MissingSecret { ref credential_id, .. })
                 if credential_id == "cred-dead"
+        ));
+    }
+
+    fn binding_row(conn: &Connection, id: &str) -> (String, String, String, i64) {
+        conn.query_row(
+            "SELECT credential_id, provider, config, updated_at FROM integration_bindings WHERE id = ?1",
+            rusqlite::params![id],
+            |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?, row.get(3)?)),
+        )
+        .expect("binding row")
+    }
+
+    fn gitlab_target<'a>(credential_id: &'a str) -> BindingTarget<'a> {
+        BindingTarget {
+            workspace_id: "harborline",
+            provider: "gitlab",
+            credential_id,
+        }
+    }
+
+    #[test]
+    fn replacing_a_key_rewrites_the_secret_and_keeps_the_binding() {
+        let conn = test_conn();
+        let cache = cache();
+        seed_credential(&conn, "cred-gl", "gitlab");
+        seed_binding(&conn, "b-gl", "harborline", None, "gitlab", "cred-gl");
+        let before = binding_row(&conn, "b-gl");
+        let keychain = RefCell::new(HashMap::<String, String>::new());
+
+        replace_secret_with(
+            &conn,
+            &gitlab_target("cred-gl"),
+            "  glpat-new  ",
+            &cache,
+            |key, value| {
+                keychain
+                    .borrow_mut()
+                    .insert(key.to_string(), value.to_string());
+                Ok(())
+            },
+        )
+        .expect("replaces");
+
+        assert_eq!(binding_row(&conn, "b-gl"), before);
+        assert_eq!(
+            keychain.borrow().get(&secret_key("cred-gl")).cloned(),
+            Some("glpat-new".to_string())
+        );
+        assert_eq!(cached(&cache, "cred-gl").as_deref(), Some("glpat-new"));
+    }
+
+    #[test]
+    fn replacing_a_key_refuses_a_binding_that_points_elsewhere() {
+        let conn = test_conn();
+        let cache = cache();
+        seed_credential(&conn, "cred-gl", "gitlab");
+        seed_credential(&conn, "cred-other", "gitlab");
+        seed_binding(&conn, "b-gl", "harborline", None, "gitlab", "cred-other");
+        let wrote = RefCell::new(false);
+
+        let outcome = replace_secret_with(
+            &conn,
+            &gitlab_target("cred-gl"),
+            "glpat-new",
+            &cache,
+            |_, _| {
+                *wrote.borrow_mut() = true;
+                Ok(())
+            },
+        );
+
+        assert!(matches!(
+            outcome,
+            Err(IntegrationCredentialError::UnboundValue { ref field, .. }) if field == "credential"
+        ));
+        assert!(!*wrote.borrow());
+        assert!(cached(&cache, "cred-gl").is_none());
+    }
+
+    #[test]
+    fn replacing_a_key_without_a_binding_in_that_workspace_writes_nothing() {
+        let conn = test_conn();
+        let cache = cache();
+        seed_credential(&conn, "cred-gl", "gitlab");
+        seed_binding(&conn, "b-gl", "northwind", None, "gitlab", "cred-gl");
+
+        let outcome = replace_secret_with(
+            &conn,
+            &gitlab_target("cred-gl"),
+            "glpat-new",
+            &cache,
+            |_, _| panic!("nothing is written"),
+        );
+
+        assert!(outcome.is_err());
+    }
+
+    #[test]
+    fn a_failed_keychain_write_on_replace_keeps_the_old_cached_key() {
+        let conn = test_conn();
+        let cache = cache();
+        seed_credential(&conn, "cred-gl", "gitlab");
+        seed_binding(&conn, "b-gl", "harborline", None, "gitlab", "cred-gl");
+        remember(&cache, "cred-gl", "glpat-old");
+
+        let outcome = replace_secret_with(
+            &conn,
+            &gitlab_target("cred-gl"),
+            "glpat-new",
+            &cache,
+            |_, _| Err(secrets::SecretError::InvalidKey),
+        );
+
+        assert!(outcome.is_err());
+        assert_eq!(cached(&cache, "cred-gl").as_deref(), Some("glpat-old"));
+    }
+
+    #[test]
+    fn replacing_refuses_github_and_an_empty_key() {
+        let conn = test_conn();
+        let cache = cache();
+        let github = BindingTarget {
+            workspace_id: "harborline",
+            provider: "github",
+            credential_id: "cred-gh",
+        };
+
+        let refused_github = replace_secret_with(&conn, &github, "ghp_new", &cache, |_, _| Ok(()));
+        let refused_empty =
+            replace_secret_with(&conn, &gitlab_target("cred-gl"), "   ", &cache, |_, _| {
+                Ok(())
+            });
+
+        assert!(matches!(
+            refused_github,
+            Err(IntegrationCredentialError::UnknownProvider(_))
+        ));
+        assert!(matches!(
+            refused_empty,
+            Err(IntegrationCredentialError::MissingCredential)
         ));
     }
 

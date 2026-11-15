@@ -50,6 +50,7 @@ const h = vi.hoisted(() => ({
 
 const loadProjectSentryLinks = vi.fn(async () => undefined);
 const noteTaskRecords = vi.fn();
+const noteToolUseCounts = vi.fn();
 
 vi.mock('../../../store', () => ({
   EMPTY_ARRAY: Object.freeze([]),
@@ -60,6 +61,7 @@ vi.mock('../../../store', () => ({
       projectSentryLinks: Record<string, never>;
       loadProjectSentryLinks: typeof loadProjectSentryLinks;
       noteTaskRecords: typeof noteTaskRecords;
+      noteToolUseCounts: typeof noteToolUseCounts;
     }) => T,
   ) =>
     selector({
@@ -68,6 +70,7 @@ vi.mock('../../../store', () => ({
       projectSentryLinks: {},
       loadProjectSentryLinks,
       noteTaskRecords,
+      noteToolUseCounts,
     }),
 }));
 
@@ -245,6 +248,22 @@ describe('useInboxRecords', () => {
         { key: expect.stringContaining('jira'), isForMe: false },
         { key: expect.stringContaining('github'), isForMe: true },
       ],
+    });
+  });
+
+  it('notes the open count of each settled tool for the Connections page', () => {
+    h.github = {
+      groups: githubGroups('2026-08-01T10:00:00Z'),
+      loading: false,
+      error: null,
+      hasRemote: true,
+    };
+
+    renderHook(() => useInboxRecords({ workspaceId, rootPath: '/repo' }));
+
+    expect(noteToolUseCounts).toHaveBeenLastCalledWith({
+      workspaceId,
+      counts: expect.objectContaining({ github: expect.objectContaining({ issues: 1 }) }),
     });
   });
 

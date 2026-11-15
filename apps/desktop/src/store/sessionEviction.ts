@@ -203,6 +203,8 @@ export const NON_SESSION_STATE_KEYS = [
   'workspaceIntegrations',
   'integrationCredentials',
   'integrationCredentialUsage',
+  'integrationKeyChecks',
+  'toolUseCounts',
   'projectGitStatus',
   'projectCheckoutPulling',
   'repoDivergence',
