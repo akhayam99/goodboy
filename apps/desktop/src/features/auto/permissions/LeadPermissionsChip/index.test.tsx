@@ -65,7 +65,7 @@ const openLead = async () => {
 };
 
 describe('LeadPermissionsChip', () => {
-  it('shows This Lead with Reset for an override, and Reset writes the row away', async () => {
+  it('marks an override Changed with Reset, and Reset writes the row away', async () => {
     const read = vi
       .fn()
       .mockResolvedValueOnce(permissionsFor({ leadRows: { push: 'ask' } }))
@@ -74,7 +74,10 @@ describe('LeadPermissionsChip', () => {
     useAppStore.setState({ readLeadPermissions: read, changeLeadPermission: change });
     const popover = await openLead();
 
-    fireEvent.click(await popover.findByRole('button', { name: 'Use default' }));
+    const row = await popover.findByRole('tablist', { name: 'Push a branch' });
+    expect(row.closest('[data-permission-row]')?.getAttribute('data-changed')).toBe('true');
+    expect(popover.getAllByText('Changed')).toHaveLength(1);
+    fireEvent.click(popover.getByRole('button', { name: 'Reset Push a branch' }));
 
     await waitFor(() =>
       expect(change).toHaveBeenCalledWith({
@@ -82,7 +85,10 @@ describe('LeadPermissionsChip', () => {
         change: { key: 'push', value: null },
       }),
     );
-    await waitFor(() => expect(popover.queryByRole('button', { name: 'Use default' })).toBeNull());
+    await waitFor(() =>
+      expect(popover.queryByRole('button', { name: 'Reset Push a branch' })).toBeNull(),
+    );
+    expect(popover.queryByText('Changed')).toBeNull();
   });
 
   it('reads Custom as soon as a row is tightened', async () => {

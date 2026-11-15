@@ -542,6 +542,8 @@ inbox-error
 inbox-source
 inbox-states
 integration-issue-focused
+lead-permissions-head
+lead-permissions-page
 limit-continue
 link-scope
 linkwork-star

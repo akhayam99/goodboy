@@ -73,7 +73,12 @@ Dark mode brightens one step at a time, 1.06 to 1.09:1 between neighbours.
 Light mode is ink on paper, read on two axes. On the elevation axis (what sits
 in front) chrome < content < raised = floating: nothing is brighter than white,
 so above raised the lift is `shadow-lg` plus `border`. On the nesting axis
-(what sits inside) content > panel > inset: the deeper, the darker.
+(what sits inside) content > panel > inset: the deeper, the darker. The sheet
+sits near white (`0.984`) and the chrome a clear step under it (1.09:1), so the
+left column reads as a frame and not as a grey slab; panel and inset step down
+from the sheet at 1.07:1 and 1.06:1, and the neutrals carry almost no hue, so
+nothing tints blue. Light `shadow-sm` is a soft contact shadow, enough to seat a
+raised card or a picked segment on the page.
 
 The window backdrop is step 0 plus one glow: `bg-backdrop` paints `chrome`
 under `--app-backdrop`, a radial of `primary` from the top-left corner (the
@@ -90,7 +95,7 @@ radial at `--app-backdrop-cover-strength` (6), so the handoff has no seam.
 `drawer` sits beside the page surface, not on the ladder: a right drawer is its
 own container next to the sheet and is painted one step quieter than
 `background`, between `chrome` and `background` in both themes (dark
-`oklch(0.187 0.006 255)`, light `oklch(0.964 0.0045 250)`: the same hue and no
+`oklch(0.187 0.006 255)`, light `oklch(0.968 0.002 250)`: the same hue and no
 more chroma than `background`, so it recedes and never tints). It carries every
 text token at 4.5:1 and every border at the floors of the ladder, held by
 `token-contrast-floor.test.ts`. A drawer container never fakes the difference
@@ -130,13 +135,14 @@ frost (the role at 90% over `blur(3px) saturate(1.2)`) for a header on `subtle`
 (a drawer's pinned title row included) and for a diff file header, which parks right under the pinned zone, so a long
 diff never stacks two strong frosts on every scroll frame. Under a session head
 the whole head (title row, crumbs or tabs, the page's pinned rows) is one
-surface with one backdrop: `sticky-surface-head`, the quiet frost (the
-background at 86% over `blur(8px) saturate(1.2)`), painted once by the page's
-`RevealRegion` overlay from the top of the head to the bottom of its pinned
-rows, so content reads the same under every head row. Text on
-the frost holds 4.5:1 over any surface or half-inked text under it
+surface: `sticky-surface-head`, the opaque `background` with no blur, painted
+once by the page's `RevealRegion` overlay from the top of the head to the bottom
+of its pinned rows. The head holds controls (the run settings row, Stop, the
+chips), and a transcript blurred behind them made them hard to read, so nothing
+shows through it; the hairline marks where content passes under. Text on the
+two frosts holds 4.5:1 over any surface or half-inked text under it
 (`sticky-surface.test.ts`). Under `prefers-reduced-transparency: reduce` both
-are the opaque role and the blur is off. A sticky header draws no `shadow-*` and no
+frosts are the opaque role and the blur is off. A sticky header draws no `shadow-*` and no
 gradient band; the only edge is the 1px `border-soft` hairline of
 `ScrollFade edge="line"`, lit once content is scrolled under it. Its block
 padding leaves more room below than above, from the spacing scale (`PANE_RHYTHM.pinnedInset`
@@ -159,8 +165,11 @@ selected is 13% and 12%, so a selected row always reads above a hovered one.
 
 A selected row has one treatment everywhere: `bg-selected`, foreground text and
 medium weight, driven by `data-selected` (`selectedRow.ts`, used by
-`SelectableRow`). `SegmentedTabs` follows it too: a
-hairline track, `bg-selected` on the active segment, no raised pill. A
+`SelectableRow`). `SegmentedTabs` is the one exception, because a segment that
+only darkens read as disabled in light mode: a `fill` track, and the active
+segment raised on it (`bg-segment-active`, white in light and white 10% in dark,
+with `shadow-sm`) and outlined in `border`, whose edge clears 3:1 in both
+themes. A
 selected nav entry also lights its icon in its own kind color, never the
 label: `selectedIconClass` (`SelectableRow selectedIconTone`, the column
 doors, `RailButton` and the pressed session tool) over one function,
@@ -922,6 +931,11 @@ the outline look, `ghost` and `quiet` the quiet look.
   Stage colors go through `STAGE_TONE`. No per-file tone maps.
 - The stage tones: attention `warning`, running `info`, in review `success`,
   done `merged`, building neutral.
+- Each tone keeps one job: `primary` is the one accent for the main action,
+  `warning` (amber) only says something needs you, `danger` (red) only marks
+  stop and destructive, and `info` marks a neutral fact such as a setting that
+  differs from its default (**Changed**). Light `warning` sits at amber gold (hue 70) so it never reads as a second red beside `danger` (hue 22), and
+  `warning-mark` clears 3:1 as a dot on every surface.
 - Surfaces follow the six-role ladder above. To lift something, move it to the
   role it plays; to sink something inside a parent, use `fill`. Never invent a
   shade.

@@ -283,7 +283,7 @@ the page (`data-session-head-band`, `z-40`), and `useHeadInset` writes its heigh
 (`relative`, `-top` and a height of 100% plus the inset, the same reach-under a
 `ScrollFade` uses, never a margin) and its `RevealRegion` pads the pinned overlay by it, so
 content scrolls under the title row, the crumbs or tabs and the pinned rows alike, behind
-one `sticky-surface-head` frost. A page that is not a `PaneShell` starts below the head as
+one opaque `sticky-surface-head`. A page that is not a `PaneShell` starts below the head as
 before. The head breathes through two tokens, never per page: `PANE_RHYTHM.head.rows`
 (12px between the title row and the tabs or crumbs) and `PANE_RHYTHM.head.under` (20px under
 the head before the page starts). Inside a page header the blocks (the title with its meta
@@ -673,9 +673,9 @@ A header on `subtle`, a drawer's title row and a diff file header take
 `sticky-surface-subtle`, the light frost at 90% with `blur(3px) saturate(1.2)`,
 so a row that parks under the pinned zone never stacks two strong frosts. Under a
 session head the overlay and the sliding header take `sticky-surface-head`
-instead, the quiet frost at 86% with `blur(8px) saturate(1.2)`, and the pinned row
-adds none of its own, so the head is one frosted edge, not a band under its last
-row. All three are opaque under `prefers-reduced-transparency: reduce`. No `shadow-*`, no gradient band, no
+instead, the opaque `background` with no blur, and the pinned row adds none of its
+own, so the transcript never reads through the head controls and the head ends on
+one hairline. The two frosts are opaque under `prefers-reduced-transparency: reduce`. No `shadow-*`, no gradient band, no
 `bg-background` on the header itself. Its block padding leans down: the pinned zone
 is `pt-3 pb-5` (`PANE_RHYTHM.pinnedInset`), more room below than above, because
 the back row's 24px line already holds 4px above its text, and a header under or inside it adds no
