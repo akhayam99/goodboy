@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 import { afterEach, describe, expect, it } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
-import { FileStatusMark } from './FileStatusMark';
+import { FileStatusMark } from '.';
 
 afterEach(cleanup);
 

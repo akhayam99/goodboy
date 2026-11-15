@@ -1,6 +1,6 @@
 import type { FileDiffStatus } from '@goodboy/types';
 import { cn, tintClasses } from '@goodboy/ui';
-import { STATUS_LETTER, STATUS_TONE, STATUS_WORD } from '../lib/fileStatus';
+import { STATUS_LETTER, STATUS_TONE, STATUS_WORD } from '../../lib/fileStatus';
 
 type Props = {
   readonly status: FileDiffStatus;
