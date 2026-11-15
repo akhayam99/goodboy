@@ -66,6 +66,7 @@ const board: BranchBoard = {
     },
     { id: 'merged', label: 'Merged', rowIds: ['d'], visibleRowIds: ['d'], hiddenCount: 0 },
   ],
+  settled: { spendUsd: 0, elapsedMs: 0, agentIds: [], leadIds: [] },
   isGrouped: true,
   isAlone: false,
 };

@@ -70,7 +70,7 @@ The board groups the branches in this order: **Needs you**, **In progress**, **M
 - A long branch name is cut in the middle, so its end stays readable.
 - A branch with no pull request reads **No PR**. A step that does not apply is a short dash instead of a circle.
 - A row says each fact once. A column stays empty when the state already says it. A merged branch shows no checks.
-- The **Not on a branch** row holds work that has no branch. It names itself by its next step, such as the open question, and never offers a branch verb.
+- The **Not on a branch** row holds work that has no branch. It names itself by its next step, such as the open question, and never offers a branch verb. It shows only while that work runs or needs you: a finished run with no branch adds no row, and its spend and time still count in the tiles.
 - With many rows, **Merged** shows the first few and **Show 4 more** opens the rest.
 
 The **Questions** tile filters the board to the branches with an open question. One line says so, with **Clear** to leave. **Branches** clears the filter. The other tiles only read.
