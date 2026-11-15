@@ -23,7 +23,7 @@ export { useDropdown } from './useDropdown';
 export { useDropdownDirection } from './useDropdownDirection';
 export { PopoverPortalProvider, usePopoverPortalTarget } from './PopoverPortalContext';
 export type { DropdownController } from './useDropdown';
-export { ICON_SIZE, ICON_STROKE } from './iconSize';
+export { ICON_SIZE, ICON_STROKE, iconStrokeOf } from './iconSize';
 export { TEXT_ROLE } from './textRoles';
 export type { TextRole } from './textRoles';
 export {
