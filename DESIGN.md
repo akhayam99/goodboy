@@ -53,6 +53,10 @@ two share the same look.
 - [docs/tone-of-voice.md](./docs/tone-of-voice.md) owns the language of
   product copy. [CONVENTIONS.md](./CONVENTIONS.md) owns the language of the
   repository.
+- **An action label is a verb and an object in the developer's words**
+  (Rebase on main, Merge pull request, Discard changes), never a metaphor, and a
+  copy action exists only where the content is not already selectable. The rule
+  and its guard are in [docs/concepts.md](./docs/concepts.md) → Vocabulary rules.
 - **Terse and direct.** Labels are nouns or verbs, not sentences. Help text
   must earn its place, or it is cut. No exclamation marks, no cheerleading.
 - **Sentence case** for buttons, headings, menu items. Never Title Case, never
@@ -154,6 +158,54 @@ The test is what the user came for, not which component draws it:
 A scroll region with a fixed height is fine on these. Truncation is not. A new
 surface qualifies by answering the "why" column, not by being added to this
 list.
+
+## One frame for every page
+
+Eleven rules for how a page is built and how the user moves between pages. They
+came from reviewing the running app page by page; a screen that breaks one reads
+as a different product. Tokens are in
+[packages/ui/DESIGN-SYSTEM.md](./packages/ui/DESIGN-SYSTEM.md), the navigation
+model in [docs/navigation/model.md](./docs/navigation/model.md).
+
+- **One session head.** A session page draws one head: the title row (title on
+  the left, its actions on the right) and under it the tab strip. No page draws
+  a title of its own; the tab names the page.
+- **A secondary page says so and shows the way out.** Below a tab (an artifact,
+  a pull request, a run, an agent) the head keeps its title row, shows a back
+  button before the title and swaps the tabs for crumbs. The back button, the
+  crumbs and Esc walk the same chain one step up. A tab has no back button. The
+  first crumb reads Overview, never the session title the row above already
+  shows.
+- **One left edge and one centred column per page.** The head, the crumbs, the
+  page header and the content share one left edge and sit in one centred column.
+  A page picks its width from the four tiers (measure, reading, column, full),
+  never its own.
+- **Side rails on the left drive the centre.** A list that changes what the
+  centre shows (the Files of a pull request, the Agents of a run) is a rail on
+  the left of the content, with its own first row, scroll and remembered width.
+  It folds to a toggle on a narrow window.
+- **Panels open to the right, in one order.** Page content, then the detail
+  panel (an artifact, Ask, a check analysis), then the tools rail, then the tool
+  dock (Terminal, Browser). The content slides to re-centre when a panel opens
+  or closes, and every dock follows the same push or overlay rule.
+- **One fact, said once per row.** A row never repeats a state in two columns
+  or in its title and its status. One function decides which cell says it.
+- **One state word per thing, from one source.** A run, an agent and a pull
+  request read their word from one function; the crumb, the list, the rail and
+  the composer cannot disagree.
+- **Air between blocks, density inside rows.** The head, the blocks of a page
+  header and the transcript turns breathe through tokens. A row, a rail and a
+  list stay dense.
+- **One overflow menu per scope.** A page, a row or a panel has at most one `⋯`,
+  of five rows or fewer. A detail page shows the menu of what it shows, the
+  session menu is one crumb up.
+- **One filled button per row and per header, and every verb has an intent.**
+  Primary is the one next step. Rebase, force push and reset are caution;
+  delete, discard and Stop are destructive and quiet; filled only inside a
+  confirm. Success is a state, never a button.
+- **Never a raw id or an internal word.** An artifact reads by its title, an
+  agent by its role and task, a worktree by its branch or folder. Failed calls
+  say it in plain words with a way to retry, never the exception text.
 
 ## The contract of an action
 

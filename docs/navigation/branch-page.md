@@ -16,7 +16,7 @@ quoted headers, so a name with accents is its own file.
 under its title (`BranchTabStrip`, built on `PageTabs`); the page computes its counts once
 (`branchTabFactsOf`, built on `worktreeEntryFactsOf`). The tree row of the branch has no rows under it, only
 one pill. **One tab row per page.** Inside a session the session head sits above the page
-with the crumbs `Session › {branch name}` in place of the session tabs (see
+with the crumbs `Overview › {branch name}` in place of the session tabs (see
 [session-rail.md](session-rail.md#crumbs)), so the pull request page shows only its own row.
 Every door to the session's changes (the single-branch Changes shortcut, the board row's
 Changes door, the palette, the chord) opens this page on its Changes tab. A host with no
