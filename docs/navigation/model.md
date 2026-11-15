@@ -90,7 +90,7 @@
   control it holds for another container is the sidebar toggle. The bar never
   edits a record in place.
 - **The column holds every door and never changes level.** New session comes first, then the doors Board (the board, ⌘⇧H),
-  Tasks, Workflows, Chat, Impact and Monitoring as rows, Impact and Monitoring quiet; Chat ends in a plus
+  Tasks, Workflows, Chat, Connections, Impact and Monitoring as rows, Impact and Monitoring quiet; Chat ends in a plus
   (New chat) that is always visible. No separator: the Pinned and
   Sessions lists follow, and Settings and the Goodboy line, with the bug icon, sit at the foot, the app's corner. A
   door's trailing slot is one `StatusMark` (`doorMarkOf`): a 6px dot (unread, warning, neutral)
@@ -102,7 +102,11 @@
   is `useWorkspaceAttention` over every session of the workspace, whatever the
   project filter. The Now chip does not show it. The palette's
   Needs you rows read the attention group of `useStageGroupedSessions`.
-  Work is a seventh door between Tasks and Workflows, with a New badge outlined in the primary colour,
+  Connections, after Chat at full weight, is the page of the providers on this Mac and the
+  integrations of the workspace (`features/connections`); it has no shortcut and answers to
+  Providers and Integrations in ⌘K. The amber dot on it names what needs fixing, such as
+  "Connections, Claude is about to run out" (`selectProviderAttention`, named by `doorSignalOf`).
+  Work is an eighth door between Tasks and Workflows, with a New badge outlined in the primary colour,
   and it shows only while the Work switch is on (`columnDoorsOf`). Its page is the studio `work`
   (key `+work`, `features/work/components/WorkPage`): every Lead of the workspace across sessions,
   four filters (All open, Needs you, Working, Finished) whose counts come from `workRowsOf`, polled
@@ -114,7 +118,7 @@
   Monitoring is the row after Impact, its page has no band and no Close, and
   it is the one way to the page in the chrome: the top bar holds no Monitoring
   icon. The column holds no tool: Terminal and Browser live on the right rail
-  (see The session tools), and the folded rail shows the same six doors.
+  (see The session tools), and the folded rail shows the same seven doors.
   The test for a home: a place you go to and read full width is a door; a tool
   you open beside your work, in the dock with Open full page, is a rail icon.
   Chat (a conversation list and its transcript) and Impact (a report of tiles
@@ -133,12 +137,12 @@
   (`shared/navigation/destinations.ts`) owns the name, the glyph, the shortcut,
   the menu id, the former names, the scope (`app` or `workspace`) and the home
   (`column`, `rail`, `topBar` or `foot`) of Board, Tasks, Workflows, Chat,
-  Impact, Monitoring, Notifications, Terminal, Browser, Settings, Guide and
-  What's new, in one order. The column rows, the folded rail, the foot
+  Connections, Impact, Monitoring, Notifications, Terminal, Browser, Settings,
+  Guide and What's new, in one order. The column rows, the folded rail, the foot
   of the column, the Go menu, the palette rows and the
   shortcut sheet all read it, so a destination has one word and one glyph in
   every place. Settings, Guide and What's new have the `foot` home and the `app`
-  scope; the nine others are `workspace` pages. `openDestination` is the one way
+  scope; the ten others are `workspace` pages. `openDestination` is the one way
   to open one, Board included: it replaces the open page and pushes only from a
   place, whichever channel asked, so Back lands where you were before the first
   page. A name changes in `NAMES` and the table moves with it; the Rust menu is
@@ -148,6 +152,7 @@
   destinations in its Navigate group follow the order of the list. Board answers
   to Sessions in the palette and its page is titled Board. Each session page has
   its own glyph: Runs draws `CONCEPT_ICONS.runs`, not the Workflows door glyph,
+  Connections answers to Providers and Integrations and draws the plug,
   and Artifacts keeps `CONCEPT_ICONS.plans`. Moving a destination to another
   home is a change of its `home` and its row in the table, nothing else.
 - **One home per thing.** Say a thing must exist in state A and can exist in
@@ -192,7 +197,7 @@
   workspace tools, stay docked beside any page but their own (see
   [shell.md](./shell.md), The dock follows the page).
 - **A door replaces, a link stacks.** A door is a control that names a studio:
-  a column door (Tasks, Chat, Workflows, Impact, Monitoring, Settings), the Goodboy
+  a column door (Tasks, Chat, Connections, Workflows, Impact, Monitoring, Settings), the Goodboy
   line, the foot of the bell list, a ⌘K Go to
   row and the spend chip. Pressing a door while a studio is open replaces that studio in
   the same history entry (`switchStudio`), so five doors in a row leave one
@@ -210,7 +215,7 @@
   layered: it closes a popover or a confirmation inside the studio before the
   studio itself. The exit follows the scope. An app page (Settings, Help, New
   workspace) shows Back to app in its band and answers to Esc. A workspace page
-  (Tasks, Workflows, Chat, Impact, Terminal, Browser, Monitoring, Notifications)
+  (Tasks, Workflows, Chat, Connections, Impact, Terminal, Browser, Monitoring, Notifications)
   shows no exit control: it leaves by another door, Back or Esc. Nothing has a
   Close button.
 - **One selected sign.** Every page lights exactly one control, with
