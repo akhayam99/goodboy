@@ -6,7 +6,12 @@ import {
   settingsDirectory,
   type SettingsStatus,
 } from './components/SettingsStudio/settingsDirectory';
-import { CONNECTIONS_SETTING_KEY, settingsPaletteEntries } from './settingsPaletteEntries';
+import { SETTING_ROWS } from './settingRows';
+import {
+  CONNECTIONS_SETTING_KEY,
+  SETTING_ROW_KEY_PREFIX,
+  settingsPaletteEntries,
+} from './settingsPaletteEntries';
 
 const QUIET_STATUS: SettingsStatus = {
   subtitles: {
@@ -22,6 +27,33 @@ const QUIET_STATUS: SettingsStatus = {
 };
 
 describe('settingsPaletteEntries', () => {
+  it('lists every registry row tagged Setting with its page and band', () => {
+    const open = vi.fn();
+    const rows = settingsPaletteEntries({
+      groups: settingsDirectory({ status: QUIET_STATUS, workspaceName: 'Harborline' }),
+      open,
+    }).filter((entry) => entry.key.startsWith(SETTING_ROW_KEY_PREFIX));
+
+    expect(rows.map((entry) => entry.key.slice(SETTING_ROW_KEY_PREFIX.length))).toEqual(
+      SETTING_ROWS.map((row) => row.key),
+    );
+    expect(rows.every((entry) => entry.tag === 'Setting' && entry.kind === 'setting')).toBe(true);
+    const theme = rows.find((entry) => entry.label === 'Theme');
+    expect(theme?.detail).toBe('General · Appearance');
+    theme?.run();
+    expect(open).toHaveBeenCalledWith({ scope: 'app', section: 'general', row: 'theme' });
+  });
+
+  it('keeps workspace rows out of the palette when no workspace is open', () => {
+    const rows = settingsPaletteEntries({
+      groups: settingsDirectory({ status: QUIET_STATUS, workspaceName: null }),
+      open: vi.fn(),
+    }).filter((entry) => entry.key.startsWith(SETTING_ROW_KEY_PREFIX));
+
+    expect(rows.map((entry) => entry.label)).toContain('Dock badge');
+    expect(rows.map((entry) => entry.label)).not.toContain('Branch prefix');
+  });
+
   it('finds the Models page under This workspace when searching its former name Defaults', () => {
     const open = vi.fn();
     const entry = settingsPaletteEntries({

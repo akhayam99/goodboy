@@ -18,6 +18,7 @@ import { MODELS_PAGE_SECTION } from '../../isModelsPage';
 import { settingsDirectory, settingsPageKey } from './settingsDirectory';
 import { pageFocusOf, resolveSettingsFocus } from './resolveSettingsFocus';
 import { workspacePageOf } from './workspacePages';
+import { SettingRowFocusContext } from '../../settingRowFocusContext';
 
 type Props = {
   readonly currentWorkspace: Workspace | null;
@@ -86,6 +87,19 @@ export const SettingsStudio = ({
     rememberPage();
   }, [pageKey]);
 
+  const row = focus.row ?? null;
+  const rowFocus = useMemo(
+    () => ({
+      row,
+      onShown: () =>
+        onScopeChange({
+          scope: focus.scope,
+          ...(focus.section !== undefined && { section: focus.section }),
+        }),
+    }),
+    [row, focus.scope, focus.section, onScopeChange],
+  );
+
   const workspace = availableScope === 'workspace' ? currentWorkspace : null;
   const focusSection = focus.section === MODELS_PAGE_SECTION ? undefined : focus.section;
 
@@ -136,7 +150,9 @@ export const SettingsStudio = ({
             detail={
               <StudioDetail>
                 <div data-settings-detail="" className="h-full min-h-0 min-w-0">
-                  {renderDetail(requestClose)}
+                  <SettingRowFocusContext value={rowFocus}>
+                    {renderDetail(requestClose)}
+                  </SettingRowFocusContext>
                 </div>
               </StudioDetail>
             }
