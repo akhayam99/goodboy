@@ -337,15 +337,18 @@ cut at the end, never in the middle; the group's`aria-label` keeps the full
   `general`, `after-merge`, `review-replies`, `permissions`, `danger`) now
   pick a page (`workspacePageOf`); `track-with-git` (and the old
   `dev-project`) lands on Projects with the first commit review of the first
-  plain code folder open. The workspace is renamed from the `Name` field of the
-  Projects page, and its name is written once on that page, in the top bar
-  (the disconnect row says `Disconnect this workspace`). The attribution line
-  lives on Run defaults only, and Replies and commits links to it. Replies
-  and commits holds the reply voice and templates, `Mark thread as resolved`
+  plain code folder open. The workspace is renamed from the `Name` row of the
+  `Workspace` band that opens the Projects page, and its name is written once
+  on that page, in the top bar. The page ends in a `Danger zone` band whose
+  row says `Disconnect this workspace`, confirmed in place. The attribution
+  line lives on Run defaults only, and Replies and commits links to it.
+  Replies and commits holds the `Replies` band (the voice), the templates
+  with the seven placeholders shown once under both and added to the
+  template last in focus (`ReplyTemplatesBand`), `Mark thread as resolved`
   and the commit style (`review-replies` stays its page id and anchor); Run
   defaults is its own page of the workspace settings.
-  The Projects page lists each folder once: one row per repository or plain
-  folder under one count line (`3 projects, 1 plain folder`,
+  The Projects page lists each folder once, under a `Projects` heading. The
+  count is written once, in the page meta line (`3 projects, 1 plain folder`,
   `projectsCountLine`). A row opens in place; there is no second card for the
   same folder. Tracking a plain folder with git is an inline flow in its own
   row (`TrackWithGitFlow`, `FolderGitCard`), never a dialog: the
@@ -378,10 +381,13 @@ pageKeys.ts`), typed so a new override key does not compile until it has
   copied, and neither are projects, folders, integration accounts,
   permission history or `bootstrap.*` keys. Restoring writes `null`; every
   override change of one copy or restore is one `patchWorkspaceOverrides`
-  through the queued workspace writer. A field whose value differs from the
-  default shows a small Reset button after its label (tooltip `Reset to
-default`, hidden while the value is the default, `WorkspaceFieldRow`). Precedent:
-  JetBrains Copy to Project and VS Code's Modified marker with Reset Setting.
+  through the queued workspace writer. Every settings row, This Mac and
+  workspace alike, has one shape (`SettingRow`): label, one help line, the
+  control on the right. A row whose value differs from the default shows a
+  small Reset button on the label line (tooltip `Reset to default`, hidden
+  while the value is the default), after the `N folders use their own` chip
+  of a workspace row (`WorkspaceFieldRow`). Precedent: JetBrains Copy to
+  Project and VS Code's Modified marker with Reset Setting.
 - **Storage is the one place for disk space, scoped by a picker.** App >
   Storage lists every worktree folder Goodboy made, grouped by repository,
   under three filters: To review, In use and Kept. Each part is a card
@@ -493,11 +499,13 @@ workspaceId, nowMs })`, owns every row's attention sentence and tone (it replace
   `missing` in `projectGitStatus` (otherwise the row just names the
   workspace). A dot means only "needs you": a tool whose health is bad shows a
   warning or danger dot named by its reason (`toolAttention`), and a connected,
-  healthy provider or tool shows none (no green dot for connected). No rail row is red: the destructive actions sit at the
-  bottom of their page, Reset (Delete all data) at the end of Backup and
-  Disconnect at the end of Projects, and turn red only in their inline
-  confirm. Panel sections sit on bands (`Band`, eyebrow outside) with gap between
-  them and no `Divider`. The workspace page is the exception: one
+  healthy provider or tool shows none (no green dot for connected). No rail row is red: the destructive actions close
+  their page in a `Danger zone` band, Delete all data at the end of Backup
+  and reset and Disconnect at the end of Projects, and turn red only in their
+  inline confirm. Every group on a settings page is a named band (`Band`,
+  eyebrow outside) with gap between them and no `Divider`; a band name never
+  repeats its only row, and no page titles a group with a bare `Eyebrow`
+  (`settings-section-titles-are-bands`). The workspace page is the exception: one
   column of eyebrow sections 24px apart. Its title is the workspace name,
   renamed in place. One `Terminal folder` row sits above the projects: the
   computed folder (`workspaceFolder`) with `Change` (the folder dialog) and,
