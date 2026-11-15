@@ -104,7 +104,9 @@
   Needs you rows read the attention group of `useStageGroupedSessions`.
   Connections, after Chat at full weight, is the page of the providers on this Mac and the
   integrations of the workspace (`features/connections`); it has no shortcut and answers to
-  Providers and Integrations in ⌘K. The amber dot on it names what needs fixing, such as
+  Providers and Integrations in ⌘K. A provider row pushes its detail page (`openConnection`,
+  studio focus `{ provider }`) under the trail Connections > Claude; the trail and Esc go back
+  up to the index and the door always lands on the index. The amber dot on it names what needs fixing, such as
   "Connections, Claude is about to run out" (`selectProviderAttention`, named by `doorSignalOf`).
   Work is an eighth door between Tasks and Workflows, with a New badge outlined in the primary colour,
   and it shows only while the Work switch is on (`columnDoorsOf`). Its page is the studio `work`

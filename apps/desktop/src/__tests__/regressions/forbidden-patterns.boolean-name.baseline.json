@@ -149,7 +149,6 @@
     "apps/desktop/src/features/providers/components/ProviderStudio/ProviderPage/AccountGroup/types.ts": 1,
     "apps/desktop/src/features/providers/components/ProviderStudio/ProviderPage/index.tsx": 3,
     "apps/desktop/src/features/providers/components/ProviderStudio/ProviderPage/ModelsGroup/index.tsx": 1,
-    "apps/desktop/src/features/providers/components/ProviderStudio/ProviderPage/ProviderPageBody.tsx": 3,
     "apps/desktop/src/features/providers/hooks/useOrchestratorModelPick/index.ts": 1,
     "apps/desktop/src/features/providers/hooks/useSpreadByHeadroom/index.ts": 2,
     "apps/desktop/src/features/providers/policy/policyRows.ts": 2,

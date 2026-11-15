@@ -568,7 +568,6 @@
     "apps/desktop/src/features/providers/components/ProviderStudio/ProviderPage/AccountGroup/index.tsx": 1,
     "apps/desktop/src/features/providers/components/ProviderStudio/ProviderPage/AccountGroup/RuntimeRow.tsx": 1,
     "apps/desktop/src/features/providers/components/ProviderStudio/ProviderPage/ModelsGroup/index.tsx": 3,
-    "apps/desktop/src/features/providers/components/ProviderStudio/ProviderPage/PermissionsGroup.tsx": 1,
     "apps/desktop/src/features/providers/components/ProviderStudio/ProviderPage/UsageGroup/index.tsx": 1,
     "apps/desktop/src/features/providers/components/ProviderStudio/ProviderPage/UsageGroup/ResetCreditRow/resetCopy.ts": 5,
     "apps/desktop/src/features/providers/components/ProviderStudio/ProviderPage/usePlanLabel.ts": 1,

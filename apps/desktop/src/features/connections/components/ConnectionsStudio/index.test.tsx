@@ -70,17 +70,40 @@ describe('ConnectionsStudio', () => {
     expect(screen.queryByRole('region', { name: 'Integrations' })).toBeNull();
   });
 
-  it('opens the provider page in Settings from its row', async () => {
+  it('opens the provider page inside Connections from its row', async () => {
     const onOpen = vi.fn();
     window.addEventListener('goodboy:open-settings', onOpen);
     render(<ConnectionsStudio currentWorkspace={WORKSPACE} onClose={() => undefined} />);
 
     fireEvent.click(await screen.findByRole('button', { name: /^Claude/ }));
 
-    expect(onOpen).toHaveBeenCalledOnce();
-    expect(onOpen.mock.calls[0]?.[0]).toMatchObject({
-      detail: { scope: 'providers', provider: 'anthropic' },
+    expect(onOpen).not.toHaveBeenCalled();
+    expect(useAppStore.getState().appStudio).toEqual({
+      kind: 'connections',
+      focus: { provider: 'anthropic' },
     });
     window.removeEventListener('goodboy:open-settings', onOpen);
+  });
+
+  it('shows the provider page under a trail that leads back to Connections', async () => {
+    const refreshProviders = vi.fn(async () => undefined);
+    useAppStore.setState({ refreshProviders });
+    useAppStore.getState().openStudio({
+      studio: { kind: 'connections', focus: { provider: 'anthropic' } },
+    });
+    render(
+      <ConnectionsStudio
+        currentWorkspace={WORKSPACE}
+        focus={{ provider: 'anthropic' }}
+        onClose={() => undefined}
+      />,
+    );
+
+    await screen.findByRole('heading', { level: 1, name: 'Claude' });
+    expect(screen.queryByRole('region', { name: 'Providers' })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Connections' }));
+
+    expect(refreshProviders).toHaveBeenCalledOnce();
+    expect(useAppStore.getState().appStudio).toEqual({ kind: 'connections', focus: null });
   });
 });

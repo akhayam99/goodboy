@@ -1,7 +1,6 @@
 {
   "apps/desktop/src/app/components/AppTopBar/LimitsStrip/LimitsTooltip.tsx": 1,
   "apps/desktop/src/features/providers/components/ProviderIcon.tsx": 1,
-  "apps/desktop/src/features/providers/components/ProviderStudio/ProviderPage/PermissionsGroup.tsx": 1,
   "apps/desktop/src/features/providers/components/ProviderStudio/ProviderPage/UsageGroup/index.tsx": 4,
   "apps/desktop/src/features/providers/providers.ts": 3,
   "apps/desktop/src/features/workflows/components/WorkflowNodeRouting/lockableEffort.ts": 1,

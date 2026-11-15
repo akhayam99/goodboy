@@ -4368,11 +4368,6 @@
       "count": 1
     }
   },
-  "apps/desktop/src/features/providers/components/ProviderStudio/ProviderPage/ProviderPageBody.tsx": {
-    "@typescript-eslint/naming-convention": {
-      "count": 7
-    }
-  },
   "apps/desktop/src/features/providers/components/ProviderStudio/ProviderPage/UsageGroup/ResetCreditRow/index.test.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 4

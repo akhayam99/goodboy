@@ -40,17 +40,8 @@ vi.mock('./DefaultsPanel', () => ({
 }));
 
 vi.mock('./ProviderPage', () => ({
-  ProviderPage: ({
-    info,
-    scopeLabel,
-  }: {
-    info: { id: string } | null;
-    scopeLabel?: string | null;
-  }) => (
-    <>
-      <h1>{`detail ${info?.id ?? 'none'}`}</h1>
-      <span data-testid="scope">{scopeLabel ?? ''}</span>
-    </>
+  ProviderPage: ({ info }: { info: { id: string } | null }) => (
+    <h1>{`detail ${info?.id ?? 'none'}`}</h1>
   ),
 }));
 
@@ -112,7 +103,7 @@ describe('ProviderSettingsScope', () => {
     expect(screen.getByTestId('scope').textContent).toBe('Harborline');
   });
 
-  it('names the workspace on a provider page too', () => {
+  it('opens the provider page of the focused provider in a workspace', () => {
     state.providers = [{ id: 'anthropic', connection: 'connected' }];
     render(
       <ProviderSettingsScope
@@ -122,15 +113,7 @@ describe('ProviderSettingsScope', () => {
       />,
     );
 
-    expect(screen.getByRole('heading', { name: 'detail anthropic' })).toBeDefined();
-    expect(screen.getByTestId('scope').textContent).toBe('Harborline');
-  });
-
-  it('says All workspaces when there is no workspace scope', () => {
-    state.providers = [{ id: 'anthropic', connection: 'connected' }];
-    render(<ProviderSettingsScope workspaceId={null} frame={plainFrame} />);
-
-    expect(screen.getByTestId('scope').textContent).toBe('All workspaces');
+    screen.getByRole('heading', { name: 'detail anthropic' });
   });
 });
 
