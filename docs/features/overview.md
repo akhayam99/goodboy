@@ -46,6 +46,7 @@ Follow what happened in a session in one list. The **Log** is the last section o
 - One row per agent, workflow run or fix run shows its state, model, time and cost.
 - Plain facts get a row too, such as context changes, branch events and links.
 - Rows go newest first, with a search box.
+- Rows hold no buttons. The next step for a row, such as **Push** or **Start fix**, stays on its branch row above, so a step is offered once on the page.
 - The rail draws like the Agents column of a run: one thin line, the same nodes and elbows, the same step height. A day starts under a thin rule with its name.
 - A long log stays smooth. Rows far from the screen are skipped but keep their height. Rows a screen away are drawn before you reach them.
 - Every row carries the glyph its concept has in the sidebar and the **New** menu. A workflow run has the Workflows glyph, an orchestrated run the orchestrator glyph, and an agent its role.

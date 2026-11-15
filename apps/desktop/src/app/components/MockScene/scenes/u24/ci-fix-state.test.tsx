@@ -24,6 +24,7 @@ import {
   resetWorktreeStatusCache,
 } from '../../../../../store/runtime/worktreeStatuses/cache';
 import { mockSceneIpc } from '../mockSceneIpc';
+import { SESSION_ID } from '../activityRunSeed';
 import { U24_CI_FIX_STATE_SCENES } from './ci-fix-state';
 
 let store: StoryStore;
@@ -71,6 +72,16 @@ const openRowDrawer = () => {
   return screen.getByRole('region', { name: 'Debugger' });
 };
 
+const openLogDrawer = () => {
+  act(() => {
+    store.getState().openDrawer({
+      kind: 'session-log',
+      sessionId: SESSION_ID,
+      payload: { focusEntryId: null },
+    });
+  });
+};
+
 const rowPush = (): HTMLElement | null =>
   screen
     .queryAllByRole('button', { name: 'Push' })
@@ -78,7 +89,7 @@ const rowPush = (): HTMLElement | null =>
 const requireRowPush = (): HTMLElement => {
   const button = rowPush();
   if (button === null) {
-    throw new Error('The Activity row has no Push');
+    throw new Error('The log row has no Push');
   }
   return button;
 };
@@ -255,16 +266,21 @@ describe('CI fix state scenes', () => {
     expect(row?.textContent).toContain('Sonnet 5.5');
     expect(row?.textContent).not.toContain('Composer 2.5');
   });
-  it('offers Push on the log row of the chain and once on the Fix row of Needs you', () => {
+  it('offers Push once, on the Fix row of Needs you, and none on the log row of the chain', () => {
     show({ name: 'activity-check-fixed-local' });
     expect(screen.queryByText('payments-api / test is fixed on your branch')).toBeNull();
-    expect(rowPush()).not.toBeNull();
+    expect(rowPush()).toBeNull();
     const needsYou = screen.getByRole('region', { name: 'Branches' });
     expect(within(needsYou).getAllByRole('button', { name: 'Push' })).toHaveLength(1);
-    expect(screen.getAllByRole('button', { name: 'Push' })).toHaveLength(2);
+    expect(screen.getAllByRole('button', { name: 'Push' })).toHaveLength(1);
     expect(screen.queryByText('Review the changes')).toBeNull();
   });
-  it('pushes once from the Activity row and then drops the Push', async () => {
+  it('offers Push on the log row of the chain in the Log drawer kept for restored places', () => {
+    show({ name: 'activity-check-fixed-local' });
+    openLogDrawer();
+    expect(rowPush()).not.toBeNull();
+  });
+  it('pushes once from the log row and then drops the Push', async () => {
     let isPushed = false;
     const pushes: Array<unknown> = [];
     store.setState({
@@ -272,6 +288,7 @@ describe('CI fix state scenes', () => {
       loadSessionMounts: async () => [],
     });
     show({ name: 'activity-check-fixed-local' });
+    openLogDrawer();
     const commits = (): ReadonlyArray<BranchCommit> => [
       {
         sha: '9e4c1a7d3b5f60718293a4b5c6d7e8f901234567',
@@ -303,6 +320,7 @@ describe('CI fix state scenes', () => {
   it('drops the row Push when the branch is pushed from somewhere else', async () => {
     let isPushed = false;
     show({ name: 'activity-check-fixed-local' });
+    openLogDrawer();
     const worktreePaths = Object.values(store.getState().sessionProjectMounts)
       .flat()
       .map((mount) => mount.worktreePath);
@@ -355,6 +373,7 @@ describe('CI fix state scenes', () => {
       reportError,
     });
     show({ name: 'activity-check-fixed-local' });
+    openLogDrawer();
     mockSceneIpc((command) => {
       if (command === 'git_push') {
         return { stdout: '', stderr: 'rejected: non-fast-forward', exitCode: 1 };
