@@ -103,7 +103,7 @@ export const App = () => {
     openNewChat,
     openMonitoring,
     openImpact,
-    settingsProviderId,
+    connectionsProviderId,
     studio,
     layers,
   } = useAppOverlays({
@@ -246,7 +246,7 @@ export const App = () => {
               sidebar={{ isCollapsed: arrangement.isLeftRail, onToggle: sessionSidebar.toggle }}
               onOpenSpend={openSpend}
               onOpenScript={(run) => void openRunningScript({ run })}
-              openProviderId={settingsProviderId}
+              openProviderId={connectionsProviderId}
             />
           }
           leftSidebarCollapsed={arrangement.isLeftRail}

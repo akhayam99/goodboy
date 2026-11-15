@@ -4,7 +4,7 @@ import { cn, ICON_SIZE, Tooltip } from '@goodboy/ui';
 import { PROVIDER_LABEL } from '../../../features/providers/providerLabel';
 import { ProviderGlyph } from './ProviderGlyph';
 import { ROUTING_PICKER_CONSTANTS } from './constants';
-import { openSettings } from '../../../features/settings/openSettings';
+import { openConnection } from '../../../features/connections/openConnection';
 
 type Props = {
   readonly connectedProviders: ReadonlyArray<ProviderId>;
@@ -79,7 +79,7 @@ export const ProviderGrid = ({
           aria-label="Add provider"
           onClick={() => {
             onNavigateProviders();
-            openSettings({ scope: 'providers' });
+            openConnection({ focus: null });
           }}
           className="inline-flex h-full shrink-0 items-center justify-center gap-1 rounded-md px-2 text-chip font-medium text-muted-foreground transition-colors hover:bg-background hover:text-foreground"
         >

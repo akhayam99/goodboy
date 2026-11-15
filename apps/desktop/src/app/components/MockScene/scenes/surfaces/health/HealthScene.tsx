@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
-import { SettingsFrame } from '../../audit/SettingsFrame';
+import type { ConnectionsFocus } from '../../../../../../features/connections/connectionsFocus';
+import { ConnectionsFrame } from '../../audit/ConnectionsFrame';
 import { payloadString } from '../../audit/ipcPayload';
 import { seedBrandSettings } from '../../brand/settingsBrandSeed';
 import { mockSceneIpc } from '../../mockSceneIpc';
@@ -14,6 +15,8 @@ const MINUTE_MS = 60_000;
 const DRIVE_AFTER_MS = 1_200;
 const MISSING_KEY = 'mock-brand-cred-linear';
 const CURRENT_CODEX_VERSION = '0.163.0';
+const CODEX_PAGE: ConnectionsFocus = { kind: 'provider', provider: 'codex' };
+const LINEAR_PAGE: ConnectionsFocus = { kind: 'tool', tool: 'linear' };
 
 const seedHealth = (): void => {
   seedBrandSettings();
@@ -85,17 +88,15 @@ const Drive = ({ menuLabel, regionLabel }: Props) => {
 export const U26S_HEALTH_SCENES = {
   'u26s-health-codexmenu': () => (
     <>
-      <SettingsFrame focus={{ scope: 'providers', provider: 'codex' }} seed={seedHealth} />
+      <ConnectionsFrame focus={CODEX_PAGE} seed={seedHealth} />
       <Drive menuLabel="More Codex actions" regionLabel={null} />
     </>
   ),
   'u26s-health-codexaccount': () => (
     <>
-      <SettingsFrame focus={{ scope: 'providers', provider: 'codex' }} seed={seedHealth} />
+      <ConnectionsFrame focus={CODEX_PAGE} seed={seedHealth} />
       <Drive menuLabel={null} regionLabel="Account" />
     </>
   ),
-  'u26s-health-linear': () => (
-    <SettingsFrame focus={{ scope: 'tools', tool: 'linear' }} seed={seedHealth} />
-  ),
+  'u26s-health-linear': () => <ConnectionsFrame focus={LINEAR_PAGE} seed={seedHealth} />,
 };

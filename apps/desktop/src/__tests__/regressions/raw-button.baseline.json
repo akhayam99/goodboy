@@ -159,7 +159,6 @@
   "apps/desktop/src/features/settings/components/SettingsStudio/FlowSourcePicker.tsx": 1,
   "apps/desktop/src/features/settings/components/SettingsStudio/GoodboyIgnoreField.tsx": 1,
   "apps/desktop/src/features/settings/components/SettingsStudio/SecurityFindingsSection.tsx": 1,
-  "apps/desktop/src/features/settings/components/SettingsStudio/SettingsRailFold.tsx": 1,
   "apps/desktop/src/features/storage/components/BranchesPage/RecentlyDeletedBranches.tsx": 1,
   "apps/desktop/src/features/storage/components/StoragePage/WorktreeGroup.tsx": 1,
   "apps/desktop/src/features/terminal/components/TerminalStudio/TerminalRowName.tsx": 1,

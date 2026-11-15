@@ -1,6 +1,14 @@
+import { useEffect } from 'react';
 import { isApiProvider } from '@goodboy/core/providers';
 import type { WorkspaceId } from '@goodboy/types';
-import { Button, EmptyState, PaneShell, RefreshIconButton, StateBadge } from '@goodboy/ui';
+import {
+  Button,
+  EmptyState,
+  PaneShell,
+  RefreshIconButton,
+  StateBadge,
+  appScrollIntoView,
+} from '@goodboy/ui';
 import type { FramePage } from '@goodboy/ui';
 import type { ProviderDisplayInfo } from '../providers';
 import { useAppStore } from '../../../store';
@@ -14,6 +22,7 @@ import { ModelsGroup } from '../components/ProviderStudio/ProviderPage/ModelsGro
 import { ProviderAttentionNotice } from '../components/ProviderStudio/ProviderPage/ProviderAttentionNotice';
 import { ProviderHealthNotice } from '../components/ProviderStudio/ProviderPage/ProviderHealthNotice';
 import { UsageGroup } from '../components/ProviderStudio/ProviderPage/UsageGroup';
+import { USAGE_SECTION_ID } from '../components/ProviderStudio/ProviderPage/UsageGroup/usageSectionId';
 import { usePlanLabel } from '../components/ProviderStudio/ProviderPage/usePlanLabel';
 import { PermissionsFold } from './PermissionsFold';
 import { ProviderFacts } from './ProviderFacts';
@@ -25,6 +34,7 @@ type Props = {
   readonly shouldAutoConnect: boolean;
   readonly shouldAutoUpdate: boolean;
   readonly isModelsFocused: boolean;
+  readonly isUsageFocused?: boolean;
   readonly workspaceId: WorkspaceId | null;
   readonly page?: FramePage;
   readonly animationClassName?: string;
@@ -35,6 +45,7 @@ export const ProviderDetailBody = ({
   shouldAutoConnect,
   shouldAutoUpdate,
   isModelsFocused,
+  isUsageFocused = false,
   workspaceId,
   page,
   animationClassName,
@@ -62,6 +73,14 @@ export const ProviderDetailBody = ({
   });
   const stateWord = useProviderStateWord({ info });
   const onRefresh = () => void refresh();
+  const isUsageShown = isUsageFocused && isReady;
+
+  useEffect(() => {
+    if (!isUsageShown) {
+      return;
+    }
+    appScrollIntoView({ element: document.getElementById(USAGE_SECTION_ID), block: 'start' });
+  }, [isUsageShown]);
 
   return (
     <PaneShell

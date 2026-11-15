@@ -660,7 +660,7 @@ describe('Context updates in the drawer', () => {
     window.removeEventListener('goodboy:open-settings', opened);
     const event = opened.mock.calls[0]?.[0];
     expect(event instanceof CustomEvent ? event.detail : null).toEqual({
-      scope: 'providers',
+      scope: 'workspace',
       section: 'summarizer',
     });
   });

@@ -6,7 +6,7 @@
   "apps/desktop/src/features/session/timeline/buildTimelineStream/index.test.ts": 3136,
   "apps/desktop/src/features/suggestions/deriveNextSteps.test.ts": 1121,
   "apps/desktop/src/features/workTreeModel/railGeometry.test.ts": 1052,
-  "apps/desktop/src/shared/components/RoutingPicker/index.test.tsx": 1113,
+  "apps/desktop/src/shared/components/RoutingPicker/index.test.tsx": 1096,
   "apps/desktop/src/store/slices/artifacts/artifactScoutRun.test.ts": 1107,
   "apps/desktop/src/store/slices/history/index.test.ts": 1678,
   "apps/desktop/src/store/slices/resolve/candidateIntegration.test.ts": 1649,

@@ -1,6 +1,7 @@
 import { Button, useDropdown } from '@goodboy/ui';
 import type { WorkspaceId } from '@goodboy/types';
 import { NAMES } from '../../../../shared/utils/names';
+import { MODELS_PAGE_SECTION } from '../../../settings/isModelsPage';
 import { openSettings } from '../../../settings/openSettings';
 import { usePolicySummary } from '../../hooks/usePolicySummary';
 import { SettingChip } from '../../../../shared/components/SettingChip';
@@ -21,7 +22,7 @@ export const DefaultModelsSetting = ({ workspaceId }: Props) => {
       words={{
         value: summary,
         source: 'new runs',
-        chain: `Set in ${NAMES.providers}. A run can change its own from its page.`,
+        chain: `Set in ${NAMES.models}. A run can change its own from its page.`,
       }}
       help={HELP}
       error={null}
@@ -35,10 +36,10 @@ export const DefaultModelsSetting = ({ workspaceId }: Props) => {
         className="self-start"
         onClick={() => {
           dropdown.close();
-          openSettings({ scope: 'providers' });
+          openSettings({ scope: 'workspace', section: MODELS_PAGE_SECTION });
         }}
       >
-        {`Open ${NAMES.providers}`}
+        {`Open ${NAMES.models}`}
       </Button>
     </SettingChip>
   );

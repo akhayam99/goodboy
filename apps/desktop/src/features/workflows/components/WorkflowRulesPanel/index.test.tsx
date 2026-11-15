@@ -223,17 +223,17 @@ describe('WorkflowRulesPanel', () => {
     );
   });
 
-  it('opens Providers from the Models chip', () => {
+  it('opens the workspace Models page from the Models chip', () => {
     const received: Array<unknown> = [];
     const listener = (event: Event) => received.push((event as CustomEvent).detail);
     window.addEventListener('goodboy:open-settings', listener);
     panel();
 
     fireEvent.click(chip('Models'));
-    fireEvent.click(screen.getByRole('button', { name: 'Open Providers' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Open Models' }));
     window.removeEventListener('goodboy:open-settings', listener);
 
-    expect(received).toEqual([{ scope: 'providers', section: undefined }]);
+    expect(received).toEqual([{ scope: 'workspace', section: 'models' }]);
   });
 
   it('shows the policy in one line, with no switch and no provider list', () => {

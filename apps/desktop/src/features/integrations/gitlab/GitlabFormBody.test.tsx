@@ -11,6 +11,7 @@ import type {
 const { state, ghStatusMock, ghClearTokenMock } = vi.hoisted(() => ({
   state: {
     workspaceIntegrations: {} as Record<string, ReadonlyArray<unknown>>,
+    integrationKeyChecks: {},
     connectGitlab: vi.fn(async () => undefined),
     refreshViewerIdentity: vi.fn(async () => []),
     disconnectIntegration: vi.fn(async () => undefined),

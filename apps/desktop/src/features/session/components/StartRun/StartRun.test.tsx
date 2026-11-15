@@ -862,7 +862,8 @@ describe('StartRun model', () => {
     expect(opened).toHaveBeenCalledTimes(1);
     const event = opened.mock.calls[0]?.[0];
     expect(event instanceof CustomEvent ? event.detail : null).toMatchObject({
-      scope: 'providers',
+      scope: 'workspace',
+      section: 'models',
     });
     window.removeEventListener('goodboy:open-settings', opened);
   });

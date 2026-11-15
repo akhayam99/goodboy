@@ -99,6 +99,27 @@ describe('the provider detail body', () => {
     ]);
   });
 
+  it('scrolls to Usage when a link asked for the usage section', () => {
+    const scrolled = vi.fn();
+    Object.defineProperty(Element.prototype, 'scrollIntoView', {
+      configurable: true,
+      value: scrolled,
+    });
+    render(
+      <ProviderDetailBody
+        info={CLAUDE}
+        shouldAutoConnect={false}
+        shouldAutoUpdate={false}
+        isModelsFocused={false}
+        isUsageFocused
+        workspaceId={null}
+      />,
+    );
+
+    expect(scrolled).toHaveBeenCalledOnce();
+    expect(scrolled.mock.contexts[0]).toBe(document.getElementById('provider-usage'));
+  });
+
   it('keeps the permissions closed until asked, with the count of modes that work fully', () => {
     renderBody({ info: CLAUDE });
 

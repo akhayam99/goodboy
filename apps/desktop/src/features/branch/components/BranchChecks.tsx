@@ -14,7 +14,7 @@ import { useSessionRepo } from '../../../store/slices/worktrees/useSessionRepo';
 import { actionButtonLookOf } from '../../actions/actionButtonLookOf';
 import { useActionControls } from '../../actions/useActionControls';
 import { useGithubConnection } from '../../integrations/github/useGithubConnection';
-import { openToolSettings } from '../../integrations/openToolSettings';
+import { openIntegration } from '../../integrations/openIntegration';
 import { ChecksMode } from '../../review/components/ChecksMode';
 import { checksViewOf, type ChecksHost, type ChecksHostKind } from '../checksViewOf';
 import { usePullRequestView } from '../hooks/usePullRequestView';
@@ -179,7 +179,7 @@ export const BranchChecks = ({ sessionId, mountId = null }: Props) => {
           isTokenBound={connection.mode === 'pat' || hasBinding}
           isChecking={isChecking}
           error={view.error}
-          onOpenSettings={() => openToolSettings({ tool: portHost ?? 'github' })}
+          onOpenSettings={() => openIntegration({ tool: portHost ?? 'github' })}
           onCheckAgain={checkAgain}
         />
       );

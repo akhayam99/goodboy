@@ -39,7 +39,12 @@ import { openNewWorkspace } from '../../workspace/openNewWorkspace';
 import { useIsMainWindow } from '../../workspace/useIsMainWindow';
 import { getWizardState, resumeSetup } from '../../onboarding/onboardingSettings';
 import { useSettingsDirectory } from '../../settings/hooks/useSettingsDirectory';
-import { settingsPaletteEntries } from '../../settings/settingsPaletteEntries';
+import {
+  CONNECTIONS_SETTING_KEY,
+  settingsPaletteEntries,
+} from '../../settings/settingsPaletteEntries';
+import { connectionPaletteEntries } from '../../connections/connectionPaletteEntries';
+import { openConnection } from '../../connections/openConnection';
 import { guidePaletteEntries } from '../../settings/guidePaletteEntries';
 import { checkForUpdatesNow } from '../../updater/checkForUpdatesNow';
 import type { SettingsFocus } from '../../settings/settingsFocus';
@@ -93,6 +98,7 @@ export const useCommandEntries = (): ReadonlyArray<PaletteEntry> => {
     workspaceId: currentWorkspace?.id ?? null,
     workspaceName: currentWorkspace?.name ?? null,
   });
+  const providers = useAppStore((s) => s.providers);
   const sessionId = currentSession === null ? null : (currentSession.id as SessionId);
   const openWorkspace = useAppStore((s) => s.openWorkspace);
   const navigate = useAppStore((s) => s.navigate);
@@ -447,8 +453,11 @@ export const useCommandEntries = (): ReadonlyArray<PaletteEntry> => {
     out.push(
       footDestinationEntryOf({ id: 'settings' }),
       ...settingsPaletteEntries({ groups: settingsGroups, open: openSettingsDoor }).filter(
-        (entry) => entry.key !== 'setting:app:shortcuts',
+        (entry) =>
+          entry.key !== 'setting:app:shortcuts' &&
+          (!hasWorkspace || entry.key !== CONNECTIONS_SETTING_KEY),
       ),
+      ...connectionPaletteEntries({ providers, hasWorkspace }),
       ...THEME_CHOICES.map((choice): PaletteEntry => ({
         key: `action:theme-${choice}`,
         label: `${NAMES.theme}: ${choice}`,
@@ -473,7 +482,7 @@ export const useCommandEntries = (): ReadonlyArray<PaletteEntry> => {
         kind: 'action',
         group: 'action',
         icon: CONCEPT_ICONS.providers,
-        run: () => openSettingsDoor({ scope: 'providers' }),
+        run: () => openConnection({ focus: null }),
       },
       {
         key: 'action:pair-device',
@@ -539,6 +548,7 @@ export const useCommandEntries = (): ReadonlyArray<PaletteEntry> => {
     unreadSessionIds,
     showToast,
     settingsGroups,
+    providers,
     innerColumn,
     canResumeSetup,
     isWork,

@@ -1,6 +1,6 @@
 import { initialFilters } from './initialFilters';
 import { CHECK_STATE } from '../../../../store/slices/notifications/errorRecovery';
-import { openToolSettings } from '../../../integrations/openToolSettings';
+import { openIntegration } from '../../../integrations/openIntegration';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { inlineMarkdownText, useEscapeLayer, PaneShell, appScrollIntoView } from '@goodboy/ui';
 import { NAMES } from '../../../../shared/utils/names';
@@ -448,7 +448,7 @@ export const InboxStudio = ({
   const failureLineOf = (provider: InboxProvider): TaskLine => {
     const name = integrationLabel({ provider });
     const failure = sourceFailureOf({ name, message: errors[provider] ?? '' });
-    const onAction = failure.isRefused ? () => openToolSettings({ tool: provider }) : refetch;
+    const onAction = failure.isRefused ? () => openIntegration({ tool: provider }) : refetch;
     return { key: `failure:${provider}`, failure, onAction };
   };
   const isSourceGrouped = view.groupBy === 'source';
@@ -459,7 +459,7 @@ export const InboxStudio = ({
     : [];
   const looseFailures = isSourceGrouped ? [] : failingProviders.map(failureLineOf);
 
-  const openSettings = () => openToolSettings({});
+  const openSettings = () => openIntegration({});
 
   const facets = (
     <InboxFacetRail

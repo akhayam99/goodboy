@@ -2,7 +2,7 @@ import { integrationLabel } from '../../../shared/utils/integrationLabel';
 import { selectToolKeyCheck } from '../../../store/slices/integrations/selectToolKeyCheck';
 import type { AppStore } from '../../../store/store';
 import { connectedToolsOf } from '../../integrations/connectedToolsOf';
-import { TOOL_ORDER } from '../../integrations/toolRailEntries';
+import { TOOL_ORDER } from '../../integrations/toolOrder';
 import { orderProviders } from '../../providers/orderProviders';
 import { connectionStateOf } from './connectionStateOf';
 

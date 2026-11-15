@@ -1,7 +1,7 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import { TOOL_USES } from '../../../store/slices/integrations/toolUses';
-import { TOOL_ORDER } from '../../integrations/toolRailEntries';
+import { TOOL_ORDER } from '../../integrations/toolOrder';
 import { toolUseRowsOf } from './toolUseRowsOf';
 
 describe('toolUseRowsOf', () => {

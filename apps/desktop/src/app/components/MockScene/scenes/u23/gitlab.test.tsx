@@ -116,13 +116,11 @@ describe('the gitlab page scenes', () => {
 
     expect(await screen.findByText("Goodboy can't read this merge request")).toBeDefined();
     expect(screen.getByText(/Give it the `api` scope/)).toBeDefined();
-    const button = screen.getByRole('button', { name: 'Open GitLab settings' });
-    const heard: Array<unknown> = [];
-    window.addEventListener('goodboy:open-settings', (event) =>
-      heard.push((event as CustomEvent).detail),
-    );
-    fireEvent.click(button);
-    expect(heard).toEqual([{ scope: 'tools', tool: 'gitlab' }]);
+    fireEvent.click(screen.getByRole('button', { name: 'Open GitLab settings' }));
+    expect(store.getState().appStudio).toEqual({
+      kind: 'connections',
+      focus: { kind: 'tool', tool: 'gitlab' },
+    });
     expect(screen.getByRole('button', { name: 'Retry' })).toBeDefined();
   });
 

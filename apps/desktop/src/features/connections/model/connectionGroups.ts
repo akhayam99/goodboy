@@ -1,6 +1,6 @@
 import type { ProviderId } from '@goodboy/types';
 import { isProviderId } from '@goodboy/types/helpers';
-import { TOOL_ORDER } from '../../integrations/toolRailEntries';
+import { TOOL_ORDER } from '../../integrations/toolOrder';
 import { orderProviders } from '../../providers/orderProviders';
 import type { ProviderDisplayInfo } from '../../providers/providers';
 import type { ConnectionToolId } from './connectionState';

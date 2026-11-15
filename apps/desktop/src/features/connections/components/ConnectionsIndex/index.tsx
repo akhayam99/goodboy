@@ -15,7 +15,7 @@ import { integrationLabel } from '../../../../shared/utils/integrationLabel';
 import { NAMES } from '../../../../shared/utils/names';
 import { useAppStore } from '../../../../store';
 import { TOOL_CATALOG } from '../../../integrations/toolCatalog';
-import { openSettings } from '../../../settings/openSettings';
+import { openModelsSettings } from '../../../settings/openModelsSettings';
 import { useConnectionGroups } from '../../hooks/useConnectionGroups';
 import { useConnectionsRefresh } from '../../hooks/useConnectionsRefresh';
 import { useToolChecks } from '../../hooks/useToolChecks';
@@ -142,7 +142,7 @@ export const ConnectionsIndex = ({ workspace }: Props) => {
           label={NAMES.providers}
           place={PROVIDERS_PLACE}
           action={
-            <Button variant="ghost" size="sm" onClick={() => openSettings({ scope: 'providers' })}>
+            <Button variant="ghost" size="sm" onClick={() => openModelsSettings()}>
               {MODELS_LINK}
               <ArrowRight size={ICON_SIZE.row} aria-hidden />
             </Button>

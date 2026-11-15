@@ -48,7 +48,6 @@ export type WindowEventDetails = {
   readonly 'goodboy:script-ended': Payload;
   readonly 'goodboy:onboarding-progress': undefined;
   readonly 'goodboy:open-onboarding-wizard': Payload | undefined;
-  readonly 'goodboy:credential-recheck': undefined;
   readonly 'goodboy:needs-you-feedback': Payload;
 };
 

@@ -310,10 +310,8 @@ describe('LimitsStrip', () => {
     expect(document.activeElement).toBe(everyButton[everyButton.length - 1]);
   });
 
-  it('presses the chip of the provider open in settings and opens its usage on click', () => {
+  it('presses the chip of the provider open in Connections and opens its usage on click', () => {
     setLimits(bothReporting());
-    const listener = vi.fn();
-    window.addEventListener('goodboy:open-settings', listener);
     render(<LimitsStrip openProviderId="codex" />);
 
     const codex = chipButtons().find(
@@ -321,14 +319,10 @@ describe('LimitsStrip', () => {
     );
     expect(codex?.getAttribute('aria-pressed')).toBe('true');
     fireEvent.click(chipButtons()[0] as HTMLElement);
-    const event = listener.mock.calls[0]?.[0] as CustomEvent;
-    expect(event.detail).toEqual({
-      scope: 'providers',
-      provider: 'anthropic',
-      section: 'usage',
-      door: true,
+    expect(useAppStore.getState().appStudio).toEqual({
+      kind: 'connections',
+      focus: { kind: 'provider', provider: 'anthropic', section: 'usage' },
     });
-    window.removeEventListener('goodboy:open-settings', listener);
   });
 
   it('leaves the call to connect to the footer when none is connected', () => {
@@ -410,14 +404,14 @@ describe('LimitsStrip opening the Providers menu', () => {
   it('falls back to the usage page with no workspace, where no policy exists', () => {
     setLimits(bothReporting());
     setWorkspace(null);
-    const listener = vi.fn();
-    window.addEventListener('goodboy:open-settings', listener);
     render(<LimitsStrip />);
 
     fireEvent.click(chipButtons()[0] as HTMLElement);
 
     expect(screen.queryByRole('dialog', { name: 'Providers' })).toBeNull();
-    expect(listener).toHaveBeenCalledOnce();
-    window.removeEventListener('goodboy:open-settings', listener);
+    expect(useAppStore.getState().appStudio).toEqual({
+      kind: 'connections',
+      focus: { kind: 'provider', provider: 'anthropic', section: 'usage' },
+    });
   });
 });

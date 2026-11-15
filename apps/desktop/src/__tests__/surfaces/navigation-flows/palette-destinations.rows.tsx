@@ -432,12 +432,9 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
   },
   {
     name: 'palette: Connect a provider',
-    covers: ['openStudio', 'scope:providers', 'palette:Connect a provider'],
+    covers: ['openStudio', 'studio:connections', 'palette:Connect a provider'],
     open: () => openPalette(/^Connect a provider/),
-    lands: both(
-      () => settingsPage(),
-      () => visible('region', 'Providers'),
-    ),
+    lands: () => studio('Connections'),
   },
   {
     name: 'palette: Pair an iPhone',

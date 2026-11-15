@@ -29,7 +29,7 @@ import { useOpenAgentQuestion } from '../../context/hooks/useOpenAgentQuestion';
 import type { RebaseSuggestionTarget, SessionSuggestion } from '../types';
 import { projectById } from '../../../store/slices/projects/projectIndex';
 import { continueWithRole } from '../../session/startRun/continueWithRole';
-import { openSettings } from '../../settings/openSettings';
+import { openConnection } from '../../connections/openConnection';
 import { useShowToast } from '../../../shared/components/Toast/useShowToast';
 import { archiveSessionAction } from './archiveSessionAction';
 import { checkWorkLockOf } from '../../branch/checks/checkWorkLockOf';
@@ -41,7 +41,7 @@ import { moveTrackerAction } from './moveTrackerAction';
 const REVIEW_THE_CHANGES = 'Review the changes';
 
 const openProviderSignIn = ({ providerId }: { readonly providerId: ProviderId }) =>
-  openSettings({ scope: 'providers', provider: providerId, action: 'login' });
+  openConnection({ focus: { kind: 'provider', provider: providerId, action: 'login' } });
 
 type Params = {
   readonly session: Session;

@@ -18,6 +18,8 @@ type Props = {
 
 const MODELS_SECTION = 'models';
 
+const USAGE_SECTION = 'usage';
+
 export const ProviderDetail = ({ focus, workspaceId }: Props) => {
   const { provider } = focus;
   const info = useAppStore((state) => state.providers.find((item) => item.id === provider));
@@ -55,6 +57,7 @@ export const ProviderDetail = ({ focus, workspaceId }: Props) => {
             shouldAutoConnect={focus.action !== undefined && focus.action !== 'update'}
             shouldAutoUpdate={focus.action === 'update'}
             isModelsFocused={focus.section === MODELS_SECTION}
+            isUsageFocused={focus.section === USAGE_SECTION}
             workspaceId={workspaceId}
             page="connections"
           />

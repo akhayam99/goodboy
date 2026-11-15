@@ -1,5 +1,6 @@
 import { CONCEPT_ICONS } from '../../shared/components/conceptIcons';
-import { formerNamesOf } from '../../shared/utils/names';
+import { NAMES, formerNamesOf } from '../../shared/utils/names';
+import { openConnection } from '../connections/openConnection';
 import type { PaletteEntry } from '../palette/types';
 import type { SettingsGroup } from './components/SettingsStudio/settingsDirectory';
 import type { SettingsFlow, SettingsFocus } from './settingsFocus';
@@ -12,8 +13,19 @@ type Params = {
 const PREFIX: Readonly<Record<SettingsGroup['scope'], string>> = {
   app: 'Settings',
   workspace: 'Workspace settings',
-  providers: 'Providers',
-  tools: 'Integrations',
+};
+
+export const CONNECTIONS_SETTING_KEY = 'setting:connections';
+
+const connectionsEntry: PaletteEntry = {
+  key: CONNECTIONS_SETTING_KEY,
+  label: `Go to ${NAMES.connections}`,
+  kind: 'setting',
+  group: 'action',
+  icon: CONCEPT_ICONS.connections,
+  tag: 'Settings',
+  secondary: [NAMES.providers, 'Integrations'],
+  run: () => openConnection({ focus: null }),
 };
 
 const flowEntry = ({
@@ -50,10 +62,11 @@ export const settingsPaletteEntries = ({ groups, open }: Params): ReadonlyArray<
     })),
   );
   if (!groups.some((group) => group.scope === 'workspace')) {
-    return pages;
+    return [...pages, connectionsEntry];
   }
   return [
     ...pages,
+    connectionsEntry,
     flowEntry({
       flow: 'copy',
       label: 'Copy settings from another workspace',

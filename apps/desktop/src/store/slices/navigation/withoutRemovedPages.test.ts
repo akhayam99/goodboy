@@ -64,6 +64,34 @@ describe('withoutRemovedPages', () => {
     expect(next.place).toEqual(stored.place);
   });
 
+  it.each([
+    {
+      studio: { kind: 'settings', focus: { scope: 'providers', provider: 'codex' } },
+      lands: { kind: 'connections', focus: { kind: 'provider', provider: 'codex' } },
+    },
+    {
+      studio: { kind: 'settings', focus: { scope: 'tools', tool: 'linear' } },
+      lands: { kind: 'connections', focus: { kind: 'tool', tool: 'linear' } },
+    },
+    {
+      studio: { kind: 'settings', focus: { scope: 'tools' } },
+      lands: { kind: 'connections', focus: null },
+    },
+    {
+      studio: { kind: 'settings', focus: { scope: 'providers' } },
+      lands: { kind: 'settings', focus: { scope: 'providers' } },
+    },
+  ])(
+    'restores a stored $studio.focus.scope Settings page where it lives now',
+    ({ studio, lands }) => {
+      const stored: Location = JSON.parse(
+        JSON.stringify({ ...storedAt({ lens: 'questions' }), studio }),
+      );
+
+      expect(withoutRemovedPages({ location: stored }).studio).toEqual(lands);
+    },
+  );
+
   it('keeps a live studio as it was', () => {
     const location: Location = { ...storedAt({ lens: 'questions' }), studio: { kind: 'guide' } };
 

@@ -1,6 +1,5 @@
 // @vitest-environment happy-dom
 
-import type { ReactNode } from 'react';
 import type { IsoDateTime, Workspace, WorkspaceId } from '@goodboy/types';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
@@ -127,12 +126,10 @@ vi.mock('../../../../store', () => ({
   useCurrentWorkspace: () => null,
 }));
 
-vi.mock('../../../providers/components/ProviderStudio', () => ({
-  ProviderSettingsScope: ({
-    frame,
-  }: {
-    readonly frame: (parts: { detail: ReactNode }) => ReactNode;
-  }) => frame({ detail: <div>Provider settings content</div> }),
+vi.mock('../../../providers/components/ProviderStudio/DefaultsPanel', () => ({
+  DefaultsPanel: ({ focusSection }: { readonly focusSection?: string }) => (
+    <div>{`Models content ${focusSection ?? 'top'}`}</div>
+  ),
 }));
 
 vi.mock('./WorkspaceScopePanel', () => ({
@@ -169,7 +166,7 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe('SettingsStudio', () => {
-  it('opens the actual tool form from a focused settings request', async () => {
+  it('opens the workspace Models page, at a model row when one is named', () => {
     const workspace: Workspace = {
       id: 'workspace-1' as WorkspaceId,
       name: 'Workspace',
@@ -196,21 +193,30 @@ describe('SettingsStudio', () => {
       createdAt: '2026-09-01' as IsoDateTime,
       updatedAt: '2026-09-01' as IsoDateTime,
     };
-    render(
+    const { rerender } = render(
       <SettingsStudio
         currentWorkspace={workspace}
         onScopeChange={vi.fn()}
-        focus={{ scope: 'tools', tool: 'linear' }}
+        focus={{ scope: 'workspace', section: 'models' }}
         onClose={vi.fn()}
       />,
     );
-    expect((await screen.findByLabelText('API key')).id).toBe('linear-api-key');
-    expect(screen.getAllByRole('navigation', { name: 'Settings scopes' })).toHaveLength(1);
-    const integrations = within(
-      screen.getByRole('navigation', { name: 'Settings scopes' }),
-    ).getByRole('button', { name: /^Integrations/ });
-    expect(integrations.getAttribute('aria-expanded')).toBe('true');
-    expect(integrations.textContent).toBe('Integrations');
+    expect(screen.getByText('Models content top')).toBeDefined();
+    const rail = screen.getByRole('navigation', { name: 'Settings scopes' });
+    expect(within(rail).getByRole('button', { name: 'Models' }).getAttribute('aria-current')).toBe(
+      'true',
+    );
+    expect(within(rail).queryByRole('button', { name: /^Integrations/ })).toBeNull();
+
+    rerender(
+      <SettingsStudio
+        currentWorkspace={workspace}
+        onScopeChange={vi.fn()}
+        focus={{ scope: 'workspace', section: 'summarizer' }}
+        onClose={vi.fn()}
+      />,
+    );
+    expect(screen.getByText('Models content summarizer')).toBeDefined();
   });
 
   const renderApp = ({
@@ -281,8 +287,8 @@ describe('SettingsStudio', () => {
     expect(onScopeChange).toHaveBeenCalledWith(moved);
   });
 
-  it('says why the workspace groups are empty, and lands providers on an account', () => {
-    const { rerender } = render(
+  it('says why the workspace group is empty, and keeps the row to Connections', () => {
+    render(
       <SettingsStudio
         currentWorkspace={null}
         onScopeChange={vi.fn()}
@@ -294,42 +300,15 @@ describe('SettingsStudio', () => {
     const rail = screen.getByRole('navigation', { name: /settings scopes/i });
     expect(within(rail).queryByRole('list', { name: 'Workspace settings' })).toBeNull();
     expect(within(rail).queryByRole('button', { name: /^Integrations/ })).toBeNull();
+    expect(within(rail).queryByRole('button', { name: /^Providers/ })).toBeNull();
     expect(within(rail).getByText('Open a workspace to see its settings.')).toBeDefined();
-    expect(within(rail).getByText('Integrations belong to a workspace.')).toBeDefined();
-    expect(within(rail).getByRole('button', { name: 'Providers', expanded: false })).toBeDefined();
+    expect(within(rail).getByRole('button', { name: 'Open Connections' })).toBeDefined();
     expect(screen.getByRole('heading', { name: 'General' })).toBeDefined();
-
-    rerender(
-      <SettingsStudio
-        currentWorkspace={null}
-        onScopeChange={vi.fn()}
-        focus={{ scope: 'providers' }}
-        onClose={vi.fn()}
-      />,
-    );
-    expect(screen.getByText('Provider settings content')).toBeDefined();
-    expect(screen.getByRole('list', { name: 'App settings' })).toBeDefined();
-    expect(within(rail).getByRole('button', { name: 'Providers', expanded: true })).toBeDefined();
-    expect(screen.getAllByRole('navigation', { name: 'Settings scopes' })).toHaveLength(1);
   });
 
-  it('keeps one rail mounted across scopes, opening Providers for a page inside it', () => {
+  it('keeps one rail mounted across pages', () => {
     const { rerender } = renderApp();
     const rail = screen.getByRole('navigation', { name: /settings scopes/i });
-
-    rerender(
-      <SettingsStudio
-        currentWorkspace={null}
-        onScopeChange={vi.fn()}
-        focus={{ scope: 'providers' }}
-        onClose={vi.fn()}
-      />,
-    );
-
-    expect(screen.getByRole('navigation', { name: /settings scopes/i })).toBe(rail);
-    expect(within(rail).getByRole('list', { name: 'App settings' })).toBeDefined();
-    expect(within(rail).getByRole('list', { name: 'Providers settings' })).toBeDefined();
-    expect(screen.getByText('Provider settings content')).toBeDefined();
 
     rerender(
       <SettingsStudio
@@ -341,7 +320,6 @@ describe('SettingsStudio', () => {
     );
 
     expect(screen.getByRole('navigation', { name: /settings scopes/i })).toBe(rail);
-    expect(screen.queryByText('Provider settings content')).toBeNull();
     expect(within(rail).getByRole('button', { name: 'Storage' }).getAttribute('aria-current')).toBe(
       'true',
     );
@@ -354,47 +332,19 @@ describe('SettingsStudio', () => {
     cleanup();
 
     state.updaterStatus = 'available';
-    state.providers = [
-      { id: 'anthropic', label: 'Claude', connection: 'connected', version: '2.1.200' },
-    ];
     try {
       renderApp();
       const flagged = screen.getByRole('navigation', { name: /settings scopes/i });
       expect(within(flagged).getByRole('img', { name: 'Update available' })).toBeDefined();
-      expect(
-        within(within(flagged).getByRole('button', { name: /^Providers/ })).getByRole('img', {
-          name: 'Claude CLI needs an update',
-        }),
-      ).toBeDefined();
     } finally {
       state.updaterStatus = 'idle';
-      state.providers = [];
     }
   });
 
-  it('keeps the closed providers group to one line, with no count, no tone and no usage', () => {
-    state.providers = [
-      { id: 'anthropic', label: 'Claude', connection: 'connected', version: '9.9.9' },
-      { id: 'codex', label: 'Codex', connection: 'connected', version: '9.9.9' },
-    ];
-    try {
-      renderApp();
-      const rail = screen.getByRole('navigation', { name: /settings scopes/i });
-      const group = within(rail).getByRole('button', { name: /^Providers/ });
-
-      expect(group.textContent).toBe('Providers');
-      expect(group.getAttribute('aria-expanded')).toBe('false');
-      expect(within(rail).queryByRole('img')).toBeNull();
-    } finally {
-      state.providers = [];
-    }
-  });
-
-  it('reports rail clicks as focus changes, and a fold click as no change at all', () => {
+  it('reports rail clicks as focus changes', () => {
     const onScopeChange = vi.fn();
     renderApp({ onScopeChange });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Providers' }));
     fireEvent.click(screen.getByRole('button', { name: 'Storage' }));
 
     expect(onScopeChange.mock.calls).toEqual([[{ scope: 'app', section: 'storage' }]]);

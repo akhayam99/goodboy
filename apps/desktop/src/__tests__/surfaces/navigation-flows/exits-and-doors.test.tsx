@@ -186,7 +186,7 @@ describe('doors replace the open studio and content links stack', () => {
 
     await clickButton('Tasks');
     const withOneStudio = stack()?.entries.length ?? 0;
-    await fireOpenSettings({ scope: 'providers', door: true });
+    await fireOpenSettings({ scope: 'app', door: true });
 
     expect(appStudioKind()).toBe('settings');
     expect(stack()?.entries.length).toBe(withOneStudio);
@@ -197,13 +197,39 @@ describe('doors replace the open studio and content links stack', () => {
 
     await clickButton('Tasks');
     const withOneStudio = stack()?.entries.length ?? 0;
-    await fireOpenSettings({ scope: 'providers' });
+    await fireOpenSettings({ scope: 'app' });
 
     expect(appStudioKind()).toBe('settings');
     expect(stack()?.entries.length).toBe(withOneStudio + 1);
 
     await click(historyButton('Back'));
     expect(appStudioKind()).toBe('inbox');
+  });
+
+  it('sends an old provider settings link to its page in Connections, and back returns', async () => {
+    await boot({ seed: 'pr' });
+
+    await clickButton('Tasks');
+    await fireOpenSettings({ scope: 'providers', provider: 'anthropic', action: 'login' });
+
+    expect(useAppStore.getState().appStudio).toEqual({
+      kind: 'connections',
+      focus: { kind: 'provider', provider: 'anthropic', action: 'login' },
+    });
+
+    await click(historyButton('Back'));
+    expect(appStudioKind()).toBe('inbox');
+  });
+
+  it('sends an old integrations link to the tool page in Connections', async () => {
+    await boot({ seed: 'pr' });
+
+    await fireOpenSettings({ scope: 'tools', tool: 'gitlab' });
+
+    expect(useAppStore.getState().appStudio).toEqual({
+      kind: 'connections',
+      focus: { kind: 'tool', tool: 'gitlab' },
+    });
   });
 });
 

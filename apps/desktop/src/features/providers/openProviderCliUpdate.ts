@@ -1,10 +1,10 @@
 import type { ProviderId } from '@goodboy/types';
-import { openSettings } from '../settings/openSettings';
+import { openConnection } from '../connections/openConnection';
 
 type Params = {
   readonly providerId: ProviderId;
 };
 
 export const openProviderCliUpdate = ({ providerId }: Params): void => {
-  openSettings({ scope: 'providers', provider: providerId, action: 'update' });
+  openConnection({ focus: { kind: 'provider', provider: providerId, action: 'update' } });
 };

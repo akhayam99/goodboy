@@ -283,7 +283,6 @@
   "apps/desktop/src/features/integrations/bitbucket/client.test.ts": 1,
   "apps/desktop/src/features/integrations/components/CreateReviewForm/CreateReviewForm.test.tsx": 1,
   "apps/desktop/src/features/integrations/components/IntegrationConnectedRow/index.test.tsx": 1,
-  "apps/desktop/src/features/integrations/components/ToolSettingsScope/index.test.tsx": 1,
   "apps/desktop/src/features/integrations/github/github.test.ts": 1,
   "apps/desktop/src/features/integrations/github/GithubFormBody.rejection.test.tsx": 1,
   "apps/desktop/src/features/integrations/gitlab/client.test.ts": 1,

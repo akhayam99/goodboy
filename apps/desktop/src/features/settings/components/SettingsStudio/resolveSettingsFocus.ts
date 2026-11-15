@@ -1,4 +1,5 @@
 import type { SettingsFocus, SettingsPageScope, SettingsStudioScope } from '../../settingsFocus';
+import { MODELS_PAGE_SECTION, isModelsPage } from '../../isModelsPage';
 import { settingsPageKey, type SettingsGroup } from './settingsDirectory';
 
 const GENERAL: SettingsFocus = { scope: 'app', section: 'general' };
@@ -23,15 +24,34 @@ const MOVED_PAGES: ReadonlyArray<MovedPage> = [
   },
 ];
 
+const RETIRED_SCOPES: ReadonlySet<string> = new Set(['providers', 'tools']);
+
 type MovedParams = {
   readonly focus: SettingsFocus;
 };
 
+const withoutRetiredScope = ({ focus }: MovedParams): SettingsFocus => {
+  const scope = String(focus.scope);
+  if (!RETIRED_SCOPES.has(scope)) {
+    return focus;
+  }
+  const provider: unknown = Reflect.get(focus, 'provider');
+  if (scope === 'tools' || provider !== undefined) {
+    return GENERAL;
+  }
+  const { section } = focus;
+  return {
+    scope: 'workspace',
+    section: section !== undefined && isModelsPage({ section }) ? section : MODELS_PAGE_SECTION,
+  };
+};
+
 const movedSettingsFocus = ({ focus }: MovedParams): SettingsFocus => {
+  const current = withoutRetiredScope({ focus });
   const moved = MOVED_PAGES.find(
-    ({ from }) => from.scope === focus.scope && from.section === focus.section,
+    ({ from }) => from.scope === current.scope && from.section === current.section,
   );
-  return moved === undefined ? focus : { ...focus, ...moved.to };
+  return moved === undefined ? current : { ...current, ...moved.to };
 };
 
 type PageFocusParams = {
@@ -42,8 +62,6 @@ type PageFocusParams = {
 export const pageFocusOf = ({ scope, focus }: PageFocusParams): SettingsFocus => ({
   scope,
   ...(focus.section !== undefined && { section: focus.section }),
-  ...(focus.provider !== undefined && { provider: focus.provider }),
-  ...(focus.tool !== undefined && { tool: focus.tool }),
 });
 
 type ResolveParams = {
@@ -63,8 +81,6 @@ export const resolveSettingsFocus = ({ focus, last, groups }: ResolveParams): Se
   const key = settingsPageKey({
     scope: page.scope === 'home' ? 'app' : page.scope,
     section: page.section,
-    provider: page.provider,
-    tool: page.tool,
   });
   const exists = groups.some((group) => group.pages.some((entry) => entry.key === key));
   return exists ? page : GENERAL;

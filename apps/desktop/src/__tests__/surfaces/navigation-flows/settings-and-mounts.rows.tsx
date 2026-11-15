@@ -15,6 +15,7 @@ import {
   pane,
   openBranchFiles,
   sessionLevel,
+  studio,
   useAppStore,
   visible,
 } from './harness';
@@ -66,25 +67,18 @@ export const SETTINGS_AND_MOUNT_ROWS: ReadonlyArray<Row> = [
   },
   {
     name: 'settings rail: models under this workspace',
-    covers: ['openSettings', 'openProviders', 'scope:providers'],
+    covers: ['openSettings', 'scope:workspace', 'settings:models'],
     open: () => openSettingsRail(/^Models/),
     lands: () => visible('region', 'Providers'),
   },
   {
-    name: 'settings rail: one provider page',
-    covers: ['openSettings', 'scope:providers', 'settings:provider'],
-    open: async () => {
-      await openSettingsRail(/^Providers/);
-      const rail = await screen.findByRole('list', { name: 'Providers settings' });
-      await click(within(rail).getByRole('button', { name: /Claude/ }));
-    },
-    lands: () => heading('Claude'),
-  },
-  {
-    name: 'settings rail: integrations',
-    covers: ['openSettings', 'scope:tools'],
-    open: () => openSettingsRail(/^Integrations/),
-    lands: () => visible('list', 'Integrations settings'),
+    name: 'settings rail: the moved row opens Connections',
+    covers: ['openSettings', 'studio:connections', 'settings:moved-to-connections'],
+    open: () => openSettingsRail(/^Open Connections/),
+    lands: both(
+      () => studio('Connections'),
+      () => heading('Connections'),
+    ),
   },
   {
     name: 'mount row menu: scripts',

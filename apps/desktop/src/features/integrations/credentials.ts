@@ -33,9 +33,3 @@ export const integrationBindingReplaceSecret = ({
     credentialId,
     secret,
   });
-
-export const CREDENTIAL_RECHECK_EVENT = 'goodboy:credential-recheck';
-
-export const requestCredentialRecheck = (): void => {
-  window.dispatchEvent(new Event(CREDENTIAL_RECHECK_EVENT));
-};

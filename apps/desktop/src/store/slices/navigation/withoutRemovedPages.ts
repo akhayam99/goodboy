@@ -1,6 +1,9 @@
 import { isProviderListLens } from './isProviderListLens';
 import { contextSectionOf } from './contextSectionOf';
 import { brandId, type AgentId, type SessionId, type WorkflowRunId } from '@goodboy/types';
+import { isProviderId } from '@goodboy/types/helpers';
+import { connectionFocusOf } from '../../../features/connections/connectionFocusOf';
+import { TOOL_ORDER } from '../../../features/integrations/toolOrder';
 import { IPHONE_SETTINGS_PLACE } from '../../../features/settings/iphoneSettingsPlace';
 import { CONTEXT_ROWS } from '../contextDrawer/contextRows';
 import type { OpenDrawer } from '../drawer/state';
@@ -57,11 +60,36 @@ const withRows = ({ focus, rows }: RowsParams): Focus =>
     ? focus
     : { ...focus, returnRows: { ...focus.returnRows, ...rows } };
 
+type MovedStudioParams = {
+  readonly studio: StudioPlace;
+};
+
+const connectionsOfSettings = ({ studio }: MovedStudioParams): StudioPlace => {
+  if (studio.kind !== 'settings') {
+    return studio;
+  }
+  const scope = String(studio.focus.scope);
+  const provider: unknown = Reflect.get(studio.focus, 'provider');
+  const tool: unknown = Reflect.get(studio.focus, 'tool');
+  const knownTool = TOOL_ORDER.find((candidate) => candidate === tool);
+  const isProviderPage = scope === 'providers' && isProviderId(provider);
+  if (scope !== 'tools' && !isProviderPage) {
+    return studio;
+  }
+  return {
+    kind: 'connections',
+    focus: connectionFocusOf({
+      ...(isProviderId(provider) && { provider }),
+      ...(knownTool !== undefined && { tool: knownTool }),
+    }),
+  };
+};
+
 const studioStillThere = ({ studio }: StudioParams): StudioPlace | null => {
   if (studio === null) {
     return null;
   }
-  return REMOVED_STUDIOS.get(String(studio.kind)) ?? studio;
+  return REMOVED_STUDIOS.get(String(studio.kind)) ?? connectionsOfSettings({ studio });
 };
 
 const withoutRemovedStudio = ({ location }: Params): Location => {

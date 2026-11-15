@@ -1,5 +1,4 @@
 import { describe, expect, it, vi } from 'vitest';
-import { NAMES } from '../../shared/utils/names';
 import type { SettingsGroup } from './components/SettingsStudio/settingsDirectory';
 import { REVIEW_REPLIES_SECTION_ID } from '../resolve/replySettingsCopy';
 import { workspacePageEntry } from './components/SettingsStudio/workspacePages';
@@ -7,25 +6,7 @@ import {
   settingsDirectory,
   type SettingsStatus,
 } from './components/SettingsStudio/settingsDirectory';
-import { settingsPaletteEntries } from './settingsPaletteEntries';
-
-const providersGroup: SettingsGroup = {
-  scope: 'providers',
-  label: NAMES.providers,
-  concept: 'providers',
-  place: 'Providers',
-  attention: undefined,
-  tone: undefined,
-  needsWorkspace: false,
-  pages: [
-    {
-      key: 'providers:defaults',
-      label: NAMES.models,
-      attention: null,
-      target: { scope: 'providers' },
-    },
-  ],
-};
+import { CONNECTIONS_SETTING_KEY, settingsPaletteEntries } from './settingsPaletteEntries';
 
 const QUIET_STATUS: SettingsStatus = {
   subtitles: {
@@ -35,24 +16,38 @@ const QUIET_STATUS: SettingsStatus = {
     storageTone: undefined,
     securityFindingsText: undefined,
     securityFindingsTone: undefined,
-    providersText: undefined,
-    providersTone: undefined,
     workspaceText: undefined,
     workspaceTone: undefined,
   },
-  providers: [],
-  tools: [],
 };
 
 describe('settingsPaletteEntries', () => {
-  it('finds the Models page when searching its former name Defaults', () => {
+  it('finds the Models page under This workspace when searching its former name Defaults', () => {
     const open = vi.fn();
-    const [entry] = settingsPaletteEntries({ groups: [providersGroup], open });
-    expect(entry?.label).toBe('Providers: Models');
+    const entry = settingsPaletteEntries({
+      groups: settingsDirectory({ status: QUIET_STATUS, workspaceName: 'Harborline' }),
+      open,
+    }).find((candidate) => candidate.key === 'setting:workspace:models');
+    expect(entry?.label).toBe('Workspace settings: Models');
     expect(entry?.secondary).toContain('Defaults');
     entry?.run();
-    expect(open).toHaveBeenCalledWith({ scope: 'providers' });
+    expect(open).toHaveBeenCalledWith({ scope: 'workspace', section: 'models' });
   });
+
+  it.each([{ workspaceName: 'Harborline' }, { workspaceName: null }])(
+    'answers Providers and Integrations with Go to Connections ($workspaceName)',
+    ({ workspaceName }) => {
+      const entries = settingsPaletteEntries({
+        groups: settingsDirectory({ status: QUIET_STATUS, workspaceName }),
+        open: vi.fn(),
+      });
+      const connections = entries.find((candidate) => candidate.key === CONNECTIONS_SETTING_KEY);
+
+      expect(connections?.label).toBe('Go to Connections');
+      expect(connections?.secondary).toEqual(['Providers', 'Integrations']);
+      expect(entries.filter((entry) => /^(Providers|Integrations):/.test(entry.label))).toEqual([]);
+    },
+  );
 
   it('opens the replies page under its new name and still answers to Review replies', () => {
     const open = vi.fn();

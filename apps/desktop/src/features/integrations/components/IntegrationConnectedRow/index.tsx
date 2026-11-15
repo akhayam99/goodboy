@@ -2,8 +2,8 @@ import { useState } from 'react';
 import { Chip, ConfirmPopover, formatError, ICON_SIZE, IconButton } from '@goodboy/ui';
 import { TriangleAlert, Unplug } from 'lucide-react';
 import type { IntegrationCredentialId } from '@goodboy/types';
-import { useCredentialSecret } from '../../useCredentialSecret';
-import { toolHealthOf } from '../../toolHealthOf';
+import { useAppStore } from '../../../../store';
+import { selectIntegrationKeyCheck } from '../../../../store/slices/integrations/selectIntegrationKeyCheck';
 import {
   IntegrationGlyph,
   type IntegrationGlyphProvider,
@@ -32,8 +32,11 @@ export const IntegrationConnectedRow = ({
   onDisconnect,
 }: Props) => {
   const label = integrationLabel({ provider });
-  const secret = useCredentialSecret({ credentialId });
-  const health = toolHealthOf({ tool: provider, isConnected: true, secret });
+  const isKeyMissing = useAppStore(
+    (state) =>
+      provider !== 'github' &&
+      selectIntegrationKeyCheck({ state, credentialId })?.isPresent === false,
+  );
   const [isArmed, setIsArmed] = useState(false);
   const [isBusy, setIsBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -61,7 +64,7 @@ export const IntegrationConnectedRow = ({
             <span className="truncate font-mono text-meta text-muted-foreground">{secondary}</span>
           ) : null}
         </div>
-        {health.chip === null ? null : <Chip kind="state" tone="danger" label={health.chip} />}
+        {isKeyMissing ? <Chip kind="state" tone="danger" label="Key missing" /> : null}
         {badge != null ? <Chip kind="state" tone="neutral" bordered label={badge} /> : null}
         {hasHeaderDisconnect ? null : (
           <ConfirmPopover
@@ -85,7 +88,7 @@ export const IntegrationConnectedRow = ({
           />
         )}
       </div>
-      {health.signal === 'danger' && !hasHeaderDisconnect ? (
+      {isKeyMissing && !hasHeaderDisconnect ? (
         <p className="flex items-start gap-1 text-meta text-muted-foreground">
           <TriangleAlert
             size={ICON_SIZE.row}

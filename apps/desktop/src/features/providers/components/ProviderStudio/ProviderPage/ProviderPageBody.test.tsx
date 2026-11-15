@@ -63,7 +63,7 @@ vi.mock('./ModelsGroup', () => ({
   ModelsGroup: () => <section aria-label="Models in the picker" />,
 }));
 
-import { ProviderPage } from './index';
+import { ProviderDetailBody } from '../../../ProviderDetailBody';
 
 afterEach(() => {
   cleanup();
@@ -105,7 +105,15 @@ describe('ProviderPage', () => {
       },
     };
     try {
-      render(<ProviderPage info={info} autoConnect={false} autoUpdate={false} />);
+      render(
+        <ProviderDetailBody
+          info={info}
+          shouldAutoConnect={false}
+          isModelsFocused={false}
+          workspaceId={null}
+          shouldAutoUpdate={false}
+        />,
+      );
 
       const notice = screen.getByText('Claude is about to run out.');
       const usage = screen.getByRole('region', { name: 'Usage for anthropic' });
@@ -116,13 +124,29 @@ describe('ProviderPage', () => {
   });
 
   it('shows no attention notice for a provider with room left', () => {
-    render(<ProviderPage info={info} autoConnect={false} autoUpdate={false} />);
+    render(
+      <ProviderDetailBody
+        info={info}
+        shouldAutoConnect={false}
+        isModelsFocused={false}
+        workspaceId={null}
+        shouldAutoUpdate={false}
+      />,
+    );
 
     expect(screen.queryByText(/about to run out|is out/)).toBeNull();
   });
 
   it('lays out usage, models, account and what works in that order', () => {
-    render(<ProviderPage info={info} autoConnect={false} autoUpdate={false} />);
+    render(
+      <ProviderDetailBody
+        info={info}
+        shouldAutoConnect={false}
+        isModelsFocused={false}
+        workspaceId={null}
+        shouldAutoUpdate={false}
+      />,
+    );
 
     expect(regionNames()).toEqual([
       'Usage for anthropic',
@@ -133,7 +157,15 @@ describe('ProviderPage', () => {
   });
 
   it('carries only the plan in the header meta and the account in the account group', () => {
-    render(<ProviderPage info={info} autoConnect={false} autoUpdate={false} />);
+    render(
+      <ProviderDetailBody
+        info={info}
+        shouldAutoConnect={false}
+        isModelsFocused={false}
+        workspaceId={null}
+        shouldAutoUpdate={false}
+      />,
+    );
 
     expect(screen.getAllByText('Team plan')).toHaveLength(2);
     expect(screen.getByText('Signed in as dev@acme.test')).toBeDefined();
@@ -142,7 +174,15 @@ describe('ProviderPage', () => {
 
   it('says what each mode does on this cli', () => {
     const codex = { ...info, id: 'codex', label: 'Codex', binary: 'codex' } as ProviderDisplayInfo;
-    render(<ProviderPage info={codex} autoConnect={false} autoUpdate={false} />);
+    render(
+      <ProviderDetailBody
+        info={codex}
+        shouldAutoConnect={false}
+        isModelsFocused={false}
+        workspaceId={null}
+        shouldAutoUpdate={false}
+      />,
+    );
 
     const permissions = within(screen.getByRole('region', { name: 'What works with Codex' }));
     fireEvent.click(permissions.getByRole('button', { name: 'What works with Codex' }));
@@ -152,7 +192,15 @@ describe('ProviderPage', () => {
   });
 
   it('names the verbs of the header menu from the provider kind, Disconnect last', () => {
-    render(<ProviderPage info={info} autoConnect={false} autoUpdate={false} />);
+    render(
+      <ProviderDetailBody
+        info={info}
+        shouldAutoConnect={false}
+        isModelsFocused={false}
+        workspaceId={null}
+        shouldAutoUpdate={false}
+      />,
+    );
 
     fireEvent.click(screen.getByRole('button', { name: 'More Claude actions' }));
 
@@ -166,7 +214,15 @@ describe('ProviderPage', () => {
   });
 
   it('holds no button in the account row', () => {
-    render(<ProviderPage info={info} autoConnect={false} autoUpdate={false} />);
+    render(
+      <ProviderDetailBody
+        info={info}
+        shouldAutoConnect={false}
+        isModelsFocused={false}
+        workspaceId={null}
+        shouldAutoUpdate={false}
+      />,
+    );
 
     const account = within(screen.getByRole('region', { name: 'Account' }));
     expect(account.queryByRole('button', { name: 'Disconnect' })).toBeNull();
@@ -176,7 +232,15 @@ describe('ProviderPage', () => {
   });
 
   it('signs the provider out only after the confirm in the header menu', () => {
-    render(<ProviderPage info={info} autoConnect={false} autoUpdate={false} />);
+    render(
+      <ProviderDetailBody
+        info={info}
+        shouldAutoConnect={false}
+        isModelsFocused={false}
+        workspaceId={null}
+        shouldAutoUpdate={false}
+      />,
+    );
 
     fireEvent.click(screen.getByRole('button', { name: 'More Claude actions' }));
     fireEvent.click(screen.getByRole('menuitem', { name: 'Disconnect' }));
@@ -192,7 +256,15 @@ describe('ProviderPage', () => {
       anthropic: { standing: 'connected', events: [], evidence: { serverAccepted: true } },
     };
     try {
-      render(<ProviderPage info={info} autoConnect={false} autoUpdate={false} />);
+      render(
+        <ProviderDetailBody
+          info={info}
+          shouldAutoConnect={false}
+          isModelsFocused={false}
+          workspaceId={null}
+          shouldAutoUpdate={false}
+        />,
+      );
       expect(screen.queryByRole('region', { name: 'Claude connection history' })).toBeNull();
 
       fireEvent.click(screen.getByRole('button', { name: 'More Claude actions' }));
@@ -207,7 +279,15 @@ describe('ProviderPage', () => {
   });
 
   it('checks again by refreshing the providers and testing the connection', async () => {
-    render(<ProviderPage info={info} autoConnect={false} autoUpdate={false} />);
+    render(
+      <ProviderDetailBody
+        info={info}
+        shouldAutoConnect={false}
+        isModelsFocused={false}
+        workspaceId={null}
+        shouldAutoUpdate={false}
+      />,
+    );
 
     fireEvent.click(screen.getByRole('button', { name: 'More Claude actions' }));
     await act(async () => {
@@ -220,10 +300,12 @@ describe('ProviderPage', () => {
 
   it('shows only the connect card while the provider is not connected', () => {
     render(
-      <ProviderPage
+      <ProviderDetailBody
         info={{ ...info, connection: 'missing' } as ProviderDisplayInfo}
-        autoConnect={false}
-        autoUpdate={false}
+        shouldAutoConnect={false}
+        isModelsFocused={false}
+        workspaceId={null}
+        shouldAutoUpdate={false}
       />,
     );
 
@@ -232,7 +314,15 @@ describe('ProviderPage', () => {
   });
 
   it('cancels the disconnect and keeps the provider signed in', () => {
-    render(<ProviderPage info={info} autoConnect={false} autoUpdate={false} />);
+    render(
+      <ProviderDetailBody
+        info={info}
+        shouldAutoConnect={false}
+        isModelsFocused={false}
+        workspaceId={null}
+        shouldAutoUpdate={false}
+      />,
+    );
 
     fireEvent.click(screen.getByRole('button', { name: 'More Claude actions' }));
     fireEvent.click(screen.getByRole('menuitem', { name: 'Disconnect' }));
@@ -242,7 +332,15 @@ describe('ProviderPage', () => {
   });
 
   it('signs claude in again straight away', async () => {
-    render(<ProviderPage info={info} autoConnect={false} autoUpdate={false} />);
+    render(
+      <ProviderDetailBody
+        info={info}
+        shouldAutoConnect={false}
+        isModelsFocused={false}
+        workspaceId={null}
+        shouldAutoUpdate={false}
+      />,
+    );
 
     fireEvent.click(screen.getByRole('button', { name: 'More Claude actions' }));
     await act(async () => {
@@ -254,7 +352,15 @@ describe('ProviderPage', () => {
 
   it('asks before signing codex in again, since codex signs out first', () => {
     const codex = { ...info, id: 'codex', label: 'Codex', binary: 'codex' } as ProviderDisplayInfo;
-    render(<ProviderPage info={codex} autoConnect={false} autoUpdate={false} />);
+    render(
+      <ProviderDetailBody
+        info={codex}
+        shouldAutoConnect={false}
+        isModelsFocused={false}
+        workspaceId={null}
+        shouldAutoUpdate={false}
+      />,
+    );
 
     fireEvent.click(screen.getByRole('button', { name: 'More Codex actions' }));
     fireEvent.click(screen.getByRole('menuitem', { name: 'Sign in again' }));
@@ -268,7 +374,15 @@ describe('ProviderPage', () => {
   });
 
   it('opens the api key form in the account only when asked', () => {
-    render(<ProviderPage info={info} autoConnect={false} autoUpdate={false} />);
+    render(
+      <ProviderDetailBody
+        info={info}
+        shouldAutoConnect={false}
+        isModelsFocused={false}
+        workspaceId={null}
+        shouldAutoUpdate={false}
+      />,
+    );
     expect(screen.queryByRole('form', { name: 'Use an API key' })).toBeNull();
 
     fireEvent.click(screen.getByRole('button', { name: /Use an API key instead of your plan/ }));

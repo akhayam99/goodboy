@@ -1,7 +1,20 @@
 // @vitest-environment happy-dom
-import { afterEach, describe, expect, it, vi } from 'vitest';
+
+vi.mock('@tauri-apps/api/core', async () =>
+  (await import('../../../../../store/storyHarness')).tauriCoreModuleMock(),
+);
+vi.mock('@tauri-apps/api/event', async () =>
+  (await import('../../../../../store/storyHarness')).tauriEventModuleMock(),
+);
+
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
-import { QUIET_TOOL_HEALTH } from '../../../../../__tests__/helpers/quietToolHealth';
+import {
+  STORE_IMPORT_TIMEOUT_MS,
+  importStore,
+  resetStoryStore,
+  type StoryStore,
+} from '../../../../../store/storyHarness';
 import { SettingsSearchResults } from './index';
 import { settingsDirectory, type SettingsStatus } from '../settingsDirectory';
 
@@ -13,30 +26,22 @@ const STATUS: SettingsStatus = {
     storageTone: undefined,
     securityFindingsText: undefined,
     securityFindingsTone: undefined,
-    providersText: undefined,
-    providersTone: undefined,
     workspaceText: undefined,
     workspaceTone: undefined,
   },
-  providers: [
-    {
-      id: 'anthropic',
-      label: 'Claude',
-      status: { subtitle: 'Claude is about to run out', tone: 'warning' },
-    },
-  ],
-  tools: [
-    {
-      tool: 'linear',
-      label: 'Linear',
-      subtitle: 'Not connected',
-      isConnected: false,
-      health: QUIET_TOOL_HEALTH,
-    },
-  ],
 };
 
 const GROUPS = settingsDirectory({ status: STATUS, workspaceName: 'Harborline' });
+
+let useAppStore: StoryStore;
+
+beforeAll(async () => {
+  useAppStore = await importStore();
+}, STORE_IMPORT_TIMEOUT_MS);
+
+beforeEach(async () => {
+  await resetStoryStore();
+});
 
 afterEach(cleanup);
 
@@ -55,14 +60,28 @@ const mount = ({ query }: MountParams) => {
 
 describe('SettingsSearchResults', () => {
   it('lists the matching settings and opens the one picked', () => {
-    const { onOpen, onPicked } = mount({ query: 'claude' });
+    const { onOpen, onPicked } = mount({ query: 'models' });
 
     const results = screen.getByRole('list', { name: 'Matching settings' });
-    fireEvent.click(within(results).getByRole('button', { name: /Claude/ }));
+    fireEvent.click(within(results).getByRole('button', { name: /Models/ }));
 
     expect(onPicked).toHaveBeenCalledOnce();
-    expect(onOpen).toHaveBeenCalledWith({ scope: 'providers', provider: 'anthropic' });
+    expect(onOpen).toHaveBeenCalledWith({ scope: 'workspace', section: 'models' });
   });
+
+  it.each(['Providers', 'integrations'])(
+    'finds Go to Connections under the old name %s',
+    (query) => {
+      const { onOpen, onPicked } = mount({ query });
+
+      const results = screen.getByRole('list', { name: 'Matching settings' });
+      fireEvent.click(within(results).getByRole('button', { name: 'Go to Connections' }));
+
+      expect(onPicked).toHaveBeenCalledOnce();
+      expect(onOpen).not.toHaveBeenCalled();
+      expect(useAppStore.getState().appStudio).toEqual({ kind: 'connections', focus: null });
+    },
+  );
 
   it('says so when nothing matches', () => {
     mount({ query: 'no such page' });

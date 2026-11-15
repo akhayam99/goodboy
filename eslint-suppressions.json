@@ -3262,11 +3262,6 @@
       "count": 1
     }
   },
-  "apps/desktop/src/features/integrations/components/ToolSettingsScope/index.test.tsx": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 10
-    }
-  },
   "apps/desktop/src/features/integrations/connection.test.ts": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 2
@@ -4358,6 +4353,11 @@
       "count": 1
     }
   },
+  "apps/desktop/src/features/providers/components/ProviderStudio/ProviderPage/ProviderPageBody.test.tsx": {
+    "@typescript-eslint/consistent-type-assertions": {
+      "count": 12
+    }
+  },
   "apps/desktop/src/features/providers/components/ProviderStudio/ProviderPage/UsageGroup/ResetCreditRow/index.test.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 4
@@ -4374,26 +4374,6 @@
     }
   },
   "apps/desktop/src/features/providers/components/ProviderStudio/ProviderPage/cliRow.test.tsx": {
-    "@typescript-eslint/naming-convention": {
-      "count": 2
-    }
-  },
-  "apps/desktop/src/features/providers/components/ProviderStudio/ProviderPage/index.test.tsx": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 12
-    }
-  },
-  "apps/desktop/src/features/providers/components/ProviderStudio/ProviderPage/index.tsx": {
-    "@typescript-eslint/naming-convention": {
-      "count": 6
-    }
-  },
-  "apps/desktop/src/features/providers/components/ProviderStudio/index.test.tsx": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 8
-    }
-  },
-  "apps/desktop/src/features/providers/components/ProviderStudio/index.tsx": {
     "@typescript-eslint/naming-convention": {
       "count": 2
     }
@@ -9146,11 +9126,6 @@
   "apps/desktop/src/store/slices/providers/runLifecycle.ts": {
     "@typescript-eslint/naming-convention": {
       "count": 2
-    }
-  },
-  "apps/desktop/src/store/slices/providers/selectProviderAttention.test.ts": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 4
     }
   },
   "apps/desktop/src/store/slices/providers/updateProviderCli.test.ts": {

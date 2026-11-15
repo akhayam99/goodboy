@@ -6,11 +6,10 @@ type Props = {
   readonly group: SettingsGroup;
   readonly pageKey: string | null;
   readonly onSelect: (params: SettingsScopeChange) => void;
-  readonly id?: string;
 };
 
-export const SettingsRailPageList = ({ group, pageKey, onSelect, id }: Props) => (
-  <ul id={id} aria-label={`${group.label} settings`} className="flex flex-col gap-0.5">
+export const SettingsRailPageList = ({ group, pageKey, onSelect }: Props) => (
+  <ul aria-label={`${group.label} settings`} className="flex flex-col gap-0.5">
     {group.pages.map((page) => (
       <li key={page.key} data-settings-page={page.key}>
         <SettingsNavRow

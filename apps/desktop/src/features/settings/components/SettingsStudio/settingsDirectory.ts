@@ -1,14 +1,10 @@
-import type { ProviderId } from '@goodboy/types';
 import type { Tone } from '@goodboy/ui';
 import type { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { NAMES } from '../../../../shared/utils/names';
-import type { ToolHealth } from '../../../integrations/toolHealthOf';
-import type { ToolRailEntry } from '../../../integrations/toolRailEntries';
-import type { ProviderRailStatus } from '../../../providers/providerRailStatus';
 import type { SettingsPageScope, SettingsScopeChange } from '../../settingsFocus';
 import { APP_SECTIONS, appSectionOf, type AppSection } from './appSections';
+import { MODELS_PAGE_SECTION, isModelsPage } from '../../isModelsPage';
 import type { RailSubtitles } from './railSubtitles';
-import { SCOPE_ITEMS, isNestedScope, type NestedScope } from './settingsScopes';
 import { WORKSPACE_PAGES, workspacePageOf, type WorkspacePage } from './workspacePages';
 
 type Concept = keyof typeof CONCEPT_ICONS;
@@ -36,33 +32,13 @@ export type SettingsGroup = {
   readonly pages: ReadonlyArray<SettingsPage>;
 };
 
-type SettingsProviderEntry = {
-  readonly id: ProviderId;
-  readonly label: string;
-  readonly status: ProviderRailStatus;
-};
-
 export type SettingsStatus = {
   readonly subtitles: RailSubtitles;
-  readonly providers: ReadonlyArray<SettingsProviderEntry>;
-  readonly tools: ReadonlyArray<ToolRailEntry>;
 };
 
 type Params = {
   readonly status: SettingsStatus;
   readonly workspaceName: string | null;
-};
-
-const scopeMeta = (
-  scope: Exclude<SettingsPageScope, 'app'>,
-): Pick<SettingsGroup, 'scope' | 'label' | 'concept' | 'needsWorkspace'> => {
-  const item = SCOPE_ITEMS.find((candidate) => candidate.scope === scope);
-  return {
-    scope,
-    label: item?.label ?? 'Settings',
-    concept: item?.concept ?? 'settings',
-    needsWorkspace: item?.needsWorkspace ?? true,
-  };
 };
 
 const ATTENTION_TONES: ReadonlyArray<Tone> = ['info', 'warning', 'danger'];
@@ -97,34 +73,6 @@ const attentionOf = ({
   }
   return { text, tone };
 };
-
-type FoldParams = {
-  readonly group: SettingsGroup;
-};
-
-type FoldOfPageParams = {
-  readonly groups: ReadonlyArray<SettingsGroup>;
-  readonly pageKey: string | null;
-};
-
-export const foldOfPageKey = ({ groups, pageKey }: FoldOfPageParams): NestedScope | null => {
-  const group = groups.find(
-    (candidate) =>
-      isNestedScope(candidate.scope) && candidate.pages.some((page) => page.key === pageKey),
-  );
-  return group !== undefined && isNestedScope(group.scope) ? group.scope : null;
-};
-
-export const foldAttentionLinesOf = ({ group }: FoldParams): string =>
-  group.pages.flatMap((page) => (page.attention === null ? [] : [page.attention.text])).join('; ');
-
-export const foldAttentionOf = ({ group }: FoldParams): SettingsAttention | null =>
-  worstAttention({
-    attentions: [
-      attentionOf({ text: group.attention, tone: group.tone }),
-      ...group.pages.map((page) => page.attention),
-    ],
-  });
 
 const appAttention = ({
   section,
@@ -168,13 +116,13 @@ const appGroup = ({ status }: Pick<Params, 'status'>): SettingsGroup => ({
 
 const MODELS_AFTER_PAGE: WorkspacePage = 'general';
 
-export const MODELS_PAGE_KEY = 'providers:defaults';
+const MODELS_PAGE_KEY = `workspace:${MODELS_PAGE_SECTION}`;
 
 const modelsPage: SettingsPage = {
   key: MODELS_PAGE_KEY,
   label: NAMES.models,
   attention: null,
-  target: { scope: 'providers' },
+  target: { scope: 'workspace', section: MODELS_PAGE_SECTION },
 };
 
 const workspacePagesOf = ({ status }: Pick<Params, 'status'>): ReadonlyArray<SettingsPage> =>
@@ -195,94 +143,32 @@ const workspacePagesOf = ({ status }: Pick<Params, 'status'>): ReadonlyArray<Set
   });
 
 const workspaceGroup = ({ status, workspaceName }: Params): SettingsGroup => ({
-  ...scopeMeta('workspace'),
+  scope: 'workspace',
+  label: 'This workspace',
+  concept: 'workspace',
+  needsWorkspace: true,
   place: workspaceName ?? 'This workspace',
   attention: status.subtitles.workspaceText,
   tone: status.subtitles.workspaceTone,
   pages: workspacePagesOf({ status }),
 });
 
-const providerPages = ({ status }: Pick<Params, 'status'>): ReadonlyArray<SettingsPage> => {
-  const accounts = status.providers.map((provider): SettingsPage => ({
-    key: `provider:${provider.id}`,
-    label: provider.label,
-    attention: attentionOf({ text: provider.status.subtitle, tone: provider.status.tone }),
-    target: { scope: 'providers', provider: provider.id },
-  }));
-  if (accounts.length > 0) {
-    return accounts;
-  }
-  return [
-    {
-      key: 'providers:defaults',
-      label: NAMES.providers,
-      attention: attentionOf({
-        text: status.subtitles.providersText,
-        tone: status.subtitles.providersTone,
-      }),
-      target: { scope: 'providers' },
-    },
-  ];
-};
-
-const providersGroup = (params: Params): SettingsGroup => ({
-  ...scopeMeta('providers'),
-  place: params.workspaceName ?? 'This Mac',
-  attention: params.status.subtitles.providersText,
-  tone: params.status.subtitles.providersTone,
-  pages: providerPages({ status: params.status }),
-});
-
-type ToolAttentionParams = {
-  readonly health: ToolHealth;
-};
-
-const toolAttention = ({ health }: ToolAttentionParams): SettingsAttention | null => {
-  if (health.signal === 'none' || health.reason === null) {
-    return null;
-  }
-  return { text: health.reason, tone: health.signal === 'danger' ? 'danger' : 'warning' };
-};
-
-const toolsGroup = ({ status, workspaceName }: Params): SettingsGroup => ({
-  ...scopeMeta('tools'),
-  place: workspaceName ?? 'This workspace',
-  attention: undefined,
-  tone: undefined,
-  pages: status.tools.map((entry): SettingsPage => ({
-    key: `tool:${entry.tool}`,
-    label: entry.label,
-    attention: toolAttention({ health: entry.health }),
-    target: { scope: 'tools', tool: entry.tool },
-  })),
-});
-
 export const settingsDirectory = (params: Params): ReadonlyArray<SettingsGroup> => {
-  const groups = [
-    appGroup(params),
-    workspaceGroup(params),
-    providersGroup(params),
-    toolsGroup(params),
-  ];
+  const groups = [appGroup(params), workspaceGroup(params)];
   return groups.filter((group) => params.workspaceName !== null || !group.needsWorkspace);
 };
 
 type PageKeyParams = {
   readonly scope: SettingsPageScope;
   readonly section?: string;
-  readonly provider?: ProviderId;
-  readonly tool?: ToolRailEntry['tool'];
 };
 
-export const settingsPageKey = ({ scope, section, provider, tool }: PageKeyParams): string => {
+export const settingsPageKey = ({ scope, section }: PageKeyParams): string => {
   if (scope === 'app') {
     return `app:${appSectionOf({ section })}`;
   }
-  if (scope === 'providers') {
-    return provider === undefined ? 'providers:defaults' : `provider:${provider}`;
-  }
-  if (scope === 'tools') {
-    return tool === undefined ? 'tools' : `tool:${tool}`;
+  if (isModelsPage({ section })) {
+    return MODELS_PAGE_KEY;
   }
   return `workspace:${workspacePageOf({ section })}`;
 };

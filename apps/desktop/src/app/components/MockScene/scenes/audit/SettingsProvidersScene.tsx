@@ -2,7 +2,7 @@ import { legacyHiddenModels, withModelsVisible } from '@goodboy/core/providers';
 import { PROVIDER_IDS, type ProviderId, type RoleModelPreferences } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
 import { SETTING_HIDDEN_MODELS } from '../../../../../features/settings/settings';
-import { SettingsFrame } from './SettingsFrame';
+import { ConnectionsFrame } from './ConnectionsFrame';
 import { sceneParam } from './sceneParams';
 import { seedPolicyScene } from '../providerPolicySeed';
 import { SETTINGS_WORKSPACE_ID } from './settingsSeed';
@@ -105,5 +105,8 @@ const seedScene = () => {
 };
 
 export const SettingsProvidersScene = () => (
-  <SettingsFrame focus={{ scope: 'providers', provider: PROVIDER }} seed={seedScene} />
+  <ConnectionsFrame
+    focus={PROVIDER === undefined ? null : { kind: 'provider', provider: PROVIDER }}
+    seed={seedScene}
+  />
 );

@@ -7,6 +7,7 @@ import type { IntegrationCredentialId, SlackIntegrationBinding, WorkspaceId } fr
 const { state } = vi.hoisted(() => ({
   state: {
     workspaceIntegrations: {} as Record<string, ReadonlyArray<unknown>>,
+    integrationKeyChecks: {},
     connectSlack: vi.fn(async () => undefined),
     disconnectIntegration: vi.fn(async () => undefined),
     refreshSlackChannels: vi.fn(async () => undefined),

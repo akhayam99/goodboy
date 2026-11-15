@@ -48,11 +48,7 @@ const isInboxKind = (value: unknown): value is InboxKind =>
   typeof value === 'string' && INBOX_KINDS.some((kind) => kind === value);
 
 const isSettingsScope = (value: unknown): value is SettingsStudioScope =>
-  value === 'home' ||
-  value === 'app' ||
-  value === 'workspace' ||
-  value === 'providers' ||
-  value === 'tools';
+  value === 'home' || value === 'app' || value === 'workspace';
 
 const readImpactScope = (value: unknown): ImpactScope | null => {
   if (typeof value !== 'object' || value === null) {
@@ -81,22 +77,45 @@ export const eventSessionId = (event: Event): SessionId | null => {
   return isSessionId(sessionId) && sessionId !== '' ? sessionId : null;
 };
 
-export const settingsOverlayFromEvent = (event: Event): StudioPlace => {
-  const scope = eventValue({ event, key: 'scope' });
+type OverlayParams = {
+  readonly event: Event;
+};
+
+const connectionsOverlayFromEvent = ({ event }: OverlayParams): StudioPlace => {
   const tool = eventValue({ event, key: 'tool' });
   const section = eventValue({ event, key: 'section' });
   const provider =
     eventValue({ event, key: 'provider' }) ?? eventValue({ event, key: 'providerId' });
   const action = eventValue({ event, key: 'action' });
+  if (isProviderId(provider)) {
+    return {
+      kind: 'connections',
+      focus: {
+        kind: 'provider',
+        provider,
+        ...(isProviderLifecycleAction(action) && { action }),
+        ...(typeof section === 'string' && { section }),
+      },
+    };
+  }
+  return {
+    kind: 'connections',
+    focus: isInboxProvider(tool) ? { kind: 'tool', tool } : null,
+  };
+};
+
+export const settingsOverlayFromEvent = (event: Event): StudioPlace => {
+  const scope = eventValue({ event, key: 'scope' });
+  if (scope === 'providers' || scope === 'tools') {
+    return connectionsOverlayFromEvent({ event });
+  }
+  const section = eventValue({ event, key: 'section' });
   const flow = eventValue({ event, key: 'flow' });
   return {
     kind: 'settings',
     focus: {
       scope: isSettingsScope(scope) ? scope : 'home',
-      tool: isInboxProvider(tool) ? tool : undefined,
       section: typeof section === 'string' ? section : undefined,
-      provider: isProviderId(provider) ? provider : undefined,
-      action: isProviderLifecycleAction(action) ? action : undefined,
       flow: flow === 'copy' || flow === 'restore' ? flow : undefined,
     },
   };

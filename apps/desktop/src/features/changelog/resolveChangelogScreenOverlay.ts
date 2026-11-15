@@ -26,11 +26,8 @@ export const resolveChangelogScreenOverlay = ({
   if (screen === 'settings/app/storage') {
     return { kind: 'settings', focus: { scope: 'app', section: 'storage' } };
   }
-  if (screen === 'settings/providers') {
-    return { kind: 'settings', focus: { scope: 'providers' } };
-  }
-  if (screen === 'settings/tools') {
-    return { kind: 'settings', focus: { scope: 'tools' } };
+  if (screen === 'settings/providers' || screen === 'settings/tools') {
+    return { kind: 'connections', focus: null };
   }
   if (screen === 'settings/workspace/projects') {
     return { kind: 'settings', focus: { scope: 'workspace', section: 'projects' } };

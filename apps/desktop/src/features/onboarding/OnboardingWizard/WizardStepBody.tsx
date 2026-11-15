@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { formatError } from '@goodboy/ui';
 import type { WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../store';
-import { openSettings } from '../../settings/openSettings';
+import { openConnection } from '../../connections/openConnection';
 import { applyDefaultAgent } from './defaultAgent';
 import { handOffFirstSession } from './startFirstSession';
 import type { WizardContext } from './useOnboardingWizard';
@@ -39,7 +39,7 @@ export const WizardStepBody = ({ step, nav, wizard }: Props) => {
       .finally(() => nav.setBusy(false));
   };
 
-  const onOpenSettings = () => nav.later({ after: () => openSettings({ scope: 'tools' }) });
+  const onOpenSettings = () => nav.later({ after: () => openConnection({ focus: null }) });
 
   switch (step) {
     case 'agents':

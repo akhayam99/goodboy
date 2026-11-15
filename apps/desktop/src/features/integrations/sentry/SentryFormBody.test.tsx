@@ -8,6 +8,7 @@ import { chooseListboxValue } from '../../../__tests__/helpers/listbox';
 const { state, client, openUrl } = vi.hoisted(() => ({
   state: {
     workspaceIntegrations: {} as Record<string, ReadonlyArray<unknown>>,
+    integrationKeyChecks: {},
     connectSentry: vi.fn(async (_params: unknown) => undefined),
     disconnectIntegration: vi.fn(async () => undefined),
     forgetIntegrationCredential: vi.fn(async () => undefined),

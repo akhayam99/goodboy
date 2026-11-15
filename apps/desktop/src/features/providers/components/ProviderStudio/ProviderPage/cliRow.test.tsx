@@ -8,7 +8,7 @@ import {
   INITIAL_LIFECYCLE_MAP,
 } from '../../../../../store/slices/providers/types';
 import { buildProviderList, type ProviderDisplayInfo } from '../../../providers';
-import { ProviderPage } from './index';
+import { ProviderDetailBody } from '../../../ProviderDetailBody';
 
 vi.mock('../../InlineTerminal', () => ({
   InlineTerminal: () => <div>update terminal</div>,
@@ -71,7 +71,15 @@ describe('provider page CLI row', () => {
     const info = seedClaude({ version: '2.1.240', available: true, error: null });
     expect(info.connection).toBe('installed_disconnected');
 
-    render(<ProviderPage info={info} autoConnect={false} autoUpdate />);
+    render(
+      <ProviderDetailBody
+        info={info}
+        shouldAutoConnect={false}
+        isModelsFocused={false}
+        workspaceId={null}
+        shouldAutoUpdate
+      />,
+    );
 
     const account = within(screen.getByRole('region', { name: 'Account' }));
     expect(account.getByText('Claude CLI')).toBeDefined();
@@ -89,7 +97,15 @@ describe('provider page CLI row', () => {
     const info: ProviderDisplayInfo = { ...seeded, connection: 'error', error: 'Probe failed' };
     useAppStore.setState({ providers: [info] });
 
-    render(<ProviderPage info={info} autoConnect={false} autoUpdate={false} />);
+    render(
+      <ProviderDetailBody
+        info={info}
+        shouldAutoConnect={false}
+        isModelsFocused={false}
+        workspaceId={null}
+        shouldAutoUpdate={false}
+      />,
+    );
 
     expect(screen.getByText('Detection failed')).toBeDefined();
     expect(
@@ -103,7 +119,15 @@ describe('provider page CLI row', () => {
     const info = seedClaude({ version: null, available: false, error: 'Probe failed' });
     expect(info.connection).toBe('error');
 
-    render(<ProviderPage info={info} autoConnect={false} autoUpdate={false} />);
+    render(
+      <ProviderDetailBody
+        info={info}
+        shouldAutoConnect={false}
+        isModelsFocused={false}
+        workspaceId={null}
+        shouldAutoUpdate={false}
+      />,
+    );
 
     expect(screen.queryByRole('region', { name: 'Account' })).toBeNull();
   });
@@ -111,7 +135,15 @@ describe('provider page CLI row', () => {
   it('shows no CLI row when the CLI is not installed', () => {
     const info = seedClaude({ version: null, available: false, error: null });
 
-    render(<ProviderPage info={info} autoConnect={false} autoUpdate />);
+    render(
+      <ProviderDetailBody
+        info={info}
+        shouldAutoConnect={false}
+        isModelsFocused={false}
+        workspaceId={null}
+        shouldAutoUpdate
+      />,
+    );
 
     expect(screen.queryByRole('region', { name: 'Account' })).toBeNull();
     expect(updateProviderCli).not.toHaveBeenCalled();

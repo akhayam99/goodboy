@@ -130,8 +130,8 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
     lead: 'Each provider connects with a sign in you already have or an API key. Goodboy watches your plan windows and your spend.',
     points: [
       {
-        term: 'One page per provider',
-        desc: `${NAMES.providers}, in Settings, has a page per provider with usage, the models in your picker, permissions and your account. Test connection makes a real account call.`,
+        term: NAMES.connections,
+        desc: `${NAMES.connections} has a tile per provider. Its page shows usage, picker models, permissions and your account.`,
       },
       {
         term: 'Usage in the top bar',
@@ -160,8 +160,8 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
     ],
     links: [
       {
-        label: `Open ${NAMES.providers}`,
-        target: { kind: 'studio', studio: { kind: 'settings', focus: { scope: 'providers' } } },
+        label: `Open ${NAMES.connections}`,
+        target: { kind: 'studio', studio: { kind: 'connections', focus: null } },
       },
       {
         label: 'Open Impact, Spend',
@@ -425,8 +425,8 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
         target: { kind: 'studio', studio: { kind: 'inbox', focus: null } },
       },
       {
-        label: 'Open Integrations',
-        target: { kind: 'studio', studio: { kind: 'settings', focus: { scope: 'tools' } } },
+        label: `Open ${NAMES.connections}`,
+        target: { kind: 'studio', studio: { kind: 'connections', focus: null } },
       },
     ],
   },
@@ -678,7 +678,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
     points: [
       {
         term: 'Settings rail',
-        desc: `Settings, or ${shortcutGlyphs('settings.open')}, opens as a page beside the sidebar, on the page you used last. Its rail groups App, This workspace, ${NAMES.providers} and Integrations, and the last two collapse. Search settings finds any setting, and a dot marks a page that needs you.`,
+        desc: `Settings, or ${shortcutGlyphs('settings.open')}, opens as a page beside the sidebar, on the page you used last. Its rail groups App and This workspace; providers and integrations moved to ${NAMES.connections}. Search settings finds any setting, and a dot marks a page that needs you.`,
       },
       {
         term: 'Copy and restore',

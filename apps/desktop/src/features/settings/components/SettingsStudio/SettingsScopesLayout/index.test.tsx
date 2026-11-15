@@ -10,7 +10,6 @@ vi.mock('@tauri-apps/api/event', async () =>
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { studioRailFoldKey } from '@goodboy/ui';
-import { QUIET_TOOL_HEALTH } from '../../../../../__tests__/helpers/quietToolHealth';
 import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
@@ -31,21 +30,9 @@ const STATUS: SettingsStatus = {
     storageTone: undefined,
     securityFindingsText: undefined,
     securityFindingsTone: undefined,
-    providersText: undefined,
-    providersTone: undefined,
     workspaceText: undefined,
     workspaceTone: undefined,
   },
-  providers: [],
-  tools: [
-    {
-      tool: 'linear',
-      label: 'Linear',
-      subtitle: 'Not connected',
-      isConnected: false,
-      health: QUIET_TOOL_HEALTH,
-    },
-  ],
 };
 
 const GROUPS = settingsDirectory({ status: STATUS, workspaceName: 'Harborline' });

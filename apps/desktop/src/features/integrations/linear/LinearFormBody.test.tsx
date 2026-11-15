@@ -7,6 +7,7 @@ import type { IntegrationCredentialId, WorkspaceId } from '@goodboy/types';
 const { state } = vi.hoisted(() => ({
   state: {
     workspaceIntegrations: {} as Record<string, ReadonlyArray<unknown>>,
+    integrationKeyChecks: {},
     connectLinear: vi.fn(async () => undefined),
     disconnectIntegration: vi.fn(async () => undefined),
     forgetIntegrationCredential: vi.fn(async () => undefined),

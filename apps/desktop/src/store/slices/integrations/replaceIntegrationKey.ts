@@ -1,8 +1,5 @@
 import type { WorkspaceId, WorkspaceIntegrationProvider } from '@goodboy/types';
-import {
-  integrationBindingReplaceSecret,
-  requestCredentialRecheck,
-} from '../../../features/integrations/credentials';
+import { integrationBindingReplaceSecret } from '../../../features/integrations/credentials';
 import { integrationLabel } from '../../../shared/utils/integrationLabel';
 import { INTEGRATION_KEY_READS } from './integrationKeyReads';
 import { markIntegrationKey } from './markIntegrationKey';
@@ -41,6 +38,5 @@ export const replaceIntegrationKey = ({ set, get }: SliceDeps) => {
       throw new Error(`Couldn't save the key in your Mac's keychain. Try again.`);
     }
     markIntegrationKey({ set, credentialId, isPresent: true });
-    requestCredentialRecheck();
   };
 };

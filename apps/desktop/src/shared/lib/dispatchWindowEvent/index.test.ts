@@ -40,14 +40,9 @@ describe('openSettings', () => {
     expect(lastDetail()).toStrictEqual({ scope: 'workspace', section: 'projects' });
   });
 
-  it('keeps the door flag and the provider action for a replace-and-install call', () => {
+  it('keeps the door flag and the flow', () => {
     window.addEventListener('goodboy:open-settings', listener);
-    openSettings({ scope: 'providers', provider: 'anthropic', action: 'install', door: true });
-    expect(lastDetail()).toStrictEqual({
-      scope: 'providers',
-      provider: 'anthropic',
-      action: 'install',
-      door: true,
-    });
+    openSettings({ scope: 'workspace', flow: 'copy', door: true });
+    expect(lastDetail()).toStrictEqual({ scope: 'workspace', flow: 'copy', door: true });
   });
 });

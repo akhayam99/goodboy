@@ -20,5 +20,7 @@ export const ProvidersScopeScene = () => {
     }, OPEN_DELAY_MS);
     return () => window.clearTimeout(id);
   }, []);
-  return <SettingsFrame focus={{ scope: 'providers' }} seed={seedProvidersScope} />;
+  return (
+    <SettingsFrame focus={{ scope: 'workspace', section: 'models' }} seed={seedProvidersScope} />
+  );
 };
