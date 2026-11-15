@@ -1,6 +1,6 @@
 import type { SessionId } from '@goodboy/types';
 import type { AppState } from '../../types';
-import { selectOpenDrawer } from '../drawer/selectOpenDrawer';
+import { selectDetailDrawer } from '../drawer/selectDetailDrawer';
 
 type Params = {
   readonly state: AppState;
@@ -8,6 +8,6 @@ type Params = {
 };
 
 export const selectIsAskOpen = ({ state, sessionId }: Params): boolean => {
-  const drawer = selectOpenDrawer(state);
-  return drawer?.kind === 'ask' && drawer.sessionId === sessionId && state.appStudio === null;
+  const detail = selectDetailDrawer({ state });
+  return detail?.kind === 'ask' && detail.sessionId === sessionId && state.appStudio === null;
 };

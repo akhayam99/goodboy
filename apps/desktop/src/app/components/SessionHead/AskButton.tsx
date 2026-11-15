@@ -2,6 +2,7 @@ import { Button, ICON_SIZE, Tooltip } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../store';
 import { selectIsAskOpen } from '../../../store/slices/ask/selectIsAskOpen';
+import { selectDetailDrawer } from '../../../store/slices/drawer/selectDetailDrawer';
 import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
 import { PRESSED_TOGGLE } from '../../../shared/components/pressedToggle';
 
@@ -14,8 +15,9 @@ export const AskButton = ({ sessionId }: Props) => {
   const isOpen = useAppStore((state) => selectIsAskOpen({ state, sessionId }));
   const toggle = () => {
     const state = useAppStore.getState();
-    if (isOpen) {
-      state.closeDrawer();
+    const detail = selectDetailDrawer({ state });
+    if (isOpen && detail !== null) {
+      state.closeDrawerEntry({ entry: detail });
       return;
     }
     state.openAsk({ sessionId });
