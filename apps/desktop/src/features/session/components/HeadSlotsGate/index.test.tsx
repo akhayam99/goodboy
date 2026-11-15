@@ -18,6 +18,7 @@ const SLOTS: SessionHeadSlots = {
   frame: node(),
   isTitleClaimed: false,
   isHeadingClaimed: false,
+  isReadingClaimed: false,
   setTitle: () => undefined,
   setMeta: () => undefined,
   claim: () => undefined,

@@ -25,11 +25,11 @@ import { SlackDraftCard } from './SlackDraftCard';
 import { dayKey, rowAnchorOf } from './lib';
 import { DayDivider } from './DayDivider';
 import { planBlockVersions } from './planBlockVersions';
-import { rowVisibilityStyle } from './rowVisibilityStyle';
+import { rowBoxOf } from './rowBoxOf';
+import { answerClampOf } from './answerClampOf';
 import { splitTurns } from './splitTurns';
 import { lastRowIndexByRun } from './lastRowIndexByRun';
 import { rowEstimatePx } from './rowEstimatePx';
-import { rowHeightCache } from './rowHeightCache';
 import { heightKeyOf } from './heightKeyOf';
 import { NoStepsRow } from './NoStepsRow';
 import { isWorkflowRailRow } from './workflowRailGroup';
@@ -147,14 +147,13 @@ export const TranscriptRows = ({
       isStepsOnly,
       key: `workflow-rail-${railGroupKey}-${railGroup.length}`,
     });
+    const box = rowBoxOf({ heightKey: railKey, estimate: () => RAIL_ROW_PX * railGroup.length });
     out.push(
       <li
         key={`workflow-rail-${railGroupKey}`}
         data-anchor-key={railKey}
-        className="flex flex-col"
-        style={rowVisibilityStyle({
-          px: rowHeightCache.read({ key: railKey }) ?? RAIL_ROW_PX * railGroup.length,
-        })}
+        className={`flex flex-col ${box.className}`}
+        style={box.style}
       >
         {railGroup}
       </li>,
@@ -258,6 +257,7 @@ export const TranscriptRows = ({
       lastFooterRunId = row.item.runId;
     }
     const heightKey = heightKeyOf({ agentId: selectedAgentId, isStepsOnly, key: row.key });
+    const clampLines = answerClampOf({ row, activeRunId: activeRunId ?? null });
     const turn = Math.max(0, turnIndex);
     const stepHead = isStepHeadDue ? { 'data-turn-heading': turn } : null;
     isStepHeadDue = false;
@@ -267,10 +267,9 @@ export const TranscriptRows = ({
         ref={(element) => register({ key: row.key, element })}
         {...rowAnchorOf({ row, heightKey })}
         {...stepHead}
-        style={rowVisibilityStyle({
-          px:
-            rowHeightCache.read({ key: heightKey }) ??
-            rowEstimatePx({ row, isClusterOpen: isStepsOnly }),
+        {...rowBoxOf({
+          heightKey,
+          estimate: () => rowEstimatePx({ row, isClusterOpen: isStepsOnly, clampLines }),
         })}
       >
         {row.kind !== 'item' ? (

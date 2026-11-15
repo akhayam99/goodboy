@@ -148,8 +148,9 @@ Artifacts, plans, reports, Chat, Workflows, settings pages, agent and pull
 request detail. Header, trail band (crumbs and the Ask button, whose right
 edge is the column's), body and footer share its edges. Prose keeps the 720px
 measure aligned left inside it, except an artifact page, which fills the column
-(the plan drawer keeps the measure). Three tiers: **measure** (`--measure`, 720px,
-`PageColumn width="measure"` or `PANE_RHYTHM.prose`) for prose, **column**
+(the plan drawer keeps the measure). Four tiers: **measure** (`--measure`, 720px,
+`PageColumn width="measure"` or `PANE_RHYTHM.prose`) for prose, **reading**
+(`--reading`, 880px) for an agent conversation with its session head, **column**
 (`--column-max`, 960px) for the page column, and **full** for work surfaces,
 which start at the pane's left edge and are the only exception. `PageColumn`
 adds the 24px gutter, 16px when the pane is under 720px wide. No view picks its

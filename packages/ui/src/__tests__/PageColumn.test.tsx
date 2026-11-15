@@ -46,7 +46,7 @@ describe('PageColumn', () => {
     );
   });
 
-  it('caps a reading column at the measure and starts it on the left edge of the column', () => {
+  it('caps a reading column at the transcript measure and centres it like the column', () => {
     render(
       <PageColumn width="reading">
         <p>Transcript</p>
@@ -58,12 +58,12 @@ describe('PageColumn', () => {
       expect.arrayContaining([
         'mx-auto',
         'w-full',
-        'max-w-[var(--column-frame)]',
-        'pl-6',
-        'pr-[max(1.5rem,calc(min(100%,var(--column-frame))-var(--measure-frame)+1.5rem))]',
+        'max-w-[var(--reading-frame)]',
+        'px-6',
         '@max-[720px]:px-4',
       ]),
     );
+    expect(classes.some((name) => name.startsWith('pr-') || name.startsWith('pl-'))).toBe(false);
   });
 
   it('keeps the gutter but drops the cap and the centring when it is full width', () => {
@@ -79,8 +79,8 @@ describe('PageColumn', () => {
     expect(classes).not.toContain('max-w-[var(--column-frame)]');
   });
 
-  it('centres column and measure, leaves full on the pane edges, one gutter everywhere', () => {
-    const widths: ReadonlyArray<PageColumnWidth> = ['column', 'measure', 'full'];
+  it('centres column, reading and measure, leaves full on the pane edges, one gutter everywhere', () => {
+    const widths: ReadonlyArray<PageColumnWidth> = ['column', 'reading', 'measure', 'full'];
     render(
       <>
         {widths.map((width) => (
@@ -99,6 +99,7 @@ describe('PageColumn', () => {
 
     expect(new Set(gutters)).toEqual(new Set(['@max-[720px]:px-4 px-6']));
     expect(classesOf('edge column')).toContain('mx-auto');
+    expect(classesOf('edge reading')).toContain('mx-auto');
     expect(classesOf('edge measure')).toContain('mx-auto');
     expect(classesOf('edge full')).not.toContain('mx-auto');
   });

@@ -42,7 +42,7 @@ const FORBIDDEN_WIDTHS: ReadonlyArray<Forbidden> = [
   { pattern: /\bmx-auto\b/, allowed: CENTRED_ALLOWLIST },
   { pattern: /PANE_RHYTHM\.(measure|column)\b/, allowed: NO_EXCEPTION },
   {
-    pattern: /\bmax-w-\[var\(--(column-max|column-frame|measure-frame)\)\]/,
+    pattern: /\bmax-w-\[var\(--(column-max|column-frame|measure-frame|reading|reading-frame)\)\]/,
     allowed: NO_EXCEPTION,
   },
   { pattern: /DIFF_CAPPED_COLUMN_CLASS/, allowed: NO_EXCEPTION },
@@ -256,6 +256,8 @@ describe('content column contract', () => {
 
     expect(styles).toMatch(/--measure:\s*720px;/);
     expect(styles).toMatch(/--measure-frame:\s*calc\(var\(--measure\) \+ 48px\);/);
+    expect(styles).toMatch(/--reading:\s*880px;/);
+    expect(styles).toMatch(/--reading-frame:\s*calc\(var\(--reading\) \+ 48px\);/);
     const prose = walk(FEATURES)
       .map(toKey)
       .filter((key) => /max-w-\[var\(--measure\)\]/.test(read(key)));
@@ -270,6 +272,7 @@ describe('content column contract', () => {
 
     expect(source).toMatch(/column: `mx-auto max-w-\[var\(--column-frame\)\]/);
     expect(source).toMatch(/measure: `mx-auto max-w-\[var\(--measure-frame\)\]/);
+    expect(source).toMatch(/reading: `mx-auto max-w-\[var\(--reading-frame\)\]/);
     expect(source).toMatch(/full: GUTTER_CLASS,/);
     const centred = walk(FEATURES)
       .map(toKey)
@@ -296,7 +299,7 @@ describe('content column contract', () => {
     expect(read('features/workspace-chat/components/ChatComposer/index.tsx')).not.toMatch(/max-w-/);
   });
 
-  it('puts the agent transcript, its composer and the rows above it on the 720 reading column, no exception', () => {
+  it('puts the agent transcript, its composer and the rows above it on the 880 reading column, no exception', () => {
     const files = [
       'features/chat/components/ChatView/index.tsx',
       'features/chat/components/ChatInput/index.tsx',

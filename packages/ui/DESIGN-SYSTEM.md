@@ -572,8 +572,8 @@ Overview and a comfortable everything else.
 **Prose is the one exception. It is a reading grade, not drift.** Human and
 assistant transcript messages, a markdown body and any artifact the reader came
 for stay on `text-prose` or `text-body`. Making those smaller makes the app
-worse. A conversation reads in the 720px measure, centred: assistant messages
-take the measure and a user card keeps a 48px start gap (`PANE_RHYTHM.message.user`). The chrome around prose still takes the role its job asks for. A
+worse. An agent conversation reads in the 880px reading column and the chat room
+in the 720px measure, both centred: assistant messages take the column and a user card keeps a 48px start gap (`PANE_RHYTHM.message.user`). The chrome around prose still takes the role its job asks for. A
 document pane's section label is an eyebrow even when the body under it is
 prose, because `DESIGN.md` compresses chrome without limit and never the
 artifact.
