@@ -40,7 +40,7 @@ type DeleteTarget = {
 
 const TAB_OPTIONS: ReadonlyArray<ListboxOption<BranchTab>> = [
   { value: 'safe', label: 'Safe to delete' },
-  { value: 'needs-look', label: 'Needs a look' },
+  { value: 'needs-look', label: 'Check first' },
   { value: 'all', label: 'All' },
 ];
 

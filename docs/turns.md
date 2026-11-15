@@ -1206,15 +1206,15 @@ While a row is revealing (`data-reveal-answer` on it) the follow stops at the
 answer's top: the view follows the bottom until the top of the answer is 56 px
 under the top of the view (clear of the 48 px fade of `ScrollFade`), then holds
 there, so you read from its first line,
-and "Jump to latest" shows. When the written text reaches the bottom of the
+and "Scroll to latest" shows. When the written text reaches the bottom of the
 view, `onRevealOverflow` finishes the reveal (`revealPacer.flush`), so what is
 below the fold is simply there, not animated. When the reveal ends the view
-stays where it is. The hold ends at once for a reader who scrolls, and "Jump to
+stays where it is. The hold ends at once for a reader who scrolls, and "Scroll to
 latest" or a manual scroll to the bottom during the reveal goes back to
 following the bottom until the reveal ends. The old rule, always stick to the
 bottom while pinned, still holds for everything that is not a revealing answer.
 
-"Jump to latest" (`JumpToLatest`) is mounted all the time. It shows when the
+"Scroll to latest" (`JumpToLatest`) is mounted all the time. It shows when the
 content (not the spacer) ends 32 px or more under the view, `isBehind` in
 `useScrollPin`: a reply that passed the bottom of the view, or a reader who
 scrolled up. While you are at the bottom, or a question waits and its pill

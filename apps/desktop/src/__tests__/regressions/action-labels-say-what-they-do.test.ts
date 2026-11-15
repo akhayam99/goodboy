@@ -29,6 +29,13 @@ const BANNED_PHRASES: ReadonlyArray<string> = [
   'Putting back',
   'did not hear it',
   'Telling Auto',
+  'Put on a branch',
+  'Put it back on',
+  'Done, forget it',
+  'Move aside and restart',
+  'Gone, skipped',
+  'Pick up an issue',
+  'Got it',
 ];
 
 const BANNED_LABELS: ReadonlyArray<string> = ['Keep', 'Separate', 'Stop keeping', 'Remove'];

@@ -104,9 +104,9 @@ describe('the agent pages of a run', () => {
     expect(crumbs[2]).toMatch(/^Implementer · Post one credit per retry/);
     expect(crumbs[3]).toMatch(/^Scout/);
 
-    const fold = screen.getByRole('button', { name: 'Show folded crumbs' });
+    const fold = screen.getByRole('button', { name: 'Show hidden crumbs' });
     fireEvent.click(fold);
-    const menu = screen.getByRole('menu', { name: 'Folded crumbs' });
+    const menu = screen.getByRole('menu', { name: 'Hidden crumbs' });
     const rows = within(menu).getAllByRole('menuitem');
     expect(rows.map((row) => row.textContent)).toEqual(['Runs', railRunTitle()]);
 

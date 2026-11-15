@@ -574,7 +574,7 @@ describe('PaletteOverlay, Ask in chat', () => {
     expect(
       screen.getByRole('option', { name: 'Ask in chat' }).getAttribute('aria-description'),
     ).toBe('"pay export"');
-    expect(screen.getByText('Jump to')).toBeDefined();
+    expect(screen.getByText('Go to')).toBeDefined();
   });
 
   it('keeps the best match picked for a name, and Ask in chat picked for a question', () => {

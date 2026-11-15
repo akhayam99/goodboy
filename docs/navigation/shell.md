@@ -502,7 +502,7 @@ covered.
   page.
 - Centre: the movement cluster, then the command center. `Back` and `Forward`
   (24px icons) name their destination in the label and the tooltip
-  (`Back: Comments`, the session on a second line, `Hold for history` on a
+  (`Back: Comments`, the session on a second line, `Hold to show history` on a
   third, `⌘[`), sit at 40% with `Nothing to go back to` when the history is
   empty, and open the last 12 entries on right click or a 400ms hold. Board and
   Chat left the bar for the column. Board, the column's first door, is pressed

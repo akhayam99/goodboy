@@ -90,7 +90,7 @@ export const buildBranchDecision = ({
         found: NO_BRANCH,
         note: null,
         confirm: {
-          label: `Put it back on ${recorded}`,
+          label: `Check out ${recorded}`,
           resolution: 'restore-recorded',
           isDisabled: holder === 'checking',
         },

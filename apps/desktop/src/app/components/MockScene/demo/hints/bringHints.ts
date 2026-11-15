@@ -136,7 +136,7 @@ export const BRING_HINTS: ReadonlyArray<DemoHint> = [
     label: 'Keep connected tools',
     copy: 'Continue with these tools',
     instruction: 'Press **Continue** to finish setting up Harborline.',
-    result: 'Pick up an issue now lists HBL-412, the duplicate-credit bug.',
+    result: 'Pick an issue now lists HBL-412, the duplicate-credit bug.',
     beat: 0,
     anchor: TOOLS_CONTINUE,
     focus: WIZARD_COLUMN,

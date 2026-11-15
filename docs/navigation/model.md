@@ -570,7 +570,7 @@ operation when focus is outside a text field or terminal. Dismissing the
 toast does not discard the operation. An Undo that fails stays retryable.
 
 Session unlink snapshots all placements of one task, including every branch.
-A move (`Move to`, Take off, Put on a branch) is one operation: it replaces the
+A move (`Move to`, Remove from this branch, Link work to this branch) is one operation: it replaces the
 rows of that task in one write, so branch to branch is one Undo, and it
 snapshots the session placement it may create too. Undo compares the
 current placements with the operation's expected result and restores the

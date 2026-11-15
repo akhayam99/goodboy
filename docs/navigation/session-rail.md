@@ -700,7 +700,7 @@ activity yet show the plain overview with its actions.
   in the back button of the title row. The history arrows in the top bar are
   memory, not a way up: the left one reads `Back: {place}` and the right one
   `Forward: {place}` (an agent's name, a run's title, a page), with the
-  session's title on a second line and `Hold for history` on a third; a hold or a
+  session's title on a second line and `Hold to show history` on a third; a hold or a
   right click opens the History menu with the same names. A test that wants
   the arrow takes `[data-nav-arrow="back"]`.
 - **The session title row holds the session's actions, once.** The page headers under the

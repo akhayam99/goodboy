@@ -397,7 +397,7 @@ folders · size` (`WorktreeRemoveButton`), with the sentence on idle days as
   its help line, and the folder `...` menu shows on hover and focus. `Prune`
   is a secondary button that confirms. Branches is a Workspace page
   (`branches`, `BranchesPage`): the workspace's After merge rule first, then
-  the branch list under one select (`Safe to delete`, `Needs a look`, `All`),
+  the branch list under one select (`Safe to delete`, `Check first`, `All`),
   then a `Recently deleted` fold row (restore or delete for good, loaded from
   `deleted_branches` on open, which also releases the refs of deletions older
   than 14 days). The page meta line reads `N safe to delete · M need a look`
@@ -436,9 +436,9 @@ workspaces` (folders whose owning workspace is gone or was never linked),
   the batched distance counts per branch), with the merge test cached by both
   tips (4096 entries at most) and fed each branch's merged pull request head
   (`listMergedRequestHeads`); protected branches never show. One select
-  (`Safe to delete`, the default, `Needs a look`, `All`) filters the list.
+  (`Safe to delete`, the default, `Check first`, `All`) filters the list.
   Safe to delete means merged by merge commit or rebase, merged by its pull
-  request with nothing after the merged head, or never used. Needs a look
+  request with nothing after the merged head, or never used. Check first
   means `Merged, then N new commits`, unmerged and gone on origin, local only
   for over 30 days, or older than 90 days; never preselected. Every branch
   row and every Recently deleted row sit on one grid (`BRANCH_TABLE_GRID`,
