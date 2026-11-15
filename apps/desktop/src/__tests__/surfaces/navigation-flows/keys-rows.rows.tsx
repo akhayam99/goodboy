@@ -3,6 +3,8 @@ import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { StepId, Workflow, WorkflowId, WorkflowRun, WorkflowRunId } from '@goodboy/types';
 import { STORY_NOW } from '../../../store/storyHarness';
+import { lensPlace } from '../../../store/slices/navigation/canonicalLocation';
+import { LOG_LANDING } from '../../../features/session/central/log/logLanding';
 import { type Ctx, type Row, WAIT, both, lens, settle, useAppStore } from './harness';
 
 const SHIP_ID = 'flow-workflow-retry-fix' as WorkflowId;
@@ -70,11 +72,9 @@ export const KEYS_ROWS_ROWS: ReadonlyArray<Row> = [
     open: async (ctx) => {
       seedRunInActivity(ctx);
       await settle();
-      useAppStore.getState().openDrawer({
-        kind: 'session-log',
-        sessionId: ctx.sessionId,
-        payload: { focusEntryId: null },
-      });
+      const state = useAppStore.getState();
+      LOG_LANDING.request({ sessionId: ctx.sessionId });
+      state.navigate({ to: lensPlace({ state, sessionId: ctx.sessionId, lens: null }) });
       await settle();
       await screen.findByRole('region', { name: 'Log entries' });
       await tabToRunRow();

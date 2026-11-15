@@ -4,6 +4,8 @@ import { Button, ICON_SIZE, Input, tintClasses, appScrollIntoView } from '@goodb
 import type { Session } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { usePendingAction } from '../../../../shared/hooks/usePendingAction';
+import { useRowPreload } from '../../../../shared/hooks/useRowPreload';
+import { scrollParentOf } from '../../../../shared/utils/scrollParentOf';
 
 import { countRowIdOf } from '../../timeline/buildTimelineStream';
 import { useExplodeGroups, type ExplodeGroups } from '../../hooks/useExplodeGroups';
@@ -20,6 +22,10 @@ import { NAMES } from '../../../../shared/utils/names';
 
 const MARK_SEEN_KEY = 'mark-all-seen';
 
+const LOG_ROW_SELECTOR = '[data-log-row]';
+
+const LOG_ROW_BOX = '[content-visibility:auto] data-row-near:[content-visibility:visible]';
+
 type Props = {
   readonly session: Session;
   readonly focusEntryId?: string | null;
@@ -30,7 +36,14 @@ export const LogPane = ({ session, focusEntryId = null }: Props) => {
   const markAllAgentsSeen = useAppStore((s) => s.markAllAgentsSeen);
   const pending = usePendingAction({ sessionId });
   const [query, setQuery] = useState('');
+  const sectionRef = useRef<HTMLElement>(null);
+  const viewportRef = useRef<HTMLElement | null>(null);
   const listRef = useRef<HTMLDivElement>(null);
+  useLayoutEffect(() => {
+    viewportRef.current =
+      sectionRef.current === null ? null : scrollParentOf({ element: sectionRef.current });
+  }, []);
+  useRowPreload({ viewportRef, rowSelector: LOG_ROW_SELECTOR });
   const anchor = useScrollAnchor({ listRef });
   const groups = useExplodeGroups();
   const { set: setGroup, showAll: showAllGroup } = groups;
@@ -78,7 +91,11 @@ export const LogPane = ({ session, focusEntryId = null }: Props) => {
 
   return (
     <ActionColumnContext.Provider value={hasActionColumn}>
-      <section aria-label="Log entries" className="@container/activity flex flex-col gap-2">
+      <section
+        ref={sectionRef}
+        aria-label="Log entries"
+        className="@container/activity flex flex-col gap-2"
+      >
         <div className="flex items-center gap-2">
           <Input
             type="search"
@@ -120,30 +137,35 @@ export const LogPane = ({ session, focusEntryId = null }: Props) => {
                   }
                   const slot =
                     item.kind === 'row' || item.kind === 'more' ? item.explode : undefined;
-                  if (slot === undefined) {
-                    if (item.id === focusEntryId) {
-                      return (
-                        <div
-                          key={item.id}
-                          data-log-focus=""
-                          className={tintClasses('primary').bgSoft}
-                        >
-                          <TimelineRow {...props} />
-                        </div>
-                      );
-                    }
-                    return <TimelineRow key={item.id} {...props} />;
-                  }
+                  const row = <TimelineRow {...props} />;
+                  const still =
+                    item.id === focusEntryId ? (
+                      <div data-log-focus="" className={tintClasses('primary').bgSoft}>
+                        {row}
+                      </div>
+                    ) : (
+                      row
+                    );
                   return (
-                    <TimelineRevealRow
+                    <div
                       key={item.id}
-                      groupId={slot.groupId}
-                      isLeaving={explode.leavingIds.has(slot.groupId)}
-                      isShown={wasShown.has(item.id)}
-                      onSettled={explode.settle}
+                      data-log-row=""
+                      className={LOG_ROW_BOX}
+                      style={{ containIntrinsicSize: `auto ${item.height}px` }}
                     >
-                      <TimelineRow {...props} />
-                    </TimelineRevealRow>
+                      {slot === undefined ? (
+                        still
+                      ) : (
+                        <TimelineRevealRow
+                          groupId={slot.groupId}
+                          isLeaving={explode.leavingIds.has(slot.groupId)}
+                          isShown={wasShown.has(item.id)}
+                          onSettled={explode.settle}
+                        >
+                          {row}
+                        </TimelineRevealRow>
+                      )}
+                    </div>
                   );
                 })}
               </div>
