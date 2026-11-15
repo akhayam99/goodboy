@@ -111,12 +111,14 @@ export const settingsOverlayFromEvent = (event: Event): StudioPlace => {
   }
   const section = eventValue({ event, key: 'section' });
   const flow = eventValue({ event, key: 'flow' });
+  const row = eventValue({ event, key: 'row' });
   return {
     kind: 'settings',
     focus: {
       scope: isSettingsScope(scope) ? scope : 'home',
       section: typeof section === 'string' ? section : undefined,
       flow: flow === 'copy' || flow === 'restore' ? flow : undefined,
+      ...(typeof row === 'string' && { row }),
     },
   };
 };

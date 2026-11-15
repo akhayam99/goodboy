@@ -8,6 +8,7 @@ export type SettingsFocus = {
   readonly scope: SettingsStudioScope;
   readonly section?: string;
   readonly flow?: SettingsFlow;
+  readonly row?: string;
 };
 
 export type SettingsScopeChange = {
