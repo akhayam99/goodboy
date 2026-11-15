@@ -187,7 +187,11 @@ describe('command palette settings entries', () => {
     },
     {
       from: { scope: 'app', section: 'security-findings' },
-      to: { scope: 'app', section: 'storage' },
+      to: { scope: 'workspace', section: 'permissions' },
+    },
+    {
+      from: { scope: 'workspace', section: 'security-findings' },
+      to: { scope: 'workspace', section: 'permissions' },
     },
     { from: { scope: 'app', section: 'shortcuts' }, to: { scope: 'app', section: 'shortcuts' } },
   ] satisfies ReadonlyArray<{ from: SettingsFocus; to: SettingsFocus }>)(

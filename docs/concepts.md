@@ -1411,8 +1411,8 @@ How a reply reads is set in Settings, Workspace, **Replies and commits**:
 e31b9f4` when a history rewrite folded the fix. Reply and page always read
   the last commit of the thread after rewrites. The defaults are the
   reason, then `Fixed in {commit_story}.` or `Leaving this as is.`
-- **Sign replies** is the attribution line switch, so one value signs
-  everything Goodboy posts
+- **Attribution line**, under Voice in the Replies band, signs everything
+  Goodboy posts with one value
 - **Mark thread as resolved** (on by default, it resolves the thread after the reply) and **Commits** (new
   commit, or fixup of the commit that added the line)
 - **Edit the posted reply** (on by default, stored per workspace in the
@@ -1978,9 +1978,11 @@ session up again in Goodboy.
   (they were App and This workspace). **General**, **Keyboard shortcuts**,
   **Advanced**, **Storage**, **Backup and reset** and **iPhone** are the This
   Mac pages (Keyboard shortcuts was Shortcuts, iPhone was Pair device and
-  Companion; Updates is a band at the end of General; Security findings is a
-  section at the end of Storage). iPhone stays out of the rail until a phone
-  is paired. **Branches** is a Workspace page that starts with After merge. **Pair an iPhone** is the one verb that opens the iPhone
+  Companion; Updates is a band at the end of General; Security findings is the
+  Secrets in saved scripts band of the workspace's Permissions page). iPhone
+  stays out of the rail until a phone is paired. **Branches** is a Workspace
+  page that starts with Naming (branch prefix and branch name), then After
+  merge. **Pair an iPhone** is the one verb that opens the iPhone
   page, and **Edit commits** is the one name for changing the commits of a
   branch (it was Rewrite history). **Disconnect** is the one verb for a
   provider or tool (it was Sign out). The old words are Search or run aliases and

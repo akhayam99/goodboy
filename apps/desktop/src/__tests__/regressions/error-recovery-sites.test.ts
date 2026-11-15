@@ -51,7 +51,7 @@ const SITES: ReadonlyArray<Site> = [
     title: "Couldn't save what agents know about you",
   },
   {
-    file: 'features/settings/components/SettingsStudio/WorkspaceDefaultsGrid.tsx',
+    file: 'features/settings/components/SettingsStudio/WorkspaceBranchNamingBand.tsx',
     title: "Couldn't save the branch prefix",
   },
   {

@@ -4,6 +4,8 @@ import { PermissionsSettings } from '../../../permissions/components/Permissions
 import { WorkspaceStorageNotice } from '../../../storage/components/WorkspaceStorageNotice';
 import { storageWorkspacePages } from '../../../storage/storageWorkspacePages';
 import { WorkspaceAfterMergeSection } from './WorkspaceAfterMergeSection';
+import { WorkspaceBranchNamingBand } from './WorkspaceBranchNamingBand';
+import { SecurityFindingsSection } from './SecurityFindingsSection';
 import { WorkspaceProfileSection } from './WorkspaceProfileSection';
 import { WorkspaceProjectsSection } from './WorkspaceProjectsSection';
 import { WorkspaceDefaultsGrid } from './WorkspaceDefaultsGrid';
@@ -47,6 +49,7 @@ export const WorkspacePageBody = ({
     case 'branches':
       return (
         <>
+          <WorkspaceBranchNamingBand workspaceId={workspaceId} />
           <WorkspaceAfterMergeSection workspaceId={workspaceId} />
           {storageWorkspacePages({ workspaceId }).branches.body}
         </>
@@ -62,6 +65,7 @@ export const WorkspacePageBody = ({
               {control}
             </WorkspaceFieldRow>
           )}
+          afterRules={<SecurityFindingsSection workspaceId={workspaceId} />}
         />
       );
     default: {

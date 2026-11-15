@@ -4,7 +4,7 @@ import { EMPTY_OVERRIDES } from '@goodboy/types/testing';
 import { FIELD_PAGE, isWorkspaceOwnedOverride, pageKeys } from './pageKeys';
 import { PLAN_PAGES, WORKSPACE_PAGES } from './components/SettingsStudio/workspacePages';
 import { fieldDef } from './workspaceSettings/fields';
-import { copyPlan, restorePlan } from './workspaceSettings/plan';
+import { copyPlan, restorePlan, type PlanScope } from './workspaceSettings/plan';
 import type { WorkspaceSettingsSnapshot } from './workspaceSettings/snapshot';
 
 const snapshot = (overrides: Partial<OverrideSettings>): WorkspaceSettingsSnapshot => ({
@@ -52,6 +52,43 @@ describe('pageKeys', () => {
     expect(WORKSPACE_PAGES.map((entry) => entry.label)).not.toContain('Review replies');
   });
 
+  it('puts each field on the page that holds its row', () => {
+    expect(FIELD_PAGE).toEqual({
+      parallelAgents: 'general',
+      verbosity: 'general',
+      workflowRules: 'general',
+      branchPrefix: 'branches',
+      branchTemplate: 'branches',
+      afterMerge: 'branches',
+      replyVoice: 'review-replies',
+      replyStyleNote: 'review-replies',
+      attribution: 'review-replies',
+      replyTemplateFixed: 'review-replies',
+      replyTemplateNoChange: 'review-replies',
+      resolveOnGithub: 'review-replies',
+      editPostedReply: 'review-replies',
+      resolveCommitStyle: 'review-replies',
+      permissionMode: 'permissions',
+      roles: 'profile',
+      aboutWork: 'profile',
+      workingRules: 'profile',
+      explainMore: 'profile',
+    });
+    expect(pageKeys({ page: 'branches' })).toEqual([
+      'branchPrefix',
+      'branchTemplate',
+      'afterMerge',
+    ]);
+    expect(pageKeys({ page: 'general' })).not.toEqual(
+      expect.arrayContaining(['branchPrefix', 'branchTemplate', 'attribution']),
+    );
+    expect(pageKeys({ page: 'review-replies' }).slice(0, 3)).toEqual([
+      'replyVoice',
+      'replyStyleNote',
+      'attribution',
+    ]);
+  });
+
   it('owns nothing on Projects, so it is never copied', () => {
     expect(pageKeys({ page: 'projects' })).toEqual([]);
   });
@@ -71,12 +108,51 @@ describe('workspace settings plans', () => {
   it('restores by writing null for every changed value', () => {
     const plan = restorePlan({
       scope: 'general',
-      current: snapshot({ defaultBranchPrefix: 'hl', parallelAgents: false }),
+      current: snapshot({ defaultVerbosity: 'brief', parallelAgents: false }),
     });
 
     expect(plan.flatMap((page) => page.items.map((item) => item.write))).toEqual([
-      { overrides: { defaultBranchPrefix: null } },
+      { overrides: { defaultVerbosity: null } },
     ]);
+  });
+
+  it('restores the branch names on Branches and the attribution line on Replies, not on Run defaults', () => {
+    const current = snapshot({
+      defaultBranchPrefix: 'hl',
+      defaultBranchTemplate: '{prefix}/{task}-{slug}',
+      attributionFooter: false,
+      afterMerge: 'local-and-origin',
+    });
+
+    const fieldsOf = ({ scope }: { readonly scope: PlanScope }) =>
+      restorePlan({ scope, current }).flatMap((page) => page.items.map((item) => item.field));
+
+    expect(fieldsOf({ scope: 'general' })).toEqual([]);
+    expect(fieldsOf({ scope: 'branches' })).toEqual([
+      'branchPrefix',
+      'branchTemplate',
+      'afterMerge',
+    ]);
+    expect(fieldsOf({ scope: 'review-replies' })).toEqual(['attribution']);
+  });
+
+  it('copies the branch names into Branches and the attribution line into Replies', () => {
+    const source = snapshot({
+      defaultBranchPrefix: 'nw',
+      attributionFooter: false,
+      defaultVerbosity: 'brief',
+    });
+    const fieldsOf = ({ scope }: { readonly scope: PlanScope }) =>
+      copyPlan({ scope, current: snapshot({}), source }).flatMap((page) =>
+        page.items.map((item) => item.field),
+      );
+
+    expect(fieldsOf({ scope: 'general' })).toEqual(['verbosity']);
+    expect(fieldsOf({ scope: 'branches' })).toEqual(['branchPrefix']);
+    expect(fieldsOf({ scope: 'review-replies' })).toEqual(['attribution']);
+    expect(
+      copyPlan({ scope: 'all', current: snapshot({}), source }).map((page) => page.page),
+    ).toEqual(['general', 'branches', 'review-replies']);
   });
 
   it('never copies provider defaults or a value the source leaves at its default', () => {

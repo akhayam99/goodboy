@@ -13,6 +13,8 @@ vi.mock('@goodboy/db', async () =>
     setWorkspacePermissionDefault: vi.fn(async () => undefined),
     listDeletedBranches: vi.fn(async () => []),
     listExpiredDeletedBranches: vi.fn(async () => []),
+    listMergedRequestHeads: vi.fn(async () => []),
+    listGoodboyBranches: vi.fn(async () => []),
   }),
 );
 vi.mock('../../../permissions/permissions', async () =>
@@ -78,6 +80,8 @@ const seed = ({
     patch_workspace_overrides: null,
     get_workspace_overrides: (args: { readonly workspaceId: WorkspaceId }) =>
       args.workspaceId === NORTHWIND.id ? northwind : harborline,
+    project_branches: { userEmail: 'mara@harborline.test', branches: [] },
+    gh_run: { stdout: '', stderr: '', exitCode: 1 },
   });
   useAppStore.setState({
     workspaces: [HARBORLINE, NORTHWIND],
@@ -263,12 +267,18 @@ describe('WorkspaceScopePanel pages', () => {
     expect(header?.querySelector('[data-slot="pane-meta"]')?.textContent).toBe('No projects yet');
   });
 
-  it('opens Branches with After merge first and Check again in the header', () => {
+  it('opens Branches with Naming, then After merge, then the branch list', () => {
     renderPage({ section: 'branches' });
 
     expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Branches');
+    const naming = screen.getByRole('region', { name: 'Naming' });
     const afterMerge = screen.getByRole('region', { name: 'When a pull request merges' });
     const branches = screen.getByRole('region', { name: 'Branches' });
+    within(naming).getByLabelText('Branch prefix');
+    within(naming).getByText('Branch name');
+    expect(
+      naming.compareDocumentPosition(afterMerge) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
     expect(
       afterMerge.compareDocumentPosition(branches) & Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy();
@@ -298,22 +308,41 @@ describe('WorkspaceScopePanel pages', () => {
 
     renderPage({ section: 'permissions' });
     screen.getByRole('region', { name: 'Recent decisions' });
-  });
-
-  it('keeps the attribution line on New sessions only', () => {
-    renderPage({ section: 'review-replies' });
-    expect(screen.queryByText('Attribution line')).toBeNull();
     cleanup();
 
+    renderPage({ section: 'security-findings' });
+    expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Permissions');
+    screen.getByRole('region', { name: 'Secrets in saved scripts' });
+  });
+
+  it('puts the secrets band after Rules and before Recent decisions', () => {
+    renderPage({ section: 'permissions' });
+
+    const rules = screen.getByRole('region', { name: 'Rules' });
+    const secrets = screen.getByRole('region', { name: 'Secrets in saved scripts' });
+    const decisions = screen.getByRole('region', { name: 'Recent decisions' });
+    expect(rules.compareDocumentPosition(secrets) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(
+      secrets.compareDocumentPosition(decisions) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+  });
+
+  it('keeps the branch names and the attribution line off Run defaults', () => {
     renderPage({ section: 'general' });
-    screen.getByText('Attribution line');
+    expect(screen.queryByText('Attribution line')).toBeNull();
+    expect(screen.queryByLabelText('Branch prefix')).toBeNull();
+    expect(screen.queryByText('Branch name')).toBeNull();
+    cleanup();
+
+    renderPage({ section: 'review-replies' });
+    within(screen.getByRole('region', { name: 'Replies' })).getByText('Attribution line');
   });
 
   it('persists the attribution switch through the queued writer', async () => {
-    renderPage({ section: 'general' });
-    const region = screen.getByRole('region', { name: 'Branches and comments' });
+    renderPage({ section: 'review-replies' });
+    const region = screen.getByRole('region', { name: 'Replies' });
 
-    fireEvent.click(within(region).getByRole('switch'));
+    fireEvent.click(within(region).getByRole('switch', { name: 'Attribution line' }));
 
     await waitFor(() => expect(savedPatches()).toHaveLength(1));
     expect(savedPatches()[0]).toEqual({ attributionFooter: false });
@@ -379,6 +408,10 @@ describe('changed from default', () => {
   it('marks a value that differs from the default and resets it to null', async () => {
     seed({ harborline: overrides({ defaultBranchPrefix: 'hl', defaultVerbosity: 'normal' }) });
     renderPage({ section: 'general' });
+    expect(screen.queryByRole('button', { name: /^Reset .* to default$/ })).toBeNull();
+    cleanup();
+
+    renderPage({ section: 'branches' });
 
     expect(screen.getAllByRole('button', { name: /^Reset .* to default$/ })).toHaveLength(1);
     expect(screen.queryByRole('button', { name: 'Branch prefix options' })).toBeNull();
@@ -406,15 +439,40 @@ describe('restore defaults', () => {
       within(pageMenu('Replies and commits')).getByRole('menuitem', { name: /Restore defaults/ }),
     );
     const flow = screen.getByRole('region', { name: 'Restore defaults' });
-    expect(flow.textContent).toContain('Goes back to the default: 2 settings on 1 page.');
-    fireEvent.click(within(flow).getByRole('button', { name: 'Restore 2 settings' }));
+    expect(flow.textContent).toContain('Goes back to the default: 3 settings on 1 page.');
+    fireEvent.click(within(flow).getByRole('button', { name: 'Restore 3 settings' }));
 
     await waitFor(() => expect(savedPatches()).toHaveLength(1));
-    expect(savedPatches()[0]).toEqual({ replyVoice: null, resolveCommitStyle: null });
+    expect(savedPatches()[0]).toEqual({
+      replyVoice: null,
+      attributionFooter: null,
+      resolveCommitStyle: null,
+    });
 
     fireEvent.click(screen.getByRole('button', { name: 'Undo' }));
     await waitFor(() => expect(savedPatches()).toHaveLength(2));
     expect(savedPatches()[1]?.replyVoice).toBe('friendly');
+  });
+});
+
+describe('changed count per page', () => {
+  it.each([
+    ['general', 'Run defaults', '1 change'],
+    ['branches', 'Branches', '2 changes'],
+    ['review-replies', 'Replies and commits', '1 change'],
+  ] as const)('counts the moved fields on %s', (section, label, hint) => {
+    seed({
+      harborline: overrides({
+        defaultBranchPrefix: 'hl',
+        defaultBranchTemplate: '{prefix}/{slug}',
+        attributionFooter: false,
+        defaultVerbosity: 'brief',
+      }),
+    });
+    renderPage({ section });
+
+    const restore = within(pageMenu(label)).getByRole('menuitem', { name: /Restore defaults/ });
+    expect(restore.textContent).toContain(hint);
   });
 });
 
@@ -468,15 +526,16 @@ describe('copy from another workspace', () => {
     fireEvent.click(await within(flow).findByRole('radio', { name: /Northwind/ }));
     fireEvent.click(within(flow).getByRole('button', { name: 'Preview changes' }));
 
-    expect(flow.textContent).toContain('Will change 3 settings on 3 pages.');
-    ['Run defaults', 'Branches', 'Replies and commits'].forEach((page) =>
+    expect(flow.textContent).toContain('Will change 3 settings on 2 pages.');
+    ['Branches', 'Replies and commits'].forEach((page) =>
       within(flow).getByRole('checkbox', { name: `Include ${page}` }),
     );
-    fireEvent.click(within(flow).getByRole('checkbox', { name: 'Include Branches' }));
+    expect(within(flow).queryByRole('checkbox', { name: 'Include Run defaults' })).toBeNull();
+    fireEvent.click(within(flow).getByRole('checkbox', { name: 'Include Replies and commits' }));
     fireEvent.click(within(flow).getByRole('button', { name: 'Copy 2 settings' }));
 
     await screen.findByText('Copied 2 settings from Northwind.');
-    expect(savedPatches()).toEqual([{ defaultBranchPrefix: 'nw', replyVoice: 'formal' }]);
+    expect(savedPatches()).toEqual([{ defaultBranchPrefix: 'nw', afterMerge: 'ask' }]);
   });
 });
 
@@ -513,17 +572,20 @@ describe('folders that use their own value', () => {
         }),
       ],
     });
-    renderPage({ section: 'general' });
+    renderPage({ section: 'branches' });
 
     within(labelLine('Branch prefix')).getByText('2 folders use their own');
+    expect(within(labelLine('Branch name')).queryByText(/use their own|uses its own/)).toBeNull();
+    expect(screen.getAllByText(/folders? use[s]? (their|its) own/)).toHaveLength(1);
+    cleanup();
+
+    renderPage({ section: 'general' });
+
     within(labelLine('Reply length')).getByText('1 folder uses its own');
     expect(
       within(labelLine('Parallel agents')).queryByText(/use their own|uses its own/),
     ).toBeNull();
-    expect(
-      within(labelLine('Attribution line')).queryByText(/use their own|uses its own/),
-    ).toBeNull();
-    expect(screen.getAllByText(/folders? use[s]? (their|its) own/)).toHaveLength(2);
+    expect(screen.getAllByText(/folders? use[s]? (their|its) own/)).toHaveLength(1);
   });
 
   it('shows no chip while no folder holds a value of its own', () => {
@@ -553,7 +615,7 @@ describe('folders that use their own value', () => {
         }),
       ],
     });
-    renderPage({ section: 'general' });
+    renderPage({ section: 'branches' });
 
     const line = within(labelLine('Branch prefix'));
     line.getByText('1 folder uses its own');

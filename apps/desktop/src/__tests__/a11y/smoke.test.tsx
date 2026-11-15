@@ -244,7 +244,7 @@ describe('a11y smoke, SettingsStudio app scope', () => {
       loadSetting: vi.fn(async () => null),
       saveSetting: vi.fn(async () => undefined),
     };
-    const { container } = renderInToasts(<AppScopePanel section="general" workspaceId={null} />);
+    const { container } = renderInToasts(<AppScopePanel section="general" />);
     await expectBaseline({ name: 'AppScopePanel open', container });
   });
 });

@@ -5,6 +5,7 @@ import { Band, BandStack, Markdown, SectionHeader, SegmentedTabs, Switch } from 
 import { useAppStore } from '../../../../store';
 import type { WorkspaceOverridesPatch } from '../../../../store/slices/overrides/patchWorkspaceOverrides';
 import { NAMES } from '../../../../shared/utils/names';
+import { isAttributionEnabled } from '../../../../shared/utils/attribution';
 import { buildResolutionReplyBody } from '../../../../store/slices/github/buildResolutionReplyBody';
 import {
   EDIT_POSTED_REPLY_OFF,
@@ -104,7 +105,13 @@ export const WorkspaceReviewRepliesSection = ({ workspaceId }: Props) => {
   return (
     <div className="grid grid-cols-1 gap-6 @3xl:grid-cols-[minmax(0,1fr)_minmax(0,22rem)]">
       <div className="flex min-w-0 flex-col gap-4">
-        <Band inset="content" label="Replies" ariaLabel="Replies" headingLevel={2}>
+        <Band
+          inset="content"
+          label="Replies"
+          ariaLabel="Replies"
+          hint="How every reply reads and how it is signed."
+          headingLevel={2}
+        >
           <WorkspaceFieldRow
             workspaceId={workspaceId}
             field="replyVoice"
@@ -131,6 +138,18 @@ export const WorkspaceReviewRepliesSection = ({ workspaceId }: Props) => {
               onSave={(note) => void persist({ patch: { replyStyleNote: note } })}
             />
           )}
+          <WorkspaceFieldRow
+            workspaceId={workspaceId}
+            field="attribution"
+            help="Signs every comment and review reply Goodboy posts."
+          >
+            <Switch
+              ariaLabel="Attribution line"
+              checked={isAttributionEnabled({ overrides })}
+              disabled={isBusy}
+              onChange={(isOn) => void persist({ patch: { attributionFooter: isOn } })}
+            />
+          </WorkspaceFieldRow>
         </Band>
         <ReplyTemplatesBand
           fixed={settings.templateFixed}

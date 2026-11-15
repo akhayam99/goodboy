@@ -114,7 +114,6 @@ describe('settings rail rows', () => {
     { section: 'shortcuts', page: 'shortcuts' },
     { section: 'advanced', page: 'advanced' },
     { section: 'storage', page: 'storage' },
-    { section: 'security-findings', page: 'storage' },
     { section: 'backup', page: 'backup' },
     { section: 'iphone', page: 'iphone' },
     { section: 'help', page: 'general' },
@@ -132,6 +131,7 @@ describe('settings rail rows', () => {
     { section: 'models', page: 'models' },
     { section: 'summarizer', page: 'models' },
     { section: 'permissions', page: 'permissions' },
+    { section: 'security-findings', page: 'permissions' },
     { section: 'branches', page: 'branches' },
     { section: 'after-merge', page: 'branches' },
     { section: 'review-replies', page: 'review-replies' },
@@ -159,16 +159,24 @@ describe('settings rail rows', () => {
     expect(settingsPageKey({ scope: 'workspace', section: 'summarizer' })).toBe('workspace:models');
   });
 
-  it('puts the update dot on General and the worse of storage and findings on Storage', () => {
-    const app = pagesOf(LOUD_STATUS).filter((page) => page.key.startsWith('app:'));
-    const attentionOf = (key: string) => app.find((page) => page.key === key)?.attention;
+  it('puts the update dot on General, storage on Storage and findings on Permissions', () => {
+    const pages = pagesOf(LOUD_STATUS);
+    const attentionOf = (key: string) => pages.find((page) => page.key === key)?.attention;
 
     expect(attentionOf('app:general')).toEqual({ text: 'Update available', tone: 'info' });
     expect(attentionOf('app:advanced')).toBeNull();
-    expect(attentionOf('app:storage')).toEqual({ text: '3 open findings', tone: 'warning' });
+    expect(attentionOf('app:storage')).toEqual({ text: '12 GB can go', tone: 'warning' });
+    expect(attentionOf('workspace:permissions')).toEqual({
+      text: '3 open findings',
+      tone: 'warning',
+    });
+    expect(attentionOf('workspace:projects')).toEqual({
+      text: '2 folders not found',
+      tone: 'warning',
+    });
   });
 
-  it('keeps a storage warning over an info line about findings', () => {
+  it('keeps the storage warning on Storage', () => {
     const status: SettingsStatus = {
       subtitles: {
         ...QUIET_STATUS.subtitles,

@@ -57,14 +57,14 @@ describe('the Settings tree scenes', () => {
     );
   });
 
-  it('u26s-settings-general draws the four labels and General without Updates', async () => {
+  it('u26s-settings-general draws the two scope labels and General without Updates', async () => {
     const rail = await mount({ id: 'u26s-settings-general' });
 
     expect(
       within(rail)
         .getAllByRole('heading', { level: 2 })
         .map((heading) => heading.textContent),
-    ).toEqual(['App', 'Providers', 'This workspace · Harborline', 'Integrations']);
+    ).toEqual(['App', 'This workspace · Harborline']);
     expect(title()).toBe('General');
     screen.getByRole('heading', { level: 2, name: 'Appearance' });
     expect(screen.queryByRole('switch', { name: 'Download updates in the background' })).toBeNull();
@@ -78,13 +78,13 @@ describe('the Settings tree scenes', () => {
     screen.getByRole('button', { name: "Open What's new" });
   });
 
-  it('u26s-settings-storage ends Storage with the security findings', async () => {
+  it('u26s-settings-storage keeps the cleanup policy as a row of Worktrees', async () => {
     await mount({ id: 'u26s-settings-storage' });
 
     expect(title()).toBe('Storage');
-    expect(
-      await screen.findByText('No findings in your saved scripts.', undefined, WAIT),
-    ).toBeDefined();
+    const worktrees = await screen.findByRole('region', { name: 'Worktrees' }, WAIT);
+    within(worktrees).getByRole('combobox', { name: 'Suggest cleanup after' });
+    expect(screen.queryByRole('region', { name: 'Secrets in saved scripts' })).toBeNull();
   });
 
   it('u26s-settings-iphone lists the paired iPhone with Pair an iPhone in the header', async () => {
@@ -110,10 +110,9 @@ describe('the Settings tree scenes', () => {
     screen.getByRole('button', { name: 'Check again' });
   });
 
-  it('u26s-settings-nows says why the workspace groups are empty', async () => {
+  it('u26s-settings-nows says why the workspace group is empty', async () => {
     await mount({ id: 'u26s-settings-nows' });
 
     screen.getByText('Open a workspace to see its settings.');
-    screen.getByText('Integrations belong to a workspace.');
   });
 });

@@ -23,14 +23,14 @@ export type WorkspaceSettingField =
   | 'workflowRules';
 
 export const FIELD_PAGE: Readonly<Record<WorkspaceSettingField, PlanPage>> = {
-  branchPrefix: 'general',
-  branchTemplate: 'general',
-  attribution: 'general',
   parallelAgents: 'general',
   verbosity: 'general',
+  branchPrefix: 'branches',
+  branchTemplate: 'branches',
   afterMerge: 'branches',
   replyVoice: 'review-replies',
   replyStyleNote: 'review-replies',
+  attribution: 'review-replies',
   replyTemplateFixed: 'review-replies',
   replyTemplateNoChange: 'review-replies',
   resolveOnGithub: 'review-replies',

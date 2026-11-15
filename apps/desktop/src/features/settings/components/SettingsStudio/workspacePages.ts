@@ -48,7 +48,7 @@ const ALL_WORKSPACE_PAGES = [
   },
   {
     id: PERMISSIONS_SECTION_ID,
-    label: 'Permissions',
+    label: NAMES.permissions,
     concept: 'approval',
   },
   {
@@ -82,6 +82,7 @@ const SECTION_ALIASES: ReadonlyMap<string, WorkspacePage> = new Map<string, Work
   [LEGACY_DEV_PROJECT_SECTION_ID, 'projects'],
   [FOLDER_OPTIONS_SECTION_ID, 'projects'],
   ['after-merge', 'branches'],
+  ['security-findings', PERMISSIONS_SECTION_ID],
 ]);
 
 export const workspacePageOf = ({ section }: SectionParams): WorkspacePage => {

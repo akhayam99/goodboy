@@ -23,7 +23,6 @@ export const UPDATES_SECTION_ID = 'updates';
 export const IPHONE_SECTION_ID: AppSection = 'iphone';
 
 const APP_SECTION_ALIASES: ReadonlyMap<string, AppSection> = new Map<string, AppSection>([
-  ['security-findings', 'storage'],
   [UPDATES_SECTION_ID, 'general'],
 ]);
 

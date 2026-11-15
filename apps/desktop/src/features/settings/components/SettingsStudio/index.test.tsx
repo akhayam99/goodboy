@@ -308,7 +308,11 @@ describe('SettingsStudio', () => {
   });
 
   it.each([
-    { section: 'security-findings', page: 'Storage', moved: { scope: 'app', section: 'storage' } },
+    {
+      section: 'security-findings',
+      page: 'General',
+      moved: { scope: 'workspace', section: 'permissions' },
+    },
     { section: 'branches', page: 'General', moved: { scope: 'workspace', section: 'branches' } },
   ])('moves the old $section link to its new page', ({ section, page, moved }) => {
     const onScopeChange = vi.fn();
@@ -502,14 +506,14 @@ describe('SettingsStudio', () => {
     }
   });
 
-  it('opens on the new page when the last visit was an old one', () => {
+  it('opens General when the last visit moved to a workspace page and no workspace is open', () => {
     state.lastSettingsFocus = { scope: 'app', section: 'security-findings' };
     try {
       const onScopeChange = vi.fn();
       renderHome(onScopeChange);
 
-      expect(screen.getByRole('heading', { level: 1, name: 'Storage' })).toBeDefined();
-      expect(onScopeChange).toHaveBeenCalledWith({ scope: 'app', section: 'storage' });
+      expect(screen.getByRole('heading', { level: 1, name: 'General' })).toBeDefined();
+      expect(onScopeChange).toHaveBeenCalledWith({ scope: 'app', section: 'general' });
     } finally {
       state.lastSettingsFocus = null;
     }

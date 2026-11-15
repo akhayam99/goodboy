@@ -114,7 +114,6 @@ export const SettingsStudio = ({
       <AppScopePanel
         section={appSectionOf({ section: focus.section })}
         isUpdatesFocused={focus.section === UPDATES_SECTION_ID}
-        workspaceId={currentWorkspace?.id ?? null}
       />
     );
   };
