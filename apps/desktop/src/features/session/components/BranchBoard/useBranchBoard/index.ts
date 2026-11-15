@@ -14,7 +14,8 @@ import { useSessionRunHistory } from '../../../../../shared/hooks/useSessionRunH
 import { liveAutoViewsOf } from '../../../../auto/liveAutoViewsOf';
 import type { BranchEntry } from '../../../central/branches/branchStoryOf';
 import { boardInputsOf } from '../../../central/board/boardInputsOf';
-import { branchBoardOf, NO_BRANCH_ROW_ID } from '../../../central/board/branchBoardOf';
+import { branchBoardOf } from '../../../central/board/branchBoardOf';
+import { runningByRowIdOf } from '../../../central/board/runningByRowIdOf';
 import type { BranchBoard } from '../../../central/board/boardTypes';
 import {
   overviewTileFactsOf,
@@ -87,19 +88,10 @@ export const useBranchBoard = ({ session, entries }: Params): Result => {
       }),
     [entries, inputs, mergedAtByMountId, session],
   );
-  const runningByRowId = useMemo(() => {
-    const known = new Set<string>(board.rows.map((row) => row.id));
-    const byRow = new Map<string, number>();
-    for (const agent of inputs.agents) {
-      if (!agent.isRunning) {
-        continue;
-      }
-      const key =
-        agent.mountId !== null && known.has(agent.mountId) ? agent.mountId : NO_BRANCH_ROW_ID;
-      byRow.set(key, (byRow.get(key) ?? 0) + 1);
-    }
-    return byRow;
-  }, [board.rows, inputs.agents]);
+  const runningByRowId = useMemo(
+    () => runningByRowIdOf({ rows: board.rows, agents: inputs.agents, leads: inputs.leads }),
+    [board.rows, inputs.agents, inputs.leads],
+  );
   const newRowIds = useMemo(() => {
     const unread = new Set<string>(
       unreadAgentsOf({ agents }).flatMap((agent) =>

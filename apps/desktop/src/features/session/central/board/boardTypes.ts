@@ -22,6 +22,9 @@ export type BoardLead = Readonly<{
   primaryMountId: string | null;
   spendUsd: number;
   elapsedMs: number;
+  isRunning: boolean;
+  isBlocked: boolean;
+  isFailed: boolean;
 }>;
 
 export type BoardGroupId = 'needs-you' | 'in-progress' | 'merged' | 'not-on-branch';

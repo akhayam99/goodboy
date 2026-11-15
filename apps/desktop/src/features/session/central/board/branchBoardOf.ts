@@ -100,7 +100,7 @@ const rowOf = ({
   spendUsd,
   elapsedMs,
 }: RowParams): BoardRow => {
-  const stage = deriveSessionStage(branchFactsFor({ session, branch, asks, agents }));
+  const stage = deriveSessionStage(branchFactsFor({ session, branch, asks, agents, leads }));
   const isMerged = branch !== null && (branch.isFinished || stage.prState === 'merged');
   const askIds = asks.map((ask) => ask.id);
   const attentionId =

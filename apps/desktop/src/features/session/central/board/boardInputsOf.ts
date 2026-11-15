@@ -79,6 +79,9 @@ export const boardInputsOf = ({
         primaryMountId: view.tree.primaryMountId ?? root.mountId ?? null,
         spendUsd: ownSpendOf({ id: root.id }),
         elapsedMs: elapsedOf({ agent: root, now }),
+        isRunning: root.status === 'running',
+        isBlocked: root.status === 'blocked',
+        isFailed: root.status === 'failed',
       },
     ];
   });

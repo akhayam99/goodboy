@@ -5,6 +5,7 @@ import type { IsoDateTime, MountId, Session, SessionId, WorkspaceId } from '@goo
 import type { BranchFacts } from '../branches/branchFactsOf';
 import type { BoardAgent, BoardAsk, BoardLead } from './boardTypes';
 import { branchBoardOf, MERGED_FOLD_LIMIT } from './branchBoardOf';
+import { runningByRowIdOf } from './runningByRowIdOf';
 import { sessionKpisOf } from './sessionKpisOf';
 
 const DATE = brandId<IsoDateTime>({ value: '2026-08-04T00:00:00.000Z' });
@@ -96,6 +97,9 @@ const leadOf = (id: string, primaryMountId: string | null, spendUsd = 2): BoardL
   primaryMountId,
   spendUsd,
   elapsedMs: 500,
+  isRunning: false,
+  isBlocked: false,
+  isFailed: false,
 });
 
 type Inputs = {
@@ -269,6 +273,30 @@ describe('sessionKpisOf', () => {
     });
     expect(board.rows.find((row) => row.id === 'a')?.spendUsd).toBe(3);
     expect(board.rows.find((row) => row.id === 'b')?.spendUsd).toBe(1);
+  });
+
+  it('shows a running Lead with no children as running on its branch, counted as a Lead', () => {
+    const leads = [{ ...leadOf('lead-1', 'a'), isRunning: true }];
+    const board = boardOf({ branches: [branchOf('a'), branchOf('b')], leads });
+    const kpis = sessionKpisOf({ board });
+
+    expect(board.rows.find((row) => row.id === 'a')?.stage.reason).toBe('agent running');
+    expect(board.rows.find((row) => row.id === 'b')?.stage.reason).not.toBe('agent running');
+    expect(runningByRowIdOf({ rows: board.rows, agents: [], leads })).toEqual(new Map([['a', 1]]));
+    expect(kpis.leadCount).toBe(1);
+    expect(kpis.agentCount).toBe(0);
+  });
+
+  it('puts a failed Lead in the attention of its branch', () => {
+    const board = boardOf({
+      branches: [branchOf('a'), branchOf('b')],
+      leads: [{ ...leadOf('lead-1', 'a'), isFailed: true }],
+    });
+    const a = board.rows.find((row) => row.id === 'a');
+
+    expect(a?.stage.stage).toBe('attention');
+    expect(a?.group).toBe('needs-you');
+    expect(board.rows.find((row) => row.id === 'b')?.group).toBe('in-progress');
   });
 
   it('counts a merged branch in the Branches tile', () => {
