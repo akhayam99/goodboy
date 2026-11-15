@@ -70,6 +70,9 @@ const writeSavedFile = ({ worktreePath, relPath }: WriteParams): void => {
   const state = useAppStore.getState();
   const stack = currentStack(state);
   const kept = stack.entries[stack.index]?.focus.returnRows ?? {};
+  if (relPath === null && !Object.keys(kept).some((key) => FILE_ROWS.has(key))) {
+    return;
+  }
   const rest = Object.fromEntries(Object.entries(kept).filter(([key]) => !FILE_ROWS.has(key)));
   const returnRows =
     relPath === null
