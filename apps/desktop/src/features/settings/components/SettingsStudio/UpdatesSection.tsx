@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
-import { Band, FieldRow, Switch } from '@goodboy/ui';
+import { Band, Switch } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
 import { useInstalledVersion } from '../../../changelog/hooks/useInstalledVersion';
 import { UpdateVersionRow } from '../../../updater/components/UpdateVersionRow';
 import { SETTING_UPDATER_AUTO_DOWNLOAD } from '../../../settings/settings';
+import { SettingRow } from './SettingRow';
 
 export const UpdatesSection = () => {
   const loadSetting = useAppStore((state) => state.loadSetting);
@@ -26,16 +27,18 @@ export const UpdatesSection = () => {
     <Band inset="content" label="Version" headingLevel={2}>
       <div className="flex flex-col">
         <UpdateVersionRow installedVersion={installedVersion} />
-        <FieldRow
+        <SettingRow
           label="Download updates in the background"
           help="Restart to use a new version once it lands."
+          isChanged={!isAutoDownload}
+          onReset={() => onToggleAutoDownload(true)}
         >
           <Switch
             ariaLabel="Download updates in the background"
             checked={isAutoDownload}
             onChange={onToggleAutoDownload}
           />
-        </FieldRow>
+        </SettingRow>
       </div>
     </Band>
   );

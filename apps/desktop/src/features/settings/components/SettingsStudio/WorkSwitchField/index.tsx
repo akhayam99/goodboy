@@ -1,9 +1,10 @@
 import { useState } from 'react';
-import { FieldRow, Switch } from '@goodboy/ui';
+import { Switch } from '@goodboy/ui';
 import { useAppStore } from '../../../../../store';
 import { useIsWorkOn } from '../../../../../shared/hooks/useIsWorkOn';
 import { NOTHING_CHANGED } from '../../../../../store/slices/notifications/errorRecovery';
 import { SETTING_WORK_ENABLED } from '../../../../../shared/lib/workSetting';
+import { SettingRow } from '../SettingRow';
 
 const HELP =
   'Adds the Work section, starts runs from one composer and names the agent that leads a run Lead instead of Auto. Running work keeps its rules when you turn it off.';
@@ -33,7 +34,7 @@ export const WorkSwitchField = () => {
   };
 
   return (
-    <FieldRow
+    <SettingRow
       label="Work (experimental)"
       help={
         error === null ? (
@@ -44,12 +45,14 @@ export const WorkSwitchField = () => {
           </span>
         )
       }
+      isChanged={isWorkOn}
+      onReset={() => void save({ isOn: false })}
     >
       <Switch
         ariaLabel="Work (experimental)"
         checked={isWorkOn}
         onChange={(isOn) => void save({ isOn })}
       />
-    </FieldRow>
+    </SettingRow>
   );
 };

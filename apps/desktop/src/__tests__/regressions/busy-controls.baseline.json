@@ -6,7 +6,6 @@
   "apps/desktop/src/features/backup/components/BackupPage/index.tsx": 1,
   "apps/desktop/src/features/session/components/SessionOverviewPane/GoalTeaser.tsx": 2,
   "apps/desktop/src/features/settings/components/SettingsStudio/AppResetSection.tsx": 1,
-  "apps/desktop/src/features/settings/components/SettingsStudio/WorkspaceFieldRow.tsx": 1,
   "apps/desktop/src/features/settings/components/SettingsStudio/WorkspaceProjectsSection.tsx": 1,
   "apps/desktop/src/features/workspace-chat/components/ChatList/index.tsx": 1,
   "apps/desktop/src/features/workspace-chat/components/TurnIntoWorkPanel/index.tsx": 1,
