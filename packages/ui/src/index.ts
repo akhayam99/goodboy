@@ -352,6 +352,8 @@ export { StatusDot } from './components/StatusDot';
 export type { StatusDotProps } from './components/StatusDot';
 export { StageTrack } from './components/StageTrack';
 export type { StageTrackProps, StageTrackStage, StageTrackState } from './components/StageTrack';
+export { StatusMark } from './components/StatusMark';
+export type { StatusMarkSpec, StatusMarkState } from './components/StatusMark/statusMarkSpec';
 export { StateDot } from './components/StateDot';
 export type { DotState, StateDotProps } from './components/StateDot';
 export { ListGrid } from './components/ListGrid/ListGrid';

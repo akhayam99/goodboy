@@ -90,7 +90,7 @@ const MARKS: ReadonlyArray<Mark> = [
   {
     title: 'Review the Acme import mapper',
     tone: 'info',
-    state: 'marker',
+    state: 'dot',
     words: 'New reply',
   },
   {
@@ -114,7 +114,7 @@ const MARKS: ReadonlyArray<Mark> = [
   {
     title: 'Northwind CSV export',
     tone: 'merged',
-    state: 'finished',
+    state: 'merged',
     words: 'Done',
   },
 ];
@@ -138,10 +138,12 @@ describe('the session marks scene', () => {
       );
       await waitFor(() => expect(rowOf(mark.title)).toBeDefined());
       const row = rowOf(mark.title);
-      const node = row.querySelector('[role="img"]');
+      const node = row.querySelector('[data-row-state] [role="img"]');
 
       expect(row.querySelector('[data-node-tone]')?.getAttribute('data-node-tone')).toBe(mark.tone);
-      expect(node?.getAttribute('data-node-state')).toBe(mark.state);
+      expect(
+        node?.getAttribute('data-status-state') ?? node?.getAttribute('data-status-mark'),
+      ).toBe(mark.state);
       expect((node?.getAttribute('aria-label') ?? '').replace(/, unseen$/, '')).toBe(mark.words);
     },
   );
@@ -168,7 +170,7 @@ describe('the session marks scene', () => {
     const row = rowOf('Add a Harborline export schema');
 
     expect(row.querySelector('[role="img"]')).toBeNull();
-    expect(row.querySelector('[data-testid="state-node-slot"]')).not.toBeNull();
+    expect(row.querySelector('[data-row-state] [data-status-mark="empty"]')).not.toBeNull();
   });
 
   it('sets the unread reply in the strong row weight and nothing else', async () => {

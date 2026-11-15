@@ -10,7 +10,7 @@ afterEach(cleanup);
 const mark = (signal: DoorSignal) => render(<DoorSignalMark signal={signal} />).container;
 
 describe('DoorSignalMark', () => {
-  it('draws a small amber dot and a muted number when sessions need you', () => {
+  it('draws the number alone in amber when sessions need you, with no dot before it', () => {
     const count = mark({
       count: 3,
       isWarning: true,
@@ -22,10 +22,11 @@ describe('DoorSignalMark', () => {
 
     expect(count?.textContent).toBe('3');
     expect(count?.getAttribute('data-door-signal')).toBe('warning');
-    expect(count?.querySelectorAll('[aria-hidden]')).toHaveLength(1);
+    expect(count?.querySelector('.rounded-full')).toBeNull();
+    expect(count?.innerHTML).toContain('text-warning');
   });
 
-  it('draws the dot red, and the number still muted, when something is broken', () => {
+  it('draws the number in red when something is broken', () => {
     const count = mark({
       count: 9,
       isWarning: true,
@@ -37,9 +38,10 @@ describe('DoorSignalMark', () => {
 
     expect(count?.textContent).toBe('9+');
     expect(count?.getAttribute('data-door-signal')).toBe('danger');
+    expect(count?.innerHTML).toContain('text-danger');
   });
 
-  it('draws the number for one session too, with its dot and no pill', () => {
+  it('draws the number for one session too, in the one mark box, with no pill', () => {
     const one = mark({
       count: 1,
       isWarning: true,
@@ -51,6 +53,7 @@ describe('DoorSignalMark', () => {
 
     expect(one.querySelector('[data-door-count]')?.textContent).toBe('1');
     expect(one.querySelector('[data-door-pill]')).toBeNull();
+    expect(one.querySelector('[data-status-mark="count"]')?.className).toContain('size-4');
   });
 
   it('draws a bare muted number, no dot, for ports in use', () => {
@@ -64,7 +67,8 @@ describe('DoorSignalMark', () => {
 
     expect(count?.textContent).toBe('3');
     expect(count?.getAttribute('data-door-signal')).toBe('neutral');
-    expect(count?.querySelector('[aria-hidden]')).toBeNull();
+    expect(count?.querySelector('.rounded-full')).toBeNull();
+    expect(count?.innerHTML).toContain('text-faint-foreground');
   });
 
   it('draws only the dot on the collapsed rail, where a number has no room', () => {
@@ -102,7 +106,7 @@ describe('DoorSignalMark', () => {
     expect(port.querySelector('[data-door-count]')).toBeNull();
   });
 
-  it('keeps the primary dot for an unread chat', () => {
+  it('keeps the unread dot for an unread chat', () => {
     const unread = mark({ count: 0, isWarning: false, isUnread: true, fact: 'unread' });
 
     expect(unread.querySelector('[data-door-signal="unread"]')).not.toBeNull();

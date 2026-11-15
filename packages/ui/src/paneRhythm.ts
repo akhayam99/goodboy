@@ -63,8 +63,8 @@ export const PANE_RHYTHM = {
     door: 'h-7 px-2',
     doorGap: 'gap-1',
     icon: 'flex w-3 shrink-0 items-center justify-center',
-    mark: 'flex min-w-3.5 shrink-0 items-center justify-center',
-    action: 'absolute right-7.5 top-0.5 flex size-6 items-center justify-center',
+    mark: 'flex size-4 shrink-0 items-center justify-center',
+    action: 'absolute right-8 top-0.5 flex size-6 items-center justify-center',
   },
   property: {
     group: 'flex flex-col gap-1',
