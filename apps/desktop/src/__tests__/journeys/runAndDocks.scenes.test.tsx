@@ -74,8 +74,9 @@ describe('journey: the run page, its Agents rail and an agent in the centre', ()
     await journey.mount({ name: 'agentlead' });
 
     const crumbs = journey.crumbsOf();
-    expect(crumbs.slice(0, 2)).toEqual(['Overview', 'Runs']);
-    expect(crumbs).toHaveLength(5);
+    expect(crumbs[0]).toBe('Overview');
+    expect(crumbs).toHaveLength(4);
+    screen.getByRole('button', { name: 'Show folded crumbs' });
     expect(journey.view().agentId).not.toBeNull();
     expect(screen.getAllByRole('button', { name: 'copy message' }).length).toBeGreaterThan(0);
     screen.getByRole('button', { name: /^Back to Round once/ });
