@@ -59,8 +59,10 @@ const idsNow = (): ReadonlyArray<string> =>
     (action) => action.id,
   );
 
-const labelOf = ({ id }: { readonly id: string }): string | undefined =>
-  SESSION_KIND.actions.find((action) => action.id === id)?.label;
+const labelOf = ({ id }: { readonly id: string }): string | undefined => {
+  const label = SESSION_KIND.actions.find((action) => action.id === id)?.label;
+  return typeof label === 'string' ? label : undefined;
+};
 
 const env: ActionEnv = {
   getState: () => useAppStore.getState(),
