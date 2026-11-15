@@ -75,6 +75,8 @@ b-monitoring-expanded
 board
 board-delete-confirm
 board-empty-lanes
+board-needs-you-run
+board-needs-you-runs
 board-no-ongoing
 board-selected
 board-shell

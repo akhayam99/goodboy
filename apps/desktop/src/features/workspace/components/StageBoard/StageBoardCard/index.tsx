@@ -76,7 +76,7 @@ export const StageBoardCard = memo(function StageBoardCard({
   const projectLine = projectLineOf({ mounts });
   const dynamicActions = useDynamicActions(session, nav, stage);
 
-  const [visibleAction = attentionAction ?? undefined] = dynamicActions;
+  const [visibleAction = attentionAction ?? undefined] = waitingRun === null ? dynamicActions : [];
   const anchorKey = `board:${id}`;
   const rename = useSessionTitleRename({ sessionId: id, goal: session.goal, ...rowTitle });
   useRenameRequest({
