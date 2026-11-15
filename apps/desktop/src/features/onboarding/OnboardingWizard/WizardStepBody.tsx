@@ -39,7 +39,7 @@ export const WizardStepBody = ({ step, nav, wizard }: Props) => {
       .finally(() => nav.setBusy(false));
   };
 
-  const onOpenSettings = () => nav.later({ after: () => openConnection({ focus: null }) });
+  const onOpenConnections = () => nav.later({ after: () => openConnection({ focus: null }) });
 
   switch (step) {
     case 'agents':
@@ -64,7 +64,7 @@ export const WizardStepBody = ({ step, nav, wizard }: Props) => {
           isLocked={nav.isLocked}
           onBack={nav.goBack}
           onContinue={mode === 'single' ? () => nav.finish() : nav.goNext}
-          onOpenSettings={onOpenSettings}
+          onOpenConnections={onOpenConnections}
         />
       );
     case 'first-session':

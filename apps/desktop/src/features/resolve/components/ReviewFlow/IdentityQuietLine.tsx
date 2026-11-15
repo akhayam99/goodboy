@@ -23,7 +23,7 @@ export const IdentityQuietLine = ({ sessionId }: Props) => {
   }
   return (
     <p data-identity-quiet="" className={cn('px-3 text-meta', TEXT_ROLE.hint)}>
-      {health.copy} Reconnect it in Settings, Integrations.
+      {health.copy} Reconnect it in Connections.
     </p>
   );
 };

@@ -3,6 +3,7 @@ import { PROVIDER_IDS, type ProviderId, type RoleModelPreferences } from '@goodb
 import { useAppStore } from '../../../../../store';
 import { SETTING_HIDDEN_MODELS } from '../../../../../features/settings/settings';
 import { ConnectionsFrame } from './ConnectionsFrame';
+import { SettingsFrame } from './SettingsFrame';
 import { sceneParam } from './sceneParams';
 import { seedPolicyScene } from '../providerPolicySeed';
 import { SETTINGS_WORKSPACE_ID } from './settingsSeed';
@@ -104,9 +105,9 @@ const seedScene = () => {
   seedRoleSets();
 };
 
-export const SettingsProvidersScene = () => (
-  <ConnectionsFrame
-    focus={PROVIDER === undefined ? null : { kind: 'provider', provider: PROVIDER }}
-    seed={seedScene}
-  />
-);
+export const SettingsProvidersScene = () =>
+  PROVIDER === undefined ? (
+    <SettingsFrame focus={{ scope: 'workspace', section: 'models' }} seed={seedScene} />
+  ) : (
+    <ConnectionsFrame focus={{ kind: 'provider', provider: PROVIDER }} seed={seedScene} />
+  );
