@@ -93,6 +93,22 @@ describe('NowChip', () => {
     expect(container.querySelector('[data-now-idle]')?.textContent).toBe('Needs you');
   });
 
+  it('marks Needs you with the warning dot and Idle with the neutral ring', () => {
+    seed([ASKING], [ASKING]);
+    const { container, unmount } = render(<NowChip onOpenScript={vi.fn()} />);
+    const waitingDot = container.querySelector('[data-now-idle] > span:first-child');
+
+    expect(waitingDot?.className).toContain('bg-warning');
+    expect(waitingDot?.className).not.toContain('ring-idle');
+    unmount();
+    seed([]);
+    const idle = render(<NowChip onOpenScript={vi.fn()} />);
+
+    expect(idle.container.querySelector('[data-now-idle] > span:first-child')?.className).toContain(
+      'ring-idle',
+    );
+  });
+
   it('shows only the segments above zero, and names them all in one label', () => {
     seed([RUNNING]);
     const { container } = render(<NowChip onOpenScript={vi.fn()} />);
