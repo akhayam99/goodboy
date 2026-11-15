@@ -22,7 +22,7 @@ export const HistoryDragGhost = ({ drag, title, titleOf }: Props) => {
       : target.mode === 'noop'
         ? 'Already here'
         : target.mode === 'into'
-          ? `Fold into ${quoted({ text: titleOf(target.sha) })}, keeps its title`
+          ? `Fixup into ${quoted({ text: titleOf(target.sha) })}`
           : 'Move here';
   const action =
     target === null || target.mode === 'noop' ? null : target.mode === 'into' ? 'fixup' : 'move';

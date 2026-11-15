@@ -34,7 +34,7 @@ describe('historyMarkCardOf', () => {
 
   it('puts the explanation in the footnote after the row count', () => {
     const card = historyMarkCardOf({
-      label: 'Folds into "Add ledger export" (fixup)',
+      label: 'Fixup into "Add ledger export"',
       facts: [],
       note: "Only that commit's title is kept.",
     });

@@ -16,9 +16,15 @@ const BANNED_PHRASES: ReadonlyArray<string> = [
   'Who reads this',
   'Fix it anyway',
   'Copy last reply',
+  'Fold in',
+  'Folds in',
+  'Folds into',
+  'Fold into',
+  'fold it in',
+  'Nothing below to combine with',
 ];
 
-const BANNED_LABELS: ReadonlyArray<string> = ['Keep', 'Separate', 'Stop keeping'];
+const BANNED_LABELS: ReadonlyArray<string> = ['Keep', 'Separate', 'Stop keeping', 'Remove'];
 
 type WalkParams = {
   readonly dir: string;

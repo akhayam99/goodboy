@@ -14,12 +14,12 @@ const COMBINE_OPTIONS: ReadonlyArray<SegmentedTabOption<Choice>> = [
   {
     value: 'fixup',
     label: 'Keep title',
-    tooltip: 'Fold in (fixup): keeps only the title of the commit it goes into.',
+    tooltip: 'Fixup: keeps only the message of the commit it goes into.',
   },
   {
     value: 'squash',
     label: 'Keep both',
-    tooltip: 'Combine (squash): keeps both commit messages.',
+    tooltip: 'Squash: keeps both commit messages.',
   },
 ];
 

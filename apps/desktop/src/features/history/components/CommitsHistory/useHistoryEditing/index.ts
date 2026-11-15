@@ -80,7 +80,7 @@ export const useHistoryEditing = ({
   const foldDown = ({ sha, mode }: { readonly sha: string; readonly mode: CombineMode }) => {
     const next = combineDown({ items, sha, mode });
     if (next === items) {
-      setLive('Nothing below to combine with');
+      setLive('No commit below');
       return;
     }
     const target =
@@ -104,20 +104,20 @@ export const useHistoryEditing = ({
       return;
     }
     if (!canRemove({ items, sha })) {
-      setLive('Separate what it takes in first');
+      setLive('Separate the commits squashed into it first');
       return;
     }
     change({
       items: setVerb({ items, sha, verb: 'drop' }),
       arrive: { sha, action: 'drop' },
-      message: `Removed ${titleOf(sha)}`,
+      message: `Dropped ${titleOf(sha)}`,
     });
   };
   const setMode = ({ sha, mode }: { readonly sha: string; readonly mode: CombineMode }) =>
     change({
       items: setCombineMode({ items, sha, mode }),
       message:
-        mode === 'fixup' ? 'Keeps only the target title (fixup)' : 'Keeps both messages (squash)',
+        mode === 'fixup' ? 'Fixup: keeps only the target message' : 'Squash: keeps both messages',
     });
   const separate = ({ sha }: { readonly sha: string }) =>
     change({ items: resetStep({ items, sha }), message: `Separated ${titleOf(sha)}` });

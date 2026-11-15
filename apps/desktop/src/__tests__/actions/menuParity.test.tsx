@@ -556,22 +556,28 @@ describe('every ⋯ menu and its right click list the same actions in the same o
       .slice(0, fromContext.length);
 
     expect(fromContext).toEqual([
-      'Rename',
+      'Reword',
       'Fixup down',
       'Squash down',
       'Move up',
       'Move down',
       'Copy SHA',
       'Copy subject',
-      'Remove',
+      'Drop commit',
     ]);
-    expect(fromOverflow).toEqual(['Rename', 'Fixup down', 'Squash down', 'Copy SHA', 'Remove']);
+    expect(fromOverflow).toEqual([
+      'Reword',
+      'Fixup down',
+      'Squash down',
+      'Copy SHA',
+      'Drop commit',
+    ]);
     expect(fromContext.filter((label) => fromOverflow.includes(label))).toEqual(fromOverflow);
     expect(screen.getByText('For this commit')).toBeDefined();
     expect(fromPalette.slice(0, fromContext.length - 1)).toEqual(
-      fromContext.filter((label) => label !== 'Remove'),
+      fromContext.filter((label) => label !== 'Drop commit'),
     );
-    expect(fromPalette).not.toContain('Remove');
+    expect(fromPalette).not.toContain('Drop commit');
   });
 });
 

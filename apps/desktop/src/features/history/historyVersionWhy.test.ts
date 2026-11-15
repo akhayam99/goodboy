@@ -16,7 +16,7 @@ describe('historyVersionWhy', () => {
       historyVersionWhy({
         facts: { isSameForkAsNext: true, nextCommitCount: 2, commitCount: 3 },
       }),
-    ).toBe('Before a fold or drop');
+    ).toBe('Before a fixup, squash or drop');
   });
 
   it('names a split when the next version has more commits', () => {

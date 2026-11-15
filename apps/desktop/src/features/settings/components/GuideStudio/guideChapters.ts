@@ -483,7 +483,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
     points: [
       {
         term: 'Shape the history',
-        desc: 'Drag a commit to move it, or onto another to fold it in, and reword, squash or drop it from its row. Each edit applies at once, and commits not yet online read Not pushed.',
+        desc: 'Drag a commit to move it, or onto another to fixup into it, and reword, squash or drop it from its row. Each edit applies at once, and commits not yet online read Not pushed.',
       },
       {
         term: 'Undo and versions',
