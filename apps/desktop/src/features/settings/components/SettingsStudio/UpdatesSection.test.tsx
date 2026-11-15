@@ -133,7 +133,7 @@ describe('UpdatesSection', () => {
     render(<UpdatesSection />);
 
     const toggle = await screen.findByRole('switch', {
-      name: 'Download updates in the background',
+      name: 'Download in the background',
     });
     await waitFor(() => expect(toggle.getAttribute('aria-checked')).toBe('true'));
     fireEvent.click(toggle);

@@ -272,7 +272,7 @@ describe('WorkspaceScopePanel pages', () => {
 
     expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Branches');
     const naming = screen.getByRole('region', { name: 'Naming' });
-    const afterMerge = screen.getByRole('region', { name: 'When a pull request merges' });
+    const afterMerge = screen.getByRole('region', { name: 'After merge' });
     const branches = screen.getByRole('region', { name: 'Branches' });
     within(naming).getByLabelText('Branch prefix');
     within(naming).getByText('Branch name');
@@ -299,7 +299,7 @@ describe('WorkspaceScopePanel pages', () => {
   it('lands old anchors on their page', () => {
     renderPage({ section: 'after-merge' });
     expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Branches');
-    screen.getByRole('region', { name: 'When a pull request merges' });
+    screen.getByRole('region', { name: 'After merge' });
     cleanup();
 
     renderPage({ section: 'review-replies' });

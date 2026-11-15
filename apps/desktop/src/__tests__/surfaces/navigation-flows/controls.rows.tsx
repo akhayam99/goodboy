@@ -81,7 +81,7 @@ export const CONTROLS_ROWS: ReadonlyArray<Row> = [
     lands: async () => {
       const user = userEvent.setup();
       const target = await waitFor(
-        () => screen.getByRole('switch', { name: 'Download updates in the background' }),
+        () => screen.getByRole('switch', { name: 'Download in the background' }),
         WAIT,
       );
       const tabbable = [

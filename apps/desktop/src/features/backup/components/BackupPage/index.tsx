@@ -63,7 +63,7 @@ export const BackupPage = () => {
         inset="content"
         label="Export"
         ariaLabel="Export"
-        hint="Your setup for another Mac, or a copy. Never keys or tokens."
+        hint="For another Mac, or a copy. Never keys or tokens."
         headingLevel={2}
       >
         <ExportGroupsSection
@@ -87,7 +87,11 @@ export const BackupPage = () => {
             {exportError}
           </p>
         )}
-        <SettingRow label="Backup file" rowKey="backup-export">
+        <SettingRow
+          label="Export backup"
+          rowKey="backup-export"
+          help="Saves a backup file with the groups you ticked."
+        >
           <Button isBusy={isExporting} busyLabel="Exporting…" onClick={() => void onExport()}>
             Export
           </Button>
@@ -108,9 +112,13 @@ export const BackupPage = () => {
         hint="Adds and updates. Never deletes."
         headingLevel={2}
       >
-        <SettingRow label="Setup file" rowKey="backup-import">
+        <SettingRow
+          label="Import a backup"
+          rowKey="backup-import"
+          help="Opens a backup file and shows what changes first."
+        >
           <Button variant="secondary" onClick={() => void chooseImportFile()}>
-            Import
+            Choose file
           </Button>
         </SettingRow>
         {importError !== null && (

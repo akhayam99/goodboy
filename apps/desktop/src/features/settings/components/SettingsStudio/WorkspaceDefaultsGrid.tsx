@@ -47,7 +47,7 @@ export const WorkspaceDefaultsGrid = ({ workspaceId }: Props) => {
         <WorkspaceFieldRow
           workspaceId={workspaceId}
           field="parallelAgents"
-          help="Lets eligible agents split independent work and reconcile it in one output."
+          help="Eligible agents split independent work, then merge one result."
         >
           <Switch
             ariaLabel="Parallel agents"
@@ -58,7 +58,7 @@ export const WorkspaceDefaultsGrid = ({ workspaceId }: Props) => {
         <WorkspaceFieldRow
           workspaceId={workspaceId}
           field="verbosity"
-          help="How much agents explain while they work."
+          help="How much agents say while they work."
         >
           <VerbositySelect
             value={verbositySave.value}

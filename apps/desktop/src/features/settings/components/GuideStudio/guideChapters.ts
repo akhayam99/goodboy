@@ -309,7 +309,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Work and the Lead',
-        desc: 'Work (experimental), in Settings, calls the agent behind a run the Lead, lists every Lead under Work and adds Start work. Asks you sets one row per decision.',
+        desc: 'Work, in Advanced settings, renames Auto to Lead, lists every Lead under Work and adds Start work. Asks you sets one row per decision.',
       },
       {
         term: 'Overview',

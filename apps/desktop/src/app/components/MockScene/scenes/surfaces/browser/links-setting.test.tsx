@@ -61,7 +61,7 @@ describe('the Links setting scenes', () => {
     }
     render(<Scene />);
 
-    const row = await screen.findByRole('tablist', { name: 'Links' }, WAIT);
+    const row = await screen.findByRole('tablist', { name: 'Links in a session' }, WAIT);
     expect(row.querySelector('[role="tab"][aria-selected="true"]')?.textContent).toBe('In Goodboy');
   });
 });

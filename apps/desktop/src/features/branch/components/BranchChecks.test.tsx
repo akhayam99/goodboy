@@ -284,7 +284,7 @@ describe('Checks tab when the access cannot read checks', () => {
       screen.getByText('Give the token read access to checks and commit statuses.'),
     ).toBeDefined();
     expect(screen.queryByText('gh auth refresh -s repo')).toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: 'Open GitHub settings' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Open GitHub in Connections' }));
     expect(useAppStore.getState().appStudio).toEqual({
       kind: 'connections',
       focus: { kind: 'tool', tool: 'github' },
@@ -306,7 +306,7 @@ describe('Checks tab when the access cannot read checks', () => {
 
     await show();
 
-    expect(screen.getByRole('button', { name: 'Open GitHub settings' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Open GitHub in Connections' })).toBeDefined();
   });
 
   it('gives the gh command in a copy chip when no token is bound', async () => {
@@ -314,7 +314,7 @@ describe('Checks tab when the access cannot read checks', () => {
 
     expect(screen.getByText('gh auth refresh -s repo')).toBeDefined();
     expect(screen.getByRole('button', { name: 'Copy command' })).toBeDefined();
-    expect(screen.queryByRole('button', { name: 'Open GitHub settings' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Open GitHub in Connections' })).toBeNull();
   });
 
   it('checks again by forcing the read', async () => {
@@ -441,7 +441,7 @@ describe('Checks tab on Bitbucket', () => {
 
     expect(screen.getByText('The API token lacks the pull request scope')).toBeDefined();
     expect(screen.queryByText(/GitHub/)).toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: 'Open Bitbucket settings' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Open Bitbucket in Connections' }));
     expect(useAppStore.getState().appStudio).toEqual({
       kind: 'connections',
       focus: { kind: 'tool', tool: 'bitbucket' },
@@ -708,7 +708,7 @@ describe('Checks tab on a host that reads its own checks', () => {
     expect(screen.getByText("Goodboy can't read pipelines for notify-relay")).toBeDefined();
     expect(screen.getByText(/Give it the `api` scope/)).toBeDefined();
     expect(screen.queryByText(/GitHub/)).toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: 'Open GitLab settings' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Open GitLab in Connections' }));
     expect(useAppStore.getState().appStudio).toEqual({
       kind: 'connections',
       focus: { kind: 'tool', tool: 'gitlab' },

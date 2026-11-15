@@ -67,14 +67,14 @@ describe('the Settings tree scenes', () => {
     ).toEqual(['App', 'This workspace · Harborline']);
     expect(title()).toBe('General');
     screen.getByRole('heading', { level: 2, name: 'Appearance' });
-    expect(screen.queryByRole('switch', { name: 'Download updates in the background' })).toBeNull();
+    expect(screen.queryByRole('switch', { name: 'Download in the background' })).toBeNull();
   });
 
   it('u26s-settings-updates gives Updates its own page', async () => {
     await mount({ id: 'u26s-settings-updates' });
 
     expect(title()).toBe('Updates');
-    screen.getByRole('switch', { name: 'Download updates in the background' });
+    screen.getByRole('switch', { name: 'Download in the background' });
     screen.getByRole('button', { name: "Open What's new" });
   });
 
@@ -106,7 +106,7 @@ describe('the Settings tree scenes', () => {
     await mount({ id: 'u26s-settings-branches' });
 
     expect(title()).toBe('Branches');
-    screen.getByRole('region', { name: 'When a pull request merges' });
+    screen.getByRole('region', { name: 'After merge' });
     screen.getByRole('button', { name: 'Check again' });
   });
 

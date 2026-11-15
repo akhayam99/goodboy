@@ -116,7 +116,7 @@ describe('the gitlab page scenes', () => {
 
     expect(await screen.findByText("Goodboy can't read this merge request")).toBeDefined();
     expect(screen.getByText(/Give it the `api` scope/)).toBeDefined();
-    fireEvent.click(screen.getByRole('button', { name: 'Open GitLab settings' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Open GitLab in Connections' }));
     expect(store.getState().appStudio).toEqual({
       kind: 'connections',
       focus: { kind: 'tool', tool: 'gitlab' },

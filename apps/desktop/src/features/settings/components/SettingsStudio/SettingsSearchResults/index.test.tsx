@@ -115,8 +115,11 @@ describe('SettingsSearchResults', () => {
 
   it.each([
     { former: 'Resolve the thread after replying', label: 'Mark thread as resolved' },
-    { former: 'Skip folders', label: 'Leave out' },
-    { former: 'Classic send keys', label: 'Keys from before 0.15.5' },
+    { former: 'Leave out', label: 'Skip folders' },
+    { former: 'Keys from before 0.15.5', label: 'Classic send keys' },
+    { former: 'Show if a command passed or failed', label: 'Command status' },
+    { former: 'Banner when you are away', label: 'Banner when away' },
+    { former: 'Setup file', label: 'Import a backup' },
   ])('finds $label under its old label $former', ({ former, label }) => {
     mount({ query: former });
 
@@ -127,9 +130,8 @@ describe('SettingsSearchResults', () => {
     mount({ query: 'workspace' });
 
     const labels = optionLabels();
-    const autoAsks = labels.findIndex((label) => label.endsWith('asks you'));
     expect(labels.indexOf('Disconnect this workspace')).toBeGreaterThanOrEqual(0);
-    expect(autoAsks).toBeGreaterThan(labels.indexOf('Disconnect this workspace'));
+    expect(labels.indexOf('Name')).toBeGreaterThan(labels.indexOf('Disconnect this workspace'));
   });
 
   it('finds the iPhone pairing row while the page is out of the rail', () => {

@@ -21,16 +21,16 @@ describe('the Notifications band', () => {
     render(<AwayAlertsBand />);
 
     expect(stateOf('Dock badge')).toBe('true');
-    expect(stateOf('Banner when you are away')).toBe('false');
+    expect(stateOf('Banner when away')).toBe('false');
   });
 
   it('turns the banner on and off', async () => {
     render(<AwayAlertsBand />);
 
-    await userEvent.click(screen.getByRole('switch', { name: 'Banner when you are away' }));
+    await userEvent.click(screen.getByRole('switch', { name: 'Banner when away' }));
     await waitFor(() => expect(useAwayAlertsStore.getState().bannerChoice).toBe('on'));
 
-    await userEvent.click(screen.getByRole('switch', { name: 'Banner when you are away' }));
+    await userEvent.click(screen.getByRole('switch', { name: 'Banner when away' }));
     await waitFor(() => expect(useAwayAlertsStore.getState().bannerChoice).toBe('off'));
   });
 

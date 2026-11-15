@@ -36,7 +36,7 @@ export const AppResetSection = () => {
       <SettingRow
         label={NAMES.deleteAllData}
         rowKey="delete-all-data"
-        help="Every workspace, session, transcript and rule. Keychain keys are untouched."
+        help="Every workspace, session, transcript and rule. Keychain keys stay."
       >
         {wipeState === 'done' ? (
           <span className="flex items-center gap-3">

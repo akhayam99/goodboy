@@ -52,6 +52,6 @@ describe('ContrastPreferenceField', () => {
   it('tells the person the system setting is followed too', () => {
     render(<ContrastPreferenceField />);
 
-    screen.getByText(/follows your system setting too/i);
+    screen.getByText('Stronger borders and text. Follows macOS.');
   });
 });

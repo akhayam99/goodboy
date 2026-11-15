@@ -1,5 +1,6 @@
 import { REVIEW_SOURCE_LABEL } from '@goodboy/core/review-source';
 import { Button, CommandPreview, CopyButton, Notice } from '@goodboy/ui';
+import { NAMES } from '../../../shared/utils/names';
 import type { ChecksHost } from '../checksViewOf';
 
 type Props = {
@@ -35,7 +36,7 @@ export const ChecksDeniedNotice = ({
         actions={
           <>
             <Button variant="secondary" size="sm" onClick={onOpenSettings}>
-              Open GitLab settings
+              Open GitLab in {NAMES.connections}
             </Button>
             <Button variant="secondary" size="sm" isBusy={isChecking} onClick={onCheckAgain}>
               Check again
@@ -56,7 +57,7 @@ export const ChecksDeniedNotice = ({
         actions={
           <>
             <Button variant="secondary" size="sm" onClick={onOpenSettings}>
-              Open {label} settings
+              Open {label} in {NAMES.connections}
             </Button>
             <Button variant="secondary" size="sm" isBusy={isChecking} onClick={onCheckAgain}>
               Check again
@@ -77,7 +78,7 @@ export const ChecksDeniedNotice = ({
         <>
           {isTokenBound ? (
             <Button variant="secondary" size="sm" onClick={onOpenSettings}>
-              Open GitHub settings
+              Open GitHub in {NAMES.connections}
             </Button>
           ) : null}
           <Button variant="secondary" size="sm" isBusy={isChecking} onClick={onCheckAgain}>

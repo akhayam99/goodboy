@@ -93,9 +93,9 @@ export const WorkspaceAfterMergeSection = ({ workspaceId }: Props) => {
     <Band
       inset="content"
       label="After merge"
-      hint="What happens to a branch once its pull request merges."
+      hint="Once its pull request merges."
       headingLevel={2}
-      ariaLabel="When a pull request merges"
+      ariaLabel="After merge"
     >
       <WorkspaceFieldRow
         workspaceId={workspaceId}
@@ -104,7 +104,7 @@ export const WorkspaceAfterMergeSection = ({ workspaceId }: Props) => {
         help={AFTER_MERGE_NEVER}
       >
         <SegmentedTabs
-          ariaLabel="When a pull request merges"
+          ariaLabel="Folder and branch"
           size="sm"
           value={save.value}
           options={options}

@@ -273,7 +273,7 @@ describe('SettingsStudio', () => {
     expect(
       screen.getAllByRole('heading', { level: 2 }).map((heading) => heading.textContent),
     ).toEqual(expect.arrayContaining(['Git', 'Built-in terminal', 'Search', 'Experiments']));
-    expect(screen.getByRole('switch', { name: 'Work (experimental)' }).tagName).toBe('BUTTON');
+    expect(screen.getByRole('switch', { name: 'Work' }).tagName).toBe('BUTTON');
     expect(screen.queryByRole('switch', { name: 'Auto agent' })).toBeNull();
     expect(screen.queryByText('Open with')).toBeNull();
   });
@@ -556,7 +556,7 @@ describe('SettingsStudio', () => {
 
     expect(screen.getByRole('heading', { name: 'Backup and reset' })).toBeDefined();
     expect(screen.getByRole('button', { name: 'Export' })).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Import' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Choose file' })).toBeDefined();
   });
 });
 

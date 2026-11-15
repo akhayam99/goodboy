@@ -144,10 +144,19 @@ describe('BackupPage', () => {
     });
   });
 
-  it('offers to choose a setup file to import', async () => {
+  it('calls the file a backup file on both sides', () => {
     render(<BackupPage />);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Import' }));
+    screen.getByText('Export backup');
+    screen.getByText('Import a backup');
+    expect(screen.getAllByText(/backup file/)).toHaveLength(2);
+    expect(screen.queryByText(/setup file/i)).toBeNull();
+  });
+
+  it('offers to choose a backup file to import', async () => {
+    render(<BackupPage />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Choose file' }));
 
     await waitFor(() => expect(state.chooseBackupImportFile).toHaveBeenCalledOnce());
   });
