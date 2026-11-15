@@ -1,11 +1,13 @@
-import type { Agent, AgentId, OpenQuestion } from '@goodboy/types';
+import type { Agent, AgentId, OpenQuestion, TurnState } from '@goodboy/types';
 import type { AutoTreeView } from '../../../../store/slices/auto-view/state';
+import { autoTreeWordOf } from '../../../auto/autoTreeWordOf';
 import type { BoardAgent, BoardAsk, BoardLead } from './boardTypes';
 
 type Params = {
   readonly agents: ReadonlyArray<Agent>;
   readonly questions: ReadonlyArray<OpenQuestion>;
   readonly views: ReadonlyArray<AutoTreeView>;
+  readonly rootTurns: Readonly<Record<string, TurnState | undefined>>;
   readonly spendByAgentId: ReadonlyMap<AgentId, number>;
   readonly now: number;
 };
@@ -39,6 +41,7 @@ export const boardInputsOf = ({
   agents,
   questions,
   views,
+  rootTurns,
   spendByAgentId,
   now,
 }: Params): BoardInputs => {
@@ -73,15 +76,21 @@ export const boardInputsOf = ({
     if (root === undefined) {
       return [];
     }
+    const { lead } = autoTreeWordOf({
+      view,
+      rootTurn: rootTurns[root.id] ?? null,
+      isWork: false,
+    });
+    const isFailed = lead.reason === 'failed';
     return [
       {
         id: root.id,
         primaryMountId: view.tree.primaryMountId ?? root.mountId ?? null,
         spendUsd: ownSpendOf({ id: root.id }),
         elapsedMs: elapsedOf({ agent: root, now }),
-        isRunning: root.status === 'running',
-        isBlocked: root.status === 'blocked',
-        isFailed: root.status === 'failed',
+        isRunning: lead.stop === 'working',
+        isBlocked: lead.stop === 'waitsForYou' && !isFailed,
+        isFailed,
       },
     ];
   });
