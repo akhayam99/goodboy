@@ -47,7 +47,7 @@ describe('how often the repositories are checked', () => {
     expect(screen.getByRole('tab', { name: '15 min' }).getAttribute('aria-selected')).toBe('true');
   });
 
-  it('keeps the old interval when the save fails and says nothing was changed', async () => {
+  it('keeps the old interval when the save fails and says so under the row', async () => {
     const reportError = vi.fn(async () => undefined);
     useAppStore.setState({
       settings: { [SETTING_REPO_CHECK_MINUTES]: '30' },
@@ -61,14 +61,10 @@ describe('how often the repositories are checked', () => {
     fireEvent.click(screen.getByRole('tab', { name: 'Off' }));
 
     await waitFor(() =>
-      expect(screen.getByRole('tab', { name: 'Off' }).hasAttribute('disabled')).toBe(false),
+      expect(screen.getByRole('alert').textContent).toContain("Couldn't save. Still 30 min."),
     );
+    expect(screen.getByRole('tab', { name: '30 min' }).getAttribute('aria-selected')).toBe('true');
     expect(useAppStore.getState().settings[SETTING_REPO_CHECK_MINUTES]).toBe('30');
-    expect(reportError).toHaveBeenCalledWith(
-      expect.objectContaining({
-        title: "Couldn't save how often to check the repositories",
-        recovery: { clause: 'nothing-changed' },
-      }),
-    );
+    expect(reportError).not.toHaveBeenCalled();
   });
 });

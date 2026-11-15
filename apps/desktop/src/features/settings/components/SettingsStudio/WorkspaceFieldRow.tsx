@@ -24,6 +24,7 @@ export const WorkspaceFieldRow = ({ workspaceId, field, help, layout, children }
       chip={foldersNote}
       isChanged={state.isChanged}
       onReset={() => void state.reset()}
+      save={state.save}
     >
       {children}
     </SettingRow>

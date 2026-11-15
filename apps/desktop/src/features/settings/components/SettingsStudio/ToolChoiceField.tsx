@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { Listbox } from '@goodboy/ui';
+import type { SettingSave } from '../../hooks/useSettingSave';
 import { SettingRow } from './SettingRow';
 
 export type ToolChoice = {
@@ -10,19 +11,29 @@ export type ToolChoice = {
 
 type Props = {
   readonly label: string;
-  readonly help: string;
+  readonly help: ReactNode;
   readonly value: string;
   readonly defaultValue?: string;
   readonly choices: ReadonlyArray<ToolChoice>;
+  readonly save?: Pick<SettingSave<unknown>, 'error' | 'isSaving' | 'retry'>;
   readonly onChange: (value: string) => void;
 };
 
-export const ToolChoiceField = ({ label, help, value, defaultValue, choices, onChange }: Props) => (
+export const ToolChoiceField = ({
+  label,
+  help,
+  value,
+  defaultValue,
+  choices,
+  save,
+  onChange,
+}: Props) => (
   <SettingRow
     label={label}
     help={help}
     isChanged={defaultValue !== undefined && value !== defaultValue}
     onReset={defaultValue === undefined ? undefined : () => onChange(defaultValue)}
+    save={save}
   >
     <Listbox
       size="sm"

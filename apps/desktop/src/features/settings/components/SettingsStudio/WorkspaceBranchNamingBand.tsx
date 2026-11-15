@@ -4,7 +4,7 @@ import { Band, Input } from '@goodboy/ui';
 import { DEFAULT_BRANCH_PREFIX } from '../../../../features/settings/settings';
 import { useAppStore } from '../../../../store';
 import { selectWorkspaceResolvedSettings } from '../../../../store/slices/overrides/selectResolvedSettings';
-import { NOTHING_CHANGED } from '../../../../store/slices/notifications/errorRecovery';
+import { useWorkspaceOverrideSave } from '../../hooks/useWorkspaceOverrideSave';
 import { BranchTemplateField } from './BranchTemplateField';
 import { WorkspaceFieldRow } from './WorkspaceFieldRow';
 
@@ -27,43 +27,32 @@ const sanitized = ({ input }: PrefixParams): string =>
 const committedPrefix = ({ input }: PrefixParams): string => input.trim().replace(/[-/]+$/, '');
 
 export const WorkspaceBranchNamingBand = ({ workspaceId }: Props) => {
-  const patchWorkspaceOverrides = useAppStore((s) => s.patchWorkspaceOverrides);
   const resolvedBranchPrefix = useAppStore(
     (s) => selectWorkspaceResolvedSettings({ state: s, workspaceId }).defaultBranchPrefix,
   );
-  const reportError = useAppStore((s) => s.reportError);
-  const [branchPrefix, setBranchPrefix] = useState(DEFAULT_BRANCH_PREFIX);
-  const [savedBranchPrefix, setSavedBranchPrefix] = useState(DEFAULT_BRANCH_PREFIX);
-  const [isBusy, setIsBusy] = useState(false);
+  const [draftPrefix, setDraftPrefix] = useState<string | null>(null);
+  const prefixSave = useWorkspaceOverrideSave({
+    workspaceId,
+    field: 'branchPrefix',
+    saved: resolvedBranchPrefix,
+    patchOf: ({ value }) => ({ defaultBranchPrefix: value }),
+  });
 
   useEffect(() => {
-    setBranchPrefix(resolvedBranchPrefix);
-    setSavedBranchPrefix(resolvedBranchPrefix);
-  }, [workspaceId, resolvedBranchPrefix]);
+    setDraftPrefix(null);
+  }, [workspaceId]);
 
-  const commitBranchPrefix = async () => {
-    const cleaned = committedPrefix({ input: branchPrefix });
-    const next = cleaned === '' ? DEFAULT_BRANCH_PREFIX : cleaned;
-    if (next === savedBranchPrefix) {
-      setBranchPrefix(next);
+  const commitBranchPrefix = () => {
+    if (draftPrefix === null) {
       return;
     }
-    setIsBusy(true);
-    try {
-      await patchWorkspaceOverrides({ workspaceId, patch: { defaultBranchPrefix: next } });
-      setBranchPrefix(next);
-      setSavedBranchPrefix(next);
-    } catch (err) {
-      setBranchPrefix(savedBranchPrefix);
-      void reportError({
-        title: "Couldn't save the branch prefix",
-        error: err,
-        workspaceId,
-        recovery: NOTHING_CHANGED,
-      });
-    } finally {
-      setIsBusy(false);
+    const cleaned = committedPrefix({ input: draftPrefix });
+    const next = cleaned === '' ? DEFAULT_BRANCH_PREFIX : cleaned;
+    setDraftPrefix(null);
+    if (next === prefixSave.value) {
+      return;
     }
+    void prefixSave.save({ value: next });
   };
 
   return (
@@ -75,16 +64,15 @@ export const WorkspaceBranchNamingBand = ({ workspaceId }: Props) => {
       >
         <Input
           type="text"
-          value={branchPrefix}
-          onChange={(e) => setBranchPrefix(sanitized({ input: e.target.value }))}
-          onBlur={() => void commitBranchPrefix()}
+          value={draftPrefix ?? prefixSave.value}
+          onChange={(e) => setDraftPrefix(sanitized({ input: e.target.value }))}
+          onBlur={commitBranchPrefix}
           onKeyDown={(e) => {
             if (e.key === 'Enter') {
-              void commitBranchPrefix();
+              commitBranchPrefix();
             }
           }}
           placeholder={DEFAULT_BRANCH_PREFIX}
-          disabled={isBusy}
           maxLength={16}
           spellCheck={false}
           autoComplete="off"

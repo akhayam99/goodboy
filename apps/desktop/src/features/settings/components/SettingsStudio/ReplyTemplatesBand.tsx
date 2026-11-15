@@ -5,6 +5,7 @@ import {
   replyTemplateProblems,
   type ReplyTemplateVariable,
 } from '../../../resolve/renderReplyTemplate';
+import type { SettingSave } from '../../hooks/useSettingSave';
 import { ReplyTemplateField } from './ReplyTemplateField';
 
 export type ReplyTemplateKey = 'replyTemplateFixed' | 'replyTemplateNoChange';
@@ -19,16 +20,8 @@ const TEMPLATE_LABEL: Readonly<Record<ReplyTemplateKey, string>> = {
   replyTemplateNoChange: 'When not changing',
 };
 
-type SaveParams = {
-  readonly key: ReplyTemplateKey;
-  readonly value: string;
-};
-
 type Props = {
-  readonly fixed: string;
-  readonly noChange: string;
-  readonly isDisabled: boolean;
-  readonly onSave: (params: SaveParams) => void;
+  readonly saves: Readonly<Record<ReplyTemplateKey, SettingSave<string>>>;
 };
 
 type DraftParams = {
@@ -40,7 +33,9 @@ type InsertParams = {
   readonly name: ReplyTemplateVariable;
 };
 
-export const ReplyTemplatesBand = ({ fixed, noChange, isDisabled, onSave }: Props) => {
+export const ReplyTemplatesBand = ({ saves }: Props) => {
+  const fixed = saves.replyTemplateFixed.value;
+  const noChange = saves.replyTemplateNoChange.value;
   const [fixedDraft, setFixedDraft] = useState(fixed);
   const [noChangeDraft, setNoChangeDraft] = useState(noChange);
   const [target, setTarget] = useState<ReplyTemplateKey>('replyTemplateFixed');
@@ -53,10 +48,6 @@ export const ReplyTemplatesBand = ({ fixed, noChange, isDisabled, onSave }: Prop
     setNoChangeDraft(noChange);
   }, [noChange]);
 
-  const saved: Readonly<Record<ReplyTemplateKey, string>> = {
-    replyTemplateFixed: fixed,
-    replyTemplateNoChange: noChange,
-  };
   const drafts: Readonly<Record<ReplyTemplateKey, string>> = {
     replyTemplateFixed: fixedDraft,
     replyTemplateNoChange: noChangeDraft,
@@ -67,10 +58,10 @@ export const ReplyTemplatesBand = ({ fixed, noChange, isDisabled, onSave }: Prop
   };
 
   const save = ({ key, next }: DraftParams) => {
-    if (next === saved[key] || replyTemplateProblems({ template: next }).length > 0) {
+    if (next === saves[key].value || replyTemplateProblems({ template: next }).length > 0) {
       return;
     }
-    onSave({ key, value: next });
+    void saves[key].save({ value: next });
   };
 
   const insert = ({ name }: InsertParams) => {
@@ -92,7 +83,8 @@ export const ReplyTemplatesBand = ({ fixed, noChange, isDisabled, onSave }: Prop
           key={key}
           label={TEMPLATE_LABEL[key]}
           draft={drafts[key]}
-          isDisabled={isDisabled}
+          isDisabled={saves[key].isSaving}
+          save={saves[key]}
           onDraftChange={(next) => setters[key](next)}
           onFocus={() => setTarget(key)}
           onCommit={() => save({ key, next: drafts[key] })}
@@ -108,7 +100,7 @@ export const ReplyTemplatesBand = ({ fixed, noChange, isDisabled, onSave }: Prop
               key={name}
               variant="secondary"
               size="xs"
-              disabled={isDisabled}
+              disabled={saves[target].isSaving}
               onClick={() => insert({ name })}
               className="font-mono"
             >

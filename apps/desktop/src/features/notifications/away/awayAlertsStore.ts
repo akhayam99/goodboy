@@ -14,8 +14,8 @@ type BannerParams = {
 type AwayAlertsState = {
   readonly isBadgeOn: boolean;
   readonly bannerChoice: BannerChoice;
-  readonly setBadge: (params: BadgeParams) => void;
-  readonly setBannerChoice: (params: BannerParams) => void;
+  readonly setBadge: (params: BadgeParams) => boolean;
+  readonly setBannerChoice: (params: BannerParams) => boolean;
 };
 
 type KeyParams = {
@@ -41,12 +41,13 @@ const readStored = ({ key }: KeyParams): string | null => {
   }
 };
 
-const writeStored = ({ key, value }: WriteParams): void => {
+const writeStored = ({ key, value }: WriteParams): boolean => {
   try {
     localStorage.setItem(key, value);
   } catch {
-    return;
+    return false;
   }
+  return true;
 };
 
 const badgeOf = ({ value }: ValueParams): boolean => value !== BADGE_OFF;
@@ -63,12 +64,18 @@ export const useAwayAlertsStore = create<AwayAlertsState>((set) => ({
   isBadgeOn: readBadge(),
   bannerChoice: readChoice(),
   setBadge: ({ isOn }) => {
-    writeStored({ key: STORAGE_KEYS.awayBadge, value: isOn ? BADGE_ON : BADGE_OFF });
+    if (!writeStored({ key: STORAGE_KEYS.awayBadge, value: isOn ? BADGE_ON : BADGE_OFF })) {
+      return false;
+    }
     set({ isBadgeOn: isOn });
+    return true;
   },
   setBannerChoice: ({ choice }) => {
-    writeStored({ key: STORAGE_KEYS.awayBanner, value: choice });
+    if (!writeStored({ key: STORAGE_KEYS.awayBanner, value: choice })) {
+      return false;
+    }
     set({ bannerChoice: choice });
+    return true;
   },
 }));
 

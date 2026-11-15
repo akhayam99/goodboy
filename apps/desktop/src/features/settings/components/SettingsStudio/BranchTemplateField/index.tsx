@@ -19,7 +19,7 @@ import {
   SAMPLE_TASK_ID,
 } from './branchPreviewSource';
 import { branchTemplateProblemCopy } from './branchTemplateProblemCopy';
-import { NOTHING_CHANGED } from '../../../../../store/slices/notifications/errorRecovery';
+import { useWorkspaceOverrideSave } from '../../../hooks/useWorkspaceOverrideSave';
 
 type Props = {
   readonly workspaceId: WorkspaceId;
@@ -70,12 +70,18 @@ export const BranchTemplateField = ({ workspaceId }: Props) => {
   );
   const goal = useAppStore((state) => lastSessionGoal({ state, workspaceId }));
   const taskId = useAppStore((state) => lastSessionTaskId({ state, workspaceId }));
-  const patchWorkspaceOverrides = useAppStore((state) => state.patchWorkspaceOverrides);
-  const reportError = useAppStore((state) => state.reportError);
-  const template = stored === null || stored.trim() === '' ? DEFAULT_BRANCH_TEMPLATE : stored;
+  const templateSave = useWorkspaceOverrideSave({
+    workspaceId,
+    field: 'branchTemplate',
+    saved: stored === null || stored.trim() === '' ? DEFAULT_BRANCH_TEMPLATE : stored,
+    patchOf: ({ value }) => ({
+      defaultBranchTemplate: value === DEFAULT_BRANCH_TEMPLATE ? null : value,
+    }),
+  });
+  const template = templateSave.value;
   const [isCustomOpen, setIsCustomOpen] = useState(choiceOf(template) === 'custom');
   const [draft, setDraft] = useState(template);
-  const [isBusy, setIsBusy] = useState(false);
+  const isBusy = templateSave.isSaving;
   const inputRef = useRef<HTMLInputElement>(null);
   const optionRefs = useRef<Array<HTMLButtonElement | null>>([]);
 
@@ -104,22 +110,7 @@ export const BranchTemplateField = ({ workspaceId }: Props) => {
     if (next === template) {
       return;
     }
-    setIsBusy(true);
-    try {
-      await patchWorkspaceOverrides({
-        workspaceId,
-        patch: { defaultBranchTemplate: next === DEFAULT_BRANCH_TEMPLATE ? null : next },
-      });
-    } catch (error) {
-      void reportError({
-        title: "Couldn't save the branch name",
-        error,
-        workspaceId,
-        recovery: NOTHING_CHANGED,
-      });
-    } finally {
-      setIsBusy(false);
-    }
+    await templateSave.save({ value: next });
   };
 
   const pick = (choice: Choice) => {

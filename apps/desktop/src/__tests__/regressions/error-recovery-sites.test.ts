@@ -11,20 +11,8 @@ const SRC = 'apps/desktop/src/';
 
 const SITES: ReadonlyArray<Site> = [
   {
-    file: 'features/settings/components/SettingsStudio/OpenWithBand.tsx',
-    title: "Couldn't save the default editor",
-  },
-  {
-    file: 'features/settings/components/SettingsStudio/OpenWithBand.tsx',
-    title: "Couldn't save the default browser",
-  },
-  {
-    file: 'features/settings/components/SettingsStudio/OpenWithBand.tsx',
-    title: "Couldn't save the default terminal app",
-  },
-  {
-    file: 'features/settings/components/SettingsStudio/ClassicComposerKeysField.tsx',
-    title: "Couldn't save the composer keys",
+    file: 'features/settings/hooks/useSettingSave/index.ts',
+    title: 'title: failureTitle',
   },
   {
     file: 'features/settings/components/SettingsStudio/RunDefaultRow.tsx',
@@ -35,28 +23,12 @@ const SITES: ReadonlyArray<Site> = [
     title: "Couldn't save the terminal folder",
   },
   {
-    file: 'features/settings/components/SettingsStudio/WorkspaceAfterMergeSection.tsx',
-    title: "Couldn't save what happens after a merge",
-  },
-  {
-    file: 'features/settings/components/SettingsStudio/BranchTemplateField/index.tsx',
-    title: "Couldn't save the branch name",
-  },
-  {
     file: 'features/settings/components/SettingsStudio/useShortcutRecorder/index.ts',
     title: "Couldn't save the shortcut",
   },
   {
     file: 'features/settings/components/SettingsStudio/WorkspaceProfileSection.tsx',
     title: "Couldn't save what agents know about you",
-  },
-  {
-    file: 'features/settings/components/SettingsStudio/WorkspaceBranchNamingBand.tsx',
-    title: "Couldn't save the branch prefix",
-  },
-  {
-    file: 'features/settings/components/SettingsStudio/RepoCheckBand.tsx',
-    title: "Couldn't save how often to check the repositories",
   },
   {
     file: 'features/providers/hooks/useSpreadByHeadroom/index.ts',
@@ -136,12 +108,12 @@ describe('the reported errors of the most used actions name their way out', () =
     }
   });
 
-  it('covers twenty-seven call sites', () => {
+  it('covers twenty call sites', () => {
     const total = SITES.reduce(
       (sum, { file, title }) =>
         sum + callsNaming({ text: sources.get(`${SRC}${file}`) ?? '', title }).length,
       0,
     );
-    expect(total).toBe(27);
+    expect(total).toBe(20);
   });
 });

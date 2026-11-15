@@ -1,6 +1,8 @@
 import type { ReactNode } from 'react';
 import { RotateCcw } from 'lucide-react';
 import { FieldRow, IconButton } from '@goodboy/ui';
+import type { SettingSave } from '../../hooks/useSettingSave';
+import { SaveErrorHelp } from './SaveErrorHelp';
 import { SettingLevelChip } from './SettingLevelChip';
 
 type Props = {
@@ -10,6 +12,7 @@ type Props = {
   readonly chip?: string | null;
   readonly isChanged?: boolean;
   readonly onReset?: () => void;
+  readonly save?: Pick<SettingSave<unknown>, 'error' | 'isSaving' | 'retry'>;
   readonly children: ReactNode;
 };
 
@@ -20,6 +23,7 @@ export const SettingRow = ({
   chip = null,
   isChanged = false,
   onReset,
+  save,
   children,
 }: Props) => {
   const canReset = isChanged && onReset !== undefined;
@@ -39,8 +43,14 @@ export const SettingRow = ({
       ) : null}
     </>
   ) : null;
+  const hasError = save !== undefined && save.error !== null;
   return (
-    <FieldRow label={label} help={help} marker={marker} layout={layout}>
+    <FieldRow
+      label={label}
+      help={hasError ? <SaveErrorHelp help={help} save={save} /> : help}
+      marker={marker}
+      layout={layout}
+    >
       {children}
     </FieldRow>
   );

@@ -1487,6 +1487,15 @@ Settings can be set at four levels. The level closest to the work wins:
   not exist, with a named error and no write, and it returns the stored row,
   which the settings screens show. Saves of one workspace run in order; when a
   save fails, only the keys it changed go back to the last saved value.
+- **A failed save stays on its row.** A switch, a choice or a text field on a
+  This Mac or workspace page shows the new value while it saves. When the save
+  fails, the old value comes back and the row says "Couldn't save. Still hb."
+  with **Retry**, which sends the value that failed to the same workspace. No
+  toast while the page is open; a toast only when the page closed before the
+  answer. Saves of one row run in order, and an answer for an older change,
+  success or failure, is dropped. The hook is `useSettingSave` (row key from
+  `settingRowKey`, failures shared by the control and its reset in `rowSaves`),
+  wrapped by `useAppSettingSave` and `useWorkspaceOverrideSave`.
 - **Workflows and saved steps** belong to the workspace. Built-in
   steps live in code and are the same everywhere. They are read only: **Save a
   copy** puts one copy in the workspace, and that copy remembers what it is

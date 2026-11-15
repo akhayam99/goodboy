@@ -1,9 +1,11 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import { Band, Switch, appScrollIntoView } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
 import { useInstalledVersion } from '../../../changelog/hooks/useInstalledVersion';
 import { UpdateVersionRow } from '../../../updater/components/UpdateVersionRow';
-import { SETTING_UPDATER_AUTO_DOWNLOAD } from '../../../settings/settings';
+import { useAppSettingSave } from '../../hooks/useAppSettingSave';
+import { SETTING_UPDATER_AUTO_DOWNLOAD } from '../../settings';
+import { SWITCH_SETTING } from '../../switchSetting';
 import { SettingRow } from './SettingRow';
 import { UpdatesWhatsNewRow } from './UpdatesWhatsNewRow';
 
@@ -13,15 +15,18 @@ type Props = {
 
 export const UpdatesSection = ({ isFocused = false }: Props) => {
   const loadSetting = useAppStore((state) => state.loadSetting);
-  const saveSetting = useAppStore((state) => state.saveSetting);
+  const stored = useAppStore((state) => state.settings[SETTING_UPDATER_AUTO_DOWNLOAD]);
   const installedVersion = useInstalledVersion();
-  const [isAutoDownload, setIsAutoDownload] = useState(true);
   const bandRef = useRef<HTMLDivElement>(null);
+  const save = useAppSettingSave({
+    settingKey: SETTING_UPDATER_AUTO_DOWNLOAD,
+    saved: stored !== 'false',
+    ...SWITCH_SETTING,
+    failureTitle: "Couldn't save background downloads",
+  });
 
   useEffect(() => {
-    void loadSetting(SETTING_UPDATER_AUTO_DOWNLOAD).then((value) =>
-      setIsAutoDownload(value !== 'false'),
-    );
+    void loadSetting(SETTING_UPDATER_AUTO_DOWNLOAD);
   }, [loadSetting]);
 
   useEffect(() => {
@@ -29,11 +34,6 @@ export const UpdatesSection = ({ isFocused = false }: Props) => {
       appScrollIntoView({ element: bandRef.current, block: 'start' });
     }
   }, [isFocused]);
-
-  const onToggleAutoDownload = (next: boolean): void => {
-    setIsAutoDownload(next);
-    void saveSetting(SETTING_UPDATER_AUTO_DOWNLOAD, next ? 'true' : 'false');
-  };
 
   return (
     <div ref={bandRef} className="flex flex-col">
@@ -44,13 +44,14 @@ export const UpdatesSection = ({ isFocused = false }: Props) => {
           <SettingRow
             label="Download updates in the background"
             help="Restart to use a new version once it lands."
-            isChanged={!isAutoDownload}
-            onReset={() => onToggleAutoDownload(true)}
+            isChanged={!save.value}
+            onReset={() => void save.save({ value: true })}
+            save={save}
           >
             <Switch
               ariaLabel="Download updates in the background"
-              checked={isAutoDownload}
-              onChange={onToggleAutoDownload}
+              checked={save.value}
+              onChange={(isNext) => void save.save({ value: isNext })}
             />
           </SettingRow>
         </div>
