@@ -276,7 +276,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Right rail',
-        desc: 'Icons at the right of every screen. A session page adds Explore, Context, Ask, Agents and Scripts; Terminal and Browser sit at the foot and stay open as you move. Open full page grows them; Dock or Beside the session puts them back.',
+        desc: 'Icons at the right of every screen. A session page adds Explore, Context, Ask, Agents and Scripts; Terminal and Browser sit at the foot and stay open as you move. Open full page grows them; Dock puts them back.',
       },
     ],
     links: [],

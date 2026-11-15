@@ -384,7 +384,7 @@ describe('the browser page', () => {
     screen.getByRole('button', { name: 'PR #318' });
     screen.getByRole('button', { name: 'API guides, pinned' });
     expect(screen.queryByRole('heading', { name: 'Browser' })).toBeNull();
-    screen.getByRole('button', { name: 'Beside the session' });
+    screen.getByRole('button', { name: 'Dock' });
     screen.getByRole('button', { name: 'New tab' });
   });
 
@@ -619,7 +619,7 @@ describe('the browser page', () => {
     await waitFor(() =>
       expect(groupLabels()).toEqual(['Pinned · payments-api', 'Show tax in the checkout total']),
     );
-    expect(screen.queryByText('No browser tabs yet')).toBeNull();
+    expect(screen.queryByText(/Its tabs show here, grouped by session/)).toBeNull();
     screen.getByRole('button', { name: 'API guides, pinned' });
   });
 
@@ -628,7 +628,7 @@ describe('the browser page', () => {
     store.setState({ sessions: [] });
     openPage({ tabId: null });
 
-    expect(await screen.findByText('No browser tabs yet')).toBeDefined();
+    expect(await screen.findByText('No page open')).toBeDefined();
     expect(document.querySelector('[data-browser-view]')).toBeNull();
   });
 
@@ -636,7 +636,7 @@ describe('the browser page', () => {
     rows = [];
     store.setState({ sessions: [] });
     openPage({ tabId: null, sessionId: null });
-    await screen.findByText('No browser tabs yet');
+    await screen.findByText('No page open');
 
     fireEvent.click(screen.getByRole('button', { name: 'Dock' }));
 
@@ -675,7 +675,7 @@ describe('moving a tab between the pane and the page', () => {
       }),
     );
 
-    fireEvent.click(screen.getByRole('button', { name: 'Beside the session' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Dock' }));
 
     expect(store.getState().appStudio).toBeNull();
     expect(store.getState().drawer).toEqual({
@@ -706,7 +706,7 @@ describe('moving a tab between the pane and the page', () => {
     );
     expect(callsOf({ command: 'browser_tab_show' })).toHaveLength(1);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Beside the session' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Dock' }));
 
     await waitFor(() => expect(callsOf({ command: 'browser_tab_show' })).toHaveLength(2));
     expect(lastViewCall()).toEqual(['browser_tab_show', 'live-1']);
@@ -723,7 +723,7 @@ describe('moving a tab between the pane and the page', () => {
     await promote();
     await waitFor(() => expect(callsOf({ command: 'browser_tab_show' })).toHaveLength(2));
 
-    fireEvent.click(screen.getByRole('button', { name: 'Beside the session' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Dock' }));
     await act(async () => {
       held.release();
     });

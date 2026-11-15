@@ -36,7 +36,7 @@ The strip ends with the same controls on every scope.
 
 - **Change folder** is disabled while a command runs. It clears what is typed on the prompt, then types `cd`. The tab stays under the folder it started in.
 - The ports sit next to it.
-- **⋯** holds **Send last output**, **Copy worktree path** and **Open session**. A folder with no session has a quiet **Copy folder path** instead.
+- **⋯** holds **Send last output**, **Copy worktree path** and **Open session**. In the dock it sits in the header, before **Open full page**, as in the Browser; on the page it comes before **Dock**. A folder with no session has a quiet **Copy folder path** instead.
 - **Send last output** attaches the end of the tab's scrollback to the session's composer. It is sent only when you send.
 - Selecting text in a terminal shows **Send to the agent**. It attaches just the selection the same way.
 - A port a terminal listens on shows as quiet text on a worktree row that is not selected. For the selected worktree it shows as a chip at the right edge of the tab strip, never on a tab. A click opens localhost on it in the session's browser, **⌘-click** in your own. A folder with no session opens your browser.
@@ -205,7 +205,7 @@ Open your dev server, a port or a link beside the session or on a page of its ow
 - The page is read when you press it, never before. Nothing goes to the agent until you send the message, and the × on the chip takes it away.
 - A page over 60,000 characters is cut, and the text says so at the end. A key or a token in the text is hidden.
 - A page that moved to another site since you pressed is not read. A failure says why under the address row, with **Retry**.
-- **Open full page** makes it full size on the Browser page. It lists every tab, grouped by session, then the pins of each project. **Beside the session**, at the right of the trail, puts it back. The page never reloads, so a half-typed form stays.
+- **Open full page** makes it full size on the Browser page. It lists every tab, grouped by session, then the pins of each project. **Dock**, last in the address row, puts it back. The page never reloads, so a half-typed form stays.
 - The page has no title band: the trail, the address row, then the page. The first button of the address row folds the tab list, and **New tab** is the last row of the list.
 - Pick a tab on the Browser page to show it there. The trail at the top goes back to its session, and a reload comes back to the same tab.
 - The address is a command field. Type an address and press **Enter** to open it beside the session, or **⌘Enter** to open it in your browser. A localhost address opens your dev server.

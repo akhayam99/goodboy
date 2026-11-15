@@ -165,6 +165,14 @@ export const TerminalDrawerBody = ({ workspaceId, sessionId, worktreeKey, onClos
           />
         </span>
       }
+      menu={
+        <TerminalStripActions
+          worktree={worktree}
+          tab={selected}
+          handoffSessionId={sessionId}
+          canOpenSession={false}
+        />
+      }
       page={{
         label: NAMES.openFullPage,
         onOpen: () => openTerminalOnPage({ terminalId: selected.id, sessionId }),
@@ -172,7 +180,7 @@ export const TerminalDrawerBody = ({ workspaceId, sessionId, worktreeKey, onClos
       onClose={onClose}
       scroll="self"
     >
-      <div onKeyDown={handleKeyDown} className="flex h-full min-h-0 flex-1 flex-col gap-2 py-2">
+      <div onKeyDown={handleKeyDown} className="flex h-full min-h-0 flex-1 flex-col gap-2 pb-2">
         <TerminalTabStrip
           label={worktree.projectName}
           tabs={model.tabs}
@@ -187,21 +195,13 @@ export const TerminalDrawerBody = ({ workspaceId, sessionId, worktreeKey, onClos
           onCloseLastIdle={onClose}
           sessionId={sessionId}
           actions={
-            <>
-              <TerminalStripActions
-                worktree={worktree}
-                tab={selected}
-                handoffSessionId={sessionId}
-                canOpenSession={false}
+            sessionId === null || worktree.path === null ? null : (
+              <TerminalScriptsMenu
+                sessionId={sessionId}
+                workspaceId={workspaceId}
+                worktreePath={worktree.path}
               />
-              {sessionId === null || worktree.path === null ? null : (
-                <TerminalScriptsMenu
-                  sessionId={sessionId}
-                  workspaceId={workspaceId}
-                  worktreePath={worktree.path}
-                />
-              )}
-            </>
+            )
           }
         />
         <div className="flex min-h-0 flex-1 flex-col px-2">

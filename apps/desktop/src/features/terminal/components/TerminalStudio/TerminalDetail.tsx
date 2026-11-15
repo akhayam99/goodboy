@@ -66,12 +66,12 @@ export const TerminalDetail = ({ model, isActive, portsByTerminal }: Props) => {
         }
         actions={
           <>
-            <DockTerminalButton selected={selected} />
             <TerminalStripActions
               worktree={worktree}
               tab={selected}
               handoffSessionId={worktree.sessionId}
             />
+            <DockTerminalButton selected={selected} />
           </>
         }
       />

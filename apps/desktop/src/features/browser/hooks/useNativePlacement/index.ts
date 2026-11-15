@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type RefObject } from 'react';
 import type { SessionId } from '@goodboy/types';
+import { appliedZoom } from '../../../../shared/lib/appliedZoom';
 import type { BrowserTab } from '../../../../store/slices/browser/types';
 import { createNativePlacement } from '../../createNativePlacement';
 import { createOverlayWatch, type CoverReason } from '../../createOverlayWatch';
@@ -84,7 +85,12 @@ export const useNativePlacement = ({
       const bounds =
         wantedTab === null
           ? null
-          : viewBoundsOf({ view: element, overlays, maxWidth: maxWidthRef.current });
+          : viewBoundsOf({
+              view: element,
+              overlays,
+              zoom: appliedZoom.read(),
+              maxWidth: maxWidthRef.current,
+            });
       placement.want({
         view: wantedTab === null || bounds === null ? null : { tab: wantedTab, bounds },
       });
