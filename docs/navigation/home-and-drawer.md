@@ -176,7 +176,7 @@ once when a drag ends; a double click on the handle resets to the tier default
 (400 or 720); the three saved widths never bleed. A saved browser width that no
 longer fits after a window resize shrinks to `room` and keeps pushing while 720
 fits; the saved value stays and comes back when the window grows. No drawer
-expands over the whole column. `selectDrawerSizing` reads the tier from the kind
+expands over the whole column. `drawerSizingOf` reads the tier from the kind
 table. The pure rule lives in `drawerLayoutOf` (`drawerGeometry.ts`).
 
 **One push rule.** The drawer uses the content width after both rails and the

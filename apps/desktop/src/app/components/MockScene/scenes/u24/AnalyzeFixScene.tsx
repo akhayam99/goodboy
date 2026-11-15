@@ -4,6 +4,7 @@ import { useAppStore } from '../../../../../store';
 import { selectDrawerPanel } from '../../../../../store/slices/drawer/selectDrawerPanel';
 import { SessionOverviewPane } from '../../../../../features/session/components/SessionOverviewPane';
 import { BranchChecks } from '../../../../../features/branch/components/BranchChecks';
+import { LOG_LANDING } from '../../../../../features/session/central/log/logLanding';
 import { DrawerHost } from '../../../DrawerHost';
 import { shellArrangement } from '../../../../shellArrangement';
 import { SESSION, SESSION_ID } from '../activityRunSeed';
@@ -38,11 +39,7 @@ export const AnalyzeFixScene = ({
       unloadedDetailSeed();
     }
     if (isLogOpen) {
-      useAppStore.getState().openDrawer({
-        kind: 'session-log',
-        sessionId: SESSION_ID,
-        payload: { focusEntryId: null },
-      });
+      LOG_LANDING.request({ sessionId: SESSION_ID });
     }
     setIsReady(true);
   }, [phase, shouldOpenDrawer, isDetailUnloaded, isLogOpen]);

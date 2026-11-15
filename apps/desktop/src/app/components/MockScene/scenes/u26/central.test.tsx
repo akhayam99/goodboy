@@ -77,19 +77,20 @@ describe('the central column scenes', () => {
     expect(Object.keys(U26_CENTRAL_SCENES)).toEqual(KEYS);
   });
 
-  it('draws the Log drawer over the column', async () => {
+  it('lands on the one Log section of the column, with no drawer', async () => {
     await show({ name: 'u26-central-log-light' });
 
-    screen.getByRole('region', { name: 'Log' });
+    expect(screen.getAllByRole('region', { name: 'Log entries' })).toHaveLength(1);
+    expect(screen.queryByRole('region', { name: 'Log' })).toBeNull();
     screen.getByRole('region', { name: 'Branches' });
   });
 
-  it('opens the Log drawer on the scene that follows the theme of the page', async () => {
+  it('lands on the Log section on the scene that follows the theme of the page', async () => {
     applyDocumentTheme({ theme: 'light' });
     try {
       await show({ name: 'u26-central-log' });
 
-      screen.getByRole('region', { name: 'Log' });
+      screen.getByRole('region', { name: 'Log entries' });
       screen.getByRole('region', { name: 'Branches' });
       expect(document.documentElement.getAttribute('data-theme')).toBe('light');
     } finally {
@@ -97,10 +98,10 @@ describe('the central column scenes', () => {
     }
   });
 
-  it('opens the log drawer on the search scene', async () => {
+  it('lands on the Log section on the search scene', async () => {
     await show({ name: 'u26-central-log-search-light' });
 
-    screen.getByRole('region', { name: 'Log' });
+    screen.getByRole('region', { name: 'Log entries' });
     screen.getByRole('searchbox', { name: 'Search the log' });
   });
 

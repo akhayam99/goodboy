@@ -193,7 +193,7 @@ describe('a session in the merge queue', () => {
     );
 
     expect(nodeOf(container)).toEqual({ tone, words });
-    expect(container.querySelector('[role="img"]')?.getAttribute('data-node-state')).toBe(
+    expect(container.querySelector('[role="img"]')?.getAttribute('data-status-state')).toBe(
       'merging',
     );
   });

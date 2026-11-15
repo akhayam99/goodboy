@@ -54,7 +54,11 @@ const mount = ({ name }: MountParams) => {
 describe('the small flows scenes', () => {
   it('keeps one question on the board with one Answer button', async () => {
     mount({ name: 'u34-u5-question' });
-    const board = await screen.findByRole('region', { name: 'Branches' });
+    await screen.findByRole('region', { name: 'Branches' });
+    const board = document.querySelector<HTMLElement>('[data-slot="branch-board-section"]');
+    if (board === null) {
+      throw new Error('The board section is missing');
+    }
     const state = (await importStore()).getState();
     expect(Object.values(state.sessionOpenQuestions).flat()).toHaveLength(1);
     expect(within(board).getAllByRole('button', { name: 'Answer' })).toHaveLength(1);

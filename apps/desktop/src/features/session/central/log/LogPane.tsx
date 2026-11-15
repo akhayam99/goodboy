@@ -29,9 +29,10 @@ const LOG_ROW_BOX = '[content-visibility:auto] data-row-near:[content-visibility
 type Props = {
   readonly session: Session;
   readonly focusEntryId?: string | null;
+  readonly hasRowActions?: boolean;
 };
 
-export const LogPane = ({ session, focusEntryId = null }: Props) => {
+export const LogPane = ({ session, focusEntryId = null, hasRowActions = true }: Props) => {
   const sessionId = session.id;
   const markAllAgentsSeen = useAppStore((s) => s.markAllAgentsSeen);
   const pending = usePendingAction({ sessionId });
@@ -90,7 +91,7 @@ export const LogPane = ({ session, focusEntryId = null }: Props) => {
   }, [focusEntryId, hasLaidOutRows]);
 
   return (
-    <ActionColumnContext.Provider value={hasActionColumn}>
+    <ActionColumnContext.Provider value={hasRowActions && hasActionColumn}>
       <section
         ref={sectionRef}
         aria-label="Log entries"
@@ -106,7 +107,7 @@ export const LogPane = ({ session, focusEntryId = null }: Props) => {
           />
           {rows.unreadAgentIds.size > 0 ? (
             <Button
-              variant="ghost"
+              variant="quiet"
               size="sm"
               disabled={pending.pendingKeys.has(MARK_SEEN_KEY)}
               onClick={() =>

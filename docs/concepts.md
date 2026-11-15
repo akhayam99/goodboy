@@ -268,10 +268,10 @@ and every row: **Needs you**, **Needs approval**, **Not finished**,
 a limit reads **Paused**, a hint, a stopped Auto or an agent that stopped
 unfinished reads **Needs you** with one sentence.
 
-State word tooltips follow this table. The regression guard checks the shared
-meanings and the state maps against it.
+Each state word means what this table says. The regression guard checks its own
+copy of the meanings and the state maps against it.
 
-| State word       | Meaning, also its tooltip                                     |
+| State word       | Meaning                                                       |
 | ---------------- | ------------------------------------------------------------- |
 | Needs you        | Only you can move it. The sentence says what it needs.        |
 | Needs approval   | A plan waits for your approval. Counts as Needs you.          |

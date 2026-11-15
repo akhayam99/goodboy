@@ -3,7 +3,7 @@ import { AppShell, ScrollFade, UnderTrailContext } from '@goodboy/ui';
 import { AutoReleaseContext } from '../../../../../features/auto/autoReleaseContext';
 import { SessionOverviewPane } from '../../../../../features/session/components/SessionOverviewPane';
 import { useAppStore } from '../../../../../store';
-import { selectDrawerSizing } from '../../../../../store/slices/drawer/selectDrawerSizing';
+import { selectDrawerSizing } from '../../../../../store/slices/drawer/testing/selectDrawerSizing';
 import { shellArrangement } from '../../../../shellArrangement';
 import { DrawerHost } from '../../../DrawerHost';
 import { SessionFrame } from '../../../SessionRail/SessionFrame';
