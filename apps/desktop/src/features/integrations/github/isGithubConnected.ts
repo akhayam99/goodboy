@@ -1,9 +1,8 @@
 import type { GhTokenStatus } from '@goodboy/types';
 
 type Params = {
-  readonly isWorkspaceAuthenticated: boolean;
-  readonly globalStatus: GhTokenStatus | null;
+  readonly statuses: ReadonlyArray<GhTokenStatus | null | undefined>;
 };
 
-export const isGithubConnected = ({ isWorkspaceAuthenticated, globalStatus }: Params): boolean =>
-  isWorkspaceAuthenticated || (globalStatus !== null && globalStatus.mode !== 'absent');
+export const isGithubConnected = ({ statuses }: Params): boolean =>
+  statuses.some((status) => status != null && status.mode !== 'absent');

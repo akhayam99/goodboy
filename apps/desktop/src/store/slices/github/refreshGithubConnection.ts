@@ -15,6 +15,9 @@ export const refreshGithubConnection = (set: SetFn, get: GetFn) => {
     const status = await ghStatus(workspaceId).catch(() => null);
     set((state) => ({
       githubWorkspaceStatus: { ...state.githubWorkspaceStatus, [workspaceId]: status },
+      ...(status !== null && {
+        githubCheckedAt: { ...state.githubCheckedAt, [workspaceId]: Date.now() },
+      }),
     }));
   };
 };

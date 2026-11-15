@@ -307,6 +307,7 @@ export const NON_SESSION_STATE_KEYS = [
   'attentionFromWindows',
   'githubStatus',
   'githubWorkspaceStatus',
+  'githubCheckedAt',
   'volatilePermissionAllows',
   'workflowStudioDrafts',
   'workflowGenerations',

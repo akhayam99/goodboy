@@ -30,15 +30,13 @@ export const useToolPage = ({ workspaceId, tool }: Params) => {
   const disconnectIntegration = useAppStore((state) => state.disconnectIntegration);
   const refreshGithubStatus = useAppStore((state) => state.refreshGithubStatus);
   const globalGithub = useAppStore((state) => state.githubStatus);
+  const githubCheckedAt = useAppStore((state) => state.githubCheckedAt[workspaceId] ?? null);
   const github = useGithubConnection({ workspaceId });
   const [checkError, setCheckError] = useState<string | null>(null);
 
   const isGithub = tool === 'github';
   const isConnected = isGithub
-    ? isGithubConnected({
-        isWorkspaceAuthenticated: github.isAuthenticated,
-        globalStatus: globalGithub,
-      })
+    ? isGithubConnected({ statuses: [github.status, globalGithub] })
     : binding !== undefined;
   const toolState = toolStateOf({ isConnected, hasKey: !isGithub, keyCheck });
   const refreshGithub = github.refresh;
@@ -91,6 +89,7 @@ export const useToolPage = ({ workspaceId, tool }: Params) => {
     isConnected,
     toolState,
     keyCheck,
+    checkedAt: isGithub ? githubCheckedAt : (keyCheck?.checkedAt ?? null),
     checkError,
     github,
     githubStatus: globalGithub,

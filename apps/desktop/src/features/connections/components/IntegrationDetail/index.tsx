@@ -94,7 +94,7 @@ export const IntegrationDetail = ({ workspaceId, workspaceName, tool, onUp }: Pr
             <ToolFacts
               who={head.who}
               facts={head.facts}
-              checkedAt={page.keyCheck?.checkedAt ?? null}
+              checkedAt={page.checkedAt}
               checkError={page.checkError}
             />
           ) : null

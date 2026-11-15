@@ -139,8 +139,9 @@ describe('ConnectionsIndex', () => {
     const tools = screen.getByRole('region', { name: 'Integrations' });
     within(tools).getByText('Harborline workspace');
     within(tools).getByText('harborline-bot');
-    await waitFor(() => expect(within(tools).getAllByText(/^Checked /)).toHaveLength(1));
-    within(tools).getByRole('button', { name: 'GitHub, Connected' });
+    await waitFor(() => expect(within(tools).getAllByText(/^Checked /)).toHaveLength(2));
+    const github = within(tools).getByRole('button', { name: 'GitHub, Connected' });
+    within(github.parentElement ?? github).getByText(/^Checked /);
     within(tools).getByRole('button', { name: 'Linear, Connected' });
     expect(
       within(within(tools).getByRole('group', { name: 'Not set up' })).getAllByRole('button'),
@@ -187,7 +188,7 @@ describe('ConnectionsIndex', () => {
     seed({ hasKey: true });
     render(<ConnectionsIndex workspace={WORKSPACE} />);
     const tools = await screen.findByRole('region', { name: 'Integrations' });
-    await waitFor(() => expect(within(tools).getAllByText(/^Checked /)).toHaveLength(1));
+    await waitFor(() => expect(within(tools).getAllByText(/^Checked /)).toHaveLength(2));
     const before = storySpies.tauriInvoke.mock.calls.filter(
       ([command]) => command === 'integration_credential_has_secret',
     ).length;
@@ -218,7 +219,9 @@ describe('ConnectionsIndex', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Which model each role uses' }));
 
-    expect(onOpen.mock.calls.map(([event]) => event.detail)).toEqual([{ scope: 'providers' }]);
+    expect(onOpen.mock.calls.map(([event]) => event.detail)).toEqual([
+      { scope: 'workspace', section: 'models' },
+    ]);
     window.removeEventListener('goodboy:open-settings', onOpen);
   });
 

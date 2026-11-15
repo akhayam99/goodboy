@@ -28,7 +28,11 @@ export const IntegrationTile = ({ tool, workspaceId, nowMs, onOpen }: Props) => 
     (state) => state.githubWorkspaceStatus[workspaceId]?.user ?? state.githubStatus?.user ?? null,
   );
   const keyCheck = useAppStore((state) => selectToolKeyCheck({ state, workspaceId, tool }));
+  const githubCheckedAt = useAppStore((state) => state.githubCheckedAt[workspaceId] ?? null);
   const hasKey = tool !== 'github';
+  const githubCheck =
+    githubCheckedAt === null ? null : { isPresent: true, checkedAt: githubCheckedAt };
+  const lastCheck = hasKey ? keyCheck : githubCheck;
   const state = connectionStateOf({
     subject: { kind: 'tool', isConnected: true, hasKey, keyCheck },
   });
@@ -48,11 +52,9 @@ export const IntegrationTile = ({ tool, workspaceId, nowMs, onOpen }: Props) => 
           <Chip key={feed} tone="neutral" label={feed} bordered />
         ))}
       </span>
-      {hasKey ? (
-        <span className="text-meta text-faint-foreground">
-          {lastCheckLineOf({ keyCheck, nowMs })}
-        </span>
-      ) : null}
+      <span className="text-meta text-faint-foreground">
+        {lastCheckLineOf({ keyCheck: lastCheck, nowMs })}
+      </span>
     </ConnectionTile>
   );
 };
