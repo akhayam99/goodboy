@@ -49,6 +49,7 @@ const actionsOf = ({ open }: ActionsParams): ColumnActions => ({
   openChat: open,
   openWorkflows: open,
   openNewChat: open,
+  openConnections: open,
   openMonitoring: open,
   openImpact: open,
   openSettings: open,

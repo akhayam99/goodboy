@@ -144,6 +144,15 @@ export const STUDIO_META = {
     skeleton: { shape: 'rows', hasRail: true },
     railWidth: 'standard',
   },
+  connections: {
+    icon: CONCEPT_ICONS.connections,
+    tone: CONCEPT_TONE.connections,
+    title: NAMES.connections,
+    close: 'none',
+    tier: 'column',
+    page: 'connections',
+    skeleton: { shape: 'cards', hasRail: false },
+  },
   monitoring: {
     icon: CONCEPT_ICONS.monitoring,
     tone: CONCEPT_TONE.monitoring,

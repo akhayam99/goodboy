@@ -11,6 +11,7 @@ export type DestinationId =
   | 'work'
   | 'workflows'
   | 'chat'
+  | 'connections'
   | 'impact'
   | 'terminal'
   | 'browser'
@@ -85,6 +86,15 @@ export const DESTINATIONS: ReadonlyArray<Destination> = [
     home: 'column',
     scope: 'workspace',
     aliases: [],
+  },
+  {
+    id: 'connections',
+    label: NAMES.connections,
+    icon: CONCEPT_ICONS.connections,
+    menuId: 'menu.connections',
+    home: 'column',
+    scope: 'workspace',
+    aliases: [NAMES.providers, 'Integrations'],
   },
   {
     id: 'impact',

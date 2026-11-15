@@ -48,6 +48,7 @@ describe('frameGeometryOf', () => {
       'workflows',
       'terminal',
       'monitoring',
+      'connections',
       'notifications',
       'guide',
       'impact',

@@ -140,6 +140,29 @@ describe('doorSignalOf', () => {
     );
   });
 
+  it('says nothing for Connections while nothing needs fixing', () => {
+    expect(doorSignalOf({ kind: 'connections', reasons: [] })).toBeUndefined();
+  });
+
+  it('warns on Connections with a dot and no number, naming the one thing to fix', () => {
+    expect(doorSignalOf({ kind: 'connections', reasons: ['Claude is about to run out'] })).toEqual({
+      count: 1,
+      isWarning: true,
+      isUnread: false,
+      tone: 'warning',
+      fact: 'Claude is about to run out',
+    });
+  });
+
+  it('counts and lists every thing to fix on Connections', () => {
+    expect(
+      doorSignalOf({
+        kind: 'connections',
+        reasons: ['Codex is out', 'Key missing on this Mac'],
+      })?.fact,
+    ).toBe('2 need you: Codex is out, Key missing on this Mac');
+  });
+
   it('counts the running chats and shows a dot only for unread with none running', () => {
     expect(doorSignalOf({ kind: 'chat', count: 0, hasUnread: false })).toBeUndefined();
     expect(doorSignalOf({ kind: 'chat', count: 2, hasUnread: true })).toEqual({

@@ -40,6 +40,7 @@ const DOORS: ReadonlyArray<Door> = [
   { name: 'Settings', kind: 'settings', isSidebarPage: false },
   { name: 'Chat', kind: 'chat', isSidebarPage: true },
   { name: 'Monitoring', kind: 'monitoring', isSidebarPage: true },
+  { name: 'Connections', kind: 'connections', isSidebarPage: true },
 ];
 
 const historyButton = (verb: 'Back' | 'Forward'): HTMLElement => {

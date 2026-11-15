@@ -17,6 +17,8 @@ export const destinationStudioOf = ({ id, state }: Params): StudioPlace => {
       return { kind: 'workflow' };
     case 'chat':
       return { kind: 'chat', chatId: selectChatDoor({ state }) };
+    case 'connections':
+      return { kind: 'connections' };
     case 'impact':
       return { kind: 'impact', scope: null };
     case 'monitoring':

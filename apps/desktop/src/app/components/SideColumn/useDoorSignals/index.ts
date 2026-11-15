@@ -6,10 +6,14 @@ import { splitPortRows } from '../../../../features/monitoring/splitPortRows';
 import { workspacePortSet } from '../../../../features/monitoring/workspacePortSet';
 import { useChatActivity } from '../../../../features/workspace-chat/hooks/useChatActivity';
 import { useNowSessions } from '../../../../shared/hooks/useNowSessions';
+import { useNow } from '../../../../shared/hooks/useNow';
+import { selectProviderAttention } from '../../../../store/slices/providers/selectProviderAttention';
 import type { ColumnDoorId } from '../../../../shared/navigation/columnPlace';
 import { doorSignalOf, type DoorSignal } from '../doorSignal';
 
 type Params = Record<never, never>;
+
+const PROVIDER_CLOCK_MS = 60_000;
 
 export const useDoorSignals = ({}: Params): Partial<Record<ColumnDoorId, DoorSignal>> => {
   const rows = useAppStore(selectPortRows);
@@ -24,6 +28,8 @@ export const useDoorSignals = ({}: Params): Partial<Record<ColumnDoorId, DoorSig
       : (state.taskNewKeys[state.currentWorkspaceId]?.length ?? 0),
   );
   const { attention } = useNowSessions({});
+  const nowMs = useNow(PROVIDER_CLOCK_MS);
+  const providerAttention = useAppStore((state) => selectProviderAttention({ state, nowMs }));
 
   return useMemo(() => {
     const split = splitPortRows({
@@ -43,6 +49,10 @@ export const useDoorSignals = ({}: Params): Partial<Record<ColumnDoorId, DoorSig
       }),
       inbox: doorSignalOf({ kind: 'inbox', count: taskNewCount }),
       chat: doorSignalOf({ kind: 'chat', count: runningCount, hasUnread }),
+      connections: doorSignalOf({
+        kind: 'connections',
+        reasons: providerAttention === null ? [] : [providerAttention],
+      }),
       monitoring: hasSnapshot
         ? doorSignalOf({ kind: 'monitoring', ...monitoringSignal({ split }) })
         : undefined,
@@ -52,6 +62,7 @@ export const useDoorSignals = ({}: Params): Partial<Record<ColumnDoorId, DoorSig
     taskNewCount,
     runningCount,
     hasUnread,
+    providerAttention,
     rows,
     hasSnapshot,
     scanned,

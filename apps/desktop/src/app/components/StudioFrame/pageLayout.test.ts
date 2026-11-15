@@ -40,6 +40,10 @@ const DOOR_PAGES: ReadonlyArray<PageRoot> = [
     files: ['features/monitoring/components/MonitoringStudio/MonitoringPage.tsx'],
   },
   {
+    page: 'connections',
+    files: ['features/connections/components/ConnectionsStudio/ConnectionsPage.tsx'],
+  },
+  {
     page: 'notifications',
     files: ['features/notifications/components/NotificationsStudio/index.tsx'],
   },
@@ -122,6 +126,7 @@ const PAGE_KIND_MEASURE: Readonly<Record<string, PageColumnWidth>> = {
   browser: 'full',
   settings: 'column',
   monitoring: 'column',
+  connections: 'column',
   notifications: 'column',
   guide: 'column',
   guideChapter: 'column',
@@ -183,6 +188,7 @@ const SKELETON_BODY_OF: Readonly<Record<keyof typeof STUDIO_META, string>> = {
   chat: 'room',
   terminal: 'terminal',
   browser: 'rows',
+  connections: 'cards',
   monitoring: 'rows',
 };
 
