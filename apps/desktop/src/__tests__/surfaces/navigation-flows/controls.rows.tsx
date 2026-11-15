@@ -76,7 +76,7 @@ export const CONTROLS_ROWS: ReadonlyArray<Row> = [
     open: async () => {
       await clickButton('Settings');
       await settingsPage();
-      await clickButton(/^Updates/);
+      await clickButton(/^General/);
     },
     lands: async () => {
       const user = userEvent.setup();

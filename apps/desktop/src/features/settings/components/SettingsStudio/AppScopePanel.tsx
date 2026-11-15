@@ -5,14 +5,12 @@ import type { WorkspaceId } from '@goodboy/types';
 import { APP_SECTIONS, type AppSection } from './appSections';
 import { BackupPage } from '../../../backup/components/BackupPage';
 import { iphoneSettingsPage } from '../../../companion/iphoneSettingsPage';
-import { APP_VERSION } from '../../../../shared/lib/appVersion';
 import { useAppStore } from '../../../../store';
 import { AppResetSection } from './AppResetSection';
+import { AppAdvancedSection } from './AppAdvancedSection';
 import { AppGeneralSection } from './AppGeneralSection';
 import { SecurityFindingsSection } from './SecurityFindingsSection';
 import { ShortcutsSection } from './ShortcutsSection';
-import { UpdatesSection } from './UpdatesSection';
-import { UpdatesWhatsNewBand } from './UpdatesWhatsNewBand';
 import { SHORTCUT_ROW_COUNT } from './shortcutRows';
 import { STORAGE_APP_PAGES } from '../../../storage/storageAppPages';
 import { useStorageMeta } from '../../../storage/useStorageMeta';
@@ -20,6 +18,7 @@ import { SETTINGS_PANE_ENTRY } from './settingsPaneEntry';
 
 type Props = {
   readonly section: AppSection;
+  readonly isUpdatesFocused?: boolean;
   readonly workspaceId: WorkspaceId | null;
 };
 
@@ -27,6 +26,7 @@ type PaneSection = Exclude<AppSection, 'iphone'>;
 
 type BodyProps = {
   readonly section: PaneSection;
+  readonly isUpdatesFocused: boolean;
   readonly workspaceId: WorkspaceId | null;
 };
 
@@ -34,19 +34,14 @@ const SECTION_ACTIONS: Readonly<Partial<Record<PaneSection, ReactNode>>> = {
   storage: STORAGE_APP_PAGES.storage.actions,
 };
 
-const SectionBody = ({ section, workspaceId }: BodyProps) => {
+const SectionBody = ({ section, isUpdatesFocused, workspaceId }: BodyProps) => {
   switch (section) {
     case 'general':
-      return <AppGeneralSection />;
-    case 'updates':
-      return (
-        <>
-          <UpdatesSection />
-          <UpdatesWhatsNewBand />
-        </>
-      );
+      return <AppGeneralSection isUpdatesFocused={isUpdatesFocused} />;
     case 'shortcuts':
       return <ShortcutsSection />;
+    case 'advanced':
+      return <AppAdvancedSection />;
     case 'storage':
       return (
         <>
@@ -68,7 +63,7 @@ const SectionBody = ({ section, workspaceId }: BodyProps) => {
   }
 };
 
-export const AppScopePanel = ({ section, workspaceId }: Props) => {
+export const AppScopePanel = ({ section, isUpdatesFocused = false, workspaceId }: Props) => {
   const reportError = useAppStore((state) => state.reportError);
   const storageMeta = useStorageMeta();
   if (section === 'iphone') {
@@ -78,7 +73,6 @@ export const AppScopePanel = ({ section, workspaceId }: Props) => {
     });
   }
   const meta: Readonly<Partial<Record<PaneSection, string>>> = {
-    updates: APP_VERSION === null ? undefined : `Goodboy ${APP_VERSION}`,
     shortcuts: `${SHORTCUT_ROW_COUNT} shortcuts`,
     storage: storageMeta,
   };
@@ -92,7 +86,11 @@ export const AppScopePanel = ({ section, workspaceId }: Props) => {
       meta={meta[section]}
       actions={SECTION_ACTIONS[section]}
     >
-      <SectionBody section={section} workspaceId={workspaceId} />
+      <SectionBody
+        section={section}
+        isUpdatesFocused={isUpdatesFocused}
+        workspaceId={workspaceId}
+      />
     </PaneShell>
   );
 };

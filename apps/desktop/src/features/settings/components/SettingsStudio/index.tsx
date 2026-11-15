@@ -9,13 +9,15 @@ import { useAppStore } from '../../../../store';
 import { AppScopePanel } from './AppScopePanel';
 import { SettingsScopesLayout } from './SettingsScopesLayout';
 import { settingsScopeAvailable } from './settingsScopes';
-import { appSectionOf } from './appSections';
+import { UPDATES_SECTION_ID, appSectionOf } from './appSections';
 import type { SettingsFocus, SettingsPageScope, SettingsScopeChange } from '../../settingsFocus';
 import { WorkspaceScopePanel } from './WorkspaceScopePanel';
 import { useSettingsStatus } from '../../hooks/useSettingsStatus';
-import { isModelsPage, MODELS_PAGE_SECTION } from '../../isModelsPage';
+import { useIsIphonePaired } from '../../hooks/useIsIphonePaired';
+import { MODELS_PAGE_SECTION } from '../../isModelsPage';
 import { settingsDirectory, settingsPageKey } from './settingsDirectory';
 import { pageFocusOf, resolveSettingsFocus } from './resolveSettingsFocus';
+import { workspacePageOf } from './workspacePages';
 
 type Props = {
   readonly currentWorkspace: Workspace | null;
@@ -57,9 +59,10 @@ export const SettingsStudio = ({
   const workspaceId = currentWorkspace?.id ?? null;
   const workspaceName = currentWorkspace?.name ?? null;
   const status = useSettingsStatus({ workspaceId });
+  const isIphonePaired = useIsIphonePaired();
   const groups = useMemo(
-    () => settingsDirectory({ status, workspaceName }),
-    [status, workspaceName],
+    () => settingsDirectory({ status, workspaceName, isIphonePaired }),
+    [status, workspaceName, isIphonePaired],
   );
   const lastFocus = useAppStore((state) => state.lastSettingsFocus);
   const rememberFocus = useAppStore((state) => state.rememberSettingsFocus);
@@ -87,7 +90,7 @@ export const SettingsStudio = ({
   const focusSection = focus.section === MODELS_PAGE_SECTION ? undefined : focus.section;
 
   const renderDetail = (requestClose: () => void): ReactNode => {
-    if (workspace !== null && isModelsPage({ section: focus.section })) {
+    if (workspace !== null && workspacePageOf({ section: focus.section }) === MODELS_PAGE_SECTION) {
       return (
         <DefaultsPanel
           workspaceId={workspace.id}
@@ -110,6 +113,7 @@ export const SettingsStudio = ({
     return (
       <AppScopePanel
         section={appSectionOf({ section: focus.section })}
+        isUpdatesFocused={focus.section === UPDATES_SECTION_ID}
         workspaceId={currentWorkspace?.id ?? null}
       />
     );

@@ -35,6 +35,7 @@ const STATUS: SettingsStatus = {
 type MountParams = {
   readonly pageKey?: string;
   readonly workspaceName?: string | null;
+  readonly isIphonePaired?: boolean;
 };
 
 let useAppStore: StoryStore;
@@ -49,9 +50,13 @@ beforeEach(async () => {
 
 afterEach(cleanup);
 
-const mount = ({ pageKey = 'app:general', workspaceName = 'Harborline' }: MountParams = {}) => {
+const mount = ({
+  pageKey = 'app:general',
+  workspaceName = 'Harborline',
+  isIphonePaired = false,
+}: MountParams = {}) => {
   const onSelect = vi.fn();
-  const groups = settingsDirectory({ status: STATUS, workspaceName });
+  const groups = settingsDirectory({ status: STATUS, workspaceName, isIphonePaired });
   render(
     <SettingsRail
       pageKey={pageKey}
@@ -66,12 +71,17 @@ const mount = ({ pageKey = 'app:general', workspaceName = 'Harborline' }: MountP
 const movedRow = () => screen.getByRole('button', { name: 'Open Connections' });
 
 describe('SettingsRail', () => {
-  it('labels two scopes: App and This workspace', () => {
+  it('names two scopes: This Mac for every workspace, then the workspace by its name', () => {
     mount();
 
-    const headings = screen.getAllByRole('heading', { level: 2 }).map((node) => node.textContent);
+    const headings = screen
+      .getAllByRole('heading', { level: 2 })
+      .map((node) => [node.firstElementChild?.textContent, node.lastElementChild?.textContent]);
 
-    expect(headings).toEqual(['App', 'This workspace · Harborline']);
+    expect(headings).toEqual([
+      ['This Mac', 'every workspace'],
+      ['Harborline', 'this workspace'],
+    ]);
   });
 
   it('draws every page row as one line of text', () => {
@@ -87,10 +97,51 @@ describe('SettingsRail', () => {
     expect(rows.filter((row) => !labels.has(row))).toEqual([]);
   });
 
-  it('keeps Models under This workspace and marks it current', () => {
+  it('lists the pages of each scope in order, without iPhone until a phone is paired', () => {
+    mount();
+    const labelsOf = (name: string) =>
+      within(screen.getByRole('list', { name }))
+        .getAllByRole('button')
+        .map((button) => button.textContent);
+
+    expect(labelsOf('This Mac settings')).toEqual([
+      'General',
+      'Keyboard shortcuts',
+      'Advanced',
+      'Storage',
+      'Backup and reset',
+    ]);
+    expect(labelsOf('Harborline settings')).toEqual([
+      'Projects',
+      'About you',
+      'Run defaults',
+      'Models',
+      'Permissions',
+      'Branches',
+      'Replies and commits',
+    ]);
+  });
+
+  it('shows iPhone once a phone is paired', () => {
+    mount({ isIphonePaired: true });
+
+    const app = screen.getByRole('list', { name: 'This Mac settings' });
+    expect(within(app).getByRole('button', { name: 'iPhone' }).textContent).toBe('iPhone');
+  });
+
+  it('shows iPhone while its page is open, even with no phone paired', () => {
+    mount({ pageKey: 'app:iphone' });
+
+    const app = screen.getByRole('list', { name: 'This Mac settings' });
+    expect(within(app).getByRole('button', { name: 'iPhone' }).getAttribute('aria-current')).toBe(
+      'true',
+    );
+  });
+
+  it('keeps Models under the workspace and marks it current', () => {
     const { onSelect } = mount({ pageKey: 'workspace:models' });
 
-    const workspace = screen.getByRole('list', { name: 'This workspace settings' });
+    const workspace = screen.getByRole('list', { name: 'Harborline settings' });
     const models = within(workspace).getByRole('button', { name: 'Models' });
     expect(models.getAttribute('aria-current')).toBe('true');
 
@@ -133,14 +184,14 @@ describe('SettingsRail', () => {
     expect(movedRow()).toBeDefined();
   });
 
-  it('puts the update dot on Updates, never on General', () => {
-    mount();
+  it('puts the update dot on General, now that Updates is a band of it', () => {
+    mount({ pageKey: 'app:storage' });
 
     expect(
-      within(screen.getByRole('button', { name: /^Updates/ })).getByRole('img', {
+      within(screen.getByRole('button', { name: /^General/ })).getByRole('img', {
         name: 'Update available',
       }),
     ).toBeDefined();
-    expect(within(screen.getByRole('button', { name: 'General' })).queryByRole('img')).toBeNull();
+    expect(screen.queryByRole('button', { name: /^Updates/ })).toBeNull();
   });
 });

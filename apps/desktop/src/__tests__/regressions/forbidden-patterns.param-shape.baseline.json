@@ -813,7 +813,7 @@
     "apps/desktop/src/features/settings/components/SettingsStudio/UpdatesSection.tsx": 1,
     "apps/desktop/src/features/settings/components/SettingsStudio/WorkspaceAfterMergeSection.tsx": 2,
     "apps/desktop/src/features/settings/components/SettingsStudio/WorkspaceDefaultsGrid.tsx": 2,
-    "apps/desktop/src/features/settings/components/SettingsStudio/workspacePages.ts": 3,
+    "apps/desktop/src/features/settings/components/SettingsStudio/workspacePages.ts": 2,
     "apps/desktop/src/features/settings/components/SettingsStudio/WorkspaceProfileSection.tsx": 1,
     "apps/desktop/src/features/settings/components/SettingsStudio/WorkspaceReviewRepliesSection.tsx": 3,
     "apps/desktop/src/features/settings/components/SettingsStudio/WorkspaceSettingsFlow.tsx": 2,

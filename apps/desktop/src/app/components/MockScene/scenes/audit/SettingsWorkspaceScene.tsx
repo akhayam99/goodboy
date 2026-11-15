@@ -7,6 +7,7 @@ import { useAppStore } from '../../../../../store';
 import { SettingsFrame } from './SettingsFrame';
 import { sceneParam } from './sceneParams';
 import { SETTINGS_PROJECTS } from './settingsSeed';
+import { seedStorageScene } from '../brand/StorageScene';
 
 const SECTION = sceneParam({ key: 'section' }) ?? undefined;
 
@@ -57,6 +58,14 @@ const seedProjectScripts = (): void => {
   }));
 };
 
+const seedBranchesPage = (): void => {
+  seedStorageScene();
+  seedProjectScripts();
+};
+
 export const SettingsWorkspaceScene = () => (
-  <SettingsFrame focus={{ scope: 'workspace', section: SECTION }} seed={seedProjectScripts} />
+  <SettingsFrame
+    focus={{ scope: 'workspace', section: SECTION }}
+    seed={SECTION === 'branches' ? seedBranchesPage : seedProjectScripts}
+  />
 );

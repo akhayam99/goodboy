@@ -38,7 +38,7 @@ import {
   type StoryStore,
 } from '../../../../store/storyHarness';
 import { ToastProvider } from '../../../../shared/components/Toast';
-import { WORKSPACE_PAGES } from './workspacePages';
+import { PLAN_PAGES, planPageLabel } from './workspacePages';
 import { WorkspaceScopePanel } from './WorkspaceScopePanel';
 
 let useAppStore: StoryStore;
@@ -131,7 +131,7 @@ describe('WorkspaceScopePanel pages', () => {
     screen.getByRole('region', { name: 'Disconnect workspace' });
   });
 
-  it.each(WORKSPACE_PAGES.map((page) => ({ id: page.id, label: page.label })))(
+  it.each(PLAN_PAGES.map((id) => ({ id, label: planPageLabel({ page: id }) })))(
     'gives $id one title and no sentence under it',
     ({ id, label }) => {
       renderPage({ section: id });
