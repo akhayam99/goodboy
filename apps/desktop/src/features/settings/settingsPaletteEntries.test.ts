@@ -117,8 +117,8 @@ describe('settingsPaletteEntries', () => {
     },
     {
       former: 'Security findings',
-      label: 'Settings: Storage',
-      target: { scope: 'app', section: 'storage' },
+      label: 'Workspace settings: Permissions',
+      target: { scope: 'workspace', section: 'permissions' },
     },
     {
       former: 'Pair device',

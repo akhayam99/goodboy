@@ -51,7 +51,7 @@ const ALL_WORKSPACE_PAGES = [
   },
   {
     id: PERMISSIONS_SECTION_ID,
-    label: 'Permissions',
+    label: NAMES.permissions,
     concept: 'approval',
   },
 ] as const satisfies ReadonlyArray<WorkspacePageEntry>;
