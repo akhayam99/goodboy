@@ -86,6 +86,13 @@ describe('NowChip', () => {
     expect(screen.queryByRole('button', { name: /running/ })).toBeNull();
   });
 
+  it('never says Idle while a session waits on you and nothing runs', () => {
+    seed([ASKING], [ASKING]);
+    const { container } = render(<NowChip onOpenScript={vi.fn()} />);
+
+    expect(container.querySelector('[data-now-idle]')?.textContent).toBe('Needs you');
+  });
+
   it('shows only the segments above zero, and names them all in one label', () => {
     seed([RUNNING]);
     const { container } = render(<NowChip onOpenScript={vi.fn()} />);

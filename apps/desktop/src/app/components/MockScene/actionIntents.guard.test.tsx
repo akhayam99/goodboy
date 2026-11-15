@@ -20,7 +20,7 @@ const SCENE_IDS = Object.keys(MOCK_SCENES)
 const FILLED =
   'button[data-variant="primary"]:not([data-intent="caution"]):not([data-intent="destructive"])';
 const TONED_FILLED =
-  'button[data-variant="primary"][data-intent="caution"], button[data-variant="primary"][data-intent="destructive"]';
+  'button[data-variant="primary"][data-intent="caution"]:not([data-confirm-action]), button[data-variant="primary"][data-intent="destructive"]:not([data-confirm-action])';
 const ROWS = '[data-action-card], header, [role="row"], [role="listitem"]';
 
 beforeAll(async () => {

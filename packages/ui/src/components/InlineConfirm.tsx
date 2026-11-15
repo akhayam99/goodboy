@@ -2,9 +2,9 @@ import { useState, type ReactNode } from 'react';
 import { cn } from '../cn';
 import { formatError } from '../formatError';
 import { tintClasses, type Tone } from '../tint';
-import { Button, type ButtonVariant } from './Button';
+import { Button, type ButtonIntent, type ButtonVariant } from './Button';
 
-export type ConfirmRole = 'primary' | 'alert' | 'danger';
+export type ConfirmRole = 'primary' | 'alert' | 'caution' | 'danger';
 
 export type ConfirmAltAction = {
   readonly label: string;
@@ -33,13 +33,22 @@ type Props = {
 const ROLE_TONE: Record<ConfirmRole, Tone> = {
   primary: 'primary',
   alert: 'warning',
+  caution: 'warning',
   danger: 'danger',
 };
 
 const ROLE_VARIANT: Record<ConfirmRole, ButtonVariant> = {
   primary: 'primary',
   alert: 'primary',
+  caution: 'primary',
   danger: 'danger',
+};
+
+const ROLE_INTENT: Record<ConfirmRole, ButtonIntent> = {
+  primary: 'primary',
+  alert: 'primary',
+  caution: 'caution',
+  danger: 'destructive',
 };
 
 export const InlineConfirm = ({
@@ -131,6 +140,7 @@ export const InlineConfirm = ({
           </Button>
           <Button
             variant={ROLE_VARIANT[role]}
+            intent={ROLE_INTENT[role]}
             size="sm"
             data-confirm-action
             onClick={() => void confirm()}

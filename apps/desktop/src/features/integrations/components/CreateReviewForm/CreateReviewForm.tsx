@@ -31,6 +31,7 @@ import { openedSentenceOf } from './openedSentenceOf';
 import { requestReviewersOrWarn } from './requestReviewersOrWarn';
 import { ReviewSettings } from './ReviewSettings';
 import { ReviewTextCard } from './ReviewTextCard';
+import { actionButtonLookOf } from '../../../actions/actionButtonLookOf';
 import { ScribeBar } from './ScribeBar';
 import { useCreateReviewBases } from './useCreateReviewBases';
 import { useScribeJob } from './useScribeJob';
@@ -407,9 +408,8 @@ export const CreateReviewForm = ({
         <div data-slot="create-actions" className="flex items-center justify-end gap-2">
           {hasText && (
             <Button
-              variant="ghost"
+              {...actionButtonLookOf({ verb: 'discard', variant: 'ghost' })}
               size="md"
-              className="text-muted-foreground"
               disabled={isLocked}
               onClick={onDiscard}
             >

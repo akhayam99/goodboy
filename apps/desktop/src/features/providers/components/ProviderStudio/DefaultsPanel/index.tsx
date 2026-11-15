@@ -35,6 +35,7 @@ import { SETTINGS_PANE_ENTRY } from '../../../../settings/components/SettingsStu
 import { useModelScope } from '../../../hooks/useModelScope';
 import { resolutionOf } from '../../../../../store/runtime/models/selectResolution';
 import { isPinUnrunnable } from './resolutionNote';
+import { actionButtonLookOf } from '../../../../actions/actionButtonLookOf';
 
 type Props = {
   readonly workspaceId: WorkspaceId;
@@ -131,7 +132,12 @@ export const DefaultsPanel = ({ workspaceId, scopeLabel = null, focusSection }: 
             isBusy={busy}
             onConfirm={onResetAll}
             trigger={({ arm }) => (
-              <Button size="sm" variant="ghost" disabled={busy} onClick={arm}>
+              <Button
+                size="sm"
+                {...actionButtonLookOf({ verb: 'defaults.reset', variant: 'ghost' })}
+                disabled={busy}
+                onClick={arm}
+              >
                 <RotateCcw size={ICON_SIZE.row} aria-hidden />
                 Reset all to Auto
               </Button>

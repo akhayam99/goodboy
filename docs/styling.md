@@ -202,10 +202,11 @@ out (`animate-drawer-dock-out`), and `useSnapAfterFloat` lands the aside at its
 closed width with no width transition, so the rail stops where it started.
 `sizing` on `DrawerColumn` is `side` (400, drag 384 to 560), `reader`
 (720, drag 480 to 1000) and `browser` (720, drag 480 to the room the session column leaves, so
-past 1000 on a wide window; it shrinks to the room on a narrower window while 720 fits); each tier
+past 1000 on a wide window; it shrinks to the room on a narrower window while 480 fits, so at
+1440 it pushes like the terminal instead of lying over the page); each tier
 has its own saved width and a handle. `placement="overlay"` skips the push
 rule for a drawer that always lies over the page; the thresholds (928 for
-`side`, 1344 for `reader`) are pinned by `drawerGeometry.test.ts`. The pure geometry lives in
+`side`, 1344 for `reader`, 1104 for `browser`) are pinned by `drawerGeometry.test.ts`. The pure geometry lives in
 `packages/ui/src/drawerGeometry.ts` (`drawerLayoutOf`, with `drawerWidthOf`,
 `drawerModeOf` and `mainWidthOf` on top of it) and `drawerGeometry.test.ts`
 sweeps every main from 600 to 2400 and runs a width matrix: 1024, 1440 and

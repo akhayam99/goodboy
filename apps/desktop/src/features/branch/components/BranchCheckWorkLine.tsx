@@ -5,6 +5,9 @@ import { useAgentStop } from '../../../shared/hooks/useAgentStop';
 import { NAMES } from '../../../shared/utils/names';
 import { TailLine } from '../../live-state/TailLine';
 import { TAIL_ACTION } from '../../live-state/tailAction';
+import { actionButtonLookOf } from '../../actions/actionButtonLookOf';
+
+const STOP_LOOK = actionButtonLookOf({ verb: 'stop', variant: 'quiet' });
 
 type Props = {
   readonly sessionId: SessionId;
@@ -35,7 +38,12 @@ export const BranchCheckWorkLine = ({ sessionId, agentId, isFixing, checkName }:
         }}
         verbs={
           isStopping ? null : (
-            <Button size="xs" variant="ghost-danger" onClick={agentStop.stop}>
+            <Button
+              size="xs"
+              variant={STOP_LOOK.variant}
+              intent={STOP_LOOK.intent}
+              onClick={agentStop.stop}
+            >
               {NAMES.stop}
             </Button>
           )

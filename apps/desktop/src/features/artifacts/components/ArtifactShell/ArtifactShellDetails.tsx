@@ -33,7 +33,7 @@ export const ArtifactShellDetails = ({ sessionId, artifact, agents, artifacts }:
         <MetaRow
           items={[
             creator === null ? (
-              <span key="creator">an agent that is gone</span>
+              <span key="creator">A removed agent</span>
             ) : (
               <button
                 key="creator"
@@ -46,7 +46,7 @@ export const ArtifactShellDetails = ({ sessionId, artifact, agents, artifacts }:
               </button>
             ),
             <span key="kind">{ARTIFACT_KIND_MARKER_LABEL[artifact.kind]}</span>,
-            <span key="scope">{artifact.workflowRunId === null ? 'standalone' : 'run'}</span>,
+            artifact.workflowRunId === null ? null : <span key="scope">From a run</span>,
             <span key="revision">v{artifact.revision}</span>,
             <span key="created" className="tabular-nums">
               {formatDateTime({ at: artifact.createdAt })}
