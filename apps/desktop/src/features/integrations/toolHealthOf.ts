@@ -1,4 +1,4 @@
-import type { IntegrationGlyphProvider } from './components/IntegrationGlyph';
+import type { IntegrationGlyphProvider } from '../../shared/components/IntegrationGlyph';
 import type { CredentialSecretState } from './useCredentialSecret';
 
 type ToolSignal = 'none' | 'warn' | 'danger';

@@ -1,6 +1,7 @@
 import type { IntegrationBinding, WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../store';
-import type { IntegrationGlyphProvider } from './components/IntegrationGlyph';
+import type { IntegrationGlyphProvider } from '../../shared/components/IntegrationGlyph';
+import { isGithubConnected } from './github/isGithubConnected';
 import { useGithubConnection } from './github/useGithubConnection';
 
 type Params = {
@@ -17,10 +18,12 @@ export const useToolConnections = ({ workspaceId }: Params) => {
   );
   const github = useGithubConnection({ workspaceId });
   const globalGithub = useAppStore((state) => state.githubStatus);
-  const isGlobalGithubConnected = globalGithub !== null && globalGithub.mode !== 'absent';
   const githubIdentity = github.user ?? globalGithub?.user ?? null;
   const connected: Record<IntegrationGlyphProvider, boolean> = {
-    github: github.isAuthenticated || isGlobalGithubConnected,
+    github: isGithubConnected({
+      isWorkspaceAuthenticated: github.isAuthenticated,
+      globalStatus: globalGithub,
+    }),
     gitlab: integrations.some((binding) => binding.provider === 'gitlab'),
     bitbucket: integrations.some((binding) => binding.provider === 'bitbucket'),
     linear: integrations.some((binding) => binding.provider === 'linear'),

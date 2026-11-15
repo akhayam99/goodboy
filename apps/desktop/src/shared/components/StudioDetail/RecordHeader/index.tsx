@@ -12,10 +12,7 @@ import {
   TruncatedText,
   useInheritedPaneActions,
 } from '@goodboy/ui';
-import {
-  IntegrationGlyph,
-  type IntegrationGlyphProvider,
-} from '../../../../features/integrations/components/IntegrationGlyph';
+import { IntegrationGlyph, type IntegrationGlyphProvider } from '../../IntegrationGlyph';
 import { integrationLabel } from '../../../utils/integrationLabel';
 
 import { RecordActions } from '../RecordActions';

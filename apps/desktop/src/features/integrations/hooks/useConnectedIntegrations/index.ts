@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import type { IntegrationBinding, WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
-import type { IntegrationGlyphProvider } from '../../components/IntegrationGlyph';
+import type { IntegrationGlyphProvider } from '../../../../shared/components/IntegrationGlyph';
 import { useGithubConnection } from '../../github/useGithubConnection';
 
 type Params = {

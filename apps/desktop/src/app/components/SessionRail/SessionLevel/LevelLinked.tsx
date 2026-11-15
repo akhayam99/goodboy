@@ -11,7 +11,7 @@ import { useSessionRepo } from '../../../../store/slices/worktrees/useSessionRep
 import { externalTaskLinkKey } from '../../../../store/slices/sessions/externalTaskLinkKey';
 import { taskIdentityKey } from '../../../../shared/utils/taskIdentityKey';
 import { distinctTasks } from '../../../../shared/utils/distinctTasks';
-import { IntegrationGlyph } from '../../../../features/integrations/components/IntegrationGlyph';
+import { IntegrationGlyph } from '../../../../shared/components/IntegrationGlyph';
 import { ObjectMenuArea } from '../../../../features/actions/components/ObjectMenuArea';
 import { LinkIssueAction } from '../../../../features/session/components/SessionOverviewPane/LinkIssueAction';
 import { openGithubIssue } from '../../../../features/session/openGithubIssue';

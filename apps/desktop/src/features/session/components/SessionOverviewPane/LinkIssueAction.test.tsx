@@ -29,7 +29,7 @@ vi.mock('./useLinkWorkItems', () => ({
   useLinkWorkItems: () => work,
 }));
 
-vi.mock('../../../integrations/components/IntegrationGlyph', () => ({
+vi.mock('../../../../shared/components/IntegrationGlyph', () => ({
   IntegrationGlyph: ({ provider }: { provider: string }) => (
     <span data-testid={`glyph-${provider}`} />
   ),

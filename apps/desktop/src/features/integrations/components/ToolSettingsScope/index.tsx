@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { WorkspaceId } from '@goodboy/types';
 import { TOOL_CATALOG } from '../../toolCatalog';
-import type { IntegrationGlyphProvider } from '../IntegrationGlyph';
+import type { IntegrationGlyphProvider } from '../../../../shared/components/IntegrationGlyph';
 import { useToolConnections } from '../../useToolConnections';
 import type { ScopeFrame } from '../../../settings/components/SettingsStudio/types';
 import { ToolDetailPanel } from './ToolDetailPanel';

@@ -4,7 +4,7 @@ import { TOOL_CATALOG } from '../../toolCatalog';
 import { SETTINGS_PANE_ENTRY } from '../../../settings/components/SettingsStudio/settingsPaneEntry';
 import { ObjectActionVerb } from '../../../actions/ObjectActionVerb';
 import { IntegrationMenu } from '../../../actions/IntegrationMenu';
-import type { IntegrationGlyphProvider } from '../IntegrationGlyph';
+import type { IntegrationGlyphProvider } from '../../../../shared/components/IntegrationGlyph';
 import { integrationLabel } from '../../../../shared/utils/integrationLabel';
 import { FORM_BODIES } from '../../formBodies';
 import { toolHealthOf } from '../../toolHealthOf';
@@ -12,7 +12,7 @@ import { useCredentialSecret } from '../../useCredentialSecret';
 import { useIntegrationTarget } from '../../useIntegrationTarget';
 import { toolIdentity } from './toolIdentity';
 import type { GithubConnection } from '../../github/useGithubConnection';
-import { GithubAccountRows } from './GithubAccountRows';
+import { GithubAccountRows } from '../../github/GithubAccountRows';
 
 type Props = {
   readonly workspaceId: WorkspaceId;

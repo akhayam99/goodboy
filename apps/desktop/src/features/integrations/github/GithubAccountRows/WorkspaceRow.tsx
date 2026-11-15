@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import type { WorkspaceId } from '@goodboy/types';
-import type { GithubConnection } from '../../../github/useGithubConnection';
-import { GithubFormBody } from '../../../github/GithubFormBody';
+import type { GithubConnection } from '../useGithubConnection';
+import { GithubFormBody } from '../GithubFormBody';
 
 type Props = {
   readonly workspaceId: WorkspaceId;

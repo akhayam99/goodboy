@@ -1,18 +1,19 @@
 import { useEffect, useState } from 'react';
 import { Eyebrow, RefreshIconButton } from '@goodboy/ui';
 import type { WorkspaceId } from '@goodboy/types';
-import { useAppStore } from '../../../../../store';
-import type { GithubConnection } from '../../../github/useGithubConnection';
+import { useAppStore } from '../../../../store';
+import type { GithubConnection } from '../useGithubConnection';
 import { AllWorkspacesRow } from './AllWorkspacesRow';
 import { GhMissingNotice } from './GhMissingNotice';
 import { WorkspaceRow } from './WorkspaceRow';
 
 type Props = {
   readonly workspaceId: WorkspaceId;
+  readonly workspaceName?: string;
   readonly connection: GithubConnection;
 };
 
-export const GithubAccountRows = ({ workspaceId, connection }: Props) => {
+export const GithubAccountRows = ({ workspaceId, workspaceName, connection }: Props) => {
   const status = useAppStore((state) => state.githubStatus);
   const refreshGithubStatus = useAppStore((state) => state.refreshGithubStatus);
   const [isChecking, setIsChecking] = useState(false);
@@ -56,7 +57,7 @@ export const GithubAccountRows = ({ workspaceId, connection }: Props) => {
         <AllWorkspacesRow status={status} />
       </div>
       <div className="flex flex-col gap-2">
-        <Eyebrow label="This workspace" muted />
+        <Eyebrow label={workspaceName ?? 'This workspace'} muted />
         <WorkspaceRow
           workspaceId={workspaceId}
           connection={connection}

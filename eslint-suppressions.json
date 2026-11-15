@@ -3244,11 +3244,6 @@
       "count": 7
     }
   },
-  "apps/desktop/src/features/integrations/components/IntegrationGlyph/index.tsx": {
-    "@typescript-eslint/naming-convention": {
-      "count": 2
-    }
-  },
   "apps/desktop/src/features/integrations/components/LaunchSessionPanel/LaunchMountRow.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 1
@@ -3788,11 +3783,6 @@
   "apps/desktop/src/features/integrations/slack/SlackFormBody.test.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 10
-    }
-  },
-  "apps/desktop/src/features/integrations/slack/SlackSettings/index.tsx": {
-    "@typescript-eslint/naming-convention": {
-      "count": 3
     }
   },
   "apps/desktop/src/features/integrations/slack/SlackStudio/useSlackThreads.test.ts": {
@@ -7136,6 +7126,11 @@
     }
   },
   "apps/desktop/src/shared/components/GenericTerminalPanel/terminalFind.test.tsx": {
+    "@typescript-eslint/naming-convention": {
+      "count": 2
+    }
+  },
+  "apps/desktop/src/shared/components/IntegrationGlyph/index.tsx": {
     "@typescript-eslint/naming-convention": {
       "count": 2
     }

@@ -1,6 +1,6 @@
 import { memo } from 'react';
 import { cn, ICON_SIZE, ListGridRow, StatusDot, tintClasses } from '@goodboy/ui';
-import { IntegrationGlyph } from '../../../integrations/components/IntegrationGlyph';
+import { IntegrationGlyph } from '../../../../shared/components/IntegrationGlyph';
 import { integrationLabel } from '../../../../shared/utils/integrationLabel';
 
 import { INBOX_STATE_PRESENTATION } from '../../../../shared/components/StudioDetail/RecordState';

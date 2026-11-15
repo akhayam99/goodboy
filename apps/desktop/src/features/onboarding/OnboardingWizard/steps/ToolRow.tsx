@@ -3,7 +3,7 @@ import { Button, ICON_SIZE } from '@goodboy/ui';
 import {
   IntegrationGlyph,
   type IntegrationGlyphProvider,
-} from '../../../integrations/components/IntegrationGlyph';
+} from '../../../../shared/components/IntegrationGlyph';
 import { integrationLabel } from '../../../../shared/utils/integrationLabel';
 
 import { StepListRow } from './StepListRow';

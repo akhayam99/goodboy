@@ -1,7 +1,7 @@
 import type { MouseEvent } from 'react';
 import { Chip, cn, Tooltip } from '@goodboy/ui';
 import type { SessionExternalTask, SessionExternalTaskProvider } from '@goodboy/types';
-import { IntegrationGlyph } from '../IntegrationGlyph';
+import { IntegrationGlyph } from '../../../../shared/components/IntegrationGlyph';
 import { ExternalRefActions } from '../../../../shared/components/ExternalRefActions';
 import { LinkedWorkRow } from '../LinkedWorkRow';
 import { openLink } from '../../../open/openLink';

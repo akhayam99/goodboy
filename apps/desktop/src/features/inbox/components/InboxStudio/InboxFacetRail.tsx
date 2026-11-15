@@ -14,7 +14,7 @@ import type { Project } from '@goodboy/types';
 import { Button, FacetRail, FacetRow, FacetSection, ICON_SIZE, StatusDot } from '@goodboy/ui';
 import { NAMES } from '../../../../shared/utils/names';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
-import { IntegrationGlyph } from '../../../integrations/components/IntegrationGlyph';
+import { IntegrationGlyph } from '../../../../shared/components/IntegrationGlyph';
 import { integrationLabel } from '../../../../shared/utils/integrationLabel';
 import {
   activeFilterCount,

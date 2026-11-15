@@ -1,4 +1,4 @@
-import type { IntegrationGlyphProvider } from '../../../features/integrations/components/IntegrationGlyph';
+import type { IntegrationGlyphProvider } from '../../../shared/components/IntegrationGlyph';
 import type { StudioPlace } from '../../../store';
 
 export const isAppScopeOverlay = ({ overlay }: { readonly overlay: StudioPlace }): boolean => {

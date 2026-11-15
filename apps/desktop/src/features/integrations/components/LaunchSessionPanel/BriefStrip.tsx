@@ -3,7 +3,7 @@ import type {
   IssueBriefEntry,
   IssueBriefSource,
 } from '../../../../store/slices/issue-briefs/types';
-import { IntegrationGlyph } from '../IntegrationGlyph';
+import { IntegrationGlyph } from '../../../../shared/components/IntegrationGlyph';
 import { issueBriefFailureText } from '../../shared/issueBriefFailureText';
 
 type Props = {
