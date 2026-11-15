@@ -398,6 +398,12 @@ confirm-worktree-remove
 confirmpopover
 connections-door
 connections-door-dark
+connections-index
+connections-index-dark
+connections-index-empty
+connections-index-no-workspace
+connections-index-warnings
+connections-index-warnings-dark
 context-drawer
 context-mark-read
 controls-fields
