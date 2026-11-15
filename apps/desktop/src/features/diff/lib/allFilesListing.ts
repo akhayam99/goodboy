@@ -37,7 +37,10 @@ type SortParams = {
 };
 
 const sortedEntries = ({ entries }: SortParams): ReadonlyArray<ExploreEntry> =>
-  [...entries].sort((a, b) => Number(b.isDir) - Number(a.isDir) || a.name.localeCompare(b.name));
+  [...entries].sort((a, b) => {
+    const byDir = Number(b.isDir) - Number(a.isDir);
+    return byDir !== 0 ? byDir : a.name.localeCompare(b.name);
+  });
 
 const diffEntryOf = ({ relPath, isDir }: NewEntryParams): ExploreEntry => ({
   name: baseNameOf({ path: relPath }),

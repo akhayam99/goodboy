@@ -148,7 +148,9 @@ describe('navigation flow table ratchet', () => {
       .getAllByRole('tab')
       .map((item) => {
         const count = item.querySelector('[data-tab-count]')?.textContent ?? '';
-        const text = (item.textContent ?? '').slice(0, -count.length || undefined).trim();
+        const text = (item.textContent ?? '')
+          .slice(0, count.length === 0 ? undefined : -count.length)
+          .trim();
         const known = CRUMB_ROWS.find((row) => text.startsWith(row.label));
         return `crumb:${known?.label ?? text}`;
       });

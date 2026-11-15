@@ -217,7 +217,8 @@ const newestFirst = ({ rows, recencyByMountId }: NewestParams): ReadonlyArray<Bo
   [...rows].sort((left, right) => {
     const leftAt = recencyByMountId.get(left.id) ?? 0;
     const rightAt = recencyByMountId.get(right.id) ?? 0;
-    return rightAt - leftAt || (left.branch ?? '').localeCompare(right.branch ?? '');
+    const byRecency = rightAt - leftAt;
+    return byRecency !== 0 ? byRecency : (left.branch ?? '').localeCompare(right.branch ?? '');
   });
 
 type GroupsParams = {

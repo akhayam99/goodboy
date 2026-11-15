@@ -112,8 +112,10 @@ type NodeListParams = {
   readonly nodes: ReadonlyArray<Node>;
 };
 
-const launchOrderOf = ({ left, right }: OrderParams): number =>
-  left.createdAt - right.createdAt || left.id.localeCompare(right.id);
+const launchOrderOf = ({ left, right }: OrderParams): number => {
+  const byLaunch = left.createdAt - right.createdAt;
+  return byLaunch !== 0 ? byLaunch : left.id.localeCompare(right.id);
+};
 
 const uniqueByAgent = ({ delegations }: DelegationsParams): ReadonlyArray<LeadTreeDelegation> => {
   const seen = new Set<string>();
@@ -350,12 +352,14 @@ export const leadTreeOf = ({
       id: plan.id,
     });
   }
-  placed.sort(
-    (left, right) =>
-      left.at - right.at ||
-      KIND_ORDER[left.kind] - KIND_ORDER[right.kind] ||
-      left.id.localeCompare(right.id),
-  );
+  placed.sort((left, right) => {
+    const byTime = left.at - right.at;
+    if (byTime !== 0) {
+      return byTime;
+    }
+    const byKind = KIND_ORDER[left.kind] - KIND_ORDER[right.kind];
+    return byKind !== 0 ? byKind : left.id.localeCompare(right.id);
+  });
   const spendAgents = unique.map((delegation) => ({
     agentId: delegation.agentId,
     mountId: delegation.mountId,
