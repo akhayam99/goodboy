@@ -4,7 +4,7 @@ Keep tokens out of what you save, move your setup between machines, and update w
 
 ### Security findings
 
-Catch a token pasted into a saved script before it travels. Each time you save a project script, Goodboy checks it for keys and tokens on your Mac, and findings show at the end of **Settings › App › Storage**, under **Security findings**. **Not a secret** dismisses one and **Flag again** brings it back.
+Catch a token pasted into a saved script before it travels. Each time you save a project script, Goodboy checks it for keys and tokens on your Mac, and findings show at the end of **Settings › Storage**, under **Security findings**. **Not a secret** dismisses one and **Flag again** brings it back.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/security-findings-dark.webp">
@@ -54,7 +54,7 @@ When the database cannot be opened at all, the start screen offers **Retry** fir
 
 ### Updates
 
-Get updates in the background, then see what is new. When one is ready, the version pill in the Goodboy line opens a card with **Restart now** and **Later**, and a **What's new** link in its sentence. With agents running, **Restart when they finish** waits for them. **Settings › App › Updates** shows the installed version and **Check for updates**.
+Get updates in the background, then see what is new. When one is ready, the version pill in the Goodboy line opens a card with **Restart now** and **Later**, and a **What's new** link in its sentence. With agents running, **Restart when they finish** waits for them. The Updates band at the end of **Settings › This Mac › General** shows the installed version and **Check for updates**.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/security-updates-dark.webp">

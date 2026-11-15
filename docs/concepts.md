@@ -436,7 +436,7 @@ screen calls it **Close branch**, and a closed row offers **Reopen**.
 delete a mount that has uncommitted work, a lock, or a process still using the
 folder. It keeps track of it and tries again at the next cleanup.
 
-**Storage** (Settings > App > Storage) shows every worktree folder Goodboy made
+**Storage** (Settings > This Mac > Storage) shows every worktree folder Goodboy made
 in three groups. **In use** belongs to a session that is still open and is never
 touched from there. **To review** belongs to an archived or deleted session, or
 to no session at all. **Kept** is what you chose to keep, for good or for 30
@@ -1966,21 +1966,22 @@ session up again in Goodboy.
   is the tab of Workflows that sets what
   a new run starts with. A renamed label keeps its old name as a ⌘K alias:
   searching the old word finds the new one (`formerNamesOf` in `names.ts`).
-- **Models** is the Providers page that sets what each role runs on (it was
-  Defaults). **Limit** is the most a provider, a run or a session may spend,
+- **Models** is the workspace settings page that sets what each role runs on
+  (it was Defaults). **Limit** is the most a provider, a run or a session may spend,
   said the same in the provider panel (Monthly limit, Save limit, Remove limit),
   the alerts and the run defaults (it was Spend cap and cap), **Limits** the
   backup group that holds them (it was Spend caps). Notifications written before
   the change keep their stored text, and the `budget-cap` kind id stays, **Copy context** the drawer button, **Context window**
   the share of a model window a turn filled, and **What's new** the release
   notes page. The old words are ⌘K aliases or retired names.
-- **General**, **Updates**, **Keyboard shortcuts**, **Storage**, **Backup and
-  reset** and **iPhone** are the App pages of Settings (Keyboard shortcuts was
-  Shortcuts, iPhone was Pair device and Companion; Security findings is a
-  section at the end of Storage). **Branches** is a Workspace page that starts
-  with After merge. **Pair an iPhone** is the one verb that opens the iPhone
-  page, **Providers** is its group in the rail (it was Providers &
-  models), and **Edit commits** is the one name for changing the commits of a
+- **This Mac** and the workspace name are the two groups of the Settings rail
+  (they were App and This workspace). **General**, **Keyboard shortcuts**,
+  **Advanced**, **Storage**, **Backup and reset** and **iPhone** are the This
+  Mac pages (Keyboard shortcuts was Shortcuts, iPhone was Pair device and
+  Companion; Updates is a band at the end of General; Security findings is a
+  section at the end of Storage). iPhone stays out of the rail until a phone
+  is paired. **Branches** is a Workspace page that starts with After merge. **Pair an iPhone** is the one verb that opens the iPhone
+  page, and **Edit commits** is the one name for changing the commits of a
   branch (it was Rewrite history). **Disconnect** is the one verb for a
   provider or tool (it was Sign out). The old words are Search or run aliases and
   `RETIRED_NAMES` keeps them out of copy. A dot on a settings row means only

@@ -674,19 +674,19 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
     id: 'settings',
     group: 'housekeeping',
     title: 'Settings and backup',
-    lead: 'App settings apply everywhere and workspace settings to one workspace. Your whole setup can move to another Mac.',
+    lead: 'This Mac settings apply everywhere and workspace settings to one workspace. Your whole setup can move to another Mac.',
     points: [
       {
         term: 'Settings rail',
-        desc: `Settings, or ${shortcutGlyphs('settings.open')}, opens as a page beside the sidebar, on the page you used last. Its rail groups App and This workspace; providers and integrations moved to ${NAMES.connections}. Search settings finds any setting, and a dot marks a page that needs you.`,
+        desc: `Settings, or ${shortcutGlyphs('settings.open')}, opens as a page beside the sidebar, on the page you used last. Its rail groups This Mac and the workspace; providers and integrations moved to ${NAMES.connections}. Search settings finds any setting, and a dot marks a page that needs you.`,
       },
       {
         term: 'Copy and restore',
         desc: 'Copy from another workspace, or Restore defaults, previews every change before it applies. A field that differs from its default has a dot and a Reset.',
       },
       {
-        term: 'App pages',
-        desc: `General, Updates, ${NAMES.keyboardShortcuts}, Storage, ${NAMES.backupAndReset} and ${NAMES.iphone}, where ${NAMES.pairIphone} shows the code the phone scans.`,
+        term: 'This Mac pages',
+        desc: `General, with Updates at its end, ${NAMES.keyboardShortcuts}, Advanced, Storage and ${NAMES.backupAndReset}. ${NAMES.iphone} shows once a phone is paired.`,
       },
       {
         term: 'Open with',

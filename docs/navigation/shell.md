@@ -617,7 +617,7 @@ only drop under zoom.
   of the top bar on the board, inside sessions, and under studios. Exactly one
   switcher is live, and ⌘O opens its single anchored popover.
 - **Theme is not in the bar.** It is set once, so the strip keeps live status:
-  Now, Limits, spend and the bell. Settings > App > General > Appearance holds
+  Now, Limits, spend and the bell. Settings > This Mac > General > Appearance holds
   the three-way choice, and the palette answers to **Theme** with **Theme: dark**,
   **Theme: light** and **Theme: system**. Both call `switchTheme({ to })` in
   `shared/lib/theme.ts`, the only writer. The swap stays one paint
@@ -965,7 +965,7 @@ its plain keys with `useShortcut` and an enabled flag, never with its own
 window listener.
 Every entry also names the task `group` it belongs to (General, Workspaces,
 Navigate, Session, Views, Lists, Comments, Changes, Window; ids stay `review` and
-`diff`), and Settings > App > Keyboard shortcuts lists the
+`diff`), and Settings > This Mac > Keyboard shortcuts lists the
 groups in that order, read top to bottom per column. An entry that works only in
 one place carries a `scope` (Tasks and Notifications lists, the Branch page,
 the terminal, a chat composer, an activity row, a workspace

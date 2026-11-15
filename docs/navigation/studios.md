@@ -288,7 +288,10 @@ cut at the end, never in the middle; the group's`aria-label` keeps the full
   the alias for "the last page" and `SettingsStudio` resolves it once, then
   amends the history entry to the concrete page. The scopes rail is the only
   index, drawn beside the page (its fold control and `Search settings` first,
-  then the groups): its three scopes (App, Providers, This workspace, with Integrations nested under it) come from `settingsDirectory`. Every row is one 28px
+  then the groups): its two groups, named by scope (This Mac with the caption
+  every workspace, then the workspace name with the caption this workspace),
+  come from `settingsDirectory`, and the row to Connections ends it
+  (`MovedToConnectionsRow`). Every row is one 28px
   line of one grammar (`SettingsNavRow`): a group row carries its icon, a page
   row is nested by `PANE_RHYTHM.navRail.nest`, and a row has no second line,
   no count and no identity. A row that needs something shows a 6px dot at its
@@ -303,26 +306,29 @@ cut at the end, never in the middle; the group's`aria-label` keeps the full
   place of the groups, and opens the one picked on the same history entry; with
   no match it says `No settings match`. The status lines are read
   once per studio (`useSettingsStatus`, on the minute clock of `useNow`);
-  opening Settings starts no loading of its own (no storage scan, no branch
-  scan, no provider refresh). Without a workspace the Workspace and
-  Integrations groups are left out. Precedent: the VS Code settings editor and
-  Linear's settings sidebar.
-- **Settings nests items in its rail.** The App items (General, Updates,
-  Keyboard shortcuts, Storage, Backup and reset, iPhone) always sit under the
-  App row as indented
-  rows, whichever scope is active, so switching scope never moves a row above
-  the pointer. The This workspace pages (Projects, About you, Run defaults, Models,
-  Branches, Replies and commits, Permissions) sit the same way under the
-  This workspace row (`workspacePages.ts`, `SettingsRailPageGroup`). The panel
-  shows one item at a time. Providers nests one row per provider
-  (connections only), and Integrations nests one row per tool under This workspace. Those
-  two lists open and close with `Reveal`, and the rail stays one mounted
-  element across scopes: `SettingsStudio` portals each scope's nested list and
-  detail into slots it owns, and keeps a closing scope mounted until its list
-  has collapsed. Every settings panel enters with `nav-step-in`
-  (`SETTINGS_PANE_ENTRY`). So no scope adds a second rail column. Every scope
-  panel keeps the reading width. Precedent: the VS Code settings table of
-  contents and Linear's settings sidebar.
+  opening Settings starts no loading of its own beyond one `bridge_status`
+  read (no storage scan, no branch scan, no provider refresh). Without a workspace the
+  workspace group is one line that asks you to open one. Precedent: the VS Code
+  settings editor and Linear's settings sidebar.
+- **Settings nests items in its rail.** The This Mac pages (General, Keyboard
+  shortcuts, Advanced, Storage, Backup and reset) always sit under their
+  heading, whichever scope is active, so switching scope never moves a row
+  above the pointer (`appSections.ts`). The workspace pages (Projects, About
+  you, Run defaults, Models, Permissions, Branches, Replies and commits) sit the
+  same way under the workspace name (`workspacePages.ts`,
+  `SettingsRailPageGroup`). General ends with the Updates band (version row,
+  What's new, background download) and carries the update dot; the old
+  `updates` id opens General scrolled to that band, and a remembered `updates`
+  page reopens as plain General (`resolveSettingsFocus`). Advanced holds Git,
+  Built-in terminal, Search and Experiments. Models is the workspace page
+  `models`: `workspacePageOf` maps it and every model row id to it, and
+  `PlanPage` leaves it out of copy and restore. iPhone stays out of the rail
+  until `useIsIphonePaired` reads a paired phone (or while its page is open);
+  Search settings and Search or run still list it. The panel shows one item at
+  a time and enters with `nav-step-in` (`SETTINGS_PANE_ENTRY`), so no scope
+  adds a second rail column. Every scope panel keeps the reading width.
+  Precedent: the VS Code settings table of contents and Linear's settings
+  sidebar.
 - **Models names its workspace in the page header.** The Models page of This
   workspace carries the workspace name as the meta line of its title
   (`DefaultsPanel` takes `scopeLabel`). Provider pages live in Connections.

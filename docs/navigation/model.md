@@ -338,7 +338,7 @@ and the tab opens on the session's folder.
      **Guide: {chapter}** entry per `GUIDE_CHAPTERS` row (opens it through
      `openGuideChapter`, also while the Guide is open) are typed only. Pair an
      iPhone answers to Pair your iPhone and the other former names of the page.
-     Check for updates opens Settings > Updates and runs the updater check only
+     Check for updates opens the Updates band of Settings > General and runs the updater check only
      in a status the menu item also checks. Palette and menu bar share one
      function, `checkForUpdatesNow` in `features/updater`.
      The overlay is a compact window: 640px wide (search 720px), a 48px input row,
