@@ -74,7 +74,7 @@ Actions say what they do: Rebase on their commits, Abort rebase and Restore stas
 - The Browser dock shows its page at the right place and size at any app zoom, not only at 100%. <!-- gb area=sessions pr=2227 -->
 - Saved places from older versions reopen as they were, and a saved Explore file opens on Changes with All files. <!-- gb area=app pr=2227 -->
 - A long file tree switched between Changed and All files and back keeps scrolling and updating. <!-- gb area=review pr=2227 -->
-- A Lead agent with no children shows as running or failed on the Overview board. <!-- gb area=agents pr=2227 -->
+- An Auto run that started no agents shows as running or failed on the Overview board. <!-- gb area=agents pr=2227 -->
 - A reply with a mistyped outcome marker shows in full, and the marker no longer leaks into the outcome line. <!-- gb area=agents pr=2227 -->
 
 ## Goodboy v0.35.0
