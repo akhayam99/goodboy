@@ -9,7 +9,12 @@ type Props = {
 export const BrowserTabStrip = ({ model }: Props) => {
   const shownId = model.shown?.tab.id ?? null;
   return (
-    <ToolTabStrip newLabel="New tab" newShortcut="browser.newTab" onNew={model.startDraft}>
+    <ToolTabStrip
+      newLabel="New tab"
+      newShortcut="browser.newTab"
+      onNew={model.startDraft}
+      isUnderHead
+    >
       <nav aria-label="Browser tabs" className="flex w-full items-center gap-1">
         {model.tabs.map((tab) => (
           <BrowserTabChip
