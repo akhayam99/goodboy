@@ -60,12 +60,13 @@ describe('every control in the top bar is 28 high with a 6px radius', () => {
     expect(bell).not.toContain('bg-warning');
   });
 
-  it('draws the bell count like a tab count: a tone dot and a muted number, never colored text', () => {
+  it('draws the bell count like a door or tab count: one toned number, no dot beside it', () => {
     const bell = sourceOf({
       path: 'features/notifications/components/NotificationCenter/BellButton.tsx',
     });
 
-    expect(bell).toContain('<StatusDot');
-    expect(bell).not.toMatch(/text-(?:primary|warning|unread)/);
+    expect(bell).toContain("tintClasses(hasUnreadDebt ? 'warning' : 'unread').text");
+    expect(bell).not.toContain('StatusDot');
+    expect(bell).not.toContain('text-primary');
   });
 });

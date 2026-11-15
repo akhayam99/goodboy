@@ -534,8 +534,8 @@ covered.
   session that needs you is not counted as running; its dots are static, and its tooltip
   names the unit: "2 sessions running, 1 script running"; at zero one muted slot is drawn so the chips beside it never move: "Idle" with the neutral ring, or "Needs you" with the warning dot while a session waits on you), Usage,
   today's spend (hidden until the first cent today) and the bell (its unread count beside
-  the icon, drawn like a tab count: a 6px dot, the quiet unread tone or warning when an
-  unread item carries an action, and the number in the muted role, capped at 9+). There is no storage chip:
+  the icon, drawn like a door or tab count: one number, capped at 9+, in the quiet unread
+  tone, or warning when an unread item carries an action). There is no storage chip:
   a control that appears when a threshold is crossed breaks the rule above,
   and "Free 7 GB" read as free disk, not what can go. The "N GB can go" line
   lives on the Storage row of the Settings rail. Now opens one popover grouped by those
