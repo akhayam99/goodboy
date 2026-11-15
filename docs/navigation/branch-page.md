@@ -460,7 +460,10 @@ it was viewed; none on a merged or closed pull request), then the name (a rename
 `from <old path>` under it, a deleted file is struck through), a comment count chip whose
 tooltip names the kinds (`2 notes, 1 on GitHub`), `+N −N` only at a rail of 280 or more, and
 the status letter. `+N` and `−N` sit in two fixed right-aligned columns (`Delta`), and a closed
-folder keeps the status letter's slot empty, so every count lines up down the list. A name too long for the rail keeps its first six characters and its last
+folder keeps the status letter's slot empty, so every count lines up down the list. The
+status letter is one mark (`FileStatusMark`) in the tree, in All files (which leaves M out)
+and in the file header: one letter in one 12px slot, A in success, D in danger, M and R
+muted, so amber stays for what needs you and blue for what runs. A name too long for the rail keeps its first six characters and its last
 six with the extension chain (`Statem…ceCard.test.tsx`, `cutFileName`), and a name too short for
 that keeps its first three characters (`ind…dule.css`): a name is cut in the middle, never at its
 start. The full name stays for a screen reader. A file or folder row has no tooltip: the full path is in the file header of the diff. The tree is a `tree`: Up and Down move

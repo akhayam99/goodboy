@@ -532,10 +532,10 @@ covered.
 - Right, in this order: the Now chip (running, scripts, each
   only when above zero, from `deriveSessionStage` through `useNowSessions`, so a running
   session that needs you is not counted as running; its dots are static, and its tooltip
-  names the unit: "2 sessions running, 1 script running"; at zero one muted "Idle" slot is drawn so the chips beside it never move), Usage,
-  today's spend (hidden until the first cent today) and the bell (a 6px dot at its corner,
-  primary when unread, warning when an unread item carries an action; the count is the Unread
-  tab badge in its popover). There is no storage chip:
+  names the unit: "2 sessions running, 1 script running"; at zero one muted slot is drawn so the chips beside it never move: "Idle" with the neutral ring, or "Needs you" with the warning dot while a session waits on you), Usage,
+  today's spend (hidden until the first cent today) and the bell (its unread count beside
+  the icon, drawn like a tab count: a 6px dot, the quiet unread tone or warning when an
+  unread item carries an action, and the number in the muted role, capped at 9+). There is no storage chip:
   a control that appears when a threshold is crossed breaks the rule above,
   and "Free 7 GB" read as free disk, not what can go. The "N GB can go" line
   lives on the Storage row of the Settings rail. Now opens one popover grouped by those
@@ -589,8 +589,9 @@ never hide. A Usage chip is
 the provider glyph and one bar, the percent beside it only above 70%; every
 window lives in its tooltip and its accessible name. A provider with no
 figures yet draws no chip. The Usage chips past the ones that fit, and the
-providers with no figures, are the only overflow: a `+N providers` chip (`+1
-provider`, never a bare number; with no chip shown it reads `Usage`) takes the
+providers with no figures, are the only overflow: a `+N providers` chip (the
+hidden provider glyphs first, like a Usage chip, then `+1 provider`, never a bare
+number; with no chip shown it reads `Usage`) takes the
 tone of the worst hidden provider and lists them. It stays visible at every bar width. No other control moves into an
 overflow menu. `chrome-labels` sits below the 1024px minimum window, so words
 only drop under zoom.

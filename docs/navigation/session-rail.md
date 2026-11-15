@@ -753,7 +753,10 @@ tool it replaces moves into the chip. Terminal names the running terminals
 (`Terminal, 2 running`), Browser names its tabs (`Browser, 3 tabs`); the words
 come from `toolFactOf` over `runningTerminalCount` and `browserTabCount`, and
 the same two numbers show in the icon's corner (`ToolCount`, `countTextOf`,
-9+ past nine) unless a signal dot holds that corner.
+9+ past nine) unless a signal dot holds that corner. Every corner mark (count,
+signal dot, waiting ring) anchors to the icon button, outside the 16px glyph
+(`TOOL_CORNER_SLOT`): the count and the dot share the top end corner, the ring
+the top start corner, and none ever covers the icon.
 
 Terminal and Browser are workspace tools: their dock opens with
 `toggleTerminalDock` and `toggleBrowserDock` from the rail, the palette, the Go
