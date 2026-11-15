@@ -85,6 +85,12 @@
           "shown": true
         },
         {
+          "title": "The Start work composer",
+          "text": "With Work on, every door to an Auto or Orchestrator run opens one composer for the goal first.",
+          "group": "Start a task",
+          "also": "Start work composer"
+        },
+        {
           "title": "One start form",
           "text": "Every door draws the same form: the New session page, a session's Runs page, ⌘K and the setup Scout run.",
           "group": "Start a task",
@@ -1331,19 +1337,21 @@
           "title": "Work section",
           "text": "Open Work to see every Lead of the workspace in one list, and see which ones need you.",
           "group": "Work",
-          "main": true
+          "also": "Work and Leads",
+          "shown": true
         },
         {
           "title": "Lead",
           "text": "A Lead reads one of five words: Working, Waits for you, Resting, Stopped or Finished.",
           "group": "Work",
-          "main": true
+          "also": "Lead states"
         },
         {
           "title": "Permission rows",
           "text": "A Lead's autonomy is nine rows you can read and change.",
           "group": "Work",
-          "main": true
+          "also": "permission rows",
+          "shown": true
         },
         {
           "title": "Terminal",
