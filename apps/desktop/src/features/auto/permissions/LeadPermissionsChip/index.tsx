@@ -8,10 +8,10 @@ import {
   useDropdown,
 } from '@goodboy/ui';
 import type { AutoTreeId, SessionId, WorkspaceId } from '@goodboy/types';
-import { NAMES } from '../../../shared/utils/names';
-import { RUN_AUTONOMY_OPTIONS } from '../../workflows/runAutonomy';
-import { LeadPermissionsPanel } from './LeadPermissionsPanel';
-import { useLeadPermissions, type LeadPermissionScope } from '../hooks/useLeadPermissions';
+import { NAMES } from '../../../../shared/utils/names';
+import { RUN_AUTONOMY_OPTIONS } from '../../../workflows/runAutonomy';
+import { LeadPermissionsPanel } from '../LeadPermissionsPanel';
+import { useLeadPermissions, type LeadPermissionScope } from '../../hooks/useLeadPermissions';
 
 export type LeadPermissionsTarget = Readonly<{
   workspaceId: WorkspaceId;

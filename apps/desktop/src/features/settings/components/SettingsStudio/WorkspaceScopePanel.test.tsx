@@ -38,6 +38,8 @@ import {
   type StoryStore,
 } from '../../../../store/storyHarness';
 import { ToastProvider } from '../../../../shared/components/Toast';
+import { SETTING_WORK_ENABLED } from '../../../../shared/lib/workSetting';
+import { NAMES } from '../../../../shared/utils/names';
 import { WORKSPACE_PAGES } from './workspacePages';
 import { WorkspaceScopePanel } from './WorkspaceScopePanel';
 
@@ -121,7 +123,62 @@ beforeEach(async () => {
 
 afterEach(cleanup);
 
+const RUN_DEFAULT_ROWS: ReadonlyArray<readonly [string, ReadonlyArray<string>]> = [
+  [
+    'New runs',
+    ['Workflow asks you', 'Auto agent asks you', 'Start as', NAMES.spendCap, NAMES.models],
+  ],
+  ['Agents', ['Parallel agents', 'Reply length']],
+];
+
+const runDefaultBands = () =>
+  screen
+    .getAllByRole('region')
+    .map((band) => band.getAttribute('aria-label'))
+    .filter((label) => label === 'New runs' || label === 'Agents' || label === 'Guidance');
+
+const expectRunDefaultRows = () => {
+  expect(runDefaultBands()).toEqual(['New runs', 'Agents', 'Guidance']);
+  for (const [band, rows] of RUN_DEFAULT_ROWS) {
+    const region = within(screen.getByRole('region', { name: band }));
+    for (const row of rows) {
+      region.getByText(row, { selector: 'span' });
+    }
+  }
+  screen.getByRole('textbox', { name: 'Guidance' });
+  expect(screen.queryByRole('region', { name: NAMES.asksYou })).toBeNull();
+};
+
 describe('WorkspaceScopePanel pages', () => {
+  it('lays Run defaults out in three bands: New runs, Agents and Guidance', () => {
+    renderPage({ section: 'general' });
+
+    expectRunDefaultRows();
+  });
+
+  it('shows the same rows with Work on, with no separate Asks you band', () => {
+    seed({ settings: { [SETTING_WORK_ENABLED]: 'true' } });
+    renderPage({ section: 'general' });
+
+    expectRunDefaultRows();
+    screen.getByRole('button', { name: /^Asks you: / });
+  });
+
+  it('keeps the session row in New runs with a session open, the one place that sets it', () => {
+    const session = aSession({ workspaceId: HARBORLINE.id, goal: 'Retry webhooks with backoff' });
+    useAppStore.setState({ sessions: [session], currentSessionId: session.id });
+    renderPage({ section: 'general' });
+
+    const newRuns = within(screen.getByRole('region', { name: 'New runs' }));
+    expect(newRuns.getAllByRole('tablist').map((row) => row.getAttribute('aria-label'))).toEqual([
+      'Workflow asks you',
+      'Auto agent asks you',
+      'Start as',
+      'New runs in this session start as',
+      'At the limit',
+    ]);
+  });
+
   it('opens on Projects with the workspace name, and one page per section', () => {
     renderPage();
 

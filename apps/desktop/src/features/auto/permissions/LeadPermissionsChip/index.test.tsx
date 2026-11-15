@@ -22,7 +22,7 @@ import {
   type StoryStore,
 } from '../../../../store/storyHarness';
 import { SETTING_WORK_ENABLED } from '../../../../shared/lib/workSetting';
-import { LeadPermissionsData } from '.';
+import { LeadPermissionsChip } from '.';
 
 let useAppStore: StoryStore;
 
@@ -56,12 +56,15 @@ beforeEach(async () => {
 
 afterEach(cleanup);
 
-const renderLead = () =>
+const openLead = async () => {
   render(
-    <LeadPermissionsData workspaceId={WORKSPACE} sessionId={null} treeId={TREE} scope="lead" />,
+    <LeadPermissionsChip target={{ workspaceId: WORKSPACE, sessionId: null, treeId: TREE }} />,
   );
+  fireEvent.click(await screen.findByRole('button', { name: /^Asks you: (?!Loading)/ }));
+  return within(screen.getByRole('dialog', { name: 'Asks you' }));
+};
 
-describe('LeadPermissionsData', () => {
+describe('LeadPermissionsChip', () => {
   it('shows This Lead with Reset for an override, and Reset writes the row away', async () => {
     const read = vi
       .fn()
@@ -69,10 +72,9 @@ describe('LeadPermissionsData', () => {
       .mockResolvedValue(permissionsFor({ leadRows: {} }));
     const change = vi.fn().mockResolvedValue(undefined);
     useAppStore.setState({ readLeadPermissions: read, changeLeadPermission: change });
-    renderLead();
+    const popover = await openLead();
 
-    await screen.findByText('This Lead');
-    fireEvent.click(screen.getByRole('button', { name: 'Use default' }));
+    fireEvent.click(await popover.findByRole('button', { name: 'Use default' }));
 
     await waitFor(() =>
       expect(change).toHaveBeenCalledWith({
@@ -80,7 +82,7 @@ describe('LeadPermissionsData', () => {
         change: { key: 'push', value: null },
       }),
     );
-    await waitFor(() => expect(screen.queryByText('This Lead')).toBeNull());
+    await waitFor(() => expect(popover.queryByRole('button', { name: 'Use default' })).toBeNull());
   });
 
   it('reads Custom as soon as a row is tightened', async () => {
@@ -88,9 +90,9 @@ describe('LeadPermissionsData', () => {
       readLeadPermissions: vi.fn().mockResolvedValue(permissionsFor({ leadRows: { push: 'ask' } })),
       changeLeadPermission: vi.fn(),
     });
-    renderLead();
+    const popover = await openLead();
 
-    const custom = await screen.findByRole('tab', { name: 'Custom' });
+    const custom = await popover.findByRole('tab', { name: 'Custom' });
     expect(custom.getAttribute('aria-selected')).toBe('true');
   });
 
@@ -103,9 +105,9 @@ describe('LeadPermissionsData', () => {
         ),
       changeLeadPermission: vi.fn(),
     });
-    renderLead();
+    const popover = await openLead();
 
-    await screen.findByText('No plan is approved at this setting, so this reads as Ask.');
+    await popover.findByText('No plan is approved at this setting, so this reads as Ask.');
   });
 
   it('keeps the old value and shows the error under the row when a write fails', async () => {
@@ -113,14 +115,14 @@ describe('LeadPermissionsData', () => {
       readLeadPermissions: vi.fn().mockResolvedValue(permissionsFor({ leadRows: {} })),
       changeLeadPermission: vi.fn().mockRejectedValue(new Error('disk full')),
     });
-    renderLead();
+    const popover = await openLead();
 
-    const group = await screen.findByRole('tablist', { name: 'Push a branch' });
+    const group = await popover.findByRole('tablist', { name: 'Push a branch' });
     fireEvent.click(within(group).getByRole('tab', { name: 'Ask' }));
 
-    const alert = await screen.findByRole('alert');
+    const alert = await popover.findByRole('alert');
     expect(alert.textContent).toContain('disk full');
-    const checks = screen.getByRole('tab', { name: 'When checks pass' });
+    const checks = popover.getByRole('tab', { name: 'When checks pass' });
     expect(checks.getAttribute('aria-selected')).toBe('true');
   });
 });

@@ -146,10 +146,9 @@ describe('the provider policy has one home', () => {
     seed({ policy: POLICY, rules: { spreadByHeadroom: true } });
     render(<WorkflowRulesPanel workspaceId={WORKSPACE.id} />);
 
-    fireEvent.click(screen.getByRole('button', { name: /^Models: / }));
-    const band = screen.getByRole('dialog', { name: 'Models' });
+    const band = screen.getByRole('region', { name: 'New runs' });
     expect(within(band).queryAllByRole('switch')).toEqual([]);
-    expect(within(band).getByRole('button', { name: 'Open Providers' })).toBeDefined();
+    expect(within(band).getByRole('button', { name: 'Open Models' })).toBeDefined();
     expect(within(band).getByTestId('rules-policy-summary').textContent).toBe(
       'Claude, Codex · Cursor as backup',
     );
@@ -169,7 +168,6 @@ describe('the provider policy has one home', () => {
     render(<WorkflowRulesPanel workspaceId={WORKSPACE.id} />);
 
     expect(screen.queryAllByRole('switch', { name: SPREAD_LABEL })).toEqual([]);
-    fireEvent.click(screen.getByRole('button', { name: /^Models: / }));
     expect(screen.getByTestId('rules-policy-summary')).toBeDefined();
     cleanup();
     const reopened = openPopover();
