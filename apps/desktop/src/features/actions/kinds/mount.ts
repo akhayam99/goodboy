@@ -319,12 +319,12 @@ const MOUNT_ACTIONS: ReadonlyArray<ActionDefinition<MountFacts>> = [
   },
   {
     id: 'mount.abortRebaseConflict',
-    label: 'Keep branch as it was',
+    label: 'Abort rebase',
     icon: Undo2,
     group: 'act',
     when: ({ facts }) => isAsking({ facts }),
     slot: () => 'notice',
-    pendingLabel: () => 'Keeping…',
+    pendingLabel: () => 'Aborting…',
     run: ({ facts, env }) =>
       env.getState().keepRebaseStop({ sessionId: facts.sessionId, mountId: facts.mountId }),
   },

@@ -96,7 +96,6 @@ describe('ObjectOverflowMenu', () => {
           'agent.close',
           'agent.reopen',
           'agent.model',
-          'agent.copyReply',
           'agent.copyName',
           'agent.delete',
         ]}
@@ -124,7 +123,6 @@ describe('ObjectOverflowMenu', () => {
           'agent.reopen',
           'agent.model',
           'agent.moveToAuto',
-          'agent.copyReply',
           'agent.copyName',
         ]}
       />,
@@ -149,7 +147,6 @@ describe('ObjectOverflowMenu', () => {
           'agent.close',
           'agent.reopen',
           'agent.model',
-          'agent.copyReply',
         ]}
       />,
     );

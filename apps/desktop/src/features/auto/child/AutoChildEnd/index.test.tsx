@@ -97,10 +97,18 @@ describe('the end of an Auto child page', () => {
 
   it('keeps Queued and Stop for a child that was only accepted', () => {
     const delegation = aDelegation({ key: 'impl', role: 'implementer', state: 'accepted' });
-    show({ delegation });
+    show({ delegation, status: 'pending' });
 
     screen.getByText('Queued');
     screen.getByRole('button', { name: 'Stop' });
+  });
+
+  it('leaves Stop to the dock while the child runs, so the page has one Stop', () => {
+    const delegation = aDelegation({ key: 'impl', role: 'implementer', state: 'running' });
+    show({ delegation, status: 'running' });
+
+    screen.getByText('Running');
+    expect(screen.queryByRole('button', { name: 'Stop' })).toBeNull();
   });
 
   it('leaves a stopped child to the page notice, with no second Retry at the end', () => {

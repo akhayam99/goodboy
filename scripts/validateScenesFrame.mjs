@@ -20,8 +20,6 @@ export const FRAME_SCENES = [
   { scene: 'frame&view=settings', rail: FRAME_CTX_RAIL_QUERY, isBare: true },
   { scene: 'scripts-empty', rail: FRAME_RAIL_QUERY, isBare: true },
   { scene: 'artifact-states', rail: FRAME_RAIL_QUERY },
-  { scene: 'explore', rail: FRAME_RAIL_QUERY, isBare: true },
-  { scene: 'explore-changes', rail: FRAME_RAIL_QUERY, isBare: true },
   { scene: 'storage-other-tools', rail: FRAME_RAIL_QUERY, isBare: true },
   { scene: 'board-shell', rail: FRAME_RAIL_QUERY, isBare: true },
   { scene: 'chat-room', rail: FRAME_RAIL_QUERY },

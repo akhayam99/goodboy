@@ -66,6 +66,7 @@ The board groups the branches in this order: **Needs you**, **In progress**, **M
 - The track is filled up to where the branch stands. The state color shows only on that stage.
 - Next to it is the step the branch stands at, such as **Checks failing** in red, **No pull request** in gray, **Approved** in green or **Merged** in violet. The state has the same color everywhere in the app.
 - A branch an agent works on shows its agents and its spend. A dot marks what is new since you last looked.
+- A Lead counts as work on its own branch: a Lead running alone shows that branch running, and a failed Lead puts it under **Needs you**.
 - A long branch name is cut in the middle, so its end stays readable.
 - A branch with no pull request reads **No PR**. A step that does not apply is a short dash instead of a circle.
 - A row says each fact once. A column stays empty when the state already says it. A merged branch shows no checks.
@@ -106,8 +107,8 @@ Know the moves that unblock the task, such as answering a question, fixing a fai
 **A stopped rebase**
 
 - Its row says in one sentence what stopped ("2 files conflict with main: MembersPage.tsx and 1 more. Your branch is as it was.").
-- It leads with the verb that fixes it: **Resolve with Auto**, **Bring them in**, **Retry rebase** or **Fix with an agent**.
-- **Resolve in terminal**, **Keep branch as it was**, **Undo rebase** and **Open branch** sit in its **⋯** menu as they apply.
+- It leads with the verb that fixes it: **Resolve with Auto**, **Rebase on their commits**, **Retry rebase** or **Fix with an agent**.
+- **Resolve in terminal**, **Abort rebase**, **Undo rebase** and **Open branch** sit in its **⋯** menu as they apply.
 - A click on its title opens the branch with the rebase panel.
 
 **Where a click goes**
@@ -152,7 +153,7 @@ This part is for contributors and agents who change the feature.
 - Archive: `ArchivePrimary` is the header button when `isArchivePrimaryOf` holds (every branch merged, no live agent, no open question). In every other case Archive stays in the session menu with the same guards.
 - Loading skeleton: `SessionOverviewSkeleton` draws its cards from `overviewCardsOf` and the same surface (`OVERVIEW_CARD_SURFACE`). `SessionWorkspace` shows it through `SkeletonSwap`: nothing for the first 120 ms, then at least 160 ms. The notices slot animates its height with `HeightMotion` and `PANE_GROUPS_GAP_REM`.
 - The overview draws the branch board only. `liveGroupsOf` orders the live groups that feed the board.
-- Branch board model: `branchBoardOf` builds one row per branch in any state, plus a row without a branch. It sorts them into Needs you, In progress, Merged and Not on a branch. `branchFactsFor` feeds `deriveSessionStage` the facts of one branch only. A question on one branch leaves the others alone. `boardRowCellsOf` picks the words of a row and drops a word an earlier cell already said. `sessionKpisOf` reads the board for the Branches, Spend and Time tiles and counts Leads, agents and asks by id. Spend comes from `leadSpendByBranchOf`.
+- Branch board model: `branchBoardOf` builds one row per branch in any state, plus a row without a branch. It sorts them into Needs you, In progress, Merged and Not on a branch. `branchFactsFor` feeds `deriveSessionStage` the facts of one branch only, its Leads included. `runningByRowIdOf` counts the running agents and Leads of each row. A question on one branch leaves the others alone. `boardRowCellsOf` picks the words of a row and drops a word an earlier cell already said. `sessionKpisOf` reads the board for the Branches, Spend and Time tiles and counts Leads, agents and asks by id. Spend comes from `leadSpendByBranchOf`.
 - Empty session: `useIsEmptySession` is the one rule for the start form, and `CentralColumn` places `FolderCard` after the board.
 - Notices: `overviewNoticesOf` counts them for `overviewCardsOf`. A closed notice is not counted.
 - `useOverviewNotices` holds the dismissals, keyed by `mismatchDismissalKeyOf` so a new mismatch shows again, and the stranded-branch check. A dismissal expires when its observation clears (`liveDismissalsOf`). Unchanged polls stay dismissed. `CentralColumn` draws the notices in one place above the board.

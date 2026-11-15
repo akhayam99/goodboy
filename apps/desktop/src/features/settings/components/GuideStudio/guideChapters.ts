@@ -375,7 +375,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Visible to',
-        desc: 'Who reads this, in the menu of each card, says which roles receive it. Planners, implementers, reviewers, debuggers and resolvers read the decisions.',
+        desc: 'Change visibility, in the menu of each card, says which roles receive it. Planners, implementers, reviewers, debuggers and resolvers read the decisions.',
       },
       {
         term: 'Explanations',
@@ -412,7 +412,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Task links',
-        desc: `A Linked row in the rail opens its task. Its right click menu holds Move to, Take off this branch and ${NAMES.removeLinkFromSession}, each with Undo; the Log keeps Re-link.`,
+        desc: `A Linked row in the rail opens its task. Its right click menu holds Move to, Remove from this branch and ${NAMES.removeLinkFromSession}, each with Undo; the Log keeps Re-link.`,
       },
       {
         term: 'Slack',
@@ -499,7 +499,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'A rebase conflict asks',
-        desc: 'A conflict leaves the branch as it was and asks: Resolve with Auto, Resolve in terminal or Keep branch as it was, with Add a hint. Auto resolves in the worktree and never pushes; Resolve in terminal starts the rebase there.',
+        desc: 'A conflict leaves the branch as it was and asks: Resolve with Auto, Resolve in terminal or Abort rebase, with Add a hint. Auto resolves in the worktree and never pushes; Resolve in terminal starts the rebase there.',
       },
       {
         term: 'Rebase all',

@@ -345,7 +345,7 @@ const copyOf = ({
       return {
         tone: 'warn',
         title: dirtyTitleOf({ count: run.dirtyChoice?.dirtyCount ?? null }),
-        line: `${run.dirtyChoice?.files.length ?? 0} of them are also changed on ${baseBranch}. Goodboy sets them aside and brings them back.`,
+        line: `${run.dirtyChoice?.files.length ?? 0} of them are also changed on ${baseBranch}. Goodboy stashes them and restores them after the rebase.`,
       };
     case 'restore-conflict':
       return {
@@ -357,7 +357,7 @@ const copyOf = ({
       return {
         tone: 'warn',
         title: 'Your files from the last rebase are still set aside.',
-        line: 'Bring them back when you are ready.',
+        line: 'Restore stashed files when you are ready.',
       };
     case 'checking':
       return { tone: 'info', title: running, line: 'Checking the branch' };
@@ -424,7 +424,7 @@ const copyOf = ({
       return {
         tone: 'warn',
         title: originTitleOf({ count: originCount }),
-        line: 'Someone pushed to this branch while you rebased. Nothing was pushed. Bring them in adds their commits to yours, then pushes.',
+        line: 'Someone pushed to this branch while you rebased. Nothing was pushed. Rebase on their commits puts yours on top of theirs, then pushes.',
       };
     case 'head-moved':
       return { tone: 'warn', title: 'The branch moved', line: 'Nothing was changed.' };

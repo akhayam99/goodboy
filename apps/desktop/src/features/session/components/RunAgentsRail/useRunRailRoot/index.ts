@@ -1,8 +1,8 @@
 import { useMemo } from 'react';
 import type { AgentId, SessionId } from '@goodboy/types';
-import { useAppStore, useTranscript } from '../../../../../store';
+import { useAppStore } from '../../../../../store';
+import { autoRunTitleOf } from '../../../autoRunTitleOf';
 import type { LeadTreeRootState } from '../../../../auto/tree/leadTreeRootState';
-import { autoRootTitleOf } from '../../AutoAgentsPane/autoRootTitleOf';
 import type { LeadTreeRoot } from '../../LeadTree/leadTreeRoot';
 
 type Params = {
@@ -12,22 +12,19 @@ type Params = {
 };
 
 export const useRunRailRoot = ({ sessionId, rootAgentId, state }: Params): LeadTreeRoot | null => {
-  const name = useAppStore(
-    (store) =>
-      (store.sessionPhaseRuns[sessionId] ?? []).find((agent) => agent.id === rootAgentId)?.name ??
-      null,
+  const title = useAppStore((store) =>
+    autoRunTitleOf({ state: store, sessionId, agentId: rootAgentId }),
   );
-  const events = useTranscript(rootAgentId);
   return useMemo(
     () =>
-      state === null || name === null
+      state === null || title === null
         ? null
         : {
             agentId: rootAgentId,
-            title: autoRootTitleOf({ name, ask: state.ask, events }),
+            title,
             node: state.node,
             word: state.word,
           },
-    [state, name, rootAgentId, events],
+    [state, title, rootAgentId],
   );
 };

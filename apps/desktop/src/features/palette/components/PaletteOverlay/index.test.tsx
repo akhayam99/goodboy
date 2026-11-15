@@ -511,7 +511,7 @@ describe('PaletteOverlay on a focused commit row', () => {
     expect(screen.getByText('For this commit')).toBeDefined();
     expect(optionNames().slice(0, 7)).toEqual([
       'Rename',
-      'Fold down',
+      'Fixup down',
       'Squash down',
       'Move up',
       'Move down',
@@ -537,7 +537,7 @@ describe('PaletteOverlay on a focused commit row', () => {
     const release = focusCommitRow(commitScope({ isFolded: true }));
     openIn(PAYOUT);
 
-    expect(optionNames().slice(0, 3)).toEqual(['Separate', 'Copy SHA', 'Copy subject']);
+    expect(optionNames().slice(0, 3)).toEqual(['Separate commit', 'Copy SHA', 'Copy subject']);
     expect(optionNames()).not.toContain('Rename');
     release();
   });

@@ -572,8 +572,8 @@ Overview and a comfortable everything else.
 **Prose is the one exception. It is a reading grade, not drift.** Human and
 assistant transcript messages, a markdown body and any artifact the reader came
 for stay on `text-prose` or `text-body`. Making those smaller makes the app
-worse. A conversation reads in the 720px measure, centred: assistant messages
-take the measure and a user card keeps a 48px start gap (`PANE_RHYTHM.message.user`). The chrome around prose still takes the role its job asks for. A
+worse. An agent conversation reads in the 880px reading column and the chat room
+in the 720px measure, both centred: assistant messages take the column and a user card keeps a 48px start gap (`PANE_RHYTHM.message.user`). The chrome around prose still takes the role its job asks for. A
 document pane's section label is an eyebrow even when the body under it is
 prose, because `DESIGN.md` compresses chrome without limit and never the
 artifact.
@@ -781,6 +781,40 @@ never 20, 28 or 40px.
 `gap-10` and their `gap-x`, `gap-y`, `space-x` and `space-y` twins fail
 `scale-rules.test.ts`.
 
+## Page frame
+
+The tokens behind the rules in [DESIGN.md](../../DESIGN.md) → One frame for every
+page. Pages read them, never their own pixels. [docs/styling.md](../../docs/styling.md)
+holds the mechanics.
+
+| Token                                   | Value                              | What it spaces                                                   |
+| --------------------------------------- | ---------------------------------- | ---------------------------------------------------------------- |
+| `PANE_RHYTHM.firstRow`                  | `h-10 pt-2`                        | the frame's first row: sidebar, rails and the head's title row   |
+| `PANE_RHYTHM.head.rows`                 | `gap-3` (12)                       | the title row, then the tabs or crumbs                           |
+| `PANE_RHYTHM.head.under`                | `pb-5` (20)                        | the head, before the page starts                                 |
+| `PANE_RHYTHM.block`                     | `gap-3` (12)                       | blocks of a page header: title and meta, tabs, toolbar           |
+| `PANE_RHYTHM.transcript.turns` / blocks | `gap-8` / `gap-4`                  | turns of a transcript, then the blocks inside one turn           |
+| `--measure`                             | 720px                              | prose, the chat room (`PageColumn width="measure"`)              |
+| `--reading`                             | 880px                              | an agent conversation: head, transcript and composer             |
+| `--column-max`                          | 960px                              | the page column (`PageColumn`)                                   |
+| full                                    | the pane                           | the Board, the Terminal, the Browser (`PageColumn width="full"`) |
+| `sticky-surface-head`                   | 86% over `blur(8px) saturate(1.2)` | the whole sticky head as one surface, painted once by the page   |
+
+A page gets its width from `PAGE_MEASURE` in `frameGeometry.ts`, and
+`columnContract.test.ts` fails on a width or a centring a page picks itself. A
+session page puts its head in `SessionHeadFrame`
+(`apps/desktop/src/features/session/components/`), which also owns the `lead`
+slot for a left rail (Files, Agents) and the `aside` slot for the right.
+
+**Panels.** From the page to the window edge: the detail panel, the tools rail,
+the tool dock. `DrawerColumn` draws the detail and the dock, with the rail on
+the dock's left edge, so a tool opens toward the window edge. A panel pushes the
+page only while it leaves the page its minimum width (`drawerLayoutOf`);
+under that every panel lies over the page with a scrim, and the rail stays
+visible. The page content eases to its new width in `DURATION_BASE_MS` with the
+motion token, and `prefers-reduced-motion` turns it off. The numbers and the
+thresholds are in [docs/styling.md](../../docs/styling.md#the-window-grid).
+
 ## Action intent
 
 A `Button` carries an `intent` next to its variant. One map,
@@ -790,10 +824,16 @@ variant a call site passes. The `action-intents` scene shows every pair.
 
 | Intent        | Verbs                                         | Filled                                 | Outline | Quiet |
 | ------------- | --------------------------------------------- | -------------------------------------- | ------- | ----- |
-| `primary`     | push, open PR, review, run, continue          | the one next step of the row or header | no      | no    |
+| `primary`     | push, open PR, merge, review, run, continue   | the one next step of the row or header | no      | no    |
 | `neutral`     | everything else                               | no                                     | yes     | yes   |
 | `caution`     | rebase, force push, reset, rewrite history    | only inside a confirm                  | default | yes   |
 | `destructive` | remove worktree, delete branch, discard, stop | only inside a confirm                  | default | yes   |
+
+A new action verb is added to the sets in `actionIntentOf.ts` in the same change
+as its label, and its label follows the rule in
+[docs/concepts.md](../../docs/concepts.md) (a verb and an object, never a
+metaphor). A call site never picks an intent by hand: it asks `actionIntentOf`
+or `actionButtonLookOf`.
 
 Stop has one look everywhere: destructive and quiet, whatever variant the call
 site asks for (`isStopVerb`). A neutral intent never fills: `Button` draws a

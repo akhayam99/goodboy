@@ -18,6 +18,7 @@ const CAUTION_VERBS: ReadonlySet<string> = new Set([
   'abort rebase',
   'undo rebase',
   'retry rebase',
+  'rebase on their commits',
   'diff.abortRebase',
   'mount.abortRebase',
   'mount.abortRebaseConflict',

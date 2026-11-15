@@ -557,7 +557,7 @@ describe('every ⋯ menu and its right click list the same actions in the same o
 
     expect(fromContext).toEqual([
       'Rename',
-      'Fold down',
+      'Fixup down',
       'Squash down',
       'Move up',
       'Move down',
@@ -565,7 +565,7 @@ describe('every ⋯ menu and its right click list the same actions in the same o
       'Copy subject',
       'Remove',
     ]);
-    expect(fromOverflow).toEqual(['Rename', 'Fold down', 'Squash down', 'Copy SHA', 'Remove']);
+    expect(fromOverflow).toEqual(['Rename', 'Fixup down', 'Squash down', 'Copy SHA', 'Remove']);
     expect(fromContext.filter((label) => fromOverflow.includes(label))).toEqual(fromOverflow);
     expect(screen.getByText('For this commit')).toBeDefined();
     expect(fromPalette.slice(0, fromContext.length - 1)).toEqual(

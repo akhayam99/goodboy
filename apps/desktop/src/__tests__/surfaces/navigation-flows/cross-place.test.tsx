@@ -425,7 +425,7 @@ const askChipAwayFrom = async ({ lens }: { readonly lens: string }): Promise<Ask
   return requireValue({ value: found });
 };
 
-const RAIL_TOKEN = /^(mx-auto|max-w-\[var\(--(column|measure)-frame\)\])$/;
+const RAIL_TOKEN = /^(mx-auto|max-w-\[var\(--(column|measure|reading)-frame\)\])$/;
 
 const railOf = (element: Element | null): string => {
   const column = element?.closest<HTMLElement>('[data-page-column]') ?? null;
@@ -440,7 +440,7 @@ const COLUMN_RAIL = 'column mx-auto max-w-[var(--column-frame)]';
 
 const MEASURE_RAIL = 'measure mx-auto max-w-[var(--measure-frame)]';
 
-const READING_RAIL = 'reading mx-auto max-w-[var(--column-frame)]';
+const READING_RAIL = 'reading mx-auto max-w-[var(--reading-frame)]';
 
 const placeRoot = (): Element => {
   const root =
@@ -860,13 +860,13 @@ describe('moving across every place keeps one frame', () => {
       transcript: scrollContent(),
       composer: shown('textarea'),
     });
-    expectOneRail({ place: 'Agent transcript', layers: agentHead(), rail: COLUMN_RAIL });
+    expectOneRail({ place: 'Agent transcript', layers: agentHead(), rail: READING_RAIL });
     expectOneRail({ place: 'Agent transcript', layers: agentLayers(), rail: READING_RAIL });
     await openContextDrawer(sessionId);
     expectOneRail({
       place: 'Agent transcript with a drawer',
       layers: agentHead(),
-      rail: COLUMN_RAIL,
+      rail: READING_RAIL,
     });
     expectOneRail({
       place: 'Agent transcript with a drawer',

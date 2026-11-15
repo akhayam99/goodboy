@@ -1,6 +1,7 @@
 import type { AgentId, Session } from '@goodboy/types';
 import { useAppStore } from '../../../../../../store';
 import { classifyAgent, type AgentKind } from '../../../../../session/agent-kind';
+import { isAgentRunningOf } from '../../../../isAgentRunningOf';
 import { RUNNING_KINDS } from '../../lib';
 
 type Params = {
@@ -54,9 +55,7 @@ export const useAgentSelection = ({ session, agentId }: Params) => {
   });
   const isAgentKnown = selectedAgentState !== null || selectedAgentStatus !== null;
   const isRunning = isAgentKnown
-    ? selectedAgentState === null
-      ? selectedAgentStatus === 'running'
-      : RUNNING_KINDS.has(selectedAgentState.kind)
+    ? isAgentRunningOf({ turn: selectedAgentState, status: selectedAgentStatus })
     : RUNNING_KINDS.has(session.state.kind);
 
   return {

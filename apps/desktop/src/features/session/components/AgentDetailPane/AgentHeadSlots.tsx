@@ -1,5 +1,6 @@
-import type { ReactNode } from 'react';
+import { useContext, useLayoutEffect, type ReactNode } from 'react';
 import { HeadSlotPortal } from '../HeadSlotPortal';
+import { SessionHeadSlotsContext } from '../../sessionHeadSlotsContext';
 
 type Props = {
   readonly title: ReactNode;
@@ -8,6 +9,14 @@ type Props = {
 };
 
 export const AgentHeadSlots = ({ title, actions, isRunStep }: Props) => {
+  const claim = useContext(SessionHeadSlotsContext)?.claim ?? null;
+  useLayoutEffect(() => {
+    if (claim === null) {
+      return;
+    }
+    claim({ part: 'reading', isClaimed: true });
+    return () => claim({ part: 'reading', isClaimed: false });
+  }, [claim]);
   if (!isRunStep) {
     return <HeadSlotPortal slot="title">{title}</HeadSlotPortal>;
   }

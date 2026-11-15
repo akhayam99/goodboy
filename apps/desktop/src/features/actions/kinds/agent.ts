@@ -1,14 +1,5 @@
 import { CHECK_STATE, NOTHING_CHANGED } from '../../../store/slices/notifications/errorRecovery';
-import {
-  CircleCheck,
-  CircleDot,
-  Copy,
-  MessageSquare,
-  OctagonX,
-  Cpu,
-  Pencil,
-  Tag,
-} from 'lucide-react';
+import { CircleCheck, CircleDot, MessageSquare, OctagonX, Cpu, Pencil, Tag } from 'lucide-react';
 import { parseHiddenModels, visibleCatalog } from '@goodboy/core/providers';
 import { AUTO_GATES, isAdoptableKind } from '@goodboy/core/auto';
 import type { Agent, AgentStatus, ProviderId, SessionId } from '@goodboy/types';
@@ -31,7 +22,6 @@ import {
   isAgentClosedByUser,
   isTurnStateLive,
 } from '../../session/agent-lifecycle';
-import { lastReplyOf } from '../../session/lastReplyOf';
 import { dispatchAfterNavigation } from '../dispatchAfterNavigation';
 import { agentObjectKey } from '../agentObjectKey';
 import { RENAME_REQUEST_EVENT, requestRename } from '../../../shared/utils/renameRequest';
@@ -51,7 +41,6 @@ export type AgentFacts = {
   readonly isClosedByUser: boolean;
   readonly isWorkflowStep: boolean;
   readonly hasMount: boolean;
-  readonly lastReply: string | null;
   readonly provider: ProviderId;
   readonly modelKey: string | null;
   readonly hiddenModels: string | null;
@@ -109,7 +98,6 @@ export const AGENT_KIND: ObjectKindDefinition<AgentActionTarget, AgentFacts> = {
       isClosedByUser: isAgentClosedByUser({ agent: { ...agent, status } }),
       isWorkflowStep: agent.workflowRunId != null,
       hasMount: (state.sessionProjectMounts[target.sessionId] ?? []).length > 0,
-      lastReply: lastReplyOf({ events: state.transcripts[agent.id] ?? [] }),
       provider:
         state.agentProviderOverride[agent.id] ??
         agent.providerOverride ??
@@ -344,14 +332,6 @@ export const AGENT_KIND: ObjectKindDefinition<AgentActionTarget, AgentFacts> = {
           modelOverride: choice,
         });
       },
-    },
-    {
-      id: 'agent.copyReply',
-      label: 'Copy last reply',
-      icon: Copy,
-      group: 'copy',
-      when: ({ facts }) => facts.lastReply !== null,
-      run: ({ facts, env }) => env.copyText({ text: facts.lastReply ?? '' }),
     },
     {
       id: 'agent.copyName',

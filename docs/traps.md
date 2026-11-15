@@ -171,7 +171,7 @@ The Rust files with the most comments lost them in one pass. What a reader would
   through `PrWriteOptions`: a write without one lands on the active mount's repository, where
   another pull request can carry the same number. So do `requestReview`, `editPr`, the reviewer search port (`usePullRequestPort({ mountId })`), the create form's reviewer step and the Scribe settle (`work.mountId`). `refreshMountPr` keeps the known request when a poll of
   the same branch and repository answers empty.
-- The verbs of a stopped rebase (Resolve with Auto, Resolve in terminal, Keep, Bring them in, Undo rebase, Retry rebase, Fix with an agent, Retry push) are built once by `rebaseStopVerbs` and called by `useJobBannerActions` (banner and panel) and `useActionCardActions` (Next rows). A new surface calls the factory; it never rebuilds a verb, because the copy that does drops the start hint or the `adoptRebaseStop` step.
+- The verbs of a stopped rebase (Resolve with Auto, Resolve in terminal, Abort rebase, Rebase on their commits, Undo rebase, Retry rebase, Fix with an agent, Retry push) are built once by `rebaseStopVerbs` and called by `useJobBannerActions` (banner and panel) and `useActionCardActions` (Next rows). A new surface calls the factory; it never rebuilds a verb, because the copy that does drops the start hint or the `adoptRebaseStop` step.
 - There is one push verb, `pushBranch({ sessionId, mountId, mode })` (github slice):
   `plain` pushes the branch, `lease` force pushes with lease, either behind a `confirmed` guard
   (the commits the confirm listed, re-read from origin first) or an `expected` guard (the remote
@@ -179,7 +179,7 @@ The Rust files with the most comments lost them in one pass. What a reader would
   `pushWithLease` itself. A lease push that lands on a mount whose history run is waiting for its
   push (`applied`, or `stopped` on `push-failed` or `origin-moved`) also settles that run
   (`settleHistoryPush`: run `pushed`, the plan, the edited replies, the `history_pushed` event and
-  the pull request description), so the header Push, the panel Push and Bring them in leave the
+  the pull request description), so the header Push, the panel Push and Rebase on their commits leave the
   same trace. The result carries `reason: 'moved' | 'failed'`; `moved` is a stale lease. The two
   Push actions (`mount.push`, `diff.push`) are one definition, `pushAction`.
 - `pullRequestViews` holds one entry per session and mount

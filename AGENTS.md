@@ -29,6 +29,7 @@ hold the detail.
 16. Every retry and every undo path has a test (`undo-sites-have-tests` for undo, no guard yet for retry).
 17. No regex that backtracks polynomially on input, and no dispatch on a key the user controls (lint `regexp/no-super-linear-backtracking`; CodeQL scans pull requests).
 18. Docs move with the code: the doc that owns a changed fact changes in the same commit, and a fact that is no longer true is deleted, not appended after (`check:doc-refs`, `doc-budget`).
+19. A button takes its intent from `actionIntentOf`, and an action label is a verb and an object in the developer's words, never a metaphor (`toned-verbs-take-their-intent`, `action-labels-say-what-they-do`).
 
 Rules 12 to 16 are written out, each with its helper and its test, in [docs/typescript/state-writes.md](./docs/typescript/state-writes.md).
 
@@ -109,6 +110,10 @@ mechanics in [docs/styling.md](./docs/styling.md). The rules to keep in mind:
   mechanics in [docs/styling.md](./docs/styling.md).
 - Lists and cards stay dense. Never compress the artifact the user opened, as
   [DESIGN.md](./DESIGN.md) Compaction explains.
+- A page follows the frame rules in [DESIGN.md](./DESIGN.md) → One frame for
+  every page (one head, a back button and crumbs below a tab, one left edge, one
+  filled button, no raw ids). The spacing and width tokens are in
+  [packages/ui/DESIGN-SYSTEM.md](./packages/ui/DESIGN-SYSTEM.md#page-frame).
 
 ## Testing and dependencies
 

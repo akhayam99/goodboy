@@ -63,7 +63,7 @@ export const WORKTREE_KIND: ObjectKindDefinition<WorktreeActionTarget, WorktreeF
     },
     {
       id: 'worktree.keep',
-      label: 'Keep',
+      label: 'Keep worktree',
       icon: Bookmark,
       group: 'act',
       when: canKeep,
@@ -71,7 +71,7 @@ export const WORKTREE_KIND: ObjectKindDefinition<WorktreeActionTarget, WorktreeF
     },
     {
       id: 'worktree.stopKeeping',
-      label: 'Stop keeping',
+      label: 'Stop keeping worktree',
       icon: Bookmark,
       group: 'act',
       when: ({ facts }) => !facts.isInUse && facts.isKept,

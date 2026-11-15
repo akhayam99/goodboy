@@ -1,21 +1,39 @@
 import { useEffect, useState, type RefObject } from 'react';
 
 type Params = {
-  readonly viewportRef: RefObject<HTMLDivElement | null>;
   readonly isWindowed: boolean;
 };
 
 export type RowWindowMeasure = {
+  readonly viewportRef: RefObject<HTMLDivElement | null>;
   readonly scrollTop: number;
   readonly viewport: number;
 };
 
-export const useRowWindow = ({ viewportRef, isWindowed }: Params): RowWindowMeasure => {
+type TrackedRefParams = {
+  readonly onElement: (element: HTMLDivElement | null) => void;
+};
+
+const trackedRefOf = ({ onElement }: TrackedRefParams): RefObject<HTMLDivElement | null> => {
+  let element: HTMLDivElement | null = null;
+  return {
+    get current() {
+      return element;
+    },
+    set current(next: HTMLDivElement | null) {
+      element = next;
+      onElement(next);
+    },
+  };
+};
+
+export const useRowWindow = ({ isWindowed }: Params): RowWindowMeasure => {
   const [scrollTop, setScrollTop] = useState(0);
   const [viewport, setViewport] = useState(0);
+  const [element, setElement] = useState<HTMLDivElement | null>(null);
+  const [viewportRef] = useState(() => trackedRefOf({ onElement: setElement }));
 
   useEffect(() => {
-    const element = viewportRef.current;
     if (element === null || !isWindowed) {
       return;
     }
@@ -31,7 +49,7 @@ export const useRowWindow = ({ viewportRef, isWindowed }: Params): RowWindowMeas
       element.removeEventListener('scroll', measure);
       observer?.disconnect();
     };
-  }, [isWindowed, viewportRef]);
+  }, [element, isWindowed]);
 
-  return { scrollTop, viewport };
+  return { viewportRef, scrollTop, viewport };
 };

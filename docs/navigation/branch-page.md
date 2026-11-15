@@ -16,7 +16,7 @@ quoted headers, so a name with accents is its own file.
 under its title (`BranchTabStrip`, built on `PageTabs`); the page computes its counts once
 (`branchTabFactsOf`, built on `worktreeEntryFactsOf`). The tree row of the branch has no rows under it, only
 one pill. **One tab row per page.** Inside a session the session head sits above the page
-with the crumbs `Session › {branch name}` in place of the session tabs (see
+with the crumbs `Overview › {branch name}` in place of the session tabs (see
 [session-rail.md](session-rail.md#crumbs)), so the pull request page shows only its own row.
 Every door to the session's changes (the single-branch Changes shortcut, the board row's
 Changes door, the palette, the chord) opens this page on its Changes tab. A host with no
@@ -145,7 +145,7 @@ stop blocks the branch (`useJobBannerActions`, a failed verb keeps the panel wit
 Retry, kept per branch and named with the branch when the session has more than one, and a verb
 running on one branch never locks another). A rebase that is in progress in the worktree with no
 Goodboy stop (started in a terminal) draws one minimal row, `GitRebaseRow`: Continue rebase, Open
-terminal, Abort rebase. The other states keep the strip (Stash and rebase, Bring them back, Undo rewrite, Retry
+terminal, Abort rebase. The other states keep the strip (Stash and rebase, Restore stashed files, Undo rewrite, Retry
 with a note, Open providers, Open agent). A failed push after
 a rebase offers `Fix with an agent` (the primary: an Implementer on that worktree briefed with the
 command and git output, `fixPushWithAgent`; it commits the fix and never pushes, Goodboy then
@@ -615,7 +615,7 @@ predicts the replay in memory; when it conflicts, the button reads
 it was and asks in the panel (`RebaseConflictPrompt` inside `RebaseStopPanel`): **Resolve with
 Auto**, **Resolve in terminal** (`resolveRebaseMyself`: `worktree_start_rebase` in the worktree, then the
 terminal; `worktree_rebase_conflicts` reads each file's markers and `worktree_continue_rebase` finishes
-it) or **Keep branch as it was** (`keepRebaseStop`: it records `history_restored`
+it) or **Abort rebase** (`keepRebaseStop`: it records `history_restored`
 with `reason: 'kept'`, which settles the stop in every window, and only then drops the run; a
 failed save changes nothing and offers Retry); no agent starts by itself. A clean rebase
 moves the branch only after the engine checks the result, with a backup ref and

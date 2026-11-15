@@ -1233,13 +1233,20 @@ viewed, where every row is new), and `firstUnseenRowKeyOf` puts the divider
 before the row after the last row dated at or before that moment, only when a
 later dated row exists.
 
-Every row is `content-visibility: auto`. Its `contain-intrinsic-size` is
+Every row is `content-visibility: auto` (`ChatView/rowBoxOf.ts`). Its `contain-intrinsic-size` is
 `auto <px>`: the height last measured for that agent, mode and row key
 (`ChatView/rowHeightCache.ts`, written by the anchor hook from each row's
-`data-anchor-key`), else `rowEstimatePx` (`ChatView/rowEstimatePx.ts`): a user
-message and an answer by their whole line count (no cap), an operations
+`data-anchor-key`), else `rowEstimatePx` (`ChatView/rowEstimatePx.ts`): lines wrapped
+on the 880 reading column, a blank line as the 12 px paragraph gap, a code line at 20 px;
+a finished plain answer at its 12 line clamp plus **Show more** (`answerClampOf`), a user
+message at its 8 line clamp plus **Show all**, an operations
 cluster as its 32 px header while collapsed and by every step when open (steps
-mode), a workflow rail group by its rows, any other kind 72 px. The cache is
+mode), a workflow rail group by its rows, any other kind 72 px. `useRowPreload`
+(called by `useTranscriptAnchor`) marks every row within a screen above or below the
+view with `data-row-near`, which draws it (`content-visibility: visible`), so a row is
+measured and the anchor has corrected for it before it scrolls into view: no blank
+flash and no shift when scrolling up into older turns. `ClampedText` decides its
+**Show all** before paint, so a user message never grows a row after it is drawn. The cache is
 what keeps a revisit (another agent and back, another page and back) from
 falling back to estimates. The estimates keep the scrollbar thumb steady: each
 error is a change of `scrollHeight` when the row first renders, which resizes

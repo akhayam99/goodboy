@@ -358,11 +358,12 @@ session overview, Board, Tasks, Chat, Impact and Workflows are on its list.
 A page root names its kind (`page="overview"`, `page="terminal"`) and
 `PAGE_MEASURE` in `packages/ui/src/frameGeometry.ts` gives the column it sits on:
 
-| Measure | Pages                                                                                                                                                     |
-| ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| column  | Overview, Runs, a run, an agent, Artifacts, a plan or report, Questions, the worktree pages, Tasks, Workflows, Settings, Monitoring, Notifications, Guide |
-| measure | the chat room (header, thread, composer)                                                                                                                  |
-| full    | the Board, the Terminal                                                                                                                                   |
+| Measure | Pages                                                                                                                                           |
+| ------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| column  | Overview, Runs, a run, Artifacts, a plan or report, Questions, the worktree pages, Tasks, Workflows, Settings, Monitoring, Notifications, Guide |
+| reading | an agent and an Auto run: session head, transcript and composer                                                                                 |
+| measure | the chat room (header, thread, composer)                                                                                                        |
+| full    | the Board, the Terminal                                                                                                                         |
 
 A loading page draws `PageSkeleton` with the same kind, so its title bar and
 body start where the page will: `STUDIO_META[kind].skeleton` names the body shape
@@ -426,16 +427,17 @@ parent: Runs > Create, a run, a form, a studio's detail and its loading state
 all sit on a `PageColumn` (`FormPage` is one), and `columnContract.test.ts`
 walks every studio so a new place cannot sit on the left.
 
-Three width tiers, one rule each:
+Four width tiers, one rule each:
 
-| Tier    | Width                 | Used by                                                                                                                                                           |
-| ------- | --------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| measure | `--measure`, 720px    | prose: plan prose, comment and note bodies, a Brief, the chat room and the agent transcript with its composer (`PANE_RHYTHM.prose`, `PageColumn width="measure"`) |
-| column  | `--column-max`, 960px | the page column, centred: Overview, settings, cards, code blocks and tool output inside the transcript (`PageColumn`, `FormPage`)                                 |
-| full    | the pane, fluid       | work surfaces, from the pane's left edge: the terminal, Tasks lists, the Board (`PageColumn width="full"`)                                                        |
+| Tier    | Width                 | Used by                                                                                                                |
+| ------- | --------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| measure | `--measure`, 720px    | prose: plan prose, comment and note bodies, a Brief, the chat room (`PANE_RHYTHM.prose`, `PageColumn width="measure"`) |
+| reading | `--reading`, 880px    | an agent conversation, centred: session head, transcript and composer (`PageColumn width="reading"`)                   |
+| column  | `--column-max`, 960px | the page column, centred: Overview, settings, cards (`PageColumn`, `FormPage`)                                         |
+| full    | the pane, fluid       | work surfaces, from the pane's left edge: the terminal, Tasks lists, the Board (`PageColumn width="full"`)             |
 
-The agent transcript takes `PageColumn width="reading"`: the 720 measure, starting on the
-column's left edge instead of centring, so it keeps the left edge of the session head.
+The agent page claims the reading column in the session head (`claim({ part: 'reading' })` from
+`AgentHeadSlots`), so the title row and crumbs share the transcript's left edge.
 
 A body that owns its scroll (`scroll="self"`: the agent transcript and its
 composer) puts its own `PageColumn` around the scrolling content and the
@@ -456,7 +458,8 @@ the column minimum (560px plus gutters); under that the drawer lies over the
 page. Closing the drawer slides the column back. It is one 220ms
 ease-out width transition on the drawer's track (`DURATION_BASE_MS`), so the column's centre follows
 it in the same frames; it is off under `prefers-reduced-motion`. A route change
-never moves the column, with or without a drawer. The pure geometry is
+never moves the column, with or without a drawer, except into an agent page: its
+reading column is 80px narrower, so the head moves in by 40px. The pure geometry is
 `pageBoxOf` in `packages/ui/src/drawerGeometry.ts`.
 
 No view picks its own width or its own centring. The column changes only when
@@ -465,7 +468,7 @@ Overview to Review to a chat. `app/components/StudioFrame/columnContract.test.ts
 `max-w-[Nch]`, any `max-w-[Npx]` (Search or run, the onboarding wizard and Home, on one 600px column, are the
 listed exceptions), any `max-w-[Nrem]` of 24rem or more, any `mx-auto` outside
 the Board frame and two centred empty states (centring is `PageColumn`'s job,
-and the test asserts it centres `column` and `measure` and not `full`), `PANE_RHYTHM.measure`,
+and the test asserts it centres `column`, `reading` and `measure` and not `full`), `PANE_RHYTHM.measure`,
 `DIFF_CAPPED_COLUMN_CLASS` and `max-w-xl` to `max-w-7xl` (with a narrow list
 for cards that still use `max-w-xl`), and on a lens the session workspace
 mounts without `PaneShell`, or a root that draws a crumb of its own. The
@@ -480,15 +483,13 @@ transcript or a diff, asks for `scroll="self"`.
 
 A Session page reads as one centred column: every child, banner, card and
 footer sits on the same edges. Only prose keeps the 720px measure, aligned left
-inside the column. Tables, code and cards take the whole column. An Agent page is
-the exception: it reads in the 720px measure, header to composer.
+inside the column. Tables, code and cards take the whole column.
 
-A conversation sits in the 720px measure, with no exception: the agent
-transcript, the rows above it and its composer share one column (`PAGE_MEASURE.agent`,
-the `reading` width), so a line holds about 98 characters of the 15/24 message text
-(`text-prose`). Inside a session that column starts on the left edge of the 960 column,
-under the session title and crumbs, instead of centring itself: one left edge for the head,
-the crumbs and the conversation (the chat room keeps the centred `measure`).
+An agent conversation sits in the 880px reading column, with no exception: the session
+head, the transcript, the rows above it and its composer share one centred column
+(`PAGE_MEASURE.agent`, the `reading` width) in the space between the Agents rail and the
+tools rail, so a line holds about 115 characters of the 15/24 message text (`text-prose`).
+The chat room keeps the centred 720 `measure`.
 Tables and code scroll inside the column. A user or injected card keeps a fixed
 48px start gap (`PANE_RHYTHM.message.user`) in the agent transcript, Chat, the
 Ask panel and the fix run drawer. The rhythm is set by the parent's gap

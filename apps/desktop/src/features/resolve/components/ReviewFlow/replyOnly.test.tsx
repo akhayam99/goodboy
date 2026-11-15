@@ -179,12 +179,14 @@ describe('steering the answer in place', () => {
   it('opens a hint field for Fix it anyway on a no-change answer', async () => {
     await mountReply({ variant: 'alone' });
 
-    await openMenuItem(/^Fix it anyway/);
+    await openMenuItem(/^Fix with an agent anyway/);
 
     expect(
       within(comment()).getByRole('textbox', { name: 'What the fix should do' }),
     ).toBeDefined();
-    expect(within(comment()).getByRole('button', { name: 'Fix it anyway' })).toBeDefined();
+    expect(
+      within(comment()).getByRole('button', { name: 'Fix with an agent anyway' }),
+    ).toBeDefined();
   });
 
   it('offers Reply only on a fix, and switches the thread when pressed', async () => {
@@ -192,7 +194,7 @@ describe('steering the answer in place', () => {
     stub({ switchToReplyOnly });
     await mountReply({ threadId: EXPANDED_THREAD_ID });
 
-    expect(within(bar()).queryByRole('button', { name: 'Fix it anyway' })).toBeNull();
+    expect(within(bar()).queryByRole('button', { name: 'Fix with an agent anyway' })).toBeNull();
     fireEvent.click(within(bar()).getByRole('button', { name: /^Reply only/ }));
 
     await waitFor(() =>

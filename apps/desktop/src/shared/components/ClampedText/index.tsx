@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import { cn } from '@goodboy/ui';
 
 type Props = {
@@ -17,7 +17,7 @@ export const ClampedText = ({ text, children, className }: Props) => {
   const isLong = text.split('\n').length > CLAMP_LINES || text.length > LONG_TEXT_LENGTH;
   const canExpand = isLong || isMeasuredOverflow;
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const body = bodyRef.current;
     if (body === null || isExpanded) {
       return;

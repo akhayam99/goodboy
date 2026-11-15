@@ -170,6 +170,7 @@ export const NAMES = {
   removeWorktrees: 'Remove worktrees',
   switchBranch: 'Switch branch',
   rebaseOn: 'Rebase on',
+  rebaseOnThem: 'Rebase on their commits',
   newWorkspace: 'New workspace',
   resumeSetup: 'Resume setup',
   role: {
@@ -294,6 +295,7 @@ const FORMER_NAMES: Readonly<Record<string, ReadonlyArray<string>>> = {
   [NAMES.newBranch]: ['New worktree'],
   [NAMES.closeBranch]: ['Close worktree'],
   [NAMES.rebaseOn]: ["Start from today's main"],
+  [NAMES.rebaseOnThem]: ['Bring them in', 'Bring them into the plan'],
   [NAMES.start]: ['Launch session'],
   [NAMES.pickAnIssue]: ['Pick up issue'],
   [NAMES.startWorkFromChat]: ['Start work', 'Start work from here', 'Turn into work'],

@@ -1,5 +1,5 @@
 import { useContext } from 'react';
-import { PageColumn, PANE_RHYTHM, PaneTitleRow, cn } from '@goodboy/ui';
+import { PAGE_MEASURE, PageColumn, PANE_RHYTHM, PaneTitleRow, cn } from '@goodboy/ui';
 import type { Session } from '@goodboy/types';
 import { useAppStore } from '../../../store';
 import { captureLocation } from '../../../store/slices/navigation/captureLocation';
@@ -25,7 +25,7 @@ export const SessionHead = ({ session }: Props) => {
     );
   });
   return (
-    <PageColumn width="column">
+    <PageColumn width={slots?.isReadingClaimed === true ? PAGE_MEASURE.agent : 'column'}>
       <header
         data-session-head=""
         data-head-nav={isDetail ? 'crumbs' : 'tabs'}

@@ -331,8 +331,8 @@ describe('the start, agent and workflow chapters', () => {
 
   it('says a rebase conflict asks, and Rebase all hands the conflicts to one Auto', () => {
     const asks = pointOf('commits', 'A rebase conflict asks');
-    ['Resolve with Auto', 'Resolve in terminal', 'Keep branch as it was', 'never pushes'].forEach(
-      (word) => expect(asks).toContain(word),
+    ['Resolve with Auto', 'Resolve in terminal', 'Abort rebase', 'never pushes'].forEach((word) =>
+      expect(asks).toContain(word),
     );
     const all = pointOf('commits', 'Rebase all');
     expect(all).toContain('one Auto run');

@@ -117,6 +117,32 @@ const PREVIOUS_RELEASE_DRAWERS: ReadonlySet<string> = new Set([
   'identifier-peek',
 ]);
 
+const PREVIOUS_RELEASE_STUDIOS: ReadonlySet<string> = new Set([
+  'settings',
+  'guide',
+  'addWorkspace',
+  'workflow',
+  'inbox',
+  'impact',
+  'changelog',
+  'notifications',
+  'monitoring',
+  'chat',
+  'browser',
+  'terminal',
+]);
+
+const PREVIOUS_RELEASE_PLACES: ReadonlySet<string> = new Set(['board', 'session']);
+
+const PREVIOUS_RELEASE_BRANCH_TABS: ReadonlySet<string> = new Set([
+  'pr',
+  'comments',
+  'files',
+  'commits',
+  'checks',
+  'work',
+]);
+
 const isProviderListLens = ({ lens }: SectionParams): boolean => PROVIDER_LIST_LENSES.has(lens);
 
 const contextSectionOf = ({ lens }: SectionParams): string | null => {
@@ -250,10 +276,20 @@ export const opensInPreviousRelease = ({ location }: Params): boolean => {
   if (drawer !== null && !PREVIOUS_RELEASE_DRAWERS.has(String(drawer.kind))) {
     return false;
   }
+  if (folded.studio !== null && !PREVIOUS_RELEASE_STUDIOS.has(String(folded.studio.kind))) {
+    return false;
+  }
+  if (!PREVIOUS_RELEASE_PLACES.has(String(folded.place.at))) {
+    return false;
+  }
   if (folded.place.at !== 'session') {
     return true;
   }
   const { lens, target } = folded.place.view;
   const isKnownLens = lens === null || PREVIOUS_RELEASE_LENSES.has(String(lens));
-  return isKnownLens && (target === null || PREVIOUS_RELEASE_TARGETS.has(String(target.kind)));
+  const isKnownTarget =
+    target === null ||
+    (PREVIOUS_RELEASE_TARGETS.has(String(target.kind)) &&
+      (target.kind !== 'branch' || PREVIOUS_RELEASE_BRANCH_TABS.has(String(target.tab))));
+  return isKnownLens && isKnownTarget;
 };

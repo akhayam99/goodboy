@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react';
+import { useCallback, useEffect, useMemo, useState, type KeyboardEvent } from 'react';
 import { EmptyLine, ScrollFade, Skeleton } from '@goodboy/ui';
 import type { FileDiff } from '@goodboy/types';
 import { WINDOW_MIN_ROWS, layoutRows, windowOf } from '../../../../shared/utils/windowRows';
@@ -84,12 +84,11 @@ export const AllFilesTree = ({
   );
   const entries = useMemo(() => entryRowsOf(rows), [rows]);
 
-  const viewportRef = useRef<HTMLDivElement | null>(null);
   const [cursorId, setCursorId] = useState<string | null>(null);
   const [isTreeFocused, setIsTreeFocused] = useState(false);
   const layout = useMemo(() => layoutRows({ rows, heightOf: rowHeightOf }), [rows]);
   const isWindowed = rows.length > WINDOW_MIN_ROWS;
-  const { scrollTop, viewport } = useRowWindow({ viewportRef, isWindowed });
+  const { viewportRef, scrollTop, viewport } = useRowWindow({ isWindowed });
   const { start, end } = isWindowed
     ? windowOf({ layout, count: rows.length, scrollTop, viewport })
     : { start: 0, end: rows.length };

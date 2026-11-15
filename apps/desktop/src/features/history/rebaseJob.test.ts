@@ -143,7 +143,7 @@ describe('a rebase job that stopped', () => {
       'an origin that moved',
       { reason: 'origin-moved' },
       'Rebased here, but someone pushed to origin',
-      'Someone pushed to this branch while you rebased. Nothing was pushed. Bring them in adds their commits to yours, then pushes.',
+      'Someone pushed to this branch while you rebased. Nothing was pushed. Rebase on their commits puts yours on top of theirs, then pushes.',
       'Stopped: origin moved',
     ],
     [

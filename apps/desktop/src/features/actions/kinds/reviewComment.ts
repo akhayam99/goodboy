@@ -562,7 +562,7 @@ export const REVIEW_COMMENT_KIND: ObjectKindDefinition<
     },
     {
       id: 'reviewComment.fixItAnyway',
-      label: 'Fix it anyway',
+      label: 'Fix with an agent anyway',
       icon: CONCEPT_ICONS.agents,
       group: 'act',
       when: ({ facts }) =>

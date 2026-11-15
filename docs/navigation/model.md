@@ -482,9 +482,9 @@ them. The navigation slice (`store/slices/navigation/`) owns both.
   call). Closing an app studio is Back to the entry below it, so Up from a
   studio and Close land in the same place. `crumbsOf` walks `parentPlace` up to
   the session and names every step for the session crumbs, the first one reading
-  `Overview` (`Session › Runs › {run}`,
-  `Session › {parent agent} › {agent}`, `Session › Artifacts › {artifact}`,
-  `Session › {branch}`); a sub agent's parent is the agent that spawned it.
+  `Overview` (`Overview › Runs › {run}`,
+  `Overview › Runs › {parent agent} › {agent}`, `Overview › Artifacts › {artifact}`,
+  `Overview › {branch}`); a sub agent's parent is the agent that spawned it.
 - **An Auto run keeps one frame.** The run page and the page of every agent
   under it draw the Agents rail in the frame's left slot (`LeadPage`,
   `RunAgentsRail`). The marked row is the agent in the address, so a reload,

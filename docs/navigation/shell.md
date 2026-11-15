@@ -68,7 +68,7 @@ never exists on one surface only.
   Frequent alternatives stay visible beside it or on the row they affect.
   `⋯` holds copy and rare actions. A linked task is one row of the session
   level's Linked group (`LinkedTaskRow`): a click opens the task, a drag moves
-  it, and Unlink, Move to and Take off this branch sit in its right click
+  it, and Unlink, Move to and Remove from this branch sit in its right click
   menu (Shift+F10), with no kebab and no hover control.
   Putting work on a branch is `Link work to this branch` (`mount.putTaskOnBranch`), on the
   Overview branch row and in the Projects tree row menu. Link work is the single entry
@@ -121,8 +121,7 @@ never exists on one surface only.
   on the Delete N confirm archives at once, with no second ask. An agent: Open agent, Show its
   changes; Message this agent (not on the agent's own page, where the composer is), Interrupt while a turn runs, Close or Reopen,
   Let Auto take it from here on an old standalone agent of a standard role,
-  Detach from Auto on an agent that was moved, Change model (one submenu); copy the last reply
-  and the name; Delete agent. A
+  Detach from Auto on an agent that was moved, Change model (one submenu); copy the name; Delete agent. A
   workflow run: Open run, View diff; Answer, Start run, Continue, Restart
   step, Start the next step, Restore; Copy run summary; Stop run, Archive
   run and Delete run, each confirmed. An artifact: the viewer's verbs by kind and status,
@@ -254,7 +253,7 @@ never exists on one surface only.
   review draft asks in a popover. Remove
   from session and a storage worktree's Remove keep their detailed confirm (the
   removal plan, the forced remove) in their own menu. A reversible verb runs at once with an Undo toast (Archive, Delete on an artifact,
-  Close agent, Unlink, Stop tracking, Take off this branch). The toast lasts
+  Close agent, Unlink, Stop tracking, Remove from this branch). The toast lasts
   about 10 seconds and Cmd+Z undoes the latest operation outside a text field.
   Reversible removals never ask for confirmation. Removing a commit on the Commits tab acts immediately with Undo.
 - **Blocked verbs stay.** A verb that cannot run now stays in the menu, dimmed,
@@ -412,8 +411,8 @@ primary), Step routing (orchestrated), Save as preset, Copy
 run summary, **Stop run** (asks first), Archive run and Delete run, never
 the approve button. A failed Pause, Continue or Stop leaves the run as it was,
 reports the error and keeps the word, so pressing it again is the retry.
-The title is the only h1 of the page; the row above it says `Back to runs`, it
-or Esc (the session's one Esc ladder) goes back to the list, and no other chevron on the page does.
+The title is the only h1 of the page; the head's back button (`Back to Runs`), its crumbs
+or Esc (the session's one Esc ladder) go back to the list, and no other chevron on the page does.
 Scripts reads `[search] [New script]`. A page with no actions draws no `...`.
 
 A window is a strip, a set of columns, and a pane. Each owns one thing.

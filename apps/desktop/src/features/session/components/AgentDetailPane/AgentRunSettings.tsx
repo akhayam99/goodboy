@@ -1,5 +1,8 @@
-import type { ReactNode, RefCallback } from 'react';
+import { useMemo, type ReactNode, type RefCallback } from 'react';
 import type { Agent, Session } from '@goodboy/types';
+import { useAppStore } from '../../../../store';
+import { autoChildStatusOf } from '../../../auto/autoChildStatusOf';
+import { delegationGlanceOf } from '../../glance/delegationGlanceOf';
 import type { useAutoChat } from '../../../auto/chat/useAutoChat';
 import { autoLimitOpenEvent } from '../../../auto/chat/autoLimitOpenEvent';
 import { useAgentSpend } from '../../hooks/useAgentSpend';
@@ -44,7 +47,14 @@ export const AgentRunSettings = ({
     />
   );
   const budget = autoView?.budget ?? null;
-  const glance = useConversationGlance({ sessionId: session.id, agent, autoView });
+  const conversationGlance = useConversationGlance({ sessionId: session.id, agent, autoView });
+  const views = useAppStore((state) => state.autoTreeViews[session.id]);
+  const childStatus = useMemo(
+    () => (autoView === null ? autoChildStatusOf({ views, agent }) : null),
+    [autoView, views, agent],
+  );
+  const glance =
+    childStatus === null ? conversationGlance : delegationGlanceOf({ status: childStatus });
   return (
     <RunGlanceLine
       id={agent.id}

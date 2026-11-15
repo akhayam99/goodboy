@@ -159,7 +159,7 @@ characters`, in the warning tone from 90%. A longer draft is blocked before
   `applyLocation` and the workspace), and a saved window that names the retired
   `agents` or `auto` lens lands on Runs through `withoutRemovedPages`, so an
   old address or a saved window lands on Runs, the crumbs of a run read
-  `Session › Runs › {run}` and those of a top agent `Session › {agent}`. An agent's home is Runs, or Comments for a resolver
+  `Overview › Runs › {run}` and those of a top agent `Overview › Runs › {agent}`. An agent's home is Runs, or Comments for a resolver
   (`agentHomeLens`). A row never carries a native
   `title`. The Runs page opens on the Start a run field (`StartRun`), and
   **Start a run** in the New menu (`newForm.startRun`), in a session's ⌘K
@@ -669,21 +669,26 @@ activity yet show the plain overview with its actions.
 
 - **Every session place below a tab draws the crumbs in place of the tab strip.**
   `crumbsOf` (store, navigation) walks `parentPlace` from the open place up to the session
-  and prepends the Overview, drawn as `Overview` (`NAMES.overview`). In the examples below
-  read `Session` as that first crumb. A main agent reads `Session › Runs ›
-{agent}`, a sub agent `Session › Runs › {parent agent} › {agent}`; an agent Auto started
+  and prepends the Overview, drawn as `Overview` (`NAMES.overview`). A main agent reads
+  `Overview › Runs › {agent}`, a sub agent `Overview › Runs › {parent agent} › {agent}`; an agent Auto started
   that still has its role name reads `{Role} · {short task}` (`agentTaskLabelOf`: the role noun
   and the first sentence of its task through `taskTitleOf`, never the raw prompt; the head
-  draws the task middle cut, the full brief one click away), a run `Session › Runs ›
-{run title}` (the run's title, else its workflow's name, else `Run`), a run step adds its
-  step names, an artifact `Session › Artifacts › {artifact title}`, a branch or pull request
-  `Session › {branch name}` (one crumb with a file or a thread open), a GitHub issue, a linked
-  task and a branchless Changes place `Session › {page}`. Names come from `placeTitleOf`
+  draws the task middle cut, the full brief one click away), a run `Overview › Runs ›
+{run title}` (the run's title, else its workflow's name, else `Run`), an Auto run and every
+  agent under it name the run through `autoRunTitleOf` (features/session: the first line of
+  the ask, else of the run's first message, else the flow word of `flowWordOf`, never a fixed
+  `Auto`), which the run page crumb and the Agents rail root row read too, a run step adds its
+  step names, an artifact `Overview › Artifacts › {artifact title}`, a branch or pull request
+  `Overview › {branch name}` (one crumb with a file or a thread open), a GitHub issue, a linked
+  task and a branchless Changes place `Overview › {page}`. Names come from `placeTitleOf`
   (store, navigation), the one name a place has, which the history arrows and their hold menu
   read too. A crumb is a quiet `xs` button; a click calls `upTo` with its place: a real
   navigation, so a reload or a deep link with no history below still goes there; when the
   entry below is that place it is a Back instead of a push. The last crumb is the page
-  (`aria-current="page"`). A tab (`isTabView`: the Overview, Runs, Artifacts, Questions,
+  (`aria-current="page"`). Five crumbs or more fold (`crumbFoldOf`): the first and the last two
+  stay, the ones between become one `…` crumb whose menu lists them (`SessionCrumbFold`), and
+  a crumb between the first and the page is capped at 192px so the page crumb keeps the room.
+  A tab (`isTabView`: the Overview, Runs, Artifacts, Questions,
   Context, also with a question drawer open) draws the tabs, and a drawer keeps its
   `DrawerFrame` back. `every-place-has-a-way-up.test.tsx` walks one place per lens and per
   target kind, renders `SessionWorkspace` with the head and fails when the drawn crumbs differ
@@ -955,7 +960,7 @@ comment` for the maintainer's own comment, `Resolve: Mara Quint on index.ts`
 - **An integration page hangs off its own tool.** Its crumb uses the name
   the sidebar uses (GitHub, GitLab, Jira, Linear, Slack). A studio belongs under its own tool, never under another tool's lens.
 - **Opening a child adds its parent to the crumbs**: a sub agent reads
-  `Session › {parent agent} › {agent}`. Selecting a sibling changes only the child
+  `Overview › Runs › {parent agent} › {agent}`. Selecting a sibling changes only the child
   region.
 - **The crumbs show the structure of the app, not the history of the
   session.** A parent comes from the object that is open, never from the
@@ -975,7 +980,7 @@ still running.` on Merge, reads in the meta line as well as in the tooltip) sits
   (`s/{session}/branch/{tab}[:{mount}][/t/{thread}]`). A section switch and a
   thread selection replace the entry, so Back never walks them; Esc is the way
   back to the section. The crumbs of a section, a thread or a file read the same
-  `Session › {branch name}` from every door; Esc on a thread or a file first goes
+  `Overview › {branch name}` from every door; Esc on a thread or a file first goes
   to its section, then to the Overview. The branch switcher is `project · head ▾` in the
   header. `layers.ts` is
   gone. The requests `pr`, `review` and `files` (a mount present) are
