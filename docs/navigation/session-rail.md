@@ -19,7 +19,10 @@ in `features/session/pageRegistry.ts`); the sidebar flyout of the open session
   `SessionWorkspace` through `SessionHeadContext`, and `SessionWorkspace` draws it once, above
   every page and overlay, on the page column: the title row (the session title, renamed in
   place, then **New**, **Ask**, Pin, Refresh and More session actions) and under it the tab
-  strip. Every tab shows the same head at the same top, the title row on the sidebar's first
+  strip, whose bottom rule spans the column like the branch page tabs. A detail page drops More
+  session actions from the title row (`SessionHeadActions` `isDetail`), so a page shows one `⋯`,
+  the menu of what it shows (the run, the artifact, the pull request); the session menu is one
+  crumb up. Every tab shows the same head at the same top, the title row on the sidebar's first
   row line; no tab draws a title of its own ("Runs", "Questions", "Context" are the tab
   names), and a page intro, when kept, sits under the tabs in the muted role (the Runs lede).
   The pages below sit under the head (`UnderTrailContext`), so their own header adds no top

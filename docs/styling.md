@@ -267,7 +267,9 @@ letter, and the head never moves between tabs. Its actions end at the column's r
 the page header actions' right edge. A detail page (an agent, a lead, a run) draws no title
 of its own: `SessionHeadFrame` hands it three slots through `SessionHeadSlotsContext`, and
 `HeadSlotPortal` puts its name in the last crumb (rename and the object menu stay on it),
-its state word, spend, Settings, more menu and run controls at the right end of the crumb row,
+its state word and spend as one quiet line (only the dot carries the tone), then the run
+settings toggle (a sliders icon) and the more menu side by side, and run controls at the right
+end of the crumb row,
 and a side column such as the lead's Agents beside the head and the page, full height, with
 its header on the frame first row (`PANE_RHYTHM.firstRow`). The head and the page then
 centre in the space left of that column, so they keep one left edge. The frame has the same
