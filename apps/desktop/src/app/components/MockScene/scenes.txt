@@ -396,6 +396,8 @@ confirm-session-delete
 confirm-signout
 confirm-worktree-remove
 confirmpopover
+connections-door
+connections-door-dark
 context-drawer
 context-mark-read
 controls-fields
