@@ -81,13 +81,15 @@ describe('the Board needs you run scenes', () => {
   it('names the waiting run and its state on the card', async () => {
     const line = await mount('board-needs-you-run');
 
-    expect(line.textContent).toBe('Run Hold payouts behind a merchant notice · Plan is ready');
+    expect(line.textContent).toBe('Run Hold payouts behind a merchant notice');
+    const card = line.closest('article');
+    expect(card?.querySelector('[data-board-signal]')?.textContent).toBe('Plan is ready');
   });
 
   it('counts a second waiting run with +1', async () => {
     const line = await mount('board-needs-you-runs');
 
-    expect(line.textContent).toBe('Run Hold payouts behind a merchant notice · Plan is ready · +1');
+    expect(line.textContent).toBe('Run Hold payouts behind a merchant notice +1');
   });
 
   it('opens the named run in its session from Review plan', async () => {

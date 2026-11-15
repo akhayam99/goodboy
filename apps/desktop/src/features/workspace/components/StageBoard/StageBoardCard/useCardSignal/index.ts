@@ -24,7 +24,7 @@ export const useCardSignal = ({ session, info, isArchived }: Params): CardSignal
   const attentionAction = useAttentionAction({ session, info, verb: waitingRun?.verb ?? null });
   const signal =
     waitingRun !== null && sessionSignal.kind === 'attention'
-      ? { ...sessionSignal, word: null }
+      ? { ...sessionSignal, label: waitingRun.words, word: waitingRun.words }
       : sessionSignal;
   return { signal, waitingRun, attentionAction };
 };
