@@ -51,8 +51,13 @@ test.
 `faint-foreground` clears 4.5:1 on every surface step and on a `fill` chip sunk
 into `background`, `subtle` or `muted`, in both themes, and the syntax tokens
 clear 4.5:1 on the plain diff background and on an added or removed line, word
-fill included. `text-contrast.test.ts` reads the tokens from `styles.css` and
-fails when one drifts under.
+fill included, while the line number clears it on the diff gutter. Each syntax
+token keeps one hue in both themes. `text-contrast.test.ts` reads the tokens
+from `styles.css` and fails when one drifts under. The terminal reads every
+ANSI color from a scale step (step 11 for a hue, grays for black and white);
+each clears 4.5:1 on the terminal background, except dark black and light
+bright white (3:1), pinned by `terminal-ansi-contrast.test.ts`. Its search
+highlights use the amber steps and its selection the `selection` token.
 
 ## Surface ladder
 
@@ -980,13 +985,14 @@ the outline look, `ghost` and `quiet` the quiet look.
   `T-solid-hover` and `on-T`, plus `border-control`, `selection`, `brand-accent`
   and the six `diff-` line tokens. Each tone step is opaque and equals its
   scale step (`danger-subtle` is red step 3), so a chip reads the same on every
-  surface; the diff steps still mix the tone at 10%. A `::selection` rule paints
-  selected text with `selection`. `tintClasses`, `Button` and the solid marks
-  read the steps: rings and soft borders on `T-edge`, strong and hover rings on
-  `T-solid`, and `unread` fills on the primary steps. `tone-opacity.test.ts`
-  counts what is left on opacity. That count only falls. The text fields, checkboxes and listbox fields
-  use `border-control`. The diff paints added and removed lines and words with
-  the `diff-` tokens, and the selected line with `primary-subtle` and a
+  surface. A `::selection` rule paints selected text with `selection`.
+  `tintClasses`, `Button` and the solid marks read the steps: rings and soft
+  borders on `T-edge`, strong and hover rings on `T-solid`, and `unread` fills on
+  the primary steps. `tone-opacity.test.ts` counts what is left on opacity. That
+  count only falls. The text fields, checkboxes and listbox fields use
+  `border-control`. The diff paints added and removed lines, line numbers and
+  words with the opaque `diff-` steps (line, gutter, word, each a step darker in
+  light and lighter in dark), and the selected line with `primary-subtle` and a
   `primary-solid` rail. The brand chip sets `primary` to `brand-accent` inside
   itself, so a later primary change leaves the logo alone.
 

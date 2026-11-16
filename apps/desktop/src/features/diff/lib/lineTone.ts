@@ -11,6 +11,12 @@ export const LINE_FILL: Record<DiffHunkLine['kind'], string> = {
   context: '',
 };
 
+export const GUTTER_FILL: Record<DiffHunkLine['kind'], string> = {
+  add: 'bg-diff-add-gutter',
+  del: 'bg-diff-remove-gutter',
+  context: '',
+};
+
 export const WORD_FILL: Record<DiffHunkLine['kind'], string> = {
   add: 'bg-diff-add-word rounded-sm',
   del: 'bg-diff-remove-word rounded-sm',

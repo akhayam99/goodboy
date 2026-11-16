@@ -995,7 +995,6 @@
     "apps/desktop/src/shared/components/ExternalRefActions/index.tsx": 1,
     "apps/desktop/src/shared/components/GenericTerminalPanel/index.tsx": 5,
     "apps/desktop/src/shared/components/GenericTerminalPanel/LazyGenericTerminalPanel.tsx": 1,
-    "apps/desktop/src/shared/components/GenericTerminalPanel/terminal-theme.ts": 2,
     "apps/desktop/src/shared/components/GenericTerminalPanel/TerminalFindBar.tsx": 1,
     "apps/desktop/src/shared/components/Learnings/WorkspaceLearnings.tsx": 1,
     "apps/desktop/src/shared/components/NewWorkspaceForm/FolderFaceChoice.tsx": 1,
