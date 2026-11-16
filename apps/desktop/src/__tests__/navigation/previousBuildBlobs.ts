@@ -185,10 +185,10 @@ const FORMER_BLOBS: ReadonlyArray<PreviousBuildBlob> = [
 const WORK_STUDIO = { kind: 'work', filter: 'needsYou' } as const;
 
 const WORK_STUDIO_BLOB: ExpectedBlob = {
-  name: 'studio work',
+  name: 'retired studio work',
   kind: 'work',
   blob: blobOf({ place: SESSION_PLACE, studio: WORK_STUDIO }),
-  expected: WORK_STUDIO,
+  expected: null,
 };
 
 const TERMINAL_DOCK_WITHOUT_SESSION: PreviousBuildBlob = {

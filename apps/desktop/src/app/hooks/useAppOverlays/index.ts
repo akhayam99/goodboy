@@ -94,8 +94,6 @@ export const useAppOverlays = ({
 
   const openWorkflows = useCallback(() => openDestination({ id: 'workflows' }), []);
 
-  const openWork = useCallback(() => openDestination({ id: 'work' }), []);
-
   const openInbox = useCallback(() => openDestination({ id: 'inbox' }), []);
 
   const openChat = useCallback(() => openDestination({ id: 'chat' }), []);
@@ -199,7 +197,6 @@ export const useAppOverlays = ({
     openNewChat,
     openMonitoring,
     openImpact,
-    openWork,
     openWorkflows,
     studio,
     layers,

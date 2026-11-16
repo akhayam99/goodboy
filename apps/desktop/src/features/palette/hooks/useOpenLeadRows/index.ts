@@ -25,7 +25,7 @@ export const useOpenLeadRows = ({ workspaceId }: Params): ReadonlyArray<WorkRow>
       if (workspaceId === null) {
         return;
       }
-      void loadWorkLeads({ workspaceId, filter: useAppStore.getState().workFilter });
+      void loadWorkLeads({ workspaceId });
     },
     everyMs: POLL_MS,
     isEnabled: isOn,

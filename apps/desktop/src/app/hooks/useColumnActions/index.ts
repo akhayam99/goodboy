@@ -2,9 +2,7 @@ import { useMemo } from 'react';
 import type { ColumnActions } from '../../components/SideColumn/columnDoors';
 import { openDestination } from '../../../shared/navigation/openDestination';
 
-type Params = Omit<ColumnActions, 'openWork' | 'openConnections'>;
-
-const openWork = (): void => openDestination({ id: 'work' });
+type Params = Omit<ColumnActions, 'openConnections'>;
 
 const openConnections = (): void => openDestination({ id: 'connections' });
 
@@ -24,7 +22,6 @@ export const useColumnActions = ({
     () => ({
       openBoard,
       openInbox,
-      openWork,
       openChat,
       openWorkflows,
       openNewChat,

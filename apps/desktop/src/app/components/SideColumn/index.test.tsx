@@ -35,7 +35,6 @@ let useAppStore: StoryStore;
 const actions = (): ColumnActions => ({
   openBoard: vi.fn(),
   openInbox: vi.fn(),
-  openWork: vi.fn(),
   openChat: vi.fn(),
   openWorkflows: vi.fn(),
   openNewChat: vi.fn(),
@@ -102,7 +101,7 @@ beforeEach(async () => {
 afterEach(cleanup);
 
 describe('SideColumn', () => {
-  it('stacks New session, eight door rows and no tool, the sessions, then Settings and the Goodboy line, the toggle left to the top bar', () => {
+  it('stacks New session, seven door rows and no tool, the sessions, then Settings and the Goodboy line, the toggle left to the top bar', () => {
     mountColumn();
     const nav = navLayer();
 
@@ -113,7 +112,6 @@ describe('SideColumn', () => {
     expect(doorNames(nav)).toEqual([
       'board',
       'inbox',
-      'work',
       'workflows',
       'chat',
       'connections',
@@ -128,7 +126,6 @@ describe('SideColumn', () => {
     ).toEqual([
       'board',
       'inbox',
-      'work',
       'workflows',
       'chat',
       'connections',
@@ -366,14 +363,11 @@ describe('SideColumn', () => {
     expect(plus.closest('[class*="opacity-0"]')).toBeNull();
   });
 
-  it('shows the Work door with its New badge, whatever the old Work switch row says', () => {
-    useAppStore.setState({ settings: { 'work.enabled': 'false' } });
+  it('draws no Work door whatever the Work setting says', () => {
+    useAppStore.setState({ settings: { 'work.enabled': 'true' } });
     mountColumn({ place: 'board' });
 
-    expect(doorNames(navLayer())).toContain('work');
-    expect(
-      navLayer().querySelector('[data-column-door-row="work"]')?.textContent?.includes('New'),
-    ).toBe(true);
+    expect(doorNames(navLayer())).not.toContain('work');
   });
 
   it('ends every door on the trailing mark column, with an action slot only before it', () => {
@@ -507,7 +501,7 @@ describe('ColumnRail', () => {
     expect(document.querySelector('[data-door-signal]')).toBeNull();
   });
 
-  it('keeps every door as an icon at 44px: New, the eight doors of the open column, then Settings, the bug and the mark', () => {
+  it('keeps every door as an icon at 44px: New, the seven doors of the open column, then Settings, the bug and the mark', () => {
     const { container } = mountRail();
     const rail = container.querySelector('[data-column-rail]') as HTMLElement;
 
@@ -517,7 +511,6 @@ describe('ColumnRail', () => {
       'new',
       'board',
       'inbox',
-      'work',
       'workflows',
       'chat',
       'connections',

@@ -11,8 +11,6 @@ export const destinationStudioOf = ({ id, state }: Params): StudioPlace => {
   switch (id) {
     case 'inbox':
       return { kind: 'inbox', focus: null };
-    case 'work':
-      return { kind: 'work' };
     case 'workflows':
       return { kind: 'workflow' };
     case 'chat':

@@ -168,17 +168,6 @@ export const COLUMN_DOOR_ROWS: ReadonlyArray<Row> = [
     ),
   },
   {
-    name: 'column: work',
-    covers: ['openWork', 'studio:work'],
-    door: 'visible',
-    open: () => click(doorIn('work')),
-    lands: both(
-      () => studio('Work'),
-      () => heading(/^Work$/),
-      async () => expect(doorIn('work').getAttribute('aria-current')).toBe('page'),
-    ),
-  },
-  {
     name: 'column: workflow library',
     covers: ['openWorkflows', 'studio:workflow'],
     door: 'visible',

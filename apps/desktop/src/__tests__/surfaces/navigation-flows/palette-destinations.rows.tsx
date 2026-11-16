@@ -254,16 +254,6 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
     ),
   },
   {
-    name: 'palette: Work',
-    covers: ['openStudio', 'studio:work', 'palette:Work'],
-    door: 'palette',
-    open: () => openPalette(/^Work$/),
-    lands: both(
-      () => studio('Work'),
-      () => heading(/^Work$/),
-    ),
-  },
-  {
     name: 'palette: Workflows',
     covers: ['openStudio', 'studio:workflow', 'palette:Workflows'],
     door: 'palette',

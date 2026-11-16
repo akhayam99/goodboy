@@ -64,7 +64,6 @@ export const SideColumn = ({
                     id={door.id}
                     icon={door.icon}
                     label={door.label}
-                    {...(door.badge !== undefined && { badge: door.badge })}
                     isQuiet={door.isReference === true}
                     {...(door.shortcutId !== undefined && { shortcut: door.shortcutId })}
                     isCurrent={place === door.id}

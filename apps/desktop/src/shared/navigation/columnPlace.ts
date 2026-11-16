@@ -36,8 +36,6 @@ const studioPlace = ({ studio }: StudioParams): ColumnPlace => {
       return 'connections';
     case 'workflow':
       return 'workflows';
-    case 'work':
-      return 'work';
     case 'terminal':
       return 'terminal';
     case 'browser':
@@ -76,7 +74,6 @@ const STUDIO_OVER_SESSION: ReadonlySet<ColumnPlace> = new Set<ColumnPlace>([
   'inbox',
   'chat',
   'connections',
-  'work',
   'workflows',
   'terminal',
   'browser',

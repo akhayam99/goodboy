@@ -1,16 +1,9 @@
 # Work
 
-One page lists every Lead of a workspace, whatever session it runs in. A Lead is the agent that plans a job, hands it to helpers and asks you only for what your permission rows say.
+A Lead is the agent that plans a job, hands it to helpers and asks you only for what your permission rows say. It runs inside its session, and the [Board](board.md#session-card) shows which run waits for you.
 
-### Work section
-
-Open **Work** to see every Lead of the workspace in one list, and see which ones need you. A row opens the Lead in its session.
-
-- Four filters sit above the list: **All open**, **Needs you**, **Working** and **Finished**. Each shows its count, and the filter you pick comes back after a reload or a Back.
-- A row shows the title, then the session goal, the project and the branch under it. At the right it shows the state in words, how many agents run, what the Lead spent and how long ago it changed.
-- A Lead that waits for you has a button on its row: **Review plan**, **Answer** or **Open**. A Lead on two branches is one row.
-- **Start work** opens the composer at the top of the page, as [The Start work composer](start.md#the-start-work-composer) describes. ⌘K lists Work and one row per open Lead.
-- If a refresh fails, the list keeps what it read last, says "Couldn't refresh Leads" and offers **Retry**.
+- There is no Work page in the sidebar. A window that was left on it opens on the Board.
+- ⌘K lists one row per open Lead.
 
 ### Lead
 
@@ -39,7 +32,7 @@ A Lead's autonomy is nine rows you can read and change.
 This part is for contributors and agents who change the feature.
 
 - The old `work.enabled` setting is never read: the rules it turned on are the rules for everyone, pinned by `upgradeFromSwitchOff.sqlite.test.ts`.
-- The page is `WorkPage` in `features/work/components/WorkPage/`. `useWorkLeads` polls and keeps only the latest read, `workRowsOf` owns every number and filter count, and `workStateOf` writes the state and the button of a row. The read is `listAutoWorkTreesOfWorkspace` in `packages/db/src/queries/auto-work-trees.ts`.
+- The ⌘K rows are `leadEntries` over `workRowsOf`, read by `loadWorkLeads` in `store/slices/work/` from `listAutoWorkTreesOfWorkspace` in `packages/db/src/queries/auto-work-trees.ts`. A saved `work` studio folds to the Board in `withoutRemovedPages`.
 - The five words come from `leadStopOf` in `packages/core/src/auto/leadStopOf.ts`, through `autoTreeWordOf`.
 - The rows, presets and precedence are `packages/core/src/auto/permissions.ts`. A Lead's own rows live in `auto_trees.permissions` and the default in the workspace value `auto.permissions` (m243). The panel is `LeadPermissionsPanel` in `features/auto/permissions/`; `PERMISSION_GROUPS` holds its four groups.
 - Asks are listed by `leadAsksOf` and answered by `answerAsk`. The action bar draws them in `AutoDockAsk`.

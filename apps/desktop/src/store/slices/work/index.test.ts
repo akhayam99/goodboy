@@ -105,22 +105,21 @@ const idsOfStore = (): ReadonlyArray<string> =>
 
 describe('the work slice', () => {
   it('reads the Leads of three sessions of the workspace with their branches', async () => {
-    const load = useAppStore.getState().loadWorkLeads({ workspaceId: workspace, filter: 'open' });
+    const load = useAppStore.getState().loadWorkLeads({ workspaceId: workspace });
     await vi.waitFor(() => expect(gates).toHaveLength(1));
     gates[0]?.();
     await load;
 
     expect(idsOfStore()).toEqual(['tree-a', 'tree-b', 'tree-c']);
     expect(useAppStore.getState().workLeads[0]?.branches).toEqual(['hl/one', 'hl/two']);
-    expect(useAppStore.getState().isWorkStale).toBe(false);
   });
 
-  it('drops a late read for a filter the window left', async () => {
+  it('drops a late read for a workspace the window left', async () => {
     const { loadWorkLeads } = useAppStore.getState();
 
-    const older = loadWorkLeads({ workspaceId: workspace, filter: 'open' });
+    const older = loadWorkLeads({ workspaceId: workspace });
     await vi.waitFor(() => expect(gates).toHaveLength(1));
-    const newer = loadWorkLeads({ workspaceId: otherWorkspace, filter: 'needsYou' });
+    const newer = loadWorkLeads({ workspaceId: otherWorkspace });
     await vi.waitFor(() => expect(gates).toHaveLength(2));
     gates[1]?.();
     await newer;
@@ -128,29 +127,41 @@ describe('the work slice', () => {
     await older;
 
     expect(idsOfStore()).toEqual(['tree-z']);
-    expect(useAppStore.getState().workFilter).toBe('needsYou');
     expect(useAppStore.getState().workWorkspaceId).toBe(otherWorkspace);
   });
 
-  it('keeps the old rows and marks the list stale when a read fails', async () => {
+  it('keeps the old rows when a read fails and takes the next read', async () => {
     const { loadWorkLeads } = useAppStore.getState();
-    const first = loadWorkLeads({ workspaceId: workspace, filter: 'open' });
+    const first = loadWorkLeads({ workspaceId: workspace });
     await vi.waitFor(() => expect(gates).toHaveLength(1));
     gates[0]?.();
     await first;
 
     isFailing = true;
-    await loadWorkLeads({ workspaceId: workspace, filter: 'working' });
+    await loadWorkLeads({ workspaceId: workspace });
 
     expect(idsOfStore()).toEqual(['tree-a', 'tree-b', 'tree-c']);
-    expect(useAppStore.getState().isWorkStale).toBe(true);
 
     isFailing = false;
-    const retry = loadWorkLeads({ workspaceId: workspace, filter: 'working' });
+    const retry = loadWorkLeads({ workspaceId: otherWorkspace });
     await vi.waitFor(() => expect(gates).toHaveLength(2));
     gates[1]?.();
     await retry;
 
-    expect(useAppStore.getState().isWorkStale).toBe(false);
+    expect(idsOfStore()).toEqual(['tree-z']);
+  });
+
+  it('empties the rows when the first read of another workspace fails', async () => {
+    const { loadWorkLeads } = useAppStore.getState();
+    const first = loadWorkLeads({ workspaceId: workspace });
+    await vi.waitFor(() => expect(gates).toHaveLength(1));
+    gates[0]?.();
+    await first;
+
+    isFailing = true;
+    await loadWorkLeads({ workspaceId: otherWorkspace });
+
+    expect(idsOfStore()).toEqual([]);
+    expect(useAppStore.getState().workWorkspaceId).toBe(otherWorkspace);
   });
 });
