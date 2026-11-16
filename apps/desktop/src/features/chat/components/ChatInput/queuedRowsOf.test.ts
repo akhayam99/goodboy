@@ -96,16 +96,7 @@ describe('queuedRowsOf', () => {
     expect(queuedRowsOf({ queue: [], view: clock, ...AT_REST })[0]?.action).toBeNull();
   });
 
-  it('says Waits for this reply when the tree takes a turn and no child runs', () => {
-    const view = aView({ phase: 'deciding', pendingMessages: [message('a', 0)] });
-
-    expect(queuedRowsOf({ queue: [], view, ...AT_REST })[0]).toMatchObject({
-      statusText: 'Waits for this reply',
-      action: null,
-    });
-  });
-
-  it('says Not read yet without Send now when the switch delivers at once', () => {
+  it('says Not read yet without Send now, since a message reaches the Lead at once', () => {
     const waiting = aView({
       phase: 'waiting',
       delegations: [RUNNING],
@@ -114,15 +105,17 @@ describe('queuedRowsOf', () => {
     const deciding = aView({ phase: 'deciding', pendingMessages: [message('b', 0)] });
     const stopped = aView({ phase: 'stopped', pendingMessages: [message('c', 0)] });
 
-    expect(queuedRowsOf({ queue: [], view: waiting, ...AT_REST, isAtOnce: true })[0]).toMatchObject(
-      { statusText: 'Not read yet', action: null },
+    expect(queuedRowsOf({ queue: [], view: waiting, ...AT_REST })[0]).toMatchObject({
+      statusText: 'Not read yet',
+      action: null,
+    });
+    expect(queuedRowsOf({ queue: [], view: deciding, ...AT_REST })[0]).toMatchObject({
+      statusText: 'Not read yet',
+      action: null,
+    });
+    expect(queuedRowsOf({ queue: [], view: stopped, ...AT_REST })[0]?.statusText).toBe(
+      'Not delivered',
     );
-    expect(
-      queuedRowsOf({ queue: [], view: deciding, ...AT_REST, isAtOnce: true })[0],
-    ).toMatchObject({ statusText: 'Not read yet', action: null });
-    expect(
-      queuedRowsOf({ queue: [], view: stopped, ...AT_REST, isAtOnce: true })[0]?.statusText,
-    ).toBe('Not delivered');
   });
 
   it('keeps a message that moves from the tray to the outbox in one place, once', () => {

@@ -100,7 +100,7 @@ const enter = async ({ amount }: EnterParams) => {
     target: { value: amount },
   });
   await act(async () => {
-    fireEvent.submit(within(popover).getByRole('form', { name: 'Limit for this Auto' }));
+    fireEvent.submit(within(popover).getByRole('form', { name: 'Limit for this Lead' }));
   });
   return popover;
 };
@@ -122,11 +122,11 @@ beforeEach(async () => {
 afterEach(cleanup);
 
 describe('the Auto limit chip under a session budget', () => {
-  it('names this Auto as the limit and allows a raise when the session budget only warns', async () => {
+  it('names this Lead as the limit and allows a raise when the session budget only warns', async () => {
     withSessionBudget({ onExceed: 'warn' });
     const chip = show({ capUsd: 4 });
 
-    expect(chip.getAttribute('aria-label')).toBe('Limit: $4.00, this Auto');
+    expect(chip.getAttribute('aria-label')).toBe('Limit: $4.00, this Lead');
     fireEvent.click(chip);
     const popover = await enter({ amount: '8' });
 
@@ -168,19 +168,20 @@ describe('the Auto level chip of the settings line', () => {
       />,
     );
 
-  it('shows After the plan from the workspace on an Auto agent and nothing on another agent', () => {
+  it('shows the permission rows at After the plan on a Lead and nothing on another agent', async () => {
     showLevel({ isAuto: true });
-    screen.getByRole('button', { name: /^Asks you: After the plan, from / });
+    await screen.findByRole('button', { name: 'Asks you: After the plan' });
     cleanup();
 
     showLevel({ isAuto: false });
     expect(screen.queryByRole('button', { name: /^Asks you/ })).toBeNull();
   });
 
-  it('saves the level for this session only and names this run as the source', async () => {
+  it('saves a preset as the level of this session only', async () => {
     showLevel({ isAuto: true });
-    fireEvent.click(screen.getByRole('button', { name: /^Asks you: / }));
-    fireEvent.click(screen.getByRole('tab', { name: 'Every step' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Asks you: After the plan' }));
+    const panel = within(screen.getByRole('dialog', { name: 'Asks you' }));
+    fireEvent.click(await panel.findByRole('tab', { name: 'Every step' }));
 
     await waitFor(async () =>
       expect(await readAutoLevel({ db: storySqlite(), target })).toBe('step'),
@@ -188,17 +189,19 @@ describe('the Auto level chip of the settings line', () => {
     expect(await readAutoLevel({ db: storySqlite(), target: { workspaceId: WORKSPACE_ID } })).toBe(
       'plan',
     );
-    await screen.findByRole('button', { name: 'Asks you: Every step, this run' });
+    await screen.findByRole('button', { name: 'Asks you: Every step' });
   });
 
-  it('keeps the old level and says why when the write fails', async () => {
+  it('keeps the old preset and says why when the write fails', async () => {
     showLevel({ isAuto: true });
+    fireEvent.click(await screen.findByRole('button', { name: 'Asks you: After the plan' }));
+    const panel = within(screen.getByRole('dialog', { name: 'Asks you' }));
+    const never = await panel.findByRole('tab', { name: 'Never' });
     await storySqlite().execute('DELETE FROM sessions WHERE id = ?', [AUTO_SEED_SESSION]);
-    fireEvent.click(screen.getByRole('button', { name: /^Asks you: / }));
-    fireEvent.click(screen.getByRole('tab', { name: 'Never' }));
+    fireEvent.click(never);
 
-    const alert = await screen.findByRole('alert');
+    const alert = await panel.findByRole('alert');
     expect(alert.textContent).toContain("Couldn't change it.");
-    screen.getByRole('button', { name: /^Asks you: After the plan/ });
+    screen.getByRole('button', { name: 'Asks you: After the plan' });
   });
 });

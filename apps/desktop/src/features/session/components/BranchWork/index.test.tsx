@@ -530,7 +530,7 @@ describe('the Leads of a branch', () => {
 
     const line = await screen.findByTestId('branch-work-lead');
     expect(line.textContent).toContain(RETRY.branch);
-    screen.getByRole('heading', { level: 2, name: 'Autos' });
+    screen.getByRole('heading', { level: 2, name: 'Leads' });
     unmount();
 
     const other = render(
@@ -561,7 +561,7 @@ describe('the Leads of a branch', () => {
     expect(within(tree).getAllByRole('treeitem')).toHaveLength(1);
     expect(tree.textContent).toContain('Implementer');
     expect(tree.textContent).not.toContain('Tester');
-    expect(screen.getByTestId('branch-work-story').textContent).toMatch(/^Auto /);
+    expect(screen.getByTestId('branch-work-story').textContent).toMatch(/^Lead /);
   });
 
   it('reads the tab count from the same counts as the Leads it lists', async () => {
@@ -588,7 +588,7 @@ describe('the Leads of a branch', () => {
       </ToastProvider>,
     );
 
-    fireEvent.click(await screen.findByRole('button', { name: /^Auto Stop retried/ }));
+    fireEvent.click(await screen.findByRole('button', { name: /^Lead Stop retried/ }));
     cleanup();
     act(() => useAppStore.getState().up());
 

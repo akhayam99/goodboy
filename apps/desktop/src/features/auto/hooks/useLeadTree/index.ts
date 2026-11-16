@@ -4,7 +4,6 @@ import type { Agent, AgentId, SessionId, TelemetryRecord } from '@goodboy/types'
 import { useAppStore } from '../../../../store';
 import type { AgentQueuedTurn } from '../../../../store/slices/agentQueue/types';
 import type { AutoReadMessage } from '../../../../store/slices/auto-view/state';
-import { useIsWorkOn } from '../../../../shared/hooks/useIsWorkOn';
 import { useSessionRunHistory } from '../../../../shared/hooks/useSessionRunHistory';
 import { agentSpendById } from '../../../session/timeline/agentSpendById';
 import { autoTreeOfAgent } from '../../autoTreeOfAgent';
@@ -53,7 +52,6 @@ const NO_SNAPSHOTS: Readonly<Record<string, unknown>> = {};
 
 export const useLeadTree = ({ sessionId, rootAgentId, queue, queued }: Params): LeadTreeModel => {
   const views = useAutoTreeViews({ sessionId });
-  const isWork = useIsWorkOn();
   const agents = useAppStore((state) => state.sessionPhaseRuns[sessionId] ?? NO_AGENTS);
   const telemetry = useAppStore((state) => state.sessionTelemetry[sessionId] ?? NO_TELEMETRY);
   const agentRunHistory = useSessionRunHistory({ sessionId });
@@ -70,9 +68,9 @@ export const useLeadTree = ({ sessionId, rootAgentId, queue, queued }: Params): 
     if (view === null) {
       return null;
     }
-    const state = autoTreeWordOf({ view, rootTurn, isWork });
+    const state = autoTreeWordOf({ view, rootTurn });
     return { node: state.node, word: state.word, ask: view.rootAsk };
-  }, [view, rootTurn, isWork]);
+  }, [view, rootTurn]);
   const { rows } = queued;
   const model = useMemo(() => {
     if (view === null) {
@@ -88,7 +86,6 @@ export const useLeadTree = ({ sessionId, rootAgentId, queue, queued }: Params): 
     const notes = noteNodesOf({
       rows,
       createdAtById,
-      isWork,
       read: view.readMessages ?? NO_READ,
     });
     const facts = leadTreeDelegationsOf({
@@ -111,7 +108,7 @@ export const useLeadTree = ({ sessionId, rootAgentId, queue, queued }: Params): 
       tree,
       items: leadTreeItemsOf({ tree, agentsById: facts.agentsById, notes: notes.nodes }),
     };
-  }, [view, rows, queue, agents, spendByAgentId, rootAgentId, isWork]);
+  }, [view, rows, queue, agents, spendByAgentId, rootAgentId]);
   return {
     items: model.items,
     root,

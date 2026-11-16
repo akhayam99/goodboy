@@ -1,12 +1,10 @@
 import type { AgentId, SessionId, TurnEvent } from '@goodboy/types';
 import type { AppState } from '../../store/types';
-import { flowWordOf } from '../../shared/lib/flowWordOf';
-import { SETTING_WORK_ENABLED } from '../../shared/lib/workSetting';
 import { isDefaultAgentName } from './isDefaultAgentName';
 import { autoRootTitleOf } from './components/AutoAgentsPane/autoRootTitleOf';
 
 type Params = {
-  readonly state: Pick<AppState, 'sessionPhaseRuns' | 'autoTreeViews' | 'transcripts' | 'settings'>;
+  readonly state: Pick<AppState, 'sessionPhaseRuns' | 'autoTreeViews' | 'transcripts'>;
   readonly sessionId: SessionId;
   readonly agentId: AgentId;
 };
@@ -31,5 +29,5 @@ export const autoRunTitleOf = ({ state, sessionId, agentId }: Params): string | 
   if (title !== agent.name || !isDefaultAgentName({ name: agent.name, kind: 'auto' })) {
     return title;
   }
-  return flowWordOf({ isWork: state.settings[SETTING_WORK_ENABLED] === 'true' });
+  return 'Lead';
 };

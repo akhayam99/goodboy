@@ -87,7 +87,6 @@ const runsOf = ({
     revisingStarts: {},
     mounts,
     projects: [PAYMENTS_PROJECT, LEDGER_PROJECT],
-    isWork: false,
   });
 
 const presetRun = () =>
@@ -195,7 +194,7 @@ describe('sessionRunsOf', () => {
     expect(byKind.get('auto')).toMatchObject({
       shape: 'lead',
       origin: 'Agent · Auto agent',
-      stateWord: 'Done',
+      stateWord: 'Finished',
       open: { kind: 'auto', agentId: FIXTURE_ROOT },
     });
     expect(byKind.get('agent')).toMatchObject({

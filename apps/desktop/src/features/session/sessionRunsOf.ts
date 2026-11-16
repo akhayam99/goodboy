@@ -90,7 +90,6 @@ type Params = {
   readonly revisingStarts: Readonly<Record<string, number>>;
   readonly mounts: ReadonlyArray<SessionMountView>;
   readonly projects: ReadonlyArray<WorkBranchProject>;
-  readonly isWork: boolean;
 };
 
 const NO_AGENTS: ReadonlyArray<Agent> = [];
@@ -259,33 +258,25 @@ type AutoRowParams = {
   readonly agents: ReadonlyArray<Agent>;
   readonly autoViews: ReadonlyArray<AutoTreeView>;
   readonly rootTurns: Params['rootTurns'];
-  readonly isWork: boolean;
 };
 
 type RestingParams = {
   readonly root: Agent;
-  readonly isWork: boolean;
 };
 
-const restingWordOf = ({ root, isWork }: RestingParams): Pick<AutoTreeWord, 'state' | 'word'> => {
+const restingWordOf = ({ root }: RestingParams): Pick<AutoTreeWord, 'state' | 'word'> => {
   if (root.status === 'running') {
-    return { state: 'running', word: isWork ? LEAD_STOP_WORDS.working : NAMES.running };
+    return { state: 'running', word: LEAD_STOP_WORDS.working };
   }
-  return { state: 'idle', word: isWork ? LEAD_STOP_WORDS.resting : NAMES.idle };
+  return { state: 'idle', word: LEAD_STOP_WORDS.resting };
 };
 
-const autoRowOf = ({
-  root,
-  agents,
-  autoViews,
-  rootTurns,
-  isWork,
-}: AutoRowParams): SessionRunRow => {
+const autoRowOf = ({ root, agents, autoViews, rootTurns }: AutoRowParams): SessionRunRow => {
   const view = autoViews.find((candidate) => candidate.tree.rootAgentId === root.id);
   const state =
     view === undefined
-      ? restingWordOf({ root, isWork })
-      : autoTreeWordOf({ view, rootTurn: rootTurns[root.id] ?? null, isWork });
+      ? restingWordOf({ root })
+      : autoTreeWordOf({ view, rootTurn: rootTurns[root.id] ?? null });
   const dot = autoDotOf({ state: state.state });
   const children = descendantAgentsOf({ agents, rootId: root.id });
   const agentIds = [root.id, ...children.map((child) => child.id)];
@@ -384,7 +375,6 @@ export const sessionRunsOf = ({
   revisingStarts,
   mounts,
   projects,
-  isWork,
 }: Params): ReadonlyArray<SessionRun> => {
   const standalone = agents.filter((agent) => isStandaloneAgent({ agent }));
   const kinds = standalone.map((agent) => ({
@@ -393,7 +383,7 @@ export const sessionRunsOf = ({
   }));
   const autoRows = kinds
     .filter(({ kind }) => kind === 'auto')
-    .map(({ agent }) => autoRowOf({ root: agent, agents, autoViews, rootTurns, isWork }));
+    .map(({ agent }) => autoRowOf({ root: agent, agents, autoViews, rootTurns }));
   const agentRows = kinds
     .filter(({ kind }) => isAgentsPageKind({ kind }))
     .map(({ agent, kind }) =>

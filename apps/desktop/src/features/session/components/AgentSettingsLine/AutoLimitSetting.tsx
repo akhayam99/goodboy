@@ -2,8 +2,6 @@ import { formatUsd, useDropdown } from '@goodboy/ui';
 import type { AutoBudgetFacts } from '@goodboy/core/auto';
 import type { AutoTreeId, SessionId } from '@goodboy/types';
 import { NAMES } from '../../../../shared/utils/names';
-import { useFlowWord } from '../../../../shared/hooks/useFlowWord';
-import type { FlowWord } from '../../../../shared/lib/flowWordOf';
 import { undoable } from '../../../../shared/utils/undoable';
 import { useAppStore } from '../../../../store';
 import { autoLimitOpenEvent } from '../../../auto/chat/autoLimitOpenEvent';
@@ -26,15 +24,10 @@ type ApplyParams = {
   readonly usd: number | null;
 };
 
-type HelpParams = {
-  readonly word: FlowWord;
-};
-
-const helpOf = ({ word }: HelpParams): string =>
-  `What this ${word} and the agents it starts may spend. The smallest limit pauses it. Applies when you press Enter or close.`;
+const HELP =
+  'What this Lead and the agents it starts may spend. The smallest limit pauses it. Applies when you press Enter or close.';
 
 export const AutoLimitSetting = ({ sessionId, treeId, facts, sessionCapUsd, words }: Props) => {
-  const word = useFlowWord();
   const dropdown = useDropdown({
     expectedHeight: 240,
     expectedWidth: 320,
@@ -62,8 +55,8 @@ export const AutoLimitSetting = ({ sessionId, treeId, facts, sessionCapUsd, word
       return failure;
     }
     undoable({
-      message: `${word} limit changed.`,
-      conflictMessage: `The ${word} limit changed again, so Undo was skipped.`,
+      message: 'Lead limit changed.',
+      conflictMessage: 'The Lead limit changed again, so Undo was skipped.',
       isCurrent: () => capOf() === usd,
       undo: async () => {
         const undone = await save({ expectedCapUsd: usd, capUsd: previous });
@@ -79,7 +72,7 @@ export const AutoLimitSetting = ({ sessionId, treeId, facts, sessionCapUsd, word
     reportTo: { sessionId },
     currentUsd: facts.capUsd,
     isOpen: dropdown.open,
-    failureTitle: `Couldn't change the ${word} limit`,
+    failureTitle: "Couldn't change the Lead limit",
     apply,
   });
 
@@ -88,7 +81,7 @@ export const AutoLimitSetting = ({ sessionId, treeId, facts, sessionCapUsd, word
       dropdown={dropdown}
       label={NAMES.spendCap}
       words={words}
-      help={helpOf({ word })}
+      help={HELP}
       error={draft.error}
       onOpenSource={openRunDefaults}
     >
@@ -104,11 +97,7 @@ export const AutoLimitSetting = ({ sessionId, treeId, facts, sessionCapUsd, word
           </>
         )}
       </dl>
-      <LimitAmountForm
-        label={`Limit for this ${word}`}
-        inputId={`auto-limit-${treeId}`}
-        draft={draft}
-      />
+      <LimitAmountForm label="Limit for this Lead" inputId={`auto-limit-${treeId}`} draft={draft} />
     </SettingChip>
   );
 };
