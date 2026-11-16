@@ -185,11 +185,11 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Start from Tasks',
-        desc: `${NAMES.startSession}, on an issue in Tasks, opens New session with the issue linked and its goal written in. Pick from Tasks does the same on the page.`,
+        desc: `${NAMES.startSession}, on an issue in Tasks, opens New session with the issue linked and its goal written in. Pick from Tasks does the same on the page, with a tab per source.`,
       },
       {
         term: 'Pin folders',
-        desc: 'The folders chip reads Auto picks: an agent adds the folder it must edit. Pin folders there from Suggested or All projects.',
+        desc: 'The folders chip reads Auto picks: an agent adds the folder it must edit. Pin folders there from Starred, Recent or All projects, and star a row to keep it on top.',
       },
       {
         term: 'New menu',
@@ -359,7 +359,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Running summary',
-        desc: 'After each turn, State, Next and Learned are updated for the next agent, and an edit you made is kept.',
+        desc: 'After each turn, State, Next and Learned are updated for the next agent, and an edit you made is kept. The State heads Context with its blockers; Next reads as steps and Learned as facts.',
       },
       {
         term: 'Context pane',

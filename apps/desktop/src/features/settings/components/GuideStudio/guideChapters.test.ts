@@ -302,7 +302,7 @@ describe('the start, agent and workflow chapters', () => {
     expect(pointOf('kickoff', NAMES.startARun)).toContain('a Lead plans the run');
     expect(pointOf('kickoff', 'Start from Tasks')).toContain('Pick from Tasks');
     expect(pointOf('kickoff', 'Pin folders')).toContain('Auto picks');
-    expect(pointOf('kickoff', 'Pin folders')).toContain('Suggested');
+    expect(pointOf('kickoff', 'Pin folders')).toContain('Starred, Recent or All projects');
     expect(pointOf('kickoff', 'Pin folders')).toContain('All projects');
   });
 
