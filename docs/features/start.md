@@ -13,7 +13,7 @@ Write what you want done and press Start. A Lead runs it: it plans first, then s
 - A name typed in the text still wins over the kind.
 - The kinds and the settings under the box are [one start form](#one-start-form).
 - Under the box, a line reads "Starts as ..." with the reason and the model. It changes as you type, before you press Start. Once you press a kind, the line says what that kind does.
-- The paperclip, paste and drop attach files and images. They go with the run to its first agent.
+- The paperclip, paste and drop attach files and images, on Runs and on New session, whatever the kind. They go with the run to its first agent. A file that cannot be attached says why on the box, and the text and the other files stay.
 - ↵ starts, ⇧↵ adds a line.
 
 The pick is a rule table in the app, with no model call. Goodboy reads it top to bottom until a row holds.
@@ -228,7 +228,7 @@ This part is for contributors and agents who change the feature.
 - Run page: `OrchestratorModelChip` reads `useOrchestratorModel`, which writes `setWorkflowOrchestratorRouting`. An agent page keeps its model in `ComposerToolbar` (`ComposerRoutingPicker`); `AgentSettingsLine` draws no model (`modelInComposer.test.tsx`).
 - Model pins: `startRoutedRun` takes `routing` for a lead and `orchestratorRouting` for a plan. `attachWorkflowToSession` stores the second as the run's `orchestratorRouting`. A start clears the pins.
 - Prefix menu: `useRunPrefixMenu` reuses `QuickActionsPopover` for `~` and `@`. A pick sets the chip and empties the field.
-- Attachments: `usePromptFiles` stages them. `startRoutedRun` saves them as goal attachments of the session (an agent) or the run (a plan) before the first agent starts.
+- Attachments: `usePromptFiles` stages them. `startRoutedRun` saves them as goal attachments of the session (an agent) or the run (a plan) before the first agent starts. On New session, `SessionKickoff` hands the files `useStartRun` stages to `StartTaskField` and to `useStartShape`. An agent or preset start sends them and removes them once it went through (`newSessionAttach.test.tsx`).
 - Limit chip: `autoLimitOf` returns the amount, its source and the default. `useAutoTreeLimit` returns `view`, `start` and `settle`. Every kind reads the one default, `runDefaultLimitOf`, which reads the workspace rules through `workspaceRulesFor`, the same fn `attachWorkflowToSession` uses. The chip, its help (`AUTO_LIMIT_COPY.helpOf`) and the start read that one source, and the chip links to the Run defaults page (Change default, `openRunDefaults`). A typed amount is for that run only and is never stored. `useStartRun` and `useStartShape` call `settle` after a successful start, which drops the typed amount.
 - Limit at start: `start` returns the `StartLimit` that `startLimitOf` builds from the same facts the chip shows. `useStartRun` and `useStartShape` call it at start time, and pass the result to `startRoutedRun`, which hands `spendLimitUsd` and `limitSource` to `attachWorkflowToSession`. `runLimitOf` there sets the run's own limit and writes the same amount into its `rulesSnapshot`. The snapshot never carries a limit the form did not show. A start that passes nothing, such as a workflow from the chat prefix, copies the workspace limit of the Run defaults instead.
 - Tiers: `limitTiersOf` words the session and provider month lines, `useAutoTreeLimit` returns them as `tiers`, and `runSettingsOf` uses the same function for the run's chain. `runLimitSourceOf` reads **default** or **this run** from the run's `limitSource`.
