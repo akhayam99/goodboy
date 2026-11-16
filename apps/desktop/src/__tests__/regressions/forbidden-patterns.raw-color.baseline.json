@@ -1,0 +1,7 @@
+{
+  "raw-color": {
+    "apps/desktop/src/features/wireframes/wireframePalette.ts": 9,
+    "apps/desktop/src/shared/lib/highlight/theme.ts": 15,
+    "packages/ui/src/components/Avatar.tsx": 2
+  }
+}
