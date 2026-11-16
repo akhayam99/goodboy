@@ -2,8 +2,6 @@ import { useEffect, useState } from 'react';
 import type { LeadPermissionKey } from '@goodboy/core/auto';
 import type { AutoTreeId } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
-import { useIsWorkOn } from '../../../../../shared/hooks/useIsWorkOn';
-import { flowWordOf } from '../../../../../shared/lib/flowWordOf';
 import { PERMISSION_ROWS } from '../../../permissions/permissionRows';
 
 type Params = {
@@ -14,8 +12,6 @@ type Params = {
 const UNREAD = "Couldn't read the permission";
 
 export const useAskPermissionRow = ({ treeId, rowKey }: Params): string | null => {
-  const isWorkFlowOn = useIsWorkOn();
-  const word = flowWordOf({ isWork: isWorkFlowOn });
   const readPermissions = useAppStore((state) => state.readLeadPermissions);
   const [text, setText] = useState<string | null>(null);
 
@@ -23,14 +19,14 @@ export const useAskPermissionRow = ({ treeId, rowKey }: Params): string | null =
     let isCurrent = true;
     const read = async (): Promise<void> => {
       try {
-        const permissions = await readPermissions({ target: { treeId }, isWorkFlowOn });
+        const permissions = await readPermissions({ target: { treeId } });
         const copy = PERMISSION_ROWS.find((row) => row.key === rowKey);
         const row = permissions.rows[rowKey];
         const value = copy?.options.find((option) => option.value === row.value)?.label;
         if (!isCurrent || copy === undefined || value === undefined) {
           return;
         }
-        const source = row.source === 'lead' ? `This ${word}` : 'Workspace default';
+        const source = row.source === 'lead' ? 'This Lead' : 'Workspace default';
         setText(`${copy.title}: ${value} · ${source}`);
       } catch {
         if (isCurrent) {
@@ -43,7 +39,7 @@ export const useAskPermissionRow = ({ treeId, rowKey }: Params): string | null =
     return () => {
       isCurrent = false;
     };
-  }, [readPermissions, isWorkFlowOn, word, treeId, rowKey]);
+  }, [readPermissions, treeId, rowKey]);
 
   return text;
 };

@@ -208,6 +208,7 @@ describe('the open session on the rail', () => {
       'new',
       'board',
       'inbox',
+      'work',
       'workflows',
       'chat',
       'connections',

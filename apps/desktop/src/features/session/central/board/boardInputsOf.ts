@@ -76,11 +76,7 @@ export const boardInputsOf = ({
     if (root === undefined) {
       return [];
     }
-    const { lead } = autoTreeWordOf({
-      view,
-      rootTurn: rootTurns[root.id] ?? null,
-      isWork: false,
-    });
+    const { lead } = autoTreeWordOf({ view, rootTurn: rootTurns[root.id] ?? null });
     const isFailed = lead.reason === 'failed';
     return [
       {

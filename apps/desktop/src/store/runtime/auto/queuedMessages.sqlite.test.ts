@@ -1,8 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { AUTO_BLOCK_TEXT } from '@goodboy/core/auto';
-import { getAutoTree, listAutoDelegations, listAutoOutbox, setSetting } from '@goodboy/db';
+import { getAutoTree, listAutoDelegations, listAutoOutbox } from '@goodboy/db';
 import { brandId, type SessionId } from '@goodboy/types';
-import { SETTING_WORK_ENABLED } from '../../../shared/lib/workSetting';
 import { readAutoTreeViews } from '../../slices/auto-view/readAutoTreeViews';
 import { deliverNext } from './deliver';
 import { addUserRow } from './testing/deliveryWorld';
@@ -20,13 +19,8 @@ const SCOUT = { role: 'scout', task: 'find the export callers', reason: 'read on
 
 const MESSAGE_ID = 'outbox-user-2';
 
-type WaitingParams = {
-  readonly isWork?: boolean;
-};
-
-const waitingWorld = async ({ isWork = false }: WaitingParams = {}): Promise<RuntimeWorld> => {
+const waitingWorld = async (): Promise<RuntimeWorld> => {
   const world = await makeRuntimeWorld();
-  await setSetting(world.state.world.db, SETTING_WORK_ENABLED, isWork ? 'true' : 'false');
   await userSays({ world, id: 'outbox-user-1', text: 'look at the ledger export' });
   await autoDelegates({ world, spec: { children: [SCOUT] } });
   await autoTurnEnds({ world });
@@ -36,7 +30,6 @@ const waitingWorld = async ({ isWork = false }: WaitingParams = {}): Promise<Run
     text: 'also check notify-relay',
     atMs: world.state.world.clock.now() + 5,
   });
-  await world.runtime.drive(world.treeId);
   return world;
 };
 
@@ -71,7 +64,7 @@ afterEach(() => {
 });
 
 describe('a message sent while the children run', () => {
-  it('waits in the outbox and reaches the view as a pending message', async () => {
+  it('reaches the view as a pending message until the runtime drives it', async () => {
     const world = await waitingWorld();
 
     expect(await pendingIds(world)).toEqual([MESSAGE_ID]);
@@ -81,6 +74,22 @@ describe('a message sent while the children run', () => {
       sessionId: brandId<SessionId>({ value: 'session-harborline' }),
     });
     expect(views[0]?.pendingMessages.map((message) => message.rowId)).toEqual([MESSAGE_ID]);
+  });
+
+  it('is delivered at once when driven and leaves the children running', async () => {
+    const world = await waitingWorld();
+
+    await world.runtime.drive(world.treeId);
+    await world.runtime.settled();
+
+    expect(turnsMentioning(world, 'also check notify-relay')).toHaveLength(1);
+    expect(await pendingIds(world)).toEqual([]);
+    const [delegation] = await listAutoDelegations({
+      db: world.state.world.db,
+      treeId: world.treeId,
+    });
+    expect(delegation?.state).toBe('running');
+    expect(world.errors).toEqual([]);
   });
 
   it('Send now delivers it as its own turn and leaves the children running', async () => {
@@ -120,40 +129,37 @@ describe('a message sent while the children run', () => {
     expect(await acceptedIds(world)).toContain(MESSAGE_ID);
   });
 
-  it.each([false, true])(
-    'is delivered once, and the results once, when Send now races with the child finishing (Work %s)',
-    async (isWork) => {
-      const world = await waitingWorld({ isWork });
-      const turn = world.state.ports.childTurns[0];
-      if (turn === undefined) {
-        throw new Error('a child was expected');
-      }
+  it('is delivered once, and the results once, when Send now races with the child finishing', async () => {
+    const world = await waitingWorld();
+    const turn = world.state.ports.childTurns[0];
+    if (turn === undefined) {
+      throw new Error('a child was expected');
+    }
 
-      await Promise.all([
-        world.runtime.sendNow({ treeId: world.treeId, rowId: MESSAGE_ID }),
-        childTurnEnds({
-          world,
-          index: 0,
-          text: `Found three callers.\n<<step-done id="${turn.childAgentId}">>`,
-        }),
-      ]);
+    await Promise.all([
+      world.runtime.sendNow({ treeId: world.treeId, rowId: MESSAGE_ID }),
+      childTurnEnds({
+        world,
+        index: 0,
+        text: `Found three callers.\n<<step-done id="${turn.childAgentId}">>`,
+      }),
+    ]);
+    await world.runtime.settled();
+    if ((await pendingIds(world)).length > 0) {
+      await autoTurnEnds({ world });
       await world.runtime.settled();
-      if ((await pendingIds(world)).length > 0) {
-        await autoTurnEnds({ world });
-        await world.runtime.settled();
-      }
+    }
 
-      expect(turnsMentioning(world, 'also check notify-relay')).toHaveLength(1);
-      expect(turnsMentioning(world, 'RESULTS FROM YOUR AGENTS')).toHaveLength(1);
-      expect(await pendingIds(world)).toEqual([]);
-      expect(
-        (await listAutoOutbox({ db: world.state.world.db, treeId: WORLD_TREE })).filter(
-          (row) => row.id === MESSAGE_ID && row.state === 'accepted',
-        ),
-      ).toHaveLength(1);
-      expect(world.errors).toEqual([]);
-    },
-  );
+    expect(turnsMentioning(world, 'also check notify-relay')).toHaveLength(1);
+    expect(turnsMentioning(world, 'RESULTS FROM YOUR AGENTS')).toHaveLength(1);
+    expect(await pendingIds(world)).toEqual([]);
+    expect(
+      (await listAutoOutbox({ db: world.state.world.db, treeId: WORLD_TREE })).filter(
+        (row) => row.id === MESSAGE_ID && row.state === 'accepted',
+      ),
+    ).toHaveLength(1);
+    expect(world.errors).toEqual([]);
+  });
 
   it('goes with the results, after them, when the child finishes first', async () => {
     const world = await waitingWorld();
@@ -208,12 +214,13 @@ describe('the watchdog of a waiting tree', () => {
     expect(String(warn.mock.calls[0]?.[0])).toMatch(/^\[auto\]/);
   });
 
-  it('keeps the message waiting while a child runs', async () => {
+  it('delivers the message at once while a child runs', async () => {
     const world = await waitingWorld();
 
     await world.runtime.drive(world.treeId);
+    await world.runtime.settled();
 
-    expect(await pendingIds(world)).toEqual([MESSAGE_ID]);
+    expect(await pendingIds(world)).toEqual([]);
   });
 
   it('lets a tick deliver it once the running child is gone', async () => {

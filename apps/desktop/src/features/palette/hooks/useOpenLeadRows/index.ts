@@ -11,15 +11,14 @@ const NONE: ReadonlyArray<WorkRow> = [];
 
 type Params = {
   readonly workspaceId: WorkspaceId | null;
-  readonly isEnabled: boolean;
 };
 
-export const useOpenLeadRows = ({ workspaceId, isEnabled }: Params): ReadonlyArray<WorkRow> => {
+export const useOpenLeadRows = ({ workspaceId }: Params): ReadonlyArray<WorkRow> => {
   const leads = useAppStore((state) => state.workLeads);
   const loadedFor = useAppStore((state) => state.workWorkspaceId);
   const rootTurns = useRootTurns({ leads });
   const loadWorkLeads = useAppStore((state) => state.loadWorkLeads);
-  const isOn = isEnabled && workspaceId !== null;
+  const isOn = workspaceId !== null;
 
   usePoll({
     run: () => {
@@ -36,7 +35,7 @@ export const useOpenLeadRows = ({ workspaceId, isEnabled }: Params): ReadonlyArr
   return useMemo(
     () =>
       isOn && loadedFor === workspaceId
-        ? workRowsOf({ leads, rootTurns, filter: 'open', isWork: true }).rows
+        ? workRowsOf({ leads, rootTurns, filter: 'open' }).rows
         : NONE,
     [isOn, loadedFor, workspaceId, leads, rootTurns],
   );

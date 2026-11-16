@@ -71,7 +71,7 @@ const enter = async ({ popover, amount }: EnterParams) => {
     target: { value: amount },
   });
   await act(async () => {
-    fireEvent.submit(within(popover).getByRole('form', { name: 'Limit for this Auto' }));
+    fireEvent.submit(within(popover).getByRole('form', { name: 'Limit for this Lead' }));
   });
 };
 
@@ -92,7 +92,7 @@ beforeEach(async () => {
 afterEach(cleanup);
 
 describe('the Auto limit chip', () => {
-  it('writes the new limit of this Auto on Enter and Undo puts the old one back', async () => {
+  it('writes the new limit of this Lead on Enter and Undo puts the old one back', async () => {
     const popover = show({ sessionCapUsd: null });
 
     await enter({ popover, amount: '3' });

@@ -11,8 +11,8 @@ vi.mock('../../../../../shared/lib/db', async () =>
 );
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { AUTO_SEED_SESSION, seedAutoSession } from '@goodboy/db/test-helpers/auto-seeds';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { seedAutoSession } from '@goodboy/db/test-helpers/auto-seeds';
 import { brandId, type WorkspaceId } from '@goodboy/types';
 import {
   STORE_IMPORT_TIMEOUT_MS,
@@ -22,9 +22,6 @@ import {
   storySqlite,
   type StoryStore,
 } from '../../../../../store/storyHarness';
-import { readAutoLevel } from '../../../../../store/runtime/auto/level/readAutoLevel';
-import { writeAutoLevel } from '../../../../../store/runtime/auto/level/writeAutoLevel';
-import { SETTING_WORK_ENABLED } from '../../../../../shared/lib/workSetting';
 import { AutoLevelDefaultRow } from './index';
 
 const WORKSPACE_ID = brandId<WorkspaceId>({ value: 'workspace-harborline' });
@@ -44,47 +41,19 @@ beforeEach(async () => {
 afterEach(cleanup);
 
 describe('AutoLevelDefaultRow', () => {
-  it('starts on After the plan and stores the workspace default that a run reads', async () => {
-    render(<AutoLevelDefaultRow workspaceId={WORKSPACE_ID} />);
+  it.each([[undefined], ['false'], ['true']] as const)(
+    'holds the permission rows and opens each permission from them, old Work switch row %s',
+    (oldSwitch) => {
+      useAppStore.setState({
+        settings: oldSwitch === undefined ? {} : { 'work.enabled': oldSwitch },
+      });
+      render(<AutoLevelDefaultRow workspaceId={WORKSPACE_ID} />);
 
-    screen.getByRole('tab', { name: 'After the plan', selected: true });
-    fireEvent.click(screen.getByRole('tab', { name: 'Never' }));
+      screen.getByText('Auto agent asks you');
+      expect(screen.queryByRole('tablist', { name: 'Auto agent asks you' })).toBeNull();
+      fireEvent.click(screen.getByRole('button', { name: /^Asks you: / }));
 
-    await waitFor(async () =>
-      expect(
-        await readAutoLevel({ db: storySqlite(), target: { workspaceId: WORKSPACE_ID } }),
-      ).toBe('run'),
-    );
-    expect(
-      await readAutoLevel({ db: storySqlite(), target: { sessionId: AUTO_SEED_SESSION } }),
-    ).toBe('run');
-    await screen.findByRole('tab', { name: 'Never', selected: true });
-  });
-
-  it('lets a level picked for a session win over the new default', async () => {
-    await writeAutoLevel({
-      db: storySqlite(),
-      target: { sessionId: AUTO_SEED_SESSION },
-      level: 'step',
-    });
-    render(<AutoLevelDefaultRow workspaceId={WORKSPACE_ID} />);
-    fireEvent.click(screen.getByRole('tab', { name: 'Never' }));
-
-    await screen.findByRole('tab', { name: 'Never', selected: true });
-    expect(
-      await readAutoLevel({ db: storySqlite(), target: { sessionId: AUTO_SEED_SESSION } }),
-    ).toBe('step');
-    expect(useAppStore.getState().workspaceValues[WORKSPACE_ID]?.['auto.level']).toContain('run');
-  });
-
-  it('keeps the same row with Work on and opens each permission from it', async () => {
-    useAppStore.setState({ settings: { [SETTING_WORK_ENABLED]: 'true' } });
-    render(<AutoLevelDefaultRow workspaceId={WORKSPACE_ID} />);
-
-    screen.getByText('Auto agent asks you');
-    expect(screen.queryByRole('tablist', { name: 'Auto agent asks you' })).toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: /^Asks you: / }));
-
-    screen.getByRole('dialog', { name: 'Asks you' });
-  });
+      screen.getByRole('dialog', { name: 'Asks you' });
+    },
+  );
 });

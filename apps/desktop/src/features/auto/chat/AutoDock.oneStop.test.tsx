@@ -63,15 +63,15 @@ describe('the one Stop of Auto', () => {
 
     screen.getByText('Implementer running, Tester queued');
     expect(screen.queryByRole('button', { name: 'Change approach' })).toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: 'Stop Auto and 2 agents' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Stop Lead and 2 agents' }));
 
     await waitFor(() => expect(stop).toHaveBeenCalledWith({ treeId: view.tree.id }));
   });
 
-  it('reads Stop Auto when no agent runs', () => {
+  it('reads Stop Lead when no agent runs', () => {
     renderDock({ view: aView({ phase: 'deciding' }) });
 
-    screen.getByRole('button', { name: 'Stop Auto' });
+    screen.getByRole('button', { name: 'Stop Lead' });
   });
 
   it('keeps Stop on screen while the root replies at the limit', () => {
@@ -83,7 +83,7 @@ describe('the one Stop of Auto', () => {
 
     renderDock({ view: aView({ phase: 'waiting', spentUsd: 10, capUsd: 10 }) });
 
-    screen.getByRole('button', { name: 'Stop Auto' });
+    screen.getByRole('button', { name: 'Stop Lead' });
   });
 
   it('keeps Stop in the live line at the limit, so Esc again to stop can sit beside it', () => {
@@ -96,7 +96,7 @@ describe('the one Stop of Auto', () => {
       }),
     });
 
-    const stop = screen.getByRole('button', { name: 'Stop Auto and 1 agent' });
+    const stop = screen.getByRole('button', { name: 'Stop Lead and 1 agent' });
     expect(stop.closest('[data-auto-dock]')).toBeNull();
   });
 
@@ -109,16 +109,16 @@ describe('the one Stop of Auto', () => {
       view: { ...base, tree: { ...base.tree, blockedReason: 'The provider failed.' } },
     });
 
-    screen.getByRole('button', { name: 'Stop Auto and 1 agent' });
+    screen.getByRole('button', { name: 'Stop Lead and 1 agent' });
   });
 
   it('shows Stopping while the tree exits, and the failure stays on screen', async () => {
     registerTreeStopPort({ port: vi.fn(async () => 'stuck' as const) });
     renderDock({ view: aView({ phase: 'deciding' }) });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Stop Auto' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Stop Lead' }));
 
     await screen.findByText('Some agents are still running. Press Stop again to retry.');
-    screen.getByRole('button', { name: 'Stop Auto' });
+    screen.getByRole('button', { name: 'Stop Lead' });
   });
 });

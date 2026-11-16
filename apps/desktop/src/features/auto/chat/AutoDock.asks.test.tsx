@@ -10,7 +10,6 @@ import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vite
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { leadPermissionsOf } from '@goodboy/core/auto';
 import { brandId, type AgentId } from '@goodboy/types';
-import { SETTING_WORK_ENABLED } from '../../../shared/lib/workSetting';
 import { anAgent } from '@goodboy/types/testing';
 import {
   STORE_IMPORT_TIMEOUT_MS,
@@ -53,7 +52,6 @@ const renderDock = ({ view, port }: RenderParams) => {
   useAppStore.setState({
     autoTreeViews: { [FIXTURE_SESSION]: [view] },
     loadAutoTrees: async () => undefined,
-    settings: { ...useAppStore.getState().settings, [SETTING_WORK_ENABLED]: 'true' },
     readLeadPermissions: async () =>
       leadPermissionsOf({
         leadRows: { push: 'ask', dependencies: 'ask' },

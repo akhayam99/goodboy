@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import type { WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
 import type { WorkFilter } from '../../../../../store/slices/work/state';
-import { SETTING_WORK_ENABLED } from '../../../../../shared/lib/workSetting';
 import { StartWork } from '../../../../../features/session/components/StartWork';
 import { WorkStudio } from '../../../../../features/work/components/WorkStudio';
 import { SideColumn } from '../../../SideColumn';
@@ -44,7 +43,6 @@ const WorkListScene = ({ filter, isLoading = false, isStartOpen = false }: Props
   useEffect(() => {
     const seed = seedSidebarNav(SIDEBAR_NAV_DEFAULTS);
     useAppStore.setState({
-      settings: { ...useAppStore.getState().settings, [SETTING_WORK_ENABLED]: 'true' },
       loadWorkLeads: async () => undefined,
       projects: PROJECTS.map((project) => ({ ...project, workspaceId: seed.workspaceId })),
       workLeads: workListLeads(),

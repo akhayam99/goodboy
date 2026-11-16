@@ -5,7 +5,6 @@ import { QueuedNotesReportContext } from '../../../chat/queuedNotesReport';
 import type { LeadTreeDataModel } from '../../../auto/tree/LeadTreeData';
 import { AgentDetailPane } from '../AgentDetailPane';
 import { SessionHeadSlotsContext } from '../../sessionHeadSlotsContext';
-import { useIsWorkOn } from '../../../../shared/hooks/useIsWorkOn';
 import { RunAgentsRail } from '../RunAgentsRail';
 import { LeadHeaderWord } from './LeadHeaderWord';
 
@@ -31,11 +30,7 @@ export const LeadPageBody = ({
   const [root, setRoot] = useState<HTMLDivElement | null>(null);
   const [ownLead, setOwnLead] = useState<HTMLDivElement | null>(null);
   const slots = useContext(SessionHeadSlotsContext);
-  const isWork = useIsWorkOn();
   const isRunShown = shownAgent.id === agent.id;
-  const headerState = isWork ? (
-    <LeadHeaderWord sessionId={session.id} rootAgentId={agent.id} />
-  ) : undefined;
   return (
     <div
       ref={setRoot}
@@ -66,7 +61,7 @@ export const LeadPageBody = ({
               agent={agent}
               isChatActive={isChatActive}
               onBack={onBack}
-              {...(headerState !== undefined && { headerState })}
+              headerState={<LeadHeaderWord sessionId={session.id} rootAgentId={agent.id} />}
             />
           </QueuedNotesReportContext.Provider>
         ) : (

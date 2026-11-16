@@ -1,7 +1,6 @@
 import type { LeadPermissionValue } from '@goodboy/core/auto';
-import { getSetting, type Database } from '@goodboy/db';
+import type { Database } from '@goodboy/db';
 import type { AutoTreeId } from '@goodboy/types';
-import { SETTING_WORK_ENABLED } from '../../../../shared/lib/workSetting';
 import { readLeadPermissions } from './readLeadPermissions';
 
 export type PublishPermissions = Readonly<{
@@ -17,8 +16,7 @@ type Params = {
 };
 
 const readRows = async ({ db, treeId }: Params): Promise<PublishPermissions> => {
-  const isWorkFlowOn = (await getSetting(db, SETTING_WORK_ENABLED)) === 'true';
-  const { rows } = await readLeadPermissions({ db, target: { treeId }, isWorkFlowOn });
+  const { rows } = await readLeadPermissions({ db, target: { treeId } });
   return { push: rows.push.value, pullRequest: rows.pullRequest.value };
 };
 

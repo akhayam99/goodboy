@@ -8,7 +8,6 @@ import {
   setAutoTreePermissionsIfUnchanged,
   setSetting,
 } from '@goodboy/db';
-import { SETTING_WORK_ENABLED } from '../../../shared/lib/workSetting';
 import { stopTree } from './stopTree';
 import { endedTurn } from './testing/deliveryWorld';
 import {
@@ -195,13 +194,11 @@ describe('the answer and finish actions of the block', () => {
 
 type CloseParams = {
   readonly world: RuntimeWorld;
-  readonly isWorkOn: boolean;
   readonly closer: 'you' | 'lead';
 };
 
-const closeWorkIs = async ({ world, isWorkOn, closer }: CloseParams): Promise<void> => {
+const closeWorkIs = async ({ world, closer }: CloseParams): Promise<void> => {
   const db = world.state.world.db;
-  await setSetting(db, SETTING_WORK_ENABLED, isWorkOn ? 'true' : 'false');
   const outcome = await setAutoTreePermissionsIfUnchanged({
     db,
     treeId: world.treeId,
@@ -226,9 +223,9 @@ const settledScout = async ({ world }: SettledParams): Promise<void> => {
 };
 
 describe('the finish block and the Close the work row', () => {
-  it('closes the tree when Close the work is Lead and Work is on', async () => {
+  it('closes the tree when Close the work is Lead', async () => {
     const world = await started();
-    await closeWorkIs({ world, isWorkOn: true, closer: 'lead' });
+    await closeWorkIs({ world, closer: 'lead' });
     await settledScout({ world });
 
     await autoTurnEndsWithBlock({ world, block: { action: 'finish', summary: 'Mapped.' } });
@@ -239,7 +236,7 @@ describe('the finish block and the Close the work row', () => {
 
   it('rests when Close the work is You, and Mark finished stays the user button', async () => {
     const world = await started();
-    await closeWorkIs({ world, isWorkOn: true, closer: 'you' });
+    await closeWorkIs({ world, closer: 'you' });
     await settledScout({ world });
 
     await autoTurnEndsWithBlock({ world, block: { action: 'finish', summary: 'Mapped.' } });
@@ -247,9 +244,9 @@ describe('the finish block and the Close the work row', () => {
     expect(await treeOf(world)).toMatchObject({ phase: 'done' });
   });
 
-  it('rests as today with Work off, whatever the Lead row says', async () => {
+  it('rests with the default row, even when an old Work switch row says on', async () => {
     const world = await started();
-    await closeWorkIs({ world, isWorkOn: false, closer: 'lead' });
+    await setSetting(world.state.world.db, 'work.enabled', 'true');
     await settledScout({ world });
 
     await autoTurnEndsWithBlock({ world, block: { action: 'finish', summary: 'Mapped.' } });
@@ -259,7 +256,7 @@ describe('the finish block and the Close the work row', () => {
 
   it('refuses to finish with an open agent and says why, even when the Lead may close', async () => {
     const world = await started();
-    await closeWorkIs({ world, isWorkOn: true, closer: 'lead' });
+    await closeWorkIs({ world, closer: 'lead' });
     await autoTurnEndsWithBlock({ world, block: delegateBlock([SCOUTS[0], IMPLEMENTER]) });
     const index = world.state.ports.childTurns.findIndex((turn) => turn.role === 'implementer');
     await childTurnEnds({
@@ -277,7 +274,7 @@ describe('the finish block and the Close the work row', () => {
 
   it('opens a closed Lead again when the user writes to it', async () => {
     const world = await started();
-    await closeWorkIs({ world, isWorkOn: true, closer: 'lead' });
+    await closeWorkIs({ world, closer: 'lead' });
     await settledScout({ world });
     await autoTurnEndsWithBlock({ world, block: { action: 'finish', summary: 'Mapped.' } });
     const turns = world.state.ports.autoTurns.length;

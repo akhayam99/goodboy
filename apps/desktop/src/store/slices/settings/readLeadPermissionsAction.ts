@@ -7,10 +7,9 @@ import {
 
 type Params = {
   readonly target: LeadPermissionsTarget;
-  readonly isWorkFlowOn: boolean;
 };
 
 export const readLeadPermissionsAction = () => {
-  return ({ target, isWorkFlowOn }: Params): Promise<LeadPermissions> =>
-    readLeadPermissions({ db: tauriDatabase, target, isWorkFlowOn });
+  return ({ target }: Params): Promise<LeadPermissions> =>
+    readLeadPermissions({ db: tauriDatabase, target });
 };

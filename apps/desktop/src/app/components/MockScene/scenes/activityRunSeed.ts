@@ -35,7 +35,6 @@ import type {
   WorkspaceId,
 } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
-import { SETTING_WORK_ENABLED } from '../../../../shared/lib/workSetting';
 import { sceneClock } from '../sceneClock';
 import { sceneParam } from './audit/sceneParams';
 import type { SummarizerRound } from '../../../../store/slices/summaries/state';
@@ -1329,7 +1328,6 @@ export const durationHistory = ({ nowMs }: { readonly nowMs: number }): Duration
 
 export const seedActivityRunScene = () => {
   useAppStore.setState({
-    settings: { ...useAppStore.getState().settings, [SETTING_WORK_ENABLED]: 'false' },
     workspaces: [WORKSPACE],
     currentWorkspaceId: WORKSPACE_ID,
     projects: PROJECTS,

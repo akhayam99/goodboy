@@ -23,7 +23,6 @@ export type LeadPermissionsTarget =
 type Params = {
   readonly db: Database;
   readonly target: LeadPermissionsTarget;
-  readonly isWorkFlowOn: boolean;
 };
 
 type LeadFacts = Readonly<{
@@ -46,11 +45,7 @@ const leadFactsOf = async ({ db, target }: LeadFactsParams): Promise<LeadFacts> 
   return { levelTarget: { sessionId: tree.sessionId }, leadRaw, spendLimitUsd: tree.capUsd };
 };
 
-export const readLeadPermissions = async ({
-  db,
-  target,
-  isWorkFlowOn,
-}: Params): Promise<LeadPermissions> => {
+export const readLeadPermissions = async ({ db, target }: Params): Promise<LeadPermissions> => {
   const { levelTarget, leadRaw, spendLimitUsd } = await leadFactsOf({ db, target });
   const level = await autoLevelSetting({ db, target: levelTarget });
   const defaultRaw = await getWorkspaceValue({
@@ -68,7 +63,7 @@ export const readLeadPermissions = async ({
     isPlanApprovalOff: !isAutoPlanApprovalRequired({
       settings: { [SETTING_AUTO_PLAN_APPROVAL]: approval ?? '' },
     }),
-    isWorkFlowOn,
+    isWorkFlowOn: true,
     spendLimitUsd,
   });
 };

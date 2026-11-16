@@ -1,7 +1,9 @@
 import type { AutoLevel } from '@goodboy/core/auto';
-import type { LeadPermissionsTarget } from '../../permissions/LeadPermissionsChip';
+import {
+  LeadPermissionsChip,
+  type LeadPermissionsTarget,
+} from '../../permissions/LeadPermissionsChip';
 import { AsksLevelChip } from './AsksLevelChip';
-import { WorkAwareChip } from './WorkAwareChip';
 
 type PickParams = {
   readonly next: AutoLevel;
@@ -17,11 +19,9 @@ type Props = {
   readonly permissions?: LeadPermissionsTarget;
 };
 
-export const AutoLevelChip = ({ permissions, ...level }: Props) => {
-  const chip = <AsksLevelChip {...level} />;
-  return permissions === undefined ? (
-    chip
+export const AutoLevelChip = ({ permissions, ...level }: Props) =>
+  permissions === undefined || (permissions.sessionId === null && permissions.treeId === null) ? (
+    <AsksLevelChip {...level} />
   ) : (
-    <WorkAwareChip target={permissions}>{chip}</WorkAwareChip>
+    <LeadPermissionsChip target={permissions} />
   );
-};

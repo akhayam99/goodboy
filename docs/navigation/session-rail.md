@@ -674,7 +674,7 @@ activity yet show the plain overview with its actions.
   draws the task middle cut, the full brief one click away), a run `Overview › Runs ›
 {run title}` (the run's title, else its workflow's name, else `Run`), an Auto run and every
   agent under it name the run through `autoRunTitleOf` (features/session: the first line of
-  the ask, else of the run's first message, else the flow word of `flowWordOf`, never a fixed
+  the ask, else of the run's first message, else `Lead`, never the default agent name
   `Auto`), which the run page crumb and the Agents rail root row read too, a run step adds its
   step names, an artifact `Overview › Artifacts › {artifact title}`, a branch or pull request
   `Overview › {branch name}` (one crumb with a file or a thread open), a GitHub issue, a linked

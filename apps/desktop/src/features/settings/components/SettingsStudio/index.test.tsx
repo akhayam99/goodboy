@@ -264,16 +264,18 @@ describe('SettingsStudio', () => {
     expect(screen.queryByRole('heading', { level: 2, name: 'Search' })).toBeNull();
   });
 
-  it('puts git, the terminal, search and experiments on Advanced', () => {
+  it('puts git, the terminal and search on Advanced, with no Work switch left', () => {
     renderApp({ section: 'advanced' });
 
     expect(screen.getByRole('heading', { level: 1, name: 'Advanced' }).textContent).toBe(
       'Advanced',
     );
-    expect(
-      screen.getAllByRole('heading', { level: 2 }).map((heading) => heading.textContent),
-    ).toEqual(expect.arrayContaining(['Git', 'Built-in terminal', 'Search', 'Experiments']));
-    expect(screen.getByRole('switch', { name: 'Work' }).tagName).toBe('BUTTON');
+    const headings = screen
+      .getAllByRole('heading', { level: 2 })
+      .map((heading) => heading.textContent);
+    expect(headings).toEqual(expect.arrayContaining(['Git', 'Built-in terminal', 'Search']));
+    expect(headings).not.toContain('Experiments');
+    expect(screen.queryByRole('switch', { name: 'Work' })).toBeNull();
     expect(screen.queryByRole('switch', { name: 'Auto agent' })).toBeNull();
     expect(screen.queryByText('Open with')).toBeNull();
   });

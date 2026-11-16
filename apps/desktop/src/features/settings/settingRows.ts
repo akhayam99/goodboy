@@ -162,14 +162,6 @@ export const SETTING_ROWS: ReadonlyArray<SettingRow> = [
     band: 'Search',
   }),
   row({
-    key: 'work',
-    label: NAMES.work,
-    help: 'Adds the Work section and one composer for runs. Auto becomes Lead.',
-    page: ADVANCED,
-    band: 'Experiments',
-    formerNames: ['Work (experimental)'],
-  }),
-  row({
     key: 'background-download',
     label: 'Download in the background',
     help: 'New versions land while you work.',

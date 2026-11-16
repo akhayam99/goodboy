@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { publishOfResult } from '@goodboy/core/auto';
+import { LEAD_PERMISSION_PRESETS, publishOfResult } from '@goodboy/core/auto';
 import {
   getAutoGrant,
   insertAutoGrantStatement,
@@ -9,12 +9,12 @@ import {
 } from '@goodboy/db';
 import { AUTO_SEED_SESSION } from '@goodboy/db/test-helpers/auto-seeds';
 import { brandId, type WorkspaceId } from '@goodboy/types';
-import { flowRulesOf, type FlowRules } from '../../features/work/flowRulesOf';
-import { SETTING_WORK_ENABLED } from '../../shared/lib/workSetting';
 import { readAutoTreeViews } from '../../store/slices/auto-view/readAutoTreeViews';
 import { readAdmissionPermissions } from '../../store/runtime/auto/admission/readAdmissionPermissions';
 import { createAskAnswerer } from '../../store/runtime/auto/asks/createAskAnswerer';
 import { leadAsksOf } from '../../store/runtime/auto/asks/leadAsksOf';
+import { readIsLeadClosing } from '../../store/runtime/auto/level/readIsLeadClosing';
+import { readLaunchPermissions } from '../../store/runtime/auto/level/readLaunchPermissions';
 import { readPublishPermissions } from '../../store/runtime/auto/level/readPublishPermissions';
 import { writeAutoLevel } from '../../store/runtime/auto/level/writeAutoLevel';
 import {
@@ -32,26 +32,10 @@ import {
   type RuntimeWorld,
 } from '../../store/runtime/auto/testing/runtimeWorld';
 
-type Position = 'off' | 'on';
-
-const CYCLE: ReadonlyArray<Position> = ['off', 'on', 'off'];
+const OLD_WORK_SWITCH = 'work.enabled';
 const WORKSPACE = { workspaceId: brandId<WorkspaceId>({ value: 'workspace-harborline' }) };
 const SESSION = { sessionId: AUTO_SEED_SESSION };
 const NEED = 'I need nock 14.0.1 to stub the host.';
-
-type MatrixRow = readonly [name: string, key: keyof FlowRules, off: unknown, on: unknown];
-
-const SWITCH_MATRIX: ReadonlyArray<MatrixRow> = [
-  ['sidebar', 'hasWorkSection', false, true],
-  ['the word', 'word', 'Auto', 'Lead'],
-  ['start target', 'shouldStartOpenComposer', false, true],
-  ['start label', 'startLabel', 'Start a run', 'Start work'],
-  ['autonomy control', 'autonomyControl', 'level-chip', 'rows-panel'],
-  ['permission rows', 'hasPermissionRows', false, true],
-  ['a message while agents work', 'isMessageDeliveredAtOnce', false, true],
-  ['the Lead closes its own work', 'canLeadCloseItsWork', false, true],
-  ['a saved place on Work', 'savedPlaceOnWork', 'board', 'work'],
-];
 
 type WorldParams = {
   readonly world: RuntimeWorld;
@@ -77,16 +61,12 @@ const setDefaultRow = ({ world, change }: RowParams) =>
     nowMs: world.state.world.clock.now(),
   });
 
-type FlipParams = WorldParams & {
-  readonly position: Position;
+type SwitchParams = WorldParams & {
+  readonly value: 'true' | 'false';
 };
 
-const flip = async ({ world, position }: FlipParams) => {
-  await setSetting(
-    world.state.world.db,
-    SETTING_WORK_ENABLED,
-    position === 'on' ? 'true' : 'false',
-  );
+const oldSwitchSaid = async ({ world, value }: SwitchParams) => {
+  await setSetting(world.state.world.db, OLD_WORK_SWITCH, value);
   await world.runtime.drive(world.treeId);
   await world.runtime.settled();
 };
@@ -120,7 +100,7 @@ const threeAsksWorld = async (): Promise<RuntimeWorld> => {
   const db = world.state.world.db;
   world.state.ports.setMounts([LEDGER_MOUNT]);
   world.state.ports.setSnapshots(LEDGER_MOUNT.worktreePath ?? '', [START, END]);
-  await setSetting(db, SETTING_WORK_ENABLED, 'false');
+  await setSetting(db, OLD_WORK_SWITCH, 'false');
   await writeAutoLevel({ db, target: SESSION, level: 'run' });
   await setLeadRow({ world, change: { key: 'push', value: 'ask' } });
   await userSays({ world, id: 'outbox-acme', text: 'ship the ledger export' });
@@ -188,15 +168,32 @@ const factsOf = async ({ world }: WorldParams) => {
   };
 };
 
-describe('the switch matrix through a full flip cycle', () => {
-  it.each(SWITCH_MATRIX)('%s reads off, on, off', (_name, key, off, on) => {
-    const values = CYCLE.map((position) => flowRulesOf({ isWork: position === 'on' })[key]);
-    expect(values).toEqual([off, on, off]);
-  });
-});
+describe('an upgrade from 0.36 with the Work switch off', () => {
+  it('reads a session level as the preset of the rows, with no stored row', async () => {
+    const world = await makeRuntimeWorld();
+    const db = world.state.world.db;
+    await setSetting(db, OLD_WORK_SWITCH, 'false');
+    await writeAutoLevel({ db, target: SESSION, level: 'step' });
 
-describe('the switch rehearsal with three asks pending', () => {
-  it('keeps a push ask, a dependency ask and a restricted start through off, on, off', async () => {
+    const step = LEAD_PERMISSION_PRESETS.step;
+    expect(await readAdmissionPermissions({ db, treeId: world.treeId })).toEqual({
+      approvePlan: step.approvePlan,
+      startReaders: step.startReaders,
+      startWriters: step.startWriters,
+      addProject: step.addProject,
+    });
+    expect(await readPublishPermissions({ db, treeId: world.treeId })).toEqual({
+      push: step.push,
+      pullRequest: step.pullRequest,
+    });
+    expect(await readLaunchPermissions({ db, treeId: world.treeId })).toEqual({
+      dependencies: step.dependencies,
+      protectedFiles: step.protectedFiles,
+    });
+    expect(await readIsLeadClosing({ db, treeId: world.treeId })).toBe(false);
+  });
+
+  it('keeps a push ask, a dependency ask and a restricted start, whatever the old row says', async () => {
     const world = await threeAsksWorld();
     const pending = {
       asks: ['dependency', 'push', 'start'],
@@ -211,20 +208,18 @@ describe('the switch rehearsal with three asks pending', () => {
     expect(await factsOf({ world })).toEqual(pending);
 
     const seen = [];
-    for (const position of CYCLE) {
-      await flip({ world, position });
+    for (const value of ['true', 'false'] as const) {
+      await oldSwitchSaid({ world, value });
       seen.push(await factsOf({ world }));
     }
 
-    expect(seen).toEqual([pending, pending, pending]);
+    expect(seen).toEqual([pending, pending]);
     expect(world.errors).toEqual([]);
   });
 
-  it('answers each ask once after the cycle, and nothing starts or pushes twice', async () => {
+  it('answers each ask once, and nothing starts or pushes twice', async () => {
     const world = await threeAsksWorld();
-    for (const position of CYCLE) {
-      await flip({ world, position });
-    }
+    await oldSwitchSaid({ world, value: 'false' });
     const answer = answererOf({ world });
     const asks = await asksOf({ world });
 
@@ -253,18 +248,15 @@ describe('the switch rehearsal with three asks pending', () => {
     expect(await asksOf({ world })).toEqual([]);
   });
 
-  it('keeps a start the workspace default held while on, when the switch goes off before it starts', async () => {
+  it('holds a start on the workspace default even with the old row off', async () => {
     const world = await makeRuntimeWorld();
     const db = world.state.world.db;
     await writeAutoLevel({ db, target: SESSION, level: 'run' });
-    await setSetting(db, SETTING_WORK_ENABLED, 'true');
+    await setSetting(db, OLD_WORK_SWITCH, 'false');
     await setDefaultRow({ world, change: { key: 'startReaders', value: 'ask' } });
     await userSays({ world, id: 'outbox-acme', text: 'read the notify-relay retries' });
     await autoDelegates({ world, spec: [reader], requestId: 'request-reader' });
     await autoTurnEnds({ world });
-    expect((await delegationsOf({ world }))[0]?.state).toBe('awaiting_confirm');
-
-    await flip({ world, position: 'off' });
 
     expect(world.state.ports.childTurns).toEqual([]);
     expect((await delegationsOf({ world }))[0]?.state).toBe('awaiting_confirm');
@@ -275,7 +267,6 @@ describe('the switch rehearsal with three asks pending', () => {
     const world = await makeRuntimeWorld();
     const db = world.state.world.db;
     await writeAutoLevel({ db, target: SESSION, level: 'run' });
-    await setSetting(db, SETTING_WORK_ENABLED, 'true');
     await userSays({ world, id: 'outbox-acme', text: 'read the notify-relay retries' });
     await autoDelegates({ world, spec: [reader], requestId: 'request-reader' });
     await setDefaultRow({ world, change: { key: 'startReaders', value: 'ask' } });

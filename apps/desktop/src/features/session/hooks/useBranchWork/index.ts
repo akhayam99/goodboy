@@ -13,7 +13,6 @@ import {
   questionBranchGroupsOf,
   type QuestionBranchGroup,
 } from '../../components/SessionWorkspace/parts/questionsLensModel';
-import { useFlowWord } from '../../../../shared/hooks/useFlowWord';
 import { useBranchLeads } from '../useBranchLeads';
 import { useQuestionsLens } from '../useQuestionsLens';
 import { useSessionRuns } from '../useSessionRuns';
@@ -66,8 +65,7 @@ export const useBranchWork = ({
   );
   const branchLeads = useBranchLeads({ sessionId, group: runGroup, mountId, mounts });
   const { leads, earlier, onToggleFold } = branchLeads;
-  const word = useFlowWord();
-  const story = useMemo(() => branchStoryLineOf({ leads, word }), [leads, word]);
+  const story = useMemo(() => branchStoryLineOf({ leads }), [leads]);
   const questionGroup = useMemo(
     () =>
       groupKey === null

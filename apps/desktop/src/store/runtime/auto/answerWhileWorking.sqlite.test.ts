@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { getAutoTree, listAutoDelegations, listAutoOutbox, setSetting } from '@goodboy/db';
 import { brandId, type SessionId } from '@goodboy/types';
-import { SETTING_WORK_ENABLED } from '../../../shared/lib/workSetting';
 import { readAutoTreeViews } from '../../slices/auto-view/readAutoTreeViews';
 import { addUserRow } from './testing/deliveryWorld';
 import { WORLD_TREE } from './testing/autoWorld';
@@ -26,13 +25,17 @@ const NOTE = 'also cover the batch endpoint';
 
 const SESSION = brandId<SessionId>({ value: 'session-harborline' });
 
+const OLD_WORK_SWITCH = 'work.enabled';
+
 type WorkParams = {
-  readonly isWork: boolean;
+  readonly oldSwitch?: 'true' | 'false';
 };
 
-const workingWorld = async ({ isWork }: WorkParams): Promise<RuntimeWorld> => {
+const workingWorld = async ({ oldSwitch }: WorkParams = {}): Promise<RuntimeWorld> => {
   const world = await makeRuntimeWorld();
-  await setSetting(world.state.world.db, SETTING_WORK_ENABLED, isWork ? 'true' : 'false');
+  if (oldSwitch !== undefined) {
+    await setSetting(world.state.world.db, OLD_WORK_SWITCH, oldSwitch);
+  }
   await userSays({ world, id: 'outbox-user-1', text: 'look at the ledger export' });
   await autoDelegates({ world, spec: { children: SCOUTS } });
   await autoTurnEnds({ world });
@@ -71,9 +74,9 @@ const turnsMentioning = ({ worlds, text }: MentionParams): number =>
   worlds.flatMap((world) => world.state.ports.autoTurns).filter((turn) => turn.text.includes(text))
     .length;
 
-describe('a note sent while agents work, with the switch on', () => {
+describe('a note sent while agents work', () => {
   it('is delivered before the agents settle and both keep running', async () => {
-    const world = await workingWorld({ isWork: true });
+    const world = await workingWorld();
     expect(await runningCount({ world })).toBe(2);
 
     await sendNote({ world });
@@ -86,7 +89,7 @@ describe('a note sent while agents work, with the switch on', () => {
   });
 
   it('reads the note back at the turn that took it', async () => {
-    const world = await workingWorld({ isWork: true });
+    const world = await workingWorld();
     await sendNote({ world });
 
     const views = await readAutoTreeViews({ db: world.state.world.db, sessionId: SESSION });
@@ -97,7 +100,7 @@ describe('a note sent while agents work, with the switch on', () => {
   });
 
   it('delivers agents that settle during the Lead turn in the next turn, once', async () => {
-    const world = await workingWorld({ isWork: true });
+    const world = await workingWorld();
     await sendNote({ world });
     const turnsBefore = world.state.ports.autoTurns.length;
     const [first, second] = world.state.ports.childTurns;
@@ -139,7 +142,7 @@ describe('a note sent while agents work, with the switch on', () => {
   });
 
   it('never delivers a note once Stop was pressed', async () => {
-    const world = await workingWorld({ isWork: true });
+    const world = await workingWorld();
     const turnsBefore = world.state.ports.autoTurns.length;
     await addUserRow({
       world: world.state.world,
@@ -157,7 +160,7 @@ describe('a note sent while agents work, with the switch on', () => {
   });
 
   it('delivers the note once after the lease passes to another window', async () => {
-    const world = await workingWorld({ isWork: true });
+    const world = await workingWorld();
     await sendNote({ world });
     const turn = world.state.ports.autoTurns.at(-1);
     if (turn === undefined) {
@@ -185,16 +188,16 @@ describe('a note sent while agents work, with the switch on', () => {
   });
 });
 
-describe('a note sent while agents work, with the switch off', () => {
-  it('waits for the agents as today', async () => {
-    const world = await workingWorld({ isWork: false });
+describe('a note sent while agents work, after an upgrade with the old Work switch off', () => {
+  it('is delivered at once: the old switch row is never read', async () => {
+    const world = await workingWorld({ oldSwitch: 'false' });
 
     await sendNote({ world });
 
-    expect(turnsMentioning({ worlds: [world], text: NOTE })).toBe(0);
+    expect(turnsMentioning({ worlds: [world], text: NOTE })).toBe(1);
+    expect(await runningCount({ world })).toBe(2);
     const note = (await rowsOf({ world })).find((row) => String(row.id) === NOTE_ID);
-    expect(note?.state).toBe('pending');
-    const views = await readAutoTreeViews({ db: world.state.world.db, sessionId: SESSION });
-    expect(views[0]?.pendingMessages.map((message) => message.rowId)).toEqual([NOTE_ID]);
+    expect(note?.state).toBe('accepted');
+    expect(world.errors).toEqual([]);
   });
 });

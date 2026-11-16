@@ -7,7 +7,6 @@ import {
   aDelegation,
   aView,
 } from '../auto/testing/autoViewFixtures';
-import { SETTING_WORK_ENABLED } from '../../shared/lib/workSetting';
 import { autoRunTitleOf } from './autoRunTitleOf';
 
 const BRIEF: ReadonlyArray<TurnEvent> = [
@@ -25,16 +24,9 @@ type StateParams = {
   readonly rootName?: string;
   readonly rootAsk?: string | null;
   readonly events?: ReadonlyArray<TurnEvent>;
-  readonly isWork?: boolean;
 };
 
-const stateOf = ({
-  rootName = 'Auto',
-  rootAsk = null,
-  events = [],
-  isWork = false,
-}: StateParams) => ({
-  settings: { [SETTING_WORK_ENABLED]: isWork ? 'true' : 'false' },
+const stateOf = ({ rootName = 'Auto', rootAsk = null, events = [] }: StateParams) => ({
   sessionPhaseRuns: {
     [FIXTURE_SESSION]: [
       anAgent({ id: FIXTURE_ROOT, name: rootName, kind: 'auto' }),
@@ -62,16 +54,9 @@ describe('autoRunTitleOf', () => {
     );
   });
 
-  it('falls back to the flow word, Auto or Lead, never a fixed name', () => {
+  it('falls back to Lead, never the default agent name', () => {
     expect(
       autoRunTitleOf({ state: stateOf({}), sessionId: FIXTURE_SESSION, agentId: FIXTURE_ROOT }),
-    ).toBe('Auto');
-    expect(
-      autoRunTitleOf({
-        state: stateOf({ isWork: true }),
-        sessionId: FIXTURE_SESSION,
-        agentId: FIXTURE_ROOT,
-      }),
     ).toBe('Lead');
   });
 

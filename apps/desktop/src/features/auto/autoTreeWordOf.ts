@@ -1,7 +1,6 @@
 import { leadStopOf, type LeadStopState } from '@goodboy/core/auto';
 import type { TurnState } from '@goodboy/types';
 import type { WorkNodeState } from '@goodboy/ui';
-import { NAMES } from '../../shared/utils/names';
 import type { AutoTreeView } from '../../store/slices/auto-view/state';
 import { isAutoPausedAtLimit } from './isAutoPausedAtLimit';
 import { isAutoPlanAwaitingApproval } from './isAutoPlanAwaitingApproval';
@@ -22,24 +21,22 @@ export type AutoTreeWord = Readonly<{
 type Params = {
   readonly view: AutoTreeView;
   readonly rootTurn: TurnState | null;
-  readonly isWork: boolean;
 };
 
 type AutoFace = Readonly<{
   state: AutoTreeState;
-  word: string;
   node: WorkNodeState;
 }>;
 
 const AUTO_FACES = {
-  stopping: { state: 'stopping', word: NAMES.stopping, node: 'stopped' },
-  stopped: { state: 'stopped', word: NAMES.stopped, node: 'stopped' },
-  done: { state: 'done', word: NAMES.done, node: 'done' },
-  failed: { state: 'failed', word: NAMES.failed, node: 'failed' },
-  idle: { state: 'idle', word: NAMES.idle, node: 'queued' },
-  asking: { state: 'asking', word: NAMES.needsYou, node: 'approval' },
-  paused: { state: 'paused', word: NAMES.paused, node: 'budget' },
-  running: { state: 'running', word: NAMES.running, node: 'running' },
+  stopping: { state: 'stopping', node: 'stopped' },
+  stopped: { state: 'stopped', node: 'stopped' },
+  done: { state: 'done', node: 'done' },
+  failed: { state: 'failed', node: 'failed' },
+  idle: { state: 'idle', node: 'queued' },
+  asking: { state: 'asking', node: 'approval' },
+  paused: { state: 'paused', node: 'budget' },
+  running: { state: 'running', node: 'running' },
 } as const satisfies Readonly<Record<AutoTreeState, AutoFace>>;
 
 type FaceParams = {
@@ -68,7 +65,7 @@ const autoStateOf = ({ lead }: FaceParams): AutoTreeState => {
   }
 };
 
-export const autoTreeWordOf = ({ view, rootTurn, isWork }: Params): AutoTreeWord => {
+export const autoTreeWordOf = ({ view, rootTurn }: Params): AutoTreeWord => {
   const lead = leadStopOf({
     phase: view.tree.phase,
     isRootTurnLive: rootTurn?.kind === 'running' || rootTurn?.kind === 'starting',
@@ -81,7 +78,7 @@ export const autoTreeWordOf = ({ view, rootTurn, isWork }: Params): AutoTreeWord
   const face = AUTO_FACES[autoStateOf({ lead })];
   return {
     state: face.state,
-    word: isWork ? lead.word : face.word,
+    word: lead.word,
     node: face.node,
     isLive: face.state === 'running',
     lead,
