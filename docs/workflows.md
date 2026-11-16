@@ -552,7 +552,12 @@ flaky tests" from the saved run route, "Agent · Scout"), model by name and effo
 when the run has no known total), cost and age, every row the same columns. A row names its work as
 `workBranchesOf` (`features/session`) reads it: the agents of the run through
 `Agent.mountId`, the mount a step inherits from the step before it
-(`inheritedMountIdOf`, shared with `selectRunStepMountId`) and the Auto tree.
+(`inheritedMountIdOf`, shared with `selectRunStepMountId`), the Auto tree
+(`leadMountAgentsOf`: the Lead takes the tree's `primaryMountId`, a child its
+delegation target) and, in a session with one mount on a branch, that mount for
+an agent that recorded none, so rows from before 0.38 file there with no
+migration. New rows record it: a Lead started in a one mount session
+(`soleTurnMountIdOf` in `startRoutedRun`) and every child (`createAutoChild`).
 A read only agent counts. A detached mount or a removed worktree moves its
 branch to `SessionRun.goneBranches`, so the run keeps its branch group on Runs.
 `SessionRun.branches` carries the attached result, which the row chips read. The

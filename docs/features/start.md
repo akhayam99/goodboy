@@ -187,6 +187,7 @@ All the work of a session lives in one rail entry, **Runs**: preset runs, orches
 - The page says what it holds in one gray line under its title, whether it is empty or full.
 - Groups read their name in bold with their count in gray, 32px apart. A run's name leads its row; the kind, state, progress, cost and age after it are one step smaller and gray.
 - **By branch** puts what needs you first, then what is running, then open branches with the newest work on top. **No branch** follows the same rules.
+- A Lead and every agent it starts sit under the branch they work on. In a session with one branch, every run sits under it, older runs too.
 - A branch whose pull request is merged or closed, or whose worktree is gone, folds under one **Finished** row at the bottom once its runs are done. The row is closed until you press **Show**.
 - A finished run's name is gray. A live run keeps full weight and its state.
 - Archived runs never show on Runs. The timeline keeps them, and the run's page restores them.
@@ -216,7 +217,7 @@ A failed start keeps the goal and settings. Its cause appears above the form act
 
 ## Under the hood
 
-- Branch Work tab: `branchWorkTabRegistration` (`features/session`) gives the Branch page its Work tab, `useBranchWork` reads the branch group of runs, questions and artifacts once, and `branchWorkCountsOf` turns it into the badge. `components/BranchWork/index.test.tsx` checks that the tab counts what Runs and Questions count for the same branch; `u37-branch-work` is its scene.
+- Branch Work tab: `branchWorkTabRegistration` (`features/session`) gives the Branch page its Work tab, `useBranchWork` reads the branch group of runs, questions and artifacts once, and `branchWorkCountsOf` turns it into the badge. `components/BranchWork/index.test.tsx` checks that the tab counts what Runs and Questions count for the same branch; `u37-branch-work` is its scene. `workBranchesOf` files an agent with no mount under the only mount of the session and `leadMountAgentsOf` reads a Lead's tree; `sessionRunsOf.test.ts` covers one mount, two mounts and older rows.
 - Agent page menu: `agentHeaderOmitOf` omits Change model because `AgentRunSettings` supplies the model control. `AgentHeaderActions` also omits redundant reply-copy and changes rows when needed. `p10-agent-page.test.tsx` caps child menus at five rows and keeps Copy name.
 
 This part is for contributors and agents who change the feature.
