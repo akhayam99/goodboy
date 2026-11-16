@@ -92,7 +92,7 @@ with `@` in the field, which starts that role at once with no Auto turn first.
   (`AUTO_OWN_PROVIDERS`: not the opencode family, see Providers), with the route
   the workspace picks for the role.
 - The **Limit** chip starts on No limit, or the budget of the session when it
-  pauses ("Limit for this Auto run" in its popover, with a **No limit** action). The smallest
+  pauses ("Limit for this run" in its popover, with a **No limit** action). The smallest
   limit pauses Auto, as for runs. A session budget that only warns caps no
   Auto run: every path reads the session cap through `pausingSessionCapOf`
   (`apps/desktop/src/features/budget/`), which gives `null` for one. A new tree

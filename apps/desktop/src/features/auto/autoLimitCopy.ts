@@ -18,13 +18,13 @@ const LIMIT_NONE = 'Limit: none';
 const TITLE = {
   orchestrated: 'Limit for this run',
   preset: 'Limit for this run',
-  autoAgent: 'Limit for this Auto run',
+  autoAgent: 'Limit for this run',
 } as const satisfies Record<AutoLimitKind, string>;
 
 const SPENDER = {
   orchestrated: 'this run and the agents it starts',
-  preset: 'this run and the agents it starts',
-  autoAgent: 'Auto and the agents it starts',
+  preset: 'the Lead and the agents it starts',
+  autoAgent: 'the Lead and the agents it starts',
 } as const satisfies Record<AutoLimitKind, string>;
 
 const STARTS_FROM = 'It applies to this run only. Run defaults set where new runs start.';

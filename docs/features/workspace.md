@@ -124,7 +124,7 @@ Choose how new session branches are named, under **Naming** on the **Branches** 
 
 ### New runs start as
 
-Choose how **Start a run** handles a new ask in this workspace with **Start as** in **Run defaults**: **Let Auto pick**, **Workflow** or **Auto agent**. With a session open, a second row, **New runs in this session start as**, sets that session's own default, which wins over the workspace one. Either reaches new runs only, and each change shows a toast with **Undo**.
+Choose how **Start a run** handles a new ask in this workspace with **Start as** in **Run defaults**: **Lead with a preset that fits** or **Lead**. A **Workflow** default saved before reads as **Lead**. With a session open, a second row, **New runs in this session start as**, sets that session's own default, which wins over the workspace one. Either reaches new runs only, and each change shows a toast with **Undo**.
 
 ### Auto asks you
 
