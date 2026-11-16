@@ -326,7 +326,7 @@ state is a `StateDot` or a glyph in a 16px column.
 
 `StateDot` is the one state mark of a list or a sidebar slot: a 6px
 `StatusDot` named by its state word (the tooltip and the accessible name),
-`running` (info), `needsYou` (warning), `failed` (danger), `unread` (the quiet `unread` tone: a reduced-chroma cyan, 6.3:1 on dark and 3.8:1 on light, never used on a button),
+`running` (info), `needsYou` (warning), `failed` (danger), `unread` (the quiet `unread` tone: a reduced-chroma blue, 6.9:1 on the dark page and 4.5:1 on the light one, never used on a button),
 `done` (success), and `idle` and `stopped`, a neutral ring with a transparent
 fill on every background. A running dot pulses (under `motion-safe`) only when
 the caller passes `isLive`, on the item that runs (a list row, a tail glyph);
@@ -943,11 +943,19 @@ the outline look, `ghost` and `quiet` the quiet look.
   Stage colors go through `STAGE_TONE`. No per-file tone maps.
 - The stage tones: attention `warning`, running `info`, in review `success`,
   done `merged`, building neutral.
-- Each tone keeps one job: `primary` is the one accent for the main action,
-  `warning` (amber) only says something needs you, `danger` (red) only marks
-  stop and destructive, and `info` marks a neutral fact such as a setting that
-  differs from its default (**Changed**). Light `warning` sits at amber gold (hue 70) so it never reads as a second red beside `danger` (hue 22), and
-  `warning-mark` clears 3:1 as a dot on every surface.
+- Each tone keeps one job: `primary` (blue) is the one accent for the main
+  action, a link, a selection and focus, `warning` (amber) only says something
+  needs you, `danger` (red) only marks stop and destructive, and `info` (cyan)
+  marks a neutral fact or work in progress, such as a setting that differs from
+  its default (**Changed**). Cyan sits 44 degrees from the action blue, so the
+  two never read as one. `merged` (purple) is merged and done, `draft` is a
+  quiet gray. `warning-mark` clears 3:1 as a dot on every surface.
+- Each tone token (`danger`, `primary` ...) is step 11 of its scale: text, an
+  icon, a dot, a bar (`draft`, a step quieter, is gray step 10). A fill that carries a label is `T-solid` (step 9) with
+  `on-T` on it, never the bare tone. `on-T` is white in both themes, except on
+  amber, which takes a dark ink. The focus ring has its own `focus-ring` value,
+  a stronger blue than `primary` text, and an open menu's trigger draws the same
+  ring. Find highlights (`find-match`, `find-current`) are opaque amber steps.
 - Surfaces follow the six-role ladder above. To lift something, move it to the
   role it plays; to sink something inside a parent, use `fill`. Never invent a
   shade.
@@ -970,14 +978,13 @@ the outline look, `ghost` and `quiet` the quiet look.
   `palette-scales-contrast.test.ts`.
 - Each tone also has step tokens: `T-wash`, `T-subtle`, `T-edge`, `T-solid`,
   `T-solid-hover` and `on-T`, plus `border-control`, `selection`, `brand-accent`
-  and the six `diff-` line tokens. For now each tone and diff step holds the
-  value that stands in its place today (`danger-subtle` is `danger` at 10%), so
-  a component moved onto them looks the same; `border-control` and `selection`
-  already carry their gray and blue values, and a `::selection` rule paints
-  selected text with `selection`. `tintClasses`,
-  `Button` and the solid marks read them already; the ring and the soft border
-  stay on opacity until their steps turn, and `tone-opacity.test.ts` counts what
-  is left. That count only falls. The text fields, checkboxes and listbox fields
+  and the six `diff-` line tokens. Each tone step is opaque and equals its
+  scale step (`danger-subtle` is red step 3), so a chip reads the same on every
+  surface; the diff steps still mix the tone at 10%. A `::selection` rule paints
+  selected text with `selection`. `tintClasses`, `Button` and the solid marks
+  read the steps: rings and soft borders on `T-edge`, strong and hover rings on
+  `T-solid`, and `unread` fills on the primary steps. `tone-opacity.test.ts`
+  counts what is left on opacity. That count only falls. The text fields, checkboxes and listbox fields
   use `border-control`. The diff paints added and removed lines and words with
   the `diff-` tokens, and the selected line with `primary-subtle` and a
   `primary-solid` rail. The brand chip sets `primary` to `brand-accent` inside
@@ -1026,8 +1033,8 @@ An icon inside a solid fill, a `primary` or `danger` button or a `ghost-danger`
 button takes the label colour (`[&_svg]:text-current` in `tintClasses(tone).solid`
 and `BUTTON_VARIANT_CLASSES`), so a toned icon passed in never draws a dim tint
 on the fill. `ButtonIconColor.test.tsx` pins it per variant and per tone; the
-`on-tone` contrast on every tone in both themes is pinned by
-`token-contrast-floor.test.ts`.
+`on-T` contrast on `T-solid` and on `T-solid-hover`, for every tone in both
+themes, is pinned by `token-contrast-floor.test.ts`.
 
 ### Avatar
 

@@ -128,7 +128,7 @@ check (`approved`) is a pull request ready to merge. A Bitbucket session wears
 the same marks: its commit statuses and its reviewers feed the same table, so a
 failed status is red, a reviewer's changes request is amber and an approval beside
 a failed status never reads ready. A pull request in the merge
-queue (`pr-queued`) is the `merging` mark: a ring in the `primary` teal around a
+queue (`pr-queued`) is the `merging` mark: a ring in the `primary` blue around a
 half-filled core, calm and in progress, because nothing is left for you to do.
 It ranks below the needs-you reasons and above approved, and the session stays
 in review, so it never enters Needs you, the Now chip or the Needs you
