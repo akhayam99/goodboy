@@ -35,7 +35,7 @@ A running agent, step or run shows a cyan dot or label on the overview, the Boar
 #### Status colors you can tell apart
 <!-- gb area=app image=board -->
 
-Red for failed, green for done, amber for waiting on you and purple for merged each keep one meaning. A draft pull request is gray instead of violet, so it no longer looks merged.
+Red for a failure, green for a step that passed, amber for waiting on you and purple for merged each keep one meaning. A draft pull request is gray instead of violet, so it no longer looks merged.
 
 Labels on a colored button or badge read in white, and on amber in dark ink, in both themes.
 
