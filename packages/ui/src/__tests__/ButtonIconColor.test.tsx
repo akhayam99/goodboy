@@ -9,8 +9,8 @@ import { tintClasses, type Tone } from '../tint';
 const ICON_FOLLOWS_TEXT = '[&_svg]:text-current';
 
 const TEXT_TOKEN_BY_VARIANT = {
-  primary: 'text-on-tone',
-  danger: 'text-on-tone',
+  primary: 'text-on-primary',
+  danger: 'text-on-danger',
   'ghost-danger': 'text-danger',
 } as const satisfies Partial<Record<ButtonVariant, string>>;
 
@@ -56,7 +56,7 @@ describe('Button icon color', () => {
   it.each(SOLID_TONES)('draws icons on the %s solid fill in the on-tone label color', (tone) => {
     const classes = classesOf({ value: tintClasses(tone).solid });
 
-    expect(classes).toContain('text-on-tone');
+    expect(classes).toContain(`text-on-${tone}`);
     expect(classes).toContain(ICON_FOLLOWS_TEXT);
   });
 });
