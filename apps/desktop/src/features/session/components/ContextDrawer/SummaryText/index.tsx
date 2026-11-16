@@ -1,5 +1,5 @@
 import { InlineMarkdown } from '@goodboy/ui';
-import { SummaryCode } from './SummaryCode';
+import { SummaryCode } from '../SummaryCode';
 
 type Props = {
   readonly text: string;
