@@ -12,7 +12,7 @@ type Params = {
   readonly runningCount: number;
 };
 
-export type BoardTileChip = Readonly<{
+type BoardTileChip = Readonly<{
   word: string;
   tone: Tone;
 }>;

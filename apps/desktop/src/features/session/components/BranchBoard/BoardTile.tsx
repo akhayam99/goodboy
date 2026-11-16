@@ -44,7 +44,6 @@ const BoardTileView = ({ rowId }: Props) => {
   return (
     <div
       data-board-row={rowId}
-      data-board-state={chip.word}
       className={cn(
         'relative flex min-h-14 min-w-0 items-center gap-3 rounded-md bg-background px-3 py-2',
         ROW_HOVER,

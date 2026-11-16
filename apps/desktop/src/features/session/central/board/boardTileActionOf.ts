@@ -7,7 +7,7 @@ type Params = {
   readonly cards: ReadonlyArray<Pick<ActionCardModel, 'kind'>>;
 };
 
-export type BoardTileAction =
+type BoardTileAction =
   | { readonly kind: 'none' }
   | { readonly kind: 'card'; readonly index: number }
   | { readonly kind: 'question'; readonly questionId: OpenQuestionId };
