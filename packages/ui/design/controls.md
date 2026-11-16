@@ -84,7 +84,7 @@ native `<select>`: the WebKit menu ignores theme, density and keyboard.
   (`chipClasses`). Open, the border goes to `border-strong` and the chevron
   turns 180 degrees in 120ms. Disabled, the text is `disabled-foreground` and
   `disabledReason` shows in a tooltip.
-- **Popover**: level 4 (`floating`, `shadow-lg`, `border`, `rounded-lg`),
+- **Popover**: level 4 (`floating`, `shadow-lg`, `floating-edge`, `rounded-lg`),
   padding 4, at least the trigger's width and at most 360 by 320, scrolling in
   a `ScrollFade`. It opens below and flips above with `useDropdown`, entering
   in 120ms (opacity and a 0.98 scale, `animate-popover-in`). Every select,
@@ -153,7 +153,7 @@ places it at the pointer, and an overflow trigger places it in an
 `AnchoredPopover`. The desktop feeds both from the action registry, so the two
 never differ ([docs/navigation/shell.md](../../../docs/navigation/shell.md#context-menus)).
 
-- **Surface**: level 4 (`FLOATING_SURFACE`: `floating`, `shadow-lg`, `border`,
+- **Surface**: level 4 (`FLOATING_SURFACE`: `floating`, `shadow-lg`, `floating-edge`,
   `rounded-lg`), 240px wide with a 200px floor and a 384px ceiling
   (`MENU_MAX_WIDTH`, passed as `maxWidth` to `useDropdown` because the inline
   `max-width` the hook writes would beat a `max-w-*` class; a long row

@@ -116,7 +116,7 @@ parent whose size changes from place to place.
 A surface takes the role it plays on the six-step ladder (`chrome`,
 `background`, `subtle`, `muted`, `elevated`, `floating`), anything inside a
 parent takes `fill`, and a grey "not yet" mark takes `idle`. Borders pick one of
-four jobs: `border-soft` decorates, `border` outlines a box or a floating edge,
+four jobs: `border-soft` decorates, `border` is the quiet edge of a box,
 `border-control` outlines a field, a checkbox or a select, and `border-strong`
 emphasises a control on hover. The roles, the light-mode axes
 and the contrast floors are in
@@ -124,16 +124,18 @@ and the contrast floors are in
 class with no `--color-*` token behind it fails `no-token-bypass.test.ts`.
 
 `bg-chrome` is the app frame and nothing else. `AppShell` paints the window
-once with `bg-backdrop` (chrome plus the `--app-backdrop` glow), and the top bar
-and the left column stay transparent on it, so one field runs behind both. The
-main pane stays on `bg-background`, one step in front, and every panel and
-drawer stays flat. `no-token-bypass.test.ts` fails a `bg-chrome` anywhere else
-and a `bg-backdrop` outside `AppShell` (the c02 levels scene, which draws the
-shell without it, is the one exception). `--app-backdrop-strength` defaults to
-3 (percent of `primary`); light mode multiplies it by
-`--app-backdrop-scale: 2.5`, because the same percent is invisible on the near-white
-chrome. `index.html` carries the light cover as a literal 15% and
-`boot-shell-paints-the-chrome.test.ts` fails if it drifts from the scale.
+once with `bg-backdrop` (flat chrome, no glow), and the top bar and the left
+column stay transparent on it, so one field runs behind both. The main pane
+stays on `bg-background`, one step in front, and every panel and drawer stays
+flat. `no-token-bypass.test.ts` fails a `bg-chrome` anywhere else and a
+`bg-backdrop` outside `AppShell` (the c02 levels scene, which draws the shell
+without it, is the one exception). `index.html` restates the chrome as a
+literal and `boot-shell-paints-the-chrome.test.ts` fails if it drifts.
+
+A shadow class reads a per-theme `--elevation-*` variable, never a value in
+`@theme`: Tailwind writes a theme shadow into the utility, so a light override
+of `--shadow-*` would never reach it. A new shadow step adds a `--shadow-*`
+that points at an `--elevation-*`, declared in `:root` and in the light block.
 
 ## The window grid
 

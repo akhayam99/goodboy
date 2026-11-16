@@ -69,41 +69,47 @@ between them instead of mixing one surface through opacity.
 | 5    | floating | `bg-floating`   | popovers, menus, centred dialogs, toasts, the palette |
 | 6    | tooltip  | `bg-floating`   | the label tooltip, one line on the floating surface   |
 
-Dark mode brightens one step at a time, 1.06 to 1.09:1 between neighbours.
-Light mode is ink on paper, read on two axes. On the elevation axis (what sits
-in front) chrome < content < raised = floating: nothing is brighter than white,
-so above raised the lift is `shadow-lg` plus `border`. On the nesting axis
-(what sits inside) content > panel > inset: the deeper, the darker. The sheet
-sits near white (`0.984`) and the chrome a clear step under it (1.09:1), so the
-left column reads as a frame and not as a grey slab; panel and inset step down
-from the sheet at 1.07:1 and 1.06:1, and the neutrals carry almost no hue, so
-nothing tints blue. Light `shadow-sm` is a soft contact shadow, enough to seat a
-raised card or a picked segment on the page.
+The neutrals are one cool gray scale (hue 264, chroma under 0.014), twelve
+steps per theme in `--gray-1` to `--gray-12`, and the surface and text tokens
+take their values from it. Dark mode brightens one step at a time, at least
+1.04:1 between neighbours. Light mode is ink on paper, read on two axes. On the
+elevation axis (what sits in front) chrome < content < raised = floating:
+nothing is brighter than white, so above raised the lift is `shadow-lg`, whose
+first layer is a 1px ring. On the nesting axis (what sits inside) content >
+panel > inset: the deeper, the darker. The sheet sits near white (`0.984`) and
+the chrome a step under it, so the left column reads as a frame and not as a
+grey slab; panel and inset step down from the sheet at 1.04:1 or more
+(`token-contrast-floor.test.ts`). Light `shadow-sm` is a soft contact shadow,
+enough to seat a raised card or a picked segment on the page.
 
-The window backdrop is step 0 plus one glow: `bg-backdrop` paints `chrome`
-under `--app-backdrop`, a radial of `primary` from the top-left corner (the
-website accent hue). `--app-backdrop-strength` is its alpha in percent, 3 by
-default, a faint glow over chrome (0 turns it off); light mode scales it by
-`--app-backdrop-scale: 2.5` (3% sidebar becomes 7.5%, the 6% cover 15%) so the glow
-reads on the light chrome as it does on the dark one. Only `AppShell` (and the c02 levels scene that stands in for it) paints it,
-under the top bar and
-the left column; the sheet, the session rail and every drawer stay opaque and
-flat. Mock scenes preview a strength with `?backdrop=<n>`. The boot splash and
-the Welcome cover that follows it paint `bg-backdrop-cover` instead: the same
-radial at `--app-backdrop-cover-strength` (6), so the handoff has no seam.
+Every shadow step (`shadow-xs` to `shadow-xl`) reads a per-theme
+`--elevation-*` variable. Tailwind writes a theme shadow into its utility, so a
+light value declared under the same name would never reach the class; the
+indirection is what lets light draw its own shadows, cool ink at 6 to 18%
+instead of the dark black.
+
+The window backdrop is step 0 and flat: `bg-backdrop` paints `chrome` under the
+top bar and the left column, and only `AppShell` (and the c02 levels scene that
+stands in for it) paints it; the sheet, the session rail and every drawer stay
+opaque and flat. The boot splash and the Welcome cover that follows it paint
+`bg-backdrop-cover`, the same chrome, so the handoff has no seam. No glow sits
+behind the window.
 
 `drawer` sits beside the page surface, not on the ladder: a right drawer is its
 own container next to the sheet and is painted one step quieter than
 `background`, between `chrome` and `background` in both themes (dark
-`oklch(0.187 0.006 255)`, light `oklch(0.968 0.002 250)`: the same hue and no
+`oklch(0.174 0.004 264)`, light `oklch(0.972 0.002 264)`: the same hue and no
 more chroma than `background`, so it recedes and never tints). It carries every
 text token at 4.5:1 and every border at the floors of the ladder, held by
 `token-contrast-floor.test.ts`. A drawer container never fakes the difference
 with a border.
 
 Two tokens are relations, not steps. `fill` is one step inside whatever parent
-it sits on (white 6% in dark, black 5% in light), so a neutral chip, a
-secondary button or a skeleton moves the right way on any surface. `idle` is
+it sits on (white 6% in dark, ink 6% in light), so a neutral chip or a
+skeleton moves the right way on any surface. The secondary button paints
+`button-secondary`: `fill` in dark, white with `shadow-xs` (its
+`shadow-button-secondary`) in light, so it stands on the page instead of
+sinking into it. `idle` is
 the single grey for "not yet" and "off": pending and queued dots, an off switch
 track, inactive bars. States that share it differ by shape (filled, ring,
 dash), never by another opacity.
@@ -113,19 +119,18 @@ Four borders, each with one job:
 | token            | job                                                              | floor                           |
 | ---------------- | ---------------------------------------------------------------- | ------------------------------- |
 | `border-soft`    | decorative hairline: dividers, image frames, resting raised card | 1.2:1, 1.3:1 on raised/floating |
-| `border`         | the floating edge, card hover                                    | 3:1 on every step               |
+| `border`         | the quiet box edge: card hover, secondary button, dark floating  | 1.4:1, above `border-soft`      |
 | `border-control` | fields, checkboxes, search and listbox fields, listbox ticks     | 3:1 on every step               |
 | `border-strong`  | emphasis: control hover                                          | 4.5:1 on every step             |
 
-`border-control` holds the value of `border` for now. The two split when the
-neutrals move to the gray scale.
-
-`border` is an alpha overlay (foreground at 38% in dark, 45% in light), never a
-solid value, so it holds 3:1 on every step from `chrome` to `floating` and sits
-near 3.3:1 on the base sheet instead of 4.5:1.
+The first three are alpha overlays of one ink (white in dark, `gray-12` in
+light), never a solid value, so each keeps its floor on every step from
+`chrome` to `floating`: `border-soft` at 9% and 13.5%, `border` at 15% and 20%,
+`border-control` at 40% and 52%. A box reads by its quiet edge; only a control
+the user acts on carries the 3:1 edge (`token-contrast-floor.test.ts`).
 
 Three translucent tokens paint over whatever sits below them: `frame-edge`
-(white 8% in dark, black 8.5% in light) draws the content sheet and the right
+(white 8% in dark, ink 10.5% in light) draws the content sheet and the right
 drawer container at 1.2:1 or more on chrome and background, and
 `scrollbar-thumb` and `scrollbar-thumb-active` clear 1.8:1 and 3:1 on
 background, panel and floating.
@@ -154,17 +159,18 @@ is `pt-3 pb-5` for the pinned back row, whose 24px line holds 4px above its text
 write their own blur, alpha or shadow.
 
 A clickable card at rest carries two signals together (a fill one step above
-its parent plus the hairline). Its states clear 3:1: hover `border`, selection
-`bg-selected`, focus ring. `token-contrast-floor.test.ts` holds the ladder
+its parent plus the hairline). Its states: hover `border`, selection
+`bg-selected`, focus ring at 3:1. `token-contrast-floor.test.ts` holds the ladder
 order and every floor on all six steps, and `no-token-bypass.test.ts` fails on
 any colour class with no `--color-*` token behind it.
 
 `bg-hover` and `bg-selected` are interaction overlays painted as a
 background-image layer, so they stack on whatever fill the element rests on
 instead of replacing it, and `cn` keeps them beside a surface class. Hover is
-8.5% white in dark and 7.5% black in light, about 19 of 255 levels on a row and
-on a tinted waiting or unread row, enough to notice while moving down a list;
-selected is 13% and 12%, so a selected row always reads above a hovered one.
+8.5% white in dark and 8.8% ink in light, about 19 of 255 levels on a row and
+on a waiting or unread row (`warning-wash`, `primary-wash`), enough to notice
+while moving down a list; selected is 13% and 12.5%, so a selected row always
+reads above a hovered one.
 `row-hover-wash.test.ts` holds both floors. `scrim` is reserved for modal backdrops and the backdrop of a drawer over the page.
 
 A selected row has one treatment everywhere: `bg-selected`, foreground text and
@@ -172,8 +178,8 @@ medium weight, driven by `data-selected` (`selectedRow.ts`, used by
 `SelectableRow`). `SegmentedTabs` is the one exception, because a segment that
 only darkens read as disabled in light mode: a `fill` track, and the active
 segment raised on it (`bg-segment-active`, white in light and white 10% in dark,
-with `shadow-sm`) and outlined in `border`, whose edge clears 3:1 in both
-themes. A
+with `shadow-sm`) and outlined in the quiet `border`; the shadow and the white
+step carry it, not the edge. A
 selected nav entry also lights its icon in its own kind color, never the
 label: `selectedIconClass` (`SelectableRow selectedIconTone`, the column
 doors, `RailButton` and the pressed session tool) over one function,
@@ -675,7 +681,7 @@ together, and there is no arbitrary shadow.
 | 1 sheet    | `background`                    | none        | `frame-edge`                  | `frame` where chrome wraps | content, studio detail           |
 | 2 band     | `fill` (band), `subtle` (panel) | none        | none                          | `lg`                       | groups, panels on the sheet      |
 | 3 card     | `elevated`                      | `shadow-sm` | `border-soft`, hover `border` | `lg`                       | board cards                      |
-| 4 floating | `floating`                      | `shadow-lg` | `border`                      | `lg`                       | popovers, menus, toasts, dialogs |
+| 4 floating | `floating`                      | `shadow-lg` | `floating-edge`               | `lg`                       | popovers, menus, toasts, dialogs |
 | 5 tooltip  | `floating`                      | `shadow-lg` | `border-soft`                 | `md`                       | label tooltips                   |
 
 The label tooltip is `FLOATING_SURFACE` with the `md` radius and a soft border: foreground text in `text-meta` medium, `px-2 py-1`, at most 280px wide, fading in over 120ms when motion is allowed. Its shortcut is a plain `Kbd` in the faint color. The shared `Tooltip` gives its node an `id` and sets `aria-describedby` on the trigger while it is open, unless its text equals the trigger's `aria-label`, so a screen reader never hears a name twice. `Tooltip` has no variant; a mark with two facts or more uses the fact card below. It opens on the side it is given and flips to the other side when it would cross the window edge by the gap, so it never sits under the edge or over its own target; along the edge it shifts instead. A trigger that opens a popover passes `isSuppressed` with the popover state, so its label never lies over the popover it opened.
@@ -700,8 +706,10 @@ A right drawer is its own container, never a card inside the sheet: it holds the
 only to a dragged card.
 
 **One floating surface.** Level 4 is the constant `FLOATING_SURFACE`
-(`rounded-lg border border-border bg-floating shadow-lg`, from
-`packages/ui/src/floatingSurface.ts`). `Popover`, `ContextMenu`,
+(`rounded-lg border border-floating-edge bg-floating shadow-lg`, from
+`packages/ui/src/floatingSurface.ts`). `floating-edge` is `border` in dark and
+transparent in light, where the 1px ring inside `shadow-lg` draws the edge;
+`Dialog` takes the same edge. `Popover`, `ContextMenu`,
 `MenuChoicePanel`, `MenuSubmenuPanel` (a row with `children` opens its rows beside it: ArrowRight opens, ArrowLeft closes and returns focus to the row, Escape closes the whole menu), the crumb menu, the history arrow menu, the session hover
 card, the session switcher, the update arrival card and the delete confirm
 take it as it is; a site adds layout and padding only, never a border, a fill or
@@ -962,9 +970,11 @@ the outline look, `ghost` and `quiet` the quiet look.
   `palette-scales-contrast.test.ts`.
 - Each tone also has step tokens: `T-wash`, `T-subtle`, `T-edge`, `T-solid`,
   `T-solid-hover` and `on-T`, plus `border-control`, `selection`, `brand-accent`
-  and the six `diff-` line tokens. For now each one holds the value that stands
-  in its place today (`danger-subtle` is `danger` at 10%, `border-control` is
-  `border`), so a component moved onto them looks the same. `tintClasses`,
+  and the six `diff-` line tokens. For now each tone and diff step holds the
+  value that stands in its place today (`danger-subtle` is `danger` at 10%), so
+  a component moved onto them looks the same; `border-control` and `selection`
+  already carry their gray and blue values, and a `::selection` rule paints
+  selected text with `selection`. `tintClasses`,
   `Button` and the solid marks read them already; the ring and the soft border
   stay on opacity until their steps turn, and `tone-opacity.test.ts` counts what
   is left. That count only falls. The text fields, checkboxes and listbox fields

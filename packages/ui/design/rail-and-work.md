@@ -558,7 +558,7 @@ glyph, the branch cut at the end in `text-code`, and the pull request glyph;
 the current branch reads in `foreground`. Every row and button takes its hover
 wash and focus ring from `ROW_INTERACTIVE`, never a copy.
 
-The hover card is `bg-floating`, `border`, `shadow-lg`, 320px wide and `p-3`,
+The hover card is `bg-floating`, `floating-edge`, `shadow-lg`, 320px wide and `p-3`,
 and its title row, state rows and facts line are the `FactCard` parts
 (`FactCardHeader`, `FactCardState`, `FactCardFootnote`), so it and every fact
 card share one anatomy and cannot drift; only its chips and actions are its own,

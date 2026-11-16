@@ -273,7 +273,7 @@ about its effect is a worse defect than one that reads badly.
   holds the choice; the palette toggle sets the opposite of what is showing.
 - **More contrast is one switch, not a slider.** `data-contrast="more"` on the
   root, set by `prefers-contrast: more` or by Settings > App > General > More
-  contrast, moves the soft border to the border value, lifts the hover and
+  contrast, moves the soft border to the control border value, lifts the hover and
   selected washes one step, draws idle marks and disabled text at the faint
   text color and the frame edge at 2:1. It overrides tokens only, in both
   themes; `more-contrast-tokens.test.ts` holds the floors for each.
