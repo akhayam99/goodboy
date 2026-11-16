@@ -8,6 +8,9 @@ vi.mock('@tauri-apps/api/event', async () =>
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
+import type { IconGlyph } from '@goodboy/ui/icons';
+import { findGlyph } from '@goodboy/ui/icons/testing/findGlyph';
+import { CONCEPT_ICONS } from '../../../../../shared/components/conceptIcons';
 import { ToastProvider } from '../../../../../shared/components/Toast';
 import {
   importStore,
@@ -49,18 +52,18 @@ const show = ({ name }: Params) => {
   );
 };
 
-const runGlyphClasses = (): ReadonlyArray<string> =>
-  screen
-    .getAllByTestId('run-glyph')
-    .map((glyph) => glyph.querySelector('svg')?.getAttribute('class') ?? '');
+type DrawsParams = {
+  readonly icon: IconGlyph;
+};
+
+const runGlyphDraws = ({ icon }: DrawsParams): boolean =>
+  screen.getAllByTestId('run-glyph').some((glyph) => findGlyph({ root: glyph, icon }) !== null);
 
 describe('activity kinds scenes', () => {
   it('draws a preset run with the Workflows glyph and an orchestrated run with the orchestrator', () => {
     show({ name: 'activity-kinds-light' });
-    const classes = runGlyphClasses();
-    expect(classes.some((name) => name.includes('lucide-waypoints'))).toBe(true);
-    expect(classes.some((name) => name.includes('lucide-network'))).toBe(true);
-    expect(classes.some((name) => name.includes('lucide-layout-template'))).toBe(false);
+    expect(runGlyphDraws({ icon: CONCEPT_ICONS.workflows })).toBe(true);
+    expect(runGlyphDraws({ icon: CONCEPT_ICONS.orchestrator })).toBe(true);
     expect(screen.getAllByRole('img', { name: /preset run/i }).length).toBeGreaterThan(0);
   });
   it('registers a light and a dark shot', () => {

@@ -2,6 +2,8 @@
 
 import { afterEach, describe, expect, it } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
+import { CircleDashed } from '@goodboy/ui/icons';
+import { findGlyph } from '@goodboy/ui/icons/testing/findGlyph';
 import { tooltipTextOf } from '../../../../../__tests__/helpers/tooltip';
 import { PullRequestChip } from './index';
 
@@ -35,6 +37,6 @@ describe('PullRequestChip', () => {
     const icon = screen.getByLabelText('No pull request');
     expect(icon.getAttribute('title')).toBeNull();
     expect(tooltipTextOf({ element: icon })).toBe('No pull request');
-    expect(icon.querySelector('.lucide-circle-dashed')).not.toBeNull();
+    expect(findGlyph({ root: icon, icon: CircleDashed })).not.toBeNull();
   });
 });

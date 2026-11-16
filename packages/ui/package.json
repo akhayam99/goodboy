@@ -11,6 +11,10 @@
     "./icons": {
       "types": "./src/icons/index.ts",
       "default": "./src/icons/index.ts"
+    },
+    "./icons/testing/*": {
+      "types": "./src/icons/testing/*.ts",
+      "default": "./src/icons/testing/*.ts"
     }
   },
   "scripts": {
@@ -20,7 +24,6 @@
   "dependencies": {
     "@phosphor-icons/react": "2.1.10",
     "clsx": "^2.1.1",
-    "lucide-react": "^1.61.0",
     "tailwind-merge": "^3.7.0"
   },
   "peerDependencies": {

@@ -2,6 +2,8 @@
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { Plus, SquarePen } from '@goodboy/ui/icons';
+import { findGlyph } from '@goodboy/ui/icons/testing/findGlyph';
 import type { SessionId } from '@goodboy/types';
 import { brandedId } from '../../../history/testing/brandedId';
 import type { PickerCluster, PickerRow } from '../../terminalPickerClusters';
@@ -81,8 +83,8 @@ describe('the New terminal button', () => {
     render(<NewTerminalMenu clusters={[]} onNew={onNew} onOpenAt={vi.fn()} />);
 
     const button = screen.getByRole('button', { name: 'New terminal' });
-    expect(button.querySelector('svg.lucide-plus')).not.toBeNull();
-    expect(button.querySelector('svg.lucide-square-pen')).toBeNull();
+    expect(findGlyph({ root: button, icon: Plus })).not.toBeNull();
+    expect(findGlyph({ root: button, icon: SquarePen })).toBeNull();
     fireEvent.click(button);
     expect(onNew).toHaveBeenCalledOnce();
   });

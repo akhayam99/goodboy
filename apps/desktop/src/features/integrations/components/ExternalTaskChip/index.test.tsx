@@ -2,6 +2,8 @@
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { ArrowRight, ArrowUpRight } from '@goodboy/ui/icons';
+import { findGlyph } from '@goodboy/ui/icons/testing/findGlyph';
 import type { SessionExternalTask, SessionExternalTaskProvider } from '@goodboy/types';
 
 const mocks = vi.hoisted(() => ({
@@ -98,7 +100,7 @@ describe('ExternalTaskChip, row appearance', () => {
     expect(screen.getByText('Improve preview metadata')).toBeDefined();
     expect(screen.getByRole('link', { name: 'Open in Linear' })).toBeDefined();
     expect(screen.getByRole('button', { name: 'Copy GB-123 link' })).toBeDefined();
-    expect(container.querySelector('.lucide-arrow-up-right')).not.toBeNull();
+    expect(findGlyph({ root: container, icon: ArrowUpRight })).not.toBeNull();
   });
 
   it('omits the copy-link action when the task has no url', () => {
@@ -135,7 +137,7 @@ describe('ExternalTaskChip, row appearance', () => {
     fireEvent.click(screen.getByRole('button', { name: 'open GB-123 integration' }));
     expect(onClick).toHaveBeenCalledOnce();
     expect(studioListener).not.toHaveBeenCalled();
-    expect(container.querySelector('.lucide-arrow-right')).not.toBeNull();
+    expect(findGlyph({ root: container, icon: ArrowRight })).not.toBeNull();
     window.removeEventListener('goodboy:open-linear-studio', studioListener);
   });
 });

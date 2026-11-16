@@ -10,7 +10,8 @@ import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render, waitFor } from '@testing-library/react';
-import { ChevronLeft } from '@goodboy/ui/icons';
+import { ArrowLeft, ChevronLeft } from '@goodboy/ui/icons';
+import { findGlyphs } from '@goodboy/ui/icons/testing/findGlyphs';
 import { Trail } from '@goodboy/ui';
 import { ToastProvider } from '../../shared/components/Toast';
 import { MOCK_SCENES } from '../../app/components/MockScene';
@@ -18,7 +19,7 @@ import { STORE_IMPORT_TIMEOUT_MS, importStore, resetStoryStore } from '../../sto
 
 const SRC = join(__dirname, '..', '..');
 const TRAIL = '[data-slot="trail"]';
-const BACK_GLYPH = '.lucide-chevron-left, .lucide-arrow-left';
+const BACK_GLYPHS = [ChevronLeft, ArrowLeft];
 const BACK_CHARACTERS = /[‹←]/;
 const SESSION_SCENE = 'shell';
 const SESSION_TABS = '[data-session-head]';
@@ -48,7 +49,8 @@ afterEach(() => {
 });
 
 const hasBackGlyph = (trail: Element): boolean =>
-  trail.querySelector(BACK_GLYPH) !== null || BACK_CHARACTERS.test(trail.textContent ?? '');
+  findGlyphs({ root: trail, icons: BACK_GLYPHS }).length > 0 ||
+  BACK_CHARACTERS.test(trail.textContent ?? '');
 
 const sourcesOf = (dir: string): ReadonlyArray<string> =>
   readdirSync(dir).flatMap((name) => {
@@ -102,7 +104,7 @@ describe('no back glyph in a trail', () => {
     });
     expect(Array.from(document.querySelectorAll(TRAIL)).filter(hasBackGlyph)).toEqual([]);
     expect(document.querySelector(`${TAB_HEAD} [data-session-back]`)).toBeNull();
-    const glyphs = Array.from(document.querySelectorAll(BACK_GLYPH));
+    const glyphs = findGlyphs({ root: document, icons: BACK_GLYPHS });
     expect(glyphs.some((glyph) => glyph.closest(TAB_HEAD) !== null)).toBe(false);
     expect(
       glyphs.some(
@@ -137,7 +139,7 @@ describe('no back glyph in a trail', () => {
     const crumbs = document.querySelector(CRUMBS);
     expect(crumbs === null ? true : hasBackGlyph(crumbs)).toBe(false);
     const head = document.querySelector(SESSION_TABS);
-    const glyphs = Array.from(head?.querySelectorAll(BACK_GLYPH) ?? []);
+    const glyphs = findGlyphs({ root: head, icons: BACK_GLYPHS });
     expect(glyphs).toHaveLength(1);
     const button = glyphs[0]?.closest('button') ?? null;
     expect(button?.hasAttribute('data-session-back')).toBe(true);

@@ -2,7 +2,10 @@
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { DotsThreeVerticalIcon } from '@phosphor-icons/react/DotsThreeVertical';
 import { OverflowMenu } from '../components/OverflowMenu';
+import { Ellipsis } from '../icons';
+import { findGlyph } from '../icons/testing/findGlyph';
 import type { MenuEntry } from '../components/ContextMenu/menuTypes';
 import { MENU_MAX_WIDTH } from '../menuMaxWidth';
 
@@ -98,9 +101,9 @@ describe('OverflowMenu', () => {
 
   it('draws the ellipsis glyph by default, never the vertical dots', () => {
     render(<OverflowMenu entries={TWO} />);
-    const glyph = screen.getByRole('button', { name: /more actions/i }).querySelector('svg');
-    expect(glyph?.getAttribute('class')).toContain('lucide-ellipsis');
-    expect(glyph?.getAttribute('class')).not.toContain('lucide-ellipsis-vertical');
+    const trigger = screen.getByRole('button', { name: /more actions/i });
+    expect(findGlyph({ root: trigger, icon: Ellipsis })).not.toBeNull();
+    expect(findGlyph({ root: trigger, icon: DotsThreeVerticalIcon })).toBeNull();
   });
 
   it('draws nothing and logs when it has no items', () => {

@@ -11,6 +11,8 @@ vi.mock('@goodboy/db', async () =>
 );
 
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { ChevronDown } from '@goodboy/ui/icons';
+import { findGlyph } from '@goodboy/ui/icons/testing/findGlyph';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { brandedId } from '../../../../history/testing/brandedId';
 import type { Agent, Session, SessionId, WorkspaceId } from '@goodboy/types';
@@ -109,7 +111,7 @@ describe('OverviewActions', () => {
   it('draws a chevron, since it opens a menu', () => {
     const { container } = render(<OverviewActions session={SESSION} />);
 
-    expect(container.querySelector('.lucide-chevron-down')).not.toBeNull();
+    expect(findGlyph({ root: container, icon: ChevronDown })).not.toBeNull();
   });
 });
 

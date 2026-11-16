@@ -2,7 +2,8 @@
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
-import { Circle } from '../icons';
+import { ChevronRight, Circle } from '../icons';
+import { findGlyph } from '../icons/testing/findGlyph';
 import { Trail } from '../components/Trail';
 import type { CrumbMenuModel, CrumbMenuRow } from '../components/Trail/crumbMenuTypes';
 
@@ -82,8 +83,8 @@ describe('Trail', () => {
     expect(plain?.tagName).not.toBe(menu?.tagName);
     expect(plain?.className).toContain('w-6');
     expect(menu?.className).toContain('w-6');
-    expect(plain?.querySelector('svg')?.getAttribute('class')).toContain('lucide-chevron-right');
-    expect(menu?.querySelector('svg')?.getAttribute('class')).toContain('lucide-chevron-right');
+    expect(findGlyph({ root: plain, icon: ChevronRight })).not.toBeNull();
+    expect(findGlyph({ root: menu, icon: ChevronRight })).not.toBeNull();
     expect(page?.querySelector('[data-trail-tail]')).toBeNull();
     expect(container.querySelectorAll('[data-trail-tail]')).toHaveLength(2);
   });

@@ -3,8 +3,12 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
 import { WorkNode } from '../components/WorkTree/WorkNode';
 import type { WorkNodeState } from '../components/WorkTree/workNodeSpec';
+import { Check } from '../icons';
+import { findGlyph } from '../icons/testing/findGlyph';
 
 afterEach(cleanup);
+
+const GLYPH_SVG = 'svg[viewBox="0 0 256 256"]';
 
 const nodeOf = (label: string): HTMLElement => screen.getByRole('img', { name: label });
 
@@ -145,7 +149,7 @@ describe('WorkNode', () => {
     expect(disc?.getAttribute('class')).toContain('fill-success-solid');
     expect(disc?.getAttribute('class')).toContain('stroke-success-solid');
     expect(disc?.getAttribute('class')).not.toContain('fill-none');
-    const check = screen.getByTestId('work-node-glyph').querySelector('svg.lucide-check');
+    const check = findGlyph({ root: screen.getByTestId('work-node-glyph'), icon: Check });
     expect(check).not.toBeNull();
     expect(check?.getAttribute('class')).toContain('text-on-success');
     expect(check?.getAttribute('width')).toBe('12');
@@ -170,7 +174,7 @@ describe('WorkNode', () => {
 
     const node = nodeOf('Approved');
     expect(node.style.width).toBe('14px');
-    expect(node.querySelector('svg.lucide-check')?.getAttribute('width')).toBe('12');
+    expect(findGlyph({ root: node, icon: Check })?.getAttribute('width')).toBe('12');
   });
 
   it('draws a finished node as a solid violet disc with a white check, apart from approved', () => {
@@ -188,7 +192,7 @@ describe('WorkNode', () => {
     expect(disc).toContain('stroke-merged-solid');
     expect(disc).not.toContain('fill-none');
     expect(disc).not.toContain('success');
-    const check = finished.querySelector('svg.lucide-check');
+    const check = findGlyph({ root: finished, icon: Check });
     expect(check?.getAttribute('class')).toContain('text-on-merged');
     expect(check?.getAttribute('width')).toBe('12');
     const approved = nodeOf('Approved').querySelector('circle');
@@ -216,9 +220,9 @@ describe('WorkNode', () => {
     const core = merging.querySelector('path');
     expect(core?.parentElement?.getAttribute('class')).toContain('fill-primary');
     expect(core?.getAttribute('d')).toContain('A');
-    expect(merging.querySelector('svg.lucide-check')).toBeNull();
-    expect(nodeOf('Approved').querySelector('svg.lucide-check')).not.toBeNull();
-    expect(nodeOf('Finished').querySelector('svg.lucide-check')).not.toBeNull();
+    expect(findGlyph({ root: merging, icon: Check })).toBeNull();
+    expect(findGlyph({ root: nodeOf('Approved'), icon: Check })).not.toBeNull();
+    expect(findGlyph({ root: nodeOf('Finished'), icon: Check })).not.toBeNull();
     expect(merging.textContent).toBe('');
   });
 
@@ -248,7 +252,7 @@ describe('WorkNode', () => {
     );
 
     for (const state of states) {
-      for (const glyph of nodeOf(state).querySelectorAll('svg.lucide')) {
+      for (const glyph of nodeOf(state).querySelectorAll(GLYPH_SVG)) {
         expect(Number(glyph.getAttribute('width'))).toBeGreaterThanOrEqual(12);
       }
     }

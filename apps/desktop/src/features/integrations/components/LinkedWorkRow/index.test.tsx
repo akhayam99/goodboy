@@ -1,6 +1,7 @@
 // @vitest-environment happy-dom
 
-import { GitBranch } from '@goodboy/ui/icons';
+import { ArrowRight, ArrowUpRight, GitBranch } from '@goodboy/ui/icons';
+import { findGlyph } from '@goodboy/ui/icons/testing/findGlyph';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { LinkedWorkRow } from './index';
@@ -93,7 +94,7 @@ describe('LinkedWorkRow, navigation', () => {
       />,
     );
 
-    expect(container.querySelector('.lucide-arrow-up-right')).not.toBeNull();
-    expect(container.querySelector('.lucide-arrow-right')).toBeNull();
+    expect(findGlyph({ root: container, icon: ArrowUpRight })).not.toBeNull();
+    expect(findGlyph({ root: container, icon: ArrowRight })).toBeNull();
   });
 });
