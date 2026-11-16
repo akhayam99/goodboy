@@ -1,5 +1,5 @@
+import { PROVIDER_IDS as REGISTRY_PROVIDER_IDS } from '@goodboy/types';
 import type { SessionId, TelemetryRecord } from '@goodboy/types';
-import type { ProviderId } from '@goodboy/types';
 import { costCoverage, type CostCoverage } from '@goodboy/core/providers';
 
 export type SortKey = 'recent' | 'expensive';
@@ -37,21 +37,7 @@ export type CoverageTurnCounts = {
   readonly unpriced: number;
 };
 
-export const PROVIDER_IDS = [
-  'anthropic',
-  'cursor',
-  'codex',
-  'gemini',
-  'copilot',
-  'opencode',
-  'openrouter',
-  'moonshot',
-] satisfies ReadonlyArray<ProviderId>;
-
-type Expect<T extends true> = T;
-type ProviderIdsAreTotal =
-  Exclude<ProviderId, (typeof PROVIDER_IDS)[number]> extends never ? true : false;
-type _ProviderIdsTotalCheck = Expect<ProviderIdsAreTotal>;
+export const PROVIDER_IDS = REGISTRY_PROVIDER_IDS;
 
 export const sortTurns = (
   turns: ReadonlyArray<WorkspaceTurn>,

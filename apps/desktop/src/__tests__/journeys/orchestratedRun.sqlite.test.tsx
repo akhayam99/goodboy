@@ -5,7 +5,9 @@ import { cleanup, render, type RenderResult } from '@testing-library/react';
 import { ToastProvider } from '../../shared/components/Toast';
 import { OrchestratedRunPage } from '../../features/session/components/OrchestratedRun';
 import { insertWorkspace, saveWorkflow } from '@goodboy/db';
-import { ORCHESTRATOR_SYSTEM_PROMPT } from '@goodboy/core/orchestrator';
+import { DEFAULT_WORKFLOW_RULES } from '@goodboy/types';
+import { aPlan } from '../../test/planFixtures';
+import type { ProviderDisplayInfo } from '../../features/providers/providers';
 import type {
   IsoDateTime,
   SessionId,
@@ -174,7 +176,7 @@ beforeEach(async () => {
     workspaces_with_unread: [],
     gh_run: { stdout: '', stderr: 'no git remotes found', exitCode: 1 },
     planner_run: (payload: AuxPayload) => {
-      if (payload.args.systemPrompt !== ORCHESTRATOR_SYSTEM_PROMPT) {
+      if (!payload.args.systemPrompt.startsWith('You are the workflow orchestrator for ')) {
         return { stdout: '', stderr: 'no aux provider in tests', exitCode: 1 };
       }
       requests.push(payload);
@@ -249,6 +251,102 @@ const storedOutcome = async (workflowRunId: WorkflowRunId) =>
   });
 
 describe('journey: an orchestrated run to completion', () => {
+  it.each([false, true])(
+    'starts the Copilot step of a plan with a previous write failure: %s',
+    async (hasPreviousFailure) => {
+      const copilot: ProviderDisplayInfo = {
+        id: 'copilot',
+        binary: 'copilot',
+        label: 'Copilot',
+        connection: 'connected',
+        capabilities: { models: [] },
+        docsUrl: 'https://example.test/copilot',
+        version: null,
+        identity: null,
+        error: null,
+      };
+      const routing = await import('../../features/providers/routing');
+      vi.mocked(routing.resolveProviderForTurn).mockResolvedValue({
+        selectedProvider: 'copilot',
+        selectedModel: 'gpt-6.1-sol',
+        reason: 'preferred',
+        fallbackUsed: false,
+      });
+      const providers = useAppStore.getState().providers;
+      useAppStore.setState({
+        providers: [...providers, copilot],
+        sessionPlans: {
+          [sessionId]: [
+            aPlan({ sessionId, bodyMd: 'Implement the settlement plan in ledger-core.' }),
+          ],
+        },
+      });
+      const next = orchestrated({
+        action: 'next',
+        reason: 'Implement the approved settlement plan.',
+        step: {
+          name: 'Implement the settlement plan',
+          role: 'implementer',
+          promptPrefix: 'Implement the approved settlement plan in ledger-core.',
+          provider: 'copilot',
+          model: 'gpt-6.1-sol',
+          effort: 'high',
+          modelReason: 'Use the connected model for the implementation.',
+        },
+      });
+      replies = hasPreviousFailure ? [next, next, DONE] : [next, DONE];
+      if (hasPreviousFailure) {
+        storySpies.invokeAgentInsert.mockRejectedValueOnce(new Error('Invalid routing decision'));
+      }
+      await useAppStore.getState().attachWorkflowToSession(sessionId, WORKFLOW_ID, {
+        autoRun: true,
+        executionMode: 'dynamic',
+        triggerMode: 'immediate',
+        rulesSnapshot: {
+          ...DEFAULT_WORKFLOW_RULES,
+          autonomy: 'run',
+          spreadByHeadroom: false,
+          canOrchestratorPickModel: true,
+          planApproved: true,
+        },
+      });
+      const workflowRunId = runIdOfSession();
+      let retry: Promise<void> | undefined;
+      if (hasPreviousFailure) {
+        await vi.waitFor(() =>
+          expect(runOf(workflowRunId)?.orchestrationStop?.kind).toBe('failure'),
+        );
+        await vi.waitFor(() =>
+          expect(useAppStore.getState().orchestratingWorkflowRuns[workflowRunId]).toBe(false),
+        );
+        expect(await runAgents(workflowRunId)).toEqual([]);
+        retry = useAppStore.getState().retryWorkflowOrchestration(sessionId, workflowRunId);
+      }
+      await vi.waitFor(() => expect(held.turns).toHaveLength(1));
+      const [agent] = (useAppStore.getState().sessionPhaseRuns[sessionId] ?? []).filter(
+        (entry) => entry.workflowRunId === workflowRunId,
+      );
+      expect(agent).toMatchObject({
+        status: 'running',
+        providerOverride: 'copilot',
+        routingDecision: {
+          selected: { provider: 'copilot', model: 'gpt-6.1-sol', effort: 'high' },
+          source: 'agent',
+        },
+      });
+      expect(
+        await rowsOf<{ provider_override: string }>({
+          sql: 'SELECT provider_override FROM agents WHERE workflow_run_id = ?',
+          params: [workflowRunId],
+        }),
+      ).toEqual([{ provider_override: 'copilot' }]);
+      expect(runOf(workflowRunId)?.orchestrationStop).toBeUndefined();
+      expect(storySpies.runTurn.mock.calls[0]?.[0]).toMatchObject({ provider: 'copilot' });
+      held.turns[0]?.finish();
+      await retry;
+    },
+  );
+
   it('decides a step, runs it, decides the next, and finishes when the orchestrator says done', async () => {
     await useAppStore.getState().attachWorkflowToSession(sessionId, WORKFLOW_ID, {
       autoRun: true,

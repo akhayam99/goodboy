@@ -1,3 +1,4 @@
+import { PROVIDER_IDS } from '@goodboy/types';
 import { invokeCommand } from '../../shared/lib/invokeCommand';
 import { listen, type UnlistenFn } from '@tauri-apps/api/event';
 import { PROVIDER_CAPABILITIES, getDefaultTurnModel } from '@goodboy/core/providers';
@@ -58,35 +59,9 @@ import { jiraListIssues, jiraGetIssue, type JiraIssue } from '../integrations/ji
 import { goalFromIssue as jiraGoalFromIssue } from '../integrations/jira/jiraGoalFromIssue';
 import { sessionById } from '../../store/slices/sessions/sessionIndex';
 
-export const BRIDGE_PROVIDER_ALLOWLIST = [
-  'anthropic',
-  'cursor',
-  'codex',
-  'gemini',
-  'copilot',
-  'opencode',
-  'openrouter',
-  'moonshot',
-] satisfies ReadonlyArray<ProviderId>;
+export const BRIDGE_PROVIDER_ALLOWLIST = PROVIDER_IDS;
 
-export const PROVIDER_MENU_ORDER = [
-  'anthropic',
-  'cursor',
-  'codex',
-  'gemini',
-  'copilot',
-  'opencode',
-  'openrouter',
-  'moonshot',
-] satisfies ReadonlyArray<ProviderId>;
-
-type Expect<T extends true> = T;
-type BridgeProviderAllowlistIsTotal =
-  Exclude<ProviderId, (typeof BRIDGE_PROVIDER_ALLOWLIST)[number]> extends never ? true : false;
-type _BridgeProviderAllowlistTotalCheck = Expect<BridgeProviderAllowlistIsTotal>;
-type ProviderMenuOrderIsTotal =
-  Exclude<ProviderId, (typeof PROVIDER_MENU_ORDER)[number]> extends never ? true : false;
-type _ProviderMenuOrderTotalCheck = Expect<ProviderMenuOrderIsTotal>;
+export const PROVIDER_MENU_ORDER = PROVIDER_IDS;
 
 const MOBILE_EDITABLE_SLOTS: ReadonlySet<SlotKey> = new Set<SlotKey>([
   'goal',

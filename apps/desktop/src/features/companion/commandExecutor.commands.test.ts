@@ -1,4 +1,5 @@
 // @vitest-environment node
+import { PROVIDER_IDS } from '@goodboy/types';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { BridgeCommand } from './commandExecutor';
 
@@ -408,27 +409,9 @@ describe('provider/model override coercion', () => {
     },
   );
 
-  it('keeps the bridge allowlist and the menu order as separate arrays', () => {
-    expect(BRIDGE_PROVIDER_ALLOWLIST).not.toBe(PROVIDER_MENU_ORDER);
-  });
-
-  it('rejects a provider still listed in the menu order once removed from the bridge allowlist', async () => {
-    const original = [...BRIDGE_PROVIDER_ALLOWLIST];
-    BRIDGE_PROVIDER_ALLOWLIST.splice(
-      0,
-      BRIDGE_PROVIDER_ALLOWLIST.length,
-      ...original.filter((id) => id !== 'openrouter'),
-    );
-    try {
-      expect(PROVIDER_MENU_ORDER).toContain('openrouter');
-      await executeBridgeCommand(
-        cmd('send', { sessionId: 's1', content: 'go', providerId: 'openrouter' }),
-      );
-      const arg = lastCall(h.sendTurn)[0] as Record<string, unknown>;
-      expect(arg.override).toBeUndefined();
-    } finally {
-      BRIDGE_PROVIDER_ALLOWLIST.splice(0, BRIDGE_PROVIDER_ALLOWLIST.length, ...original);
-    }
+  it('uses the registry for both the bridge allowlist and the menu order', () => {
+    expect(BRIDGE_PROVIDER_ALLOWLIST).toBe(PROVIDER_IDS);
+    expect(PROVIDER_MENU_ORDER).toBe(PROVIDER_IDS);
   });
 });
 
