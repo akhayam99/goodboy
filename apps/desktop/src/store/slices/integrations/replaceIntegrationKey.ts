@@ -37,6 +37,7 @@ export const replaceIntegrationKey = ({ set, get }: SliceDeps) => {
     } catch {
       throw new Error(`Couldn't save the key in your Mac's keychain. Try again.`);
     }
+    INTEGRATION_KEY_READS.cancel({ key: credentialId });
     markIntegrationKey({ set, credentialId, isPresent: true });
   };
 };

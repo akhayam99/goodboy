@@ -180,6 +180,29 @@ describe('replaceIntegrationKey', () => {
 
     expect(useAppStore.getState().integrationKeyChecks[CREDENTIAL_ID]?.isPresent).toBe(true);
   });
+
+  it('drops a key check asked while the host checks the new key, once the key is saved', async () => {
+    const lateCheck = deferred<boolean>();
+    const hostCheck = deferred<object>();
+    stubStoryInvoke({
+      integration_credential_has_secret: () => lateCheck.promise,
+      gitlab_validate_connection: () => hostCheck.promise,
+      integration_binding_replace_secret: null,
+    });
+
+    const replace = useAppStore.getState().replaceIntegrationKey({
+      workspaceId: WORKSPACE_ID,
+      provider: 'gitlab',
+      secret: 'glpat-new',
+    });
+    const check = useAppStore.getState().checkIntegrationKey({ credentialId: CREDENTIAL_ID });
+    hostCheck.resolve({ id: 7, username: 'platform-lead', name: 'Platform Lead' });
+    await replace;
+    lateCheck.resolve(false);
+    await check;
+
+    expect(useAppStore.getState().integrationKeyChecks[CREDENTIAL_ID]?.isPresent).toBe(true);
+  });
 });
 
 describe('checkIntegrationKey', () => {
