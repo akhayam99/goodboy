@@ -1,3 +1,4 @@
+import { PROVIDER_IDS } from '@goodboy/types';
 import type { ModelSelection, ProviderId } from '@goodboy/types';
 import { defaultModelSelection } from './defaultModelSelection';
 import { MODEL_CATALOGS } from './catalogs';
@@ -10,21 +11,7 @@ type Params = {
   readonly modelId: string;
 };
 
-export const PROVIDERS = [
-  'anthropic',
-  'cursor',
-  'codex',
-  'gemini',
-  'copilot',
-  'opencode',
-  'openrouter',
-  'moonshot',
-] satisfies ReadonlyArray<ProviderId>;
-
-type Expect<T extends true> = T;
-type ProvidersAreTotal =
-  Exclude<ProviderId, (typeof PROVIDERS)[number]> extends never ? true : false;
-type _ProvidersTotalCheck = Expect<ProvidersAreTotal>;
+export const PROVIDERS = PROVIDER_IDS;
 
 export const matchModelSelectionForProvider = ({
   provider,

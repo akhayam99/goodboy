@@ -12,6 +12,14 @@ file is in `.prettierignore`: the meta comment sits on the line right below
 each entry's heading, with no blank line, and a formatter would push it down
 onto its own paragraph.
 
+## Goodboy v0.38.1
+
+Runs start their next step when the orchestrator picks a GitHub Copilot model.
+
+### Fixed
+
+- Runs that pick a GitHub Copilot model, or another connected provider, start their step instead of failing. <!-- gb area=workflows -->
+
 ## Goodboy v0.38.0
 
 Work folds into Runs: every new run in a session has a Lead that plans the job and starts the agents it needs.

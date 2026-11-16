@@ -504,6 +504,8 @@ One row per provider says what the app knows about it, in two places that a test
 
 `provider-spec-parity.test.ts` reads `spec.rs` and fails when the ids, their order or a binary drift from the TypeScript table. `provider-id-comparisons.test.ts` counts the places that still compare with a provider id (`=== 'cursor'`); the count only falls. To branch on what a provider can do, add a flag, read it, and leave the comparison out. The steps for a whole new provider are in [add-a-provider](recipes/add-a-provider.md).
 
+Full provider lists read `PROVIDER_IDS` from `packages/types/src/provider-registry.ts`. Routing persistence also reads its `EFFORT_LEVELS`. Stored provider names extend the registry with the legacy `openai` billing name (`packages/types/src/provider.ts`). `full-provider-lists.test.ts` checks complete TypeScript lists against the registry and names the capability subsets it excludes. `agent-write.test.ts` round trips every provider and effort through the stored routing lock, proposal, selection and executed pick.
+
 Two helpers have one owner each: `codex_home()` in `codex_rollout.rs` is the only place that resolves `CODEX_HOME`, and `exit_code_of` in `proc/pty.rs` turns a finished PTY child into the exit code the lifecycle and terminal events carry.
 
 ### How Connect works

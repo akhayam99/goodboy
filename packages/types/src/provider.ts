@@ -1,28 +1,10 @@
+import { PROVIDER_IDS, type ProviderId } from './provider-registry';
 import type { IsoDateTime, ProviderRunId, SessionId } from './ids';
 import type { RoutingDecision } from './budget';
 
-export type ProviderName =
-  | 'anthropic'
-  | 'openai'
-  | 'cursor'
-  | 'codex'
-  | 'gemini'
-  | 'copilot'
-  | 'opencode'
-  | 'openrouter'
-  | 'moonshot';
+export type ProviderName = ProviderId | 'openai';
 
-export const PROVIDER_NAMES = [
-  'anthropic',
-  'openai',
-  'cursor',
-  'codex',
-  'gemini',
-  'copilot',
-  'opencode',
-  'openrouter',
-  'moonshot',
-] satisfies ReadonlyArray<ProviderName>;
+export const PROVIDER_NAMES = [...PROVIDER_IDS, 'openai'] satisfies ReadonlyArray<ProviderName>;
 
 export const isProviderName = (value: unknown): value is ProviderName =>
   typeof value === 'string' && PROVIDER_NAMES.some((provider) => provider === value);

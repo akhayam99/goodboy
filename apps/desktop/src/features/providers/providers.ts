@@ -1,3 +1,4 @@
+import { PROVIDER_IDS } from '@goodboy/types';
 import { isApiProvider, providerFlags } from '@goodboy/core/providers';
 import { invokeCommand } from '../../shared/lib/invokeCommand';
 import { PROVIDER_LABEL } from './providerLabel';
@@ -230,17 +231,7 @@ export const buildProviderList = (
   auth?: ProviderAuthResults,
   credentialProviderIds: ReadonlySet<ProviderId> = new Set(),
 ): ReadonlyArray<ProviderDisplayInfo> => {
-  const ids: ProviderId[] = [
-    'anthropic',
-    'cursor',
-    'codex',
-    'gemini',
-    'copilot',
-    'opencode',
-    'openrouter',
-    'moonshot',
-  ];
-  return ids.map((id) => {
+  return PROVIDER_IDS.map((id) => {
     if (isApiProvider({ id })) {
       return apiProviderInfo({
         id,
