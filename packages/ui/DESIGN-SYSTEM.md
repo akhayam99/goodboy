@@ -108,13 +108,17 @@ the single grey for "not yet" and "off": pending and queued dots, an off switch
 track, inactive bars. States that share it differ by shape (filled, ring,
 dash), never by another opacity.
 
-Three borders, each with one job:
+Four borders, each with one job:
 
-| token           | job                                                              | floor                           |
-| --------------- | ---------------------------------------------------------------- | ------------------------------- |
-| `border-soft`   | decorative hairline: dividers, image frames, resting raised card | 1.2:1, 1.3:1 on raised/floating |
-| `border`        | controls, the floating edge, card hover                          | 3:1 on every step               |
-| `border-strong` | emphasis: control hover                                          | 4.5:1 on every step             |
+| token            | job                                                              | floor                           |
+| ---------------- | ---------------------------------------------------------------- | ------------------------------- |
+| `border-soft`    | decorative hairline: dividers, image frames, resting raised card | 1.2:1, 1.3:1 on raised/floating |
+| `border`         | the floating edge, card hover                                    | 3:1 on every step               |
+| `border-control` | fields, checkboxes, search and listbox fields, listbox ticks     | 3:1 on every step               |
+| `border-strong`  | emphasis: control hover                                          | 4.5:1 on every step             |
+
+`border-control` holds the value of `border` for now. The two split when the
+neutrals move to the gray scale.
 
 `border` is an alpha overlay (foreground at 38% in dark, 45% in light), never a
 solid value, so it holds 3:1 on every step from `chrome` to `floating` and sits
@@ -959,7 +963,11 @@ the outline look, `ghost` and `quiet` the quiet look.
   `T-solid-hover` and `on-T`, plus `border-control`, `selection`, `brand-accent`
   and the six `diff-` line tokens. For now each one holds the value that stands
   in its place today (`danger-subtle` is `danger` at 10%, `border-control` is
-  `border`), so nothing on screen moves until a component uses them.
+  `border`), so a component moved onto them looks the same. The text fields,
+  checkboxes and listbox fields use `border-control`. The diff paints added and
+  removed lines and words with the `diff-` tokens, and the selected line with
+  `primary-subtle` and a `primary-solid` rail. The brand chip sets `primary` to
+  `brand-accent` inside itself, so a later primary change leaves the logo alone.
 
 ## Icon and tone vocabulary
 

@@ -116,8 +116,9 @@ parent whose size changes from place to place.
 A surface takes the role it plays on the six-step ladder (`chrome`,
 `background`, `subtle`, `muted`, `elevated`, `floating`), anything inside a
 parent takes `fill`, and a grey "not yet" mark takes `idle`. Borders pick one of
-three jobs: `border-soft` decorates, `border` delineates a control, and
-`border-strong` emphasises a control on hover. The roles, the light-mode axes
+four jobs: `border-soft` decorates, `border` outlines a box or a floating edge,
+`border-control` outlines a field, a checkbox or a select, and `border-strong`
+emphasises a control on hover. The roles, the light-mode axes
 and the contrast floors are in
 [DESIGN-SYSTEM.md](../packages/ui/DESIGN-SYSTEM.md#surface-ladder). A colour
 class with no `--color-*` token behind it fails `no-token-bypass.test.ts`.
