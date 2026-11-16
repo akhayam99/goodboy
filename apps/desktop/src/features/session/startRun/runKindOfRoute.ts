@@ -33,7 +33,7 @@ export const runKindOfRoute = ({ route }: Params): RunKindOfRoute => {
   }
   return {
     shape: 'autoAgent',
-    name: runKindLineOf({ line: { kind: 'autoAgent' } }),
+    name: runKindLineOf({ line: { kind: 'lead', planName: route.presetName } }),
     what: START_KIND_COPY.shapes.autoAgent.what,
   };
 };

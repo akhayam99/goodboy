@@ -545,9 +545,9 @@ The Runs page (`WorkflowsPane`) lists every run of the session on one
 `ListGrid` (`RunsGrid`, columns in `runsGridColumns.ts`), one row per request
 from `sessionRunsOf`: preset runs, orchestrated runs, Auto conversations and
 the agents you started by hand, newest first. The columns: state dot, shape
-glyph (Workflow or Agent), title, origin ("Workflow · Preset Fix a layout",
-"Workflow · Orchestrated", "Agent · Auto agent", "Agent ·
-Scout"), model by name and effort (agent and Auto rows only, hidden when no row has one), state word, progress from `runStepCountOf` ("2 of 3 steps", or "2 steps done"
+glyph (Workflow, Lead or Agent), title, origin ("Workflow · Preset Fix a layout",
+"Workflow · Orchestrated" with a gray "older run", "Lead", "Lead · plan Fix
+flaky tests" from the saved run route, "Agent · Scout"), model by name and effort (agent and Auto rows only, hidden when no row has one), state word, progress from `runStepCountOf` ("2 of 3 steps", or "2 steps done"
 when the run has no known total), cost and age, every row the same columns. A row names its work as
 `workBranchesOf` (`features/session`) reads it: the agents of the run through
 `Agent.mountId`, the mount a step inherits from the step before it

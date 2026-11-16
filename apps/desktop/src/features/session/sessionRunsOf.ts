@@ -3,6 +3,7 @@ import type {
   Agent,
   AgentId,
   OpenQuestion,
+  RunRoute,
   SessionMountView,
   TurnEvent,
   TurnState,
@@ -37,7 +38,7 @@ import { workBranchesOf, type WorkBranch, type WorkBranchProject } from './workB
 
 type SessionRunKind = 'preset' | 'orchestrated' | 'auto' | 'agent';
 
-export type SessionRunShape = 'plan' | 'lead';
+type SessionRunShape = 'plan' | 'lead';
 
 type SessionRunOpen = Readonly<
   | { kind: 'run'; runId: WorkflowRunId }
@@ -66,6 +67,7 @@ export type SessionRun = Readonly<{
   isFinished: boolean;
   isUnread: boolean;
   isRestartStopped: boolean;
+  isOlderRun: boolean;
   progress: string;
   startedAt: number;
   revisingSince: number | null;
@@ -91,7 +93,10 @@ type Params = {
   readonly mounts: ReadonlyArray<SessionMountView>;
   readonly projects: ReadonlyArray<WorkBranchProject>;
   readonly isWork: boolean;
+  readonly routes?: Readonly<Record<string, RunRoute>>;
 };
+
+const NO_ROUTES: Readonly<Record<string, RunRoute>> = {};
 
 const NO_AGENTS: ReadonlyArray<Agent> = [];
 
@@ -107,10 +112,7 @@ const WAITING_DOTS: ReadonlySet<DotState> = new Set<DotState>(['needsYou', 'fail
 
 const FINISHED_DOTS: ReadonlySet<DotState> = new Set<DotState>(['done', 'stopped']);
 
-const ORIGIN = {
-  orchestrated: runKindLineOf({ line: { kind: 'orchestrated' } }),
-  auto: runKindLineOf({ line: { kind: 'autoAgent' } }),
-} as const;
+const ORCHESTRATED_LINE = runKindLineOf({ line: { kind: 'orchestrated' } });
 
 type TimeParams = {
   readonly value: string | number | null | undefined;
@@ -233,7 +235,7 @@ const workflowRowsOf = ({
       shape: 'plan',
       title: nameByRunId.get(run.id) ?? workflowKindName({ workflow }),
       origin: isOrchestrated
-        ? ORIGIN.orchestrated
+        ? ORCHESTRATED_LINE
         : runKindLineOf({
             line: { kind: 'preset', presetName: workflowKindName({ workflow }) },
           }),
@@ -244,6 +246,7 @@ const workflowRowsOf = ({
       isFinished: !facts.isActive,
       isUnread: isUnreadOf({ agents, agentIds }),
       isRestartStopped: false,
+      isOlderRun: isOrchestrated,
       progress: facts.progress,
       startedAt: timeOf({ value: run.createdAt }),
       revisingSince: revisingStarts[run.id] ?? null,
@@ -260,6 +263,7 @@ type AutoRowParams = {
   readonly autoViews: ReadonlyArray<AutoTreeView>;
   readonly rootTurns: Params['rootTurns'];
   readonly isWork: boolean;
+  readonly route: RunRoute | null;
 };
 
 type RestingParams = {
@@ -280,6 +284,7 @@ const autoRowOf = ({
   autoViews,
   rootTurns,
   isWork,
+  route,
 }: AutoRowParams): SessionRunRow => {
   const view = autoViews.find((candidate) => candidate.tree.rootAgentId === root.id);
   const state =
@@ -294,7 +299,7 @@ const autoRowOf = ({
     kind: 'auto',
     shape: 'lead',
     title: autoRootTitleOf({ name: root.name, ask: view?.rootAsk ?? null, events: NO_EVENTS }),
-    origin: ORIGIN.auto,
+    origin: runKindLineOf({ line: { kind: 'lead', planName: route?.presetName ?? null } }),
     dot,
     stateWord: state.word,
     ...progressStateOf({ dot }),
@@ -302,6 +307,7 @@ const autoRowOf = ({
     isFinished: FINISHED_DOTS.has(dot),
     isUnread: isUnreadOf({ agents, agentIds }),
     isRestartStopped: false,
+    isOlderRun: false,
     progress: agentCountLabelOf({
       count: runAgentCountOf({ agentIds: children.map((child) => child.id) }),
     }),
@@ -344,6 +350,7 @@ const agentRowOf = ({ agent, kind, agents, questions, turn }: AgentRowParams): S
     isFinished: state.isFinished,
     isUnread: isUnreadOf({ agents, agentIds }),
     isRestartStopped: state.status === 'stopped' && !state.isFinished && agent.stoppedBy === 'app',
+    isOlderRun: false,
     progress: agentCountLabelOf({ count: runAgentCountOf({ agentIds }) }),
     startedAt: timeOf({ value: agent.startedAt }),
     revisingSince: null,
@@ -385,6 +392,7 @@ export const sessionRunsOf = ({
   mounts,
   projects,
   isWork,
+  routes = NO_ROUTES,
 }: Params): ReadonlyArray<SessionRun> => {
   const standalone = agents.filter((agent) => isStandaloneAgent({ agent }));
   const kinds = standalone.map((agent) => ({
@@ -393,7 +401,16 @@ export const sessionRunsOf = ({
   }));
   const autoRows = kinds
     .filter(({ kind }) => kind === 'auto')
-    .map(({ agent }) => autoRowOf({ root: agent, agents, autoViews, rootTurns, isWork }));
+    .map(({ agent }) =>
+      autoRowOf({
+        root: agent,
+        agents,
+        autoViews,
+        rootTurns,
+        isWork,
+        route: routes[agent.id] ?? null,
+      }),
+    );
   const agentRows = kinds
     .filter(({ kind }) => isAgentsPageKind({ kind }))
     .map(({ agent, kind }) =>

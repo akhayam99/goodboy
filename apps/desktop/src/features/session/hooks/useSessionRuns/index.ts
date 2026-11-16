@@ -1,12 +1,14 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import type { Agent, Session, SessionMountView, TurnState } from '@goodboy/types';
 import { planRevisingStartIn } from '../../../plans/planRevisingStartIn';
 import { useAppStore, useSessionOpenQuestions } from '../../../../store';
+import { READ_FAILED } from '../../../../store/slices/notifications/errorRecovery';
 import type { AutoTreeView } from '../../../../store/slices/auto-view/state';
 import { autoRootsOf } from '../../../auto/autoRootsOf';
 import { useAttachedWorkflowRuns } from '../../../workflows/useAttachedWorkflowRuns';
 import { sessionRunsOf, type SessionRun } from '../../sessionRunsOf';
+import { parseRunRoutes, runRoutesKey } from '../../startRun/runRoutesSetting';
 import { useIsWorkOn } from '../../../../shared/hooks/useIsWorkOn';
 import { useLiveAgentTurns } from '../../../../shared/hooks/useLiveAgentTurns';
 
@@ -32,6 +34,20 @@ export const useSessionRuns = ({ session }: Params): ReadonlyArray<SessionRun> =
   const projects = useAppStore((state) => state.projects);
   const turnByAgentId = useLiveAgentTurns({ agents });
   const isWork = useIsWorkOn();
+  const routesKey = runRoutesKey({ sessionId });
+  const rawRoutes = useAppStore((state) => state.settings[routesKey]);
+  const loadSetting = useAppStore((state) => state.loadSetting);
+  const reportError = useAppStore((state) => state.reportError);
+  const routes = useMemo(() => parseRunRoutes({ raw: rawRoutes }), [rawRoutes]);
+  useEffect(() => {
+    loadSetting(routesKey).catch((error: unknown) => {
+      void reportError({
+        recovery: READ_FAILED,
+        title: "Couldn't read how this run was started",
+        error,
+      });
+    });
+  }, [routesKey, loadSetting, reportError]);
   const revisingStarts = useAppStore(
     useShallow((state) => {
       const starts: Record<string, number> = {};
@@ -71,9 +87,11 @@ export const useSessionRuns = ({ session }: Params): ReadonlyArray<SessionRun> =
         mounts,
         projects,
         isWork,
+        routes,
       }),
     [
       isWork,
+      routes,
       attachedRuns,
       agents,
       kindOverride,
