@@ -514,11 +514,6 @@
       "count": 1
     }
   },
-  "apps/desktop/src/features/settings/components/SettingsStudio/OpenWithBand.tsx": {
-    "@typescript-eslint/strict-boolean-expressions": {
-      "count": 2
-    }
-  },
   "apps/desktop/src/features/storage/groupStorageFolders.ts": {
     "@typescript-eslint/strict-boolean-expressions": {
       "count": 1
