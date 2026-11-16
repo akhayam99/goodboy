@@ -30,6 +30,8 @@ export type ChangelogLintRule =
   | 'meta-area-unknown'
   | 'meta-screen-unknown'
   | 'meta-image-format'
+  | 'meta-theme-format'
+  | 'meta-theme-without-image'
   | 'meta-pr-format'
   | 'denylist';
 
@@ -51,7 +53,7 @@ const IMAGE_NAME_PATTERN = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 const PR_LIST_PATTERN = /^\d+(,\d+)*$/;
 
 const SECTION_ORDER: ReadonlyArray<'New' | 'Improved' | 'Fixed'> = ['New', 'Improved', 'Fixed'];
-const META_KNOWN_KEYS: ReadonlySet<string> = new Set(['area', 'screen', 'image', 'pr']);
+const META_KNOWN_KEYS: ReadonlySet<string> = new Set(['area', 'screen', 'image', 'theme', 'pr']);
 
 const EM_DASH = String.fromCharCode(0x2014);
 const MIDDOT = String.fromCharCode(0xb7);
@@ -258,6 +260,13 @@ const validateMeta = ({ line }: ValidateMetaParams): ReadonlyArray<ChangelogLint
         message: `invalid image name "${value}"`,
       });
     }
+    if (key === 'theme' && value !== 'light' && value !== 'dark') {
+      violations.push({
+        line: line.number,
+        rule: 'meta-theme-format',
+        message: `invalid picture theme "${value}", expected light or dark`,
+      });
+    }
     if (key === 'pr' && !PR_LIST_PATTERN.test(value)) {
       violations.push({
         line: line.number,
@@ -271,6 +280,13 @@ const validateMeta = ({ line }: ValidateMetaParams): ReadonlyArray<ChangelogLint
       line: line.number,
       rule: 'meta-area-missing',
       message: 'meta comment is missing "area"',
+    });
+  }
+  if (seenKeys.has('theme') && !seenKeys.has('image')) {
+    violations.push({
+      line: line.number,
+      rule: 'meta-theme-without-image',
+      message: '"theme" pins the pictures of "image", which is missing',
     });
   }
   return violations;

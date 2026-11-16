@@ -46,6 +46,7 @@ export const FeatureBlock = ({
         <ReleaseImage
           version={version}
           image={feature.image}
+          pinnedTheme={feature.theme}
           hasBefore={hasBefore}
           alt={feature.title}
         />

@@ -150,7 +150,7 @@ Search settings lists the rows that match, each with its page and band. Pick one
 The Asks you panel of a Lead opens with one line of what the Lead asks you before, then its rows under Agents, Git and publishing, Project and Finish. A row you changed is marked Changed, with Reset beside it, and the option in use stands out from the others. The four fixed rules sit quietly at the end.
 
 #### A clearer light mode
-<!-- gb area=app image=v1-overview -->
+<!-- gb area=app image=v1-overview theme=light -->
 
 Light mode separates the page, the sidebar and cards by tone, with darker secondary text and an amber that no longer looks red. The picked option of a switch such as Light, Dark or System is raised and outlined, so it reads at a glance.
 

@@ -967,7 +967,8 @@ saves `docs/changelog/next/<name>-<before|after>-{dark,light}.webp`.
   work-in-progress pictures across PRs in the same release. The PR that bumps
   the version numbers renames the `next` folder to `docs/changelog/<version>/` and sets
   `image=<name>` on the entry. `changelogImageBudget.test.ts` then checks
-  names, complete dark/light pairs, that a `before` has a matching `after`,
+  names, complete dark/light pairs (only the pinned theme for an entry with
+  `theme=`), that a `before` has a matching `after`,
   at most 12 images and 2 MB per release, and no orphan file.
 - **Retroactive from the release's own code.** A release that already
   shipped can gain pictures, but never capture today's app under an old
