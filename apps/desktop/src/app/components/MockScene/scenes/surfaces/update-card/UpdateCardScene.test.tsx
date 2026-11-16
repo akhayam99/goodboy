@@ -149,10 +149,11 @@ describe('the update card scenes', () => {
     expect(row?.contains(screen.getByTestId('goodboy-chip')) ?? false).toBe(true);
   });
 
-  it('u26s-update-settings puts the same verbs on Settings, Updates', async () => {
+  it('u26s-update-settings puts the same verbs on the Updates band of Settings, General', async () => {
     await mount({ id: 'u26s-update-settings' });
 
-    expect(screen.getByRole('heading', { level: 1, name: 'Updates' })).toBeDefined();
+    expect(screen.getByRole('heading', { level: 1, name: 'General' })).toBeDefined();
+    screen.getByRole('heading', { level: 2, name: 'Updates' });
     screen.getByText('Goodboy 0.27.2 is ready');
     screen.getByText('2 agents are running. A restart now picks them up where they stopped.');
     for (const name of ['Restart now', 'Restart when they finish']) {

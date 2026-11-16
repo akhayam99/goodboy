@@ -205,6 +205,7 @@ export const NON_SESSION_STATE_KEYS = [
   'integrationCredentialUsage',
   'integrationKeyChecks',
   'toolUseCounts',
+  'toolCheckErrors',
   'projectGitStatus',
   'projectCheckoutPulling',
   'repoDivergence',

@@ -5,6 +5,7 @@ import { connectedToolsOf } from '../../integrations/connectedToolsOf';
 import { TOOL_ORDER } from '../../integrations/toolOrder';
 import { orderProviders } from '../../providers/orderProviders';
 import { connectionStateOf } from './connectionStateOf';
+import { workspaceBindingsOf } from './workspaceBindingsOf';
 
 type Params = {
   readonly state: Pick<
@@ -40,7 +41,9 @@ const toolReasons = ({ state }: Params): ReadonlyArray<string> => {
     return [];
   }
   const connected = connectedToolsOf({
-    integrations: state.workspaceIntegrations[workspaceId] ?? [],
+    integrations: workspaceBindingsOf({
+      integrations: state.workspaceIntegrations[workspaceId] ?? [],
+    }),
     githubStatuses: [state.githubWorkspaceStatus[workspaceId], state.githubStatus],
   });
   return TOOL_ORDER.flatMap((tool) => {

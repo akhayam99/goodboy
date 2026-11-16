@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { Checkbox, SkeletonRow, Switch } from '@goodboy/ui';
 import type { SlackIntegrationBinding, WorkspaceId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
+import { SlackSaveError } from './SlackSaveError';
 import { useSlackConfigSave } from './useSlackConfigSave';
 
 type Props = {
@@ -14,7 +15,7 @@ export const SlackChannels = ({ workspaceId, slack }: Props) => {
     (state) => state.slackChannels[workspaceId]?.channels ?? EMPTY_ARRAY,
   );
   const refreshSlackChannels = useAppStore((state) => state.refreshSlackChannels);
-  const persist = useSlackConfigSave({ workspaceId });
+  const slackSave = useSlackConfigSave({ workspaceId });
   const config = slack.config;
 
   useEffect(() => {
@@ -40,12 +41,22 @@ export const SlackChannels = ({ workspaceId, slack }: Props) => {
                 )}
               </span>
             }
-            onChange={(isChecked) => {
-              const next = isChecked
-                ? [...config.followedChannels, { id: channel.id, name: channel.name }]
-                : config.followedChannels.filter((candidate) => candidate.id !== channel.id);
-              persist({ ...config, followedChannels: next, hasSelectedChannels: true });
-            }}
+            onChange={(isChecked) =>
+              slackSave.save({
+                update: ({ config: latest }) => {
+                  const others = latest.followedChannels.filter(
+                    (candidate) => candidate.id !== channel.id,
+                  );
+                  return {
+                    ...latest,
+                    followedChannels: isChecked
+                      ? [...others, { id: channel.id, name: channel.name }]
+                      : others,
+                    hasSelectedChannels: true,
+                  };
+                },
+              })
+            }
           />
         ))}
         {channels.length === 0 ? <SkeletonRow label="Loading channels" /> : null}
@@ -53,8 +64,13 @@ export const SlackChannels = ({ workspaceId, slack }: Props) => {
       <Switch
         label="Private channels and direct messages"
         checked={config.includePrivate}
-        onChange={(isChecked) => persist({ ...config, includePrivate: isChecked })}
+        onChange={(isChecked) =>
+          slackSave.save({
+            update: ({ config: latest }) => ({ ...latest, includePrivate: isChecked }),
+          })
+        }
       />
+      <SlackSaveError save={slackSave} />
     </div>
   );
 };

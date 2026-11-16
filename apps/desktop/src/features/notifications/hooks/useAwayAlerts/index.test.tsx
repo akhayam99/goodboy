@@ -215,7 +215,9 @@ describe('the dock badge', () => {
     mount();
     await waitFor(() => expect(tauri.setBadgeCount).toHaveBeenLastCalledWith(1));
 
-    act(() => useAwayAlertsStore.getState().setBadge({ isOn: false }));
+    await act(() => {
+      useAwayAlertsStore.getState().setBadge({ isOn: false });
+    });
 
     await waitFor(() => expect(tauri.setBadgeCount).toHaveBeenLastCalledWith(undefined));
   });

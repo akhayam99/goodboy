@@ -1347,7 +1347,6 @@
     "apps/desktop/src/store/slices/integrations/forgetIntegrationCredential.ts": 1,
     "apps/desktop/src/store/slices/integrations/loadIntegrationCredentials.ts": 1,
     "apps/desktop/src/store/slices/integrations/loadIntegrations.ts": 1,
-    "apps/desktop/src/store/slices/integrations/updateSlackConfig.ts": 1,
     "apps/desktop/src/store/slices/issue-briefs/requestIssueBrief.ts": 1,
     "apps/desktop/src/store/slices/monitoring/goodboyStopRoute.ts": 1,
     "apps/desktop/src/store/slices/monitoring/loadWatchedPorts.ts": 1,

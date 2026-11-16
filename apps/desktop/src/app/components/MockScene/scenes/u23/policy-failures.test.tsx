@@ -117,12 +117,14 @@ describe('the policy and failure scenes', () => {
   it('settings-run-defaults-link shows the policy as a summary and a link, with no switch for it', async () => {
     await mount('settings-run-defaults-link');
 
-    const line = screen.getByRole('group', { name: 'Run defaults' });
-    fireEvent.click(within(line).getByRole('button', { name: /^Models:/ }));
-    const popover = screen.getByRole('dialog', { name: 'Models' });
-    expect(within(popover).getByTestId('rules-policy-summary')).toBeDefined();
-    expect(within(popover).getByRole('button', { name: 'Open Models' })).toBeDefined();
-    expect(within(popover).queryAllByRole('switch')).toEqual([]);
+    const band = screen.getByRole('region', { name: 'New runs' });
+    expect(within(band).getByText('Which model each role uses.').textContent).toBe(
+      'Which model each role uses.',
+    );
+    expect(within(band).getByRole('button', { name: 'Open Models' }).textContent).toBe(
+      'Open Models',
+    );
+    expect(within(band).queryAllByRole('switch')).toEqual([]);
   });
 
   it('wireframe-failed explains the failure in a notice and keeps the raw message behind Details', async () => {
@@ -202,7 +204,7 @@ describe('the policy and failure scenes', () => {
     });
   });
 
-  it('shows the workspace name once on Settings > Workspace > Projects, in the top bar', async () => {
+  it('keeps the workspace name to the top bar and the rail scope, never on the Projects page', async () => {
     useAppStore.setState({ loadProjectGitStatus: async () => undefined });
     render(
       <ToastProvider>
@@ -212,7 +214,7 @@ describe('the policy and failure scenes', () => {
     await settle();
 
     expect(screen.getByRole('heading', { level: 1, name: 'Projects' })).toBeDefined();
-    expect(screen.getAllByText('Harborline')).toHaveLength(1);
+    expect(screen.getAllByText('Harborline')).toHaveLength(2);
     const page = document.querySelector('[data-settings-detail]');
     expect(page).not.toBeNull();
     expect(within(page as HTMLElement).queryAllByText(/Harborline/)).toEqual([]);

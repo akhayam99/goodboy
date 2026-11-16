@@ -3,6 +3,7 @@ import type { SessionId, WorkspaceId } from '@goodboy/types';
 import { isRecord } from '@goodboy/types/helpers';
 import { deleteSetting, listSettingsWithPrefix, setSetting } from '@goodboy/db';
 import { tauriDatabase } from '../../shared/lib/db';
+import { storedStudioOf } from '../../store/slices/navigation/storedStudioOf';
 import {
   EMPTY_FOCUS,
   type Focus,
@@ -147,7 +148,12 @@ const serializeWindowLayout = ({
   workspaceId,
   location,
   at,
-}: Omit<WindowLayout, 'label'>): string => JSON.stringify({ workspaceId, location, at });
+}: Omit<WindowLayout, 'label'>): string =>
+  JSON.stringify({
+    workspaceId,
+    location: { ...location, studio: storedStudioOf({ studio: location.studio }) },
+    at,
+  });
 
 export const saveWindowLayout = async (layout: WindowLayout): Promise<void> => {
   await setSetting(

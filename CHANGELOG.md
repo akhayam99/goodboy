@@ -12,6 +12,83 @@ file is in `.prettierignore`: the meta comment sits on the line right below
 each entry's heading, with no blank line, and a formatter would push it down
 onto its own paragraph.
 
+## Goodboy v0.37.0
+
+Providers and integrations share one home, Connections, and Settings keeps only settings, each one in a single place.
+
+### New
+
+#### Connections in the sidebar
+<!-- gb area=providers screen=connections image=connections-door -->
+
+Connections sits in the sidebar after Chat, and in the Go menu. An amber dot on it says a provider or an integration needs you, and its tooltip says why. ⌘K finds it as Connections, Providers or Integrations, and lists each provider and tool by name.
+
+#### Providers and integrations on one page
+<!-- gb area=providers screen=connections image=connections -->
+
+Connections shows a tile for every provider on this Mac and every integration of the workspace. A tile says its state in one word, and a provider tile carries its 5-hour and weekly usage. What is not set up waits in a low row under each group, with the step that sets it up.
+
+Refresh checks them all again, and Which model each role uses opens Models.
+
+#### A page for each provider
+<!-- gb area=providers screen=connections image=provider-page -->
+
+A provider page opens from its tile with its state, plan and CLI at the top, then Usage, the models in the picker and your account. What works with the provider folds into a closed row at the end. An API key is added in place, and a failed save keeps what you typed.
+
+#### A page for each integration
+<!-- gb area=integrations screen=connections image=integration-page -->
+
+An integration page shows the account, the key and when it was last checked, and what the tool does in this workspace. When the key is missing from this Mac, Paste a new key replaces it in place: the key is checked before it is saved, and the connection stays as it is. Slack's page splits into Channels, What agents can do and Signature.
+
+### Improved
+
+#### Settings keeps only settings
+<!-- gb area=settings screen=settings/app image=settings-rail -->
+
+The Settings rail groups This Mac and your workspace, and ends with a row to Connections. Updates sit in General, and Git, the built-in terminal, search and experiments move to Advanced. iPhone shows once a phone is paired, and Models is a page of the workspace.
+
+A link to the old Providers or Integrations pages, from a notification or a restored window, opens the same provider or tool in Connections.
+
+#### Every setting in one place
+<!-- gb area=settings image=branches -->
+
+The branch prefix and name template sit in Branches, under Naming. The attribution line joins Replies, secrets found in saved scripts sit on Permissions, and Suggest cleanup after is the last row of Storage, Worktrees. Backup has Export and Import bands, and deleting data or disconnecting sits in a Danger zone.
+
+#### Run defaults in three bands
+<!-- gb area=settings image=run-defaults -->
+
+Run defaults reads as New runs, Agents and Guidance, with rows in place of chips. New runs holds what workflows and the Auto agent ask you, Start as, the Limit on spend and a line to Models.
+
+#### Models on one grid
+<!-- gb area=settings image=models -->
+
+Every role and task on the Models page sits on one grid: name, job, model, effort and source line up. Each group has its own band, and the first line points to Connections for accounts and usage.
+
+#### Search finds the setting
+<!-- gb area=settings screen=settings/app -->
+
+Search settings lists the rows that match, each with its page and band. Pick one and the page opens on that row and lights it. ⌘K lists settings by name too.
+
+#### Asks you reads in groups
+<!-- gb area=agents image=v1-lead-permissions -->
+
+The Asks you panel of a Lead opens with one line of what the Lead asks you before, then its rows under Agents, Git and publishing, Project and Finish. A row you changed is marked Changed, with Reset beside it, and the option in use stands out from the others. The four fixed rules sit quietly at the end.
+
+#### A clearer light mode
+<!-- gb area=app image=v1-overview -->
+
+Light mode separates the page, the sidebar and cards by tone, with darker secondary text and an amber that no longer looks red. The picked option of a switch such as Light, Dark or System is raised and outlined, so it reads at a glance.
+
+#### A solid session head
+<!-- gb area=sessions -->
+
+The session head no longer blurs what scrolls under it. It is solid, so the conversation never shows through its controls.
+
+#### Reset and errors on the row
+<!-- gb area=settings screen=settings/app -->
+
+A setting that differs from its default has its own reset, on This Mac pages too. A save that fails puts the old value back and says so under the row, with Retry, instead of a toast.
+
 ## Goodboy v0.36.0
 
 Work brings the Lead and asks you answer as rows, the Overview ends with the full log, and commit edits use git words.

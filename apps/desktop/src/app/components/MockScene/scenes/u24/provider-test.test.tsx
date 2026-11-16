@@ -24,6 +24,7 @@ import { U24_PROVIDER_TEST_SCENES } from './provider-test';
 beforeAll(async () => {
   await importStore();
   await import('../../../../../features/settings/components/SettingsStudio');
+  await import('../../../../../features/connections/components/ConnectionsStudio');
 }, STORE_IMPORT_TIMEOUT_MS);
 beforeEach(async () => {
   await resetStoryStore();

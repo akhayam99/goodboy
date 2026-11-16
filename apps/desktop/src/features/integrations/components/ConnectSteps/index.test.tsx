@@ -30,7 +30,8 @@ describe('ConnectSteps', () => {
     render(<ConnectSteps steps={STEPS} ariaLabel="Connect a tool" />);
     const later = screen.getByText('Three');
     expect(later).toBeDefined();
-    expect(later.closest('[aria-hidden="true"]')).not.toBeNull();
+    expect(later.closest('[inert]')).not.toBeNull();
+    expect(later.closest('[aria-hidden="true"]')).toBeNull();
   });
 
   it('shows every step title up front, not only the current one', () => {

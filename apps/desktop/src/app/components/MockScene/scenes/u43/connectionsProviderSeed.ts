@@ -1,9 +1,10 @@
-import type {
-  CredentialId,
-  IsoDateTime,
-  ProviderConnectionState,
-  ProviderId,
-  ProviderLimits,
+import {
+  brandId,
+  type CredentialId,
+  type IsoDateTime,
+  type ProviderConnectionState,
+  type ProviderId,
+  type ProviderLimits,
 } from '@goodboy/types';
 import type { ProviderDisplayInfo } from '../../../../../features/providers/providers';
 import { useAppStore } from '../../../../../store';
@@ -51,7 +52,7 @@ type IsoParams = {
 };
 
 const isoIn = ({ ms }: IsoParams): IsoDateTime =>
-  new Date(Date.now() + ms).toISOString() as IsoDateTime;
+  brandId<IsoDateTime>({ value: new Date(Date.now() + ms).toISOString() });
 
 const claudeLimits = (): ProviderLimits => ({
   providerId: 'anthropic',
@@ -201,7 +202,7 @@ export const seedConnectionsProviders = (): void => {
     },
     providerCredentials: [
       {
-        id: 'credential-openrouter-harborline' as CredentialId,
+        id: brandId<CredentialId>({ value: 'credential-openrouter-harborline' }),
         providerId: 'openrouter',
         label: 'Harborline key',
         hint: '····a91f',

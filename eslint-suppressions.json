@@ -469,7 +469,7 @@
   },
   "apps/desktop/src/app/components/AppTopBar/LimitsStrip/index.test.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
-      "count": 17
+      "count": 16
     }
   },
   "apps/desktop/src/app/components/AppTopBar/NavCluster/HistoryArrow.tsx": {
@@ -1234,7 +1234,7 @@
   },
   "apps/desktop/src/app/components/MockScene/scenes/u23/gitlab.test.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
-      "count": 4
+      "count": 3
     }
   },
   "apps/desktop/src/app/components/MockScene/scenes/u23/gitlabSeed.ts": {
@@ -1890,7 +1890,7 @@
   },
   "apps/desktop/src/features/branch/components/BranchChecks.test.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
-      "count": 5
+      "count": 4
     }
   },
   "apps/desktop/src/features/branch/components/BranchFiles.tsx": {
@@ -8314,11 +8314,6 @@
   "apps/desktop/src/store/slices/integrations/index.test.ts": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 38
-    }
-  },
-  "apps/desktop/src/store/slices/integrations/updateSlackConfig.ts": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 1
     }
   },
   "apps/desktop/src/store/slices/mount-cleanup/cleanupPolicy.ts": {

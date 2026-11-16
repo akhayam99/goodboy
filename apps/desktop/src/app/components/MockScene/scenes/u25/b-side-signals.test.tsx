@@ -104,13 +104,13 @@ describe('the side column signal scenes', () => {
     },
   );
 
-  it('side-signals-idle shows nothing on the rows, only the Sessions dot for who needs you', async () => {
+  it('side-signals-idle shows nothing on the work rows, only the Sessions dot for who needs you', async () => {
     await mount({ name: 'side-signals-idle' });
 
     expect(screen.getByRole('button', { name: 'Monitoring' }).textContent).toBe('Monitoring');
     expect(
       document.querySelector(
-        '[data-column-door]:not([data-column-door="board"]) [data-door-signal]',
+        '[data-column-door]:not([data-column-door="board"]):not([data-column-door="connections"]) [data-door-signal]',
       ),
     ).toBeNull();
   });

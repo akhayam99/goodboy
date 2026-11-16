@@ -20,7 +20,7 @@ export const createIntegrationsSlice = ({ set, get }: SliceDeps) => {
   return {
     loadIntegrations: loadIntegrations(set, get),
     refreshViewerIdentity: refreshViewerIdentity({ set, get }),
-    checkTools: checkTools({ get }),
+    checkTools: checkTools({ set, get }),
     loadIntegrationCredentials: loadIntegrationCredentials(set),
     forgetIntegrationCredential: forgetIntegrationCredential(set, get),
     disconnectIntegration: disconnectIntegration(set),
@@ -30,7 +30,7 @@ export const createIntegrationsSlice = ({ set, get }: SliceDeps) => {
     connectJira: connectJira(set, get),
     connectBitbucket: connectBitbucket(set, get),
     connectSlack: connectSlack(set),
-    updateSlackConfig: updateSlackConfig(set, get),
+    updateSlackConfig: updateSlackConfig({ set, get }),
     checkIntegrationKey: checkIntegrationKey({ set, get }),
     replaceIntegrationKey: replaceIntegrationKey({ set, get }),
     noteToolUseCounts: noteToolUseCounts({ set, get }),
