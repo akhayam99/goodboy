@@ -51,6 +51,11 @@ In light, box edges are softer and the black drop shadows are gone. Secondary bu
 
 In dark, the grays are cooler and the glow behind the window is gone.
 
+#### Counts sit on their icon
+<!-- gb area=sessions -->
+
+The counts on the Tools rail sit on the corner of their icon and never cover the label under it, with 9+ past nine. The selected tool is a soft tile instead of a boxed button.
+
 #### Diff and terminal colors from one palette
 <!-- gb area=review image=diff -->
 

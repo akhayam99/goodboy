@@ -346,7 +346,8 @@ A session row in the left column carries one mark, a `StatusMark` from `sessionM
 | Surface                            | Mark                                   | Drawing                                                                                                                                                                                                                           |
 | ---------------------------------- | -------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Session tabs, sidebar doors, bell  | inline count                           | the sidebar status mark's count drawing: one `text-chip` tabular number beside the word or icon, warning when it needs you, info while it runs, the quiet unread tone on the bell, faint otherwise; no dot beside it              |
-| Tools rail (Terminal, Browser)     | corner count, signal dot, waiting ring | `TOOL_CORNER_SLOT`: a 14px box on the icon button's corner, outside the 16px glyph, so it never covers the icon; the count is a `bg-hover` pill                                                                                   |
+| Tools rail (Terminal, Browser)     | corner count, signal dot, waiting ring | `CountBadge` with `placement="corner"` (see Count badge) on the 16px glyph's top end corner; the signal dot shares that corner and the waiting ring takes the top start one (`TOOL_CORNER_SLOT`)                                  |
+| Workspace launcher row             | count badge                            | `CountBadge` in its tone: warning or danger, because the number is sessions that need you                                                                                                                                         |
 | Top bar Now chip                   | state dot                              | warning dot for Needs you, neutral ring for Idle, info dot for running                                                                                                                                                            |
 | Agents rail                        | node, number, meter                    | `WorkNode` in the rail lane; the number in a fixed 24px right aligned slot and the spend or clock in a fixed meter slot (`LEAD_TREE_METER`, reserved on the run row too), so roles, words and costs share one column at any depth |
 | Files rail, All files, diff header | status letter                          | `FileStatusMark`: one letter in one 12px slot, A success, D danger, M and R neutral                                                                                                                                               |
@@ -355,6 +356,24 @@ A session row in the left column carries one mark, a `StatusMark` from `sessionM
 
 Scenes `c01-grid-list`, `c01-grid-groups`, `c01-grid-dots` and `c01-grid-type`
 show the grid, its groups, every dot and the type specimen.
+
+### Count badge
+
+`CountBadge` is the one count pill: a 14px tall `text-chip` tabular number on
+a full round, at least as wide as it is tall. It draws nothing at 0, and past
+nine it reads `9+` (`countTextOf`, the one cap every count, door and bell
+uses). It is neutral by default, `bg-selected` under muted text, so it steps
+one level on any surface, the selected tile included; `warning` and `danger`
+paint the tone's solid and are for a number that needs you. It names itself
+`n open` (`label` overrides it), and a control whose own name already says the
+number passes `isAnnounced={false}`. `placement="corner"` hangs it off the top
+end corner of the box it sits in (`COUNT_BADGE_CORNER`), a box the size of the
+glyph and never of the button, so the pill overlaps the glyph's corner by a
+few pixels and stays clear of the label under it, the way macOS dock badges
+sit. A count beside a word stays the inline number above, never a pill, the
+way Linear sidebar counts read. The `session-tools-counts` scene shows it, and
+`validateScenesToolBadge.mjs` fails a badge that covers a label or leaves the
+rail.
 
 ### Tile as filter
 

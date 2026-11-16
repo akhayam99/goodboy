@@ -1,8 +1,6 @@
-import { ICON_SIZE, IconButton, TEXT_ROLE, cn, selectedIconClass } from '@goodboy/ui';
-import { PRESSED_TOGGLE } from '../../../../shared/components/pressedToggle';
+import { CountBadge, ICON_SIZE, IconButton, TEXT_ROLE, cn, selectedIconClass } from '@goodboy/ui';
 import { navEntryToneOf } from '../../../../shared/components/navEntryToneOf';
 import type { SessionTool } from './sessionTools';
-import { ToolCount } from './ToolCount';
 import { ToolCountSkeleton } from './ToolCountSkeleton';
 import { ToolSignalDot } from './ToolSignalDot';
 import { ToolWaitingRing } from './ToolWaitingRing';
@@ -22,6 +20,9 @@ type Props = {
   readonly onFocus: () => void;
   readonly onToggle: () => void;
 };
+
+const QUIET_TILE =
+  'aria-pressed:bg-selected aria-pressed:text-foreground aria-pressed:hover:bg-selected';
 
 export const SessionToolButton = ({
   tool,
@@ -47,7 +48,7 @@ export const SessionToolButton = ({
     <span
       data-slot="session-tool"
       data-state={state}
-      className="flex min-w-0 flex-col items-center gap-0.5"
+      className="grid w-full grid-rows-[auto_auto] justify-items-center gap-0.5"
     >
       <span data-slot="tool-icon" className="relative flex">
         <IconButton
@@ -62,14 +63,21 @@ export const SessionToolButton = ({
           tabIndex={tabIndex}
           data-testid={`pane-toggle-${tool.pane}`}
           data-icon-tone={isLit ? tone : undefined}
-          className={cn(PRESSED_TOGGLE, isLit && selectedIconClass({ tone }))}
+          className={cn(QUIET_TILE, isLit && selectedIconClass({ tone }))}
           onFocus={onFocus}
           onClick={isCurrent ? undefined : onToggle}
         />
-        {state === 'waiting' ? <ToolWaitingRing /> : null}
-        {signal === null ? null : <ToolSignalDot signal={signal} />}
-        {signal === null && isCountLoading ? <ToolCountSkeleton /> : null}
-        {signal === null && !isCountLoading && count > 0 ? <ToolCount count={count} /> : null}
+        <span
+          data-slot="tool-glyph"
+          className="pointer-events-none absolute left-1/2 top-1/2 size-4 -translate-x-1/2 -translate-y-1/2"
+        >
+          {state === 'waiting' ? <ToolWaitingRing /> : null}
+          {signal === null ? null : <ToolSignalDot signal={signal} />}
+          {signal === null && isCountLoading ? <ToolCountSkeleton /> : null}
+          {signal === null && !isCountLoading ? (
+            <CountBadge count={count} placement="corner" isAnnounced={false} testId="tool-count" />
+          ) : null}
+        </span>
       </span>
       <span
         aria-hidden
