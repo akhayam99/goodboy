@@ -50,7 +50,7 @@ Every door draws the same form: the New session page, a session's Runs page (and
 - One row of chips holds the settings, each written "Label: value". Each chip opens its own popover, anchored to it, so it stays inside the window. The source of a value ("from Harborline") sits in the popover header, and a chip is tinted when its value is not the default.
 - **Projects** and **Edits** are always in the row. **Asks you**, **Limit** and **Guidance** sit under **More** until they differ from their default.
 - A kind shows only the settings it uses. **Projects** shows on the New session page only, **Role** on Agent only. **Limit** and **Asks you** do not show on Agent: a plain agent has no limit to enforce and no step to stop at.
-- The model sits in the message box, beside **Start**. It names the orchestrator or the agent for this run, **Auto** until you pick one. A pick is for this run only.
+- The model sits in the message box, beside **Start**. It names the model of the Lead or the agent for this run, **Auto** until you pick one. A pick is for this run only.
 - **Asks you** is the Lead's level, on Lead and on Preset.
 - **Edits** is what agents may do in the session: **Read only**, **Ask first**, **Edits allowed** or **Full access**. It reads the workspace default until you pick, and a start never writes a mode you did not pick. A pick applies to the whole session, and is set before the first agent starts. The chat box picker reads **Edits: Ask first**, the same label.
 - **Limit** reads "Limit: $5.00" ("Limit: none" without one), with a quiet "default" while the amount is the one the kind starts from. Every kind, and a start with no kind pressed, starts from the **Run defaults** limit. Switching kind shows the new kind's default and keeps an amount you typed. Its popover lists $5, $10 and $25 beside the default and your typed amount, with an **Other amount** field and **No limit**.
@@ -65,6 +65,20 @@ Every door draws the same form: the New session page, a session's Runs page (and
 - The primary always reads **Start**, whatever the kind.
 - Setup's Scout run is pinned to Agent, so it draws no **How** chip and no role chip, and the same chips as every other form.
 - Start work from chat drafts the brief in the drawer, makes the session, then opens this form on the session with the goal filled in.
+
+### Permission rows
+
+A Lead's autonomy is nine rows you can read and change.
+
+- The rows are: approve the plan, start agents that read, start agents that write, push, and open a pull request. The rest are add dependencies, change protected files, add a project and close the work.
+- The three levels, **Every step**, **After the plan** and **Never**, are presets of these rows. **Custom** lights up by itself when the rows match none of them.
+- The panel groups the rows under Agents, Git and publishing, Project and Finish, and its first line says what the Lead asks you before.
+- Each row has its own value on a Lead and a default for the workspace. A row set on a Lead is marked **Changed**, with **Reset** beside it. A row you did not set follows the default live.
+- The workspace default sits under **Lead asks you** in the Run defaults. The panel opens from the **Asks you** chip of the start form and from the Lead page.
+- A row saves the moment you change it. A failed save keeps the old value and shows the error under the row.
+- A row you tighten while an agent runs applies to its next start. One you loosen never releases a start that already waits.
+- The spend limit shows under Finish, read only. Four rules never change, listed under Always on: a force push asks and takes a backup, you merge, agents never push, and the Lead never writes code.
+- An older workflow run keeps the level it started with, from **Workflow asks you**.
 
 ### The Kind chip
 
@@ -90,8 +104,8 @@ Its last line says what a pick does.
 
 The settings line of a run names the model that runs it, next to the **Kind** chip.
 
-- An orchestrated run shows **Orchestrator** with its model, **Auto** while the run follows the default. A pick is for this run only, and **Auto** in the picker goes back to the default. The chip is fixed while the orchestrator decides and once the run is over. The hint box below holds the same control.
-- An agent or an Auto agent has its model in its message box, beside **Send**. A pick there applies from the next turn of that agent.
+- An older orchestrated run shows **Orchestrator** with its model, **Auto** while the run follows the default. A pick is for this run only, and **Auto** in the picker goes back to the default. The chip is fixed while the orchestrator decides and once the run is over. The hint box below holds the same control.
+- An agent or a Lead has its model in its message box, beside **Send**. A pick there applies from the next turn of that agent.
 - The default of each is in **Settings › Models › Runs**.
 
 ### The New session page
@@ -108,9 +122,9 @@ Start a session from your goal: write it or pick an issue, then choose the kind 
 
 Under the task sits [one start form](#one-start-form).
 
-- The page remembers the last kind you started in this workspace (saved after a start succeeds). It opens on that kind next time. The first visit opens on Auto.
+- The page remembers the last kind you started in this workspace (saved after a start succeeds). It opens on that kind next time. The first visit opens on Lead.
 - Each window keeps its own pick while it is open.
-- ⌘K **New workflow session** opens the page on Orchestrated, **New agent session** on Auto, and **Start a run** on Auto.
+- ⌘K **New workflow session**, **New agent session** and **Start a run** open the page on Lead.
 - The goal is required on every kind. If the start fails, the page keeps everything and Start becomes **Retry**. Leaving the page while a start is on its way drops the late answer.
 - A session with no run shows this form inline on its Overview, so the first action is on the page. **New** stays the outline button in every state.
 - After a start, if the new worktree reads its dependencies from another folder, a warning says to reinstall before the agent runs checks. The Branch page keeps its own notice.
@@ -123,7 +137,7 @@ Under the task sits [one start form](#one-start-form).
 - The list opens on Suggested (the folders you used last, then starred ones, five at most) and then All projects by name.
 - It reads **Auto picks**, the folder you pinned, or how many you pinned.
 - A pin always wins. With a folder pinned, nothing else is mounted on start.
-- An Auto agent that has to write and finds no folder picks one the same way, inside the same allowance. It asks where it should work only when the task names no folder of the workspace or the allowance is spent.
+- A Lead that has to write and finds no folder picks one the same way, inside the same allowance. It asks where it should work only when the task names no folder of the workspace or the allowance is spent.
 
 ### Start on a task
 
@@ -164,8 +178,8 @@ The other views of a session open from its head and from the keyboard:
 
 - **Context** opens on Goal; its cards share one menu for editing, versions and who reads them.
 - Hover one to read its name and key. Each tool shows its name below its icon, brighter while it is open.
-- **Agents** lists every agent of the session as a tree, the same set as the Runs page. Runs and Auto sit with their agents under them, and an agent you started yourself is a launch of one row with its state word.
-- The tree follows the run or Auto you have open, or shows only what is live when nothing is open. **All runs** goes to the Runs page.
+- **Agents** lists every agent of the session as a tree, the same set as the Runs page. Each run sits with its agents under it, a Lead first, and an agent you started yourself is a launch of one row with its state word.
+- The tree follows the run you have open, or shows only what is live when nothing is open. **All runs** goes to the Runs page.
 - Click an agent, or press Enter on it, to read it in the page beside the tree. The tree stays open with that agent selected.
 - **j** and **k** with focus on a row open the next and the previous agent.
 - A session with nothing live says "Nothing live right now".
@@ -173,7 +187,7 @@ The other views of a session open from its head and from the keyboard:
 
 **Runs**
 
-All the work of a session lives in one rail entry, **Runs**: preset runs, orchestrated runs, Auto conversations and the agents you started. One row per request, newest first.
+All the work of a session lives in one rail entry, **Runs**: the runs a Lead leads, older preset and orchestrated runs, and the agents you started. One row per request, newest first.
 
 - Each row says who leads it: "Lead", "Lead · plan Fix flaky tests" when the Lead follows a preset, and "Agent · Scout" for a one agent run. An older row keeps its own line, "Workflow · Preset Fix a layout", and an orchestrated one adds a gray "older run".
 - The page says what it holds in one gray line under its title, whether it is empty or full.
@@ -228,13 +242,14 @@ This part is for contributors and agents who change the feature.
 - Limit popover: `AutoLimitChip` uses `AnchoredPopover` at the standard popover width, so it flips and shifts inside the window.
 - No limit: **No limit** on the chip is for that run only. A start never writes a limit, so the default changes only on the Run defaults page.
 - Kind chip: `runKindLineOf` words the chip, and the Runs list reads it too.
-- Asks you chip: `AsksYouChip` is shared with the run's settings line. For the Auto agent `AutoLevelChip` wraps it, the same chip the running agent's settings line shows. The chip reads the session level, then the workspace default, through `useAutoLevel`, and `startRoutedRun` writes the pick with the `changeAutoLevel` store action before the lead starts.
+- Asks you chip: `AsksYouChip` is shared with the run's settings line. For the Lead `AutoLevelChip` wraps it, the same chip the running agent's settings line shows. The chip reads the session level, then the workspace default, through `useAutoLevel`, and `startRoutedRun` writes the pick with the `changeAutoLevel` store action before the lead starts.
 - Guidance chip: `StartGuidanceSetting` reads the workspace text through `workspaceGuidanceOf` and the pick from the draft (`SessionDraft.guidance`, `null` until edited) or, on a session's Runs page, from `useStartRun`. `StartGuidanceChip` draws it on `SettingChip`, and `guidanceWordsOf` words the value and its tag. `guidanceShownOf` is the text on screen and `guidanceToSendOf` the text a start sends, so both read one pick. `startGuidanceReaderOf` picks the line on who reads it.
 - Run guidance: `startRoutedRun` takes `guidance`, and `useStartRun` forwards it. A plan writes it to `rulesSnapshot.standingGuidance`, which the orchestrator reads as its Operator process. `null` keeps the workspace value. `''` starts the run without any.
-- Agent guidance: an agent gets a `**Guidance**` section ahead of its ask. The Auto agent keeps its text in the `run.guidance` workspace value, which `spawnAgent` writes before the first turn.
+- Agent guidance: an agent gets a `**Guidance**` section ahead of its ask. The Lead keeps its text in the `run.guidance` workspace value, which `spawnAgent` writes before the first turn.
 - Auto guidance: `autoSystemPromptOf` adds a guidance block to the system prompt on every turn. `resolveDelegateChild` puts a `**Guidance**` section before the `**Task**` of each child.
 - Unset guidance leaves every prompt as it was. `changeRunRoute`, `continueWithRole` and `moveToAuto` carry it to the run they start.
 - Last kind you started: the setting `newSession.lastStart.<workspaceId>`, written after a start succeeds.
+- Permission rows: the rows, presets and precedence are `packages/core/src/auto/permissions.ts`. A Lead's own rows live in `auto_trees.permissions` and the default in the workspace value `auto.permissions` (m243). The panel is `LeadPermissionsPanel` in `features/auto/permissions/`; `PERMISSION_GROUPS` holds its four groups. The old `work.enabled` setting is never read: the rules it turned on are the rules for everyone, pinned by `upgradeFromSwitchOff.sqlite.test.ts`.
 - Branch arrival: `openBranchWork` carries the requested group to `useRunsFolds`, which unfolds its finished rows in either grouping, and **Finished** when the group sits there. `rowControls.test.tsx` covers bare state rows past the cap, a merged branch, focus and scrolling.
 - Runs order: `branchGroupOrderOf` orders the By branch groups and splits off the finished ones, which `FinishedBranches` folds. A removed worktree keeps its branch in `SessionRun.goneBranches`. `RunsGrid/index.tsx` drops archived runs. `RunsGrid/order.test.tsx` and the `u37-runs-order` scenes cover it.
 - Page intro: the two lines live in `SESSION_PAGE_INTRO` in `apps/desktop/src/features/session/sessionPageIntro.ts`, drawn by `SessionPageIntro` in the page header.

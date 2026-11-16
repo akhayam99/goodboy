@@ -270,9 +270,9 @@ describe('the shell chapter', () => {
     expect(actions).toContain('Archive and Delete');
   });
 
-  it('shows the agents of a run and Auto on the rail at the left, with its key and no rail level', () => {
+  it('shows the agents of a run and its Lead on the rail at the left, with its key and no rail level', () => {
     const agents = pointOf('shell', 'Agents rail');
-    [shortcutGlyphs('session.spawned'), 'run or Auto', 'at the left', 'Enter opens'].forEach(
+    [shortcutGlyphs('session.spawned'), 'its Lead first', 'at the left', 'Enter opens'].forEach(
       (entry) => expect(agents).toContain(entry),
     );
     expect(agents).not.toContain('Agents panel');
@@ -297,8 +297,9 @@ describe('the shell chapter', () => {
 
 describe('the start, agent and workflow chapters', () => {
   it('names the one way to start a session and the folder picker', () => {
-    expect(pointOf('kickoff', 'What kind of run?')).toContain('Orchestrated or Preset');
-    expect(pointOf('kickoff', NAMES.startARun)).toContain('Auto picks a workflow or an agent');
+    expect(pointOf('kickoff', 'What kind of run?')).toContain('Lead, Preset or Agent');
+    expect(pointOf('kickoff', 'What kind of run?')).not.toContain('Orchestrated');
+    expect(pointOf('kickoff', NAMES.startARun)).toContain('a Lead plans the run');
     expect(pointOf('kickoff', 'Start from Tasks')).toContain('Pick from Tasks');
     expect(pointOf('kickoff', 'Pin folders')).toContain('Auto picks');
     expect(pointOf('kickoff', 'Pin folders')).toContain('Suggested');
@@ -310,27 +311,23 @@ describe('the start, agent and workflow chapters', () => {
     Object.values(NEW_DRAWER_FORMS).forEach((form) => expect(menu).toContain(form.title));
   });
 
-  it('tells Orchestrated from Auto', () => {
-    const orchestrated = pointOf('workflows', 'Orchestrated');
-    expect(orchestrated).toContain('orchestrator model picks each next step');
-    expect(orchestrated).toContain('Hint the orchestrator');
-    expect(orchestrated).toContain('Send now');
-    const auto = pointOf('agents', 'Auto');
-    expect(auto).toContain('Start a run');
-    expect(auto).toContain('under a limit');
-    expect(auto).toContain('child agents');
-    const both = pointOf('workflows', 'Orchestrated or Auto');
-    expect(both).toContain('Orchestrated is not Auto');
-    expect(both).not.toContain('Experimental');
+  it('keeps orchestrated runs as older runs and gives every new run a Lead', () => {
+    const older = pointOf('workflows', 'Older runs');
+    ['older run', 'Hint the orchestrator', 'Send now', 'New runs always have a Lead'].forEach(
+      (entry) => expect(older).toContain(entry),
+    );
+    expect(pointOf('workflows', 'Orchestrated')).toBe('');
+    expect(pointOf('agents', 'Auto')).toBe('');
+    expect(pointOf('agents', 'The Lead')).toContain('under a limit');
   });
 
-  it('says a rebase conflict asks, and Rebase all hands the conflicts to one Auto', () => {
+  it('says a rebase conflict asks, and Rebase all hands the conflicts to one Lead', () => {
     const asks = pointOf('commits', 'A rebase conflict asks');
     ['Resolve with Auto', 'Resolve in terminal', 'Abort rebase', 'never pushes'].forEach((word) =>
       expect(asks).toContain(word),
     );
     const all = pointOf('commits', 'Rebase all');
-    expect(all).toContain('one Auto run');
+    expect(all).toContain('one Lead run');
     expect(all).toContain('Also tidy commits with Auto');
   });
 
@@ -382,7 +379,7 @@ describe('the Words chapter', () => {
       'Run',
       'Plan',
       'Preset',
-      'Auto',
+      'Lead',
       'Scout',
       'Turn',
       'Worktree and branch',
@@ -402,8 +399,8 @@ describe('the Words chapter', () => {
     expect(unknown).toEqual([]);
   });
 
-  it('defines Run, Plan, Preset, Auto and Scout in one sentence each', () => {
-    ['Run', 'Plan', 'Preset', 'Auto', 'Scout'].forEach((term) => {
+  it('defines Run, Plan, Preset, Lead and Scout in one sentence each', () => {
+    ['Run', 'Plan', 'Preset', 'Lead', 'Scout'].forEach((term) => {
       const desc = words?.points.find((point) => point.term === term)?.desc ?? '';
       expect(desc).not.toBe('');
       expect(desc.split(/(?<=[.?!])\s+/)).toHaveLength(1);

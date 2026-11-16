@@ -1,6 +1,6 @@
 # Auto
 
-> **Read this when** you change or explain the Auto agent: its release gate,
+> **Read this when** you change or explain the Lead, the Auto agent in code: its release gate,
 > how a person starts it, what it shows in the Overview and its chat,
 > how a plan is approved, and which providers it may use. **Not for** the
 > tables and the scheduler behind it ([architecture.md](architecture.md), Auto
@@ -22,6 +22,27 @@ finish (`readLaunchPermissions`, `readPublishPermissions`,
 while its agents work, and the screen calls the Auto root the Lead. The old
 `work.enabled` row may stay in the settings table and is never read;
 `upgradeFromSwitchOff.sqlite.test.ts` pins that pending asks survive the upgrade.
+
+## Names
+
+The engine keeps the name auto in code; the screens never say it for the unit
+of work. One map, read it before a rename:
+
+| Screen and docs                     | Code                                                                       |
+| ----------------------------------- | -------------------------------------------------------------------------- |
+| Run, led by a Lead                  | an Auto tree: `auto_trees` (m230), `features/auto/`, `store/runtime/auto/` |
+| Lead                                | the root agent of the tree, role `auto` (`NAMES.role.auto` is Lead)        |
+| Row "Lead", "Lead · plan X"         | `SessionRun` kind `auto`, worded by `runKindLineOf`                        |
+| Lead asks you, permission rows      | `auto.permissions`, `auto_trees.permissions` (m243)                        |
+| Older run "Workflow · Orchestrated" | `session_workflows` with `execution_mode` (m091), kind `orchestrated`      |
+
+Some buttons still carry the old word: **Let Auto take it from here**, **Detach
+from Auto**, **Stopped by Auto**, **What Auto was told**, **Use as an Auto
+check** and **Resolve with Auto**. They are copy, not a second engine. New runs
+never start the orchestrator; an open orchestrated run finishes on it, and the
+orchestrator goes no earlier than two minor releases after 0.38.0
+([features/workflows.md](features/workflows.md#older-runs)). No migration
+moves a row between the two engines.
 
 ## Status
 

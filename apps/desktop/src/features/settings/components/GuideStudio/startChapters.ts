@@ -56,11 +56,11 @@ export const START_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Preset',
-        desc: 'A saved workflow that a run follows.',
+        desc: 'A saved workflow that a Lead follows as its plan.',
       },
       {
-        term: 'Auto',
-        desc: 'The agent that picks how a run goes.',
+        term: NAMES.lead,
+        desc: 'The agent that plans a run and starts the agents it needs.',
       },
       {
         term: 'Scout',
