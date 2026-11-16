@@ -51,6 +51,11 @@ In light, box edges are softer and the black drop shadows are gone. Secondary bu
 
 In dark, the grays are cooler and the glow behind the window is gone.
 
+#### New icons
+<!-- gb area=app -->
+
+Every icon in the app is redrawn in one set with softer, rounder lines. Check marks and large icons are drawn heavier, and a selected or starred item shows a filled icon.
+
 #### Counts sit on their icon
 <!-- gb area=sessions -->
 
