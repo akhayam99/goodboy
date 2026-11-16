@@ -7057,11 +7057,6 @@
       "count": 1
     }
   },
-  "apps/desktop/src/shared/components/GenericTerminalPanel/terminal-theme.ts": {
-    "@typescript-eslint/strict-boolean-expressions": {
-      "count": 5
-    }
-  },
   "apps/desktop/src/shared/components/GenericTerminalPanel/terminalFind.test.tsx": {
     "@typescript-eslint/naming-convention": {
       "count": 2

@@ -109,7 +109,7 @@ export const GenericTerminalPanel = ({
       fontFamily: "'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace",
       fontSize: 12,
       lineHeight: 1.4,
-      theme: resolveTerminalTheme(getAppliedTheme()),
+      theme: resolveTerminalTheme({ theme: getAppliedTheme() }),
       disableStdin: readOnly,
       allowProposedApi: true,
     });
@@ -291,7 +291,7 @@ export const GenericTerminalPanel = ({
         if (!term) {
           return;
         }
-        term.options.theme = resolveTerminalTheme(getAppliedTheme());
+        term.options.theme = resolveTerminalTheme({ theme: getAppliedTheme() });
       }),
     [],
   );

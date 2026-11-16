@@ -1,92 +1,48 @@
 import type { ITheme } from '@xterm/xterm';
+import { TERMINAL_ANSI_STEPS } from './terminalAnsiSteps';
 
-/**
- * xterm palettes. background / foreground / cursor are anchored to the app's
- * canvas tokens at runtime (see {@link resolveTerminalTheme}); the ANSI ramp
- * stays fixed so program output keeps stable, recognizable colors across themes.
- */
-const LIGHT_THEME: ITheme = {
-  background: '#f8f8f8',
-  foreground: '#1a1a2e',
-  cursor: '#4078f2',
-  selectionBackground: '#4078f230',
-  black: '#383a42',
-  red: '#e45649',
-  green: '#50a14f',
-  yellow: '#c18401',
-  blue: '#4078f2',
-  magenta: '#a626a4',
-  cyan: '#0184bc',
-  white: '#fafafa',
-  brightBlack: '#696c77',
-  brightRed: '#e45649',
-  brightGreen: '#50a14f',
-  brightYellow: '#986801',
-  brightBlue: '#4078f2',
-  brightMagenta: '#a626a4',
-  brightCyan: '#0184bc',
-  brightWhite: '#ffffff',
+type TerminalTheme = 'dark' | 'light';
+
+type TokenMap = Readonly<Partial<Record<Exclude<keyof ITheme, 'extendedAnsi'>, string>>>;
+
+const SURFACE_TOKENS: TokenMap = {
+  background: '--color-background',
+  foreground: '--color-foreground',
+  cursor: '--color-primary',
+  selectionBackground: '--color-selection',
+  scrollbarSliderBackground: '--color-scrollbar-thumb',
+  scrollbarSliderHoverBackground: '--color-scrollbar-thumb-active',
+  scrollbarSliderActiveBackground: '--color-scrollbar-thumb-active',
 };
 
-const DARK_THEME: ITheme = {
-  background: '#1a1a1f',
-  foreground: '#e6e6e6',
-  cursor: '#8ab4f8',
-  selectionBackground: '#8ab4f840',
-  black: '#3c3c3c',
-  red: '#ff7b72',
-  green: '#7ee787',
-  yellow: '#f0c674',
-  blue: '#8ab4f8',
-  magenta: '#d2a8ff',
-  cyan: '#79c0ff',
-  white: '#d0d0d0',
-  brightBlack: '#6e7681',
-  brightRed: '#ffa198',
-  brightGreen: '#7ee787',
-  brightYellow: '#ffd66e',
-  brightBlue: '#8ab4f8',
-  brightMagenta: '#d2a8ff',
-  brightCyan: '#79c0ff',
-  brightWhite: '#ffffff',
+const rootStyles = (): CSSStyleDeclaration | null => {
+  if (typeof window === 'undefined' || typeof document === 'undefined') {
+    return null;
+  }
+  return window.getComputedStyle(document.documentElement);
 };
 
-const readToken = (styles: CSSStyleDeclaration, token: string): string | null => {
+type ReadTokenParams = { readonly styles: CSSStyleDeclaration; readonly token: string };
+
+const readToken = ({ styles, token }: ReadTokenParams): string | null => {
   const value = styles.getPropertyValue(token).trim();
   return value.length > 0 ? value : null;
 };
 
-/**
- * Returns the palette for the active theme with its surface colors
- * (background / foreground / cursor) anchored to the live canvas tokens, so the
- * terminal sits flush with the surrounding app surface. The fixed ANSI ramp is
- * preserved. Falls back to the static palette when tokens can't be resolved
- * (e.g. SSR or a detached node).
- */
-export const resolveTerminalTheme = (theme: 'dark' | 'light'): ITheme => {
-  const base = theme === 'dark' ? DARK_THEME : LIGHT_THEME;
-  if (typeof window === 'undefined' || typeof document === 'undefined') {
-    return base;
+type ThemeParams = { readonly theme: TerminalTheme };
+
+export const resolveTerminalTheme = ({ theme }: ThemeParams): ITheme => {
+  const styles = rootStyles();
+  if (styles === null) {
+    return {};
   }
-  const styles = window.getComputedStyle(document.documentElement);
-  const background = readToken(styles, '--color-background');
-  const foreground = readToken(styles, '--color-foreground');
-  const cursor = readToken(styles, '--color-primary');
-  const scrollbarSliderBackground = readToken(styles, '--color-scrollbar-thumb');
-  const scrollbarSliderActiveBackground = readToken(styles, '--color-scrollbar-thumb-active');
-  return {
-    ...base,
-    ...(background ? { background } : {}),
-    ...(foreground ? { foreground } : {}),
-    ...(cursor ? { cursor } : {}),
-    ...(scrollbarSliderBackground ? { scrollbarSliderBackground } : {}),
-    ...(scrollbarSliderActiveBackground
-      ? {
-          scrollbarSliderHoverBackground: scrollbarSliderActiveBackground,
-          scrollbarSliderActiveBackground,
-        }
-      : {}),
-  };
+  const tokens: TokenMap = { ...TERMINAL_ANSI_STEPS[theme], ...SURFACE_TOKENS };
+  return Object.fromEntries(
+    Object.entries(tokens).flatMap(([key, token]) => {
+      const value = token === undefined ? null : readToken({ styles, token });
+      return value === null ? [] : [[key, value]];
+    }),
+  );
 };
 
 export type TerminalFindColors = {
@@ -96,24 +52,48 @@ export type TerminalFindColors = {
   readonly activeMatchColorOverviewRuler: string;
 };
 
-const FIND_COLORS: Readonly<Record<'dark' | 'light', TerminalFindColors>> = {
+const FIND_STEPS: Readonly<Record<TerminalTheme, TerminalFindColors>> = {
   dark: {
-    matchBackground: '#f0c67440',
-    matchOverviewRuler: '#f0c674',
-    activeMatchBackground: '#f0c674a0',
-    activeMatchColorOverviewRuler: '#ffd88a',
+    matchBackground: '--amber-6',
+    matchOverviewRuler: '--amber-9',
+    activeMatchBackground: '--amber-8',
+    activeMatchColorOverviewRuler: '--amber-11',
   },
   light: {
-    matchBackground: '#fde68a90',
-    matchOverviewRuler: '#c18401',
-    activeMatchBackground: '#f59e0bc0',
-    activeMatchColorOverviewRuler: '#986801',
+    matchBackground: '--amber-5',
+    matchOverviewRuler: '--amber-9',
+    activeMatchBackground: '--amber-7',
+    activeMatchColorOverviewRuler: '--amber-11',
   },
 };
 
-type FindColorsParams = {
-  readonly theme: 'dark' | 'light';
+export const resolveTerminalFindColors = ({
+  theme,
+}: ThemeParams): TerminalFindColors | undefined => {
+  const styles = rootStyles();
+  if (styles === null) {
+    return undefined;
+  }
+  const steps = FIND_STEPS[theme];
+  const matchBackground = readToken({ styles, token: steps.matchBackground });
+  const matchOverviewRuler = readToken({ styles, token: steps.matchOverviewRuler });
+  const activeMatchBackground = readToken({ styles, token: steps.activeMatchBackground });
+  const activeMatchColorOverviewRuler = readToken({
+    styles,
+    token: steps.activeMatchColorOverviewRuler,
+  });
+  if (
+    matchBackground === null ||
+    matchOverviewRuler === null ||
+    activeMatchBackground === null ||
+    activeMatchColorOverviewRuler === null
+  ) {
+    return undefined;
+  }
+  return {
+    matchBackground,
+    matchOverviewRuler,
+    activeMatchBackground,
+    activeMatchColorOverviewRuler,
+  };
 };
-
-export const resolveTerminalFindColors = ({ theme }: FindColorsParams): TerminalFindColors =>
-  FIND_COLORS[theme];
