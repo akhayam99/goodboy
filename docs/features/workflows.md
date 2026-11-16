@@ -110,7 +110,7 @@ With two or more branches a switch groups the page **By branch** or **By state**
 
 A row's branch chip opens the Branch page, **Also on** shows the same run in its other group, and a title click opens the run at once. Right click a row and pick **Rename** to edit its title. The Branch page has a **Runs** tab with the runs, questions and artifacts of that branch, the same rows as these pages. **All runs** opens this page with the group of the branch open, in the grouping you chose. **Open branch** on a group opens that Work tab, and Back from a run returns to it.
 
-When something listens on a port on this branch, a **Running here** line lists the ports and what opened them, and opens Monitoring on this branch. Nothing runs, no line.
+When something listens on a port on this branch, the line under the branch name shows up to two ports with a live dot and their name, then **+1 more**. A click on a port opens it. **Ports** opens Monitoring on this branch. Nothing runs, nothing shows.
 
 ### Hints to the orchestrator
 
