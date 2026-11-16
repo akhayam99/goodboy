@@ -8,7 +8,6 @@ import {
   EMPTY_ARRAY,
   useAppStore,
   useSessionLoading,
-  useSessionOpenQuestions,
   useSessionSlots,
   useSessionSlotsLoad,
   useSlotHistoryCount,
@@ -22,12 +21,14 @@ import { decisionChangesSince } from '../../../../store/slices/contextDrawer/dec
 import { selectContextBaseline } from '../../../../store/slices/contextDrawer/selectContextBaseline';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { NAMES } from '../../../../shared/utils/names';
-import { shareableContext } from '../../context/shareableContext';
 import { CONTEXT_SECTION_LABEL } from './contextSections';
 import { CONTEXT_SECTION_SLOT } from './contextSectionSlots';
 import { GoalTab } from './GoalTab';
 import { DecisionsSection } from './DecisionsSection';
 import { SummarySection } from './SummarySection';
+import { SummaryStatus } from './SummaryStatus';
+import { usePendingRemovals } from './usePendingRemovals';
+import { useContextBrief } from './useContextBrief';
 import { VersionsView } from './VersionsView';
 import { ContextUpdates } from './ContextUpdates';
 import { ContextCopyButton } from './ContextCopyButton';
@@ -39,8 +40,6 @@ import { slotVisibility, youOnlyVisibility } from './roleVisibility';
 import { ExplanationsSection } from './ExplanationsSection';
 import { revealContextSection } from './revealContextSection';
 import { useLearningList } from '../../../../shared/hooks/useLearningList';
-
-const NO_PENDING_REMOVALS: ReadonlySet<number> = new Set();
 
 type ContextSlotSection = Exclude<ContextDrawerSection, 'explanations'>;
 
@@ -70,7 +69,6 @@ export const ContextDrawer = ({
   const slots = useSessionSlots(sessionId);
   const loading = useSessionLoading(sessionId);
   const slotsLoad = useSessionSlotsLoad(sessionId);
-  const openQuestions = useSessionOpenQuestions(sessionId);
   const summarizer = useSummarizerStatus(sessionId);
   const baseline = useAppStore((state) => selectContextBaseline({ state, sessionId }));
   const openContextDrawer = useAppStore((state) => state.openContextDrawer);
@@ -88,7 +86,7 @@ export const ContextDrawer = ({
   const decisionsHistory = useSlotHistoryCount(sessionId, CONTEXT_SECTION_SLOT.decisions);
   const summaryHistory = useSlotHistoryCount(sessionId, CONTEXT_SECTION_SLOT.summary);
   const [rawSection, setRawSection] = useState<ContextSlotSection | null>(null);
-  const [pendingRemovals, setPendingRemovals] = useState<ReadonlySet<number>>(NO_PENDING_REMOVALS);
+  const removals = usePendingRemovals();
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const goal = slotValue({ slots, key: 'goal' });
@@ -140,14 +138,7 @@ export const ContextDrawer = ({
     revealContextSection({ scroller: scrollRef.current, section });
   }, [section, view]);
 
-  const openQuestionTexts = useMemo(
-    () =>
-      openQuestions
-        .filter((question) => question.status === 'open')
-        .map((question) => question.text),
-    [openQuestions],
-  );
-  const brief = shareableContext({ goal, decisions, summary, openQuestions: openQuestionTexts });
+  const brief = useContextBrief({ sessionId, goal, decisions, summary });
 
   const openVersions = ({ section }: SectionParams) =>
     openContextDrawer({ sessionId, section: section, view: 'versions' });
@@ -208,18 +199,10 @@ export const ContextDrawer = ({
             sourceValue={decisions}
             onWriteSource={(next) => writeSlot({ section: 'decisions', next })}
             onCloseRawEditor={() => setRawSection(null)}
-            pendingRemovals={pendingRemovals}
-            onMarkRemoved={(number) =>
-              setPendingRemovals((current) => new Set(current).add(number))
-            }
-            onUnmarkRemoved={(number) =>
-              setPendingRemovals((current) => {
-                const next = new Set(current);
-                next.delete(number);
-                return next;
-              })
-            }
-            onClearRemovals={() => setPendingRemovals(NO_PENDING_REMOVALS)}
+            pendingRemovals={removals.pending}
+            onMarkRemoved={(number) => removals.mark({ number })}
+            onUnmarkRemoved={(number) => removals.unmark({ number })}
+            onClearRemovals={removals.clear}
           />
         </ContextSection>
         <ContextSection
@@ -251,10 +234,17 @@ export const ContextDrawer = ({
   })();
 
   const copy = <ContextCopyButton brief={brief} />;
+  const status = view === 'current' ? <SummaryStatus value={summary} /> : null;
+  const lead = (
+    <>
+      {status}
+      {cards}
+    </>
+  );
 
   if (isPage) {
     return (
-      <ContextPageFrame sessionId={sessionId} action={copy} cards={cards} frameRef={scrollRef}>
+      <ContextPageFrame sessionId={sessionId} action={copy} cards={lead} frameRef={scrollRef}>
         {sections}
       </ContextPageFrame>
     );
@@ -283,7 +273,10 @@ export const ContextDrawer = ({
         viewportRef={scrollRef}
         fadeSize={24}
       >
-        <BandStack>{sections}</BandStack>
+        <BandStack>
+          {status}
+          {sections}
+        </BandStack>
       </ScrollFade>
     </DrawerFrame>
   );

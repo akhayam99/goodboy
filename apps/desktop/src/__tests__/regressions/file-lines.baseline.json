@@ -33,7 +33,7 @@
   "apps/desktop/src/features/search/components/SearchMode/index.tsx": 311,
   "apps/desktop/src/features/session/agent-kind.ts": 724,
   "apps/desktop/src/features/session/components/ContextDrawer/DecisionsSection.tsx": 378,
-  "apps/desktop/src/features/session/components/ContextDrawer/index.tsx": 272,
+  "apps/desktop/src/features/session/components/ContextDrawer/index.tsx": 266,
   "apps/desktop/src/features/session/components/SessionOverviewPane/LinkWorkPicker.tsx": 302,
   "apps/desktop/src/features/session/timeline/buildTimelineGroups.ts": 648,
   "apps/desktop/src/features/settings/components/GuideStudio/guideChapters.ts": 852,

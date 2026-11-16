@@ -499,15 +499,20 @@ column), **Change model** (Settings, This workspace, Models, scrolled to Step su
 and **Update now**. Update now queues a consolidation pass through
 `requestContextUpdate`, behind any pass in flight and never beside it;
 `summarizerPending` holds the turns waiting and whether a requested update is queued.
-Summary draws its State block only when the State holds more than its first sentence (`stateBodyHasMore`), so the block never repeats the sentence.
+The State of the summary heads the tab, above Projects and Linked, as a status box built
+like the pull request merge box (`SummaryStatus`): a glyph, a count of blockers or of steps
+left (`summaryStatusWordOf`, never a run state word), the first State sentence, one row per
+blocker and the other State lines. It is hidden while slots load, fail or show Versions.
 
 Every card reads as labelled blocks (`ContextBlock`: a flat group with an
-eyebrow title, an icon and a count). A block shows its key line first and
-folds the rest behind **Show N more** (`KeyLineList` through `ContextExpander`, the
-one fold style of the tab); `summaryItems` splits a
+eyebrow title, an icon and a count). Goal shows its key line first and
+folds the rest behind **Show N more** (`KeyLineList` through `ContextExpander`). A Summary
+group is a list (`SummaryBlock`): Next an ordered list of steps with the first one tinted,
+Learned and the rest a list of facts. Each shows three and folds the rest behind one
+**Show all N** in its head (`aria-expanded`); `summaryItems` splits a
 body into items, one per top-level bullet with its sub-bullets, or one per
-sentence for prose. Summary shows State when it says more than the glance line, then Next
-and Learned, then any section the summarizer did not name; Open questions are left out
+sentence for prose. Summary shows Next and Learned, then any section the summarizer did not
+name; State lives in the status box; Open questions are left out
 because Needs you already says them, and **Edit** on the card still shows the whole
 document. Goal is one block with the card menu in its header, also while it is empty,
 loading or being edited (Edit and Versions are off while a draft is open).

@@ -566,6 +566,35 @@ describe('Context drawer sections', () => {
     for (const line of document.querySelectorAll('[data-context-section] p')) {
       expect(line.closest('[data-slot="empty-line"]')).not.toBeNull();
     }
+    expect(screen.queryByRole('region', { name: 'State' })).toBeNull();
+  });
+
+  it('puts the State status above the cards, with the blocker as its own row', () => {
+    setSlots({
+      goal: 'Stop crediting an invoice twice.',
+      decisions: '',
+      summary: [
+        '#### State',
+        '- Dedupe check is live in payments-api',
+        '- Blocked: notify-relay waits on the `delivery_state_v2` flag',
+        '',
+        '#### Next',
+        '- Ask Northwind to turn the flag on',
+      ].join('\n'),
+    });
+    mount();
+
+    const status = screen.getByRole('region', { name: 'State' });
+    expect(status.getAttribute('data-context-status')).toBe('blocked');
+    within(status).getByText('1 blocker');
+    within(status).getByText('Dedupe check is live in payments-api');
+    const blockers = within(status).getByRole('list', { name: 'Blockers' });
+    expect(blockers.textContent).toBe('Blocker: notify-relay waits on the delivery_state_v2 flag');
+    const goal = document.querySelector('[data-context-section="goal"]');
+    expect(
+      goal !== null &&
+        (status.compareDocumentPosition(goal) & Node.DOCUMENT_POSITION_FOLLOWING) > 0,
+    ).toBe(true);
   });
 
   it('keeps the Goal menu on an empty Goal and on a Goal being edited', () => {

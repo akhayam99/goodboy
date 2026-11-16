@@ -19,7 +19,7 @@ Read the reason behind a decision without opening the run. When Goodboy records 
 
 ### Running summary
 
-Hand the next agent where things stand. After a reply the drawer shows **Next** and **Learned**, and **State** when it says more than the one sentence the Overview shows. Open questions stay on the Overview. The Overview owns the State sentence and calls its age **Updated**. Copied context and agent prompts keep the complete summary.
+Hand the next agent where things stand. After a reply the Context tab opens on the **State**: a glyph, a count of blockers or of steps left, and the State's first sentence. Each blocker gets its own row with a warning glyph, and the rest of the State follows. The Summary card lists **Next** as numbered steps, the first one leading, and **Learned** as facts. Each group shows three and opens the rest with one **Show all**. Code reads in quiet mono, and a long path is shortened in the middle with the full path on hover. Open questions stay on the Overview. Copied context and agent prompts keep the complete summary.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/context-summary-dark.webp">
@@ -58,6 +58,6 @@ Hand a plan straight to the implementer. The plan goes from **Ready to run** to 
 ## Under the hood
 
 - Decision marks: `DecisionsSection` renders one list and `markContextRead` clears marks after persistence.
-- Summary: `summaryDisplayBlocks` draws State only when `stateBodyHasMore` says it exceeds the sentence, and `shareableContext` keeps the complete text.
+- Summary: `summaryStatusOf` reads State into the status box (`SummaryStatus`): a State line that says blocked, blocker, cannot or can't, or starts with waiting or stuck, is a blocker. `summaryStatusWordOf` counts blockers or Next steps and never names a run state. `summaryDisplayBlocks` leaves State out of the card, `SummaryBlock` folds a group past three, `shortPathOf` shortens a path, and `shareableContext` keeps the complete text.
 - Card controls: `SlotSourceActions` keeps the three menu entries together.
 - Card head: `ContextCardHead` draws the head row of every Context card, Projects and Linked included, and `ContextExpander` every fold inside a card.
