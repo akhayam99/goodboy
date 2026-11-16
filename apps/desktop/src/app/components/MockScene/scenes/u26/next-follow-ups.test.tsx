@@ -7,7 +7,7 @@ vi.mock('@tauri-apps/api/event', async () =>
 );
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { cleanup, render, screen, within } from '@testing-library/react';
 import { ToastProvider } from '../../../../../shared/components/Toast';
 import {
   importStore,
@@ -54,11 +54,6 @@ const needsYou = (): HTMLElement => screen.getByRole('region', { name: 'Branches
 describe('next follow-ups scenes', () => {
   it('offers Start fix once, on the Fix row of Needs you, once the analyze run proposed a fix', () => {
     show({ name: 'overview-after-analyze-light' });
-    for (const row of document.querySelectorAll<HTMLElement>(
-      '[data-board-row] button[aria-expanded="false"]',
-    )) {
-      fireEvent.click(row);
-    }
     expect(screen.getAllByRole('button', { name: 'Start fix' })).toHaveLength(1);
     expect(within(needsYou()).getAllByRole('button', { name: 'Start fix' })).toHaveLength(1);
   });

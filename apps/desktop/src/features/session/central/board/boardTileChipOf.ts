@@ -1,4 +1,5 @@
 import type { Tone } from '@goodboy/ui';
+import { sentenceCase } from '../../../../shared/utils/sentenceCase';
 import { STAGE_TONE } from '../../session-stage';
 import type { BranchEntry } from '../branches/branchStoryOf';
 import { BRANCH_STATE_TONE, type BranchState } from '../branches/branchStateTone';
@@ -31,13 +32,6 @@ const REQUEST_SHORT = { '#': 'PR', '!': 'MR' } as const satisfies Readonly<
   Record<'#' | '!', string>
 >;
 
-type SentenceParams = {
-  readonly text: string;
-};
-
-const sentenceOf = ({ text }: SentenceParams): string =>
-  text.length === 0 ? text : `${text.charAt(0).toUpperCase()}${text.slice(1)}`;
-
 export const boardTileChipOf = ({ row, entry, runningCount }: Params): BoardTileChip => {
   if (row.isMerged) {
     return {
@@ -58,7 +52,7 @@ export const boardTileChipOf = ({ row, entry, runningCount }: Params): BoardTile
     return { word: WORKING, tone: STAGE_TONE.running };
   }
   if (entry === null) {
-    return { word: sentenceOf({ text: row.stage.reason }), tone: 'neutral' };
+    return { word: sentenceCase({ text: row.stage.reason }), tone: 'neutral' };
   }
   const request = entry.fact.request;
   if (request !== null && entry.story.state === 'open') {

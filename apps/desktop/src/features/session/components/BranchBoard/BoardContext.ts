@@ -7,14 +7,9 @@ import type { ActionCardModel } from '../../central/next/actionCardsOf';
 import type { ActionCardActions } from '../../central/next/useActionCardActions';
 import type { RemoveWorktrees } from './useRemoveWorktrees';
 
-type ToggleParams = {
-  readonly rowId: string;
-};
-
 export type BoardContextValue = Readonly<{
   session: Session;
   now: number;
-  isNarrow: boolean;
   rowById: ReadonlyMap<string, BoardRow>;
   entryByRowId: ReadonlyMap<string, BranchEntry>;
   runningByRowId: ReadonlyMap<string, number>;
@@ -26,8 +21,6 @@ export type BoardContextValue = Readonly<{
   actionsFor: ActionCardActions['actionsFor'];
   openFor: ActionCardActions['openFor'];
   removal: RemoveWorktrees;
-  openIds: ReadonlySet<string>;
-  onToggleRow: (params: ToggleParams) => void;
 }>;
 
 export const BoardContext = createContext<BoardContextValue | null>(null);
