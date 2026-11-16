@@ -320,6 +320,8 @@ export { ListboxList, listboxOptionId } from './components/Listbox/ListboxList';
 export type { ListboxListProps } from './components/Listbox/ListboxList';
 export { ListboxOptionRow } from './components/Listbox/ListboxOptionRow';
 export type { ListboxOptionRowProps } from './components/Listbox/ListboxOptionRow';
+export { ListboxTrigger } from './components/Listbox/ListboxTrigger';
+export type { ListboxTriggerProps } from './components/Listbox/ListboxTrigger';
 export { filterOptions } from './components/Listbox/filterOptions';
 export type { FilteredOption, ListboxMatch } from './components/Listbox/filterOptions';
 export { useListboxKeyboard } from './components/Listbox/useListboxKeyboard';

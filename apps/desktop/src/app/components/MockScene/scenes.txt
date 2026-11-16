@@ -1404,6 +1404,10 @@ u44-run-page-ask-light
 u44-run-page-light
 u44-runs-list
 u44-runs-start-open
+u44-task-picker-all
+u44-task-picker-error
+u44-task-picker-loading
+u44-task-picker-sentry
 update-card
 update-card-long-version
 update-card-narrow

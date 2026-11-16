@@ -34,6 +34,7 @@ export const STORAGE_PREFIXES = {
   inboxKindFilter: `${PREFIX}inbox-kind-filter:`,
   taskListView: `${PREFIX}task-list-view:v1:`,
   taskArrivals: `${PREFIX}task-arrivals:v1:`,
+  taskPickerSource: `${PREFIX}task-picker-source:v1:`,
   artifactDrafts: `${PREFIX}artifact-drafts:`,
   agentDraft: `${PREFIX}agent-draft:v1:`,
   questionDraft: `${PREFIX}question-draft:v1:`,
