@@ -548,10 +548,12 @@ workspaceId, nowMs })`, owns every row's attention sentence and tone (it replace
   card starts at the name column (`grid-cols-subgrid`) so its content sits 12px
   right of the name. `starredProjectsFirst({ projects, inside })` is the one
   order: starred first, then the rest, by `name` in Settings and by `recency`
-  in pickers (`groupProjects` calls it). A project picker (the session Add
-  folder list, the Sessions folder filter) with a starred project and six or
-  more projects shows the same two headings and a small filled star on starred
-  rows (`shouldGroupStarred`); a search flattens them. New session defaults sit in a
+  in pickers (`groupProjects` calls it). The Sessions folder filter with a
+  starred project and six or more projects shows the same two headings and a
+  small filled star on starred rows (`shouldGroupStarred`); a search flattens
+  them. The session Add folder list and the New session picker share
+  `projectPickerGroups` instead: Starred, Recent (folders the latest sessions
+  worked in, at most five), then the rest by name. New session defaults sit in a
   two-column grid with each help behind an info mark, followed by the
   `After a pull request merges` segmented control, and disconnecting is a
   ghost row at the bottom that asks in a `ConfirmPopover` beside its button. Onboarding keeps the

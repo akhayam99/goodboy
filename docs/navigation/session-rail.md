@@ -626,9 +626,16 @@ required first, and the draft stays for the next New.
 
 The draft asks no question first (`SessionKickoff`): **Projects** (`WhereChip`) is
 optional and sits in the task field, and **Start blank** sits in the page
-header. Where is a searchable multiple `Listbox` in two groups
-(`projectPickerOptions`): "Suggested" holds at most five (the most recently
-used, then starred ones) and "All projects" lists the rest by name. The draft
+header. Where is a searchable multiple `Listbox` in three groups
+(`projectPickerOptions`, `projectPickerGroups`): "Starred" by name, "Recent"
+with at most five (the issue's matched folder first with its reason line, then
+the active folder of the workspace's latest sessions, `recentProjectIdsOf`),
+and "All projects" with the rest by name. `Project.lastAccessedAt` only moves
+when a folder is added or reconnected, so it never orders the picker. Each row
+carries a `ListboxStar`: the star or ⌘S on the active row calls
+`setProjectStarred`, the row changes after the save, and a failure shows in the
+list status (`useProjectStarToggle`). With nothing starred the list ends on one
+hint line (`ProjectStarHint`). The draft
 keeps the picks as `projectIds`; the first is the session's project and the
 rest are added with it (`additionalProjectIds`).
 

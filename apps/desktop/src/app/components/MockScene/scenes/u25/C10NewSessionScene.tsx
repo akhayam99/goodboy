@@ -20,6 +20,8 @@ export type C10SceneState = {
   readonly projectNames: ReadonlyArray<string>;
   readonly hasManyProjects?: boolean;
   readonly isPickerOpen?: boolean;
+  readonly pickerQuery?: string;
+  readonly starredNames?: ReadonlyArray<string>;
   readonly startFailure?: string;
   readonly clickLabel?: string;
   readonly openPrefix?: string;
@@ -87,6 +89,15 @@ const seedProjects = ({ state }: Props): void => {
   if (state.hasManyProjects === true && template !== undefined) {
     useAppStore.setState((current) => ({
       projects: [...current.projects, ...extraProjects({ template })],
+    }));
+  }
+  const starredNames = state.starredNames ?? [];
+  if (starredNames.length > 0) {
+    const starredAt = clock.iso({ at: '2026-10-10T09:00:00.000Z' });
+    useAppStore.setState((current) => ({
+      projects: current.projects.map((project) =>
+        starredNames.includes(project.name) ? { ...project, starredAt } : project,
+      ),
     }));
   }
   if (state.hasConnectedProviders === true) {
@@ -168,11 +179,16 @@ export const C10NewSessionScene = ({ state }: Props) => {
         trigger.click();
         return;
       }
+      const query = state.pickerQuery ?? PICKER_QUERY;
+      if (query === '') {
+        window.clearInterval(timer);
+        return;
+      }
       const search = document.querySelector<HTMLInputElement>('input[aria-label="Search folders"]');
       if (search === null) {
         return;
       }
-      typeInto({ input: search, text: PICKER_QUERY });
+      typeInto({ input: search, text: query });
       window.clearInterval(timer);
     }, STEP_DELAY_MS);
     return () => window.clearInterval(timer);

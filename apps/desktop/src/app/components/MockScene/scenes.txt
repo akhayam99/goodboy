@@ -314,6 +314,7 @@ c10-new-wireframe
 c10-start-failed
 c10-start-orchestrate
 c10-start-projects
+c10-start-projects-starred
 c10-start-task
 c10-start-workflow
 c11-sessions-board

@@ -128,7 +128,8 @@ Under the task sits [one start form](#one-start-form).
 
 **Projects** is optional. Search it by name, even with 50 folders in the workspace.
 
-- The list opens on Suggested (the folders you used last, then starred ones, five at most) and then All projects by name.
+- The list opens on Starred, then Recent (the folders your latest sessions worked in, five at most), then All projects by name. A folder that matches the picked task leads Recent with the reason under its name.
+- The star on a row, or ⌘S on the highlighted row, stars or unstars it. The star changes once the save is done; a failed save leaves it as it was and says why in the list. With nothing starred, one line at the bottom says how.
 - It reads **Auto picks**, the folder you pinned, or how many you pinned.
 - A pin always wins. With a folder pinned, nothing else is mounted on start.
 - An Auto agent that has to write and finds no folder picks one the same way, inside the same allowance. It asks where it should work only when the task names no folder of the workspace or the allowance is spent.

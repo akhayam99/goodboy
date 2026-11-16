@@ -82,7 +82,7 @@ export const SessionKickoff = ({ workspaceId, notice }: Props) => {
 
   const agentModel = useDraftAgentModel({ workspaceId, base: shapeModel });
   const model = kind === null ? autoRun.model : kind === 'agent' ? agentModel : shapeModel;
-  const suggestedIds = suggestedId === null ? [] : [suggestedId];
+  const match = launch === null ? null : { projectId: launch.selectedId, reason: launch.reason };
   const isBusy = isStarting || shapeRun.isStarting || autoRun.isStarting;
   const hasGoal = autoRun.text.trim() !== '';
 
@@ -98,7 +98,7 @@ export const SessionKickoff = ({ workspaceId, notice }: Props) => {
       <StartBranchNotice workspaceId={workspaceId} isDisabled={isBusy} />
       <NewSessionStartForm
         workspaceId={workspaceId}
-        suggestedIds={suggestedIds}
+        match={match}
         shapeRun={shapeRun}
         autoRun={autoRun}
         limit={limit}

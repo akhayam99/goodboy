@@ -25,6 +25,15 @@ const PICKER: C10SceneState = {
   isPickerOpen: true,
 };
 
+const PICKER_STARRED: C10SceneState = {
+  page: { choice: 'orchestrate', goal: RUN_GOAL },
+  projectNames: TWO_PROJECTS,
+  hasManyProjects: true,
+  isPickerOpen: true,
+  pickerQuery: '',
+  starredNames: ['payments-api', 'northwind-service-02'],
+};
+
 const FAILED: C10SceneState = {
   page: { choice: 'orchestrate', goal: RUN_GOAL },
   projectNames: TWO_PROJECTS,
@@ -37,6 +46,7 @@ export const U25_C10_NEW_SESSION_SCENES = {
   'c10-start-workflow': () => <C10NewSessionScene state={WORKFLOW} />,
   'c10-start-orchestrate': () => <C10NewSessionScene state={ORCHESTRATE} />,
   'c10-start-projects': () => <C10NewSessionScene state={PICKER} />,
+  'c10-start-projects-starred': () => <C10NewSessionScene state={PICKER_STARRED} />,
   'c10-start-failed': () => <C10NewSessionScene state={FAILED} />,
   'c10-new-menu': C10NewMenuScene,
   'c10-new-report': U24_NEW_DRAWER_SCENES['new-drawer-write'],
