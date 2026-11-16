@@ -224,7 +224,7 @@ const renderPage = async (): Promise<void> => {
 
 const KINDS = 'What kind of run?';
 
-const PICK_LINE = 'A Lead plans it and starts the agents. Or give it a preset, or pick one agent.';
+const PICK_LINE = 'A Lead by default. Or a preset, or one agent.';
 
 type KindParams = {
   readonly name: RegExp;

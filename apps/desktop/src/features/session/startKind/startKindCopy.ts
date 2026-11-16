@@ -20,11 +20,11 @@ type CountParams = {
 export const START_KIND_COPY = {
   question: 'What kind of run?',
   how: 'How',
-  pickLine: 'A Lead plans it and starts the agents. Or give it a preset, or pick one agent.',
+  pickLine: 'A Lead by default. Or a preset, or one agent.',
   kindLine: {
     lead: 'Plans it and starts the agents it needs.',
-    preset: 'The Lead follows a saved preset as its plan.',
-    agent: 'One role you pick, on the model you pick.',
+    preset: 'The Lead follows a saved preset.',
+    agent: 'One role, no Lead.',
   },
   kindTab: {
     lead: 'Lead',

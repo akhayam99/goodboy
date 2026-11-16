@@ -69,9 +69,7 @@ describe('the u27 start page scenes', () => {
       within(kinds).getByRole('tab', { name });
     }
     expect(
-      screen.getAllByText(
-        'A Lead plans it and starts the agents. Or give it a preset, or pick one agent.',
-      ).length,
+      screen.getAllByText('A Lead by default. Or a preset, or one agent.').length,
     ).toBeGreaterThan(0);
   });
 
