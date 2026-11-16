@@ -8,7 +8,6 @@ import { AUTO_STATE_TONE } from './autoStateTone';
 import { planNeedsApprovalOf } from '../../../shared/utils/planNeedsApprovalOf';
 import { AutoDockPlanComments } from './AutoDockPlanComments';
 import { focusAgentComposer } from './focusAgentComposer';
-import { useLoadedFlowWord } from '../../../shared/hooks/useLoadedFlowWord';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -39,7 +38,6 @@ export const AutoDockPlan = ({
     sessionId,
     artifactId: brandId<ArtifactId>({ value: artifactId }),
   });
-  const flow = useLoadedFlowWord();
   const plan = useSessionPlans(sessionId).find((candidate) => candidate.id === artifactId) ?? null;
   const hasUnsentComments = useDraftPlanComments({ sessionId, plan });
   if (model === null) {
@@ -67,7 +65,7 @@ export const AutoDockPlan = ({
           aria-live="polite"
           className={tintClasses(AUTO_STATE_TONE.waitingOnYou).text}
         >
-          {`Plan v${model.version} approved. Couldn't send it to ${flow}.`}
+          {`Plan v${model.version} approved. Couldn't send it to Lead.`}
         </span>
         <span className="flex-1" />
         {openPlan}

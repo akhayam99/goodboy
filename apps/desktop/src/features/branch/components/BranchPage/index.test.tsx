@@ -283,7 +283,7 @@ describe('Branch page header and sections', () => {
       'Changes',
       'Commits',
       'Checks',
-      'Work',
+      'Runs',
       'Comments',
     ]);
     expect(railRow(/^Comments/).getAttribute('aria-selected')).toBe('true');
@@ -299,7 +299,7 @@ describe('Branch page header and sections', () => {
       'Changes',
       'Commits',
       'Checks',
-      'Work',
+      'Runs',
       'Comments',
     ]);
     expect(
@@ -345,7 +345,7 @@ describe('Branch page sections by state', () => {
     dropRequest();
     await settle();
 
-    expect(sectionNames()).toEqual(['Conversation', 'Changes', 'Commits', 'Work']);
+    expect(sectionNames()).toEqual(['Conversation', 'Changes', 'Commits', 'Runs']);
   });
 
   it('adds Comments to a branch with no pull request once one local note exists', async () => {
@@ -356,7 +356,7 @@ describe('Branch page sections by state', () => {
     });
     await settle();
 
-    expect(sectionNames()).toEqual(['Conversation', 'Changes', 'Commits', 'Work', 'Comments']);
+    expect(sectionNames()).toEqual(['Conversation', 'Changes', 'Commits', 'Runs', 'Comments']);
     expect(railRow(/^Comments/).textContent).toBe('Comments');
   });
 
@@ -372,7 +372,7 @@ describe('Branch page sections by state', () => {
         'Changes',
         'Commits',
         'Checks',
-        'Work',
+        'Runs',
         'Comments',
       ]);
     },

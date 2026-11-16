@@ -55,6 +55,26 @@ describe('releaseImageRequests', () => {
     ]);
   });
 
+  it('requests only the pinned theme for an entry with theme=', () => {
+    const release = parseOne({
+      body: [
+        'A short opening sentence.',
+        '',
+        '### Improved',
+        '',
+        '#### A clearer light mode',
+        '<!-- gb area=app image=v1-overview theme=light -->',
+        '',
+        'Light mode reads better.',
+      ].join('\n'),
+    });
+
+    expect(releaseImageRequests({ release })).toEqual([
+      { version: '0.10.0', file: 'v1-overview-before-light.webp' },
+      { version: '0.10.0', file: 'v1-overview-after-light.webp' },
+    ]);
+  });
+
   it('requests nothing for an entry without an image, or a markdown-shaped release', () => {
     const withoutImage = parseOne({
       body: [

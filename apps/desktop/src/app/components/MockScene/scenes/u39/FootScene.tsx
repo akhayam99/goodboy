@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import { COLLAPSED_RAIL_WIDTH } from '@goodboy/ui';
-import { SETTING_WORK_ENABLED } from '../../../../../shared/lib/workSetting';
 import { useAppStore } from '../../../../../store';
 import type { ColumnActions } from '../../../SideColumn/columnDoors';
 import { ColumnFoot } from '../../../SideColumn/ColumnFoot';
@@ -21,7 +20,6 @@ const noop = () => undefined;
 const ACTIONS: ColumnActions = {
   openBoard: noop,
   openInbox: noop,
-  openWork: noop,
   openChat: noop,
   openWorkflows: noop,
   openNewChat: noop,
@@ -39,7 +37,6 @@ export const FootScene = ({ hasUpdate }: Props) => {
   useEffect(() => {
     installSceneDatabase();
     useAppStore.setState({
-      settings: { ...useAppStore.getState().settings, [SETTING_WORK_ENABLED]: 'false' },
       updaterStatus: hasUpdate ? 'available' : 'idle',
       updateVersion: hasUpdate ? VERSION : null,
       updateNotes: null,

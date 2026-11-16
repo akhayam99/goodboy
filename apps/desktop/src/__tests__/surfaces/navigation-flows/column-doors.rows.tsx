@@ -3,7 +3,6 @@ import { fireEvent, screen, waitFor } from '@testing-library/react';
 import type { ChatId } from '@goodboy/types';
 import { brandedId } from '../../../features/history/testing/brandedId';
 import { useThemeStore, type ThemePreference } from '../../../shared/lib/theme';
-import { SETTING_WORK_ENABLED } from '../../../shared/lib/workSetting';
 import {
   type Row,
   WAIT,
@@ -166,24 +165,6 @@ export const COLUMN_DOOR_ROWS: ReadonlyArray<Row> = [
       () => studio('Tasks'),
       () => heading(/^Tasks$/),
       async () => expect(doorIn('inbox').getAttribute('aria-current')).toBe('page'),
-    ),
-  },
-  {
-    name: 'column: work, with the work setting on',
-    covers: ['openWork', 'studio:work'],
-    door: 'visible',
-    open: async () => {
-      const state = useAppStore.getState();
-      useAppStore.setState({
-        settings: { ...state.settings, [SETTING_WORK_ENABLED]: 'true' },
-      });
-      await settle();
-      await click(doorIn('work'));
-    },
-    lands: both(
-      () => studio('Work'),
-      () => heading(/^Work$/),
-      async () => expect(doorIn('work').getAttribute('aria-current')).toBe('page'),
     ),
   },
   {

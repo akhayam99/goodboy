@@ -3,7 +3,6 @@ import { switchEpoch } from '../workspaces/switchEpoch';
 import { applyLocation } from './applyLocation';
 import { canonicalLocation } from './canonicalLocation';
 import { currentStack, stackKey } from './currentStack';
-import { foldedWorkPlace } from './foldedWorkPlace';
 import { replaceTop } from './history';
 import { withKnownMount } from './withKnownMount';
 import { withoutRemovedPages } from './withoutRemovedPages';
@@ -35,13 +34,7 @@ const needsArchive = ({ get, location }: NeedsArchiveParams): boolean =>
 export const restoreLocation = (set: SetFn, get: GetFn) => {
   return async ({ location }: Params): Promise<void> => {
     const workspaceId = get().currentWorkspaceId;
-    const foldEpoch = switchEpoch.value;
-    const folded =
-      location.studio?.kind === 'work' ? await foldedWorkPlace({ get, location }) : location;
-    if (foldEpoch !== switchEpoch.value) {
-      return;
-    }
-    const cleaned = withoutRemovedPages({ location: folded });
+    const cleaned = withoutRemovedPages({ location });
     if (workspaceId !== null && needsArchive({ get, location: cleaned })) {
       const epoch = switchEpoch.value;
       await get()

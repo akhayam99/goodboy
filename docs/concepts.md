@@ -200,7 +200,7 @@ one-line **description**. Both live on the project row in workspace settings.
 - Every agent's project list puts starred projects first, marks them, shows each
   description next to the name, and says to look in starred projects first when
   a request names no project. The planner and the orchestrator get the same list
-- Project pickers and the Activity project filter put starred projects on top; the New session picker lists them in its Suggested group after the issue's project and the most recently used
+- Project pickers and the Activity project filter put starred projects on top; the New session picker opens on Starred, then Recent (the folders the latest sessions worked in), then All projects, and stars a row in place
 - A star never changes what an agent may mount or write
 
 A repo project needs a working git setup before a session can make a worktree
@@ -1967,7 +1967,7 @@ session up again in Goodboy.
   (`brief`, `normal`, `verbose`) and the directive sent to the provider do not
   change. **Brief** stays the name of the agent tab and of a text you edit
   before something starts, so the two never share a screen.
-- **Stop** is the one name for ending a running turn: the labeled button in the dock, the right click menu and Search or run all say it, and the agent header has none. While the process exits it reads **Stopping**, and after 5 seconds **Still stopping** with **Force stop**. A button that stops more or less than the open agent names its scope (**Stop Auto and 2 agents**, **Stop this reply** on a step page).
+- **Stop** is the one name for ending a running turn: the labeled button in the dock, the right click menu and Search or run all say it, and the agent header has none. While the process exits it reads **Stopping**, and after 5 seconds **Still stopping** with **Force stop**. A button that stops more or less than the open agent names its scope (**Stop run** for the Lead and its agents, **Stop this reply** on a step page).
 - **Runs** is the tab of a session that lists its runs. A run is one execution
   inside a session. A workflow is the definition you set up in Workflow Studio,
   and it spawns runs. **Workflows** is the studio and the library, and the word

@@ -1,4 +1,4 @@
-import { useMemo, type ReactNode } from 'react';
+import { useMemo, type ComponentProps, type ReactNode } from 'react';
 import { ChevronUp } from 'lucide-react';
 import { Button, HeaderActions, ICON_SIZE, Notice, PaneTitleRow, Tooltip } from '@goodboy/ui';
 import type { PullRequestHost, PullRequestState, SessionId } from '@goodboy/types';
@@ -12,7 +12,10 @@ import { actionButtonStateOf } from '../../../actions/actionButtonStateOf';
 import type { BranchControls } from '../../hooks/useBranchControls';
 import { branchShownIdsOf, type BranchPrimary } from '../../branchPrimary';
 import { requestNounLabel } from '../../requestNounLabel';
+import { isBranchReadOnly } from '../../branchTabs';
+import { BranchRunningPorts } from '../BranchRunningPorts';
 import { BranchOverflow } from './BranchOverflow';
+import { BranchTools } from './BranchTools';
 import { BranchStateChip } from './BranchStateChip';
 
 type Props = {
@@ -28,6 +31,7 @@ type Props = {
   readonly isActive?: boolean;
   readonly canEditTitle: boolean;
   readonly line?: ReactNode;
+  readonly running?: Pick<ComponentProps<typeof BranchRunningPorts>, 'session' | 'mount'>;
   readonly onMutated: () => void;
 };
 
@@ -50,6 +54,7 @@ export const BranchHeader = ({
   isActive = true,
   canEditTitle,
   line = null,
+  running,
   onMutated,
 }: Props) => {
   const primary = isStepHidden ? null : controls.primary;
@@ -113,17 +118,12 @@ export const BranchHeader = ({
     controls.pullRequestControls.confirming !== null ||
     controls.sessionControls.confirming !== null;
   const primaryVariant = isYielding ? 'secondary' : 'primary';
+  const prKind = pr === null ? 'none' : pullRequestKindOf({ state: pr.state, isDraft: pr.isDraft });
+  const isReadOnly = isBranchReadOnly({ state: prKind });
   return (
     <div className="relative flex min-w-0 flex-col gap-2">
       <PaneTitleRow
-        badge={
-          pr === null ? null : (
-            <BranchStateChip
-              state={pullRequestKindOf({ state: pr.state, isDraft: pr.isDraft })}
-              host={host}
-            />
-          )
-        }
+        badge={pr === null ? null : <BranchStateChip state={prKind} host={host} />}
         title={
           <PullRequestTitle
             title={pr?.title ?? fallbackTitle}
@@ -134,12 +134,24 @@ export const BranchHeader = ({
         meta={
           titleEdit.isEditing ? (
             <span className="text-meta text-muted-foreground">Enter saves, Esc cancels</span>
-          ) : (
+          ) : running === undefined ? (
             line
+          ) : (
+            <span className="flex min-w-0 items-center gap-2">
+              {line}
+              <BranchRunningPorts
+                session={running.session}
+                mount={running.mount}
+                isActive={isActive}
+              />
+            </span>
           )
         }
         actions={
           <div className="flex min-w-0 items-center gap-2">
+            {running === undefined ? null : (
+              <BranchTools sessionId={sessionId} canStartRun={!isReadOnly} />
+            )}
             <HeaderActions
               secondary={
                 secondary === null

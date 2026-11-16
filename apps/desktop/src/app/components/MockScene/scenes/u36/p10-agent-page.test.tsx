@@ -79,7 +79,7 @@ const mountOnAuto = async (): Promise<void> => {
       .getState()
       .navigate({ to: agentPlace({ sessionId: AUTO_SESSION.id, agentId: rootOf() }) });
   });
-  await screen.findByPlaceholderText('Message Auto', undefined, WAIT);
+  await screen.findByPlaceholderText('Message Lead', undefined, WAIT);
   await screen.findAllByRole('list', { name: 'Delegations' }, WAIT);
 };
 
@@ -332,7 +332,7 @@ describe('one agent, one page', () => {
 
     const box = await screen.findByPlaceholderText('Message Implementer', undefined, WAIT);
     expect(box).toHaveProperty('value', expect.stringContaining('applyCredit'));
-    expect(screen.queryByPlaceholderText('Message Auto')).toBeNull();
+    expect(screen.queryByPlaceholderText('Message Lead')).toBeNull();
   });
 
   it.each(['u36-p10-child-composer-light', 'u36-p10-child-composer-dark'])(

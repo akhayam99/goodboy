@@ -21,6 +21,7 @@ import {
   type PendingAttachment,
 } from '../../../features/attachments/pendingAttachment';
 import { countNoun } from '../../utils/countNoun';
+import { pastedFilesOf } from './pastedFilesOf';
 
 export type PersistArgs = {
   readonly id: string;
@@ -146,7 +147,7 @@ export const usePendingAttachments = ({
 
   const onPaste = useCallback(
     (event: ReactClipboardEvent<HTMLTextAreaElement>) => {
-      const files = Array.from(event.clipboardData.files).filter(isAccepted);
+      const files = pastedFilesOf({ data: event.clipboardData }).filter(isAccepted);
       if (files.length > 0) {
         event.preventDefault();
         void addFiles(files);

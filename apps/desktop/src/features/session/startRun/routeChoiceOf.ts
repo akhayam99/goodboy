@@ -1,4 +1,4 @@
-import type { RunRoute, RunRouteCloseness, RunRouteShape, Workflow } from '@goodboy/types';
+import type { RunRoute, RunRouteCloseness, Workflow } from '@goodboy/types';
 import { runKindLineOf } from '../startKind/runKindLineOf';
 import { RUN_ROUTE_COPY } from './runRouteCopy';
 
@@ -10,28 +10,60 @@ type PresetRouteParams = {
 };
 
 export const presetRouteOf = ({ preset, closeness, row, why }: PresetRouteParams): RunRoute => ({
-  shape: 'plan',
+  shape: 'lead',
   row,
   presetName: preset.name,
   closeness,
   role: null,
-  choice: `${runKindLineOf({ line: { kind: 'preset', presetName: preset.name } })} · ${RUN_ROUTE_COPY.closeness[closeness]}`,
+  choice: `${RUN_ROUTE_COPY.leadPlan({ name: preset.name })} · ${RUN_ROUTE_COPY.closeness[closeness]}`,
   why,
 });
 
-type ShapeRouteParams = {
-  readonly shape: RunRouteShape;
+type OlderPlanRouteParams = {
+  readonly preset: Workflow | null;
+  readonly closeness: RunRouteCloseness;
   readonly row: number;
   readonly why: string;
 };
 
-export const shapeRouteOf = ({ shape, row, why }: ShapeRouteParams): RunRoute => ({
-  shape,
+export const olderPlanRouteOf = ({
+  preset,
+  closeness,
+  row,
+  why,
+}: OlderPlanRouteParams): RunRoute =>
+  preset === null
+    ? {
+        shape: 'plan',
+        row,
+        presetName: null,
+        closeness: null,
+        role: null,
+        choice: RUN_ROUTE_COPY.shapes.plan,
+        why,
+      }
+    : {
+        shape: 'plan',
+        row,
+        presetName: preset.name,
+        closeness,
+        role: null,
+        choice: `${runKindLineOf({ line: { kind: 'preset', presetName: preset.name } })} · ${RUN_ROUTE_COPY.closeness[closeness]}`,
+        why,
+      };
+
+type ShapeRouteParams = {
+  readonly row: number;
+  readonly why: string;
+};
+
+export const leadRouteOf = ({ row, why }: ShapeRouteParams): RunRoute => ({
+  shape: 'lead',
   row,
   presetName: null,
   closeness: null,
   role: null,
-  choice: RUN_ROUTE_COPY.shapes[shape],
+  choice: RUN_ROUTE_COPY.shapes.lead,
   why,
 });
 

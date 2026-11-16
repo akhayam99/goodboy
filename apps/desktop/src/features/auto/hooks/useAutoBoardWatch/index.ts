@@ -43,7 +43,7 @@ const loadOnce = ({ sessionId, reported }: LoadParams): void => {
       reported.add(sessionId);
       void state.reportError({
         recovery: READ_FAILED,
-        title: "Couldn't read the Auto agents",
+        title: "Couldn't read the runs",
         error,
         sessionId,
       });

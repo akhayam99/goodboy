@@ -123,6 +123,57 @@ describe('parseChangelog', () => {
     expect(releases[0]?.sections.new[0]?.paragraphs).toEqual(['A paragraph.']);
   });
 
+  it('reads theme= as the theme an entry pins its pictures to', () => {
+    const text = [
+      '## Goodboy v9.9.9',
+      '',
+      'A lead sentence for this release.',
+      '',
+      '### Improved',
+      '',
+      '#### A clearer light mode',
+      '<!-- gb area=app image=some-shot theme=light -->',
+      '',
+      'A paragraph.',
+      '',
+      '#### Something else',
+      '<!-- gb area=app image=other-shot -->',
+      '',
+      'Another paragraph.',
+    ].join('\n');
+    const releases = parseChangelog({ text });
+    expect(releases[0]?.shape).toBe('v2');
+    expect(releases[0]?.sections.improved[0]?.theme).toBe('light');
+    expect(releases[0]?.sections.improved[1]?.theme).toBeNull();
+  });
+
+  it('falls back to markdown for a theme= that is not light or dark', () => {
+    const text = [
+      '## Goodboy v9.9.9',
+      '',
+      'A lead sentence for this release.',
+      '',
+      '### New',
+      '',
+      '#### Something new',
+      '<!-- gb area=app image=some-shot theme=sepia -->',
+      '',
+      'A paragraph.',
+    ].join('\n');
+    const releases = parseChangelog({ text });
+    expect(releases[0]?.shape).toBe('markdown');
+  });
+
+  it('pins the 0.37.0 light mode entry to its light pictures', () => {
+    const content = readFileSync(CHANGELOG_PATH, 'utf8');
+    const release = parseChangelog({ text: content }).find((entry) => entry.version === '0.37.0');
+    const lightMode = release?.sections.improved.find(
+      (feature) => feature.title === 'A clearer light mode',
+    );
+    expect(lightMode?.image).toBe('v1-overview');
+    expect(lightMode?.theme).toBe('light');
+  });
+
   it('parses a Fixed-only release', () => {
     const text = [
       '## Goodboy v9.9.9',

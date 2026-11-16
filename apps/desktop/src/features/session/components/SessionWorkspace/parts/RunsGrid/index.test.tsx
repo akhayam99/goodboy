@@ -86,7 +86,6 @@ const runsOf = ({ agents, blockedIds = [], attached = [], mounts = [] }: RunsPar
     revisingStarts: {},
     mounts,
     projects: [],
-    isWork: false,
   });
 
 type GridParams = {
@@ -429,6 +428,33 @@ describe('RunsGrid', () => {
       kind: 'connections',
       focus: { kind: 'provider', provider: 'anthropic', action: 'login' },
     });
+  });
+
+  it('marks an orchestrated row as an older run beside its own line, and no other row', () => {
+    const plan = aNowRun({
+      key: 'plan',
+      title: 'Center every member page',
+      isDynamic: true,
+      workflow: aNowWorkflow({
+        key: 'plan',
+        name: 'Orchestrated',
+        stepNames: ['Find'],
+        origin: 'orchestrated',
+      }),
+    });
+    const agents = [
+      aNowStepAgent({ attached: plan, stepIndex: 0, status: 'running', name: 'Find' }),
+      aNowAgent({ key: 'scout', name: 'Scout the export', status: 'running' }),
+    ];
+    useAppStore.setState({ sessionPhaseRuns: { [NOW_SESSION]: agents } });
+
+    renderGrid({ runs: runsOf({ agents, attached: [plan] }) });
+
+    const older = screen.getByRole('button', {
+      name: /^Open Center every member page, Workflow, /,
+    });
+    expect(older.textContent).toContain('Workflow · Orchestrated');
+    expect(screen.getAllByText(NAMES.runKind.olderRun)).toHaveLength(1);
   });
 
   it('continues an operator stopped orchestrated run as a run when no step was cut', async () => {

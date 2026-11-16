@@ -12,6 +12,7 @@ export const TRANSCRIPT_DRAWER_COPY = {
   gone: 'This agent is no longer in the session.',
   send: 'Send',
   sendFailed: "Couldn't send the message",
+  attachNote: 'Files go with the message',
   replyLabel: ({ name }: { readonly name: string }) => `Message to ${name}`,
   replyPlaceholder: ({ name }: { readonly name: string }) => `Message ${name}`,
 } as const;

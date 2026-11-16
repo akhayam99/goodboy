@@ -68,6 +68,38 @@ describe('cardRowIdOf', () => {
     ).toBe('no-branch');
   });
 
+  it('puts a question with no branch on the tile that holds its ask', () => {
+    const card: ActionCardModel = {
+      ...cardOf({ kind: 'question', mountId: null }),
+      source: {
+        kind: 'owner',
+        owner: {
+          id: 'question-1',
+          kind: 'question',
+          text: 'Cap per day or per payout?',
+          where: null,
+          at: null,
+          item: null,
+          question: null,
+          questionIds: ['question-1'],
+          prNumber: null,
+          owed: null,
+          mountId: null,
+        },
+      },
+    };
+
+    expect(
+      cardRowIdOf({
+        card,
+        rowIds: ROW_IDS,
+        looseRowId: LOOSE,
+        rowIdByAskId: new Map([['question-1', 'mount-a']]),
+      }),
+    ).toBe('mount-a');
+    expect(cardRowIdOf({ card, rowIds: ROW_IDS, looseRowId: LOOSE })).toBe('no-branch');
+  });
+
   it('falls back to the loose list for a branch the board does not show', () => {
     expect(
       cardRowIdOf({

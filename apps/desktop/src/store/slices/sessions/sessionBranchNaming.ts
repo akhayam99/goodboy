@@ -5,6 +5,7 @@ import {
   type BranchValues,
 } from '@goodboy/core/slug';
 import { UNTITLED_BASE } from '../../../shared/utils/sessionTitle';
+import { goalBranchSlug } from './goalBranchSlug';
 
 const SLUG_MAX_LENGTH = 40;
 const UNTITLED_SLUG = 'session';
@@ -23,22 +24,38 @@ type Params = {
   readonly taskIdentifiers?: ReadonlyArray<string>;
 };
 
-const goalSlug = ({ text, fallback }: { readonly text: string; readonly fallback: string }) =>
-  trimSlugAtWord({
+type GoalSlugParams = {
+  readonly text: string;
+  readonly fallback: string;
+};
+
+const goalSlug = ({ text, fallback }: GoalSlugParams): string => {
+  const meaningful = goalBranchSlug({ text, maxLength: SLUG_MAX_LENGTH });
+  if (meaningful !== '') {
+    return meaningful;
+  }
+  return trimSlugAtWord({
     value: slugify({ input: text, maxLength: text.length, fallback }),
     maxLength: SLUG_MAX_LENGTH,
   });
+};
 
-const escapeForPattern = (value: string): string => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+type PatternParams = {
+  readonly value: string;
+};
 
-const goalWithoutTask = ({
-  goal,
-  identifier,
-}: {
+const escapeForPattern = ({ value }: PatternParams): string =>
+  value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+type WithoutTaskParams = {
   readonly goal: string;
   readonly identifier: string;
-}): string =>
-  goal.replace(/\[[^\]]*\]/g, ' ').replace(new RegExp(escapeForPattern(identifier), 'gi'), ' ');
+};
+
+const goalWithoutTask = ({ goal, identifier }: WithoutTaskParams): string =>
+  goal
+    .replace(/\[[^\]]*\]/g, ' ')
+    .replace(new RegExp(escapeForPattern({ value: identifier }), 'gi'), ' ');
 
 export const sessionBranchNaming = ({
   template,

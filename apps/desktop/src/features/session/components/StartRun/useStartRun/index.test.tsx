@@ -151,15 +151,18 @@ describe('useStartRun guidance', () => {
     });
   });
 
-  it('snapshots the guidance in the rules of an orchestrated run', async () => {
+  it('hands the guidance to the Lead a task with an end starts', async () => {
+    const spawnAgent = vi.fn<SpawnFn>(async () => AGENT);
     const attachWorkflowToSession = vi.fn<AttachFn>(async () => undefined);
-    useAppStore.setState({ attachWorkflowToSession });
+    useAppStore.setState({ spawnAgent, attachWorkflowToSession });
 
     await startWith({ text: TASK, guidance: GUIDANCE });
 
-    expect(attachWorkflowToSession.mock.calls[0]?.[2]?.rulesSnapshot).toMatchObject({
-      standingGuidance: GUIDANCE,
+    expect(spawnAgent.mock.calls[0]?.[1]).toMatchObject({
+      kindOverride: 'auto',
+      guidance: GUIDANCE,
     });
+    expect(attachWorkflowToSession).not.toHaveBeenCalled();
   });
 
   it('hands the workspace guidance to the agent when the form picked none', async () => {

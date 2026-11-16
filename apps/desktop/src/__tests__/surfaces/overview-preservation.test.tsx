@@ -155,14 +155,6 @@ describe('Overview capabilities from the session Overview', () => {
     });
 
     within(merged).getByRole('button', { name: /^Remove 1 worktree/ });
-    fireEvent.click(
-      present({
-        value: within(merged).getAllByRole('button', { expanded: false })[0],
-        what: 'the merged row',
-      }),
-    );
-    await advance();
-
     within(merged).getByRole('button', { name: 'Remove worktree' });
   });
 

@@ -1089,7 +1089,7 @@ The count only falls: remove a line when the write moves behind a command.
 | `workflows`                   | ts     | `saveWorkflow` and `removeWorkflow`. Exception: the backup import.                                                                                                                                                                                                                                                                     |
 | `workspace_profiles`          | ts     | Exception: the backup import.                                                                                                                                                                                                                                                                                                          |
 | `workspace_starred_issues`    | ts     |                                                                                                                                                                                                                                                                                                                                        |
-| `workspace_values`            | ts     | Per-workspace values (`auto.level`, `run.guidance`, `terminal.workspaceFolder`, `sessions.pinned`), keys registered in `queries/entity-value.ts`; deleted with the workspace.                                                                                                                                                          |
+| `workspace_values`            | ts     | Per-workspace values (`auto.level`, `run.guidance`, `run.limit`, `run.locks`, `terminal.workspaceFolder`, `sessions.pinned`), keys registered in `queries/entity-value.ts`; deleted with the workspace.                                                                                                                                |
 | `workspaces`                  | ts     | Exceptions: the backup import and the override columns, which have one writer, `patch_workspace_overrides` in `settings_overrides.rs`. It writes only the columns a patch names, refuses a value the column does not allow, and returns the stored row; `packages/db` only reads them.                                                 |
 | `worktree_roots`              | ts     | Exception: a project move rewrites `repo_root`.                                                                                                                                                                                                                                                                                        |
 
@@ -1101,6 +1101,10 @@ of other roles. `AUTO_GATES.isDelegationEnabled` in
 setting; an old `agents.autoExperiment` row is never read), and Auto decides
 through the `<<auto>>` block, not through a bridge verb. The tables are additive, so an older build
 refuses the file with `DatabaseFromNewerBuildError` instead of reading it.
+The screens call the root Auto agent the Lead and its tree a run; the tables,
+the role `auto` and the code keep the engine name ([auto.md](auto.md#names)).
+Older orchestrated runs stay in `session_workflows` on their own engine, and no
+migration moves a row between the two.
 m230 also adds the partial index `idx_agents_auto_roots` on `agents(session_id, ordinal)` for
 root Auto agents, which the scan for an Auto agent without a tree (`listAutoAgentsWithoutTree`)
 reads. m232 rebuilds `auto_delegations` (foreign keys off, copy, drop, rename,
@@ -1126,8 +1130,7 @@ kept.
   is a one-way step: a build from before it refuses the database
   (`DatabaseFromNewerBuildError`, `packages/db/src/migrations/downgradeGuard.ts`)
   and offers the snapshot taken before the migration ran
-  (`migrationSnapshotStorage` in `shared/lib/dbBoot.ts`). The everyday way back
-  is the Work switch, not an older build.
+  (`migrationSnapshotStorage` in `shared/lib/dbBoot.ts`).
 - `store/runtime/auto/scheduler.ts` is the one writer of tree state. A window
   writes only while it holds the lease, so a second window reads. Every
   transition names the phase revision, generation and phase it expects, and a

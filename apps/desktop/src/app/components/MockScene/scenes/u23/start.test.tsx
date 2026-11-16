@@ -49,13 +49,13 @@ describe('the start scenes', () => {
     ]);
   });
 
-  it('shows the picked issue above the task, offers the four kinds, and has no issue search', async () => {
+  it('shows the picked issue above the task, opens How on Lead, and has no issue search', async () => {
     draw({ name: 'start-pick-one-block' });
 
     const picked = await screen.findByRole('list', { name: 'Picked issues' });
     expect(picked.textContent).toContain('HBL-412');
     expect(screen.getByRole('textbox', { name: 'Goal' })).toBeDefined();
-    screen.getByRole('button', { name: 'How: Auto' });
+    screen.getByRole('button', { name: 'How: Lead' });
     expect(screen.getByRole<HTMLButtonElement>('button', { name: 'Start' }).disabled).toBe(true);
     expect(screen.queryByRole('button', { name: /^Runs as/ })).toBeNull();
     expect(screen.queryByRole('textbox', { name: 'Search issues' })).toBeNull();

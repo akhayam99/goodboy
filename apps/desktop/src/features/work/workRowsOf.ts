@@ -30,24 +30,18 @@ type Params = {
   readonly leads: ReadonlyArray<WorkLead>;
   readonly rootTurns: Readonly<Record<string, TurnState | undefined>>;
   readonly filter: WorkFilter;
-  readonly isWork: boolean;
 };
 
 type RowParams = {
   readonly lead: WorkLead;
   readonly rootTurns: Params['rootTurns'];
-  readonly isWork: boolean;
 };
 
 const RUNNING_DELEGATION_STATES: ReadonlySet<string> = new Set(['starting', 'running']);
 
-const workRowOf = ({ lead, rootTurns, isWork }: RowParams): WorkRow => {
+const workRowOf = ({ lead, rootTurns }: RowParams): WorkRow => {
   const { view } = lead;
-  const word = autoTreeWordOf({
-    view,
-    rootTurn: rootTurns[view.tree.rootAgentId] ?? null,
-    isWork,
-  });
+  const word = autoTreeWordOf({ view, rootTurn: rootTurns[view.tree.rootAgentId] ?? null });
   const rootAsk = view.rootAsk?.trim() ?? '';
   return {
     treeId: lead.treeId,
@@ -93,9 +87,9 @@ type CountParams = {
 const rowCountOf = ({ rows, filter }: CountParams): number =>
   rows.filter((row) => MATCHES[filter]({ row })).length;
 
-export const workRowsOf = ({ leads, rootTurns, filter, isWork }: Params): WorkRows => {
+export const workRowsOf = ({ leads, rootTurns, filter }: Params): WorkRows => {
   const all = leads
-    .map((lead) => workRowOf({ lead, rootTurns, isWork }))
+    .map((lead) => workRowOf({ lead, rootTurns }))
     .sort((a, b) => {
       const byUpdate = b.updatedAt - a.updatedAt;
       return byUpdate !== 0 ? byUpdate : a.treeId.localeCompare(b.treeId);

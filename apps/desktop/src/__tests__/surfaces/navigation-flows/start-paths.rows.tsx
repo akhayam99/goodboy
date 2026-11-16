@@ -268,7 +268,7 @@ export const START_PATHS_ROWS: ReadonlyArray<Row> = [
     },
   },
   {
-    name: 'New session door: the four kinds and one settings row, with Where in the row and not under the task',
+    name: 'New session door: the three kinds and one settings row, with Where in the row and not under the task',
     covers: ['navigate'],
     open: (ctx) => openTasksAndStartOn({ ctx, lastStart: 'preset' }),
     lands: async () => {
@@ -295,13 +295,14 @@ export const START_PATHS_ROWS: ReadonlyArray<Row> = [
       await settle(6);
     },
     lands: async () => {
-      await waitFor(() => expect(startCalls.runs).toHaveLength(1), WAIT);
+      await waitFor(() => expect(startCalls.agents).toHaveLength(1), WAIT);
+      expect(startCalls.runs).toHaveLength(0);
       expect(startCalls.sessions).toHaveLength(1);
       expect(startCalls.sessions[0]).toMatchObject({
         title: 'Retried webhooks post a second credit',
         externalTasks: [expect.objectContaining({ identifier: 'HBL-415', provider: 'linear' })],
       });
-      expect(startCalls.runs[0]?.sessionId).toBe(newSessionId);
+      expect(startCalls.agents[0]).toMatchObject({ sessionId: newSessionId, kindOverride: 'auto' });
       await waitFor(() => expect(useAppStore.getState().currentSessionId).toBe(newSessionId), WAIT);
       expect(screen.queryByText('Run started')).toBeNull();
       expect(toastTitles('Session started')).toHaveLength(0);

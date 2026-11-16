@@ -80,7 +80,7 @@ const primaryId = (): string | null =>
   document.querySelector('[data-branch-primary]')?.getAttribute('data-branch-primary') ?? null;
 
 describe('Branch page header', () => {
-  it('holds the title row, one meta line and the page tabs, and no running line, work line or notice', async () => {
+  it('holds the title row, one meta line and the page tabs, no ports while nothing runs, and no work line or notice', async () => {
     seedQuietRequest({
       patch: { author: { login: 'nadia-p', avatarUrl: null } },
       viewer: 'harborline-dev',
@@ -93,7 +93,8 @@ describe('Branch page header', () => {
     expect(header?.querySelectorAll('[data-pr-header-line]')).toHaveLength(1);
     expect(header?.querySelectorAll('[role="tablist"]')).toHaveLength(1);
     expect(header?.querySelector('[role="tablist"]')?.getAttribute('data-slot')).toBe('page-tabs');
-    expect(header?.querySelector('[data-branch-running-line]')).toBeNull();
+    expect(header?.querySelectorAll('[data-slot="pane-meta"]')).toHaveLength(1);
+    expect(header?.querySelector('[data-branch-ports]')).toBeNull();
     expect(header?.querySelector('[data-testid="resolve-run-status"]')).toBeNull();
     expect(header?.querySelector('[role="alert"]')).toBeNull();
   });

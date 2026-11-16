@@ -11,10 +11,11 @@ vi.mock('../../../../shared/lib/db', async () =>
 );
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import {
   getSetting,
   getWorkspaceValue,
+  insertSession,
   insertWorkspace,
   setSetting,
   setWorkspaceValue,
@@ -24,8 +25,11 @@ import {
   brandId,
   type AgentId,
   type IsoDateTime,
+  type MountId,
+  type ProjectId,
   type ProviderId,
   type SessionId,
+  type SessionMountView,
   type StepId,
   type Workflow,
   type WorkflowId,
@@ -44,6 +48,8 @@ import { providerBudgetStatusFor } from '../../../budget/testing/providerBudgetF
 import type { ProviderDisplayInfo } from '../../../providers/providers';
 import { runDefaultKey } from '../../startRun/runDefaultSetting';
 import { runRoutesKey } from '../../startRun/runRoutesSetting';
+import { startRunEventName } from '../../startRun/startRunEventName';
+import { chooseListboxValue } from '../../../../__tests__/helpers/listbox';
 import { StartRun } from './StartRun';
 
 const WORKSPACE = aWorkspace({ name: 'Cascadia' });
@@ -153,6 +159,7 @@ beforeEach(async () => {
   await resetStoryStore();
   const db = await openStorySqlite();
   await insertWorkspace({ db, workspace: WORKSPACE });
+  await insertSession(db, SESSION);
   useAppStore.setState({
     workspaces: [WORKSPACE],
     currentWorkspaceId: WORKSPACE.id,
@@ -200,35 +207,29 @@ describe('StartRun', () => {
     expect(JSON.parse(raw ?? '{}')[AGENT]).toMatchObject({ row: 1, shape: 'lead', role: 'scout' });
   });
 
-  it('starts an orchestrated run for a task with an end', async () => {
-    const savePhaseTemplate = vi.fn<SaveFn>(async () => FIX_A_LAYOUT);
+  it('starts a Lead for a task with an end, never an orchestrated run', async () => {
+    const spawnAgent = vi.fn<SpawnFn>(async () => AGENT);
     const attachWorkflowToSession = vi.fn<AttachFn>(async () => undefined);
-    useAppStore.setState({
-      savePhaseTemplate,
-      attachWorkflowToSession,
-      generateWorkflowTitle: vi.fn(async () => undefined),
-    });
+    useAppStore.setState({ spawnAgent, attachWorkflowToSession });
     renderField({ sessionId: SESSION.id });
 
     ask({ text: 'center every member page' });
 
-    await waitFor(() => expect(attachWorkflowToSession).toHaveBeenCalledTimes(1));
-    expect(savePhaseTemplate.mock.calls[0]?.[0]).toMatchObject({
-      origin: 'orchestrated',
-      goal: 'center every member page',
-      steps: [],
-    });
-    expect(attachWorkflowToSession.mock.calls[0]?.[2]).toMatchObject({
-      executionMode: 'dynamic',
-      rulesSnapshot: { route: { row: 3, shape: 'plan' } },
-    });
+    await waitFor(() => expect(spawnAgent).toHaveBeenCalledTimes(1));
+    expect(spawnAgent).toHaveBeenCalledWith(
+      SESSION.id,
+      expect.objectContaining({ kindOverride: 'auto', initialPrompt: 'center every member page' }),
+    );
+    expect(attachWorkflowToSession).not.toHaveBeenCalled();
+    const raw = await getSetting(storySqlite(), runRoutesKey({ sessionId: SESSION.id }));
+    expect(JSON.parse(raw ?? '{}')[AGENT]).toMatchObject({ row: 3, shape: 'lead' });
   });
 
-  it('starts a plan from the preset the ask matches, its steps in the rules', async () => {
-    const savePhaseTemplate = vi.fn<SaveFn>(async () => FIX_A_LAYOUT);
+  it('gives a Lead the preset the ask matches as its plan, its steps in the brief', async () => {
+    const spawnAgent = vi.fn<SpawnFn>(async () => AGENT);
     const attachWorkflowToSession = vi.fn<AttachFn>(async () => undefined);
     useAppStore.setState({
-      savePhaseTemplate,
+      spawnAgent,
       attachWorkflowToSession,
       phaseTemplates: { [WORKSPACE.id]: [FIX_A_LAYOUT] },
     });
@@ -236,31 +237,29 @@ describe('StartRun', () => {
 
     ask({ text: 'Fix the layout of the Harborline billing page' });
 
-    await waitFor(() => expect(attachWorkflowToSession).toHaveBeenCalledTimes(1));
-    expect(savePhaseTemplate.mock.calls[0]?.[0]?.processText).toBeUndefined();
-    expect(attachWorkflowToSession.mock.calls[0]?.[2]).toMatchObject({
-      executionMode: 'dynamic',
-      rulesSnapshot: {
-        route: { row: 2, closeness: 'adapt', presetName: 'Fix a layout' },
-        preset: {
-          workflowId: LAYOUT_ID,
-          name: 'Fix a layout',
-          steps: [
-            { name: 'Find', role: 'scout', isPinned: false },
-            { name: 'Center', role: null, isPinned: false },
-          ],
-        },
-      },
+    await waitFor(() => expect(spawnAgent).toHaveBeenCalledTimes(1));
+    expect(attachWorkflowToSession).not.toHaveBeenCalled();
+    expect(spawnAgent.mock.calls[0]?.[1].initialPrompt).toBe(
+      [
+        'Fix the layout of the Harborline billing page',
+        'Plan: follow the preset "Fix a layout".',
+        '1. Find (scout)\n2. Center',
+        'You may add, skip or move a step. Say why when you do.',
+      ].join('\n\n'),
+    );
+    const raw = await getSetting(storySqlite(), runRoutesKey({ sessionId: SESSION.id }));
+    expect(JSON.parse(raw ?? '{}')[AGENT]).toMatchObject({
+      row: 2,
+      shape: 'lead',
+      closeness: 'adapt',
+      presetName: 'Fix a layout',
     });
   });
 
-  it('reads the session default from the Change menu before any other row', async () => {
+  it('reads a session default of plan as a Lead, before any other row', async () => {
+    const spawnAgent = vi.fn<SpawnFn>(async () => AGENT);
     const attachWorkflowToSession = vi.fn<AttachFn>(async () => undefined);
-    useAppStore.setState({
-      savePhaseTemplate: vi.fn<SaveFn>(async () => FIX_A_LAYOUT),
-      attachWorkflowToSession,
-      generateWorkflowTitle: vi.fn(async () => undefined),
-    });
+    useAppStore.setState({ spawnAgent, attachWorkflowToSession });
     await setSetting(
       storySqlite(),
       runDefaultKey({ scope: { kind: 'workspace', workspaceId: WORKSPACE.id } }),
@@ -275,9 +274,14 @@ describe('StartRun', () => {
 
     ask({ text: QUESTION });
 
-    await waitFor(() => expect(attachWorkflowToSession).toHaveBeenCalledTimes(1));
-    expect(attachWorkflowToSession.mock.calls[0]?.[2]).toMatchObject({
-      rulesSnapshot: { route: { row: 1, shape: 'plan', why: 'your default', ask: QUESTION } },
+    await waitFor(() => expect(spawnAgent).toHaveBeenCalledTimes(1));
+    expect(attachWorkflowToSession).not.toHaveBeenCalled();
+    const raw = await getSetting(storySqlite(), runRoutesKey({ sessionId: SESSION.id }));
+    expect(JSON.parse(raw ?? '{}')[AGENT]).toMatchObject({
+      row: 1,
+      shape: 'lead',
+      why: 'your default',
+      ask: QUESTION,
     });
   });
 
@@ -439,10 +443,11 @@ describe('StartRun run as', () => {
     );
   });
 
-  it('opens the preset menu on ~ and starts a plan from the preset it picked', async () => {
+  it('opens the preset menu on ~ and gives a Lead the preset it picked as its plan', async () => {
+    const spawnAgent = vi.fn<SpawnFn>(async () => AGENT);
     const attachWorkflowToSession = vi.fn<AttachFn>(async () => undefined);
     useAppStore.setState({
-      savePhaseTemplate: vi.fn<SaveFn>(async () => FIX_A_LAYOUT),
+      spawnAgent,
       attachWorkflowToSession,
       phaseTemplates: { [WORKSPACE.id]: [FIX_A_LAYOUT] },
     });
@@ -452,32 +457,43 @@ describe('StartRun run as', () => {
     pickFromMenu({ label: 'Fix a layout' });
     ask({ text: QUESTION });
 
-    await waitFor(() => expect(attachWorkflowToSession).toHaveBeenCalledTimes(1));
-    expect(attachWorkflowToSession.mock.calls[0]?.[2]).toMatchObject({
-      rulesSnapshot: { route: { row: 1, presetName: 'Fix a layout', closeness: 'follow' } },
+    await waitFor(() => expect(spawnAgent).toHaveBeenCalledTimes(1));
+    expect(attachWorkflowToSession).not.toHaveBeenCalled();
+    expect(spawnAgent.mock.calls[0]?.[1].initialPrompt).toContain(
+      'Plan: follow the preset "Fix a layout".',
+    );
+    const raw = await getSetting(storySqlite(), runRoutesKey({ sessionId: SESSION.id }));
+    expect(JSON.parse(raw ?? '{}')[AGENT]).toMatchObject({
+      row: 1,
+      presetName: 'Fix a layout',
+      closeness: 'follow',
     });
   });
 
   it('says what Start will do before it is pressed, then what the picked kind does', () => {
+    useAppStore.setState({ phaseTemplates: { [WORKSPACE.id]: [FIX_A_LAYOUT] } });
     renderField({ sessionId: SESSION.id });
 
     fireEvent.change(field(), { target: { value: QUESTION } });
-    expect(routeLine()).toContain('Starts as Agent · Auto');
+    expect(routeLine()).toContain('Starts as Lead');
     expect(routeLine()).toContain('A question or a check, and no preset fits');
 
-    pickKind({ name: 'Orchestrated' });
+    pickKind({ name: 'Preset' });
 
-    screen.getByText('Orchestrated plans each next step as it goes.');
+    expect(
+      screen.getAllByText('The Lead follows a saved preset as its plan.').length,
+    ).toBeGreaterThan(0);
     expect(document.querySelector('[data-run-route-line]')).toBeNull();
-    expect(isPicked({ name: 'Orchestrated' })).toBe(true);
+    expect(isPicked({ name: 'Preset' })).toBe(true);
   });
 
-  it('shows the limit chip for an Auto or workflow kind and none for an agent', () => {
+  it('shows the limit chip for a Lead or a preset and none for an agent', () => {
+    useAppStore.setState({ phaseTemplates: { [WORKSPACE.id]: [FIX_A_LAYOUT] } });
     renderField({ sessionId: SESSION.id });
 
     screen.getByRole('button', { name: 'Limit: none' });
 
-    pickKind({ name: 'Orchestrated' });
+    pickKind({ name: 'Preset' });
 
     screen.getByRole('button', { name: 'Limit: none' });
 
@@ -487,16 +503,17 @@ describe('StartRun run as', () => {
     expect(screen.queryByRole('button', { name: /^Limit: / })).toBeNull();
   });
 
-  it('shows Asks you for an Auto run and for a workflow, and none for an agent', () => {
+  it('shows the Lead Asks you for a Lead and a preset, and none for an agent', async () => {
+    useAppStore.setState({ phaseTemplates: { [WORKSPACE.id]: [FIX_A_LAYOUT] } });
     renderField({ sessionId: SESSION.id });
 
     fireEvent.change(field(), { target: { value: QUESTION } });
-    screen.getByRole('button', { name: 'Asks you: After the plan, from Cascadia' });
+    await screen.findByRole('button', { name: 'Asks you: After the plan' });
 
-    pickKind({ name: 'Orchestrated' });
+    pickKind({ name: 'Preset' });
 
-    screen.getByRole('button', { name: /^Asks you: Every step/ });
-    expect(screen.queryByRole('button', { name: /^Asks you: After the plan/ })).toBeNull();
+    await screen.findByRole('button', { name: 'Asks you: After the plan' });
+    expect(screen.queryByRole('button', { name: /^Asks you: Every step/ })).toBeNull();
 
     pickKind({ name: 'Agent' });
 
@@ -544,14 +561,14 @@ describe('StartRun run as', () => {
     await waitFor(() => screen.getByText('Never'));
   });
 
-  it('offers the four kinds, lists the roles on Agent and keeps Preset for a saved preset', () => {
+  it('offers three kinds, lists the roles on Agent and keeps Preset for a saved preset', () => {
     renderField({ sessionId: SESSION.id });
 
     expect(
       within(kindCards())
         .getAllByRole('tab')
         .map((tab) => tab.textContent?.split(/(?=[A-Z])/)[0]),
-    ).toEqual(['Auto', 'Agent', 'Orchestrated', 'Preset']);
+    ).toEqual(['Lead', 'Preset', 'Agent']);
     expect(kindTab({ name: 'Preset' }).hasAttribute('disabled')).toBe(true);
     cleanup();
 
@@ -563,12 +580,12 @@ describe('StartRun run as', () => {
     screen.getByRole('option', { name: /^Scout/ });
   });
 
-  it('starts a plan from the preset the Preset kind names, following it or adapting', async () => {
+  it('gives a Lead the preset the Preset kind names, following it or adapting', async () => {
+    const spawnAgent = vi.fn<SpawnFn>(async () => AGENT);
     const attachWorkflowToSession = vi.fn<AttachFn>(async () => undefined);
     useAppStore.setState({
-      savePhaseTemplate: vi.fn<SaveFn>(async () => FIX_A_LAYOUT),
+      spawnAgent,
       attachWorkflowToSession,
-      generateWorkflowTitle: vi.fn(async () => undefined),
       phaseTemplates: { [WORKSPACE.id]: [FIX_A_LAYOUT] },
     });
     renderField({ sessionId: SESSION.id });
@@ -580,17 +597,22 @@ describe('StartRun run as', () => {
     ).toBe('true');
     ask({ text: QUESTION });
 
-    await waitFor(() => expect(attachWorkflowToSession).toHaveBeenCalledTimes(1));
-    expect(attachWorkflowToSession.mock.calls[0]?.[2]).toMatchObject({
-      rulesSnapshot: { route: { presetName: 'Fix a layout', closeness: 'adapt' } },
+    await waitFor(() => expect(spawnAgent).toHaveBeenCalledTimes(1));
+    expect(attachWorkflowToSession).not.toHaveBeenCalled();
+    expect(spawnAgent.mock.calls[0]?.[1]).toMatchObject({ kindOverride: 'auto' });
+    const raw = await getSetting(storySqlite(), runRoutesKey({ sessionId: SESSION.id }));
+    expect(JSON.parse(raw ?? '{}')[AGENT]).toMatchObject({
+      shape: 'lead',
+      presetName: 'Fix a layout',
+      closeness: 'adapt',
     });
   });
 
   it('keeps a typed token ahead of the kind', async () => {
     const spawnAgent = vi.fn<SpawnFn>(async () => AGENT);
-    useAppStore.setState({ spawnAgent });
+    useAppStore.setState({ spawnAgent, phaseTemplates: { [WORKSPACE.id]: [FIX_A_LAYOUT] } });
     renderField({ sessionId: SESSION.id });
-    pickKind({ name: 'Orchestrated' });
+    pickKind({ name: 'Preset' });
 
     ask({ text: `@Scout ${QUESTION}` });
 
@@ -598,35 +620,35 @@ describe('StartRun run as', () => {
     expect(spawnAgent.mock.calls[0]?.[1]).toMatchObject({ kindOverride: 'scout' });
   });
 
-  it('starts a workflow with the Asks you picked and an agent with the Edits picked', async () => {
+  it('starts a preset Lead with the Asks you level and the Edits picked', async () => {
     const spawnAgent = vi.fn<SpawnFn>(async () => AGENT);
     const attachWorkflowToSession = vi.fn<AttachFn>(async () => undefined);
+    const changeAutoLevel = vi.fn<StoryState['changeAutoLevel']>(async () => undefined);
     const setSessionPermissionMode = vi.fn<StoryState['setSessionPermissionMode']>(
       async () => undefined,
     );
     useAppStore.setState({
       spawnAgent,
-      savePhaseTemplate: vi.fn<SaveFn>(async () => FIX_A_LAYOUT),
       attachWorkflowToSession,
-      generateWorkflowTitle: vi.fn(async () => undefined),
+      changeAutoLevel,
       setSessionPermissionMode,
+      phaseTemplates: { [WORKSPACE.id]: [FIX_A_LAYOUT] },
     });
     renderField({ sessionId: SESSION.id });
-    pickKind({ name: 'Orchestrated' });
-    fireEvent.click(screen.getByRole('button', { name: /^Asks you:/ }));
-    fireEvent.click(screen.getByRole('tab', { name: 'Never' }));
+    pickKind({ name: 'Preset' });
+    fireEvent.click(await screen.findByRole('button', { name: /^Asks you: (?!Loading)/ }));
+    fireEvent.click(await screen.findByRole('tab', { name: 'Never' }));
     fireEvent.click(screen.getByRole('button', { name: /^Edits:/ }));
     fireEvent.click(screen.getByRole('tab', { name: /^Read only/ }));
 
     ask({ text: 'center every member page' });
 
-    await waitFor(() => expect(attachWorkflowToSession).toHaveBeenCalledTimes(1));
-    expect(attachWorkflowToSession.mock.calls[0]?.[2]).toMatchObject({
-      autoRun: true,
-      rulesSnapshot: { autonomy: 'run' },
-    });
+    await waitFor(() => expect(spawnAgent).toHaveBeenCalledTimes(1));
+    expect(changeAutoLevel).toHaveBeenCalledWith(
+      expect.objectContaining({ sessionId: SESSION.id, level: 'run' }),
+    );
     expect(setSessionPermissionMode).toHaveBeenCalledWith(SESSION.id, 'plan');
-    expect(spawnAgent).not.toHaveBeenCalled();
+    expect(attachWorkflowToSession).not.toHaveBeenCalled();
   });
 
   it('leaves the session mode alone when no Edits were picked', async () => {
@@ -644,11 +666,7 @@ describe('StartRun run as', () => {
   });
 
   it('writes no run default when a run starts and the person set none', async () => {
-    useAppStore.setState({
-      savePhaseTemplate: vi.fn<SaveFn>(async () => FIX_A_LAYOUT),
-      attachWorkflowToSession: vi.fn<AttachFn>(async () => undefined),
-      generateWorkflowTitle: vi.fn(async () => undefined),
-    });
+    useAppStore.setState({ spawnAgent: vi.fn<SpawnFn>(async () => AGENT) });
     renderField({ sessionId: SESSION.id });
 
     ask({ text: 'center every member page' });
@@ -688,12 +706,13 @@ describe('StartRun attachments', () => {
     );
   });
 
-  it('hands attachments to an orchestrated run too', async () => {
-    const attachWorkflowToSession = vi.fn<AttachFn>(async () => undefined);
+  it('hands attachments to a Lead that follows a preset too', async () => {
+    const spawnAgent = vi.fn<SpawnFn>(async () => AGENT);
+    const addGoalAttachments = vi.fn<StoryState['addGoalAttachments']>(async () => undefined);
     useAppStore.setState({
-      savePhaseTemplate: vi.fn<SaveFn>(async () => FIX_A_LAYOUT),
-      attachWorkflowToSession,
-      generateWorkflowTitle: vi.fn(async () => undefined),
+      spawnAgent,
+      addGoalAttachments,
+      phaseTemplates: { [WORKSPACE.id]: [FIX_A_LAYOUT] },
     });
     renderField({ sessionId: SESSION.id });
 
@@ -701,10 +720,10 @@ describe('StartRun attachments', () => {
       target: { files: [image({ name: 'layout.png' })] },
     });
     await screen.findByRole('button', { name: 'Remove layout.png' });
-    ask({ text: 'center every member page' });
+    ask({ text: '~Fix a layout center every member page' });
 
-    await waitFor(() => expect(attachWorkflowToSession).toHaveBeenCalledTimes(1));
-    expect(attachWorkflowToSession.mock.calls[0]?.[2]?.attachmentInputs).toEqual([
+    await waitFor(() => expect(spawnAgent).toHaveBeenCalledTimes(1));
+    expect(addGoalAttachments).toHaveBeenCalledWith({ type: 'session', id: SESSION.id }, [
       expect.objectContaining({ fileName: 'layout.png' }),
     ]);
   });
@@ -763,11 +782,11 @@ describe('StartRun model', () => {
     connectProviders();
     renderField({ sessionId: SESSION.id });
     fireEvent.change(field(), { target: { value: QUESTION } });
-    const agentLine = routeLine();
+    const leadLine = routeLine();
 
-    pickKind({ name: 'Orchestrated' });
+    pickKind({ name: 'Agent' });
 
-    expect(agentLine).toContain('Starts as Agent · Auto agent · ');
+    expect(leadLine).toContain('Starts as Lead · ');
     expect(modelChip().getAttribute('aria-label')).toContain('Model: ');
   });
 
@@ -791,27 +810,29 @@ describe('StartRun model', () => {
     await waitFor(() => expect(modelChip().getAttribute('data-run-model')).toBe('auto'));
   });
 
-  it('starts an orchestrated run with the orchestrator model picked for this run', async () => {
+  it('starts a preset Lead on the model picked for this run', async () => {
     connectProviders();
+    const spawnAgent = vi.fn<SpawnFn>(async () => AGENT);
     const attachWorkflowToSession = vi.fn<AttachFn>(async () => undefined);
     useAppStore.setState({
-      savePhaseTemplate: vi.fn<SaveFn>(async () => FIX_A_LAYOUT),
+      spawnAgent,
       attachWorkflowToSession,
-      generateWorkflowTitle: vi.fn(async () => undefined),
+      phaseTemplates: { [WORKSPACE.id]: [FIX_A_LAYOUT] },
     });
     renderField({ sessionId: SESSION.id });
-    pickKind({ name: 'Orchestrated' });
+    pickKind({ name: 'Preset' });
     fireEvent.change(field(), { target: { value: 'center every member page' } });
 
     fireEvent.click(modelChip());
     fireEvent.click(screen.getByRole('button', { name: 'Cursor' }));
     fireEvent.click(screen.getByRole('button', { name: /^(Start|Retry)/ }));
 
-    await waitFor(() => expect(attachWorkflowToSession).toHaveBeenCalledTimes(1));
-    expect(attachWorkflowToSession.mock.calls[0]?.[2]).toMatchObject({
-      executionMode: 'dynamic',
-      orchestratorRouting: { providerId: 'cursor' },
+    await waitFor(() => expect(spawnAgent).toHaveBeenCalledTimes(1));
+    expect(spawnAgent.mock.calls[0]?.[1]).toMatchObject({
+      kindOverride: 'auto',
+      provider: 'cursor',
     });
+    expect(attachWorkflowToSession).not.toHaveBeenCalled();
   });
 
   it('picks the model of a plain Agent from the same chip, for this run only', async () => {
@@ -837,12 +858,12 @@ describe('StartRun model', () => {
     const spawnAgent = vi.fn<SpawnFn>(async () => AGENT);
     useAppStore.setState({ spawnAgent });
     renderField({ sessionId: SESSION.id });
-    pickKind({ name: 'Orchestrated' });
+    pickKind({ name: 'Agent' });
     fireEvent.click(modelChip());
     fireEvent.click(screen.getByRole('button', { name: 'Cursor' }));
     expect(modelChip().getAttribute('data-run-model')).toBe('pinned');
 
-    pickKind({ name: 'Auto' });
+    pickKind({ name: 'Lead' });
 
     expect(modelChip().getAttribute('data-run-model')).toBe('auto');
     ask({ text: QUESTION });
@@ -900,7 +921,7 @@ describe('StartRun guidance', () => {
     withWorkspaceGuidance();
     renderField({ sessionId: SESSION.id });
 
-    for (const name of ['Auto', 'Agent', 'Orchestrated']) {
+    for (const name of ['Lead', 'Agent']) {
       pickKind({ name });
       expect(chip().getAttribute('aria-label')).toBe(
         `Guidance: ${WORKSPACE_GUIDANCE}, from Cascadia`,
@@ -938,19 +959,19 @@ describe('StartRun guidance', () => {
     });
   });
 
-  it('snapshots the guidance you wrote in the rules of an orchestrated run', async () => {
+  it('hands the guidance you wrote to the Lead a task with an end starts', async () => {
     withWorkspaceGuidance();
-    const attachWorkflowToSession = vi.fn<AttachFn>(async () => undefined);
-    useAppStore.setState({ attachWorkflowToSession });
+    const spawnAgent = vi.fn<SpawnFn>(async () => AGENT);
+    useAppStore.setState({ spawnAgent });
     renderField({ sessionId: SESSION.id });
-    pickKind({ name: 'Orchestrated' });
     edit(RUN_GUIDANCE);
 
     ask({ text: 'center every member page' });
 
-    await waitFor(() => expect(attachWorkflowToSession).toHaveBeenCalledTimes(1));
-    expect(attachWorkflowToSession.mock.calls[0]?.[2]?.rulesSnapshot).toMatchObject({
-      standingGuidance: RUN_GUIDANCE,
+    await waitFor(() => expect(spawnAgent).toHaveBeenCalledTimes(1));
+    expect(spawnAgent.mock.calls[0]?.[1]).toMatchObject({
+      kindOverride: 'auto',
+      guidance: RUN_GUIDANCE,
     });
   });
 
@@ -987,11 +1008,10 @@ describe('StartRun guidance', () => {
   it('keeps the guidance when you switch kind', () => {
     withWorkspaceGuidance();
     renderField({ sessionId: SESSION.id });
-    pickKind({ name: 'Orchestrated' });
+    pickKind({ name: 'Agent' });
     edit(RUN_GUIDANCE);
 
-    pickKind({ name: 'Agent' });
-    pickKind({ name: 'Auto' });
+    pickKind({ name: 'Lead' });
 
     expect(chip().getAttribute('aria-label')).toBe(`Guidance: ${RUN_GUIDANCE}, this run`);
   });
@@ -1013,5 +1033,123 @@ describe('StartRun guidance', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
     await waitFor(() => expect(spawnAgent).toHaveBeenCalledTimes(2));
     expect(spawnAgent.mock.calls[1]?.[1]).toMatchObject({ guidance: RUN_GUIDANCE });
+  });
+});
+
+describe('StartRun branch', () => {
+  const RETRY_BRANCH = 'feat/retry-dedupe';
+  const REPLAY_BRANCH = 'feat/replay';
+
+  type MountParams = {
+    readonly branch: string;
+    readonly isAttached?: boolean;
+  };
+
+  const mountOf = ({ branch, isAttached = true }: MountParams): SessionMountView => ({
+    id: brandId<MountId>({ value: `mount-${branch}` }),
+    sessionId: SESSION.id,
+    projectId: brandId<ProjectId>({ value: 'project-payments-api' }),
+    worktreePath: `payments-api-${branch}`,
+    lastWorktreePath: null,
+    branch,
+    baseBranch: 'main',
+    parallelIndex: 0,
+    mountName: 'payments-api',
+    repoSlug: 'harborline/payments-api',
+    repoRoot: 'payments-api',
+    isAttached,
+    diskState: 'present',
+    revision: 1,
+    createdAt: NOW,
+    updatedAt: NOW,
+  });
+
+  type MountsParams = {
+    readonly mounts: ReadonlyArray<SessionMountView>;
+  };
+
+  const seedMounts = ({ mounts }: MountsParams): void => {
+    useAppStore.setState({ sessionMounts: { [SESSION.id]: mounts } });
+  };
+
+  const branchChip = (): HTMLElement => screen.getByRole('combobox', { name: 'Branch' });
+
+  type DoorParams = {
+    readonly branch: string;
+  };
+
+  const openFromBranchRow = ({ branch }: DoorParams): void => {
+    act(() => {
+      window.dispatchEvent(
+        new CustomEvent(startRunEventName({ sessionId: SESSION.id }), {
+          detail: { text: '', branch },
+        }),
+      );
+    });
+  };
+
+  it('shows no Branch chip when the session has no branch', () => {
+    seedMounts({ mounts: [] });
+    renderField({ sessionId: SESSION.id });
+
+    expect(screen.queryByRole('combobox', { name: 'Branch' })).toBeNull();
+  });
+
+  it('names the one branch of the session and asks nothing more of the Lead', async () => {
+    const spawnAgent = vi.fn<SpawnFn>(async () => AGENT);
+    useAppStore.setState({ spawnAgent });
+    seedMounts({ mounts: [mountOf({ branch: RETRY_BRANCH })] });
+    renderField({ sessionId: SESSION.id });
+
+    expect(branchChip().textContent).toContain(RETRY_BRANCH);
+    ask({ text: QUESTION });
+
+    await waitFor(() => expect(spawnAgent).toHaveBeenCalledTimes(1));
+    expect(spawnAgent.mock.calls[0]?.[1]).toMatchObject({ initialPrompt: QUESTION });
+  });
+
+  it('starts on the branch the row named, then goes back to any branch', async () => {
+    const spawnAgent = vi.fn<SpawnFn>(async () => AGENT);
+    useAppStore.setState({ spawnAgent });
+    seedMounts({
+      mounts: [
+        mountOf({ branch: RETRY_BRANCH }),
+        mountOf({ branch: REPLAY_BRANCH }),
+        mountOf({ branch: 'feat/detached', isAttached: false }),
+      ],
+    });
+    renderField({ sessionId: SESSION.id });
+    expect(branchChip().textContent).toContain('Any branch');
+
+    openFromBranchRow({ branch: REPLAY_BRANCH });
+    expect(branchChip().textContent).toContain(REPLAY_BRANCH);
+    ask({ text: QUESTION });
+
+    await waitFor(() => expect(spawnAgent).toHaveBeenCalledTimes(1));
+    expect(spawnAgent.mock.calls[0]?.[1]).toMatchObject({
+      initialPrompt: `${QUESTION}\n\nWork on the branch ${REPLAY_BRANCH}.`,
+    });
+    await waitFor(() => expect(branchChip().textContent).toContain('Any branch'));
+  });
+
+  it('keeps the picked branch when the start fails, so Retry starts on it', async () => {
+    const spawnAgent = vi
+      .fn<SpawnFn>()
+      .mockRejectedValueOnce(new Error('The provider is cooling down'))
+      .mockResolvedValue(AGENT);
+    useAppStore.setState({ spawnAgent });
+    seedMounts({ mounts: [mountOf({ branch: RETRY_BRANCH }), mountOf({ branch: REPLAY_BRANCH })] });
+    renderField({ sessionId: SESSION.id });
+    chooseListboxValue({ trigger: branchChip(), value: RETRY_BRANCH });
+
+    ask({ text: QUESTION });
+
+    await screen.findByText(/The provider is cooling down/);
+    expect(branchChip().textContent).toContain(RETRY_BRANCH);
+    fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
+    await waitFor(() => expect(spawnAgent).toHaveBeenCalledTimes(2));
+    expect(spawnAgent.mock.calls[1]?.[1]).toMatchObject({
+      initialPrompt: `${QUESTION}\n\nWork on the branch ${RETRY_BRANCH}.`,
+    });
   });
 });

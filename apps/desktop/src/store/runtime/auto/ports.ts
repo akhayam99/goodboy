@@ -19,6 +19,7 @@ import type {
   MessageAttachment,
   ProviderId,
   SessionId,
+  WorkflowRoutingLock,
 } from '@goodboy/types';
 
 export type AgentGrant = Readonly<{
@@ -49,6 +50,7 @@ export type RoutingRequest = Readonly<{
   role: AutoDelegationRole;
   fields: WorkflowRoutingWireFields;
   promptText: string;
+  stepLock?: WorkflowRoutingLock | null;
 }>;
 
 export type RoutingProposalFate = 'kept' | 'adjusted' | 'replaced' | 'none';

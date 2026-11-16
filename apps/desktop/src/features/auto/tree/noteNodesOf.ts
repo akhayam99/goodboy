@@ -20,7 +20,6 @@ export type NoteNode = Readonly<{
 type Params = {
   readonly rows: ReadonlyArray<NoteSource>;
   readonly createdAtById: ReadonlyMap<string, number>;
-  readonly isWork: boolean;
   readonly read: ReadonlyArray<AutoReadMessage>;
 };
 
@@ -29,31 +28,29 @@ export type NoteNodes = Readonly<{
   timed: ReadonlyArray<LeadTreeTimed>;
 }>;
 
-export const noteNodesOf = ({ rows, createdAtById, isWork, read }: Params): NoteNodes => {
+export const noteNodesOf = ({ rows, createdAtById, read }: Params): NoteNodes => {
   const queued = rows.map((row): NoteNode => {
     const isSending = row.status === 'sending';
     return {
       id: row.id,
       createdAt: createdAtById.get(row.id) ?? 0,
       text: row.content,
-      word: noteWordOf({ isWork, turn: null }),
+      word: noteWordOf({ turn: null }),
       canEdit: !isSending,
       canRemove: !isSending,
     };
   });
   const queuedIds = new Set(queued.map((node) => node.id));
-  const readNodes = isWork
-    ? read
-        .filter((message) => !queuedIds.has(message.rowId))
-        .map((message): NoteNode => ({
-          id: message.rowId,
-          createdAt: message.createdAt,
-          text: message.text,
-          word: noteWordOf({ isWork, turn: message.turn }),
-          canEdit: false,
-          canRemove: false,
-        }))
-    : [];
+  const readNodes = read
+    .filter((message) => !queuedIds.has(message.rowId))
+    .map((message): NoteNode => ({
+      id: message.rowId,
+      createdAt: message.createdAt,
+      text: message.text,
+      word: noteWordOf({ turn: message.turn }),
+      canEdit: false,
+      canRemove: false,
+    }));
   const nodes = [...readNodes, ...queued];
   return {
     nodes,

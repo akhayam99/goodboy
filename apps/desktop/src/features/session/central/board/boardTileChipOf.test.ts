@@ -1,0 +1,134 @@
+// @vitest-environment node
+import { describe, expect, it } from 'vitest';
+import { brandId } from '@goodboy/types';
+import type { IsoDateTime, MountId, Session, SessionId, WorkspaceId } from '@goodboy/types';
+import type { BranchFacts } from '../branches/branchFactsOf';
+import { branchEntriesOf } from '../branches/branchStoryOf';
+import { NAMES } from '../../../../shared/utils/names';
+import { boardTileChipOf, WAITS_FOR_YOU } from './boardTileChipOf';
+import type { BoardAsk } from './boardTypes';
+import { branchBoardOf } from './branchBoardOf';
+
+const DATE = brandId<IsoDateTime>({ value: '2026-08-04T00:00:00.000Z' });
+
+const session: Session = {
+  id: brandId<SessionId>({ value: 'session-1' }),
+  workspaceId: brandId<WorkspaceId>({ value: 'workspace-1' }),
+  goal: 'Fix the settlement export',
+  state: { kind: 'idle', lastActivityAt: DATE },
+  contextSlots: [],
+  providerPreference: { defaultProvider: 'anthropic', allowTurnOverride: false },
+  permissionMode: 'bypassPermissions',
+  workflowRuns: [],
+  autoRun: false,
+  titleUserEdited: false,
+  createdAt: DATE,
+  updatedAt: DATE,
+};
+
+type BranchParams = {
+  readonly checks?: 'success' | 'failure' | 'pending' | null;
+  readonly state?: 'open' | 'merged';
+  readonly hasRequest?: boolean;
+  readonly noun?: '#' | '!';
+};
+
+const branchOf = ({
+  checks = null,
+  state = 'open',
+  hasRequest = true,
+  noun = '#',
+}: BranchParams): BranchFacts => ({
+  mountId: brandId<MountId>({ value: 'ledger' }),
+  mountPath: '/wt/ledger',
+  projectName: 'ledger-core',
+  branch: 'nw/ledger-rounding',
+  baseBranch: 'main',
+  request: hasRequest
+    ? {
+        noun,
+        number: 57,
+        isDraft: false,
+        state,
+        checksWord: null,
+        checks,
+        reviewDecision: null,
+        isMergeable: true,
+        isChecksAbsent: false,
+        isReviewOptional: false,
+      }
+    : null,
+  behind: null,
+  isStale: false,
+  checkedAgo: null,
+  liveCount: 0,
+  liveTitle: null,
+  isFinished: state === 'merged',
+  status: hasRequest
+    ? null
+    : {
+        ahead: 2,
+        changedFiles: 0,
+        isRebasing: false,
+        push: { kind: 'not-pushed', commits: 2 },
+      },
+  series: null,
+});
+
+const ASK: BoardAsk = { id: 'ask-1', mountId: 'ledger', leadId: null };
+
+type ChipParams = {
+  readonly branch: BranchFacts;
+  readonly asks?: ReadonlyArray<BoardAsk>;
+  readonly runningCount?: number;
+};
+
+const chipOf = ({ branch, asks = [], runningCount = 0 }: ChipParams) => {
+  const board = branchBoardOf({ session, branches: [branch], asks, agents: [], leads: [] });
+  const [row] = board.rows;
+  if (row === undefined) {
+    throw new Error('no row');
+  }
+  const entries = branchEntriesOf({ facts: [branch], detailByMountId: new Map() });
+  const entry = [...entries.live, ...entries.finished][0] ?? null;
+  return boardTileChipOf({ row, entry, runningCount });
+};
+
+describe('boardTileChipOf', () => {
+  it('says Merged in the merged tone on a merged branch', () => {
+    expect(chipOf({ branch: branchOf({ state: 'merged', checks: 'success' }) })).toEqual({
+      word: 'Merged',
+      tone: 'merged',
+    });
+  });
+
+  it('says Waits for you when a question waits on the branch, before failing checks', () => {
+    expect(chipOf({ branch: branchOf({ checks: 'failure' }), asks: [ASK] })).toEqual({
+      word: WAITS_FOR_YOU,
+      tone: 'warning',
+    });
+  });
+
+  it('says Checks failing in red over Running', () => {
+    expect(chipOf({ branch: branchOf({ checks: 'failure' }), runningCount: 1 })).toEqual({
+      word: 'Checks failing',
+      tone: 'danger',
+    });
+  });
+
+  it('says Running while an agent runs on an open branch', () => {
+    expect(chipOf({ branch: branchOf({ checks: 'pending' }), runningCount: 2 })).toEqual({
+      word: NAMES.running,
+      tone: 'info',
+    });
+  });
+
+  it('says Not pushed on a branch with local commits and no request', () => {
+    expect(chipOf({ branch: branchOf({ hasRequest: false }) }).word).toBe('Not pushed');
+  });
+
+  it('names the open pull request by its kind, the number living on the facts line', () => {
+    expect(chipOf({ branch: branchOf({}) }).word).toBe('PR open');
+    expect(chipOf({ branch: branchOf({ noun: '!' }) }).word).toBe('MR open');
+  });
+});

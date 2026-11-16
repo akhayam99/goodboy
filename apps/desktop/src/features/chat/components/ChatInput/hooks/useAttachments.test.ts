@@ -319,3 +319,79 @@ describe('useAttachments', () => {
     });
   });
 });
+
+type ScopeProps = {
+  readonly selectedAgentId: AgentId | null;
+  readonly worktree: string | null;
+};
+
+const mountScoped = (initialProps: ScopeProps) =>
+  renderHook(
+    ({ selectedAgentId, worktree }: ScopeProps) =>
+      useAttachments({
+        selectedAgentId,
+        sessionWorktree: worktree,
+        providerDisconnected: false,
+        showToast,
+      }),
+    { initialProps },
+  );
+
+const pasted: PendingAttachment = {
+  id: 'pasted-1',
+  fileName: 'checkout-502.png',
+  mimeType: 'image/png',
+  blob: new Blob(['png'], { type: 'image/png' }),
+  relPath: null,
+};
+
+describe('useAttachments keeps what was just attached', () => {
+  it('keeps an image pasted before the worktree was known once the worktree arrives', async () => {
+    const { result, rerender } = mountScoped({ selectedAgentId: AGENT_A, worktree: null });
+    await waitFor(() => expect(result.current.isRestored).toBe(true));
+    act(() => {
+      result.current.setAttachments([pasted]);
+    });
+
+    rerender({ selectedAgentId: AGENT_A, worktree: '/tmp/wt' });
+
+    await waitFor(() => expect(result.current.isRestored).toBe(true));
+    expect(result.current.attachments.map((a) => a.id)).toEqual(['pasted-1']);
+  });
+
+  it('keeps an image pasted while the stored draft is still being read', async () => {
+    const read: { finish: (dataUrl: string) => void } = { finish: () => undefined };
+    readAttachmentSpy.mockImplementationOnce(
+      () =>
+        new Promise<string>((resolve) => {
+          read.finish = resolve;
+        }),
+    );
+    useAppStore.setState({ agentAttachments: { [AGENT_A]: [draft] } });
+    const { result } = mountScoped({ selectedAgentId: AGENT_A, worktree: '/tmp/wt' });
+    await waitFor(() => expect(readAttachmentSpy).toHaveBeenCalled());
+    act(() => {
+      result.current.setAttachments((current) => [...current, pasted]);
+    });
+
+    await act(async () => {
+      read.finish('data:image/png;base64,QUJD');
+    });
+
+    await waitFor(() => expect(result.current.isRestored).toBe(true));
+    expect(result.current.attachments.map((a) => a.id)).toEqual(['att-1', 'pasted-1']);
+  });
+
+  it('never shows the files of the previous agent on another agent', async () => {
+    const { result, rerender } = mountScoped({ selectedAgentId: AGENT_A, worktree: '/tmp/wt' });
+    await waitFor(() => expect(result.current.isRestored).toBe(true));
+    act(() => {
+      result.current.setAttachments([pasted]);
+    });
+
+    rerender({ selectedAgentId: AGENT_B, worktree: '/tmp/wt' });
+
+    await waitFor(() => expect(result.current.isRestored).toBe(true));
+    expect(result.current.attachments).toEqual([]);
+  });
+});

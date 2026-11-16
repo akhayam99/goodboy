@@ -77,7 +77,7 @@ describe('the u30 start guidance scenes', () => {
     mount({ id: 'u30-start-guidance-open' });
 
     const popover = await screen.findByRole('dialog', { name: 'Guidance for this run' }, WAIT);
-    within(popover).getByText('Read by the orchestrator, which carries it into each step.');
+    within(popover).getByText('Read by the Lead and the agents it starts.');
     expect(within(popover).getByRole<HTMLTextAreaElement>('textbox').value).toContain(
       'ledger-core schema',
     );

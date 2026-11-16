@@ -7,8 +7,7 @@ import { SidebarSessionsFilter } from '../../../features/workspace/components/Se
 import type { ShellColumnScope } from '../../shellArrangement';
 import { ColumnDoorRow } from './ColumnDoorRow';
 import { ColumnFoot } from './ColumnFoot';
-import { columnDoorsOf, openColumnDoor, type ColumnActions } from './columnDoors';
-import { useIsWorkOn } from '../../../shared/hooks/useIsWorkOn';
+import { COLUMN_DOORS, openColumnDoor, type ColumnActions } from './columnDoors';
 import { useDoorSignals } from './useDoorSignals';
 import { isStudioOverSession, type ColumnPlace } from '../../../shared/navigation/columnPlace';
 
@@ -32,7 +31,6 @@ export const SideColumn = ({
   isPeek = false,
 }: Props) => {
   const signals = useDoorSignals({});
-  const isWork = useIsWorkOn();
   const go = (open: () => void) => () => {
     open();
     onNavigate?.();
@@ -60,13 +58,12 @@ export const SideColumn = ({
                   {...(onNavigate !== undefined && { onNavigate })}
                 />
               </div>
-              {columnDoorsOf({ isWork }).map((door) => (
+              {COLUMN_DOORS.map((door) => (
                 <Fragment key={door.id}>
                   <ColumnDoorRow
                     id={door.id}
                     icon={door.icon}
                     label={door.label}
-                    {...(door.badge !== undefined && { badge: door.badge })}
                     isQuiet={door.isReference === true}
                     {...(door.shortcutId !== undefined && { shortcut: door.shortcutId })}
                     isCurrent={place === door.id}

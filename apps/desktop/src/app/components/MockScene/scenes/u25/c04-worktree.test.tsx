@@ -103,7 +103,7 @@ describe('the c04 worktree level scenes', () => {
       'Changes',
       'Commits',
       'Checks',
-      'Work',
+      'Runs',
       'Comments',
     ]);
     expect(screen.getByRole('group', { name: 'Properties' })).toBeDefined();

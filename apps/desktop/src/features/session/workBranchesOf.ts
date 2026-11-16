@@ -1,6 +1,7 @@
 import type { Agent, AgentId, MountId, ProjectId, SessionMountView } from '@goodboy/types';
 import { projectById } from '../../store/slices/projects/projectIndex';
 import { inheritedMountIdOf } from '../../store/slices/workflows/runMount/inheritedMountIdOf';
+import { soleMountIdOf } from './soleMountIdOf';
 
 export type WorkBranch = Readonly<{
   mountId: MountId;
@@ -26,10 +27,13 @@ type Params = {
 type MountParams = {
   readonly agent: Agent;
   readonly agents: ReadonlyArray<Agent>;
+  readonly soleMountId: MountId | null;
 };
 
-const stepMountIdOf = ({ agent, agents }: MountParams): MountId | null =>
-  agent.mountId ?? inheritedMountIdOf({ agents, workflowRunId: agent.workflowRunId ?? null });
+const stepMountIdOf = ({ agent, agents, soleMountId }: MountParams): MountId | null =>
+  agent.mountId ??
+  inheritedMountIdOf({ agents, workflowRunId: agent.workflowRunId ?? null }) ??
+  soleMountId;
 
 type MountBranchParams = {
   readonly mountId: MountId;
@@ -67,11 +71,12 @@ export const workBranchesOf = ({
 }: Params): ReadonlyArray<WorkBranch> => {
   const members = new Set<string>(agentIds);
   const found = new Map<string, WorkBranch>();
+  const soleMountId = soleMountIdOf({ mounts });
   for (const agent of agents) {
     if (!members.has(agent.id)) {
       continue;
     }
-    const mountId = stepMountIdOf({ agent, agents });
+    const mountId = stepMountIdOf({ agent, agents, soleMountId });
     if (mountId === null || found.has(mountId)) {
       continue;
     }

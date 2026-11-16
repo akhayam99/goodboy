@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { useShallow } from 'zustand/react/shallow';
-import type { Agent, Session, TelemetryRecord } from '@goodboy/types';
+import type { Agent, Session, SessionMountView, TelemetryRecord } from '@goodboy/types';
 import {
   EMPTY_ARRAY,
   useAppStore,
@@ -23,6 +23,7 @@ import {
   type OverviewTileFacts,
 } from '../../../central/board/overviewTileFactsOf';
 import { sessionKpisOf, type SessionKpis } from '../../../central/board/sessionKpisOf';
+import { placedAgentsOf } from '../../../placedAgentsOf';
 import { agentSpendById } from '../../../timeline/agentSpendById';
 
 type Params = {
@@ -45,6 +46,8 @@ const NO_AGENTS: ReadonlyArray<Agent> = [];
 
 const NO_VIEWS: ReadonlyArray<AutoTreeView> = [];
 
+const NO_MOUNTS: ReadonlyArray<SessionMountView> = [];
+
 const NO_TELEMETRY: ReadonlyArray<TelemetryRecord> = [];
 
 const CLOCK_MS = 30_000;
@@ -53,6 +56,7 @@ export const useBranchBoard = ({ session, entries }: Params): Result => {
   const sessionId = session.id;
   const agents = useAppStore((state) => state.sessionPhaseRuns[sessionId] ?? NO_AGENTS);
   const allViews = useAppStore((state) => state.autoTreeViews[sessionId] ?? NO_VIEWS);
+  const mounts = useAppStore((state) => state.sessionMounts[sessionId] ?? NO_MOUNTS);
   const telemetry = useAppStore((state) => state.sessionTelemetry[sessionId] ?? NO_TELEMETRY);
   const questions = useSessionOpenQuestions(sessionId);
   const plans = useSessionPlans(sessionId);
@@ -82,9 +86,13 @@ export const useBranchBoard = ({ session, entries }: Params): Result => {
     }
     return byMount;
   }, [entries, mountGithub]);
+  const placedAgents = useMemo(
+    () => placedAgentsOf({ agents, autoViews: allViews, mounts }),
+    [agents, allViews, mounts],
+  );
   const inputs = useMemo(
-    () => boardInputsOf({ agents, questions, views, rootTurns, spendByAgentId, now }),
-    [agents, now, questions, rootTurns, spendByAgentId, views],
+    () => boardInputsOf({ agents: placedAgents, questions, views, rootTurns, spendByAgentId, now }),
+    [now, placedAgents, questions, rootTurns, spendByAgentId, views],
   );
   const board = useMemo(
     () =>

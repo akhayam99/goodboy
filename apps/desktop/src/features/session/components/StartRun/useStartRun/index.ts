@@ -43,10 +43,8 @@ import { useAutoLevel } from '../../../../../shared/hooks/useAutoLevel';
 import { useRunModel, type RunModelModel } from '../useRunModel';
 import type { IssueCandidate } from '../../../../integrations/fetchIssueCandidates';
 import type { SessionDraftMount } from '../../../../../store/slices/sessionDraft/startSessionFromDraft';
+import { askOnBranchOf } from '../../../startRun/askOnBranchOf';
 import { askWithFileOf } from '../../../startRun/askWithFileOf';
-import { SETTING_WORK_ENABLED } from '../../../../../shared/lib/workSetting';
-import { flowRulesOf } from '../../../../work/flowRulesOf';
-import { openStartWork } from '../../../../work/openStartWork';
 import { draftStartOf } from '../../../startRun/draftStartOf';
 import { rememberLastStart } from '../../../startKind/rememberLastStart';
 import type { StartRunFile } from '../../../startRun/startRunFileOf';
@@ -67,6 +65,8 @@ export type StartRunModel = Readonly<{
   discard: () => void;
   file: StartRunFile | null;
   setFile: (file: StartRunFile | null) => void;
+  branch: string | null;
+  setBranch: (branch: string | null) => void;
   start: () => Promise<void>;
   isStarting: boolean;
   error: string | null;
@@ -196,6 +196,7 @@ export const useStartRun = ({
     setLocalText('');
   }, [discardSessionDraft, sessionId, workspaceId]);
   const [file, setFile] = useState<StartRunFile | null>(null);
+  const [branch, setBranch] = useState<string | null>(null);
   const [isStarting, setIsStarting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [runAs, setRunAs] = useState<RunAs>(AUTO_RUN_AS);
@@ -310,6 +311,7 @@ export const useStartRun = ({
       isStartingRef.current = false;
       setLocalText('');
       setFile(null);
+      setBranch(null);
       setRunAs(AUTO_RUN_AS);
       setPickedLevel(null);
       setPickedAutonomy(null);
@@ -380,43 +382,20 @@ export const useStartRun = ({
               }),
             })
           : roleRunOf({ text: asked, role });
-      const isWork = state.settings[SETTING_WORK_ENABLED] === 'true';
-      if (
-        flowRulesOf({ isWork }).shouldStartOpenComposer &&
-        routed.role === null &&
-        routed.preset === null
-      ) {
-        openStartWork({
-          seed: {
-            sessionId,
-            projectId: mount?.projectId ?? null,
-            branch: null,
-            text:
-              file === null
-                ? routed.ask
-                : askWithFileOf({
-                    ask: routed.ask,
-                    relPath: file.relPath,
-                    absolutePath: file.absolutePath,
-                  }),
-          },
-        });
-        clearAsked({ asked });
-        return;
-      }
       const staged = stagedFiles;
       const attachments = await toAttachmentInputs(staged);
-      const result =
+      const fileAsk =
         file === null
-          ? routed
-          : {
-              ...routed,
-              ask: askWithFileOf({
-                ask: routed.ask,
-                relPath: file.relPath,
-                absolutePath: file.absolutePath,
-              }),
-            };
+          ? routed.ask
+          : askWithFileOf({
+              ask: routed.ask,
+              relPath: file.relPath,
+              absolutePath: file.absolutePath,
+            });
+      const result = {
+        ...routed,
+        ask: askOnBranchOf({ ask: fileAsk, branch: sessionId === null ? null : branch }),
+      };
       const pin: RunModelPin | null =
         role === null ? pinFor({ slot: runModelSlotOf({ result }) }) : null;
       const pinned = pinnedRoutingOf({ result, pin });
@@ -467,6 +446,7 @@ export const useStartRun = ({
       if (claim.isCurrent()) {
         clearAsked({ asked });
         setFile((current) => (current === file ? null : current));
+        setBranch((current) => (current === branch ? null : current));
         setRunAs(AUTO_RUN_AS);
         setPickedLevel(null);
         setPickedAutonomy(null);
@@ -490,6 +470,7 @@ export const useStartRun = ({
   }, [
     clearAsked,
     autonomyPick,
+    branch,
     clearModel,
     file,
     mount,
@@ -516,6 +497,8 @@ export const useStartRun = ({
     discard,
     file,
     setFile,
+    branch,
+    setBranch,
     start,
     isStarting,
     error,

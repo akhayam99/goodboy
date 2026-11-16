@@ -4,10 +4,16 @@ import {
   type AutoAgentWithoutTree,
   type InsertAutoTreeOutcome,
 } from '@goodboy/db';
-import { brandId, type AutoTreeId, type SessionId } from '@goodboy/types';
+import { brandId, type AutoTreeId, type SessionId, type WorkspaceId } from '@goodboy/types';
+import { readRunLimit, type RunLimitChoice } from '../runLimit/readRunLimit';
 import type { AgentVerbContext } from './verbContext';
 
 const HOUR_MS = 60 * 60 * 1000;
+
+type ChosenLimitParams = Readonly<{ choice: Exclude<RunLimitChoice, { kind: 'inherited' }> }>;
+
+const runLimitUsdOf = ({ choice }: ChosenLimitParams): number | null =>
+  choice.kind === 'capped' ? choice.usd : null;
 
 export type SessionCapParams = Readonly<{ sessionId: SessionId }>;
 
@@ -31,6 +37,15 @@ export const startAutoTree = async ({
   workspaceLimitUsd,
 }: StartAutoTreeParams): Promise<InsertAutoTreeOutcome> => {
   const mounts = await ctx.ports.loadMounts({ sessionId: agent.sessionId });
+  const runLimit = await readRunLimit({
+    db: ctx.db,
+    workspaceId: brandId<WorkspaceId>({ value: agent.workspaceId }),
+    agentId: agent.agentId,
+  });
+  const limitUsd =
+    runLimit.kind === 'inherited'
+      ? await workspaceLimitUsd({ workspaceId: agent.workspaceId })
+      : runLimitUsdOf({ choice: runLimit });
   const nowMs = ctx.now();
   return ctx.scheduler.createTree({
     id: brandId<AutoTreeId>({ value: ctx.ports.newId() }),
@@ -39,7 +54,7 @@ export const startAutoTree = async ({
     primaryMountId: mounts.find((mount) => isUsableMount({ mount }))?.id ?? null,
     capUsd: autoTreeCapUsd({
       sessionCapUsd: sessionCapUsd({ sessionId: agent.sessionId }),
-      workspaceLimitUsd: await workspaceLimitUsd({ workspaceId: agent.workspaceId }),
+      workspaceLimitUsd: limitUsd,
     }),
     hardDeadlineAt: nowMs + AUTO_TREE_LIMITS.wallClockHours * HOUR_MS,
   });

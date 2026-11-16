@@ -259,4 +259,21 @@ export const RETIRED_NAMES: ReadonlyArray<RetiredName> = [
   },
   { id: 'exit-status', pattern: /^Exit status$/, use: NAMES.commandStatus },
   { id: 'leave-out', pattern: /^Leave out$/, use: NAMES.skipFolders },
+  {
+    id: 'auto-agent',
+    pattern: /\bAuto agents?\b/,
+    use: NAMES.lead,
+  },
+  {
+    id: 'start-work-verb',
+    pattern: /\bStart work\b(?! from (?:chat|this)\b)/,
+    use: NAMES.startARun,
+    allowedPaths: /^(?:features\/work\/|features\/session\/components\/StartWork\/)/,
+  },
+  {
+    id: 'work-door',
+    pattern: /^Work$/,
+    use: NAMES.runs,
+    allowedPaths: /^(?:features\/work\/|shared\/components\/ProfileForm\/)/,
+  },
 ];

@@ -24,7 +24,7 @@ export const StartHowChip = ({ kind, hasPresets, isDisabled, onPick }: Props) =>
         value: START_KIND_COPY.kindTab[kind],
         source: '',
         chain: '',
-        isChanged: kind !== 'auto',
+        isChanged: kind !== 'lead',
       }}
       help={START_KIND_COPY.pickLine}
       error={null}

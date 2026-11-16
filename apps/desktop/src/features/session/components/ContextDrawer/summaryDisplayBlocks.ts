@@ -3,12 +3,10 @@ import {
   type SummaryDocument,
   type SummarySectionKey,
 } from '@goodboy/core/context';
-import { stateBodyHasMore } from '../../central/summary/stateBodyHasMore';
 
 const SUMMARY_NOTES_TITLE = 'Notes';
 
 const SUMMARY_DISPLAY_KEYS = [
-  'state',
   'next',
   'learned',
 ] as const satisfies ReadonlyArray<SummarySectionKey>;
@@ -38,16 +36,10 @@ export const summaryDisplayBlocks = ({ document }: Params): ReadonlyArray<Summar
 
   const hasKnownSection = document.blocks.some((block) => block.sectionKey != null);
   const isBlankDocument = document.blocks.length === 0;
-  const offersEverySection = hasKnownSection || isBlankDocument;
+  const shouldOfferEverySection = hasKnownSection || isBlankDocument;
 
   const sections = SUMMARY_DISPLAY_KEYS.flatMap<SummaryDisplayBlock>((sectionKey) => {
     const block = document.blocks.find((candidate) => candidate.sectionKey === sectionKey);
-    if (
-      sectionKey === 'state' &&
-      (block == null || !stateBodyHasMore({ body: block.body ?? '' }))
-    ) {
-      return [];
-    }
     if (block != null) {
       return [
         {
@@ -59,7 +51,7 @@ export const summaryDisplayBlocks = ({ document }: Params): ReadonlyArray<Summar
         },
       ];
     }
-    if (offersEverySection === false) {
+    if (!shouldOfferEverySection) {
       return [];
     }
     return [

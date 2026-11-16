@@ -162,27 +162,26 @@ const pickCursor = () => {
 };
 
 describe('journey: pick the model of a run at the kickoff', () => {
-  it('offers Model on Auto picks, and starts the orchestrator on the model picked', async () => {
-    const { attachWorkflowToSession } = spies();
+  it('offers Model with no kind pressed, and starts the Lead on the model picked', async () => {
+    const { spawnAgent, attachWorkflowToSession } = spies();
     open();
 
-    fireEvent.click(screen.getByRole('button', { name: /^How: / }));
-    fireEvent.click(screen.getByRole('tab', { name: /^Orchestrated/ }));
     pickCursor();
     fireEvent.click(screen.getByRole('button', { name: 'Start' }));
 
-    await waitFor(() => expect(attachWorkflowToSession).toHaveBeenCalledTimes(1));
-    expect(attachWorkflowToSession.mock.calls[0]?.[2]).toMatchObject({
-      executionMode: 'dynamic',
-      orchestratorRouting: { providerId: 'cursor' },
+    await waitFor(() => expect(spawnAgent).toHaveBeenCalledTimes(1));
+    expect(spawnAgent.mock.calls[0]?.[1]).toMatchObject({
+      kindOverride: 'auto',
+      provider: 'cursor',
     });
+    expect(attachWorkflowToSession).not.toHaveBeenCalled();
   });
 
-  it('starts the Auto agent of a picked shape on the model picked for that run', async () => {
+  it('starts the Lead of a picked shape on the model picked for that run', async () => {
     const { spawnAgent } = spies();
     open();
     fireEvent.click(screen.getByRole('button', { name: /^How: / }));
-    fireEvent.click(screen.getByRole('tab', { name: /^Auto/ }));
+    fireEvent.click(screen.getByRole('tab', { name: /^Lead/ }));
 
     pickCursor();
     fireEvent.click(screen.getByRole('button', { name: 'Start' }));
@@ -194,26 +193,11 @@ describe('journey: pick the model of a run at the kickoff', () => {
     });
   });
 
-  it('starts the orchestrator of a picked shape on the model picked for that run', async () => {
-    const { attachWorkflowToSession } = spies();
-    open();
-    fireEvent.click(screen.getByRole('button', { name: /^How: / }));
-    fireEvent.click(screen.getByRole('tab', { name: /^Orchestrated/ }));
-
-    pickCursor();
-    fireEvent.click(screen.getByRole('button', { name: 'Start' }));
-
-    await waitFor(() => expect(attachWorkflowToSession).toHaveBeenCalledTimes(1));
-    expect(attachWorkflowToSession.mock.calls[0]?.[2]).toMatchObject({
-      orchestratorRouting: { providerId: 'cursor' },
-    });
-  });
-
   it('leaves the model to the defaults when none is picked', async () => {
     const { spawnAgent } = spies();
     open();
     fireEvent.click(screen.getByRole('button', { name: /^How: / }));
-    fireEvent.click(screen.getByRole('tab', { name: /^Auto/ }));
+    fireEvent.click(screen.getByRole('tab', { name: /^Lead/ }));
     expect(modelChip().getAttribute('data-run-model')).toBe('auto');
 
     fireEvent.click(screen.getByRole('button', { name: 'Start' }));

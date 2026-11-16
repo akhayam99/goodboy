@@ -1,7 +1,5 @@
-import { AUTO_BLOCK_TEXT, parseAutoDelegationRole } from '@goodboy/core/auto';
-import { AGENT_KIND_META, kindForRole } from '../../session/agent-kind';
+import { AUTO_BLOCK_TEXT } from '@goodboy/core/auto';
 import type { AutoTreeView } from '../../../store/slices/auto-view/state';
-import { taskTitleOf } from '../taskTitleOf';
 import { noteWordOf } from '../tree/noteWordOf';
 
 export type PendingMessageAction = 'sendNow' | 'raiseLimit' | 'retry';
@@ -21,55 +19,13 @@ const STOPPED_REASON = 'Auto was stopped.';
 
 const NOT_DELIVERED = 'Not delivered';
 
-const WAITS_FOR_TURN = 'Waits for this reply';
-
-const waitingForOf = ({ view }: Params): string => {
-  const open = view.delegations.filter(
-    (delegation) => delegation.state !== 'settled' && !delegation.isAdopted,
-  );
-  const [only] = open;
-  if (open.length === 1 && only !== undefined) {
-    const role = parseAutoDelegationRole({ role: only.role });
-    const noun = role === null ? 'agent' : AGENT_KIND_META[kindForRole({ role })].noun;
-    return taskTitleOf({ request: only.request }) ?? `the ${noun}`;
-  }
-  return `${open.length} agents`;
-};
-
-const hasOpenChild = ({ view }: Params): boolean =>
-  view.delegations.some((delegation) => delegation.state !== 'settled' && !delegation.isAdopted);
-
-type LineParams = Params & {
-  readonly isAtOnce?: boolean;
-};
-
-export const pendingMessageLineOf = ({
-  view,
-  isAtOnce = false,
-}: LineParams): PendingMessageLine => {
+export const pendingMessageLineOf = ({ view }: Params): PendingMessageLine => {
   const { phase, blockedReason } = view.tree;
-  const isHeld = phase === 'blocked' || phase === 'stopping' || phase === 'stopped';
-  if (isAtOnce && !isHeld) {
-    return {
-      tone: 'waits',
-      text: noteWordOf({ isWork: true, turn: null }),
-      reason: null,
-      action: null,
-    };
-  }
-  if (phase === 'waiting' && hasOpenChild({ view })) {
-    return {
-      tone: 'waits',
-      text: `Waits for ${waitingForOf({ view })}`,
-      reason: null,
-      action: 'sendNow',
-    };
-  }
   if (phase === 'stopping' || phase === 'stopped') {
     return { tone: 'notDelivered', text: NOT_DELIVERED, reason: STOPPED_REASON, action: null };
   }
   if (phase !== 'blocked') {
-    return { tone: 'waits', text: WAITS_FOR_TURN, reason: null, action: null };
+    return { tone: 'waits', text: noteWordOf({ turn: null }), reason: null, action: null };
   }
   const reason =
     blockedReason === null || blockedReason === '' ? "Auto couldn't reply." : blockedReason;

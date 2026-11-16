@@ -8,12 +8,14 @@ import {
   type OpenQuestion,
   type SessionMountView,
   type ProviderRunId,
+  type RunRoute,
   type TurnState,
 } from '@goodboy/types';
 import { aProject, anAgent } from '@goodboy/types/testing';
 import type { AutoTreeView } from '../../store/slices/auto-view/state';
 import { aDelegation, aView, FIXTURE_NOW, FIXTURE_ROOT } from '../auto/testing/autoViewFixtures';
 import type { AttachedRun } from '../workflows/activeWorkflowRuns';
+import { branchGroupsOf } from './branchGroupsOf';
 import { liveGroupsOf } from './central/now/liveGroupsOf';
 import {
   aNowAgent,
@@ -87,7 +89,6 @@ const runsOf = ({
     revisingStarts: {},
     mounts,
     projects: [PAYMENTS_PROJECT, LEDGER_PROJECT],
-    isWork: false,
   });
 
 const presetRun = () =>
@@ -187,15 +188,18 @@ describe('sessionRunsOf', () => {
       origin: 'Workflow · Preset Fix a layout',
       open: { kind: 'run', runId: preset.run.id },
     });
+    expect(byKind.get('preset')?.isOlderRun).toBe(false);
     expect(byKind.get('orchestrated')).toMatchObject({
       shape: 'plan',
       origin: 'Workflow · Orchestrated',
+      isOlderRun: true,
       open: { kind: 'run', runId: plan.run.id },
     });
     expect(byKind.get('auto')).toMatchObject({
       shape: 'lead',
-      origin: 'Agent · Auto agent',
-      stateWord: 'Done',
+      origin: 'Lead',
+      isOlderRun: false,
+      stateWord: 'Finished',
       open: { kind: 'auto', agentId: FIXTURE_ROOT },
     });
     expect(byKind.get('agent')).toMatchObject({
@@ -205,6 +209,39 @@ describe('sessionRunsOf', () => {
       progress: '1 agent',
       open: { kind: 'agent', agentId: 'agent-scout' },
     });
+  });
+
+  it('names the preset a Lead follows from the saved route of its run', () => {
+    const route = {
+      shape: 'lead',
+      row: 1,
+      presetName: 'Fix flaky tests',
+      closeness: 'adapt',
+      role: null,
+      choice: 'Lead',
+      why: 'you picked it',
+    } satisfies RunRoute;
+    const routed = sessionRunsOf({
+      attachedRuns: [],
+      agents: [autoRoot({ status: 'running' })],
+      kindOverride: {},
+      autoViews: [aView({ phase: 'waiting' })],
+      orchestrating: {},
+      questions: [],
+      rootTurns: {},
+      turnByAgentId: new Map(),
+      revisingStarts: {},
+      mounts: [],
+      projects: [],
+      routes: { [FIXTURE_ROOT]: route, 'agent-elsewhere': { ...route, presetName: 'Other' } },
+    });
+    const plain = runsOf({
+      agents: [autoRoot({ status: 'running' })],
+      autoViews: [aView({ phase: 'waiting' })],
+    });
+
+    expect(routed.map((run) => run.origin)).toEqual(['Lead · plan Fix flaky tests']);
+    expect(plain.map((run) => run.origin)).toEqual(['Lead']);
   });
 
   it('lists the newest request first', () => {
@@ -660,5 +697,54 @@ describe('the branches a run works on', () => {
 
     expect(auto?.branches).toEqual([]);
     expect(auto?.goneBranches.map((branch) => branch.branch)).toEqual(['rec/2-backfill']);
+  });
+
+  it('files a Lead and its children under the only branch of a one mount session', () => {
+    const plan = orchestratedRun();
+    const agents = [
+      autoRoot({ status: 'running' }),
+      autoChild(),
+      aNowStepAgent({ attached: plan, stepIndex: 0, status: 'running', name: 'Find' }),
+      handScout({ status: 'completed' }),
+    ];
+    const runs = runsOf({ runs: [plan], agents, mounts: [API] });
+    const groups = branchGroupsOf({ runs, mounts: [] });
+    const onBranch = groups.find((group) => group.key === `mount:${API.id}`);
+
+    expect(groups.map((group) => group.key)).toEqual([`mount:${API.id}`]);
+    expect(onBranch?.runs.map((run) => run.kind).sort()).toEqual(['agent', 'auto', 'orchestrated']);
+  });
+
+  it('reads a Lead from its tree and a child from its delegation when two mounts share a session', () => {
+    const fixer = aDelegation({ key: 'fixer', role: 'implementer', state: 'running' });
+    const view = aView({
+      phase: 'waiting',
+      delegations: [{ ...fixer, target: { mountId: LEDGER.id } }],
+    });
+    const agents = [autoRoot({ status: 'running' }), autoChild()];
+    const runs = runsOf({ agents, autoViews: [view], mounts: [API, LEDGER] });
+    const auto = runs.find((run) => run.kind === 'auto');
+
+    expect(auto?.branches.map((branch) => branch.branch)).toEqual([
+      'fix/duplicate-credit',
+      'rec/2-backfill',
+    ]);
+  });
+
+  it('keeps each run on its own branch when two mounts share a session', () => {
+    const scout = { ...handScout({ status: 'completed' }), mountId: NOW_MOUNT_LEDGER };
+    const lead = { ...autoRoot({ status: 'running' }), mountId: NOW_MOUNT_API };
+    const runs = runsOf({ agents: [lead, scout], mounts: [API, LEDGER] });
+    const branchesOf = (kind: string) =>
+      runs.find((run) => run.kind === kind)?.branches.map((branch) => branch.branch);
+
+    expect(branchesOf('auto')).toEqual(['fix/duplicate-credit']);
+    expect(branchesOf('agent')).toEqual(['rec/2-backfill']);
+  });
+
+  it('leaves an older row without a mount unfiled when two mounts share a session', () => {
+    const runs = runsOf({ agents: [handScout({ status: 'completed' })], mounts: [API, LEDGER] });
+
+    expect(runs[0]?.branches).toEqual([]);
   });
 });

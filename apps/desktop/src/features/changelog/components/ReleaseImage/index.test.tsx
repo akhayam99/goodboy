@@ -46,6 +46,33 @@ describe('ReleaseImage', () => {
     expect(screen.queryByRole('tablist')).toBeNull();
   });
 
+  it('shows the light pair of a light pinned entry in a dark viewer', async () => {
+    invoke.mockResolvedValue('data:image/webp;base64,AAA=');
+    render(
+      <ReleaseImage
+        version="0.37.0"
+        image="v1-overview"
+        pinnedTheme="light"
+        hasBefore={true}
+        alt="A clearer light mode"
+      />,
+    );
+
+    await screen.findByRole('img', { name: 'A clearer light mode' });
+    expect(invoke).toHaveBeenCalledWith('changelog_image', {
+      version: '0.37.0',
+      file: 'v1-overview-before-light.webp',
+    });
+    expect(invoke).toHaveBeenCalledWith('changelog_image', {
+      version: '0.37.0',
+      file: 'v1-overview-after-light.webp',
+    });
+    expect(invoke).not.toHaveBeenCalledWith('changelog_image', {
+      version: '0.37.0',
+      file: 'v1-overview-after-dark.webp',
+    });
+  });
+
   it('offers a before/after switch for an Improved entry and fetches both', async () => {
     invoke.mockResolvedValue('data:image/webp;base64,AAA=');
     render(<ReleaseImage version="0.10.0" image="crumb-menu" hasBefore={true} alt="Crumb menu" />);

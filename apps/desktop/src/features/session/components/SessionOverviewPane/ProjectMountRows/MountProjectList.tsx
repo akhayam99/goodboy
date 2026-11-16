@@ -9,7 +9,7 @@ import {
   ROW_INTERACTIVE,
   ScrollFade,
 } from '@goodboy/ui';
-import type { Project, SessionId, WorkspaceId } from '@goodboy/types';
+import type { Project, ProjectId, SessionId, WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
 import {
   rememberExistingWorktree,
@@ -18,6 +18,7 @@ import {
 } from '../../../../../store/slices/sessions/branchChoiceSeeds';
 import { projectGlyph } from '../../../../../shared/components/conceptIcons';
 import { shouldGroupStarred } from '../../../../../shared/utils/shouldGroupStarred';
+import { projectPickerGroups } from '../../../../../shared/components/ProjectPicker/projectPickerGroups';
 import { MountPreflightCard } from './MountPreflightCard';
 import { mountFailure, type MountFailure } from './mountFailure';
 import { useMountPreflight } from './useMountPreflight';
@@ -31,6 +32,7 @@ type Props = {
   readonly sessionId: SessionId;
   readonly workspaceId: WorkspaceId;
   readonly projects: ReadonlyArray<Project>;
+  readonly recentIds: ReadonlyArray<ProjectId>;
   readonly emptyHint: string;
   readonly onDone: () => void;
 };
@@ -39,6 +41,7 @@ export const MountProjectList = ({
   sessionId,
   workspaceId,
   projects,
+  recentIds,
   emptyHint,
   onDone,
 }: Props) => {
@@ -54,23 +57,21 @@ export const MountProjectList = ({
     () => projects.filter((project) => project.name.toLowerCase().includes(query.toLowerCase())),
     [projects, query],
   );
-  const isGrouped =
-    query.trim() === '' &&
-    shouldGroupStarred({
-      starredCount: projects.filter((project) => project.starredAt !== undefined).length,
-      total: projects.length,
-    });
+  const isQueryEmpty = query.trim() === '';
   const groups = useMemo(() => {
+    const { starred, recent, all } = projectPickerGroups({ projects: filtered, recentIds });
+    const isGrouped =
+      isQueryEmpty &&
+      shouldGroupStarred({ starredCount: starred.length + recent.length, total: projects.length });
     if (!isGrouped) {
-      return [{ key: 'all', label: null, projects: filtered }];
+      return [{ key: 'all', label: null, projects: [...starred, ...recent, ...all] }];
     }
-    const starred = filtered.filter((project) => project.starredAt !== undefined);
-    const others = filtered.filter((project) => project.starredAt === undefined);
     return [
       { key: 'starred', label: 'Starred', projects: starred },
-      { key: 'other', label: 'Other folders', projects: others },
+      { key: 'recent', label: 'Recent', projects: recent },
+      { key: 'other', label: 'Other folders', projects: all },
     ].filter((group) => group.projects.length > 0);
-  }, [filtered, isGrouped]);
+  }, [filtered, recentIds, isQueryEmpty, projects.length]);
   const selectedProject = projectById(projects, selectedProjectId) ?? null;
   const preflightState = useMountPreflight({ sessionId, project: selectedProject, choice });
 

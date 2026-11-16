@@ -1,4 +1,3 @@
-import { NAMES } from '../../../shared/utils/names';
 import { runKindLineOf } from '../startKind/runKindLineOf';
 
 type CountParams = {
@@ -15,12 +14,14 @@ type NameParams = {
 
 const ORCHESTRATED_LINE = runKindLineOf({ line: { kind: 'orchestrated' } });
 
-const AUTO_AGENT_LINE = runKindLineOf({ line: { kind: 'autoAgent' } });
+const LEAD_LINE = 'Lead';
 
 export const RUN_ROUTE_COPY = {
   label: 'Start a run',
   fromPreset: ({ name }: NameParams) => `Start from ${name}`,
-  placeholder: 'Describe what you want done. Auto picks how to run it.',
+  placeholder: 'What should the Lead get done?',
+  leadPlan: ({ name }: NameParams) => `${LEAD_LINE} · plan ${name}`,
+  olderPresetWhat: 'A saved list of steps, followed or adapted.',
   hint: '~ presets, @ roles',
   runAs: {
     startsAs: 'Starts as',
@@ -38,7 +39,7 @@ export const RUN_ROUTE_COPY = {
   failed: "Couldn't start the run",
   shapes: {
     plan: ORCHESTRATED_LINE,
-    lead: AUTO_AGENT_LINE,
+    lead: LEAD_LINE,
   },
   closeness: {
     follow: 'Keep steps',
@@ -62,9 +63,9 @@ export const RUN_ROUTE_COPY = {
   sessionDefaultHelp: ({ name }: NameParams) =>
     `Wins over the workspace default in ${name}. Runs already going keep theirs.`,
   defaults: {
-    auto: 'Let Auto pick',
-    plan: NAMES.runKind.workflow,
-    lead: NAMES.runKind.autoAgent,
+    auto: 'Lead with a preset that fits',
+    plan: LEAD_LINE,
+    lead: LEAD_LINE,
   },
   defaultSaved: ({ name }: NameParams) => `New runs start as: ${name}`,
   defaultChanged: 'The default changed since. Nothing was undone.',
@@ -79,6 +80,6 @@ export const RUN_ROUTE_COPY = {
     pullRequest: ({ number }: NumberParams) => `Fixes on pull request #${number}`,
     oneFile: 'One file to look at',
     questionOrCheck: 'A question or a check, and no preset fits',
-    unsure: 'Not sure yet: an Auto agent first',
+    unsure: 'The Lead plans it first',
   },
 } as const;

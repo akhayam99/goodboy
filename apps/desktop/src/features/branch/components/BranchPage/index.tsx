@@ -419,6 +419,7 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
                   <PullRequestHeaderLine pr={pr} host={host} openedAt={openedAt} />
                 )
               }
+              running={{ session, mount: identity.mount }}
               controls={controls}
               isPushBusy={isPushBusy}
               isPrimaryYielding={isPrimaryYielding}
@@ -440,8 +441,6 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
         <div className="flex min-h-0 min-w-0 flex-1 flex-col">
           <BranchBodyTop
             session={session}
-            mount={identity.mount}
-            isActive={isActive}
             controls={controls}
             review={branchReview}
             isFixRunShown={tab !== 'comments' && branchReview.comments.facts.isFixRunLive}

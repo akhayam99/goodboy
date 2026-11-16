@@ -1,7 +1,7 @@
 import type { RunRouteCloseness, Workflow } from '@goodboy/types';
 import type { StartShape } from '../../../store/slices/sessionDraft/state';
 import { AGENT_KIND_META, type AgentKind } from '../agent-kind';
-import { presetRouteOf, roleRouteOf, shapeRouteOf } from './routeChoiceOf';
+import { leadRouteOf, presetRouteOf, roleRouteOf } from './routeChoiceOf';
 import type { RunRouteResult } from './runRouteOf';
 import { RUN_ROUTE_COPY } from './runRouteCopy';
 
@@ -34,7 +34,7 @@ export const pickedRouteOf = ({ shape, ask, preset, closeness, role }: Params): 
     };
   }
   return {
-    route: shapeRouteOf({ shape: shape === 'autoAgent' ? 'lead' : 'plan', row: PICKED_ROW, why }),
+    route: leadRouteOf({ row: PICKED_ROW, why }),
     ask,
     preset: null,
     role: null,

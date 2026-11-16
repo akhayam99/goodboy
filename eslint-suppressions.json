@@ -5084,11 +5084,6 @@
       "count": 1
     }
   },
-  "apps/desktop/src/features/session/components/ContextDrawer/summaryDisplayBlocks.ts": {
-    "@typescript-eslint/naming-convention": {
-      "count": 1
-    }
-  },
   "apps/desktop/src/features/session/components/RoleSelect/index.test.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 2

@@ -4,15 +4,25 @@ A workflow runs several agents in one session, each step with its own role, mode
 
 ### Start a workflow
 
-A workflow run starts from the New session page: pick **Orchestrated** or **Preset**, and press **Start workflow**. From **Start a run** Auto picks a workflow when the ask has steps, or type `~` and a preset name to follow that preset. A preset's steps, roles and models are edited in the Workflows studio.
+To run a preset, open **Start a run** and pick **Preset** under **How**, or type `~` and its name. The run gets a Lead with the preset as its plan, and its row reads "Lead · plan Fix a layout". A preset's steps, roles and models are edited in the Workflows studio.
 
-### Orchestrated
+### Older runs
 
-Give a goal and a model picks each next step, with its role, model, effort and a reason. It stops when done or blocked.
+A run started before every run had a Lead stays as it was, on its own engine.
+
+- On an orchestrated run a model picks each next step, with its role, model, effort and a reason. It keeps its row, its page and its line, "Workflow · Orchestrated" with a gray "older run". **Continue** and **Start** finish it on the orchestrator.
+- A preset run started before keeps its line, such as "Workflow · Preset Fix a layout", and its steps.
+- New runs never start the orchestrator. A draft left on **Orchestrated** opens on **Lead**.
+- The orchestrator stays while such a run can still be open, then goes. The rows stay readable after that.
 
 ### A preset as the plan a run starts from
 
-A run started from a preset in **Start a run** follows that preset as a plan, and the line under its title says "Workflow · Preset Fix a layout · Adapt as it goes · 1 change". **Adapt as it goes** may add a step when a finding asks for it, skip one whose work is done, or move one that has not started; each change is tagged **Added**, **Skipped** or **Moved** in the checklist with its reason as the step's Why. **Follow it** never changes a step on its own: when one does not fit, the run stops and asks, with **Add it**, **Skip** and **Switch to adapt**. A pinned step runs as written and is never skipped or moved. Your goal, guidance and hints always rank above the preset.
+A preset you pick in **Start a run**, or one your ask matches, starts a Lead with that preset as its plan. The run's line reads "Lead · plan Fix a layout". The Lead reads your ask first, then the preset's steps.
+
+- **With the preset** sets how close the Lead keeps to the steps.
+- **Keep steps** runs the saved steps in their order. The Lead asks before it adds, skips or moves one. A preset you name with `~` starts this way.
+- **May change steps** lets the Lead add, skip or move a step, and it says why. A preset your ask matches starts this way.
+- A run started before 0.38 keeps its own line, such as "Workflow · Preset Fix a layout · Keep steps", and runs on as an older run.
 
 ### Preset and Custom
 
@@ -69,7 +79,7 @@ With **Every step** the step stops as blocked and **Skip step** sits on its row.
 
 ### Run defaults
 
-Set what every new run starts with on the **Run defaults** page in Settings. **New runs** holds **Workflow asks you**, **Auto agent asks you**, **Start as**, the **Limit** with **Pause** or **Warn only**, and the **Models**. **Agents** holds **Parallel agents** and **Reply length**. **Guidance** holds the shared guidance for the agents that write code. A change reaches new runs only.
+Set what every new run starts with on the **Run defaults** page in Settings. **New runs** holds **Workflow asks you**, **Lead asks you**, **Start as**, the **Limit** with **Pause** or **Warn only**, and the **Models**. **Agents** holds **Parallel agents** and **Reply length**. **Guidance** holds the shared guidance for the agents that write code. A change reaches new runs only.
 
 The limit here applies to a run started from a chat prefix or a suggestion, and the run page names it **default**. Every kind starts from this one limit; a limit saved earlier as the Auto limit is folded into it. A new run starts from them, and a **From your rules** line shows where one run differs, with a **Reset** on that control. Provider order lives in **Open Models**.
 
@@ -98,9 +108,9 @@ The groups are **Needs you**, **Running**, **Idle**, **Finished** and **Archived
 
 With two or more branches a switch groups the page **By branch** or **By state**, one choice per session. **By branch** has a group per branch or pull request series, and **No branch** comes last. Groups that need you come first, finished runs fold, and archived runs fold apart, last. The choice stays after a reload. A run on several branches stands in each, with **Also on feat/retry-budget**. With one branch the page is the same list.
 
-A row's branch chip opens the Branch page, **Also on** shows the same run in its other group, and a title click opens the run at once. Right click a row and pick **Rename** to edit its title. The Branch page has a **Work** tab with the runs, questions and artifacts of that branch, the same rows as these pages. **All runs** opens this page with the group of the branch open, in the grouping you chose. **Open branch** on a group opens that Work tab, and Back from a run returns to it.
+A row's branch chip opens the Branch page, **Also on** shows the same run in its other group, and a title click opens the run at once. Right click a row and pick **Rename** to edit its title. The Branch page has a **Runs** tab with the runs, questions and artifacts of that branch, the same rows as these pages. **All runs** opens this page with the group of the branch open, in the grouping you chose. **Open branch** on a group opens that Work tab, and Back from a run returns to it.
 
-When something listens on a port on this branch, a **Running here** line lists the ports and what opened them, and opens Monitoring on this branch. Nothing runs, no line.
+When something listens on a port on this branch, the line under the branch name shows up to two ports with a live dot and their name, then **+1 more**. A click on a port opens it. **Ports** opens Monitoring on this branch. Nothing runs, nothing shows.
 
 ### Hints to the orchestrator
 
@@ -162,7 +172,10 @@ Bring custom workflows over from your other workspaces with **Import** in the Wo
 
 ## Under the hood
 
+- Older runs: the rows stay in `session_workflows` with their `execution_mode` (`packages/db/src/migrations/m091-workflow-execution-mode.ts`), and no migration touches them. `sessionRunsOf` keeps the `orchestrated` and `preset` kinds, `runKindLineOf` words their line, and `RunsGridRow` adds the gray `NAMES.runKind.olderRun` tag. The orchestrator engine is removed no earlier than two minor releases after 0.38.0, the first release where new runs never start it ([versioning.md](../versioning.md)).
+- Preset as a plan: `runRouteOf` sends a named preset to `presetRouteOf` with `follow` and a matched one with `adapt`. `startRoutedRun` spawns the Lead with `leadPlanBriefOf`, which puts the ask first, then the steps, then the closeness line. The chip words are `START_KIND_COPY.closeness` and the route words `RUN_ROUTE_COPY.closeness` (`startRoutedRun.test.ts`).
 - Run transcript doors: `workflowRun.stepTranscript` and `OrchestratedTailVerb` navigate to the step agent page and close the drawer, keeping one composer (`workflowRun.subagent.test.ts`, `run-pages.test.tsx`, `failure-links.test.tsx`).
+- Older runs: an orchestrated run stopped halfway keeps its "Workflow · Orchestrated" row in Runs, and **Continue** finishes it on the Orchestrator with no Lead tree (`olderRunsResume.sqlite.test.tsx`).
 
 This part is for contributors and agents who change the feature.
 

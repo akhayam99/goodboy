@@ -52,7 +52,7 @@ export const SessionKickoff = ({ workspaceId, notice }: Props) => {
   const shapeModel = useRunModel({
     workspaceId,
     sessionId: null,
-    slot: runModelSlotOfShape({ shape: startShape ?? 'orchestrated', agentKind }),
+    slot: runModelSlotOfShape({ shape: startShape ?? 'autoAgent', agentKind }),
   });
   const autoRun = useStartRun({
     workspaceId,
@@ -68,6 +68,7 @@ export const SessionKickoff = ({ workspaceId, notice }: Props) => {
     settleLimit: limit.settle,
     model: shapeModel,
     level: autoRun.pickedLevel,
+    files: autoRun.files,
   });
 
   useEffect(() => {
@@ -82,7 +83,7 @@ export const SessionKickoff = ({ workspaceId, notice }: Props) => {
 
   const agentModel = useDraftAgentModel({ workspaceId, base: shapeModel });
   const model = kind === null ? autoRun.model : kind === 'agent' ? agentModel : shapeModel;
-  const suggestedIds = suggestedId === null ? [] : [suggestedId];
+  const match = launch === null ? null : { projectId: launch.selectedId, reason: launch.reason };
   const isBusy = isStarting || shapeRun.isStarting || autoRun.isStarting;
   const hasGoal = autoRun.text.trim() !== '';
 
@@ -93,12 +94,14 @@ export const SessionKickoff = ({ workspaceId, notice }: Props) => {
         isDisabled={isBusy}
         isSubmitBlocked={!hasGoal || isBusy}
         model={model}
+        files={autoRun.files}
+        filesNotice={autoRun.filesNotice}
         onSubmit={() => void (kind === null ? autoRun.start() : shapeRun.start())}
       />
       <StartBranchNotice workspaceId={workspaceId} isDisabled={isBusy} />
       <NewSessionStartForm
         workspaceId={workspaceId}
-        suggestedIds={suggestedIds}
+        match={match}
         shapeRun={shapeRun}
         autoRun={autoRun}
         limit={limit}

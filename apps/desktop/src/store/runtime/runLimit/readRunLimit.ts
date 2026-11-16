@@ -1,0 +1,28 @@
+import { getWorkspaceValue, type Database } from '@goodboy/db';
+import type { AgentId, WorkspaceId } from '@goodboy/types';
+import { parseRunLimit } from './parseRunLimit';
+
+type Params = {
+  readonly db: Database;
+  readonly workspaceId: WorkspaceId;
+  readonly agentId: AgentId;
+};
+
+export type RunLimitChoice =
+  | Readonly<{ kind: 'inherited' }>
+  | Readonly<{ kind: 'capped'; usd: number }>
+  | Readonly<{ kind: 'uncapped' }>;
+
+export const readRunLimit = async ({
+  db,
+  workspaceId,
+  agentId,
+}: Params): Promise<RunLimitChoice> => {
+  const raw = await getWorkspaceValue({ db, workspaceId, key: 'run.limit' });
+  const { agents } = parseRunLimit({ raw });
+  if (!Object.hasOwn(agents, agentId)) {
+    return { kind: 'inherited' };
+  }
+  const usd = agents[agentId] ?? null;
+  return usd === null ? { kind: 'uncapped' } : { kind: 'capped', usd };
+};

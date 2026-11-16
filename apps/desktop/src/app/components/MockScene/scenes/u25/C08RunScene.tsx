@@ -45,7 +45,6 @@ type ActionsParams = {
 const actionsOf = ({ open }: ActionsParams): ColumnActions => ({
   openBoard: open,
   openInbox: open,
-  openWork: open,
   openChat: open,
   openWorkflows: open,
   openNewChat: open,

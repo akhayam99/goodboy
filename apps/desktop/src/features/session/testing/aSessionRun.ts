@@ -40,6 +40,7 @@ export const aSessionRun = ({
   isFinished,
   isUnread: false,
   isRestartStopped: false,
+  isOlderRun: false,
   progress: '',
   startedAt,
   revisingSince: null,

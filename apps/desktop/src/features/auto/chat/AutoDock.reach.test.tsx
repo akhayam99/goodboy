@@ -59,7 +59,7 @@ describe('the Auto dock Stop outside working', () => {
     renderDock({ view });
 
     screen.getByText(/^At the \$10\.00 limit\. No new agent starts\./);
-    fireEvent.click(screen.getByRole('button', { name: 'Stop Auto and 1 agent' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Stop run' }));
 
     await waitFor(() => expect(stop).toHaveBeenCalledWith({ treeId: view.tree.id }));
   });
@@ -70,7 +70,7 @@ describe('the Auto dock Stop outside working', () => {
       view: { ...base, tree: { ...base.tree, blockedReason: AUTO_BLOCK_TEXT.budget } },
     });
 
-    screen.getByRole('button', { name: 'Stop Auto and 1 agent' });
+    screen.getByRole('button', { name: 'Stop run' });
     expect(screen.queryByRole('button', { name: 'Change approach' })).toBeNull();
   });
 
@@ -82,7 +82,7 @@ describe('the Auto dock Stop outside working', () => {
       }),
     });
 
-    screen.getByRole('button', { name: 'Stop Auto' });
+    screen.getByRole('button', { name: 'Stop run' });
     screen.getByText('Where should the Implementer work?');
     expect(screen.queryByRole('button', { name: 'Change approach' })).toBeNull();
   });
@@ -119,7 +119,7 @@ describe('the Auto dock when Auto was not told', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Approve and start Build' }));
     const tell = await screen.findByRole('button', { name: 'Resend approval' });
-    screen.getByText("Plan v1 approved. Couldn't send it to Auto.");
+    screen.getByText("Plan v1 approved. Couldn't send it to Lead.");
     expect(screen.queryByRole('button', { name: 'Approve and start Build' })).toBeNull();
     fireEvent.click(tell);
 

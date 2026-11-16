@@ -84,6 +84,7 @@ describe('the c10 New session scenes', () => {
       'c10-start-failed',
       'c10-start-orchestrate',
       'c10-start-projects',
+      'c10-start-projects-starred',
       'c10-start-task',
       'c10-start-workflow',
     ]);
@@ -92,11 +93,11 @@ describe('the c10 New session scenes', () => {
     }
   });
 
-  it('c10-start-task puts HBL-412 above the task and offers the four kinds', async () => {
+  it('c10-start-task puts HBL-412 above the task and opens How on Lead', async () => {
     await mount({ id: 'c10-start-task' });
 
     expect(screen.getByRole('list', { name: 'Picked issues' }).textContent).toContain('HBL-412');
-    screen.getByRole('button', { name: 'How: Auto' });
+    screen.getByRole('button', { name: 'How: Lead' });
     expect(screen.queryByRole('button', { name: /^Runs as/ })).toBeNull();
   });
 
@@ -136,8 +137,25 @@ describe('the c10 New session scenes', () => {
     const listbox = screen.getByRole('listbox', { name: 'Projects' });
     expect(within(listbox).getAllByRole('option')).toHaveLength(1);
     expect(within(listbox).getByRole('option', { name: /payments-api/ })).toBeDefined();
-    expect(within(listbox).queryAllByText(/^(Suggested|All projects)$/).length).toBeGreaterThan(0);
+    expect(within(listbox).queryAllByText(/^(Recent|All projects)$/).length).toBeGreaterThan(0);
     expect(whereLabel()).toContain('2');
+  });
+
+  it('c10-start-projects-starred opens on Starred, then the folders runs used, then the rest', async () => {
+    await mount({ id: 'c10-start-projects-starred' });
+
+    const listbox = screen.getByRole('listbox', { name: 'Projects' });
+    const headings = within(listbox)
+      .queryAllByText(/^(Starred|Recent|All projects)$/)
+      .map((node) => node.textContent);
+    expect(headings).toEqual(['Starred', 'Recent', 'All projects']);
+    const options = within(listbox).getAllByRole('option');
+    expect(options.slice(0, 2).map((option) => option.textContent)).toEqual([
+      'northwind-service-02',
+      'payments-api',
+    ]);
+    within(listbox).getByRole('button', { name: 'Unstar payments-api' });
+    expect(screen.queryByText('Star a project to keep it on top')).toBeNull();
   });
 
   it('c10-start-failed keeps the draft, says why and turns Start into Retry', async () => {

@@ -110,7 +110,7 @@ describe('the u37 branch work scene', () => {
     await mount();
 
     const strip = screen.getByRole('tablist', { name: 'Branch pages' });
-    const work = within(strip).getByRole('tab', { name: /^Work/ });
+    const work = within(strip).getByRole('tab', { name: /^Runs/ });
     expect(work.getAttribute('aria-selected')).toBe('true');
     expect(work.querySelector('[data-tab-count]')?.textContent).toBe('1');
     expect(document.querySelector('[data-branch-runs-line]')).toBeNull();
@@ -123,7 +123,7 @@ describe('the u37 branch work scene', () => {
     await mount();
     const strip = screen.getByRole('tablist', { name: 'Branch pages' });
     const countOfWork = () =>
-      within(strip).getByRole('tab', { name: /^Work/ }).querySelector('[data-tab-count]')
+      within(strip).getByRole('tab', { name: /^Runs/ }).querySelector('[data-tab-count]')
         ?.textContent;
 
     for (const tab of within(strip).getAllByRole('tab')) {
@@ -138,7 +138,7 @@ describe('the u37 branch work scene', () => {
   it('lines runs, questions and artifacts up in one grid: marks, titles, state words and times', async () => {
     await mount();
 
-    const grid = screen.getByRole('list', { name: 'Work on this branch' });
+    const grid = screen.getByRole('list', { name: 'Runs on this branch' });
     for (const name of ['Runs', 'Questions', 'Artifacts']) {
       expect(sectionOf(name).closest('[data-list-grid]')).toBe(grid);
       expect(sectionOf(name).querySelector('[data-list-grid-group-mark]')).not.toBeNull();

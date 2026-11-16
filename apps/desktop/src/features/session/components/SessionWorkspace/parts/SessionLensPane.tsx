@@ -9,7 +9,6 @@ import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../../shared/components/co
 import { lazyNamed } from '../../../../../shared/lib/lazyNamed';
 import { openLens } from '../../../openLens';
 import type { LensSurface } from '../../../lens-surface';
-import { ContextTab } from '../../ContextTab';
 import { SessionOverviewPane } from '../../SessionOverviewPane';
 import { LinkIssueAction } from '../../SessionOverviewPane/LinkIssueAction';
 import { FilesPane } from './FilesPane';
@@ -28,6 +27,11 @@ const BranchPage = lazyNamed({
 const ArtifactStudio = lazyNamed({
   load: () => import('../../../../artifacts/components/ArtifactStudio'),
   pick: ({ ArtifactStudio }) => ArtifactStudio,
+});
+
+const ContextTab = lazyNamed({
+  load: () => import('../../ContextTab'),
+  pick: ({ ContextTab }) => ContextTab,
 });
 
 type Props = {
@@ -133,7 +137,11 @@ export const SessionLensPane = ({ session, target, isShown }: Props) => {
     );
   }
   if (target === 'context') {
-    return <ContextTab session={session} />;
+    return (
+      <Suspense fallback={<LensSkeleton page="overview" label="Loading context" />}>
+        <ContextTab session={session} />
+      </Suspense>
+    );
   }
   if (target === 'files') {
     return (

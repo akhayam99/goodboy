@@ -1,6 +1,6 @@
 import type { RunRoute, Workflow } from '@goodboy/types';
 import type { RunRouteChoice } from '../../startRun/changeRunRoute';
-import { runKindLineOf } from '../../startKind/runKindLineOf';
+import { RUN_ROUTE_COPY } from '../../startRun/runRouteCopy';
 
 type Params = {
   readonly route: RunRoute;
@@ -15,32 +15,23 @@ export type RunKindChoice = Readonly<{
 
 export const runKindChoicesOf = ({ route, presets }: Params): ReadonlyArray<RunKindChoice> => {
   const closeness = route.closeness ?? 'adapt';
-  const isOrchestrated = route.shape === 'plan' && route.presetName === null;
-  const isAutoAgent = route.shape === 'lead';
-  const orchestrated: ReadonlyArray<RunKindChoice> = isOrchestrated
+  const isLeadPlan = route.shape === 'lead' && route.role === null;
+  const isPlainLead = isLeadPlan && route.presetName === null;
+  const lead: ReadonlyArray<RunKindChoice> = isPlainLead
     ? []
     : [
         {
-          key: 'orchestrated',
-          label: runKindLineOf({ line: { kind: 'orchestrated' } }),
-          choice: { shape: 'plan', presetId: null, closeness },
-        },
-      ];
-  const fromPresets = presets
-    .filter((preset) => route.shape !== 'plan' || preset.name !== route.presetName)
-    .map((preset): RunKindChoice => ({
-      key: `preset:${preset.id}`,
-      label: runKindLineOf({ line: { kind: 'preset', presetName: preset.name } }),
-      choice: { shape: 'plan', presetId: preset.id, closeness },
-    }));
-  const autoAgent: ReadonlyArray<RunKindChoice> = isAutoAgent
-    ? []
-    : [
-        {
-          key: 'auto-agent',
-          label: runKindLineOf({ line: { kind: 'autoAgent' } }),
+          key: 'lead',
+          label: RUN_ROUTE_COPY.shapes.lead,
           choice: { shape: 'lead', presetId: null, closeness },
         },
       ];
-  return [...orchestrated, ...fromPresets, ...autoAgent];
+  const fromPresets = presets
+    .filter((preset) => !isLeadPlan || preset.name !== route.presetName)
+    .map((preset): RunKindChoice => ({
+      key: `preset:${preset.id}`,
+      label: RUN_ROUTE_COPY.leadPlan({ name: preset.name }),
+      choice: { shape: 'lead', presetId: preset.id, closeness },
+    }));
+  return [...lead, ...fromPresets];
 };

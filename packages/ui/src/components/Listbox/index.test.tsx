@@ -394,6 +394,116 @@ describe('Listbox', () => {
   });
 });
 
+describe('Listbox star', () => {
+  type StarredHarnessProps = {
+    readonly onToggle: (value: string) => void;
+    readonly onChange: (values: ReadonlyArray<string>) => void;
+  };
+
+  const StarredHarness = ({ onToggle, onChange }: StarredHarnessProps) => (
+    <Listbox
+      multiple
+      searchable
+      ariaLabel="Projects"
+      searchLabel="Search projects"
+      options={[
+        { name: 'ledger-core', isStarred: true },
+        { name: 'notify-relay', isStarred: false },
+      ].map(({ name, isStarred }) => ({
+        value: name,
+        label: name,
+        star: {
+          isStarred,
+          label: `${isStarred ? 'Unstar' : 'Star'} ${name}`,
+          tooltip: 'Starred projects stay on top',
+          onToggle: () => onToggle(name),
+        },
+      }))}
+      value={[]}
+      onChange={onChange}
+    />
+  );
+
+  it('toggles the star without picking the row', () => {
+    const onToggle = vi.fn();
+    const onChange = vi.fn();
+    render(<StarredHarness onToggle={onToggle} onChange={onChange} />);
+
+    fireEvent.click(screen.getByRole('combobox', { name: 'Projects' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Star notify-relay' }));
+
+    expect(onToggle).toHaveBeenCalledWith('notify-relay');
+    expect(onChange).not.toHaveBeenCalled();
+    expect(
+      screen.getByRole('button', { name: 'Unstar ledger-core' }).getAttribute('aria-pressed'),
+    ).toBe('true');
+  });
+
+  it('stars the active row with Cmd+S or Ctrl+S from the search field', () => {
+    const onToggle = vi.fn();
+    render(<StarredHarness onToggle={onToggle} onChange={vi.fn()} />);
+
+    fireEvent.click(screen.getByRole('combobox', { name: 'Projects' }));
+    const search = screen.getByRole('combobox', { name: 'Search projects' });
+    fireEvent.keyDown(search, { key: 's', code: 'KeyS', metaKey: true });
+    fireEvent.keyDown(search, { key: 'ArrowDown', code: 'ArrowDown' });
+    fireEvent.keyDown(search, { key: 's', code: 'KeyS', ctrlKey: true });
+
+    expect(onToggle.mock.calls).toEqual([['ledger-core'], ['notify-relay']]);
+  });
+
+  type ReorderHarnessProps = {
+    readonly onChange: (value: string) => void;
+  };
+
+  const ReorderHarness = ({ onChange }: ReorderHarnessProps) => {
+    const [starred, setStarred] = useState<ReadonlyArray<string>>(['ledger-core']);
+    const names = ['ledger-core', 'notify-relay', 'payments-api'];
+    const ordered = [
+      ...names.filter((name) => starred.includes(name)),
+      ...names.filter((name) => !starred.includes(name)),
+    ];
+    return (
+      <Listbox
+        searchable
+        ariaLabel="Projects"
+        searchLabel="Search projects"
+        options={ordered.map((name) => ({
+          value: name,
+          label: name,
+          star: {
+            isStarred: starred.includes(name),
+            label: `${starred.includes(name) ? 'Unstar' : 'Star'} ${name}`,
+            tooltip: 'Starred projects stay on top',
+            onToggle: () =>
+              setStarred((current) =>
+                current.includes(name)
+                  ? current.filter((entry) => entry !== name)
+                  : [...current, name],
+              ),
+          },
+        }))}
+        value={null}
+        onChange={onChange}
+      />
+    );
+  };
+
+  it('keeps the cursor on the row it starred when the row moves into Starred', () => {
+    const onChange = vi.fn();
+    render(<ReorderHarness onChange={onChange} />);
+
+    fireEvent.click(screen.getByRole('combobox', { name: 'Projects' }));
+    const search = screen.getByRole('combobox', { name: 'Search projects' });
+    fireEvent.keyDown(search, { key: 'ArrowDown', code: 'ArrowDown' });
+    fireEvent.keyDown(search, { key: 'ArrowDown', code: 'ArrowDown' });
+    fireEvent.keyDown(search, { key: 's', code: 'KeyS', metaKey: true });
+    fireEvent.keyDown(search, { key: 'Enter', code: 'Enter' });
+
+    expect(onChange).toHaveBeenCalledWith('payments-api');
+  });
+});
+
 describe('filterOptions', () => {
   it('matches a subsequence when no substring matches', () => {
     const [first] = filterOptions({ options: BRANCHES, query: 'frb' });

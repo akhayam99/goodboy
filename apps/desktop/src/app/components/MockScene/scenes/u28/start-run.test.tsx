@@ -59,12 +59,12 @@ describe('the u28 start run scenes', () => {
   it('shows what Start will do under the box and the attach control', async () => {
     mount({ id: 'u28-start-run-route-line' });
 
-    const line = await screen.findByText(/^Starts[ ]as.*Auto agent/, {}, WAIT);
+    const line = await screen.findByText(/^Starts[ ]as[ ]Lead/, {}, WAIT);
     expect(line.textContent).toContain('A question or a check, and no preset fits');
     screen.getByRole('button', { name: 'Attach files' });
     fireEvent.click(screen.getByRole('button', { name: /^How: / }));
     const kinds = screen.getByRole('tablist', { name: 'What kind of run?' });
-    expect(within(kinds).getAllByRole('tab')).toHaveLength(4);
+    expect(within(kinds).getAllByRole('tab')).toHaveLength(3);
   });
 
   it('opens the Edits menu with the four things an agent may do', async () => {
@@ -83,30 +83,29 @@ describe('the u28 start run scenes', () => {
     ]);
   });
 
-  it('names the model of the Auto agent in the settings row, and in the route line', async () => {
+  it('names the model of the Lead in the settings row, and in the route line', async () => {
     mount({ id: 'u28-start-run-route-line' });
 
-    const line = await screen.findByText(/^Starts[ ]as.*Auto agent/, {}, WAIT);
+    const line = await screen.findByText(/^Starts[ ]as[ ]Lead/, {}, WAIT);
     const chip = screen.getByRole('button', { name: /^Model:/ });
     expect(chip.getAttribute('aria-label')).toMatch(/, Auto$/);
-    expect(line.textContent).toMatch(
-      /^Starts[ ]as[ ]Agent · Auto agent · .+ · A question or a check/,
-    );
+    expect(line.textContent).toMatch(/^Starts[ ]as[ ]Lead · .+ · A question or a check/);
   });
 
   it('opens the Model menu with the picker and the link to the default', async () => {
     mount({ id: 'u28-start-run-model-menu' });
 
-    const menu = await screen.findByRole('dialog', { name: 'Auto agent model' }, WAIT);
+    const menu = await screen.findByRole('dialog', { name: 'Lead model' }, WAIT);
     within(menu).getByRole('button', { name: /^Auto, now / });
     within(menu).getByRole('button', { name: 'Change the default in Settings' });
   });
 
-  it('names the orchestrator when the ask becomes an orchestrated run', async () => {
+  it('starts a task with an end as a Lead, never the orchestrator', async () => {
     mount({ id: 'u28-start-run-orchestrated' });
 
-    const line = await screen.findByText(/^Starts[ ]as.*Orchestrated/, {}, WAIT);
+    const line = await screen.findByText(/^Starts[ ]as[ ]Lead/, {}, WAIT);
     expect(line.textContent).toContain('A task with an end');
+    expect(line.textContent).not.toContain('Orchestrated');
     expect(screen.getByRole('button', { name: /^Model:/ }).getAttribute('data-run-model')).toBe(
       'auto',
     );

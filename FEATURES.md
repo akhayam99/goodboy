@@ -33,7 +33,7 @@ Connect your trackers, code hosts and Slack once. Their work lands in one list c
 
 [More on tasks and your tools](docs/features/inbox.md)
 
-<a id="start-a-run"></a><a id="what-auto-chose-and-change"></a><a id="one-start-form"></a><a id="the-kind-chip"></a><a id="the-model-of-a-run"></a><a id="the-new-session-page"></a><a id="start-on-a-task"></a><a id="how-do-you-want-to-start"></a><a id="pick-up-a-task-with-a-drafted-brief"></a><a id="review-a-pull-request"></a><a id="run-a-workflow"></a><a id="ask-an-agent"></a><a id="start-an-agent"></a><a id="start-more-work-in-a-session"></a><a id="start-blank"></a><a id="named-by-goodboy"></a><a id="undo-an-unlink"></a><a id="move-an-issue-between-the-session-and-a-branch"></a><a id="start-one-session-from-several-issues"></a><a id="star-an-issue-from-link-work"></a><a id="the-start-work-composer"></a>
+<a id="start-a-run"></a><a id="what-auto-chose-and-change"></a><a id="one-start-form"></a><a id="the-kind-chip"></a><a id="the-model-of-a-run"></a><a id="the-new-session-page"></a><a id="start-on-a-task"></a><a id="how-do-you-want-to-start"></a><a id="pick-up-a-task-with-a-drafted-brief"></a><a id="review-a-pull-request"></a><a id="run-a-workflow"></a><a id="ask-an-agent"></a><a id="start-an-agent"></a><a id="start-more-work-in-a-session"></a><a id="start-blank"></a><a id="named-by-goodboy"></a><a id="undo-an-unlink"></a><a id="move-an-issue-between-the-session-and-a-branch"></a><a id="start-one-session-from-several-issues"></a><a id="star-an-issue-from-link-work"></a><a id="the-start-work-composer"></a><a id="permission-rows"></a>
 
 ## Start a task
 
@@ -42,21 +42,10 @@ Begin from an issue, a workflow or a question. Everything starts as one draft, a
 - **The New session page**: Start a session from your goal: write it or pick an issue, then choose the kind of run.
 - **Start a run**: Write what you want done and press Start.
 - **Start on a task**: Start a session from an issue in Tasks, with the issue linked and its goal written in.
+- **Permission rows**: A Lead's autonomy is nine rows you can read and change.
 - **Review a pull request**: A pull request waiting on you in Tasks shows Review pull request in place of Start.
 
 [More on starting a task](docs/features/start.md)
-
-<a id="work-section"></a><a id="lead"></a><a id="permission-rows"></a>
-
-## Work
-
-One page lists every Lead of a workspace, whatever session it runs in. A Lead is the agent that plans a job, hands it to helpers and asks you only for what your permission rows say.
-
-- **Work section**: Open Work to see every Lead of the workspace in one list, and see which ones need you.
-- **Lead**: A Lead reads one of five words: Working, Waits for you, Resting, Stopped or Finished.
-- **Permission rows**: A Lead's autonomy is nine rows you can read and change.
-
-[More on work](docs/features/work.md)
 
 <a id="session-overview"></a><a id="refresh-a-session"></a><a id="activity"></a><a id="full-log"></a><a id="cards"></a><a id="new-session-overview-experimental"></a><a id="next"></a><a id="time-left"></a><a id="changes"></a><a id="file-versions"></a>
 
@@ -120,21 +109,21 @@ The Commits section of the Branch page lets you clean up a branch before it goes
 
 [More on commits and history](docs/features/branch-history.md)
 
-<a id="start-a-workflow"></a><a id="workflow-builder"></a><a id="orchestrated"></a><a id="a-preset-as-the-plan-a-run-starts-from"></a><a id="preset-and-custom"></a><a id="built-in-workflows"></a><a id="runs-of-a-workflow"></a><a id="saved-steps"></a><a id="model-per-step"></a><a id="when-to-ask"></a><a id="autonomy"></a><a id="asks-you"></a><a id="pause-resume-and-skip"></a><a id="steps-that-cannot-finish"></a><a id="run-defaults"></a><a id="workflow-rules"></a><a id="spend-cap"></a><a id="limit"></a><a id="chained-starts"></a><a id="workflow-run"></a><a id="hints-to-the-orchestrator"></a><a id="why-each-step-and-the-run-recap"></a><a id="step-handoff-summary"></a><a id="open-questions"></a><a id="let-an-agent-decide"></a><a id="import-workflows"></a>
+<a id="start-a-workflow"></a><a id="workflow-builder"></a><a id="orchestrated"></a><a id="older-runs"></a><a id="a-preset-as-the-plan-a-run-starts-from"></a><a id="preset-and-custom"></a><a id="built-in-workflows"></a><a id="runs-of-a-workflow"></a><a id="saved-steps"></a><a id="model-per-step"></a><a id="when-to-ask"></a><a id="autonomy"></a><a id="asks-you"></a><a id="pause-resume-and-skip"></a><a id="steps-that-cannot-finish"></a><a id="run-defaults"></a><a id="workflow-rules"></a><a id="spend-cap"></a><a id="limit"></a><a id="chained-starts"></a><a id="workflow-run"></a><a id="hints-to-the-orchestrator"></a><a id="why-each-step-and-the-run-recap"></a><a id="step-handoff-summary"></a><a id="open-questions"></a><a id="let-an-agent-decide"></a><a id="import-workflows"></a>
 
 ## Workflows
 
 A workflow runs several agents in one session, each step with its own role, model and effort. Use it to split a job into steps such as scout, plan, implement and review, and to steer the run while it goes. You choose how much it asks you and how much it may spend.
 
-- **Start a workflow**: A workflow run starts from the New session page: pick Orchestrated or Preset, and press Start workflow.
-- **Orchestrated**: Give a goal and a model picks each next step, with its role, model, effort and a reason.
+- **Start a workflow**: To run a preset, open Start a run and pick Preset under How, or type ~ and its name.
+- **Older runs**: A run started before every run had a Lead stays as it was, on its own engine.
 - **Run defaults**: Set what every new run starts with on the Run defaults page in Settings.
 - **Workflow run**: Follow a run step by step, with its sub-agents under their agent and one button that moves it on.
 - **Limit**: Cap what a run or a session can spend, and choose Pause workflows or Warn only.
 
 [More on workflows](docs/features/workflows.md)
 
-<a id="workspace-chat"></a><a id="ask-in-a-session"></a><a id="images-in-chat"></a><a id="roles"></a><a id="agent-header"></a><a id="one-page-per-agent"></a><a id="what-the-agent-received"></a><a id="agent-transcript"></a><a id="one-dock"></a><a id="agent-suggests"></a><a id="queue-or-send-now"></a><a id="message-and-document-fields"></a><a id="stop-and-continue"></a><a id="quiet-agents"></a><a id="turn-footer"></a><a id="tool-call-states"></a><a id="composer-plus-menu"></a><a id="attach-files"></a><a id="drift-warning"></a><a id="subagents-from-plan-parts"></a><a id="auto-agent"></a><a id="history-rewriter-and-scribe"></a><a id="one-language-per-session"></a><a id="agents-column"></a>
+<a id="workspace-chat"></a><a id="ask-in-a-session"></a><a id="images-in-chat"></a><a id="roles"></a><a id="agent-header"></a><a id="one-page-per-agent"></a><a id="what-the-agent-received"></a><a id="agent-transcript"></a><a id="one-dock"></a><a id="agent-suggests"></a><a id="queue-or-send-now"></a><a id="message-and-document-fields"></a><a id="stop-and-continue"></a><a id="quiet-agents"></a><a id="turn-footer"></a><a id="tool-call-states"></a><a id="composer-plus-menu"></a><a id="attach-files"></a><a id="drift-warning"></a><a id="subagents-from-plan-parts"></a><a id="auto-agent"></a><a id="lead"></a><a id="work-section"></a><a id="history-rewriter-and-scribe"></a><a id="one-language-per-session"></a><a id="agents-column"></a>
 
 ## Agents
 
@@ -145,6 +134,7 @@ Talk to agents, watch what they do and steer them while they work. You can ask q
 - **Roles**: Give each agent the job it is good at.
 - **Agent transcript**: Follow one agent's work as one conversation you can write in.
 - **Agents column**: See every agent of a run beside its page.
+- **Lead**: A Lead plans a run, hands the work to helpers and asks you only for what your permission rows say.
 
 [More on agents](docs/features/agents.md)
 
@@ -188,7 +178,7 @@ Watch how much of each plan is left, keep work moving when a provider runs out, 
 
 [More on providers, limits and cost](docs/features/providers.md)
 
-<a id="start-from-scratch"></a><a id="start-a-project-from-nothing"></a><a id="track-a-folder-with-git-later"></a><a id="workspace-with-several-folders"></a><a id="workspace-with-several-projects"></a><a id="starred-folders-descriptions-and-base-branch"></a><a id="starred-projects-descriptions-and-base-branch"></a><a id="worktrees"></a><a id="several-branches-per-repo"></a><a id="several-branches-per-project"></a><a id="workspace-switcher-and-reconnect"></a><a id="repo-status-across-folders"></a><a id="repo-status-across-projects"></a><a id="repository-status"></a><a id="locate-moved-folders"></a><a id="locate-moved-projects"></a><a id="keep-goodboy-out-of-git"></a><a id="branch-names"></a><a id="new-runs-start-as"></a><a id="copy-settings-from-another-workspace"></a><a id="monitoring"></a><a id="workspace-and-projects"></a><a id="new-worktrees-start-usable"></a><a id="auto-asks-you"></a>
+<a id="start-from-scratch"></a><a id="start-a-project-from-nothing"></a><a id="track-a-folder-with-git-later"></a><a id="workspace-with-several-folders"></a><a id="workspace-with-several-projects"></a><a id="starred-folders-descriptions-and-base-branch"></a><a id="starred-projects-descriptions-and-base-branch"></a><a id="worktrees"></a><a id="several-branches-per-repo"></a><a id="several-branches-per-project"></a><a id="workspace-switcher-and-reconnect"></a><a id="repo-status-across-folders"></a><a id="repo-status-across-projects"></a><a id="repository-status"></a><a id="locate-moved-folders"></a><a id="locate-moved-projects"></a><a id="keep-goodboy-out-of-git"></a><a id="branch-names"></a><a id="new-runs-start-as"></a><a id="copy-settings-from-another-workspace"></a><a id="monitoring"></a><a id="workspace-and-projects"></a><a id="new-worktrees-start-usable"></a><a id="auto-asks-you"></a><a id="lead-asks-you"></a>
 
 ## Workspaces and folders
 

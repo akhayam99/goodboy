@@ -191,7 +191,7 @@ the backup Goodboy made before updating.` Nothing else.
 - A New/Improved entry is a `#### ` title (sentence case, no PR ref, no
   period, max 60 characters), followed immediately (no blank line) by a
   hidden meta comment: `<!-- gb area=<area> screen=<screen> image=<name>
-pr=<numbers> -->` (`area` required, the rest optional, no spaces inside a
+theme=<light|dark> pr=<numbers> -->` (`area` required, the rest optional, no spaces inside a
   value). Then one or two paragraphs (the first entry of the release may have
   three), max 70 words each.
 - A Fixed entry is one line: a bullet, its text (max 30 words), then the meta
@@ -221,6 +221,12 @@ pr=<numbers> -->` (`area` required, the rest optional, no spaces inside a
   missing, offline, or unreadable. `scripts/release-notes.mjs` expands it into
   a `<picture>` under the entry when it builds the tagged release's GitHub
   body; the in-app parser ignores that block.
+- `theme=<light|dark>` goes with `image=` and pins the entry's pictures to one
+  theme, for a change that only one theme shows (a light mode entry gets
+  `theme=light`). What's new and the GitHub body then show that theme's files
+  whatever theme the reader uses, and the folder keeps only that theme's
+  `<name>-{before,after}-<theme>.webp`. An app older than 0.38.0 does not know
+  `theme=` and shows that whole release as plain markdown, without pictures.
 
 ## Align the in-app Guide
 

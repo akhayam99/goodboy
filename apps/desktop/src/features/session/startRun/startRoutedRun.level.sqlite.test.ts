@@ -22,8 +22,11 @@ import {
   storySqlite,
   type StoryStore,
 } from '../../../store/storyHarness';
+import { isAdmissionPlanGateOn } from '@goodboy/core/auto';
 import { readAutoLevel } from '../../../store/runtime/auto/level/readAutoLevel';
+import { readLeadPermissions } from '../../../store/runtime/auto/level/readLeadPermissions';
 import { writeAutoLevel } from '../../../store/runtime/auto/level/writeAutoLevel';
+import { writeRunDefault } from './runDefaultSetting';
 import { runRouteOf, type RunRouteFacts } from './runRouteOf';
 import { startRoutedRun } from './startRoutedRun';
 
@@ -111,6 +114,59 @@ describe('startRoutedRun stores the Auto level', () => {
     );
 
     expect(spawnAgent).not.toHaveBeenCalled();
+    expect(
+      await readAutoLevel({ db: storySqlite(), target: { sessionId: AUTO_SEED_SESSION } }),
+    ).toBe('run');
+  });
+
+  it('makes a Lead started with the plan default wait for plan approval before a writer', async () => {
+    const spawnAgent = mockSpawn();
+    await writeAutoLevel({ db: storySqlite(), target: { workspaceId: WORKSPACE }, level: 'run' });
+    await writeRunDefault({
+      db: storySqlite(),
+      scope: { kind: 'workspace', workspaceId: WORKSPACE },
+      shape: 'plan',
+    });
+    spawnAgent.mockImplementationOnce(async () => {
+      const { rows } = await readLeadPermissions({
+        db: storySqlite(),
+        target: { sessionId: AUTO_SEED_SESSION },
+      });
+      expect(
+        isAdmissionPlanGateOn({
+          isPlanApprovalRequired: true,
+          permissions: { approvePlan: rows.approvePlan.value },
+        }),
+      ).toBe(true);
+      expect(rows.startWriters.value).toBe('afterPlan');
+      return AGENT;
+    });
+
+    await startRoutedRun({ sessionId: AUTO_SEED_SESSION, result });
+
+    expect(spawnAgent).toHaveBeenCalledTimes(1);
+    expect(
+      await readAutoLevel({ db: storySqlite(), target: { sessionId: AUTO_SEED_SESSION } }),
+    ).toBe('plan');
+  });
+
+  it('keeps a stricter level, and a level the person picked, over the plan default', async () => {
+    mockSpawn();
+    await writeAutoLevel({ db: storySqlite(), target: { workspaceId: WORKSPACE }, level: 'step' });
+    await writeRunDefault({
+      db: storySqlite(),
+      scope: { kind: 'session', sessionId: AUTO_SEED_SESSION },
+      shape: 'plan',
+    });
+
+    await startRoutedRun({ sessionId: AUTO_SEED_SESSION, result });
+
+    expect(
+      await readAutoLevel({ db: storySqlite(), target: { sessionId: AUTO_SEED_SESSION } }),
+    ).toBe('step');
+
+    await startRoutedRun({ sessionId: AUTO_SEED_SESSION, result, level: 'run' });
+
     expect(
       await readAutoLevel({ db: storySqlite(), target: { sessionId: AUTO_SEED_SESSION } }),
     ).toBe('run');

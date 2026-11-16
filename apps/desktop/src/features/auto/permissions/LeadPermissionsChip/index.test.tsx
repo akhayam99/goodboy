@@ -21,7 +21,6 @@ import {
   resetStoryStore,
   type StoryStore,
 } from '../../../../store/storyHarness';
-import { SETTING_WORK_ENABLED } from '../../../../shared/lib/workSetting';
 import { LeadPermissionsChip } from '.';
 
 let useAppStore: StoryStore;
@@ -51,7 +50,6 @@ beforeAll(async () => {
 
 beforeEach(async () => {
   await resetStoryStore();
-  useAppStore.setState({ settings: { [SETTING_WORK_ENABLED]: 'true' } });
 });
 
 afterEach(cleanup);

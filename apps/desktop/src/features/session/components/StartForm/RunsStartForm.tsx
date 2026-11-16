@@ -11,6 +11,7 @@ import { AUTO_RUN_AS } from '../../startRun/runAsOf';
 import { routeLineOf } from '../../startRun/routeLineOf';
 import { RUN_ROUTE_COPY } from '../../startRun/runRouteCopy';
 import { StartPresetFields } from '../SessionKickoff/StartPresetFields';
+import { StartRunBranchChip } from '../StartRun/StartRunBranchChip';
 import type { StartRunModel } from '../StartRun/useStartRun';
 import { StartForm } from './StartForm';
 import { runAsOfStartFormKind, startFormKindOfRunAs } from './runAsOfStartKind';
@@ -88,7 +89,15 @@ export const RunsStartForm = ({
     workspaceName,
     isDisabled: isStarting,
     model: run.model,
-    where: null,
+    where:
+      sessionId === null ? null : (
+        <StartRunBranchChip
+          sessionId={sessionId}
+          branch={run.branch}
+          isDisabled={isStarting}
+          onChange={run.setBranch}
+        />
+      ),
     role:
       runAs.kind === 'role' && !isPinned
         ? {

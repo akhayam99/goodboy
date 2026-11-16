@@ -626,9 +626,16 @@ required first, and the draft stays for the next New.
 
 The draft asks no question first (`SessionKickoff`): **Projects** (`WhereChip`) is
 optional and sits in the task field, and **Start blank** sits in the page
-header. Where is a searchable multiple `Listbox` in two groups
-(`projectPickerOptions`): "Suggested" holds at most five (the most recently
-used, then starred ones) and "All projects" lists the rest by name. The draft
+header. Where is a searchable multiple `Listbox` in three groups
+(`projectPickerOptions`, `projectPickerGroups`): "Starred" by name, "Recent"
+with at most five (the issue's matched folder first with its reason line, then
+the active folder of the workspace's latest sessions, `recentProjectIdsOf`),
+and "All projects" with the rest by name. `Project.lastAccessedAt` only moves
+when a folder is added or reconnected, so it never orders the picker. Each row
+carries a `ListboxStar`: the star or ⌘S on the active row calls
+`setProjectStarred`, the row changes after the save, and a failure shows in the
+list status (`useProjectStarToggle`). With nothing starred the list ends on one
+hint line (`ProjectStarHint`). The draft
 keeps the picks as `projectIds`; the first is the session's project and the
 rest are added with it (`additionalProjectIds`).
 
@@ -674,7 +681,7 @@ activity yet show the plain overview with its actions.
   draws the task middle cut, the full brief one click away), a run `Overview › Runs ›
 {run title}` (the run's title, else its workflow's name, else `Run`), an Auto run and every
   agent under it name the run through `autoRunTitleOf` (features/session: the first line of
-  the ask, else of the run's first message, else the flow word of `flowWordOf`, never a fixed
+  the ask, else of the run's first message, else `Lead`, never the default agent name
   `Auto`), which the run page crumb and the Agents rail root row read too, a run step adds its
   step names, an artifact `Overview › Artifacts › {artifact title}`, a branch or pull request
   `Overview › {branch name}` (one crumb with a file or a thread open), a GitHub issue, a linked

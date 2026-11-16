@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useAppliedTheme } from '../../../../shared/lib/theme';
+import type { Theme } from '../../../../shared/lib/theme';
 import { changelogImageFileName } from '../../changelogImageFiles';
 import type { ChangelogImageVariant } from '../../changelogImageFiles';
 import { fetchChangelogImage } from '../../fetchChangelogImage';
@@ -13,6 +14,7 @@ type Params = {
   readonly version: string;
   readonly image: string;
   readonly variant: ChangelogImageVariant;
+  readonly pinnedTheme?: Theme | null;
   readonly enabled?: boolean;
 };
 
@@ -23,9 +25,11 @@ export const useChangelogImage = ({
   version,
   image,
   variant,
+  pinnedTheme = null,
   enabled = true,
 }: Params): ChangelogImageState => {
-  const theme = useAppliedTheme();
+  const appliedTheme = useAppliedTheme();
+  const theme = pinnedTheme ?? appliedTheme;
   const shownFor = useRef<string | null>(null);
   const [state, setState] = useState<ChangelogImageState>(enabled ? LOADING : ABSENT);
 

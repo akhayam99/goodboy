@@ -4,10 +4,12 @@ import { useChangelogImage } from '../../hooks/useChangelogImage';
 import { ReleaseImageCell } from './ReleaseImageCell';
 import type { ChangelogImageVariant } from '../../changelogImageFiles';
 import { ImageLightbox } from '../../../../shared/components/ImageLightbox';
+import type { Theme } from '../../../../shared/lib/theme';
 
 type Props = {
   readonly version: string;
   readonly image: string;
+  readonly pinnedTheme?: Theme | null;
   readonly hasBefore: boolean;
   readonly alt: string;
 };
@@ -20,11 +22,17 @@ const VARIANT_OPTIONS: ReadonlyArray<{
   { value: 'before', label: 'Before' },
 ];
 
-export const ReleaseImage = ({ version, image, hasBefore, alt }: Props) => {
+export const ReleaseImage = ({ version, image, pinnedTheme = null, hasBefore, alt }: Props) => {
   const [variant, setVariant] = useState<ChangelogImageVariant>('after');
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
-  const after = useChangelogImage({ version, image, variant: 'after' });
-  const before = useChangelogImage({ version, image, variant: 'before', enabled: hasBefore });
+  const after = useChangelogImage({ version, image, variant: 'after', pinnedTheme });
+  const before = useChangelogImage({
+    version,
+    image,
+    variant: 'before',
+    pinnedTheme,
+    enabled: hasBefore,
+  });
 
   const active = variant === 'before' ? before : after;
 

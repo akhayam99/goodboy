@@ -97,7 +97,7 @@ Move through Goodboy, change a shortcut and stop an agent without leaving the ke
 - **⌘⌥A** opens Runs on what is running.
 - **⌘1** to **⌘9** switch workspaces.
 - **⌘[** and **⌘]** walk your history: the last 50 places of this window, empty after a reload.
-- **⌘↑** and **Esc** go one crumb up: to the parent of the page, and the same after a reload. The page of a top agent goes back to its session's Overview, or to the Work tab of the pull request you opened it from. A session tab has no parent, so ⌘↑ goes to the board.
+- **⌘↑** and **Esc** go one crumb up: to the parent of the page, and the same after a reload. The page of a top agent goes back to its session's Overview, or to the Runs tab of the pull request you opened it from. A session tab has no parent, so ⌘↑ goes to the board.
 - **⌥⌘↓** goes to the next session that needs you.
 - **⌘/** opens the full list.
 

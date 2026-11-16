@@ -452,8 +452,8 @@ describe('the form and the row', () => {
     await mount('u36-p14-form-how-open');
 
     const kinds = screen.getByRole('tablist', { name: 'What kind of run?' });
-    expect(within(kinds).getAllByRole('tab')).toHaveLength(4);
-    within(kinds).getByText('Plans each next step as it goes.');
+    expect(within(kinds).getAllByRole('tab')).toHaveLength(3);
+    within(kinds).getByText('Plans it and starts the agents it needs.');
   });
 
   it('shows the rename field requested for the row', async () => {
@@ -478,6 +478,6 @@ describe('the Branch page', () => {
 
     expect(document.querySelector('[data-branch-runs-line]')).toBeNull();
     const strip = screen.getByRole('tablist', { name: 'Branch pages' });
-    expect(within(strip).getByRole('tab', { name: /^Work/ }).textContent).toMatch(/^Work1$/);
+    expect(within(strip).getByRole('tab', { name: /^Runs/ }).textContent).toMatch(/^Runs1$/);
   });
 });

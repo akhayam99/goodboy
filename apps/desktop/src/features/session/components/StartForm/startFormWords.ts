@@ -23,10 +23,7 @@ export const startLimitKindOf = ({ kind, routeKind }: LimitParams): AutoLimitKin
   if (kind === null) {
     return routeKind;
   }
-  if (kind === 'agent') {
-    return null;
-  }
-  return kind === 'auto' ? 'autoAgent' : kind;
+  return kind === 'agent' ? null : 'autoAgent';
 };
 
 export type StartAsksKind = 'level' | 'steps';
@@ -44,10 +41,7 @@ export const startAsksOf = ({ kind, isAutoLead, isPlan }: AsksParams): StartAsks
     }
     return isPlan ? 'steps' : null;
   }
-  if (kind === 'auto') {
-    return 'level';
-  }
-  return kind === 'agent' ? null : 'steps';
+  return kind === 'agent' ? null : 'level';
 };
 
 export type StartGuidanceReader = keyof typeof START_KIND_COPY.guidance.readers;
@@ -63,10 +57,7 @@ export const startGuidanceReaderOf = ({
     }
     return isAutoLead ? 'auto' : 'agent';
   }
-  if (kind === 'auto' || kind === 'agent') {
-    return kind;
-  }
-  return 'orchestrator';
+  return kind === 'agent' ? 'agent' : 'auto';
 };
 
 type ReasonParams = {

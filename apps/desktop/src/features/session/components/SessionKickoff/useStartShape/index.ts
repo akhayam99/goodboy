@@ -10,14 +10,15 @@ import { rememberLastStart } from '../../../startKind/rememberLastStart';
 import { applyStartEdits } from '../../../startRun/applyStartEdits';
 import { draftStartOf } from '../../../startRun/draftStartOf';
 import { pickedRouteOf } from '../../../startRun/pickedRouteOf';
-import { agentRoutingOfPin, orchestratorRoutingOfPin } from '../../../startRun/runModelPin';
+import { agentRoutingOfPin } from '../../../startRun/runModelPin';
 import { runModelSlotOfShape } from '../../../startRun/runModelSlotOf';
 import { guidanceToSendOf } from '../../../startRun/guidanceToSendOf';
 import { startRoutedRun } from '../../../startRun/startRoutedRun';
 import { workspaceGuidanceOf } from '../../../startRun/workspaceGuidanceOf';
+import type { PromptFieldFiles } from '../../../../../shared/components/PromptField';
+import { toAttachmentInputs } from '../../../../attachments/pendingAttachment';
 import type { StartLimit } from '../../../../auto/startLimitOf';
 import type { RunModelModel } from '../../StartRun/useRunModel';
-import { hasAsksGate } from '../hasAsksGate';
 import { useStartFromDraft } from '../useStartFromDraft';
 
 type Params = {
@@ -27,6 +28,7 @@ type Params = {
   readonly settleLimit: () => void;
   readonly model: RunModelModel;
   readonly level: AutoLevel | null;
+  readonly files: PromptFieldFiles;
 };
 
 export type StartShapeModel = Readonly<{
@@ -44,8 +46,11 @@ export const useStartShape = ({
   settleLimit,
   model,
   level,
+  files,
 }: Params): StartShapeModel => {
   const { clear: clearModel, pinFor } = model;
+  const filesRef = useRef(files);
+  filesRef.current = files;
   const [isStarting, setIsStarting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const isStartingRef = useRef(false);
@@ -105,18 +110,16 @@ export const useStartShape = ({
           : pin !== null && slot.kind === 'agent'
             ? agentRoutingOfPin({ pin })
             : null;
-      const orchestratorRouting =
-        pin !== null && slot.kind === 'orchestrator' ? orchestratorRoutingOfPin({ pin }) : null;
-      const autonomy = hasAsksGate({ shape }) ? draft.autonomy : null;
+      const staged = filesRef.current.attachments;
+      const attachments = await toAttachmentInputs(staged);
       const run = async (created: Session): Promise<void> => {
         await applyStartEdits({ sessionId: created.id, mode: draft.permissionMode });
         await startRoutedRun({
           sessionId: created.id,
           result,
+          attachments,
           routing,
-          orchestratorRouting,
-          autonomy,
-          level: shape === 'autoAgent' ? level : null,
+          level: shape === 'agent' ? null : level,
           limit,
           guidance: guidanceToSendOf({
             picked: draft.guidance,
@@ -131,6 +134,7 @@ export const useStartShape = ({
       rememberLastStart({ workspaceId, last: shape });
       clearModel();
       settleLimit();
+      staged.forEach((attachment) => filesRef.current.onRemove(attachment.id));
     } catch (cause) {
       if (claim.isCurrent()) {
         setError(formatError(cause));

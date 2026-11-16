@@ -494,31 +494,19 @@ describe('batches, waiting text and composer line', () => {
     ).toBeNull();
   });
 
-  it('queues the composer while Auto waits and points at the plan version while it needs approval', () => {
+  it('names the Lead while it waits and points at the plan version while it needs approval', () => {
     const waiting = aView({
       phase: 'waiting',
       delegations: [aDelegation({ key: 'b', role: 'implementer', state: 'running' })],
     });
 
-    expect(composerPlaceholderOf({ view: waiting, flow: 'Auto' })).toBe('Message Auto');
+    expect(composerPlaceholderOf({ view: waiting })).toBe('Message Lead');
     expect(
       composerPlaceholderOf({
         view: aView({ phase: 'waiting', artifacts: [aPlanRow({ revision: 2 })] }),
-        flow: 'Auto',
       }),
-    ).toBe('Message Auto, or describe changes to plan v2');
-    expect(
-      composerPlaceholderOf({ view: aView({ phase: 'answering' }), flow: 'Auto' }),
-    ).toBeUndefined();
-  });
-
-  it('names the lead in the composer when the work switch is on', () => {
-    const waiting = aView({
-      phase: 'waiting',
-      delegations: [aDelegation({ key: 'b', role: 'implementer', state: 'running' })],
-    });
-
-    expect(composerPlaceholderOf({ view: waiting, flow: 'Lead' })).toBe('Message Lead');
+    ).toBe('Message Lead, or describe changes to plan v2');
+    expect(composerPlaceholderOf({ view: aView({ phase: 'answering' }) })).toBeUndefined();
   });
 });
 

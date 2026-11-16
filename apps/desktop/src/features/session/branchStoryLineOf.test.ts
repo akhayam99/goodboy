@@ -16,15 +16,14 @@ const leadOf = (dot: BranchLead['dot']): BranchLead => ({
 
 describe('branchStoryLineOf', () => {
   it.each([
-    ['Auto', 'running', 'Auto is working on this branch.'],
-    ['Lead', 'running', 'Lead is working on this branch.'],
-    ['Auto', 'needsYou', 'Auto waits for you on this branch.'],
-    ['Lead', 'done', 'Lead finished its work on this branch.'],
-  ] as const)('says %s for a %s lead', (word, dot, line) => {
-    expect(branchStoryLineOf({ leads: [leadOf(dot)], word })).toBe(line);
+    ['running', 'Lead is working on this branch.'],
+    ['needsYou', 'Lead waits for you on this branch.'],
+    ['done', 'Lead finished its work on this branch.'],
+  ] as const)('names the Lead for a %s lead', (dot, line) => {
+    expect(branchStoryLineOf({ leads: [leadOf(dot)] })).toBe(line);
   });
 
   it('says nothing without a lead', () => {
-    expect(branchStoryLineOf({ leads: [], word: 'Lead' })).toBeNull();
+    expect(branchStoryLineOf({ leads: [] })).toBeNull();
   });
 });

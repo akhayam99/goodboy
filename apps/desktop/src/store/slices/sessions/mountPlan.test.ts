@@ -80,8 +80,8 @@ describe('mountPlan', () => {
     const plan = mountPlan({ state: stateWith(), sessionId: SID, projectId: PID, mountId: MID });
 
     expect(plan?.baseBranch).toBe('main');
-    expect(plan?.branch).toBe(`${DEFAULT_BRANCH_PREFIX}/ship-the-rebase-row`);
-    expect(plan?.slug).toBe('ship-the-rebase-row');
+    expect(plan?.branch).toBe(`${DEFAULT_BRANCH_PREFIX}/ship-rebase-row`);
+    expect(plan?.slug).toBe('ship-rebase-row');
     expect(plan?.targetPath).toMatch(SHORT_WORKTREE_PATH);
   });
 
@@ -238,7 +238,7 @@ describe('mountPlan', () => {
       taskIdentifiers: ['HAR-212'],
     });
 
-    expect(plan?.branch).toBe('team/hl/mara-quint/har-212-ship-the-rebase-row');
+    expect(plan?.branch).toBe('team/hl/mara-quint/har-212-ship-rebase-row');
     expect(plan?.targetPath).toMatch(SHORT_WORKTREE_PATH);
   });
 
@@ -251,7 +251,7 @@ describe('mountPlan', () => {
 
     const plan = mountPlan({ state, sessionId: SID, projectId: PID, mountId: MID });
 
-    expect(plan?.branch).toBe(`${DEFAULT_BRANCH_PREFIX}/ship-the-rebase-row`);
+    expect(plan?.branch).toBe(`${DEFAULT_BRANCH_PREFIX}/ship-rebase-row`);
   });
 
   it('adds -2 when the repository already has the branch, outside any session', () => {
@@ -260,10 +260,10 @@ describe('mountPlan', () => {
       sessionId: SID,
       projectId: PID,
       mountId: MID,
-      repoBranches: [`${DEFAULT_BRANCH_PREFIX}/ship-the-rebase-row`],
+      repoBranches: [`${DEFAULT_BRANCH_PREFIX}/ship-rebase-row`],
     });
 
-    expect(plan?.branch).toBe(`${DEFAULT_BRANCH_PREFIX}/ship-the-rebase-row-2`);
+    expect(plan?.branch).toBe(`${DEFAULT_BRANCH_PREFIX}/ship-rebase-row-2`);
   });
 
   it('returns null when the project does not belong to the session workspace', () => {

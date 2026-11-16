@@ -125,6 +125,11 @@ native `<select>`: the WebKit menu ignores theme, density and keyboard.
 - **Multiple**: a checkbox in the leading slot with the row icon beside it,
   Enter toggles and stays open, a footer reading "2 selected" (nothing at 0)
   and Clear.
+- **Star**: an option with `star` (`ListboxStar`) ends in a `StarToggle`,
+  filled on starred rows and shown on the others only on the cursor row.
+  Clicking it never picks the row, and ⌘S (Ctrl+S off macOS) toggles the
+  cursor row from the keyboard, since Tab closes the list. `isBusy` disables
+  both while the caller saves.
 - **Empty copy**: `emptyLabel` and `noMatchLabel` replace the default "No
   {noun}s yet" and "No {noun} matches" sentences when the list has its own
   words ("No sessions match").

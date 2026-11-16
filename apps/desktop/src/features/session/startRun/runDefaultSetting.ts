@@ -28,6 +28,20 @@ type RawParams = {
 export const parseRunDefault = ({ raw }: RawParams): RunDefault | null =>
   raw === 'auto' || raw === 'plan' || raw === 'lead' ? raw : null;
 
+type LeadDefault = Readonly<{
+  shouldMatchPreset: boolean;
+  shouldAskPlan: boolean;
+}>;
+
+type ShapeParams = {
+  readonly shape: RunDefault;
+};
+
+export const leadDefaultOf = ({ shape }: ShapeParams): LeadDefault => ({
+  shouldMatchPreset: shape === 'auto',
+  shouldAskPlan: shape === 'plan',
+});
+
 type WriteParams = {
   readonly db: Database;
   readonly scope: RunDefaultScope;

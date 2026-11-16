@@ -8,32 +8,22 @@ vi.mock('@tauri-apps/plugin-dialog', () => ({ open: vi.fn() }));
 
 import { describe, expect, it, vi } from 'vitest';
 import { act, screen } from '@testing-library/react';
-import { flowWordOf } from '../../shared/lib/flowWordOf';
-import { SETTING_WORK_ENABLED } from '../../shared/lib/workSetting';
 import { installSceneJourney } from './sceneJourney';
 
 const journey = installSceneJourney();
 
-type Position = 'off' | 'on';
+const OLD_SWITCH_ROWS: ReadonlyArray<string> = ['false', 'true'];
 
-const CYCLE: ReadonlyArray<Position> = ['off', 'on', 'off'];
-
-type FlipParams = {
-  readonly position: Position;
+type OldSwitchParams = {
+  readonly value: string;
 };
 
-const flip = async ({ position }: FlipParams): Promise<string> => {
+const oldSwitchSaid = async ({ value }: OldSwitchParams): Promise<void> => {
   act(() => {
     const store = journey.store();
-    store.setState({
-      settings: {
-        ...store.getState().settings,
-        [SETTING_WORK_ENABLED]: position === 'on' ? 'true' : 'false',
-      },
-    });
+    store.setState({ settings: { ...store.getState().settings, 'work.enabled': value } });
   });
   await journey.settle();
-  return flowWordOf({ isWork: position === 'on' });
 };
 
 const hasButton = (name: string | RegExp): boolean =>
@@ -42,55 +32,42 @@ const hasButton = (name: string | RegExp): boolean =>
 const limitLabel = (): string =>
   screen.getByRole('button', { name: /^Limit: / }).getAttribute('aria-label') ?? '';
 
-describe('journey: a Lead page with a pending ask, switch off, on, off', () => {
-  it('keeps the push ask and names the flow in every label', async () => {
+describe('journey: a Lead page with a pending ask, whatever the old Work switch row says', () => {
+  it('keeps the push ask and names the Lead in every label', async () => {
     await journey.mount({ name: 'work-lead-push' });
 
-    for (const position of CYCLE) {
-      const word = await flip({ position });
+    for (const value of OLD_SWITCH_ROWS) {
+      await oldSwitchSaid({ value });
 
       expect(hasButton('Push')).toBe(true);
       expect(hasButton("Don't push")).toBe(true);
-      expect(hasButton(`Stop ${word}`)).toBe(true);
-      screen.getByText(`Push a branch: Ask · This ${word}`);
-      expect(limitLabel()).toBe(`Limit: $10.00, this ${word}`);
+      expect(hasButton('Stop run')).toBe(true);
+      screen.getByText('Push a branch: Ask · This Lead');
+      expect(limitLabel()).toBe('Limit: $10.00, this Lead');
     }
   });
 
-  it('keeps the dependency ask with its package through the cycle', async () => {
+  it('keeps the dependency ask with its package', async () => {
     await journey.mount({ name: 'work-lead-dependency' });
 
-    for (const position of CYCLE) {
-      const word = await flip({ position });
+    for (const value of OLD_SWITCH_ROWS) {
+      await oldSwitchSaid({ value });
 
       expect(hasButton('Allow nock@14.0.1')).toBe(true);
       expect(hasButton('Do it without')).toBe(true);
-      screen.getByText(`Add or upgrade dependencies: Ask · This ${word}`);
+      screen.getByText('Add or upgrade dependencies: Ask · This Lead');
     }
   });
 
-  it('holds a message while agents work only with the switch off', async () => {
+  it('never holds a message while agents work: it reads Not read yet, no Send now', async () => {
     await journey.mount({ name: 'work-lead-working' });
 
-    for (const position of CYCLE) {
-      const word = await flip({ position });
+    for (const value of OLD_SWITCH_ROWS) {
+      await oldSwitchSaid({ value });
 
-      expect(hasButton(`Stop ${word} and 2 agents`)).toBe(true);
-      expect(hasButton('Send now')).toBe(position === 'off');
-      expect(screen.queryAllByText('Not read yet').length > 0).toBe(position === 'on');
-    }
-  });
-});
-
-describe('journey: the Work list, switch off, on, off', () => {
-  it('shows the Work item in the sidebar only with the switch on', async () => {
-    await journey.mount({ name: 'work-list' });
-
-    for (const position of CYCLE) {
-      await flip({ position });
-
-      expect(hasButton(/^Work$/)).toBe(position === 'on');
-      expect(hasButton('Start work')).toBe(true);
+      expect(hasButton('Stop run')).toBe(true);
+      expect(hasButton('Send now')).toBe(false);
+      expect(screen.queryAllByText('Not read yet').length > 0).toBe(true);
     }
   });
 });

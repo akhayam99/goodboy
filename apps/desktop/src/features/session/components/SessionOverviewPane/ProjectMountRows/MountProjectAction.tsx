@@ -1,11 +1,11 @@
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { FolderPlus } from 'lucide-react';
 import { AnchoredPopover, Button, ICON_SIZE, IconButton, useDropdown } from '@goodboy/ui';
 import type { SessionId, WorkspaceId } from '@goodboy/types';
 import { useShallow } from 'zustand/react/shallow';
 import { useAppStore } from '../../../../../store';
 import { MountProjectList } from './MountProjectList';
-import { starredProjectsFirst } from '../../../../../shared/utils/starredProjectsFirst';
+import { useRecentProjectIds } from '../../../../../shared/components/ProjectPicker/useRecentProjectIds';
 
 import { NAMES } from '../../../../../shared/utils/names';
 import { LevelAddTrigger } from '../../../../../shared/components/LevelAddTrigger';
@@ -33,10 +33,7 @@ export const MountProjectAction = ({ sessionId, workspaceId, presentation = 'ico
       );
     }),
   );
-  const orderedProjects = useMemo(
-    () => starredProjectsFirst({ projects: availableProjects, inside: 'recency' }),
-    [availableProjects],
-  );
+  const recentIds = useRecentProjectIds({ workspaceId });
   const hasWorkspaceProjects = useAppStore((state) =>
     state.projects.some((project) => project.workspaceId === workspaceId),
   );
@@ -85,7 +82,8 @@ export const MountProjectAction = ({ sessionId, workspaceId, presentation = 'ico
         <MountProjectList
           sessionId={sessionId}
           workspaceId={workspaceId}
-          projects={orderedProjects}
+          projects={availableProjects}
+          recentIds={recentIds}
           emptyHint={
             hasWorkspaceProjects
               ? 'Every workspace folder is already in this session.'

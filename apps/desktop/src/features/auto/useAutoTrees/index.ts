@@ -46,7 +46,7 @@ export const useAutoTrees = ({ sessionId }: Params): ReadonlyArray<AutoTreeView>
           hasReported.current = true;
           void reportError({
             recovery: READ_FAILED,
-            title: "Couldn't read the Auto agents",
+            title: "Couldn't read the runs",
             error,
             sessionId,
           });

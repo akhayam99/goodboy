@@ -41,7 +41,9 @@ A comment reads the same in the diff, the review pane and the page: `CommentBody
 without a pull request; on a pull request you can edit, click it or press `E` on
 the Conversation entry and it becomes an input in the same 32px row, `Enter` saves
 to the host, `Esc` cancels, a failure is an inline notice with Retry), the state chip (20 high,
-the state word and its icon, `BranchStateChip`), one primary and `⋯`. The
+the state word and its icon, `BranchStateChip`), three icon buttons (`BranchTools`: **Start a run on
+this branch**, hidden once the branch is merged or closed, **Open a terminal here** in the branch
+folder and **Open the browser here**; the Overview tile sends you here for them), one primary and `⋯`. The
 line under the title is the same on every tab: the number and the branch in mono, `into` the base,
 and the author's picture and name with `opened it` and the age (`PullRequestHeaderLine`); without a pull
 request it says `Not pushed`, `Pushed` or `Rebasing` and the distance to the base. **There is no branch switcher in the header or
@@ -590,7 +592,7 @@ is left out; with nothing at all the tab says so. The tab body comes from one re
 `features/branch/branchWorkTab.ts`), which `useBranchTabFacts` and `BranchWorkBody` import
 directly; the artifacts section comes the same way from `branchWorkArtifactsRegistration`. The tab is
 always available: a missing registration is a build error, not a state the page handles. Past that
-module the Work tab adds no import of the session feature's components or hooks.
+module the Runs tab adds no import of the session feature's components or hooks.
 `useBranchTabFacts` reads it once per page for the badge and the body; until the questions and the
 artifacts are read the body is a skeleton, and for artifacts also until every provenance read has
 answered (`useArtifactBranchItems` `isSettled`). A run, an agent or an artifact opened from Work, by a
@@ -602,8 +604,8 @@ once every provenance read has answered (`useGroupArrival` waits for `isSettled`
 question opens its drawer over the Questions page, whose `Close` goes back here. Back also reopens the
 fold that held the row you left and scrolls to it (`useRowReturn`: `N finished`, `N archived`,
 `N answered`, `N used`). `Also on` on a row
-opens the Work tab of the other branch. `Open branch` on Runs, Questions and Artifacts, and a run's
-branch chip, land on Work (`openBranchWorkTab`), on the path the Branch page knows for that mount id
+opens the Runs tab of the other branch. `Open branch` on Runs, Questions and Artifacts, and a run's
+branch chip, land on Runs (`openBranchWorkTab`), on the path the Branch page knows for that mount id
 (`sessionProjectMounts`), so a row with no worktree path never opens the fallback branch; a group, chip or series
 row whose mount the page does not know draws no `Open branch` (`useCanOpenBranchWork`, `branchPageMountOf`). The Projects tree draws no Work mark yet (`worktreeEntryFactsOf`
 gives Work no fact): the tree reads no runs or questions per row. The Monitoring entry for the branch has no slot yet:

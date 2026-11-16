@@ -165,8 +165,10 @@ describe('the Auto chat scenes', () => {
     expect(rows).toHaveLength(1);
     expect(rows[0]?.getAttribute('data-source')).toBe('auto');
     expect(rows[0]?.textContent).toContain('Also keep the retry window at 30 seconds.');
-    expect(rows[0]?.textContent).toMatch(/Waits for /);
-    within(rowAt({ rows, index: 0 })).getByRole('button', { name: 'Send now' });
+    expect(rows[0]?.textContent).toContain('Not read yet');
+    expect(
+      within(rowAt({ rows, index: 0 })).queryByRole('button', { name: 'Send now' }),
+    ).toBeNull();
     expect(screen.getAllByText('Also keep the retry window at 30 seconds.')).toHaveLength(1);
     expect(document.querySelectorAll('[data-auto-pending-message]')).toHaveLength(0);
   });
@@ -176,11 +178,11 @@ describe('the Auto chat scenes', () => {
 
     const rows = await screen.findAllByTestId('queued-message-row', undefined, WAIT);
     expect(rows.map((row) => row.getAttribute('data-source'))).toEqual(['auto', 'agent']);
-    expect(rows[0]?.textContent).toMatch(/Waits for /);
+    expect(rows[0]?.textContent).toContain('Not read yet');
     expect(rows[1]?.textContent).toContain('Waits for this reply');
     expect(rows[0]?.querySelectorAll('[data-attachment-control]')).toHaveLength(2);
     expect(rows[1]?.querySelectorAll('[data-attachment-control]')).toHaveLength(1);
-    expect(queueRows().getAllByRole('button', { name: 'Send now' })).toHaveLength(2);
+    expect(queueRows().getAllByRole('button', { name: 'Send now' })).toHaveLength(1);
     expect(
       screen.getAllByText('Also keep the retry window at 30 seconds, see the timeline.'),
     ).toHaveLength(1);
@@ -216,7 +218,7 @@ describe('the Auto chat scenes', () => {
     const popover = screen.getByRole('dialog', { name: 'Limit' });
     expect(within(popover).getByText('$0.27')).toBeDefined();
     expect(within(popover).getByText('$4.50')).toBeDefined();
-    expect(within(popover).getByRole('form', { name: 'Limit for this Auto' })).toBeDefined();
+    expect(within(popover).getByRole('form', { name: 'Limit for this Lead' })).toBeDefined();
     expect(popover.textContent).toContain('comes first');
   });
 

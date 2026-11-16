@@ -14,6 +14,7 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import { ICON_SIZE, SelectableRow, cn, tintClasses } from '@goodboy/ui';
+import { NAMES } from '../../../../../shared/utils/names';
 import type { MergeBoxGlyph, MergeBoxRow as Row, MergeBoxTarget } from './mergeBox';
 
 type Props = {
@@ -42,7 +43,7 @@ const TARGET_WORD: Readonly<Record<MergeBoxTarget, string>> = {
   files: 'Changes',
   commits: 'Commits',
   checks: 'Checks',
-  work: 'Work',
+  work: NAMES.runs,
   reviewers: 'Ask for review',
 };
 

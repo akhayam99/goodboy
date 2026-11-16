@@ -26,7 +26,6 @@ type SaveParams = {
 
 const RUN_DEFAULT_OPTIONS: ReadonlyArray<SegmentedTabOption<RunDefault>> = [
   { value: 'auto', label: RUN_ROUTE_COPY.defaults.auto },
-  { value: 'plan', label: RUN_ROUTE_COPY.defaults.plan },
   { value: 'lead', label: RUN_ROUTE_COPY.defaults.lead },
 ];
 
@@ -40,7 +39,8 @@ export const RunDefaultRow = ({ scope, label, rowKey, help, fallback }: Props) =
   const loadSetting = useAppStore((state) => state.loadSetting);
   const reportError = useAppStore((state) => state.reportError);
   const [isSaving, setIsSaving] = useState(false);
-  const value = parseRunDefault({ raw }) ?? fallback;
+  const stored = parseRunDefault({ raw }) ?? fallback;
+  const value = stored === 'plan' ? 'lead' : stored;
 
   useEffect(() => {
     loadSetting(key).catch((error: unknown) => {

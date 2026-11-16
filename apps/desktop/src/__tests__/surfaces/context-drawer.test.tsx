@@ -86,12 +86,13 @@ describe('Context tab', () => {
     await waitFor(() => expect(screen.queryByText('Added')).toBeNull());
   });
 
-  it('draws State beyond the Overview sentence and keeps the complete context for copying', async () => {
+  it('draws State in its own box above the Summary and keeps the complete context for copying', async () => {
     open();
     mount();
     const tab = await screen.findByTestId('context-tab');
     const summary = within(tab).getByRole('region', { name: 'Summary' });
-    within(summary).getByRole('region', { name: 'State' });
+    const state = within(tab).getByRole('region', { name: 'State' });
+    expect(summary.contains(state)).toBe(false);
     within(summary).getByRole('region', { name: 'Next' });
     within(summary).getByRole('region', { name: 'Learned' });
     screen.getByRole('button', { name: 'Copy context' });

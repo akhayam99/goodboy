@@ -65,7 +65,7 @@ const boxOf = async ({ placeholder }: { readonly placeholder: string }) => {
 
 const childBox = () => boxOf({ placeholder: 'Message Implementer' });
 
-const autoBox = () => boxOf({ placeholder: 'Message Auto' });
+const autoBox = () => boxOf({ placeholder: 'Message Lead' });
 
 const openAgent = ({ agentId }: { readonly agentId: AgentId }) => {
   act(() => {
@@ -123,7 +123,7 @@ const enabledSend = async (): Promise<HTMLElement> => {
 };
 
 describe('the child page composer names its agent', () => {
-  it('keeps the child draft out of the Auto box', async () => {
+  it('keeps the child draft out of the Lead box', async () => {
     const box = await mountScene();
 
     expect(box.value).toBe(DRAFT);
@@ -136,10 +136,10 @@ describe('the child page composer names its agent', () => {
     await mountScene();
 
     expect(screen.getAllByRole('textbox')).toHaveLength(1);
-    expect(screen.queryByPlaceholderText('Message Auto')).toBeNull();
+    expect(screen.queryByPlaceholderText('Message Lead')).toBeNull();
   });
 
-  it('types in the Auto box without touching the child draft', async () => {
+  it('types in the Lead box without touching the child draft', async () => {
     await mountScene();
     openAgent({ agentId: AUTO_ROOT_ID });
 

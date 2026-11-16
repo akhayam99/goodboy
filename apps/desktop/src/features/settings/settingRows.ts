@@ -162,14 +162,6 @@ export const SETTING_ROWS: ReadonlyArray<SettingRow> = [
     band: 'Search',
   }),
   row({
-    key: 'work',
-    label: NAMES.work,
-    help: 'Adds the Work section and one composer for runs. Auto becomes Lead.',
-    page: ADVANCED,
-    band: 'Experiments',
-    formerNames: ['Work (experimental)'],
-  }),
-  row({
     key: 'background-download',
     label: 'Download in the background',
     help: 'New versions land while you work.',
@@ -305,8 +297,8 @@ export const SETTING_ROWS: ReadonlyArray<SettingRow> = [
   }),
   row({
     key: 'auto-asks',
-    label: `${NAMES.runKind.autoAgent} asks you`,
-    help: `How often a run started as ${NAMES.runKind.autoAgent} stops for your go.`,
+    label: `${NAMES.lead} asks you`,
+    help: `How often a run led by the ${NAMES.lead} stops for your go.`,
     page: RUN_DEFAULTS,
     band: NEW_RUNS,
     formerNames: ['Auto asks you', 'Auto runs ask you'],

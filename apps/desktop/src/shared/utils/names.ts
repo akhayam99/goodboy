@@ -1,6 +1,6 @@
 import type { AgentRole } from '@goodboy/types';
 
-const AUTO_AGENT = 'Auto agent';
+const LEAD = 'Lead';
 
 export const NAMES = {
   needsYou: 'Needs you',
@@ -51,13 +51,16 @@ export const NAMES = {
   questions: 'Questions',
   agents: 'Agents',
   runs: 'Runs',
+  lead: LEAD,
   orchestrated: 'Orchestrated',
   runKind: {
     workflow: 'Workflow',
     agent: 'Agent',
     orchestrated: 'Orchestrated',
     preset: 'Preset',
-    autoAgent: AUTO_AGENT,
+    plan: 'plan',
+    olderRun: 'older run',
+    run: 'Run',
   },
   overview: 'Overview',
   branch: 'Branch',
@@ -196,14 +199,15 @@ export const NAMES = {
     scribe: 'Scribe',
     'ci-debugger': 'CI debugger',
     'ci-fixer': 'CI fixer',
-    auto: AUTO_AGENT,
+    auto: LEAD,
     custom: 'Generalist',
   } satisfies Record<AgentRole, string>,
 } as const;
 
 const FORMER_NAMES: Readonly<Record<string, ReadonlyArray<string>>> = {
   [NAMES.runDefaults]: ['Rules', 'Workflow rules'],
-  [NAMES.runs]: ['Workflows', 'Workflow runs'],
+  [NAMES.runs]: ['Workflows', 'Workflow runs', 'Work'],
+  [NAMES.lead]: ['Auto agent'],
   [NAMES.whatsNew]: ['Changelog'],
   [NAMES.spendCap]: ['Spend cap', 'Spend limit', 'Default cap', 'Cap', 'Budget cap'],
   [NAMES.spendCaps]: ['Spend caps', 'Budget rules'],
@@ -262,6 +266,7 @@ const FORMER_NAMES: Readonly<Record<string, ReadonlyArray<string>>> = {
     'Start agent',
     'Start Auto',
     'Start another run',
+    'Start work',
   ],
   [NAMES.removeFromSession]: ['Detach project', 'Detach'],
   [NAMES.deleteAllData]: ['Wipe local database', 'Wipe'],

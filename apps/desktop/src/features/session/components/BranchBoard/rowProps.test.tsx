@@ -6,8 +6,8 @@ import type { IsoDateTime, Session, SessionId, WorkspaceId } from '@goodboy/type
 
 const seen: Array<Record<string, unknown>> = [];
 
-vi.mock('./BoardRow', () => ({
-  BoardRow: (props: Record<string, unknown>) => {
+vi.mock('./BoardTile', () => ({
+  BoardTile: (props: Record<string, unknown>) => {
     seen.push(props);
     return null;
   },
@@ -39,7 +39,6 @@ const session: Session = {
 const context: BoardContextValue = {
   session,
   now: 0,
-  isNarrow: false,
   rowById: new Map(),
   entryByRowId: new Map(),
   runningByRowId: new Map(),
@@ -65,12 +64,10 @@ const context: BoardContextValue = {
     sizeLabel: null,
     run: async () => undefined,
   },
-  openIds: new Set(['a']),
-  onToggleRow: () => undefined,
 };
 
-describe('the props of a board row', () => {
-  it('are primitives, so a row re-renders only when its own facts change', () => {
+describe('the props of a board tile', () => {
+  it('are primitives, so a tile re-renders only when its own facts change', () => {
     render(
       <BoardContext.Provider value={context}>
         <BoardGroup

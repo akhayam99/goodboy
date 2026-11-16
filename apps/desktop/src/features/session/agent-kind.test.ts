@@ -928,7 +928,7 @@ describe('the Auto role, while it is not offered', () => {
   });
 
   it('keeps one label across both label sources and the badge', () => {
-    expect(AGENT_KIND_META.auto.label).toBe('Auto agent');
+    expect(AGENT_KIND_META.auto.label).toBe('Lead');
     expect(ROLE_LABEL.auto).toBe(AGENT_KIND_META.auto.label);
     expect(AGENT_KIND_PALETTE.auto.label).toBe(AGENT_KIND_META.auto.noun);
     expect(AGENT_KIND_PALETTE.auto).toMatchObject({ bg: 'bg-agent-auto', fg: 'text-agent-auto' });

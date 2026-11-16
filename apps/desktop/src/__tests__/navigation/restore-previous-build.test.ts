@@ -40,7 +40,6 @@ import {
   type StoryStore,
 } from '../../test/storyHarness';
 import { DRAWER_KINDS } from '../../store/slices/drawer/drawerKinds';
-import { SETTING_WORK_ENABLED } from '../../shared/lib/workSetting';
 import { IPHONE_SETTINGS_PLACE } from '../../features/settings/iphoneSettingsPlace';
 import { listWindowLayouts } from '../../features/workspace/windowLayout';
 import { useSessionSidebarVisibility } from '../../features/workspace/hooks/useSessionSidebarVisibility';
@@ -141,11 +140,10 @@ afterEach(cleanup);
 
 describe('layouts saved by the previous build', () => {
   it('holds one fixture for every studio kind and every drawer kind the app has', () => {
-    expect(
-      [...PREVIOUS_BUILD_BLOBS.studios, PREVIOUS_BUILD_BLOBS.workStudio]
-        .map((entry) => entry.kind)
-        .sort(),
-    ).toEqual([...studioKindsInSource()].sort());
+    expect(PREVIOUS_BUILD_BLOBS.studios.map((entry) => entry.kind).sort()).toEqual(
+      [...studioKindsInSource()].sort(),
+    );
+    expect(studioKindsInSource()).not.toContain(PREVIOUS_BUILD_BLOBS.workStudio.kind);
     const kinds = PREVIOUS_BUILD_BLOBS.drawers.map((entry) => entry.kind);
     expect(kinds.filter((kind) => !RETIRED_DRAWER_KINDS.includes(kind)).sort()).toEqual(
       Object.keys(DRAWER_KINDS).sort(),
@@ -196,26 +194,19 @@ describe('layouts saved by the previous build', () => {
     expect(state.appStudio).toEqual(entry.expected);
   });
 
-  it('restores a saved Work page while Work is on', async () => {
-    useAppStore.setState((current) => ({
-      settings: { ...current.settings, [SETTING_WORK_ENABLED]: 'true' },
-    }));
+  it.each([['true'], ['false']] as const)(
+    'folds a saved Work page to the board, old Work switch row %s',
+    async (oldSwitch) => {
+      useAppStore.setState((current) => ({
+        settings: { ...current.settings, 'work.enabled': oldSwitch },
+      }));
 
-    const state = await restoredFrom({ entry: PREVIOUS_BUILD_BLOBS.workStudio });
+      const state = await restoredFrom({ entry: PREVIOUS_BUILD_BLOBS.workStudio });
 
-    expect(state.appStudio).toEqual(PREVIOUS_BUILD_BLOBS.workStudio.expected);
-  });
-
-  it('folds a saved Work page to the board while Work is off', async () => {
-    useAppStore.setState((current) => ({
-      settings: { ...current.settings, [SETTING_WORK_ENABLED]: 'false' },
-    }));
-
-    const state = await restoredFrom({ entry: PREVIOUS_BUILD_BLOBS.workStudio });
-
-    expect(state.appStudio).toBeNull();
-    expect(state.currentSessionId).toBeNull();
-  });
+      expect(state.appStudio).toBeNull();
+      expect(state.currentSessionId).toBeNull();
+    },
+  );
 
   it.each(PREVIOUS_BUILD_BLOBS.drawers)(
     'loads the $name and restores the drawer',

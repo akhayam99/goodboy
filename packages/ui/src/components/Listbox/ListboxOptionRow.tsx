@@ -4,6 +4,8 @@ import { cn } from '../../cn';
 import { DISABLED } from '../../disabledStyle';
 import type { ListboxMatch } from './filterOptions';
 import { HighlightedLabel } from './HighlightedLabel';
+import type { ListboxStar } from './listboxTypes';
+import { StarToggle } from '../StarToggle';
 import { ICON_SIZE, ICON_STROKE } from '../../iconSize';
 
 export type ListboxOptionRowProps = {
@@ -13,6 +15,7 @@ export type ListboxOptionRowProps = {
   readonly description?: string;
   readonly leading?: ReactNode;
   readonly meta?: ReactNode;
+  readonly star?: ListboxStar;
   readonly match?: ListboxMatch;
   readonly isCode?: boolean;
   readonly isActive: boolean;
@@ -33,6 +36,7 @@ export const ListboxOptionRow = ({
   description,
   leading,
   meta,
+  star,
   match = NO_MATCH,
   isCode = false,
   isActive,
@@ -128,6 +132,16 @@ export const ListboxOptionRow = ({
           {meta}
         </span>
       ) : null}
+      {star === undefined ? null : (
+        <StarToggle
+          isStarred={star.isStarred}
+          label={star.label}
+          tooltip={star.tooltip}
+          disabled={star.isBusy === true}
+          className={cn(!star.isStarred && !isActive && 'opacity-0 focus-visible:opacity-100')}
+          onToggle={star.onToggle}
+        />
+      )}
       {isEmphasized ? (
         <Check
           size={ICON_SIZE.control}

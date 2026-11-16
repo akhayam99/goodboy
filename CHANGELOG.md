@@ -12,6 +12,87 @@ file is in `.prettierignore`: the meta comment sits on the line right below
 each entry's heading, with no blank line, and a formatter would push it down
 onto its own paragraph.
 
+## Goodboy v0.38.0
+
+Work folds into Runs: every new run in a session has a Lead that plans the job and starts the agents it needs.
+
+### New
+
+#### Every new run has a Lead
+<!-- gb area=agents image=run-page -->
+
+Write what you want done in Start a run and press Start. A Lead plans first, then starts the agents it needs, inside the session where you asked. A preset that fits the ask becomes the Lead's plan, and naming a role with @ still starts that one agent alone.
+
+The run page names the Lead and its state in the crumb row, and the button that ends it reads Stop run.
+
+#### Start a run on a branch
+<!-- gb area=sessions image=runs-start -->
+
+The Start a run field has a Branch chip with the session's branches. It reads Any branch until you pick one, and the run works on the branch you picked. A failed start keeps it for Retry.
+
+The header of a branch page has Start a run on this branch, which opens the field on Runs with that branch picked.
+
+### Improved
+
+#### No more Work page or Work switch
+<!-- gb area=agents image=board-run -->
+
+The sidebar has no Work page and Settings has no Work switch: what the switch turned on is on for everyone. Every Lead follows its permission rows, and a note you write while its agents work goes in at once. A window left on Work opens on the Board. On a branch, the Work tab is now Runs.
+
+A Board card in Needs you names the run that waits, and its button says what it does: Review plan, Answer the Lead or Open run.
+
+#### Runs say who leads them
+<!-- gb area=sessions -->
+
+Each row on Runs says who leads it: a Lead, a Lead that follows a preset, or one agent such as the Implementer. How in Start a run offers Lead, Preset and Agent, and Start as in Run defaults offers Lead with a preset that fits, or Lead.
+
+#### The Auto agent is the Lead
+<!-- gb area=agents -->
+
+Models, the Kind chip and Run defaults name the Auto agent the Lead. Run defaults has Lead asks you under Workflow asks you, so workflows can keep asking at every step while a Lead goes on after the plan.
+
+#### Older runs keep their engine
+<!-- gb area=workflows -->
+
+A run started before on the orchestrator, a preset or the Auto agent still shows on Runs and picks up with Continue on the engine it started on. An orchestrated row adds a gray older run.
+
+#### Pick from Tasks by source
+<!-- gb area=sessions image=task-picker -->
+
+Pick from Tasks lists your open tasks by source, newest first. Tabs on top narrow it to one source and count what matches the search. Each row shows the key, the title, its state and its repo or project. Arrows move and Enter picks. A source that didn't load says so in the list with Retry.
+
+#### Starred folders lead the Projects picker
+<!-- gb area=sessions image=projects -->
+
+Projects on the start page opens on Starred, then Recent, the folders your latest sessions worked in, then All projects. The star on a row, or ⌘S on the highlighted row, stars or unstars it. The folder list on the Overview uses the same groups.
+
+#### The Context tab leads with the State
+<!-- gb area=sessions image=context -->
+
+The State heads the Context tab in a box with a count of blockers or of steps left, its first sentence and one row per blocker. The Summary card lists Next as numbered steps and Learned as facts. Each group shows three and opens the rest with one Show all.
+
+#### Branch names from the goal's words
+<!-- gb area=sessions -->
+
+A new branch is named from two to five meaningful words of the goal, English or Italian, with a ticket id in the goal such as HBL-1528 first. Words like the, for or per are left out.
+
+#### One tile per branch on the Overview
+<!-- gb area=sessions image=branch-tile -->
+
+Each branch on the Overview is one tile: its name and project, one state such as Running or Waits for you, a short line with its pull request number and what waits, and at most one button for the next step. The tile opens the branch page, where its changes, commits, checks, runs and questions live.
+
+#### Running ports sit under the branch name
+<!-- gb area=sessions -->
+
+The ports a branch runs show next to Not pushed under its name on the branch page: two at most, then a count. A click opens the port, and Ports opens Monitoring on the branch.
+
+### Fixed
+
+- Paste, drop and the paperclip attach images again in New session and in a reply to an agent. <!-- gb area=sessions -->
+- An image pasted in chat no longer disappears a moment later. <!-- gb area=sessions -->
+- Runs started by a Lead, and the agents it starts, show under their branch on Runs and the board, in older sessions too. <!-- gb area=agents -->
+- The pictures of the light mode entry in 0.37.0 show light mode in a dark window too. <!-- gb area=app -->
+
 ## Goodboy v0.37.0
 
 Providers and integrations share one home, Connections, and Settings keeps only settings, each one in a single place.
@@ -75,7 +156,7 @@ Search settings lists the rows that match, each with its page and band. Pick one
 The Asks you panel of a Lead opens with one line of what the Lead asks you before, then its rows under Agents, Git and publishing, Project and Finish. A row you changed is marked Changed, with Reset beside it, and the option in use stands out from the others. The four fixed rules sit quietly at the end.
 
 #### A clearer light mode
-<!-- gb area=app image=v1-overview -->
+<!-- gb area=app image=v1-overview theme=light -->
 
 Light mode separates the page, the sidebar and cards by tone, with darker secondary text and an amber that no longer looks red. The picked option of a switch such as Light, Dark or System is raised and outlined, so it reads at a glance.
 

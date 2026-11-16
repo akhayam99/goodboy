@@ -16,11 +16,14 @@ import { sessionById } from '../../../store/slices/sessions/sessionIndex';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { openAgentRevealEvent } from '../../../shared/utils/openAgentReveal';
 import { uniqueNameOf } from '../../workflows/uniqueNameOf';
+import { leadPlanBriefOf } from './leadPlanBriefOf';
+import { planFirstLevelOf } from './planFirstLevelOf';
 import { presetSnapshotOf } from './presetSnapshotOf';
 import type { StartLimit } from '../../auto/startLimitOf';
 import type { AgentKindRouting } from '../agent-kind';
 import type { RunRouteResult } from './runRouteOf';
 import { runRoutesKey, writeRunRoute } from './runRoutesSetting';
+import { soleTurnMountIdOf } from './soleTurnMountIdOf';
 
 const ORCHESTRATED_WORKFLOW_NAME = 'Orchestrated workflow';
 
@@ -64,14 +67,36 @@ export const startRoutedRun = async ({
     if (attachments.length > 0) {
       await state.addGoalAttachments({ type: 'session', id: sessionId }, attachments);
     }
-    if (level !== null && role === null) {
-      await state.changeAutoLevel({ workspaceId: session.workspaceId, sessionId, level });
+    const startLevel =
+      role !== null
+        ? null
+        : (level ?? (await planFirstLevelOf({ sessionId, workspaceId: session.workspaceId })));
+    if (startLevel !== null) {
+      await state.changeAutoLevel({
+        workspaceId: session.workspaceId,
+        sessionId,
+        level: startLevel,
+      });
     }
+    const leadMountId =
+      role === null ? soleTurnMountIdOf({ state: useAppStore.getState(), sessionId }) : null;
+    const stepLocks =
+      preset === null || role !== null
+        ? []
+        : presetSnapshotOf({ preset }).steps.flatMap(({ role: stepRole, routingLock }) =>
+            stepRole === null || routingLock === null ? [] : [{ role: stepRole, routingLock }],
+          );
     const agentId = await state.spawnAgent(sessionId, {
       kindOverride: role ?? 'auto',
-      initialPrompt: work,
+      ...(leadMountId !== null && { mountId: leadMountId }),
+      initialPrompt:
+        preset === null || role !== null
+          ? work
+          : leadPlanBriefOf({ work, preset, closeness: route.closeness ?? 'follow' }),
       focus: 'agent',
       ...(guidance !== null && { guidance }),
+      ...(role === null && limit !== null && { limitUsd: limit.usd }),
+      ...(stepLocks.length > 0 && { stepLocks }),
       ...(routing !== null && {
         provider: routing.provider,
         model: routing.model,

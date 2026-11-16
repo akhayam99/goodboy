@@ -22,7 +22,6 @@ export const AutoDockUnderTest = ({ view, rootAgent, onOpenArtifact }: Props) =>
     rootAgent,
     isStopping: actions.isStopping,
     stop: () => void actions.stop({ view }),
-    flow: 'Auto',
   });
   return (
     <>

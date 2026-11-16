@@ -1,9 +1,11 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import type { KeyboardEvent } from 'react';
 
 export type ListboxKeyItem = {
+  readonly key?: string;
   readonly label: string;
   readonly isDisabled: boolean;
+  readonly onStar?: () => void;
 };
 
 type Params = {
@@ -16,6 +18,10 @@ type Params = {
   readonly onTab: () => void;
 };
 
+type ComboParams = {
+  readonly event: KeyboardEvent<HTMLElement>;
+};
+
 type StepParams = {
   readonly items: ReadonlyArray<ListboxKeyItem>;
   readonly from: number;
@@ -25,6 +31,11 @@ type StepParams = {
 type EdgeParams = {
   readonly items: ReadonlyArray<ListboxKeyItem>;
   readonly isLast: boolean;
+};
+
+type ActiveCursor = {
+  readonly index: number;
+  readonly key: string | undefined;
 };
 
 type TypeaheadParams = {
@@ -84,6 +95,9 @@ const typeaheadIndex = ({ items, from, buffer }: TypeaheadParams): number => {
   return -1;
 };
 
+const isStarCombo = ({ event }: ComboParams): boolean =>
+  (event.metaKey || event.ctrlKey) && !event.altKey && !event.shiftKey && event.code === 'KeyS';
+
 const isPrintable = (event: KeyboardEvent<HTMLElement>): boolean =>
   event.key.length === 1 && !event.metaKey && !event.ctrlKey && !event.altKey;
 
@@ -96,7 +110,18 @@ export const useListboxKeyboard = ({
   onCommit,
   onTab,
 }: Params): ListboxKeyboard => {
-  const [activeIndex, setActiveIndex] = useState(-1);
+  const [cursor, setCursor] = useState<ActiveCursor>({ index: -1, key: undefined });
+  const activeIndex = useMemo(() => {
+    if (cursor.key === undefined) {
+      return cursor.index;
+    }
+    const found = items.findIndex((item) => item.key === cursor.key);
+    return found === -1 ? cursor.index : found;
+  }, [cursor, items]);
+  const setActiveIndex = useCallback(
+    (index: number) => setCursor({ index, key: items[index]?.key }),
+    [items],
+  );
   const buffer = useRef('');
   const bufferTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -114,7 +139,7 @@ export const useListboxKeyboard = ({
         setActiveIndex(found);
       }
     },
-    [activeIndex, items],
+    [activeIndex, items, setActiveIndex],
   );
 
   const onKeyDown = useCallback(
@@ -124,6 +149,13 @@ export const useListboxKeyboard = ({
           event.preventDefault();
           onOpen();
         }
+        return;
+      }
+      const onStar = items[activeIndex]?.onStar;
+      if (onStar !== undefined && isStarCombo({ event })) {
+        event.preventDefault();
+        event.stopPropagation();
+        onStar();
         return;
       }
       const move = (index: number) => {
@@ -178,7 +210,18 @@ export const useListboxKeyboard = ({
         typeahead(event.key);
       }
     },
-    [activeIndex, isOpen, isTypeaheadEnabled, items, onClose, onCommit, onOpen, onTab, typeahead],
+    [
+      activeIndex,
+      isOpen,
+      isTypeaheadEnabled,
+      items,
+      onClose,
+      onCommit,
+      onOpen,
+      onTab,
+      setActiveIndex,
+      typeahead,
+    ],
   );
 
   return { activeIndex, setActiveIndex, onKeyDown };

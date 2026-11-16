@@ -173,7 +173,7 @@ still carry them and list them as Workflow rules in the preview.
 The page is titled **Run defaults** and has three bands, one row per setting
 (`FieldRow`). `WorkspaceDefaultsGrid` draws the page: `WorkflowRulesPanel` owns
 the **New runs** and **Guidance** bands and takes the settings rows it does not
-own (`runRows`: **Auto agent asks you** and **Start as**) and the **Agents** band
+own (`runRows`: **Lead asks you** and **Start as**) and the **Agents** band
 (children: **Parallel agents**, **Reply length**) from it. A change reaches new
 runs only, since every run keeps its own copy of the rules
 (`attachWorkflowToSession` copies them at start). A failed save keeps the old
@@ -182,11 +182,15 @@ value and shows the error under its row.
 - **Workflow asks you** (`DefaultAsksSetting`): Every step, After the plan or
   Never, applied on click. The hints are the ones the builder shows
   (`RUN_AUTONOMY_OPTIONS`)
-- **Auto agent asks you** (`AutoLevelDefaultRow`): the same three levels for
-  Auto. With Work on, the row holds `LeadPermissionsChip` on the workspace
-  default instead, so there is no separate Asks you band
-- **Start as** (`RunDefaultField`): Let Auto pick, Workflow or Auto agent. With
-  a session of this workspace open, a second row sets that session's default;
+- **Lead asks you** (`AutoLevelDefaultRow`): holds `LeadPermissionsChip` on
+  the workspace default, so there is no separate Asks you band
+- **Start as** (`RunDefaultField`): every value starts a Lead. `auto` lets the
+  router give it a matching preset, `lead` takes no preset on its own, and
+  `plan` (written by older versions) takes no preset and makes the Lead ask
+  before acting on its plan: when the session level is Never and the start
+  picked no level, `startRoutedRun` sets the session to After the plan before
+  the Lead starts, and a stricter level stays (`planFirstLevelOf`). With a
+  session of this workspace open, a second row sets that session's default;
   it is the only writer of the session default (`changeRunDefault`)
 - **Limit** (`DefaultLimitSetting`): the amount per run, applied on Enter (a
   blank amount is no limit) or when the field loses focus, and what happens at
@@ -545,13 +549,19 @@ The Runs page (`WorkflowsPane`) lists every run of the session on one
 `ListGrid` (`RunsGrid`, columns in `runsGridColumns.ts`), one row per request
 from `sessionRunsOf`: preset runs, orchestrated runs, Auto conversations and
 the agents you started by hand, newest first. The columns: state dot, shape
-glyph (Workflow or Agent), title, origin ("Workflow · Preset Fix a layout",
-"Workflow · Orchestrated", "Agent · Auto agent", "Agent ·
-Scout"), model by name and effort (agent and Auto rows only, hidden when no row has one), state word, progress from `runStepCountOf` ("2 of 3 steps", or "2 steps done"
+glyph (Workflow, Lead or Agent), title, origin ("Workflow · Preset Fix a layout",
+"Workflow · Orchestrated" with a gray "older run", "Lead", "Lead · plan Fix
+flaky tests" from the saved run route, "Agent · Scout"), model by name and effort (agent and Auto rows only, hidden when no row has one), state word, progress from `runStepCountOf` ("2 of 3 steps", or "2 steps done"
 when the run has no known total), cost and age, every row the same columns. A row names its work as
 `workBranchesOf` (`features/session`) reads it: the agents of the run through
 `Agent.mountId`, the mount a step inherits from the step before it
-(`inheritedMountIdOf`, shared with `selectRunStepMountId`) and the Auto tree.
+(`inheritedMountIdOf`, shared with `selectRunStepMountId`), the Auto tree
+(`placedAgentsOf`: the Lead takes the tree's `primaryMountId`, a child its
+delegation target) and, in a session with one mount on a branch, that mount for
+an agent that recorded none (`soleMountIdOf`), so rows from before 0.38 file
+there with no migration. The Overview board reads the same `placedAgentsOf`
+(`useBranchBoard`). New rows record it: a Lead started in a one mount session
+(`soleTurnMountIdOf` in `startRoutedRun`) and every child (`createAutoChild`).
 A read only agent counts. A detached mount or a removed worktree moves its
 branch to `SessionRun.goneBranches`, so the run keeps its branch group on Runs.
 `SessionRun.branches` carries the attached result, which the row chips read. The
@@ -577,7 +587,7 @@ still attached), with no live run, folds under one
 **Finished** row at the bottom with its count, closed until **Show**
 (`FinishedBranches`). Inside a group live runs come first, newest first, and its
 finished runs fold into **N finished**; a finished run's title is muted
-(`RunRowTitle`). On the Branch page Work tab archived runs fold apart behind
+(`RunRowTitle`). On the Branch page Runs tab archived runs fold apart behind
 **N archived** and come last (`branchGroupRunsOf`). A run that touches
 several branches stands in each of them, keyed by group and run, with the chip
 **Also on feat/retry-budget** (**Also on 2 branches** for more). The chip reveals
@@ -586,15 +596,15 @@ title and the chips are siblings of the row button (`ListGridRow` `overlays`),
 so a row never nests a button. A click on the title opens the run immediately.
 **Rename** in the row's right click menu edits the title in place (leaving the
 box on the same text writes nothing, `useInlineRename`). The menu is the run's own (the `runRow` kind, five rows at most),
-never the session's. The Branch page draws the same group on its **Work** tab
+never the session's. The Branch page draws the same group on its **Runs** tab
 (`RunsByBranch` with a `heading`, see [branch-page.md](navigation/branch-page.md)), and
 its **All runs** lands on Runs with that group open in the grouping you chose, or
 reveals its runs under By state (`openBranchWork`, which never calls `setGroupBy`;
 `useRunsFolds` unfolds **Finished** and the finished rows before scrolling and focusing
-the first matching row); Back returns to the Work tab (`Focus.runGroup` on the history entry) and to the
+the first matching row); Back returns to the Runs tab (`Focus.runGroup` on the history entry) and to the
 row you left, not to the top of the group. The tab counts what the group header
 counts (`branchGroupShownCountOf`: archived runs are left out, a series group counts
-the runs of all its parts). **Open branch** on a group lands on that Work tab
+the runs of all its parts). **Open branch** on a group lands on that Runs tab
 (`openBranchWorkTab`). The page
 count stays one per run. Questions and Artifacts group by the same function
 (`branchKeyedGroupsOf` in `branchGroupsOf.ts`, which `branchGroupsOf` also uses) and
@@ -610,7 +620,7 @@ agent, else the run (`artifactBranchesOf`); `groupArtifactRowsByBranch` runs
 after `filterArtifactRows`, keeps the trash apart and leaves the state groups
 untouched. A replicated row has one key per group (`artifactBranchRowKeyOf`,
 `questionBranchRowKeyOf`) and the open question is marked only in its first
-group. The Work tab draws the question and artifact groups of the branch the same way
+group. The Runs tab draws the question and artifact groups of the branch the same way
 (`questionGroupCountOf`, `artifactBranchCountOf`), its **All questions** and **All artifacts**
 go through `openBranchWork`, and Back from Questions or Artifacts returns to Work
 (`parentPlace`). The artifacts section is registered by the artifacts feature
