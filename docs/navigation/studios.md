@@ -288,7 +288,10 @@ cut at the end, never in the middle; the group's`aria-label` keeps the full
   the alias for "the last page" and `SettingsStudio` resolves it once, then
   amends the history entry to the concrete page. The scopes rail is the only
   index, drawn beside the page (its fold control and `Search settings` first,
-  then the groups): its three scopes (App, Providers, This workspace, with Integrations nested under it) come from `settingsDirectory`. Every row is one 28px
+  then the groups): its two groups, named by scope (This Mac with the caption
+  every workspace, then the workspace name with the caption this workspace),
+  come from `settingsDirectory`, and the row to Connections ends it
+  (`MovedToConnectionsRow`). Every row is one 28px
   line of one grammar (`SettingsNavRow`): a group row carries its icon, a page
   row is nested by `PANE_RHYTHM.navRail.nest`, and a row has no second line,
   no count and no identity. A row that needs something shows a 6px dot at its
@@ -298,36 +301,51 @@ cut at the end, never in the middle; the group's`aria-label` keeps the full
   out or out opens on a notice at the top of its page (`ProviderAttentionNotice`,
   the usage notice that used to close the Usage band). Every page is also an entry in Search or run
   (`settingsPaletteEntries`, `Settings: Storage`, `Providers: Claude`, `Workspace settings: Models`), built from
-  the same list, so ⌘K and the rail cannot disagree. `Search settings` in the
-  rail (`SettingsSearchResults`) filters those same entries by name and former name, lists them in
-  place of the groups, and opens the one picked on the same history entry; with
-  no match it says `No settings match`. The status lines are read
+  the same list, so ⌘K and the rail cannot disagree. Every setting row has a
+  key in one registry (`settingRows.ts`: label, help, page, band, former names),
+  and ⌘K lists those rows too, tagged `Setting`, with "Page · Band" as detail.
+  `Search settings` in the rail (`settingsSearchHits`, `SettingsSearchResults`)
+  lists the matching pages, then the matching rows (label before former name
+  before help), in place of the groups; the arrows move, Return opens, Esc
+  clears (`useSettingsSearch`). A row pick opens its page on the same history
+  entry with `row` in the focus; the row scrolls into view and lights for a
+  moment (`useSettingRowAnchor`, fed by `SettingRowFocusContext`, inside
+  `SettingRow` through its `rowKey`; `FieldRow` takes the `anchor` and
+  `isHighlighted`), then the focus drops `row`. A workspace field row finds its
+  key by field (`settingRowKeyOfField`). ⌘K leaves out the row of Pair an
+  iPhone, which is already a command. With no match it says `No setting
+matches "x".` and points to ⌘K for actions. `settingRows.test.tsx` renders
+  every page and fails when a registry label no longer renders, a rendered
+  `data-anchor` key is not in the registry, or a registry row renders without
+  its anchor (the profile fields of `ProfileForm` and Pair an iPhone are the
+  named exceptions). The status lines are read
   once per studio (`useSettingsStatus`, on the minute clock of `useNow`);
-  opening Settings starts no loading of its own (no storage scan, no branch
-  scan, no provider refresh). Without a workspace the Workspace and
-  Integrations groups are left out. Precedent: the VS Code settings editor and
-  Linear's settings sidebar.
-- **Settings nests items in its rail.** The App items (General, Updates,
-  Keyboard shortcuts, Storage, Backup and reset, iPhone) always sit under the
-  App row as indented
-  rows, whichever scope is active, so switching scope never moves a row above
-  the pointer. The This workspace pages (Projects, About you, Run defaults, Models,
-  Branches, Replies and commits, Permissions) sit the same way under the
-  This workspace row (`workspacePages.ts`, `SettingsRailPageGroup`). The panel
-  shows one item at a time. Providers nests one row per provider
-  (connections only), and Integrations nests one row per tool under This workspace. Those
-  two lists open and close with `Reveal`, and the rail stays one mounted
-  element across scopes: `SettingsStudio` portals each scope's nested list and
-  detail into slots it owns, and keeps a closing scope mounted until its list
-  has collapsed. Every settings panel enters with `nav-step-in`
-  (`SETTINGS_PANE_ENTRY`). So no scope adds a second rail column. Every scope
-  panel keeps the reading width. Precedent: the VS Code settings table of
-  contents and Linear's settings sidebar.
-- **Providers names its scope in the page header.** Every page of
-  the scope (Models and each provider) carries the scope as the meta line of
-  its title: the workspace name when one is open, `All workspaces` when there
-  is none (`ProviderSettingsScope` passes `scopeLabel`). The name
-  appears once per page.
+  opening Settings starts no loading of its own beyond one `bridge_status`
+  read (no storage scan, no branch scan, no provider refresh). Without a workspace the
+  workspace group is one line that asks you to open one. Precedent: the VS Code
+  settings editor and Linear's settings sidebar.
+- **Settings nests items in its rail.** The This Mac pages (General, Keyboard
+  shortcuts, Advanced, Storage, Backup and reset) always sit under their
+  heading, whichever scope is active, so switching scope never moves a row
+  above the pointer (`appSections.ts`). The workspace pages (Projects, About
+  you, Run defaults, Models, Permissions, Branches, Replies and commits) sit the
+  same way under the workspace name (`workspacePages.ts`,
+  `SettingsRailPageGroup`). General ends with the Updates band (version row,
+  What's new, background download) and carries the update dot; the old
+  `updates` id opens General scrolled to that band, and a remembered `updates`
+  page reopens as plain General (`resolveSettingsFocus`). Advanced holds Git,
+  Built-in terminal, Search and Experiments. Models is the workspace page
+  `models`: `workspacePageOf` maps it and every model row id to it, and
+  `PlanPage` leaves it out of copy and restore. iPhone stays out of the rail
+  until `useIsIphonePaired` reads a paired phone (or while its page is open);
+  Search settings and Search or run still list it. The panel shows one item at
+  a time and enters with `nav-step-in` (`SETTINGS_PANE_ENTRY`), so no scope
+  adds a second rail column. Every scope panel keeps the reading width.
+  Precedent: the VS Code settings table of contents and Linear's settings
+  sidebar.
+- **Models names its workspace in the page header.** The Models page of This
+  workspace carries the workspace name as the meta line of its title
+  (`DefaultsPanel` takes `scopeLabel`). Provider pages live in Connections.
 - **Workspace settings is one page per area, each part in a card.** A
   workspace page carries the page title and one line of
   help; every part is a `Band` with one heading style (eyebrow, icon, hint
@@ -337,15 +355,22 @@ cut at the end, never in the middle; the group's`aria-label` keeps the full
   `general`, `after-merge`, `review-replies`, `permissions`, `danger`) now
   pick a page (`workspacePageOf`); `track-with-git` (and the old
   `dev-project`) lands on Projects with the first commit review of the first
-  plain code folder open. The workspace is renamed from the `Name` field of the
-  Projects page, and its name is written once on that page, in the top bar
-  (the disconnect row says `Disconnect this workspace`). The attribution line
-  lives on Run defaults only, and Replies and commits links to it. Replies
-  and commits holds the reply voice and templates, `Mark thread as resolved`
-  and the commit style (`review-replies` stays its page id and anchor); Run
-  defaults is its own page of the workspace settings.
-  The Projects page lists each folder once: one row per repository or plain
-  folder under one count line (`3 projects, 1 plain folder`,
+  plain code folder open. The workspace is renamed from the `Name` row of the
+  `Workspace` band that opens the Projects page, and its name is written once
+  on that page, in the top bar. The page ends in a `Danger zone` band whose
+  row says `Disconnect this workspace`, confirmed in place.
+  Replies and commits holds the `Replies` band (the voice and the
+  attribution line), the templates with the seven placeholders shown once
+  under both and added to the template last in focus (`ReplyTemplatesBand`),
+  `Mark thread as resolved` and the commit style (`review-replies` stays its
+  page id and anchor); Run defaults is its own page of the workspace
+  settings and holds no branch or reply setting. Branches opens on a Naming
+  band (`WorkspaceBranchNamingBand`: Branch prefix and Branch name), then
+  After merge. Each field's page is `FIELD_PAGE` in
+  `features/settings/pageKeys.ts`, so Restore defaults, Copy from and the
+  changed count follow a field when it moves; override keys never change.
+  The Projects page lists each folder once, under a `Projects` heading. The
+  count is written once, in the page meta line (`3 projects, 1 plain folder`,
   `projectsCountLine`). A row opens in place; there is no second card for the
   same folder. Tracking a plain folder with git is an inline flow in its own
   row (`TrackWithGitFlow`, `FolderGitCard`), never a dialog: the
@@ -378,10 +403,13 @@ pageKeys.ts`), typed so a new override key does not compile until it has
   copied, and neither are projects, folders, integration accounts,
   permission history or `bootstrap.*` keys. Restoring writes `null`; every
   override change of one copy or restore is one `patchWorkspaceOverrides`
-  through the queued workspace writer. A field whose value differs from the
-  default shows a small Reset button after its label (tooltip `Reset to
-default`, hidden while the value is the default, `WorkspaceFieldRow`). Precedent:
-  JetBrains Copy to Project and VS Code's Modified marker with Reset Setting.
+  through the queued workspace writer. Every settings row, This Mac and
+  workspace alike, has one shape (`SettingRow`): label, one help line, the
+  control on the right. A row whose value differs from the default shows a
+  small Reset button on the label line (tooltip `Reset to default`, hidden
+  while the value is the default), after the `N folders use their own` chip
+  of a workspace row (`WorkspaceFieldRow`). Precedent: JetBrains Copy to
+  Project and VS Code's Modified marker with Reset Setting.
 - **Storage is the one place for disk space, scoped by a picker.** App >
   Storage lists every worktree folder Goodboy made, grouped by repository,
   under three filters: To review, In use and Kept. Each part is a card
@@ -396,14 +424,16 @@ another repository` at its foot), Artifacts of deleted sessions, and
 folders · size` (`WorktreeRemoveButton`), with the sentence on idle days as
   its help line, and the folder `...` menu shows on hover and focus. `Prune`
   is a secondary button that confirms. Branches is a Workspace page
-  (`branches`, `BranchesPage`): the workspace's After merge rule first, then
-  the branch list under one select (`Safe to delete`, `Check first`, `All`),
+  (`branches`, `BranchesPage`): the Naming band and the workspace's After
+  merge rule first, then the branch list under one select (`Safe to delete`, `Check first`, `All`),
   then a `Recently deleted` fold row (restore or delete for good, loaded from
   `deleted_branches` on open, which also releases the refs of deletions older
   than 14 days). The page meta line reads `N safe to delete · M need a look`
   (`branchesMetaOf` through `useBranchesMeta`). A scope picker
   (`StorageScopePicker`, `Listbox`) sits in the page header row next to
-  `Suggest cleanup after` and `Check again` (`StorageHeaderActions`); the
+  `Check again` (`StorageHeaderActions`); `Suggest cleanup after` is the last
+  row of the Worktrees band (`StorageSuggestAfterRow`), and a failed save
+  keeps the old number of days; the
   Branches header has the same picker without `Removed workspaces`
   (`BranchesHeaderActions`). `openStorage` and the
   cleanup notifications always land on Storage. The picker lists the current
@@ -460,9 +490,11 @@ workspaces` (folders whose owning workspace is gone or was never linked),
   and wireframes whose session is gone, under To review and Kept, with Open,
   Keep (30 days or always) and Delete, which asks in a `ConfirmPopover` beside its button. Its one bulk
   action deletes the unused ones. Artifacts never trigger a nudge on their own.
-- **Security findings is a section at the end of the Storage page,
-  workspace-scoped** (`SecurityFindingsSection`; the old `security-findings`
-  address lands on Storage, and its warning dot sits on Storage). It scans the
+- **Security findings are the `Secrets in saved scripts` band of the
+  workspace's Permissions page**, after Rules (`SecurityFindingsSection`,
+  passed to `PermissionsSettings` as `afterRules`; the old
+  `security-findings` address lands on Permissions, and its warning dot sits
+  on Permissions). It scans the
   text Goodboy keeps for a workspace (saved scripts today; workflow steps,
   the profile, reply templates and permission rules are named in the design
   but not wired to a scan call yet) for known token shapes
@@ -480,9 +512,7 @@ workspaceId, nowMs })`, owns every row's attention sentence and tone (it replace
   calls it once per studio and hands the result to the rail and the home, and
   a test mounts the home on the strict `invoke` mock to keep it free of
   commands and loads at render. A dot appears only
-  when something needs doing: warning on Providers when a connected
-  CLI is too old for a model it serves or no provider is connected
-  (`selectProviderAttention`, with the reason as the dot's label), info on
+  when something needs doing: info on
   Updates while an app update is ready (`updatesText`), info on Storage with "N GB can go" as
   its label once clean idle folders pass 10 GB (warning when the disk has
   under 10 GB free and at least 1 GB can go, `storageAttention`),
@@ -491,13 +521,14 @@ workspaceId, nowMs })`, owns every row's attention sentence and tone (it replace
   worse of its two dots, `appAttention`), and warning on
   Workspace with "N folders not found" once one of its projects reads
   `missing` in `projectGitStatus` (otherwise the row just names the
-  workspace). A dot means only "needs you": a tool whose health is bad shows a
-  warning or danger dot named by its reason (`toolAttention`), and a connected,
-  healthy provider or tool shows none (no green dot for connected). No rail row is red: the destructive actions sit at the
-  bottom of their page, Reset (Delete all data) at the end of Backup and
-  Disconnect at the end of Projects, and turn red only in their inline
-  confirm. Panel sections sit on bands (`Band`, eyebrow outside) with gap between
-  them and no `Divider`. The workspace page is the exception: one
+  workspace). A dot means only "needs you", never "connected"; provider and
+  tool health lives on their Connections tiles and the Connections door. No rail row is red: the destructive actions close
+  their page in a `Danger zone` band, Delete all data at the end of Backup
+  and reset and Disconnect at the end of Projects, and turn red only in their
+  inline confirm. Every group on a settings page is a named band (`Band`,
+  eyebrow outside) with gap between them and no `Divider`; a band name never
+  repeats its only row, and no page titles a group with a bare `Eyebrow`
+  (`settings-section-titles-are-bands`). The workspace page is the exception: one
   column of eyebrow sections 24px apart. Its title is the workspace name,
   renamed in place. One `Terminal folder` row sits above the projects: the
   computed folder (`workspaceFolder`) with `Change` (the folder dialog) and,

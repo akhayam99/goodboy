@@ -377,7 +377,7 @@ page with its own calls and words (the chip and the form read `merge request`, t
 Tauri commands that hold the stored token, `Mark ready` and `Convert to draft`
 change the `Draft:` prefix of the title, Merge lists the ways the project
 allows, and a token without the `api` scope reads `Goodboy can't read this merge
-request` with `Open GitLab settings`. A branch with no merge request shows the
+request` with `Open GitLab in Connections`. A branch with no merge request shows the
 same create form with `Create merge request`, the same Scribe job and no
 reviewers. Bitbucket uses the same page through its own adapter
 (`bitbucketPullRequestPort`, built by `bitbucketPortOf` from the mount's
@@ -564,7 +564,7 @@ history rows land on `branch/commits`. **Checks.** The checks of the pull reques
 session reads them through the same five states once its host's
 `canReadChecks` is on (GitLab: the jobs of the head pipeline, a job allowed to
 fail counts as skipped; Bitbucket: its commit statuses; a token that cannot read pipelines gets the denied
-notice with `Open GitLab settings`); while it is off the tab says Goodboy does
+notice with `Open GitLab in Connections`); while it is off the tab says Goodboy does
 not show that host's checks yet (`checksViewOf`).
 
 **Work.** On a branch with an Auto run the tab opens with a story line and a `Leads` block

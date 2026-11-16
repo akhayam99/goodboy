@@ -1,21 +1,47 @@
 // @vitest-environment happy-dom
 
-import { afterEach, describe, expect, it, vi } from 'vitest';
+vi.mock('@tauri-apps/api/core', async () =>
+  (await import('../../../../store/storyHarness')).tauriCoreModuleMock(),
+);
+vi.mock('@tauri-apps/api/event', async () =>
+  (await import('../../../../store/storyHarness')).tauriEventModuleMock(),
+);
+
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import type { IntegrationCredentialId } from '@goodboy/types';
 import { credentialIdOf } from '../../../../__tests__/helpers/brandedIds';
+import {
+  STORE_IMPORT_TIMEOUT_MS,
+  importStore,
+  resetStoryStore,
+  type StoryStore,
+} from '../../../../store/storyHarness';
 import { IntegrationConnectedRow } from '.';
 
-const secret = vi.hoisted(() => ({ has: true }));
+const CREDENTIAL_ID = credentialIdOf({ value: 'cred-1' });
 
-vi.mock('@tauri-apps/api/core', () => ({
-  invoke: vi.fn(async () => secret.has),
-}));
+let useAppStore: StoryStore;
 
-afterEach(() => {
-  cleanup();
-  secret.has = true;
+beforeAll(async () => {
+  useAppStore = await importStore();
+}, STORE_IMPORT_TIMEOUT_MS);
+
+beforeEach(async () => {
+  await resetStoryStore();
 });
+
+afterEach(cleanup);
+
+type KeyParams = {
+  readonly isPresent: boolean;
+};
+
+const keyChecked = ({ isPresent }: KeyParams): void => {
+  useAppStore.setState({
+    integrationKeyChecks: { [CREDENTIAL_ID]: { isPresent, checkedAt: 0 } },
+  });
+};
 
 const renderRow = ({
   onDisconnect = vi.fn(async () => undefined),
@@ -87,19 +113,26 @@ describe('IntegrationConnectedRow', () => {
 });
 
 describe('a connection whose key left the keychain', () => {
-  it('says the key is gone instead of claiming a healthy connection', async () => {
-    secret.has = false;
-    renderRow({ credentialId: credentialIdOf({ value: 'cred-1' }) });
+  it('says the key is gone instead of claiming a healthy connection', () => {
+    keyChecked({ isPresent: false });
+    renderRow({ credentialId: CREDENTIAL_ID });
 
-    await waitFor(() => expect(screen.getByText(/missing from this Mac/i)).toBeDefined());
+    expect(screen.getByText(/missing from this Mac/i)).toBeDefined();
     expect(screen.getByText('Connected as Ada Lovelace')).toBeDefined();
   });
 
-  it('stays quiet while the key is where it should be', async () => {
-    renderRow({ credentialId: credentialIdOf({ value: 'cred-1' }) });
+  it('stays quiet while the key is where it should be', () => {
+    keyChecked({ isPresent: true });
+    renderRow({ credentialId: CREDENTIAL_ID });
 
-    await waitFor(() => expect(screen.getByText('Connected as Ada Lovelace')).toBeDefined());
+    expect(screen.getByText('Connected as Ada Lovelace')).toBeDefined();
     expect(screen.queryByText(/missing from this Mac/i)).toBeNull();
+  });
+
+  it('stays quiet until the keychain has answered', () => {
+    renderRow({ credentialId: CREDENTIAL_ID });
+
+    expect(screen.queryByText('Key missing')).toBeNull();
   });
 });
 
@@ -123,11 +156,11 @@ describe('a row whose disconnect lives in the page header', () => {
     expect(screen.queryByRole('button')).toBeNull();
   });
 
-  it('shows one Key missing chip and no second sentence about it', async () => {
-    secret.has = false;
-    renderHeaderRow({ credentialId: credentialIdOf({ value: 'cred-1' }) });
+  it('shows one Key missing chip and no second sentence about it', () => {
+    keyChecked({ isPresent: false });
+    renderHeaderRow({ credentialId: CREDENTIAL_ID });
 
-    expect(await screen.findByText('Key missing')).toBeDefined();
+    screen.getByText('Key missing');
     expect(screen.queryByText(/missing from this Mac/i)).toBeNull();
     expect(screen.queryByRole('button')).toBeNull();
   });

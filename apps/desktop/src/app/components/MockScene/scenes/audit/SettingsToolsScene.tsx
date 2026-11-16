@@ -3,9 +3,9 @@ import type {
   IntegrationBindingId,
   IntegrationCredentialId,
 } from '@goodboy/types';
-import type { IntegrationGlyphProvider } from '../../../../../features/integrations/components/IntegrationGlyph';
+import type { IntegrationGlyphProvider } from '../../../../../shared/components/IntegrationGlyph';
 import { useAppStore } from '../../../../../store';
-import { SettingsFrame } from './SettingsFrame';
+import { ConnectionsFrame } from './ConnectionsFrame';
 import { SETTINGS_WORKSPACE_ID } from './settingsSeed';
 import { sceneParam } from './sceneParams';
 import { sceneClock } from '../../sceneClock';
@@ -68,5 +68,8 @@ const seedTools = (): void => {
 };
 
 export const SettingsToolsScene = () => (
-  <SettingsFrame focus={{ scope: 'tools', tool: TOOL }} seed={seedTools} />
+  <ConnectionsFrame
+    focus={TOOL === undefined ? null : { kind: 'tool', tool: TOOL }}
+    seed={seedTools}
+  />
 );

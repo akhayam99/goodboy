@@ -8,6 +8,7 @@ import {
   resetStoryStore,
   storySpies,
   STORE_IMPORT_TIMEOUT_MS,
+  type StoryStore,
 } from '../../../../../store/storyHarness';
 import { installFakeResizeObserver } from '../../../../../test/fakeResizeObserver';
 import { clearSceneInvoke, sceneInvoke } from '../../../../../test/sceneInvoke';
@@ -20,9 +21,11 @@ vi.mock('@tauri-apps/api/event', async () =>
   (await import('../../../../../store/storyHarness')).tauriEventModuleMock(),
 );
 
+let useAppStore: StoryStore;
+
 beforeAll(async () => {
   installFakeResizeObserver();
-  await importStore();
+  useAppStore = await importStore();
 }, STORE_IMPORT_TIMEOUT_MS);
 
 beforeEach(async () => {
@@ -114,11 +117,9 @@ describe('the small flows scenes', () => {
 
   it('offers provider recovery above Retry', () => {
     mount({ name: 'u34-u12-provider' });
-    const open = vi.fn();
-    window.addEventListener('goodboy:open-settings', open, { once: true });
     const alert = screen.getByRole('alert');
     fireEvent.click(within(alert).getByRole('button', { name: 'Connect a provider' }));
-    expect(open).toHaveBeenCalledTimes(1);
+    expect(useAppStore.getState().appStudio).toEqual({ kind: 'connections', focus: null });
     expect(
       within(alert)
         .getByRole('button', { name: 'Connect a provider' })

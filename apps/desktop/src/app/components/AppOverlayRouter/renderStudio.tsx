@@ -50,6 +50,10 @@ const BrowserStudio = lazyNamed({
   load: () => import('../../../features/browser/components/BrowserStudio'),
   pick: ({ BrowserStudio }) => BrowserStudio,
 });
+const ConnectionsStudio = lazyNamed({
+  load: () => import('../../../features/connections/components/ConnectionsStudio'),
+  pick: ({ ConnectionsStudio }) => ConnectionsStudio,
+});
 const MonitoringStudio = lazyNamed({
   load: () => import('../../../features/monitoring/components/MonitoringStudio'),
   pick: ({ MonitoringStudio }) => MonitoringStudio,
@@ -137,6 +141,14 @@ export const renderStudio = ({
     case 'browser':
       return currentWorkspace === null ? null : (
         <BrowserStudio sessionId={overlay.sessionId} tabId={overlay.tabId} onClose={close} />
+      );
+    case 'connections':
+      return (
+        <ConnectionsStudio
+          currentWorkspace={currentWorkspace}
+          focus={overlay.focus ?? null}
+          onClose={close}
+        />
       );
     case 'monitoring':
       return currentWorkspace === null ? null : <MonitoringStudio onClose={close} />;

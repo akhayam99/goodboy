@@ -4,7 +4,7 @@ import type { Tone } from '@goodboy/ui';
 import type { OpenQuestion } from '@goodboy/types';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../../../shared/components/conceptIcons';
 import { ARTIFACT_KIND_MARKER_LABEL } from '../../../../../artifacts/artifactPresentation';
-import { IntegrationGlyph } from '../../../../../integrations/components/IntegrationGlyph';
+import { IntegrationGlyph } from '../../../../../../shared/components/IntegrationGlyph';
 import { rowStateNode, rowStateTone } from '../../../../../workTreeModel/rowStateCopy';
 import type { TimelineRowItem } from '../../../../timeline/buildTimelineStream';
 import { sessionEventGlyph } from '../../../../timeline/sessionEventPresentation';

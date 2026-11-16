@@ -5,6 +5,8 @@ import type { ToastAction } from '../../../../shared/components/Toast';
 import { revealInFileManager } from '../../../../shared/lib/reveal';
 import { integrationLabel } from '../../../../shared/utils/integrationLabel';
 import { NAMES } from '../../../../shared/utils/names';
+import { connectionFocusOf } from '../../../connections/connectionFocusOf';
+import { openConnection } from '../../../connections/openConnection';
 import { openSettings } from '../../../settings/openSettings';
 import { retryNotifiedPush } from '../../retryNotifiedPush';
 
@@ -21,19 +23,21 @@ type Params = {
 export const mapRecoveryAction = ({ action, store }: Params): ToastAction => {
   if (action.kind === 'open-settings') {
     const { scope, section, provider, tool } = action;
+    if (tool !== undefined) {
+      return {
+        label: `Reconnect ${integrationLabel({ provider: tool })}`,
+        onClick: () => openConnection({ focus: { kind: 'tool', tool } }),
+      };
+    }
+    if (scope === 'providers' || scope === 'tools') {
+      return {
+        label: `Open ${NAMES.connections}`,
+        onClick: () => openConnection({ focus: connectionFocusOf({ provider }) }),
+      };
+    }
     return {
-      label:
-        tool === undefined
-          ? NAMES.openSettings
-          : `Reconnect ${integrationLabel({ provider: tool })}`,
-      onClick: () => {
-        openSettings({
-          scope,
-          ...(section !== undefined && { section }),
-          ...(provider !== undefined && { provider }),
-          ...(tool !== undefined && { tool }),
-        });
-      },
+      label: NAMES.openSettings,
+      onClick: () => openSettings({ scope, ...(section !== undefined && { section }) }),
     };
   }
   if (action.kind === 'reveal-path') {

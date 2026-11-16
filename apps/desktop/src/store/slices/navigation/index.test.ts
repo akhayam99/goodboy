@@ -690,9 +690,9 @@ describe('navigation slice', () => {
   it('replaces the studio voice when the same studio opens again', () => {
     const store = makeStore();
     store.getState().openStudio({ studio: { kind: 'settings', focus: { scope: 'app' } } });
-    store.getState().openStudio({ studio: { kind: 'settings', focus: { scope: 'providers' } } });
+    store.getState().openStudio({ studio: { kind: 'settings', focus: { scope: 'workspace' } } });
     expect(store.getState().navigation[WS]?.entries).toHaveLength(2);
-    expect(keyOf(store)).toBe('board+settings/providers');
+    expect(keyOf(store)).toBe('board+settings/workspace');
   });
 
   it('closes the studio on a forward move and finds it again on back', () => {

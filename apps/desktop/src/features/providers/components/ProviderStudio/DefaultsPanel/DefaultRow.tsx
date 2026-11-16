@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { BandRow, cn, TruncatedText } from '@goodboy/ui';
+import { ROLE_GRID } from './roleGrid';
 
 type Props = {
   readonly label: string;
@@ -18,22 +19,24 @@ export const DefaultRow = ({
   status,
   children,
 }: Props) => (
-  <BandRow isInteractive className="min-w-0 gap-3 py-0.5">
-    <span
-      data-default-row={anchor}
-      className="min-w-0 flex-1 truncate text-body text-foreground @[600px]:w-36 @[600px]:flex-none"
-    >
-      {label}
+  <BandRow isInteractive className="min-w-0">
+    <div data-role-grid="" className={ROLE_GRID.row}>
+      <span data-default-row={anchor} className={ROLE_GRID.name}>
+        {label}
+      </span>
+      <TruncatedText
+        className={cn(
+          ROLE_GRID.job,
+          isSummaryNoted ? 'text-muted-foreground' : 'text-faint-foreground',
+        )}
+      >
+        {summary}
+      </TruncatedText>
+      <div className={ROLE_GRID.route}>{children}</div>
+      <span className={ROLE_GRID.source}>{status}</span>
+    </div>
+    <span aria-hidden className="invisible text-row">
+      ›
     </span>
-    <TruncatedText
-      className={cn(
-        'hidden min-w-0 flex-1 truncate text-meta @[600px]:block',
-        isSummaryNoted ? 'text-muted-foreground' : 'text-faint-foreground',
-      )}
-    >
-      {summary}
-    </TruncatedText>
-    {status === undefined ? null : <span className="flex shrink-0 items-center">{status}</span>}
-    <div className="w-[264px] min-w-0 shrink-0">{children}</div>
   </BandRow>
 );

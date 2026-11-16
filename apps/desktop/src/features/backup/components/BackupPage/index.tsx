@@ -1,7 +1,8 @@
 import { useEffect } from 'react';
-import { Button, Eyebrow, FieldRow, FormActions, Notice } from '@goodboy/ui';
+import { Band, Button, FormActions, Notice } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
 import { useToast } from '../../../../shared/components/Toast';
+import { SettingRow } from '../../../settings/settingRow';
 import { ExportGroupsSection } from './ExportGroupsSection';
 import { NeverIncluded } from './NeverIncluded';
 import { LeftOutFindings } from './LeftOutFindings';
@@ -58,13 +59,13 @@ export const BackupPage = () => {
 
   return (
     <div className="flex flex-col gap-6">
-      <section aria-labelledby="backup-export" className="flex flex-col gap-3">
-        <h2 id="backup-export" className="flex items-center gap-2">
-          <Eyebrow label="Export" />
-        </h2>
-        <p className="text-meta text-muted-foreground">
-          Move your setup to another Mac, or keep a copy. This never contains keys or tokens.
-        </p>
+      <Band
+        inset="content"
+        label="Export"
+        ariaLabel="Export"
+        hint="For another Mac, or a copy. Never keys or tokens."
+        headingLevel={2}
+      >
         <ExportGroupsSection
           groups={groups}
           counts={exportPreview?.counts ?? null}
@@ -86,11 +87,15 @@ export const BackupPage = () => {
             {exportError}
           </p>
         )}
-        <FieldRow label="Backup file">
+        <SettingRow
+          label="Export backup"
+          rowKey="backup-export"
+          help="Saves a backup file with the groups you ticked."
+        >
           <Button isBusy={isExporting} busyLabel="Exporting…" onClick={() => void onExport()}>
             Export
           </Button>
-        </FieldRow>
+        </SettingRow>
         {exportPhase === 'done' && exportedPath !== null && (
           <Notice
             tone="success"
@@ -98,20 +103,24 @@ export const BackupPage = () => {
             title={`Saved ${exportedPath.split('/').pop()}. No keys, tokens or folder paths inside.`}
           />
         )}
-      </section>
+      </Band>
 
-      <section aria-labelledby="backup-import" className="flex flex-col gap-3">
-        <h2 id="backup-import" className="flex items-center gap-2">
-          <Eyebrow label="Import" />
-        </h2>
-        <p className="text-meta text-muted-foreground">
-          Import adds and updates. It never deletes anything.
-        </p>
-        <FieldRow label="Setup file">
+      <Band
+        inset="content"
+        label="Import"
+        ariaLabel="Import"
+        hint="Adds and updates. Never deletes."
+        headingLevel={2}
+      >
+        <SettingRow
+          label="Import a backup"
+          rowKey="backup-import"
+          help="Opens a backup file and shows what changes first."
+        >
           <Button variant="secondary" onClick={() => void chooseImportFile()}>
-            Import
+            Choose file
           </Button>
-        </FieldRow>
+        </SettingRow>
         {importError !== null && (
           <p role="alert" className="text-meta text-danger">
             {importError}
@@ -176,7 +185,7 @@ export const BackupPage = () => {
             }
           />
         )}
-      </section>
+      </Band>
     </div>
   );
 };

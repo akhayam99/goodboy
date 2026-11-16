@@ -97,12 +97,31 @@ const DRAWERS: Readonly<Record<string, unknown>> = {
   },
 };
 
-const STUDIO_BLOBS: ReadonlyArray<ExpectedBlob> = Object.entries(STUDIOS).map(([kind, studio]) => ({
-  name: `studio ${kind}`,
-  kind,
-  blob: blobOf({ place: SESSION_PLACE, studio }),
-  expected: studio,
-}));
+const SETTINGS_PROVIDER_PAGE = {
+  kind: 'settings',
+  focus: { scope: 'providers', provider: 'anthropic' },
+};
+
+type StudioBlob = ExpectedBlob & {
+  readonly stored: object;
+};
+
+const STUDIO_BLOBS: ReadonlyArray<StudioBlob> = [
+  ...Object.entries(STUDIOS).map(([kind, studio]) => ({
+    name: `studio ${kind}`,
+    kind,
+    blob: blobOf({ place: SESSION_PLACE, studio }),
+    stored: studio,
+    expected: studio,
+  })),
+  {
+    name: 'studio connections, saved as the settings provider page',
+    kind: 'connections',
+    blob: blobOf({ place: SESSION_PLACE, studio: SETTINGS_PROVIDER_PAGE }),
+    stored: SETTINGS_PROVIDER_PAGE,
+    expected: { kind: 'connections', focus: { kind: 'provider', provider: 'anthropic' } },
+  },
+];
 
 const FOLDED_DRAWER_LENSES: ReadonlyMap<string, string | null> = new Map<string, string | null>([
   ['context', 'context'],

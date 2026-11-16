@@ -27,6 +27,14 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe('AppResetSection', () => {
+  it('closes the page in a Danger zone band', () => {
+    render(<AppResetSection />);
+
+    const band = screen.getByRole('region', { name: 'Danger zone' });
+    within(band).getByRole('heading', { name: 'Danger zone' });
+    within(band).getByRole('button', { name: 'Delete all data' });
+  });
+
   it('asks in a popover outside the section and leaves the section as it was', () => {
     const { container } = render(<AppResetSection />);
     const section = container.querySelector('section');
@@ -73,10 +81,26 @@ describe('WorkspaceDisconnectBand', () => {
   it('names the workspace in the popover title and waits for the confirm', () => {
     render(<WorkspaceDisconnectBand workspaceId={workspace.id} requestClose={vi.fn()} />);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Disconnect' }));
+    fireEvent.click(
+      within(screen.getByRole('region', { name: 'Danger zone' })).getByRole('button', {
+        name: 'Disconnect',
+      }),
+    );
 
     expect(screen.getByRole('dialog', { name: 'Disconnect Harborline?' })).toBeDefined();
     expect(actions.disconnectWorkspace).not.toHaveBeenCalled();
+  });
+
+  it('keeps the workspace when the confirm is cancelled', async () => {
+    const requestClose = vi.fn();
+    render(<WorkspaceDisconnectBand workspaceId={workspace.id} requestClose={requestClose} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Disconnect' }));
+    fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Cancel' }));
+
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+    expect(actions.disconnectWorkspace).not.toHaveBeenCalled();
+    expect(requestClose).not.toHaveBeenCalled();
   });
 
   it('disconnects on confirm and closes the settings page', async () => {

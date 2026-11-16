@@ -160,7 +160,7 @@ const ModelsOverApp = ({ policy, openRole, scrollTo }: Props) => {
     const id = window.setTimeout(
       () =>
         useAppStore.getState().switchStudio({
-          studio: { kind: 'settings', focus: { scope: 'providers' } },
+          studio: { kind: 'settings', focus: { scope: 'workspace', section: 'models' } },
         }),
       OPEN_DELAY_MS,
     );

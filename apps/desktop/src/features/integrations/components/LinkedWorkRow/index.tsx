@@ -2,7 +2,10 @@ import type { MouseEvent, ReactNode } from 'react';
 import { ArrowRight, ArrowUpRight, type LucideIcon } from 'lucide-react';
 import { cn, ICON_SIZE, tintClasses, Tooltip, FOCUS_RING } from '@goodboy/ui';
 import type { Tone } from '@goodboy/ui';
-import { IntegrationGlyph, type IntegrationGlyphProvider } from '../IntegrationGlyph';
+import {
+  IntegrationGlyph,
+  type IntegrationGlyphProvider,
+} from '../../../../shared/components/IntegrationGlyph';
 
 type IconLeading = {
   readonly kind: 'icon';

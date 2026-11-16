@@ -21,6 +21,7 @@ import { adaptSlackThreads } from '../adapters/slack';
 import { attachInboxProjects } from '../attachInboxProjects';
 import { isForMeRecord } from '../isForMeRecord';
 import { orderInboxRecords } from '../orderInboxRecords';
+import { toolUseCountsOf } from '../toolUseCountsOf';
 import { INBOX_PROVIDERS, type InboxProvider, type InboxRecord } from '../types';
 import { useInboxSentryIssues } from '../useInboxSentryIssues';
 
@@ -136,6 +137,14 @@ export const useInboxRecords = ({ workspaceId, rootPath }: Params): Result => {
   const connected = INBOX_PROVIDERS.filter((provider) =>
     provider === 'github' ? github.hasRemote === true : has(provider),
   );
+  const noteToolUseCounts = useAppStore((state) => state.noteToolUseCounts);
+  const settledKey = connected
+    .filter((provider) => !loading[provider] && errors[provider] === null)
+    .join(' ');
+  useEffect(() => {
+    const settled = INBOX_PROVIDERS.filter((provider) => settledKey.split(' ').includes(provider));
+    noteToolUseCounts({ workspaceId, counts: toolUseCountsOf({ records, settled }) });
+  }, [noteToolUseCounts, workspaceId, records, settledKey]);
   const refetch = (): void => {
     github.refetch();
     githubPrs.refetch();

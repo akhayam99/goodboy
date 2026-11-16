@@ -1,42 +1,64 @@
-import { useEffect, useState } from 'react';
-import { Band, FieldRow, Switch } from '@goodboy/ui';
+import { useEffect, useRef } from 'react';
+import { Band, Switch, appScrollIntoView } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
 import { useInstalledVersion } from '../../../changelog/hooks/useInstalledVersion';
 import { UpdateVersionRow } from '../../../updater/components/UpdateVersionRow';
-import { SETTING_UPDATER_AUTO_DOWNLOAD } from '../../../settings/settings';
+import { useAppSettingSave } from '../../hooks/useAppSettingSave';
+import { SETTING_UPDATER_AUTO_DOWNLOAD } from '../../settings';
+import { SWITCH_SETTING } from '../../switchSetting';
+import { SettingRow } from './SettingRow';
+import { UpdatesWhatsNewRow } from './UpdatesWhatsNewRow';
 
-export const UpdatesSection = () => {
+const DOWNLOAD_LABEL = 'Download in the background';
+
+type Props = {
+  readonly isFocused?: boolean;
+};
+
+export const UpdatesSection = ({ isFocused = false }: Props) => {
   const loadSetting = useAppStore((state) => state.loadSetting);
-  const saveSetting = useAppStore((state) => state.saveSetting);
+  const stored = useAppStore((state) => state.settings[SETTING_UPDATER_AUTO_DOWNLOAD]);
   const installedVersion = useInstalledVersion();
-  const [isAutoDownload, setIsAutoDownload] = useState(true);
+  const bandRef = useRef<HTMLDivElement>(null);
+  const save = useAppSettingSave({
+    settingKey: SETTING_UPDATER_AUTO_DOWNLOAD,
+    saved: stored !== 'false',
+    ...SWITCH_SETTING,
+    failureTitle: "Couldn't save background downloads",
+  });
 
   useEffect(() => {
-    void loadSetting(SETTING_UPDATER_AUTO_DOWNLOAD).then((value) =>
-      setIsAutoDownload(value !== 'false'),
-    );
+    void loadSetting(SETTING_UPDATER_AUTO_DOWNLOAD);
   }, [loadSetting]);
 
-  const onToggleAutoDownload = (next: boolean): void => {
-    setIsAutoDownload(next);
-    void saveSetting(SETTING_UPDATER_AUTO_DOWNLOAD, next ? 'true' : 'false');
-  };
+  useEffect(() => {
+    if (isFocused) {
+      appScrollIntoView({ element: bandRef.current, block: 'start' });
+    }
+  }, [isFocused]);
 
   return (
-    <Band inset="content" label="Version" headingLevel={2}>
-      <div className="flex flex-col">
-        <UpdateVersionRow installedVersion={installedVersion} />
-        <FieldRow
-          label="Download updates in the background"
-          help="Restart to use a new version once it lands."
-        >
-          <Switch
-            ariaLabel="Download updates in the background"
-            checked={isAutoDownload}
-            onChange={onToggleAutoDownload}
-          />
-        </FieldRow>
-      </div>
-    </Band>
+    <div ref={bandRef} className="flex flex-col">
+      <Band inset="content" label="Updates" headingLevel={2}>
+        <div className="flex flex-col">
+          <UpdateVersionRow installedVersion={installedVersion} />
+          <UpdatesWhatsNewRow />
+          <SettingRow
+            label={DOWNLOAD_LABEL}
+            rowKey="background-download"
+            help="New versions land while you work."
+            isChanged={!save.value}
+            onReset={() => void save.save({ value: true })}
+            save={save}
+          >
+            <Switch
+              ariaLabel={DOWNLOAD_LABEL}
+              checked={save.value}
+              onChange={(isNext) => void save.save({ value: isNext })}
+            />
+          </SettingRow>
+        </div>
+      </Band>
+    </div>
   );
 };

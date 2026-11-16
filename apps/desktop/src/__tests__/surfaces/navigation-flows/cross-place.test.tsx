@@ -647,8 +647,8 @@ describe('moving across every place keeps one frame', () => {
       target: { value: 'storage' },
     });
     await settle();
-    const results = screen.getByRole('list', { name: 'Matching settings' });
-    await click(requireValue({ value: within(results).getAllByRole('button')[0] }));
+    const results = screen.getByRole('listbox', { name: 'Matching settings' });
+    await click(requireValue({ value: within(results).getAllByRole('option')[0] }));
 
     const focus = useAppStore.getState().appStudio;
     expect(focus?.kind).toBe('settings');
@@ -662,7 +662,7 @@ describe('moving across every place keeps one frame', () => {
       target: { value: 'zzzz nothing' },
     });
     await settle();
-    screen.getByText('No settings match');
+    screen.getByText(/^No setting matches "zzzz nothing"\./);
   });
 
   it('folds into the rail of doors with ⌘B on the board, in a session, under a studio and under Settings', async () => {

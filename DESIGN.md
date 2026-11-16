@@ -402,11 +402,16 @@ rule with the exception in Status & signals.
 ### Doors and tools
 
 A place you go to and read full width is a door in the left column (Board,
-Tasks, Workflows, Chat, Impact, Monitoring). A tool you open beside your work
-is an icon on the tools rail and opens the dock, with Open full page (Terminal,
-Browser). Chat and Impact are places. Monitoring is the one tool-like door,
-glanced at beside Terminal, and it stays a door until it has a dock body
+Tasks, Workflows, Chat, Connections, Impact, Monitoring). A tool you open beside
+your work is an icon on the tools rail and opens the dock, with Open full page
+(Terminal, Browser). Chat and Impact are places. Monitoring is the one tool-like
+door, glanced at beside Terminal, and it stays a door until it has a dock body
 ([docs/navigation/model.md](docs/navigation/model.md)).
+
+An object the app connects to has one home, and Settings is not it. Providers
+and integrations live in Connections; Settings keeps only preferences (App and
+This workspace, workspace Models included). Every link to a provider or a tool
+opens its Connections page, never a Settings scope.
 
 Every sidebar row ends on one trailing column: one `StatusMark` per row, 16px,
 centred on the row, the same x on doors and session rows. A ring means still

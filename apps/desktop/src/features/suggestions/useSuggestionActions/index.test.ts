@@ -78,6 +78,7 @@ const { storeState, spies, fixable } = vi.hoisted(() => {
     reportError,
     spawnAgent,
     navigate,
+    openStudio: vi.fn(),
     runPlan,
     pushBranch,
     openRewriteHistory,
@@ -740,9 +741,8 @@ describe('useSuggestionActions', () => {
     });
   });
 
-  it('dispatches the provider sign-in flow', () => {
-    const listener = vi.fn();
-    window.addEventListener('goodboy:open-settings', listener);
+  it('opens the provider sign-in in Connections', () => {
+    spies.openStudio.mockClear();
     const actions = actionsFor({
       suggestion: {
         ...suggestionBase,
@@ -756,14 +756,12 @@ describe('useSuggestionActions', () => {
     expect(actions.primary?.label).toBe('Sign in');
     actions.primary?.run();
 
-    expect(listener).toHaveBeenCalledTimes(1);
-    const [event] = listener.mock.calls[0] ?? [];
-    expect(event instanceof CustomEvent ? event.detail : null).toEqual({
-      scope: 'providers',
-      provider: 'anthropic',
-      action: 'login',
+    expect(spies.openStudio).toHaveBeenCalledWith({
+      studio: {
+        kind: 'connections',
+        focus: { kind: 'provider', provider: 'anthropic', action: 'login' },
+      },
     });
-    window.removeEventListener('goodboy:open-settings', listener);
   });
 
   it('retries a failed standalone agent as the same role', () => {

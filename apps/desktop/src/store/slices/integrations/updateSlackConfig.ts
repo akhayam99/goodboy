@@ -1,34 +1,48 @@
 import { upsertIntegrationBinding } from '@goodboy/db';
-import type { IsoDateTime, SlackIntegrationConfig, WorkspaceId } from '@goodboy/types';
+import type { SlackIntegrationBinding, SlackIntegrationConfig, WorkspaceId } from '@goodboy/types';
+import { isoNow } from '@goodboy/types/helpers';
 import { tauriDatabase } from '../../../shared/lib/db';
-import type { GetFn, SetFn } from './types';
+import { createSerialQueue } from '../../runtime/state-writes/serialQueue';
+import type { SliceDeps } from '../../slice-types';
 
-type Params = {
-  readonly workspaceId: WorkspaceId;
+type ConfigParams = {
   readonly config: SlackIntegrationConfig;
 };
 
-export const updateSlackConfig = (set: SetFn, get: GetFn) => {
-  return async ({ workspaceId, config }: Params): Promise<void> => {
-    const binding = get()
-      .workspaceIntegrations[workspaceId]?.filter((entry) => entry.provider === 'slack')
-      .at(0);
-    if (binding === undefined) {
-      return;
-    }
-    const updated = {
-      ...binding,
-      config,
-      updatedAt: new Date().toISOString() as IsoDateTime,
-    };
-    await upsertIntegrationBinding({ db: tauriDatabase, binding: updated });
-    set((state) => ({
-      workspaceIntegrations: {
-        ...state.workspaceIntegrations,
-        [workspaceId]: (state.workspaceIntegrations[workspaceId] ?? []).map((entry) =>
-          entry.id === binding.id ? updated : entry,
-        ),
+export type SlackConfigUpdate = (params: ConfigParams) => SlackIntegrationConfig;
+
+type Params = {
+  readonly workspaceId: WorkspaceId;
+  readonly update: SlackConfigUpdate;
+};
+
+const SLACK_CONFIG_WRITES = createSerialQueue();
+
+export const updateSlackConfig = ({ set, get }: SliceDeps) => {
+  return ({ workspaceId, update }: Params): Promise<void> =>
+    SLACK_CONFIG_WRITES.run({
+      key: workspaceId,
+      task: async () => {
+        const binding = (get().workspaceIntegrations[workspaceId] ?? []).find(
+          (entry): entry is SlackIntegrationBinding => entry.provider === 'slack',
+        );
+        if (binding === undefined) {
+          return;
+        }
+        const updated = {
+          ...binding,
+          config: update({ config: binding.config }),
+          updatedAt: isoNow(),
+        };
+        await upsertIntegrationBinding({ db: tauriDatabase, binding: updated });
+        set((state) => ({
+          workspaceIntegrations: {
+            ...state.workspaceIntegrations,
+            [workspaceId]: (state.workspaceIntegrations[workspaceId] ?? []).map((entry) =>
+              entry.id === binding.id ? updated : entry,
+            ),
+          },
+        }));
       },
-    }));
-  };
+    });
 };

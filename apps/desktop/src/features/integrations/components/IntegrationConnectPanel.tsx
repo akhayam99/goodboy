@@ -1,5 +1,8 @@
 import type { ReactNode } from 'react';
-import { IntegrationGlyph, type IntegrationGlyphProvider } from './IntegrationGlyph';
+import {
+  IntegrationGlyph,
+  type IntegrationGlyphProvider,
+} from '../../../shared/components/IntegrationGlyph';
 import { integrationLabel } from '../../../shared/utils/integrationLabel';
 import { ICON_SIZE } from '@goodboy/ui';
 

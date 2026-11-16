@@ -34,7 +34,7 @@ import {
   type ProviderHealth,
 } from '../../../../../store/slices/providers/providerHealth';
 import type { ProviderDisplayInfo } from '../../../providers';
-import { ProviderPage } from './index';
+import { ProviderDetailBody } from '../../../ProviderDetailBody';
 
 let useAppStore: StoryStore;
 
@@ -102,10 +102,12 @@ describe('a provider that cannot be checked', () => {
   it('keeps Usage and Models visible and says what it last knew', () => {
     seed({ health: { standing: 'cannot_check', evidence: GOOD_TWO_MINUTES_AGO } });
     render(
-      <ProviderPage
+      <ProviderDetailBody
         info={info({ connection: 'connected' })}
-        autoConnect={false}
-        autoUpdate={false}
+        shouldAutoConnect={false}
+        isModelsFocused={false}
+        workspaceId={null}
+        shouldAutoUpdate={false}
       />,
     );
     expect(screen.getByRole('region', { name: 'Usage for cursor' })).toBeDefined();
@@ -117,10 +119,12 @@ describe('a provider that cannot be checked', () => {
   it('keeps Usage visible even when nothing was ever confirmed', () => {
     seed({ health: { standing: 'cannot_check' } });
     render(
-      <ProviderPage
+      <ProviderDetailBody
         info={info({ connection: 'cannot_check' })}
-        autoConnect={false}
-        autoUpdate={false}
+        shouldAutoConnect={false}
+        isModelsFocused={false}
+        workspaceId={null}
+        shouldAutoUpdate={false}
       />,
     );
     expect(screen.getByRole('region', { name: 'Usage for cursor' })).toBeDefined();
@@ -131,10 +135,12 @@ describe('a provider that cannot be checked', () => {
     const refresh = vi.fn(async () => undefined);
     seed({ health: { standing: 'cannot_check', evidence: GOOD_TWO_MINUTES_AGO }, refresh });
     render(
-      <ProviderPage
+      <ProviderDetailBody
         info={info({ connection: 'connected' })}
-        autoConnect={false}
-        autoUpdate={false}
+        shouldAutoConnect={false}
+        isModelsFocused={false}
+        workspaceId={null}
+        shouldAutoUpdate={false}
       />,
     );
     fireEvent.click(screen.getByRole('button', { name: 'Check again' }));
@@ -156,10 +162,12 @@ describe('a provider that refuses runs while its probe says connected', () => {
       },
     });
     render(
-      <ProviderPage
+      <ProviderDetailBody
         info={info({ connection: 'connected' })}
-        autoConnect={false}
-        autoUpdate={false}
+        shouldAutoConnect={false}
+        isModelsFocused={false}
+        workspaceId={null}
+        shouldAutoUpdate={false}
       />,
     );
     expect(screen.getByText('Cursor refused your last 3 runs')).toBeDefined();
@@ -179,10 +187,12 @@ describe('a provider that refuses runs while its probe says connected', () => {
   it('shows no breaker notice once the breaker is closed', () => {
     seed({ health: { standing: 'connected', evidence: GOOD_TWO_MINUTES_AGO } });
     render(
-      <ProviderPage
+      <ProviderDetailBody
         info={info({ connection: 'connected' })}
-        autoConnect={false}
-        autoUpdate={false}
+        shouldAutoConnect={false}
+        isModelsFocused={false}
+        workspaceId={null}
+        shouldAutoUpdate={false}
       />,
     );
     expect(screen.queryByText(/refused your last/)).toBeNull();
@@ -198,10 +208,12 @@ describe('the page meta', () => {
       },
     });
     render(
-      <ProviderPage
+      <ProviderDetailBody
         info={info({ connection: 'connected' })}
-        autoConnect={false}
-        autoUpdate={false}
+        shouldAutoConnect={false}
+        isModelsFocused={false}
+        workspaceId={null}
+        shouldAutoUpdate={false}
       />,
     );
     const account = within(screen.getByRole('region', { name: 'Account' }));
@@ -213,10 +225,12 @@ describe('the page meta', () => {
   it('says who is signed in and when the server last confirmed it, with one chip', () => {
     seed({ health: { standing: 'connected', evidence: GOOD_TWO_MINUTES_AGO } });
     render(
-      <ProviderPage
+      <ProviderDetailBody
         info={info({ connection: 'connected' })}
-        autoConnect={false}
-        autoUpdate={false}
+        shouldAutoConnect={false}
+        isModelsFocused={false}
+        workspaceId={null}
+        shouldAutoUpdate={false}
       />,
     );
     const account = within(screen.getByRole('region', { name: 'Account' }));

@@ -15,8 +15,8 @@ the session rail ("Agent · Auto agent"), so the rail has no Auto entry
 to mark. Auto starts agents of the role it picks (`AUTO_ROLE_WHEN`), and
 agents started by hand keep working.
 
-One app-wide setting, **Work (experimental)** (`SETTING_WORK_ENABLED`, under
-Experiments on the General page, off by default), moves doors, names and
+One app-wide setting, **Work** (`SETTING_WORK_ENABLED`, under
+Experiments on the Advanced page, off by default), moves doors, names and
 engine rules, never views. Off: no Work section, the word Auto, "Start a run"
 opens the router, the level chip. On: Work, the word Lead, one composer,
 permission rows. `flowWordOf` (`shared/lib/flowWordOf.ts`, read through
@@ -1211,8 +1211,9 @@ panel reads again after every write. Picking a preset writes the level and
 clears the own rows; on a Lead it pins a row only where a workspace default
 would still disagree with the preset. `LeadPermissionsChip` mounts the panel
 from `AutoLevelChip` (through `WorkAwareChip`) in Start work and on the Lead
-page when Work is on; with Work off the level chip stays. Workspace settings
-show it as the **Asks you** band (`AutonomyDefaultsBand`) in place of the **Auto asks you** row.
+page when Work is on; with Work off the level chip stays. In the workspace
+settings the **Auto agent asks you** row of Run defaults holds the chip on the
+workspace default when Work is on (`AutoLevelDefaultRow`).
 A row tightened while an agent runs applies to its next start. The tests are
 `permissions.test.ts` (the compatibility table for each level with the switch
 on and off, each precedence step, the stale pair) and

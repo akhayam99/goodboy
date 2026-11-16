@@ -1,17 +1,7 @@
 import { SettingsFrame } from '../../audit/SettingsFrame';
 import { seedStorageScene } from '../../brand/StorageScene';
 import { seedBrandSettings } from '../../brand/settingsBrandSeed';
-import { useAppStore } from '../../../../../../store';
 import { installIphoneIpc } from './settingsTree/installIphoneIpc';
-
-const seedQuietFindings = (): void => {
-  seedStorageScene();
-  useAppStore.setState({
-    openSecurityFindings: {},
-    dismissedSecurityFindings: {},
-    loadSecurityFindings: async () => undefined,
-  });
-};
 
 const seedPaired = (): void => {
   seedBrandSettings();
@@ -31,7 +21,7 @@ export const U26S_SETTINGS_TREE_SCENES = {
     <SettingsFrame focus={{ scope: 'app', section: 'updates' }} seed={seedBrandSettings} />
   ),
   'u26s-settings-storage': () => (
-    <SettingsFrame focus={{ scope: 'app', section: 'storage' }} seed={seedQuietFindings} />
+    <SettingsFrame focus={{ scope: 'app', section: 'storage' }} seed={seedStorageScene} />
   ),
   'u26s-settings-iphone': () => (
     <SettingsFrame focus={{ scope: 'app', section: 'iphone' }} seed={seedPaired} />

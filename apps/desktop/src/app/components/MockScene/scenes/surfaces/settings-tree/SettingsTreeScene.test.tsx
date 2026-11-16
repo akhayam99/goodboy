@@ -57,34 +57,34 @@ describe('the Settings tree scenes', () => {
     );
   });
 
-  it('u26s-settings-general draws the four labels and General without Updates', async () => {
+  it('u26s-settings-general draws the two scope labels and General with its Updates band', async () => {
     const rail = await mount({ id: 'u26s-settings-general' });
 
     expect(
       within(rail)
         .getAllByRole('heading', { level: 2 })
         .map((heading) => heading.textContent),
-    ).toEqual(['App', 'Providers', 'This workspace · Harborline', 'Integrations']);
+    ).toEqual(['This Macevery workspace', 'Harborlinethis workspace']);
     expect(title()).toBe('General');
     screen.getByRole('heading', { level: 2, name: 'Appearance' });
-    expect(screen.queryByRole('switch', { name: 'Download updates in the background' })).toBeNull();
+    screen.getByRole('heading', { level: 2, name: 'Updates' });
   });
 
-  it('u26s-settings-updates gives Updates its own page', async () => {
+  it('u26s-settings-updates opens General, where Updates is a band', async () => {
     await mount({ id: 'u26s-settings-updates' });
 
-    expect(title()).toBe('Updates');
-    screen.getByRole('switch', { name: 'Download updates in the background' });
+    expect(title()).toBe('General');
+    screen.getByRole('switch', { name: 'Download in the background' });
     screen.getByRole('button', { name: "Open What's new" });
   });
 
-  it('u26s-settings-storage ends Storage with the security findings', async () => {
+  it('u26s-settings-storage keeps the cleanup policy as a row of Worktrees', async () => {
     await mount({ id: 'u26s-settings-storage' });
 
     expect(title()).toBe('Storage');
-    expect(
-      await screen.findByText('No findings in your saved scripts.', undefined, WAIT),
-    ).toBeDefined();
+    const worktrees = await screen.findByRole('region', { name: 'Worktrees' }, WAIT);
+    within(worktrees).getByRole('combobox', { name: 'Suggest cleanup after' });
+    expect(screen.queryByRole('region', { name: 'Secrets in saved scripts' })).toBeNull();
   });
 
   it('u26s-settings-iphone lists the paired iPhone with Pair an iPhone in the header', async () => {
@@ -106,14 +106,13 @@ describe('the Settings tree scenes', () => {
     await mount({ id: 'u26s-settings-branches' });
 
     expect(title()).toBe('Branches');
-    screen.getByRole('region', { name: 'When a pull request merges' });
+    screen.getByRole('region', { name: 'After merge' });
     screen.getByRole('button', { name: 'Check again' });
   });
 
-  it('u26s-settings-nows says why the workspace groups are empty', async () => {
+  it('u26s-settings-nows says why the workspace group is empty', async () => {
     await mount({ id: 'u26s-settings-nows' });
 
     screen.getByText('Open a workspace to see its settings.');
-    screen.getByText('Integrations belong to a workspace.');
   });
 });

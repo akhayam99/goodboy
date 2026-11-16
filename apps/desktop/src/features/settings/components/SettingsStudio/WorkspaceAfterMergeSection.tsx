@@ -5,6 +5,7 @@ import { Band, Collapsible, SegmentedTabs } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
 import { DEFAULT_AFTER_MERGE_RULE } from '../../../../store/slices/branch-cleanup';
 import { repoDeletesMergedBranches } from '../../../../store/slices/branch-cleanup/repoDeletesMergedBranches';
+import { useWorkspaceOverrideSave } from '../../hooks/useWorkspaceOverrideSave';
 import { WorkspaceFieldRow } from './WorkspaceFieldRow';
 import {
   AFTER_MERGE_LABEL,
@@ -12,7 +13,6 @@ import {
   githubAutoDeleteNote,
   githubAutoDeleteSummary,
 } from '../../../../shared/utils/afterMergeCopy';
-import { NOTHING_CHANGED } from '../../../../store/slices/notifications/errorRecovery';
 
 type Props = {
   readonly workspaceId: WorkspaceId;
@@ -69,9 +69,12 @@ export const WorkspaceAfterMergeSection = ({ workspaceId }: Props) => {
     () => repoProjects.map((project) => ({ name: project.name, rootPath: project.rootPath })),
     [repoProjects],
   );
-  const patchWorkspaceOverrides = useAppStore((state) => state.patchWorkspaceOverrides);
-  const reportError = useAppStore((state) => state.reportError);
-  const [isBusy, setIsBusy] = useState(false);
+  const save = useWorkspaceOverrideSave<AfterMergeRule>({
+    workspaceId,
+    field: 'afterMerge',
+    saved: rule,
+    patchOf: ({ value }) => ({ afterMerge: value }),
+  });
   const [isReposOpen, setIsReposOpen] = useState(false);
   const autoDeleting = useGithubAutoDeleteRepos({ workspaceId, repos });
   const isOriginRedundant = repos.length > 0 && autoDeleting.length === repos.length;
@@ -81,34 +84,18 @@ export const WorkspaceAfterMergeSection = ({ workspaceId }: Props) => {
       AFTER_MERGE_RULES.map((value) => ({
         value,
         label: AFTER_MERGE_LABEL[value],
-        disabled: isBusy || (value === 'local-and-origin' && isOriginRedundant),
+        disabled: value === 'local-and-origin' && isOriginRedundant,
       })),
-    [isBusy, isOriginRedundant],
+    [isOriginRedundant],
   );
-
-  const choose = async (next: AfterMergeRule) => {
-    setIsBusy(true);
-    try {
-      await patchWorkspaceOverrides({ workspaceId, patch: { afterMerge: next } });
-    } catch (error) {
-      void reportError({
-        title: "Couldn't save what happens after a merge",
-        error,
-        workspaceId,
-        recovery: NOTHING_CHANGED,
-      });
-    } finally {
-      setIsBusy(false);
-    }
-  };
 
   return (
     <Band
       inset="content"
       label="After merge"
-      hint="What happens to a branch once its pull request merges."
+      hint="Once its pull request merges."
       headingLevel={2}
-      ariaLabel="When a pull request merges"
+      ariaLabel="After merge"
     >
       <WorkspaceFieldRow
         workspaceId={workspaceId}
@@ -117,11 +104,11 @@ export const WorkspaceAfterMergeSection = ({ workspaceId }: Props) => {
         help={AFTER_MERGE_NEVER}
       >
         <SegmentedTabs
-          ariaLabel="When a pull request merges"
+          ariaLabel="Folder and branch"
           size="sm"
-          value={rule}
+          value={save.value}
           options={options}
-          onChange={(next) => void choose(next)}
+          onChange={(next) => void save.save({ value: next })}
         />
       </WorkspaceFieldRow>
       {autoDeleting.length === 1 && (

@@ -1,4 +1,4 @@
-import type { IntegrationGlyphProvider } from './components/IntegrationGlyph';
+import type { IntegrationGlyphProvider } from '../../shared/components/IntegrationGlyph';
 import { integrationLabel } from '../../shared/utils/integrationLabel';
 
 type Params = {

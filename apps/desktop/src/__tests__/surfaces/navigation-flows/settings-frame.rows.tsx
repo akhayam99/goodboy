@@ -41,11 +41,17 @@ const openFromRail = async (): Promise<void> => {
   expect(hasRail()).toBe(true);
 };
 
+const goToModels = async (): Promise<void> => {
+  const nav = await screen.findByRole('navigation', { name: 'Settings scopes' });
+  await click(within(nav).getByRole('button', { name: 'Models' }));
+  await heading('Models');
+};
+
 const goToClaude = async (): Promise<void> => {
   const nav = await screen.findByRole('navigation', { name: 'Settings scopes' });
-  await click(within(nav).getAllByRole('button', { name: /^Providers/ })[0] as HTMLElement);
-  const list = await screen.findByRole('list', { name: 'Providers settings' });
-  await click(within(list).getByRole('button', { name: /^Claude/ }));
+  await click(within(nav).getByRole('button', { name: 'Open Connections' }));
+  await heading('Connections');
+  await click(await screen.findByRole('button', { name: /^Claude, / }));
   await heading('Claude');
 };
 
@@ -102,24 +108,24 @@ const sessionKeyRow = ({
 
 export const SETTINGS_FRAME_ROWS: ReadonlyArray<Row> = [
   {
-    name: 'settings frame: folded sidebar, session, Settings, Providers and Claude, then Back to app',
-    covers: ['openSettings', 'scope:providers', 'settings:provider'],
+    name: 'settings frame: folded sidebar, session, Settings, Models, then Back to app',
+    covers: ['openSettings', 'scope:workspace', 'settings:models'],
     open: async () => {
       await collapse();
       await openFromRail();
       expect(screen.getByRole('button', { name: /^Back to app/ })).toBeDefined();
-      await goToClaude();
+      await goToModels();
       await backToApp();
     },
     lands: railAndSessionBack('1'),
   },
   {
-    name: 'settings frame: folded sidebar, session, Settings, Providers and Claude, then Esc',
-    covers: ['openSettings', 'scope:providers', 'settings:provider'],
+    name: 'settings frame: folded sidebar, session, Settings, Models, then Esc',
+    covers: ['openSettings', 'scope:workspace', 'settings:models'],
     open: async () => {
       await collapse();
       await openFromRail();
-      await goToClaude();
+      await goToModels();
       await escape();
     },
     lands: railAndSessionBack('1'),
@@ -298,8 +304,9 @@ export const SETTINGS_FRAME_ROWS: ReadonlyArray<Row> = [
     },
   },
   {
-    name: 'settings frame: a provider about to run out shows a dot in the nav and the notice on its page',
-    covers: ['openSettings', 'scope:providers', 'settings:provider'],
+    name: 'settings frame: the moved row leads to a provider about to run out, with the notice on its page',
+    covers: ['openSettings', 'studio:connections', 'settings:moved-to-connections'],
+    door: 'visible',
     open: async () => {
       seedPolicyScene({ workspaceId: useAppStore.getState().currentWorkspaceId as WorkspaceId });
       await clickButton('Settings');
@@ -307,23 +314,8 @@ export const SETTINGS_FRAME_ROWS: ReadonlyArray<Row> = [
       await goToClaude();
     },
     lands: async () => {
-      const list = screen.getByRole('list', { name: 'Providers settings' });
-      const claude = within(list).getByRole('button', { name: /^Claude/ });
-      expect(claude.textContent).toBe('Claude');
-      expect(within(claude).getByRole('img', { name: 'Claude is about to run out' })).toBeDefined();
-      expect(
-        within(within(list).getByRole('button', { name: /^Codex/ })).getByRole('img', {
-          name: 'Codex is out',
-        }),
-      ).toBeDefined();
-      const detail = document.querySelector('[data-settings-detail]') as HTMLElement;
-      const body = detail.querySelector('[data-slot="pane-body"]') as HTMLElement;
-      expect(body.firstElementChild?.textContent).toContain('Claude is about to run out.');
-      expect(
-        Array.from(list.querySelectorAll('button')).every(
-          (row) => (row.textContent ?? '').trim().split('\n').length === 1,
-        ),
-      ).toBe(true);
+      expect(screen.queryByRole('list', { name: 'Providers settings' })).toBeNull();
+      expect(await screen.findByText('Claude is about to run out.')).toBeDefined();
     },
   },
 ];

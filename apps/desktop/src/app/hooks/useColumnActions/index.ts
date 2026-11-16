@@ -2,9 +2,11 @@ import { useMemo } from 'react';
 import type { ColumnActions } from '../../components/SideColumn/columnDoors';
 import { openDestination } from '../../../shared/navigation/openDestination';
 
-type Params = Omit<ColumnActions, 'openWork'>;
+type Params = Omit<ColumnActions, 'openWork' | 'openConnections'>;
 
 const openWork = (): void => openDestination({ id: 'work' });
+
+const openConnections = (): void => openDestination({ id: 'connections' });
 
 export const useColumnActions = ({
   openBoard,
@@ -26,6 +28,7 @@ export const useColumnActions = ({
       openChat,
       openWorkflows,
       openNewChat,
+      openConnections,
       openMonitoring,
       openImpact,
       openSettings,

@@ -76,7 +76,7 @@ describe('the provider health scene', () => {
   it('local says the sign-in is not confirmed by the provider', async () => {
     await mount('local');
 
-    expect(screen.getByText('Not confirmed')).toBeDefined();
+    expect(screen.getAllByText('Not confirmed').length).toBeGreaterThan(0);
     expect(screen.queryByText(/checked [0-9j]/)).toBeNull();
   });
 

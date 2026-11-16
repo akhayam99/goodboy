@@ -1,5 +1,5 @@
 import type { ProviderConnectionState, ProviderId } from '@goodboy/types';
-import { openSettings } from '../settings/openSettings';
+import { openConnection } from '../connections/openConnection';
 
 type Params = {
   readonly providerId: ProviderId;
@@ -7,10 +7,11 @@ type Params = {
 };
 
 export const openProviderConnect = ({ providerId, connection }: Params): void => {
-  openSettings({
-    scope: 'providers',
-    provider: providerId,
-    action: connection === 'missing' ? 'install' : 'login',
-    door: true,
+  openConnection({
+    focus: {
+      kind: 'provider',
+      provider: providerId,
+      action: connection === 'missing' ? 'install' : 'login',
+    },
   });
 };

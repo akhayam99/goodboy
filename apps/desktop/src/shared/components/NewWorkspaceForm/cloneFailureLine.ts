@@ -4,10 +4,10 @@ import { CLONE_HOSTS } from './cloneHosts';
 import type { CloneFailure } from './cloneFailureTypes';
 
 const LOGIN_STEPS = {
-  github: 'Run gh auth login, or connect GitHub in Integrations.',
-  gitlab: 'Run glab auth login, or connect GitLab in Integrations.',
+  github: 'Run gh auth login, or connect GitHub in Connections.',
+  gitlab: 'Run glab auth login, or connect GitLab in Connections.',
   bitbucket:
-    'Sign in with git so it can read your Bitbucket login, or connect Bitbucket in Integrations.',
+    'Sign in with git so it can read your Bitbucket login, or connect Bitbucket in Connections.',
 } as const satisfies Record<CloneHostKey, string>;
 
 type Params = {

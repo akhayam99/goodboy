@@ -239,6 +239,7 @@ describe('useMenuCommands', () => {
     ['menu.workflows', 'workflow'],
     ['menu.impact', 'impact'],
     ['menu.monitoring', 'monitoring'],
+    ['menu.connections', 'connections'],
   ])('does nothing when %s is picked on the page it opens', async (id, kind) => {
     renderHook(() => useMenuCommands());
     await listened();

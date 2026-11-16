@@ -132,5 +132,5 @@ const seedProvidersScene = (): void => {
 };
 
 export const ProvidersScene = () => (
-  <SettingsFrame focus={{ scope: 'providers' }} seed={seedProvidersScene} />
+  <SettingsFrame focus={{ scope: 'workspace', section: 'models' }} seed={seedProvidersScene} />
 );

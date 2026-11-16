@@ -59,7 +59,19 @@ type BoardParams = {
   readonly hasUnread?: undefined;
 };
 
-type Params = InboxParams | ChatParams | MonitoringParams | BoardParams;
+type ConnectionsParams = {
+  readonly kind: 'connections';
+  readonly reasons: ReadonlyArray<string>;
+  readonly count?: undefined;
+  readonly inUse?: undefined;
+  readonly downPins?: undefined;
+  readonly hasUnread?: undefined;
+  readonly tone?: undefined;
+  readonly quietCount?: undefined;
+  readonly quietReasons?: undefined;
+};
+
+type Params = InboxParams | ChatParams | MonitoringParams | BoardParams | ConnectionsParams;
 
 type FactParams = {
   readonly lead: string;
@@ -103,6 +115,20 @@ export const doorSignalOf = ({
       tone: tone ?? 'warning',
       countText: countTextOf({ count }),
       fact: factOf({ lead: needsYouText({ count, unit: 'sessions' }), reasons }),
+    };
+  }
+  if (kind === 'connections') {
+    const [onlyReason] = reasons;
+    if (onlyReason === undefined) {
+      return undefined;
+    }
+    return {
+      count: reasons.length,
+      isWarning: true,
+      isUnread: false,
+      tone: 'warning',
+      fact:
+        reasons.length === 1 ? onlyReason : factOf({ lead: `${reasons.length} need you`, reasons }),
     };
   }
   if (kind === 'inbox') {

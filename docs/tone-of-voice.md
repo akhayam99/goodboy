@@ -111,7 +111,7 @@ talking to a market. There are two voices:
 - **One scale for "stop and ask".** "Ask first" is the only label for it, in
   Settings, Slack, after-merge cleanup and limits.
 - **One form for a settings path and for a key.** Write a path as
-  **Settings › App › Storage**: bold, with › between the steps, the way the app
+  **Settings › This Mac › Storage**: bold, with › between the steps, the way the app
   writes its trail. Write a key as its Mac glyphs, **⌘Z**, never "Cmd+Z". A
   Linux form is stated on the keyboard page, not beside the Mac key elsewhere.
 - **Code identifiers in backticks**: `pnpm tauri:dev`, not "the pnpm tauri:dev

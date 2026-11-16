@@ -1,4 +1,6 @@
+import type { ReactNode } from 'react';
 import type { WorkflowRules, WorkspaceId } from '@goodboy/types';
+import { Band } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
 import { useWorkflowRules } from '../../hooks/useWorkflowRules';
 import { DefaultAsksSetting } from './DefaultAsksSetting';
@@ -9,9 +11,11 @@ import { NOTHING_CHANGED } from '../../../../store/slices/notifications/errorRec
 
 type Props = {
   readonly workspaceId: WorkspaceId;
+  readonly runRows?: ReactNode;
+  readonly children?: ReactNode;
 };
 
-export const WorkflowRulesPanel = ({ workspaceId }: Props) => {
+export const WorkflowRulesPanel = ({ workspaceId, runRows, children }: Props) => {
   const { rules, patch } = useWorkflowRules({ workspaceId });
   const reportError = useAppStore((state) => state.reportError);
   const save = (next: Partial<WorkflowRules>) => {
@@ -25,23 +29,20 @@ export const WorkflowRulesPanel = ({ workspaceId }: Props) => {
     });
   };
   return (
-    <div data-testid="workflow-rules" className="flex flex-col gap-8">
-      <div className="flex flex-col gap-1">
-        <h2 className="text-title">New runs</h2>
-        <p className="text-body text-muted-foreground">
-          What a new run starts with. Each run keeps its own copy.
-        </p>
-      </div>
-      <div
-        role="group"
-        aria-label="Run defaults"
-        data-run-defaults=""
-        className="flex min-w-0 flex-wrap items-center gap-1"
+    <div data-testid="workflow-rules" className="contents">
+      <Band
+        inset="content"
+        label="New runs"
+        ariaLabel="New runs"
+        hint="Each run keeps its own copy."
+        headingLevel={2}
       >
         <DefaultAsksSetting autonomy={rules.autonomy} patch={patch} />
+        {runRows}
         <DefaultLimitSetting workspaceId={workspaceId} rules={rules} patch={patch} />
         <DefaultModelsSetting workspaceId={workspaceId} />
-      </div>
+      </Band>
+      {children}
       <RulesGuidanceBand workspaceId={workspaceId} rules={rules} onChange={save} />
     </div>
   );

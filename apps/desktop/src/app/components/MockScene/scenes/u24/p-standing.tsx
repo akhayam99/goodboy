@@ -135,7 +135,7 @@ const ProviderHealthOverApp = () => {
     const id = window.setTimeout(
       () =>
         useAppStore.getState().switchStudio({
-          studio: { kind: 'settings', focus: { scope: 'providers', provider: 'cursor' } },
+          studio: { kind: 'connections', focus: { kind: 'provider', provider: 'cursor' } },
         }),
       OPEN_DELAY_MS,
     );

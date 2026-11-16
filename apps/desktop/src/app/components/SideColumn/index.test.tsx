@@ -39,6 +39,7 @@ const actions = (): ColumnActions => ({
   openChat: vi.fn(),
   openWorkflows: vi.fn(),
   openNewChat: vi.fn(),
+  openConnections: vi.fn(),
   openMonitoring: vi.fn(),
   openImpact: vi.fn(),
   openSettings: vi.fn(),
@@ -101,7 +102,7 @@ beforeEach(async () => {
 afterEach(cleanup);
 
 describe('SideColumn', () => {
-  it('stacks New session, six door rows and no tool, the sessions, then Settings and the Goodboy line, the toggle left to the top bar', () => {
+  it('stacks New session, seven door rows and no tool, the sessions, then Settings and the Goodboy line, the toggle left to the top bar', () => {
     mountColumn();
     const nav = navLayer();
 
@@ -114,6 +115,7 @@ describe('SideColumn', () => {
       'inbox',
       'workflows',
       'chat',
+      'connections',
       'impact',
       'monitoring',
       'settings',
@@ -122,7 +124,16 @@ describe('SideColumn', () => {
       Array.from(nav.querySelectorAll('[data-column-door-row]')).map((row) =>
         row.getAttribute('data-column-door-row'),
       ),
-    ).toEqual(['board', 'inbox', 'workflows', 'chat', 'impact', 'monitoring', 'settings']);
+    ).toEqual([
+      'board',
+      'inbox',
+      'workflows',
+      'chat',
+      'connections',
+      'impact',
+      'monitoring',
+      'settings',
+    ]);
     expect(nav.querySelector('[data-column-tiles]')).toBeNull();
     expect(within(nav).queryByRole('button', { name: /^Terminal/ })).toBeNull();
     expect(within(nav).queryByRole('button', { name: /^Browser/ })).toBeNull();
@@ -193,6 +204,40 @@ describe('SideColumn', () => {
     expect(door.querySelector('[data-door-signal="warning"]')).not.toBeNull();
   });
 
+  it('opens Connections from its full weight door after Chat, plain while nothing needs fixing', () => {
+    const doors = actions();
+    mountColumn({ doors });
+
+    const door = screen.getByRole('button', { name: 'Connections' });
+    fireEvent.click(door);
+
+    expect(doors.openConnections).toHaveBeenCalledOnce();
+    expect(door.querySelector('[data-door-signal]')).toBeNull();
+  });
+
+  it('puts the amber dot on Connections and names what needs fixing', () => {
+    useAppStore.setState({
+      providers: [
+        {
+          id: 'anthropic',
+          binary: 'claude',
+          capabilities: { models: [] },
+          connection: 'missing',
+          version: null,
+          identity: null,
+          label: 'Claude',
+          error: null,
+          docsUrl: 'https://docs.harborline.test',
+        },
+      ],
+    });
+    mountColumn();
+
+    const door = screen.getByRole('button', { name: 'Connections, No provider connected' });
+    expect(door.querySelector('[data-door-signal="warning"]')).not.toBeNull();
+    expect(door.querySelector('[data-door-count]')).toBeNull();
+  });
+
   it('draws Impact quieter than the daily doors, in the same list', () => {
     mountColumn();
     const nav = navLayer();
@@ -224,6 +269,7 @@ describe('SideColumn', () => {
     ['terminal', []],
     ['browser', []],
     ['monitoring', ['monitoring']],
+    ['connections', ['connections']],
     ['settings', ['settings']],
     ['new', []],
     ['impact', ['impact']],
@@ -463,7 +509,7 @@ describe('ColumnRail', () => {
     expect(document.querySelector('[data-door-signal]')).toBeNull();
   });
 
-  it('keeps every door as an icon at 44px: New, the six doors of the open column, then Settings, the bug and the mark', () => {
+  it('keeps every door as an icon at 44px: New, the seven doors of the open column, then Settings, the bug and the mark', () => {
     const { container } = mountRail();
     const rail = container.querySelector('[data-column-rail]') as HTMLElement;
 
@@ -475,6 +521,7 @@ describe('ColumnRail', () => {
       'inbox',
       'workflows',
       'chat',
+      'connections',
       'impact',
       'monitoring',
       'settings',

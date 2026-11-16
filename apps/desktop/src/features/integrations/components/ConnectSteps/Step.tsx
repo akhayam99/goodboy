@@ -69,7 +69,7 @@ export const ConnectStepsStep = ({ step, ordinal, isLast }: Props) => {
         )}
         {step.content != null && (
           <div
-            aria-hidden={step.status === 'later'}
+            inert={step.status === 'later'}
             className={cn(
               'mt-1 flex min-w-0 flex-col gap-2',
               step.status === 'later' && 'pointer-events-none opacity-50',

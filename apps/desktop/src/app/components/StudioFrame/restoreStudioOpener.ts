@@ -17,7 +17,9 @@ const isFocusable = (element: HTMLElement | null): element is HTMLElement =>
   element !== null && element.isConnected && element.closest('[inert]') === null;
 
 export const restoreStudioOpener = ({ opener, kind }: Params): void => {
-  if (isFocusHeldElsewhere()) {
+  const isStudioStillOpen =
+    document.querySelector(`[data-studio-frame][data-studio="${kind}"]`) !== null;
+  if (isStudioStillOpen || isFocusHeldElsewhere()) {
     return;
   }
   const door = document.querySelector<HTMLElement>(`[data-column-door="${kind}"]`);

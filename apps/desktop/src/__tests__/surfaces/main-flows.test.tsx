@@ -48,6 +48,7 @@ import { SessionDraftPane } from '../../features/session/components/SessionDraft
 import { InboxDetail } from '../../features/inbox/components/InboxStudio/InboxDetail';
 import type { InboxProvider, InboxRecord } from '../../features/inbox/types';
 import { SettingsStudio } from '../../features/settings/components/SettingsStudio';
+import { ConnectionsStudio } from '../../features/connections/components/ConnectionsStudio';
 
 const NO_ERRORS: Readonly<Record<InboxProvider, string | null>> = {
   github: null,
@@ -305,30 +306,29 @@ describe('main flows on the real store', () => {
     expectNoRenderLoop();
   });
 
-  it('walks from the providers page to one provider page', async () => {
+  it('walks from the Settings moved row to one provider page in Connections', async () => {
     seedSettingsBase();
 
-    const onScopeChange = vi.fn();
     await mountFlow(
       <SettingsStudio
         currentWorkspace={SETTINGS_WORKSPACE}
-        focus={{ scope: 'providers' }}
-        onScopeChange={onScopeChange}
+        focus={{ scope: 'workspace', section: 'models' }}
+        onScopeChange={vi.fn()}
         onClose={() => undefined}
       />,
     );
-    fireEvent.click(screen.getByRole('button', { name: /^Providers/ }));
-    const rail = screen.getByRole('list', { name: 'Providers settings' });
-    expect(screen.queryByRole('heading', { name: 'Claude' })).toBeNull();
-    fireEvent.click(within(rail).getByRole('button', { name: /Claude/ }));
-    expect(onScopeChange).toHaveBeenCalledWith({ scope: 'providers', provider: 'anthropic' });
+    expect(screen.queryByRole('list', { name: 'Providers settings' })).toBeNull();
+    const movedRow = screen
+      .getAllByRole('button', { name: 'Open Connections' })
+      .find((button) => button.dataset.settingsMoved === 'connections');
+    fireEvent.click(movedRow!);
+    expect(useAppStore.getState().appStudio).toEqual({ kind: 'connections', focus: null });
     cleanup();
 
     await mountFlow(
-      <SettingsStudio
+      <ConnectionsStudio
         currentWorkspace={SETTINGS_WORKSPACE}
-        focus={{ scope: 'providers', provider: 'anthropic' }}
-        onScopeChange={onScopeChange}
+        focus={{ kind: 'provider', provider: 'anthropic' }}
         onClose={() => undefined}
       />,
     );

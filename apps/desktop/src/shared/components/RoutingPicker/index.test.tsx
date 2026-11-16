@@ -329,17 +329,12 @@ describe('RoutingPicker', () => {
   });
 
   it('opens the page of the provider in view from the gear', () => {
-    const listener = vi.fn();
-    window.addEventListener('goodboy:open-settings', listener);
     render(<RoutingPicker {...baseProps} provider="codex" model="gpt-5.6-sol" />);
     fireEvent.click(screen.getByRole('button', { name: /routing/i }));
     fireEvent.click(screen.getByRole('button', { name: 'Choose which Codex models show here' }));
-    window.removeEventListener('goodboy:open-settings', listener);
-    const event: unknown = listener.mock.calls[0]?.[0];
-    expect(event instanceof CustomEvent ? event.detail : null).toEqual({
-      scope: 'providers',
-      provider: 'codex',
-      section: 'models',
+    expect(useAppStore.getState().appStudio).toEqual({
+      kind: 'connections',
+      focus: { kind: 'provider', provider: 'codex', section: 'models' },
     });
   });
 
@@ -914,15 +909,11 @@ describe('RoutingPicker', () => {
     expect(screen.queryByRole('button', { name: 'Cursor' })).toBeNull();
   });
 
-  it('links the connected provider row to the in-app Providers surface', () => {
+  it('links the connected provider row to Connections', () => {
     render(<RoutingPicker {...baseProps} connectedProviders={['anthropic']} />);
     fireEvent.click(screen.getByRole('button', { name: /routing/i }));
-    const addProvider = screen.getByRole('button', { name: 'Add provider' });
-    const onOpenProviderStudio = vi.fn();
-    window.addEventListener('goodboy:open-settings', onOpenProviderStudio);
-    fireEvent.click(addProvider);
-    window.removeEventListener('goodboy:open-settings', onOpenProviderStudio);
-    expect(onOpenProviderStudio).toHaveBeenCalledOnce();
+    fireEvent.click(screen.getByRole('button', { name: 'Add provider' }));
+    expect(useAppStore.getState().appStudio).toEqual({ kind: 'connections', focus: null });
     expect(screen.queryByRole('dialog', { name: 'routing' })).toBeNull();
   });
 
@@ -943,20 +934,12 @@ describe('RoutingPicker', () => {
     expect(screen.queryByRole('button', { name: 'Cursor' })).toBeNull();
   });
 
-  it('links the empty provider state to the providers studio', () => {
-    const events: CustomEvent[] = [];
-    const onOpenProviderStudio = (event: Event) => {
-      if (event instanceof CustomEvent) {
-        events.push(event);
-      }
-    };
-    window.addEventListener('goodboy:open-settings', onOpenProviderStudio);
+  it('links the empty provider state to Connections', () => {
     render(<RoutingPicker {...baseProps} connectedProviders={[]} />);
     fireEvent.click(screen.getByRole('button', { name: /routing/i }));
     expect(screen.getByText('No providers connected')).toBeDefined();
     fireEvent.click(screen.getByRole('button', { name: 'Open providers' }));
-    expect(events).toHaveLength(1);
-    window.removeEventListener('goodboy:open-settings', onOpenProviderStudio);
+    expect(useAppStore.getState().appStudio).toEqual({ kind: 'connections', focus: null });
   });
 
   it('focuses the selected model chip when the popover opens', () => {

@@ -1,10 +1,10 @@
 import { Boxes } from 'lucide-react';
 import { Button, EmptyState } from '@goodboy/ui';
-import { openSettings } from '../../../../settings/openSettings';
+import { openConnection } from '../../../../connections/openConnection';
 
 export const NoProvidersNotice = () => {
   const openProviderSettings = () => {
-    openSettings({ scope: 'providers' });
+    openConnection({ focus: null });
   };
 
   return (

@@ -1,5 +1,5 @@
 import { EmptyLine, Button } from '@goodboy/ui';
-import { openSettings } from '../../../features/settings/openSettings';
+import { openConnection } from '../../../features/connections/openConnection';
 
 type Props = {
   readonly onNavigate?: () => void;
@@ -8,7 +8,7 @@ type Props = {
 export const NoConnectedProviders = ({ onNavigate }: Props) => {
   const openProviderStudio = () => {
     onNavigate?.();
-    openSettings({ scope: 'providers' });
+    openConnection({ focus: null });
   };
 
   return (

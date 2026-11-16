@@ -44,6 +44,7 @@ const DOOR_ORDER: ReadonlyArray<string> = [
   'inbox',
   'workflows',
   'chat',
+  'connections',
   'impact',
   'monitoring',
 ];
@@ -128,7 +129,7 @@ export const COLUMN_DOOR_ROWS: ReadonlyArray<Row> = [
   {
     name: 'palette verb: Delete asks first',
     covers: ['palette:Delete…'],
-    open: () => openPalette(/^Delete/, 'delete'),
+    open: () => openPalette(/^Delete…/, 'delete'),
     lands: async () => expect(await screen.findByText('Delete session?', {}, WAIT)).toBeDefined(),
   },
   {
@@ -264,6 +265,29 @@ export const COLUMN_DOOR_ROWS: ReadonlyArray<Row> = [
       async () =>
         expect(document.querySelector('[data-top-bar] [aria-label^="Monitoring"]')).toBe(null),
     ),
+  },
+  {
+    name: 'column: connections',
+    covers: ['openConnections', 'studio:connections'],
+    door: 'visible',
+    open: () => click(doorIn('connections')),
+    lands: both(
+      () => studio('Connections'),
+      () => heading('Connections'),
+      async () => expect(doorIn('connections').getAttribute('aria-current')).toBe('page'),
+    ),
+  },
+  {
+    name: 'palette: Go to Connections answers to Providers',
+    covers: ['palette:Connections'],
+    open: () => openPalette(/^Connections/, 'Providers'),
+    lands: () => studio('Connections'),
+  },
+  {
+    name: 'palette: Go to Connections answers to Integrations',
+    covers: [],
+    open: () => openPalette(/^Connections/, 'Integrations'),
+    lands: () => studio('Connections'),
   },
   {
     name: 'palette: Go to Monitoring',

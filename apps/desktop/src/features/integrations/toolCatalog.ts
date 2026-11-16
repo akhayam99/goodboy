@@ -1,4 +1,4 @@
-import type { IntegrationGlyphProvider } from './components/IntegrationGlyph';
+import type { IntegrationGlyphProvider } from '../../shared/components/IntegrationGlyph';
 
 export type ToolCatalogEntry = {
   readonly provider: IntegrationGlyphProvider;

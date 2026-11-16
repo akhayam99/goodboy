@@ -90,7 +90,7 @@
   control it holds for another container is the sidebar toggle. The bar never
   edits a record in place.
 - **The column holds every door and never changes level.** New session comes first, then the doors Board (the board, ⌘⇧H),
-  Tasks, Workflows, Chat, Impact and Monitoring as rows, Impact and Monitoring quiet; Chat ends in a plus
+  Tasks, Workflows, Chat, Connections, Impact and Monitoring as rows, Impact and Monitoring quiet; Chat ends in a plus
   (New chat) that is always visible. No separator: the Pinned and
   Sessions lists follow, and Settings and the Goodboy line, with the bug icon, sit at the foot, the app's corner. A
   door's trailing slot is one `StatusMark` (`doorMarkOf`): a 6px dot (unread, warning, neutral)
@@ -102,7 +102,48 @@
   is `useWorkspaceAttention` over every session of the workspace, whatever the
   project filter. The Now chip does not show it. The palette's
   Needs you rows read the attention group of `useStageGroupedSessions`.
-  Work is a seventh door between Tasks and Workflows, with a New badge outlined in the primary colour,
+  Connections, after Chat at full weight, is the page of the providers on this Mac and the
+  integrations of the workspace (`features/connections`); it has no shortcut and answers to
+  Providers and Integrations in ⌘K. Its index shows a tile per set up provider and integration
+  in a fixed order (`connectionGroups`), and a low Not set up row under each group with the verb
+  that sets it up. Health changes a tile's word and border, never its place. The tile word, the
+  word in a provider page's head, the header counts and the amber dot on the door all come from
+  `connectionStateOf`, which takes a tool's word from `toolStateOf`, the same word the tool
+  page's head shows; the dot names what needs fixing, such as "Connections, Linear: Key
+  missing" (`connectionsAttentionOf`, named by `doorSignalOf`). The key check of each tool lives
+  in memory in the store, one entry per key with its time (`integrationKeyChecks`, written by
+  `checkIntegrationKey`, latest only); the index checks every key of the workspace at most once a
+  minute unless its refresh forces it (`checkTools`), and a failed read keeps the last answer and
+  shows the error on the refresh button. That error is the newest check of the workspace it
+  names (`toolCheckErrors`, latest only per workspace): Refresh clears it once the check answers,
+  and a late check of another workspace never shows. Only workspace bindings count as connected
+  tools on the index and the door (`workspaceBindingsOf`), as on the tool page. GitHub has no key: its tile and page read the time of the
+  last gh check that answered (`githubCheckedAt`), and whether it is connected comes from
+  `isGithubConnected` alone. A tile, or a Not set up row, pushes its detail page
+  through `openConnection`: studio focus `{ kind: 'provider', provider }` (with the install or
+  sign in step) or `{ kind: 'tool', tool }` (`IntegrationDetail`), under the trail Connections >
+  Claude or Connections > GitLab; the trail and Esc go back up to the index at the scroll it had
+  (`useScrollMemory`), and the door always lands on the index. The tool page says what the tool
+  does in the workspace, one row per use with its count and a link to Tasks: the counts are the
+  open records Tasks last loaded (`toolUseCountsOf`, read through `selectToolUseCount`), nothing
+  shows before Tasks loaded them, and a tool whose key is missing reads Paused. A missing or bad
+  key is replaced in place (`replaceIntegrationKey`): the host checks the new key first, the
+  keychain slot of the binding is rewritten, and the binding itself is kept; a key check asked
+  while the new key was checked is dropped once it is saved. Connections is the
+  one home of providers and integrations: Settings has no providers or tools scope
+  (`SettingsStudioScope` is home, app, workspace), and every link to a provider or a tool, from a
+  notification, an error, the usage chips or ⌘K (`connectionPaletteEntries`), opens its page
+  through `openConnection`, as a link that stacks. An old link keeps working: an
+  `goodboy:open-settings` event on scope providers or tools opens Connections
+  (`settingsOverlayFromEvent`), a stored notification action does too (`mapRecoveryAction`), a
+  restored window on a provider or tool page lands on its Connections page
+  (`withoutRemovedPages`), and a remembered Settings page there lands on App, General, or on
+  This workspace, Models for the old Models page (`resolveSettingsFocus`). For all of 0.37 the
+  Settings rail ends with a row that opens Connections (`MovedToConnectionsRow`).
+  `settings-has-no-connection-scopes.test.ts` keeps any new code from opening Settings on those
+  scopes. The one place they stay is the saved window layout: it stores a Connections page as
+  the Settings provider or tools page 0.36 opens (`storedStudioOf`), and restore folds it back.
+  Work is an eighth door between Tasks and Workflows, with a New badge outlined in the primary colour,
   and it shows only while the Work switch is on (`columnDoorsOf`). Its page is the studio `work`
   (key `+work`, `features/work/components/WorkPage`): every Lead of the workspace across sessions,
   four filters (All open, Needs you, Working, Finished) whose counts come from `workRowsOf`, polled
@@ -114,7 +155,7 @@
   Monitoring is the row after Impact, its page has no band and no Close, and
   it is the one way to the page in the chrome: the top bar holds no Monitoring
   icon. The column holds no tool: Terminal and Browser live on the right rail
-  (see The session tools), and the folded rail shows the same six doors.
+  (see The session tools), and the folded rail shows the same seven doors.
   The test for a home: a place you go to and read full width is a door; a tool
   you open beside your work, in the dock with Open full page, is a rail icon.
   Chat (a conversation list and its transcript) and Impact (a report of tiles
@@ -133,12 +174,12 @@
   (`shared/navigation/destinations.ts`) owns the name, the glyph, the shortcut,
   the menu id, the former names, the scope (`app` or `workspace`) and the home
   (`column`, `rail`, `topBar` or `foot`) of Board, Tasks, Workflows, Chat,
-  Impact, Monitoring, Notifications, Terminal, Browser, Settings, Guide and
-  What's new, in one order. The column rows, the folded rail, the foot
+  Connections, Impact, Monitoring, Notifications, Terminal, Browser, Settings,
+  Guide and What's new, in one order. The column rows, the folded rail, the foot
   of the column, the Go menu, the palette rows and the
   shortcut sheet all read it, so a destination has one word and one glyph in
   every place. Settings, Guide and What's new have the `foot` home and the `app`
-  scope; the nine others are `workspace` pages. `openDestination` is the one way
+  scope; the ten others are `workspace` pages. `openDestination` is the one way
   to open one, Board included: it replaces the open page and pushes only from a
   place, whichever channel asked, so Back lands where you were before the first
   page. A name changes in `NAMES` and the table moves with it; the Rust menu is
@@ -148,6 +189,7 @@
   destinations in its Navigate group follow the order of the list. Board answers
   to Sessions in the palette and its page is titled Board. Each session page has
   its own glyph: Runs draws `CONCEPT_ICONS.runs`, not the Workflows door glyph,
+  Connections answers to Providers and Integrations and draws the plug,
   and Artifacts keeps `CONCEPT_ICONS.plans`. Moving a destination to another
   home is a change of its `home` and its row in the table, nothing else.
 - **One home per thing.** Say a thing must exist in state A and can exist in
@@ -192,7 +234,7 @@
   workspace tools, stay docked beside any page but their own (see
   [shell.md](./shell.md), The dock follows the page).
 - **A door replaces, a link stacks.** A door is a control that names a studio:
-  a column door (Tasks, Chat, Workflows, Impact, Monitoring, Settings), the Goodboy
+  a column door (Tasks, Chat, Connections, Workflows, Impact, Monitoring, Settings), the Goodboy
   line, the foot of the bell list, a ⌘K Go to
   row and the spend chip. Pressing a door while a studio is open replaces that studio in
   the same history entry (`switchStudio`), so five doors in a row leave one
@@ -210,7 +252,7 @@
   layered: it closes a popover or a confirmation inside the studio before the
   studio itself. The exit follows the scope. An app page (Settings, Help, New
   workspace) shows Back to app in its band and answers to Esc. A workspace page
-  (Tasks, Workflows, Chat, Impact, Terminal, Browser, Monitoring, Notifications)
+  (Tasks, Workflows, Chat, Connections, Impact, Terminal, Browser, Monitoring, Notifications)
   shows no exit control: it leaves by another door, Back or Esc. Nothing has a
   Close button.
 - **One selected sign.** Every page lights exactly one control, with
@@ -301,7 +343,7 @@ and the tab opens on the session's folder.
      **Guide: {chapter}** entry per `GUIDE_CHAPTERS` row (opens it through
      `openGuideChapter`, also while the Guide is open) are typed only. Pair an
      iPhone answers to Pair your iPhone and the other former names of the page.
-     Check for updates opens Settings > Updates and runs the updater check only
+     Check for updates opens the Updates band of Settings > General and runs the updater check only
      in a status the menu item also checks. Palette and menu bar share one
      function, `checkForUpdatesNow` in `features/updater`.
      The overlay is a compact window: 640px wide (search 720px), a 48px input row,
@@ -538,7 +580,8 @@ them. The navigation slice (`store/slices/navigation/`) owns both.
 
   The previous release must open every place this build saves: it folds a
   stored Context tab to its Context panel and opens a stored Changes tab as
-  that branch's diff on its pull request page. `storedPlaces.test.ts` runs
+  that branch's diff on its pull request page, and a saved Connections page
+  opens as its Settings page. `storedPlaces.test.ts` runs
   every row through a frozen copy of that fold
   (`testing/opensInPreviousRelease.ts`), and `navigationContract.test.ts`
   holds the two Backs, the reload and the two windows.

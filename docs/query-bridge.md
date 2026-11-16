@@ -48,7 +48,7 @@ They can also act on them, the same way you can from Goodboy. The bridge refuses
 - **Which account.** Each connection belongs to the workspace, and a project can override it with its own account. GitHub also works with your `gh` CLI login when the workspace has no GitHub token.
 - **What Auto's agents can publish.** Goodboy refuses an agent that Auto started when it asks the bridge to push, open a pull or merge request, approve, request changes, decline, mark ready or merge, gives it no git host token and makes a plain `git push` fail. It can read, comment, reply and resolve a thread. Goodboy does the publishing itself after its own steps. An agent with a shell still runs as your OS user, so it could reach your git host with your own CLI login; Goodboy shows on its card when the branch changed online.
 - **The connection itself.** Only you can connect, disconnect or check a connection. No agent can.
-- **Draft first.** Pull requests and merge requests an agent opens start as drafts unless it asks for ready. Slack works the same way: in Settings > Integrations > Slack, set replies and reactions to Allowed, Ask first or Never. Ask first queues the message instead of posting it.
+- **Draft first.** Pull requests and merge requests an agent opens start as drafts unless it asks for ready. Slack works the same way: in Connections > Slack, set replies and reactions to Allowed, Ask first or Never. Ask first queues the message instead of posting it.
 - **Slack channels and scope.** An agent only reads the channels you follow, never the rest of your workspace, and never starts a new conversation or sends a direct message.
 
 ## What you see

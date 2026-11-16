@@ -2,14 +2,12 @@ import type {
   AgentId,
   ChatId,
   ChatMessageId,
-  IntegrationBindingId,
   IntegrationCredentialId,
   IsoDateTime,
   WorkspaceId,
 } from '@goodboy/types';
 
 const isAgentId = (value: string): value is AgentId => value.length > 0;
-const isBindingId = (value: string): value is IntegrationBindingId => value.length > 0;
 const isCredentialId = (value: string): value is IntegrationCredentialId => value.length > 0;
 const isWorkspaceId = (value: string): value is WorkspaceId => value.length > 0;
 const isIsoDateTime = (value: string): value is IsoDateTime => value.length > 0;
@@ -21,13 +19,6 @@ type Params = {
 export const agentIdOf = ({ value }: Params): AgentId => {
   if (!isAgentId(value)) {
     throw new Error('empty agent id');
-  }
-  return value;
-};
-
-export const bindingIdOf = ({ value }: Params): IntegrationBindingId => {
-  if (!isBindingId(value)) {
-    throw new Error('empty binding id');
   }
   return value;
 };

@@ -4,7 +4,6 @@ import {
   AnchoredPopover,
   cn,
   Eyebrow,
-  FieldRow,
   ICON_SIZE,
   POPOVER_WIDTH_CLASS,
   POPOVER_WIDTH_PX,
@@ -15,6 +14,7 @@ import { ProviderGlyph } from '../../../../../shared/components/RoutingPicker/Pr
 import { useProviderPolicy } from '../../../hooks/useProviderPolicy';
 import { PROVIDER_LABEL } from '../../../providerLabel';
 import { ProviderPolicyList } from '../../ProviderPolicyList';
+import { SettingRow } from '../../../../settings/settingRow';
 import { SpreadByHeadroomRow } from './SpreadByHeadroomRow';
 
 type Props = {
@@ -37,7 +37,7 @@ export const ProvidersInOrder = ({ workspaceId }: Props) => {
       : `New work starts on ${PROVIDER_LABEL[firstOn]}. Backup only if no On provider can work.`;
 
   return (
-    <FieldRow label="When a provider is out" help={help}>
+    <SettingRow label="When a provider is out" rowKey="provider-order" help={help}>
       <AnchoredPopover
         dropdown={dropdown}
         role="dialog"
@@ -73,6 +73,6 @@ export const ProvidersInOrder = ({ workspaceId }: Props) => {
         <ProviderPolicyList workspaceId={workspaceId} hasReset />
         <SpreadByHeadroomRow workspaceId={workspaceId} />
       </AnchoredPopover>
-    </FieldRow>
+    </SettingRow>
   );
 };

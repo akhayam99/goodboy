@@ -4,23 +4,20 @@ import { PermissionsSettings } from '../../../permissions/components/Permissions
 import { WorkspaceStorageNotice } from '../../../storage/components/WorkspaceStorageNotice';
 import { storageWorkspacePages } from '../../../storage/storageWorkspacePages';
 import { WorkspaceAfterMergeSection } from './WorkspaceAfterMergeSection';
+import { WorkspaceBranchNamingBand } from './WorkspaceBranchNamingBand';
+import { SecurityFindingsSection } from './SecurityFindingsSection';
 import { WorkspaceProfileSection } from './WorkspaceProfileSection';
 import { WorkspaceProjectsSection } from './WorkspaceProjectsSection';
-import { WorkflowRulesPanel } from '../../../workflows/workflowRulesPanel';
 import { WorkspaceDefaultsGrid } from './WorkspaceDefaultsGrid';
 import { WorkspaceReviewRepliesSection } from './WorkspaceReviewRepliesSection';
 import { WorkspaceNameBand } from './WorkspaceNameBand';
 import { WorkspaceDisconnectBand } from './WorkspaceDisconnectBand';
 import { WorkspaceFieldRow } from './WorkspaceFieldRow';
-import {
-  isFolderOptionsSection,
-  isTrackWithGitSection,
-  type WorkspacePage,
-} from './workspacePages';
+import { isFolderOptionsSection, isTrackWithGitSection, type PlanPage } from './workspacePages';
 
 type Props = {
   readonly workspaceId: WorkspaceId;
-  readonly page: WorkspacePage;
+  readonly page: PlanPage;
   readonly section?: string;
   readonly requestClose: () => void;
 };
@@ -48,15 +45,11 @@ export const WorkspacePageBody = ({
     case 'profile':
       return <WorkspaceProfileSection workspaceId={workspaceId} />;
     case 'general':
-      return (
-        <>
-          <WorkflowRulesPanel workspaceId={workspaceId} />
-          <WorkspaceDefaultsGrid workspaceId={workspaceId} />
-        </>
-      );
+      return <WorkspaceDefaultsGrid workspaceId={workspaceId} />;
     case 'branches':
       return (
         <>
+          <WorkspaceBranchNamingBand workspaceId={workspaceId} />
           <WorkspaceAfterMergeSection workspaceId={workspaceId} />
           {storageWorkspacePages({ workspaceId }).branches.body}
         </>
@@ -72,6 +65,7 @@ export const WorkspacePageBody = ({
               {control}
             </WorkspaceFieldRow>
           )}
+          afterRules={<SecurityFindingsSection workspaceId={workspaceId} />}
         />
       );
     default: {

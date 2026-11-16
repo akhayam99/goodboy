@@ -28,6 +28,7 @@ const { state } = vi.hoisted(() => ({
     loadSetting: vi.fn(async (_key: string) => null as string | null),
     saveSetting: vi.fn(async (_key: string, _value: string) => undefined),
     reportError: vi.fn(),
+    openStudio: vi.fn(),
     savedProjectModels: Object.fromEntries([]),
     loadSavedProjectModels: vi.fn(async () => undefined),
     applySavedProjectModels: vi.fn(async () => undefined),
@@ -685,6 +686,31 @@ describe('DefaultsPanel', () => {
     expect(screen.getByText('Step summaries')).toBeDefined();
     expect(screen.getByText('Scout')).toBeDefined();
     expect(screen.queryByRole('tab')).toBeNull();
+  });
+
+  it('lays every run, chat, agent and background task row on the one model grid', () => {
+    render(<DefaultsPanel workspaceId={WORKSPACE_ID} />);
+
+    const gridRows = document.querySelectorAll('[data-role-grid]');
+    const roleCount = DEFAULT_GROUPS.agents.flatMap((group) => group.members).length;
+    const taskCount = DEFAULT_GROUPS.tasks.flatMap((group) => group.members).length;
+    const runCount = DEFAULT_GROUPS.runs.agents.length + DEFAULT_GROUPS.runs.tasks.length;
+    expect(gridRows).toHaveLength(runCount + 1 + roleCount + taskCount);
+    for (const name of ['Runs', 'Chat', 'Agents', 'Background tasks']) {
+      const region = screen.getByRole('region', { name });
+      expect(region.querySelector('[data-role-grid]') !== null).toBe(true);
+    }
+  });
+
+  it('points to Connections for accounts, usage and the picker list', () => {
+    render(<DefaultsPanel workspaceId={WORKSPACE_ID} />);
+
+    screen.getByText('Accounts, usage and which models show in the picker live in Connections.');
+    fireEvent.click(screen.getByRole('button', { name: 'Open Connections' }));
+
+    expect(state.openStudio).toHaveBeenCalledWith({
+      studio: { kind: 'connections', focus: null },
+    });
   });
 
   it('renders 11 roles and 10 tasks inside their groups, and the two run models apart', () => {

@@ -34,6 +34,7 @@ const h = vi.hoisted(() => ({
   },
   refetch: vi.fn(),
   openLink: vi.fn(),
+  openStudio: vi.fn(),
   isEscapeEnabled: true as boolean,
   closeLabel: '' as string,
   toggleStar: vi.fn<(record: InboxRecord) => Promise<void>>(async () => undefined),
@@ -66,13 +67,16 @@ vi.mock('../../../open/openLink', () => ({ openLink: h.openLink }));
 vi.mock('../../../../store', () => ({
   useSessionById: (id: SessionId | null) =>
     id === LINKED_SESSION_ID ? { id, goal: '**Fix** the crash' } : null,
-  useAppStore: <T,>(
-    selector: (state: {
-      readonly workspaces: ReadonlyArray<never>;
-      readonly sessions: ReadonlyArray<never>;
-      readonly sessionExternalTasks: Readonly<Record<string, never>>;
-    }) => T,
-  ) => selector({ workspaces: [], sessions: [], sessionExternalTasks: {} }),
+  useAppStore: Object.assign(
+    <T,>(
+      selector: (state: {
+        readonly workspaces: ReadonlyArray<never>;
+        readonly sessions: ReadonlyArray<never>;
+        readonly sessionExternalTasks: Readonly<Record<string, never>>;
+      }) => T,
+    ) => selector({ workspaces: [], sessions: [], sessionExternalTasks: {} }),
+    { getState: () => ({ openStudio: h.openStudio }) },
+  ),
 }));
 
 vi.mock('../../useInboxStars', () => {
@@ -704,16 +708,13 @@ describe('InboxStudio', () => {
   it('asks to connect a tool when nothing is connected', () => {
     h.records = [];
     h.connected = [];
-    const dispatchSpy = vi.spyOn(window, 'dispatchEvent');
+    h.openStudio.mockClear();
 
     renderStudio();
 
     fireEvent.click(screen.getByRole('button', { name: 'Connect a tool' }));
 
-    expect(dispatchSpy).toHaveBeenCalledWith(
-      expect.objectContaining({ type: 'goodboy:open-settings', detail: { scope: 'tools' } }),
-    );
-    dispatchSpy.mockRestore();
+    expect(h.openStudio).toHaveBeenCalledWith({ studio: { kind: 'connections', focus: null } });
   });
 
   it('recovers from a deep-linked source with no records through clear filters', () => {

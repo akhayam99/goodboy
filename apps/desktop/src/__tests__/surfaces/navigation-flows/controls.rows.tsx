@@ -76,12 +76,12 @@ export const CONTROLS_ROWS: ReadonlyArray<Row> = [
     open: async () => {
       await clickButton('Settings');
       await settingsPage();
-      await clickButton(/^Updates/);
+      await clickButton(/^General/);
     },
     lands: async () => {
       const user = userEvent.setup();
       const target = await waitFor(
-        () => screen.getByRole('switch', { name: 'Download updates in the background' }),
+        () => screen.getByRole('switch', { name: 'Download in the background' }),
         WAIT,
       );
       const tabbable = [

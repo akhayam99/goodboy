@@ -1,4 +1,4 @@
-import { SettingsFrame } from '../audit/SettingsFrame';
+import { ConnectionsFrame } from '../audit/ConnectionsFrame';
 import { sceneParam } from '../audit/sceneParams';
 import { useFakeTauri, type FakeHandlers } from './fakeTauri';
 import { seedBrandLimits } from './limitsSeed';
@@ -24,5 +24,5 @@ const seedCodex = (): void => {
 
 export const BrandCodexScene = () => {
   useFakeTauri({ handlers: HANDLERS, holdMs: 6000 });
-  return <SettingsFrame focus={{ scope: 'providers', provider: 'codex' }} seed={seedCodex} />;
+  return <ConnectionsFrame focus={{ kind: 'provider', provider: 'codex' }} seed={seedCodex} />;
 };

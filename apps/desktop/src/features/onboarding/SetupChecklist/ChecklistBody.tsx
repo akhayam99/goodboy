@@ -1,5 +1,5 @@
 import { dispatchWindowEvent } from '../../../shared/lib/dispatchWindowEvent';
-import { openSettings } from '../../settings/openSettings';
+import { openConnection } from '../../connections/openConnection';
 import { resumeSetup } from '../onboardingSettings';
 import type { OnboardingProgress } from '../hooks/useOnboardingProgress';
 import type { SetupItemId } from '../setupProgress';
@@ -18,7 +18,7 @@ type ActionParams = {
 };
 
 const AFTER_SETUP: Readonly<Record<SetupItemId, (() => void) | null>> = {
-  agents: () => openSettings({ scope: 'providers' }),
+  agents: () => openConnection({ focus: null }),
   workspace: () => dispatchWindowEvent({ name: 'goodboy:add-workspace' }),
   'first-session': () => dispatchWindowEvent({ name: 'goodboy:new-session' }),
 };

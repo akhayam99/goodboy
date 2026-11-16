@@ -32,7 +32,7 @@ type Props = {
   readonly isLocked: boolean;
   readonly onBack: (() => void) | null;
   readonly onContinue: () => void;
-  readonly onOpenSettings: () => void;
+  readonly onOpenConnections: () => void;
 };
 
 type HostLineParams = {
@@ -75,7 +75,7 @@ export const ToolsStep = ({
   isLocked,
   onBack,
   onContinue,
-  onOpenSettings,
+  onOpenConnections,
 }: Props) => {
   const [boundId] = useState(workspaceId);
   const [openTool, setOpenTool] = useState<Tool | null>(null);
@@ -217,8 +217,8 @@ export const ToolsStep = ({
         leading={
           <span className="flex items-center gap-1 text-meta text-faint-foreground">
             More tools in
-            <Button size="xs" variant="quiet" onClick={onOpenSettings}>
-              Settings, Integrations
+            <Button size="xs" variant="quiet" onClick={onOpenConnections}>
+              Connections
             </Button>
           </span>
         }

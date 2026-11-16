@@ -96,16 +96,13 @@ export const useAppOverlays = ({
 
   const openWork = useCallback(() => openDestination({ id: 'work' }), []);
 
-  const openProviders = useCallback(
-    () => goTo({ overlay: { kind: 'settings', focus: { scope: 'providers' } } }),
-    [goTo],
-  );
-
   const openInbox = useCallback(() => openDestination({ id: 'inbox' }), []);
 
   const openChat = useCallback(() => openDestination({ id: 'chat' }), []);
 
   const openNewChat = useCallback(() => goTo({ overlay: { kind: 'chat', chatId: null } }), [goTo]);
+
+  const openConnections = useCallback(() => openDestination({ id: 'connections' }), []);
 
   const openMonitoring = useCallback(() => openDestination({ id: 'monitoring' }), []);
 
@@ -117,16 +114,11 @@ export const useAppOverlays = ({
   );
 
   const changeSettingsScope = useCallback(
-    ({ scope, section, tool, provider }: SettingsScopeChange) =>
+    ({ scope, section }: SettingsScopeChange) =>
       amendStudio({
         studio: {
           kind: 'settings',
-          focus: {
-            scope,
-            ...(section !== undefined && { section }),
-            ...(tool !== undefined && { tool }),
-            ...(provider !== undefined && { provider }),
-          },
+          focus: { scope, ...(section !== undefined && { section }) },
         },
       }),
     [amendStudio],
@@ -189,18 +181,18 @@ export const useAppOverlays = ({
   });
 
   return {
-    settingsProviderId:
-      overlay?.kind === 'settings' && overlay.focus.scope === 'providers'
-        ? (overlay.focus.provider ?? null)
+    connectionsProviderId:
+      overlay?.kind === 'connections' && overlay.focus?.kind === 'provider'
+        ? overlay.focus.provider
         : null,
     armDeleteConfirm,
     openAddWorkspace,
     openChangelog,
     openChat,
+    openConnections,
     openGuide,
     openInbox,
     openPalette,
-    openProviders,
     openSettings,
     openShortcutHelp,
     openSpend,

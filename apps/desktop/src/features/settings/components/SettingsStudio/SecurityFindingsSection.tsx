@@ -2,36 +2,30 @@ import { useEffect, useState } from 'react';
 import { ShieldCheck } from 'lucide-react';
 import { useShallow } from 'zustand/react/shallow';
 import type { WorkspaceId } from '@goodboy/types';
-import { Band, Button, EmptyLine, SectionHeader, SkeletonRow } from '@goodboy/ui';
+import { Band, Button, EmptyLine, ICON_SIZE, SectionHeader, SkeletonRow } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { SECRET_KIND_LABEL, SecurityFindingRow } from './SecurityFindingRow';
 
 type Props = {
-  readonly workspaceId: WorkspaceId | null;
+  readonly workspaceId: WorkspaceId;
 };
 
-const SECURITY_FINDINGS_LABEL = 'Security findings';
+const SECRETS_LABEL = 'Secrets in saved scripts';
 
-const SECURITY_FINDINGS_HINT =
-  'Keys or tokens in your saved scripts. This text never leaves your Mac.';
+const SECRETS_HINT = 'Keys or tokens in your saved scripts. This text never leaves your Mac.';
 
 export const SecurityFindingsSection = ({ workspaceId }: Props) => {
   const [status, setStatus] = useState<'loading' | 'ready'>('loading');
   const loadSecurityFindings = useAppStore((state) => state.loadSecurityFindings);
   const dismissSecurityFinding = useAppStore((state) => state.dismissSecurityFinding);
   const flagSecurityFindingAgain = useAppStore((state) => state.flagSecurityFindingAgain);
-  const open = useAppStore(
-    useShallow((state) =>
-      workspaceId === null ? [] : (state.openSecurityFindings[workspaceId] ?? []),
-    ),
-  );
+  const open = useAppStore(useShallow((state) => state.openSecurityFindings[workspaceId] ?? []));
   const dismissed = useAppStore(
-    useShallow((state) =>
-      workspaceId === null ? [] : (state.dismissedSecurityFindings[workspaceId] ?? []),
-    ),
+    useShallow((state) => state.dismissedSecurityFindings[workspaceId] ?? []),
   );
   const projectScripts = useAppStore(
-    useShallow((state) => (workspaceId === null ? [] : (state.projectScripts[workspaceId] ?? []))),
+    useShallow((state) => state.projectScripts[workspaceId] ?? []),
   );
   const projectNameById = useAppStore(
     useShallow((state) =>
@@ -41,31 +35,18 @@ export const SecurityFindingsSection = ({ workspaceId }: Props) => {
   const [isDismissedOpen, setIsDismissedOpen] = useState(false);
 
   useEffect(() => {
-    if (workspaceId === null) {
-      return;
-    }
     setStatus('loading');
     void loadSecurityFindings({ workspaceId }).finally(() => setStatus('ready'));
   }, [loadSecurityFindings, workspaceId]);
 
-  const header = (
-    <SectionHeader label={SECURITY_FINDINGS_LABEL} hint={SECURITY_FINDINGS_HINT} headingLevel={2} />
-  );
-
-  if (workspaceId === null) {
-    return (
-      <section aria-label={SECURITY_FINDINGS_LABEL} className="flex flex-col gap-2">
-        {header}
-        <Band inset="content">
-          <EmptyLine>Open a workspace to check its saved scripts.</EmptyLine>
-        </Band>
-      </section>
-    );
-  }
-
   return (
-    <section aria-label={SECURITY_FINDINGS_LABEL} className="flex flex-col gap-2">
-      {header}
+    <section aria-label={SECRETS_LABEL} className="flex flex-col gap-2">
+      <SectionHeader
+        label={SECRETS_LABEL}
+        hint={SECRETS_HINT}
+        icon={<CONCEPT_ICONS.security size={ICON_SIZE.row} aria-hidden />}
+        headingLevel={2}
+      />
       {open.length > 0 && (
         <p className="text-meta text-faint-foreground">
           Keep the value in your shell or in a .env file git ignores, and use its name instead:{' '}

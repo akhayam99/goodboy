@@ -10,7 +10,7 @@ import {
 } from '../../../../store';
 import { formatAge } from '../../../../shared/utils/time/formatAge';
 import { useNow } from '../../../../shared/hooks/useNow';
-import { openSettings } from '../../../settings/openSettings';
+import { openModelsSettings } from '../../../settings/openModelsSettings';
 import { ContextUpdateGlyph } from './ContextUpdateGlyph';
 import {
   contextUpdateHint,
@@ -126,7 +126,7 @@ export const ContextUpdates = ({ sessionId, action }: Props) => {
               <span>{round === null ? 'Set in Models' : roundModel({ round })}</span>
               <button
                 type="button"
-                onClick={() => openSettings({ scope: 'providers', section: 'summarizer' })}
+                onClick={() => openModelsSettings({ section: 'summarizer' })}
                 className="inline-flex items-center gap-0.5 text-meta text-muted-foreground hover:text-foreground"
               >
                 Change model

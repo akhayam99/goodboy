@@ -1,6 +1,7 @@
 import type { WorkspaceId } from '@goodboy/types';
-import { FieldRow, Switch } from '@goodboy/ui';
+import { Switch } from '@goodboy/ui';
 import { useOrchestratorModelPick } from '../../../hooks/useOrchestratorModelPick';
+import { SettingRow } from '../../../../settings/settingRow';
 
 type Props = {
   readonly workspaceId: WorkspaceId;
@@ -15,12 +16,16 @@ const HELP_ON =
 export const OrchestratorModelPickRow = ({ workspaceId }: Props) => {
   const { isOn, setIsOn } = useOrchestratorModelPick({ workspaceId });
   return (
-    <FieldRow label="Models in workflows" help={isOn ? HELP_ON : HELP_OFF}>
+    <SettingRow
+      label="Models in workflows"
+      rowKey="models-in-workflows"
+      help={isOn ? HELP_ON : HELP_OFF}
+    >
       <Switch
         ariaLabel="Let the workflow orchestrator choose models"
         checked={isOn}
         onChange={setIsOn}
       />
-    </FieldRow>
+    </SettingRow>
   );
 };

@@ -67,4 +67,8 @@ describe('PROVIDER_FLAGS', () => {
       'codex',
     ]);
   });
+
+  it('follows Allow and Deny rules for anthropic only', () => {
+    expect(idsWhere((id) => providerFlags({ id }).canFollowRules)).toEqual(['anthropic']);
+  });
 });

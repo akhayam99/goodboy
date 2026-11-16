@@ -1,7 +1,7 @@
 import { CircleAlert } from 'lucide-react';
 import { Button, ICON_SIZE } from '@goodboy/ui';
 import { useCopyText } from '../../../../shared/hooks/useCopyText';
-import { openSettings } from '../../../settings/openSettings';
+import { openConnection } from '../../../connections/openConnection';
 
 type Props = {
   readonly error: string;
@@ -24,7 +24,7 @@ export const StartFailure = ({ error }: Props) => {
           variant={isProviderMissing ? 'primary' : 'secondary'}
           onClick={() => {
             if (isProviderMissing) {
-              openSettings({ scope: 'providers' });
+              openConnection({ focus: null });
               return;
             }
             void copy({ text: error });

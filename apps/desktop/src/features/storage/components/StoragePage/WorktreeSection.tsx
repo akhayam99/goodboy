@@ -20,6 +20,7 @@ import { useStorageSummary } from '../../hooks/useStorageSummary';
 import { BulkRemoveBar } from './BulkRemoveBar';
 import { ScanRepositoryRow } from './ScanRepositoryRow';
 import { StorageOutcomeNotice } from './StorageOutcomeNotice';
+import { StorageSuggestAfterRow } from './StorageSuggestAfterRow';
 import { WorktreeColumns } from './WorktreeColumns';
 import { WorktreeGroup } from './WorktreeGroup';
 import { WorktreeRemoveButton } from './WorktreeRemoveButton';
@@ -214,6 +215,7 @@ export const WorktreeSection = ({ scope }: Props) => {
           </div>
         )}
         <ScanRepositoryRow />
+        <StorageSuggestAfterRow />
       </Band>
       {filter === 'review' ? (
         <BulkRemoveBar

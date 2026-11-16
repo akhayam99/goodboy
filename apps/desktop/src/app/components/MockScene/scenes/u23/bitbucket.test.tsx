@@ -330,16 +330,14 @@ describe('the Checks tab on Bitbucket', () => {
   });
 
   it('branch-pr-bitbucket-denied warns that the token lacks the scope and opens the settings', async () => {
-    const listener = vi.fn();
-    window.addEventListener('goodboy:open-settings', listener);
     draw('branch-pr-bitbucket-denied');
 
     expect(await screen.findByText('The API token lacks the pull request scope')).toBeDefined();
-    fireEvent.click(screen.getByRole('button', { name: 'Open Bitbucket settings' }));
-    expect(listener.mock.calls[0]?.[0]).toMatchObject({
-      detail: { scope: 'tools', tool: 'bitbucket' },
+    fireEvent.click(screen.getByRole('button', { name: 'Open Bitbucket in Connections' }));
+    expect(useAppStore.getState().appStudio).toEqual({
+      kind: 'connections',
+      focus: { kind: 'tool', tool: 'bitbucket' },
     });
-    window.removeEventListener('goodboy:open-settings', listener);
   });
 });
 

@@ -194,10 +194,11 @@ describe('theme switch is a class swap on the html element', () => {
     });
     const surface = screen.getByTestId('measured');
     const field = screen.getByRole('tablist', { name: 'Theme' });
+    const row = field.closest('[data-anchor="theme"]');
     const outside: Array<Node> = [];
     const observer = new MutationObserver((records) => {
       records
-        .filter((record) => !field.contains(record.target))
+        .filter((record) => row?.contains(record.target) !== true)
         .forEach((record) => outside.push(record.target));
     });
     observer.observe(surface, { childList: true, subtree: true, characterData: true });

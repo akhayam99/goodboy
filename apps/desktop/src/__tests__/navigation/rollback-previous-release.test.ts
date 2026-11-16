@@ -11,6 +11,8 @@ import { DRAWER_KINDS } from '../../store/slices/drawer/drawerKinds';
 import { LENS_KINDS } from '../../store/slices/session-view/types';
 import { BOARD_PLACE, branchPlace, sessionPlace } from '../../store/slices/navigation/place';
 import { PLACE_ROWS } from '../../store/slices/navigation/placeRows';
+import type { StudioPlace } from '../../store/slices/navigation/studio';
+import { storedStudioOf } from '../../store/slices/navigation/storedStudioOf';
 import { opensInPreviousRelease } from '../../store/slices/navigation/testing/opensInPreviousRelease';
 import {
   EMPTY_FOCUS,
@@ -156,10 +158,25 @@ const DRAWERS_SAVED: ReadonlyArray<Row> = [
   ]),
 ];
 
-const STUDIOS_SAVED: ReadonlyArray<Row> = PREVIOUS_BUILD_BLOBS.studios.map((entry): Row => [
-  `the ${entry.kind} page`,
-  JSON.stringify(entry.blob),
-]);
+const CONNECTIONS_PAGES: ReadonlyArray<Extract<StudioPlace, { readonly kind: 'connections' }>> = [
+  { kind: 'connections', focus: { kind: 'provider', provider: 'anthropic' } },
+  { kind: 'connections', focus: { kind: 'tool', tool: 'linear' } },
+  { kind: 'connections', focus: null },
+  { kind: 'connections' },
+];
+
+const STUDIOS_SAVED: ReadonlyArray<Row> = [
+  ...PREVIOUS_BUILD_BLOBS.studios.map((entry): Row => [
+    `the ${entry.kind} page`,
+    JSON.stringify(entry.blob),
+  ]),
+  ...CONNECTIONS_PAGES.map((studio): Row => [
+    `the connections page on ${studio.focus?.kind ?? 'its list'}`,
+    JSON.stringify({
+      location: READ_BACK(textOf({ place: BOARD_PLACE, studio: storedStudioOf({ studio }) })),
+    }),
+  ]),
+];
 
 describe('rehearsal: the previous release opens every place this build saves', () => {
   it.each(PLACE_ROWS_SAVED)('opens %s', (_name, text) => {

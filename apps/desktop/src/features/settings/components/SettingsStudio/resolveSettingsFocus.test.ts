@@ -1,9 +1,11 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
-import type { ProviderId } from '@goodboy/types';
 import type { SettingsFocus } from '../../settingsFocus';
-import { settingsPaletteEntries } from '../../settingsPaletteEntries';
-import { QUIET_TOOL_HEALTH } from '../../../../__tests__/helpers/quietToolHealth';
+import {
+  CONNECTIONS_SETTING_KEY,
+  SETTING_ROW_KEY_PREFIX,
+  settingsPaletteEntries,
+} from '../../settingsPaletteEntries';
 import { resolveSettingsFocus } from './resolveSettingsFocus';
 import {
   settingsDirectory,
@@ -11,8 +13,6 @@ import {
   type SettingsGroup,
   type SettingsStatus,
 } from './settingsDirectory';
-
-const QUIET_HEALTH = QUIET_TOOL_HEALTH;
 
 const STATUS: SettingsStatus = {
   subtitles: {
@@ -22,34 +22,9 @@ const STATUS: SettingsStatus = {
     storageTone: undefined,
     securityFindingsText: undefined,
     securityFindingsTone: undefined,
-    providersText: undefined,
-    providersTone: undefined,
     workspaceText: undefined,
     workspaceTone: undefined,
   },
-  providers: [
-    {
-      id: 'anthropic' as ProviderId,
-      label: 'Claude',
-      status: { subtitle: 'Connected', tone: 'success' },
-    },
-  ],
-  tools: [
-    {
-      tool: 'linear',
-      label: 'Linear',
-      subtitle: 'Not connected',
-      isConnected: false,
-      health: QUIET_HEALTH,
-    },
-    {
-      tool: 'slack',
-      label: 'Slack',
-      subtitle: 'Not connected',
-      isConnected: false,
-      health: QUIET_HEALTH,
-    },
-  ],
 };
 
 const WITH_WORKSPACE = settingsDirectory({ workspaceName: 'Harborline', status: STATUS });
@@ -57,6 +32,16 @@ const WITHOUT_WORKSPACE = settingsDirectory({ workspaceName: null, status: STATU
 
 const GENERAL: SettingsFocus = { scope: 'app', section: 'general' };
 const HOME: SettingsFocus = { scope: 'home' };
+const MODELS: SettingsFocus = { scope: 'workspace', section: 'models' };
+
+type SavedParams = {
+  readonly value: object;
+};
+
+const savedBefore037 = ({ value }: SavedParams): SettingsFocus => {
+  const saved: SettingsFocus = JSON.parse(JSON.stringify(value));
+  return saved;
+};
 
 const resolve = ({
   last,
@@ -76,10 +61,21 @@ describe('resolveSettingsFocus', () => {
       scope: 'app',
       section: 'backup',
     });
-    expect(resolve({ last: { scope: 'tools', tool: 'slack' } })).toEqual({
-      scope: 'tools',
-      tool: 'slack',
+    expect(resolve({ last: MODELS })).toEqual(MODELS);
+  });
+
+  it('reopens a saved Updates page on General, and a saved iPhone page on iPhone', () => {
+    expect(resolve({ last: { scope: 'app', section: 'updates' } })).toEqual(GENERAL);
+    expect(resolve({ last: { scope: 'app', section: 'iphone' } })).toEqual({
+      scope: 'app',
+      section: 'iphone',
     });
+  });
+
+  it('keeps an explicit Updates link so General can scroll to its band', () => {
+    const focus: SettingsFocus = { scope: 'app', section: 'updates' };
+
+    expect(resolveSettingsFocus({ focus, last: null, groups: WITH_WORKSPACE })).toEqual(focus);
   });
 
   it('falls back to General when the last page needs a workspace that is gone', () => {
@@ -88,10 +84,34 @@ describe('resolveSettingsFocus', () => {
     ).toEqual(GENERAL);
   });
 
-  it('falls back to General when the last provider is no longer listed', () => {
-    expect(resolve({ last: { scope: 'providers', provider: 'gone' as ProviderId } })).toEqual(
+  it('lands a saved provider or integration page on General, now that both live in Connections', () => {
+    expect(
+      resolve({ last: savedBefore037({ value: { scope: 'providers', provider: 'anthropic' } }) }),
+    ).toEqual(GENERAL);
+    expect(resolve({ last: savedBefore037({ value: { scope: 'tools', tool: 'slack' } }) })).toEqual(
       GENERAL,
     );
+    expect(resolve({ last: savedBefore037({ value: { scope: 'tools' } }) })).toEqual(GENERAL);
+  });
+
+  it('keeps the saved Models page under This workspace', () => {
+    expect(resolve({ last: savedBefore037({ value: { scope: 'providers' } }) })).toEqual(MODELS);
+    expect(
+      resolveSettingsFocus({
+        focus: savedBefore037({ value: { scope: 'providers', section: 'summarizer' } }),
+        last: null,
+        groups: WITH_WORKSPACE,
+      }),
+    ).toEqual({ scope: 'workspace', section: 'summarizer' });
+  });
+
+  it('lands the saved Models page on General when no workspace is open', () => {
+    expect(
+      resolve({
+        last: savedBefore037({ value: { scope: 'providers' } }),
+        groups: WITHOUT_WORKSPACE,
+      }),
+    ).toEqual(GENERAL);
   });
 
   it('leaves a concrete focus alone', () => {
@@ -112,7 +132,12 @@ describe('command palette settings entries', () => {
     });
     const pages = WITH_WORKSPACE.flatMap((group) => group.pages);
 
-    const pageEntries = entries.filter((entry) => !entry.key.startsWith('setting:workspace:flow:'));
+    const pageEntries = entries.filter(
+      (entry) =>
+        !entry.key.startsWith('setting:workspace:flow:') &&
+        !entry.key.startsWith(SETTING_ROW_KEY_PREFIX) &&
+        entry.key !== CONNECTIONS_SETTING_KEY,
+    );
 
     expect(pageEntries.map((entry) => entry.key)).toEqual(
       pages.map((page) => `setting:${page.key}`),
@@ -125,8 +150,6 @@ describe('command palette settings entries', () => {
         settingsPageKey({
           scope: focus.scope === 'home' ? 'app' : focus.scope,
           section: focus.section,
-          provider: focus.provider,
-          tool: focus.tool,
         }),
       ),
     ).toEqual(pages.map((page) => page.key));
@@ -170,7 +193,11 @@ describe('command palette settings entries', () => {
     },
     {
       from: { scope: 'app', section: 'security-findings' },
-      to: { scope: 'app', section: 'storage' },
+      to: { scope: 'workspace', section: 'permissions' },
+    },
+    {
+      from: { scope: 'workspace', section: 'security-findings' },
+      to: { scope: 'workspace', section: 'permissions' },
     },
     { from: { scope: 'app', section: 'shortcuts' }, to: { scope: 'app', section: 'shortcuts' } },
   ] satisfies ReadonlyArray<{ from: SettingsFocus; to: SettingsFocus }>)(
@@ -180,16 +207,6 @@ describe('command palette settings entries', () => {
       expect(resolve({ last: from })).toEqual(to);
     },
   );
-
-  it('keeps the provider and tool of a moved link', () => {
-    expect(
-      resolveSettingsFocus({
-        focus: { scope: 'tools', tool: 'linear' },
-        last: null,
-        groups: WITH_WORKSPACE,
-      }),
-    ).toEqual({ scope: 'tools', tool: 'linear' });
-  });
 
   it('lands an old link on General when its new page needs a workspace and there is none', () => {
     expect(

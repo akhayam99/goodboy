@@ -77,7 +77,7 @@ describe('the side column signal scenes', () => {
       'chat',
     );
     expect(screen.queryByRole('button', { name: 'New terminal' })).toBeNull();
-    expect(document.querySelectorAll('[data-door-slot="signal"]').length).toBe(7);
+    expect(document.querySelectorAll('[data-door-slot="signal"]').length).toBe(8);
   });
 
   it('side-info-framed gives every counted session page its number in a shot frame', async () => {

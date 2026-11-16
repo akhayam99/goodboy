@@ -130,8 +130,8 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
     lead: 'Each provider connects with a sign in you already have or an API key. Goodboy watches your plan windows and your spend.',
     points: [
       {
-        term: 'One page per provider',
-        desc: `${NAMES.providers}, in Settings, has a page per provider with usage, the models in your picker, permissions and your account. Test connection makes a real account call.`,
+        term: NAMES.connections,
+        desc: `${NAMES.connections} has a tile per provider. Its page shows usage, picker models, permissions and your account.`,
       },
       {
         term: 'Usage in the top bar',
@@ -151,7 +151,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Use reset',
-        desc: 'When Codex offers a free reset, its page shows the expiry and Use reset,.',
+        desc: 'When Codex offers a free reset, its page shows the expiry and Use reset.',
       },
       {
         term: NAMES.spendCap,
@@ -160,8 +160,8 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
     ],
     links: [
       {
-        label: `Open ${NAMES.providers}`,
-        target: { kind: 'studio', studio: { kind: 'settings', focus: { scope: 'providers' } } },
+        label: `Open ${NAMES.connections}`,
+        target: { kind: 'studio', studio: { kind: 'connections', focus: null } },
       },
       {
         label: 'Open Impact, Spend',
@@ -252,7 +252,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
     points: [
       {
         term: 'Sidebar',
-        desc: 'New session, then Board, Tasks, Work when on, Workflows, Chat, Impact and Monitoring, your sessions, Settings, and the Goodboy line with the bug icon. An amber dot says sessions need you, or on Monitoring that a pinned port is down.',
+        desc: 'New session, then Board, Tasks, Work when on, Workflows, Chat, Connections, Impact and Monitoring, your sessions, Settings, and the Goodboy line with the bug icon. An amber dot says sessions need you, or on Monitoring that a pinned port is down.',
       },
       {
         term: 'Session rows',
@@ -309,7 +309,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Work and the Lead',
-        desc: 'Work (experimental), in Settings, calls the agent behind a run the Lead, lists every Lead under Work and adds Start work. Asks you sets one row per decision.',
+        desc: 'Work, in Advanced settings, renames Auto to Lead, lists every Lead under Work and adds Start work. Asks you sets one row per decision.',
       },
       {
         term: 'Overview',
@@ -342,11 +342,11 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Asks you and pause',
-        desc: 'Asks you: Every step, After the plan or Never sets how often a run stops for you. Pause run lets the step in flight finish, and Stop run asks first.',
+        desc: 'Every step, After the plan or Never sets how often a run stops for you, one row per kind in Run defaults. Pause run lets the step in flight finish, and Stop run asks first.',
       },
       {
         term: NAMES.runDefaults,
-        desc: 'This tab in Workflows sets what new runs start with: when it asks you, a limit and guidance. A run keeps the rules it started with.',
+        desc: 'This Settings page sets what new runs start with. A run keeps the rules it started with.',
       },
       {
         term: 'Open questions',
@@ -396,7 +396,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
     points: [
       {
         term: 'Agents use your tools',
-        desc: 'An agent asks Goodboy and Goodboy makes the call, so your keys never reach the agent. Keys stay in your system credential store.',
+        desc: 'Goodboy makes the call for the agent, so your keys never reach it. They stay in your system credential store.',
       },
       {
         term: NAMES.tasks,
@@ -415,8 +415,8 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
         desc: `A Linked row in the rail opens its task. Its right click menu holds Move to, Remove from this branch and ${NAMES.removeLinkFromSession}, each with Undo; the Log keeps Re-link.`,
       },
       {
-        term: 'Slack',
-        desc: 'Pick the channels and what agents may do there. Replies default to Ask first and wait for your Send.',
+        term: 'Integration pages',
+        desc: `Each tool has a page in ${NAMES.connections}, and a missing key gets Paste a new key. On Slack's, pick the channels and what agents may do; replies default to Ask first.`,
       },
     ],
     links: [
@@ -425,8 +425,8 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
         target: { kind: 'studio', studio: { kind: 'inbox', focus: null } },
       },
       {
-        label: 'Open Integrations',
-        target: { kind: 'studio', studio: { kind: 'settings', focus: { scope: 'tools' } } },
+        label: `Open ${NAMES.connections}`,
+        target: { kind: 'studio', studio: { kind: 'connections', focus: null } },
       },
     ],
   },
@@ -642,15 +642,15 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: NAMES.branches,
-        desc: 'Workspace, Branches starts with After merge: Ask first, Delete on this Mac or Also on origin, and a branch with later commits is left alone. Then the branches safe to delete, and Recently deleted restores one.',
+        desc: 'Workspace, Branches starts with Naming, then After merge: Ask first, Delete on this Mac or Also on origin, and a branch with later commits is left alone. Then the branches safe to delete, and Recently deleted restores one.',
       },
       {
         term: 'Other tools',
         desc: 'The Claude Code, Codex and Cursor folders on this Mac, read only, with how much came from Goodboy sessions.',
       },
       {
-        term: 'Security findings',
-        desc: 'The last section of Storage. Saving a script checks it for keys and tokens on your Mac; Not a secret dismisses a finding, and Flag again restores it.',
+        term: 'Secrets in saved scripts',
+        desc: 'A band of the workspace Permissions page. Saving a script checks it for keys and tokens on your Mac; Not a secret dismisses a finding, and Flag again restores it.',
       },
     ],
     links: [
@@ -674,19 +674,19 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
     id: 'settings',
     group: 'housekeeping',
     title: 'Settings and backup',
-    lead: 'App settings apply everywhere and workspace settings to one workspace. Your whole setup can move to another Mac.',
+    lead: 'This Mac settings apply everywhere and workspace settings to one workspace. Your whole setup can move to another Mac.',
     points: [
       {
         term: 'Settings rail',
-        desc: `Settings, or ${shortcutGlyphs('settings.open')}, opens as a page beside the sidebar, on the page you used last. Its rail groups App, This workspace, ${NAMES.providers} and Integrations, and the last two collapse. Search settings finds any setting, and a dot marks a page that needs you.`,
+        desc: `Settings, or ${shortcutGlyphs('settings.open')}, opens as a page beside the sidebar, on the page you used last. Its rail groups This Mac and the workspace; providers and integrations moved to ${NAMES.connections}. Search settings finds any setting, and a dot marks a page that needs you.`,
       },
       {
         term: 'Copy and restore',
         desc: 'Copy from another workspace, or Restore defaults, previews every change before it applies. A field that differs from its default has a dot and a Reset.',
       },
       {
-        term: 'App pages',
-        desc: `General, Updates, ${NAMES.keyboardShortcuts}, Storage, ${NAMES.backupAndReset} and ${NAMES.iphone}, where ${NAMES.pairIphone} shows the code the phone scans.`,
+        term: 'This Mac pages',
+        desc: `General, with Updates at its end, ${NAMES.keyboardShortcuts}, Advanced, Storage and ${NAMES.backupAndReset}. ${NAMES.iphone} shows once a phone is paired.`,
       },
       {
         term: 'Open with',

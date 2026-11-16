@@ -1,4 +1,7 @@
 import type { SettingsFocus, SettingsPageScope, SettingsStudioScope } from '../../settingsFocus';
+import { MODELS_PAGE_SECTION, isModelsPage } from '../../isModelsPage';
+import { PERMISSIONS_SECTION_ID } from '../../../permissions/openPermissionSettings';
+import { appSectionOf } from './appSections';
 import { settingsPageKey, type SettingsGroup } from './settingsDirectory';
 
 const GENERAL: SettingsFocus = { scope: 'app', section: 'general' };
@@ -15,7 +18,11 @@ const MOVED_PAGES: ReadonlyArray<MovedPage> = [
   },
   {
     from: { scope: 'app', section: 'security-findings' },
-    to: { scope: 'app', section: 'storage' },
+    to: { scope: 'workspace', section: PERMISSIONS_SECTION_ID },
+  },
+  {
+    from: { scope: 'workspace', section: 'security-findings' },
+    to: { scope: 'workspace', section: PERMISSIONS_SECTION_ID },
   },
   {
     from: { scope: 'workspace', section: 'after-merge' },
@@ -23,16 +30,38 @@ const MOVED_PAGES: ReadonlyArray<MovedPage> = [
   },
 ];
 
+const RETIRED_SCOPES: ReadonlySet<string> = new Set(['providers', 'tools']);
+
 type MovedParams = {
   readonly focus: SettingsFocus;
 };
 
-const movedSettingsFocus = ({ focus }: MovedParams): SettingsFocus => {
-  const moved = MOVED_PAGES.find(
-    ({ from }) => from.scope === focus.scope && from.section === focus.section,
-  );
-  return moved === undefined ? focus : { ...focus, ...moved.to };
+const withoutRetiredScope = ({ focus }: MovedParams): SettingsFocus => {
+  const scope = String(focus.scope);
+  if (!RETIRED_SCOPES.has(scope)) {
+    return focus;
+  }
+  const provider: unknown = Reflect.get(focus, 'provider');
+  if (scope === 'tools' || provider !== undefined) {
+    return GENERAL;
+  }
+  const { section } = focus;
+  return {
+    scope: 'workspace',
+    section: section !== undefined && isModelsPage({ section }) ? section : MODELS_PAGE_SECTION,
+  };
 };
+
+const movedSettingsFocus = ({ focus }: MovedParams): SettingsFocus => {
+  const current = withoutRetiredScope({ focus });
+  const moved = MOVED_PAGES.find(
+    ({ from }) => from.scope === current.scope && from.section === current.section,
+  );
+  return moved === undefined ? current : { ...current, ...moved.to };
+};
+
+const savedPageOf = ({ focus }: MovedParams): SettingsFocus =>
+  focus.scope === 'app' ? { ...focus, section: appSectionOf({ section: focus.section }) } : focus;
 
 type PageFocusParams = {
   readonly scope: SettingsPageScope;
@@ -42,8 +71,6 @@ type PageFocusParams = {
 export const pageFocusOf = ({ scope, focus }: PageFocusParams): SettingsFocus => ({
   scope,
   ...(focus.section !== undefined && { section: focus.section }),
-  ...(focus.provider !== undefined && { provider: focus.provider }),
-  ...(focus.tool !== undefined && { tool: focus.tool }),
 });
 
 type ResolveParams = {
@@ -59,12 +86,10 @@ export const resolveSettingsFocus = ({ focus, last, groups }: ResolveParams): Se
   if (last === null || last.scope === 'home') {
     return GENERAL;
   }
-  const page = movedSettingsFocus({ focus: last });
+  const page = savedPageOf({ focus: movedSettingsFocus({ focus: last }) });
   const key = settingsPageKey({
     scope: page.scope === 'home' ? 'app' : page.scope,
     section: page.section,
-    provider: page.provider,
-    tool: page.tool,
   });
   const exists = groups.some((group) => group.pages.some((entry) => entry.key === key));
   return exists ? page : GENERAL;

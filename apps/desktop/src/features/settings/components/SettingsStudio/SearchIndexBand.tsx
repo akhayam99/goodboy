@@ -1,11 +1,13 @@
 import { CHECK_STATE } from '../../../../store/slices/notifications/errorRecovery';
 import { useEffect, useMemo } from 'react';
 import type { ProjectId } from '@goodboy/types';
-import { Band, Button, FieldRow, Listbox } from '@goodboy/ui';
+import { Band, Button, Listbox } from '@goodboy/ui';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import { formatBytes } from '../../../../shared/utils/formatBytes';
 import { shortcutGlyphs } from '../../../../shared/keyboard/registry';
+import { NAMES } from '../../../../shared/utils/names';
 import { searchProgressLabel } from '../../../search/components/SearchMode/searchProgressLabel';
+import { SettingRow } from './SettingRow';
 
 type SizeParams = {
   readonly status: { readonly bytes: number; readonly docs: number } | null;
@@ -84,16 +86,21 @@ export const SearchIndexBand = () => {
     <Band
       inset="content"
       label="Search"
-      hint={`What ${shortcutGlyphs('search.open')} finds. The index never leaves this Mac.`}
+      hint={`What ${shortcutGlyphs('search.open')} finds.`}
       headingLevel={2}
     >
       <div className="flex flex-col">
-        <FieldRow label="Index" help={progress ?? 'Kept up to date as you work.'}>
+        <SettingRow
+          label="Index"
+          rowKey="search-index"
+          help={progress ?? 'Kept up to date as you work. Never leaves this Mac.'}
+        >
           <span className="text-meta text-muted-foreground">{size}</span>
-        </FieldRow>
-        <FieldRow
-          label="Rebuild"
-          help="Empties the index and fills it again from your sessions while the app is idle."
+        </SettingRow>
+        <SettingRow
+          label="Rebuild the index"
+          rowKey="search-rebuild"
+          help="Empties it and fills it again while the app is idle."
         >
           <Button
             size="sm"
@@ -105,10 +112,13 @@ export const SearchIndexBand = () => {
           >
             Rebuild
           </Button>
-        </FieldRow>
-        <FieldRow
-          label="Leave out"
-          help="Sessions, messages and branches of these folders stop showing in search."
+        </SettingRow>
+        <SettingRow
+          label={NAMES.skipFolders}
+          rowKey="search-leave-out"
+          help="Their sessions and branches stay out of search."
+          isChanged={excluded.length > 0}
+          onReset={() => void changeExcluded({ next: [] })}
         >
           <Listbox
             multiple
@@ -116,12 +126,12 @@ export const SearchIndexBand = () => {
             searchable
             noun="folder"
             placeholder="No folder"
-            ariaLabel="Folders search leaves out"
+            ariaLabel={NAMES.skipFolders}
             options={options}
             value={excluded}
             onChange={(values) => void changeExcluded({ next: values as ReadonlyArray<ProjectId> })}
           />
-        </FieldRow>
+        </SettingRow>
       </div>
     </Band>
   );

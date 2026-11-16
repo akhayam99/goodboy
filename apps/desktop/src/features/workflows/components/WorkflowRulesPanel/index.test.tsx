@@ -83,9 +83,18 @@ const claudeAt = ({ used }: { readonly used: number }): ProviderLimits => ({
 
 const panel = () => render(<WorkflowRulesPanel workspaceId={HARBORLINE.id} />);
 
-const chip = (label: string) =>
-  within(screen.getByRole('group', { name: 'Run defaults' })).getByRole('button', {
-    name: new RegExp(`^${label}:`),
+const newRuns = () => within(screen.getByRole('region', { name: 'New runs' }));
+
+const asksTab = ({ name }: { readonly name: RegExp }) =>
+  within(newRuns().getByRole('tablist', { name: 'Workflow asks you' })).getByRole('tab', {
+    name,
+  });
+
+const failSaves = () =>
+  useAppStore.setState({
+    patchWorkspaceOverrides: vi.fn(async (): Promise<void> => {
+      throw new Error('disk full');
+    }),
   });
 
 beforeAll(async () => {
@@ -138,49 +147,68 @@ const withRules = (rules: Partial<WorkflowRules>) =>
   }));
 
 describe('WorkflowRulesPanel', () => {
-  it('starts on the defaults with one chip per setting and the guidance field', () => {
+  it('starts on the defaults with one row per setting and the guidance field', () => {
     panel();
 
     expect(screen.getByRole('heading', { level: 2, name: 'New runs' })).toBeDefined();
-    expect(
-      within(screen.getByRole('group', { name: 'Run defaults' }))
-        .getAllByRole('button')
-        .map((chip) => chip.getAttribute('aria-label')),
-    ).toEqual([
-      'Asks you: Every step, new runs',
-      'Limit: none, new runs',
-      'Models: Claude, Codex · Cursor as backup, new runs',
-    ]);
+    expect(asksTab({ name: /Every step/ }).getAttribute('aria-selected')).toBe('true');
+    expect(newRuns().getByLabelText<HTMLInputElement>('Limit in dollars').value).toBe('');
+    expect(newRuns().getByTestId('rules-policy-summary').textContent).toBe(
+      'Claude, Codex · Cursor as backup',
+    );
+    expect(newRuns().queryAllByRole('button', { name: /^(Asks you|Limit|Models):/ })).toEqual([]);
     expect(screen.getByRole('textbox', { name: 'Guidance' })).toBeDefined();
   });
 
-  it('opens one popover per chip, the same as on a run, with no Save', () => {
+  it('shows the hints the builder shows, with no Save', () => {
     panel();
 
-    fireEvent.click(chip('Asks you'));
-    const popover = screen.getByRole('dialog', { name: 'Asks you' });
     expect(
-      within(popover)
+      within(newRuns().getByRole('tablist', { name: 'Workflow asks you' }))
         .getAllByRole('tab')
         .map((tab) => tab.textContent),
     ).toEqual(RUN_AUTONOMY_OPTIONS.map((option) => option.label));
-    expect(within(popover).queryByRole('button', { name: 'Save' })).toBeNull();
+    expect(newRuns().queryByRole('button', { name: 'Save' })).toBeNull();
   });
 
-  it('saves Asks you for new runs as soon as you pick it', async () => {
+  it('puts the rows it gets after Workflow asks you and the bands it gets before Guidance', () => {
+    render(
+      <WorkflowRulesPanel workspaceId={HARBORLINE.id} runRows={<p>Start as row</p>}>
+        <section aria-label="Agents" />
+      </WorkflowRulesPanel>,
+    );
+
+    expect(
+      newRuns()
+        .getAllByText(/^(Workflow asks you|Start as row|Limit|Models)$/)
+        .map((node) => node.textContent),
+    ).toEqual(['Workflow asks you', 'Start as row', 'Limit', 'Models']);
+    expect(screen.getAllByRole('region').map((band) => band.getAttribute('aria-label'))).toEqual([
+      'New runs',
+      'Agents',
+      'Guidance',
+    ]);
+  });
+
+  it('saves Workflow asks you for new runs as soon as you pick it', async () => {
     panel();
 
-    fireEvent.click(chip('Asks you'));
-    fireEvent.click(
-      within(screen.getByRole('dialog', { name: 'Asks you' })).getByRole('tab', {
-        name: /After the plan/,
-      }),
-    );
+    fireEvent.click(asksTab({ name: /After the plan/ }));
 
     await waitFor(() => expect(savedRules().map((rules) => rules?.autonomy)).toEqual(['plan']));
     expect(useAppStore.getState().workspaceOverrides[HARBORLINE.id]?.workflowRules?.autonomy).toBe(
       'plan',
     );
+  });
+
+  it('keeps the old value and says why under the row when the save fails', async () => {
+    failSaves();
+    panel();
+
+    fireEvent.click(asksTab({ name: /After the plan/ }));
+
+    expect((await newRuns().findByRole('alert')).textContent).toContain('disk full');
+    expect(asksTab({ name: /Every step/ }).getAttribute('aria-selected')).toBe('true');
   });
 
   it('reaches new runs only: a run already going keeps its own copy', async () => {
@@ -192,12 +220,7 @@ describe('WorkflowRulesPanel', () => {
     });
     panel();
 
-    fireEvent.click(chip('Asks you'));
-    fireEvent.click(
-      within(screen.getByRole('dialog', { name: 'Asks you' })).getByRole('tab', {
-        name: /^Never/,
-      }),
-    );
+    fireEvent.click(asksTab({ name: /^Never/ }));
 
     await waitFor(() => expect(savedRules().map((rules) => rules?.autonomy)).toEqual(['run']));
     expect(useAppStore.getState().sessions[0]?.workflowRuns[0]?.rulesSnapshot).toMatchObject({
@@ -206,46 +229,64 @@ describe('WorkflowRulesPanel', () => {
     });
   });
 
-  it('applies the limit for new runs on Enter and the behaviour at the limit on click', async () => {
+  it('applies the spend limit on Enter and the behaviour at the limit on click', async () => {
     panel();
 
-    fireEvent.click(chip('Limit'));
-    const popover = screen.getByRole('dialog', { name: 'Limit' });
-    fireEvent.change(within(popover).getByLabelText('Limit in dollars'), {
-      target: { value: '40' },
-    });
-    fireEvent.submit(within(popover).getByRole('form', { name: 'Limit for new runs' }));
+    const amount = newRuns().getByLabelText('Limit in dollars');
+    fireEvent.focus(amount);
+    fireEvent.change(amount, { target: { value: '40' } });
+    fireEvent.submit(newRuns().getByRole('form', { name: 'Limit for new runs' }));
     await waitFor(() => expect(savedRules().at(-1)).toMatchObject({ spendLimitUsd: 40 }));
-    fireEvent.click(within(popover).getByRole('tab', { name: 'Warn only' }));
+    fireEvent.click(
+      within(newRuns().getByRole('tablist', { name: 'At the limit' })).getByRole('tab', {
+        name: 'Warn only',
+      }),
+    );
 
     await waitFor(() =>
       expect(savedRules().at(-1)).toMatchObject({ spendLimitUsd: 40, spendLimitMode: 'notify' }),
     );
   });
 
-  it('opens Providers from the Models chip', () => {
+  it('keeps the old spend limit and says why under the row when the save fails', async () => {
+    withRules({ spendLimitUsd: 20 });
+    failSaves();
+    panel();
+
+    const amount = newRuns().getByLabelText<HTMLInputElement>('Limit in dollars');
+    expect(amount.value).toBe('20');
+    fireEvent.focus(amount);
+    fireEvent.change(amount, { target: { value: '40' } });
+    fireEvent.submit(newRuns().getByRole('form', { name: 'Limit for new runs' }));
+
+    expect((await newRuns().findByRole('alert')).textContent).toContain('disk full');
+    expect(
+      useAppStore.getState().workspaceOverrides[HARBORLINE.id]?.workflowRules?.spendLimitUsd,
+    ).toBe(20);
+  });
+
+  it('opens the workspace Models page from the Models row', () => {
     const received: Array<unknown> = [];
     const listener = (event: Event) => received.push((event as CustomEvent).detail);
     window.addEventListener('goodboy:open-settings', listener);
     panel();
 
-    fireEvent.click(chip('Models'));
-    fireEvent.click(screen.getByRole('button', { name: 'Open Providers' }));
+    fireEvent.click(newRuns().getByRole('button', { name: 'Open Models' }));
     window.removeEventListener('goodboy:open-settings', listener);
 
-    expect(received).toEqual([{ scope: 'providers', section: undefined }]);
+    expect(received).toEqual([{ scope: 'workspace', section: 'models' }]);
   });
 
   it('shows the policy in one line, with no switch and no provider list', () => {
     panel();
 
-    fireEvent.click(chip('Models'));
-    const popover = screen.getByRole('dialog', { name: 'Models' });
-    expect(within(popover).queryAllByRole('switch')).toHaveLength(0);
+    expect(newRuns().queryAllByRole('switch')).toHaveLength(0);
     expect(screen.getByTestId('rules-policy-summary').textContent).toBe(
       'Claude, Codex · Cursor as backup',
     );
-    expect(popover.textContent).not.toMatch(/most room|room left/);
+    expect(screen.getByRole('region', { name: 'New runs' }).textContent).not.toMatch(
+      /most room|room left/,
+    );
   });
 
   it('saves guidance, polishes it into one rule per line and undoes the polish', async () => {

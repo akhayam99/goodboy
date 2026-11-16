@@ -1,11 +1,12 @@
-import { CHECK_STATE } from '../../../../store/slices/notifications/errorRecovery';
 import { useCallback } from 'react';
 import type { WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import type { WorkspaceSettingField } from '../../pageKeys';
-import { fieldDef, isChanged } from '../../workspaceSettings/fields';
+import { settingRowKey } from '../../settingRowKey';
+import { effectiveValue, fieldDef, isChanged } from '../../workspaceSettings/fields';
 import { applyWorkspaceSettings } from '../../workspaceSettings/plan';
 import { workspaceSettingsSnapshot } from '../../workspaceSettings/snapshot';
+import { useSettingSave, type SettingSave } from '../useSettingSave';
 
 type Params = {
   readonly workspaceId: WorkspaceId;
@@ -17,6 +18,7 @@ export type WorkspaceFieldState = {
   readonly isChanged: boolean;
   readonly defaultLabel: string;
   readonly reset: () => Promise<void>;
+  readonly save: Pick<SettingSave<string>, 'error' | 'isSaving' | 'retry'>;
 };
 
 export const useWorkspaceField = ({ workspaceId, field }: Params): WorkspaceFieldState => {
@@ -24,29 +26,40 @@ export const useWorkspaceField = ({ workspaceId, field }: Params): WorkspaceFiel
   const changed = useAppStore((state) =>
     isChanged({ def, snapshot: workspaceSettingsSnapshot({ state, workspaceId }) }),
   );
-  const reportError = useAppStore((state) => state.reportError);
+  const currentLabel = useAppStore((state) =>
+    def.display(
+      effectiveValue({ def, snapshot: workspaceSettingsSnapshot({ state, workspaceId }) }),
+    ),
+  );
+  const defaultLabel = def.display(def.fallback);
 
-  const reset = useCallback(async () => {
-    try {
-      await applyWorkspaceSettings({
+  const write = useCallback(
+    () =>
+      applyWorkspaceSettings({
         state: useAppStore.getState(),
         workspaceId,
         writes: [def.write(null)],
-      });
-    } catch (error) {
-      void reportError({
-        recovery: CHECK_STATE,
-        title: `Couldn't reset ${def.label.toLowerCase()}`,
-        error,
-        workspaceId,
-      });
-    }
-  }, [def, reportError, workspaceId]);
+      }),
+    [def, workspaceId],
+  );
+
+  const save = useSettingSave({
+    rowKey: settingRowKey({ workspaceId, row: field }),
+    saved: currentLabel,
+    write,
+    display: ({ value }) => value,
+    failureTitle: `Couldn't reset ${def.label.toLowerCase()}`,
+    workspaceId,
+  });
+  const { save: send } = save;
+
+  const reset = useCallback(() => send({ value: defaultLabel }), [defaultLabel, send]);
 
   return {
     label: def.label,
     isChanged: changed,
-    defaultLabel: def.display(def.fallback),
+    defaultLabel,
     reset,
+    save,
   };
 };

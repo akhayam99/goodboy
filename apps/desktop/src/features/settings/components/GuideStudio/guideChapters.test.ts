@@ -344,7 +344,7 @@ describe('the start, agent and workflow chapters', () => {
 
   it('names the Work switch, the Lead and its asks', () => {
     const work = pointOf('agents', 'Work and the Lead');
-    ['Work (experimental)', 'Lead', NAMES.startWork, 'Asks you'].forEach((entry) =>
+    ['Work, in Advanced settings', 'Lead', NAMES.startWork, 'Asks you'].forEach((entry) =>
       expect(work).toContain(entry),
     );
   });

@@ -277,7 +277,7 @@
     "apps/desktop/src/features/integrations/components/LaunchSessionPanel/index.tsx": 1,
     "apps/desktop/src/features/integrations/components/LaunchSessionPanel/LaunchedNotice.tsx": 1,
     "apps/desktop/src/features/integrations/components/LinkedWorkRow/index.tsx": 1,
-    "apps/desktop/src/features/integrations/components/ToolSettingsScope/GithubAccountRows/AllWorkspacesRow.tsx": 1,
+    "apps/desktop/src/features/integrations/github/GithubAccountRows/AllWorkspacesRow.tsx": 1,
     "apps/desktop/src/features/integrations/sentry/SentryBreadcrumbs.tsx": 1,
     "apps/desktop/src/features/notifications/components/NotificationCenter/BellHeader.tsx": 1,
     "apps/desktop/src/features/notifications/components/NotificationsStudio/index.tsx": 2,

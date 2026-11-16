@@ -17,7 +17,7 @@ import { changedCount, distanceBehind, unmergedCount } from '../../../shared/lib
 import { isInSyncWithOrigin } from '../isInSyncWithOrigin';
 import { openSessionTerminal } from '../../terminal/openSessionTerminal';
 import { pushFixCommand } from '../pushFixCommand';
-import { openSettings } from '../../settings/openSettings';
+import { openConnection } from '../../connections/openConnection';
 import { useHistoryRunFlow } from '../components/CommitsHistory/useHistoryRunFlow';
 import { rebaseConflictOf } from '../rebaseConflictOf';
 import { rebaseFileStatesOf, type RebaseFileStates } from '../rebaseFileStatesOf';
@@ -152,7 +152,7 @@ export const useRebaseJob = ({
         cwd: worktreePath,
         prefill: pushFixCommand({ branch: mount.branch, remoteSha: run.remoteSha }),
       }),
-    openProviders: () => openSettings({ scope: 'providers' }),
+    openProviders: () => openConnection({ focus: null }),
     seeWhatItDid: () => {
       if (agentId === null) {
         return;

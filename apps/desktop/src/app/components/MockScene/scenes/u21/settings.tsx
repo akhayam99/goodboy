@@ -1,6 +1,5 @@
 import { useEffect, useState, type ComponentType } from 'react';
-import type { SettingsFocus } from '../../../../../features/settings/settingsFocus';
-import { useAppStore } from '../../../../../store';
+import { useAppStore, type StudioPlace } from '../../../../../store';
 import { AppFrame } from '../audit/AppFrame';
 import { seedFrame } from '../audit/frameSeed';
 import { installSettingsInvokeMocks } from '../audit/installSettingsInvokeMocks';
@@ -12,7 +11,7 @@ type FrameContext = 'board' | 'session' | 'rail';
 
 type Props = {
   readonly context: FrameContext;
-  readonly focus: SettingsFocus;
+  readonly focus: StudioPlace;
   readonly hasLimits?: boolean;
 };
 
@@ -34,7 +33,7 @@ const SettingsOverApp = ({ context, focus, hasLimits = false }: Props) => {
       return;
     }
     const id = window.setTimeout(
-      () => useAppStore.getState().switchStudio({ studio: { kind: 'settings', focus } }),
+      () => useAppStore.getState().switchStudio({ studio: focus }),
       OPEN_DELAY_MS,
     );
     return () => window.clearTimeout(id);
@@ -46,9 +45,12 @@ const SettingsOverApp = ({ context, focus, hasLimits = false }: Props) => {
   return <AppFrame view="settings-over-app" isRailCollapsed={context === 'rail'} />;
 };
 
-const GENERAL: SettingsFocus = { scope: 'app', section: 'general' };
+const GENERAL: StudioPlace = { kind: 'settings', focus: { scope: 'app', section: 'general' } };
 
-const CLAUDE_PAGE: SettingsFocus = { scope: 'providers', provider: 'anthropic' };
+const CLAUDE_PAGE: StudioPlace = {
+  kind: 'connections',
+  focus: { kind: 'provider', provider: 'anthropic' },
+};
 
 export const U21_SETTINGS_SCENES: Readonly<Record<string, ComponentType>> = {
   'settings-general-pinned': () => <SettingsOverApp context="session" focus={GENERAL} />,

@@ -1,10 +1,11 @@
 import type { AutoLevel, LeadPermissionKey, LeadPermissions } from '@goodboy/core/auto';
-import { SegmentedTabs, formatUsd } from '@goodboy/ui';
+import { Eyebrow, SegmentedTabs } from '@goodboy/ui';
 import { RUN_AUTONOMY_OPTIONS } from '../../workflows/runAutonomy';
 import { LeadPermissionRow } from './LeadPermissionRow';
 import { LockedRows } from './LockedRows';
+import { PermissionLimitRow } from './PermissionLimitRow';
 import { PermissionSentence } from './PermissionSentence';
-import { PERMISSION_GRID_CLASS } from './permissionGrid';
+import { PERMISSION_GROUPS } from './permissionGroups';
 import { PERMISSION_ROWS } from './permissionRows';
 import type { LeadPermissionScope } from '../hooks/useLeadPermissions';
 
@@ -56,6 +57,11 @@ const PRESET_OPTIONS: ReadonlyArray<{
   { value: 'custom', label: 'Custom' },
 ];
 
+const SUBTITLE = {
+  lead: 'What this Lead does alone, and where it stops for you.',
+  default: 'What a new Lead in this workspace does alone.',
+} as const satisfies Record<LeadPermissionScope, string>;
+
 export const LeadPermissionsPanel = ({
   permissions,
   scope,
@@ -67,10 +73,26 @@ export const LeadPermissionsPanel = ({
   onPreset,
   onScope,
 }: Props) => (
-  <div data-permissions-panel={scope} className="flex min-w-0 flex-col gap-4">
-    <div className="flex items-center justify-between gap-3">
-      <div className="flex items-center gap-3">
-        <span className="text-eyebrow text-faint-foreground">Start from</span>
+  <div data-permissions-panel={scope} className="flex min-w-0 flex-col gap-6 p-5">
+    <div className="flex flex-col gap-4">
+      <div className="flex min-w-0 flex-col gap-0.5">
+        <span className="text-heading text-foreground">Asks you</span>
+        <span className="text-meta text-faint-foreground">{SUBTITLE[scope]}</span>
+      </div>
+      <div className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-x-4 gap-y-2">
+        {onScope === undefined ? null : (
+          <>
+            <span className="text-eyebrow text-muted-foreground">Applies to</span>
+            <SegmentedTabs<LeadPermissionScope>
+              size="xs"
+              ariaLabel="Applies to"
+              value={scope}
+              options={SCOPE_OPTIONS.map((option) => ({ ...option }))}
+              onChange={(next) => onScope({ scope: next })}
+            />
+          </>
+        )}
+        <span className="text-eyebrow text-muted-foreground">Start from</span>
         <SegmentedTabs<PresetValue>
           size="xs"
           ariaLabel="Start from"
@@ -86,55 +108,38 @@ export const LeadPermissionsPanel = ({
           }}
         />
       </div>
-      {onScope === undefined ? null : (
-        <SegmentedTabs<LeadPermissionScope>
-          size="xs"
-          ariaLabel="Applies to"
-          value={scope}
-          options={SCOPE_OPTIONS.map((option) => ({ ...option }))}
-          onChange={(next) => onScope({ scope: next })}
-        />
+      {presetError === null ? null : (
+        <p role="alert" className="text-meta text-danger">
+          {presetError}
+        </p>
       )}
+      <PermissionSentence permissions={permissions} isForLead={scope === 'lead'} />
     </div>
-    {presetError === null ? null : (
-      <p role="alert" className="text-meta text-danger">
-        {presetError}
-      </p>
-    )}
-    <div className="flex flex-col gap-3">
-      {PERMISSION_ROWS.map((copy) => {
-        const effective = permissions.rows[copy.key];
-        return (
-          <LeadPermissionRow
-            key={copy.key}
-            copy={copy}
-            value={effective.value}
-            source={effective.source}
-            note={effective.note}
-            scope={scope}
-            error={rowErrors[copy.key] ?? null}
-            isDisabled={isDisabled}
-            onChange={({ value }) => onChange({ key: copy.key, value })}
-            onReset={() => onReset({ key: copy.key })}
-          />
-        );
-      })}
-      <div data-permission-row="spendLimit" className={PERMISSION_GRID_CLASS}>
-        <div className="flex min-w-0 flex-col gap-0.5">
-          <span className="text-row text-foreground">Limit</span>
-          <span className="text-meta text-muted-foreground">
-            Counts the Lead and every agent it starts.
-          </span>
+    {PERMISSION_GROUPS.map((group) => (
+      <section key={group.title} aria-label={group.title} className="flex flex-col gap-3">
+        <Eyebrow label={group.title} />
+        <div className="flex flex-col gap-4">
+          {PERMISSION_ROWS.filter((copy) => group.keys.includes(copy.key)).map((copy) => {
+            const effective = permissions.rows[copy.key];
+            return (
+              <LeadPermissionRow
+                key={copy.key}
+                copy={copy}
+                value={effective.value}
+                source={effective.source}
+                note={effective.note}
+                scope={scope}
+                error={rowErrors[copy.key] ?? null}
+                isDisabled={isDisabled}
+                onChange={({ value }) => onChange({ key: copy.key, value })}
+                onReset={() => onReset({ key: copy.key })}
+              />
+            );
+          })}
+          {group.hasLimit ? <PermissionLimitRow spendLimitUsd={permissions.spendLimitUsd} /> : null}
         </div>
-        <span className="text-meta text-foreground">
-          {permissions.spendLimitUsd === null
-            ? 'Set when it starts'
-            : formatUsd(permissions.spendLimitUsd)}
-        </span>
-        <span className="text-right text-meta text-faint-foreground">pauses there, as today</span>
-      </div>
-    </div>
+      </section>
+    ))}
     <LockedRows rows={permissions.locked} />
-    <PermissionSentence permissions={permissions} isForLead={scope === 'lead'} />
   </div>
 );

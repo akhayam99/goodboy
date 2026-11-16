@@ -11,6 +11,7 @@ import type {
 const { state } = vi.hoisted(() => ({
   state: {
     workspaceIntegrations: {} as Record<string, ReadonlyArray<unknown>>,
+    integrationKeyChecks: {},
     connectBitbucket: vi.fn(async () => undefined),
     disconnectIntegration: vi.fn(async () => undefined),
     forgetIntegrationCredential: vi.fn(async () => undefined),

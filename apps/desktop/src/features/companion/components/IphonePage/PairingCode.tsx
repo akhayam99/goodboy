@@ -1,5 +1,6 @@
 import { RefreshCw } from 'lucide-react';
 import { Button, cn, ICON_SIZE, Skeleton } from '@goodboy/ui';
+import { NAMES } from '../../../../shared/utils/names';
 import type { QrInfo } from '../../bridge';
 
 import { pairingBarTone, type PairingBarTone } from './pairingBarTone';
@@ -38,9 +39,11 @@ export const PairingCode = ({ info, isLoading, error, remaining, total, onMint }
   if (error !== null) {
     return (
       <div className="flex size-[300px] flex-col items-center justify-center gap-3">
-        <p className="text-center text-meta text-danger">{error}</p>
+        <p role="alert" className="text-center text-meta text-danger">
+          {error}
+        </p>
         <Button variant="secondary" size="sm" onClick={onMint}>
-          <RefreshCw size={ICON_SIZE.row} aria-hidden /> Retry
+          <RefreshCw size={ICON_SIZE.row} aria-hidden /> {NAMES.retry}
         </Button>
       </div>
     );

@@ -49,9 +49,7 @@ describe('WorkSwitchField', () => {
         <WordProbe />
       </>,
     );
-    expect(
-      screen.getByRole('switch', { name: 'Work (experimental)' }).getAttribute('aria-checked'),
-    ).toBe('false');
+    expect(screen.getByRole('switch', { name: 'Work' }).getAttribute('aria-checked')).toBe('false');
     expect(screen.getByTestId('word').textContent).toBe('Auto');
   });
 
@@ -79,7 +77,7 @@ describe('WorkSwitchField', () => {
     expect(useAppStore.getState().autoTreeViews).toBe(running);
   });
 
-  it('keeps the old flow and shows the error on the row when the write fails', async () => {
+  it('keeps the old flow and shows the error on the row when the write fails, and Retry saves', async () => {
     storySpies.setSetting.mockRejectedValueOnce(new Error('disk is full'));
     render(
       <>
@@ -89,8 +87,13 @@ describe('WorkSwitchField', () => {
     );
 
     fireEvent.click(screen.getByRole('switch'));
-    expect((await screen.findByRole('alert')).textContent).toBe('disk is full');
+    expect((await screen.findByRole('alert')).textContent).toContain("Couldn't save. Still Off.");
+    expect(screen.getByRole('switch').getAttribute('aria-checked')).toBe('false');
     expect(screen.getByTestId('word').textContent).toBe('Auto');
     expect(useAppStore.getState().settings[SETTING_WORK_ENABLED]).not.toBe('true');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
+    await waitFor(() => expect(screen.getByTestId('word').textContent).toBe('Lead'));
+    expect(screen.queryByRole('alert')).toBeNull();
   });
 });

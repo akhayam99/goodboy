@@ -5,8 +5,8 @@ import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import type { WorkspaceIssueLookup } from '../../../integrations/hooks/useWorkspaceIssueLookup';
 import type { LookupHit } from '../../../integrations/issueCode/lookupIssueByCode';
 
-const { openToolSettings } = vi.hoisted(() => ({ openToolSettings: vi.fn() }));
-vi.mock('../../../integrations/openToolSettings', () => ({ openToolSettings }));
+const { openIntegration } = vi.hoisted(() => ({ openIntegration: vi.fn() }));
+vi.mock('../../../integrations/openIntegration', () => ({ openIntegration }));
 
 import { InboxLookupGroup } from './InboxLookupGroup';
 
@@ -222,7 +222,7 @@ describe('InboxLookupGroup', () => {
     fireEvent.click(
       screen.getByRole('button', { name: 'Linear stopped accepting your key. Sign in again' }),
     );
-    expect(openToolSettings).toHaveBeenCalledWith({ tool: 'linear' });
+    expect(openIntegration).toHaveBeenCalledWith({ tool: 'linear' });
     fireEvent.click(screen.getByRole('button', { name: /Retry$/ }));
     expect(retry).toHaveBeenCalled();
   });

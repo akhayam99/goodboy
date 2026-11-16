@@ -17,6 +17,7 @@ export type MountDetailFailure = {
 export type GithubState = {
   readonly githubStatus: GhTokenStatus | null;
   readonly githubWorkspaceStatus: Readonly<Record<WorkspaceId, GhTokenStatus | null>>;
+  readonly githubCheckedAt: Readonly<Record<WorkspaceId, number>>;
   readonly mountGithub: Readonly<Record<MountId, MountGithubState>>;
   readonly mountDetailFailures: Readonly<Record<MountId, MountDetailFailure>>;
   readonly mountSelectedPr: Readonly<Record<MountId, MountPullRequestIdentity | null>>;
@@ -30,6 +31,7 @@ export type GithubState = {
 export const githubInitialState: GithubState = {
   githubStatus: null,
   githubWorkspaceStatus: {},
+  githubCheckedAt: {},
   mountGithub: {},
   mountDetailFailures: {},
   mountSelectedPr: {},

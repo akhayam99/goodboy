@@ -13,7 +13,7 @@ import { RoutingLabel } from '../../../../shared/components/RoutingLabel';
 import { ROUTING_PILL_CLASS } from '../../../../shared/components/RoutingPicker/ROUTING_PILL_CLASS';
 import { RoutingPickerBody } from '../../../../shared/components/RoutingPicker/RoutingPickerBody';
 import { recommendationSummary } from '../../../../shared/components/RoutingPicker/recommendationSummary';
-import { openSettings } from '../../../settings/openSettings';
+import { openModelsSettings } from '../../../settings/openModelsSettings';
 import { RUN_MODEL_COPY } from '../../startRun/runModelCopy';
 import type { RunModelView } from './useRunModel';
 
@@ -117,8 +117,7 @@ export const RunModelChip = ({
             size="xs"
             onClick={() => {
               dropdown.close();
-              openSettings({
-                scope: 'providers',
+              openModelsSettings({
                 ...(settingsSection !== undefined && { section: settingsSection }),
               });
             }}

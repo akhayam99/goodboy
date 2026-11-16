@@ -275,13 +275,8 @@ describe('Checks tab when the access cannot read checks', () => {
     expect(screen.queryByText(/No checks have reported/)).toBeNull();
   });
 
-  it('points a bound token at Settings', async () => {
+  it('points a bound token at its GitHub page in Connections', async () => {
     useAppStore.setState({ githubWorkspaceStatus: { [SESSION.workspaceId]: PAT_STATUS } });
-    const opened: Array<unknown> = [];
-    const onOpen = (event: Event): void => {
-      opened.push(event instanceof CustomEvent ? event.detail : null);
-    };
-    window.addEventListener('goodboy:open-settings', onOpen);
 
     await show();
 
@@ -289,9 +284,11 @@ describe('Checks tab when the access cannot read checks', () => {
       screen.getByText('Give the token read access to checks and commit statuses.'),
     ).toBeDefined();
     expect(screen.queryByText('gh auth refresh -s repo')).toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: 'Open GitHub settings' }));
-    window.removeEventListener('goodboy:open-settings', onOpen);
-    expect(opened).toEqual([{ scope: 'tools', tool: 'github' }]);
+    fireEvent.click(screen.getByRole('button', { name: 'Open GitHub in Connections' }));
+    expect(useAppStore.getState().appStudio).toEqual({
+      kind: 'connections',
+      focus: { kind: 'tool', tool: 'github' },
+    });
   });
 
   it('treats a GitHub binding of the workspace as a bound token too', async () => {
@@ -309,7 +306,7 @@ describe('Checks tab when the access cannot read checks', () => {
 
     await show();
 
-    expect(screen.getByRole('button', { name: 'Open GitHub settings' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Open GitHub in Connections' })).toBeDefined();
   });
 
   it('gives the gh command in a copy chip when no token is bound', async () => {
@@ -317,7 +314,7 @@ describe('Checks tab when the access cannot read checks', () => {
 
     expect(screen.getByText('gh auth refresh -s repo')).toBeDefined();
     expect(screen.getByRole('button', { name: 'Copy command' })).toBeDefined();
-    expect(screen.queryByRole('button', { name: 'Open GitHub settings' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Open GitHub in Connections' })).toBeNull();
   });
 
   it('checks again by forcing the read', async () => {
@@ -438,20 +435,17 @@ describe('Checks tab on Bitbucket', () => {
       ...VIEW,
       checks: { read: 'denied', error: 'The API token lacks the pull request scope', runs: [] },
     };
-    const listener = vi.fn();
-    window.addEventListener('goodboy:open-settings', listener);
     useAppStore.setState({ pullRequestViews: viewEntry(denied), loadPullRequestView: vi.fn() });
 
     await show();
 
     expect(screen.getByText('The API token lacks the pull request scope')).toBeDefined();
     expect(screen.queryByText(/GitHub/)).toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: 'Open Bitbucket settings' }));
-    expect(listener).toHaveBeenCalledTimes(1);
-    expect(listener.mock.calls[0]?.[0]).toMatchObject({
-      detail: { scope: 'tools', tool: 'bitbucket' },
+    fireEvent.click(screen.getByRole('button', { name: 'Open Bitbucket in Connections' }));
+    expect(useAppStore.getState().appStudio).toEqual({
+      kind: 'connections',
+      focus: { kind: 'tool', tool: 'bitbucket' },
     });
-    window.removeEventListener('goodboy:open-settings', listener);
   });
 
   it('offers Retry and Details when the statuses could not be read, and retries the port', async () => {
@@ -709,24 +703,20 @@ describe('Checks tab on a host that reads its own checks', () => {
       }),
       loadPullRequestView: load,
     });
-    const opened: Array<unknown> = [];
-    const listen = (event: Event): void => {
-      opened.push((event as CustomEvent).detail);
-    };
-    window.addEventListener('goodboy:open-settings', listen);
-
     await show();
 
     expect(screen.getByText("Goodboy can't read pipelines for notify-relay")).toBeDefined();
     expect(screen.getByText(/Give it the `api` scope/)).toBeDefined();
     expect(screen.queryByText(/GitHub/)).toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: 'Open GitLab settings' }));
-    expect(opened).toEqual([{ scope: 'tools', tool: 'gitlab' }]);
+    fireEvent.click(screen.getByRole('button', { name: 'Open GitLab in Connections' }));
+    expect(useAppStore.getState().appStudio).toEqual({
+      kind: 'connections',
+      focus: { kind: 'tool', tool: 'gitlab' },
+    });
     load.mockClear();
     fireEvent.click(screen.getByRole('button', { name: 'Check again' }));
     expect(load).toHaveBeenCalledWith({ sessionId: SESSION.id, force: true });
     expect(refresh).not.toHaveBeenCalled();
-    window.removeEventListener('goodboy:open-settings', listen);
   });
 
   it('says it could not read the pipelines and retries through the port', async () => {

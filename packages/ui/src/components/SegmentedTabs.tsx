@@ -130,7 +130,7 @@ export const SegmentedTabs = <T extends string>({
         isUnderline
           ? UNDERLINE_FRAME
           : cn(
-              'gap-0.5 rounded-md border border-border-soft p-px',
+              'gap-0.5 rounded-md bg-fill p-0.5',
               SEGMENTED_FRAME_CLASSES[step],
               fill ? 'grid w-full' : 'inline-flex w-fit items-center',
             ),
@@ -183,7 +183,7 @@ export const SegmentedTabs = <T extends string>({
                       fill && 'w-full',
                       TAB_CLASSES[step],
                       isActive
-                        ? 'bg-selected text-foreground'
+                        ? 'border-border bg-segment-active text-foreground shadow-sm'
                         : 'text-muted-foreground hover:bg-hover hover:text-foreground',
                     ),
                 FOCUS_RING,

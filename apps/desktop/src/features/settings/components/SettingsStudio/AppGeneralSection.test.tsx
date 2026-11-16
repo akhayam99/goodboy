@@ -41,9 +41,11 @@ const seed = ({ editors, browsers }: SeedParams) => {
     loadDetectedEditors: async () => undefined,
     loadDetectedBrowsers: async () => undefined,
     loadDetectedTerminals: async () => undefined,
+    settings: Object.fromEntries(stored),
     loadSetting: async (key: string) => stored.get(key) ?? null,
     saveSetting: async (key: string, value: string) => {
       stored.set(key, value);
+      useAppStore.setState({ settings: Object.fromEntries(stored) });
     },
     reportError,
   } as never);

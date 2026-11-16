@@ -1,6 +1,6 @@
-import { SettingsFrame } from '../audit/SettingsFrame';
+import { ConnectionsFrame } from '../audit/ConnectionsFrame';
 import { seedBrandSettings } from './settingsBrandSeed';
 
 export const BrandToolsScene = () => (
-  <SettingsFrame focus={{ scope: 'tools', tool: 'linear' }} seed={seedBrandSettings} />
+  <ConnectionsFrame focus={{ kind: 'tool', tool: 'linear' }} seed={seedBrandSettings} />
 );

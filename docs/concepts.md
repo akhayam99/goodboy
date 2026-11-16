@@ -436,7 +436,7 @@ screen calls it **Close branch**, and a closed row offers **Reopen**.
 delete a mount that has uncommitted work, a lock, or a process still using the
 folder. It keeps track of it and tries again at the next cleanup.
 
-**Storage** (Settings > App > Storage) shows every worktree folder Goodboy made
+**Storage** (Settings > This Mac > Storage) shows every worktree folder Goodboy made
 in three groups. **In use** belongs to a session that is still open and is never
 touched from there. **To review** belongs to an archived or deleted session, or
 to no session at all. **Kept** is what you chose to keep, for good or for 30
@@ -1411,8 +1411,8 @@ How a reply reads is set in Settings, Workspace, **Replies and commits**:
 e31b9f4` when a history rewrite folded the fix. Reply and page always read
   the last commit of the thread after rewrites. The defaults are the
   reason, then `Fixed in {commit_story}.` or `Leaving this as is.`
-- **Sign replies** is the attribution line switch, so one value signs
-  everything Goodboy posts
+- **Attribution line**, under Voice in the Replies band, signs everything
+  Goodboy posts with one value
 - **Mark thread as resolved** (on by default, it resolves the thread after the reply) and **Commits** (new
   commit, or fixup of the commit that added the line)
 - **Edit the posted reply** (on by default, stored per workspace in the
@@ -1487,6 +1487,17 @@ Settings can be set at four levels. The level closest to the work wins:
   not exist, with a named error and no write, and it returns the stored row,
   which the settings screens show. Saves of one workspace run in order; when a
   save fails, only the keys it changed go back to the last saved value.
+- **A failed save stays on its row.** A switch, a choice or a text field on a
+  This Mac or workspace page shows the new value while it saves. When the save
+  fails, the old value comes back and the row says "Couldn't save. Still hb."
+  with **Retry**, which sends the value that failed to the same workspace. No
+  toast while the page is open; a toast only when the page closed before the
+  answer. Saves of one row run in order, and an answer for an older change,
+  success or failure, is dropped. The hook is `useSettingSave` (row key from
+  `settingRowKey`, failures shared by the control and its reset in `rowSaves`),
+  wrapped by `useAppSettingSave` and `useWorkspaceOverrideSave`. `SettingRow`
+  takes the save as `save` and writes the error under its help line; its
+  reset goes through the same save, so a failed reset stays on the row too.
 - **Workflows and saved steps** belong to the workspace. Built-in
   steps live in code and are the same everywhere. They are read only: **Save a
   copy** puts one copy in the workspace, and that copy remembers what it is
@@ -1613,7 +1624,7 @@ A connection to a tool lives on the **workspace**. Goodboy calls it a
   Goodboy uses it before the workspace binding.
 - GitHub works the same way. A workspace with no GitHub key of its own uses
   the key for all workspaces, then your `gh` CLI login. Both are set in one
-  place, **Settings > Integrations > GitHub**, in an **All workspaces** row and a
+  place, **Connections > GitHub**, in an **All workspaces** row and a
   **This workspace** row. App settings have no GitHub section.
 - Secrets stay inside Goodboy. Agents reach your tools only through the
   [query bridge](query-bridge.md).
@@ -1783,8 +1794,8 @@ selected project stays listed even at zero, and a project's count is the
 records tied to it. A GitHub or GitLab record belongs to the project whose
 remote (`Project.remoteUrl`) is its repo. A tracker record never belongs to a
 project; its row shows the tracker's own project or team instead. A Sentry error
-belongs to every project linked to its Sentry project in Settings, Integrations,
-Sentry, where each project can read several Sentry projects and one Sentry
+belongs to every project linked to its Sentry project in Connections, Sentry,
+where each project can read several Sentry projects and one Sentry
 project can serve several projects (`project_sentry_links`, m191). Links can be
 suggested from Sentry code mappings and wait for your Link. Tasks reads the
 first page of every linked Sentry project besides the connected one, in one
@@ -1854,7 +1865,7 @@ itself. **Settings → App → General → Open with** picks the editor, the ter
 (Terminal.app, iTerm, Warp or Ghostty, as installed) and the browser. With up to four options the choice is a segmented control like Theme;
 with more it is a list. The browser starts at **System default**, and a
 ⌘-click on a link, wireframes and anything opened outside a session open there. A fourth row,
-**Links**, picks where a plain click on a web link, a plan or a report goes: **In Goodboy**
+**Links in a session**, picks where a plain click on a web link, a plan or a report goes: **In Goodboy**
 (the default, in a tab beside the session) or **In your browser**. One function, `openTarget`,
 decides where each target opens (see [browser.md](browser.md#the-click-rule)); the Open verbs of the action registry (`features/actions/kinds/`) go through it, and a failed open shows on the run line with Retry. If the browser you picked is removed,
 links open in the system browser and a note in Settings says so. When you are done, you pick the
@@ -1966,21 +1977,24 @@ session up again in Goodboy.
   is the tab of Workflows that sets what
   a new run starts with. A renamed label keeps its old name as a ⌘K alias:
   searching the old word finds the new one (`formerNamesOf` in `names.ts`).
-- **Models** is the Providers page that sets what each role runs on (it was
-  Defaults). **Limit** is the most a provider, a run or a session may spend,
+- **Models** is the workspace settings page that sets what each role runs on
+  (it was Defaults). **Limit** is the most a provider, a run or a session may spend,
   said the same in the provider panel (Monthly limit, Save limit, Remove limit),
   the alerts and the run defaults (it was Spend cap and cap), **Limits** the
   backup group that holds them (it was Spend caps). Notifications written before
   the change keep their stored text, and the `budget-cap` kind id stays, **Copy context** the drawer button, **Context window**
   the share of a model window a turn filled, and **What's new** the release
   notes page. The old words are ⌘K aliases or retired names.
-- **General**, **Updates**, **Keyboard shortcuts**, **Storage**, **Backup and
-  reset** and **iPhone** are the App pages of Settings (Keyboard shortcuts was
-  Shortcuts, iPhone was Pair device and Companion; Security findings is a
-  section at the end of Storage). **Branches** is a Workspace page that starts
-  with After merge. **Pair an iPhone** is the one verb that opens the iPhone
-  page, **Providers** is its group in the rail (it was Providers &
-  models), and **Edit commits** is the one name for changing the commits of a
+- **This Mac** and the workspace name are the two groups of the Settings rail
+  (they were App and This workspace). **General**, **Keyboard shortcuts**,
+  **Advanced**, **Storage**, **Backup and reset** and **iPhone** are the This
+  Mac pages (Keyboard shortcuts was Shortcuts, iPhone was Pair device and
+  Companion; Updates is a band at the end of General; Security findings is the
+  Secrets in saved scripts band of the workspace's Permissions page). iPhone
+  stays out of the rail until a phone is paired. **Branches** is a Workspace
+  page that starts with Naming (branch prefix and branch name), then After
+  merge. **Pair an iPhone** is the one verb that opens the iPhone
+  page, and **Edit commits** is the one name for changing the commits of a
   branch (it was Rewrite history). **Disconnect** is the one verb for a
   provider or tool (it was Sign out). The old words are Search or run aliases and
   `RETIRED_NAMES` keeps them out of copy. A dot on a settings row means only
@@ -1992,7 +2006,7 @@ session up again in Goodboy.
   `secondaryHeaders.test.ts` keep every secondary page on that header.
 - **Add a plain folder** and **Add existing** put a folder or a repository
   under a project. **Link** stays for tying a ticket to a session or a pull
-  request. Tools connect from Settings > Integrations.
+  request. Tools connect from Connections.
 - **Asks you** is the setting that decides how often a run stops for you:
   **Every step**, **After the plan** or **Never** (it was Autonomy with Ask me,
   Balanced and Autopilot, and before that Autorun, Run on its own and When to

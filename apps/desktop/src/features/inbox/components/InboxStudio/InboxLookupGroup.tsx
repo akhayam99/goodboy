@@ -2,7 +2,7 @@ import { ListGridGroup, ListGridLine } from '@goodboy/ui';
 import type { WorkspaceIssueLookup } from '../../../integrations/hooks/useWorkspaceIssueLookup';
 import type { LookupHit } from '../../../integrations/issueCode/lookupIssueByCode';
 import { lookingUpText, lookupStatuses } from '../../../integrations/issueCode/lookupCopy';
-import { openToolSettings } from '../../../integrations/openToolSettings';
+import { openIntegration } from '../../../integrations/openIntegration';
 import { InboxRow, inboxOptionId } from './InboxRow';
 import type { InboxRecord } from '../../types';
 import { LookupStatusRow } from './LookupStatusRow';
@@ -66,7 +66,7 @@ export const InboxLookupGroup = ({
                     return;
                   }
                   if (chosen.action?.kind === 'open-integrations') {
-                    openToolSettings({ tool: chosen.action.provider });
+                    openIntegration({ tool: chosen.action.provider });
                   }
                 }}
               />

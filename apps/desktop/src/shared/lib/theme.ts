@@ -6,6 +6,8 @@ export type Theme = 'dark' | 'light';
 
 export type ThemePreference = Theme | 'system';
 
+export const DEFAULT_THEME_PREFERENCE: ThemePreference = 'dark';
+
 const STORAGE_KEY = STORAGE_KEYS.theme;
 const LIGHT_QUERY = '(prefers-color-scheme: light)';
 const SWITCHING_ATTRIBUTE = 'data-theme-switching';
@@ -13,9 +15,9 @@ const RELEASE_GUARD_MS = 120;
 
 const themePref = persistedPref<ThemePreference>({
   key: STORAGE_KEY,
-  parse: (raw) => (raw === 'light' || raw === 'system' ? raw : 'dark'),
+  parse: (raw) => (raw === 'light' || raw === 'system' ? raw : DEFAULT_THEME_PREFERENCE),
   serialize: (preference) => preference,
-  fallback: 'dark',
+  fallback: DEFAULT_THEME_PREFERENCE,
 });
 
 const readStoredPreference = themePref.read;
@@ -132,7 +134,7 @@ type ThemeState = {
 };
 
 export const useThemeStore = create<ThemeState>(() => ({
-  preference: 'dark',
+  preference: DEFAULT_THEME_PREFERENCE,
 }));
 
 type SwitchThemeParams = {

@@ -3,7 +3,7 @@ import type { ProviderId } from '@goodboy/types';
 import { ICON_SIZE, IconButton } from '@goodboy/ui';
 import { PROVIDER_LABEL } from '../../../features/providers/providerLabel';
 import { MODELS_SECTION } from '../../../features/providers/components/ProviderStudio/ProviderPage/ModelsGroup/constants';
-import { openSettings } from '../../../features/settings/openSettings';
+import { openConnection } from '../../../features/connections/openConnection';
 
 type Props = {
   readonly provider: ProviderId;
@@ -20,7 +20,7 @@ export const ModelVisibilityLink = ({ provider, onNavigate }: Props) => {
       iconSize={ICON_SIZE.control}
       onClick={() => {
         onNavigate();
-        openSettings({ scope: 'providers', provider, section: MODELS_SECTION });
+        openConnection({ focus: { kind: 'provider', provider, section: MODELS_SECTION } });
       }}
       className="size-5"
     />

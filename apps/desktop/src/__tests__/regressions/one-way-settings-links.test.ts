@@ -13,7 +13,6 @@ const OPENS_WORKFLOW_RULES = /openWorkflowRules/;
 const WORKFLOW_PANELS_THAT_OPEN_SETTINGS: ReadonlyArray<string> = [
   'components/WorkflowGuidance/AlsoSentLine.tsx',
   'components/WorkflowRulesPanel/DefaultModelsSetting.tsx',
-  'components/WorkflowStudio/WorkflowEditor/NoProvidersNotice.tsx',
 ];
 
 const listSources = (dir: string, acc: string[] = []): string[] => {

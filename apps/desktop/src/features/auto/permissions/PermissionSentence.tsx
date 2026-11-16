@@ -11,7 +11,7 @@ export const PermissionSentence = ({ permissions, isForLead }: Props) => {
   return (
     <p
       data-permission-sentence=""
-      className="rounded-md bg-selected px-3 py-2 text-meta text-muted-foreground"
+      className="rounded-md bg-fill px-3 py-2 text-meta text-muted-foreground"
     >
       {parts.subject} you before:{' '}
       <span className="text-foreground">

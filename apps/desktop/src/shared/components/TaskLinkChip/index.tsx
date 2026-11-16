@@ -1,7 +1,7 @@
 import { GitBranch } from 'lucide-react';
 import { Chip, ICON_SIZE } from '@goodboy/ui';
 import type { SessionExternalTaskProvider } from '@goodboy/types';
-import { IntegrationGlyph } from '../../../features/integrations/components/IntegrationGlyph';
+import { IntegrationGlyph } from '../IntegrationGlyph';
 
 type Props = {
   readonly provider: SessionExternalTaskProvider;

@@ -99,6 +99,24 @@ describe('names', () => {
     ]);
   });
 
+  it('keeps the old settings row labels as former names', () => {
+    expect(
+      [
+        NAMES.classicSendKeys,
+        NAMES.commandStatus,
+        NAMES.skipFolders,
+        NAMES.bannerWhenAway,
+        NAMES.linksInSession,
+      ].map((name) => [name, formerNamesOf(name)[0]]),
+    ).toEqual([
+      ['Classic send keys', 'Keys from before 0.15.5'],
+      ['Command status', 'Show if a command passed or failed'],
+      ['Skip folders', 'Leave out'],
+      ['Banner when away', 'Banner when you are away'],
+      ['Links in a session', 'Links'],
+    ]);
+  });
+
   it('names every start with one verb set and keeps the old labels as former names', () => {
     expect([NAMES.startARun, NAMES.startRun, NAMES.letAutoTakeIt]).toEqual([
       'Start a run',

@@ -8,7 +8,7 @@ vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn(async () => () => undefi
 vi.mock('@tauri-apps/plugin-dialog', () => ({ open: vi.fn() }));
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, cleanup, render, screen, within } from '@testing-library/react';
+import { act, cleanup, render, screen } from '@testing-library/react';
 import { ToastProvider } from '../../../../../shared/components/Toast';
 import {
   STORE_IMPORT_TIMEOUT_MS,
@@ -24,6 +24,7 @@ const SETTLE_MS = 2_000;
 beforeAll(async () => {
   await importStore();
   await import('../../../../../features/settings/components/SettingsStudio');
+  await import('../../../../../features/connections/components/ConnectionsStudio');
 }, STORE_IMPORT_TIMEOUT_MS);
 
 beforeEach(async () => {
@@ -74,16 +75,10 @@ describe('the Settings scenes', () => {
     expect(screen.getAllByRole('navigation', { name: 'Settings scopes' })).toHaveLength(1);
   });
 
-  it('settings-providers-rail shows the dot in the nav and the notice on the Claude page', async () => {
+  it('settings-providers-rail lands on the Claude page in Connections with its notice', async () => {
     await mount('settings-providers-rail');
 
-    expect(screen.getByRole('button', { name: /^Back to app/ })).toBeDefined();
-    const list = screen.getByRole('list', { name: 'Providers settings' });
-    expect(
-      within(within(list).getByRole('button', { name: /^Claude/ })).getByRole('img', {
-        name: 'Claude is about to run out',
-      }),
-    ).toBeDefined();
+    expect(screen.queryByRole('navigation', { name: 'Settings scopes' })).toBeNull();
     expect(screen.getByRole('heading', { name: 'Claude' })).toBeDefined();
     expect(screen.getByText('Claude is about to run out.')).toBeDefined();
   });

@@ -3,24 +3,14 @@ import type { OpenSettingsDetail } from '../../shared/lib/dispatchWindowEvent/wi
 
 type Params = OpenSettingsDetail;
 
-export const openSettings = ({
-  scope,
-  section,
-  tool,
-  provider,
-  action,
-  flow,
-  door: isDoor,
-}: Params): void => {
+export const openSettings = ({ scope, section, flow, row, door: isDoor }: Params): void => {
   dispatchWindowEvent({
     name: 'goodboy:open-settings',
     detail: {
       scope,
       ...(section !== undefined && { section }),
-      ...(tool !== undefined && { tool }),
-      ...(provider !== undefined && { provider }),
-      ...(action !== undefined && { action }),
       ...(flow !== undefined && { flow }),
+      ...(row !== undefined && { row }),
       ...(isDoor !== undefined && { door: isDoor }),
     },
   });

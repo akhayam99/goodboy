@@ -420,16 +420,15 @@ describe('RunsGrid', () => {
       sessionPhaseRuns: { [NOW_SESSION]: agents },
       authResults: { anthropic: { state: 'disconnected', identity: null } },
     });
-    const opened = vi.fn();
-    window.addEventListener('goodboy:open-settings', opened);
-
     renderGrid({ runs: runsOf({ agents }) });
 
     expect(screen.queryByRole('button', { name: NAMES.continue })).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Connect Claude' }));
-    window.removeEventListener('goodboy:open-settings', opened);
     expect(continueStoppedAgent).not.toHaveBeenCalled();
-    expect(opened).toHaveBeenCalledOnce();
+    expect(useAppStore.getState().appStudio).toEqual({
+      kind: 'connections',
+      focus: { kind: 'provider', provider: 'anthropic', action: 'login' },
+    });
   });
 
   it('continues an operator stopped orchestrated run as a run when no step was cut', async () => {

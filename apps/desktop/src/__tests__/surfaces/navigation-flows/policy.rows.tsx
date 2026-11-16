@@ -59,9 +59,8 @@ const flipSpreadInProviders = async (): Promise<void> => {
 
 const runDefaultsShowsALink = async (): Promise<void> => {
   await heading('Run defaults');
-  await click(await screen.findByRole('button', { name: /^Models: / }));
-  const band = await screen.findByRole('dialog', { name: 'Models' });
-  expect(within(band).getByRole('button', { name: 'Open Providers' })).toBeDefined();
+  const band = await screen.findByRole('region', { name: 'New runs' });
+  expect(within(band).getByRole('button', { name: 'Open Models' })).toBeDefined();
   expect(within(band).getByTestId('rules-policy-summary').textContent).toMatch(/^Claude, Codex/);
   expect(within(band).queryAllByRole('switch')).toEqual([]);
   expect(screen.queryByRole('switch', { name: SPREAD_LABEL })).toBeNull();
@@ -104,7 +103,7 @@ const INSTALL_COMMAND = 'brew install gh';
 export const POLICY_ROWS: ReadonlyArray<Row> = [
   {
     name: 'policy: the spread option set in Providers is a link, not a second switch, in Run defaults',
-    covers: ['openSettings', 'studio:workflow', 'palette:Run defaults', 'scope:providers'],
+    covers: ['openSettings', 'studio:workflow', 'palette:Run defaults', 'settings:models'],
     door: 'palette',
     open: async () => {
       await flipSpreadInProviders();
@@ -114,13 +113,13 @@ export const POLICY_ROWS: ReadonlyArray<Row> = [
   },
   {
     name: 'policy: the link in Run defaults opens Providers on the same policy',
-    covers: ['openSettings', 'studio:workflow', 'palette:Run defaults', 'scope:providers'],
+    covers: ['openSettings', 'studio:workflow', 'palette:Run defaults', 'settings:models'],
     door: 'palette',
     open: async () => {
       await flipSpreadInProviders();
       await openPalette(/^Run defaults/, 'run defaults');
       await runDefaultsShowsALink();
-      await clickButton('Open Providers');
+      await clickButton('Open Models');
     },
     lands: async () => {
       await heading('Models');

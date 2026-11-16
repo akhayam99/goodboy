@@ -153,7 +153,7 @@ const WORKSPACE_FIELDS: ReadonlyArray<WorkspaceFieldDef> = [
   }),
   erase({
     id: 'afterMerge',
-    label: 'When a pull request merges',
+    label: 'Folder and branch',
     fallback: DEFAULT_AFTER_MERGE_RULE,
     parse: oneOf(AFTER_MERGE_RULES),
     stored: ({ overrides }) => overrides?.afterMerge ?? null,
@@ -218,7 +218,7 @@ const WORKSPACE_FIELDS: ReadonlyArray<WorkspaceFieldDef> = [
   }),
   erase({
     id: 'resolveCommitStyle',
-    label: 'Commit style',
+    label: 'A fix for a comment lands as',
     fallback: REPLY_SETTINGS_DEFAULT.commitStyle,
     parse: oneOf(RESOLVE_COMMIT_STYLES),
     stored: ({ overrides }) => overrides?.resolveCommitStyle ?? null,

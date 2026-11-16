@@ -18,11 +18,9 @@ vi.mock('@tauri-apps/api/core', () => ({
 }));
 vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn(async () => () => undefined) }));
 
-import { brandId } from '@goodboy/types';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, render, screen } from '@testing-library/react';
 import type { ReactNode } from 'react';
-import type { ProviderId } from '@goodboy/types';
 import { importStore, resetStoryStore, type StoryStore } from '../../store/storyHarness';
 import { sessionPlace } from '../../store/slices/navigation/place';
 import { seedSessionWithMounts } from '../helpers/seedSessionWithMounts';
@@ -410,12 +408,7 @@ describe('primary surfaces mount on real store selectors', () => {
   it.each([
     ['app settings', { scope: 'app' }, 'General'],
     ['workspace settings with its rail', { scope: 'workspace' }, 'Projects'],
-    ['the providers page', { scope: 'providers' }, 'Providers'],
-    [
-      'a provider page',
-      { scope: 'providers', provider: brandId<ProviderId>({ value: 'anthropic' }) },
-      'Claude',
-    ],
+    ['the workspace Models page', { scope: 'workspace', section: 'models' }, 'Models'],
   ] satisfies ReadonlyArray<readonly [string, SettingsFocus, string]>)(
     'opens %s',
     async (_name, focus, text) => {

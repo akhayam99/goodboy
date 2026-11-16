@@ -10,7 +10,7 @@ import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conce
 import { openLink } from '../../../open/openLink';
 import { useWorkspaceIssueLookup } from '../../../integrations/hooks/useWorkspaceIssueLookup';
 import { lookupStatuses } from '../../../integrations/issueCode/lookupCopy';
-import { openToolSettings } from '../../../integrations/openToolSettings';
+import { openIntegration } from '../../../integrations/openIntegration';
 import { LookupStatusRow } from '../../../inbox/components/InboxStudio/LookupStatusRow';
 import { extractQualifiers } from '../../grammar';
 import { toSearchQuery } from '../../toSearchQuery';
@@ -246,7 +246,7 @@ export const SearchMode = ({
                   return;
                 }
                 if (chosen.action?.kind === 'open-integrations') {
-                  openToolSettings({ tool: chosen.action.provider });
+                  openIntegration({ tool: chosen.action.provider });
                 }
               }}
             />

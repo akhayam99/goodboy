@@ -171,14 +171,11 @@ describe('HelpStudio on the Guide', () => {
     fireEvent.click(chapterButton('Providers and limits'));
     fireEvent.click(
       within(page('Providers and limits')).getByRole('button', {
-        name: 'Open Providers',
+        name: 'Open Connections',
       }),
     );
 
-    expect(useAppStore.getState().appStudio).toEqual({
-      kind: 'settings',
-      focus: { scope: 'providers' },
-    });
+    expect(useAppStore.getState().appStudio).toEqual({ kind: 'connections', focus: null });
   });
 
   it('opens Monitoring and Impact, Spend from their chapters', () => {

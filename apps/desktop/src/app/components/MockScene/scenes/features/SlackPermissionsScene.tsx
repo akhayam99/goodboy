@@ -1,6 +1,6 @@
 import type { IntegrationBinding } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
-import { SettingsFrame } from '../audit/SettingsFrame';
+import { ConnectionsFrame } from '../audit/ConnectionsFrame';
 import { SETTINGS_WORKSPACE_ID } from '../audit/settingsSeed';
 import { BRAND_BINDINGS, seedBrandSettings } from '../brand/settingsBrandSeed';
 
@@ -33,5 +33,5 @@ const seed = (): void => {
 };
 
 export const FeaturesSlackPermissionsScene = () => (
-  <SettingsFrame focus={{ scope: 'tools', tool: 'slack' }} seed={seed} />
+  <ConnectionsFrame focus={{ kind: 'tool', tool: 'slack' }} seed={seed} />
 );

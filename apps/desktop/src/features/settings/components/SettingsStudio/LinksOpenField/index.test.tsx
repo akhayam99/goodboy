@@ -70,7 +70,7 @@ describe('the Links row in Open with', () => {
     expect(tabNamed({ name: 'In your browser' }).getAttribute('aria-selected')).toBe('true');
   });
 
-  it('keeps the old value and says so when the save fails', async () => {
+  it('keeps the old value and says so under the row when the save fails', async () => {
     await setSetting(storySqlite(), SETTING_LINKS_OPEN, 'goodboy');
     const reportError = vi.fn(async () => undefined);
     useAppStore.setState({
@@ -86,11 +86,10 @@ describe('the Links row in Open with', () => {
 
     fireEvent.click(tabNamed({ name: 'In your browser' }));
 
-    await waitFor(() =>
-      expect(reportError).toHaveBeenCalledWith(
-        expect.objectContaining({ title: "Couldn't save where links open" }),
-      ),
+    expect((await screen.findByRole('alert')).textContent).toContain(
+      "Couldn't save. Still In Goodboy.",
     );
     expect(tabNamed({ name: 'In Goodboy' }).getAttribute('aria-selected')).toBe('true');
+    expect(reportError).not.toHaveBeenCalled();
   });
 });

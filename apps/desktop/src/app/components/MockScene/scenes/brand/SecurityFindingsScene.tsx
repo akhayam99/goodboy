@@ -69,7 +69,7 @@ const SCROLL_PAD_PX = 28;
 
 const scrollToFindings = (): void => {
   window.setTimeout(() => {
-    const section = document.querySelector('section[aria-label="Security findings"]');
+    const section = document.querySelector('section[aria-label="Secrets in saved scripts"]');
     section?.scrollIntoView({ block: 'start' });
     let parent = section?.parentElement ?? null;
     while (parent !== null && parent.scrollTop === 0) {
@@ -85,5 +85,5 @@ const seedFindingsInView = (): void => {
 };
 
 export const BrandSecurityFindingsScene = () => (
-  <SettingsFrame focus={{ scope: 'app', section: 'security-findings' }} seed={seedFindingsInView} />
+  <SettingsFrame focus={{ scope: 'workspace', section: 'permissions' }} seed={seedFindingsInView} />
 );

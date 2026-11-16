@@ -1,10 +1,12 @@
 import { CHECK_STATE } from '../../../../store/slices/notifications/errorRecovery';
 import { useState } from 'react';
 import { RotateCcw, Trash2 } from 'lucide-react';
-import { Button, cn, ConfirmPopover, Eyebrow, FieldRow, ICON_SIZE, tintClasses } from '@goodboy/ui';
+import { Band, Button, cn, ConfirmPopover, ICON_SIZE, tintClasses } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
 
 import { NAMES } from '../../../../shared/utils/names';
+import { DANGER_ZONE } from './dangerZone';
+import { SettingRow } from './SettingRow';
 
 type WipeState = 'idle' | 'confirm' | 'wiping' | 'done';
 
@@ -30,13 +32,11 @@ export const AppResetSection = () => {
   };
 
   return (
-    <section aria-labelledby="backup-reset" className="flex flex-col gap-3">
-      <h2 id="backup-reset" className="flex items-center gap-2">
-        <Eyebrow label="Reset" />
-      </h2>
-      <FieldRow
+    <Band inset="content" label={DANGER_ZONE} ariaLabel={DANGER_ZONE} headingLevel={2}>
+      <SettingRow
         label={NAMES.deleteAllData}
-        help="Every workspace, session, transcript and rule. Keychain keys are untouched."
+        rowKey="delete-all-data"
+        help="Every workspace, session, transcript and rule. Keychain keys stay."
       >
         {wipeState === 'done' ? (
           <span className="flex items-center gap-3">
@@ -69,7 +69,7 @@ export const AppResetSection = () => {
             )}
           />
         )}
-      </FieldRow>
-    </section>
+      </SettingRow>
+    </Band>
   );
 };

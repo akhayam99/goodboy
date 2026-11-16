@@ -92,7 +92,11 @@ A response applies only while it is the answer to the newest request.
   when the shown version moves, so an answer for an older version is dropped.
   `selectAgent` in `store/slices/agents/` claims one token per agent for its
   two transcript reads and drops either answer, or a failure, once a newer
-  open of the same agent started.
+  open of the same agent started. `useSettingSave` in
+  `features/settings/hooks/` claims one token per settings row and queues the
+  row's writes: an older answer is dropped, the latest failure puts the old
+  value back under the row with Retry, and a toast shows only when the page
+  closed first (test: `WorkspaceDefaultsGrid.saveErrors.test.tsx`).
 - Worked example: `setCurrentWorkspace` in `store/slices/workspaces/`. It
   claims one token per switch, reads everything first, and checks `isCurrent()`
   after each await. Only then does one `set()` clear the old workspace and fill
@@ -121,7 +125,9 @@ value and write only if it is still the old value.
   `store/runtime/state-writes/serialQueue.ts` runs the tasks of one key in call
   order, so the last pick wins instead of an older pick retrying over a newer
   one. In use: `changeAutoLevel` in `store/slices/settings/` (test:
-  `changeAutoLevel.sqlite.test.ts`, two quick picks). `addGoalAttachments` and
+  `changeAutoLevel.sqlite.test.ts`, two quick picks). `updateSlackConfig` queues the
+  Slack writes of a workspace and applies each change to the latest saved config, so two
+  quick edits both land (test: `integrations/index.test.ts`). `addGoalAttachments` and
   `removeGoalAttachment` share one queue per owner (`attachmentWrites`), so a
   remove never cancels the refresh of an add that already committed (test:
   `loadGoalAttachments.test.ts`, an add and a remove overlapping).

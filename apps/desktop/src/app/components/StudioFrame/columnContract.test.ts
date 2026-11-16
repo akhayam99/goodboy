@@ -171,6 +171,7 @@ const STUDIO_ROOTS: Readonly<Record<StudioKind, ReadonlyArray<string>>> = {
   ],
   notifications: ['features/notifications/components/NotificationsStudio/index.tsx'],
   chat: ['features/workspace-chat/components/ChatRoom/index.tsx'],
+  connections: ['features/connections/components/ConnectionsIndex/index.tsx'],
   monitoring: ['features/monitoring/components/MonitoringStudio/MonitoringPage.tsx'],
 };
 

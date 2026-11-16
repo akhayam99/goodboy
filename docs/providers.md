@@ -168,7 +168,11 @@ Goodboy stores keys in your system keychain, not in its own database.
 ## Defaults and task models
 
 Go to **Settings** → **Providers** → **Models** to choose what a workspace
-uses when you leave a model on **Auto**. It is one page in three parts.
+uses when you leave a model on **Auto**. A first line says that accounts, usage
+and which models show in the picker live in **Connections**, with **Open
+Connections** beside it (`DefaultsPanel/ConnectionsPointer`). Below it each group
+is one band with its label: Runs, Providers, Choosing models, Chat, Agents and
+Background tasks.
 
 - **When a provider is out**: the workspace's provider policy, summed up on the row
   ("Claude, Codex · Cursor as backup"). The row opens the list in place: drag a
@@ -217,6 +221,14 @@ all to Auto**, in the menu at the top right, clears every pin after a confirm th
 how many. The page header carries no count. Each provider page counts its own pins in
 the Models group header (`ProviderPage/ModelsGroup/PinnedCount`, `3 pinned`): the chat
 model, the roles and the tasks of this workspace that use that provider.
+
+Every run, chat, agent and background task row sits on one column template
+(`DefaultsPanel/roleGrid.ts`): name, job, model, effort and the source chip, then the
+open chevron. A task or chat row's picker spans the model and effort columns and keeps
+an empty chevron slot, so the columns line up down the page. The job column hides when
+the page is narrower than 720 px. `node scripts/validate-scenes.mjs --only models-grid`
+checks the `settings-providers-scope` scene at 960 and 1280 px: one template, no row
+past its band, no sideways scroll.
 
 Each role row (`DefaultsPanel/RoleRow`) is a `Collapsible`. Closed, it shows one
 shape, the same as the chat row: the provider glyph, the model, its effort when the
@@ -330,14 +342,21 @@ header says how many show (`Showing 6 of 11`) next to **Show all**.
 
 ## The provider page
 
-Each provider page in **Settings > Providers** has four groups, in the
-same order for every provider: **Usage**, **Models in the picker**,
-**Permissions** and **Account**. The header carries the plan (`Team plan`), the
-Account group the signed-in account and the CLI version (`Claude CLI 2.1.282`), and
-the header menu holds **Check again**, **Sign in again**, **History**, **Copy CLI
-path** and, after a line, **Disconnect**. The menu reads the provider kind of the
-action registry (`useProviderTarget`, `kinds/provider.ts`), so no button in the page
-repeats a verb. A provider that is not connected shows only its connect card.
+A provider tile in **Connections** opens its page there, under the trail
+`Connections > Claude` (Esc goes back up). A provider in the Not set up row opens the
+same page on its install or sign in step. Settings has no provider pages; its rail ends
+with a row that opens Connections. The page has four groups, in the same order
+for every provider: **Usage**, **Models in the picker**, **Account** and a closed
+**What works with Claude** row that holds the permissions table and says how many
+modes work fully (`4 of 6 work fully`). The head carries the glyph, the name, one
+state word, the same word as its tile in Connections (`Signed in`, `About to run out`,
+`Key saved`, `Not set up`), a check again
+button and the header menu; under it the facts sit as pills: the plan (`Max plan`), the
+account, the CLI version (`Claude CLI 2.1.282`) and the last check. The header menu
+holds **Check again**, **Sign in again**, **History**, **Copy CLI path** and, after a
+line, **Disconnect**. The menu reads the provider kind of the action registry
+(`useProviderTarget`, `kinds/provider.ts`), so no button in the page repeats a verb.
+A provider that is not set up shows only its setup path.
 
 - **Usage**: one row per window the provider reported (5 hours, the week, a
   model's week), with the share used and the reset. The header says when the
@@ -369,7 +388,7 @@ repeats a verb. A provider that is not connected shows only its connect card.
   status, so the percentage is the same everywhere. **Open in Impact** edits the
   budget. On a
   plan this is what the same tokens would cost on the API, not what you pay
-- **Permissions**: what this CLI does with each mode (`Works`, `Partly` with the
+- **What works with**: closed until you open it. What this CLI does with each mode (`Works`, `Partly` with the
   reason, or `Not available` with the mode it runs as instead), whether it
   follows Allow and Deny rules (only Claude does), and that role limits are
   asked, not locked. It reads `modeSupport` in `@goodboy/core`
@@ -382,7 +401,9 @@ repeats a verb. A provider that is not connected shows only its connect card.
   sign-in has expired or the last connection test failed. Under it sit one CLI row
   (`Claude CLI 2.1.282`, in
   the same place on every CLI provider), and **Use an API key instead of your
-  plan**, which opens the API keys. When a model needs a newer CLI, the update
+  plan**, which opens an inline form: one field, **Cancel** and **Save key**. A failed
+  save keeps the form and the typed key and says so under the buttons; after a save the
+  key and the workspace credentials show. When a model needs a newer CLI, the update
   notice (`CliUpdateNotice`) sits right under the Account rows, below that CLI row.
   A provider that is not signed in but has its CLI installed shows the same CLI row
   and notice under its connect card (`AccountGroup/CliGroup`), and an `update`
@@ -479,7 +500,7 @@ This part is for contributors and agents who change how providers work.
 One row per provider says what the app knows about it, in two places that a test keeps equal.
 
 - Rust: `PROVIDER_SPECS` in `src-tauri/src/providers/spec.rs`. A row holds the id, the CLI family (`Cli`), the binary to run, the read-only chat shape (only Claude and Codex have one) and the sign-in check. Finding a CLI (`detect_provider`), checking sign-in (`check_provider_auth_blocking`), the lifecycle exit status, the chat shape and `Cli::of_provider` all read it. `Cli::of_binary` answers `None` for a name that is no row's binary, so a mistyped binary gets no arguments instead of Claude's.
-- TypeScript: `PROVIDER_FLAGS` in `packages/core/src/providers/providerFlags.ts`. A row holds the binary, the store slot that keeps the last status (`statusSlot`), whether the transcript is replayed as text (`shouldReplayHistoryAsText`) and whether an account test exists (`hasAccountTest`). A flag exists only when code branches on it, and a test per flag pins its value.
+- TypeScript: `PROVIDER_FLAGS` in `packages/core/src/providers/providerFlags.ts`. A row holds the binary, the store slot that keeps the last status (`statusSlot`), whether the transcript is replayed as text (`shouldReplayHistoryAsText`) whether an account test exists (`hasAccountTest`) and whether the provider follows Allow and Deny rules (`canFollowRules`, read by the "What works with" table of the provider page). A flag exists only when code branches on it, and a test per flag pins its value.
 
 `provider-spec-parity.test.ts` reads `spec.rs` and fails when the ids, their order or a binary drift from the TypeScript table. `provider-id-comparisons.test.ts` counts the places that still compare with a provider id (`=== 'cursor'`); the count only falls. To branch on what a provider can do, add a flag, read it, and leave the comparison out. The steps for a whole new provider are in [add-a-provider](recipes/add-a-provider.md).
 
@@ -628,8 +649,8 @@ and the helper tasks), while an explicit pick, an agent pin or a retry still run
 request made because something just changed (`isFresh`: connect, sign-out, Check again)
 queues exactly one more run. Every run carries a sequence number and a result older than
 the last applied one is dropped. Triggers: boot, focus after 5 minutes (60 seconds while a
-provider is not healthy), **Check again**, connect and sign-out, and a click in the
-Settings rail only when the last confirmation is older than 60 seconds. A first "not
+provider is not healthy), **Check again**, connect and sign-out, and opening a provider
+page only when the last confirmation is older than 60 seconds. A first "not
 logged in" answer asks again by itself 12 seconds later, so the second answer does not
 wait for the next focus. Each standing
 change writes one line to the app log through `log_provider_standing`:
@@ -1356,7 +1377,8 @@ project,local --no-session-persistence` in an empty scratch directory,
 - `apps/desktop/src/store/slices/providers/connectProvider.ts`: the steps and timers behind **Connect**
 - `apps/desktop/src/store/slices/providers/providerHealth.ts`: standing, evidence and the breaker (pure reducer); `applyProviderProbe.ts` and `recordProviderRun.ts` feed it
 - `apps/desktop/src-tauri/src/provider_standing_log.rs`: the log line for a standing change
-- `apps/desktop/src/features/providers/components/ProviderStudio/`: the rail, **Models** and `ProviderPage/` (`UsageGroup`, `ModelsGroup`, `PermissionsGroup`, `AccountGroup`)
+- `apps/desktop/src/features/providers/components/ProviderStudio/`: the rail, **Models** and `ProviderPage/` (`UsageGroup`, `ModelsGroup`, `AccountGroup` with `ApiKeyForm`)
+- `apps/desktop/src/features/providers/ProviderDetailBody/`: the provider page body (head, facts, group order, `PermissionsFold` over `permissionRows`), shared by Settings and `features/connections/components/ProviderDetail.tsx`; its head word reads `features/connections/model/connectionStateOf.ts` through `useProviderStateWord`
 - `apps/desktop/src/features/providers/components/ProviderConnect/guides.ts`: the guide text shown in the app
 - `apps/desktop/src-tauri/src/providers.rs`: finding CLIs and checking sign-in
 - `apps/desktop/src-tauri/src/providers/spec.rs`: `PROVIDER_SPECS`, the Rust provider table

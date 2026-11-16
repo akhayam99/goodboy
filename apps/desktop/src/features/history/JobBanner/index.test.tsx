@@ -574,9 +574,7 @@ describe('the job banner', () => {
     expect(screen.getByRole('button', { name: 'Open terminal here' })).toBeDefined();
   });
 
-  it('sends a missing provider to Providers', async () => {
-    const opened = vi.fn();
-    window.addEventListener('goodboy:open-settings', opened);
+  it('sends a missing provider to Connections', async () => {
     await showRun({
       phase: 'stopped',
       stop: { reason: 'no-provider', message: '', files: ['webhook.ts'], sha: null },
@@ -584,8 +582,7 @@ describe('the job banner', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Open providers' }));
 
-    expect(opened).toHaveBeenCalledTimes(1);
-    window.removeEventListener('goodboy:open-settings', opened);
+    expect(useAppStore.getState().appStudio).toEqual({ kind: 'connections', focus: null });
   });
 
   it.each(['head-moved', 'blocked'] as const)(

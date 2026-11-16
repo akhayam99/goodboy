@@ -6,7 +6,6 @@
   "apps/desktop/src/features/providers/components/ProviderStudio/DefaultsPanel/index.tsx": 1,
   "apps/desktop/src/features/providers/components/ProviderStudio/ProviderCredentialsSection.tsx": 1,
   "apps/desktop/src/features/providers/components/ProviderStudio/ProviderPage/AccountGroup/ConnectionHistory/index.tsx": 1,
-  "apps/desktop/src/features/providers/components/ProviderStudio/ProviderPage/index.tsx": 1,
   "apps/desktop/src/features/quick-actions/QuickActionsPopover/index.tsx": 1,
   "apps/desktop/src/features/session/components/SessionOverviewPane/ProjectMountRows/MountProjectList.tsx": 1,
   "apps/desktop/src/features/storage/components/BranchesPage/RecentlyDeletedBranches.tsx": 1,

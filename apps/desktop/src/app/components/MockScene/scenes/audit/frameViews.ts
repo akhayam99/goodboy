@@ -20,10 +20,8 @@ export const triggerFrameView = ({ view, openers }: TriggerParams): void => {
       openSettings({ scope: 'workspace' });
       return;
     case 'settings-providers':
-      openers.openProviders();
-      return;
     case 'settings-tools':
-      openSettings({ scope: 'tools' });
+      openers.openConnections();
       return;
     case 'shortcuts':
       openers.openShortcutHelp();

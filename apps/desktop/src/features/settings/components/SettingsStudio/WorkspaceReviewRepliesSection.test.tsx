@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import type { OverrideSettings, WorkspaceId } from '@goodboy/types';
 import { overridesWithAttribution } from '../../../../__tests__/helpers/attributionOverrides';
 import type { WorkspaceOverridesPatch } from '../../../../store/slices/overrides/patchWorkspaceOverrides';
@@ -50,6 +50,7 @@ const renderWith = (patch: Partial<OverrideSettings> = {}) => {
 beforeEach(() => {
   state.patchWorkspaceOverrides.mockClear();
   state.saveSetting.mockClear();
+  state.reportError.mockClear();
   state.settings = {};
   learn.mockReset();
 });
@@ -74,16 +75,18 @@ describe('WorkspaceReviewRepliesSection', () => {
     expect(preview.textContent).toContain('Leaving this as is.');
   });
 
-  it('saves the voice and shows the style note only for like my replies', () => {
+  it('saves the voice and shows the style note only for like my replies', async () => {
     renderWith({ replyVoice: 'mine', replyStyleNote: 'Short. Starts lowercase.' });
 
     expect(screen.getByLabelText('Style note')).toHaveProperty('value', 'Short. Starts lowercase.');
     fireEvent.click(screen.getByRole('tab', { name: 'Formal' }));
 
-    expect(state.patchWorkspaceOverrides).toHaveBeenCalledWith({
-      workspaceId: WORKSPACE,
-      patch: { replyVoice: 'formal' },
-    });
+    await waitFor(() =>
+      expect(state.patchWorkspaceOverrides).toHaveBeenCalledWith({
+        workspaceId: WORKSPACE,
+        patch: { replyVoice: 'formal' },
+      }),
+    );
   });
 
   it('learns a style note from my replies in this workspace and saves it', async () => {
@@ -133,59 +136,135 @@ describe('WorkspaceReviewRepliesSection', () => {
     expect(state.patchWorkspaceOverrides).not.toHaveBeenCalled();
   });
 
-  it('saves a valid template and stores the default as empty', () => {
+  it('names the voice band apart from its row', () => {
+    renderWith();
+
+    screen.getByRole('region', { name: 'Replies' });
+    expect(screen.queryByRole('region', { name: 'Voice' })).toBeNull();
+  });
+
+  it('shows the placeholders once, under both templates, and adds one to the template in focus', async () => {
+    renderWith();
+
+    expect(screen.getAllByRole('button', { name: '{reason}' })).toHaveLength(1);
+    const templates = screen.getByRole('region', { name: 'Templates' });
+    const placeholders = within(templates).getByRole('group', { name: 'Placeholders' });
+    const noChange = screen.getByLabelText('When not changing');
+    expect(
+      noChange.compareDocumentPosition(placeholders) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+
+    fireEvent.focus(noChange);
+    fireEvent.blur(noChange);
+    fireEvent.click(within(placeholders).getByRole('button', { name: '{reviewer}' }));
+
+    await waitFor(() =>
+      expect(state.patchWorkspaceOverrides).toHaveBeenCalledWith({
+        workspaceId: WORKSPACE,
+        patch: { replyTemplateNoChange: '{reason}\n\nLeaving this as is. {reviewer}' },
+      }),
+    );
+  });
+
+  it('saves a valid template and stores the default as empty', async () => {
     renderWith({ replyTemplateFixed: '{reason}\n\nDone in {commit}.' });
     const field = screen.getByLabelText('When fixed');
 
     fireEvent.change(field, { target: { value: '{reason}\n\nFixed in {commit_story}.' } });
     fireEvent.blur(field);
 
-    expect(state.patchWorkspaceOverrides).toHaveBeenCalledWith({
-      workspaceId: WORKSPACE,
-      patch: { replyTemplateFixed: null },
-    });
+    await waitFor(() =>
+      expect(state.patchWorkspaceOverrides).toHaveBeenCalledWith({
+        workspaceId: WORKSPACE,
+        patch: { replyTemplateFixed: null },
+      }),
+    );
   });
 
-  it('turns off resolving on GitHub and picks the fixup commit style', () => {
+  it('keeps the old template and says so under it when the save fails', async () => {
+    state.patchWorkspaceOverrides.mockRejectedValueOnce(new Error('disk is offline'));
+    renderWith();
+    const field = screen.getByLabelText('When fixed');
+
+    fireEvent.change(field, { target: { value: '{reason}\n\nDone in {commit}.' } });
+    fireEvent.blur(field);
+
+    expect((await screen.findByRole('alert')).textContent).toContain(
+      "Couldn't save. Still {reason} Fixed in {commit_story}.",
+    );
+    expect(field).toHaveProperty('value', '{reason}\n\nFixed in {commit_story}.');
+    expect(state.reportError).not.toHaveBeenCalled();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
+    await waitFor(() =>
+      expect(state.patchWorkspaceOverrides).toHaveBeenLastCalledWith({
+        workspaceId: WORKSPACE,
+        patch: { replyTemplateFixed: '{reason}\n\nDone in {commit}.' },
+      }),
+    );
+  });
+
+  it('turns off resolving on GitHub and picks the fixup commit style', async () => {
     renderWith();
 
-    const [resolveSwitch] = screen.getAllByRole('switch');
-    if (resolveSwitch === undefined) {
-      throw new Error('resolve switch missing');
-    }
-    fireEvent.click(resolveSwitch);
+    fireEvent.click(screen.getByRole('switch', { name: 'Mark thread as resolved' }));
 
-    expect(state.patchWorkspaceOverrides).toHaveBeenCalledWith({
-      workspaceId: WORKSPACE,
-      patch: { resolveOnGithub: false },
-    });
+    await waitFor(() =>
+      expect(state.patchWorkspaceOverrides).toHaveBeenCalledWith({
+        workspaceId: WORKSPACE,
+        patch: { resolveOnGithub: false },
+      }),
+    );
     cleanup();
     renderWith();
     fireEvent.click(screen.getByRole('tab', { name: 'Fixup of the commit that added the line' }));
-    expect(state.patchWorkspaceOverrides).toHaveBeenCalledWith({
-      workspaceId: WORKSPACE,
-      patch: { resolveCommitStyle: 'fixup' },
-    });
+    await waitFor(() =>
+      expect(state.patchWorkspaceOverrides).toHaveBeenCalledWith({
+        workspaceId: WORKSPACE,
+        patch: { resolveCommitStyle: 'fixup' },
+      }),
+    );
   });
 
-  it('edits the posted reply by default and saves the switch per workspace', () => {
+  it('edits the posted reply by default and saves the switch per workspace', async () => {
     renderWith();
 
-    const [, editSwitch] = screen.getAllByRole('switch');
-    if (editSwitch === undefined) {
-      throw new Error('edit switch missing');
-    }
-    expect(screen.getByText('Edit the posted reply')).toBeTruthy();
+    const editSwitch = screen.getByRole('switch', { name: 'Edit the posted reply' });
     expect(editSwitch.getAttribute('aria-checked')).toBe('true');
     fireEvent.click(editSwitch);
 
-    expect(state.saveSetting).toHaveBeenCalledWith(`review.edit_posted_reply.${WORKSPACE}`, '0');
+    await waitFor(() =>
+      expect(state.saveSetting).toHaveBeenCalledWith(`review.edit_posted_reply.${WORKSPACE}`, '0'),
+    );
   });
 
-  it('leaves the attribution line to New sessions', () => {
+  it('holds the attribution line in the Replies band, under Voice', async () => {
     renderWith({ attributionFooter: false });
 
-    expect(screen.getAllByRole('switch')).toHaveLength(2);
-    expect(screen.queryByText('Attribution line')).toBeNull();
+    const band = screen.getByRole('region', { name: 'Replies' });
+    const attribution = within(band).getByRole('switch', { name: 'Attribution line' });
+    within(band).getByRole('tablist', { name: 'Reply voice' });
+    expect(attribution.getAttribute('aria-checked')).toBe('false');
+    fireEvent.click(attribution);
+
+    await waitFor(() =>
+      expect(state.patchWorkspaceOverrides).toHaveBeenCalledWith({
+        workspaceId: WORKSPACE,
+        patch: { attributionFooter: true },
+      }),
+    );
+  });
+
+  it('keeps the attribution line as it was when the save fails, and says so under it', async () => {
+    state.patchWorkspaceOverrides.mockRejectedValueOnce(new Error('disk full'));
+    renderWith({ attributionFooter: false });
+
+    fireEvent.click(screen.getByRole('switch', { name: 'Attribution line' }));
+
+    expect((await screen.findByRole('alert')).textContent).toContain("Couldn't save. Still Off.");
+    expect(
+      screen.getByRole('switch', { name: 'Attribution line' }).getAttribute('aria-checked'),
+    ).toBe('false');
+    expect(state.reportError).not.toHaveBeenCalled();
   });
 });

@@ -90,7 +90,6 @@
   "apps/desktop/src/features/session/hooks/useSessionProjectScope/index.test.ts": 1,
   "apps/desktop/src/features/session/hooks/useTimelineOpen/index.ciFix.test.ts": 1,
   "apps/desktop/src/features/session/hooks/useTimelineOpen/index.jobRows.test.ts": 1,
-  "apps/desktop/src/features/settings/components/SettingsStudio/AppGeneralSection.experiments.test.tsx": 1,
   "apps/desktop/src/features/settings/components/SettingsStudio/AppGeneralSection.test.tsx": 1,
   "apps/desktop/src/features/settings/components/SettingsStudio/resetAndDisconnect.test.tsx": 1,
   "apps/desktop/src/features/settings/components/SettingsStudio/SearchIndexBand.test.tsx": 1,

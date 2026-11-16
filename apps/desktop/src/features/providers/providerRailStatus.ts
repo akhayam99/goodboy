@@ -12,8 +12,10 @@ export type ProviderRailStatus = {
 
 type Params = {
   readonly provider: ProviderDisplayInfo;
-  readonly state: Pick<AppStore, 'cliRequirements'> &
-    Partial<Pick<AppStore, 'providerLimits' | 'providerHealth'>>;
+  readonly state: Pick<AppStore, 'cliRequirements'> & {
+    readonly providerLimits?: AppStore['providerLimits'];
+    readonly providerHealth?: Partial<AppStore['providerHealth']>;
+  };
   readonly nowMs?: number;
   readonly isLimitIgnored?: boolean;
 };

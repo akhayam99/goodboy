@@ -84,7 +84,7 @@ const step = ({ workspaceId, projects, onContinue = () => undefined }: RenderPar
     isLocked={false}
     onBack={() => undefined}
     onContinue={onContinue}
-    onOpenSettings={() => undefined}
+    onOpenConnections={() => undefined}
   />
 );
 

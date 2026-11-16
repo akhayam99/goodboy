@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { FieldRow, SegmentedTabs, type SegmentedTabOption } from '@goodboy/ui';
+import { SegmentedTabs, type SegmentedTabOption } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
 import { changeRunDefault } from '../../../session/startRun/changeRunDefault';
 import {
@@ -10,10 +10,12 @@ import {
 } from '../../../session/startRun/runDefaultSetting';
 import { RUN_ROUTE_COPY } from '../../../session/startRun/runRouteCopy';
 import { CHECK_STATE, READ_FAILED } from '../../../../store/slices/notifications/errorRecovery';
+import { SettingRow } from './SettingRow';
 
 type Props = {
   readonly scope: RunDefaultScope;
   readonly label: string;
+  readonly rowKey?: string;
   readonly help: string;
   readonly fallback: RunDefault | null;
 };
@@ -32,7 +34,7 @@ const DISABLED_OPTIONS: ReadonlyArray<SegmentedTabOption<RunDefault>> = RUN_DEFA
   (option) => ({ ...option, disabled: true }),
 );
 
-export const RunDefaultRow = ({ scope, label, help, fallback }: Props) => {
+export const RunDefaultRow = ({ scope, label, rowKey, help, fallback }: Props) => {
   const key = runDefaultKey({ scope });
   const raw = useAppStore((state) => state.settings[key]);
   const loadSetting = useAppStore((state) => state.loadSetting);
@@ -62,7 +64,7 @@ export const RunDefaultRow = ({ scope, label, help, fallback }: Props) => {
   };
 
   return (
-    <FieldRow label={label} help={help}>
+    <SettingRow label={label} rowKey={rowKey} help={help}>
       <SegmentedTabs
         ariaLabel={label}
         size="sm"
@@ -70,6 +72,6 @@ export const RunDefaultRow = ({ scope, label, help, fallback }: Props) => {
         options={isSaving ? DISABLED_OPTIONS : RUN_DEFAULT_OPTIONS}
         onChange={(shape) => void save({ shape })}
       />
-    </FieldRow>
+    </SettingRow>
   );
 };

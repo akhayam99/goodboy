@@ -21,6 +21,8 @@ vi.mock('@goodboy/db', async () =>
 );
 vi.mock('../../shared/lib/db', () => ({ tauriDatabase: {} }));
 
+import type { StudioPlace } from '../../store/slices/navigation/studio';
+import { withoutRemovedPages } from '../../store/slices/navigation/withoutRemovedPages';
 import { listWindowLayouts, parseLocation, saveWindowLayout } from './windowLayout';
 
 const WS = 'ws-harborline' as WorkspaceId;
@@ -93,4 +95,28 @@ describe('windowLayout', () => {
     expect(layouts.map((layout) => layout.label)).toEqual(['main']);
     expect(layouts[0]?.location).toEqual(BOARD);
   });
+
+  it.each<StudioPlace>([
+    { kind: 'connections', focus: { kind: 'provider', provider: 'codex' } },
+    { kind: 'connections', focus: { kind: 'tool', tool: 'linear' } },
+    { kind: 'connections', focus: null },
+  ])(
+    'saves the connections page as the settings page the previous release reads and reopens it',
+    async (studio) => {
+      const nowMs = Date.now();
+      await saveWindowLayout({
+        label: 'main',
+        workspaceId: WS,
+        location: { ...BOARD, studio },
+        at: nowMs,
+      });
+
+      const saved: unknown = JSON.parse(h.settings.get('window.layout.main') ?? 'null');
+      const layouts = await listWindowLayouts({ nowMs });
+      const location = layouts[0]?.location ?? null;
+
+      expect(saved).toMatchObject({ location: { studio: { kind: 'settings' } } });
+      expect(location === null ? null : withoutRemovedPages({ location }).studio).toEqual(studio);
+    },
+  );
 });

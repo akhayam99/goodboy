@@ -88,16 +88,31 @@ describe('recovery actions of a reported error', () => {
     expect(opened).toEqual([{ scope: 'app', section: 'general' }]);
   });
 
-  it('open-settings: opens the providers page', () => {
-    mapAction({ kind: 'open-settings', scope: 'providers' })?.onClick();
-    expect(opened).toEqual([{ scope: 'providers' }]);
+  it('open-settings: a stored providers action opens Connections', () => {
+    const toastAction = mapAction({ kind: 'open-settings', scope: 'providers' });
+    expect(toastAction?.label).toBe('Open Connections');
+    toastAction?.onClick();
+    expect(opened).toEqual([]);
+    expect(useAppStore.getState().appStudio).toEqual({ kind: 'connections', focus: null });
   });
 
-  it('open-settings: names the tool to reconnect and opens its page', () => {
+  it('open-settings: a stored provider action opens its page in Connections', () => {
+    mapAction({ kind: 'open-settings', scope: 'providers', provider: 'codex' })?.onClick();
+    expect(useAppStore.getState().appStudio).toEqual({
+      kind: 'connections',
+      focus: { kind: 'provider', provider: 'codex' },
+    });
+  });
+
+  it('open-settings: names the tool to reconnect and opens its page in Connections', () => {
     const toastAction = mapAction({ kind: 'open-settings', scope: 'tools', tool: 'gitlab' });
     expect(toastAction?.label).toBe('Reconnect GitLab');
     toastAction?.onClick();
-    expect(opened).toEqual([{ scope: 'tools', tool: 'gitlab' }]);
+    expect(opened).toEqual([]);
+    expect(useAppStore.getState().appStudio).toEqual({
+      kind: 'connections',
+      focus: { kind: 'tool', tool: 'gitlab' },
+    });
   });
 
   it('reveal-path: shows that folder in Finder', async () => {

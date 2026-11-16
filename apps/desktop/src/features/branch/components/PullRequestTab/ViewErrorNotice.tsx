@@ -1,7 +1,8 @@
 import { REVIEW_SOURCE_LABEL, type PullRequestFailureKind } from '@goodboy/core/review-source';
 import { Button, Notice } from '@goodboy/ui';
 import type { PullRequestHost } from '@goodboy/types';
-import { openToolSettings } from '../../../integrations/openToolSettings';
+import { NAMES } from '../../../../shared/utils/names';
+import { openIntegration } from '../../../integrations/openIntegration';
 
 type Props = {
   readonly host: PullRequestHost;
@@ -29,9 +30,9 @@ export const ViewErrorNotice = ({ host, kind, error, onReload }: Props) => {
             <Button
               size="sm"
               variant="secondary"
-              onClick={() => openToolSettings({ tool: 'gitlab' })}
+              onClick={() => openIntegration({ tool: 'gitlab' })}
             >
-              Open {REVIEW_SOURCE_LABEL[host]} settings
+              Open {REVIEW_SOURCE_LABEL[host]} in {NAMES.connections}
             </Button>
             {retry}
           </>

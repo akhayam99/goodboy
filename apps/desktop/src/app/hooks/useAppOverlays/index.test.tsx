@@ -276,10 +276,10 @@ describe('app overlay hook', () => {
   it('mounts settings from the open-settings event with the requested scope', async () => {
     renderHarness();
 
-    fire({ name: 'goodboy:open-settings', detail: { scope: 'providers' } });
+    fire({ name: 'goodboy:open-settings', detail: { scope: 'workspace' } });
 
     expect(await openStudios()).toEqual(['settings']);
-    expect(screen.getByTestId('studio').getAttribute('data-scope')).toBe('providers');
+    expect(screen.getByTestId('studio').getAttribute('data-scope')).toBe('workspace');
   });
 
   it.each([
