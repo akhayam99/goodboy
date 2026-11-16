@@ -76,6 +76,11 @@ The State heads the Context tab in a box with a count of blockers or of steps le
 
 A new branch is named from two to five meaningful words of the goal, English or Italian, with a ticket id in the goal such as HBL-1528 first. Words like the, for or per are left out.
 
+#### Running ports sit under the branch name
+<!-- gb area=sessions -->
+
+The ports a branch runs show next to Not pushed under its name on the branch page: two at most, then a count. A click opens the port, and Ports opens Monitoring on the branch.
+
 ### Fixed
 
 - Paste, drop and the paperclip attach images again in New session and in a reply to an agent. <!-- gb area=sessions -->
