@@ -51,6 +51,7 @@ const mount = ({ name }: MountParams) => {
 describe('rail order and badge scenes', () => {
   it('registers every scene for the capture', () => {
     expect(Object.keys(U28_RAIL_ORDER_BADGE_SCENES).sort()).toEqual([
+      'session-tools-counts',
       'session-tools-order',
       'sessions-door-counts',
     ]);
@@ -59,7 +60,7 @@ describe('rail order and badge scenes', () => {
     }
   });
 
-  it('session-tools-order reads the Tools caption, then the terminal and the browser', () => {
+  it('session-tools-order reads the terminal, then the browser, with no heading above them', () => {
     mount({ name: 'session-tools-order' });
 
     const toolbar = screen.getByRole('toolbar', { name: 'Tools' });
@@ -68,8 +69,24 @@ describe('rail order and badge scenes', () => {
         .getAllByRole('button')
         .map((button) => button.getAttribute('aria-label')),
     ).toEqual(['Terminal', 'Browser']);
-    expect(toolbar.querySelector('[data-slot="tool-group-caption"]')?.textContent).toBe('Tools');
+    expect(toolbar.textContent).toBe('TerminalBrowser');
     expect(within(toolbar).queryByRole('separator')).toBeNull();
+  });
+
+  it('session-tools-counts puts a neutral corner badge on each glyph, capped at 9+', async () => {
+    mount({ name: 'session-tools-counts' });
+
+    const toolbar = await screen.findByRole('toolbar', { name: 'Tools' });
+    const badges = Array.from(toolbar.querySelectorAll('[data-testid="tool-count"]'));
+    expect(badges.map((badge) => badge.textContent)).toEqual(['1', '9+']);
+    expect(badges.map((badge) => badge.getAttribute('data-count-badge'))).toEqual([
+      'neutral',
+      'neutral',
+    ]);
+    expect(
+      badges.every((badge) => badge.parentElement?.getAttribute('data-slot') === 'tool-glyph'),
+    ).toBe(true);
+    expect(screen.getByTestId('pane-toggle-browser').getAttribute('aria-pressed')).toBe('true');
   });
 
   it('sessions-door-counts draws a tone dot and a muted number, red only for a broken one', () => {

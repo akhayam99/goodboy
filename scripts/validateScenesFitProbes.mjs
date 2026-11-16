@@ -9,6 +9,7 @@ import { runRunTailFit } from './validateScenesRunTailFit.mjs';
 import { runPageColumn } from './validateScenesPageColumn.mjs';
 import { runRowStart } from './validateScenesRowStart.mjs';
 import { runTitleBand } from './validateScenesTitleBand.mjs';
+import { runToolBadge } from './validateScenesToolBadge.mjs';
 
 export const runFitProbes = async (context) => {
   await runFrost(context);
@@ -22,4 +23,5 @@ export const runFitProbes = async (context) => {
   await runPageColumn(context);
   await runTitleBand(context);
   await runRowStart(context);
+  await runToolBadge(context);
 };
