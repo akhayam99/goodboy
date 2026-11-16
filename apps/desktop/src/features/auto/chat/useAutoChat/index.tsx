@@ -107,7 +107,6 @@ export const useAutoChat = ({ session, agent }: Params): AutoChat => {
           rootAgent: agent,
           isStopping: actions.isStopping,
           stop: () => void actions.stop({ view }),
-          flow,
         });
 
   const dock =

@@ -11,7 +11,7 @@ Auto is an agent that answers questions itself and hands the work it cannot do
 alone to agents of the right role, with a model it picks for each. It waits for
 their results, reads them and goes on. It is always on, and there is no switch
 to turn it off. Since ux27 one flow unit 1 an Auto conversation is a row of the one **Runs** entry of
-the session rail ("Agent · Auto agent"), so the rail has no Auto entry
+the session rail ("Lead", or "Lead · plan X" when it follows a preset), so the rail has no Auto entry
 to mark. Auto starts agents of the role it picks (`AUTO_ROLE_WHEN`), and
 agents started by hand keep working.
 
@@ -390,7 +390,7 @@ writing to it reopens it to **Deciding**.
   "Plan v1 · no approval needed" (`planAwaitsYou`): neither is an ask.
   Without a plan the dock folds to the live row (`DockLiveLine`): what runs,
   as in **Implementer running, Tester queued**, its clock and one quiet Stop
-  that names its scope, **Stop Auto and 2 agents** (`autoDockStopOf`). Esc twice
+  that names its scope, **Stop run**: the Lead and its agents (`autoDockStopOf`). Esc twice
   presses the same button. The live row sits outside the scroll of the dock, so
   a long ask never pushes Stop away, and **Esc again to stop** sits beside it:
   at the limit and on a failed tree too, Stop stays in the live row and the row
@@ -513,7 +513,7 @@ writing to it reopens it to **Deciding**.
   **Implementer running, Tester queued**, **Starting agents**, **Reading the results**, **Deciding what to do
   next**, a refused hand over in the user voice, **At the $5.00 limit. Nothing new
   starts.** with a filled **Raise to $10**, **Change limit** (opens the Limit chip's
-  popover on the Auto page) and **Stop Auto**, plus a line on the agents still
+  popover on the Auto page) and **Stop run**, plus a line on the agents still
   running when there are any, the block reason with a filled **Retry** and **View
   transcript** (a block at the budget offers **Raise limit**, **Change limit**
   and **Stop** instead, one at the time limit only **Open transcript**). The

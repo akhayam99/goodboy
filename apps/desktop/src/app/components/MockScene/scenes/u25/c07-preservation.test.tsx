@@ -96,10 +96,8 @@ describe('Auto: every capability keeps a home in Auto', () => {
     if (dock === null) {
       throw new Error('no dock');
     }
-    expect(within(dock).queryByRole('button', { name: /^Stop Auto/ })).toBeNull();
-    expect(
-      await screen.findByRole('button', { name: /^Stop Auto and \d agents?$/ }, WAIT),
-    ).toBeDefined();
+    expect(within(dock).queryByRole('button', { name: 'Stop run' })).toBeNull();
+    expect(await screen.findByRole('button', { name: 'Stop run' }, WAIT)).toBeDefined();
     expect(screen.queryByRole('button', { name: 'Change approach' })).toBeNull();
   });
 

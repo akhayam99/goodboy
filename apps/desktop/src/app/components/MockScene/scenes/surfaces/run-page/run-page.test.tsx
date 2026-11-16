@@ -131,8 +131,8 @@ describe('the run page scenes', () => {
     const container = await mount({ name: 'run-page-lead-working' });
     const meta = partOf({ root: container, selector: '[data-session-head-meta]' });
 
-    within(meta).getByRole('button', { name: 'Stop Lead and 2 agents' });
-    expect(screen.getAllByRole('button', { name: /^Stop Lead/ })).toHaveLength(1);
+    within(meta).getByRole('button', { name: 'Stop run' });
+    expect(screen.getAllByRole('button', { name: /^Stop (?:run|Lead)/ })).toHaveLength(1);
     expect(meta.querySelectorAll('[data-lead-state]')).toHaveLength(1);
     expect(meta.textContent).not.toMatch(/Auto/);
     screen.getByPlaceholderText('Message Lead');
