@@ -1,4 +1,4 @@
-import { Check, Minus } from 'lucide-react';
+import { Check, Minus } from '@goodboy/ui/icons';
 import { ICON_SIZE, cn, Tooltip } from '@goodboy/ui';
 import type { Visibility } from './roleVisibility';
 

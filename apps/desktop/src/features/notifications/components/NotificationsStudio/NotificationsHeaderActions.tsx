@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from 'react';
-import { CheckCheck } from 'lucide-react';
+import { CheckCheck } from '@goodboy/ui/icons';
 import { Button, HeaderActions, ICON_SIZE } from '@goodboy/ui';
 
 import { ArmedActionPopover } from '../../../../shared/components/HeaderConfirm/ArmedActionPopover';

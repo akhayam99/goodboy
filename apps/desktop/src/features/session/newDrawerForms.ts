@@ -1,11 +1,11 @@
-import type { LucideIcon } from 'lucide-react';
+import type { IconGlyph } from '@goodboy/ui/icons';
 import type { NewDrawerForm } from '../../store/slices/drawer/state';
 import { CONCEPT_ICONS } from '../../shared/components/conceptIcons';
 import { DRAW_WIREFRAME_CHOICE, WRITE_REPORT_CHOICE } from '../../shared/lib/startCopy';
 
 type NewDrawerFormMeta = {
   readonly title: string;
-  readonly icon: LucideIcon;
+  readonly icon: IconGlyph;
 };
 
 export const NEW_DRAWER_FORMS = {

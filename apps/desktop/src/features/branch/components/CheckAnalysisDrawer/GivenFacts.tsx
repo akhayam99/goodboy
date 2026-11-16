@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { SquareArrowOutUpRight } from 'lucide-react';
+import { SquareArrowOutUpRight } from '@goodboy/ui/icons';
 import { Button, Disclosure, ICON_SIZE } from '@goodboy/ui';
 
 import { openLink } from '../../../open/openLink';

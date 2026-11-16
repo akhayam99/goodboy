@@ -1,8 +1,8 @@
-import type { LucideIcon } from 'lucide-react';
+import type { IconGlyph } from '@goodboy/ui/icons';
 import { cn, tintClasses, type Tone } from '@goodboy/ui';
 
 type Props = {
-  readonly icon: LucideIcon;
+  readonly icon: IconGlyph;
   readonly tone: Tone;
 };
 

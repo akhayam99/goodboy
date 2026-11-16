@@ -1,4 +1,4 @@
-import { Plus } from 'lucide-react';
+import { Plus } from '@goodboy/ui/icons';
 import { AnchoredPopover, IconButton, useDropdown, type MenuEntry } from '@goodboy/ui';
 import type { QuickActionGroup } from '../../../../quick-actions/grammar';
 import { AppMenuList } from '../../../../actions/AppMenuList';

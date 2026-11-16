@@ -1,5 +1,5 @@
 import type { MouseEvent, ReactNode } from 'react';
-import { ChevronRight } from 'lucide-react';
+import { ChevronRight } from '@goodboy/ui/icons';
 import {
   Button,
   cn,

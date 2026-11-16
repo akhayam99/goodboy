@@ -1,5 +1,5 @@
 import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent } from 'react';
-import { TriangleAlert, Search } from 'lucide-react';
+import { TriangleAlert, Search } from '@goodboy/ui/icons';
 import {
   cn,
   Divider,

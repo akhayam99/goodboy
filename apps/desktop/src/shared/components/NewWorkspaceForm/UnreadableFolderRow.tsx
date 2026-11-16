@@ -1,5 +1,5 @@
 import { OPEN_FAILED } from '../../../store/slices/notifications/errorRecovery';
-import { Lock } from 'lucide-react';
+import { Lock } from '@goodboy/ui/icons';
 import { Button, ICON_SIZE, ICON_STROKE, StatusDot } from '@goodboy/ui';
 import { useAppStore } from '../../../store';
 import { openPrivacySettings } from '../../lib/privacySettings';

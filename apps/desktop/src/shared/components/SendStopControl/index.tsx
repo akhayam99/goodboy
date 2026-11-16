@@ -1,4 +1,4 @@
-import { ArrowUp, Square } from 'lucide-react';
+import { ArrowUp, Square } from '@goodboy/ui/icons';
 import { cn, ICON_SIZE, IconButton, tintClasses } from '@goodboy/ui';
 import { NAMES } from '../../utils/names';
 

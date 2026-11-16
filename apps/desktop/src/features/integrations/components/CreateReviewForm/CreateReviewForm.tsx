@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
-import { ArrowUpToLine } from 'lucide-react';
+import { ArrowUpToLine } from '@goodboy/ui/icons';
 import { Button, ICON_SIZE, InlineConfirm, Tooltip, formatError } from '@goodboy/ui';
 import type { MountId, SessionExternalTask, SessionId } from '@goodboy/types';
 import { useResolution } from '../../../providers/hooks/useResolution';

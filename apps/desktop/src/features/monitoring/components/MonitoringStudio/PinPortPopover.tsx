@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react';
-import { Pin } from 'lucide-react';
+import { Pin } from '@goodboy/ui/icons';
 import { AnchoredPopover, Button, ICON_SIZE, Input, useDropdown } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
 import { isValidPort } from '../../../../store/slices/monitoring/isValidPort';

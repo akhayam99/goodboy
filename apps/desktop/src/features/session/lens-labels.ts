@@ -1,4 +1,4 @@
-import type { LucideIcon } from 'lucide-react';
+import type { IconGlyph } from '@goodboy/ui/icons';
 import type { LensKind } from '../../store';
 import { CONCEPT_ICONS } from '../../shared/components/conceptIcons';
 import { NAMES } from '../../shared/utils/names';
@@ -35,7 +35,7 @@ export const LENS_ICON = {
   jira_issues: CONCEPT_ICONS.jira,
   github_issue: CONCEPT_ICONS.issues,
   slack_threads: CONCEPT_ICONS.slack,
-} satisfies Record<LensKind, LucideIcon>;
+} satisfies Record<LensKind, IconGlyph>;
 
 export const SIMPLE_LENSES = new Set<LensKind>([
   'workflows',

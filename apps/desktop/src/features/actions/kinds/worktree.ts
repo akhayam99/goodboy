@@ -1,4 +1,4 @@
-import { Bookmark, CircleHelp, Clock, Code, Copy, FolderOpen, Trash2 } from 'lucide-react';
+import { Bookmark, CircleHelp, Clock, Code, Copy, FolderOpen, Trash2 } from '@goodboy/ui/icons';
 import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
 import { openInConfiguredTerminal } from '../../../shared/lib/terminalApp';
 import type { ObjectKindDefinition, WorktreeActionTarget } from '../types';

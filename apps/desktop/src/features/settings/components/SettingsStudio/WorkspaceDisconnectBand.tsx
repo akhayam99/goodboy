@@ -2,7 +2,7 @@ import { CHECK_STATE } from '../../../../store/slices/notifications/errorRecover
 import { useState } from 'react';
 import type { WorkspaceId } from '@goodboy/types';
 import { Band, Button, ConfirmPopover, ICON_SIZE } from '@goodboy/ui';
-import { Unplug } from 'lucide-react';
+import { Unplug } from '@goodboy/ui/icons';
 import { useAppStore } from '../../../../store';
 
 import { selectLiveWork } from '../../../../store/runtime/live-work/selectLiveWork';

@@ -1,4 +1,4 @@
-import type { LucideIcon } from 'lucide-react';
+import type { IconGlyph } from '@goodboy/ui/icons';
 import type {
   AgentId,
   ArtifactId,
@@ -170,8 +170,8 @@ export type ActionDefinition<F> = {
   readonly label: string | ((params: FactsParams<F>) => string);
   readonly shortLabel?: (params: FactsParams<F>) => string;
   readonly ariaLabel?: (params: FactsParams<F>) => string;
-  readonly icon: LucideIcon;
-  readonly iconOf?: (params: FactsParams<F>) => LucideIcon;
+  readonly icon: IconGlyph;
+  readonly iconOf?: (params: FactsParams<F>) => IconGlyph;
   readonly iconClassName?: string;
   readonly group: ActionGroup;
   readonly submenu?: ActionSubmenu;
@@ -212,7 +212,7 @@ export type ResolvedAction = {
   readonly label: string;
   readonly shortLabel: string;
   readonly ariaLabel: string | null;
-  readonly icon: LucideIcon;
+  readonly icon: IconGlyph;
   readonly iconClassName: string | null;
   readonly group: ActionGroup;
   readonly submenu?: ActionSubmenu;

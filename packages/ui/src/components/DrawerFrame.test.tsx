@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 
-import { Plus } from 'lucide-react';
+import { Plus } from '../icons';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { DrawerBackChipContext } from '../drawerBackChipContext';

@@ -1,4 +1,4 @@
-import { ChevronsLeft, ChevronsRight, Plus } from 'lucide-react';
+import { ChevronsLeft, ChevronsRight, Plus } from '@goodboy/ui/icons';
 import {
   FOCUS_RING,
   ICON_SIZE,

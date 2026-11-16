@@ -1,4 +1,4 @@
-import { SquareArrowOutUpRight } from 'lucide-react';
+import { SquareArrowOutUpRight } from '@goodboy/ui/icons';
 import { Button, CopyButton, ICON_SIZE, Notice } from '@goodboy/ui';
 
 import { currentPlatform } from '../../../shared/platform';

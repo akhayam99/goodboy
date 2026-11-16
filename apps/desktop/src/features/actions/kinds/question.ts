@@ -1,4 +1,4 @@
-import { PanelRight } from 'lucide-react';
+import { PanelRight } from '@goodboy/ui/icons';
 import type { Agent, OpenQuestionId, SessionId } from '@goodboy/types';
 import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
 import { openAsker } from '../../session/openAsker';

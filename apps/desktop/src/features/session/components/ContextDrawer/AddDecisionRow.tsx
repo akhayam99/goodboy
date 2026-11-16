@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Plus } from 'lucide-react';
+import { Plus } from '@goodboy/ui/icons';
 import { ICON_SIZE, Input } from '@goodboy/ui';
 
 type Props = {

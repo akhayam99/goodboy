@@ -1,4 +1,4 @@
-import { DoorClosedLocked, Milestone, type LucideIcon } from 'lucide-react';
+import { DoorClosedLocked, Milestone, type IconGlyph } from '@goodboy/ui/icons';
 import { ICON_SIZE, SelectableRow, Tooltip } from '@goodboy/ui';
 
 import { isInstalledRelease } from '../../isInstalledRelease';
@@ -8,7 +8,7 @@ import type { ReleaseEntry } from '../../parseChangelog';
 import { releaseSummary } from '../../releaseSummary';
 
 type OneWayMark = {
-  readonly icon: LucideIcon;
+  readonly icon: IconGlyph;
   readonly label: string;
 };
 

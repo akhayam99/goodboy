@@ -1,4 +1,4 @@
-import { ChevronDown, SlidersHorizontal } from 'lucide-react';
+import { ChevronDown, SlidersHorizontal } from '@goodboy/ui/icons';
 import {
   AnchoredPopover,
   cn,

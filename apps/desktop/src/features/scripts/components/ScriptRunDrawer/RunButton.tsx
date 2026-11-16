@@ -1,4 +1,4 @@
-import { Play } from 'lucide-react';
+import { Play } from '@goodboy/ui/icons';
 import { Button, ICON_SIZE, Tooltip } from '@goodboy/ui';
 
 type Props = {

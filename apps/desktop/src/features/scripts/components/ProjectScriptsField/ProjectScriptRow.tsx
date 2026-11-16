@@ -1,4 +1,4 @@
-import { CheckCheck, Pin } from 'lucide-react';
+import { CheckCheck, Pin } from '@goodboy/ui/icons';
 import { ICON_SIZE, IconButton } from '@goodboy/ui';
 
 type Props = {

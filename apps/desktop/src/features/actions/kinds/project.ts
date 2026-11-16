@@ -1,4 +1,4 @@
-import { Plus, Unlink } from 'lucide-react';
+import { Plus, Unlink } from '@goodboy/ui/icons';
 import type { ProjectId, SessionId } from '@goodboy/types';
 import { NAMES } from '../../../shared/utils/names';
 import { projectById } from '../../../store/slices/projects/projectIndex';

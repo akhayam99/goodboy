@@ -1,5 +1,5 @@
 import type { KeyboardEvent } from 'react';
-import { TriangleAlert } from 'lucide-react';
+import { TriangleAlert } from '@goodboy/ui/icons';
 import { ICON_SIZE, SegmentedTabs, StatusDot, type SegmentedTabOption } from '@goodboy/ui';
 import { IntegrationGlyph } from '../../../../../shared/components/IntegrationGlyph';
 import { integrationLabel } from '../../../../../shared/utils/integrationLabel';

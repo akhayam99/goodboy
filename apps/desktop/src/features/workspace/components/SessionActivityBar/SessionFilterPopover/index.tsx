@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { ListFilter } from 'lucide-react';
+import { ListFilter } from '@goodboy/ui/icons';
 import {
   AnchoredPopover,
   Button,

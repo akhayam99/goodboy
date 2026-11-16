@@ -1,5 +1,5 @@
 import { READ_FAILED } from '../../../../store/slices/notifications/errorRecovery';
-import { RefreshCw } from 'lucide-react';
+import { RefreshCw } from '@goodboy/ui/icons';
 import { Button, ICON_SIZE } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
 

@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { X } from 'lucide-react';
+import { X } from '@goodboy/ui/icons';
 import { Chip, ICON_SIZE, Listbox } from '@goodboy/ui';
 import type { Project, ProjectId } from '@goodboy/types';
 

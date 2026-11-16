@@ -1,4 +1,4 @@
-import { Copy } from 'lucide-react';
+import { Copy } from '@goodboy/ui/icons';
 import { describe, expect, it } from 'vitest';
 import { AGENT_KIND } from './kinds/agent';
 import { ARTIFACT_KIND } from './kinds/artifact';

@@ -2,7 +2,7 @@
 
 import { afterEach, describe, expect, it } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
-import { GitBranch } from 'lucide-react';
+import { GitBranch } from '../icons';
 import { BUTTON_VARIANT_CLASSES, Button, type ButtonVariant } from '../components/Button';
 import { tintClasses, type Tone } from '../tint';
 

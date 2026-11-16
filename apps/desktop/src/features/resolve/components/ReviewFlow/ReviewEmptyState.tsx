@@ -1,4 +1,4 @@
-import { CheckCheck } from 'lucide-react';
+import { CheckCheck } from '@goodboy/ui/icons';
 import { EmptyState } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { NoPullRequestState } from './NoPullRequestState';

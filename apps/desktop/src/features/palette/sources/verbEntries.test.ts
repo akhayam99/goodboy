@@ -1,5 +1,5 @@
 // @vitest-environment node
-import { Square } from 'lucide-react';
+import { Square } from '@goodboy/ui/icons';
 import { describe, expect, it } from 'vitest';
 import { NAMES } from '../../../shared/utils/names';
 import type { ResolvedAction, SessionsActionTarget } from '../../actions/types';

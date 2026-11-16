@@ -6,7 +6,7 @@ import {
   GitPullRequestClosed,
   GitPullRequestDraft,
   ListChecks,
-} from 'lucide-react';
+} from '@goodboy/ui/icons';
 import type { PullRequestStateKind, SessionPrGroup } from '@goodboy/types';
 import type { StatePresentation } from './statePresentation';
 

@@ -1,16 +1,16 @@
 import type { ReactNode } from 'react';
-import type { LucideIcon } from 'lucide-react';
+import type { IconGlyph } from '../../icons';
 import type { Tone } from '../../tint';
 
 export type CrumbLead =
-  | { readonly kind: 'icon'; readonly icon: LucideIcon; readonly className?: string }
+  | { readonly kind: 'icon'; readonly icon: IconGlyph; readonly className?: string }
   | { readonly kind: 'number'; readonly value: number }
   | { readonly kind: 'node'; readonly node: ReactNode };
 
 export type CrumbState = {
   readonly word: string;
   readonly tone: Tone;
-  readonly glyph?: LucideIcon;
+  readonly glyph?: IconGlyph;
 };
 
 export type CrumbMenuRow = {
@@ -42,7 +42,7 @@ export type CrumbMenuConfirm = {
 export type CrumbMenuAction = {
   readonly id: string;
   readonly label: string;
-  readonly icon: LucideIcon;
+  readonly icon: IconGlyph;
   readonly hint?: string;
   readonly confirm: CrumbMenuConfirm | null;
   readonly onRun: () => void;

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { UserRound, UserX } from 'lucide-react';
+import { UserRound, UserX } from '@goodboy/ui/icons';
 import { formatError, SkeletonRow, type MenuEntry } from '@goodboy/ui';
 import type { ProjectId, WorkspaceId } from '@goodboy/types';
 import { linearFetchTeamMembers, type LinearTeamMember } from './client';

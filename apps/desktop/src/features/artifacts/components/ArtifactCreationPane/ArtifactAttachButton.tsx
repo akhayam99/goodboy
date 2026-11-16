@@ -1,5 +1,5 @@
 import type { ChangeEvent, RefObject } from 'react';
-import { Paperclip } from 'lucide-react';
+import { Paperclip } from '@goodboy/ui/icons';
 import { ICON_SIZE, IconButton } from '@goodboy/ui';
 import { ATTACHMENT_ACCEPT } from '../../../chat/attachment-kinds';
 

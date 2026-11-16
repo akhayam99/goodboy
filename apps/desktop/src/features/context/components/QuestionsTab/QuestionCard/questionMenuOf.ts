@@ -1,4 +1,4 @@
-import { Bot, Send, X } from 'lucide-react';
+import { Bot, Send, X } from '@goodboy/ui/icons';
 import type { MenuEntry } from '@goodboy/ui';
 import { QUESTION_DELEGATE_COPY, type DelegateRowState } from '../../../questionDelegate';
 import { SEND_AS_MESSAGE_HINT } from '../AnswerSubmitButton';

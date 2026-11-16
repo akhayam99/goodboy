@@ -1,4 +1,4 @@
-import { Check } from 'lucide-react';
+import { Check } from '@goodboy/ui/icons';
 import { cn, ICON_SIZE } from '@goodboy/ui';
 
 import {

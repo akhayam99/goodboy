@@ -1,4 +1,4 @@
-import { Wrench } from 'lucide-react';
+import { Wrench } from '@goodboy/ui/icons';
 import { ICON_SIZE } from '@goodboy/ui';
 import type { ChangelogFix } from '../../parseChangelog';
 import { AreaTag } from './AreaTag';

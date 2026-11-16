@@ -1,5 +1,5 @@
 import type { ComponentProps } from 'react';
-import type { LucideIcon } from 'lucide-react';
+import type { IconGlyph } from '../icons';
 import { cn } from '../cn';
 import { DISABLED } from '../disabledStyle';
 import { FOCUS_RING } from '../focusRing';
@@ -10,7 +10,7 @@ import { Tooltip, type TooltipSide } from './Tooltip';
 export type IconButtonSize = 'xs' | 'sm' | 'md';
 
 export type IconButtonProps = Omit<ComponentProps<'button'>, 'type' | 'children' | 'title'> & {
-  icon: LucideIcon;
+  icon: IconGlyph;
   label: string;
   tooltip?: string;
   shortcut?: string;

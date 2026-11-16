@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from 'react';
-import { Hand, ShieldCheck } from 'lucide-react';
+import { Hand, ShieldCheck } from '@goodboy/ui/icons';
 import {
   AnchoredPopover,
   Button,

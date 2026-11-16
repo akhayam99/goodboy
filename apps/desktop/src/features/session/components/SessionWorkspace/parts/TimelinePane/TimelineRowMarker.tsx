@@ -1,4 +1,4 @@
-import type { LucideIcon } from 'lucide-react';
+import type { IconGlyph } from '@goodboy/ui/icons';
 import { WORK_NODE_GLYPH_SIZE, WorkNode, tintClasses } from '@goodboy/ui';
 import type { Tone } from '@goodboy/ui';
 import type { OpenQuestion } from '@goodboy/types';
@@ -19,12 +19,12 @@ type KindParams = {
   readonly kind: ActivityRowKind;
 };
 
-const iconOf = ({ kind }: KindParams): LucideIcon => CONCEPT_ICONS[activityRowConcept({ kind })];
+const iconOf = ({ kind }: KindParams): IconGlyph => CONCEPT_ICONS[activityRowConcept({ kind })];
 
 const toneOf = ({ kind }: KindParams): Tone => CONCEPT_TONE[activityRowConcept({ kind })];
 
 type ConceptParams = {
-  readonly icon: LucideIcon;
+  readonly icon: IconGlyph;
   readonly tone: Tone;
   readonly label: string;
   readonly isEmphasized: boolean;

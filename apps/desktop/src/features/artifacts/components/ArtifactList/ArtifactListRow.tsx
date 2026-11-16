@@ -1,5 +1,5 @@
 import { memo, type ReactNode } from 'react';
-import { ChevronRight } from 'lucide-react';
+import { ChevronRight } from '@goodboy/ui/icons';
 import { cn, ICON_SIZE, InteractiveRow, Tooltip, TruncatedText } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import type { ArtifactListRow as Row } from '../../artifactListRows';

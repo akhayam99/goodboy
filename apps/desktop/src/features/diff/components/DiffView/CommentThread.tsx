@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from 'react';
-import { Lock, Trash2 } from 'lucide-react';
+import { Lock, Trash2 } from '@goodboy/ui/icons';
 import {
   Chip,
   ConfirmPopover,

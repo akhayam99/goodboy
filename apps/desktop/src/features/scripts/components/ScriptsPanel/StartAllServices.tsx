@@ -1,4 +1,4 @@
-import { Play } from 'lucide-react';
+import { Play } from '@goodboy/ui/icons';
 import { Button, ICON_SIZE } from '@goodboy/ui';
 import type { RunnableScript, SessionScriptGroup } from '../../buildSessionScripts';
 import type { StartAllParams } from '../../hooks/useServiceStarts';

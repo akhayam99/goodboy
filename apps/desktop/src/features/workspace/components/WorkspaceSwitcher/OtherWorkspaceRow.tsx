@@ -1,4 +1,4 @@
-import { AppWindow } from 'lucide-react';
+import { AppWindow } from '@goodboy/ui/icons';
 import { cn, ICON_SIZE, IconButton, Kbd, ROW_INTERACTIVE, StatusDot } from '@goodboy/ui';
 import type { Workspace } from '@goodboy/types';
 import { useAppStore, useWorkspaceAttentionEntry } from '../../../../store';

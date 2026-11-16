@@ -1,4 +1,4 @@
-import { ArrowUpRight } from 'lucide-react';
+import { ArrowUpRight } from '@goodboy/ui/icons';
 import type { WorkspaceId } from '@goodboy/types';
 import { EmptyLine, Eyebrow, ICON_SIZE, SelectableRow, tintClasses } from '@goodboy/ui';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../shared/components/conceptIcons';

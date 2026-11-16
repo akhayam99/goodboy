@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import type { LucideIcon } from 'lucide-react';
+import type { IconGlyph } from '@goodboy/ui/icons';
 import { cn, ICON_SIZE, PANE_RHYTHM, tintClasses, Tooltip, FOCUS_RING } from '@goodboy/ui';
 import type { ShortcutId } from '../../../shared/keyboard/registry';
 
@@ -16,7 +16,7 @@ type DoorCreate = {
 
 type Props = {
   readonly id: string;
-  readonly icon: LucideIcon;
+  readonly icon: IconGlyph;
   readonly label: string;
   readonly shortcut?: ShortcutId;
   readonly isCurrent: boolean;

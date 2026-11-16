@@ -1,5 +1,5 @@
 import type { PointerEvent } from 'react';
-import { Plus } from 'lucide-react';
+import { Plus } from '@goodboy/ui/icons';
 import { cn, ICON_SIZE, FOCUS_RING } from '@goodboy/ui';
 import type { DiffCommentSide } from '@goodboy/types';
 

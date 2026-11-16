@@ -1,5 +1,5 @@
 import { Fragment, useMemo, useState } from 'react';
-import { Star } from 'lucide-react';
+import { Star } from '@goodboy/ui/icons';
 import {
   cn,
   EmptyLine,

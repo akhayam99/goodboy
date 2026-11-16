@@ -1,4 +1,4 @@
-import { Bell } from 'lucide-react';
+import { Bell } from '@goodboy/ui/icons';
 import { cn, FOCUS_RING, ICON_SIZE, tintClasses, Tooltip, TOP_BAR_CONTROL } from '@goodboy/ui';
 import { NAMES } from '../../../../shared/utils/names';
 

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ArrowUpRight } from 'lucide-react';
+import { ArrowUpRight } from '@goodboy/ui/icons';
 import { GhostActionButton } from '@goodboy/ui';
 import type { HandoffRef, SessionId } from '@goodboy/types';
 import { openLink } from '../../../open/openLink';

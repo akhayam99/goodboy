@@ -1,5 +1,5 @@
 import { useState, type MouseEvent } from 'react';
-import { Pencil } from 'lucide-react';
+import { Pencil } from '@goodboy/ui/icons';
 import { Button, cn, EmptyLine, ICON_SIZE, Markdown, Textarea } from '@goodboy/ui';
 import { useInlineProseEdit } from '../../hooks/useInlineProseEdit';
 import { isInteractiveClick } from '../../utils/isInteractiveClick';

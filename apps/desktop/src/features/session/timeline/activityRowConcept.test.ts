@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
-import type { LucideIcon } from 'lucide-react';
+import type { IconGlyph } from '@goodboy/ui/icons';
 import {
   BookOpen,
   CircleHelp,
@@ -14,7 +14,7 @@ import {
   Bot,
   PanelsTopLeft,
   Waypoints,
-} from 'lucide-react';
+} from '@goodboy/ui/icons';
 import type { SessionEventKind } from '@goodboy/types';
 import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
 import { PULL_REQUEST_PRESENTATION } from '../../../shared/utils/pullRequestPresentation';
@@ -35,11 +35,11 @@ const EXPECTED = {
   wireframe: PanelsTopLeft,
   learning: BookOpen,
   branch: GitBranch,
-} satisfies Record<ActivityRowKind, LucideIcon>;
+} satisfies Record<ActivityRowKind, IconGlyph>;
 
 const KINDS = Object.keys(EXPECTED).filter((kind): kind is ActivityRowKind => kind in EXPECTED);
 
-const CONCEPT_GLYPHS: ReadonlySet<LucideIcon> = new Set(Object.values(CONCEPT_ICONS));
+const CONCEPT_GLYPHS: ReadonlySet<IconGlyph> = new Set(Object.values(CONCEPT_ICONS));
 
 type EventGlyphSource = 'concept' | 'pull-request';
 
@@ -85,11 +85,11 @@ const EVENT_KINDS = Object.keys(EVENT_GLYPH_SOURCE).filter(
   (kind): kind is SessionEventKind => kind in EVENT_GLYPH_SOURCE,
 );
 
-const PULL_REQUEST_GLYPHS: ReadonlySet<LucideIcon> = new Set(
+const PULL_REQUEST_GLYPHS: ReadonlySet<IconGlyph> = new Set(
   Object.values(PULL_REQUEST_PRESENTATION).map((presentation) => presentation.icon),
 );
 
-const GLYPHS_BY_SOURCE: Readonly<Record<EventGlyphSource, ReadonlySet<LucideIcon>>> = {
+const GLYPHS_BY_SOURCE: Readonly<Record<EventGlyphSource, ReadonlySet<IconGlyph>>> = {
   concept: CONCEPT_GLYPHS,
   'pull-request': PULL_REQUEST_GLYPHS,
 };

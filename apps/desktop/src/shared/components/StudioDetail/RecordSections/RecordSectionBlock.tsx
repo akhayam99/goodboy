@@ -1,5 +1,5 @@
 import { useId, useState } from 'react';
-import { ChevronRight } from 'lucide-react';
+import { ChevronRight } from '@goodboy/ui/icons';
 import { cn, Eyebrow, FOCUS_RING, ICON_SIZE, ROW_INTERACTIVE } from '@goodboy/ui';
 
 import type { RecordSection } from './types';

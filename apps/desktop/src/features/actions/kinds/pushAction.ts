@@ -1,4 +1,4 @@
-import { ArrowUpToLine } from 'lucide-react';
+import { ArrowUpToLine } from '@goodboy/ui/icons';
 import type { ActionDefinition, ActionSlot } from '../types';
 import {
   canForcePush,

@@ -1,4 +1,4 @@
-import { RotateCcw } from 'lucide-react';
+import { RotateCcw } from '@goodboy/ui/icons';
 import type { ProviderId } from '@goodboy/types';
 import { Button, ConfirmPopover, ICON_SIZE } from '@goodboy/ui';
 

@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { Band, ICON_SIZE, Notice } from '@goodboy/ui';
-import { Globe } from 'lucide-react';
+import { Globe } from '@goodboy/ui/icons';
 import {
   DEFAULT_BROWSER_APP,
   DEFAULT_EDITOR_BINARY,

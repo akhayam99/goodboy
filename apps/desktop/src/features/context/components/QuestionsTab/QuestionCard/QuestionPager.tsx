@@ -1,4 +1,4 @@
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight } from '@goodboy/ui/icons';
 import { Button, cn, ICON_SIZE, IconButton } from '@goodboy/ui';
 import { questionsLeft } from './questionsLeft';
 

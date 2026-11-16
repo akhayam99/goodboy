@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { SquareArrowOutUpRight, FolderOpen, Unplug } from 'lucide-react';
+import { SquareArrowOutUpRight, FolderOpen, Unplug } from '@goodboy/ui/icons';
 import type { Project } from '@goodboy/types';
 import { Button, CopyButton, ICON_SIZE } from '@goodboy/ui';
 import { useAppStore } from '../../../store';

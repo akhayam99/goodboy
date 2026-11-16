@@ -1,6 +1,6 @@
 import { CHECK_STATE } from '../../../../store/slices/notifications/errorRecovery';
 import { useEffect, useRef, useState } from 'react';
-import { Unlink } from 'lucide-react';
+import { Unlink } from '@goodboy/ui/icons';
 import type { WorkspaceId } from '@goodboy/types';
 import type {
   RecordFrame,

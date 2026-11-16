@@ -2,7 +2,7 @@
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
-import { RefreshCw } from 'lucide-react';
+import { RefreshCw } from '../icons';
 import { IconButton } from '../components/IconButton';
 
 const anchorOf = (trigger: HTMLElement): HTMLElement => {

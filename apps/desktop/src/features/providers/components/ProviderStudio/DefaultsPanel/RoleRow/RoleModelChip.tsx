@@ -1,5 +1,5 @@
 import type { KeyboardEvent } from 'react';
-import { X } from 'lucide-react';
+import { X } from '@goodboy/ui/icons';
 import { FOCUS_RING, Chip, cn, IconButton } from '@goodboy/ui';
 import type { RoleSetEntry } from '../../../../roleSetEntries';
 

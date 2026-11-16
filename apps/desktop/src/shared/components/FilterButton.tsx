@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { ListFilter } from 'lucide-react';
+import { ListFilter } from '@goodboy/ui/icons';
 import { AnchoredPopover, Button, Chip, cn, ICON_SIZE, Tooltip, useDropdown } from '@goodboy/ui';
 
 type Props = {

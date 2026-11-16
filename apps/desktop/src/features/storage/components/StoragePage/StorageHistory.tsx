@@ -1,6 +1,6 @@
 import { CHECK_STATE, OPEN_FAILED } from '../../../../store/slices/notifications/errorRecovery';
 import { useState } from 'react';
-import { FolderOpen, Trash2 } from 'lucide-react';
+import { FolderOpen, Trash2 } from '@goodboy/ui/icons';
 import { Band, BandRow, Button, ConfirmPopover, ICON_SIZE, SectionHeader } from '@goodboy/ui';
 import { useToast } from '../../../../shared/components/Toast';
 import { useAppStore } from '../../../../store';

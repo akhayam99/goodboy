@@ -18,7 +18,7 @@ import {
   IconButton,
 } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
-import { ArrowUpRight } from 'lucide-react';
+import { ArrowUpRight } from '@goodboy/ui/icons';
 import { STORAGE_KEYS, persistedPref } from '../../../../shared/lib/storage-keys';
 import { DeletedSessionTag } from '../../../../shared/components/DeletedSessionTag';
 import { RoutingLabel } from '../../../../shared/components/RoutingLabel';

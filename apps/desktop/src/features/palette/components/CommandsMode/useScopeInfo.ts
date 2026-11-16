@@ -1,4 +1,4 @@
-import type { LucideIcon } from 'lucide-react';
+import type { IconGlyph } from '@goodboy/ui/icons';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { sessionTitle } from '../../../../shared/utils/sessionTitle';
@@ -8,7 +8,7 @@ import { sessionById } from '../../../../store/slices/sessions/sessionIndex';
 export type ScopeInfo = {
   readonly title: string;
   readonly noun: string;
-  readonly icon: LucideIcon;
+  readonly icon: IconGlyph;
   readonly key: string;
 };
 

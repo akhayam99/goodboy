@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ChevronRight, History } from 'lucide-react';
+import { ChevronRight, History } from '@goodboy/ui/icons';
 import { Eyebrow, ICON_SIZE, SelectableRow } from '@goodboy/ui';
 
 import type { ChangelogCatchUp } from '../../changelogCatchUp';

@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from 'react';
-import { Check } from 'lucide-react';
+import { Check } from '@goodboy/ui/icons';
 import type { AgentRole } from '@goodboy/types';
 import { Button, Chip, ICON_SIZE } from '@goodboy/ui';
 

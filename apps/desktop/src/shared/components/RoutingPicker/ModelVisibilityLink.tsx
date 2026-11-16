@@ -1,4 +1,4 @@
-import { Settings2 } from 'lucide-react';
+import { Settings2 } from '@goodboy/ui/icons';
 import type { ProviderId } from '@goodboy/types';
 import { ICON_SIZE, IconButton } from '@goodboy/ui';
 import { PROVIDER_LABEL } from '../../../features/providers/providerLabel';

@@ -1,5 +1,5 @@
 import { useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { ArrowDown } from 'lucide-react';
+import { ArrowDown } from '@goodboy/ui/icons';
 import { Button, ICON_SIZE, ScrollFade, appScrollTo } from '@goodboy/ui';
 
 import { LinkedLogText, type LogFileLink } from './LinkedLogText';

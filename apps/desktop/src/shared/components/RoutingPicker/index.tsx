@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from 'react';
 import type { ShortcutId } from '../../keyboard/registry';
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown } from '@goodboy/ui/icons';
 import { MODEL_CATALOGS } from '@goodboy/core/providers';
 import { AnchoredPopover, cn, ICON_SIZE, tintClasses, Tooltip, useDropdown } from '@goodboy/ui';
 import type { ProviderId, VerbosityLevel } from '@goodboy/types';

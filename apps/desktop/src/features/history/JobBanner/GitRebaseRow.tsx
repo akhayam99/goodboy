@@ -1,4 +1,4 @@
-import { Undo2 } from 'lucide-react';
+import { Undo2 } from '@goodboy/ui/icons';
 import { Button, ConfirmPopover, ICON_SIZE, Notice } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { actionButtonLookOf } from '../../actions/actionButtonLookOf';

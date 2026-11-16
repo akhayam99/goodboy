@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { RotateCcw } from 'lucide-react';
+import { RotateCcw } from '@goodboy/ui/icons';
 import type { OverrideSettings, WorkspaceId } from '@goodboy/types';
 import { ROLE_REGISTRY } from '@goodboy/core/roles';
 import { DEFAULT_GROUPS, TASKS } from '@goodboy/core/settings';

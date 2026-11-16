@@ -1,5 +1,5 @@
 import { useRef } from 'react';
-import { ArrowLeft, ArrowRight } from 'lucide-react';
+import { ArrowLeft, ArrowRight } from '@goodboy/ui/icons';
 import {
   AnchoredPopover,
   cn,

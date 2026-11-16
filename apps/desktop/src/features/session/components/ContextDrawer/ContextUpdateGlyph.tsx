@@ -1,4 +1,4 @@
-import { TriangleAlert, Check, Clock, RefreshCw } from 'lucide-react';
+import { TriangleAlert, Check, Clock, RefreshCw } from '@goodboy/ui/icons';
 import { ICON_SIZE, StatusDot } from '@goodboy/ui';
 import type { ContextUpdatePhase } from './contextUpdateCopy';
 

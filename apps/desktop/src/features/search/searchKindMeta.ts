@@ -1,11 +1,11 @@
-import type { LucideIcon } from 'lucide-react';
+import type { IconGlyph } from '@goodboy/ui/icons';
 import type { SearchKind } from '@goodboy/types';
 import type { Tone } from '@goodboy/ui';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../shared/components/conceptIcons';
 
 type KindMeta = {
   readonly label: string;
-  readonly icon: LucideIcon;
+  readonly icon: IconGlyph;
   readonly tone: Tone;
 };
 

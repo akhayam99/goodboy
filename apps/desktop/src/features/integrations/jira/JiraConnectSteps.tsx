@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ArrowLeftRight, Check, SquareArrowOutUpRight, MessageSquare } from 'lucide-react';
+import { ArrowLeftRight, Check, SquareArrowOutUpRight, MessageSquare } from '@goodboy/ui/icons';
 import { Button, formatError, ICON_SIZE, Listbox } from '@goodboy/ui';
 import type { IntegrationCredentialId, WorkspaceId } from '@goodboy/types';
 import { openLink } from '../../open/openLink';

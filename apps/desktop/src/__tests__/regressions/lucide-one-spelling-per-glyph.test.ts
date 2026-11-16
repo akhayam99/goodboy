@@ -16,7 +16,8 @@ const BANNED_ALIASES: Readonly<Record<string, string>> = {
   ExternalLink: 'SquareArrowOutUpRight',
 };
 
-const LUCIDE_IMPORT = /import\s*(?:type\s*)?\{([^}]*)\}\s*from\s*'lucide-react'/g;
+const LUCIDE_IMPORT =
+  /import\s*(?:type\s*)?\{([^}]*)\}\s*from\s*'(?:@goodboy\/ui\/|(?:\.{1,2}\/)+)icons'/g;
 
 type ListParams = {
   readonly dir: string;

@@ -1,5 +1,5 @@
 import type { KeyboardEvent, PointerEvent, ReactNode } from 'react';
-import { GripVertical } from 'lucide-react';
+import { GripVertical } from '@goodboy/ui/icons';
 import {
   cn,
   ICON_SIZE,

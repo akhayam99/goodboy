@@ -1,4 +1,4 @@
-import { Square } from 'lucide-react';
+import { Square } from '@goodboy/ui/icons';
 import { Button, ConfirmPopover, ICON_SIZE } from '@goodboy/ui';
 import { actionButtonLookOf } from '../../../actions/actionButtonLookOf';
 

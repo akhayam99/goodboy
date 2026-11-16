@@ -1,5 +1,5 @@
 import { useEffect, useMemo } from 'react';
-import { Square, SquareTerminal } from 'lucide-react';
+import { Square, SquareTerminal } from '@goodboy/ui/icons';
 import { Button, DrawerFrame, ICON_SIZE, type DrawerBack } from '@goodboy/ui';
 import type { MountId, SessionId } from '@goodboy/types';
 

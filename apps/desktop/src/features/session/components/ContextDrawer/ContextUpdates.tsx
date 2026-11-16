@@ -1,5 +1,5 @@
 import { Fragment, useId, useState, type ReactNode } from 'react';
-import { ArrowUpRight, ChevronRight } from 'lucide-react';
+import { ArrowUpRight, ChevronRight } from '@goodboy/ui/icons';
 import { Button, EmptyLine, ICON_SIZE, Notice, Reveal, FOCUS_RING, cn } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import {

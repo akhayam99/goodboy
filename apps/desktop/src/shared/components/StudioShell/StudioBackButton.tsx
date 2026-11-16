@@ -1,4 +1,4 @@
-import { ChevronLeft } from 'lucide-react';
+import { ChevronLeft } from '@goodboy/ui/icons';
 import { Button, cn, ICON_SIZE } from '@goodboy/ui';
 
 type Props = {

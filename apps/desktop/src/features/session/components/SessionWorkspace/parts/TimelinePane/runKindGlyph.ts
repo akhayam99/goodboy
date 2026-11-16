@@ -1,10 +1,10 @@
-import type { LucideIcon } from 'lucide-react';
+import type { IconGlyph } from '@goodboy/ui/icons';
 import { CONCEPT_ICONS } from '../../../../../../shared/components/conceptIcons';
 import { activityRowConcept } from '../../../../timeline/activityRowConcept';
 import type { RunWorkflowKind } from '../../../../timeline/runWorkflowKind';
 
 type RunKindGlyph = {
-  readonly icon: LucideIcon;
+  readonly icon: IconGlyph;
   readonly label: string;
   readonly isNamedInTooltip: boolean;
 };

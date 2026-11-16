@@ -1,4 +1,4 @@
-import { RotateCcw, Trash2 } from 'lucide-react';
+import { RotateCcw, Trash2 } from '@goodboy/ui/icons';
 import { Button, cn, EmptyState, ICON_SIZE, tintClasses, Tooltip } from '@goodboy/ui';
 import type { FileVersion, FileVersionId } from '@goodboy/types';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../../../shared/components/conceptIcons';

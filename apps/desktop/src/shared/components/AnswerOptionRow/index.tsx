@@ -1,5 +1,5 @@
 import { useId, type ReactNode } from 'react';
-import { Check } from 'lucide-react';
+import { Check } from '@goodboy/ui/icons';
 import { cn, FOCUS_RING, ICON_SIZE, ICON_STROKE } from '@goodboy/ui';
 import type { OpenQuestionSelectMode } from '@goodboy/types';
 import { SelectionIndicator } from './SelectionIndicator';

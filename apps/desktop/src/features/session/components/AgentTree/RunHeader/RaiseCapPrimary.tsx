@@ -1,4 +1,4 @@
-import { Wallet } from 'lucide-react';
+import { Wallet } from '@goodboy/ui/icons';
 import { Button, ICON_SIZE } from '@goodboy/ui';
 import type { BudgetAlert, Session } from '@goodboy/types';
 

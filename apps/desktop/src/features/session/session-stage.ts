@@ -1,5 +1,5 @@
-import { Eye, Hammer } from 'lucide-react';
-import type { LucideIcon } from 'lucide-react';
+import { Eye, Hammer } from '@goodboy/ui/icons';
+import type { IconGlyph } from '@goodboy/ui/icons';
 import type { Tone } from '@goodboy/ui';
 import type { SessionAttentionReason, SessionStage, SessionStageInfo } from '@goodboy/types';
 import { CONCEPT_ICONS } from '../../shared/components/conceptIcons';
@@ -220,7 +220,7 @@ export const SESSION_STAGE_META: Record<SessionStage, SessionStageEntry> = {
   },
 };
 
-const SESSION_STAGE_ICON: Record<SessionStage, LucideIcon> = {
+const SESSION_STAGE_ICON: Record<SessionStage, IconGlyph> = {
   attention: CONCEPT_ICONS.questions,
   running: CONCEPT_ICONS.stageRunning,
   review: Eye,

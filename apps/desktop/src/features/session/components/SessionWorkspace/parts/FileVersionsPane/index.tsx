@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Trash2 } from 'lucide-react';
+import { Trash2 } from '@goodboy/ui/icons';
 import { Button, cn, Divider, formatError, ICON_SIZE, PaneShell, tintClasses } from '@goodboy/ui';
 import { useShallow } from 'zustand/react/shallow';
 import type { FileVersion, FileVersionId, SessionId } from '@goodboy/types';

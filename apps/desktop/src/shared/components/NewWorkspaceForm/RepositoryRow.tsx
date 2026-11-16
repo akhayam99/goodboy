@@ -1,4 +1,4 @@
-import { GitBranch } from 'lucide-react';
+import { GitBranch } from '@goodboy/ui/icons';
 import { Chip, ICON_SIZE, ICON_STROKE } from '@goodboy/ui';
 import { CONCEPT_ICONS } from '../conceptIcons';
 import { FOLDER_FACE_COPY } from '../../../features/workspace/folderFaceCopy';

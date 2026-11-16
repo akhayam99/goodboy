@@ -1,5 +1,12 @@
 import { useId, type ReactNode } from 'react';
-import { TriangleAlert, ArrowDown, ArrowUp, ArrowUpDown, Check, ChevronRight } from 'lucide-react';
+import {
+  TriangleAlert,
+  ArrowDown,
+  ArrowUp,
+  ArrowUpDown,
+  Check,
+  ChevronRight,
+} from '@goodboy/ui/icons';
 import {
   Button,
   cn,

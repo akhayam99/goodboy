@@ -1,5 +1,5 @@
 import { ICON_SIZE, ICON_STROKE, Tooltip } from '@goodboy/ui';
-import { Check } from 'lucide-react';
+import { Check } from '@goodboy/ui/icons';
 
 type Props = {
   readonly viewed: number;

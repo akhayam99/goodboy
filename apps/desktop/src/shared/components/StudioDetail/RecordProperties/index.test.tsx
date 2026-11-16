@@ -2,7 +2,7 @@
 
 import { afterEach, describe, expect, it } from 'vitest';
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
-import { Flag } from 'lucide-react';
+import { Flag } from '@goodboy/ui/icons';
 import { RecordProperties } from './index';
 
 afterEach(cleanup);

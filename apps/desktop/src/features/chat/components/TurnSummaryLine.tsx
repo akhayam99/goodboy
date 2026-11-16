@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { ChevronRight } from 'lucide-react';
+import { ChevronRight } from '@goodboy/ui/icons';
 import { Button, ICON_SIZE, StatusDot, TruncatedText } from '@goodboy/ui';
 import type { TranscriptItem } from '../utils/transcript-items';
 import { turnSummary } from '../utils/turnSummary';

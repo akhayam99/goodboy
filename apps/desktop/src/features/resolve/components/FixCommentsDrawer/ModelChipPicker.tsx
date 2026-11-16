@@ -1,4 +1,4 @@
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown } from '@goodboy/ui/icons';
 import { AnchoredPopover, ICON_SIZE, PopoverBody, useDropdown } from '@goodboy/ui';
 import type { ProviderId } from '@goodboy/types';
 import type { AgentKindRouting } from '../../../session/agent-kind';

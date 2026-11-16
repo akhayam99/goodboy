@@ -1,5 +1,5 @@
 import { useMemo, type ComponentProps, type ReactNode } from 'react';
-import { ChevronUp } from 'lucide-react';
+import { ChevronUp } from '@goodboy/ui/icons';
 import { Button, HeaderActions, ICON_SIZE, Notice, PaneTitleRow, Tooltip } from '@goodboy/ui';
 import type { PullRequestHost, PullRequestState, SessionId } from '@goodboy/types';
 import type { BranchTab } from '../../../../store/slices/navigation/types';

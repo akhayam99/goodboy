@@ -2,7 +2,7 @@
 
 import { afterEach, describe, expect, it, vi, type Mock } from 'vitest';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
-import { Archive, Cpu, Trash2 } from 'lucide-react';
+import { Archive, Cpu, Trash2 } from '../icons';
 import { ContextMenu } from '../components/ContextMenu/ContextMenu';
 import { placeContextMenu } from '../components/ContextMenu/placeContextMenu';
 import { OverflowMenu } from '../components/OverflowMenu';

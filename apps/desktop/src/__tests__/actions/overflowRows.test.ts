@@ -9,7 +9,7 @@ vi.mock('@tauri-apps/api/event', async () =>
 
 import { readFileSync } from 'fs';
 import { join } from 'path';
-import { Link } from 'lucide-react';
+import { Link } from '@goodboy/ui/icons';
 import { brandId, type AgentId, type SessionId } from '@goodboy/types';
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import {

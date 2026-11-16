@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { cn, ICON_SIZE, STRIPED_BLOCK_LIST, STRIPED_MIN_ROWS } from '@goodboy/ui';
-import { ChevronRight, Unplug } from 'lucide-react';
+import { ChevronRight, Unplug } from '@goodboy/ui/icons';
 import { useAppStore } from '../../../../store';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { pluralize } from '../../../../shared/utils/pluralize';

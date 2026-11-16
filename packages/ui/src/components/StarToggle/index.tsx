@@ -1,4 +1,4 @@
-import { Star } from 'lucide-react';
+import { Star } from '../../icons';
 import { cn } from '../../cn';
 import { FOCUS_RING } from '../../focusRing';
 import { ICON_SIZE } from '../../iconSize';

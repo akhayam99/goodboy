@@ -8,8 +8,8 @@ import {
   MessagesSquare,
   Star,
   TriangleAlert,
-  type LucideIcon,
-} from 'lucide-react';
+  type IconGlyph,
+} from '@goodboy/ui/icons';
 import type { Project } from '@goodboy/types';
 import { Button, FacetRail, FacetRow, FacetSection, ICON_SIZE, StatusDot } from '@goodboy/ui';
 import { NAMES } from '../../../../shared/utils/names';
@@ -41,7 +41,7 @@ type Props = {
 
 type Presentation = {
   readonly label: string;
-  readonly icon: LucideIcon;
+  readonly icon: IconGlyph;
 };
 
 const VIEW_PRESENTATION = {

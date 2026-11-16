@@ -1,4 +1,4 @@
-import { Copy, SquareArrowOutUpRight, FolderOpen } from 'lucide-react';
+import { Copy, SquareArrowOutUpRight, FolderOpen } from '@goodboy/ui/icons';
 import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
 import { openInConfiguredTerminal } from '../../../shared/lib/terminalApp';
 import type { ExploreFileActionTarget, ObjectKindDefinition } from '../types';

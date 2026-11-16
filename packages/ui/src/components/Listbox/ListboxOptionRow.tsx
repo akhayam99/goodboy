@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { Check } from 'lucide-react';
+import { Check } from '../../icons';
 import { cn } from '../../cn';
 import { DISABLED } from '../../disabledStyle';
 import type { ListboxMatch } from './filterOptions';

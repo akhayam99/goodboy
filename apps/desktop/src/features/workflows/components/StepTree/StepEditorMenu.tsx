@@ -1,4 +1,4 @@
-import { ArrowDown, ArrowUp, Copy, Save, Trash2 } from 'lucide-react';
+import { ArrowDown, ArrowUp, Copy, Save, Trash2 } from '@goodboy/ui/icons';
 import { AnchoredPopover, Button, ICON_SIZE, useDropdown } from '@goodboy/ui';
 import type { MenuEntry } from '@goodboy/ui';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';

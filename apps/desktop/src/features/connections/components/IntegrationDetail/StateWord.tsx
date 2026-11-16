@@ -1,4 +1,4 @@
-import { CircleAlert } from 'lucide-react';
+import { CircleAlert } from '@goodboy/ui/icons';
 import { ICON_SIZE, cn, tintClasses } from '@goodboy/ui';
 import type { ToolState } from '../../model/toolStateOf';
 

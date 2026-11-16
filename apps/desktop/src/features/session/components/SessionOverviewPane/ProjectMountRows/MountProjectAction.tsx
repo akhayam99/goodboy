@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { FolderPlus } from 'lucide-react';
+import { FolderPlus } from '@goodboy/ui/icons';
 import { AnchoredPopover, Button, ICON_SIZE, IconButton, useDropdown } from '@goodboy/ui';
 import type { SessionId, WorkspaceId } from '@goodboy/types';
 import { useShallow } from 'zustand/react/shallow';

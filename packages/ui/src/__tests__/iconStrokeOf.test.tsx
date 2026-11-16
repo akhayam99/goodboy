@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 import { afterEach, describe, expect, it } from 'vitest';
 import { cleanup, render } from '@testing-library/react';
-import { Plus } from 'lucide-react';
+import { Plus } from '../icons';
 import { IconButton } from '../components/IconButton';
 import { ICON_SIZE, ICON_STROKE, iconStrokeOf } from '../iconSize';
 

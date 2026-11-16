@@ -1,5 +1,5 @@
 import type { KeyboardEvent, PointerEvent } from 'react';
-import { GripVertical } from 'lucide-react';
+import { GripVertical } from '@goodboy/ui/icons';
 import type { ProviderPolicyState } from '@goodboy/types';
 import { Button, cn, ICON_SIZE, tintClasses, Tooltip, FOCUS_RING } from '@goodboy/ui';
 

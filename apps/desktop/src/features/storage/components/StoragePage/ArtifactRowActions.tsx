@@ -1,5 +1,5 @@
 import { CHECK_STATE } from '../../../../store/slices/notifications/errorRecovery';
-import { Bookmark, ChevronDown, Clock, Eye } from 'lucide-react';
+import { Bookmark, ChevronDown, Clock, Eye } from '@goodboy/ui/icons';
 import { Button, ICON_SIZE, OverflowMenu, type MenuEntry } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
 import type { StorageArtifact } from '../../../../store/slices/storage/types';

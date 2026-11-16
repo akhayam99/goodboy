@@ -1,5 +1,5 @@
 import type { KeyboardEvent, ReactNode, Ref } from 'react';
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown } from '../../icons';
 import { cn } from '../../cn';
 import { FOCUS_RING } from '../../focusRing';
 import { chipClasses } from '../Chip';

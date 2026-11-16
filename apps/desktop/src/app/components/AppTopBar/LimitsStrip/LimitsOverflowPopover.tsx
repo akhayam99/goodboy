@@ -10,7 +10,7 @@ import {
   TOP_BAR_CONTROL,
   useDropdown,
 } from '@goodboy/ui';
-import { TriangleAlert } from 'lucide-react';
+import { TriangleAlert } from '@goodboy/ui/icons';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { ProviderGlyph } from '../../../../shared/components/RoutingPicker/ProviderGlyph';
 import { NAMES } from '../../../../shared/utils/names';

@@ -1,5 +1,5 @@
 import type { MouseEvent } from 'react';
-import { SquareArrowOutUpRight } from 'lucide-react';
+import { SquareArrowOutUpRight } from '@goodboy/ui/icons';
 import { requestOpenLink } from '../../lib/requestOpenLink';
 import { CopyButton, ICON_SIZE, Tooltip } from '@goodboy/ui';
 

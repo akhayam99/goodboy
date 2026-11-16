@@ -1,10 +1,10 @@
-import type { LucideIcon } from 'lucide-react';
+import type { IconGlyph } from '@goodboy/ui/icons';
 import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
 import { NAMES } from '../../../shared/utils/names';
 import type { StartShape } from '../../../store/slices/sessionDraft/state';
 
 type ShapeCard = Readonly<{
-  icon: LucideIcon;
+  icon: IconGlyph;
   what: string;
   whileRuns: string;
 }>;

@@ -1,4 +1,4 @@
-import { Check, ChevronDown, X } from 'lucide-react';
+import { Check, ChevronDown, X } from '@goodboy/ui/icons';
 import {
   AnchoredPopover,
   Button,

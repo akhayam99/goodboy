@@ -1,4 +1,4 @@
-import { Check, CircleDashed } from 'lucide-react';
+import { Check, CircleDashed } from '@goodboy/ui/icons';
 import { Button, Markdown } from '@goodboy/ui';
 import { parseRunSummaryText } from '@goodboy/core/orchestrator';
 import type { Session } from '@goodboy/types';

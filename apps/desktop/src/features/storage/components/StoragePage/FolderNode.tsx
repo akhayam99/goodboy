@@ -1,4 +1,4 @@
-import { Check, CircleHelp, FolderOpen, SquareTerminal, TriangleAlert } from 'lucide-react';
+import { Check, CircleHelp, FolderOpen, SquareTerminal, TriangleAlert } from '@goodboy/ui/icons';
 import { WORK_NODE_GLYPH_SIZE, WorkNode, type WorkNodeMark, type WorkNodeState } from '@goodboy/ui';
 import type { StorageFolderStatus } from '../../../../store/slices/storage/types';
 

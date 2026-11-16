@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ShieldCheck } from 'lucide-react';
+import { ShieldCheck } from '@goodboy/ui/icons';
 import type { SecretKind, SecurityFinding, SecurityFindingSubjectKind } from '@goodboy/types';
 import { Button, ConfirmPopover, formatError, ICON_SIZE, Notice } from '@goodboy/ui';
 

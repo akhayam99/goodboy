@@ -1,4 +1,4 @@
-import { History } from 'lucide-react';
+import { History } from '@goodboy/ui/icons';
 import { Eyebrow, ICON_SIZE, FOCUS_RING, cn } from '@goodboy/ui';
 import type { AskThread, ChatId } from '@goodboy/types';
 

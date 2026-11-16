@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { TriangleAlert, Trash2 } from 'lucide-react';
+import { TriangleAlert, Trash2 } from '@goodboy/ui/icons';
 import type { ProjectId } from '@goodboy/types';
 import {
   Checkbox,

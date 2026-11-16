@@ -10,7 +10,7 @@ import {
   Dot,
   Square,
   Trash2,
-} from 'lucide-react';
+} from '@goodboy/ui/icons';
 import type { ArtifactKind, ArtifactStatus } from '@goodboy/types';
 import { CONCEPT_ICONS } from '../../shared/components/conceptIcons';
 import type { StatePresentation } from '../../shared/utils/statePresentation';

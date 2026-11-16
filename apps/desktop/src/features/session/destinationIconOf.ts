@@ -1,4 +1,4 @@
-import type { LucideIcon } from 'lucide-react';
+import type { IconGlyph } from '@goodboy/ui/icons';
 import { CONCEPT_ICONS } from '../../shared/components/conceptIcons';
 import type { LensDestination } from './lens-destinations';
 import { LENS_ICON } from './lens-labels';
@@ -7,7 +7,7 @@ type Params = {
   readonly destination: LensDestination;
 };
 
-export const destinationIconOf = ({ destination }: Params): LucideIcon => {
+export const destinationIconOf = ({ destination }: Params): IconGlyph => {
   if (destination.pane !== undefined) {
     return destination.pane === 'spawned' ? CONCEPT_ICONS.agents : CONCEPT_ICONS[destination.pane];
   }

@@ -1,5 +1,5 @@
 import { memo } from 'react';
-import { ArchiveRestore } from 'lucide-react';
+import { ArchiveRestore } from '@goodboy/ui/icons';
 import { ICON_SIZE, IconButton, InteractiveRow, cn } from '@goodboy/ui';
 import type { ChatId } from '@goodboy/types';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';

@@ -1,4 +1,4 @@
-import { CircleDashed } from 'lucide-react';
+import { CircleDashed } from '@goodboy/ui/icons';
 import type { AgentRole } from '@goodboy/types';
 import { cn, ICON_SIZE, WORK_META_COLUMN } from '@goodboy/ui';
 import { AgentKindChip } from '../../../../shared/components/AgentKindChip';

@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { CircleAlert, CircleCheck, Info, TriangleAlert } from 'lucide-react';
+import { CircleAlert, CircleCheck, Info, TriangleAlert } from '@goodboy/ui/icons';
 import { ICON_SIZE, cn, tintClasses } from '@goodboy/ui';
 
 type FolderNoticeTone = 'info' | 'warning' | 'danger' | 'success';

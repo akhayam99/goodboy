@@ -1,10 +1,10 @@
-import { Circle, CircleCheck, Contrast, TriangleAlert, type LucideIcon } from 'lucide-react';
+import { Circle, CircleCheck, Contrast, TriangleAlert, type IconGlyph } from '@goodboy/ui/icons';
 import { cn, ICON_SIZE, tintClasses, type Tone } from '@goodboy/ui';
 
 import type { InboxState } from '../../../../features/inbox/types';
 
 type Presentation = {
-  readonly icon: LucideIcon;
+  readonly icon: IconGlyph;
   readonly tone: Tone;
 };
 

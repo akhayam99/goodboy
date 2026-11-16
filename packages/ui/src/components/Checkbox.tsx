@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { Check, Minus } from 'lucide-react';
+import { Check, Minus } from '../icons';
 import { cn } from '../cn';
 import { FOCUS_RING } from '../focusRing';
 import { ICON_SIZE, ICON_STROKE } from '../iconSize';

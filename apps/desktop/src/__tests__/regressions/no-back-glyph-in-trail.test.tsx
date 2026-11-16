@@ -10,7 +10,7 @@ import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render, waitFor } from '@testing-library/react';
-import { ChevronLeft } from 'lucide-react';
+import { ChevronLeft } from '@goodboy/ui/icons';
 import { Trail } from '@goodboy/ui';
 import { ToastProvider } from '../../shared/components/Toast';
 import { MOCK_SCENES } from '../../app/components/MockScene';

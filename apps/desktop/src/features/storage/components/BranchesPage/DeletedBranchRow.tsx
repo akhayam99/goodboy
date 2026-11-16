@@ -1,4 +1,4 @@
-import { Clock, Trash2, Undo2 } from 'lucide-react';
+import { Clock, Trash2, Undo2 } from '@goodboy/ui/icons';
 import type { DeletedBranch } from '@goodboy/types';
 import { Button, Chip, ConfirmPopover, ICON_SIZE, IconButton, TruncatedText } from '@goodboy/ui';
 

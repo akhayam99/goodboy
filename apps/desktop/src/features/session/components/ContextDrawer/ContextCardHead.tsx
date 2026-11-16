@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown } from '@goodboy/ui/icons';
 import { Button, Eyebrow, ICON_SIZE, cn } from '@goodboy/ui';
 import { countSlotText } from '../../../../shared/utils/countSlotText';
 

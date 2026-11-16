@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import type { LucideIcon } from 'lucide-react';
+import type { IconGlyph } from '@goodboy/ui/icons';
 import type { ResolvedFact } from '../../../detail-fields/factTypes';
 
 type RecordVerbConfirm = {
@@ -11,7 +11,7 @@ type RecordVerbConfirm = {
 export type RecordVerb = {
   readonly key: string;
   readonly label: string;
-  readonly icon: LucideIcon;
+  readonly icon: IconGlyph;
   readonly onRun: () => void | Promise<void>;
   readonly isBusy: boolean;
   readonly blockedReason: string | null;

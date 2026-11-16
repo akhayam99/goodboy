@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { BookOpen, ChevronRight } from 'lucide-react';
+import { BookOpen, ChevronRight } from '@goodboy/ui/icons';
 import { cn, ICON_SIZE, FOCUS_RING } from '@goodboy/ui';
 
 import { pluralize } from '../../../../shared/utils/pluralize';

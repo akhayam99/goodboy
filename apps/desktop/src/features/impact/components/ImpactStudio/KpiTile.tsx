@@ -1,4 +1,4 @@
-import { ArrowDown, ArrowUp, Minus } from 'lucide-react';
+import { ArrowDown, ArrowUp, Minus } from '@goodboy/ui/icons';
 import { cn, ICON_SIZE, StatCard, tintClasses, Tooltip } from '@goodboy/ui';
 
 import type { ImpactDelta } from '../../utils/impactDelta';

@@ -8,12 +8,12 @@ import {
   FileLock,
   FileSpreadsheet,
   FileText,
-  type LucideIcon,
-} from 'lucide-react';
+  type IconGlyph,
+} from '@goodboy/ui/icons';
 import { describe, expect, it } from 'vitest';
 import { fileGlyphOf } from './fileGlyph';
 
-const CASES: ReadonlyArray<readonly [string, LucideIcon]> = [
+const CASES: ReadonlyArray<readonly [string, IconGlyph]> = [
   ['rounding.ts', FileCode],
   ['Button.tsx', FileCode],
   ['lib.rs', FileCode],

@@ -1,6 +1,6 @@
 import { READ_FAILED } from '../../../../store/slices/notifications/errorRecovery';
 import { useState } from 'react';
-import { Plus } from 'lucide-react';
+import { Plus } from '@goodboy/ui/icons';
 import { BandRow, Button, ICON_SIZE } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
 

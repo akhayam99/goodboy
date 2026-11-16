@@ -1,6 +1,6 @@
 import { NAMES } from '../../shared/utils/names';
-import { AppWindow } from 'lucide-react';
-import type { LucideIcon } from 'lucide-react';
+import { AppWindow } from '@goodboy/ui/icons';
+import type { IconGlyph } from '@goodboy/ui/icons';
 import { CONCEPT_ICONS } from '../../shared/components/conceptIcons';
 
 const CHANGELOG_AREAS = {
@@ -16,7 +16,7 @@ const CHANGELOG_AREAS = {
   storage: { label: 'Storage', icon: CONCEPT_ICONS.storage },
   settings: { label: 'Settings', icon: CONCEPT_ICONS.settings },
   app: { label: 'App', icon: AppWindow },
-} as const satisfies Record<string, { readonly label: string; readonly icon: LucideIcon }>;
+} as const satisfies Record<string, { readonly label: string; readonly icon: IconGlyph }>;
 
 export type ChangelogArea = keyof typeof CHANGELOG_AREAS;
 
@@ -34,5 +34,5 @@ type ChangelogAreaIconParams = {
   readonly area: ChangelogArea;
 };
 
-export const changelogAreaIcon = ({ area }: ChangelogAreaIconParams): LucideIcon =>
+export const changelogAreaIcon = ({ area }: ChangelogAreaIconParams): IconGlyph =>
   CHANGELOG_AREAS[area].icon;

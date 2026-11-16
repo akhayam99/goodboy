@@ -13,7 +13,7 @@ import {
   Square,
   StepForward,
   Undo2,
-} from 'lucide-react';
+} from '@goodboy/ui/icons';
 import type {
   Agent,
   AgentId,

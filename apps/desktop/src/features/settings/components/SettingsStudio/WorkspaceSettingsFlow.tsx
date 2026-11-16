@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Check, RotateCcw, X } from 'lucide-react';
+import { Check, RotateCcw, X } from '@goodboy/ui/icons';
 import type { WorkspaceId } from '@goodboy/types';
 import { Button, formatError, ICON_SIZE, IconButton } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';

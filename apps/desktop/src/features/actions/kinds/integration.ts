@@ -1,4 +1,4 @@
-import { Inbox, RefreshCw, Unplug } from 'lucide-react';
+import { Inbox, RefreshCw, Unplug } from '@goodboy/ui/icons';
 import type { IntegrationActionTarget, ObjectKindDefinition } from '../types';
 
 export type IntegrationFacts = {

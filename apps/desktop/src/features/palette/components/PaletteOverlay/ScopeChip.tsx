@@ -1,8 +1,8 @@
 import { ICON_SIZE, Tooltip } from '@goodboy/ui';
-import type { LucideIcon } from 'lucide-react';
+import type { IconGlyph } from '@goodboy/ui/icons';
 
 type Props = {
-  readonly icon: LucideIcon;
+  readonly icon: IconGlyph;
   readonly label: string;
   readonly hint: string;
 };

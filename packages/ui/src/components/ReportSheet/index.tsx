@@ -1,5 +1,5 @@
 import { useEffect, useId, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
-import { ChevronRight, Search, ShieldCheck } from 'lucide-react';
+import { ChevronRight, Search, ShieldCheck } from '../../icons';
 import { cn } from '../../cn';
 import { FLOATING_SURFACE } from '../../floatingSurface';
 import { FOCUS_RING } from '../../focusRing';

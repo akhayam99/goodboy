@@ -1,4 +1,4 @@
-import { CheckCheck, Trash2 } from 'lucide-react';
+import { CheckCheck, Trash2 } from '@goodboy/ui/icons';
 import type { NotificationsActionTarget, ObjectKindDefinition } from '../types';
 import { countNoun } from '../../../shared/utils/countNoun';
 

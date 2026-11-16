@@ -1,4 +1,4 @@
-import { Copy, Link, SquareArrowOutUpRight } from 'lucide-react';
+import { Copy, Link, SquareArrowOutUpRight } from '@goodboy/ui/icons';
 import type { CheckRunActionTarget, ObjectKindDefinition } from '../types';
 
 export type CheckRunFacts = {

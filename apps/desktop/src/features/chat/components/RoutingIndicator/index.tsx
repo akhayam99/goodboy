@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { TriangleAlert } from 'lucide-react';
+import { TriangleAlert } from '@goodboy/ui/icons';
 import type {
   ProviderId,
   RoutingDecision,

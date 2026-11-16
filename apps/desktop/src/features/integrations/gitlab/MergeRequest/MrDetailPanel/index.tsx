@@ -13,7 +13,7 @@ import { DescriptionSection } from '../../../../../shared/components/Description
 import { useEffect, useState } from 'react';
 import { ICON_SIZE, Notice, PaneShell, RefreshIconButton } from '@goodboy/ui';
 
-import { GitBranch } from 'lucide-react';
+import { GitBranch } from '@goodboy/ui/icons';
 import type { GitlabIntegrationBinding, SessionId, WorkspaceId } from '@goodboy/types';
 import { gitlabMergeRequestFields, resolveFacts } from '../../../../../shared/detail-fields';
 import { useAppStore } from '../../../../../store';

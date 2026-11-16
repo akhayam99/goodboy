@@ -1,4 +1,4 @@
-import { Trash2 } from 'lucide-react';
+import { Trash2 } from '@goodboy/ui/icons';
 import { ConfirmPopover, ICON_SIZE, IconButton } from '@goodboy/ui';
 
 import { ConfirmFrame } from './ConfirmFrame';

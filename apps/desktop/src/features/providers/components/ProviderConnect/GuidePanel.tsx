@@ -1,5 +1,5 @@
 import { cn, ICON_SIZE, tintClasses } from '@goodboy/ui';
-import { SquareArrowOutUpRight } from 'lucide-react';
+import { SquareArrowOutUpRight } from '@goodboy/ui/icons';
 import type { ProviderGuide } from './guides';
 
 type Props = {

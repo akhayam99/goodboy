@@ -4,7 +4,7 @@ import { destinationEntryOf } from '../destinationEntryOf';
 import { destinationPaletteKeyOf } from '../destinationPaletteKeyOf';
 import { footDestinationEntryOf } from '../footDestinationEntryOf';
 import { useMemo } from 'react';
-import { CircleArrowUp, PanelLeft, Plus, RotateCcw, Smartphone } from 'lucide-react';
+import { CircleArrowUp, PanelLeft, Plus, RotateCcw, Smartphone } from '@goodboy/ui/icons';
 import { useCurrentInnerColumn } from '@goodboy/ui';
 import type { AgentId, ProjectScript, SessionId, Workflow } from '@goodboy/types';
 import {

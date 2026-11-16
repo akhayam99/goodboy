@@ -1,4 +1,4 @@
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight } from '@goodboy/ui/icons';
 import { cn, ICON_SIZE, FOCUS_RING } from '@goodboy/ui';
 import type { AgentId } from '@goodboy/types';
 import { MOVE_TO_AUTO_EVENT, moveToAutoDetail } from '../../../auto/adopt/moveToAutoEvent';

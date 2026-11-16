@@ -1,4 +1,4 @@
-import { MessageSquare } from 'lucide-react';
+import { MessageSquare } from '@goodboy/ui/icons';
 import { DrawerFrame } from '@goodboy/ui';
 import type { MountId, SessionId } from '@goodboy/types';
 import type { ResolvedAction } from '../../../actions/types';

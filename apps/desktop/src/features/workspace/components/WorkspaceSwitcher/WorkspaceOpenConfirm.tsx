@@ -1,4 +1,4 @@
-import { TriangleAlert } from 'lucide-react';
+import { TriangleAlert } from '@goodboy/ui/icons';
 import { ICON_SIZE, InlineConfirm } from '@goodboy/ui';
 
 type Props = {

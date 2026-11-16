@@ -1,4 +1,4 @@
-import { ArrowUpRight, Bot, Code, Copy, CopyPlus, MonitorSmartphone, X } from 'lucide-react';
+import { ArrowUpRight, Bot, Code, Copy, CopyPlus, MonitorSmartphone, X } from '@goodboy/ui/icons';
 import {
   AnchoredPopover,
   ICON_SIZE,

@@ -1,4 +1,4 @@
-import { CircleStop } from 'lucide-react';
+import { CircleStop } from '@goodboy/ui/icons';
 import { PINNED_RUN_COPY } from '../../workflows/pinnedRunCopy';
 import type { ActionDefinition } from '../types';
 import type { MountFacts } from './mountFacts';

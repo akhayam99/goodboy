@@ -1,4 +1,4 @@
-import { Plus } from 'lucide-react';
+import { Plus } from '@goodboy/ui/icons';
 import { IconButton, PANE_RHYTHM } from '@goodboy/ui';
 
 type Props = {

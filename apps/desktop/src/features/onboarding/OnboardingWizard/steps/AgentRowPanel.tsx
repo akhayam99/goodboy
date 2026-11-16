@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { SquareArrowOutUpRight, SquareTerminal } from 'lucide-react';
+import { SquareArrowOutUpRight, SquareTerminal } from '@goodboy/ui/icons';
 import { Button, CopyButton, ICON_SIZE, Reveal, useEscapeLayer } from '@goodboy/ui';
 import { InlineTerminal } from '../../../providers/components/InlineTerminal';
 

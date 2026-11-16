@@ -1,5 +1,5 @@
 import type { KeyboardEvent } from 'react';
-import { Pencil } from 'lucide-react';
+import { Pencil } from '@goodboy/ui/icons';
 import { PromptField } from '../../../../../shared/components/PromptField';
 import type { OpenQuestionSelectMode } from '@goodboy/types';
 import { AnswerOptionRow } from '../../../../../shared/components/AnswerOptionRow';

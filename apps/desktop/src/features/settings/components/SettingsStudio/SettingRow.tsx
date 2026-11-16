@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { RotateCcw } from 'lucide-react';
+import { RotateCcw } from '@goodboy/ui/icons';
 import { FieldRow, IconButton } from '@goodboy/ui';
 import type { SettingSave } from '../../hooks/useSettingSave';
 import { useSettingRowAnchor } from '../../hooks/useSettingRowAnchor';

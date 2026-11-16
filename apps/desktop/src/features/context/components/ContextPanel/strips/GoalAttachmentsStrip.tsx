@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { Paperclip } from 'lucide-react';
+import { Paperclip } from '@goodboy/ui/icons';
 import { Eyebrow, ICON_SIZE } from '@goodboy/ui';
 import {
   brandId,

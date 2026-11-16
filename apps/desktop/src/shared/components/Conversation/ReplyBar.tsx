@@ -1,4 +1,4 @@
-import { MessageSquareReply, TextQuote, X } from 'lucide-react';
+import { MessageSquareReply, TextQuote, X } from '@goodboy/ui/icons';
 import { ICON_SIZE, IconButton } from '@goodboy/ui';
 import type { ReplyTarget } from './useReplyTarget';
 

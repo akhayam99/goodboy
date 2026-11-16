@@ -1,4 +1,4 @@
-import { GitBranch, Pin, RefreshCw, Trash2 } from 'lucide-react';
+import { GitBranch, Pin, RefreshCw, Trash2 } from '@goodboy/ui/icons';
 import {
   Button,
   Chip,

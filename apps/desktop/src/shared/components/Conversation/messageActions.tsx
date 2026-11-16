@@ -1,4 +1,4 @@
-import { Check, MessageSquareReply, TextQuote, Undo2 } from 'lucide-react';
+import { Check, MessageSquareReply, TextQuote, Undo2 } from '@goodboy/ui/icons';
 import type { ReactNode } from 'react';
 import { MessageAction } from './MessageAction';
 import type { ConversationMessage, ConversationSource, ConversationThread } from './types';

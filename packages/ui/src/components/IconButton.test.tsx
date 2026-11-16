@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 
-import { Trash2 } from 'lucide-react';
+import { Trash2 } from '../icons';
 import { afterEach, describe, expect, it } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { registerShortcutGlyphs } from '../shortcutGlyphs';

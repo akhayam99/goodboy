@@ -1,4 +1,4 @@
-import { Copy } from 'lucide-react';
+import { Copy } from '@goodboy/ui/icons';
 import type { SessionId } from '@goodboy/types';
 import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
 import type { ObjectKindDefinition, TerminalTabActionTarget } from '../types';

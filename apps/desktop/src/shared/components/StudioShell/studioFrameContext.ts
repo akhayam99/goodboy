@@ -1,9 +1,9 @@
 import { createContext, useContext, type ReactNode, type Ref } from 'react';
 import type { DrawerSizing, Tone } from '@goodboy/ui';
-import type { LucideIcon } from 'lucide-react';
+import type { IconGlyph } from '@goodboy/ui/icons';
 
 export type StudioChrome = {
-  readonly icon?: LucideIcon;
+  readonly icon?: IconGlyph;
   readonly tone?: Tone;
   readonly glyph?: ReactNode;
   readonly title: string;

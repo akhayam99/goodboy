@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import type { LucideIcon } from 'lucide-react';
+import type { IconGlyph } from '../../icons';
 import { cn } from '../../cn';
 import { ICON_SIZE } from '../../iconSize';
 import { PANE_RHYTHM } from '../../paneRhythm';
@@ -7,7 +7,7 @@ import { tintClasses, type Tone } from '../../tint';
 import { SelectableRow } from '../SelectableRow';
 
 type LeadingProps =
-  | { readonly icon: LucideIcon; readonly glyph?: undefined }
+  | { readonly icon: IconGlyph; readonly glyph?: undefined }
   | { readonly glyph: ReactNode; readonly icon?: undefined };
 
 type Props = LeadingProps & {

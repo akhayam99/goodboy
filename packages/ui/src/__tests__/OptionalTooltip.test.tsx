@@ -4,7 +4,7 @@ import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { Chip } from '../components/Chip';
 import { GhostActionButton } from '../components/GhostActionButton';
 import { OptionalTooltip } from '../components/OptionalTooltip';
-import { Eye } from 'lucide-react';
+import { Eye } from '../icons';
 
 afterEach(() => {
   cleanup();

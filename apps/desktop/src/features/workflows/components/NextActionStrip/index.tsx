@@ -1,4 +1,4 @@
-import { CircleAlert } from 'lucide-react';
+import { CircleAlert } from '@goodboy/ui/icons';
 import { ClampedProse, cn, ICON_SIZE, StatusDot, tintClasses, ToneBar } from '@goodboy/ui';
 import type { AgentId, SessionId, Workflow, WorkflowRun } from '@goodboy/types';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';

@@ -1,4 +1,4 @@
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight } from '@goodboy/ui/icons';
 import { ICON_SIZE, IconButton } from '@goodboy/ui';
 import type { HandoffSection, HandoffSectionKind, SessionId } from '@goodboy/types';
 import { HANDOFF_SECTION_LABEL } from '../../utils/handoffLabels';

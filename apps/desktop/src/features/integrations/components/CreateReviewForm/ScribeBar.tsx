@@ -1,4 +1,4 @@
-import { Check } from 'lucide-react';
+import { Check } from '@goodboy/ui/icons';
 import { Button, ICON_SIZE, StatusDot, Tooltip } from '@goodboy/ui';
 import type { ProviderId } from '@goodboy/types';
 import { RoutingPicker } from '../../../../shared/components/RoutingPicker';

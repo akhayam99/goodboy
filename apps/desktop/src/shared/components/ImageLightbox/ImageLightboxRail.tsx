@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { ImageOff } from 'lucide-react';
+import { ImageOff } from '@goodboy/ui/icons';
 import { Button, ICON_SIZE, Skeleton, Tooltip, cn } from '@goodboy/ui';
 import type { ImageLightboxItem } from './types';
 

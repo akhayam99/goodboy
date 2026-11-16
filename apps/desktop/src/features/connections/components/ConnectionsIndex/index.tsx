@@ -1,5 +1,5 @@
 import { useRef } from 'react';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight } from '@goodboy/ui/icons';
 import type { Workspace } from '@goodboy/types';
 import {
   Button,

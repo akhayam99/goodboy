@@ -1,5 +1,5 @@
 import type { RefObject } from 'react';
-import { Bell } from 'lucide-react';
+import { Bell } from '@goodboy/ui/icons';
 import { EmptyState, ScrollFade, Skeleton } from '@goodboy/ui';
 import type { Notification } from '@goodboy/db';
 import { notificationGroupKey } from '../../grouping';

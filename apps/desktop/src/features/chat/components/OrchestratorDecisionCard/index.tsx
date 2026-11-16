@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Route } from 'lucide-react';
+import { Route } from '@goodboy/ui/icons';
 import { cn, ICON_SIZE, Markdown, tintClasses } from '@goodboy/ui';
 import type { TranscriptItem } from '../../utils/transcript-items';
 import { formatClock } from '../../../../shared/utils/time/formatClock';

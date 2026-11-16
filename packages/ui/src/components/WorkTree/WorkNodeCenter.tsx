@@ -1,4 +1,4 @@
-import { Check, Minus, Shield } from 'lucide-react';
+import { Check, Minus, Shield } from '../../icons';
 import { cn } from '../../cn';
 import { ICON_STROKE } from '../../iconSize';
 import { WORK_NODE_GLYPH_SIZE, type WorkNodeMark, type WorkNodeState } from './workNodeSpec';

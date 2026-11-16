@@ -1,6 +1,6 @@
 import { CHECK_STATE } from '../../../../../store/slices/notifications/errorRecovery';
 import { useState } from 'react';
-import { Check, Play, RotateCcw, Undo2, type LucideIcon } from 'lucide-react';
+import { Check, Play, RotateCcw, Undo2, type IconGlyph } from '@goodboy/ui/icons';
 import { Button, ICON_SIZE, Tooltip } from '@goodboy/ui';
 import type { Session } from '@goodboy/types';
 import { CONCEPT_ICONS } from '../../../../../shared/components/conceptIcons';
@@ -27,7 +27,7 @@ type Props = {
 };
 
 type Spec = {
-  readonly icon: LucideIcon;
+  readonly icon: IconGlyph;
   readonly hint: string;
   readonly failure: string;
   readonly run: () => void | Promise<void>;

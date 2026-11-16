@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Download } from 'lucide-react';
+import { Download } from '@goodboy/ui/icons';
 import { ScrollFade, WORK_NODE_GLYPH_SIZE, cn } from '@goodboy/ui';
 import { CLOSING_ID } from './closingId';
 import { CLOSING_TITLE } from './closingTitle';

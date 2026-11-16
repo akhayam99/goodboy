@@ -1,4 +1,4 @@
-import { Undo2 } from 'lucide-react';
+import { Undo2 } from '@goodboy/ui/icons';
 import { Button, ConfirmPopover, HeaderActions, ICON_SIZE } from '@goodboy/ui';
 
 import type { PlanEditorModel } from './usePlanEditor';

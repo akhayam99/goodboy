@@ -1,4 +1,4 @@
-import type { LucideIcon } from 'lucide-react';
+import type { IconGlyph } from '@goodboy/ui/icons';
 import { Chip, ICON_SIZE, tintClasses, type Tone } from '@goodboy/ui';
 import { CONCEPT_ICONS } from '../../../../../shared/components/conceptIcons';
 import type { AskHandle, AskTarget } from '../../askHandles';
@@ -9,7 +9,7 @@ type Props = {
 };
 
 type Glyph = {
-  readonly icon: LucideIcon;
+  readonly icon: IconGlyph;
   readonly tone: Tone;
 };
 

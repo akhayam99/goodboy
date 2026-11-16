@@ -1,6 +1,6 @@
 import { CHECK_STATE } from '../../../store/slices/notifications/errorRecovery';
 import { useState } from 'react';
-import { Check } from 'lucide-react';
+import { Check } from '@goodboy/ui/icons';
 import { Button, ICON_SIZE, Notice } from '@goodboy/ui';
 import type { AgentId, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../store';

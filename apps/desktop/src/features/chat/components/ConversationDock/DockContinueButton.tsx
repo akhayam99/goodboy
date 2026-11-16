@@ -1,6 +1,6 @@
 import { CHECK_STATE } from '../../../../store/slices/notifications/errorRecovery';
 import { useState } from 'react';
-import { RotateCcw } from 'lucide-react';
+import { RotateCcw } from '@goodboy/ui/icons';
 import { Button, ICON_SIZE, Tooltip } from '@goodboy/ui';
 import type { AgentId, SessionId } from '@goodboy/types';
 import { NAMES } from '../../../../shared/utils/names';

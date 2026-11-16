@@ -1,4 +1,4 @@
-import { RotateCcw } from 'lucide-react';
+import { RotateCcw } from '@goodboy/ui/icons';
 import { Button, ICON_SIZE } from '@goodboy/ui';
 
 type Props = {

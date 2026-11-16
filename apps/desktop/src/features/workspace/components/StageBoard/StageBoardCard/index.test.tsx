@@ -1,7 +1,7 @@
 import type { TooltipProps } from '@goodboy/ui';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
-import { HelpCircle, Play, type LucideIcon } from 'lucide-react';
+import { HelpCircle, Play, type IconGlyph } from '@goodboy/ui/icons';
 import type {
   IsoDateTime,
   PullRequestState,
@@ -18,7 +18,7 @@ import type { BoardNavigation } from '../useBoardNavigation';
 
 type MockDynamicAction = {
   readonly key: string;
-  readonly icon: LucideIcon;
+  readonly icon: IconGlyph;
   readonly tone: 'primary' | 'warning' | 'danger';
   readonly label: string;
   readonly onClick: () => void;

@@ -7,7 +7,7 @@ import {
   Tag,
   Terminal,
   BellRing,
-} from 'lucide-react';
+} from '@goodboy/ui/icons';
 import type { GhRunner } from '@goodboy/core/github';
 import type { GhTokenStatus } from '@goodboy/types';
 import {

@@ -1,5 +1,5 @@
 import { useEffect, useState, type KeyboardEvent } from 'react';
-import { Check, X } from 'lucide-react';
+import { Check, X } from '@goodboy/ui/icons';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { GhostActionButton, Input, Textarea, cn } from '@goodboy/ui';
 

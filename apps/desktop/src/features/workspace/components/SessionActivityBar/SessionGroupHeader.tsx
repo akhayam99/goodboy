@@ -1,4 +1,4 @@
-import { ChevronRight } from 'lucide-react';
+import { ChevronRight } from '@goodboy/ui/icons';
 import { cn, Eyebrow, ICON_SIZE, Tooltip, type Tone } from '@goodboy/ui';
 
 type Props = {

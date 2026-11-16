@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Unplug } from 'lucide-react';
+import { Unplug } from '@goodboy/ui/icons';
 import { Button, ConfirmPopover, ICON_SIZE } from '@goodboy/ui';
 
 export const SignOutScene = () => {

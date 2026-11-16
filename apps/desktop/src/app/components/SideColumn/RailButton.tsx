@@ -1,5 +1,5 @@
 import type { FocusEvent, KeyboardEvent, MouseEvent, ReactNode } from 'react';
-import type { LucideIcon } from 'lucide-react';
+import type { IconGlyph } from '@goodboy/ui/icons';
 import {
   cn,
   ICON_SIZE,
@@ -21,7 +21,7 @@ export type RailButtonPopup = {
 
 type Props = {
   readonly id: string;
-  readonly icon: LucideIcon;
+  readonly icon: IconGlyph;
   readonly label: string;
   readonly mark?: string | null;
   readonly shortcut?: ShortcutId;

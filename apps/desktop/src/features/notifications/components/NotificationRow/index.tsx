@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { Trash2 } from 'lucide-react';
+import { Trash2 } from '@goodboy/ui/icons';
 import type { Notification } from '@goodboy/db';
 import { Button, cn, FOCUS_RING, ICON_SIZE, IconButton, tintClasses, Tooltip } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';

@@ -1,6 +1,6 @@
 import { countNoun } from '../../shared/utils/countNoun';
 import { NAMES } from '../../shared/utils/names';
-import type { LucideIcon } from 'lucide-react';
+import type { IconGlyph } from '@goodboy/ui/icons';
 import {
   Archive,
   ArrowUp,
@@ -14,7 +14,7 @@ import {
   Trash2,
   UserPlus,
   Wrench,
-} from 'lucide-react';
+} from '@goodboy/ui/icons';
 import type { PullRequestPresentationState } from '../../shared/utils/pullRequestPresentation';
 import type { ResolvedAction } from '../actions/types';
 import { applyFixesLabel } from '../resolve/commentProjection';
@@ -36,7 +36,7 @@ export type BranchPrimary = {
   readonly source: BranchPrimarySource;
   readonly actionId: string;
   readonly label: string;
-  readonly icon: LucideIcon;
+  readonly icon: IconGlyph;
   readonly blockedReason: string | null;
   readonly pendingLabel: string | null;
   readonly isBusy: boolean;
@@ -101,7 +101,7 @@ type FromActionParams = {
   readonly source: BranchPrimarySource;
   readonly action: ResolvedAction;
   readonly label?: string;
-  readonly icon?: LucideIcon;
+  readonly icon?: IconGlyph;
 };
 
 const fromAction = ({ source, action, label, icon }: FromActionParams): BranchPrimary => ({
@@ -119,7 +119,7 @@ const fromAction = ({ source, action, label, icon }: FromActionParams): BranchPr
 type StepActionParams = {
   readonly action: BranchStepAction;
   readonly label: string;
-  readonly icon: LucideIcon;
+  readonly icon: IconGlyph;
   readonly note?: string | null;
 };
 
@@ -137,7 +137,7 @@ const stepAction = ({ action, label, icon, note = null }: StepActionParams): Bra
 
 type ReviewActionParams = {
   readonly label: string;
-  readonly icon: LucideIcon;
+  readonly icon: IconGlyph;
   readonly blockedReason?: string | null;
   readonly isBusy?: boolean;
   readonly isExpanded?: boolean | null;
@@ -229,7 +229,7 @@ type StepParams = Params & {
 
 type RequestActionParams = Pick<FindParams, 'id'> & {
   readonly label: string;
-  readonly icon: LucideIcon;
+  readonly icon: IconGlyph;
 };
 
 const stepPrimaryOf = ({

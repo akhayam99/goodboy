@@ -1,4 +1,4 @@
-import { Bot, FolderOpen } from 'lucide-react';
+import { Bot, FolderOpen } from '@goodboy/ui/icons';
 import { ICON_SIZE, IconButton, Tooltip } from '@goodboy/ui';
 
 export const TooltipShortcutStage = () => (

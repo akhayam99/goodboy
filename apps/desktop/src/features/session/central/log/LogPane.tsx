@@ -1,5 +1,5 @@
 import { useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { CheckCheck } from 'lucide-react';
+import { CheckCheck } from '@goodboy/ui/icons';
 import { Button, ICON_SIZE, Input } from '@goodboy/ui';
 import type { Session } from '@goodboy/types';
 import { useAppStore } from '../../../../store';

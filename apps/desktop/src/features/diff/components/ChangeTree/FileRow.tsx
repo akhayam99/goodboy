@@ -1,4 +1,4 @@
-import { Check, MessageSquare } from 'lucide-react';
+import { Check, MessageSquare } from '@goodboy/ui/icons';
 import {
   cn,
   ICON_SIZE,

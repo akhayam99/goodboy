@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown } from '@goodboy/ui/icons';
 import { AnchoredPopover, Button, cn, ICON_SIZE, useDropdown } from '@goodboy/ui';
 import type { RunRoute, Workflow, WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';

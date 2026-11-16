@@ -6,7 +6,7 @@ import {
   GitPullRequestArrow,
   GitPullRequestClosed,
   GitPullRequestDraft,
-} from 'lucide-react';
+} from '@goodboy/ui/icons';
 import type { PullRequestPresentationState } from '../../shared/utils/pullRequestPresentation';
 import { pullRequestStateToneOf } from './pullRequestStateToneOf';
 

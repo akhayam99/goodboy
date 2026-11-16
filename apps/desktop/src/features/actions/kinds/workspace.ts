@@ -1,4 +1,4 @@
-import { AppWindow, ArrowRightLeft, Copy } from 'lucide-react';
+import { AppWindow, ArrowRightLeft, Copy } from '@goodboy/ui/icons';
 import type { ObjectKindDefinition, WorkspaceActionTarget } from '../types';
 
 export type WorkspaceFacts = {

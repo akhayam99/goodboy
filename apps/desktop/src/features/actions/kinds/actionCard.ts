@@ -1,4 +1,4 @@
-import { SquareArrowOutUpRight } from 'lucide-react';
+import { SquareArrowOutUpRight } from '@goodboy/ui/icons';
 import { MAX_OVERFLOW_ROWS } from '../overflowCutOf';
 import type {
   ActionCardActionTarget,

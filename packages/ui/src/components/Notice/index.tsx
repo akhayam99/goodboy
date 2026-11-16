@@ -1,5 +1,5 @@
 import { Children, Fragment, isValidElement, useId, useState, type ReactNode } from 'react';
-import { ChevronRight, CircleAlert, CircleCheck, Info, TriangleAlert } from 'lucide-react';
+import { ChevronRight, CircleAlert, CircleCheck, Info, TriangleAlert } from '../../icons';
 import { cn } from '../../cn';
 import { FOCUS_RING } from '../../focusRing';
 import { ICON_SIZE, ICON_STROKE } from '../../iconSize';

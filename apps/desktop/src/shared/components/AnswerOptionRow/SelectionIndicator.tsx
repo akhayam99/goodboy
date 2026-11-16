@@ -1,4 +1,4 @@
-import { Check } from 'lucide-react';
+import { Check } from '@goodboy/ui/icons';
 import { cn, ICON_SIZE, ICON_STROKE } from '@goodboy/ui';
 import type { OpenQuestionSelectMode } from '@goodboy/types';
 

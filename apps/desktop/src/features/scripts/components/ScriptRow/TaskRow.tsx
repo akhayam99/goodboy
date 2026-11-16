@@ -1,4 +1,4 @@
-import { Check, Circle, Square, X } from 'lucide-react';
+import { Check, Circle, Square, X } from '@goodboy/ui/icons';
 import { ICON_SIZE, InteractiveRow, StatusDot, Tooltip } from '@goodboy/ui';
 
 import { joinFacts } from '../../../../shared/utils/joinFacts';

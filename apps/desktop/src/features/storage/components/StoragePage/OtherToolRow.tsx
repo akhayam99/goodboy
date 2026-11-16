@@ -1,4 +1,4 @@
-import { FolderOpen } from 'lucide-react';
+import { FolderOpen } from '@goodboy/ui/icons';
 import type { ProviderId } from '@goodboy/types';
 import { BandRow, Button, cn, ICON_SIZE, Meter } from '@goodboy/ui';
 import { ProviderGlyph } from '../../../../shared/components/RoutingPicker/ProviderGlyph';

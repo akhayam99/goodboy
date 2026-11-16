@@ -5,8 +5,8 @@ import {
   GitPullRequestArrow,
   GitPullRequestClosed,
   GitPullRequestDraft,
-  type LucideIcon,
-} from 'lucide-react';
+  type IconGlyph,
+} from '@goodboy/ui/icons';
 import { tintClasses, type Tone } from '@goodboy/ui';
 import type { PullRequestPresentationState } from '../../shared/utils/pullRequestPresentation';
 
@@ -15,13 +15,13 @@ type Params = {
 };
 
 export type PullRequestStateTone = {
-  readonly icon: LucideIcon;
+  readonly icon: IconGlyph;
   readonly tone: Tone;
   readonly iconClass: string;
 };
 
 type StateMark = {
-  readonly icon: LucideIcon;
+  readonly icon: IconGlyph;
   readonly tone: Tone;
 };
 

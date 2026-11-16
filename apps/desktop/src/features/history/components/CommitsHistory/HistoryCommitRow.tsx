@@ -1,5 +1,5 @@
 import { memo, type PointerEvent as ReactPointerEvent, type ReactNode } from 'react';
-import { GripVertical } from 'lucide-react';
+import { GripVertical } from '@goodboy/ui/icons';
 import { cn, ICON_SIZE } from '@goodboy/ui';
 import type { BranchCommit, SessionId } from '@goodboy/types';
 import { formatAge } from '../../../../shared/utils/time/formatAge';

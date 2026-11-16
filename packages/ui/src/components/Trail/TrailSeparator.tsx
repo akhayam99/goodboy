@@ -1,4 +1,4 @@
-import { ChevronRight } from 'lucide-react';
+import { ChevronRight } from '../../icons';
 import { TRAIL_TAIL_CLASS } from './trailClasses';
 import { ICON_SIZE } from '../../iconSize';
 

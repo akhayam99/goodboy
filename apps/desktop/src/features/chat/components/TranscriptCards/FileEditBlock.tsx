@@ -1,4 +1,4 @@
-import { ArrowUpRight, FileEdit } from 'lucide-react';
+import { ArrowUpRight, FileEdit } from '@goodboy/ui/icons';
 import { displayPath } from '../../../../shared/utils/display-path';
 import { TranscriptShell } from '../TranscriptShell';
 import { Eyebrow, ICON_SIZE, tintClasses, TruncatedText } from '@goodboy/ui';

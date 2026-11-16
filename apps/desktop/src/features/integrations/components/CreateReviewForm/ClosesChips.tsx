@@ -1,4 +1,4 @@
-import { X } from 'lucide-react';
+import { X } from '@goodboy/ui/icons';
 import { Chip, ICON_SIZE, IconButton } from '@goodboy/ui';
 import type { ClosingIssueReference } from '../../github/closingIssueReferences';
 

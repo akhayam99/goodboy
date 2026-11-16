@@ -1,5 +1,5 @@
 import { IconButton } from '@goodboy/ui';
-import { Undo2, Redo2 } from 'lucide-react';
+import { Undo2, Redo2 } from '@goodboy/ui/icons';
 
 type Props = {
   readonly canUndo: boolean;

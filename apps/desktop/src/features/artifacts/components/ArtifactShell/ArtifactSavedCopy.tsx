@@ -1,4 +1,4 @@
-import { SquareArrowOutUpRight, FolderOpen } from 'lucide-react';
+import { SquareArrowOutUpRight, FolderOpen } from '@goodboy/ui/icons';
 import { Button, ICON_SIZE, SectionHeader, TruncatedText } from '@goodboy/ui';
 
 import type { ArtifactSavedCopy as SavedCopy } from '../../hooks/useArtifactSavedCopy';

@@ -1,4 +1,4 @@
-import { CircleAlert } from 'lucide-react';
+import { CircleAlert } from '@goodboy/ui/icons';
 import { FactCard } from '@goodboy/ui';
 import type { FileDiff } from '@goodboy/types';
 import { artifactStateCardOf } from '../../../../../features/artifacts/artifactStateCardOf';

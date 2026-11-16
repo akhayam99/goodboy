@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { Button, ICON_SIZE, Notice, Skeleton, Textarea } from '@goodboy/ui';
-import { RotateCw } from 'lucide-react';
+import { RotateCw } from '@goodboy/ui/icons';
 
 type Props = {
   readonly title: string;

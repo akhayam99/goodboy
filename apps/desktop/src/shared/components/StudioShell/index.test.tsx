@@ -2,7 +2,7 @@
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
-import { Settings } from 'lucide-react';
+import { Settings } from '@goodboy/ui/icons';
 import { PaneShell } from '@goodboy/ui';
 import { StudioShell } from './index';
 

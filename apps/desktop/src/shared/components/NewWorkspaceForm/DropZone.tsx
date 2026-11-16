@@ -1,5 +1,5 @@
 import { useRef } from 'react';
-import { Upload } from 'lucide-react';
+import { Upload } from '@goodboy/ui/icons';
 import { FOCUS_RING, ICON_SIZE, ICON_STROKE, cn } from '@goodboy/ui';
 import { useFileDropTarget } from '../../hooks/useFileDropTarget';
 

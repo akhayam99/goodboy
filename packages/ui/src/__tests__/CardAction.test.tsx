@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
-import { Star } from 'lucide-react';
+import { Star } from '../icons';
 import { CardAction } from '../components/CardAction';
 
 afterEach(cleanup);

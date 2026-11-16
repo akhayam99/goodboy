@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
-import { Folder, FolderGit2, ListVideo, SquareTerminal } from 'lucide-react';
+import { Folder, FolderGit2, ListVideo, SquareTerminal } from '@goodboy/ui/icons';
 import { CONCEPT_ICONS, CONCEPT_TONE, projectGlyph } from './conceptIcons';
 import { ICON_SIZE, ICON_STROKE } from '@goodboy/ui';
 

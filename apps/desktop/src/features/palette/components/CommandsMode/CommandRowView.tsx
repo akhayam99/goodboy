@@ -1,5 +1,5 @@
 import { PALETTE_ROW_PX } from './paletteBodyLayout';
-import { ChevronRight } from 'lucide-react';
+import { ChevronRight } from '@goodboy/ui/icons';
 import { cn, ICON_SIZE, KeyHint } from '@goodboy/ui';
 
 import { shortcutGlyphs } from '../../../../shared/keyboard/registry';

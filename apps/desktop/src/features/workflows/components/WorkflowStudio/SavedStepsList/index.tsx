@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from 'react';
-import { Plus } from 'lucide-react';
+import { Plus } from '@goodboy/ui/icons';
 import { Button, EmptyState, formatError, ICON_SIZE } from '@goodboy/ui';
 import { DEFAULT_SESSION_PROVIDER_PREFERENCE } from '@goodboy/core/providers';
 import { modelOnProvider } from '../../../../providers/roleResolution';

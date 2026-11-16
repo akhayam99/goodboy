@@ -1,4 +1,4 @@
-import { GitBranch, Undo2 } from 'lucide-react';
+import { GitBranch, Undo2 } from '@goodboy/ui/icons';
 import { REBASE_ALL_MIN_BRANCHES } from '../../history/behindBranchesOf';
 import type { ActionDefinition } from '../types';
 import type { SessionFacts } from './session';

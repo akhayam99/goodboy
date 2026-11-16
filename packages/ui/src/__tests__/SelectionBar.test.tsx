@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 
 import { useState } from 'react';
-import { Archive, Trash2 } from 'lucide-react';
+import { Archive, Trash2 } from '../icons';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { SelectionBar, type SelectionVerb } from '../components/SelectionBar';

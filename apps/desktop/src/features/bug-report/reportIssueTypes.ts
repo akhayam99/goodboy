@@ -1,5 +1,5 @@
-import { Bug, CircleQuestionMark, Lightbulb } from 'lucide-react';
-import type { LucideIcon } from 'lucide-react';
+import { Bug, CircleQuestionMark, Lightbulb } from '@goodboy/ui/icons';
+import type { IconGlyph } from '@goodboy/ui/icons';
 
 export const ISSUE_TYPE_OPTIONS = [
   { value: 'bug', label: 'Bug', icon: Bug, hint: 'Something broke', tone: 'danger' },
@@ -20,7 +20,7 @@ export const ISSUE_TYPE_OPTIONS = [
 ] as const satisfies ReadonlyArray<{
   readonly value: string;
   readonly label: string;
-  readonly icon: LucideIcon;
+  readonly icon: IconGlyph;
   readonly hint: string;
   readonly tone: 'danger' | 'success' | 'warning';
 }>;

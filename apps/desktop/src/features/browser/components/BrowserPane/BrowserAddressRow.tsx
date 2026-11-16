@@ -8,7 +8,7 @@ import {
   Square,
   Terminal,
   X,
-} from 'lucide-react';
+} from '@goodboy/ui/icons';
 import { IconButton, PANE_RHYTHM, cn } from '@goodboy/ui';
 import { useShortcut } from '../../../../shared/keyboard/useShortcut';
 import { useBrowserKeys } from '../../hooks/useBrowserKeys';

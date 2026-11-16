@@ -1,5 +1,5 @@
 import type { MouseEvent } from 'react';
-import { ImageOff, X } from 'lucide-react';
+import { ImageOff, X } from '@goodboy/ui/icons';
 import { Button, ICON_SIZE, IconButton, Skeleton, Tooltip, cn } from '@goodboy/ui';
 import type { AttachmentThumbnail } from '../components/AttachmentChip';
 import type { StripSize } from './stripLayout';

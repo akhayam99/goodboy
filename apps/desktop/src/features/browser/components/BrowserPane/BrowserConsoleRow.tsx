@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ChevronRight, CircleAlert, Info, Terminal, TriangleAlert } from 'lucide-react';
+import { ChevronRight, CircleAlert, Info, Terminal, TriangleAlert } from '@goodboy/ui/icons';
 import { ICON_SIZE, SelectableRow, TruncatedText, cn } from '@goodboy/ui';
 import { isFailedRequest, networkStatusWordOf } from '../../networkStatusWordOf';
 import type { BrowserConsoleEntry, BrowserConsoleLevel } from '../../types';

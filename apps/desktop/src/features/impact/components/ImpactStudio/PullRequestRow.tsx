@@ -1,6 +1,6 @@
 import type { PullRequestEntry } from '@goodboy/db';
 import type { SessionId } from '@goodboy/types';
-import { ArrowUpRight } from 'lucide-react';
+import { ArrowUpRight } from '@goodboy/ui/icons';
 import { cn, formatUsd, formatUsdPrecise, ICON_SIZE, Tooltip } from '@goodboy/ui';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { DeletedSessionTag } from '../../../../shared/components/DeletedSessionTag';

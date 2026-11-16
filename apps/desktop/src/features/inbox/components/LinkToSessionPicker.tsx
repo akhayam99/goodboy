@@ -1,6 +1,6 @@
 import { CHECK_STATE } from '../../../store/slices/notifications/errorRecovery';
 import { useMemo, useState } from 'react';
-import { Link2 } from 'lucide-react';
+import { Link2 } from '@goodboy/ui/icons';
 import { useShallow } from 'zustand/react/shallow';
 import type { IsoDateTime, SessionId, WorkspaceId } from '@goodboy/types';
 import { ICON_SIZE, Listbox, type ListboxOption } from '@goodboy/ui';

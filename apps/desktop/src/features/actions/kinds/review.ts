@@ -1,4 +1,4 @@
-import { ArrowUp, MessageSquarePlus } from 'lucide-react';
+import { ArrowUp, MessageSquarePlus } from '@goodboy/ui/icons';
 import type { SessionId } from '@goodboy/types';
 import { isOpenNote, noteThreadId } from '../../resolve/notes/noteThread';
 import { notesOnBranchOf } from '../../resolve/notes/notesOnBranchOf';

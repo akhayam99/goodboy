@@ -1,4 +1,4 @@
-import { ArrowRightLeft, Minus, SquareArrowOutUpRight, Unlink } from 'lucide-react';
+import { ArrowRightLeft, Minus, SquareArrowOutUpRight, Unlink } from '@goodboy/ui/icons';
 import type {
   ProjectId,
   SessionExternalTask,

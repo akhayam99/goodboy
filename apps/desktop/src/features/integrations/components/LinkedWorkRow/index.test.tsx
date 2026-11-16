@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 
-import { GitBranch } from 'lucide-react';
+import { GitBranch } from '@goodboy/ui/icons';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { LinkedWorkRow } from './index';

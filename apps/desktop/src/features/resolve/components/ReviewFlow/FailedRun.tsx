@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { CircleAlert, RefreshCw, SquareTerminal } from 'lucide-react';
+import { CircleAlert, RefreshCw, SquareTerminal } from '@goodboy/ui/icons';
 import { Button, ICON_SIZE, KeyHint, FOCUS_RING, cn } from '@goodboy/ui';
 import type { ResolveAttempt, SessionId } from '@goodboy/types';
 import { useTranscript } from '../../../../store/slices/transcripts/selectors';

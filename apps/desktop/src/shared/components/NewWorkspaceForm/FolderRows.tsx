@@ -1,4 +1,4 @@
-import { Lock, Plus } from 'lucide-react';
+import { Lock, Plus } from '@goodboy/ui/icons';
 import { Button, ICON_SIZE } from '@goodboy/ui';
 import { CONCEPT_ICONS } from '../conceptIcons';
 import { FOLDER_FACE_COPY } from '../../../features/workspace/folderFaceCopy';

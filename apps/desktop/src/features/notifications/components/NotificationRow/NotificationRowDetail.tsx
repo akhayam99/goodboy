@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Bug, SlidersHorizontal } from 'lucide-react';
+import { Bug, SlidersHorizontal } from '@goodboy/ui/icons';
 import type { Notification } from '@goodboy/db';
 import { cn, ICON_SIZE, Tooltip } from '@goodboy/ui';
 

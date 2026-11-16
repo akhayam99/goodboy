@@ -6,7 +6,7 @@ import type {
   WorkspaceIntegrationProvider,
 } from '@goodboy/types';
 import { formatError, ICON_SIZE } from '@goodboy/ui';
-import { KeyRound } from 'lucide-react';
+import { KeyRound } from '@goodboy/ui/icons';
 import { useAppStore } from '../../../../store';
 import { CredentialRow } from './CredentialRow';
 

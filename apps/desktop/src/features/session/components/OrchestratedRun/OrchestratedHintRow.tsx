@@ -1,5 +1,5 @@
 import { useId } from 'react';
-import { MessageSquareText } from 'lucide-react';
+import { MessageSquareText } from '@goodboy/ui/icons';
 import {
   Button,
   Markdown,

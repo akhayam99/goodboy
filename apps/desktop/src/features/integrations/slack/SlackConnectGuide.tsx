@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Button, CopyButton, ICON_SIZE, SegmentedTabs, type SegmentedTabOption } from '@goodboy/ui';
-import { ArrowLeft, ArrowRight, SquareArrowOutUpRight } from 'lucide-react';
+import { ArrowLeft, ArrowRight, SquareArrowOutUpRight } from '@goodboy/ui/icons';
 import { openLink } from '../../open/openLink';
 import { SLACK_APPS_URL, SLACK_NEW_APP_URL, SLACK_USER_SCOPES } from './slackAppManifest';
 

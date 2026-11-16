@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ChevronDown, Search } from 'lucide-react';
+import { ChevronDown, Search } from '@goodboy/ui/icons';
 import {
   AnchoredPopover,
   Chip,

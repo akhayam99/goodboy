@@ -1,4 +1,4 @@
-import { Archive, Settings } from 'lucide-react';
+import { Archive, Settings } from '@goodboy/ui/icons';
 import { ICON_SIZE, IconButton } from '@goodboy/ui';
 import { CutTitleRow } from './CutTitleRow';
 import { EdgeTooltip } from './EdgeTooltip';

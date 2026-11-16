@@ -1,4 +1,4 @@
-import { ChevronRight } from 'lucide-react';
+import { ChevronRight } from '@goodboy/ui/icons';
 import { cn, FOCUS_RING, ICON_SIZE } from '@goodboy/ui';
 
 import type { GuideLink, GuideTarget } from '../guideTarget';
