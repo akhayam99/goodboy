@@ -3,6 +3,7 @@ import type { WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { connectedToolsOf } from '../../../integrations/connectedToolsOf';
 import { connectionGroups, type ConnectionGroups } from '../../model/connectionGroups';
+import { workspaceBindingsOf } from '../../model/workspaceBindingsOf';
 
 type Params = {
   readonly workspaceId: WorkspaceId | null;
@@ -26,7 +27,7 @@ export const useConnectionGroups = ({ workspaceId }: Params): ConnectionGroups =
           workspaceId === null
             ? null
             : connectedToolsOf({
-                integrations: integrations ?? [],
+                integrations: workspaceBindingsOf({ integrations: integrations ?? [] }),
                 githubStatuses: [workspaceGithub, globalGithub],
               }),
       }),
