@@ -80,8 +80,12 @@ export const startRoutedRun = async ({
     }
     const leadMountId =
       role === null ? soleTurnMountIdOf({ state: useAppStore.getState(), sessionId }) : null;
-    const runPreset = preset === null || role !== null ? null : presetSnapshotOf({ preset });
-    const isPinned = runPreset !== null && runPreset.steps.some((step) => step.isPinned);
+    const stepLocks =
+      preset === null || role !== null
+        ? []
+        : presetSnapshotOf({ preset }).steps.flatMap(({ role: stepRole, routingLock }) =>
+            stepRole === null || routingLock === null ? [] : [{ role: stepRole, routingLock }],
+          );
     const agentId = await state.spawnAgent(sessionId, {
       kindOverride: role ?? 'auto',
       ...(leadMountId !== null && { mountId: leadMountId }),
@@ -92,7 +96,7 @@ export const startRoutedRun = async ({
       focus: 'agent',
       ...(guidance !== null && { guidance }),
       ...(role === null && limit !== null && { limitUsd: limit.usd }),
-      ...(isPinned && { runPreset }),
+      ...(stepLocks.length > 0 && { stepLocks }),
       ...(routing !== null && {
         provider: routing.provider,
         model: routing.model,

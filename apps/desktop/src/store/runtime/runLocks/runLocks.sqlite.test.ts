@@ -1,18 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { AUTO_SEED_ROOT } from '@goodboy/db/test-helpers/auto-seeds';
-import {
-  brandId,
-  type AgentId,
-  type RunPreset,
-  type WorkflowRoutingLock,
-  type WorkspaceId,
-} from '@goodboy/types';
+import { brandId, type AgentId, type WorkflowRoutingLock, type WorkspaceId } from '@goodboy/types';
 import { runAutoCommand } from '../auto/runAutoCommand';
 import { makeAutoWorld } from '../auto/testing/autoWorld';
 import { makeFakePorts, WORLD_GRANT } from '../auto/testing/fakePorts';
 import type { RoutingRequest } from '../auto/ports';
 import { readRunStepLock } from './readRunStepLock';
-import { writeRunPreset } from './writeRunPreset';
+import { writeRunLocks } from './writeRunLocks';
 
 const workspaceId = brandId<WorkspaceId>({ value: 'workspace-harborline' });
 const LEAD = brandId<AgentId>({ value: AUTO_SEED_ROOT });
@@ -24,20 +18,13 @@ const LOCK: WorkflowRoutingLock = {
   origin: 'user',
 };
 
-const PRESET: RunPreset = {
-  workflowId: 'workflow-layout',
-  name: 'Fix a layout',
-  steps: [
-    { name: 'Find', role: 'scout', promptPrefix: '', isPinned: false, routingLock: null },
-    { name: 'Build', role: 'implementer', promptPrefix: '', isPinned: true, routingLock: LOCK },
-  ],
-};
+const LOCKS = [{ role: 'implementer', routingLock: LOCK }];
 
-describe('preset of a Lead', () => {
+describe('pinned models of a Lead', () => {
   it('reads the lock of the step whose role matches, and nothing for another role or Lead', async () => {
     const { db } = await makeAutoWorld();
 
-    await writeRunPreset({ db, workspaceId, agentId: LEAD, preset: PRESET });
+    await writeRunLocks({ db, workspaceId, agentId: LEAD, locks: LOCKS });
 
     expect(await readRunStepLock({ db, workspaceId, agentId: LEAD, role: 'implementer' })).toEqual(
       LOCK,
@@ -50,7 +37,7 @@ describe('preset of a Lead', () => {
 
   it('hands the pinned model to the routing of the child the Lead starts for that step', async () => {
     const world = await makeAutoWorld();
-    await writeRunPreset({ db: world.db, workspaceId, agentId: LEAD, preset: PRESET });
+    await writeRunLocks({ db: world.db, workspaceId, agentId: LEAD, locks: LOCKS });
     const ports = makeFakePorts();
     const requests: RoutingRequest[] = [];
     const resolveRouting = ports.resolveRouting;

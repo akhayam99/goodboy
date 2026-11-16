@@ -1,6 +1,6 @@
 import { getWorkspaceValue, type Database } from '@goodboy/db';
 import type { AgentId, WorkflowRoutingLock, WorkspaceId } from '@goodboy/types';
-import { parseRunPresets } from './parseRunPresets';
+import { parseRunLocks } from './parseRunLocks';
 
 type Params = {
   readonly db: Database;
@@ -15,13 +15,7 @@ export const readRunStepLock = async ({
   agentId,
   role,
 }: Params): Promise<WorkflowRoutingLock | null> => {
-  const raw = await getWorkspaceValue({ db, workspaceId, key: 'run.preset' });
-  const preset = parseRunPresets({ raw }).agents[agentId];
-  if (preset === undefined) {
-    return null;
-  }
-  return (
-    preset.steps.find((step) => step.role === role && step.routingLock !== null)?.routingLock ??
-    null
-  );
+  const raw = await getWorkspaceValue({ db, workspaceId, key: 'run.locks' });
+  const locks = parseRunLocks({ raw }).agents[agentId] ?? [];
+  return locks.find((step) => step.role === role)?.routingLock ?? null;
 };

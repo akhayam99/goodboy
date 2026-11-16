@@ -42,15 +42,13 @@ import {
   type AutoAttemptId,
   type AutoDelegationId,
   type AutoOutboxId,
-  type WorkspaceId,
 } from '@goodboy/types';
-import { readRunGuidance } from '../runGuidance/readRunGuidance';
-import { readRunStepLock } from '../runPreset/readRunStepLock';
 import type { AutoContinue } from '../../../features/auto/delegationContinueOf';
 import type { AdmitChildInput } from './admit';
 import { gatherBranchFacts, mountLabelOf } from './branchFacts/gatherBranchFacts';
 import { readAdmissionPermissions } from './admission/readAdmissionPermissions';
 import { refusalMountNote } from './mount/refusalMountNote';
+import { leadRunFactsOf } from '../runLocks/leadRunFactsOf';
 import { pickChildMount } from './pickChildMount';
 import type { AgentGrant } from './ports';
 import { textFieldOf } from '../../../shared/utils/textFieldOf';
@@ -498,12 +496,7 @@ export const resolveDelegateChild = async ({
   const inputs = await inputsOf({ ctx, tree, artifactIds: child.artifactIds });
   const words = revise === null ? null : await userWordsOf({ ctx, tree, rowIds: child.changeFrom });
   const producerRouting = revise?.producerRouting ?? {};
-  const stepLock = await readRunStepLock({
-    db: ctx.db,
-    workspaceId: brandId<WorkspaceId>({ value: grant.workspaceId }),
-    agentId: tree.rootAgentId,
-    role,
-  });
+  const lead = await leadRunFactsOf({ db: ctx.db, grant, tree, role });
   const routing = await ctx.ports.resolveRouting({
     sessionId: grant.sessionId,
     role,
@@ -516,7 +509,7 @@ export const resolveDelegateChild = async ({
       difficulty: child.difficulty ?? undefined,
     },
     promptText: revise === null ? child.task : [child.task, ...(words?.words ?? [])].join('\n'),
-    stepLock,
+    stepLock: lead.stepLock,
   });
   if (routing.kind === 'blocked') {
     return refuse({ slot, code: routing.code, message: routing.message });
@@ -526,11 +519,6 @@ export const resolveDelegateChild = async ({
     revise === null
       ? (retry?.childAgentId ?? brandId<AgentId>({ value: ctx.ports.newId() }))
       : revise.agentId;
-  const guidance = await readRunGuidance({
-    db: ctx.db,
-    workspaceId: brandId<WorkspaceId>({ value: grant.workspaceId }),
-    agentId: tree.rootAgentId,
-  });
   const kickoff = composeDelegationKickoff({
     role,
     childAgentId,
@@ -545,7 +533,7 @@ export const resolveDelegateChild = async ({
     retryNote:
       retry === null ? null : retryNoteOf({ retry, hasInstructions: continueWith !== null }),
     instructions: continueWith?.text ?? null,
-    guidance,
+    guidance: lead.guidance,
     isSubstep:
       substep !== null || (retry !== null && substepLinkOf({ request: retry.request }) !== null),
   });

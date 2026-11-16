@@ -1545,9 +1545,9 @@ when it creates the tree, in whichever window creates it. An uncapped Lead ignor
 the workspace default. A lower session cap still wins. A Lead started without its
 own entry gets the workspace default as before.
 
-A preset Lead with a pinned step keeps the preset snapshot in `run.preset`, a map
-of the root agent id to the snapshot (`store/runtime/runPreset/`), written by
-`spawnAgent` before the agent row exists. When the Lead delegates,
+A preset Lead with a pinned step keeps its locked steps in `run.locks`, a map of
+the root agent id to each step's role and lock (`store/runtime/runLocks/`),
+written by `spawnAgent` before the agent row exists. When the Lead delegates,
 `resolveDelegateChild` reads the lock of the first step whose role matches the
 child's role and hands it to the routing as `stepLock`, so the child runs on the
 pinned provider, model and effort whatever the Lead proposed. The brief names the

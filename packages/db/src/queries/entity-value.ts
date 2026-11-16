@@ -7,7 +7,7 @@ export const WORKSPACE_VALUE_KEYS = [
   'auto.permissions',
   'run.guidance',
   'run.limit',
-  'run.preset',
+  'run.locks',
   'terminal.workspaceFolder',
   'sessions.pinned',
 ] as const;

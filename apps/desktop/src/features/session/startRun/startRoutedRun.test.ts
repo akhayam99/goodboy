@@ -218,12 +218,10 @@ describe('startRoutedRun keeps the reason with the run', () => {
     expect(options?.initialPrompt).toContain(
       '1. Find (implementer, pinned to anthropic claude-opus-5-5 high)',
     );
-    expect(options?.runPreset?.steps).toEqual([
-      expect.objectContaining({ role: 'implementer', isPinned: true, routingLock: lock }),
-    ]);
+    expect(options?.stepLocks).toEqual([{ role: 'implementer', routingLock: lock }]);
   });
 
-  it('hands no preset to keep when no step of it is pinned', async () => {
+  it('hands no pinned model when no step of the preset is pinned', async () => {
     const engines = mockEngines();
 
     await startRoutedRun({
@@ -231,7 +229,7 @@ describe('startRoutedRun keeps the reason with the run', () => {
       result: routeOf({ text: '~Fix a layout the totals table' }),
     });
 
-    expect(engines.spawnAgent.mock.calls[0]?.[1]).not.toHaveProperty('runPreset');
+    expect(engines.spawnAgent.mock.calls[0]?.[1]).not.toHaveProperty('stepLocks');
   });
 
   it('starts a Lead for an ask that matches a preset, free to adapt it', async () => {
