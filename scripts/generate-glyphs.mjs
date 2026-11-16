@@ -18,7 +18,7 @@ const EXTRA_WEIGHTS = {
 };
 const SHADE_OPACITY = '0.2';
 
-export const glyphNamesOf = ({ indexSource }) =>
+const glyphNamesOf = ({ indexSource }) =>
   [...new Set([...indexSource.matchAll(GENERATED_IMPORT)].map((match) => match[1]))].sort();
 
 const definitionsDirectory = () =>
@@ -41,7 +41,7 @@ const duotoneOf = ({ name, paths }) => {
   return { shade: compactPath({ d: shade.d }), line: compactPath({ d: line.d }) };
 };
 
-export const drawingOf = ({ name, weights }) =>
+const drawingOf = ({ name, weights }) =>
   Object.fromEntries(
     [...BASE_WEIGHTS, ...(EXTRA_WEIGHTS[name] ?? [])].map((weight) => {
       const paths = weights.get(weight);
@@ -52,24 +52,21 @@ export const drawingOf = ({ name, weights }) =>
     }),
   );
 
-export const glyphSource = async ({ name, weights }) =>
-  format(
-    [
-      "import { glyph } from '../glyph';",
-      `export const ${name} = glyph(${JSON.stringify({ name, drawing: drawingOf({ name, weights }) }, null, 2)});`,
-    ].join('\n\n'),
+const glyphSource = async ({ name, weights }) => {
+  const options = JSON.stringify({ name, drawing: drawingOf({ name, weights }) }, null, 2);
+  return format(
+    ["import { glyph } from '../glyph';", `export const ${name} = glyph(${options});`].join('\n\n'),
     { ...(await resolveConfig(INDEX_PATH)), parser: 'typescript' },
   );
+};
 
 const readWeights = async ({ name }) => {
   const url = pathToFileURL(resolve(definitionsDirectory(), `${name}.es.js`)).href;
   const definitions = Object.values(await import(url))[0];
-  return new Map(
-    [...definitions].map(([weight, fragment]) => [weight, pathsOf({ fragment })]),
-  );
+  return new Map([...definitions].map(([weight, fragment]) => [weight, pathsOf({ fragment })]));
 };
 
-export const generatedFiles = async ({ names }) =>
+const generatedFiles = async ({ names }) =>
   new Map(
     await Promise.all(
       names.map(async (name) => [
@@ -105,7 +102,9 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   if (process.argv.includes('--check')) {
     const stale = staleFiles({ files });
     stale.forEach((file) => console.error(`glyphs: ${file} is out of date`));
-    console.log(stale.length === 0 ? 'glyphs ok' : 'glyphs stale: node scripts/generate-glyphs.mjs');
+    console.log(
+      stale.length === 0 ? 'glyphs ok' : 'glyphs stale: node scripts/generate-glyphs.mjs',
+    );
     process.exit(stale.length === 0 ? 0 : 1);
   }
   rmSync(GENERATED_DIRECTORY, { recursive: true, force: true });
