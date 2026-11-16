@@ -91,6 +91,12 @@
           "also": "start form"
         },
         {
+          "title": "Permission rows",
+          "text": "A Lead's autonomy is nine rows you can read and change.",
+          "group": "Start a task",
+          "also": "permission rows"
+        },
+        {
           "title": "The Kind chip",
           "text": "Each run says what it is, Lead or Agent, and why. Pick another kind to start a second run; this one keeps going.",
           "group": "Start a task",
@@ -540,7 +546,7 @@
         },
         {
           "title": "A preset as the plan a run starts from",
-          "text": "A run follows its preset as a plan. It can adapt as it goes, or stop and ask when a step does not fit.",
+          "text": "A preset starts a Lead with its steps as the plan. Keep steps asks before a change, May change steps lets the Lead change them and say why.",
           "group": "Workflows",
           "also": "preset plans"
         },
@@ -1310,12 +1316,6 @@
           "group": "Agents",
           "also": "Lead",
           "shown": true
-        },
-        {
-          "title": "Permission rows",
-          "text": "A Lead's autonomy is nine rows you can read and change.",
-          "group": "Agents",
-          "also": "permission rows"
         },
         {
           "title": "History rewriter and Scribe",

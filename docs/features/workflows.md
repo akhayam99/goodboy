@@ -17,7 +17,12 @@ A run started before every run had a Lead stays as it was, on its own engine.
 
 ### A preset as the plan a run starts from
 
-A run started from a preset in **Start a run** follows that preset as a plan, and the line under its title says "Workflow · Preset Fix a layout · Adapt as it goes · 1 change". **Adapt as it goes** may add a step when a finding asks for it, skip one whose work is done, or move one that has not started; each change is tagged **Added**, **Skipped** or **Moved** in the checklist with its reason as the step's Why. **Follow it** never changes a step on its own: when one does not fit, the run stops and asks, with **Add it**, **Skip** and **Switch to adapt**. A pinned step runs as written and is never skipped or moved. Your goal, guidance and hints always rank above the preset.
+A preset you pick in **Start a run**, or one your ask matches, starts a Lead with that preset as its plan. The run's line reads "Lead · plan Fix a layout". The Lead reads your ask first, then the preset's steps.
+
+- **With the preset** sets how close the Lead keeps to the steps.
+- **Keep steps** runs the saved steps in their order. The Lead asks before it adds, skips or moves one. A preset you name with `~` starts this way.
+- **May change steps** lets the Lead add, skip or move a step, and it says why. A preset your ask matches starts this way.
+- A run started before 0.38 keeps its own line, such as "Workflow · Preset Fix a layout · Keep steps", and runs on as an older run.
 
 ### Preset and Custom
 
@@ -168,6 +173,7 @@ Bring custom workflows over from your other workspaces with **Import** in the Wo
 ## Under the hood
 
 - Older runs: the rows stay in `session_workflows` with their `execution_mode` (`packages/db/src/migrations/m091-workflow-execution-mode.ts`), and no migration touches them. `sessionRunsOf` keeps the `orchestrated` and `preset` kinds, `runKindLineOf` words their line, and `RunsGridRow` adds the gray `NAMES.runKind.olderRun` tag. The orchestrator engine is removed no earlier than two minor releases after 0.38.0, the first release where new runs never start it ([versioning.md](../versioning.md)).
+- Preset as a plan: `runRouteOf` sends a named preset to `presetRouteOf` with `follow` and a matched one with `adapt`. `startRoutedRun` spawns the Lead with `leadPlanBriefOf`, which puts the ask first, then the steps, then the closeness line. The chip words are `START_KIND_COPY.closeness` and the route words `RUN_ROUTE_COPY.closeness` (`startRoutedRun.test.ts`).
 - Run transcript doors: `workflowRun.stepTranscript` and `OrchestratedTailVerb` navigate to the step agent page and close the drawer, keeping one composer (`workflowRun.subagent.test.ts`, `run-pages.test.tsx`, `failure-links.test.tsx`).
 - Older runs: an orchestrated run stopped halfway keeps its "Workflow · Orchestrated" row in Runs, and **Continue** finishes it on the Orchestrator with no Lead tree (`olderRunsResume.sqlite.test.tsx`).
 
