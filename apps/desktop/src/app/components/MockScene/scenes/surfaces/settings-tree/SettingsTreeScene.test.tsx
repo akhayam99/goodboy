@@ -57,23 +57,23 @@ describe('the Settings tree scenes', () => {
     );
   });
 
-  it('u26s-settings-general draws the two scope labels and General without Updates', async () => {
+  it('u26s-settings-general draws the two scope labels and General with its Updates band', async () => {
     const rail = await mount({ id: 'u26s-settings-general' });
 
     expect(
       within(rail)
         .getAllByRole('heading', { level: 2 })
         .map((heading) => heading.textContent),
-    ).toEqual(['App', 'This workspace · Harborline']);
+    ).toEqual(['This Macevery workspace', 'Harborlinethis workspace']);
     expect(title()).toBe('General');
     screen.getByRole('heading', { level: 2, name: 'Appearance' });
-    expect(screen.queryByRole('switch', { name: 'Download in the background' })).toBeNull();
+    screen.getByRole('heading', { level: 2, name: 'Updates' });
   });
 
-  it('u26s-settings-updates gives Updates its own page', async () => {
+  it('u26s-settings-updates opens General, where Updates is a band', async () => {
     await mount({ id: 'u26s-settings-updates' });
 
-    expect(title()).toBe('Updates');
+    expect(title()).toBe('General');
     screen.getByRole('switch', { name: 'Download in the background' });
     screen.getByRole('button', { name: "Open What's new" });
   });

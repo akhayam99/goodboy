@@ -139,7 +139,7 @@ describe('the ux39 right dock scenes', () => {
     );
   });
 
-  it('ux39-p4-column-folded shows the six doors and no tool on the folded rail', async () => {
+  it('ux39-p4-column-folded shows the seven doors and no tool on the folded rail', async () => {
     await mount('ux39-p4-column-folded');
 
     const doors = Array.from(
@@ -151,6 +151,7 @@ describe('the ux39 right dock scenes', () => {
       'inbox',
       'workflows',
       'chat',
+      'connections',
       'impact',
       'monitoring',
       'settings',

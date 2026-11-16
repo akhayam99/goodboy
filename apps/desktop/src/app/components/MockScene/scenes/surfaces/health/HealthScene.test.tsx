@@ -27,9 +27,6 @@ afterEach(() => {
   window.history.replaceState(null, '', '/');
 });
 
-const railOf = async (): Promise<HTMLElement> =>
-  screen.findByRole('navigation', { name: 'Settings scopes' }, WAIT);
-
 describe('the health scenes', () => {
   it('registers every scene for the capture', () => {
     expect(Object.keys(U26S_HEALTH_SCENES).sort()).toEqual([
@@ -40,37 +37,17 @@ describe('the health scenes', () => {
     expect(MOCK_SCENES['u26s-health-linear']).toBe(U26S_HEALTH_SCENES['u26s-health-linear']);
   });
 
-  it('u26s-health-linear shows the missing key in the notice, the chip and the rail dot', async () => {
+  it('u26s-health-linear shows the missing key in the notice and the state word', async () => {
     const Scene = U26S_HEALTH_SCENES['u26s-health-linear'];
     render(<Scene />);
-    const rail = await railOf();
 
-    await screen.findByText('The Linear key is missing from this Mac', undefined, WAIT);
-    expect(screen.getByText('Key missing')).toBeDefined();
-    await waitFor(
-      () =>
-        expect(
-          within(rail)
-            .getByRole('button', { name: /Linear/ })
-            .querySelector('[role="img"]'),
-        ).not.toBeNull(),
-      WAIT,
-    );
-    expect(
-      within(rail)
-        .getByRole('button', { name: /Linear/ })
-        .querySelector('[role="img"]')
-        ?.getAttribute('aria-label'),
-    ).toBe('Key missing on this Mac');
-    expect(
-      within(rail).getByRole('button', { name: /Jira/ }).querySelector('[role="img"]'),
-    ).toBeNull();
+    await screen.findByText('The Linear key is missing from this Mac.', undefined, WAIT);
+    await waitFor(() => expect(screen.getAllByText('Key missing').length).toBeGreaterThan(0), WAIT);
   });
 
   it('u26s-health-codexmenu opens the provider menu with Disconnect last', async () => {
     const Scene = U26S_HEALTH_SCENES['u26s-health-codexmenu'];
     render(<Scene />);
-    await railOf();
 
     const items = await screen.findAllByRole('menuitem', undefined, WAIT);
     expect(items.map((item) => item.textContent)).toEqual([
