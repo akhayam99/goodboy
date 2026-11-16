@@ -2,7 +2,7 @@ import type { Session, SessionId } from '@goodboy/types';
 import type { StartSessionFromDraftParams } from '../../store/slices/sessionDraft/startSessionFromDraft';
 import { draftGoalText } from '../../store/slices/sessionDraft/draftGoalText';
 import type { AgentKindRouting } from '../session/agent-kind';
-import { shapeRouteOf } from '../session/startRun/routeChoiceOf';
+import { leadRouteOf } from '../session/startRun/routeChoiceOf';
 import type { RunRouteResult } from '../session/startRun/runRouteOf';
 import { startRoutedRun } from '../session/startRun/startRoutedRun';
 import { startWorkKeyOf, type StartWorkTarget } from './startWorkTarget';
@@ -37,7 +37,7 @@ const write = async ({ target, text, routing, startFromDraft }: Params): Promise
       ? `${asked}\n\nWork on the branch ${target.branch}.`
       : asked;
   const result: RunRouteResult = {
-    route: shapeRouteOf({ shape: 'lead', row: ROUTE_ROW, why: ROUTE_WHY }),
+    route: leadRouteOf({ row: ROUTE_ROW, why: ROUTE_WHY }),
     ask,
     preset: null,
     role: null,

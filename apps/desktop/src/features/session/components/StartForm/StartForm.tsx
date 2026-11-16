@@ -43,7 +43,7 @@ export const StartForm = ({
       lead={
         onKind === null ? null : (
           <StartHowChip
-            kind={kind ?? 'auto'}
+            kind={kind ?? 'lead'}
             hasPresets={hasPresets}
             isDisabled={isDisabled}
             onPick={onKind}

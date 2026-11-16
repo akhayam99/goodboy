@@ -16,6 +16,7 @@ import { sessionById } from '../../../store/slices/sessions/sessionIndex';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { openAgentRevealEvent } from '../../../shared/utils/openAgentReveal';
 import { uniqueNameOf } from '../../workflows/uniqueNameOf';
+import { leadPlanBriefOf } from './leadPlanBriefOf';
 import { presetSnapshotOf } from './presetSnapshotOf';
 import type { StartLimit } from '../../auto/startLimitOf';
 import type { AgentKindRouting } from '../agent-kind';
@@ -69,7 +70,10 @@ export const startRoutedRun = async ({
     }
     const agentId = await state.spawnAgent(sessionId, {
       kindOverride: role ?? 'auto',
-      initialPrompt: work,
+      initialPrompt:
+        preset === null || role !== null
+          ? work
+          : leadPlanBriefOf({ work, preset, closeness: route.closeness ?? 'follow' }),
       focus: 'agent',
       ...(guidance !== null && { guidance }),
       ...(routing !== null && {

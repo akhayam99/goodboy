@@ -108,7 +108,9 @@ export const RunKindChip = ({ workspaceId, target, route, changeCount, phase }: 
       {phase === 'live' ? null : (
         <RunKindChoices
           choices={choices}
-          closeness={kind.shape === 'preset' ? (route.closeness ?? 'adapt') : null}
+          closeness={
+            route.shape === 'plan' && kind.shape === 'preset' ? (route.closeness ?? 'adapt') : null
+          }
           presetId={presetId}
           heading={RUN_KIND_HEADING[phase]}
           isBusy={change.isBusy}

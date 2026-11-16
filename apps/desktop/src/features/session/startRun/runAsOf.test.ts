@@ -42,23 +42,13 @@ const factsOf = (text: string): RunRouteFacts => ({
 });
 
 describe('what Run as makes Start do', () => {
-  it('leaves the pick to the rules while it is on Auto', () => {
+  it('leaves the pick to the rules while it is on Lead, and the rules pick a Lead', () => {
     const result = runAsRouteOf({ runAs: AUTO_RUN_AS, facts: factsOf('center every page') });
 
-    expect(result.route).toMatchObject({ shape: 'plan', row: 3 });
+    expect(result.route).toMatchObject({ shape: 'lead', presetName: null, row: 3 });
   });
 
-  it('starts an orchestrated run when picked, whatever the ask looks like', () => {
-    const result = runAsRouteOf({
-      runAs: { kind: 'orchestrated' },
-      facts: factsOf('Which handler fires twice?'),
-    });
-
-    expect(result.route).toMatchObject({ shape: 'plan', presetName: null, row: 1 });
-    expect(result.ask).toBe('Which handler fires twice?');
-  });
-
-  it('starts an Auto agent when picked, even for a task with an end', () => {
+  it('starts a Lead when picked, even for a task with an end', () => {
     const result = runAsRouteOf({
       runAs: { kind: 'autoAgent' },
       facts: factsOf('center every page'),
@@ -77,7 +67,12 @@ describe('what Run as makes Start do', () => {
       facts: factsOf('Which handler fires twice?'),
     });
 
-    expect(picked.route).toMatchObject({ presetName: 'Fix a layout', closeness: 'follow' });
+    expect(picked.route).toMatchObject({
+      shape: 'lead',
+      presetName: 'Fix a layout',
+      closeness: 'follow',
+      choice: 'Lead · plan Fix a layout · Keep steps',
+    });
     expect(picked.preset?.id).toBe(FIX_A_LAYOUT.id);
     expect(gone.route.row).toBe(5);
   });
@@ -93,7 +88,7 @@ describe('what Run as makes Start do', () => {
 
   it('lets a token typed in the text win over the chip', () => {
     const result = runAsRouteOf({
-      runAs: { kind: 'orchestrated' },
+      runAs: { kind: 'autoAgent' },
       facts: factsOf('@Scout look at this'),
     });
 

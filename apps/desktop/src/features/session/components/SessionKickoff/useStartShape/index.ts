@@ -10,14 +10,13 @@ import { rememberLastStart } from '../../../startKind/rememberLastStart';
 import { applyStartEdits } from '../../../startRun/applyStartEdits';
 import { draftStartOf } from '../../../startRun/draftStartOf';
 import { pickedRouteOf } from '../../../startRun/pickedRouteOf';
-import { agentRoutingOfPin, orchestratorRoutingOfPin } from '../../../startRun/runModelPin';
+import { agentRoutingOfPin } from '../../../startRun/runModelPin';
 import { runModelSlotOfShape } from '../../../startRun/runModelSlotOf';
 import { guidanceToSendOf } from '../../../startRun/guidanceToSendOf';
 import { startRoutedRun } from '../../../startRun/startRoutedRun';
 import { workspaceGuidanceOf } from '../../../startRun/workspaceGuidanceOf';
 import type { StartLimit } from '../../../../auto/startLimitOf';
 import type { RunModelModel } from '../../StartRun/useRunModel';
-import { hasAsksGate } from '../hasAsksGate';
 import { useStartFromDraft } from '../useStartFromDraft';
 
 type Params = {
@@ -105,18 +104,13 @@ export const useStartShape = ({
           : pin !== null && slot.kind === 'agent'
             ? agentRoutingOfPin({ pin })
             : null;
-      const orchestratorRouting =
-        pin !== null && slot.kind === 'orchestrator' ? orchestratorRoutingOfPin({ pin }) : null;
-      const autonomy = hasAsksGate({ shape }) ? draft.autonomy : null;
       const run = async (created: Session): Promise<void> => {
         await applyStartEdits({ sessionId: created.id, mode: draft.permissionMode });
         await startRoutedRun({
           sessionId: created.id,
           result,
           routing,
-          orchestratorRouting,
-          autonomy,
-          level: shape === 'autoAgent' ? level : null,
+          level: shape === 'agent' ? null : level,
           limit,
           guidance: guidanceToSendOf({
             picked: draft.guidance,

@@ -115,7 +115,7 @@ export const NewSessionStartForm = ({
       : startFormHintOf({ kind });
 
   const pickKind = ({ next }: PickParams): void => {
-    if (next === 'auto' || next === kind) {
+    if (next === 'lead' || next === kind) {
       patchSessionDraft({
         workspaceId,
         patch: { startKind: 'auto', startShape: null, hasChosenStart: true },
@@ -125,7 +125,7 @@ export const NewSessionStartForm = ({
     patchSessionDraft({
       workspaceId,
       patch: {
-        startKind: next === 'orchestrated' || next === 'preset' ? 'workflow' : 'agent',
+        startKind: next === 'preset' ? 'workflow' : 'agent',
         startShape: startShapeOfFormKind({ kind: next }),
         hasChosenStart: true,
       },

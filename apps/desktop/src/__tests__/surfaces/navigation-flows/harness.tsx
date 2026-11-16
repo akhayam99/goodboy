@@ -114,6 +114,7 @@ const BRIDGE: Readonly<Record<string, unknown>> = {
 const SELECTS: ReadonlyArray<readonly [RegExp, unknown]> = [
   [/FROM history_plans /, []],
   [/SELECT MAX\(ordinal\) as max_ordinal FROM session_workflows/, [{ max_ordinal: null }]],
+  [/^SELECT \* FROM settings WHERE key = \?$/, []],
 ];
 
 const INSERTED_AGENT = /^\s*INSERT INTO agents\s*\(([^)]+)\)\s*VALUES/;

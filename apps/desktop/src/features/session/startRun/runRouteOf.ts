@@ -1,7 +1,7 @@
 import type { RunRoute, Workflow } from '@goodboy/types';
 import type { AgentKind } from '../agent-kind';
-import { presetRouteOf, roleRouteOf, shapeRouteOf } from './routeChoiceOf';
-import type { RunDefault } from './runDefaultSetting';
+import { leadRouteOf, presetRouteOf, roleRouteOf } from './routeChoiceOf';
+import { leadDefaultOf, type RunDefault } from './runDefaultSetting';
 import { RUN_ROUTE_COPY } from './runRouteCopy';
 
 type RunRouteRole = Readonly<{
@@ -210,13 +210,9 @@ export const runRouteOf = ({ facts }: Params): RunRouteResult => {
       role: pickedRole.kind,
     };
   }
-  if (facts.defaultShape !== 'auto') {
+  if (!leadDefaultOf({ shape: facts.defaultShape }).shouldMatchPreset) {
     return {
-      route: shapeRouteOf({
-        shape: facts.defaultShape,
-        row: 1,
-        why: RUN_ROUTE_COPY.why.yourDefault,
-      }),
+      route: leadRouteOf({ row: 1, why: RUN_ROUTE_COPY.why.yourDefault }),
       ask: text,
       preset: null,
       role: null,
@@ -244,8 +240,7 @@ export const runRouteOf = ({ facts }: Params): RunRouteResult => {
   }
   if (facts.hasTask || isSpread({ text })) {
     return {
-      route: shapeRouteOf({
-        shape: 'plan',
+      route: leadRouteOf({
         row: 3,
         why:
           facts.mountCount > 1
@@ -264,8 +259,7 @@ export const runRouteOf = ({ facts }: Params): RunRouteResult => {
     (words.some((word) => PULL_REQUEST_WORDS.has(word)) || words.includes(`#${pullRequest.number}`))
   ) {
     return {
-      route: shapeRouteOf({
-        shape: 'lead',
+      route: leadRouteOf({
         row: 4,
         why: RUN_ROUTE_COPY.why.pullRequest({ number: pullRequest.number }),
       }),
@@ -276,8 +270,7 @@ export const runRouteOf = ({ facts }: Params): RunRouteResult => {
   }
   if (facts.fileCount === 1 || isQuestionOrCheck({ text })) {
     return {
-      route: shapeRouteOf({
-        shape: 'lead',
+      route: leadRouteOf({
         row: 5,
         why:
           facts.fileCount === 1 ? RUN_ROUTE_COPY.why.oneFile : RUN_ROUTE_COPY.why.questionOrCheck,
@@ -288,7 +281,7 @@ export const runRouteOf = ({ facts }: Params): RunRouteResult => {
     };
   }
   return {
-    route: shapeRouteOf({ shape: 'lead', row: 6, why: RUN_ROUTE_COPY.why.unsure }),
+    route: leadRouteOf({ row: 6, why: RUN_ROUTE_COPY.why.unsure }),
     ask: text,
     preset: null,
     role: null,

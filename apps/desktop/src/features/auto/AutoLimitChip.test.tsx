@@ -193,7 +193,7 @@ describe('AutoLimitChip', () => {
   it.each([
     ['orchestrated', 'Limit for this run'],
     ['preset', 'Limit for this run'],
-    ['autoAgent', 'Limit for this Auto run'],
+    ['autoAgent', 'Limit for this run'],
   ] as const)('names the %s kind in the popover title', (kind, title) => {
     render(chip({ usd: 5, kind }));
 
@@ -201,9 +201,7 @@ describe('AutoLimitChip', () => {
     const dialog = screen.getByRole('dialog', { name: title });
 
     within(dialog).getByText(title);
-    if (kind !== 'autoAgent') {
-      expect(dialog.textContent).not.toContain('Auto');
-    }
+    expect(dialog.textContent).not.toContain('Auto');
   });
 
   it('opens on the design system popover, under its chip, inside the window, at a fixed width', () => {

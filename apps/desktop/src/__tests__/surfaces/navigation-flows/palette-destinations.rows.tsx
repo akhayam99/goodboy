@@ -366,7 +366,7 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
     open: () => openPalette(/^New workflow session$/),
     lands: both(
       () => heading('New session'),
-      () => pressedKind('Orchestrated'),
+      () => pressedKind('Lead'),
     ),
   },
   {
@@ -375,7 +375,7 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
     open: () => openPalette(/^New agent session$/),
     lands: both(
       () => heading('New session'),
-      () => pressedKind('Auto'),
+      () => pressedKind('Lead'),
     ),
   },
   {

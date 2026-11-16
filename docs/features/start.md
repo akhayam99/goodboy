@@ -4,7 +4,7 @@ Begin from an issue, a workflow or a question. Everything starts as one draft, a
 
 ### Start a run
 
-Write what you want done and press Start. Goodboy picks how to run it.
+Write what you want done and press Start. A Lead runs it: it plans first, then starts the agents it needs.
 
 - The **Start a run** field sits at the top of a session's Runs page.
 - On the **New session** page, the same form routes the goal you wrote the same way until you pick a kind.
@@ -18,17 +18,18 @@ Write what you want done and press Start. Goodboy picks how to run it.
 
 The pick is a rule table in the app, with no model call. Goodboy reads it top to bottom until a row holds.
 
-| Order | If                                                                                                       | Goodboy starts                                                                                                |
-| ----- | -------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
-| 1     | You said it: `~Fix a layout` or `@Scout`, or a default you set in Settings                               | That preset, or that role at once. A session default wins over the workspace one.                             |
-| 2     | The ask names a preset of the workspace, or shares at least two words of its description and step titles | A Preset workflow that adapts as it goes. A name match ranks first, then the preset last used in the session. |
-| 3     | A task is linked, or the ask is a list or names many places ("every page")                               | An Orchestrated workflow                                                                                      |
-| 4     | The session's open pull request fails its checks or has changes requested, and the ask is about it       | An Auto agent                                                                                                 |
-| 5     | A question, a check or one file                                                                          | An Auto agent                                                                                                 |
-| 6     | Nothing above                                                                                            | An Auto agent first                                                                                           |
+| Order | If                                                                                                       | Goodboy starts                                                                                               |
+| ----- | -------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| 1     | You said it: `~Fix a layout` or `@Scout`, or a default you set in Settings                               | A Lead with that preset as its plan, or that role at once. A session default wins over the workspace one.    |
+| 2     | The ask names a preset of the workspace, or shares at least two words of its description and step titles | A Lead with that preset as its plan, free to change it. A name match ranks first, then the preset last used. |
+| 3     | A task is linked, or the ask is a list or names many places ("every page")                               | A Lead                                                                                                       |
+| 4     | The session's open pull request fails its checks or has changes requested, and the ask is about it       | A Lead                                                                                                       |
+| 5     | A question, a check or one file                                                                          | A Lead                                                                                                       |
+| 6     | Nothing above                                                                                            | A Lead                                                                                                       |
 
-- **Start as** sets the default for the workspace. **New runs in this session start as** sets it for the open session. Both are in Settings, under **Run defaults**.
-- A workflow starts an orchestrated run. A preset seeds that run with its steps, in order. An agent starts Auto (or the role you named).
+- **Start as** sets the default for the workspace. **New runs in this session start as** sets it for the open session. Both are in Settings, under **Run defaults**. Every value starts a Lead. Only **Lead with a preset that fits** lets row 2 hand it a preset. A default saved as Workflow before reads as **Lead**.
+- A preset becomes the Lead's plan: its brief lists the steps in order, with **Keep steps** or **May change steps**. A role you named starts that one agent, with no Lead.
+- New runs never start the orchestrator. A run started on it before keeps its engine, its line and its page.
 - The reason is kept with the run.
 - If the start fails, the field keeps your text and Start becomes **Retry**.
 - Moving to another session while a start is on its way drops the late answer, so its text or error never lands on the other session.
@@ -51,14 +52,14 @@ With [Work](work.md) on, the doors that start an Auto or Orchestrator run open o
 
 Every door draws the same form: the New session page, a session's Runs page (and so the New menu's **Start a run**), ⌘K, and the setup Scout run.
 
-- The goal comes first. Under it the **How** chip holds the four kinds, **Auto**, **Agent**, **Orchestrated** and **Preset**, with one line for each in its menu. The action row ends the form.
-- Auto is picked by default and picks by the table above. Pick the same kind again to give the choice back to Auto.
+- The goal comes first. Under it the **How** chip holds three kinds, **Lead**, **Preset** and **Agent**, with one line for each in its menu. The action row ends the form.
+- Lead is picked by default and reads the table above. Pick the same kind again to give the choice back to Lead. A draft left on Orchestrated by an older version opens on Lead.
 - **Preset** is off until the workspace has a preset. A pressed Preset shows the picker with its steps and **Keep steps** or **May change steps**.
 - One row of chips holds the settings, each written "Label: value". Each chip opens its own popover, anchored to it, so it stays inside the window. The source of a value ("from Harborline") sits in the popover header, and a chip is tinted when its value is not the default.
 - **Projects** and **Edits** are always in the row. **Asks you**, **Limit** and **Guidance** sit under **More** until they differ from their default.
 - A kind shows only the settings it uses. **Projects** shows on the New session page only, **Role** on Agent only. **Limit** and **Asks you** do not show on Agent: a plain agent has no limit to enforce and no step to stop at.
 - The model sits in the message box, beside **Start**. It names the orchestrator or the agent for this run, **Auto** until you pick one. A pick is for this run only.
-- **Asks you** is Every step, After the plan or Never for a workflow, and the Auto level for an Auto agent.
+- **Asks you** is the Lead's level, on Lead and on Preset.
 - **Edits** is what agents may do in the session: **Read only**, **Ask first**, **Edits allowed** or **Full access**. It reads the workspace default until you pick, and a start never writes a mode you did not pick. A pick applies to the whole session, and is set before the first agent starts. The chat box picker reads **Edits: Ask first**, the same label.
 - **Limit** reads "Limit: $5.00" ("Limit: none" without one), with a quiet "default" while the amount is the one the kind starts from. Every kind, and a start with no kind pressed, starts from the **Run defaults** limit. Switching kind shows the new kind's default and keeps an amount you typed. Its popover lists $5, $10 and $25 beside the default and your typed amount, with an **Other amount** field and **No limit**.
 - Under the amounts the popover names the limits that still apply: the session limit, then each provider's monthly limit. Each shows what is spent, as in "Session $0 of $20.00 · Claude $41.20 of $200.00 this month".
@@ -66,7 +67,7 @@ Every door draws the same form: the New session page, a session's Runs page (and
 - The run page shows the same amount with its source, **default** or **this run**.
 - **Guidance** shows on every kind. It starts as the workspace guidance, with a quiet "from Harborline" tag. Once you edit it the tag reads "this run", and "None" when you clear it.
 - The chip shows the start of the text, and a tooltip shows all of it. Its popover has the text, **Use workspace guidance** and **No guidance**.
-- The popover says who reads it. The orchestrator reads it on Orchestrated and Preset, the agent on Agent, and the Auto agent with the helpers it starts on Auto.
+- The popover says who reads it: the Lead and the agents it starts on Lead and Preset, the agent on Agent.
 - Switching kind keeps the guidance you wrote. A start that fails keeps it, and Retry sends it again.
 - Switching kind keeps what you typed and the values that still apply.
 - The primary always reads **Start**, whatever the kind.
@@ -75,15 +76,15 @@ Every door draws the same form: the New session page, a session's Runs page (and
 
 ### The Kind chip
 
-Every run started from the field or the New session page leads its settings line with a **Kind** chip that names what runs. The names are those of the New session page: "Workflow · Orchestrated", "Workflow · Preset Fix a layout", "Agent · Auto agent" and "Agent · Scout".
+Every run started from the field or the New session page leads its settings line with a **Kind** chip that names what runs. The names are "Lead", "Lead · plan Fix a layout" and "Agent · Scout". A run started before keeps its name, such as "Workflow · Orchestrated" or "Workflow · Preset Fix a layout".
 
 The chip opens one popover. It shows:
 
 - the kind and "set at start";
 - one line on what that kind does;
 - why it was picked ("you picked it" when you chose it on the page), with how many steps Auto changed in the preset;
-- **With the preset** (Keep steps, May change steps) on a preset run;
-- the other kinds a run can be (Workflow · Orchestrated, each preset, Agent · Auto agent).
+- **With the preset** (Keep steps, May change steps) on an older preset run;
+- the other kinds a new run can be (Lead, and Lead · plan for each preset).
 
 Its last line says what a pick does.
 
