@@ -1,12 +1,17 @@
-import { memo, type ReactNode } from 'react';
+import { memo, type ComponentType, type ReactNode } from 'react';
 import { ctxTagLabel } from './ctxTagStyle';
 import { freshenNode, type FreshTail } from './freshenNode';
 import { parseInline, type InlineNode } from './parseInline';
+
+type InlineCodeProps = {
+  readonly value: string;
+};
 
 type Props = {
   readonly text: string;
   readonly className?: string;
   readonly fresh?: FreshTail | undefined;
+  readonly codeAs?: ComponentType<InlineCodeProps>;
 };
 
 const CODE_CLASS = 'rounded-md bg-muted px-1 py-0 font-mono text-foreground';
@@ -14,15 +19,19 @@ const CODE_CLASS = 'rounded-md bg-muted px-1 py-0 font-mono text-foreground';
 type RenderParams = {
   readonly nodes: ReadonlyArray<InlineNode>;
   readonly keyPrefix: string;
+  readonly codeAs: ComponentType<InlineCodeProps> | undefined;
 };
 
-const renderNodes = ({ nodes, keyPrefix }: RenderParams): ReactNode =>
+const renderNodes = ({ nodes, keyPrefix, codeAs: CodeAs }: RenderParams): ReactNode =>
   nodes.map((node, position) => {
     const key = `${keyPrefix}-${position}`;
     switch (node.kind) {
       case 'text':
         return node.value;
       case 'code':
+        if (CodeAs !== undefined) {
+          return <CodeAs key={key} value={node.value} />;
+        }
         return (
           <code key={key} className={CODE_CLASS}>
             {node.value}
@@ -31,15 +40,21 @@ const renderNodes = ({ nodes, keyPrefix }: RenderParams): ReactNode =>
       case 'strong':
         return (
           <strong key={key} className="font-semibold">
-            {renderNodes({ nodes: node.children, keyPrefix: key })}
+            {renderNodes({ nodes: node.children, keyPrefix: key, codeAs: CodeAs })}
           </strong>
         );
       case 'em':
-        return <em key={key}>{renderNodes({ nodes: node.children, keyPrefix: key })}</em>;
+        return (
+          <em key={key}>{renderNodes({ nodes: node.children, keyPrefix: key, codeAs: CodeAs })}</em>
+        );
       case 'del':
-        return <del key={key}>{renderNodes({ nodes: node.children, keyPrefix: key })}</del>;
+        return (
+          <del key={key}>
+            {renderNodes({ nodes: node.children, keyPrefix: key, codeAs: CodeAs })}
+          </del>
+        );
       case 'link':
-        return renderNodes({ nodes: node.children, keyPrefix: key });
+        return renderNodes({ nodes: node.children, keyPrefix: key, codeAs: CodeAs });
       case 'image':
         return node.alt;
       case 'video':
@@ -53,8 +68,8 @@ const renderNodes = ({ nodes, keyPrefix }: RenderParams): ReactNode =>
     }
   });
 
-const InlineMarkdownImpl = ({ text, className, fresh }: Props) => {
-  const node = renderNodes({ nodes: parseInline({ text }), keyPrefix: 'i' });
+const InlineMarkdownImpl = ({ text, className, fresh, codeAs }: Props) => {
+  const node = renderNodes({ nodes: parseInline({ text }), keyPrefix: 'i', codeAs });
   return (
     <span className={className}>
       {fresh === undefined ? node : freshenNode({ node, tail: fresh })}
