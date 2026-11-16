@@ -18,6 +18,7 @@ import type {
   ListboxTriggerVariant,
   ListboxValue,
 } from './listboxTypes';
+import { keyItemsOf } from './keyItemsOf';
 import { edgeIndex, useListboxKeyboard } from './useListboxKeyboard';
 import { ICON_SIZE } from '../../iconSize';
 
@@ -144,16 +145,7 @@ export const Listbox = <T extends ListboxValue>(props: ListboxProps<T>) => {
     create !== undefined && trimmedQuery !== '' && !hasExactMatch
       ? create.label(trimmedQuery)
       : undefined;
-  const keyItems = useMemo(
-    () => [
-      ...entries.map(({ option }) => ({
-        label: option.label,
-        isDisabled: option.disabledReason !== undefined,
-      })),
-      ...(createLabel === undefined ? [] : [{ label: createLabel, isDisabled: false }]),
-    ],
-    [createLabel, entries],
-  );
+  const keyItems = useMemo(() => keyItemsOf({ entries, createLabel }), [createLabel, entries]);
 
   const closeToTrigger = useCallback(() => {
     dropdown.close();

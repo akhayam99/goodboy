@@ -1,8 +1,9 @@
 import { useId, useMemo } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { Button } from '@goodboy/ui';
-import type { ProjectId, Workflow, WorkspaceId } from '@goodboy/types';
+import type { Workflow, WorkspaceId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
+import type { ProjectMatch } from '../../../../shared/components/ProjectPicker/projectMatch';
 import { selectSessionDraft } from '../../../../store/slices/sessionDraft/selectSessionDraft';
 import { recommendationSummary } from '../../../../shared/components/RoutingPicker/recommendationSummary';
 import { NAMES } from '../../../../shared/utils/names';
@@ -29,7 +30,7 @@ import { startSettingItemsOf } from './startSettingItemsOf';
 
 type Props = {
   readonly workspaceId: WorkspaceId;
-  readonly suggestedIds: ReadonlyArray<ProjectId>;
+  readonly match: ProjectMatch | null;
   readonly shapeRun: StartShapeModel;
   readonly autoRun: StartRunModel;
   readonly limit: AutoTreeLimitModel;
@@ -44,7 +45,7 @@ const NO_PRESETS: ReadonlyArray<Workflow> = [];
 
 export const NewSessionStartForm = ({
   workspaceId,
-  suggestedIds,
+  match,
   shapeRun,
   autoRun,
   limit,
@@ -139,9 +140,7 @@ export const NewSessionStartForm = ({
     workspaceName,
     isDisabled,
     model,
-    where: (
-      <WhereChip workspaceId={workspaceId} suggestedIds={suggestedIds} isDisabled={isDisabled} />
-    ),
+    where: <WhereChip workspaceId={workspaceId} match={match} isDisabled={isDisabled} />,
     role: {
       value: draft.agentKind,
       onChange: ({ next }) =>

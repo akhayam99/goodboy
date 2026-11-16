@@ -4,6 +4,7 @@ import type { KeyboardEvent } from 'react';
 export type ListboxKeyItem = {
   readonly label: string;
   readonly isDisabled: boolean;
+  readonly onStar?: () => void;
 };
 
 type Params = {
@@ -14,6 +15,10 @@ type Params = {
   readonly onClose: () => void;
   readonly onCommit: (index: number) => void;
   readonly onTab: () => void;
+};
+
+type ComboParams = {
+  readonly event: KeyboardEvent<HTMLElement>;
 };
 
 type StepParams = {
@@ -84,6 +89,9 @@ const typeaheadIndex = ({ items, from, buffer }: TypeaheadParams): number => {
   return -1;
 };
 
+const isStarCombo = ({ event }: ComboParams): boolean =>
+  (event.metaKey || event.ctrlKey) && !event.altKey && !event.shiftKey && event.code === 'KeyS';
+
 const isPrintable = (event: KeyboardEvent<HTMLElement>): boolean =>
   event.key.length === 1 && !event.metaKey && !event.ctrlKey && !event.altKey;
 
@@ -124,6 +132,13 @@ export const useListboxKeyboard = ({
           event.preventDefault();
           onOpen();
         }
+        return;
+      }
+      const onStar = items[activeIndex]?.onStar;
+      if (onStar !== undefined && isStarCombo({ event })) {
+        event.preventDefault();
+        event.stopPropagation();
+        onStar();
         return;
       }
       const move = (index: number) => {

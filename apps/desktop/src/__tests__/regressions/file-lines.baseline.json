@@ -71,7 +71,7 @@
   "packages/types/src/index.ts": 655,
   "packages/ui/src/components/ContextMenu/MenuList.tsx": 253,
   "packages/ui/src/components/DrawerColumn.tsx": 259,
-  "packages/ui/src/components/Listbox/index.tsx": 359,
+  "packages/ui/src/components/Listbox/index.tsx": 351,
   "packages/ui/src/components/Markdown/index.tsx": 675,
   "packages/ui/src/components/ReportSheet/index.tsx": 306,
   "packages/ui/src/components/Tooltip.tsx": 319,

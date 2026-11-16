@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import type { MountId, Project, ProjectId, SessionId, WorkspaceId } from '@goodboy/types';
 import { TEST_NOW, aProject } from '@goodboy/types/testing';
 import { emptyOverrides } from '../../../../../store/storyHarness';
@@ -71,6 +71,7 @@ const renderList = () =>
       sessionId={SID}
       workspaceId={WID}
       emptyHint=""
+      recentIds={[]}
       projects={[repoProject]}
       onDone={vi.fn()}
     />,
@@ -242,6 +243,15 @@ describe('MountProjectList', () => {
   });
 });
 
+type GroupParams = {
+  readonly label: string;
+};
+
+const groupNames = ({ label }: GroupParams) =>
+  within(screen.getByRole('list', { name: label }))
+    .getAllByRole('button')
+    .map((button) => button.getAttribute('aria-label'));
+
 describe('MountProjectList groups', () => {
   const named = ({ name, isStarred }: { readonly name: string; readonly isStarred: boolean }) =>
     aProject({
@@ -268,6 +278,7 @@ describe('MountProjectList groups', () => {
         sessionId={SID}
         workspaceId={WID}
         emptyHint=""
+        recentIds={[]}
         projects={projects}
         onDone={vi.fn()}
       />,
@@ -278,6 +289,31 @@ describe('MountProjectList groups', () => {
     expect(screen.getAllByRole('button', { name: /^Add / })).toHaveLength(6);
   });
 
+  it('heads Recent between Starred and the rest with the folders used last', () => {
+    const projects = NAMES.map((name, index) => named({ name, isStarred: index === 0 }));
+    const recentIds = [projects[5], projects[0], projects[3]].flatMap((project) =>
+      project === undefined ? [] : [project.id],
+    );
+    render(
+      <MountProjectList
+        sessionId={SID}
+        workspaceId={WID}
+        emptyHint=""
+        recentIds={recentIds}
+        projects={projects}
+        onDone={vi.fn()}
+      />,
+    );
+
+    expect(groupNames({ label: 'Starred' })).toEqual(['Add ledger-core']);
+    expect(groupNames({ label: 'Recent' })).toEqual(['Add runbooks', 'Add cascadia-web']);
+    expect(groupNames({ label: 'Other folders' })).toEqual([
+      'Add acme-infra',
+      'Add notify-relay',
+      'Add payments-api',
+    ]);
+  });
+
   it('shows no headings under six projects or with nothing starred', () => {
     const fewer = NAMES.slice(0, 5).map((name, index) => named({ name, isStarred: index < 2 }));
     const { unmount } = render(
@@ -285,6 +321,7 @@ describe('MountProjectList groups', () => {
         sessionId={SID}
         workspaceId={WID}
         emptyHint=""
+        recentIds={[]}
         projects={fewer}
         onDone={vi.fn()}
       />,
@@ -298,6 +335,7 @@ describe('MountProjectList groups', () => {
         sessionId={SID}
         workspaceId={WID}
         emptyHint=""
+        recentIds={[]}
         projects={none}
         onDone={vi.fn()}
       />,

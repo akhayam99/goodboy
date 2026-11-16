@@ -54,6 +54,7 @@ export const PickerStarredScene = () => {
             sessionId={SESSION_ID}
             workspaceId={SETTINGS_WORKSPACE.id}
             emptyHint=""
+            recentIds={[]}
             projects={PROJECTS}
             onDone={noop}
           />
