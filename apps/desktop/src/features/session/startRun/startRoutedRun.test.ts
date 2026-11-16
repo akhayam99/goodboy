@@ -196,6 +196,44 @@ describe('startRoutedRun keeps the reason with the run', () => {
     });
   });
 
+  it('hands the Lead the model pinned on a preset step, in its brief and for its children', async () => {
+    const engines = mockEngines();
+    const lock = {
+      version: 1,
+      pick: { provider: 'anthropic', model: 'claude-opus-5-5', effort: 'high' },
+      origin: 'user',
+    } as const;
+    const pinned: Workflow = {
+      ...LAYOUT,
+      steps: LAYOUT.steps.map((step) => ({ ...step, role: 'implementer', routingLock: lock })),
+    };
+    useAppStore.setState({ phaseTemplates: { [WORKSPACE.id]: [pinned] } });
+    const result = runRouteOf({
+      facts: { ...FACTS, presets: [pinned], text: '~Fix a layout the totals table' },
+    });
+
+    await startRoutedRun({ sessionId: SESSION.id, result });
+
+    const options = engines.spawnAgent.mock.calls[0]?.[1];
+    expect(options?.initialPrompt).toContain(
+      '1. Find (implementer, pinned to anthropic claude-opus-5-5 high)',
+    );
+    expect(options?.runPreset?.steps).toEqual([
+      expect.objectContaining({ role: 'implementer', isPinned: true, routingLock: lock }),
+    ]);
+  });
+
+  it('hands no preset to keep when no step of it is pinned', async () => {
+    const engines = mockEngines();
+
+    await startRoutedRun({
+      sessionId: SESSION.id,
+      result: routeOf({ text: '~Fix a layout the totals table' }),
+    });
+
+    expect(engines.spawnAgent.mock.calls[0]?.[1]).not.toHaveProperty('runPreset');
+  });
+
   it('starts a Lead for an ask that matches a preset, free to adapt it', async () => {
     const engines = mockEngines();
     const result = routeOf({ text: 'Fix the layout on every billing page' });

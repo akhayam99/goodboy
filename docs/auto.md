@@ -1545,6 +1545,14 @@ when it creates the tree, in whichever window creates it. An uncapped Lead ignor
 the workspace default. A lower session cap still wins. A Lead started without its
 own entry gets the workspace default as before.
 
+A preset Lead with a pinned step keeps the preset snapshot in `run.preset`, a map
+of the root agent id to the snapshot (`store/runtime/runPreset/`), written by
+`spawnAgent` before the agent row exists. When the Lead delegates,
+`resolveDelegateChild` reads the lock of the first step whose role matches the
+child's role and hands it to the routing as `stepLock`, so the child runs on the
+pinned provider, model and effort whatever the Lead proposed. The brief names the
+pin on the step line too.
+
 After the routing table the prompt renders **WHEN TO ADD A ROLE** from `packages/core/src/roleNeeds.ts`
 (`roleNeedsSection`, driver `auto`): per role a trigger the root can see and a "do not add it when".
 Auto picks the narrowest row whose trigger it sees in the goal or in a result: history words

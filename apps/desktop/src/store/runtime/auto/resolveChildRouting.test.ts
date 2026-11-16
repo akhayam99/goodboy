@@ -101,6 +101,17 @@ describe('the model an Auto child runs on', () => {
     }
   });
 
+  it('runs the child on the model its preset step pinned', () => {
+    const pick = { provider: 'codex', model: 'gpt-5.5', effort: 'high' } as const;
+    const outcome = resolveChildRouting({
+      state: useAppStore.getState(),
+      request: { ...request({}), stepLock: { version: 1, pick, origin: 'user' } },
+      nowMs: 0,
+    });
+
+    expect(outcome).toMatchObject({ kind: 'ready', ...pick });
+  });
+
   it('never picks Cursor or Gemini, even when Auto proposes one', () => {
     for (const provider of ['cursor', 'gemini']) {
       const outcome = resolve({ provider, model: 'composer-2.5', effort: 'medium' });

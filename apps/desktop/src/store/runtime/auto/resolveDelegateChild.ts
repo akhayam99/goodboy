@@ -45,6 +45,7 @@ import {
   type WorkspaceId,
 } from '@goodboy/types';
 import { readRunGuidance } from '../runGuidance/readRunGuidance';
+import { readRunStepLock } from '../runPreset/readRunStepLock';
 import type { AutoContinue } from '../../../features/auto/delegationContinueOf';
 import type { AdmitChildInput } from './admit';
 import { gatherBranchFacts, mountLabelOf } from './branchFacts/gatherBranchFacts';
@@ -497,6 +498,12 @@ export const resolveDelegateChild = async ({
   const inputs = await inputsOf({ ctx, tree, artifactIds: child.artifactIds });
   const words = revise === null ? null : await userWordsOf({ ctx, tree, rowIds: child.changeFrom });
   const producerRouting = revise?.producerRouting ?? {};
+  const stepLock = await readRunStepLock({
+    db: ctx.db,
+    workspaceId: brandId<WorkspaceId>({ value: grant.workspaceId }),
+    agentId: tree.rootAgentId,
+    role,
+  });
   const routing = await ctx.ports.resolveRouting({
     sessionId: grant.sessionId,
     role,
@@ -509,6 +516,7 @@ export const resolveDelegateChild = async ({
       difficulty: child.difficulty ?? undefined,
     },
     promptText: revise === null ? child.task : [child.task, ...(words?.words ?? [])].join('\n'),
+    stepLock,
   });
   if (routing.kind === 'blocked') {
     return refuse({ slot, code: routing.code, message: routing.message });

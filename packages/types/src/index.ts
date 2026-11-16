@@ -170,6 +170,7 @@ export {
 export {
   PLAN_CHANGE_KINDS,
   parsePlanChangeRequest,
+  parseRunPreset,
   type PlanChange,
   type PlanChangeKind,
   type PlanChangeRequest,

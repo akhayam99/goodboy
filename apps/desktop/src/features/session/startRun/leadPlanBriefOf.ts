@@ -15,7 +15,13 @@ const CLOSENESS_LINE = {
 export const leadPlanBriefOf = ({ work, preset, closeness }: Params): string => {
   const { name, steps } = presetSnapshotOf({ preset });
   const stepLines = steps.map((step, index) => {
-    const role = step.role === null ? '' : ` (${step.role})`;
+    const pick = step.routingLock?.pick ?? null;
+    const pin =
+      pick === null
+        ? null
+        : `pinned to ${[pick.provider, pick.model, pick.effort].filter((part) => part !== null).join(' ')}`;
+    const tags = [step.role, pin].filter((tag) => tag !== null);
+    const role = tags.length === 0 ? '' : ` (${tags.join(', ')})`;
     const brief = step.promptPrefix.trim();
     return `${index + 1}. ${step.name}${role}${brief === '' ? '' : `: ${brief}`}`;
   });

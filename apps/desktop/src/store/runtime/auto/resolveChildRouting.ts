@@ -87,6 +87,7 @@ export const resolveChildRouting = ({
     roleModels: selectResolvedSettings({ state, sessionId: request.sessionId })?.roleModels ?? null,
     providerPool: pool,
     availability,
+    stepLock: request.stepLock ?? null,
   });
   if (resolution.kind === 'blocked') {
     return { kind: 'blocked', code: 'no_provider', message: resolution.reason };
