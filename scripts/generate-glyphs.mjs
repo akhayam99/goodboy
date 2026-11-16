@@ -1,8 +1,8 @@
 import { mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
-import { createRequire } from 'node:module';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { format, resolveConfig } from 'prettier';
+import { compactPath } from './lib/compactPath.mjs';
 
 const REPOSITORY_DIRECTORY = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const ICONS_DIRECTORY = resolve(REPOSITORY_DIRECTORY, 'packages/ui/src/icons');
@@ -21,10 +21,8 @@ const SHADE_OPACITY = '0.2';
 export const glyphNamesOf = ({ indexSource }) =>
   [...new Set([...indexSource.matchAll(GENERATED_IMPORT)].map((match) => match[1]))].sort();
 
-const definitionsDirectory = () => {
-  const require = createRequire(resolve(REPOSITORY_DIRECTORY, 'packages/ui/package.json'));
-  return resolve(dirname(require.resolve('@phosphor-icons/react')), 'defs');
-};
+const definitionsDirectory = () =>
+  resolve(dirname(fileURLToPath(import.meta.resolve('@phosphor-icons/react'))), 'defs');
 
 const pathsOf = ({ fragment }) => [fragment.props.children].flat().map((child) => child.props);
 
@@ -32,7 +30,7 @@ const singlePath = ({ name, weight, paths }) => {
   if (paths.length !== 1 || paths[0].opacity !== undefined) {
     throw new Error(`${name} ${weight} is not one plain path`);
   }
-  return paths[0].d;
+  return compactPath({ d: paths[0].d });
 };
 
 const duotoneOf = ({ name, paths }) => {
@@ -40,7 +38,7 @@ const duotoneOf = ({ name, paths }) => {
   if (paths.length !== 2 || shade.opacity !== SHADE_OPACITY || line.opacity !== undefined) {
     throw new Error(`${name} duotone is not one shade and one line`);
   }
-  return { shade: shade.d, line: line.d };
+  return { shade: compactPath({ d: shade.d }), line: compactPath({ d: line.d }) };
 };
 
 export const drawingOf = ({ name, weights }) =>
