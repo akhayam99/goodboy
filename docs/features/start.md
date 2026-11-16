@@ -107,6 +107,7 @@ The settings line of a run names the model that runs it, next to the **Kind** ch
 Start a session from your goal: write it or pick an issue, then choose the kind of run.
 
 - The first field is **Goal** ("Describe the goal, or pick one from Tasks"). Write it, or press **Pick from Tasks** in its bottom row to pick an open issue. The issue fills the goal when it is empty and links to the session.
+- **Pick from Tasks** lists your open tasks by source, newest first. Tabs on top narrow it to one source (Linear, GitHub, Sentry, whatever is connected) and count what matches the search. Each row shows the key, the title, its state and its repo or project. Arrows move, Enter picks, Tab reaches the source tabs. A source that didn't load says so in the list with **Retry**. The page remembers the source you picked in this workspace.
 - **Projects** sits in the settings row and reads **Auto picks**. The session runs on the workspace, and agents read every folder.
 - The folders the goal needs are mounted on start. They are the workspace's only repo, the repo of a linked GitHub or GitLab issue, and the repos the goal names by their exact name.
 - Later an agent mounts the folder it must edit by itself.
@@ -251,3 +252,5 @@ This part is for contributors and agents who change the feature.
 - Linked work: `LevelLinked` owns the list and history fold. `IntegrationPane` returns to Overview after unlink succeeds. `openLens` routes provider shortcuts to Link work with the provider as the event source, and `buildWorkItems` compares a link with every mount branch.
 
 - Question arrival: `QuestionsGrid` unfolds Answered and focuses the plain question id in state mode. `QuestionsGridRow` ignores title clicks from nested buttons and links. `apps/desktop/src/features/session/components/SessionWorkspace/parts/QuestionsPane.byBranch.test.tsx` covers answered-only arrival and Also on without opening the drawer.
+
+- Task picker: `TaskPicker` feeds `useInboxRecords` into `TaskPickerPopover` (`SessionKickoff/TaskPickerPopover/`). `taskPickerView` owns the open tasks, the grouping, the search and every count; done tasks and sources without candidates (Slack, Bitbucket) are left out. `useTaskPickerCursor` follows the task key, so a source that answers late keeps the cursor on the same task. `taskPickerSourcePref` keeps the source per workspace. `TaskPickerPopover/index.test.tsx` and the `u44-task-picker-*` scenes cover it.
