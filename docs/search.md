@@ -220,8 +220,10 @@ A focused terminal keeps ⌘F for itself: `GenericTerminalPanel` claims the
 chord in `attachCustomKeyEventHandler` before the app dispatcher sees it,
 and opens `TerminalFindBar` over the scrollback through
 `@xterm/addon-search`. Enter and ⌘G walk forward, Shift+Enter and ⇧⌘G walk
-back, Escape closes and gives the terminal its focus back. Terminal output
-is never indexed, so this is the one view global search cannot reach.
+back, Escape closes and gives the terminal its focus back. The matches are
+amber, read from the opaque amber scale steps in `resolveTerminalFindColors`
+because xterm only parses an opaque decoration color. Terminal output is
+never indexed, so this is the one view global search cannot reach.
 
 ## Settings
 

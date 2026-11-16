@@ -51,8 +51,13 @@ test.
 `faint-foreground` clears 4.5:1 on every surface step and on a `fill` chip sunk
 into `background`, `subtle` or `muted`, in both themes, and the syntax tokens
 clear 4.5:1 on the plain diff background and on an added or removed line, word
-fill included. `text-contrast.test.ts` reads the tokens from `styles.css` and
-fails when one drifts under.
+fill included, while the line number clears it on the diff gutter. Each syntax
+token keeps one hue in both themes. `text-contrast.test.ts` reads the tokens
+from `styles.css` and fails when one drifts under. The terminal reads every
+ANSI color from a scale step (step 11 for a hue, grays for black and white);
+each clears 4.5:1 on the terminal background, except dark black and light
+bright white (3:1), pinned by `terminal-ansi-contrast.test.ts`. Its search
+highlights use the amber steps and its selection the `selection` token.
 
 ## Surface ladder
 
@@ -970,7 +975,7 @@ the outline look, `ghost` and `quiet` the quiet look.
   `palette-scales-contrast.test.ts`.
 - Each tone also has step tokens: `T-wash`, `T-subtle`, `T-edge`, `T-solid`,
   `T-solid-hover` and `on-T`, plus `border-control`, `selection`, `brand-accent`
-  and the six `diff-` line tokens. For now each tone and diff step holds the
+  and the six `diff-` line tokens. For now each tone step holds the
   value that stands in its place today (`danger-subtle` is `danger` at 10%), so
   a component moved onto them looks the same; `border-control` and `selection`
   already carry their gray and blue values, and a `::selection` rule paints
@@ -978,8 +983,9 @@ the outline look, `ghost` and `quiet` the quiet look.
   `Button` and the solid marks read them already; the ring and the soft border
   stay on opacity until their steps turn, and `tone-opacity.test.ts` counts what
   is left. That count only falls. The text fields, checkboxes and listbox fields
-  use `border-control`. The diff paints added and removed lines and words with
-  the `diff-` tokens, and the selected line with `primary-subtle` and a
+  use `border-control`. The diff paints added and removed lines, line numbers
+  and words with the opaque `diff-` steps (line, gutter, word, each a step
+  darker in light and lighter in dark), and the selected line with `primary-subtle` and a
   `primary-solid` rail. The brand chip sets `primary` to `brand-accent` inside
   itself, so a later primary change leaves the logo alone.
 
