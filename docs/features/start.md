@@ -38,7 +38,7 @@ The pick is a rule table in the app, with no model call. Goodboy reads it top to
 - Setup's last step draws this field too, pinned to Scout, so the first start teaches the second.
 - On a session's Runs page the settings row holds a **Branch** chip with the session's branches. It reads **Any branch** until you pick one, and shows the branch alone when the session has one.
 - A picked branch goes with the ask, so the run works on that branch. A failed start keeps it for Retry. A successful start clears it.
-- An open row of the branch board has **Start a run on this branch**. It opens the field on Runs with that branch picked.
+- The branch page header has **Start a run on this branch**. It opens the field on Runs with that branch picked.
 
 ### One start form
 
@@ -231,7 +231,7 @@ A failed start keeps the goal and settings. Its cause appears above the form act
 This part is for contributors and agents who change the feature.
 
 - Start form: `StartForm` draws the kinds, the fields, the settings row and the actions. `NewSessionStartForm` feeds it from the session draft and `RunsStartForm` from `useStartRun`. A kind declares the settings it uses in `START_KIND_SETTINGS`, and `startSettingsOf` keeps the order and drops a setting nothing supplies.
-- Branch chip: `StartRunBranchChip` sits in the Where slot of `RunsStartForm` and lists the attached mounts through `startRunBranchOptionsOf`. `openStartRun` takes the branch, `startRunBranchOf` reads it from the event, and `askOnBranchOf` adds it to the ask. `BoardDoors` is the board row door; `startRunDoors.scenes.test.tsx` and `BranchBoard/index.test.tsx` cover the doors.
+- Branch chip: `StartRunBranchChip` sits in the Where slot of `RunsStartForm` and lists the attached mounts through `startRunBranchOptionsOf`. `openStartRun` takes the branch, `startRunBranchOf` reads it from the event, and `askOnBranchOf` adds it to the ask. `BranchTools` is the branch page door; `startRunDoors.scenes.test.tsx` and `BranchPage/overviewDoors.test.tsx` cover the doors.
 - Kind to route: `runAsOfStartFormKind` turns a pressed kind into the `RunAs` that `runAsRouteOf` turns into the route Start uses, with a typed token ahead of the kind. `routeLineOf` builds the live "Starts as" line.
 - Edits: `StartEditsSetting` reads the draft, or the session on Runs. `applyStartEdits` calls `setSessionPermissionMode` before the first agent starts and does nothing when no mode was picked.
 - Model chip: `RunModelChip` is the one control on every door and kind, the Agent kind of the New session page included. Its `pill` variant sits in the `model` slot of the start box (`StartRun`, `StartTaskField`) with the composer pill look (`ROUTING_PILL_CLASS`); `START_KIND_SETTINGS` has no model key. `SessionKickoff` picks the view once and hands it to the box and to `NewSessionStartForm`. There `useDraftAgentModel` wraps the `useRunModel` view so a pick lands in the draft's `agentRouting`. `useRunModel` resolves the default of the slot the route lands on and keeps this start's pins by slot. `runModelSlotOf` maps a plan to the `workflow_orchestrator` task and a lead to its role, `auto` by default.
