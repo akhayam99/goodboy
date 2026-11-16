@@ -85,12 +85,6 @@
           "shown": true
         },
         {
-          "title": "The Start work composer",
-          "text": "With Work on, every door to an Auto or Orchestrator run opens one composer for the goal first.",
-          "group": "Start a task",
-          "also": "Start work composer"
-        },
-        {
           "title": "One start form",
           "text": "Every door draws the same form: the New session page, a session's Runs page, ⌘K and the setup Scout run.",
           "group": "Start a task",
@@ -98,13 +92,13 @@
         },
         {
           "title": "The Kind chip",
-          "text": "Each run says what it is, Workflow or Agent, and why. Pick another kind to start a second run; this one keeps going.",
+          "text": "Each run says what it is, Lead or Agent, and why. Pick another kind to start a second run; this one keeps going.",
           "group": "Start a task",
           "also": "Change"
         },
         {
           "title": "The model of a run",
-          "text": "A run names the model it runs on next to its Kind, Orchestrator or Auto agent, and you can pick another one for that run only.",
+          "text": "A run names the model it runs on next to its Kind, Lead or agent, and you can pick another one for that run only.",
           "group": "Start a task",
           "also": "Model"
         },
@@ -461,13 +455,13 @@
         },
         {
           "title": "New runs start as",
-          "text": "Pick how a new ask starts in this workspace: Auto, a plan with steps or one agent.",
+          "text": "Pick how a new ask starts in this workspace: a Lead, a Lead with a preset or one agent.",
           "group": "Workspaces and folders",
           "also": "run default"
         },
         {
-          "title": "Auto asks you",
-          "text": "Choose how much Auto may do alone in a workspace: every step, after the plan or never.",
+          "title": "Lead asks you",
+          "text": "Choose how much a Lead may do alone in a workspace: every step, after the plan or never, or one permission row at a time.",
           "group": "Workspaces and folders",
           "also": "Asks you"
         },
@@ -534,13 +528,13 @@
       "items": [
         {
           "title": "Start a workflow",
-          "text": "A workflow run starts from the New session page: pick Orchestrated or Preset, and press Start workflow.",
+          "text": "A run that follows a preset starts from Start a run: pick Preset under How, or type ~ and a preset name.",
           "group": "Workflows",
           "main": true
         },
         {
-          "title": "Orchestrated",
-          "text": "Give a goal and a model picks each next step, with its role, model, effort and a reason.",
+          "title": "Older runs",
+          "text": "A run started before every run had a Lead stays as it was, on its own engine.",
           "group": "Workflows",
           "main": true
         },
@@ -1163,16 +1157,12 @@
       "id": "agents",
       "title": "Work with agents directly",
       "lead": "Ask questions, give each helper a job, and steer it from the keyboard or a real terminal.",
-      "groups": ["Agents", "Work", "Keyboard and terminal"],
+      "groups": ["Agents", "Keyboard and terminal"],
       "mocks": ["askcode"],
       "guides": [
         {
           "area": "agents",
           "label": "Agents"
-        },
-        {
-          "area": "work",
-          "label": "Work"
         },
         {
           "area": "keyboard",
@@ -1315,10 +1305,17 @@
           "shown": true
         },
         {
-          "title": "Auto agent",
-          "text": "Try an agent that picks the roles, models and next steps for you. It is always on, marked as an experiment, and you can stop it or take an agent back. It runs your chosen checks on what its agents write, and a force push waits for you. It decides on every agent that comes back, and can continue, message or stop it.",
+          "title": "Lead",
+          "text": "A Lead plans a run, hands the work to helpers and asks you only for what your permission rows say.",
           "group": "Agents",
-          "also": "auto agent"
+          "also": "Lead",
+          "shown": true
+        },
+        {
+          "title": "Permission rows",
+          "text": "A Lead's autonomy is nine rows you can read and change.",
+          "group": "Agents",
+          "also": "permission rows"
         },
         {
           "title": "History rewriter and Scribe",
@@ -1331,25 +1328,6 @@
           "text": "Get agents and summaries in the language of your goal.",
           "group": "Agents",
           "also": "one language"
-        },
-        {
-          "title": "Work section",
-          "text": "Open Work to see every Lead of the workspace in one list, and see which ones need you.",
-          "group": "Work",
-          "also": "Work and Leads",
-          "shown": true
-        },
-        {
-          "title": "Lead",
-          "text": "A Lead reads one of five words: Working, Waits for you, Resting, Stopped or Finished.",
-          "group": "Work",
-          "also": "Lead states"
-        },
-        {
-          "title": "Permission rows",
-          "text": "A Lead's autonomy is nine rows you can read and change.",
-          "group": "Work",
-          "also": "permission rows"
         },
         {
           "title": "Terminal",

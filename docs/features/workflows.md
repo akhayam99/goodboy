@@ -4,11 +4,16 @@ A workflow runs several agents in one session, each step with its own role, mode
 
 ### Start a workflow
 
-A workflow run starts from the New session page: pick **Orchestrated** or **Preset**, and press **Start workflow**. From **Start a run** Auto picks a workflow when the ask has steps, or type `~` and a preset name to follow that preset. A preset's steps, roles and models are edited in the Workflows studio.
+A run that follows a preset starts from **Start a run**: pick **Preset** under **How**, or type `~` and a preset name. The run gets a Lead with the preset as its plan, and its row reads "Lead · plan Fix a layout". A preset's steps, roles and models are edited in the Workflows studio.
 
-### Orchestrated
+### Older runs
 
-Give a goal and a model picks each next step, with its role, model, effort and a reason. It stops when done or blocked.
+A run started before every run had a Lead stays as it was, on its own engine.
+
+- On an orchestrated run a model picks each next step, with its role, model, effort and a reason. It keeps its row, its page and its line, "Workflow · Orchestrated" with a gray "older run". **Continue** and **Start** finish it on the orchestrator.
+- A preset run started before keeps its line, such as "Workflow · Preset Fix a layout", and its steps.
+- New runs never start the orchestrator. A draft left on **Orchestrated** opens on **Lead**.
+- The orchestrator stays while such a run can still be open, then goes. The rows stay readable after that.
 
 ### A preset as the plan a run starts from
 
@@ -162,6 +167,7 @@ Bring custom workflows over from your other workspaces with **Import** in the Wo
 
 ## Under the hood
 
+- Older runs: the rows stay in `session_workflows` with their `execution_mode` (`packages/db/src/migrations/m091-workflow-execution-mode.ts`), and no migration touches them. `sessionRunsOf` keeps the `orchestrated` and `preset` kinds, `runKindLineOf` words their line, and `RunsGridRow` adds the gray `NAMES.runKind.olderRun` tag. The orchestrator engine is removed no earlier than two minor releases after 0.38.0, the first release where new runs never start it ([versioning.md](../versioning.md)).
 - Run transcript doors: `workflowRun.stepTranscript` and `OrchestratedTailVerb` navigate to the step agent page and close the drawer, keeping one composer (`workflowRun.subagent.test.ts`, `run-pages.test.tsx`, `failure-links.test.tsx`).
 
 This part is for contributors and agents who change the feature.

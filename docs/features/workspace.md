@@ -126,7 +126,7 @@ Choose how new session branches are named, under **Naming** on the **Branches** 
 
 Choose how **Start a run** handles a new ask in this workspace with **Start as** in **Run defaults**: **Lead with a preset that fits** or **Lead**. A **Workflow** default saved before reads as **Lead**. With a session open, a second row, **New runs in this session start as**, sets that session's own default, which wins over the workspace one. Either reaches new runs only, and each change shows a toast with **Undo**.
 
-### Auto asks you
+### Lead asks you
 
 Choose how much a Lead may do alone in this workspace with **Lead asks you**. It sits under **Workflow asks you**, so workflows can keep asking at every step while a Lead goes on after the plan. Each Lead can change its own from its page.
 

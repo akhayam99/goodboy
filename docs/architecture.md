@@ -1101,6 +1101,10 @@ of other roles. `AUTO_GATES.isDelegationEnabled` in
 setting; an old `agents.autoExperiment` row is never read), and Auto decides
 through the `<<auto>>` block, not through a bridge verb. The tables are additive, so an older build
 refuses the file with `DatabaseFromNewerBuildError` instead of reading it.
+The screens call the root Auto agent the Lead and its tree a run; the tables,
+the role `auto` and the code keep the engine name ([auto.md](auto.md#names)).
+Older orchestrated runs stay in `session_workflows` on their own engine, and no
+migration moves a row between the two.
 m230 also adds the partial index `idx_agents_auto_roots` on `agents(session_id, ordinal)` for
 root Auto agents, which the scan for an Auto agent without a tree (`listAutoAgentsWithoutTree`)
 reads. m232 rebuilds `auto_delegations` (foreign keys off, copy, drop, rename,
