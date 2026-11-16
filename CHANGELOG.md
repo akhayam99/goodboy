@@ -12,6 +12,52 @@ file is in `.prettierignore`: the meta comment sits on the line right below
 each entry's heading, with no blank line, and a formatter would push it down
 onto its own paragraph.
 
+## Goodboy v0.39.0
+
+A new palette in both themes: blue for what you can press, cyan for what is running, and a light mode without heavy borders.
+
+### Improved
+
+#### Blue for what you can press
+<!-- gb area=app image=new-session -->
+
+Start, Push and every other main button are blue now, and so are the switches you turn on, progress meters, the unread dot and the text you select.
+
+Before, the main button was cyan and information was blue. The two have swapped: blue says you can act, cyan says something is going on.
+
+The focus ring has its own stronger blue, so you see at once which field you are typing in.
+
+#### Cyan for running work and information
+<!-- gb area=sessions image=overview -->
+
+A running agent, step or run shows a cyan dot or label on the overview, the Board, the top bar and the run page. Notices that only inform, like a closed branch, and open pull requests use the same cyan.
+
+#### Status colors you can tell apart
+<!-- gb area=app image=board -->
+
+Red for failed, green for done, amber for waiting on you and purple for merged each keep one meaning. A draft pull request is gray instead of violet, so it no longer looks merged.
+
+Labels on a colored button or badge read in white, and on amber in dark ink, in both themes.
+
+#### Agent and workspace colors at one weight
+<!-- gb area=agents image=run-page -->
+
+Each agent kind and each workspace keeps its own hue, now at the same lightness, so no glyph or tile shouts over the others. Workspace colors stay clear of the status colors, so a workspace tile never reads as a state.
+
+#### Quieter grays and edges in both themes
+<!-- gb area=app image=settings -->
+
+In light, box edges are softer and the black drop shadows are gone. Secondary buttons are white with a quiet edge, and menus float on a light shadow. Fields, checkboxes and pickers keep a firmer edge, so you still find them at a glance.
+
+In dark, the grays are cooler and the glow behind the window is gone.
+
+#### Diff and terminal colors from one palette
+<!-- gb area=review image=diff -->
+
+Added and removed lines sit on clear green and red rows, the line numbers have their own column shade, and changed words stand out inside a row. Code gets one hue per kind of token.
+
+The terminal draws its colors from the same palette, and Find in the terminal marks matches in amber.
+
 ## Goodboy v0.38.1
 
 Runs start their next step when the orchestrator picks a GitHub Copilot model.
