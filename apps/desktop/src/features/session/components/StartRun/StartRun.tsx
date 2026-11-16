@@ -5,6 +5,7 @@ import { useAutoTreeLimit } from '../../../auto/useAutoTreeLimit';
 import { QuickActionsPopover } from '../../../quick-actions/QuickActionsPopover';
 import type { AgentKind } from '../../agent-kind';
 import { RUN_ROUTE_COPY } from '../../startRun/runRouteCopy';
+import { startRunBranchOf } from '../../startRun/startRunBranchOf';
 import { startRunDetailOf } from '../../startRun/startRunDetailOf';
 import { startRunEventName } from '../../startRun/startRunEventName';
 import { startRunFileOf } from '../../startRun/startRunFileOf';
@@ -60,7 +61,7 @@ export const StartRun = ({
     setText: run.setText,
     onPick: run.setRunAs,
   });
-  const { setText, setFile } = run;
+  const { setText, setFile, setBranch } = run;
 
   useEffect(() => {
     const onOpen = (event: Event): void => {
@@ -72,6 +73,10 @@ export const StartRun = ({
       if (file !== null) {
         setFile(file);
       }
+      const branch = startRunBranchOf({ event });
+      if (branch !== null) {
+        setBranch(branch);
+      }
       window.requestAnimationFrame(() =>
         sectionRef.current?.querySelector<HTMLTextAreaElement>('textarea')?.focus(),
       );
@@ -79,7 +84,7 @@ export const StartRun = ({
     const name = startRunEventName({ sessionId });
     window.addEventListener(name, onOpen);
     return () => window.removeEventListener(name, onOpen);
-  }, [sessionId, setFile, setText]);
+  }, [sessionId, setBranch, setFile, setText]);
 
   return (
     <section
