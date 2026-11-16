@@ -12,6 +12,10 @@ type Props = {
   readonly isDisabled: boolean;
 };
 
+type AttachParams = {
+  readonly candidate: IssueCandidate;
+};
+
 export const TaskPicker = ({ workspaceId, isDisabled }: Props) => {
   const rootPath = useAppStore((state) =>
     primaryProjectRoot({ projects: state.projects, workspaceId }),
@@ -19,7 +23,7 @@ export const TaskPicker = ({ workspaceId, isDisabled }: Props) => {
   const inbox = useInboxRecords({ workspaceId, rootPath: rootPath ?? '' });
   const patchSessionDraft = useAppStore((state) => state.patchSessionDraft);
 
-  const attach = (candidate: IssueCandidate): void => {
+  const attach = ({ candidate }: AttachParams): void => {
     const draft = selectSessionDraft({ state: useAppStore.getState(), workspaceId });
     patchSessionDraft({
       workspaceId,
@@ -42,7 +46,7 @@ export const TaskPicker = ({ workspaceId, isDisabled }: Props) => {
       errors={inbox.errors}
       isDisabled={isDisabled}
       onRetry={inbox.refetch}
-      onPick={attach}
+      onPick={(candidate) => attach({ candidate })}
     />
   );
 };
