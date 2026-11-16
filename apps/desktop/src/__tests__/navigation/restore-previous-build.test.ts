@@ -189,7 +189,7 @@ describe('layouts saved by the previous build', () => {
 
   it.each(PREVIOUS_BUILD_BLOBS.studios)('loads the $name and restores the page', async (entry) => {
     const layout = await savedLayoutOf({ entry });
-    expect(layout?.location.studio).toEqual(entry.expected);
+    expect(layout?.location.studio).toEqual(entry.stored);
 
     const state = await restoredFrom({ entry });
 
