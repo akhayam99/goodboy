@@ -136,11 +136,12 @@ export const TaskPickerPopover = ({
     if (event.key !== 'Tab') {
       return;
     }
+    event.preventDefault();
     if (!hasSources) {
       dropdown.close();
+      triggerRef.current?.focus();
       return;
     }
-    event.preventDefault();
     sourcesRef.current
       ?.querySelector<HTMLButtonElement>('[role="tab"][aria-selected="true"]')
       ?.focus();

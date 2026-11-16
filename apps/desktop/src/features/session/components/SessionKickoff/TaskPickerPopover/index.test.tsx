@@ -82,6 +82,7 @@ const RECORDS: ReadonlyArray<InboxRecord> = [
 type MountParams = {
   readonly workspaceId?: WorkspaceId;
   readonly records?: ReadonlyArray<InboxRecord>;
+  readonly connected?: ReadonlyArray<InboxProvider>;
   readonly loading?: Readonly<Record<InboxProvider, boolean>>;
   readonly errors?: Readonly<Record<InboxProvider, string | null>>;
   readonly onRetry?: () => void;
@@ -91,6 +92,7 @@ type MountParams = {
 const pickerOf = ({
   workspaceId = HARBORLINE,
   records = RECORDS,
+  connected = CONNECTED,
   loading = IDLE,
   errors = NO_ERRORS,
   onRetry = () => undefined,
@@ -99,7 +101,7 @@ const pickerOf = ({
   <TaskPickerPopover
     workspaceId={workspaceId}
     records={records}
-    connected={CONNECTED}
+    connected={connected}
     loading={loading}
     errors={errors}
     isDisabled={false}
@@ -248,6 +250,21 @@ describe('TaskPickerPopover', () => {
     render(pickerOf({ workspaceId: NORTHWIND }));
     open();
     expect(sourceTab(/^All/).getAttribute('aria-selected')).toBe('true');
+  });
+
+  it('hides the source tabs for one source, and Tab closes back to the chip', () => {
+    render(
+      pickerOf({
+        records: RECORDS.filter((record) => record.provider === 'linear'),
+        connected: ['linear'],
+      }),
+    );
+    open();
+
+    expect(screen.queryByRole('tablist', { name: 'Task sources' })).toBeNull();
+    fireEvent.keyDown(search(), { key: 'Tab' });
+    expect(screen.queryByRole('listbox', { name: 'Tasks' })).toBeNull();
+    expect(document.activeElement).toBe(screen.getByRole('combobox', { name: 'Pick from Tasks' }));
   });
 
   it('reaches the sources with Tab and switches them with the arrows', () => {
