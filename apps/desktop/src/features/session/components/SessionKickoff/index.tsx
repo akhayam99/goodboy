@@ -52,7 +52,7 @@ export const SessionKickoff = ({ workspaceId, notice }: Props) => {
   const shapeModel = useRunModel({
     workspaceId,
     sessionId: null,
-    slot: runModelSlotOfShape({ shape: startShape ?? 'orchestrated', agentKind }),
+    slot: runModelSlotOfShape({ shape: startShape ?? 'autoAgent', agentKind }),
   });
   const autoRun = useStartRun({
     workspaceId,

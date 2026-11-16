@@ -20,18 +20,16 @@ type CountParams = {
 export const START_KIND_COPY = {
   question: 'What kind of run?',
   how: 'How',
-  pickLine: 'Auto picks how to run it. Or pick a kind.',
+  pickLine: 'A Lead plans it and starts the agents. Or give it a preset, or pick one agent.',
   kindLine: {
-    auto: 'Picks how to run it from your goal.',
+    lead: 'Plans it and starts the agents it needs.',
+    preset: 'The Lead follows a saved preset as its plan.',
     agent: 'One role you pick, on the model you pick.',
-    orchestrated: 'Plans each next step as it goes.',
-    preset: 'A saved list of steps, kept or changed as it goes.',
   },
   kindTab: {
-    auto: 'Auto',
-    agent: 'Agent',
-    orchestrated: 'Orchestrated',
+    lead: 'Lead',
     preset: 'Preset',
+    agent: 'Agent',
   },
   settings: 'Run settings',
   more: 'More',
@@ -45,7 +43,7 @@ export const START_KIND_COPY = {
     label: NAMES.guidance,
     title: 'Guidance for this run',
     readers: {
-      auto: 'Read by the Auto agent and the helpers it starts.',
+      auto: 'Read by the Lead and the agents it starts.',
       agent: 'Read by the agent at the start of its brief.',
       orchestrator: 'Read by the orchestrator, which carries it into each step.',
     },
@@ -79,8 +77,8 @@ export const START_KIND_COPY = {
     label: 'With the preset',
     follow: 'Keep steps',
     adapt: 'May change steps',
-    followLine: 'The saved steps in order. Auto asks before a change.',
-    adaptLine: 'Auto may add, skip or move a step, and says why.',
+    followLine: 'The saved steps in order. The Lead asks before a change.',
+    adaptLine: 'The Lead may add, skip or move a step, and says why.',
   },
   role: 'Role',
   starting: 'Starting',
@@ -97,8 +95,8 @@ export const START_KIND_COPY = {
     },
     preset: {
       icon: CONCEPT_ICONS.plan,
-      what: 'A saved list of steps, followed or adapted.',
-      whileRuns: 'While it runs, the saved steps tick off and a change is marked.',
+      what: 'The Lead follows a saved preset as its plan.',
+      whileRuns: 'While it runs, the Lead starts an agent per step and says why it changes one.',
     },
     agent: {
       icon: CONCEPT_ICONS.agents,
@@ -107,8 +105,8 @@ export const START_KIND_COPY = {
     },
     autoAgent: {
       icon: CONCEPT_ICONS.auto,
-      what: 'Auto works on it and starts helpers, under your limit.',
-      whileRuns: 'While it runs, its helpers show under it, against your limit.',
+      what: 'The Lead plans it and starts the agents it needs, under your limit.',
+      whileRuns: 'While it runs, its agents show under it, against your limit.',
     },
   } satisfies Record<StartShape, ShapeCard>,
 } as const;

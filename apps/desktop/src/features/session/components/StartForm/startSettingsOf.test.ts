@@ -22,8 +22,7 @@ describe('startSettingsOf', () => {
   it('gives every kind that asks and limits the same chip order', () => {
     const expected = ['where', 'asks', 'edits', 'limit', 'guidance'];
     expect(keysOf({ kind: null })).toEqual(expected);
-    expect(keysOf({ kind: 'auto' })).toEqual(expected);
-    expect(keysOf({ kind: 'orchestrated' })).toEqual(expected);
+    expect(keysOf({ kind: 'lead' })).toEqual(expected);
     expect(keysOf({ kind: 'preset' })).toEqual(expected);
   });
 
@@ -32,7 +31,7 @@ describe('startSettingsOf', () => {
   });
 
   it('marks the changed settings', () => {
-    const items = startSettingsOf({ kind: 'auto', nodes: NODES, changed: ['limit'] });
+    const items = startSettingsOf({ kind: 'lead', nodes: NODES, changed: ['limit'] });
 
     expect(items.filter((item) => item.isChanged).map((item) => item.key)).toEqual(['limit']);
   });

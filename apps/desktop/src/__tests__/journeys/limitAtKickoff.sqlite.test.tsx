@@ -184,11 +184,9 @@ describe('journey: the limit chip at the kickoff', () => {
     expect(row.queryByRole('button', { name: /^Limit / })).toBeNull();
   });
 
-  it('names a run, not Auto, in the popover of a workflow kind, which starts from the Run defaults', async () => {
+  it('names a run, not Auto, in the Limit popover, which starts from the Run defaults', async () => {
     spies();
     open();
-    fireEvent.click(screen.getByRole('button', { name: /^How: / }));
-    fireEvent.click(screen.getByRole('tab', { name: /^Orchestrated/ }));
     const row = startSettingsRowOf({
       group: await screen.findByRole('group', { name: 'Run settings' }),
     });
@@ -198,11 +196,11 @@ describe('journey: the limit chip at the kickoff', () => {
     screen.getByRole('dialog', { name: 'Limit for this run' });
   });
 
-  it('starts the Auto kind from the same Run defaults limit and links to its page', async () => {
+  it('starts the Lead kind from the same Run defaults limit and links to its page', async () => {
     spies();
     open();
     fireEvent.click(screen.getByRole('button', { name: /^How: / }));
-    fireEvent.click(screen.getByRole('tab', { name: /^Auto/ }));
+    fireEvent.click(screen.getByRole('tab', { name: /^Lead/ }));
     const row = startSettingsRowOf({
       group: await screen.findByRole('group', { name: 'Run settings' }),
     });

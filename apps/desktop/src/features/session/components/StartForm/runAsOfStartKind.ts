@@ -13,9 +13,8 @@ export const startFormKindOfRunAs = ({ runAs }: KindParams): StartFormKind | nul
       return null;
     case 'role':
       return 'agent';
-    case 'orchestrated':
     case 'preset':
-      return runAs.kind;
+      return 'preset';
     default: {
       const unreachable: never = runAs;
       return unreachable;
@@ -29,11 +28,8 @@ type RunAsParams = {
 };
 
 export const runAsOfStartFormKind = ({ kind, presets }: RunAsParams): RunAs => {
-  if (kind === 'auto') {
+  if (kind === 'lead') {
     return AUTO_RUN_AS;
-  }
-  if (kind === 'orchestrated') {
-    return { kind: 'orchestrated' };
   }
   if (kind === 'agent') {
     return { kind: 'role', role: 'scout' };

@@ -55,22 +55,24 @@ describe('the u27 start page scenes', () => {
     expect(Object.keys(U27_START_PAGE_SCENES)).toHaveLength(8);
   });
 
-  it('opens on four kinds with Auto picked, and says Auto picks', async () => {
+  it('opens on three kinds with Lead picked, and says a Lead runs it', async () => {
     mount({ id: 'u27-start-page-after-choice' });
 
-    fireEvent.click(await screen.findByRole('button', { name: /^How: Auto/ }, WAIT));
+    fireEvent.click(await screen.findByRole('button', { name: /^How: Lead/ }, WAIT));
     const kinds = await screen.findByRole('tablist', { name: 'What kind of run?' }, WAIT);
     expect(
       within(kinds)
         .getAllByRole('tab')
         .map((tab) => tab.getAttribute('aria-selected')),
-    ).toEqual(['true', 'false', 'false', 'false']);
-    for (const name of [/^Auto/, /^Agent/, /^Orchestrated/, /^Preset/]) {
+    ).toEqual(['true', 'false', 'false']);
+    for (const name of [/^Lead/, /^Preset/, /^Agent/]) {
       within(kinds).getByRole('tab', { name });
     }
-    expect(screen.getAllByText('Auto picks how to run it. Or pick a kind.').length).toBeGreaterThan(
-      0,
-    );
+    expect(
+      screen.getAllByText(
+        'A Lead plans it and starts the agents. Or give it a preset, or pick one agent.',
+      ).length,
+    ).toBeGreaterThan(0);
   });
 
   it('gives the agent a role, Edits and no limit, and its model in the message box', async () => {
@@ -100,7 +102,8 @@ describe('the u27 start page scenes', () => {
     ).toHaveLength(3);
     screen.getByRole('tablist', { name: 'With the preset' });
     const row = startSettingsRowOf({ group: screen.getByRole('group', { name: 'Run settings' }) });
-    row.getByRole('button', { name: /^Asks you: Every step/ });
+    row.getByRole('button', { name: /^Asks you: / });
+    expect(row.queryByRole('button', { name: /^Asks you: Every step/ })).toBeNull();
     expect(row.getByRole('combobox', { name: 'Projects' }).textContent).toContain('harbor-portal');
     screen.getByText('Member pages drift left on wide screens');
     screen.getByRole('button', { name: 'Start' });
@@ -108,16 +111,16 @@ describe('the u27 start page scenes', () => {
     expect(await screen.findByRole('combobox', { name: 'Pick from Tasks' }, WAIT)).toBeDefined();
   });
 
-  it('keeps Auto picks as the unpicked state of the same form', async () => {
+  it('keeps Lead as the unpicked state of the same form', async () => {
     mount({ id: 'u27-start-page-after-auto-picks' });
 
-    fireEvent.click(await screen.findByRole('button', { name: /^How: Auto/ }, WAIT));
+    fireEvent.click(await screen.findByRole('button', { name: /^How: Lead/ }, WAIT));
     const kinds = await screen.findByRole('tablist', { name: 'What kind of run?' }, WAIT);
-    expect(within(kinds).getByRole('tab', { name: /^Auto/ }).getAttribute('aria-selected')).toBe(
+    expect(within(kinds).getByRole('tab', { name: /^Lead/ }).getAttribute('aria-selected')).toBe(
       'true',
     );
     screen.getByText(/^Starts[ ]as/);
-    fireEvent.click(within(kinds).getByRole('tab', { name: /^Orchestrated/ }));
-    await screen.findByRole('button', { name: /^How: Orchestrated/ }, WAIT);
+    fireEvent.click(within(kinds).getByRole('tab', { name: /^Agent/ }));
+    await screen.findByRole('button', { name: /^How: Agent/ }, WAIT);
   });
 });

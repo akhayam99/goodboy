@@ -216,7 +216,7 @@ export const CREATE_AND_SEARCH_ROWS: ReadonlyArray<Row> = [
     lands: async () => {
       expect(await screen.findByRole('textbox', { name: 'Start a run' }, WAIT)).toBeDefined();
       expect(screen.queryByRole('region', { name: 'Run a workflow' })).toBeNull();
-      screen.getByRole('button', { name: 'How: Auto' });
+      screen.getByRole('button', { name: 'How: Lead' });
       const settings = startSettingsRowOf({
         group: screen.getByRole('group', { name: 'Run settings' }),
       });

@@ -92,11 +92,11 @@ describe('the c10 New session scenes', () => {
     }
   });
 
-  it('c10-start-task puts HBL-412 above the task and offers the four kinds', async () => {
+  it('c10-start-task puts HBL-412 above the task and opens How on Lead', async () => {
     await mount({ id: 'c10-start-task' });
 
     expect(screen.getByRole('list', { name: 'Picked issues' }).textContent).toContain('HBL-412');
-    screen.getByRole('button', { name: 'How: Auto' });
+    screen.getByRole('button', { name: 'How: Lead' });
     expect(screen.queryByRole('button', { name: /^Runs as/ })).toBeNull();
   });
 

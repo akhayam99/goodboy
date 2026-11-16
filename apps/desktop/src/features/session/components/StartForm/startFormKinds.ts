@@ -1,21 +1,15 @@
 import type { StartKind, StartShape } from '../../../../store/slices/sessionDraft/state';
 
-export type StartFormKind = 'auto' | 'agent' | 'orchestrated' | 'preset';
+export type StartFormKind = 'lead' | 'preset' | 'agent';
 
 export type StartSettingKey = 'where' | 'role' | 'asks' | 'edits' | 'limit' | 'guidance';
 
-export const START_FORM_KINDS: ReadonlyArray<StartFormKind> = [
-  'auto',
-  'agent',
-  'orchestrated',
-  'preset',
-];
+export const START_FORM_KINDS: ReadonlyArray<StartFormKind> = ['lead', 'preset', 'agent'];
 
 const START_KIND_SETTINGS = {
-  auto: ['where', 'asks', 'edits', 'limit', 'guidance'],
-  agent: ['where', 'role', 'edits', 'guidance'],
-  orchestrated: ['where', 'asks', 'edits', 'limit', 'guidance'],
+  lead: ['where', 'asks', 'edits', 'limit', 'guidance'],
   preset: ['where', 'asks', 'edits', 'limit', 'guidance'],
+  agent: ['where', 'role', 'edits', 'guidance'],
 } as const satisfies Record<StartFormKind, ReadonlyArray<StartSettingKey>>;
 
 const START_PICK_SETTINGS = [
@@ -33,19 +27,12 @@ type UsedParams = {
 export const startSettingsUsedBy = ({ kind }: UsedParams): ReadonlyArray<StartSettingKey> =>
   kind === null ? START_PICK_SETTINGS : START_KIND_SETTINGS[kind];
 
-type ShapeParams = {
-  readonly shape: StartShape;
-};
-
-const startFormKindOfShape = ({ shape }: ShapeParams): StartFormKind =>
-  shape === 'autoAgent' ? 'auto' : shape;
-
 type KindParams = {
   readonly kind: StartFormKind;
 };
 
 export const startShapeOfFormKind = ({ kind }: KindParams): StartShape =>
-  kind === 'auto' ? 'autoAgent' : kind;
+  kind === 'lead' ? 'autoAgent' : kind;
 
 type DraftParams = {
   readonly startKind: StartKind | null;
@@ -55,9 +42,12 @@ type DraftParams = {
 export const startFormKindOfDraft = ({
   startKind,
   startShape,
-}: DraftParams): StartFormKind | null =>
-  (startKind === 'workflow' || startKind === 'agent') &&
-  startShape !== null &&
-  startShape !== 'autoAgent'
-    ? startFormKindOfShape({ shape: startShape })
-    : null;
+}: DraftParams): StartFormKind | null => {
+  if (startKind !== 'workflow' && startKind !== 'agent') {
+    return null;
+  }
+  if (startShape === 'preset' || startShape === 'agent') {
+    return startShape;
+  }
+  return null;
+};
