@@ -162,7 +162,7 @@ describe('RunKindChip', () => {
       within(startAs)
         .getAllByRole('button')
         .map((row) => row.textContent),
-    ).toEqual(['Workflow · Orchestrated', 'Agent · Auto agent']);
+    ).toEqual(['Lead', 'Lead · plan Fix a layout']);
     expect(popover.textContent).toContain('Starts a new run with the same goal.');
     expect(popover.textContent).not.toContain('Start every run in this session');
   });
@@ -192,7 +192,7 @@ describe('RunKindChip', () => {
     const popover = openChip({ phase: 'finished' });
 
     await act(async () => {
-      fireEvent.click(within(popover).getByRole('button', { name: 'Agent · Auto agent' }));
+      fireEvent.click(within(popover).getByRole('button', { name: 'Lead' }));
     });
 
     await waitFor(() => expect(engines.spawnAgent).toHaveBeenCalledTimes(1));
@@ -213,7 +213,7 @@ describe('RunKindChip', () => {
     const popover = openChip({ phase: 'ended' });
 
     await act(async () => {
-      fireEvent.click(within(popover).getByRole('button', { name: 'Agent · Auto agent' }));
+      fireEvent.click(within(popover).getByRole('button', { name: 'Lead' }));
     });
 
     expect((await within(popover).findByRole('alert')).textContent).toBe(
@@ -246,14 +246,48 @@ describe('RunKindChip', () => {
       'Ends this run and starts a new one with what it did so far.',
     );
     await act(async () => {
-      fireEvent.click(within(popover).getByRole('button', { name: 'Agent · Auto agent' }));
+      fireEvent.click(within(popover).getByRole('button', { name: 'Lead · plan Fix a layout' }));
     });
 
     await waitFor(() => expect(engines.spawnAgent).toHaveBeenCalledTimes(1));
+    expect(engines.spawnAgent.mock.calls[0]?.[1]).toMatchObject({ kindOverride: 'auto' });
     expect(engines.spawnAgent.mock.calls[0]?.[1].initialPrompt).toContain(
       'Six pages share one wrapper',
     );
+    expect(engines.spawnAgent.mock.calls[0]?.[1].initialPrompt).toContain(
+      'Plan: follow the preset "Fix a layout".',
+    );
     await waitFor(() => expect(engines.closeWorkflowRun).toHaveBeenCalledWith(SESSION.id, RUN_ID));
     await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Kind' })).toBeNull());
+  });
+
+  it('names a Lead run by its plan and offers no Orchestrated and no step tabs', () => {
+    const agentId = brandId<AgentId>({ value: 'agent-ledger-core' });
+    render(
+      <RunKindChip
+        workspaceId={WORKSPACE.id}
+        target={{ kind: 'lead', sessionId: SESSION.id, agentId }}
+        route={{
+          ...ROUTE,
+          shape: 'lead',
+          row: 1,
+          choice: 'Lead · plan Fix a layout · May change steps',
+          why: 'you picked it',
+        }}
+        changeCount={0}
+        phase="finished"
+      />,
+    );
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Kind: Lead · plan Fix a layout, set at start' }),
+    );
+    const popover = screen.getByRole('dialog', { name: 'Kind' });
+
+    expect(within(popover).queryAllByRole('tab')).toHaveLength(0);
+    expect(
+      within(within(popover).getByRole('group', { name: 'Start a new run as' }))
+        .getAllByRole('button')
+        .map((row) => row.textContent),
+    ).toEqual(['Lead']);
   });
 });

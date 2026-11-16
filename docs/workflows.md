@@ -185,8 +185,10 @@ value and shows the error under its row.
 - **Auto agent asks you** (`AutoLevelDefaultRow`): the same three levels for
   Auto. With Work on, the row holds `LeadPermissionsChip` on the workspace
   default instead, so there is no separate Asks you band
-- **Start as** (`RunDefaultField`): Let Auto pick, Workflow or Auto agent. With
-  a session of this workspace open, a second row sets that session's default;
+- **Start as** (`RunDefaultField`): every value starts a Lead. `auto` lets the
+  router give it a matching preset, `lead` takes no preset on its own, and
+  `plan` (written by older versions) reads as `lead` (`leadDefaultOf`). With a
+  session of this workspace open, a second row sets that session's default;
   it is the only writer of the session default (`changeRunDefault`)
 - **Limit** (`DefaultLimitSetting`): the amount per run, applied on Enter (a
   blank amount is no limit) or when the field loses focus, and what happens at

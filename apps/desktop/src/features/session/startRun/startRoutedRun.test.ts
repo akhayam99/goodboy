@@ -31,7 +31,8 @@ import {
   storySqlite,
   type StoryStore,
 } from '../../../store/storyHarness';
-import { runRouteOf, type RunRouteFacts } from './runRouteOf';
+import { olderPlanRouteOf } from './routeChoiceOf';
+import { runRouteOf, type RunRouteFacts, type RunRouteResult } from './runRouteOf';
 import { parseRunRoutes, runRoutesKey } from './runRoutesSetting';
 import { startRoutedRun } from './startRoutedRun';
 
@@ -99,6 +100,18 @@ type RouteOfParams = {
 
 const routeOf = ({ text }: RouteOfParams) => runRouteOf({ facts: { ...FACTS, text } });
 
+const olderPlanOf = ({ text }: RouteOfParams): RunRouteResult => ({
+  route: olderPlanRouteOf({
+    preset: LAYOUT,
+    closeness: 'adapt',
+    row: 2,
+    why: 'Your ask matches the preset',
+  }),
+  ask: text,
+  preset: LAYOUT,
+  role: null,
+});
+
 const readRoutes = async (): Promise<Readonly<Record<string, RunRoute>>> =>
   parseRunRoutes({
     raw: await getSetting(storySqlite(), runRoutesKey({ sessionId: SESSION.id })),
@@ -136,9 +149,9 @@ describe('startRoutedRun keeps the reason with the run', () => {
     });
   });
 
-  it('puts the reason of a plan in the rules the run starts with', async () => {
+  it('keeps the plan engine for an older run and puts its reason in its rules', async () => {
     const engines = mockEngines();
-    const result = routeOf({ text: 'Fix the layout on every billing page' });
+    const result = olderPlanOf({ text: 'Fix the layout on every billing page' });
 
     const started = await startRoutedRun({ sessionId: SESSION.id, result });
 
@@ -154,17 +167,56 @@ describe('startRoutedRun keeps the reason with the run', () => {
     expect(engines.spawnAgent).not.toHaveBeenCalled();
   });
 
-  it('keeps the reason of a run you picked by name', async () => {
+  it('starts a Lead with the preset you named as its plan', async () => {
     const engines = mockEngines();
     const result = routeOf({ text: '~Fix a layout the totals table' });
 
-    await startRoutedRun({ sessionId: SESSION.id, result });
+    const started = await startRoutedRun({ sessionId: SESSION.id, result });
 
-    const options = engines.attachWorkflowToSession.mock.calls[0]?.[2];
-    expect(options?.rulesSnapshot?.route).toMatchObject({
+    expect(started).toEqual({ kind: 'lead', agentId: AGENT });
+    expect(engines.attachWorkflowToSession).not.toHaveBeenCalled();
+    const options = engines.spawnAgent.mock.calls[0]?.[1];
+    expect(options?.kindOverride).toBe('auto');
+    expect(options?.initialPrompt).toBe(
+      [
+        'the totals table',
+        'Plan: follow the preset "Fix a layout".',
+        '1. Find (scout)',
+        'Keep these steps in their order. Ask before you add, skip or move one.',
+      ].join('\n\n'),
+    );
+    expect((await readRoutes())[AGENT]).toMatchObject({
+      shape: 'lead',
       row: 1,
       presetName: 'Fix a layout',
+      closeness: 'follow',
       ask: 'the totals table',
+    });
+  });
+
+  it('starts a Lead for an ask that matches a preset, free to adapt it', async () => {
+    const engines = mockEngines();
+    const result = routeOf({ text: 'Fix the layout on every billing page' });
+
+    await startRoutedRun({ sessionId: SESSION.id, result });
+
+    expect(engines.attachWorkflowToSession).not.toHaveBeenCalled();
+    expect(engines.spawnAgent.mock.calls[0]?.[1]?.initialPrompt).toContain(
+      'You may add, skip or move a step. Say why when you do.',
+    );
+  });
+
+  it('sends the ask alone when one role runs it', async () => {
+    const engines = mockEngines();
+
+    await startRoutedRun({
+      sessionId: SESSION.id,
+      result: { ...routeOf({ text: '~Fix a layout the totals table' }), role: 'implementer' },
+    });
+
+    expect(engines.spawnAgent.mock.calls[0]?.[1]).toMatchObject({
+      kindOverride: 'implementer',
+      initialPrompt: 'the totals table',
     });
   });
 
@@ -214,9 +266,9 @@ describe('startRoutedRun pins the model of one run', () => {
     expect(options).not.toHaveProperty('provider');
   });
 
-  it('starts an orchestrated run with the orchestrator the person picked', async () => {
+  it('resumes an older orchestrated run with the orchestrator the person picked', async () => {
     const engines = mockEngines();
-    const result = routeOf({ text: 'Fix the layout on every billing page' });
+    const result = olderPlanOf({ text: 'Fix the layout on every billing page' });
 
     await startRoutedRun({
       sessionId: SESSION.id,
@@ -230,9 +282,9 @@ describe('startRoutedRun pins the model of one run', () => {
     });
   });
 
-  it('starts an orchestrated run on the default orchestrator when none is picked', async () => {
+  it('resumes an older orchestrated run on the default orchestrator', async () => {
     const engines = mockEngines();
-    const result = routeOf({ text: 'Fix the layout on every billing page' });
+    const result = olderPlanOf({ text: 'Fix the layout on every billing page' });
 
     await startRoutedRun({ sessionId: SESSION.id, result });
 
@@ -281,7 +333,7 @@ describe('startRoutedRun carries the guidance of one run', () => {
   it('snapshots the guidance of an orchestrated run over the workspace value', async () => {
     const engines = mockEngines();
     withWorkspaceGuidance();
-    const result = routeOf({ text: 'Fix the layout on every billing page' });
+    const result = olderPlanOf({ text: 'Fix the layout on every billing page' });
 
     await startRoutedRun({
       sessionId: SESSION.id,
@@ -297,7 +349,7 @@ describe('startRoutedRun carries the guidance of one run', () => {
   it('keeps the workspace guidance when the run has none of its own', async () => {
     const engines = mockEngines();
     withWorkspaceGuidance();
-    const result = routeOf({ text: 'Fix the layout on every billing page' });
+    const result = olderPlanOf({ text: 'Fix the layout on every billing page' });
 
     await startRoutedRun({ sessionId: SESSION.id, result, guidance: null });
 
@@ -309,7 +361,7 @@ describe('startRoutedRun carries the guidance of one run', () => {
   it('starts a run without guidance when the person cleared the workspace value', async () => {
     const engines = mockEngines();
     withWorkspaceGuidance();
-    const result = routeOf({ text: 'Fix the layout on every billing page' });
+    const result = olderPlanOf({ text: 'Fix the layout on every billing page' });
 
     await startRoutedRun({ sessionId: SESSION.id, result, guidance: '' });
 

@@ -29,13 +29,13 @@ type TextParams = {
 const routeOf = ({ text }: TextParams) => runRouteOf({ facts: { ...FACTS, text } });
 
 describe('runModelSlotOf', () => {
-  it('puts a plan on the orchestrator', () => {
+  it('puts a task with an end on the Lead', () => {
     expect(runModelSlotOf({ result: routeOf({ text: 'center every member page' }) })).toEqual(
-      ORCHESTRATOR_SLOT,
+      AUTO_AGENT_SLOT,
     );
   });
 
-  it('puts a question on the Auto agent', () => {
+  it('puts a question on the Lead', () => {
     expect(
       runModelSlotOf({ result: routeOf({ text: 'Which notify-relay handler fires twice?' }) }),
     ).toEqual(AUTO_AGENT_SLOT);
@@ -50,9 +50,9 @@ describe('runModelSlotOf', () => {
 
   it('maps the shapes of the New session page to the same slots', () => {
     expect(runModelSlotOfShape({ shape: 'orchestrated', agentKind: 'scout' })).toEqual(
-      ORCHESTRATOR_SLOT,
+      AUTO_AGENT_SLOT,
     );
-    expect(runModelSlotOfShape({ shape: 'preset', agentKind: 'scout' })).toEqual(ORCHESTRATOR_SLOT);
+    expect(runModelSlotOfShape({ shape: 'preset', agentKind: 'scout' })).toEqual(AUTO_AGENT_SLOT);
     expect(runModelSlotOfShape({ shape: 'autoAgent', agentKind: 'scout' })).toEqual(
       AUTO_AGENT_SLOT,
     );

@@ -14,7 +14,7 @@ import {
 import { useAppStore } from '../../../store';
 import { sessionById } from '../../../store/slices/sessions/sessionIndex';
 import { presetSnapshotOf } from './presetSnapshotOf';
-import { presetRouteOf, shapeRouteOf } from './routeChoiceOf';
+import { leadRouteOf, olderPlanRouteOf, presetRouteOf } from './routeChoiceOf';
 import { runFindingsOf } from './runFindingsOf';
 import { RUN_ROUTE_COPY } from './runRouteCopy';
 import type { RunRouteResult } from './runRouteOf';
@@ -47,16 +47,28 @@ type ResultParams = {
   readonly presets: ReadonlyArray<Workflow>;
 };
 
+type RouteParams = {
+  readonly choice: RunRouteChoice;
+  readonly preset: Workflow | null;
+};
+
+const chosenRouteOf = ({ choice, preset }: RouteParams): RunRoute => {
+  const why = RUN_ROUTE_COPY.why.picked;
+  if (choice.shape === 'plan') {
+    return olderPlanRouteOf({ preset, closeness: choice.closeness, row: 1, why });
+  }
+  if (preset === null) {
+    return leadRouteOf({ row: 1, why });
+  }
+  return presetRouteOf({ preset, closeness: choice.closeness, row: 1, why });
+};
+
 const chosenResultOf = ({ choice, ask, presets }: ResultParams): RunRouteResult => {
   const preset =
-    choice.shape === 'plan' && choice.presetId !== null
-      ? (presets.find((candidate) => candidate.id === choice.presetId) ?? null)
-      : null;
-  const why = RUN_ROUTE_COPY.why.picked;
-  const route =
-    preset === null
-      ? shapeRouteOf({ shape: choice.shape, row: 1, why })
-      : presetRouteOf({ preset, closeness: choice.closeness, row: 1, why });
+    choice.presetId === null
+      ? null
+      : (presets.find((candidate) => candidate.id === choice.presetId) ?? null);
+  const route = chosenRouteOf({ choice, preset });
   return { route: { ...route, ask }, ask, preset, role: null };
 };
 
@@ -167,9 +179,6 @@ const changeLeadRun = async ({
   agentId,
   choice,
 }: LeadParams): Promise<RunRouteChange> => {
-  if (choice.shape === 'lead') {
-    return 'unchanged';
-  }
   await useAppStore.getState().loadSetting(runRoutesKey({ sessionId }));
   const state = useAppStore.getState();
   const session = sessionById(state.sessions, sessionId);
@@ -178,6 +187,14 @@ const changeLeadRun = async ({
   }
   const route =
     parseRunRoutes({ raw: state.settings[runRoutesKey({ sessionId })] })[agentId] ?? null;
+  const presets = (state.phaseTemplates[session.workspaceId] ?? []).filter(
+    (candidate) => candidate.isPreset === true,
+  );
+  const currentPresetId =
+    presets.find((candidate) => candidate.name === route?.presetName)?.id ?? null;
+  if (choice.shape === 'lead' && choice.presetId === currentPresetId) {
+    return 'unchanged';
+  }
   const agents = state.sessionPhaseRuns[sessionId] ?? [];
   const root = agents.find((agent) => agent.id === agentId) ?? null;
   const turn = state.agentTurnState[agentId];
@@ -190,9 +207,6 @@ const changeLeadRun = async ({
     throw new Error(RUN_ROUTE_COPY.stillGoing);
   }
   const ask = route?.ask ?? root?.name ?? '';
-  const presets = (state.phaseTemplates[session.workspaceId] ?? []).filter(
-    (candidate) => candidate.isPreset === true,
-  );
   const findings = runFindingsOf({
     done: [],
     summaries: [

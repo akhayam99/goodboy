@@ -29,12 +29,8 @@ export const runModelSlotOf = ({ result }: ResultParams): RunModelSlot => {
   return result.role === null ? AUTO_AGENT_SLOT : { kind: 'agent', agentKind: result.role };
 };
 
-export const runModelSlotOfShape = ({ shape, agentKind }: ShapeParams): RunModelSlot => {
-  if (shape === 'orchestrated' || shape === 'preset') {
-    return ORCHESTRATOR_SLOT;
-  }
-  return shape === 'autoAgent' ? AUTO_AGENT_SLOT : { kind: 'agent', agentKind };
-};
+export const runModelSlotOfShape = ({ shape, agentKind }: ShapeParams): RunModelSlot =>
+  shape === 'agent' ? { kind: 'agent', agentKind } : AUTO_AGENT_SLOT;
 
 export const runModelSlotKeyOf = ({ slot }: KeyParams): string =>
   slot.kind === 'orchestrator' ? 'orchestrator' : `agent:${slot.agentKind}`;

@@ -72,15 +72,16 @@ const factsOf = (overrides: Partial<RunRouteFacts>): RunRouteFacts => ({
 const routeOf = (overrides: Partial<RunRouteFacts>) => runRouteOf({ facts: factsOf(overrides) });
 
 describe('runRouteOf, row 1: you said it', () => {
-  it('follows a preset named with a tilde and strips the name from the ask', () => {
+  it('gives a Lead the preset named with a tilde as its plan and strips the name', () => {
     const result = routeOf({ text: '~Fix a layout center the billing page' });
 
     expect(result.route).toMatchObject({
       row: 1,
-      shape: 'plan',
+      shape: 'lead',
       closeness: 'follow',
       presetName: 'Fix a layout',
-      choice: 'Workflow · Preset Fix a layout · Keep steps',
+      role: null,
+      choice: 'Lead · plan Fix a layout · Keep steps',
       why: 'you picked it',
     });
     expect(result.preset?.id).toBe(FIX_A_LAYOUT.id);
@@ -100,16 +101,21 @@ describe('runRouteOf, row 1: you said it', () => {
     expect(result.ask).toBe('where does payments-api validate a refund?');
   });
 
-  it('reads the default set for this session or workspace', () => {
-    const result = routeOf({ text: 'center every member page', defaultShape: 'plan' });
+  it.each(['plan', 'lead'] as const)(
+    'reads the default %s as a Lead that takes no preset on its own',
+    (defaultShape) => {
+      const result = routeOf({ text: 'Fix the layout of every page', defaultShape });
 
-    expect(result.route).toMatchObject({
-      row: 1,
-      shape: 'plan',
-      choice: 'Workflow · Orchestrated',
-      why: 'your default',
-    });
-  });
+      expect(result.route).toMatchObject({
+        row: 1,
+        shape: 'lead',
+        presetName: null,
+        choice: 'Lead',
+        why: 'your default',
+      });
+      expect(result.preset).toBeNull();
+    },
+  );
 
   it('wins over every later row', () => {
     const result = routeOf({ text: '@Scout check every page', hasTask: true });
@@ -125,15 +131,15 @@ describe('runRouteOf, row 1: you said it', () => {
 });
 
 describe('runRouteOf, row 2: a preset matches the ask', () => {
-  it('adapts the preset whose name the ask holds', () => {
+  it('gives a Lead the preset whose name the ask holds, free to adapt it', () => {
     const result = routeOf({ text: 'Fix the layout of the Harborline billing page' });
 
     expect(result.route).toMatchObject({
       row: 2,
-      shape: 'plan',
+      shape: 'lead',
       closeness: 'adapt',
       presetName: 'Fix a layout',
-      choice: 'Workflow · Preset Fix a layout · May change steps',
+      choice: 'Lead · plan Fix a layout · May change steps',
       why: 'Your ask matches the preset',
     });
     expect(result.ask).toBe('Fix the layout of the Harborline billing page');
@@ -203,28 +209,28 @@ describe('runRouteOf, row 2: a preset matches the ask', () => {
 });
 
 describe('runRouteOf, row 3: a task with an end', () => {
-  it('plans when a task is attached', () => {
+  it('starts a Lead when a task is attached', () => {
     const result = routeOf({ text: 'ship the refund retry', hasTask: true });
 
     expect(result.route).toMatchObject({
       row: 3,
-      shape: 'plan',
-      choice: 'Workflow · Orchestrated',
+      shape: 'lead',
+      choice: 'Lead',
       why: 'A task with an end',
     });
   });
 
-  it('plans when the ask names an end state across many places', () => {
+  it('starts a Lead when the ask names an end state across many places', () => {
     const result = routeOf({ text: 'center every member page', mountCount: 3 });
 
     expect(result.route).toMatchObject({
       row: 3,
-      shape: 'plan',
+      shape: 'lead',
       why: 'A task with an end, across 3 projects',
     });
   });
 
-  it('plans when the ask is a list', () => {
+  it('starts a Lead when the ask is a list', () => {
     const result = routeOf({ text: 'Do these:\n- rename the ledger-core table\n- move the job' });
 
     expect(result.route.row).toBe(3);
@@ -262,7 +268,7 @@ describe('runRouteOf, row 5: a question, a check or one file', () => {
     expect(result.route).toMatchObject({
       row: 5,
       shape: 'lead',
-      choice: 'Agent · Auto agent',
+      choice: 'Lead',
       why: 'A question or a check, and no preset fits',
     });
   });
@@ -288,9 +294,28 @@ describe('runRouteOf, row 6: nothing above holds', () => {
       row: 6,
       shape: 'lead',
       presetName: null,
-      choice: 'Agent · Auto agent',
-      why: 'Not sure yet: an Auto agent first',
+      choice: 'Lead',
+      why: 'The Lead plans it first',
     });
     expect(result.ask).toBe('make the settings feel calmer');
+  });
+});
+
+describe('runRouteOf, one engine for new runs', () => {
+  it.each([
+    { text: '~Fix a layout center the billing page' },
+    { text: 'Fix the layout of the Harborline billing page' },
+    { text: 'ship the refund retry', hasTask: true },
+    { text: 'Do these:\n- rename the ledger-core table\n- move the job' },
+    {
+      text: 'make the checks pass',
+      pullRequest: { number: 41, isFailing: true, hasComments: false },
+    },
+    { text: 'Which notify-relay handler fires twice?' },
+    { text: 'make the settings feel calmer' },
+    { text: 'center every member page', defaultShape: 'plan' as const },
+    { text: '@Implementer add the retry' },
+  ])('never starts the plan engine for $text', (overrides) => {
+    expect(routeOf(overrides).route.shape).toBe('lead');
   });
 });

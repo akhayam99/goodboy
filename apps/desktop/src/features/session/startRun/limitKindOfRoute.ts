@@ -8,5 +8,8 @@ type Params = {
 
 export const limitKindOfRoute = ({ route }: Params): AutoLimitKind | null => {
   const { shape } = runKindOfRoute({ route });
-  return shape === 'agent' ? null : shape;
+  if (shape === 'agent') {
+    return null;
+  }
+  return route.shape === 'lead' ? 'autoAgent' : shape;
 };
