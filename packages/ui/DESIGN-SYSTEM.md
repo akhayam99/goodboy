@@ -978,7 +978,8 @@ the outline look, `ghost` and `quiet` the quiet look.
   and the same for `blue`, `green`, `amber`, `red`, `purple` and `cyan`. Steps 1
   and 2 are backgrounds, 3 to 5 component fills, 6 to 8 borders, 9 and 10
   solids, 11 and 12 text. Only `styles.css` and the terminal read them; code
-  speaks in roles. Text steps on background steps and the ink on each solid
+  speaks in roles. A hex or an `oklch(`, `rgb(` or `hsl(` literal in product
+  code is counted by the `raw-color` rule, and that count only falls. Text steps on background steps and the ink on each solid
   clear 4.5:1 and an APCA floor (Lc 60 for content, 45 for labels), pinned by
   `palette-scales-contrast.test.ts`.
 - Each tone also has step tokens: `T-wash`, `T-subtle`, `T-edge`, `T-solid`,
