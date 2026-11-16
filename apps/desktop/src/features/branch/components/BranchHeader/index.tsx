@@ -1,4 +1,4 @@
-import { useMemo, type ReactNode } from 'react';
+import { useMemo, type ComponentProps, type ReactNode } from 'react';
 import { ChevronUp } from 'lucide-react';
 import { Button, HeaderActions, ICON_SIZE, Notice, PaneTitleRow, Tooltip } from '@goodboy/ui';
 import type { PullRequestHost, PullRequestState, SessionId } from '@goodboy/types';
@@ -12,6 +12,7 @@ import { actionButtonStateOf } from '../../../actions/actionButtonStateOf';
 import type { BranchControls } from '../../hooks/useBranchControls';
 import { branchShownIdsOf, type BranchPrimary } from '../../branchPrimary';
 import { requestNounLabel } from '../../requestNounLabel';
+import { BranchRunningPorts } from '../BranchRunningPorts';
 import { BranchOverflow } from './BranchOverflow';
 import { BranchStateChip } from './BranchStateChip';
 
@@ -28,6 +29,7 @@ type Props = {
   readonly isActive?: boolean;
   readonly canEditTitle: boolean;
   readonly line?: ReactNode;
+  readonly running?: Pick<ComponentProps<typeof BranchRunningPorts>, 'session' | 'mount'>;
   readonly onMutated: () => void;
 };
 
@@ -50,6 +52,7 @@ export const BranchHeader = ({
   isActive = true,
   canEditTitle,
   line = null,
+  running,
   onMutated,
 }: Props) => {
   const primary = isStepHidden ? null : controls.primary;
@@ -134,8 +137,17 @@ export const BranchHeader = ({
         meta={
           titleEdit.isEditing ? (
             <span className="text-meta text-muted-foreground">Enter saves, Esc cancels</span>
-          ) : (
+          ) : running === undefined ? (
             line
+          ) : (
+            <span className="flex min-w-0 items-center gap-2">
+              {line}
+              <BranchRunningPorts
+                session={running.session}
+                mount={running.mount}
+                isActive={isActive}
+              />
+            </span>
           )
         }
         actions={

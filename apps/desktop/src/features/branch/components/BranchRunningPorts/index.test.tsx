@@ -20,7 +20,7 @@ import {
   type StoryStore,
 } from '../../../../store/storyHarness';
 import { brandedId } from '../../../history/testing/brandedId';
-import { BranchRunningLine } from './index';
+import { BranchRunningPorts } from './index';
 
 vi.mock('@tauri-apps/api/core', async () =>
   (await import('../../../../store/storyHarness')).tauriCoreModuleMock(),
@@ -37,6 +37,7 @@ const SESSION_ID = brandedId<SessionId>({ value: 's-northwind' });
 const PROJECT_ID = brandedId<ProjectId>({ value: 'payments-api' });
 const BRANCH = 'nw/fix-duplicate-credit';
 const WORKTREE = '/mock/worktrees/northwind/payments-api';
+const SESSION = { id: SESSION_ID, workspaceId: WORKSPACE_ID };
 
 const PROJECT: Project = aProject({
   id: PROJECT_ID,
@@ -61,8 +62,12 @@ const MOUNT: SessionProjectMount = {
   revision: 1,
 };
 
-const RUNNING: MonitorSnapshot = {
-  listeners: [{ port: 5173, address: '127.0.0.1', protocol: 'tcp', pid: 4100 }],
+type SnapshotParams = {
+  readonly ports: ReadonlyArray<number>;
+};
+
+const snapshotOf = ({ ports }: SnapshotParams): MonitorSnapshot => ({
+  listeners: ports.map((port) => ({ port, address: '127.0.0.1', protocol: 'tcp', pid: 4100 })),
   processes: [
     {
       pid: 4100,
@@ -79,8 +84,9 @@ const RUNNING: MonitorSnapshot = {
   ],
   takenAt: 2,
   isPlatformSupported: true,
-};
+});
 
+const RUNNING = snapshotOf({ ports: [5173] });
 const IDLE: MonitorSnapshot = { ...RUNNING, listeners: [], processes: [] };
 
 const LEDGER: ReadonlyArray<LedgerRow> = [
@@ -103,12 +109,17 @@ type SeedParams = {
 };
 
 let useAppStore: StoryStore;
+let outside: string[];
 
 const seed = ({ snapshot, ledger }: SeedParams): void => {
   stubStoryInvoke({
     monitor_snapshot: () => snapshot,
     process_ledger_list: () => ledger,
     monitor_watched_ports: () => [],
+    open_url: ({ url }: { readonly url: string }) => {
+      outside = [...outside, url];
+      return null;
+    },
   });
   useAppStore.setState({
     currentWorkspaceId: WORKSPACE_ID,
@@ -120,36 +131,39 @@ const seed = ({ snapshot, ledger }: SeedParams): void => {
   });
 };
 
+const portChips = (): HTMLElement[] =>
+  screen.queryAllByRole('button', { name: /^Open localhost:\d+$/ });
+
 beforeAll(async () => {
   useAppStore = await importStore();
 }, STORE_IMPORT_TIMEOUT_MS);
 
 beforeEach(async () => {
+  outside = [];
   await resetStoryStore();
 });
 
 afterEach(() => {
   cleanup();
+  vi.restoreAllMocks();
 });
 
-describe('BranchRunningLine', () => {
+describe('BranchRunningPorts', () => {
   it('is hidden when nothing runs on the branch', async () => {
     seed({ snapshot: IDLE, ledger: [] });
-    const { container } = render(
-      <BranchRunningLine session={{ workspaceId: WORKSPACE_ID }} mount={MOUNT} />,
-    );
+    const { container } = render(<BranchRunningPorts session={SESSION} mount={MOUNT} />);
     await act(async () => undefined);
 
-    expect(container.querySelector('[data-branch-running-line]')).toBeNull();
-    expect(screen.queryByText('Running here')).toBeNull();
+    expect(container.querySelector('[data-branch-ports]')).toBeNull();
+    expect(screen.queryByText('Ports')).toBeNull();
   });
 
   it('is hidden when a port runs on another branch', async () => {
     seed({ snapshot: RUNNING, ledger: [{ ...LEDGER[0]!, branch: 'nw/ledger-rounding' }] });
-    render(<BranchRunningLine session={{ workspaceId: WORKSPACE_ID }} mount={MOUNT} />);
+    const { container } = render(<BranchRunningPorts session={SESSION} mount={MOUNT} />);
     await act(async () => undefined);
 
-    expect(screen.queryByText('Running here')).toBeNull();
+    expect(container.querySelector('[data-branch-ports]')).toBeNull();
   });
 
   it('does not ask for a snapshot while the Branch page is not on screen', async () => {
@@ -157,27 +171,58 @@ describe('BranchRunningLine', () => {
     const refreshMonitorSnapshot = vi.fn(async () => undefined);
     const loadWatchedPorts = vi.fn(async () => undefined);
     act(() => useAppStore.setState({ refreshMonitorSnapshot, loadWatchedPorts }));
-    render(
-      <BranchRunningLine session={{ workspaceId: WORKSPACE_ID }} mount={MOUNT} isActive={false} />,
-    );
+    render(<BranchRunningPorts session={SESSION} mount={MOUNT} isActive={false} />);
     await act(async () => undefined);
 
     expect(loadWatchedPorts).not.toHaveBeenCalled();
     expect(refreshMonitorSnapshot).not.toHaveBeenCalled();
   });
 
-  it('names the port that runs here and opens Monitoring filtered to the branch', async () => {
+  it('shows one chip per running port with its name and a Ports link', async () => {
+    seed({ snapshot: snapshotOf({ ports: [5173, 4310] }), ledger: LEDGER });
+    render(<BranchRunningPorts session={SESSION} mount={MOUNT} />);
+
+    await waitFor(() => expect(portChips()).toHaveLength(2));
+    expect(portChips().map((chip) => chip.textContent)).toEqual([':4310node', ':5173node']);
+    screen.getByRole('button', { name: 'Ports' });
+  });
+
+  it('shows two chips and folds the rest into +n', async () => {
+    seed({ snapshot: snapshotOf({ ports: [5173, 4310, 6006] }), ledger: LEDGER });
+    render(<BranchRunningPorts session={SESSION} mount={MOUNT} />);
+
+    await waitFor(() => expect(portChips()).toHaveLength(2));
+    expect(screen.queryByRole('button', { name: 'Open localhost:6006' })).toBeNull();
+    screen.getByRole('button', { name: '+1 more' });
+    expect(screen.queryByRole('button', { name: 'Ports' })).toBeNull();
+  });
+
+  it('opens the port itself on a click on its chip', async () => {
+    vi.spyOn(navigator, 'userAgent', 'get').mockReturnValue('Macintosh');
     seed({ snapshot: RUNNING, ledger: LEDGER });
     const openStudio = vi.fn();
     act(() => useAppStore.setState({ openStudio }));
-    render(<BranchRunningLine session={{ workspaceId: WORKSPACE_ID }} mount={MOUNT} />);
+    render(<BranchRunningPorts session={SESSION} mount={MOUNT} />);
 
-    const name = 'Open :5173 node in Monitoring';
-    await waitFor(() => expect(screen.queryByRole('button', { name })).not.toBeNull());
-    const pill = screen.getByRole('button', { name });
-    screen.getByText('Terminal');
-    fireEvent.click(pill);
+    await waitFor(() => expect(portChips()).toHaveLength(1));
+    fireEvent.click(screen.getByRole('button', { name: 'Open localhost:5173' }), {
+      metaKey: true,
+    });
 
+    await waitFor(() => expect(outside).toEqual(['http://localhost:5173']));
+    expect(openStudio).not.toHaveBeenCalled();
+  });
+
+  it('opens Monitoring filtered to the branch from the Ports link', async () => {
+    seed({ snapshot: RUNNING, ledger: LEDGER });
+    const openStudio = vi.fn();
+    act(() => useAppStore.setState({ openStudio }));
+    render(<BranchRunningPorts session={SESSION} mount={MOUNT} />);
+
+    await waitFor(() => expect(screen.queryByRole('button', { name: 'Ports' })).not.toBeNull());
+    fireEvent.click(screen.getByRole('button', { name: 'Ports' }));
+
+    expect(outside).toEqual([]);
     expect(openStudio).toHaveBeenCalledWith({
       studio: {
         kind: 'monitoring',

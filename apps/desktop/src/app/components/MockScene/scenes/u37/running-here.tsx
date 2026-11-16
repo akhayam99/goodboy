@@ -15,7 +15,7 @@ const MINUTE = 60_000;
 const DEV_PID = 4100;
 const API_PID = 4310;
 
-type Variant = 'running' | 'idle';
+type Variant = 'running' | 'more' | 'idle';
 
 type Props = {
   readonly variant: Variant;
@@ -44,6 +44,7 @@ const processOf = ({ pid, name, args, cwd, ageMinutes }: ProcessParams): Monitor
 
 type SeedParams = {
   readonly mount: SessionProjectMount;
+  readonly hasMore: boolean;
 };
 
 type Seed = {
@@ -51,13 +52,16 @@ type Seed = {
   readonly ledger: ReadonlyArray<LedgerRow>;
 };
 
-const runningSeedOf = ({ mount }: SeedParams): Seed => {
+const runningSeedOf = ({ mount, hasMore }: SeedParams): Seed => {
   const cwd = mount.worktreePath;
   return {
     snapshot: {
       listeners: [
         { port: 5173, address: '127.0.0.1', protocol: 'tcp', pid: DEV_PID },
         { port: 4310, address: '127.0.0.1', protocol: 'tcp', pid: API_PID },
+        ...(hasMore
+          ? [{ port: 6006, address: '127.0.0.1', protocol: 'tcp' as const, pid: DEV_PID }]
+          : []),
       ],
       processes: [
         processOf({ pid: DEV_PID, name: 'vite', args: 'vite --port 5173', cwd, ageMinutes: 42 }),
@@ -112,7 +116,8 @@ const RunningHereScene = ({ variant }: Props) => {
     if (mount === undefined) {
       throw new Error('The running here scene needs a seeded branch.');
     }
-    const seed = variant === 'running' ? runningSeedOf({ mount }) : IDLE_SEED;
+    const seed =
+      variant === 'idle' ? IDLE_SEED : runningSeedOf({ mount, hasMore: variant === 'more' });
     mockSceneIpc((command) => {
       if (command === 'monitor_snapshot') {
         return seed.snapshot;
@@ -141,5 +146,6 @@ const RunningHereScene = ({ variant }: Props) => {
 
 export const U37_RUNNING_HERE_SCENES = {
   'u37-running-here': () => <RunningHereScene variant="running" />,
+  'u37-running-here-more': () => <RunningHereScene variant="more" />,
   'u37-running-here-idle': () => <RunningHereScene variant="idle" />,
 };

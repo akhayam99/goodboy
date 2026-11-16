@@ -59,8 +59,7 @@ const mount = ({ id }: MountParams) => {
   );
 };
 
-const runningLine = (): HTMLElement | null =>
-  document.querySelector<HTMLElement>('[data-branch-running-line]');
+const ports = (): HTMLElement | null => document.querySelector<HTMLElement>('[data-branch-ports]');
 
 describe('the u37 running here scenes', () => {
   it('registers each scene', () => {
@@ -69,26 +68,43 @@ describe('the u37 running here scenes', () => {
     }
   });
 
-  it('puts the line at the top of the body, under the page tabs and out of the header', async () => {
+  it('puts the ports on the header meta line after the branch facts, and nothing under the tabs', async () => {
     mount({ id: 'u37-running-here' });
 
-    await waitFor(() => expect(runningLine()).not.toBeNull());
-    const tabs = screen.getAllByRole('tab')[0];
-    const position = runningLine()?.compareDocumentPosition(tabs ?? document.body) ?? 0;
-    expect(position & Node.DOCUMENT_POSITION_PRECEDING).toBeGreaterThan(0);
-    expect(runningLine()?.closest('[data-page-header]')).toBeNull();
+    await waitFor(() => expect(ports()).not.toBeNull());
+    const meta = ports()?.closest('[data-slot="pane-meta"]');
+    expect(meta?.closest('[data-page-header]')).not.toBeNull();
+    const facts = meta?.querySelector('[data-branch-start-line], [data-pr-header-line]');
+    const order = facts?.compareDocumentPosition(ports() ?? document.body) ?? 0;
+    expect(order & Node.DOCUMENT_POSITION_FOLLOWING).toBeGreaterThan(0);
+    expect(document.querySelectorAll('[data-branch-ports]')).toHaveLength(1);
+    expect(document.querySelector('[data-branch-running-line]')).toBeNull();
+    expect(screen.queryByText('Running here')).toBeNull();
   });
 
   it('names the terminal port and the agent port of the branch', async () => {
     mount({ id: 'u37-running-here' });
 
-    await waitFor(() => expect(runningLine()).not.toBeNull());
-    const line = runningLine();
-    expect(line?.textContent).toContain(':5173');
-    expect(line?.textContent).toContain(':4310');
-    expect(line?.textContent).not.toContain(':4310:4310');
-    expect(line?.textContent).toContain('Terminal');
-    expect(line?.textContent).toContain('Agent');
+    await waitFor(() => expect(ports()).not.toBeNull());
+    const text = ports()?.textContent ?? '';
+    expect(text).toContain(':4310');
+    expect(text).toContain(':5173');
+    expect(text).not.toContain(':4310:4310');
+    const chips = screen.queryAllByRole('button', { name: /^Open localhost:\d+$/ });
+    expect(chips.map((chip) => chip.getAttribute('aria-label'))).toEqual([
+      'Open localhost:4310',
+      'Open localhost:5173',
+    ]);
+    screen.getByRole('button', { name: 'Ports' });
+  });
+
+  it('shows two ports and folds the third into +1 more', async () => {
+    mount({ id: 'u37-running-here-more' });
+
+    await waitFor(() => expect(ports()).not.toBeNull());
+    expect(screen.queryAllByRole('button', { name: /^Open localhost:\d+$/ })).toHaveLength(2);
+    expect(screen.queryByRole('button', { name: 'Open localhost:6006' })).toBeNull();
+    screen.getByRole('button', { name: '+1 more' });
   });
 
   it('opens Monitoring filtered to the branch', async () => {
@@ -96,8 +112,8 @@ describe('the u37 running here scenes', () => {
     mount({ id: 'u37-running-here' });
     act(() => store.setState({ openStudio }));
 
-    await waitFor(() => expect(runningLine()).not.toBeNull());
-    fireEvent.click(screen.getByRole('button', { name: /^Open :5173 .* in Monitoring$/ }));
+    await waitFor(() => expect(ports()).not.toBeNull());
+    fireEvent.click(screen.getByRole('button', { name: 'Ports' }));
 
     expect(openStudio).toHaveBeenCalledTimes(1);
     expect(openStudio.mock.calls[0]?.[0]).toMatchObject({
@@ -108,12 +124,13 @@ describe('the u37 running here scenes', () => {
     });
   });
 
-  it('shows no line when nothing runs on the branch', async () => {
+  it('shows no ports and no empty label when nothing runs on the branch', async () => {
     mount({ id: 'u37-running-here-idle' });
 
     await screen.findAllByRole('tab');
     await act(async () => undefined);
 
-    expect(runningLine()).toBeNull();
+    expect(ports()).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Ports' })).toBeNull();
   });
 });

@@ -430,7 +430,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
     points: [
       {
         term: 'Branch page',
-        desc: 'Click a branch on the board or the Projects card and its page opens in place: Conversation, Changes, Commits, Checks, Runs and Comments. Rebase sits on its row, and Running here opens Monitoring on the branch.',
+        desc: 'Click a branch on the board or the Projects card and its page opens in place: Conversation, Changes, Commits, Checks, Runs and Comments. Rebase sits on its row, and the ports running on the branch sit under its name.',
       },
       {
         term: 'Conversation',
