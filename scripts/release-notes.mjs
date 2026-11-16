@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const ROOT_DIRECTORY = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const CHANGELOG_PATH = resolve(ROOT_DIRECTORY, 'CHANGELOG.md');
@@ -8,6 +8,7 @@ const VERSION_PATTERN = /^\d+\.\d+\.\d+$/;
 const RAW_CONTENT_ROOT = 'https://raw.githubusercontent.com/akhayam99/goodboy';
 const ENTRY_TITLE_PATTERN = /^#### (.+)$/;
 const IMAGE_TOKEN_PATTERN = /(?:^| )image=([a-z0-9]+(?:-[a-z0-9]+)*)(?= |$)/;
+const THEME_TOKEN_PATTERN = /(?:^| )theme=(light|dark)(?= |$)/;
 const NEXT_HEADING_PATTERN = /^#{3,4} /;
 
 const parseVersion = ({ ref }) => {
@@ -49,8 +50,16 @@ const imageNameFromMeta = ({ metaLine }) => {
   return match === null ? null : match[1];
 };
 
-const pictureBlockLines = ({ version, title, image }) => {
+const pinnedThemeFromMeta = ({ metaLine }) => {
+  const match = THEME_TOKEN_PATTERN.exec(metaLine);
+  return match === null ? null : match[1];
+};
+
+const pictureBlockLines = ({ version, title, image, pinnedTheme }) => {
   const base = `${RAW_CONTENT_ROOT}/v${version}/docs/changelog/${version}/${image}-after`;
+  if (pinnedTheme !== null) {
+    return ['<picture>', `  <img alt="${title}" src="${base}-${pinnedTheme}.webp">`, '</picture>'];
+  }
   const dark = `${base}-dark.webp`;
   const light = `${base}-light.webp`;
   return [
@@ -62,7 +71,7 @@ const pictureBlockLines = ({ version, title, image }) => {
   ];
 };
 
-const expandPictures = ({ notes, version }) => {
+export const expandPictures = ({ notes, version }) => {
   const lines = notes.split('\n');
   const output = [];
   let index = 0;
@@ -86,7 +95,8 @@ const expandPictures = ({ notes, version }) => {
     while (body[body.length - 1] === '') {
       body.pop();
     }
-    output.push(...body, '', ...pictureBlockLines({ version, title, image }), '');
+    const pinnedTheme = pinnedThemeFromMeta({ metaLine });
+    output.push(...body, '', ...pictureBlockLines({ version, title, image, pinnedTheme }), '');
   }
   return output.join('\n');
 };
@@ -112,4 +122,6 @@ const main = () => {
   process.stdout.write(`${expandPictures({ notes, version })}\n`);
 };
 
-main();
+if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
+  main();
+}
