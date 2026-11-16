@@ -10,6 +10,7 @@ import { tokensForLine, type DiffTokenMap } from '../../hooks/useDiffTokens';
 import { LINE_PREFIX } from '../../lib/fileStatus';
 import {
   EMPTY_SIDE_FILL,
+  GUTTER_FILL,
   LINE_FILL,
   SELECTED_FILL,
   SELECTED_RAIL,
@@ -208,6 +209,7 @@ export const DiffRows = ({
             (newLine !== null && isRangeCommented('new', newLine));
           const oldBlocks = oldLine === null ? null : blocksAfter({ side: 'old', line: oldLine });
           const newBlocks = newLine === null ? null : blocksAfter({ side: 'new', line: newLine });
+          const gutterFill = selected ? '' : GUTTER_FILL[line.kind];
           return (
             <Fragment key={`l${row.hunkIndex}-${row.rowIndex}`}>
               <div
@@ -222,8 +224,13 @@ export const DiffRows = ({
                   (selected || commented) && SELECTED_RAIL,
                 )}
               >
-                {gutter('old', oldLine, line.kind === 'del')}
-                {gutter('new', newLine, true)}
+                {gutter(
+                  'old',
+                  oldLine,
+                  line.kind === 'del',
+                  cn(gutterFill, commented && SELECTED_RAIL),
+                )}
+                {gutter('new', newLine, true, gutterFill)}
                 <div
                   role="gridcell"
                   aria-hidden
@@ -254,6 +261,7 @@ export const DiffRows = ({
           spot: number | null,
         ) => {
           const fill = line === null ? EMPTY_SIDE_FILL : LINE_FILL[line.kind];
+          const gutterFill = line === null ? EMPTY_SIDE_FILL : GUTTER_FILL[line.kind];
           const selected = isSelected(side, spot);
           const commented = spot !== null && isRangeCommented(side, spot);
           return (
@@ -262,7 +270,7 @@ export const DiffRows = ({
                 side,
                 spot,
                 true,
-                cn(fill, selected && SELECTED_FILL, (selected || commented) && SELECTED_RAIL),
+                cn(gutterFill, selected && SELECTED_FILL, (selected || commented) && SELECTED_RAIL),
               )}
               <div
                 role="gridcell"

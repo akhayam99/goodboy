@@ -1,7 +1,7 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import { THEME_NAMES, tokenOf } from '../../../test/styleTokens';
-import { LINE_FILL, SELECTED_FILL, SELECTED_RAIL, WORD_FILL } from './lineTone';
+import { GUTTER_FILL, LINE_FILL, SELECTED_FILL, SELECTED_RAIL, WORD_FILL } from './lineTone';
 
 const TOKEN = /(?:bg-|var\(--color-)([a-z-]+)/;
 
@@ -25,13 +25,26 @@ describe('diff line tone', () => {
     expect(WORD_FILL.context).toBe('');
   });
 
+  it('paints the line number column of an added and a removed line with its own step', () => {
+    expect(tokenNameOf({ classes: GUTTER_FILL.add })).toBe('diff-add-gutter');
+    expect(tokenNameOf({ classes: GUTTER_FILL.del })).toBe('diff-remove-gutter');
+    expect(GUTTER_FILL.context).toBe('');
+  });
+
   it('marks the selected line with the primary steps', () => {
     expect(tokenNameOf({ classes: SELECTED_FILL })).toBe('primary-subtle');
     expect(tokenNameOf({ classes: SELECTED_RAIL })).toBe('primary-solid');
   });
 
   it('reads every token it names from styles.css in both themes', () => {
-    const classes = [LINE_FILL.add, LINE_FILL.del, WORD_FILL.add, WORD_FILL.del];
+    const classes = [
+      LINE_FILL.add,
+      LINE_FILL.del,
+      GUTTER_FILL.add,
+      GUTTER_FILL.del,
+      WORD_FILL.add,
+      WORD_FILL.del,
+    ];
     const names = [...classes, SELECTED_FILL, SELECTED_RAIL].map((each) =>
       tokenNameOf({ classes: each }),
     );
