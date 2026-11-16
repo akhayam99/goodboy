@@ -449,8 +449,8 @@
 }
 
 .gkButton[data-variant='primary'] {
-  color: var(--g-on-tone);
-  background: var(--g-primary);
+  color: var(--g-on-primary);
+  background: var(--g-primary-solid);
 }
 
 .gkButton[data-variant='ghost'] {
