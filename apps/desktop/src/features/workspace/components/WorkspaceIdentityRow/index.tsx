@@ -1,4 +1,4 @@
-import { ChevronsUpDown } from 'lucide-react';
+import { ChevronsUpDown } from '@goodboy/ui/icons';
 import {
   AnchoredPopover,
   Button,

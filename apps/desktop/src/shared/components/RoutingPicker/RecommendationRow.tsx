@@ -1,4 +1,4 @@
-import { Check } from 'lucide-react';
+import { Check } from '@goodboy/ui/icons';
 import { CONCEPT_ICONS } from '../conceptIcons';
 import { cn, ICON_SIZE } from '@goodboy/ui';
 import { PROVIDER_BRAND } from '../../../features/providers/components/provider-brand';

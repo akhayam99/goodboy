@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { ShieldCheck } from 'lucide-react';
+import { ShieldCheck } from '@goodboy/ui/icons';
 import { useShallow } from 'zustand/react/shallow';
 import type { WorkspaceId } from '@goodboy/types';
 import { Band, Button, EmptyLine, ICON_SIZE, SectionHeader, SkeletonRow } from '@goodboy/ui';

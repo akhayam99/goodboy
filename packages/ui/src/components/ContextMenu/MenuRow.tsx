@@ -1,5 +1,5 @@
 import type { KeyboardEvent, Ref } from 'react';
-import { ChevronRight, SquareArrowOutUpRight } from 'lucide-react';
+import { ChevronRight, SquareArrowOutUpRight } from '../../icons';
 import { cn } from '../../cn';
 import { OptionalTooltip } from '../OptionalTooltip';
 import { tintClasses } from '../../tint';

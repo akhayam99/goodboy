@@ -2,7 +2,7 @@
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
-import { GitMerge } from 'lucide-react';
+import { GitMerge } from '@goodboy/ui/icons';
 import type { ResolvedAction } from '../../types';
 import type { ActionControls } from '../../useActionControls';
 import { ActionConfirmPanel } from './ActionConfirmPanel';

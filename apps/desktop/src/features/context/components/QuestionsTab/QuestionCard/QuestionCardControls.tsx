@@ -1,4 +1,4 @@
-import { X } from 'lucide-react';
+import { X } from '@goodboy/ui/icons';
 import { ICON_SIZE, IconButton, type MenuEntry } from '@goodboy/ui';
 import { QuestionCardMenu } from './QuestionCardMenu';
 import { QuestionPager, type QuestionPagerModel } from './QuestionPager';

@@ -1,4 +1,4 @@
-import { ArrowDown } from 'lucide-react';
+import { ArrowDown } from '@goodboy/ui/icons';
 import { cn, IconButton } from '@goodboy/ui';
 
 type Props = {

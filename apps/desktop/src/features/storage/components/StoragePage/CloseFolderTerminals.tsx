@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { SquareTerminal } from 'lucide-react';
+import { SquareTerminal } from '@goodboy/ui/icons';
 import { Button, ICON_SIZE } from '@goodboy/ui';
 import { AnchoredConfirm } from '../../../../shared/components/AnchoredConfirm';
 import { useAppStore } from '../../../../store';

@@ -7,8 +7,8 @@ import {
   FileLock,
   FileSpreadsheet,
   FileText,
-  type LucideIcon,
-} from 'lucide-react';
+  type IconGlyph,
+} from '@goodboy/ui/icons';
 
 type FileGlyphKind = 'code' | 'data' | 'text' | 'image' | 'sheet' | 'lock' | 'archive' | 'generic';
 
@@ -16,7 +16,7 @@ type Params = {
   readonly name: string;
 };
 
-const GLYPHS: Readonly<Record<FileGlyphKind, LucideIcon>> = {
+const GLYPHS: Readonly<Record<FileGlyphKind, IconGlyph>> = {
   code: FileCode,
   data: FileJson,
   text: FileText,
@@ -105,4 +105,4 @@ const fileGlyphKindOf = ({ name }: Params): FileGlyphKind => {
   return KIND_BY_EXTENSION.get(lower.slice(dot + 1)) ?? 'generic';
 };
 
-export const fileGlyphOf = ({ name }: Params): LucideIcon => GLYPHS[fileGlyphKindOf({ name })];
+export const fileGlyphOf = ({ name }: Params): IconGlyph => GLYPHS[fileGlyphKindOf({ name })];

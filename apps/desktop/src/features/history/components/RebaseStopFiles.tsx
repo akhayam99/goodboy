@@ -1,4 +1,4 @@
-import { Check } from 'lucide-react';
+import { Check } from '@goodboy/ui/icons';
 import { Button, ICON_SIZE, StatusDot, TruncatedText, tintClasses } from '@goodboy/ui';
 import type { RebaseFileState } from '../rebaseFileStatesOf';
 

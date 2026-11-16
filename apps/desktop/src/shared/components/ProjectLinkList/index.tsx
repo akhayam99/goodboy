@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from 'react';
-import { Plus } from 'lucide-react';
+import { Plus } from '@goodboy/ui/icons';
 import { Button, ICON_SIZE } from '@goodboy/ui';
 import type { Project, WorkspaceId } from '@goodboy/types';
 import { useProjectLinking } from '../../hooks/useProjectLinking';

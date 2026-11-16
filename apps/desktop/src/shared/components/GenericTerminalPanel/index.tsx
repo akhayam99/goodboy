@@ -5,7 +5,7 @@ import { ClipboardAddon } from '@xterm/addon-clipboard';
 import { Unicode11Addon } from '@xterm/addon-unicode11';
 import { SearchAddon } from '@xterm/addon-search';
 import '@xterm/xterm/css/xterm.css';
-import { RotateCcw } from 'lucide-react';
+import { RotateCcw } from '@goodboy/ui/icons';
 import { getAppliedTheme, subscribeAppliedTheme } from '../../lib/theme';
 import { resolveTerminalTheme } from './terminal-theme';
 import { IconButton } from '@goodboy/ui';

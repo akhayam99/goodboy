@@ -1,4 +1,4 @@
-import { Eye } from 'lucide-react';
+import { Eye } from '@goodboy/ui/icons';
 import { Eyebrow, ICON_SIZE, Chip } from '@goodboy/ui';
 import type { RoleRunFacts } from './roleRunFacts';
 

@@ -14,7 +14,7 @@ import {
   SkipForward,
   TextCursorInput,
   Undo2,
-} from 'lucide-react';
+} from '@goodboy/ui/icons';
 import type { AgentId, ResolveVerdict, SessionId } from '@goodboy/types';
 import {
   REVIEW_SOURCE_CAPABILITIES,

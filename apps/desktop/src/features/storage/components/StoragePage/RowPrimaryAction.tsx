@@ -1,4 +1,4 @@
-import { Code } from 'lucide-react';
+import { Code } from '@goodboy/ui/icons';
 import { Button, ICON_SIZE } from '@goodboy/ui';
 import { useAppStore, sessionPlace } from '../../../../store';
 import type { TerminalTab } from '../../../../shared/types/terminal';

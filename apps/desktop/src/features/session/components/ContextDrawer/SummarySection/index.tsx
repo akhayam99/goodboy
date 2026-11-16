@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import type { LucideIcon } from 'lucide-react';
+import type { IconGlyph } from '@goodboy/ui/icons';
 import { EmptyLine, SkeletonText } from '@goodboy/ui';
 import { parseSummaryDocument, type SummarySectionKey } from '@goodboy/core/context';
 import { CONCEPT_ICONS } from '../../../../../shared/components/conceptIcons';
@@ -7,7 +7,7 @@ import { RawDocumentEditor } from '../RawDocumentEditor';
 import { SummaryBlock } from '../SummaryBlock';
 import { summaryDisplayBlocks } from '../summaryDisplayBlocks';
 
-const SECTION_ICONS: Record<SummarySectionKey, LucideIcon> = {
+const SECTION_ICONS: Record<SummarySectionKey, IconGlyph> = {
   problem: CONCEPT_ICONS.goal,
   learned: CONCEPT_ICONS.suggestion,
   state: CONCEPT_ICONS.autorun,

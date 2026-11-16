@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Square } from 'lucide-react';
+import { Square } from '@goodboy/ui/icons';
 import { brandId, type AgentId } from '@goodboy/types';
 import { ICON_SIZE } from '@goodboy/ui';
 import { ObjectOverflowMenu } from '../../../../../../features/actions/ObjectOverflowMenu';

@@ -1,5 +1,5 @@
 import { cn, ICON_SIZE, tintClasses } from '@goodboy/ui';
-import { MessagesSquare } from 'lucide-react';
+import { MessagesSquare } from '@goodboy/ui/icons';
 import type { SessionId } from '@goodboy/types';
 import { OpenSessionButton } from '../../../../shared/components/OpenSessionButton';
 

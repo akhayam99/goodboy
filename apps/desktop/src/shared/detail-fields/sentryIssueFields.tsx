@@ -1,4 +1,4 @@
-import { Activity, Code2, Tag } from 'lucide-react';
+import { Activity, Code2, Tag } from '@goodboy/ui/icons';
 import type { SentryTag } from '../../features/integrations/sentry/client';
 import { stateWord } from '../../features/inbox/stateWord';
 import type { InboxState } from '../../features/inbox/types';

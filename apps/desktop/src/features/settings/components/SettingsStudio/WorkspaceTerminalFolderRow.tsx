@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Terminal } from 'lucide-react';
+import { Terminal } from '@goodboy/ui/icons';
 import type { WorkspaceId } from '@goodboy/types';
 import { Button, ICON_SIZE } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';

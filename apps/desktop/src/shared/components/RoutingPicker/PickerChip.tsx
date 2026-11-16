@@ -1,4 +1,4 @@
-import { EyeOff } from 'lucide-react';
+import { EyeOff } from '@goodboy/ui/icons';
 import { cn, ICON_SIZE, Tooltip } from '@goodboy/ui';
 import { CHIP_ACTIVE } from './chipTone';
 

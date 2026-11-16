@@ -1,5 +1,5 @@
 import type { KeyboardEvent } from 'react';
-import { Copy } from 'lucide-react';
+import { Copy } from '@goodboy/ui/icons';
 import { Button, FormActions, ICON_SIZE } from '@goodboy/ui';
 import type { ProviderId } from '@goodboy/types';
 import type { StepDraft } from '../../../engine';

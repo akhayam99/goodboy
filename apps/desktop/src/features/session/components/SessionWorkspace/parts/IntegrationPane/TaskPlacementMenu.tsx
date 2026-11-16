@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { useShallow } from 'zustand/react/shallow';
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown } from '@goodboy/ui/icons';
 import type { SessionExternalTask, SessionId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../../../store';
 import { ICON_SIZE } from '@goodboy/ui';

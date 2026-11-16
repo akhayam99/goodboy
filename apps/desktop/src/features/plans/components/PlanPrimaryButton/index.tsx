@@ -1,4 +1,4 @@
-import { Check, Play } from 'lucide-react';
+import { Check, Play } from '@goodboy/ui/icons';
 import { Button, ICON_SIZE } from '@goodboy/ui';
 
 import type { PlanPrimaryAction } from '../../usePlanPrimaryAction';

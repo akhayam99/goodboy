@@ -1,5 +1,5 @@
 import type { ComponentProps } from 'react';
-import { MessageSquare } from 'lucide-react';
+import { MessageSquare } from '@goodboy/ui/icons';
 import { DrawerFrame } from '@goodboy/ui';
 import type { ReviewEntry } from '../ReviewFlow/useReviewEntries';
 import { CommentDrawerFrame } from './CommentDrawerFrame';

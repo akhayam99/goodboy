@@ -1,4 +1,4 @@
-import { Check, Copy, Square, X } from 'lucide-react';
+import { Check, Copy, Square, X } from '@goodboy/ui/icons';
 import { Button, cn, ICON_SIZE, useCopyLink } from '@goodboy/ui';
 
 import { formatDuration } from '../../../../shared/utils/time/formatDuration';

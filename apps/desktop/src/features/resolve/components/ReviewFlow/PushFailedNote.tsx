@@ -1,4 +1,4 @@
-import { CircleAlert } from 'lucide-react';
+import { CircleAlert } from '@goodboy/ui/icons';
 import { ICON_SIZE } from '@goodboy/ui';
 import { PUSH_FAILED_TITLE, pushFailedBodyOf } from '../../commentStateCopy';
 import type { ResolveRowState } from '../../resolveRowState';

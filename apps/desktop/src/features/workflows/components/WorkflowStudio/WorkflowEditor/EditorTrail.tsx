@@ -1,4 +1,4 @@
-import { Check, Copy, Trash2, Undo2 } from 'lucide-react';
+import { Check, Copy, Trash2, Undo2 } from '@goodboy/ui/icons';
 import { Button, ICON_SIZE, OverflowMenu, tintClasses, type MenuItemEntry } from '@goodboy/ui';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../../shared/components/conceptIcons';
 import { StudioTrail } from '../../../../../shared/components/StudioShell/StudioTrail';

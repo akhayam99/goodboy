@@ -1,4 +1,4 @@
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown } from '@goodboy/ui/icons';
 import { AnchoredPopover, Button, ICON_SIZE, MENU_MAX_WIDTH, useDropdown } from '@goodboy/ui';
 import { AppMenuList } from '../../../actions/AppMenuList';
 import type { ConsoleLevelFilter } from '../../consoleRowsOf';

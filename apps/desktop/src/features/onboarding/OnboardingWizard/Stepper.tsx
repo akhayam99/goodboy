@@ -1,5 +1,5 @@
-import { Check } from 'lucide-react';
-import { cn, ICON_SIZE } from '@goodboy/ui';
+import { Check } from '@goodboy/ui/icons';
+import { cn, ICON_SIZE, ICON_WEIGHT } from '@goodboy/ui';
 
 import {
   NUMBERED_WIZARD_STEPS,
@@ -76,7 +76,7 @@ export const Stepper = ({ current }: Props) => {
                 {state === 'done' ? (
                   <Check
                     size={ICON_SIZE.mark}
-                    strokeWidth={2.5}
+                    weight={ICON_WEIGHT.check}
                     aria-hidden
                     className="wizard-stepper-check"
                   />

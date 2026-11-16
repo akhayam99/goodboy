@@ -1,4 +1,4 @@
-import { TriangleAlert, GitBranch } from 'lucide-react';
+import { TriangleAlert, GitBranch } from '@goodboy/ui/icons';
 import { useShallow } from 'zustand/react/shallow';
 import {
   AnchoredPopover,

@@ -1,4 +1,4 @@
-import type { LucideIcon } from 'lucide-react';
+import type { IconGlyph } from '@goodboy/ui/icons';
 import type { SessionId, WorkspaceId } from '@goodboy/types';
 import type { ShortcutId } from '../../shared/keyboard/registry';
 import type {
@@ -59,7 +59,7 @@ type PaletteLevelRequest = { readonly kind: 'actions'; readonly target: ObjectTa
 export type PaletteEntry = RankCandidate & {
   readonly kind: PaletteKind;
   readonly group: PaletteGroup | null;
-  readonly icon: LucideIcon;
+  readonly icon: IconGlyph;
   readonly accent?: string;
   readonly detail?: string;
   readonly tag?: string;

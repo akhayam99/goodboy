@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { CircleAlert } from 'lucide-react';
+import { CircleAlert } from '../icons';
 import { cn } from '../cn';
 import { ICON_SIZE } from '../iconSize';
 

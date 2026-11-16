@@ -1,4 +1,4 @@
-import { GitBranch } from 'lucide-react';
+import { GitBranch } from '@goodboy/ui/icons';
 import { ICON_SIZE, TEXT_ROLE } from '@goodboy/ui';
 import { Frame } from './Frame';
 import { Section } from './Section';

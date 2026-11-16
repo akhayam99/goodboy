@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { CornerDownLeft } from 'lucide-react';
+import { CornerDownLeft } from '@goodboy/ui/icons';
 import { Button, cn, ICON_SIZE, ROW_INTERACTIVE, Skeleton } from '@goodboy/ui';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 

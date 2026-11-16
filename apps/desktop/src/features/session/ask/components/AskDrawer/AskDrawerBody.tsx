@@ -2,7 +2,7 @@ import { CHECK_STATE } from '../../../../../store/slices/notifications/errorReco
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { NAMES } from '../../../../../shared/utils/names';
 import { useAskFollow } from '../../hooks/useAskFollow';
-import { RotateCcw } from 'lucide-react';
+import { RotateCcw } from '@goodboy/ui/icons';
 import { DrawerFrame, EmptyState, IconButton } from '@goodboy/ui';
 import type { ArtifactId, ChatMessage, ChatMessageId, Session } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';

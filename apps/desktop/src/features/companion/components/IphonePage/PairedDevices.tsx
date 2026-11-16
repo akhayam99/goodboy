@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Smartphone, Unplug } from 'lucide-react';
+import { Smartphone, Unplug } from '@goodboy/ui/icons';
 import { Button, ConfirmPopover, ICON_SIZE } from '@goodboy/ui';
 
 import { pluralize } from '../../../../shared/utils/pluralize';

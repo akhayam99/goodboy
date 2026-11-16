@@ -1,8 +1,8 @@
 import type { ReactNode } from 'react';
-import { Check, Minus } from 'lucide-react';
+import { Check, Minus } from '../icons';
 import { cn } from '../cn';
 import { FOCUS_RING } from '../focusRing';
-import { ICON_SIZE, ICON_STROKE } from '../iconSize';
+import { ICON_SIZE, ICON_WEIGHT } from '../iconSize';
 
 export type CheckboxProps = {
   readonly label?: ReactNode;
@@ -58,7 +58,7 @@ export const Checkbox = ({
       {checked && indeterminate !== true ? (
         <Check
           size={ICON_SIZE.row}
-          strokeWidth={ICON_STROKE.check}
+          weight={ICON_WEIGHT.check}
           aria-hidden
           className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-on-primary"
         />
@@ -66,7 +66,7 @@ export const Checkbox = ({
       {indeterminate === true ? (
         <Minus
           size={ICON_SIZE.row}
-          strokeWidth={ICON_STROKE.check}
+          weight={ICON_WEIGHT.check}
           aria-hidden
           className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-on-primary"
         />

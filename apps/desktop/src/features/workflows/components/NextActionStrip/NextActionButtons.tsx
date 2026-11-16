@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { TriangleAlert } from 'lucide-react';
+import { TriangleAlert } from '@goodboy/ui/icons';
 import { Button, ConfirmPopover, ICON_SIZE } from '@goodboy/ui';
 import type { SessionId, WorkflowRunId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';

@@ -1,6 +1,6 @@
 import { useRef } from 'react';
 import type { ComponentProps, ReactNode, Ref } from 'react';
-import { Search, X } from 'lucide-react';
+import { Search, X } from '../icons';
 import { cn } from '../cn';
 import { ICON_SIZE } from '../iconSize';
 import { IconButton } from './IconButton';

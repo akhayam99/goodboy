@@ -1,5 +1,5 @@
 import { Fragment, useMemo, useState } from 'react';
-import { Star } from 'lucide-react';
+import { Star } from '@goodboy/ui/icons';
 import {
   cn,
   EmptyLine,
@@ -203,8 +203,9 @@ export const MountProjectList = ({
                           {isStarred ? (
                             <Star
                               size={ICON_SIZE.mark}
+                              weight="fill"
                               aria-hidden
-                              className="shrink-0 fill-current text-warning"
+                              className="shrink-0 text-warning"
                             />
                           ) : null}
                         </button>

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { CircleAlert } from 'lucide-react';
+import { CircleAlert } from '@goodboy/ui/icons';
 import { Button, ConfirmPopover, ICON_SIZE, Tooltip, TruncatedText } from '@goodboy/ui';
 import { actionButtonLookOf } from '../../../actions/actionButtonLookOf';
 import { LOOSE_ROW_ID } from './looseRowId';

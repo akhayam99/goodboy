@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 
-import { Inbox } from 'lucide-react';
+import { Inbox } from '@goodboy/ui/icons';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render } from '@testing-library/react';
 import { PreviewHints } from './PreviewHints';

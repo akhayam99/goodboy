@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { ChevronRight } from 'lucide-react';
+import { ChevronRight } from '@goodboy/ui/icons';
 import { ICON_SIZE, InteractiveRow } from '@goodboy/ui';
 
 type Props = {

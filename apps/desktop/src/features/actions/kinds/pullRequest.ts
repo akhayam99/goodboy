@@ -10,7 +10,7 @@ import {
   Send,
   UserPlus,
   CircleX,
-} from 'lucide-react';
+} from '@goodboy/ui/icons';
 import {
   PULL_REQUEST_NOUNS,
   REVIEW_SOURCE_CAPABILITIES,

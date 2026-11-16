@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { CircleAlert, ArrowUp, Check, GitCommitHorizontal } from 'lucide-react';
+import { CircleAlert, ArrowUp, Check, GitCommitHorizontal } from '@goodboy/ui/icons';
 import { Eyebrow, ICON_SIZE } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 

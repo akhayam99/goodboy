@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { ChevronDown, FileJson, FolderOpen, Plus } from 'lucide-react';
+import { ChevronDown, FileJson, FolderOpen, Plus } from '@goodboy/ui/icons';
 import { AnchoredPopover, Button, ICON_SIZE, useDropdown } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';

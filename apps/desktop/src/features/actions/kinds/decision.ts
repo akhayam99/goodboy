@@ -1,4 +1,4 @@
-import { Copy, Scale } from 'lucide-react';
+import { Copy, Scale } from '@goodboy/ui/icons';
 import type { DecisionActionTarget, ObjectKindDefinition } from '../types';
 
 export type DecisionFacts = {

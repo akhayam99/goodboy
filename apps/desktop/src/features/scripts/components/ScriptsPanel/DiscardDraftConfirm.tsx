@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { FileWarning } from 'lucide-react';
+import { FileWarning } from '@goodboy/ui/icons';
 import { ConfirmPopover, ICON_SIZE } from '@goodboy/ui';
 
 type Props = {

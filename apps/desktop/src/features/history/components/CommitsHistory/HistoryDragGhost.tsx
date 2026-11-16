@@ -1,5 +1,5 @@
 import { createPortal } from 'react-dom';
-import { GripVertical } from 'lucide-react';
+import { GripVertical } from '@goodboy/ui/icons';
 import { cn, FLOATING_SURFACE, ICON_SIZE } from '@goodboy/ui';
 
 import { HISTORY_ACTION_CLASSES } from '../../historyActionClasses';

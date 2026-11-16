@@ -1,4 +1,4 @@
-import { Link, SquareArrowOutUpRight } from 'lucide-react';
+import { Link, SquareArrowOutUpRight } from '@goodboy/ui/icons';
 import { openWebAction } from '../openWebAction';
 import type { LinkActionTarget, ObjectKindDefinition } from '../types';
 

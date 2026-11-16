@@ -1,4 +1,4 @@
-import { Copy, Mail, MailOpen } from 'lucide-react';
+import { Copy, Mail, MailOpen } from '@goodboy/ui/icons';
 import type { Session } from '@goodboy/types';
 import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
 import { sessionTitle } from '../../../shared/utils/sessionTitle';

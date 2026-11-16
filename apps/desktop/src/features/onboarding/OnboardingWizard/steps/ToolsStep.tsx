@@ -1,5 +1,5 @@
 import { useContext, useState, type KeyboardEvent, type ReactNode } from 'react';
-import { ChevronRight } from 'lucide-react';
+import { ChevronRight } from '@goodboy/ui/icons';
 import { Button, cn, FormActions, ICON_SIZE, KeyHint, Notice, useEscapeLayer } from '@goodboy/ui';
 import type { Project, WorkspaceId } from '@goodboy/types';
 import { GithubFormBody } from '../../../integrations/github/GithubFormBody';

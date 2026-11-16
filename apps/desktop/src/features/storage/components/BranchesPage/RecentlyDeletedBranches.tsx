@@ -1,6 +1,6 @@
 import { CHECK_STATE } from '../../../../store/slices/notifications/errorRecovery';
 import { useId, useState } from 'react';
-import { ChevronRight } from 'lucide-react';
+import { ChevronRight } from '@goodboy/ui/icons';
 import type { DeletedBranch } from '@goodboy/types';
 import { DELETED_BRANCH_KEEP_DAYS } from '@goodboy/types';
 import { Band, cn, EmptyLine, ICON_SIZE, FOCUS_RING } from '@goodboy/ui';

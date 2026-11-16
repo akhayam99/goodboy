@@ -1,4 +1,4 @@
-import { Lock } from 'lucide-react';
+import { Lock } from '@goodboy/ui/icons';
 import { Eyebrow, ICON_SIZE } from '@goodboy/ui';
 import type { LeadLockedRow } from '@goodboy/core/auto';
 

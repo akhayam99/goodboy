@@ -1,4 +1,4 @@
-import { CircleAlert, ArrowUpCircle, Clock } from 'lucide-react';
+import { CircleAlert, ArrowUpCircle, Clock } from '@goodboy/ui/icons';
 import { ICON_SIZE } from '@goodboy/ui';
 import type { UpdateCardState } from '../updateCardState';
 

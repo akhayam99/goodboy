@@ -8,7 +8,7 @@ import {
   GitMerge,
   Pencil,
   Upload,
-} from 'lucide-react';
+} from '@goodboy/ui/icons';
 import { Button, formatError, ICON_SIZE, SkeletonRow } from '@goodboy/ui';
 import type { Project, WorkspaceGitStatus } from '@goodboy/types';
 import { useAppStore } from '../../../../store';

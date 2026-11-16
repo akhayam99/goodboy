@@ -1,4 +1,4 @@
-import { ListTree } from 'lucide-react';
+import { ListTree } from '@goodboy/ui/icons';
 import { AnchoredPopover, Button, ICON_SIZE, useDropdown } from '@goodboy/ui';
 import type { ReportOutlineEntry } from '../../reportOutline';
 

@@ -7,7 +7,7 @@ import {
   HelpCircle,
   MinusCircle,
   CircleX,
-} from 'lucide-react';
+} from '@goodboy/ui/icons';
 
 type Props = {
   readonly conclusion: PrCheckConclusion;

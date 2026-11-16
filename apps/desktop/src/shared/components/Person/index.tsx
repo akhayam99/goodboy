@@ -1,4 +1,4 @@
-import { Bot } from 'lucide-react';
+import { Bot } from '@goodboy/ui/icons';
 import { Avatar, cn, ICON_SIZE, tintClasses } from '@goodboy/ui';
 
 type PersonSize = 'xs' | 'sm' | 'md';

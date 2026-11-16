@@ -1,5 +1,5 @@
 import { OptionalTooltip } from './OptionalTooltip';
-import type { LucideIcon } from 'lucide-react';
+import type { IconGlyph } from '../icons';
 import { cn } from '../cn';
 import { FOCUS_RING } from '../focusRing';
 import { tintClasses, type Tone } from '../tint';
@@ -7,7 +7,7 @@ import { StatusDot } from './StatusDot';
 import { ICON_SIZE } from '../iconSize';
 
 export type GhostActionButtonProps = {
-  readonly icon: LucideIcon;
+  readonly icon: IconGlyph;
   readonly label: string;
   readonly tone?: Tone;
   readonly pressed?: boolean;

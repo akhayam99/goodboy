@@ -1,5 +1,5 @@
 import { useMemo, useState, type ReactNode } from 'react';
-import { Plus, RotateCcw } from 'lucide-react';
+import { Plus, RotateCcw } from '@goodboy/ui/icons';
 import type { WorkflowRunHistoryRow } from '@goodboy/db';
 import { Button, ConfirmPopover, EmptyState, ICON_SIZE, ListGrid } from '@goodboy/ui';
 import type { Workflow } from '@goodboy/types';

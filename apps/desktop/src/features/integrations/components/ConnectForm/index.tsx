@@ -5,7 +5,7 @@ import type {
   WorkspaceIntegrationProvider,
 } from '@goodboy/types';
 import { Button, Collapsible, formatError, ICON_SIZE, Input } from '@goodboy/ui';
-import { SquareArrowOutUpRight } from 'lucide-react';
+import { SquareArrowOutUpRight } from '@goodboy/ui/icons';
 import { IntegrationCredentialPicker } from '../IntegrationCredentialPicker';
 
 type ConnectConfigField = {

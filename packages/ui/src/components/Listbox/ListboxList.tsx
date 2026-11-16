@@ -1,5 +1,5 @@
 import { Fragment } from 'react';
-import { Plus } from 'lucide-react';
+import { Plus } from '../../icons';
 import { cn } from '../../cn';
 import { Eyebrow } from '../Eyebrow';
 import type { FilteredOption } from './filterOptions';

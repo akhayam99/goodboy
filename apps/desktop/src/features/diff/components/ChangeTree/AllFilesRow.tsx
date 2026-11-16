@@ -1,4 +1,4 @@
-import { ChevronRight, Folder } from 'lucide-react';
+import { ChevronRight, Folder } from '@goodboy/ui/icons';
 import type { FileDiff } from '@goodboy/types';
 import { cn, ICON_SIZE, SelectableRow, treeIndentPx } from '@goodboy/ui';
 import { MiddleText } from '../../../../shared/components/MiddleText';

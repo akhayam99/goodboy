@@ -1,5 +1,5 @@
 import { useMemo, type ReactNode } from 'react';
-import { Check } from 'lucide-react';
+import { Check } from '@goodboy/ui/icons';
 import {
   AnchoredPopover,
   MENU_MAX_WIDTH,

@@ -2,7 +2,7 @@
 
 import { afterEach, describe, expect, it } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
-import { Inbox } from 'lucide-react';
+import { Inbox } from '../icons';
 import { EmptyState, FilledEmptyState } from '../components/EmptyState';
 
 afterEach(cleanup);

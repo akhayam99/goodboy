@@ -1,7 +1,7 @@
 import { PROVIDER_CONNECT_CAPABILITIES } from '@goodboy/core/providers';
 import { useEffect, useRef } from 'react';
 import { Button, cn, Collapsible, ICON_SIZE } from '@goodboy/ui';
-import { CircleCheck } from 'lucide-react';
+import { CircleCheck } from '@goodboy/ui/icons';
 import { type ProviderId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { openLink } from '../../../open/openLink';
@@ -104,7 +104,6 @@ export const ProviderConnect = ({ providerId, chrome, autoStart = false, onDone 
         ) : (
           <Mark
             size={ICON_SIZE.hero}
-            strokeWidth={2}
             aria-hidden
             className="mt-0.5 shrink-0"
             style={{ color: `var(${PROVIDER_BRAND[providerId].cssVar})` }}

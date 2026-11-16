@@ -1,4 +1,4 @@
-import { Clock } from 'lucide-react';
+import { Clock } from '@goodboy/ui/icons';
 import { ICON_SIZE, Tooltip } from '@goodboy/ui';
 import type { RunTimeLeft } from '../../session/timeline/runTimeLeft';
 

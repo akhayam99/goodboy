@@ -1,6 +1,6 @@
 import { OPEN_FAILED, READ_FAILED } from '../../../../store/slices/notifications/errorRecovery';
 import { useEffect } from 'react';
-import { Info, Lock, Wrench } from 'lucide-react';
+import { Info, Lock, Wrench } from '@goodboy/ui/icons';
 import {
   Band,
   BandRow,

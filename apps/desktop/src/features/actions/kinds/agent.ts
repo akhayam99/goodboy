@@ -1,5 +1,13 @@
 import { CHECK_STATE, NOTHING_CHANGED } from '../../../store/slices/notifications/errorRecovery';
-import { CircleCheck, CircleDot, MessageSquare, OctagonX, Cpu, Pencil, Tag } from 'lucide-react';
+import {
+  CircleCheck,
+  CircleDot,
+  MessageSquare,
+  OctagonX,
+  Cpu,
+  Pencil,
+  Tag,
+} from '@goodboy/ui/icons';
 import { parseHiddenModels, visibleCatalog } from '@goodboy/core/providers';
 import { AUTO_GATES, isAdoptableKind } from '@goodboy/core/auto';
 import type { Agent, AgentStatus, ProviderId, SessionId } from '@goodboy/types';

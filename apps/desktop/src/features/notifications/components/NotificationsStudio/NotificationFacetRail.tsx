@@ -1,4 +1,4 @@
-import { Inbox, Mail, Zap, type LucideIcon } from 'lucide-react';
+import { Inbox, Mail, Zap, type IconGlyph } from '@goodboy/ui/icons';
 import {
   Eyebrow,
   SegmentedTabs,
@@ -38,7 +38,7 @@ const VIEW_PRESENTATION = {
   all: { label: 'All', icon: Inbox },
   unread: { label: 'Unread', icon: Mail },
   action: { label: 'Needs action', icon: Zap },
-} satisfies Record<NotificationView, { label: string; icon: LucideIcon }>;
+} satisfies Record<NotificationView, { label: string; icon: IconGlyph }>;
 
 const SEVERITY_LABEL = {
   error: 'Errors',
@@ -53,7 +53,7 @@ const SOURCE_ICON = {
   budget: CONCEPT_ICONS.budget,
   providers: CONCEPT_ICONS.providers,
   system: CONCEPT_ICONS.settings,
-} satisfies Record<NotificationSource, LucideIcon>;
+} satisfies Record<NotificationSource, IconGlyph>;
 
 export const NotificationFacetRail = ({
   filters,

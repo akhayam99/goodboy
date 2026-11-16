@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 
 import { lazy } from 'react';
-import { Workflow } from 'lucide-react';
+import { Workflow } from '@goodboy/ui/icons';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { PAGE_MEASURE, PaneShell } from '@goodboy/ui';

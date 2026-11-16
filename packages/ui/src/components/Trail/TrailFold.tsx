@@ -1,4 +1,4 @@
-import { Ellipsis } from 'lucide-react';
+import { Ellipsis } from '../../icons';
 import { cn } from '../../cn';
 import { useDropdown } from '../../useDropdown';
 import { AnchoredPopover } from '../AnchoredPopover';

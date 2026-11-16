@@ -1,4 +1,4 @@
-import { ImageOff } from 'lucide-react';
+import { ImageOff } from '@goodboy/ui/icons';
 import { ICON_SIZE, Skeleton } from '@goodboy/ui';
 import type { ImageLightboxItem } from './types';
 

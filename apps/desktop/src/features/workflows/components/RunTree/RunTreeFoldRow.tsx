@@ -1,5 +1,5 @@
 import type { KeyboardEvent } from 'react';
-import { ChevronDown, ChevronUp } from 'lucide-react';
+import { ChevronDown, ChevronUp } from '@goodboy/ui/icons';
 import { ICON_SIZE, ROW_INTERACTIVE, cn } from '@goodboy/ui';
 import type { TimelineCountItem } from '../../../session/timeline/buildTimelineStream';
 import { groupSummaryText } from '../../../session/timeline/groupSummary';

@@ -8,7 +8,7 @@ import {
   inlineMarkdownText,
   Kbd,
 } from '@goodboy/ui';
-import { TriangleAlert, ArrowRight } from 'lucide-react';
+import { TriangleAlert, ArrowRight } from '@goodboy/ui/icons';
 import type {
   ProjectId,
   SessionExternalTaskProvider,

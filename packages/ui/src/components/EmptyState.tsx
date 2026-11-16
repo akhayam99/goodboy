@@ -1,4 +1,4 @@
-import type { LucideIcon } from 'lucide-react';
+import type { IconGlyph } from '../icons';
 import type { ReactNode } from 'react';
 import { cn } from '../cn';
 import { ICON_SIZE } from '../iconSize';
@@ -6,7 +6,7 @@ import type { Tone } from '../tint';
 
 type IllustrationProps =
   | {
-      readonly icon: LucideIcon;
+      readonly icon: IconGlyph;
       readonly illustration?: never;
     }
   | {

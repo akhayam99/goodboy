@@ -1,4 +1,4 @@
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight } from '@goodboy/ui/icons';
 import { cn, ICON_SIZE, FOCUS_RING } from '@goodboy/ui';
 
 import { agentKindPalette, type AgentKind } from '../../agent-kind';

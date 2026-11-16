@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { UserRound } from 'lucide-react';
+import { UserRound } from '@goodboy/ui/icons';
 import {
   AnchoredPopover,
   Button,

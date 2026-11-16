@@ -1,4 +1,4 @@
-import { Eye, Hand, PencilLine, Zap, type LucideIcon } from 'lucide-react';
+import { Eye, Hand, PencilLine, Zap, type IconGlyph } from '@goodboy/ui/icons';
 import type { ClaudePermissionMode } from '@goodboy/types';
 import type { Tone } from '@goodboy/ui';
 
@@ -10,7 +10,7 @@ export type ModeCopy = {
   readonly promise: string;
   readonly short: string;
   readonly tone: Tone;
-  readonly icon: LucideIcon;
+  readonly icon: IconGlyph;
 };
 
 export const PICKER_MODES = [

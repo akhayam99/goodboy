@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ArrowRight, Milestone } from 'lucide-react';
+import { ArrowRight, Milestone } from '@goodboy/ui/icons';
 import { Button, Eyebrow, ICON_SIZE, Markdown, Notice, ScrollFade, tintClasses } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
 import type { TranscriptItem } from '../../utils/transcript-items';

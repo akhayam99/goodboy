@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { Eye } from 'lucide-react';
+import { Eye } from '@goodboy/ui/icons';
 import { ICON_SIZE } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';

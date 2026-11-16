@@ -1,4 +1,4 @@
-import { Rocket } from 'lucide-react';
+import { Rocket } from '@goodboy/ui/icons';
 import { Button, ICON_SIZE } from '@goodboy/ui';
 
 import { NAMES } from '../../../shared/utils/names';

@@ -1,4 +1,4 @@
-import { Lock } from 'lucide-react';
+import { Lock } from '@goodboy/ui/icons';
 import { useShallow } from 'zustand/react/shallow';
 import type { Project } from '@goodboy/types';
 import { CONCEPT_ICONS } from '../../../../../../shared/components/conceptIcons';

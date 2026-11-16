@@ -1,4 +1,4 @@
-import { ChevronLeft } from 'lucide-react';
+import { ChevronLeft } from '@goodboy/ui/icons';
 import { Button, ICON_SIZE, Markdown, useEscapeLayer, FOCUS_RING, cn } from '@goodboy/ui';
 import type { ArtifactId, SessionId } from '@goodboy/types';
 

@@ -1,7 +1,7 @@
 import { CLI_CREDENTIAL, isApiProvider } from '@goodboy/core/providers';
 import { useMemo } from 'react';
 import { Band, BAND_ROW_CLASS, cn, ICON_SIZE, Listbox } from '@goodboy/ui';
-import { FolderGit2 } from 'lucide-react';
+import { FolderGit2 } from '@goodboy/ui/icons';
 import { type ProviderId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 

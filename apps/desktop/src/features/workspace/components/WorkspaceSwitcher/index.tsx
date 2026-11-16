@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Plus, Search } from 'lucide-react';
+import { Plus, Search } from '@goodboy/ui/icons';
 import { Button, Divider, EmptyState, ICON_SIZE, Kbd, ScrollFade } from '@goodboy/ui';
 import type { Workspace, WorkspaceId } from '@goodboy/types';
 import {

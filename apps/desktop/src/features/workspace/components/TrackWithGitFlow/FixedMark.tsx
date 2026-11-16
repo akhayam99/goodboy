@@ -1,5 +1,5 @@
-import { Check } from 'lucide-react';
-import { cn, ICON_SIZE, ICON_STROKE } from '@goodboy/ui';
+import { Check } from '@goodboy/ui/icons';
+import { cn, ICON_SIZE, ICON_WEIGHT } from '@goodboy/ui';
 
 type Props = {
   readonly isGoing: boolean;
@@ -13,7 +13,7 @@ export const FixedMark = ({ isGoing }: Props) => (
         isGoing ? 'bg-primary-solid text-on-primary' : 'border border-border',
       )}
     >
-      {isGoing ? <Check size={ICON_SIZE.row} strokeWidth={ICON_STROKE.check} /> : null}
+      {isGoing ? <Check size={ICON_SIZE.row} weight={ICON_WEIGHT.check} /> : null}
     </span>
   </span>
 );

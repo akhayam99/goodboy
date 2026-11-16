@@ -9,7 +9,7 @@ import {
   ScrollText,
   Square,
   Trash2,
-} from 'lucide-react';
+} from '@goodboy/ui/icons';
 import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
 import { NAMES } from '../../../shared/utils/names';
 import type { ObjectKindDefinition, ScriptActionTarget } from '../types';

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { ChevronRight } from 'lucide-react';
+import { ChevronRight } from '@goodboy/ui/icons';
 import { Button, cn, Eyebrow, ICON_SIZE, IconButton, tintClasses } from '@goodboy/ui';
 import type { MaterializationDeferralCause } from '@goodboy/types';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';

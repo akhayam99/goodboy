@@ -1,4 +1,4 @@
-import { BadgeCheck, GitBranch, UserRound } from 'lucide-react';
+import { BadgeCheck, GitBranch, UserRound } from '@goodboy/ui/icons';
 import type { BitbucketPullRequest } from '../../features/integrations/bitbucket/client';
 import { Person } from '../components/Person';
 import type { FactRegistry } from './factTypes';

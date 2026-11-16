@@ -1,5 +1,5 @@
 import { useEffect, type ReactNode } from 'react';
-import { Ellipsis } from 'lucide-react';
+import { Ellipsis } from '../icons';
 import { AnchoredPopover } from './AnchoredPopover';
 import { MenuTriggerButton, type MenuTriggerSize } from './MenuTriggerButton';
 import { ICON_SIZE } from '../iconSize';

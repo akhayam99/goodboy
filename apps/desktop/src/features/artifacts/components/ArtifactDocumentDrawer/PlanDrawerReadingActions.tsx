@@ -1,4 +1,4 @@
-import { Pencil } from 'lucide-react';
+import { Pencil } from '@goodboy/ui/icons';
 import { Button, HeaderActions, ICON_SIZE } from '@goodboy/ui';
 
 import type { ResolvedAction } from '../../../actions/types';

@@ -1,4 +1,4 @@
-import { Check, SquareArrowOutUpRight } from 'lucide-react';
+import { Check, SquareArrowOutUpRight } from '@goodboy/ui/icons';
 import { Button, ICON_SIZE, WorkNode } from '@goodboy/ui';
 import { CommentBody } from '../../../../shared/components/CommentBody';
 

@@ -12,7 +12,7 @@ import {
   RotateCw,
   Square,
   Trash2,
-} from 'lucide-react';
+} from '@goodboy/ui/icons';
 import type {
   AgentId,
   ArtifactComment,

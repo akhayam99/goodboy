@@ -1,12 +1,12 @@
 import { NAMES } from '../../../../shared/utils/names';
-import type { LucideIcon } from 'lucide-react';
+import type { IconGlyph } from '@goodboy/ui/icons';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import type { ShortcutId } from '../../../../shared/keyboard/registry';
 import type { ClusterPane } from '../../panes/clusterPane';
 
 export type SessionTool = {
   readonly pane: ClusterPane;
-  readonly icon: LucideIcon;
+  readonly icon: IconGlyph;
   readonly label: string;
   readonly fullLabel?: string;
   readonly shortcut?: ShortcutId;

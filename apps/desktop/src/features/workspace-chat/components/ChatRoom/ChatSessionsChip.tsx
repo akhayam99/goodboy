@@ -1,4 +1,4 @@
-import { Layers } from 'lucide-react';
+import { Layers } from '@goodboy/ui/icons';
 import {
   AnchoredPopover,
   cn,

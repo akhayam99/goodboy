@@ -1,4 +1,4 @@
-import { X } from 'lucide-react';
+import { X } from '@goodboy/ui/icons';
 import { IconButton } from '@goodboy/ui';
 import type { IssueCandidate } from '../../../integrations/fetchIssueCandidates';
 

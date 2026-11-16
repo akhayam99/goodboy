@@ -1,4 +1,4 @@
-import { ArrowDownToLine } from 'lucide-react';
+import { ArrowDownToLine } from '@goodboy/ui/icons';
 import type { Project, ProjectId, WorkspaceGitStatus } from '@goodboy/types';
 import type { PaletteEntry } from '../types';
 

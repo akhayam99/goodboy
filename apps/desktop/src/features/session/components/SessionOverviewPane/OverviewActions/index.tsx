@@ -1,4 +1,4 @@
-import { ChevronDown, Plus } from 'lucide-react';
+import { ChevronDown, Plus } from '@goodboy/ui/icons';
 import { AnchoredPopover, Button, ICON_SIZE, Tooltip, useDropdown } from '@goodboy/ui';
 import type { Session } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';

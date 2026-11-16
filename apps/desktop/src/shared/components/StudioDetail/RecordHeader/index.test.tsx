@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
-import { GitMerge, Send, Unlink, CircleX } from 'lucide-react';
+import { GitMerge, Send, Unlink, CircleX } from '@goodboy/ui/icons';
 import type { RecordFrame, RecordVerb, RecordVerbs } from '../RecordActions/types';
 import { RecordHeader } from './index';
 

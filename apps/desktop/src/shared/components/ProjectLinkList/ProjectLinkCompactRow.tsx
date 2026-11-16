@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from 'react';
-import { TriangleAlert, Folder, FolderGit2 } from 'lucide-react';
+import { TriangleAlert, Folder, FolderGit2 } from '@goodboy/ui/icons';
 import type { Project, WorkspaceGitStatus } from '@goodboy/types';
 import { cn, ICON_SIZE, ROW_INTERACTIVE, Tooltip } from '@goodboy/ui';
 

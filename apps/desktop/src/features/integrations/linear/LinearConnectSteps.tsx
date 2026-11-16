@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Check, SquareArrowOutUpRight, ShieldAlert } from 'lucide-react';
+import { Check, SquareArrowOutUpRight, ShieldAlert } from '@goodboy/ui/icons';
 import { Button, ICON_SIZE, Input, StatusDot } from '@goodboy/ui';
 import type { WorkspaceId } from '@goodboy/types';
 import { openLink } from '../../open/openLink';

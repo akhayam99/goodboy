@@ -1,4 +1,4 @@
-import { X } from 'lucide-react';
+import { X } from '@goodboy/ui/icons';
 import { Checkbox, IconButton } from '@goodboy/ui';
 import type { FolderEntry } from './folderEntry';
 import type { FolderRowContext } from './folderRowContext';

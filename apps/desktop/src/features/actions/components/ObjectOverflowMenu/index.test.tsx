@@ -10,6 +10,8 @@ vi.mock('@tauri-apps/api/event', () => ({
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { Ellipsis } from '@goodboy/ui/icons';
+import { findGlyph } from '@goodboy/ui/icons/testing/findGlyph';
 import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
@@ -66,8 +68,8 @@ describe('ObjectOverflowMenu', () => {
     render(<ObjectOverflowMenu target={TARGET} label="More actions" />);
 
     const trigger = screen.getByRole('button', { name: 'More actions' });
-    expect(trigger.querySelector('svg.lucide-ellipsis')).not.toBeNull();
-    expect(trigger.querySelector('svg.lucide-ellipsis-vertical')).toBeNull();
+    expect(findGlyph({ root: trigger, icon: Ellipsis })).not.toBeNull();
+    expect(trigger.querySelectorAll('svg')).toHaveLength(1);
   });
 
   it('is a 24px square in a list row and a 28px square in a header', () => {

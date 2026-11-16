@@ -1,7 +1,7 @@
 import { OptionalTooltip } from '../OptionalTooltip';
 import { Tooltip } from '../Tooltip';
 import { useEffect, useRef, type ReactNode } from 'react';
-import { X } from 'lucide-react';
+import { X } from '../../icons';
 import { cn } from '../../cn';
 import { FLOATING_SURFACE } from '../../floatingSurface';
 import { FOCUS_RING } from '../../focusRing';

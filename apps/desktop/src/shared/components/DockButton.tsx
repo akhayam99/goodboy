@@ -1,4 +1,4 @@
-import { PanelRight } from 'lucide-react';
+import { PanelRight } from '@goodboy/ui/icons';
 import { Button, ICON_SIZE, Tooltip } from '@goodboy/ui';
 import { NAMES } from '../utils/names';
 

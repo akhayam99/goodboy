@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { GitMerge } from 'lucide-react';
+import { GitMerge } from '@goodboy/ui/icons';
 import { Button } from '@goodboy/ui';
 import { ActionConfirmPanel } from '../../../../../../features/actions/components/ActionControls/ActionConfirmPanel';
 import type { ResolvedAction } from '../../../../../../features/actions/types';

@@ -1,5 +1,5 @@
 import { useContext } from 'react';
-import { Play } from 'lucide-react';
+import { Play } from '../icons';
 import { cn } from '../cn';
 import { ICON_SIZE } from '../iconSize';
 import { Button } from './Button';

@@ -1,8 +1,8 @@
-import { CornerDownRight, type LucideIcon } from 'lucide-react';
+import { CornerDownRight, type IconGlyph } from '@goodboy/ui/icons';
 import type { HandoffSender } from '@goodboy/types';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 
-export const HANDOFF_SENDER_ICON: Readonly<Record<HandoffSender['kind'], LucideIcon>> = {
+export const HANDOFF_SENDER_ICON: Readonly<Record<HandoffSender['kind'], IconGlyph>> = {
   you: CONCEPT_ICONS.agents,
   orchestrator: CONCEPT_ICONS.orchestrator,
   workflowStep: CONCEPT_ICONS.workflows,

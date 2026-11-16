@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { Check, Copy, X } from 'lucide-react';
+import { Check, Copy, X } from '../icons';
 import { cn } from '../cn';
 import { FOCUS_RING } from '../focusRing';
 import { ICON_SIZE } from '../iconSize';

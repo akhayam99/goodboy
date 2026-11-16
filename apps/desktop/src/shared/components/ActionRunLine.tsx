@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { X } from 'lucide-react';
+import { X } from '@goodboy/ui/icons';
 import { Button, IconButton, Notice } from '@goodboy/ui';
 import type { ActionRun } from '../../store/slices/action-runs/types';
 

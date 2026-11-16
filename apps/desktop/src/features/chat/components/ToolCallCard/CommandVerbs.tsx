@@ -1,4 +1,4 @@
-import { Copy, SquareTerminal } from 'lucide-react';
+import { Copy, SquareTerminal } from '@goodboy/ui/icons';
 import { Button, ICON_SIZE, useCopyLink } from '@goodboy/ui';
 import type { AgentId, SessionId } from '@goodboy/types';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';

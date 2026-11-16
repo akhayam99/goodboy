@@ -1,4 +1,4 @@
-import { ArchiveRestore } from 'lucide-react';
+import { ArchiveRestore } from '@goodboy/ui/icons';
 import { Button, ICON_SIZE } from '@goodboy/ui';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 

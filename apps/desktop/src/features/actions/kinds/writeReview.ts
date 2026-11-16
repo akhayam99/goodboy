@@ -1,4 +1,4 @@
-import { Pencil, Send, Trash2, X } from 'lucide-react';
+import { Pencil, Send, Trash2, X } from '@goodboy/ui/icons';
 import type { PrReviewDraft, SessionId } from '@goodboy/types';
 import { EMPTY_REVIEW_SUBMISSION } from '../../../store/slices/review-drafts/reviewSubmission';
 import type { PublishPrReviewVerdict } from '../../../store/slices/review-drafts/types';

@@ -1,4 +1,4 @@
-import { ChevronRight, CircleCheck } from 'lucide-react';
+import { ChevronRight, CircleCheck } from '@goodboy/ui/icons';
 import { cn, FOCUS_RING, ICON_SIZE, ROW_INTERACTIVE } from '@goodboy/ui';
 import type { ConversationThread } from './types';
 

@@ -1,5 +1,5 @@
 import { useContext } from 'react';
-import { ChevronRight } from 'lucide-react';
+import { ChevronRight } from '@goodboy/ui/icons';
 import { useShallow } from 'zustand/react/shallow';
 import { Button, ICON_SIZE, cn } from '@goodboy/ui';
 import type { Session } from '@goodboy/types';

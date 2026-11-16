@@ -1,5 +1,5 @@
 import { formatUsd, ICON_SIZE, IconButton, Notice } from '@goodboy/ui';
-import { X } from 'lucide-react';
+import { X } from '@goodboy/ui/icons';
 import type { BudgetAlert } from '@goodboy/types';
 import { providerLabel } from '../../providerLabel';
 

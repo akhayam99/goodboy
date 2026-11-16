@@ -1,8 +1,8 @@
 import { Children, Fragment, isValidElement, useId, useState, type ReactNode } from 'react';
-import { ChevronRight, CircleAlert, CircleCheck, Info, TriangleAlert } from 'lucide-react';
+import { ChevronRight, CircleAlert, CircleCheck, Info, TriangleAlert } from '../../icons';
 import { cn } from '../../cn';
 import { FOCUS_RING } from '../../focusRing';
-import { ICON_SIZE, ICON_STROKE } from '../../iconSize';
+import { ICON_SIZE, ICON_WEIGHT } from '../../iconSize';
 import { FLOATING_SURFACE } from '../../floatingSurface';
 import { tintClasses } from '../../tint';
 import { ScrollFade } from '../ScrollFade';
@@ -112,7 +112,7 @@ export const Notice = ({
       >
         <Icon
           size={ICON_SIZE.notice}
-          strokeWidth={ICON_STROKE.notice}
+          weight={ICON_WEIGHT.notice}
           aria-hidden
           {...(iconTestId !== undefined ? { 'data-testid': iconTestId } : {})}
           className={cn('shrink-0', !isTitleOnly && 'mt-0.5', tint.icon)}

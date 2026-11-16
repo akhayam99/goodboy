@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Check, Link2, Moon, Share, Sun, type LucideIcon } from 'lucide-react';
+import { Check, Link2, Moon, Share, Sun, type IconGlyph } from '@goodboy/ui/icons';
 import {
   FOCUS_RING,
   GithubIcon,
@@ -56,7 +56,7 @@ type IconParams = {
   readonly canShare: boolean;
 };
 
-const handoffIcon = ({ state, canShare }: IconParams): LucideIcon => {
+const handoffIcon = ({ state, canShare }: IconParams): IconGlyph => {
   if (state === 'shared' || state === 'copied') {
     return Check;
   }

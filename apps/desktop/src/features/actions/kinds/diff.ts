@@ -7,7 +7,7 @@ import {
   GitPullRequestCreate,
   History,
   Undo2,
-} from 'lucide-react';
+} from '@goodboy/ui/icons';
 import type { SessionId } from '@goodboy/types';
 import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
 import { dirtyTreeSentence } from '../../../shared/lib/dirtyTreeCopy';

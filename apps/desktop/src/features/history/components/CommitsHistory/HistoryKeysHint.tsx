@@ -1,4 +1,4 @@
-import { CircleHelp } from 'lucide-react';
+import { CircleHelp } from '@goodboy/ui/icons';
 import { AnchoredPopover, IconButton, Kbd, SelectableRow, useDropdown } from '@goodboy/ui';
 import { openGuideChapter } from '../../../settings/openGuideChapter';
 import { HISTORY_KEYS } from './useHistoryKeys/historyKeys';

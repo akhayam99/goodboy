@@ -1,4 +1,4 @@
-import { Square } from 'lucide-react';
+import { Square } from '@goodboy/ui/icons';
 import { StatusDot, IconButton } from '@goodboy/ui';
 import { formatDuration } from '../../../shared/utils/time/formatDuration';
 import type { RunningScript } from '../hooks/useRunningScripts';

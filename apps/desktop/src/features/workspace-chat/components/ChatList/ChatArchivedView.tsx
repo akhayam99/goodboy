@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Search } from 'lucide-react';
+import { Search } from '@goodboy/ui/icons';
 import { Button, ICON_SIZE, ScrollFade, tintClasses } from '@goodboy/ui';
 import type { ChatId, ChatSummary } from '@goodboy/types';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';

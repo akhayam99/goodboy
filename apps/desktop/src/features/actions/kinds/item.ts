@@ -1,4 +1,4 @@
-import { Copy, SquareArrowOutUpRight } from 'lucide-react';
+import { Copy, SquareArrowOutUpRight } from '@goodboy/ui/icons';
 import type { ItemActionTarget, ObjectKindDefinition } from '../types';
 
 export type ItemFacts = {

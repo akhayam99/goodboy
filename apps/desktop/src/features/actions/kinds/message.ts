@@ -1,4 +1,4 @@
-import { Copy, FileCode, Quote } from 'lucide-react';
+import { Copy, FileCode, Quote } from '@goodboy/ui/icons';
 import type { AgentId, SessionId } from '@goodboy/types';
 import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
 import { agentPlace } from '../../../store/slices/navigation/place';

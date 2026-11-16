@@ -1,4 +1,4 @@
-import { TriangleAlert, Check } from 'lucide-react';
+import { TriangleAlert, Check } from '@goodboy/ui/icons';
 import { ICON_SIZE } from '@goodboy/ui';
 import { requestOpenLink } from '../../lib/requestOpenLink';
 import type { ScribeProposalState } from '../../hooks/useScribeProposal';

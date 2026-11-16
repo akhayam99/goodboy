@@ -1,5 +1,5 @@
 import { useEffect, useId, useRef, useState, type KeyboardEvent } from 'react';
-import { Plus, Search } from 'lucide-react';
+import { Plus, Search } from '@goodboy/ui/icons';
 import {
   AnchoredPopover,
   EmptyLine,

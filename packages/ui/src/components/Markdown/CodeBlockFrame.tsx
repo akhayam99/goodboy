@@ -1,5 +1,5 @@
 import { useContext, useState, type ReactNode } from 'react';
-import { WrapText } from 'lucide-react';
+import { WrapText } from '../../icons';
 import { cn } from '../../cn';
 import { ICON_SIZE } from '../../iconSize';
 import { Button } from '../Button';

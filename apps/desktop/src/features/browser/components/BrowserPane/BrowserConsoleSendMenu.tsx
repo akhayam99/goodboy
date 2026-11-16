@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { Bot, ChevronDown } from 'lucide-react';
+import { Bot, ChevronDown } from '@goodboy/ui/icons';
 import type { SessionId } from '@goodboy/types';
 import { AnchoredPopover, Button, ICON_SIZE, MENU_MAX_WIDTH, useDropdown } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';

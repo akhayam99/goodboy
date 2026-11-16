@@ -2,7 +2,8 @@
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
-import { Settings } from 'lucide-react';
+import { Settings } from '@goodboy/ui/icons';
+import { findGlyph } from '@goodboy/ui/icons/testing/findGlyph';
 import { PaneShell } from '@goodboy/ui';
 import { StudioShell } from './index';
 
@@ -44,7 +45,7 @@ describe('StudioShell header', () => {
     render(<StudioShell {...defaults}>{() => <p>body</p>}</StudioShell>);
     expect(screen.queryByText('Test Studio')).toBeNull();
     expect(screen.queryByText('acme')).toBeNull();
-    expect(document.querySelector('svg.lucide-settings')).toBeNull();
+    expect(findGlyph({ root: document, icon: Settings })).toBeNull();
   });
 
   it('moves Close into the page header when the body draws one', () => {

@@ -1,6 +1,6 @@
 import { READ_FAILED } from '../../../store/slices/notifications/errorRecovery';
 import { useEffect, useMemo } from 'react';
-import { Pin } from 'lucide-react';
+import { Pin } from '@goodboy/ui/icons';
 import { IconButton } from '@goodboy/ui';
 import type { Session } from '@goodboy/types';
 import { ObjectOverflowMenu } from '../../../features/actions/ObjectOverflowMenu';

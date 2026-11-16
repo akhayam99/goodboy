@@ -1,4 +1,4 @@
-import { Paperclip } from 'lucide-react';
+import { Paperclip } from '@goodboy/ui/icons';
 import { cn, ICON_SIZE, tintClasses } from '@goodboy/ui';
 
 type Props = {

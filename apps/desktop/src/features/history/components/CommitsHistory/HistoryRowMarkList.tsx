@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { ArrowDown, ArrowUp, GitMerge, Minus, PenLine } from 'lucide-react';
+import { ArrowDown, ArrowUp, GitMerge, Minus, PenLine } from '@goodboy/ui/icons';
 import { ICON_SIZE } from '@goodboy/ui';
 import { quoted } from '../../historyEditText';
 import type { HistoryRowMark } from '../../historyRowMarks';

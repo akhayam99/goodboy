@@ -1,4 +1,4 @@
-import { PanelLeftClose, PanelLeftOpen } from 'lucide-react';
+import { PanelLeftClose, PanelLeftOpen } from '@goodboy/ui/icons';
 import { IconButton } from '@goodboy/ui';
 
 type Props = {

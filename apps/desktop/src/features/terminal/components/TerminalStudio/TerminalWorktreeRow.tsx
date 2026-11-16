@@ -1,4 +1,4 @@
-import { Folder, GitBranch } from 'lucide-react';
+import { Folder, GitBranch } from '@goodboy/ui/icons';
 import { cn, ICON_SIZE, ListGridRow, StateDot, TEXT_ROLE } from '@goodboy/ui';
 
 import type { TerminalActivity } from '../../terminalActivityOf';

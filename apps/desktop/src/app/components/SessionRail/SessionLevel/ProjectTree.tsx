@@ -1,5 +1,5 @@
 import { useId } from 'react';
-import { ChevronRight } from 'lucide-react';
+import { ChevronRight } from '@goodboy/ui/icons';
 import { REVIEW_SOURCE_LABEL } from '@goodboy/core/review-source';
 import { ICON_SIZE, Reveal, SelectableRow } from '@goodboy/ui';
 import type { SessionId, WorktreeStatus } from '@goodboy/types';

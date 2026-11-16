@@ -1,5 +1,5 @@
 import { useMemo, type ReactNode } from 'react';
-import { Undo2 } from 'lucide-react';
+import { Undo2 } from '@goodboy/ui/icons';
 import { Button, ConfirmPopover, ICON_SIZE, Notice, Tooltip, type NoticeTone } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../store';

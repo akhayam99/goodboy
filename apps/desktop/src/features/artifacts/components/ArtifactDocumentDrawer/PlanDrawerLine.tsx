@@ -1,4 +1,4 @@
-import { Info } from 'lucide-react';
+import { Info } from '@goodboy/ui/icons';
 import { ICON_SIZE } from '@goodboy/ui';
 
 type Props = {

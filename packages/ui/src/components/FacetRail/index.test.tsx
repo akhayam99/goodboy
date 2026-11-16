@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
-import { Inbox, Mail } from 'lucide-react';
+import { Inbox, Mail } from '../../icons';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { FacetRow } from './FacetRow';
 import { FacetSection } from './FacetSection';

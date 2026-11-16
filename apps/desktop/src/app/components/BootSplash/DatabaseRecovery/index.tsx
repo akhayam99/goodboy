@@ -1,5 +1,5 @@
 import { Button, ICON_SIZE, InlineConfirm, formatError } from '@goodboy/ui';
-import { DatabaseBackup } from 'lucide-react';
+import { DatabaseBackup } from '@goodboy/ui/icons';
 import { useState } from 'react';
 import { NAMES } from '../../../../shared/utils/names';
 import { useAppStore } from '../../../../store';

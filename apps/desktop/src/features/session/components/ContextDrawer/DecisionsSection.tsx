@@ -4,7 +4,7 @@ import { matchesClosedSearch } from './matchesClosedSearch';
 import { revealDecisionRow } from './revealDecisionRow';
 import { CHECK_STATE } from '../../../../store/slices/notifications/errorRecovery';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Undo2 } from 'lucide-react';
+import { Undo2 } from '@goodboy/ui/icons';
 import {
   EmptyLine,
   ICON_SIZE,

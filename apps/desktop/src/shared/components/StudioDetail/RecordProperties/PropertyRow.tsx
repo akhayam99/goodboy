@@ -1,4 +1,4 @@
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown } from '@goodboy/ui/icons';
 import { AnchoredPopover, cn, ICON_SIZE, PANE_RHYTHM, Tooltip, useDropdown } from '@goodboy/ui';
 
 import { FactValue } from './FactValue';

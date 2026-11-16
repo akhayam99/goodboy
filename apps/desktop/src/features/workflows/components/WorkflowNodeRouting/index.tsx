@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { X } from 'lucide-react';
+import { X } from '@goodboy/ui/icons';
 import { Band, ICON_SIZE, IconButton } from '@goodboy/ui';
 import { PROVIDER_CAPABILITIES } from '@goodboy/core/providers';
 import type { Agent, ProviderId, SessionId, Step, WorkflowRunId } from '@goodboy/types';

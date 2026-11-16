@@ -1,4 +1,4 @@
-import { Check } from 'lucide-react';
+import { Check } from '../../icons';
 import { cn } from '../../cn';
 import { FOCUS_RING } from '../../focusRing';
 import { tintClasses } from '../../tint';

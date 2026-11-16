@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { Pencil, Trash2, Undo2 } from 'lucide-react';
+import { Pencil, Trash2, Undo2 } from '@goodboy/ui/icons';
 import { Button, Chip, ClampedProse, cn, ICON_SIZE, Markdown, FOCUS_RING } from '@goodboy/ui';
 import { useFreshLanding } from '../../../chat/reveal/useFreshLanding';
 import { BlockEditor } from './BlockEditor';

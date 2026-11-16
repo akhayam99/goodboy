@@ -1,5 +1,5 @@
 import type { FramePage, Tone } from '@goodboy/ui';
-import type { LucideIcon } from 'lucide-react';
+import type { IconGlyph } from '@goodboy/ui/icons';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../shared/components/conceptIcons';
 import { NAMES } from '../../../shared/utils/names';
 import type { StudioKind } from '../../../store';
@@ -14,7 +14,7 @@ export type StudioSkeletonSpec = {
 type StudioCloseHome = 'none' | 'back';
 
 type StudioMeta = {
-  readonly icon: LucideIcon;
+  readonly icon: IconGlyph;
   readonly tone?: Tone;
   readonly title: string;
   readonly close: StudioCloseHome;

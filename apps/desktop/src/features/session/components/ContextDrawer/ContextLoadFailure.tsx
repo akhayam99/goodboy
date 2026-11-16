@@ -1,4 +1,4 @@
-import { RotateCcw, TriangleAlert } from 'lucide-react';
+import { RotateCcw, TriangleAlert } from '@goodboy/ui/icons';
 import { Button, EmptyState, ICON_SIZE } from '@goodboy/ui';
 
 type Props = {

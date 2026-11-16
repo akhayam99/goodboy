@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ChevronRight, Search } from 'lucide-react';
+import { ChevronRight, Search } from '@goodboy/ui/icons';
 import {
   Button,
   cn,

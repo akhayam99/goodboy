@@ -1,12 +1,12 @@
 import type { ReactNode } from 'react';
-import type { LucideIcon } from 'lucide-react';
+import type { IconGlyph } from '@goodboy/ui/icons';
 import { cn, Eyebrow, ICON_SIZE } from '@goodboy/ui';
 
 const COUNT_FLOOR = 2;
 
 type Props = {
   readonly title: string;
-  readonly icon?: LucideIcon;
+  readonly icon?: IconGlyph;
   readonly count?: number;
   readonly action?: ReactNode;
   readonly className?: string;

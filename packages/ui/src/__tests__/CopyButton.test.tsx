@@ -2,6 +2,8 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, act } from '@testing-library/react';
 import { CopyButton } from '../components/CopyButton';
+import { Check } from '../icons';
+import { findGlyph } from '../icons/testing/findGlyph';
 
 afterEach(cleanup);
 
@@ -103,7 +105,7 @@ describe('CopyButton', () => {
     await flushMicrotasks();
 
     expect(writeText).toHaveBeenCalledWith('session summary');
-    expect(container.querySelector('.lucide-check')).not.toBeNull();
+    expect(findGlyph({ root: container, icon: Check })).not.toBeNull();
     expect(screen.getByRole('button', { name: 'copy summary' })).toBeDefined();
   });
 

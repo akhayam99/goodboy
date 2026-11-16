@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { X } from 'lucide-react';
+import { X } from '@goodboy/ui/icons';
 import { Dialog, ICON_SIZE, IconButton, ScrollFade } from '@goodboy/ui';
 import { ImageLightboxRail } from './ImageLightboxRail';
 import { ImageLightboxStage } from './ImageLightboxStage';

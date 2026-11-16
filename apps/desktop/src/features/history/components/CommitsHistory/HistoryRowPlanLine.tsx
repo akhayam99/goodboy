@@ -1,5 +1,5 @@
 import { Fragment } from 'react';
-import { TriangleAlert } from 'lucide-react';
+import { TriangleAlert } from '@goodboy/ui/icons';
 import { cn, FactCard, ICON_SIZE } from '@goodboy/ui';
 
 import { HISTORY_ACTION_CLASSES } from '../../historyActionClasses';

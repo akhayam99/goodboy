@@ -2,7 +2,7 @@ import { useContext, useEffect, useState, type ReactNode } from 'react';
 import type { ResolvedFact } from '../../../detail-fields/factTypes';
 import { RecordFrameContext } from '../RecordFrameContext';
 import { RecordProperties } from '../RecordProperties';
-import { X } from 'lucide-react';
+import { X } from '@goodboy/ui/icons';
 import {
   Button,
   ICON_SIZE,

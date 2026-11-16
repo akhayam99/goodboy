@@ -1,4 +1,4 @@
-import { Plus } from 'lucide-react';
+import { Plus } from '@goodboy/ui/icons';
 import { cn, ICON_SIZE, PANE_RHYTHM, ScrollFade, SectionLabel, SelectableRow } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { useShallow } from 'zustand/react/shallow';

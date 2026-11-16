@@ -1,6 +1,6 @@
 import type { IntegrationCredential } from '@goodboy/types';
 import { ICON_SIZE, IconButton } from '@goodboy/ui';
-import { Check, Trash2 } from 'lucide-react';
+import { Check, Trash2 } from '@goodboy/ui/icons';
 
 type Props = {
   readonly credential: IntegrationCredential;

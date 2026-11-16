@@ -1,4 +1,4 @@
-import { TerminalSquare, X } from 'lucide-react';
+import { TerminalSquare, X } from '@goodboy/ui/icons';
 import { ConfirmPopover, ICON_SIZE, IconButton } from '@goodboy/ui';
 
 type Props = {

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { resetAdvice } from '@goodboy/core/providers';
 import { BAND_ROW_CLASS, Button, cn, ICON_SIZE } from '@goodboy/ui';
-import { Gift } from 'lucide-react';
+import { Gift } from '@goodboy/ui/icons';
 import { useAppStore } from '../../../../../../../store';
 
 import { countLabel, expiryLine } from './resetCopy';

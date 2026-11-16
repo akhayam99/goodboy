@@ -1,5 +1,5 @@
 // @vitest-environment node
-import { Inbox } from 'lucide-react';
+import { Inbox } from '@goodboy/ui/icons';
 import { describe, expect, it } from 'vitest';
 import { buildCommandList } from './commandList';
 import { EMPTY_FRECENCY } from './frecency';

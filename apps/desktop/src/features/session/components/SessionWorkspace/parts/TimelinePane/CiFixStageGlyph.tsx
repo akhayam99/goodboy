@@ -1,4 +1,4 @@
-import { Check } from 'lucide-react';
+import { Check } from '@goodboy/ui/icons';
 import { ICON_SIZE, StatusDot } from '@goodboy/ui';
 
 import type { CiFixStageStatus } from '../../../../../branch/checks/ciFixStages';

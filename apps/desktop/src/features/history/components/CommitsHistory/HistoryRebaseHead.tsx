@@ -1,6 +1,6 @@
 import { READ_FAILED } from '../../../../store/slices/notifications/errorRecovery';
 import { useEffect, useState } from 'react';
-import { ArrowUp } from 'lucide-react';
+import { ArrowUp } from '@goodboy/ui/icons';
 import { Button, ConfirmPopover, ICON_SIZE, Listbox } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 

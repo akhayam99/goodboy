@@ -1,4 +1,4 @@
-import { Copy, PanelRight } from 'lucide-react';
+import { Copy, PanelRight } from '@goodboy/ui/icons';
 import type { AgentId, ArtifactId, SessionId } from '@goodboy/types';
 import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
 import { agentPlace } from '../../../store/slices/navigation/place';

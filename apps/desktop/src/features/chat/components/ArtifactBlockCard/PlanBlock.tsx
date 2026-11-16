@@ -1,4 +1,4 @@
-import { CircleDot } from 'lucide-react';
+import { CircleDot } from '@goodboy/ui/icons';
 import { cn, ICON_SIZE, tintClasses, FOCUS_RING } from '@goodboy/ui';
 import type { AgentId, SessionId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';

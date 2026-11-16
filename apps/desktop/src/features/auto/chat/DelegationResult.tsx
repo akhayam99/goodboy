@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { Check, FileText, MessageSquare, X } from 'lucide-react';
+import { Check, FileText, MessageSquare, X } from '@goodboy/ui/icons';
 import { Chip, ICON_SIZE, type Tone } from '@goodboy/ui';
 import { OutcomeLine } from '../../chat/readingOrder/OutcomeLine';
 import { ReadingNotes } from '../../chat/readingOrder/ReadingNotes';

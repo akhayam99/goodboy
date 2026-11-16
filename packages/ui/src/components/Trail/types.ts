@@ -1,11 +1,11 @@
 import type { ReactNode } from 'react';
-import type { LucideIcon } from 'lucide-react';
+import type { IconGlyph } from '../../icons';
 import type { CrumbMenuModel } from './crumbMenuTypes';
 
 export type TrailSegmentModel = {
   readonly id: string;
   readonly label: string;
-  readonly icon: LucideIcon;
+  readonly icon: IconGlyph;
   readonly iconClassName?: string;
   readonly glyph?: ReactNode;
   readonly accessory?: ReactNode;

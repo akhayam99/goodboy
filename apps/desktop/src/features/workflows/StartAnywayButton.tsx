@@ -1,4 +1,4 @@
-import { TriangleAlert, Play } from 'lucide-react';
+import { TriangleAlert, Play } from '@goodboy/ui/icons';
 import { Button, ConfirmPopover, ICON_SIZE } from '@goodboy/ui';
 import type { WorkflowBlockReason } from './advanceGate';
 import { useStartAnywayConfirm } from './useStartAnywayConfirm';

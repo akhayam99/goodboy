@@ -1,4 +1,4 @@
-import { MessageSquare } from 'lucide-react';
+import { MessageSquare } from '@goodboy/ui/icons';
 import type { PrComment } from '@goodboy/types';
 import { ICON_SIZE, FOCUS_RING, cn } from '@goodboy/ui';
 import { newReplyLine } from '../../reviewFlowCopy';

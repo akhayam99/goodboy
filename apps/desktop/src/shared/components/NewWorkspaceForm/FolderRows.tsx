@@ -1,5 +1,5 @@
-import { Lock, Plus } from 'lucide-react';
-import { Button, ICON_SIZE } from '@goodboy/ui';
+import { Lock, Plus } from '@goodboy/ui/icons';
+import { Button, ICON_SIZE, ICON_WEIGHT } from '@goodboy/ui';
 import { CONCEPT_ICONS } from '../conceptIcons';
 import { FOLDER_FACE_COPY } from '../../../features/workspace/folderFaceCopy';
 import { draftFolders } from './draftFolders';
@@ -56,7 +56,7 @@ export const FolderRows = ({ draft, home, destinationName, isBusy }: Props) => {
           busyLabel="Reading folder"
           onClick={() => void draft.addFolder()}
         >
-          <Plus size={ICON_SIZE.row} strokeWidth={2} aria-hidden />
+          <Plus size={ICON_SIZE.row} weight={ICON_WEIGHT.row} aria-hidden />
           Add project
         </Button>
         <span className="flex min-w-0 flex-1 items-center justify-end gap-1 text-meta text-faint-foreground">

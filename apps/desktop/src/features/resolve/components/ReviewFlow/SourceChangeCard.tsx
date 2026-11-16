@@ -1,4 +1,4 @@
-import { Pencil } from 'lucide-react';
+import { Pencil } from '@goodboy/ui/icons';
 import { ICON_SIZE, Notice } from '@goodboy/ui';
 
 import { formatClock } from '../../../../shared/utils/time/formatClock';

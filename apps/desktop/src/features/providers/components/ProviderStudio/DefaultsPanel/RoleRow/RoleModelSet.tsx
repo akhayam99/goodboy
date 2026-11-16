@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Plus } from 'lucide-react';
+import { Plus } from '@goodboy/ui/icons';
 import { ROLE_MODEL_SET_MAX, type EffortLevel, type ProviderId } from '@goodboy/types';
 import { Button, ICON_SIZE, StatusDot } from '@goodboy/ui';
 import { RoutingPicker } from '../../../../../../shared/components/RoutingPicker';

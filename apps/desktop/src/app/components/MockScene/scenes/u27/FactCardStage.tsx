@@ -1,4 +1,4 @@
-import { Gauge, GitBranch } from 'lucide-react';
+import { Gauge, GitBranch } from '@goodboy/ui/icons';
 import { FactCard, ICON_SIZE } from '@goodboy/ui';
 import type { FactCardSpec } from '@goodboy/ui';
 

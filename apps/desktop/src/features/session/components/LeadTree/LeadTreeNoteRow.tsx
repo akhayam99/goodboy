@@ -1,5 +1,5 @@
 import { memo } from 'react';
-import { MessageSquare } from 'lucide-react';
+import { MessageSquare } from '@goodboy/ui/icons';
 import { Button, cn, ICON_SIZE } from '@goodboy/ui';
 import { SpawnedRailCell } from '../SessionWorkspace/parts/TimelinePane/SpawnedRailCell';
 import type { RailRow } from '../../../workTreeModel/railGeometry';

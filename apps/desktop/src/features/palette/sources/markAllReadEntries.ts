@@ -1,4 +1,4 @@
-import { MailOpen } from 'lucide-react';
+import { MailOpen } from '@goodboy/ui/icons';
 import type { SessionId } from '@goodboy/types';
 import type { PaletteEntry } from '../types';
 

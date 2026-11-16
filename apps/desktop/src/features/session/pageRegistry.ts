@@ -1,4 +1,4 @@
-import type { LucideIcon } from 'lucide-react';
+import type { IconGlyph } from '@goodboy/ui/icons';
 import type { LensKind } from '../../store';
 import { CONCEPT_ICONS } from '../../shared/components/conceptIcons';
 import type { ShortcutId } from '../../shared/keyboard/registry';
@@ -11,7 +11,7 @@ type PageId = 'overview' | 'files' | 'runs' | 'artifacts' | 'questions' | 'conte
 export type Page = {
   readonly id: PageId;
   readonly label: string;
-  readonly icon: LucideIcon;
+  readonly icon: IconGlyph;
   readonly tint: LensKind | null;
   readonly shortcut: ShortcutId;
   readonly count: CountedPageId | null;

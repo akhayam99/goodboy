@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { Pencil } from 'lucide-react';
+import { Pencil } from '@goodboy/ui/icons';
 import { Button, ICON_SIZE } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../../store/store';

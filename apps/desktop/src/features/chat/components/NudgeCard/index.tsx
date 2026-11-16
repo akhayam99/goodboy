@@ -1,5 +1,5 @@
 import { useEffect, useRef, type ReactNode } from 'react';
-import { X } from 'lucide-react';
+import { X } from '@goodboy/ui/icons';
 import { Button, cn, tintClasses, IconButton } from '@goodboy/ui';
 import { TranscriptShell } from '../TranscriptShell';
 

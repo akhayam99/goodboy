@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { ChevronLeft } from 'lucide-react';
+import { ChevronLeft } from '@goodboy/ui/icons';
 import { Button, ICON_SIZE } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { useAppStore, useSlotHistory } from '../../../../store';

@@ -1,6 +1,6 @@
 import { useMemo, useRef, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight } from '@goodboy/ui/icons';
 import { cn, ICON_SIZE, FOCUS_RING } from '@goodboy/ui';
 import type { AgentId, PlanId, SessionId, TurnState } from '@goodboy/types';
 import { extractHandoff } from '@goodboy/core/context';

@@ -1,4 +1,4 @@
-import { ArrowRight, Undo2 } from 'lucide-react';
+import { ArrowRight, Undo2 } from '@goodboy/ui/icons';
 import { Button, cn, ICON_SIZE, Markdown, FOCUS_RING } from '@goodboy/ui';
 import { DecisionNumber } from './DecisionNumber';
 import type { ClosedDecisionByline } from './decisionByline';

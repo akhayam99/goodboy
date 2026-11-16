@@ -1,4 +1,4 @@
-import { ArrowLeft, Lightbulb, LightbulbOff, Moon, RotateCcw, Sun } from 'lucide-react';
+import { ArrowLeft, Lightbulb, LightbulbOff, Moon, RotateCcw, Sun } from '@goodboy/ui/icons';
 import { Button, ICON_SIZE, IconButton, buttonClasses, cn } from '@goodboy/ui';
 import { BrandTile } from '../../../../shared/components/BrandTile';
 import { DEMO_LINKS } from './demoLinks';

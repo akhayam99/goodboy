@@ -1,10 +1,10 @@
-import { FileText, Folder, Image, MessageSquare, type LucideIcon } from 'lucide-react';
+import { FileText, Folder, Image, MessageSquare, type IconGlyph } from '@goodboy/ui/icons';
 import { ICON_SIZE } from '@goodboy/ui';
 import type { LaunchSnapshotItem, LaunchSnapshotKind } from '../chat/launchSnapshotOf';
 
 export const AUTO_CHILD_NOTHING_GIVEN = 'Nothing was given to the agent.';
 
-const ICONS: Readonly<Record<LaunchSnapshotKind, LucideIcon>> = {
+const ICONS: Readonly<Record<LaunchSnapshotKind, IconGlyph>> = {
   note: MessageSquare,
   result: FileText,
   artifact: FileText,

@@ -1,4 +1,4 @@
-import { RefreshCw } from 'lucide-react';
+import { RefreshCw } from '@goodboy/ui/icons';
 import { Button, cn, ICON_SIZE, Skeleton } from '@goodboy/ui';
 import { NAMES } from '../../../../shared/utils/names';
 import type { QrInfo } from '../../bridge';

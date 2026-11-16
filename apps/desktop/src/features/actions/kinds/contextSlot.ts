@@ -1,4 +1,4 @@
-import { Eye, History, Pencil } from 'lucide-react';
+import { Eye, History, Pencil } from '@goodboy/ui/icons';
 import type { ContextSlotActionTarget, ObjectKindDefinition } from '../types';
 
 export type ContextSlotFacts = {

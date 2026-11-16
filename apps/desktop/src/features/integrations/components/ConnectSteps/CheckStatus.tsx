@@ -1,5 +1,5 @@
 import { ICON_SIZE, StatusDot } from '@goodboy/ui';
-import { Check, ShieldAlert } from 'lucide-react';
+import { Check, ShieldAlert } from '@goodboy/ui/icons';
 
 type Props = {
   readonly status: 'idle' | 'checking' | 'ok' | 'error';

@@ -1,6 +1,6 @@
 import { useId, type ReactNode } from 'react';
-import { Check } from 'lucide-react';
-import { cn, FOCUS_RING, ICON_SIZE, ICON_STROKE } from '@goodboy/ui';
+import { Check } from '@goodboy/ui/icons';
+import { cn, FOCUS_RING, ICON_SIZE, ICON_WEIGHT } from '@goodboy/ui';
 import type { OpenQuestionSelectMode } from '@goodboy/types';
 import { SelectionIndicator } from './SelectionIndicator';
 
@@ -52,7 +52,7 @@ export const AnswerOptionRow = ({
         {isPicked ? (
           <Check
             size={ICON_SIZE.row}
-            strokeWidth={ICON_STROKE.check}
+            weight={ICON_WEIGHT.check}
             aria-hidden
             className="text-foreground"
           />

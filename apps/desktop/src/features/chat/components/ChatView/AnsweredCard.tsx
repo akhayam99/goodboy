@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Bot, CircleCheck } from 'lucide-react';
+import { Bot, CircleCheck } from '@goodboy/ui/icons';
 import { ICON_SIZE, Markdown } from '@goodboy/ui';
 import type { OpenQuestion } from '@goodboy/types';
 import { formatAge } from '../../../../shared/utils/time/formatAge';

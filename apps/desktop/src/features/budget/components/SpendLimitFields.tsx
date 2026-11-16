@@ -1,4 +1,4 @@
-import { Bell, Pause } from 'lucide-react';
+import { Bell, Pause } from '@goodboy/ui/icons';
 import { Input, SegmentedTabs, cn, type SegmentedTabOption } from '@goodboy/ui';
 import type { SessionBudgetOnExceed } from '@goodboy/types';
 import { parseSpendLimit } from '../parseSpendLimit';

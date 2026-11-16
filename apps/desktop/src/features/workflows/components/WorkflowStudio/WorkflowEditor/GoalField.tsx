@@ -1,4 +1,4 @@
-import { Target, Undo2 } from 'lucide-react';
+import { Target, Undo2 } from '@goodboy/ui/icons';
 import { cn, ICON_SIZE } from '@goodboy/ui';
 import { CONCEPT_ICONS } from '../../../../../shared/components/conceptIcons';
 import { PromptField, type PromptFieldFiles } from '../../../../../shared/components/PromptField';

@@ -1,4 +1,4 @@
-import { TriangleAlert } from 'lucide-react';
+import { TriangleAlert } from '@goodboy/ui/icons';
 import { Button, FormActions, ICON_SIZE, Input, Textarea } from '@goodboy/ui';
 import type { Project, ProjectId } from '@goodboy/types';
 

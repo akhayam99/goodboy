@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type FocusEvent } from 'react';
-import { X } from 'lucide-react';
+import { X } from '@goodboy/ui/icons';
 import { Button, cn, ICON_SIZE, IconButton, KeyHint, Notice, type NoticeTone } from '@goodboy/ui';
 
 import { useIsWindowFocused } from '../../hooks/useIsWindowFocused';

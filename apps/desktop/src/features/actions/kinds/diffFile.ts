@@ -1,4 +1,4 @@
-import { Copy, SquareArrowOutUpRight, FileText } from 'lucide-react';
+import { Copy, SquareArrowOutUpRight, FileText } from '@goodboy/ui/icons';
 import type { DiffFileActionTarget, ObjectKindDefinition } from '../types';
 
 export type DiffFileFacts = {

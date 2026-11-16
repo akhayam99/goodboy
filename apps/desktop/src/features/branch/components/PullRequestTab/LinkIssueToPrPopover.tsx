@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Plus } from 'lucide-react';
+import { Plus } from '@goodboy/ui/icons';
 import type { MountId, SessionId } from '@goodboy/types';
 import {
   AnchoredPopover,

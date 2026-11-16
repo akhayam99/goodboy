@@ -1,6 +1,6 @@
 import type { ImpactSession } from '@goodboy/db';
 import type { SessionId } from '@goodboy/types';
-import { ArrowUpRight } from 'lucide-react';
+import { ArrowUpRight } from '@goodboy/ui/icons';
 import {
   cn,
   EmptyState,

@@ -1,5 +1,5 @@
 // @vitest-environment node
-import { Inbox } from 'lucide-react';
+import { Inbox } from '@goodboy/ui/icons';
 import { describe, expect, it, vi } from 'vitest';
 import { brandId, type SessionId, type WorkflowRunId } from '@goodboy/types';
 import { aWorkflowRun } from '@goodboy/types/testing';

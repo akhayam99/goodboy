@@ -1,4 +1,4 @@
-import { ArrowUpRight, Eye, Undo2, X } from 'lucide-react';
+import { ArrowUpRight, Eye, Undo2, X } from '@goodboy/ui/icons';
 import { Button, Chip, ICON_SIZE, cn } from '@goodboy/ui';
 import type { SessionContextItem } from '@goodboy/types';
 import { learningOriginLine, learningSourceLine } from './learningCopy';

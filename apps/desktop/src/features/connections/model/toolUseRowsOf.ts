@@ -1,4 +1,4 @@
-import { GitMerge, Hash, type LucideIcon } from 'lucide-react';
+import { GitMerge, Hash, type IconGlyph } from '@goodboy/ui/icons';
 import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
 import type { IntegrationGlyphProvider } from '../../../shared/components/IntegrationGlyph';
 import type { InboxKind } from '../../inbox/types';
@@ -12,7 +12,7 @@ export type ToolUseRowModel = {
   readonly key: string;
   readonly label: string;
   readonly detail: string;
-  readonly icon: LucideIcon;
+  readonly icon: IconGlyph;
   readonly source: ToolUseSource;
 };
 

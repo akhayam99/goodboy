@@ -1,4 +1,4 @@
-import { ListFilter } from 'lucide-react';
+import { ListFilter } from '@goodboy/ui/icons';
 import { IconButton } from '@goodboy/ui';
 import { CONCEPT_ICONS } from '../../../../../shared/components/conceptIcons';
 import { ColumnDoorRow } from '../../../SideColumn/ColumnDoorRow';

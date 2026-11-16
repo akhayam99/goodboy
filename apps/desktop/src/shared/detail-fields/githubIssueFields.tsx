@@ -1,4 +1,4 @@
-import { FolderGit2, Tag } from 'lucide-react';
+import { FolderGit2, Tag } from '@goodboy/ui/icons';
 import type { GithubIssue } from '@goodboy/types';
 import { RecordState } from '../components/StudioDetail/RecordState';
 import { stateWord } from '../../features/inbox/stateWord';

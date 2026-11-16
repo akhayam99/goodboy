@@ -1,5 +1,5 @@
 import { useContext, useEffect, useState, type ReactNode } from 'react';
-import { ChevronDown, SlidersHorizontal } from 'lucide-react';
+import { ChevronDown, SlidersHorizontal } from '@goodboy/ui/icons';
 import { Button, ICON_SIZE, IconButton, cn, tintClasses } from '@goodboy/ui';
 import { PRESSED_TOGGLE } from '../../../../shared/components/pressedToggle';
 import type { Glance } from '../../glance/glanceOf';

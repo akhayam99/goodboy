@@ -12,11 +12,6 @@ type Props = {
 export const ArtifactKindGlyph = ({ kind, size, className }: Props) => {
   const Icon = CONCEPT_ICONS[ARTIFACT_KIND_CONCEPT[kind]];
   return (
-    <Icon
-      size={size}
-      strokeWidth={2}
-      aria-hidden
-      className={cn('shrink-0 text-muted-foreground', className)}
-    />
+    <Icon size={size} aria-hidden className={cn('shrink-0 text-muted-foreground', className)} />
   );
 };

@@ -1,7 +1,8 @@
 import type { TooltipProps } from '@goodboy/ui';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
-import { HelpCircle, Play, type LucideIcon } from 'lucide-react';
+import { ChevronRight, HelpCircle, Play, type IconGlyph } from '@goodboy/ui/icons';
+import { findGlyph } from '@goodboy/ui/icons/testing/findGlyph';
 import type {
   IsoDateTime,
   PullRequestState,
@@ -18,7 +19,7 @@ import type { BoardNavigation } from '../useBoardNavigation';
 
 type MockDynamicAction = {
   readonly key: string;
-  readonly icon: LucideIcon;
+  readonly icon: IconGlyph;
   readonly tone: 'primary' | 'warning' | 'danger';
   readonly label: string;
   readonly onClick: () => void;
@@ -220,7 +221,7 @@ describe('StageBoardCard layout', () => {
     render(<StageBoardCard session={session} nav={nav} />);
     expect(screen.queryByText('no PR yet')).toBeNull();
     expect(screen.queryByTestId('session-progress')).toBeNull();
-    expect(document.querySelector('.lucide-chevron-right')).toBeNull();
+    expect(findGlyph({ root: document, icon: ChevronRight })).toBeNull();
   });
 
   it('renders a backticked goal as inline code and keeps the tooltip plain', () => {

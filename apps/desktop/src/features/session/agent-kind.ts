@@ -16,8 +16,8 @@ import {
   ScanSearch,
   Telescope,
   Wrench,
-  type LucideIcon,
-} from 'lucide-react';
+  type IconGlyph,
+} from '@goodboy/ui/icons';
 import type { AutoLimitContext } from '../../store/slices/providerLimits/autoLimitContext';
 import { CONCEPT_ICONS } from '../../shared/components/conceptIcons';
 import { NAMES } from '../../shared/utils/names';
@@ -299,7 +299,7 @@ export type AgentKindPaletteEntry = {
   readonly bg: string;
   readonly fg: string;
   readonly label: string;
-  readonly icon: LucideIcon;
+  readonly icon: IconGlyph;
 };
 
 export const AGENT_KIND_PALETTE: Record<AgentKind, AgentKindPaletteEntry> = {

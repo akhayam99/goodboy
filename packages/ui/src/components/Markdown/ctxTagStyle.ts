@@ -11,15 +11,15 @@ import {
   Target,
   TextQuote,
   TriangleAlert,
-  type LucideIcon,
-} from 'lucide-react';
+  type IconGlyph,
+} from '../../icons';
 import { cn } from '../../cn';
 import { tintClasses, type Tone } from '../../tint';
 
 export type CtxTone = 'primary' | 'success' | 'warning' | 'danger' | 'info' | 'muted';
 
 type CtxTagStyle = {
-  readonly icon: LucideIcon;
+  readonly icon: IconGlyph;
   readonly label: string;
   readonly tone: CtxTone;
   readonly iconClass: string;
@@ -53,7 +53,7 @@ const TONE_CLASSES: Record<CtxTone, ToneClasses> = {
 
 type TagSpec = {
   readonly match: RegExp;
-  readonly icon: LucideIcon;
+  readonly icon: IconGlyph;
   readonly label: string;
   readonly tone: CtxTone;
 };

@@ -1,9 +1,9 @@
 import type { FocusEvent, KeyboardEvent, MouseEvent, ReactNode } from 'react';
-import type { LucideIcon } from 'lucide-react';
+import type { IconGlyph } from '@goodboy/ui/icons';
 import {
   cn,
   ICON_SIZE,
-  iconStrokeOf,
+  iconWeightOf,
   PANE_RHYTHM,
   tintClasses,
   Tooltip,
@@ -21,7 +21,7 @@ export type RailButtonPopup = {
 
 type Props = {
   readonly id: string;
-  readonly icon: LucideIcon;
+  readonly icon: IconGlyph;
   readonly label: string;
   readonly mark?: string | null;
   readonly shortcut?: ShortcutId;
@@ -107,7 +107,7 @@ export const RailButton = ({
         <span data-nav-icon="" className={PANE_RHYTHM.navRail.icon}>
           <Icon
             size={iconSize}
-            strokeWidth={iconStrokeOf({ size: iconSize })}
+            weight={iconWeightOf({ size: iconSize })}
             aria-hidden
             className={iconClass}
           />
@@ -115,7 +115,7 @@ export const RailButton = ({
       ) : (
         <Icon
           size={iconSize}
-          strokeWidth={iconStrokeOf({ size: iconSize })}
+          weight={iconWeightOf({ size: iconSize })}
           aria-hidden
           data-nav-icon=""
           className={cn('shrink-0', iconClass)}

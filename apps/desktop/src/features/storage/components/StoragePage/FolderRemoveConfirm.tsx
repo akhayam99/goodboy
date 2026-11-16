@@ -1,6 +1,6 @@
 import { CHECK_STATE } from '../../../../store/slices/notifications/errorRecovery';
 import { useState } from 'react';
-import { Trash2, TriangleAlert } from 'lucide-react';
+import { Trash2, TriangleAlert } from '@goodboy/ui/icons';
 import type { WorktreeRemovalMode } from '@goodboy/types';
 import { AnchoredConfirm } from '../../../../shared/components/AnchoredConfirm';
 import { useAppStore } from '../../../../store';

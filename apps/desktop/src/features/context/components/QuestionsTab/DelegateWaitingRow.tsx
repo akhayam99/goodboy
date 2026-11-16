@@ -1,4 +1,4 @@
-import { ChevronRight } from 'lucide-react';
+import { ChevronRight } from '@goodboy/ui/icons';
 import { cn, ICON_SIZE, StatusDot, FOCUS_RING } from '@goodboy/ui';
 
 import { QUESTION_DELEGATE_COPY } from '../../questionDelegate';

@@ -9,7 +9,7 @@ import {
   Play,
   RotateCcw,
   Undo2,
-} from 'lucide-react';
+} from '@goodboy/ui/icons';
 import type { MountId, SessionId, WorktreeStatus } from '@goodboy/types';
 import type { AppStore } from '../../../store/store';
 import type { RemoteHostKind } from '../../../shared/utils/remoteHost';

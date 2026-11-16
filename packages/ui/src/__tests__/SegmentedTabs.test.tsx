@@ -2,7 +2,7 @@
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
-import { Bug } from 'lucide-react';
+import { Bug } from '../icons';
 import { ChoiceCards } from '../components/ChoiceCards';
 import { SegmentedTabs } from '../components/SegmentedTabs';
 

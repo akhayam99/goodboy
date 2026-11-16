@@ -1,4 +1,4 @@
-import { Pin, X } from 'lucide-react';
+import { Pin, X } from '@goodboy/ui/icons';
 import { ICON_SIZE, IconButton, SelectableRow } from '@goodboy/ui';
 import { toolTabClassName } from '../../../../shared/utils/toolTabClassName';
 import { BrowserFavicon } from './BrowserFavicon';

@@ -1,4 +1,4 @@
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown } from '@goodboy/ui/icons';
 import type { WorkspaceId } from '@goodboy/types';
 import {
   AnchoredPopover,

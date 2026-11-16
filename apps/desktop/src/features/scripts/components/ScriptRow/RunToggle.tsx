@@ -1,4 +1,4 @@
-import { Play, Square } from 'lucide-react';
+import { Play, Square } from '@goodboy/ui/icons';
 import { ICON_SIZE, IconButton } from '@goodboy/ui';
 
 import { SCRIPT_ROW_CELL } from './scriptRowCells';

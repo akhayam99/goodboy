@@ -1,4 +1,4 @@
-import { TriangleAlert } from 'lucide-react';
+import { TriangleAlert } from '@goodboy/ui/icons';
 import type { EffortLevel, ProviderId } from '@goodboy/types';
 import { Chip, ICON_SIZE, Tooltip } from '@goodboy/ui';
 

@@ -1,7 +1,7 @@
 import { CHECK_STATE } from '../../../../../store/slices/notifications/errorRecovery';
 import { NAMES } from '../../../../../shared/utils/names';
 import { useState } from 'react';
-import { GitFork } from 'lucide-react';
+import { GitFork } from '@goodboy/ui/icons';
 import { useShallow } from 'zustand/react/shallow';
 import {
   AnchoredPopover,

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Check, ChevronDown, CircleCheck } from 'lucide-react';
+import { Check, ChevronDown, CircleCheck } from '@goodboy/ui/icons';
 import { ICON_SIZE, SelectableRow, cn } from '@goodboy/ui';
 import { countNoun } from '../../../../../shared/utils/countNoun';
 

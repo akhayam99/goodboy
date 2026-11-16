@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { MessageCircle, SkipForward } from 'lucide-react';
+import { MessageCircle, SkipForward } from '@goodboy/ui/icons';
 import { Button, ConfirmPopover, ICON_SIZE, Notice } from '@goodboy/ui';
 import type { Agent, SessionId, WorkflowRun } from '@goodboy/types';
 import { useAppStore } from '../../../../store';

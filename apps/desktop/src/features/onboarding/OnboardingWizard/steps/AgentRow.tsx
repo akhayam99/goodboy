@@ -1,4 +1,4 @@
-import { RotateCw } from 'lucide-react';
+import { RotateCw } from '@goodboy/ui/icons';
 import { Button, Chip, ICON_SIZE, type Tone } from '@goodboy/ui';
 
 import type { AgentRow as AgentRowModel, AgentRowState } from '../agentRowOf';

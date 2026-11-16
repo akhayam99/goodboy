@@ -1,4 +1,4 @@
-import { Pin } from 'lucide-react';
+import { Pin } from '@goodboy/ui/icons';
 import { Button, ICON_SIZE } from '@goodboy/ui';
 import type { RunnableScript, SessionScriptGroup } from '../../buildSessionScripts';
 import { scriptOutcomeLabel } from '../../scriptOutcomeLabel';

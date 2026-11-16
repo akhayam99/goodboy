@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { Info } from 'lucide-react';
+import { Info } from '@goodboy/ui/icons';
 import { EmptyLine } from '@goodboy/ui';
 import { ExplorePreviewPanel } from '../../features/explore/components/ExplorePreviewPanel';
 import { useExplorePreview } from '../../features/diff/FilesMode/useExplorePreview';

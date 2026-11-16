@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { ScriptActionTarget } from '../../../actions/types';
-import { Pin, Plus } from 'lucide-react';
+import { Pin, Plus } from '@goodboy/ui/icons';
 import {
   Button,
   DrawerFrame,

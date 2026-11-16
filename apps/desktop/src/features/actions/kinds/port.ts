@@ -7,7 +7,7 @@ import {
   SquareArrowOutUpRight,
   SquarePen,
   Zap,
-} from 'lucide-react';
+} from '@goodboy/ui/icons';
 import type { HiddenPortSource } from '@goodboy/core/monitoring';
 import { openWebAction } from '../openWebAction';
 import type { StopProgress } from '../../../store/slices/monitoring/types';

@@ -1,9 +1,9 @@
 import type { MouseEvent } from 'react';
-import { Check } from 'lucide-react';
+import { Check } from '../icons';
 import { cn } from '../cn';
 import { FOCUS_RING } from '../focusRing';
 import { Tooltip } from './Tooltip';
-import { ICON_SIZE, ICON_STROKE } from '../iconSize';
+import { ICON_SIZE, ICON_WEIGHT } from '../iconSize';
 
 export type SelectionCheckboxProps = {
   readonly checked: boolean;
@@ -60,7 +60,7 @@ export const SelectionCheckbox = ({
             : 'border-border-control bg-background hover:border-foreground',
         )}
       >
-        {checked ? <Check size={ICON_SIZE.row} strokeWidth={ICON_STROKE.check} /> : null}
+        {checked ? <Check size={ICON_SIZE.row} weight={ICON_WEIGHT.check} /> : null}
       </span>
     </button>
   </Tooltip>

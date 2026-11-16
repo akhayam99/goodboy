@@ -1,4 +1,4 @@
-import { BadgeCheck, GitBranch, UserRound } from 'lucide-react';
+import { BadgeCheck, GitBranch, UserRound } from '@goodboy/ui/icons';
 import type {
   GitlabMergeRequest,
   GitlabMrApprovalState,

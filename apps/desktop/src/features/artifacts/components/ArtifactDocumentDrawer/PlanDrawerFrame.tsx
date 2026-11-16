@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useState } from 'react';
-import { Copy } from 'lucide-react';
+import { Copy } from '@goodboy/ui/icons';
 import { cn, DrawerFrame, ICON_SIZE, IconButton, PageColumn } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import type { SendArtifactCommentsResult } from '../../../../store/slices/artifact-comments/types';
