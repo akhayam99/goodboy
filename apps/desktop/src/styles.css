@@ -69,6 +69,8 @@
   --color-find-current: oklch(0.76 0.13 78 / 0.62);
 
   --color-border-control: oklch(1 0 0 / 0.4);
+  --color-floating-edge: var(--color-border);
+  --color-button-secondary: var(--color-fill);
   --color-brand-accent: oklch(0.74 0.13 210);
   --color-selection: oklch(0.39 0.116 259);
 
@@ -390,18 +392,12 @@
     }
   }
 
-  /* Dark shadows, subtle drop + faint inner highlight to lift cards on dark bg. */
-  --shadow-xs: 0 1px 2px 0 oklch(0 0 0 / 0.3);
-  --shadow-sm: 0 1px 2px 0 oklch(0 0 0 / 0.32), inset 0 1px 0 0 oklch(1 0 0 / 0.035);
-  --shadow-md:
-    0 2px 4px -1px oklch(0 0 0 / 0.3), 0 8px 18px -4px oklch(0 0 0 / 0.42),
-    inset 0 1px 0 0 oklch(1 0 0 / 0.04);
-  --shadow-lg:
-    0 0 0 1px oklch(1 0 0 / 0.07), 0 6px 12px -4px oklch(0 0 0 / 0.38),
-    0 20px 44px -10px oklch(0 0 0 / 0.55), inset 0 1px 0 0 oklch(1 0 0 / 0.05);
-  --shadow-xl:
-    0 0 0 1px oklch(1 0 0 / 0.08), 0 10px 20px -6px oklch(0 0 0 / 0.42),
-    0 36px 70px -14px oklch(0 0 0 / 0.62), inset 0 1px 0 0 oklch(1 0 0 / 0.05);
+  --shadow-xs: var(--elevation-xs);
+  --shadow-sm: var(--elevation-sm);
+  --shadow-md: var(--elevation-md);
+  --shadow-lg: var(--elevation-lg);
+  --shadow-xl: var(--elevation-xl);
+  --shadow-button-secondary: var(--elevation-button-secondary);
 
   --duration-quick: 120ms;
   --duration-base: 200ms;
@@ -432,6 +428,18 @@
 }
 
 :root {
+  --elevation-xs: 0 1px 2px 0 oklch(0 0 0 / 0.3);
+  --elevation-sm: 0 1px 2px 0 oklch(0 0 0 / 0.32), inset 0 1px 0 0 oklch(1 0 0 / 0.035);
+  --elevation-md:
+    0 2px 4px -1px oklch(0 0 0 / 0.3), 0 8px 18px -4px oklch(0 0 0 / 0.42),
+    inset 0 1px 0 0 oklch(1 0 0 / 0.04);
+  --elevation-lg:
+    0 0 0 1px oklch(1 0 0 / 0.07), 0 6px 12px -4px oklch(0 0 0 / 0.38),
+    0 20px 44px -10px oklch(0 0 0 / 0.55), inset 0 1px 0 0 oklch(1 0 0 / 0.05);
+  --elevation-xl:
+    0 0 0 1px oklch(1 0 0 / 0.08), 0 10px 20px -6px oklch(0 0 0 / 0.42),
+    0 36px 70px -14px oklch(0 0 0 / 0.62), inset 0 1px 0 0 oklch(1 0 0 / 0.05);
+  --elevation-button-secondary: 0 0 0 0 transparent;
   --gray-1: oklch(0.165 0.004 264);
   --gray-2: oklch(0.193 0.005 264);
   --gray-3: oklch(0.218 0.006 264);
@@ -754,6 +762,8 @@ html[data-theme='light'] {
   --color-border: oklch(0.215 0.012 264 / 0.2);
   --color-border-soft: oklch(0.215 0.012 264 / 0.135);
   --color-border-control: oklch(0.215 0.012 264 / 0.52);
+  --color-floating-edge: transparent;
+  --color-button-secondary: var(--color-elevated);
   --color-overlay-hover: oklch(0.215 0.012 264 / 0.088);
   --color-overlay-selected: oklch(0.215 0.012 264 / 0.125);
   --color-segment-active: oklch(1 0 0);
@@ -836,16 +846,17 @@ html[data-theme='light'] {
   --color-syntax-regex: oklch(0.46 0.13 120);
   /* Light shadows: a soft contact shadow at sm/md so a raised card or a picked
      segment sits on the page. Only shadow-lg lifts, reserved for popovers and dialogs. */
-  --shadow-xs: 0 1px 2px 0 oklch(0.25 0.03 264 / 0.06);
-  --shadow-sm: 0 1px 2px 0 oklch(0.25 0.03 264 / 0.06), 0 1px 3px 0 oklch(0.25 0.03 264 / 0.07);
-  --shadow-md:
+  --elevation-xs: 0 1px 2px 0 oklch(0.25 0.03 264 / 0.06);
+  --elevation-sm: 0 1px 2px 0 oklch(0.25 0.03 264 / 0.06), 0 1px 3px 0 oklch(0.25 0.03 264 / 0.07);
+  --elevation-md:
     0 2px 4px -1px oklch(0.25 0.03 264 / 0.06), 0 6px 16px -2px oklch(0.25 0.03 264 / 0.09);
-  --shadow-lg:
+  --elevation-lg:
     0 0 0 1px oklch(0.25 0.03 264 / 0.06), 0 2px 6px -1px oklch(0.25 0.03 264 / 0.06),
     0 12px 28px -6px oklch(0.25 0.03 264 / 0.12);
-  --shadow-xl:
+  --elevation-xl:
     0 0 0 1px oklch(0.25 0.03 264 / 0.06), 0 6px 14px -4px oklch(0.25 0.03 264 / 0.08),
     0 28px 56px -12px oklch(0.25 0.03 264 / 0.18);
+  --elevation-button-secondary: var(--elevation-xs);
   --gray-1: oklch(0.984 0.002 264);
   --gray-2: oklch(0.968 0.003 264);
   --gray-3: oklch(0.951 0.003 264);

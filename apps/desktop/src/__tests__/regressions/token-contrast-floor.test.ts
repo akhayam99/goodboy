@@ -176,9 +176,9 @@ const readTranslucent = ({ block, token }: { block: string; token: string }): Tr
 };
 
 const readShadow = ({ block, name }: { block: string; name: string }): string => {
-  const match = block.match(new RegExp(`--shadow-${name}:([^;]+);`));
+  const match = block.match(new RegExp(`--elevation-${name}:([^;]+);`));
   if (match === null) {
-    throw new Error(`styles.css has no --shadow-${name}`);
+    throw new Error(`styles.css has no --elevation-${name}`);
   }
   return String(match[1]).trim();
 };
@@ -465,6 +465,16 @@ describe('surface ladder', () => {
       readShadow({ block: blocks.light, name: 'sm' }),
     );
   });
+
+  it.each(['xs', 'sm', 'md', 'lg', 'xl'])(
+    'lets shadow-%s follow the theme instead of the inlined dark value',
+    (name) => {
+      expect(blocks.dark).toContain(`--shadow-${name}: var(--elevation-${name});`);
+      expect(readShadow({ block: blocks.light, name })).not.toEqual(
+        readShadow({ block: blocks.dark, name }),
+      );
+    },
+  );
 
   it.each([
     { theme: 'dark', block: blocks.dark, direction: 1 },
