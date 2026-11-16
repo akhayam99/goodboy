@@ -49,10 +49,10 @@ export const Checkbox = ({
           }
         }}
         className={cn(
-          'peer size-4 cursor-pointer appearance-none rounded-sm border border-border-control bg-background transition-colors checked:border-primary checked:bg-primary',
+          'peer size-4 cursor-pointer appearance-none rounded-sm border border-border-control bg-background transition-colors checked:border-primary-solid checked:bg-primary-solid',
           FOCUS_RING,
           'disabled:cursor-not-allowed disabled:bg-fill',
-          indeterminate === true && 'border-primary bg-primary',
+          indeterminate === true && 'border-primary-solid bg-primary-solid',
         )}
       />
       {checked && indeterminate !== true ? (
@@ -60,7 +60,7 @@ export const Checkbox = ({
           size={ICON_SIZE.row}
           strokeWidth={ICON_STROKE.check}
           aria-hidden
-          className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-background"
+          className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-on-primary"
         />
       ) : null}
       {indeterminate === true ? (
@@ -68,7 +68,7 @@ export const Checkbox = ({
           size={ICON_SIZE.row}
           strokeWidth={ICON_STROKE.check}
           aria-hidden
-          className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-background"
+          className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-on-primary"
         />
       ) : null}
     </span>

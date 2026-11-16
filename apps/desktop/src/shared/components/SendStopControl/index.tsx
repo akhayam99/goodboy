@@ -16,7 +16,7 @@ type Props = {
 
 const SEND_READY = cn(
   tintClasses('primary').solid,
-  'hover:bg-primary hover:text-on-tone hover:brightness-110',
+  'hover:bg-primary-solid-hover hover:text-on-primary',
 );
 
 const SEND_IDLE = 'bg-fill text-faint-foreground hover:bg-fill hover:text-faint-foreground';

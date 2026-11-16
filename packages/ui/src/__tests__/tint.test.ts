@@ -15,23 +15,36 @@ describe('tintClasses', () => {
   it.each(SEMANTIC_TONES)('%s reads its fills and edge from the tone steps', (tone) => {
     const tint = tintClasses(tone);
     expect(tint.border).toBe(`border-${tone}-edge`);
-    expect(tint.borderSoft).toBe(`border-${tone}/20`);
+    expect(tint.borderSoft).toBe(`border-${tone}-edge`);
+    expect(tint.ring).toBe(`ring-${tone}-edge`);
+    expect(tint.ringStrong).toBe(`ring-${tone}-solid`);
     expect(tint.bg).toBe(`bg-${tone}-subtle`);
     expect(tint.bgSoft).toBe(`bg-${tone}-wash`);
     expect(tint.hoverBorder).toBe(`hover:border-${tone}-edge`);
     expect(tint.hoverBg).toBe('hover:bg-hover');
-    expect(tint.hoverRing).toBe(`hover:ring-${tone}/60`);
+    expect(tint.hoverRing).toBe(`hover:ring-${tone}-solid`);
     expect(tint.hoverBgSoft).toBe(`hover:bg-${tone}-wash`);
     expect(tint.solid).toBe(`bg-${tone}-solid text-on-${tone} [&_svg]:text-current`);
     expect(tint.rail).toBe(`border-l-${tone}`);
   });
 
-  it('keeps unread on the opacity scale until it has steps of its own', () => {
+  it.each<Tone>(['unread', ...SEMANTIC_TONES])(
+    '%s never reaches for an opacity modifier',
+    (tone) => {
+      const values = Object.values(tintClasses(tone));
+      expect(values.filter((value) => value.includes('/'))).toEqual([]);
+    },
+  );
+
+  it('fills unread from the primary steps and keeps its own quieter dot and text', () => {
     expect(tintClasses('unread')).toMatchObject({
-      bg: 'bg-unread/10',
-      bgSoft: 'bg-unread/5',
-      border: 'border-unread/40',
-      solid: 'bg-unread text-on-tone [&_svg]:text-current',
+      bg: 'bg-primary-subtle',
+      bgSoft: 'bg-primary-wash',
+      border: 'border-primary-edge',
+      ringStrong: 'ring-unread',
+      dot: 'bg-unread',
+      text: 'text-unread',
+      solid: 'bg-primary-solid text-on-primary [&_svg]:text-current',
     });
   });
 
@@ -51,11 +64,11 @@ describe('tintClasses', () => {
     expect(tintClasses('draft')).toMatchObject({
       bg: 'bg-draft-subtle',
       bgSoft: 'bg-draft-wash',
-      ring: 'ring-draft/20',
+      ring: 'ring-draft-edge',
       border: 'border-draft-edge',
-      borderSoft: 'border-draft/20',
+      borderSoft: 'border-draft-edge',
       hoverBorder: 'hover:border-draft-edge',
-      hoverRing: 'hover:ring-draft/60',
+      hoverRing: 'hover:ring-draft-solid',
       hoverBg: 'hover:bg-hover',
       hoverBgSoft: 'hover:bg-draft-wash',
       hoverText: 'hover:text-draft',

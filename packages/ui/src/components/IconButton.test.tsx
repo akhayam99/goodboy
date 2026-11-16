@@ -25,7 +25,7 @@ describe('IconButton', () => {
     );
 
     const button = getByRole('button', { name: 'Delete session' });
-    expect(button.className).toMatch(/\bborder-danger\/\d+/);
+    expect(button.className).toMatch(/\bborder-danger-edge\b/);
   });
 
   it('reads busy and refuses a second click while its action runs', () => {

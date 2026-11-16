@@ -142,12 +142,12 @@ describe('WorkNode', () => {
 
     const node = nodeOf('Approved');
     const disc = node.querySelector('circle');
-    expect(disc?.getAttribute('class')).toContain('fill-success');
-    expect(disc?.getAttribute('class')).toContain('stroke-success');
+    expect(disc?.getAttribute('class')).toContain('fill-success-solid');
+    expect(disc?.getAttribute('class')).toContain('stroke-success-solid');
     expect(disc?.getAttribute('class')).not.toContain('fill-none');
     const check = screen.getByTestId('work-node-glyph').querySelector('svg.lucide-check');
     expect(check).not.toBeNull();
-    expect(check?.getAttribute('class')).toContain('text-on-tone');
+    expect(check?.getAttribute('class')).toContain('text-on-success');
     expect(check?.getAttribute('width')).toBe('12');
   });
 
@@ -184,12 +184,12 @@ describe('WorkNode', () => {
     const finished = nodeOf('Finished');
     const disc = finished.querySelector('circle')?.getAttribute('class') ?? '';
     expect(finished.style.width).toBe('14px');
-    expect(disc).toContain('fill-merged');
-    expect(disc).toContain('stroke-merged');
+    expect(disc).toContain('fill-merged-solid');
+    expect(disc).toContain('stroke-merged-solid');
     expect(disc).not.toContain('fill-none');
     expect(disc).not.toContain('success');
     const check = finished.querySelector('svg.lucide-check');
-    expect(check?.getAttribute('class')).toContain('text-on-tone');
+    expect(check?.getAttribute('class')).toContain('text-on-merged');
     expect(check?.getAttribute('width')).toBe('12');
     const approved = nodeOf('Approved').querySelector('circle');
     expect(approved?.getAttribute('r')).toBe(finished.querySelector('circle')?.getAttribute('r'));
@@ -333,7 +333,7 @@ describe('WorkNode', () => {
     );
 
     const node = nodeOf('Plan');
-    expect(node.className).toContain('ring-warning/20');
+    expect(node.className).toContain('ring-warning-edge');
     expect(node.textContent).toBe('P');
   });
 

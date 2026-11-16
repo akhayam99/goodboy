@@ -16,7 +16,7 @@ export const WorkspaceTile = ({ workspace, isDimmed = false, className }: Props)
     aria-hidden
     data-workspace-tile=""
     className={cn(
-      'flex size-5 shrink-0 items-center justify-center rounded-md text-chip text-on-tone ring-1 ring-inset ring-border-soft',
+      'flex size-5 shrink-0 items-center justify-center rounded-md text-chip text-background ring-1 ring-inset ring-border-soft',
       isDimmed && 'opacity-60',
       className,
     )}

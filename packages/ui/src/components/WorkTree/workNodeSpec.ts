@@ -126,8 +126,8 @@ export const WORK_NODE_RING: Record<Exclude<WorkNodeState, 'marker' | 'mixed'>, 
   approved: {
     radius: 9.5,
     strokeWidth: 1,
-    strokeClassName: 'stroke-success',
-    fillClassName: 'fill-success',
+    strokeClassName: 'stroke-success-solid',
+    fillClassName: 'fill-success-solid',
     dashArray: null,
   },
   merging: {
@@ -147,8 +147,8 @@ export const WORK_NODE_RING: Record<Exclude<WorkNodeState, 'marker' | 'mixed'>, 
   finished: {
     radius: 9.5,
     strokeWidth: 1,
-    strokeClassName: 'stroke-merged',
-    fillClassName: 'fill-merged',
+    strokeClassName: 'stroke-merged-solid',
+    fillClassName: 'fill-merged-solid',
     dashArray: null,
   },
   closed: {

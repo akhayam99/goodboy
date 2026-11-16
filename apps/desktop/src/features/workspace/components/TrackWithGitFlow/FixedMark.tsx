@@ -10,7 +10,7 @@ export const FixedMark = ({ isGoing }: Props) => (
     <span
       className={cn(
         'flex size-4 items-center justify-center rounded-sm opacity-50',
-        isGoing ? 'bg-primary-solid text-background' : 'border border-border',
+        isGoing ? 'bg-primary-solid text-on-primary' : 'border border-border',
       )}
     >
       {isGoing ? <Check size={ICON_SIZE.row} strokeWidth={ICON_STROKE.check} /> : null}

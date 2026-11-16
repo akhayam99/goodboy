@@ -13,7 +13,9 @@ export const SelectionIndicator = ({ mode, selected }: Props) => (
     className={cn(
       'grid size-4 shrink-0 translate-y-0.5 place-items-center border',
       mode === 'many' ? 'rounded-sm' : 'rounded-full',
-      selected ? 'border-primary bg-primary text-on-tone' : 'border-border bg-transparent',
+      selected
+        ? 'border-primary-solid bg-primary-solid text-on-primary'
+        : 'border-border bg-transparent',
     )}
   >
     {selected &&

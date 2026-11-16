@@ -91,7 +91,7 @@ export class ErrorBoundary extends Component<Props, ErrorBoundaryState> {
             <button
               type="button"
               onClick={this.reset}
-              className="rounded-sm bg-primary px-3 py-2 text-meta font-semibold text-on-tone hover:opacity-90"
+              className="rounded-sm bg-primary-solid px-3 py-2 text-meta font-semibold text-on-primary hover:bg-primary-solid-hover"
             >
               Retry
             </button>

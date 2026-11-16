@@ -84,7 +84,7 @@ export const ListboxOptionRow = ({
             className={cn(
               'flex size-3.5 items-center justify-center rounded-sm border',
               isSelected
-                ? 'border-primary bg-primary text-on-tone'
+                ? 'border-primary-solid bg-primary-solid text-on-primary'
                 : 'border-border-control bg-background',
             )}
           >

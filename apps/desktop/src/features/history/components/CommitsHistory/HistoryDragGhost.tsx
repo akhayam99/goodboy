@@ -51,7 +51,7 @@ export const HistoryDragGhost = ({ drag, title, titleOf }: Props) => {
           'shrink-0 rounded-sm px-2 text-meta',
           action === null
             ? 'bg-fill text-muted-foreground'
-            : cn(HISTORY_ACTION_CLASSES[action].solid, 'text-on-tone'),
+            : cn(HISTORY_ACTION_CLASSES[action].solid, 'text-background'),
         )}
       >
         {label}

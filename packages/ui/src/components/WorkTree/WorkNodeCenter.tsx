@@ -89,7 +89,7 @@ export const WorkNodeCenter = ({
     case 'failed':
       return signOf({ sign: '!', className: 'text-danger' });
     case 'approved':
-      return <Check size={glyphSize} strokeWidth={ICON_STROKE.check} className="text-on-tone" />;
+      return <Check size={glyphSize} strokeWidth={ICON_STROKE.check} className="text-on-success" />;
     case 'merging':
       return (
         <svg viewBox="0 0 20 20" className="size-full fill-primary">
@@ -99,7 +99,7 @@ export const WorkNodeCenter = ({
     case 'done':
       return <Check size={glyphSize} strokeWidth={2.5} className="text-success" />;
     case 'finished':
-      return <Check size={glyphSize} strokeWidth={ICON_STROKE.check} className="text-on-tone" />;
+      return <Check size={glyphSize} strokeWidth={ICON_STROKE.check} className="text-on-merged" />;
     case 'closed':
       return <Check size={glyphSize} strokeWidth={2.5} className="text-muted-foreground" />;
     case 'stopped':

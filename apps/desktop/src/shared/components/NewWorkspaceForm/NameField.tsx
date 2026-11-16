@@ -32,7 +32,7 @@ export const NameField = ({ workspaceId, name, sourceName, isBusy, onNameChange 
       <div className="flex min-w-0 items-center gap-1">
         <span
           aria-hidden
-          className="flex size-7 shrink-0 items-center justify-center rounded-md text-heading text-on-tone"
+          className="flex size-7 shrink-0 items-center justify-center rounded-md text-heading text-background"
           style={{ backgroundColor: workspaceAccent(workspaceId) }}
         >
           {initial === '' ? '?' : initial}

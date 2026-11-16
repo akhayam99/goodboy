@@ -56,7 +56,7 @@ export const SelectionCheckbox = ({
         className={cn(
           'flex size-4 items-center justify-center rounded-md border motion-safe:transition-colors',
           checked
-            ? 'border-primary bg-primary text-on-tone'
+            ? 'border-primary-solid bg-primary-solid text-on-primary'
             : 'border-border-control bg-background hover:border-foreground',
         )}
       >
