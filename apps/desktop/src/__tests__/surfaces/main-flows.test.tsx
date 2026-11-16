@@ -298,7 +298,7 @@ describe('main flows on the real store', () => {
 
     expect(useAppStore.getState().drawer).toBeNull();
     expect(selectIsContextTabOpen({ state: useAppStore.getState(), sessionId })).toBe(true);
-    screen.getByTestId('context-tab');
+    await screen.findByTestId('context-tab');
     act(() => openLens({ sessionId, lens: null }));
     await settle();
 
