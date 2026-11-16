@@ -36,7 +36,7 @@ const HUES = {
 export const TERMINAL_ANSI_STEPS: Readonly<Record<'dark' | 'light', AnsiSteps>> = {
   dark: {
     ...HUES,
-    black: '--gray-7',
+    black: '--gray-8',
     white: '--gray-11',
     brightBlack: '--gray-10',
     brightWhite: '--gray-12',

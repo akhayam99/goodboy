@@ -11,13 +11,14 @@ import {
 
 const MIN_TEXT_CONTRAST = 4.5;
 const MIN_BRIGHT_WHITE_ON_PAPER = 3;
+const MIN_BLACK_ON_SHEET = 3;
 const STEP = /^--([a-z]+)-(\d+)$/;
 
 type FloorParams = { readonly theme: Theme; readonly name: string };
 
 const floorOf = ({ theme, name }: FloorParams): number => {
   if (theme === 'dark' && name === 'black') {
-    return 0;
+    return MIN_BLACK_ON_SHEET;
   }
   if (theme === 'light' && name === 'brightWhite') {
     return MIN_BRIGHT_WHITE_ON_PAPER;
