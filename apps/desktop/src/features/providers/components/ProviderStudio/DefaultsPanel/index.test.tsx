@@ -209,7 +209,7 @@ const SONNET_TASK_LABELS: ReadonlySet<string> = new Set([
 ]);
 
 describe('DefaultsPanel', () => {
-  it('opens with a Runs section that holds the Auto agent and the Orchestrator', () => {
+  it('opens with a Runs section that holds the Lead and the Orchestrator', () => {
     render(<DefaultsPanel workspaceId={WORKSPACE_ID} />);
 
     const sections = screen
@@ -218,12 +218,12 @@ describe('DefaultsPanel', () => {
     expect(sections.indexOf('Runs')).toBeGreaterThanOrEqual(0);
     expect(sections.indexOf('Runs')).toBeLessThan(sections.indexOf('Providers'));
     const runs = screen.getByRole('region', { name: 'Runs' });
-    within(runs).getByText('Auto agent');
+    within(runs).getByText('Lead');
     within(runs).getByText('Orchestrator');
     expect(runs.querySelector('[aria-label="Orchestrator routing model"]')).not.toBeNull();
   });
 
-  it('reads the Auto agent pin from roleModels.auto and marks it Pinned', () => {
+  it('reads the Lead pin from roleModels.auto and marks it Pinned', () => {
     state.workspaceOverrides = {
       'ws-1': {
         ...EMPTY_OVERRIDES,
@@ -232,8 +232,8 @@ describe('DefaultsPanel', () => {
     };
     render(<DefaultsPanel workspaceId={WORKSPACE_ID} />);
 
-    expect(roleRow('Auto agent').textContent).toContain('Pinned');
-    expect(roleRow('Auto agent').textContent).toContain('Opus 5.5');
+    expect(roleRow('Lead').textContent).toContain('Pinned');
+    expect(roleRow('Lead').textContent).toContain('Opus 5.5');
   });
 
   it('keeps the stored keys: the Orchestrator row writes taskModels', () => {

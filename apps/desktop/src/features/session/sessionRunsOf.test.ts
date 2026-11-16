@@ -8,6 +8,7 @@ import {
   type OpenQuestion,
   type SessionMountView,
   type ProviderRunId,
+  type RunRoute,
   type TurnState,
 } from '@goodboy/types';
 import { aProject, anAgent } from '@goodboy/types/testing';
@@ -186,14 +187,17 @@ describe('sessionRunsOf', () => {
       origin: 'Workflow · Preset Fix a layout',
       open: { kind: 'run', runId: preset.run.id },
     });
+    expect(byKind.get('preset')?.isOlderRun).toBe(false);
     expect(byKind.get('orchestrated')).toMatchObject({
       shape: 'plan',
       origin: 'Workflow · Orchestrated',
+      isOlderRun: true,
       open: { kind: 'run', runId: plan.run.id },
     });
     expect(byKind.get('auto')).toMatchObject({
       shape: 'lead',
-      origin: 'Agent · Auto agent',
+      origin: 'Lead',
+      isOlderRun: false,
       stateWord: 'Finished',
       open: { kind: 'auto', agentId: FIXTURE_ROOT },
     });
@@ -204,6 +208,39 @@ describe('sessionRunsOf', () => {
       progress: '1 agent',
       open: { kind: 'agent', agentId: 'agent-scout' },
     });
+  });
+
+  it('names the preset a Lead follows from the saved route of its run', () => {
+    const route = {
+      shape: 'lead',
+      row: 1,
+      presetName: 'Fix flaky tests',
+      closeness: 'adapt',
+      role: null,
+      choice: 'Lead',
+      why: 'you picked it',
+    } satisfies RunRoute;
+    const routed = sessionRunsOf({
+      attachedRuns: [],
+      agents: [autoRoot({ status: 'running' })],
+      kindOverride: {},
+      autoViews: [aView({ phase: 'waiting' })],
+      orchestrating: {},
+      questions: [],
+      rootTurns: {},
+      turnByAgentId: new Map(),
+      revisingStarts: {},
+      mounts: [],
+      projects: [],
+      routes: { [FIXTURE_ROOT]: route, 'agent-elsewhere': { ...route, presetName: 'Other' } },
+    });
+    const plain = runsOf({
+      agents: [autoRoot({ status: 'running' })],
+      autoViews: [aView({ phase: 'waiting' })],
+    });
+
+    expect(routed.map((run) => run.origin)).toEqual(['Lead · plan Fix flaky tests']);
+    expect(plain.map((run) => run.origin)).toEqual(['Lead']);
   });
 
   it('lists the newest request first', () => {

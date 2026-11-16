@@ -1,5 +1,6 @@
 import type { AgentId, SessionId } from '@goodboy/types';
 import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
+import { NAMES } from '../../../shared/utils/names';
 import type { WorkRow } from '../../work/workRowsOf';
 import type { PaletteEntry } from '../types';
 
@@ -23,11 +24,11 @@ export const leadEntries = ({ rows, open }: Params): ReadonlyArray<PaletteEntry>
     return [
       {
         key: `lead:${row.treeId}`,
-        label: `Lead: ${row.title}`,
-        secondary: ['Work', 'Lead', row.sessionGoal],
+        label: `${NAMES.lead}: ${row.title}`,
+        secondary: [NAMES.runKind.run, NAMES.lead, row.sessionGoal],
         kind: 'goto',
         group: null,
-        icon: CONCEPT_ICONS.work,
+        icon: CONCEPT_ICONS.auto,
         detail: row.sessionGoal,
         run: () => open({ sessionId: row.sessionId, agentId: row.rootAgentId }),
       },

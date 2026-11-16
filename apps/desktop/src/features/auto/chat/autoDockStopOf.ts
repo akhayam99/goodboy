@@ -1,11 +1,9 @@
 import type { Agent, TurnState } from '@goodboy/types';
 import type { AutoTreeView } from '../../../store/slices/auto-view/state';
-import { pluralize } from '../../../shared/utils/pluralize';
 import { NAMES } from '../../../shared/utils/names';
 import type { ConversationStop } from '../../../shared/types/conversationStop';
 import { autoTreeLive } from '../../live-state/adapters/autoTreeLive';
 import { autoGlanceOf } from '../glance/autoGlanceOf';
-import { openDelegationCountOf } from './openDelegationCountOf';
 
 type Params = {
   readonly view: AutoTreeView;
@@ -13,16 +11,6 @@ type Params = {
   readonly rootAgent: Pick<Agent, 'status' | 'stoppedBy' | 'stoppedAt'>;
   readonly isStopping: boolean;
   readonly stop: () => void;
-};
-
-type ViewParams = {
-  readonly view: AutoTreeView;
-};
-
-const stopAutoLabelOf = ({ view }: ViewParams): string => {
-  const count = openDelegationCountOf({ view });
-  const label = `${NAMES.stop} Lead`;
-  return count === 0 ? label : `${label} and ${pluralize(count, 'agent')}`;
 };
 
 export const autoDockStopOf = ({
@@ -41,7 +29,7 @@ export const autoDockStopOf = ({
   const isRootLive = rootTurn?.kind === 'running' || rootTurn?.kind === 'starting';
   const isAttention = facts?.state === 'paused' || facts?.state === 'failed';
   return {
-    label: stopAutoLabelOf({ view }),
+    label: NAMES.stopRun,
     phase: isTreeStopping ? 'stopping' : 'idle',
     sentence: isRootLive || (glance.isLive && !isAttention) ? glance.sentence : '',
     stop,

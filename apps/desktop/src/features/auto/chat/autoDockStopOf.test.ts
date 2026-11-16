@@ -22,7 +22,7 @@ describe('autoDockStopOf', () => {
       stop: vi.fn(),
     });
 
-    expect(stop).toMatchObject({ label: 'Stop Lead and 1 agent', phase: 'idle', sentence: '' });
+    expect(stop).toMatchObject({ label: 'Stop run', phase: 'idle', sentence: '' });
   });
 
   it('offers the stop of a plan that waits while a sibling agent runs', () => {
@@ -40,7 +40,27 @@ describe('autoDockStopOf', () => {
       stop: vi.fn(),
     });
 
-    expect(stop?.label).toBe('Stop Lead and 1 agent');
+    expect(stop?.label).toBe('Stop run');
+  });
+
+  it('names the run it stops, the Lead and its agents together', () => {
+    const view = aView({
+      phase: 'waiting',
+      delegations: [
+        aDelegation({ key: 'impl', role: 'implementer', state: 'running' }),
+        aDelegation({ key: 'test', role: 'tester', state: 'running' }),
+      ],
+    });
+
+    const stop = autoDockStopOf({
+      view,
+      rootTurn: null,
+      rootAgent: ROOT,
+      isStopping: false,
+      stop: vi.fn(),
+    });
+
+    expect(stop?.label).toBe('Stop run');
   });
 
   it('offers none for a tree that rests', () => {

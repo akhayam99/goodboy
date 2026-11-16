@@ -414,7 +414,7 @@ describe('c07 Auto scenes', () => {
   it('c07-auto-stop-failed shows the failed Stop inline in the dock', async () => {
     mount({ id: 'c07-auto-stop-failed' });
 
-    const title = await screen.findByText("Couldn't stop the Auto agents", undefined, WAIT);
+    const title = await screen.findByText("Couldn't stop the run", undefined, WAIT);
     const alert = title.closest('[role="alert"]');
     expect(alert?.closest('[data-conversation-dock]')).not.toBeNull();
     expect(alert?.textContent).toContain('Auto is still starting. Retry in a moment.');
@@ -427,10 +427,10 @@ describe('c07 Auto scenes', () => {
     expect(screen.queryByRole('textbox', { name: 'Describe the work' })).toBeNull();
     expect(screen.queryByText('No runs yet')).toBeNull();
     expect(screen.queryByRole('button', { name: 'Start an auto' })).toBeNull();
-    const rows = within(list).getAllByRole('button', { name: /, Agent, / });
+    const rows = within(list).getAllByRole('button', { name: /, Lead, / });
     expect(rows).toHaveLength(2);
-    expect(within(list).getByRole('button', { name: /, Agent, Idle$/ })).toBeDefined();
-    expect(within(list).getByRole('button', { name: /, Agent, Done$/ })).toBeDefined();
+    expect(within(list).getByRole('button', { name: /, Lead, Idle$/ })).toBeDefined();
+    expect(within(list).getByRole('button', { name: /, Lead, Done$/ })).toBeDefined();
     expect(sessionHead()).toBeDefined();
 
     fireEvent.click(rows[0] ?? list);

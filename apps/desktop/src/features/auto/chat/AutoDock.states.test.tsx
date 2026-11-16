@@ -146,7 +146,7 @@ describe('AutoDock', () => {
 
     expect(document.querySelector('[data-dock-plan]')).toBeNull();
     screen.getByText('Implementer running');
-    screen.getByRole('button', { name: 'Stop Lead and 1 agent' });
+    screen.getByRole('button', { name: 'Stop run' });
   });
 
   it('shows the limit with one filled Raise and a quiet Stop, and leaves the chat', () => {
@@ -157,7 +157,7 @@ describe('AutoDock', () => {
     screen.getByText('At the $10.00 limit. Nothing new starts.');
     const raise = screen.getByRole('button', { name: 'Raise to $20.00' });
     expect(raise.getAttribute('data-variant')).toBe('primary');
-    const stop = screen.getByRole('button', { name: 'Stop Lead' });
+    const stop = screen.getByRole('button', { name: 'Stop run' });
     expect(stop.getAttribute('data-variant')).toBe('quiet');
   });
 
@@ -284,7 +284,7 @@ describe('AutoDock', () => {
       }),
     });
 
-    screen.getByRole('button', { name: 'Stop Lead and 1 agent' });
+    screen.getByRole('button', { name: 'Stop run' });
   });
 
   it('asks before it discards the comments, then removes each one', async () => {

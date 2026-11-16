@@ -59,7 +59,7 @@ describe('the Auto dock Stop outside working', () => {
     renderDock({ view });
 
     screen.getByText(/^At the \$10\.00 limit\. No new agent starts\./);
-    fireEvent.click(screen.getByRole('button', { name: 'Stop Lead and 1 agent' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Stop run' }));
 
     await waitFor(() => expect(stop).toHaveBeenCalledWith({ treeId: view.tree.id }));
   });
@@ -70,7 +70,7 @@ describe('the Auto dock Stop outside working', () => {
       view: { ...base, tree: { ...base.tree, blockedReason: AUTO_BLOCK_TEXT.budget } },
     });
 
-    screen.getByRole('button', { name: 'Stop Lead and 1 agent' });
+    screen.getByRole('button', { name: 'Stop run' });
     expect(screen.queryByRole('button', { name: 'Change approach' })).toBeNull();
   });
 
@@ -82,7 +82,7 @@ describe('the Auto dock Stop outside working', () => {
       }),
     });
 
-    screen.getByRole('button', { name: 'Stop Lead' });
+    screen.getByRole('button', { name: 'Stop run' });
     screen.getByText('Where should the Implementer work?');
     expect(screen.queryByRole('button', { name: 'Change approach' })).toBeNull();
   });

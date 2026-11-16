@@ -58,7 +58,7 @@ export const deleteAgent = (set: SetFn, get: GetFn) => {
       .catch((error: unknown) => {
         void get().reportError({
           recovery: READ_FAILED,
-          title: "Couldn't read the Auto agents",
+          title: "Couldn't read the runs",
           error,
           sessionId,
         });

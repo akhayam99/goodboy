@@ -64,9 +64,9 @@ describe('AgentKindChip', () => {
     expect(tooltipTextOf({ element: glyph })).toBe('Planner');
   });
 
-  it('names the Auto role an Auto agent, beside an unchanged Generalist', () => {
+  it('names the Auto role the Lead, beside an unchanged Generalist', () => {
     render(<AgentKindChip kind="auto" density="glyph" />);
-    expect(screen.getByRole('img', { name: 'Auto agent' }).querySelector('svg')).not.toBeNull();
+    expect(screen.getByRole('img', { name: 'Lead' }).querySelector('svg')).not.toBeNull();
     cleanup();
 
     render(<AgentKindChip kind="generic" density="glyph" />);

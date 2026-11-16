@@ -200,7 +200,7 @@ export const routeAutoUserTurn = async ({
   await state.loadAutoTrees({ sessionId: input.sessionId }).catch((error: unknown) =>
     state.reportError({
       recovery: READ_FAILED,
-      title: "Couldn't read the Auto agents",
+      title: "Couldn't read the runs",
       error,
       sessionId: input.sessionId,
     }),

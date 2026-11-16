@@ -35,13 +35,13 @@ export const runKindOfRoute = ({ route }: Params): RunKindOfRoute => {
   if (route.presetName !== null) {
     return {
       shape: 'preset',
-      name: RUN_ROUTE_COPY.leadPlan({ name: route.presetName }),
+      name: runKindLineOf({ line: { kind: 'lead', planName: route.presetName } }),
       what: START_KIND_COPY.shapes.preset.what,
     };
   }
   return {
     shape: 'autoAgent',
-    name: RUN_ROUTE_COPY.shapes.lead,
+    name: runKindLineOf({ line: { kind: 'lead', planName: null } }),
     what: START_KIND_COPY.shapes.autoAgent.what,
   };
 };

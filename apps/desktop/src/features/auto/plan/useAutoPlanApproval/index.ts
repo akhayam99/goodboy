@@ -67,7 +67,7 @@ export const useAutoPlanApproval = ({
       loadAutoTrees({ sessionId }).catch((error: unknown) =>
         reportError({
           recovery: READ_FAILED,
-          title: "Couldn't read the Auto agents",
+          title: "Couldn't read the runs",
           error,
           sessionId,
         }),
@@ -139,7 +139,7 @@ export const useAutoPlanApproval = ({
       await loadAutoTrees({ sessionId }).catch((error: unknown) =>
         reportError({
           recovery: READ_FAILED,
-          title: "Couldn't read the Auto agents",
+          title: "Couldn't read the runs",
           error,
           sessionId,
         }),

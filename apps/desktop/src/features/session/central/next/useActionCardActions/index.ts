@@ -426,7 +426,7 @@ export const useActionCardActions = ({ session }: Params): ActionCardActions => 
         ? null
         : verbOf({
             label: 'Stop',
-            ariaLabel: 'Stop Auto and its agents',
+            ariaLabel: NAMES.stopRun,
             isBusy: treeActions.stoppingTreeId === view.tree.id,
             run: () => void treeActions.stop({ view }),
           });

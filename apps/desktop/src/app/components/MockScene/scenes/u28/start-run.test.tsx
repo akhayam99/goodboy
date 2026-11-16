@@ -95,7 +95,7 @@ describe('the u28 start run scenes', () => {
   it('opens the Model menu with the picker and the link to the default', async () => {
     mount({ id: 'u28-start-run-model-menu' });
 
-    const menu = await screen.findByRole('dialog', { name: 'Auto agent model' }, WAIT);
+    const menu = await screen.findByRole('dialog', { name: 'Lead model' }, WAIT);
     within(menu).getByRole('button', { name: /^Auto, now / });
     within(menu).getByRole('button', { name: 'Change the default in Settings' });
   });

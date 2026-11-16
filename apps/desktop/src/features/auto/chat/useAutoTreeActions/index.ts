@@ -69,7 +69,7 @@ export const useAutoTreeActions = ({ sessionId }: Params): AutoTreeActions => {
     } catch (error) {
       setFailure({
         treeId: view.tree.id,
-        title: "Couldn't stop the Auto agents",
+        title: "Couldn't stop the run",
         message: formatError(error),
       });
     } finally {

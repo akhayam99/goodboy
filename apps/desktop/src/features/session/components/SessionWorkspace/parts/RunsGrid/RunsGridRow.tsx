@@ -9,7 +9,7 @@ import { formatAge } from '../../../../../../shared/utils/time/formatAge';
 import { formatSpan } from '../../../../../../shared/utils/time/formatSpan';
 import type { ObjectTarget } from '../../../../../actions/types';
 import { useObjectMenuTrigger } from '../../../../../actions/useObjectMenuTrigger';
-import type { SessionRun, SessionRunShape } from '../../../../sessionRunsOf';
+import type { SessionRun } from '../../../../sessionRunsOf';
 import { RunRowTitle } from './RunRowTitle';
 import { RunRowVerb } from './RunRowVerb';
 import { runRowAnchorKey } from './runRowAnchorKey';
@@ -32,9 +32,11 @@ const SHAPE_ICON = {
   lead: CONCEPT_ICONS.auto,
 } as const;
 
-const SHAPE_LABEL: Readonly<Record<SessionRunShape, string>> = {
-  plan: NAMES.runKind.workflow,
-  lead: NAMES.runKind.agent,
+const KIND_LABEL: Readonly<Record<SessionRun['kind'], string>> = {
+  preset: NAMES.runKind.workflow,
+  orchestrated: NAMES.runKind.workflow,
+  auto: NAMES.lead,
+  agent: NAMES.runKind.agent,
 };
 
 type MenuParams = {
@@ -78,7 +80,7 @@ export const RunsGridRow = ({
   const Icon = SHAPE_ICON[run.shape];
   return (
     <ListGridRow
-      ariaLabel={`Open ${run.title}, ${SHAPE_LABEL[run.shape]}, ${run.stateWord}${run.isUnread ? ', unread' : ''}`}
+      ariaLabel={`Open ${run.title}, ${KIND_LABEL[run.kind]}, ${run.stateWord}${run.isUnread ? ', unread' : ''}`}
       onSelect={onOpen}
       rowKey={rowKey}
       overlays={[
@@ -108,11 +110,20 @@ export const RunsGridRow = ({
         <StateDot state={run.dot} label={run.stateWord} isLive={run.dot === 'running'} />,
         <Icon
           size={ICON_SIZE.row}
-          aria-label={SHAPE_LABEL[run.shape]}
+          aria-label={KIND_LABEL[run.kind]}
           className="text-muted-foreground"
         />,
         '',
-        run.origin,
+        run.isOlderRun ? (
+          <span className="flex min-w-0 items-baseline gap-2">
+            <span className="truncate">{run.origin}</span>
+            <span className="shrink-0 text-meta text-muted-foreground">
+              {NAMES.runKind.olderRun}
+            </span>
+          </span>
+        ) : (
+          run.origin
+        ),
         modelLine === null ? '' : <AgentModelLine line={modelLine} />,
         run.stateWord,
         run.progress,

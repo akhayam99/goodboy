@@ -76,7 +76,7 @@ Every door draws the same form: the New session page, a session's Runs page (and
 
 ### The Kind chip
 
-Every run started from the field or the New session page leads its settings line with a **Kind** chip that names what runs. The names are "Lead", "Lead · plan Fix a layout" and "Agent · Scout". A run started before keeps its name, such as "Workflow · Orchestrated" or "Workflow · Preset Fix a layout".
+Every run started from the field or the New session page leads its settings line with a **Kind** chip that names what runs, in the words of its row on Runs: "Lead", "Lead · plan Fix a layout" and "Agent · Scout". A run started before keeps its name, such as "Workflow · Orchestrated" or "Workflow · Preset Fix a layout".
 
 The chip opens one popover. It shows:
 
@@ -183,7 +183,7 @@ The other views of a session open from its head and from the keyboard:
 
 All the work of a session lives in one rail entry, **Runs**: preset runs, orchestrated runs, Auto conversations and the agents you started. One row per request, newest first.
 
-- Each row says what it was, in the same words as the New session page: "Workflow · Preset Fix a layout", "Workflow · Orchestrated", "Agent · Auto agent" and "Agent · Scout".
+- Each row says who leads it: "Lead", "Lead · plan Fix flaky tests" when the Lead follows a preset, and "Agent · Scout" for a one agent run. An older row keeps its own line, "Workflow · Preset Fix a layout", and an orchestrated one adds a gray "older run".
 - The page says what it holds in one gray line under its title, whether it is empty or full.
 - Groups read their name in bold with their count in gray, 32px apart. A run's name leads its row; the kind, state, progress, cost and age after it are one step smaller and gray.
 - **By branch** puts what needs you first, then what is running, then open branches with the newest work on top. **No branch** follows the same rules.

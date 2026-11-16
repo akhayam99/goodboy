@@ -117,6 +117,9 @@ describe('the u27 one flow scenes', () => {
     ).toHaveLength(2);
     expect(
       rows.filter((row) => row.getAttribute('aria-label')?.includes(', Agent, ') === true),
-    ).toHaveLength(2);
+    ).toHaveLength(1);
+    expect(
+      rows.filter((row) => row.getAttribute('aria-label')?.includes(', Lead, ') === true),
+    ).toHaveLength(1);
   });
 });
