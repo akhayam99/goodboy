@@ -964,7 +964,7 @@ describe('New session guidance', () => {
     withWorkspaceGuidance();
     await openPage();
     const readers: ReadonlyArray<readonly [RegExp, string]> = [
-      [/^Auto/, 'Read by the Auto agent and the helpers it starts.'],
+      [/^Auto/, 'Read by the Lead and the agents it starts.'],
       [/^Agent/, 'Read by the agent at the start of its brief.'],
       [/^Orchestrated/, 'Read by the orchestrator, which carries it into each step.'],
     ];

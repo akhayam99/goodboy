@@ -33,6 +33,19 @@ describe('the Lead entries of the palette', () => {
     expect(new Set(entries.map((entry) => entry.key)).size).toBe(2);
   });
 
+  it('reads Run · Lead, never Work', () => {
+    const { rows } = workRowsOf({
+      leads: [leadOf({ key: 'a' })],
+      rootTurns: {},
+      filter: 'open',
+      isWork: true,
+    });
+
+    const entry = leadEntries({ rows, open: vi.fn() })[0];
+
+    expect(entry?.secondary).toEqual(['Run', 'Lead', 'Goal a']);
+  });
+
   it('opens the Lead page of the session through the resolver', () => {
     const open = vi.fn();
     const { rows } = workRowsOf({

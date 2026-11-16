@@ -41,7 +41,7 @@ export const mountAutoTaskFolders = async ({ get, params }: Params): Promise<Tas
     pinnedProjectIds: [],
     linkedProjectIds,
     text,
-    reason: 'an Auto agent changes files here',
+    reason: 'a run changes files here',
     agentId: null,
     turnRunId: null,
   });

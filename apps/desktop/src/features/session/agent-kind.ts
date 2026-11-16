@@ -150,10 +150,10 @@ export const AGENT_KIND_META: Record<
     expectedOutput: null,
   },
   auto: {
-    label: 'Auto agent',
-    noun: 'Auto agent',
+    label: 'Lead',
+    noun: 'Lead',
     firstMessagePrompt: null,
-    pluralLabel: 'auto agents',
+    pluralLabel: 'leads',
     hint: 'Answers, or hands the work to the roles it picks. Never edits files',
     persona: 'max',
     expectedOutput: null,

@@ -370,7 +370,7 @@ describe('deleteAgent', () => {
     await deleteAgent(set, get)(SID, DOOMED);
 
     expect(hoisted.reportError).toHaveBeenCalledWith(
-      expect.objectContaining({ title: "Couldn't read the Auto agents", sessionId: SID }),
+      expect.objectContaining({ title: "Couldn't read the runs", sessionId: SID }),
     );
   });
 

@@ -45,7 +45,7 @@ export const START_KIND_COPY = {
     label: NAMES.guidance,
     title: 'Guidance for this run',
     readers: {
-      auto: 'Read by the Auto agent and the helpers it starts.',
+      auto: 'Read by the Lead and the agents it starts.',
       agent: 'Read by the agent at the start of its brief.',
       orchestrator: 'Read by the orchestrator, which carries it into each step.',
     },
@@ -107,8 +107,8 @@ export const START_KIND_COPY = {
     },
     autoAgent: {
       icon: CONCEPT_ICONS.auto,
-      what: 'Auto works on it and starts helpers, under your limit.',
-      whileRuns: 'While it runs, its helpers show under it, against your limit.',
+      what: 'The Lead plans it and starts the agents it needs, under your limit.',
+      whileRuns: 'While it runs, its agents show under it, against your limit.',
     },
   } satisfies Record<StartShape, ShapeCard>,
 } as const;

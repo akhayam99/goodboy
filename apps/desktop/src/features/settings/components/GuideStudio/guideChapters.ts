@@ -143,7 +143,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Auto in Models',
-        desc: 'The model setting, not the Auto agent: each role runs on a rung of one ladder per provider, moved by step size. Models shows the pick. A model turned off is left out.',
+        desc: 'The model setting, not the Lead: each role runs on a rung of one ladder per provider, moved by step size. Models shows the pick. A model turned off is left out.',
       },
       {
         term: 'Fallback',
@@ -308,8 +308,8 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
         desc: 'Hands Auto an older agent you started yourself; Detach from Auto takes it back. When Auto cannot decide, it reads Blocked with Retry.',
       },
       {
-        term: 'Work and the Lead',
-        desc: 'Work, in Advanced settings, renames Auto to Lead, lists every Lead under Work and adds Start work. Asks you sets one row per decision.',
+        term: 'The Lead',
+        desc: 'Leads each new run: it plans first, then starts the agents it needs. Asks you sets one row per decision.',
       },
       {
         term: 'Overview',
