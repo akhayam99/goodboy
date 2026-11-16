@@ -266,16 +266,16 @@
           "isNew": false
         },
         {
-          "id": "the-start-work-composer",
-          "title": "The Start work composer",
-          "copy": "With Work on, the doors that start an Auto or Orchestrator run open one composer instead of starting.",
+          "id": "one-start-form",
+          "title": "One start form",
+          "copy": "Every door draws the same form: the New session page, a session's Runs page (and so the New menu's Start a run), ⌘K, and the setup Scout run.",
           "image": null,
           "isNew": false
         },
         {
-          "id": "one-start-form",
-          "title": "One start form",
-          "copy": "Every door draws the same form: the New session page, a session's Runs page (and so the New menu's Start a run), ⌘K, and the setup Scout run.",
+          "id": "permission-rows",
+          "title": "Permission rows",
+          "copy": "A Lead's autonomy is nine rows you can read and change.",
           "image": null,
           "isNew": false
         },
@@ -395,27 +395,6 @@
           "id": "move-an-issue-between-the-session-and-a-branch",
           "title": "Move an issue between the session and a branch",
           "copy": "Choose where an issue belongs with Move to in its chip menu: the session or one of the open branches of its project.",
-          "image": null,
-          "isNew": false
-        }
-      ]
-    },
-    {
-      "id": "work",
-      "title": "Work",
-      "image": null,
-      "features": [
-        {
-          "id": "lead",
-          "title": "Lead",
-          "copy": "A Lead reads one of five words: Working, Waits for you, Resting, Stopped or Finished.",
-          "image": null,
-          "isNew": false
-        },
-        {
-          "id": "permission-rows",
-          "title": "Permission rows",
-          "copy": "A Lead's autonomy is nine rows you can read and change.",
           "image": null,
           "isNew": false
         }
@@ -667,7 +646,7 @@
         {
           "id": "work-behind-a-branch",
           "title": "Work behind a branch",
-          "copy": "The Work tab shows what Goodboy did on the branch: its runs, its questions, answered ones folded with their answer, and its plans and reports.",
+          "copy": "The Runs tab shows what Goodboy did on the branch: its runs, its questions, answered ones folded with their answer, and its plans and reports.",
           "image": null,
           "isNew": false
         },
@@ -849,21 +828,21 @@
         {
           "id": "start-a-workflow",
           "title": "Start a workflow",
-          "copy": "A workflow run starts from the New session page: pick Orchestrated or Preset, and press Start workflow.",
+          "copy": "A run that follows a preset starts from Start a run: pick Preset under How, or type ~ and a preset name.",
           "image": null,
           "isNew": false
         },
         {
-          "id": "orchestrated",
-          "title": "Orchestrated",
-          "copy": "Give a goal and a model picks each next step, with its role, model, effort and a reason.",
+          "id": "older-runs",
+          "title": "Older runs",
+          "copy": "A run started before every run had a Lead stays as it was, on its own engine.",
           "image": null,
           "isNew": false
         },
         {
           "id": "a-preset-as-the-plan-a-run-starts-from",
           "title": "A preset as the plan a run starts from",
-          "copy": "A run started from a preset in Start a run follows that preset as a plan, and the line under its title says \"Workflow · Preset Fix a layout · Adapt as it goes · 1 change\".",
+          "copy": "A preset you pick in Start a run, or one your ask matches, starts a Lead with that preset as its plan.",
           "image": null,
           "isNew": false
         },
@@ -1141,9 +1120,9 @@
           "isNew": false
         },
         {
-          "id": "auto-agent",
-          "title": "Auto agent",
-          "copy": "Try an agent that picks the roles for you.",
+          "id": "lead",
+          "title": "Lead",
+          "copy": "A Lead plans a run, hands the work to helpers and asks you only for what your permission rows say.",
           "image": null,
           "isNew": false
         },
@@ -1484,8 +1463,8 @@
           "isNew": false
         },
         {
-          "id": "auto-asks-you",
-          "title": "Auto asks you",
+          "id": "lead-asks-you",
+          "title": "Lead asks you",
           "copy": "Choose how much a Lead may do alone in this workspace with Lead asks you.",
           "image": null,
           "isNew": false
