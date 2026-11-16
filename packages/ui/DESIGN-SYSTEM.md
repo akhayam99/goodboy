@@ -947,6 +947,19 @@ the outline look, `ghost` and `quiet` the quiet look.
   `border-l-border`) and `bgSoft` (5%, only for washing a whole card). The
   neutral `bg`, `bgSoft` and `solid` sit on `fill`, so a neutral chip sinks one
   step into any parent.
+- Seven raw scales of twelve steps each, per theme, sit outside the `--color-`
+  namespace so Tailwind makes no class from them: `--gray-1` to `--gray-12`,
+  and the same for `blue`, `green`, `amber`, `red`, `purple` and `cyan`. Steps 1
+  and 2 are backgrounds, 3 to 5 component fills, 6 to 8 borders, 9 and 10
+  solids, 11 and 12 text. Only `styles.css` and the terminal read them; code
+  speaks in roles. Text steps on background steps and the ink on each solid
+  clear 4.5:1 and an APCA floor (Lc 60 for content, 45 for labels), pinned by
+  `palette-scales-contrast.test.ts`.
+- Each tone also has step tokens: `T-wash`, `T-subtle`, `T-edge`, `T-solid`,
+  `T-solid-hover` and `on-T`, plus `border-control`, `selection`, `brand-accent`
+  and the six `diff-` line tokens. For now each one holds the value that stands
+  in its place today (`danger-subtle` is `danger` at 10%, `border-control` is
+  `border`), so nothing on screen moves until a component uses them.
 
 ## Icon and tone vocabulary
 

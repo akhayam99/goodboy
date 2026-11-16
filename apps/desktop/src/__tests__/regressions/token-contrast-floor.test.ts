@@ -41,24 +41,53 @@ const swatch = (palette: Palette, token: string): Rgb => {
   return rgb;
 };
 
-const readPalette = (block: string): Palette => {
-  const palette: Record<string, Rgb> = {};
-  const pattern = /--color-([a-z0-9-]+):\s*oklch\(([\d.]+)\s+([\d.]+)\s+([\d.]+)\s*\)\s*;/g;
-  for (const match of block.matchAll(pattern)) {
-    palette[String(match[1])] = oklchToSrgb(Number(match[2]), Number(match[3]), Number(match[4]));
+const OPAQUE_OKLCH = /^oklch\(([\d.]+) ([\d.]+) ([\d.]+)\)$/;
+const HEX = /^#([0-9a-f]{6})$/i;
+const ALIAS = /^var\(--color-([a-z0-9-]+)\)$/;
+const ALIAS_DEPTH = 8;
+
+type ResolveSwatchParams = {
+  declared: ReadonlyMap<string, string>;
+  token: string;
+  depth: number;
+};
+
+const resolveSwatch = ({ declared, token, depth }: ResolveSwatchParams): Rgb | null => {
+  const value = declared.get(token);
+  if (value === undefined || depth > ALIAS_DEPTH) {
+    return null;
   }
-  const hexPattern = /--color-([a-z0-9-]+):\s*#([0-9a-f]{6})\s*;/gi;
-  for (const match of block.matchAll(hexPattern)) {
-    const value = String(match[2]);
-    palette[String(match[1])] = [
-      Number.parseInt(value.slice(0, 2), 16) / 255,
-      Number.parseInt(value.slice(2, 4), 16) / 255,
-      Number.parseInt(value.slice(4, 6), 16) / 255,
+  const oklch = value.match(OPAQUE_OKLCH);
+  if (oklch !== null) {
+    return oklchToSrgb(Number(oklch[1]), Number(oklch[2]), Number(oklch[3]));
+  }
+  const hex = value.match(HEX);
+  if (hex !== null) {
+    const digits = String(hex[1]);
+    return [
+      Number.parseInt(digits.slice(0, 2), 16) / 255,
+      Number.parseInt(digits.slice(2, 4), 16) / 255,
+      Number.parseInt(digits.slice(4, 6), 16) / 255,
     ];
   }
-  const aliasPattern = /--color-([a-z0-9-]+):\s*var\(--color-([a-z0-9-]+)\)\s*;/gi;
-  for (const match of block.matchAll(aliasPattern)) {
-    palette[String(match[1])] = swatch(palette, String(match[2]));
+  const alias = value.match(ALIAS);
+  if (alias !== null) {
+    return resolveSwatch({ declared, token: String(alias[1]), depth: depth + 1 });
+  }
+  return null;
+};
+
+const readPalette = (block: string): Palette => {
+  const declared = new Map<string, string>();
+  for (const match of block.matchAll(/--color-([a-z0-9-]+):([^;]+);/g)) {
+    declared.set(String(match[1]), String(match[2]).trim().replace(/\s+/g, ' '));
+  }
+  const palette: Record<string, Rgb> = {};
+  for (const token of declared.keys()) {
+    const rgb = resolveSwatch({ declared, token, depth: 0 });
+    if (rgb !== null) {
+      palette[token] = rgb;
+    }
   }
   return palette;
 };
@@ -126,8 +155,7 @@ const IDENTITY_SEPARATION = 4.5;
 
 const readThemes = (): Readonly<Record<'dark' | 'light', Palette>> => {
   const blocks = themeBlocks();
-  const dark = readPalette(blocks.dark);
-  return { dark, light: { ...dark, ...readPalette(blocks.light) } };
+  return { dark: readPalette(blocks.dark), light: readPalette(blocks.dark + blocks.light) };
 };
 
 type Translucent = Readonly<{ rgb: Rgb; alpha: number }>;

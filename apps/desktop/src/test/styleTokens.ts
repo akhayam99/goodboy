@@ -10,29 +10,80 @@ export const STYLES_PATH = join(__dirname, '..', 'styles.css');
 
 export const THEME_NAMES: ReadonlyArray<Theme> = ['dark', 'light'];
 
-const readTokens = (block: string): Readonly<Record<string, Token>> => {
-  const tokens: Record<string, Token> = {};
-  const pattern =
-    /--color-([a-z0-9-]+):\s*oklch\(([\d.]+)\s+([\d.]+)\s+([\d.]+)\s*(?:\/\s*([\d.]+)\s*)?\)\s*;/g;
-  for (const match of block.matchAll(pattern)) {
-    tokens[String(match[1])] = {
-      rgb: oklchToSrgb(Number(match[2]), Number(match[3]), Number(match[4])),
-      alpha: match[5] === undefined ? 1 : Number(match[5]),
-    };
+type Declarations = ReadonlyMap<string, string>;
+
+const OKLCH = /^oklch\(([\d.]+) ([\d.]+) ([\d.]+)(?: \/ ([\d.]+))?\)$/;
+const ALIAS = /^var\(--color-([a-z0-9-]+)\)$/;
+const MIX = /^color-mix\(in oklab, var\(--color-([a-z0-9-]+)\) ([\d.]+)%, transparent\)$/;
+const ALIAS_DEPTH = 8;
+
+type ReadDeclarationsParams = { readonly block: string; readonly prefix: string };
+
+const readDeclarations = ({ block, prefix }: ReadDeclarationsParams): Map<string, string> => {
+  const declared = new Map<string, string>();
+  for (const match of block.matchAll(new RegExp(`${prefix}([a-z0-9-]+):([^;]+);`, 'g'))) {
+    declared.set(String(match[1]), String(match[2]).trim().replace(/\s+/g, ' '));
   }
-  return tokens;
+  return declared;
 };
 
-const readThemes = (): Readonly<Record<Theme, Readonly<Record<string, Token>>>> => {
+type ResolveTokenParams = {
+  readonly declared: Declarations;
+  readonly name: string;
+  readonly depth?: number;
+};
+
+export const resolveToken = ({ declared, name, depth = 0 }: ResolveTokenParams): Token | null => {
+  const value = declared.get(name);
+  if (value === undefined || depth > ALIAS_DEPTH) {
+    return null;
+  }
+  if (value === 'transparent') {
+    return { rgb: [0, 0, 0], alpha: 0 };
+  }
+  const oklch = value.match(OKLCH);
+  if (oklch !== null) {
+    return {
+      rgb: oklchToSrgb(Number(oklch[1]), Number(oklch[2]), Number(oklch[3])),
+      alpha: oklch[4] === undefined ? 1 : Number(oklch[4]),
+    };
+  }
+  const alias = value.match(ALIAS);
+  if (alias !== null) {
+    return resolveToken({ declared, name: String(alias[1]), depth: depth + 1 });
+  }
+  const mix = value.match(MIX);
+  if (mix === null) {
+    return null;
+  }
+  const base = resolveToken({ declared, name: String(mix[1]), depth: depth + 1 });
+  if (base === null) {
+    return null;
+  }
+  return { rgb: base.rgb, alpha: (base.alpha * Number(mix[2])) / 100 };
+};
+
+type ThemeBlocks = Readonly<Record<Theme, string>>;
+
+const readThemeBlocks = (): ThemeBlocks => {
   const css = readFileSync(STYLES_PATH, 'utf8');
   const themeStart = css.indexOf('@theme {');
   const lightStart = css.indexOf("html[data-theme='light'] {");
-  const dark = readTokens(css.slice(themeStart, lightStart));
-  const light = readTokens(css.slice(lightStart, css.indexOf('\n}', lightStart)));
-  return { dark, light: { ...dark, ...light } };
+  const dark = css.slice(themeStart, lightStart);
+  return { dark, light: dark + css.slice(lightStart, css.indexOf('\n}', lightStart)) };
 };
 
-const THEMES = readThemes();
+const BLOCKS = readThemeBlocks();
+
+const THEMES: Readonly<Record<Theme, Declarations>> = {
+  dark: readDeclarations({ block: BLOCKS.dark, prefix: '--color-' }),
+  light: readDeclarations({ block: BLOCKS.light, prefix: '--color-' }),
+};
+
+const SCALES: Readonly<Record<Theme, Declarations>> = {
+  dark: readDeclarations({ block: BLOCKS.dark, prefix: '--' }),
+  light: readDeclarations({ block: BLOCKS.light, prefix: '--' }),
+};
 
 export const tokenOf = ({
   theme,
@@ -41,11 +92,22 @@ export const tokenOf = ({
   readonly theme: Theme;
   readonly name: string;
 }): Token => {
-  const token = THEMES[theme][name];
-  if (token === undefined) {
-    throw new Error(`styles.css has no oklch --color-${name} in ${theme}`);
+  const token = resolveToken({ declared: THEMES[theme], name });
+  if (token === null) {
+    throw new Error(`styles.css has no resolvable --color-${name} in ${theme}`);
   }
   return token;
+};
+
+type ScaleStepParams = { readonly theme: Theme; readonly scale: string; readonly step: number };
+
+export const scaleStepOf = ({ theme, scale, step }: ScaleStepParams): Rgb => {
+  const value = SCALES[theme].get(`${scale}-${step}`);
+  const match = value === undefined ? null : value.match(OKLCH);
+  if (match === null || match[4] !== undefined) {
+    throw new Error(`styles.css has no opaque --${scale}-${step} in ${theme}`);
+  }
+  return oklchToSrgb(Number(match[1]), Number(match[2]), Number(match[3]));
 };
 
 export const over = ({
