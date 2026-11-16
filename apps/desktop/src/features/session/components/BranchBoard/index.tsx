@@ -55,18 +55,22 @@ export const BranchBoard = ({ session, entries, cards: allCards, actionsFor, ope
   const removal = useRemoveWorktrees({ sessionId, mergedMountIds });
   const rowById = useMemo(() => new Map(board.rows.map((row) => [row.id, row])), [board.rows]);
   const rowIds = useMemo(() => new Set(rowById.keys()), [rowById]);
+  const rowIdByAskId = useMemo(
+    () => new Map(board.rows.flatMap((row) => row.askIds.map((askId) => [askId, row.id] as const))),
+    [board.rows],
+  );
   const cardsByRowId = useMemo(() => {
     const byRow = new Map<string, ReadonlyArray<ActionCardModel>>();
     for (const card of cards) {
       if (SESSION_LEVEL_KINDS.includes(card.kind) || card.kind === MERGE_KIND) {
         continue;
       }
-      const rowId = cardRowIdOf({ card, rowIds, looseRowId: LOOSE_ROW_ID });
+      const rowId = cardRowIdOf({ card, rowIds, looseRowId: LOOSE_ROW_ID, rowIdByAskId });
       const key = rowId === LOOSE_ROW_ID || rowIds.has(rowId) ? rowId : LOOSE_ROW_ID;
       byRow.set(key, [...(byRow.get(key) ?? []), card]);
     }
     return byRow;
-  }, [cards, rowIds]);
+  }, [cards, rowIds, rowIdByAskId]);
   const mergeCard = useMemo(() => cards.find((card) => card.kind === MERGE_KIND) ?? null, [cards]);
   const groups = visibleGroupsOf({ board, filter, isMergedExpanded });
   const firstOpenGroup = groups.find((group) => group.id !== 'merged')?.id ?? null;

@@ -66,13 +66,16 @@ describe('boardTileActionOf', () => {
     ).toEqual({ kind: 'question', questionId: 'question-1' });
   });
 
-  it('offers nothing on a merged branch or a branch with nothing waiting', () => {
+  it('offers Remove worktree on a merged branch, never its cards', () => {
     expect(
       boardTileActionOf({
         row: rowOf({ isMerged: true }),
         cards: [cardOf({ kind: 'push-branch' })],
       }),
-    ).toEqual({ kind: 'none' });
+    ).toEqual({ kind: 'remove', mountId: 'ledger' });
+  });
+
+  it('offers nothing on a branch with nothing waiting', () => {
     expect(boardTileActionOf({ row: rowOf({}), cards: [] })).toEqual({ kind: 'none' });
   });
 });

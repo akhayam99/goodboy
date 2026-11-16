@@ -79,7 +79,7 @@ A new branch is named from two to five meaningful words of the goal, English or 
 #### One tile per branch on the Overview
 <!-- gb area=sessions image=branch-tile -->
 
-Each branch on the Overview is one tile: its name and project, one state such as Working or Waits for you, a short line of what waits, and at most one button for the next step. The tile opens the branch page, where its changes, commits, checks, runs and questions live.
+Each branch on the Overview is one tile: its name and project, one state such as Running or Waits for you, a short line with its pull request number and what waits, and at most one button for the next step. The tile opens the branch page, where its changes, commits, checks, runs and questions live.
 
 #### Running ports sit under the branch name
 <!-- gb area=sessions -->

@@ -10,13 +10,14 @@ type Params = {
 type BoardTileAction =
   | { readonly kind: 'none' }
   | { readonly kind: 'card'; readonly index: number }
-  | { readonly kind: 'question'; readonly questionId: OpenQuestionId };
+  | { readonly kind: 'question'; readonly questionId: OpenQuestionId }
+  | { readonly kind: 'remove'; readonly mountId: string };
 
 const ANSWER_KINDS: ReadonlySet<string> = new Set(['question', 'answer-questions']);
 
 export const boardTileActionOf = ({ row, cards }: Params): BoardTileAction => {
   if (row.isMerged) {
-    return { kind: 'none' };
+    return row.mountId === null ? { kind: 'none' } : { kind: 'remove', mountId: row.mountId };
   }
   const [askId] = row.askIds;
   if (askId !== undefined) {

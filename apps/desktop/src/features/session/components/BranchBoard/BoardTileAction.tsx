@@ -2,6 +2,7 @@ import { Button } from '@goodboy/ui';
 import { questionPlace, useAppStore } from '../../../../store';
 import { actionButtonLookOf } from '../../../actions/actionButtonLookOf';
 import { boardTileActionOf } from '../../central/board/boardTileActionOf';
+import { BoardRemoveButton } from './BoardRemoveButton';
 import { BoardRowAction } from './BoardRowAction';
 import { useBoardContext } from './useBoardContext';
 
@@ -12,7 +13,7 @@ type Props = {
 const ANSWER = 'Answer';
 
 export const BoardTileAction = ({ rowId }: Props) => {
-  const { session, rowById, cardsByRowId } = useBoardContext();
+  const { session, rowById, cardsByRowId, removal } = useBoardContext();
   const navigate = useAppStore((state) => state.navigate);
   const row = rowById.get(rowId);
   if (row === undefined) {
@@ -24,6 +25,12 @@ export const BoardTileAction = ({ rowId }: Props) => {
       return null;
     case 'card':
       return <BoardRowAction rowId={rowId} index={action.index} text="" />;
+    case 'remove':
+      return removal.targets.every((target) => target.mountId !== action.mountId) ? null : (
+        <span className="pointer-events-auto flex shrink-0">
+          <BoardRemoveButton mountIds={[action.mountId]} variant="quiet" />
+        </span>
+      );
     case 'question': {
       const look = actionButtonLookOf({ verb: ANSWER, variant: 'primary' });
       return (
@@ -31,7 +38,6 @@ export const BoardTileAction = ({ rowId }: Props) => {
           size="sm"
           variant={look.variant}
           intent={look.intent}
-          aria-label={`${ANSWER} the question on ${row.branch ?? 'this work'}`}
           className="pointer-events-auto shrink-0"
           onClick={() =>
             navigate({

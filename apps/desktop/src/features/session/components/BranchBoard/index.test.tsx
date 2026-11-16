@@ -188,12 +188,12 @@ describe('the branch board on the Overview', () => {
     expect(tenant.querySelector('[data-board-chip]')?.textContent).toBe('Waits for you');
     await vi.waitFor(() =>
       expect(tileOf({ branch: TENANT }).querySelector('[data-board-facts]')?.textContent).toBe(
-        '1 question waits',
+        'PR #309 · 1 question waits',
       ),
     );
     const ledger = tileOf({ branch: LEDGER });
     expect(ledger.textContent).toContain('ledger-core');
-    expect(ledger.querySelector('[data-board-chip]')?.textContent).toBe('Working');
+    expect(ledger.querySelector('[data-board-chip]')?.textContent).toBe('Running');
   });
 
   it('carries one button at most: Answer before the Rebase that also waits', async () => {
@@ -296,7 +296,7 @@ describe('the branch board on the Overview', () => {
     }
   });
 
-  it('moves a tile to Merged with the Merged chip and no button once its request merges', async () => {
+  it('moves a tile to Merged with the Merged chip and no button until a cleanup is proposed', async () => {
     seedCentralColumn({ kind: 'branches' });
     await show();
 
@@ -370,7 +370,9 @@ describe('the branch board on the Overview', () => {
       expect(document.body.textContent).toContain(proposal.branch);
     }
     await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: /^Remove worktrees?$/ }));
+      fireEvent.click(
+        within(screen.getByRole('dialog')).getByRole('button', { name: /^Remove worktrees?$/ }),
+      );
       await Promise.resolve();
     });
     await vi.waitFor(() => expect(resolveMountCleanup).toHaveBeenCalledTimes(merged.length));
@@ -393,7 +395,9 @@ describe('the branch board on the Overview', () => {
 
     fireEvent.click(screen.getByRole('button', { name: /^Remove \d worktrees?/ }));
     await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: /^Remove worktrees?$/ }));
+      fireEvent.click(
+        within(screen.getByRole('dialog')).getByRole('button', { name: /^Remove worktrees?$/ }),
+      );
       await Promise.resolve();
     });
 

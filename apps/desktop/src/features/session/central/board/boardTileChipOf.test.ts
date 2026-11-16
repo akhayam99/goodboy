@@ -4,7 +4,8 @@ import { brandId } from '@goodboy/types';
 import type { IsoDateTime, MountId, Session, SessionId, WorkspaceId } from '@goodboy/types';
 import type { BranchFacts } from '../branches/branchFactsOf';
 import { branchEntriesOf } from '../branches/branchStoryOf';
-import { boardTileChipOf, WAITS_FOR_YOU, WORKING } from './boardTileChipOf';
+import { NAMES } from '../../../../shared/utils/names';
+import { boardTileChipOf, WAITS_FOR_YOU } from './boardTileChipOf';
 import type { BoardAsk } from './boardTypes';
 import { branchBoardOf } from './branchBoardOf';
 
@@ -108,16 +109,16 @@ describe('boardTileChipOf', () => {
     });
   });
 
-  it('says Checks failing in red over Working', () => {
+  it('says Checks failing in red over Running', () => {
     expect(chipOf({ branch: branchOf({ checks: 'failure' }), runningCount: 1 })).toEqual({
       word: 'Checks failing',
       tone: 'danger',
     });
   });
 
-  it('says Working while an agent runs on an open branch', () => {
+  it('says Running while an agent runs on an open branch', () => {
     expect(chipOf({ branch: branchOf({ checks: 'pending' }), runningCount: 2 })).toEqual({
-      word: WORKING,
+      word: NAMES.running,
       tone: 'info',
     });
   });
@@ -126,8 +127,8 @@ describe('boardTileChipOf', () => {
     expect(chipOf({ branch: branchOf({ hasRequest: false }) }).word).toBe('Not pushed');
   });
 
-  it('names the open pull request with its number', () => {
-    expect(chipOf({ branch: branchOf({}) }).word).toBe('PR #57 open');
-    expect(chipOf({ branch: branchOf({ noun: '!' }) }).word).toBe('MR !57 open');
+  it('names the open pull request by its kind, the number living on the facts line', () => {
+    expect(chipOf({ branch: branchOf({}) }).word).toBe('PR open');
+    expect(chipOf({ branch: branchOf({ noun: '!' }) }).word).toBe('MR open');
   });
 });

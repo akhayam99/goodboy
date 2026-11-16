@@ -1,10 +1,12 @@
 import type { Tone } from '@goodboy/ui';
+import { NAMES } from '../../../../shared/utils/names';
 import { sentenceCase } from '../../../../shared/utils/sentenceCase';
 import { STAGE_TONE } from '../../session-stage';
 import type { BranchEntry } from '../branches/branchStoryOf';
 import { BRANCH_STATE_TONE, type BranchState } from '../branches/branchStateTone';
 import { stageWordOf } from './boardRowWordsOf';
 import type { BoardRow } from './boardTypes';
+import { requestShortOf } from './requestShortOf';
 
 type Params = {
   readonly row: BoardRow;
@@ -19,18 +21,12 @@ type BoardTileChip = Readonly<{
 
 export const WAITS_FOR_YOU = 'Waits for you';
 
-export const WORKING = 'Working';
-
 const BLOCKED_STATES: ReadonlySet<BranchState> = new Set<BranchState>([
   'checks-failing',
   'conflicts',
   'changes-requested',
   'gone',
 ]);
-
-const REQUEST_SHORT = { '#': 'PR', '!': 'MR' } as const satisfies Readonly<
-  Record<'#' | '!', string>
->;
 
 export const boardTileChipOf = ({ row, entry, runningCount }: Params): BoardTileChip => {
   if (row.isMerged) {
@@ -49,17 +45,14 @@ export const boardTileChipOf = ({ row, entry, runningCount }: Params): BoardTile
     return { word: WAITS_FOR_YOU, tone: STAGE_TONE.attention };
   }
   if (runningCount > 0) {
-    return { word: WORKING, tone: STAGE_TONE.running };
+    return { word: NAMES.running, tone: STAGE_TONE.running };
   }
   if (entry === null) {
     return { word: sentenceCase({ text: row.stage.reason }), tone: 'neutral' };
   }
   const request = entry.fact.request;
   if (request !== null && entry.story.state === 'open') {
-    return {
-      word: `${REQUEST_SHORT[request.noun]} ${request.noun}${request.number} open`,
-      tone: entry.story.tone,
-    };
+    return { word: `${requestShortOf({ request })} open`, tone: entry.story.tone };
   }
   return { word: entry.story.word, tone: entry.story.tone };
 };
