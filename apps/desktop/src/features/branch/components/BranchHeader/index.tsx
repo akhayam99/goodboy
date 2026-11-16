@@ -12,8 +12,10 @@ import { actionButtonStateOf } from '../../../actions/actionButtonStateOf';
 import type { BranchControls } from '../../hooks/useBranchControls';
 import { branchShownIdsOf, type BranchPrimary } from '../../branchPrimary';
 import { requestNounLabel } from '../../requestNounLabel';
+import { isBranchReadOnly } from '../../branchTabs';
 import { BranchRunningPorts } from '../BranchRunningPorts';
 import { BranchOverflow } from './BranchOverflow';
+import { BranchTools } from './BranchTools';
 import { BranchStateChip } from './BranchStateChip';
 
 type Props = {
@@ -116,17 +118,12 @@ export const BranchHeader = ({
     controls.pullRequestControls.confirming !== null ||
     controls.sessionControls.confirming !== null;
   const primaryVariant = isYielding ? 'secondary' : 'primary';
+  const prKind = pr === null ? 'none' : pullRequestKindOf({ state: pr.state, isDraft: pr.isDraft });
+  const isReadOnly = isBranchReadOnly({ state: prKind });
   return (
     <div className="relative flex min-w-0 flex-col gap-2">
       <PaneTitleRow
-        badge={
-          pr === null ? null : (
-            <BranchStateChip
-              state={pullRequestKindOf({ state: pr.state, isDraft: pr.isDraft })}
-              host={host}
-            />
-          )
-        }
+        badge={pr === null ? null : <BranchStateChip state={prKind} host={host} />}
         title={
           <PullRequestTitle
             title={pr?.title ?? fallbackTitle}
@@ -152,6 +149,9 @@ export const BranchHeader = ({
         }
         actions={
           <div className="flex min-w-0 items-center gap-2">
+            {running === undefined ? null : (
+              <BranchTools sessionId={sessionId} canStartRun={!isReadOnly} />
+            )}
             <HeaderActions
               secondary={
                 secondary === null
