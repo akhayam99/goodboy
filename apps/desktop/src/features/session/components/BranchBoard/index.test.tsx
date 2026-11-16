@@ -25,9 +25,9 @@ import {
 import { installFakeResizeObserver } from '../../../../test/fakeResizeObserver';
 import { sceneInvoke, clearSceneInvoke } from '../../../../test/sceneInvoke';
 import { resetWorktreeStatusCache } from '../../../../store/runtime/worktreeStatuses/cache';
+import userEvent from '@testing-library/user-event';
+import { branchPlace } from '../../../../store/slices/navigation/place';
 import { AutoReleaseContext } from '../../../auto/autoReleaseContext';
-import { startRunBranchOf } from '../../startRun/startRunBranchOf';
-import { startRunEventName } from '../../startRun/startRunEventName';
 import {
   COLUMN_SESSION_ID,
   seedCentralColumn,
@@ -120,7 +120,7 @@ const show = async () => {
 };
 
 const rowButtons = () => [
-  ...document.querySelectorAll<HTMLButtonElement>('[data-board-row] button[aria-expanded]'),
+  ...document.querySelectorAll<HTMLButtonElement>('[data-board-row] button[role="link"]'),
 ];
 
 const firstRowButton = (): HTMLButtonElement => {
@@ -130,6 +130,23 @@ const firstRowButton = (): HTMLButtonElement => {
   }
   return first;
 };
+
+type TileParams = {
+  readonly branch: string;
+};
+
+const tileOf = ({ branch }: TileParams): HTMLElement => {
+  const link = screen.getByRole('link', { name: `Open ${branch}` });
+  const tile = link.closest<HTMLElement>('[data-board-row]');
+  if (tile === null) {
+    throw new Error('The link must sit in a tile.');
+  }
+  return tile;
+};
+
+const TENANT = 'ak/eng-1190-tenant-limits';
+
+const LEDGER = 'ak/eng-1190-ledger-limits';
 
 type ProposalsParams = {
   readonly sizeBytes: number | null;
@@ -161,84 +178,135 @@ describe('the branch board on the Overview', () => {
     screen.getByRole('region', { name: 'Branches' });
   });
 
-  it('opens a row on a click and keeps the scroll of its container', async () => {
-    seedCentralColumn({ kind: 'branches' });
-    const { container } = await show();
-    const scroller = document.createElement('div');
-    scroller.scrollTop = 0;
-    container.appendChild(scroller);
-    const first = firstRowButton();
-    expect(first.getAttribute('aria-expanded')).toBe('false');
-
-    fireEvent.click(first);
-
-    expect(first.getAttribute('aria-expanded')).toBe('true');
-    expect(document.querySelector('[data-slot="branch-work"]')).not.toBeNull();
-    expect(scroller.scrollTop).toBe(0);
-  });
-
-  it('opens the start field of this session with the branch of the open row', async () => {
+  it('draws one tile per branch: its name, its project and one state chip', async () => {
     seedCentralColumn({ kind: 'branches' });
     await show();
-    const branches = (useAppStore.getState().sessionProjectMounts[COLUMN_SESSION_ID] ?? []).map(
-      (mount) => mount.branch,
+
+    const tenant = tileOf({ branch: TENANT });
+    expect(tenant.textContent).toContain('payments-api');
+    expect(tenant.querySelectorAll('[data-board-chip]')).toHaveLength(1);
+    expect(tenant.querySelector('[data-board-chip]')?.textContent).toBe('Waits for you');
+    await vi.waitFor(() =>
+      expect(tileOf({ branch: TENANT }).querySelector('[data-board-facts]')?.textContent).toBe(
+        '1 question waits',
+      ),
     );
-    const opened: Array<string | null> = [];
-    const onOpen = (event: Event): void => {
-      opened.push(startRunBranchOf({ event }));
-    };
-    const name = startRunEventName({ sessionId: COLUMN_SESSION_ID });
-    window.addEventListener(name, onOpen);
-    fireEvent.click(firstRowButton());
-
-    fireEvent.click(screen.getByRole('button', { name: 'Start a run on this branch' }));
-    await vi.waitFor(() => expect(opened).toHaveLength(1));
-    window.removeEventListener(name, onOpen);
-
-    expect(branches).toContain(opened[0]);
+    const ledger = tileOf({ branch: LEDGER });
+    expect(ledger.textContent).toContain('ledger-core');
+    expect(ledger.querySelector('[data-board-chip]')?.textContent).toBe('Working');
   });
 
-  it('opening a row leaves the open tool and the slot as they were', async () => {
+  it('carries one button at most: Answer before the Rebase that also waits', async () => {
     seedCentralColumn({ kind: 'branches' });
+    const navigate = vi.fn();
+    act(() => {
+      useAppStore.setState({ navigate });
+    });
+    await show();
+
+    const tenant = within(tileOf({ branch: TENANT })).getAllByRole('button');
+    expect(tenant.map((button) => button.textContent)).toEqual(['Answer']);
+    expect(within(tileOf({ branch: LEDGER })).queryAllByRole('button')).toHaveLength(0);
+
+    const [answer] = tenant;
+    fireEvent.click(answer ?? document.body);
+    const [call] = navigate.mock.calls;
+    expect(call?.[0]).toMatchObject({ to: { view: { lens: 'questions' } } });
+  });
+
+  it('carries the first verb of the branch when nothing is asked there', async () => {
+    seedCentralColumn({ kind: 'branches' });
+    act(() => {
+      useAppStore.setState({ sessionOpenQuestions: {} });
+    });
+    await show();
+
+    const tenant = within(tileOf({ branch: TENANT })).getAllByRole('button');
+    expect(tenant.map((button) => button.textContent)).toEqual(['Rebase']);
+    expect(tileOf({ branch: TENANT }).querySelector('[data-board-chip]')?.textContent).toBe(
+      'Checks failing',
+    );
+  });
+
+  it('opens the branch page on Conversation from the tile, and leaves the tools alone', async () => {
+    seedCentralColumn({ kind: 'branches' });
+    const navigate = vi.fn();
+    act(() => {
+      useAppStore.setState({ navigate });
+    });
     await show();
     const before = useAppStore.getState().drawer;
-    const first = firstRowButton();
+    const mount = (useAppStore.getState().sessionProjectMounts[COLUMN_SESSION_ID] ?? []).find(
+      (candidate) => candidate.branch === TENANT,
+    );
 
-    fireEvent.click(first);
-    expect(first.getAttribute('aria-expanded')).toBe('true');
-    fireEvent.click(first);
+    fireEvent.click(screen.getByRole('link', { name: `Open ${TENANT}` }));
 
+    expect(navigate).toHaveBeenCalledWith({
+      to: branchPlace({
+        sessionId: COLUMN_SESSION_ID,
+        mountPath: mount?.worktreePath ?? null,
+        tab: 'pr',
+      }),
+    });
     expect(useAppStore.getState().drawer).toBe(before);
-    expect(useAppStore.getState().drawerBack).toBeNull();
   });
 
-  it('keeps a row open when it changes group', async () => {
+  it('reaches the tile and its button as two stops, and Enter on the tile opens it', async () => {
+    seedCentralColumn({ kind: 'branches' });
+    const navigate = vi.fn();
+    act(() => {
+      useAppStore.setState({ navigate });
+    });
+    await show();
+    const tile = tileOf({ branch: TENANT });
+    const link = within(tile).getByRole('link');
+    const [action] = within(tile).getAllByRole('button');
+    const user = userEvent.setup();
+
+    act(() => {
+      link.focus();
+    });
+    await user.tab();
+    expect(document.activeElement).toBe(action);
+    expect(link.contains(action ?? null)).toBe(false);
+
+    act(() => {
+      link.focus();
+    });
+    await user.keyboard('{Enter}');
+    expect(navigate).toHaveBeenCalledTimes(1);
+  });
+
+  it('shows no chevron, no open row and none of the lists or doors of the old row', async () => {
     seedCentralColumn({ kind: 'branches' });
     await show();
-    const first = firstRowButton();
-    fireEvent.click(first);
-    expect(first.getAttribute('aria-expanded')).toBe('true');
+    const board = screen.getByRole('region', { name: 'Branches' });
+
+    expect(board.querySelector('[aria-expanded]')).toBeNull();
+    expect(document.querySelector('[data-slot="branch-work"]')).toBeNull();
+    for (const word of [
+      'Also waiting for you',
+      'Terminal here',
+      'Browser here',
+      'Start a run on this branch',
+      'Open the PR page',
+    ]) {
+      expect(board.textContent).not.toContain(word);
+    }
+  });
+
+  it('moves a tile to Merged with the Merged chip and no button once its request merges', async () => {
+    seedCentralColumn({ kind: 'branches' });
+    await show();
 
     setRequestState({ state: 'merged' });
     await settle();
 
-    const after = rowButtons().find((button) => button.getAttribute('aria-expanded') === 'true');
-    expect(after).toBeDefined();
-    expect(after?.closest('[data-board-group]')?.getAttribute('data-board-group')).toBe('merged');
-  });
-
-  it('reopens the last row after a reload', async () => {
-    seedCentralColumn({ kind: 'branches' });
-    const view = await show();
-    const first = firstRowButton();
-    fireEvent.click(first);
-    const name = first.getAttribute('aria-label');
-    view.unmount();
-
-    await show();
-
-    const reopened = rowButtons().find((button) => button.getAttribute('aria-label') === name);
-    expect(reopened?.getAttribute('aria-expanded')).toBe('true');
+    const tenant = tileOf({ branch: TENANT });
+    expect(tenant.closest('[data-board-group]')?.getAttribute('data-board-group')).toBe('merged');
+    expect(tenant.querySelector('[data-board-chip]')?.textContent).toBe('Merged');
+    expect(within(tenant).queryAllByRole('button')).toHaveLength(0);
   });
 
   it('shows Questions, Artifacts, Spend and Time tiles and no Checks or Needs you tile', async () => {

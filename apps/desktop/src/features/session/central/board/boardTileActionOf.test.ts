@@ -1,0 +1,78 @@
+// @vitest-environment node
+import { describe, expect, it } from 'vitest';
+import type { ActionCardModel } from '../next/actionCardsOf';
+import { boardTileActionOf } from './boardTileActionOf';
+import type { BoardRow } from './boardTypes';
+
+type RowParams = {
+  readonly askIds?: ReadonlyArray<string>;
+  readonly isMerged?: boolean;
+};
+
+const rowOf = ({ askIds = [], isMerged = false }: RowParams): BoardRow => ({
+  id: 'ledger',
+  mountId: 'ledger',
+  projectName: 'ledger-core',
+  branch: 'nw/ledger-rounding',
+  group: isMerged ? 'merged' : 'in-progress',
+  isMerged,
+  stage: {
+    stage: 'building',
+    reason: '',
+    addsFact: false,
+    attention: null,
+    prState: null,
+  },
+  checks: null,
+  askIds,
+  agentIds: [],
+  leadIds: [],
+  needsYouIds: askIds,
+  spendUsd: 0,
+  elapsedMs: 0,
+});
+
+type CardParams = {
+  readonly kind: ActionCardModel['kind'];
+};
+
+const cardOf = ({ kind }: CardParams): Pick<ActionCardModel, 'kind'> => ({ kind });
+
+describe('boardTileActionOf', () => {
+  it('takes the first card of the branch when nothing is asked', () => {
+    expect(
+      boardTileActionOf({
+        row: rowOf({}),
+        cards: [cardOf({ kind: 'rebase-project' }), cardOf({ kind: 'push-branch' })],
+      }),
+    ).toEqual({ kind: 'card', index: 0 });
+  });
+
+  it('puts Answer first: the question card wins over an earlier rebase', () => {
+    expect(
+      boardTileActionOf({
+        row: rowOf({ askIds: ['question-1'] }),
+        cards: [cardOf({ kind: 'rebase-project' }), cardOf({ kind: 'question' })],
+      }),
+    ).toEqual({ kind: 'card', index: 1 });
+  });
+
+  it('opens the first question when no card answers it', () => {
+    expect(
+      boardTileActionOf({
+        row: rowOf({ askIds: ['question-1', 'question-2'] }),
+        cards: [cardOf({ kind: 'rebase-project' })],
+      }),
+    ).toEqual({ kind: 'question', questionId: 'question-1' });
+  });
+
+  it('offers nothing on a merged branch or a branch with nothing waiting', () => {
+    expect(
+      boardTileActionOf({
+        row: rowOf({ isMerged: true }),
+        cards: [cardOf({ kind: 'push-branch' })],
+      }),
+    ).toEqual({ kind: 'none' });
+    expect(boardTileActionOf({ row: rowOf({}), cards: [] })).toEqual({ kind: 'none' });
+  });
+});

@@ -81,11 +81,11 @@ describe('the u44 branch runs linked scene', () => {
     );
   });
 
-  it('shows the Lead and its agents under the branch row', async () => {
+  it('counts the run of the Lead on the branch tile, as the Runs tab does', async () => {
     await mount();
 
-    screen.getByText(/Lead is working on this branch\. 3 agents ran here\./);
-    screen.getByText('Implementer');
-    expect(screen.queryByText('Nothing ran on this branch yet')).toBeNull();
+    const facts = document.querySelector('[data-board-row] [data-board-facts]');
+    expect(facts?.textContent).toBe('1 run');
+    expect(document.querySelector('[data-slot="branch-work"]')).toBeNull();
   });
 });

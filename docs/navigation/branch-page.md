@@ -41,7 +41,9 @@ A comment reads the same in the diff, the review pane and the page: `CommentBody
 without a pull request; on a pull request you can edit, click it or press `E` on
 the Conversation entry and it becomes an input in the same 32px row, `Enter` saves
 to the host, `Esc` cancels, a failure is an inline notice with Retry), the state chip (20 high,
-the state word and its icon, `BranchStateChip`), one primary and `⋯`. The
+the state word and its icon, `BranchStateChip`), three icon buttons (`BranchTools`: **Start a run on
+this branch**, hidden once the branch is merged or closed, **Open a terminal here** in the branch
+folder and **Open the browser here**; the Overview tile sends you here for them), one primary and `⋯`. The
 line under the title is the same on every tab: the number and the branch in mono, `into` the base,
 and the author's picture and name with `opened it` and the age (`PullRequestHeaderLine`); without a pull
 request it says `Not pushed`, `Pushed` or `Rebasing` and the distance to the base. **There is no branch switcher in the header or

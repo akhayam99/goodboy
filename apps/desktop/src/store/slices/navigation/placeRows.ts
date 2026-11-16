@@ -5,5 +5,4 @@ export const PLACE_ROWS = {
   filesMount: 'files.mount',
   runsFilter: 'runs.filter',
   boardLead: 'board.lead',
-  boardRow: 'board.row',
 } as const satisfies Readonly<Record<string, string>>;
