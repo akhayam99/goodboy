@@ -1054,8 +1054,10 @@ tell apart. So a run and a workspace get a colour that says "this one" and
 nothing more.
 
 One set serves every object that needs a name: `--color-identity-1` to
-`--color-identity-8` in `apps/desktop/src/styles.css`, chroma 0.09 on eight
-hues, with no red and no amber, so a lane never reads as failed or waiting
+`--color-identity-8` in `apps/desktop/src/styles.css`, one lightness and one
+chroma per theme on eight hues (0.74 and 0.1 in dark, 0.51 and 0.11 in light,
+less chroma where the gamut ends), so no slot weighs more than another. No red
+and no amber, so a lane never reads as failed or waiting
 (`identity-palette-avoids-state-hues.test.ts` keeps every hue 30 degrees or
 more from the danger and warning hues). Two accessors read it, and nothing
 else does:
@@ -1106,7 +1108,9 @@ block, not in a chip: see "Needs you and the two views" below.
 
 Agent kinds (`--color-agent-*`) and provider glyphs (`--color-provider-*`) are
 identity palettes of their own. Each has a single accessor and is held to the
-same floor test. Anything else that reaches for an identity colour is a bug.
+same floor test. Agent kinds keep their hue and share one lightness and chroma
+per theme (0.78 and 0.12 in dark, 0.465 in light), so no kind shouts louder
+than another. Anything else that reaches for an identity colour is a bug.
 Add a tone instead.
 
 The rail, work node and row vocabulary continues in [Rail and work vocabulary](design/rail-and-work.md).
