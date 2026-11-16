@@ -149,11 +149,7 @@ export const OrchestratedHintRow = ({
             mark={{
               kind: 'glyph',
               glyph: (
-                <MessageSquareText
-                  size={WORK_NODE_GLYPH_SIZE}
-                  strokeWidth={2}
-                  className="text-muted-foreground"
-                />
+                <MessageSquareText size={WORK_NODE_GLYPH_SIZE} className="text-muted-foreground" />
               ),
             }}
           />

@@ -2,7 +2,7 @@ import { Check, MessageSquare } from '@goodboy/ui/icons';
 import {
   cn,
   ICON_SIZE,
-  ICON_STROKE,
+  ICON_WEIGHT,
   ROW_INTERACTIVE,
   Tooltip,
   StatusDot,
@@ -159,7 +159,7 @@ export const FileRow = ({
             className="flex size-4 items-center justify-center text-success"
           >
             {isViewed ? (
-              <Check size={ICON_SIZE.mark} strokeWidth={ICON_STROKE.check} aria-hidden />
+              <Check size={ICON_SIZE.mark} weight={ICON_WEIGHT.check} aria-hidden />
             ) : (
               <StatusDot size="sm" tone="warning" />
             )}

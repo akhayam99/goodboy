@@ -30,8 +30,6 @@ type ConceptParams = {
   readonly isEmphasized: boolean;
 };
 
-const HALO_OPACITY = 0.18;
-
 const conceptNode = ({ icon: Icon, tone, label, isEmphasized }: ConceptParams) => (
   <WorkNode
     state="marker"
@@ -42,9 +40,7 @@ const conceptNode = ({ icon: Icon, tone, label, isEmphasized }: ConceptParams) =
       glyph: (
         <Icon
           size={WORK_NODE_GLYPH_SIZE}
-          strokeWidth={2}
-          fill={isEmphasized ? 'currentColor' : 'none'}
-          fillOpacity={isEmphasized ? HALO_OPACITY : undefined}
+          weight={isEmphasized ? 'duotone' : 'regular'}
           className={tintClasses(tone).icon}
         />
       ),

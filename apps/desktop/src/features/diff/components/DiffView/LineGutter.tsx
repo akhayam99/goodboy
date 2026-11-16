@@ -74,7 +74,7 @@ export const LineGutter = ({
             aria-hidden
             className="absolute left-1 top-0.5 hidden size-4 items-center justify-center rounded-sm bg-primary-solid text-on-primary group-hover/line:flex"
           >
-            <Plus size={ICON_SIZE.mark} strokeWidth={2.5} />
+            <Plus size={ICON_SIZE.mark} weight="bold" />
           </span>
         ) : null}
         {lineNumber}

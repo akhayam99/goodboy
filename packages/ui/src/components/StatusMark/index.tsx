@@ -1,5 +1,5 @@
 import { cn } from '../../cn';
-import { ICON_SIZE, ICON_STROKE } from '../../iconSize';
+import { ICON_SIZE, ICON_WEIGHT } from '../../iconSize';
 import { tintClasses } from '../../tint';
 import { STATUS_MARK_DRAWING, type StatusMarkSpec } from './statusMarkSpec';
 
@@ -46,7 +46,7 @@ const drawingOf = ({ mark }: DrawingParams) => {
       return (
         <Icon
           size={ICON_SIZE.row}
-          strokeWidth={ICON_STROKE.row}
+          weight={ICON_WEIGHT.row}
           aria-hidden
           className={drawing.className}
         />

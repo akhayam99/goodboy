@@ -11,7 +11,6 @@ const ICON_DEFAULTS = {
   weight: 'regular',
   color: 'currentColor',
   mirrored: false,
-  'aria-hidden': true,
 } as const satisfies IconProps;
 
 export const IconDefaults = ({ children }: Props) => (

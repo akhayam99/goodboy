@@ -1,5 +1,5 @@
 import { GitBranch } from '@goodboy/ui/icons';
-import { Chip, ICON_SIZE, ICON_STROKE } from '@goodboy/ui';
+import { Chip, ICON_SIZE, ICON_WEIGHT } from '@goodboy/ui';
 import { CONCEPT_ICONS } from '../conceptIcons';
 import { FOLDER_FACE_COPY } from '../../../features/workspace/folderFaceCopy';
 import { ConflictNotice } from './ConflictNotice';
@@ -50,7 +50,7 @@ export const RepositoryRow = ({
     <FolderRowFrame
       name={folder.name}
       path={tildePath({ path: folder.path, home })}
-      icon={<RepoIcon size={ICON_SIZE.hero} strokeWidth={ICON_STROKE.hero} aria-hidden />}
+      icon={<RepoIcon size={ICON_SIZE.hero} weight={ICON_WEIGHT.hero} aria-hidden />}
       isDimmed={!folder.isIncluded}
       lead={lead}
       trailing={trailing}

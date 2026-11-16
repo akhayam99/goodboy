@@ -3,7 +3,7 @@ import type { IconGlyph } from '../icons';
 import { cn } from '../cn';
 import { DISABLED } from '../disabledStyle';
 import { FOCUS_RING } from '../focusRing';
-import { ICON_SIZE, iconStrokeOf } from '../iconSize';
+import { ICON_SIZE, iconWeightOf } from '../iconSize';
 import { tintClasses, type Tone } from '../tint';
 import { Tooltip, type TooltipSide } from './Tooltip';
 
@@ -92,7 +92,7 @@ export const IconButton = ({
       >
         <Icon
           size={iconSize ?? ICON_BUTTON_GLYPH[size]}
-          strokeWidth={iconStrokeOf({ size: iconSize ?? ICON_BUTTON_GLYPH[size] })}
+          weight={iconWeightOf({ size: iconSize ?? ICON_BUTTON_GLYPH[size] })}
           aria-hidden
           className={cn('shrink-0', busy && 'motion-safe:animate-soft-pulse')}
         />

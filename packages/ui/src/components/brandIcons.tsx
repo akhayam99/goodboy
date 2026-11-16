@@ -4,8 +4,9 @@ import type { IconGlyph, IconGlyphProps } from '../icons';
 export const svgProps = ({
   size = 24,
   color: _color,
-  strokeWidth: _sw,
-  absoluteStrokeWidth: _asw,
+  weight: _weight,
+  mirrored: _mirrored,
+  alt: _alt,
   ...rest
 }: IconGlyphProps) => ({
   width: size,

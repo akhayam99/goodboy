@@ -50,7 +50,7 @@ describe('Button icon color', () => {
     const button = screen.getByRole('button', { name: 'Rebase' });
 
     expect(classesOf({ value: button.className })).toContain(ICON_FOLLOWS_TEXT);
-    expect(button.querySelector('svg')?.getAttribute('stroke')).toBe('currentColor');
+    expect(button.querySelector('svg')?.getAttribute('fill')).toBe('currentColor');
   });
 
   it.each(SOLID_TONES)('draws icons on the %s solid fill in the on-tone label color', (tone) => {

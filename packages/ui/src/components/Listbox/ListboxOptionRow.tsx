@@ -6,7 +6,7 @@ import type { ListboxMatch } from './filterOptions';
 import { HighlightedLabel } from './HighlightedLabel';
 import type { ListboxStar } from './listboxTypes';
 import { StarToggle } from '../StarToggle';
-import { ICON_SIZE, ICON_STROKE } from '../../iconSize';
+import { ICON_SIZE, ICON_WEIGHT } from '../../iconSize';
 
 export type ListboxOptionRowProps = {
   readonly id: string;
@@ -88,7 +88,7 @@ export const ListboxOptionRow = ({
                 : 'border-border-control bg-background',
             )}
           >
-            {isSelected ? <Check size={ICON_SIZE.mark} strokeWidth={ICON_STROKE.check} /> : null}
+            {isSelected ? <Check size={ICON_SIZE.mark} weight={ICON_WEIGHT.check} /> : null}
           </span>
         </span>
       ) : null}

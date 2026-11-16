@@ -2,7 +2,7 @@
 import { describe, expect, it } from 'vitest';
 import { Folder, FolderGit2, ListVideo, SquareTerminal } from '@goodboy/ui/icons';
 import { CONCEPT_ICONS, CONCEPT_TONE, projectGlyph } from './conceptIcons';
-import { ICON_SIZE, ICON_STROKE } from '@goodboy/ui';
+import { ICON_SIZE, ICON_WEIGHT } from '@goodboy/ui';
 
 describe('CONCEPT_TONE', () => {
   it('uses the draft tone for plans', () => {
@@ -63,14 +63,14 @@ describe('ICON_SIZE', () => {
     expect(ICON_SIZE).toEqual({ mark: 10, row: 12, control: 14, notice: 16, hero: 18 });
   });
 
-  it('gives each size one stroke weight and checks a heavier one', () => {
-    expect(ICON_STROKE).toEqual({
-      mark: 2,
-      row: 2,
-      control: 1.75,
-      notice: 1.75,
-      hero: 1.5,
-      check: 2.5,
+  it('gives each size one weight and checks a heavier one', () => {
+    expect(ICON_WEIGHT).toEqual({
+      mark: 'bold',
+      row: 'bold',
+      control: 'regular',
+      notice: 'regular',
+      hero: 'regular',
+      check: 'bold',
     });
   });
 

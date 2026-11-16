@@ -1,4 +1,4 @@
-import { ICON_SIZE, ICON_STROKE, Tooltip } from '@goodboy/ui';
+import { ICON_SIZE, ICON_WEIGHT, Tooltip } from '@goodboy/ui';
 import { Check } from '@goodboy/ui/icons';
 
 type Props = {
@@ -22,7 +22,7 @@ export const ViewedRing = ({ viewed, total }: Props) => {
           className="flex shrink-0 items-center justify-center rounded-full bg-primary-solid text-on-primary"
           style={{ width: SIZE, height: SIZE }}
         >
-          <Check size={ICON_SIZE.mark} strokeWidth={ICON_STROKE.check} aria-hidden />
+          <Check size={ICON_SIZE.mark} weight={ICON_WEIGHT.check} aria-hidden />
         </span>
       </Tooltip>
     );

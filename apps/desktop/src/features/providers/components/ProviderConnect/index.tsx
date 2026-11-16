@@ -104,7 +104,6 @@ export const ProviderConnect = ({ providerId, chrome, autoStart = false, onDone 
         ) : (
           <Mark
             size={ICON_SIZE.hero}
-            strokeWidth={2}
             aria-hidden
             className="mt-0.5 shrink-0"
             style={{ color: `var(${PROVIDER_BRAND[providerId].cssVar})` }}

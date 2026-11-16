@@ -1,7 +1,6 @@
 export type {
   Icon as IconGlyph,
   IconProps as IconGlyphProps,
-  IconWeight,
 } from '@phosphor-icons/react/dist/lib/types';
 export { IconDefaults } from './IconDefaults';
 export { PulseIcon as Activity } from '@phosphor-icons/react/Pulse';
@@ -214,7 +213,7 @@ export { PathIcon as Route } from '@phosphor-icons/react/Path';
 export { FloppyDiskIcon as Save } from '@phosphor-icons/react/FloppyDisk';
 export { ScalesIcon as Scale } from '@phosphor-icons/react/Scales';
 export { ScanIcon as ScanEye } from '@phosphor-icons/react/Scan';
-export { BinocularsIcon as ScanSearch } from '@phosphor-icons/react/Binoculars';
+export { DetectiveIcon as ScanSearch } from '@phosphor-icons/react/Detective';
 export { ScrollIcon as ScrollText } from '@phosphor-icons/react/Scroll';
 export { MagnifyingGlassIcon as Search } from '@phosphor-icons/react/MagnifyingGlass';
 export { MagnifyingGlassMinusIcon as SearchX } from '@phosphor-icons/react/MagnifyingGlassMinus';

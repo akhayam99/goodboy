@@ -1,5 +1,5 @@
 import { Check } from '@goodboy/ui/icons';
-import { cn, ICON_SIZE, ICON_STROKE } from '@goodboy/ui';
+import { cn, ICON_SIZE, ICON_WEIGHT } from '@goodboy/ui';
 
 type Props = {
   readonly isDone: boolean;
@@ -13,6 +13,6 @@ export const StepMark = ({ isDone }: Props) => (
       isDone ? 'bg-success-solid text-on-success' : 'ring-1 ring-inset ring-border',
     )}
   >
-    {isDone ? <Check size={ICON_SIZE.mark} strokeWidth={ICON_STROKE.check} aria-hidden /> : null}
+    {isDone ? <Check size={ICON_SIZE.mark} weight={ICON_WEIGHT.check} aria-hidden /> : null}
   </span>
 );

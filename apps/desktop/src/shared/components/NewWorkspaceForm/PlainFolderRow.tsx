@@ -1,4 +1,4 @@
-import { Chip, ICON_SIZE, ICON_STROKE } from '@goodboy/ui';
+import { Chip, ICON_SIZE, ICON_WEIGHT } from '@goodboy/ui';
 import { FOLDER_FACE_COPY } from '../../../features/workspace/folderFaceCopy';
 import { CONCEPT_ICONS } from '../conceptIcons';
 import { ConflictNotice } from './ConflictNotice';
@@ -26,7 +26,7 @@ export const PlainFolderRow = ({
   <FolderRowFrame
     name={folder.name}
     path={tildePath({ path: folder.path, home })}
-    icon={<FolderIcon size={ICON_SIZE.hero} strokeWidth={ICON_STROKE.hero} aria-hidden />}
+    icon={<FolderIcon size={ICON_SIZE.hero} weight={ICON_WEIGHT.hero} aria-hidden />}
     isDimmed={!folder.isIncluded}
     lead={lead}
     trailing={trailing}

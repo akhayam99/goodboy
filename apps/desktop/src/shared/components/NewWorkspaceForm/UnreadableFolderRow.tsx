@@ -1,6 +1,6 @@
 import { OPEN_FAILED } from '../../../store/slices/notifications/errorRecovery';
 import { Lock } from '@goodboy/ui/icons';
-import { Button, ICON_SIZE, ICON_STROKE, StatusDot } from '@goodboy/ui';
+import { Button, ICON_SIZE, ICON_WEIGHT, StatusDot } from '@goodboy/ui';
 import { useAppStore } from '../../../store';
 import { openPrivacySettings } from '../../lib/privacySettings';
 import { currentPlatform } from '../../platform';
@@ -137,7 +137,7 @@ export const UnreadableFolderRow = ({ folder, draft, home, isBusy, lead, trailin
     <FolderRowFrame
       name={folder.name}
       path={shown}
-      icon={<Lock size={ICON_SIZE.hero} strokeWidth={ICON_STROKE.hero} aria-hidden />}
+      icon={<Lock size={ICON_SIZE.hero} weight={ICON_WEIGHT.hero} aria-hidden />}
       lead={lead}
       trailing={trailing}
       meta={

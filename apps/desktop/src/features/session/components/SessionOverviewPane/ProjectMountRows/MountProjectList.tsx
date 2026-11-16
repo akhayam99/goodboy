@@ -203,8 +203,9 @@ export const MountProjectList = ({
                           {isStarred ? (
                             <Star
                               size={ICON_SIZE.mark}
+                              weight="fill"
                               aria-hidden
-                              className="shrink-0 fill-current text-warning"
+                              className="shrink-0 text-warning"
                             />
                           ) : null}
                         </button>
