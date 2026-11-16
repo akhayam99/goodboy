@@ -14,7 +14,6 @@ describe('the destination list', () => {
     expect(DESTINATIONS.map((destination) => destination.label)).toEqual([
       'Board',
       'Tasks',
-      'Work',
       'Workflows',
       'Chat',
       'Connections',

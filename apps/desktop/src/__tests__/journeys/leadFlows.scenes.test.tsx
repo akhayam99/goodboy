@@ -41,7 +41,7 @@ describe('journey: a Lead page with a pending ask, whatever the old Work switch 
 
       expect(hasButton('Push')).toBe(true);
       expect(hasButton("Don't push")).toBe(true);
-      expect(hasButton('Stop Lead')).toBe(true);
+      expect(hasButton('Stop run')).toBe(true);
       screen.getByText('Push a branch: Ask · This Lead');
       expect(limitLabel()).toBe('Limit: $10.00, this Lead');
     }
@@ -65,7 +65,7 @@ describe('journey: a Lead page with a pending ask, whatever the old Work switch 
     for (const value of OLD_SWITCH_ROWS) {
       await oldSwitchSaid({ value });
 
-      expect(hasButton('Stop Lead and 2 agents')).toBe(true);
+      expect(hasButton('Stop run')).toBe(true);
       expect(hasButton('Send now')).toBe(false);
       expect(screen.queryAllByText('Not read yet').length > 0).toBe(true);
     }

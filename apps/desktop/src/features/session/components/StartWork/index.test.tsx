@@ -20,7 +20,6 @@ import {
   type StoryStore,
 } from '../../../../store/storyHarness';
 import { ToastProvider } from '../../../../shared/components/Toast';
-import { openStartRun } from '../../startRun/openStartRun';
 import { StartWork } from '.';
 
 const WORKSPACE = aWorkspace({ name: 'Harborline' });
@@ -43,7 +42,6 @@ beforeEach(async () => {
     currentWorkspaceId: WORKSPACE.id,
     sessions: [SESSION],
     settings: { 'work.enabled': 'true' },
-    workStart: null,
   });
 });
 
@@ -87,12 +85,5 @@ describe('the Start work composer', () => {
     await waitFor(() => expect(screen.getByRole('alert').textContent).toContain('No provider'));
     expect(onClose).not.toHaveBeenCalled();
     screen.getByDisplayValue(TEXT);
-  });
-});
-
-describe('the start door', () => {
-  it('opens the field in Runs, never this composer, whatever the old Work switch row says', () => {
-    openStartRun({ sessionId: SESSION.id, text: TEXT });
-    expect(useAppStore.getState().workStart).toBeNull();
   });
 });

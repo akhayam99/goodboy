@@ -23,18 +23,16 @@ describe('the column doors', () => {
     expect(CONCEPT_ICONS.sessions).not.toBe(CONCEPT_ICONS.stageRunning);
   });
 
-  it('lists the destinations and no tool, the Work door between Tasks and Workflows with a New badge', () => {
+  it('lists the seven destinations, no tool and no Work door', () => {
     expect(COLUMN_DOORS.map((entry) => entry.label)).toEqual([
       'Board',
       'Tasks',
-      'Work',
       'Workflows',
       'Chat',
       'Connections',
       'Impact',
       'Monitoring',
     ]);
-    expect(COLUMN_DOORS.find((entry) => entry.id === 'work')?.badge).toBe('New');
   });
 
   it('marks Impact and Monitoring as quiet reference doors', () => {

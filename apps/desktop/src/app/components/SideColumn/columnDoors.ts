@@ -9,7 +9,6 @@ export type ColumnDoor = {
   readonly icon: LucideIcon;
   readonly shortcutId?: ShortcutId;
   readonly isReference?: boolean;
-  readonly badge?: string;
 };
 
 type DoorDestination = Destination & { readonly id: ColumnDoorId };
@@ -18,19 +17,13 @@ type DoorParams = {
   readonly destination: DoorDestination;
 };
 
-const DOOR_BADGES: Readonly<Partial<Record<ColumnDoorId, string>>> = { work: 'New' };
-
-const doorOf = ({ destination }: DoorParams): ColumnDoor => {
-  const badge = DOOR_BADGES[destination.id];
-  return {
-    id: destination.id,
-    label: destination.label,
-    icon: destination.icon,
-    ...(destination.shortcutId !== undefined && { shortcutId: destination.shortcutId }),
-    ...(destination.isReference === true && { isReference: true }),
-    ...(badge !== undefined && { badge }),
-  };
-};
+const doorOf = ({ destination }: DoorParams): ColumnDoor => ({
+  id: destination.id,
+  label: destination.label,
+  icon: destination.icon,
+  ...(destination.shortcutId !== undefined && { shortcutId: destination.shortcutId }),
+  ...(destination.isReference === true && { isReference: true }),
+});
 
 export const COLUMN_DOORS: ReadonlyArray<ColumnDoor> = DESTINATIONS.filter(
   (destination): destination is DoorDestination => destination.home === 'column',
@@ -39,7 +32,6 @@ export const COLUMN_DOORS: ReadonlyArray<ColumnDoor> = DESTINATIONS.filter(
 export type ColumnActions = {
   readonly openBoard: () => void;
   readonly openInbox: () => void;
-  readonly openWork: () => void;
   readonly openChat: () => void;
   readonly openWorkflows: () => void;
   readonly openNewChat: () => void;
@@ -63,9 +55,6 @@ export const openColumnDoor = ({ id, actions }: OpenDoorParams): void => {
       return;
     case 'inbox':
       actions.openInbox();
-      return;
-    case 'work':
-      actions.openWork();
       return;
     case 'chat':
       actions.openChat();

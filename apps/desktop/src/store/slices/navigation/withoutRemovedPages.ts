@@ -8,7 +8,7 @@ import { IPHONE_SETTINGS_PLACE } from '../../../features/settings/iphoneSettings
 import { CONTEXT_ROWS } from '../contextDrawer/contextRows';
 import type { OpenDrawer } from '../drawer/state';
 import { LENS_KINDS, type LensKind } from '../session-view/types';
-import { sessionPlace } from './place';
+import { BOARD_PLACE, sessionPlace } from './place';
 import { PLACE_ROWS } from './placeRows';
 import type { StudioPlace } from './studio';
 import type { Focus, Location, Place, SessionTarget } from './types';
@@ -43,6 +43,8 @@ const CONTEXT_SECTIONS: ReadonlySet<unknown> = new Set([
 const REMOVED_STUDIOS: ReadonlyMap<string, StudioPlace> = new Map<string, StudioPlace>([
   ['companion', IPHONE_SETTINGS_PLACE],
 ]);
+
+const STUDIOS_NOW_ON_BOARD: ReadonlySet<string> = new Set(['work']);
 
 const NO_ROWS: Rows = {};
 
@@ -93,6 +95,14 @@ const studioStillThere = ({ studio }: StudioParams): StudioPlace | null => {
 };
 
 const withoutRemovedStudio = ({ location }: Params): Location => {
+  if (location.studio !== null && STUDIOS_NOW_ON_BOARD.has(String(location.studio.kind))) {
+    return {
+      ...location,
+      place: BOARD_PLACE,
+      studio: null,
+      focus: { ...location.focus, drawer: null },
+    };
+  }
   const studio = studioStillThere({ studio: location.studio });
   return studio === location.studio ? location : { ...location, studio };
 };

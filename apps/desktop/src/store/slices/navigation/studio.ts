@@ -5,7 +5,6 @@ import type { InboxKind, InboxProvider } from '../../../features/inbox/types';
 import type { SettingsFocus } from '../../../features/settings/settingsFocus';
 import type { ConnectionsFocus } from '../../../features/connections/connectionsFocus';
 import type { MonitoringTarget } from '../../../features/monitoring/monitoringTarget';
-import type { WorkFilter } from '../work/state';
 
 export type InboxStudioFocus = {
   readonly provider: InboxProvider | null;
@@ -19,7 +18,6 @@ export type StudioPlace =
   | { readonly kind: 'guide' }
   | { readonly kind: 'addWorkspace' }
   | { readonly kind: 'workflow' }
-  | { readonly kind: 'work'; readonly filter?: WorkFilter }
   | { readonly kind: 'inbox'; readonly focus: InboxStudioFocus | null }
   | { readonly kind: 'impact'; readonly scope: ImpactScope | null }
   | { readonly kind: 'changelog' }
@@ -58,8 +56,6 @@ export const studioKey = ({ studio }: KeyParams): string => {
       return joined(['impact', studio.scope?.kind]);
     case 'workflow':
       return 'workflows';
-    case 'work':
-      return 'work';
     case 'chat':
       return joined(['chat', studio.chatId]);
     case 'terminal':

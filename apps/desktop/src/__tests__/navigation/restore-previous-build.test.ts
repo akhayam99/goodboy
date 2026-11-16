@@ -140,11 +140,10 @@ afterEach(cleanup);
 
 describe('layouts saved by the previous build', () => {
   it('holds one fixture for every studio kind and every drawer kind the app has', () => {
-    expect(
-      [...PREVIOUS_BUILD_BLOBS.studios, PREVIOUS_BUILD_BLOBS.workStudio]
-        .map((entry) => entry.kind)
-        .sort(),
-    ).toEqual([...studioKindsInSource()].sort());
+    expect(PREVIOUS_BUILD_BLOBS.studios.map((entry) => entry.kind).sort()).toEqual(
+      [...studioKindsInSource()].sort(),
+    );
+    expect(studioKindsInSource()).not.toContain(PREVIOUS_BUILD_BLOBS.workStudio.kind);
     const kinds = PREVIOUS_BUILD_BLOBS.drawers.map((entry) => entry.kind);
     expect(kinds.filter((kind) => !RETIRED_DRAWER_KINDS.includes(kind)).sort()).toEqual(
       Object.keys(DRAWER_KINDS).sort(),
@@ -196,7 +195,7 @@ describe('layouts saved by the previous build', () => {
   });
 
   it.each([['true'], ['false']] as const)(
-    'restores a saved Work page, old Work switch row %s',
+    'folds a saved Work page to the board, old Work switch row %s',
     async (oldSwitch) => {
       useAppStore.setState((current) => ({
         settings: { ...current.settings, 'work.enabled': oldSwitch },
@@ -204,7 +203,8 @@ describe('layouts saved by the previous build', () => {
 
       const state = await restoredFrom({ entry: PREVIOUS_BUILD_BLOBS.workStudio });
 
-      expect(state.appStudio).toEqual(PREVIOUS_BUILD_BLOBS.workStudio.expected);
+      expect(state.appStudio).toBeNull();
+      expect(state.currentSessionId).toBeNull();
     },
   );
 

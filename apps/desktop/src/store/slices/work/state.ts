@@ -23,16 +23,10 @@ export type StartWorkSeed = Readonly<{
 
 export type WorkState = {
   readonly workLeads: ReadonlyArray<WorkLead>;
-  readonly workFilter: WorkFilter;
   readonly workWorkspaceId: WorkspaceId | null;
-  readonly isWorkStale: boolean;
-  readonly workStart: StartWorkSeed | null;
 };
 
 export const workInitialState: WorkState = {
   workLeads: [],
-  workFilter: 'open',
   workWorkspaceId: null,
-  isWorkStale: false,
-  workStart: null,
 };

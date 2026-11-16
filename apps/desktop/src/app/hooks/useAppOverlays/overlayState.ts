@@ -9,7 +9,6 @@ export const isAppScopeOverlay = ({ overlay }: { readonly overlay: StudioPlace }
       return true;
     case 'addWorkspace':
     case 'workflow':
-    case 'work':
     case 'inbox':
     case 'impact':
     case 'notifications':

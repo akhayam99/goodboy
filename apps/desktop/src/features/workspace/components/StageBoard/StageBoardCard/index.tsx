@@ -7,7 +7,8 @@ import { CONCEPT_ICONS } from '../../../../../shared/components/conceptIcons';
 import { sessionCardShell } from '../../../../session/components/sessionCardShell';
 import { stageTrackOf } from '../../../../session/stageTrackOf';
 import type { BoardNavigation } from '../useBoardNavigation';
-import { useAttentionAction } from './useAttentionAction';
+import { useCardSignal } from './useCardSignal';
+import { WaitingRunLine } from '../WaitingRunLine';
 import { useDynamicActions } from './useDynamicActions';
 import { useObjectMenuTrigger } from '../../../../actions/useObjectMenuTrigger';
 import { useRenameRequest } from '../../../../../shared/hooks/useRenameRequest';
@@ -17,7 +18,6 @@ import { sessionObjectKey } from '../../../../actions/kinds/session';
 import { sessionSelectionTarget } from '../../../../actions/sessionSelectionTarget';
 import { useSessionTitleRename } from '../../../../session/hooks/useSessionTitleRename';
 import { SessionSignal } from '../SessionSignal';
-import { useSessionSignal } from '../useSessionSignal';
 import { projectLineOf } from '../projectLineOf';
 
 type CardSelectionEvent = {
@@ -69,15 +69,14 @@ export const StageBoardCard = memo(function StageBoardCard({
     session,
     isArchived,
   });
-  const { stage } = summary;
-  const signal = useSessionSignal({ session, isArchived });
+  const { stage, info } = summary;
+  const { signal, waitingRun, attentionAction } = useCardSignal({ session, info, isArchived });
   const track = stageTrackOf({ stage, isArchived });
   const mounts = useAppStore((s) => s.sessionProjectMounts?.[id] ?? EMPTY_ARRAY);
   const projectLine = projectLineOf({ mounts });
   const dynamicActions = useDynamicActions(session, nav, stage);
-  const attentionAction = useAttentionAction({ session, info: summary.info });
 
-  const [visibleAction = attentionAction ?? undefined] = dynamicActions;
+  const [visibleAction = attentionAction ?? undefined] = waitingRun === null ? dynamicActions : [];
   const anchorKey = `board:${id}`;
   const rename = useSessionTitleRename({ sessionId: id, goal: session.goal, ...rowTitle });
   useRenameRequest({
@@ -238,6 +237,7 @@ export const StageBoardCard = memo(function StageBoardCard({
       </span>
 
       <div className="col-span-full row-start-2 flex min-h-5 min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5">
+        {waitingRun === null ? null : <WaitingRunLine run={waitingRun} />}
         <span
           data-slot="card-project"
           className="min-w-0 break-words text-meta text-muted-foreground"
