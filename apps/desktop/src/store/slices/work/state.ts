@@ -1,4 +1,4 @@
-import type { AutoTreeId, ProjectId, SessionId, WorkspaceId } from '@goodboy/types';
+import type { AutoTreeId, SessionId, WorkspaceId } from '@goodboy/types';
 import type { AutoTreeView } from '../auto-view/state';
 
 export const WORK_FILTERS = ['open', 'needsYou', 'working', 'finished'] as const;
@@ -12,13 +12,6 @@ export type WorkLead = Readonly<{
   projectId: string | null;
   branches: ReadonlyArray<string>;
   view: AutoTreeView;
-}>;
-
-export type StartWorkSeed = Readonly<{
-  sessionId: SessionId | null;
-  projectId: ProjectId | null;
-  branch: string | null;
-  text: string;
 }>;
 
 export type WorkState = {

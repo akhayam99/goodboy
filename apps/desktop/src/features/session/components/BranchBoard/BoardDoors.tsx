@@ -1,10 +1,11 @@
-import { GitCommitVertical, GitPullRequest, Globe, SquareTerminal } from 'lucide-react';
+import { GitCommitVertical, GitPullRequest, Globe, Plus, SquareTerminal } from 'lucide-react';
 import { Button, ICON_SIZE } from '@goodboy/ui';
 import { branchPlace, useAppStore } from '../../../../store';
 import { openBranchBrowser } from '../../../browser/openBranchBrowser';
 import type { BranchWorkCounts } from '../../../branch/branchTabFactsOf';
 import { openBranchTerminal } from '../../../terminal/openBranchTerminal';
 import { countWordOf } from '../../central/board/countWordOf';
+import { openStartRun } from '../../startRun/openStartRun';
 import { BoardRemoveButton } from './BoardRemoveButton';
 import { useBoardContext } from './useBoardContext';
 
@@ -12,6 +13,8 @@ type Props = {
   readonly rowId: string;
   readonly counts: BranchWorkCounts | null;
 };
+
+const START_ON_BRANCH = 'Start a run on this branch';
 
 type CountsParams = {
   readonly counts: BranchWorkCounts | null;
@@ -91,6 +94,16 @@ export const BoardDoors = ({ rowId, counts }: Props) => {
         >
           <GitPullRequest size={ICON_SIZE.control} aria-hidden />
           Open the PR page
+        </Button>
+      )}
+      {row.isMerged ? null : (
+        <Button
+          size="sm"
+          variant="quiet"
+          onClick={() => openStartRun({ sessionId: session.id, branch: row.branch })}
+        >
+          <Plus size={ICON_SIZE.control} aria-hidden />
+          {START_ON_BRANCH}
         </Button>
       )}
       {row.isMerged ? <BoardRemoveButton mountIds={[fact.mountId]} variant="quiet" /> : null}

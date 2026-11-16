@@ -36,17 +36,9 @@ The pick is a rule table in the app, with no model call. Goodboy reads it top to
 - **Start a run** in a session's New menu and ⌘K opens the field. ⌘K offers **Start from** each preset, which opens it with `~` and the preset name.
 - Outside a session, ⌘K **Start a run** opens the New session page on Auto picks.
 - Setup's last step draws this field too, pinned to Scout, so the first start teaches the second.
-
-### The Start work composer
-
-With [Work](work.md) on, the doors that start an Auto or Orchestrator run open one composer instead of starting. With it off, every row above behaves as written.
-
-- The composer opens at the top of the Work page. It holds the goal and the chips Session, Project, Branch, Asks you, Limit and Model.
-- Its doors are **Start work** on the Work page, in a session's New menu and in ⌘K. An open board row has **Start work on this branch**, and the start router's rows for Auto and Orchestrator open it too. A preset or a role you named still starts at once.
-- Each door fills in what it knows. From Work the session is **New session**. Inside a session it is that session. From a branch row the branch is filled in.
-- The write names workspace, session or new, project and branch, and reads nothing from the page you are on after the press. They are its once-only key, so a double press starts one Lead.
-- A new session is created for the Lead and removed again if the start fails. A failed start keeps the composer and its text, with the error, and Start becomes **Retry**.
-- Cancel closes it. Its text is not restored.
+- On a session's Runs page the settings row holds a **Branch** chip with the session's branches. It reads **Any branch** until you pick one, and shows the branch alone when the session has one.
+- A picked branch goes with the ask, so the run works on that branch. A failed start keeps it for Retry. A successful start clears it.
+- An open row of the branch board has **Start a run on this branch**. It opens the field on Runs with that branch picked.
 
 ### One start form
 
@@ -222,6 +214,7 @@ A failed start keeps the goal and settings. Its cause appears above the form act
 This part is for contributors and agents who change the feature.
 
 - Start form: `StartForm` draws the kinds, the fields, the settings row and the actions. `NewSessionStartForm` feeds it from the session draft and `RunsStartForm` from `useStartRun`. A kind declares the settings it uses in `START_KIND_SETTINGS`, and `startSettingsOf` keeps the order and drops a setting nothing supplies.
+- Branch chip: `StartRunBranchChip` sits in the Where slot of `RunsStartForm` and lists the attached mounts through `startRunBranchOptionsOf`. `openStartRun` takes the branch, `startRunBranchOf` reads it from the event, and `askOnBranchOf` adds it to the ask. `BoardDoors` is the board row door; `startRunDoors.scenes.test.tsx` and `BranchBoard/index.test.tsx` cover the doors.
 - Kind to route: `runAsOfStartFormKind` turns a pressed kind into the `RunAs` that `runAsRouteOf` turns into the route Start uses, with a typed token ahead of the kind. `routeLineOf` builds the live "Starts as" line.
 - Edits: `StartEditsSetting` reads the draft, or the session on Runs. `applyStartEdits` calls `setSessionPermissionMode` before the first agent starts and does nothing when no mode was picked.
 - Model chip: `RunModelChip` is the one control on every door and kind, the Agent kind of the New session page included. Its `pill` variant sits in the `model` slot of the start box (`StartRun`, `StartTaskField`) with the composer pill look (`ROUTING_PILL_CLASS`); `START_KIND_SETTINGS` has no model key. `SessionKickoff` picks the view once and hands it to the box and to `NewSessionStartForm`. There `useDraftAgentModel` wraps the `useRunModel` view so a pick lands in the draft's `agentRouting`. `useRunModel` resolves the default of the slot the route lands on and keeps this start's pins by slot. `runModelSlotOf` maps a plan to the `workflow_orchestrator` task and a lead to its role, `auto` by default.

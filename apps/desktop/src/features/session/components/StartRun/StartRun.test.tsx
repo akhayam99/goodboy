@@ -11,7 +11,7 @@ vi.mock('../../../../shared/lib/db', async () =>
 );
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import {
   getSetting,
   getWorkspaceValue,
@@ -25,8 +25,11 @@ import {
   brandId,
   type AgentId,
   type IsoDateTime,
+  type MountId,
+  type ProjectId,
   type ProviderId,
   type SessionId,
+  type SessionMountView,
   type StepId,
   type Workflow,
   type WorkflowId,
@@ -45,6 +48,8 @@ import { providerBudgetStatusFor } from '../../../budget/testing/providerBudgetF
 import type { ProviderDisplayInfo } from '../../../providers/providers';
 import { runDefaultKey } from '../../startRun/runDefaultSetting';
 import { runRoutesKey } from '../../startRun/runRoutesSetting';
+import { startRunEventName } from '../../startRun/startRunEventName';
+import { chooseListboxValue } from '../../../../__tests__/helpers/listbox';
 import { StartRun } from './StartRun';
 
 const WORKSPACE = aWorkspace({ name: 'Cascadia' });
@@ -507,7 +512,7 @@ describe('StartRun run as', () => {
 
     pickKind({ name: 'Preset' });
 
-    screen.getByRole('button', { name: 'Asks you: After the plan' });
+    await screen.findByRole('button', { name: 'Asks you: After the plan' });
     expect(screen.queryByRole('button', { name: /^Asks you: Every step/ })).toBeNull();
 
     pickKind({ name: 'Agent' });
@@ -1028,5 +1033,123 @@ describe('StartRun guidance', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
     await waitFor(() => expect(spawnAgent).toHaveBeenCalledTimes(2));
     expect(spawnAgent.mock.calls[1]?.[1]).toMatchObject({ guidance: RUN_GUIDANCE });
+  });
+});
+
+describe('StartRun branch', () => {
+  const RETRY_BRANCH = 'feat/retry-dedupe';
+  const REPLAY_BRANCH = 'feat/replay';
+
+  type MountParams = {
+    readonly branch: string;
+    readonly isAttached?: boolean;
+  };
+
+  const mountOf = ({ branch, isAttached = true }: MountParams): SessionMountView => ({
+    id: brandId<MountId>({ value: `mount-${branch}` }),
+    sessionId: SESSION.id,
+    projectId: brandId<ProjectId>({ value: 'project-payments-api' }),
+    worktreePath: `payments-api-${branch}`,
+    lastWorktreePath: null,
+    branch,
+    baseBranch: 'main',
+    parallelIndex: 0,
+    mountName: 'payments-api',
+    repoSlug: 'harborline/payments-api',
+    repoRoot: 'payments-api',
+    isAttached,
+    diskState: 'present',
+    revision: 1,
+    createdAt: NOW,
+    updatedAt: NOW,
+  });
+
+  type MountsParams = {
+    readonly mounts: ReadonlyArray<SessionMountView>;
+  };
+
+  const seedMounts = ({ mounts }: MountsParams): void => {
+    useAppStore.setState({ sessionMounts: { [SESSION.id]: mounts } });
+  };
+
+  const branchChip = (): HTMLElement => screen.getByRole('combobox', { name: 'Branch' });
+
+  type DoorParams = {
+    readonly branch: string;
+  };
+
+  const openFromBranchRow = ({ branch }: DoorParams): void => {
+    act(() => {
+      window.dispatchEvent(
+        new CustomEvent(startRunEventName({ sessionId: SESSION.id }), {
+          detail: { text: '', branch },
+        }),
+      );
+    });
+  };
+
+  it('shows no Branch chip when the session has no branch', () => {
+    seedMounts({ mounts: [] });
+    renderField({ sessionId: SESSION.id });
+
+    expect(screen.queryByRole('combobox', { name: 'Branch' })).toBeNull();
+  });
+
+  it('names the one branch of the session and asks nothing more of the Lead', async () => {
+    const spawnAgent = vi.fn<SpawnFn>(async () => AGENT);
+    useAppStore.setState({ spawnAgent });
+    seedMounts({ mounts: [mountOf({ branch: RETRY_BRANCH })] });
+    renderField({ sessionId: SESSION.id });
+
+    expect(branchChip().textContent).toContain(RETRY_BRANCH);
+    ask({ text: QUESTION });
+
+    await waitFor(() => expect(spawnAgent).toHaveBeenCalledTimes(1));
+    expect(spawnAgent.mock.calls[0]?.[1]).toMatchObject({ initialPrompt: QUESTION });
+  });
+
+  it('starts on the branch the row named, then goes back to any branch', async () => {
+    const spawnAgent = vi.fn<SpawnFn>(async () => AGENT);
+    useAppStore.setState({ spawnAgent });
+    seedMounts({
+      mounts: [
+        mountOf({ branch: RETRY_BRANCH }),
+        mountOf({ branch: REPLAY_BRANCH }),
+        mountOf({ branch: 'feat/detached', isAttached: false }),
+      ],
+    });
+    renderField({ sessionId: SESSION.id });
+    expect(branchChip().textContent).toContain('Any branch');
+
+    openFromBranchRow({ branch: REPLAY_BRANCH });
+    expect(branchChip().textContent).toContain(REPLAY_BRANCH);
+    ask({ text: QUESTION });
+
+    await waitFor(() => expect(spawnAgent).toHaveBeenCalledTimes(1));
+    expect(spawnAgent.mock.calls[0]?.[1]).toMatchObject({
+      initialPrompt: `${QUESTION}\n\nWork on the branch ${REPLAY_BRANCH}.`,
+    });
+    await waitFor(() => expect(branchChip().textContent).toContain('Any branch'));
+  });
+
+  it('keeps the picked branch when the start fails, so Retry starts on it', async () => {
+    const spawnAgent = vi
+      .fn<SpawnFn>()
+      .mockRejectedValueOnce(new Error('The provider is cooling down'))
+      .mockResolvedValue(AGENT);
+    useAppStore.setState({ spawnAgent });
+    seedMounts({ mounts: [mountOf({ branch: RETRY_BRANCH }), mountOf({ branch: REPLAY_BRANCH })] });
+    renderField({ sessionId: SESSION.id });
+    chooseListboxValue({ trigger: branchChip(), value: RETRY_BRANCH });
+
+    ask({ text: QUESTION });
+
+    await screen.findByText(/The provider is cooling down/);
+    expect(branchChip().textContent).toContain(RETRY_BRANCH);
+    fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
+    await waitFor(() => expect(spawnAgent).toHaveBeenCalledTimes(2));
+    expect(spawnAgent.mock.calls[1]?.[1]).toMatchObject({
+      initialPrompt: `${QUESTION}\n\nWork on the branch ${RETRY_BRANCH}.`,
+    });
   });
 });

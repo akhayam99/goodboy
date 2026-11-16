@@ -26,6 +26,8 @@ import { installFakeResizeObserver } from '../../../../test/fakeResizeObserver';
 import { sceneInvoke, clearSceneInvoke } from '../../../../test/sceneInvoke';
 import { resetWorktreeStatusCache } from '../../../../store/runtime/worktreeStatuses/cache';
 import { AutoReleaseContext } from '../../../auto/autoReleaseContext';
+import { startRunBranchOf } from '../../startRun/startRunBranchOf';
+import { startRunEventName } from '../../startRun/startRunEventName';
 import {
   COLUMN_SESSION_ID,
   seedCentralColumn,
@@ -173,6 +175,27 @@ describe('the branch board on the Overview', () => {
     expect(first.getAttribute('aria-expanded')).toBe('true');
     expect(document.querySelector('[data-slot="branch-work"]')).not.toBeNull();
     expect(scroller.scrollTop).toBe(0);
+  });
+
+  it('opens the start field of this session with the branch of the open row', async () => {
+    seedCentralColumn({ kind: 'branches' });
+    await show();
+    const branches = (useAppStore.getState().sessionProjectMounts[COLUMN_SESSION_ID] ?? []).map(
+      (mount) => mount.branch,
+    );
+    const opened: Array<string | null> = [];
+    const onOpen = (event: Event): void => {
+      opened.push(startRunBranchOf({ event }));
+    };
+    const name = startRunEventName({ sessionId: COLUMN_SESSION_ID });
+    window.addEventListener(name, onOpen);
+    fireEvent.click(firstRowButton());
+
+    fireEvent.click(screen.getByRole('button', { name: 'Start a run on this branch' }));
+    await vi.waitFor(() => expect(opened).toHaveLength(1));
+    window.removeEventListener(name, onOpen);
+
+    expect(branches).toContain(opened[0]);
   });
 
   it('opening a row leaves the open tool and the slot as they were', async () => {

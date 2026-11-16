@@ -9,13 +9,23 @@ type Params = {
   readonly sessionId: SessionId;
   readonly text?: string;
   readonly file?: StartRunFile | null;
+  readonly branch?: string | null;
 };
 
-export const openStartRun = ({ sessionId, text = '', file = null }: Params): void => {
+export const openStartRun = ({
+  sessionId,
+  text = '',
+  file = null,
+  branch = null,
+}: Params): void => {
   const state = useAppStore.getState();
   state.navigate({ to: lensPlace({ state, sessionId, lens: 'workflows' }) });
   dispatchAfterNavigation({
     name: startRunEventName({ sessionId }),
-    detail: file === null ? { text } : { text, file },
+    detail: {
+      text,
+      ...(file !== null && { file }),
+      ...(branch !== null && { branch }),
+    },
   });
 };
