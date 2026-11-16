@@ -1,6 +1,7 @@
 import type { Agent, AgentId, MountId, ProjectId, SessionMountView } from '@goodboy/types';
 import { projectById } from '../../store/slices/projects/projectIndex';
 import { inheritedMountIdOf } from '../../store/slices/workflows/runMount/inheritedMountIdOf';
+import { soleMountIdOf } from './soleMountIdOf';
 
 export type WorkBranch = Readonly<{
   mountId: MountId;
@@ -33,15 +34,6 @@ const stepMountIdOf = ({ agent, agents, soleMountId }: MountParams): MountId | n
   agent.mountId ??
   inheritedMountIdOf({ agents, workflowRunId: agent.workflowRunId ?? null }) ??
   soleMountId;
-
-type SoleParams = {
-  readonly mounts: ReadonlyArray<SessionMountView>;
-};
-
-const soleMountIdOf = ({ mounts }: SoleParams): MountId | null => {
-  const only = mounts.length === 1 ? mounts[0] : undefined;
-  return only === undefined || only.branch === '' ? null : only.id;
-};
 
 type MountBranchParams = {
   readonly mountId: MountId;

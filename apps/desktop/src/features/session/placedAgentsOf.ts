@@ -1,6 +1,7 @@
 import type { Agent, MountId, SessionMountView } from '@goodboy/types';
 import type { AutoTreeView } from '../../store/slices/auto-view/state';
 import { delegationMountIdOf } from '../auto/delegationMountIdOf';
+import { soleMountIdOf } from './soleMountIdOf';
 
 type Params = {
   readonly agents: ReadonlyArray<Agent>;
@@ -16,10 +17,12 @@ type KnownParams = {
 const knownMountIdOf = ({ value, mounts }: KnownParams): MountId | null =>
   value === null ? null : (mounts.find((mount) => mount.id === value)?.id ?? null);
 
-export const leadMountAgentsOf = ({ agents, autoViews, mounts }: Params): ReadonlyArray<Agent> => {
-  if (autoViews.length === 0 || !agents.some((agent) => agent.mountId == null)) {
-    return agents;
-  }
+type LeadParams = {
+  readonly autoViews: ReadonlyArray<AutoTreeView>;
+  readonly mounts: ReadonlyArray<SessionMountView>;
+};
+
+const leadMountsOf = ({ autoViews, mounts }: LeadParams): ReadonlyMap<string, MountId> => {
   const leadMounts = new Map<string, MountId>();
   for (const view of autoViews) {
     const root = knownMountIdOf({ value: view.tree.primaryMountId, mounts });
@@ -33,8 +36,20 @@ export const leadMountAgentsOf = ({ agents, autoViews, mounts }: Params): Readon
       }
     }
   }
+  return leadMounts;
+};
+
+export const placedAgentsOf = ({ agents, autoViews, mounts }: Params): ReadonlyArray<Agent> => {
+  if (!agents.some((agent) => agent.mountId == null)) {
+    return agents;
+  }
+  const leadMounts = leadMountsOf({ autoViews, mounts });
+  const soleMountId = soleMountIdOf({ mounts });
   return agents.map((agent) => {
-    const mountId = agent.mountId == null ? leadMounts.get(agent.id) : undefined;
-    return mountId === undefined ? agent : { ...agent, mountId };
+    if (agent.mountId != null) {
+      return agent;
+    }
+    const mountId = leadMounts.get(agent.id) ?? soleMountId;
+    return mountId === null ? agent : { ...agent, mountId };
   });
 };

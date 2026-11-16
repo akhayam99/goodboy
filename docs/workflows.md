@@ -553,10 +553,11 @@ when the run has no known total), cost and age, every row the same columns. A ro
 `workBranchesOf` (`features/session`) reads it: the agents of the run through
 `Agent.mountId`, the mount a step inherits from the step before it
 (`inheritedMountIdOf`, shared with `selectRunStepMountId`), the Auto tree
-(`leadMountAgentsOf`: the Lead takes the tree's `primaryMountId`, a child its
+(`placedAgentsOf`: the Lead takes the tree's `primaryMountId`, a child its
 delegation target) and, in a session with one mount on a branch, that mount for
-an agent that recorded none, so rows from before 0.38 file there with no
-migration. New rows record it: a Lead started in a one mount session
+an agent that recorded none (`soleMountIdOf`), so rows from before 0.38 file
+there with no migration. The Overview board reads the same `placedAgentsOf`
+(`useBranchBoard`). New rows record it: a Lead started in a one mount session
 (`soleTurnMountIdOf` in `startRoutedRun`) and every child (`createAutoChild`).
 A read only agent counts. A detached mount or a removed worktree moves its
 branch to `SessionRun.goneBranches`, so the run keeps its branch group on Runs.

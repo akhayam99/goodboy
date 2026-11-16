@@ -34,7 +34,7 @@ import { autoRootTitleOf } from './components/AutoAgentsPane/autoRootTitleOf';
 import { agentCountLabelOf } from './agentCountLabelOf';
 import { descendantAgentsOf } from './descendantAgentsOf';
 import { runAgentCountOf } from './runAgentCountOf';
-import { leadMountAgentsOf } from './leadMountAgentsOf';
+import { placedAgentsOf } from './placedAgentsOf';
 import { workBranchesOf, type WorkBranch, type WorkBranchProject } from './workBranchesOf';
 
 type SessionRunKind = 'preset' | 'orchestrated' | 'auto' | 'agent';
@@ -399,7 +399,7 @@ export const sessionRunsOf = ({
     .map(({ agent, kind }) =>
       agentRowOf({ agent, kind, agents, questions, turn: turnByAgentId.get(agent.id) }),
     );
-  const placedAgents = leadMountAgentsOf({ agents, autoViews, mounts });
+  const placedAgents = placedAgentsOf({ agents, autoViews, mounts });
   return [
     ...workflowRowsOf({ attachedRuns, agents, orchestrating, questions, revisingStarts }),
     ...autoRows,

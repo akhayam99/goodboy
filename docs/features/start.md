@@ -217,7 +217,7 @@ A failed start keeps the goal and settings. Its cause appears above the form act
 
 ## Under the hood
 
-- Branch Work tab: `branchWorkTabRegistration` (`features/session`) gives the Branch page its Work tab, `useBranchWork` reads the branch group of runs, questions and artifacts once, and `branchWorkCountsOf` turns it into the badge. `components/BranchWork/index.test.tsx` checks that the tab counts what Runs and Questions count for the same branch; `u37-branch-work` is its scene. `workBranchesOf` files an agent with no mount under the only mount of the session and `leadMountAgentsOf` reads a Lead's tree; `sessionRunsOf.test.ts` covers one mount, two mounts and older rows.
+- Branch Work tab: `branchWorkTabRegistration` (`features/session`) gives the Branch page its Work tab, `useBranchWork` reads the branch group of runs, questions and artifacts once, and `branchWorkCountsOf` turns it into the badge. `components/BranchWork/index.test.tsx` checks that the tab counts what Runs and Questions count for the same branch; `u37-branch-work` is its scene. `placedAgentsOf` puts an agent with no mount on its Lead's tree mount or on the only mount of the session. Runs and the Overview board both read it. `placedAgentsOf.test.ts` covers one mount, two mounts and older rows.
 - Agent page menu: `agentHeaderOmitOf` omits Change model because `AgentRunSettings` supplies the model control. `AgentHeaderActions` also omits redundant reply-copy and changes rows when needed. `p10-agent-page.test.tsx` caps child menus at five rows and keeps Copy name.
 
 This part is for contributors and agents who change the feature.
