@@ -46,15 +46,29 @@ describe('retired names match whatever the casing', () => {
     expect(retiredIdsIn({ text })).toContain(id);
   });
 
+  it.each(['Start a run', 'Start workflow', 'Orchestrated', 'Let Auto take it from here'])(
+    'leaves the start verb %s alone',
+    (text) => {
+      expect(retiredIdsIn({ text })).toEqual([]);
+    },
+  );
+
   it.each([
-    'Start a run',
-    'Start workflow',
-    'Start Auto agent',
-    'Orchestrated',
-    'Let Auto take it from here',
-  ])('leaves the start verb %s alone', (text) => {
-    expect(retiredIdsIn({ text })).toEqual([]);
+    ['Auto agent', 'auto-agent'],
+    ["Couldn't read the Auto agents", 'auto-agent'],
+    ['Start work on this branch', 'start-work-verb'],
+    ['Start work', 'start-work-verb'],
+    ['Work', 'work-door'],
+  ])('flags the word a run with its Lead replaced: %s', (text, id) => {
+    expect(retiredIdsIn({ text })).toContain(id);
   });
+
+  it.each(['Lead', 'Lead · plan Fix flaky tests', 'Start work from chat', 'Work on the export'])(
+    'leaves the run word %s alone',
+    (text) => {
+      expect(retiredIdsIn({ text })).toEqual([]);
+    },
+  );
 
   it.each([
     ['Pair device', 'pair-device'],
