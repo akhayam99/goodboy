@@ -5,7 +5,6 @@ import { applyDocumentTheme } from '../../../../../../shared/lib/theme';
 import { useAppStore } from '../../../../../../store';
 import { autoChildRoutingOf } from '../../../../../../features/auto/autoChildRoutingOf';
 import { agentPlace } from '../../../../../../store/slices/navigation/place';
-import { SETTING_WORK_ENABLED } from '../../../../../../shared/lib/workSetting';
 import type { AgentId } from '@goodboy/types';
 import { seedActivityRunScene } from '../../activityRunSeed';
 import { leadNextStepView } from './leadNextStepView';
@@ -56,11 +55,6 @@ export const RunPageScene = ({
     });
     const seeded = extend({ scene: autoSceneOf({ state }) });
     const scene = isLead ? { ...seeded, view: leadNextStepView({ view: seeded.view }) } : seeded;
-    if (isLead) {
-      useAppStore.setState((current) => ({
-        settings: { ...current.settings, [SETTING_WORK_ENABLED]: 'true' },
-      }));
-    }
     const agents = scene.agents.map((agent) => {
       const delegation = [...scene.view.delegations]
         .reverse()

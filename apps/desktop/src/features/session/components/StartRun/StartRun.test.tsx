@@ -15,6 +15,7 @@ import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-li
 import {
   getSetting,
   getWorkspaceValue,
+  insertSession,
   insertWorkspace,
   setSetting,
   setWorkspaceValue,
@@ -153,6 +154,7 @@ beforeEach(async () => {
   await resetStoryStore();
   const db = await openStorySqlite();
   await insertWorkspace({ db, workspace: WORKSPACE });
+  await insertSession(db, SESSION);
   useAppStore.setState({
     workspaces: [WORKSPACE],
     currentWorkspaceId: WORKSPACE.id,
@@ -487,11 +489,11 @@ describe('StartRun run as', () => {
     expect(screen.queryByRole('button', { name: /^Limit: / })).toBeNull();
   });
 
-  it('shows Asks you for an Auto run and for a workflow, and none for an agent', () => {
+  it('shows Asks you for an Auto run and for a workflow, and none for an agent', async () => {
     renderField({ sessionId: SESSION.id });
 
     fireEvent.change(field(), { target: { value: QUESTION } });
-    screen.getByRole('button', { name: 'Asks you: After the plan, from Cascadia' });
+    await screen.findByRole('button', { name: 'Asks you: After the plan' });
 
     pickKind({ name: 'Orchestrated' });
 

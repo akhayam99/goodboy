@@ -36,13 +36,6 @@ export const COLUMN_DOORS: ReadonlyArray<ColumnDoor> = DESTINATIONS.filter(
   (destination): destination is DoorDestination => destination.home === 'column',
 ).map((destination) => doorOf({ destination }));
 
-type DoorsParams = {
-  readonly isWork: boolean;
-};
-
-export const columnDoorsOf = ({ isWork }: DoorsParams): ReadonlyArray<ColumnDoor> =>
-  isWork ? COLUMN_DOORS : COLUMN_DOORS.filter((door) => door.id !== 'work');
-
 export type ColumnActions = {
   readonly openBoard: () => void;
   readonly openInbox: () => void;

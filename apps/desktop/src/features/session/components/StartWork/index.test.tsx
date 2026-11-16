@@ -43,6 +43,7 @@ beforeEach(async () => {
     currentWorkspaceId: WORKSPACE.id,
     sessions: [SESSION],
     settings: { 'work.enabled': 'true' },
+    workStart: null,
   });
 });
 
@@ -90,15 +91,7 @@ describe('the Start work composer', () => {
 });
 
 describe('the start door', () => {
-  it('opens the composer with the switch on and the router with it off', () => {
-    openStartRun({ sessionId: SESSION.id, text: TEXT });
-    expect(useAppStore.getState().workStart).toEqual({
-      sessionId: SESSION.id,
-      projectId: null,
-      branch: null,
-      text: TEXT,
-    });
-    useAppStore.setState({ workStart: null, settings: { 'work.enabled': 'false' } });
+  it('opens the field in Runs, never this composer, whatever the old Work switch row says', () => {
     openStartRun({ sessionId: SESSION.id, text: TEXT });
     expect(useAppStore.getState().workStart).toBeNull();
   });
