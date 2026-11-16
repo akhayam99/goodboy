@@ -10,6 +10,10 @@ const OPEN_SETTINGS_ON_MOVED_SCOPE = /openSettings\w*\(\s*\{[^)]*?scope:\s*'(?:p
 const SETTINGS_PLACE_ON_MOVED_SCOPE =
   /kind:\s*'settings',\s*focus:\s*\{\s*scope:\s*'(?:providers|tools)'/;
 
+const SAVED_FOR_THE_PREVIOUS_RELEASE: ReadonlySet<string> = new Set([
+  join('store', 'slices', 'navigation', 'storedStudioOf.ts'),
+]);
+
 const isSource = (entry: string): boolean =>
   (entry.endsWith('.ts') || entry.endsWith('.tsx')) &&
   !entry.endsWith('.test.ts') &&
@@ -33,9 +37,13 @@ const listSourceFiles = (dir: string, acc: string[] = []): string[] => {
 describe('providers and integrations live in Connections', () => {
   it('opens no Settings page on the providers or tools scope', () => {
     const offenders = listSourceFiles(DESKTOP_SRC).flatMap((file) => {
+      const path = relative(DESKTOP_SRC, file);
+      if (SAVED_FOR_THE_PREVIOUS_RELEASE.has(path)) {
+        return [];
+      }
       const source = readFileSync(file, 'utf8');
       return OPEN_SETTINGS_ON_MOVED_SCOPE.test(source) || SETTINGS_PLACE_ON_MOVED_SCOPE.test(source)
-        ? [relative(DESKTOP_SRC, file)]
+        ? [path]
         : [];
     });
 
@@ -43,6 +51,12 @@ describe('providers and integrations live in Connections', () => {
       offenders,
       `Open the page through features/connections/openConnection.ts instead:\n${offenders.join('\n')}`,
     ).toEqual([]);
+  });
+
+  it('keeps the old scopes only in the shape a window layout is saved in, never in a place it opens', () => {
+    const saved = readFileSync(join(DESKTOP_SRC, ...SAVED_FOR_THE_PREVIOUS_RELEASE), 'utf8');
+
+    expect(saved).not.toMatch(/openSettings|openStudio|navigate|set\(/);
   });
 
   it('catches both shapes of an old link', () => {

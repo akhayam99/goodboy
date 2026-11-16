@@ -158,7 +158,7 @@ const DRAWERS_SAVED: ReadonlyArray<Row> = [
   ]),
 ];
 
-const CONNECTIONS_PAGES: ReadonlyArray<StudioPlace> = [
+const CONNECTIONS_PAGES: ReadonlyArray<Extract<StudioPlace, { readonly kind: 'connections' }>> = [
   { kind: 'connections', focus: { kind: 'provider', provider: 'anthropic' } },
   { kind: 'connections', focus: { kind: 'tool', tool: 'linear' } },
   { kind: 'connections', focus: null },
