@@ -21,7 +21,9 @@ finish (`readLaunchPermissions`, `readPublishPermissions`,
 `readAdmissionPermissions`, `readIsLeadClosing`), a message reaches the Lead
 while its agents work, and the screen calls the Auto root the Lead. The old
 `work.enabled` row may stay in the settings table and is never read;
-`upgradeFromSwitchOff.sqlite.test.ts` pins that pending asks survive the upgrade.
+`upgradeFromSwitchOff.sqlite.test.ts` pins that pending asks survive the upgrade,
+and `upgradeFromSwitchOn.sqlite.test.ts` that the rows a Lead set for itself
+stay and a new Lead takes the workspace default.
 
 ## Status
 
