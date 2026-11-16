@@ -26,7 +26,7 @@ Write what you want done in Start a run and press Start. A Lead plans first, the
 The run page names the Lead and its state in the crumb row, and the button that ends it reads Stop run.
 
 #### Start a run on a branch
-<!-- gb area=sessions -->
+<!-- gb area=sessions image=runs-start -->
 
 The Start a run field has a Branch chip with the session's branches. It reads Any branch until you pick one, and the run works on the branch you picked. A failed start keeps it for Retry.
 
@@ -37,7 +37,7 @@ An open row of the branch board has Start a run on this branch, which opens the 
 #### No more Work page or Work switch
 <!-- gb area=agents image=board-run -->
 
-The sidebar has no Work page and Settings has no Work switch: what the switch turned on is on for everyone. Every Lead follows its permission rows, and a note you write while its agents work goes in at once. A window left on Work opens on the Board.
+The sidebar has no Work page and Settings has no Work switch: what the switch turned on is on for everyone. Every Lead follows its permission rows, and a note you write while its agents work goes in at once. A window left on Work opens on the Board. On a branch, the Work tab is now Runs.
 
 A Board card in Needs you names the run that waits, and its button says what it does: Review plan, Answer the Lead or Open run.
 
@@ -55,6 +55,32 @@ Models, the Kind chip and Run defaults name the Auto agent the Lead. Run default
 <!-- gb area=workflows -->
 
 A run started before on the orchestrator, a preset or the Auto agent still shows on Runs and picks up with Continue on the engine it started on. An orchestrated row adds a gray older run.
+
+#### Pick from Tasks by source
+<!-- gb area=sessions image=task-picker -->
+
+Pick from Tasks lists your open tasks by source, newest first. Tabs on top narrow it to one source and count what matches the search. Each row shows the key, the title, its state and its repo or project. Arrows move and Enter picks. A source that didn't load says so in the list with Retry.
+
+#### Starred folders lead the Projects picker
+<!-- gb area=sessions image=projects -->
+
+Projects on the start page opens on Starred, then Recent, the folders your latest sessions worked in, then All projects. The star on a row, or ⌘S on the highlighted row, stars or unstars it. The folder list on the Overview uses the same groups.
+
+#### The Context tab leads with the State
+<!-- gb area=sessions image=context -->
+
+The State heads the Context tab in a box with a count of blockers or of steps left, its first sentence and one row per blocker. The Summary card lists Next as numbered steps and Learned as facts. Each group shows three and opens the rest with one Show all.
+
+#### Branch names from the goal's words
+<!-- gb area=sessions -->
+
+A new branch is named from two to five meaningful words of the goal, English or Italian, with a ticket id in the goal such as HBL-1528 first. Words like the, for or per are left out.
+
+### Fixed
+
+- Paste, drop and the paperclip attach images again in New session and in a reply to an agent. <!-- gb area=sessions -->
+- An image pasted in chat no longer disappears a moment later. <!-- gb area=sessions -->
+- Runs started by a Lead, and the agents it starts, show under their branch on Runs and the board, in older sessions too. <!-- gb area=agents -->
 
 ## Goodboy v0.37.0
 
