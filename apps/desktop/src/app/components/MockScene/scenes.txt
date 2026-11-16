@@ -1396,6 +1396,10 @@ u37-runs-order-light
 u39-destinations
 u39-foot
 u39-foot-update
+u44-task-picker-all
+u44-task-picker-error
+u44-task-picker-loading
+u44-task-picker-sentry
 update-card
 update-card-long-version
 update-card-narrow
