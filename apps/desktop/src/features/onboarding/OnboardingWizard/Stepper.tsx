@@ -28,7 +28,7 @@ const stepState = ({ position, currentPosition }: StateParams): StepState => {
 
 const NODE_CLASS: Readonly<Record<StepState, string>> = {
   done: 'bg-fill text-muted-foreground',
-  current: 'bg-primary text-on-tone',
+  current: 'bg-primary-solid text-on-primary',
   later: 'ring-1 ring-inset ring-border-soft text-faint-foreground',
 };
 
