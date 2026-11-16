@@ -5,7 +5,6 @@ import { ObjectMenuProvider } from '../../../features/actions/components/ObjectM
 import { finish as finishOnboarding } from '../../../features/onboarding/onboardingSettings';
 import { useBrandChrome } from './scenes/brand/brandChrome';
 import { useHideSceneToasts } from './useHideSceneToasts';
-import { useBackdropParam } from './useBackdropParam';
 import { applyDocumentTheme, useThemeStore } from '../../../shared/lib/theme';
 import { ReportSheetHost } from '../../../features/bug-report/components/ReportSheetHost';
 import { useReportSheetParam } from './scenes/audit/ReportScenes';
@@ -40,8 +39,6 @@ export const MockScene = () => {
   }
 
   useHideSceneToasts();
-
-  useBackdropParam();
 
   useBrandChrome({ isBrand: params.get('brand') === '1' });
 

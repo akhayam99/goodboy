@@ -7,30 +7,16 @@
     <script src="/freeze-prototype.js"></script>
     <style>
       html {
-        --shell-chrome: oklch(0.17 0.006 255);
-        --shell-primary: oklch(0.74 0.13 210);
-        --shell-backdrop: radial-gradient(
-          ellipse 70% 90% at 0% 0%,
-          color-mix(in oklab, var(--shell-primary) 6%, transparent),
-          transparent
-        );
+        --shell-chrome: oklch(0.165 0.004 264);
         background-color: var(--shell-chrome);
-        background-image: var(--shell-backdrop);
         color-scheme: dark;
       }
       html[data-theme='light'] {
-        --shell-chrome: oklch(0.955 0.004 250);
-        --shell-primary: oklch(0.468 0.13 218);
-        --shell-backdrop: radial-gradient(
-          ellipse 70% 90% at 0% 0%,
-          color-mix(in oklab, var(--shell-primary) 15%, transparent),
-          transparent
-        );
+        --shell-chrome: oklch(0.966 0.003 264);
         color-scheme: light;
       }
       #boot-shell {
         background-color: var(--shell-chrome);
-        background-image: var(--shell-backdrop);
         inset: 0;
         pointer-events: none;
         position: fixed;

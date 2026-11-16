@@ -17,38 +17,30 @@ const tokenIn = ({ block, name }: { readonly block: RegExp; readonly name: strin
 };
 
 describe('boot shell', () => {
-  it('paints the dark chrome and primary the splash paints', () => {
+  it('paints the dark chrome the splash paints', () => {
     const chrome = tokenIn({ block: DARK_BLOCK, name: '--color-chrome' });
-    const primary = tokenIn({ block: DARK_BLOCK, name: '--color-primary' });
     expect(chrome).not.toBe('');
     expect(html).toContain(`--shell-chrome: ${chrome};`);
-    expect(html).toContain(`--shell-primary: ${primary};`);
   });
 
-  it('starts light for a light theme, with the light chrome and primary', () => {
+  it('starts light for a light theme, with the light chrome', () => {
     const chrome = tokenIn({ block: LIGHT_BLOCK, name: '--color-chrome' });
-    const primary = tokenIn({ block: LIGHT_BLOCK, name: '--color-primary' });
     expect(chrome).not.toBe('');
     const lightRule = html.match(/html\[data-theme='light'\] \{[^}]*\}/)?.[0] ?? '';
     expect(lightRule).toContain(`--shell-chrome: ${chrome};`);
-    expect(lightRule).toContain(`--shell-primary: ${primary};`);
     expect(lightRule).toContain('color-scheme: light');
     expect(html).toContain("setAttribute('data-theme', 'light')");
   });
 
-  it('uses the same 6% cover strength as the splash and the Welcome cover', () => {
-    expect(styles).toMatch(/--app-backdrop-cover-strength: 6;/);
-    expect(styles).toMatch(/--app-backdrop-strength: 3;/);
-    expect(html).toContain('var(--shell-primary) 6%');
-  });
-
-  it('paints the light cover at the cover strength times the light backdrop scale', () => {
-    const scale = Number(
-      styles.match(/html\[data-theme='light'\] \{\s*--app-backdrop-scale: ([\d.]+);\s*\}/)?.[1],
+  it('paints flat chrome with no glow behind the window, like the splash and the shell', () => {
+    expect(html).not.toMatch(/gradient/);
+    expect(styles).not.toMatch(/--app-backdrop/);
+    expect(styles).toMatch(
+      /@utility bg-backdrop \{\s*background-color: var\(--color-chrome\);\s*\}/,
     );
-    const lightRule = html.match(/html\[data-theme='light'\] \{[\s\S]*?\n      \}/)?.[0] ?? '';
-    expect(scale).toBeGreaterThan(1);
-    expect(lightRule).toContain(`var(--shell-primary) ${6 * scale}%`);
+    expect(styles).toMatch(
+      /@utility bg-backdrop-cover \{\s*background-color: var\(--color-chrome\);\s*\}/,
+    );
   });
 
   it('draws the 84px brand tile at the splash anchor and no text', () => {
@@ -59,7 +51,7 @@ describe('boot shell', () => {
   });
 
   it('opens the native window on dark chrome, never the old gray', () => {
-    expect(tauriConf).toContain('"backgroundColor": "#0e1012"');
+    expect(tauriConf).toContain('"backgroundColor": "#0d0e10"');
     expect(tauriConf).not.toContain('#202225');
   });
 });

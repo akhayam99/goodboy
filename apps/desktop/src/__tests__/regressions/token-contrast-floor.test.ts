@@ -14,6 +14,7 @@ const READ_SURFACES = [...SURFACES, 'drawer'] as const;
 const STEP_FLOOR = 1.04;
 const DRAWER_STEP_FLOOR = 1.03;
 const FILL_FLOOR = 1.1;
+const BOX_BORDER_FLOOR = 1.4;
 const TONES = ['primary', 'info', 'success', 'warning', 'danger', 'merged', 'draft'] as const;
 // The diff viewer paints code on the canvas and on hunk rows, never on a card.
 const CODE_SURFACES = ['background', 'subtle', 'muted'] as const;
@@ -182,7 +183,10 @@ const readShadow = ({ block, name }: { block: string; name: string }): string =>
   return String(match[1]).trim();
 };
 
-describe.each(Object.entries(readThemes()))('%s palette', (_theme, palette) => {
+describe.each(['dark', 'light'] as const)('%s palette', (theme) => {
+  const palette = readThemes()[theme];
+  const block = themeBlocks()[theme];
+
   it.each(READ_SURFACES)('carries body and tone text at 4.5:1 on %s', (surface) => {
     const failures = ['foreground', 'muted-foreground', 'faint-foreground', ...TONES]
       .map((token) => ({
@@ -303,9 +307,24 @@ describe.each(Object.entries(readThemes()))('%s palette', (_theme, palette) => {
 
   it.each(READ_SURFACES)('keeps the soft border visible on %s', (surface) => {
     const floor = surface === 'elevated' || surface === 'floating' ? 1.3 : 1.2;
-    expect(
-      contrast(swatch(palette, 'border-soft'), swatch(palette, surface)),
-    ).toBeGreaterThanOrEqual(floor);
+    const parent = swatch(palette, surface);
+    const soft = readTranslucent({ block, token: 'border-soft' });
+    const painted = composite({ foreground: soft.rgb, background: parent, alpha: soft.alpha });
+    expect(contrast(painted, parent)).toBeGreaterThanOrEqual(floor);
+  });
+
+  it.each(READ_SURFACES)('draws the box border above the soft border on %s', (surface) => {
+    const parent = swatch(palette, surface);
+    const edgeContrast = ({ token }: { token: string }): number => {
+      const edge = readTranslucent({ block, token });
+      return contrast(
+        composite({ foreground: edge.rgb, background: parent, alpha: edge.alpha }),
+        parent,
+      );
+    };
+    expect(edgeContrast({ token: 'border' })).toBeGreaterThan(
+      edgeContrast({ token: 'border-soft' }),
+    );
   });
 
   it.each(READ_SURFACES)('keeps the strong border at 4.5:1 on %s', (surface) => {
@@ -475,7 +494,8 @@ type OverlayFloor = {
 };
 
 const OVERLAY_FLOORS: ReadonlyArray<OverlayFloor> = [
-  { token: 'border', surfaces: READ_SURFACES, floor: LARGE_FLOOR },
+  { token: 'border-control', surfaces: READ_SURFACES, floor: LARGE_FLOOR },
+  { token: 'border', surfaces: READ_SURFACES, floor: BOX_BORDER_FLOOR },
   { token: 'frame-edge', surfaces: ['chrome', 'background'], floor: 1.2 },
   { token: 'scrollbar-thumb', surfaces: ['background', 'subtle', 'floating'], floor: 1.8 },
   { token: 'scrollbar-thumb-active', surfaces: ['background', 'subtle', 'floating'], floor: 3 },

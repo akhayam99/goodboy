@@ -130,7 +130,7 @@ const RULES = [
       'apps/desktop/src/app/components/BootSplash/NewerDatabaseScreen.tsx',
       'apps/desktop/src/features/onboarding/OnboardingWizard/WizardFrame.tsx',
     ],
-    why: 'the 6% cover backdrop paints the boot splash, its error screens and the Welcome cover that follows, so the handoff has no seam; the app shell stays on the 3% backdrop',
+    why: 'the cover backdrop paints the boot splash, its error screens and the Welcome cover that follows, so the handoff has no seam',
   },
   {
     pattern: /\bduration-\[/,

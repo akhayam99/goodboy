@@ -8,7 +8,6 @@ const STYLES = STYLES_PATH;
 const LEVELS = 255;
 const MIN_HOVER_LEVELS = 18;
 const MIN_SELECTED_OVER_HOVER_LEVELS = 6;
-const SOFT_TINT_ALPHA = 0.05;
 
 const levelsBetween = ({ first, second }: { readonly first: Rgb; readonly second: Rgb }): number =>
   LEVELS * Math.max(...first.map((channel, index) => Math.abs(channel - (second[index] ?? 0))));
@@ -29,28 +28,27 @@ const washOf = ({
   });
 };
 
+const washRow = ({ theme, name }: { readonly theme: Theme; readonly name: string }): Rgb => {
+  const wash = tokenOf({ theme, name });
+  return over({
+    top: wash.rgb,
+    base: tokenOf({ theme, name: 'background' }).rgb,
+    alpha: wash.alpha,
+  });
+};
+
 type Row = { readonly name: string; readonly base: (theme: Theme) => Rgb };
 
 const ROWS: ReadonlyArray<Row> = [
   { name: 'a rest row on background', base: (theme) => tokenOf({ theme, name: 'background' }).rgb },
   { name: 'a rest row on subtle', base: (theme) => tokenOf({ theme, name: 'subtle' }).rgb },
   {
-    name: 'a waiting row (warning tint)',
-    base: (theme) =>
-      over({
-        top: tokenOf({ theme, name: 'warning' }).rgb,
-        base: tokenOf({ theme, name: 'background' }).rgb,
-        alpha: SOFT_TINT_ALPHA,
-      }),
+    name: 'a waiting row (warning wash)',
+    base: (theme) => washRow({ theme, name: 'warning-wash' }),
   },
   {
-    name: 'an unread row (primary tint)',
-    base: (theme) =>
-      over({
-        top: tokenOf({ theme, name: 'primary' }).rgb,
-        base: tokenOf({ theme, name: 'background' }).rgb,
-        alpha: SOFT_TINT_ALPHA,
-      }),
+    name: 'an unread row (primary wash)',
+    base: (theme) => washRow({ theme, name: 'primary-wash' }),
   },
 ];
 

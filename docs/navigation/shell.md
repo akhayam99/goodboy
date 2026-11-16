@@ -852,10 +852,9 @@ top of the shell (same `BootStage`, so the tile does not move); there is no fixe
 wait, and reduced motion removes the splash at once. The window opens hidden and
 `useRevealWindow` shows it after the first paint (Rust shows it after 3 s if the
 page never does), so a light theme never flashes dark. Before React, `index.html`
-paints the same chrome, 6% backdrop and tile in both themes, and the native
-window background is the dark chrome `#0e1012`
-(`boot-shell-paints-the-chrome.test.ts` pins both to `styles.css`). The sidebar
-and app shell stay at 3%. Agents lists one row per sign-in CLI (Claude,
+paints the same chrome and tile in both themes, and the native window background
+is the dark chrome `#0d0e10` (`boot-shell-paints-the-chrome.test.ts` pins both
+to `styles.css`). Agents lists one row per sign-in CLI (Claude,
 Codex, Cursor, Gemini) with its real state: Ready with version and account, Not
 signed in with Sign in, Not installed with the exact install command and Run,
 Can't start with the CLI's output and Check again. Rows check again on window
