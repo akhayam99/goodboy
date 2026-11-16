@@ -318,7 +318,7 @@ describe('the u28 run page scenes', () => {
       within(restartAs)
         .getAllByRole('button')
         .map((button) => button.textContent),
-    ).toEqual(['Workflow · Preset Fix flaky tests', 'Agent · Auto agent']);
+    ).toEqual(['Lead', 'Lead · plan Fix flaky tests']);
     expect(popover.textContent).toContain(
       'Ends this run and starts a new one with what it did so far.',
     );
