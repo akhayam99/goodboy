@@ -104,7 +104,7 @@ describe('mountPlan and a goal that names a branch', () => {
     const plan = planFor({ goal: 'Ship the rebase row', repoBranches: ['ak/one-branch'] });
 
     expect(plan).toMatchObject({ adoptedBranch: null, goalBranches: [] });
-    expect(plan?.branch).toBe(`${DEFAULT_BRANCH_PREFIX}/ship-the-rebase-row`);
+    expect(plan?.branch).toBe(`${DEFAULT_BRANCH_PREFIX}/ship-rebase-row`);
   });
 
   it('lets an explicit seed branch win over the goal', () => {

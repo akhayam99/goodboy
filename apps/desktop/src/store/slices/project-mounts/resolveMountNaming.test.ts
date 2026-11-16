@@ -67,7 +67,7 @@ describe('resolveForkBranchName', () => {
     const name = forkName({ id: 'HBL-412', title: 'Duplicate credit on redelivery' });
 
     expect(name).toContain('hbl-412');
-    expect(name).toContain('duplicate-credit-on-redelivery');
+    expect(name).toContain('duplicate-credit-redelivery');
     expect(name).not.toContain('ledger-export');
   });
 

@@ -250,7 +250,7 @@ describe('useMountPreflight', () => {
   });
 
   it('shows the plan while checking, then the repository verdict', async () => {
-    const derived = `${DEFAULT_BRANCH_PREFIX}/ship-the-rebase-row`;
+    const derived = `${DEFAULT_BRANCH_PREFIX}/ship-rebase-row`;
     h.listBranchNames.mockResolvedValue(['main', derived]);
     const { result } = renderHook(() =>
       useMountPreflight({ sessionId: SID, project: repoProject }),
@@ -273,7 +273,7 @@ describe('useMountPreflight', () => {
 
     await waitFor(() => expect(result.current.status).toBe('ready'));
     expect(result.current.branchScanError).toContain('not a git repository');
-    expect(result.current.preflight?.branch).toBe(`${DEFAULT_BRANCH_PREFIX}/ship-the-rebase-row`);
+    expect(result.current.preflight?.branch).toBe(`${DEFAULT_BRANCH_PREFIX}/ship-rebase-row`);
   });
 
   it('skips the branch scan for a folder project', async () => {
@@ -347,7 +347,7 @@ describe('useMountPreflight', () => {
 
     await waitFor(() => expect(result.current.status).toBe('ready'));
     expect(result.current.preflight).toMatchObject({
-      branch: `${DEFAULT_BRANCH_PREFIX}/ship-the-rebase-row`,
+      branch: `${DEFAULT_BRANCH_PREFIX}/ship-rebase-row`,
       isExistingBranch: false,
       goalBranches: [],
     });
