@@ -12,6 +12,50 @@ file is in `.prettierignore`: the meta comment sits on the line right below
 each entry's heading, with no blank line, and a formatter would push it down
 onto its own paragraph.
 
+## Goodboy v0.38.0
+
+Work folds into Runs: every new run in a session has a Lead that plans the job and starts the agents it needs.
+
+### New
+
+#### Every new run has a Lead
+<!-- gb area=agents image=run-page -->
+
+Write what you want done in Start a run and press Start. A Lead plans first, then starts the agents it needs, inside the session where you asked. A preset that fits the ask becomes the Lead's plan, and naming a role with @ still starts that one agent alone.
+
+The run page names the Lead and its state in the crumb row, and the button that ends it reads Stop run.
+
+#### Start a run on a branch
+<!-- gb area=sessions -->
+
+The Start a run field has a Branch chip with the session's branches. It reads Any branch until you pick one, and the run works on the branch you picked. A failed start keeps it for Retry.
+
+An open row of the branch board has Start a run on this branch, which opens the field on Runs with that branch picked.
+
+### Improved
+
+#### No more Work page or Work switch
+<!-- gb area=agents image=board-run -->
+
+The sidebar has no Work page and Settings has no Work switch: what the switch turned on is on for everyone. Every Lead follows its permission rows, and a note you write while its agents work goes in at once. A window left on Work opens on the Board.
+
+A Board card in Needs you names the run that waits, and its button says what it does: Review plan, Answer the Lead or Open run.
+
+#### Runs say who leads them
+<!-- gb area=sessions -->
+
+Each row on Runs says who leads it: a Lead, a Lead that follows a preset, or one agent such as the Implementer. How in Start a run offers Lead, Preset and Agent, and Start as in Run defaults offers Lead with a preset that fits, or Lead.
+
+#### The Auto agent is the Lead
+<!-- gb area=agents -->
+
+Models, the Kind chip and Run defaults name the Auto agent the Lead. Run defaults has Lead asks you under Workflow asks you, so workflows can keep asking at every step while a Lead goes on after the plan.
+
+#### Older runs keep their engine
+<!-- gb area=workflows -->
+
+A run started before on the orchestrator, a preset or the Auto agent still shows on Runs and picks up with Continue on the engine it started on. An orchestrated row adds a gray older run.
+
 ## Goodboy v0.37.0
 
 Providers and integrations share one home, Connections, and Settings keeps only settings, each one in a single place.
