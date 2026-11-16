@@ -48,7 +48,7 @@ describe('resolveToken', () => {
 
 describe('the styles.css reader', () => {
   it.each(THEME_NAMES)('resolves an alias against the %s theme', (theme) => {
-    expect(tokenOf({ theme, name: 'focus-ring' })).toEqual(tokenOf({ theme, name: 'primary' }));
+    expect(tokenOf({ theme, name: 'on-primary' })).toEqual(tokenOf({ theme, name: 'on-tone' }));
   });
 
   it('reads a raw scale step per theme', () => {
