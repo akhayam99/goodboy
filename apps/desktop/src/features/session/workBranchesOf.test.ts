@@ -119,6 +119,39 @@ describe('workBranchesOf', () => {
     expect(branches).toEqual([]);
   });
 
+  it('files an agent without a mount under the only mount of the session', () => {
+    const older = anAgent({ sessionId: SESSION });
+    const branches = workBranchesOf({
+      agentIds: [older.id],
+      agents: [older],
+      mounts: [DUP],
+      projects: PROJECTS,
+    });
+    expect(branches.map((branch) => branch.branch)).toEqual(['fix/duplicate-credit']);
+  });
+
+  it('files nothing for an agent without a mount when the only mount has no branch', () => {
+    const older = anAgent({ sessionId: SESSION });
+    const branches = workBranchesOf({
+      agentIds: [older.id],
+      agents: [older],
+      mounts: [{ ...DUP, branch: '' }],
+      projects: PROJECTS,
+    });
+    expect(branches).toEqual([]);
+  });
+
+  it('files nothing for an agent without a mount when two mounts share the session', () => {
+    const older = anAgent({ sessionId: SESSION });
+    const branches = workBranchesOf({
+      agentIds: [older.id],
+      agents: [older],
+      mounts: [DUP, RETRY],
+      projects: PROJECTS,
+    });
+    expect(branches).toEqual([]);
+  });
+
   it('falls back to the mount name when the project is unknown', () => {
     const agent = anAgent({ sessionId: SESSION, mountId: DUP.id });
     const branches = workBranchesOf({

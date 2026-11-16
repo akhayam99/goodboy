@@ -15,6 +15,7 @@ import { aProject, anAgent } from '@goodboy/types/testing';
 import type { AutoTreeView } from '../../store/slices/auto-view/state';
 import { aDelegation, aView, FIXTURE_NOW, FIXTURE_ROOT } from '../auto/testing/autoViewFixtures';
 import type { AttachedRun } from '../workflows/activeWorkflowRuns';
+import { branchGroupsOf } from './branchGroupsOf';
 import { liveGroupsOf } from './central/now/liveGroupsOf';
 import {
   aNowAgent,
@@ -696,5 +697,54 @@ describe('the branches a run works on', () => {
 
     expect(auto?.branches).toEqual([]);
     expect(auto?.goneBranches.map((branch) => branch.branch)).toEqual(['rec/2-backfill']);
+  });
+
+  it('files a Lead and its children under the only branch of a one mount session', () => {
+    const plan = orchestratedRun();
+    const agents = [
+      autoRoot({ status: 'running' }),
+      autoChild(),
+      aNowStepAgent({ attached: plan, stepIndex: 0, status: 'running', name: 'Find' }),
+      handScout({ status: 'completed' }),
+    ];
+    const runs = runsOf({ runs: [plan], agents, mounts: [API] });
+    const groups = branchGroupsOf({ runs, mounts: [] });
+    const onBranch = groups.find((group) => group.key === `mount:${API.id}`);
+
+    expect(groups.map((group) => group.key)).toEqual([`mount:${API.id}`]);
+    expect(onBranch?.runs.map((run) => run.kind).sort()).toEqual(['agent', 'auto', 'orchestrated']);
+  });
+
+  it('reads a Lead from its tree and a child from its delegation when two mounts share a session', () => {
+    const fixer = aDelegation({ key: 'fixer', role: 'implementer', state: 'running' });
+    const view = aView({
+      phase: 'waiting',
+      delegations: [{ ...fixer, target: { mountId: LEDGER.id } }],
+    });
+    const agents = [autoRoot({ status: 'running' }), autoChild()];
+    const runs = runsOf({ agents, autoViews: [view], mounts: [API, LEDGER] });
+    const auto = runs.find((run) => run.kind === 'auto');
+
+    expect(auto?.branches.map((branch) => branch.branch)).toEqual([
+      'fix/duplicate-credit',
+      'rec/2-backfill',
+    ]);
+  });
+
+  it('keeps each run on its own branch when two mounts share a session', () => {
+    const scout = { ...handScout({ status: 'completed' }), mountId: NOW_MOUNT_LEDGER };
+    const lead = { ...autoRoot({ status: 'running' }), mountId: NOW_MOUNT_API };
+    const runs = runsOf({ agents: [lead, scout], mounts: [API, LEDGER] });
+    const branchesOf = (kind: string) =>
+      runs.find((run) => run.kind === kind)?.branches.map((branch) => branch.branch);
+
+    expect(branchesOf('auto')).toEqual(['fix/duplicate-credit']);
+    expect(branchesOf('agent')).toEqual(['rec/2-backfill']);
+  });
+
+  it('leaves an older row without a mount unfiled when two mounts share a session', () => {
+    const runs = runsOf({ agents: [handScout({ status: 'completed' })], mounts: [API, LEDGER] });
+
+    expect(runs[0]?.branches).toEqual([]);
   });
 });

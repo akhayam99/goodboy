@@ -26,10 +26,22 @@ type Params = {
 type MountParams = {
   readonly agent: Agent;
   readonly agents: ReadonlyArray<Agent>;
+  readonly soleMountId: MountId | null;
 };
 
-const stepMountIdOf = ({ agent, agents }: MountParams): MountId | null =>
-  agent.mountId ?? inheritedMountIdOf({ agents, workflowRunId: agent.workflowRunId ?? null });
+const stepMountIdOf = ({ agent, agents, soleMountId }: MountParams): MountId | null =>
+  agent.mountId ??
+  inheritedMountIdOf({ agents, workflowRunId: agent.workflowRunId ?? null }) ??
+  soleMountId;
+
+type SoleParams = {
+  readonly mounts: ReadonlyArray<SessionMountView>;
+};
+
+const soleMountIdOf = ({ mounts }: SoleParams): MountId | null => {
+  const only = mounts.length === 1 ? mounts[0] : undefined;
+  return only === undefined || only.branch === '' ? null : only.id;
+};
 
 type MountBranchParams = {
   readonly mountId: MountId;
@@ -67,11 +79,12 @@ export const workBranchesOf = ({
 }: Params): ReadonlyArray<WorkBranch> => {
   const members = new Set<string>(agentIds);
   const found = new Map<string, WorkBranch>();
+  const soleMountId = soleMountIdOf({ mounts });
   for (const agent of agents) {
     if (!members.has(agent.id)) {
       continue;
     }
-    const mountId = stepMountIdOf({ agent, agents });
+    const mountId = stepMountIdOf({ agent, agents, soleMountId });
     if (mountId === null || found.has(mountId)) {
       continue;
     }
