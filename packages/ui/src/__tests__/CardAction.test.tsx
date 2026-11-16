@@ -33,7 +33,7 @@ describe('CardAction', () => {
     const { className } = screen.getByRole('button', { name: 'Pin' });
     expect(className).toContain('text-muted-foreground');
     expect(className).toContain('hover:text-success');
-    expect(className).toContain('hover:bg-success/5');
+    expect(className).toContain('hover:bg-success-wash');
     expect(className).not.toMatch(/(^| )bg-success/);
     expect(className).not.toMatch(/(^| )text-success/);
   });

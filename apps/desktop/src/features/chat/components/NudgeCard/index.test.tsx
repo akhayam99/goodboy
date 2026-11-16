@@ -40,7 +40,7 @@ describe('NudgeCard', () => {
     expect(container.firstElementChild?.className).not.toContain('border-l-2');
     expect(container.querySelector('[data-testid="tone-bar"][data-tone="warning"]')).not.toBeNull();
     expect(screen.getByRole('button', { name: /go/i }).className).toContain(
-      'bg-warning text-on-tone',
+      'bg-warning-solid text-on-warning',
     );
   });
 

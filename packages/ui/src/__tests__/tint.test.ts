@@ -12,18 +12,27 @@ const SEMANTIC_TONES: ReadonlyArray<Tone> = [
 ];
 
 describe('tintClasses', () => {
-  it.each(SEMANTIC_TONES)('%s follows the shared opacity scale', (tone) => {
+  it.each(SEMANTIC_TONES)('%s reads its fills and edge from the tone steps', (tone) => {
     const tint = tintClasses(tone);
-    expect(tint.border).toMatch(/\/40$/);
-    expect(tint.borderSoft).toMatch(/\/20$/);
-    expect(tint.bg).toMatch(/\/10$/);
-    expect(tint.bgSoft).toMatch(/\/5$/);
-    expect(tint.hoverBorder).toMatch(/^hover:border-\S+\/40$/);
+    expect(tint.border).toBe(`border-${tone}-edge`);
+    expect(tint.borderSoft).toBe(`border-${tone}/20`);
+    expect(tint.bg).toBe(`bg-${tone}-subtle`);
+    expect(tint.bgSoft).toBe(`bg-${tone}-wash`);
+    expect(tint.hoverBorder).toBe(`hover:border-${tone}-edge`);
     expect(tint.hoverBg).toBe('hover:bg-hover');
-    expect(tint.hoverRing).toMatch(/^hover:ring-\S+\/60$/);
-    expect(tint.hoverBgSoft).toMatch(/^hover:bg-\S+\/5$/);
-    expect(tint.solid).toMatch(/^bg-\S+ text-on-tone \[&_svg\]:text-current$/);
+    expect(tint.hoverRing).toBe(`hover:ring-${tone}/60`);
+    expect(tint.hoverBgSoft).toBe(`hover:bg-${tone}-wash`);
+    expect(tint.solid).toBe(`bg-${tone}-solid text-on-${tone} [&_svg]:text-current`);
     expect(tint.rail).toBe(`border-l-${tone}`);
+  });
+
+  it('keeps unread on the opacity scale until it has steps of its own', () => {
+    expect(tintClasses('unread')).toMatchObject({
+      bg: 'bg-unread/10',
+      bgSoft: 'bg-unread/5',
+      border: 'border-unread/40',
+      solid: 'bg-unread text-on-tone [&_svg]:text-current',
+    });
   });
 
   it('keeps neutral chips one step inside any parent with the relative fill', () => {
@@ -35,25 +44,25 @@ describe('tintClasses', () => {
   });
 
   it('reads the draft tone from the TINT record, not a hardcoded coverage list', () => {
-    expect(tintClasses('draft').bg).toBe('bg-draft/10');
+    expect(tintClasses('draft').bg).toBe('bg-draft-subtle');
   });
 
   it('exposes a draft tone bound to the draft token, not indigo hardcodes', () => {
     expect(tintClasses('draft')).toMatchObject({
-      bg: 'bg-draft/10',
-      bgSoft: 'bg-draft/5',
+      bg: 'bg-draft-subtle',
+      bgSoft: 'bg-draft-wash',
       ring: 'ring-draft/20',
-      border: 'border-draft/40',
+      border: 'border-draft-edge',
       borderSoft: 'border-draft/20',
-      hoverBorder: 'hover:border-draft/40',
+      hoverBorder: 'hover:border-draft-edge',
       hoverRing: 'hover:ring-draft/60',
       hoverBg: 'hover:bg-hover',
-      hoverBgSoft: 'hover:bg-draft/5',
+      hoverBgSoft: 'hover:bg-draft-wash',
       hoverText: 'hover:text-draft',
       text: 'text-draft',
       icon: 'text-draft',
       dot: 'bg-draft',
-      solid: 'bg-draft text-on-tone [&_svg]:text-current',
+      solid: 'bg-draft-solid text-on-draft [&_svg]:text-current',
     });
   });
 });

@@ -19,7 +19,7 @@ export const ViewedRing = ({ viewed, total }: Props) => {
         <span
           role="img"
           aria-label={label}
-          className="flex shrink-0 items-center justify-center rounded-full bg-primary text-on-tone"
+          className="flex shrink-0 items-center justify-center rounded-full bg-primary-solid text-on-primary"
           style={{ width: SIZE, height: SIZE }}
         >
           <Check size={ICON_SIZE.mark} strokeWidth={ICON_STROKE.check} aria-hidden />
