@@ -107,6 +107,21 @@ registries:
   second `zbus` 5 beside the 4 that `keyring` pulls), one new npm package, no new
   transitive npm package. `pnpm audit` is clean.
 
+`@phosphor-icons/react` 2.1.10 (npm, pinned exactly, in `packages/ui` only)
+draws every app glyph through `@goodboy/ui/icons`, in place of
+`lucide-react`. Checked on 17 November 2026 against the registry:
+
+- **In-house**: no. The set is about 260 glyphs, each in six weights.
+- **Maintenance**: last release 22 May 2025, so the six month rule above
+  refuses it. One npm maintainer, the Phosphor organisation's repository.
+- **Adoption**: 7.8M downloads a week. **Licence**: MIT. **Transitive deps**:
+  none, React is a peer. `pnpm audit` is clean.
+- **Size**: each glyph module carries all six weights. The initial load grows
+  from 1,935,278 to 2,056,049 bytes gzip, over the 1,938,492 byte budget.
+
+The website keeps `lucide-react` as its own dev dependency: `sync-icons.mjs`
+copies lucide paths into the site mocks.
+
 The rules for internal workspace deps (the `workspace:*` protocol, no phantom deps) live in [CONVENTIONS.md](../CONVENTIONS.md) → pnpm.
 
 ## Upgrades: stable over newest
