@@ -76,6 +76,7 @@ export const startRoutedRun = async ({
           : leadPlanBriefOf({ work, preset, closeness: route.closeness ?? 'follow' }),
       focus: 'agent',
       ...(guidance !== null && { guidance }),
+      ...(role === null && limit !== null && limit.usd !== null && { limitUsd: limit.usd }),
       ...(routing !== null && {
         provider: routing.provider,
         model: routing.model,

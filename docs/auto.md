@@ -1536,6 +1536,12 @@ passes the agent id to `autoSystemPromptOf`, so `buildAutoSystemPrompt` adds a
 the root's text into each child brief as a `**Guidance**` section before the
 `**Task**`. A run without guidance builds the same prompt and briefs as before.
 
+A limit picked for one Lead lives the same way in `run.limit`, a map of the root
+agent id to dollars (`store/runtime/runLimit/`). `spawnAgent` writes it before the
+agent row exists, and `startAutoTree` reads it in place of the workspace default
+when it creates the tree, in whichever window creates it. A lower session cap still
+wins. A Lead started without its own limit gets the workspace default as before.
+
 After the routing table the prompt renders **WHEN TO ADD A ROLE** from `packages/core/src/roleNeeds.ts`
 (`roleNeedsSection`, driver `auto`): per role a trigger the root can see and a "do not add it when".
 Auto picks the narrowest row whose trigger it sees in the goal or in a result: history words

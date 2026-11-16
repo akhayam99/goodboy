@@ -4,7 +4,8 @@ import {
   type AutoAgentWithoutTree,
   type InsertAutoTreeOutcome,
 } from '@goodboy/db';
-import { brandId, type AutoTreeId, type SessionId } from '@goodboy/types';
+import { brandId, type AutoTreeId, type SessionId, type WorkspaceId } from '@goodboy/types';
+import { readRunLimit } from '../runLimit/readRunLimit';
 import type { AgentVerbContext } from './verbContext';
 
 const HOUR_MS = 60 * 60 * 1000;
@@ -31,6 +32,11 @@ export const startAutoTree = async ({
   workspaceLimitUsd,
 }: StartAutoTreeParams): Promise<InsertAutoTreeOutcome> => {
   const mounts = await ctx.ports.loadMounts({ sessionId: agent.sessionId });
+  const runLimitUsd = await readRunLimit({
+    db: ctx.db,
+    workspaceId: brandId<WorkspaceId>({ value: agent.workspaceId }),
+    agentId: agent.agentId,
+  });
   const nowMs = ctx.now();
   return ctx.scheduler.createTree({
     id: brandId<AutoTreeId>({ value: ctx.ports.newId() }),
@@ -39,7 +45,8 @@ export const startAutoTree = async ({
     primaryMountId: mounts.find((mount) => isUsableMount({ mount }))?.id ?? null,
     capUsd: autoTreeCapUsd({
       sessionCapUsd: sessionCapUsd({ sessionId: agent.sessionId }),
-      workspaceLimitUsd: await workspaceLimitUsd({ workspaceId: agent.workspaceId }),
+      workspaceLimitUsd:
+        runLimitUsd ?? (await workspaceLimitUsd({ workspaceId: agent.workspaceId })),
     }),
     hardDeadlineAt: nowMs + AUTO_TREE_LIMITS.wallClockHours * HOUR_MS,
   });

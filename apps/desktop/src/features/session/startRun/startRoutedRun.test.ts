@@ -370,3 +370,38 @@ describe('startRoutedRun carries the guidance of one run', () => {
     });
   });
 });
+
+describe('startRoutedRun carries the limit of one run', () => {
+  it('hands the picked limit to the Lead a preset starts', async () => {
+    const engines = mockEngines();
+    const result = routeOf({ text: '~Fix a layout the totals table' });
+
+    await startRoutedRun({ sessionId: SESSION.id, result, limit: { usd: 3, source: 'run' } });
+
+    expect(engines.spawnAgent.mock.calls[0]?.[1]).toMatchObject({
+      kindOverride: 'auto',
+      limitUsd: 3,
+    });
+  });
+
+  it('hands no limit to the Lead when the run keeps the default', async () => {
+    const engines = mockEngines();
+    const result = routeOf({ text: '~Fix a layout the totals table' });
+
+    await startRoutedRun({ sessionId: SESSION.id, result, limit: { usd: null, source: null } });
+
+    expect(engines.spawnAgent.mock.calls[0]?.[1]).not.toHaveProperty('limitUsd');
+  });
+
+  it('hands no limit to one role, which runs outside a Lead tree', async () => {
+    const engines = mockEngines();
+
+    await startRoutedRun({
+      sessionId: SESSION.id,
+      result: { ...routeOf({ text: '~Fix a layout the totals table' }), role: 'implementer' },
+      limit: { usd: 3, source: 'run' },
+    });
+
+    expect(engines.spawnAgent.mock.calls[0]?.[1]).not.toHaveProperty('limitUsd');
+  });
+});
