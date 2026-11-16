@@ -2,6 +2,7 @@ import { mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'nod
 import { createRequire } from 'node:module';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import { format, resolveConfig } from 'prettier';
 
 const REPOSITORY_DIRECTORY = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const ICONS_DIRECTORY = resolve(REPOSITORY_DIRECTORY, 'packages/ui/src/icons');
@@ -42,28 +43,25 @@ const duotoneOf = ({ name, paths }) => {
   return { shade: shade.d, line: line.d };
 };
 
-export const drawingLines = ({ name, weights }) =>
-  [...BASE_WEIGHTS, ...(EXTRA_WEIGHTS[name] ?? [])].flatMap((weight) => {
-    const paths = weights.get(weight);
-    if (weight === 'duotone') {
-      const { shade, line } = duotoneOf({ name, paths });
-      return ['    duotone: {', `      shade: '${shade}',`, `      line: '${line}',`, '    },'];
-    }
-    return [`    ${weight}: '${singlePath({ name, weight, paths })}',`];
-  });
+export const drawingOf = ({ name, weights }) =>
+  Object.fromEntries(
+    [...BASE_WEIGHTS, ...(EXTRA_WEIGHTS[name] ?? [])].map((weight) => {
+      const paths = weights.get(weight);
+      if (weight === 'duotone') {
+        return [weight, duotoneOf({ name, paths })];
+      }
+      return [weight, singlePath({ name, weight, paths })];
+    }),
+  );
 
-export const glyphSource = ({ name, weights }) =>
-  [
-    "import { glyph } from '../glyph';",
-    '',
-    `export const ${name} = glyph({`,
-    `  name: '${name}',`,
-    '  drawing: {',
-    ...drawingLines({ name, weights }),
-    '  },',
-    '});',
-    '',
-  ].join('\n');
+export const glyphSource = async ({ name, weights }) =>
+  format(
+    [
+      "import { glyph } from '../glyph';",
+      `export const ${name} = glyph(${JSON.stringify({ name, drawing: drawingOf({ name, weights }) }, null, 2)});`,
+    ].join('\n\n'),
+    { ...(await resolveConfig(INDEX_PATH)), parser: 'typescript' },
+  );
 
 const readWeights = async ({ name }) => {
   const url = pathToFileURL(resolve(definitionsDirectory(), `${name}.es.js`)).href;
@@ -78,7 +76,7 @@ export const generatedFiles = async ({ names }) =>
     await Promise.all(
       names.map(async (name) => [
         `${name}.ts`,
-        glyphSource({ name, weights: await readWeights({ name }) }),
+        await glyphSource({ name, weights: await readWeights({ name }) }),
       ]),
     ),
   );
