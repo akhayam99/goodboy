@@ -1,7 +1,7 @@
 import type { WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { selectSessionDraft } from '../../../../store/slices/sessionDraft/selectSessionDraft';
-import { PromptField } from '../../../../shared/components/PromptField';
+import { PromptField, type PromptFieldFiles } from '../../../../shared/components/PromptField';
 import { START_KIND_COPY } from '../../startKind/startKindCopy';
 import { RunModelChip } from '../StartRun/RunModelChip';
 import type { RunModelView } from '../StartRun/useRunModel';
@@ -13,6 +13,8 @@ type Props = {
   readonly isDisabled: boolean;
   readonly isSubmitBlocked: boolean;
   readonly model: RunModelView;
+  readonly files: PromptFieldFiles;
+  readonly filesNotice: string | null;
   readonly onSubmit: () => void;
 };
 
@@ -21,6 +23,8 @@ export const StartTaskField = ({
   isDisabled,
   isSubmitBlocked,
   model,
+  files,
+  filesNotice,
   onSubmit,
 }: Props) => {
   const goal = useAppStore((state) => selectSessionDraft({ state, workspaceId }).workflowGoal);
@@ -41,6 +45,8 @@ export const StartTaskField = ({
         isSubmitBlocked={isSubmitBlocked}
         placeholder={START_KIND_COPY.goalPlaceholder}
         disabled={isDisabled}
+        files={files}
+        notice={filesNotice}
         minRows={2}
         maxRows={8}
         keyLabels={{ send: 'start' }}

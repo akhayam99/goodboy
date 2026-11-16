@@ -68,6 +68,7 @@ export const SessionKickoff = ({ workspaceId, notice }: Props) => {
     settleLimit: limit.settle,
     model: shapeModel,
     level: autoRun.pickedLevel,
+    files: autoRun.files,
   });
 
   useEffect(() => {
@@ -93,6 +94,8 @@ export const SessionKickoff = ({ workspaceId, notice }: Props) => {
         isDisabled={isBusy}
         isSubmitBlocked={!hasGoal || isBusy}
         model={model}
+        files={autoRun.files}
+        filesNotice={autoRun.filesNotice}
         onSubmit={() => void (kind === null ? autoRun.start() : shapeRun.start())}
       />
       <StartBranchNotice workspaceId={workspaceId} isDisabled={isBusy} />
