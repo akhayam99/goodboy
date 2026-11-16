@@ -802,7 +802,8 @@ ternary. `icon-size-uses-a-token.test.ts` scans the app and `packages/ui`.
 
 Weight is one rule, `ICON_WEIGHT` in the same file: Phosphor bold at `mark`
 and `row` and on a check mark, regular at `control`, `notice` and `hero`, so
-every icon draws a line about 1px wide. A call site passes the token, never a
+every icon draws a line about 1px wide. Bold is drawn as the regular outline
+widened by a round stroke ([iconography.md](../../docs/iconography.md#sizes)). A call site passes the token, never a
 literal; `iconWeightOf({ size })` picks it from the size, and `IconButton` and
 the folded rail's `RailButton` use it.
 

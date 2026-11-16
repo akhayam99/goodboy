@@ -107,17 +107,23 @@ registries:
   second `zbus` 5 beside the 4 that `keyring` pulls), one new npm package, no new
   transitive npm package. `pnpm audit` is clean.
 
-`@phosphor-icons/react` 2.1.10 (npm, pinned exactly, in `packages/ui` only)
-draws every app glyph through `@goodboy/ui/icons`, in place of
-`lucide-react`. Checked on 17 November 2026 against the registry:
+`@phosphor-icons/react` 2.1.10 (npm, pinned exactly, a root dev dependency)
+is the source of every app glyph, in place of `lucide-react`. The app never
+imports it: `scripts/generate-glyphs.mjs` reads its drawings and writes one
+small component per glyph into `packages/ui/src/icons/generated/`, which
+`@goodboy/ui/icons` serves. Checked on 17 November 2026 against the registry:
 
-- **In-house**: no. The set is about 260 glyphs, each in six weights.
+- **In-house**: the drawn glyphs are. The package stays only as the source the
+  generator reads.
 - **Maintenance**: last release 22 May 2025, so the six month rule above
-  refuses it. One npm maintainer, the Phosphor organisation's repository.
+  refuses it as a runtime dependency; as a generator input nothing of it ships.
+  One npm maintainer, the Phosphor organisation's repository.
 - **Adoption**: 7.8M downloads a week. **Licence**: MIT. **Transitive deps**:
   none, React is a peer. `pnpm audit` is clean.
-- **Size**: each glyph module carries all six weights. The initial load grows
-  from 1,935,278 to 2,056,049 bytes gzip, over the 1,938,492 byte budget.
+- **Size**: each package module carries all six weights (2,056,049 bytes gzip
+  at first load). The generated set keeps the regular path rounded to whole
+  units, plus fill on one glyph and duotone on three, and draws bold from
+  regular: 1,936,479 bytes gzip, under the 1,938,492 byte budget.
 
 The website keeps `lucide-react` as its own dev dependency: `sync-icons.mjs`
 copies lucide paths into the site mocks.

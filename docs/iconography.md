@@ -17,8 +17,11 @@ Rules that hold everywhere:
 
 - Phosphor only, imported from `@goodboy/ui/icons`. That module re-exports
   each Phosphor glyph under the name the code uses (`ChevronDown` draws
-  Phosphor `CaretDown`), one per-icon path each, so a glyph lands only in the
-  chunk that draws it. Brand marks come from `@goodboy/ui` (`GithubIcon`,
+  Phosphor `CaretDown`), one generated file each in
+  `packages/ui/src/icons/generated/`, so a glyph lands only in the chunk that
+  draws it. To add a glyph, add its line to `packages/ui/src/icons/index.ts` and
+  run `pnpm icons:glyphs`; `pnpm check:glyphs` fails when a generated file is
+  stale. Brand marks come from `@goodboy/ui` (`GithubIcon`,
   `GitlabIcon`, `LinearIcon`, `JiraIcon`, `SentryIcon`, `SlackIcon`,
   `BitbucketIcon`) or from `IntegrationGlyph`, never from a look-alike glyph.
 - `Sparkles`, `Sparkle`, `Wand2` and `WandSparkles` are banned by
@@ -47,8 +50,15 @@ Five tokens, exported from `@goodboy/ui`:
 A glyph with no weight draws regular. `iconWeightOf({ size })` gives the weight
 of a size; `IconButton` and the folded rail's buttons draw with it. A check mark
 takes `ICON_WEIGHT.check` (bold) at any size, a starred star the fill weight.
+Bold is the regular outline widened by a round 8 unit stroke, which is the
+Phosphor bold line (24 units on the 256 grid instead of 16). Only `Star` carries
+fill, and only the plan, report and wireframe glyphs carry duotone (the
+emphasized timeline marker); any other glyph asked for those weights draws
+regular. A new fill or duotone use adds the glyph to `EXTRA_WEIGHTS` in
+`scripts/generate-glyphs.mjs`. Paths are rounded to whole units of the 256
+grid, under 0.04px at 18px.
 A test asks `findGlyph` (`@goodboy/ui/icons/testing/findGlyph`) whether an svg
-draws a glyph at any weight, since a Phosphor svg carries no class.
+draws a glyph at any weight, since a generated svg carries no class.
 Import one spelling per
 glyph: `TriangleAlert`, `CircleAlert`, `CircleX`, `CircleCheck` and
 `SquareArrowOutUpRight` (the older aliases of those glyphs and the plain external-link glyph are
