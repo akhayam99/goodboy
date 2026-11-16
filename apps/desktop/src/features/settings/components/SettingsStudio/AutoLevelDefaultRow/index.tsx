@@ -12,8 +12,8 @@ type Props = {
 };
 
 const ROW_KEY = 'auto-asks';
-const LABEL = `${NAMES.runKind.autoAgent} asks you`;
-const HELP = `How often a run started as ${NAMES.runKind.autoAgent} stops, one permission at a time.`;
+const LABEL = `${NAMES.lead} asks you`;
+const HELP = `How often a run led by the ${NAMES.lead} stops, one permission at a time.`;
 
 export const AutoLevelDefaultRow = ({ workspaceId }: Props) => {
   const target = useMemo(

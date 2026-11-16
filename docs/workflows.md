@@ -173,7 +173,7 @@ still carry them and list them as Workflow rules in the preview.
 The page is titled **Run defaults** and has three bands, one row per setting
 (`FieldRow`). `WorkspaceDefaultsGrid` draws the page: `WorkflowRulesPanel` owns
 the **New runs** and **Guidance** bands and takes the settings rows it does not
-own (`runRows`: **Auto agent asks you** and **Start as**) and the **Agents** band
+own (`runRows`: **Lead asks you** and **Start as**) and the **Agents** band
 (children: **Parallel agents**, **Reply length**) from it. A change reaches new
 runs only, since every run keeps its own copy of the rules
 (`attachWorkflowToSession` copies them at start). A failed save keeps the old
@@ -182,9 +182,8 @@ value and shows the error under its row.
 - **Workflow asks you** (`DefaultAsksSetting`): Every step, After the plan or
   Never, applied on click. The hints are the ones the builder shows
   (`RUN_AUTONOMY_OPTIONS`)
-- **Auto agent asks you** (`AutoLevelDefaultRow`): the same three levels for
-  Auto. With Work on, the row holds `LeadPermissionsChip` on the workspace
-  default instead, so there is no separate Asks you band
+- **Lead asks you** (`AutoLevelDefaultRow`): holds `LeadPermissionsChip` on
+  the workspace default, so there is no separate Asks you band
 - **Start as** (`RunDefaultField`): every value starts a Lead. `auto` lets the
   router give it a matching preset, `lead` takes no preset on its own, and
   `plan` (written by older versions) reads as `lead` (`leadDefaultOf`). With a

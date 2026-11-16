@@ -76,7 +76,7 @@ Every door draws the same form: the New session page, a session's Runs page (and
 
 ### The Kind chip
 
-Every run started from the field or the New session page leads its settings line with a **Kind** chip that names what runs, in the words of its row on Runs: "Lead", "Lead · plan Fix a layout" and "Agent · Scout". A run started before keeps its name, such as "Workflow · Orchestrated" or "Workflow · Preset Fix a layout".
+Every run started from the field or the New session page leads its settings line with a **Kind** chip that names what runs. It uses the words of its row on Runs: "Lead", "Lead · plan Fix a layout" and "Agent · Scout". A run started before keeps its name, such as "Workflow · Orchestrated" or "Workflow · Preset Fix a layout".
 
 The chip opens one popover. It shows:
 

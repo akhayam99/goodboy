@@ -297,8 +297,8 @@ export const SETTING_ROWS: ReadonlyArray<SettingRow> = [
   }),
   row({
     key: 'auto-asks',
-    label: `${NAMES.runKind.autoAgent} asks you`,
-    help: `How often a run started as ${NAMES.runKind.autoAgent} stops for your go.`,
+    label: `${NAMES.lead} asks you`,
+    help: `How often a run led by the ${NAMES.lead} stops for your go.`,
     page: RUN_DEFAULTS,
     band: NEW_RUNS,
     formerNames: ['Auto asks you', 'Auto runs ask you'],

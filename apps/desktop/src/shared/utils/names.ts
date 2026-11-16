@@ -58,7 +58,6 @@ export const NAMES = {
     agent: 'Agent',
     orchestrated: 'Orchestrated',
     preset: 'Preset',
-    autoAgent: 'Auto agent',
     plan: 'plan',
     olderRun: 'older run',
     run: 'Run',

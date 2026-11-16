@@ -49,8 +49,8 @@ describe('AutoLevelDefaultRow', () => {
       });
       render(<AutoLevelDefaultRow workspaceId={WORKSPACE_ID} />);
 
-      screen.getByText('Auto agent asks you');
-      expect(screen.queryByRole('tablist', { name: 'Auto agent asks you' })).toBeNull();
+      screen.getByText('Lead asks you');
+      expect(screen.queryByRole('tablist', { name: 'Lead asks you' })).toBeNull();
       fireEvent.click(screen.getByRole('button', { name: /^Asks you: / }));
 
       screen.getByRole('dialog', { name: 'Asks you' });

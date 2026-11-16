@@ -5,7 +5,6 @@ type Params = {
     | Readonly<{ kind: 'lead'; planName: string | null }>
     | Readonly<{ kind: 'orchestrated' }>
     | Readonly<{ kind: 'preset'; presetName: string }>
-    | Readonly<{ kind: 'autoAgent' }>
     | Readonly<{ kind: 'agent'; role: string }>;
 };
 
@@ -22,8 +21,6 @@ export const runKindLineOf = ({ line }: Params): string => {
       return [kinds.workflow, kinds.orchestrated].join(SEPARATOR);
     case 'preset':
       return [kinds.workflow, `${kinds.preset} ${line.presetName}`].join(SEPARATOR);
-    case 'autoAgent':
-      return [kinds.agent, kinds.autoAgent].join(SEPARATOR);
     case 'agent':
       return [kinds.agent, line.role].join(SEPARATOR);
     default: {

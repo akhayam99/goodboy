@@ -1203,7 +1203,7 @@ from `AutoLevelChip` wherever a session or a Lead exists: the start field of a
 session and the Lead page. With no Lead yet it reads the session, and a preset
 writes that session's level only. A new session draft has no session to
 name, so it keeps the level chip, applied to the session once it exists. In the
-workspace settings the **Auto agent asks you** row of Run defaults holds the
+workspace settings the **Lead asks you** row of Run defaults holds the
 chip on the workspace default (`AutoLevelDefaultRow`).
 A row tightened while an agent runs applies to its next start. The tests are
 `permissions.test.ts` (the compatibility table for each level, each

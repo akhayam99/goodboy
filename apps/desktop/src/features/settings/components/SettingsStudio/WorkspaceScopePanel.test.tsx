@@ -127,10 +127,7 @@ beforeEach(async () => {
 afterEach(cleanup);
 
 const RUN_DEFAULT_ROWS: ReadonlyArray<readonly [string, ReadonlyArray<string>]> = [
-  [
-    'New runs',
-    ['Workflow asks you', 'Auto agent asks you', 'Start as', NAMES.spendCap, NAMES.models],
-  ],
+  ['New runs', ['Workflow asks you', 'Lead asks you', 'Start as', NAMES.spendCap, NAMES.models]],
   ['Agents', ['Parallel agents', 'Reply length']],
 ];
 

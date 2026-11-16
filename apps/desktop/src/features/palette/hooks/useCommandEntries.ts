@@ -295,7 +295,7 @@ export const useCommandEntries = (): ReadonlyArray<PaletteEntry> => {
           kind: 'create',
           group: 'action',
           icon: CONCEPT_ICONS.agents,
-          secondary: ['New agent', NAMES.runKind.autoAgent],
+          secondary: ['New agent', NAMES.lead],
           run: () => openNewSessionAs({ startKind: 'agent', startShape: 'autoAgent' }),
         },
         {
