@@ -781,19 +781,19 @@ ternary. `icon-size-uses-a-token.test.ts` scans the app and `packages/ui`.
 | `ICON_SIZE.notice`  | 16  | the tone icon of a `Notice`, the `DogMascot` default      |
 | `ICON_SIZE.hero`    | 18  | empty states, studio headers, choice tiles                |
 
-Stroke is one rule, `ICON_STROKE` in the same file: 2 at `mark` and `row`, 1.75
-at `control` and `notice`, 1.5 at `hero`, and 2.5 on a check mark, so every
-icon draws a line about 1px wide. A call site passes the token, never a number;
-`iconStrokeOf({ size })` picks it from the size, and `IconButton` and the
-folded rail's `RailButton` use it.
+Weight is one rule, `ICON_WEIGHT` in the same file: Phosphor bold at `mark`
+and `row` and on a check mark, regular at `control`, `notice` and `hero`, so
+every icon draws a line about 1px wide. A call site passes the token, never a
+literal; `iconWeightOf({ size })` picks it from the size, and `IconButton` and
+the folded rail's `RailButton` use it.
 
 One size per place, so a column never mixes sizes:
 
 | Place                                        | Size      | Notes                                           |
 | -------------------------------------------- | --------- | ----------------------------------------------- |
-| Left column doors, New session, door actions | `row`     | lucide concept glyph, `navRail.icon` slot       |
+| Left column doors, New session, door actions | `row`     | concept glyph, `navRail.icon` slot              |
 | Left column trailing marks                   | `row`     | `StatusMark` glyphs in the 16px box             |
-| Folded rail (doors, Settings)                | `control` | `RailButton`, stroke 1.75                       |
+| Folded rail (doors, Settings)                | `control` | `RailButton`, regular weight                    |
 | Tools rail (Terminal, Browser)               | `notice`  | icon over its caption, both centred on the rail |
 | Page and session header actions              | `control` | `IconButton` `sm` and `md`                      |
 | List and table rows                          | `row`     | leading and trailing glyphs                     |
@@ -832,8 +832,8 @@ from the reader. `STATUS_MARK_DRAWING` in `statusMarkSpec.ts` is the table.
 
 The circle carries meaning only where something moves: a ring is progress. A
 mark that asks you is one bare glyph in warning; a settled outcome is a single
-circled lucide glyph, the circle part of the glyph, never a container. Glyphs
-are `ICON_SIZE.row` with the row stroke.
+circled glyph, the circle part of the glyph, never a container. Glyphs
+are `ICON_SIZE.row` with the row weight.
 
 A session row picks one mark (`sessionMarkOf`): what asks you or failed, then
 running, then the unread dot, then the settled glyph, then empty. A door picks
@@ -1004,7 +1004,7 @@ the other maps it to its tone. The second map's type comes from the first, so a
 concept cannot get an icon without a tone, or a tone without an icon.
 
 - **One icon per concept.** If a concept already has an entry, never import a
-  lucide symbol for it locally. Add the concept to the map instead.
+  glyph for it locally. Add the concept to the map instead.
 - **One tone per concept, passed alongside the icon** as a pair where it is
   used.
 - **Tone is meaning, not decoration.** `questions` is `warning` because a

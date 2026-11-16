@@ -7,17 +7,20 @@
 One meaning, one glyph. The registry in
 [`apps/desktop/src/shared/components/conceptIcons.ts`](../apps/desktop/src/shared/components/conceptIcons.ts)
 is the contract. `CONCEPT_ICONS` maps a concept to its glyph. `CONCEPT_TONE`
-maps the same concept to its tone. `ICON_SIZE` and `ICON_STROKE`, in
+maps the same concept to its tone. `ICON_SIZE` and `ICON_WEIGHT`, in
 `packages/ui/src/iconSize.ts` and imported from `@goodboy/ui`, give the only
-five sizes and the stroke weights the app draws icons with. This document is the readable version of that file. The
+five sizes and the weights the app draws icons with. This document is the readable version of that file. The
 code is right when they disagree: a change to the registry, `LENS_LABEL` or
 `LENS_ICON` updates this document in the same pull request.
 
 Rules that hold everywhere:
 
-- Lucide only. Brand marks come from `@goodboy/ui` (`GithubIcon`, `GitlabIcon`,
-  `LinearIcon`, `JiraIcon`, `SentryIcon`, `SlackIcon`, `BitbucketIcon`) or from
-  `IntegrationGlyph`, never from a lucide look-alike.
+- Phosphor only, imported from `@goodboy/ui/icons`. That module re-exports
+  each Phosphor glyph under the name the code uses (`ChevronDown` draws
+  Phosphor `CaretDown`), one per-icon path each, so a glyph lands only in the
+  chunk that draws it. Brand marks come from `@goodboy/ui` (`GithubIcon`,
+  `GitlabIcon`, `LinearIcon`, `JiraIcon`, `SentryIcon`, `SlackIcon`,
+  `BitbucketIcon`) or from `IntegrationGlyph`, never from a look-alike glyph.
 - `Sparkles`, `Sparkle`, `Wand2` and `WandSparkles` are banned by
   `apps/desktop/src/__tests__/regressions/no-ai-sparkle-glyphs.test.ts`. An AI
   control uses the glyph of its concept (`orchestrator`, `enhance`,
@@ -33,16 +36,20 @@ Rules that hold everywhere:
 
 Five tokens, exported from `@goodboy/ui`:
 
-| Token               | px  | Stroke | Use                                                    |
-| ------------------- | --- | ------ | ------------------------------------------------------ |
-| `ICON_SIZE.mark`    | 10  | 2      | A glyph inside a chip, a dot or an xs control          |
-| `ICON_SIZE.row`     | 12  | 2      | Leading and trailing glyphs inside list and table rows |
-| `ICON_SIZE.control` | 14  | 1.75   | Buttons, menu triggers, rail tabs, form adornments     |
-| `ICON_SIZE.notice`  | 16  | 1.75   | The tone icon of a `Notice`                            |
-| `ICON_SIZE.hero`    | 18  | 1.5    | Empty states, studio headers, choice tiles             |
+| Token               | px  | Weight  | Use                                                    |
+| ------------------- | --- | ------- | ------------------------------------------------------ |
+| `ICON_SIZE.mark`    | 10  | bold    | A glyph inside a chip, a dot or an xs control          |
+| `ICON_SIZE.row`     | 12  | bold    | Leading and trailing glyphs inside list and table rows |
+| `ICON_SIZE.control` | 14  | regular | Buttons, menu triggers, rail tabs, form adornments     |
+| `ICON_SIZE.notice`  | 16  | regular | The tone icon of a `Notice`                            |
+| `ICON_SIZE.hero`    | 18  | regular | Empty states, studio headers, choice tiles             |
 
-`iconStrokeOf({ size })` gives the stroke of a size; `IconButton` and the
-folded rail's buttons draw with it. A check mark takes `ICON_STROKE.check` (2.5) at any size. Import one spelling per
+A glyph with no weight draws regular. `iconWeightOf({ size })` gives the weight
+of a size; `IconButton` and the folded rail's buttons draw with it. A check mark
+takes `ICON_WEIGHT.check` (bold) at any size, a starred star the fill weight.
+A test asks `findGlyph` (`@goodboy/ui/icons/testing/findGlyph`) whether an svg
+draws a glyph at any weight, since a Phosphor svg carries no class.
+Import one spelling per
 glyph: `TriangleAlert`, `CircleAlert`, `CircleX`, `CircleCheck` and
 `SquareArrowOutUpRight` (the older aliases of those glyphs and the plain external-link glyph are
 banned by `lucide-one-spelling-per-glyph.test.ts`). Failure has three glyphs, one place
@@ -142,7 +149,7 @@ label. DESIGN-SYSTEM.md owns the full table.
 
 ## Agent kinds
 
-Each agent kind has one lucide glyph and one color, both on its entry in
+Each agent kind has one glyph and one color, both on its entry in
 `AGENT_KIND_PALETTE` (`icon`, `fg`, `bg`) in `features/session/agent-kind.ts`,
 read through `agentKindPalette({ kind })`. A kind the app does not know falls
 back to `Bot` in the muted tone. Where a kind means the same thing as a concept,
@@ -216,7 +223,7 @@ between the repo and the folder glyph. Never work it out again inline.
 
 ## Integrations and providers
 
-Brand marks only, never a lucide stand-in. `github`, `gitlab`, `bitbucket`,
+Brand marks only, never a glyph stand-in. `github`, `gitlab`, `bitbucket`,
 `linear`, `jira`, `sentry`, `slack` map to the `@goodboy/ui` brand
 components. Tasks source facets draw them through `IntegrationGlyph`: in brand
 color when the integration is connected, muted when it is not. `providers`
