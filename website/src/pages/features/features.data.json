@@ -85,12 +85,6 @@
           "shown": true
         },
         {
-          "title": "The Start work composer",
-          "text": "With Work on, every door to an Auto or Orchestrator run opens one composer for the goal first.",
-          "group": "Start a task",
-          "also": "Start work composer"
-        },
-        {
           "title": "One start form",
           "text": "Every door draws the same form: the New session page, a session's Runs page, ⌘K and the setup Scout run.",
           "group": "Start a task",
