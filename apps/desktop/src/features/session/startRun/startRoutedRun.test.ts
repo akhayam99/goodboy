@@ -17,6 +17,7 @@ import {
   brandId,
   type AgentId,
   type IsoDateTime,
+  type ProjectId,
   type RunRoute,
   type StepId,
   type Workflow,
@@ -31,6 +32,7 @@ import {
   storySqlite,
   type StoryStore,
 } from '../../../store/storyHarness';
+import { aMountView } from '../testing/aMountView';
 import { olderPlanRouteOf } from './routeChoiceOf';
 import { runRouteOf, type RunRouteFacts, type RunRouteResult } from './runRouteOf';
 import { parseRunRoutes, runRoutesKey } from './runRoutesSetting';
@@ -233,6 +235,56 @@ describe('startRoutedRun keeps the reason with the run', () => {
     );
 
     expect(await readRoutes()).toEqual({});
+  });
+});
+
+describe('startRoutedRun files the Lead on its branch', () => {
+  const API = aMountView({
+    key: 'payments-api',
+    sessionId: SESSION.id,
+    projectId: brandId<ProjectId>({ value: 'project-payments-api' }),
+    projectName: 'payments-api',
+    branch: 'fix/duplicate-credit',
+  });
+  const LEDGER = aMountView({
+    key: 'ledger-core',
+    sessionId: SESSION.id,
+    projectId: brandId<ProjectId>({ value: 'project-ledger-core' }),
+    projectName: 'ledger-core',
+    branch: 'rec/2-backfill',
+  });
+
+  it('records the only mount of the session on the Lead it spawns', async () => {
+    useAppStore.setState({ sessionMounts: { [SESSION.id]: [API] } });
+    const engines = mockEngines();
+
+    await startRoutedRun({ sessionId: SESSION.id, result: routeOf({ text: 'Fix the totals' }) });
+
+    expect(engines.spawnAgent.mock.calls[0]?.[1]).toMatchObject({
+      kindOverride: 'auto',
+      mountId: API.id,
+    });
+  });
+
+  it('records no mount when two mounts share the session', async () => {
+    useAppStore.setState({ sessionMounts: { [SESSION.id]: [API, LEDGER] } });
+    const engines = mockEngines();
+
+    await startRoutedRun({ sessionId: SESSION.id, result: routeOf({ text: 'Fix the totals' }) });
+
+    expect(engines.spawnAgent.mock.calls[0]?.[1]).not.toHaveProperty('mountId');
+  });
+
+  it('leaves the mount of a one role run to its turn', async () => {
+    useAppStore.setState({ sessionMounts: { [SESSION.id]: [API] } });
+    const engines = mockEngines();
+
+    await startRoutedRun({
+      sessionId: SESSION.id,
+      result: { ...routeOf({ text: 'Fix the totals' }), role: 'implementer' },
+    });
+
+    expect(engines.spawnAgent.mock.calls[0]?.[1]).not.toHaveProperty('mountId');
   });
 });
 
