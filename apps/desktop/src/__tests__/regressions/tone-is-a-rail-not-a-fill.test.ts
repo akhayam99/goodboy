@@ -13,7 +13,7 @@ const TINT_OWNER = 'packages/ui/src/tint.ts';
 
 const DIRECT_FILL = /tintClasses\(\s*['"](?:danger|warning)['"]\s*\)\.(?:bg|bgSoft)\b/g;
 const TINT_DECLARATION = /const\s+(\w+)\s*=\s*tintClasses\(\s*['"](?:danger|warning)['"]\s*\)/g;
-const RAW_FILL = /(?<![\w:/-])bg-(?:danger|warning)\/\d+/g;
+const RAW_FILL = /(?<![\w:/-])bg-(?:danger|warning)(?:\/\d+|-(?:wash|subtle)\b)/g;
 
 type Reason = 'chip' | 'control' | 'diff' | 'debt';
 
@@ -112,9 +112,10 @@ describe('tone is a rail, not a fill', () => {
     const source = [
       "const dangerTint = tintClasses('danger');",
       "cn(dangerTint.bg, tintClasses('warning').bgSoft, 'bg-danger/10', 'hover:bg-warning/10');",
+      "cn('bg-warning-subtle', 'bg-danger-wash', 'hover:bg-danger-subtle', 'bg-danger-solid');",
       'cn(dangerTint.text, dangerTint.dot);',
     ].join('\n');
-    expect(countToneFills({ source })).toBe(3);
+    expect(countToneFills({ source })).toBe(5);
   });
 
   it('keeps danger and warning fills to chips, controls and diff cells', () => {

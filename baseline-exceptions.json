@@ -341,5 +341,12 @@
     "count": 1,
     "reason": "Files stays searchable as the former name of Changes, and the word is still drawn on the file rail",
     "release": "0.31.12"
+  },
+  {
+    "rule": "new",
+    "file": "apps/desktop/src/__tests__/regressions/tone-opacity.baseline.json",
+    "count": 40,
+    "reason": "first measure of the guard that ux45 PR2 adds; the ledger only falls from here",
+    "release": "0.39.0"
   }
 ]
