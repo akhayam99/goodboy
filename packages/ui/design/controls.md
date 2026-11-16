@@ -77,7 +77,7 @@ draws every step from the tokens.
 native `<select>`: the WebKit menu ignores theme, density and keyboard.
 `no-token-bypass.test.ts` fails on `<select` and on any import of `Select`.
 
-- **Trigger**: `field` in forms and Settings (hairline `border`, the
+- **Trigger**: `field` in forms and Settings (`border-control`, the
   container's fill, 28px `sm` (the default) or 32px `md`, 12px text,
   `rounded-md`), `quiet` for a value
   inside a row (muted text, `bg-hover` on hover), `chip` inside cards and steps

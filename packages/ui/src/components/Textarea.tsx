@@ -46,7 +46,7 @@ export const Textarea = ({
       ref={ref}
       value={value}
       className={cn(
-        'native-scroll w-full rounded-md border border-border bg-background px-3 py-2 text-ui text-foreground shadow-sm placeholder:text-faint-foreground',
+        'native-scroll w-full rounded-md border border-border-control bg-background px-3 py-2 text-ui text-foreground shadow-sm placeholder:text-faint-foreground',
         FOCUS_RING,
         'disabled:bg-fill disabled:text-disabled-foreground resize-none transition-[border-color,box-shadow] focus-visible:shadow-md',
         !autoGrow && 'min-h-16',

@@ -58,7 +58,7 @@ export const SearchField = ({
     <div
       data-size={size}
       className={cn(
-        'flex w-full items-center gap-2 rounded-md border border-border bg-background px-2 focus-within:ring-2 focus-within:ring-focus-ring',
+        'flex w-full items-center gap-2 rounded-md border border-border-control bg-background px-2 focus-within:ring-2 focus-within:ring-focus-ring',
         FIELD_HEIGHT_CLASSES[size],
         hasValue && 'pr-1',
         className,

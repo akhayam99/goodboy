@@ -49,7 +49,7 @@ export const Checkbox = ({
           }
         }}
         className={cn(
-          'peer size-4 cursor-pointer appearance-none rounded-sm border border-border bg-background transition-colors checked:border-primary checked:bg-primary',
+          'peer size-4 cursor-pointer appearance-none rounded-sm border border-border-control bg-background transition-colors checked:border-primary checked:bg-primary',
           FOCUS_RING,
           'disabled:cursor-not-allowed disabled:bg-fill',
           indeterminate === true && 'border-primary bg-primary',

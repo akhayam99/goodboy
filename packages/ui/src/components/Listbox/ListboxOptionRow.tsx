@@ -83,7 +83,9 @@ export const ListboxOptionRow = ({
           <span
             className={cn(
               'flex size-3.5 items-center justify-center rounded-sm border',
-              isSelected ? 'border-primary bg-primary text-on-tone' : 'border-border bg-background',
+              isSelected
+                ? 'border-primary bg-primary text-on-tone'
+                : 'border-border-control bg-background',
             )}
           >
             {isSelected ? <Check size={ICON_SIZE.mark} strokeWidth={ICON_STROKE.check} /> : null}

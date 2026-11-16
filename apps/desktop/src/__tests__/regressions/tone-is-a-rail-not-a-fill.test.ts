@@ -15,7 +15,7 @@ const DIRECT_FILL = /tintClasses\(\s*['"](?:danger|warning)['"]\s*\)\.(?:bg|bgSo
 const TINT_DECLARATION = /const\s+(\w+)\s*=\s*tintClasses\(\s*['"](?:danger|warning)['"]\s*\)/g;
 const RAW_FILL = /(?<![\w:/-])bg-(?:danger|warning)(?:\/\d+|-(?:wash|subtle)\b)/g;
 
-type Reason = 'chip' | 'control' | 'diff' | 'debt';
+type Reason = 'chip' | 'control' | 'debt';
 
 type Allowance = {
   readonly count: number;
@@ -38,10 +38,6 @@ const ALLOWED: Readonly<Record<string, Allowance>> = {
   'apps/desktop/src/features/workflows/components/WorkflowNextStepCta/index.tsx': {
     count: 1,
     reason: 'control',
-  },
-  'apps/desktop/src/features/diff/lib/lineTone.ts': {
-    count: 2,
-    reason: 'diff',
   },
 };
 

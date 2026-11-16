@@ -57,7 +57,7 @@ export const SelectionCheckbox = ({
           'flex size-4 items-center justify-center rounded-md border motion-safe:transition-colors',
           checked
             ? 'border-primary bg-primary text-on-tone'
-            : 'border-border bg-background hover:border-foreground',
+            : 'border-border-control bg-background hover:border-foreground',
         )}
       >
         {checked ? <Check size={ICON_SIZE.row} strokeWidth={ICON_STROKE.check} /> : null}
