@@ -196,6 +196,42 @@ describe('startRoutedRun keeps the reason with the run', () => {
     });
   });
 
+  it('hands the Lead the model pinned on a preset step, in its brief and for its children', async () => {
+    const engines = mockEngines();
+    const lock = {
+      version: 1,
+      pick: { provider: 'anthropic', model: 'claude-opus-5-5', effort: 'high' },
+      origin: 'user',
+    } as const;
+    const pinned: Workflow = {
+      ...LAYOUT,
+      steps: LAYOUT.steps.map((step) => ({ ...step, role: 'implementer', routingLock: lock })),
+    };
+    useAppStore.setState({ phaseTemplates: { [WORKSPACE.id]: [pinned] } });
+    const result = runRouteOf({
+      facts: { ...FACTS, presets: [pinned], text: '~Fix a layout the totals table' },
+    });
+
+    await startRoutedRun({ sessionId: SESSION.id, result });
+
+    const options = engines.spawnAgent.mock.calls[0]?.[1];
+    expect(options?.initialPrompt).toContain(
+      '1. Find (implementer, pinned to anthropic claude-opus-5-5 high)',
+    );
+    expect(options?.stepLocks).toEqual([{ role: 'implementer', routingLock: lock }]);
+  });
+
+  it('hands no pinned model when no step of the preset is pinned', async () => {
+    const engines = mockEngines();
+
+    await startRoutedRun({
+      sessionId: SESSION.id,
+      result: routeOf({ text: '~Fix a layout the totals table' }),
+    });
+
+    expect(engines.spawnAgent.mock.calls[0]?.[1]).not.toHaveProperty('stepLocks');
+  });
+
   it('starts a Lead for an ask that matches a preset, free to adapt it', async () => {
     const engines = mockEngines();
     const result = routeOf({ text: 'Fix the layout on every billing page' });
@@ -436,11 +472,20 @@ describe('startRoutedRun carries the limit of one run', () => {
     });
   });
 
-  it('hands no limit to the Lead when the run keeps the default', async () => {
+  it('hands the Lead an explicit no limit when the person chose none', async () => {
     const engines = mockEngines();
     const result = routeOf({ text: '~Fix a layout the totals table' });
 
     await startRoutedRun({ sessionId: SESSION.id, result, limit: { usd: null, source: null } });
+
+    expect(engines.spawnAgent.mock.calls[0]?.[1]).toMatchObject({ limitUsd: null });
+  });
+
+  it('leaves the limit to the workspace when the start had no limit to pass', async () => {
+    const engines = mockEngines();
+    const result = routeOf({ text: '~Fix a layout the totals table' });
+
+    await startRoutedRun({ sessionId: SESSION.id, result, limit: null });
 
     expect(engines.spawnAgent.mock.calls[0]?.[1]).not.toHaveProperty('limitUsd');
   });

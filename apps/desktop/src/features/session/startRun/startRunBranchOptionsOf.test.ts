@@ -28,6 +28,15 @@ describe('startRunBranchOptionsOf', () => {
     expect(choice?.label).toBe('Any branch');
   });
 
+  it('leaves out a folder mount with no branch name', () => {
+    expect(startRunBranchOptionsOf({ branches: [''], picked: null })).toBeNull();
+
+    const choice = startRunBranchOptionsOf({ branches: ['', 'feat/replay', ''], picked: null });
+
+    expect(choice?.options.map((option) => option.label)).toEqual(['feat/replay']);
+    expect(choice?.value).toBe('feat/replay');
+  });
+
   it('keeps a branch a door picked even when the list has not read it yet', () => {
     const choice = startRunBranchOptionsOf({ branches: [], picked: 'feat/export-batch' });
 

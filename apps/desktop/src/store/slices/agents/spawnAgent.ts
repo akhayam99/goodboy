@@ -33,6 +33,8 @@ import { buildPlanKickoffSection, composeKickoff, composePlanSection } from '../
 import { runGuidanceSection } from '../workflows/standingGuidance';
 import { writeRunGuidance } from '../../runtime/runGuidance/writeRunGuidance';
 import { writeRunLimit } from '../../runtime/runLimit/writeRunLimit';
+import type { RunStepLock } from '../../runtime/runLocks/parseRunLocks';
+import { writeRunLocks } from '../../runtime/runLocks/writeRunLocks';
 import { namedMountTarget } from '../resolve/mountTarget';
 import {
   canFanOutClusters,
@@ -65,7 +67,8 @@ type SpawnArgs = {
   effort?: string;
   initialPrompt?: string;
   guidance?: string | null;
-  limitUsd?: number;
+  limitUsd?: number | null;
+  stepLocks?: ReadonlyArray<RunStepLock>;
   humanPrompt?: string;
   seedPrompt?: string;
   triggeredPlanId?: PlanId;
@@ -204,6 +207,14 @@ const runSpawn = async ({ set, get, sessionId, session, args }: Params): Promise
             workspaceId: session.workspaceId,
             agentId: newAgentId,
             usd: args.limitUsd,
+          });
+        }
+        if (args.stepLocks !== undefined) {
+          await writeRunLocks({
+            db: tauriDatabase,
+            workspaceId: session.workspaceId,
+            agentId: newAgentId,
+            locks: args.stepLocks,
           });
         }
         const inserted = await invokeAgentInsert({

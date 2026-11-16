@@ -186,7 +186,10 @@ value and shows the error under its row.
   the workspace default, so there is no separate Asks you band
 - **Start as** (`RunDefaultField`): every value starts a Lead. `auto` lets the
   router give it a matching preset, `lead` takes no preset on its own, and
-  `plan` (written by older versions) reads as `lead` (`leadDefaultOf`). With a
+  `plan` (written by older versions) takes no preset and makes the Lead ask
+  before acting on its plan: when the session level is Never and the start
+  picked no level, `startRoutedRun` sets the session to After the plan before
+  the Lead starts, and a stricter level stays (`planFirstLevelOf`). With a
   session of this workspace open, a second row sets that session's default;
   it is the only writer of the session default (`changeRunDefault`)
 - **Limit** (`DefaultLimitSetting`): the amount per run, applied on Enter (a

@@ -11,20 +11,20 @@ type Params = {
   readonly db: Database;
   readonly workspaceId: WorkspaceId;
   readonly agentId: AgentId;
-  readonly usd: number;
+  readonly usd: number | null;
 };
 
 const MAX_ATTEMPTS = 3;
 
 export const writeRunLimit = async ({ db, workspaceId, agentId, usd }: Params): Promise<void> => {
-  if (!Number.isFinite(usd) || usd <= 0) {
+  if (usd !== null && (!Number.isFinite(usd) || usd <= 0)) {
     throw new Error('A run limit must be more than $0.');
   }
   const key = 'run.limit';
   for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt += 1) {
     const raw = await getWorkspaceValue({ db, workspaceId, key });
     const current = parseRunLimit({ raw });
-    if (current.agents[agentId] === usd) {
+    if (Object.hasOwn(current.agents, agentId) && current.agents[agentId] === usd) {
       return;
     }
     const value = JSON.stringify({ agents: { ...current.agents, [agentId]: usd } });
