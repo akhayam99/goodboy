@@ -20,7 +20,9 @@ export const startRunBranchOptionsOf = ({
   branches,
   picked,
 }: Params): StartRunBranchChoice | null => {
-  const named = [...new Set([...branches, ...(picked === null ? [] : [picked])])];
+  const named = [...new Set([...branches, ...(picked === null ? [] : [picked])])].filter(
+    (branch) => branch.trim() !== '',
+  );
   const [only] = named;
   if (only === undefined) {
     return null;
