@@ -5,7 +5,6 @@ export const svgProps = ({
   size = 24,
   color: _color,
   weight: _weight,
-  mirrored: _mirrored,
   alt: _alt,
   ...rest
 }: IconGlyphProps) => ({

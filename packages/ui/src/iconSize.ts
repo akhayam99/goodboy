@@ -1,4 +1,4 @@
-import type { IconWeight } from '@phosphor-icons/react/dist/lib/types';
+import type { IconWeight } from './icons/types';
 
 export const ICON_SIZE = {
   mark: 10,

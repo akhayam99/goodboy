@@ -1,11 +1,11 @@
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
-import type { Icon, IconWeight } from '@phosphor-icons/react/dist/lib/types';
+import type { IconGlyph, IconWeight } from '../types';
 
-const WEIGHTS: ReadonlyArray<IconWeight> = ['thin', 'light', 'regular', 'bold', 'fill', 'duotone'];
+const WEIGHTS: ReadonlyArray<IconWeight> = ['regular', 'bold', 'fill', 'duotone'];
 
 type DrawingParams = {
-  readonly icon: Icon;
+  readonly icon: IconGlyph;
   readonly weight: IconWeight;
 };
 
@@ -17,7 +17,7 @@ const drawingOf = ({ icon, weight }: DrawingParams): string => {
 
 type FindGlyphsParams = {
   readonly root: Element | Document | null | undefined;
-  readonly icons: ReadonlyArray<Icon>;
+  readonly icons: ReadonlyArray<IconGlyph>;
 };
 
 export const findGlyphs = ({ root, icons }: FindGlyphsParams): ReadonlyArray<SVGSVGElement> => {

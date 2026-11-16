@@ -19,12 +19,11 @@ describe('CopilotIcon', () => {
   });
 
   it('takes the size from its prop and drops glyph props the other brand marks drop', () => {
-    const { container } = render(<CopilotIcon size={16} weight="bold" mirrored />);
+    const { container } = render(<CopilotIcon size={16} weight="bold" />);
 
     const svg = container.querySelector('svg');
     expect(svg?.getAttribute('width')).toBe('16');
     expect(svg?.getAttribute('height')).toBe('16');
     expect(svg?.hasAttribute('weight')).toBe(false);
-    expect(svg?.hasAttribute('mirrored')).toBe(false);
   });
 });

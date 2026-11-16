@@ -1,9 +1,9 @@
-import type { Icon } from '@phosphor-icons/react/dist/lib/types';
+import type { IconGlyph } from '../types';
 import { findGlyphs } from './findGlyphs';
 
 type FindGlyphParams = {
   readonly root: Element | Document | null | undefined;
-  readonly icon: Icon;
+  readonly icon: IconGlyph;
 };
 
 export const findGlyph = ({ root, icon }: FindGlyphParams): SVGSVGElement | null =>

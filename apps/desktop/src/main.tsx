@@ -7,7 +7,6 @@ import {
   RemoteImageLoaderProvider,
   type ErrorReportRequest,
 } from '@goodboy/ui';
-import { IconDefaults } from '@goodboy/ui/icons';
 import { App } from './App';
 import { installBackends } from './app/installBackends';
 import { ScrollerStyleProvider } from './shared/components/ScrollerStyleProvider';
@@ -69,17 +68,15 @@ createRoot(container).render(
         onOpen={(url) => requestOpenLink({ url })}
       >
         <CodeHighlighterContext.Provider value={APP_CODE_HIGHLIGHTER}>
-          <IconDefaults>
-            <ScrollerStyleProvider>
-              {MockEntry !== null ? (
-                <Suspense fallback={null}>
-                  <MockEntry />
-                </Suspense>
-              ) : (
-                <App />
-              )}
-            </ScrollerStyleProvider>
-          </IconDefaults>
+          <ScrollerStyleProvider>
+            {MockEntry !== null ? (
+              <Suspense fallback={null}>
+                <MockEntry />
+              </Suspense>
+            ) : (
+              <App />
+            )}
+          </ScrollerStyleProvider>
         </CodeHighlighterContext.Provider>
       </RemoteImageLoaderProvider>
     </ErrorBoundary>

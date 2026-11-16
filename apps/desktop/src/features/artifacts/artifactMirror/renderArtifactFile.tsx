@@ -1,6 +1,5 @@
 import { renderToStaticMarkup } from 'react-dom/server';
 import type { SessionArtifact } from '@goodboy/types';
-import { IconDefaults } from '@goodboy/ui/icons';
 import { ArtifactDocument } from '../components/ArtifactDocument';
 import documentSheet from '../components/ArtifactDocument/artifactDocument.css?raw';
 import appStyles from '../../../styles.css?raw';
@@ -50,9 +49,7 @@ export const renderArtifactFile = ({ artifact, workspaceName }: Params): string 
     '</head>',
     '<body>',
     `<div class="print-sheet" data-medium="file" data-page="portrait">${renderToStaticMarkup(
-      <IconDefaults>
-        <ArtifactDocument artifact={artifact} medium="file" workspaceName={workspaceName} />
-      </IconDefaults>,
+      <ArtifactDocument artifact={artifact} medium="file" workspaceName={workspaceName} />,
     )}</div>`,
     '</body>',
     '</html>',
