@@ -211,7 +211,9 @@ describe('ChangesPane', () => {
     const memo = await screen.findByRole('region', { name: 'launch-memo.md' });
     await waitFor(() => expect(memo.textContent).toContain('Teams of 5 to 200 people'));
     const added = memo.querySelector('[data-line-kind="add"]');
-    expect(added?.querySelector('[class*="bg-success"]')?.textContent).toContain('5 to 200 people');
+    expect(added?.querySelector('[class*="bg-diff-add-word"]')?.textContent).toContain(
+      '5 to 200 people',
+    );
     expect(screen.getByText('Saved versions use 18 MB of 1.0 GB')).toBeDefined();
   });
 
