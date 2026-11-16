@@ -920,12 +920,80 @@ describe('store contract', () => {
       };
       store.setState({ workspaceIntegrations: { [WS_ID]: [existing] } });
 
-      await store.getState().updateSlackConfig({ workspaceId: WS_ID, config });
+      await store.getState().updateSlackConfig({
+        workspaceId: WS_ID,
+        update: ({ config: latest }) => ({ ...latest, followedChannels: config.followedChannels }),
+      });
 
       expect(storySpies.upsertIntegrationBinding).toHaveBeenCalledWith(
         expect.objectContaining({ binding: expect.objectContaining({ config }) }),
       );
       expect(store.getState().workspaceIntegrations[WS_ID]?.[0]?.config).toEqual(config);
+    });
+
+    it('updateSlackConfig queues two quick changes so the second keeps the first', async () => {
+      const store = useAppStore;
+      const existing: IntegrationBinding = {
+        id: brandId<IntegrationBindingId>({ value: 'sl-queued' }),
+        workspaceId: WS_ID,
+        projectId: null,
+        provider: 'slack',
+        config: slackConfig({ teamId: 'T01', teamName: 'Acme', userId: 'U09' }),
+        credentialId: CRED_ID,
+        createdAt: brandId<IsoDateTime>({ value: '2026-01-01T00:00:00.000Z' }),
+        updatedAt: brandId<IsoDateTime>({ value: '2026-01-01T00:00:00.000Z' }),
+      };
+      store.setState({ workspaceIntegrations: { [WS_ID]: [existing] } });
+      let finishFirst: () => void = () => undefined;
+      storySpies.upsertIntegrationBinding.mockImplementationOnce(
+        () =>
+          new Promise<undefined>((resolve) => {
+            finishFirst = () => resolve(undefined);
+          }),
+      );
+
+      const first = store.getState().updateSlackConfig({
+        workspaceId: WS_ID,
+        update: ({ config }) => ({ ...config, includePrivate: true }),
+      });
+      const second = store.getState().updateSlackConfig({
+        workspaceId: WS_ID,
+        update: ({ config }) => ({
+          ...config,
+          agentPolicy: { ...config.agentPolicy, reply: 'never' },
+        }),
+      });
+      await vi.waitFor(() => expect(storySpies.upsertIntegrationBinding).toHaveBeenCalledOnce());
+      finishFirst();
+      await Promise.all([first, second]);
+
+      const saved = store.getState().workspaceIntegrations[WS_ID]?.[0]?.config;
+      expect(saved).toMatchObject({ includePrivate: true, agentPolicy: { reply: 'never' } });
+    });
+
+    it('updateSlackConfig keeps the old config and rejects when the write fails', async () => {
+      const store = useAppStore;
+      const existing: IntegrationBinding = {
+        id: brandId<IntegrationBindingId>({ value: 'sl-failed' }),
+        workspaceId: WS_ID,
+        projectId: null,
+        provider: 'slack',
+        config: slackConfig({ teamId: 'T01', teamName: 'Acme', userId: 'U09' }),
+        credentialId: CRED_ID,
+        createdAt: brandId<IsoDateTime>({ value: '2026-01-01T00:00:00.000Z' }),
+        updatedAt: brandId<IsoDateTime>({ value: '2026-01-01T00:00:00.000Z' }),
+      };
+      store.setState({ workspaceIntegrations: { [WS_ID]: [existing] } });
+      storySpies.upsertIntegrationBinding.mockRejectedValueOnce(new Error('database is locked'));
+
+      await expect(
+        store.getState().updateSlackConfig({
+          workspaceId: WS_ID,
+          update: ({ config }) => ({ ...config, includePrivate: true }),
+        }),
+      ).rejects.toThrow('database is locked');
+
+      expect(store.getState().workspaceIntegrations[WS_ID]?.[0]).toEqual(existing);
     });
   });
 });

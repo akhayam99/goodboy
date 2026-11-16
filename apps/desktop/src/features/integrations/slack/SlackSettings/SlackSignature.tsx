@@ -1,5 +1,6 @@
 import { Input, Switch } from '@goodboy/ui';
 import type { SlackIntegrationBinding, WorkspaceId } from '@goodboy/types';
+import { SlackSaveError } from './SlackSaveError';
 import { useSlackConfigSave } from './useSlackConfigSave';
 
 type Props = {
@@ -8,7 +9,7 @@ type Props = {
 };
 
 export const SlackSignature = ({ workspaceId, slack }: Props) => {
-  const persist = useSlackConfigSave({ workspaceId });
+  const slackSave = useSlackConfigSave({ workspaceId });
   const config = slack.config;
 
   return (
@@ -17,27 +18,41 @@ export const SlackSignature = ({ workspaceId, slack }: Props) => {
         label="Add a note under messages an agent writes"
         checked={config.signature.agents}
         onChange={(isChecked) =>
-          persist({ ...config, signature: { ...config.signature, agents: isChecked } })
+          slackSave.save({
+            update: ({ config: latest }) => ({
+              ...latest,
+              signature: { ...latest.signature, agents: isChecked },
+            }),
+          })
         }
       />
       <Input
         aria-label="Agent message signature"
         value={config.signature.text}
         disabled={!config.signature.agents}
-        onChange={(event) =>
-          persist({
-            ...config,
-            signature: { ...config.signature, text: event.target.value },
-          })
-        }
+        onChange={(event) => {
+          const text = event.target.value;
+          slackSave.save({
+            update: ({ config: latest }) => ({
+              ...latest,
+              signature: { ...latest.signature, text },
+            }),
+          });
+        }}
       />
       <Switch
         label="Also under your messages sent from Goodboy"
         checked={config.signature.own}
         onChange={(isChecked) =>
-          persist({ ...config, signature: { ...config.signature, own: isChecked } })
+          slackSave.save({
+            update: ({ config: latest }) => ({
+              ...latest,
+              signature: { ...latest.signature, own: isChecked },
+            }),
+          })
         }
       />
+      <SlackSaveError save={slackSave} />
       <div className="flex min-w-0 flex-col gap-1 rounded-lg border border-border-soft bg-elevated p-3 shadow-sm">
         <span className="text-body text-foreground">I checked the refund split.</span>
         {config.signature.agents && config.signature.text.trim() !== '' ? (

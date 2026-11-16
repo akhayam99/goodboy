@@ -30,7 +30,7 @@ export const createIntegrationsSlice = ({ set, get }: SliceDeps) => {
     connectJira: connectJira(set, get),
     connectBitbucket: connectBitbucket(set, get),
     connectSlack: connectSlack(set),
-    updateSlackConfig: updateSlackConfig(set, get),
+    updateSlackConfig: updateSlackConfig({ set, get }),
     checkIntegrationKey: checkIntegrationKey({ set, get }),
     replaceIntegrationKey: replaceIntegrationKey({ set, get }),
     noteToolUseCounts: noteToolUseCounts({ set, get }),

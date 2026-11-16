@@ -3,6 +3,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import type { IntegrationCredentialId, SlackIntegrationBinding, WorkspaceId } from '@goodboy/types';
+import type { SlackConfigUpdate } from '../../../store/slices/integrations/updateSlackConfig';
+
+type SlackSaveParams = {
+  readonly workspaceId: WorkspaceId;
+  readonly update: SlackConfigUpdate;
+};
 
 const { state } = vi.hoisted(() => ({
   state: {
@@ -11,7 +17,8 @@ const { state } = vi.hoisted(() => ({
     connectSlack: vi.fn(async () => undefined),
     disconnectIntegration: vi.fn(async () => undefined),
     refreshSlackChannels: vi.fn(async () => undefined),
-    updateSlackConfig: vi.fn(async () => undefined),
+    updateSlackConfig: vi.fn(async (_params: SlackSaveParams) => undefined),
+    reportError: vi.fn(async () => undefined),
     slackChannels: {} as Record<string, { readonly channels: ReadonlyArray<unknown> }>,
     forgetIntegrationCredential: vi.fn(async () => undefined),
     integrationCredentials: [] as ReadonlyArray<unknown>,
@@ -61,7 +68,7 @@ beforeEach(() => {
   state.connectSlack = vi.fn(async () => undefined);
   state.disconnectIntegration = vi.fn(async () => undefined);
   state.refreshSlackChannels = vi.fn(async () => undefined);
-  state.updateSlackConfig = vi.fn(async () => undefined);
+  state.updateSlackConfig = vi.fn(async (_params: SlackSaveParams) => undefined);
   state.slackChannels = {};
   state.forgetIntegrationCredential = vi.fn(async () => undefined);
   state.integrationCredentials = [];
@@ -199,13 +206,37 @@ describe('SlackFormBody', () => {
 
       expect(state.updateSlackConfig).toHaveBeenCalledWith({
         workspaceId: WS_ID,
-        config: expect.objectContaining({
-          followedChannels: [{ id: 'C1', name: 'payments' }],
-          hasSelectedChannels: true,
-        }),
+        update: expect.any(Function),
+      });
+      const [call] = state.updateSlackConfig.mock.calls;
+      expect(call?.[0]?.update({ config: slackIntegration.config })).toMatchObject({
+        followedChannels: [{ id: 'C1', name: 'payments' }],
+        hasSelectedChannels: true,
       });
       expect(screen.getAllByRole('tab', { name: 'Ask first' })).toHaveLength(2);
       screen.getByDisplayValue('Written with Goodboy');
+    });
+
+    it('says a Slack setting did not save, keeps the old value and saves it again on Retry', async () => {
+      state.updateSlackConfig = vi
+        .fn<(params: SlackSaveParams) => Promise<undefined>>()
+        .mockRejectedValueOnce(new Error('database is locked'))
+        .mockResolvedValue(undefined);
+      render(<SlackFormBody workspaceId={WS_ID} />);
+
+      fireEvent.click(screen.getByRole('switch', { name: /private channels/i }));
+
+      const alert = await screen.findByRole('alert');
+      within(alert).getByText('database is locked');
+      expect(
+        screen.getByRole('switch', { name: /private channels/i }).getAttribute('aria-checked'),
+      ).toBe('false');
+      fireEvent.click(within(alert).getByRole('button', { name: 'Retry' }));
+
+      await waitFor(() => expect(screen.queryByRole('alert')).toBeNull());
+      expect(state.updateSlackConfig).toHaveBeenCalledTimes(2);
+      const retried = state.updateSlackConfig.mock.calls[1]?.[0];
+      expect(retried?.update({ config: slackIntegration.config }).includePrivate).toBe(true);
     });
 
     it('disconnects Slack for the workspace once the confirm is confirmed', async () => {
