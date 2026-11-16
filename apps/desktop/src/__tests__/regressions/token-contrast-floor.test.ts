@@ -3,6 +3,7 @@ import { readFileSync } from 'fs';
 import { join } from 'path';
 import { describe, expect, it } from 'vitest';
 import { oklchToSrgb, type Rgb } from '../../test/colorMath';
+import { THEME_BLOCKS } from '../../test/styleTokens';
 
 const STYLES = join(__dirname, '..', '..', 'styles.css');
 
@@ -127,10 +128,9 @@ const readLabs = (block: string): Readonly<Record<string, Lab>> => {
 
 const themeBlocks = (): Readonly<{ dark: string; light: string }> => {
   const css = readFileSync(STYLES, 'utf8');
-  const themeStart = css.indexOf('@theme {');
   const lightStart = css.indexOf("html[data-theme='light'] {");
   return {
-    dark: css.slice(themeStart, lightStart),
+    dark: THEME_BLOCKS.dark,
     light: css.slice(lightStart, css.indexOf('\n}', lightStart)),
   };
 };

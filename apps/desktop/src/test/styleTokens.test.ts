@@ -51,6 +51,12 @@ describe('the styles.css reader', () => {
     expect(tokenOf({ theme, name: 'on-primary' })).toEqual(tokenOf({ theme, name: 'on-tone' }));
   });
 
+  it.each(THEME_NAMES)('reads primary from the %s theme, not from a scoped rule', (theme) => {
+    expect(tokenOf({ theme, name: 'primary' })).not.toEqual(
+      tokenOf({ theme, name: 'brand-accent' }),
+    );
+  });
+
   it('reads a raw scale step per theme', () => {
     expect(scaleStepOf({ theme: 'light', scale: 'gray', step: 1 })).not.toEqual(
       scaleStepOf({ theme: 'dark', scale: 'gray', step: 1 }),

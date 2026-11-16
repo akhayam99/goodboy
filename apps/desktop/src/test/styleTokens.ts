@@ -65,24 +65,43 @@ export const resolveToken = ({ declared, name, depth = 0 }: ResolveTokenParams):
 
 type ThemeBlocks = Readonly<Record<Theme, string>>;
 
-const readThemeBlocks = (): ThemeBlocks => {
-  const css = readFileSync(STYLES_PATH, 'utf8');
-  const themeStart = css.indexOf('@theme {');
-  const lightStart = css.indexOf("html[data-theme='light'] {");
-  const dark = css.slice(themeStart, lightStart);
-  return { dark, light: dark + css.slice(lightStart, css.indexOf('\n}', lightStart)) };
+const GLOBAL_HEADERS: ReadonlyArray<string> = ['@theme {', ':root {'];
+const LIGHT_HEADERS: ReadonlyArray<string> = ["html[data-theme='light'] {"];
+
+type ReadBlocksParams = { readonly css: string; readonly headers: ReadonlyArray<string> };
+
+const readBlocks = ({ css, headers }: ReadBlocksParams): string => {
+  const blocks: string[] = [];
+  for (const header of headers) {
+    let start = css.indexOf(`\n${header}\n`);
+    while (start !== -1) {
+      const end = css.indexOf('\n}', start + 1);
+      if (end === -1) {
+        throw new Error(`styles.css has an unclosed ${header} block`);
+      }
+      blocks.push(css.slice(start, end));
+      start = css.indexOf(`\n${header}\n`, end);
+    }
+  }
+  return blocks.join('\n');
 };
 
-const BLOCKS = readThemeBlocks();
+const readThemeBlocks = (): ThemeBlocks => {
+  const css = readFileSync(STYLES_PATH, 'utf8');
+  const dark = readBlocks({ css, headers: GLOBAL_HEADERS });
+  return { dark, light: `${dark}\n${readBlocks({ css, headers: LIGHT_HEADERS })}` };
+};
+
+export const THEME_BLOCKS = readThemeBlocks();
 
 const THEMES: Readonly<Record<Theme, Declarations>> = {
-  dark: readDeclarations({ block: BLOCKS.dark, prefix: '--color-' }),
-  light: readDeclarations({ block: BLOCKS.light, prefix: '--color-' }),
+  dark: readDeclarations({ block: THEME_BLOCKS.dark, prefix: '--color-' }),
+  light: readDeclarations({ block: THEME_BLOCKS.light, prefix: '--color-' }),
 };
 
 const SCALES: Readonly<Record<Theme, Declarations>> = {
-  dark: readDeclarations({ block: BLOCKS.dark, prefix: '--' }),
-  light: readDeclarations({ block: BLOCKS.light, prefix: '--' }),
+  dark: readDeclarations({ block: THEME_BLOCKS.dark, prefix: '--' }),
+  light: readDeclarations({ block: THEME_BLOCKS.light, prefix: '--' }),
 };
 
 export const tokenOf = ({
