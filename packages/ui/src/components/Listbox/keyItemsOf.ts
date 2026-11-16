@@ -12,6 +12,7 @@ export const keyItemsOf = <T extends ListboxValue>({
   createLabel,
 }: Params<T>): ReadonlyArray<ListboxKeyItem> => [
   ...entries.map(({ option }) => ({
+    key: `${typeof option.value}:${String(option.value)}`,
     label: option.label,
     isDisabled: option.disabledReason !== undefined,
     ...(option.star !== undefined &&

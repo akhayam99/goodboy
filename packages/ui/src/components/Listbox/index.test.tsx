@@ -451,6 +451,57 @@ describe('Listbox star', () => {
 
     expect(onToggle.mock.calls).toEqual([['ledger-core'], ['notify-relay']]);
   });
+
+  type ReorderHarnessProps = {
+    readonly onChange: (value: string) => void;
+  };
+
+  const ReorderHarness = ({ onChange }: ReorderHarnessProps) => {
+    const [starred, setStarred] = useState<ReadonlyArray<string>>(['ledger-core']);
+    const names = ['ledger-core', 'notify-relay', 'payments-api'];
+    const ordered = [
+      ...names.filter((name) => starred.includes(name)),
+      ...names.filter((name) => !starred.includes(name)),
+    ];
+    return (
+      <Listbox
+        searchable
+        ariaLabel="Projects"
+        searchLabel="Search projects"
+        options={ordered.map((name) => ({
+          value: name,
+          label: name,
+          star: {
+            isStarred: starred.includes(name),
+            label: `${starred.includes(name) ? 'Unstar' : 'Star'} ${name}`,
+            tooltip: 'Starred projects stay on top',
+            onToggle: () =>
+              setStarred((current) =>
+                current.includes(name)
+                  ? current.filter((entry) => entry !== name)
+                  : [...current, name],
+              ),
+          },
+        }))}
+        value={null}
+        onChange={onChange}
+      />
+    );
+  };
+
+  it('keeps the cursor on the row it starred when the row moves into Starred', () => {
+    const onChange = vi.fn();
+    render(<ReorderHarness onChange={onChange} />);
+
+    fireEvent.click(screen.getByRole('combobox', { name: 'Projects' }));
+    const search = screen.getByRole('combobox', { name: 'Search projects' });
+    fireEvent.keyDown(search, { key: 'ArrowDown', code: 'ArrowDown' });
+    fireEvent.keyDown(search, { key: 'ArrowDown', code: 'ArrowDown' });
+    fireEvent.keyDown(search, { key: 's', code: 'KeyS', metaKey: true });
+    fireEvent.keyDown(search, { key: 'Enter', code: 'Enter' });
+
+    expect(onChange).toHaveBeenCalledWith('payments-api');
+  });
 });
 
 describe('filterOptions', () => {
