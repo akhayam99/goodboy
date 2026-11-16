@@ -2,6 +2,14 @@ import type { ReactNode } from 'react';
 
 export type ListboxValue = string | number;
 
+export type ListboxStar = {
+  readonly isStarred: boolean;
+  readonly label: string;
+  readonly tooltip: string;
+  readonly isBusy?: boolean;
+  readonly onToggle: () => void;
+};
+
 export type ListboxOption<T extends ListboxValue> = {
   readonly value: T;
   readonly label: string;
@@ -12,6 +20,7 @@ export type ListboxOption<T extends ListboxValue> = {
   readonly disabledReason?: string;
   readonly keywords?: string;
   readonly isCode?: boolean;
+  readonly star?: ListboxStar;
 };
 
 export type ListboxTriggerVariant = 'field' | 'quiet' | 'chip';

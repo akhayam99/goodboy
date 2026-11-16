@@ -315,6 +315,7 @@ export type {
   ListboxTriggerVariant,
   ListboxValue,
 } from './components/Listbox';
+export type { ListboxStar } from './components/Listbox/listboxTypes';
 export { ListboxList, listboxOptionId } from './components/Listbox/ListboxList';
 export type { ListboxListProps } from './components/Listbox/ListboxList';
 export { ListboxOptionRow } from './components/Listbox/ListboxOptionRow';

@@ -69,6 +69,7 @@ export const ListboxList = <T extends ListboxValue>({
               description={option.description}
               leading={option.leading}
               meta={option.meta}
+              star={option.star}
               match={match}
               isCode={option.isCode}
               isActive={index === activeIndex}
