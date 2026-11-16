@@ -101,10 +101,10 @@ describe('Auto: every capability keeps a home in Auto', () => {
     expect(screen.queryByRole('button', { name: 'Change approach' })).toBeNull();
   });
 
-  it('Composer placeholder by state: Message Auto while Auto waits', async () => {
+  it('Composer placeholder by state: Message Lead while the Lead waits', async () => {
     mount({ Scene: U25_C07_AUTO_SCENES['c07-auto-working'] });
 
-    expect(await screen.findByPlaceholderText('Message Auto', undefined, WAIT)).toBeDefined();
+    expect(await screen.findByPlaceholderText('Message Lead', undefined, WAIT)).toBeDefined();
   });
 
   it('Revision line: the same producer line says revising v2', async () => {

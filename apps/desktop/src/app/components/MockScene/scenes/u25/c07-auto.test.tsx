@@ -199,7 +199,7 @@ describe('c07 Auto scenes', () => {
       screen.getByText('Auto started this agent and reads your messages to it.'),
     ).toBeDefined();
     expect(screen.getByPlaceholderText('Message Implementer')).toBeDefined();
-    expect(screen.queryByPlaceholderText('Message Auto')).toBeNull();
+    expect(screen.queryByPlaceholderText('Message Lead')).toBeNull();
     expect(
       sessionHead().querySelector('[data-slot="pane-title-row"] [data-session-back]'),
     ).not.toBeNull();
@@ -261,7 +261,7 @@ describe('c07 Auto scenes', () => {
     const ask = await screen.findByText('Where should the Implementer work?', undefined, WAIT);
     expect(ask).toBeDefined();
     expect(ask.closest('[data-conversation-dock]')).not.toBeNull();
-    expect(screen.getByPlaceholderText('Pick a project, or write to Auto')).toBeDefined();
+    expect(screen.getByPlaceholderText('Pick a project, or write to Lead')).toBeDefined();
     const list = screen.getByRole('list', { name: 'Projects' });
     const boxes = within(list).getAllByRole('checkbox');
     expect(boxes.length).toBeGreaterThan(1);
@@ -336,7 +336,7 @@ describe('c07 Auto scenes', () => {
     expect(within(popover).getByText('Spent')).toBeDefined();
     expect(within(popover).getByText('Reserved')).toBeDefined();
     expect(within(popover).getByText('Turns')).toBeDefined();
-    expect(within(popover).getByRole('form', { name: 'Limit for this Auto' })).toBeDefined();
+    expect(within(popover).getByRole('form', { name: 'Limit for this Lead' })).toBeDefined();
   });
 
   it('c07-auto-working titles the Auto root with its goal and holds no Open transcript in the menu', async () => {
@@ -429,8 +429,8 @@ describe('c07 Auto scenes', () => {
     expect(screen.queryByRole('button', { name: 'Start an auto' })).toBeNull();
     const rows = within(list).getAllByRole('button', { name: /, Lead, / });
     expect(rows).toHaveLength(2);
-    expect(within(list).getByRole('button', { name: /, Lead, Idle$/ })).toBeDefined();
-    expect(within(list).getByRole('button', { name: /, Lead, Done$/ })).toBeDefined();
+    expect(within(list).getByRole('button', { name: /, Lead, Resting$/ })).toBeDefined();
+    expect(within(list).getByRole('button', { name: /, Lead, Finished$/ })).toBeDefined();
     expect(sessionHead()).toBeDefined();
 
     fireEvent.click(rows[0] ?? list);

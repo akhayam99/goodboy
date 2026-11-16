@@ -873,10 +873,10 @@ the same reason a failed plain agent raises, and it does not count as a wait for
 (`autoWaitRootsOf` counts a plan, a project ask and a stuck child, compared on the
 typed `AutoTreeState`, never on a display word).
 
-A tree at its limit reads **Paused**, whether the budget is spent
-or a guard blocked it for the budget or the wall clock (`isAutoPausedAtLimit`, the one
-function the word, the glance and the row facts read). Its row sits under Needs you
-with the word Paused, and it raises `run-paused-at-limit` (`autoLimitRootsOf`), not
+A tree at its limit reads **Waits for you** with the reason `limit` (`leadStopOf`),
+whether the budget is spent or a guard blocked it for the budget or the wall clock
+(`isAutoPausedAtLimit`, the one function the word, the glance and the row facts read).
+Its row sits under Needs you, and it raises `run-paused-at-limit` (`autoLimitRootsOf`), not
 `auto-needs-you`. It has no Retry card: the limit is raised, not retried.
 
 A child that returned (outcome `blocked`, reasons `needs_shell`, `needs_writer`,
