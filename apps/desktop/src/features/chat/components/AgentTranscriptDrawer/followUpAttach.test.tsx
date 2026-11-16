@@ -2,13 +2,14 @@
 
 type DragHandler = (event: { readonly payload: unknown }) => void;
 
-const { dragHandlers, invokeMock } = vi.hoisted(() => ({
-  dragHandlers: new Set<DragHandler>(),
-  invokeMock: vi.fn(),
-}));
+const { dragHandlers } = vi.hoisted(() => ({ dragHandlers: new Set<DragHandler>() }));
 
-vi.mock('@tauri-apps/api/core', () => ({ invoke: invokeMock }));
-vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn(async () => () => undefined) }));
+vi.mock('@tauri-apps/api/core', async () =>
+  (await import('../../../../store/storyHarness')).tauriCoreModuleMock(),
+);
+vi.mock('@tauri-apps/api/event', async () =>
+  (await import('../../../../store/storyHarness')).tauriEventModuleMock(),
+);
 vi.mock('@tauri-apps/api/webview', () => ({
   getCurrentWebview: () => ({
     setZoom: async () => undefined,
@@ -26,6 +27,7 @@ import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
   resetStoryStore,
+  storySpies,
   type StoryStore,
 } from '../../../../store/storyHarness';
 import { SESSION, SESSION_ID } from '../../../../app/components/MockScene/scenes/resolveSeed';
@@ -58,8 +60,7 @@ beforeAll(async () => {
 beforeEach(async () => {
   await resetStoryStore();
   dragHandlers.clear();
-  invokeMock.mockReset();
-  invokeMock.mockImplementation((command: unknown) => {
+  storySpies.tauriInvoke.mockImplementation((command?: unknown) => {
     if (command === 'attachment_read_dropped') {
       return Promise.resolve({
         fileName: 'ledger-core-chart.png',

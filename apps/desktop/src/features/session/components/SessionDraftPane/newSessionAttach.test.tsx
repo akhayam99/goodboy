@@ -2,13 +2,17 @@
 
 type DragHandler = (event: { readonly payload: unknown }) => void;
 
-const { dragHandlers, invokeMock } = vi.hoisted(() => ({
-  dragHandlers: new Set<DragHandler>(),
-  invokeMock: vi.fn(),
-}));
+const { dragHandlers } = vi.hoisted(() => ({ dragHandlers: new Set<DragHandler>() }));
 
-vi.mock('@tauri-apps/api/core', () => ({ invoke: invokeMock }));
-vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn(async () => () => undefined) }));
+vi.mock('@tauri-apps/api/core', async () =>
+  (await import('../../../../store/storyHarness')).tauriCoreModuleMock(),
+);
+vi.mock('@tauri-apps/api/event', async () =>
+  (await import('../../../../store/storyHarness')).tauriEventModuleMock(),
+);
+vi.mock('../../../../shared/lib/db', async () =>
+  (await import('../../../../store/storyHarness')).sqliteDbLibModuleMock(),
+);
 vi.mock('@tauri-apps/plugin-dialog', () => ({ open: vi.fn() }));
 vi.mock('@tauri-apps/api/webview', () => ({
   getCurrentWebview: () => ({
@@ -27,11 +31,14 @@ import { brandedId } from '../../../history/testing/brandedId';
 import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
+  openStorySqlite,
   resetStoryStore,
+  storySpies,
   type StoryStore,
 } from '../../../../store/storyHarness';
 import type { AppStore } from '../../../../store/store';
 import { ToastProvider } from '../../../../shared/components/Toast';
+import { queueOnlyInvoke } from '../../../../test/queueOnlyInvoke';
 import { sessionPlace } from '../../../../store/slices/navigation/place';
 import {
   WORKSPACE_ID,
@@ -69,8 +76,8 @@ beforeEach(async () => {
   await resetStoryStore();
   seedBoardScene();
   dragHandlers.clear();
-  invokeMock.mockReset();
-  invokeMock.mockImplementation((command: unknown) => {
+  await openStorySqlite();
+  storySpies.tauriInvoke.mockImplementation((command?: unknown, args?: unknown) => {
     if (command === 'attachment_read_dropped') {
       return Promise.resolve({
         fileName: 'ledger-core-chart.png',
@@ -78,13 +85,7 @@ beforeEach(async () => {
         dataBase64: 'aGk=',
       });
     }
-    if (command === 'db_execute') {
-      return Promise.resolve({ rowsAffected: 1 });
-    }
-    if (command === 'db_select') {
-      return Promise.resolve([]);
-    }
-    return new Promise<never>(() => undefined);
+    return queueOnlyInvoke({ command, args });
   });
   const first = useAppStore.getState().sessions[0];
   if (first === undefined) {
@@ -108,12 +109,6 @@ afterEach(() => {
   localStorage.clear();
 });
 
-const settle = async (): Promise<void> => {
-  await act(async () => {
-    await new Promise((resolve) => setTimeout(resolve, 20));
-  });
-};
-
 const openPage = async (): Promise<void> => {
   useAppStore.getState().navigate({ to: sessionPlace({ sessionId: cameFrom.id }) });
   useAppStore.getState().openSessionDraft();
@@ -122,7 +117,7 @@ const openPage = async (): Promise<void> => {
       <SessionDraftPane workspaceId={WORKSPACE_ID} />
     </ToastProvider>,
   );
-  await settle();
+  await screen.findByRole('textbox', { name: 'Goal' }, WAIT);
   const more = screen.queryByRole('button', { name: /^More/ });
   if (more !== null) {
     fireEvent.click(more);
@@ -160,7 +155,13 @@ const pickAgent = async (): Promise<void> => {
       name: /^Agent/,
     }),
   );
-  await settle();
+  await waitFor(
+    () =>
+      expect(screen.getByRole('button', { name: /^How: / }).getAttribute('aria-label')).toMatch(
+        /Agent/,
+      ),
+    WAIT,
+  );
 };
 
 const attachedNames = (): ReadonlyArray<string> =>
@@ -234,12 +235,8 @@ describe('New session field attachments', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Start' }));
 
-    expect(
-      await screen.findByText('The folder is locked by another window', undefined, WAIT),
-    ).toBeDefined();
-    expect(
-      within(goalField()).getByRole('button', { name: 'Remove checkout-502.png' }),
-    ).toBeDefined();
+    await screen.findByText('The folder is locked by another window', undefined, WAIT);
+    within(goalField()).getByRole('button', { name: 'Remove checkout-502.png' });
     expect(screen.getByRole<HTMLTextAreaElement>('textbox', { name: 'Goal' }).value).toBe(GOAL);
   });
 
@@ -253,7 +250,7 @@ describe('New session field attachments', () => {
 
     fireEvent.paste(goalBox(), { clipboardData: { files: [huge] } });
 
-    expect(await within(goalField()).findByRole('alert', undefined, WAIT)).toBeDefined();
+    await within(goalField()).findByRole('alert', undefined, WAIT);
     within(goalField()).getByRole('button', { name: 'Remove checkout-502.png' });
   });
 });
