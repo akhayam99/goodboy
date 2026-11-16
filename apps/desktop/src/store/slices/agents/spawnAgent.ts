@@ -65,7 +65,7 @@ type SpawnArgs = {
   effort?: string;
   initialPrompt?: string;
   guidance?: string | null;
-  limitUsd?: number;
+  limitUsd?: number | null;
   humanPrompt?: string;
   seedPrompt?: string;
   triggeredPlanId?: PlanId;

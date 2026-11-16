@@ -10,11 +10,17 @@ const northwind = brandId<WorkspaceId>({ value: 'workspace-northwind' });
 const FIRST = brandId<AgentId>({ value: 'agent-ledger-core' });
 const SECOND = brandId<AgentId>({ value: 'agent-notify-relay' });
 
+const INHERITED = { kind: 'inherited' } as const;
+
+const UNCAPPED = { kind: 'uncapped' } as const;
+
+const cappedAt = (usd: number) => ({ kind: 'capped', usd }) as const;
+
 describe('run limit of a Lead', () => {
   it('reads nothing for an agent started without a limit', async () => {
     const { db } = await makeAutoWorld();
 
-    expect(await readRunLimit({ db, workspaceId, agentId: FIRST })).toBeNull();
+    expect(await readRunLimit({ db, workspaceId, agentId: FIRST })).toEqual(INHERITED);
     expect(await getWorkspaceValue({ db, workspaceId, key: 'run.limit' })).toBeNull();
   });
 
@@ -23,10 +29,22 @@ describe('run limit of a Lead', () => {
 
     await writeRunLimit({ db, workspaceId, agentId: FIRST, usd: 3 });
 
-    expect(await readRunLimit({ db, workspaceId, agentId: FIRST })).toBe(3);
+    expect(await readRunLimit({ db, workspaceId, agentId: FIRST })).toEqual(cappedAt(3));
     expect(
       JSON.parse((await getWorkspaceValue({ db, workspaceId, key: 'run.limit' })) ?? ''),
     ).toEqual({ agents: { [FIRST]: 3 } });
+  });
+
+  it('keeps no limit as its own choice, apart from an agent that inherits', async () => {
+    const { db } = await makeAutoWorld();
+
+    await writeRunLimit({ db, workspaceId, agentId: FIRST, usd: null });
+
+    expect(await readRunLimit({ db, workspaceId, agentId: FIRST })).toEqual(UNCAPPED);
+    expect(await readRunLimit({ db, workspaceId, agentId: SECOND })).toEqual(INHERITED);
+    expect(
+      JSON.parse((await getWorkspaceValue({ db, workspaceId, key: 'run.limit' })) ?? ''),
+    ).toEqual({ agents: { [FIRST]: null } });
   });
 
   it('keeps the limit of another agent and another workspace apart', async () => {
@@ -35,9 +53,9 @@ describe('run limit of a Lead', () => {
     await writeRunLimit({ db, workspaceId, agentId: FIRST, usd: 3 });
     await writeRunLimit({ db, workspaceId, agentId: SECOND, usd: 12 });
 
-    expect(await readRunLimit({ db, workspaceId, agentId: FIRST })).toBe(3);
-    expect(await readRunLimit({ db, workspaceId, agentId: SECOND })).toBe(12);
-    expect(await readRunLimit({ db, workspaceId: northwind, agentId: FIRST })).toBeNull();
+    expect(await readRunLimit({ db, workspaceId, agentId: FIRST })).toEqual(cappedAt(3));
+    expect(await readRunLimit({ db, workspaceId, agentId: SECOND })).toEqual(cappedAt(12));
+    expect(await readRunLimit({ db, workspaceId: northwind, agentId: FIRST })).toEqual(INHERITED);
   });
 
   it('keeps both writes when two windows write different agents at once', async () => {
@@ -48,8 +66,8 @@ describe('run limit of a Lead', () => {
       writeRunLimit({ db: { ...db }, workspaceId, agentId: SECOND, usd: 12 }),
     ]);
 
-    expect(await readRunLimit({ db, workspaceId, agentId: FIRST })).toBe(3);
-    expect(await readRunLimit({ db, workspaceId, agentId: SECOND })).toBe(12);
+    expect(await readRunLimit({ db, workspaceId, agentId: FIRST })).toEqual(cappedAt(3));
+    expect(await readRunLimit({ db, workspaceId, agentId: SECOND })).toEqual(cappedAt(12));
   });
 
   it('swaps only when the stored value is the one it read', async () => {
@@ -64,8 +82,8 @@ describe('run limit of a Lead', () => {
     await writeRunLimit({ db, workspaceId, agentId: FIRST, usd: 5 });
     select.mockRestore();
 
-    expect(await readRunLimit({ db, workspaceId, agentId: FIRST })).toBe(5);
-    expect(await readRunLimit({ db, workspaceId, agentId: SECOND })).toBe(12);
+    expect(await readRunLimit({ db, workspaceId, agentId: FIRST })).toEqual(cappedAt(5));
+    expect(await readRunLimit({ db, workspaceId, agentId: SECOND })).toEqual(cappedAt(12));
   });
 
   it('refuses a limit that is not more than $0 and writes nothing', async () => {
@@ -87,7 +105,7 @@ describe('run limit of a Lead', () => {
       value: JSON.stringify({ agents: { [FIRST]: 'three', [SECOND]: -2 } }),
     });
 
-    expect(await readRunLimit({ db, workspaceId, agentId: FIRST })).toBeNull();
-    expect(await readRunLimit({ db, workspaceId, agentId: SECOND })).toBeNull();
+    expect(await readRunLimit({ db, workspaceId, agentId: FIRST })).toEqual(INHERITED);
+    expect(await readRunLimit({ db, workspaceId, agentId: SECOND })).toEqual(INHERITED);
   });
 });

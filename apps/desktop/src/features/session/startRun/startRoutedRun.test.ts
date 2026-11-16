@@ -436,11 +436,20 @@ describe('startRoutedRun carries the limit of one run', () => {
     });
   });
 
-  it('hands no limit to the Lead when the run keeps the default', async () => {
+  it('hands the Lead an explicit no limit when the person chose none', async () => {
     const engines = mockEngines();
     const result = routeOf({ text: '~Fix a layout the totals table' });
 
     await startRoutedRun({ sessionId: SESSION.id, result, limit: { usd: null, source: null } });
+
+    expect(engines.spawnAgent.mock.calls[0]?.[1]).toMatchObject({ limitUsd: null });
+  });
+
+  it('leaves the limit to the workspace when the start had no limit to pass', async () => {
+    const engines = mockEngines();
+    const result = routeOf({ text: '~Fix a layout the totals table' });
+
+    await startRoutedRun({ sessionId: SESSION.id, result, limit: null });
 
     expect(engines.spawnAgent.mock.calls[0]?.[1]).not.toHaveProperty('limitUsd');
   });

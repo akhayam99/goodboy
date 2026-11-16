@@ -1537,10 +1537,13 @@ the root's text into each child brief as a `**Guidance**` section before the
 `**Task**`. A run without guidance builds the same prompt and briefs as before.
 
 A limit picked for one Lead lives the same way in `run.limit`, a map of the root
-agent id to dollars (`store/runtime/runLimit/`). `spawnAgent` writes it before the
+agent id to dollars, or to `null` when the person chose No limit
+(`store/runtime/runLimit/`). `readRunLimit` tells the three states apart:
+inherited (no entry), capped and uncapped. `spawnAgent` writes it before the
 agent row exists, and `startAutoTree` reads it in place of the workspace default
-when it creates the tree, in whichever window creates it. A lower session cap still
-wins. A Lead started without its own limit gets the workspace default as before.
+when it creates the tree, in whichever window creates it. An uncapped Lead ignores
+the workspace default. A lower session cap still wins. A Lead started without its
+own entry gets the workspace default as before.
 
 After the routing table the prompt renders **WHEN TO ADD A ROLE** from `packages/core/src/roleNeeds.ts`
 (`roleNeedsSection`, driver `auto`): per role a trigger the root can see and a "do not add it when".

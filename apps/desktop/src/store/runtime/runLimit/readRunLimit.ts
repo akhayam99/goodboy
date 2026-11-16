@@ -8,11 +8,21 @@ type Params = {
   readonly agentId: AgentId;
 };
 
+export type RunLimitChoice =
+  | Readonly<{ kind: 'inherited' }>
+  | Readonly<{ kind: 'capped'; usd: number }>
+  | Readonly<{ kind: 'uncapped' }>;
+
 export const readRunLimit = async ({
   db,
   workspaceId,
   agentId,
-}: Params): Promise<number | null> => {
+}: Params): Promise<RunLimitChoice> => {
   const raw = await getWorkspaceValue({ db, workspaceId, key: 'run.limit' });
-  return parseRunLimit({ raw }).agents[agentId] ?? null;
+  const { agents } = parseRunLimit({ raw });
+  if (!Object.hasOwn(agents, agentId)) {
+    return { kind: 'inherited' };
+  }
+  const usd = agents[agentId] ?? null;
+  return usd === null ? { kind: 'uncapped' } : { kind: 'capped', usd };
 };

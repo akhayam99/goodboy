@@ -22,7 +22,7 @@ import {
   storySqlite,
   type StoryStore,
 } from '../../storyHarness';
-import { readRunLimit } from '../../runtime/runLimit/readRunLimit';
+import { readRunLimit, type RunLimitChoice } from '../../runtime/runLimit/readRunLimit';
 import { invokeAgentList } from '../../../features/workflows/workflows';
 
 const WORKSPACE = brandId<WorkspaceId>({ value: 'workspace-harborline' });
@@ -33,7 +33,7 @@ type SendFn = StoryState['sendTurn'];
 
 type Sent = {
   readonly content: string;
-  readonly storedLimit: number | null;
+  readonly storedLimit: RunLimitChoice | null;
 };
 
 let useAppStore: StoryStore;
@@ -69,7 +69,7 @@ beforeEach(async () => {
 });
 
 type SpawnParams = {
-  readonly limitUsd?: number;
+  readonly limitUsd?: number | null;
 };
 
 const spawn = async ({ limitUsd }: SpawnParams): Promise<AgentId> => {
@@ -87,15 +87,29 @@ describe('spawnAgent with the limit of one run', () => {
   it('stores the limit under the new Lead before the kickoff goes out', async () => {
     const agentId = await spawn({ limitUsd: 3 });
 
-    expect(sent[0]).toEqual({ content: ASK, storedLimit: 3 });
-    expect(await readRunLimit({ db: storySqlite(), workspaceId: WORKSPACE, agentId })).toBe(3);
+    expect(sent[0]).toEqual({ content: ASK, storedLimit: { kind: 'capped', usd: 3 } });
+    expect(await readRunLimit({ db: storySqlite(), workspaceId: WORKSPACE, agentId })).toEqual({
+      kind: 'capped',
+      usd: 3,
+    });
   });
 
   it('stores nothing when the run keeps the default', async () => {
     const agentId = await spawn({});
 
-    expect(sent[0]).toEqual({ content: ASK, storedLimit: null });
-    expect(await readRunLimit({ db: storySqlite(), workspaceId: WORKSPACE, agentId })).toBeNull();
+    expect(sent[0]).toEqual({ content: ASK, storedLimit: { kind: 'inherited' } });
+    expect(await readRunLimit({ db: storySqlite(), workspaceId: WORKSPACE, agentId })).toEqual({
+      kind: 'inherited',
+    });
+  });
+
+  it('stores no limit when the person chose none, before the kickoff goes out', async () => {
+    const agentId = await spawn({ limitUsd: null });
+
+    expect(sent[0]).toEqual({ content: ASK, storedLimit: { kind: 'uncapped' } });
+    expect(await readRunLimit({ db: storySqlite(), workspaceId: WORKSPACE, agentId })).toEqual({
+      kind: 'uncapped',
+    });
   });
 
   it('leaves no agent behind when the limit cannot be saved, and Retry makes exactly one', async () => {
@@ -119,6 +133,9 @@ describe('spawnAgent with the limit of one run', () => {
     const agentId = await spawn({ limitUsd: 3 });
 
     expect(await invokeAgentList(AUTO_SEED_SESSION)).toHaveLength(rowsBefore.length + 1);
-    expect(await readRunLimit({ db: storySqlite(), workspaceId: WORKSPACE, agentId })).toBe(3);
+    expect(await readRunLimit({ db: storySqlite(), workspaceId: WORKSPACE, agentId })).toEqual({
+      kind: 'capped',
+      usd: 3,
+    });
   });
 });

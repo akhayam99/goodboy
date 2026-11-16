@@ -96,6 +96,42 @@ describe('starting the tree of an Auto agent', () => {
     expect((await treeOf(state))?.capUsd).toBe(2);
   });
 
+  it('starts uncapped when the run chose no limit, though the workspace has one', async () => {
+    const state = await worldWithAutoAgent();
+    await writeRunLimit({
+      db: state.world.db,
+      workspaceId: WORKSPACE,
+      agentId: AUTO_AGENT,
+      usd: null,
+    });
+
+    await startAutoTrees({
+      ctx: state.ctx,
+      sessionCapUsd: () => null,
+      workspaceLimitUsd: async () => 8,
+    });
+
+    expect((await treeOf(state))?.capUsd).toBeNull();
+  });
+
+  it('keeps a session budget over a run that chose no limit', async () => {
+    const state = await worldWithAutoAgent();
+    await writeRunLimit({
+      db: state.world.db,
+      workspaceId: WORKSPACE,
+      agentId: AUTO_AGENT,
+      usd: null,
+    });
+
+    await startAutoTrees({
+      ctx: state.ctx,
+      sessionCapUsd: () => 6,
+      workspaceLimitUsd: async () => 8,
+    });
+
+    expect((await treeOf(state))?.capUsd).toBe(6);
+  });
+
   it('starts one tree per Auto agent, once, and leaves the other agents alone', async () => {
     const state = await worldWithAutoAgent();
     const params = {

@@ -1,7 +1,7 @@
 import { isRecord } from '@goodboy/types/helpers';
 
 export type RunLimitSetting = Readonly<{
-  agents: Readonly<Record<string, number>>;
+  agents: Readonly<Record<string, number | null>>;
 }>;
 
 type Params = { readonly raw: string | null };
@@ -16,9 +16,9 @@ export const parseRunLimit = ({ raw }: Params): RunLimitSetting => {
   if (!isRecord(parsed) || !isRecord(parsed['agents'])) {
     return { agents: {} };
   }
-  const entries: Array<readonly [string, number]> = [];
+  const entries: Array<readonly [string, number | null]> = [];
   for (const [agentId, value] of Object.entries(parsed['agents'])) {
-    if (typeof value === 'number' && Number.isFinite(value) && value > 0) {
+    if (value === null || (typeof value === 'number' && Number.isFinite(value) && value > 0)) {
       entries.push([agentId, value]);
     }
   }
