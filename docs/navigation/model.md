@@ -114,7 +114,10 @@
   in memory in the store, one entry per key with its time (`integrationKeyChecks`, written by
   `checkIntegrationKey`, latest only); the index checks every key of the workspace at most once a
   minute unless its refresh forces it (`checkTools`), and a failed read keeps the last answer and
-  shows the error on the refresh button. GitHub has no key: its tile and page read the time of the
+  shows the error on the refresh button. That error is the newest check of the workspace it
+  names (`toolCheckErrors`, latest only per workspace): Refresh clears it once the check answers,
+  and a late check of another workspace never shows. Only workspace bindings count as connected
+  tools on the index and the door (`workspaceBindingsOf`), as on the tool page. GitHub has no key: its tile and page read the time of the
   last gh check that answered (`githubCheckedAt`), and whether it is connected comes from
   `isGithubConnected` alone. A tile, or a Not set up row, pushes its detail page
   through `openConnection`: studio focus `{ kind: 'provider', provider }` (with the install or
@@ -125,7 +128,8 @@
   open records Tasks last loaded (`toolUseCountsOf`, read through `selectToolUseCount`), nothing
   shows before Tasks loaded them, and a tool whose key is missing reads Paused. A missing or bad
   key is replaced in place (`replaceIntegrationKey`): the host checks the new key first, the
-  keychain slot of the binding is rewritten, and the binding itself is kept. Connections is the
+  keychain slot of the binding is rewritten, and the binding itself is kept; a key check asked
+  while the new key was checked is dropped once it is saved. Connections is the
   one home of providers and integrations: Settings has no providers or tools scope
   (`SettingsStudioScope` is home, app, workspace), and every link to a provider or a tool, from a
   notification, an error, the usage chips or ⌘K (`connectionPaletteEntries`), opens its page
@@ -137,7 +141,8 @@
   This workspace, Models for the old Models page (`resolveSettingsFocus`). For all of 0.37 the
   Settings rail ends with a row that opens Connections (`MovedToConnectionsRow`).
   `settings-has-no-connection-scopes.test.ts` keeps any new code from opening Settings on those
-  scopes.
+  scopes. The one place they stay is the saved window layout: it stores a Connections page as
+  the Settings provider or tools page 0.36 opens (`storedStudioOf`), and restore folds it back.
   Work is an eighth door between Tasks and Workflows, with a New badge outlined in the primary colour,
   and it shows only while the Work switch is on (`columnDoorsOf`). Its page is the studio `work`
   (key `+work`, `features/work/components/WorkPage`): every Lead of the workspace across sessions,
@@ -575,7 +580,8 @@ them. The navigation slice (`store/slices/navigation/`) owns both.
 
   The previous release must open every place this build saves: it folds a
   stored Context tab to its Context panel and opens a stored Changes tab as
-  that branch's diff on its pull request page. `storedPlaces.test.ts` runs
+  that branch's diff on its pull request page, and a saved Connections page
+  opens as its Settings page. `storedPlaces.test.ts` runs
   every row through a frozen copy of that fold
   (`testing/opensInPreviousRelease.ts`), and `navigationContract.test.ts`
   holds the two Backs, the reload and the two windows.

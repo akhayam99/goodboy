@@ -125,7 +125,9 @@ value and write only if it is still the old value.
   `store/runtime/state-writes/serialQueue.ts` runs the tasks of one key in call
   order, so the last pick wins instead of an older pick retrying over a newer
   one. In use: `changeAutoLevel` in `store/slices/settings/` (test:
-  `changeAutoLevel.sqlite.test.ts`, two quick picks). `addGoalAttachments` and
+  `changeAutoLevel.sqlite.test.ts`, two quick picks). `updateSlackConfig` queues the
+  Slack writes of a workspace and applies each change to the latest saved config, so two
+  quick edits both land (test: `integrations/index.test.ts`). `addGoalAttachments` and
   `removeGoalAttachment` share one queue per owner (`attachmentWrites`), so a
   remove never cancels the refresh of an add that already committed (test:
   `loadGoalAttachments.test.ts`, an add and a remove overlapping).
