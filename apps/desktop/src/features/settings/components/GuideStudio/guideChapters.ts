@@ -177,11 +177,11 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
     points: [
       {
         term: 'What kind of run?',
-        desc: 'How picks Auto, Agent, Orchestrated or Preset. One form shows only what that kind needs.',
+        desc: 'How picks Lead, Preset or Agent. One form shows only what that kind needs.',
       },
       {
         term: NAMES.startARun,
-        desc: 'Press no kind and Auto picks a workflow or an agent; @Scout starts that role. Esc closes the draft, asking first if you wrote something.',
+        desc: 'Press no kind and a Lead plans the run; @Scout starts that role alone. Esc closes the draft, asking first if you wrote something.',
       },
       {
         term: 'Start from Tasks',
@@ -252,7 +252,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
     points: [
       {
         term: 'Sidebar',
-        desc: 'New session, then Board, Tasks, Work when on, Workflows, Chat, Connections, Impact and Monitoring, your sessions, Settings, and the Goodboy line with the bug icon. An amber dot says sessions need you, or on Monitoring that a pinned port is down.',
+        desc: 'New session, then Board, Tasks, Workflows, Chat, Connections, Impact and Monitoring, your sessions, Settings, and the Goodboy line with the bug icon. An amber dot says sessions need you, or on Monitoring that a pinned port is down.',
       },
       {
         term: 'Session rows',
@@ -264,7 +264,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Session pages',
-        desc: 'Tabs under the title: Overview, Runs, Artifacts, Questions while one is open, and Context, plus Changes with exactly one branch. Runs holds plans, presets, Auto and agents. Context holds the Projects and Linked cards. Below a tab, Esc goes one up.',
+        desc: 'Tabs under the title: Overview, Runs, Artifacts, Questions while one is open, and Context, plus Changes with exactly one branch. Runs holds every run and the agents you started. Context holds the Projects and Linked cards. Below a tab, Esc goes one up.',
       },
       {
         term: 'Session actions and +',
@@ -272,7 +272,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Agents rail',
-        desc: `A run or Auto lists its agents at the left. A row opens one in the centre; arrows move, Enter opens. ${shortcutGlyphs('session.spawned')} opens Runs on what is running.`,
+        desc: `A run lists its agents at the left, its Lead first. A row opens one in the centre; arrows move, Enter opens. ${shortcutGlyphs('session.spawned')} opens Runs on what is running.`,
       },
       {
         term: 'Tools rail',
@@ -300,16 +300,12 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
         desc: 'Every run, grouped by branch or by state. Each agent opens as one page with its brief and what came back.',
       },
       {
-        term: 'Auto',
-        desc: 'The agent behind Start a run. It answers what it can, delegates the rest to child agents of the narrowest role that fits and goes on under a limit, listed under Runs. A returned child reads Idle.',
+        term: 'The Lead',
+        desc: 'Leads each new run: it plans first, answers what it can and starts the agents it needs, each of the narrowest role that fits, under a limit. Asks you sets one row per decision.',
       },
       {
         term: 'Let Auto take it from here',
-        desc: 'Hands Auto an older agent you started yourself; Detach from Auto takes it back. When Auto cannot decide, it reads Blocked with Retry.',
-      },
-      {
-        term: 'The Lead',
-        desc: 'Leads each new run: it plans first, then starts the agents it needs. Asks you sets one row per decision.',
+        desc: 'Hands the Lead an older agent you started yourself; Detach from Auto takes it back. When the Lead cannot decide, it reads Blocked with Retry.',
       },
       {
         term: 'Overview',
@@ -322,7 +318,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
     id: 'workflows',
     group: 'daily',
     title: 'Workflows',
-    lead: 'A workflow is a list of steps you can reuse, and each step of a run gets its own agent.',
+    lead: 'A workflow is a list of steps you can reuse. A run that follows one has a Lead, with the steps as its plan.',
     points: [
       {
         term: 'Built in and your own',
@@ -333,12 +329,8 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
         desc: 'A run lists its steps, with Add step under them. The line at the end says what it waits for, with the button that moves it on. A halted step reads Needs you, with Open step N.',
       },
       {
-        term: 'Orchestrated',
-        desc: 'Give a goal and an orchestrator model picks each next step with a reason, until done or blocked. Hint the orchestrator queues a hint, and Send now reads it at once, stopping the step in flight.',
-      },
-      {
-        term: 'Orchestrated or Auto',
-        desc: 'Orchestrated is not Auto: the orchestrator only picks the next step and you steer with hints. Auto is one agent that delegates to children.',
+        term: 'Older runs',
+        desc: 'A run started on the orchestrator before keeps its row, tagged older run, and finishes there. Hint the orchestrator queues a hint, and Send now reads it at once. New runs always have a Lead.',
       },
       {
         term: 'Asks you and pause',
@@ -499,11 +491,11 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'A rebase conflict asks',
-        desc: 'A conflict leaves the branch as it was and asks: Resolve with Auto, Resolve in terminal or Abort rebase, with Add a hint. Auto resolves in the worktree and never pushes; Resolve in terminal starts the rebase there.',
+        desc: 'A conflict leaves the branch as it was and asks: Resolve with Auto, Resolve in terminal or Abort rebase, with Add a hint. A Lead resolves in the worktree and never pushes; Resolve in terminal starts the rebase there.',
       },
       {
         term: 'Rebase all',
-        desc: "With two or more branches behind, Rebase all on the Projects card rebases the clean ones with git and sends conflicts to one Auto run. Rows show Rebasing, Queued or Conflict; the header has Abort. Next's rebase picker adds Also tidy commits with Auto.",
+        desc: "With two or more branches behind, Rebase all on the Projects card rebases the clean ones with git and sends conflicts to one Lead run. Rows show Rebasing, Queued or Conflict; the header has Abort. Next's rebase picker adds Also tidy commits with Auto.",
       },
       {
         term: 'Force push',
