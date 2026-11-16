@@ -91,7 +91,9 @@ describe('the r4 content scenes', () => {
     await mount('r4-context-summary');
 
     const summary = screen.getByRole('region', { name: 'Summary' });
-    within(summary).getByText('State');
+    within(summary).getByText('Next');
+    expect(within(summary).queryByRole('region', { name: 'State' })).toBeNull();
+    screen.getByRole('region', { name: 'State' });
     expect(screen.getAllByText('Learned')).toHaveLength(1);
     within(summary).getByText('Learned');
   });
