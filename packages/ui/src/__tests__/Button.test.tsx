@@ -44,6 +44,20 @@ describe('Button', () => {
     expect(classes).not.toContain('bg-fill');
   });
 
+  it('raises a secondary on its own fill and shadow, and drops the shadow when disabled', () => {
+    render(
+      <Button variant="secondary" size="sm">
+        Copy branch
+      </Button>,
+    );
+    const classes = screen.getByRole('button', { name: 'Copy branch' }).className.split(/\s+/);
+
+    expect(classes).toContain('bg-button-secondary');
+    expect(classes).toContain('shadow-button-secondary');
+    expect(classes).toContain('border-border');
+    expect(classes).toContain('disabled:shadow-none');
+  });
+
   it('shows a pulsing status dot while busy, never a spinner', () => {
     const { container } = render(<Button isBusy>Save</Button>);
     const button = screen.getByRole('button', { name: 'Save' });

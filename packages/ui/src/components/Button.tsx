@@ -24,7 +24,7 @@ export const BUTTON_VARIANT_CLASSES = {
   primary:
     'bg-primary-solid text-on-primary hover:bg-primary-solid-hover disabled:bg-fill disabled:text-disabled-foreground [&_svg]:text-current',
   secondary:
-    'bg-fill text-foreground hover:bg-hover border-border disabled:bg-fill disabled:text-disabled-foreground',
+    'bg-button-secondary text-foreground shadow-button-secondary hover:bg-hover border-border disabled:bg-fill disabled:text-disabled-foreground disabled:shadow-none',
   ghost:
     'border-0 text-foreground hover:bg-hover disabled:bg-transparent disabled:text-disabled-foreground',
   quiet:

@@ -7,6 +7,7 @@ const merge = extendTailwindMerge({
     classGroups: {
       'bg-image': ['bg-hover', 'bg-selected'],
       'font-size': [{ text: [...TYPE_ROLES] }],
+      shadow: [{ shadow: ['button-secondary'] }],
     },
   },
 });
