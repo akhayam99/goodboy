@@ -473,6 +473,47 @@ describe('a rule with its own ledger', () => {
   });
 });
 
+describe('raw-color', () => {
+  const tsx = 'apps/desktop/src/features/x/Row.tsx';
+  const scan = ({ path = tsx, text }) => count({ id: 'raw-color', path, text });
+
+  it('counts every hex and colour function on a line, not the line', () => {
+    assert.equal(scan({ text: "const a = { fg: '#fff', bg: '#0b0b0dcc' };" }), 2);
+    assert.equal(scan({ text: "'bg-[#1a1a1a] text-[#abc]'" }), 2);
+    assert.equal(scan({ text: 'const c = `oklch(0.92 0.04 ${hue})`;' }), 1);
+    assert.equal(scan({ text: "'rgb(0 0 0)', 'rgba(0,0,0,.5)', 'hsl(1 2% 3%)'" }), 3);
+  });
+
+  it('leaves tokens, entities, ids and look-alike names alone', () => {
+    const allowed = [
+      "'var(--color-primary)'",
+      "'color-mix(in oklch, var(--color-danger) 40%, transparent)'",
+      'const fill = toRgb({ value });',
+      "'&#123;'",
+      "const id = 'row-#12345678a';",
+      "const anchor = '#settings';",
+      "'bg-primary-solid text-on-primary'",
+    ];
+    assert.deepEqual(
+      allowed.filter((text) => scan({ text }) > 0),
+      [],
+    );
+  });
+
+  it('reads product code only: no mock scene, no other package, no test', () => {
+    const text = "const a = '#ffffff';";
+    assert.equal(scan({ path: 'packages/ui/src/components/Avatar.tsx', text }), 1);
+    assert.equal(scan({ path: 'apps/desktop/src/app/components/MockScene/scenes/a.ts', text }), 0);
+    assert.equal(scan({ path: 'packages/core/src/artifacts/a.ts', text }), 0);
+    assert.equal(scan({ path: 'apps/desktop/src/features/x/a.test.ts', text }), 0);
+  });
+
+  it('keeps its counts in a ledger of its own', () => {
+    const file = readSource({ path: tsx, text: "const a = '#fff';" });
+    assert.equal(ledgerOf({ rule: rule({ id: 'raw-color' }), file }), 'rule:raw-color');
+  });
+});
+
 describe('shrunkOffenses', () => {
   const baselines = { core: { 'else-branch': { 'a.ts': 3, 'gone.ts': 1, 'same.ts': 2 } } };
 
@@ -580,6 +621,11 @@ const FIXTURES = {
     path: TS,
     flagged: 'const key = `chat.default_model.${workspaceId}`;',
     allowed: "const key = 'chat.default_model';",
+  },
+  'raw-color': {
+    path: TSX,
+    flagged: "const style = { color: '#e5534b' };",
+    allowed: "const style = { color: 'var(--color-danger)' };",
   },
   'rust-else': { path: 'apps/desktop/src-tauri/src/a.rs', flagged: '} else {', allowed: 'if a {' },
   'sibling-margin': { path: TS, flagged: "'mt-2'", allowed: "'gap-2'" },

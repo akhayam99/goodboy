@@ -5,6 +5,7 @@ import { booleanNameLines } from './ast/booleanName.mjs';
 import { BOOLEAN_PREFIXES } from './ast/booleanPrefixes.mjs';
 import { DIFF_FONT_SANS_RULE } from './diffFontSans.mjs';
 import { paramShapeLines } from './ast/paramShape.mjs';
+import { RAW_COLOR_RULE } from './rawColor.mjs';
 import { unbracedIfLines } from './ast/unbracedIf.mjs';
 import { unusedImportLines } from './ast/unusedImport.mjs';
 
@@ -469,6 +470,7 @@ export const RULES = [
     matches: (line) => ENTITY_KEYED_SETTING.test(line),
     hint: 'a value that belongs to one workspace, project or session goes in workspace_values or project_values (or a column), never in a settings key built with its id (docs/file-system.md, Where a preference lives)',
   }),
+  RAW_COLOR_RULE,
   lineRule({
     id: 'rust-else',
     kinds: ['rust'],

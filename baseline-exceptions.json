@@ -348,5 +348,12 @@
     "count": 40,
     "reason": "first measure of the guard that ux45 PR2 adds; the ledger only falls from here",
     "release": "0.39.0"
+  },
+  {
+    "rule": "new",
+    "file": "apps/desktop/src/__tests__/regressions/forbidden-patterns.raw-color.baseline.json",
+    "count": 26,
+    "reason": "first measure of the raw colour guard that ux45 PR8 adds; the ledger only falls from here",
+    "release": "0.39.0"
   }
 ]
