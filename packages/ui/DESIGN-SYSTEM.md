@@ -939,12 +939,13 @@ the outline look, `ghost` and `quiet` the quiet look.
 - Surfaces follow the six-role ladder above. To lift something, move it to the
   role it plays; to sink something inside a parent, use `fill`. Never invent a
   shade.
-- Tone variants have fixed names, all owned by `tintClasses`: `solid` (full
-  fill plus `on-tone`, only the primary CTA and confirmed destructive buttons),
-  `bg` (10% wash, never a signal on its own), `text` (tone text, readable on its
-  own wash), `border` (40%, decoration, never the only signal), `rail` (full
-  tone left border, for a card or strip whose edge carries meaning; neutral is
-  `border-l-border`) and `bgSoft` (5%, only for washing a whole card). The
+- Tone variants have fixed names, all owned by `tintClasses`: `solid`
+  (`T-solid` plus `on-T`, only the primary CTA and confirmed destructive
+  buttons), `bg` (`T-subtle`, never a signal on its own), `text` (tone text,
+  readable on its own wash), `border` (`T-edge`, decoration, never the only
+  signal), `rail` (full tone left border, for a card or strip whose edge carries
+  meaning; neutral is `border-l-border`) and `bgSoft` (`T-wash`, only for
+  washing a whole card). The
   neutral `bg`, `bgSoft` and `solid` sit on `fill`, so a neutral chip sinks one
   step into any parent.
 - Seven raw scales of twelve steps each, per theme, sit outside the `--color-`
@@ -959,7 +960,9 @@ the outline look, `ghost` and `quiet` the quiet look.
   `T-solid-hover` and `on-T`, plus `border-control`, `selection`, `brand-accent`
   and the six `diff-` line tokens. For now each one holds the value that stands
   in its place today (`danger-subtle` is `danger` at 10%, `border-control` is
-  `border`), so nothing on screen moves until a component uses them.
+  `border`). `tintClasses`, `Button` and the solid marks read them already;
+  the ring and the soft border stay on opacity until their steps turn, and
+  `tone-opacity.test.ts` counts what is left. That count only falls.
 
 ## Icon and tone vocabulary
 
@@ -997,8 +1000,8 @@ concept cannot get an icon without a tone, or a tone without an icon.
 Eight tones (`success`, `info`, `warning`, `danger`, `primary`, `merged`,
 `draft`, `neutral`). Each one resolves through the single accessor
 `tintClasses(tone)`. Components take a `Tone` and call it. They never
-hand-write `bg-warning/10`. Every solid semantic fill uses the shared `on-tone`
-text colour.
+hand-write `bg-warning/10`. Every solid semantic fill takes its own tone's ink,
+`on-T` on `T-solid` (`on-danger` on `danger-solid`).
 
 An icon inside a solid fill, a `primary` or `danger` button or a `ghost-danger`
 button takes the label colour (`[&_svg]:text-current` in `tintClasses(tone).solid`
