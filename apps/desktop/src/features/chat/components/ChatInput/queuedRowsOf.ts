@@ -28,7 +28,6 @@ type Params = {
   readonly view: AutoTreeView | null;
   readonly isAgentStopped: boolean;
   readonly nowMs: number;
-  readonly isAtOnce?: boolean;
 };
 
 const AGENT_QUEUED_TEXT = 'Waits for this reply';
@@ -116,11 +115,10 @@ const isInTranscript = ({ turn }: TurnParams): boolean =>
 
 type AutoRowsParams = {
   readonly view: AutoTreeView;
-  readonly isAtOnce: boolean;
 };
 
-const autoRowsOf = ({ view, isAtOnce }: AutoRowsParams): ReadonlyArray<QueuedRow> => {
-  const line = pendingMessageLineOf({ view, isAtOnce });
+const autoRowsOf = ({ view }: AutoRowsParams): ReadonlyArray<QueuedRow> => {
+  const line = pendingMessageLineOf({ view });
   return [...view.pendingMessages]
     .sort((a, b) => a.createdAt - b.createdAt)
     .map((message): QueuedRow => ({
@@ -158,9 +156,8 @@ export const queuedRowsOf = ({
   view,
   isAgentStopped,
   nowMs,
-  isAtOnce = false,
 }: Params): ReadonlyArray<QueuedRow> => {
-  const autoRows = view === null ? [] : autoRowsOf({ view, isAtOnce });
+  const autoRows = view === null ? [] : autoRowsOf({ view });
   return [
     ...autoRows,
     ...queue

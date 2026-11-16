@@ -22,11 +22,10 @@ const READ: ReadonlyArray<AutoReadMessage> = [
 ];
 
 describe('noteNodesOf', () => {
-  it('makes a queued row a Queued node with both actions, switch off', () => {
+  it('makes a queued row a Not read yet node with both actions', () => {
     const { nodes, timed } = noteNodesOf({
       rows: [row({})],
       createdAtById: new Map([['q1', 50]]),
-      isWork: false,
       read: [],
     });
     expect(nodes).toEqual([
@@ -34,7 +33,7 @@ describe('noteNodesOf', () => {
         id: 'q1',
         createdAt: 50,
         text: 'Also cover the batch endpoint',
-        word: 'Queued',
+        word: 'Not read yet',
         canEdit: true,
         canRemove: true,
       },
@@ -42,21 +41,19 @@ describe('noteNodesOf', () => {
     expect(timed).toEqual([{ id: 'q1', createdAt: 50 }]);
   });
 
-  it('names a queued row Not read yet with both actions, switch on', () => {
+  it('names a row that was not delivered Not read yet with both actions', () => {
     const { nodes } = noteNodesOf({
       rows: [row({ status: 'notDelivered' })],
       createdAtById: new Map(),
-      isWork: true,
       read: [],
     });
     expect(nodes[0]).toMatchObject({ word: 'Not read yet', canEdit: true, canRemove: true });
   });
 
-  it('makes a read note a node with its turn and no actions, switch on', () => {
+  it('makes a read note a node with its turn and no actions', () => {
     const { nodes, timed } = noteNodesOf({
       rows: [row({})],
       createdAtById: new Map([['q1', 50]]),
-      isWork: true,
       read: READ,
     });
     expect(nodes[0]).toEqual({
@@ -73,29 +70,16 @@ describe('noteNodesOf', () => {
     ]);
   });
 
-  it('shows no read note with the switch off', () => {
-    const { nodes } = noteNodesOf({
-      rows: [],
-      createdAtById: new Map(),
-      isWork: false,
-      read: READ,
-    });
-    expect(nodes).toEqual([]);
-  });
-
   it('takes the actions away while a row is sending', () => {
     const { nodes } = noteNodesOf({
       rows: [row({ status: 'sending' })],
       createdAtById: new Map(),
-      isWork: true,
       read: [],
     });
     expect(nodes[0]).toMatchObject({ canEdit: false, canRemove: false });
   });
 
   it('leaves no node for a row that is gone', () => {
-    expect(
-      noteNodesOf({ rows: [], createdAtById: new Map(), isWork: true, read: [] }).nodes,
-    ).toEqual([]);
+    expect(noteNodesOf({ rows: [], createdAtById: new Map(), read: [] }).nodes).toEqual([]);
   });
 });

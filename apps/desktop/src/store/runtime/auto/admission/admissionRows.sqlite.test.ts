@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { listAutoDelegations, setSetting } from '@goodboy/db';
 import { brandId, type WorkspaceId } from '@goodboy/types';
-import { SETTING_WORK_ENABLED } from '../../../../shared/lib/workSetting';
 import { writeLeadPermission, type LeadPermissionChange } from '../level/writeLeadPermission';
 import {
   batchInput,
@@ -106,14 +105,13 @@ describe('admission reads the permission rows', () => {
     });
   });
 
-  it.each([
-    [true, 'awaiting_confirm'],
-    [false, 'accepted'],
-  ] as const)(
-    'reads the workspace default only while the work switch is on (%s)',
-    async (isOn, state) => {
+  it.each([[null], ['true'], ['false']] as const)(
+    'reads the workspace default whatever the old Work switch row says (%s)',
+    async (oldSwitch) => {
       const world = await makeAutoWorld();
-      await setSetting(world.db, SETTING_WORK_ENABLED, isOn ? 'true' : 'false');
+      if (oldSwitch !== null) {
+        await setSetting(world.db, 'work.enabled', oldSwitch);
+      }
       await writeLeadPermission({
         db: world.db,
         target: WORKSPACE,
@@ -122,7 +120,7 @@ describe('admission reads the permission rows', () => {
       });
       expect(await admitOne({ world, role: 'scout', hasPlan: false })).toEqual({
         kind: 'accepted',
-        state,
+        state: 'awaiting_confirm',
       });
     },
   );

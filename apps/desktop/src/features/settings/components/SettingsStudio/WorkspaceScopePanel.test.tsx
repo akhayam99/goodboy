@@ -40,7 +40,6 @@ import {
   type StoryStore,
 } from '../../../../store/storyHarness';
 import { ToastProvider } from '../../../../shared/components/Toast';
-import { SETTING_WORK_ENABLED } from '../../../../shared/lib/workSetting';
 import { NAMES } from '../../../../shared/utils/names';
 import { PLAN_PAGES, planPageLabel } from './workspacePages';
 import { WorkspaceScopePanel } from './WorkspaceScopePanel';
@@ -154,14 +153,7 @@ const expectRunDefaultRows = () => {
 };
 
 describe('WorkspaceScopePanel pages', () => {
-  it('lays Run defaults out in three bands: New runs, Agents and Guidance', () => {
-    renderPage({ section: 'general' });
-
-    expectRunDefaultRows();
-  });
-
-  it('shows the same rows with Work on, with no separate Asks you band', () => {
-    seed({ settings: { [SETTING_WORK_ENABLED]: 'true' } });
+  it('lays Run defaults out in three bands, the permission rows behind one chip', () => {
     renderPage({ section: 'general' });
 
     expectRunDefaultRows();
@@ -176,7 +168,6 @@ describe('WorkspaceScopePanel pages', () => {
     const newRuns = within(screen.getByRole('region', { name: 'New runs' }));
     expect(newRuns.getAllByRole('tablist').map((row) => row.getAttribute('aria-label'))).toEqual([
       'Workflow asks you',
-      'Auto agent asks you',
       'Start as',
       'New runs in this session start as',
       'At the limit',

@@ -1,7 +1,6 @@
 import type { Agent, SessionId } from '@goodboy/types';
 import { Button, StatusDot, TruncatedText } from '@goodboy/ui';
 import { useAppStore } from '../../../store';
-import { useIsWorkOn } from '../../../shared/hooks/useIsWorkOn';
 import type { AutoTreeView } from '../../../store/slices/auto-view/state';
 import { autoTreeWordOf } from '../autoTreeWordOf';
 import { AUTO_STATE_TONE } from './autoStateTone';
@@ -20,9 +19,8 @@ type Props = {
 const TONE = AUTO_STATE_TONE.waitingOnYou;
 
 export const AutoDockAsk = ({ sessionId, view, rootAgent, bar, moreCount }: Props) => {
-  const isWork = useIsWorkOn();
   const rootTurn = useAppStore((state) => state.agentTurnState[rootAgent.id] ?? null);
-  const word = autoTreeWordOf({ view, rootTurn, isWork });
+  const word = autoTreeWordOf({ view, rootTurn });
   const model = useAnswerAsk({ sessionId });
   const rowText = useAskPermissionRow({ treeId: view.tree.id, rowKey: bar.rowKey });
   const isBusy = model.busyId === bar.askId;

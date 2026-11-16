@@ -25,7 +25,7 @@ import { OPEN_REPORT_SHEET_EVENT } from '../../../features/bug-report/openReport
 import { brandedId } from '../../../features/history/testing/brandedId';
 import { ColumnRail } from './ColumnRail';
 import { SideColumn } from './index';
-import { columnDoorsOf, type ColumnActions } from './columnDoors';
+import { COLUMN_DOORS, type ColumnActions } from './columnDoors';
 import type { ColumnPlace } from '../../../shared/navigation/columnPlace';
 
 const WORKSPACE = aWorkspace({ name: 'Harborline' });
@@ -102,7 +102,7 @@ beforeEach(async () => {
 afterEach(cleanup);
 
 describe('SideColumn', () => {
-  it('stacks New session, seven door rows and no tool, the sessions, then Settings and the Goodboy line, the toggle left to the top bar', () => {
+  it('stacks New session, eight door rows and no tool, the sessions, then Settings and the Goodboy line, the toggle left to the top bar', () => {
     mountColumn();
     const nav = navLayer();
 
@@ -113,6 +113,7 @@ describe('SideColumn', () => {
     expect(doorNames(nav)).toEqual([
       'board',
       'inbox',
+      'work',
       'workflows',
       'chat',
       'connections',
@@ -127,6 +128,7 @@ describe('SideColumn', () => {
     ).toEqual([
       'board',
       'inbox',
+      'work',
       'workflows',
       'chat',
       'connections',
@@ -364,12 +366,8 @@ describe('SideColumn', () => {
     expect(plus.closest('[class*="opacity-0"]')).toBeNull();
   });
 
-  it('shows the Work door with its New badge only while the switch is on', () => {
-    mountColumn({ place: 'board' });
-    expect(doorNames(navLayer())).not.toContain('work');
-    cleanup();
-
-    useAppStore.setState({ settings: { 'work.enabled': 'true' } });
+  it('shows the Work door with its New badge, whatever the old Work switch row says', () => {
+    useAppStore.setState({ settings: { 'work.enabled': 'false' } });
     mountColumn({ place: 'board' });
 
     expect(doorNames(navLayer())).toContain('work');
@@ -382,7 +380,7 @@ describe('SideColumn', () => {
     mountColumn({ place: 'board' });
     const nav = navLayer();
 
-    for (const { id } of columnDoorsOf({ isWork: false })) {
+    for (const { id } of COLUMN_DOORS) {
       const door = nav.querySelector(`[data-column-door-row="${id}"] [data-column-door]`);
       const signal = door?.querySelectorAll('[data-door-slot="signal"]');
       expect(signal).toHaveLength(1);
@@ -509,7 +507,7 @@ describe('ColumnRail', () => {
     expect(document.querySelector('[data-door-signal]')).toBeNull();
   });
 
-  it('keeps every door as an icon at 44px: New, the seven doors of the open column, then Settings, the bug and the mark', () => {
+  it('keeps every door as an icon at 44px: New, the eight doors of the open column, then Settings, the bug and the mark', () => {
     const { container } = mountRail();
     const rail = container.querySelector('[data-column-rail]') as HTMLElement;
 
@@ -519,6 +517,7 @@ describe('ColumnRail', () => {
       'new',
       'board',
       'inbox',
+      'work',
       'workflows',
       'chat',
       'connections',

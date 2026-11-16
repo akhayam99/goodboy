@@ -25,7 +25,7 @@ const leadOf = ({ key }: { readonly key: string }): WorkLead => {
 describe('the Lead entries of the palette', () => {
   it('lists each open Lead once, even when it worked on two branches', () => {
     const leads = [leadOf({ key: 'a' }), leadOf({ key: 'b' })];
-    const { rows } = workRowsOf({ leads, rootTurns: {}, filter: 'open', isWork: true });
+    const { rows } = workRowsOf({ leads, rootTurns: {}, filter: 'open' });
 
     const entries = leadEntries({ rows: [...rows, ...rows], open: vi.fn() });
 
@@ -35,12 +35,7 @@ describe('the Lead entries of the palette', () => {
 
   it('opens the Lead page of the session through the resolver', () => {
     const open = vi.fn();
-    const { rows } = workRowsOf({
-      leads: [leadOf({ key: 'a' })],
-      rootTurns: {},
-      filter: 'open',
-      isWork: true,
-    });
+    const { rows } = workRowsOf({ leads: [leadOf({ key: 'a' })], rootTurns: {}, filter: 'open' });
 
     leadEntries({ rows, open })[0]?.run();
 

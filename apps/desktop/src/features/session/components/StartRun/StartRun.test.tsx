@@ -15,6 +15,7 @@ import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-li
 import {
   getSetting,
   getWorkspaceValue,
+  insertSession,
   insertWorkspace,
   setSetting,
   setWorkspaceValue,
@@ -153,6 +154,7 @@ beforeEach(async () => {
   await resetStoryStore();
   const db = await openStorySqlite();
   await insertWorkspace({ db, workspace: WORKSPACE });
+  await insertSession(db, SESSION);
   useAppStore.setState({
     workspaces: [WORKSPACE],
     currentWorkspaceId: WORKSPACE.id,
@@ -496,16 +498,16 @@ describe('StartRun run as', () => {
     expect(screen.queryByRole('button', { name: /^Limit: / })).toBeNull();
   });
 
-  it('shows the Lead Asks you for a Lead and a preset, and none for an agent', () => {
+  it('shows the Lead Asks you for a Lead and a preset, and none for an agent', async () => {
     useAppStore.setState({ phaseTemplates: { [WORKSPACE.id]: [FIX_A_LAYOUT] } });
     renderField({ sessionId: SESSION.id });
 
     fireEvent.change(field(), { target: { value: QUESTION } });
-    screen.getByRole('button', { name: 'Asks you: After the plan, from Cascadia' });
+    await screen.findByRole('button', { name: 'Asks you: After the plan' });
 
     pickKind({ name: 'Preset' });
 
-    screen.getByRole('button', { name: 'Asks you: After the plan, from Cascadia' });
+    await screen.findByRole('button', { name: 'Asks you: After the plan' });
     expect(screen.queryByRole('button', { name: /^Asks you: Every step/ })).toBeNull();
 
     pickKind({ name: 'Agent' });
@@ -629,8 +631,11 @@ describe('StartRun run as', () => {
     });
     renderField({ sessionId: SESSION.id });
     pickKind({ name: 'Preset' });
-    fireEvent.click(screen.getByRole('button', { name: /^Asks you:/ }));
-    fireEvent.click(screen.getByRole('tab', { name: 'Never' }));
+    fireEvent.click(await screen.findByRole('button', { name: /^Asks you: (?!Loading)/ }));
+    const asks = within(screen.getByRole('dialog', { name: 'Asks you' }));
+    fireEvent.click(
+      within(asks.getByRole('tablist', { name: 'Start from' })).getByRole('tab', { name: 'Never' }),
+    );
     fireEvent.click(screen.getByRole('button', { name: /^Edits:/ }));
     fireEvent.click(screen.getByRole('tab', { name: /^Read only/ }));
 

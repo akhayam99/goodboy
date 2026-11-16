@@ -4,7 +4,6 @@ import { LEAD_STOP_WORDS } from '@goodboy/core/auto';
 import type { AutoPhase } from '@goodboy/db';
 import type { Agent } from '@goodboy/types';
 import { anAgent } from '@goodboy/types/testing';
-import { SETTING_WORK_ENABLED } from '../../shared/lib/workSetting';
 import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
@@ -80,7 +79,6 @@ const runsOf = ({ view }: ViewParams) =>
     revisingStarts: {},
     mounts: [],
     projects: [],
-    isWork: true,
   });
 
 const workRowWordOf = ({ view }: ViewParams): string | undefined =>
@@ -103,21 +101,14 @@ const branchBlockWordOf = ({ view }: ViewParams): string | undefined =>
     openFoldIds: new Set(),
   }).leads[0]?.stateWord;
 
-type WorldParams = ViewParams & {
-  readonly isWorkOn: boolean;
-};
-
-const renderHeader = ({ view, isWorkOn }: WorldParams) => {
-  useAppStore.setState({
-    settings: { ...useAppStore.getState().settings, [SETTING_WORK_ENABLED]: String(isWorkOn) },
-    autoTreeViews: { [FIXTURE_SESSION]: [view] },
-  });
+const renderHeader = ({ view }: ViewParams) => {
+  useAppStore.setState({ autoTreeViews: { [FIXTURE_SESSION]: [view] } });
   return render(<LeadHeaderWord sessionId={FIXTURE_SESSION} rootAgentId={FIXTURE_ROOT} />);
 };
 
 describe('the five Lead words, one function, every reader', () => {
   it.each(CASES)('$name reads $word in the header, the row and the branch', ({ view, word }) => {
-    renderHeader({ view, isWorkOn: true });
+    renderHeader({ view });
 
     expect(Object.values(LEAD_STOP_WORDS)).toContain(word);
     expect(screen.getByText(word).textContent).toBe(word);
@@ -125,9 +116,11 @@ describe('the five Lead words, one function, every reader', () => {
     expect(branchBlockWordOf({ view })).toBe(word);
   });
 
-  it('shows no header word with Work off', () => {
-    const view = viewOf({ phase: 'done' });
-    const { container } = renderHeader({ view, isWorkOn: false });
+  it('shows no header word for a Lead whose tree is not loaded', () => {
+    useAppStore.setState({ autoTreeViews: {} });
+    const { container } = render(
+      <LeadHeaderWord sessionId={FIXTURE_SESSION} rootAgentId={FIXTURE_ROOT} />,
+    );
 
     expect(container.textContent).toBe('');
   });

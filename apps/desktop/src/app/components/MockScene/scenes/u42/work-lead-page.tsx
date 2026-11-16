@@ -33,21 +33,14 @@ const dependencyViewOf = ({ view }: ViewParams): AutoTreeView =>
 
 export const U42_WORK_LEAD_PAGE_SCENES: Readonly<Record<string, ComponentType>> = {
   'work-lead-plan': () => <AutoChatScene state="plan" hasLeadPage />,
-  'work-lead-working': () => <AutoChatScene state="leadWorking" hasLeadPage isWorkOn />,
+  'work-lead-working': () => <AutoChatScene state="leadWorking" hasLeadPage />,
   'work-lead-push': () => (
-    <AutoChatScene
-      state="working"
-      hasLeadPage
-      isWorkOn
-      viewOf={pushViewOf}
-      leadRows={{ push: 'ask' }}
-    />
+    <AutoChatScene state="working" hasLeadPage viewOf={pushViewOf} leadRows={{ push: 'ask' }} />
   ),
   'work-lead-dependency': () => (
     <AutoChatScene
       state="working"
       hasLeadPage
-      isWorkOn
       viewOf={dependencyViewOf}
       leadRows={{ dependencies: 'ask' }}
     />

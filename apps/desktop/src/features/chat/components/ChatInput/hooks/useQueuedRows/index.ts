@@ -9,9 +9,6 @@ import {
 } from '../../../../../attachments/pendingAttachment';
 import { autoLimitOpenEvent } from '../../../../../auto/chat/autoLimitOpenEvent';
 import { useAutoTreeActions } from '../../../../../auto/chat/useAutoTreeActions';
-import { flowRulesOf } from '../../../../../work/flowRulesOf';
-import { SETTING_WORK_ENABLED } from '../../../../../../shared/lib/workSetting';
-import { useAppStore } from '../../../../../../store';
 import { readAttachment } from '../../../../turn';
 import { focusComposerTextarea } from '../../focusComposerTextarea';
 import { directRevealAtOf } from '../../directRevealAtOf';
@@ -106,8 +103,6 @@ export const useQueuedRows = ({
     const timer = window.setTimeout(() => setNowMs(Date.now()), nextReveal - Date.now());
     return () => window.clearTimeout(timer);
   }, [nextReveal]);
-  const isWork = useAppStore((state) => state.settings[SETTING_WORK_ENABLED] === 'true');
-  const isAtOnce = flowRulesOf({ isWork }).isMessageDeliveredAtOnce;
   const rows = useMemo(
     () =>
       queuedRowsOf({
@@ -115,9 +110,8 @@ export const useQueuedRows = ({
         view,
         isAgentStopped,
         nowMs: Math.max(nowMs, Date.now()),
-        isAtOnce,
       }),
-    [queue, view, isAgentStopped, nowMs, isAtOnce],
+    [queue, view, isAgentStopped, nowMs],
   );
 
   const messageOf = useCallback(

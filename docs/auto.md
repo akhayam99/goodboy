@@ -15,15 +15,13 @@ the session rail ("Agent · Auto agent"), so the rail has no Auto entry
 to mark. Auto starts agents of the role it picks (`AUTO_ROLE_WHEN`), and
 agents started by hand keep working.
 
-One app-wide setting, **Work** (`SETTING_WORK_ENABLED`, under
-Experiments on the Advanced page, off by default), moves doors, names and
-engine rules, never views. Off: no Work section, the word Auto, "Start a run"
-opens the router, the level chip. On: Work, the word Lead, one composer,
-permission rows. `flowWordOf` (`shared/lib/flowWordOf.ts`, read through
-`useFlowWord`) is the only place that picks Auto or Lead, aria-labels
-included; `flowRulesOf` in the same folder holds the rest of the matrix and
-its table test pins both positions. A flip never loosens a running Lead and never loses a pending
-ask; a failed write keeps the old flow and shows the error on the row.
+The Work switch is gone: the rules it turned on are the rules for everyone.
+The engine reads the permission rows on every launch, publish, admission and
+finish (`readLaunchPermissions`, `readPublishPermissions`,
+`readAdmissionPermissions`, `readIsLeadClosing`), a message reaches the Lead
+while its agents work, and the screen calls the Auto root the Lead. The old
+`work.enabled` row may stay in the settings table and is never read;
+`upgradeFromSwitchOff.sqlite.test.ts` pins that pending asks survive the upgrade.
 
 ## Status
 
@@ -201,14 +199,9 @@ message the runtime
 cannot take, or one with a file that is not an image, is refused with "Auto didn't get your
 message" and the composer keeps its text.
 
-**When a message waits.** A `user` row is delivered in every phase that takes a turn
-(`chooseDeliveryRows`), except while the tree is `waiting` for running agents: there it
-stays `pending` and goes with the next results, so a message typed during a long child run
-reaches Auto only when the child ends. That is the switch off.
-
-**Answer while working.** With **Work** on (`flowRulesOf().isMessageDeliveredAtOnce`, read
-by `deliverNext` from the `work.enabled` setting at every delivery), a `user` row is delivered
-in `waiting` too, all pending user rows in one turn, while the agents keep running. The Lead
+**Answer while working.** A `user` row is delivered in every phase that takes a turn
+(`chooseDeliveryRows`), `waiting` included (`isMessageAtOnce` in `deliverNext`), all
+pending user rows in one turn, while the agents keep running. The Lead
 may answer, start another agent or say it waits. Its turn moves the tree to `deciding`; an
 agent that settles meanwhile writes its results row as usual, and `settleAutoTurn` sends the
 tree to `merging`, so those results go in the next turn, once. Delivery stays once per
@@ -216,8 +209,8 @@ outbox row id: a claimed or accepted row is never `pending` again, and a lapsed 
 reuses the stored delivery and its delivery id. Stop wins: a stopping tree delivers nothing.
 The claim stores the turn number (`turns_used + 1`) in the stored delivery, and
 `readAutoTreeViews` reads a note sent while agents worked back as `readMessages` with that
-turn. The note words come from `noteWordOf`: "Queued" with the switch off, "Not read yet"
-and "Read at turn n" with it on. Remove is the undo until the note is read; a note the
+turn. The note words come from `noteWordOf`: "Not read yet" and "Read at turn n". Remove is
+the undo until the note is read; a note the
 runtime could not deliver keeps "Not read yet" in the tree and stays editable.
 
 **One queue.** The chat holds only what Auto has read. Every message not delivered yet sits above
@@ -295,11 +288,11 @@ Tester**, **Needs you**, **Reading the results**, **Failed**, **Stopping**,
 children are not rows of the Overview; they live in the Auto tree of the Agents
 panel.
 
-Auto finishes itself only when the Lead may close the work: with the Work
-switch on and the Close the work row at Lead (never set by a preset), a
+Auto finishes itself only when the Lead may close the work: with the Close the
+work row at Lead (never set by a preset), a
 `finish` block that was accepted settles the turn in the stored phase
 `finished` instead of a resting phase (`settleAutoTurn`, `readIsLeadClosing`),
-in the same guarded write. With the row at You, or the switch off, it rests.
+in the same guarded write. With the row at You, the default, it rests.
 A tree that rests after its agents settled (stored
 phase `done`) reads **Idle** in the row and the rail root, never Done. **Mark finished** in the agent menu
 (`agent.markAutoFinished`, undoable) moves a resting tree to the stored phase
@@ -422,8 +415,7 @@ writing to it reopens it to **Deciding**.
   tooltip and accessible name. The rail row, the delegation
   line, the result card and the delivery text Auto reads all take the name from
   that one function, so Auto and the screen say the same name. A stuck child is a Next card headed by its branch and
-  pull request ("Auto needs you", or "Lead needs you" while Work is on, only
-  when its branch is unknown; `flowWordOf` through `useNextCards`) whose
+  pull request ("Lead needs you" only when its branch is unknown; `actionCardsOf`) whose
   sentence names the role, never the quoted ask: `The scout never started.` (or
   `failed.`, `timed out.`, one verb per child state from
   `autoStuckKindOf` and `autoStuckVerbOf`; a child that returned to Auto is
@@ -748,7 +740,7 @@ tree node whose Edit and Remove are the composer's own.
 
 ### Lead state words
 
-With the Work switch on, a Lead reads one of five words: **Working**, **Waits
+A Lead reads one of five words: **Working**, **Waits
 for you**, **Resting**, **Stopped**, **Finished**. `leadStopOf`
 (`packages/core/src/auto/leadStopOf.ts`) is the one function that picks it,
 from the stored phase, the Lead's own turn, a plan waiting for approval, a
@@ -757,9 +749,7 @@ turn are the reason next to **Waits for you**, never a sixth word; Stopping
 reads **Stopped** with the reason `stopping`. `autoTreeWordOf` calls it for
 every reader: the header word of the Lead page (`LeadHeaderWord`), the session row
 (`sessionRunsOf`), the Lead line of a branch Work tab (`branchLeadsOf`, which
-copies the row word). With the switch
-off the same function gives the Auto words of the Overview below, and the
-header shows no word. `leadStopReaders.test.tsx` checks every word in every
+copies the row word). `leadStopReaders.test.tsx` checks every word in every
 reader.
 
 ### The workspace read
@@ -1042,7 +1032,7 @@ It decides by ending its final reply with at most one block:
   waits, and the refusal says why. With Close the work at You it stores nothing: the tree still
   rests as Idle until the user marks it finished, and the prompt asks Auto to suggest **Mark
   finished** and to send `finish` only when the user asked to close. With Close the work at
-  Lead and the Work switch on, the turn settles as `finished` and the prompt
+  Lead, the turn settles as `finished` and the prompt
   (`buildAutoSystemPrompt` with `isLeadClosing`) asks the Lead to end with `finish` once the
   work is done. A user message to a finished Lead opens it again.
 - `mount` attaches a project of the workspace, on the branch the user named
@@ -1181,8 +1171,8 @@ all three, and ask only once a row is set to Ask.
 
 `leadPermissionsOf` is the one function that gives a row its effective value
 and its source, in this order: the Lead's own rows (`auto_trees.permissions`,
-m243), the workspace default (workspace value `auto.permissions`, read only
-while the Work switch is on), the session's level, the workspace level, then
+m243), the workspace default (workspace value `auto.permissions`), the
+session's level, the workspace level, then
 **After the plan**. The hidden `agents.autoPlanApproval` setting stands in for
 the default's Approve the plan row while no Lead row and no default row holds
 it, so a workspace that never opens the panel behaves as today; once a row
@@ -1210,20 +1200,22 @@ failed write keeps the old value and shows the error under its row, and the
 panel reads again after every write. Picking a preset writes the level and
 clears the own rows; on a Lead it pins a row only where a workspace default
 would still disagree with the preset. `LeadPermissionsChip` mounts the panel
-from `AutoLevelChip` (through `WorkAwareChip`) in Start work and on the Lead
-page when Work is on; with Work off the level chip stays. In the workspace
-settings the **Auto agent asks you** row of Run defaults holds the chip on the
-workspace default when Work is on (`AutoLevelDefaultRow`).
+from `AutoLevelChip` wherever a session or a Lead exists: the start field of a
+session and the Lead page. With no Lead yet it reads the session, and a preset
+writes that session's level only. A new session draft has no session to
+name, so it keeps the level chip, applied to the session once it exists. In the
+workspace settings the **Auto agent asks you** row of Run defaults holds the
+chip on the workspace default (`AutoLevelDefaultRow`).
 A row tightened while an agent runs applies to its next start. The tests are
-`permissions.test.ts` (the compatibility table for each level with the switch
-on and off, each precedence step, the stale pair) and
+`permissions.test.ts` (the compatibility table for each level, each
+precedence step, the stale pair) and
 `leadPermissions.sqlite.test.ts` (writes, Use default, two windows, failure).
 
 #### Admission rows
 
 Admission reads four rows, never the level
-(`store/runtime/auto/admission/readAdmissionPermissions.ts`, the Work switch
-from `work.enabled`): Start agents that read decides whether a reader role
+(`store/runtime/auto/admission/readAdmissionPermissions.ts`): Start agents
+that read decides whether a reader role
 waits for your confirmation, Start agents that write the same for a writer
 role (`admissionStateOf`; After the plan and Free start it, and an explicit
 `confirm: true` still asks), Approve the plan turns the plan gate on for a
@@ -1249,7 +1241,7 @@ proposal stays waiting and the action bar shows `CONFIRM_REFUSED_REASON`; the
 plan was used when the child was proposed, so the way out is to decline it.
 Two confirms start one child (the second reads `lost`). The tests are
 `admission/admissionRows.sqlite.test.ts` (a table per row and value, the
-default only with Work on), `level/admissionLevels.sqlite.test.ts`
+default whatever an old Work switch row says), `level/admissionLevels.sqlite.test.ts`
 (unchanged, no stored rows) and `level/confirmationLifecycle.sqlite.test.ts`.
 
 ### Asks
@@ -1298,8 +1290,7 @@ start ask.
 The Push a branch and Open or update a pull request rows are enforced in
 Goodboy's own publish step, never in the agent (an agent cannot push at all).
 `readPublishPermissions` (`store/runtime/auto/level/`) reads both effective
-values for the tree, with the Work switch from the `work.enabled` setting; a
-read that fails reads as Ask for both, so a broken read holds and never
+values for the tree; a read that fails reads as Ask for both, so a broken read holds and never
 publishes.
 
 - **Push.** `planPublish` takes the push value. `isPublishAskedOf`

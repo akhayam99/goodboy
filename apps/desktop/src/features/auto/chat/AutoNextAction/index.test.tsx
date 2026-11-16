@@ -278,7 +278,7 @@ describe('the next step card', () => {
     fireEvent.click(screen.getByRole('option', { name: /Spawn a tester first/ }));
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
 
-    await screen.findByText("Declined. Couldn't send it to Auto.");
+    await screen.findByText("Declined. Couldn't send it to Lead.");
     fireEvent.click(screen.getByRole('button', { name: 'Resend answer' }));
 
     await waitFor(() => expect(sendTurn).toHaveBeenCalledTimes(2));
@@ -289,7 +289,7 @@ describe('the next step card', () => {
       content: 'Next step: tester',
     });
     await waitFor(() =>
-      expect(screen.queryByText("Declined. Couldn't send it to Auto.")).toBeNull(),
+      expect(screen.queryByText("Declined. Couldn't send it to Lead.")).toBeNull(),
     );
   });
 

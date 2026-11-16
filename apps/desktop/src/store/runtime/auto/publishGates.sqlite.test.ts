@@ -6,10 +6,9 @@ import {
   type MountSnapshot,
   type PickableMount,
 } from '@goodboy/core/auto';
-import { getAutoGrant, listAutoDelegations, setSetting, type AutoGrantId } from '@goodboy/db';
+import { getAutoGrant, listAutoDelegations, type AutoGrantId } from '@goodboy/db';
 import { AUTO_SEED_SESSION } from '@goodboy/db/test-helpers/auto-seeds';
 import { brandId, type WorkspaceId } from '@goodboy/types';
-import { SETTING_WORK_ENABLED } from '../../../shared/lib/workSetting';
 import { readAutoTreeViews } from '../../slices/auto-view/readAutoTreeViews';
 import { createAskAnswerer } from './asks/createAskAnswerer';
 import { leadAsksOf } from './asks/leadAsksOf';
@@ -247,7 +246,7 @@ describe('a plain push when its row says Ask', () => {
     expect(await asksOf(world)).toEqual([]);
   });
 
-  it('holds on the workspace default while the Work switch is on', async () => {
+  it('holds on the workspace default', async () => {
     const world = await worldOf({});
     await writeLeadPermission({
       db: world.state.world.db,
@@ -255,7 +254,6 @@ describe('a plain push when its row says Ask', () => {
       change: { key: 'push', value: 'ask' },
       nowMs: WORLD_NOW,
     });
-    await setSetting(world.state.world.db, SETTING_WORK_ENABLED, 'true');
     await runChild({ world, child: pusher({}), text: done });
 
     expect(world.state.ports.pushes).toEqual([]);

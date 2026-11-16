@@ -334,7 +334,7 @@ matches "x".` and points to ⌘K for actions. `settingRows.test.tsx` renders
   What's new, background download) and carries the update dot; the old
   `updates` id opens General scrolled to that band, and a remembered `updates`
   page reopens as plain General (`resolveSettingsFocus`). Advanced holds Git,
-  Built-in terminal, Search and Experiments. Models is the workspace page
+  Built-in terminal and Search. Models is the workspace page
   `models`: `workspacePageOf` maps it and every model row id to it, and
   `PlanPage` leaves it out of copy and restore. iPhone stays out of the rail
   until `useIsIphonePaired` reads a paired phone (or while its page is open);

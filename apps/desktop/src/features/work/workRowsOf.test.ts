@@ -56,7 +56,7 @@ const LEADS = [
 ];
 
 const read = (filter: 'open' | 'needsYou' | 'working' | 'finished') =>
-  workRowsOf({ leads: LEADS, rootTurns: {}, filter, isWork: true });
+  workRowsOf({ leads: LEADS, rootTurns: {}, filter });
 
 describe('workRowsOf', () => {
   it('shows one row for a Lead on two branches and keeps both branches on it', () => {

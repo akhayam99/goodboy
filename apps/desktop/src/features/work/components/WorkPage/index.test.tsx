@@ -79,7 +79,6 @@ const seed = (): void => {
     workLeads: LEADS,
     workWorkspaceId: WS,
     isWorkStale: false,
-    settings: { 'work.enabled': 'true' },
     agentTurnState: {},
   });
 };

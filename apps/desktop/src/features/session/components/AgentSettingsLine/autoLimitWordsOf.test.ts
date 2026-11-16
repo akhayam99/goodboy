@@ -25,18 +25,17 @@ const wordsOf = ({ sessionCapUsd, capUsd }: WordsParams) =>
     sessionCapUsd,
     workspaceLimitUsd: 5,
     workspaceName: 'Harborline',
-    word: 'Auto',
   });
 
-describe('where the Auto limit comes from', () => {
-  it('names the workspace when its Auto limit is the smallest', () => {
+describe('where the Lead limit comes from', () => {
+  it('names the workspace when its limit is the smallest', () => {
     const capUsd = autoTreeCapUsd({ sessionCapUsd: 8, workspaceLimitUsd: 5 });
 
     expect(wordsOf({ sessionCapUsd: 8, capUsd })).toEqual({
       value: '$5.00',
       source: 'from Harborline',
       isFromWorkspace: true,
-      chain: 'This Auto $5.00, then session $8.00, then Harborline $5.00. $5.00 comes first.',
+      chain: 'This Lead $5.00, then session $8.00, then Harborline $5.00. $5.00 comes first.',
     });
   });
 
@@ -49,49 +48,33 @@ describe('where the Auto limit comes from', () => {
     });
   });
 
-  it('names this Auto when its own limit was set on it', () => {
+  it('names this Lead when its own limit was set on it', () => {
     expect(wordsOf({ sessionCapUsd: null, capUsd: 3 })).toMatchObject({
       value: '$3.00',
-      source: 'this Auto',
-      chain: 'This Auto $3.00, then session none, then Harborline $5.00. $3.00 comes first.',
+      source: 'this Lead',
+      chain: 'This Lead $3.00, then session none, then Harborline $5.00. $3.00 comes first.',
     });
   });
 
-  it('says nothing stops an Auto with no limit and no session limit', () => {
+  it('says nothing stops a Lead with no limit and no session limit', () => {
     expect(wordsOf({ sessionCapUsd: null, capUsd: null })).toMatchObject({
       value: 'none',
       source: '',
     });
   });
 
-  it('reads a workspace without an Auto limit as none, not as a made-up amount', () => {
+  it('reads a workspace without a limit as none, not as a made-up amount', () => {
     expect(
       autoLimitWordsOf({
         facts: factsOf({ capUsd: null }),
         sessionCapUsd: null,
         workspaceLimitUsd: null,
         workspaceName: 'Harborline',
-        word: 'Auto',
       }),
     ).toEqual({
       value: 'none',
       source: '',
-      chain: 'This Auto none, then session none, then Harborline none. Nothing stops this Auto.',
-    });
-  });
-
-  it('names this Lead with the Work switch on', () => {
-    expect(
-      autoLimitWordsOf({
-        facts: factsOf({ capUsd: 3 }),
-        sessionCapUsd: null,
-        workspaceLimitUsd: 5,
-        workspaceName: 'Harborline',
-        word: 'Lead',
-      }),
-    ).toMatchObject({
-      source: 'this Lead',
-      chain: 'This Lead $3.00, then session none, then Harborline $5.00. $3.00 comes first.',
+      chain: 'This Lead none, then session none, then Harborline none. Nothing stops this Lead.',
     });
   });
 });

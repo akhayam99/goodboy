@@ -26,28 +26,23 @@ const valuesOf = ({ permissions }: ValuesParams) =>
   Object.fromEntries(LEAD_PERMISSION_KEYS.map((key) => [key, permissions.rows[key].value]));
 
 describe('Lead permissions in the database', () => {
-  it.each(
-    LEVELS.flatMap((level) => [true, false].map((isWorkFlowOn) => [level, isWorkFlowOn] as const)),
-  )(
-    'reads a session at %s exactly as its level today, switch on %s',
-    async (level, isWorkFlowOn) => {
-      const { db } = await makeAutoWorld();
-      await writeAutoLevel({ db, target: { sessionId: AUTO_SEED_SESSION }, level });
-      const permissions = await readLeadPermissions({ db, target: tree, isWorkFlowOn });
-      expect(valuesOf({ permissions })).toEqual(LEAD_PERMISSION_PRESETS[level]);
-      expect(permissions.preset).toBe(level);
-      expect(permissions.spendLimitUsd).toBe(5);
-      const isEveryChildAsked = level === 'step';
-      expect(permissions.rows.startReaders.value === 'ask').toBe(isEveryChildAsked);
-      expect(permissions.rows.startWriters.value === 'ask').toBe(isEveryChildAsked);
-      expect(permissions.rows.approvePlan.value === 'ask').toBe(level !== 'run');
-    },
-  );
+  it.each(LEVELS)('reads a session at %s exactly as its level today', async (level) => {
+    const { db } = await makeAutoWorld();
+    await writeAutoLevel({ db, target: { sessionId: AUTO_SEED_SESSION }, level });
+    const permissions = await readLeadPermissions({ db, target: tree });
+    expect(valuesOf({ permissions })).toEqual(LEAD_PERMISSION_PRESETS[level]);
+    expect(permissions.preset).toBe(level);
+    expect(permissions.spendLimitUsd).toBe(5);
+    const isEveryChildAsked = level === 'step';
+    expect(permissions.rows.startReaders.value === 'ask').toBe(isEveryChildAsked);
+    expect(permissions.rows.startWriters.value === 'ask').toBe(isEveryChildAsked);
+    expect(permissions.rows.approvePlan.value === 'ask').toBe(level !== 'run');
+  });
 
   it('follows the workspace level for a session without its own', async () => {
     const { db } = await makeAutoWorld();
     await writeAutoLevel({ db, target: workspace, level: 'run' });
-    const permissions = await readLeadPermissions({ db, target: tree, isWorkFlowOn: true });
+    const permissions = await readLeadPermissions({ db, target: tree });
     expect(permissions.preset).toBe('run');
     expect(permissions.rows.startWriters.source).toBe('workspace');
   });
@@ -66,7 +61,7 @@ describe('Lead permissions in the database', () => {
       change: { key: 'push', value: 'whenChecksPass' },
       nowMs: WORLD_NOW,
     });
-    const overridden = await readLeadPermissions({ db, target: tree, isWorkFlowOn: true });
+    const overridden = await readLeadPermissions({ db, target: tree });
     expect(overridden.rows.push).toEqual({ value: 'whenChecksPass', source: 'lead', note: null });
     await writeLeadPermission({
       db,
@@ -75,17 +70,15 @@ describe('Lead permissions in the database', () => {
       nowMs: WORLD_NOW,
     });
     expect(await getAutoTreePermissions({ db, treeId: WORLD_TREE })).toBe('{}');
-    const reset = await readLeadPermissions({ db, target: tree, isWorkFlowOn: true });
+    const reset = await readLeadPermissions({ db, target: tree });
     expect(reset.rows.push).toEqual({ value: 'ask', source: 'default', note: null });
     expect(reset.preset).toBe('custom');
-    const switchedOff = await readLeadPermissions({ db, target: tree, isWorkFlowOn: false });
-    expect(switchedOff.rows.push.source).toBe('workspace');
   });
 
   it('reads the hidden plan setting until a row holds the plan', async () => {
     const { db } = await makeAutoWorld();
     await setSetting(db, SETTING_AUTO_PLAN_APPROVAL, 'false');
-    const seeded = await readLeadPermissions({ db, target: tree, isWorkFlowOn: true });
+    const seeded = await readLeadPermissions({ db, target: tree });
     expect(seeded.rows.approvePlan).toEqual({ value: 'skip', source: 'setting', note: null });
     expect(seeded.rows.startWriters.value).toBe('free');
     await writeLeadPermission({
@@ -94,7 +87,7 @@ describe('Lead permissions in the database', () => {
       change: { key: 'approvePlan', value: 'ask' },
       nowMs: WORLD_NOW,
     });
-    const owned = await readLeadPermissions({ db, target: tree, isWorkFlowOn: true });
+    const owned = await readLeadPermissions({ db, target: tree });
     expect(owned.rows.approvePlan).toEqual({ value: 'ask', source: 'default', note: null });
     expect(owned.rows.startWriters.value).toBe('afterPlan');
   });
@@ -137,7 +130,7 @@ describe('Lead permissions in the database', () => {
       change: { key: 'closeWork', value: 'lead' },
       nowMs: WORLD_NOW,
     });
-    const permissions = await readLeadPermissions({ db, target: tree, isWorkFlowOn: true });
+    const permissions = await readLeadPermissions({ db, target: tree });
     expect(permissions.rows.addProject.source).toBe('lead');
     expect(permissions.rows.closeWork).toEqual({ value: 'lead', source: 'lead', note: null });
   });
@@ -160,7 +153,7 @@ describe('Lead permissions in the database', () => {
       }),
     ).rejects.toThrow('disk unavailable');
     failing.mockRestore();
-    const kept = await readLeadPermissions({ db, target: tree, isWorkFlowOn: true });
+    const kept = await readLeadPermissions({ db, target: tree });
     expect(kept.rows.dependencies.value).toBe('ask');
     vi.spyOn(db, 'execute').mockResolvedValue({ rowsAffected: 0 });
     await expect(
@@ -178,9 +171,7 @@ describe('Lead permissions in the database', () => {
   it('refuses a read or a write for a Lead that no longer exists', async () => {
     const { db } = await makeAutoWorld();
     const gone = { treeId: brandId<typeof WORLD_TREE>({ value: 'tree-gone' }) };
-    await expect(readLeadPermissions({ db, target: gone, isWorkFlowOn: true })).rejects.toThrow(
-      'no longer exists',
-    );
+    await expect(readLeadPermissions({ db, target: gone })).rejects.toThrow('no longer exists');
     await expect(
       writeLeadPermission({
         db,

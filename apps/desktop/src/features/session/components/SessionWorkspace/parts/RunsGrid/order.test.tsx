@@ -150,7 +150,6 @@ const renderWorld = ({
     revisingStarts: {},
     mounts,
     projects: [PAYMENTS, NOTIFY, LEDGER],
-    isWork: false,
   });
   return render(
     <ToastProvider>

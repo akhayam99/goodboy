@@ -16,7 +16,6 @@ import { brandId, type AgentId, type SessionId, type WorkspaceId } from '@goodbo
 import { anAgent, aSession } from '@goodboy/types/testing';
 import type { AppStore } from '../../store';
 import { STORE_IMPORT_TIMEOUT_MS, importStore, type StoryStore } from '../../storyHarness';
-import { SETTING_WORK_ENABLED } from '../../../shared/lib/workSetting';
 import { createDrawerSlice } from '../drawer';
 import { createNavigationSlice } from '.';
 import { captureWindowLocation } from './captureWindowLocation';
@@ -33,11 +32,13 @@ beforeAll(async () => {
   useAppStore = await importStore();
 }, STORE_IMPORT_TIMEOUT_MS);
 
+const EMPTY_SETTINGS: Readonly<Record<string, string>> = {};
+
 type WindowParams = {
-  readonly isWork: boolean;
+  readonly oldSwitch?: 'true' | 'false';
 };
 
-const windowStore = ({ isWork }: WindowParams) =>
+const windowStore = ({ oldSwitch }: WindowParams = {}) =>
   create<AppStore>()((set, get) => ({
     ...useAppStore.getInitialState(),
     currentWorkspaceId: WS,
@@ -46,7 +47,7 @@ const windowStore = ({ isWork }: WindowParams) =>
     navigation: {},
     appStudio: null,
     drawer: null,
-    settings: { [SETTING_WORK_ENABLED]: isWork ? 'true' : 'false' },
+    settings: oldSwitch === undefined ? EMPTY_SETTINGS : { 'work.enabled': oldSwitch },
     sessionPhaseRuns: { [S1]: [anAgent({ id: LEAD, sessionId: S1, name: 'planner' })] },
     setCurrentSession: async (id: SessionId | null) => {
       set((state) => ({
@@ -70,7 +71,7 @@ const storedWork: Location = {
 
 describe('the Work destination', () => {
   it('opens a Lead inside its session and Back returns to the list with its filter', () => {
-    const store = windowStore({ isWork: true });
+    const store = windowStore();
     store.getState().switchStudio({ studio: { kind: 'work', filter: 'needsYou' } });
 
     store.getState().navigate({ to: agentPlace({ sessionId: S1, agentId: LEAD }) });
@@ -86,34 +87,27 @@ describe('the Work destination', () => {
   });
 
   it('keeps the filter a window picked across a reload', async () => {
-    const before = windowStore({ isWork: true });
+    const before = windowStore();
     before.getState().switchStudio({ studio: { kind: 'work' } });
     before.getState().amendStudio({ studio: { kind: 'work', filter: 'working' } });
     const saved: Location = JSON.parse(
       JSON.stringify(captureWindowLocation({ state: before.getState() })),
     );
 
-    const after = windowStore({ isWork: true });
+    const after = windowStore();
     await after.getState().restoreLocation({ location: saved });
 
     expect(after.getState().appStudio).toEqual({ kind: 'work', filter: 'working' });
   });
 
-  it('restores a stored Work place with the switch on', async () => {
-    const store = windowStore({ isWork: true });
+  it.each([[undefined], ['true'], ['false']] as const)(
+    'restores a stored Work place, old Work switch row %s',
+    async (oldSwitch) => {
+      const store = windowStore({ oldSwitch });
 
-    await store.getState().restoreLocation({ location: storedWork });
+      await store.getState().restoreLocation({ location: storedWork });
 
-    expect(store.getState().appStudio).toEqual({ kind: 'work', filter: 'needsYou' });
-  });
-
-  it('opens the Board for a stored Work place with the switch off', async () => {
-    const store = windowStore({ isWork: false });
-
-    await store.getState().restoreLocation({ location: storedWork });
-
-    expect(store.getState().appStudio).toBeNull();
-    expect(store.getState().currentSessionId).toBeNull();
-    expect(captureWindowLocation({ state: store.getState() }).place).toEqual({ at: 'board' });
-  });
+      expect(store.getState().appStudio).toEqual({ kind: 'work', filter: 'needsYou' });
+    },
+  );
 });
