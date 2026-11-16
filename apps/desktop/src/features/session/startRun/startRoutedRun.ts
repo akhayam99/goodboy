@@ -17,6 +17,7 @@ import { tauriDatabase } from '../../../shared/lib/db';
 import { openAgentRevealEvent } from '../../../shared/utils/openAgentReveal';
 import { uniqueNameOf } from '../../workflows/uniqueNameOf';
 import { leadPlanBriefOf } from './leadPlanBriefOf';
+import { planFirstLevelOf } from './planFirstLevelOf';
 import { presetSnapshotOf } from './presetSnapshotOf';
 import type { StartLimit } from '../../auto/startLimitOf';
 import type { AgentKindRouting } from '../agent-kind';
@@ -66,8 +67,16 @@ export const startRoutedRun = async ({
     if (attachments.length > 0) {
       await state.addGoalAttachments({ type: 'session', id: sessionId }, attachments);
     }
-    if (level !== null && role === null) {
-      await state.changeAutoLevel({ workspaceId: session.workspaceId, sessionId, level });
+    const startLevel =
+      role !== null
+        ? null
+        : (level ?? (await planFirstLevelOf({ sessionId, workspaceId: session.workspaceId })));
+    if (startLevel !== null) {
+      await state.changeAutoLevel({
+        workspaceId: session.workspaceId,
+        sessionId,
+        level: startLevel,
+      });
     }
     const leadMountId =
       role === null ? soleTurnMountIdOf({ state: useAppStore.getState(), sessionId }) : null;
