@@ -1,6 +1,7 @@
 import { getAgentById, insertAgent, type AutoDelegation, type Database } from '@goodboy/db';
-import type { Agent, AgentId, SessionId } from '@goodboy/types';
+import { brandId, type Agent, type AgentId, type MountId, type SessionId } from '@goodboy/types';
 import { autoChildRoutingOf } from '../../../features/auto/autoChildRoutingOf';
+import { delegationMountIdOf } from '../../../features/auto/delegationMountIdOf';
 
 export type CreateAutoChildParams = Readonly<{
   db: Database;
@@ -41,6 +42,7 @@ export const createAutoChild = async ({
   if (existing !== null) {
     return { kind: 'exists', agent: existing };
   }
+  const mountId = delegationMountIdOf({ delegation });
   try {
     const agent = await insertAgent(db, {
       id: delegation.childAgentId,
@@ -50,6 +52,7 @@ export const createAutoChild = async ({
       status: 'pending',
       kind,
       parentAgentId,
+      ...(mountId !== null && { mountId: brandId<MountId>({ value: mountId }) }),
       ...autoChildRoutingOf({ delegation }),
     });
     return { kind: 'created', agent };

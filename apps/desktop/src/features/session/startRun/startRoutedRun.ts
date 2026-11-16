@@ -22,6 +22,7 @@ import type { StartLimit } from '../../auto/startLimitOf';
 import type { AgentKindRouting } from '../agent-kind';
 import type { RunRouteResult } from './runRouteOf';
 import { runRoutesKey, writeRunRoute } from './runRoutesSetting';
+import { soleTurnMountIdOf } from './soleTurnMountIdOf';
 
 const ORCHESTRATED_WORKFLOW_NAME = 'Orchestrated workflow';
 
@@ -68,8 +69,11 @@ export const startRoutedRun = async ({
     if (level !== null && role === null) {
       await state.changeAutoLevel({ workspaceId: session.workspaceId, sessionId, level });
     }
+    const leadMountId =
+      role === null ? soleTurnMountIdOf({ state: useAppStore.getState(), sessionId }) : null;
     const agentId = await state.spawnAgent(sessionId, {
       kindOverride: role ?? 'auto',
+      ...(leadMountId !== null && { mountId: leadMountId }),
       initialPrompt:
         preset === null || role !== null
           ? work

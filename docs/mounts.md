@@ -45,6 +45,13 @@ and `apps/desktop/src/store/slices/mount-cleanup/`.
   gets `<prefix>/<slug>`. The task id only enters when the session starts from a
   task: a task linked later never renames the branch. The prefix may hold `/`
   (`team/ak`); the worktree folder stays flat because `/` becomes `-`.
+- The `{slug}` keeps 2 to 5 meaningful words of the goal (`goalBranchSlug`,
+  read by `sessionBranchNaming`): English and Italian filler is dropped
+  ("devo fare la", "I need to", "please"), accents fold, a ticket id such as
+  `HBL-412` comes first, and the slug stops at 40 characters on a word
+  boundary. A goal with no meaningful word falls back to the plain slug. The
+  title written later never renames the branch: it lands during the first turn,
+  and a switch then would bump the mount revision under running agents.
 - A name an agent asks for (`mount fork`, `mount switch --create`) or the New branch form gives goes through the same
   prefix (project, then workspace, then the default). A name that already
   starts with `<prefix>/` stays as it is, `feat/x` becomes `<prefix>/feat-x`

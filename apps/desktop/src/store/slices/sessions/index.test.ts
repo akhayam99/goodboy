@@ -1219,7 +1219,7 @@ describe('store contract', () => {
 
       expect(storySpies.createWorktree).toHaveBeenCalledWith(
         expect.objectContaining({
-          branchName: 'goodboy/grw-1220-applicare-nuove-icone-alla-navbar',
+          branchName: 'goodboy/grw-1220-applicare-nuove-icone-navbar',
         }),
       );
     });
