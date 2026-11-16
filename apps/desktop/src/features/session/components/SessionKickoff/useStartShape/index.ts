@@ -15,6 +15,8 @@ import { runModelSlotOfShape } from '../../../startRun/runModelSlotOf';
 import { guidanceToSendOf } from '../../../startRun/guidanceToSendOf';
 import { startRoutedRun } from '../../../startRun/startRoutedRun';
 import { workspaceGuidanceOf } from '../../../startRun/workspaceGuidanceOf';
+import type { PromptFieldFiles } from '../../../../../shared/components/PromptField';
+import { toAttachmentInputs } from '../../../../attachments/pendingAttachment';
 import type { StartLimit } from '../../../../auto/startLimitOf';
 import type { RunModelModel } from '../../StartRun/useRunModel';
 import { useStartFromDraft } from '../useStartFromDraft';
@@ -26,6 +28,7 @@ type Params = {
   readonly settleLimit: () => void;
   readonly model: RunModelModel;
   readonly level: AutoLevel | null;
+  readonly files: PromptFieldFiles;
 };
 
 export type StartShapeModel = Readonly<{
@@ -43,8 +46,11 @@ export const useStartShape = ({
   settleLimit,
   model,
   level,
+  files,
 }: Params): StartShapeModel => {
   const { clear: clearModel, pinFor } = model;
+  const filesRef = useRef(files);
+  filesRef.current = files;
   const [isStarting, setIsStarting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const isStartingRef = useRef(false);
@@ -104,11 +110,14 @@ export const useStartShape = ({
           : pin !== null && slot.kind === 'agent'
             ? agentRoutingOfPin({ pin })
             : null;
+      const staged = filesRef.current.attachments;
+      const attachments = await toAttachmentInputs(staged);
       const run = async (created: Session): Promise<void> => {
         await applyStartEdits({ sessionId: created.id, mode: draft.permissionMode });
         await startRoutedRun({
           sessionId: created.id,
           result,
+          attachments,
           routing,
           level: shape === 'agent' ? null : level,
           limit,
@@ -125,6 +134,7 @@ export const useStartShape = ({
       rememberLastStart({ workspaceId, last: shape });
       clearModel();
       settleLimit();
+      staged.forEach((attachment) => filesRef.current.onRemove(attachment.id));
     } catch (cause) {
       if (claim.isCurrent()) {
         setError(formatError(cause));

@@ -1,13 +1,10 @@
-import { CHECK_STATE } from '../../../../store/slices/notifications/errorRecovery';
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useRef, type ReactNode } from 'react';
 import { Button, DrawerFrame, cn, PANE_RHYTHM, appScrollIntoView } from '@goodboy/ui';
 import type { AgentId, SessionId } from '@goodboy/types';
 import { useAppStore, useTranscript } from '../../../../store';
 import { sessionById } from '../../../../store/slices/sessions/sessionIndex';
 import { selectOpenDrawer } from '../../../../store/slices/drawer/selectOpenDrawer';
 import { AGENT_KIND_META, classifyAgent } from '../../../session/agent-kind';
-import { isReportedError } from '../../../../store/slices/notifications/reportedError';
-import { restoreDraftOnFailedSend } from '../../../../shared/utils/restoreDraftOnFailedSend';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { PromptField } from '../../../../shared/components/PromptField';
 import { ChatView } from '../ChatView';
@@ -16,6 +13,7 @@ import { agentTranscriptTitle, TRANSCRIPT_DRAWER_COPY } from './transcriptDrawer
 import { DrawerTabs } from './DrawerTabs';
 import { useDrawerTabs } from './useDrawerTabs';
 import { useRevealToolCall } from './useRevealToolCall';
+import { useTranscriptReply } from './useTranscriptReply';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -71,19 +69,16 @@ export const AgentTranscriptDrawer = ({
   });
   const bodyRef = useRef<HTMLDivElement>(null);
   useRevealToolCall({ bodyRef, toolUseId, request });
-  const draft = useAppStore((s) => s.agentDraft?.[agentId] ?? '');
   const isEnded = useAppStore(
     (s) =>
       (s.agentTurnState[agentId]?.kind ??
         sessionById(s.sessions, sessionId)?.state.kind ??
         null) === 'ended',
   );
-  const setAgentDraft = useAppStore((s) => s.setAgentDraft);
-  const hydrateAgentDraft = useAppStore((s) => s.hydrateAgentDraft);
-  useEffect(() => hydrateAgentDraft({ agentId }), [agentId, hydrateAgentDraft]);
-  const sendAgentMessage = useAppStore((s) => s.sendAgentMessage);
-  const reportError = useAppStore((s) => s.reportError);
-  const [isSending, setIsSending] = useState(false);
+  const { draft, setDraft, isSending, send, files, notice } = useTranscriptReply({
+    sessionId,
+    agentId,
+  });
   const transcriptCount = useTranscript(agentId).length;
   const { tab, pickTab, hasLeadDot, hasTranscriptDot } = useDrawerTabs({
     isLeadPreferred,
@@ -92,55 +87,6 @@ export const AgentTranscriptDrawer = ({
   });
   const hasTabs = lead !== null && session !== null && agent !== null;
   const isTranscriptShown = !hasTabs || tab === 'transcript';
-
-  const send = async (): Promise<void> => {
-    const content = draft.trim();
-    if (content === '' || isSending) {
-      return;
-    }
-    setIsSending(true);
-    const id = crypto.randomUUID();
-    setAgentDraft(agentId, '');
-    try {
-      const delivery = await sendAgentMessage({
-        sessionId,
-        turn: { id, agentId, content, attachments: [], override: undefined },
-      });
-      const held = (useAppStore.getState().agentQueue[agentId] ?? []).find(
-        (item) => item.id === id,
-      )?.hold;
-      if (delivery.isUnwritten === true) {
-        const current = useAppStore.getState().agentDraft[agentId] ?? '';
-        setAgentDraft(agentId, restoreDraftOnFailedSend({ sent: content, current }));
-      }
-      const failure = delivery.failure ?? held?.reason ?? null;
-      if (!delivery.isDelivered && failure !== null) {
-        void reportError({
-          recovery: CHECK_STATE,
-          title: TRANSCRIPT_DRAWER_COPY.sendFailed,
-          error: new Error(failure),
-          sessionId,
-        });
-      }
-    } catch (error) {
-      const state = useAppStore.getState();
-      const isSaved = (state.agentQueue[agentId] ?? []).some((item) => item.id === id);
-      if (!isSaved) {
-        const current = state.agentDraft[agentId] ?? '';
-        setAgentDraft(agentId, restoreDraftOnFailedSend({ sent: content, current }));
-      }
-      if (!isReportedError(error)) {
-        void reportError({
-          recovery: CHECK_STATE,
-          title: TRANSCRIPT_DRAWER_COPY.sendFailed,
-          error,
-          sessionId,
-        });
-      }
-    } finally {
-      setIsSending(false);
-    }
-  };
 
   useEffect(() => {
     if (turn === null) {
@@ -169,10 +115,12 @@ export const AgentTranscriptDrawer = ({
         kind="message"
         label={TRANSCRIPT_DRAWER_COPY.replyLabel({ name })}
         value={draft}
-        onChange={(next) => setAgentDraft(agentId, next)}
+        onChange={(next) => setDraft({ next })}
         onSubmit={() => void send()}
         placeholder={TRANSCRIPT_DRAWER_COPY.replyPlaceholder({ name })}
         disabled={isSending}
+        files={files}
+        notice={notice}
         autoFocus={draft !== ''}
         minRows={2}
         maxRows={8}

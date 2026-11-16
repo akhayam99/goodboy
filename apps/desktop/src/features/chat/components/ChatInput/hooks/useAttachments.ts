@@ -46,6 +46,7 @@ export const useAttachments = ({
   sessionWorktreeRef.current = sessionWorktree;
   const attachmentsAgentIdRef = useRef<AgentId | null>(null);
   const pendingRestoreAgentRef = useRef<AgentId | null>(selectedAgentId);
+  const listAgentRef = useRef<AgentId | null>(selectedAgentId);
   const [restoredAgentId, setRestoredAgentId] = useState<AgentId | null>(null);
 
   const persistAttachmentToDisk = useCallback(async (att: PersistArgs): Promise<string | null> => {
@@ -105,7 +106,11 @@ export const useAttachments = ({
       if (pendingRestoreAgentRef.current !== agentId) {
         return;
       }
-      setAttachments(restored);
+      setAttachments((current) => {
+        const shown = new Set(current.map((att) => att.id));
+        const missing = restored.filter((att) => !shown.has(att.id));
+        return [...missing, ...current].slice(0, ATTACHMENT_LIMIT);
+      });
       attachmentsAgentIdRef.current = agentId;
       setRestoredAgentId(agentId);
     },
@@ -132,11 +137,15 @@ export const useAttachments = ({
   }, [attachments, selectedAgentId, setAgentAttachments]);
 
   useEffect(() => {
+    const isAgentSwitch = listAgentRef.current !== selectedAgentId;
+    listAgentRef.current = selectedAgentId;
     pendingRestoreAgentRef.current = selectedAgentId;
     attachmentsAgentIdRef.current = null;
     setRestoredAgentId(null);
-    if (selectedAgentId === null) {
+    if (selectedAgentId === null || isAgentSwitch) {
       setAttachments([]);
+    }
+    if (selectedAgentId === null) {
       return;
     }
     const stored = useAppStore.getState().agentAttachments[selectedAgentId] ?? [];
