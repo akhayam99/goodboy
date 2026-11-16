@@ -30,7 +30,6 @@ const waitingWorld = async (): Promise<RuntimeWorld> => {
     text: MESSAGE,
     atMs: world.state.world.clock.now() + 5,
   });
-  await world.runtime.drive(world.treeId);
   return world;
 };
 
@@ -50,7 +49,7 @@ const viewOf = async (world: RuntimeWorld) => {
 const turnsMentioning = (world: RuntimeWorld) =>
   world.state.ports.autoTurns.filter((turn) => turn.text.includes(MESSAGE));
 
-describe('withdrawing a message that waits', () => {
+describe('withdrawing a message before the Lead reads it', () => {
   it('drops the row with its own reason and takes it out of the view', async () => {
     const world = await waitingWorld();
 

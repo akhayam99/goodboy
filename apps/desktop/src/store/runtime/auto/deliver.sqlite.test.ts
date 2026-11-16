@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { getAutoOutbox, getAutoTree, listAutoOutbox, listAutoReservations } from '@goodboy/db';
+import {
+  getAutoOutbox,
+  getAutoTree,
+  listAutoDelegations,
+  listAutoOutbox,
+  listAutoReservations,
+} from '@goodboy/db';
 import { AUTO_TURN_CEILING_USD, EMPTY_USER_FACTS } from '@goodboy/core/auto';
 import { brandId, type AutoOutboxId, type SessionId } from '@goodboy/types';
 import { readAutoTreeViews } from '../../slices/auto-view/readAutoTreeViews';
@@ -153,27 +159,38 @@ describe('delivering stored rows to Auto', () => {
     ]);
   });
 
-  it('keeps a user message waiting while children run and delivers a question at once', async () => {
+  it('delivers a user message at once while children run, and leaves them running', async () => {
     const state = await makeDeliveryWorld({ isDeciding: true });
     await state.world.scheduler.admit(batchInput({ children: [childInput({ key: 'a' })] }));
     await state.world.db.execute(`UPDATE auto_delegations SET state = 'running'`);
     await state.world.db.execute(`UPDATE auto_trees SET phase = 'waiting'`);
     await addUserRow({ world: state.world, id: 'outbox-user-1', text: 'also add tests' });
 
-    expect(await deliver(state)).toMatchObject({ kind: 'idle', reason: 'no_rows' });
-    expect(state.ports.autoTurns).toHaveLength(0);
+    const outcome = await deliver(state);
 
+    expect(outcome).toMatchObject({ kind: 'delivered', deliveryId: 'outbox-user-1' });
+    expect(state.ports.autoTurns[0]?.text).toContain('also add tests');
+    expect(
+      (await listAutoDelegations({ db: state.world.db, treeId: WORLD_TREE })).map(
+        (delegation) => delegation.state,
+      ),
+    ).toEqual(['running']);
+  });
+
+  it('delivers a question at once while children run', async () => {
+    const state = await makeDeliveryWorld({ isDeciding: true });
+    await state.world.scheduler.admit(batchInput({ children: [childInput({ key: 'a' })] }));
+    await state.world.db.execute(`UPDATE auto_delegations SET state = 'running'`);
+    await state.world.db.execute(`UPDATE auto_trees SET phase = 'waiting'`);
     await addQuestionRow({ world: state.world, id: 'outbox-question-1' });
+
     const outcome = await deliver(state);
 
     expect(outcome).toMatchObject({ kind: 'delivered', deliveryId: 'outbox-question-1' });
     expect(state.ports.autoTurns[0]?.text).toContain('QUESTIONS FROM YOUR AGENTS');
-    expect(state.ports.autoTurns[0]?.text).not.toContain('also add tests');
     expect(
-      (await listAutoOutbox({ db: state.world.db, treeId: WORLD_TREE, states: ['pending'] })).map(
-        (row) => row.id,
-      ),
-    ).toEqual(['outbox-user-1']);
+      await listAutoOutbox({ db: state.world.db, treeId: WORLD_TREE, states: ['pending'] }),
+    ).toEqual([]);
   });
 
   it('delivers the results and the pending user messages as one turn, in order', async () => {

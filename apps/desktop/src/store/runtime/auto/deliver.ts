@@ -18,7 +18,6 @@ import {
   autoTreePhaseStatement,
   claimAutoOutboxStatement,
   getAutoTree,
-  getSetting,
   reserveAutoReservationStatement,
   listAutoDelegations,
   listAutoOutbox,
@@ -37,8 +36,6 @@ import type { OwnTurns } from './createOwnTurns';
 import { chooseDeliveryRows } from './deliveryRows';
 import { pausedDeadlineStatement } from './pausedDeadlineStatement';
 import type { AutoTurnEnded, TurnStartOutcome } from './ports';
-import { flowRulesOf } from '../../../features/work/flowRulesOf';
-import { SETTING_WORK_ENABLED } from '../../../shared/lib/workSetting';
 import { userOnceAllowsOf } from '../../slices/permissions/userOnceAllowsOf';
 import { userImagesOf } from './userImagesOf';
 import type { AgentVerbContext } from './verbContext';
@@ -270,13 +267,10 @@ const hasNoRunningChild = async ({ ctx, tree, pending }: IdleParams): Promise<bo
   );
 };
 
-const isMessageAtOnce = async ({ ctx, tree, pending }: IdleParams): Promise<boolean> => {
-  if (tree.phase !== 'waiting' || !pending.some((row) => row.kind === 'user')) {
-    return false;
-  }
-  const raw = await getSetting(ctx.db, SETTING_WORK_ENABLED);
-  return flowRulesOf({ isWork: raw === 'true' }).isMessageDeliveredAtOnce;
-};
+type AtOnceParams = Omit<IdleParams, 'ctx'>;
+
+const isMessageAtOnce = ({ tree, pending }: AtOnceParams): boolean =>
+  tree.phase === 'waiting' && pending.some((row) => row.kind === 'user');
 
 export const deliverNext = async ({
   ctx,
@@ -298,7 +292,7 @@ export const deliverNext = async ({
   }
   const pending = await listAutoOutbox({ db: ctx.db, treeId, states: ['pending'] });
   const isIdle = await hasNoRunningChild({ ctx, tree, pending });
-  const isAtOnce = await isMessageAtOnce({ ctx, tree, pending });
+  const isAtOnce = isMessageAtOnce({ tree, pending });
   const rows = chooseDeliveryRows({
     phase: tree.phase,
     generation: tree.generation,

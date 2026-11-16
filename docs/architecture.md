@@ -1126,8 +1126,7 @@ kept.
   is a one-way step: a build from before it refuses the database
   (`DatabaseFromNewerBuildError`, `packages/db/src/migrations/downgradeGuard.ts`)
   and offers the snapshot taken before the migration ran
-  (`migrationSnapshotStorage` in `shared/lib/dbBoot.ts`). The everyday way back
-  is the Work switch, not an older build.
+  (`migrationSnapshotStorage` in `shared/lib/dbBoot.ts`).
 - `store/runtime/auto/scheduler.ts` is the one writer of tree state. A window
   writes only while it holds the lease, so a second window reads. Every
   transition names the phase revision, generation and phase it expects, and a

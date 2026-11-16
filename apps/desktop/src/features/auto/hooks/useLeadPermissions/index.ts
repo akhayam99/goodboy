@@ -9,7 +9,6 @@ import {
 import { formatError } from '@goodboy/ui';
 import type { AutoTreeId, SessionId, WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
-import { useIsWorkOn } from '../../../../shared/hooks/useIsWorkOn';
 import { createLatestOnly } from '../../../../store/runtime/state-writes/latestOnly';
 import { permissionChangeOf } from '../../permissions/permissionChangeOf';
 
@@ -55,13 +54,23 @@ const READ_KEY = 'lead-permissions-read';
 const permissionTargetOf = ({ treeId, workspaceId }: TargetParams) =>
   treeId === null ? { workspaceId } : { treeId };
 
+type ReadTargetParams = TargetParams & {
+  readonly levelSessionId: SessionId | null;
+};
+
+const readTargetOf = ({ treeId, workspaceId, levelSessionId }: ReadTargetParams) => {
+  if (treeId === null && levelSessionId !== null) {
+    return { sessionId: levelSessionId };
+  }
+  return permissionTargetOf({ treeId, workspaceId });
+};
+
 export const useLeadPermissions = ({
   workspaceId,
   sessionId,
   treeId: leadTreeId,
   scope,
 }: Params): LeadPermissionsModel => {
-  const isWorkFlowOn = useIsWorkOn();
   const readPermissions = useAppStore((state) => state.readLeadPermissions);
   const changePermission = useAppStore((state) => state.changeLeadPermission);
   const changeAutoLevel = useAppStore((state) => state.changeAutoLevel);
@@ -73,13 +82,13 @@ export const useLeadPermissions = ({
   const latestRef = useRef(createLatestOnly());
   const treeId = scope === 'lead' ? leadTreeId : null;
   const isLead = treeId !== null;
+  const levelSessionId = isLead || leadTreeId === null ? sessionId : null;
 
   const read = useCallback(async (): Promise<LeadPermissions | null> => {
     const claim = latestRef.current.claim({ key: READ_KEY });
     try {
       const value = await readPermissions({
-        target: permissionTargetOf({ treeId, workspaceId }),
-        isWorkFlowOn,
+        target: readTargetOf({ treeId, workspaceId, levelSessionId }),
       });
       if (claim.isCurrent()) {
         setPermissions(value);
@@ -92,7 +101,7 @@ export const useLeadPermissions = ({
       }
       return null;
     }
-  }, [readPermissions, isWorkFlowOn, treeId, workspaceId]);
+  }, [readPermissions, treeId, workspaceId, levelSessionId]);
 
   useEffect(() => {
     setRowErrors({});
@@ -132,11 +141,12 @@ export const useLeadPermissions = ({
     async ({ level }: PresetParams): Promise<void> => {
       const target = permissionTargetOf({ treeId, workspaceId });
       const ownSource = isLead ? 'lead' : 'default';
+      const isSessionLevel = !isLead && levelSessionId !== null;
       setPresetError(null);
       setIsBusy(true);
       try {
-        await changeAutoLevel({ workspaceId, sessionId: isLead ? sessionId : null, level });
-        for (const key of LEAD_PERMISSION_KEYS) {
+        await changeAutoLevel({ workspaceId, sessionId: levelSessionId, level });
+        for (const key of isSessionLevel ? [] : LEAD_PERMISSION_KEYS) {
           const cleared = permissionChangeOf({ key, value: null });
           if (cleared !== null && permissions?.rows[key].source === ownSource) {
             await changePermission({ target, change: cleared });
@@ -160,7 +170,16 @@ export const useLeadPermissions = ({
         setIsBusy(false);
       }
     },
-    [changeAutoLevel, changePermission, read, permissions, isLead, treeId, sessionId, workspaceId],
+    [
+      changeAutoLevel,
+      changePermission,
+      read,
+      permissions,
+      isLead,
+      treeId,
+      levelSessionId,
+      workspaceId,
+    ],
   );
 
   return { permissions, rowErrors, presetError, readError, isBusy, change, reset, pickPreset };

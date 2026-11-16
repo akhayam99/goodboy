@@ -1,6 +1,5 @@
-import { getSetting, type Database } from '@goodboy/db';
+import type { Database } from '@goodboy/db';
 import type { AutoTreeId } from '@goodboy/types';
-import { SETTING_WORK_ENABLED } from '../../../../shared/lib/workSetting';
 import { readLeadPermissions } from './readLeadPermissions';
 
 type Params = {
@@ -9,14 +8,6 @@ type Params = {
 };
 
 export const readIsLeadClosing = async ({ db, treeId }: Params): Promise<boolean> => {
-  const isWorkOn = (await getSetting(db, SETTING_WORK_ENABLED)) === 'true';
-  if (!isWorkOn) {
-    return false;
-  }
-  const permissions = await readLeadPermissions({
-    db,
-    target: { treeId },
-    isWorkFlowOn: true,
-  });
+  const permissions = await readLeadPermissions({ db, target: { treeId } });
   return permissions.rows.closeWork.value === 'lead';
 };
