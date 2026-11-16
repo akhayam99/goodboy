@@ -1,3 +1,4 @@
+import { PROVIDER_IDS } from '@goodboy/types';
 import type { AgentId, ProviderId, TurnProviderOverride, EffortLevel } from '@goodboy/types';
 import type { StoredAttachment } from '../../../attachments/pendingAttachment';
 import { PREFIXES, type QuickActionGroup } from '../../../quick-actions/grammar';
@@ -35,21 +36,7 @@ export const composerPlaceholder = ({
   return 'Message the agent';
 };
 
-export const VALID_PROVIDERS = [
-  'anthropic',
-  'cursor',
-  'codex',
-  'gemini',
-  'copilot',
-  'opencode',
-  'openrouter',
-  'moonshot',
-] satisfies ReadonlyArray<ProviderId>;
-
-type Expect<T extends true> = T;
-type ValidProvidersAreTotal =
-  Exclude<ProviderId, (typeof VALID_PROVIDERS)[number]> extends never ? true : false;
-type _ValidProvidersTotalCheck = Expect<ValidProvidersAreTotal>;
+export const VALID_PROVIDERS = PROVIDER_IDS;
 
 export type QueuedTurn = {
   readonly id: string;

@@ -1,3 +1,4 @@
+import { EFFORT_LEVELS, PROVIDER_IDS } from '@goodboy/types';
 import type {
   WorkflowModelPick,
   WorkflowRoutingDecision,
@@ -8,16 +9,8 @@ import type {
 import { isRecord } from '@goodboy/types/helpers';
 import { parseJsonStrict } from '../shared/parseJsonColumn';
 
-const PROVIDERS: ReadonlySet<string> = new Set([
-  'anthropic',
-  'cursor',
-  'codex',
-  'gemini',
-  'opencode',
-  'openrouter',
-  'moonshot',
-]);
-const EFFORTS: ReadonlySet<string> = new Set(['minimal', 'low', 'medium', 'high', 'xhigh', 'max']);
+const PROVIDERS: ReadonlySet<string> = new Set(PROVIDER_IDS);
+const EFFORTS: ReadonlySet<string> = new Set(EFFORT_LEVELS);
 const TASK_TYPES: ReadonlySet<string> = new Set([
   'exploration',
   'planning',

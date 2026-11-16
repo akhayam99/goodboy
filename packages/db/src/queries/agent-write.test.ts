@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { brandId } from '@goodboy/types';
+import { brandId, EFFORT_LEVELS, PROVIDER_IDS } from '@goodboy/types';
 import type {
   AgentId,
   IsoDateTime,
@@ -116,6 +116,37 @@ describe('agent writes', () => {
   };
 
   describe('insertAgent', () => {
+    it.each(PROVIDER_IDS)('round trips routing for %s through an agent write', async (provider) => {
+      for (const effort of [null, ...EFFORT_LEVELS]) {
+        const selected = { provider, model: 'gpt-6.1-sol', effort };
+        const routingDecision: WorkflowRoutingDecision = {
+          ...decision,
+          proposal: { pick: selected, reason: 'Chosen', source: 'agent', profile },
+          selected,
+          executed: selected,
+        };
+        const routingLock: WorkflowRoutingLock = { version: 1, pick: selected, origin: 'user' };
+        const inserted = await insertAgent(db, {
+          sessionId,
+          ordinal: 0,
+          name: 'Implement ledger-core',
+          kind: 'implementer',
+          status: 'pending',
+          providerOverride: provider,
+          modelOverride: selected.model,
+          routingDecision,
+          routingLock,
+          taskProfile: profile,
+        });
+        expect(await getAgentById(db, inserted.id)).toMatchObject({
+          providerOverride: provider,
+          routingDecision,
+          routingLock,
+          taskProfile: profile,
+        });
+      }
+    });
+
     it('writes every column the caller gave and returns the stored agent', async () => {
       await db.execute(
         "INSERT INTO session_workflows (session_id, workflow_id, workflow_run_id, ordinal, created_at) VALUES (?, 'wf-1', 'run-1', 0, 1)",

@@ -2654,7 +2654,7 @@
   },
   "apps/desktop/src/features/companion/commandExecutor.commands.test.ts": {
     "@typescript-eslint/consistent-type-assertions": {
-      "count": 20
+      "count": 19
     }
   },
   "apps/desktop/src/features/companion/commandExecutor.test.ts": {

@@ -1,12 +1,11 @@
 import type {
-  EffortLevel,
   ProviderId,
   WorkflowRoutingProposal,
   WorkflowTaskDifficulty,
   WorkflowTaskProfile,
   WorkflowTaskType,
 } from '@goodboy/types';
-import { PROVIDER_IDS } from '@goodboy/types';
+import { EFFORT_LEVELS, PROVIDER_IDS } from '@goodboy/types';
 import { catalogModelForId } from '../providers/catalogModelForId';
 import { resolvedStoredModelId } from '../providers/resolvedStoredModelId';
 import { resolveStoredModelSelection } from '../providers/resolveStoredModelSelection';
@@ -38,14 +37,7 @@ export type WorkflowRoutingWireFields = Readonly<{
   modelReason?: unknown;
 }>;
 
-export const MODEL_EFFORTS = [
-  'minimal',
-  'low',
-  'medium',
-  'high',
-  'xhigh',
-  'max',
-] satisfies ReadonlyArray<EffortLevel>;
+export const MODEL_EFFORTS = EFFORT_LEVELS;
 
 const TASK_TYPES = [
   'exploration',
