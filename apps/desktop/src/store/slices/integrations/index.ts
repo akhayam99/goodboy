@@ -20,7 +20,7 @@ export const createIntegrationsSlice = ({ set, get }: SliceDeps) => {
   return {
     loadIntegrations: loadIntegrations(set, get),
     refreshViewerIdentity: refreshViewerIdentity({ set, get }),
-    checkTools: checkTools({ get }),
+    checkTools: checkTools({ set, get }),
     loadIntegrationCredentials: loadIntegrationCredentials(set),
     forgetIntegrationCredential: forgetIntegrationCredential(set, get),
     disconnectIntegration: disconnectIntegration(set),

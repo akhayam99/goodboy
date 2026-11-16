@@ -8,7 +8,16 @@ vi.mock('@tauri-apps/api/event', async () =>
 );
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import {
+  act,
+  cleanup,
+  fireEvent,
+  render,
+  renderHook,
+  screen,
+  waitFor,
+  within,
+} from '@testing-library/react';
 import { brandId } from '@goodboy/types';
 import type {
   GhTokenStatus,
@@ -16,7 +25,9 @@ import type {
   IntegrationCredentialId,
   IsoDateTime,
   ProviderConnectionState,
+  ProjectId,
   ProviderId,
+  WorkspaceId,
 } from '@goodboy/types';
 import { aWorkspace } from '@goodboy/types/testing';
 import {
@@ -27,6 +38,8 @@ import {
   stubStoryInvoke,
   type StoryStore,
 } from '../../../../store/storyHarness';
+import { useConnectionsRefresh } from '../../hooks/useConnectionsRefresh';
+import { useToolChecks } from '../../hooks/useToolChecks';
 import { connectionsAttentionOf } from '../../model/connectionsAttentionOf';
 import { ConnectionsIndex } from './index';
 
@@ -54,6 +67,7 @@ const aProvider = ({ id, label, connection }: ProviderParams) => ({
 
 type KeyParams = {
   readonly hasKey: boolean;
+  readonly keyAnswer?: () => unknown;
 };
 
 const GITHUB: GhTokenStatus = { mode: 'gh-cli', available: true, user: 'harborline-bot' };
@@ -70,9 +84,9 @@ const cliStatus = ({ id }: CliParams) => ({
   error: null,
 });
 
-const seed = ({ hasKey }: KeyParams) => {
+const seed = ({ hasKey, keyAnswer = () => hasKey }: KeyParams) => {
   stubStoryInvoke({
-    integration_credential_has_secret: () => hasKey,
+    integration_credential_has_secret: keyAnswer,
     gh_status: GITHUB,
     refresh_provider_status: () => cliStatus({ id: 'anthropic' }),
     refresh_cursor_status: () => cliStatus({ id: 'cursor' }),
@@ -202,6 +216,64 @@ describe('ConnectionsIndex', () => {
         ).length,
       ).toBe(before + 1),
     );
+  });
+
+  it('leaves a tool bound only to a project under Not set up, as its page does', async () => {
+    seed({ hasKey: true });
+    useAppStore.setState((state) => ({
+      workspaceIntegrations: {
+        [WORKSPACE.id]: (state.workspaceIntegrations[WORKSPACE.id] ?? []).map((binding) => ({
+          ...binding,
+          projectId: brandId<ProjectId>({ value: 'project-ledger-core' }),
+        })),
+      },
+    }));
+    render(<ConnectionsIndex workspace={WORKSPACE} />);
+
+    const tools = await screen.findByRole('region', { name: 'Integrations' });
+    const setup = within(tools).getByRole('group', { name: 'Not set up' });
+    expect(within(setup).getAllByRole('button')).toHaveLength(6);
+    expect(within(tools).queryByRole('button', { name: /^Linear, Connected|Checking/ })).toBeNull();
+    expect(connectionsAttentionOf({ state: useAppStore.getState(), nowMs: Date.now() })).toBeNull();
+  });
+
+  it('clears a failed automatic check once Refresh checks the tools again', async () => {
+    const answers = [Promise.reject(new Error('keychain locked')), Promise.resolve(true)];
+    seed({ hasKey: true, keyAnswer: () => answers.shift() });
+    const { result } = renderHook(() => ({
+      refresh: useConnectionsRefresh({ workspaceId: WORKSPACE.id }),
+      checkError: useToolChecks({ workspaceId: WORKSPACE.id }),
+    }));
+    await waitFor(() => expect(result.current.checkError).toBe('keychain locked'));
+
+    act(() => result.current.refresh.refresh());
+
+    await waitFor(() => expect(result.current.refresh.isRefreshing).toBe(false));
+    expect(result.current.refresh.error ?? result.current.checkError).toBeNull();
+  });
+
+  it('shows the check result of the open workspace, not a late one of the workspace before', async () => {
+    seed({ hasKey: true });
+    const northwind = aWorkspace({ name: 'Northwind' });
+    const answers: Array<(reason: Error) => void> = [];
+    stubStoryInvoke({
+      integration_credential_has_secret: () =>
+        new Promise<boolean>((_resolve, reject) => {
+          answers.push(reject);
+        }),
+    });
+    const { result, rerender } = renderHook(
+      ({ workspaceId }: { readonly workspaceId: WorkspaceId }) => useToolChecks({ workspaceId }),
+      { initialProps: { workspaceId: WORKSPACE.id } },
+    );
+
+    rerender({ workspaceId: northwind.id });
+    answers[0]?.(new Error('keychain locked'));
+
+    await waitFor(() =>
+      expect(useAppStore.getState().toolCheckErrors[WORKSPACE.id]).toBe('keychain locked'),
+    );
+    expect(result.current).toBeNull();
   });
 
   it('opens the provider page inside Connections from its tile and the role models in Settings', async () => {

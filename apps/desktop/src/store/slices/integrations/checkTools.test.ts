@@ -96,7 +96,7 @@ describe('checkTools', () => {
     ]);
   });
 
-  it('keeps the last key state and rejects when the keychain read fails', async () => {
+  it('keeps the last key state and stores the failure on the named workspace', async () => {
     useAppStore.setState({
       integrationKeyChecks: { [LINEAR_KEY]: { isPresent: true, checkedAt: 1 } },
     });
@@ -104,13 +104,53 @@ describe('checkTools', () => {
       integration_credential_has_secret: () => Promise.reject(new Error('keychain locked')),
     });
 
-    await expect(
-      useAppStore.getState().checkTools({ workspaceId: NORTHWIND, isForced: true }),
-    ).rejects.toThrow('keychain locked');
+    await useAppStore.getState().checkTools({ workspaceId: NORTHWIND, isForced: true });
 
     expect(useAppStore.getState().integrationKeyChecks[LINEAR_KEY]).toEqual({
       isPresent: true,
       checkedAt: 1,
+    });
+    expect(useAppStore.getState().toolCheckErrors).toEqual({ [NORTHWIND]: 'keychain locked' });
+  });
+
+  it('clears the failure once a later check of the same workspace succeeds', async () => {
+    const answers = [Promise.reject(new Error('keychain locked')), Promise.resolve(true)];
+    stubStoryInvoke({ integration_credential_has_secret: () => answers.shift() });
+
+    await useAppStore.getState().checkTools({ workspaceId: NORTHWIND, isForced: true });
+    expect(useAppStore.getState().toolCheckErrors[NORTHWIND]).toBe('keychain locked');
+
+    await useAppStore.getState().checkTools({ workspaceId: NORTHWIND, isForced: true });
+
+    expect(useAppStore.getState().toolCheckErrors[NORTHWIND]).toBeUndefined();
+  });
+
+  it('drops a late failure of an older check and keeps each workspace its own result', async () => {
+    const answers: Array<{
+      readonly resolve: (value: boolean) => void;
+      readonly reject: (reason: Error) => void;
+    }> = [];
+    stubStoryInvoke({
+      integration_credential_has_secret: () =>
+        new Promise<boolean>((resolve, reject) => {
+          answers.push({ resolve, reject });
+        }),
+    });
+
+    const older = useAppStore.getState().checkTools({ workspaceId: NORTHWIND, isForced: true });
+    const newer = useAppStore.getState().checkTools({ workspaceId: NORTHWIND, isForced: true });
+    const harborline = useAppStore
+      .getState()
+      .checkTools({ workspaceId: HARBORLINE, isForced: true });
+    answers[1]?.resolve(true);
+    await newer;
+    answers[0]?.reject(new Error('keychain locked'));
+    answers[2]?.reject(new Error('sentry key missing'));
+    answers[3]?.resolve(true);
+    await Promise.all([older, harborline]);
+
+    expect(useAppStore.getState().toolCheckErrors).toEqual({
+      [HARBORLINE]: 'sentry key missing',
     });
   });
 

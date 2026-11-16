@@ -18,6 +18,7 @@ export type IntegrationsState = {
   readonly integrationCredentialUsage: IntegrationCredentialUsage;
   readonly integrationKeyChecks: Readonly<Record<IntegrationCredentialId, IntegrationKeyCheck>>;
   readonly toolUseCounts: Readonly<Record<WorkspaceId, ToolUseCounts>>;
+  readonly toolCheckErrors: Readonly<Record<WorkspaceId, string>>;
 };
 
 export const integrationsInitialState: IntegrationsState = {
@@ -26,4 +27,5 @@ export const integrationsInitialState: IntegrationsState = {
   integrationCredentialUsage: {},
   integrationKeyChecks: {},
   toolUseCounts: {},
+  toolCheckErrors: {},
 };
