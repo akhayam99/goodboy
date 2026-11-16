@@ -44,6 +44,21 @@ describe('AnswerOptionRow', () => {
     expect(screen.getByRole('checkbox', { name: 'yes' }).getAttribute('aria-checked')).toBe('true');
   });
 
+  it('draws the unchecked multi-choice box with the control border, like every checkbox', () => {
+    const { container } = render(
+      <AnswerOptionRow
+        label="yes"
+        keyHint={1}
+        selected={false}
+        mode="many"
+        onToggle={() => undefined}
+      />,
+    );
+    const box = container.querySelector('span[aria-hidden].size-4');
+    expect(box?.className.split(' ')).toContain('border-border-control');
+    expect(box?.className.split(' ')).not.toContain('border-border');
+  });
+
   it('tags the recommended answer and describes the tile with it', () => {
     render(
       <AnswerOptionRow

@@ -15,7 +15,7 @@ export const SelectionIndicator = ({ mode, selected }: Props) => (
       mode === 'many' ? 'rounded-sm' : 'rounded-full',
       selected
         ? 'border-primary-solid bg-primary-solid text-on-primary'
-        : 'border-border bg-transparent',
+        : 'border-border-control bg-transparent',
     )}
   >
     {selected &&
