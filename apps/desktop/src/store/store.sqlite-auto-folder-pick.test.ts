@@ -200,7 +200,7 @@ const boot = async ({ projects }: BootParams): Promise<Booted> => {
   const runtime = makeAutoRuntime({
     db,
     getState: useAppStore.getState,
-    sleep: async () => undefined,
+    sleep: () => new Promise<void>((resolve) => setImmediate(resolve)),
     watchPolls: 3,
   });
   const started = await startAutoTree({
