@@ -280,7 +280,7 @@ describe('the shell chapter', () => {
 
   it('opens a branch in place from the board and the Projects card', () => {
     const branchPage = pointOf('review', 'Branch page');
-    ['in place', 'Conversation', 'Comments', 'Changes', 'Commits', 'Checks', 'Work'].forEach(
+    ['in place', 'Conversation', 'Comments', 'Changes', 'Commits', 'Checks', 'Runs'].forEach(
       (entry) => expect(branchPage).toContain(entry),
     );
     expect(branchPage).not.toContain('steps into');

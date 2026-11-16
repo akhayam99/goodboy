@@ -24,7 +24,7 @@ const ArtifactsSection = branchWorkArtifactsRegistration.Section;
 
 const ArtifactsIcon = CONCEPT_ICONS.artifacts;
 
-const WORK_LABEL = 'Work on this branch';
+const WORK_LABEL = 'Runs on this branch';
 
 export const BranchWork = ({ session, work }: Props) => {
   const sessionId = session.id;

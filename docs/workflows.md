@@ -578,7 +578,7 @@ still attached), with no live run, folds under one
 **Finished** row at the bottom with its count, closed until **Show**
 (`FinishedBranches`). Inside a group live runs come first, newest first, and its
 finished runs fold into **N finished**; a finished run's title is muted
-(`RunRowTitle`). On the Branch page Work tab archived runs fold apart behind
+(`RunRowTitle`). On the Branch page Runs tab archived runs fold apart behind
 **N archived** and come last (`branchGroupRunsOf`). A run that touches
 several branches stands in each of them, keyed by group and run, with the chip
 **Also on feat/retry-budget** (**Also on 2 branches** for more). The chip reveals
@@ -587,15 +587,15 @@ title and the chips are siblings of the row button (`ListGridRow` `overlays`),
 so a row never nests a button. A click on the title opens the run immediately.
 **Rename** in the row's right click menu edits the title in place (leaving the
 box on the same text writes nothing, `useInlineRename`). The menu is the run's own (the `runRow` kind, five rows at most),
-never the session's. The Branch page draws the same group on its **Work** tab
+never the session's. The Branch page draws the same group on its **Runs** tab
 (`RunsByBranch` with a `heading`, see [branch-page.md](navigation/branch-page.md)), and
 its **All runs** lands on Runs with that group open in the grouping you chose, or
 reveals its runs under By state (`openBranchWork`, which never calls `setGroupBy`;
 `useRunsFolds` unfolds **Finished** and the finished rows before scrolling and focusing
-the first matching row); Back returns to the Work tab (`Focus.runGroup` on the history entry) and to the
+the first matching row); Back returns to the Runs tab (`Focus.runGroup` on the history entry) and to the
 row you left, not to the top of the group. The tab counts what the group header
 counts (`branchGroupShownCountOf`: archived runs are left out, a series group counts
-the runs of all its parts). **Open branch** on a group lands on that Work tab
+the runs of all its parts). **Open branch** on a group lands on that Runs tab
 (`openBranchWorkTab`). The page
 count stays one per run. Questions and Artifacts group by the same function
 (`branchKeyedGroupsOf` in `branchGroupsOf.ts`, which `branchGroupsOf` also uses) and
@@ -611,7 +611,7 @@ agent, else the run (`artifactBranchesOf`); `groupArtifactRowsByBranch` runs
 after `filterArtifactRows`, keeps the trash apart and leaves the state groups
 untouched. A replicated row has one key per group (`artifactBranchRowKeyOf`,
 `questionBranchRowKeyOf`) and the open question is marked only in its first
-group. The Work tab draws the question and artifact groups of the branch the same way
+group. The Runs tab draws the question and artifact groups of the branch the same way
 (`questionGroupCountOf`, `artifactBranchCountOf`), its **All questions** and **All artifacts**
 go through `openBranchWork`, and Back from Questions or Artifacts returns to Work
 (`parentPlace`). The artifacts section is registered by the artifacts feature

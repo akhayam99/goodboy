@@ -430,14 +430,14 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
     points: [
       {
         term: 'Branch page',
-        desc: 'Click a branch on the board or the Projects card and its page opens in place: Conversation, Changes, Commits, Checks, Work and Comments. Rebase sits on its row, and Running here opens Monitoring on the branch.',
+        desc: 'Click a branch on the board or the Projects card and its page opens in place: Conversation, Changes, Commits, Checks, Runs and Comments. Rebase sits on its row, and Running here opens Monitoring on the branch.',
       },
       {
         term: 'Conversation',
         desc: 'One merge box says whether it can merge, then what holds it, worst first. Add reviewers or merge the ways the host allows; with none yet, a create form offers Write with Scribe.',
       },
       {
-        term: 'Work',
+        term: 'Runs',
         desc: 'Runs, questions and artifacts of the branch, with a count of what waits for you.',
       },
       {

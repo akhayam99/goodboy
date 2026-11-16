@@ -668,7 +668,7 @@ model of the agents, notes and plans of a tree. It is a pure function over
 loaded rows: agents are numbered by launch (1, 2, 2.1), a retry folds into the
 agent it retries and keeps its number, a set of two or more settled siblings
 folds to one line until opened when the caller lets it fold (`canFold`: the
-Work tab does, the Lead page never does), and notes and plans are unnumbered
+Runs tab does, the Lead page never does), and notes and plans are unnumbered
 rows placed by time among the top agents. Spend counts each agent once. The split per
 branch lives only in `leadSpendByBranchOf`: an agent's spend goes to the row of
 its own branch, the Lead's own turns to its primary branch, or to the group
@@ -692,12 +692,12 @@ note that is sending has no actions and a removed one leaves no node.
 `useLeadTree` loads the delegations, mounts and costs into `leadTreeOf`.
 `LeadTree` shares the row tokens of `RunTree` but not its agent stream.
 
-The Work tab of a branch reads the same model per branch (`branchLeadsOf`, through
+The Runs tab of a branch reads the same model per branch (`branchLeadsOf`, through
 `useBranchLeads`). Each Auto run of the branch group is one Lead line: glyph, the word
 Auto, title, state word, and its spend on this branch (the split of
 `leadSpendByBranchOf` for that mount). Below it the compact `LeadTree` lists only the
 agents the Lead ran on this branch, flat under the Lead. A Lead that also worked on
-another branch says `also on` with that branch, and that note opens its Work tab when
+another branch says `also on` with that branch, and that note opens its Runs tab when
 the Branch page knows the mount. The line has no button of its own: it opens the Lead
 page, and the tree opens it too. A Lead is never listed on a branch it has no run on.
 
@@ -771,7 +771,7 @@ project ask and the spend limit. Plan ready, an ask, the limit and a failed
 turn are the reason next to **Waits for you**, never a sixth word; Stopping
 reads **Stopped** with the reason `stopping`. `autoTreeWordOf` calls it for
 every reader: the header word of the Lead page (`LeadHeaderWord`), the session row
-(`sessionRunsOf`), the Lead line of a branch Work tab (`branchLeadsOf`, which
+(`sessionRunsOf`), the Lead line of a branch Runs tab (`branchLeadsOf`, which
 copies the row word). `leadStopReaders.test.tsx` checks every word in every
 reader.
 

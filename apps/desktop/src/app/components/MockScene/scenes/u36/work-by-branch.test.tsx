@@ -109,7 +109,7 @@ describe('the u36 work by branch scenes', () => {
 
     expect(document.querySelector('[data-branch-runs-line]')).toBeNull();
     const strip = screen.getByRole('tablist', { name: 'Branch pages' });
-    const work = within(strip).getByRole('tab', { name: /^Work/ });
+    const work = within(strip).getByRole('tab', { name: /^Runs/ });
     expect(work.querySelector('[data-tab-count]')?.textContent).toBe('1');
   });
 });

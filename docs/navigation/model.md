@@ -542,7 +542,7 @@ them. The navigation slice (`store/slices/navigation/`) owns both.
   `canonicalAgent` resolves for every door) goes back to Runs, the list that holds
   it, so its crumbs read `Overview › Runs › {run}` like a workflow run; when an up
   lands on the Overview, `upTo` writes the agent it left into
-  `focus.returnRows['board.lead']` so the board brings its row into view; opened from the Work tab of a pull request it goes
+  `focus.returnRows['board.lead']` so the board brings its row into view; opened from the Runs tab of a pull request it goes
   back to that tab, read from `focus.runGroup`, which the window layout saves.
   A session tab (Overview, Runs, Artifacts, Questions, Context) is the top of
   its session and has no crumbs; a file open in a branchless session's Changes

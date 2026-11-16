@@ -56,7 +56,7 @@ export const BRANCH_TAB_REGISTRY: BranchTabRegistry = {
   },
   work: {
     id: 'work',
-    label: 'Work',
+    label: NAMES.runs,
     address: 'work',
     shortcut: null,
     isAvailable: true,

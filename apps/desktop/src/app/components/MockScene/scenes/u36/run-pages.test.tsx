@@ -478,6 +478,6 @@ describe('the Branch page', () => {
 
     expect(document.querySelector('[data-branch-runs-line]')).toBeNull();
     const strip = screen.getByRole('tablist', { name: 'Branch pages' });
-    expect(within(strip).getByRole('tab', { name: /^Work/ }).textContent).toMatch(/^Work1$/);
+    expect(within(strip).getByRole('tab', { name: /^Runs/ }).textContent).toMatch(/^Runs1$/);
   });
 });

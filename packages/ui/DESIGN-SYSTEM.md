@@ -267,7 +267,7 @@ state is a `StateDot` or a glyph in a 16px column.
   `validate-scenes` checks in a browser that no list row ends past its list.
 - `cells` on `ListGridRow` is a list in column order, or `{ byKey }` keyed by
   column key, so one row can sit in any grid that names those keys and a key the
-  grid lacks is dropped. The Branch page Work tab draws runs, questions and
+  grid lacks is dropped. The Branch page Runs tab draws runs, questions and
   artifacts in one grid with the runs' columns this way, so their marks, titles,
   state words and times share one x.
 - `overlays` on `ListGridRow` draws controls as siblings of the row button, each

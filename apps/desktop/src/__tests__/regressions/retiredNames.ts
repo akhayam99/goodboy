@@ -274,7 +274,6 @@ export const RETIRED_NAMES: ReadonlyArray<RetiredName> = [
     id: 'work-door',
     pattern: /^Work$/,
     use: NAMES.runs,
-    allowedPaths:
-      /^(?:features\/work\/|features\/branch\/branchTabs\.ts|features\/branch\/components\/PullRequestTab\/MergeBox\/MergeBoxRow\.tsx|shared\/components\/ProfileForm\/|features\/settings\/components\/GuideStudio\/)/,
+    allowedPaths: /^(?:features\/work\/|shared\/components\/ProfileForm\/)/,
   },
 ];

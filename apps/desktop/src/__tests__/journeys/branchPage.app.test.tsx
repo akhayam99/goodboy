@@ -72,7 +72,7 @@ describe('journey: the branch page, its tabs and its files rail', () => {
       'Changes',
       'Commits',
       'Checks',
-      'Work',
+      'Runs',
       'Comments',
     ]);
     await click(await findSection(/^Changes/));
@@ -83,7 +83,7 @@ describe('journey: the branch page, its tabs and its files rail', () => {
     expect(branchTabNow()).toBe('commits');
     expect(hasFilesRail()).toBe(false);
 
-    await click(await findSection(/^Work/));
+    await click(await findSection(/^Runs/));
     expect(branchTabNow()).toBe('work');
     expect(hasFilesRail()).toBe(false);
 
@@ -117,7 +117,7 @@ describe('journey: the branch page, its tabs and its files rail', () => {
     await boot({ seed: 'pr' });
     await openBranchFiles();
     await click(await findSection(/^Commits/));
-    await click(await findSection(/^Work/));
+    await click(await findSection(/^Runs/));
     await click(await findSection(/^Changes/));
 
     await pressEsc();
