@@ -1,7 +1,9 @@
 // @vitest-environment happy-dom
+import { readFileSync } from 'fs';
 import { afterEach, describe, expect, it } from 'vitest';
 import { cleanup, render } from '@testing-library/react';
 import { applyDocumentTheme } from '../../../shared/lib/theme';
+import { STYLES_PATH } from '../../../test/styleTokens';
 import { BrandLockup } from './BrandLockup';
 
 afterEach(() => {
@@ -54,6 +56,14 @@ describe('BrandLockup', () => {
     const { container } = render(<BrandLockup version={null} />);
 
     expect(container.textContent).toBe('GoodboyBeta');
+  });
+
+  it('takes the accent inside the chip from brand-accent, not from primary', () => {
+    const css = readFileSync(STYLES_PATH, 'utf8');
+    const start = css.indexOf('.goodboy-brand-chip {');
+    const rule = css.slice(start, css.indexOf('}', start));
+
+    expect(rule).toContain('--color-primary: var(--color-brand-accent);');
   });
 
   it('draws only the mark in the chip on the rail', () => {
