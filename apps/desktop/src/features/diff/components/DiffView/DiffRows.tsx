@@ -59,6 +59,8 @@ const codeClass = (wrap: boolean): string =>
     wrap ? 'whitespace-pre-wrap [overflow-wrap:anywhere]' : 'whitespace-pre',
   );
 
+const SIGN_CELL = 'select-none text-center font-mono text-meta leading-5';
+
 const oldSpot = (line: DiffHunkLine | null): number | null =>
   line !== null && line.kind !== 'add' ? line.oldLine : null;
 
@@ -210,6 +212,7 @@ export const DiffRows = ({
           const oldBlocks = oldLine === null ? null : blocksAfter({ side: 'old', line: oldLine });
           const newBlocks = newLine === null ? null : blocksAfter({ side: 'new', line: newLine });
           const gutterFill = selected ? '' : GUTTER_FILL[line.kind];
+          const oldGutterFill = cn(gutterFill, commented && SELECTED_RAIL);
           return (
             <Fragment key={`l${row.hunkIndex}-${row.rowIndex}`}>
               <div
@@ -224,21 +227,9 @@ export const DiffRows = ({
                   (selected || commented) && SELECTED_RAIL,
                 )}
               >
-                {gutter(
-                  'old',
-                  oldLine,
-                  line.kind === 'del',
-                  cn(gutterFill, commented && SELECTED_RAIL),
-                )}
+                {gutter('old', oldLine, line.kind === 'del', oldGutterFill)}
                 {gutter('new', newLine, true, gutterFill)}
-                <div
-                  role="gridcell"
-                  aria-hidden
-                  className={cn(
-                    'select-none text-center font-mono text-meta leading-5',
-                    SIGN_TEXT[line.kind],
-                  )}
-                >
+                <div role="gridcell" aria-hidden className={cn(SIGN_CELL, SIGN_TEXT[line.kind])}>
                   {LINE_PREFIX[line.kind]}
                 </div>
                 <div role="gridcell" className={codeClass(effectiveWrap)}>
