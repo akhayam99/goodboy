@@ -134,6 +134,7 @@ describe('the run page scenes', () => {
     within(meta).getByRole('button', { name: 'Stop run' });
     expect(screen.getAllByRole('button', { name: /^Stop (?:run|Lead)/ })).toHaveLength(1);
     expect(meta.querySelectorAll('[data-lead-state]')).toHaveLength(1);
+    expect(meta.querySelector('[data-run-kind-line]')?.textContent).toBe('Lead');
     expect(meta.textContent).not.toMatch(/Auto/);
     screen.getByPlaceholderText('Message Lead');
   });
