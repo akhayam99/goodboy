@@ -7,6 +7,7 @@ const feature: ChangelogFeature = {
   area: 'sessions',
   screen: null,
   image: null,
+  theme: null,
   prs: [],
   paragraphs: [],
 };

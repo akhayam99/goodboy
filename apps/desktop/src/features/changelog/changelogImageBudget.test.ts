@@ -60,10 +60,12 @@ const referencedImages = ({
   readonly release: ReleaseEntry | undefined;
 }): {
   readonly byImage: ReadonlyMap<string, 'new' | 'improved'>;
+  readonly pinnedThemes: ReadonlyMap<string, 'dark' | 'light'>;
 } => {
   const byImage = new Map<string, 'new' | 'improved'>();
+  const pinnedThemes = new Map<string, 'dark' | 'light'>();
   if (release === undefined || release.shape !== 'v2') {
-    return { byImage };
+    return { byImage, pinnedThemes };
   }
   release.sections.new.forEach((feature) => {
     if (feature.image !== null) {
@@ -75,7 +77,12 @@ const referencedImages = ({
       byImage.set(feature.image, 'improved');
     }
   });
-  return { byImage };
+  [...release.sections.new, ...release.sections.improved].forEach((feature) => {
+    if (feature.image !== null && feature.theme !== null) {
+      pinnedThemes.set(feature.image, feature.theme);
+    }
+  });
+  return { byImage, pinnedThemes };
 };
 
 describe('docs/changelog image budget', () => {
@@ -95,7 +102,7 @@ describe('docs/changelog image budget', () => {
   versionDirs.forEach((versionDir) => {
     describe(`docs/changelog/${versionDir}`, () => {
       const release = releases.find((entry) => entry.version === versionDir);
-      const { byImage } = referencedImages({ release });
+      const { byImage, pinnedThemes } = referencedImages({ release });
       const fileNames = listFiles({ versionDir });
       const parsed = fileNames.map((fileName) => ({
         fileName,
@@ -130,7 +137,7 @@ describe('docs/changelog image budget', () => {
       it('has a complete dark/light pair for every image and variant it carries', () => {
         const byImageVariant = new Map<string, Set<'dark' | 'light'>>();
         parsed.forEach(({ parsed: file }) => {
-          if (file === null) {
+          if (file === null || pinnedThemes.has(file.image)) {
             return;
           }
           const key = `${file.image}-${file.variant}`;
@@ -141,6 +148,21 @@ describe('docs/changelog image budget', () => {
         byImageVariant.forEach((themes, key) => {
           expect(themes.has('dark'), `${key} is missing its dark file`).toBe(true);
           expect(themes.has('light'), `${key} is missing its light file`).toBe(true);
+        });
+      });
+
+      it('keeps only the pinned theme for an image pinned with theme=', () => {
+        parsed.forEach(({ fileName, parsed: file }) => {
+          if (file === null) {
+            return;
+          }
+          const pinned = pinnedThemes.get(file.image);
+          if (pinned === undefined) {
+            return;
+          }
+          expect(file.theme, `${fileName} is never shown: its entry pins theme=${pinned}`).toBe(
+            pinned,
+          );
         });
       });
 

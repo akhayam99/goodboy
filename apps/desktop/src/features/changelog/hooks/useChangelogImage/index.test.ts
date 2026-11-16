@@ -39,6 +39,28 @@ describe('useChangelogImage', () => {
     });
   });
 
+  it('loads the pinned light file in a dark viewer', async () => {
+    invoke.mockResolvedValue('data:image/webp;base64,AAA=');
+    const { result } = renderHook(() =>
+      useChangelogImage({
+        version: '0.37.0',
+        image: 'v1-overview',
+        variant: 'before',
+        pinnedTheme: 'light',
+      }),
+    );
+
+    await waitFor(() => expect(result.current.kind).toBe('ready'));
+    expect(invoke).toHaveBeenCalledWith('changelog_image', {
+      version: '0.37.0',
+      file: 'v1-overview-before-light.webp',
+    });
+    expect(invoke).not.toHaveBeenCalledWith('changelog_image', {
+      version: '0.37.0',
+      file: 'v1-overview-before-dark.webp',
+    });
+  });
+
   it('is absent when the backend has nothing for that release', async () => {
     invoke.mockResolvedValue(null);
     const { result } = renderHook(() =>

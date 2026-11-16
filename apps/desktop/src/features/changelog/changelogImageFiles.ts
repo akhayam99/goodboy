@@ -36,7 +36,8 @@ export const changelogImageFilesForFeature = ({
     return [];
   }
   const image = feature.image;
+  const themes = feature.theme === null ? CHANGELOG_IMAGE_THEMES : [feature.theme];
   return changelogImageVariants({ hasBefore }).flatMap((variant) =>
-    CHANGELOG_IMAGE_THEMES.map((theme) => changelogImageFileName({ image, variant, theme })),
+    themes.map((theme) => changelogImageFileName({ image, variant, theme })),
   );
 };

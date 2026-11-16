@@ -2,12 +2,14 @@ import { isChangelogArea } from './changelogAreas';
 import type { ChangelogArea } from './changelogAreas';
 import { isChangelogScreen } from './changelogScreens';
 import type { ChangelogScreen } from './changelogScreens';
+import type { Theme } from '../../shared/lib/theme';
 
 export type ChangelogFeature = {
   readonly title: string;
   readonly area: ChangelogArea;
   readonly screen: ChangelogScreen | null;
   readonly image: string | null;
+  readonly theme: Theme | null;
   readonly prs: ReadonlyArray<number>;
   readonly paragraphs: ReadonlyArray<string>;
 };
@@ -56,6 +58,7 @@ type Meta = {
   readonly area: ChangelogArea;
   readonly screen: ChangelogScreen | null;
   readonly image: string | null;
+  readonly theme: Theme | null;
   readonly prs: ReadonlyArray<number>;
 };
 
@@ -79,6 +82,7 @@ const parseMeta = ({ text }: { readonly text: string }): Meta | null => {
   let area: ChangelogArea | null = null;
   let screen: ChangelogScreen | null = null;
   let image: string | null = null;
+  let theme: Theme | null = null;
   let prs: ReadonlyArray<number> = [];
   const seenKeys = new Set<string>();
   for (const token of tokens) {
@@ -113,6 +117,13 @@ const parseMeta = ({ text }: { readonly text: string }): Meta | null => {
       image = value;
       continue;
     }
+    if (key === 'theme') {
+      if (value !== 'light' && value !== 'dark') {
+        return null;
+      }
+      theme = value;
+      continue;
+    }
     if (key === 'pr') {
       const parsed = parsePrList({ value });
       if (parsed === null) {
@@ -126,7 +137,7 @@ const parseMeta = ({ text }: { readonly text: string }): Meta | null => {
   if (area === null) {
     return null;
   }
-  return { area, screen, image, prs };
+  return { area, screen, image, theme, prs };
 };
 
 type CursorState = { index: number };
@@ -346,6 +357,7 @@ const parseStrict = ({ version, lines }: ParseStrictParams): ReleaseEntry | null
         area: meta.area,
         screen: meta.screen,
         image: meta.image,
+        theme: meta.theme,
         prs: meta.prs,
         paragraphs,
       };
