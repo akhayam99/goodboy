@@ -5,7 +5,6 @@ import { contrastRatio, over, THEME_NAMES, tokenOf, type Theme } from '../../tes
 
 const MIN_TEXT_CONTRAST = 4.5;
 const MIN_FAINT_ON_SUBTLE = 4.6;
-const TINT_ALPHA = 0.1;
 
 const SYNTAX_TOKENS = [
   'syntax-keyword',
@@ -24,21 +23,29 @@ const SYNTAX_TOKENS = [
 
 const SURFACES = ['chrome', 'background', 'subtle', 'muted', 'elevated'] as const;
 
-const tinted = ({
+const CODE_FILLS: ReadonlyArray<ReadonlyArray<string>> = [
+  ['diff-add-line'],
+  ['diff-add-line', 'diff-add-word'],
+  ['diff-remove-line'],
+  ['diff-remove-line', 'diff-remove-word'],
+];
+
+const GUTTER_FILLS = ['diff-add-gutter', 'diff-remove-gutter'] as const;
+
+const layered = ({
   theme,
-  tone,
-  layers,
+  fills,
 }: {
   readonly theme: Theme;
-  readonly tone: 'success' | 'danger';
-  readonly layers: number;
-}): Rgb => {
-  let base = tokenOf({ theme, name: 'background' }).rgb;
-  for (let layer = 0; layer < layers; layer += 1) {
-    base = over({ top: tokenOf({ theme, name: tone }).rgb, base, alpha: TINT_ALPHA });
-  }
-  return base;
-};
+  readonly fills: ReadonlyArray<string>;
+}): Rgb =>
+  fills.reduce(
+    (base, name) => {
+      const fill = tokenOf({ theme, name });
+      return over({ top: fill.rgb, base, alpha: fill.alpha });
+    },
+    tokenOf({ theme, name: 'background' }).rgb,
+  );
 
 const ratioOn = ({
   theme,
@@ -98,15 +105,19 @@ describe.each(THEME_NAMES)('text contrast in %s', (theme) => {
   it.each(SYNTAX_TOKENS)(
     '%s reads at 4.5:1 on an added and a removed line, word fill included',
     (name) => {
-      for (const tone of ['success', 'danger'] as const) {
-        for (const layers of [1, 2]) {
-          expect(
-            ratioOn({ theme, name, background: tinted({ theme, tone, layers }) }),
-          ).toBeGreaterThanOrEqual(MIN_TEXT_CONTRAST);
-        }
+      for (const fills of CODE_FILLS) {
+        expect(
+          ratioOn({ theme, name, background: layered({ theme, fills }) }),
+        ).toBeGreaterThanOrEqual(MIN_TEXT_CONTRAST);
       }
     },
   );
+
+  it.each(GUTTER_FILLS)('the faint line number reads at 4.5:1 on %s', (fill) => {
+    expect(
+      ratioOn({ theme, name: 'faint-foreground', background: layered({ theme, fills: [fill] }) }),
+    ).toBeGreaterThanOrEqual(MIN_TEXT_CONTRAST);
+  });
 
   it.each(SYNTAX_TOKENS)('%s reads at 4.5:1 on the plain diff background', (name) => {
     expect(
