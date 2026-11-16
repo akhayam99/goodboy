@@ -4,7 +4,7 @@ A workflow runs several agents in one session, each step with its own role, mode
 
 ### Start a workflow
 
-A run that follows a preset starts from **Start a run**: pick **Preset** under **How**, or type `~` and a preset name. The run gets a Lead with the preset as its plan, and its row reads "Lead · plan Fix a layout". A preset's steps, roles and models are edited in the Workflows studio.
+To run a preset, open **Start a run** and pick **Preset** under **How**, or type `~` and its name. The run gets a Lead with the preset as its plan, and its row reads "Lead · plan Fix a layout". A preset's steps, roles and models are edited in the Workflows studio.
 
 ### Older runs
 

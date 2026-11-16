@@ -828,7 +828,7 @@
         {
           "id": "start-a-workflow",
           "title": "Start a workflow",
-          "copy": "A run that follows a preset starts from Start a run: pick Preset under How, or type ~ and a preset name.",
+          "copy": "To run a preset, open Start a run and pick Preset under How, or type ~ and its name.",
           "image": null,
           "isNew": false
         },

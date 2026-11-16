@@ -115,7 +115,7 @@ The Commits section of the Branch page lets you clean up a branch before it goes
 
 A workflow runs several agents in one session, each step with its own role, model and effort. Use it to split a job into steps such as scout, plan, implement and review, and to steer the run while it goes. You choose how much it asks you and how much it may spend.
 
-- **Start a workflow**: A run that follows a preset starts from Start a run: pick Preset under How, or type ~ and a preset name.
+- **Start a workflow**: To run a preset, open Start a run and pick Preset under How, or type ~ and its name.
 - **Older runs**: A run started before every run had a Lead stays as it was, on its own engine.
 - **Run defaults**: Set what every new run starts with on the Run defaults page in Settings.
 - **Workflow run**: Follow a run step by step, with its sub-agents under their agent and one button that moves it on.
