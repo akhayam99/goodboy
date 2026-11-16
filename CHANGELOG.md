@@ -30,7 +30,7 @@ The run page names the Lead and its state in the crumb row, and the button that 
 
 The Start a run field has a Branch chip with the session's branches. It reads Any branch until you pick one, and the run works on the branch you picked. A failed start keeps it for Retry.
 
-An open row of the branch board has Start a run on this branch, which opens the field on Runs with that branch picked.
+The header of a branch page has Start a run on this branch, which opens the field on Runs with that branch picked.
 
 ### Improved
 
@@ -76,6 +76,11 @@ The State heads the Context tab in a box with a count of blockers or of steps le
 
 A new branch is named from two to five meaningful words of the goal, English or Italian, with a ticket id in the goal such as HBL-1528 first. Words like the, for or per are left out.
 
+#### One tile per branch on the Overview
+<!-- gb area=sessions image=branch-tile -->
+
+Each branch on the Overview is one tile: its name and project, one state such as Working or Waits for you, a short line of what waits, and at most one button for the next step. The tile opens the branch page, where its changes, commits, checks, runs and questions live.
+
 #### Running ports sit under the branch name
 <!-- gb area=sessions -->
 
@@ -86,6 +91,7 @@ The ports a branch runs show next to Not pushed under its name on the branch pag
 - Paste, drop and the paperclip attach images again in New session and in a reply to an agent. <!-- gb area=sessions -->
 - An image pasted in chat no longer disappears a moment later. <!-- gb area=sessions -->
 - Runs started by a Lead, and the agents it starts, show under their branch on Runs and the board, in older sessions too. <!-- gb area=agents -->
+- The pictures of the light mode entry in 0.37.0 show light mode in a dark window too. <!-- gb area=app -->
 
 ## Goodboy v0.37.0
 
