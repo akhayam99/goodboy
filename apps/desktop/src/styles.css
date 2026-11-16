@@ -51,70 +51,68 @@
   --color-scrollbar-thumb: oklch(1 0 0 / 0.2);
   --color-scrollbar-thumb-active: oklch(1 0 0 / 0.38);
 
-  --color-primary: oklch(0.74 0.13 210);
-  --color-unread: oklch(0.66 0.07 210);
-  --color-on-tone: oklch(0.16 0 0);
+  --color-primary: oklch(0.785 0.109 259);
+  --color-unread: oklch(0.7 0.09 259);
+  --color-on-tone: oklch(0.995 0 0);
   --color-brand: #0b0b0d;
 
-  /* Semantic tokens. Every tone clears 4.5:1 as text on the brightest surface
-     (`elevated`), which is what sets their lightness floor. */
-  --color-danger: oklch(0.742 0.17 22);
-  --color-warning: oklch(0.76 0.13 78);
-  --color-warning-mark: oklch(0.76 0.13 78);
-  --color-success: oklch(0.71 0.13 148);
-  --color-info: oklch(0.716 0.12 245);
-  --color-merged: oklch(0.734 0.15 305);
-  --color-draft: oklch(0.728 0.14 277);
-  --color-find-match: oklch(0.76 0.13 78 / 0.28);
-  --color-find-current: oklch(0.76 0.13 78 / 0.62);
+  --color-danger: oklch(0.78 0.128 25);
+  --color-warning: oklch(0.82 0.14 80);
+  --color-warning-mark: oklch(0.82 0.14 80);
+  --color-success: oklch(0.78 0.15 150);
+  --color-info: oklch(0.8 0.115 215);
+  --color-merged: oklch(0.79 0.124 300);
+  --color-draft: oklch(0.715 0.012 264);
+  --color-find-match: oklch(0.39 0.093 58);
+  --color-find-current: oklch(0.53 0.12 63);
 
   --color-border-control: oklch(1 0 0 / 0.4);
   --color-floating-edge: var(--color-border);
   --color-button-secondary: var(--color-fill);
-  --color-brand-accent: oklch(0.74 0.13 210);
+  --color-brand-accent: oklch(0.74 0.128 210);
   --color-selection: oklch(0.39 0.116 259);
 
-  --color-primary-wash: color-mix(in oklab, var(--color-primary) 5%, transparent);
-  --color-primary-subtle: color-mix(in oklab, var(--color-primary) 10%, transparent);
-  --color-primary-edge: color-mix(in oklab, var(--color-primary) 40%, transparent);
-  --color-primary-solid: var(--color-primary);
-  --color-primary-solid-hover: color-mix(in oklab, var(--color-primary) 90%, transparent);
+  --color-primary-wash: oklch(0.212 0.04 259);
+  --color-primary-subtle: oklch(0.265 0.062 259);
+  --color-primary-edge: oklch(0.45 0.136 259);
+  --color-primary-solid: oklch(0.53 0.2 259);
+  --color-primary-solid-hover: oklch(0.565 0.2 259);
   --color-on-primary: var(--color-on-tone);
-  --color-info-wash: color-mix(in oklab, var(--color-info) 5%, transparent);
-  --color-info-subtle: color-mix(in oklab, var(--color-info) 10%, transparent);
-  --color-info-edge: color-mix(in oklab, var(--color-info) 40%, transparent);
-  --color-info-solid: var(--color-info);
-  --color-info-solid-hover: color-mix(in oklab, var(--color-info) 90%, transparent);
+  --color-info-wash: oklch(0.212 0.026 215);
+  --color-info-subtle: oklch(0.265 0.04 215);
+  --color-info-edge: oklch(0.45 0.078 215);
+  --color-info-solid: oklch(0.51 0.089 215);
+  --color-info-solid-hover: oklch(0.545 0.096 215);
   --color-on-info: var(--color-on-tone);
-  --color-danger-wash: color-mix(in oklab, var(--color-danger) 5%, transparent);
-  --color-danger-subtle: color-mix(in oklab, var(--color-danger) 10%, transparent);
-  --color-danger-edge: color-mix(in oklab, var(--color-danger) 40%, transparent);
-  --color-danger-solid: var(--color-danger);
-  --color-danger-solid-hover: color-mix(in oklab, var(--color-danger) 90%, transparent);
+  --color-danger-wash: oklch(0.212 0.04 25);
+  --color-danger-subtle: oklch(0.265 0.062 25);
+  --color-danger-edge: oklch(0.45 0.136 25);
+  --color-danger-solid: oklch(0.548 0.205 25);
+  --color-danger-solid-hover: oklch(0.583 0.208 25);
   --color-on-danger: var(--color-on-tone);
-  --color-success-wash: color-mix(in oklab, var(--color-success) 5%, transparent);
-  --color-success-subtle: color-mix(in oklab, var(--color-success) 10%, transparent);
-  --color-success-edge: color-mix(in oklab, var(--color-success) 40%, transparent);
-  --color-success-solid: var(--color-success);
-  --color-success-solid-hover: color-mix(in oklab, var(--color-success) 90%, transparent);
+  --color-success-wash: oklch(0.212 0.032 150);
+  --color-success-subtle: oklch(0.265 0.05 150);
+  --color-success-edge: oklch(0.45 0.109 150);
+  --color-success-solid: oklch(0.515 0.141 150);
+  --color-success-solid-hover: oklch(0.545 0.15 150);
   --color-on-success: var(--color-on-tone);
-  --color-warning-wash: color-mix(in oklab, var(--color-warning) 5%, transparent);
-  --color-warning-subtle: color-mix(in oklab, var(--color-warning) 10%, transparent);
-  --color-warning-edge: color-mix(in oklab, var(--color-warning) 40%, transparent);
-  --color-warning-solid: var(--color-warning);
-  --color-warning-solid-hover: color-mix(in oklab, var(--color-warning) 90%, transparent);
-  --color-on-warning: var(--color-on-tone);
-  --color-merged-wash: color-mix(in oklab, var(--color-merged) 5%, transparent);
-  --color-merged-subtle: color-mix(in oklab, var(--color-merged) 10%, transparent);
-  --color-merged-edge: color-mix(in oklab, var(--color-merged) 40%, transparent);
-  --color-merged-solid: var(--color-merged);
-  --color-merged-solid-hover: color-mix(in oklab, var(--color-merged) 90%, transparent);
+  --color-warning-wash: oklch(0.212 0.034 58);
+  --color-warning-subtle: oklch(0.265 0.053 58);
+  --color-warning-edge: oklch(0.45 0.108 58);
+  --color-warning-solid: oklch(0.8 0.16 78);
+  --color-warning-solid-hover: oklch(0.84 0.155 82);
+  --color-on-warning: oklch(0.2 0.04 62);
+  --color-merged-wash: oklch(0.212 0.038 300);
+  --color-merged-subtle: oklch(0.265 0.059 300);
+  --color-merged-edge: oklch(0.45 0.129 300);
+  --color-merged-solid: oklch(0.535 0.195 300);
+  --color-merged-solid-hover: oklch(0.57 0.198 300);
   --color-on-merged: var(--color-on-tone);
-  --color-draft-wash: color-mix(in oklab, var(--color-draft) 5%, transparent);
-  --color-draft-subtle: color-mix(in oklab, var(--color-draft) 10%, transparent);
-  --color-draft-edge: color-mix(in oklab, var(--color-draft) 40%, transparent);
-  --color-draft-solid: var(--color-draft);
-  --color-draft-solid-hover: color-mix(in oklab, var(--color-draft) 90%, transparent);
+  --color-draft-wash: oklch(0.218 0.006 264);
+  --color-draft-subtle: oklch(0.243 0.007 264);
+  --color-draft-edge: oklch(0.36 0.01 264);
+  --color-draft-solid: oklch(0.5 0.012 264);
+  --color-draft-solid-hover: oklch(0.54 0.012 264);
   --color-on-draft: var(--color-on-tone);
 
   --color-diff-add-line: color-mix(in oklab, var(--color-success) 10%, transparent);
@@ -413,7 +411,7 @@
 
   /* Opaque on purpose: a translucent ring composites toward the surface under it
      and drops below 3:1 on the brighter elevations. */
-  --color-focus-ring: var(--color-primary);
+  --color-focus-ring: oklch(0.62 0.19 259);
 
   --z-index-studio: 50;
   --z-index-popover-backdrop: 55;
@@ -772,22 +770,54 @@ html[data-theme='light'] {
   --color-scrollbar-thumb: oklch(0.215 0.012 264 / 0.29);
   --color-scrollbar-thumb-active: oklch(0.215 0.012 264 / 0.5);
   --color-selection: oklch(0.893 0.052 259);
-  --color-primary: oklch(0.468 0.13 218);
-  --color-brand-accent: oklch(0.468 0.13 218);
-  --color-unread: oklch(0.56 0.08 210);
-  --color-on-tone: oklch(0.99 0 0);
-  /* Semantic, tuned for AA on light bg (text use) and white-fg readability (bg use).
-     Warning sits at amber gold (70), far from the danger red (22): at 55 it read as
-     a second red beside danger. The mark is darker so a dot clears 3:1 on chrome. */
-  --color-danger: oklch(0.5 0.19 22);
-  --color-warning: oklch(0.5 0.11 70);
-  --color-warning-mark: oklch(0.62 0.14 72);
-  --color-success: oklch(0.45 0.14 148);
-  --color-info: oklch(0.481 0.14 245);
-  --color-merged: oklch(0.49 0.18 305);
-  --color-draft: oklch(0.49 0.17 277);
-  --color-find-match: oklch(0.86 0.15 88 / 0.55);
-  --color-find-current: oklch(0.8 0.16 75 / 0.9);
+  --color-primary: oklch(0.5 0.19 259);
+  --color-brand-accent: oklch(0.48 0.082 210);
+  --color-unread: oklch(0.56 0.13 259);
+  --color-danger: oklch(0.51 0.195 25);
+  --color-warning: oklch(0.5 0.115 62);
+  --color-warning-mark: oklch(0.66 0.154 60);
+  --color-success: oklch(0.47 0.13 150);
+  --color-info: oklch(0.47 0.082 215);
+  --color-merged: oklch(0.5 0.19 300);
+  --color-draft: oklch(0.495 0.013 264);
+  --color-find-match: oklch(0.893 0.07 88);
+  --color-find-current: oklch(0.8 0.105 82);
+  --color-primary-wash: oklch(0.978 0.01 259);
+  --color-primary-subtle: oklch(0.953 0.022 259);
+  --color-primary-edge: oklch(0.8 0.1 259);
+  --color-primary-solid: oklch(0.548 0.205 259);
+  --color-primary-solid-hover: oklch(0.5 0.194 259);
+  --color-info-wash: oklch(0.978 0.013 215);
+  --color-info-subtle: oklch(0.953 0.027 215);
+  --color-info-edge: oklch(0.8 0.081 215);
+  --color-info-solid: oklch(0.535 0.094 215);
+  --color-info-solid-hover: oklch(0.49 0.085 215);
+  --color-danger-wash: oklch(0.978 0.01 25);
+  --color-danger-subtle: oklch(0.953 0.022 25);
+  --color-danger-edge: oklch(0.8 0.114 25);
+  --color-danger-solid: oklch(0.565 0.21 25);
+  --color-danger-solid-hover: oklch(0.52 0.2 25);
+  --color-success-wash: oklch(0.978 0.016 150);
+  --color-success-subtle: oklch(0.953 0.034 150);
+  --color-success-edge: oklch(0.8 0.099 150);
+  --color-success-solid: oklch(0.535 0.146 150);
+  --color-success-solid-hover: oklch(0.49 0.134 150);
+  --color-warning-wash: oklch(0.978 0.017 92);
+  --color-warning-subtle: oklch(0.953 0.036 92);
+  --color-warning-edge: oklch(0.8 0.105 82);
+  --color-warning-solid: oklch(0.66 0.154 60);
+  --color-warning-solid-hover: oklch(0.715 0.161 64);
+  --color-on-warning: oklch(0.15 0.03 62);
+  --color-merged-wash: oklch(0.978 0.011 300);
+  --color-merged-subtle: oklch(0.953 0.026 300);
+  --color-merged-edge: oklch(0.8 0.118 300);
+  --color-merged-solid: oklch(0.55 0.2 300);
+  --color-merged-solid-hover: oklch(0.505 0.195 300);
+  --color-draft-wash: oklch(0.968 0.003 264);
+  --color-draft-subtle: oklch(0.951 0.003 264);
+  --color-draft-edge: oklch(0.85 0.008 264);
+  --color-draft-solid: oklch(0.495 0.013 264);
+  --color-draft-solid-hover: oklch(0.43 0.014 264);
   --color-history-fixup: oklch(0.47 0.12 232);
   --color-history-squash: oklch(0.485 0.12 85);
   --color-history-move: oklch(0.5 0.16 300);
@@ -831,7 +861,7 @@ html[data-theme='light'] {
   --color-agent-ci-debugger: oklch(0.45 0.12 225);
   --color-agent-ci-fixer: oklch(0.45 0.12 200);
   --color-agent-wireframe: oklch(0.5 0.15 345);
-  --color-focus-ring: var(--color-primary);
+  --color-focus-ring: oklch(0.548 0.205 259);
   --color-syntax-keyword: oklch(0.48 0.17 300);
   --color-syntax-string: oklch(0.44 0.13 145);
   --color-syntax-number: oklch(0.47 0.13 60);
@@ -1184,7 +1214,7 @@ body {
 }
 
 [data-menu-open] {
-  outline: 2px solid var(--color-primary);
+  outline: 2px solid var(--color-focus-ring);
   outline-offset: -2px;
 }
 

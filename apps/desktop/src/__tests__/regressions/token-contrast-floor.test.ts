@@ -16,6 +16,7 @@ const DRAWER_STEP_FLOOR = 1.03;
 const FILL_FLOOR = 1.1;
 const BOX_BORDER_FLOOR = 1.4;
 const TONES = ['primary', 'info', 'success', 'warning', 'danger', 'merged', 'draft'] as const;
+const TINT_STEPS = ['wash', 'subtle'] as const;
 // The diff viewer paints code on the canvas and on hunk rows, never on a card.
 const CODE_SURFACES = ['background', 'subtle', 'muted'] as const;
 
@@ -214,17 +215,10 @@ describe.each(['dark', 'light'] as const)('%s palette', (theme) => {
     expect(failures).toEqual([]);
   });
 
-  it.each(READ_SURFACES)('keeps tone text readable on its tint over %s', (surface) => {
+  it.each(TINT_STEPS)('keeps tone text readable on its %s step', (step) => {
     const failures = TONES.map((tone) => ({
       tone,
-      ratio: contrast(
-        swatch(palette, tone),
-        composite({
-          foreground: swatch(palette, tone),
-          background: swatch(palette, surface),
-          alpha: 0.1,
-        }),
-      ),
+      ratio: contrast(swatch(palette, tone), swatch(palette, `${tone}-${step}`)),
     })).filter(({ ratio }) => ratio < BODY_FLOOR);
     expect(failures).toEqual([]);
   });
@@ -345,10 +339,18 @@ describe.each(['dark', 'light'] as const)('%s palette', (theme) => {
     ).toBeGreaterThanOrEqual(LARGE_FLOOR);
   });
 
-  it.each(TONES)('keeps %s solid fills readable', (tone) => {
-    expect(contrast(swatch(palette, 'on-tone'), swatch(palette, tone))).toBeGreaterThanOrEqual(
+  it.each(TONES)('keeps the %s label readable on its solid and on its solid hover', (tone) => {
+    const label = swatch(palette, `on-${tone}`);
+    expect(contrast(label, swatch(palette, `${tone}-solid`))).toBeGreaterThanOrEqual(BODY_FLOOR);
+    expect(contrast(label, swatch(palette, `${tone}-solid-hover`))).toBeGreaterThanOrEqual(
       BODY_FLOOR,
     );
+  });
+
+  it.each(TONES)('moves the %s solid when the pointer is on it', (tone) => {
+    expect(
+      contrast(swatch(palette, `${tone}-solid`), swatch(palette, `${tone}-solid-hover`)),
+    ).toBeGreaterThan(1);
   });
 
   it('keeps primary inside the 200-275 hue band', () => {
@@ -547,7 +549,6 @@ const UI_SOURCE = join(__dirname, '..', '..', '..', '..', '..', 'packages', 'ui'
 const TINT_SOURCE = join(UI_SOURCE, 'tint.ts');
 const CHIP_SOURCE = join(UI_SOURCE, 'components', 'Chip.tsx');
 const SELECTED_ROW_SOURCE = join(UI_SOURCE, 'selectedRow.ts');
-const REST_TINT = 0.1;
 const SELECTED_ROW_TEXT = ['foreground', 'muted-foreground'] as const;
 
 describe('composed contrast', () => {
@@ -572,22 +573,6 @@ describe('composed contrast', () => {
     expect(chip).not.toMatch(/tint\.hoverBg/);
     expect(chip).toMatch(/tint\.hoverRing/);
   });
-
-  it.each(cases)(
-    'keeps tone text at 4.5:1 on its tint over $surface in $theme',
-    ({ theme, surface }) => {
-      const palette = palettes[theme];
-      const failures = TONES.map((tone) => {
-        const tinted = composite({
-          foreground: swatch(palette, tone),
-          background: swatch(palette, surface),
-          alpha: REST_TINT,
-        });
-        return { tone, ratio: contrast(swatch(palette, tone), tinted) };
-      }).filter(({ ratio }) => ratio < BODY_FLOOR);
-      expect(failures).toEqual([]);
-    },
-  );
 
   it.each(cases)(
     'keeps the text of a selected row at 4.5:1 over $surface in $theme',
