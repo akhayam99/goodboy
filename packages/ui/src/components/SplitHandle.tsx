@@ -132,6 +132,8 @@ export const SplitHandle = ({
   const isHoveredRef = useRef(false);
   const activityRef = useRef(onActivityChange);
   activityRef.current = onActivityChange;
+  const dragRef = useRef({ axis, growth, min, max, onChange });
+  dragRef.current = { axis, growth, min, max, onChange };
 
   const report = () => {
     if (dragStateRef.current !== null) {
@@ -151,17 +153,20 @@ export const SplitHandle = ({
           return;
         }
         event.preventDefault();
+        const drag = dragRef.current;
         const next = clamp({
-          value: dragState.startValue + (pointOf({ event, axis }) - dragState.startPoint) * growth,
-          min,
-          max,
+          value:
+            dragState.startValue +
+            (pointOf({ event, axis: drag.axis }) - dragState.startPoint) * drag.growth,
+          min: drag.min,
+          max: drag.max,
         });
         if (next === liveValueRef.current) {
           return;
         }
         liveValueRef.current = next;
         handleRef.current?.setAttribute('aria-valuenow', String(next));
-        onChange(next);
+        drag.onChange(next);
       },
       { signal: listeners.signal },
     );
@@ -188,7 +193,7 @@ export const SplitHandle = ({
         document.body.removeAttribute(SPLIT_DRAG_ATTRIBUTE);
       }
     };
-  }, [axis, growth, max, min, onChange]);
+  }, []);
 
   const startDrag = ({ event }: StartDragParams) => {
     if (event.button !== 0) {
