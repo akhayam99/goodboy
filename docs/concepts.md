@@ -1936,7 +1936,7 @@ session up again in Goodboy.
   is what the **Tasks** door lists and what a task link attaches to a
   session. A session is never called a task, the field that holds its goal
   says **Goal**, and a script that runs and ends is a **Command** (the Scripts
-  pane groups **Services** and **Commands**). The setup wizard follows the
+  pane lists Services before Commands, in one list per branch). The setup wizard follows the
   same rule: step 3 connects the tools your tasks come from, step 4 starts
   your first session.
 - Internal words stay in code and technical docs. The screen says the word the

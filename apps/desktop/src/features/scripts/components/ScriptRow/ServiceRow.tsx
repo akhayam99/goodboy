@@ -63,7 +63,14 @@ export const ServiceRow = ({
         <StatusDot tone={dotTone({ glyph: lastRun?.glyph })} size="sm" pulsing={isRunning} />
       </span>
       <span className="flex min-w-0 flex-1 flex-col">
-        <span className="truncate text-row text-foreground">{script.name}</span>
+        <span className="flex min-w-0 items-baseline gap-2">
+          <span className="min-w-0 truncate text-row text-foreground">{script.name}</span>
+          {hasSecondLine ? null : (
+            <span className="min-w-0 flex-1 truncate text-code text-faint-foreground">
+              {script.invocation}
+            </span>
+          )}
+        </span>
         {hasSecondLine ? (
           <span className="truncate text-code text-faint-foreground">
             {line ?? 'Waiting for output'}

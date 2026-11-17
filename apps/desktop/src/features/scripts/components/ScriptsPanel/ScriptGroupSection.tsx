@@ -10,6 +10,7 @@ type Props = {
   readonly isRefreshing: boolean;
   readonly editor: ReactNode;
   readonly note: ReactNode;
+  readonly action: ReactNode;
   readonly children: ReactNode;
   readonly onToggle: () => void;
   readonly onRefresh: () => void;
@@ -21,6 +22,7 @@ export const ScriptGroupSection = ({
   isRefreshing,
   editor,
   note,
+  action,
   children,
   onToggle,
   onRefresh,
@@ -61,6 +63,7 @@ export const ScriptGroupSection = ({
             </span>
           )}
         </button>
+        {isCollapsed ? null : action}
         {group.isReady ? (
           <span className="flex w-7 shrink-0 items-center justify-center">
             <IconButton
