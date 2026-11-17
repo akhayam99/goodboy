@@ -63,8 +63,18 @@ const closeSessions = async (): Promise<void> => {
 
 const cardOf = (sessionId: string): HTMLElement => {
   const card = document.querySelector<HTMLElement>(`article[data-select-id="${sessionId}"]`);
-  expect(card).not.toBeNull();
-  return card as HTMLElement;
+  if (card === null) {
+    throw new Error(`no card for ${sessionId} on the Board`);
+  }
+  return card;
+};
+
+const shownList = (): HTMLElement => {
+  const list = sessionsList();
+  if (list === null) {
+    throw new Error('Sessions is not open');
+  }
+  return list;
 };
 
 const onBoard = async (): Promise<void> => {

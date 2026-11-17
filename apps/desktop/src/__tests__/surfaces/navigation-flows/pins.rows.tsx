@@ -129,8 +129,18 @@ const closeSessions = async (): Promise<void> => {
 
 const cardOf = (sessionId: string): HTMLElement => {
   const card = document.querySelector<HTMLElement>(`article[data-select-id="${sessionId}"]`);
-  expect(card).not.toBeNull();
-  return card as HTMLElement;
+  if (card === null) {
+    throw new Error(`no card for ${sessionId} on the Board`);
+  }
+  return card;
+};
+
+const shownList = (): HTMLElement => {
+  const list = sessionsList();
+  if (list === null) {
+    throw new Error('Sessions is not open');
+  }
+  return list;
 };
 
 const onBoard = async (): Promise<void> => {
@@ -176,7 +186,7 @@ const expectPinnedOnTop = async ({ sessionId }: { readonly sessionId: string }):
   await waitFor(() => {
     expect(pinnedIds()).toContain(sessionId);
     expect(rowIds()[0]).toBe(sessionId);
-    within(sessionsList() as HTMLElement).getByText('Pinned');
+    within(shownList()).getByText('Pinned');
   }, WAIT);
 };
 
@@ -218,17 +228,14 @@ export const PIN_ROWS: ReadonlyArray<Row> = [
       await openSessions();
       orderBefore = rowIds();
       await pinThroughTheStore({ sessionId: ctx.sessionId });
-      within(sessionsList() as HTMLElement).getByText('Pinned');
+      within(shownList()).getByText('Pinned');
       await closeSessions();
       await openPalette(/^Unpin session$/, 'unpin session');
     },
     lands: async (ctx) => {
       await waitFor(() => expect(pinnedIds()).not.toContain(ctx.sessionId), WAIT);
       await openSessions();
-      await waitFor(
-        () => expect(within(sessionsList() as HTMLElement).queryByText('Pinned')).toBeNull(),
-        WAIT,
-      );
+      await waitFor(() => expect(within(shownList()).queryByText('Pinned')).toBeNull(), WAIT);
       expect(rowIds()).toEqual(orderBefore);
     },
   },
@@ -242,7 +249,7 @@ export const PIN_ROWS: ReadonlyArray<Row> = [
       await chooseFromRowMenu({ sessionId: target, label: /^Archive/ });
       await openSessions();
       await waitFor(() => expect(rowIds()).not.toContain(target), WAIT);
-      expect(within(sessionsList() as HTMLElement).queryByText('Pinned')).toBeNull();
+      expect(within(shownList()).queryByText('Pinned')).toBeNull();
       expect(pinnedIds()).toContain(target);
       await closeSessions();
       fireEvent.click(await screen.findByRole('button', { name: 'Undo' }, WAIT));

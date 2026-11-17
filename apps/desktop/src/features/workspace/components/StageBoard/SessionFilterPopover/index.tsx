@@ -46,7 +46,6 @@ export const SessionFilterPopover = ({ workspaceId, sessions }: Props) => {
   const projectOptions = useProjectFilterOptions({ workspaceId, sessions });
 
   const dropdown = useDropdown({
-    align: 'end',
     width: 'w-60',
     expectedWidth: MENU_WIDTH,
     expectedHeight: 440,
