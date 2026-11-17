@@ -50,9 +50,9 @@ installNavigationHooks();
 
 const door = (id: string): HTMLElement => {
   const found = document.querySelector<HTMLElement>(
-    `[data-side-column] [data-column-layer="nav"] [data-column-door="${id}"], [data-column-rail] [data-column-door="${id}"]`,
+    `[data-shell-rail] [data-shell-rail-item="${id}"]`,
   );
-  expect(found, `no ${id} door in the column or the rail`).not.toBeNull();
+  expect(found, `no ${id} place on the rail`).not.toBeNull();
   return requireValue({ value: found });
 };
 
@@ -92,17 +92,17 @@ const lensOf = (): string | null => {
 const currentDoors = (): ReadonlyArray<string> =>
   Array.from(
     document.querySelectorAll(
-      '[data-side-column] [data-column-layer="nav"] [data-column-door][aria-current="page"], [data-column-rail] [data-column-door][aria-current="page"], [data-goodboy-chip][aria-current="page"], [data-top-bar] [aria-current="page"]',
+      '[data-shell-rail] [data-shell-rail-item][aria-current="page"], [data-goodboy-chip][aria-current="page"], [data-top-bar] [aria-current="page"]',
     ),
   ).map(
     (element) =>
-      element.getAttribute('data-column-door') ?? element.getAttribute('aria-label') ?? '',
+      element.getAttribute('data-shell-rail-item') ?? element.getAttribute('aria-label') ?? '',
   );
 
 const expectColumnBesideStudio = (): void => {
-  const column = document.querySelector('[data-side-column], [data-column-rail]');
-  expect(column).not.toBeNull();
-  expect(column?.closest('aside')?.hasAttribute('inert')).toBe(false);
+  const rail = document.querySelector('[data-shell-rail]');
+  expect(rail).not.toBeNull();
+  expect(rail?.closest('aside')?.hasAttribute('inert')).toBe(false);
   const slot = document.querySelector('[data-drawer-main] [data-studio-slot="content"]');
   expect(slot).not.toBeNull();
   expect(slot?.previousElementSibling?.hasAttribute('inert')).toBe(true);
@@ -175,21 +175,9 @@ const expectPlace = ({ session, lens, studio: kind, doors }: ExpectedPlace): voi
   expect(currentDoors()).toEqual(doors);
 };
 
-type ColumnState = 'column' | 'rail';
-
-const expectColumn = (expected: ColumnState): void => {
-  const column = document.querySelector('[data-side-column]');
-  const rail = document.querySelector('[data-column-rail]');
-  const nav = document.querySelector('[data-column-layer="nav"]');
-  expect(document.querySelector('[data-column-layer="settings"]')).toBeNull();
-  if (expected === 'rail') {
-    expect(rail).not.toBeNull();
-    expect(column).toBeNull();
-    return;
-  }
-  expect(column).not.toBeNull();
-  expect(rail).toBeNull();
-  expect(nav?.hasAttribute('inert')).toBe(false);
+const expectRail = (): void => {
+  expect(document.querySelector('[data-shell-rail]')).not.toBeNull();
+  expect(document.querySelector('[data-shell-rail] [inert]')).toBeNull();
 };
 
 type FocusOwner = 'drawer' | 'column' | 'main' | 'studio' | 'none';
@@ -202,7 +190,7 @@ const focusOwner = (): FocusOwner => {
   if (active.closest('aside[aria-label="Side panel"]') !== null) {
     return 'drawer';
   }
-  if (active.closest('[data-side-column], [data-column-rail]') !== null) {
+  if (active.closest('[data-shell-rail]') !== null) {
     return 'column';
   }
   if (active.closest('[data-studio-slot]') !== null) {
@@ -322,12 +310,22 @@ const drawerRequests = (sessionId: SessionId): ReadonlyArray<DrawerRequest> => {
   ];
 };
 
-const sessionRow = (sessionId: SessionId): HTMLElement => {
+const boardCard = (sessionId: SessionId): HTMLElement => {
   const found = document.querySelector<HTMLElement>(
-    `[data-side-column] [data-column-sessions] [data-select-id="${sessionId}"]`,
+    `article[data-select-id="${sessionId}"] button`,
   );
-  expect(found, `no row for ${sessionId} in the column`).not.toBeNull();
+  expect(found, `no card for ${sessionId} on the Board`).not.toBeNull();
   return requireValue({ value: found });
+};
+
+const openFromSessions = async (sessionId: SessionId): Promise<void> => {
+  await click(screen.getByRole('button', { name: 'Sessions' }));
+  const goal = useAppStore.getState().sessions.find((session) => session.id === sessionId)?.goal;
+  const option = within(screen.getByRole('listbox', { name: 'Sessions' }))
+    .getAllByRole('option')
+    .find((candidate) => goal !== undefined && candidate.textContent?.startsWith(goal) === true);
+  expect(option, `no row for ${sessionId} in Sessions`).toBeDefined();
+  await click(requireValue({ value: option }));
 };
 
 const SESSION_TABS = '[role="tablist"][aria-label="Session pages"]';
@@ -381,7 +379,7 @@ const otherSession = (sessionId: SessionId): SessionId => {
     .sessions.find(
       (session) =>
         session.id !== sessionId &&
-        document.querySelector(`[data-column-sessions] [data-select-id="${session.id}"]`) !== null,
+        session.workspaceId === useAppStore.getState().currentWorkspaceId,
     );
   expect(other).toBeDefined();
   return brandId<SessionId>({ value: requireValue({ value: other?.id }) });
@@ -512,13 +510,13 @@ describe('moving across every place keeps one frame', () => {
   it('walks the board, a session and its pages, then Back and Forward retrace them', async () => {
     const { sessionId } = await boot({ seed: 'pr' });
 
-    await click(door('board'));
+    await press('session.board');
     await heading('Board');
     expect(currentDoors()).toEqual(['board']);
 
     await click(historyButton('Back'));
     expect(useAppStore.getState().currentSessionId).toBe(sessionId);
-    expect(currentDoors()).toEqual([]);
+    expect(currentDoors()).toEqual(['board']);
 
     await press('lens.workflows');
     await press('lens.plans');
@@ -531,7 +529,7 @@ describe('moving across every place keeps one frame', () => {
     expect(lensOf()).toBe('workflows');
     await click(historyButton('Forward'));
     expect(lensOf()).toBe('plans');
-    expect(document.querySelector('[data-side-column]')).not.toBeNull();
+    expectRail();
     expectHealthy();
   });
 
@@ -576,7 +574,7 @@ describe('moving across every place keeps one frame', () => {
     await escape();
     expect(studio()).toBeNull();
     expect(lensOf()).toBe('plans');
-    expect(currentDoors()).toEqual([]);
+    expect(currentDoors()).toEqual(['board']);
     expectHealthy();
   });
 
@@ -612,9 +610,7 @@ describe('moving across every place keeps one frame', () => {
       await click(door('settings'));
       expect(studio()).toBe('settings');
       screen.getByRole('navigation', { name: 'Settings scopes' });
-      expect(document.querySelector('[data-column-layer="nav"]')?.hasAttribute('inert')).toBe(
-        false,
-      );
+      expectRail();
       expectColumnBesideStudio();
       expect(currentDoors()).toEqual(['settings']);
 
@@ -622,9 +618,7 @@ describe('moving across every place keeps one frame', () => {
 
       expect(studio()).toBeNull();
       expect(lensOf()).toBe('plans');
-      expect(document.querySelector('[data-column-layer="nav"]')?.hasAttribute('inert')).toBe(
-        false,
-      );
+      expectRail();
       expect(document.activeElement).toBe(expectedFocus());
     }
 
@@ -663,40 +657,6 @@ describe('moving across every place keeps one frame', () => {
     });
     await settle();
     screen.getByText(/^No setting matches "zzzz nothing"\./);
-  });
-
-  it('folds into the rail of doors with ⌘B on the board, in a session, under a studio and under Settings', async () => {
-    await boot({ seed: 'pr' });
-
-    await press('column.toggle');
-    const rail = document.querySelector<HTMLElement>('[data-column-rail]');
-    if (rail === null) {
-      throw new Error('no rail after the fold');
-    }
-    expect(rail.querySelector('[data-column-door="board"]')).not.toBeNull();
-    expect(document.querySelector('[data-side-column]')).toBeNull();
-    expect(shown(SESSION_TABS)).not.toBeNull();
-
-    await click(door('inbox'));
-    expect(studio()).toBe('inbox');
-    expect(currentDoors()).toEqual(['inbox']);
-
-    await click(door('settings'));
-    expect(studio()).toBe('settings');
-    screen.getByRole('navigation', { name: 'Settings scopes' });
-
-    await press('column.toggle');
-    expect(document.querySelector('[data-side-column]')).not.toBeNull();
-    screen.getByRole('button', { name: /^Back to app/ });
-
-    await backToApp();
-    await click(door('board'));
-    await heading('Board');
-    await press('column.toggle');
-    expect(door('board').getAttribute('aria-current')).toBe('page');
-    await press('column.toggle');
-    expect(door('board').getAttribute('aria-current')).toBe('page');
-    expectHealthy();
   });
 
   it('parks a session drawer under a page, and Esc brings it back with its page', async () => {
@@ -780,7 +740,7 @@ describe('moving across every place keeps one frame', () => {
   it('keeps the centred column at the same x across Overview, Runs, Artifacts and Settings, drawer or not', async () => {
     const { sessionId } = await boot({ seed: 'pr' });
     seedShipAFix();
-    await click(sessionRow(sessionId));
+    await openFromSessions(sessionId);
 
     const PAGES = ['Overview', 'Runs', 'Artifacts'] as const;
     const trailColumn = (): string => shown(HEADER)?.closest('[data-page-column]')?.className ?? '';
@@ -840,7 +800,7 @@ describe('moving across every place keeps one frame', () => {
   it('puts header, Ask, body and composer of every page on one rail, drawer or not', async () => {
     const { sessionId } = await boot({ seed: 'pr' });
     seedShipAFix();
-    await click(sessionRow(sessionId));
+    await openFromSessions(sessionId);
 
     const overviewLayers = (): RailLayers =>
       sessionLayers({ body: shown('[data-slot="pane-body"]') });
@@ -917,25 +877,24 @@ describe('moving across every place keeps one frame', () => {
   });
 
   it(
-    'walks one app instance across the column, every page, drawer, studio and the palette',
+    'walks one app instance across the rail, every page, drawer, studio and the palette',
     { timeout: 40_000 },
     async () => {
       const { sessionId } = await boot({ seed: 'pr' });
       seedShipAFix();
 
-      await click(door('board'));
+      await press('session.board');
       await heading('Board');
       expectPlace({ session: null, lens: 'board', studio: null, doors: ['board'] });
-      expectColumn('column');
+      expectRail();
 
-      await click(sessionRow(sessionId));
-      expectPlace({ session: sessionId, lens: null, studio: null, doors: [] });
-      expect(sessionRow(sessionId).getAttribute('aria-current')).toBe('page');
+      await click(boardCard(sessionId));
+      expectPlace({ session: sessionId, lens: null, studio: null, doors: ['board'] });
       expect(currentPage()).toBe('Overview');
 
       for (const [page, lens] of SESSION_PAGES) {
         await openPage(page);
-        expectPlace({ session: sessionId, lens, studio: null, doors: [] });
+        expectPlace({ session: sessionId, lens, studio: null, doors: ['board'] });
         expect(currentPage()).toBe(page);
         expectCentredColumns();
         expectAskInToolColumn();
@@ -950,22 +909,22 @@ describe('moving across every place keeps one frame', () => {
         expect(useAppStore.getState().branchTab[sessionId]).toBe(
           tab === 'Changes' ? 'files' : 'comments',
         );
-        expectPlace({ session: sessionId, lens: 'branch', studio: null, doors: [] });
+        expectPlace({ session: sessionId, lens: 'branch', studio: null, doors: ['board'] });
       }
 
       act(() => seedSessionAsk({ state: 'answer', session: currentSession(sessionId) }));
       await settle();
       expect(openDrawerKind()).toBe('ask');
-      expectPlace({ session: sessionId, lens: 'branch', studio: null, doors: [] });
+      expectPlace({ session: sessionId, lens: 'branch', studio: null, doors: ['board'] });
       const chip = await askChipAwayFrom({ lens: 'branch' });
       await click(chip.button);
       expect(lensOf()).toBe(chip.lens);
       await click(historyButton('Back'));
-      expectPlace({ session: sessionId, lens: 'branch', studio: null, doors: [] });
+      expectPlace({ session: sessionId, lens: 'branch', studio: null, doors: ['board'] });
       await escape();
       await openPage('Branch');
       await click(getSection(/^Comments/));
-      expectPlace({ session: sessionId, lens: 'branch', studio: null, doors: [] });
+      expectPlace({ session: sessionId, lens: 'branch', studio: null, doors: ['board'] });
 
       const edge = leftEdge();
       for (const request of drawerRequests(sessionId)) {
@@ -976,7 +935,7 @@ describe('moving across every place keeps one frame', () => {
         await escape();
         expect(openDrawerKind(), `${request.kind} closes on Esc`).toBeNull();
         expect(leftEdge().main).toBe(edge.main);
-        expectPlace({ session: sessionId, lens: 'branch', studio: null, doors: [] });
+        expectPlace({ session: sessionId, lens: 'branch', studio: null, doors: ['board'] });
       }
 
       const other = otherSession(sessionId);
@@ -987,49 +946,26 @@ describe('moving across every place keeps one frame', () => {
       fireEvent.keyUp(window, { key: 'Control', code: 'ControlLeft' });
       await settle();
       expect(screen.queryByRole('listbox', { name: 'Recent sessions' })).toBeNull();
-      expectPlace({ session: other, lens: null, studio: null, doors: [] });
+      expectPlace({ session: other, lens: null, studio: null, doors: ['board'] });
       await waitFor(() => expect(currentPage()).toBe('Overview'), { timeout: 3000 });
 
       await click(historyButton('Back'));
-      expectPlace({ session: sessionId, lens: 'branch', studio: null, doors: [] });
+      expectPlace({ session: sessionId, lens: 'branch', studio: null, doors: ['board'] });
       await click(historyButton('Forward'));
-      expectPlace({ session: other, lens: null, studio: null, doors: [] });
+      expectPlace({ session: other, lens: null, studio: null, doors: ['board'] });
       await click(historyButton('Back'));
 
-      await press('column.toggle');
-      expectColumn('rail');
-      expectPlace({ session: sessionId, lens: 'branch', studio: null, doors: [] });
-      fireEvent.pointerEnter(screen.getByTestId('sidebar-peek-edge'));
-      await settle(16);
-      const peek = screen.getByRole('region', { name: 'Sessions' });
-      expect(peek.querySelector('[data-column-door="board"]')).not.toBeNull();
-      expect(currentPage()).toBe('Branch');
-      await press('lens.overview');
-      await click(
-        requireValue({ value: peek.querySelector<HTMLElement>(`[data-select-id="${other}"]`) }),
-      );
-      expectPlace({ session: other, lens: null, studio: null, doors: [] });
-      await click(historyButton('Back'));
-      expectPlace({ session: sessionId, lens: null, studio: null, doors: [] });
-      await click(historyButton('Back'));
-      await press('column.toggle');
-      expectColumn('column');
-      expectPlace({ session: sessionId, lens: 'branch', studio: null, doors: [] });
+      expectPlace({ session: sessionId, lens: 'branch', studio: null, doors: ['board'] });
 
       door('settings').focus();
       await click(door('settings'));
       expectPlace({ session: sessionId, lens: 'branch', studio: 'settings', doors: ['settings'] });
-      expectColumn('column');
+      expectRail();
       expectColumnBesideStudio();
-      await press('column.toggle');
-      expectColumn('rail');
-      expectPlace({ session: sessionId, lens: 'branch', studio: 'settings', doors: ['settings'] });
-      await press('column.toggle');
-      expectColumn('column');
       screen.getByRole('button', { name: /^Back to app/ }).focus();
       await backToApp();
-      expectPlace({ session: sessionId, lens: 'branch', studio: null, doors: [] });
-      expectColumn('column');
+      expectPlace({ session: sessionId, lens: 'branch', studio: null, doors: ['board'] });
+      expectRail();
       expect(document.activeElement).toBe(door('settings'));
       expect(useAppStore.getState().branchTab[sessionId]).toBe('comments');
 
@@ -1038,7 +974,7 @@ describe('moving across every place keeps one frame', () => {
         expectPlace({ session: sessionId, lens: 'branch', studio: kind, doors: [id] });
         expectColumnBesideStudio();
         await escape();
-        expectPlace({ session: sessionId, lens: 'branch', studio: null, doors: [] });
+        expectPlace({ session: sessionId, lens: 'branch', studio: null, doors: ['board'] });
       }
 
       const runsBefore = sessionRuns(sessionId);
@@ -1049,7 +985,7 @@ describe('moving across every place keeps one frame', () => {
       });
       await settle();
       await waitFor(() => expect(sessionRuns(sessionId)).toBe(runsBefore + 1));
-      expectPlace({ session: sessionId, lens: 'workflows', studio: null, doors: [] });
+      expectPlace({ session: sessionId, lens: 'workflows', studio: null, doors: ['board'] });
       expect(shown('[data-session-crumbs]')).not.toBeNull();
       await escape();
       expect(currentPage()).toBe('Runs');
@@ -1066,10 +1002,10 @@ describe('moving across every place keeps one frame', () => {
       await settle();
       await press('lens.overview');
       await settle();
-      expectPlace({ session: sessionId, lens: null, studio: null, doors: [] });
+      expectPlace({ session: sessionId, lens: null, studio: null, doors: ['board'] });
       expect(useAppStore.getState().focusedWorkflowRunId[sessionId] ?? null).toBeNull();
       await click(historyButton('Back'));
-      expectPlace({ session: sessionId, lens: 'workflows', studio: null, doors: [] });
+      expectPlace({ session: sessionId, lens: 'workflows', studio: null, doors: ['board'] });
       expect(useAppStore.getState().focusedWorkflowRunId[sessionId]).toBe(startedRun);
 
       await press('lens.plans');
@@ -1080,7 +1016,7 @@ describe('moving across every place keeps one frame', () => {
       await openPage('Overview');
       expect(useAppStore.getState().focusedArtifactId[sessionId] ?? null).toBeNull();
       await click(historyButton('Back'));
-      expectPlace({ session: sessionId, lens: 'plans', studio: null, doors: [] });
+      expectPlace({ session: sessionId, lens: 'plans', studio: null, doors: ['board'] });
       expect(useAppStore.getState().focusedArtifactId[sessionId]).toBe(JOURNEY_ARTIFACT);
       expectHealthy();
     },
@@ -1102,7 +1038,7 @@ describe('moving across every place keeps one frame', () => {
     await clickButton('New session');
     expect(
       document
-        .querySelector('[data-side-column] [data-create="session"]')
+        .querySelector('[data-shell-rail] [data-shell-rail-item="new"]')
         ?.getAttribute('aria-current'),
     ).toBe('page');
     expectHealthy();

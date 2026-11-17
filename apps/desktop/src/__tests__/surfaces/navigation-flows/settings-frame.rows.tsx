@@ -26,7 +26,7 @@ import {
 const storedCollapse = (): string | null =>
   window.localStorage.getItem(STORAGE_KEYS.sessionSidebarCollapsed);
 
-const hasRail = (): boolean => document.querySelector('[data-column-rail]') !== null;
+const hasRail = (): boolean => document.querySelector('[data-shell-rail]') !== null;
 
 const studioKind = (): string | null => useAppStore.getState().appStudio?.kind ?? null;
 
@@ -143,7 +143,7 @@ export const SETTINGS_FRAME_ROWS: ReadonlyArray<Row> = [
     },
     lands: async (ctx) => {
       await railAndSessionBack(null)(ctx);
-      expect(document.querySelector('[data-side-column] [data-column-layer="nav"]')).not.toBeNull();
+      expect(document.querySelector('[data-shell-rail]')).not.toBeNull();
     },
   },
   {

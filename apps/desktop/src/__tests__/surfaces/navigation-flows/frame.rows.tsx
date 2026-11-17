@@ -21,10 +21,10 @@ const QUESTIONS_ROW = CRUMB_ROWS.find((row) => row.label === 'Questions');
 
 const doorOf = (name: string): HTMLElement => {
   const door = document.querySelector<HTMLElement>(
-    `[data-side-column] [data-column-door="${name}"]`,
+    `[data-shell-rail] [data-shell-rail-item="${name}"]`,
   );
   if (door === null) {
-    throw new Error(`no ${name} door in the side column`);
+    throw new Error(`no ${name} place on the rail`);
   }
   return door;
 };

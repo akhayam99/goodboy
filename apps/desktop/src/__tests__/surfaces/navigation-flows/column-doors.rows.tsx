@@ -22,7 +22,7 @@ let clipboardWrites: Array<string> = [];
 
 const doorIn = (name: string): HTMLElement => {
   const door = document.querySelector<HTMLElement>(
-    `[data-side-column] [data-column-door="${name}"]`,
+    `[data-shell-rail] [data-shell-rail-item="${name}"]`,
   );
   expect(door).not.toBeNull();
   return door as HTMLElement;
@@ -30,7 +30,7 @@ const doorIn = (name: string): HTMLElement => {
 
 const createIn = (name: string): HTMLElement => {
   const button = document.querySelector<HTMLElement>(
-    `[data-side-column] [data-create="${name}"], [data-side-column] [data-door-create="${name}"]`,
+    `[data-shell-rail] [data-shell-rail-item="${name === 'session' ? 'new' : name}"]`,
   );
   if (button === null) {
     throw new Error(`The column has no create button ${name}`);
@@ -53,9 +53,9 @@ const railTool = (name: 'terminal' | 'browser'): HTMLElement => {
 };
 
 const doorIdsInColumn = (): ReadonlyArray<string> =>
-  Array.from(document.querySelectorAll<HTMLElement>('[data-side-column] [data-column-door]')).map(
-    (door) => door.getAttribute('data-column-door') ?? '',
-  );
+  Array.from(
+    document.querySelectorAll<HTMLElement>('[data-shell-rail] [data-shell-rail-item]'),
+  ).map((door) => door.getAttribute('data-shell-rail-item') ?? '');
 
 const themeRow = ({ choice }: { readonly choice: ThemePreference }): Row => ({
   name: `palette: Theme: ${choice} sets the theme`,

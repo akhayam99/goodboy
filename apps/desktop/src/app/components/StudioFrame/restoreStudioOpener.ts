@@ -1,4 +1,5 @@
 import type { StudioKind } from '../../../store';
+import { studioPlaceOf } from '../../../shared/navigation/studioPlaceOf';
 
 type Params = {
   readonly opener: HTMLElement | null;
@@ -22,7 +23,8 @@ export const restoreStudioOpener = ({ opener, kind }: Params): void => {
   if (isStudioStillOpen || isFocusHeldElsewhere()) {
     return;
   }
-  const door = document.querySelector<HTMLElement>(`[data-column-door="${kind}"]`);
+  const place = studioPlaceOf({ studio: kind });
+  const door = document.querySelector<HTMLElement>(`[data-shell-rail-item="${place}"]`);
   const target = isFocusable(opener) ? opener : door;
   if (!isFocusable(target)) {
     return;

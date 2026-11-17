@@ -1,5 +1,6 @@
 import type { StudioKind } from '../../store';
 import type { DestinationId, FootDestinationId, RailDestinationId } from './destinations';
+import { studioPlaceOf } from './studioPlaceOf';
 
 export type ColumnDoorId = Exclude<
   DestinationId,
@@ -22,47 +23,9 @@ type Params = {
   readonly studio: StudioKind | null;
 };
 
-type StudioParams = {
-  readonly studio: StudioKind;
-};
-
-const studioPlace = ({ studio }: StudioParams): ColumnPlace => {
-  switch (studio) {
-    case 'inbox':
-      return 'inbox';
-    case 'chat':
-      return 'chat';
-    case 'connections':
-      return 'connections';
-    case 'workflow':
-      return 'workflows';
-    case 'terminal':
-      return 'terminal';
-    case 'browser':
-      return 'browser';
-    case 'monitoring':
-      return 'monitoring';
-    case 'settings':
-      return 'settings';
-    case 'impact':
-      return 'impact';
-    case 'guide':
-    case 'changelog':
-      return 'help';
-    case 'notifications':
-      return 'notifications';
-    case 'addWorkspace':
-      return 'addWorkspace';
-    default: {
-      const unreachable: never = studio;
-      return unreachable;
-    }
-  }
-};
-
 export const columnPlaceOf = ({ hasSession, isDraftShown, studio }: Params): ColumnPlace => {
   if (studio !== null) {
-    return studioPlace({ studio });
+    return studioPlaceOf({ studio });
   }
   if (isDraftShown) {
     return 'new';

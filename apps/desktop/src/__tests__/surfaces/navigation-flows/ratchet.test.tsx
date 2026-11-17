@@ -71,11 +71,7 @@ const EXEMPT: Readonly<Record<string, string>> = {
 
 const CHROME_TARGET_CEILING = 24;
 
-const CHROME_ROOTS = [
-  '[data-top-bar]',
-  '[data-side-column] [data-column-layer="nav"]',
-  '[data-slot="trail-bar"]',
-];
+const CHROME_ROOTS = ['[data-top-bar]', '[data-shell-rail]', '[data-slot="trail-bar"]'];
 
 const INTERACTIVE = 'button, a[href], input, [role="button"]';
 
@@ -96,7 +92,7 @@ describe('the frame holds at most 24 chrome targets on a session page', () => {
   it('counts the top bar, the column outside its sessions list and the trail', async () => {
     await boot({ seed: 'pr' });
 
-    expect(document.querySelector('[data-side-column]')).not.toBeNull();
+    expect(document.querySelector('[data-shell-rail]')).not.toBeNull();
     expect(document.querySelector('[data-app-footer]')).toBeNull();
     const targets = chromeTargets();
     expect(targets.length, targets.join(' | ')).toBeLessThanOrEqual(CHROME_TARGET_CEILING);
