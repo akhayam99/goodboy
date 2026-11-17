@@ -4,8 +4,6 @@ import { PANE_RHYTHM, PageColumn, PaneShell, cn } from '@goodboy/ui';
 import type { PullRequestHost, Session, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { branchGithubOf } from '../../../../store/slices/github/branchGithubOf';
-import { branchPlace } from '../../../../store/slices/navigation/place';
-import type { BranchTab } from '../../../../store/slices/navigation/types';
 import { pullRequestViewOf } from '../../../../store/slices/pull-request-view/pullRequestViewOf';
 import { refreshActiveRequest } from '../../../../store/slices/review-source/refreshActiveRequest';
 import { useSessionRepo } from '../../../../store/slices/worktrees/useSessionRepo';
@@ -28,11 +26,13 @@ import { pushPhaseYieldsOf } from '../../pushPhaseYieldsOf';
 import { hasOpenRebaseStopOf } from '../../hasOpenRebaseStopOf';
 import { MERGE_METHOD_LABEL } from '../../../actions/kinds/pullRequest';
 import { useBranchTab } from '../../hooks/useBranchTab';
+import { useSelectBranchTab } from '../../hooks/useSelectBranchTab';
 import { useBranchTabFacts } from '../../hooks/useBranchTabFacts';
 import { usePullRequestView } from '../../hooks/usePullRequestView';
 import { capabilityReasonOf } from '../../pullRequestCapabilityReason';
 import { useBranchReviewState } from '../../hooks/useBranchReviewState';
 import { branchTabsOf, isBranchReadOnly, resolveBranchTab } from '../../branchTabs';
+import { checkTabLiveOf } from '../../checks/checkTabLiveOf';
 import { branchScopeOf } from '../../../../store/slices/session-view/branchScopeOf';
 import { pullRequestKindOf } from '../../../../shared/utils/pullRequestKind';
 import { loadedBranchFilesOf } from '../../loadedBranchFilesOf';
@@ -65,7 +65,6 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
   const identity = useBranchIdentity({ sessionId });
   const setPullRequestMode = useAppStore((s) => s.setPullRequestMode);
   const isReviewWriting = useAppStore((s) => s.pullRequestModes[sessionId] === 'write_review');
-  const navigate = useAppStore((s) => s.navigate);
   const diffFocus = useAppStore((s) => s.diffFocus[sessionId] ?? null);
   const historyMountId = identity.mount?.mountId ?? null;
   const github = useAppStore((s) =>
@@ -178,18 +177,7 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
         isStopOpen: hasOpenRebaseStop,
       });
 
-  const selectTab = useCallback(
-    (next: BranchTab): void => {
-      if (next === tab) {
-        return;
-      }
-      navigate({
-        to: branchPlace({ sessionId, mountPath: identity.mountPath, tab: next }),
-        mode: 'replace',
-      });
-    },
-    [identity.mountPath, navigate, sessionId, tab],
-  );
+  const selectTab = useSelectBranchTab({ sessionId, mountPath: identity.mountPath, tab });
 
   const controls = useBranchControls({
     sessionId,
@@ -386,6 +374,8 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
     ahead: start.step.ahead,
     notPushed: pushCount,
   });
+  const checksLive = checkTabLiveOf({ work: controls.checkWork });
+  const tabLive = checksLive === null ? {} : { checks: checksLive };
   const openedAt = pullRequestView.view?.createdAt ?? null;
   const isWritingReview = isReviewWriting && pr !== null && pr.state === 'open';
   const isChanges = tab === 'files' && identity.mountPath !== null && !isWritingReview;
@@ -429,7 +419,13 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
               canEditTitle={canEditTitle}
               onMutated={onMutated}
             />
-            <BranchTabStrip tabs={tabs} facts={entryFacts} value={tab} onSelect={selectTab} />
+            <BranchTabStrip
+              tabs={tabs}
+              facts={entryFacts}
+              live={tabLive}
+              value={tab}
+              onSelect={selectTab}
+            />
             <div
               ref={setTabActionsSlot}
               data-slot="branch-tab-actions"

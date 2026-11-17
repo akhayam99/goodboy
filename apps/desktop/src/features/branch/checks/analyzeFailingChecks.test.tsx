@@ -217,7 +217,7 @@ describe('Analyze with the real store and SQLite', () => {
   });
   it.each([
     { phase: 'running' as const, label: 'Analyzing', canRetry: false },
-    { phase: 'proposal' as const, label: 'Fix proposed', canRetry: false },
+    { phase: 'proposal' as const, label: 'Cause found', canRetry: false },
     { phase: 'no-fix' as const, label: 'No fix found', canRetry: true },
   ])('derives $label from the agent and transcript', async ({ phase, label, canRetry }) => {
     show({ phase });

@@ -145,13 +145,20 @@ the place of its work from the click to the result.
   holds still while the agent waits. Stop and Open transcript sit in the
   line's `verbs`, drawn with `row-actions` on a `group/row`: shown on hover
   and focus, always in the tab order, and always in the item's `⋯` menu.
+  `ItemAgentVerbs` draws the pair for one agent; Stop is busy while its
+  request is out and offered again once it stalls.
 - **The result.** The same line says what happened in one sentence and offers
   one action in its `action` slot, visible at rest: Review fix, Review, Apply,
   Push, Retry, Analyze again, Open changes. A word never only describes the
   agent; it says what you can do next.
 - **The batch.** A batch puts its state on every item (Fixing, Queued with its
   place, Fix ready) and one quiet count in the list's header, with Stop all in
-  its `⋯`. Outside the tab that holds the work, the tab carries a live dot.
+  its `⋯`. The tab that holds live work carries a breathing dot on every
+  tab, its tooltip the word and the item ("Analyzing payments-api / test").
+- **The place.** While you are on the tab, an item that changes state keeps
+  its group and its place; the groups sort again when you come back to the
+  tab. The list component holds the order, never the store. Failing checks
+  do this today (`useHeldCheckGroups`).
 - **The words.** Every word and verb comes from `ITEM_WORK_WORDS`
   (`itemWork/itemWorkWords.ts`): Starting, Queued, Analyzing, Fixing,
   Resolving, In a run, Cause found, Fix ready, Question, "Fixed, not pushed",

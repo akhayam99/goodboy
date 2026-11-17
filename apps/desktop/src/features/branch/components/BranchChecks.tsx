@@ -17,6 +17,7 @@ import { useGithubConnection } from '../../integrations/github/useGithubConnecti
 import { openIntegration } from '../../integrations/openIntegration';
 import { ChecksMode } from '../../review/components/ChecksMode';
 import { checksViewOf, type ChecksHost, type ChecksHostKind } from '../checksViewOf';
+import { useHeldCheckGroups } from '../hooks/useHeldCheckGroups';
 import { usePullRequestView } from '../hooks/usePullRequestView';
 import { repoNameOf } from '../repoNameOf';
 import { AnalyzedCheckRow } from './AnalyzedCheckRow';
@@ -34,6 +35,8 @@ const HOST_NOUN: Readonly<Record<ChecksHost, string>> = {
 };
 
 const CREATE_ACTION_ID = 'pullRequest.create';
+
+const NO_CHECKS: ReadonlyArray<PrCheckRun> = [];
 
 const FAILED_CONCLUSIONS: ReadonlySet<PrCheckRun['conclusion']> = new Set<PrCheckRun['conclusion']>(
   ['failure', 'timed_out', 'cancelled'],
@@ -121,6 +124,8 @@ export const BranchChecks = ({ sessionId, mountId = null }: Props) => {
         : { kind: portView.errorKind === 'denied' ? 'denied' : 'failed', error: portView.error },
   });
 
+  const shownChecks = view.kind === 'ready' ? view.checks : NO_CHECKS;
+  const heldGroups = useHeldCheckGroups({ checks: shownChecks });
   const fallbackUrl = pr?.url ?? host.url ?? '';
   const createAction = create.actions.find((action) => action.id === CREATE_ACTION_ID);
 
@@ -214,7 +219,8 @@ export const BranchChecks = ({ sessionId, mountId = null }: Props) => {
                     })
                   )
           }
-          checks={view.kind === 'ready' ? view.checks : []}
+          checks={shownChecks}
+          heldGroups={heldGroups}
           fallbackUrl={fallbackUrl}
           host={isPortHost ? host.kind : 'github'}
           isLoading={view.kind === 'loading'}

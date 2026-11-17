@@ -50,6 +50,21 @@ const show = ({ name }: Params) => {
 };
 
 describe('checks analysis scenes', () => {
+  it('draws the Debugger work on the failing row, with Stop and no duration', () => {
+    show({ name: 'branch-checks-analyzing' });
+    const row = document.querySelector<HTMLElement>('[data-check-row="payments-api / test"]');
+    if (row === null) {
+      throw new Error('The failing check row is missing');
+    }
+    expect(
+      row
+        .querySelector('[data-check-status] [data-item-work]')
+        ?.getAttribute('data-item-work-state'),
+    ).toBe('analyzing');
+    within(row).getByRole('button', { name: 'Stop' });
+    within(row).getByRole('button', { name: 'Open transcript' });
+    expect(row.querySelector('button > span:last-child')?.textContent).toBe('');
+  });
   it('opens the analysis beside the page and preserves its selected agent', async () => {
     const store = await importStore();
     const { container } = show({ name: 'branch-checks-analyzing' });

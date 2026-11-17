@@ -130,7 +130,7 @@ const show = () =>
   );
 
 const rowWord = (): string | null =>
-  document.querySelector('[data-check-status]')?.textContent ?? null;
+  document.querySelector('[data-check-status] [data-item-work-word]')?.textContent ?? null;
 
 const fixers = () =>
   (store.getState().sessionPhaseRuns[seed.sessionId] ?? []).filter(
@@ -238,7 +238,7 @@ describe('Start fix with the real store and SQLite', () => {
         },
       }),
     );
-    await waitFor(() => expect(rowWord()).toBe('Not pushed'));
+    await waitFor(() => expect(rowWord()).toBe('Fixed, not pushed'));
     expect(store.getState().checkFixCommits[child.id]).toMatchObject({
       kind: 'found',
       sha: '9e4c1a7',
@@ -262,7 +262,7 @@ describe('Start fix with the real store and SQLite', () => {
         fixAgentId: child.id,
       }),
     );
-    expect(rowWord()).toBe('Re-running');
+    expect(rowWord()).toBe('Pushed');
   });
   it.each([
     {
