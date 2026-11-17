@@ -90,7 +90,7 @@ If someone pushed after you applied, Goodboy lists their new commits and offers 
 - Once it settles, the panel under the Branch header says what happened and what you can do.
 - **Force push** replaces the branch on origin only if nobody pushed since you last looked. A failed Push or Force push in the Branch header offers the same two actions.
 - If origin changed between your confirm and the push, the failure leads with **Check again**. It fetches and lists the commits only on origin, with author and subject. Then it asks again: **Force push anyway** drops them, **Rebase on their commits** keeps them. It offers no **Retry**, since that would reuse the old check.
-- There, **Fix with an agent** and **Open terminal here** read origin again first. They keep commits nobody confirmed: the agent rebases on them, and the terminal gets a rebase on origin, then a push. A failed start shows in the card, not in a toast.
+- There, **Fix with an agent** and **Open terminal here** read origin again first. Since nobody confirmed the new commits, they keep everything on origin: the agent rebases on it, and the terminal gets a rebase on origin, then a push. A failed start shows in the card, not in a toast.
 - **Add a hint** under **Fix with an agent** and under **Rewrite with an agent** passes your words to the agent. A failed start keeps them.
 - While Push, Rebase, Merge or another Branch header action runs, its button shows the pending word (**Pushing…**) and ignores more clicks.
 - When it finishes, a line under the header says what happened (**Pushed 1 commit to origin.**). It stays until you dismiss it or start the next action.
