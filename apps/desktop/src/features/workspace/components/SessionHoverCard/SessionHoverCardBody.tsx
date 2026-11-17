@@ -9,13 +9,13 @@ import {
   GhostActionButton,
   ICON_SIZE,
   StatusDot,
+  StatusMark,
 } from '@goodboy/ui';
 import type { Session, SessionAttentionReason, SessionId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import { NAMES } from '../../../../shared/utils/names';
 import { useReviewDraftCount } from './useReviewDraftCount';
 import { SessionProgress } from '../SessionProgress';
-import { StateNode } from '../../../../shared/components/StateNode';
 import { useSessionRowFacts } from '../../hooks/useSessionRowFacts';
 import { getLinkedRequest } from '../StageBoard/StageBoardCard/getLinkedRequest';
 import { ExternalTaskChip } from '../../../integrations/components/ExternalTaskChip';
@@ -47,7 +47,7 @@ export const SessionHoverCardBody = ({
   isFactsOnly = false,
 }: Props) => {
   const sessionId = session.id as SessionId;
-  const { summary, node, keys, title, unreadLabel } = useSessionRowFacts({ session, isArchived });
+  const { summary, mark, keys, title, unreadLabel } = useSessionRowFacts({ session, isArchived });
   const pullRequest = useAppStore((state) => state.sessionGithub[sessionId]?.pr ?? null);
   const mergeRequest = useAppStore((state) => gitlabSessionOf({ state, sessionId })?.mr ?? null);
   const mounts = useAppStore((state) => state.sessionProjectMounts?.[sessionId] ?? EMPTY_ARRAY);
@@ -97,7 +97,7 @@ export const SessionHoverCardBody = ({
         }
       />
       <div className="flex flex-col gap-1">
-        <FactCardState glyph={<StateNode node={node} />} words={stateText} />
+        <FactCardState glyph={<StatusMark mark={mark} />} words={stateText} />
         {isWorking ? (
           <FactCardState
             glyph={<StatusDot tone="info" size="sm" pulsing />}

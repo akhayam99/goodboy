@@ -1,6 +1,6 @@
 import { PALETTE_ROW_PX } from './paletteBodyLayout';
 import { ChevronRight } from '@goodboy/ui/icons';
-import { cn, ICON_SIZE, KeyHint } from '@goodboy/ui';
+import { cn, ICON_SIZE, KeyHint, StatusMark } from '@goodboy/ui';
 
 import { shortcutGlyphs } from '../../../../shared/keyboard/registry';
 import type { CommandRow } from '../../commandList';
@@ -62,7 +62,9 @@ export const CommandRowView = ({ row, id, isSelected, onHover, onRun }: Props) =
           TILED.has(item.kind) && 'bg-fill',
         )}
       >
-        {item.accent === undefined ? (
+        {item.mark !== undefined ? (
+          <StatusMark mark={item.mark} />
+        ) : item.accent === undefined ? (
           <Icon
             size={ICON_SIZE.control}
             className={isDanger ? 'text-danger' : 'text-muted-foreground'}

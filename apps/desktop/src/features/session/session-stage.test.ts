@@ -124,7 +124,7 @@ describe('the reason table', () => {
     ['run-stopped', '!', 'danger', 'Failed'],
     ['run-paused-at-limit', '!', 'warning', 'A run paused at its limit'],
     ['run-waits-for-go', 'approval', 'warning', 'Step is ready'],
-    ['auto-needs-you', 'approval', 'warning', 'Auto needs you'],
+    ['auto-needs-you', 'approval', 'warning', 'Lead needs you'],
     ['slack-reply-waiting', 'approval', 'warning', 'A Slack reply needs approval'],
   ])('gives %s the mark %s in %s with the words "%s"', (reason, mark, tone, words) => {
     expect(ATTENTION_REASON_META[reason]).toMatchObject({ mark, tone, words, reason: words });

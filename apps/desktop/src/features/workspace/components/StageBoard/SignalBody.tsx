@@ -1,10 +1,9 @@
 import type { MouseEvent } from 'react';
 import { CloudOff } from '@goodboy/ui/icons';
 import { REVIEW_SOURCE_LABEL } from '@goodboy/core/review-source';
-import { cn, ICON_SIZE, StateDot, Tooltip, tintClasses } from '@goodboy/ui';
+import { cn, ICON_SIZE, StateDot, StatusMark, Tooltip } from '@goodboy/ui';
 import { PullRequestChip } from '../../../integrations/github/components/PullRequestChip';
-import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
-import { ATTENTION_REASON_META } from '../../../session/session-stage';
+import { attentionMarkOf } from '../../../session/attentionMarkOf';
 import type { BoardSignal } from './boardSignalOf';
 import { SignalWord } from './SignalWord';
 
@@ -25,17 +24,14 @@ const countWord = ({ count }: CountParams): string | null => (count > 1 ? String
 
 export const SignalBody = ({ signal, onGlyphEnter, onGlyphLeave }: Props) => {
   switch (signal.kind) {
-    case 'attention': {
-      const meta = ATTENTION_REASON_META[signal.reason];
-      const Glyph = CONCEPT_ICONS[meta.icon];
+    case 'attention':
       return (
         <SignalWord
           label={signal.label}
-          glyph={<Glyph size={ICON_SIZE.row} aria-hidden className={tintClasses(meta.tone).text} />}
+          glyph={<StatusMark mark={attentionMarkOf({ reason: signal.reason })} />}
           word={signal.word}
         />
       );
-    }
     case 'running':
       return (
         <SignalWord

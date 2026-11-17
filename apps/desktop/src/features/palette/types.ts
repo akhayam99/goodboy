@@ -1,4 +1,5 @@
 import type { IconGlyph } from '@goodboy/ui/icons';
+import type { StatusMarkSpec } from '@goodboy/ui';
 import type { SessionId, WorkspaceId } from '@goodboy/types';
 import type { ShortcutId } from '../../shared/keyboard/registry';
 import type {
@@ -60,6 +61,7 @@ export type PaletteEntry = RankCandidate & {
   readonly kind: PaletteKind;
   readonly group: PaletteGroup | null;
   readonly icon: IconGlyph;
+  readonly mark?: StatusMarkSpec;
   readonly accent?: string;
   readonly detail?: string;
   readonly tag?: string;

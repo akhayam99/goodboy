@@ -1,4 +1,6 @@
 import { describe, expect, it } from 'vitest';
+import type { StatusMarkSpec } from '@goodboy/ui';
+import type { SessionAttentionReason } from '@goodboy/types';
 import { sessionMarkOf } from './sessionMarkOf';
 import { sessionNodeOf } from './sessionNode';
 
@@ -25,6 +27,39 @@ const markOf = ({ info, isArchived = false }: MarkParams) =>
   sessionMarkOf({ node: sessionNodeOf({ info: { ...BASE, ...info }, isArchived }) });
 
 describe('sessionMarkOf', () => {
+  it.each<[SessionAttentionReason, StatusMarkSpec]>([
+    ['agent-error', { kind: 'state', state: 'failed' }],
+    ['push-failed', { kind: 'state', state: 'failed' }],
+    ['ci-failed', { kind: 'state', state: 'failed' }],
+    ['run-stopped', { kind: 'state', state: 'failed' }],
+    ['open-question', { kind: 'state', state: 'question' }],
+    ['fix-needs-you', { kind: 'state', state: 'question' }],
+    ['needs-approval', { kind: 'state', state: 'approval' }],
+    ['plan-approval', { kind: 'state', state: 'approval' }],
+    ['run-waits-for-go', { kind: 'state', state: 'approval' }],
+    ['auto-needs-you', { kind: 'state', state: 'approval' }],
+    ['slack-reply-waiting', { kind: 'state', state: 'approval' }],
+    ['changes-requested', { kind: 'state', state: 'alert' }],
+    ['fix-couldnt-fix', { kind: 'state', state: 'alert' }],
+    ['run-paused-at-limit', { kind: 'state', state: 'alert' }],
+    ['pr-queued', { kind: 'state', state: 'merging' }],
+    ['pr-approved', { kind: 'state', state: 'approved' }],
+    ['unread-reply', { kind: 'dot', tone: 'unread' }],
+  ])('draws %s as %o', (attention, mark) => {
+    expect(markOf({ info: { stage: 'attention', attention } })).toEqual(mark);
+  });
+
+  it('keeps a bare needs you stage on the question glyph', () => {
+    expect(markOf({ info: { stage: 'attention' } })).toEqual({ kind: 'state', state: 'question' });
+  });
+
+  it('draws the merge queue as the moving ring', () => {
+    expect(markOf({ info: { stage: 'review', attention: 'pr-queued' } })).toEqual({
+      kind: 'state',
+      state: 'merging',
+    });
+  });
+
   it('draws a question as one bare glyph, never inside a ring', () => {
     expect(markOf({ info: { stage: 'attention', attention: 'open-question' } })).toEqual({
       kind: 'state',

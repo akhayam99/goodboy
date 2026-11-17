@@ -1,7 +1,9 @@
+import type { StatusMarkSpec } from '@goodboy/ui';
 import type { Session } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { unreadAgentsOf } from '../../../../store/slices/agents/unreadAgentsOf';
 import { sessionNodeOf, type SessionNode } from '../../../session/sessionNode';
+import { sessionMarkOf } from '../../../session/sessionMarkOf';
 import { unreadLabelOf } from '../../../session/unreadLabelOf';
 import { viewedAgentIdOf } from '../../../../shared/utils/viewedAgentIdOf';
 import { plainText } from '../../../../shared/utils/plainText';
@@ -11,6 +13,7 @@ import { useSessionSummary, type SessionSummary } from '../useSessionSummary';
 export type SessionRowFacts = {
   readonly summary: SessionSummary;
   readonly node: SessionNode;
+  readonly mark: StatusMarkSpec;
   readonly rowTitle: SessionRowTitle;
   readonly keys: ReadonlyArray<string>;
   readonly title: string;
@@ -38,6 +41,7 @@ export const useSessionRowFacts = ({ session, isArchived = false }: Params): Ses
   return {
     summary,
     node,
+    mark: sessionMarkOf({ node }),
     rowTitle,
     keys: rowTitle.keys,
     title: rowTitle.title,

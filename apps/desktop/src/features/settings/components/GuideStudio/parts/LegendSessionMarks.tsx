@@ -1,6 +1,7 @@
 import type { SessionStageInfo } from '@goodboy/types';
-import { WorkNode } from '@goodboy/ui';
+import { StatusMark } from '@goodboy/ui';
 import { sessionNodeOf } from '../../../../session/sessionNode';
+import { sessionMarkOf } from '../../../../session/sessionMarkOf';
 import { LegendaGrid } from './LegendaGrid';
 
 type MarkInfo = Pick<SessionStageInfo, 'stage' | 'attention' | 'prState'>;
@@ -9,7 +10,6 @@ type MarkRow = {
   readonly label: string;
   readonly desc: string;
   readonly info: MarkInfo;
-  readonly isArchived?: boolean;
 };
 
 const MARK_ROWS: ReadonlyArray<MarkRow> = [
@@ -25,7 +25,7 @@ const MARK_ROWS: ReadonlyArray<MarkRow> = [
   },
   {
     label: 'approval',
-    desc: 'a permission or a plan waits for your approval',
+    desc: 'a permission, a plan, a ready step or the Lead waits for you',
     info: { stage: 'attention', attention: 'needs-approval', prState: null },
   },
   {
@@ -49,14 +49,9 @@ const MARK_ROWS: ReadonlyArray<MarkRow> = [
     info: { stage: 'review', attention: 'pr-queued', prState: null },
   },
   {
-    label: 'in review',
-    desc: 'the work is out for review',
-    info: { stage: 'review', attention: null, prState: null },
-  },
-  {
-    label: 'building',
-    desc: 'work in progress, nothing to review yet',
-    info: { stage: 'building', attention: null, prState: null },
+    label: 'new reply',
+    desc: "an agent answered and you haven't read it yet",
+    info: { stage: 'attention', attention: 'unread-reply', prState: null },
   },
   {
     label: 'done',
@@ -69,10 +64,9 @@ const MARK_ROWS: ReadonlyArray<MarkRow> = [
     info: { stage: 'done', attention: null, prState: 'closed' },
   },
   {
-    label: 'archived',
-    desc: 'shown only under Show archived',
-    info: { stage: 'done', attention: null, prState: null },
-    isArchived: true,
+    label: 'no mark',
+    desc: 'in review, building or archived: nothing waits on you',
+    info: { stage: 'review', attention: null, prState: null },
   },
 ];
 
@@ -83,18 +77,8 @@ type NodeParams = {
 };
 
 const nodeOf = ({ row }: NodeParams) => {
-  const node = sessionNodeOf({ info: row.info, isArchived: row.isArchived === true });
-  return (
-    <WorkNode
-      state={node.state}
-      mark={node.mark}
-      tone={node.tone}
-      label={node.label}
-      isSpinning={node.isSpinning}
-      hasUnread={node.hasUnread}
-      size="sm"
-    />
-  );
+  const node = sessionNodeOf({ info: row.info, isArchived: false });
+  return <StatusMark mark={sessionMarkOf({ node })} label={node.label} />;
 };
 
 export const LegendSessionMarks = ({}: Props) => (
