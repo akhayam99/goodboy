@@ -7,6 +7,7 @@ import type { BootstrapState } from './slices/bootstrap/state';
 import type { FolderPurposeState } from './slices/folder-purpose/state';
 import type { ReviewBulkState } from './slices/review-bulk/state';
 import type { ReviewLaunchState } from './slices/review-launch/state';
+import type { CommentRunStartState } from './slices/comment-run-start/state';
 import type { OutputHandoffsState } from './slices/output-handoffs/state';
 import type { ReviewSelectionState } from './slices/review-selection/state';
 import type { ReviewSourceState } from './slices/review-source/state';
@@ -148,6 +149,7 @@ type AppSliceState = ArtifactsState &
   ReviewNavigationState &
   ReviewBulkState &
   ReviewLaunchState &
+  CommentRunStartState &
   OutputHandoffsState &
   ReviewSelectionState &
   ReviewSourceState &
