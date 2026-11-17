@@ -9,7 +9,6 @@ export const STORAGE_KEYS = {
   diffLayoutMode: `${PREFIX}diff-layout-mode`,
   diffWrap: `${PREFIX}diff-wrap`,
   exploreWrap: `${PREFIX}explore-wrap:v1`,
-  leftSidebarWidth: `${PREFIX}left-sidebar-width:v3`,
   sessionRailCollapsed: `${PREFIX}session-rail-collapsed:v1`,
   sessionRailFoldedCards: `${PREFIX}session-rail-folded-cards:v1`,
   sessionRailTreeOpen: `${PREFIX}session-rail-tree-open:v1`,

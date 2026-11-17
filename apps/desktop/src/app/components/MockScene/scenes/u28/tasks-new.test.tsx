@@ -63,14 +63,14 @@ describe('the tasks arrivals scene', () => {
     expect(MOCK_SCENES[SCENE]).toBe(U28_TASKS_NEW_SCENES[SCENE]);
   });
 
-  it('dots two arrivals, counts them in the header and dots the Tasks door', async () => {
+  it('dots two arrivals, counts them in the header and dots Tasks on the rail', async () => {
     await mount();
 
     expect(document.querySelectorAll('[data-task-new]')).toHaveLength(2);
     screen.getByText(/\d+ open, 2 new/);
     expect(
-      document.querySelector('[data-column-door="inbox"] [data-door-signal="unread"]'),
-    ).not.toBeNull();
+      document.querySelector('[data-shell-rail-item="inbox"]')?.getAttribute('aria-label'),
+    ).toBe('Tasks, 2 new');
   });
 
   it('has no accessibility violation', async () => {

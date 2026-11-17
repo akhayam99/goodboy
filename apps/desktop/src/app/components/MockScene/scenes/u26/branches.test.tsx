@@ -55,45 +55,15 @@ const mount = async ({ name }: MountParams): Promise<void> => {
   expect(screen.queryByText('Something went wrong')).toBeNull();
 };
 
-const rows = (): ReadonlyArray<HTMLElement> =>
-  screen.getAllByRole('option').filter((option) => option.hasAttribute('data-select-id'));
-
 describe('the u26 branches scenes, units 1 and 2', () => {
   it('registers every scene in the mock registry, in both themes', () => {
     const names = Object.keys(U26_BRANCHES_SCENES);
     for (const name of names) {
       expect(MOCK_SCENES[name], name).toBeDefined();
     }
-    expect(names.filter((name) => name.endsWith('-dark'))).toHaveLength(4);
-    expect(names.filter((name) => name.endsWith('-light'))).toHaveLength(4);
+    expect(names.filter((name) => name.endsWith('-dark'))).toHaveLength(2);
+    expect(names.filter((name) => name.endsWith('-light'))).toHaveLength(2);
   });
-
-  it.each(['u26-sessions-base-dark', 'u26-sessions-base-light'] as const)(
-    '%s draws the main sidebar rows as title, space, state, with no checkbox and no hint',
-    async (name) => {
-      await mount({ name });
-
-      expect(screen.queryByRole('checkbox')).toBeNull();
-      const [first] = rows();
-      expect(first?.lastElementChild?.hasAttribute('data-row-state')).toBe(true);
-      expect(first?.getAttribute('aria-selected')).toBe('false');
-      expect(screen.queryByText('Shift click for a range, Option click to add one')).toBeNull();
-    },
-  );
-
-  it.each(['u26-sessions-multi-dark', 'u26-sessions-multi-light'] as const)(
-    '%s shows three rows selected with no checkbox and the bar counting them',
-    async (name) => {
-      await mount({ name });
-
-      expect(screen.queryByRole('checkbox')).toBeNull();
-      expect(rows().filter((row) => row.getAttribute('aria-selected') === 'true')).toHaveLength(3);
-      expect(
-        within(screen.getByRole('toolbar', { name: /selected$/ })).getByText('3 selected'),
-      ).toBeDefined();
-      expect(screen.getByText('Shift click for a range, Option click to add one')).toBeDefined();
-    },
-  );
 
   it.each(['u26-board-multi-dark', 'u26-board-multi-light'] as const)(
     '%s shows three cards pressed with no checkbox, the track and padding at rest',
