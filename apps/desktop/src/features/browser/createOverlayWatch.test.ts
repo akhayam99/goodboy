@@ -1,5 +1,6 @@
 // @vitest-environment happy-dom
 import { afterEach, describe, expect, it } from 'vitest';
+import { SPLIT_DRAG_ATTRIBUTE } from '@goodboy/ui';
 import { createOverlayWatch } from './createOverlayWatch';
 
 type Rect = {
@@ -55,6 +56,7 @@ const coversView = (): boolean => {
 };
 
 afterEach(() => {
+  document.body.removeAttribute(SPLIT_DRAG_ATTRIBUTE);
   document.body.replaceChildren();
 });
 
@@ -158,6 +160,17 @@ describe('createOverlayWatch', () => {
 
     expect(clear.coverOf({ view: under, rect: under.getBoundingClientRect() })).toBeNull();
     clear.stop();
+  });
+
+  it('covers the view while a split handle drags, and uncovers it on release', () => {
+    const view = placedView();
+    const watch = createOverlayWatch();
+
+    document.body.setAttribute(SPLIT_DRAG_ATTRIBUTE, 'x');
+    expect(watch.coverOf({ view, rect: view.getBoundingClientRect() })).toBe('drag');
+    document.body.removeAttribute(SPLIT_DRAG_ATTRIBUTE);
+    expect(watch.coverOf({ view, rect: view.getBoundingClientRect() })).toBeNull();
+    watch.stop();
   });
 
   it('leaves the view alone for a tooltip parked off screen', () => {
