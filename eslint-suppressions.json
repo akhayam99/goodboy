@@ -13151,11 +13151,6 @@
       "count": 3
     }
   },
-  "packages/ui/src/components/ResizeHandle.tsx": {
-    "@typescript-eslint/naming-convention": {
-      "count": 2
-    }
-  },
   "packages/ui/src/components/Reveal.tsx": {
     "@typescript-eslint/naming-convention": {
       "count": 2
