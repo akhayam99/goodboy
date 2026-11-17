@@ -38,6 +38,7 @@ export type ScriptFacts = {
   readonly onSaveAs: (() => void) | null;
   readonly onDelete: (() => Promise<void>) | null;
   readonly onRestart?: () => void;
+  readonly onOpenInTerminal?: () => void;
   readonly pin?: ScriptPinFacts;
   readonly ask?: ScriptAskFacts;
 };
@@ -53,6 +54,14 @@ export const SCRIPT_KIND: ObjectKindDefinition<ScriptActionTarget, ScriptFacts> 
       group: 'open',
       when: () => true,
       run: ({ facts }) => facts.onShowOutput(),
+    },
+    {
+      id: 'script.openInTerminal',
+      label: 'Open in terminal',
+      icon: CONCEPT_ICONS.terminal,
+      group: 'open',
+      when: ({ facts }) => facts.onOpenInTerminal !== undefined,
+      run: ({ facts }) => facts.onOpenInTerminal?.(),
     },
     {
       id: 'script.askAgent',

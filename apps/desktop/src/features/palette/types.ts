@@ -57,6 +57,12 @@ export type PaletteKind =
 
 type PaletteLevelRequest = { readonly kind: 'actions'; readonly target: ObjectTarget };
 
+export type PaletteStep = {
+  readonly title: string;
+  readonly placeholder: string;
+  readonly entries: ReadonlyArray<PaletteEntry>;
+};
+
 export type PaletteEntry = RankCandidate & {
   readonly kind: PaletteKind;
   readonly group: PaletteGroup | null;
@@ -70,5 +76,6 @@ export type PaletteEntry = RankCandidate & {
   readonly action?: ResolvedAction;
   readonly confirm?: ActionConfirm;
   readonly level?: PaletteLevelRequest;
+  readonly step?: () => PaletteStep | null;
   readonly run: () => void;
 };

@@ -511,7 +511,7 @@
     "apps/desktop/src/features/palette/components/CommandsMode/useScopeInfo.ts": 1,
     "apps/desktop/src/features/palette/components/PaletteOverlay/index.tsx": 1,
     "apps/desktop/src/features/palette/frecency.ts": 2,
-    "apps/desktop/src/features/palette/hooks/useCommandEntries.ts": 3,
+    "apps/desktop/src/features/palette/hooks/useCommandEntries.ts": 2,
     "apps/desktop/src/features/palette/hooks/useSessionPalette.ts": 1,
     "apps/desktop/src/features/palette/paletteTiers.ts": 5,
     "apps/desktop/src/features/palette/score.ts": 3,

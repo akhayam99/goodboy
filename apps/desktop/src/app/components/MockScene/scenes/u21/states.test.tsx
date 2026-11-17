@@ -85,13 +85,13 @@ describe('the u21 page-state scenes', () => {
     expect(await screen.findByTestId('artifact-list')).toBeDefined();
   });
 
-  it('shows the Scripts first-time state with its one primary', async () => {
+  it('shows the Scripts first-time state in one line with its one action', async () => {
     renderScene('scripts-empty');
 
-    const heading = await screen.findByRole('heading', { level: 3, name: 'No scripts yet' });
-    const empty = heading.closest('div')?.parentElement;
-    if (empty === null || empty === undefined) {
-      throw new Error('no empty state around the heading');
+    const line = await screen.findByText('No branch in this session to run scripts on.');
+    const empty = line.closest('[data-slot="empty-line"]');
+    if (!(empty instanceof HTMLElement)) {
+      throw new Error('no empty line around the sentence');
     }
     expect(within(empty).getByRole('button', { name: 'Add project' })).toBeDefined();
   });

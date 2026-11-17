@@ -159,12 +159,16 @@ On a Mac the menu bar carries the same keys.
 Pin the scripts you use and run them from the session.
 
 - Open the Scripts pane from **Scripts** on the right rail, or with ⌘⌥S.
-- It groups scripts on one grid into **Services** (dev servers and watchers) and **Commands** (scripts that run and end).
-- A click on a row opens its output. The row's one control is **Run** or **Stop**. **Pin**, **Restart** and the rest live in the right click menu.
+- It lists scripts in one list per branch, headed by the project and the branch they run on. Services (dev servers and watchers) come first, then the scripts that run and end.
+- Each row shows the script's name and its command in mono.
+- A click on a row opens its output. The row's one control is **Run** or **Stop**. **Pin**, **Restart**, **Open in terminal** and the rest live in the right click menu.
+- **Open in terminal** opens a terminal in that branch's worktree with the command typed in, not run.
+- A script runs on the branch you are on: the branch page, or the agent or run you opened. A terminal opens there too, and its tab names the branch.
+- From ⌘K, a script runs at once when its project has one branch in the session. With more than one and no branch on screen, a second step asks **Run Replay settlement batch on which branch?**, the branch that ran a script last first.
 - A running service shows its dot and uptime. CPU and memory are two rows in the card you get when you rest on its status.
 - Its port opens beside the session on a click, and in your own browser on **⌘-click**.
 - **Run** on a Service starts it in place and leaves the list as it is. The row's last line, uptime and port are the feedback. A click on the row, or Enter, opens its output.
-- A project with more than one Service has **Start all services** on the Services band. It starts the ones that are not running.
+- A project with more than one Service has **Start all services** on its header. It starts the ones that are not running.
 - **Run** on a Command shows the Command's live output in place of the list, with **Run again**, **Copy output**, **Send to the agent** and **Back to scripts**.
 - **Send to the agent** attaches the log to the session's composer without sending it. The log is titled with the script, the exit code and the worktree. The same verb is in the row's right click menu.
 - A line a program redraws (a progress bar, a spinner) shows as its last frame, one line.
@@ -175,7 +179,7 @@ Pin the scripts you use and run them from the session.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/keyboard-script-drawer-dark.webp">
-  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/keyboard-script-drawer-light.webp" alt="The Scripts pane grouped by project with Services and Commands, and the Check posting drift output open on the right: Failed after 12s in ledger-core on nw/fix-settlement-replay, the failing vitest output, Run again, Exit 1 and Copy output">
+  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/keyboard-script-drawer-light.webp" alt="The Scripts pane grouped by project, and the Check posting drift output open on the right: Failed after 12s in ledger-core on nw/fix-settlement-replay, the failing vitest output, Run again, Exit 1 and Copy output">
 </picture>
 
 <sub>Screenshot from Goodboy 0.27.1</sub>

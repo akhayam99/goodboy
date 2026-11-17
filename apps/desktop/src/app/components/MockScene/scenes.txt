@@ -1430,6 +1430,7 @@ u47-comment-run-suggest
 u47-lead-ask-long-answer
 u47-overview-rows-two-projects
 u47-overview-rows-two-projects-light
+u47-scripts-branch-step
 update-card
 update-card-long-version
 update-card-narrow

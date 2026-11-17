@@ -57,9 +57,14 @@ export const TaskRow = ({
         ) : null}
       </span>
       <span className="flex min-w-0 flex-1 flex-col">
-        <Tooltip content={runsInLabel({ script })}>
-          <span className="truncate text-row text-foreground">{script.name}</span>
-        </Tooltip>
+        <span className="flex min-w-0 items-baseline gap-2">
+          <span className="min-w-0 truncate text-row text-foreground">{script.name}</span>
+          <Tooltip content={runsInLabel({ script })}>
+            <span className="min-w-0 flex-1 truncate text-code text-faint-foreground">
+              {script.invocation}
+            </span>
+          </Tooltip>
+        </span>
         {failedLine === null ? null : (
           <span className="truncate text-code text-faint-foreground">{failedLine}</span>
         )}
