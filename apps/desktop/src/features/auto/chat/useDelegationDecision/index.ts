@@ -9,8 +9,8 @@ import {
 } from '../../delegationDecisionPort';
 import { useBusyAct } from '../../hooks/useBusyAct';
 
-const NOT_READY_TITLE = "Couldn't answer Auto";
-const LOST_TITLE = 'Auto has already moved on';
+const NOT_READY_TITLE = "Couldn't answer the Lead";
+const LOST_TITLE = 'The Lead has already moved on';
 const REFUSED_TITLE = "This agent can't start yet";
 
 type DecideParams = {
@@ -27,7 +27,7 @@ export const useDelegationDecision = (): DelegationDecisionModel => {
   const reportError = useAppStore((state) => state.reportError);
   const { busyIds, run } = useBusyAct<DelegationDecisionPort>({
     title: NOT_READY_TITLE,
-    notReadyMessage: "Auto can't take this answer here yet.",
+    notReadyMessage: "The Lead can't take this answer here yet.",
     currentPort: currentDelegationDecisionPort,
   });
 

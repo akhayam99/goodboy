@@ -74,7 +74,7 @@ describe('the Auto dock Stop outside working', () => {
     expect(screen.queryByRole('button', { name: 'Change approach' })).toBeNull();
   });
 
-  it('keeps Stop while Auto asks which project to use', () => {
+  it('keeps Stop while The Lead asks which project to use', () => {
     renderDock({
       view: aView({
         phase: 'waiting',
@@ -153,7 +153,7 @@ describe('the Auto dock when Auto was not told', () => {
 
     await waitFor(() =>
       expect(reportError).toHaveBeenCalledWith(
-        expect.objectContaining({ title: "Couldn't send the approval to Auto" }),
+        expect.objectContaining({ title: "Couldn't send the approval to the Lead" }),
       ),
     );
     await waitFor(() =>

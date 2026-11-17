@@ -37,9 +37,9 @@ describe('the chip where an agent suggests Auto', () => {
     window.addEventListener(MOVE_TO_AUTO_EVENT, listen);
     mount();
 
-    expect(await screen.findByText('Agent suggests: Auto')).toBeDefined();
+    expect(await screen.findByText('Agent suggests: the Lead')).toBeDefined();
     expect(screen.getByText('Needs a tester and a reviewer')).toBeDefined();
-    fireEvent.click(screen.getByRole('button', { name: 'Let Auto take it from here' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Let the Lead take it from here' }));
     window.removeEventListener(MOVE_TO_AUTO_EVENT, listen);
 
     await waitFor(() => expect(heard).toEqual([{ agentId: AGENT }]));
@@ -49,12 +49,12 @@ describe('the chip where an agent suggests Auto', () => {
     useAppStore.setState({ settings: { 'agents.autoExperiment': 'false' } });
     mount();
 
-    expect(screen.getByText('Agent suggests: Auto')).toBeDefined();
+    expect(screen.getByText('Agent suggests: the Lead')).toBeDefined();
   });
 
   it('stays hidden while the release gate is closed', () => {
     mount({ isReleased: false });
 
-    expect(screen.queryByText('Agent suggests: Auto')).toBeNull();
+    expect(screen.queryByText('Agent suggests: the Lead')).toBeNull();
   });
 });

@@ -23,7 +23,7 @@ import { invokeAgentList } from '../workflows/workflows';
 import { currentAutoDrivePort } from './autoDrivePort';
 import { runDefaultLimitOf } from '../../store/slices/workflows/runLimit/runDefaultLimitOf';
 
-const OFF_MESSAGE = 'Auto is not available in this build.';
+const OFF_MESSAGE = 'The Lead is not available in this build.';
 const GONE_MESSAGE = 'This agent is no longer in the session.';
 const DEFAULT_EFFORT = 'medium';
 const DEFAULT_PROVIDER = 'anthropic';
@@ -66,7 +66,7 @@ const driveAtOnce = async ({ treeId, sessionId }: DriveAtOnceParams): Promise<vo
   } catch (error) {
     await useAppStore.getState().reportError({
       recovery: CHECK_STATE,
-      title: "Auto didn't start right away",
+      title: "The Lead didn't start right away",
       error,
       sessionId,
     });

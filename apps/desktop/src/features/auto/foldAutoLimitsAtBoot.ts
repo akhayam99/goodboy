@@ -11,7 +11,7 @@ export const foldAutoLimitsAtBoot = async (): Promise<void> => {
         foldAutoLimitOfWorkspace({ workspaceId: workspace.id }).catch((error: unknown) =>
           reportError({
             recovery: CHECK_STATE,
-            title: "Couldn't move the Auto limit into the run defaults",
+            title: "Couldn't move the Lead limit into the run defaults",
             error,
             workspaceId: workspace.id,
           }),

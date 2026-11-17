@@ -4,7 +4,7 @@ import { stoppedSentenceOf } from '../../glance/stoppedSentenceOf';
 
 const SUMMARY_RESUME_PROVIDERS: ReadonlySet<ProviderId> = new Set(['codex', 'cursor', 'gemini']);
 
-const AUTO_READS = 'Auto reads the result.';
+const AUTO_READS = 'The Lead reads the result.';
 
 const RUN_PAUSED = 'The run is paused.';
 

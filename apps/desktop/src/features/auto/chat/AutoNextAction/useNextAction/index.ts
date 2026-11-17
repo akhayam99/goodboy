@@ -10,8 +10,8 @@ import {
 } from '../../../delegationDecisionPort';
 import { nextStepMessageOf, type NextAction } from '../../nextActionOf';
 
-const NOT_READY = "Auto can't take this answer in this window yet.";
-const LOST_NOTE = 'No longer open. Auto proposes again if it still wants this.';
+const NOT_READY = "The Lead can't take this answer in this window yet.";
+const LOST_NOTE = 'No longer open. The Lead proposes again if it still wants this.';
 
 type Params = {
   readonly sessionId: SessionId;

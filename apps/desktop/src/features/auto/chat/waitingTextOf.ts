@@ -28,7 +28,7 @@ export const waitingTextOf = ({ view }: Params): string | null => {
   }
   const nouns = openRoleNouns({ delegations: view.delegations });
   if (phase === 'merging' || nouns.length === 0) {
-    return 'Auto is reading the results';
+    return 'The Lead is reading the results';
   }
   return `Waiting for ${joinNouns({ nouns })}`;
 };

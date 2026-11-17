@@ -20,7 +20,7 @@ export const AutoPlanToolbar = ({ model }: Props) => {
       {model.isToldFailed ? (
         <>
           <span className="min-w-0 truncate text-meta text-muted-foreground">
-            Approved. Couldn&apos;t send it to Auto.
+            Approved. Couldn&apos;t send it to the Lead.
           </span>
           <Button
             size="sm"

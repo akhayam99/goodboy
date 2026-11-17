@@ -137,7 +137,7 @@ describe('the end of an Auto child page', () => {
     expect(screen.queryByRole('button', { name: /^Retry/ })).toBeNull();
   });
 
-  it('reads a child that came back as Returned to Auto with its request, never Failed or Needs you', () => {
+  it('reads a child that came back as Returned to the Lead with its request, never Failed or Needs you', () => {
     const delegation = {
       ...aDelegation({ key: 'scout', role: 'scout', state: 'settled', outcome: 'blocked' }),
       reason: 'declared_blocked',
@@ -145,14 +145,14 @@ describe('the end of an Auto child page', () => {
     };
     show({ delegation, status: 'blocked' });
 
-    screen.getByText('Returned to Auto: Needs a shell to read commits in payments-api.');
+    screen.getByText('Returned to the Lead: Needs a shell to read commits in payments-api.');
     expect(screen.queryByText(/Failed/)).toBeNull();
     expect(screen.queryByText('Needs you')).toBeNull();
     expect(screen.queryByRole('button', { name: /^Retry/ })).toBeNull();
     expect(document.body.textContent).not.toContain('declared_blocked');
   });
 
-  it('keeps the outcome marker out of the Returned to Auto tail', () => {
+  it('keeps the outcome marker out of the Returned to the Lead tail', () => {
     const delegation = {
       ...aDelegation({ key: 'scout', role: 'scout', state: 'settled', outcome: 'blocked' }),
       reason: 'declared_blocked',
@@ -165,12 +165,12 @@ describe('the end of an Auto child page', () => {
     };
     show({ delegation, status: 'blocked' });
 
-    screen.getByText('Returned to Auto: Needs a shell to read commits in payments-api.');
+    screen.getByText('Returned to the Lead: Needs a shell to read commits in payments-api.');
     expect(document.body.textContent).not.toContain('<<outcome>>');
     expect(document.body.textContent).not.toContain('needs a shell<');
   });
 
-  it('keeps Returned to Auto at the end of a completed child', () => {
+  it('keeps Returned to the Lead at the end of a completed child', () => {
     const delegation = aDelegation({
       key: 'impl',
       role: 'implementer',
@@ -179,7 +179,7 @@ describe('the end of an Auto child page', () => {
     });
     show({ delegation, status: 'completed' });
 
-    screen.getByText('Returned to Auto');
+    screen.getByText('Returned to the Lead');
   });
 
   it.each([
@@ -228,14 +228,14 @@ describe('the end of an Auto child page', () => {
     },
   );
 
-  it('does not read Idle or Returned to Auto for a returned child that Auto replaced', () => {
+  it('does not read Idle or Returned to the Lead for a returned child that Auto replaced', () => {
     const delegation = {
       ...aDelegation({ key: 'scout', role: 'scout', state: 'settled', outcome: 'blocked' }),
       reason: 'declared_blocked',
     };
     show({ delegation, status: 'blocked', isReplaced: true });
 
-    expect(screen.queryByText(/Returned to Auto/)).toBeNull();
+    expect(screen.queryByText(/Returned to the Lead/)).toBeNull();
     expect(screen.queryByText('Idle')).toBeNull();
   });
 });

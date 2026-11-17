@@ -37,7 +37,7 @@ export const useAutoTreeCap = ({ sessionId, treeId }: Params): AutoTreeCapSave =
           onDriveError: (error) => {
             void reportError({
               recovery: CHECK_STATE,
-              title: "Auto didn't restart after the limit change",
+              title: "The Lead didn't restart after the limit change",
               error,
               sessionId,
             });

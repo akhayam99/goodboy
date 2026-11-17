@@ -108,7 +108,7 @@ export const AutoProjectAsk = ({ sessionId, rootAgentId, ask }: Props) => {
           await ensureProjectMounted({
             sessionId,
             projectId: pick.projectId,
-            reason: `Auto asked where the ${ask.roleNoun} should work`,
+            reason: `The Lead asked where the ${ask.roleNoun} should work`,
           });
         }
         await reply({

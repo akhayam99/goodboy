@@ -17,7 +17,7 @@ const REASON_TEXT: ReadonlyMap<string, string> = new Map([
   ['needs_shell', "It needs a command run, and it can't run one."],
   ['needs_writer', 'It needs files changed, and it only reads.'],
   ['needs_role', 'It needs another kind of agent for part of the work.'],
-  ['needs_decision', 'It needs Auto to choose before it goes on.'],
+  ['needs_decision', 'It needs the Lead to choose before it goes on.'],
   ['needs_user', 'It needs something only you can give.'],
   ['needs_dependency', 'It needs a dependency you allow.'],
   ['needs_protected_file', 'It needs a protected file changed, if you allow it.'],

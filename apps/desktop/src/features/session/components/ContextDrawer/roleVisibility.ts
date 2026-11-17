@@ -83,7 +83,7 @@ export const slotVisibility = ({ slot }: { readonly slot: SlotKey }): Visibility
     summary: left.length === 0 ? 'All roles' : `All roles except ${left.join(', ')}`,
     hasYou: false,
     chips,
-    note: slot === 'goal' ? 'Agents only.' : 'Agents only. Auto children read only their brief.',
+    note: slot === 'goal' ? 'Agents only.' : 'Agents only. Lead children read only their brief.',
   };
 };
 

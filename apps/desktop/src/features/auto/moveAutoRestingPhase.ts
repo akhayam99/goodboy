@@ -18,6 +18,6 @@ export const moveAutoRestingPhase = async ({
 }: Params): Promise<void> => {
   const isMoved = await moveRestingAutoTree({ db, treeId, from, to, nowMs });
   if (!isMoved) {
-    throw new Error('Auto is working again. Mark it finished once it rests.');
+    throw new Error('The Lead is working again. Mark it finished once it rests.');
   }
 };

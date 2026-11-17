@@ -108,7 +108,7 @@ describe('HelpStudio on the Guide', () => {
   it('lists chapters and points that match the search, and Enter opens the first and flashes its point', () => {
     render(<HelpStudio tab="guide" onClose={vi.fn()} onOpenScreen={vi.fn()} />);
 
-    fireEvent.change(search(), { target: { value: 'resolve with auto' } });
+    fireEvent.change(search(), { target: { value: 'resolve with the lead' } });
 
     const results = screen.getByRole('list', { name: 'Help results' });
 

@@ -11,7 +11,7 @@ describe('the notice of a refused hand over', () => {
         refusal: { action: 'delegate', code: 'mount_ambiguous', roles: ['implementer'] },
       }),
     ).toBe(
-      'Auto tried to start an Implementer. Not started: more than one folder fits and it did not say which. Auto is choosing again.',
+      'The Lead tried to start an Implementer. Not started: more than one folder fits and it did not say which. The Lead is choosing again.',
     );
   });
 
@@ -25,22 +25,22 @@ describe('the notice of a refused hand over', () => {
         },
       }),
     ).toContain(
-      'Auto tried to start Implementer and Tester. Not started: the conversation reached its limit',
+      'The Lead tried to start Implementer and Tester. Not started: the conversation reached its limit',
     );
     expect(
       refusalNoticeOf({ refusal: { action: 'block', code: 'spec_invalid', roles: [] } }),
-    ).toContain('Auto tried to start an agent. Not started: the request was not valid.');
+    ).toContain('The Lead tried to start an agent. Not started: the request was not valid.');
   });
 
   it('words a refused answer and a refused finish as what they are', () => {
     expect(
       refusalNoticeOf({ refusal: { action: 'answer', code: 'question_unknown', roles: [] } }),
     ).toBe(
-      "Auto's answer to an agent was not sent: it answered a question nobody asked. Auto is choosing again.",
+      "The Lead's answer to an agent was not sent: it answered a question nobody asked. The Lead is choosing again.",
     );
     expect(
       refusalNoticeOf({ refusal: { action: 'finish', code: 'tree_busy', roles: [] } }),
-    ).toContain('Auto tried to finish. Not finished: the conversation was busy.');
+    ).toContain('The Lead tried to finish. Not finished: the conversation was busy.');
   });
 
   it('has a user reason for every refusal code and survives an unknown one', () => {
@@ -66,7 +66,7 @@ describe('the notice of a refused hand over', () => {
     };
 
     expect(waitingTextOf({ view: aView({ phase: 'merging', pendingRefusal: mounted }) })).toBe(
-      'Auto is reading the results',
+      'The Lead is reading the results',
     );
     expect(
       waitingTextOf({ view: aView({ phase: 'waiting', pendingRefusal: mounted }) }),
@@ -77,7 +77,7 @@ describe('the notice of a refused hand over', () => {
     expect(
       refusalNoticeOf({ refusal: { action: 'mount', code: 'mount_elsewhere', roles: [] } }),
     ).toBe(
-      'Auto tried to add a project. Not added: that project is already added on another branch. Auto is choosing again.',
+      'The Lead tried to add a project. Not added: that project is already added on another branch. The Lead is choosing again.',
     );
   });
 
@@ -88,7 +88,7 @@ describe('the notice of a refused hand over', () => {
       refusalNoticeOf({ refusal }),
     );
     expect(waitingTextOf({ view: aView({ phase: 'merging' }) })).toBe(
-      'Auto is reading the results',
+      'The Lead is reading the results',
     );
     expect(waitingTextOf({ view: aView({ phase: 'deciding', pendingRefusal: refusal }) })).toBe(
       'Deciding what to do next',

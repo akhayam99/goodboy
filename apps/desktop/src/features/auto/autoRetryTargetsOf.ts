@@ -7,6 +7,7 @@ import { autoStuckKindOf, type AutoStuckKind } from './autoStuckKindOf';
 import { textField } from './chat/readJson';
 import { isAutoPausedAtLimit } from './isAutoPausedAtLimit';
 import { isAutoPlanAwaitingApproval } from './isAutoPlanAwaitingApproval';
+import { NAMES } from '../../shared/utils/names';
 
 type AutoRetryTargetKind = AutoStuckKind | 'approve' | 'blocked';
 
@@ -93,8 +94,8 @@ type OwnParams = ViewParams & {
 const ownTargetOf = ({ view, kind }: OwnParams): AutoRetryTarget => ({
   agentId: view.tree.rootAgentId,
   rootAgentId: view.tree.rootAgentId,
-  role: 'Auto',
-  noun: 'Auto',
+  role: NAMES.lead,
+  noun: NAMES.lead,
   kind,
   reason: null,
   reasonCode: null,

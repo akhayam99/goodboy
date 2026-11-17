@@ -86,7 +86,7 @@ describe('Auto rests and only the user finishes it', () => {
     expect(await treeOf(world)).toMatchObject({ phase: 'deciding' });
 
     await expect(move({ world, from: 'answering', to: 'finished' })).rejects.toThrow(
-      'Auto is working again. Mark it finished once it rests.',
+      'The Lead is working again. Mark it finished once it rests.',
     );
     expect(await treeOf(world)).toMatchObject({ phase: 'deciding' });
   });

@@ -308,7 +308,7 @@ describe('approving an Auto plan, on the real store and database', () => {
     );
     expect(screen.queryByText(/Auto did not hear it/)).toBeNull();
     expect(reportError).not.toHaveBeenCalledWith(
-      expect.objectContaining({ title: "The plan is approved, but Auto wasn't told" }),
+      expect.objectContaining({ title: "The plan is approved, but the Lead wasn't told" }),
     );
   });
 

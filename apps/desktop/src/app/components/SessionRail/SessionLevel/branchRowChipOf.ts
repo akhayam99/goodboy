@@ -49,12 +49,12 @@ type FilesParams = {
 const autoReasonOf = ({ files }: FilesParams): string => {
   const [only] = files;
   if (files.length === 1 && only !== undefined) {
-    return `Auto resolves 1 file: ${only}`;
+    return `The Lead resolves 1 file: ${only}`;
   }
   if (files.length > 1) {
-    return `Auto resolves ${files.length} files`;
+    return `The Lead resolves ${files.length} files`;
   }
-  return 'Auto resolves it';
+  return 'The Lead resolves it';
 };
 
 const autoChipOf = ({
@@ -67,7 +67,7 @@ const autoChipOf = ({
     return {
       kind: 'autoResolving',
       tone: 'primary',
-      text: 'Auto resolving',
+      text: 'Lead resolving',
       reason: autoReasonOf({ files: conflictFiles }),
       isBreathing: true,
       icon: 'auto',
@@ -78,7 +78,7 @@ const autoChipOf = ({
       kind: 'conflict',
       tone: 'danger',
       text: 'Rebase stopped',
-      reason: 'Waiting for Auto',
+      reason: 'Waiting for the Lead',
       isBreathing: false,
       icon: null,
     };
@@ -89,7 +89,7 @@ const autoChipOf = ({
   return {
     kind: 'rebasedByAuto',
     tone: 'success',
-    text: 'Rebased by Auto',
+    text: 'Rebased by the Lead',
     reason: null,
     isBreathing: false,
     icon: 'auto',

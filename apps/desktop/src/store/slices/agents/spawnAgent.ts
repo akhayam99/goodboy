@@ -89,7 +89,7 @@ const NO_ALLOWED_MODEL_TITLE = 'No model is allowed for this agent';
 const NO_ALLOWED_MODEL_MESSAGE =
   'Every model this agent could use is hidden. Show a model in Settings, or pick one for this agent by hand.';
 
-const AUTO_PROVIDER_TITLE = "Auto can't run on this provider";
+const AUTO_PROVIDER_TITLE = "The Lead can't run on this provider";
 const AUTO_PROVIDER_MESSAGE =
   'Auto only reads, and this provider cannot confine a read-only agent yet. Pick Claude, Codex, Cursor or Gemini for Auto.';
 

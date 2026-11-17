@@ -7,7 +7,7 @@ type Props = {
   readonly error: string;
 };
 
-const PROVIDER_MISSING = 'Connect Claude, Codex, Cursor or Gemini to use Auto.';
+const PROVIDER_MISSING = 'Connect Claude, Codex, Cursor or Gemini to use the Lead.';
 
 export const StartFailure = ({ error }: Props) => {
   const copy = useCopyText();

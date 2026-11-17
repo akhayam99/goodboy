@@ -29,7 +29,7 @@ describe('branchRowChipOf during a Rebase all', () => {
     });
   });
 
-  it('says Auto resolving with the file when one file is left', () => {
+  it('says Lead resolving with the file when one file is left', () => {
     const chip = branchRowChipOf({
       ...BASE,
       rebase: branchOf({ state: 'auto' }),
@@ -38,10 +38,10 @@ describe('branchRowChipOf during a Rebase all', () => {
     });
 
     expect(chip).toMatchObject({
-      text: 'Auto resolving',
+      text: 'Lead resolving',
       icon: 'auto',
       isBreathing: true,
-      reason: 'Auto resolves 1 file: src/retry/backoff.ts',
+      reason: 'The Lead resolves 1 file: src/retry/backoff.ts',
     });
   });
 
@@ -53,23 +53,23 @@ describe('branchRowChipOf during a Rebase all', () => {
       conflictFiles: ['src/a.ts', 'src/b.ts'],
     });
 
-    expect(chip?.reason).toBe('Auto resolves 2 files');
+    expect(chip?.reason).toBe('The Lead resolves 2 files');
   });
 
   it('says Conflict while Auto has not started on it', () => {
     expect(branchRowChipOf({ ...BASE, rebase: branchOf({ state: 'auto' }) })).toMatchObject({
       text: 'Rebase stopped',
       tone: 'danger',
-      reason: 'Waiting for Auto',
+      reason: 'Waiting for the Lead',
       isBreathing: false,
     });
   });
 
-  it('says Rebased by Auto until the batch settles, then nothing', () => {
+  it('says Rebased by the Lead until the batch settles, then nothing', () => {
     const rebase = branchOf({ state: 'auto' });
 
     expect(branchRowChipOf({ ...BASE, rebase, isSettled: true })).toMatchObject({
-      text: 'Rebased by Auto',
+      text: 'Rebased by the Lead',
       icon: 'auto',
       isBreathing: false,
     });

@@ -16,8 +16,8 @@ export const PROJECT_ASK_KIND: ObjectKindDefinition<ProjectAskActionTarget, Proj
       label: NAMES.decline,
       icon: X,
       group: 'act',
-      description: () => 'Tells Auto to start nothing',
-      blockedReason: ({ facts }) => (facts.isBusy ? 'Auto is taking your answer' : null),
+      description: () => 'Tells the Lead to start nothing',
+      blockedReason: ({ facts }) => (facts.isBusy ? 'The Lead is taking your answer' : null),
       when: () => true,
       run: ({ facts }) => {
         if (facts.isBusy) {

@@ -99,7 +99,7 @@ const blocked = ({ view }: ViewParams): TailFacts => {
   }
   return {
     state: 'failed',
-    phrase: reason === null || reason === '' ? "Auto couldn't reply" : reason,
+    phrase: reason === null || reason === '' ? "The Lead couldn't reply" : reason,
     startedAt: null,
     actions: [TAIL_ACTION.retry, TAIL_ACTION.viewTranscript, ...stopOf({ view })],
   };
