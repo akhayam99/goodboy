@@ -33,6 +33,11 @@ export const LeadDetailsDrawer = ({ sessionId, workspaceId, treeId, onClose }: P
         </p>
       ) : (
         <div data-lead-details="" className="flex min-w-0 flex-col gap-6">
+          {model.readError === null ? null : (
+            <p role="alert" className="text-meta text-danger">
+              {model.readError}
+            </p>
+          )}
           <LeadLevelRow
             permissions={permissions}
             error={model.levelError}

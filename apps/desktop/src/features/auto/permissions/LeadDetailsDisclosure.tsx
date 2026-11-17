@@ -23,7 +23,7 @@ export const LeadDetailsDisclosure = ({ model }: Props) => {
         </span>
       }
     >
-      <div className="flex min-w-0 flex-col pt-3 pb-2">
+      <div className="flex min-w-0 flex-col gap-3 pt-3 pb-2">
         {permissions === null ? (
           <p
             role={model.readError === null ? 'status' : 'alert'}
@@ -32,12 +32,19 @@ export const LeadDetailsDisclosure = ({ model }: Props) => {
             {model.readError ?? 'Reading the details.'}
           </p>
         ) : (
-          <LeadPermissionsPanel
-            permissions={permissions}
-            rowErrors={model.rowErrors}
-            isDisabled={model.isBusy}
-            onChange={({ key, value }) => void model.change({ key, value })}
-          />
+          <>
+            {model.readError === null ? null : (
+              <p role="alert" className="text-meta text-danger">
+                {model.readError}
+              </p>
+            )}
+            <LeadPermissionsPanel
+              permissions={permissions}
+              rowErrors={model.rowErrors}
+              isDisabled={model.isBusy}
+              onChange={({ key, value }) => void model.change({ key, value })}
+            />
+          </>
         )}
       </div>
     </Disclosure>
