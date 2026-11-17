@@ -3,6 +3,7 @@ import { formatError } from '@goodboy/ui';
 import type { AutoLevel } from '@goodboy/core/auto';
 import type {
   ClaudePermissionMode,
+  MountId,
   Session,
   SessionId,
   Workflow,
@@ -58,8 +59,18 @@ type Params = {
   readonly settleLimit: () => void;
   readonly mount?: SessionDraftMount | null;
   readonly role?: AgentKind | null;
+  readonly seedText?: string;
+  readonly seedBranch?: string | null;
+  readonly sources?: StartRunSources | null;
   readonly onStarted?: () => void;
+  readonly onLaunched?: () => void;
 };
+
+export type StartRunSources = Readonly<{
+  threadIds: ReadonlyArray<string>;
+  mountId: MountId | null;
+  quote: string;
+}>;
 
 export type StartRunModel = Readonly<{
   text: string;
@@ -172,9 +183,13 @@ export const useStartRun = ({
   settleLimit,
   mount = null,
   role = null,
+  seedText = '',
+  seedBranch = null,
+  sources = null,
   onStarted,
+  onLaunched,
 }: Params): StartRunModel => {
-  const [localText, setLocalText] = useState('');
+  const [localText, setLocalText] = useState(seedText);
   const draftText = useAppStore((state) =>
     sessionId === null ? selectSessionDraft({ state, workspaceId }).workflowGoal : '',
   );
@@ -199,7 +214,7 @@ export const useStartRun = ({
     setLocalText('');
   }, [discardSessionDraft, sessionId, workspaceId]);
   const [file, setFile] = useState<StartRunFile | null>(null);
-  const [branch, setBranch] = useState<string | null>(null);
+  const [branch, setBranch] = useState<string | null>(seedBranch);
   const [isStarting, setIsStarting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [runAs, setRunAs] = useState<RunAs>(AUTO_RUN_AS);
@@ -443,11 +458,17 @@ export const useStartRun = ({
               limit,
               ...(guidanceNow !== null && { guidance: guidanceNow }),
               ...pinned,
+              ...(sources !== null && {
+                sourceThreadIds: sources.threadIds,
+                sourceMountId: sources.mountId,
+                findings: sources.quote,
+              }),
             }),
           ));
       if (sessionId === null) {
         rememberLastStart({ workspaceId, last: 'auto' });
       }
+      onLaunched?.();
       if (claim.isCurrent()) {
         clearAsked({ asked });
         setFile((current) => (current === file ? null : current));
@@ -479,6 +500,7 @@ export const useStartRun = ({
     clearModel,
     file,
     mount,
+    onLaunched,
     onStarted,
     pickedLevel,
     pickedEdits,
@@ -490,6 +512,7 @@ export const useStartRun = ({
     sessionId,
     settleLimit,
     setStagedFiles,
+    sources,
     stagedFiles,
     startFromDraft,
     text,
