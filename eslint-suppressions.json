@@ -1998,11 +1998,6 @@
       "count": 8
     }
   },
-  "apps/desktop/src/features/bug-report/components/ReportSheetHost.tsx": {
-    "@typescript-eslint/naming-convention": {
-      "count": 1
-    }
-  },
   "apps/desktop/src/features/bug-report/crashReport.ts": {
     "@typescript-eslint/naming-convention": {
       "count": 1
