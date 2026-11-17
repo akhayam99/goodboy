@@ -53,7 +53,7 @@ export const BrowserView = ({
           <EmptyState
             icon={CONCEPT_ICONS.browser}
             title="No page open"
-            description="A localhost address opens your dev server."
+            description="Type an address, or open a link from a run."
             action={
               onNew === undefined ? undefined : (
                 <Button size="sm" onClick={onNew}>
