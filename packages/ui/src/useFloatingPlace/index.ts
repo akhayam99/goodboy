@@ -18,6 +18,7 @@ type Params = {
   readonly alignment?: FloatingAlign;
   readonly clearOf?: HTMLElement | null;
   readonly contentKey?: string | number;
+  readonly crossInset?: number;
 };
 
 type SameParams = {
@@ -70,6 +71,7 @@ export const useFloatingPlace = ({
   alignment = 'center',
   clearOf = null,
   contentKey,
+  crossInset,
 }: Params): FloatingCoords | null => {
   const [place, setPlace] = useState<FloatingCoords | null>(null);
 
@@ -85,9 +87,9 @@ export const useFloatingPlace = ({
       gap,
       edge,
       alignment,
-      crossInset: alignment === 'start' ? gap : 0,
+      crossInset: crossInset ?? (alignment === 'start' ? gap : 0),
     });
-  }, [anchor, tipRef, isActive, clearOf, side, gap, edge, alignment]);
+  }, [anchor, tipRef, isActive, clearOf, side, gap, edge, alignment, crossInset]);
 
   const remeasure = useCallback(() => {
     const next = measure();
