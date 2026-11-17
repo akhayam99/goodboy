@@ -513,6 +513,33 @@ describe('StoragePage', () => {
     expect(state.keepStorageArtifact).toHaveBeenCalledWith({ id: openedReport.id, days: 30 });
   });
 
+  it('holds the artifact row while it keeps and reports a refused keep', async () => {
+    let fail: (error: Error) => void = () => undefined;
+    state.keepStorageArtifact.mockImplementationOnce(
+      () =>
+        new Promise<undefined>((_resolve, reject) => {
+          fail = reject;
+        }),
+    );
+    render(<StoragePage />);
+    const row = screen.getAllByTestId('storage-artifact-row')[1];
+
+    fireEvent.click(within(row!).getByRole('button', { name: 'Keep' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: 'For 30 days' }));
+    const keep = within(row!).getByRole('button', { name: 'Keep' });
+    expect(keep.hasAttribute('disabled')).toBe(true);
+    expect(within(row!).getByRole('button', { name: 'Delete' }).hasAttribute('disabled')).toBe(
+      true,
+    );
+
+    fail(new Error('database is locked'));
+    await waitFor(() => expect(keep.hasAttribute('disabled')).toBe(false));
+    expect(state.keepStorageArtifact).toHaveBeenCalledOnce();
+    expect(state.reportError).toHaveBeenCalledWith(
+      expect.objectContaining({ title: "Couldn't keep this artifact" }),
+    );
+  });
+
   it('asks in a popover before deleting one artifact with its copy and its record', () => {
     render(<StoragePage />);
     const row = screen.getAllByTestId('storage-artifact-row')[2];
