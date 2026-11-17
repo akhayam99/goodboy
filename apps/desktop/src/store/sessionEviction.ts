@@ -352,6 +352,7 @@ export const NON_SESSION_STATE_KEYS = [
   'navigation',
   'appStudio',
   'lastSettingsFocus',
+  'sessionsCardPhase',
   'lastChatByWorkspace',
   'terminalNames',
   'terminalOrdinals',

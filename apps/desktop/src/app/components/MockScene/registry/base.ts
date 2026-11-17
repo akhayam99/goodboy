@@ -109,6 +109,7 @@ import { SessionStatesScene } from '../scenes/audit/SessionStatesScene';
 import { SessionHoverScene } from '../scenes/sessions/SessionHoverScene';
 import { SessionSwitcherScene } from '../scenes/sessions/SessionSwitcherScene';
 import { SessionsMenuScene } from '../scenes/sessions/SessionsMenuScene';
+import { SessionsCardScene } from '../scenes/sessions/SessionsCardScene';
 import { SessionsPopoverScene } from '../scenes/sessions/SessionsPopoverScene';
 import { FeaturesStartTabsScene } from '../scenes/features/StartTabsScene';
 import { FeaturesReviewPushConfirmScene } from '../scenes/features/ReviewPushConfirmScene';
@@ -427,6 +428,7 @@ export const BASE_SCENES = {
   'session-states': SessionStatesScene,
   'sessions-menu': SessionsMenuScene,
   'sessions-popover': SessionsPopoverScene,
+  'sessions-card': SessionsCardScene,
   'session-hover': SessionHoverScene,
   'session-switcher': SessionSwitcherScene,
   'session-start': SessionStartScene,

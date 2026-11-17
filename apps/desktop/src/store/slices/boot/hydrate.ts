@@ -118,7 +118,9 @@ const readBootSettings = async ({
     hydrateOnboardingFromDb(),
     get().hydrateBootstrapPhases(),
     get().hydrateFolderPurposes(),
-    get().hydrateChangelogSeen(),
+    get()
+      .hydrateChangelogSeen()
+      .then(() => get().hydrateSessionsCard()),
     get().hydrateCliRequirements(),
   ]);
   set((state) => {
