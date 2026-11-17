@@ -95,7 +95,7 @@ export const RunsStartForm = ({
     run.setRunAs(runAsOfStartFormKind({ kind: next, presets }));
   };
   const note =
-    isPinned || (isRouting && hasText) ? null : startFormNoteOf({ kind, workflow, closeness });
+    isPinned || shownHint !== null ? null : startFormNoteOf({ kind, workflow, closeness });
 
   const settings = startSettingItemsOf({
     kind,
