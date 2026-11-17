@@ -84,6 +84,6 @@ Learn how Goodboy works in short chapters, one per page with Previous and Next. 
 
 **Also in this area**
 
-| Feature     | What it does for you                 |
-| ----------- | ------------------------------------ |
-| Update pill | A quiet pill when an update is ready |
+| Feature     | What it does for you                                         |
+| ----------- | ------------------------------------------------------------ |
+| Update mark | A quiet mark at the foot of the rail when an update is ready |
