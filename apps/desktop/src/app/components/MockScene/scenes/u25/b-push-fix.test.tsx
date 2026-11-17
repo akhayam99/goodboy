@@ -60,11 +60,16 @@ describe('the u25 push fix scenes', () => {
     expect(document.querySelector('[data-rebase-conflict]')).toBeNull();
   });
 
-  it('shows the agent fixing and hides the failure actions', async () => {
+  it('turns the same panel into the card of the fix, with Stop and no Retry push', async () => {
     await renderScene({ name: 'push-fixing' });
 
-    expect(screen.getByText('Rebased, fixing the push')).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Open agent' })).toBeDefined();
-    expect(screen.queryByRole('button', { name: 'Fix with an agent' })).toBeNull();
+    const panel = within(screen.getByRole('region', { name: 'Rebase' }));
+    panel.getByText('Rebased, fixing the push');
+    panel.getByText('Fixing');
+    panel.getByRole('button', { name: 'Stop' });
+    panel.getByRole('button', { name: 'Open transcript' });
+    expect(panel.queryByRole('button', { name: 'Retry push' })).toBeNull();
+    expect(panel.queryByRole('button', { name: 'Fix with an agent' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Open agent' })).toBeNull();
   });
 });

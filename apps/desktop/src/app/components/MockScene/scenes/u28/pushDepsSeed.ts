@@ -1,4 +1,10 @@
-import { brandId, type Agent, type AgentId } from '@goodboy/types';
+import {
+  brandId,
+  type Agent,
+  type AgentId,
+  type ProviderRunId,
+  type TurnEvent,
+} from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
 import type { PushFixOutcome } from '../../../../../store/slices/history/types';
 import type { WorktreeDepsCheck } from '../../../../../shared/lib/worktreeDepsCheck';
@@ -10,7 +16,13 @@ import { FIX_RUN_MOUNT, MOUNT_TARGET, SESSION, seedResolveScene } from '../resol
 const clock = sceneClock({ anchor: '2026-10-28T10:20:00.000Z' });
 
 export type PushDepsVariant =
-  'working' | 'pushed' | 'agent-failed' | 'push-failed' | 'deps-linked' | 'deps-installing';
+  | 'working'
+  | 'pushed'
+  | 'agent-failed'
+  | 'stopped'
+  | 'push-failed'
+  | 'deps-linked'
+  | 'deps-installing';
 
 type Params = {
   readonly variant: PushDepsVariant;
@@ -41,16 +53,42 @@ type CheckParams = {
 const checkOf = ({ hasStaleDeps }: CheckParams): WorktreeDepsCheck =>
   hasStaleDeps ? LINKED : READY;
 
+const STATUS_OF: Readonly<Partial<Record<PushDepsVariant, Agent['status']>>> = {
+  working: 'running',
+  'agent-failed': 'failed',
+  stopped: 'stopped',
+};
+
 const agentOf = ({ variant }: Params): Agent => ({
   id: AGENT_ID,
   sessionId: SESSION.id,
   ordinal: 4,
   name: 'Fix the push',
-  status: variant === 'working' ? 'running' : variant === 'agent-failed' ? 'failed' : 'completed',
+  status: STATUS_OF[variant] ?? 'completed',
   kind: 'implementer',
   mountId: MOUNT_TARGET.mountId,
   startedAt: clock.iso({ at: '2026-10-28T10:02:00.000Z' }),
 });
+
+const RUN_ID = brandId<ProviderRunId>({ value: 'mock-push-fix-run' });
+const STEP_AT = clock.iso({ at: '2026-10-28T10:03:00.000Z' });
+
+const WORKING_TRANSCRIPT: ReadonlyArray<TurnEvent> = [
+  {
+    kind: 'assistant_text',
+    runId: RUN_ID,
+    delta: 'The hook fails on a type error in postings.ts.',
+    at: STEP_AT,
+  },
+  {
+    kind: 'tool_call_start',
+    runId: RUN_ID,
+    toolUseId: 'mock-push-typecheck',
+    toolName: 'Bash',
+    input: { command: 'pnpm typecheck' },
+    at: STEP_AT,
+  },
+];
 
 const outcomeOf = ({ variant }: Params): PushFixOutcome | null => {
   const base = {
@@ -76,6 +114,14 @@ const outcomeOf = ({ variant }: Params): PushFixOutcome | null => {
       followUp: null,
     };
   }
+  if (variant === 'stopped') {
+    return {
+      ...base,
+      kind: 'agent_stopped',
+      reason: 'The agent was stopped before it finished.',
+      followUp: null,
+    };
+  }
   if (variant === 'push-failed') {
     return {
       ...base,
@@ -94,6 +140,10 @@ export const pushDepsSeed = ({ variant }: Params): void => {
   useAppStore.setState((state) => ({
     sessionProjectMounts: { ...state.sessionProjectMounts, [SESSION.id]: [FIX_RUN_MOUNT] },
     sessionPhaseRuns: { ...state.sessionPhaseRuns, [SESSION.id]: [agentOf({ variant })] },
+    transcripts:
+      variant === 'working'
+        ? { ...state.transcripts, [AGENT_ID]: WORKING_TRANSCRIPT }
+        : state.transcripts,
     branchPushFixes:
       variant === 'working'
         ? {

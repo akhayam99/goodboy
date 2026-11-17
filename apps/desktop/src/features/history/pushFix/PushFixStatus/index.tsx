@@ -1,7 +1,7 @@
 import type { MountId, SessionId } from '@goodboy/types';
-import { useAppStore } from '../../../store';
-import type { PushContinuation } from '../../../store/slices/history/types';
-import { usePushFix } from '../../hooks/usePushFix';
+import { useAppStore } from '../../../../store';
+import type { PushContinuation } from '../../../../store/slices/history/types';
+import { usePushFix } from '../../../../shared/hooks/usePushFix';
 import { PushFixStatusLine } from '../PushFixStatusLine';
 
 type Props = {
@@ -16,7 +16,7 @@ export const PushFixStatus = ({ sessionId, mountId, onSettled }: Props) => {
     return null;
   }
   return (
-    <div className="flex min-w-0 flex-wrap items-center gap-2 rounded-lg bg-subtle px-4 py-2 text-meta">
+    <div className="flex min-w-0 flex-col rounded-lg bg-subtle px-4 py-2">
       <PushFixStatusLine
         sessionId={sessionId}
         state={state}

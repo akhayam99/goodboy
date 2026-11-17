@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { Button, formatError } from '@goodboy/ui';
 import type { MountId, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
-import { PushFixStatusLine } from '../../../../../shared/components/PushFixStatusLine';
 import { usePushFix } from '../../../../../shared/hooks/usePushFix';
 import { NAMES } from '../../../../../shared/utils/names';
 import { captureStartHint } from '../../../../../store/slices/startHints/captureStartHint';
@@ -86,13 +85,13 @@ export const PushFailureActions = ({
       setIsOpening(false);
     }
   };
-  const isWorking = fix.kind === 'working';
+  if (fix.kind === 'working') {
+    return null;
+  }
+  const isRetry = fix.kind === 'failed' || fix.kind === 'stopped';
   return (
     <div className="flex max-w-sm flex-wrap items-center gap-2">
-      {fix.kind !== 'none' && fix.kind !== 'pushed' && (
-        <PushFixStatusLine sessionId={sessionId} state={fix} />
-      )}
-      {!isWorking && recheck.check !== null && (
+      {recheck.check !== null && (
         <OriginCheckAsk
           check={recheck.check}
           phase={recheck.phase}
@@ -100,7 +99,7 @@ export const PushFailureActions = ({
           onRebase={() => void recheck.rebase()}
         />
       )}
-      {!isWorking && recheck.check === null && (
+      {recheck.check === null && (
         <>
           {isOriginMoved && (
             <Button
@@ -118,7 +117,7 @@ export const PushFailureActions = ({
             isBusy={isFixing}
             onClick={() => void fixWithAgent()}
           >
-            {NAMES.fixPushWithAgent}
+            {isRetry ? NAMES.retry : NAMES.fixPushWithAgent}
           </Button>
           <Button size="sm" variant="ghost" isBusy={isOpening} onClick={() => void openTerminal()}>
             Open terminal here

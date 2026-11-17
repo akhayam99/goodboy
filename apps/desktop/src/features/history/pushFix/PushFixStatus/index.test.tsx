@@ -1,28 +1,28 @@
 // @vitest-environment happy-dom
 
 vi.mock('@tauri-apps/api/core', async () =>
-  (await import('../../../store/storyHarness')).tauriCoreModuleMock(),
+  (await import('../../../../store/storyHarness')).tauriCoreModuleMock(),
 );
 vi.mock('@tauri-apps/api/event', async () =>
-  (await import('../../../store/storyHarness')).tauriEventModuleMock(),
+  (await import('../../../../store/storyHarness')).tauriEventModuleMock(),
 );
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { brandId, type AgentId } from '@goodboy/types';
 import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
   resetStoryStore,
   type StoryStore,
-} from '../../../store/storyHarness';
+} from '../../../../store/storyHarness';
 import {
   FIX_RUN_MOUNT,
   MOUNT_TARGET,
   SESSION,
   seedResolveScene,
-} from '../../../app/components/MockScene/scenes/resolveSeed';
-import type { PushFixOutcome } from '../../../store/slices/history/types';
+} from '../../../../app/components/MockScene/scenes/resolveSeed';
+import type { PushFixOutcome } from '../../../../store/slices/history/types';
 import { PushFixAgentAction } from '../PushFixAgentAction';
 import { PushFixStatus } from './index';
 
@@ -41,7 +41,7 @@ afterEach(cleanup);
 
 const AGENT_ID = brandId<AgentId>({ value: 'agent-push-fixer' });
 
-type AgentStatus = 'running' | 'completed' | 'failed';
+type AgentStatus = 'running' | 'completed' | 'failed' | 'stopped';
 
 type SeedAgentParams = {
   readonly status: AgentStatus;
@@ -67,6 +67,28 @@ const seedFixAgent = ({ status }: SeedAgentParams): void => {
   });
 };
 
+const seedTrackedFix = (): void =>
+  store.setState({
+    branchPushFixes: {
+      [AGENT_ID]: {
+        agentId: AGENT_ID,
+        sessionId: SESSION.id,
+        mountId: MOUNT_TARGET.mountId,
+        identity: {
+          worktreePath: FIX_RUN_MOUNT.worktreePath,
+          branch: FIX_RUN_MOUNT.branch,
+          projectId: FIX_RUN_MOUNT.projectId,
+        },
+        isForce: false,
+        confirmedOnlyOnline: null,
+        confirmedRemoteSha: null,
+        startedAt: 1,
+      },
+    },
+    sessionProjectMounts: { [SESSION.id]: [FIX_RUN_MOUNT] },
+    reportError: vi.fn(async () => undefined),
+  });
+
 const outcome = (overrides: Partial<PushFixOutcome>): PushFixOutcome => ({
   agentId: AGENT_ID,
   sessionId: SESSION.id,
@@ -90,6 +112,14 @@ const status = (onSettled?: () => void) => (
   />
 );
 
+const workLine = (): HTMLElement => {
+  const line = document.querySelector<HTMLElement>('[data-item-work]');
+  if (line === null) {
+    throw new Error('No work line');
+  }
+  return line;
+};
+
 describe('PushFixStatus after the card was left and came back', () => {
   it('shows nothing when no fix ever ran on that branch', () => {
     const { container } = render(status());
@@ -101,26 +131,41 @@ describe('PushFixStatus after the card was left and came back', () => {
     seedFixAgent({ status: 'running' });
 
     const first = render(status());
-    screen.getByText('An agent is fixing the push');
+    expect(workLine().dataset.itemWorkState).toBe('fixing');
     first.unmount();
     render(status());
 
-    screen.getByText('An agent is fixing the push');
-    screen.getByRole('button', { name: 'Open the agent' });
+    within(screen.getByRole('status')).getByText('Fixing');
+    screen.getByRole('button', { name: 'Stop' });
+    screen.getByRole('button', { name: 'Open transcript' });
     expect(screen.queryByRole('button', { name: 'Dismiss' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Retry' })).toBeNull();
   });
 
-  it('opens the fix agent of that branch', () => {
+  it('opens the transcript of the fix agent of that branch', () => {
     seedFixAgent({ status: 'running' });
-    const navigate = vi.fn();
-    store.setState({ navigate });
+    const openDrawer = vi.fn();
+    store.setState({ openDrawer });
     render(status());
 
-    fireEvent.click(screen.getByRole('button', { name: 'Open the agent' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Open transcript' }));
 
-    expect(navigate).toHaveBeenCalledWith({
-      to: expect.objectContaining({ agentId: AGENT_ID, sessionId: SESSION.id }),
+    expect(openDrawer).toHaveBeenCalledWith({
+      kind: 'transcript',
+      sessionId: SESSION.id,
+      payload: { agentId: AGENT_ID },
     });
+  });
+
+  it('stops the fix agent from the card', () => {
+    seedFixAgent({ status: 'running' });
+    const cancelCurrentTurn = vi.fn(async () => undefined);
+    store.setState({ cancelCurrentTurn });
+    render(status());
+
+    fireEvent.click(screen.getByRole('button', { name: 'Stop' }));
+
+    expect(cancelCurrentTurn).toHaveBeenCalledWith(SESSION.id, AGENT_ID, 'user');
   });
 
   it('shows the pushed fix and what the waiting action did, then lets you dismiss it', () => {
@@ -131,21 +176,37 @@ describe('PushFixStatus after the card was left and came back', () => {
     first.unmount();
     render(status());
 
-    screen.getByText("The agent's fix is pushed. Pull request #318 is open.");
+    const line = screen.getByRole('status');
+    within(line).getByText('Pushed');
+    within(line).getByText('Pull request #318 is open.');
     fireEvent.click(screen.getByRole('button', { name: 'Dismiss' }));
     expect(store.getState().pushFixOutcomes[MOUNT_TARGET.mountId]).toBeUndefined();
-    expect(screen.queryByText(/The agent's fix is pushed/)).toBeNull();
+    expect(screen.queryByText('Pushed')).toBeNull();
   });
 
-  it('says the agent did not finish and why', () => {
+  it('says the agent failed and why', () => {
     seedFixAgent({ status: 'failed' });
+    seedOutcome(outcome({ kind: 'agent_failed', reason: 'The provider is offline.' }));
+
+    render(status());
+
+    const alert = screen.getByRole('alert');
+    within(alert).getByText('Failed');
+    within(alert).getByText('The provider is offline.');
+  });
+
+  it('says a fix you stopped is stopped, with what stays on the branch', () => {
+    seedFixAgent({ status: 'stopped' });
     seedOutcome(
-      outcome({ kind: 'agent_failed', reason: 'The agent was stopped before it finished.' }),
+      outcome({ kind: 'agent_stopped', reason: 'The agent was stopped before it finished.' }),
     );
 
     render(status());
 
-    expect(screen.getByRole('alert').textContent).toBe('The agent was stopped before it finished.');
+    const line = screen.getByRole('status');
+    within(line).getByText('Stopped');
+    within(line).getByText('Nothing was pushed; its edits stay on the branch.');
+    expect(screen.queryByRole('alert')).toBeNull();
   });
 
   it('says which check stopped the push after the fix', () => {
@@ -153,7 +214,7 @@ describe('PushFixStatus after the card was left and came back', () => {
 
     render(status());
 
-    expect(screen.getByRole('alert').textContent).toBe(
+    within(screen.getByRole('alert')).getByText(
       "The fix couldn't be pushed: pre-push: yarn knip --cache failed.",
     );
   });
@@ -165,8 +226,8 @@ describe('PushFixStatus after the card was left and came back', () => {
 
     render(status());
 
-    expect(screen.getByRole('alert').textContent).toBe(
-      "The agent's fix is pushed. The pull request was not created.",
+    within(screen.getByRole('alert')).getByText(
+      'The fix is pushed. The pull request was not created.',
     );
   });
 
@@ -189,7 +250,7 @@ describe('PushFixStatus after the card was left and came back', () => {
       tone: 'done',
       sentence: 'Nothing else is waiting.',
     });
-    screen.getByText("The agent's fix is pushed. Nothing else is waiting.");
+    screen.getByText('Nothing else is waiting.');
   });
 });
 
@@ -262,27 +323,8 @@ describe('the claim on a pushed fix while the waiting action continues', () => {
 describe('the push fix across a leave and return, through the real store', () => {
   it('shows the agent working, then the pushed fix, on a card mounted after the agent settled', async () => {
     seedFixAgent({ status: 'running' });
-    store.setState({
-      branchPushFixes: {
-        [AGENT_ID]: {
-          agentId: AGENT_ID,
-          sessionId: SESSION.id,
-          mountId: MOUNT_TARGET.mountId,
-          identity: {
-            worktreePath: FIX_RUN_MOUNT.worktreePath,
-            branch: FIX_RUN_MOUNT.branch,
-            projectId: FIX_RUN_MOUNT.projectId,
-          },
-          isForce: false,
-          confirmedOnlyOnline: null,
-          confirmedRemoteSha: null,
-          startedAt: 1,
-        },
-      },
-      sessionProjectMounts: { [SESSION.id]: [FIX_RUN_MOUNT] },
-      pushBranch: vi.fn(async () => ({ ok: true as const })),
-      reportError: vi.fn(async () => undefined),
-    });
+    seedTrackedFix();
+    store.setState({ pushBranch: vi.fn(async () => ({ ok: true as const })) });
     const onSettled = vi.fn();
 
     const card = render(
@@ -293,7 +335,8 @@ describe('the push fix across a leave and return, through the real store', () =>
         onSettled={onSettled}
       />,
     );
-    screen.getByText('An agent is fixing the push');
+    within(screen.getByRole('status')).getByText('Fixing');
+    expect(screen.queryByRole('button', { name: 'Fix with an agent' })).toBeNull();
     card.unmount();
 
     seedFixAgent({ status: 'completed' });
@@ -309,31 +352,12 @@ describe('the push fix across a leave and return, through the real store', () =>
 
     render(status());
 
-    screen.getByText("The agent's fix is pushed.");
+    within(screen.getByRole('status')).getByText('Pushed');
   });
 
-  it('shows why the agent stopped on a card mounted after it was stopped', async () => {
+  it('shows why the agent failed on a card mounted after it settled, with Retry', async () => {
     seedFixAgent({ status: 'running' });
-    store.setState({
-      branchPushFixes: {
-        [AGENT_ID]: {
-          agentId: AGENT_ID,
-          sessionId: SESSION.id,
-          mountId: MOUNT_TARGET.mountId,
-          identity: {
-            worktreePath: FIX_RUN_MOUNT.worktreePath,
-            branch: FIX_RUN_MOUNT.branch,
-            projectId: FIX_RUN_MOUNT.projectId,
-          },
-          isForce: false,
-          confirmedOnlyOnline: null,
-          confirmedRemoteSha: null,
-          startedAt: 1,
-        },
-      },
-      sessionProjectMounts: { [SESSION.id]: [FIX_RUN_MOUNT] },
-      reportError: vi.fn(async () => undefined),
-    });
+    seedTrackedFix();
 
     seedFixAgent({ status: 'failed' });
     await act(async () => {
@@ -353,7 +377,42 @@ describe('the push fix across a leave and return, through the real store', () =>
       />,
     );
 
-    expect(screen.getByRole('alert').textContent).toBe('The provider is offline.');
-    screen.getByRole('button', { name: 'Fix with an agent' });
+    within(screen.getByRole('alert')).getByText('The provider is offline.');
+    screen.getByRole('button', { name: 'Retry' });
+    expect(screen.queryByRole('button', { name: 'Fix with an agent' })).toBeNull();
+  });
+
+  it('retries a stopped fix with a new agent from the same card', async () => {
+    seedFixAgent({ status: 'running' });
+    seedTrackedFix();
+    seedFixAgent({ status: 'stopped' });
+    await act(async () => {
+      await store.getState().settleBranchPushFix({
+        sessionId: SESSION.id,
+        agentId: AGENT_ID,
+        hasFailed: true,
+        wasStopped: true,
+        reason: 'The agent was stopped before it finished.',
+      });
+    });
+    const fixBranchPushWithAgent = vi.fn(async () => undefined);
+    store.setState({ fixBranchPushWithAgent });
+    render(
+      <PushFixAgentAction
+        sessionId={SESSION.id}
+        mountId={MOUNT_TARGET.mountId}
+        output="boom"
+        onSettled={vi.fn()}
+      />,
+    );
+
+    within(screen.getByRole('status')).getByText('Stopped');
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
+    });
+
+    expect(fixBranchPushWithAgent).toHaveBeenCalledWith(
+      expect.objectContaining({ sessionId: SESSION.id, mountId: MOUNT_TARGET.mountId }),
+    );
   });
 });

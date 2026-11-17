@@ -548,9 +548,13 @@ describe('the job banner', () => {
       pushFix: { agentId: A_REBASE_AGENT_ID },
     });
 
+    const panel = within(screen.getByRole('region', { name: 'Rebase' }));
+    panel.getByText('Fixing');
+    panel.getByRole('button', { name: 'Stop' });
+    fireEvent.click(panel.getByRole('button', { name: 'Open transcript' }));
+    expect(useAppStore.getState().drawer?.kind).toBe('transcript');
     expect(screen.queryByRole('button', { name: 'Fix with an agent' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Retry push' })).toBeNull();
-    expect(screen.getByRole('button', { name: 'Open agent' })).toBeDefined();
   });
 
   it('opens the output of a failed push on Details', async () => {

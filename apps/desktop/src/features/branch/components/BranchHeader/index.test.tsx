@@ -1118,12 +1118,13 @@ describe('BranchHeader push fix status', () => {
     });
 
     const first = renderHeader({ pr: open });
-    screen.getByText('An agent is fixing the push');
+    screen.getByText('Fixing');
     first.unmount();
     renderHeader({ pr: open });
 
-    screen.getByText('An agent is fixing the push');
-    screen.getByRole('button', { name: 'Open the agent' });
+    screen.getByText('Fixing');
+    screen.getByRole('button', { name: 'Stop' });
+    screen.getByRole('button', { name: 'Open transcript' });
   });
 
   it('shows why the fix did not land, and lets the line be dismissed', () => {
@@ -1144,7 +1145,7 @@ describe('BranchHeader push fix status', () => {
     });
     renderHeader({ pr: open });
 
-    expect(screen.getByRole('alert').textContent).toBe(
+    within(screen.getByRole('alert')).getByText(
       "The fix couldn't be pushed: pre-push: yarn knip --cache failed.",
     );
     fireEvent.click(screen.getByRole('button', { name: 'Dismiss' }));

@@ -1,9 +1,14 @@
 import { X } from '@goodboy/ui/icons';
 import { Button, IconButton } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
-import { useAppStore } from '../../store';
-import { agentPlace } from '../../store/slices/navigation/place';
-import type { PushFixState } from '../../store/slices/history/pushFix/pushFixStateOf';
+import { useAppStore } from '../../../store';
+import { useTranscript } from '../../../store/slices/transcripts/selectors';
+import type { PushFixState } from '../../../store/slices/history/pushFix/pushFixStateOf';
+import { useAgentStop } from '../../../shared/hooks/useAgentStop';
+import { actionButtonLookOf } from '../../actions/actionButtonLookOf';
+import { ItemWorkLine } from '../../live-state/itemWork/ItemWorkLine';
+import { agentStepPhraseOf } from '../../live-state/itemWork/agentStepPhraseOf';
+import { ITEM_WORK_WORDS, type ItemWorkState } from '../../live-state/itemWork/itemWorkWords';
 
 type ActiveState = Exclude<PushFixState, { readonly kind: 'none' }>;
 
@@ -13,49 +18,94 @@ type Props = {
   readonly onDismiss?: () => void;
 };
 
-const WORKING_LABEL = 'An agent is fixing the push';
-const PUSHED_LABEL = "The agent's fix is pushed.";
-const AGENT_FAILED_LABEL = "The agent didn't finish.";
-const OPEN_LABEL = 'Open the agent';
-const DISMISS_LABEL = 'Dismiss';
-
-type SentenceParams = {
+type StateParams = {
   readonly state: ActiveState;
 };
 
-const statusSentenceOf = ({ state }: SentenceParams): string => {
-  if (state.kind === 'working') {
-    return WORKING_LABEL;
+const STOPPED_DETAIL = 'Nothing was pushed; its edits stay on the branch.';
+const AGENT_FAILED_DETAIL = 'Nothing was pushed.';
+const DISMISS_LABEL = 'Dismiss';
+const STOP_LOOK = actionButtonLookOf({ verb: ITEM_WORK_WORDS.verb.stop, variant: 'quiet' });
+
+const itemWorkStateOf = ({ state }: StateParams): ItemWorkState => {
+  switch (state.kind) {
+    case 'working':
+      return 'fixing';
+    case 'pushed':
+      return state.followUp?.tone === 'failed' ? 'failed' : 'pushed';
+    case 'stopped':
+      return 'stopped';
+    case 'failed':
+      return 'failed';
+    default:
+      return state satisfies never;
   }
-  if (state.kind === 'pushed') {
-    return state.followUp === null ? PUSHED_LABEL : `${PUSHED_LABEL} ${state.followUp.sentence}`;
+};
+
+const outcomeDetailOf = ({ state }: StateParams): string | null => {
+  switch (state.kind) {
+    case 'working':
+      return null;
+    case 'pushed':
+      if (state.followUp === null) {
+        return null;
+      }
+      return state.followUp.tone === 'failed'
+        ? `The fix is pushed. ${state.followUp.sentence}`
+        : state.followUp.sentence;
+    case 'stopped':
+      return STOPPED_DETAIL;
+    case 'failed':
+      if (state.step === 'push') {
+        return `The fix couldn't be pushed: ${state.reason ?? 'the push failed'}.`;
+      }
+      return state.reason ?? AGENT_FAILED_DETAIL;
+    default:
+      return state satisfies never;
   }
-  if (state.step === 'push') {
-    return `The fix couldn't be pushed: ${state.reason ?? 'the push failed'}.`;
-  }
-  return state.reason === null ? AGENT_FAILED_LABEL : state.reason;
 };
 
 export const PushFixStatusLine = ({ sessionId, state, onDismiss }: Props) => {
-  const isAlert =
-    state.kind === 'failed' || (state.kind === 'pushed' && state.followUp?.tone === 'failed');
+  const isWorking = state.kind === 'working';
+  const transcript = useTranscript(isWorking ? state.agentId : null);
+  const agentStop = useAgentStop({ sessionId, agentId: isWorking ? state.agentId : null });
+  const openTranscript = () =>
+    useAppStore
+      .getState()
+      .openDrawer({ kind: 'transcript', sessionId, payload: { agentId: state.agentId } });
   return (
-    <>
-      <span role={isAlert ? 'alert' : 'status'} className="min-w-0 text-meta text-muted-foreground">
-        {statusSentenceOf({ state })}
-      </span>
-      <Button
-        size="sm"
-        variant="ghost"
-        onClick={() =>
-          useAppStore.getState().navigate({ to: agentPlace({ sessionId, agentId: state.agentId }) })
-        }
-      >
-        {OPEN_LABEL}
-      </Button>
-      {onDismiss !== undefined && state.kind !== 'working' && (
-        <IconButton icon={X} label={DISMISS_LABEL} variant="ghost" onClick={onDismiss} />
-      )}
-    </>
+    <ItemWorkLine
+      state={itemWorkStateOf({ state })}
+      detail={isWorking ? agentStepPhraseOf({ transcript }) : outcomeDetailOf({ state })}
+      agentId={isWorking ? state.agentId : null}
+      isAgentWaiting={agentStop.isBlocked}
+      action={
+        <>
+          {isWorking && (
+            <Button
+              size="xs"
+              variant={STOP_LOOK.variant}
+              intent={STOP_LOOK.intent}
+              isBusy={agentStop.phase !== 'idle'}
+              onClick={agentStop.stop}
+            >
+              {ITEM_WORK_WORDS.verb.stop}
+            </Button>
+          )}
+          <Button size="xs" variant="ghost" onClick={openTranscript}>
+            {ITEM_WORK_WORDS.verb.openTranscript}
+          </Button>
+          {onDismiss !== undefined && !isWorking && (
+            <IconButton
+              icon={X}
+              label={DISMISS_LABEL}
+              size="xs"
+              variant="ghost"
+              onClick={onDismiss}
+            />
+          )}
+        </>
+      }
+    />
   );
 };

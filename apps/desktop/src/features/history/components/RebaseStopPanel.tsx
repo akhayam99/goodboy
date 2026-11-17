@@ -21,6 +21,7 @@ import { RebaseConflictPrompt } from './RebaseConflictPrompt';
 import { REBASE_ABORT_CONFIRM } from './rebaseAbortConfirm';
 import { RebaseOriginCommits } from '../../../shared/components/RebaseOriginCommits';
 import { RebaseStopFiles, type OpenFileParams } from './RebaseStopFiles';
+import { PushFixWorkingLine } from '../pushFix/PushFixWorkingLine';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -83,10 +84,7 @@ type VerbParams = {
   readonly verb: Verb;
 };
 
-const DISMISSABLE: ReadonlySet<RebaseJobState> = new Set<RebaseJobState>([
-  'result-differs',
-  'failed',
-]);
+const DISMISSABLE = new Set<RebaseJobState>(['result-differs', 'failed']);
 
 const FILES_LABEL: Partial<Record<RebaseJobState, string>> = {
   'rebasing-here': 'Files to resolve',
@@ -398,6 +396,8 @@ export const RebaseStopPanel = ({ sessionId, worktreePath, controls, actions }: 
             placeholder={START_HINT_COPY.pushFix}
           />
         );
+      case 'fixing-push':
+        return <PushFixWorkingLine sessionId={sessionId} agentId={agentId} />;
       case 'auto-done':
       case 'rebased-here':
       case 'pushed':
@@ -419,7 +419,6 @@ export const RebaseStopPanel = ({ sessionId, worktreePath, controls, actions }: 
       case 'done':
       case 'stuck':
       case 'no-provider':
-      case 'fixing-push':
         return null;
       default:
         return state satisfies never;

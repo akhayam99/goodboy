@@ -335,7 +335,8 @@ describe('PushBanner', () => {
       />,
     );
 
-    screen.getByText('An agent is fixing the push');
+    screen.getByText('Fixing');
+    screen.getByRole('button', { name: 'Stop' });
     expect(screen.queryByRole('button', { name: 'Fix with an agent' })).toBeNull();
     expect(retryAfterFix).not.toHaveBeenCalled();
     act(() => {
