@@ -1422,16 +1422,6 @@
       "count": 1
     }
   },
-  "apps/desktop/src/app/hooks/useSessionNavigation/index.test.tsx": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 1
-    }
-  },
-  "apps/desktop/src/app/hooks/useSessionNavigation/index.ts": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 1
-    }
-  },
   "apps/desktop/src/app/shellArrangement/index.ts": {
     "@typescript-eslint/naming-convention": {
       "count": 1
