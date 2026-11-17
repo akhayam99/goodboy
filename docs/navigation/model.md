@@ -103,7 +103,8 @@
   question for you" (`doorSignalOf`). It reads `useNowSessions().attention`, which
   is `useWorkspaceAttention` over every session of the workspace, whatever the
   project filter. The Now chip does not show it. The palette's
-  Needs you rows read the attention group of `useStageGroupedSessions`.
+  Needs you rows, the Now chip's idle word and the screen reader line read the
+  same counted sessions (`useNowSessions().needsYou`), longest waiting first.
   Connections, after Chat at full weight, is the page of the providers on this Mac and the
   integrations of the workspace (`features/connections`); it has no shortcut and answers to
   Providers and Integrations in ⌘K. Its index shows a tile per set up provider and integration

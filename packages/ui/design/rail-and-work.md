@@ -451,10 +451,13 @@ and the Needs you order follows it, falling back to the last edit. Mark as unrea
 in the mark box, unless the session asks you, failed or runs, which outranks it
 (`sessionMarkOf`), and the switcher and the hover card draw the same mark.
 
-The door pill. The Board door, the folded rail and the top bar say how many
-sessions need you with one function, `attentionCountOf` (read through
-`useWorkspaceAttention`), over every session of the workspace and never the
-project filter. A session counts when its stage is needs you and one of its
+The door pill. The Board door, the folded rail, the top bar, the number on the
+Board's Needs you lane and the Needs you group of the session order
+(`sessionOrderOf`) say how many sessions need you with one function,
+`attentionCountOf` (read through `useWorkspaceAttention`), over every session
+of the workspace and never the project filter. The lane keeps that number
+while the filter hides some of its cards or a quiet card sits in it; with only
+quiet cards it draws no number. A session counts when its stage is needs you and one of its
 reasons is `warning` or `danger`; a session waiting only on `unread-reply` or
 `pr-approved` is quiet and does not count. On the Board door the count is the
 number alone in a `StatusMark` (`9+` above nine, `text-chip`), in `warning`, or

@@ -56,7 +56,7 @@ type Props = {
 
 export const StageBoard = ({ workspaceId, sessions }: Props) => {
   const groups = useStageGroupedSessions(workspaceId, sessions);
-  const needsYouElsewhere = useNeedsYouElsewhere({ workspaceId, sessions });
+  const needsYou = useNeedsYouElsewhere({ workspaceId, sessions });
   const setSessionViewPrefs = useAppStore((s) => s.setSessionViewPrefs);
   const navigate = useAppStore((s) => s.navigate);
   const clearFilters = useClearSessionFilters({ workspaceId });
@@ -188,7 +188,7 @@ export const StageBoard = ({ workspaceId, sessions }: Props) => {
           archivedCount={archived.length}
           onArchivedShownChange={onArchivedShownChange}
           hiddenCount={pending || empty ? 0 : hiddenCount}
-          needsYouElsewhere={pending || empty ? 0 : needsYouElsewhere}
+          needsYouElsewhere={pending || empty ? 0 : needsYou.elsewhere}
           onClearFilters={clearFilters}
         >
           {!pending && hasProjects && empty && <SetupCard isMainWindow={isMainWindow} />}
@@ -222,6 +222,7 @@ export const StageBoard = ({ workspaceId, sessions }: Props) => {
                 layout={layout}
                 scrollLaneRem={scrollLaneRem}
                 byStage={byStage}
+                needsYouCount={needsYou.count}
                 archived={projectArchived}
                 isArchivedLoading={archivedList === undefined}
                 nav={nav}

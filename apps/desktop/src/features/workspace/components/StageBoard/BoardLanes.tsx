@@ -23,6 +23,7 @@ type Props = {
   readonly layout: BoardLanesLayout;
   readonly scrollLaneRem: number;
   readonly byStage: ReadonlyMap<string, ReadonlyArray<Session>>;
+  readonly needsYouCount: number;
   readonly archived: ReadonlyArray<Session>;
   readonly isArchivedLoading: boolean;
   readonly nav: BoardNavigation;
@@ -42,6 +43,7 @@ export const BoardLanes = ({
   layout,
   scrollLaneRem,
   byStage,
+  needsYouCount,
   archived,
   isArchivedLoading,
   nav,
@@ -129,6 +131,7 @@ export const BoardLanes = ({
             key={stage}
             spec={{ kind: 'stage', stage }}
             sessions={byStage.get(stage) ?? EMPTY_ARRAY}
+            {...(stage === 'attention' && { count: needsYouCount })}
             nav={nav}
             selection={selection}
             onClearSelection={selection.clearAll}

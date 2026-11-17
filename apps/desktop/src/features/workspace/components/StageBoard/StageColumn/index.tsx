@@ -67,6 +67,7 @@ type ModifierEvent = {
 type StageColumnProps = {
   readonly spec: ColumnSpec;
   readonly sessions: ReadonlyArray<Session>;
+  readonly count?: number;
   readonly nav: BoardNavigation;
   readonly selection: ColumnSelection;
   readonly onClearSelection: () => void;
@@ -82,6 +83,7 @@ type StageColumnProps = {
 export const StageColumn = ({
   spec,
   sessions,
+  count = sessions.length,
   nav,
   selection,
   onClearSelection,
@@ -125,10 +127,8 @@ export const StageColumn = ({
         >
           <span className="flex items-center gap-2">
             <Eyebrow label={sentenceCase({ text: view.presentation.label })} muted={isEmpty} />
-            {!isEmpty && (
-              <span className="text-meta tabular-nums text-faint-foreground">
-                {sessions.length}
-              </span>
+            {count > 0 && (
+              <span className="text-meta tabular-nums text-faint-foreground">{count}</span>
             )}
           </span>
         </Tooltip>
