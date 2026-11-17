@@ -31,7 +31,7 @@ type EndParams = {
   readonly run: RunRow;
 };
 
-const endOf = ({ agent, run }: EndParams): CommentRunEnd => {
+const runEndOf = ({ agent, run }: EndParams): CommentRunEnd => {
   if (agent.status === 'stopped' || agent.status === 'failed' || STOPPED_DOTS.has(run.dot)) {
     return 'stopped';
   }
@@ -42,7 +42,7 @@ type SummaryParams = {
   readonly agent: Agent;
 };
 
-const summaryOf = ({ agent }: SummaryParams): string | null => {
+const leadSummaryOf = ({ agent }: SummaryParams): string | null => {
   const summary = agent.outputSummary?.trim() ?? '';
   return summary === '' ? null : summary;
 };
@@ -69,8 +69,8 @@ export const commentRunViewsOf = ({
       title: run.title,
       stateWord: run.stateWord,
       dot: run.dot,
-      end: endOf({ agent, run }),
-      summary: summaryOf({ agent }),
+      end: runEndOf({ agent, run }),
+      summary: leadSummaryOf({ agent }),
       mountId: agent.mountId ?? null,
       threadIds,
     };

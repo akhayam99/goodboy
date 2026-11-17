@@ -48,7 +48,7 @@ export const CommentRunSources = ({ sessionId, agent }: Props) => {
     <section
       aria-label={COMMENT_RUN_COPY.fromComments({ count })}
       data-comment-run-sources={agent.id}
-      className="flex min-w-0 flex-col gap-2 rounded-lg bg-subtle px-4 py-3"
+      className="flex min-w-0 flex-col gap-2 rounded-lg bg-subtle p-4 ring-1 ring-border-soft"
     >
       <div className="flex min-w-0 items-baseline gap-2">
         <h2 className="shrink-0 text-row text-foreground">

@@ -31,7 +31,7 @@ export const CommentRunOutcome = ({ sessionId, threadId, run, word, isNote, host
             {COMMENT_RUN_COPY.keptWithNote}
           </span>
         </p>
-        <p className="min-w-0 whitespace-pre-wrap rounded-lg bg-subtle px-4 py-3 text-ui text-foreground">
+        <p className="min-w-0 whitespace-pre-wrap rounded-lg bg-subtle px-4 py-2 text-ui text-foreground">
           {run.summary ?? COMMENT_RUN_COPY.noSummary}
         </p>
         {resolvedLine}

@@ -8,7 +8,7 @@ type Props = {
   readonly onOpen: () => void;
 };
 
-const placeOf = ({ head }: Pick<CommentRunHead, 'head'>): string | null => {
+const sourcePlaceOf = ({ head }: Pick<CommentRunHead, 'head'>): string | null => {
   if (head?.path === undefined || head.path === '') {
     return null;
   }
@@ -17,7 +17,7 @@ const placeOf = ({ head }: Pick<CommentRunHead, 'head'>): string | null => {
 
 export const CommentRunSourceCard = ({ source, hostLabel, onOpen }: Props) => {
   const { head, isNote } = source;
-  const place = placeOf({ head });
+  const place = sourcePlaceOf({ head });
   const status =
     head?.resolved === true
       ? COMMENT_RUN_COPY.resolvedOn({ label: isNote ? null : hostLabel })

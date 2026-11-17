@@ -53,8 +53,7 @@ import { PushFailedNote } from './PushFailedNote';
 import { CommentRunStrip } from './CommentRunStrip';
 import { replyNoteKindOf } from './replyNoteKind';
 import { SourceChangeCard } from './SourceChangeCard';
-import { ThreadRecheckLine } from './ThreadRecheckLine';
-import { ThreadVerdictCard } from './ThreadVerdictCard';
+import { ThreadMissingLines } from './ThreadMissingLines';
 import type { ReviewEntry } from './useReviewEntries';
 
 type Props = ReviewCommentBinding & {
@@ -247,16 +246,7 @@ export const ReviewComment = ({
         <ReviewerCommentBlock commentThread={row.commentThread} />
       </div>
 
-      {entry.run === null ? null : (
-        <CommentRunStrip
-          sessionId={sessionId}
-          threadId={threadId}
-          run={entry.run}
-          word={entry.resolveWord}
-          isNote={isNote}
-          hostLabel={provider}
-        />
-      )}
+      <CommentRunStrip sessionId={sessionId} entry={entry} hostLabel={provider} />
 
       <PreviousAttempts attempts={previous} />
 
@@ -268,19 +258,7 @@ export const ReviewComment = ({
         remote === null &&
         entry.change !== null && <SourceChangeCard change={entry.change} />}
 
-      {remote === 'missing' && entry.isChecking && (
-        <ThreadRecheckLine sessionId={sessionId} agentId={entry.checkAgentId} />
-      )}
-
-      {remote === 'missing' && !entry.isChecking && verdict !== null && (
-        <ThreadVerdictCard sessionId={sessionId} verdict={verdict} isPushed={isPushedMissing} />
-      )}
-
-      {remote === 'missing' && !entry.isChecking && entry.checkError !== null && (
-        <p role="status" className="text-meta text-warning">
-          {entry.checkError}
-        </p>
-      )}
+      <ThreadMissingLines sessionId={sessionId} entry={entry} />
 
       {row.attempt !== null && !isOwnFixGone && isFailed && (
         <AgentLine

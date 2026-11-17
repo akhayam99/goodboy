@@ -14,7 +14,7 @@ type MessageParams = {
   readonly quote: string;
 };
 
-const messageOf = ({ quote }: MessageParams): string =>
+const addedMessageOf = ({ quote }: MessageParams): string =>
   [COMMENT_RUN_COPY.addedMessage, quote].filter((part) => part.trim() !== '').join('\n\n');
 
 export const addToCommentRun = ({ set, get }: SliceDeps) => {
@@ -31,7 +31,7 @@ export const addToCommentRun = ({ set, get }: SliceDeps) => {
       set,
       get,
       agentId,
-      content: messageOf({ quote }),
+      content: addedMessageOf({ quote }),
     });
     if (!isSaved) {
       await removeAgentSourceThread({ db: tauriDatabase, id: agentId, threadId });

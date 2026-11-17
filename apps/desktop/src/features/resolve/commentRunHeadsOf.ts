@@ -17,7 +17,7 @@ type HeadParams = Omit<Params, 'threadIds'> & {
   readonly threadId: string;
 };
 
-const headOf = ({ threadId, notes, comments }: HeadParams): CommentRunHead => {
+const commentHeadOf = ({ threadId, notes, comments }: HeadParams): CommentRunHead => {
   const noteId = noteIdOfThread({ threadId });
   if (noteId !== null) {
     const note = notes.find((candidate) => candidate.id === noteId);
@@ -38,4 +38,4 @@ export const commentRunHeadsOf = ({
   notes,
   comments,
 }: Params): ReadonlyArray<CommentRunHead> =>
-  [...new Set(threadIds)].map((threadId) => headOf({ threadId, notes, comments }));
+  [...new Set(threadIds)].map((threadId) => commentHeadOf({ threadId, notes, comments }));
