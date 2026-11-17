@@ -57,6 +57,7 @@ import { behindBranchesOf } from '../../history/behindBranchesOf';
 import { SESSION_EXTERNAL_OPEN_ACTIONS, withGoToSubmenu } from './sessionGoToActions';
 import { lifecyclePortsOf } from './lifecyclePortsOf';
 import { SESSION_BRANCH_ACTIONS } from './sessionBranchActions';
+import { SESSION_ASK_ACTION } from './sessionAskAction';
 import { mergedFactsOf, type MergedFacts } from './mergedMountsOf';
 
 export type SessionFacts = MergedFacts & {
@@ -104,8 +105,6 @@ export const SESSION_HEADER_ANCHOR = 'session-header';
 const NO_MOUNT_REASON = 'Add a folder to this session first';
 
 const REFRESHING_REASON = 'Already refreshing';
-
-const ASK_SESSION_LABEL = 'Ask about this session';
 
 const deleteDescription = ({ isBranchless }: { readonly isBranchless: boolean }): string =>
   `${DELETE_REMOVED_LINE} ${deleteKeptLine({ isBranchless })} ${DELETE_CANNOT_UNDO}`;
@@ -357,21 +356,7 @@ const SESSION_ACTIONS: ReadonlyArray<ActionDefinition<SessionFacts>> = [
       });
     },
   },
-  {
-    id: 'session.ask',
-    label: ASK_SESSION_LABEL,
-    icon: CONCEPT_ICONS.ask,
-    group: 'act',
-    shortcut: 'ask.open',
-    when: isUnarchived,
-    run: ({ facts, env }) => {
-      const state = env.getState();
-      if (state.currentSessionId !== facts.sessionId) {
-        state.navigate({ to: lensPlace({ state, sessionId: facts.sessionId, lens: null }) });
-      }
-      env.getState().openAsk({ sessionId: facts.sessionId });
-    },
-  },
+  SESSION_ASK_ACTION,
   {
     id: 'session.pin',
     label: NAMES.pin,
