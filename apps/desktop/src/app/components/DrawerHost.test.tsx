@@ -28,11 +28,13 @@ import { invoke } from '@tauri-apps/api/core';
 import type {
   AgentId,
   ArtifactId,
+  AutoTreeId,
   IsoDateTime,
   MountId,
   OpenQuestionId,
   ReportArtifact,
   SessionId,
+  WorkspaceId,
 } from '@goodboy/types';
 import { aSession, anAgent } from '@goodboy/types/testing';
 import { useAppStore } from '../../store';
@@ -214,6 +216,19 @@ const ENTRIES: ReadonlyArray<Entry> = [
           newRev: null,
           baseBranch: null,
         },
+      },
+    },
+  },
+  {
+    kind: 'lead-details',
+    region: 'Lead details',
+    seed: seedSession,
+    drawer: {
+      kind: 'lead-details',
+      sessionId: SESSION,
+      payload: {
+        workspaceId: brandId<WorkspaceId>({ value: 'ws-harborline' }),
+        treeId: brandId<AutoTreeId>({ value: 'tree-harborline' }),
       },
     },
   },

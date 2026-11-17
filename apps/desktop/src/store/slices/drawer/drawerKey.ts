@@ -42,6 +42,8 @@ export const drawerKey = (content: DrawerContent): string => {
       }:${content.payload.path ?? ''}${content.payload.whole === undefined ? '' : ':whole'}`;
     case 'identifier-peek':
       return `identifier-peek:${content.payload.worktreePath}:${content.payload.word}`;
+    case 'lead-details':
+      return `lead-details:${content.payload.treeId}`;
     default: {
       const exhaustive: never = content;
       return String(exhaustive);

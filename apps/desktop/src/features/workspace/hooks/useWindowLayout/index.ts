@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { useAppStore } from '../../../../store';
 import type { AppStore } from '../../../../store/store';
 import { captureWindowLocation } from '../../../../store/slices/navigation/captureWindowLocation';
+import { savedLocationOf } from '../../../../store/slices/navigation/savedLocationOf';
 import { currentWindowLabel, onWindowClose } from '../../window';
 import { forgetWindowLayout, saveWindowLayout } from '../../windowLayout';
 
@@ -44,7 +45,7 @@ const persist = async ({
   await saveWindowLayout({
     label,
     workspaceId,
-    location: captureWindowLocation({ state }),
+    location: savedLocationOf({ location: captureWindowLocation({ state }) }),
     at: Date.now(),
   });
 };

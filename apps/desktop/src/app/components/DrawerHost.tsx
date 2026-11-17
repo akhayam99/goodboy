@@ -153,6 +153,7 @@ const renderDrawer = ({
     case 'file-diff':
     case 'history-versions':
     case 'identifier-peek':
+    case 'lead-details':
     case 'plan-part':
     case 'terminal':
       return renderRegisteredDrawer({ drawer, closeDrawer, openDrawer });
