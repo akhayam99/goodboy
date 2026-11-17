@@ -42,7 +42,7 @@ const context: BoardContextValue = {
   rowById: new Map(),
   entryByRowId: new Map(),
   runningByRowId: new Map(),
-  mergedAtByMountId: new Map(),
+  settledAtByMountId: new Map(),
   newRowIds: new Set(),
   diffStatByPath: new Map(),
   cardsByRowId: new Map(),

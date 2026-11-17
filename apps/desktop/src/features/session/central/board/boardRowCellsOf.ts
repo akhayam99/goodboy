@@ -6,7 +6,7 @@ import type { BoardRow } from './boardTypes';
 type Params = {
   readonly row: BoardRow;
   readonly entry: BranchEntry | null;
-  readonly mergedAt: number | null;
+  readonly settledAt: number | null;
   readonly now: number;
   readonly runningCount: number;
   readonly nextTitle: string | null;
@@ -52,7 +52,7 @@ const askWordOf = ({ count }: AskParams): string =>
 export const boardRowCellsOf = ({
   row,
   entry,
-  mergedAt,
+  settledAt,
   now,
   runningCount,
   nextTitle,
@@ -63,7 +63,7 @@ export const boardRowCellsOf = ({
   const stageWord =
     isBranchless && isAgentReason
       ? runningWordOf({ count: runningCount })
-      : stageWordOf({ row, entry, mergedAt, now });
+      : stageWordOf({ row, entry, settledAt, now });
   const branchlessTitle = nextTitle ?? (askWord !== '' ? askWord : sentenceOf({ text: stageWord }));
   const title = isBranchless ? branchlessTitle : (row.branch ?? '');
   const seen = new Set<string>(isBranchless ? [factKeyOf({ text: title })] : []);
@@ -76,7 +76,7 @@ export const boardRowCellsOf = ({
     return text;
   };
   const stage = keep({ text: stageWord });
-  const checksWords = row.isMerged ? { text: '', tone: null } : checksWordsOf({ entry });
+  const checksWords = row.isSettled ? { text: '', tone: null } : checksWordsOf({ entry });
   const checksText = keep({ text: checksWords.text });
   const checks: ChecksWords =
     checksText === '' ? { text: '', tone: null } : { text: checksText, tone: checksWords.tone };

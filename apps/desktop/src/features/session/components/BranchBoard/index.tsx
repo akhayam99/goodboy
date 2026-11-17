@@ -4,6 +4,7 @@ import { useMountDiffStats } from '../../../../store';
 import type { BranchEntry } from '../../central/branches/branchStoryOf';
 import type { ActionCardModel } from '../../central/next/actionCardsOf';
 import type { ActionCardActions } from '../../central/next/useActionCardActions';
+import type { BoardGroupId } from '../../central/board/boardTypes';
 import { cardRowIdOf } from '../../central/board/cardRowIdOf';
 import { visibleGroupsOf } from '../../central/board/visibleGroupsOf';
 import { boardProjectNamesOf } from '../../central/board/boardProjectNamesOf';
@@ -33,9 +34,9 @@ const MERGE_KIND = 'merge-series';
 export const BranchBoard = ({ session, entries, cards: allCards, actionsFor, openFor }: Props) => {
   const cards = session.archivedAt == null ? allCards : NO_CARDS;
   const sessionId = session.id;
-  const { board, kpis, entryByRowId, mergedAtByMountId, runningByRowId, newRowIds, now } =
+  const { board, kpis, entryByRowId, settledAtByMountId, runningByRowId, newRowIds, now } =
     useBranchBoard({ session, entries });
-  const [isMergedExpanded, setIsMergedExpanded] = useState(false);
+  const [expandedGroupIds, setExpandedGroupIds] = useState<ReadonlySet<BoardGroupId>>(new Set());
   const diffStatByPath = useMountDiffStats(sessionId);
   const mergedMountIds = useMemo(
     () =>
@@ -66,15 +67,16 @@ export const BranchBoard = ({ session, entries, cards: allCards, actionsFor, ope
   const mergeCard = useMemo(() => cards.find((card) => card.kind === MERGE_KIND) ?? null, [cards]);
   const projectNames = useMemo(() => boardProjectNamesOf({ rows: board.rows }), [board.rows]);
   const soleProjectName = projectNames.length === 1 ? (projectNames[0] ?? null) : null;
-  const groups = visibleGroupsOf({ board, isMergedExpanded });
-  const firstOpenGroup = groups.find((group) => group.id !== 'merged')?.id ?? null;
+  const groups = visibleGroupsOf({ board, expandedGroupIds });
+  const firstOpenGroup =
+    groups.find((group) => group.id !== 'merged' && group.id !== 'closed')?.id ?? null;
   const value: BoardContextValue = {
     session,
     now,
     rowById,
     entryByRowId,
     runningByRowId,
-    mergedAtByMountId,
+    settledAtByMountId,
     newRowIds,
     diffStatByPath,
     cardsByRowId,
@@ -104,7 +106,15 @@ export const BranchBoard = ({ session, entries, cards: allCards, actionsFor, ope
                 key={group.id}
                 group={group}
                 isFirstOpenGroup={group.id === firstOpenGroup}
-                onShowMore={() => setIsMergedExpanded((isExpanded) => !isExpanded)}
+                onShowMore={() =>
+                  setExpandedGroupIds((current) => {
+                    const next = new Set(current);
+                    if (!next.delete(group.id)) {
+                      next.add(group.id);
+                    }
+                    return next;
+                  })
+                }
               />
             ))}
           </div>

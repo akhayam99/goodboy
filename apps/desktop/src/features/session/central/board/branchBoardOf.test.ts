@@ -26,7 +26,7 @@ const session: Session = {
 };
 
 type BranchOptions = {
-  readonly state?: 'open' | 'merged';
+  readonly state?: 'open' | 'merged' | 'closed';
   readonly checks?: 'success' | 'failure' | 'pending' | null;
   readonly hasRequest?: boolean;
   readonly mountPath?: string | null;
@@ -64,7 +64,7 @@ const branchOf = (id: string, options: BranchOptions = {}): BranchFacts => {
     checkedAgo: null,
     liveCount: 0,
     liveTitle: null,
-    isFinished: state === 'merged',
+    isFinished: state !== 'open',
     status: null,
     series: null,
   };
@@ -120,6 +120,71 @@ describe('branchBoardOf', () => {
     expect(merged?.group).toBe('merged');
     expect(merged?.isMerged).toBe(true);
     expect(board.rows).toHaveLength(2);
+  });
+
+  it('puts a closed request in Closed, never in Merged', () => {
+    const board = boardOf({
+      branches: [
+        branchOf('a'),
+        branchOf('b', { state: 'merged' }),
+        branchOf('c', { state: 'closed' }),
+      ],
+    });
+    const closed = board.rows.find((row) => row.id === 'c');
+    expect(closed?.group).toBe('closed');
+    expect(closed?.isClosed).toBe(true);
+    expect(closed?.isMerged).toBe(false);
+    expect(closed?.isSettled).toBe(true);
+    expect(closed?.checks).toBeNull();
+    expect(closed?.needsYouIds).toEqual([]);
+    expect(board.groups.map((group) => group.id)).toEqual(['in-progress', 'merged', 'closed']);
+    expect(board.groups.find((group) => group.id === 'merged')?.rowIds).toEqual(['b']);
+    expect(board.groups.find((group) => group.id === 'closed')?.rowIds).toEqual(['c']);
+    expect(board.groups.find((group) => group.id === 'closed')?.label).toBe('Closed');
+  });
+
+  it('keeps a merged request in Merged', () => {
+    const board = boardOf({ branches: [branchOf('b', { state: 'merged' })] });
+    const merged = board.rows[0];
+    expect(merged?.group).toBe('merged');
+    expect(merged?.isMerged).toBe(true);
+    expect(merged?.isClosed).toBe(false);
+  });
+
+  it('counts a closed request as a branch but not as merged', () => {
+    const board = boardOf({
+      branches: [branchOf('b', { state: 'merged' }), branchOf('c', { state: 'closed' })],
+    });
+    expect(sessionKpisOf({ board }).branches).toEqual({ merged: 1, total: 2 });
+  });
+
+  it('moves a request out of Closed when it is reopened', () => {
+    const closed = boardOf({ branches: [branchOf('c', { state: 'closed' }), branchOf('a')] });
+    expect(closed.rows.find((row) => row.id === 'c')?.group).toBe('closed');
+    const reopened = boardOf({ branches: [branchOf('c', { state: 'open' }), branchOf('a')] });
+    const row = reopened.rows.find((candidate) => candidate.id === 'c');
+    expect(row?.group).toBe('in-progress');
+    expect(row?.isClosed).toBe(false);
+    expect(row?.isSettled).toBe(false);
+    expect(reopened.groups.some((group) => group.id === 'closed')).toBe(false);
+  });
+
+  it('folds closed to the 3 newest while other groups have rows, apart from merged', () => {
+    const closed = ['c1', 'c2', 'c3', 'c4', 'c5'].map((id) => branchOf(id, { state: 'closed' }));
+    const board = boardOf({
+      branches: [branchOf('a'), branchOf('m1', { state: 'merged' }), ...closed],
+      recencyByMountId: new Map([
+        ['c1', 1],
+        ['c2', 5],
+        ['c3', 3],
+        ['c4', 4],
+        ['c5', 2],
+      ]),
+    });
+    const group = board.groups.find((candidate) => candidate.id === 'closed');
+    expect(group?.visibleRowIds).toEqual(['c2', 'c4', 'c3']);
+    expect(group?.hiddenCount).toBe(2);
+    expect(board.groups.find((candidate) => candidate.id === 'merged')?.hiddenCount).toBe(0);
   });
 
   it('leaves the stage of branch B alone when branch A has a question', () => {

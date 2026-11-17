@@ -28,7 +28,7 @@ const session: Session = {
 
 type BranchParams = {
   readonly checks?: 'success' | 'failure' | 'pending' | null;
-  readonly state?: 'open' | 'merged';
+  readonly state?: 'open' | 'merged' | 'closed';
   readonly hasRequest?: boolean;
   readonly noun?: '#' | '!';
 };
@@ -63,7 +63,7 @@ const branchOf = ({
   checkedAgo: null,
   liveCount: 0,
   liveTitle: null,
-  isFinished: state === 'merged',
+  isFinished: state !== 'open',
   status: hasRequest
     ? null
     : {
@@ -99,6 +99,13 @@ describe('boardTileChipOf', () => {
     expect(chipOf({ branch: branchOf({ state: 'merged', checks: 'success' }) })).toEqual({
       word: 'Merged',
       tone: 'merged',
+    });
+  });
+
+  it('says Closed in the neutral tone on a closed request, never Merged', () => {
+    expect(chipOf({ branch: branchOf({ state: 'closed', checks: 'success' }) })).toEqual({
+      word: 'Closed',
+      tone: 'neutral',
     });
   });
 

@@ -7,15 +7,18 @@ import type { BoardRow } from './boardTypes';
 type RowParams = {
   readonly askIds?: ReadonlyArray<string>;
   readonly isMerged?: boolean;
+  readonly isClosed?: boolean;
 };
 
-const rowOf = ({ askIds = [], isMerged = false }: RowParams): BoardRow => ({
+const rowOf = ({ askIds = [], isMerged = false, isClosed = false }: RowParams): BoardRow => ({
   id: 'ledger',
   mountId: 'ledger',
   projectName: 'ledger-core',
   branch: 'nw/ledger-rounding',
-  group: isMerged ? 'merged' : 'in-progress',
+  group: isMerged ? 'merged' : isClosed ? 'closed' : 'in-progress',
   isMerged,
+  isClosed,
+  isSettled: isMerged || isClosed,
   stage: {
     stage: 'building',
     reason: '',
@@ -73,6 +76,15 @@ describe('boardTileActionOf', () => {
         cards: [cardOf({ kind: 'push-branch' })],
       }),
     ).toEqual({ kind: 'remove', mountId: 'ledger' });
+  });
+
+  it('offers nothing on a closed request, never Remove worktree', () => {
+    expect(
+      boardTileActionOf({
+        row: rowOf({ isClosed: true }),
+        cards: [cardOf({ kind: 'push-branch' })],
+      }),
+    ).toEqual({ kind: 'none' });
   });
 
   it('offers nothing on a branch with nothing waiting', () => {
