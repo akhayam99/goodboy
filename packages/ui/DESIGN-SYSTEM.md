@@ -793,6 +793,16 @@ measurement and measures again on a resize and on a scroll of any ancestor
 (capture), skipping a scroll inside the card itself. A new hover card or flyout
 calls the hook; it does not copy the clamp.
 
+**A layer that stays open floats through `AnchoredLayer`.** A list or a line
+that hangs off its box while the box shows (the composer quick actions, the
+queued hints line, a failed workspace switch) is never `absolute` inside it:
+a clipping parent would cut it. `AnchoredLayer` portals it to the popover
+layer and places it from the element it is rendered in, through
+`useFloatingPlace` with side `top` or `bottom`, start aligned, a 4px gap and
+`SHELL_GUTTER_PX` (12px) from every window edge. It can take the width of its
+box under a scale width (`isAnchorWidth`, `maxWidth`). The `absolute-popover`
+forbidden pattern holds the hand-made kind at zero.
+
 ## Spacing scale
 
 The base is `4px`, set in px and never in rem. Every utility comes out as
