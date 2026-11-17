@@ -13281,11 +13281,6 @@
       "count": 1
     }
   },
-  "packages/ui/src/components/brandIcons.tsx": {
-    "@typescript-eslint/naming-convention": {
-      "count": 1
-    }
-  },
   "packages/ui/src/components/tabListKeys.ts": {
     "@typescript-eslint/naming-convention": {
       "count": 1
