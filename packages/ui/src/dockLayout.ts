@@ -1,8 +1,9 @@
 import { DRAWER_TIERS, pushReserveOf, type DrawerSizing } from './drawerGeometry';
+import { DOCK_GRID_CAP } from './dockGridCap';
 import { SHELL_GUTTER_PX } from './frameGeometry';
 
-const DOCK_MAX_COLUMNS = 2;
-const DOCK_MAX_ROWS = 2;
+const DOCK_MAX_COLUMNS = DOCK_GRID_CAP.columns;
+const DOCK_MAX_ROWS = DOCK_GRID_CAP.rows;
 const EVEN_ROW_SHARE = 0.5;
 const BROWSER_ROW_SHARE = 0.58;
 const OVER_PAGE_MARGIN_PX = SHELL_GUTTER_PX * 2;
