@@ -40,7 +40,7 @@ import { dismissThreadFix, refreshThreadGitState } from './refreshThreadGitState
 import { publishThreadNow } from './publication/publishThreadNow';
 import { reconcileHandReplies } from './reconcileHandReplies';
 import { switchToReplyOnly } from './switchToReplyOnly';
-import { discardProposedFix } from './discardProposedFix';
+import { discardProposedFix } from './discardFix/discardProposedFix';
 import { recheckThread, settleThreadRecheck } from './recheckThread';
 import { resolveThreadOnRemote } from './resolveThreadOnRemote';
 import { settleResolveSourceChange } from './settleResolveSourceChange';

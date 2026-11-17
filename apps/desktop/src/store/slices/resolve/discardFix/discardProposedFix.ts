@@ -8,14 +8,14 @@ import {
   setResolveCandidateState,
 } from '@goodboy/db';
 import type { ResolveThread } from '@goodboy/types';
-import { tauriDatabase } from '../../../shared/lib/db';
-import { loadResolveCandidatesInto } from './loadResolveCandidatesInto';
-import { loadResolveQueueItemsInto } from './loadResolveQueueItemsInto';
-import { projectResolveRows } from './projectResolveRows';
-import { saveResolveThread } from './saveResolveThread';
+import { tauriDatabase } from '../../../../shared/lib/db';
+import { loadResolveCandidatesInto } from '../loadResolveCandidatesInto';
+import { loadResolveQueueItemsInto } from '../loadResolveQueueItemsInto';
+import { projectResolveRows } from '../projectResolveRows';
+import { saveResolveThread } from '../saveResolveThread';
 import { DISCARD_FIX_ERROR } from './discardFixError';
-import { STALE_APPROVAL } from './staleApproval';
-import type { DiscardFixParams, SliceParams } from './types';
+import { STALE_APPROVAL } from '../staleApproval';
+import type { DiscardFixParams, SliceParams } from '../types';
 
 type Params = SliceParams & DiscardFixParams;
 

@@ -1,12 +1,12 @@
 // @vitest-environment happy-dom
 vi.mock('@tauri-apps/api/core', async () =>
-  (await import('../../storyHarness')).tauriCoreModuleMock(),
+  (await import('../../../storyHarness')).tauriCoreModuleMock(),
 );
 vi.mock('@tauri-apps/api/event', async () =>
-  (await import('../../storyHarness')).tauriEventModuleMock(),
+  (await import('../../../storyHarness')).tauriEventModuleMock(),
 );
-vi.mock('../../../shared/lib/db', async () =>
-  (await import('../../storyHarness')).sqliteDbLibModuleMock(),
+vi.mock('../../../../shared/lib/db', async () =>
+  (await import('../../../storyHarness')).sqliteDbLibModuleMock(),
 );
 
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -27,7 +27,7 @@ import {
   openStorySqlite,
   resetStoryStore,
   type StoryStore,
-} from '../../storyHarness';
+} from '../../../storyHarness';
 import { DISCARD_FIX_ERROR } from './discardFixError';
 
 const sessionId = brandId<SessionId>({ value: 'session' });
