@@ -127,7 +127,7 @@ beforeEach(async () => {
 afterEach(cleanup);
 
 const RUN_DEFAULT_ROWS: ReadonlyArray<readonly [string, ReadonlyArray<string>]> = [
-  ['New runs', ['Workflow asks you', 'Lead asks you', 'Start as', NAMES.spendCap, NAMES.models]],
+  ['New runs', ['Stops for your OK', 'Start as', NAMES.spendCap, NAMES.models]],
   ['Agents', ['Parallel agents', 'Reply length']],
 ];
 
@@ -150,11 +150,12 @@ const expectRunDefaultRows = () => {
 };
 
 describe('WorkspaceScopePanel pages', () => {
-  it('lays Run defaults out in three bands, the permission rows behind one chip', () => {
+  it('lays Run defaults out in three bands, with one stop row for workflows and the Lead', () => {
     renderPage({ section: 'general' });
 
     expectRunDefaultRows();
-    screen.getByRole('button', { name: /^Asks you: / });
+    expect(screen.queryByText('Lead asks you')).toBeNull();
+    expect(screen.queryByRole('button', { name: /^Asks you: / })).toBeNull();
   });
 
   it('keeps the session row in New runs with a session open, the one place that sets it', () => {
@@ -164,7 +165,7 @@ describe('WorkspaceScopePanel pages', () => {
 
     const newRuns = within(screen.getByRole('region', { name: 'New runs' }));
     expect(newRuns.getAllByRole('tablist').map((row) => row.getAttribute('aria-label'))).toEqual([
-      'Workflow asks you',
+      'Stops for your OK',
       'Start as',
       'New runs in this session start as',
       'At the limit',

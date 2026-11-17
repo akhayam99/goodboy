@@ -1,33 +1,28 @@
 import { SegmentedTabs } from '@goodboy/ui';
-import type { WorkflowAutonomy, WorkflowRules } from '@goodboy/types';
+import type { WorkflowAutonomy, WorkspaceId } from '@goodboy/types';
 import { SettingRow } from '../../../settings/settingRow';
 import { RUN_AUTONOMY_OPTIONS, runAutonomyOf } from '../../runAutonomy';
-import { useAutonomyPick } from '../../hooks/useAutonomyPick';
-import { NAMES } from '../../../../shared/utils/names';
-
-type PatchRules = (next: Partial<WorkflowRules>) => Promise<void>;
+import { useStopsLevel } from '../../hooks/useStopsLevel';
+import { STOPS_LEVEL_COPY } from '../../stopsLevelCopy';
 
 type Props = {
-  readonly autonomy: WorkflowAutonomy;
-  readonly patch: PatchRules;
+  readonly workspaceId: WorkspaceId;
 };
 
-const LABEL = `${NAMES.runKind.workflow} asks you`;
-const HELP = `How often a run started as ${NAMES.runKind.workflow} stops for your go.`;
-
-export const DefaultAsksSetting = ({ autonomy, patch }: Props) => {
-  const current = runAutonomyOf({ autoRun: false, autonomy });
-  const { error, isBusy, pick } = useAutonomyPick({
-    current: autonomy,
-    save: ({ next }) => patch({ autonomy: next }),
-  });
+export const DefaultAsksSetting = ({ workspaceId }: Props) => {
+  const { stops, error, isBusy, pick } = useStopsLevel({ workspaceId });
+  const value = stops.kind === 'same' ? stops.level : null;
+  const help =
+    stops.kind === 'same'
+      ? `${runAutonomyOf({ autoRun: false, autonomy: stops.level }).hint} ${STOPS_LEVEL_COPY.shared}`
+      : STOPS_LEVEL_COPY.split({ workflow: stops.workflow, lead: stops.lead });
   return (
     <SettingRow
-      label={LABEL}
-      rowKey="workflow-asks"
+      label={STOPS_LEVEL_COPY.label}
+      rowKey="stops-for-ok"
       help={
         <>
-          {HELP}
+          {help}
           {error === null ? null : (
             <span role="alert" className="text-danger">
               {' '}
@@ -39,14 +34,14 @@ export const DefaultAsksSetting = ({ autonomy, patch }: Props) => {
     >
       <SegmentedTabs<WorkflowAutonomy>
         size="sm"
-        ariaLabel={LABEL}
+        ariaLabel={STOPS_LEVEL_COPY.label}
         options={RUN_AUTONOMY_OPTIONS.map((option) => ({
           value: option.key,
           label: option.label,
           tooltip: option.hint,
           disabled: isBusy,
         }))}
-        value={current.key}
+        value={value}
         onChange={(next) => void pick({ next })}
       />
     </SettingRow>

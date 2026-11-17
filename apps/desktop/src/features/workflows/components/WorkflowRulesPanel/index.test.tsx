@@ -17,6 +17,7 @@ import {
   type WorkflowRules,
   type Workspace,
 } from '@goodboy/types';
+import type { AutoLevel } from '@goodboy/core/auto';
 import { aSession, aWorkflowRun, aWorkspace, EMPTY_OVERRIDES } from '@goodboy/types/testing';
 import {
   STORE_IMPORT_TIMEOUT_MS,
@@ -26,6 +27,7 @@ import {
   stubStoryInvoke,
   type StoryStore,
 } from '../../../../store/storyHarness';
+import { parseAutoLevelSetting } from '../../../../store/runtime/auto/level/parseAutoLevelSetting';
 import { buildProviderList, type ProviderStatus } from '../../../providers/providers';
 import { RUN_AUTONOMY_OPTIONS } from '../../runAutonomy';
 import { WorkflowRulesPanel } from './index';
@@ -86,9 +88,36 @@ const panel = () => render(<WorkflowRulesPanel workspaceId={HARBORLINE.id} />);
 const newRuns = () => within(screen.getByRole('region', { name: 'New runs' }));
 
 const asksTab = ({ name }: { readonly name: RegExp }) =>
-  within(newRuns().getByRole('tablist', { name: 'Workflow asks you' })).getByRole('tab', {
+  within(newRuns().getByRole('tablist', { name: 'Stops for your OK' })).getByRole('tab', {
     name,
   });
+
+const selectedLevels = () =>
+  within(newRuns().getByRole('tablist', { name: 'Stops for your OK' }))
+    .getAllByRole('tab')
+    .filter((tab) => tab.getAttribute('aria-selected') === 'true')
+    .map((tab) => tab.textContent);
+
+const leadLevel = (): AutoLevel | null =>
+  parseAutoLevelSetting({
+    raw: useAppStore.getState().workspaceValues[HARBORLINE.id]?.['auto.level'] ?? null,
+  }).defaultLevel;
+
+type LevelParams = {
+  readonly level: AutoLevel;
+};
+
+const storeLeadLevel = ({ level }: LevelParams) =>
+  useAppStore.setState((state) => ({
+    workspaceValues: {
+      ...state.workspaceValues,
+      [HARBORLINE.id]: { 'auto.level': JSON.stringify({ defaultLevel: level, sessions: {} }) },
+    },
+  }));
+
+const leadWrites = vi.fn(async ({ level }: LevelParams) => {
+  storeLeadLevel({ level });
+});
 
 const failSaves = () =>
   useAppStore.setState({
@@ -103,12 +132,14 @@ beforeAll(async () => {
 
 beforeEach(async () => {
   await resetStoryStore();
+  leadWrites.mockClear();
   stubStoryInvoke({ patch_workspace_overrides: null, db_select: () => [] });
   useAppStore.setState({
     workspaces: [HARBORLINE],
     currentWorkspaceId: HARBORLINE.id,
     loadSetting: vi.fn(async (): Promise<string | null> => null),
     loadWorkspaceValue: vi.fn(async (): Promise<string | null> => null),
+    changeAutoLevel: leadWrites,
     ...connectedProviders(),
     workspaceOverrides: {
       [HARBORLINE.id]: {
@@ -151,7 +182,7 @@ describe('WorkflowRulesPanel', () => {
     panel();
 
     expect(screen.getByRole('heading', { level: 2, name: 'New runs' })).toBeDefined();
-    expect(asksTab({ name: /Every step/ }).getAttribute('aria-selected')).toBe('true');
+    expect(selectedLevels()).toEqual([]);
     expect(newRuns().getByLabelText<HTMLInputElement>('Limit in dollars').value).toBe('');
     expect(newRuns().getByTestId('rules-policy-summary').textContent).toBe(
       'Claude, Codex · Cursor as backup',
@@ -164,14 +195,14 @@ describe('WorkflowRulesPanel', () => {
     panel();
 
     expect(
-      within(newRuns().getByRole('tablist', { name: 'Workflow asks you' }))
+      within(newRuns().getByRole('tablist', { name: 'Stops for your OK' }))
         .getAllByRole('tab')
         .map((tab) => tab.textContent),
     ).toEqual(RUN_AUTONOMY_OPTIONS.map((option) => option.label));
     expect(newRuns().queryByRole('button', { name: 'Save' })).toBeNull();
   });
 
-  it('puts the rows it gets after Workflow asks you and the bands it gets before Guidance', () => {
+  it('puts the rows it gets after Stops for your OK and the bands it gets before Guidance', () => {
     render(
       <WorkflowRulesPanel workspaceId={HARBORLINE.id} runRows={<p>Start as row</p>}>
         <section aria-label="Agents" />
@@ -180,9 +211,9 @@ describe('WorkflowRulesPanel', () => {
 
     expect(
       newRuns()
-        .getAllByText(/^(Workflow asks you|Start as row|Limit|Models)$/)
+        .getAllByText(/^(Stops for your OK|Start as row|Limit|Models)$/)
         .map((node) => node.textContent),
-    ).toEqual(['Workflow asks you', 'Start as row', 'Limit', 'Models']);
+    ).toEqual(['Stops for your OK', 'Start as row', 'Limit', 'Models']);
     expect(screen.getAllByRole('region').map((band) => band.getAttribute('aria-label'))).toEqual([
       'New runs',
       'Agents',
@@ -190,25 +221,100 @@ describe('WorkflowRulesPanel', () => {
     ]);
   });
 
-  it('saves Workflow asks you for new runs as soon as you pick it', async () => {
+  it('says when workflows and the Lead stop at different points, until you pick', () => {
+    withRules({ autonomy: 'step' });
+    storeLeadLevel({ level: 'plan' });
+    panel();
+
+    expect(selectedLevels()).toEqual([]);
+    expect(
+      newRuns().getByText(/^Workflows: Every step · Lead: After the plan\. Pick one\.$/),
+    ).toBeDefined();
+    expect(savedRules()).toEqual([]);
+    expect(leadWrites).not.toHaveBeenCalled();
+  });
+
+  it('shows one level when both stop at the same point', () => {
+    withRules({ autonomy: 'run' });
+    storeLeadLevel({ level: 'run' });
+    panel();
+
+    expect(selectedLevels()).toEqual(['Never']);
+    expect(newRuns().getByText(/Workflows and the Lead follow it\./)).toBeDefined();
+  });
+
+  it('writes workflows and the Lead together, for this workspace, from one pick', async () => {
+    withRules({ autonomy: 'step' });
+    storeLeadLevel({ level: 'plan' });
     panel();
 
     fireEvent.click(asksTab({ name: /After the plan/ }));
 
-    await waitFor(() => expect(savedRules().map((rules) => rules?.autonomy)).toEqual(['plan']));
-    expect(useAppStore.getState().workspaceOverrides[HARBORLINE.id]?.workflowRules?.autonomy).toBe(
-      'plan',
-    );
+    await waitFor(() => expect(selectedLevels()).toEqual(['After the plan']));
+    expect(savedRules().map((rules) => rules?.autonomy)).toEqual(['plan']);
+    expect(leadWrites).toHaveBeenCalledWith({
+      workspaceId: HARBORLINE.id,
+      sessionId: null,
+      level: 'plan',
+    });
+    expect(leadLevel()).toBe('plan');
   });
 
-  it('keeps the old value and says why under the row when the save fails', async () => {
+  it('keeps both old values and says why under the row when the first save fails', async () => {
+    withRules({ autonomy: 'step' });
+    storeLeadLevel({ level: 'step' });
     failSaves();
     panel();
 
     fireEvent.click(asksTab({ name: /After the plan/ }));
 
     expect((await newRuns().findByRole('alert')).textContent).toContain('disk full');
-    expect(asksTab({ name: /Every step/ }).getAttribute('aria-selected')).toBe('true');
+    expect(selectedLevels()).toEqual(['Every step']);
+    expect(leadWrites).not.toHaveBeenCalled();
+    expect(leadLevel()).toBe('step');
+  });
+
+  it('puts the workflow level back when the Lead level fails to save', async () => {
+    withRules({ autonomy: 'step' });
+    storeLeadLevel({ level: 'step' });
+    leadWrites.mockRejectedValueOnce(new Error('database is locked'));
+    panel();
+
+    fireEvent.click(asksTab({ name: /^Never/ }));
+
+    expect((await newRuns().findByRole('alert')).textContent).toContain('database is locked');
+    expect(savedRules().map((rules) => rules?.autonomy)).toEqual(['run', 'step']);
+    expect(useAppStore.getState().workspaceOverrides[HARBORLINE.id]?.workflowRules?.autonomy).toBe(
+      'step',
+    );
+    expect(leadLevel()).toBe('step');
+    expect(selectedLevels()).toEqual(['Every step']);
+  });
+
+  it('keeps the old level shown while saving and ignores a second pick until it lands', async () => {
+    withRules({ autonomy: 'step' });
+    storeLeadLevel({ level: 'step' });
+    let land: () => void = () => undefined;
+    leadWrites.mockImplementationOnce(
+      ({ level }) =>
+        new Promise<void>((resolve) => {
+          land = () => {
+            storeLeadLevel({ level });
+            resolve();
+          };
+        }),
+    );
+    panel();
+
+    fireEvent.click(asksTab({ name: /After the plan/ }));
+    await waitFor(() => expect(leadWrites).toHaveBeenCalledTimes(1));
+    expect(selectedLevels()).toEqual(['Every step']);
+    fireEvent.click(asksTab({ name: /^Never/ }));
+    land();
+
+    await waitFor(() => expect(selectedLevels()).toEqual(['After the plan']));
+    expect(leadWrites).toHaveBeenCalledTimes(1);
+    expect(savedRules().map((rules) => rules?.autonomy)).toEqual(['plan']);
   });
 
   it('reaches new runs only: a run already going keeps its own copy', async () => {

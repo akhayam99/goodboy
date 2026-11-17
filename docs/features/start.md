@@ -74,11 +74,11 @@ A Lead's autonomy is nine rows you can read and change.
 - The three levels, **Every step**, **After the plan** and **Never**, are presets of these rows. **Custom** lights up by itself when the rows match none of them.
 - The panel groups the rows under Agents, Git and publishing, Project and Finish, and its first line says what the Lead asks you before.
 - Each row has its own value on a Lead and a default for the workspace. A row set on a Lead is marked **Changed**, with **Reset** beside it. A row you did not set follows the default live.
-- The workspace default sits under **Lead asks you** in the Run defaults. The panel opens from the **Asks you** chip of the start form and from the Lead page.
+- The workspace level is **Stops for your OK** in the Run defaults, shared with workflows. The panel opens from the **Asks you** chip of the start form and from the Lead page.
 - A row saves the moment you change it. A failed save keeps the old value and shows the error under the row.
 - A row you tighten while an agent runs applies to its next start. One you loosen never releases a start that already waits.
 - The spend limit shows under Finish, read only. Four rules never change, listed under Always on: a force push asks and takes a backup, you merge, agents never push, and the Lead never writes code.
-- An older workflow run keeps the level it started with, from **Workflow asks you**.
+- An older workflow run keeps the level it started with.
 
 ### The Kind chip
 

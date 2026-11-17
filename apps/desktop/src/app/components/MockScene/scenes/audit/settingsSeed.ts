@@ -1,12 +1,15 @@
-import type {
-  ClaudePermissionMode,
-  MountId,
-  OverrideSettings,
-  Project,
-  ProjectId,
-  SessionId,
-  Workspace,
-  WorkspaceId,
+import type { AutoLevel } from '@goodboy/core/auto';
+import type { WorkspaceValueKey } from '@goodboy/db';
+import {
+  DEFAULT_WORKFLOW_RULES,
+  type ClaudePermissionMode,
+  type MountId,
+  type OverrideSettings,
+  type Project,
+  type ProjectId,
+  type SessionId,
+  type Workspace,
+  type WorkspaceId,
 } from '@goodboy/types';
 import type { ProviderDisplayInfo } from '../../../../../features/providers/providers';
 import { useAppStore } from '../../../../../store';
@@ -24,6 +27,19 @@ import {
 } from '../learningsSeed';
 
 const clock = sceneClock({ anchor: '2026-09-22T10:12:00.000Z' });
+
+type AutoLevelParams = {
+  readonly level: AutoLevel;
+};
+
+type WorkspaceValueParams = {
+  readonly workspaceId: WorkspaceId;
+  readonly key: WorkspaceValueKey;
+};
+
+type ChangeAutoLevelParams = AutoLevelParams & {
+  readonly workspaceId: WorkspaceId;
+};
 
 export const SETTINGS_WORKSPACE_ID = 'mock-settings-workspace-harborline' as WorkspaceId;
 const SETTINGS_NOW = clock.iso({ at: '2026-09-22T10:12:00.000Z' });
@@ -48,7 +64,11 @@ const SETTINGS_OVERRIDES: OverrideSettings = {
   resolveCommitStyle: null,
   afterMerge: null,
   defaultBranchTemplate: null,
+  workflowRules: { ...DEFAULT_WORKFLOW_RULES, autonomy: 'plan' },
 };
+
+const autoLevelValueOf = ({ level }: AutoLevelParams): string =>
+  JSON.stringify({ defaultLevel: level, sessions: {} });
 
 const NO_FOLDER_OVERRIDES: OverrideSettings = {
   defaultProviderId: null,
@@ -318,6 +338,22 @@ export const seedSettingsBase = (): void => {
     currentWorkspaceId: SETTINGS_WORKSPACE_ID,
     projects: [...SETTINGS_PROJECTS],
     workspaceOverrides: { [SETTINGS_WORKSPACE_ID]: SETTINGS_OVERRIDES },
+    workspaceValues: {
+      [SETTINGS_WORKSPACE_ID]: { 'auto.level': autoLevelValueOf({ level: 'plan' }) },
+    },
+    loadWorkspaceValue: async ({ workspaceId, key }: WorkspaceValueParams) =>
+      useAppStore.getState().workspaceValues[workspaceId]?.[key] ?? null,
+    changeAutoLevel: async ({ workspaceId, level }: ChangeAutoLevelParams) => {
+      useAppStore.setState((state) => ({
+        workspaceValues: {
+          ...state.workspaceValues,
+          [workspaceId]: {
+            ...state.workspaceValues[workspaceId],
+            'auto.level': autoLevelValueOf({ level }),
+          },
+        },
+      }));
+    },
     workspaceLearnings: {
       [SETTINGS_WORKSPACE_ID]: workspaceLearningsSeed({
         workspaceId: SETTINGS_WORKSPACE_ID,
