@@ -149,6 +149,13 @@ the place of its work from the click to the result.
   one action in its `action` slot, visible at rest: Review fix, Review, Apply,
   Push, Retry, Analyze again, Open changes. A word never only describes the
   agent; it says what you can do next.
+- **A card is one item.** A card that holds one thing (a failed push, a
+  stopped rebase) keeps its title and puts the line under it. Its verbs sit
+  in the `action` slot, visible at rest, since there is no row to hover. While
+  the agent works the card offers Stop and Open transcript and drops every
+  verb that would race it (Retry, a second start, the hint box). After Failed
+  or Stopped the start verb reads Retry and is the only Retry on the card.
+  The push fix line (`PushFixStatusLine`) is the reference.
 - **The batch.** A batch puts its state on every item (Fixing, Queued with its
   place, Fix ready) and one quiet count in the list's header, with Stop all in
   its `⋯`. Outside the tab that holds the work, the tab carries a live dot.

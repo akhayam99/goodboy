@@ -151,9 +151,10 @@ terminal, Abort rebase. The other states keep the strip (Stash and rebase, Resto
 with a note, Open providers, Open agent). A failed push after
 a rebase offers `Fix with an agent` (the primary: an Implementer on that worktree briefed with the
 command and git output, `fixPushWithAgent`; it commits the fix and never pushes, Goodboy then
-pushes again with the same lease, `settlePushFix`, and the banner follows it with a link to its
-transcript), `Open terminal here` (the session terminal drawer at the worktree with the exact
-push typed at the prompt and not run, `openSessionTerminal` with `prefill`) and `Retry push`.
+pushes again with the same lease, `settlePushFix`), `Open terminal here` (the session terminal
+drawer at the worktree with the exact push typed at the prompt and not run, `openSessionTerminal`
+with `prefill`) and `Retry push`. While the agent works the same panel stays (`fixing-push` is a
+stop panel state) and holds the push fix line with Stop and Open transcript, and no Retry push.
 The same two actions sit beside Retry on the inline failure line of the header Push and Force
 push (`PushFailureActions`, shown when the failed action's error is a push failure (`pushFailedError`)): the
 agent is `fixBranchPushWithAgent`, its finish runs `settleBranchPushFix` (plain push, or force push
@@ -179,16 +180,23 @@ the latest text of the screen that registered it. A continuation may return what
 or the reason it failed). A retry that finds nothing new while the last publication failed on its
 push shows that failure, never `Nothing is waiting for the push` (`failedPushPublication`).
 The card does not depend on staying mounted. The fix of a branch is kept in the store
-(`branchPushFixes`) and its result in `pushFixOutcomes` by mount (`pushed`, `agent_failed` or
-`push_failed`, with the reason and the follow up), both written through to browser storage
-(`pushFixMemory`, six hours, read when the store starts) so a window reload keeps them.
-`pushFixStateOf` reads one answer from them and from the saved agents, so a running `Fix the
-push` agent of the branch is found again even when the window forgot the fix: `working`, `pushed`,
-`failed` or `none`. Every push surface draws it with `usePushFix` and `PushFixStatusLine`: the
-failure card and the header line replace their button while the agent works and show why it
-stopped or what stopped the push after it; the Comments banner (`PushFixIdle`), the header
-(`PushFixStatus`) and the create form (`CreateNotices`) show the same line when no failure is on
-screen, so leaving the page and coming back shows the agent, its progress and its result. A
+(`branchPushFixes`) and its result in `pushFixOutcomes` by mount (`pushed`, `agent_failed`,
+`agent_stopped` when you stopped it, or `push_failed`, with the reason and the follow up), both
+written through to browser storage (`pushFixMemory`, six hours, read when the store starts) so a
+window reload keeps them. `pushFixStateOf` reads one answer from them and from the saved agents,
+so a running `Fix the push` agent of the branch is found again even when the window forgot the
+fix: `working`, `pushed`, `stopped`, `failed` or `none`. Every push surface draws it with
+`usePushFix` and one line, `PushFixStatusLine` (in `features/history/pushFix/`, on
+`ItemWorkLine`): Fixing with the agent's step and active time, Stop and Open transcript while it
+works; then Pushed with the follow up, Stopped ("Nothing was pushed; its edits stay on the
+branch."), or Failed with the reason, each with Open transcript. On the push failure card of the
+Branch header (`usePushFailureSlots`) the line sits under the Push failed title, above the hook
+output; while the agent works the card has no Retry, no hint box and no Fix with an agent, and
+after Failed or Stopped the agent button reads Retry and is the only Retry. The Comments failure
+card and the create form (`PushFixAgentAction`) show the same line with Retry. The Comments banner
+(`PushFixIdle`), the header (`PushFixStatus`) and the create form (`CreateNotices`) show the line
+when no failure is on screen, so leaving the page and coming back shows the agent, its progress
+and its result. A
 result nobody took (the fix pushed while no continuation was registered) is claimed once by the
 first surface that mounts with a continuation (`claimPushFixOutcome`) and run there. The claim is held
 in memory (`pushFixClaims`) while it runs. `completePushFixOutcome` marks the result taken and records
