@@ -306,8 +306,10 @@ describe('the shell chapter', () => {
 
 describe('the start, agent and workflow chapters', () => {
   it('names the one way to start a session and the folder picker', () => {
-    expect(pointOf('kickoff', 'What kind of run?')).toContain('Lead, Preset or Agent');
-    expect(pointOf('kickoff', 'What kind of run?')).not.toContain('Orchestrated');
+    expect(pointOf('kickoff', 'Plan')).toContain(
+      'The Lead plans it, Follow a workflow or One agent',
+    );
+    expect(pointOf('kickoff', 'Plan')).not.toMatch(/Orchestrated|Preset/);
     expect(pointOf('kickoff', NAMES.startARun)).toContain('a Lead plans the run');
     expect(pointOf('kickoff', 'Start from Tasks')).toContain('Pick from Tasks');
     expect(pointOf('kickoff', 'Pin folders')).toContain('Auto picks');
@@ -387,7 +389,7 @@ describe('the Words chapter', () => {
       'Agent',
       'Run',
       'Plan',
-      'Preset',
+      'Workflow',
       'Lead',
       'Scout',
       'Turn',
@@ -408,13 +410,14 @@ describe('the Words chapter', () => {
     expect(unknown).toEqual([]);
   });
 
-  it('defines Run, Plan, Preset, Lead and Scout in one sentence each', () => {
-    ['Run', 'Plan', 'Preset', 'Lead', 'Scout'].forEach((term) => {
+  it('defines Run, Plan, Workflow, Lead and Scout in one sentence each', () => {
+    ['Run', 'Plan', 'Workflow', 'Lead', 'Scout'].forEach((term) => {
       const desc = words?.points.find((point) => point.term === term)?.desc ?? '';
       expect(desc).not.toBe('');
       expect(desc.split(/(?<=[.?!])\s+/)).toHaveLength(1);
     });
-    expect(pointOf('words', 'Preset')).toContain('workflow');
+    expect(pointOf('words', 'Workflow')).toContain('steps');
+    expect(allText()).not.toMatch(/\bpresets?\b/i);
     expect(pointOf('words', 'Session')).not.toMatch(/\btask\b/);
   });
 

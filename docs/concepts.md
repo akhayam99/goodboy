@@ -15,10 +15,9 @@ The other docs link here instead of explaining them again.
 - **Folder**: one repository or plain folder inside a workspace (the code calls it a project)
 - **Session**: one goal, the unit of work, with its own limit and shared notes
 - **Agent**: one chat inside a session, with its own provider and model
-- **Workflow**: a list of steps you can reuse, and each step gets its own agent
+- **Workflow**: a list of steps you can reuse, and each step gets its own agent; a run follows it as written or adapts it as it goes
 - **Run**: one go at a goal inside a session, started as a workflow, an agent or Auto
 - **Plan**: the steps an agent writes before it builds, kept as an artifact you approve or revise
-- **Preset**: a workflow you saved, which a run follows as written or adapts as it goes
 - **Auto**: the agent that picks how a run goes and starts helpers, under your limit
 - **Scout**: a role that reads the code and answers, and changes nothing
 - **Artifact**: a plan, report or wireframe an agent saves as its own page
