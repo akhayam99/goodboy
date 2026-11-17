@@ -241,7 +241,7 @@ describe('the u23 comments scenes', () => {
     fireEvent.click(within(home).getByRole('button', { name: 'Stop' }));
     expect(
       await screen.findByRole('dialog', {
-        name: /^Stop (this fix run|the fix for \d+ comments)\?$/,
+        name: 'Stop this fix run?',
       }),
     ).toBeDefined();
   });
