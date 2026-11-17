@@ -252,17 +252,17 @@ describe('StartRun limit by kind', () => {
     expect(screen.queryByRole('button', { name: /^Limit: / })).toBeNull();
   });
 
-  it('words the chip help from the Run defaults, with a kind and without one', async () => {
+  it('words the chip help from Runs in Settings, with a kind and without one', async () => {
     renderField({ sessionId: SESSION.id });
     fireEvent.click(await screen.findByRole('button', { name: RUN_DEFAULT }));
-    screen.getByText(/Run defaults set where new runs start\./);
+    screen.getByText(/Runs in Settings sets where new runs start\./);
     expect(screen.queryByText(/Other runs in this workspace/)).toBeNull();
     fireEvent.keyDown(document.body, { key: 'Escape', code: 'Escape' });
 
     pickKind({ name: 'Preset' });
     fireEvent.click(await screen.findByRole('button', { name: RUN_DEFAULT }));
 
-    screen.getByText(/Run defaults set where new runs start\./);
+    screen.getByText(/Runs in Settings sets where new runs start\./);
   });
 
   it('opens the Run defaults page from the Change default link of the chip', async () => {

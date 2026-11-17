@@ -7,6 +7,7 @@ import {
   type SettingsStatus,
 } from './components/SettingsStudio/settingsDirectory';
 import { SETTING_ROWS } from './settingRows';
+import { settingsSearchHits } from './settingsSearchHits';
 import {
   CONNECTIONS_SETTING_KEY,
   SETTING_ROW_KEY_PREFIX,
@@ -167,6 +168,11 @@ describe('settingsPaletteEntries', () => {
       label: 'Workspace settings: Branches',
       target: { scope: 'workspace', section: 'branches' },
     },
+    ...['Run defaults', 'Start as', 'Rules', 'Workflow rules'].map((former) => ({
+      former,
+      label: 'Workspace settings: Runs',
+      target: { scope: 'workspace', section: 'general' },
+    })),
   ])('opens $label when searching its old name $former', ({ former, label, target }) => {
     const open = vi.fn();
     const entry = settingsPaletteEntries({
@@ -178,4 +184,17 @@ describe('settingsPaletteEntries', () => {
     entry?.run();
     expect(open).toHaveBeenCalledWith(target);
   });
+
+  it.each(['Run defaults', 'Start as'])(
+    'Search settings answers %s with the Runs page first',
+    (query) => {
+      const hits = settingsSearchHits({
+        groups: settingsDirectory({ status: QUIET_STATUS, workspaceName: 'Harborline' }),
+        query,
+        open: vi.fn(),
+      });
+
+      expect(hits[0]?.label).toBe('Workspace settings: Runs');
+    },
+  );
 });

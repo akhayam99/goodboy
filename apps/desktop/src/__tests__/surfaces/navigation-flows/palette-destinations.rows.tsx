@@ -264,11 +264,11 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
     ),
   },
   {
-    name: 'palette: Run defaults',
-    covers: ['openSettings', 'scope:workspace', 'palette:Run defaults'],
+    name: 'palette: Workspace settings: Runs',
+    covers: ['openSettings', 'scope:workspace', 'palette:Runs'],
     door: 'palette',
-    open: () => openPalette(/^Run defaults/, 'run defaults'),
-    lands: () => heading('Run defaults'),
+    open: () => openPalette(/^Workspace settings: Runs/, 'runs'),
+    lands: () => heading(/^Runs$/),
   },
   {
     name: 'palette: Impact',

@@ -1978,8 +1978,8 @@ session up again in Goodboy.
   and it spawns runs. **Workflows** is the studio and the library, and the word
   stays for definitions you pick ("Start workflow", "from a workflow"). A verb
   on one execution says run: **Start workflow**, **Stop run**, **Archive run**,
-  **Delete run**. The ⌘K section that lists them is **Runs**. **Run defaults**
-  is the tab of Workflows that sets what
+  **Delete run**. The ⌘K section that lists them is **Runs**. The **Runs** page
+  of the workspace settings (it was Run defaults) sets what
   a new run starts with. A renamed label keeps its old name as a ⌘K alias:
   searching the old word finds the new one (`formerNamesOf` in `names.ts`).
 - **Models** is the workspace settings page that sets what each role runs on

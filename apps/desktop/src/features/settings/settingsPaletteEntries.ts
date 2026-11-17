@@ -78,7 +78,7 @@ export const settingsPaletteEntries = ({ groups, open }: Params): ReadonlyArray<
       group: 'action',
       icon: CONCEPT_ICONS[group.concept],
       tag: 'Settings',
-      secondary: formerNamesOf(page.label),
+      secondary: [...formerNamesOf(page.label), ...(page.searchAliases ?? [])],
       run: () => open({ ...page.target }),
     })),
   );

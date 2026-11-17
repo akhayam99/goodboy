@@ -57,12 +57,10 @@ const flipSpreadInProviders = async (): Promise<void> => {
   await waitFor(() => expect(spreadRule()).toBe(true), WAIT);
 };
 
-const runDefaultsShowsALink = async (): Promise<void> => {
-  await heading('Run defaults');
-  const band = await screen.findByRole('region', { name: 'New runs' });
-  expect(within(band).getByRole('button', { name: 'Open Models' })).toBeDefined();
-  expect(within(band).getByTestId('rules-policy-summary').textContent).toMatch(/^Claude, Codex/);
-  expect(within(band).queryAllByRole('switch')).toEqual([]);
+const runsLeavesThePolicyToModels = async (): Promise<void> => {
+  await heading(/^Runs$/);
+  await screen.findByRole('region', { name: 'When a run stops for you' });
+  expect(screen.queryByRole('button', { name: 'Open Models' })).toBeNull();
   expect(screen.queryByRole('switch', { name: SPREAD_LABEL })).toBeNull();
 };
 
@@ -102,33 +100,14 @@ const INSTALL_COMMAND = 'brew install gh';
 
 export const POLICY_ROWS: ReadonlyArray<Row> = [
   {
-    name: 'policy: the spread option set in Providers is a link, not a second switch, in Run defaults',
-    covers: ['openSettings', 'studio:workflow', 'palette:Run defaults', 'settings:models'],
+    name: 'policy: the spread option set in Models has no second switch or link in Runs',
+    covers: ['openSettings', 'studio:workflow', 'palette:Runs', 'settings:models'],
     door: 'palette',
     open: async () => {
       await flipSpreadInProviders();
-      await openPalette(/^Run defaults/, 'run defaults');
+      await openPalette(/^Workspace settings: Runs/, 'run defaults');
     },
-    lands: runDefaultsShowsALink,
-  },
-  {
-    name: 'policy: the link in Run defaults opens Providers on the same policy',
-    covers: ['openSettings', 'studio:workflow', 'palette:Run defaults', 'settings:models'],
-    door: 'palette',
-    open: async () => {
-      await flipSpreadInProviders();
-      await openPalette(/^Run defaults/, 'run defaults');
-      await runDefaultsShowsALink();
-      await clickButton('Open Models');
-    },
-    lands: async () => {
-      await heading('Models');
-      await click(await screen.findByRole('button', { name: /^Claude, Codex/, expanded: false }));
-      const dialog = await screen.findByRole('dialog', { name: 'When a provider is out' });
-      expect(
-        within(dialog).getByRole('switch', { name: SPREAD_LABEL }).getAttribute('aria-checked'),
-      ).toBe('true');
-    },
+    lands: runsLeavesThePolicyToModels,
   },
   {
     name: 'first lap: gh missing, copy the install command, press Check again, then the signed-in form',

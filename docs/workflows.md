@@ -166,15 +166,21 @@ flag plus the run's copy of the rules, and can change later from the run's
 ## Workflow rules
 
 Rules are the workspace defaults every new run starts from. They live only in the
-**Run defaults** page of the workspace settings (Settings > This workspace > Run defaults); the Workflows studio has no tab for
-them. The all-pages Restore defaults and Copy from in the workspace settings menu
-still carry them and list them as Workflow rules in the preview.
+**Runs** page of the workspace settings (Settings > This workspace > Runs, section
+id `general`); the Workflows studio has no tab for them. Its old names (Run
+defaults, Rules, Workflow rules, Start as) find it in Search settings and in
+`⌘K` (`FORMER_NAMES`, `searchAliases` in `workspacePages.ts`). The all-pages
+Restore defaults and Copy from in the workspace settings menu still carry them
+and list them as Runs in the preview.
 
-The page is titled **Run defaults** and has three bands, one row per setting
-(`FieldRow`). `WorkspaceDefaultsGrid` draws the page: `WorkflowRulesPanel` owns
-the **New runs** and **Guidance** bands and takes the **Agents** band
-(children: **Parallel agents**, **Reply length**) from it. A change reaches new
-runs only, since every run keeps its own copy of the rules
+The page asks one question per band, one row per setting (`FieldRow`).
+`WorkspaceDefaultsGrid` draws it: `WorkflowRulesPanel` owns **When a run stops
+for you**, **Spending** and **Guidance**, takes the **Agents** band (**Reply
+length**) as children and the closed **Advanced** disclosure (**Parallel
+agents**, `RunsAdvancedBand`) as `advanced`, last. Advanced says **Parallel
+agents on** beside its title while the switch is on, and a search hit on the row
+opens it. The page has no Models row: Models is the next page of the rail. A
+change reaches new runs only, since every run keeps its own copy of the rules
 (`attachWorkflowToSession` copies them at start). A failed save keeps the old
 value and shows the error under its row.
 
@@ -193,11 +199,6 @@ value and shows the error under its row.
   blank amount is no limit) or when the field loses focus, and what happens at
   the limit, Pause or Warn only, applied on click (`useLimitAmountDraft` in
   `shared/hooks`)
-- **Models** (`DefaultModelsSetting`): the policy in one line ("Claude, Codex ·
-  Cursor as backup") and **Open Models**. It holds no switch and
-  lists no provider: the order and the **Send new steps to the provider with
-  the most room** option live in Settings > This workspace > Models, the one
-  home of the provider policy
 - No separate Auto limit: a limit stored under the old Auto limit
   (`auto.treeLimitUsd`) is folded into the **Limit** above once at boot, for
   every workspace (`foldAutoLimitsAtBoot`, `foldAutoLimitIntoRunDefaults`). The
@@ -206,7 +207,8 @@ value and shows the error under its row.
   the error. After the fold every reader and writer of a run limit (the start
   form, the Auto start, `moveToAuto`, the Auto runtime) uses the Limit of this
   page, and nothing reads the old key
-- **Guidance**: text every run starts with, with its own **Polish**
+- **Guidance**: text every run starts with, one plain field with its own
+  **Polish** and no Write or Preview tabs
 
 ### Guidance
 
@@ -235,7 +237,7 @@ the first line. An orchestrated run tags no step.
 **Polish** on guidance uses `polishWorkflowGuidance` in `packages/core`, its own
 prompt next to the goal polish: one rule per line as a list, the language of the
 input, every rule kept and none added. The builder has no "Also sent to" line:
-the guidance box says only where it goes, and the Run defaults tab keeps the
+the guidance box says only where it goes, and the Runs page keeps the
 line about the profile field. The names there come from `PROFILE_ACCESS`: the
 roles that never read the working rules.
 
@@ -265,7 +267,7 @@ Settings > This workspace > Models, with one sentence under it: with it off, "Ne
 steps follow the provider order."; with it on and a provider passed, where the
 next step goes and how full the passed one is, and otherwise that steps of one
 run can land on different providers (`nextStepPick`, `spreadSentence`).
-The Run defaults page only links there.
+The Runs page shows nothing of it.
 
 The builder opens filled from the rules and shows them in one **From your
 rules** line with **Edit**. A launch control that leaves the rules shows a dot
@@ -346,7 +348,7 @@ read top to bottom at the conversation measure:
   popover explaining "$17.00 spent, $2.00 of it this run"); the run's own spend
   stays on the glance line above, so a number shows once. There is no Save
   or Done: a choice applies on click, the limit on Enter or when the popover
-  closes. Every limit field (the run, the session, Run defaults and Auto) is a
+  closes. Every limit field (the run, the session, the Runs page and Auto) is a
   text field with a decimal keypad, so cents such as `2.50` (or `2,50`) go
   through and Enter is never stopped by a browser step rule; `parseSpendLimit`
   in `features/budget/` is the one rule for what counts as an amount. A failed write keeps the old value with the error under the

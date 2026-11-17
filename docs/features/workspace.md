@@ -124,7 +124,7 @@ Choose how new session branches are named, under **Naming** on the **Branches** 
 
 ### Stops for your OK
 
-Choose when a new run in this workspace stops for your go: every step, after the plan or never. One row in **Run defaults** sets it for workflows and for the Lead alike. One click saves both, and a failed save keeps both old levels and shows the error under the row.
+Choose when a new run in this workspace stops for your go: every step, after the plan or never. One row on the **Runs** page in Settings sets it for workflows and for the Lead alike. One click saves both, and a failed save keeps both old levels and shows the error under the row.
 
 If the two were saved apart, the row names both and selects none until you pick one. Nothing changes before you do. A level saved in one window shows in the others. Each Lead can change its own level and its permission rows from its page.
 

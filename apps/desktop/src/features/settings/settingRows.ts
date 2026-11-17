@@ -61,9 +61,8 @@ const SHORTCUTS: SettingRowPage = { scope: 'app', section: 'shortcuts' };
 const BACKUP: SettingRowPage = { scope: 'app', section: 'backup' };
 const IPHONE: SettingRowPage = { scope: 'app', section: 'iphone' };
 const PROJECTS: SettingRowPage = { scope: 'workspace', section: 'projects' };
-const RUN_DEFAULTS: SettingRowPage = { scope: 'workspace', section: 'general' };
+const RUNS: SettingRowPage = { scope: 'workspace', section: 'general' };
 const MODELS: SettingRowPage = { scope: 'workspace', section: 'models' };
-const NEW_RUNS = 'New runs';
 
 export const SETTING_ROWS: ReadonlyArray<SettingRow> = [
   row({
@@ -278,7 +277,7 @@ export const SETTING_ROWS: ReadonlyArray<SettingRow> = [
     key: 'parallel-agents',
     field: 'parallelAgents',
     help: 'Eligible agents split independent work, then merge one result.',
-    band: 'Agents',
+    band: 'Advanced',
   }),
   fieldRow({
     key: 'reply-length',
@@ -291,8 +290,8 @@ export const SETTING_ROWS: ReadonlyArray<SettingRow> = [
     key: 'stops-for-ok',
     label: STOPS_LEVEL_COPY.label,
     help: STOPS_LEVEL_COPY.help,
-    page: RUN_DEFAULTS,
-    band: NEW_RUNS,
+    page: RUNS,
+    band: 'When a run stops for you',
     formerNames: [
       'Asks you',
       `${NAMES.runKind.workflow} asks you`,
@@ -305,15 +304,8 @@ export const SETTING_ROWS: ReadonlyArray<SettingRow> = [
     key: 'spend-limit',
     label: NAMES.spendCap,
     help: 'Per new run, saved on Enter. The session limit still applies.',
-    page: RUN_DEFAULTS,
-    band: NEW_RUNS,
-  }),
-  row({
-    key: 'run-models',
-    label: NAMES.models,
-    help: 'Which model each role uses.',
-    page: RUN_DEFAULTS,
-    band: NEW_RUNS,
+    page: RUNS,
+    band: 'Spending',
   }),
   fieldRow({
     key: 'after-merge',

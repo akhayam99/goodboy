@@ -102,7 +102,7 @@ with `@` in the field, which starts that role at once with no Auto turn first.
   [Start a run](features/start.md#start-a-run)): `spawnAgent` with the `auto`
   kind and the ask as its first message, or the role named with `@`. The field
   carries the same **Limit** chip (`useAutoTreeLimit`), which starts from the
-  Limit of the Run defaults and applies to this run only. The route is kept per agent in `runs.routes.<sessionId>`.
+  Limit of the Runs settings page and applies to this run only. The route is kept per agent in `runs.routes.<sessionId>`.
 - A start never rereads a setting at the click: there is no mode another window
   can change, so the form on screen is the mode that starts.
 - The goal is the first message of the Auto agent. It is not a plain turn: the
@@ -117,7 +117,7 @@ with `@` in the field, which starts that role at once with no Auto turn first.
   limit pauses Auto, as for runs. A session budget that only warns caps no
   Auto run: every path reads the session cap through `pausingSessionCapOf`
   (`apps/desktop/src/features/budget/`), which gives `null` for one. A new tree
-  starts on the smaller of that cap and the Limit of the Run defaults of the workspace
+  starts on the smaller of that cap and the Limit of the Runs settings page of the workspace
   (`autoTreeLimitOf` in `packages/core/src/auto/`, which also names the winner;
   `startAutoRuntime`, `moveToAuto`, `useAutoTreeLimit` and `setSessionBudget`
   read the session cap this way), and
@@ -128,7 +128,7 @@ with `@` in the field, which starts that role at once with no Auto turn first.
   read, so a cap another window lowered first still ends at the smaller one
   and is never raised, and a cap raised after the read is lowered too), so the next turn pauses on what is
   already spent. A limit exists only when a person sets one. The workspace default is the Limit
-  of the Run defaults page (see [Workflows](workflows.md)), and a start never
+  of the Runs settings page (see [Workflows](workflows.md)), and a start never
   stores a limit: an amount typed on the form is for that run only.
 - A Next card that starts a role gets **Discuss with Auto** as the last
   entry of its more menu. It is the registry verb `suggestion.talkWithAuto`
@@ -1158,7 +1158,7 @@ with `changeAutoLevel`.
 
 The chip lives in the settings line of an Auto agent (`AutoLevelSetting`, next
 to the Limit chip). The workspace default is the **Stops for your OK** row of
-Run defaults, shared with workflows: `changeStopsLevel` writes it with the
+the Runs settings page, shared with workflows: `changeStopsLevel` writes it with the
 workflow level, see [workflows.md](./workflows.md). The chip goes through `useAutoLevel` in `shared/hooks/`,
 which reads `auto.level`, writes through the `changeAutoLevel` store action
 (`writeAutoLevel` on a named session or workspace, then a reload of the value
@@ -1220,7 +1220,7 @@ then fails with "changed in another window"; a failed write keeps the old value.
 The panel for these rows is `features/auto/permissions/`: `LeadPermissionsPanel`
 shows the nine rows in three groups and the four locked rows as one line. The
 level and **Custom** sit above it in `LeadLevelRow` (the drawer) or on the
-**Stops for your OK** row (the Run defaults). `LeadPermissions.level` is the
+**Stops for your OK** row (the Runs settings page). `LeadPermissions.level` is the
 level the rows fall back to, and `leadDetailsDifferOf` counts the rows that
 differ from it: that count is the only source of "Custom, 2 details". A row
 saves when you change it; there is no draft. A failed write keeps the old
@@ -1237,7 +1237,7 @@ and **Fine-tune this run**, which opens the `lead-details` drawer
 a level writes that session's level only, and the last row is **Fine-tune in
 Settings**. A run never writes the workspace default. A new session draft has
 no session to name, so it keeps the level chip, applied to the session once it
-exists. In the Run defaults the **Stops for your OK** row shows Custom and
+exists. On the Runs settings page the **Stops for your OK** row shows Custom and
 Reset for the workspace default rows, and **Fine-tune what the Lead does
 alone** opens them in the page (`LeadDetailsDisclosure`); a level pick there
 writes both level keys, then clears the default rows. The `lead-details`

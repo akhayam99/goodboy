@@ -1254,7 +1254,7 @@ kept.
   every fifteen seconds, which also renews the owner lease. The interval starts with the
   runtime and stops only on teardown. Each tick also starts the tree
   of an Auto agent that has none (`startAutoTrees.ts`), capped at the budget of its session,
-  else at the Limit of the Run defaults of the workspace (`runDefaultLimitOf`), else with no cap
+  else at the Limit of the Runs settings page of the workspace (`runDefaultLimitOf`), else with no cap
   (`autoTreeCapUsd`). It hands the screens the ports they call, the answer to a
   confirm card (`confirmDelegation`) and the Stop button (`stopTree`); the Stop button
   reports a tree that did not stop, and one that another window runs. When delegation is

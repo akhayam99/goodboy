@@ -19,6 +19,7 @@ type SettingsPage = {
   readonly attention: SettingsAttention | null;
   readonly target: SettingsScopeChange;
   readonly isHidden?: boolean;
+  readonly searchAliases?: ReadonlyArray<string>;
 };
 
 export type SettingsGroup = {
@@ -124,6 +125,7 @@ const workspacePagesOf = ({ status }: Pick<Params, 'status'>): ReadonlyArray<Set
     label: page.label,
     attention: workspaceAttention({ page: page.id, subtitles: status.subtitles }),
     target: { scope: 'workspace', section: page.id },
+    searchAliases: page.searchAliases,
   }));
 
 const workspaceGroup = ({ status, workspaceName }: Params): SettingsGroup => ({
