@@ -4,6 +4,7 @@ use std::path::{Path, PathBuf};
 use std::time::{Duration, SystemTime};
 
 use crate::pty_ring::RING_CAP;
+use crate::util::redact::redact_text;
 
 const DIR_NAME: &str = "terminal-scrollback";
 pub const STALE_AFTER: Duration = Duration::from_secs(7 * 24 * 60 * 60);
@@ -58,8 +59,13 @@ pub fn save(dir: &Path, id: &str, bytes: &[u8]) -> io::Result<()> {
         return forget(dir, id);
     }
     create_private_dir(dir)?;
-    let tail = &bytes[bytes.len().saturating_sub(RING_CAP)..];
+    let redacted = redacted_scrollback(bytes);
+    let tail = &redacted[redacted.len().saturating_sub(RING_CAP)..];
     write_private_file(&dir.join(file_name_of(id)), tail)
+}
+
+fn redacted_scrollback(bytes: &[u8]) -> Vec<u8> {
+    redact_text(&String::from_utf8_lossy(bytes)).into_bytes()
 }
 
 pub fn prune_stale(dir: &Path, now: SystemTime, max_age: Duration) -> usize {
@@ -130,6 +136,43 @@ mod tests {
 
         let written = fs::read(dir.join(file_name_of("s::t1"))).unwrap();
         assert_eq!(written.len(), RING_CAP);
+        let _ = fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn a_saved_scrollback_never_holds_a_secret_printed_in_the_terminal() {
+        let dir = scratch("redact");
+        let printed = "\x1b[32m$\x1b[0m env\r\nGITHUB_TOKEN=ghp_abcdefghijklmnopqrstuvwx\r\nOPENAI_API_KEY=sk-proj-abcdefghijklmnop1234\r\ncurl -H 'Authorization: Bearer abcdefghijklmnop' https://u:hunter22@api.acme.dev/ledger-core\r\nAWS_ACCESS_KEY_ID=AKIAABCDEFGHIJKLMNOP\r\npnpm test --filter payments-api\r\n";
+        save(&dir, "s::t5", printed.as_bytes()).unwrap();
+
+        let written =
+            String::from_utf8(fs::read(dir.join(file_name_of("s::t5"))).unwrap()).unwrap();
+        for leak in [
+            "ghp_abcdefghijklmnopqrstuvwx",
+            "sk-proj-abcdefghijklmnop1234",
+            "abcdefghijklmnop'",
+            "hunter22",
+            "AKIAABCDEFGHIJKLMNOP",
+        ] {
+            assert!(!written.contains(leak), "leaked {leak} in {written}");
+        }
+        assert!(written.contains("\x1b[32m$\x1b[0m env\r\n"));
+        assert!(written.contains("api.acme.dev/ledger-core"));
+        assert!(written.contains("pnpm test --filter payments-api\r\n"));
+        let _ = fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn a_scrollback_cut_inside_a_character_still_saves_and_stays_capped() {
+        let dir = scratch("cut");
+        let mut bytes = "é".repeat(RING_CAP).into_bytes();
+        bytes.drain(..1);
+        bytes.extend_from_slice(b"\r\ntoken=abcdefghijkl\r\n");
+        save(&dir, "s::t6", &bytes).unwrap();
+
+        let written = fs::read(dir.join(file_name_of("s::t6"))).unwrap();
+        assert!(written.len() <= RING_CAP);
+        assert!(written.ends_with(b"token=***\r\n"));
         let _ = fs::remove_dir_all(&dir);
     }
 
