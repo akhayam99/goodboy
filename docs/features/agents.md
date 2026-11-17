@@ -94,7 +94,7 @@ Everything that needs you sits in one block joined to the box you type in. The h
 
 A failed turn keeps **Retry** in the dock and **Failed here** in the chat. The latter opens its explanation in Steps, even after a later success. On an older failure it shows the reason on hover.
 
-A stopped agent reads **Stopped by you. What it wrote is kept.** with a filled **Continue**, and a stopped subagent offers **Continue**, never **Retry**. The Lead's limit, failure and project ask sit there too: **Raise to $20.00**, **Retry**, **Use payments-api**. When a run ends with changes, the dock reads **2 files changed on hl/reinstall-deps** with **Review changes**, and nothing when nothing changed. When this conversation asks nothing and the session waits on you elsewhere, it offers the next item from the Overview, as in **Next: Tester asks · 1 more**. A next step the Lead proposes waits there too.
+A stopped agent reads **Stopped by you. What it wrote is kept.** with a filled **Continue**, and a stopped subagent offers **Continue**, never **Retry**. The Lead's limit, failure and project ask sit there too: **Raise to $20.00**, **Retry**, **Use payments-api**. When a run ends with changes, the dock reads **2 files changed on hl/reinstall-deps** with **Review changes**, and nothing when nothing changed. A wait elsewhere in the session stays in the agents rail and in **Needs you** at the top, never in this dock. A next step the Lead proposes waits there too.
 
 An **Always allow** that could not resume reads **Stopped before your answer** with a filled **Continue**.
 

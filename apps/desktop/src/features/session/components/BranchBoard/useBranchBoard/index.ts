@@ -1,12 +1,7 @@
 import { useMemo } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import type { Agent, Session, SessionMountView, TelemetryRecord } from '@goodboy/types';
-import {
-  EMPTY_ARRAY,
-  useAppStore,
-  useSessionOpenQuestions,
-  useSessionPlans,
-} from '../../../../../store';
+import { useAppStore, useSessionOpenQuestions } from '../../../../../store';
 import type { AutoTreeView } from '../../../../../store/slices/auto-view/state';
 import { unreadAgentsOf } from '../../../../../store/slices/agents/unreadAgentsOf';
 import { useNow } from '../../../../../shared/hooks/useNow';
@@ -18,10 +13,6 @@ import { boardInputsOf } from '../../../central/board/boardInputsOf';
 import { branchBoardOf } from '../../../central/board/branchBoardOf';
 import { runningByRowIdOf } from '../../../central/board/runningByRowIdOf';
 import type { BranchBoard } from '../../../central/board/boardTypes';
-import {
-  overviewTileFactsOf,
-  type OverviewTileFacts,
-} from '../../../central/board/overviewTileFactsOf';
 import { sessionKpisOf, type SessionKpis } from '../../../central/board/sessionKpisOf';
 import { placedAgentsOf } from '../../../placedAgentsOf';
 import { agentSpendById } from '../../../timeline/agentSpendById';
@@ -34,7 +25,6 @@ type Params = {
 type Result = Readonly<{
   board: BranchBoard;
   kpis: SessionKpis;
-  tileFacts: OverviewTileFacts;
   entryByRowId: ReadonlyMap<string, BranchEntry>;
   mergedAtByMountId: ReadonlyMap<string, number>;
   runningByRowId: ReadonlyMap<string, number>;
@@ -59,8 +49,6 @@ export const useBranchBoard = ({ session, entries }: Params): Result => {
   const mounts = useAppStore((state) => state.sessionMounts[sessionId] ?? NO_MOUNTS);
   const telemetry = useAppStore((state) => state.sessionTelemetry[sessionId] ?? NO_TELEMETRY);
   const questions = useSessionOpenQuestions(sessionId);
-  const plans = useSessionPlans(sessionId);
-  const artifacts = useAppStore((state) => state.sessionArtifacts[sessionId] ?? EMPTY_ARRAY);
   const agentRunHistory = useSessionRunHistory({ sessionId });
   const { mountGithub } = useSessionMountHosts({ sessionId });
   const now = useNow(CLOCK_MS, true);
@@ -117,10 +105,6 @@ export const useBranchBoard = ({ session, entries }: Params): Result => {
     return new Set<string>(board.rows.filter((row) => unread.has(row.id)).map((row) => row.id));
   }, [agents, board.rows]);
   const kpis = useMemo(() => sessionKpisOf({ board }), [board]);
-  const tileFacts = useMemo(
-    () => overviewTileFactsOf({ questions, plans, artifacts, agents }),
-    [agents, artifacts, plans, questions],
-  );
   const entryByRowId = useMemo(
     () => new Map<string, BranchEntry>(entries.map((entry) => [entry.fact.mountId, entry])),
     [entries],
@@ -128,7 +112,6 @@ export const useBranchBoard = ({ session, entries }: Params): Result => {
   return {
     board,
     kpis,
-    tileFacts,
     entryByRowId,
     mergedAtByMountId,
     runningByRowId,

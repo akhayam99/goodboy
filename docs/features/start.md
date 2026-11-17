@@ -6,7 +6,7 @@ Begin from an issue, a workflow or a question. Everything starts as one draft, a
 
 Write what you want done and press Start. A Lead runs it: it plans first, then starts the agents it needs.
 
-- The **Start a run** field sits at the top of a session's Runs page.
+- The **Start a run** field is a session's Runs page while it has no run. With runs, **New** in the head starts one.
 - On the **New session** page, the same form routes the goal you wrote the same way until you pick a kind.
 - Its hint reads "~ workflows, @ roles".
 - Typing `~` or `@` in an empty field opens the same menu as the chat box. Pick a workflow or a role and the **Plan** row shows it.

@@ -12,7 +12,7 @@ vi.mock('../../../shared/lib/db', async () =>
 );
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, cleanup, fireEvent, render, waitFor } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { brandId } from '@goodboy/types';
 import type { LensKind } from '../../../store';
 import type { TerminalTabId } from '../../../shared/types/terminal';
@@ -139,6 +139,14 @@ const shapeOf = (): HeadShape => {
   };
 };
 
+const titleRowLabels = (): ReadonlyArray<string> => {
+  const row = headOf().querySelector('[data-slot="pane-title-row"]');
+  return [...(row?.querySelectorAll('button') ?? [])]
+    .filter((button) => !button.hasAttribute('data-session-back'))
+    .map((button) => button.getAttribute('aria-label') ?? button.textContent?.trim() ?? '')
+    .slice(1);
+};
+
 const crumbLabels = (): ReadonlyArray<string> =>
   [...document.querySelectorAll('[data-session-crumbs] li')].map(
     (crumb) => crumb.textContent ?? '',
@@ -166,71 +174,62 @@ describe('the session head', () => {
     }
   });
 
-  it('holds New, Ask, Pin, Refresh and More in the title row on every tab', () => {
+  it('holds only New and More in the title row on every tab', () => {
     go({ to: sessionPlace({ sessionId: FLOW_SESSION_ID, lens: 'context' }) });
     renderWorkspace();
 
-    const row = headOf().querySelector('[data-slot="pane-title-row"]');
-    const labels = [...(row?.querySelectorAll('button') ?? [])].map(
-      (button) => button.getAttribute('aria-label') ?? button.textContent?.trim() ?? '',
-    );
-    expect(labels.slice(1)).toEqual([
-      'New',
-      'Ask',
+    expect(titleRowLabels()).toEqual(['New', 'More session actions']);
+  });
+
+  it('lists Ask, Pin, Refresh, Archive and Delete in More session actions', () => {
+    go({ to: sessionPlace({ sessionId: FLOW_SESSION_ID, lens: 'context' }) });
+    renderWorkspace();
+
+    fireEvent.click(screen.getByRole('button', { name: 'More session actions' }));
+
+    const rows = screen
+      .getAllByRole('menuitem')
+      .map((row) => row.textContent?.replace(/\s+/g, ' ').trim() ?? '');
+    expect(rows).toHaveLength(5);
+    for (const [index, word] of [
+      'Ask about this session',
       'Pin session',
       'Refresh session',
-      'More session actions',
-    ]);
+      'Archive',
+      'Delete',
+    ].entries()) {
+      expect(rows[index]).toContain(word);
+    }
   });
 
-  it('opens Ask as a detail panel and keeps it out of the Context tab', () => {
+  it('opens Ask beside the dock from the menu and keeps it out of the Context tab', () => {
     go({ to: sessionPlace({ sessionId: FLOW_SESSION_ID, lens: 'context' }) });
     renderWorkspace();
-
-    expect(document.querySelector('[data-testid="context-ask"]')).toBeNull();
-    const ask = document.querySelector<HTMLElement>('[data-session-action="ask"]');
-    act(() => ask?.click());
-
-    expect(useAppStore.getState().drawer).toMatchObject({
-      kind: 'ask',
-      sessionId: FLOW_SESSION_ID,
-    });
-    expect(ask?.getAttribute('aria-pressed')).toBe('true');
-    act(() => ask?.click());
-    expect(useAppStore.getState().drawer).toBeNull();
-  });
-
-  it.each([
-    { order: 'Ask before the Terminal', isAskFirst: true },
-    { order: 'the Terminal before Ask', isAskFirst: false },
-  ])('presses Ask and closes only Ask beside the dock, opened $order', ({ isAskFirst }) => {
-    go({ to: sessionPlace({ sessionId: FLOW_SESSION_ID, lens: 'context' }) });
-    renderWorkspace();
-    const ask = document.querySelector<HTMLElement>('[data-session-action="ask"]');
-    const openTerminal = () =>
+    act(() =>
       useAppStore.getState().openDrawer({
         kind: 'terminal',
         sessionId: FLOW_SESSION_ID,
         payload: { terminalId: brandId<TerminalTabId>({ value: 'term-ledger' }) },
-      });
+      }),
+    );
 
-    act(() => {
-      if (isAskFirst) {
-        useAppStore.getState().openAsk({ sessionId: FLOW_SESSION_ID });
-        openTerminal();
-        return;
-      }
-      openTerminal();
-      useAppStore.getState().openAsk({ sessionId: FLOW_SESSION_ID });
+    expect(document.querySelector('[data-testid="context-ask"]')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'More session actions' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: /Ask about this session/ }));
+
+    expect(selectDetailDrawer({ state: useAppStore.getState() })).toMatchObject({
+      kind: 'ask',
+      sessionId: FLOW_SESSION_ID,
     });
-
-    expect(selectDetailDrawer({ state: useAppStore.getState() })?.kind).toBe('ask');
-    expect(ask?.getAttribute('aria-pressed')).toBe('true');
-    act(() => ask?.click());
-
-    expect(selectDetailDrawer({ state: useAppStore.getState() })).toBeNull();
     expect(selectDockDrawer({ state: useAppStore.getState() })?.kind).toBe('terminal');
-    expect(ask?.getAttribute('aria-pressed')).toBe('false');
+  });
+
+  it('keeps one menu on a detail page: the title row holds New and no session menu', async () => {
+    go({ to: ARTIFACT_PLACE });
+    renderWorkspace();
+    await waitFor(() => expect(headOf().getAttribute('data-head-nav')).toBe('crumbs'));
+
+    expect(titleRowLabels()).toEqual(['New']);
   });
 
   it('replaces the tabs with Session, Artifacts and the item on an artifact', async () => {

@@ -3,7 +3,6 @@ import type { Agent, Session } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { effectiveAgentStatusOf } from '../../../workTreeModel/agentStateOf';
 import { AgentDockChanges } from './AgentDockChanges';
-import { AgentDockNext } from './AgentDockNext';
 
 type Props = {
   readonly session: Session;
@@ -34,7 +33,6 @@ export const AgentDockLead = ({
       {autoDock}
       {isDocked ? stopped : null}
       {isRunOver ? <AgentDockChanges sessionId={session.id} agent={agent} /> : null}
-      {isDocked && !isRunStep ? <AgentDockNext session={session} agent={agent} /> : null}
     </>
   );
 };

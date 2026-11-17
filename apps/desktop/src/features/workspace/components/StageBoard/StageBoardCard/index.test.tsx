@@ -411,7 +411,7 @@ describe('StageBoardCard one signal', () => {
   it('marks the slot offline when GitHub could not be reached', () => {
     hooks.prFetchState = 'unreachable';
     render(<StageBoardCard session={session} nav={nav} />);
-    expect(screen.getByLabelText('Could not reach GitHub, will retry')).toBeTruthy();
+    expect(screen.getByLabelText("Couldn't reach GitHub, will retry")).toBeTruthy();
   });
 
   it('keeps an archived card to its pull request, never a live signal', () => {
@@ -533,7 +533,7 @@ describe('StageBoardCard actions', () => {
     const onHoverLeave = vi.fn();
     render(<StageBoardCard session={session} nav={nav} onHoverLeave={onHoverLeave} />);
 
-    fireEvent.mouseEnter(screen.getByRole('img', { name: /Could not reach/ }));
+    fireEvent.mouseEnter(screen.getByRole('img', { name: /Couldn't reach/ }));
 
     expect(onHoverLeave).toHaveBeenCalledTimes(1);
   });
@@ -620,21 +620,33 @@ describe('StageBoardCard in the Needs you lane', () => {
     expect(nav.selectCard).not.toHaveBeenCalled();
   });
 
-  it('keeps the first dynamic action ahead of the reason button', () => {
+  it('makes the question word the button when the first action answers that question', () => {
     hooks.stage = 'attention';
     hooks.attention = 'open-question';
+    const answer = vi.fn();
     useDynamicActionsMock.mockReturnValue([
-      {
-        key: 'questions',
-        icon: HelpCircle,
-        tone: 'warning',
-        label: 'Answer now',
-        onClick: vi.fn(),
-      },
+      { key: 'questions', icon: HelpCircle, tone: 'warning', label: 'Answer now', onClick: answer },
     ]);
     render(<StageBoardCard session={session} nav={nav} />);
 
-    screen.getByLabelText('Answer now');
+    expect(screen.queryByLabelText('Answer now')).toBeNull();
+    expect(
+      within(screen.getByRole('group', { name: 'Session quick actions' })).queryAllByRole('button'),
+    ).toHaveLength(0);
+    fireEvent.click(screen.getByLabelText('1 question for you', { selector: 'button' }));
+    expect(answer).toHaveBeenCalledTimes(1);
+    expect(nav.selectCard).not.toHaveBeenCalled();
+  });
+
+  it('keeps a round button for an action the reason word does not name', () => {
+    hooks.stage = 'attention';
+    hooks.attention = 'open-question';
+    useDynamicActionsMock.mockReturnValue([
+      { key: 'run', icon: Play, tone: 'primary', label: 'Continue', onClick: vi.fn() },
+    ]);
+    render(<StageBoardCard session={session} nav={nav} />);
+
+    screen.getByLabelText('Continue', { selector: 'button' });
     expect(screen.queryByLabelText('1 question for you', { selector: 'button' })).toBeNull();
   });
 
@@ -717,7 +729,7 @@ describe('StageBoardCard with the real tooltip beside the hover card', () => {
     hooks.prFetchState = 'unreachable';
     render(<CardWithSurface />);
     fireEvent.mouseEnter(screen.getByRole('article'));
-    fireEvent.mouseEnter(screen.getByRole('img', { name: /Could not reach/ }));
+    fireEvent.mouseEnter(screen.getByRole('img', { name: /Couldn't reach/ }));
     wait(500);
 
     expect(tooltips()).toHaveLength(1);

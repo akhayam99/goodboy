@@ -646,9 +646,10 @@ the row before the title is cut, then the model (below 920) and the origin
 (below 928, only while no row has a model, `yieldsTo`) (`runsGridColumns.ts`). A row is the button;
 an agent or Auto row also opens the agent's right click menu, and an archived run is restored from its page. The state
 word and the dot of a workflow run come from `runRowFactsOf`, the same function the identity row
-of the Agents column reads. `runRowFactsOf` computes no word of its own: it reads `runStateOf`, the one function that holds the word, the page word, the tone, the primary kind and whether the run needs you for every way a run stops. The run tail and the glance read the same table (`runStateOfPrimary`), so a halted step is **Needs you** on the run page and **Not finished** or **Failed** in the list, from one place. The page opens on the list with a quiet **Start a run** row that opens
-the field (`StartRun`, see [Start a run](features/start.md#start-a-run)) in place and **Esc** closes it;
-a session with no run shows the field alone.
+of the Agents column reads. `runRowFactsOf` computes no word of its own: it reads `runStateOf`, the one function that holds the word, the page word, the tone, the primary kind and whether the run needs you for every way a run stops. The run tail and the glance read the same table (`runStateOfPrimary`), so a halted step is **Needs you** on the run page and **Not finished** or **Failed** in the list, from one place. The page opens on the list with no start row: **New** in the head starts a run, and the
+`session.startRun` verb (⌘K, the sidebar row) opens the field (`StartRun`, see
+[Start a run](features/start.md#start-a-run)) above the list through `startRunEventName`, and
+**Esc** closes it; a session with no run shows the field alone.
 
 A routed start (`startRoutedRun` in `features/session/startRun/`) uses today's
 engines. `runRouteOf` picks the row; a plan creates an `origin: 'orchestrated'`

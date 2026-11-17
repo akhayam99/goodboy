@@ -109,7 +109,7 @@ describe('the central column scenes', () => {
     await show({ name: 'u26-central-mid-light' });
 
     screen.getByRole('region', { name: 'Branches' });
-    expect(document.querySelector('[data-slot="session-kpis"]')?.children).toHaveLength(5);
+    expect(document.querySelector('[data-slot="session-kpis"]')?.children).toHaveLength(3);
     expect(screen.queryByRole('region', { name: 'Now' })).toBeNull();
   });
 

@@ -91,11 +91,12 @@ describe('the u36 runs list scenes', () => {
     screen.getByRole('button', { name: 'Open Replay the failed webhooks, Agent, Stopped' });
   });
 
-  it('u36-p14-runs-start-open opens the form in place under the Start a run row', async () => {
+  it('u36-p14-runs-start-open opens the form above the list, with no Start a run row', async () => {
     await mount('u36-p14-runs-start-open');
 
     screen.getByRole('textbox', { name: 'Start a run' });
     screen.getByRole('list', { name: 'Runs' });
+    expect(screen.queryByRole('button', { name: 'Start a run' })).toBeNull();
   });
 
   it('u36-p14-runs-empty is the form with no list and no row', async () => {

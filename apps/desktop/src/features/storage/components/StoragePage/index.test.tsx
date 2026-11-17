@@ -593,12 +593,12 @@ describe('StoragePage', () => {
 
     it('reads the branches of the scope again with the sizes on Check again', () => {
       const ledger = aProject({
-        workspaceId: safeIdle.workspaceId,
+        workspaceId: safeIdle.workspaceId ?? undefined,
         name: 'ledger-core',
         kind: 'repo',
       });
       const relay = aProject({
-        workspaceId: northwindFolder.workspaceId,
+        workspaceId: northwindFolder.workspaceId ?? undefined,
         name: 'notify-relay',
         kind: 'repo',
       });

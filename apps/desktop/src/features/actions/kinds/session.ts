@@ -57,6 +57,7 @@ import { behindBranchesOf } from '../../history/behindBranchesOf';
 import { SESSION_EXTERNAL_OPEN_ACTIONS, withGoToSubmenu } from './sessionGoToActions';
 import { lifecyclePortsOf } from './lifecyclePortsOf';
 import { SESSION_BRANCH_ACTIONS } from './sessionBranchActions';
+import { SESSION_ASK_ACTION } from './sessionAskAction';
 import { mergedFactsOf, type MergedFacts } from './mergedMountsOf';
 
 export type SessionFacts = MergedFacts & {
@@ -355,6 +356,7 @@ const SESSION_ACTIONS: ReadonlyArray<ActionDefinition<SessionFacts>> = [
       });
     },
   },
+  SESSION_ASK_ACTION,
   {
     id: 'session.pin',
     label: NAMES.pin,

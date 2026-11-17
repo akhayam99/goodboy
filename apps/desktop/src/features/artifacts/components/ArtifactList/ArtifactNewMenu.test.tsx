@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 
-import { act, cleanup, render, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { SessionId } from '@goodboy/types';
 
@@ -21,7 +21,7 @@ afterEach(cleanup);
 
 describe('ArtifactNewMenu', () => {
   it('opens its kinds when the trail asks for a new artifact', () => {
-    render(<ArtifactNewMenu sessionId={SESSION_ID} onImportWireframe={() => undefined} />);
+    render(<ArtifactNewMenu sessionId={SESSION_ID} isEmpty onImportWireframe={() => undefined} />);
     expect(screen.queryByText('Wireframe')).toBeNull();
 
     act(() => {
@@ -30,5 +30,22 @@ describe('ArtifactNewMenu', () => {
 
     expect(screen.getByText('Wireframe')).toBeDefined();
     expect(screen.getByText('Report')).toBeDefined();
+  });
+
+  it('leaves Report and Wireframe to New in the head once the session has artifacts', () => {
+    render(
+      <ArtifactNewMenu
+        sessionId={SESSION_ID}
+        isEmpty={false}
+        onImportWireframe={() => undefined}
+      />,
+    );
+
+    expect(screen.queryByRole('button', { name: /New artifact/ })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Artifact files' }));
+    expect(screen.queryByText('Report')).toBeNull();
+    expect(screen.queryByText('Wireframe')).toBeNull();
+    screen.getByRole('menuitem', { name: /Import wireframe JSON/ });
+    screen.getByRole('menuitem', { name: /Show in Finder/ });
   });
 });

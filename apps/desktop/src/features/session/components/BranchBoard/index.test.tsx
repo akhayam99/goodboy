@@ -168,12 +168,12 @@ const proposalsOf = ({ sizeBytes }: ProposalsParams): ReadonlyArray<MountCleanup
   }));
 
 describe('the branch board on the Overview', () => {
-  it('draws five tiles above a board with one row per branch', async () => {
+  it('draws three tiles above a board with one row per branch', async () => {
     seedCentralColumn({ kind: 'branches' });
     await show();
 
     const tiles = document.querySelector('[data-slot="session-kpis"]');
-    expect(tiles?.children).toHaveLength(5);
+    expect(tiles?.children).toHaveLength(3);
     expect(rowButtons().length).toBeGreaterThan(1);
     screen.getByRole('region', { name: 'Branches' });
   });
@@ -309,7 +309,7 @@ describe('the branch board on the Overview', () => {
     expect(within(tenant).queryAllByRole('button')).toHaveLength(0);
   });
 
-  it('shows Questions, Artifacts, Spend and Time tiles and no Checks or Needs you tile', async () => {
+  it('shows Branches, Spend and Time tiles and leaves Questions and Artifacts to the tabs', async () => {
     seedCentralColumn({ kind: 'branches' });
     await show();
     const tiles = document.querySelector<HTMLElement>('[data-slot="session-kpis"]');
@@ -318,34 +318,13 @@ describe('the branch board on the Overview', () => {
     }
     const text = tiles.textContent ?? '';
 
-    for (const label of ['Branches', 'Questions', 'Artifacts', 'Spend', 'Time']) {
+    for (const label of ['Branches', 'Spend', 'Time']) {
       expect(text).toContain(label);
     }
-    expect(text).not.toContain('Checks');
-    expect(text).not.toContain('Needs you');
-    expect(text).not.toContain('Agents working');
-  });
-
-  it('filters the board with Questions and Clear, and the line says so', async () => {
-    seedCentralColumn({ kind: 'branches' });
-    await show();
-    const before = rowButtons().length;
-
-    fireEvent.click(screen.getByRole('button', { name: /Questions/ }));
-    const needsLine = document.querySelector<HTMLElement>('[data-board-filter="questions"]');
-    if (needsLine === null) {
-      throw new Error('The filter line must show.');
+    for (const label of ['Questions', 'Artifacts', 'Checks', 'Needs you', 'Agents working']) {
+      expect(text).not.toContain(label);
     }
-    expect(needsLine.textContent).toMatch(/open question/);
-    expect(rowButtons().length).toBeLessThanOrEqual(before);
-    if (rowButtons().length === 0) {
-      expect(document.querySelector('[data-board-group]')).toBeNull();
-      expect(needsLine.getAttribute('data-board-filter-empty')).toBe('true');
-    }
-
-    fireEvent.click(within(needsLine).getByRole('button', { name: 'Clear' }));
-    expect(document.querySelector('[data-board-filter]')).toBeNull();
-    expect(rowButtons()).toHaveLength(before);
+    expect(within(tiles).queryAllByRole('button')).toHaveLength(0);
   });
 
   it('names each worktree before Remove worktrees acts, and removes one by one', async () => {

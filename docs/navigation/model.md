@@ -53,7 +53,9 @@
   breathing, needs you warning, in review success, done merged, archived
   neutral and still; it steps under the selection box while one shows): a goal
   of up to two lines (the full goal in the
-  tooltip) is the card's one button, the quick action sits at its right, the
+  tooltip) is the card's one button, the quick action sits at its right (or,
+  when it answers the reason the signal names, `signalActionOf`, the signal
+  itself is the button and no icon shows), the
   lifecycle menu is the right click and Shift F10, and the bottom line holds the project
   in gray (`projectLineOf`, "payments-api +1" for several) and one signal at the
   right (`boardSignalOf`, the same one the List row shows): an open question,

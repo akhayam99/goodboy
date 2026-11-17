@@ -102,7 +102,7 @@ While the session's workflows load, the run page draws its goal, its facts and t
 
 <sub>Screenshot from Goodboy 0.31.12</sub>
 
-Runs opens on your runs. A quiet **Start a run** row opens the field in place, and **Esc** closes it. With no run yet the field is the page.
+Runs opens on your runs. **New** in the head starts the next one, and **Start a run** from ⌘K opens the field above the list, where **Esc** closes it. With no run yet the field is the page.
 
 The groups are **Needs you**, **Running**, **Idle**, **Finished** and **Archived**. An agent you stopped reads **Stopped**. A preset that has not started reads **Ready**. The row always offers the real **Continue** or **Start**, and **Connect** when the provider is signed out. A row names the branch its run works on, and the rest as `+N`.
 
