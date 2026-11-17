@@ -74,4 +74,25 @@ describe('the u25 integration fix scenes', () => {
     expect(within(alert).getByRole('button', { name: 'Fix with an agent' })).toBeDefined();
     expect(within(alert).getByRole('button', { name: 'Open terminal here' })).toBeDefined();
   });
+
+  it('leads with Check again and no Retry after origin moved', async () => {
+    await renderScene({ name: 'branch-force-push-origin-moved' });
+
+    const alert = await screen.findByRole('alert');
+    expect(alert.textContent).toContain('Origin changed. Check again before force pushing.');
+    within(alert).getByRole('button', { name: 'Check again' });
+    expect(within(alert).queryByRole('button', { name: 'Retry' })).toBeNull();
+  });
+
+  it('lists what is new on origin and asks again after the check', async () => {
+    await renderScene({ name: 'branch-force-push-origin-checked' });
+
+    const alert = await screen.findByRole('alert');
+    const list = within(alert).getByRole('list', { name: 'New on origin' });
+    expect(list.textContent).toContain('Retry the Northwind webhook once on a timeout');
+    expect(list.textContent).toContain('Cascadia');
+    within(alert).getByRole('button', { name: 'Force push anyway' });
+    within(alert).getByRole('button', { name: 'Rebase on their commits' });
+    expect(within(alert).queryByRole('button', { name: 'Retry' })).toBeNull();
+  });
 });

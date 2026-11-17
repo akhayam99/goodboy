@@ -12,6 +12,7 @@ type Props = {
   readonly failureActions?: ReactNode;
   readonly failureHint?: ReactNode;
   readonly failureDetail?: ReactNode;
+  readonly canRetry?: boolean;
 };
 
 export const ActionRunLine = ({
@@ -23,6 +24,7 @@ export const ActionRunLine = ({
   failureActions = null,
   failureHint = null,
   failureDetail = null,
+  canRetry = true,
 }: Props) => {
   if (run === null || run.phase === 'pending' || run.message === null) {
     return null;
@@ -46,9 +48,11 @@ export const ActionRunLine = ({
             actions={
               <>
                 {failureActions}
-                <Button size="sm" variant="secondary" onClick={onRetry}>
-                  Retry
-                </Button>
+                {canRetry && (
+                  <Button size="sm" variant="secondary" onClick={onRetry}>
+                    Retry
+                  </Button>
+                )}
               </>
             }
           />
