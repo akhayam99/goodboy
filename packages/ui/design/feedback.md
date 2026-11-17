@@ -187,6 +187,16 @@ the place of its work from the click to the result.
   transcript opens an agent's work and Open run opens a run. Failed is
   `role="alert"`, every other word `role="status"`. `?scene=u48-item-work-line`
   shows each word.
+- **One word on every surface.** The rail's Needs you rows, the board and
+  session marks, Ask, the fix run line in the transcript and the rebase panel
+  read the same words. Counts come from one function
+  (`resolveWordCountText`): "#318 · 2 fixes ready · 1 failed", never "to
+  review" or "couldn't fix". The transcript line reads Fixing, Question and
+  Fixed. A conflict the Lead resolves reads Resolving and offers Open
+  transcript. Discard means one thing: it throws a proposed fix away, on the
+  row and in the Fix comments drawer, and the comment is open again; parking
+  a comment is Skip. The retired names guard holds Fix proposed, No fix
+  proposed, Fix stopped, Re-running, Open the agent and "couldn't fix".
 
 ## Empty states
 

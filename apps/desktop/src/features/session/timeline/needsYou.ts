@@ -1,6 +1,7 @@
 import { countNoun } from '../../../shared/utils/countNoun';
 import type { MountId, OpenQuestion, SessionEvent } from '@goodboy/types';
 import { agentDisplayName } from '../../../shared/utils/agentDisplayName';
+import { resolveWordCountText } from '../../resolve/resolveWordCountText';
 import { hasHistoryRecovery } from '../../history/historyRecovery';
 import { isRowNeedingYou } from '../../workTreeModel/rowState';
 import type {
@@ -116,12 +117,18 @@ const owedText = ({
 }): string =>
   [
     prNumber === null ? 'Fix run' : `#${prNumber}`,
-    ...(owed.toReview === 0 ? [] : [`${owed.toReview} to review`]),
+    ...(owed.toReview === 0
+      ? []
+      : [resolveWordCountText({ word: 'to_review', count: owed.toReview })]),
     ...(owed.questions === 0
       ? []
-      : [countNoun({ count: owed.questions, one: 'question', many: 'questions' })]),
-    ...(owed.pushFailed === 0 ? [] : [`${owed.pushFailed} push failed`]),
-    ...(owed.couldntFix === 0 ? [] : [`${owed.couldntFix} couldn't fix`]),
+      : [resolveWordCountText({ word: 'question', count: owed.questions })]),
+    ...(owed.pushFailed === 0
+      ? []
+      : [resolveWordCountText({ word: 'push_failed', count: owed.pushFailed })]),
+    ...(owed.couldntFix === 0
+      ? []
+      : [resolveWordCountText({ word: 'couldnt_fix', count: owed.couldntFix })]),
   ].join(' · ');
 
 const mergeFixRunOwners = ({

@@ -24,7 +24,7 @@ The Overview reads top to bottom:
 
 1. **The goal.** The page opens on what the task is for, in the words you gave it.
 2. **The state.** One sentence from the running summary says where the work stands, with when it was written. It turns gray when it is older than a day.
-3. **What waits for you.** The **Needs you** group of the board comes first, and each row says why in words.
+3. **What waits for you.** The **Needs you** group of the board comes first, and each row says why in words. A fix run reads **#318 · 2 fixes ready · 1 failed**, the words of its rows.
 4. **Where each branch stands.** Every row shows the six stages of its branch and the one step it stands at.
 5. **What it costs.** The **Spend** and **Time** tiles add up every branch. Spend names its Leads and agents, and leaves out Leads when there are none.
 

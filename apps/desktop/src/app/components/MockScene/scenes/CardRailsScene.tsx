@@ -13,6 +13,7 @@ import { PermissionDecisionCard } from '../../../../features/permissions/compone
 import { PermissionRequestCard } from '../../../../features/permissions/components/PermissionRequestCard';
 import { QuestionCard } from '../../../../features/context/components/QuestionsTab/QuestionCard';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
+import { NAMES } from '../../../../shared/utils/names';
 import { sceneClock } from '../sceneClock';
 
 const clock = sceneClock({ anchor: '2026-09-22T09:12:00.000Z' });
@@ -162,7 +163,7 @@ export const CardRailsScene = () => {
               icon={<CONCEPT_ICONS.autorun size={ICON_SIZE.control} aria-hidden />}
               title="This step has been running for eleven minutes"
               body="The implementer has not written anything since the rebase."
-              primary={{ label: 'Open the agent', onClick: noop }}
+              primary={{ label: NAMES.openTranscript, onClick: noop }}
               secondary={{ label: 'Stop it', onClick: noop }}
               onDismiss={noop}
               ariaLabel="Nudge"

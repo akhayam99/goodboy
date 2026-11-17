@@ -293,7 +293,7 @@ describe('the job banner', () => {
       stop: { reason: 'conflict', message: '', files: ['webhook.ts'], sha: null },
     });
 
-    screen.getByRole('button', { name: 'Open agent' });
+    screen.getByRole('button', { name: 'Open transcript' });
   });
 
   it('says what a finished rebase did and offers the undo', async () => {
@@ -435,7 +435,7 @@ describe('the job banner', () => {
 
     expect(screen.getAllByRole('button').map((button) => button.textContent)).toEqual([
       'Retry with a note',
-      'Open agent',
+      'Open transcript',
       'Dismiss',
     ]);
     expect(screen.queryByRole('textbox')).toBeNull();
@@ -899,7 +899,7 @@ describe('the rebase stop panel', () => {
     });
   });
 
-  it('shows Auto at work with the files it resolves and Open the Lead only', async () => {
+  it('shows Auto at work with the files it resolves and Open transcript only', async () => {
     gitNow.isRebasing = true;
     gitNow.unmerged = 1;
     conflictsNow.files = [
@@ -919,7 +919,7 @@ describe('the rebase stop panel', () => {
     expect(panel().textContent).toContain('The Lead is rebasing on main');
     expect(panel().textContent).toContain('1 of 2 files resolved.');
     expect(fileStates()).toEqual(['resolved', 'conflict']);
-    expect(verbsIn({ node: panel() })).toEqual(['Open the Lead']);
+    expect(verbsIn({ node: panel() })).toEqual(['Open transcript']);
   });
 
   it('offers Push with the lease once Auto rebased, and says pushed once origin has it', async () => {
@@ -940,7 +940,7 @@ describe('the rebase stop panel', () => {
     );
 
     expect(panel().textContent).toContain('Rebased on main');
-    expect(verbsIn({ node: panel() })).toEqual(['Push', 'Open the Lead']);
+    expect(verbsIn({ node: panel() })).toEqual(['Push', 'Open transcript']);
 
     gitNow.upstreamAhead = 0;
     await refresh();
@@ -966,7 +966,7 @@ describe('the rebase stop panel', () => {
       }),
     );
 
-    expect(verbsIn({ node: panel() })).toEqual(['Push', 'Open the Lead']);
+    expect(verbsIn({ node: panel() })).toEqual(['Push', 'Open transcript']);
 
     fireEvent.click(within(panel()).getByRole('button', { name: 'Push' }));
     await settle();

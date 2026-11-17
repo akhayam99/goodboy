@@ -1,6 +1,7 @@
 import { Copy, FileCode, Quote } from '@goodboy/ui/icons';
 import type { AgentId, SessionId } from '@goodboy/types';
 import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
+import { NAMES } from '../../../shared/utils/names';
 import { agentPlace } from '../../../store/slices/navigation/place';
 import { dispatchAfterNavigation } from '../dispatchAfterNavigation';
 import type { MessageActionTarget, ObjectKindDefinition } from '../types';
@@ -43,7 +44,7 @@ export const MESSAGE_KIND: ObjectKindDefinition<MessageActionTarget, MessageFact
   actions: [
     {
       id: 'message.openAgent',
-      label: 'Open the agent',
+      label: NAMES.openAgent,
       icon: CONCEPT_ICONS.agents,
       group: 'open',
       when: ({ facts }) => facts.hasComposer,

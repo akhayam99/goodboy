@@ -73,7 +73,7 @@ const MARKS: ReadonlyArray<Mark> = [
     title: 'Backfill the settlement dates',
     tone: 'warning',
     state: 'alert',
-    words: "1 comment it couldn't fix",
+    words: '1 comment failed',
   },
   {
     title: 'Write the notify-relay digest',

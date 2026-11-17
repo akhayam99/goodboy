@@ -45,9 +45,7 @@ describe('the node of a session that needs you', () => {
   it('counts the questions and the comments in the words', () => {
     expect(needing('open-question', { openQuestionCount: 3 }).label).toBe('3 questions for you');
     expect(needing('fix-needs-you', { fixNeedsYouCount: 2 }).label).toBe('2 comments need you');
-    expect(needing('fix-couldnt-fix', { fixCouldntFixCount: 2 }).label).toBe(
-      "2 comments it couldn't fix",
-    );
+    expect(needing('fix-couldnt-fix', { fixCouldntFixCount: 2 }).label).toBe('2 comments failed');
   });
 
   it('keeps an unread reply quiet, with the dot instead of a mark', () => {

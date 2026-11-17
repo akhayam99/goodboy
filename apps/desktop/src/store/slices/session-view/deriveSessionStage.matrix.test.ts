@@ -96,12 +96,12 @@ const ROWS: ReadonlyArray<Row> = [
     before: {
       stage: 'attention',
       attention: 'fix-couldnt-fix',
-      reason: "2 comments couldn't be fixed",
+      reason: '2 comments failed',
     },
     after: {
       stage: 'attention',
       attention: 'fix-couldnt-fix',
-      reason: "2 comments couldn't be fixed",
+      reason: '2 comments failed',
       isRunning: false,
     },
   },

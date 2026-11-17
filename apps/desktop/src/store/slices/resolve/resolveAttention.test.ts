@@ -149,7 +149,7 @@ describe('resolveAttentionNotices', () => {
     ]);
     expect(notices.map((notice) => notice.title)).toEqual([
       'A fix run needs you',
-      "A fix run couldn't fix a note",
+      'A fix run failed on a note',
     ]);
   });
 
@@ -160,7 +160,7 @@ describe('resolveAttentionNotices', () => {
       sessionId: SESSION,
     });
 
-    expect(notices.map((notice) => notice.title)).toEqual(["A fix run couldn't fix 3 comments"]);
+    expect(notices.map((notice) => notice.title)).toEqual(['A fix run failed on 3 comments']);
   });
 
   it('tells you once, in red, when a push fails, and not again while it stays failed', () => {
