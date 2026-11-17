@@ -729,7 +729,8 @@ activity yet show the plain overview with its actions.
 
 ## The session tools
 
-The right rail is one 56px column (`SESSION_TOOL_RAIL_WIDTH`) at the window's
+The right rail is one 56px column (`TOOL_RAIL_WIDTH_PX`; 44px, icons only, the
+name in the tooltip, under a 1100px window, as the places rail) at the window's
 right edge on every screen of a workspace, `aria-label="Tools"` (`SessionTools`,
 drawn by `ShellToolRail` in
 the shell's `rightRail` slot, and inside their own sheet by Tasks, Chat and

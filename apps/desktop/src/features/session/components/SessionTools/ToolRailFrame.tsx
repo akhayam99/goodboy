@@ -1,6 +1,6 @@
 import { useLayoutEffect, useRef, useState } from 'react';
 import type { SessionId } from '@goodboy/types';
-import { PANE_RHYTHM, cn } from '@goodboy/ui';
+import { PANE_RHYTHM, TOOL_RAIL_WIDTH_PX, cn, useShellRailForm } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
 import { selectBrowserTabCount } from '../../../../store/slices/browser/selectBrowserTabCount';
 import { selectDetailDrawer } from '../../../../store/slices/drawer/selectDetailDrawer';
@@ -9,7 +9,6 @@ import { selectSlotBack } from '../../../../store/slices/drawer/selectSlotBack';
 import { monitoringSignalOf } from '../../../monitoring/monitoringSignalOf';
 import { runningTerminalCount } from '../../../terminal/runningTerminalCount';
 import { portsFactOf } from './portsFactOf';
-import { SESSION_TOOL_RAIL_WIDTH } from './sessionToolRailWidth';
 import { RAIL_TOOLS, type RailToolId } from './sessionTools';
 import { SessionToolButton } from './SessionToolButton';
 import { railFocusMemo } from './railFocusMemo';
@@ -48,6 +47,7 @@ export const ToolRailFrame = ({ sessionId, terminalSignal }: Props) => {
   const hasDownPin = useAppStore(
     (state) => (monitoringSignalOf({ state })?.downPins.length ?? 0) > 0,
   );
+  const form = useShellRailForm();
   const tools = RAIL_TOOLS;
   const count = tools.length;
   const [focusIndex, setFocusIndex] = useState(() =>
@@ -92,11 +92,12 @@ export const ToolRailFrame = ({ sessionId, terminalSignal }: Props) => {
   return (
     <div
       ref={railRef}
-      style={{ width: SESSION_TOOL_RAIL_WIDTH }}
+      style={{ width: TOOL_RAIL_WIDTH_PX[form] }}
       role="toolbar"
       aria-label="Tools"
       aria-orientation="vertical"
       data-testid="session-tools"
+      data-tool-rail={form}
       onFocus={() => {
         railFocusMemo.isDrawerOpener = false;
       }}
@@ -130,6 +131,7 @@ export const ToolRailFrame = ({ sessionId, terminalSignal }: Props) => {
             isWaiting={waitingKind === tool.pane}
             isCurrent={pageKind === tool.pane}
             isDisabled={isSessionMissing}
+            isCaptioned={form === 'wide'}
             fact={toolFactOf({
               pane: tool.pane,
               runningCount,

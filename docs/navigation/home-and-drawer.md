@@ -119,7 +119,8 @@ pair keeps a 12px inset above the window's bottom edge. `DRAWER_GUTTER` in
 **The rail is the anchor.** The drawer container holds the dock and the rail
 on one surface. `DrawerDockBox` puts the rail last (`data-drawer-edge`, fed
 through `DrawerEdgeContext`), pinned to the window's right edge. Closed, the
-container is the rail alone, 56px wide (`SESSION_TOOL_RAIL_WIDTH`). Terminal,
+container is the rail alone, 56px wide, 44px and icons only under a 1100px
+window, the name in the tooltip (`TOOL_RAIL_WIDTH_PX`). Terminal,
 Browser, Scripts, Ask and Monitor each toggle their panel to its left
 (`RAIL_TOOLS`, `toggleRailTool`). Scripts and Ask are disabled without a
 session. The rail stays still while a panel opens, closes or resizes, so its
@@ -215,6 +216,14 @@ card, and the page is `inert`, so nothing under it takes a click, a Tab or a
 screen reader. A click on the scrim asks the top layer of the escape stack
 (`dismissTopEscapeLayer` in `packages/ui/src/escape.ts`), so an editor or an
 unsent draft inside the drawer answers first, exactly as it does to Esc.
+The scrim and the floating aside are no overlay for the keys (`OVERLAY_SELECTOR`
+leaves them out), so Esc, ⌘W in a terminal and ⌘⇧W still reach the panels.
+In the smallest window (1024 by 700) a narrow panel pushes beside the icon rail
+and the Browser lies over the page, left of the rail at the edge. A focused web
+page keeps a bare Esc (only ⌘ chords leave it, see [browser.md](../browser.md)), so that
+Browser closes with ⌘⇧W (File, Close the Drawer, in the menu bar), a click on
+the scrim, or Esc once the keyboard is outside the page
+(`DrawerColumnNarrowWindow.test.tsx`).
 Pushing has no scrim and nothing is inert. Closed, the
 aside is `DRAWER_GUTTER` plus the rail (0px with no rail) and the rail stays
 live; only the panel is `inert`. Opening and closing ease the track's width in

@@ -1,6 +1,9 @@
 import { DRAWER_TIERS, pushReserveOf, type DrawerSizing } from './drawerGeometry';
 import { DOCK_GRID_CAP } from './dockGridCap';
 import { SHELL_GUTTER_PX } from './frameGeometry';
+import type { ShellRailForm } from './components/ShellRail/shellRailFormContext';
+import { shellRailFormOf } from './components/ShellRail/shellRailFormOf';
+import { SHELL_RAIL_WIDTH_PX, TOOL_RAIL_WIDTH_PX } from './components/ShellRail/shellRailGeometry';
 
 const DOCK_MAX_COLUMNS = DOCK_GRID_CAP.columns;
 const DOCK_MAX_ROWS = DOCK_GRID_CAP.rows;
@@ -42,6 +45,7 @@ type PlacedColumn = {
 };
 
 type DockLayout = {
+  readonly railForm: ShellRailForm;
   readonly mode: 'push' | 'over';
   readonly isStacked: boolean;
   readonly isDetailOver: boolean;
@@ -50,6 +54,8 @@ type DockLayout = {
   readonly columns: ReadonlyArray<PlacedColumn>;
   readonly rail: DockBox;
 };
+
+type FrameLayout = Omit<DockLayout, 'rail' | 'railForm'>;
 
 type Lane = {
   readonly panes: ReadonlyArray<DockPane>;
@@ -257,7 +263,7 @@ const pushLayoutOf = ({
   lanes,
   isStacked,
   isDetailOver,
-}: TryParams): Omit<DockLayout, 'rail'> | null => {
+}: TryParams): FrameLayout | null => {
   const pushed = detail === null || isDetailOver ? lanes : [detail, ...lanes];
   const fit = pushFitOf({ lanes: pushed, mainWidth: frame.mainWidth });
   if (fit === null) {
@@ -304,12 +310,7 @@ type OverParams = {
   readonly isStacked: boolean;
 };
 
-const overLayoutOf = ({
-  frame,
-  detail,
-  lanes,
-  isStacked,
-}: OverParams): Omit<DockLayout, 'rail'> => {
+const overLayoutOf = ({ frame, detail, lanes, isStacked }: OverParams): FrameLayout => {
   const over = detail === null ? lanes : [detail, ...lanes];
   const cap = Math.max(
     0,
@@ -347,8 +348,8 @@ type Params = {
   readonly windowWidth: number;
   readonly windowHeight: number;
   readonly top: number;
-  readonly leftRailWidth: number;
-  readonly toolRailWidth: number;
+  readonly leftRailWidth?: number;
+  readonly toolRailWidth?: number;
   readonly detail: DockPane | null;
   readonly columns: ReadonlyArray<DockColumn>;
 };
@@ -362,18 +363,21 @@ export const dockLayoutOf = ({
   detail,
   columns,
 }: Params): DockLayout => {
-  const railLeft = windowWidth - toolRailWidth;
+  const railForm = shellRailFormOf({ windowWidth });
+  const leftWidth = leftRailWidth ?? SHELL_RAIL_WIDTH_PX[railForm];
+  const toolWidth = toolRailWidth ?? TOOL_RAIL_WIDTH_PX[railForm];
+  const railLeft = windowWidth - toolWidth;
   const frame: Frame = {
     top,
     height: Math.max(0, windowHeight - top - SHELL_GUTTER_PX),
-    mainLeft: leftRailWidth,
-    mainWidth: Math.max(0, railLeft - leftRailWidth),
+    mainLeft: leftWidth,
+    mainWidth: Math.max(0, railLeft - leftWidth),
     railLeft,
   };
   const rail = {
     x: railLeft,
     y: top,
-    width: toolRailWidth,
+    width: toolWidth,
     height: Math.max(0, windowHeight - top),
   };
   const detailLane = detail === null ? null : laneOf({ panes: [detail] });
@@ -395,14 +399,15 @@ export const dockLayoutOf = ({
       ? [{ frame, detail: detailLane, lanes: folded, isStacked: true, isDetailOver: true }]
       : []),
   ];
-  const pushed = tries.reduce<Omit<DockLayout, 'rail'> | null>(
+  const pushed = tries.reduce<FrameLayout | null>(
     (found, attempt) => found ?? pushLayoutOf(attempt),
     null,
   );
   if (pushed !== null) {
-    return { ...pushed, rail };
+    return { ...pushed, railForm, rail };
   }
   return {
+    railForm,
     ...overLayoutOf({
       frame,
       detail: detailLane,
