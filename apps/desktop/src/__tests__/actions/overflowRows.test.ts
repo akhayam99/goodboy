@@ -161,15 +161,16 @@ const RUN_VIEWING: ActionViewing = { kind: 'workflowRun', id: RUN };
 
 describe('a header or row ⋯ holds at most five rows in any one state', () => {
   describe('session row in the rail', () => {
-    const { only } = sessionMenuOf({ limitUsd: null });
     it.each(SESSION_STATES.filter(([, value]) => value !== null))('%s', (_state, value) => {
       if (value === null) {
         return;
       }
       seed(value);
-      expectWithinFive({
-        kinds: ['session'],
-        rows: rowsOfTarget({ target: SESSION_TARGET, only }),
+      [false, true].forEach((isArchived) => {
+        expectWithinFive({
+          kinds: ['session'],
+          rows: rowsOfTarget({ target: SESSION_TARGET, only: sessionMenuOf({ isArchived }) }),
+        });
       });
     });
   });

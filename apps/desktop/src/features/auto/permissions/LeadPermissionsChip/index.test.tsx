@@ -14,32 +14,33 @@ vi.mock('../../../../shared/lib/db', async () =>
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { leadPermissionsOf, type StoredLeadPermissionRows } from '@goodboy/core/auto';
-import { brandId, type AutoTreeId, type WorkspaceId } from '@goodboy/types';
+import { brandId, type AutoTreeId, type SessionId, type WorkspaceId } from '@goodboy/types';
 import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
   resetStoryStore,
   type StoryStore,
 } from '../../../../store/storyHarness';
-import { LeadPermissionsChip } from '.';
+import { LeadPermissionsChip, type LeadPermissionsTarget } from '.';
 
 let useAppStore: StoryStore;
 
 const WORKSPACE = brandId<WorkspaceId>({ value: 'ws-harborline' });
+const SESSION = brandId<SessionId>({ value: 'session-harborline' });
 const TREE = brandId<AutoTreeId>({ value: 'tree-harborline' });
+const LEAD: LeadPermissionsTarget = { workspaceId: WORKSPACE, sessionId: SESSION, treeId: TREE };
 
 type FactsParams = {
   readonly leadRows: StoredLeadPermissionRows;
-  readonly isPlanApprovalOff?: boolean;
 };
 
-const permissionsFor = ({ leadRows, isPlanApprovalOff = false }: FactsParams) =>
+const permissionsFor = ({ leadRows }: FactsParams) =>
   leadPermissionsOf({
     leadRows,
     defaultRows: {},
     sessionLevel: 'plan',
     workspaceLevel: null,
-    isPlanApprovalOff,
+    isPlanApprovalOff: false,
     isWorkFlowOn: true,
     spendLimitUsd: 10,
   });
@@ -54,79 +55,124 @@ beforeEach(async () => {
 
 afterEach(cleanup);
 
-const openLead = async () => {
-  render(
-    <LeadPermissionsChip target={{ workspaceId: WORKSPACE, sessionId: null, treeId: TREE }} />,
-  );
-  fireEvent.click(await screen.findByRole('button', { name: /^Asks you: (?!Loading)/ }));
-  return within(screen.getByRole('dialog', { name: 'Asks you' }));
+type OpenParams = {
+  readonly target: LeadPermissionsTarget;
+  readonly word: RegExp;
+};
+
+const openMenu = async ({ target, word }: OpenParams) => {
+  render(<LeadPermissionsChip target={target} />);
+  fireEvent.click(await screen.findByRole('button', { name: word }));
+  return within(screen.getByRole('menu', { name: 'Stops for your OK' }));
 };
 
 describe('LeadPermissionsChip', () => {
-  it('marks an override Changed with Reset, and Reset writes the row away', async () => {
+  it('opens a menu of three levels with the current one checked and Fine-tune last', async () => {
+    useAppStore.setState({
+      readLeadPermissions: vi.fn().mockResolvedValue(permissionsFor({ leadRows: {} })),
+    });
+    const menu = await openMenu({ target: LEAD, word: /^Stops for your OK: After the plan$/ });
+
+    const levels = menu.getAllByRole('menuitemradio');
+    expect(levels).toHaveLength(3);
+    expect(levels.map((level) => level.getAttribute('aria-checked'))).toEqual([
+      'false',
+      'true',
+      'false',
+    ]);
+    expect(menu.queryByRole('menuitem', { name: /^Reset/ })).toBeNull();
+    menu.getByRole('menuitem', { name: /^Fine-tune this run/ });
+  });
+
+  it('reads Custom with the count, checks no level, and offers Reset', async () => {
+    useAppStore.setState({
+      readLeadPermissions: vi
+        .fn()
+        .mockResolvedValue(permissionsFor({ leadRows: { push: 'ask', dependencies: 'ask' } })),
+    });
+    const menu = await openMenu({
+      target: LEAD,
+      word: /^Stops for your OK: Custom, 2 details$/,
+    });
+
+    const checked = menu
+      .getAllByRole('menuitemradio')
+      .filter((level) => level.getAttribute('aria-checked') === 'true');
+    expect(checked).toHaveLength(0);
+    menu.getByRole('menuitem', { name: 'Reset to After the plan' });
+  });
+
+  it('Reset writes the level back on this Lead and the chip reads the level again', async () => {
     const read = vi
       .fn()
       .mockResolvedValueOnce(permissionsFor({ leadRows: { push: 'ask' } }))
       .mockResolvedValue(permissionsFor({ leadRows: {} }));
+    const changeAutoLevel = vi.fn().mockResolvedValue(undefined);
     const change = vi.fn().mockResolvedValue(undefined);
-    useAppStore.setState({ readLeadPermissions: read, changeLeadPermission: change });
-    const popover = await openLead();
+    useAppStore.setState({
+      readLeadPermissions: read,
+      changeAutoLevel,
+      changeLeadPermission: change,
+    });
+    const menu = await openMenu({ target: LEAD, word: /^Stops for your OK: Custom, 1 detail$/ });
 
-    const row = await popover.findByRole('tablist', { name: 'Push a branch' });
-    expect(row.closest('[data-permission-row]')?.getAttribute('data-changed')).toBe('true');
-    expect(popover.getAllByText('Changed')).toHaveLength(1);
-    fireEvent.click(popover.getByRole('button', { name: 'Reset Push a branch' }));
+    fireEvent.click(menu.getByRole('menuitem', { name: 'Reset to After the plan' }));
 
     await waitFor(() =>
-      expect(change).toHaveBeenCalledWith({
-        target: { treeId: TREE },
-        change: { key: 'push', value: null },
+      expect(changeAutoLevel).toHaveBeenCalledWith({
+        workspaceId: WORKSPACE,
+        sessionId: SESSION,
+        level: 'plan',
       }),
     );
-    await waitFor(() =>
-      expect(popover.queryByRole('button', { name: 'Reset Push a branch' })).toBeNull(),
-    );
-    expect(popover.queryByText('Changed')).toBeNull();
-  });
-
-  it('reads Custom as soon as a row is tightened', async () => {
-    useAppStore.setState({
-      readLeadPermissions: vi.fn().mockResolvedValue(permissionsFor({ leadRows: { push: 'ask' } })),
-      changeLeadPermission: vi.fn(),
+    expect(change).toHaveBeenCalledWith({
+      target: { treeId: TREE },
+      change: { key: 'push', value: null },
     });
-    const popover = await openLead();
-
-    const custom = await popover.findByRole('tab', { name: 'Custom' });
-    expect(custom.getAttribute('aria-selected')).toBe('true');
+    await screen.findByRole('button', { name: 'Stops for your OK: After the plan' });
   });
 
-  it('shows the one line for a plan skip with writers set after the plan', async () => {
-    useAppStore.setState({
-      readLeadPermissions: vi
-        .fn()
-        .mockResolvedValue(
-          permissionsFor({ leadRows: { approvePlan: 'skip', startWriters: 'afterPlan' } }),
-        ),
-      changeLeadPermission: vi.fn(),
-    });
-    const popover = await openLead();
-
-    await popover.findByText('No plan is approved at this setting, so this reads as Ask.');
-  });
-
-  it('keeps the old value and shows the error under the row when a write fails', async () => {
+  it('keeps the level and says why when the write fails', async () => {
     useAppStore.setState({
       readLeadPermissions: vi.fn().mockResolvedValue(permissionsFor({ leadRows: {} })),
-      changeLeadPermission: vi.fn().mockRejectedValue(new Error('disk full')),
+      changeAutoLevel: vi.fn().mockRejectedValue(new Error('disk full')),
+      changeLeadPermission: vi.fn(),
     });
-    const popover = await openLead();
+    const menu = await openMenu({ target: LEAD, word: /^Stops for your OK: After the plan$/ });
 
-    const group = await popover.findByRole('tablist', { name: 'Push a branch' });
-    fireEvent.click(within(group).getByRole('tab', { name: 'Ask' }));
+    fireEvent.click(menu.getByRole('menuitemradio', { name: /^Never/ }));
 
-    const alert = await popover.findByRole('alert');
+    const alert = await screen.findByRole('alert');
     expect(alert.textContent).toContain('disk full');
-    const checks = popover.getByRole('tab', { name: 'When checks pass' });
-    expect(checks.getAttribute('aria-selected')).toBe('true');
+    screen.getByRole('button', { name: 'Stops for your OK: After the plan' });
+  });
+
+  it('Fine-tune this run opens the Lead details beside the chat', async () => {
+    useAppStore.setState({
+      readLeadPermissions: vi.fn().mockResolvedValue(permissionsFor({ leadRows: {} })),
+    });
+    const menu = await openMenu({ target: LEAD, word: /^Stops for your OK: After the plan$/ });
+
+    fireEvent.click(menu.getByRole('menuitem', { name: /^Fine-tune this run/ }));
+
+    expect(useAppStore.getState().drawer).toEqual({
+      kind: 'lead-details',
+      sessionId: SESSION,
+      payload: { workspaceId: WORKSPACE, treeId: TREE },
+    });
+  });
+
+  it('before a Lead exists, the last row points to Settings and nothing else edits details', async () => {
+    useAppStore.setState({
+      readLeadPermissions: vi.fn().mockResolvedValue(permissionsFor({ leadRows: {} })),
+    });
+    const menu = await openMenu({
+      target: { workspaceId: WORKSPACE, sessionId: SESSION, treeId: null },
+      word: /^Stops for your OK: After the plan$/,
+    });
+
+    menu.getByRole('menuitem', { name: /^Fine-tune in Settings/ });
+    expect(menu.queryByRole('menuitem', { name: /^Fine-tune this run/ })).toBeNull();
+    expect(screen.queryByRole('tablist')).toBeNull();
   });
 });

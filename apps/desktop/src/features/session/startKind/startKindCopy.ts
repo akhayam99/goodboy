@@ -1,12 +1,8 @@
-import type { IconGlyph } from '@goodboy/ui/icons';
-import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
 import { NAMES } from '../../../shared/utils/names';
 import type { StartShape } from '../../../store/slices/sessionDraft/state';
 
 type ShapeCard = Readonly<{
-  icon: IconGlyph;
   what: string;
-  whileRuns: string;
 }>;
 
 type NameParams = {
@@ -18,22 +14,37 @@ type CountParams = {
 };
 
 export const START_KIND_COPY = {
-  question: 'What kind of run?',
-  how: 'How',
-  pickLine: 'A Lead by default. Or a preset, or one agent.',
-  kindLine: {
-    lead: 'Plans it and starts the agents it needs.',
-    preset: 'The Lead follows a saved preset.',
-    agent: 'One role, no Lead.',
-  },
-  kindTab: {
-    lead: 'Lead',
-    preset: 'Preset',
-    agent: 'Agent',
+  plan: {
+    label: 'Plan',
+    lead: 'The Lead plans it',
+    preset: 'Follow a workflow',
+    agent: 'One agent',
+    leadLine: 'The Lead writes a plan first, then starts the agents it needs.',
+    agentLine: 'One role you pick, on the model you pick. You answer between turns.',
+    followLine: ({ count }: CountParams) =>
+      count === 1
+        ? 'The Lead runs its one step as written.'
+        : `The Lead runs the ${count} steps as written.`,
+    adaptLine: ({ name }: NameParams) =>
+      `The Lead starts from ${name} and says why when it changes a step.`,
+    suggest: 'Looks like your workflow',
+    useIt: 'Use it',
   },
   settings: 'Run settings',
-  more: 'More',
-  less: 'Less',
+  change: 'Change',
+  done: 'Done',
+  words: {
+    stops: 'Stops',
+    stopsStep: 'at every step',
+    stopsPlan: 'after the plan',
+    stopsNever: 'Never stops',
+    limit: 'Limit',
+    limitNone: 'none',
+    projects: 'Projects',
+    projectsAuto: 'picked for you',
+    projectCount: ({ count }: CountParams) => `${count} projects`,
+    guidanceOwn: 'for this run',
+  },
   edits: {
     label: NAMES.edits,
     help: 'What agents may do in this session. The chat box changes it later.',
@@ -69,44 +80,30 @@ export const START_KIND_COPY = {
   searchTasks: 'Search tasks',
   noTasks: 'No open tasks in this workspace',
   removeTask: ({ name }: NameParams) => `Remove ${name}`,
-  preset: 'Preset',
-  pickPreset: 'Pick a preset',
-  noPresets: 'No presets yet. Save a run as a preset to start from it.',
-  presetSteps: 'Preset steps',
-  closeness: {
-    label: 'With the preset',
-    follow: 'Keep steps',
-    adapt: 'May change steps',
-    followLine: 'The saved steps in order. The Lead asks before a change.',
-    adaptLine: 'The Lead may add, skip or move a step, and says why.',
-  },
+  preset: 'Workflow',
+  pickPreset: 'Pick a workflow',
+  noPresets: 'No saved workflows yet. Save a run as a workflow to start from it.',
+  presetSteps: 'Workflow steps',
+  keepSteps: 'Keep its steps as written',
   role: 'Role',
   starting: 'Starting',
   discard: 'Discard',
   goalNeeded: 'Write the goal first.',
-  presetNeeded: 'Pick a preset first.',
+  presetNeeded: 'Pick a workflow first.',
   failed: "Couldn't start the run",
   lastStartFailed: "Couldn't read your last start",
   shapes: {
     orchestrated: {
-      icon: CONCEPT_ICONS.orchestrator,
       what: 'Orchestrated plans each next step as it goes.',
-      whileRuns: 'While it runs, the plan grows one step at a time, each with why.',
     },
     preset: {
-      icon: CONCEPT_ICONS.plan,
-      what: 'The Lead follows a saved preset as its plan.',
-      whileRuns: 'While it runs, the Lead starts an agent per step and says why it changes one.',
+      what: 'The Lead follows a saved workflow as its plan.',
     },
     agent: {
-      icon: CONCEPT_ICONS.agents,
       what: 'One role you pick, on the model you pick.',
-      whileRuns: 'While it runs, you answer between turns.',
     },
     autoAgent: {
-      icon: CONCEPT_ICONS.auto,
       what: 'The Lead plans it and starts the agents it needs, under your limit.',
-      whileRuns: 'While it runs, its agents show under it, against your limit.',
     },
   } satisfies Record<StartShape, ShapeCard>,
 } as const;

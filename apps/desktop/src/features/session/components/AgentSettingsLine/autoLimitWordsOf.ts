@@ -54,6 +54,7 @@ export const autoLimitWordsOf = ({
     return {
       value: 'none',
       source: '',
+      fact: 'No limit',
       chain: `${chain} Nothing stops this Lead.`,
     };
   }

@@ -13,12 +13,14 @@ export const asksWordsOf = ({ own, workspaceName, workspaceAutonomy }: Params): 
   if (own.key === inherited.key) {
     return {
       value: own.label,
+      fact: own.fact,
       source: `from ${workspaceName}`,
       chain: `From ${workspaceName}: ${own.label}.`,
     };
   }
   return {
     value: own.label,
+    fact: own.fact,
     source: 'this run',
     isChanged: true,
     chain: `This run: ${own.label}. ${workspaceName}: ${inherited.label}. The run wins.`,

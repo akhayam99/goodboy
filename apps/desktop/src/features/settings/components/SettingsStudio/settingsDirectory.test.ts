@@ -84,7 +84,7 @@ describe('settings rail rows', () => {
     expect(labelsOf('workspace')).toEqual([
       'Projects',
       'About you',
-      'Run defaults',
+      'Runs',
       'Models',
       'Permissions',
       'Branches',

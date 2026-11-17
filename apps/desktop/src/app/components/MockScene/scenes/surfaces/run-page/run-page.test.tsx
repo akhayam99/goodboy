@@ -7,7 +7,7 @@ vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn(async () => () => undefi
 vi.mock('@tauri-apps/plugin-dialog', () => ({ open: vi.fn() }));
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, cleanup, render, screen, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { ToastProvider } from '../../../../../../shared/components/Toast';
 import {
   STORE_IMPORT_TIMEOUT_MS,
@@ -70,7 +70,7 @@ const partOf = ({ root, selector }: PartParams): HTMLElement => {
 };
 
 describe('the run page scenes', () => {
-  it('run-page-plan draws one head: the run name is the last crumb, its meta ends the crumb row', async () => {
+  it('run-page-plan draws one head: the run name is the last crumb, its status line under it', async () => {
     const container = await mount({ name: 'run-page-plan' });
     const head = partOf({ root: container, selector: '[data-session-head]' });
 
@@ -87,8 +87,29 @@ describe('the run page scenes', () => {
     expect(current?.textContent).toMatch(/^Why does the ledger retry post a second credit/);
     const meta = partOf({ root: head, selector: '[data-session-head-meta]' });
     expect(meta.querySelector('[data-glance-place="head"]')).not.toBeNull();
-    within(meta).getByRole('button', { name: 'Run settings' });
+    expect(within(meta).queryByRole('button', { name: 'Run settings' })).toBeNull();
+    const facts = within(meta).getByRole('group', { name: 'Run settings' });
+    expect(within(facts).getByRole('button', { name: /^Edits: / }).textContent).toBe('Ask first');
     expect(container.querySelectorAll('[data-glance]')).toHaveLength(1);
+  });
+
+  it('run-head-menu says the Lead settings as words and opens the stop rule as one menu', async () => {
+    const container = await mount({ name: 'run-head-menu' });
+    const meta = partOf({ root: container, selector: '[data-session-head-meta]' });
+    const facts = within(meta).getByRole('group', { name: 'Run settings' });
+    const stops = within(facts).getByRole('button', { name: 'Stops for your OK: After the plan' });
+
+    expect(stops.textContent).toBe('Stops after the plan');
+    expect(within(facts).getByRole('button', { name: /^Limit: / }).textContent).toBe(
+      'Limit $10.00',
+    );
+    if (stops.getAttribute('aria-expanded') !== 'true') {
+      fireEvent.click(stops);
+    }
+    expect(stops.getAttribute('aria-expanded')).toBe('true');
+    const menu = screen.getByRole('menu', { name: 'Stops for your OK' });
+    expect(within(menu).getAllByRole('menuitemradio')).toHaveLength(3);
+    expect(container.querySelector('[data-session-head] .bg-subtle.rounded-lg')).toBeNull();
   });
 
   it('run-page-many puts the Agents rail in the left slot, the run first, counting every agent once', async () => {

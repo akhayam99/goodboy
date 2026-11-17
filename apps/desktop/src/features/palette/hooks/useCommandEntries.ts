@@ -34,7 +34,6 @@ import { openSettings } from '../../settings/openSettings';
 import { openSessionTerminalHere } from '../../terminal/openSessionTerminalHere';
 import { openWorkspaceTerminal } from '../../terminal/openWorkspaceTerminal';
 import { openImpactStudio } from '../../impact/openImpactStudio';
-import { openRunDefaults } from '../../settings/openRunDefaults';
 import { openNewWorkspace } from '../../workspace/openNewWorkspace';
 import { useIsMainWindow } from '../../workspace/useIsMainWindow';
 import { getWizardState, resumeSetup } from '../../onboarding/onboardingSettings';
@@ -254,15 +253,6 @@ export const useCommandEntries = (): ReadonlyArray<PaletteEntry> => {
           open: ({ sessionId: leadSessionId, agentId }) =>
             navigate({ to: agentPlace({ sessionId: leadSessionId, agentId }) }),
         }),
-        {
-          key: 'goto:run-defaults',
-          label: NAMES.runDefaults,
-          kind: 'page',
-          group: null,
-          icon: CONCEPT_ICONS.workflows,
-          secondary: formerNamesOf(NAMES.runDefaults),
-          run: openRunDefaults,
-        },
         {
           key: 'goto:impact-spend',
           label: 'Impact: Spend',

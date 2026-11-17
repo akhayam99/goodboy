@@ -86,14 +86,16 @@ type KindParams = {
   readonly name: string;
 };
 
-const kindTab = ({ name }: KindParams): HTMLElement => {
-  if (screen.queryByRole('tablist', { name: 'What kind of run?' }) === null) {
-    fireEvent.click(screen.getByRole('button', { name: /^How: / }));
-  }
-  return within(screen.getByRole('tablist', { name: 'What kind of run?' })).getByRole('tab', {
-    name: new RegExp(`^${name}`),
-  });
+const PLAN_CHOICES: Readonly<Record<string, string>> = {
+  Lead: 'The Lead plans it',
+  Preset: 'Follow a workflow',
+  Agent: 'One agent',
 };
+
+const kindTab = ({ name }: KindParams): HTMLElement =>
+  within(screen.getByRole('tablist', { name: 'Plan' })).getByRole('tab', {
+    name: PLAN_CHOICES[name] ?? name,
+  });
 
 const pickKind = ({ name }: KindParams): void => {
   fireEvent.click(kindTab({ name }));
@@ -109,9 +111,9 @@ const renderField = ({ sessionId }: RenderParams) => {
       <StartRun workspaceId={WORKSPACE.id} sessionId={sessionId} />
     </ToastProvider>,
   );
-  const more = screen.queryByRole('button', { name: /^More/ });
-  if (more !== null) {
-    fireEvent.click(more);
+  const change = screen.queryByRole('button', { name: 'Change' });
+  if (change !== null) {
+    fireEvent.click(change);
   }
   return view;
 };
@@ -250,17 +252,17 @@ describe('StartRun limit by kind', () => {
     expect(screen.queryByRole('button', { name: /^Limit: / })).toBeNull();
   });
 
-  it('words the chip help from the Run defaults, with a kind and without one', async () => {
+  it('words the chip help from Runs in Settings, with a kind and without one', async () => {
     renderField({ sessionId: SESSION.id });
     fireEvent.click(await screen.findByRole('button', { name: RUN_DEFAULT }));
-    screen.getByText(/Run defaults set where new runs start\./);
+    screen.getByText(/Runs in Settings sets where new runs start\./);
     expect(screen.queryByText(/Other runs in this workspace/)).toBeNull();
     fireEvent.keyDown(document.body, { key: 'Escape', code: 'Escape' });
 
     pickKind({ name: 'Preset' });
     fireEvent.click(await screen.findByRole('button', { name: RUN_DEFAULT }));
 
-    screen.getByText(/Run defaults set where new runs start\./);
+    screen.getByText(/Runs in Settings sets where new runs start\./);
   });
 
   it('opens the Run defaults page from the Change default link of the chip', async () => {

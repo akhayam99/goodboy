@@ -166,41 +166,39 @@ flag plus the run's copy of the rules, and can change later from the run's
 ## Workflow rules
 
 Rules are the workspace defaults every new run starts from. They live only in the
-**Run defaults** page of the workspace settings (Settings > This workspace > Run defaults); the Workflows studio has no tab for
-them. The all-pages Restore defaults and Copy from in the workspace settings menu
-still carry them and list them as Workflow rules in the preview.
+**Runs** page of the workspace settings (Settings > This workspace > Runs, section
+id `general`); the Workflows studio has no tab for them. Its old names (Run
+defaults, Rules, Workflow rules, Start as) find it in Search settings and in
+`⌘K` (`FORMER_NAMES`, `searchAliases` in `workspacePages.ts`). The all-pages
+Restore defaults and Copy from in the workspace settings menu still carry them
+and list them as Runs in the preview.
 
-The page is titled **Run defaults** and has three bands, one row per setting
-(`FieldRow`). `WorkspaceDefaultsGrid` draws the page: `WorkflowRulesPanel` owns
-the **New runs** and **Guidance** bands and takes the settings rows it does not
-own (`runRows`: **Lead asks you** and **Start as**) and the **Agents** band
-(children: **Parallel agents**, **Reply length**) from it. A change reaches new
-runs only, since every run keeps its own copy of the rules
+The page asks one question per band, one row per setting (`FieldRow`).
+`WorkspaceDefaultsGrid` draws it: `WorkflowRulesPanel` owns **When a run stops
+for you**, **Spending** and **Guidance**, takes the **Agents** band (**Reply
+length**) as children and the closed **Advanced** disclosure (**Parallel
+agents**, `RunsAdvancedBand`) as `advanced`, last. Advanced says **Parallel
+agents on** beside its title while the switch is on, and a search hit on the row
+opens it. The page has no Models row: Models is the next page of the rail. A
+change reaches new runs only, since every run keeps its own copy of the rules
 (`attachWorkflowToSession` copies them at start). A failed save keeps the old
 value and shows the error under its row.
 
-- **Workflow asks you** (`DefaultAsksSetting`): Every step, After the plan or
-  Never, applied on click. The hints are the ones the builder shows
-  (`RUN_AUTONOMY_OPTIONS`)
-- **Lead asks you** (`AutoLevelDefaultRow`): holds `LeadPermissionsChip` on
-  the workspace default, so there is no separate Asks you band
-- **Start as** (`RunDefaultField`): every value starts a Lead. `auto` lets the
-  router give it a matching preset, `lead` takes no preset on its own, and
-  `plan` (written by older versions) takes no preset and makes the Lead ask
-  before acting on its plan: when the session level is Never and the start
-  picked no level, `startRoutedRun` sets the session to After the plan before
-  the Lead starts, and a stricter level stays (`planFirstLevelOf`). With a
-  session of this workspace open, a second row sets that session's default;
-  it is the only writer of the session default (`changeRunDefault`)
+- **Stops for your OK** (`DefaultAsksSetting`, `useStopsLevel`): Every step,
+  After the plan or Never, one level for workflows and the Lead. A pick runs
+  `changeStopsLevel`, which writes `WorkflowRules.autonomy` and then the
+  workspace `auto.level` for the named workspace; if the second write fails
+  it puts the first back and the row shows the error. The tabs keep the old
+  level until both writes land, and a second pick waits for the first.
+  `stopsLevelOf` reads both keys, an unsaved key as its own default
+  (workflows `step`, Lead `plan`): when they differ, the row names both and
+  selects none, and nothing is written until you pick. Both keys reach the
+  other windows on the data-changed bus (`announceWorkspaceChange`, read back
+  by `listenSettingChanges`). `auto.permissions` is not touched
 - **Limit** (`DefaultLimitSetting`): the amount per run, applied on Enter (a
   blank amount is no limit) or when the field loses focus, and what happens at
   the limit, Pause or Warn only, applied on click (`useLimitAmountDraft` in
   `shared/hooks`)
-- **Models** (`DefaultModelsSetting`): the policy in one line ("Claude, Codex ·
-  Cursor as backup") and **Open Models**. It holds no switch and
-  lists no provider: the order and the **Send new steps to the provider with
-  the most room** option live in Settings > This workspace > Models, the one
-  home of the provider policy
 - No separate Auto limit: a limit stored under the old Auto limit
   (`auto.treeLimitUsd`) is folded into the **Limit** above once at boot, for
   every workspace (`foldAutoLimitsAtBoot`, `foldAutoLimitIntoRunDefaults`). The
@@ -209,7 +207,8 @@ value and shows the error under its row.
   the error. After the fold every reader and writer of a run limit (the start
   form, the Auto start, `moveToAuto`, the Auto runtime) uses the Limit of this
   page, and nothing reads the old key
-- **Guidance**: text every run starts with, with its own **Polish**
+- **Guidance**: text every run starts with, one plain field with its own
+  **Polish** and no Write or Preview tabs
 
 ### Guidance
 
@@ -238,7 +237,7 @@ the first line. An orchestrated run tags no step.
 **Polish** on guidance uses `polishWorkflowGuidance` in `packages/core`, its own
 prompt next to the goal polish: one rule per line as a list, the language of the
 input, every rule kept and none added. The builder has no "Also sent to" line:
-the guidance box says only where it goes, and the Run defaults tab keeps the
+the guidance box says only where it goes, and the Runs page keeps the
 line about the profile field. The names there come from `PROFILE_ACCESS`: the
 roles that never read the working rules.
 
@@ -268,7 +267,7 @@ Settings > This workspace > Models, with one sentence under it: with it off, "Ne
 steps follow the provider order."; with it on and a provider passed, where the
 next step goes and how full the passed one is, and otherwise that steps of one
 run can land on different providers (`nextStepPick`, `spreadSentence`).
-The Run defaults page only links there.
+The Runs page shows nothing of it.
 
 The builder opens filled from the rules and shows them in one **From your
 rules** line with **Edit**. A launch control that leaves the rules shows a dot
@@ -336,27 +335,27 @@ read top to bottom at the conversation measure:
   same items. Asks you is not in this menu: its chip holds it. An archived run shows
   **Restore** and reads dimmed, with no composer.
 - **Goal** (`OrchestratedGoal`). The goal as prose, then one glance line (state
-  word, one sentence from `runGlanceOf`, the spend of the limit and **Settings**,
-  `RunGlanceLine`, the same on a preset run's Overview and on every other run
-  kind) over the run settings line (`OrchestratedFacts`): **Settings** unfolds it
-  inline. One chip per
-  setting while the run lives (`RunSettingsLine`), each reading its label, its
-  value and where it comes from, as "Limit $5.00 this run". A chip
+  word, one sentence from `runGlanceOf`, the spend of the limit and the run
+  settings as words, `RunGlanceLine`, the same on a preset run's Overview and on every
+  other run kind; `OrchestratedFacts` passes the settings in). One dotted word per
+  setting while the run lives (`RunSettingsLine`), each reading its value as
+  "Stops after the plan", "Limit $5.00" or "Auto on Claude" (`fact` in its words), its
+  label and where it comes from in its accessible name. A word
   opens only its own popover on `AnchoredPopover` (320px): the setting, one
   line of help, the control and, last, where it comes from ("This run $5.00,
-  then session $8.00. $5.00 comes first.", `runSettingsOf`). The chip reads the
-  limit that comes first and never the spend ("Limit $20.00 from session", the
+  then session $8.00. $5.00 comes first.", `runSettingsOf`). The word reads the
+  limit that comes first and never the spend ("Limit $20.00", named "Limit: $20.00, from session", the
   popover explaining "$17.00 spent, $2.00 of it this run"); the run's own spend
   stays on the glance line above, so a number shows once. There is no Save
   or Done: a choice applies on click, the limit on Enter or when the popover
-  closes. Every limit field (the run, the session, Run defaults and Auto) is a
+  closes. Every limit field (the run, the session, the Runs page and Auto) is a
   text field with a decimal keypad, so cents such as `2.50` (or `2,50`) go
   through and Enter is never stopped by a browser step rule; `parseSpendLimit`
   in `features/budget/` is the one rule for what counts as an amount. A failed write keeps the old value with the error under the
   field (or in the log when the popover already closed). **Models** switches
   each provider the run may use (`setWorkflowRunProviderPool`, latest answer
   wins, Undo puts the old providers back); a change applies from the next
-  step. Under the chips, the preset the run came from and the time left while
+  step. Under the line, the preset the run came from and the time left while
   the run lives (`useRunTimeLeft`). The workflow's
   process text and the run's standing guidance sit behind **Show guidance** as
   the one text the orchestrator reads (`orchestratorProcessText`), so guidance
@@ -640,9 +639,10 @@ the row before the title is cut, then the model (below 920) and the origin
 (below 928, only while no row has a model, `yieldsTo`) (`runsGridColumns.ts`). A row is the button;
 an agent or Auto row also opens the agent's right click menu, and an archived run is restored from its page. The state
 word and the dot of a workflow run come from `runRowFactsOf`, the same function the identity row
-of the Agents column reads. `runRowFactsOf` computes no word of its own: it reads `runStateOf`, the one function that holds the word, the page word, the tone, the primary kind and whether the run needs you for every way a run stops. The run tail and the glance read the same table (`runStateOfPrimary`), so a halted step is **Needs you** on the run page and **Not finished** or **Failed** in the list, from one place. The page opens on the list with a quiet **Start a run** row that opens
-the field (`StartRun`, see [Start a run](features/start.md#start-a-run)) in place and **Esc** closes it;
-a session with no run shows the field alone.
+of the Agents column reads. `runRowFactsOf` computes no word of its own: it reads `runStateOf`, the one function that holds the word, the page word, the tone, the primary kind and whether the run needs you for every way a run stops. The run tail and the glance read the same table (`runStateOfPrimary`), so a halted step is **Needs you** on the run page and **Not finished** or **Failed** in the list, from one place. The page opens on the list with no start row: **New** in the head starts a run, and the
+`session.startRun` verb (⌘K, the sidebar row) opens the field (`StartRun`, see
+[Start a run](features/start.md#start-a-run)) above the list through `startRunEventName`, and
+**Esc** closes it; a session with no run shows the field alone.
 
 A routed start (`startRoutedRun` in `features/session/startRun/`) uses today's
 engines. `runRouteOf` picks the row; a plan creates an `origin: 'orchestrated'`
@@ -681,8 +681,7 @@ keep theirs. The route also keeps the ask, so a second run can start from it.
 `RunKindChip` (`features/session/components/RunRoute/`) shows the stored route
 as the first chip of the run settings line (`OrchestratedFacts` passes it in)
 and on an agent's page, named by `runKindOfRoute`; its popover holds the why
-with the count of `rules.planChanges` ("Why: Your ask matches the preset · 1
-change"), the closeness and the other kinds (`runKindChoicesOf`). The facts
+with the count of `rules.planChanges` ("Why: you picked it · 1 change"), the closeness and the other kinds (`runKindChoicesOf`). The facts
 line then leaves the preset out, so it is said once. A pick calls
 `changeRunRoute`. Follow or Adapt, and a new preset before the first step, only
 rewrite `rules.route` (`updateWorkflowRunRules`) and the run's `processText`.
@@ -699,15 +698,17 @@ with the findings (`runFindingsOf`: the run summary's done entries and the
 settled steps' summaries). On a stopped run the first run is then closed
 (`closeWorkflowRun`), so two runs never edit one branch; on a finished run, or
 an agent that finished, nothing is written to the first (`route.changedTo` is
-only parsed, for older runs). The defaults live in
-the settings keys `runs.defaultShape.session.<sessionId>` and
-`runs.defaultShape.<workspaceId>` (`runDefaultSetting.ts`), read by row 1
-through `runDefaultOf`; `changeRunDefault` writes compare and swap and records
-an undo that refuses when the stored value moved. A missing session key means
-the session inherits the workspace default, so undo of a first session default
-deletes the key while it still holds the shape it set
-(`removeSettingIfUnchanged` in the settings slice, which also drops it from
-`settings`) instead of writing `auto`. Opening a preset run shows its page; the session rail stays
+only parsed, for older runs). The router never adopts a workflow: a typed
+`~name` or the Plan row picks one, and `suggestedWorkflowOf` only names the
+best match for the "Looks like your workflow" line (`StartWorkflowSuggestion`).
+The settings keys `runs.defaultShape.session.<sessionId>` and
+`runs.defaultShape.<workspaceId>` (`runDefaultSetting.ts`), once written by
+**Start as**, are read only until 0.41.0 ([versioning.md](versioning.md),
+Retired state): `useStartRun` loads them, `runDefaultOf` lets the session key
+win, `lead` and `plan` hide the suggestion, and `plan` still makes the Lead
+ask before acting on its plan: when the session level is Never and the start
+picked no level, `startRoutedRun` sets the session to After the plan before
+the Lead starts, and a stricter level stays (`planFirstLevelOf`). Opening a preset run shows its page; the session rail stays
 on the session and the run's agents are in the Agents column.
 
 Orchestrated runs have no page of their own since ux27 one flow unit 1: they

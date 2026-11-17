@@ -20,6 +20,7 @@ import {
   type StoryStore,
 } from '../../../../../store/storyHarness';
 import { clearSceneInvoke, sceneInvoke } from '../../../../../test/sceneInvoke';
+import { startRunEventName } from '../../../../../features/session/startRun/startRunEventName';
 import { U25_C06_CONVERSATION_SCENES } from './c06-conversation';
 import { C06_AGENT_ID } from './c06ConversationSeed';
 
@@ -178,7 +179,13 @@ describe('agent rows stay reachable from the one conversation', () => {
     await mount({ name: 'c06-agents-list' });
 
     expect(screen.queryByRole('button', { name: 'Start an agent' })).toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: 'Start a run' }));
+    expect(screen.queryByRole('button', { name: 'Start a run' })).toBeNull();
+    const sessionId = useAppStore.getState().currentSessionId;
+    act(() => {
+      if (sessionId !== null) {
+        window.dispatchEvent(new CustomEvent(startRunEventName({ sessionId })));
+      }
+    });
     expect(screen.getByRole('textbox', { name: 'Start a run' })).toBeDefined();
   });
 

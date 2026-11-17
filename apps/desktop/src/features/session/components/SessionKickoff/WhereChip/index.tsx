@@ -1,9 +1,7 @@
 import { useMemo } from 'react';
-import { useShallow } from 'zustand/react/shallow';
 import { Listbox } from '@goodboy/ui';
 import type { WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
-import { selectSessionDraft } from '../../../../../store/slices/sessionDraft/selectSessionDraft';
 import type { ProjectMatch } from '../../../../../shared/components/ProjectPicker/projectMatch';
 import { projectPickerOptions } from '../../../../../shared/components/ProjectPicker/projectPickerOptions';
 import { ProjectStarHint } from '../../../../../shared/components/ProjectPicker/ProjectStarHint';
@@ -11,6 +9,7 @@ import { useProjectStarToggle } from '../../../../../shared/components/ProjectPi
 import { useRecentProjectIds } from '../../../../../shared/components/ProjectPicker/useRecentProjectIds';
 import { START_KIND_COPY } from '../../../startKind/startKindCopy';
 import { START_PICK_TRIGGER } from '../startPickTrigger';
+import { useDraftProjects } from './useDraftProjects';
 
 type Props = {
   readonly workspaceId: WorkspaceId;
@@ -34,14 +33,7 @@ const whereValueOf = ({ names }: ValueParams): string => {
 };
 
 export const WhereChip = ({ workspaceId, match, isDisabled }: Props) => {
-  const projects = useAppStore(
-    useShallow((state) =>
-      state.projects.filter(
-        (project) => project.workspaceId === workspaceId && project.disconnectedAt == null,
-      ),
-    ),
-  );
-  const projectIds = useAppStore((state) => selectSessionDraft({ state, workspaceId }).projectIds);
+  const { projects, projectIds, names } = useDraftProjects({ workspaceId });
   const patchSessionDraft = useAppStore((state) => state.patchSessionDraft);
   const recentIds = useRecentProjectIds({ workspaceId });
   const stars = useProjectStarToggle();
@@ -61,11 +53,7 @@ export const WhereChip = ({ workspaceId, match, isDisabled }: Props) => {
     return null;
   }
   const hasStarred = projects.some((project) => project.starredAt !== undefined);
-  const value = whereValueOf({
-    names: projectIds.flatMap((id) =>
-      projects.filter((project) => project.id === id).map((project) => project.name),
-    ),
-  });
+  const value = whereValueOf({ names });
 
   return (
     <Listbox

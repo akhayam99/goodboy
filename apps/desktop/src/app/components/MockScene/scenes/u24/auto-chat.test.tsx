@@ -290,8 +290,8 @@ describe('the Auto chat scenes', () => {
   it('auto-chat-child reads the Planner with its brief on top and one box Auto hears', async () => {
     mount({ id: 'auto-chat-child' });
 
-    const brief = await screen.findByRole('region', { name: 'Why Auto started it' }, WAIT);
-    within(brief).getByText('Auto started this agent and reads your messages to it.');
+    const brief = await screen.findByRole('region', { name: 'Why the Lead started it' }, WAIT);
+    within(brief).getByText('The Lead started this agent and reads your messages to it.');
     expect(screen.queryByRole('button', { name: 'Open Auto' })).toBeNull();
     expect(screen.getByPlaceholderText('Message Planner')).toBeDefined();
     expect(screen.getAllByRole('textbox')).toHaveLength(1);

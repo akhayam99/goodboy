@@ -174,13 +174,12 @@ describe('journey: the limit chip at the kickoff', () => {
   it('gives the agent kind no limit chip, since a plain agent has no limit to enforce', async () => {
     spies();
     open();
-    fireEvent.click(screen.getByRole('button', { name: /^How: / }));
-    fireEvent.click(screen.getByRole('tab', { name: /^Agent/ }));
+    fireEvent.click(screen.getByRole('tab', { name: 'One agent' }));
     const row = startSettingsRowOf({
       group: await screen.findByRole('group', { name: 'Run settings' }),
     });
 
-    row.getByRole('combobox', { name: 'Role' });
+    screen.getByRole('combobox', { name: 'Role' });
     expect(row.queryByRole('button', { name: /^Limit / })).toBeNull();
   });
 
@@ -199,8 +198,7 @@ describe('journey: the limit chip at the kickoff', () => {
   it('starts the Lead kind from the same Run defaults limit and links to its page', async () => {
     spies();
     open();
-    fireEvent.click(screen.getByRole('button', { name: /^How: / }));
-    fireEvent.click(screen.getByRole('tab', { name: /^Lead/ }));
+    fireEvent.click(screen.getByRole('tab', { name: 'The Lead plans it' }));
     const row = startSettingsRowOf({
       group: await screen.findByRole('group', { name: 'Run settings' }),
     });

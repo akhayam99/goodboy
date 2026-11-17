@@ -102,7 +102,7 @@ with `@` in the field, which starts that role at once with no Auto turn first.
   [Start a run](features/start.md#start-a-run)): `spawnAgent` with the `auto`
   kind and the ask as its first message, or the role named with `@`. The field
   carries the same **Limit** chip (`useAutoTreeLimit`), which starts from the
-  Limit of the Run defaults and applies to this run only. The route is kept per agent in `runs.routes.<sessionId>`.
+  Limit of the Runs settings page and applies to this run only. The route is kept per agent in `runs.routes.<sessionId>`.
 - A start never rereads a setting at the click: there is no mode another window
   can change, so the form on screen is the mode that starts.
 - The goal is the first message of the Auto agent. It is not a plain turn: the
@@ -117,7 +117,7 @@ with `@` in the field, which starts that role at once with no Auto turn first.
   limit pauses Auto, as for runs. A session budget that only warns caps no
   Auto run: every path reads the session cap through `pausingSessionCapOf`
   (`apps/desktop/src/features/budget/`), which gives `null` for one. A new tree
-  starts on the smaller of that cap and the Limit of the Run defaults of the workspace
+  starts on the smaller of that cap and the Limit of the Runs settings page of the workspace
   (`autoTreeLimitOf` in `packages/core/src/auto/`, which also names the winner;
   `startAutoRuntime`, `moveToAuto`, `useAutoTreeLimit` and `setSessionBudget`
   read the session cap this way), and
@@ -128,7 +128,7 @@ with `@` in the field, which starts that role at once with no Auto turn first.
   read, so a cap another window lowered first still ends at the smaller one
   and is never raised, and a cap raised after the read is lowered too), so the next turn pauses on what is
   already spent. A limit exists only when a person sets one. The workspace default is the Limit
-  of the Run defaults page (see [Workflows](workflows.md)), and a start never
+  of the Runs settings page (see [Workflows](workflows.md)), and a start never
   stores a limit: an amount typed on the form is for that run only.
 - A Next card that starts a role gets **Discuss with Auto** as the last
   entry of its more menu. It is the registry verb `suggestion.talkWithAuto`
@@ -506,11 +506,14 @@ writing to it reopens it to **Deciding**.
   and the menu, then one glance line, the same component for every run kind
   (`RunGlanceLine`: Auto, orchestrated, preset and a plain agent): a dot, the state word (**Needs
   you**, **Running**, **Queued**, **Ready**, **Paused**, **Failed**, **Stopping**,
-  **Stopped**, **Done**, **Idle**, **Skipped**), one sentence, the spend of the limit and **Settings**
-  (`autoGlanceOf` for Auto, `agentGlanceOf` and `runGlanceOf` for the others, all
-  through `glanceOf`). **Settings** unfolds the unchanged chip row
-  inline, never a popover; the row stays mounted so the asks and model slots
-  keep their portals. Each cluster of agents is one soft card (`AutoTurnCard`,
+  **Stopped**, **Done**, **Idle**, **Skipped**), one sentence, the spend of the limit and the
+  run settings as words (`autoGlanceOf` for Auto, `agentGlanceOf` and `runGlanceOf` for the
+  others, all through `glanceOf`). There is no panel and no toggle: `RunGlanceLine` sets
+  `SettingLookContext` to `fact`, so each setting draws as one dotted word that opens its own
+  menu or popover ("Stops after the plan · Ask first · Limit $10.00" on a Lead, "Ask first ·
+  No limit" on an agent). The words are always mounted, so an open event
+  (`goodboy:open-permission-picker`, `autoLimitOpenEvent`) opens its popover on its own word,
+  and the asks slot the composer portals into sits in the same line. Each cluster of agents is one soft card (`AutoTurnCard`,
   head `autoCardHeadOf`): the noun of the work it holds (**Plan**, **Build** or **Review**),
   the agent count and one word that follows the loudest child (**Needs you**, **Failed**,
   **Running**, then the settled word such as **Done**), then flat rows. A row is one
@@ -543,7 +546,7 @@ writing to it reopens it to **Deciding**.
   thinking line of the conversation speaks instead. There is no separate strip
   of running children: the running rows of the cards, the rail and the dock
   already say it. The glance line under the title holds the state word, the
-  spend and **Settings** only; the dock and the tail say the sentence, and both
+  spend and the setting words only; the dock and the tail say the sentence, and both
   read one glance (`useConversationGlance`, `conversationAskOf`), so the word
   and the sentence never disagree. A permission a subagent asks reaches Auto's
   dock, named, oldest first, with `1 of 2` and **Open Implementer**. While a plan waits the dock owns the one
@@ -559,7 +562,7 @@ writing to it reopens it to **Deciding**.
   page with one box, and the back row reads **Back to Auto**. A saved window that held the
   old panel opens this page (`withoutRemovedPages`). The page title is the task
   Auto gave it (the first line of the brief when the task is missing); on top, the line
-  "Auto started this agent and reads your messages to it.", why Auto chose that role, the model it runs on with its
+  "The Lead started this agent and reads your messages to it.", why the Lead chose that role, the model it runs on with its
   provider (no dollar amount: a child holds no money) and the note when the app changed
   the model (`AutoChildBrief`); then the child's conversation; at the end what
   came back (summary, files changed, checks with their source, open questions,
@@ -707,7 +710,7 @@ The page of an agent Auto started answers why it exists at the top of its
 transcript, in the block `AutoChildBrief`
 (`apps/desktop/src/features/auto/child/AutoChildBrief.tsx`, inserted by
 `useAutoChildChat`). Every line comes from the stored delegation row through
-`delegationCardOf`: Why Auto chose the role (the stored `reason`), Why not the
+`delegationCardOf`: Why the Lead chose the role (the stored `reason`), Why not the
 role fit when both are stored, Done when (`doneWhen`), Went in, the routing, and
 Attempt n with the last attempt's result when the `retryOf` chain is longer than
 one (`delegationAttemptsOf`). The brief itself is the first message of the
@@ -1154,11 +1157,13 @@ workspace default through `useAutoLevel` and `startRoutedRun` writes the pick
 with `changeAutoLevel`.
 
 The chip lives in the settings line of an Auto agent (`AutoLevelSetting`, next
-to the Limit chip) and the workspace default in Settings, workspace defaults
-(`AutoLevelDefaultRow`). Both go through `useAutoLevel` in `shared/hooks/`,
+to the Limit chip). The workspace default is the **Stops for your OK** row of
+the Runs settings page, shared with workflows: `changeStopsLevel` writes it with the
+workflow level, see [workflows.md](./workflows.md). The chip goes through `useAutoLevel` in `shared/hooks/`,
 which reads `auto.level`, writes through the `changeAutoLevel` store action
-(`writeAutoLevel` on a named session or workspace, then a reload of the value)
-and keeps only the latest pick. A
+(`writeAutoLevel` on a named session or workspace, then a reload of the value
+and a note to the other windows, which read it again) and keeps only the
+latest pick. A
 failed write keeps the old level and shows the reason. The chip is rendered by
 `AgentSettingsLine` itself, never through the composer slot, so the message
 field is not affected.
@@ -1213,21 +1218,39 @@ null value is Reset and removes the row. A lost swap re-reads and retries once,
 then fails with "changed in another window"; a failed write keeps the old value.
 
 The panel for these rows is `features/auto/permissions/`: `LeadPermissionsPanel`
-shows the preset tabs (Custom lights by itself and is not pickable), the nine
-rows on one grid, the spend limit read only, the four locked rows and the
-closing sentence of `permissionSentenceOf`. A row saves when you change it;
-there is no draft. An own row shows "This Lead" (or "Set here" on the default)
-with **Reset**, which writes null; the other rows follow the default live. A
-failed write keeps the old value and shows the error under its row, and the
-panel reads again after every write. Picking a preset writes the level and
-clears the own rows; on a Lead it pins a row only where a workspace default
-would still disagree with the preset. `LeadPermissionsChip` mounts the panel
-from `AutoLevelChip` wherever a session or a Lead exists: the start field of a
-session and the Lead page. With no Lead yet it reads the session, and a preset
-writes that session's level only. A new session draft has no session to
-name, so it keeps the level chip, applied to the session once it exists. In the
-workspace settings the **Lead asks you** row of Run defaults holds the
-chip on the workspace default (`AutoLevelDefaultRow`).
+shows the nine rows in three groups and the four locked rows as one line. The
+level and **Custom** sit above it in `LeadLevelRow` (the drawer) or on the
+**Stops for your OK** row (the Runs settings page). `LeadPermissions.level` is the
+level the rows fall back to, and `leadDetailsDifferOf` counts the rows that
+differ from it: that count is the only source of "Custom, 2 details". A row
+saves when you change it; there is no draft. A failed write keeps the old
+value and shows the error under its row, and the panel reads again after
+every write. A read that fails after the rows loaded keeps them and shows the
+error above them. Every reader of a workspace (`useLeadPermissions`: the chip,
+the drawer, the Settings disclosure) listens to one revision per workspace
+(`leadPermissionsRevisionByWorkspace`, slice `lead-permissions`); a write that
+landed bumps it and the other readers read again, a failed write bumps
+nothing, and each reader keeps only its latest answer
+(`LeadDetailsDrawer/index.chip.test.tsx`). Picking a level writes the level
+and clears the own rows; on a
+Lead it pins a row only where a workspace default would still disagree with
+the level. Reset is a pick of the current level.
+
+`LeadPermissionsChip` is the **Stops** menu that `AutoLevelChip` mounts
+wherever a session or a Lead exists: the start field of a session and the Lead
+page. It holds the three levels, **Reset to** the level when the rows differ,
+and **Fine-tune this run**, which opens the `lead-details` drawer
+(`LeadDetailsDrawer`) beside the chat. With no Lead yet it reads the session,
+a level writes that session's level only, and the last row is **Fine-tune in
+Settings**. A run never writes the workspace default. A new session draft has
+no session to name, so it keeps the level chip, applied to the session once it
+exists. On the Runs settings page the **Stops for your OK** row shows Custom and
+Reset for the workspace default rows, and **Fine-tune what the Lead does
+alone** opens them in the page (`LeadDetailsDisclosure`); a level pick there
+writes both level keys, then clears the default rows. The `lead-details`
+drawer is never saved in the window layout (`UNSAVED_DRAWER_KINDS`,
+`savedLocationOf`), so a rollback to a release without it opens the run
+without the drawer.
 A row tightened while an agent runs applies to its next start. The tests are
 `permissions.test.ts` (the compatibility table for each level, each
 precedence step, the stale pair) and
@@ -1582,7 +1605,7 @@ narrower role fits, the batch is refused with `role_narrower` and nothing is wri
 asks for tests: a tester fits. Send it to a tester ("role":"tester"), or keep the implementer with
 "roleReason": one line on why the implementer fits better." A second send whose child carries
 `roleReason` passes; the admission stores `roleFit` and `roleReason` in `request_json`, and the
-child's page shows "Why not Tester: <reason>" under "Why Auto chose Implementer" (`roleKept` in
+child's page shows "Why not Tester: <reason>" under "Why the Lead chose Implementer" (`roleKept` in
 `delegationCardOf`, `AutoChildBrief`). A retry, a continue and a revise keep their role and are
 never scanned; a retry and a continue copy `roleFit` and `roleReason` from the earlier request, so
 the page keeps its "Why not" line. While Auto cannot start a Rewriter (`AUTO_CLOSED_ROLES` in `roles.ts`), history work

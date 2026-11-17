@@ -6,8 +6,6 @@ import { useAppStore } from '../../../../store';
 import { pluralize } from '../../../../shared/utils/pluralize';
 import { pageKeys } from '../../pageKeys';
 import { usePageChangedCount } from '../../hooks/usePageChangedCount';
-import { storageWorkspacePages } from '../../../storage/storageWorkspacePages';
-import { useBranchesMeta } from '../../../storage/useBranchesMeta';
 import { projectsCountLine } from './projectsCountLine';
 import { SETTINGS_PANE_ENTRY } from './settingsPaneEntry';
 import { WorkspacePageBody } from './WorkspacePageBody';
@@ -28,10 +26,8 @@ export const WorkspaceScopePanel = ({ workspaceId, section, initialFlow, request
   const ownsSettings = pageKeys({ page }).length > 0;
   const changedCount = usePageChangedCount({ workspaceId, page });
   const projectsMeta = useAppStore((s) => projectsCountLine({ projects: s.projects, workspaceId }));
-  const branchesMeta = useBranchesMeta({ workspaceId });
   const metaByPage: Readonly<Partial<Record<PlanPage, string | undefined>>> = {
     projects: projectsMeta,
-    branches: branchesMeta,
   };
   const [flow, setFlow] = useState<{
     readonly page: PlanPage;
@@ -96,16 +92,7 @@ export const WorkspaceScopePanel = ({ workspaceId, section, initialFlow, request
       animationClassName={SETTINGS_PANE_ENTRY}
       title={entry.label}
       meta={metaByPage[page]}
-      actions={
-        page === 'branches' ? (
-          <>
-            {storageWorkspacePages({ workspaceId }).branches.actions}
-            {menu}
-          </>
-        ) : (
-          menu
-        )
-      }
+      actions={menu}
       subheader={
         openFlow === null ? undefined : (
           <WorkspaceSettingsFlow

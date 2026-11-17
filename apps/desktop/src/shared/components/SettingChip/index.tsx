@@ -7,6 +7,9 @@ import {
   tintClasses,
   type DropdownController,
 } from '@goodboy/ui';
+import { FactButton } from './FactButton';
+import { FactDot } from './FactDot';
+import { useIsSettingFact } from './settingLookContext';
 import type { SettingWords } from './settingWords';
 
 const CHANGED_TINT = tintClasses('info');
@@ -36,15 +39,16 @@ export const SettingChip = ({
   onOpenSource,
   children,
 }: Props) => {
+  const ariaLabel = [`${label}: ${words.value}`, words.source]
+    .filter((part) => part !== '')
+    .join(', ');
   const chip = (
     <Button
       size="xs"
       variant="setting"
       aria-haspopup="dialog"
       aria-expanded={dropdown.open}
-      aria-label={[`${label}: ${words.value}`, words.source]
-        .filter((part) => part !== '')
-        .join(', ')}
+      aria-label={ariaLabel}
       data-setting-chip={label}
       onClick={dropdown.toggle}
       data-setting-changed={words.isChanged === true ? '' : undefined}
@@ -58,8 +62,21 @@ export const SettingChip = ({
       <span className="min-w-0 max-w-56 truncate text-eyebrow text-foreground">{words.value}</span>
     </Button>
   );
-  const trigger = chip;
-  return (
+  const fact = (
+    <FactButton
+      aria-haspopup="dialog"
+      aria-expanded={dropdown.open}
+      aria-label={ariaLabel}
+      data-setting-chip={label}
+      onClick={dropdown.toggle}
+    >
+      {words.fact ?? `${label} ${words.value}`}
+    </FactButton>
+  );
+  const isFact = useIsSettingFact();
+  const trigger = isFact ? fact : chip;
+  const tip = isFact ? (tooltip ?? help) : tooltip;
+  const popover = (
     <AnchoredPopover
       dropdown={dropdown}
       role="dialog"
@@ -67,10 +84,10 @@ export const SettingChip = ({
       anchorClassName="inline-flex min-w-0"
       className="flex flex-col gap-2 p-3"
       trigger={
-        tooltip === undefined ? (
+        tip === undefined ? (
           trigger
         ) : (
-          <Tooltip content={tooltip} isSuppressed={dropdown.open}>
+          <Tooltip content={tip} isSuppressed={dropdown.open}>
             {trigger}
           </Tooltip>
         )
@@ -105,5 +122,14 @@ export const SettingChip = ({
         {words.chain}
       </p>
     </AnchoredPopover>
+  );
+  if (!isFact) {
+    return popover;
+  }
+  return (
+    <>
+      <FactDot />
+      {popover}
+    </>
   );
 };

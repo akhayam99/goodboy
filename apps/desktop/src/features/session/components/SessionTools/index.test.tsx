@@ -263,7 +263,7 @@ describe('SessionTools', () => {
     expect(toggle('terminal').tabIndex).toBe(-1);
   });
 
-  it('names the running terminals and shows their count on Terminal', () => {
+  it('names the running terminals on Terminal and draws no number at rest', () => {
     useAppStore.setState({
       terminalTabs: {
         [SESSION_ID]: [
@@ -289,29 +289,18 @@ describe('SessionTools', () => {
     render(<SessionTools sessionId={null} />);
 
     expect(toggle('terminal').getAttribute('aria-label')).toBe('Terminal, 2 running');
-    const tool = toggle('terminal').closest('[data-slot="session-tool"]');
-    expect(tool?.querySelector('[data-testid="tool-count"]')?.textContent).toBe('2');
+    expect(tooltipTextOf({ element: toggle('terminal') })).toContain('2 running');
     const glyph = toggle('terminal')
       .closest('[data-slot="tool-icon"]')
       ?.querySelector('[data-slot="tool-glyph"]');
     expect(glyph?.className.split(' ')).toEqual(
       expect.arrayContaining(['absolute', 'left-1/2', 'top-1/2', 'size-4']),
     );
-    expect(glyph?.querySelector('[data-testid="tool-count"]')?.getAttribute('data-placement')).toBe(
-      'corner',
-    );
-    expect(glyph?.querySelector('[data-testid="tool-count"]')?.className.split(' ')).toEqual(
-      expect.arrayContaining(['bottom-full', 'left-full']),
-    );
-    expect(tool?.querySelector('[data-signal]')).toBeNull();
-    expect(
-      toggle('browser')
-        .closest('[data-slot="session-tool"]')
-        ?.querySelector('[data-testid="tool-count"]'),
-    ).toBeNull();
+    expect(glyph?.childElementCount).toBe(0);
+    expect(screen.getByRole('toolbar', { name: 'Tools' }).textContent).toBe('TerminalBrowser');
   });
 
-  it('shows the open browser tabs as a count on Browser', () => {
+  it('names the open browser tabs on Browser and draws no number at rest', () => {
     const titles = ['Harborline', 'Northwind', 'Acme', 'Cascadia'];
     useAppStore.setState({
       currentWorkspaceId: WORKSPACE,
@@ -333,52 +322,32 @@ describe('SessionTools', () => {
     render(<SessionTools sessionId={null} />);
 
     expect(toggle('browser').getAttribute('aria-label')).toBe('Browser, 4 tabs');
+    expect(tooltipTextOf({ element: toggle('browser') })).toContain('4 tabs');
     expect(
       toggle('browser')
-        .closest('[data-slot="session-tool"]')
-        ?.querySelector('[data-testid="tool-count"]')?.textContent,
-    ).toBe('4');
+        .closest('[data-slot="tool-icon"]')
+        ?.querySelector('[data-slot="tool-glyph"]')?.childElementCount,
+    ).toBe(0);
   });
 
-  it('shows no count on Browser until the tab rows have loaded', () => {
-    useAppStore.setState({
-      currentWorkspaceId: WORKSPACE,
-      sessions: [sessionFixture()],
-      browserTabCounts: {},
-    });
-    render(<SessionTools sessionId={null} />);
+  it.each([
+    { rows: 'not loaded', browserTabCounts: {} },
+    { rows: 'empty', browserTabCounts: { [WORKSPACE]: 0 } },
+  ] as const)(
+    'names Browser alone and draws nothing on it while its tab rows are $rows',
+    ({ browserTabCounts }) => {
+      useAppStore.setState({
+        currentWorkspaceId: WORKSPACE,
+        sessions: [sessionFixture()],
+        browserTabCounts,
+      });
+      render(<SessionTools sessionId={null} />);
 
-    expect(toggle('browser').getAttribute('aria-label')).toBe('Browser');
-    const tool = toggle('browser').closest('[data-slot="session-tool"]');
-    expect(tool?.querySelector('[data-testid="tool-count"]')).toBeNull();
-    const skeleton = tool?.querySelector('[data-testid="tool-count-skeleton"]');
-    expect(skeleton?.getAttribute('aria-label')).toBe('Loading');
-  });
-
-  it('draws no skeleton on Browser once the tab rows have loaded empty', () => {
-    useAppStore.setState({
-      currentWorkspaceId: WORKSPACE,
-      sessions: [sessionFixture()],
-      browserTabCounts: { [WORKSPACE]: 0 },
-    });
-    render(<SessionTools sessionId={null} />);
-
-    expect(screen.queryByTestId('tool-count-skeleton')).toBeNull();
-    expect(screen.queryByTestId('tool-count')).toBeNull();
-  });
-
-  it('draws no skeleton and no count on Browser when the tab rows failed to load', () => {
-    useAppStore.setState({
-      currentWorkspaceId: WORKSPACE,
-      sessions: [sessionFixture()],
-      browserTabCounts: {},
-      browserTabCountFailures: { [WORKSPACE]: true },
-    });
-    render(<SessionTools sessionId={null} />);
-
-    expect(screen.queryByTestId('tool-count-skeleton')).toBeNull();
-    expect(screen.queryByTestId('tool-count')).toBeNull();
-  });
+      expect(toggle('browser').getAttribute('aria-label')).toBe('Browser');
+      expect(screen.queryByRole('status')).toBeNull();
+      expect(screen.getByRole('toolbar', { name: 'Tools' }).textContent).toBe('TerminalBrowser');
+    },
+  );
 
   it('selects Terminal while its page is open and does nothing on click', () => {
     useAppStore.setState({

@@ -15,18 +15,18 @@ Every place you go sits in one sidebar on the left. It looks the same on every s
 
 Click a session and its row stays selected. The session opens on its Overview, under one head that every page of the session shares:
 
-- the title, then **New**, **Ask**, **Pin**, **Refresh** and **⋯**
+- the title, then **New** and **⋯**
 - the tabs **Overview**, **Runs**, **Artifacts**, **Questions** and **Context**, with counts on Runs, Artifacts and Questions
 
 The **Context** tab holds a **Projects** card that folds each folder and branch, and a **Linked** card with the work linked to it. Every branch is led by its pull request icon in its color. Click one to open its Branch page, with the tabs **Conversation**, **Changes**, **Commits**, **Checks**, **Work** and **Comments**.
 
-The **⋯** holds **Limit**, **Archive** and **Delete** with the session's other actions.
+The **⋯** holds **Ask about this session**, **Pin session**, **Refresh session**, **Archive** and **Delete**. The limit and the rest of the session's actions sit in the sidebar row's menu and in ⌘K.
 
 A branch, an artifact or a run keeps the head and shows crumbs such as **Overview › Artifacts › Plan** in place of the tabs. Each crumb is a link, and **Esc** goes one crumb up.
 
-**Ask** opens a detail panel beside the page. From left to right a window holds the sidebar, the page, the detail panel, the tools column and the dock. On a narrow window a panel lies over the page with a scrim.
+**Ask about this session**, from the **⋯** or ⌘L, opens a detail panel beside the page. From left to right a window holds the sidebar, the page, the detail panel, the tools column and the dock. On a narrow window a panel lies over the page with a scrim.
 
-At the right of every page, a column of icons is named with its shortcut on hover. Under the caption **Tools**, on every page, it holds **Terminal** and **Browser**, each with its count. With a dock open, the column sits on the dock's left edge. They stay open as you move between pages. **Open full page** in the dock header makes either one full size, and **Dock**, last in the page's first row, puts either one back. The active tool shows its name below its icon.
+At the right of every page, a column of icons is named with its shortcut on hover. Under the caption **Tools**, on every page, it holds **Terminal** and **Browser**. Neither shows a number: the tooltip says how many terminals run and how many tabs are open. With a dock open, the column sits on the dock's left edge. They stay open as you move between pages. **Open full page** in the dock header makes either one full size, and **Dock**, last in the page's first row, puts either one back. The active tool shows its name below its icon.
 
 **⌘B**, or the sidebar button at the top left of the window, folds the sidebar into a slim bar of icons, on every page. It stays as you left it: starting a new session never unfolds it. Folded, the sidebar draws only sessions that need you, run or have unread news, each as its state node; the rest wait behind a `+N` button. Branches show the request state icon. Each tooltip names the state.
 

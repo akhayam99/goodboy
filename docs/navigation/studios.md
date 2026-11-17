@@ -290,8 +290,8 @@ cut at the end, never in the middle; the group's`aria-label` keeps the full
   index, drawn beside the page (its fold control and `Search settings` first,
   then the groups): its two groups, named by scope (This Mac with the caption
   every workspace, then the workspace name with the caption this workspace),
-  come from `settingsDirectory`, and the row to Connections ends it
-  (`MovedToConnectionsRow`). Every row is one 28px
+  come from `settingsDirectory`, and nothing but settings pages sits in it.
+  Every row is one 28px
   line of one grammar (`SettingsNavRow`): a group row carries its icon, a page
   row is nested by `PANE_RHYTHM.navRail.nest`, and a row has no second line,
   no count and no identity. A row that needs something shows a 6px dot at its
@@ -328,7 +328,7 @@ matches "x".` and points to ⌘K for actions. `settingRows.test.tsx` renders
   shortcuts, Advanced, Storage, Backup and reset) always sit under their
   heading, whichever scope is active, so switching scope never moves a row
   above the pointer (`appSections.ts`). The workspace pages (Projects, About
-  you, Run defaults, Models, Permissions, Branches, Replies and commits) sit the
+  you, Runs, Models, Permissions, Branches, Replies and commits) sit the
   same way under the workspace name (`workspacePages.ts`,
   `SettingsRailPageGroup`). General ends with the Updates band (version row,
   What's new, background download) and carries the update dot; the old
@@ -359,11 +359,13 @@ matches "x".` and points to ⌘K for actions. `settingRows.test.tsx` renders
   `Workspace` band that opens the Projects page, and its name is written once
   on that page, in the top bar. The page ends in a `Danger zone` band whose
   row says `Disconnect this workspace`, confirmed in place.
-  Replies and commits holds the `Replies` band (the voice and the
-  attribution line), the templates with the seven placeholders shown once
-  under both and added to the template last in focus (`ReplyTemplatesBand`),
-  `Mark thread as resolved` and the commit style (`review-replies` stays its
-  page id and anchor); Run defaults is its own page of the workspace
+  Replies and commits is one column: `How replies read` (the voice, the
+  preview right under it, `Sign replies`, then `Reply wording`, a closed
+  disclosure with the two templates and an `Insert` popover per template
+  that puts a placeholder at the caret, `ReplyTemplatesBand`), `After a
+reply` (`Resolve the thread`, `Update the reply after a squash`) and
+  `Commits` (`review-replies` stays its page id and anchor; a search hit on a
+  template opens the disclosure); Runs is its own page of the workspace
   settings and holds no branch or reply setting. Branches opens on a Naming
   band (`WorkspaceBranchNamingBand`: Branch prefix and Branch name), then
   After merge. Each field's page is `FIELD_PAGE` in
@@ -414,8 +416,8 @@ pageKeys.ts`), typed so a new override key does not compile until it has
   Storage lists every worktree folder Goodboy made, grouped by repository,
   under three filters: To review, In use and Kept. Each part is a card
   (`Band`) under a plain section title: Worktrees (with `Scan
-another repository` at its foot), Artifacts of deleted sessions, and
-  Transcripts and app data. There is no summary band: the page meta line
+another repository` at its foot), Branches with `Recently deleted`,
+  Artifacts of deleted sessions, and Transcripts and app data. There is no summary band: the page meta line
   reads `<total> on this Mac`, or `<total> in <workspace>` under a scope (the
   shared transcripts and app data stay out of a scoped total), from
   one function (`storageTotalBytes` and `storageMetaOf` through
@@ -423,19 +425,19 @@ another repository` at its foot), Artifacts of deleted sessions, and
   free. The Worktrees header holds the three filters and `Remove N safe
 folders · size` (`WorktreeRemoveButton`), with the sentence on idle days as
   its help line, and the folder `...` menu shows on hover and focus. `Prune`
-  is a secondary button that confirms. Branches is a Workspace page
-  (`branches`, `BranchesPage`): the Naming band and the workspace's After
-  merge rule first, then the branch list under one select (`Safe to delete`, `Check first`, `All`),
-  then a `Recently deleted` fold row (restore or delete for good, loaded from
-  `deleted_branches` on open, which also releases the refs of deletions older
-  than 14 days). The page meta line reads `N safe to delete · M need a look`
-  (`branchesMetaOf` through `useBranchesMeta`). A scope picker
-  (`StorageScopePicker`, `Listbox`) sits in the page header row next to
-  `Check again` (`StorageHeaderActions`); `Suggest cleanup after` is the last
-  row of the Worktrees band (`StorageSuggestAfterRow`), and a failed save
-  keeps the old number of days; the
-  Branches header has the same picker without `Removed workspaces`
-  (`BranchesHeaderActions`). `openStorage` and the
+  is a secondary button that confirms. The branch list sits under
+  Worktrees (`BranchesPage` in `StoragePage`), in the same scope, and is
+  hidden under `Removed workspaces`: one select (`Safe to delete`, `Check
+first`, `All`), then a `Recently deleted` fold row (restore or delete for
+  good, loaded from `deleted_branches` on open, which also releases the refs
+  of deletions older than 14 days). Its header reads `N safe to delete · M
+need a look` (`branchesMetaOf` in `BranchesHeader`). The Workspace page
+  Branches holds settings only: the Naming band and the After merge rule. A
+  scope picker (`StorageScopePicker`, `Listbox`) sits in the page header row
+  next to `Check again` (`StorageHeaderActions`), which rereads the sizes and
+  the branches of the scope (`StorageCheckAgain`); `Suggest cleanup after` is
+  the last row of the Worktrees band (`StorageSuggestAfterRow`), and a failed
+  save keeps the old number of days. `openStorage` and the
   cleanup notifications always land on Storage. The picker lists the current
   window's workspace, every other workspace with its own weight, `Removed
 workspaces` (folders whose owning workspace is gone or was never linked),
@@ -458,7 +460,7 @@ workspaces` (folders whose owning workspace is gone or was never linked),
   settings table (`storage.suggestAfterDays`, `storage.lastNudgeAt`,
   `storage.lastNudgeBytes`). Sizes are measured one folder at a time after
   boot, never on the boot path. The worktree scan itself sends nothing.
-  On the Branches page, `BranchesSection` lists local branches
+  On Storage, `BranchesSection` lists local branches
   only, in the same scope, in one list. It scans only when it opens:
   `git for-each-ref` over the local branches, one more over `origin` and one
   for the distance behind the base (`project_branches`; fields are split on a

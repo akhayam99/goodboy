@@ -72,8 +72,8 @@ const FORM_SCENES: ReadonlyArray<readonly [SceneId, string]> = [
   ['c10-new-wireframe', 'Draw a wireframe'],
 ];
 
-const whereLabel = (): string =>
-  screen.getByRole('combobox', { name: 'Projects' }).textContent ?? '';
+const settingsLine = (): string =>
+  document.querySelector('[data-start-settings-line]')?.textContent ?? '';
 
 describe('the c10 New session scenes', () => {
   it('registers one scene per state of the New session page and the New forms', () => {
@@ -93,11 +93,13 @@ describe('the c10 New session scenes', () => {
     }
   });
 
-  it('c10-start-task puts HBL-412 above the task and opens How on Lead', async () => {
+  it('c10-start-task puts HBL-412 above the task and opens the Plan row on the Lead', async () => {
     await mount({ id: 'c10-start-task' });
 
     expect(screen.getByRole('list', { name: 'Picked issues' }).textContent).toContain('HBL-412');
-    screen.getByRole('button', { name: 'How: Lead' });
+    expect(
+      screen.getByRole('tab', { name: 'The Lead plans it' }).getAttribute('aria-selected'),
+    ).toBe('true');
     expect(screen.queryByRole('button', { name: /^Runs as/ })).toBeNull();
   });
 
@@ -108,7 +110,7 @@ describe('the c10 New session scenes', () => {
       'value',
       'Make ledger posts in payments-api safe to retry end to end, and keep ledger-core balances unchanged',
     );
-    expect(whereLabel()).toContain('2');
+    expect(settingsLine()).toContain('2 projects');
     expect(screen.queryByRole('button', { name: 'Start an auto' })).toBeNull();
   });
 
@@ -138,7 +140,7 @@ describe('the c10 New session scenes', () => {
     expect(within(listbox).getAllByRole('option')).toHaveLength(1);
     expect(within(listbox).getByRole('option', { name: /payments-api/ })).toBeDefined();
     expect(within(listbox).queryAllByText(/^(Recent|All projects)$/).length).toBeGreaterThan(0);
-    expect(whereLabel()).toContain('2');
+    expect(screen.getByRole('combobox', { name: 'Projects' }).textContent).toContain('2');
   });
 
   it('c10-start-projects-starred opens on Starred, then the folders runs used, then the rest', async () => {

@@ -24,6 +24,7 @@ const VARIANTS = [
   'quiet',
   'ghost-danger',
   'setting',
+  'fact',
 ] as const satisfies ReadonlyArray<ButtonVariant>;
 
 describe('Button', () => {
@@ -42,6 +43,20 @@ describe('Button', () => {
     expect(classes).toContain('hover:border-border');
     expect(classes).toContain('focus-visible:border-border');
     expect(classes).not.toContain('bg-fill');
+  });
+
+  it('draws a fact as a muted word with a dotted underline and the hover fill while open', () => {
+    render(
+      <Button variant="fact" size="xs" aria-expanded>
+        Ask first
+      </Button>,
+    );
+    const classes = screen.getByRole('button', { name: 'Ask first' }).className.split(/\s+/);
+
+    expect(classes).toContain('text-muted-foreground');
+    expect(classes).toContain('decoration-dotted');
+    expect(classes).toContain('aria-expanded:bg-hover');
+    expect(classes).toContain('border-0');
   });
 
   it('raises a secondary on its own fill and shadow, and drops the shadow when disabled', () => {

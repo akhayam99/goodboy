@@ -2,7 +2,14 @@ import { brandId } from '@goodboy/types';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import type { AgentId, ArtifactId, MountId, SessionId } from '@goodboy/types';
+import type {
+  AgentId,
+  ArtifactId,
+  AutoTreeId,
+  MountId,
+  SessionId,
+  WorkspaceId,
+} from '@goodboy/types';
 import {
   DRAWER_INSET,
   LEFT_SIDEBAR_DEFAULT,
@@ -85,6 +92,14 @@ const EVERY_KIND: ReadonlyArray<DrawerRequest> = [
     sessionId: SESSION_ID,
     payload: { source: { kind: 'worktree', worktreePath: '/work/ledger-core' }, path: null },
   },
+  {
+    kind: 'lead-details',
+    sessionId: SESSION_ID,
+    payload: {
+      workspaceId: brandId<WorkspaceId>({ value: 'ws-harborline' }),
+      treeId: brandId<AutoTreeId>({ value: 'tree-1' }),
+    },
+  },
 ];
 
 const sizingOf = (drawer: DrawerRequest): DrawerSizing =>
@@ -151,6 +166,7 @@ const SIZING_BY_KIND: ReadonlyArray<readonly [DrawerRequest['kind'], DrawerSizin
   ['new', 'reader'],
   ['transcript', 'side'],
   ['file-diff', 'reader'],
+  ['lead-details', 'side'],
 ];
 
 describe('the tier of every drawer', () => {

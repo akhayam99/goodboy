@@ -27,7 +27,7 @@ const SPENDER = {
   autoAgent: 'the Lead and the agents it starts',
 } as const satisfies Record<AutoLimitKind, string>;
 
-const STARTS_FROM = 'It applies to this run only. Run defaults set where new runs start.';
+const STARTS_FROM = 'It applies to this run only. Runs in Settings sets where new runs start.';
 
 export const AUTO_LIMIT_COPY = {
   noLimit: NO_LIMIT,

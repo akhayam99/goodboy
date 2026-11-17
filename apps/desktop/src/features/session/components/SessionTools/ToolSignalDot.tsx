@@ -4,7 +4,6 @@ import { TOOL_CORNER_SLOT } from './toolCornerSlot';
 
 const TONE = {
   error: 'danger',
-  running: 'info',
   changed: 'primary',
 } as const satisfies Record<ToolSignal['kind'], Tone>;
 

@@ -53,7 +53,9 @@
   breathing, needs you warning, in review success, done merged, archived
   neutral and still; it steps under the selection box while one shows): a goal
   of up to two lines (the full goal in the
-  tooltip) is the card's one button, the quick action sits at its right, the
+  tooltip) is the card's one button, the quick action sits at its right (or,
+  when it answers the reason the signal names, `signalActionOf`, the signal
+  itself is the button and no icon shows), the
   lifecycle menu is the right click and Shift F10, and the bottom line holds the project
   in gray (`projectLineOf`, "payments-api +1" for several) and one signal at the
   right (`boardSignalOf`, the same one the List row shows): an open question,
@@ -138,9 +140,9 @@
   (`settingsOverlayFromEvent`), a stored notification action does too (`mapRecoveryAction`), a
   restored window on a provider or tool page lands on its Connections page
   (`withoutRemovedPages`), and a remembered Settings page there lands on App, General, or on
-  This workspace, Models for the old Models page (`resolveSettingsFocus`). For all of 0.37 the
-  Settings rail ends with a row that opens Connections (`MovedToConnectionsRow`).
-  `settings-has-no-connection-scopes.test.ts` keeps any new code from opening Settings on those
+  This workspace, Models for the old Models page (`resolveSettingsFocus`). The Settings rail
+  has no row to Connections: Search settings answers Providers and Integrations with Go to
+  Connections (`settingsPaletteEntries`). `settings-has-no-connection-scopes.test.ts` keeps any new code from opening Settings on those
   scopes. The one place they stay is the saved window layout: it stores a Connections page as
   the Settings provider or tools page 0.36 opens (`storedStudioOf`), and restore folds it back.
   There is no Work door and no `work` studio: the Board is the one list across sessions, and a
@@ -327,7 +329,7 @@ and the tab opens on the session's folder.
      entry in the one its `kind` names (`EMPTY_SECTION_KINDS` in
      `commandList.ts`): **Go to** (`goto`: one row per page destination of
      `DESTINATIONS`, in its order, Board, Tasks, Workflows, Chat, Impact, Monitoring, Notifications, Terminal and Browser (these two open the dock),
-     then the Run defaults and Impact Spend pages, and Settings, whose row
+     then the Impact Spend page, and Settings, whose row
      is also a `goto` entry; Board answers to its former name Sessions), **Create**
      (`create`: New session, New chat, New terminal, New workspace), **App**
      (`action`: Resume setup while setup is unfinished in the main window,
@@ -349,7 +351,7 @@ and the tab opens on the session's folder.
      Board door dot counts (`useNowSessions`), each opening its `attentionPlace`. The bell, the toast and the
      Notifications page open through it too: a notification keeps a reason and a mount in its stored action
      (`open-place`, no migration), and a build that does not know the kind reads no action. The session pages (Open Overview,
-     Questions, Artifacts and the rest), Run defaults and Impact: Spend stay out
+     Questions, Artifacts and the rest) and Impact: Spend stay out
      of the empty list and answer to typing.
      The order of the list is the one place the palette differs from a `⋯` menu:
      both list the same verbs (`menuParity.test.tsx`, which counts the verbs

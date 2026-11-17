@@ -1,285 +1,281 @@
 import { createElement, type ReactElement, type SVGProps } from 'react';
 
+export type IconWeight = 'regular' | 'bold' | 'fill' | 'duotone';
+
 type IconProps = Omit<SVGProps<SVGSVGElement>, 'children'> & {
+  readonly color?: string;
   readonly size?: number;
-  readonly strokeWidth?: number;
+  readonly weight?: IconWeight;
 };
 
 export type IconComponent = (props: IconProps) => ReactElement;
 
-type IconNode = readonly (readonly [string, Record<string, string>])[];
+type GlyphDrawing = {
+  readonly regular: string;
+  readonly fill?: string;
+  readonly duotone?: { readonly shade: string; readonly line: string };
+};
 
-const createIcon =
-  (nodes: IconNode): IconComponent =>
-  ({ size = 24, strokeWidth = 2, ...rest }) =>
+type PathsParams = {
+  readonly drawing: GlyphDrawing;
+  readonly weight: IconWeight;
+  readonly color: string;
+};
+
+type GlyphParams = {
+  readonly drawing: GlyphDrawing;
+};
+
+const BOLD_STROKE_WIDTH = 8;
+
+const pathsOf = ({ drawing, weight, color }: PathsParams): ReactElement[] => {
+  if (weight === 'bold') {
+    return [
+      createElement('path', {
+        key: 'bold',
+        d: drawing.regular,
+        stroke: color,
+        strokeWidth: BOLD_STROKE_WIDTH,
+        strokeLinejoin: 'round',
+      }),
+    ];
+  }
+  if (weight === 'fill' && drawing.fill != null) {
+    return [createElement('path', { key: 'fill', d: drawing.fill })];
+  }
+  if (weight === 'duotone' && drawing.duotone != null) {
+    return [
+      createElement('path', { key: 'shade', d: drawing.duotone.shade, opacity: '0.2' }),
+      createElement('path', { key: 'line', d: drawing.duotone.line }),
+    ];
+  }
+  return [createElement('path', { key: 'regular', d: drawing.regular })];
+};
+
+const glyph =
+  ({ drawing }: GlyphParams): IconComponent =>
+  ({ color = 'currentColor', size = 24, weight = 'regular', ...rest }) =>
     createElement(
       'svg',
       {
         xmlns: 'http://www.w3.org/2000/svg',
         width: size,
         height: size,
-        viewBox: '0 0 24 24',
-        fill: 'none',
-        stroke: 'currentColor',
-        strokeWidth,
-        strokeLinecap: 'round',
-        strokeLinejoin: 'round',
+        fill: color,
+        viewBox: '0 0 256 256',
         'aria-hidden': true,
         focusable: false,
         ...rest,
       },
-      nodes.map(([tag, attributes], index) => createElement(tag, { ...attributes, key: index })),
+      pathsOf({ drawing, weight, color }),
     );
 
-export const ArrowRight = createIcon([
-  ['path', { d: 'M5 12h14' }],
-  ['path', { d: 'm12 5 7 7-7 7' }],
-]);
-export const BookOpen = createIcon([
-  ['path', { d: 'M12 5v16' }],
-  [
-    'path',
-    {
-      d: 'M20.001 19A2 2 0 0022 17V5a2 2 0 00-1.999-2L16 3.002A5 5 0 0012 5a5 5 0 00-4-2H4a2 2 0 00-2 2v12a2 2 0 001.999 2H8a5 5 0 014 2 5 5 0 014-2z',
+export const ArrowRight = glyph({
+  drawing: {
+    regular:
+      'm222,134l-72,72a8,8,0,0,1-12-12l59-58H40a8,8,0,0,1,0-16h157l-59-58a8,8,0,0,1,12-12l72,72a8,8,0,0,1,0,12z',
+  },
+});
+export const BookOpen = glyph({
+  drawing: {
+    regular:
+      'm232,48h-72a40,40,0,0,0-32,16a40,40,0,0,0-32-16H24a8,8,0,0,0-8,8v144a8,8,0,0,0,8,8h72a24,24,0,0,1,24,24a8,8,0,0,0,16,0a24,24,0,0,1,24-24h72a8,8,0,0,0,8-8V56a8,8,0,0,0-8-8zM96,192H32V64h64a24,24,0,0,1,24,24v112a40,40,0,0,0-24-8zm128,0h-64a40,40,0,0,0-24,8V88a24,24,0,0,1,24-24h64z',
+  },
+});
+export const Bot = glyph({
+  drawing: {
+    regular:
+      'm200,48h-64V16a8,8,0,0,0-16,0v32H56a32,32,0,0,0-32,32v112a32,32,0,0,0,32,32h144a32,32,0,0,0,32-32V80a32,32,0,0,0-32-32zm16,144a16,16,0,0,1-16,16H56a16,16,0,0,1-16-16V80a16,16,0,0,1,16-16h144a16,16,0,0,1,16,16zm-52-56H92a28,28,0,0,0,0,56h72a28,28,0,0,0,0-56zm-24,16v24h-24v-24zm-60,12a12,12,0,0,1,12-12h8v24h-8a12,12,0,0,1-12-12zm84,12h-8v-24h8a12,12,0,0,1,0,24zm-92-68a12,12,0,1,1,12,12a12,12,0,0,1-12-12zm88,0a12,12,0,1,1,12,12a12,12,0,0,1-12-12z',
+  },
+});
+export const BugPlay = glyph({
+  drawing: {
+    regular:
+      'm208,152h16a8,8,0,0,0,0-16h-16v-16h16a8,8,0,0,0,0-16h-16a80,80,0,0,0-22-47l20-19a8,8,0,0,0-12-12l-20,21a80,80,0,0,0-92,0L62,26a8,8,0,0,0-12,12l20,19a80,80,0,0,0-22,47H32a8,8,0,0,0,0,16h16v16H32a8,8,0,0,0,0,16h16v8c0,3,0,5,0,8H32a8,8,0,0,0,0,16h20a80,80,0,0,0,152,0h20a8,8,0,0,0,0-16h-16c0-3,0-5,0-8zM128,48a64,64,0,0,1,63,56H64a64,64,0,0,1,64-56zm8,175v-79a8,8,0,0,0-16,0v79a64,64,0,0,1-56-63v-40h128v40a64,64,0,0,1-56,63z',
+  },
+});
+export const Check = glyph({
+  drawing: {
+    regular: 'm230,78L102,206a8,8,0,0,1-12,0l-56-56a8,8,0,0,1,12-12l50,51L218,66a8,8,0,0,1,12,12z',
+  },
+});
+export const ChevronDown = glyph({
+  drawing: {
+    regular: 'm214,102l-80,80a8,8,0,0,1-12,0l-80-80a8,8,0,0,1,12-12l74,75l74-75a8,8,0,0,1,12,12z',
+  },
+});
+export const ChevronRight = glyph({
+  drawing: {
+    regular: 'm182,134l-80,80a8,8,0,0,1-12-12l75-74L90,54a8,8,0,0,1,12-12l80,80a8,8,0,0,1,0,12z',
+  },
+});
+export const Circle = glyph({
+  drawing: {
+    regular:
+      'm128,24a104,104,0,1,0,104,104A104,104,0,0,0,128,24zm0,192a88,88,0,1,1,88-88a88,88,0,0,1-88,88z',
+  },
+});
+export const CircleCheck = glyph({
+  drawing: {
+    regular:
+      'm174,98a8,8,0,0,1,0,12l-56,56a8,8,0,0,1-12,0l-24-24a8,8,0,0,1,12-12l18,19l50-51a8,8,0,0,1,12,0zm58,30A104,104,0,1,1,128,24a104,104,0,0,1,104,104zm-16,0a88,88,0,1,0-88,88a88,88,0,0,0,88-88z',
+  },
+});
+export const CircleHelp = glyph({
+  drawing: {
+    regular:
+      'm140,180a12,12,0,1,1-12-12a12,12,0,0,1,12,12zM128,72c-22,0-40,16-40,36v4a8,8,0,0,0,16,0v-4c0-11,11-20,24-20s24,9,24,20s-11,20-24,20a8,8,0,0,0-8,8v8a8,8,0,0,0,16,0v-1c18-3,32-18,32-35c0-20-18-36-40-36zm104,56A104,104,0,1,1,128,24a104,104,0,0,1,104,104zm-16,0a88,88,0,1,0-88,88a88,88,0,0,0,88-88z',
+  },
+});
+export const CirclePlay = glyph({
+  drawing: {
+    regular:
+      'm128,24a104,104,0,1,0,104,104A104,104,0,0,0,128,24zm0,192a88,88,0,1,1,88-88a88,88,0,0,1-88,88zm48-95l-64-40a8,8,0,0,0-12,7v80a8,8,0,0,0,12,7l64-40a8,8,0,0,0,0-14zm-60,33v-52l41,26z',
+  },
+});
+export const CodeXml = glyph({
+  drawing: {
+    regular:
+      'm69,94l-40,34l40,34a8,8,0,1,1-10,12l-48-40a8,8,0,0,1,0-12l48-40a8,8,0,0,1,10,12zm176,28l-48-40a8,8,0,1,0-10,12l41,34l-41,34a8,8,0,1,0,10,12l48-40a8,8,0,0,0,0-12zm-82-90a8,8,0,0,0-11,5L88,213a8,8,0,0,0,5,11a8,8,0,0,0,3,0a8,8,0,0,0,8-5l64-176a8,8,0,0,0-5-11z',
+  },
+});
+export const Contrast = glyph({
+  drawing: {
+    regular:
+      'm128,24a104,104,0,1,0,104,104A104,104,0,0,0,128,24zm8,16a86,86,0,0,1,16,3v170a86,86,0,0,1-16,3zm32,10a88,88,0,0,1,16,10v136a88,88,0,0,1-16,10zM40,128a88,88,0,0,1,80-88v176a88,88,0,0,1-80-88zm160,51V77a88,88,0,0,1,0,102z',
+  },
+});
+export const Database = glyph({
+  drawing: {
+    regular:
+      'm128,24c-54,0-96,25-96,56v96c0,31,42,56,96,56s96-25,96-56V80c0-31-42-56-96-56zm80,104c0,10-8,19-22,27c-15,8-36,13-58,13s-43-5-58-13c-14-8-22-17-22-27v-17c17,15,46,25,80,25s63-10,80-25zM70,53c15-8,36-13,58-13s43,5,58,13c14,8,22,17,22,27s-8,19-22,27c-15,8-36,13-58,13s-43-5-58-13c-14-8-22-17-22-27s8-19,22-27zm116,150c-15,8-36,13-58,13s-43-5-58-13c-14-8-22-17-22-27v-17c17,15,46,25,80,25s63-10,80-25v17c0,10-8,19-22,27z',
+  },
+});
+export const Feather = glyph({
+  drawing: {
+    regular:
+      'm221,35a64,64,0,0,0-90,0l-70,69a16,16,0,0,0-5,11v74l-30,29a8,8,0,0,0,12,12l29-30h74a16,16,0,0,0,11-5l0,0l69-70a64,64,0,0,0,0-90zm-79,11a48,48,0,0,1,70,66h-57l35-34a8,8,0,0,0-12-12l-58,59V68zm-70,69l32-31v57l-32,32zm69,69H83l56-56h57z',
+  },
+});
+export const FileText = glyph({
+  drawing: {
+    regular:
+      'm214,82l-56-56a8,8,0,0,0-6-2H56a16,16,0,0,0-16,16v176a16,16,0,0,0,16,16h144a16,16,0,0,0,16-16V88a8,8,0,0,0-2-6zm-54-31l29,29h-29zm40,165H56V40h88v48a8,8,0,0,0,8,8h48v120zm-32-80a8,8,0,0,1-8,8H96a8,8,0,0,1,0-16h64a8,8,0,0,1,8,8zm0,32a8,8,0,0,1-8,8H96a8,8,0,0,1,0-16h64a8,8,0,0,1,8,8z',
+    duotone: {
+      shade: 'm208,88h-56V32z',
+      line: 'm214,82l-56-56a8,8,0,0,0-6-2H56a16,16,0,0,0-16,16v176a16,16,0,0,0,16,16h144a16,16,0,0,0,16-16V88a8,8,0,0,0-2-6zm-54-31l29,29h-29zm40,165H56V40h88v48a8,8,0,0,0,8,8h48v120zm-32-80a8,8,0,0,1-8,8H96a8,8,0,0,1,0-16h64a8,8,0,0,1,8,8zm0,32a8,8,0,0,1-8,8H96a8,8,0,0,1,0-16h64a8,8,0,0,1,8,8z',
     },
-  ],
-]);
-export const Bot = createIcon([
-  ['path', { d: 'M12 8V4H8' }],
-  ['rect', { width: '16', height: '12', x: '4', y: '8', rx: '2' }],
-  ['path', { d: 'M2 14h2' }],
-  ['path', { d: 'M20 14h2' }],
-  ['path', { d: 'M15 13v2' }],
-  ['path', { d: 'M9 13v2' }],
-]);
-export const BugPlay = createIcon([
-  ['path', { d: 'M10 19.655A6 6 0 0 1 6 14v-3a4 4 0 0 1 4-4h4a4 4 0 0 1 4 3.97' }],
-  [
-    'path',
-    {
-      d: 'M14 15.003a1 1 0 0 1 1.517-.859l4.997 2.997a1 1 0 0 1 0 1.718l-4.997 2.997a1 1 0 0 1-1.517-.86z',
+  },
+});
+export const FlaskConical = glyph({
+  drawing: {
+    regular:
+      'm222,200L160,97V40h8a8,8,0,0,0,0-16H88a8,8,0,0,0,0,16h8v57L34,200a16,16,0,0,0,14,24h160a16,16,0,0,0,14-24zm-111-97a8,8,0,0,0,1-4V40h32v59a8,8,0,0,0,1,4l38,64c-12,2-29,1-51-10c-16-8-31-12-46-13zM48,208l29-48c14-1,30,2,47,11c19,10,35,13,48,13a70,70,0,0,0,20-3l16,27z',
+  },
+});
+export const FolderTree = glyph({
+  drawing: {
+    regular:
+      'm160,112h48a16,16,0,0,0,16-16V48a16,16,0,0,0-16-16h-48a16,16,0,0,0-16,16v16h-16a24,24,0,0,0-24,24v32H72v-8a16,16,0,0,0-16-16H24a16,16,0,0,0-16,16v32a16,16,0,0,0,16,16h32a16,16,0,0,0,16-16v-8h32v32a24,24,0,0,0,24,24h16v16a16,16,0,0,0,16,16h48a16,16,0,0,0,16-16v-48a16,16,0,0,0-16-16h-48a16,16,0,0,0-16,16v16h-16a8,8,0,0,1-8-8V88a8,8,0,0,1,8-8h16v16a16,16,0,0,0,16,16zM56,144H24v-32h32v32zm104,16h48v48h-48zm0-112h48v48h-48z',
+  },
+});
+export const GitGraph = glyph({
+  drawing: {
+    regular:
+      'm200,152a32,32,0,0,0-20,7l-23-18a32,32,0,0,0,3-13c0-1,0-1,0-2l13-5a32,32,0,1,0-5-17c0,1,0,1,0,2l-13,5a32,32,0,0,0-27-15a33,33,0,0,0-5,0l-7-15a32,32,0,1,0-20,7a33,33,0,0,0,5,0l7,15a32,32,0,0,0-8,40l-26,22a32,32,0,1,0,10,12l26-22a32,32,0,0,0,38-2l23,18a32,32,0,0,0-3,13a32,32,0,1,0,32-32zm0-64a16,16,0,1,1-16,16a16,16,0,0,1,16-16zM80,56a16,16,0,1,1,16,16a16,16,0,0,1-16-16zM56,208a16,16,0,1,1,16-16a16,16,0,0,1-16,16zm56-80a16,16,0,1,1,16,16a16,16,0,0,1-16-16zm88,72a16,16,0,1,1,16-16a16,16,0,0,1-16,16z',
+  },
+});
+export const GitPullRequest = glyph({
+  drawing: {
+    regular:
+      'm104,64a32,32,0,1,0-40,31v66a32,32,0,1,0,16,0V95a32,32,0,0,0,24-31zm-48,0a16,16,0,1,1,16,16a16,16,0,0,1-16-16zm32,128a16,16,0,1,1-16-16a16,16,0,0,1,16,16zm120-31v-50a24,24,0,0,0-7-17l-38-38h29a8,8,0,0,0,0-16h-48a8,8,0,0,0-8,8v48a8,8,0,0,0,16,0V67l38,38a8,8,0,0,1,2,6v50a32,32,0,1,0,16,0zm-8,47a16,16,0,1,1,16-16a16,16,0,0,1-16,16z',
+  },
+});
+export const GitPullRequestArrow = glyph({
+  drawing: {
+    regular:
+      'm104,64a32,32,0,1,0-40,31v66a32,32,0,1,0,16,0V95a32,32,0,0,0,24-31zm-48,0a16,16,0,1,1,16,16a16,16,0,0,1-16-16zm32,128a16,16,0,1,1-16-16a16,16,0,0,1,16,16zm120-31v-50a24,24,0,0,0-7-17l-38-38h29a8,8,0,0,0,0-16h-48a8,8,0,0,0-8,8v48a8,8,0,0,0,16,0V67l38,38a8,8,0,0,1,2,6v50a32,32,0,1,0,16,0zm-8,47a16,16,0,1,1,16-16a16,16,0,0,1-16,16z',
+  },
+});
+export const Inbox = glyph({
+  drawing: {
+    regular:
+      'm208,32H48a16,16,0,0,0-16,16v160a16,16,0,0,0,16,16h160a16,16,0,0,0,16-16V48a16,16,0,0,0-16-16zm0,16v104h-29a16,16,0,0,0-11,5l-19,19h-42l-19-19a16,16,0,0,0-11-5H48V48zm0,160H48v-40h29l19,19a16,16,0,0,0,11,5h42a16,16,0,0,0,11-5l19-19h29v40z',
+  },
+});
+export const MapIcon = glyph({
+  drawing: {
+    regular:
+      'm229,50a8,8,0,0,0-7-2l-61,16l-61-31a8,8,0,0,0-6-1L30,48a8,8,0,0,0-6,8v144a8,8,0,0,0,10,8l61-16l61,31a8,8,0,0,0,4,1a8,8,0,0,0,2,0l64-16a8,8,0,0,0,6-8V56a8,8,0,0,0-3-6zm-125,3l48,24v126l-48-24zm-64,9l48-12v128l-48,12zm176,132l-48,12V78l48-12z',
+  },
+});
+export const MessageCircle = glyph({
+  drawing: {
+    regular:
+      'm128,24a104,104,0,0,0-92,153l-11,34a16,16,0,0,0,20,20l34-11a104,104,0,1,0,49-196zm0,192a88,88,0,0,1-44-12a8,8,0,0,0-7,0l-37,12l12-37a8,8,0,0,0,0-7a88,88,0,1,1,76,44z',
+  },
+});
+export const MessageSquareReply = glyph({
+  drawing: {
+    regular:
+      'm116,120a12,12,0,1,1,12,12a12,12,0,0,1-12-12zm-32,12a12,12,0,1,0-12-12a12,12,0,0,0,12,12zm88,0a12,12,0,1,0-12-12a12,12,0,0,0,12,12zm60-76v128a16,16,0,0,1-16,16h-60l-14,24a16,16,0,0,1-28,0l-14-24H40a16,16,0,0,1-16-16V56a16,16,0,0,1,16-16h176a16,16,0,0,1,16,16zm-16,0H40v128h65a8,8,0,0,1,7,4l16,28l16-28a8,8,0,0,1,7-4h65z',
+  },
+});
+export const Minus = glyph({
+  drawing: { regular: 'm224,128a8,8,0,0,1-8,8H40a8,8,0,0,1,0-16h176a8,8,0,0,1,8,8z' },
+});
+export const PanelsTopLeft = glyph({
+  drawing: {
+    regular:
+      'm216,40H40a16,16,0,0,0-16,16v144a16,16,0,0,0,16,16h176a16,16,0,0,0,16-16V56a16,16,0,0,0-16-16zm0,16v40H40V56zM40,112h56v88H40zm176,88H112v-88h104v88z',
+    duotone: {
+      shade: 'm104,104v104H40a8,8,0,0,1-8-8v-96z',
+      line: 'm216,40H40a16,16,0,0,0-16,16v144a16,16,0,0,0,16,16h176a16,16,0,0,0,16-16V56a16,16,0,0,0-16-16zm0,16v40H40V56zM40,112h56v88H40zm176,88H112v-88h104v88z',
     },
-  ],
-  ['path', { d: 'M14.12 3.88 16 2' }],
-  ['path', { d: 'M21 5a4 4 0 0 1-3.55 3.97' }],
-  ['path', { d: 'M3 21a4 4 0 0 1 3.81-4' }],
-  ['path', { d: 'M3 5a4 4 0 0 0 3.55 3.97' }],
-  ['path', { d: 'M6 13H2' }],
-  ['path', { d: 'm8 2 1.88 1.88' }],
-  ['path', { d: 'M9 7.13V6a3 3 0 1 1 6 0v1.13' }],
-]);
-export const Check = createIcon([['path', { d: 'M20 6 9 17l-5-5' }]]);
-export const ChevronDown = createIcon([['path', { d: 'm6 9 6 6 6-6' }]]);
-export const ChevronRight = createIcon([['path', { d: 'm9 18 6-6-6-6' }]]);
-export const Circle = createIcon([['circle', { cx: '12', cy: '12', r: '10' }]]);
-export const CircleCheck = createIcon([
-  ['circle', { cx: '12', cy: '12', r: '10' }],
-  ['path', { d: 'm16 9-5.5 5.5L8 12' }],
-]);
-export const CircleHelp = createIcon([
-  ['circle', { cx: '12', cy: '12', r: '10' }],
-  ['path', { d: 'M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3' }],
-  ['path', { d: 'M12 17h.01' }],
-]);
-export const CirclePlay = createIcon([
-  [
-    'path',
-    {
-      d: 'M9 9.003a1 1 0 0 1 1.517-.859l4.997 2.997a1 1 0 0 1 0 1.718l-4.997 2.997A1 1 0 0 1 9 14.996z',
-    },
-  ],
-  ['circle', { cx: '12', cy: '12', r: '10' }],
-]);
-export const CodeXml = createIcon([
-  ['path', { d: 'm18 16 4-4-4-4' }],
-  ['path', { d: 'm6 8-4 4 4 4' }],
-  ['path', { d: 'm14.5 4-5 16' }],
-]);
-export const Contrast = createIcon([
-  ['circle', { cx: '12', cy: '12', r: '10' }],
-  ['path', { d: 'M12 18a6 6 0 0 0 0-12v12z' }],
-]);
-export const Database = createIcon([
-  ['ellipse', { cx: '12', cy: '5', rx: '9', ry: '3' }],
-  ['path', { d: 'M3 5V19A9 3 0 0 0 21 19V5' }],
-  ['path', { d: 'M3 12A9 3 0 0 0 21 12' }],
-]);
-export const Feather = createIcon([
-  [
-    'path',
-    {
-      d: 'M14.086 18.412A2 2 0 0112.67 19H5v-7.672a2 2 0 01.586-1.414L11.75 3.75a6 6 0 118.49 8.49z',
-    },
-  ],
-  ['path', { d: 'M16 8 2 22' }],
-  ['path', { d: 'M17.488 15H9' }],
-]);
-export const FileText = createIcon([
-  [
-    'path',
-    {
-      d: 'M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z',
-    },
-  ],
-  ['path', { d: 'M14 2v5a1 1 0 0 0 1 1h5' }],
-  ['path', { d: 'M10 9H8' }],
-  ['path', { d: 'M16 13H8' }],
-  ['path', { d: 'M16 17H8' }],
-]);
-export const FlaskConical = createIcon([
-  [
-    'path',
-    {
-      d: 'M14 2v6a2 2 0 0 0 .245.96l5.51 10.08A2 2 0 0 1 18 22H6a2 2 0 0 1-1.755-2.96l5.51-10.08A2 2 0 0 0 10 8V2',
-    },
-  ],
-  ['path', { d: 'M6.453 15h11.094' }],
-  ['path', { d: 'M8.5 2h7' }],
-]);
-export const FolderTree = createIcon([
-  [
-    'path',
-    {
-      d: 'M20 10a1 1 0 0 0 1-1V6a1 1 0 0 0-1-1h-2.5a1 1 0 0 1-.8-.4l-.9-1.2A1 1 0 0 0 15 3h-2a1 1 0 0 0-1 1v5a1 1 0 0 0 1 1Z',
-    },
-  ],
-  [
-    'path',
-    {
-      d: 'M20 21a1 1 0 0 0 1-1v-3a1 1 0 0 0-1-1h-2.9a1 1 0 0 1-.88-.55l-.42-.85a1 1 0 0 0-.92-.6H13a1 1 0 0 0-1 1v5a1 1 0 0 0 1 1Z',
-    },
-  ],
-  ['path', { d: 'M3 5a2 2 0 0 0 2 2h3' }],
-  ['path', { d: 'M3 3v13a2 2 0 0 0 2 2h3' }],
-]);
-export const GitGraph = createIcon([
-  ['circle', { cx: '5', cy: '6', r: '3' }],
-  ['path', { d: 'M5 9v6' }],
-  ['circle', { cx: '5', cy: '18', r: '3' }],
-  ['path', { d: 'M12 3v18' }],
-  ['circle', { cx: '19', cy: '6', r: '3' }],
-  ['path', { d: 'M16 15.7A9 9 0 0 0 19 9' }],
-]);
-export const GitPullRequest = createIcon([
-  ['circle', { cx: '18', cy: '18', r: '3' }],
-  ['circle', { cx: '6', cy: '6', r: '3' }],
-  ['path', { d: 'M13 6h3a2 2 0 0 1 2 2v7' }],
-  ['line', { x1: '6', x2: '6', y1: '9', y2: '21' }],
-]);
-export const GitPullRequestArrow = createIcon([
-  ['circle', { cx: '5', cy: '6', r: '3' }],
-  ['path', { d: 'M5 9v12' }],
-  ['circle', { cx: '19', cy: '18', r: '3' }],
-  ['path', { d: 'm15 9-3-3 3-3' }],
-  ['path', { d: 'M12 6h5a2 2 0 0 1 2 2v7' }],
-]);
-export const Inbox = createIcon([
-  ['polyline', { points: '22 12 16 12 14 15 10 15 8 12 2 12' }],
-  [
-    'path',
-    {
-      d: 'M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z',
-    },
-  ],
-]);
-export const MapIcon = createIcon([
-  [
-    'path',
-    {
-      d: 'M14.106 5.553a2 2 0 0 0 1.788 0l3.659-1.83A1 1 0 0 1 21 4.619v12.764a1 1 0 0 1-.553.894l-4.553 2.277a2 2 0 0 1-1.788 0l-4.212-2.106a2 2 0 0 0-1.788 0l-3.659 1.83A1 1 0 0 1 3 19.381V6.618a1 1 0 0 1 .553-.894l4.553-2.277a2 2 0 0 1 1.788 0z',
-    },
-  ],
-  ['path', { d: 'M15 5.764v15' }],
-  ['path', { d: 'M9 3.236v15' }],
-]);
-export const MessageCircle = createIcon([
-  [
-    'path',
-    {
-      d: 'M2.992 16.342a2 2 0 0 1 .094 1.167l-1.065 3.29a1 1 0 0 0 1.236 1.168l3.413-.998a2 2 0 0 1 1.099.092 10 10 0 1 0-4.777-4.719',
-    },
-  ],
-]);
-export const MessageSquareReply = createIcon([
-  [
-    'path',
-    {
-      d: 'M22 17a2 2 0 0 1-2 2H6.828a2 2 0 0 0-1.414.586l-2.202 2.202A.71.71 0 0 1 2 21.286V5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2z',
-    },
-  ],
-  ['path', { d: 'm10 8-3 3 3 3' }],
-  ['path', { d: 'M17 14v-1a2 2 0 0 0-2-2H7' }],
-]);
-export const Minus = createIcon([['path', { d: 'M5 12h14' }]]);
-export const PanelsTopLeft = createIcon([
-  ['rect', { width: '18', height: '18', x: '3', y: '3', rx: '2' }],
-  ['path', { d: 'M3 9h18' }],
-  ['path', { d: 'M9 21V9' }],
-]);
-export const Plus = createIcon([
-  ['path', { d: 'M5 12h14' }],
-  ['path', { d: 'M12 5v14' }],
-]);
-export const ScanEye = createIcon([
-  ['path', { d: 'M3 7V5a2 2 0 0 1 2-2h2' }],
-  ['path', { d: 'M17 3h2a2 2 0 0 1 2 2v2' }],
-  ['path', { d: 'M21 17v2a2 2 0 0 1-2 2h-2' }],
-  ['path', { d: 'M7 21H5a2 2 0 0 1-2-2v-2' }],
-  ['circle', { cx: '12', cy: '12', r: '1' }],
-  [
-    'path',
-    {
-      d: 'M18.944 12.33a1 1 0 0 0 0-.66 7.5 7.5 0 0 0-13.888 0 1 1 0 0 0 0 .66 7.5 7.5 0 0 0 13.888 0',
-    },
-  ],
-]);
-export const Shield = createIcon([
-  [
-    'path',
-    {
-      d: 'M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z',
-    },
-  ],
-]);
-export const SquareKanban = createIcon([
-  ['rect', { width: '18', height: '18', x: '3', y: '3', rx: '2' }],
-  ['path', { d: 'M8 7v7' }],
-  ['path', { d: 'M12 7v4' }],
-  ['path', { d: 'M16 7v9' }],
-]);
-export const Telescope = createIcon([
-  [
-    'path',
-    {
-      d: 'm10.065 12.493-6.18 1.318a.934.934 0 0 1-1.108-.702l-.537-2.15a1.07 1.07 0 0 1 .691-1.265l13.504-4.44',
-    },
-  ],
-  ['path', { d: 'm13.56 11.747 4.332-.924' }],
-  ['path', { d: 'm16 21-3.105-6.21' }],
-  [
-    'path',
-    {
-      d: 'M16.485 5.94a2 2 0 0 1 1.455-2.425l1.09-.272a1 1 0 0 1 1.212.727l1.515 6.06a1 1 0 0 1-.727 1.213l-1.09.272a2 2 0 0 1-2.425-1.455z',
-    },
-  ],
-  ['path', { d: 'm6.158 8.633 1.114 4.456' }],
-  ['path', { d: 'm8 21 3.105-6.21' }],
-  ['circle', { cx: '12', cy: '13', r: '2' }],
-]);
-export const TriangleAlert = createIcon([
-  ['path', { d: 'm21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3' }],
-  ['path', { d: 'M12 9v4' }],
-  ['path', { d: 'M12 17h.01' }],
-]);
-export const Waypoints = createIcon([
-  ['path', { d: 'm10.586 5.414-5.172 5.172' }],
-  ['path', { d: 'm18.586 13.414-5.172 5.172' }],
-  ['path', { d: 'M6 12h12' }],
-  ['circle', { cx: '12', cy: '20', r: '2' }],
-  ['circle', { cx: '12', cy: '4', r: '2' }],
-  ['circle', { cx: '20', cy: '12', r: '2' }],
-  ['circle', { cx: '4', cy: '12', r: '2' }],
-]);
+  },
+});
+export const Plus = glyph({
+  drawing: {
+    regular:
+      'm224,128a8,8,0,0,1-8,8h-80v80a8,8,0,0,1-16,0v-80H40a8,8,0,0,1,0-16h80V40a8,8,0,0,1,16,0v80h80a8,8,0,0,1,8,8z',
+  },
+});
+export const ScanEye = glyph({
+  drawing: {
+    regular:
+      'm224,40v40a8,8,0,0,1-16,0V48h-32a8,8,0,0,1,0-16h40a8,8,0,0,1,8,8zM80,208H48v-32a8,8,0,0,0-16,0v40a8,8,0,0,0,8,8h40a8,8,0,0,0,0-16zm136-40a8,8,0,0,0-8,8v32h-32a8,8,0,0,0,0,16h40a8,8,0,0,0,8-8v-40a8,8,0,0,0-8-8zM40,88a8,8,0,0,0,8-8V48h32a8,8,0,0,0,0-16H40a8,8,0,0,0-8,8v40a8,8,0,0,0,8,8zm40-16h96a8,8,0,0,1,8,8v96a8,8,0,0,1-8,8H80a8,8,0,0,1-8-8V80a8,8,0,0,1,8-8zm8,96h80V88H88z',
+  },
+});
+export const Shield = glyph({
+  drawing: {
+    regular:
+      'm208,40H48a16,16,0,0,0-16,16v56c0,53,26,85,47,102c23,19,46,25,47,26a8,8,0,0,0,4,0c1-1,24-7,47-26c21-17,47-49,47-102V56a16,16,0,0,0-16-16zm0,72c0,37-14,67-41,89a129,129,0,0,1-39,23a128,128,0,0,1-39-22c-27-22-41-53-41-90l0-56l160,0z',
+  },
+});
+export const SquareKanban = glyph({
+  drawing: {
+    regular:
+      'm216,48H40a8,8,0,0,0-8,8v152a16,16,0,0,0,16,16h40a16,16,0,0,0,16-16v-48h48v16a16,16,0,0,0,16,16h40a16,16,0,0,0,16-16V56a8,8,0,0,0-8-8zM88,208H48v-80h40zm0-96H48V64h40zm64,32h-48V64h48zm56,32h-40v-48h40zm0-64h-40V64h40z',
+  },
+});
+export const Telescope = glyph({
+  drawing: {
+    regular:
+      'm237,152v0a47,47,0,0,0-2-6l-42-94a8,8,0,0,0-1-3a32,32,0,0,0-46,0a8,8,0,0,0-2,6v25h-32V55a8,8,0,0,0-2-6a32,32,0,0,0-46,0a8,8,0,0,0-1,3l-42,94a47,47,0,0,0-2,6v0a48,48,0,1,0,93,16V96h32v72a48,48,0,1,0,93-16zM77,60a16,16,0,0,1,19-1v73a48,48,0,0,0-47-10zM64,200a32,32,0,1,1,32-32a32,32,0,0,1-32,32zm96-141a16,16,0,0,1,19,1l28,62a48,48,0,0,0-47,10zm32,141a32,32,0,1,1,32-32a32,32,0,0,1-32,32z',
+  },
+});
+export const TriangleAlert = glyph({
+  drawing: {
+    regular:
+      'm237,188L149,36h0a25,25,0,0,0-42,0L19,188a24,24,0,0,0,0,24a24,24,0,0,0,22,12h174a24,24,0,0,0,22-12a24,24,0,0,0,0-24zm-14,16a9,9,0,0,1-8,4H41a9,9,0,0,1-8-4a8,8,0,0,1,0-8l88-152a9,9,0,0,1,15,0l87,152a8,8,0,0,1,0,8zm-103-60v-40a8,8,0,0,1,16,0v40a8,8,0,0,1-16,0zm20,36a12,12,0,1,1-12-12a12,12,0,0,1,12,12z',
+  },
+});
+export const Waypoints = glyph({
+  drawing: {
+    regular:
+      'm246,74l-32-32a8,8,0,0,0-12,12l19,18h-13c-49,0-61,28-71,53c-10,22-17,41-50,43a40,40,0,1,0,0,16c44-3,55-29,64-53c10-24,18-43,57-43h13l-19,18a8,8,0,0,0,12,12l32-32a8,8,0,0,0,0-12zM48,200a24,24,0,1,1,24-24a24,24,0,0,1-24,24z',
+  },
+});
 
 export const APP_BRAND_PATHS = {
   anthropic:

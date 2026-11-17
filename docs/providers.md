@@ -192,10 +192,10 @@ Background tasks.
   **Reset** goes back to every connected provider On. Under the list the same
   popover holds **Send new steps to the provider with the most room**, the
   `spreadByHeadroom` rule of the workflow rules (`useSpreadByHeadroom`, written
-  through `patchWorkspaceOverrides` like the Run defaults tab used to); it is
+  through `patchWorkspaceOverrides`); it is
   disabled with "Needs a provider that reports limits" while no On provider
-  reports them. This is the one home of the provider policy: Run defaults shows
-  the summary and a link here in its **Models** chip. The page header names its scope: the workspace
+  reports them. This is the one home of the provider policy: the Runs settings
+  page shows nothing of it. The page header names its scope: the workspace
   name, or **All workspaces** when none is open
 - **Runs**: the two models a run starts with, first on the page. **Auto agent** is the
   `auto` role (`roleModels.auto`, narrowed to the providers Auto can run on, as

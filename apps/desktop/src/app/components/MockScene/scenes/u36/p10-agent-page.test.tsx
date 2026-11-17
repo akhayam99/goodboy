@@ -154,8 +154,8 @@ describe('one agent, one page', () => {
     await screen.findByPlaceholderText('Message Implementer', undefined, WAIT);
     expect(useAppStore.getState().selectedAgentId[AUTO_SESSION.id]).toBe(IMPLEMENTER_ID);
     expect(screen.getAllByRole('textbox')).toHaveLength(1);
-    within(await screen.findByRole('region', { name: 'Why Auto started it' }, WAIT)).getByText(
-      /^Why Auto chose Implementer:/,
+    within(await screen.findByRole('region', { name: 'Why the Lead started it' }, WAIT)).getByText(
+      /^Why the Lead chose Implementer:/,
     );
   });
 

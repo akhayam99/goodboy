@@ -31,7 +31,7 @@ const openDiffHistory = async (): Promise<void> => {
 
 const pressedKind = (name: string): Promise<void> =>
   waitFor(() => {
-    screen.getByRole('button', { name: `How: ${name}` });
+    expect(screen.getByRole('tab', { name }).getAttribute('aria-selected')).toBe('true');
   }, WAIT);
 
 export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
@@ -93,7 +93,10 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
     name: 'palette: Refresh session',
     covers: ['resyncSession', 'palette:Refresh session'],
     open: () => openPalette(/^Refresh session/, 'refresh session'),
-    lands: () => visible('button', 'Refresh session'),
+    lands: async () => {
+      await clickButton('More session actions');
+      await visible('menuitem', /^Refresh session/);
+    },
   },
   {
     name: 'palette: Board',
@@ -264,11 +267,11 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
     ),
   },
   {
-    name: 'palette: Run defaults',
-    covers: ['openSettings', 'scope:workspace', 'palette:Run defaults'],
+    name: 'palette: Workspace settings: Runs',
+    covers: ['openSettings', 'scope:workspace', 'palette:Runs'],
     door: 'palette',
-    open: () => openPalette(/^Run defaults/, 'run defaults'),
-    lands: () => heading('Run defaults'),
+    open: () => openPalette(/^Workspace settings: Runs/, 'runs'),
+    lands: () => heading(/^Runs$/),
   },
   {
     name: 'palette: Impact',
@@ -356,7 +359,7 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
     open: () => openPalette(/^New workflow session$/),
     lands: both(
       () => heading('New session'),
-      () => pressedKind('Lead'),
+      () => pressedKind('The Lead plans it'),
     ),
   },
   {
@@ -365,7 +368,7 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
     open: () => openPalette(/^New agent session$/),
     lands: both(
       () => heading('New session'),
-      () => pressedKind('Lead'),
+      () => pressedKind('The Lead plans it'),
     ),
   },
   {

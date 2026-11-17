@@ -1,18 +1,29 @@
+import type { RunRouteCloseness, Workflow } from '@goodboy/types';
 import type { AutoLimitKind } from '../../../auto/autoLimitCopy';
 import { START_KIND_COPY } from '../../startKind/startKindCopy';
-import { startShapeOfFormKind, type StartFormKind } from './startFormKinds';
+import { liveStepsOf } from './liveStepsOf';
+import type { StartFormKind } from './startFormKinds';
 
-type HintParams = {
+type NoteParams = {
   readonly kind: StartFormKind | null;
+  readonly workflow: Workflow | null;
+  readonly closeness: RunRouteCloseness;
 };
 
-export const startFormHintOf = ({ kind }: HintParams): string =>
-  kind === null
-    ? START_KIND_COPY.pickLine
-    : START_KIND_COPY.shapes[startShapeOfFormKind({ kind })].what;
-
-export const startFormNoteOf = ({ kind }: HintParams): string | null =>
-  kind === null ? null : START_KIND_COPY.shapes[startShapeOfFormKind({ kind })].whileRuns;
+export const startFormNoteOf = ({ kind, workflow, closeness }: NoteParams): string | null => {
+  if (kind === 'agent') {
+    return START_KIND_COPY.plan.agentLine;
+  }
+  if (kind !== 'preset') {
+    return START_KIND_COPY.plan.leadLine;
+  }
+  if (workflow === null) {
+    return null;
+  }
+  return closeness === 'follow'
+    ? START_KIND_COPY.plan.followLine({ count: liveStepsOf({ workflow }).length })
+    : START_KIND_COPY.plan.adaptLine({ name: workflow.name });
+};
 
 type LimitParams = {
   readonly kind: StartFormKind | null;

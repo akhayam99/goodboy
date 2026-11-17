@@ -90,17 +90,14 @@ describe('the side column signal scenes', () => {
   );
 
   it.each(['side-tiles-dark', 'side-tiles-light'] as const)(
-    '%s shows the running terminals as a count on the Terminal rail button',
+    '%s names the running terminals on the Terminal rail button and draws no number',
     async (name) => {
       await mount({ name });
 
-      const tool = within(screen.getByRole('toolbar', { name: 'Tools' })).getByTestId(
-        'pane-toggle-terminal',
-      );
-      expect(
-        tool.closest('[data-slot="session-tool"]')?.querySelector('[data-testid="tool-count"]')
-          ?.textContent,
-      ).toBe('2');
+      const toolbar = screen.getByRole('toolbar', { name: 'Tools' });
+      const tool = within(toolbar).getByTestId('pane-toggle-terminal');
+      expect(tool.getAttribute('aria-label')).toBe('Terminal, 2 running');
+      expect(toolbar.textContent).toBe('TerminalBrowser');
     },
   );
 

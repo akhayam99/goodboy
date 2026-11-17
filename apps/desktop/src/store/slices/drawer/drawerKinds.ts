@@ -38,4 +38,5 @@ export const DRAWER_KINDS = {
   'history-versions': READER,
   'file-diff': WIDE_READER,
   'identifier-peek': WIDE_READER,
+  'lead-details': READER,
 } as const satisfies Record<DrawerKind, DrawerKindRow>;

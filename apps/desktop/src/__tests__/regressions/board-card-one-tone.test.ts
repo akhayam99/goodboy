@@ -9,7 +9,7 @@ const sourceOf = ({ path }: { readonly path: string }): string =>
   readFileSync(join(REPO_ROOT, path), 'utf8');
 
 const CARD = 'apps/desktop/src/features/workspace/components/StageBoard/StageBoardCard/index.tsx';
-const SIGNAL = 'apps/desktop/src/features/workspace/components/StageBoard/SessionSignal.tsx';
+const SIGNAL = 'apps/desktop/src/features/workspace/components/StageBoard/SignalBody.tsx';
 const OPTION_ROW = 'apps/desktop/src/shared/components/AnswerOptionRow/index.tsx';
 
 describe('a Board card says its state once', () => {

@@ -176,8 +176,8 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
     lead: 'A session starts from one goal: write it or pick one from Tasks, then pick the kind of run. It stays a draft until you press Start or Start blank.',
     points: [
       {
-        term: 'What kind of run?',
-        desc: 'How picks Lead, Preset or Agent. One form shows only what that kind needs.',
+        term: 'Plan',
+        desc: 'The Lead plans it, Follow a workflow or One agent.',
       },
       {
         term: NAMES.startARun,
@@ -268,7 +268,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Session actions and +',
-        desc: 'The + on the Projects card adds or connects a folder. The + on a folder row starts a new branch. More session actions, next to Pin, holds Archive and Delete.',
+        desc: 'The + on the Projects card adds or connects a folder. The + on a folder row starts a new branch. More session actions, next to New, holds Ask about this session, Pin, Refresh, Archive and Delete.',
       },
       {
         term: 'Agents rail',
@@ -301,7 +301,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'The Lead',
-        desc: 'Leads each new run: it plans first, answers what it can and starts the agents it needs, each of the narrowest role that fits, under a limit. Asks you sets one row per decision.',
+        desc: 'Leads each new run: it plans first, answers what it can and starts the agents it needs, each of the narrowest role that fits, under a limit. Fine-tune this run sets one row per decision.',
       },
       {
         term: 'Let Auto take it from here',
@@ -333,11 +333,11 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
         desc: 'A run started on the orchestrator before keeps its row, tagged older run, and finishes there. Hint the orchestrator queues a hint, and Send now reads it at once. New runs always have a Lead.',
       },
       {
-        term: 'Asks you and pause',
-        desc: 'Every step, After the plan or Never sets how often a run stops for you, one row per kind in Run defaults. Pause run lets the step in flight finish, and Stop run asks first.',
+        term: 'Stops for your OK and pause',
+        desc: 'Every step, After the plan or Never sets how often workflows and the Lead stop for you, one row in Runs in Settings. Pause run lets the step in flight finish, and Stop run asks first.',
       },
       {
-        term: NAMES.runDefaults,
+        term: 'Runs in Settings',
         desc: 'This Settings page sets what new runs start with. A run keeps the rules it started with.',
       },
       {
@@ -634,7 +634,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: NAMES.branches,
-        desc: 'Workspace, Branches starts with Naming, then After merge: Ask first, Delete on this Mac or Also on origin, and a branch with later commits is left alone. Then the branches safe to delete, and Recently deleted restores one.',
+        desc: 'Under Worktrees, the branches safe to delete; Recently deleted restores one. Workspace, Branches keeps Naming and After merge: Ask first, Delete on this Mac or Also on origin. A branch with later commits stays.',
       },
       {
         term: 'Other tools',

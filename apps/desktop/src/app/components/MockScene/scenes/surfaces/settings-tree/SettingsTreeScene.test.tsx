@@ -102,12 +102,13 @@ describe('the Settings tree scenes', () => {
     screen.getByText('Goodboy for iPhone is in private testing');
   });
 
-  it('u26s-settings-branches opens the workspace Branches page with After merge first', async () => {
+  it('u26s-settings-branches opens the workspace Branches page with settings only', async () => {
     await mount({ id: 'u26s-settings-branches' });
 
     expect(title()).toBe('Branches');
     screen.getByRole('region', { name: 'After merge' });
-    screen.getByRole('button', { name: 'Check again' });
+    expect(screen.queryByRole('button', { name: 'Check again' })).toBeNull();
+    expect(screen.queryByRole('region', { name: 'Branches' })).toBeNull();
   });
 
   it('u26s-settings-nows says why the workspace group is empty', async () => {

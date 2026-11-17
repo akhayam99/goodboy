@@ -167,7 +167,7 @@ describe('the dock after a stop', () => {
 });
 
 describe('the dock when another agent waits on you', () => {
-  it('offers the next item from the Overview cards, and Open reaches it', async () => {
+  it('draws no Next row: the agents rail and the top bar carry the other wait', async () => {
     const dock = await mount({ name: 'u36-p9-running' });
     const asked = aPlannerQuestion({
       sessionId: C06_SESSION_ID,
@@ -181,9 +181,8 @@ describe('the dock when another agent waits on you', () => {
     );
     await settle();
 
-    const row = dock.querySelector<HTMLElement>('[data-dock-next]');
-    expect(row?.textContent).toMatch(/^Next:/);
-    within(row ?? dock).getByRole('button', { name: 'Open' });
+    expect(dock.textContent).not.toMatch(/Next:/);
+    expect(within(dock).queryByRole('button', { name: 'Open' })).toBeNull();
   });
 });
 

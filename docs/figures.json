@@ -243,10 +243,6 @@
     "version": "0.33.0",
     "recipe": "--scene 'onboarding&step=workspace&brand=1' --window 1280x860 --wait 8000"
   },
-  "features/storage-branches": {
-    "version": "0.27.1",
-    "recipe": "--scene 'settings-app&section=branches&brand=1' --window 1280x800 --wait 8000"
-  },
   "features/storage-worktrees": {
     "version": "0.27.1",
     "recipe": "--scene 'settings-app&section=storage&brand=1' --window 1280x800 --wait 8000"

@@ -88,7 +88,6 @@
   "features/workspace/components/LocateMovedProjects/index.tsx": 1,
   "features/workspace/components/ProjectGitPill/ProjectGitDetail.tsx": 2,
   "features/workspace/components/StageBoard/index.tsx": 2,
-  "features/workspace/components/StageBoard/SessionSignal.tsx": 1,
   "features/workTreeModel/workTime.ts": 1,
   "shared/components/NewWorkspaceForm/FolderFaceChoice.tsx": 1,
   "shared/components/ProfileForm/ProfileAccessPopover.tsx": 1,

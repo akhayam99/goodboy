@@ -1,6 +1,6 @@
 import { AFTER_MERGE_NEVER } from '../../shared/utils/afterMergeCopy';
 import { NAMES, formerNamesOf } from '../../shared/utils/names';
-import { RUN_ROUTE_COPY } from '../session/startRun/runRouteCopy';
+import { STOPS_LEVEL_COPY } from '../workflows/stopsLevelCopy';
 import type { WorkspaceSettingField } from './pageKeys';
 import type { SettingsPageScope } from './settingsFocus';
 import { fieldDef } from './workspaceSettings/fields';
@@ -61,9 +61,8 @@ const SHORTCUTS: SettingRowPage = { scope: 'app', section: 'shortcuts' };
 const BACKUP: SettingRowPage = { scope: 'app', section: 'backup' };
 const IPHONE: SettingRowPage = { scope: 'app', section: 'iphone' };
 const PROJECTS: SettingRowPage = { scope: 'workspace', section: 'projects' };
-const RUN_DEFAULTS: SettingRowPage = { scope: 'workspace', section: 'general' };
+const RUNS: SettingRowPage = { scope: 'workspace', section: 'general' };
 const MODELS: SettingRowPage = { scope: 'workspace', section: 'models' };
-const NEW_RUNS = 'New runs';
 
 export const SETTING_ROWS: ReadonlyArray<SettingRow> = [
   row({
@@ -278,7 +277,7 @@ export const SETTING_ROWS: ReadonlyArray<SettingRow> = [
     key: 'parallel-agents',
     field: 'parallelAgents',
     help: 'Eligible agents split independent work, then merge one result.',
-    band: 'Agents',
+    band: 'Advanced',
   }),
   fieldRow({
     key: 'reply-length',
@@ -288,42 +287,25 @@ export const SETTING_ROWS: ReadonlyArray<SettingRow> = [
     formerNames: ['Verbosity'],
   }),
   row({
-    key: 'workflow-asks',
-    label: `${NAMES.runKind.workflow} asks you`,
-    help: `How often a run started as ${NAMES.runKind.workflow} stops for your go.`,
-    page: RUN_DEFAULTS,
-    band: NEW_RUNS,
-    formerNames: ['Asks you'],
-  }),
-  row({
-    key: 'auto-asks',
-    label: `${NAMES.lead} asks you`,
-    help: `How often a run led by the ${NAMES.lead} stops for your go.`,
-    page: RUN_DEFAULTS,
-    band: NEW_RUNS,
-    formerNames: ['Auto asks you', 'Auto runs ask you'],
-  }),
-  row({
-    key: 'start-as',
-    label: RUN_ROUTE_COPY.workspaceDefault,
-    help: RUN_ROUTE_COPY.workspaceDefaultHelp,
-    page: RUN_DEFAULTS,
-    band: NEW_RUNS,
-    formerNames: ['New runs start as'],
+    key: 'stops-for-ok',
+    label: STOPS_LEVEL_COPY.label,
+    help: STOPS_LEVEL_COPY.help,
+    page: RUNS,
+    band: 'When a run stops for you',
+    formerNames: [
+      'Asks you',
+      `${NAMES.runKind.workflow} asks you`,
+      `${NAMES.lead} asks you`,
+      'Auto asks you',
+      'Auto runs ask you',
+    ],
   }),
   row({
     key: 'spend-limit',
     label: NAMES.spendCap,
     help: 'Per new run, saved on Enter. The session limit still applies.',
-    page: RUN_DEFAULTS,
-    band: NEW_RUNS,
-  }),
-  row({
-    key: 'run-models',
-    label: NAMES.models,
-    help: 'Which model each role uses.',
-    page: RUN_DEFAULTS,
-    band: NEW_RUNS,
+    page: RUNS,
+    band: 'Spending',
   }),
   fieldRow({
     key: 'after-merge',

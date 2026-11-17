@@ -1,7 +1,6 @@
-import { CountBadge, ICON_SIZE, IconButton, TEXT_ROLE, cn, selectedIconClass } from '@goodboy/ui';
+import { ICON_SIZE, IconButton, TEXT_ROLE, cn, selectedIconClass } from '@goodboy/ui';
 import { navEntryToneOf } from '../../../../shared/components/navEntryToneOf';
 import type { SessionTool } from './sessionTools';
-import { ToolCountSkeleton } from './ToolCountSkeleton';
 import { ToolSignalDot } from './ToolSignalDot';
 import { ToolWaitingRing } from './ToolWaitingRing';
 import { toolStateOf } from './toolStateOf';
@@ -13,8 +12,6 @@ type Props = {
   readonly isWaiting: boolean;
   readonly isCurrent?: boolean;
   readonly fact?: string | null;
-  readonly count?: number;
-  readonly isCountLoading?: boolean;
   readonly signal: ToolSignal | null;
   readonly tabIndex: number;
   readonly onFocus: () => void;
@@ -30,8 +27,6 @@ export const SessionToolButton = ({
   isWaiting,
   isCurrent = false,
   fact = null,
-  count = 0,
-  isCountLoading = false,
   signal,
   tabIndex,
   onFocus,
@@ -73,10 +68,6 @@ export const SessionToolButton = ({
         >
           {state === 'waiting' ? <ToolWaitingRing /> : null}
           {signal === null ? null : <ToolSignalDot signal={signal} />}
-          {signal === null && isCountLoading ? <ToolCountSkeleton /> : null}
-          {signal === null && !isCountLoading ? (
-            <CountBadge count={count} placement="corner" isAnnounced={false} testId="tool-count" />
-          ) : null}
         </span>
       </span>
       <span

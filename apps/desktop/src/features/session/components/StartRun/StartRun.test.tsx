@@ -17,7 +17,6 @@ import {
   getWorkspaceValue,
   insertSession,
   insertWorkspace,
-  setSetting,
   setWorkspaceValue,
 } from '@goodboy/db';
 import {
@@ -46,7 +45,6 @@ import {
 import { ToastProvider } from '../../../../shared/components/Toast';
 import { providerBudgetStatusFor } from '../../../budget/testing/providerBudgetFixture';
 import type { ProviderDisplayInfo } from '../../../providers/providers';
-import { runDefaultKey } from '../../startRun/runDefaultSetting';
 import { runRoutesKey } from '../../startRun/runRoutesSetting';
 import { startRunEventName } from '../../startRun/startRunEventName';
 import { chooseListboxValue } from '../../../../__tests__/helpers/listbox';
@@ -106,24 +104,23 @@ type KindParams = {
   readonly name: string;
 };
 
-const howChip = (): HTMLElement => screen.getByRole('button', { name: /^How: / });
-
-const kindCards = (): HTMLElement => {
-  if (screen.queryByRole('tablist', { name: 'What kind of run?' }) === null) {
-    fireEvent.click(howChip());
-  }
-  return screen.getByRole('tablist', { name: 'What kind of run?' });
+const PLAN_CHOICES: Readonly<Record<string, string>> = {
+  Lead: 'The Lead plans it',
+  Preset: 'Follow a workflow',
+  Agent: 'One agent',
 };
 
 const kindTab = ({ name }: KindParams): HTMLElement =>
-  within(kindCards()).getByRole('tab', { name: new RegExp(`^${name}`) });
+  within(screen.getByRole('tablist', { name: 'Plan' })).getByRole('tab', {
+    name: PLAN_CHOICES[name] ?? name,
+  });
 
 const pickKind = ({ name }: KindParams): void => {
   fireEvent.click(kindTab({ name }));
 };
 
 const isPicked = ({ name }: KindParams): boolean =>
-  howChip().getAttribute('aria-label') === `How: ${name}`;
+  kindTab({ name }).getAttribute('aria-selected') === 'true';
 
 type RenderParams = {
   readonly sessionId: SessionId;
@@ -135,9 +132,9 @@ const renderField = ({ sessionId }: RenderParams) => {
       <StartRun workspaceId={WORKSPACE.id} sessionId={sessionId} />
     </ToastProvider>,
   );
-  const more = screen.queryByRole('button', { name: /^More/ });
-  if (more !== null) {
-    fireEvent.click(more);
+  const change = screen.queryByRole('button', { name: 'Change' });
+  if (change !== null) {
+    fireEvent.click(change);
   }
   return view;
 };
@@ -223,83 +220,6 @@ describe('StartRun', () => {
     expect(attachWorkflowToSession).not.toHaveBeenCalled();
     const raw = await getSetting(storySqlite(), runRoutesKey({ sessionId: SESSION.id }));
     expect(JSON.parse(raw ?? '{}')[AGENT]).toMatchObject({ row: 3, shape: 'lead' });
-  });
-
-  it('gives a Lead the preset the ask matches as its plan, its steps in the brief', async () => {
-    const spawnAgent = vi.fn<SpawnFn>(async () => AGENT);
-    const attachWorkflowToSession = vi.fn<AttachFn>(async () => undefined);
-    useAppStore.setState({
-      spawnAgent,
-      attachWorkflowToSession,
-      phaseTemplates: { [WORKSPACE.id]: [FIX_A_LAYOUT] },
-    });
-    renderField({ sessionId: SESSION.id });
-
-    ask({ text: 'Fix the layout of the Harborline billing page' });
-
-    await waitFor(() => expect(spawnAgent).toHaveBeenCalledTimes(1));
-    expect(attachWorkflowToSession).not.toHaveBeenCalled();
-    expect(spawnAgent.mock.calls[0]?.[1].initialPrompt).toBe(
-      [
-        'Fix the layout of the Harborline billing page',
-        'Plan: follow the preset "Fix a layout".',
-        '1. Find (scout)\n2. Center',
-        'You may add, skip or move a step. Say why when you do.',
-      ].join('\n\n'),
-    );
-    const raw = await getSetting(storySqlite(), runRoutesKey({ sessionId: SESSION.id }));
-    expect(JSON.parse(raw ?? '{}')[AGENT]).toMatchObject({
-      row: 2,
-      shape: 'lead',
-      closeness: 'adapt',
-      presetName: 'Fix a layout',
-    });
-  });
-
-  it('reads a session default of plan as a Lead, before any other row', async () => {
-    const spawnAgent = vi.fn<SpawnFn>(async () => AGENT);
-    const attachWorkflowToSession = vi.fn<AttachFn>(async () => undefined);
-    useAppStore.setState({ spawnAgent, attachWorkflowToSession });
-    await setSetting(
-      storySqlite(),
-      runDefaultKey({ scope: { kind: 'workspace', workspaceId: WORKSPACE.id } }),
-      'lead',
-    );
-    await setSetting(
-      storySqlite(),
-      runDefaultKey({ scope: { kind: 'session', sessionId: SESSION.id } }),
-      'plan',
-    );
-    renderField({ sessionId: SESSION.id });
-
-    ask({ text: QUESTION });
-
-    await waitFor(() => expect(spawnAgent).toHaveBeenCalledTimes(1));
-    expect(attachWorkflowToSession).not.toHaveBeenCalled();
-    const raw = await getSetting(storySqlite(), runRoutesKey({ sessionId: SESSION.id }));
-    expect(JSON.parse(raw ?? '{}')[AGENT]).toMatchObject({
-      row: 1,
-      shape: 'lead',
-      why: 'your default',
-      ask: QUESTION,
-    });
-  });
-
-  it('reads the workspace default from Settings when the session has none', async () => {
-    const spawnAgent = vi.fn<SpawnFn>(async () => AGENT);
-    useAppStore.setState({ spawnAgent });
-    await setSetting(
-      storySqlite(),
-      runDefaultKey({ scope: { kind: 'workspace', workspaceId: WORKSPACE.id } }),
-      'lead',
-    );
-    renderField({ sessionId: SESSION.id });
-
-    ask({ text: 'center every member page' });
-
-    await waitFor(() => expect(spawnAgent).toHaveBeenCalledTimes(1));
-    const raw = await getSetting(storySqlite(), runRoutesKey({ sessionId: SESSION.id }));
-    expect(JSON.parse(raw ?? '{}')[AGENT]).toMatchObject({ row: 1, why: 'your default' });
   });
 
   it('keeps the text and offers Retry when the start fails', async () => {
@@ -470,21 +390,20 @@ describe('StartRun run as', () => {
     });
   });
 
-  it('says what Start will do before it is pressed, then what the picked kind does', () => {
+  it('says what Start will do before it is pressed, then what the picked workflow does', () => {
     useAppStore.setState({ phaseTemplates: { [WORKSPACE.id]: [FIX_A_LAYOUT] } });
     renderField({ sessionId: SESSION.id });
 
     fireEvent.change(field(), { target: { value: QUESTION } });
     expect(routeLine()).toContain('Starts as Lead');
-    expect(routeLine()).toContain('A question or a check, and no preset fits');
+    expect(routeLine()).toContain('A question or a check');
 
     pickKind({ name: 'Preset' });
 
-    expect(
-      screen.getAllByText('The Lead follows a saved preset as its plan.').length,
-    ).toBeGreaterThan(0);
+    screen.getByText('The Lead starts from Fix a layout and says why when it changes a step.');
     expect(document.querySelector('[data-run-route-line]')).toBeNull();
     expect(isPicked({ name: 'Preset' })).toBe(true);
+    expect(document.body.textContent).not.toMatch(/preset/i);
   });
 
   it('shows the limit chip for a Lead or a preset and none for an agent', () => {
@@ -503,21 +422,21 @@ describe('StartRun run as', () => {
     expect(screen.queryByRole('button', { name: /^Limit: / })).toBeNull();
   });
 
-  it('shows the Lead Asks you for a Lead and a preset, and none for an agent', async () => {
+  it('shows the Lead Stops for a Lead and a preset, and none for an agent', async () => {
     useAppStore.setState({ phaseTemplates: { [WORKSPACE.id]: [FIX_A_LAYOUT] } });
     renderField({ sessionId: SESSION.id });
 
     fireEvent.change(field(), { target: { value: QUESTION } });
-    await screen.findByRole('button', { name: 'Asks you: After the plan' });
+    await screen.findByRole('button', { name: 'Stops for your OK: After the plan' });
 
     pickKind({ name: 'Preset' });
 
-    await screen.findByRole('button', { name: 'Asks you: After the plan' });
-    expect(screen.queryByRole('button', { name: /^Asks you: Every step/ })).toBeNull();
+    await screen.findByRole('button', { name: 'Stops for your OK: After the plan' });
+    expect(screen.queryByRole('button', { name: /^Stops for your OK: Every step/ })).toBeNull();
 
     pickKind({ name: 'Agent' });
 
-    expect(screen.queryByRole('button', { name: /^Asks you/ })).toBeNull();
+    expect(screen.queryByRole('button', { name: /^Stops for your OK/ })).toBeNull();
   });
 
   it('shows the level the session already has, and a run started untouched keeps it', async () => {
@@ -561,14 +480,15 @@ describe('StartRun run as', () => {
     await waitFor(() => screen.getByText('Never'));
   });
 
-  it('offers three kinds, lists the roles on Agent and keeps Preset for a saved preset', () => {
+  it('offers three plans, lists the roles on one agent and keeps a workflow for a saved one', () => {
     renderField({ sessionId: SESSION.id });
 
     expect(
-      within(kindCards())
+      within(screen.getByRole('tablist', { name: 'Plan' }))
         .getAllByRole('tab')
-        .map((tab) => tab.textContent?.split(/(?=[A-Z])/)[0]),
-    ).toEqual(['Lead', 'Preset', 'Agent']);
+        .map((tab) => tab.textContent),
+    ).toEqual(['The Lead plans it', 'Follow a workflow', 'One agent']);
+    expect(isPicked({ name: 'Lead' })).toBe(true);
     expect(kindTab({ name: 'Preset' }).hasAttribute('disabled')).toBe(true);
     cleanup();
 
@@ -580,7 +500,7 @@ describe('StartRun run as', () => {
     screen.getByRole('option', { name: /^Scout/ });
   });
 
-  it('gives a Lead the preset the Preset kind names, following it or adapting', async () => {
+  it('gives a Lead the workflow the Plan row names, free to change its steps', async () => {
     const spawnAgent = vi.fn<SpawnFn>(async () => AGENT);
     const attachWorkflowToSession = vi.fn<AttachFn>(async () => undefined);
     useAppStore.setState({
@@ -591,10 +511,10 @@ describe('StartRun run as', () => {
     renderField({ sessionId: SESSION.id });
 
     pickKind({ name: 'Preset' });
-    screen.getByRole('list', { name: 'Preset steps' });
+    screen.getByRole('list', { name: 'Workflow steps' });
     expect(
-      screen.getByRole('tab', { name: 'May change steps' }).getAttribute('aria-selected'),
-    ).toBe('true');
+      screen.getByRole<HTMLInputElement>('checkbox', { name: 'Keep its steps as written' }).checked,
+    ).toBe(false);
     ask({ text: QUESTION });
 
     await waitFor(() => expect(spawnAgent).toHaveBeenCalledTimes(1));
@@ -605,6 +525,24 @@ describe('StartRun run as', () => {
       shape: 'lead',
       presetName: 'Fix a layout',
       closeness: 'adapt',
+    });
+  });
+
+  it('keeps the workflow steps as written once the box is checked, and says so', async () => {
+    const spawnAgent = vi.fn<SpawnFn>(async () => AGENT);
+    useAppStore.setState({ spawnAgent, phaseTemplates: { [WORKSPACE.id]: [FIX_A_LAYOUT] } });
+    renderField({ sessionId: SESSION.id });
+
+    pickKind({ name: 'Preset' });
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Keep its steps as written' }));
+    screen.getByText(/^The Lead runs (the \d+ steps|its one step) as written\.$/);
+    ask({ text: QUESTION });
+
+    await waitFor(() => expect(spawnAgent).toHaveBeenCalledTimes(1));
+    const raw = await getSetting(storySqlite(), runRoutesKey({ sessionId: SESSION.id }));
+    expect(JSON.parse(raw ?? '{}')[AGENT]).toMatchObject({
+      presetName: 'Fix a layout',
+      closeness: 'follow',
     });
   });
 
@@ -620,7 +558,7 @@ describe('StartRun run as', () => {
     expect(spawnAgent.mock.calls[0]?.[1]).toMatchObject({ kindOverride: 'scout' });
   });
 
-  it('starts a preset Lead with the Asks you level and the Edits picked', async () => {
+  it('starts a preset Lead with the Stops level and the Edits picked', async () => {
     const spawnAgent = vi.fn<SpawnFn>(async () => AGENT);
     const attachWorkflowToSession = vi.fn<AttachFn>(async () => undefined);
     const changeAutoLevel = vi.fn<StoryState['changeAutoLevel']>(async () => undefined);
@@ -636,8 +574,8 @@ describe('StartRun run as', () => {
     });
     renderField({ sessionId: SESSION.id });
     pickKind({ name: 'Preset' });
-    fireEvent.click(await screen.findByRole('button', { name: /^Asks you: (?!Loading)/ }));
-    fireEvent.click(await screen.findByRole('tab', { name: 'Never' }));
+    fireEvent.click(await screen.findByRole('button', { name: /^Stops for your OK: (?!Loading)/ }));
+    fireEvent.click(await screen.findByRole('menuitemradio', { name: /^Never/ }));
     fireEvent.click(screen.getByRole('button', { name: /^Edits:/ }));
     fireEvent.click(screen.getByRole('tab', { name: /^Read only/ }));
 

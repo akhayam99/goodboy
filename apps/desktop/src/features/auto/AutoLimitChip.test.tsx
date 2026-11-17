@@ -119,18 +119,18 @@ describe('AutoLimitChip', () => {
   });
 
   it.each(['orchestrated', 'preset', 'autoAgent'] as const)(
-    'speaks of the Run defaults for the %s kind',
+    'speaks of Runs in Settings for the %s kind',
     (kind) => {
       render(chip({ usd: 8, kind }));
 
       fireEvent.click(screen.getByRole('button', { name: 'Limit: $8.00' }));
 
-      screen.getByText(/Run defaults set where new runs start\./);
+      screen.getByText(/Runs in Settings sets where new runs start\./);
       expect(screen.queryByText(/Other runs in this workspace/)).toBeNull();
     },
   );
 
-  it('offers Change default when it can open the Run defaults page', () => {
+  it('offers Change default when it can open the Runs page', () => {
     const onChangeDefault = vi.fn();
     render(
       <AutoLimitChip

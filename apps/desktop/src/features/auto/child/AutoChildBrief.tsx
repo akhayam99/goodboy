@@ -1,6 +1,7 @@
 import type { MessageAttachment } from '@goodboy/types';
 import { Chip } from '@goodboy/ui';
 import { RoutingLabel } from '../../../shared/components/RoutingLabel';
+import { NAMES } from '../../../shared/utils/names';
 import type { DelegationCardModel } from '../chat/delegationCardOf';
 import type { LaunchSnapshotItem } from '../chat/launchSnapshotOf';
 import type { ShownRouting } from '../executedRoutingOf';
@@ -15,7 +16,9 @@ type Props = {
   readonly attemptsNote: string | null;
 };
 
-const AUTO_CHILD_LINE = 'Auto started this agent and reads your messages to it.';
+const THE_LEAD = `the ${NAMES.lead}`;
+
+const AUTO_CHILD_LINE = `The ${NAMES.lead} started this agent and reads your messages to it.`;
 
 export const AutoChildBrief = ({
   card,
@@ -27,12 +30,15 @@ export const AutoChildBrief = ({
 }: Props) => {
   const shownImages = wentIn === null ? images : [];
   return (
-    <section aria-label="Why Auto started it" className="flex min-w-0 flex-col gap-3 text-ui">
+    <section
+      aria-label={`Why ${THE_LEAD} started it`}
+      className="flex min-w-0 flex-col gap-3 text-ui"
+    >
       <div className="flex min-w-0 flex-col gap-1">
         <p className="text-muted-foreground">{AUTO_CHILD_LINE}</p>
         {card.reason === null ? null : (
           <p className="text-foreground">
-            <span className="text-muted-foreground">Why Auto chose {card.roleLabel}: </span>
+            <span className="text-muted-foreground">{`Why ${THE_LEAD} chose ${card.roleLabel}: `}</span>
             {card.reason}
           </p>
         )}
@@ -67,7 +73,7 @@ export const AutoChildBrief = ({
           <p className="text-faint-foreground">{card.routingNote}</p>
         )}
         {shownImages.length === 0 ? null : (
-          <ul aria-label="Images Auto passed on" className="flex min-w-0 flex-wrap gap-1">
+          <ul aria-label={`Images ${THE_LEAD} passed on`} className="flex min-w-0 flex-wrap gap-1">
             {shownImages.map((image) => (
               <li key={image.id}>
                 <Chip tone="neutral" kind="reference" label={image.fileName} />

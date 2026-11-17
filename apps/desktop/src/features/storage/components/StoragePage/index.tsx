@@ -2,6 +2,7 @@ import { READ_FAILED } from '../../../../store/slices/notifications/errorRecover
 import { useEffect } from 'react';
 import { useAppStore } from '../../../../store';
 import { resolveStorageScope } from '../../resolveStorageScope';
+import { BranchesPage } from '../BranchesPage';
 import { ArtifactSection } from './ArtifactSection';
 import { OtherToolsSection } from './OtherToolsSection';
 import { StorageHistory } from './StorageHistory';
@@ -23,6 +24,7 @@ export const StoragePage = () => {
   return (
     <div className="flex flex-col gap-8">
       <WorktreeSection scope={scope} />
+      {scope.kind === 'removed' ? null : <BranchesPage scope={scope} />}
       <ArtifactSection scope={scope} />
       <StorageHistory />
       <OtherToolsSection />

@@ -69,6 +69,7 @@ vi.mock('../../../../shared/components/Toast', () => ({
 vi.mock('@tauri-apps/plugin-dialog', () => ({ open: vi.fn(async () => null) }));
 
 import { StoragePage } from './index';
+import { StorageHeaderActions } from './StorageHeaderActions';
 
 const safeIdle = folder('rounding-drift', {
   facts: facts('/repos/ledger-core/.goodboy/worktrees/rounding-drift', { localOnlyCommits: 2 }),
@@ -183,6 +184,13 @@ beforeEach(() => {
     setCurrentSession: vi.fn(async () => undefined),
     storageScope: null,
     setStorageScope: vi.fn(),
+    branchScans: {},
+    loadProjectBranches: vi.fn(async () => undefined),
+    deleteBranches: vi.fn(async () => ({ deleted: [], kept: [] })),
+    restoreDeletedBranches: vi.fn(async () => undefined),
+    forgetDeletedBranches: vi.fn(async () => undefined),
+    deletedBranches: {},
+    loadDeletedBranches: vi.fn(async () => undefined),
     currentWorkspaceId: null,
     workspaces: [],
     currentWorkspace: null,
@@ -566,6 +574,44 @@ describe('StoragePage', () => {
       render(<StoragePage />);
 
       expect(screen.getByText('goodboy/northwind-cleanup')).toBeDefined();
+    });
+
+    it('lists the branches right under Worktrees, and hides them for removed workspaces', () => {
+      const { unmount } = render(<StoragePage />);
+
+      const sections = Array.from(document.querySelectorAll('section[aria-label]')).map((node) =>
+        node.getAttribute('aria-label'),
+      );
+      expect(sections.slice(0, 2)).toEqual(['Worktrees', 'Branches']);
+      unmount();
+
+      Object.assign(state, { storageScope: { kind: 'removed' } });
+      render(<StoragePage />);
+
+      expect(screen.queryByRole('region', { name: 'Branches' })).toBeNull();
+    });
+
+    it('reads the branches of the scope again with the sizes on Check again', () => {
+      const ledger = aProject({
+        workspaceId: safeIdle.workspaceId ?? undefined,
+        name: 'ledger-core',
+        kind: 'repo',
+      });
+      const relay = aProject({
+        workspaceId: northwindFolder.workspaceId ?? undefined,
+        name: 'notify-relay',
+        kind: 'repo',
+      });
+      Object.assign(state, {
+        projects: [ledger, relay],
+        storageScope: { kind: 'workspace', id: 'harborline' },
+      });
+      render(<StorageHeaderActions />);
+
+      fireEvent.click(screen.getByRole('button', { name: 'Check again' }));
+
+      expect(state.loadStorage).toHaveBeenCalledWith({ isForced: true });
+      expect(state.loadProjectBranches).toHaveBeenCalledWith({ projectIds: [ledger.id] });
     });
   });
 });

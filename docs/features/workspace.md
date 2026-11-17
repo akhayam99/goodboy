@@ -122,15 +122,11 @@ Keep Goodboy's own folder out of your commits with one click. The card shows up 
 
 Choose how new session branches are named, under **Naming** on the **Branches** page: a **Branch prefix**, with or without the task id, or a **Custom** template. Each choice shows the name it would give your last session, and existing branches keep their names.
 
-### New runs start as
+### Stops for your OK
 
-Choose how **Start a run** handles a new ask in this workspace with **Start as** in **Run defaults**: **Lead with a preset that fits** or **Lead**. A **Workflow** default saved before reads as **Lead**. With a session open, a second row, **New runs in this session start as**, sets that session's own default, which wins over the workspace one. Either reaches new runs only, and each change shows a toast with **Undo**.
+Choose when a new run in this workspace stops for your go: every step, after the plan or never. One row on the **Runs** page in Settings sets it for workflows and for the Lead alike. One click saves both, and a failed save keeps both old levels and shows the error under the row.
 
-### Lead asks you
-
-Choose how much a Lead may do alone in this workspace with **Lead asks you**. It sits under **Workflow asks you**, so workflows can keep asking at every step while a Lead goes on after the plan. Each Lead can change its own from its page.
-
-The row holds an **Asks you** button that opens the permissions. The three levels, **Every step**, **After the plan** (the default) and **Never**, are presets. Each permission is its own row: the plan, agents that read or write, push, pull request, dependencies, protected files, add a project and close the work. Four rules never change. One sentence says what a new Lead asks you before. A row saves when you change it, and **Reset** returns it to the level.
+If the two were saved apart, the row names both and selects none until you pick one. Nothing changes before you do. A level saved in one window shows in the others. Each Lead can change its own level and its permission rows from its page.
 
 ### Monitoring
 

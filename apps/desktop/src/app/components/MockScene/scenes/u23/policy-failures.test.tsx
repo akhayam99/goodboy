@@ -91,12 +91,11 @@ const expectFailureNotice = ({
 };
 
 describe('the policy and failure scenes', () => {
-  it('names the five scenes of the unit', () => {
+  it('names the four scenes of the unit', () => {
     expect(Object.keys(U23_POLICY_FAILURES_SCENES).sort()).toEqual([
       'first-lap-publish-no-gh',
       'scribe-failed',
       'settings-providers-scope',
-      'settings-run-defaults-link',
       'wireframe-failed',
     ]);
   });
@@ -112,19 +111,6 @@ describe('the policy and failure scenes', () => {
     });
     expect(toggle.hasAttribute('disabled')).toBe(false);
     expect(popover.getAllByRole('switch')).toHaveLength(1);
-  });
-
-  it('settings-run-defaults-link shows the policy as a summary and a link, with no switch for it', async () => {
-    await mount('settings-run-defaults-link');
-
-    const band = screen.getByRole('region', { name: 'New runs' });
-    expect(within(band).getByText('Which model each role uses.').textContent).toBe(
-      'Which model each role uses.',
-    );
-    expect(within(band).getByRole('button', { name: 'Open Models' }).textContent).toBe(
-      'Open Models',
-    );
-    expect(within(band).queryAllByRole('switch')).toEqual([]);
   });
 
   it('wireframe-failed explains the failure in a notice and keeps the raw message behind Details', async () => {

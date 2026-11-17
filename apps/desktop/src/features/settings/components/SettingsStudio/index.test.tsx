@@ -324,7 +324,7 @@ describe('SettingsStudio', () => {
     expect(onScopeChange).toHaveBeenCalledWith(moved);
   });
 
-  it('says why the workspace group is empty, and keeps the row to Connections', () => {
+  it('says why the workspace group is empty, with no row pointing to Connections', () => {
     render(
       <SettingsStudio
         currentWorkspace={null}
@@ -339,7 +339,7 @@ describe('SettingsStudio', () => {
     expect(within(rail).queryByRole('button', { name: /^Integrations/ })).toBeNull();
     expect(within(rail).queryByRole('button', { name: /^Providers/ })).toBeNull();
     expect(within(rail).getByText('Open a workspace to see its settings.')).toBeDefined();
-    expect(within(rail).getByRole('button', { name: 'Open Connections' })).toBeDefined();
+    expect(within(rail).queryByRole('button', { name: 'Open Connections' })).toBeNull();
     expect(screen.getByRole('heading', { name: 'General' })).toBeDefined();
   });
 

@@ -1,10 +1,12 @@
 import { emit, listen, type UnlistenFn } from '@tauri-apps/api/event';
-import type { AgentId, SessionId } from '@goodboy/types';
+import type { AgentId, SessionId, WorkspaceId } from '@goodboy/types';
 import { isTauriRuntime } from '../isTauriRuntime';
 
 const DATA_CHANGED_EVENT = 'goodboy:data-changed';
 
 const ORIGIN = globalThis.crypto?.randomUUID?.() ?? `window-${Math.random().toString(36).slice(2)}`;
+
+type WorkspaceDataKey = 'auto.level' | 'overrides';
 
 type DataChange =
   | {
@@ -12,12 +14,21 @@ type DataChange =
       readonly key: string;
       readonly sessionId?: undefined;
       readonly agentId?: undefined;
+      readonly workspaceId?: undefined;
     }
   | {
       readonly kind: 'agent-turn';
       readonly key?: undefined;
       readonly sessionId: SessionId;
       readonly agentId: AgentId;
+      readonly workspaceId?: undefined;
+    }
+  | {
+      readonly kind: 'workspace';
+      readonly key: WorkspaceDataKey;
+      readonly sessionId?: undefined;
+      readonly agentId?: undefined;
+      readonly workspaceId: WorkspaceId;
     };
 
 type Announcement = DataChange & {

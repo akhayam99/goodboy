@@ -134,7 +134,7 @@ describe('controls fields', () => {
     renderScene('controls-fields');
 
     const row = rowOf('Switch names the setting');
-    for (const name of ['Parallel agents', 'Attribution line']) {
+    for (const name of ['Parallel agents', 'Sign replies']) {
       const toggle = within(row).getByRole('switch', { name });
       expect(toggle.textContent).toBe('');
     }
@@ -146,7 +146,7 @@ describe('controls fields', () => {
     renderScene('controls-fields');
 
     const toggle = within(rowOf('Switch names the setting')).getByRole('switch', {
-      name: 'Attribution line',
+      name: 'Sign replies',
     });
     expect(toggle.getAttribute('aria-checked')).toBe('false');
     fireEvent.click(toggle);

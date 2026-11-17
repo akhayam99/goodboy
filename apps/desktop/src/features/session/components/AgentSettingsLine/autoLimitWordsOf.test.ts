@@ -74,6 +74,7 @@ describe('where the Lead limit comes from', () => {
     ).toEqual({
       value: 'none',
       source: '',
+      fact: 'No limit',
       chain: 'This Lead none, then session none, then Harborline none. Nothing stops this Lead.',
     });
   });

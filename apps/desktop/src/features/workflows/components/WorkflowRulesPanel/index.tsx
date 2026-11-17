@@ -5,17 +5,16 @@ import { useAppStore } from '../../../../store';
 import { useWorkflowRules } from '../../hooks/useWorkflowRules';
 import { DefaultAsksSetting } from './DefaultAsksSetting';
 import { DefaultLimitSetting } from './DefaultLimitSetting';
-import { DefaultModelsSetting } from './DefaultModelsSetting';
 import { RulesGuidanceBand } from './RulesGuidanceBand';
 import { NOTHING_CHANGED } from '../../../../store/slices/notifications/errorRecovery';
 
 type Props = {
   readonly workspaceId: WorkspaceId;
-  readonly runRows?: ReactNode;
   readonly children?: ReactNode;
+  readonly advanced?: ReactNode;
 };
 
-export const WorkflowRulesPanel = ({ workspaceId, runRows, children }: Props) => {
+export const WorkflowRulesPanel = ({ workspaceId, children, advanced }: Props) => {
   const { rules, patch } = useWorkflowRules({ workspaceId });
   const reportError = useAppStore((state) => state.reportError);
   const save = (next: Partial<WorkflowRules>) => {
@@ -32,18 +31,18 @@ export const WorkflowRulesPanel = ({ workspaceId, runRows, children }: Props) =>
     <div data-testid="workflow-rules" className="contents">
       <Band
         inset="content"
-        label="New runs"
-        ariaLabel="New runs"
-        hint="Each run keeps its own copy."
+        label="When a run stops for you"
+        ariaLabel="When a run stops for you"
         headingLevel={2}
       >
-        <DefaultAsksSetting autonomy={rules.autonomy} patch={patch} />
-        {runRows}
+        <DefaultAsksSetting workspaceId={workspaceId} />
+      </Band>
+      <Band inset="content" label="Spending" ariaLabel="Spending" headingLevel={2}>
         <DefaultLimitSetting workspaceId={workspaceId} rules={rules} patch={patch} />
-        <DefaultModelsSetting workspaceId={workspaceId} />
       </Band>
       {children}
       <RulesGuidanceBand workspaceId={workspaceId} rules={rules} onChange={save} />
+      {advanced}
     </div>
   );
 };

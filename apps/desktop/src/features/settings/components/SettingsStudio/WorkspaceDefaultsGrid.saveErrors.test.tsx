@@ -83,7 +83,7 @@ const answer = async ({ index, isOk }: AnswerParams) => {
   });
 };
 
-const attribution = () => screen.getByRole('switch', { name: 'Attribution line' });
+const attribution = () => screen.getByRole('switch', { name: 'Sign replies' });
 
 beforeAll(async () => {
   useAppStore = await importStore();
@@ -172,7 +172,7 @@ describe('WorkspaceDefaultsGrid save errors', () => {
     await answer({ index: 0, isOk: true });
     await waitFor(() => expect(attribution().getAttribute('aria-checked')).toBe('false'));
 
-    fireEvent.click(screen.getByRole('button', { name: 'Reset Attribution line to default' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Reset Sign replies to default' }));
     await answer({ index: 1, isOk: false });
 
     expect(screen.getByRole('alert').textContent).toContain("Couldn't save. Still Off.");
@@ -187,6 +187,7 @@ describe('WorkspaceDefaultsGrid save errors', () => {
 
   it('keeps only the latest change when an older one fails after it', async () => {
     render(<Pages />);
+    fireEvent.click(screen.getByRole('button', { name: 'Advanced' }));
     const parallel = screen.getByRole('switch', { name: 'Parallel agents' });
 
     fireEvent.click(parallel);
@@ -212,7 +213,7 @@ describe('WorkspaceDefaultsGrid save errors', () => {
 
     expect(reportError).toHaveBeenCalledWith(
       expect.objectContaining({
-        title: "Couldn't save attribution line",
+        title: "Couldn't save sign replies",
         workspaceId: WORKSPACE.id,
       }),
     );

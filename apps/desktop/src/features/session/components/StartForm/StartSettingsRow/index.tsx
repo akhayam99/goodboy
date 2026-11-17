@@ -1,41 +1,55 @@
-import { Fragment, useState, type ReactNode } from 'react';
-import { Button } from '@goodboy/ui';
+import { Fragment, useState } from 'react';
+import { Button, cn } from '@goodboy/ui';
 import { START_KIND_COPY } from '../../../startKind/startKindCopy';
-import { START_MORE_KEYS } from '../startMoreKeys';
+import { START_SENTENCE_ORDER } from '../startFormKinds';
 import type { StartSettingItem } from '../startSettingsOf';
 
 type Props = {
   readonly items: ReadonlyArray<StartSettingItem>;
-  readonly lead?: ReactNode;
+  readonly className?: string;
 };
 
-export const StartSettingsRow = ({ items, lead = null }: Props) => {
-  const [isMoreOpen, setIsMoreOpen] = useState(false);
-  if (items.length === 0 && lead === null) {
+export const StartSettingsRow = ({ items, className }: Props) => {
+  const [isOpen, setIsOpen] = useState(false);
+  if (items.length === 0) {
     return null;
   }
-  const tucked = items.filter((item) => START_MORE_KEYS.includes(item.key) && !item.isChanged);
-  const shown = isMoreOpen ? items : items.filter((item) => !tucked.includes(item));
+  const words = START_SENTENCE_ORDER.flatMap((key) =>
+    items.flatMap((item) => (item.key === key && item.words !== null ? [item.words] : [])),
+  );
   return (
     <div
       role="group"
       aria-label={START_KIND_COPY.settings}
-      className="flex min-w-0 flex-wrap items-center gap-1"
+      className={cn('flex min-w-0 flex-col gap-2', className)}
     >
-      {lead}
-      {shown.map((item) => (
-        <Fragment key={item.key}>{item.node}</Fragment>
-      ))}
-      {tucked.length === 0 ? null : (
+      <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
+        <p data-start-settings-line="" className="min-w-0 text-meta text-muted-foreground">
+          {words.map((word, index) => (
+            <Fragment key={`${word.lead}${word.value}`}>
+              {index === 0 ? null : <span aria-hidden> · </span>}
+              {word.lead === '' ? null : `${word.lead} `}
+              <span className="text-eyebrow text-foreground">{word.value}</span>
+            </Fragment>
+          ))}
+        </p>
         <Button
           size="xs"
-          variant="ghost"
-          aria-expanded={isMoreOpen}
-          onClick={() => setIsMoreOpen(!isMoreOpen)}
+          variant="quiet"
+          aria-expanded={isOpen}
+          data-start-settings-change=""
+          onClick={() => setIsOpen(!isOpen)}
         >
-          {isMoreOpen ? START_KIND_COPY.less : `${START_KIND_COPY.more} ${tucked.length}`}
+          {isOpen ? START_KIND_COPY.done : START_KIND_COPY.change}
         </Button>
-      )}
+      </div>
+      {isOpen ? (
+        <div className="flex min-w-0 flex-wrap items-center gap-1 rounded-lg bg-subtle p-2">
+          {items.map((item) => (
+            <Fragment key={item.key}>{item.node}</Fragment>
+          ))}
+        </div>
+      ) : null}
     </div>
   );
 };

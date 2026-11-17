@@ -1,54 +1,79 @@
 import { SegmentedTabs } from '@goodboy/ui';
-import type { WorkflowAutonomy, WorkflowRules } from '@goodboy/types';
+import type { WorkflowAutonomy, WorkspaceId } from '@goodboy/types';
 import { SettingRow } from '../../../settings/settingRow';
+import { LeadDetailsData } from '../../../auto/permissions/LeadDetailsData';
+import { LeadDetailsDisclosure } from '../../../auto/permissions/LeadDetailsDisclosure';
+import { LEAD_LEVEL_COPY } from '../../../auto/permissions/leadLevelCopy';
 import { RUN_AUTONOMY_OPTIONS, runAutonomyOf } from '../../runAutonomy';
-import { useAutonomyPick } from '../../hooks/useAutonomyPick';
-import { NAMES } from '../../../../shared/utils/names';
-
-type PatchRules = (next: Partial<WorkflowRules>) => Promise<void>;
+import { useStopsLevel } from '../../hooks/useStopsLevel';
+import { STOPS_LEVEL_COPY } from '../../stopsLevelCopy';
 
 type Props = {
-  readonly autonomy: WorkflowAutonomy;
-  readonly patch: PatchRules;
+  readonly workspaceId: WorkspaceId;
 };
 
-const LABEL = `${NAMES.runKind.workflow} asks you`;
-const HELP = `How often a run started as ${NAMES.runKind.workflow} stops for your go.`;
+type PickParams = {
+  readonly next: WorkflowAutonomy;
+};
 
-export const DefaultAsksSetting = ({ autonomy, patch }: Props) => {
-  const current = runAutonomyOf({ autoRun: false, autonomy });
-  const { error, isBusy, pick } = useAutonomyPick({
-    current: autonomy,
-    save: ({ next }) => patch({ autonomy: next }),
-  });
+export const DefaultAsksSetting = ({ workspaceId }: Props) => {
+  const { stops, error, isBusy, pick } = useStopsLevel({ workspaceId });
+  const leadLevel = stops.kind === 'same' ? stops.level : stops.lead;
   return (
-    <SettingRow
-      label={LABEL}
-      rowKey="workflow-asks"
-      help={
-        <>
-          {HELP}
-          {error === null ? null : (
-            <span role="alert" className="text-danger">
-              {' '}
-              {error}
-            </span>
-          )}
-        </>
-      }
-    >
-      <SegmentedTabs<WorkflowAutonomy>
-        size="sm"
-        ariaLabel={LABEL}
-        options={RUN_AUTONOMY_OPTIONS.map((option) => ({
-          value: option.key,
-          label: option.label,
-          tooltip: option.hint,
-          disabled: isBusy,
-        }))}
-        value={current.key}
-        onChange={(next) => void pick({ next })}
-      />
-    </SettingRow>
+    <LeadDetailsData workspaceId={workspaceId} leadLevel={leadLevel}>
+      {(details) => {
+        const isCustom = details.differ > 0;
+        const value = stops.kind === 'same' && !isCustom ? stops.level : null;
+        const help =
+          stops.kind === 'split'
+            ? STOPS_LEVEL_COPY.split({ workflow: stops.workflow, lead: stops.lead })
+            : isCustom
+              ? LEAD_LEVEL_COPY.help({ level: stops.level, differ: details.differ })
+              : `${runAutonomyOf({ autoRun: false, autonomy: stops.level }).hint} ${STOPS_LEVEL_COPY.shared}`;
+        const shownError = error ?? details.levelError;
+        const pickLevel = async ({ next }: PickParams): Promise<void> => {
+          const isSaved = await pick({ next });
+          if (isSaved && isCustom) {
+            await details.clearDetails();
+          }
+        };
+        return (
+          <>
+            <SettingRow
+              label={STOPS_LEVEL_COPY.label}
+              rowKey="stops-for-ok"
+              chip={isCustom ? LEAD_LEVEL_COPY.custom : null}
+              isChanged={isCustom}
+              onReset={() => void details.clearDetails()}
+              help={
+                <>
+                  {help}
+                  {shownError === null ? null : (
+                    <span role="alert" className="text-danger">
+                      {' '}
+                      {shownError}
+                    </span>
+                  )}
+                </>
+              }
+            >
+              <SegmentedTabs<WorkflowAutonomy>
+                size="sm"
+                ariaLabel={STOPS_LEVEL_COPY.label}
+                options={RUN_AUTONOMY_OPTIONS.map((option) => ({
+                  value: option.key,
+                  label: option.label,
+                  tooltip: option.hint,
+                  disabled: isBusy || details.isBusy,
+                }))}
+                value={value}
+                onChange={(next) => void pickLevel({ next })}
+              />
+            </SettingRow>
+            <LeadDetailsDisclosure model={details} />
+          </>
+        );
+      }}
+    </LeadDetailsData>
   );
 };

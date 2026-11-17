@@ -109,7 +109,7 @@ The Commits section of the Branch page lets you clean up a branch before it goes
 
 [More on commits and history](docs/features/branch-history.md)
 
-<a id="start-a-workflow"></a><a id="workflow-builder"></a><a id="orchestrated"></a><a id="older-runs"></a><a id="a-preset-as-the-plan-a-run-starts-from"></a><a id="preset-and-custom"></a><a id="built-in-workflows"></a><a id="runs-of-a-workflow"></a><a id="saved-steps"></a><a id="model-per-step"></a><a id="when-to-ask"></a><a id="autonomy"></a><a id="asks-you"></a><a id="pause-resume-and-skip"></a><a id="steps-that-cannot-finish"></a><a id="run-defaults"></a><a id="workflow-rules"></a><a id="spend-cap"></a><a id="limit"></a><a id="chained-starts"></a><a id="workflow-run"></a><a id="hints-to-the-orchestrator"></a><a id="why-each-step-and-the-run-recap"></a><a id="step-handoff-summary"></a><a id="open-questions"></a><a id="let-an-agent-decide"></a><a id="import-workflows"></a>
+<a id="start-a-workflow"></a><a id="workflow-builder"></a><a id="orchestrated"></a><a id="older-runs"></a><a id="a-preset-as-the-plan-a-run-starts-from"></a><a id="preset-and-custom"></a><a id="built-in-workflows"></a><a id="runs-of-a-workflow"></a><a id="saved-steps"></a><a id="model-per-step"></a><a id="when-to-ask"></a><a id="autonomy"></a><a id="asks-you"></a><a id="pause-resume-and-skip"></a><a id="steps-that-cannot-finish"></a><a id="run-defaults"></a><a id="runs-in-settings"></a><a id="workflow-rules"></a><a id="spend-cap"></a><a id="limit"></a><a id="chained-starts"></a><a id="workflow-run"></a><a id="hints-to-the-orchestrator"></a><a id="why-each-step-and-the-run-recap"></a><a id="step-handoff-summary"></a><a id="open-questions"></a><a id="let-an-agent-decide"></a><a id="import-workflows"></a>
 
 ## Workflows
 
@@ -117,7 +117,7 @@ A workflow runs several agents in one session, each step with its own role, mode
 
 - **Start a workflow**: To run a preset, open Start a run and pick Preset under How, or type ~ and its name.
 - **Older runs**: A run started before every run had a Lead stays as it was, on its own engine.
-- **Run defaults**: Set what every new run starts with on the Run defaults page in Settings.
+- **Runs in Settings**: Set what every new run starts with on the Runs page in Settings.
 - **Workflow run**: Follow a run step by step, with its sub-agents under their agent and one button that moves it on.
 - **Limit**: Cap what a run or a session can spend, and choose Pause workflows or Warn only.
 
@@ -178,7 +178,7 @@ Watch how much of each plan is left, keep work moving when a provider runs out, 
 
 [More on providers, limits and cost](docs/features/providers.md)
 
-<a id="start-from-scratch"></a><a id="start-a-project-from-nothing"></a><a id="track-a-folder-with-git-later"></a><a id="workspace-with-several-folders"></a><a id="workspace-with-several-projects"></a><a id="starred-folders-descriptions-and-base-branch"></a><a id="starred-projects-descriptions-and-base-branch"></a><a id="worktrees"></a><a id="several-branches-per-repo"></a><a id="several-branches-per-project"></a><a id="workspace-switcher-and-reconnect"></a><a id="repo-status-across-folders"></a><a id="repo-status-across-projects"></a><a id="repository-status"></a><a id="locate-moved-folders"></a><a id="locate-moved-projects"></a><a id="keep-goodboy-out-of-git"></a><a id="branch-names"></a><a id="new-runs-start-as"></a><a id="copy-settings-from-another-workspace"></a><a id="monitoring"></a><a id="workspace-and-projects"></a><a id="new-worktrees-start-usable"></a><a id="auto-asks-you"></a><a id="lead-asks-you"></a>
+<a id="start-from-scratch"></a><a id="start-a-project-from-nothing"></a><a id="track-a-folder-with-git-later"></a><a id="workspace-with-several-folders"></a><a id="workspace-with-several-projects"></a><a id="starred-folders-descriptions-and-base-branch"></a><a id="starred-projects-descriptions-and-base-branch"></a><a id="worktrees"></a><a id="several-branches-per-repo"></a><a id="several-branches-per-project"></a><a id="workspace-switcher-and-reconnect"></a><a id="repo-status-across-folders"></a><a id="repo-status-across-projects"></a><a id="repository-status"></a><a id="locate-moved-folders"></a><a id="locate-moved-projects"></a><a id="keep-goodboy-out-of-git"></a><a id="branch-names"></a><a id="new-runs-start-as"></a><a id="copy-settings-from-another-workspace"></a><a id="monitoring"></a><a id="workspace-and-projects"></a><a id="new-worktrees-start-usable"></a><a id="auto-asks-you"></a><a id="lead-asks-you"></a><a id="stops-for-your-ok"></a>
 
 ## Workspaces and folders
 

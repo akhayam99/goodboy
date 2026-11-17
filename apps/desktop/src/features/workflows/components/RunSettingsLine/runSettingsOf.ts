@@ -72,6 +72,7 @@ const limitOf = ({
     return {
       value: 'none',
       source: '',
+      fact: 'No limit',
       chain: `${chain} ${monthText === '' ? 'Nothing stops this run.' : 'Only the month limit stops this run.'}`,
     };
   }
@@ -97,6 +98,7 @@ const modelsOf = ({ run, workspaceName, providers }: ModelsParams): RunSettingWo
   if (own.length === 0) {
     return {
       value: `Auto on ${inherited}`,
+      fact: `Auto on ${inherited}`,
       source: `from ${workspaceName}`,
       chain: `This run: none set. ${workspaceName}: ${inherited}. ${workspaceName} wins.`,
     };
@@ -104,6 +106,7 @@ const modelsOf = ({ run, workspaceName, providers }: ModelsParams): RunSettingWo
   const names = namesOf({ providers: own });
   return {
     value: `Auto on ${names}`,
+    fact: `Auto on ${names}`,
     source: 'this run',
     chain: `This run: ${names}. ${workspaceName}: ${inherited}. The run wins.`,
   };

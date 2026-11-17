@@ -78,17 +78,22 @@ describe('the c05 overview scenes', () => {
     await mount('c05-overview-running');
 
     const board = screen.getByRole('region', { name: 'Branches' });
-    expect(document.querySelector('[data-slot="session-kpis"]')?.children).toHaveLength(5);
+    expect(document.querySelector('[data-slot="session-kpis"]')?.children).toHaveLength(3);
     expect(board.querySelectorAll('[data-board-row]').length).toBeGreaterThan(0);
     expect(within(board).queryByRole('button', { name: 'Open' })).toBeNull();
     expect(screen.queryByRole('region', { name: 'Activity' })).toBeNull();
     expect(screen.queryByRole('region', { name: 'Projects' })).toBeNull();
   });
 
-  it('c05-overview-running-loading keeps the Browser count on its skeleton', async () => {
+  it('c05-overview-running-loading draws nothing on Browser while its tab rows load', async () => {
     await mount('c05-overview-running-loading');
 
-    expect(screen.getByTestId('tool-count-skeleton').getAttribute('aria-label')).toBe('Loading');
+    const browser = screen.getByTestId('pane-toggle-browser');
+    expect(browser.getAttribute('aria-label')).toBe('Browser');
+    expect(
+      browser.closest('[data-slot="tool-icon"]')?.querySelector('[data-slot="tool-glyph"]')
+        ?.childElementCount,
+    ).toBe(0);
   });
 
   it('c05-overview-lanes draws every log row on one gutter with the step number in its slot', async () => {

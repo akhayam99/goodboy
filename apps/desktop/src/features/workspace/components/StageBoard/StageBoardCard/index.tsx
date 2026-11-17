@@ -17,7 +17,8 @@ import { useSessionRowFacts } from '../../../hooks/useSessionRowFacts';
 import { sessionObjectKey } from '../../../../actions/kinds/session';
 import { sessionSelectionTarget } from '../../../../actions/sessionSelectionTarget';
 import { useSessionTitleRename } from '../../../../session/hooks/useSessionTitleRename';
-import { SessionSignal } from '../SessionSignal';
+import { CardSignal } from './CardSignal';
+import { signalActionOf } from './signalActionOf';
 import { projectLineOf } from '../projectLineOf';
 
 type CardSelectionEvent = {
@@ -77,6 +78,7 @@ export const StageBoardCard = memo(function StageBoardCard({
   const dynamicActions = useDynamicActions(session, nav, stage);
 
   const [visibleAction = attentionAction ?? undefined] = waitingRun === null ? dynamicActions : [];
+  const signalAction = signalActionOf({ signal, action: visibleAction, isArchived, waitingRun });
   const anchorKey = `board:${id}`;
   const rename = useSessionTitleRename({ sessionId: id, goal: session.goal, ...rowTitle });
   useRenameRequest({
@@ -216,7 +218,7 @@ export const StageBoardCard = memo(function StageBoardCard({
         className="col-start-2 row-start-1 flex items-center gap-1 self-start"
       >
         <CardActionSlot label="Session quick actions">
-          {!isArchived && visibleAction !== undefined && (
+          {!isArchived && visibleAction !== undefined && signalAction === null && (
             <CardAction
               key={visibleAction.key}
               icon={visibleAction.icon}
@@ -244,19 +246,13 @@ export const StageBoardCard = memo(function StageBoardCard({
         >
           {projectLine}
         </span>
-        <span
-          data-slot="card-signal"
-          className="flex min-w-fit max-w-full flex-1 items-center justify-end"
-        >
-          <span data-slot="card-signal-reserve" className="inline-flex min-w-14 justify-end">
-            <SessionSignal
-              signal={signal}
-              onOpenRequest={handlePrClick}
-              onGlyphEnter={leaveCard}
-              onGlyphLeave={resumeCard}
-            />
-          </span>
-        </span>
+        <CardSignal
+          signal={signal}
+          action={signalAction}
+          onOpenRequest={handlePrClick}
+          onGlyphEnter={leaveCard}
+          onGlyphLeave={resumeCard}
+        />
       </div>
     </article>
   );

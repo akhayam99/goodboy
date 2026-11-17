@@ -357,6 +357,7 @@ describe('the browser pane', () => {
   it('offers one New tab action while no page is open, which opens the address field', () => {
     renderPane();
     screen.getByText('No page open');
+    screen.getByText('Type an address, or open a link from a run.');
 
     fireEvent.click(screen.getByRole('button', { name: 'New tab' }));
 

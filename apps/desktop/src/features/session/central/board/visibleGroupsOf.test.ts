@@ -1,8 +1,7 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import type { BoardRow, BranchBoard } from './boardTypes';
-import { sessionKpisOf } from './sessionKpisOf';
-import { isRowInFilter, visibleGroupsOf } from './visibleGroupsOf';
+import { visibleGroupsOf } from './visibleGroupsOf';
 
 const stage = {
   stage: 'building',
@@ -75,26 +74,11 @@ const shownCount = (groups: ReturnType<typeof visibleGroupsOf>) =>
   groups.reduce((sum, group) => sum + group.rowIds.length, 0);
 
 describe('visibleGroupsOf', () => {
-  it('shows every row when no tile filters', () => {
-    expect(shownCount(visibleGroupsOf({ board, filter: null, isMergedExpanded: false }))).toBe(4);
-  });
+  it('shows every row in its group', () => {
+    const groups = visibleGroupsOf({ board, isMergedExpanded: false });
 
-  it('shows the branches with an open question behind Questions, one ask per row', () => {
-    const groups = visibleGroupsOf({ board, filter: 'questions', isMergedExpanded: false });
-
-    expect(shownCount(groups)).toBe(sessionKpisOf({ board }).needsYou.askCount);
-    expect(groups.map((group) => group.id)).toEqual(['needs-you']);
-  });
-
-  it('shows no group when no branch has an open question', () => {
-    const quiet: BranchBoard = {
-      ...board,
-      rows: board.rows.map((row) => ({ ...row, askIds: [] })),
-    };
-
-    expect(visibleGroupsOf({ board: quiet, filter: 'questions', isMergedExpanded: false })).toEqual(
-      [],
-    );
+    expect(shownCount(groups)).toBe(4);
+    expect(groups.map((group) => group.id)).toEqual(['needs-you', 'in-progress', 'merged']);
   });
 
   it('folds the merged group only while it is not expanded', () => {
@@ -112,17 +96,10 @@ describe('visibleGroupsOf', () => {
       ),
     };
 
-    const closed = visibleGroupsOf({ board: folded, filter: null, isMergedExpanded: false });
-    const open = visibleGroupsOf({ board: folded, filter: null, isMergedExpanded: true });
+    const closed = visibleGroupsOf({ board: folded, isMergedExpanded: false });
+    const open = visibleGroupsOf({ board: folded, isMergedExpanded: true });
 
     expect(closed.find((group) => group.id === 'merged')?.rowIds).toHaveLength(3);
     expect(open.find((group) => group.id === 'merged')?.rowIds).toHaveLength(4);
-  });
-
-  it('matches a row to a filter the same way the groups do', () => {
-    const [first] = rows;
-    expect(first === undefined ? false : isRowInFilter({ row: first, filter: 'questions' })).toBe(
-      true,
-    );
   });
 });

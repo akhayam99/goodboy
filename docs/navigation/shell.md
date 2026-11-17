@@ -79,7 +79,8 @@ never exists on one surface only.
   session kind's menu, the full set of session verbs: **Go to** (a submenu
   with Open, Comments, Changes, Open in editor and Open in terminal app; a verb
   that cannot run stays in it with its reason as a tooltip), Open the full log,
-  Limit, Rename, Pin session or Unpin session, **Refresh session** (`session.refresh`, the
+  Limit, Rename, **Ask about this session** (`session.ask`, which opens the
+  session first when another one is open), Pin session or Unpin session, **Refresh session** (`session.refresh`, the
   same `refreshSession` `⌘R` runs in a session, blocked while a refresh is in
   flight), Start next steps without asking, Start a run, Link work, the copies, Archive and Delete,
   whose confirm still asks first. The palette lists the same verbs. The row is

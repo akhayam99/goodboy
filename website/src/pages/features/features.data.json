@@ -460,16 +460,10 @@
           "shown": true
         },
         {
-          "title": "New runs start as",
-          "text": "Pick how a new ask starts in this workspace: a Lead, a Lead with a preset or one agent.",
+          "title": "Stops for your OK",
+          "text": "Choose when a new run in this workspace stops for your go: every step, after the plan or never.",
           "group": "Workspaces and folders",
-          "also": "run default"
-        },
-        {
-          "title": "Lead asks you",
-          "text": "Choose how much a Lead may do alone in a workspace: every step, after the plan or never, or one permission row at a time.",
-          "group": "Workspaces and folders",
-          "also": "Asks you"
+          "also": "Lead asks you"
         },
         {
           "title": "Copy settings from another workspace",
@@ -604,7 +598,7 @@
           "shown": true
         },
         {
-          "title": "Run defaults",
+          "title": "Runs in Settings",
           "text": "Set once what every new run starts with, on the same chips a run shows: when it asks, a limit, the models, the limit and guidance.",
           "group": "Workflows",
           "also": "run defaults",

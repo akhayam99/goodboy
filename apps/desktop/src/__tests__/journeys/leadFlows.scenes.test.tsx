@@ -42,7 +42,7 @@ describe('journey: a Lead page with a pending ask, whatever the old Work switch 
       expect(hasButton('Push')).toBe(true);
       expect(hasButton("Don't push")).toBe(true);
       expect(hasButton('Stop run')).toBe(true);
-      screen.getByText('Push a branch: Ask · This Lead');
+      screen.getByText('Push a branch: Ask first · This Lead');
       expect(limitLabel()).toBe('Limit: $10.00, this Lead');
     }
   });
@@ -55,7 +55,7 @@ describe('journey: a Lead page with a pending ask, whatever the old Work switch 
 
       expect(hasButton('Allow nock@14.0.1')).toBe(true);
       expect(hasButton('Do it without')).toBe(true);
-      screen.getByText('Add or upgrade dependencies: Ask · This Lead');
+      screen.getByText('Add or upgrade dependencies: Ask first · This Lead');
     }
   });
 

@@ -306,7 +306,7 @@ describe('main flows on the real store', () => {
     expectNoRenderLoop();
   });
 
-  it('walks from the Settings moved row to one provider page in Connections', async () => {
+  it('walks from Search settings to one provider page in Connections', async () => {
     seedSettingsBase();
 
     await mountFlow(
@@ -318,10 +318,13 @@ describe('main flows on the real store', () => {
       />,
     );
     expect(screen.queryByRole('list', { name: 'Providers settings' })).toBeNull();
-    const movedRow = screen
-      .getAllByRole('button', { name: 'Open Connections' })
-      .find((button) => button.dataset.settingsMoved === 'connections');
-    fireEvent.click(movedRow!);
+    const rail = screen.getByRole('navigation', { name: 'Settings scopes' });
+    expect(within(rail).queryByRole('button', { name: /Connections/ })).toBeNull();
+    fireEvent.change(screen.getByRole('searchbox', { name: 'Search settings' }), {
+      target: { value: 'Providers' },
+    });
+    const results = await screen.findByRole('listbox', { name: 'Matching settings' });
+    fireEvent.click(within(results).getByRole('option', { name: 'Go to Connections' }));
     expect(useAppStore.getState().appStudio).toEqual({ kind: 'connections', focus: null });
     cleanup();
 

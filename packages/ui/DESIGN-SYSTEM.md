@@ -343,14 +343,14 @@ A session row in the left column carries one mark, a `StatusMark` from `sessionM
 
 **Marks across pages.** One colour role per meaning on every page: success for done or added, warning for what needs you, danger for what failed or was deleted, info for what runs, neutral for the rest. A mark never takes a role for a second meaning. Counts come in two drawings only.
 
-| Surface                            | Mark                                   | Drawing                                                                                                                                                                                                                           |
-| ---------------------------------- | -------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Session tabs, sidebar doors, bell  | inline count                           | the sidebar status mark's count drawing: one `text-chip` tabular number beside the word or icon, warning when it needs you, info while it runs, the quiet unread tone on the bell, faint otherwise; no dot beside it              |
-| Tools rail (Terminal, Browser)     | corner count, signal dot, waiting ring | `CountBadge` with `placement="corner"` (see Count badge) on the 16px glyph's top end corner; the signal dot shares that corner and the waiting ring takes the top start one (`TOOL_CORNER_SLOT`)                                  |
-| Workspace launcher row             | count badge                            | `CountBadge` in its tone: warning or danger, because the number is sessions that need you                                                                                                                                         |
-| Top bar Now chip                   | state dot                              | warning dot for Needs you, neutral ring for Idle, info dot for running                                                                                                                                                            |
-| Agents rail                        | node, number, meter                    | `WorkNode` in the rail lane; the number in a fixed 24px right aligned slot and the spend or clock in a fixed meter slot (`LEAD_TREE_METER`, reserved on the run row too), so roles, words and costs share one column at any depth |
-| Files rail, All files, diff header | status letter                          | `FileStatusMark`: one letter in one 12px slot, A success, D danger, M and R neutral                                                                                                                                               |
+| Surface                            | Mark                     | Drawing                                                                                                                                                                                                                           |
+| ---------------------------------- | ------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Session tabs, sidebar doors, bell  | inline count             | the sidebar status mark's count drawing: one `text-chip` tabular number beside the word or icon, warning when it needs you, info while it runs, the quiet unread tone on the bell, faint otherwise; no dot beside it              |
+| Tools rail (Terminal, Browser)     | signal dot, waiting ring | no number at rest, the counts live in the tooltip; the signal dot (danger for a failure, primary for a change to look at) sits on the 16px glyph's top end corner and the waiting ring on the top start one (`TOOL_CORNER_SLOT`)  |
+| Workspace launcher row             | count badge              | `CountBadge` in its tone: warning or danger, because the number is sessions that need you                                                                                                                                         |
+| Top bar Now chip                   | state dot                | warning dot for Needs you, neutral ring for Idle, info dot for running                                                                                                                                                            |
+| Agents rail                        | node, number, meter      | `WorkNode` in the rail lane; the number in a fixed 24px right aligned slot and the spend or clock in a fixed meter slot (`LEAD_TREE_METER`, reserved on the run row too), so roles, words and costs share one column at any depth |
+| Files rail, All files, diff header | status letter            | `FileStatusMark`: one letter in one 12px slot, A success, D danger, M and R neutral                                                                                                                                               |
 
 **A row title keeps one weight whatever its state.** Every title of a session, pinned, done, run, run-tree or notification row stays in its row role (`text-ui`, 13/400 in the sidebar) when it is unread, live, current or selected. State lives in the trailing mark and the text colour only: unread or new activity is the quiet unread dot (in the sidebar the dot alone in the mark box; elsewhere `isUnreadDot` on the node's corner) plus full foreground; read is muted foreground; selected is the selected surface (`bg-selected`). Weight never marks state, the way Linear and Arc keep one weight down their sidebars and let a dot and colour carry unread. `row-title-weight.test.ts` fails a weight class keyed on unread, new, active, current or selected, and `@goodboy/ui` exports no unread title role.
 
@@ -371,9 +371,11 @@ end corner of the box it sits in (`COUNT_BADGE_CORNER`), a box the size of the
 glyph and never of the button, so the pill overlaps the glyph's corner by a
 few pixels and stays clear of the label under it, the way macOS dock badges
 sit. A count beside a word stays the inline number above, never a pill, the
-way Linear sidebar counts read. The `session-tools-counts` scene shows it, and
-`validateScenesToolBadge.mjs` fails a badge that covers a label or leaves the
-rail.
+way Linear sidebar counts read. A count of things that are fine (terminals
+running, tabs open) is no badge at all: the Tools rail keeps it in the tooltip
+(`session-tools-quiet`), and its signal dot takes the same corner
+(`session-tools-signal`, which `validateScenesToolSignal.mjs` fails when the
+dot covers a label, leaves the rail or the rail draws a number).
 
 ### Tile as filter
 
@@ -383,8 +385,8 @@ list below it is that button and filters the list: `isPressed` fills it
 that counts something no row shows (spend, time) has no `onClick` and stays a
 plain tile. `unit` is the quiet word after the number ("of 4 merged"), and
 `valueTone` colors the number (`warning` for what waits, `danger` for what
-fails, `success` for done). The session Overview draws its five tiles this way
-(`BoardTiles`) and says what is filtered in one line with a **Clear** button.
+fails, `success` for done). The session Overview draws its three tiles
+(`BoardTiles`) as plain tiles: a count its tab already shows gets no tile.
 
 ### Counts, fact lines and durations
 
@@ -505,7 +507,13 @@ Nothing appears on hover; a shortcut lives in the tooltip.
 `SettingChip` is the one setting of a header line: a faint label and a
 `text-eyebrow` value at level 5, no border and no chevron at rest. Hover and
 keyboard focus draw the 1px border and the chevron, and an open popover keeps
-both. The line sits under the title, the model in the same line.
+both. The line sits under the title, the model in the same line. In the
+status line of a run or an agent page the same setting is a fact instead: the
+`fact` Button variant, a muted word with a dotted underline, the hover fill on
+point and while its menu is open, no label and no border, a faint `·` before
+it ("Stops after the plan · Ask first · Limit $10.00"). `SettingLookContext`
+picks the look, so one setting component serves both; its tooltip says what the
+word changes.
 A page uses the five levels: its title is level 1 (or `text-lead` in a list
 surface), its sections are level 2, its prose is level 3, its names are level
 4 (`text-row` for a row's name and a group label, `text-ui` for the rest of a

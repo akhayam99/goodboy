@@ -4,7 +4,7 @@ import { FOCUS_RING } from '../focusRing';
 import { StatusDot } from './StatusDot';
 
 export type ButtonVariant =
-  'primary' | 'secondary' | 'ghost' | 'danger' | 'quiet' | 'ghost-danger' | 'setting';
+  'primary' | 'secondary' | 'ghost' | 'danger' | 'quiet' | 'ghost-danger' | 'setting' | 'fact';
 export type ButtonSize = 'xs' | 'sm' | 'md';
 export type ButtonIntent = 'primary' | 'neutral' | 'caution' | 'destructive';
 
@@ -35,6 +35,7 @@ export const BUTTON_VARIANT_CLASSES = {
     'border-0 text-danger hover:bg-danger-subtle disabled:bg-transparent disabled:text-disabled-foreground [&_svg]:text-current',
   setting:
     'font-normal text-foreground hover:border-border hover:bg-hover focus-visible:border-border disabled:text-disabled-foreground',
+  fact: 'border-0 font-normal text-muted-foreground underline decoration-faint-foreground decoration-dotted underline-offset-4 hover:bg-hover hover:text-foreground aria-expanded:bg-hover aria-expanded:text-foreground disabled:text-disabled-foreground disabled:no-underline',
 } as const satisfies Record<ButtonVariant, string>;
 
 export const BUTTON_SIZE_CLASSES = {

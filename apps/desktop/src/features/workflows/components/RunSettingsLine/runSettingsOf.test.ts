@@ -129,12 +129,14 @@ describe('runSettingsOf', () => {
     const { limit } = runSettingsOf({ ...BASE, sessionCapUsd: null });
 
     expect(limit.value).toBe('none');
+    expect(limit.fact).toBe('No limit');
     expect(limit.chain).toBe('This run none, then session none. Nothing stops this run.');
   });
 
   it('reads the providers the run may use, its own or the workspace ones', () => {
     expect(runSettingsOf(BASE).models).toEqual({
       value: 'Auto on Claude, Codex',
+      fact: 'Auto on Claude, Codex',
       source: 'from Harborline',
       chain: 'This run: none set. Harborline: Claude, Codex. Harborline wins.',
     });

@@ -6,7 +6,7 @@ Open a session to see what it is for, what needs you and what happened so far.
 
 Read a session as one page: the goal, what needs you, what runs and where each branch stands.
 
-Every page of a session shares one head. The title row holds the session name, with its linked issue key in gray before it, then **New**, **Ask**, pin, refresh and more. A single click on the name renames it in place. Enter saves and Escape cancels. A small ring at the end of the field fills toward the 120 character limit and turns amber near it.
+Every page of a session shares one head. The title row holds the session name, with its linked issue key in gray before it, then **New** and **⋯**, which holds Ask, pin, refresh, archive and delete. A single click on the name renames it in place. Enter saves and Escape cancels. A small ring at the end of the field fills toward the 120 character limit and turns amber near it.
 
 Under the title sit the tabs **Overview**, **Runs**, **Artifacts**, **Questions** and **Context**. Runs, Artifacts and Questions carry a count. No tab draws a title of its own, because the tab names the page. A session with exactly one branch adds a **Changes** shortcut that opens that branch's changes. With more branches there is no shortcut, since changes belong to a branch and its pull request.
 
@@ -14,11 +14,11 @@ The Overview reads top to bottom:
 
 - The goal, then one status block: a line that says what is happening and, under it, one sentence of where the work stands. A chat the session came from sits under them.
 - Notices come first when a branch needs a decision. Examples: a branch that moved, a branch off its pull request's commits, a project not yet published, a stopped rebase. A closed worktree shows a notice with **Reopen**.
-- Five tiles: **Branches**, **Questions**, **Artifacts**, **Spend** and **Time**.
+- Three tiles: **Branches**, **Spend** and **Time**. Questions and artifacts are counted on their tabs.
 - One board with a row per branch.
 - A session with no agent, no run and no branch shows the start form and nothing else.
 
-**New** in the header starts an agent, a workflow or a write-up. **Ask** opens a panel beside the page. A branch, a pull request, an artifact or a run opens under the same head, and crumbs such as **Overview › Artifacts › Plan** replace the tabs. Each crumb is a link, and Esc goes one crumb up.
+**New** in the header starts an agent, a workflow or a write-up. **Ask about this session** in the **⋯**, or ⌘L, opens a panel beside the page. A branch, a pull request, an artifact or a run opens under the same head, and crumbs such as **Overview › Artifacts › Plan** replace the tabs. Each crumb is a link, and Esc goes one crumb up.
 
 **Reading the task without a diff.** A product manager understands where a task stands from the page alone, never from a raw diff or a file list.
 
@@ -136,14 +136,13 @@ See and undo what agents changed in a session without a branch.
 
 This part is for contributors and agents who change the feature.
 
-- Session head: `SessionHead` (`app/components/SessionHead`) is drawn once by `SessionWorkspace` through `SessionHeadContext`. It draws the tabs on a tab view (`isTabView`) and the crumbs from `crumbsOf` otherwise. Esc goes up through `parentPlace`. `AskButton` opens the Ask panel.
-- Overview board: `CentralColumn` spaces the notices, the start form and the board with `PANE_RHYTHM.groups`. `BranchBoard` draws the tiles (`BoardTiles`, on `StatCard`) and one tile per branch (`BoardGroup`, `BoardTile`). `useBranchBoard` gathers the inputs of `branchBoardOf` and `visibleGroupsOf` applies the tile filter and the fold of **Merged**.
-- Tiles: **Branches** (n of m merged), **Questions** (open, blocking count as the sub-line), **Artifacts** (the tab count, age of the newest), **Spend**, **Time**. `overviewTileFactsOf` feeds the two middle ones. Checks belong to the pull request page.
-  - **Questions** filters the board to the branches with an open question. `BoardFilterNote` says so, and when no branch matches it shows one line and **Clear**, never an empty box. **Branches** clears; the others are plain tiles.
+- Session head: `SessionHead` (`app/components/SessionHead`) is drawn once by `SessionWorkspace` through `SessionHeadContext`. It draws the tabs on a tab view (`isTabView`) and the crumbs from `crumbsOf` otherwise. Esc goes up through `parentPlace`. The `session.ask` verb in More session actions (`sessionMenuOf`) opens the Ask panel.
+- Overview board: `CentralColumn` spaces the notices, the start form and the board with `PANE_RHYTHM.groups`. `BranchBoard` draws the tiles (`BoardTiles`, on `StatCard`) and one tile per branch (`BoardGroup`, `BoardTile`). `useBranchBoard` gathers the inputs of `branchBoardOf` and `visibleGroupsOf` applies the fold of **Merged**.
+- Tiles: **Branches** (n of m merged), **Spend**, **Time**, all from `sessionKpisOf`, plain tiles with no click. Questions and artifacts are counted on their tabs, and an open question shows as the branch row's **Answer**. Checks belong to the pull request page.
   - A long branch name is cut in the middle (`splitMiddleOf`, `BoardBranchName`) so its end stays readable.
   - A card with a branch verb and no branch (`cardRowIdOf`) never sits on the **Not on a branch** row. A rebase with one target belongs to that branch's row.
 - Branch tile: `BoardTile` is a link (`role="link"`) to `branchPlace` on `pr`; a tile with no branch opens Runs. `boardTileChipOf` picks the one chip from `stageWordOf`, `branchStoryOf`, `NAMES` and `STAGE_TONE`. The order: Merged, an open question, a blocked state, the Needs you group, Running, then the story word.
-- Tile facts: `BoardTileFacts` leads with the request number (`requestShortOf`, PR or MR) and reads the lines from `useMountDiffStats`, the Changes tab owner. Runs come from `branchWorkCountsOf`, the Runs tab badge. Waiting questions are the row's `askIds`, the owner of the chip and the **Questions** filter. The branch page header carries **Start a run on this branch**, **Open a terminal here** and **Open the browser here** (`BranchTools`), so a tile needs no doors.
+- Tile facts: `BoardTileFacts` leads with the request number (`requestShortOf`, PR or MR) and reads the lines from `useMountDiffStats`, the Changes tab owner. Runs come from `branchWorkCountsOf`, the Runs tab badge. Waiting questions are the row's `askIds`, the owner of the chip. The branch page header carries **Start a run on this branch**, **Open a terminal here** and **Open the browser here** (`BranchTools`), so a tile needs no doors.
 - Tile button: `cardsByRowId` gives each tile the cards of its branch; `cardRowIdOf` puts a question card with no branch on the tile that holds its ask. `boardTileActionOf` picks one: the answer card or, with none, **Answer** on the first open question (`questionPlace`), then the first card. A merged tile takes **Remove worktree** (`BoardRemoveButton` for its one mount). `BoardTileAction` draws it through `BoardRowAction`, with its confirm and its failure. `BoardLooseCards` lists cards that fit no tile. `BoardMergeInOrder` is the series merge verb. `useRemoveWorktrees` removes the merged worktrees one by one through `resolveMountCleanup`, keeps a failed one with its reason and offers a retry for what is left.
 - Archive: `ArchivePrimary` is the header button when `isArchivePrimaryOf` holds (every branch merged, no live agent, no open question). In every other case Archive stays in the session menu with the same guards.
 - Loading skeleton: `SessionOverviewSkeleton` draws its cards from `overviewCardsOf` and the same surface (`OVERVIEW_CARD_SURFACE`). `SessionWorkspace` shows it through `SkeletonSwap`: nothing for the first 120 ms, then at least 160 ms. The notices slot animates its height with `HeightMotion` and `PANE_GROUPS_GAP_REM`.

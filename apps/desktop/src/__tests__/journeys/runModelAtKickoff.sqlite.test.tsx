@@ -180,8 +180,7 @@ describe('journey: pick the model of a run at the kickoff', () => {
   it('starts the Lead of a picked shape on the model picked for that run', async () => {
     const { spawnAgent } = spies();
     open();
-    fireEvent.click(screen.getByRole('button', { name: /^How: / }));
-    fireEvent.click(screen.getByRole('tab', { name: /^Lead/ }));
+    fireEvent.click(screen.getByRole('tab', { name: 'The Lead plans it' }));
 
     pickCursor();
     fireEvent.click(screen.getByRole('button', { name: 'Start' }));
@@ -196,8 +195,7 @@ describe('journey: pick the model of a run at the kickoff', () => {
   it('leaves the model to the defaults when none is picked', async () => {
     const { spawnAgent } = spies();
     open();
-    fireEvent.click(screen.getByRole('button', { name: /^How: / }));
-    fireEvent.click(screen.getByRole('tab', { name: /^Lead/ }));
+    fireEvent.click(screen.getByRole('tab', { name: 'The Lead plans it' }));
     expect(modelChip().getAttribute('data-run-model')).toBe('auto');
 
     fireEvent.click(screen.getByRole('button', { name: 'Start' }));

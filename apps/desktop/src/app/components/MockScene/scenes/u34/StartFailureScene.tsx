@@ -6,14 +6,11 @@ type Props = {
 };
 
 export const StartFailureScene = ({ isProviderMissing }: Props) => (
-  <div data-shot className="w-[680px] bg-background p-6 text-foreground">
+  <div data-shot className="flex w-[680px] flex-col gap-4 bg-background p-6 text-foreground">
+    <p className="text-body">Make payments-api safe to retry.</p>
     <StartForm
-      kind={null}
+      plan={null}
       hint={null}
-      hasPresets={false}
-      isDisabled={false}
-      onKind={null}
-      fields={<p className="text-body">Make payments-api safe to retry.</p>}
       settings={[]}
       note={null}
       error={

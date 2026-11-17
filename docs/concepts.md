@@ -15,10 +15,9 @@ The other docs link here instead of explaining them again.
 - **Folder**: one repository or plain folder inside a workspace (the code calls it a project)
 - **Session**: one goal, the unit of work, with its own limit and shared notes
 - **Agent**: one chat inside a session, with its own provider and model
-- **Workflow**: a list of steps you can reuse, and each step gets its own agent
+- **Workflow**: a list of steps you can reuse, and each step gets its own agent; a run follows it as written or adapts it as it goes
 - **Run**: one go at a goal inside a session, started as a workflow, an agent or Auto
 - **Plan**: the steps an agent writes before it builds, kept as an artifact you approve or revise
-- **Preset**: a workflow you saved, which a run follows as written or adapts as it goes
 - **Auto**: the agent that picks how a run goes and starts helpers, under your limit
 - **Scout**: a role that reads the code and answers, and changes nothing
 - **Artifact**: a plan, report or wireframe an agent saves as its own page
@@ -1053,8 +1052,10 @@ that kept its kind, text and place under a new id counts as changed. When a
 version lands, the notice offers `N changes · Compare` for 10 seconds; after
 that Compare stays in the versions popover.
 
-A spec made or edited outside comes back in. On the Artifacts page, **New ▾ >
-Import wireframe JSON…** picks a file (or drop a `.json` on the page); inside a
+A spec made or edited outside comes back in. On the Artifacts page, **Import
+wireframe JSON…** picks a file, from **New artifact ▾** while the session has
+no artifact and from **Artifact files** (the folder icon, beside **Show in
+Finder**) once it has some; dropping a `.json` on the page works too. Inside a
 wireframe, **Replace spec with JSON…** in the versions popover does the same
 for that wireframe. The validator answers inline, never in a dialog: what it
 adjusted, with **Import anyway** and **Cancel**, or why the file cannot be
@@ -1398,24 +1399,28 @@ was. ⌘↵ with the list focused pushes too. Behind it runs a
 3. Posts each reply, then resolves each thread on GitHub when you are allowed
    to resolve it there. Otherwise the thread stays open for the reviewer.
 
-How a reply reads is set in Settings, Workspace, **Replies and commits**:
+How a reply reads is set in Settings, Workspace, **Replies and commits**, one
+column with three bands: How replies read, After a reply, Commits.
 
-- **Voice**: Terse (the default), Friendly, Formal, or Your replies, which
+- **Voice**: Terse (the default), Friendly, Formal, or Like your replies, which
   follows a style note you can edit. **Learn from your replies** reads your last
   20 review replies in the workspace's repositories and writes that note. The
-  voice goes into the agent's prompt
-- **Templates**: When fixed and When not changing. Goodboy fills them in code,
+  voice goes into the agent's prompt. A preview of a fixed reply sits right
+  under it and follows the voice and Sign replies as soon as they change
+- **Reply wording**, closed by default and marked Default or Custom, holds the
+  two templates: When fixed and When not changing. Each has an **Insert**
+  button that puts a placeholder at the caret. Goodboy fills them in code,
   the agent writes only `{reason}`. The other variables are `{commit}`,
   `{commit_story}`, `{fixup_of}`, `{reviewer}`, `{file}` and `{line}`.
   `{commit_story}` is the same sha as `{commit}`, plus `c81e5aa, squashed into
 e31b9f4` when a history rewrite folded the fix. Reply and page always read
   the last commit of the thread after rewrites. The defaults are the
   reason, then `Fixed in {commit_story}.` or `Leaving this as is.`
-- **Attribution line**, under Voice in the Replies band, signs everything
+- **Sign replies**, under Voice in How replies read, signs everything
   Goodboy posts with one value
-- **Mark thread as resolved** (on by default, it resolves the thread after the reply) and **Commits** (new
+- **Resolve the thread** (on by default, it resolves the thread after the reply) and **Commits** (new
   commit, or fixup of the commit that added the line)
-- **Edit the posted reply** (on by default, stored per workspace in the
+- **Update the reply after a squash** (on by default, stored per workspace in the
   `settings` table under `review.edit_posted_reply.<workspaceId>`, `0` = off).
   After a history rewrite is pushed and a reply Goodboy posted names a sha that
   moved, Goodboy edits that reply in place with `updateReviewComment`: it adds
@@ -1973,8 +1978,8 @@ session up again in Goodboy.
   and it spawns runs. **Workflows** is the studio and the library, and the word
   stays for definitions you pick ("Start workflow", "from a workflow"). A verb
   on one execution says run: **Start workflow**, **Stop run**, **Archive run**,
-  **Delete run**. The ⌘K section that lists them is **Runs**. **Run defaults**
-  is the tab of Workflows that sets what
+  **Delete run**. The ⌘K section that lists them is **Runs**. The **Runs** page
+  of the workspace settings (it was Run defaults) sets what
   a new run starts with. A renamed label keeps its old name as a ⌘K alias:
   searching the old word finds the new one (`formerNamesOf` in `names.ts`).
 - **Models** is the workspace settings page that sets what each role runs on

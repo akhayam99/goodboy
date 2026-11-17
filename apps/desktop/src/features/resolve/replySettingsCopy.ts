@@ -6,14 +6,7 @@ export const VOICE_LABEL: Record<ReplyVoice, string> = {
   terse: 'Terse',
   friendly: 'Friendly',
   formal: 'Formal',
-  mine: 'Your replies',
-};
-
-export const VOICE_HELP: Record<ReplyVoice, string> = {
-  terse: 'The reason, no thanks, no apologies, two to four sentences.',
-  friendly: 'First person, with one short thanks when the comment caught a real bug.',
-  formal: 'Third person, complete sentences, no contractions.',
-  mine: 'Follows the style note learned from your own replies.',
+  mine: 'Like your replies',
 };
 
 export const VOICE_SAMPLE: Record<ReplyVoice, string> = {
@@ -28,5 +21,5 @@ export const VOICE_SAMPLE: Record<ReplyVoice, string> = {
 
 export const COMMIT_STYLE_LABEL: Record<ResolveCommitStyle, string> = {
   new: 'New commit',
-  fixup: 'Fixup of the commit that added the line',
+  fixup: "Fixup of the line's commit",
 };

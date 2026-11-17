@@ -1,6 +1,6 @@
 import { useCallback, useEffect } from 'react';
 import { REPLY_VOICES, RESOLVE_COMMIT_STYLES, type WorkspaceId } from '@goodboy/types';
-import { Band, BandStack, Markdown, SectionHeader, SegmentedTabs, Switch } from '@goodboy/ui';
+import { Band, SegmentedTabs, Switch } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
 import { NAMES } from '../../../../shared/utils/names';
 import { isAttributionEnabled } from '../../../../shared/utils/attribution';
@@ -20,12 +20,8 @@ import {
   REPLY_TEMPLATE_NO_CHANGE_DEFAULT,
   replySettingsOf,
 } from '../../../resolve/replySettings';
-import {
-  COMMIT_STYLE_LABEL,
-  VOICE_HELP,
-  VOICE_LABEL,
-  VOICE_SAMPLE,
-} from '../../../resolve/replySettingsCopy';
+import { COMMIT_STYLE_LABEL, VOICE_LABEL, VOICE_SAMPLE } from '../../../resolve/replySettingsCopy';
+import { ReplyPreview } from './ReplyPreview';
 import { ReplyStyleNoteField } from './ReplyStyleNoteField';
 import { ReplyTemplatesBand } from './ReplyTemplatesBand';
 import { WorkspaceFieldRow } from './WorkspaceFieldRow';
@@ -113,140 +109,107 @@ export const WorkspaceReviewRepliesSection = ({ workspaceId }: Props) => {
     workspaceId,
   });
 
+  const previewSettings = {
+    ...settings,
+    voice: voiceSave.value,
+    isSigned: attributionSave.value,
+    templateFixed: fixedSave.value,
+    templateNoChange: noChangeSave.value,
+  };
   const preview = buildResolutionReplyBody({
-    closure: { commitSha: PREVIEW_SHA, reply: VOICE_SAMPLE[settings.voice] },
+    closure: { commitSha: PREVIEW_SHA, reply: VOICE_SAMPLE[voiceSave.value] },
     prUrl: PREVIEW_PR_URL,
-    settings,
+    settings: previewSettings,
   });
   const noChangePreview = buildResolutionReplyBody({
-    closure: { reason: 'the sibling routes use the same name' },
+    closure: { reason: 'The sibling routes use the same name.' },
     prUrl: PREVIEW_PR_URL,
-    settings,
+    settings: previewSettings,
   });
 
   return (
-    <div className="grid grid-cols-1 gap-6 @3xl:grid-cols-[minmax(0,1fr)_minmax(0,22rem)]">
-      <div className="flex min-w-0 flex-col gap-4">
-        <Band
-          inset="content"
-          label="Replies"
-          ariaLabel="Replies"
-          hint="How every reply reads and how it is signed."
-          headingLevel={2}
+    <div className="flex min-w-0 flex-col gap-4">
+      <Band inset="content" label="How replies read" ariaLabel="How replies read" headingLevel={2}>
+        <WorkspaceFieldRow workspaceId={workspaceId} field="replyVoice">
+          <SegmentedTabs
+            ariaLabel="Reply voice"
+            size="sm"
+            value={voiceSave.value}
+            options={REPLY_VOICES.map((voice) => ({
+              value: voice,
+              label: VOICE_LABEL[voice],
+            }))}
+            onChange={(voice) => void voiceSave.save({ value: voice })}
+          />
+        </WorkspaceFieldRow>
+        {voiceSave.value === 'mine' && (
+          <ReplyStyleNoteField
+            workspaceId={workspaceId}
+            value={noteSave.value === '' ? null : noteSave.value}
+            isDisabled={noteSave.isSaving}
+            save={noteSave}
+            onSave={(note) => void noteSave.save({ value: note ?? '' })}
+          />
+        )}
+        <ReplyPreview label="Preview, a fixed comment" text={preview} />
+        <WorkspaceFieldRow
+          workspaceId={workspaceId}
+          field="attribution"
+          help='Adds "Written by Goodboy" to every comment and reply.'
         >
-          <WorkspaceFieldRow
-            workspaceId={workspaceId}
-            field="replyVoice"
-            layout="stacked"
-            help={VOICE_HELP[settings.voice]}
-          >
-            <SegmentedTabs
-              ariaLabel="Reply voice"
-              size="sm"
-              value={voiceSave.value}
-              options={REPLY_VOICES.map((voice) => ({
-                value: voice,
-                label: VOICE_LABEL[voice],
-              }))}
-              onChange={(voice) => void voiceSave.save({ value: voice })}
-            />
-          </WorkspaceFieldRow>
-          {voiceSave.value === 'mine' && (
-            <ReplyStyleNoteField
-              workspaceId={workspaceId}
-              value={noteSave.value === '' ? null : noteSave.value}
-              isDisabled={noteSave.isSaving}
-              save={noteSave}
-              onSave={(note) => void noteSave.save({ value: note ?? '' })}
-            />
-          )}
-          <WorkspaceFieldRow
-            workspaceId={workspaceId}
-            field="attribution"
-            help='Adds "Written by Goodboy" to every comment and reply.'
-          >
-            <Switch
-              ariaLabel="Attribution line"
-              checked={attributionSave.value}
-              onChange={(isOn) => void attributionSave.save({ value: isOn })}
-            />
-          </WorkspaceFieldRow>
-        </Band>
+          <Switch
+            ariaLabel={NAMES.signReplies}
+            checked={attributionSave.value}
+            onChange={(isOn) => void attributionSave.save({ value: isOn })}
+          />
+        </WorkspaceFieldRow>
         <ReplyTemplatesBand
           saves={{ replyTemplateFixed: fixedSave, replyTemplateNoChange: noChangeSave }}
+          noChangePreview={noChangePreview}
         />
-
-        <Band
-          inset="content"
-          label="Threads"
-          ariaLabel="Threads"
-          hint="What happens to a thread after a reply."
-          headingLevel={2}
+      </Band>
+      <Band inset="content" label="After a reply" ariaLabel="After a reply" headingLevel={2}>
+        <WorkspaceFieldRow
+          workspaceId={workspaceId}
+          field="resolveOnGithub"
+          help="Off leaves it to the reviewer. Bitbucket threads stay open."
         >
-          <WorkspaceFieldRow
-            workspaceId={workspaceId}
-            field="resolveOnGithub"
-            help="Off leaves it to the reviewer. Bitbucket threads stay open."
-          >
-            <Switch
-              ariaLabel={NAMES.markThreadResolved}
-              checked={resolveSave.value}
-              onChange={(isNext) => void resolveSave.save({ value: isNext })}
-            />
-          </WorkspaceFieldRow>
-          <WorkspaceFieldRow
-            workspaceId={workspaceId}
-            field="editPostedReply"
-            help="After a squash or fixup, adds an Update line. GitHub may notify."
-          >
-            <Switch
-              ariaLabel="Edit the posted reply"
-              checked={editSave.value}
-              onChange={(isNext) => void editSave.save({ value: isNext })}
-            />
-          </WorkspaceFieldRow>
-        </Band>
-        <Band inset="content" label="Commits" ariaLabel="Commits" headingLevel={2}>
-          <WorkspaceFieldRow
-            workspaceId={workspaceId}
-            field="resolveCommitStyle"
-            layout="stacked"
-            help="Fixup targets the commit that added the line."
-          >
-            <SegmentedTabs
-              ariaLabel="A fix for a comment lands as"
-              size="sm"
-              value={commitSave.value}
-              options={RESOLVE_COMMIT_STYLES.map((style) => ({
-                value: style,
-                label: COMMIT_STYLE_LABEL[style],
-              }))}
-              onChange={(style) => void commitSave.save({ value: style })}
-            />
-          </WorkspaceFieldRow>
-        </Band>
-      </div>
-      <section aria-label="Reply preview" className="flex min-w-0 flex-col gap-2">
-        <SectionHeader label="Preview" headingLevel={2} />
-        <BandStack>
-          <Band inset="content">
-            <p className="text-meta text-muted-foreground">When fixed</p>
-            {preview !== null && (
-              <Markdown text={preview} variant="preview" className="text-meta text-foreground" />
-            )}
-          </Band>
-          <Band inset="content">
-            <p className="text-meta text-muted-foreground">When not changing</p>
-            {noChangePreview !== null && (
-              <Markdown
-                text={noChangePreview}
-                variant="preview"
-                className="text-meta text-foreground"
-              />
-            )}
-          </Band>
-        </BandStack>
-      </section>
+          <Switch
+            ariaLabel={NAMES.resolveTheThread}
+            checked={resolveSave.value}
+            onChange={(isNext) => void resolveSave.save({ value: isNext })}
+          />
+        </WorkspaceFieldRow>
+        <WorkspaceFieldRow
+          workspaceId={workspaceId}
+          field="editPostedReply"
+          help="Also after a fixup. Adds an Update line, and GitHub may notify."
+        >
+          <Switch
+            ariaLabel={NAMES.updateReplyAfterSquash}
+            checked={editSave.value}
+            onChange={(isNext) => void editSave.save({ value: isNext })}
+          />
+        </WorkspaceFieldRow>
+      </Band>
+      <Band inset="content" label="Commits" ariaLabel="Commits" headingLevel={2}>
+        <WorkspaceFieldRow
+          workspaceId={workspaceId}
+          field="resolveCommitStyle"
+          help="A fixup targets the commit that added the line."
+        >
+          <SegmentedTabs
+            ariaLabel="A fix for a comment lands as"
+            size="sm"
+            value={commitSave.value}
+            options={RESOLVE_COMMIT_STYLES.map((style) => ({
+              value: style,
+              label: COMMIT_STYLE_LABEL[style],
+            }))}
+            onChange={(style) => void commitSave.save({ value: style })}
+          />
+        </WorkspaceFieldRow>
+      </Band>
     </div>
   );
 };

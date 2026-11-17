@@ -11,7 +11,7 @@ export const StorageHeaderActions = () => {
   return (
     <>
       <StorageScopePicker scope={scope} onChange={setStorageScope} />
-      <StorageCheckAgain />
+      <StorageCheckAgain scope={scope} />
     </>
   );
 };

@@ -1,9 +1,13 @@
-import { useId } from 'react';
+import { useId, type ReactNode } from 'react';
 import { Textarea, cn } from '@goodboy/ui';
 import { replyTemplateProblems } from '../../../resolve/renderReplyTemplate';
 import type { SettingSave } from '../../hooks/useSettingSave';
 import { useSettingRowAnchor } from '../../hooks/useSettingRowAnchor';
 import { SaveErrorHelp } from './SaveErrorHelp';
+
+export type ReplyTemplateCommit = {
+  readonly caret: number;
+};
 
 type Props = {
   readonly label: string;
@@ -12,8 +16,9 @@ type Props = {
   readonly isDisabled: boolean;
   readonly save: Pick<SettingSave<unknown>, 'error' | 'isSaving' | 'retry'>;
   readonly onDraftChange: (next: string) => void;
-  readonly onFocus: () => void;
-  readonly onCommit: () => void;
+  readonly onCommit: (commit: ReplyTemplateCommit) => void;
+  readonly action?: ReactNode;
+  readonly children?: ReactNode;
 };
 
 export const ReplyTemplateField = ({
@@ -23,8 +28,9 @@ export const ReplyTemplateField = ({
   isDisabled,
   save,
   onDraftChange,
-  onFocus,
   onCommit,
+  action,
+  children,
 }: Props) => {
   const id = useId();
   const anchor = useSettingRowAnchor({ rowKey });
@@ -40,9 +46,12 @@ export const ReplyTemplateField = ({
         anchor.isHighlighted && 'bg-selected',
       )}
     >
-      <label htmlFor={id} className="text-meta font-medium text-foreground">
-        {label}
-      </label>
+      <div className="flex min-w-0 items-center justify-between gap-2">
+        <label htmlFor={id} className="text-meta font-medium text-foreground">
+          {label}
+        </label>
+        {action}
+      </div>
       <Textarea
         id={id}
         value={draft}
@@ -50,8 +59,7 @@ export const ReplyTemplateField = ({
         minRows={3}
         disabled={isDisabled}
         onChange={(event) => onDraftChange(event.target.value)}
-        onFocus={onFocus}
-        onBlur={onCommit}
+        onBlur={(event) => onCommit({ caret: event.currentTarget.selectionStart })}
         className="text-code"
       />
       {problems.map((problem) => (
@@ -60,6 +68,7 @@ export const ReplyTemplateField = ({
         </p>
       ))}
       {save.error === null ? null : <SaveErrorHelp save={save} />}
+      {children}
     </div>
   );
 };

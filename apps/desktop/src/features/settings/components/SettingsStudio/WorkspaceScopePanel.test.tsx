@@ -126,20 +126,28 @@ beforeEach(async () => {
 
 afterEach(cleanup);
 
-const RUN_DEFAULT_ROWS: ReadonlyArray<readonly [string, ReadonlyArray<string>]> = [
-  ['New runs', ['Workflow asks you', 'Lead asks you', 'Start as', NAMES.spendCap, NAMES.models]],
-  ['Agents', ['Parallel agents', 'Reply length']],
+const RUNS_ROWS: ReadonlyArray<readonly [string, ReadonlyArray<string>]> = [
+  ['When a run stops for you', ['Stops for your OK']],
+  ['Spending', [NAMES.spendCap]],
+  ['Agents', ['Reply length']],
 ];
 
-const runDefaultBands = () =>
+const RUNS_BANDS: ReadonlyArray<string> = [
+  'When a run stops for you',
+  'Spending',
+  'Agents',
+  'Guidance',
+];
+
+const runsBands = () =>
   screen
     .getAllByRole('region')
-    .map((band) => band.getAttribute('aria-label'))
-    .filter((label) => label === 'New runs' || label === 'Agents' || label === 'Guidance');
+    .map((band) => band.getAttribute('aria-label') ?? '')
+    .filter((label) => RUNS_BANDS.includes(label));
 
-const expectRunDefaultRows = () => {
-  expect(runDefaultBands()).toEqual(['New runs', 'Agents', 'Guidance']);
-  for (const [band, rows] of RUN_DEFAULT_ROWS) {
+const expectRunsRows = () => {
+  expect(runsBands()).toEqual(RUNS_BANDS);
+  for (const [band, rows] of RUNS_ROWS) {
     const region = within(screen.getByRole('region', { name: band }));
     for (const row of rows) {
       region.getByText(row, { selector: 'span' });
@@ -150,25 +158,52 @@ const expectRunDefaultRows = () => {
 };
 
 describe('WorkspaceScopePanel pages', () => {
-  it('lays Run defaults out in three bands, the permission rows behind one chip', () => {
+  it('names the page Runs and asks one question per band, with Models left to its own page', () => {
     renderPage({ section: 'general' });
 
-    expectRunDefaultRows();
-    screen.getByRole('button', { name: /^Asks you: / });
+    expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Runs');
+    expectRunsRows();
+    expect(screen.queryByText('Lead asks you')).toBeNull();
+    expect(screen.queryByRole('button', { name: /^Asks you: / })).toBeNull();
+    expect(screen.queryByRole('button', { name: `Open ${NAMES.models}` })).toBeNull();
   });
 
-  it('keeps the session row in New runs with a session open, the one place that sets it', () => {
+  it('keeps Parallel agents in Advanced, closed until opened, and quiet while off', () => {
+    renderPage({ section: 'general' });
+
+    const advanced = screen.getByRole('button', { name: 'Advanced' });
+    expect(advanced.getAttribute('aria-expanded')).toBe('false');
+    expect(screen.queryByRole('switch', { name: 'Parallel agents' })).toBeNull();
+    expect(screen.queryByText('Parallel agents on')).toBeNull();
+    fireEvent.click(advanced);
+
+    expect(
+      screen.getByRole('switch', { name: 'Parallel agents' }).getAttribute('aria-checked'),
+    ).toBe('false');
+  });
+
+  it('says Parallel agents on beside a closed Advanced when it is on', () => {
+    seed({ harborline: overrides({ parallelAgents: true }) });
+    renderPage({ section: 'general' });
+
+    expect(screen.getByRole('button', { name: 'Advanced' }).getAttribute('aria-expanded')).toBe(
+      'false',
+    );
+    screen.getByText('Parallel agents on');
+  });
+
+  it('leaves how a run starts to the start form, with or without a session open', () => {
     const session = aSession({ workspaceId: HARBORLINE.id, goal: 'Retry webhooks with backoff' });
     useAppStore.setState({ sessions: [session], currentSessionId: session.id });
     renderPage({ section: 'general' });
 
-    const newRuns = within(screen.getByRole('region', { name: 'New runs' }));
-    expect(newRuns.getAllByRole('tablist').map((row) => row.getAttribute('aria-label'))).toEqual([
-      'Workflow asks you',
-      'Start as',
-      'New runs in this session start as',
+    expect(screen.getAllByRole('tablist').map((row) => row.getAttribute('aria-label'))).toEqual([
+      'Stops for your OK',
       'At the limit',
+      'Reply length',
     ]);
+    expect(screen.queryByText('Start as')).toBeNull();
+    expect(screen.queryByText('New runs in this session start as')).toBeNull();
   });
 
   it('opens on Projects with the workspace name, and one page per section', () => {
@@ -255,22 +290,19 @@ describe('WorkspaceScopePanel pages', () => {
     expect(header?.querySelector('[data-slot="pane-meta"]')?.textContent).toBe('No projects yet');
   });
 
-  it('opens Branches with Naming, then After merge, then the branch list', () => {
+  it('opens Branches with Naming, then After merge, and no branch list', () => {
     renderPage({ section: 'branches' });
 
     expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Branches');
     const naming = screen.getByRole('region', { name: 'Naming' });
     const afterMerge = screen.getByRole('region', { name: 'After merge' });
-    const branches = screen.getByRole('region', { name: 'Branches' });
     within(naming).getByLabelText('Branch prefix');
     within(naming).getByText('Branch name');
     expect(
       naming.compareDocumentPosition(afterMerge) & Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy();
-    expect(
-      afterMerge.compareDocumentPosition(branches) & Node.DOCUMENT_POSITION_FOLLOWING,
-    ).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Check again' })).toBeDefined();
+    expect(screen.queryByRole('region', { name: 'Branches' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Check again' })).toBeNull();
     expect(screen.queryByRole('combobox', { name: 'Storage scope' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Change' })).toBeNull();
   });
@@ -291,7 +323,7 @@ describe('WorkspaceScopePanel pages', () => {
     cleanup();
 
     renderPage({ section: 'review-replies' });
-    screen.getByRole('region', { name: 'Replies' });
+    screen.getByRole('region', { name: 'How replies read' });
     cleanup();
 
     renderPage({ section: 'permissions' });
@@ -315,22 +347,22 @@ describe('WorkspaceScopePanel pages', () => {
     ).toBeTruthy();
   });
 
-  it('keeps the branch names and the attribution line off Run defaults', () => {
+  it('keeps the branch names and Sign replies off Runs', () => {
     renderPage({ section: 'general' });
-    expect(screen.queryByText('Attribution line')).toBeNull();
+    expect(screen.queryByText('Sign replies')).toBeNull();
     expect(screen.queryByLabelText('Branch prefix')).toBeNull();
     expect(screen.queryByText('Branch name')).toBeNull();
     cleanup();
 
     renderPage({ section: 'review-replies' });
-    within(screen.getByRole('region', { name: 'Replies' })).getByText('Attribution line');
+    within(screen.getByRole('region', { name: 'How replies read' })).getByText('Sign replies');
   });
 
   it('persists the attribution switch through the queued writer', async () => {
     renderPage({ section: 'review-replies' });
-    const region = screen.getByRole('region', { name: 'Replies' });
+    const region = screen.getByRole('region', { name: 'How replies read' });
 
-    fireEvent.click(within(region).getByRole('switch', { name: 'Attribution line' }));
+    fireEvent.click(within(region).getByRole('switch', { name: 'Sign replies' }));
 
     await waitFor(() => expect(savedPatches()).toHaveLength(1));
     expect(savedPatches()[0]).toEqual({ attributionFooter: false });
@@ -445,7 +477,7 @@ describe('restore defaults', () => {
 
 describe('changed count per page', () => {
   it.each([
-    ['general', 'Run defaults', '1 change'],
+    ['general', 'Runs', '1 change'],
     ['branches', 'Branches', '2 changes'],
     ['review-replies', 'Replies and commits', '1 change'],
   ] as const)('counts the moved fields on %s', (section, label, hint) => {
@@ -488,7 +520,7 @@ describe('copy from another workspace', () => {
     fireEvent.click(within(flow).getByRole('button', { name: 'Preview changes' }));
 
     expect(flow.textContent).toContain('Will change 3 settings on 1 page.');
-    within(flow).getByText('Voice: Friendly → Formal, Mark thread as resolved: On → Off, 1 more');
+    within(flow).getByText('Voice: Friendly → Formal, Resolve the thread: On → Off, 1 more');
     expect(flow.textContent).toContain('Stays: folders, accounts, permission history.');
     fireEvent.click(within(flow).getByRole('button', { name: 'Copy 3 settings' }));
 
@@ -518,7 +550,7 @@ describe('copy from another workspace', () => {
     ['Branches', 'Replies and commits'].forEach((page) =>
       within(flow).getByRole('checkbox', { name: `Include ${page}` }),
     );
-    expect(within(flow).queryByRole('checkbox', { name: 'Include Run defaults' })).toBeNull();
+    expect(within(flow).queryByRole('checkbox', { name: 'Include Runs' })).toBeNull();
     fireEvent.click(within(flow).getByRole('checkbox', { name: 'Include Replies and commits' }));
     fireEvent.click(within(flow).getByRole('button', { name: 'Copy 2 settings' }));
 
@@ -568,6 +600,7 @@ describe('folders that use their own value', () => {
     cleanup();
 
     renderPage({ section: 'general' });
+    fireEvent.click(screen.getByRole('button', { name: 'Advanced' }));
 
     within(labelLine('Reply length')).getByText('1 folder uses its own');
     expect(

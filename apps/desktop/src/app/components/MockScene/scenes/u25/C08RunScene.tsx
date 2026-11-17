@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { DrawerColumn } from '@goodboy/ui';
 import { requestRename } from '../../../../../shared/utils/renameRequest';
 import { runObjectKey } from '../../../../../features/actions/runObjectKey';
+import { startRunEventName } from '../../../../../features/session/startRun/startRunEventName';
 import { applyDocumentTheme } from '../../../../../shared/lib/theme';
 import { useAppStore, useSessionById } from '../../../../../store';
 import { selectDrawerSizing } from '../../../../../store/slices/drawer/testing/selectDrawerSizing';
@@ -21,7 +22,7 @@ import {
   type C08State,
 } from './c08RunSeed';
 
-type C08Click = 'none' | 'menu' | 'addStep' | 'startRun' | 'how' | 'rowRename';
+type C08Click = 'none' | 'menu' | 'addStep' | 'startRun' | 'change' | 'rowRename';
 
 type Props = {
   readonly state: C08State;
@@ -62,11 +63,10 @@ const DEMO_ACTIONS = actionsOf({ open: elsewhere });
 
 const CLICK_DELAY_MS = 200;
 
-const SELECTOR: Readonly<Record<Exclude<C08Click, 'none'>, string>> = {
+const SELECTOR: Readonly<Record<Exclude<C08Click, 'none' | 'startRun'>, string>> = {
   menu: 'button[aria-label$="run actions"]',
   addStep: '[data-run-overview] [data-run-add-step] button',
-  startRun: '[data-start-run-row] button',
-  how: '[data-setting-chip="How"]',
+  change: '[data-start-settings-change]',
   rowRename: `[data-row-key$="/${C08_RUN_ID}"]`,
 };
 
@@ -90,6 +90,10 @@ export const C08RunScene = ({ state, selection, click = 'none', extra, theme }: 
       return;
     }
     const timer = window.setTimeout(() => {
+      if (click === 'startRun') {
+        window.dispatchEvent(new CustomEvent(startRunEventName({ sessionId: C08_SESSION_ID })));
+        return;
+      }
       const target = document.querySelector<HTMLElement>(SELECTOR[click]);
       if (click === 'rowRename') {
         const rowKey = target?.getAttribute('data-row-key');

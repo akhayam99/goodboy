@@ -15,14 +15,7 @@ Free disk space from the checkout folders of archived, deleted or gone sessions.
 
 ### Branches
 
-Delete old branches with confidence. **Branches**, in the settings of a workspace, starts with the **After merge** rule, then lists the branches that are **Safe to delete** and shows how each was merged. Rust decides which branches are safe; the page only maps it to a label. Deleted branches wait in **Recently deleted** with **Restore**, and a merged branch can be removed with **Undo**.
-
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/storage-branches-dark.webp">
-  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/storage-branches-light.webp" alt="Settings › Harborline › Branches: the After merge rule first, 7 safe to delete and 2 need a look under the title, local branches grouped by repo under ledger-core, notify-relay and payments-api, each with its session, On origin or Gone on origin, and Safe to delete with how it merged, and Recently deleted 3 at the end">
-</picture>
-
-<sub>Screenshot from Goodboy 0.27.1</sub>
+Delete old branches with confidence. **Branches**, under **Worktrees** in **Storage**, lists the branches that are **Safe to delete** in the picked scope and shows how each was merged. Rust decides which branches are safe; the page only maps it to a label. **Check again** in the page header reads the branches again with the sizes. Deleted branches wait in **Recently deleted** with **Restore**, and a merged branch can be removed with **Undo**. The **Branches** page in the settings of a workspace keeps the branch name and the **After merge** rule.
 
 ### Storage scope
 
