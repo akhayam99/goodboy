@@ -497,11 +497,13 @@ covered.
   empty, and open the last 12 entries on right click or a 400ms hold. Board and
   Chat left the bar for the places rail. Board, the rail's first place, is pressed
   (`aria-current="page"`) on the board and does nothing; over a studio on the
-  board it closes the studio; in a session it navigates to the board as a
-  history entry. ⌘⇧H does the same. Chat is a door to the `chat` studio on the
+  board it closes the studio; in a session it stays lit, since the session is
+  its child, and does nothing (`ShellLeft`): ⌘⇧H and Open Board in Sessions go
+  to the board as a history entry. Chat is a door to the `chat` studio on the
   chat you had open last in this workspace (`lastChatByWorkspace`, memory only,
   `selectChatDoor`), else the most recent chat by activity, else a new chat; after
-  you press New chat it opens a new one until you pick a chat again. The rail
+  you press New chat (in the Chat page header on an open chat, `ChatHeader`, or
+  ⌘⇧N) it opens a new one until you pick a chat again. The rail
   place, the top bar button and the palette entry share that rule. A chat with no message is one centred stage (the glyph, **Ask about {workspace}**, one sentence, the composer and up to three suggestions); the first message docks the composer at the bottom. Archiving or
   deleting the open chat lands on the next most recent one, not a blank page. Its
   row carries a running dot or a new-reply dot. The command
