@@ -197,7 +197,7 @@ Browse the session folder as a file tree on the **Changes** page of a branch. **
 
 Open your dev server, a port or a link beside the session or on a page of its own, without leaving Goodboy.
 
-- **Browser** at the foot of the right rail, or Go › **Show or Hide Browser**, shows or hides the browser beside the work, on any page. The Session pages fold to icons while it is open. The button counts the open tabs.
+- **Browser** at the foot of the right rail, or Go › **Show or Hide Browser**, shows or hides the browser beside the work, on any page. The Session pages fold to icons while it is open. Its tooltip counts the open tabs; the button shows no number.
 - The address bar shows the page, not its address: the icon, the title and the host. Click it, or press **⌘L**, to see the full address selected and type a new one. **Esc** puts the title back. The icon is the site's own when it has one, and a letter when it has none.
 - While a page loads, a thin line breathes under the address row and Reload becomes **Stop**. A page that never finishes says so after 30 seconds. **Back** and **Forward** turn off when there is nothing behind or ahead.
 - **More** holds **Send to the agent**, Open in your browser, **Open full page**, Copy address, Duplicate and Close tab. On macOS it also holds **Inspect in Safari**, which shows the tab in Safari's Develop menu.
