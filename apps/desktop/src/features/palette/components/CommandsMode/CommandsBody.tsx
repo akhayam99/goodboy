@@ -7,18 +7,18 @@ import {
   useState,
   type KeyboardEvent,
 } from 'react';
-import { ChevronRight, List } from '@goodboy/ui/icons';
+import { ChevronRight } from '@goodboy/ui/icons';
+import { allActionsEntryOf } from '../../allActionsEntryOf';
 import { Divider } from '@goodboy/ui';
 import { NAMES } from '../../../../shared/utils/names';
 import { parseQuery } from '../../../quick-actions/grammar';
 import {
-  buildActionList,
-  buildChoiceList,
   buildCommandList,
   defaultCommandKey,
   flattenRows,
   type CommandRow,
 } from '../../commandList';
+import { levelListOf } from '../../levelListOf';
 import { ASK_KEYS, askEntries } from '../../sources/askEntries';
 import { choiceEntries } from '../../sources/choiceEntries';
 import { useAppStore } from '../../../../store';
@@ -71,8 +71,6 @@ type Props = PaletteModeProps & {
 };
 
 const NO_ASKS: ReadonlyArray<PaletteEntry> = [];
-
-const ALL_ACTIONS_KEY = 'level:session-actions';
 
 const REGISTRY_LENS_KEYS: ReadonlySet<string> = new Set(['lens:review', 'lens:files']);
 
@@ -283,15 +281,7 @@ export const CommandsBody = ({
     () =>
       scopeSessionId === null || activePalette === null
         ? null
-        : {
-            key: ALL_ACTIONS_KEY,
-            label: 'All actions for this session',
-            kind: 'level',
-            group: null,
-            icon: List,
-            level: { kind: 'actions', target: { kind: 'session', sessionId: scopeSessionId } },
-            run: () => undefined,
-          },
+        : allActionsEntryOf({ sessionId: scopeSessionId }),
     [scopeSessionId, activePalette],
   );
 
@@ -370,23 +360,14 @@ export const CommandsBody = ({
             needsYou: scope?.kind === 'workspace' ? needsYou : [],
             extra,
           })
-        : level.step !== null
-          ? buildChoiceList({
-              query: filter,
-              title: level.step.title,
-              choices: level.step.entries,
-              frecency,
-              now,
-            })
-          : level.choicesOf !== null
-            ? buildChoiceList({
-                query: filter,
-                title: level.choicesOf.label,
-                choices: levelChoices,
-                frecency,
-                now,
-              })
-            : buildActionList({ query: filter, verbs: levelVerbs, frecency, now }),
+        : levelListOf({
+            level,
+            filter,
+            choices: levelChoices,
+            verbs: levelVerbs,
+            frecency,
+            now,
+          }),
     [
       level,
       query,

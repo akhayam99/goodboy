@@ -553,7 +553,7 @@ describe('PaletteOverlay, run a script', () => {
     fireEvent.keyDown(input, { key: 'Enter' });
 
     expect(onClose).not.toHaveBeenCalled();
-    expect(screen.getByText(`Run ${SCRIPT_NAME} on which branch?`)).not.toBeNull();
+    screen.getByText(`Run ${SCRIPT_NAME} on which branch?`);
     expect(optionNames()).toEqual(['hl/payout-export', 'hl/payout-webhook']);
     expect(input.getAttribute('placeholder')).toBe('Filter branches…');
     expect(selectedName()).toBe('hl/payout-export');

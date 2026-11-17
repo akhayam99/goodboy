@@ -256,6 +256,24 @@ describe('where a script runs, two branches of one project', () => {
     );
   });
 
+  it('starts no second run when the script is clicked again on the branch it runs on', async () => {
+    seed({ mounts: [SETTLEMENT, ROUNDING] });
+    const params = {
+      sessionId: SESSION.id,
+      workspaceId: HARBORLINE.id,
+      projectId: LEDGER.id,
+      mountId: SETTLEMENT.mountId,
+      pinId: REPLAY_PIN,
+    };
+    void runPinnedScript(params);
+    await vi.waitFor(() => expect(invokes('workspace_script_run')).toHaveLength(1));
+
+    const second = await runPinnedScript(params);
+
+    expect(second.kind === 'ran' ? second.result.stderr : null).toBe('Already running');
+    expect(invokes('workspace_script_run')).toHaveLength(1);
+  });
+
   it('drops a pinned run whose scan answers after the user switched session', async () => {
     seed({ mounts: [SETTLEMENT, ROUNDING] });
     const devPin = scriptPinId({ source: 'package-json', relDir: '', name: 'dev', savedId: null });
