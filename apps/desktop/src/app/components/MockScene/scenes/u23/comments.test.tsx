@@ -181,7 +181,7 @@ describe('the u23 comments scenes', () => {
     const needsYou = within(list()).getByRole('region', { name: 'Needs you' });
     expect(within(needsYou).getAllByText('Push failed').length).toBe(2);
     expect(screen.queryByText("Couldn't fix")).toBeNull();
-    expect(screen.getAllByText(/2 comments didn't go out/).length).toBeGreaterThan(0);
+    expect(screen.getAllByLabelText(/2 comments didn't go out/).length).toBeGreaterThan(0);
     expect(within(bar()).getByRole('button', { name: 'Retry push' })).toBeDefined();
     expect(
       screen.getAllByRole('alert').some((alert) => alert.textContent?.includes('Push failed')),
