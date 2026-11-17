@@ -11,6 +11,7 @@ import { SignalWord } from './SignalWord';
 type Props = {
   readonly signal: BoardSignal;
   readonly onOpenRequest?: (event: MouseEvent) => void;
+  readonly onOpenAttention?: () => void;
   readonly onGlyphEnter?: () => void;
   readonly onGlyphLeave?: (event: MouseEvent<HTMLElement>) => void;
 };
@@ -24,17 +25,42 @@ const runningLabel = ({ count }: CountParams): string =>
 
 const countWord = ({ count }: CountParams): string | null => (count > 1 ? String(count) : null);
 
-export const SessionSignal = ({ signal, onOpenRequest, onGlyphEnter, onGlyphLeave }: Props) => {
+export const SessionSignal = ({
+  signal,
+  onOpenRequest,
+  onOpenAttention,
+  onGlyphEnter,
+  onGlyphLeave,
+}: Props) => {
   switch (signal.kind) {
     case 'attention': {
       const meta = ATTENTION_REASON_META[signal.reason];
       const Glyph = CONCEPT_ICONS[meta.icon];
-      return (
+      const word = (
         <SignalWord
           label={signal.label}
           glyph={<Glyph size={ICON_SIZE.row} aria-hidden className={tintClasses(meta.tone).text} />}
           word={signal.word}
         />
+      );
+      if (onOpenAttention === undefined) {
+        return word;
+      }
+      return (
+        <button
+          type="button"
+          aria-label={signal.label}
+          data-board-signal-action=""
+          onMouseEnter={onGlyphEnter}
+          onMouseLeave={onGlyphLeave}
+          onClick={(event) => {
+            event.stopPropagation();
+            onOpenAttention();
+          }}
+          className={cn('inline-flex min-w-0 cursor-pointer rounded-sm', FOCUS_RING)}
+        >
+          {word}
+        </button>
       );
     }
     case 'running':

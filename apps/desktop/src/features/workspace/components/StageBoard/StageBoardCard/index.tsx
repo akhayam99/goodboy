@@ -18,6 +18,7 @@ import { sessionObjectKey } from '../../../../actions/kinds/session';
 import { sessionSelectionTarget } from '../../../../actions/sessionSelectionTarget';
 import { useSessionTitleRename } from '../../../../session/hooks/useSessionTitleRename';
 import { SessionSignal } from '../SessionSignal';
+import { isActionForReason } from '../isActionForReason';
 import { projectLineOf } from '../projectLineOf';
 
 type CardSelectionEvent = {
@@ -77,6 +78,13 @@ export const StageBoardCard = memo(function StageBoardCard({
   const dynamicActions = useDynamicActions(session, nav, stage);
 
   const [visibleAction = attentionAction ?? undefined] = waitingRun === null ? dynamicActions : [];
+  const signalAction =
+    !isArchived &&
+    visibleAction !== undefined &&
+    signal.kind === 'attention' &&
+    isActionForReason({ actionKey: visibleAction.key, reason: signal.reason })
+      ? visibleAction
+      : null;
   const anchorKey = `board:${id}`;
   const rename = useSessionTitleRename({ sessionId: id, goal: session.goal, ...rowTitle });
   useRenameRequest({
@@ -216,7 +224,7 @@ export const StageBoardCard = memo(function StageBoardCard({
         className="col-start-2 row-start-1 flex items-center gap-1 self-start"
       >
         <CardActionSlot label="Session quick actions">
-          {!isArchived && visibleAction !== undefined && (
+          {!isArchived && visibleAction !== undefined && signalAction === null && (
             <CardAction
               key={visibleAction.key}
               icon={visibleAction.icon}
@@ -252,6 +260,7 @@ export const StageBoardCard = memo(function StageBoardCard({
             <SessionSignal
               signal={signal}
               onOpenRequest={handlePrClick}
+              {...(signalAction !== null && { onOpenAttention: signalAction.onClick })}
               onGlyphEnter={leaveCard}
               onGlyphLeave={resumeCard}
             />

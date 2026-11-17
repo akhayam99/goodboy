@@ -620,21 +620,33 @@ describe('StageBoardCard in the Needs you lane', () => {
     expect(nav.selectCard).not.toHaveBeenCalled();
   });
 
-  it('keeps the first dynamic action ahead of the reason button', () => {
+  it('makes the question word the button when the first action answers that question', () => {
     hooks.stage = 'attention';
     hooks.attention = 'open-question';
+    const answer = vi.fn();
     useDynamicActionsMock.mockReturnValue([
-      {
-        key: 'questions',
-        icon: HelpCircle,
-        tone: 'warning',
-        label: 'Answer now',
-        onClick: vi.fn(),
-      },
+      { key: 'questions', icon: HelpCircle, tone: 'warning', label: 'Answer now', onClick: answer },
     ]);
     render(<StageBoardCard session={session} nav={nav} />);
 
-    screen.getByLabelText('Answer now');
+    expect(screen.queryByLabelText('Answer now')).toBeNull();
+    expect(
+      within(screen.getByRole('group', { name: 'Session quick actions' })).queryAllByRole('button'),
+    ).toHaveLength(0);
+    fireEvent.click(screen.getByLabelText('1 question for you', { selector: 'button' }));
+    expect(answer).toHaveBeenCalledTimes(1);
+    expect(nav.selectCard).not.toHaveBeenCalled();
+  });
+
+  it('keeps a round button for an action the reason word does not name', () => {
+    hooks.stage = 'attention';
+    hooks.attention = 'open-question';
+    useDynamicActionsMock.mockReturnValue([
+      { key: 'run', icon: Play, tone: 'primary', label: 'Continue', onClick: vi.fn() },
+    ]);
+    render(<StageBoardCard session={session} nav={nav} />);
+
+    screen.getByLabelText('Continue', { selector: 'button' });
     expect(screen.queryByLabelText('1 question for you', { selector: 'button' })).toBeNull();
   });
 
