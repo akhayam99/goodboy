@@ -43,6 +43,8 @@ import {
   type StoryStore,
 } from '../../../../store/storyHarness';
 import { registerShortcut } from '../../../../shared/keyboard/dispatcher';
+import { MENU_BOUND_IDS } from '../../../../shared/keyboard/overrides/menuBoundIds';
+import { SHORTCUTS } from '../../../../shared/keyboard/registry';
 import { useShortcutOverrides } from '../../../../shared/keyboard/overrides/useShortcutOverrides';
 import { SETTING_SHORTCUT_OVERRIDES } from '../../../settings/settings';
 import type { BrowserTab } from '../../../../store/slices/browser/types';
@@ -140,20 +142,13 @@ describe('usePageKeys', () => {
     expect(combos).not.toContain('cmd+KeyV');
   });
 
-  it('gives back the close drawer chord, the one way out of a Browser laid over the page', async () => {
-    const runs: Array<string> = [];
-    const stop = registerShortcut('slot.close', () => {
-      runs.push('close drawer');
-    });
+  it('leaves the close drawer chord to the menu bar, the way out of a Browser over the page', async () => {
     renderHook(() => useWindowKeys());
+
     await waitFor(() => expect(pushes).toHaveLength(1));
-    await listened();
-
-    expect(pushes[0]).toContain('cmd+shift+KeyW');
-    press({ payload: { tabId: TAB_ID, combo: 'cmd+shift+KeyW' } });
-
-    expect(runs).toEqual(['close drawer']);
-    stop();
+    expect(MENU_BOUND_IDS).toContain('slot.close');
+    expect(SHORTCUTS['slot.close'].combo).toBe('cmd+shift+KeyW');
+    expect(pushes[0]).not.toContain('cmd+shift+KeyW');
   });
 
   it('never asks the page for a chord without cmd, so a bare Escape stays in the page', async () => {

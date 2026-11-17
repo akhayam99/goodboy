@@ -12,5 +12,4 @@ export const PAGE_KEY_IDS = [
   'browser.find',
   'browser.console',
   'palette.open',
-  'slot.close',
 ] as const satisfies ReadonlyArray<ShortcutId>;
