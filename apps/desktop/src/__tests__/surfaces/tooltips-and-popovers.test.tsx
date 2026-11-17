@@ -21,7 +21,7 @@ import {
   type WorkflowRunId,
 } from '@goodboy/types';
 import { anAgent, aSession } from '@goodboy/types/testing';
-import { ContextMenu, POPOVER_WIDTH_PX } from '@goodboy/ui';
+import { ContextMenu, POPOVER_WIDTH_PX, SHELL_GUTTER_PX } from '@goodboy/ui';
 import { ToastProvider } from '../../shared/components/Toast';
 import { ObjectMenuProvider } from '../../features/actions/components/ObjectMenuProvider';
 import { aDelegation, FIXTURE_SESSION } from '../../features/auto/testing/autoViewFixtures';
@@ -49,7 +49,7 @@ let useAppStore: StoryStore;
 let RunSettingsLine: typeof import('../../features/workflows/components/RunSettingsLine').RunSettingsLine;
 
 const VIEWPORT = { width: 1024, height: 640 };
-const MARGIN = 8;
+const MARGIN = SHELL_GUTTER_PX;
 const POPUP_HEIGHT = 320;
 const LONG_TITLE =
   'Reconcile every duplicated credit in the Harborline ledger export before the Northwind close';

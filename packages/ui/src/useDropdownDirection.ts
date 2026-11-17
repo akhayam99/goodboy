@@ -1,5 +1,6 @@
 import { useLayoutEffect, useState } from 'react';
 import type { CSSProperties, RefObject } from 'react';
+import { SHELL_GUTTER_PX } from './frameGeometry';
 import { placeFloating } from './placeFloating';
 
 export type DropdownSide = 'bottom' | 'right' | 'left';
@@ -26,7 +27,6 @@ type AnchorRectParams = {
   readonly isAnchorWrapper: boolean;
 };
 
-const DEFAULT_VIEWPORT_MARGIN = 8;
 const DROPDOWN_GAP = 4;
 const SIDE_GAP = 8;
 const MIN_DROPDOWN_HEIGHT = 160;
@@ -62,7 +62,7 @@ export const useDropdownDirection = ({
   shouldMatchTriggerWidth,
   isAtLeastTriggerWidth = false,
   isAnchorWrapper = false,
-  viewportMargin = DEFAULT_VIEWPORT_MARGIN,
+  viewportMargin = SHELL_GUTTER_PX,
   maxWidth,
 }: Params): CSSProperties | undefined => {
   const [style, setStyle] = useState<CSSProperties | undefined>(undefined);

@@ -778,12 +778,17 @@ left rail, left of the right tool rail. The alignment follows the anchor, start
 by default and end when the end edge belongs to the trigger; a popover is never
 centred on its trigger (a tooltip is). The surface flips to the opposite side when
 its side is short and the other side has more room, slides along the other axis
-to stay inside the window margin (8px, 12 for the cards at the foot of the rail),
-and gets the room left as its `maxHeight`, so a long list scrolls inside while
-its head and foot stay put. A card that keeps its end on the anchor grows up from
-it; taller than that room, it hangs from the anchor top instead.
+to stay inside the window margin, and gets the room left as its `maxHeight`, so a
+long list scrolls inside while its head and foot stay put. A card that keeps its
+end on the anchor grows up from it; taller than that room, it hangs from the
+anchor top instead. The margin is the shell gutter, `SHELL_GUTTER_PX` (12px), the
+same for every popover, menu, context menu, update card and report sheet; no
+surface keeps a margin of its own. Tooltips and side cards keep 8px.
 `placeFloating.test.ts` holds the cases: the rail foot, the bell, a flipped menu,
 a list taller than the window, a right rail tooltip and the pointer menu.
+`barPopoverGutter.test.ts` opens every bar popover and both rail foot cards in a
+1024 by 700 window and checks each stays 12px inside every edge, the bell and
+Now on their end edge, the history lists on their start edge.
 
 **Side cards place with `useFloatingPlace`.** The rail flyout and the session
 hover card open beside their anchor through `useFloatingPlace`, which wraps

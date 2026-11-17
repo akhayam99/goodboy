@@ -443,6 +443,7 @@ export {
   FRAME_TYPES,
   PAGE_FRAME,
   PAGE_MEASURE,
+  SHELL_GUTTER_PX,
   frameGeometryOf,
   frameTierOf,
 } from './frameGeometry';

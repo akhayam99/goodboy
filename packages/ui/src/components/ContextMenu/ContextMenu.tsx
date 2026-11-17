@@ -4,6 +4,7 @@ import { cn } from '../../cn';
 import { FLOATING_SURFACE } from '../../floatingSurface';
 import { ScrollFade } from '../ScrollFade';
 import { MenuList } from './MenuList';
+import { SHELL_GUTTER_PX } from '../../frameGeometry';
 import { placeFloating, type FloatingCoords } from '../../placeFloating';
 import { useEscapeLayer } from '../../useEscapeLayer';
 import type { MenuEntry, MenuPoint } from './menuTypes';
@@ -14,8 +15,6 @@ type Props = {
   readonly entries: ReadonlyArray<MenuEntry>;
   readonly onClose: () => void;
 };
-
-const WINDOW_EDGE = 8;
 
 export const ContextMenu = ({ label, point, entries, onClose }: Props) => {
   const menuRef = useRef<HTMLDivElement>(null);
@@ -42,7 +41,7 @@ export const ContextMenu = ({ label, point, entries, onClose }: Props) => {
         tip: { width: node.offsetWidth, height: node.offsetHeight },
         side: 'right',
         gap: 0,
-        edge: WINDOW_EDGE,
+        edge: SHELL_GUTTER_PX,
         alignment: 'start',
       }),
     );
