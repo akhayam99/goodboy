@@ -255,25 +255,38 @@ The Rust files with the most comments lost them in one pass. What a reader would
   untracked files as one marker commit (author `goodboy@localhost`, subject
   `goodboy: your working tree before the fix`) through a temporary index with
   a name of its own: the owner's index and files never change. The marker is
-  made on a clean tree too, and on a lane tip it holds the tip with the owner's
-  work applied (a clash refuses the start). The candidate base stays the
-  branch head or the lane tip, so the lane chains, and `worktree_diff_range`
-  diffs from the newest marker, so the proposal is only the agent delta.
-- A marker in `expected..candidate` lands the whole chain uncommitted.
-  `integrate_onto_owner_tree` applies every commit but the markers to a private
-  index built from the files on disk, then writes it with `read-tree -m -u`,
-  which refuses an untracked or ignored file in the way. The journal keeps the
-  trees before and after, the head and the branch: a crash mid landing is
-  finished on the next accept when every file sits at one of the two trees,
-  and a replay of a finished landing checks the branch and the files first.
-  Submodule moves and merge commits are refused. A comment fix that fast
-  forwards also writes with `read-tree -m -u`; `reset --hard` overwrote an
-  untracked file at a path the fix adds.
-- A capture in the shared worktree (`shouldKeepUncommitted`, crash recovery
-  included) never runs `git add --update` and moves `HEAD` back with a two tree
-  `read-tree -m -u`, which keeps the owner's staged entries; `reset --keep`
-  reset them. Crash recovery of a copy run quarantines the copy, never the
-  owner's worktree.
+  made on a clean tree too. The candidate base is the branch head (the copy
+  hands it back as `base`, and `prepareTurn` carries it as `copyBase` into
+  `recordResolveAttempt`), never the marker, and `worktree_diff_range` diffs
+  from the marker, so the proposal is only the agent delta.
+- Notes take one fix at a time. `readyFixBlocking` (`resolveLane.ts`) holds a
+  note fix while any fix waits for review on its branch, and holds any fix
+  while a note fix waits there; the pane shows **Apply or skip the ready fix
+  first** with both buttons, and Apply or Skip drains the queue again.
+  `owner_tree_on` refuses a start that is not the branch head, a candidate
+  with more than one marker, or one whose first commit is not the marker, is
+  refused, and a run that carries a note is never split into fixes.
+- `integrate_onto_owner_tree` applies the fix commits to a private index built
+  from the files on disk, then writes it with `read-tree -m -u`. The journal
+  keeps the trees before and after, the head and the branch; both trees sit
+  under `refs/goodboy/recovery/<candidate>` until the landing is finished, so
+  `git gc` never takes them. A crash mid landing is finished on the next
+  accept when every file sits at one of the two trees, and a replay of a
+  finished landing checks the branch and the files first. Submodule moves and
+  merge commits are refused.
+- `read-tree -m -u` overwrites an ignored file. Every write of the files of a
+  fix (`branch_move.rs`, the note landing too) first lists the paths it
+  writes or removes and refuses when one of them, or a folder above it, is on
+  disk but not tracked by the index it uses.
+- A comment fix that fast forwards and a capture in the shared worktree
+  (`shouldKeepUncommitted`, crash recovery included) go through `move_branch`:
+  it captures the branch name and head before planning, refuses staged
+  entries on the files of the fix, moves the files with a two tree
+  `read-tree -m -u`, then updates that branch by name with the old head, never
+  `HEAD`. A branch switch in between, or a refused ref update, moves the files
+  back unless the owner edited them since. It never runs `git add --update`
+  and keeps the owner's other staged entries. Crash recovery of a copy run
+  quarantines the copy, never the owner's worktree.
 - A resolver started through a batch (`startBatch`, `resolve_attempts.batch_id`
   set) never writes the real branch. `drainResolveQueue` makes it a detached
   copy at the branch head, or at the working tree snapshot for a note
