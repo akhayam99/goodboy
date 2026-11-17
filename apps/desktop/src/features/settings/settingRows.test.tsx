@@ -40,6 +40,11 @@ const UNANCHORED: ReadonlySet<string> = new Set([
   'explain-more',
 ]);
 
+const BEHIND_DISCLOSURE: ReadonlySet<string> = new Set([
+  'reply-template-fixed',
+  'reply-template-no-change',
+]);
+
 let useAppStore: StoryStore;
 
 beforeAll(async () => {
@@ -66,13 +71,15 @@ const FOLDED: ReadonlySet<string> = new Set(['parallel-agents', 'reply-template-
 
 type MountParams = {
   readonly page: SettingRowPage;
+  readonly row?: string;
 };
 
-const mountPage = async ({ page }: MountParams): Promise<Element> => {
+const mountPage = async ({ page, row }: MountParams): Promise<Element> => {
   const folded = SETTING_ROWS.find(
-    (row) => pageId(row.page) === pageId(page) && FOLDED.has(row.key),
+    (entry) => pageId(entry.page) === pageId(page) && FOLDED.has(entry.key),
   );
-  const focus = folded === undefined ? page : { ...page, row: folded.key };
+  const focusRow = row ?? folded?.key;
+  const focus = focusRow === undefined ? page : { ...page, row: focusRow };
   const { container } = render(<SettingsFrame focus={focus} seed={seedPage} />);
   await act(async () => {
     await vi.advanceTimersByTimeAsync(SETTLE_MS);
@@ -132,7 +139,8 @@ describe('setting rows registry', () => {
     async ({ page }) => {
       const detail = await mountPage({ page });
       const texts = textsOf({ detail });
-      const expected = SETTING_ROWS.filter((row) => pageId(row.page) === pageId(page));
+      const rows = SETTING_ROWS.filter((row) => pageId(row.page) === pageId(page));
+      const expected = rows.filter((row) => !BEHIND_DISCLOSURE.has(row.key));
 
       expect(expected.filter((row) => !texts.has(row.label)).map((row) => row.key)).toEqual([]);
       const anchored = [...detail.querySelectorAll<HTMLElement>('[data-anchor]')].map(
@@ -144,6 +152,13 @@ describe('setting rows registry', () => {
           .filter((row) => !UNANCHORED.has(row.key) && !anchored.includes(row.key))
           .map((row) => row.key),
       ).toEqual([]);
+
+      for (const row of rows.filter((candidate) => BEHIND_DISCLOSURE.has(candidate.key))) {
+        cleanup();
+        const opened = await mountPage({ page, row: row.key });
+        expect(textsOf({ detail: opened }).has(row.label)).toBe(true);
+        expect(opened.querySelector(`[data-anchor="${row.key}"]`)).not.toBeNull();
+      }
     },
   );
 });

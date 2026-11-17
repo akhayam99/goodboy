@@ -20,7 +20,7 @@ type Props = {
 export const LeadPermissionsPanel = ({ permissions, rowErrors, isDisabled, onChange }: Props) => (
   <div data-permissions-panel="" className="@container/details flex min-w-0 flex-col gap-6">
     {PERMISSION_GROUPS.map((group) => (
-      <section key={group.title} aria-label={group.title} className="flex flex-col gap-3">
+      <div key={group.title} role="group" aria-label={group.title} className="flex flex-col gap-3">
         <Eyebrow label={group.title} />
         <div className="flex flex-col gap-4">
           {PERMISSION_ROWS.filter((copy) => group.keys.includes(copy.key)).map((copy) => {
@@ -38,7 +38,7 @@ export const LeadPermissionsPanel = ({ permissions, rowErrors, isDisabled, onCha
             );
           })}
         </div>
-      </section>
+      </div>
     ))}
     <LockedRows rows={permissions.locked} />
   </div>
