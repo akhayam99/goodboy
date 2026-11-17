@@ -10,6 +10,11 @@ type TurnEventRow = {
   created_at: number;
 };
 
+type AgentRunIdRow = {
+  readonly agent_id: AgentId;
+  readonly run_id: ProviderRunId;
+};
+
 type CountUserTextEventsParams = {
   readonly db: Database;
   readonly agentId: AgentId;
@@ -430,33 +435,31 @@ export const listAgentRunIdsForSession = async (
   db: Database,
   sessionId: SessionId,
 ): Promise<Map<AgentId, ReadonlyArray<ProviderRunId>>> => {
-  const rows = await db.select<TurnEventRow>(
-    'SELECT * FROM turn_events WHERE session_id = ? ORDER BY created_at ASC, rowid ASC',
+  const rows = await db.select<AgentRunIdRow>(
+    `SELECT agent_id, run_id
+       FROM (
+         SELECT agent_id,
+                json_extract(payload, '$.runId') AS run_id,
+                created_at,
+                rowid AS event_rowid,
+                ROW_NUMBER() OVER (
+                  PARTITION BY agent_id, json_extract(payload, '$.runId')
+                  ORDER BY created_at ASC, rowid ASC
+                ) AS seen
+           FROM turn_events
+          WHERE session_id = ?
+            AND json_valid(payload)
+            AND json_type(payload, '$.runId') = 'text'
+       )
+      WHERE seen = 1 AND run_id <> '' AND run_id <> 'history'
+      ORDER BY created_at ASC, event_rowid ASC`,
     [sessionId],
   );
   const result = new Map<AgentId, ProviderRunId[]>();
-  const seen = new Map<AgentId, Set<string>>();
   for (const row of rows) {
-    const event = rowToEvent(row);
-    if (!event) {
-      continue;
-    }
-    const runId = event.runId;
-    if (!runId || runId === ('history' as ProviderRunId)) {
-      continue;
-    }
-    const agentId = row.agent_id as AgentId;
-    let bucket = seen.get(agentId);
-    if (!bucket) {
-      bucket = new Set();
-      seen.set(agentId, bucket);
-      result.set(agentId, []);
-    }
-    if (bucket.has(runId)) {
-      continue;
-    }
-    bucket.add(runId);
-    result.get(agentId)!.push(runId);
+    const bucket = result.get(row.agent_id) ?? [];
+    bucket.push(row.run_id);
+    result.set(row.agent_id, bucket);
   }
   return result;
 };

@@ -165,7 +165,7 @@ const runFoldOf = ({
   ).length;
   return {
     expandId: entry.id,
-    isExpanded: context.expandedGroupIds.has(entry.id),
+    isExpanded: context.shouldExpandEveryGroup || context.expandedGroupIds.has(entry.id),
     summary: stepsGroupSummary({
       kind: 'run',
       steps,

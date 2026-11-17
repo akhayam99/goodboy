@@ -184,6 +184,7 @@ export type EmitContext = {
   readonly turnByAgentId: ReadonlyMap<string, TurnState>;
   readonly outputsByAgentEntryId: ReadonlyMap<string, ReadonlyArray<TimelineOutputEntry>>;
   readonly expandedGroupIds: ReadonlySet<string>;
+  readonly shouldExpandEveryGroup: boolean;
   readonly fullGroupIds: ReadonlySet<string>;
   readonly mores: Array<{ readonly anchorRowId: string; readonly more: DraftMore }>;
   readonly counts: Array<{ readonly count: DraftCount; readonly originRowId: string }>;
@@ -325,7 +326,10 @@ export const subagentsFoldOf = ({
     return null;
   }
   const expandId = subagentsExpandId({ parentId: entry.id });
-  return { expandId, isExpanded: context.expandedGroupIds.has(expandId) };
+  return {
+    expandId,
+    isExpanded: context.shouldExpandEveryGroup || context.expandedGroupIds.has(expandId),
+  };
 };
 
 const outputsFoldOf = ({
@@ -339,7 +343,10 @@ const outputsFoldOf = ({
     return null;
   }
   const expandId = outputsExpandId({ parentId: entry.id });
-  return { expandId, isExpanded: context.expandedGroupIds.has(expandId) };
+  return {
+    expandId,
+    isExpanded: context.shouldExpandEveryGroup || context.expandedGroupIds.has(expandId),
+  };
 };
 
 export const agentRows = ({

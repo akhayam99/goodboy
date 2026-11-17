@@ -1,11 +1,19 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import type { AgentId, IsoDateTime, ProviderRunId, SessionId, WorkspaceId } from '@goodboy/types';
+import {
+  brandId,
+  type AgentId,
+  type IsoDateTime,
+  type ProviderRunId,
+  type SessionId,
+  type WorkspaceId,
+} from '@goodboy/types';
 import type { Database } from '../client';
 import { makeMigratedTestDatabase } from '../test-helpers/test-db';
 import {
   countUserTextEvents,
   findUndecidedPermissionAsk,
   insertTurnEvent,
+  listAgentRunIdsForSession,
   listTurnEventEntriesForAgent,
   listTurnEventsForAgent,
   readFirstUserText,
@@ -342,5 +350,71 @@ describe('turn event queries', () => {
 
     const events = await listTurnEventsForAgent(db, agentId);
     expect(events[0]).toMatchObject({ kind: 'user_text', sentVia: 'queued' });
+  });
+
+  it('lists each run of each agent once, in the order it first spoke', async () => {
+    const secondRun = brandId<ProviderRunId>({ value: 'run-2' });
+    const rows: ReadonlyArray<readonly [AgentId, ProviderRunId]> = [
+      [agentId, runId],
+      [otherAgentId, secondRun],
+      [agentId, runId],
+      [agentId, secondRun],
+      [agentId, brandId<ProviderRunId>({ value: 'history' })],
+    ];
+    for (const [index, [owner, run]] of rows.entries()) {
+      await insertTurnEvent(db, {
+        id: `event-run-${index}`,
+        sessionId,
+        agentId: owner,
+        event: {
+          kind: 'assistant_text',
+          runId: run,
+          delta: 'step',
+          at: brandId<IsoDateTime>({ value: `2026-07-30T10:0${index}:00.000Z` }),
+        },
+      });
+    }
+    await db.execute(
+      'INSERT INTO turn_events (id, session_id, agent_id, payload, created_at) VALUES (?, ?, ?, ?, ?)',
+      ['event-broken', sessionId, agentId, '{not json', Date.now()],
+    );
+
+    const runs = await listAgentRunIdsForSession(db, sessionId);
+
+    expect([...runs.entries()]).toEqual([
+      [agentId, [runId, secondRun]],
+      [otherAgentId, [secondRun]],
+    ]);
+  });
+
+  it('reads one row per run, not one per turn event, for a long session', async () => {
+    for (let index = 0; index < 120; index += 1) {
+      await insertTurnEvent(db, {
+        id: `event-long-${index}`,
+        sessionId,
+        agentId: index % 2 === 0 ? agentId : otherAgentId,
+        event: {
+          kind: 'assistant_text',
+          runId: brandId<ProviderRunId>({ value: `run-${index % 3}` }),
+          delta: 'x'.repeat(2_000),
+          at,
+        },
+      });
+    }
+    let rowsRead = 0;
+    const counting: Database = {
+      ...db,
+      select: async <T>(sql: string, params?: ReadonlyArray<unknown>) => {
+        const result = await db.select<T>(sql, params);
+        rowsRead += result.length;
+        return result;
+      },
+    };
+
+    const runs = await listAgentRunIdsForSession(counting, sessionId);
+
+    expect(rowsRead).toBe(6);
+    expect(runs.get(agentId)).toHaveLength(3);
+    expect(runs.get(otherAgentId)).toHaveLength(3);
   });
 });
