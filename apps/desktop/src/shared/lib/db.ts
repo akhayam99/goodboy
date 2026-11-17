@@ -1,6 +1,7 @@
 import { invoke } from '@tauri-apps/api/core';
 import type { Database, StatementResult, TransactionOutcome } from '@goodboy/db';
 import { isRecord } from '@goodboy/types/helpers';
+import { schemaGate } from './schemaGate';
 
 const UNMANAGED_STATE_MARKER = 'state not managed';
 
@@ -59,23 +60,31 @@ export const vacuumDatabase = async (): Promise<void> => {
   await invokeDb('db_vacuum', {});
 };
 
-export const tauriDatabase: Database = {
+type DatabaseAfterParams = {
+  readonly before: () => Promise<void>;
+};
+
+const databaseAfter = ({ before }: DatabaseAfterParams): Database => ({
   async exec(sql) {
+    await before();
     await invokeDb('db_exec', { sql });
   },
   async execute(sql, params = []) {
+    await before();
     return invokeDb<{ rowsAffected: number }>('db_execute', {
       sql,
       params: [...params],
     });
   },
   async select<T>(sql: string, params: ReadonlyArray<unknown> = []) {
+    await before();
     return invokeDb('db_select', {
       sql,
       params: [...params],
     }) as Promise<ReadonlyArray<T>>;
   },
   async transaction({ statements }) {
+    await before();
     const outcome = await invokeDb<unknown>('db_transaction', {
       statements: statements.map((statement) => ({
         ...statement,
@@ -87,4 +96,8 @@ export const tauriDatabase: Database = {
     }
     return outcome;
   },
-};
+});
+
+export const migrationDatabase: Database = databaseAfter({ before: async () => undefined });
+
+export const tauriDatabase: Database = databaseAfter({ before: () => schemaGate.wait() });

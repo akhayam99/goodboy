@@ -7,9 +7,10 @@ import {
   runDatabaseHygiene,
 } from '@goodboy/db';
 import type { MigrateResult, MigrationSnapshotStorage } from '@goodboy/db/migrations';
-import { invokeDb, tauriDatabase } from './db';
+import { invokeDb, migrationDatabase, tauriDatabase } from './db';
 import { LATEST_MIGRATION_VERSION } from './latestMigrationVersion';
 import { NewerDatabaseError } from './newerDatabase';
+import { schemaGate } from './schemaGate';
 
 const migrationSnapshotStorage: MigrationSnapshotStorage = {
   list: async () => invokeDb<ReadonlyArray<string>>('db_list_migration_snapshots', {}),
@@ -29,7 +30,7 @@ type VersionRow = {
 const loadMigrations = () => import('@goodboy/db/migrations');
 
 const readAppliedVersion = async (): Promise<number> => {
-  const rows = await tauriDatabase
+  const rows = await migrationDatabase
     .select<VersionRow>('SELECT MAX(version) AS version FROM schema_version')
     .catch(() => []);
   return rows[0]?.version ?? 0;
@@ -50,7 +51,7 @@ const runGuardedMigrations = async ({
   try {
     return await runRuntimeMigrations({
       databasePath,
-      db: tauriDatabase,
+      db: migrationDatabase,
       storage: migrationSnapshotStorage,
     });
   } catch (error) {
@@ -77,6 +78,7 @@ export const restoreMigrationSnapshot = async ({
 export const runDbMigrations = async (): Promise<MigrateResult> => {
   const databasePath = await invokeDb<string>('db_path', {});
   const result = await runGuardedMigrations({ databasePath });
+  schemaGate.open();
   const orphaned = await deleteOrphanedWorkflowAgents({ db: tauriDatabase, now: Date.now() });
   await removeSessionQuestionsFromSlots({
     db: tauriDatabase,
@@ -96,10 +98,19 @@ export const runDbHygiene = async (): Promise<void> => {
   await invokeDb('chat_attachments_prune', {}).catch(() => undefined);
 };
 
+const replayAfterWipe = async (): Promise<MigrateResult> => {
+  schemaGate.close();
+  try {
+    await invokeDb('db_wipe', {});
+    const { migrate } = await loadMigrations();
+    return await migrate(migrationDatabase);
+  } finally {
+    schemaGate.open();
+  }
+};
+
 export const wipeDb = async (): Promise<MigrateResult> => {
-  await invokeDb('db_wipe', {});
-  const { migrate } = await loadMigrations();
-  const result = await migrate(tauriDatabase);
+  const result = await replayAfterWipe();
   await invokeDb('chat_attachments_prune', {}).catch(() => undefined);
   return result;
 };
