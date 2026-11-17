@@ -92,20 +92,11 @@ const BoardShellSceneContent = ({ isSessionOpen }: ContentProps) => {
         isDetailParked={shellRight.isDetailParked}
         studio={shell.studio}
         isDockInStudio={shellRight.isDockInStudio}
-        topBar={
-          <AppTopBar
-            sidebar={{ isCollapsed: arrangement.isLeftRail, onToggle: rail.toggle }}
-            onOpenSpend={noop}
-            onOpenScript={noop}
-          />
-        }
-        leftSidebarCollapsed={arrangement.leftSidebarCollapsed}
-        leftSidebar={
+        topBar={<AppTopBar onOpenSpend={noop} onOpenScript={noop} />}
+        leftRail={
           <ShellLeft
             arrangement={arrangement}
             workspaceId={WORKSPACE_ID}
-            currentSessionId={currentSession?.id ?? null}
-            isDraftShown={false}
             actions={shell.actions}
             {...(shell.isStudioOpen || currentSession !== null
               ? {}

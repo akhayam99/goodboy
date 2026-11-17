@@ -147,7 +147,7 @@ describe('one selected sign across the navigation surfaces', () => {
       ({ path }) => path === 'app/components/SideColumn/ColumnFoot.tsx',
     );
     const rail = signSources.find(
-      ({ path }) => path === 'app/components/SideColumn/ColumnRail.tsx',
+      ({ path }) => path === 'app/components/SideColumn/ShellLeft/index.tsx',
     );
     const topBar = signSources.find(({ path }) => path === 'app/components/AppTopBar/index.tsx');
     const help = "isCurrent={place === 'help'}";
@@ -158,8 +158,22 @@ describe('one selected sign across the navigation surfaces', () => {
     expect(topBar?.source).toContain("isCurrent={place === 'notifications'}");
   });
 
-  it('reads the place from one selector, the same one the rail and the peek read', () => {
-    const shellLeft = readFileSync(join(COLUMN_ROOT, 'ShellLeft.tsx'), 'utf8');
+  it('lights the places rail from the one column place, the Board standing for an open session', () => {
+    const rail = signSources.find(
+      ({ path }) => path === 'app/components/SideColumn/ShellLeft/index.tsx',
+    );
+    const railPlace = readFileSync(join(SRC, 'shared', 'navigation', 'railPlaceOf.ts'), 'utf8');
+
+    expect(rail?.source).toContain(
+      'railPlaceOf({ place: placeOverride === undefined ? storePlace : placeOverride })',
+    );
+    expect(rail?.source).toContain('isCurrent={place === door.id}');
+    expect(rail?.source).toContain("isCurrent={place === 'new'}");
+    expect(railPlace).toContain("place === null ? 'board' : place");
+  });
+
+  it('reads the place from one selector, the same one the places rail reads', () => {
+    const shellLeft = readFileSync(join(COLUMN_ROOT, 'ShellLeft', 'index.tsx'), 'utf8');
     const placeReaders = SCANNED_ROOTS.flatMap((root) => walk(join(SRC, root))).filter((path) =>
       readFileSync(path, 'utf8').includes('columnPlaceOf('),
     );

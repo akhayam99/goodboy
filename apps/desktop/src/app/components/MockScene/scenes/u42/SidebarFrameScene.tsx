@@ -8,7 +8,7 @@ import {
   type SessionId,
 } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
-import { BoardShellScene } from '../BoardShellScene';
+import { SidebarFrameColumn } from './SidebarFrameColumn';
 import { WORKSPACE_ID } from '../BoardScene';
 import { ThemedScene } from '../u37/ThemedScene';
 
@@ -113,6 +113,6 @@ const seedSidebarRows = (): void => {
 
 export const SidebarFrameScene = ({ theme }: Props) => (
   <ThemedScene theme={theme}>
-    <BoardShellScene afterSeed={seedSidebarRows} />
+    <SidebarFrameColumn afterSeed={seedSidebarRows} />
   </ThemedScene>
 );

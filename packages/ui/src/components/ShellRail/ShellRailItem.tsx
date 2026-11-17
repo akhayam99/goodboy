@@ -15,11 +15,14 @@ type Props = {
   readonly id: string;
   readonly icon: IconGlyph;
   readonly label: string;
+  readonly word?: string;
   readonly mark?: ShellRailMark | null;
   readonly tone?: Tone;
   readonly shortcut?: string;
   readonly isCurrent?: boolean;
   readonly isPressed?: boolean;
+  readonly isQuiet?: boolean;
+  readonly isOutlined?: boolean;
   readonly onSelect: () => void;
 };
 
@@ -36,15 +39,19 @@ export const ShellRailItem = ({
   id,
   icon,
   label,
+  word = label,
   mark = null,
   tone,
   shortcut,
   isCurrent = false,
   isPressed,
+  isQuiet = false,
+  isOutlined = false,
   onSelect,
 }: Props) => {
   const form = useContext(ShellRailFormContext);
   const isLit = isCurrent || isPressed === true;
+  const isFaint = isQuiet && !isLit;
   const name = mark !== null && isMarkShown({ mark }) ? `${label}, ${mark.name}` : label;
   return (
     <span
@@ -57,14 +64,16 @@ export const ShellRailItem = ({
           label={name}
           shortcut={shortcut}
           tooltipSide="right"
-          isTooltipSuppressed={form === 'wide' && shortcut === undefined}
+          isTooltipSuppressed={form === 'wide' && shortcut === undefined && word === label}
           size="md"
+          variant={isOutlined ? 'outline' : 'ghost'}
           iconSize={ICON_SIZE.hero}
           data-shell-rail-item={id}
           aria-current={isCurrent ? 'page' : undefined}
           aria-pressed={isPressed}
           className={cn(
             isCurrent && 'cursor-default',
+            isFaint && 'text-faint-foreground',
             isLit && LIT_TILE,
             isLit && tone !== undefined && selectedIconClass({ tone }),
           )}
@@ -93,9 +102,10 @@ export const ShellRailItem = ({
           className={cn(
             'max-w-full truncate px-0.5 text-rail',
             isLit ? TEXT_ROLE.label : TEXT_ROLE.secondary,
+            isFaint && TEXT_ROLE.hint,
           )}
         >
-          {label}
+          {word}
         </span>
       ) : null}
     </span>

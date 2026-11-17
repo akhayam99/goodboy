@@ -123,13 +123,7 @@ export const ShellFrame = ({
     <ToastProvider>
       <AppShell
         studio={shell.studio}
-        topBar={
-          <AppTopBar
-            sidebar={{ isCollapsed: arrangement.isLeftRail, onToggle: rail.toggle }}
-            onOpenSpend={noop}
-            onOpenScript={noop}
-          />
-        }
+        topBar={<AppTopBar onOpenSpend={noop} onOpenScript={noop} />}
         drawer={shellRight.isDrawerMounted ? <DrawerHost slot="dock" /> : null}
         drawerSizing={shellRight.dockSizing}
         detail={shellRight.isDetailMounted ? <DrawerHost slot="detail" /> : null}
@@ -138,13 +132,10 @@ export const ShellFrame = ({
         isDetailParked={shellRight.isDetailParked}
         isDockInStudio={shellRight.isDockInStudio}
         rightRail={shellRight.rightRail}
-        leftSidebarCollapsed={arrangement.leftSidebarCollapsed}
-        leftSidebar={
+        leftRail={
           <ShellLeft
             arrangement={arrangement}
             workspaceId={session.workspaceId}
-            currentSessionId={session.id}
-            isDraftShown={false}
             actions={shell.actions}
           />
         }

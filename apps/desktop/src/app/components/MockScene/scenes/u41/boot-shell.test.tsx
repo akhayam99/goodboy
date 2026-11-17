@@ -64,8 +64,7 @@ describe('boot shell scenes', () => {
     mount({ id: 'boot-shell' });
 
     await screen.findByRole('status', { name: 'Loading board' });
-    screen.getByRole('status', { name: 'Loading sessions' });
-    screen.getByRole('navigation', { name: 'Sidebar' });
+    screen.getByRole('navigation', { name: 'Places' });
     expect(screen.queryByText('No sessions yet')).toBeNull();
     expect(screen.queryByText('Add a folder first')).toBeNull();
     expect(document.querySelector('[data-select-id]')).toBeNull();

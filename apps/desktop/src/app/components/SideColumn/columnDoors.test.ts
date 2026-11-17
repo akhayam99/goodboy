@@ -23,7 +23,7 @@ describe('the column doors', () => {
     expect(CONCEPT_ICONS.sessions).not.toBe(CONCEPT_ICONS.stageRunning);
   });
 
-  it('lists the seven destinations, no tool and no Work door', () => {
+  it('lists the six places, no tool, no Monitoring and no Work door', () => {
     expect(COLUMN_DOORS.map((entry) => entry.label)).toEqual([
       'Board',
       'Tasks',
@@ -31,14 +31,25 @@ describe('the column doors', () => {
       'Chat',
       'Connections',
       'Impact',
-      'Monitoring',
     ]);
   });
 
-  it('marks Impact and Monitoring as quiet reference doors', () => {
+  it('marks Impact as the one quiet reference door, last', () => {
     expect(
       COLUMN_DOORS.filter((entry) => entry.isReference === true).map((entry) => entry.id),
-    ).toEqual(['impact', 'monitoring']);
+    ).toEqual(['impact']);
+    expect(COLUMN_DOORS.at(-1)?.id).toBe('impact');
+  });
+
+  it('gives Connections the short rail word Connect and keeps every other word the label', () => {
+    expect(COLUMN_DOORS.map((entry) => entry.word ?? entry.label)).toEqual([
+      'Board',
+      'Tasks',
+      'Workflows',
+      'Chat',
+      'Connect',
+      'Impact',
+    ]);
   });
 
   it('draws Connections at full weight with the plug glyph, right after Chat', () => {

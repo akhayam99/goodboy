@@ -211,7 +211,6 @@ describe('the open session on the rail', () => {
       'chat',
       'connections',
       'impact',
-      'monitoring',
       'settings',
     ]);
   });

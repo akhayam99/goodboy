@@ -99,6 +99,13 @@ describe('the destination list', () => {
     expect(rail.map((destination) => destination.id)).toEqual(['terminal', 'browser']);
   });
 
+  it('takes Monitoring off the places rail and keeps it in the menu bar and the palette', () => {
+    const menu = DESTINATIONS.filter((destination) => destination.home === 'menu');
+
+    expect(menu.map((destination) => destination.id)).toEqual(['monitoring']);
+    expect(menu.map((destination) => destination.menuId)).toEqual(['menu.monitoring']);
+  });
+
   it('lists the keyed destinations of the Navigate group in the order of the list', () => {
     const keyed = DESTINATIONS.flatMap((destination) =>
       destination.shortcutId === undefined ? [] : [destination.shortcutId],

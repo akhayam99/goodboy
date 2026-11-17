@@ -92,13 +92,10 @@ export const LayoutFlowScene = ({
     <AutoReleaseContext.Provider value>
       <div className="h-screen bg-background text-foreground">
         <AppShell
-          leftSidebarCollapsed={arrangement.leftSidebarCollapsed}
-          leftSidebar={
+          leftRail={
             <ShellLeft
               arrangement={arrangement}
               workspaceId={SESSION.workspaceId}
-              currentSessionId={SESSION.id}
-              isDraftShown={false}
               actions={ACTIONS}
               placeOverride={null}
             />

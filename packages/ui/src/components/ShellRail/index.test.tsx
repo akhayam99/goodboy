@@ -109,6 +109,29 @@ describe('ShellRail', () => {
     expect(screen.queryByRole('tooltip')).toBeNull();
   });
 
+  it('draws a short word under the icon and keeps the full name, shown in the tooltip', () => {
+    render(
+      <ShellRail label="Places" form="wide">
+        <ShellRailItem
+          id="connections"
+          icon={Inbox}
+          label="Connections"
+          word="Connect"
+          onSelect={vi.fn()}
+        />
+      </ShellRail>,
+    );
+    const connections = within(railOf()).getByRole('button', { name: 'Connections' });
+    within(railOf()).getByText('Connect');
+    vi.useFakeTimers();
+    fireEvent.mouseEnter(connections);
+    act(() => {
+      vi.advanceTimersByTime(400);
+    });
+    vi.useRealTimers();
+    expect(screen.getByRole('tooltip').textContent).toContain('Connections');
+  });
+
   it('leaves the name bare and draws nothing when the count is zero', () => {
     render(
       <ShellRail label="Places" form="wide">

@@ -40,20 +40,11 @@ export const WorkspaceFrame = ({ session, main, hasRail = true }: Props) => {
         rightRail={shellRight.rightRail}
         studio={shell.studio}
         isDockInStudio={shellRight.isDockInStudio}
-        topBar={
-          <AppTopBar
-            sidebar={{ isCollapsed: arrangement.isLeftRail, onToggle: rail.toggle }}
-            onOpenSpend={noop}
-            onOpenScript={noop}
-          />
-        }
-        leftSidebarCollapsed={arrangement.leftSidebarCollapsed}
-        leftSidebar={
+        topBar={<AppTopBar onOpenSpend={noop} onOpenScript={noop} />}
+        leftRail={
           <ShellLeft
             arrangement={arrangement}
             workspaceId={session.workspaceId}
-            currentSessionId={hasRail ? session.id : null}
-            isDraftShown={false}
             {...(!hasRail && { placeOverride: 'board' })}
             actions={shell.actions}
           />

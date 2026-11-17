@@ -9,6 +9,7 @@ export type ColumnDoor = {
   readonly icon: IconGlyph;
   readonly shortcutId?: ShortcutId;
   readonly isReference?: boolean;
+  readonly word?: string;
 };
 
 type DoorDestination = Destination & { readonly id: ColumnDoorId };
@@ -23,6 +24,7 @@ const doorOf = ({ destination }: DoorParams): ColumnDoor => ({
   icon: destination.icon,
   ...(destination.shortcutId !== undefined && { shortcutId: destination.shortcutId }),
   ...(destination.isReference === true && { isReference: true }),
+  ...(destination.railWord !== undefined && { word: destination.railWord }),
 });
 
 export const COLUMN_DOORS: ReadonlyArray<ColumnDoor> = DESTINATIONS.filter(
