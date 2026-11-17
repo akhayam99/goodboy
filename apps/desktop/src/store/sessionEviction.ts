@@ -290,7 +290,6 @@ export const NON_SESSION_STATE_KEYS = [
   'budgetRules',
   'browserProjectPins',
   'browserTabCounts',
-  'browserTabCountFailures',
   'providerSpendBreakdown',
   'providerBudgetStatus',
   'budgetAlerts',
