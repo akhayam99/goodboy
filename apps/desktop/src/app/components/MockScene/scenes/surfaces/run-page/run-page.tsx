@@ -1,4 +1,5 @@
 import type { ComponentType } from 'react';
+import { RunHeadMenuScene } from './RunHeadMenuScene';
 import { RunPageScene } from './RunPageScene';
 
 export const RUN_PAGE_SCENES = {
@@ -11,4 +12,6 @@ export const RUN_PAGE_SCENES = {
   'run-page-lead-next': () => <RunPageScene state="confirm" theme="dark" isLead />,
   'run-page-lead-next-light': () => <RunPageScene state="confirm" theme="light" isLead />,
   'run-page-lead-working': () => <RunPageScene state="working" theme="dark" isLead />,
+  'run-head-menu': () => <RunHeadMenuScene theme="dark" />,
+  'run-head-menu-light': () => <RunHeadMenuScene theme="light" />,
 } satisfies Readonly<Record<string, ComponentType>>;

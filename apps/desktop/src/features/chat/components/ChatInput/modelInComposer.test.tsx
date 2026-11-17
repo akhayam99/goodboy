@@ -58,7 +58,6 @@ describe('the model of an agent page', () => {
       expect(pickers).toHaveLength(1);
       expect(within(composer).getByRole('button', { name: /^Model routing:/ })).toBe(pickers[0]);
 
-      await userEvent.click(screen.getByRole('button', { name: 'Run settings' }));
       const settings = await screen.findByRole('group', { name: 'Run settings' }, WAIT);
       expect(within(settings).queryByRole('button', { name: /^Model routing:/ })).toBeNull();
     },

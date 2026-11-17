@@ -128,15 +128,14 @@ describe('c07 Auto scenes', () => {
     expect(glance.textContent).not.toContain('Implementer');
     expect(document.querySelector('[data-dock-live]')?.textContent).toContain('Implementer');
     expect(screen.queryByRole('group', { name: 'Working now' })).toBeNull();
-    const toggle = within(glance).getByRole('button', { name: 'Run settings' });
-    const region = document.getElementById(toggle.getAttribute('aria-controls') ?? '');
-    expect(region?.dataset.open).toBe('false');
-    expect(region?.querySelector('[data-agent-settings]')).not.toBeNull();
+    expect(within(glance).queryByRole('button', { name: 'Run settings' })).toBeNull();
+    const facts = within(glance).getByRole('group', { name: 'Run settings' });
+    const limit = within(facts).getByRole('button', { name: /^Limit: / });
+    expect(limit.getAttribute('data-variant')).toBe('fact');
 
-    fireEvent.click(toggle);
+    fireEvent.click(limit);
 
-    expect(toggle.getAttribute('aria-expanded')).toBe('true');
-    expect(region?.dataset.open).toBe('true');
+    expect(limit.getAttribute('aria-expanded')).toBe('true');
   });
 
   it('c07-auto-working keeps the center lean: no role chip, live cards for running children, one tail', async () => {
