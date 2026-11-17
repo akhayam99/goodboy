@@ -120,6 +120,29 @@ describe('createOverlayWatch', () => {
     watch.stop();
   });
 
+  it('keeps a Browser laid over the page in a narrow window shown above its veil', () => {
+    const column = document.createElement('div');
+    const main = document.createElement('div');
+    main.setAttribute('data-drawer-main', '');
+    main.setAttribute('inert', '');
+    const veil = document.createElement('div');
+    veil.setAttribute('aria-hidden', 'true');
+    veil.setAttribute('data-drawer-scrim', '');
+    giveRect({ element: veil, rect: { x: 44, y: 40, width: 936, height: 648 } });
+    const aside = document.createElement('aside');
+    aside.setAttribute('data-drawer-mode', 'overlay');
+    giveRect({ element: aside, rect: { x: 248, y: 40, width: 776, height: 648 } });
+    const browser = document.createElement('div');
+    giveRect({ element: browser, rect: { x: 260, y: 96, width: 720, height: 580 } });
+    aside.append(browser);
+    column.append(main, veil, aside);
+    document.body.append(column);
+    const watch = createOverlayWatch();
+
+    expect(watch.coverOf({ view: browser, rect: browser.getBoundingClientRect() })).toBeNull();
+    watch.stop();
+  });
+
   it('names the reason per overlay kind', () => {
     const reasons = [
       { role: 'menu', reason: 'menu' },

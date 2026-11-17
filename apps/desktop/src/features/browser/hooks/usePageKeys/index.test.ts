@@ -140,6 +140,32 @@ describe('usePageKeys', () => {
     expect(combos).not.toContain('cmd+KeyV');
   });
 
+  it('gives back the close drawer chord, the one way out of a Browser laid over the page', async () => {
+    const runs: Array<string> = [];
+    const stop = registerShortcut('slot.close', () => {
+      runs.push('close drawer');
+    });
+    renderHook(() => useWindowKeys());
+    await waitFor(() => expect(pushes).toHaveLength(1));
+    await listened();
+
+    expect(pushes[0]).toContain('cmd+shift+KeyW');
+    press({ payload: { tabId: TAB_ID, combo: 'cmd+shift+KeyW' } });
+
+    expect(runs).toEqual(['close drawer']);
+    stop();
+  });
+
+  it('never asks the page for a chord without cmd, so a bare Escape stays in the page', async () => {
+    renderHook(() => useWindowKeys());
+
+    await waitFor(() => expect(pushes).toHaveLength(1));
+    const combos = pushes[0] ?? [];
+    expect(combos.length).toBeGreaterThan(0);
+    expect(combos.filter((combo) => !combo.split('+').includes('cmd'))).toEqual([]);
+    expect(combos.some((combo) => combo.endsWith('Escape'))).toBe(false);
+  });
+
   it('leaves both reload chords to the menu bar', async () => {
     renderHook(() => useWindowKeys());
 
