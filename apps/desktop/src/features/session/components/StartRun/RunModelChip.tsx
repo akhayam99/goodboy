@@ -6,6 +6,7 @@ import {
   POPOVER_WIDTH_CLASS,
   POPOVER_WIDTH_PX,
   PopoverBody,
+  Tooltip,
   cn,
   useDropdown,
 } from '@goodboy/ui';
@@ -13,6 +14,9 @@ import { RoutingLabel } from '../../../../shared/components/RoutingLabel';
 import { ROUTING_PILL_CLASS } from '../../../../shared/components/RoutingPicker/ROUTING_PILL_CLASS';
 import { RoutingPickerBody } from '../../../../shared/components/RoutingPicker/RoutingPickerBody';
 import { recommendationSummary } from '../../../../shared/components/RoutingPicker/recommendationSummary';
+import { FactButton } from '../../../../shared/components/SettingChip/FactButton';
+import { FactDot } from '../../../../shared/components/SettingChip/FactDot';
+import { useIsSettingFact } from '../../../../shared/components/SettingChip/settingLookContext';
 import { openModelsSettings } from '../../../settings/openModelsSettings';
 import { RUN_MODEL_COPY } from '../../startRun/runModelCopy';
 import type { RunModelView } from './useRunModel';
@@ -34,6 +38,7 @@ export const RunModelChip = ({
   const menuLabel = RUN_MODEL_COPY.forThisRun({ name: model.label });
   const settingsSection = model.slot.kind === 'orchestrator' ? 'workflow_orchestrator' : undefined;
   const isPill = variant === 'pill';
+  const isFact = useIsSettingFact();
   const dropdown = useDropdown({
     disabled: isDisabled,
     width: POPOVER_WIDTH_CLASS.wide,
@@ -46,58 +51,72 @@ export const RunModelChip = ({
     effort: effective.effort,
   });
   const state = isPinned ? RUN_MODEL_COPY.pinned : RUN_MODEL_COPY.auto;
+  const ariaLabel = `${label}: ${summary}, ${state}`;
+  const routing = (
+    <RoutingLabel provider={effective.provider} model={effective.model} effort={effective.effort} />
+  );
   const route = (
     <>
-      <span className="flex min-w-0 items-center text-foreground">
-        <RoutingLabel
-          provider={effective.provider}
-          model={effective.model}
-          effort={effective.effort}
-        />
-      </span>
+      <span className="flex min-w-0 items-center text-foreground">{routing}</span>
       <span className="shrink-0 text-faint-foreground">{`· ${state}`}</span>
       <ChevronDown size={ICON_SIZE.row} aria-hidden className="shrink-0 text-faint-foreground" />
     </>
   );
-  return (
+  const fact = (
+    <Tooltip content={`${label}, ${state}`} isSuppressed={dropdown.open}>
+      <FactButton
+        disabled={isDisabled}
+        aria-haspopup="dialog"
+        aria-expanded={dropdown.open}
+        aria-label={ariaLabel}
+        data-setting-chip={label}
+        data-run-model={isPinned ? 'pinned' : 'auto'}
+        onClick={dropdown.toggle}
+      >
+        {routing}
+      </FactButton>
+    </Tooltip>
+  );
+  const pill = (
+    <Button
+      variant="ghost"
+      size="xs"
+      disabled={isDisabled}
+      aria-haspopup="dialog"
+      aria-expanded={dropdown.open}
+      aria-label={ariaLabel}
+      data-run-model={isPinned ? 'pinned' : 'auto'}
+      onClick={dropdown.toggle}
+      className={cn(ROUTING_PILL_CLASS, dropdown.open && 'bg-selected')}
+    >
+      {route}
+    </Button>
+  );
+  const chip = (
+    <Button
+      size="xs"
+      variant="secondary"
+      disabled={isDisabled}
+      aria-haspopup="dialog"
+      aria-expanded={dropdown.open}
+      aria-label={ariaLabel}
+      data-setting-chip={label}
+      data-run-model={isPinned ? 'pinned' : 'auto'}
+      onClick={dropdown.toggle}
+      className={cn('max-w-72 justify-start', dropdown.open && 'bg-selected')}
+    >
+      <span className="shrink-0 text-muted-foreground">{label}</span>
+      {route}
+    </Button>
+  );
+  const look = isPill ? pill : chip;
+  const popover = (
     <AnchoredPopover
       dropdown={dropdown}
       role="dialog"
       ariaLabel={menuLabel}
       anchorClassName="inline-flex min-w-0"
-      trigger={
-        isPill ? (
-          <Button
-            variant="ghost"
-            size="xs"
-            disabled={isDisabled}
-            aria-haspopup="dialog"
-            aria-expanded={dropdown.open}
-            aria-label={`${label}: ${summary}, ${state}`}
-            data-run-model={isPinned ? 'pinned' : 'auto'}
-            onClick={dropdown.toggle}
-            className={cn(ROUTING_PILL_CLASS, dropdown.open && 'bg-selected')}
-          >
-            {route}
-          </Button>
-        ) : (
-          <Button
-            size="xs"
-            variant="secondary"
-            disabled={isDisabled}
-            aria-haspopup="dialog"
-            aria-expanded={dropdown.open}
-            aria-label={`${label}: ${summary}, ${state}`}
-            data-setting-chip={label}
-            data-run-model={isPinned ? 'pinned' : 'auto'}
-            onClick={dropdown.toggle}
-            className={cn('max-w-72 justify-start', dropdown.open && 'bg-selected')}
-          >
-            <span className="shrink-0 text-muted-foreground">{label}</span>
-            {route}
-          </Button>
-        )
-      }
+      trigger={isFact ? fact : look}
     >
       <PopoverBody>
         <RoutingPickerBody
@@ -127,5 +146,14 @@ export const RunModelChip = ({
         </div>
       </PopoverBody>
     </AnchoredPopover>
+  );
+  if (!isFact) {
+    return popover;
+  }
+  return (
+    <>
+      <FactDot />
+      {popover}
+    </>
   );
 };

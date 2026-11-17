@@ -37,13 +37,17 @@ export const AgentSettingsLine = ({ session, kind, auto, asksSlotRef }: Props) =
       role="group"
       aria-label="Run settings"
       data-agent-settings=""
-      className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-meta"
+      className="flex min-w-0 flex-wrap items-center gap-1 text-meta"
     >
       {kind}
-      <span ref={asksSlotRef} data-settings-slot="asks" className="inline-flex empty:hidden" />
       {auto === null ? null : (
         <AutoLevelSetting sessionId={sessionId} workspaceId={workspaceId} treeId={auto.treeId} />
       )}
+      <span
+        ref={asksSlotRef}
+        data-settings-slot="asks"
+        className="inline-flex items-center gap-1 empty:hidden"
+      />
       {auto === null ? (
         <SessionLimitSetting sessionId={sessionId} />
       ) : (

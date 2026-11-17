@@ -1,7 +1,10 @@
 import { useMemo } from 'react';
 import { ChevronDown } from '@goodboy/ui/icons';
-import { AnchoredPopover, Button, cn, ICON_SIZE, useDropdown } from '@goodboy/ui';
+import { AnchoredPopover, Button, cn, ICON_SIZE, Tooltip, useDropdown } from '@goodboy/ui';
 import type { RunRoute, Workflow, WorkspaceId } from '@goodboy/types';
+import { FactButton } from '../../../../shared/components/SettingChip/FactButton';
+import { FactDot } from '../../../../shared/components/SettingChip/FactDot';
+import { useIsSettingFact } from '../../../../shared/components/SettingChip/settingLookContext';
 import { useAppStore } from '../../../../store';
 import type { RunRouteChoice, RunRouteTarget } from '../../startRun/changeRunRoute';
 import { runKindOfRoute } from '../../startRun/runKindOfRoute';
@@ -47,6 +50,7 @@ export const RunKindChip = ({ workspaceId, target, route, changeCount, phase }: 
     [templates],
   );
   const change = useRunRouteChange({ target });
+  const isFact = useIsSettingFact();
   const kind = runKindOfRoute({ route });
   const choices = runKindChoicesOf({ route, presets });
   const presetId = presets.find((preset) => preset.name === route.presetName)?.id ?? null;
@@ -65,33 +69,46 @@ export const RunKindChip = ({ workspaceId, target, route, changeCount, phase }: 
     dropdown.close();
   };
 
-  return (
+  const ariaLabel = `${RUN_ROUTE_COPY.kind}: ${kind.name}, ${RUN_ROUTE_COPY.setAtStart}`;
+  const fact = (
+    <Tooltip content={kind.what} isSuppressed={dropdown.open}>
+      <FactButton
+        aria-haspopup="dialog"
+        aria-expanded={dropdown.open}
+        aria-label={ariaLabel}
+        data-setting-chip={RUN_ROUTE_COPY.kind}
+        data-run-route={route.shape}
+        onClick={dropdown.toggle}
+      >
+        {kind.name}
+      </FactButton>
+    </Tooltip>
+  );
+  const chip = (
+    <Button
+      size="xs"
+      variant="secondary"
+      aria-haspopup="dialog"
+      aria-expanded={dropdown.open}
+      aria-label={ariaLabel}
+      data-setting-chip={RUN_ROUTE_COPY.kind}
+      data-run-route={route.shape}
+      onClick={dropdown.toggle}
+      className={cn(dropdown.open && 'bg-selected')}
+    >
+      <span className="text-foreground">{kind.name}</span>
+      <ChevronDown size={ICON_SIZE.row} aria-hidden className="shrink-0 text-faint-foreground" />
+    </Button>
+  );
+
+  const popover = (
     <AnchoredPopover
       dropdown={dropdown}
       role="dialog"
       ariaLabel={RUN_ROUTE_COPY.kind}
       anchorClassName="inline-flex"
       className="flex flex-col gap-2 p-3"
-      trigger={
-        <Button
-          size="xs"
-          variant="secondary"
-          aria-haspopup="dialog"
-          aria-expanded={dropdown.open}
-          aria-label={`${RUN_ROUTE_COPY.kind}: ${kind.name}, ${RUN_ROUTE_COPY.setAtStart}`}
-          data-setting-chip={RUN_ROUTE_COPY.kind}
-          data-run-route={route.shape}
-          onClick={dropdown.toggle}
-          className={cn(dropdown.open && 'bg-selected')}
-        >
-          <span className="text-foreground">{kind.name}</span>
-          <ChevronDown
-            size={ICON_SIZE.row}
-            aria-hidden
-            className="shrink-0 text-faint-foreground"
-          />
-        </Button>
-      }
+      trigger={isFact ? fact : chip}
     >
       <div className="flex min-w-0 items-baseline justify-between gap-2">
         <span className="min-w-0 truncate text-row text-foreground">{kind.name}</span>
@@ -126,5 +143,14 @@ export const RunKindChip = ({ workspaceId, target, route, changeCount, phase }: 
         {RUN_KIND_CONSEQUENCE[phase]}
       </p>
     </AnchoredPopover>
+  );
+  if (!isFact) {
+    return popover;
+  }
+  return (
+    <>
+      <FactDot />
+      {popover}
+    </>
   );
 };

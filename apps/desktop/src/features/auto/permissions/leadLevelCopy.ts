@@ -35,6 +35,10 @@ export const LEAD_LEVEL_COPY = {
   line: ({ level }: Pick<WordParams, 'level'>): string => LINES[level],
   word: ({ level, differ }: WordParams): string =>
     differ === 0 ? levelLabelOf({ level }) : `Custom, ${detailsOf({ differ })}`,
+  fact: ({ level, differ }: WordParams): string =>
+    differ === 0
+      ? runAutonomyOf({ autoRun: false, autonomy: level }).fact
+      : `Custom stops, ${detailsOf({ differ })}`,
   help: ({ level, differ }: WordParams): string =>
     differ === 0
       ? LINES[level]

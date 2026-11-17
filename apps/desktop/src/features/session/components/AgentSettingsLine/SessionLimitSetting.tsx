@@ -27,6 +27,7 @@ const wordsOf = ({ capUsd }: WordsParams): SettingWords => {
     return {
       value: 'none',
       source: '',
+      fact: 'No limit',
       chain: 'Session none. Nothing stops this agent.',
     };
   }
