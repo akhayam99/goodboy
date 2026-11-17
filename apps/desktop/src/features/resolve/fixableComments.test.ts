@@ -54,6 +54,24 @@ describe('fixable comments', () => {
     expect(isFixableThread({ thread: push })).toBe(false);
   });
 
+  it('leaves a comment the fix agent called bigger than one change out of Fix N and Retry N, but keeps its own retry', () => {
+    const broad = thread({
+      stage: 'failed',
+      state: 'failed',
+      stateReason: 'needs_run:It touches the payouts route and two new components.',
+    });
+    expect(isFixableThread({ thread: broad })).toBe(false);
+    expect(isRunFailedThread({ thread: broad })).toBe(true);
+    const threads = [
+      thread({ threadId: 'a', stage: 'new', state: 'open' }),
+      { ...broad, threadId: 'b' },
+      thread({ threadId: 'c', stage: 'failed', state: 'failed' }),
+    ];
+    expect(
+      threads.filter((item) => isFixableThread({ thread: item })).map((item) => item.threadId),
+    ).toEqual(['a', 'c']);
+  });
+
   it('keeps open and could-not-fix comments out of a mixed list, in order', () => {
     const threads = [
       thread({ threadId: 'a', stage: 'new', state: 'open' }),

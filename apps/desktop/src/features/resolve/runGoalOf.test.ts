@@ -79,6 +79,37 @@ describe('runGoalOf', () => {
     ).toMatch(/^Change retry\.ts:3 as the comment asks, the way the notify-relay worker does it\./);
   });
 
+  it('ends the goal with what the fix agent found when it said the comment needs a run', () => {
+    expect(
+      runGoalOf({
+        comments: [
+          { ...HEADER, finding: 'It touches the layout, the payouts route and two new components' },
+        ],
+      }),
+    ).toMatch(
+      / Follow the payouts route as the model: AppLayout owns the header, the page only passes the title and actions\. The fix agent found: It touches the layout, the payouts route and two new components\.$/,
+    );
+  });
+
+  it('quotes one finding per comment, and none for a comment the agent never stopped on', () => {
+    const goal = runGoalOf({
+      comments: [
+        { ...HEADER, finding: 'The header moves into AppLayout.' },
+        { ...FILTERS, finding: null },
+        {
+          body: 'Add a payouts tab.',
+          path: null,
+          line: null,
+          finding: '  It needs a new route.  ',
+        },
+      ],
+    });
+    expect(
+      goal.endsWith(' The fix agent found: The header moves into AppLayout. It needs a new route.'),
+    ).toBe(true);
+    expect(goal.match(/The fix agent found:/g)).toHaveLength(1);
+  });
+
   it('clips a very long comment at a word', () => {
     const goal = runGoalOf({
       comments: [{ body: 'word '.repeat(400), path: 'src/a.ts', line: 1 }],

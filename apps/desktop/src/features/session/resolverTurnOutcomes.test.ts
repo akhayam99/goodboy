@@ -148,4 +148,38 @@ describe('resolverTurnOutcomes', () => {
 
     expect(outcomes[other]).toEqual({ kind: 'analyzed', reply: 'analysis' });
   });
+
+  it('keeps needs-run per thread in a batch where another thread was fixed', () => {
+    const broad = 'PRRT_kwDO456';
+    const { turnOutcomes, needsRun, markerCount } = resolverTurnOutcomes({
+      assistantText: [
+        `<<comment-resolved threadId="${THREAD_ID}" commitSha="abc1234">>`,
+        `<<comment-reply id="${THREAD_ID}">>renamed as asked<</comment-reply>>`,
+        `<<comment-needs-run threadId="${broad}" reason="It touches the ledger layout and the payouts route.">>`,
+      ].join('\n'),
+      previousOutcomes: {},
+    });
+
+    expect(turnOutcomes[THREAD_ID]).toMatchObject({ kind: 'resolved', reply: 'renamed as asked' });
+    expect(turnOutcomes[broad]).toBeUndefined();
+    expect(needsRun).toEqual({ [broad]: 'It touches the ledger layout and the payouts route.' });
+    expect(markerCount).toBe(2);
+  });
+
+  it('lets a real outcome or a question on the same thread win over needs-run', () => {
+    const asking = 'PRRT_kwDO789';
+    const { needsRun, turnOutcomes, questions } = resolverTurnOutcomes({
+      assistantText: [
+        `<<comment-resolved threadId="${THREAD_ID}" commitSha="abc1234">>`,
+        `<<comment-needs-run threadId="${THREAD_ID}" reason="bigger">>`,
+        `<<needs-input id="${asking}" options="a|b">>Which one?<</needs-input>>`,
+        `<<comment-needs-run threadId="${asking}" reason="bigger">>`,
+      ].join('\n'),
+      previousOutcomes: {},
+    });
+
+    expect(turnOutcomes[THREAD_ID]).toMatchObject({ kind: 'resolved' });
+    expect(questions[asking]).toMatchObject({ question: 'Which one?' });
+    expect(needsRun).toEqual({});
+  });
 });

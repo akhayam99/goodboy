@@ -1430,6 +1430,9 @@ u44-task-picker-loading
 u44-task-picker-sentry
 u47-big-session-log
 u47-big-session-overview
+u47-comment-needs-run
+u47-comment-needs-run-compose
+u47-comment-needs-run-light
 u47-comment-run-changed
 u47-comment-run-compose
 u47-comment-run-compose-one

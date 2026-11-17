@@ -1,6 +1,7 @@
 import {
   extractAllCommentAnalysis,
   extractAllCommentNeedsInput,
+  extractAllCommentNeedsRun,
   extractAllCommentReplies,
   extractAllCommentResolved,
   extractAllCommentWontfix,
@@ -26,6 +27,7 @@ export type ResolverTurnOutcomes = {
   readonly outcomes: Readonly<Record<string, ResolverThreadOutcome>>;
   readonly turnOutcomes: Readonly<Record<string, ResolverThreadOutcome>>;
   readonly questions: Readonly<Record<string, ResolverThreadQuestion>>;
+  readonly needsRun: Readonly<Record<string, string>>;
   readonly markerCount: number;
   readonly analysisVerdicts: Readonly<Record<string, 'fix' | 'wontfix'>>;
 };
@@ -68,6 +70,14 @@ export const resolverTurnOutcomes = ({
       recommended: marker.recommended,
     };
   }
+  const needsRunMarkers = extractAllCommentNeedsRun({ assistantText }).filter(
+    (marker) =>
+      turnOutcomes[marker.threadId] === undefined && questions[marker.threadId] === undefined,
+  );
+  const needsRun: Record<string, string> = {};
+  for (const marker of needsRunMarkers) {
+    needsRun[marker.threadId] = marker.reason;
+  }
   let reworkedReplies = 0;
   for (const marker of extractAllCommentReplies(assistantText)) {
     if (questions[marker.threadId] !== undefined) {
@@ -87,11 +97,13 @@ export const resolverTurnOutcomes = ({
     wontfixMarkers.length +
     analysisMarkers.length +
     askedMarkers.length +
+    needsRunMarkers.length +
     reworkedReplies;
   return {
     outcomes: markerCount === 0 ? previousOutcomes : { ...previousOutcomes, ...turnOutcomes },
     turnOutcomes,
     questions,
+    needsRun,
     markerCount,
     analysisVerdicts: Object.fromEntries(
       analysisMarkers.map((marker) => [marker.threadId, marker.verdict]),

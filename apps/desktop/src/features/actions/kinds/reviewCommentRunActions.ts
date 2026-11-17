@@ -1,5 +1,6 @@
-import { CircleCheck, Send, SkipForward, Undo2 } from '@goodboy/ui/icons';
+import { CircleCheck, RefreshCw, RotateCcw, Send, SkipForward, Undo2 } from '@goodboy/ui/icons';
 import { COMMENT_RUN_COPY } from '../../resolve/commentRunCopy';
+import { NEEDS_RUN_COPY } from '../../resolve/needsRunCopy';
 import { remoteActionLabel } from '../../resolve/reviewRemote';
 import type { ReviewCommentState } from '../../resolve/reviewCommentState';
 import { requestReview } from '../../review/reviewRequest';
@@ -22,6 +23,9 @@ const isRunFirst = ({ facts }: FactsParams): boolean =>
 
 const isFree = ({ facts }: FactsParams): boolean =>
   facts.lane !== 'in_run' && facts.remote === null;
+
+const isSuggestingRun = ({ facts }: FactsParams): boolean =>
+  facts.runSuggestion !== null && facts.state === 'failed' && facts.remote === null;
 
 export const REVIEW_COMMENT_RUN_ACTIONS: ObjectKindDefinition<
   ReviewCommentActionTarget,
@@ -48,12 +52,43 @@ export const REVIEW_COMMENT_RUN_ACTIONS: ObjectKindDefinition<
     label: COMMENT_RUN_COPY.startRun,
     icon: CONCEPT_ICONS.runs,
     group: 'act',
-    description: () => COMMENT_RUN_COPY.startRunNote,
+    description: ({ facts }) =>
+      isSuggestingRun({ facts }) ? NEEDS_RUN_COPY.startRunDetail : COMMENT_RUN_COPY.startRunNote,
     when: ({ facts }) =>
       (facts.state === 'new' || facts.state === 'failed') && facts.canStartRun && isFree({ facts }),
-    slot: ({ facts }) => (isRunFirst({ facts }) ? 'primary' : 'menu'),
+    slot: ({ facts }) => (isRunFirst({ facts }) || isSuggestingRun({ facts }) ? 'primary' : 'menu'),
     run: ({ facts, env }) =>
       env.getState().openCommentRunStart({ sessionId: facts.sessionId, threadId: facts.threadId }),
+  },
+  {
+    id: 'reviewComment.retryFix',
+    label: NEEDS_RUN_COPY.retryFix,
+    icon: RefreshCw,
+    group: 'act',
+    description: () => NEEDS_RUN_COPY.retryFixDetail,
+    when: isSuggestingRun,
+    slot: () => 'menu',
+    run: ({ facts, env }) =>
+      requestReview({
+        getState: env.getState,
+        sessionId: facts.sessionId,
+        request: { kind: 'retry', threadId: facts.threadId },
+      }),
+  },
+  {
+    id: 'reviewComment.startOver',
+    label: NEEDS_RUN_COPY.startOver,
+    icon: RotateCcw,
+    group: 'act',
+    description: () => NEEDS_RUN_COPY.startOverDetail,
+    when: isSuggestingRun,
+    slot: () => 'menu',
+    run: ({ facts, env }) =>
+      requestReview({
+        getState: env.getState,
+        sessionId: facts.sessionId,
+        request: { kind: 'start_over', threadId: facts.threadId },
+      }),
   },
   {
     id: 'reviewComment.draft',
