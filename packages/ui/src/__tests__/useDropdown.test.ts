@@ -96,9 +96,9 @@ describe('useDropdown', () => {
     expect(result.current.popupClassName).toContain('fixed');
     expect(result.current.popupStyle).toMatchObject({
       bottom: 272,
-      left: 632,
-      maxWidth: 1008,
-      maxHeight: 488,
+      left: 628,
+      maxWidth: 1000,
+      maxHeight: 484,
     });
 
     rect = DOMRect.fromRect({ x: 0, y: 100, width: 80, height: 30 });
@@ -107,7 +107,7 @@ describe('useDropdown', () => {
     });
 
     expect(result.current.popupStyle).toMatchObject({
-      left: 8,
+      left: 12,
       top: 134,
     });
 
@@ -136,7 +136,7 @@ describe('useDropdown', () => {
       result.current.toggle();
     });
 
-    expect(result.current.popupStyle).toMatchObject({ top: 132, maxHeight: 628 });
+    expect(result.current.popupStyle).toMatchObject({ top: 132, maxHeight: 624 });
     trigger.remove();
   });
 
@@ -240,7 +240,7 @@ describe('useDropdown', () => {
       result.current.toggle();
     });
 
-    expect(result.current.popupStyle).toMatchObject({ left: 236, bottom: 40, maxHeight: 720 });
+    expect(result.current.popupStyle).toMatchObject({ left: 236, bottom: 40, maxHeight: 716 });
     trigger.remove();
   });
 
@@ -307,7 +307,7 @@ describe('useDropdown', () => {
       result.current.toggle();
     });
 
-    expect(result.current.popupStyle).toMatchObject({ top: 132, maxHeight: 592 });
+    expect(result.current.popupStyle).toMatchObject({ top: 132, maxHeight: 588 });
     document.documentElement.style.removeProperty('--dropdown-bottom-inset');
     trigger.remove();
   });
