@@ -697,7 +697,8 @@ window has; they save nothing.
 - Entering a session reads its row (`recallDockGrid`). A row puts its grid in
   place of the open tools (`slotWithGrid`), and a tool of a session that no
   longer exists drops out. No row keeps the open tools, so a session saved by
-  0.39 opens with the dock of its window layout.
+  0.39 opens with the dock of its window layout. A Terminal whose tab is gone
+  closes itself (`TerminalDrawer`), and the next save leaves it out.
 - A change on a session waits 300ms, then `rememberDockGrid` writes it. The
   write names the session the change was made on. Leaving the session writes
   the waiting change at once, still on that session.
