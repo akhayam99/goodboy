@@ -3,8 +3,13 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { SplitHandle } from '../components/SplitHandle';
+import { SPLIT_DRAG_ATTRIBUTE } from '../splitDragAttribute';
 
 afterEach(cleanup);
+
+type HandleParams = {
+  readonly onChange: (size: number) => void;
+};
 
 describe('SplitHandle', () => {
   it('resizes with arrow keys and the larger shift step', () => {
@@ -77,6 +82,60 @@ describe('SplitHandle', () => {
 
     expect(onChange).toHaveBeenCalledWith(400);
     expect(onReset).toHaveBeenCalledOnce();
+  });
+
+  it('marks the body with the drag axis until the release, and clears it on unmount', () => {
+    const view = render(
+      <SplitHandle
+        value={300}
+        min={160}
+        max={600}
+        onChange={vi.fn()}
+        side="bottom"
+        ariaLabel="resize row"
+      />,
+    );
+    const handle = screen.getByRole('separator', { name: 'resize row' });
+
+    fireEvent.mouseDown(handle, { button: 0, clientY: 300 });
+    expect(document.body.getAttribute(SPLIT_DRAG_ATTRIBUTE)).toBe('y');
+    fireEvent.mouseUp(window);
+    expect(document.body.hasAttribute(SPLIT_DRAG_ATTRIBUTE)).toBe(false);
+
+    fireEvent.mouseDown(handle, { button: 0, clientY: 300 });
+    view.unmount();
+    expect(document.body.hasAttribute(SPLIT_DRAG_ATTRIBUTE)).toBe(false);
+  });
+
+  it('keeps the drag mark and the drag when the parent renders new callbacks mid drag', () => {
+    const first = vi.fn();
+    const second = vi.fn();
+    const onCommit = vi.fn();
+    const handleWith = ({ onChange }: HandleParams) => (
+      <SplitHandle
+        value={300}
+        min={160}
+        max={600}
+        onChange={onChange}
+        onCommit={onCommit}
+        side="bottom"
+        ariaLabel="resize row"
+      />
+    );
+    const view = render(handleWith({ onChange: first }));
+    const handle = screen.getByRole('separator', { name: 'resize row' });
+
+    fireEvent.mouseDown(handle, { button: 0, clientY: 300 });
+    view.rerender(handleWith({ onChange: second }));
+    expect(document.body.getAttribute(SPLIT_DRAG_ATTRIBUTE)).toBe('y');
+    expect(document.body.style.cursor).toBe('row-resize');
+    fireEvent.mouseMove(window, { clientY: 280 });
+    fireEvent.mouseUp(window);
+
+    expect(first).not.toHaveBeenCalled();
+    expect(second).toHaveBeenCalledWith(320);
+    expect(onCommit).toHaveBeenCalledWith(320);
+    expect(document.body.hasAttribute(SPLIT_DRAG_ATTRIBUTE)).toBe(false);
   });
 
   it('drags a row handle on the vertical axis and ignores the horizontal one', () => {

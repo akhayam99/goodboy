@@ -56,7 +56,11 @@ follows the pointer one to one, so the panel's far edge (the tool rail beside a
 right panel) stays where it is. A focused handle moves 8px per arrow on its
 own axis, 32 with Shift; a double click returns the base size. It is a
 `separator` with the matching `aria-orientation` and its min, max and current
-size as values, updated live during a drag.
+size as values, updated live during a drag. While a drag runs the body carries
+`SPLIT_DRAG_ATTRIBUTE` with the axis, so a native web page in the window hides
+under its cover and is placed once at the release. The handle reads its
+bounds and callbacks from a ref, so a parent render mid drag keeps the drag,
+the cursor and the mark.
 
 ## Pane anatomy
 

@@ -1,6 +1,7 @@
 import { useEffect, useRef, type KeyboardEvent, type MouseEvent } from 'react';
 import { cn } from '../cn';
 import type { ResizeActivity } from '../sheet';
+import { SPLIT_DRAG_ATTRIBUTE } from '../splitDragAttribute';
 
 type Side = 'left' | 'right' | 'top' | 'bottom';
 
@@ -131,6 +132,8 @@ export const SplitHandle = ({
   const isHoveredRef = useRef(false);
   const activityRef = useRef(onActivityChange);
   activityRef.current = onActivityChange;
+  const dragRef = useRef({ axis, growth, min, max, onChange });
+  dragRef.current = { axis, growth, min, max, onChange };
 
   const report = () => {
     if (dragStateRef.current !== null) {
@@ -150,17 +153,20 @@ export const SplitHandle = ({
           return;
         }
         event.preventDefault();
+        const drag = dragRef.current;
         const next = clamp({
-          value: dragState.startValue + (pointOf({ event, axis }) - dragState.startPoint) * growth,
-          min,
-          max,
+          value:
+            dragState.startValue +
+            (pointOf({ event, axis: drag.axis }) - dragState.startPoint) * drag.growth,
+          min: drag.min,
+          max: drag.max,
         });
         if (next === liveValueRef.current) {
           return;
         }
         liveValueRef.current = next;
         handleRef.current?.setAttribute('aria-valuenow', String(next));
-        onChange(next);
+        drag.onChange(next);
       },
       { signal: listeners.signal },
     );
@@ -174,6 +180,7 @@ export const SplitHandle = ({
         commitRef.current?.(liveValueRef.current);
         document.body.style.cursor = '';
         document.body.style.userSelect = '';
+        document.body.removeAttribute(SPLIT_DRAG_ATTRIBUTE);
         report();
       },
       { signal: listeners.signal },
@@ -183,9 +190,10 @@ export const SplitHandle = ({
       if (dragStateRef.current !== null) {
         document.body.style.cursor = '';
         document.body.style.userSelect = '';
+        document.body.removeAttribute(SPLIT_DRAG_ATTRIBUTE);
       }
     };
-  }, [axis, growth, max, min, onChange]);
+  }, []);
 
   const startDrag = ({ event }: StartDragParams) => {
     if (event.button !== 0) {
@@ -199,6 +207,7 @@ export const SplitHandle = ({
     liveValueRef.current = value;
     document.body.style.cursor = shape.cursor;
     document.body.style.userSelect = 'none';
+    document.body.setAttribute(SPLIT_DRAG_ATTRIBUTE, axis);
     report();
   };
 
