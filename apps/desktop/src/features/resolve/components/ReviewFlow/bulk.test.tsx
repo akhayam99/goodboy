@@ -347,6 +347,30 @@ describe('accept in bulk', () => {
     await waitFor(() => expect(undoReviewAccepts).toHaveBeenCalledWith({ sessionId: SESSION.id }));
   });
 
+  it('keeps Undo busy while it undoes and names a failed undo', async () => {
+    let fail: (error: Error) => void = () => undefined;
+    const undoReviewAccepts = vi.fn<StoreState['undoReviewAccepts']>(
+      () =>
+        new Promise<boolean>((_resolve, reject) => {
+          fail = reject;
+        }),
+    );
+    stub({ undoReviewAccepts });
+    await mount({ stage: 'accepted' });
+
+    const undo = within(screen.getByRole('status')).getByRole('button', { name: /^Undo/ });
+    fireEvent.click(undo);
+    await waitFor(() => expect(undo.getAttribute('aria-busy')).toBe('true'));
+    fireEvent.click(undo);
+    expect(undoReviewAccepts).toHaveBeenCalledOnce();
+
+    fail(new Error('The thread is locked'));
+    const alert = await screen.findByRole('alert');
+    expect(alert.textContent).toContain("Couldn't undo the accept");
+    expect(alert.textContent).toContain('The thread is locked');
+    expect(screen.getByText('5 accepted')).toBeDefined();
+  });
+
   it('keeps accepted comments under Done, as Fixed, until they are pushed', async () => {
     await mount({ stage: 'accepted' });
 

@@ -82,6 +82,11 @@ const COMMENT_KEYS: ReadonlyArray<readonly [ShortcutId, ReadonlyArray<string>]> 
   ['review.fix', ['reviewComment.draft', 'reviewComment.fixAnyway', 'reviewComment.fixAgain']],
 ];
 
+type BulkError = {
+  readonly title: string;
+  readonly body: string;
+};
+
 type FixLaunchParams = {
   readonly threadIds: ReadonlyArray<string>;
   readonly fromThreadId?: string | null;
@@ -193,7 +198,7 @@ export const ReviewFlow = ({ session, mountId = null, push }: Props) => {
   const [isAccepting, setIsAccepting] = useState(false);
   const [isUndoing, setIsUndoing] = useState(false);
   const [dockHeight, setDockHeight] = useState(0);
-  const [acceptError, setAcceptError] = useState<string | null>(null);
+  const [acceptError, setAcceptError] = useState<BulkError | null>(null);
   const acceptReviewComments = useAppStore((s) => s.acceptReviewComments);
   const undoReviewAccepts = useAppStore((s) => s.undoReviewAccepts);
   const lastBulkAccept = useAppStore((s) => s.reviewBulkAccepts[sessionId] ?? null);
@@ -348,13 +353,17 @@ export const ReviewFlow = ({ session, mountId = null, push }: Props) => {
         clearReviewSelection({ sessionId });
         const [first] = result.failures;
         if (first !== undefined) {
-          setAcceptError(
-            bulkAcceptFailureLine({ count: result.failures.length, message: first.message }),
-          );
+          setAcceptError({
+            title: REVIEW_BULK_LABEL.acceptFailed,
+            body: bulkAcceptFailureLine({
+              count: result.failures.length,
+              message: first.message,
+            }),
+          });
         }
       } catch (caught) {
         if (!isReportedError(caught)) {
-          setAcceptError(formatError(caught));
+          setAcceptError({ title: REVIEW_BULK_LABEL.acceptFailed, body: formatError(caught) });
         }
       } finally {
         setIsAccepting(false);
@@ -371,6 +380,10 @@ export const ReviewFlow = ({ session, mountId = null, push }: Props) => {
     setAcceptError(null);
     try {
       await undoReviewAccepts({ sessionId });
+    } catch (caught) {
+      if (!isReportedError(caught)) {
+        setAcceptError({ title: REVIEW_BULK_LABEL.undoFailed, body: formatError(caught) });
+      }
     } finally {
       setIsUndoing(false);
     }
@@ -659,8 +672,8 @@ export const ReviewFlow = ({ session, mountId = null, push }: Props) => {
             tone="danger"
             placement="banner"
             role="alert"
-            title={REVIEW_BULK_LABEL.acceptFailed}
-            body={acceptError}
+            title={acceptError.title}
+            body={acceptError.body}
           />
         )}
         <ReviewToolbar
