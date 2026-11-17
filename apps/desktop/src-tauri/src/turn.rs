@@ -492,6 +492,7 @@ fn spawn_one<E: TurnEmitter>(
     backlog.open(args.run_id);
     register(registry, args.run_id, &live);
 
+    let helper_root = crate::proc::provider_helpers::install_root(args.binary);
     let app_clone = app.clone();
     let registry_clone = Arc::clone(registry);
     let backlog_clone = backlog.clone();
@@ -515,10 +516,12 @@ fn spawn_one<E: TurnEmitter>(
         });
         let stderr_buf = stderr_handle.join().unwrap_or_default();
         if !is_exiting() {
-            if !exited.stopped.is_empty() {
-                sink.send(TurnEventPayload::Reaped {
-                    stopped: exited.stopped,
-                });
+            let stopped = crate::proc::provider_helpers::without_provider_helpers(
+                exited.stopped,
+                helper_root.as_deref(),
+            );
+            if !stopped.is_empty() {
+                sink.send(TurnEventPayload::Reaped { stopped });
             }
             sink.send(TurnEventPayload::End {
                 exit_code: exited.code,
