@@ -870,8 +870,9 @@ session-start
 session-states
 session-studio-over
 session-switcher
-session-tools-counts
 session-tools-order
+session-tools-quiet
+session-tools-signal
 sessions-door-counts
 sessions-funnel
 sessions-funnel-open

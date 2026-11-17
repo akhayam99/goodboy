@@ -4,33 +4,42 @@ import { SessionTools } from '../../../../../features/session/components/Session
 import type { TerminalTabId } from '../../../../../shared/types/terminal';
 import { useAppStore } from '../../../../../store';
 
-const SESSION_ID = brandId<SessionId>({ value: 'mock-rail-counts-session-settlement' });
-const WORKSPACE_ID = brandId<WorkspaceId>({ value: 'mock-rail-counts-workspace' });
+const SESSION_ID = brandId<SessionId>({ value: 'mock-rail-signal-session-credit' });
+const WORKSPACE_ID = brandId<WorkspaceId>({ value: 'mock-rail-signal-workspace' });
+const TERMINAL_ID = brandId<TerminalTabId>({ value: `${SESSION_ID}::t1` });
 
-const seedRailCounts = (): void => {
+const seedRailSignal = (): void => {
   useAppStore.setState({
     currentWorkspaceId: WORKSPACE_ID,
-    browserTabCounts: { [WORKSPACE_ID]: 12 },
+    browserTabCounts: { [WORKSPACE_ID]: 3 },
     terminalTabs: {
       [SESSION_ID]: [
         {
-          id: brandId<TerminalTabId>({ value: `${SESSION_ID}::t1` }),
+          id: TERMINAL_ID,
           owner: { kind: 'session', sessionId: SESSION_ID },
-          title: 'pnpm dev',
+          title: 'shell',
           cwd: null,
           status: 'running',
           createdAt: 1,
         },
       ],
     },
-    drawer: { kind: 'browser', sessionId: SESSION_ID, payload: null },
+    terminalFinishes: {
+      [SESSION_ID]: {
+        terminalId: TERMINAL_ID,
+        title: 'shell',
+        command: 'pnpm test retry',
+        durationMs: 42_000,
+      },
+    },
+    drawer: null,
   });
 };
 
-export const RailCountsToolsScene = () => {
+export const RailSignalToolsScene = () => {
   const [isReady, setIsReady] = useState(false);
   useEffect(() => {
-    seedRailCounts();
+    seedRailSignal();
     setIsReady(true);
   }, []);
   if (!isReady) {
@@ -39,7 +48,7 @@ export const RailCountsToolsScene = () => {
   return (
     <main className="flex min-h-screen bg-background text-foreground">
       <div data-shot className="flex h-40 w-72">
-        <h1 className="flex-1 p-6 text-ui text-muted-foreground">Fix the settlement replay</h1>
+        <h1 className="flex-1 p-6 text-ui text-muted-foreground">Post one credit per retry</h1>
         <SessionTools sessionId={SESSION_ID} />
       </div>
     </main>

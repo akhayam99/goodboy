@@ -12,7 +12,6 @@ import {
   type StoryStore,
 } from '../../storyHarness';
 import { selectBrowserTabCount } from './selectBrowserTabCount';
-import { selectBrowserTabCountState } from './selectBrowserTabCountState';
 import type { BrowserTab, TabOwner } from './types';
 
 vi.mock('@tauri-apps/api/core', async () =>
@@ -263,7 +262,7 @@ describe('the workspace tab rows', () => {
     ).toEqual(["Couldn't load the browser tabs"]);
   });
 
-  it('marks the count failed when the first load fails and ready after a retry', async () => {
+  it('keeps no count when the first load fails and counts after a retry', async () => {
     const handler = storySpies.tauriInvoke.getMockImplementation();
     storySpies.tauriInvoke.mockImplementation(async (name?: unknown, args?: unknown) => {
       if (name === 'browser_workspace_tab_rows_list') {
@@ -271,21 +270,17 @@ describe('the workspace tab rows', () => {
       }
       return handler?.(name, args);
     });
-    const stateOf = () =>
-      selectBrowserTabCountState({ state: store.getState(), workspaceId: WORKSPACE_ID });
-    expect(stateOf()).toBe('loading');
+    expect(keptCount()).toBeNull();
 
     await store.getState().loadBrowserWorkspaceTabs({ workspaceId: WORKSPACE_ID });
 
     expect(keptCount()).toBeNull();
-    expect(stateOf()).toBe('failed');
 
     storySpies.tauriInvoke.mockImplementation(async (name?: unknown, args?: unknown) =>
       handler?.(name, args),
     );
     await store.getState().loadBrowserWorkspaceTabs({ workspaceId: WORKSPACE_ID });
 
-    expect(stateOf()).toBe('ready');
-    expect(store.getState().browserTabCountFailures).toEqual({});
+    expect(keptCount()).not.toBeNull();
   });
 });

@@ -1,4 +1,4 @@
 export type ToolSignal = {
-  readonly kind: 'changed' | 'running' | 'error';
+  readonly kind: 'changed' | 'error';
   readonly note: string;
 };

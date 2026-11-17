@@ -2,7 +2,6 @@ import { useLayoutEffect, useRef, useState } from 'react';
 import { PANE_RHYTHM, cn } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
 import { selectBrowserTabCount } from '../../../../store/slices/browser/selectBrowserTabCount';
-import { selectBrowserTabCountState } from '../../../../store/slices/browser/selectBrowserTabCountState';
 import { selectDockDrawer } from '../../../../store/slices/drawer/selectDockDrawer';
 import { selectSlotBack } from '../../../../store/slices/drawer/selectSlotBack';
 import { toggleBrowserDock } from '../../../browser/toggleBrowserDock';
@@ -47,7 +46,6 @@ export const ToolRailFrame = ({ terminalSignal }: Props) => {
   const runningCount = useAppStore((state) => runningTerminalCount({ tabs: state.terminalTabs }));
   const workspaceId = useAppStore((state) => state.currentWorkspaceId);
   const tabCount = useAppStore((state) => selectBrowserTabCount({ state, workspaceId }));
-  const tabCountState = useAppStore((state) => selectBrowserTabCountState({ state, workspaceId }));
   const tools = RAIL_TOOLS;
   const count = tools.length;
   const [focusIndex, setFocusIndex] = useState(() =>
@@ -128,8 +126,6 @@ export const ToolRailFrame = ({ terminalSignal }: Props) => {
           isWaiting={waitingKind === tool.pane}
           isCurrent={pageKind === tool.pane}
           fact={toolFactOf({ pane: tool.pane, runningCount, tabCount })}
-          count={tool.pane === 'terminal' ? runningCount : (tabCount ?? 0)}
-          isCountLoading={tool.pane === 'browser' && tabCountState === 'loading'}
           signal={tool.pane === 'terminal' ? terminalSignal : null}
           {...rovingOf({ index })}
           onToggle={() => toggleWorkspaceTool({ tool })}

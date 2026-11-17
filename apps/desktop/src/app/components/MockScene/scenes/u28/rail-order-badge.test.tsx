@@ -51,8 +51,9 @@ const mount = ({ name }: MountParams) => {
 describe('rail order and badge scenes', () => {
   it('registers every scene for the capture', () => {
     expect(Object.keys(U28_RAIL_ORDER_BADGE_SCENES).sort()).toEqual([
-      'session-tools-counts',
       'session-tools-order',
+      'session-tools-quiet',
+      'session-tools-signal',
       'sessions-door-counts',
     ]);
     for (const name of Object.keys(U28_RAIL_ORDER_BADGE_SCENES)) {
@@ -73,20 +74,31 @@ describe('rail order and badge scenes', () => {
     expect(within(toolbar).queryByRole('separator')).toBeNull();
   });
 
-  it('session-tools-counts puts a neutral corner badge on each glyph, capped at 9+', async () => {
-    mount({ name: 'session-tools-counts' });
+  it('session-tools-quiet draws no number, the counts stay in the names', async () => {
+    mount({ name: 'session-tools-quiet' });
 
     const toolbar = await screen.findByRole('toolbar', { name: 'Tools' });
-    const badges = Array.from(toolbar.querySelectorAll('[data-testid="tool-count"]'));
-    expect(badges.map((badge) => badge.textContent)).toEqual(['1', '9+']);
-    expect(badges.map((badge) => badge.getAttribute('data-count-badge'))).toEqual([
-      'neutral',
-      'neutral',
-    ]);
+    expect(toolbar.textContent).toBe('TerminalBrowser');
+    expect(toolbar.querySelector('[data-signal]')).toBeNull();
     expect(
-      badges.every((badge) => badge.parentElement?.getAttribute('data-slot') === 'tool-glyph'),
-    ).toBe(true);
+      within(toolbar)
+        .getAllByRole('button')
+        .map((button) => button.getAttribute('aria-label')),
+    ).toEqual(['Terminal, 1 running', 'Browser, 12 tabs']);
     expect(screen.getByTestId('pane-toggle-browser').getAttribute('aria-pressed')).toBe('true');
+  });
+
+  it('session-tools-signal lights one dot on Terminal for a long command that ended', async () => {
+    mount({ name: 'session-tools-signal' });
+
+    const toolbar = await screen.findByRole('toolbar', { name: 'Tools' });
+    const dots = Array.from(toolbar.querySelectorAll('[data-testid="tool-signal"]'));
+    expect(dots.map((dot) => dot.getAttribute('data-signal'))).toEqual(['changed']);
+    expect(dots[0]?.parentElement?.getAttribute('data-slot')).toBe('tool-glyph');
+    expect(screen.getByTestId('pane-toggle-terminal').getAttribute('aria-label')).toBe(
+      'Terminal, 1 running, pnpm test retry finished after 42s',
+    );
+    expect(toolbar.textContent).toBe('TerminalBrowser');
   });
 
   it('sessions-door-counts draws a tone dot and a muted number, red only for a broken one', () => {

@@ -7,7 +7,7 @@ export const holdBrowserTabCount = (): (() => void) => {
     return () => undefined;
   }
   const key = browserWrites.workspaceLoadKey({ workspaceId });
-  useAppStore.setState({ browserTabCounts: {}, browserTabCountFailures: {} });
+  useAppStore.setState({ browserTabCounts: {} });
   browserWrites.workspaceReads.set(key, new Promise<void>(() => undefined));
   return () => {
     browserWrites.workspaceReads.delete(key);
