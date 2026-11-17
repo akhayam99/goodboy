@@ -43,6 +43,15 @@ const CASES: ReadonlyArray<Case> = [
     edge: 'start',
   },
   {
+    name: 'Sessions with a list taller than the window',
+    trigger: { x: 80, y: BAR_Y, width: 96 },
+    side: 'bottom',
+    align: 'start',
+    width: POPOVER_WIDTH_PX.studio,
+    height: 32 * 60 + 96,
+    edge: 'start',
+  },
+  {
     name: 'limits overflow',
     trigger: { x: 640, y: BAR_Y, width: 40 },
     side: 'bottom',
@@ -187,5 +196,16 @@ describe('bar and rail foot popovers in the smallest window keep the shell gutte
     const box = place({ entry: bell });
     expect(box.bottom).toBe(WINDOW_HEIGHT - SHELL_GUTTER_PX);
     expect(box.maxHeight).toBeLessThan(bell.height);
+  });
+
+  it('keeps the tall Sessions list 500 wide and 12 above the window floor', () => {
+    const sessions = CASES.find((entry) => entry.name.startsWith('Sessions'));
+    expect(sessions).toBeDefined();
+    if (sessions === undefined) {
+      return;
+    }
+    const box = place({ entry: sessions });
+    expect(box.right - box.left).toBe(500);
+    expect(box.bottom).toBe(WINDOW_HEIGHT - SHELL_GUTTER_PX);
   });
 });

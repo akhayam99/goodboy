@@ -27,6 +27,7 @@ export {
   useWorkspaceRollup,
   type WorkspaceAttention,
 } from './slices/session-view/selectors';
+export type { SessionOrder } from './slices/session-view/sessionOrderOf';
 export { useDormantSpend } from './slices/dormant-spend/selectors';
 export { useActionRun } from './slices/action-runs/selectors';
 export {

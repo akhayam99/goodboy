@@ -347,6 +347,10 @@ export const KEY_ROWS: ReadonlyArray<Row> = [
     },
   }),
   pressRow({
+    id: 'sessions.toggle',
+    lands: () => visible('dialog', 'Sessions'),
+  }),
+  pressRow({
     id: 'column.toggle',
     lands: () => visible('button', /^Show sidebar/),
   }),

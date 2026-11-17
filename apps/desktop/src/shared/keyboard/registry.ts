@@ -203,10 +203,16 @@ export const SHORTCUTS = {
     group: 'navigate',
     scope: 'find',
   },
-  'column.toggle': {
+  'sessions.toggle': {
     combo: 'cmd+KeyB',
-    label: 'Show or hide the sidebar',
+    label: 'Show or hide Sessions',
     plane: 'app',
+    group: 'navigate',
+  },
+  'column.toggle': {
+    combo: 'cmd+shift+KeyB',
+    label: 'Show or hide the sidebar',
+    plane: 'session',
     group: 'navigate',
   },
   'innerColumn.toggle': {
@@ -593,13 +599,7 @@ export const SHORTCUTS = {
     scope: 'scripts',
   },
 
-  'list.next': {
-    combo: 'KeyJ',
-    label: 'Next row',
-    plane: 'pane',
-    group: 'lists',
-    scope: 'list',
-  },
+  'list.next': { combo: 'KeyJ', label: 'Next row', plane: 'pane', group: 'lists', scope: 'list' },
   'list.previous': {
     combo: 'KeyK',
     label: 'Previous row',
@@ -629,13 +629,7 @@ export const SHORTCUTS = {
     group: 'lists',
     scope: 'list',
   },
-  'list.dismiss': {
-    combo: 'KeyE',
-    label: 'Dismiss',
-    plane: 'pane',
-    group: 'lists',
-    scope: 'list',
-  },
+  'list.dismiss': { combo: 'KeyE', label: 'Dismiss', plane: 'pane', group: 'lists', scope: 'list' },
   'list.search': {
     combo: 'Slash',
     label: 'Search the list',
