@@ -28,7 +28,6 @@ import type {
   WorkspaceId,
 } from '@goodboy/types';
 import { laneAcceptCountOf, laneAcceptNotesOf } from '../../../features/resolve/laneAcceptCount';
-import { acceptUpToLabel } from '../../../features/resolve/laneCopy';
 import { createResolveSlice } from './index';
 import { laneChainOf, laneHolderOf, laneQueueOf, lanePathsOf } from './resolveLane';
 import { resolveInitialState } from './state';
@@ -569,7 +568,7 @@ describe('a note fix and comment fixes stack in one lane', () => {
     ).toEqual(['a-comment']);
   });
 
-  it('lands both fixes as ready, then accepting the chain closes the note and keeps the comment reply', async () => {
+  it('keeps a run that carries a note as one fix, and accepting it closes the note and keeps the comment reply', async () => {
     const live = makeHarness();
     const ids = [NOTE_THREAD, 'thread-b', 'thread-c'];
     await startRun({ harness: live, attemptId: 'run-1', threadIds: ids });
@@ -595,23 +594,15 @@ describe('a note fix and comment fixes stack in one lane', () => {
 
     const ready = await candidatesWithItems();
     const { chain } = laneChainOf({ candidates: ready, worktreePath });
-    expect(chain.map((link) => link.items.map((item) => item.queueItemId))).toEqual([
-      [noteItem],
-      [itemB],
-      [itemC],
+    expect(chain.map((link) => link.items.map((item) => item.queueItemId).sort())).toEqual([
+      [itemB, itemC, noteItem].sort(),
     ]);
     const queue = await listResolveQueueItems({ db, sessionId: SESSION_ID });
     const noteItemIds = new Set(
       queue.filter((entry) => entry.thread.originKind === 'diff_comment').map((e) => e.item.id),
     );
-    expect(laneAcceptCountOf({ candidates: ready, itemId: itemC })).toBe(3);
+    expect(laneAcceptCountOf({ candidates: ready, itemId: itemC })).toBe(1);
     expect(laneAcceptNotesOf({ candidates: ready, itemId: itemC, noteItemIds })).toBe(1);
-    expect(
-      acceptUpToLabel({
-        count: laneAcceptCountOf({ candidates: ready, itemId: itemC }),
-        notes: laneAcceptNotesOf({ candidates: ready, itemId: itemC, noteItemIds }),
-      }),
-    ).toBe('Apply 3 fixes · 1 is a note');
 
     await live.actions.acceptResolveQueueItem({
       sessionId: SESSION_ID,
@@ -635,6 +626,53 @@ describe('a note fix and comment fixes stack in one lane', () => {
     expect(threads.find((row) => row.threadId === 'thread-c')?.replyDraft).toBe(
       'Reply for thread-c',
     );
+  });
+
+  it('applies a direct note follow-up whose fresh copy starts on the owner snapshot', async () => {
+    const live = makeHarness();
+    const copy = join(repoRoot, 'copy-follow-up');
+    git(worktreePath, ['worktree', 'add', '--detach', '--quiet', copy, rootSha]);
+    agentCwd = copy;
+    commitFile({ name: 'owner.txt', body: 'owner work\n' });
+    const attemptId = await live.actions.recordResolveAttempt({
+      sessionId: SESSION_ID,
+      agent: anAgent({
+        id: makeAttempt({ id: 'follow-up', createdAt: 1 }).agentId,
+        sessionId: SESSION_ID,
+        kind: 'resolver',
+      }),
+      provider: 'anthropic',
+      model: 'claude-sonnet-5-5',
+      effort: null,
+      instructions: 'fix the note',
+      phase: 'running',
+      mountTarget: mountTarget(),
+      threadIds: [],
+      copyPath: copy,
+      copyBase: rootSha,
+      candidateMode: 'propose',
+    });
+    const fix = commitFile({ name: 'a.txt', body: 'a\n' });
+    const noteItem = await seedNote({ sha: fix });
+    await live.actions.captureResolveCandidate({
+      sessionId: SESSION_ID,
+      attemptId,
+      threadIds: [NOTE_THREAD],
+    });
+    const [candidate] = await listResolveCandidates({ db, sessionId: SESSION_ID });
+    expect(candidate?.baseSha).toBe(rootSha);
+    const queue = await listResolveQueueItems({ db, sessionId: SESSION_ID });
+
+    await live.actions.acceptResolveQueueItem({
+      sessionId: SESSION_ID,
+      itemId: noteItem,
+      revision: queue.find((entry) => entry.item.id === noteItem)?.item.candidateRevision ?? 0,
+      reply: '',
+    });
+
+    expect(git(worktreePath, ['rev-parse', 'HEAD'])).toBe(fix);
+    const notes = await listDiffCommentsForSession(db, SESSION_ID);
+    expect(notes.map((note) => note.status)).toEqual(['resolved']);
   });
 
   it('keeps the note open when accepting its fix runs into a conflict', async () => {

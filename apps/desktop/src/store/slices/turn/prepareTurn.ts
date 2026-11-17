@@ -140,6 +140,7 @@ export const prepareTurn = async ({ set, get, input }: Params) => {
   const turnMountId = turnTarget?.mountId ?? null;
   const turnMountRevision = turnTarget?.mountRevision ?? null;
   const copyPath = rewriterCopy === null ? (resolveCopyPath ?? launchCopy?.copyPath ?? null) : null;
+  const copyBase = copyPath === launchCopy?.copyPath ? launchCopy.base : null;
   const firstLapProject =
     rewriterCopy === null && copyPath === null && activeMount === undefined
       ? selectFirstLapProject({ state: before, sessionId })
@@ -374,6 +375,7 @@ export const prepareTurn = async ({ set, get, input }: Params) => {
       turnMountId,
       turnMountRevision,
       copyPath,
+      copyBase,
       firstLapProject,
       inPlaceFolders,
       workingDir,

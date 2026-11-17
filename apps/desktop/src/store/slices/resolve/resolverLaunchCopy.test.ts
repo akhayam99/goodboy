@@ -46,6 +46,20 @@ const AGENT_ID = 'agent-1' as AgentId;
 const MOUNT_ID = 'mount-1' as MountId;
 const TARGET = { mountId: MOUNT_ID, mountRevision: 1, worktreePath: '/repos/payments-api' };
 
+const READY: ResolveCandidate = {
+  id: 'candidate-1',
+  sessionId: SESSION_ID,
+  revision: 1,
+  baseSha: 'head-sha',
+  candidateSha: 'tip-sha',
+  worktreePath: TARGET.worktreePath,
+  mountTarget: TARGET,
+  state: 'ready',
+  integratedSha: null,
+  createdAt: 1,
+  updatedAt: 1,
+};
+
 const resolver: Agent = {
   id: AGENT_ID,
   sessionId: SESSION_ID,
@@ -122,7 +136,7 @@ describe('resolverLaunchCopy', () => {
       agentId: AGENT_ID,
     });
 
-    expect(copy).toEqual({ copyPath: '/copies/attempt-1', mountTarget: TARGET });
+    expect(copy).toEqual({ copyPath: '/copies/attempt-1', mountTarget: TARGET, base: null });
     expect(h.prepare).not.toHaveBeenCalled();
   });
 
@@ -155,26 +169,12 @@ describe('resolverLaunchCopy', () => {
       attemptId: 'attempt-1',
       shouldCarryWorkingTree: false,
     });
-    expect(copy).toEqual({ copyPath: '/copies/fresh', mountTarget: TARGET });
+    expect(copy).toEqual({ copyPath: '/copies/fresh', mountTarget: TARGET, base: 'base-sha' });
   });
 
   it('starts the fresh copy on the tip of the lane when fixes are waiting there', async () => {
     h.attempts = [attemptOf({ copyPath: null })];
-    h.candidates = [
-      {
-        id: 'candidate-1',
-        sessionId: SESSION_ID,
-        revision: 1,
-        baseSha: 'head-sha',
-        candidateSha: 'tip-sha',
-        worktreePath: TARGET.worktreePath,
-        mountTarget: TARGET,
-        state: 'ready',
-        integratedSha: null,
-        createdAt: 1,
-        updatedAt: 1,
-      },
-    ];
+    h.candidates = [READY];
 
     await resolverLaunchCopy({ get: getOf(), sessionId: SESSION_ID, agentId: AGENT_ID });
 
@@ -196,6 +196,46 @@ describe('resolverLaunchCopy', () => {
       attemptId: 'attempt-1',
       shouldCarryWorkingTree: true,
     });
+  });
+
+  it('records the base under the owner snapshot, never the snapshot, for a note follow-up', async () => {
+    h.attempts = [attemptOf({ copyPath: null, threadIds: ['note:harborline-header'] })];
+    h.prepare.mockResolvedValueOnce({ copyPath: '/copies/fresh', base: 'owner-head-sha' });
+
+    const copy = await resolverLaunchCopy({
+      get: getOf(),
+      sessionId: SESSION_ID,
+      agentId: AGENT_ID,
+    });
+
+    expect(copy?.base).toBe('owner-head-sha');
+  });
+
+  it('keeps the base under the owner snapshot when a note follow-up reuses its copy', async () => {
+    h.attempts = [attemptOf({ threadIds: ['note:harborline-header'] })];
+    h.candidates = [{ ...READY, id: 'attempt-1', state: 'building', baseSha: 'owner-head-sha' }];
+
+    const copy = await resolverLaunchCopy({
+      get: getOf(),
+      sessionId: SESSION_ID,
+      agentId: AGENT_ID,
+    });
+
+    expect(copy).toEqual({
+      copyPath: '/copies/attempt-1',
+      mountTarget: TARGET,
+      base: 'owner-head-sha',
+    });
+  });
+
+  it('never starts a note follow-up while a fix waits for review on the branch', async () => {
+    h.attempts = [attemptOf({ copyPath: null, threadIds: ['note:harborline-header'] })];
+    h.candidates = [READY];
+
+    await expect(
+      resolverLaunchCopy({ get: getOf(), sessionId: SESSION_ID, agentId: AGENT_ID }),
+    ).rejects.toThrow('Apply or skip the ready fix first');
+    expect(h.prepare).not.toHaveBeenCalled();
   });
 
   it('makes a fresh copy when the folder it remembers is gone', async () => {

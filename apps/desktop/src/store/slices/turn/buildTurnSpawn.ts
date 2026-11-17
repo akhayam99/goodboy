@@ -52,6 +52,7 @@ export const buildTurnSpawn = async ({ set, get, lease, ctx }: Params) => {
     turnTarget,
     turnMountId,
     copyPath,
+    copyBase,
     firstLapProject,
     inPlaceFolders,
     isReadOnlyAnswer,
@@ -100,6 +101,7 @@ export const buildTurnSpawn = async ({ set, get, lease, ctx }: Params) => {
               agent: agentRowEarly,
             }),
           ...(copyPath !== null && { copyPath }),
+          ...(copyBase !== null && { copyBase }),
           candidateMode: isCopyTurn
             ? 'propose'
             : resolveCandidateMode({
