@@ -124,9 +124,9 @@ afterEach(() => {
 });
 
 describe('a live Browser tab when you leave the session', () => {
-  it('stays inside the visible dock or is hidden when Chat opens from the column', async () => {
+  it('stays inside the visible dock or is hidden when Chat opens from the places rail', async () => {
     await mountBrowserBesideSession();
-    fireEvent.click(found({ selector: '[data-side-column] [data-column-door="chat"]' }));
+    fireEvent.click(found({ selector: '[data-shell-rail] [data-shell-rail-item="chat"]' }));
     await waitFor(() => expect(useAppStore.getState().appStudio?.kind).toBe('chat'), WAIT);
 
     await waitFor(() => expectNeverPaintedOutsideTheDock(), WAIT);
@@ -134,9 +134,9 @@ describe('a live Browser tab when you leave the session', () => {
 
   it('stays inside the visible dock or is hidden when Settings opens', async () => {
     await mountBrowserBesideSession();
-    const column = found({ selector: '[data-side-column]' });
+    const rail = found({ selector: '[data-shell-rail]' });
 
-    fireEvent.click(within(column).getByRole('button', { name: 'Settings' }));
+    fireEvent.click(within(rail).getByRole('button', { name: 'Settings' }));
     await waitFor(() => expect(useAppStore.getState().appStudio?.kind).toBe('settings'), WAIT);
 
     await waitFor(() => expectNeverPaintedOutsideTheDock(), WAIT);
