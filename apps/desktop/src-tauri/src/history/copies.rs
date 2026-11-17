@@ -6,7 +6,7 @@ use super::reservation::{
 };
 use super::trial::TRIAL_SLUG_PREFIX;
 use crate::app_paths::AppPathsError;
-use crate::worktree::{git, resolve_commit, snapshot_owner_tree, WorktreeError};
+use crate::worktree::{git, owner_tree_on, resolve_commit, WorktreeError};
 use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
 
@@ -290,6 +290,7 @@ pub struct ResolveCopyArgs {
 pub struct ResolveCopy {
     pub copy_path: String,
     pub head: String,
+    pub base: String,
 }
 
 pub(crate) fn resolve_copy_path_of(attempt_id: &str) -> Result<PathBuf, AppPathsError> {
@@ -305,12 +306,11 @@ pub(crate) fn prepare_resolve_copy_at(
     if copy.exists() && is_owned_copy(copy) {
         discard_copy(&copy.to_string_lossy());
     }
-    let tip = resolve_commit(cwd, start.unwrap_or("HEAD"))?;
-    let carried = match start {
-        None if should_carry_working_tree => snapshot_owner_tree(cwd, &tip)?,
-        _ => None,
+    let base = resolve_commit(cwd, start.unwrap_or("HEAD"))?;
+    let head = match should_carry_working_tree {
+        true => owner_tree_on(cwd, &base)?,
+        false => base.clone(),
     };
-    let head = carried.unwrap_or(tip);
     let mut guard = create_copy(cwd, copy, &head)?;
     deps::link_dependencies(cwd, copy);
     guard.is_kept = true;
@@ -318,6 +318,7 @@ pub(crate) fn prepare_resolve_copy_at(
     Ok(ResolveCopy {
         copy_path: copy.to_string_lossy().to_string(),
         head,
+        base,
     })
 }
 

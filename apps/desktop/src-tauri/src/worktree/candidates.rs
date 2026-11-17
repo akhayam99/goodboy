@@ -68,11 +68,10 @@ fn worktree_integrate_candidate_blocking(
         std::fs::remove_file(&picking)?;
     }
     let actual = resolve_commit(path, "HEAD")?;
-    if let Some(snapshot) = owner_tree::owner_tree_under(path, &actual, &candidate) {
+    if owner_tree::carries_owner_tree(path, &expected, &candidate)? {
         let sha = owner_tree::integrate_onto_owner_tree(owner_tree::OwnerTreeIntegration {
             path,
             journal: &journal,
-            snapshot: &snapshot,
             expected: &expected,
             candidate: &candidate,
             actual: &actual,
@@ -114,8 +113,12 @@ fn worktree_integrate_candidate_blocking(
     std::fs::create_dir_all(journal_dir)?;
     if actual == expected {
         write_journal(&journal, &[&candidate])?;
+        move_files(path, &expected, &candidate).map_err(|_| WorktreeError::Git {
+            message:
+                "the fix no longer applies on the branch: a file in your working tree is in its way"
+                    .to_string(),
+        })?;
         git(path, &["update-ref", "HEAD", &candidate, &expected])?;
-        git(path, &["reset", "--hard", "--quiet", &candidate])?;
         return Ok(IntegratedCandidate { sha: candidate });
     }
     if let Some(integrated) = landed_equivalent(path, &expected, &candidate, &actual)? {
@@ -172,6 +175,12 @@ fn write_journal(journal: &Path, lines: &[&str]) -> Result<(), WorktreeError> {
     Ok(())
 }
 
+fn move_files(path: &Path, from: &str, to: &str) -> Result<(), WorktreeError> {
+    git(path, &["update-index", "-q", "--refresh"])?;
+    git(path, &["read-tree", "-m", "-u", from, to])?;
+    Ok(())
+}
+
 fn move_head_back(
     path: &Path,
     rest_at: &str,
@@ -179,11 +188,12 @@ fn move_head_back(
     is_keeping_uncommitted: bool,
 ) -> Result<(), WorktreeError> {
     if is_keeping_uncommitted {
-        if git(path, &["reset", "--keep", "--quiet", rest_at]).is_err() {
+        if move_files(path, raw_tip, rest_at).is_err() {
             return Err(WorktreeError::Git {
                 message: "your uncommitted changes touch the files of the fix, so the branch was left as the agent left it".to_string(),
             });
         }
+        git(path, &["update-ref", "HEAD", rest_at, raw_tip])?;
         return Ok(());
     }
     git(path, &["update-ref", "HEAD", rest_at, raw_tip])?;
@@ -239,7 +249,7 @@ fn worktree_quarantine_candidate_blocking(
         }
     }
     let raw_tip = resolve_commit(path, "HEAD")?;
-    if raw_tip == base {
+    if raw_tip == base || owner_tree::holds_only_owner_tree(path, &base, &raw_tip)? {
         return Ok(QuarantinedCandidate {
             sha: None,
             base_sha: base,
@@ -329,8 +339,11 @@ fn split_stacked(
     if !merges.trim().is_empty() {
         return Ok(unsplit(picks));
     }
-    let listed = git(path, &["rev-list", "--reverse", &range])?;
-    let order: Vec<&str> = listed.lines().map(str::trim).collect();
+    let order: Vec<String> = owner_tree::commits_between(path, base, &head)?
+        .into_iter()
+        .filter(|commit| !commit.is_owner_tree)
+        .map(|commit| commit.sha)
+        .collect();
     let mut placed: Vec<(usize, String, String)> = Vec::with_capacity(picks.len());
     for pick in &picks {
         let Ok(commit) = resolve_commit(path, &pick.commit_sha) else {
@@ -386,7 +399,7 @@ fn split_one(
 mod owner_tree;
 mod scrub;
 
-pub(crate) use owner_tree::snapshot_owner_tree;
+pub(crate) use owner_tree::{owner_tree_base, owner_tree_on};
 
 #[cfg(test)]
 mod tests;
