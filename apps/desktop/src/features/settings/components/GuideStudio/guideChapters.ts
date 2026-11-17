@@ -334,10 +334,10 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Asks you and pause',
-        desc: 'Every step, After the plan or Never sets how often a run stops for you, one row per kind in Run defaults. Pause run lets the step in flight finish, and Stop run asks first.',
+        desc: 'Every step, After the plan or Never sets how often a run stops for you, one row in Runs in Settings. Pause run lets the step in flight finish, and Stop run asks first.',
       },
       {
-        term: NAMES.runDefaults,
+        term: 'Runs in Settings',
         desc: 'This Settings page sets what new runs start with. A run keeps the rules it started with.',
       },
       {

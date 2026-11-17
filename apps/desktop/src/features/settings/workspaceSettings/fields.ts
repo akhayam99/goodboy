@@ -272,7 +272,7 @@ const WORKSPACE_FIELDS: ReadonlyArray<WorkspaceFieldDef> = [
   }),
   erase({
     id: 'workflowRules',
-    label: NAMES.runDefaults,
+    label: NAMES.runs,
     fallback: canonicalWorkflowRules({ rules: DEFAULT_WORKFLOW_RULES }),
     parse: (value) =>
       typeof value === 'string' && parseWorkflowRulesText({ text: value }) !== null ? value : null,

@@ -75,7 +75,6 @@ export const NAMES = {
   decisions: 'Decisions',
   plan: 'Plan',
   changes: 'Changes',
-  runDefaults: 'Run defaults',
   whatsNew: "What's new",
   settings: 'Settings',
   guide: 'Guide',
@@ -207,8 +206,7 @@ export const NAMES = {
 } as const;
 
 const FORMER_NAMES: Readonly<Record<string, ReadonlyArray<string>>> = {
-  [NAMES.runDefaults]: ['Rules', 'Workflow rules'],
-  [NAMES.runs]: ['Workflows', 'Workflow runs', 'Work'],
+  [NAMES.runs]: ['Workflows', 'Workflow runs', 'Work', 'Run defaults', 'Rules', 'Workflow rules'],
   [NAMES.lead]: ['Auto agent'],
   [NAMES.whatsNew]: ['Changelog'],
   [NAMES.spendCap]: ['Spend cap', 'Spend limit', 'Default cap', 'Cap', 'Budget cap'],

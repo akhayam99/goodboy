@@ -23,6 +23,7 @@ type WorkspacePageEntry = {
   readonly id: WorkspacePage;
   readonly label: string;
   readonly concept: keyof typeof CONCEPT_ICONS;
+  readonly searchAliases?: ReadonlyArray<string>;
 };
 
 const ALL_WORKSPACE_PAGES = [
@@ -38,8 +39,9 @@ const ALL_WORKSPACE_PAGES = [
   },
   {
     id: 'general',
-    label: NAMES.runDefaults,
+    label: NAMES.runs,
     concept: 'terminal',
+    searchAliases: ['Start as'],
   },
   {
     id: MODELS_PAGE_SECTION,

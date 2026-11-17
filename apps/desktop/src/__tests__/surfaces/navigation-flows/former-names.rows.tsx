@@ -1,20 +1,13 @@
 import { both, heading, lens, openPalette, studio, type Row } from './harness';
 
 export const FORMER_NAME_ROWS: ReadonlyArray<Row> = [
-  {
-    name: 'searching Rules finds Run defaults',
+  ...['Run defaults', 'Start as', 'Rules', 'Workflow rules'].map((former): Row => ({
+    name: `searching ${former} finds Runs in Settings`,
     covers: ['openSettings', 'scope:workspace'],
     door: 'palette',
-    open: () => openPalette(/^Run defaults/, 'Rules'),
-    lands: () => heading('Run defaults'),
-  },
-  {
-    name: 'searching Workflow rules finds Run defaults',
-    covers: ['openSettings', 'scope:workspace'],
-    door: 'palette',
-    open: () => openPalette(/^Run defaults/, 'Workflow rules'),
-    lands: () => heading('Run defaults'),
-  },
+    open: () => openPalette(/^Workspace settings: Runs/, former),
+    lands: () => heading(/^Runs$/),
+  })),
   {
     name: 'searching Open Workflows finds Open Runs in a session',
     covers: ['palette:Open Runs'],
