@@ -190,7 +190,7 @@ describe('the policy and failure scenes', () => {
     });
   });
 
-  it('keeps the workspace name to the top bar and the rail scope, never on the Projects page', async () => {
+  it('keeps the workspace name to the rail scope, never on the Projects page', async () => {
     useAppStore.setState({ loadProjectGitStatus: async () => undefined });
     render(
       <ToastProvider>
@@ -200,7 +200,7 @@ describe('the policy and failure scenes', () => {
     await settle();
 
     expect(screen.getByRole('heading', { level: 1, name: 'Projects' })).toBeDefined();
-    expect(screen.getAllByText('Harborline')).toHaveLength(2);
+    expect(screen.getAllByText('Harborline')).toHaveLength(1);
     const page = document.querySelector('[data-settings-detail]');
     expect(page).not.toBeNull();
     expect(within(page as HTMLElement).queryAllByText(/Harborline/)).toEqual([]);

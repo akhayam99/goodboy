@@ -767,12 +767,14 @@ scroll in any ancestor moves the trigger. A card that sits beside its anchor
 instead of under it (the rail flyout, the session hover card) takes both from
 `useFloatingPlace` in `@goodboy/ui`, never from a copy of the clamp. A surface
 that is open while its box shows (the composer quick actions, the queued line
-over an input, a failed switch under the identity) floats through
-`AnchoredLayer`: it portals, places from the element it is rendered in and
+over an input, a failed switch beside the workspace mark) floats through
+`AnchoredLayer` (`top`, `bottom` or `right` of its anchor): it portals, places from the element it is rendered in and
 keeps `SHELL_GUTTER_PX` (12px) from every window edge, so a clipping parent
 never cuts it. A class line that is `absolute` and `top-full`, `bottom-full`,
 `left-full`, `right-full` or `z-popover` is the `absolute-popover` forbidden
-pattern, held at zero. A popover
+pattern, held at zero. A popover that opens from a `ShellRailItem` spreads
+`SHELL_RAIL_POPOVER` into `useDropdown`, so it opens to the right of the rail,
+start aligned, with the same gutter. A popover
 width comes from `POPOVER_WIDTH_CLASS` and `POPOVER_WIDTH_PX`, and its height is
 measured, not written down.
 

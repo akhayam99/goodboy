@@ -53,7 +53,7 @@ describe('the sidebar toggle axis', () => {
     const leftZone = TOP_BAR.indexOf('col-start-1');
     const toggle = TOP_BAR.indexOf('<ColumnToggleButton');
     expect(toggle).toBeGreaterThan(leftZone);
-    expect(toggle).toBeLessThan(TOP_BAR.indexOf('<WorkspaceIdentityRow'));
+    expect(TOP_BAR).not.toContain('<WorkspaceIdentityRow');
     expect(toggle).toBeLessThan(TOP_BAR.indexOf('col-start-2'));
     expect(toggle).toBeLessThan(TOP_BAR.indexOf('<NavCluster'));
   });

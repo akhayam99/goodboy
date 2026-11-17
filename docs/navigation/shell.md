@@ -355,6 +355,14 @@ wears a small ring and is named waiting, and a signal dot sits with either (see
 
 **The places rail** (`app/components/SideColumn/ShellLeft/`, on the `ShellRail`
 primitive) is on every screen with a workspace, in the same shape everywhere:
+the workspace mark first (`WorkspaceIdentityRow`: the workspace's tile with its
+name under it; ⌘O or a click opens the switcher popover to the right of the
+rail through `SHELL_RAIL_POPOVER`, 12px inside the window, and ⌘1 to ⌘9 switch
+without opening it; the number of sessions that need you in other workspaces is
+its count, amber, or red when one is broken, and a dot says another workspace
+had activity; while a switch loads the word names the target and the mark is
+busy, a failed switch keeps the workspace you were in and says
+`Couldn't open {name}.` with **Retry** beside the mark), then
 New (⌘N, an outlined tile; a dot and `New session, draft in progress` while a
 draft waits), then Board (⌘⇧H), Tasks, Workflows, Chat, Connect and Impact,
 then at the foot Settings (⌘,), the bug and the Goodboy mark. Each item is an
@@ -474,7 +482,8 @@ drops never lets another zone slide into its column. When the right zone
 outgrows its half, the command center slides off the midpoint instead of being
 covered.
 
-- Left: Sessions, the workspace identity, then Repositories. The bar holds
+- Left: Sessions, then Repositories. The workspace mark lives at the top of the
+  places rail, not in the bar. The bar holds
   no sidebar toggle: the places rail never folds. Sessions (`SessionsPopover`,
   ⌘B from any screen, `sessions.toggle`) opens a studio wide (500px) popover
   through the one placement rule: the 12px shell gutter from every window
@@ -483,8 +492,7 @@ covered.
   (Pinned, then by state; the Needs you number is `attentionCountOf`), typing
   filters by title or project, the arrows and Enter open a row, and the pin
   calls `pinSession` or `unpinSession`, which leave the row in place when the
-  write fails. The identity has a 200px limit and truncates, with the full name
-  in its tooltip.
+  write fails.
 - Centre: the movement cluster, then the command center. `Back` and `Forward`
   (24px icons) name their destination in the label and the tooltip
   (`Back: Comments`, the session on a second line, `Hold to show history` on a

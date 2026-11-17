@@ -111,11 +111,12 @@ afterEach(() => {
 });
 
 describe('the places rail', () => {
-  it('draws New, the six places with Impact last, then Settings, at 64px with a word under each', () => {
+  it('draws the workspace, New, the six places with Impact last, then Settings, at 64px with a word under each', () => {
     mount({});
 
     expect(rail().style.width).toBe('64px');
     expect(wordsOf()).toEqual([
+      'Harborline',
       'New',
       'Board',
       'Tasks',
@@ -127,6 +128,24 @@ describe('the places rail', () => {
     ]);
     expect(within(rail()).queryByRole('button', { name: /Monitoring/ })).toBeNull();
     within(rail()).getByRole('button', { name: 'Connections' });
+  });
+
+  it('opens the workspace popover from the mark at the top of the rail and from its chord', () => {
+    mount({});
+    const mark = within(rail()).getByRole('button', { name: 'Switch workspace: Harborline' });
+
+    expect(rail().querySelector('[data-shell-rail-item]')).toBe(mark);
+    expect(mark.getAttribute('aria-expanded')).toBe('false');
+    fireEvent.click(mark);
+    expect(mark.getAttribute('aria-expanded')).toBe('true');
+    screen.getByRole('dialog', { name: 'Switch or open a workspace' });
+    fireEvent.click(mark);
+    expect(mark.getAttribute('aria-expanded')).toBe('false');
+
+    act(() => {
+      window.dispatchEvent(new CustomEvent('goodboy:open-workspace-switcher'));
+    });
+    expect(mark.getAttribute('aria-expanded')).toBe('true');
   });
 
   it('drops to 44px icons under a 1100px window, every place still named', () => {

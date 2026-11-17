@@ -23,6 +23,7 @@ import { U25_R4_WORKSPACE_SCENES } from '../../app/components/MockScene/scenes/u
 const SETTLE_MS = 2_000;
 
 const RAIL_ORDER = [
+  'workspace',
   'new',
   'board',
   'inbox',

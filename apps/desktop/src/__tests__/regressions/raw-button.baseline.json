@@ -193,7 +193,6 @@
   "apps/desktop/src/features/workspace/components/SessionActivityBar/SessionGroupHeader.tsx": 1,
   "apps/desktop/src/features/workspace/components/StageBoard/SessionSignal.tsx": 1,
   "apps/desktop/src/features/workspace/components/StageBoard/StageBoardCard/index.tsx": 1,
-  "apps/desktop/src/features/workspace/components/WorkspaceIdentityRow/index.tsx": 1,
   "apps/desktop/src/features/workspace/components/WorkspaceSwitcher/OtherWorkspaceRow.tsx": 1,
   "apps/desktop/src/shared/components/AnswerOptionRow/index.tsx": 1,
   "apps/desktop/src/shared/components/ClampedText/index.tsx": 1,
