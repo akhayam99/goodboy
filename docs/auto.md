@@ -1215,20 +1215,32 @@ null value is Reset and removes the row. A lost swap re-reads and retries once,
 then fails with "changed in another window"; a failed write keeps the old value.
 
 The panel for these rows is `features/auto/permissions/`: `LeadPermissionsPanel`
-shows the preset tabs (Custom lights by itself and is not pickable), the nine
-rows on one grid, the spend limit read only, the four locked rows and the
-closing sentence of `permissionSentenceOf`. A row saves when you change it;
-there is no draft. An own row shows "This Lead" (or "Set here" on the default)
-with **Reset**, which writes null; the other rows follow the default live. A
-failed write keeps the old value and shows the error under its row, and the
-panel reads again after every write. Picking a preset writes the level and
-clears the own rows; on a Lead it pins a row only where a workspace default
-would still disagree with the preset. `LeadPermissionsChip` mounts the panel
-from `AutoLevelChip` wherever a session or a Lead exists: the start field of a
-session and the Lead page. With no Lead yet it reads the session, and a preset
-writes that session's level only. A new session draft has no session to
-name, so it keeps the level chip, applied to the session once it exists. The
-workspace settings hold no chip: **Stops for your OK** sets the level only.
+shows the nine rows in three groups and the four locked rows as one line. The
+level and **Custom** sit above it in `LeadLevelRow` (the drawer) or on the
+**Stops for your OK** row (the Run defaults). `LeadPermissions.level` is the
+level the rows fall back to, and `leadDetailsDifferOf` counts the rows that
+differ from it: that count is the only source of "Custom, 2 details". A row
+saves when you change it; there is no draft. A failed write keeps the old
+value and shows the error under its row, and the panel reads again after
+every write. Picking a level writes the level and clears the own rows; on a
+Lead it pins a row only where a workspace default would still disagree with
+the level. Reset is a pick of the current level.
+
+`LeadPermissionsChip` is the **Stops** menu that `AutoLevelChip` mounts
+wherever a session or a Lead exists: the start field of a session and the Lead
+page. It holds the three levels, **Reset to** the level when the rows differ,
+and **Fine-tune this run**, which opens the `lead-details` drawer
+(`LeadDetailsDrawer`) beside the chat. With no Lead yet it reads the session,
+a level writes that session's level only, and the last row is **Fine-tune in
+Settings**. A run never writes the workspace default. A new session draft has
+no session to name, so it keeps the level chip, applied to the session once it
+exists. In the Run defaults the **Stops for your OK** row shows Custom and
+Reset for the workspace default rows, and **Fine-tune what the Lead does
+alone** opens them in the page (`LeadDetailsDisclosure`); a level pick there
+writes both level keys, then clears the default rows. The `lead-details`
+drawer is never saved in the window layout (`UNSAVED_DRAWER_KINDS`,
+`savedLocationOf`), so a rollback to a release without it opens the run
+without the drawer.
 A row tightened while an agent runs applies to its next start. The tests are
 `permissions.test.ts` (the compatibility table for each level, each
 precedence step, the stale pair) and
