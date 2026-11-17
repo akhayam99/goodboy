@@ -28,8 +28,8 @@ import {
 let useAppStore: Awaited<ReturnType<typeof importStore>>;
 let CentralColumn: typeof import('./CentralColumn').CentralColumn;
 
-const FIRST_PAINT_BUDGET_MS = 300;
-const LONG_TASK_BUDGET_MS = 100;
+const OPEN_COMMIT_BUDGET = 6;
+const OPEN_IPC_BUDGET = 30;
 
 beforeAll(async () => {
   installFakeResizeObserver();
@@ -60,27 +60,25 @@ const settle = async () => {
 };
 
 describe('the overview of a session with 171 agents', () => {
-  it('paints its first frame inside the budget', async () => {
+  it('defers the log and bounds the work when opened', async () => {
     seedBigSession();
     const session = useAppStore.getState().sessions.find((item) => item.id === BIG_SESSION_ID);
     if (session === undefined) {
       throw new Error('The seed must hold the session');
     }
     let commits = 0;
-    let firstCommitMs = 0;
-    let longestCommitMs = 0;
-    const startedAt = performance.now();
+    let firstFrameRows = -1;
+    storySpies.tauriInvoke.mockClear();
     await act(async () => {
       render(
         <ToastProvider>
           <AutoReleaseContext.Provider value>
             <Profiler
               id="overview"
-              onRender={(_id, _phase, actualMs) => {
+              onRender={() => {
                 commits += 1;
-                longestCommitMs = Math.max(longestCommitMs, actualMs);
                 if (commits === 1) {
-                  firstCommitMs = actualMs;
+                  firstFrameRows = document.querySelectorAll('[data-log-row]').length;
                 }
               }}
             >
@@ -90,14 +88,11 @@ describe('the overview of a session with 171 agents', () => {
         </ToastProvider>,
       );
     });
-    const mountMs = performance.now() - startedAt;
     await settle();
     const rows = document.querySelectorAll('[data-log-row]').length;
-    process.stdout.write(
-      `[perf] big session overview mount ${mountMs.toFixed(0)}ms, first commit ${firstCommitMs.toFixed(0)}ms, longest commit ${longestCommitMs.toFixed(0)}ms, ${commits} commits, ${rows} log rows\n`,
-    );
-    expect(firstCommitMs).toBeLessThan(FIRST_PAINT_BUDGET_MS);
-    expect(longestCommitMs).toBeLessThan(LONG_TASK_BUDGET_MS);
-    expect(rows).toBeLessThanOrEqual(LOG_PAGE_ROWS);
+    expect(firstFrameRows).toBe(0);
+    expect(commits).toBeLessThanOrEqual(OPEN_COMMIT_BUDGET);
+    expect(rows).toBe(LOG_PAGE_ROWS);
+    expect(storySpies.tauriInvoke.mock.calls.length).toBeLessThanOrEqual(OPEN_IPC_BUDGET);
   });
 });

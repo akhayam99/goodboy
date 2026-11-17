@@ -14,6 +14,7 @@ vi.mock('../../../../shared/lib/db', async () =>
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, screen, within } from '@testing-library/react';
 import { anAgent } from '@goodboy/types/testing';
+import { brandId } from '@goodboy/types';
 import type { IsoDateTime, PullRequestState, SessionExternalTask, SessionId } from '@goodboy/types';
 import {
   STORE_IMPORT_TIMEOUT_MS,
@@ -79,13 +80,13 @@ const draftPr = (): PullRequestState => ({
 });
 
 const task: SessionExternalTask = {
-  sessionId: webhook.id as SessionId,
+  sessionId: brandId<SessionId>({ value: webhook.id }),
   provider: 'linear',
   externalId: 'lin-212',
   identifier: 'HBL-212',
   url: 'https://linear.app/harborline/issue/HBL-212',
   title: 'Webhook retries post twice',
-  createdAt: '2026-10-01T09:00:00.000Z' as IsoDateTime,
+  createdAt: brandId<IsoDateTime>({ value: '2026-10-01T09:00:00.000Z' }),
 };
 
 const mount = () => {
@@ -117,9 +118,13 @@ const mount = () => {
     sessionExternalTasks: { [webhook.id]: [task] },
     sessionPhaseRuns: {
       [webhook.id]: [
-        anAgent({ sessionId: webhook.id as SessionId, name: 'Planner', status: 'completed' }),
         anAgent({
-          sessionId: webhook.id as SessionId,
+          sessionId: brandId<SessionId>({ value: webhook.id }),
+          name: 'Planner',
+          status: 'completed',
+        }),
+        anAgent({
+          sessionId: brandId<SessionId>({ value: webhook.id }),
           name: 'Implementer',
           status: 'running',
           ordinal: 1,
@@ -165,17 +170,17 @@ describe('the hover card', () => {
     rest(499);
     expect(card()).toBeNull();
     rest(1);
-    expect(within(card() as HTMLElement).getByText('Fix webhook retries')).toBeDefined();
+    within(screen.getByTestId('session-hover-card')).getByText('Fix webhook retries');
   });
 
   it('swaps to the next row at once, with no second wait', () => {
     mount();
     fireEvent.mouseEnter(rowOf('Fix webhook retries'));
     rest(500);
-    expect(within(card() as HTMLElement).getByText('Fix webhook retries')).toBeDefined();
+    within(screen.getByTestId('session-hover-card')).getByText('Fix webhook retries');
     fireEvent.mouseLeave(rowOf('Fix webhook retries'));
     fireEvent.mouseEnter(rowOf('Retry policy for 429s'));
-    expect(within(card() as HTMLElement).getByText('Retry policy for 429s')).toBeDefined();
+    within(screen.getByTestId('session-hover-card')).getByText('Retry policy for 429s');
   });
 
   it('closes on Escape', () => {
@@ -200,7 +205,7 @@ describe('the hover card', () => {
     fireEvent.mouseEnter(rowOf('Fix webhook retries'));
     rest(500);
     fireEvent.mouseLeave(rowOf('Fix webhook retries'));
-    fireEvent.mouseEnter(card() as HTMLElement);
+    fireEvent.mouseEnter(screen.getByTestId('session-hover-card'));
     rest(1000);
     expect(card()).not.toBeNull();
   });
@@ -219,7 +224,7 @@ describe('what the hover card says', () => {
     mount();
     fireEvent.mouseEnter(rowOf(title));
     rest(500);
-    return within(card() as HTMLElement);
+    return within(screen.getByTestId('session-hover-card'));
   };
 
   it.each(['Retry policy for 429s', 'Fix webhook retries'])(
@@ -233,14 +238,14 @@ describe('what the hover card says', () => {
       const row = markOf(rowOf(title));
       fireEvent.mouseEnter(rowOf(title));
       rest(500);
-      expect(markOf(card() as HTMLElement)).toEqual(row);
+      expect(markOf(screen.getByTestId('session-hover-card'))).toEqual(row);
       expect(row[0]).toBe('state');
     },
   );
 
   it('says what waits on you in the words of the reason table', () => {
     const view = openCard('Retry policy for 429s');
-    expect(view.getByText('1 question for you')).toBeDefined();
+    view.getByText('1 question for you');
   });
 
   it('agrees with what the row tells a screen reader', () => {
@@ -251,20 +256,20 @@ describe('what the hover card says', () => {
     );
     fireEvent.mouseEnter(rowOf('Retry policy for 429s'));
     rest(500);
-    expect(within(card() as HTMLElement).getByText('1 question for you')).toBeDefined();
+    within(screen.getByTestId('session-hover-card')).getByText('1 question for you');
   });
 
   it('shows the pull request, its checks, the linked task and the project', () => {
     const view = openCard('Fix webhook retries');
-    expect(view.getByText('#318 Draft · checks passing')).toBeDefined();
-    expect(view.getByText('payments-api')).toBeDefined();
-    expect(view.getByText('HBL-212')).toBeDefined();
+    view.getByText('#318 Draft · checks passing');
+    view.getByText('payments-api');
+    view.getByText('HBL-212');
   });
 
   it('counts the agents and says when the session last moved', () => {
     const view = openCard('Fix webhook retries');
-    expect(view.getByText(/^2 agents/)).toBeDefined();
-    expect(view.getByText(/5m ago$/)).toBeDefined();
+    view.getByText(/^2 agents/);
+    view.getByText(/5m ago$/);
   });
 
   it('offers to open what needs you, and lands on the questions', () => {
@@ -315,9 +320,9 @@ describe('what the hover card says', () => {
     seedGithubFor({ session: retry, pr: failingApproved() });
     fireEvent.mouseEnter(rowOf('Retry policy for 429s'));
     rest(500);
-    const view = within(card() as HTMLElement);
+    const view = within(screen.getByTestId('session-hover-card'));
 
-    expect(view.getByText('1 question for you')).toBeDefined();
+    view.getByText('1 question for you');
     expect(view.getByText('Checks failing').getAttribute('data-attention-line')).toBe('ci-failed');
     expect(view.getByText('Approved, ready to merge').getAttribute('data-attention-line')).toBe(
       'pr-approved',
@@ -329,15 +334,15 @@ describe('what the hover card says', () => {
     useAppStore.setState({
       sessionOpenQuestions: {
         ...useAppStore.getState().sessionOpenQuestions,
-        [webhook.id]: [openQuestionFor({ sessionId: webhook.id as SessionId })],
+        [webhook.id]: [openQuestionFor({ sessionId: brandId<SessionId>({ value: webhook.id }) })],
       },
     });
     fireEvent.mouseEnter(rowOf('Fix webhook retries'));
     rest(500);
-    const view = within(card() as HTMLElement);
+    const view = within(screen.getByTestId('session-hover-card'));
 
-    expect(view.getByText('1 question for you')).toBeDefined();
-    expect(view.getByText('An agent is working')).toBeDefined();
+    view.getByText('1 question for you');
+    view.getByText('An agent is working');
   });
 
   it('lists what is wrong behind a running session without turning it into needs you', () => {
@@ -345,11 +350,11 @@ describe('what the hover card says', () => {
     seedGithubFor({ session: webhook, pr: failingApproved() });
     fireEvent.mouseEnter(rowOf('Fix webhook retries'));
     rest(500);
-    const view = within(card() as HTMLElement);
+    const view = within(screen.getByTestId('session-hover-card'));
 
-    expect(view.getByText('Running')).toBeDefined();
-    expect(view.getByText('Checks failing')).toBeDefined();
-    expect(view.getByText('Approved, ready to merge')).toBeDefined();
+    view.getByText('Running');
+    view.getByText('Checks failing');
+    view.getByText('Approved, ready to merge');
     expect(view.queryByText('An agent is working')).toBeNull();
   });
 
@@ -363,6 +368,6 @@ describe('what the hover card says', () => {
     });
     fireEvent.mouseEnter(rowOf('Legacy hook cleanup'));
     rest(500);
-    expect(within(card() as HTMLElement).getByText('Archived')).toBeDefined();
+    within(screen.getByTestId('session-hover-card')).getByText('Archived');
   });
 });

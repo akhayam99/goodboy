@@ -144,6 +144,8 @@ Click a workspace and the top bar names it at once, with a soft pulse, while the
 
 ## Under the hood
 
+Hover-card fixtures use branded ids and timestamps in `apps/desktop/src/features/workspace/components/SessionHoverCard/index.test.tsx`.
+
 This part is for contributors and agents who change the feature.
 
 - Switch chip: `WorkspaceIdentityRow` reads `switchingToWorkspaceId` and `workspaceSwitchError` through `useWorkspaceSwitchState`; **Retry** calls `setCurrentWorkspace` with the failed id, and `StageBoard` draws its skeleton while a switch is set.

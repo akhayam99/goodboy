@@ -30,7 +30,7 @@ const questionOf = ({ id, text, answers }: QuestionParams): OpenQuestion => ({
   createdByAgentId: AUTO_ROOT_ID,
   text,
   suggestedAnswers: [...answers],
-  recommendedAnswer: answers[0] ?? null,
+  recommendedAnswer: answers[0],
   isBlocking: true,
   userAnswer: null,
   status: 'open',

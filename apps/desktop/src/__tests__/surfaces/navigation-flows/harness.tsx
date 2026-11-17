@@ -800,6 +800,7 @@ export const installNavigationHooks = (): void => {
     useAppStore = await importStore();
     await Promise.all([
       import('../../../features/settings/components/SettingsStudio'),
+      import('../../../features/scripts/components/SessionScriptsDrawer'),
       import('../../../app/components/HelpStudio'),
       import('../../../features/workspace/components/WorkspaceLinkStudio'),
       import('../../../features/workflows/components/WorkflowStudio'),

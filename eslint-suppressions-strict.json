@@ -1259,11 +1259,6 @@
       "count": 7
     }
   },
-  "packages/db/src/queries/turn-event.ts": {
-    "@typescript-eslint/strict-boolean-expressions": {
-      "count": 3
-    }
-  },
   "packages/db/src/queries/workflow.ts": {
     "@typescript-eslint/strict-boolean-expressions": {
       "count": 7
@@ -1325,11 +1320,6 @@
     }
   },
   "packages/ui/src/components/Switch.tsx": {
-    "@typescript-eslint/strict-boolean-expressions": {
-      "count": 1
-    }
-  },
-  "packages/ui/src/components/Textarea.tsx": {
     "@typescript-eslint/strict-boolean-expressions": {
       "count": 1
     }
