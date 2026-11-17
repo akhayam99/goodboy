@@ -299,8 +299,8 @@ characters`, in the warning tone from 90%. A longer draft is blocked before
   lens saved opens on the tree with that branch current and its page in the
   center.
 - **The row menu.** One menu per branch row, the mount registry for that
-  worktree (`useObjectMenuTrigger`, the same verbs as the old identity row
-  and the status line): the row's `⋯` (`ObjectOverflowMenu`, named `<project>
+  worktree (`useMountRowMenu`, the same verbs as the Overview tile of the
+  branch): the row's `⋯` (`MountRowMenuButton`, named `<project>
 · <branch> actions`), a right click on the row and Shift+F10 on it open the
   same list, so no verb is reachable only one way. The `⋯` sits in a
   `row-actions` cell (`data-worktree-actions`): empty at rest on a row that is
