@@ -20,6 +20,17 @@ export const hoverWebhookRow = (): boolean => {
   return true;
 };
 
+export const openSessionsPopover = (): boolean => {
+  const trigger = document.querySelector<HTMLButtonElement>('button[data-sessions-trigger]');
+  if (trigger === null) {
+    return false;
+  }
+  if (trigger.getAttribute('aria-expanded') !== 'true') {
+    trigger.click();
+  }
+  return true;
+};
+
 export const holdControlTab = (): boolean => {
   window.dispatchEvent(
     new KeyboardEvent('keydown', { code: 'Tab', key: 'Tab', ctrlKey: true, bubbles: true }),

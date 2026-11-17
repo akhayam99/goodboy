@@ -28,7 +28,7 @@ A branch, an artifact or a run keeps the head and shows crumbs such as **Overvie
 
 At the right of every page, a column of icons is named with its shortcut on hover. Under the caption **Tools**, on every page, it holds **Terminal** and **Browser**. Neither shows a number: the tooltip says how many terminals run and how many tabs are open. With a dock open, the column sits on the dock's left edge. They stay open as you move between pages. **Open full page** in the dock header makes either one full size, and **Dock**, last in the page's first row, puts either one back. The active tool shows its name below its icon.
 
-**⌘B**, or the sidebar button at the top left of the window, folds the sidebar into a slim bar of icons, on every page. It stays as you left it: starting a new session never unfolds it. Folded, the sidebar draws only sessions that need you, run or have unread news, each as its state node; the rest wait behind a `+N` button. Branches show the request state icon. Each tooltip names the state.
+**⇧⌘B**, or the sidebar button at the top left of the window, folds the sidebar into a slim bar of icons, on every page. It stays as you left it: starting a new session never unfolds it. Folded, the sidebar draws only sessions that need you, run or have unread news, each as its state node; the rest wait behind a `+N` button. Branches show the request state icon. Each tooltip names the state.
 
 **⌥⌘B** folds the list beside the page you are on, such as the files of the Changes page, Chat, Terminal, the Guide or Settings. Each of those lists has its Hide button at its top left.
 

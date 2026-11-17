@@ -1,6 +1,7 @@
 import type { ProviderId } from '@goodboy/types';
 import { cn } from '@goodboy/ui';
 import { NotificationCenter } from '../../../features/notifications/components/NotificationCenter';
+import { SessionsPopover } from '../../../features/workspace/components/SessionsPopover';
 import { WorkspaceIdentityRow } from '../../../features/workspace/components/WorkspaceIdentityRow';
 import { RepoEntry } from '../../../features/workspace/components/RepoEntry';
 import { FolderGitWatch } from '../../../features/workspace/components/FolderGitWatch';
@@ -48,6 +49,7 @@ export const AppTopBar = ({ onOpenSpend, onOpenScript, openProviderId = null, si
           {sidebar === undefined ? null : (
             <ColumnToggleButton isCollapsed={sidebar.isCollapsed} onToggle={sidebar.onToggle} />
           )}
+          <SessionsPopover />
           <div className="flex min-w-0 max-w-50 items-center">
             <WorkspaceIdentityRow />
           </div>

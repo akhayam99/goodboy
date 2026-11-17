@@ -1398,7 +1398,7 @@ label loses characters before a count disappears.
 22px. The top bar's left zone starts at `--titlebar-inset`, which clears the
 macOS traffic lights. The main sidebar has one toggle, `ColumnToggleButton`,
 the first control of that zone, above the column it folds and before the
-workspace identity (⌘B). It is a 28px top bar control (`TOP_BAR_CONTROL`), so
+workspace identity (⇧⌘B). It is a 28px top bar control (`TOP_BAR_CONTROL`), so
 in full screen, where the inset is 0, its center lands on the rail's 22px axis
 (`collapsed-rail-width.test.tsx`). It is the same button whether the column is
 open or folded, its label and `aria-pressed` read the column you see ("Hide

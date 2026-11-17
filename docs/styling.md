@@ -251,7 +251,7 @@ window table (1728, 1440, 1280 and 1024) and sweeps every window from 900 to
 2600; `regressions/drawer-rule.test.ts` keeps its sizes in their owners. No
 host mounts it yet: `DrawerColumn` still runs `panelPairLayoutOf`.
 
-**A fold never re-centres an icon.** The main sidebar (⌘B) and the session
+**A fold never re-centres an icon.** The main sidebar (⇧⌘B) and the session
 rail fold through `FoldLayers` (`packages/ui/src/components/FoldLayers.tsx`):
 the grid column or the rail width eases in 220ms, the open layer keeps its full
 width pinned to the left edge and clipped, so no label wraps or truncates anew,

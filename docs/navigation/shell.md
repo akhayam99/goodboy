@@ -379,7 +379,7 @@ the snapshot is older than 15 seconds, and never beside another scan. The collap
 (no number) on those two doors, with the fact in the tooltip. Before any workspace exists the column keeps only its app
 half: Settings, the Goodboy line and the bug. The column is 240px by default and
 resizes from 200 to 400 (`goodboy:left-sidebar-width:v3`, so an older saved
-width resets once). The sidebar toggle or ⌘B folds it, on every screen,
+width resets once). The sidebar toggle or ⇧⌘B folds it, on every screen,
 Settings included, into the rail; the choice is saved, only those two write it
 (`goodboy:sessions-sidebar-collapsed`), and peek and New session never touch it.
 
@@ -443,7 +443,7 @@ hide animation or overlay can move it.
   words fade, and the 44px rail's icons sit on the open rows' lines.
 - **The main sidebar never folds by itself; a pane folds by its tier.** Only
   its toggle folds the column: the one toggle is the first control of the top
-  bar's left zone, above the column (`ColumnToggleButton` in `AppTopBar`, ⌘B),
+  bar's left zone, above the column (`ColumnToggleButton` in `AppTopBar`, ⇧⌘B),
   and no pane, no page and no window width folds or unfolds it. A session has no
   column of its own: its pages are the page tabs under the title, so no pane folds anything.
 - **The overlay slots sit inside the grid, not above it.** The peek spans the
@@ -491,8 +491,16 @@ drops never lets another zone slide into its column. When the right zone
 outgrows its half, the command center slides off the midpoint instead of being
 covered.
 
-- Left: the sidebar toggle, the workspace identity, then Repositories. The toggle
-  (`ColumnToggleButton`, ⌘B, 28px like every top bar control) sits right of
+- Left: the sidebar toggle, Sessions, the workspace identity, then Repositories.
+  Sessions (`SessionsPopover`, ⌘B from any screen, `sessions.toggle`) opens a
+  studio wide (500px) popover through the one placement rule: the 12px shell
+  gutter from every window edge, the height capped at the room left, the list
+  scrolling between a fixed search field and a fixed Open Board foot. Its
+  groups are `sessionOrderOf`'s (Pinned, then by state; the Needs you number is
+  `attentionCountOf`), typing filters by title or project, the arrows and Enter
+  open a row, and the pin calls `pinSession` or `unpinSession`, which leave the
+  row in place when the write fails. The toggle
+  (`ColumnToggleButton`, ⇧⌘B, 28px like every top bar control) sits right of
   the traffic lights, above the column it folds, and is the column's one
   toggle; the column itself has no toggle row. It reads "Hide sidebar" while
   the column is open and "Show sidebar" while it is the rail, and its

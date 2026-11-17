@@ -522,7 +522,7 @@ now forces dark the same way `&theme=light` forces light, so a frame never
 follows a stored preference.
 
 Keys inside a frame: a directed frame registers `palette.open` (Cmd+K),
-`search.open` (Cmd+F) and `column.toggle` (Cmd+B) itself, through
+`search.open` (Cmd+F) and `column.toggle` (Shift+Cmd+B) itself, through
 `scenes/useSceneShortcuts` (palette) and `scenes/useSceneSidebar` (the fold
 state of the shell frames), since `App` and `useAppShortcuts` never mount in a
 scene. When the focus is on the playground and not in the frame, `useDemoKeys`

@@ -12,7 +12,7 @@ what it holds live in [docs/navigation/shell.md](../../../docs/navigation/shell.
 
 | part        | shape                                                                                                    |
 | ----------- | -------------------------------------------------------------------------------------------------------- |
-| toggle      | none in the column: the one sidebar toggle is `ColumnToggleButton`, first in the top bar left zone (⌘B)  |
+| toggle      | none in the column: the one sidebar toggle is `ColumnToggleButton`, first in the top bar left zone (⇧⌘B) |
 | New session | a 28px row, `text-row`, the primary tint (`bg` and `ring` of `tintClasses('primary')`), `+` in primary   |
 | door        | a 28px row: 14px concept icon, the word in `text-row` muted, the shortcut in `text-chip` on hover        |
 | current     | `bg-selected`, `text-foreground`, `cursor-default`, `aria-current="page"`, one per frame                 |
@@ -21,7 +21,7 @@ what it holds live in [docs/navigation/shell.md](../../../docs/navigation/shell.
 
 Rows sit 4px apart (`gap-1`); the doors start 4px under New session. The
 column never changes its content: no page swaps it, and only the sidebar toggle
-and ⌘B fold it. A studio never covers it: a studio is a page in the one main
+and ⇧⌘B fold it. A studio never covers it: a studio is a page in the one main
 slot, drawn inside the content sheet over the page it replaces, and
 `StudioFrame` with `placement="content"` draws its band on that sheet instead
 of on the chrome. Settings is such a page, with its
