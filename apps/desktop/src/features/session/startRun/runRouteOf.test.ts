@@ -140,7 +140,7 @@ describe('runRouteOf, row 2: a preset matches the ask', () => {
       closeness: 'adapt',
       presetName: 'Fix a layout',
       choice: 'Lead · plan Fix a layout · May change steps',
-      why: 'Your ask matches the preset',
+      why: 'Your ask matches the workflow',
     });
     expect(result.ask).toBe('Fix the layout of the Harborline billing page');
   });
@@ -269,7 +269,7 @@ describe('runRouteOf, row 5: a question, a check or one file', () => {
       row: 5,
       shape: 'lead',
       choice: 'Lead',
-      why: 'A question or a check, and no preset fits',
+      why: 'A question or a check, and no workflow fits',
     });
   });
 

@@ -64,23 +64,31 @@ describe('the u30 start form scenes', () => {
     }
   });
 
-  it('draws the preset kind with its steps and one settings row', async () => {
+  it('draws the workflow plan with its steps, the settings sentence and Change open', async () => {
     mount({ id: 'u30-start-form' });
 
     const row = await settingsRow();
+    expect(
+      screen.getByRole('tab', { name: 'Follow a workflow' }).getAttribute('aria-selected'),
+    ).toBe('true');
+    expect(document.querySelector('[data-start-settings-line]')?.textContent).toMatch(
+      /^Stops after the plan · Edits full access · Limit \$8\.00 · /,
+    );
     row.getByRole('combobox', { name: 'Projects' });
     row.getByRole('button', { name: /^Asks you:/ });
     row.getByRole('button', { name: /^Edits:/ });
     row.getByRole('button', { name: /^Limit: \$8\.00/ });
-    within(screen.getByRole('list', { name: 'Preset steps' })).getAllByRole('listitem');
+    within(screen.getByRole('list', { name: 'Workflow steps' })).getAllByRole('listitem');
+    screen.getByRole('checkbox', { name: 'Keep its steps as written' });
     screen.getByRole('button', { name: 'Start' });
+    expect(document.body.textContent).not.toMatch(/preset/i);
   });
 
   it('draws the agent kind with a role and no limit or Asks you', async () => {
     mount({ id: 'u30-start-form-agent' });
 
     const row = await settingsRow();
-    expect(row.getByRole('combobox', { name: 'Role' }).textContent).toContain('Scout');
+    expect(screen.getByRole('combobox', { name: 'Role' }).textContent).toContain('Scout');
     expect(row.queryByRole('button', { name: /^Limit: / })).toBeNull();
     expect(row.queryByRole('button', { name: /^Asks you:/ })).toBeNull();
     screen.getByRole('button', { name: 'Start' });

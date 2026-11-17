@@ -106,24 +106,23 @@ type KindParams = {
   readonly name: string;
 };
 
-const howChip = (): HTMLElement => screen.getByRole('button', { name: /^How: / });
-
-const kindCards = (): HTMLElement => {
-  if (screen.queryByRole('tablist', { name: 'What kind of run?' }) === null) {
-    fireEvent.click(howChip());
-  }
-  return screen.getByRole('tablist', { name: 'What kind of run?' });
+const PLAN_CHOICES: Readonly<Record<string, string>> = {
+  Lead: 'The Lead plans it',
+  Preset: 'Follow a workflow',
+  Agent: 'One agent',
 };
 
 const kindTab = ({ name }: KindParams): HTMLElement =>
-  within(kindCards()).getByRole('tab', { name: new RegExp(`^${name}`) });
+  within(screen.getByRole('tablist', { name: 'Plan' })).getByRole('tab', {
+    name: PLAN_CHOICES[name] ?? name,
+  });
 
 const pickKind = ({ name }: KindParams): void => {
   fireEvent.click(kindTab({ name }));
 };
 
 const isPicked = ({ name }: KindParams): boolean =>
-  howChip().getAttribute('aria-label') === `How: ${name}`;
+  kindTab({ name }).getAttribute('aria-selected') === 'true';
 
 type RenderParams = {
   readonly sessionId: SessionId;
@@ -135,9 +134,9 @@ const renderField = ({ sessionId }: RenderParams) => {
       <StartRun workspaceId={WORKSPACE.id} sessionId={sessionId} />
     </ToastProvider>,
   );
-  const more = screen.queryByRole('button', { name: /^More/ });
-  if (more !== null) {
-    fireEvent.click(more);
+  const change = screen.queryByRole('button', { name: 'Change' });
+  if (change !== null) {
+    fireEvent.click(change);
   }
   return view;
 };
@@ -470,21 +469,20 @@ describe('StartRun run as', () => {
     });
   });
 
-  it('says what Start will do before it is pressed, then what the picked kind does', () => {
+  it('says what Start will do before it is pressed, then what the picked workflow does', () => {
     useAppStore.setState({ phaseTemplates: { [WORKSPACE.id]: [FIX_A_LAYOUT] } });
     renderField({ sessionId: SESSION.id });
 
     fireEvent.change(field(), { target: { value: QUESTION } });
     expect(routeLine()).toContain('Starts as Lead');
-    expect(routeLine()).toContain('A question or a check, and no preset fits');
+    expect(routeLine()).toContain('A question or a check, and no workflow fits');
 
     pickKind({ name: 'Preset' });
 
-    expect(
-      screen.getAllByText('The Lead follows a saved preset as its plan.').length,
-    ).toBeGreaterThan(0);
+    screen.getByText('The Lead starts from Fix a layout and says why when it changes a step.');
     expect(document.querySelector('[data-run-route-line]')).toBeNull();
     expect(isPicked({ name: 'Preset' })).toBe(true);
+    expect(document.body.textContent).not.toMatch(/preset/i);
   });
 
   it('shows the limit chip for a Lead or a preset and none for an agent', () => {
@@ -561,14 +559,15 @@ describe('StartRun run as', () => {
     await waitFor(() => screen.getByText('Never'));
   });
 
-  it('offers three kinds, lists the roles on Agent and keeps Preset for a saved preset', () => {
+  it('offers three plans, lists the roles on one agent and keeps a workflow for a saved one', () => {
     renderField({ sessionId: SESSION.id });
 
     expect(
-      within(kindCards())
+      within(screen.getByRole('tablist', { name: 'Plan' }))
         .getAllByRole('tab')
-        .map((tab) => tab.textContent?.split(/(?=[A-Z])/)[0]),
-    ).toEqual(['Lead', 'Preset', 'Agent']);
+        .map((tab) => tab.textContent),
+    ).toEqual(['The Lead plans it', 'Follow a workflow', 'One agent']);
+    expect(isPicked({ name: 'Lead' })).toBe(true);
     expect(kindTab({ name: 'Preset' }).hasAttribute('disabled')).toBe(true);
     cleanup();
 
@@ -580,7 +579,7 @@ describe('StartRun run as', () => {
     screen.getByRole('option', { name: /^Scout/ });
   });
 
-  it('gives a Lead the preset the Preset kind names, following it or adapting', async () => {
+  it('gives a Lead the workflow the Plan row names, free to change its steps', async () => {
     const spawnAgent = vi.fn<SpawnFn>(async () => AGENT);
     const attachWorkflowToSession = vi.fn<AttachFn>(async () => undefined);
     useAppStore.setState({
@@ -591,10 +590,10 @@ describe('StartRun run as', () => {
     renderField({ sessionId: SESSION.id });
 
     pickKind({ name: 'Preset' });
-    screen.getByRole('list', { name: 'Preset steps' });
+    screen.getByRole('list', { name: 'Workflow steps' });
     expect(
-      screen.getByRole('tab', { name: 'May change steps' }).getAttribute('aria-selected'),
-    ).toBe('true');
+      screen.getByRole<HTMLInputElement>('checkbox', { name: 'Keep its steps as written' }).checked,
+    ).toBe(false);
     ask({ text: QUESTION });
 
     await waitFor(() => expect(spawnAgent).toHaveBeenCalledTimes(1));
@@ -605,6 +604,24 @@ describe('StartRun run as', () => {
       shape: 'lead',
       presetName: 'Fix a layout',
       closeness: 'adapt',
+    });
+  });
+
+  it('keeps the workflow steps as written once the box is checked, and says so', async () => {
+    const spawnAgent = vi.fn<SpawnFn>(async () => AGENT);
+    useAppStore.setState({ spawnAgent, phaseTemplates: { [WORKSPACE.id]: [FIX_A_LAYOUT] } });
+    renderField({ sessionId: SESSION.id });
+
+    pickKind({ name: 'Preset' });
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Keep its steps as written' }));
+    screen.getByText(/^The Lead runs (the \d+ steps|its one step) as written\.$/);
+    ask({ text: QUESTION });
+
+    await waitFor(() => expect(spawnAgent).toHaveBeenCalledTimes(1));
+    const raw = await getSetting(storySqlite(), runRoutesKey({ sessionId: SESSION.id }));
+    expect(JSON.parse(raw ?? '{}')[AGENT]).toMatchObject({
+      presetName: 'Fix a layout',
+      closeness: 'follow',
     });
   });
 

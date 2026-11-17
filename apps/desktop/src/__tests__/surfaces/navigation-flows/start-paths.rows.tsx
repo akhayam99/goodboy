@@ -261,19 +261,21 @@ export const START_PATHS_ROWS: ReadonlyArray<Row> = [
       const draft = useAppStore.getState().sessionDrafts[workspaceId];
       expect(draft?.pickedIssues[0]?.identifier).toBe('HBL-415');
       expect(screen.getByRole('textbox', { name: 'Goal' })).toBeDefined();
-      screen.getByRole('button', { name: /^How: / });
+      screen.getByRole('tablist', { name: 'Plan' });
       expect(startCalls.briefs).toHaveLength(0);
       expect(startCalls.sessions).toHaveLength(0);
       expect(screen.queryByRole('dialog', { name: 'Start a session' })).toBeNull();
     },
   },
   {
-    name: 'New session door: the three kinds and one settings row, with Where in the row and not under the task',
+    name: 'New session door: the Plan row and one settings row, with Where in the row and not under the task',
     covers: ['navigate'],
     open: (ctx) => openTasksAndStartOn({ ctx, lastStart: 'preset' }),
     lands: async () => {
       await screen.findByRole('list', { name: 'Picked issues' }, WAIT);
-      screen.getByRole('button', { name: 'How: Preset' });
+      expect(
+        screen.getByRole('tab', { name: 'Follow a workflow' }).getAttribute('aria-selected'),
+      ).toBe('true');
       const task = within(screen.getByRole('region', { name: 'Goal' }));
       expect(task.queryByRole('combobox', { name: 'Projects' })).toBeNull();
       const settings = startSettingsRowOf({

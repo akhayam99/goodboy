@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import type { Project, ProjectId } from '@goodboy/types';
 import { brandedId } from '../../../../../features/history/testing/brandedId';
+import { START_KIND_COPY } from '../../../../../features/session/startKind/startKindCopy';
 import { useAppStore } from '../../../../../store';
 import { EMPTY_SESSION_DRAFT } from '../../../../../store/slices/sessionDraft/state';
 import { sceneClock } from '../../sceneClock';
@@ -127,6 +128,19 @@ const seedProjects = ({ state }: Props): void => {
   }));
 };
 
+const openRunSettings = (): boolean => {
+  const change = [...document.querySelectorAll('button')].find(
+    (button) =>
+      button.textContent?.trim() === START_KIND_COPY.change &&
+      button.getAttribute('aria-expanded') === 'false',
+  );
+  if (change === undefined) {
+    return false;
+  }
+  change.click();
+  return true;
+};
+
 export const C10NewSessionScene = ({ state }: Props) => {
   useEffect(() => {
     seedProjects({ state });
@@ -141,6 +155,9 @@ export const C10NewSessionScene = ({ state }: Props) => {
       return;
     }
     const timer = window.setInterval(() => {
+      if (state.clickLabel === undefined && openRunSettings()) {
+        return;
+      }
       if (state.openPrefix !== undefined) {
         const prefix = state.openPrefix;
         const chip = [...document.querySelectorAll('button')].find(

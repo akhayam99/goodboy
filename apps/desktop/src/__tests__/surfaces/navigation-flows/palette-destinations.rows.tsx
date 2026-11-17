@@ -31,7 +31,7 @@ const openDiffHistory = async (): Promise<void> => {
 
 const pressedKind = (name: string): Promise<void> =>
   waitFor(() => {
-    screen.getByRole('button', { name: `How: ${name}` });
+    expect(screen.getByRole('tab', { name }).getAttribute('aria-selected')).toBe('true');
   }, WAIT);
 
 export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
@@ -356,7 +356,7 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
     open: () => openPalette(/^New workflow session$/),
     lands: both(
       () => heading('New session'),
-      () => pressedKind('Lead'),
+      () => pressedKind('The Lead plans it'),
     ),
   },
   {
@@ -365,7 +365,7 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
     open: () => openPalette(/^New agent session$/),
     lands: both(
       () => heading('New session'),
-      () => pressedKind('Lead'),
+      () => pressedKind('The Lead plans it'),
     ),
   },
   {

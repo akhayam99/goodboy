@@ -1,56 +1,55 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
-import type { StartSettingItem } from '../startSettingsOf';
+import type { StartSettingItem, StartSettingWords } from '../startSettingsOf';
 import { StartSettingsRow } from '.';
 
-const itemOf = (key: StartSettingItem['key'], isChanged: boolean): StartSettingItem => ({
+type ItemParams = {
+  readonly key: StartSettingItem['key'];
+  readonly words: StartSettingWords | null;
+};
+
+const itemOf = ({ key, words }: ItemParams): StartSettingItem => ({
   key,
-  node: <span>{key}</span>,
-  isChanged,
+  node: <span>{`${key} chip`}</span>,
+  isChanged: false,
+  words,
 });
+
+const ITEMS: ReadonlyArray<StartSettingItem> = [
+  itemOf({ key: 'where', words: { lead: '', value: 'harbor-portal' } }),
+  itemOf({ key: 'asks', words: { lead: 'Stops', value: 'after the plan' } }),
+  itemOf({ key: 'edits', words: { lead: 'Edits', value: 'full access' } }),
+  itemOf({ key: 'limit', words: { lead: 'Limit', value: '$8.00' } }),
+  itemOf({ key: 'guidance', words: null }),
+];
+
+const line = (): string => document.querySelector('[data-start-settings-line]')?.textContent ?? '';
 
 describe('StartSettingsRow', () => {
   afterEach(cleanup);
 
-  it('keeps Asks you, Limit and Guidance under More', () => {
-    render(
-      <StartSettingsRow
-        items={[
-          itemOf('where', false),
-          itemOf('asks', false),
-          itemOf('edits', false),
-          itemOf('limit', false),
-          itemOf('guidance', false),
-        ]}
-      />,
-    );
+  it('reads the settings as one sentence, stops first and the projects last', () => {
+    render(<StartSettingsRow items={ITEMS} />);
 
-    expect(screen.queryByText('asks')).toBeNull();
-    expect(screen.queryByText('limit')).toBeNull();
-    expect(screen.queryByText('guidance')).toBeNull();
-    screen.getByText('edits');
-    fireEvent.click(screen.getByRole('button', { name: 'More 3' }));
-    screen.getByText('asks');
-    screen.getByText('limit');
-    screen.getByText('guidance');
-    screen.getByRole('button', { name: 'Less' });
+    expect(line()).toBe('Stops after the plan · Edits full access · Limit $8.00 · harbor-portal');
+    expect(screen.queryByText('edits chip')).toBeNull();
   });
 
-  it('promotes a setting that differs from its default out of More', () => {
-    render(
-      <StartSettingsRow
-        items={[itemOf('edits', false), itemOf('limit', true), itemOf('guidance', false)]}
-      />,
-    );
+  it('opens every control under Change and closes them on Done', () => {
+    render(<StartSettingsRow items={ITEMS} />);
 
-    screen.getByText('limit');
-    expect(screen.queryByText('guidance')).toBeNull();
-    screen.getByRole('button', { name: 'More 1' });
+    fireEvent.click(screen.getByRole('button', { name: 'Change' }));
+
+    for (const key of ['where', 'asks', 'edits', 'limit', 'guidance']) {
+      screen.getByText(`${key} chip`);
+    }
+    fireEvent.click(screen.getByRole('button', { name: 'Done' }));
+    expect(screen.queryByText('limit chip')).toBeNull();
   });
 
-  it('draws no More when every setting is always shown', () => {
-    render(<StartSettingsRow items={[itemOf('where', false), itemOf('edits', false)]} />);
+  it('draws nothing when no setting applies', () => {
+    render(<StartSettingsRow items={[]} />);
 
-    expect(screen.queryByRole('button', { name: /^More/ })).toBeNull();
+    expect(screen.queryByRole('group', { name: 'Run settings' })).toBeNull();
   });
 });
