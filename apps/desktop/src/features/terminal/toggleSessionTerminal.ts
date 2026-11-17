@@ -2,7 +2,7 @@ import { CHECK_STATE } from '../../store/slices/notifications/errorRecovery';
 import type { SessionId } from '@goodboy/types';
 import { isBranchlessSession } from '../../shared/utils/isBranchlessSession';
 import { useAppStore } from '../../store';
-import { selectPlaceMount } from '../../store/slices/project-mounts/selectPlaceMount';
+import { selectPlaceMount } from '../scripts/selectPlaceMount';
 import { resolveActiveMountPath } from '../../store/slices/worktrees/resolveActiveMountPath';
 import { openSessionFolderTerminal } from './openSessionFolderTerminal';
 import { openSessionTerminal } from './openSessionTerminal';

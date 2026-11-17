@@ -1,6 +1,6 @@
 import type { MountId, ProjectId, SessionId, SessionProjectMount } from '@goodboy/types';
 import type { AppState } from '../../store/types';
-import { selectPlaceMount } from '../../store/slices/project-mounts/selectPlaceMount';
+import { selectPlaceMount } from './selectPlaceMount';
 import { selectWritableMounts } from '../../store/slices/project-mounts/selectors';
 
 export type ScriptMountOutcome =

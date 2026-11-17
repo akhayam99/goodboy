@@ -1,7 +1,10 @@
 import type { SessionId, SessionProjectMount } from '@goodboy/types';
-import type { AppState } from '../../types';
-import { runGroupFocusOf } from '../navigation/runGroupFocusOf';
-import { selectDisplayedMount, selectWritableMounts } from './selectors';
+import type { AppState } from '../../store/types';
+import { runGroupFocusOf } from '../../store/slices/navigation/runGroupFocusOf';
+import {
+  selectDisplayedMount,
+  selectWritableMounts,
+} from '../../store/slices/project-mounts/selectors';
 
 type Params = {
   readonly state: AppState;

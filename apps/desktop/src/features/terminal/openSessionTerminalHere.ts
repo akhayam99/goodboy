@@ -3,7 +3,7 @@ import { homeFolder } from '../../shared/lib/homeFolder';
 import { useAppStore } from '../../store';
 import { sessionById } from '../../store/slices/sessions/sessionIndex';
 import { selectTerminalWorkspaceFolder } from '../../store/slices/terminal/selectors';
-import { selectPlaceMount } from '../../store/slices/project-mounts/selectPlaceMount';
+import { selectPlaceMount } from '../scripts/selectPlaceMount';
 import { resolveActiveMountPath } from '../../store/slices/worktrees/resolveActiveMountPath';
 import { openSessionTerminal } from './openSessionTerminal';
 
