@@ -1496,6 +1496,63 @@ describe('resolve queue scheduler', () => {
     );
   });
 
+  const queueOneThread = async ({
+    harness,
+    threadId,
+  }: {
+    readonly harness: ReturnType<typeof createHarness>;
+    readonly threadId: string;
+  }) => {
+    const batch = await harness.actions.createResolveBatch({
+      sessionId: SESSION_A,
+      threadIds: [threadId],
+      launchChoice: LAUNCH,
+    });
+    await harness.actions.recordResolveAttempt({
+      sessionId: SESSION_A,
+      agent: resolver({ id: BATCH_AGENTS[0] as AgentId, sessionId: SESSION_A }),
+      provider: 'anthropic',
+      model: 'claude-sonnet-5',
+      effort: null,
+      instructions: `fix ${threadId}`,
+      phase: 'queued',
+      threadIds: [threadId],
+      mountTarget: targetFor({ sessionId: SESSION_A }),
+      batch: { batchId: batch.id, launchChoice: LAUNCH },
+    });
+  };
+
+  it('starts the copy of a note fix on the owner working tree, uncommitted changes included', async () => {
+    const harness = createHarness({
+      worktreePathBySession: { [SESSION_A]: SHARED_PATH },
+      extraResolvers: BATCH_AGENTS,
+    });
+    h.dirtyPaths.add(SHARED_PATH);
+    await queueOneThread({ harness, threadId: 'note:harborline-header' });
+
+    await harness.actions.drainResolveQueue({ sessionId: SESSION_A });
+
+    h.dirtyPaths.delete(SHARED_PATH);
+    expect(h.prepareCopy).toHaveBeenLastCalledWith(
+      expect.objectContaining({ worktreePath: SHARED_PATH, shouldCarryWorkingTree: true }),
+    );
+    expect(harness.sendTurn).toHaveBeenCalledTimes(1);
+  });
+
+  it('starts the copy of a host review comment fix on the branch head as before', async () => {
+    const harness = createHarness({
+      worktreePathBySession: { [SESSION_A]: SHARED_PATH },
+      extraResolvers: BATCH_AGENTS,
+    });
+    await queueOneThread({ harness, threadId: 'PRRT_ledger-core' });
+
+    await harness.actions.drainResolveQueue({ sessionId: SESSION_A });
+
+    expect(h.prepareCopy).toHaveBeenLastCalledWith(
+      expect.objectContaining({ worktreePath: SHARED_PATH, shouldCarryWorkingTree: false }),
+    );
+  });
+
   it('runs the lanes of two branches beside each other', async () => {
     const SIBLING_PATH = '/repo/sibling';
     const harness = createHarness({

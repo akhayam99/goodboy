@@ -174,6 +174,7 @@ export const captureResolveCandidate = async ({
         candidateId: candidate.id,
         baseSha: candidate.baseSha,
         stack: isStacked,
+        shouldKeepUncommitted: !isStacked,
       });
       const splits =
         quarantined.sha === null || !isStacked || fixes.length < 2

@@ -47,6 +47,7 @@ type QuarantineCandidateParams = {
   readonly candidateId: string;
   readonly baseSha: string;
   readonly stack?: boolean;
+  readonly shouldKeepUncommitted?: boolean;
 };
 
 export type QuarantinedCandidate = {
@@ -94,6 +95,7 @@ export const prepareResolveCopy = async (args: {
   readonly worktreePath: string;
   readonly attemptId: string;
   readonly startSha?: string;
+  readonly shouldCarryWorkingTree?: boolean;
 }): Promise<ResolveCopy> => invokeCommand<ResolveCopy>('resolve_copy_prepare', { args });
 
 export type WorktreeWriterLease = {
