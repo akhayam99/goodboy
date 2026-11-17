@@ -1308,7 +1308,7 @@ describe('toolSignalFailures', () => {
 });
 
 describe('readingHoldFailures', () => {
-  it('passes a reading that stays put when Settings opens and closes', () => {
+  it('passes a reading that stays put when a setting opens and closes', () => {
     const measured = { isReadable: true, opened: 0.2, closed: 0 };
     assert.deepEqual(readingHoldFailures({ scene: 'fixture', width: 1100, measured }), []);
   });
@@ -1319,16 +1319,16 @@ describe('readingHoldFailures', () => {
       (failure) => failure.check,
     );
     assert.deepEqual(checks, [
-      'opening Settings does not move the text being read',
-      'closing Settings puts the text being read back',
+      'opening a setting does not move the text being read',
+      'closing a setting puts the text being read back',
     ]);
   });
 
-  it('fails a scene with nothing to read or no Settings toggle', () => {
+  it('fails a scene with nothing to read or no setting word', () => {
     for (const measured of [null, { isReadable: false }]) {
       assert.equal(
         readingHoldFailures({ scene: 'fixture', width: 1100, measured })[0]?.check,
-        'the agent page has a transcript to read and a Settings toggle',
+        'the agent page has a transcript to read and a setting word',
       );
     }
   });

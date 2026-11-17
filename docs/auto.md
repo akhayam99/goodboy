@@ -506,11 +506,14 @@ writing to it reopens it to **Deciding**.
   and the menu, then one glance line, the same component for every run kind
   (`RunGlanceLine`: Auto, orchestrated, preset and a plain agent): a dot, the state word (**Needs
   you**, **Running**, **Queued**, **Ready**, **Paused**, **Failed**, **Stopping**,
-  **Stopped**, **Done**, **Idle**, **Skipped**), one sentence, the spend of the limit and **Settings**
-  (`autoGlanceOf` for Auto, `agentGlanceOf` and `runGlanceOf` for the others, all
-  through `glanceOf`). **Settings** unfolds the unchanged chip row
-  inline, never a popover; the row stays mounted so the asks and model slots
-  keep their portals. Each cluster of agents is one soft card (`AutoTurnCard`,
+  **Stopped**, **Done**, **Idle**, **Skipped**), one sentence, the spend of the limit and the
+  run settings as words (`autoGlanceOf` for Auto, `agentGlanceOf` and `runGlanceOf` for the
+  others, all through `glanceOf`). There is no panel and no toggle: `RunGlanceLine` sets
+  `SettingLookContext` to `fact`, so each setting draws as one dotted word that opens its own
+  menu or popover ("Stops after the plan · Ask first · Limit $10.00" on a Lead, "Ask first ·
+  No limit" on an agent). The words are always mounted, so an open event
+  (`goodboy:open-permission-picker`, `autoLimitOpenEvent`) opens its popover on its own word,
+  and the asks slot the composer portals into sits in the same line. Each cluster of agents is one soft card (`AutoTurnCard`,
   head `autoCardHeadOf`): the noun of the work it holds (**Plan**, **Build** or **Review**),
   the agent count and one word that follows the loudest child (**Needs you**, **Failed**,
   **Running**, then the settled word such as **Done**), then flat rows. A row is one
@@ -543,7 +546,7 @@ writing to it reopens it to **Deciding**.
   thinking line of the conversation speaks instead. There is no separate strip
   of running children: the running rows of the cards, the rail and the dock
   already say it. The glance line under the title holds the state word, the
-  spend and **Settings** only; the dock and the tail say the sentence, and both
+  spend and the setting words only; the dock and the tail say the sentence, and both
   read one glance (`useConversationGlance`, `conversationAskOf`), so the word
   and the sentence never disagree. A permission a subagent asks reaches Auto's
   dock, named, oldest first, with `1 of 2` and **Open Implementer**. While a plan waits the dock owns the one

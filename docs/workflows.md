@@ -333,16 +333,16 @@ read top to bottom at the conversation measure:
   same items. Asks you is not in this menu: its chip holds it. An archived run shows
   **Restore** and reads dimmed, with no composer.
 - **Goal** (`OrchestratedGoal`). The goal as prose, then one glance line (state
-  word, one sentence from `runGlanceOf`, the spend of the limit and **Settings**,
-  `RunGlanceLine`, the same on a preset run's Overview and on every other run
-  kind) over the run settings line (`OrchestratedFacts`): **Settings** unfolds it
-  inline. One chip per
-  setting while the run lives (`RunSettingsLine`), each reading its label, its
-  value and where it comes from, as "Limit $5.00 this run". A chip
+  word, one sentence from `runGlanceOf`, the spend of the limit and the run
+  settings as words, `RunGlanceLine`, the same on a preset run's Overview and on every
+  other run kind; `OrchestratedFacts` passes the settings in). One dotted word per
+  setting while the run lives (`RunSettingsLine`), each reading its value as
+  "Stops after the plan", "Limit $5.00" or "Auto on Claude" (`fact` in its words), its
+  label and where it comes from in its accessible name. A word
   opens only its own popover on `AnchoredPopover` (320px): the setting, one
   line of help, the control and, last, where it comes from ("This run $5.00,
-  then session $8.00. $5.00 comes first.", `runSettingsOf`). The chip reads the
-  limit that comes first and never the spend ("Limit $20.00 from session", the
+  then session $8.00. $5.00 comes first.", `runSettingsOf`). The word reads the
+  limit that comes first and never the spend ("Limit $20.00", named "Limit: $20.00, from session", the
   popover explaining "$17.00 spent, $2.00 of it this run"); the run's own spend
   stays on the glance line above, so a number shows once. There is no Save
   or Done: a choice applies on click, the limit on Enter or when the popover
@@ -353,7 +353,7 @@ read top to bottom at the conversation measure:
   field (or in the log when the popover already closed). **Models** switches
   each provider the run may use (`setWorkflowRunProviderPool`, latest answer
   wins, Undo puts the old providers back); a change applies from the next
-  step. Under the chips, the preset the run came from and the time left while
+  step. Under the line, the preset the run came from and the time left while
   the run lives (`useRunTimeLeft`). The workflow's
   process text and the run's standing guidance sit behind **Show guidance** as
   the one text the orchestrator reads (`orchestratorProcessText`), so guidance
