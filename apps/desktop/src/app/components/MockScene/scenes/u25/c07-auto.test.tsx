@@ -194,9 +194,11 @@ describe('c07 Auto scenes', () => {
   it('c07-auto-child opens the Implementer on its page with its why, its tail and one box', async () => {
     mount({ id: 'c07-auto-child' });
 
-    expect(await screen.findByText(/^Why Auto chose Implementer:/, undefined, WAIT)).toBeDefined();
     expect(
-      screen.getByText('Auto started this agent and reads your messages to it.'),
+      await screen.findByText(/^Why the Lead chose Implementer:/, undefined, WAIT),
+    ).toBeDefined();
+    expect(
+      screen.getByText('The Lead started this agent and reads your messages to it.'),
     ).toBeDefined();
     expect(screen.getByPlaceholderText('Message Implementer')).toBeDefined();
     expect(screen.queryByPlaceholderText('Message Lead')).toBeNull();
@@ -308,7 +310,7 @@ describe('c07 Auto scenes', () => {
   it('c07-auto-images passes the screenshots on: the child brief names both', async () => {
     mount({ id: 'c07-auto-images' });
 
-    const shots = await screen.findByRole('list', { name: 'Images Auto passed on' }, WAIT);
+    const shots = await screen.findByRole('list', { name: 'Images the Lead passed on' }, WAIT);
     expect(within(shots).getByText('banner-wide.png')).toBeDefined();
     expect(within(shots).getByText('banner-narrow.png')).toBeDefined();
   });

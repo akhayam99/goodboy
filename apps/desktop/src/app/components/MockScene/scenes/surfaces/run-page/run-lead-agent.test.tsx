@@ -62,11 +62,11 @@ describe('the lead agent page scene', () => {
     }
     within(lead).getByRole('complementary', { name: 'Agents' });
     expect(container.querySelector('[data-session-aside]')?.childElementCount ?? 0).toBe(0);
-    const facts = screen.getByRole('region', { name: 'Why Auto started it' });
+    const facts = screen.getByRole('region', { name: 'Why the Lead started it' });
     const given = within(facts).getByRole('list', { name: 'Given to the agent' });
     expect(within(given).getAllByRole('listitem')).toHaveLength(4);
     within(given).getByText(/your note, read at turn 4/);
     within(given).getByText(/plan, version 2/);
-    expect(within(facts).queryByRole('list', { name: 'Images Auto passed on' })).toBeNull();
+    expect(within(facts).queryByRole('list', { name: 'Images the Lead passed on' })).toBeNull();
   });
 });

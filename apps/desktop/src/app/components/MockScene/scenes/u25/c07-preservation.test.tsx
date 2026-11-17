@@ -74,7 +74,9 @@ describe('Auto: every capability keeps a home in Auto', () => {
   it('Delegation reason and model changed note, no Reserved up to: the child page brief', async () => {
     mount({ Scene: U25_C07_AUTO_SCENES['c07-auto-child'] });
 
-    expect(await screen.findByText(/^Why Auto chose Implementer:/, undefined, WAIT)).toBeDefined();
+    expect(
+      await screen.findByText(/^Why the Lead chose Implementer:/, undefined, WAIT),
+    ).toBeDefined();
     expect(screen.queryByText(/Reserved up to/)).toBeNull();
   });
 
@@ -143,7 +145,7 @@ describe('Auto: every capability keeps a home in Auto', () => {
 
     expect(
       await screen.findByText(
-        'Auto started this agent and reads your messages to it.',
+        'The Lead started this agent and reads your messages to it.',
         undefined,
         WAIT,
       ),

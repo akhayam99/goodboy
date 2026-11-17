@@ -559,7 +559,7 @@ writing to it reopens it to **Deciding**.
   page with one box, and the back row reads **Back to Auto**. A saved window that held the
   old panel opens this page (`withoutRemovedPages`). The page title is the task
   Auto gave it (the first line of the brief when the task is missing); on top, the line
-  "Auto started this agent and reads your messages to it.", why Auto chose that role, the model it runs on with its
+  "The Lead started this agent and reads your messages to it.", why the Lead chose that role, the model it runs on with its
   provider (no dollar amount: a child holds no money) and the note when the app changed
   the model (`AutoChildBrief`); then the child's conversation; at the end what
   came back (summary, files changed, checks with their source, open questions,
@@ -707,7 +707,7 @@ The page of an agent Auto started answers why it exists at the top of its
 transcript, in the block `AutoChildBrief`
 (`apps/desktop/src/features/auto/child/AutoChildBrief.tsx`, inserted by
 `useAutoChildChat`). Every line comes from the stored delegation row through
-`delegationCardOf`: Why Auto chose the role (the stored `reason`), Why not the
+`delegationCardOf`: Why the Lead chose the role (the stored `reason`), Why not the
 role fit when both are stored, Done when (`doneWhen`), Went in, the routing, and
 Attempt n with the last attempt's result when the `retryOf` chain is longer than
 one (`delegationAttemptsOf`). The brief itself is the first message of the
@@ -1582,7 +1582,7 @@ narrower role fits, the batch is refused with `role_narrower` and nothing is wri
 asks for tests: a tester fits. Send it to a tester ("role":"tester"), or keep the implementer with
 "roleReason": one line on why the implementer fits better." A second send whose child carries
 `roleReason` passes; the admission stores `roleFit` and `roleReason` in `request_json`, and the
-child's page shows "Why not Tester: <reason>" under "Why Auto chose Implementer" (`roleKept` in
+child's page shows "Why not Tester: <reason>" under "Why the Lead chose Implementer" (`roleKept` in
 `delegationCardOf`, `AutoChildBrief`). A retry, a continue and a revise keep their role and are
 never scanned; a retry and a continue copy `roleFit` and `roleReason` from the earlier request, so
 the page keeps its "Why not" line. While Auto cannot start a Rewriter (`AUTO_CLOSED_ROLES` in `roles.ts`), history work
