@@ -7,11 +7,12 @@ const RESTORE_KEY = 'restore-session';
 
 type Props = {
   readonly session: Session;
+  readonly sessionId: SessionId;
   readonly onRestore?: (session: Session) => Promise<void>;
 };
 
-export const RestoreCardAction = ({ session, onRestore }: Props) => {
-  const { pendingKeys, run } = usePendingAction({ sessionId: session.id as SessionId });
+export const RestoreCardAction = ({ session, sessionId, onRestore }: Props) => {
+  const { pendingKeys, run } = usePendingAction({ sessionId });
   return (
     <CardAction
       icon={CONCEPT_ICONS.restore}

@@ -227,7 +227,9 @@ export const StageBoardCard = memo(function StageBoardCard({
               onClick={visibleAction.onClick}
             />
           )}
-          {isArchived && <RestoreCardAction session={session} onRestore={onRestore} />}
+          {isArchived && (
+            <RestoreCardAction session={session} sessionId={id} onRestore={onRestore} />
+          )}
         </CardActionSlot>
       </span>
 
