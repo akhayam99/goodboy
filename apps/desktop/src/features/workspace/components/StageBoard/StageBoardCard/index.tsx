@@ -1,5 +1,5 @@
 import { memo, useEffect, useId, useRef } from 'react';
-import { cn, Input, Tooltip, InlineMarkdown, ToneBar } from '@goodboy/ui';
+import { cn, Tooltip, InlineMarkdown, ToneBar } from '@goodboy/ui';
 import type { Session, SessionId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../../store';
 import { RestoreCardAction } from './RestoreCardAction';
@@ -17,6 +17,7 @@ import { useSessionRowFacts } from '../../../hooks/useSessionRowFacts';
 import { sessionObjectKey } from '../../../../actions/kinds/session';
 import { sessionSelectionTarget } from '../../../../actions/sessionSelectionTarget';
 import { useSessionTitleRename } from '../../../../session/hooks/useSessionTitleRename';
+import { CardRenameField } from './CardRenameField';
 import { CardSignal } from './CardSignal';
 import { signalActionOf } from './signalActionOf';
 import { projectLineOf } from '../projectLineOf';
@@ -66,7 +67,7 @@ export const StageBoardCard = memo(function StageBoardCard({
   const id = session.id as SessionId;
   const stateWordId = useId();
   const isArchived = archived === true;
-  const { summary, node, rowTitle, title, plainTitle } = useSessionRowFacts({
+  const { summary, node, rowTitle, keys, title, plainTitle } = useSessionRowFacts({
     session,
     isArchived,
   });
@@ -163,17 +164,7 @@ export const StageBoardCard = memo(function StageBoardCard({
     >
       <ToneBar tone={track.tone} density="card" isBreathing={track.isBreathing} />
       {rename.editing ? (
-        <Input
-          autoFocus
-          value={rename.draft}
-          maxLength={rename.maxLength}
-          onClick={(event) => event.stopPropagation()}
-          onChange={(event) => rename.setDraft(event.target.value)}
-          onBlur={() => void rename.commit()}
-          onKeyDown={rename.onKeyDown}
-          aria-label="Session title"
-          className="min-w-0 self-start"
-        />
+        <CardRenameField rename={rename} keys={keys} />
       ) : (
         <Tooltip content={plainTitle}>
           <button
