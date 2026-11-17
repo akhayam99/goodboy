@@ -1,6 +1,7 @@
 import type { ComponentType } from 'react';
 import { leadPermissionsOf, type StoredLeadPermissionRows } from '@goodboy/core/auto';
 import { FLOATING_SURFACE, cn } from '@goodboy/ui';
+import { LeadLevelRow } from '../../../../../features/auto/permissions/LeadLevelRow';
 import { LeadPermissionsPanel } from '../../../../../features/auto/permissions/LeadPermissionsPanel';
 
 type SceneParams = {
@@ -20,17 +21,21 @@ const sceneOf = ({ leadRows, subtitle }: SceneParams) => {
   });
   return (
     <div className="flex min-h-screen items-start justify-center bg-background p-6">
-      <section aria-label={subtitle} className={cn(FLOATING_SURFACE, 'flex w-125 flex-col')}>
+      <section
+        aria-label={subtitle}
+        className={cn(FLOATING_SURFACE, 'flex w-125 flex-col gap-6 p-5')}
+      >
+        <LeadLevelRow
+          permissions={permissions}
+          error={null}
+          isDisabled={false}
+          onPick={() => undefined}
+        />
         <LeadPermissionsPanel
           permissions={permissions}
-          scope="lead"
           rowErrors={{}}
-          presetError={null}
           isDisabled={false}
           onChange={() => undefined}
-          onReset={() => undefined}
-          onPreset={() => undefined}
-          onScope={() => undefined}
         />
       </section>
     </div>
