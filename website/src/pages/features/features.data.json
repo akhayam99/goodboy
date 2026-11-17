@@ -598,7 +598,7 @@
           "shown": true
         },
         {
-          "title": "Run defaults",
+          "title": "Runs in Settings",
           "text": "Set once what every new run starts with, on the same chips a run shows: when it asks, a limit, the models, the limit and guidance.",
           "group": "Workflows",
           "also": "run defaults",

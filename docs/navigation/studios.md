@@ -290,8 +290,8 @@ cut at the end, never in the middle; the group's`aria-label` keeps the full
   index, drawn beside the page (its fold control and `Search settings` first,
   then the groups): its two groups, named by scope (This Mac with the caption
   every workspace, then the workspace name with the caption this workspace),
-  come from `settingsDirectory`, and the row to Connections ends it
-  (`MovedToConnectionsRow`). Every row is one 28px
+  come from `settingsDirectory`, and nothing but settings pages sits in it.
+  Every row is one 28px
   line of one grammar (`SettingsNavRow`): a group row carries its icon, a page
   row is nested by `PANE_RHYTHM.navRail.nest`, and a row has no second line,
   no count and no identity. A row that needs something shows a 6px dot at its
@@ -328,7 +328,7 @@ matches "x".` and points to ⌘K for actions. `settingRows.test.tsx` renders
   shortcuts, Advanced, Storage, Backup and reset) always sit under their
   heading, whichever scope is active, so switching scope never moves a row
   above the pointer (`appSections.ts`). The workspace pages (Projects, About
-  you, Run defaults, Models, Permissions, Branches, Replies and commits) sit the
+  you, Runs, Models, Permissions, Branches, Replies and commits) sit the
   same way under the workspace name (`workspacePages.ts`,
   `SettingsRailPageGroup`). General ends with the Updates band (version row,
   What's new, background download) and carries the update dot; the old
@@ -365,7 +365,7 @@ matches "x".` and points to ⌘K for actions. `settingRows.test.tsx` renders
   that puts a placeholder at the caret, `ReplyTemplatesBand`), `After a
 reply` (`Resolve the thread`, `Update the reply after a squash`) and
   `Commits` (`review-replies` stays its page id and anchor; a search hit on a
-  template opens the disclosure); Run defaults is its own page of the workspace
+  template opens the disclosure); Runs is its own page of the workspace
   settings and holds no branch or reply setting. Branches opens on a Naming
   band (`WorkspaceBranchNamingBand`: Branch prefix and Branch name), then
   After merge. Each field's page is `FIELD_PAGE` in
