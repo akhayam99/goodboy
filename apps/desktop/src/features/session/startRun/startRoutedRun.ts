@@ -3,8 +3,10 @@ import {
   DEFAULT_WORKFLOW_RULES,
   brandId,
   type AgentId,
+  type AgentSourceKind,
   type AttachmentInput,
   type IsoDateTime,
+  type MountId,
   type OrchestratorRouting,
   type SessionId,
   type Workflow,
@@ -12,6 +14,7 @@ import {
   type WorkflowId,
 } from '@goodboy/types';
 import { useAppStore } from '../../../store';
+import { selectMountById } from '../../../store/slices/project-mounts/selectors';
 import { sessionById } from '../../../store/slices/sessions/sessionIndex';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { openAgentRevealEvent } from '../../../shared/utils/openAgentReveal';
@@ -27,6 +30,8 @@ import { soleTurnMountIdOf } from './soleTurnMountIdOf';
 
 const ORCHESTRATED_WORKFLOW_NAME = 'Orchestrated workflow';
 
+const COMMENT_RUN = 'comment_run' satisfies AgentSourceKind;
+
 type Params = {
   readonly sessionId: SessionId;
   readonly result: RunRouteResult;
@@ -38,6 +43,8 @@ type Params = {
   readonly guidance?: string | null;
   readonly attachments?: ReadonlyArray<AttachmentInput>;
   readonly limit?: StartLimit | null;
+  readonly sourceThreadIds?: ReadonlyArray<string>;
+  readonly sourceMountId?: MountId | null;
 };
 
 export type RoutedRun =
@@ -54,11 +61,24 @@ export const startRoutedRun = async ({
   guidance = null,
   attachments = [],
   limit = null,
+  sourceThreadIds = [],
+  sourceMountId = null,
 }: Params): Promise<RoutedRun> => {
   const state = useAppStore.getState();
   const session = sessionById(state.sessions, sessionId);
   if (session === undefined || session === null) {
     throw new Error('This session is no longer here');
+  }
+  const threadIds = [...new Set(sourceThreadIds)];
+  const isFromComments = threadIds.length > 0;
+  if (isFromComments && result.route.shape !== 'lead') {
+    throw new Error('A run from comments starts with the Lead');
+  }
+  if (
+    sourceMountId !== null &&
+    selectMountById({ state, sessionId, mountId: sourceMountId }) === null
+  ) {
+    throw new Error('This branch is no longer part of the session');
   }
   const { ask, preset, role } = result;
   const route = { ...result.route, ask };
@@ -79,7 +99,8 @@ export const startRoutedRun = async ({
       });
     }
     const leadMountId =
-      role === null ? soleTurnMountIdOf({ state: useAppStore.getState(), sessionId }) : null;
+      sourceMountId ??
+      (role === null ? soleTurnMountIdOf({ state: useAppStore.getState(), sessionId }) : null);
     const stepLocks =
       preset === null || role !== null
         ? []
@@ -97,6 +118,7 @@ export const startRoutedRun = async ({
       ...(guidance !== null && { guidance }),
       ...(role === null && limit !== null && { limitUsd: limit.usd }),
       ...(stepLocks.length > 0 && { stepLocks }),
+      ...(isFromComments && { sourceKind: COMMENT_RUN, sourceThreadIds: threadIds }),
       ...(routing !== null && {
         provider: routing.provider,
         model: routing.model,
