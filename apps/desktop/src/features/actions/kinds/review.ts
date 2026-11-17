@@ -20,6 +20,7 @@ import {
 } from '../../../store/slices/project-mounts/selectors';
 import { isPushFailure } from '../../resolve/reviewCommentState';
 import { reviewTallyOf } from '../../resolve/reviewTally';
+import { commentRunThreadIdsOf } from '../../resolve/commentRunThreadIdsOf';
 import { remoteOf } from '../../resolve/reviewRemote';
 import { requestReview } from '../../review/reviewRequest';
 import {
@@ -100,7 +101,10 @@ export const REVIEW_KIND: ObjectKindDefinition<ReviewActionTarget, ReviewFacts> 
         }),
       };
     });
-    const tally = reviewTallyOf({ rows: rows.map((entry) => entry.row) });
+    const tally = reviewTallyOf({
+      rows: rows.map((entry) => entry.row),
+      inRunThreadIds: new Set(commentRunThreadIdsOf({ agents: state.sessionPhaseRuns[sessionId] })),
+    });
     const count = (predicate: (entry: (typeof rows)[number]) => boolean): number =>
       rows.filter(predicate).length;
     const hasPr = source !== null;

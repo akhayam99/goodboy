@@ -38,7 +38,8 @@ import {
 } from '../../../commentProjection';
 import { checksFailedItemIds } from '../../../checksFailedItemIds';
 import { isBulkAcceptable } from '../../../bulkAccept';
-import { isFixableThread } from '../../../fixableComments';
+import { commentLaneOf, type CommentLane } from '../../../commentLaneOf';
+import { useCommentRunThreadIds } from '../../../useCommentRunThreadIds';
 import { rowFixOf, type RowFix } from '../../../rowFix';
 import { heldLaunchIdOf } from '../../../../../store/slices/resolve/launchTurns';
 import type { ResolveCandidateWithItems } from '../../../../../store/slices/resolve/state';
@@ -59,6 +60,7 @@ export type ReviewEntry = {
   readonly isChecking: boolean;
   readonly checkError: string | null;
   readonly checkAgentId: AgentId | null;
+  readonly lane: CommentLane | null;
   readonly isFixable: boolean;
   readonly isAcceptable: boolean;
   readonly fix: RowFix | null;
@@ -110,6 +112,7 @@ export const useReviewEntries = ({
   const rechecks = useAppStore((s) => s.sessionThreadRechecks[sessionId] ?? EMPTY_RECHECKS);
   const candidates = useAppStore((s) => s.sessionResolveCandidates[sessionId] ?? EMPTY_CANDIDATES);
   const checkRuns = useAppStore((s) => s.sessionResolveCheckRuns[sessionId] ?? EMPTY_CHECK_RUNS);
+  const inRunThreadIds = useCommentRunThreadIds({ sessionId });
   const all = useMemo(() => {
     const failedChecks = checksFailedItemIds({ candidates, checkRuns });
     const ordered = groupConversationsByFile({ rows }).flatMap((group) => group.rows);
@@ -134,6 +137,7 @@ export const useReviewEntries = ({
         gitChip: view,
         hasFailedChecks: failedChecks.has(row.item.id),
       });
+      const lane = commentLaneOf({ row, inRunThreadIds });
       return {
         row,
         threadId: row.thread.threadId,
@@ -156,12 +160,13 @@ export const useReviewEntries = ({
         isChecking,
         checkError: recheck?.error ?? null,
         checkAgentId: recheck?.agentId ?? null,
-        isFixable: isFixableThread({ thread: row.thread }),
+        lane,
+        isFixable: lane === 'fix',
         isAcceptable: isBulkAcceptable({ state, remote }),
         fix: rowFixOf({ state, row, projection }),
       };
     });
-  }, [candidates, changes, checkRuns, drafts, rechecks, rows, threadGit]);
+  }, [candidates, changes, checkRuns, drafts, inRunThreadIds, rechecks, rows, threadGit]);
   return useMemo(() => {
     const isNote = ({ row }: ReviewEntry): boolean => row.thread.originKind === 'diff_comment';
     const isHost = ({ row }: ReviewEntry): boolean =>
