@@ -3,7 +3,7 @@ import { cn } from '../cn';
 import type { ResizeActivity } from '../sheet';
 import { DrawerColumn } from './DrawerColumn';
 import type { DrawerPlacement, DrawerSizing } from '../drawerGeometry';
-import { ResizeHandle } from './ResizeHandle';
+import { SplitHandle } from './SplitHandle';
 import { ShellDockContext } from '../shellDockContext';
 import { ShellRailContext } from '../shellRailContext';
 import { StudioSlotContext } from '../studioSlotContext';
@@ -172,11 +172,11 @@ export const AppShell = ({
         {hasLeftSidebar ? (
           <div className="min-h-0" style={{ gridArea: 'lhandle' }}>
             {isLeftResizeDisabled ? null : (
-              <ResizeHandle
+              <SplitHandle
                 {...left.handleProps}
                 ariaLabel="Resize left sidebar"
                 onActivityChange={setLeftResize}
-                drawsEdge={false}
+                shouldDrawEdge={false}
               />
             )}
           </div>

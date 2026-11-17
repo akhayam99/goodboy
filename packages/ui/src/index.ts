@@ -250,7 +250,7 @@ export type {
   RemoteVideoFile,
   RemoteVideoLoader,
 } from './components/RemoteImage/loaderContext';
-export { ResizeHandle } from './components/ResizeHandle';
+export { SplitHandle } from './components/SplitHandle';
 export { Reveal } from './components/Reveal';
 export { FoldLayers } from './components/FoldLayers';
 export type { FoldLayersProps } from './components/FoldLayers';
@@ -268,7 +268,7 @@ export { useFoldPhase } from './useFoldPhase';
 export { exitSnapshotOf, mountExitSnapshot } from './exitSnapshot';
 export type { ExitSnapshot } from './exitSnapshot';
 export type { RevealProps } from './components/Reveal';
-export type { ResizeHandleProps } from './components/ResizeHandle';
+export type { SplitHandleProps } from './components/SplitHandle';
 export { PaneShell } from './components/PaneShell';
 export { PaneTitleRow } from './components/PaneShell/PaneTitleRow';
 export { PageHeader } from './components/PaneShell/PageHeader';

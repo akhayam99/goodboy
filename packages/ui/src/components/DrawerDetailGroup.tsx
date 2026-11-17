@@ -5,7 +5,7 @@ import { DRAWER_INSET, type DrawerMode } from '../drawerGeometry';
 import type { ResizableHandleProps } from '../useResizableWidth';
 import type { DrawerPanel } from '../useDrawerPanel';
 import { DrawerPanelCard } from './DrawerPanelCard';
-import { ResizeHandle } from './ResizeHandle';
+import { SplitHandle } from './SplitHandle';
 
 const DETAIL_CONTENT = 'w-[calc(var(--goodboy-detail-panel)-2px)]';
 
@@ -56,7 +56,7 @@ export const DrawerDetailGroup = ({
   >
     <div className={cn('flex w-2 shrink-0 justify-center', isOverlay && 'pointer-events-auto')}>
       {isOpen && !isParked ? (
-        <ResizeHandle
+        <SplitHandle
           {...handleProps}
           max={dragMax}
           value={width}

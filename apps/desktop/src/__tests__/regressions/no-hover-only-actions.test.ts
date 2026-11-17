@@ -61,14 +61,14 @@ const ALLOWED: Readonly<Record<string, Allowance>> = {
     reason:
       'decorative: the "Add a description" hint text; the project name button opens the editor',
   },
-  'packages/ui/src/components/ResizeHandle.tsx': {
-    count: 1,
-    reason: 'decorative: the edge line of a resize handle; the handle itself is always there',
-  },
   'packages/ui/src/components/SelectionCheckbox.tsx': {
     count: 1,
     reason:
       'second way: multi select is entered by Cmd or Shift click, and every row keeps its own visible actions',
+  },
+  'packages/ui/src/components/SplitHandle.tsx': {
+    count: 1,
+    reason: 'decorative: the edge line of a split handle; the handle itself is always there',
   },
 };
 

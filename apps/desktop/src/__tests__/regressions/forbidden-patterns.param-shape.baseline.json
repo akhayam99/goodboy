@@ -2140,7 +2140,6 @@
     "packages/ui/src/components/PaneShell/PageHeader.tsx": 1,
     "packages/ui/src/components/RemoteImage/loaderContext.ts": 1,
     "packages/ui/src/components/ReportSheet/index.tsx": 3,
-    "packages/ui/src/components/ResizeHandle.tsx": 4,
     "packages/ui/src/components/Reveal.tsx": 1,
     "packages/ui/src/components/ScrollFade/index.tsx": 1,
     "packages/ui/src/components/ScrollFade/useOverlayThumb/index.ts": 3,

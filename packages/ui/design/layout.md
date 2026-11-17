@@ -67,6 +67,16 @@ through `FilterButton` (Tasks included); `filter-triggers.test.ts` allows only
 the two icon-only `xs` triggers (the Board header and the file tree), and
 that list only falls.
 
+**One handle sizes every split.** `SplitHandle` is the only resize primitive,
+for columns and for rows. Its `side` names where the panel it sizes sits:
+`left` and `right` make a 6px vertical bar that follows the pointer's x,
+`top` and `bottom` a 6px horizontal bar that follows its y. The handle's edge
+follows the pointer one to one, so the panel's far edge (the tool rail beside a
+right panel) stays where it is. A focused handle moves 8px per arrow on its
+own axis, 32 with Shift; a double click returns the base size. It is a
+`separator` with the matching `aria-orientation` and its min, max and current
+size as values, updated live during a drag.
+
 ## Pane anatomy
 
 The package ships the pane primitives `PANE_RHYTHM`, `PageColumn`, `ScrollFade`

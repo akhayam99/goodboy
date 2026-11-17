@@ -8,7 +8,7 @@ import { DrawerEdgeContext } from '../drawerEdgeContext';
 import { DRAWER_PANEL_VARS } from '../drawerPanelVars';
 import { dismissTopEscapeLayer } from '../escape';
 import { SHEET_CLASSES, type ResizeActivity, type SheetEdge } from '../sheet';
-import { ResizeHandle } from './ResizeHandle';
+import { SplitHandle } from './SplitHandle';
 import { DrawerDetailGroup } from './DrawerDetailGroup';
 import { DrawerDockBox } from './DrawerDockBox';
 import { useDrawerPanel } from '../useDrawerPanel';
@@ -238,7 +238,7 @@ export const DrawerColumn = ({
               )}
             >
               {isDockShown ? (
-                <ResizeHandle
+                <SplitHandle
                   {...resizable.handleProps}
                   max={layout.dock.dragMax}
                   value={layout.dock.width}
