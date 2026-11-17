@@ -42,6 +42,7 @@ export type RebaseJobControls = {
   readonly agentId: AgentId | null;
   readonly canUndo: boolean;
   readonly dismiss: () => void;
+  readonly dismissCard: () => void;
   readonly undo: () => void;
   readonly openTerminal: () => void;
   readonly openPushTerminal: () => void;
@@ -74,6 +75,7 @@ export const useRebaseJob = ({
   );
   const navigate = useAppStore((s) => s.navigate);
   const openMountTerminal = useAppStore((s) => s.openMountTerminal);
+  const dismissRebaseCard = useAppStore((s) => s.dismissRebaseCard);
   const status = stop?.status ?? null;
   const hasUpstream = status !== null && status.upstream !== null;
   const dirtyCount = status === null ? null : changedCount({ workingTree: status.workingTree });
@@ -129,10 +131,6 @@ export const useRebaseJob = ({
   if (job === null) {
     return null;
   }
-  const isCleared = run.stop?.reason === 'dirty' && dirtyCount === 0;
-  if (isCleared) {
-    return null;
-  }
   const agentId = run.pushFix?.agentId ?? run.rebaseConflict?.autoAgentId ?? run.agentId;
   return {
     job,
@@ -143,6 +141,7 @@ export const useRebaseJob = ({
     agentId,
     canUndo: run.backupRef !== null,
     dismiss: flow.dismiss,
+    dismissCard: () => dismissRebaseCard({ sessionId, mountId: mount.mountId }),
     undo: () => flow.restoreApplied(run),
     openTerminal: () => openMountTerminal(sessionId, worktreePath),
     openPushTerminal: () =>

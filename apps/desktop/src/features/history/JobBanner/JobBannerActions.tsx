@@ -11,7 +11,7 @@ type Props = {
 };
 
 export const JobBannerActions = ({ controls, actions, isNoteOpen, onToggleNote }: Props) => {
-  const { job, agentId, canUndo } = controls;
+  const { job, agentId } = controls;
   const { pendingKeys } = actions;
   const seeWhatItDid =
     agentId === null ? null : (
@@ -20,7 +20,7 @@ export const JobBannerActions = ({ controls, actions, isNoteOpen, onToggleNote }
       </Button>
     );
   const dismiss = (
-    <Button size="sm" variant="ghost" onClick={controls.dismiss}>
+    <Button size="sm" variant="ghost" onClick={controls.dismissCard}>
       Dismiss
     </Button>
   );
@@ -74,17 +74,6 @@ export const JobBannerActions = ({ controls, actions, isNoteOpen, onToggleNote }
     case 'merging':
     case 'fixing-push':
       return seeWhatItDid;
-    case 'done':
-      return (
-        <>
-          {canUndo ? (
-            <Button size="sm" variant="ghost" onClick={controls.undo}>
-              Undo rewrite
-            </Button>
-          ) : null}
-          {dismiss}
-        </>
-      );
     case 'stuck':
       return (
         <>
@@ -109,6 +98,7 @@ export const JobBannerActions = ({ controls, actions, isNoteOpen, onToggleNote }
           {dismiss}
         </>
       );
+    case 'done':
     case 'conflict':
     case 'rebasing-here':
     case 'rebased-here':

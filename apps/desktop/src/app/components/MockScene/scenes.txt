@@ -774,8 +774,11 @@ railorder
 readme-hero
 rebase-bring-back
 rebase-choosing
+rebase-done-card
 rebase-done-carried
 rebase-origin-moved
+rebase-origin-moved-long-title
+rebase-origin-settled
 rebase-push-failed
 rebase-restore-conflict
 rebase-review-change
