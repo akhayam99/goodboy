@@ -126,6 +126,40 @@ A suggestion's `choices` (a rebase target, "Start tester instead") are items of
 the `⋯` menu of the board row, run through the same runner
 under their own key, and hold the row's other controls while one runs.
 
+### Agent work on an item
+
+Work an agent does for one item (a failing check, a review comment, a failed
+push) shows on that item, never in a status line above the list. The item is
+the place of its work from the click to the result.
+
+- **The click.** The button that started it is busy (`isBusy` through
+  `usePendingAction`) until the agent exists, and the item reads Starting. A
+  second click does not start a second agent. Starting stays local to the
+  window that clicked; every word after it comes from stored agents and
+  attempts, so a second window reads the same word.
+- **The work.** One `ItemWorkLine`
+  (`apps/desktop/src/features/live-state/itemWork/ItemWorkLine`) under the
+  item's title: the node, the word, the step in a few words from
+  `agentStepPhraseOf` (the open tool, else the last line of the agent's text)
+  and the agent's active time. The time comes from `WorkTimeContext`, so it
+  holds still while the agent waits. Stop and Open transcript sit in the
+  line's `verbs`, drawn with `row-actions` on a `group/row`: shown on hover
+  and focus, always in the tab order, and always in the item's `⋯` menu.
+- **The result.** The same line says what happened in one sentence and offers
+  one action in its `action` slot, visible at rest: Review fix, Review, Apply,
+  Push, Retry, Analyze again, Open changes. A word never only describes the
+  agent; it says what you can do next.
+- **The batch.** A batch puts its state on every item (Fixing, Queued with its
+  place, Fix ready) and one quiet count in the list's header, with Stop all in
+  its `⋯`. Outside the tab that holds the work, the tab carries a live dot.
+- **The words.** Every word and verb comes from `ITEM_WORK_WORDS`
+  (`itemWork/itemWorkWords.ts`): Starting, Queued, Analyzing, Fixing,
+  Resolving, In a run, Cause found, Fix ready, Question, "Fixed, not pushed",
+  "Applied, not pushed", Pushed, Fixed, No fix found, Stopped and Failed. Open
+  transcript opens an agent's work and Open run opens a run. Failed is
+  `role="alert"`, every other word `role="status"`. `?scene=u48-item-work-line`
+  shows each word.
+
 ## Empty states
 
 A page is always in one of five states, and each state has one shape. So "nothing
