@@ -16,6 +16,7 @@ export type CardActionProps = {
   readonly pressed?: boolean;
   readonly expanded?: boolean;
   readonly disabled?: boolean;
+  readonly isBusy?: boolean;
   readonly onClick: () => void;
 };
 
@@ -29,8 +30,10 @@ export const CardAction = ({
   pressed,
   expanded,
   disabled = false,
+  isBusy = false,
   onClick,
 }: CardActionProps) => {
+  const isOff = disabled || isBusy;
   return (
     <Tooltip
       content={tooltip ?? label}
@@ -43,7 +46,8 @@ export const CardAction = ({
         aria-pressed={pressed}
         aria-expanded={expanded}
         data-highlighted={highlighted ? '' : undefined}
-        disabled={disabled}
+        aria-busy={isBusy ? true : undefined}
+        disabled={isOff}
         onClick={(event) => {
           event.stopPropagation();
           onClick();
@@ -54,11 +58,15 @@ export const CardAction = ({
           size === 'compact' ? 'text-chip' : 'text-meta',
           tintClasses(tone).hoverBgSoft,
           tintClasses(tone).hoverText,
-          disabled && cn(DISABLED, 'hover:bg-transparent hover:text-disabled-foreground'),
+          isOff && cn(DISABLED, 'hover:bg-transparent hover:text-disabled-foreground'),
           highlighted && cn(tintClasses(tone).bgSoft, tintClasses(tone).text),
         )}
       >
-        <Icon size={size === 'compact' ? ICON_SIZE.row : ICON_SIZE.control} aria-hidden />
+        <Icon
+          size={size === 'compact' ? ICON_SIZE.row : ICON_SIZE.control}
+          aria-hidden
+          className={cn(isBusy && 'motion-safe:animate-soft-pulse')}
+        />
       </button>
     </Tooltip>
   );

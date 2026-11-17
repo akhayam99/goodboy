@@ -486,6 +486,28 @@ describe('StageBoardCard actions', () => {
     expect(group.contains(restore)).toBe(true);
   });
 
+  it('keeps Restore busy until the session is back and restores it once', async () => {
+    let finish: () => void = () => undefined;
+    const onRestore = vi.fn(
+      () =>
+        new Promise<void>((resolve) => {
+          finish = resolve;
+        }),
+    );
+    render(<StageBoardCard session={session} nav={nav} archived onRestore={onRestore} />);
+
+    const restore = screen.getByLabelText('Restore');
+    fireEvent.click(restore);
+    expect(restore.getAttribute('aria-busy')).toBe('true');
+    fireEvent.click(restore);
+    expect(onRestore).toHaveBeenCalledTimes(1);
+
+    await act(async () => {
+      finish();
+    });
+    expect(restore.getAttribute('aria-busy')).toBeNull();
+  });
+
   it('hands its own element to the hover card on enter and lets go on leave', () => {
     const onHoverEnter = vi.fn();
     const onHoverLeave = vi.fn();

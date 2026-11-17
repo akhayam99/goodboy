@@ -2,6 +2,7 @@ import { memo, useEffect, useId, useRef } from 'react';
 import { cn, Input, Tooltip, InlineMarkdown, ToneBar } from '@goodboy/ui';
 import type { Session, SessionId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../../store';
+import { usePendingAction } from '../../../../../shared/hooks/usePendingAction';
 import { CardAction, CardActionSlot, FOCUS_RING } from '@goodboy/ui';
 import { CONCEPT_ICONS } from '../../../../../shared/components/conceptIcons';
 import { sessionCardShell } from '../../../../session/components/sessionCardShell';
@@ -43,12 +44,13 @@ type StageBoardCardProps = {
   readonly getSelectedIds?: () => ReadonlyArray<SessionId>;
   readonly onClearSelection?: () => void;
   readonly onModifierClick?: (id: SessionId, event: CardSelectionEvent) => void;
-  readonly onRestore?: (session: Session) => void;
+  readonly onRestore?: (session: Session) => Promise<void>;
   readonly onHoverEnter?: (target: CardHover) => void;
   readonly onHoverLeave?: () => void;
 };
 
 const NO_SELECTION: ReadonlyArray<SessionId> = [];
+const RESTORE_KEY = 'restore-session';
 const noSelectedIds = (): ReadonlyArray<SessionId> => NO_SELECTION;
 
 export const StageBoardCard = memo(function StageBoardCard({
@@ -76,6 +78,7 @@ export const StageBoardCard = memo(function StageBoardCard({
   const mounts = useAppStore((s) => s.sessionProjectMounts?.[id] ?? EMPTY_ARRAY);
   const projectLine = projectLineOf({ mounts });
   const dynamicActions = useDynamicActions(session, nav, stage);
+  const { pendingKeys, run } = usePendingAction({ sessionId: id });
 
   const [visibleAction = attentionAction ?? undefined] = waitingRun === null ? dynamicActions : [];
   const signalAction = signalActionOf({ signal, action: visibleAction, isArchived, waitingRun });
@@ -232,7 +235,17 @@ export const StageBoardCard = memo(function StageBoardCard({
               icon={CONCEPT_ICONS.restore}
               tone="primary"
               label="Restore"
-              onClick={() => onRestore?.(session)}
+              isBusy={pendingKeys.has(RESTORE_KEY)}
+              onClick={() => {
+                if (onRestore === undefined) {
+                  return;
+                }
+                void run({
+                  key: RESTORE_KEY,
+                  failureTitle: "Couldn't restore the session",
+                  task: () => onRestore(session),
+                });
+              }}
             />
           )}
         </CardActionSlot>

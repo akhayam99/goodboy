@@ -70,7 +70,7 @@ type StageColumnProps = {
   readonly nav: BoardNavigation;
   readonly selection: ColumnSelection;
   readonly onClearSelection: () => void;
-  readonly onRestore: (session: Session) => void;
+  readonly onRestore: (session: Session) => Promise<void>;
   readonly placement?: 'lane' | 'half';
   readonly isLoading?: boolean;
   readonly motionResetKey?: string;

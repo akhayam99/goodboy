@@ -81,7 +81,7 @@ export const StageBoard = ({ workspaceId, sessions }: Props) => {
   const isMainWindow = useIsMainWindow();
 
   const onRestore = useCallback(
-    (session: Session) => void sessionArchive.restore({ sessions: [session] }),
+    (session: Session) => sessionArchive.restore({ sessions: [session] }),
     [sessionArchive],
   );
   const onArchivedShownChange = useCallback(

@@ -27,7 +27,7 @@ type Props = {
   readonly isArchivedLoading: boolean;
   readonly nav: BoardNavigation;
   readonly selection: BoardSelection;
-  readonly onRestore: (session: Session) => void;
+  readonly onRestore: (session: Session) => Promise<void>;
   readonly motionResetKey: string;
   readonly onCardEnter: (target: CardHover) => void;
   readonly onCardLeave: () => void;
