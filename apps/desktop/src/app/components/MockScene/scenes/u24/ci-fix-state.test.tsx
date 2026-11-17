@@ -67,18 +67,27 @@ const openRowDrawer = () => {
   return screen.getByRole('region', { name: 'Debugger' });
 };
 
+const rowPushOnChecks = (): HTMLElement | null =>
+  screen
+    .queryAllByRole('button', { name: 'Push' })
+    .find((button) => button.closest('[data-check-action]') !== null) ?? null;
+
 const rowPush = (): HTMLElement | null =>
   screen
     .queryAllByRole('button', { name: 'Push' })
     .find((button) => button.closest('[data-row-id]') !== null) ?? null;
 
 describe('CI fix state scenes', () => {
-  it('labels the checks row Fixed, not pushed and opens the Debugger with Push from the row', () => {
+  it('labels the checks row Fixed, not pushed with Push on the row, and one Push with the drawer open', () => {
     show({ name: 'checks-fixed-local' });
     expect(rowWord()).toBe('Fixed, not pushed');
+    expect(document.querySelector('[data-check-status]')?.textContent).toContain(
+      'Committed 9e4c1a7. Push it so the check runs again.',
+    );
     expect(screen.queryByRole('button', { name: 'Open' })).toBeNull();
-    expect(screen.queryByRole('button', { name: 'Push' })).toBeNull();
+    expect(rowPushOnChecks()).not.toBeNull();
     const drawer = openRowDrawer();
+    expect(screen.getAllByRole('button', { name: 'Push' })).toHaveLength(1);
     expect(within(drawer).getByRole('button', { name: 'Push' })).toBeDefined();
   });
   it('pushes once from the drawer of the row and moves the row to re-running', async () => {
@@ -176,7 +185,7 @@ describe('CI fix state scenes', () => {
       );
     }
   });
-  it('shows one Push, in the drawer, and the row carries none once it closes', () => {
+  it('shows one Push, in the drawer, and the row takes it back once the drawer closes', () => {
     show({ name: 'debugger-drawer-fixed-local' });
     const drawer = screen.getByRole('region', { name: 'Debugger' });
     const pushes = screen.getAllByRole('button', { name: 'Push' });
@@ -185,7 +194,9 @@ describe('CI fix state scenes', () => {
     act(() => {
       store.getState().closeDrawer();
     });
-    expect(screen.queryAllByRole('button', { name: 'Push' })).toHaveLength(0);
+    const rowPushes = screen.getAllByRole('button', { name: 'Push' });
+    expect(rowPushes).toHaveLength(1);
+    expect(rowPushes[0]?.closest('[data-check-row]')).not.toBeNull();
     expect(screen.queryByRole('region', { name: 'Debugger' })).toBeNull();
   });
   it('pushes from the drawer and then reads the three green steps and the check', async () => {
