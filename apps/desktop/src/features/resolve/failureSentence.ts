@@ -9,6 +9,7 @@ const FAILURE_CAUSE_SENTENCE: Readonly<Record<ResolveFailureCause, string>> = {
   accept_conflict: 'It conflicts with a fix you accepted before',
   worktree_missing: 'The worktree for this comment is no longer available',
   capture_failed: "The fix couldn't be saved from its copy of the branch",
+  no_result: 'The agent ended without a result for this comment',
 };
 
 const UNRECORDED_CAUSE_SENTENCE = "Goodboy didn't record why";

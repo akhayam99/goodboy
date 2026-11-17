@@ -317,7 +317,7 @@ const startResolverTurn = async ({
         attempt,
         isCleanExit: hasStarted,
         failureCause: hasStarted
-          ? 'provider_error'
+          ? 'no_result'
           : result?.blockedOverBudget === true
             ? 'spend_cap'
             : 'start_failed',

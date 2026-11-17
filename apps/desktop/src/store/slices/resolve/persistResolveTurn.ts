@@ -30,6 +30,7 @@ type Params = SliceParams & TurnParams;
 const isRecoverableCause = ({ attempt }: { readonly attempt: ResolveAttempt }): boolean =>
   attempt.failureCause === 'app_closed' ||
   attempt.failureCause === 'provider_error' ||
+  attempt.failureCause === 'no_result' ||
   (attempt.failureCause == null && attempt.error === 'interrupted');
 
 const failUncaptured = async ({
@@ -177,7 +178,7 @@ export const persistResolveTurn = async ({
             id: attempt.id,
             phase: 'failed',
             error: 'No result from the run',
-            failureCause: 'provider_error',
+            failureCause: 'no_result',
           }
         : { db, id: attempt.id, phase: waiting ? 'waiting' : 'finished' },
     );

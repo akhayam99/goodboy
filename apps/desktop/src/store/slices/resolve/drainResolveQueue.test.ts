@@ -867,6 +867,32 @@ describe('resolve queue scheduler', () => {
     expect(h.slots.get(SHARED_PATH)?.holder).toBe(AGENT_2);
   });
 
+  it('names a run that started and ended without a result, not the provider', async () => {
+    const harness = createHarness({ worktreePathBySession: { [SESSION_A]: SHARED_PATH } });
+    harness.sendTurn.mockImplementationOnce(async ({ agentId }: { readonly agentId: AgentId }) => {
+      harness.store.setState({
+        agentRunHistory: { [agentId]: [{ runId: 'run-1' }] },
+      } as unknown as Partial<ReturnType<typeof harness.store.getState>>);
+      return undefined;
+    });
+    await queueRequest({
+      actions: harness.actions,
+      sessionId: SESSION_A,
+      agentId: AGENT_1,
+      instructions: 'fix the Harborline header note',
+    });
+
+    await harness.actions.drainResolveQueue({ sessionId: SESSION_A });
+
+    await vi.waitFor(() =>
+      expect(
+        (harness.get().sessionResolveAttempts[SESSION_A] ?? []).find(
+          (attempt) => attempt.agentId === AGENT_1,
+        ),
+      ).toMatchObject({ phase: 'failed', failureCause: 'no_result' }),
+    );
+  });
+
   it('reports a request the spend cap turned away instead of leaving it running', async () => {
     const harness = createHarness({ worktreePathBySession: { [SESSION_A]: SHARED_PATH } });
     harness.sendTurn.mockResolvedValueOnce({
