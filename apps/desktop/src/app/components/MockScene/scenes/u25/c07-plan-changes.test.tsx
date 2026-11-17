@@ -139,16 +139,21 @@ describe('a message to the Lead while its plan waits for approval', () => {
     await waitFor(() => expect(store.getState().agentQueue[AUTO_ROOT_ID] ?? []).toEqual([]));
   });
 
-  it('says it went in as changes to plan v1, and drops Approve while the Lead reads it', async () => {
+  it('says plan v1 is updating to v2, and blocks Approve while the Lead reads the change', async () => {
     mount({ id: 'c07-auto-plan' });
     within(await dock()).getByRole('button', { name: APPROVE });
 
     loadView({ sentChange: { artifactId: AUTO_PLAN_ID, revision: 1 }, phase: 'deciding' });
 
-    const line = await within(await dock()).findByText('Sent as changes to plan v1');
+    const line = await within(await dock()).findByText('Updating plan v1 to v2');
     expect(line.getAttribute('role')).toBe('status');
-    expect(screen.queryByRole('button', { name: APPROVE })).toBeNull();
-    expect(screen.queryByRole('button', { name: 'Ask for changes' })).toBeNull();
+    const approve = screen.getByRole('button', { name: APPROVE });
+    expect(approve.hasAttribute('disabled')).toBe(true);
+    expect(approve.getAttribute('title')).toBe('The Lead is reading your changes to plan v1');
+    expect(screen.getByRole('button', { name: 'Ask for changes' }).hasAttribute('disabled')).toBe(
+      true,
+    );
+    expect(screen.getByRole('textbox').getAttribute('placeholder')).toBe('Message Lead');
   });
 
   it('asks again for v2 once it lands, and a late change for v1 says nothing', async () => {
@@ -158,7 +163,7 @@ describe('a message to the Lead while its plan waits for approval', () => {
     loadView({ sentChange: { artifactId: AUTO_PLAN_ID, revision: 1 }, revision: 2 });
 
     await screen.findByText('Plan v2 needs approval', undefined, WAIT);
-    expect(screen.queryByText('Sent as changes to plan v1')).toBeNull();
+    expect(screen.queryByText('Updating plan v1 to v2')).toBeNull();
     screen.getByRole('button', { name: APPROVE });
   });
 
@@ -208,7 +213,7 @@ describe('a message to the Lead while its plan waits for approval', () => {
   it('c07-auto-plan-changes shows every window the same line from the stored message', async () => {
     mount({ id: 'c07-auto-plan-changes' });
 
-    await within(await dock()).findByText('Sent as changes to plan v1', undefined, WAIT);
-    expect(screen.queryByRole('button', { name: APPROVE })).toBeNull();
+    await within(await dock()).findByText('Updating plan v1 to v2', undefined, WAIT);
+    expect(screen.getByRole('button', { name: APPROVE }).hasAttribute('disabled')).toBe(true);
   });
 });

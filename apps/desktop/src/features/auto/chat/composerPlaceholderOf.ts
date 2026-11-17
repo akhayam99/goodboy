@@ -1,5 +1,5 @@
 import type { AutoTreeView } from '../../../store/slices/auto-view/state';
-import { isAutoPlanAwaitingApproval } from '../isAutoPlanAwaitingApproval';
+import { dockPlanOf } from '../dockPlanOf';
 import { projectAskOf } from './projectAskOf';
 import { waitingTextOf } from './waitingTextOf';
 
@@ -14,11 +14,9 @@ export const composerPlaceholderOf = ({ view }: Params): string | undefined => {
   if (waitingTextOf({ view }) !== null) {
     return 'Message Lead';
   }
-  if (isAutoPlanAwaitingApproval({ view })) {
-    const plan = view.artifacts.find((row) => row.artifact.kind === 'plan');
-    return plan === undefined
-      ? undefined
-      : `Message Lead, or describe changes to plan v${plan.revision}`;
+  const plan = dockPlanOf({ view });
+  if (plan?.kind === 'waiting') {
+    return `Message Lead, or describe changes to plan v${plan.version}`;
   }
-  return undefined;
+  return plan === null ? undefined : 'Message Lead';
 };

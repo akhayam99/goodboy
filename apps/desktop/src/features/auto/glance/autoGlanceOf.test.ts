@@ -49,7 +49,7 @@ describe('autoGlanceOf', () => {
     expect(glance).toMatchObject({
       state: 'running',
       word: 'Running',
-      sentence: 'The Planner is revising plan v1',
+      sentence: 'The Planner is writing plan v2',
       isLive: true,
     });
   });
