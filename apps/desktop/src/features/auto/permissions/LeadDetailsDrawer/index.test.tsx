@@ -103,6 +103,24 @@ describe('LeadDetailsDrawer', () => {
     expect(checks.getAttribute('aria-selected')).toBe('true');
   });
 
+  it('keeps the rows and says why when reading them again fails', async () => {
+    useAppStore.setState({
+      readLeadPermissions: vi
+        .fn()
+        .mockResolvedValueOnce(permissionsFor({ leadRows: {} }))
+        .mockRejectedValue(new Error('database locked')),
+      changeLeadPermission: vi.fn().mockResolvedValue(undefined),
+    });
+    renderDrawer();
+
+    const row = await screen.findByRole('tablist', { name: 'Push a branch' });
+    fireEvent.click(within(row).getByRole('tab', { name: 'Ask first' }));
+
+    const alert = await screen.findByRole('alert');
+    expect(alert.textContent).toContain('database locked');
+    screen.getByRole('tablist', { name: 'Push a branch' });
+  });
+
   it('says in one line what never changes, with no limit row and no sentence', async () => {
     useAppStore.setState({
       readLeadPermissions: vi.fn().mockResolvedValue(permissionsFor({ leadRows: {} })),

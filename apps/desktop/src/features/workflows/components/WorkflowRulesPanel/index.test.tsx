@@ -407,6 +407,44 @@ describe('WorkflowRulesPanel', () => {
     expect(stopsBand().queryByRole('tablist', { name: 'Start from' })).toBeNull();
   });
 
+  it('keeps the details shown and says why when reading them again fails', async () => {
+    withRules({ autonomy: 'plan' });
+    storeLeadLevel({ level: 'plan' });
+    let isReadFailing = false;
+    useAppStore.setState({
+      readLeadPermissions: vi.fn(async () => {
+        if (isReadFailing) {
+          throw new Error('database locked');
+        }
+        return leadPermissionsOf({
+          leadRows: {},
+          defaultRows: {},
+          sessionLevel: null,
+          workspaceLevel: 'plan',
+          isPlanApprovalOff: false,
+          isWorkFlowOn: true,
+          spendLimitUsd: null,
+        });
+      }),
+      changeLeadPermission: vi.fn(async (): Promise<void> => {
+        isReadFailing = true;
+      }),
+    });
+    panel();
+
+    fireEvent.click(
+      await stopsBand().findByRole('button', { name: 'Fine-tune what the Lead does alone' }),
+    );
+    const row = await stopsBand().findByRole('tablist', { name: 'Open or update a pull request' });
+    fireEvent.click(within(row).getByRole('tab', { name: 'Ask first' }));
+
+    const alert = await stopsBand().findByRole('alert');
+    expect(alert.textContent).toContain('database locked');
+    expect(
+      stopsBand().getByRole('tablist', { name: 'Open or update a pull request' }),
+    ).toBeDefined();
+  });
+
   it('a level pick on Custom saves the level and then clears the details', async () => {
     const change = withDetails({ defaultRows: { push: 'ask' } });
     panel();
