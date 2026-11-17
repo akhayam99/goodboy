@@ -324,7 +324,6 @@
   "apps/desktop/src/features/resolve/components/ReviewFlow/noteActions.test.tsx": 2,
   "apps/desktop/src/features/resolve/components/ReviewFlow/PushBanner.test.tsx": 2,
   "apps/desktop/src/features/resolve/components/ReviewFlow/replyOnly.test.tsx": 10,
-  "apps/desktop/src/features/resolve/components/ReviewFlow/ResolveRunStatus.test.tsx": 3,
   "apps/desktop/src/features/resolve/components/ReviewFlow/ReviewerCommentBlock.test.tsx": 3,
   "apps/desktop/src/features/resolve/components/ReviewFlow/runSurfaces.test.tsx": 8,
   "apps/desktop/src/features/resolve/hooks/useFixStartedToast/index.test.tsx": 4,

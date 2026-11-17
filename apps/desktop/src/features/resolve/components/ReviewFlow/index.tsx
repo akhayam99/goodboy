@@ -28,7 +28,7 @@ import { SHORTCUTS, shortcutGlyphs, type ShortcutId } from '../../../../shared/k
 import { reviewFocusThreadId } from '../../../../store/slices/review-navigation';
 import { bindTarget, runObjectAction } from '../../../actions/registry';
 import { useActionEnv } from '../../../actions/useActionEnv';
-import { groupsInViewOf, stateCountsInScopeOf } from '../../commentGroupsView';
+import { stateCountsInScopeOf } from '../../commentGroupsView';
 import { useActiveReviewSource } from '../../hooks/useActiveReviewSource';
 import { useLaneStatus } from '../../hooks/useLaneStatus';
 import { LaneNotices } from './LaneNotices';
@@ -46,7 +46,10 @@ import { AnswersPanel } from './AnswersPanel';
 import { FixRunGroupHeader } from './FixRunGroupHeader';
 import { useDropHandledSelection } from './useDropHandledSelection';
 import { useFixRunGroups } from './useFixRunGroups';
+import { useHeldReviewGroups } from './useHeldReviewGroups';
 import { BulkUndoBar } from './BulkUndoBar';
+import { focusedRowId } from './focusedRowId';
+import { useCommentWork } from './useCommentWork';
 import { openFixComments } from '../../../../store/slices/resolve/openFixComments';
 import type { CommentScope, CommentState } from './ReviewScopeBar';
 import { ReviewToolbar } from './ReviewToolbar';
@@ -93,11 +96,6 @@ type FocusRowParams = {
   readonly threadId: string;
 };
 
-const focusedRowId = (): string | null =>
-  document.activeElement instanceof HTMLElement
-    ? (document.activeElement.closest('[data-thread-id]')?.getAttribute('data-thread-id') ?? null)
-    : null;
-
 const DOCK_BOTTOM_OFFSET = 24;
 
 export const ReviewFlow = ({ session, mountId = null, push }: Props) => {
@@ -113,16 +111,14 @@ export const ReviewFlow = ({ session, mountId = null, push }: Props) => {
   const scope: CommentScope = counts.notes > 0 && counts.host > 0 ? pickedScope : 'branch';
   const [commentState, setCommentState] = useState<CommentState>('open');
   const stateCounts = useMemo(() => stateCountsInScopeOf({ entries, scope }), [entries, scope]);
-  const allGroups = useMemo(
-    () => groupsInViewOf({ groups: branchGroups, scope, state: commentState }),
-    [branchGroups, commentState, scope],
-  );
+  const allGroups = useHeldReviewGroups({ groups: branchGroups, scope, state: commentState });
   const lane = useLaneStatus({ sessionId, entries: laneEntries });
   const { run, groups, fixRunReady, isRunLive } = useFixRunGroups({
     lane,
     entries,
     groups: allGroups,
   });
+  const { works, stopWork } = useCommentWork({ sessionId, entries, run, lane });
   const shownEntries = useMemo(() => groups.flatMap((group) => group.entries), [groups]);
   const storedSelection = useAppStore((s) => s.reviewSelection[sessionId]);
   const setReviewSelection = useAppStore((s) => s.setReviewSelection);
@@ -524,6 +520,8 @@ export const ReviewFlow = ({ session, mountId = null, push }: Props) => {
             <ReviewList
               sessionId={sessionId}
               groups={groups}
+              works={works}
+              onStopWork={stopWork}
               focusedThreadId={openThreadId ?? lastThreadId}
               onSelect={select}
               checked={checked}

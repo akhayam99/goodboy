@@ -53,10 +53,20 @@ const mount = async ({ name }: MountParams): Promise<void> => {
       <Scene />
     </ToastProvider>,
   );
-  await screen.findByTestId('resolve-run-status');
+  await screen.findByRole('navigation', { name: 'Comments' });
 };
 
-const statusText = (): string => screen.getByTestId('resolve-run-status').textContent ?? '';
+const toolbarText = (): string =>
+  document.querySelector('[data-slot="review-scope-bar"]')?.textContent ?? '';
+
+const commentList = (): HTMLElement => screen.getByRole('navigation', { name: 'Comments' });
+
+const counter = (): HTMLElement | null => document.querySelector('[data-fix-run-count]');
+
+const workWords = (): ReadonlyArray<string> =>
+  Array.from(document.querySelectorAll('[data-row-work] [data-item-work-word]')).map(
+    (word) => word.textContent ?? '',
+  );
 
 describe('the resolve fix scenes', () => {
   it('registers every scene for the capture', () => {
@@ -66,30 +76,34 @@ describe('the resolve fix scenes', () => {
     }
   });
 
-  it('resolve-fix-working says Fixing 8 comments and offers Stop', async () => {
+  it('resolve-fix-working puts Fixing on every row and counts the batch in the toolbar', async () => {
     await mount({ name: 'resolve-fix-working' });
 
-    expect(statusText()).toContain('Fixing 8 comments');
+    expect(workWords()).toEqual(Array(8).fill('Fixing'));
+    expect(screen.queryByTestId('resolve-run-status')).toBeNull();
+    const count = counter();
+    expect(count?.textContent).toMatch(/^Fixing·1 of 8/);
     expect(
-      within(screen.getByTestId('resolve-run-status')).getByRole('button', { name: /^Stop/ }),
+      within(count ?? document.body).getByRole('button', { name: 'Fix actions' }),
     ).toBeDefined();
+    expect(within(commentList()).getAllByRole('button', { name: /^Stop/ }).length).toBe(8);
   });
 
   it('resolve-fix-ready counts 8 fixes ready and never says Fixing', async () => {
     await mount({ name: 'resolve-fix-ready' });
 
-    expect(statusText()).toContain('Fix run · 8 comments');
-    expect(statusText()).not.toContain('Fixing');
-    expect(statusText()).not.toContain('need you');
+    expect(counter()).toBeNull();
+    expect(workWords()).toEqual([]);
+    expect(toolbarText()).not.toContain('Fixing');
+    expect(toolbarText()).not.toContain('need you');
   });
 
   it('resolve-fix-question is not live and continues only when the run is idle', async () => {
     await mount({ name: 'resolve-fix-question' });
 
-    expect(statusText()).not.toContain('Fixing');
-    expect(
-      within(screen.getByTestId('resolve-run-status')).queryByRole('button', { name: /^Stop/ }),
-    ).toBeNull();
+    expect(counter()).toBeNull();
+    expect(toolbarText()).not.toContain('Fixing');
+    expect(within(commentList()).queryByRole('button', { name: /^Stop/ })).toBeNull();
     const [first] = await screen.findAllByTestId('resolver-question');
     if (first === undefined) {
       throw new Error('no question card');
@@ -117,7 +131,7 @@ describe('the resolve fix scenes', () => {
   it('resolve-fix-failed shows Failed with a Retry in the same run', async () => {
     await mount({ name: 'resolve-fix-failed' });
 
-    expect(statusText()).toContain('Fix run · 8 comments');
+    expect(counter()).toBeNull();
     expect(screen.getAllByRole('button', { name: /Retry/ }).length).toBeGreaterThan(0);
   });
 });

@@ -1333,8 +1333,8 @@ N`, the `apply` mode of today. The choice is `ResolveLaunchChoice.mode`
 - Bulk actions on the Comments tab, each one a single store action. With no run
   (`fixRunOf` finds no launch with a live comment) the line under the
   tabs is `N open comments · Fix N ⌘A`, which opens the panel on
-  the fixable set. With a run, `RunStatusBulkActions` sits in the `actions`
-  slot of the run status line (`ResolveRunStatus`, before the model) and
+  the fixable set. With a run, `RunStatusBulkActions` sits at the end of the
+  comments bar, before the batch count (`FixRunCount`), and
   `bulkRunOf` hands it the entries of that run:
   `Use the recommended answers (N)` (two or more open questions that carry a
   recommended answer) opens the `Answer N questions` panel in the right column,

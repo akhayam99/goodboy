@@ -166,10 +166,16 @@ the place of its work from the click to the result.
   place, Fix ready) and one quiet count in the list's header, with Stop all in
   its `⋯`. The tab that holds live work carries a breathing dot on every
   tab, its tooltip the word and the item ("Analyzing payments-api / test").
+  Review comments do this today: `commentWorkOf` gives each comment Fixing,
+  or Queued with "2nd in this fix", and `FixRunCount` draws the count as one
+  `ItemWorkLine` (Fixing · 2 of 3, with the time). One agent fixes the whole
+  batch, so Stop on any of its rows stops all of it, behind the same confirm
+  as the comment drawer.
 - **The place.** While you are on the tab, an item that changes state keeps
   its group and its place; the groups sort again when you come back to the
   tab. The list component holds the order, never the store. Failing checks
-  do this today (`useHeldCheckGroups`).
+  and review comments do this today (`useHeldCheckGroups`,
+  `useHeldReviewGroups`).
 - **The words.** Every word and verb comes from `ITEM_WORK_WORDS`
   (`itemWork/itemWorkWords.ts`): Starting, Queued, Analyzing, Fixing,
   Resolving, In a run, Cause found, Fix ready, Question, "Fixed, not pushed",

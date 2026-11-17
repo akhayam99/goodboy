@@ -33,7 +33,7 @@ import { usePullRequestView } from '../../hooks/usePullRequestView';
 import { capabilityReasonOf } from '../../pullRequestCapabilityReason';
 import { useBranchReviewState } from '../../hooks/useBranchReviewState';
 import { branchTabsOf, isBranchReadOnly, resolveBranchTab } from '../../branchTabs';
-import { checkTabLiveOf } from '../../checks/checkTabLiveOf';
+import { branchTabLiveOf } from '../../branchTabLiveOf';
 import { branchScopeOf } from '../../../../store/slices/session-view/branchScopeOf';
 import { pullRequestKindOf } from '../../../../shared/utils/pullRequestKind';
 import { loadedBranchFilesOf } from '../../loadedBranchFilesOf';
@@ -375,8 +375,8 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
     ahead: start.step.ahead,
     notPushed: pushCount,
   });
-  const checksLive = checkTabLiveOf({ work: controls.checkWork });
-  const tabLive = checksLive === null ? {} : { checks: checksLive };
+  const { run, lane } = branchReview;
+  const tabLive = branchTabLiveOf({ checkWork: controls.checkWork, run, lane });
   const openedAt = pullRequestView.view?.createdAt ?? null;
   const isWritingReview = isReviewWriting && pr !== null && pr.state === 'open';
   const isChanges = tab === 'files' && identity.mountPath !== null && !isWritingReview;
@@ -435,12 +435,9 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
           <BranchBodyTop
             session={session}
             controls={controls}
-            review={branchReview}
-            isFixRunShown={tab !== 'comments' && branchReview.comments.facts.isFixRunLive}
             isPushNext={!isStepHidden && controls.primary?.actionId === 'diff.push'}
             isSetupOfferShown={!isChanges}
             baseRow={baseRow}
-            onOpenComments={() => selectTab('comments')}
           />
           {body()}
         </div>

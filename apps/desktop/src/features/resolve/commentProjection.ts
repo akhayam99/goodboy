@@ -20,7 +20,7 @@ export type ResolveWord =
 
 export type ResolveGroup = 'needs_you' | 'working' | 'done' | 'left_open';
 
-type ResolveSub = 'waiting' | 'pushing' | 'stopped' | 'resolved_remote';
+type ResolveSub = 'queued' | 'pushing' | 'stopped' | 'resolved_remote';
 
 export const RESOLVE_WORD_LABEL: Readonly<Record<ResolveWord, string>> = {
   open: 'Open',
@@ -98,7 +98,7 @@ export const RESOLVE_WORD_RANK: Readonly<Record<ResolveWord, number>> = {
 };
 
 const SUB_LABEL: Readonly<Record<Exclude<ResolveSub, 'resolved_remote'>, string>> = {
-  waiting: 'Waiting',
+  queued: NAMES.queued,
   pushing: 'Pushing',
   stopped: 'Stopped',
 };
@@ -155,6 +155,7 @@ export type ResolveCommentFacts = {
   readonly state: ReviewCommentState;
   readonly isPublishing: boolean;
   readonly isWaitingForSlot: boolean;
+  readonly isHeld?: boolean;
   readonly isPushFailure: boolean;
   readonly sourceLabel: string;
   readonly attempt: Pick<ResolveAttempt, 'failureCause' | 'phase'> | null;
@@ -185,7 +186,7 @@ const subOf = ({ facts }: { readonly facts: ResolveCommentFacts }): ResolveSub |
     case 'outdated':
       return null;
     case 'drafting':
-      return facts.isWaitingForSlot ? 'waiting' : null;
+      return facts.isWaitingForSlot || facts.isHeld === true ? 'queued' : null;
     case 'failed':
       if (facts.isPushFailure) {
         return null;

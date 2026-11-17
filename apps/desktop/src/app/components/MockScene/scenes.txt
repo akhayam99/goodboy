@@ -382,6 +382,7 @@ column-rail
 command-card
 command-palette
 comments-action-bar
+comments-batch
 comments-groups
 comments-left-open
 comments-push-failed

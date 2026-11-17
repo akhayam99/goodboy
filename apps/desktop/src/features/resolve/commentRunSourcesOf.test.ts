@@ -8,7 +8,6 @@ import { COMMENT_RUN_COPY } from './commentRunCopy';
 import { commentRunSourcesOf } from './commentRunSourcesOf';
 import { noteThreadId } from './notes/noteThread';
 import type { ReviewCommentState } from './reviewCommentState';
-import type { RowFix } from './rowFix';
 
 const HEADER_NOTE = noteThreadId({ noteId: 'note-ledger-header' });
 const FILTERS_NOTE = noteThreadId({ noteId: 'note-ledger-filters' });
@@ -26,21 +25,12 @@ type EntryParams = {
   readonly path: string | null;
   readonly state?: ReviewCommentState;
   readonly stage?: ResolveStage;
-  readonly fix?: RowFix | null;
   readonly lane?: CommentLane | null;
 };
 
-const entryOf = ({
-  threadId,
-  path,
-  state = 'new',
-  stage = 'new',
-  fix = null,
-  lane = 'fix',
-}: EntryParams) => ({
+const entryOf = ({ threadId, path, state = 'new', stage = 'new', lane = 'fix' }: EntryParams) => ({
   threadId,
   state,
-  fix,
   lane,
   row: { reviewerNote: { path }, thread: { stage } },
 });
@@ -139,7 +129,7 @@ describe('commentRunSourcesOf', () => {
         HEADER,
         FILTERS,
         entryOf({ threadId: TOTALS_THREAD, path: PAGE, state: 'drafting' }),
-        entryOf({ threadId: EXPORT_THREAD, path: EXPORT_PATH, fix: { kind: 'fixing' } }),
+        entryOf({ threadId: EXPORT_THREAD, path: EXPORT_PATH, state: 'drafting' }),
       ],
       agents: [runOf({ id: 'run-filters', threadIds: [FILTERS_NOTE] })],
       threadId: HEADER_NOTE,

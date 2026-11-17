@@ -21,8 +21,8 @@ const fixOf = ({ stage, shas = null }: Params) => {
 };
 
 describe('rowFixOf', () => {
-  it('says fixing while the run works on the comment', () => {
-    expect(fixOf({ stage: 'working' })).toEqual({ kind: 'fixing' });
+  it('leaves a comment in work to the work line', () => {
+    expect(fixOf({ stage: 'working' })).toBeNull();
   });
 
   it('says fixed with the short sha and the full one for the diff, and invites a review while it waits', () => {
@@ -55,7 +55,6 @@ describe('rowFixOf', () => {
   });
 
   it('reads each state as one line', () => {
-    expect(rowFixLineOf({ fix: { kind: 'fixing' } })).toBe('In the fix run');
     expect(
       rowFixLineOf({ fix: { kind: 'fixed', sha: '90b1d57', commit: SHA, isReview: true } }),
     ).toBe('Fixed in 90b1d57 · Review the fix');
