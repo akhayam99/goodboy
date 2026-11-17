@@ -1,4 +1,10 @@
+import type { HistoryOnlineCommit } from '@goodboy/types';
 import { withOperatorNotes } from '../chat/utils/withOperatorNotes';
+
+type Kept = {
+  readonly remoteSha: string;
+  readonly commits: ReadonlyArray<HistoryOnlineCommit>;
+};
 
 type Params = {
   readonly branch: string;
@@ -6,9 +12,30 @@ type Params = {
   readonly output: string;
   readonly hint?: string;
   readonly pending?: string;
+  readonly kept?: Kept | null;
+};
+
+type KeptParams = {
+  readonly branch: string;
+  readonly kept: Kept | null;
 };
 
 const OUTPUT_LIMIT = 6000;
+const SHORT_SHA = 7;
+
+const keptLines = ({ branch, kept }: KeptParams): ReadonlyArray<string> => {
+  if (kept === null || kept.commits.length === 0) {
+    return [];
+  }
+  return [
+    `Origin moved after the push was confirmed. origin/${branch} is now at ${kept.remoteSha} and has commits this branch lacks:`,
+    ...kept.commits.map(
+      (commit) => `- ${commit.sha.slice(0, SHORT_SHA)} ${commit.subject} (${commit.author})`,
+    ),
+    `Nobody confirmed dropping them, so keep them: rebase this branch onto ${kept.remoteSha} and resolve any conflict so both sides survive. Never force push them away.`,
+    '',
+  ];
+};
 
 export const pushFixBrief = ({
   branch,
@@ -16,6 +43,7 @@ export const pushFixBrief = ({
   output,
   hint = '',
   pending = '',
+  kept = null,
 }: Params): string => {
   const trimmed = output.trim();
   const shown = trimmed.length > OUTPUT_LIMIT ? trimmed.slice(-OUTPUT_LIMIT) : trimmed;
@@ -23,6 +51,7 @@ export const pushFixBrief = ({
   const brief = [
     `The push of ${branch} failed. Fix the cause in this worktree so the push can go through.`,
     '',
+    ...keptLines({ branch, kept }),
     `Command: ${command}`,
     'Output:',
     shown === '' ? '(no output)' : shown,

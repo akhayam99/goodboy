@@ -32,7 +32,9 @@ vi.mock('../../../features/worktree/worktree', () => ({
 
 import { resetWorktreeStatusCache } from '../../runtime/worktreeStatuses/cache';
 import { useAppStore, type AppStore } from '../../store';
+import { checkBranchOrigin } from './checkBranchOrigin';
 import { fixBranchPushWithAgent } from './fixBranchPushWithAgent';
+import { forcePushCheckedBranch } from './forcePushCheckedBranch';
 import { prefillBranchPushTerminal } from './prefillBranchPushTerminal';
 import { settleBranchPushFix } from './settleBranchPushFix';
 
@@ -113,6 +115,8 @@ const harness = (): Harness => {
     fixBranchPushWithAgent: fixBranchPushWithAgent({ set, get }),
     settleBranchPushFix: settleBranchPushFix({ set, get }),
     prefillBranchPushTerminal: prefillBranchPushTerminal({ get }),
+    checkBranchOrigin: checkBranchOrigin({ get }),
+    forcePushCheckedBranch: forcePushCheckedBranch({ get }),
     pushBranch: async (params) => {
       const { pushBranch } = await import('../github/pushBranch');
       return pushBranch({ set, get })(params);
@@ -913,5 +917,179 @@ describe('push fix outcome', () => {
     await settle({ read });
 
     expect(read().pushFixOutcomes).toEqual({});
+  });
+});
+
+const MOVED_ORIGIN = {
+  knownRemoteSha: 'newer-sha',
+  remoteSha: 'newer-sha',
+  onlyOnline: [{ sha: 'late-commit-sha', subject: 'Add the Harborline export', author: 'Acme' }],
+  fetchError: null,
+};
+
+const movedInput = () => ({
+  ...input({ isForce: true }),
+  confirmedOnlyOnline: ['early-commit'],
+  confirmedRemoteSha: 'remote-sha',
+  isOriginMoved: true,
+});
+
+describe('after origin moved', () => {
+  it('starts the agent on fresh state and tells it to keep the new commits', async () => {
+    const { read, spawnAgent } = harness();
+    h.readOriginAhead.mockResolvedValue(MOVED_ORIGIN);
+
+    await read().fixBranchPushWithAgent({ ...movedInput(), message: HOOK_OUTPUT });
+
+    const prompt = spawnAgent.mock.calls[0]?.[1].initialPrompt ?? '';
+    expect(prompt).toContain('origin/fix/ledger-postings is now at newer-sha');
+    expect(prompt).toContain('- late-co Add the Harborline export (Acme)');
+    expect(prompt).toContain('keep them: rebase this branch onto newer-sha');
+    expect(prompt).toContain("Command: git push origin 'fix/ledger-postings'");
+    expect(prompt).not.toContain('--force-with-lease');
+    expect(read().branchPushFixes[AGENT_ID]).toMatchObject({
+      isForce: false,
+      confirmedOnlyOnline: null,
+      confirmedRemoteSha: null,
+    });
+  });
+
+  it('pushes plainly after the agent rebased on the kept commits', async () => {
+    const { read } = harness();
+    h.readOriginAhead.mockResolvedValue(MOVED_ORIGIN);
+    await read().fixBranchPushWithAgent({ ...movedInput(), message: HOOK_OUTPUT });
+
+    await read().settleBranchPushFix({
+      sessionId: SESSION_ID,
+      agentId: AGENT_ID,
+      hasFailed: false,
+    });
+
+    expect(h.gitPush).toHaveBeenCalledTimes(1);
+    expect(h.pushWithLease).not.toHaveBeenCalled();
+  });
+
+  it('leases the fresh remote sha when origin moved but holds nothing this branch lacks', async () => {
+    const { read, spawnAgent } = harness();
+    h.readOriginAhead.mockResolvedValue({ ...MOVED_ORIGIN, onlyOnline: [] });
+
+    await read().fixBranchPushWithAgent({ ...movedInput(), message: HOOK_OUTPUT });
+
+    expect(spawnAgent.mock.calls[0]?.[1].initialPrompt).toContain(
+      "git push --force-with-lease='fix/ledger-postings:newer-sha' origin 'fix/ledger-postings'",
+    );
+    expect(read().branchPushFixes[AGENT_ID]).toMatchObject({
+      isForce: true,
+      confirmedOnlyOnline: [],
+      confirmedRemoteSha: 'newer-sha',
+    });
+  });
+
+  it('opens the terminal with a rebase on the fresh remote sha, never a force push', async () => {
+    const { read } = harness();
+    const setTerminalPrefill = vi.fn();
+    Object.assign(read(), {
+      addTerminalTab: vi.fn(() => 'terminal-1'),
+      setTerminalPrefill,
+      openDrawer: vi.fn(),
+    });
+    h.readOriginAhead.mockResolvedValue(MOVED_ORIGIN);
+
+    await read().prefillBranchPushTerminal(movedInput());
+
+    expect(setTerminalPrefill).toHaveBeenCalledWith(
+      expect.objectContaining({
+        prefill: "git rebase 'newer-sha' && git push origin 'fix/ledger-postings'",
+      }),
+    );
+  });
+
+  it('refuses to start from a check whose fetch failed', async () => {
+    const { read, spawnAgent } = harness();
+    h.readOriginAhead.mockResolvedValue({ ...MOVED_ORIGIN, fetchError: 'could not reach origin' });
+
+    await expect(
+      read().fixBranchPushWithAgent({ ...movedInput(), message: HOOK_OUTPUT }),
+    ).rejects.toThrow('could not reach origin');
+    expect(spawnAgent).not.toHaveBeenCalled();
+  });
+});
+
+describe('checkBranchOrigin', () => {
+  it('returns the fresh remote sha and the commits only on origin with their author', async () => {
+    const { read } = harness();
+    h.readOriginAhead.mockResolvedValue(MOVED_ORIGIN);
+
+    const check = await read().checkBranchOrigin({ sessionId: SESSION_ID, mountId: MOUNT_ID });
+
+    expect(check).toEqual({ remoteSha: 'newer-sha', onlyOnline: MOVED_ORIGIN.onlyOnline });
+  });
+
+  it('drops a late answer for an older check', async () => {
+    const { read } = harness();
+    let answerFirst: (value: unknown) => void = () => undefined;
+    h.readOriginAhead.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          answerFirst = resolve;
+        }),
+    );
+    h.readOriginAhead.mockResolvedValueOnce(MOVED_ORIGIN);
+
+    const first = read().checkBranchOrigin({ sessionId: SESSION_ID, mountId: MOUNT_ID });
+    const second = await read().checkBranchOrigin({ sessionId: SESSION_ID, mountId: MOUNT_ID });
+    answerFirst({ knownRemoteSha: 'remote-sha', remoteSha: 'remote-sha', onlyOnline: [] });
+
+    expect(await first).toBeNull();
+    expect(second?.remoteSha).toBe('newer-sha');
+  });
+
+  it('drops the answer when the mount switched branch during the fetch', async () => {
+    const { read, renameBranch } = harness();
+    h.readOriginAhead.mockImplementationOnce(async () => {
+      renameBranch({ branch: 'fix/other-branch' });
+      return MOVED_ORIGIN;
+    });
+
+    expect(await read().checkBranchOrigin({ sessionId: SESSION_ID, mountId: MOUNT_ID })).toBeNull();
+  });
+});
+
+describe('forcePushCheckedBranch', () => {
+  it('leases the checked remote sha and confirms the checked commits', async () => {
+    const { read } = harness();
+    h.readOriginAhead.mockResolvedValue(MOVED_ORIGIN);
+    const check = await read().checkBranchOrigin({ sessionId: SESSION_ID, mountId: MOUNT_ID });
+
+    const result = await read().forcePushCheckedBranch({
+      sessionId: SESSION_ID,
+      mountId: MOUNT_ID,
+      check: check ?? { remoteSha: '', onlyOnline: [] },
+    });
+
+    expect(result.ok).toBe(true);
+    expect(h.pushWithLease).toHaveBeenCalledWith(
+      expect.objectContaining({ expectedRemoteSha: 'newer-sha' }),
+    );
+  });
+
+  it('refuses when another window pushed again after the check', async () => {
+    const { read } = harness();
+    h.readOriginAhead.mockResolvedValue(MOVED_ORIGIN);
+    const check = await read().checkBranchOrigin({ sessionId: SESSION_ID, mountId: MOUNT_ID });
+    h.readOriginAhead.mockResolvedValue({
+      ...MOVED_ORIGIN,
+      knownRemoteSha: 'newest-sha',
+      remoteSha: 'newest-sha',
+    });
+
+    const result = await read().forcePushCheckedBranch({
+      sessionId: SESSION_ID,
+      mountId: MOUNT_ID,
+      check: check ?? { remoteSha: '', onlyOnline: [] },
+    });
+
+    expect(result).toMatchObject({ ok: false, reason: 'moved' });
+    expect(h.pushWithLease).not.toHaveBeenCalled();
   });
 });

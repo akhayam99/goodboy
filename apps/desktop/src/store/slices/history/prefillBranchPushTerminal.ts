@@ -1,6 +1,7 @@
-import { branchPushLease } from '../../../features/history/branchPushLease';
+import { keepOriginCommand } from '../../../features/history/keepOriginCommand';
 import { pushFixCommand } from '../../../features/history/pushFixCommand';
 import { openSessionTerminal } from '../../../features/terminal/openSessionTerminal';
+import { branchPushPlan } from './branchPushPlan';
 import { identityChange, identityOf } from './historyIdentity';
 import { historyTargetOf } from './historyTargetOf';
 import type { SliceDeps } from '../../slice-types';
@@ -9,23 +10,10 @@ import type { BranchPushInput } from './types';
 type Params = Pick<SliceDeps, 'get'>;
 
 export const prefillBranchPushTerminal = ({ get }: Params) => {
-  return async ({
-    sessionId,
-    mountId,
-    isForce,
-    confirmedOnlyOnline,
-    confirmedRemoteSha,
-  }: BranchPushInput): Promise<void> => {
+  return async (input: BranchPushInput): Promise<void> => {
+    const { sessionId, mountId } = input;
     const target = historyTargetOf({ get, sessionId, mountId });
-    const remoteSha = await branchPushLease({
-      isForce,
-      branch: target.branch,
-      worktreePath: target.worktreePath,
-      workspaceId: target.workspaceId,
-      projectId: target.projectId,
-      confirmedOnlyOnline,
-      confirmedRemoteSha,
-    });
+    const plan = await branchPushPlan({ input, target });
     if (identityChange({ get, sessionId, mountId, identity: identityOf({ target }) }) !== null) {
       return;
     }
@@ -33,7 +21,10 @@ export const prefillBranchPushTerminal = ({ get }: Params) => {
       state: get(),
       sessionId,
       cwd: target.worktreePath,
-      prefill: pushFixCommand({ branch: target.branch, remoteSha }),
+      prefill:
+        plan.kept === null
+          ? pushFixCommand({ branch: target.branch, remoteSha: plan.leaseSha })
+          : keepOriginCommand({ branch: target.branch, remoteSha: plan.kept.remoteSha }),
     });
   };
 };

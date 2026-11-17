@@ -1,5 +1,5 @@
-import { branchPushLease } from '../../../features/history/branchPushLease';
 import { pushFixBrief } from '../../../features/history/pushFixBrief';
+import { branchPushPlan } from './branchPushPlan';
 import { pushFixCommand } from '../../../features/history/pushFixCommand';
 import { identityChange, identityOf } from './historyIdentity';
 import { historyTargetOf } from './historyTargetOf';
@@ -20,17 +20,14 @@ type Params = BranchPushInput & {
 
 export const fixBranchPushWithAgent = ({ set, get }: SliceDeps) => {
   return async ({
-    sessionId,
-    mountId,
-    isForce,
-    confirmedOnlyOnline,
-    confirmedRemoteSha,
     message,
     hint,
     pending,
     onAccepted,
     onSettled,
+    ...input
   }: Params): Promise<void> => {
+    const { sessionId, mountId } = input;
     const current = pushFixStateOf({
       fixes: get().branchPushFixes,
       outcomes: get().pushFixOutcomes,
@@ -47,15 +44,8 @@ export const fixBranchPushWithAgent = ({ set, get }: SliceDeps) => {
     }
     try {
       const target = historyTargetOf({ get, sessionId, mountId });
-      const remoteSha = await branchPushLease({
-        isForce,
-        branch: target.branch,
-        worktreePath: target.worktreePath,
-        workspaceId: target.workspaceId,
-        projectId: target.projectId,
-        confirmedOnlyOnline,
-        confirmedRemoteSha,
-      });
+      const { isForce, confirmedOnlyOnline, confirmedRemoteSha, leaseSha, kept } =
+        await branchPushPlan({ input, target });
       const identity = identityOf({ target });
       if (identityChange({ get, sessionId, mountId, identity }) !== null) {
         return;
@@ -66,8 +56,9 @@ export const fixBranchPushWithAgent = ({ set, get }: SliceDeps) => {
         mountId,
         prompt: pushFixBrief({
           branch: target.branch,
-          command: pushFixCommand({ branch: target.branch, remoteSha }),
+          command: pushFixCommand({ branch: target.branch, remoteSha: leaseSha }),
           output: message,
+          kept: kept === null ? null : { remoteSha: kept.remoteSha, commits: kept.onlyOnline },
           ...(hint !== undefined && { hint }),
           ...(pending !== undefined && { pending }),
         }),
