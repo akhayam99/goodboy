@@ -347,11 +347,6 @@
 
   --animate-drawer-content-out: fold-fade-out var(--duration-quick) var(--ease-exit) forwards;
 
-  --animate-fold-label-in: fold-fade-in var(--duration-quick) var(--ease-enter) var(--delay-step)
-    both;
-
-  --animate-fold-label-out: fold-fade-out var(--duration-quick) var(--ease-exit) forwards;
-
   --animate-layer-in: layer-in var(--duration-quick) var(--ease-enter);
 
   --animate-trail-crumb-in: trail-crumb-in var(--duration-base) var(--ease-enter) var(--delay-step)

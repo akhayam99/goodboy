@@ -1,6 +1,6 @@
 import type { Session } from '@goodboy/types';
 import { shellArrangement } from '../../../../../shellArrangement';
-import { ShellLeft } from '../../../../SideColumn/ShellLeft';
+import { SideColumn } from '../../../../SideColumn';
 import { SessionContextCards } from '../../../../SessionContextCards';
 import { useSceneShell } from '../../useSceneShell';
 
@@ -18,11 +18,11 @@ export const SidebarColumns = ({ session }: Props) => {
   return (
     <div className="flex" style={{ height: COLUMN_HEIGHT }}>
       <div style={{ width: COLUMN_WIDTH }}>
-        <ShellLeft
-          arrangement={ARRANGEMENT}
+        <SideColumn
+          scope={ARRANGEMENT.columnScope}
           workspaceId={session.workspaceId}
           currentSessionId={session.id}
-          isDraftShown={false}
+          place={null}
           actions={shell.actions}
         />
       </div>

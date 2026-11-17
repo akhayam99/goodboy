@@ -80,17 +80,17 @@ describe('the shell scene mounts the real session workspace', () => {
     }
   });
 
-  it('opens Settings as a page beside the live column and Back to app returns to the session', async () => {
+  it('opens Settings as a page beside the live rail and Back to app returns to the session', async () => {
     await renderShell();
     act(() => {
       fireEvent.click(screen.getByRole('button', { name: 'Settings' }));
     });
     await waitFor(() => screen.getByRole('complementary', { name: 'Settings scopes' }));
     expect(useAppStore.getState().appStudio?.kind).toBe('settings');
-    const column = screen.getByRole('navigation', { name: 'Sidebar' });
-    expect(column.hasAttribute('inert')).toBe(false);
+    const rail = screen.getByRole('navigation', { name: 'Places' });
+    expect(rail.closest('[inert]')).toBeNull();
     expect(
-      column.querySelector('[data-column-door="settings"]')?.getAttribute('aria-current'),
+      rail.querySelector('[data-shell-rail-item="settings"]')?.getAttribute('aria-current'),
     ).toBe('page');
 
     act(() => {

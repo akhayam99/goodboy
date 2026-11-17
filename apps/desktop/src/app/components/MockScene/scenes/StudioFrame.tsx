@@ -1,6 +1,5 @@
 import type { ReactNode } from 'react';
 import { AppShell } from '@goodboy/ui';
-import type { SessionId } from '@goodboy/types';
 import type { FooterTarget } from '../../../hooks/useAppOverlays/overlayState';
 import { AppTopBar } from '../../AppTopBar';
 import { ShellLeft } from '../../SideColumn/ShellLeft';
@@ -17,15 +16,9 @@ type StudioFrameProps = {
   readonly target: FooterTarget;
   readonly main: ReactNode;
   readonly columnPlace?: ColumnPlace;
-  readonly currentSessionId?: SessionId | null;
 };
 
-export const StudioFrame = ({
-  target,
-  main,
-  columnPlace,
-  currentSessionId = null,
-}: StudioFrameProps) => {
+export const StudioFrame = ({ target, main, columnPlace }: StudioFrameProps) => {
   const workspaceId = useAppStore((state) => state.currentWorkspaceId);
   const isSettingsOpen = useAppStore((state) => state.appStudio?.kind === 'settings');
   const arrangement = shellArrangement({ hasWorkspace: true, isSidebarCollapsed: false });
@@ -35,20 +28,11 @@ export const StudioFrame = ({
   return (
     <ToastProvider>
       <AppShell
-        topBar={
-          <AppTopBar
-            sidebar={{ isCollapsed: arrangement.isLeftRail, onToggle: noop }}
-            onOpenSpend={noop}
-            onOpenScript={noop}
-          />
-        }
-        leftSidebarCollapsed={arrangement.isLeftRail}
-        leftSidebar={
+        topBar={<AppTopBar onOpenSpend={noop} onOpenScript={noop} />}
+        leftRail={
           <ShellLeft
             arrangement={arrangement}
             workspaceId={workspaceId}
-            currentSessionId={currentSessionId}
-            isDraftShown={false}
             actions={shell.actions}
             {...(isSettingsOpen ? {} : { placeOverride: place })}
           />

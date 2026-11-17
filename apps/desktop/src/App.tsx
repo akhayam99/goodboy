@@ -20,7 +20,6 @@ import { NewSessionBridge } from './features/session/components/NewSessionBridge
 import { SessionArchiveBridge } from './features/session/components/SessionArchiveBridge';
 import { SessionRefreshBridge } from './features/session/components/SessionRefreshBridge';
 import { RowActionsCueBridge } from './app/components/RowActionsCueBridge';
-import { SidebarPeekOverlay } from './features/workspace/components/SidebarPeekOverlay';
 import { ShellLeft } from './app/components/SideColumn/ShellLeft';
 import { useColumnActions } from './app/hooks/useColumnActions';
 import { useGoToBoard } from './app/hooks/useGoToBoard';
@@ -243,47 +242,17 @@ export const App = () => {
         <AppShell
           topBar={
             <AppTopBar
-              sidebar={{ isCollapsed: arrangement.isLeftRail, onToggle: sessionSidebar.toggle }}
               onOpenSpend={openSpend}
               onOpenScript={(run) => void openRunningScript({ run })}
               openProviderId={connectionsProviderId}
             />
           }
-          leftSidebarCollapsed={arrangement.isLeftRail}
-          leftSidebar={
+          leftRail={
             <ShellLeft
               arrangement={arrangement}
               workspaceId={currentWorkspaceId}
-              currentSessionId={currentSession?.id ?? null}
-              isDraftShown={isDraftShown}
               actions={columnActions}
             />
-          }
-          leftOverlay={
-            arrangement.leftOverlaySlot === 'peek' ? (
-              <SidebarPeekOverlay
-                isPeeking={sessionSidebar.isPeeking}
-                onEdgeEnter={sessionSidebar.requestPeek}
-                onEdgeLeave={() => {
-                  sessionSidebar.cancelPeek();
-                  sessionSidebar.scheduleClose();
-                }}
-                onPanelEnter={sessionSidebar.cancelClose}
-                onPanelLeave={sessionSidebar.scheduleClose}
-                onHold={sessionSidebar.holdPeek}
-                onRelease={sessionSidebar.releasePeek}
-              >
-                <ShellLeft
-                  arrangement={arrangement}
-                  workspaceId={currentWorkspaceId}
-                  currentSessionId={currentSession?.id ?? null}
-                  isDraftShown={isDraftShown}
-                  actions={columnActions}
-                  variant="peek"
-                  onNavigate={sessionSidebar.closePeek}
-                />
-              </SidebarPeekOverlay>
-            ) : undefined
           }
           drawer={shellRight.isDrawerMounted ? <DrawerHost slot="dock" /> : null}
           drawerSizing={shellRight.dockSizing}

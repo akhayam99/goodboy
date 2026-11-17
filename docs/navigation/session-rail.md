@@ -4,16 +4,16 @@
 
 ## Session page tabs
 
-**No session column.** The sidebar always shows the workspace: New session, the doors, then the
-Pinned and Sessions lists. A session row opens the session on its Overview. The session's
+**No session column.** The places rail always shows New and the workspace places,
+with Board current while a session is open. Sessions in the top bar (⌘B) opens
+the searchable list, Pinned first, then grouped by state. A row opens its session on Overview. The session's
 pages are page tabs directly under the session title (`SessionPageTabs`, built on `PageTabs`):
 Overview, Runs, Artifacts, Questions and Context, on every session, with or without a
 branch. A session with exactly one branch adds a **Changes** shortcut last: it opens that
 branch's Changes tab on the Branch page; with no branch or more than one it is absent, since
 changes belong to a branch and its pull request. Counts sit on Runs, Artifacts and Questions
-(`pageSlotOf`, the same words as the sidebar flyout). The pages come from one list (`pagesOf`
-in `features/session/pageRegistry.ts`); the sidebar flyout of the open session
-(`SessionPages`) draws the same list.
+(`pageSlotOf`). The pages come from one list (`pagesOf`
+in `features/session/pageRegistry.ts`).
 
 - **One session head.** `SessionFrame` hands `SessionHead` (`app/components/SessionHead`) to
   `SessionWorkspace` through `SessionHeadContext`, and `SessionWorkspace` draws it once, above
@@ -337,9 +337,9 @@ characters`, in the warning tone from 90%. A longer draft is blocked before
   rail: a thin icon toolbar at the right edge of the session content, between
   the page and the open drawer (see The session tools), the same on every
   page of the session, folded rail or not.
-- **Nothing folds.** The page tabs have no folded state. ⇧⌘B folds the column only, which
-  shows New, the doors and the pinned session nodes on every screen. The diff page's file
-  rail keeps its own fold.
+- **The page tabs and places rail never fold.** The places rail shows New
+  and the six places beside every session, without session rows
+  (`app/components/SideColumn/ShellLeft/`). The diff page's file rail keeps its own fold.
 - **A preset run keeps the rail on the session.** Opening a run with a fixed
   step list (a saved workflow or Describe steps; `executionMode` not
   `dynamic`) shows the run page in the center and leaves the rail on level 1;

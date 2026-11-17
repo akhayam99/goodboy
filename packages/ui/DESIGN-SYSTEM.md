@@ -603,13 +603,10 @@ Browser address row and tab list, a studio band) uses the same token, so the
 row grid of a page follows from it. `paneRhythm.test.ts` holds the edges, the
 gaps and the first row.
 
-The main sidebar has one icon column. Every leading glyph (New session, the
-doors, the session state nodes, Settings, and the same buttons on the folded
-rail) sits in `navRail.icon`, a 12px slot that centers a glyph of any size at
-22px, the folded rail's axis and the workspace tile's center in the top bar
-while `--titlebar-inset` is 0. `sidebar-icon-column.test.tsx` reads the centers
-in the `r4-column-dark` and `r4-column-light` scenes and on the folded rail,
-within 1px.
+The places rail has one icon column: `ShellRail` centers every item, so New,
+the six places and Settings share one axis at either width.
+`places-rail.test.tsx` reads the order and the width in the `r4-column-dark`
+and `r4-column-light` scenes, and with an old folded choice.
 
 A stat card holds its label to two lines (`line-clamp-2`), pins the figure to
 the bottom of the card with `mt-auto`, and puts the delta and the hint on their
@@ -840,19 +837,18 @@ Weight is one rule, `ICON_WEIGHT` in the same file: Phosphor bold at `mark`
 and `row` and on a check mark, regular at `control`, `notice` and `hero`, so
 every icon draws a line about 1px wide. Bold is drawn as the regular outline
 widened by a round stroke ([iconography.md](../../docs/iconography.md#sizes)). A call site passes the token, never a
-literal; `iconWeightOf({ size })` picks it from the size, and `IconButton` and
-the folded rail's `RailButton` use it.
+literal; `iconWeightOf({ size })` picks it from the size, and `IconButton`
+uses it.
 
 One size per place, so a column never mixes sizes:
 
-| Place                                        | Size      | Notes                                           |
-| -------------------------------------------- | --------- | ----------------------------------------------- |
-| Left column doors, New session, door actions | `row`     | concept glyph, `navRail.icon` slot              |
-| Left column trailing marks                   | `row`     | `StatusMark` glyphs in the 16px box             |
-| Folded rail (doors, Settings)                | `control` | `RailButton`, regular weight                    |
-| Tools rail (Terminal, Browser)               | `notice`  | icon over its caption, both centred on the rail |
-| Page and session header actions              | `control` | `IconButton` `sm` and `md`                      |
-| List and table rows                          | `row`     | leading and trailing glyphs                     |
+| Place                               | Size      | Notes                                           |
+| ----------------------------------- | --------- | ----------------------------------------------- |
+| Places rail (New, places, Settings) | `hero`    | `ShellRailItem`, regular weight                 |
+| Session list trailing marks         | `row`     | `StatusMark` glyphs in the 16px box             |
+| Tools rail (Terminal, Browser)      | `notice`  | icon over its caption, both centred on the rail |
+| Page and session header actions     | `control` | `IconButton` `sm` and `md`                      |
+| List and table rows                 | `row`     | leading and trailing glyphs                     |
 
 ## Status marks
 
@@ -1266,18 +1262,16 @@ Reduced motion swaps in place at the same times.
 to its token. A literal duration or `cubic-bezier` in `styles.css` outside the
 token block fails the same test.
 
-**Motion tokens.** A width that opens or folds (the main sidebar grid column,
-the session rail, the drawer track, the diff file rail) eases in
-`--duration-base` (`DURATION_BASE_MS`); words fade in `--duration-quick`
-(`fold-label-out`, and `fold-label-in` after one `--delay-step`, so they arrive
-once there is room); drawer content fades in
+**Motion tokens.** A width that opens or folds (the session rail, the drawer
+track, the diff file rail) eases in
+`--duration-base` (`DURATION_BASE_MS`); drawer content fades in
 `--duration-quick` after one `--delay-step` (`drawer-content-in`) and out in
 `--duration-quick` (`drawer-content-out`).
 Width moves only on the one element that owns it; what moves inside it is
 opacity and `transform`, and the content keeps its final width, so nothing
 reflows or wraps mid move. Every new keyframe lives under
 `prefers-reduced-motion: no-preference`, and the hooks that stage a move
-(`useFoldPhase`, `useDrawerExit`) check `canAnimate` first: under
+(`useDrawerExit`) check `canAnimate` first: under
 reduced motion, or with nothing laid out, the state changes in place.
 
 **A floating control stays mounted and fades.** A control that comes and goes
@@ -1298,18 +1292,6 @@ pauses every running animation under it: no per-element observer, nothing to
 unsubscribe. Under `forced-colors: active` a pulsing dot or arc takes the
 system `Highlight` colour and the `spin-border` ring traces in `Highlight`, so
 the "who is working" sign never vanishes with the author palette.
-
-**A fold keeps every icon where it is.** `FoldLayers` holds a rail's two
-states as two layers pinned to its left edge and clipped (`overflow-clip`): the
-open layer at its full width and the 44px icon layer under it. Folding, the
-width eases to 44px while the open layer, on the rail's own surface
-(`bg-inherit`), fades out over the icons and is removed at the end; unfolding is
-the reverse, and the icon layer leaves once the words are in. The icon layer
-draws each icon at the x and y of its open row: a `RailButton` is the open row
-without its word, the session rail's icon level starts with the session node on
-the identity row's line and its pages on 28px rows, and the main rail's New
-and doors sit on the column's rows. Neither layer carries a toggle: the one
-sidebar toggle sits in the top bar, so it never moves when the column folds.
 
 The `Trail` closes a crumb label with `grid-template-columns` from
 `1fr` to `0fr` (`--duration-base`, `--ease-enter`, 40ms cascade), the same
@@ -1393,18 +1375,12 @@ column has the only width cap and truncates first. Everything to its right is
 way. In the rail, the label truncates and the count is `shrink-0`, so a long
 label loses characters before a count disappears.
 
-**The top bar's left edge belongs to the window.** The collapsed rail is
-`COLLAPSED_RAIL_WIDTH` (44px, exported by `AppShell`) and its buttons center on
-22px. The top bar's left zone starts at `--titlebar-inset`, which clears the
-macOS traffic lights. The main sidebar has one toggle, `ColumnToggleButton`,
-the first control of that zone, above the column it folds and before the
-workspace identity (⇧⌘B). It is a 28px top bar control (`TOP_BAR_CONTROL`), so
-in full screen, where the inset is 0, its center lands on the rail's 22px axis
-(`collapsed-rail-width.test.tsx`). It is the same button whether the column is
-open or folded, its label and `aria-pressed` read the column you see ("Hide
-sidebar" / "Show sidebar"), and neither the column nor its 44px rail draws a
-toggle row (`sidebar-toggle-axis.test.tsx`). Widening the rail to fix a padding is
-the wrong trade, because chrome pays rent.
+**The top bar's left edge belongs to the window.** Its left zone starts at
+`--titlebar-inset`, which clears the macOS traffic lights. `AppTopBar` starts
+with Sessions, the workspace identity and Repositories. It holds no sidebar toggle:
+`App.tsx` supplies the places rail through `AppShell.leftRail`, with no fold
+control. `ShellRail` owns its width through `shellRailGeometry`, 64px or 44px
+under 1100px (see [The left column](design/layout.md#the-left-column)).
 
 **An inline trigger inside `AnchoredPopover` passes `anchorClassName="flex"`.**
 The anchor is a block `div`, so an `inline-flex` trigger (a `Chip`, a pill)

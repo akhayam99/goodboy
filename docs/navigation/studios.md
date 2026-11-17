@@ -6,13 +6,12 @@
 
 Every studio (Tasks, Chat, Workflows, Terminal, Impact, Notifications, Settings,
 Changelog, the guide, Add workspace) is a page in the one main slot: it renders
-inside the content sheet, over the page it replaces, beside the column. The
+inside the content sheet, over the page it replaces, beside the places rail. The
 page under it stays mounted and inert. Every drawer belongs to a session today,
 so every drawer parks (mounted, hidden and inert) until the studio closes, and
-the sheet takes its width. The column
-never changes for a studio: it stays live in both sidebar states, so another
-door or a session row is one click away, and ⇧⌘B and the sidebar toggle fold it
-on every page (`shellArrangement` takes no studio). **Settings is a page with
+the sheet takes its width. The places rail
+stays live beside every studio, with the same places and no fold control
+(`App.tsx` supplies `AppShell.leftRail`; see [The places rail](shell.md#surfaces)). **Settings is a page with
 its own scopes rail**: the 40px band holds `‹ Back to app` (with its Esc hint)
 and no crumb, since the scopes rail already shows where you are, and below it `SettingsScopesLayout` draws a
 `StudioRailLayout` named Settings scopes (`placement="page"` beside the column,
@@ -24,7 +23,7 @@ under 720px (`SETTINGS_RAIL_FOLD_BELOW`); its folded strip keeps Show and a
 Search icon that opens the rail on the field. With no saved choice, the rail
 starts folded in a window under 1200px (`foldedByDefaultBelow`), so the page keeps
 room for its dense rows, and a saved choice wins either way: a docked rail stays
-docked in the sheet of a 1100px window with the column open. The detail wrapper
+docked in the sheet of a 1100px window beside the places rail. The detail wrapper
 is a container (`detailClassName="@container"`): under 600px a Models row drops its
 description and keeps the model, the effort and the Auto or Pinned chip. The Settings row in the column
 foot is lit while it is open. Back to app, Esc and Back land alike. A session
@@ -157,7 +156,7 @@ cut at the end, never in the middle; the group's`aria-label` keeps the full
   popover built on `useDropdown` (`AnchoredPopover`, the pickers, the bell):
   it holds a layer while open, so Esc inside a studio closes the popover and
   the studio stays, and it gives focus back to its trigger. The image
-  lightbox, the sidebar peek, a history drag, the quick actions popover and the
+  lightbox, a history drag, the quick actions popover and the
   artifact page's back-to-list Esc register the same way. A layer registered
   later sits above one registered earlier. A layer inside a parked drawer is
   suspended while the studio is open and keeps its place for the trip back. A

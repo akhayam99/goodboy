@@ -139,13 +139,13 @@ describe('the ux39 right dock scenes', () => {
     );
   });
 
-  it('ux39-p4-column-folded shows the seven doors and no tool on the folded rail', async () => {
+  it('ux39-p4-column-folded shows New, the six places and Settings, no tool, on the places rail', async () => {
     await mount('ux39-p4-column-folded');
 
-    const doors = Array.from(
-      document.querySelectorAll('[data-column-rail] [data-column-door]'),
-    ).map((door) => door.getAttribute('data-column-door'));
-    expect(doors).toEqual([
+    const places = Array.from(
+      screen.getByRole('navigation', { name: 'Places' }).querySelectorAll('[data-shell-rail-item]'),
+    ).map((item) => item.getAttribute('data-shell-rail-item'));
+    expect(places).toEqual([
       'new',
       'board',
       'inbox',
@@ -153,7 +153,6 @@ describe('the ux39 right dock scenes', () => {
       'chat',
       'connections',
       'impact',
-      'monitoring',
       'settings',
     ]);
   });

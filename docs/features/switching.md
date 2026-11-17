@@ -47,7 +47,7 @@ The Sessions options menu ends with **Mark all as read**, which clears every rep
 
 ### Pin a session to keep it at the top
 
-Keep the sessions you return to at the top of the list. **Pin session** in a row's right-click menu moves it to a **Pinned** group that ignores sort and filters, and **Unpin session** puts it back. Pinned sessions keep their order on the Board and in the folded sidebar too.
+Keep the sessions you return to at the top of the list. **Pin session** in a row's right-click menu moves it to a **Pinned** group that ignores sort and filters, and **Unpin session** puts it back. Pinned sessions keep their order on the Board.
 
 ### Now chip
 

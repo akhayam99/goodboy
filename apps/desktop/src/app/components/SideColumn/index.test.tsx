@@ -101,7 +101,7 @@ beforeEach(async () => {
 afterEach(cleanup);
 
 describe('SideColumn', () => {
-  it('stacks New session, seven door rows and no tool, the sessions, then Settings and the Goodboy line, the toggle left to the top bar', () => {
+  it('stacks New session, six door rows and no tool, the sessions, then Settings and the Goodboy line, the toggle left to the top bar', () => {
     mountColumn();
     const nav = navLayer();
 
@@ -116,23 +116,13 @@ describe('SideColumn', () => {
       'chat',
       'connections',
       'impact',
-      'monitoring',
       'settings',
     ]);
     expect(
       Array.from(nav.querySelectorAll('[data-column-door-row]')).map((row) =>
         row.getAttribute('data-column-door-row'),
       ),
-    ).toEqual([
-      'board',
-      'inbox',
-      'workflows',
-      'chat',
-      'connections',
-      'impact',
-      'monitoring',
-      'settings',
-    ]);
+    ).toEqual(['board', 'inbox', 'workflows', 'chat', 'connections', 'impact', 'settings']);
     expect(nav.querySelector('[data-column-tiles]')).toBeNull();
     expect(within(nav).queryByRole('button', { name: /^Terminal/ })).toBeNull();
     expect(within(nav).queryByRole('button', { name: /^Browser/ })).toBeNull();
@@ -179,28 +169,11 @@ describe('SideColumn', () => {
     expect(currentDoors(navLayer())).toEqual([]);
   });
 
-  it('has a quiet Monitoring row after Impact that opens its page', () => {
-    const doors = actions();
-    mountColumn({ doors });
-
-    fireEvent.click(screen.getByRole('button', { name: /^Monitoring/ }));
-
-    expect(doors.openMonitoring).toHaveBeenCalledOnce();
-    expect(doorNames(navLayer()).slice(-3)).toEqual(['impact', 'monitoring', 'settings']);
-    expect(navLayer().querySelector('[data-column-door="monitoring"]')?.className ?? '').toContain(
-      'text-faint-foreground',
-    );
-  });
-
-  it('names the pinned port that is down on the Monitoring door, with the warning dot', () => {
-    useAppStore.setState({
-      monitorSnapshot: { listeners: [], processes: [], takenAt: 1, isPlatformSupported: true },
-      monitorPinned: [{ port: 9000, description: 'Mock API' }],
-    });
+  it('has no Monitoring door: Impact is the last quiet door before Settings', () => {
     mountColumn();
 
-    const door = screen.getByRole('button', { name: 'Monitoring, pinned port :9000 is down' });
-    expect(door.querySelector('[data-door-signal="warning"]')).not.toBeNull();
+    expect(screen.queryByRole('button', { name: /^Monitoring/ })).toBeNull();
+    expect(doorNames(navLayer()).slice(-2)).toEqual(['impact', 'settings']);
   });
 
   it('opens Connections from its full weight door after Chat, plain while nothing needs fixing', () => {
@@ -267,7 +240,7 @@ describe('SideColumn', () => {
     ['workflows', ['workflows']],
     ['terminal', []],
     ['browser', []],
-    ['monitoring', ['monitoring']],
+    ['monitoring', []],
     ['connections', ['connections']],
     ['settings', ['settings']],
     ['new', []],
@@ -501,7 +474,7 @@ describe('ColumnRail', () => {
     expect(document.querySelector('[data-door-signal]')).toBeNull();
   });
 
-  it('keeps every door as an icon at 44px: New, the seven doors of the open column, then Settings, the bug and the mark', () => {
+  it('keeps every door as an icon at 44px: New, the six doors of the open column, then Settings, the bug and the mark', () => {
     const { container } = mountRail();
     const rail = container.querySelector('[data-column-rail]') as HTMLElement;
 
@@ -515,7 +488,6 @@ describe('ColumnRail', () => {
       'chat',
       'connections',
       'impact',
-      'monitoring',
       'settings',
     ]);
     expect(within(rail).getByRole('button', { name: 'Report a bug' })).toBeDefined();

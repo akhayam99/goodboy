@@ -255,8 +255,6 @@ export type {
 } from './components/RemoteImage/loaderContext';
 export { SplitHandle } from './components/SplitHandle';
 export { Reveal } from './components/Reveal';
-export { FoldLayers } from './components/FoldLayers';
-export type { FoldLayersProps } from './components/FoldLayers';
 export {
   DURATION_BASE_MS,
   DURATION_QUICK_MS,
@@ -267,7 +265,6 @@ export {
 } from './motionTimings';
 export { canAnimate } from './canAnimate';
 export { prefersReducedMotion } from './prefersReducedMotion';
-export { useFoldPhase } from './useFoldPhase';
 export { exitSnapshotOf, mountExitSnapshot } from './exitSnapshot';
 export type { ExitSnapshot } from './exitSnapshot';
 export type { RevealProps } from './components/Reveal';

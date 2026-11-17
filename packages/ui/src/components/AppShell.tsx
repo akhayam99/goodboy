@@ -13,6 +13,7 @@ export type AppShellProps = {
   readonly topBar?: ReactNode;
   readonly footer?: ReactNode;
   readonly leftSidebar?: ReactNode;
+  readonly leftRail?: ReactNode;
   readonly leftHidden?: boolean;
   readonly leftSidebarCollapsed?: boolean;
   readonly leftOverlay?: ReactNode;
@@ -48,6 +49,7 @@ type LayoutParams = {
   readonly leftCollapsed: boolean;
   readonly leftHidden: boolean;
   readonly hasLeftSidebar: boolean;
+  readonly isLeftRail: boolean;
   readonly hasFooter: boolean;
 };
 
@@ -60,9 +62,13 @@ type Layout = {
 const leftColumnWidth = ({
   leftCollapsed,
   leftHidden,
-}: Pick<LayoutParams, 'leftCollapsed' | 'leftHidden'>): string => {
+  isLeftRail,
+}: Pick<LayoutParams, 'leftCollapsed' | 'leftHidden' | 'isLeftRail'>): string => {
   if (leftHidden) {
     return '0px';
+  }
+  if (isLeftRail) {
+    return 'auto';
   }
   if (leftCollapsed) {
     return `${COLLAPSED_RAIL_WIDTH}px`;
@@ -74,6 +80,7 @@ const buildLayout = ({
   leftCollapsed,
   leftHidden,
   hasLeftSidebar,
+  isLeftRail,
   hasFooter,
 }: LayoutParams): Layout => {
   const rows = hasFooter ? 'minmax(0,1fr) auto' : 'minmax(0,1fr)';
@@ -84,8 +91,8 @@ const buildLayout = ({
       templateRows: rows,
     };
   }
-  const leftCol = leftColumnWidth({ leftCollapsed, leftHidden });
-  const handleCol = leftHidden || leftCollapsed ? '0px' : `${HANDLE_WIDTH}px`;
+  const leftCol = leftColumnWidth({ leftCollapsed, leftHidden, isLeftRail });
+  const handleCol = leftHidden || leftCollapsed || isLeftRail ? '0px' : `${HANDLE_WIDTH}px`;
   return {
     templateAreas: hasFooter ? '"left lhandle main" "footer footer footer"' : '"left lhandle main"',
     templateColumns: `${leftCol} ${handleCol} minmax(0,1fr)`,
@@ -97,6 +104,7 @@ export const AppShell = ({
   topBar,
   footer,
   leftSidebar,
+  leftRail,
   leftHidden = false,
   leftSidebarCollapsed = false,
   leftOverlay,
@@ -114,8 +122,10 @@ export const AppShell = ({
   className,
 }: AppShellProps) => {
   const hasFooter = footer != null;
-  const hasLeftSidebar = leftSidebar != null;
-  const isLeftResizeDisabled = leftHidden || leftSidebarCollapsed;
+  const isLeftRail = leftRail != null;
+  const leftContent = isLeftRail ? leftRail : leftSidebar;
+  const hasLeftSidebar = leftContent != null;
+  const isLeftResizeDisabled = leftHidden || leftSidebarCollapsed || isLeftRail;
   const left = useResizableWidth<HTMLDivElement>({
     storageKey: LEFT_SIDEBAR_STORAGE_KEY,
     defaultWidth: LEFT_SIDEBAR_DEFAULT,
@@ -132,6 +142,7 @@ export const AppShell = ({
     leftCollapsed: leftSidebarCollapsed,
     leftHidden,
     hasLeftSidebar,
+    isLeftRail,
     hasFooter,
   });
   const gridStyle = {
@@ -166,7 +177,7 @@ export const AppShell = ({
             style={{ gridArea: 'left' }}
             inert={leftHidden}
           >
-            {leftSidebar}
+            {leftContent}
           </aside>
         ) : null}
         {hasLeftSidebar ? (

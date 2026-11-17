@@ -110,23 +110,11 @@ export const AppFrame = ({
   return (
     <>
       <AppShell
-        topBar={
-          <AppTopBar
-            sidebar={{
-              isCollapsed: isMainCollapsed,
-              onToggle: isFoldLive ? toggleFold : noop,
-            }}
-            onOpenSpend={overlays.openSpend}
-            onOpenScript={noop}
-          />
-        }
-        leftSidebarCollapsed={arrangement.isLeftRail}
-        leftSidebar={
+        topBar={<AppTopBar onOpenSpend={overlays.openSpend} onOpenScript={noop} />}
+        leftRail={
           <ShellLeft
             arrangement={arrangement}
             workspaceId={currentWorkspace?.id ?? null}
-            currentSessionId={isDraftShown ? null : (currentSession?.id ?? null)}
-            isDraftShown={isDraftShown}
             actions={actions}
           />
         }

@@ -387,7 +387,7 @@ session waits reads the same table, `ATTENTION_REASON_META` in
 `features/session/session-stage.ts`: one mark, one tone and one sentence per
 reason. A state has one glyph: `attentionMarkOf` turns a reason into its
 `StatusMark`, and `sessionMarkOf` turns a session into its mark through it. The
-sidebar row, the folded rail, the pinned rows, the switcher row, the hover
+session list row, the pinned rows, the switcher row, the hover
 card, the Board card signal, the Now chip rows, the palette's Needs you rows and
 the Guide legend all draw that `StatusMark`, so a Lead that needs you is the
 same amber hand everywhere, and the node's accessible label is the sentence.
@@ -609,9 +609,14 @@ tone. An item carries at most one mark on the glyph's top end corner: a count, a
 warning `CountBadge` for what needs you, or the quiet `unread` dot. The mark's
 words join the item's name (`Board, 3 need you`). The rail is 64px wide; under a
 1100px window it turns 44px wide, icons only, and the word moves into a tooltip
-on the right. A wide item shows a tooltip only when it has a shortcut. Arrow up
-and down, Home and End move focus between the items of one rail. Scene
-`shell-rail` shows both forms and a pressed tool.
+on the right. A word too long for 64px takes a short `word` (Connections reads
+Connect); the full name stays the accessible name, and a wide item shows a
+tooltip only when it has a shortcut or a short word. `isQuiet` draws a reference
+place (Impact) in the hint tone at rest, and `isOutlined` gives the create item
+(New) an outlined tile, so it reads apart from the places without a divider.
+Arrow up and down, Home and End move focus between the items of one rail. Scene
+`shell-rail` shows both forms and a pressed tool; the places rail itself is
+`ShellLeft`, in `AppShell`'s `leftRail` slot.
 
 ## Work meta
 

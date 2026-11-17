@@ -1,38 +1,34 @@
 # Search and navigation
 
-Find any session, message, plan or action, and reach it from the keyboard. One sidebar holds every place you go, and **⌘K** and **⌘F** cover the rest.
+Find any session, message, plan or action, and reach it from the keyboard. The places rail keeps workspace navigation on the left, and **⌘K** and **⌘F** cover the rest.
 
 ### Sidebar
 
-Every place you go sits in one sidebar on the left. It looks the same on every screen. From top to bottom:
+Move between Board, Tasks, Workflows, Chat, Connect and Impact from the places rail on the left.
 
-- **New session**
-- **Board** and **Tasks** (the work of your other tools)
-- **Workflows** and **Chat**. Chat has a **+** to start one.
-- the quieter **Impact** and **Monitoring**. Monitoring shows a warning dot when a pinned port is down.
-- your pinned and recent sessions
-- **Settings**, then the **Goodboy** line with the bug icon beside it. The Goodboy line opens Help and holds the version.
+**New** sits first and opens **New session**. A dot marks a draft waiting there while you are elsewhere. The six places follow, with **Impact** quieter and last. **Connect** opens **Connections**, whose full name appears on hover. **Board** stays highlighted while a session is open.
 
-Click a session and its row stays selected. The session opens on its Overview, under one head that every page of the session shares:
+An amber number on **Board** counts sessions that need you. A dot on **Tasks** marks new tasks. The rail holds no session list. **Monitoring** opens from the Go menu or **⌘K**.
 
-- the title, then **New** and **⋯**
-- the tabs **Overview**, **Runs**, **Artifacts**, **Questions** and **Context**, with counts on Runs, Artifacts and Questions
+The rail keeps the same places on every page. It never folds or resizes. In a window narrower than 1100 pixels, the words below the icons move into tooltips.
+
+**Settings**, the bug icon for **Report a bug**, and the **Goodboy** mark sit at the foot. Before you create a workspace, only this foot appears.
+
+Open **Sessions** in the top bar, or press **⌘B**, to find a session by title or project. Pinned sessions come first. **Open Board** shows finished sessions too.
+
+A session opens on its Overview, with its title, **New** and **⋯** above the page tabs. The tabs are **Overview**, **Runs**, **Artifacts**, **Questions** and **Context**. Runs, Artifacts and Questions carry counts.
 
 The **Context** tab holds a **Projects** card that folds each folder and branch, and a **Linked** card with the work linked to it. Every branch is led by its pull request icon in its color. Click one to open its Branch page, with the tabs **Conversation**, **Changes**, **Commits**, **Checks**, **Work** and **Comments**.
 
-The **⋯** holds **Ask about this session**, **Pin session**, **Refresh session**, **Archive** and **Delete**. The limit and the rest of the session's actions sit in the sidebar row's menu and in ⌘K.
+The **⋯** holds **Ask about this session**, **Pin session**, **Refresh session**, **Archive** and **Delete**. The limit and the rest of the session's actions are in the Board row's menu and in ⌘K.
 
 A branch, an artifact or a run keeps the head and shows crumbs such as **Overview › Artifacts › Plan** in place of the tabs. Each crumb is a link, and **Esc** goes one crumb up.
 
-**Ask about this session**, from the **⋯** or ⌘L, opens a detail panel beside the page. From left to right a window holds the sidebar, the page, the detail panel, the tools column and the dock. On a narrow window a panel lies over the page with a scrim.
+**Ask about this session**, from the **⋯** or ⌘L, opens a detail panel beside the page. From left to right a window holds the places rail, the page, the detail panel, the tools column and the dock. On a narrow window a panel lies over the page with a scrim.
 
 At the right of every page, a column of icons is named with its shortcut on hover. Under the caption **Tools**, on every page, it holds **Terminal** and **Browser**. Neither shows a number: the tooltip says how many terminals run and how many tabs are open. With a dock open, the column sits on the dock's left edge. They stay open as you move between pages. **Open full page** in the dock header makes either one full size, and **Dock**, last in the page's first row, puts either one back. The active tool shows its name below its icon.
 
-**⇧⌘B**, or the sidebar button at the top left of the window, folds the sidebar into a slim bar of icons, on every page. It stays as you left it: starting a new session never unfolds it. Folded, the sidebar draws only sessions that need you, run or have unread news, each as its state node; the rest wait behind a `+N` button. Branches show the request state icon. Each tooltip names the state.
-
 **⌥⌘B** folds the list beside the page you are on, such as the files of the Changes page, Chat, Terminal, the Guide or Settings. Each of those lists has its Hide button at its top left.
-
-An amber number on **Board** says how many sessions need you. A dot on **Monitoring** names the pinned port that is down.
 
 A drawer that opens in the side slot keeps the one it replaced. That one waits in a chip at the left of the drawer head. **Esc**, the close button or **⌘⇧W** brings it back with its state. A third open drops the oldest.
 
@@ -79,3 +75,11 @@ Find a message, a plan, a decision, an issue or a branch with **⌘F**. Search s
 ### Right click menus
 
 Right click a session, agent, run, artifact, pull request, file or message to see every action it has. The `⋯` menu and Search or run list the same actions, and one that cannot run says why. On a session scope that has not loaded yet, an empty Search or run draws skeleton rows instead of "Nothing to do here yet".
+
+## Under the hood
+
+- **Sidebar**: `apps/desktop/src/app/components/SideColumn/ShellLeft/index.tsx` renders New, the places and the foot. `apps/desktop/src/shared/navigation/destinations.ts` owns their order, Connect's full name and Monitoring's menu home. `apps/desktop/src/shared/navigation/railPlaceOf.ts` keeps Board current for an open session.
+- **Sidebar signals**: `apps/desktop/src/app/components/SideColumn/railMarkOf.ts` selects Board's count and Tasks' dot from `apps/desktop/src/app/components/SideColumn/useDoorSignals/index.ts`. New's draft mark is derived in `apps/desktop/src/app/components/SideColumn/ShellLeft/index.tsx`.
+- **Sidebar size**: `apps/desktop/src/App.tsx` supplies the rail to `packages/ui/src/components/AppShell.tsx` without a fold or resize control. `packages/ui/src/components/ShellRail/useShellRailForm/index.ts`, `packages/ui/src/components/ShellRail/shellRailGeometry.ts` and `packages/ui/src/components/ShellRail/ShellRailItem.tsx` own the width breakpoint, words and tooltips.
+
+- **Sessions**: `apps/desktop/src/app/components/AppTopBar/index.tsx` mounts `apps/desktop/src/features/workspace/components/SessionsPopover/index.tsx`. Its panel owns title and project filtering, keyboard selection and pin actions.

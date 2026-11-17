@@ -24,7 +24,7 @@ export type StudioDestinationId = Exclude<DestinationId, 'board'>;
 
 export type PageDestinationId = Exclude<StudioDestinationId, RailDestinationId>;
 
-export type DestinationHome = 'column' | 'rail' | 'topBar' | 'foot';
+export type DestinationHome = 'column' | 'rail' | 'menu' | 'topBar' | 'foot';
 
 export type DestinationScope = 'app' | 'workspace' | 'session';
 
@@ -38,6 +38,7 @@ export type Destination = {
   readonly aliases: ReadonlyArray<string>;
   readonly shortcutId?: ShortcutId;
   readonly isReference?: boolean;
+  readonly railWord?: string;
 };
 
 export const DESTINATIONS: ReadonlyArray<Destination> = [
@@ -86,6 +87,7 @@ export const DESTINATIONS: ReadonlyArray<Destination> = [
     home: 'column',
     scope: 'workspace',
     aliases: [NAMES.providers, 'Integrations'],
+    railWord: 'Connect',
   },
   {
     id: 'impact',
@@ -102,7 +104,7 @@ export const DESTINATIONS: ReadonlyArray<Destination> = [
     label: NAMES.monitoring,
     icon: CONCEPT_ICONS.monitoring,
     menuId: 'menu.monitoring',
-    home: 'column',
+    home: 'menu',
     scope: 'workspace',
     aliases: ['Go to Monitoring', 'Ports'],
     isReference: true,

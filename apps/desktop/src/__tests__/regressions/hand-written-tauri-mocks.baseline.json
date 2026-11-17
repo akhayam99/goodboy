@@ -10,7 +10,6 @@
   "apps/desktop/src/__tests__/regressions/no-back-glyph-in-trail.test.tsx": 1,
   "apps/desktop/src/__tests__/regressions/object-rows-open-our-menu.test.tsx": 1,
   "apps/desktop/src/__tests__/regressions/remote-image-loader-is-mounted.test.tsx": 1,
-  "apps/desktop/src/__tests__/regressions/sidebar-icon-column.test.tsx": 1,
   "apps/desktop/src/__tests__/surfaces/main-flows.test.tsx": 1,
   "apps/desktop/src/__tests__/surfaces/navigation-flows/bitbucket-page.test.tsx": 1,
   "apps/desktop/src/__tests__/surfaces/navigation-flows/board-lanes.test.tsx": 1,
