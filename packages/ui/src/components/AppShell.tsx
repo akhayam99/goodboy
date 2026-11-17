@@ -3,6 +3,7 @@ import { cn } from '../cn';
 import type { ResizeActivity } from '../sheet';
 import { DrawerColumn } from './DrawerColumn';
 import type { DrawerPlacement, DrawerSizing } from '../drawerGeometry';
+import type { DockGridSpec } from '../dockGridSpec';
 import { SplitHandle } from './SplitHandle';
 import { ShellDockContext } from '../shellDockContext';
 import { ShellRailContext } from '../shellRailContext';
@@ -20,6 +21,7 @@ export type AppShellProps = {
   readonly main: ReactNode;
   readonly drawer?: ReactNode;
   readonly drawerSizing?: DrawerSizing;
+  readonly dockGrid?: DockGridSpec | null;
   readonly detail?: ReactNode;
   readonly detailSizing?: DrawerSizing;
   readonly isDetailParked?: boolean;
@@ -111,6 +113,7 @@ export const AppShell = ({
   main,
   drawer,
   drawerSizing,
+  dockGrid = null,
   detail,
   detailSizing,
   isDetailParked,
@@ -211,7 +214,9 @@ export const AppShell = ({
                       className="absolute inset-0 z-studio flex min-h-0 min-w-0 flex-col overflow-hidden bg-background empty:hidden has-[[data-studio-sheet-owner]]:bg-chrome"
                     >
                       <StudioSlotContext.Provider value>
-                        <ShellDockContext.Provider value={isDockHosted ? (drawer ?? null) : null}>
+                        <ShellDockContext.Provider
+                          value={isDockHosted ? { node: drawer ?? null, grid: dockGrid } : null}
+                        >
                           {studio}
                         </ShellDockContext.Provider>
                       </StudioSlotContext.Provider>
@@ -222,6 +227,7 @@ export const AppShell = ({
               </div>
             }
             drawer={isDockHosted ? null : (drawer ?? null)}
+            dockGrid={isDockHosted ? null : dockGrid}
             sizing={drawerSizing}
             detail={detail ?? null}
             detailSizing={detailSizing}

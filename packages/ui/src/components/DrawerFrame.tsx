@@ -1,5 +1,6 @@
 import { DrawerContentContext } from '../drawerContentContext';
 import { DrawerBackChipContext } from '../drawerBackChipContext';
+import { DockPairTurnContext } from '../dockPairTurnContext';
 import { useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 import type { IconGlyph } from '../icons';
 import { ArrowUpRight, X } from '../icons';
@@ -104,6 +105,7 @@ export const DrawerFrame = ({
   const hasToolbar = toolbar != null;
   const drawerContent = useContext(DrawerContentContext);
   const backChip = useContext(DrawerBackChipContext);
+  const pairTurn = useContext(DockPairTurnContext);
   const hasBackChip = backChip !== null && !isHeaderless;
 
   useEscapeLayer(() => {
@@ -171,6 +173,16 @@ export const DrawerFrame = ({
       <div className={cn('flex shrink-0 items-center gap-1', hasToolbar && 'h-5')}>
         {action}
         {menu}
+        {pairTurn === null || isHeaderless ? null : (
+          <IconButton
+            icon={pairTurn.icon}
+            label={pairTurn.label}
+            tooltip={pairTurn.label}
+            variant="ghost"
+            iconSize={ICON_SIZE.control}
+            onClick={pairTurn.onTurn}
+          />
+        )}
         {page === undefined ? null : (
           <IconButton
             icon={ArrowUpRight}
@@ -191,7 +203,9 @@ export const DrawerFrame = ({
   const backLink =
     back === undefined || isHeaderless || hasBackChip ? null : <DrawerBackLink back={back} />;
   const content = (
-    <DrawerBackChipContext.Provider value={null}>{children}</DrawerBackChipContext.Provider>
+    <DrawerBackChipContext.Provider value={null}>
+      <DockPairTurnContext.Provider value={null}>{children}</DockPairTurnContext.Provider>
+    </DrawerBackChipContext.Provider>
   );
   const body =
     scroll === 'self' || isHeaderless ? (

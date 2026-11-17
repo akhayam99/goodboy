@@ -1,6 +1,12 @@
 import { DrawerContentContext } from '../drawerContentContext';
 import { useDrawerColumnWidth } from '../useDrawerColumnWidth';
 import { useCallback, useRef, type CSSProperties, type ReactNode, type Ref } from 'react';
+import { dockLayoutOf } from '../dockLayout';
+import type { SolvedDockFrame } from '../dockGridFrameOf';
+import { DOCK_FOCUS_DETAIL, DOCK_FOCUS_PAGE, type DockGridSpec } from '../dockGridSpec';
+import { useDockGrid, type DockSolveParams } from '../useDockGrid';
+import { useDrawerTierWidthSet } from '../useDrawerTierWidthSet';
+import { DockGrid } from './DockGrid';
 import { assignRef } from '../assignRef';
 import { cn } from '../cn';
 import { columnPairLayoutOf } from '../columnPairLayoutOf';
@@ -8,7 +14,7 @@ import { DrawerEdgeContext } from '../drawerEdgeContext';
 import { DRAWER_PANEL_VARS } from '../drawerPanelVars';
 import { dismissTopEscapeLayer } from '../escape';
 import { SHEET_CLASSES, type ResizeActivity, type SheetEdge } from '../sheet';
-import { SplitHandle } from './SplitHandle';
+import { SplitHandle, type SplitHandleProps } from './SplitHandle';
 import { DrawerDetailGroup } from './DrawerDetailGroup';
 import { DrawerDockBox } from './DrawerDockBox';
 import { useDrawerPanel } from '../useDrawerPanel';
@@ -36,10 +42,30 @@ type PanelVar = (typeof DRAWER_PANEL_VARS)[keyof typeof DRAWER_PANEL_VARS];
 
 type PanelVars = CSSProperties & Readonly<Record<PanelVar, string>>;
 
+const ROW_WEIGHT_FRAME = 1000;
+
+const DOCK_GRID_KEY = 'dock-grid';
+
+type FocusParams = {
+  readonly key: string;
+};
+
+const solveDock = ({ columnWidth, railWidth, detail, columns }: DockSolveParams): SolvedDockFrame =>
+  dockLayoutOf({
+    windowWidth: columnWidth,
+    windowHeight: ROW_WEIGHT_FRAME,
+    top: 0,
+    leftRailWidth: 0,
+    toolRailWidth: railWidth,
+    detail,
+    columns,
+  });
+
 export type DrawerColumnProps = {
   readonly main: ReactNode;
   readonly drawer?: ReactNode | null;
   readonly drawerKey?: string;
+  readonly dockGrid?: DockGridSpec | null;
   readonly detail?: ReactNode | null;
   readonly detailKey?: string;
   readonly detailSizing?: DrawerSizing;
@@ -61,6 +87,7 @@ export const DrawerColumn = ({
   main,
   drawer,
   drawerKey = 'drawer',
+  dockGrid = null,
   detail,
   detailKey = 'detail',
   detailSizing = 'side',
@@ -82,22 +109,56 @@ export const DrawerColumn = ({
   const asideRef = useRef<HTMLElement | null>(null);
   const trackRef = useRef<HTMLDivElement | null>(null);
   const groupRef = useRef<HTMLDivElement | null>(null);
-  const isOpen = drawer != null;
+  const gridCells = dockGrid?.columns.flat() ?? [];
+  const isOpen = drawer != null || gridCells.length > 0;
   const isDetailOpen = detail != null;
   const preview = useDrawerPreview({ asideRef, trackRef, groupRef });
-  const resizable = useDrawerTierWidths({ sizing, onPreview: preview.previewDock });
+  const dockRoute = useRef(preview.previewDock);
+  dockRoute.current = preview.previewDock;
+  const routeDock = useCallback((next: number) => dockRoute.current(next), []);
+  const tiers = useDrawerTierWidthSet({ onPreview: routeDock });
+  const resizable = tiers[sizing];
   const detailWidths = useDrawerTierWidths({
     sizing: detailSizing,
     onPreview: preview.previewDetail,
   });
   const railWidth = edge.width;
-  const layout = columnPairLayoutOf({
+  const pairLayout = columnPairLayoutOf({
     columnWidth: column.width,
     railWidth,
     placement,
     dock: { sizing, savedWidth: resizable.width, isOpen },
     detail: { sizing: detailSizing, savedWidth: detailWidths.width, isOpen: isDetailOpen },
   });
+  const grid = useDockGrid({
+    spec: dockGrid,
+    columnWidth: column.width,
+    railWidth,
+    placement,
+    detail: {
+      isShown: isDetailOpen && !isDetailParked,
+      sizing: detailSizing,
+      savedWidth: detailWidths.width,
+      fallback: pairLayout.detail,
+    },
+    tiers,
+    route: dockRoute,
+    previewDock: preview.previewDock,
+    solve: solveDock,
+    resizeLabel,
+  });
+  const layout = grid.frame?.pair ?? pairLayout;
+  const isFocusShown = grid.cellCount + (isDetailOpen && !isDetailParked ? 1 : 0) > 1;
+  const focusKey = dockGrid?.focus ?? null;
+  const dockHandle: SplitHandleProps = grid.handles[0] ?? {
+    ...resizable.handleProps,
+    max: layout.dock.dragMax,
+    value: layout.dock.width,
+    side: 'right',
+    ariaLabel: resizeLabel,
+  };
+  const focusOn = ({ key }: FocusParams) => dockGrid?.onFocus({ key });
+  const singleKey = grid.frame === null ? (gridCells[0]?.key ?? null) : null;
   const mode: DrawerMode = isOpen || isDetailOpen ? layout.mode : 'closed';
   const isOverlay = mode === 'overlay';
   const dockPanel = useDrawerPanel({ isOpen, layoutMode: layout.mode, isParked });
@@ -112,6 +173,29 @@ export const DrawerColumn = ({
   const isAnyExiting = dockPanel.exit.isExiting || detailPanel.exit.isExiting;
   const isFloating = (isOverlay && (isDockShown || isDetailShown)) || isOverlayExit;
   useSnapAfterFloat({ ref: asideRef, isFloating });
+  const dockNode =
+    dockGrid !== null && gridCells.length > 0 ? (
+      <DockGrid
+        gridRef={grid.gridRef}
+        spec={dockGrid}
+        columns={
+          grid.frame?.columns ?? [
+            {
+              width: layout.dock.width,
+              dragMax: layout.dock.dragMax,
+              panes: gridCells.map((cell) => ({ key: cell.key, weight: 1 })),
+            },
+          ]
+        }
+        handles={grid.handles}
+        turn={grid.turn}
+        isFramed={grid.frame !== null}
+        isFocusShown={isFocusShown}
+        isFloating={isFloating}
+      />
+    ) : (
+      drawer
+    );
   const hasRail = railWidth > 0;
   const dockPx = isDockShown || (dockPanel.isOverlayExit && !isParked) ? layout.dock.width : 0;
   const detailPx =
@@ -154,9 +238,15 @@ export const DrawerColumn = ({
           data-container="page"
           data-drawer-main=""
           inert={isOverlay && (isDockShown || isDetailShown)}
+          {...(dockGrid !== null && {
+            'data-dock-focus': DOCK_FOCUS_PAGE,
+            tabIndex: -1,
+            onFocusCapture: () => focusOn({ key: DOCK_FOCUS_PAGE }),
+            onPointerDownCapture: () => focusOn({ key: DOCK_FOCUS_PAGE }),
+          })}
           {...(isSheet && { 'data-sheet': sheetState, 'data-left-resize': leftResize })}
           className={cn(
-            'flex min-h-0 min-w-0 flex-1 flex-col',
+            'flex min-h-0 min-w-0 flex-1 flex-col focus-visible:outline-none',
             isSheet && 'overflow-hidden bg-background',
             isSheet && SHEET_CLASSES[sheetState],
           )}
@@ -228,6 +318,8 @@ export const DrawerColumn = ({
                 mode={mode}
                 columnWidth={column.width}
                 savedWidth={detailWidths.width}
+                isFocused={isFocusShown && focusKey === DOCK_FOCUS_DETAIL}
+                onFocus={dockGrid === null ? null : () => focusOn({ key: DOCK_FOCUS_DETAIL })}
               />
             ) : null}
             <div
@@ -237,20 +329,12 @@ export const DrawerColumn = ({
                 isContainerIdle && 'hidden',
               )}
             >
-              {isDockShown ? (
-                <SplitHandle
-                  {...resizable.handleProps}
-                  max={layout.dock.dragMax}
-                  value={layout.dock.width}
-                  side="right"
-                  ariaLabel={resizeLabel}
-                />
-              ) : null}
+              {isDockShown ? <SplitHandle {...dockHandle} /> : null}
             </div>
             <DrawerDockBox
               panel={dockPanel}
-              node={drawer}
-              panelKey={drawerKey}
+              node={dockNode}
+              panelKey={dockGrid === null ? drawerKey : DOCK_GRID_KEY}
               isOpen={isOpen}
               isParked={isParked}
               isOverlay={isOverlay}
@@ -258,6 +342,8 @@ export const DrawerColumn = ({
               isIdle={isContainerIdle}
               parkedWidth={layout.dock.width}
               setEdgeHost={edge.setHost}
+              isGrid={grid.frame !== null}
+              isFocused={isFocusShown && singleKey !== null && focusKey === singleKey}
             />
           </div>
         </aside>
