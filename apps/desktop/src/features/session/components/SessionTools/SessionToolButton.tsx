@@ -21,6 +21,7 @@ type Props = {
   readonly isWaiting: boolean;
   readonly isCurrent?: boolean;
   readonly isDisabled?: boolean;
+  readonly isCaptioned?: boolean;
   readonly fact?: string | null;
   readonly count?: ToolCount | null;
   readonly signal: ToolSignal | null;
@@ -38,6 +39,7 @@ export const SessionToolButton = ({
   isWaiting,
   isCurrent = false,
   isDisabled = false,
+  isCaptioned = true,
   fact = null,
   count = null,
   signal,
@@ -95,18 +97,20 @@ export const SessionToolButton = ({
           />
         )}
       </span>
-      <span
-        aria-hidden
-        data-slot="tool-caption"
-        data-tone={isLit ? 'open' : 'closed'}
-        className={cn(
-          'whitespace-nowrap text-rail [@media(max-height:480px)]:hidden',
-          isLit ? TEXT_ROLE.label : TEXT_ROLE.secondary,
-          isDisabled && DISABLED,
-        )}
-      >
-        {tool.label}
-      </span>
+      {isCaptioned ? (
+        <span
+          aria-hidden
+          data-slot="tool-caption"
+          data-tone={isLit ? 'open' : 'closed'}
+          className={cn(
+            'whitespace-nowrap text-rail [@media(max-height:480px)]:hidden',
+            isLit ? TEXT_ROLE.label : TEXT_ROLE.secondary,
+            isDisabled && DISABLED,
+          )}
+        >
+          {tool.label}
+        </span>
+      ) : null}
     </span>
   );
 };
