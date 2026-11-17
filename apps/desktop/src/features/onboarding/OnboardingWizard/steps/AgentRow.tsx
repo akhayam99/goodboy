@@ -3,6 +3,7 @@ import { Button, Chip, ICON_SIZE, type Tone } from '@goodboy/ui';
 
 import type { AgentRow as AgentRowModel, AgentRowState } from '../agentRowOf';
 import { ProviderGlyph } from '../../../../shared/components/RoutingPicker/ProviderGlyph';
+import { useAppStore } from '../../../../store';
 import { AgentRowPanel } from './AgentRowPanel';
 import { StepListRow } from './StepListRow';
 import { StepStatus } from './StepStatus';
@@ -37,6 +38,7 @@ const STATUS: Readonly<Record<AgentRowState, StatusCopy>> = {
   missing: { tone: 'neutral', label: 'Not installed', isPulsing: false },
   manual: { tone: 'neutral', label: 'Not installed', isPulsing: false },
   broken: { tone: 'danger', label: "Can't start", isPulsing: false },
+  outdated: { tone: 'warning', label: 'Update needed', isPulsing: false },
 };
 
 const PANEL_ALWAYS_OPEN: ReadonlySet<AgentRowState> = new Set(['signing', 'installing', 'failed']);
@@ -67,8 +69,14 @@ export const AgentRow = ({
   onCheck,
 }: Props) => {
   const status = statusOf({ row });
+  const lifecycle = useAppStore((state) => state.providerLifecycle[row.id]);
+  const updateProviderCli = useAppStore((state) => state.updateProviderCli);
+  const isUpdateRun = row.state === 'outdated' && lifecycle.action === 'update';
+  const isUpdating = isUpdateRun && lifecycle.phase === 'updating';
+  const hasUpdateFailed = isUpdateRun && lifecycle.phase === 'error';
+  const isUpdateShown = isUpdating || hasUpdateFailed;
   const isPanelOpen =
-    PANEL_ALWAYS_OPEN.has(row.state) || (PANEL_ON_TOGGLE.has(row.state) && isOpen);
+    PANEL_ALWAYS_OPEN.has(row.state) || (PANEL_ON_TOGGLE.has(row.state) && isOpen) || isUpdateShown;
 
   const actions = (() => {
     switch (row.state) {
@@ -149,6 +157,20 @@ export const AgentRow = ({
             Check again
           </Button>
         );
+      case 'outdated':
+        return (
+          <Button
+            size="sm"
+            variant="secondary"
+            isBusy={isUpdating}
+            busyLabel={`Updating ${row.product}`}
+            disabled={isLocked}
+            aria-label={`Update ${row.product}`}
+            onClick={() => void updateProviderCli(row.id)}
+          >
+            {hasUpdateFailed ? 'Retry update' : 'Update'}
+          </Button>
+        );
       case 'looking':
         return null;
       default: {
@@ -183,7 +205,22 @@ export const AgentRow = ({
         )
       }
       isPanelOpen={isPanelOpen}
-      panel={<AgentRowPanel row={row} isLocked={isLocked} onRun={onConnect} />}
+      panel={
+        <AgentRowPanel
+          row={row}
+          isLocked={isLocked}
+          onRun={onConnect}
+          update={
+            isUpdateShown
+              ? {
+                  command: lifecycle.command,
+                  failure: lifecycle.errorTail,
+                  hasFailed: hasUpdateFailed,
+                }
+              : null
+          }
+        />
+      }
     />
   );
 };

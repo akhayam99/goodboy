@@ -251,6 +251,8 @@ export const useReviewCommentController = ({
     },
     [announceStart, isSubmitting, sessionId, setError],
   );
+  const restartRef = useRef({ retryRun, startOver });
+  restartRef.current = { retryRun, startOver };
 
   const submitCompose = useCallback(async (): Promise<void> => {
     if (compose === null || isSubmitting) {
@@ -351,7 +353,7 @@ export const useReviewCommentController = ({
         return;
       }
       const { request } = event.detail;
-      if (request.kind !== 'compose' && request.kind !== 'edit_reply' && request.kind !== 'model') {
+      if (request.kind === 'fix' || request.kind === 'push') {
         return;
       }
       if (owned !== null && !owned.has(request.threadId)) {
@@ -359,6 +361,14 @@ export const useReviewCommentController = ({
       }
       event.preventDefault();
       onFocusRef.current?.(request.threadId);
+      if (request.kind === 'retry') {
+        void restartRef.current.retryRun(request.threadId);
+        return;
+      }
+      if (request.kind === 'start_over') {
+        void restartRef.current.startOver(request.threadId);
+        return;
+      }
       if (request.kind === 'model') {
         setModelOpenId(request.threadId);
         return;

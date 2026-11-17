@@ -721,8 +721,10 @@ fn build_turn_args(binary: &str, args: &SpawnOneArgs<'_>, is_stdin_allowed: bool
                 args.model.to_string(),
                 "--dir".to_string(),
                 args.working_dir.to_string(),
-                "--dangerously-skip-permissions".to_string(),
             ];
+            if access != Some(RoleAccess::ReadOnly) {
+                v.push("--dangerously-skip-permissions".to_string());
+            }
             if permission_mode != "bypassPermissions" {
                 v.push("--agent".to_string());
                 v.push("plan".to_string());
@@ -1345,6 +1347,90 @@ mod tests {
         assert!(agy.contains(&"--sandbox".to_string()));
         let opencode = turn_args("opencode", &args);
         assert_eq!(value_after(&opencode, "--agent").as_deref(), Some("plan"));
+        assert!(!opencode.contains(&"--dangerously-skip-permissions".to_string()));
+    }
+
+    #[test]
+    fn opencode_gives_the_bypass_flag_to_writers_and_never_to_a_reading_role() {
+        let modes = ["default", "plan", "acceptEdits", "bypassPermissions"];
+        for mode in modes {
+            for role in [
+                "scout",
+                "planner",
+                "investigator",
+                "reviewer",
+                "auto",
+                "custom",
+            ] {
+                let args = spawn_args(mode, Some(role), &[], &[], &[]);
+                let argv = turn_args("opencode", &args);
+                assert!(
+                    !argv.contains(&"--dangerously-skip-permissions".to_string()),
+                    "{role} in {mode}: {argv:?}"
+                );
+                assert_eq!(value_after(&argv, "--agent").as_deref(), Some("plan"));
+                assert!(read_only_violations(Cli::Opencode, Job::Planner, &argv).is_empty());
+            }
+            for role in [Some("implementer"), Some("tester"), Some("docs"), None] {
+                let args = spawn_args(mode, role, &[], &[], &[]);
+                let argv = turn_args("opencode", &args);
+                assert!(
+                    argv.contains(&"--dangerously-skip-permissions".to_string()),
+                    "{role:?} in {mode}: {argv:?}"
+                );
+                let agent = value_after(&argv, "--agent");
+                if mode == "bypassPermissions" {
+                    assert_eq!(agent, None);
+                    continue;
+                }
+                assert_eq!(agent.as_deref(), Some("plan"));
+            }
+        }
+    }
+
+    #[test]
+    fn no_reading_role_gets_a_bypass_flag_on_any_provider() {
+        let bypass_flags = [
+            "--dangerously-skip-permissions",
+            "--dangerously-bypass-approvals-and-sandbox",
+            "--force",
+            "--yolo",
+            "--full-auto",
+            "--allow-all",
+            "--allow-all-paths",
+            "--allow-all-urls",
+        ];
+        let roots = strings(&["/repo/.meta"]);
+        for role in ["scout", "planner", "investigator", "reviewer", "auto"] {
+            for mode in ["default", "plan", "acceptEdits", "bypassPermissions"] {
+                for binary in [
+                    "claude",
+                    "codex",
+                    "cursor-agent",
+                    "agy",
+                    "copilot",
+                    "opencode",
+                ] {
+                    let args = spawn_args(mode, Some(role), &[], &[], &roots);
+                    for argv in [
+                        turn_args(binary, &args),
+                        turn_args_with_prompt(binary, &args),
+                    ] {
+                        let end = argv
+                            .iter()
+                            .position(|arg| arg == "--")
+                            .unwrap_or(argv.len());
+                        let flags = &argv[..end];
+                        for flag in bypass_flags {
+                            assert!(
+                                !flags.iter().any(|arg| arg == flag),
+                                "{binary} {role} in {mode}: {argv:?}"
+                            );
+                        }
+                    }
+                }
+            }
+        }
     }
 
     #[test]

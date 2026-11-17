@@ -56,13 +56,30 @@ const setCodexPhase = ({ phase }: PhaseParams) =>
     },
   }));
 
-const codexRow = () => {
-  const row = document.querySelector<HTMLElement>('[data-row="codex"]');
+type RowParams = {
+  readonly id: string;
+};
+
+const rowOf = ({ id }: RowParams) => {
+  const row = document.querySelector<HTMLElement>(`[data-row="${id}"]`);
   if (row === null) {
-    throw new Error('no Codex row');
+    throw new Error(`no ${id} row`);
   }
   return within(row);
 };
+
+const codexRow = () => rowOf({ id: 'codex' });
+
+type TooOldParams = {
+  readonly identity: string | null;
+};
+
+const tooOldClaude = ({ identity }: TooOldParams) => ({
+  state: identity === null ? 'unknown' : 'connected',
+  identity,
+  verified: false,
+  reason: { kind: 'cli_too_old', version: '2.1.37', minimum: '2.1.41' },
+});
 
 beforeAll(async () => {
   useAppStore = await importStore();
@@ -153,5 +170,47 @@ describe('AgentRow', () => {
     fireEvent.click(codexRow().getByRole('button', { name: 'Check Codex again' }));
 
     await waitFor(() => expect(codexRow().getByText('Ready')).toBeDefined());
+  });
+
+  it('asks for an update when the Claude CLI is too old to report sign in', async () => {
+    const lifecycleRuns: Array<unknown> = [];
+    stubStoryInvoke({
+      ...agentHandlers({ signedIn: [], claudeVersion: '2.1.37 (Claude Code)' }),
+      check_provider_auth: () => tooOldClaude({ identity: null }),
+      provider_lifecycle_run: (args: unknown) => {
+        lifecycleRuns.push(args);
+        return null;
+      },
+    });
+    renderStep();
+
+    const claude = () => rowOf({ id: 'anthropic' });
+    await waitFor(() => claude().getByText('Update needed'));
+    claude().getByText('Claude Code 2.1.37 found. Goodboy needs 2.1.41 or later');
+    expect(claude().queryByRole('button', { name: 'Sign in to Claude' })).toBeNull();
+
+    fireEvent.click(claude().getByRole('button', { name: 'Update Claude Code' }));
+
+    await waitFor(() =>
+      expect(lifecycleRuns).toContainEqual(
+        expect.objectContaining({ providerId: 'anthropic', action: 'update' }),
+      ),
+    );
+  });
+
+  it('keeps an old Claude CLI ready when its config names the account', async () => {
+    stubStoryInvoke({
+      ...agentHandlers({ signedIn: [], claudeVersion: '2.1.37 (Claude Code)' }),
+      check_provider_auth: (args: { readonly providerId?: string } | undefined) =>
+        args?.providerId === 'anthropic'
+          ? tooOldClaude({ identity: 'dana@northwind.dev' })
+          : { state: 'disconnected', identity: null },
+    });
+    renderStep();
+
+    const claude = () => rowOf({ id: 'anthropic' });
+    await waitFor(() => claude().getByText('Update needed'));
+    claude().getByText('Claude Code 2.1.37 · dana@northwind.dev. Goodboy needs 2.1.41 or later');
+    await screen.findByText('1 ready · checks again when you come back');
   });
 });

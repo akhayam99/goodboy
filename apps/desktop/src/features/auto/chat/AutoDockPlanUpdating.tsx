@@ -12,6 +12,7 @@ type Props = {
   readonly planner: AutoDelegation | null;
   readonly reason: string;
   readonly openPlan: ReactNode;
+  readonly isApproveHidden: boolean;
 };
 
 const PLANNER_WORD = {
@@ -23,7 +24,14 @@ const PLANNER_WORD = {
   settled: NAMES.done,
 } as const satisfies Readonly<Record<AutoDelegationState, string>>;
 
-export const AutoDockPlanUpdating = ({ version, by, planner, reason, openPlan }: Props) => (
+export const AutoDockPlanUpdating = ({
+  version,
+  by,
+  planner,
+  reason,
+  openPlan,
+  isApproveHidden,
+}: Props) => (
   <div
     data-dock-plan="updating"
     className="flex min-h-7 min-w-0 flex-wrap items-center gap-2 text-meta"
@@ -44,8 +52,10 @@ export const AutoDockPlanUpdating = ({ version, by, planner, reason, openPlan }:
       Ask for changes
     </Button>
     {openPlan}
-    <Button variant="primary" size="sm" disabled title={reason}>
-      {AUTO_PLAN_APPROVE_LABEL}
-    </Button>
+    {isApproveHidden ? null : (
+      <Button variant="primary" size="sm" disabled title={reason}>
+        {AUTO_PLAN_APPROVE_LABEL}
+      </Button>
+    )}
   </div>
 );

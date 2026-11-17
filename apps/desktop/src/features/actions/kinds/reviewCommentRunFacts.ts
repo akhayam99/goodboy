@@ -10,6 +10,7 @@ import { commentRunSourceLabelOf } from '../../resolve/commentRunSourceLabelOf';
 import { commentRunViewOfStore } from '../../resolve/commentRunViewOfStore';
 import { joinableCommentRunsOf } from '../../resolve/joinableCommentRunsOf';
 import { noteIdOfThread } from '../../resolve/notes/noteThread';
+import { runSuggestionOf } from '../../resolve/runSuggestionOf';
 import { selectedReviewEntryOf } from '../../../store/slices/review-source/activeReviewSource';
 import { sessionById } from '../../../store/slices/sessions/sessionIndex';
 import type { AppStore } from '../../../store/store';
@@ -23,6 +24,7 @@ type JoinRun = {
 export type ReviewCommentRunFacts = {
   readonly lane: CommentLane | null;
   readonly canStartRun: boolean;
+  readonly runSuggestion: string | null;
   readonly runAgentId: AgentId | null;
   readonly runEnd: CommentRunEnd | null;
   readonly noteId: string | null;
@@ -93,6 +95,7 @@ export const reviewCommentRunFactsOf = ({
   return {
     lane: commentLaneOf({ row, inRunThreadIds: new Set(commentRunThreadIdsOf({ agents })) }),
     canStartRun: sessionById(state.sessions, sessionId)?.workspaceId != null,
+    runSuggestion: runSuggestionOf({ state, thread: row.thread }),
     runAgentId: run !== null && run.end === 'working' ? run.agentId : null,
     runEnd: run?.end ?? null,
     noteId: isNote ? (row.thread.diffCommentId ?? noteIdOfThread({ threadId })) : null,

@@ -32,6 +32,10 @@ export const authReasonSentence = ({ reason }: Params): string => {
       return 'Unknown provider';
     case 'check_unfinished':
       return "The check didn't finish";
+    case 'cli_too_old':
+      return reason.version === null
+        ? `The CLI version is unreadable. Update to ${reason.minimum} or later`
+        : `Version ${reason.version} can't report sign in. Update to ${reason.minimum} or later`;
     default: {
       const unreachable: never = reason;
       return unreachable;

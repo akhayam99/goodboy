@@ -2,7 +2,7 @@ import {
   PROVIDER_CONNECT_CAPABILITIES,
   PROVIDER_LIFECYCLE_COMMANDS,
 } from '@goodboy/core/providers';
-import type { ProviderDisplayInfo, ProviderStatus } from '../../providers/providers';
+import type { AuthReason, ProviderDisplayInfo, ProviderStatus } from '../../providers/providers';
 import { PROVIDER_LABEL } from '../../providers/providerLabel';
 import type { AgentProviderId } from '../../../store/slices/providers/probeAgent';
 import {
@@ -21,7 +21,14 @@ export type AgentRowState =
   | 'failed'
   | 'missing'
   | 'manual'
-  | 'broken';
+  | 'broken'
+  | 'outdated';
+
+export type AgentRowUpdate = {
+  readonly command: string | null;
+  readonly failure: string | null;
+  readonly hasFailed: boolean;
+};
 
 export type AgentRow = {
   readonly id: AgentProviderId;
@@ -73,14 +80,23 @@ type StateParams = {
   readonly status: ProviderStatus | null;
   readonly connect: ProviderConnectState;
   readonly check: AgentCheck;
+  readonly authReason: AuthReason | null;
 };
+
+type MinimumParams = Pick<StateParams, 'authReason'>;
+
+const minimumVersionOf = ({ authReason }: MinimumParams): string | null =>
+  authReason?.kind === 'cli_too_old' ? authReason.minimum : null;
 
 const isManual = ({ id }: Pick<StateParams, 'id'>): boolean =>
   PROVIDER_CONNECT_CAPABILITIES[id].tier === 'manual';
 
-const stateOf = ({ id, info, status, connect, check }: StateParams): AgentRowState => {
+const stateOf = ({ id, info, status, connect, check, authReason }: StateParams): AgentRowState => {
   if (ACTIVE_CONNECT_PHASES.has(connect.phase)) {
     return connect.step === 'install' ? 'installing' : 'signing';
+  }
+  if (status?.available === true && minimumVersionOf({ authReason }) !== null) {
+    return 'outdated';
   }
   if (info?.connection === 'connected') {
     return 'ready';
@@ -107,7 +123,7 @@ type LineParams = StateParams & {
   readonly state: AgentRowState;
 };
 
-const lineOf = ({ id, info, status, state, check }: LineParams): string => {
+const lineOf = ({ id, info, status, state, check, authReason }: LineParams): string => {
   if (check.failure !== null && state !== 'looking') {
     return `Couldn't check. ${check.failure}`;
   }
@@ -137,6 +153,12 @@ const lineOf = ({ id, info, status, state, check }: LineParams): string => {
       return status?.version === null || status?.version === undefined
         ? `${PRODUCT_NAME[id]} stopped on start`
         : `${product} found, it stopped on start`;
+    case 'outdated': {
+      const needs = `Goodboy needs ${minimumVersionOf({ authReason }) ?? 'a newer one'} or later`;
+      return info?.identity === null || info?.identity === undefined
+        ? `${product} found. ${needs}`
+        : `${product} · ${info.identity}. ${needs}`;
+    }
     default: {
       const unreachable: never = state;
       return unreachable;
@@ -180,15 +202,22 @@ const progressOf = ({ state, connect }: ProgressParams): string | null => {
   return null;
 };
 
-export const agentRowOf = ({ id, info, status, connect, check }: StateParams): AgentRow => {
-  const state = stateOf({ id, info, status, connect, check });
+export const agentRowOf = ({
+  id,
+  info,
+  status,
+  connect,
+  check,
+  authReason,
+}: StateParams): AgentRow => {
+  const state = stateOf({ id, info, status, connect, check, authReason });
   const commands = PROVIDER_LIFECYCLE_COMMANDS[id];
   return {
     id,
     label: PROVIDER_LABEL[id],
     product: PRODUCT_NAME[id],
     state,
-    line: lineOf({ id, info, status, connect, check, state }),
+    line: lineOf({ id, info, status, connect, check, authReason, state }),
     installCommand: commands?.install?.darwin ?? null,
     runCommand: connect.command,
     output: outputOf({ state, status, connect }),

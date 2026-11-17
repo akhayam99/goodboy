@@ -3,7 +3,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { POPOVER_WIDTH_PX } from '@goodboy/ui';
+import { POPOVER_WIDTH_PX, SHELL_GUTTER_PX } from '@goodboy/ui';
 import type { AutoLimitKind } from './autoLimitCopy';
 import { AutoLimitChip } from './AutoLimitChip';
 
@@ -214,7 +214,7 @@ describe('AutoLimitChip', () => {
     expect(dialog.closest('[data-dropdown-portal]')?.parentElement).toBe(document.body);
     expect(dialog.style.top).toBe('128px');
     expect(Number.parseFloat(dialog.style.left)).toBe(
-      window.innerWidth - POPOVER_WIDTH_PX.standard - 8,
+      window.innerWidth - POPOVER_WIDTH_PX.standard - SHELL_GUTTER_PX,
     );
     expect(Number.parseFloat(dialog.style.maxHeight)).toBeGreaterThan(0);
   });
