@@ -89,6 +89,8 @@ If someone pushed after you applied, Goodboy lists their new commits and offers 
 - While the rebase runs, the status line reads it (`Rebasing · 3 of 7 · 1 conflict`), with **Abort**.
 - Once it settles, the panel under the Branch header says what happened and what you can do.
 - **Force push** replaces the branch on origin only if nobody pushed since you last looked. A failed Push or Force push in the Branch header offers the same two actions.
+- If origin changed between your confirm and the push, the failure leads with **Check again**. It fetches and lists the commits only on origin, with author and subject. Then it asks again: **Force push anyway** drops them, **Rebase on their commits** keeps them. It offers no **Retry**, since that would reuse the old check.
+- There, **Fix with an agent** and **Open terminal here** read origin again first. They keep commits nobody confirmed: the agent rebases on them, and the terminal gets a rebase on origin, then a push. A failed start shows in the card, not in a toast.
 - **Add a hint** under **Fix with an agent** and under **Rewrite with an agent** passes your words to the agent. A failed start keeps them.
 - While Push, Rebase, Merge or another Branch header action runs, its button shows the pending word (**Pushing…**) and ignores more clicks.
 - When it finishes, a line under the header says what happened (**Pushed 1 commit to origin.**). It stays until you dismiss it or start the next action.
@@ -214,6 +216,7 @@ This part is for contributors and agents who change the feature.
 - Push after a rebase: `diff.push` is the branch page's one push action. `bringOriginInAndPush` adds the commits someone pushed to yours, then pushes with the lease of what it brought in.
 - Verbs of a stopped rebase: `rebaseStopVerbs({ get, sessionId, mountId })` in `apps/desktop/src/store/slices/history/rebaseStopVerbs.ts` is the one set the banner, the panel and the Next row run. `useJobBannerActions` keeps the error per branch.
 - Push failures: `isPrePushFailure` in `apps/desktop/src/shared/lib/` is the test the Local checks cell uses too.
+- Origin moved before a force push: `pushMount` marks the failure `isOriginMoved`. `PushFailureActions` runs `checkBranchOrigin`, which drops a late answer, and `forcePushCheckedBranch`, which leases the checked sha. `branchPushPlan` reads origin again for the agent and the terminal. All three live in `apps/desktop/src/store/slices/history/pushFix/`.
 - Rebase started elsewhere: `apps/desktop/src/features/history/JobBanner/GitRebaseRow.tsx` draws the row.
 - Open stop: `hasOpenRebaseStopOf` in `apps/desktop/src/features/branch/hasOpenRebaseStopOf.ts` is the one test for a Goodboy stop in the phase `stopped` or a rebase in progress. `apps/desktop/src/features/history/historyRecovery.ts` and `apps/desktop/src/features/history/rebaseStopOf.ts` bring a stop back after a restart, a reload or in a second window.
 - Rebase all: `apps/desktop/src/features/history/RebaseAllCard/index.tsx` draws the card. **Update all** calls `bringOriginInAndPush` with `canStartRewriter: false` in `apps/desktop/src/store/slices/rebaseAll/updateAll.ts`.
