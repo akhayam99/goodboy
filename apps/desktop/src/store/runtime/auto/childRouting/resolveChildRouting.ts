@@ -1,15 +1,17 @@
 import { isAutoChildProvider } from '@goodboy/core/auto';
 import { orchestratorModelPool, type WorkflowRoutingResolution } from '@goodboy/core/orchestrator';
 import { PROVIDER_IDS, type ProviderId } from '@goodboy/types';
-import { autoChildPool } from '../../../features/auto/autoChildPool';
-import { workflowAvailabilitySnapshot } from '../../../features/workflows/workflowAvailabilitySnapshot';
-import type { AppStore } from '../../store';
-import { selectResolvedSettings } from '../../slices/overrides/selectResolvedSettings';
-import { workspacePolicyAvailability } from '../../slices/providerLimits/workspacePolicyAvailability';
-import { sessionById } from '../../slices/sessions/sessionIndex';
-import { selectHiddenModels } from '../../slices/settings/selectHiddenModels';
-import { resolveProposedRouting } from '../../slices/workflows/resolveProposedRouting';
-import type { RoutingOutcome, RoutingProposalFate, RoutingRequest } from './ports';
+import { autoChildPool } from '../../../../features/auto/autoChildPool';
+import { autoRoutableProviders } from '../../../../features/providers/autoRoutableProviders';
+import { workflowAvailabilitySnapshot } from '../../../../features/workflows/workflowAvailabilitySnapshot';
+import type { AppStore } from '../../../store';
+import { selectResolvedSettings } from '../../../slices/overrides/selectResolvedSettings';
+import { workspacePolicyAvailability } from '../../../slices/providerLimits/workspacePolicyAvailability';
+import { sessionById } from '../../../slices/sessions/sessionIndex';
+import { selectHiddenModels } from '../../../slices/settings/selectHiddenModels';
+import { resolveProposedRouting } from '../../../slices/workflows/resolveProposedRouting';
+import type { RoutingOutcome, RoutingProposalFate, RoutingRequest } from '../ports';
+import { childRoutingRefusal } from './childRoutingRefusal';
 
 export type ResolveChildRoutingParams = Readonly<{
   state: AppStore;
@@ -59,6 +61,7 @@ export const resolveChildRouting = ({
     sessions: state.sessions,
     sessionId: request.sessionId,
     policy: workspacePolicy.policy,
+    role: request.role,
   });
   const availability = workflowAvailabilitySnapshot({
     providers: state.providers ?? [],
@@ -71,6 +74,10 @@ export const resolveChildRouting = ({
     ...workspacePolicy,
     providerPool: pool,
   });
+  const defaultProvider = providerOf({
+    value: session.providerOverride ?? session.providerPreference.defaultProvider,
+  });
+  const modelMenu = orchestratorModelPool({ availability, hidden });
   const { resolution } = resolveProposedRouting({
     state,
     sessionId: request.sessionId,
@@ -79,21 +86,35 @@ export const resolveChildRouting = ({
     fields: request.fields,
     isModelPickEnabled: false,
     promptText: request.promptText,
-    emittingProvider: 'anthropic',
-    defaultProvider: providerOf({
-      value: session.providerOverride ?? session.providerPreference.defaultProvider,
-    }),
-    modelMenu: orchestratorModelPool({ availability, hidden }),
+    emittingProvider: defaultProvider,
+    defaultProvider,
+    modelMenu,
     roleModels: selectResolvedSettings({ state, sessionId: request.sessionId })?.roleModels ?? null,
-    providerPool: pool,
+    providerPool: availability.connectedProviders.filter(
+      (provider) =>
+        !availability.coolingDownProviders.includes(provider) &&
+        !availability.budgetBlockedProviders.includes(provider),
+    ),
     availability,
     stepLock: request.stepLock ?? null,
   });
   if (resolution.kind === 'blocked') {
-    return { kind: 'blocked', code: 'no_provider', message: resolution.reason };
+    return {
+      kind: 'blocked',
+      code: 'no_provider',
+      message: childRoutingRefusal({
+        role: request.role,
+        connected: autoRoutableProviders({ providers: state.providers ?? [] }),
+        pool,
+        availability,
+        menu: modelMenu,
+        cooldowns: state.providerCooldowns ?? {},
+        nowMs,
+      }),
+    };
   }
   const selected = resolution.decision.selected;
-  if (!isAutoChildProvider({ provider: selected.provider })) {
+  if (!isAutoChildProvider({ provider: selected.provider, role: request.role })) {
     return {
       kind: 'blocked',
       code: 'provider_unproven',

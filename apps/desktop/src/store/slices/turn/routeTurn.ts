@@ -95,7 +95,10 @@ export const routeTurn = async ({ get, ctx }: Params) => {
   ];
   if (
     childTurn !== null &&
-    asked.some((candidate) => !isOnChildRoute({ route: childTurn.route, override: candidate }))
+    asked.some(
+      (candidate) =>
+        !isOnChildRoute({ route: childTurn.route, role: childTurn.role, override: candidate }),
+    )
   ) {
     return refuseChildTurn({ get, ctx, refusal: 'auto_child_off_route' });
   }
@@ -233,6 +236,7 @@ export const routeTurn = async ({ get, ctx }: Params) => {
     childTurn !== null &&
     !isOnChildRoute({
       route: childTurn.route,
+      role: childTurn.role,
       override: { providerId: provider, model: spawnModel },
     })
   ) {

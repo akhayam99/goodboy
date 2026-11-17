@@ -165,10 +165,15 @@ pub(crate) fn ensure_auto_child(binary: &str, role: Option<&str>) -> Verdict {
         .ok_or_else(|| {
             "This agent works for Auto but the turn carried no role from Auto, so it did not start. Ask Auto to continue it.".to_string()
         })?;
+    let is_reading = role_access(role) == Some(RoleAccess::ReadOnly);
     match Cli::of_binary(binary) {
         Some(Cli::Claude) | Some(Cli::Codex) => Ok(()),
+        Some(Cli::Cursor) | Some(Cli::Agy) | Some(Cli::Copilot) if is_reading => Ok(()),
+        _ if is_reading => Err(format!(
+            "A reading agent that works for Auto does not run on {binary}, because Goodboy has no way to keep it read-only there, so this {role} turn did not start. Ask Auto to continue it."
+        )),
         _ => Err(format!(
-            "An agent that works for Auto runs only on Claude or Codex, so this {role} turn on {binary} did not start. Ask Auto to continue it."
+            "An agent that writes code for Auto runs only on Claude or Codex, so this {role} turn on {binary} did not start. Ask Auto to continue it."
         )),
     }
 }
@@ -309,17 +314,22 @@ mod tests {
     }
 
     #[test]
-    fn an_auto_child_runs_only_on_claude_or_codex_and_only_with_its_role() {
+    fn an_auto_child_writes_only_on_claude_or_codex_and_reads_where_auto_runs() {
         for binary in ["claude", "/usr/local/bin/codex"] {
             assert_eq!(ensure_auto_child(binary, Some("scout")), Ok(()));
             assert_eq!(ensure_auto_child(binary, Some("implementer")), Ok(()));
         }
-        for binary in ["opencode", "cursor-agent", "agy", "copilot", "openrouter"] {
-            let refusal = ensure_auto_child(binary, Some("scout")).expect_err("refused");
+        for binary in ["cursor-agent", "agy", "copilot"] {
+            assert_eq!(ensure_auto_child(binary, Some("planner")), Ok(()));
+            let refusal = ensure_auto_child(binary, Some("implementer")).expect_err("refused");
             assert!(
-                refusal.contains("runs only on Claude or Codex"),
+                refusal.contains("writes code for Auto runs only on Claude or Codex"),
                 "{refusal}"
             );
+        }
+        for binary in ["opencode", "openrouter"] {
+            let refusal = ensure_auto_child(binary, Some("scout")).expect_err("refused");
+            assert!(refusal.contains("no way to keep it read-only"), "{refusal}");
         }
         for role in [None, Some("auto")] {
             let refusal = ensure_auto_child("claude", role).expect_err("refused");

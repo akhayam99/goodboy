@@ -271,6 +271,10 @@ cwd, startedAt }`. A turn, a chat, a planner or a summary joins it in
 - **What the user sees.** When a turn's reap stopped something, the turn emits a
   `reaped` envelope before its end, and the transcript shows one line under the
   turn: "Stopped 2 processes this turn left running: next-server, 1 more."
+  The CLI's own helpers are stopped but not named: a process whose executable
+  lives in the folder a symlinked CLI resolves to (Cursor's bundled `node`) is
+  left out of the line (`proc::provider_helpers`). A CLI that is no link, and
+  Linux, where `ps` gives no path, keep every process in the line.
 - **Boot reconcile.** At boot one update marks every `running` agent row whose
   provider run is not live as stopped (`reconcileGhostAgents`), in all
   workspaces, not only the open one. Runs the backend still holds, runs

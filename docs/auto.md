@@ -637,8 +637,8 @@ writing to it reopens it to **Deciding**.
   that loads the workspace or launches in between leaves the claimed agent
   running and an adoption or detach is still refused as a running turn
   ([turns.md](turns.md#turn-admission)). The turn
-  runs only on the routed provider and model, and only on a provider in
-  `AUTO_CHILD_PROVIDERS`: a model picked in the child's composer or a retry
+  runs only on the routed provider and model, and only on a provider
+  `autoChildProviders` allows for its role: a model picked in the child's composer or a retry
   aimed elsewhere is refused, agent pins are ignored, a provider fallback that
   leaves the route is dropped so the failure reaches Auto, and a cooldown or
   budget move off the route is refused. Each refusal shows the person a plain
@@ -655,7 +655,8 @@ writing to it reopens it to **Deciding**.
   take shows in the child's transcript. A reading role (Scout, Planner,
   Investigator, Reviewer) cannot write: on Claude it keeps Read, Grep and Glob
   in plan mode with no shell; on Codex it runs in the read-only sandbox, which
-  blocks writes but can still run read-only commands.
+  blocks writes but can still run read-only commands; on Cursor it runs in
+  `--mode plan` without `--force`, as Auto itself does there.
   The dock's **Continue** asks Auto to continue
   a stopped child, naming its delegation so Auto sends `retryOf` and the same
   agent goes on in its worktree; it never runs a plain turn on it
@@ -2076,9 +2077,16 @@ composer lists only `AUTO_OWN_PROVIDERS` and shows "Auto needs a connected provi
 else is connected; `kindRouting` for Auto never resolves to the family (the role default, a stored
 role pick and the model of the chat are all skipped) and `spawnAgent` refuses an Auto agent on it;
 and `turn_spawn` refuses `auto` and every reading role on an opencode binary (`ensure_confinement`).
-Its children run on Claude and Codex, never on Cursor, Gemini or Copilot, which cannot confine a role
-(`AUTO_CHILD_PROVIDERS`): `routeTurn` refuses a child turn whose final provider is outside the list,
-and `turn_spawn` refuses it again (`ensure_auto_child`). The pool of a tree is the run
+A reading child (scout, planner, investigator, reviewer) runs wherever Auto itself runs, under the
+same read-only confinement (Cursor `--mode plan` included). A writing child runs only on Claude and
+Codex (`AUTO_WRITER_CHILD_PROVIDERS`): a Cursor writer turn passes `--force` and has no flag that
+denies `git push` or `--no-verify`, and the launch guard runs only on Claude and Codex.
+`autoChildProviders` gives the list per role; `routeTurn` refuses a child turn whose final provider
+is outside it, and `turn_spawn` refuses it again (`ensure_auto_child`). Routing resolves the role
+default only over the providers of that list that are connected, not cooling down and not over
+budget, so a Claude usage limit moves a reading child to Cursor instead of blocking it. When nothing
+is left, `childRoutingRefusal` names each connected provider with its reason (usage limit until a
+time, budget reached, no visible model, reading roles only) and points to Settings › Models. The pool of a tree is the run
 pool when there is one, else the workspace pool (the providers the workspace
 policy on the Models page does not turn off), else every allowed provider
 (`autoChildPool`, `runProviderPool`).
