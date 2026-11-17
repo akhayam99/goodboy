@@ -55,8 +55,8 @@ export const START_CHAPTERS: ReadonlyArray<GuideChapter> = [
         desc: 'The steps an agent writes before it builds.',
       },
       {
-        term: 'Preset',
-        desc: 'A saved workflow that a Lead follows as its plan.',
+        term: 'Workflow',
+        desc: 'Saved steps a Lead follows as its plan.',
       },
       {
         term: NAMES.lead,

@@ -4,7 +4,6 @@ import { startSettingsOf } from './startSettingsOf';
 
 const NODES = {
   where: 'where',
-  role: 'role',
   asks: 'asks',
   edits: 'edits',
   limit: 'limit',
@@ -16,7 +15,7 @@ type KeysParams = {
 };
 
 const keysOf = ({ kind }: KeysParams): ReadonlyArray<string> =>
-  startSettingsOf({ kind, nodes: NODES, changed: [] }).map((item) => item.key);
+  startSettingsOf({ kind, nodes: NODES, words: {}, changed: [] }).map((item) => item.key);
 
 describe('startSettingsOf', () => {
   it('gives every kind that asks and limits the same chip order', () => {
@@ -26,13 +25,23 @@ describe('startSettingsOf', () => {
     expect(keysOf({ kind: 'preset' })).toEqual(expected);
   });
 
-  it('adds Role to Agent and drops Asks you and Limit', () => {
-    expect(keysOf({ kind: 'agent' })).toEqual(['where', 'role', 'edits', 'guidance']);
+  it('drops Asks you and Limit for one agent, whose role sits in the Plan row', () => {
+    expect(keysOf({ kind: 'agent' })).toEqual(['where', 'edits', 'guidance']);
   });
 
-  it('marks the changed settings', () => {
-    const items = startSettingsOf({ kind: 'lead', nodes: NODES, changed: ['limit'] });
+  it('marks the changed settings and keeps the words of each', () => {
+    const items = startSettingsOf({
+      kind: 'lead',
+      nodes: NODES,
+      words: { limit: { lead: 'Limit', value: '$8.00' } },
+      changed: ['limit'],
+    });
 
     expect(items.filter((item) => item.isChanged).map((item) => item.key)).toEqual(['limit']);
+    expect(items.find((item) => item.key === 'limit')?.words).toEqual({
+      lead: 'Limit',
+      value: '$8.00',
+    });
+    expect(items.find((item) => item.key === 'edits')?.words).toBeNull();
   });
 });

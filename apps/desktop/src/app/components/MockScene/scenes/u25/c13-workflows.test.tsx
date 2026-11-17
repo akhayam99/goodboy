@@ -145,7 +145,7 @@ describe('c13 workflows scenes', () => {
 
     const empty = screen.getByRole('region', { name: 'Lint and type check' });
     expect(within(empty).getByText('No runs yet')).toBeDefined();
-    fireEvent.click(within(empty).getByRole('button', { name: 'Start from this preset' }));
+    fireEvent.click(within(empty).getByRole('button', { name: 'Start from this workflow' }));
 
     expect(openSessionDraft).toHaveBeenCalledOnce();
     const workspaceId = store.getState().currentWorkspaceId;

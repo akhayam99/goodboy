@@ -7,18 +7,21 @@ import { NAMES } from '../../../../shared/utils/names';
 import type { AutoTreeLimitModel } from '../../../auto/useAutoTreeLimit';
 import type { AgentKind } from '../../agent-kind';
 import { limitKindOfRoute } from '../../startRun/limitKindOfRoute';
-import { AUTO_RUN_AS } from '../../startRun/runAsOf';
 import { routeLineOf } from '../../startRun/routeLineOf';
 import { RUN_ROUTE_COPY } from '../../startRun/runRouteCopy';
-import { StartPresetFields } from '../SessionKickoff/StartPresetFields';
+import { StartRoleField } from '../SessionKickoff/StartRoleField';
 import { StartRunBranchChip } from '../StartRun/StartRunBranchChip';
 import type { StartRunModel } from '../StartRun/useStartRun';
+import { liveStepsOf } from './liveStepsOf';
 import { StartForm } from './StartForm';
 import { runAsOfStartFormKind, startFormKindOfRunAs } from './runAsOfStartKind';
 import type { StartFormKind } from './startFormKinds';
+import { StartPlanRow } from './StartPlanRow';
+import { StartWorkflowPick } from './StartWorkflowPick';
+import { StartWorkflowSteps } from './StartWorkflowSteps';
+import { useStartEditsMode } from './useStartEditsMode';
 import {
   startAsksOf,
-  startFormHintOf,
   startFormNoteOf,
   startGuidanceReaderOf,
   startLimitKindOf,
@@ -76,11 +79,23 @@ export const RunsStartForm = ({
   const routeHint = hasText
     ? routeLineOf({ result: route, modelSummary, isModelShown: !isPinned })
     : hint;
-  const shownHint = isRouting ? routeHint : startFormHintOf({ kind });
+  const shownHint = isRouting ? routeHint : null;
+  const workflow =
+    runAs.kind === 'preset'
+      ? (presets.find((preset) => preset.id === runAs.presetId) ?? null)
+      : null;
+  const closeness = runAs.kind === 'preset' ? (runAs.closeness ?? 'follow') : 'follow';
+  const steps = liveStepsOf({ workflow });
+  const edits = useStartEditsMode({ workspaceId, sessionId, picked: run.edits });
 
   const pickKind = ({ next }: PickParams): void => {
-    run.setRunAs(next === kind ? AUTO_RUN_AS : runAsOfStartFormKind({ kind: next, presets }));
+    if (next === kind) {
+      return;
+    }
+    run.setRunAs(runAsOfStartFormKind({ kind: next, presets }));
   };
+  const note =
+    isPinned || shownHint !== null ? null : startFormNoteOf({ kind, workflow, closeness });
 
   const settings = startSettingItemsOf({
     kind,
@@ -89,22 +104,18 @@ export const RunsStartForm = ({
     workspaceName,
     isDisabled: isStarting,
     model: run.model,
-    where:
-      sessionId === null ? null : (
-        <StartRunBranchChip
-          sessionId={sessionId}
-          branch={run.branch}
-          isDisabled={isStarting}
-          onChange={run.setBranch}
-        />
-      ),
-    role:
-      runAs.kind === 'role' && !isPinned
-        ? {
-            value: runAs.role,
-            onChange: ({ next }) => run.setRunAs({ kind: 'role', role: next }),
-          }
-        : null,
+    where: {
+      node:
+        sessionId === null ? null : (
+          <StartRunBranchChip
+            sessionId={sessionId}
+            branch={run.branch}
+            isDisabled={isStarting}
+            onChange={run.setBranch}
+          />
+        ),
+      names: null,
+    },
     asks,
     level: {
       value: run.level,
@@ -112,7 +123,7 @@ export const RunsStartForm = ({
       onPick: ({ next }) => run.setLevel(next),
     },
     autonomy: { value: run.autonomy, onPick: ({ next }) => run.setAutonomy(next) },
-    edits: { value: run.edits, onPick: ({ next }) => run.setEdits(next) },
+    edits: { value: run.edits, mode: edits.mode, onPick: ({ next }) => run.setEdits(next) },
     guidance: {
       value: run.guidance,
       reader: guidanceReader,
@@ -123,26 +134,39 @@ export const RunsStartForm = ({
 
   return (
     <StartForm
-      kind={kind}
+      plan={
+        isPinned ? null : (
+          <StartPlanRow
+            kind={kind ?? 'lead'}
+            hasPresets={presets.length > 0}
+            isDisabled={isStarting}
+            onPick={(next) => pickKind({ next })}
+            pick={
+              runAs.kind === 'preset' ? (
+                <StartWorkflowPick
+                  presets={presets}
+                  presetId={workflow?.id ?? null}
+                  closeness={closeness}
+                  isDisabled={isStarting}
+                  onPreset={({ next }) => run.setRunAs({ ...runAs, presetId: next })}
+                  onCloseness={({ next }) => run.setRunAs({ ...runAs, closeness: next })}
+                />
+              ) : runAs.kind === 'role' ? (
+                <StartRoleField
+                  value={runAs.role}
+                  isDisabled={isStarting}
+                  onChange={(next) => run.setRunAs({ kind: 'role', role: next })}
+                />
+              ) : null
+            }
+            detail={steps.length > 0 ? <StartWorkflowSteps steps={steps} /> : null}
+          />
+        )
+      }
       hint={shownHint}
       isRouteHint={isRouting && hasText}
-      hasPresets={presets.length > 0}
-      isDisabled={isStarting}
-      onKind={isPinned ? null : (next) => pickKind({ next })}
-      fields={
-        runAs.kind === 'preset' && !isPinned ? (
-          <StartPresetFields
-            presets={presets}
-            presetId={presets.find((preset) => preset.id === runAs.presetId)?.id ?? null}
-            closeness={runAs.closeness ?? 'follow'}
-            isDisabled={isStarting}
-            onPreset={({ next }) => run.setRunAs({ ...runAs, presetId: next })}
-            onCloseness={({ next }) => run.setRunAs({ ...runAs, closeness: next })}
-          />
-        ) : null
-      }
       settings={settings}
-      note={isPinned ? null : startFormNoteOf({ kind })}
+      note={note}
       error={run.error}
       reason={null}
       reasonId={reasonId}

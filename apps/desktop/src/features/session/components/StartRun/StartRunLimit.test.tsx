@@ -86,14 +86,16 @@ type KindParams = {
   readonly name: string;
 };
 
-const kindTab = ({ name }: KindParams): HTMLElement => {
-  if (screen.queryByRole('tablist', { name: 'What kind of run?' }) === null) {
-    fireEvent.click(screen.getByRole('button', { name: /^How: / }));
-  }
-  return within(screen.getByRole('tablist', { name: 'What kind of run?' })).getByRole('tab', {
-    name: new RegExp(`^${name}`),
-  });
+const PLAN_CHOICES: Readonly<Record<string, string>> = {
+  Lead: 'The Lead plans it',
+  Preset: 'Follow a workflow',
+  Agent: 'One agent',
 };
+
+const kindTab = ({ name }: KindParams): HTMLElement =>
+  within(screen.getByRole('tablist', { name: 'Plan' })).getByRole('tab', {
+    name: PLAN_CHOICES[name] ?? name,
+  });
 
 const pickKind = ({ name }: KindParams): void => {
   fireEvent.click(kindTab({ name }));
@@ -109,9 +111,9 @@ const renderField = ({ sessionId }: RenderParams) => {
       <StartRun workspaceId={WORKSPACE.id} sessionId={sessionId} />
     </ToastProvider>,
   );
-  const more = screen.queryByRole('button', { name: /^More/ });
-  if (more !== null) {
-    fireEvent.click(more);
+  const change = screen.queryByRole('button', { name: 'Change' });
+  if (change !== null) {
+    fireEvent.click(change);
   }
   return view;
 };

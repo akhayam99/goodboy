@@ -8,11 +8,11 @@ Write what you want done and press Start. A Lead runs it: it plans first, then s
 
 - The **Start a run** field sits at the top of a session's Runs page.
 - On the **New session** page, the same form routes the goal you wrote the same way until you pick a kind.
-- Its hint reads "~ presets, @ roles".
-- Typing `~` or `@` in an empty field opens the same menu as the chat box. Pick a preset or a role and the **How** chip shows its kind.
-- A name typed in the text still wins over the kind.
-- The kinds and the settings under the box are [one start form](#one-start-form).
-- Under the box, a line reads "Starts as ..." with the reason and the model. It changes as you type, before you press Start. Once you press a kind, the line says what that kind does.
+- Its hint reads "~ workflows, @ roles".
+- Typing `~` or `@` in an empty field opens the same menu as the chat box. Pick a workflow or a role and the **Plan** row shows it.
+- A name typed in the text still wins over the Plan row.
+- The Plan row and the settings under the box are [one start form](#one-start-form).
+- Under the box, a line reads "Starts as ..." with the reason and the model. It changes as you type, before you press Start. Once you pick a workflow or one agent, the line by Start says what runs.
 - The paperclip, paste and drop attach files and images, on Runs and on New session, whatever the kind. They go with the run to its first agent. A file that cannot be attached says why on the box, and the text and the other files stay.
 - ↵ starts, ⇧↵ adds a line.
 
@@ -44,14 +44,15 @@ The pick is a rule table in the app, with no model call. Goodboy reads it top to
 
 Every door draws the same form: the New session page, a session's Runs page (and so the New menu's **Start a run**), ⌘K, and the setup Scout run.
 
-- The goal comes first. Under it the **How** chip holds three kinds, **Lead**, **Preset** and **Agent**, with one line for each in its menu. The action row ends the form.
-- Lead is picked by default and reads the table above. Pick the same kind again to give the choice back to Lead. A draft left on Orchestrated by an older version opens on Lead.
-- **Preset** is off until the workspace has a preset. A pressed Preset shows the picker with its steps and **Keep steps** or **May change steps**.
-- One row of chips holds the settings, each written "Label: value". Each chip opens its own popover, anchored to it, so it stays inside the window. The source of a value ("from Harborline") sits in the popover header, and a chip is tinted when its value is not the default.
-- **Projects** and **Edits** are always in the row. **Asks you**, **Limit** and **Guidance** sit under **More** until they differ from their default.
-- A kind shows only the settings it uses. **Projects** shows on the New session page only, **Role** on Agent only. **Limit** and **Asks you** do not show on Agent: a plain agent has no limit to enforce and no step to stop at.
+- The goal comes first. Under it the **Plan** row says who plans the run: **The Lead plans it**, **Follow a workflow** or **One agent**. The action row ends the form, with one line by Start on what runs.
+- **The Lead plans it** is picked by default and reads the table above. A draft left on Orchestrated by an older version opens on it.
+- **Follow a workflow** is off until the workspace has a saved workflow. Picked, it shows the workflow picker, the box **Keep its steps as written** (empty, the Lead may change a step and says why) and the steps below.
+- **One agent** shows the role picker in the same row.
+- Under the Plan row the settings read as one sentence, such as "Stops after the plan · Edits full access · Limit $8.00 · harbor-portal". **Change** opens the controls under it and **Done** closes them.
+- Each control is written "Label: value" and opens its own popover, anchored to it, so it stays inside the window. The source of a value ("from Harborline") sits in the popover header, and a control is tinted when its value is not the default.
+- A plan shows only the settings it uses. **Projects** shows on the New session page only. **Limit** and **Asks you** do not show on One agent: a plain agent has no limit to enforce and no step to stop at.
 - The model sits in the message box, beside **Start**. It names the model of the Lead or the agent for this run, **Auto** until you pick one. A pick is for this run only.
-- **Asks you** is the Lead's level, on Lead and on Preset.
+- **Asks you** is the Lead's level, when the Lead plans and when it follows a workflow.
 - **Edits** is what agents may do in the session: **Read only**, **Ask first**, **Edits allowed** or **Full access**. It reads the workspace default until you pick, and a start never writes a mode you did not pick. A pick applies to the whole session, and is set before the first agent starts. The chat box picker reads **Edits: Ask first**, the same label.
 - **Limit** reads "Limit: $5.00" ("Limit: none" without one), with a quiet "default" while the amount is the one the kind starts from. Every kind, and a start with no kind pressed, starts from the **Run defaults** limit. Switching kind shows the new kind's default and keeps an amount you typed. Its popover lists $5, $10 and $25 beside the default and your typed amount, with an **Other amount** field and **No limit**.
 - Under the amounts the popover names the limits that still apply: the session limit, then each provider's monthly limit. Each shows what is spent, as in "Session $0 of $20.00 · Claude $41.20 of $200.00 this month".
@@ -59,11 +60,11 @@ Every door draws the same form: the New session page, a session's Runs page (and
 - The run page shows the same amount with its source, **default** or **this run**.
 - **Guidance** shows on every kind. It starts as the workspace guidance, with a quiet "from Harborline" tag. Once you edit it the tag reads "this run", and "None" when you clear it.
 - The chip shows the start of the text, and a tooltip shows all of it. Its popover has the text, **Use workspace guidance** and **No guidance**.
-- The popover says who reads it: the Lead and the agents it starts on Lead and Preset, the agent on Agent.
-- Switching kind keeps the guidance you wrote. A start that fails keeps it, and Retry sends it again.
-- Switching kind keeps what you typed and the values that still apply.
-- The primary always reads **Start**, whatever the kind.
-- Setup's Scout run is pinned to Agent, so it draws no **How** chip and no role chip, and the same chips as every other form.
+- The popover says who reads it: the Lead and the agents it starts, or the one agent.
+- Switching the plan keeps the guidance you wrote. A start that fails keeps it, and Retry sends it again.
+- Switching the plan keeps what you typed and the values that still apply.
+- The primary always reads **Start**, whatever the plan.
+- Setup's Scout run is pinned to one agent, so it draws no Plan row and no role picker, and the same settings as every other form.
 - Start work from chat drafts the brief in the drawer, makes the session, then opens this form on the session with the goal filled in.
 
 ### Permission rows
@@ -89,7 +90,7 @@ The chip opens one popover. It shows:
 - the kind and "set at start";
 - one line on what that kind does;
 - why it was picked ("you picked it" when you chose it on the page), with how many steps Auto changed in the preset;
-- **With the preset** (Keep steps, May change steps) on an older preset run;
+- **With the workflow** (Keep steps, May change steps) on an older preset run;
 - the other kinds a new run can be (Lead, and Lead · plan for each preset).
 
 Its last line says what a pick does.
@@ -230,7 +231,8 @@ A failed start keeps the goal and settings. Its cause appears above the form act
 
 This part is for contributors and agents who change the feature.
 
-- Start form: `StartForm` draws the kinds, the fields, the settings row and the actions. `NewSessionStartForm` feeds it from the session draft and `RunsStartForm` from `useStartRun`. A kind declares the settings it uses in `START_KIND_SETTINGS`, and `startSettingsOf` keeps the order and drops a setting nothing supplies.
+- Start form: `StartForm` draws the Plan row (`StartPlanRow`, with `StartWorkflowPick` and `StartWorkflowSteps`), the settings row and the actions. `NewSessionStartForm` feeds it from the session draft and `RunsStartForm` from `useStartRun`. A kind declares the settings it uses in `START_KIND_SETTINGS`, and `startSettingsOf` keeps the order and drops a setting nothing supplies.
+- Settings sentence: `StartSettingsRow` reads the words of each setting in `START_SENTENCE_ORDER` and keeps the controls under **Change**. `startSettingWordsOf` writes those words from the values the controls show: `useStartEditsMode` and `useDraftProjects` are shared with `StartEditsSetting` and `WhereChip` (`StartSettingsRow/index.test.tsx`). `startFormNoteOf` writes the line by Start.
 - Branch chip: `StartRunBranchChip` sits in the Where slot of `RunsStartForm` and lists the attached mounts through `startRunBranchOptionsOf`. `openStartRun` takes the branch, `startRunBranchOf` reads it from the event, and `askOnBranchOf` adds it to the ask. `BranchTools` is the branch page door; `startRunDoors.scenes.test.tsx` and `BranchPage/overviewDoors.test.tsx` cover the doors.
 - Kind to route: `runAsOfStartFormKind` turns a pressed kind into the `RunAs` that `runAsRouteOf` turns into the route Start uses, with a typed token ahead of the kind. `routeLineOf` builds the live "Starts as" line.
 - Edits: `StartEditsSetting` reads the draft, or the session on Runs. `applyStartEdits` calls `setSessionPermissionMode` before the first agent starts and does nothing when no mode was picked.

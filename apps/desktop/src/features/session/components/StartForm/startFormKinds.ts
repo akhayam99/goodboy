@@ -2,14 +2,22 @@ import type { StartKind, StartShape } from '../../../../store/slices/sessionDraf
 
 export type StartFormKind = 'lead' | 'preset' | 'agent';
 
-export type StartSettingKey = 'where' | 'role' | 'asks' | 'edits' | 'limit' | 'guidance';
+export type StartSettingKey = 'where' | 'asks' | 'edits' | 'limit' | 'guidance';
 
 export const START_FORM_KINDS: ReadonlyArray<StartFormKind> = ['lead', 'preset', 'agent'];
+
+export const START_SENTENCE_ORDER: ReadonlyArray<StartSettingKey> = [
+  'asks',
+  'edits',
+  'limit',
+  'guidance',
+  'where',
+];
 
 const START_KIND_SETTINGS = {
   lead: ['where', 'asks', 'edits', 'limit', 'guidance'],
   preset: ['where', 'asks', 'edits', 'limit', 'guidance'],
-  agent: ['where', 'role', 'edits', 'guidance'],
+  agent: ['where', 'edits', 'guidance'],
 } as const satisfies Record<StartFormKind, ReadonlyArray<StartSettingKey>>;
 
 const START_PICK_SETTINGS = [

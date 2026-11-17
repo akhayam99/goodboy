@@ -146,7 +146,7 @@ describe('startRoutedRun keeps the reason with the run', () => {
     expect((await readRoutes())[AGENT]).toMatchObject({
       shape: 'lead',
       row: 5,
-      why: 'A question or a check, and no preset fits',
+      why: 'A question or a check, and no workflow fits',
       ask: 'Why does the ledger-core importer drop rows?',
     });
   });

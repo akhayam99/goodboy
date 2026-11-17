@@ -21,7 +21,7 @@ import {
   type C08State,
 } from './c08RunSeed';
 
-type C08Click = 'none' | 'menu' | 'addStep' | 'startRun' | 'how' | 'rowRename';
+type C08Click = 'none' | 'menu' | 'addStep' | 'startRun' | 'change' | 'rowRename';
 
 type Props = {
   readonly state: C08State;
@@ -66,7 +66,7 @@ const SELECTOR: Readonly<Record<Exclude<C08Click, 'none'>, string>> = {
   menu: 'button[aria-label$="run actions"]',
   addStep: '[data-run-overview] [data-run-add-step] button',
   startRun: '[data-start-run-row] button',
-  how: '[data-setting-chip="How"]',
+  change: '[data-start-settings-change]',
   rowRename: `[data-row-key$="/${C08_RUN_ID}"]`,
 };
 

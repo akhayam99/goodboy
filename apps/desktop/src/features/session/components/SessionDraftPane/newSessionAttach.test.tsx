@@ -146,22 +146,10 @@ const dropFile = async (): Promise<void> => {
 };
 
 const pickAgent = async (): Promise<void> => {
-  const kinds = screen.queryByRole('tablist', { name: 'What kind of run?' });
-  if (kinds === null) {
-    fireEvent.click(screen.getByRole('button', { name: /^How: / }));
-  }
-  fireEvent.click(
-    within(screen.getByRole('tablist', { name: 'What kind of run?' })).getByRole('tab', {
-      name: /^Agent/,
-    }),
-  );
-  await waitFor(
-    () =>
-      expect(screen.getByRole('button', { name: /^How: / }).getAttribute('aria-label')).toMatch(
-        /Agent/,
-      ),
-    WAIT,
-  );
+  const agent = (): HTMLElement =>
+    within(screen.getByRole('tablist', { name: 'Plan' })).getByRole('tab', { name: 'One agent' });
+  fireEvent.click(agent());
+  await waitFor(() => expect(agent().getAttribute('aria-selected')).toBe('true'), WAIT);
 };
 
 const attachedNames = (): ReadonlyArray<string> =>

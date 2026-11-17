@@ -56,7 +56,7 @@ export const U36_RUN_PAGES_SCENES = {
   'u36-p12-orch-step-blocked': () => <C09OrchestratedScene state="step-blocked" page="stepPage" />,
   'u36-p12-orch-done': () => <C09OrchestratedScene state="done" page="document" />,
   'u36-p14-form-how-open': () => (
-    <C08RunScene state="working" selection="list" click="how" extra={seedRunsEmpty} />
+    <C08RunScene state="working" selection="list" click="change" extra={seedRunsEmpty} />
   ),
   'u36-f5-row-rename': () => (
     <C08RunScene state="working" selection="list" click="rowRename" extra={seedRunsByBranch} />

@@ -176,8 +176,8 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
     lead: 'A session starts from one goal: write it or pick one from Tasks, then pick the kind of run. It stays a draft until you press Start or Start blank.',
     points: [
       {
-        term: 'What kind of run?',
-        desc: 'How picks Lead, Preset or Agent. One form shows only what that kind needs.',
+        term: 'Plan',
+        desc: 'The Lead plans it, Follow a workflow or One agent.',
       },
       {
         term: NAMES.startARun,

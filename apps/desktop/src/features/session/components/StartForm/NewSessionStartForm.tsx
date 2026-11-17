@@ -11,16 +11,21 @@ import type { AutoTreeLimitModel } from '../../../auto/useAutoTreeLimit';
 import { START_KIND_COPY } from '../../startKind/startKindCopy';
 import { limitKindOfRoute } from '../../startRun/limitKindOfRoute';
 import { routeLineOf } from '../../startRun/routeLineOf';
-import { StartPresetFields } from '../SessionKickoff/StartPresetFields';
+import { StartRoleField } from '../SessionKickoff/StartRoleField';
 import { WhereChip } from '../SessionKickoff/WhereChip';
+import { useDraftProjects } from '../SessionKickoff/WhereChip/useDraftProjects';
 import type { StartShapeModel } from '../SessionKickoff/useStartShape';
 import type { RunModelView } from '../StartRun/useRunModel';
 import type { StartRunModel } from '../StartRun/useStartRun';
+import { liveStepsOf } from './liveStepsOf';
 import { StartForm } from './StartForm';
 import { startFormKindOfDraft, startShapeOfFormKind, type StartFormKind } from './startFormKinds';
+import { StartPlanRow } from './StartPlanRow';
+import { StartWorkflowPick } from './StartWorkflowPick';
+import { StartWorkflowSteps } from './StartWorkflowSteps';
+import { useStartEditsMode } from './useStartEditsMode';
 import {
   startAsksOf,
-  startFormHintOf,
   startFormNoteOf,
   startGuidanceReaderOf,
   startLimitKindOf,
@@ -88,11 +93,11 @@ export const NewSessionStartForm = ({
   const kind = startFormKindOfDraft({ startKind: draft.startKind, startShape: draft.startShape });
   const run = kind === null ? autoRun : shapeRun;
   const isDisabled = run.isStarting;
-  const reason = startReasonOf({
-    hasGoal,
-    kind,
-    hasPreset: presets.some((preset) => preset.id === draft.workflowId),
-  });
+  const workflow = presets.find((preset) => preset.id === draft.workflowId) ?? null;
+  const steps = liveStepsOf({ workflow });
+  const where = useDraftProjects({ workspaceId });
+  const edits = useStartEditsMode({ workspaceId, sessionId: null, picked: draft.permissionMode });
+  const reason = startReasonOf({ hasGoal, kind, hasPreset: workflow !== null });
   const { route } = autoRun;
   const isAutoLead = route.route.shape === 'lead' && route.role === null;
   const isPlan = route.route.shape === 'plan';
@@ -102,21 +107,21 @@ export const NewSessionStartForm = ({
     kind,
     routeKind: limitKindOfRoute({ route: route.route }),
   });
-  const hint =
-    kind === null && hasGoal
-      ? routeLineOf({
-          result: route,
-          modelSummary: recommendationSummary({
-            provider: autoRun.model.effective.provider,
-            model: autoRun.model.effective.model,
-            effort: autoRun.model.effective.effort,
-          }),
-          isModelShown: true,
-        })
-      : startFormHintOf({ kind });
+  const isRouteHint = kind === null && hasGoal;
+  const hint = isRouteHint
+    ? routeLineOf({
+        result: route,
+        modelSummary: recommendationSummary({
+          provider: autoRun.model.effective.provider,
+          model: autoRun.model.effective.model,
+          effort: autoRun.model.effective.effort,
+        }),
+        isModelShown: true,
+      })
+    : null;
 
   const pickKind = ({ next }: PickParams): void => {
-    if (next === 'lead' || next === kind) {
+    if (next === 'lead') {
       patchSessionDraft({
         workspaceId,
         patch: { startKind: 'auto', startShape: null, hasChosenStart: true },
@@ -140,11 +145,9 @@ export const NewSessionStartForm = ({
     workspaceName,
     isDisabled,
     model,
-    where: <WhereChip workspaceId={workspaceId} match={match} isDisabled={isDisabled} />,
-    role: {
-      value: draft.agentKind,
-      onChange: ({ next }) =>
-        patchSessionDraft({ workspaceId, patch: { agentKind: next, agentRouting: null } }),
+    where: {
+      node: <WhereChip workspaceId={workspaceId} match={match} isDisabled={isDisabled} />,
+      names: where.projects.length === 0 ? null : where.names,
     },
     asks,
     level: {
@@ -158,6 +161,7 @@ export const NewSessionStartForm = ({
     },
     edits: {
       value: draft.permissionMode,
+      mode: edits.mode,
       onPick: ({ next }) => patchSessionDraft({ workspaceId, patch: { permissionMode: next } }),
     },
     guidance: {
@@ -170,28 +174,47 @@ export const NewSessionStartForm = ({
 
   return (
     <StartForm
-      kind={kind}
-      hint={hint}
-      isRouteHint={kind === null && hasGoal}
-      hasPresets={presets.length > 0}
-      isDisabled={isDisabled}
-      onKind={(next) => pickKind({ next })}
-      fields={
-        kind === 'preset' ? (
-          <StartPresetFields
-            presets={presets}
-            presetId={draft.workflowId}
-            closeness={draft.presetCloseness}
-            isDisabled={isDisabled}
-            onPreset={({ next }) => patchSessionDraft({ workspaceId, patch: { workflowId: next } })}
-            onCloseness={({ next }) =>
-              patchSessionDraft({ workspaceId, patch: { presetCloseness: next } })
-            }
-          />
-        ) : null
+      plan={
+        <StartPlanRow
+          kind={kind ?? 'lead'}
+          hasPresets={presets.length > 0}
+          isDisabled={isDisabled}
+          onPick={(next) => pickKind({ next })}
+          pick={
+            kind === 'preset' ? (
+              <StartWorkflowPick
+                presets={presets}
+                presetId={draft.workflowId}
+                closeness={draft.presetCloseness}
+                isDisabled={isDisabled}
+                onPreset={({ next }) =>
+                  patchSessionDraft({ workspaceId, patch: { workflowId: next } })
+                }
+                onCloseness={({ next }) =>
+                  patchSessionDraft({ workspaceId, patch: { presetCloseness: next } })
+                }
+              />
+            ) : kind === 'agent' ? (
+              <StartRoleField
+                value={draft.agentKind}
+                isDisabled={isDisabled}
+                onChange={(next) =>
+                  patchSessionDraft({ workspaceId, patch: { agentKind: next, agentRouting: null } })
+                }
+              />
+            ) : null
+          }
+          detail={
+            kind === 'preset' && steps.length > 0 ? <StartWorkflowSteps steps={steps} /> : null
+          }
+        />
       }
+      hint={hint}
+      isRouteHint={isRouteHint}
       settings={settings}
-      note={startFormNoteOf({ kind })}
+      note={
+        isRouteHint ? null : startFormNoteOf({ kind, workflow, closeness: draft.presetCloseness })
+      }
       error={run.error}
       reason={reason}
       reasonId={reasonId}

@@ -5,9 +5,9 @@ type Params = {
 };
 
 export const startSettingsRowOf = ({ group }: Params) => {
-  const more = within(group).queryByRole('button', { name: /^More/ });
-  if (more !== null) {
-    fireEvent.click(more);
+  const change = within(group).queryByRole('button', { name: 'Change' });
+  if (change !== null) {
+    fireEvent.click(change);
   }
   return within(group);
 };

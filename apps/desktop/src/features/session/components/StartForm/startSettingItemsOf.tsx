@@ -9,16 +9,16 @@ import type {
 import { AutoLimitChip } from '../../../auto/AutoLimitChip';
 import type { AutoLimitKind } from '../../../auto/autoLimitCopy';
 import { AutoLevelChip } from '../../../auto/level/AutoLevelChip';
+import type { PickerMode } from '../../../permissions/modeCopy';
 import { openRunDefaults } from '../../../settings/openRunDefaults';
-import type { AgentKind } from '../../agent-kind';
 import { StartAsksSetting } from '../SessionKickoff/StartAsksSetting';
-import { StartRoleField } from '../SessionKickoff/StartRoleField';
 import type { RunModelView } from '../StartRun/useRunModel';
 import { StartEditsSetting } from './StartEditsSetting';
 import { StartGuidanceSetting } from './StartGuidanceSetting';
 import type { StartFormKind } from './startFormKinds';
 import type { StartAsksKind, StartGuidanceReader } from './startFormWords';
 import { startSettingsOf, type StartSettingItem } from './startSettingsOf';
+import { startSettingWordsOf } from './startSettingWordsOf';
 
 type NextParams<Value> = {
   readonly next: Value;
@@ -33,11 +33,10 @@ type Params = {
   readonly workspaceName: string;
   readonly isDisabled: boolean;
   readonly model: RunModelView;
-  readonly where: ReactNode;
-  readonly role: {
-    readonly value: AgentKind;
-    readonly onChange: (params: NextParams<AgentKind>) => void;
-  } | null;
+  readonly where: {
+    readonly node: ReactNode;
+    readonly names: ReadonlyArray<string> | null;
+  };
   readonly asks: StartAsksKind | null;
   readonly level: {
     readonly value: AutoLevel;
@@ -50,6 +49,7 @@ type Params = {
   };
   readonly edits: {
     readonly value: ClaudePermissionMode | null;
+    readonly mode: PickerMode;
     readonly onPick: (params: NextParams<ClaudePermissionMode>) => void;
   };
   readonly guidance: {
@@ -63,6 +63,19 @@ type Params = {
   };
 };
 
+type AsksAutonomyParams = {
+  readonly asks: StartAsksKind | null;
+  readonly level: AutoLevel;
+  readonly autonomy: WorkflowAutonomy;
+};
+
+const asksAutonomyOf = ({ asks, level, autonomy }: AsksAutonomyParams): WorkflowAutonomy | null => {
+  if (asks === null) {
+    return null;
+  }
+  return asks === 'level' ? level : autonomy;
+};
+
 export const startSettingItemsOf = ({
   kind,
   workspaceId,
@@ -71,7 +84,6 @@ export const startSettingItemsOf = ({
   isDisabled,
   model,
   where,
-  role,
   asks,
   level,
   autonomy,
@@ -86,16 +98,15 @@ export const startSettingItemsOf = ({
       ...(limit.kind !== null && !limit.view.isDefault ? (['limit'] as const) : []),
       ...(guidance.value !== null ? (['guidance'] as const) : []),
     ],
+    words: startSettingWordsOf({
+      autonomy: asksAutonomyOf({ asks, level: level.value, autonomy: autonomy.value }),
+      editsMode: edits.mode,
+      limitUsd: limit.view.usd,
+      hasOwnGuidance: guidance.value !== null,
+      projectNames: where.names,
+    }),
     nodes: {
-      where,
-      role:
-        role === null ? null : (
-          <StartRoleField
-            value={role.value}
-            isDisabled={isDisabled}
-            onChange={(next) => role.onChange({ next })}
-          />
-        ),
+      where: where.node,
       asks:
         asks === 'level' ? (
           <AutoLevelChip

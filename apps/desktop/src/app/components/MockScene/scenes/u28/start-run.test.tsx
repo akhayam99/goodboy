@@ -9,7 +9,7 @@ vi.mock('@tauri-apps/api/event', async () =>
 vi.mock('@tauri-apps/plugin-dialog', () => ({ open: vi.fn() }));
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { fireEvent, cleanup, render, screen, within } from '@testing-library/react';
+import { cleanup, render, screen, within } from '@testing-library/react';
 import { ToastProvider } from '../../../../../shared/components/Toast';
 import {
   STORE_IMPORT_TIMEOUT_MS,
@@ -60,10 +60,9 @@ describe('the u28 start run scenes', () => {
     mount({ id: 'u28-start-run-route-line' });
 
     const line = await screen.findByText(/^Starts[ ]as[ ]Lead/, {}, WAIT);
-    expect(line.textContent).toContain('A question or a check, and no preset fits');
+    expect(line.textContent).toContain('A question or a check, and no workflow fits');
     screen.getByRole('button', { name: 'Attach files' });
-    fireEvent.click(screen.getByRole('button', { name: /^How: / }));
-    const kinds = screen.getByRole('tablist', { name: 'What kind of run?' });
+    const kinds = screen.getByRole('tablist', { name: 'Plan' });
     expect(within(kinds).getAllByRole('tab')).toHaveLength(3);
   });
 

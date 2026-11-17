@@ -3,11 +3,13 @@ import type { SessionDraft } from '../../../../../store/slices/sessionDraft/stat
 import { START_PAGE_SEED } from '../u27/startPage/startPageSeedData';
 import { StartFormScene } from './StartFormScene';
 
-const NO_LABELS: ReadonlyArray<string> = ['More'];
+const NO_LABELS: ReadonlyArray<string> = [];
 
-const OPEN_EDITS: ReadonlyArray<string> = ['Edits'];
+const OPEN_CHANGE: ReadonlyArray<string> = ['Change'];
 
-const OPEN_LIMIT: ReadonlyArray<string> = ['More', 'Limit'];
+const OPEN_EDITS: ReadonlyArray<string> = ['Change', 'Edits'];
+
+const OPEN_LIMIT: ReadonlyArray<string> = ['Change', 'Limit'];
 
 const BASE = {
   workflowGoal: START_PAGE_SEED.goal,
@@ -50,7 +52,7 @@ const PICKING: Partial<SessionDraft> = {
 };
 
 export const U30_START_FORM_SCENES = {
-  'u30-start-form': () => <StartFormScene draft={PRESET} openLabels={NO_LABELS} />,
+  'u30-start-form': () => <StartFormScene draft={PRESET} openLabels={OPEN_CHANGE} />,
   'u30-start-form-orchestrated': () => (
     <StartFormScene draft={ORCHESTRATED} openLabels={NO_LABELS} />
   ),
