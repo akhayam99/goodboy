@@ -41,13 +41,17 @@ type CommandParams = {
   readonly command: string;
 };
 
-type WidthParams = {
+type Axis = 'x' | 'y';
+
+type SizeParams = {
   readonly view: HTMLElement;
-  readonly width: number;
+  readonly axis: Axis;
+  readonly shrink: number;
 };
 
 type DragParams = {
   readonly isCovered: boolean;
+  readonly axis: Axis;
 };
 
 let store: StoryStore;
@@ -66,14 +70,19 @@ const placedView = (): HTMLElement => {
   return view;
 };
 
-const giveWidth = ({ view, width }: WidthParams): void => {
+const rectOf = ({ axis, shrink }: Omit<SizeParams, 'view'>): DOMRect =>
+  axis === 'x'
+    ? new DOMRect(START.x + shrink, START.y, START.width - shrink, START.height)
+    : new DOMRect(START.x, START.y + shrink, START.width, START.height - shrink);
+
+const giveSize = ({ view, axis, shrink }: SizeParams): void => {
   Object.defineProperty(view, 'getBoundingClientRect', {
     configurable: true,
-    value: () => new DOMRect(START.x + START.width - width, START.y, width, START.height),
+    value: () => rectOf({ axis, shrink }),
   });
 };
 
-const drag = async ({ isCovered }: DragParams) => {
+const drag = async ({ isCovered, axis }: DragParams) => {
   const view = placedView();
   const overlays = createOverlayWatch();
   const placement = createNativePlacement({ sessionId: SESSION_ID, onError: () => undefined });
@@ -82,14 +91,14 @@ const drag = async ({ isCovered }: DragParams) => {
     placement.want({ view: bounds === null ? null : { tab: TAB, bounds } });
     await settle();
   };
-  giveWidth({ view, width: START.width });
+  giveSize({ view, axis, shrink: 0 });
   await frame();
   storySpies.tauriInvoke.mockClear();
   if (isCovered) {
-    document.body.setAttribute(SPLIT_DRAG_ATTRIBUTE, 'x');
+    document.body.setAttribute(SPLIT_DRAG_ATTRIBUTE, axis);
   }
   for (let index = 1; index <= FRAMES; index += 1) {
-    giveWidth({ view, width: START.width - index * STEP_PX });
+    giveSize({ view, axis, shrink: index * STEP_PX });
     await frame();
   }
   document.body.removeAttribute(SPLIT_DRAG_ATTRIBUTE);
@@ -127,27 +136,27 @@ afterEach(() => {
   document.body.replaceChildren();
 });
 
+const releaseOf = ({ axis }: Pick<DragParams, 'axis'>) => {
+  const rect = rectOf({ axis, shrink: FRAMES * STEP_PX });
+  return { x: rect.x, y: rect.y, width: rect.width, height: rect.height };
+};
+
 describe('a split drag over a native page', () => {
   it('places the page on every frame of the drag when nothing covers it', async () => {
-    const calls = await drag({ isCovered: false });
+    const calls = await drag({ isCovered: false, axis: 'x' });
 
     expect(calls).toEqual({ place: FRAMES, show: 0, hide: 0 });
   });
 
-  it('hides the page once under the drag cover and places it once at the release', async () => {
-    const calls = await drag({ isCovered: true });
+  it.each<Axis>(['x', 'y'])(
+    'hides the page once under the %s drag cover and places it once at the release',
+    async (axis) => {
+      const calls = await drag({ isCovered: true, axis });
 
-    expect(calls).toEqual({ place: 1, show: 1, hide: 1 });
-    expect(lastPlace()).toEqual({
-      args: {
-        tabId: 'live-ledger',
-        bounds: {
-          x: START.x + FRAMES * STEP_PX,
-          y: START.y,
-          width: START.width - FRAMES * STEP_PX,
-          height: START.height,
-        },
-      },
-    });
-  });
+      expect(calls).toEqual({ place: 1, show: 1, hide: 1 });
+      expect(lastPlace()).toEqual({
+        args: { tabId: 'live-ledger', bounds: releaseOf({ axis }) },
+      });
+    },
+  );
 });
