@@ -554,8 +554,8 @@ writing to it reopens it to **Deciding**.
   secondary. Each card row shows the short task title,
   role glyph and elapsed active time (`DelegationClock`, shared with the rail).
   A delegation line's **Open** opens that child's page (`useAutoTreeActions`
-  `openChild`). While a plan waits for approval the ask is the state. The composer says "Message Auto" while Auto
-  waits, or "Message Auto, or describe changes to plan v1", and shows **Ask
+  `openChild`). While a plan waits for approval the ask is the state. The composer says "Message Lead" at rest and while
+  the Lead waits, or "Message Lead, or describe changes to plan v1", and shows **Ask
   first** like any agent composer.
 - **A child opens on its page, from every door** (`useAutoChildChat`, `AgentDetailPane`):
   a tree row, a delegation line, the Overview, a notification and Search or run land on one
