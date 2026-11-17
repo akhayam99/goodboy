@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import type { MountId, SessionId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import { selectMountBaseBranch } from '../../../../store/slices/project-mounts/selectors';
@@ -19,6 +19,7 @@ export const useRebaseStop = ({ sessionId, mountId, worktreePath }: Params): Reb
   const run = useAppStore((s) => (mountId === null ? null : (s.historyRuns[mountId] ?? null)));
   const events = useAppStore((s) => s.sessionEvents?.[sessionId] ?? EMPTY_ARRAY);
   const settled = useAppStore((s) => s.settledRebaseStops[sessionId] ?? EMPTY_ARRAY);
+  const settleStaleRebases = useAppStore((s) => s.settleStaleRebases);
   const baseBranch = useAppStore((s) =>
     selectMountBaseBranch({ state: s, sessionId, path: worktreePath }),
   );
@@ -29,6 +30,12 @@ export const useRebaseStop = ({ sessionId, mountId, worktreePath }: Params): Reb
       : (readWorktreeStatusRead({
           key: worktreeStatusKey({ worktreePath, baseBranch: baseBranch ?? undefined }),
         })?.readAt ?? 0);
+  useEffect(() => {
+    if (readAt === 0) {
+      return;
+    }
+    settleStaleRebases({ sessionId });
+  }, [events, readAt, run, sessionId, settleStaleRebases]);
   return useMemo(
     () =>
       mountId === null

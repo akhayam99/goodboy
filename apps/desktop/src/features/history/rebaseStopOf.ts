@@ -5,10 +5,12 @@ import type {
   SessionId,
   WorktreeStatus,
 } from '@goodboy/types';
-import type { HistoryRun, HistoryStopReason } from '../../store/slices/history/types';
+import type { HistoryRun } from '../../store/slices/history/types';
 import type { WorktreeStatusRead } from '../../store/runtime/worktreeStatuses/cache';
 import { hasHistoryRecovery } from './historyRecovery';
-import { isRebaseStopSettled } from './isRebaseStopSettled';
+import { historyStopReasonOf } from './historyStopReasonOf';
+import { isRebaseRunStale } from './isRebaseRunStale';
+import { isRebaseStopRelevant } from './isRebaseStopRelevant';
 
 export type RebaseStop = {
   readonly run: HistoryRun;
@@ -26,34 +28,6 @@ type Params = {
   readonly baseBranch: string;
   readonly read: WorktreeStatusRead | null;
 };
-
-const STOP_REASONS: ReadonlyArray<HistoryStopReason> = [
-  'conflict',
-  'hook',
-  'stuck',
-  'invalid',
-  'unverified',
-  'origin-moved',
-  'head-moved',
-  'blocked',
-  'dirty',
-  'no-provider',
-  'push-failed',
-  'failed',
-];
-
-const SETTLED_BY_GIT: ReadonlySet<HistoryStopReason> = new Set<HistoryStopReason>([
-  'conflict',
-  'hook',
-  'failed',
-]);
-
-type ReasonParams = {
-  readonly reason: string | undefined;
-};
-
-const reasonOf = ({ reason }: ReasonParams): HistoryStopReason =>
-  STOP_REASONS.find((known) => known === reason) ?? 'failed';
 
 type EventParams = {
   readonly event: SessionEvent;
@@ -91,7 +65,7 @@ type RebuildParams = {
 
 const runOfEvent = ({ sessionId, mountId, event, baseBranch }: RebuildParams): HistoryRun => {
   const payload = event.payload;
-  const reason = reasonOf({ reason: payload?.reason });
+  const reason = historyStopReasonOf({ reason: payload?.reason });
   const head = payload?.head ?? null;
   return {
     sessionId,
@@ -136,6 +110,9 @@ export const rebaseStopOf = ({
   read,
 }: Params): RebaseStop | null => {
   if (run !== null && run !== undefined) {
+    if (isRebaseRunStale({ run, read })) {
+      return null;
+    }
     return { run, eventId: null, isRebuilt: false, status: read?.status ?? null };
   }
   const event = latestOpenStopOf({
@@ -148,12 +125,13 @@ export const rebaseStopOf = ({
   }
   const rebuilt = runOfEvent({ sessionId, mountId, event, baseBranch });
   const fresh = read !== null && read.readAt > rebuilt.updatedAt ? read.status : null;
-  const reason = rebuilt.stop?.reason;
   if (
     fresh !== null &&
-    reason !== undefined &&
-    SETTLED_BY_GIT.has(reason) &&
-    isRebaseStopSettled({ status: fresh, head: rebuilt.stop?.head ?? null })
+    !isRebaseStopRelevant({
+      reason: rebuilt.stop?.reason,
+      head: rebuilt.stop?.head ?? null,
+      status: fresh,
+    })
   ) {
     return null;
   }

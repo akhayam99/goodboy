@@ -1,10 +1,11 @@
 // @vitest-environment happy-dom
 
-vi.mock('@tauri-apps/api/core', async () => {
-  const { sceneInvoke } = await import('../../../test/sceneInvoke');
-  return { invoke: vi.fn((command: string, args?: unknown) => sceneInvoke({ command, args })) };
-});
-vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn(async () => () => undefined) }));
+vi.mock('@tauri-apps/api/core', async () =>
+  (await import('../../../store/storyHarness')).tauriCoreModuleMock(),
+);
+vi.mock('@tauri-apps/api/event', async () =>
+  (await import('../../../store/storyHarness')).tauriEventModuleMock(),
+);
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
@@ -23,8 +24,12 @@ import { aProject, aSession } from '@goodboy/types/testing';
 import { mockSceneIpc } from '../../../app/components/MockScene/scenes/mockSceneIpc';
 import { mountGithubOf } from '../../workspace/testing/sessionColumn';
 import type { RebaseConflictFile } from '../../worktree/worktree';
-import { STORE_IMPORT_TIMEOUT_MS, importStore, resetStoryStore } from '../../../store/storyHarness';
-import { useAppStore } from '../../../store';
+import {
+  STORE_IMPORT_TIMEOUT_MS,
+  importStore,
+  resetStoryStore,
+  storySpies,
+} from '../../../store/storyHarness';
 import type { AppStore } from '../../../store/store';
 import type { ProviderDisplayInfo } from '../../providers/providers';
 import {
@@ -32,7 +37,7 @@ import {
   resetWorktreeStatusCache,
 } from '../../../store/runtime/worktreeStatuses/cache';
 import type { HistoryRun } from '../../../store/slices/history/types';
-import { clearSceneInvoke } from '../../../test/sceneInvoke';
+import { clearSceneInvoke, sceneInvoke } from '../../../test/sceneInvoke';
 import {
   A_REBASE_AGENT_ID,
   A_REBASE_MOUNT_ID,
@@ -72,7 +77,7 @@ const gitNow: {
   behind: 18,
   isRebasing: false,
   unmerged: 0,
-  upstreamAhead: 0,
+  upstreamAhead: 3,
 };
 
 const conflictsNow: { files: ReadonlyArray<RebaseConflictFile> } = { files: [] };
@@ -158,19 +163,24 @@ const savedConflict = ({ at }: SavedStopParams): SessionEvent => ({
 
 const PAST = '2026-10-01T10:00:00.000Z';
 
+let useAppStore: Awaited<ReturnType<typeof importStore>>;
+
 beforeAll(async () => {
-  await importStore();
+  useAppStore = await importStore();
 }, STORE_IMPORT_TIMEOUT_MS);
 
 beforeEach(async () => {
   await resetStoryStore();
+  storySpies.tauriInvoke.mockImplementation((command, args) =>
+    sceneInvoke({ command: String(command), args }),
+  );
   resetWorktreeStatusCache();
   dirty.changed = 0;
   gitNow.head = 'head-sha';
   gitNow.behind = 18;
   gitNow.isRebasing = false;
   gitNow.unmerged = 0;
-  gitNow.upstreamAhead = 0;
+  gitNow.upstreamAhead = 3;
   conflictsNow.files = [];
   gitCalls.length = 0;
   mockSceneIpc((command) => {
@@ -211,10 +221,7 @@ afterEach(() => {
   clearSceneInvoke();
 });
 
-const SETTLE_MS = 400;
-
-const settle = (): Promise<void> =>
-  act(() => new Promise<void>((resolve) => window.setTimeout(resolve, SETTLE_MS)));
+const settle = () => act(() => new Promise<void>((done) => window.setTimeout(done, 400)));
 
 type NodeParams = {
   readonly node: HTMLElement;
@@ -286,19 +293,20 @@ describe('the job banner', () => {
       stop: { reason: 'conflict', message: '', files: ['webhook.ts'], sha: null },
     });
 
-    expect(screen.getByRole('button', { name: 'Open agent' })).toBeDefined();
+    screen.getByRole('button', { name: 'Open agent' });
   });
 
   it('says what a finished rebase did and offers the undo', async () => {
     dirty.changed = 11;
     await showRun({ phase: 'pushed', commitCount: 7, backupRef: 'refs/goodboy/backup/1' });
 
-    const region = screen.getByRole('region', { name: 'Rebase job' });
+    const region = screen.getByRole('region', { name: 'Rebase' });
+    within(region).getByRole('button', { name: 'Dismiss' });
     expect(region.textContent).toContain('Rebased on main');
     expect(region.textContent).toContain(
       '7 commits. Your 11 files were not touched. Backup kept for 30 days.',
     );
-    expect(screen.getByRole('button', { name: 'Undo rewrite' })).toBeDefined();
+    screen.getByRole('button', { name: 'Undo rewrite' });
   });
 
   it('names the new online commit and offers Rebase on their commits, Resolve in terminal and Undo rebase', async () => {
@@ -382,7 +390,7 @@ describe('the job banner', () => {
     await settle();
 
     const panel = screen.getByRole('region', { name: 'Rebase' });
-    expect(within(panel).getByText('git is busy')).toBeDefined();
+    within(panel).getByText('git is busy');
     expect(reportError).not.toHaveBeenCalled();
 
     fireEvent.click(within(panel).getByRole('button', { name: 'Retry' }));
@@ -481,8 +489,10 @@ describe('the job banner', () => {
       'Open terminal here',
       'Retry push',
     ]);
-    expect(screen.getByRole('button', { name: 'Details' })).toBeDefined();
-    expect(screen.queryByRole('button', { name: 'Dismiss' })).toBeNull();
+    screen.getByRole('button', { name: 'Details' });
+    expect(screen.getByRole('button', { name: 'Dismiss' }).closest('p')?.textContent).toContain(
+      'Rebased, but the push failed',
+    );
     fireEvent.click(screen.getByRole('button', { name: 'Retry push' }));
     await settle();
 
@@ -550,7 +560,7 @@ describe('the job banner', () => {
 
     expect(screen.queryByRole('button', { name: 'Fix with an agent' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Retry push' })).toBeNull();
-    expect(screen.getByRole('button', { name: 'Open agent' })).toBeDefined();
+    screen.getByRole('button', { name: 'Open agent' });
   });
 
   it('opens the output of a failed push on Details', async () => {
@@ -573,7 +583,7 @@ describe('the job banner', () => {
     expect(screen.getByRole('dialog', { name: 'Push output' }).textContent).toContain(
       'postCredit.ts 14:7 error',
     );
-    expect(screen.getByRole('button', { name: 'Open terminal here' })).toBeDefined();
+    screen.getByRole('button', { name: 'Open terminal here' });
   });
 
   it('sends a missing provider to Connections', async () => {
@@ -766,8 +776,8 @@ describe('the rebase stop panel', () => {
 
     expect(panel().textContent).toContain('Rebase on main stopped: 2 files conflict');
     expect(panel().textContent).toContain('Your branch is as it was.');
-    expect(within(panel()).getByText('src/settlement/batch.ts')).toBeDefined();
-    expect(within(panel()).getByText('src/settlement/ledger.ts')).toBeDefined();
+    within(panel()).getByText('src/settlement/batch.ts');
+    within(panel()).getByText('src/settlement/ledger.ts');
     expect(fileStates()).toEqual(['conflict', 'conflict']);
     expect(verbsIn({ node: panel() })).toEqual([
       'Resolve with Auto',
@@ -930,7 +940,8 @@ describe('the rebase stop panel', () => {
     await refresh();
 
     expect(panel().textContent).toContain('Pushed to origin');
-    expect(verbsIn({ node: panel() })).toEqual(['Dismiss']);
+    expect(verbsIn({ node: panel() })).toEqual([]);
+    within(panel()).getByRole('button', { name: 'Dismiss' });
   });
 
   it('offers a plain Push on a branch with no pull request', async () => {
