@@ -17,7 +17,11 @@ import {
   type WorkflowRules,
   type Workspace,
 } from '@goodboy/types';
-import type { AutoLevel } from '@goodboy/core/auto';
+import {
+  leadPermissionsOf,
+  type AutoLevel,
+  type StoredLeadPermissionRows,
+} from '@goodboy/core/auto';
 import { aSession, aWorkflowRun, aWorkspace, EMPTY_OVERRIDES } from '@goodboy/types/testing';
 import {
   STORE_IMPORT_TIMEOUT_MS,
@@ -177,6 +181,36 @@ const withRules = (rules: Partial<WorkflowRules>) =>
     },
   }));
 
+type DetailsParams = {
+  readonly defaultRows: StoredLeadPermissionRows;
+};
+
+const withDetails = ({ defaultRows }: DetailsParams) => {
+  withRules({ autonomy: 'plan' });
+  storeLeadLevel({ level: 'plan' });
+  let rows = defaultRows;
+  const change = vi.fn(
+    async ({ change: next }: { readonly change: { readonly key: string } }): Promise<void> => {
+      rows = Object.fromEntries(Object.entries(rows).filter(([key]) => key !== next.key));
+    },
+  );
+  useAppStore.setState({
+    readLeadPermissions: vi.fn(async () =>
+      leadPermissionsOf({
+        leadRows: {},
+        defaultRows: rows,
+        sessionLevel: null,
+        workspaceLevel: leadLevel(),
+        isPlanApprovalOff: false,
+        isWorkFlowOn: true,
+        spendLimitUsd: null,
+      }),
+    ),
+    changeLeadPermission: change,
+  });
+  return change;
+};
+
 describe('WorkflowRulesPanel', () => {
   it('starts on the defaults with one row per setting and the guidance field', () => {
     panel();
@@ -315,6 +349,62 @@ describe('WorkflowRulesPanel', () => {
     await waitFor(() => expect(selectedLevels()).toEqual(['After the plan']));
     expect(leadWrites).toHaveBeenCalledTimes(1);
     expect(savedRules().map((rules) => rules?.autonomy)).toEqual(['plan']);
+  });
+
+  it('says Custom with the count when the Lead details differ, and Reset clears them', async () => {
+    const change = withDetails({ defaultRows: { push: 'ask' } });
+    panel();
+
+    await newRuns().findByText(/^Custom: 1 detail differs from After the plan\.$/);
+    expect(selectedLevels()).toEqual([]);
+    fireEvent.click(newRuns().getByRole('button', { name: 'Reset Stops for your OK to default' }));
+
+    await waitFor(() =>
+      expect(change).toHaveBeenCalledWith({
+        target: { workspaceId: HARBORLINE.id },
+        change: { key: 'push', value: null },
+      }),
+    );
+  });
+
+  it('opens the Lead details in the page and writes a change to this workspace', async () => {
+    const change = withDetails({ defaultRows: {} });
+    panel();
+
+    fireEvent.click(
+      await newRuns().findByRole('button', { name: 'Fine-tune what the Lead does alone' }),
+    );
+    const row = await newRuns().findByRole('tablist', { name: 'Open or update a pull request' });
+    fireEvent.click(within(row).getByRole('tab', { name: 'Ask first' }));
+
+    await waitFor(() =>
+      expect(change).toHaveBeenCalledWith({
+        target: { workspaceId: HARBORLINE.id },
+        change: { key: 'pullRequest', value: 'ask' },
+      }),
+    );
+    expect(newRuns().queryByRole('tablist', { name: 'Applies to' })).toBeNull();
+    expect(newRuns().queryByRole('tablist', { name: 'Start from' })).toBeNull();
+  });
+
+  it('a level pick on Custom saves the level and then clears the details', async () => {
+    const change = withDetails({ defaultRows: { push: 'ask' } });
+    panel();
+
+    await newRuns().findByText(/^Custom: 1 detail/);
+    fireEvent.click(asksTab({ name: /^Never/ }));
+
+    await waitFor(() =>
+      expect(change).toHaveBeenCalledWith({
+        target: { workspaceId: HARBORLINE.id },
+        change: { key: 'push', value: null },
+      }),
+    );
+    expect(leadWrites).toHaveBeenCalledWith({
+      workspaceId: HARBORLINE.id,
+      sessionId: null,
+      level: 'run',
+    });
   });
 
   it('reaches new runs only: a run already going keeps its own copy', async () => {

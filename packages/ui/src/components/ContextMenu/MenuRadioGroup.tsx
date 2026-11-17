@@ -36,7 +36,8 @@ export const MenuRadioGroup = ({ entry, onChoose }: Props) => {
               onChoose(choice.id);
             }}
             className={cn(
-              'flex w-full items-center gap-2 rounded-sm px-2 py-2 text-left focus-visible:outline-none motion-safe:transition-colors',
+              'flex w-full gap-2 rounded-sm px-2 py-2 text-left focus-visible:outline-none motion-safe:transition-colors',
+              choice.description == null ? 'items-center' : 'items-start',
               isDisabled
                 ? 'cursor-not-allowed text-disabled-foreground focus:bg-hover'
                 : 'text-foreground hover:bg-hover focus:bg-hover',
@@ -47,7 +48,16 @@ export const MenuRadioGroup = ({ entry, onChoose }: Props) => {
                 <Check size={ICON_SIZE.row} aria-hidden className="text-primary" />
               ) : null}
             </span>
-            <span className="min-w-0 flex-1 truncate">{choice.label}</span>
+            {choice.description == null ? (
+              <span className="min-w-0 flex-1 truncate">{choice.label}</span>
+            ) : (
+              <span className="flex min-w-0 flex-1 flex-col">
+                <span className="truncate">{choice.label}</span>
+                <span className="line-clamp-3 text-meta text-faint-foreground">
+                  {choice.description}
+                </span>
+              </span>
+            )}
             {choice.hint == null ? null : (
               <span className="shrink-0 text-meta tabular-nums text-faint-foreground">
                 {choice.hint}

@@ -25,6 +25,7 @@ export type MenuChoice = {
   readonly label: string;
   readonly isCurrent: boolean;
   readonly hint?: string | null;
+  readonly description?: string | null;
   readonly tooltip?: string | null;
 };
 

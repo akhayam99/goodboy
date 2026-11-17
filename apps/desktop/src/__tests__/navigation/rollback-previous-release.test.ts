@@ -8,6 +8,8 @@ import {
   type SessionId,
 } from '@goodboy/types';
 import { DRAWER_KINDS } from '../../store/slices/drawer/drawerKinds';
+import { UNSAVED_DRAWER_KINDS } from '../../store/slices/drawer/unsavedDrawerKinds';
+import { savedLocationOf } from '../../store/slices/navigation/savedLocationOf';
 import { LENS_KINDS } from '../../store/slices/session-view/types';
 import { BOARD_PLACE, branchPlace, sessionPlace } from '../../store/slices/navigation/place';
 import { PLACE_ROWS } from '../../store/slices/navigation/placeRows';
@@ -142,13 +144,15 @@ const PLACE_ROWS_SAVED: ReadonlyArray<Row> = [
 ];
 
 const DRAWERS_SAVED: ReadonlyArray<Row> = [
-  ...Object.keys(DRAWER_KINDS).map((kind): Row => [
-    `the ${kind} panel on the Overview`,
-    textOf({
-      place: sessionPlace({ sessionId: SESSION }),
-      drawer: { kind, sessionId: SESSION, payload: null },
-    }),
-  ]),
+  ...Object.keys(DRAWER_KINDS)
+    .filter((kind) => ![...UNSAVED_DRAWER_KINDS].some((unsaved) => unsaved === kind))
+    .map((kind): Row => [
+      `the ${kind} panel on the Overview`,
+      textOf({
+        place: sessionPlace({ sessionId: SESSION }),
+        drawer: { kind, sessionId: SESSION, payload: null },
+      }),
+    ]),
   ...(['terminal', 'browser'] as const).map((kind): Row => [
     `the ${kind} dock with no session`,
     textOf({
@@ -215,5 +219,23 @@ describe('rehearsal: the previous release opens every place this build saves', (
         },
       }),
     ).toBe(false);
+  });
+});
+
+describe('a panel the previous release never knew stays out of the saved layout', () => {
+  it.each([...UNSAVED_DRAWER_KINDS])('saves the place under %s without the panel', (kind) => {
+    const open: Location = READ_BACK(
+      textOf({
+        place: sessionPlace({ sessionId: SESSION }),
+        drawer: { kind, sessionId: SESSION, payload: null },
+      }),
+    );
+    expect(opensInPreviousRelease({ location: open })).toBe(false);
+
+    const saved = READ_BACK(JSON.stringify(savedLocationOf({ location: open })));
+
+    expect(saved.focus.drawer).toBeNull();
+    expect(saved.place).toEqual(open.place);
+    expect(opensInPreviousRelease({ location: saved })).toBe(true);
   });
 });

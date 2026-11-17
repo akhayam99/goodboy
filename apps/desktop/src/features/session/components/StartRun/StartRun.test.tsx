@@ -501,21 +501,21 @@ describe('StartRun run as', () => {
     expect(screen.queryByRole('button', { name: /^Limit: / })).toBeNull();
   });
 
-  it('shows the Lead Asks you for a Lead and a preset, and none for an agent', async () => {
+  it('shows the Lead Stops for a Lead and a preset, and none for an agent', async () => {
     useAppStore.setState({ phaseTemplates: { [WORKSPACE.id]: [FIX_A_LAYOUT] } });
     renderField({ sessionId: SESSION.id });
 
     fireEvent.change(field(), { target: { value: QUESTION } });
-    await screen.findByRole('button', { name: 'Asks you: After the plan' });
+    await screen.findByRole('button', { name: 'Stops for your OK: After the plan' });
 
     pickKind({ name: 'Preset' });
 
-    await screen.findByRole('button', { name: 'Asks you: After the plan' });
-    expect(screen.queryByRole('button', { name: /^Asks you: Every step/ })).toBeNull();
+    await screen.findByRole('button', { name: 'Stops for your OK: After the plan' });
+    expect(screen.queryByRole('button', { name: /^Stops for your OK: Every step/ })).toBeNull();
 
     pickKind({ name: 'Agent' });
 
-    expect(screen.queryByRole('button', { name: /^Asks you/ })).toBeNull();
+    expect(screen.queryByRole('button', { name: /^Stops for your OK/ })).toBeNull();
   });
 
   it('shows the level the session already has, and a run started untouched keeps it', async () => {
@@ -637,7 +637,7 @@ describe('StartRun run as', () => {
     expect(spawnAgent.mock.calls[0]?.[1]).toMatchObject({ kindOverride: 'scout' });
   });
 
-  it('starts a preset Lead with the Asks you level and the Edits picked', async () => {
+  it('starts a preset Lead with the Stops level and the Edits picked', async () => {
     const spawnAgent = vi.fn<SpawnFn>(async () => AGENT);
     const attachWorkflowToSession = vi.fn<AttachFn>(async () => undefined);
     const changeAutoLevel = vi.fn<StoryState['changeAutoLevel']>(async () => undefined);
@@ -653,8 +653,8 @@ describe('StartRun run as', () => {
     });
     renderField({ sessionId: SESSION.id });
     pickKind({ name: 'Preset' });
-    fireEvent.click(await screen.findByRole('button', { name: /^Asks you: (?!Loading)/ }));
-    fireEvent.click(await screen.findByRole('tab', { name: 'Never' }));
+    fireEvent.click(await screen.findByRole('button', { name: /^Stops for your OK: (?!Loading)/ }));
+    fireEvent.click(await screen.findByRole('menuitemradio', { name: /^Never/ }));
     fireEvent.click(screen.getByRole('button', { name: /^Edits:/ }));
     fireEvent.click(screen.getByRole('tab', { name: /^Read only/ }));
 

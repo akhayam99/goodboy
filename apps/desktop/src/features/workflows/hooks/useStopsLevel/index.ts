@@ -50,17 +50,22 @@ export const useStopsLevel = ({ workspaceId }: Params) => {
   }, [workspaceId, loadWorkspaceValue, reportError]);
 
   const pick = useCallback(
-    async ({ next }: PickParams): Promise<void> => {
-      if (isSavingRef.current || (live.kind === 'same' && live.level === next)) {
-        return;
+    async ({ next }: PickParams): Promise<boolean> => {
+      if (isSavingRef.current) {
+        return false;
+      }
+      if (live.kind === 'same' && live.level === next) {
+        return true;
       }
       isSavingRef.current = true;
       setHeld({ workspaceId, stops: live });
       setError(null);
       try {
         await changeStopsLevel({ workspaceId, level: next });
+        return true;
       } catch (failure) {
         setError(`Couldn't change it. ${formatError(failure)}`);
+        return false;
       } finally {
         isSavingRef.current = false;
         setHeld(null);

@@ -40,6 +40,7 @@ import {
   type StoryStore,
 } from '../../test/storyHarness';
 import { DRAWER_KINDS } from '../../store/slices/drawer/drawerKinds';
+import { UNSAVED_DRAWER_KINDS } from '../../store/slices/drawer/unsavedDrawerKinds';
 import { IPHONE_SETTINGS_PLACE } from '../../features/settings/iphoneSettingsPlace';
 import { listWindowLayouts } from '../../features/workspace/windowLayout';
 import { useSessionSidebarVisibility } from '../../features/workspace/hooks/useSessionSidebarVisibility';
@@ -146,7 +147,9 @@ describe('layouts saved by the previous build', () => {
     expect(studioKindsInSource()).not.toContain(PREVIOUS_BUILD_BLOBS.workStudio.kind);
     const kinds = PREVIOUS_BUILD_BLOBS.drawers.map((entry) => entry.kind);
     expect(kinds.filter((kind) => !RETIRED_DRAWER_KINDS.includes(kind)).sort()).toEqual(
-      Object.keys(DRAWER_KINDS).sort(),
+      Object.keys(DRAWER_KINDS)
+        .filter((kind) => ![...UNSAVED_DRAWER_KINDS].some((unsaved) => unsaved === kind))
+        .sort(),
     );
     expect(kinds.filter((kind) => RETIRED_DRAWER_KINDS.includes(kind)).sort()).toEqual(
       [...RETIRED_DRAWER_KINDS].sort(),

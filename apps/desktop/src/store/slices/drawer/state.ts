@@ -1,11 +1,13 @@
 import type {
   AgentId,
   ArtifactId,
+  AutoTreeId,
   FileDiff,
   MountId,
   OpenQuestionId,
   ProjectId,
   SessionId,
+  WorkspaceId,
 } from '@goodboy/types';
 import type { ExploreEntry } from '../../../features/explore/explore';
 import type { TerminalTabId } from '../../../shared/types/terminal';
@@ -117,6 +119,10 @@ export type DrawerContent =
         readonly path: string | null;
         readonly whole?: FileDiffWhole;
       };
+    }
+  | {
+      readonly kind: 'lead-details';
+      readonly payload: { readonly workspaceId: WorkspaceId; readonly treeId: AutoTreeId };
     }
   | {
       readonly kind: 'identifier-peek';
