@@ -1,6 +1,8 @@
+use super::branch_move::{after_files_moved, ensure_nothing_untracked_in_the_way, BranchTarget};
 use crate::proc::git::Git;
 use crate::worktree::error::WorktreeError;
 use crate::worktree::git::{git, is_ancestor, resolve_commit, short_of};
+use crate::worktree::slug::sanitize_slug;
 use std::collections::{BTreeSet, HashSet};
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicU64, Ordering};
@@ -13,8 +15,10 @@ const APPLYING: &str = "applying-to-working-tree";
 const APPLIED: &str = "applied-to-working-tree";
 const GITLINK_MODE: &str = "160000";
 const NO_LONGER_APPLIES: &str = "the fix no longer applies on the branch";
-const LANE_CONFLICT: &str =
-    "your uncommitted work and the fix waiting for review change the same lines: accept or skip that fix first";
+const READY_FIX_FIRST: &str =
+    "apply or skip the ready fix first: a note fix starts only on your branch as it is";
+const ONE_AT_A_TIME: &str =
+    "this fix is built on another fix that waits for review: apply or skip the ready fix first";
 const SUBMODULE: &str =
     "the fix changes a submodule, and Goodboy never lands a submodule in your working tree: nothing was changed";
 const MERGED: &str =
@@ -265,18 +269,29 @@ pub(crate) fn snapshot_owner_tree(cwd: &Path, head: &str) -> Result<String, Work
 
 pub(crate) fn owner_tree_on(cwd: &Path, start: &str) -> Result<String, WorktreeError> {
     let head = resolve_commit(cwd, "HEAD")?;
-    let snapshot = snapshot_owner_tree(cwd, &head)?;
-    if start == head {
-        return Ok(snapshot);
+    if start != head {
+        return Err(git_failure(READY_FIX_FIRST));
     }
-    let patch = diff_of(cwd, &head, &snapshot)?;
-    let index = TempIndex::new(cwd, "owner-lane")?;
-    index.run(cwd, &["read-tree", start])?;
-    if !patch.trim().is_empty() && index.apply(cwd, &patch).is_err() {
-        return Err(git_failure(LANE_CONFLICT));
+    snapshot_owner_tree(cwd, &head)
+}
+
+fn recovery_ref(id: &str, side: &str) -> String {
+    format!("refs/goodboy/recovery/{}/{side}", sanitize_slug(id))
+}
+
+fn keep_recovery_trees(cwd: &Path, id: &str, entry: &Journal) -> Result<(), WorktreeError> {
+    git(cwd, &["update-ref", &recovery_ref(id, "pre"), &entry.pre])?;
+    git(cwd, &["update-ref", &recovery_ref(id, "post"), &entry.post])?;
+    Ok(())
+}
+
+fn drop_recovery_trees(cwd: &Path, id: &str) {
+    for side in ["pre", "post"] {
+        crate::logging::note_failure(
+            "recovery ref delete",
+            git(cwd, &["update-ref", "-d", &recovery_ref(id, side)]),
+        );
     }
-    let tree = index.write_tree(cwd)?;
-    commit_owner_tree(cwd, &tree, start)
 }
 
 struct Journal {
@@ -340,7 +355,14 @@ fn owner_tree_now(
 ) -> Result<(TempIndex, String), WorktreeError> {
     let index = TempIndex::new(cwd, "owner-apply")?;
     index.run(cwd, &["read-tree", head])?;
-    index.take_from_disk(cwd, paths)?;
+    let files: Vec<String> = paths
+        .iter()
+        .filter(|path| {
+            std::fs::symlink_metadata(cwd.join(path)).map_or(true, |meta| !meta.is_dir())
+        })
+        .cloned()
+        .collect();
+    index.take_from_disk(cwd, &files)?;
     let tree = index.write_tree(cwd)?;
     Ok((index, tree))
 }
@@ -383,23 +405,61 @@ fn landing_of(
 
 pub(super) struct OwnerTreeIntegration<'a> {
     pub(super) path: &'a Path,
+    pub(super) id: &'a str,
     pub(super) journal: &'a Path,
     pub(super) expected: &'a str,
     pub(super) candidate: &'a str,
-    pub(super) actual: &'a str,
+    pub(super) target: &'a BranchTarget,
 }
 
 fn fixes_of(plan: &OwnerTreeIntegration<'_>) -> Result<Vec<String>, WorktreeError> {
+    let commits = commits_between(plan.path, plan.expected, plan.candidate)?;
+    let is_single_snapshot = commits.first().is_some_and(|commit| commit.is_owner_tree)
+        && commits.iter().filter(|commit| commit.is_owner_tree).count() == 1;
+    if !is_single_snapshot {
+        return Err(git_failure(ONE_AT_A_TIME));
+    }
     let mut fixes = Vec::new();
-    for commit in commits_between(plan.path, plan.expected, plan.candidate)? {
+    for commit in commits.into_iter().skip(1) {
         if commit.is_merge {
             return Err(git_failure(MERGED));
         }
-        if !commit.is_owner_tree {
-            fixes.push(commit.sha);
-        }
+        fixes.push(commit.sha);
     }
     Ok(fixes)
+}
+
+fn guard(
+    plan: &OwnerTreeIntegration<'_>,
+    owner: &TempIndex,
+    entry: &Journal,
+) -> Result<(), WorktreeError> {
+    ensure_nothing_untracked_in_the_way(
+        plan.path,
+        &|args| owner.run(plan.path, args),
+        &entry.pre,
+        &entry.post,
+    )
+}
+
+fn land(
+    plan: &OwnerTreeIntegration<'_>,
+    owner: &TempIndex,
+    entry: &Journal,
+) -> Result<(), WorktreeError> {
+    owner.run(
+        plan.path,
+        &["read-tree", "-m", "-u", &entry.pre, &entry.post],
+    )?;
+    after_files_moved(plan.path);
+    Ok(())
+}
+
+fn finish(plan: &OwnerTreeIntegration<'_>, mut entry: Journal) -> Result<String, WorktreeError> {
+    entry.state = APPLIED.to_string();
+    write_journal(plan.journal, plan.candidate, &entry)?;
+    drop_recovery_trees(plan.path, plan.id);
+    Ok(plan.candidate.to_string())
 }
 
 fn touched_by(cwd: &Path, fixes: &[String]) -> Result<Vec<String>, WorktreeError> {
@@ -415,35 +475,26 @@ fn touched_by(cwd: &Path, fixes: &[String]) -> Result<Vec<String>, WorktreeError
     Ok(touched.into_iter().collect())
 }
 
-fn resume(plan: &OwnerTreeIntegration<'_>, mut entry: Journal) -> Result<String, WorktreeError> {
+fn resume(plan: &OwnerTreeIntegration<'_>, entry: Journal) -> Result<String, WorktreeError> {
     let is_applied = entry.state == APPLIED;
-    if entry.head != plan.actual || entry.branch != branch_of(plan.path) {
-        return Err(git_failure(match is_applied {
-            true => LANDED_THEN_CHANGED,
-            false => MOVED_WHILE_LANDING,
-        }));
+    let refused = |error: WorktreeError| match is_applied {
+        true => git_failure(LANDED_THEN_CHANGED),
+        false => error,
+    };
+    if entry.head != plan.target.head || entry.branch != branch_of(plan.path) {
+        return Err(refused(git_failure(MOVED_WHILE_LANDING)));
     }
-    let paths = paths_between(plan.path, &entry.pre, &entry.post)?;
-    let (owner, current) = owner_tree_now(plan.path, plan.actual, &paths)?;
-    let landing =
-        landing_of(plan.path, &current, &entry, &paths).map_err(|error| match is_applied {
-            true => git_failure(LANDED_THEN_CHANGED),
-            false => error,
-        })?;
+    let paths = paths_between(plan.path, &entry.pre, &entry.post).map_err(refused)?;
+    let (owner, current) = owner_tree_now(plan.path, &plan.target.head, &paths)?;
+    let landing = landing_of(plan.path, &current, &entry, &paths).map_err(refused)?;
     if is_applied && landing != Landing::Done {
         return Err(git_failure(LANDED_THEN_CHANGED));
     }
     if landing != Landing::Done {
-        owner
-            .run(
-                plan.path,
-                &["read-tree", "-m", "-u", &entry.pre, &entry.post],
-            )
-            .map_err(|_| git_failure(PARTLY_LANDED))?;
+        guard(plan, &owner, &entry)?;
+        land(plan, &owner, &entry).map_err(|_| git_failure(PARTLY_LANDED))?;
     }
-    entry.state = APPLIED.to_string();
-    write_journal(plan.journal, plan.candidate, &entry)?;
-    Ok(plan.candidate.to_string())
+    finish(plan, entry)
 }
 
 pub(super) fn integrate_onto_owner_tree(
@@ -457,16 +508,17 @@ pub(super) fn integrate_onto_owner_tree(
             "the candidate is not based on the expected branch head",
         ));
     }
-    if !is_ancestor(plan.path, plan.expected, plan.actual) {
+    let actual = plan.target.head.as_str();
+    if !is_ancestor(plan.path, plan.expected, actual) {
         return Err(git_failure(format!(
             "the branch moved: expected head {}, found {}",
             short_of(plan.expected),
-            short_of(plan.actual)
+            short_of(actual)
         )));
     }
     let fixes = fixes_of(&plan)?;
     let touched = touched_by(plan.path, &fixes)?;
-    let (owner, pre) = owner_tree_now(plan.path, plan.actual, &touched)?;
+    let (owner, pre) = owner_tree_now(plan.path, actual, &touched)?;
     let fixed = TempIndex::new(plan.path, "owner-fix")?;
     fixed.run(plan.path, &["read-tree", &pre])?;
     for fix in &fixes {
@@ -475,28 +527,26 @@ pub(super) fn integrate_onto_owner_tree(
             return Err(git_failure(NO_LONGER_APPLIES));
         }
     }
-    let mut entry = Journal {
+    let entry = Journal {
         state: APPLYING.to_string(),
         post: fixed.write_tree(plan.path)?,
         pre,
-        head: plan.actual.to_string(),
-        branch: branch_of(plan.path),
+        head: actual.to_string(),
+        branch: plan.target.refname.clone().unwrap_or_default(),
     };
-    if entry.pre != entry.post {
-        write_journal(plan.journal, plan.candidate, &entry)?;
-        if owner
-            .run(
-                plan.path,
-                &["read-tree", "-m", "-u", &entry.pre, &entry.post],
-            )
-            .is_err()
-        {
-            return settle_failed_landing(&plan, &entry);
-        }
+    if entry.pre == entry.post {
+        return finish(&plan, entry);
     }
-    entry.state = APPLIED.to_string();
+    guard(&plan, &owner, &entry)?;
+    if !plan.target.is_current(plan.path) {
+        return Err(git_failure(MOVED_WHILE_LANDING));
+    }
+    keep_recovery_trees(plan.path, plan.id, &entry)?;
     write_journal(plan.journal, plan.candidate, &entry)?;
-    Ok(plan.candidate.to_string())
+    if land(&plan, &owner, &entry).is_err() {
+        return settle_failed_landing(&plan, &entry);
+    }
+    finish(&plan, entry)
 }
 
 fn settle_failed_landing(
@@ -504,11 +554,12 @@ fn settle_failed_landing(
     entry: &Journal,
 ) -> Result<String, WorktreeError> {
     let paths = paths_between(plan.path, &entry.pre, &entry.post)?;
-    let (_, current) = owner_tree_now(plan.path, plan.actual, &paths)?;
+    let (_, current) = owner_tree_now(plan.path, &plan.target.head, &paths)?;
     if landing_of(plan.path, &current, entry, &paths)? != Landing::Untouched {
         return Err(git_failure(PARTLY_LANDED));
     }
     std::fs::remove_file(plan.journal)?;
+    drop_recovery_trees(plan.path, plan.id);
     Err(git_failure(NO_LONGER_APPLIES))
 }
 

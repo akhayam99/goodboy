@@ -1,10 +1,14 @@
+use super::super::branch_move::{FilesMovedHook, AFTER_FILES_MOVED};
 use super::super::{
     journal_path, worktree_integrate_candidate_blocking, worktree_quarantine_candidate_blocking,
+    worktree_split_candidates_blocking,
 };
 use super::{snapshot_owner_tree, TempIndex, OWNER_TREE_SUBJECT};
 use crate::worktree::diff::worktree_diff_range_blocking;
 use crate::worktree::git::git;
-use crate::worktree::types::{IntegrateCandidateArgs, QuarantineCandidateArgs};
+use crate::worktree::types::{
+    IntegrateCandidateArgs, QuarantineCandidateArgs, SplitCandidatePick, SplitCandidatesArgs,
+};
 use std::path::{Path, PathBuf};
 
 fn temp_root(name: &str) -> PathBuf {
@@ -280,7 +284,7 @@ fn a_comment_fix_never_overwrites_an_untracked_owner_file_at_a_path_it_adds() {
 
     let refused = integrate(&owner.root, "comment", &candidate, &owner.base);
 
-    assert!(refused.unwrap_err().contains("no longer applies"));
+    assert!(refused.unwrap_err().contains("not tracked by Git"));
     assert_eq!(
         read(&owner.root, "cascadia.ts"),
         "export const fix = 'owner';\n"
@@ -619,65 +623,13 @@ fn a_note_copy_starts_on_the_owner_work_and_a_comment_copy_on_the_branch_head() 
 }
 
 #[test]
-fn a_note_on_a_lane_tip_sees_the_owner_work_and_the_whole_lane_lands_uncommitted() {
-    let owner = owner_with_local_work("owner-tree-lane");
+fn a_note_copy_never_starts_on_a_fix_waiting_for_review() {
+    let owner = owner_with_local_work("owner-tree-lane-refuse");
     let comment = copy_at(&owner, &owner.base);
     agent_commit(&comment, "payments-api.ts", "export const api = 2;\n");
     let first = quarantine(&comment, "lane-comment", &owner.base, true, false).unwrap();
-    write(&owner.root, "cascadia.ts", "export const fix = 'owner';\n");
-
-    let (note, made) = note_copy(&owner, Some(&first));
-
-    assert_eq!(made.base, first, "the note left the lane");
-    assert!(read(&note, "ledger.ts").contains("Harborline"));
-    assert_eq!(read(&note, "payments-api.ts"), "export const api = 2;\n");
-    assert_eq!(read(&note, "cascadia.ts"), "export const fix = 'owner';\n");
-    agent_commit(
-        &note,
-        "ledger.ts",
-        "export const round = 'up';\nexport const header = 'Harborline';\nexport const layout = 'Acme';\n",
-    );
-    let second = quarantine(&note, "lane-note", &made.base, true, false).unwrap();
-    let shown = worktree_diff_range_blocking(
-        owner.root.to_string_lossy().into_owned(),
-        made.base.clone(),
-        second.clone(),
-        false,
-    )
-    .unwrap();
-    assert!(
-        !shown.contains("cascadia"),
-        "the proposal shows the owner work: {shown}"
-    );
-
-    let landed = integrate(&owner.root, "lane-note", &second, &owner.base).unwrap();
-
-    assert_eq!(landed, second);
-    assert_eq!(git_ok(&owner.root, &["rev-parse", "HEAD"]), owner.base);
-    assert_eq!(
-        read(&owner.root, "payments-api.ts"),
-        "export const api = 2;\n"
-    );
-    assert!(read(&owner.root, "ledger.ts").contains("layout = 'Acme'"));
-    assert_eq!(
-        read(&owner.root, "cascadia.ts"),
-        "export const fix = 'owner';\n"
-    );
-    assert_eq!(
-        read(&owner.root, "notify-relay.ts"),
-        "export const relay = true;\n"
-    );
-    crate::history::discard_copy(&note.to_string_lossy());
-}
-
-#[test]
-fn a_note_whose_owner_work_clashes_with_the_lane_tip_never_starts() {
-    let owner = owner_with_local_work("owner-tree-lane-clash");
-    let comment = copy_at(&owner, &owner.base);
-    agent_commit(&comment, "ledger.ts", "export const round = 'even';\n");
-    let first = quarantine(&comment, "lane-clash", &owner.base, true, false).unwrap();
-    let copy = temp_root("owner-tree-lane-clash")
-        .join("goodboy-history-resolve-clash")
+    let copy = temp_root("owner-tree-lane-refuse")
+        .join("goodboy-history-resolve-refuse")
         .join("copy");
 
     let refused = crate::history::prepare_resolve_copy_at(&owner.root, &copy, Some(&first), true);
@@ -685,6 +637,208 @@ fn a_note_whose_owner_work_clashes_with_the_lane_tip_never_starts() {
     assert!(refused
         .unwrap_err()
         .to_string()
-        .contains("accept or skip that fix first"));
+        .contains("apply or skip the ready fix first"));
     assert!(!copy.exists());
+}
+
+#[test]
+fn a_fix_chained_on_a_note_fix_is_refused_before_anything_lands() {
+    let owner = owner_with_local_work("owner-tree-two-notes");
+    let before = status(&owner.root);
+    let (copy, made) = note_copy(&owner, None);
+    agent_commit(&copy, "payments-api.ts", "export const api = 2;\n");
+    let first = quarantine(&copy, "first-note", &made.base, true, false).unwrap();
+    let second_marker = snapshot_owner_tree(&copy, &first).unwrap();
+    git_ok(&copy, &["checkout", "--quiet", "--detach", &second_marker]);
+    agent_commit(&copy, "cascadia.ts", "export const fix = 'agent';\n");
+    let second = git_ok(&copy, &["rev-parse", "HEAD"]);
+
+    let refused = integrate(&owner.root, "second-note", &second, &owner.base);
+
+    assert!(refused
+        .unwrap_err()
+        .contains("apply or skip the ready fix first"));
+    assert_eq!(status(&owner.root), before);
+    crate::history::discard_copy(&copy.to_string_lossy());
+}
+
+#[test]
+fn a_note_batch_is_never_split_into_fixes_that_chain() {
+    let owner = owner_with_local_work("owner-tree-note-split");
+    let (copy, made) = note_copy(&owner, None);
+    agent_commit(&copy, "payments-api.ts", "export const api = 2;\n");
+    let first = git_ok(&copy, &["rev-parse", "HEAD"]);
+    agent_commit(&copy, "cascadia.ts", "export const fix = 'agent';\n");
+    let second = git_ok(&copy, &["rev-parse", "HEAD"]);
+    let pick = |id: &str, sha: &str| SplitCandidatePick {
+        candidate_id: id.to_string(),
+        commit_sha: sha.to_string(),
+    };
+
+    let splits = worktree_split_candidates_blocking(SplitCandidatesArgs {
+        worktree_path: copy.to_string_lossy().into_owned(),
+        base_sha: made.base.clone(),
+        picks: vec![pick("note-a", &first), pick("note-b", &second)],
+        stack: true,
+    })
+    .unwrap();
+
+    assert!(splits.iter().all(|split| split.sha.is_none()));
+    crate::history::discard_copy(&copy.to_string_lossy());
+}
+
+fn shared_agent_delete(name: &str) -> (Owner, String) {
+    let owner = clean_owner(name);
+    git_ok(&owner.root, &["rm", "--quiet", "payments-api.ts"]);
+    git_ok(&owner.root, &["commit", "--no-verify", "-m", "agent fix"]);
+    let tip = git_ok(&owner.root, &["rev-parse", "HEAD"]);
+    (owner, tip)
+}
+
+fn branch_lock(owner: &Owner) -> PathBuf {
+    owner.root.join(".git/refs/heads/main.lock")
+}
+
+fn set_after_files_moved(hook: FilesMovedHook) {
+    AFTER_FILES_MOVED.with(|slot| *slot.borrow_mut() = hook);
+}
+
+#[test]
+fn a_shared_quarantine_never_overwrites_an_ignored_file_where_the_agent_deleted_one() {
+    let (owner, tip) = shared_agent_delete("owner-tree-ignored");
+    let exclude = owner.root.join(".git").join("info").join("exclude");
+    std::fs::write(&exclude, "payments-api.ts\n").unwrap();
+    write(
+        &owner.root,
+        "payments-api.ts",
+        "export const api = 'Northwind';\n",
+    );
+
+    let refused = worktree_quarantine_candidate_blocking(quarantine_args(
+        &owner.root,
+        "ignored",
+        &owner.base,
+        false,
+        true,
+    ));
+
+    assert!(refused
+        .unwrap_err()
+        .to_string()
+        .contains("not tracked by Git"));
+    assert_eq!(
+        read(&owner.root, "payments-api.ts"),
+        "export const api = 'Northwind';\n"
+    );
+    assert_eq!(git_ok(&owner.root, &["rev-parse", "HEAD"]), tip);
+}
+
+#[test]
+fn a_ref_lock_during_a_comment_landing_puts_the_files_and_index_back() {
+    let owner = clean_owner("owner-tree-ref-lock");
+    let copy = copy_at(&owner, &owner.base);
+    agent_commit(&copy, "cascadia.ts", "export const fix = 'agent';\n");
+    let candidate = quarantine(&copy, "locked", &owner.base, true, false).unwrap();
+    let lock = branch_lock(&owner);
+    std::fs::write(&lock, "").unwrap();
+
+    let refused = integrate(&owner.root, "locked", &candidate, &owner.base);
+
+    assert!(refused
+        .unwrap_err()
+        .contains("Git refused to update the branch"));
+    assert_eq!(git_ok(&owner.root, &["rev-parse", "HEAD"]), owner.base);
+    assert!(!owner.root.join("cascadia.ts").exists());
+    assert_eq!(status(&owner.root), "");
+    std::fs::remove_file(&lock).unwrap();
+
+    let landed = integrate(&owner.root, "locked", &candidate, &owner.base).unwrap();
+
+    assert_eq!(landed, candidate);
+    assert_eq!(git_ok(&owner.root, &["rev-parse", "HEAD"]), candidate);
+}
+
+#[test]
+fn a_ref_lock_during_a_shared_quarantine_puts_the_files_and_index_back() {
+    let (owner, tip) = shared_agent_delete("owner-tree-ref-lock-keep");
+    let lock = branch_lock(&owner);
+    std::fs::write(&lock, "").unwrap();
+
+    let refused = worktree_quarantine_candidate_blocking(quarantine_args(
+        &owner.root,
+        "locked-keep",
+        &owner.base,
+        false,
+        true,
+    ));
+
+    assert!(refused
+        .unwrap_err()
+        .to_string()
+        .contains("Git refused to update the branch"));
+    assert_eq!(git_ok(&owner.root, &["rev-parse", "HEAD"]), tip);
+    assert!(!owner.root.join("payments-api.ts").exists());
+    assert_eq!(status(&owner.root), "");
+    std::fs::remove_file(&lock).unwrap();
+}
+
+#[test]
+fn a_branch_switch_at_the_same_commit_mid_quarantine_moves_neither_branch() {
+    let (owner, tip) = shared_agent_delete("owner-tree-switch");
+    git_ok(&owner.root, &["branch", "acme-other", &tip]);
+    set_after_files_moved(Some(Box::new(|path: &Path| {
+        git_ok(path, &["symbolic-ref", "HEAD", "refs/heads/acme-other"]);
+    })));
+
+    let refused = worktree_quarantine_candidate_blocking(quarantine_args(
+        &owner.root,
+        "switched",
+        &owner.base,
+        false,
+        true,
+    ));
+    set_after_files_moved(None);
+
+    assert!(refused
+        .unwrap_err()
+        .to_string()
+        .contains("changed while Goodboy was moving it"));
+    assert_eq!(git_ok(&owner.root, &["rev-parse", "main"]), tip);
+    assert_eq!(git_ok(&owner.root, &["rev-parse", "acme-other"]), tip);
+    assert!(!owner.root.join("payments-api.ts").exists());
+    assert_eq!(status(&owner.root), "");
+}
+
+#[test]
+fn a_landing_cut_short_is_finished_after_git_gc() {
+    let landed = two_file_note_fix("owner-tree-gc");
+    let owner = &landed.owner;
+    let pending = journal_path(&owner.root, "two-files")
+        .unwrap()
+        .with_extension("pending");
+    let blocker = pending.clone();
+    set_after_files_moved(Some(Box::new(move |_: &Path| {
+        std::fs::create_dir_all(&blocker).unwrap();
+    })));
+    let cut = integrate(&owner.root, "two-files", &landed.candidate, &owner.base);
+    set_after_files_moved(None);
+    assert!(cut.is_err());
+    std::fs::remove_dir_all(&pending).unwrap();
+    let ledger = read(&owner.root, "ledger.ts");
+    write(&owner.root, "payments-api.ts", "export const api = 1;\n");
+    git_ok(&owner.root, &["reflog", "expire", "--expire=now", "--all"]);
+    git_ok(&owner.root, &["gc", "--quiet", "--prune=now"]);
+
+    let finished = integrate(&owner.root, "two-files", &landed.candidate, &owner.base).unwrap();
+
+    assert_eq!(finished, landed.candidate);
+    assert_eq!(
+        read(&owner.root, "payments-api.ts"),
+        "export const api = 2;\n"
+    );
+    assert_eq!(read(&owner.root, "ledger.ts"), ledger);
+    assert_eq!(
+        git_ok(&owner.root, &["for-each-ref", "refs/goodboy/recovery"]),
+        ""
+    );
 }
