@@ -175,11 +175,11 @@ fn rewrite_commit(
     }
     let tree = with_index(cwd, index, &["write-tree"])?.trim().to_string();
     let parent_tree = git(cwd, &["rev-parse", &format!("{parent}^{{tree}}")])?;
-    if tree == parent_tree.trim() {
-        return Ok(None);
-    }
     let meta = commit_meta(cwd, commit)?;
     let message = git(cwd, &["log", "-1", "--format=%B", commit])?;
+    if tree == parent_tree.trim() && !super::owner_tree::is_owner_tree_message(&meta[1], &message) {
+        return Ok(None);
+    }
     let created = Git::new()
         .cwd(cwd)
         .args(["commit-tree", &tree, "-p", parent])

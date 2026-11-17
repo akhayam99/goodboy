@@ -336,3 +336,53 @@ describe('the reply voice in the resolver prompt', () => {
     expect(promptWith({ voice: 'mine', styleNote: '  ' })).toContain('Voice: terse.');
   });
 });
+
+describe('the brief for a note the owner wrote in Goodboy', () => {
+  const note = {
+    head: makeComment({
+      id: 'note-harborline',
+      threadId: 'note:harborline-header',
+      author: 'You',
+      url: '',
+      path: 'features/branch/components/ThreadProperties.tsx',
+      body: 'move this header into the layout, like the payments-api route',
+    }),
+    replies: [],
+  };
+
+  it('says the note is local, uncommitted work and never a host review comment', () => {
+    const prompt = buildResolverKickoff({ threads: [note], pr: PR, hint: '' });
+
+    expect(prompt).toContain('a note the owner wrote in Goodboy on this machine');
+    expect(prompt).toContain('not a review comment from GitHub, GitLab or Bitbucket');
+    expect(prompt).toContain('uncommitted and unpushed changes included');
+    expect(prompt).toContain('never assume it is committed or pushed');
+    expect(prompt).toContain('Never fetch, never pull, never check out another branch');
+    expect(prompt).toContain('It is never posted to a host.');
+    expect(prompt).toContain('left as notes on branch `kay/foo`');
+    expect(prompt).not.toContain('- link: ');
+  });
+
+  it('keeps the brief of a host review comment as it was', () => {
+    const prompt = buildResolverKickoff({ threads: threadsOf(1), pr: PR, hint: '' });
+
+    expect(prompt).toContain('Resolve 1 thread on PR #9108, branch `kay/foo`.');
+    expect(prompt).toContain('- link: https://github.com/o/r/pull/9108#discussion_r1');
+    expect(prompt).not.toContain('uncommitted');
+    expect(prompt).not.toContain('Never fetch');
+  });
+
+  it('keeps the note context on a retry with a hint', () => {
+    const args = buildResolverAgentArgs({
+      threads: [note],
+      pr: PR,
+      hint: 'the work is done locally, check it',
+      priorContext: [{ threadId: 'note:harborline-header', intent: 'retry' }],
+    });
+
+    expect(args.initialPrompt).toContain('uncommitted and unpushed changes included');
+    expect(args.initialPrompt).toContain('An earlier try on this thread did not finish.');
+    expect(args.initialPrompt).toContain('the work is done locally, check it');
+    expect(args.humanPrompt).not.toContain('Never fetch');
+  });
+});

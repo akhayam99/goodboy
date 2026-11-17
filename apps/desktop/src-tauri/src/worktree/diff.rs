@@ -294,6 +294,7 @@ pub(super) fn worktree_diff_range_blocking(
     if is_from_merge_base {
         return git_plain_paths(p, &["diff", &format!("{from}...{to}")]);
     }
+    let from = super::owner_tree_base(p, &from, &to)?;
     git_plain_paths(p, &["diff", &from, &to])
 }
 

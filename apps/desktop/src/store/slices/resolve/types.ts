@@ -67,6 +67,7 @@ export type AttemptParams = SessionParams & {
   readonly batch?: ResolveAttemptBatch;
   readonly launch?: ResolveAttemptLaunch;
   readonly copyPath?: string | null;
+  readonly copyBase?: string;
 };
 export type ResolveAttemptLaunch = {
   readonly launchId: string;

@@ -35,6 +35,26 @@ type QuarantineParams = {
   readonly candidateId: string;
   readonly baseSha: string;
   readonly stack?: boolean;
+  readonly shouldKeepUncommitted?: boolean;
+};
+
+const moveHeadBack = ({
+  worktreePath,
+  restAt,
+  tip,
+  shouldKeepUncommitted,
+}: {
+  readonly worktreePath: string;
+  readonly restAt: string;
+  readonly tip: string;
+  readonly shouldKeepUncommitted: boolean;
+}): void => {
+  if (shouldKeepUncommitted) {
+    git(worktreePath, ['reset', '--keep', '--quiet', restAt]);
+    return;
+  }
+  git(worktreePath, ['update-ref', 'HEAD', restAt, tip]);
+  git(worktreePath, ['reset', '--hard', '--quiet', restAt]);
 };
 
 export const quarantineCandidate = ({
@@ -42,12 +62,13 @@ export const quarantineCandidate = ({
   candidateId,
   baseSha,
   stack = false,
+  shouldKeepUncommitted = false,
 }: QuarantineParams): { readonly sha: string | null; readonly baseSha: string } => {
   const head = git(worktreePath, ['rev-parse', 'HEAD']);
   if (!isAncestor(worktreePath, baseSha, head)) {
     throw new Error('the branch head is not built on the recorded candidate base');
   }
-  if (git(worktreePath, ['status', '--porcelain=v1']) !== '') {
+  if (!shouldKeepUncommitted && git(worktreePath, ['status', '--porcelain=v1']) !== '') {
     git(worktreePath, ['add', '--update']);
     if (git(worktreePath, ['diff', '--cached', '--name-only']) !== '') {
       git(worktreePath, ['commit', '--no-verify', '--quiet', '-m', `candidate ${candidateId}`]);
@@ -58,9 +79,7 @@ export const quarantineCandidate = ({
     return { sha: null, baseSha };
   }
   git(worktreePath, ['update-ref', `refs/goodboy/candidates/${candidateId}`, tip]);
-  const restAt = stack ? tip : baseSha;
-  git(worktreePath, ['update-ref', 'HEAD', restAt, tip]);
-  git(worktreePath, ['reset', '--hard', '--quiet', restAt]);
+  moveHeadBack({ worktreePath, restAt: stack ? tip : baseSha, tip, shouldKeepUncommitted });
   return { sha: tip, baseSha };
 };
 

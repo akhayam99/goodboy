@@ -158,6 +158,7 @@ describe('projectResolveComment', () => {
       accept_conflict: 'It conflicts with a fix you accepted before',
       worktree_missing: 'The worktree for this comment is no longer available',
       capture_failed: "The fix couldn't be saved from its copy of the branch",
+      no_result: 'The agent ended without a result for this comment',
     };
     const sentences = RESOLVE_FAILURE_CAUSES.map((cause) => {
       const projection = projectResolveComment(

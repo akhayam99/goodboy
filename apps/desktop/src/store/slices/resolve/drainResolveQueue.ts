@@ -18,6 +18,7 @@ import type {
 } from '@goodboy/types';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { rulesOfKickoff } from '../../../features/chat/utils/resolverKickoffParts';
+import { carriesWorkingTree } from '../../../features/resolve/notes/carriesWorkingTree';
 import { invokeAgentList } from '../../../features/workflows/workflows';
 import {
   acquireWorktreeWriter,
@@ -34,7 +35,7 @@ import { recordResolvePhase } from './recordResolvePhase';
 import { failureCauseOfError } from './resolveFailure';
 import { isSessionLaneBusy } from './isSessionLaneBusy';
 import { recheckThread } from './recheckThread';
-import { lanePathsOf, laneHolderOf, laneTipOf } from './resolveLane';
+import { lanePathsOf, laneHolderOf, laneTipOf, readyFixBlocking } from './resolveLane';
 import { releaseEndedResolveCopies, releaseResolveCopy } from './releaseResolveCopy';
 import { resolveWorktreePath } from './resolveWorktreePath';
 import {
@@ -316,7 +317,7 @@ const startResolverTurn = async ({
         attempt,
         isCleanExit: hasStarted,
         failureCause: hasStarted
-          ? 'provider_error'
+          ? 'no_result'
           : result?.blockedOverBudget === true
             ? 'spend_cap'
             : 'start_failed',
@@ -390,6 +391,7 @@ const startCopyAttempt = async ({
     worktreePath,
     attemptId: attempt.id,
     ...(startSha !== null && { startSha }),
+    shouldCarryWorkingTree: carriesWorkingTree({ threadIds: attempt.threadIds }),
   }).catch((error: unknown) => formatError(error));
   if (typeof copy === 'string') {
     await failStart({
@@ -412,7 +414,7 @@ const startCopyAttempt = async ({
       sessionId,
       attemptId: attempt.id,
       mountTarget,
-      baseSha: copy.head,
+      baseSha: copy.base,
     });
   } catch (error) {
     await failStart({
@@ -534,6 +536,10 @@ export const drainResolveQueue = async ({
     if (attempt.batchId !== null) {
       const holder = heldLanes.get(worktreePath);
       if (holder !== undefined && holder !== attempt.agentId) {
+        continue;
+      }
+      const threadIds = attempt.threadIds;
+      if (readyFixBlocking({ candidates, attempts, worktreePath, threadIds }) !== null) {
         continue;
       }
       const hasStarted = await startCopyAttempt({

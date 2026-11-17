@@ -3,6 +3,8 @@ export const RESOLVER_KICKOFF_LABELS = {
   author: '- author: ',
   location: '- location: ',
   link: '- link: ',
+  source: '- source: ',
+  workingTree: 'Notes on your working tree',
   comment: '- comment:',
   quote: '>',
   instructions: 'What to do',

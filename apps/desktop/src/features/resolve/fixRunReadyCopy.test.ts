@@ -12,7 +12,12 @@ describe('fix run ready copy', () => {
   it('names the commit and what the next push does', () => {
     expect(
       fixRunReadyBody({
-        ready: { threadIds: ['a', 'b'], commits: ['90b1d57'], hostThreadCount: 2 },
+        ready: {
+          threadIds: ['a', 'b'],
+          commits: ['90b1d57'],
+          hostThreadCount: 2,
+          isLandingUncommitted: false,
+        },
         provider: 'GitHub',
         canResolve: true,
       }),
@@ -24,7 +29,12 @@ describe('fix run ready copy', () => {
   it('does not promise a resolve where the host cannot, and skips comments for notes', () => {
     expect(
       fixRunReadyBody({
-        ready: { threadIds: ['a'], commits: ['90b1d57', 'a1b2c3d'], hostThreadCount: 1 },
+        ready: {
+          threadIds: ['a'],
+          commits: ['90b1d57', 'a1b2c3d'],
+          hostThreadCount: 1,
+          isLandingUncommitted: false,
+        },
         provider: 'Bitbucket',
         canResolve: false,
       }),
@@ -33,11 +43,47 @@ describe('fix run ready copy', () => {
     );
     expect(
       fixRunReadyBody({
-        ready: { threadIds: ['a'], commits: ['90b1d57'], hostThreadCount: 0 },
+        ready: {
+          threadIds: ['a'],
+          commits: ['90b1d57'],
+          hostThreadCount: 0,
+          isLandingUncommitted: false,
+        },
         provider: 'GitHub',
         canResolve: true,
       }),
     ).toBe('Apply accepts the fix made in 90b1d57. The next push sends it.');
+  });
+
+  it('says a note fix lands uncommitted in the working tree and is never pushed', () => {
+    expect(
+      fixRunReadyBody({
+        ready: {
+          threadIds: ['note:harborline-header'],
+          commits: ['90b1d57'],
+          hostThreadCount: 0,
+          isLandingUncommitted: true,
+        },
+        provider: 'GitHub',
+        canResolve: true,
+      }),
+    ).toBe(
+      'Apply writes the fix made in 90b1d57 into your working tree as uncommitted changes, next to your own. Nothing is committed or pushed.',
+    );
+    expect(
+      fixRunReadyBody({
+        ready: {
+          threadIds: ['note:harborline-header', 'PRRT_ledger-core'],
+          commits: ['90b1d57'],
+          hostThreadCount: 1,
+          isLandingUncommitted: true,
+        },
+        provider: 'GitHub',
+        canResolve: true,
+      }),
+    ).toBe(
+      'Apply writes the fix made in 90b1d57 into your working tree as uncommitted changes, next to your own. Commit it yourself, then the next push sends it and replies to and resolves the comment on GitHub.',
+    );
   });
 
   it('labels the Apply step with the count', () => {

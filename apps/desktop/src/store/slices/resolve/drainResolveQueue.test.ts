@@ -179,7 +179,7 @@ const h = vi.hoisted(() => {
     discardCopy: vi.fn(async () => undefined),
     prepareCopy: vi.fn(async ({ attemptId }: { readonly attemptId: string }) => ({
       copyPath: `/copies/${attemptId}`,
-      head: 'head-sha',
+      base: 'head-sha',
     })),
     execute: vi.fn(),
     select: vi.fn(),

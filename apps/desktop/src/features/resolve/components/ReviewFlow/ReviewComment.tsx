@@ -123,7 +123,7 @@ export const ReviewComment = ({
     () => selectResolveCandidate({ candidates, itemId: row.item.id }),
     [candidates, row.item.id],
   );
-  const diff = useResolveCandidateDiff({ candidate });
+  const diff = useResolveCandidateDiff({ candidate, row });
   const members = useMemo(
     () =>
       sharedCandidateThreadIds({
@@ -297,9 +297,7 @@ export const ReviewComment = ({
 
       {state === 'needs' && <ResolverQuestionCard sessionId={sessionId} row={row} />}
 
-      {hasChange && state !== 'drafting' && (
-        <ProposedChange files={diff.files} isLoading={diff.isLoading} error={diff.error} />
-      )}
+      {hasChange && state !== 'drafting' && <ProposedChange {...diff} />}
 
       {members.length > 0 && remote === null && (state === 'ready' || state === 'edited') && (
         <div className="flex min-w-0 flex-col gap-1 text-meta text-muted-foreground">

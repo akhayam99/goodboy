@@ -248,9 +248,49 @@ The Rust files with the most comments lost them in one pass. What a reader would
   `turnSettled.ts`) besides checking the lease and the live run ids. Markers
   that still arrive on an attempt failed as `interrupted` are recorded rather
   than dropped.
+- A fix run for a note starts its copy on the owner's working tree, not on the
+  branch head. `drainResolveQueue` and `resolverLaunchCopy` pass
+  `shouldCarryWorkingTree` to `resolve_copy_prepare` when a thread id of the
+  attempt starts with `note:`. `owner_tree_on` writes the tracked edits and
+  untracked files as one marker commit (author `goodboy@localhost`, subject
+  `goodboy: your working tree before the fix`) through a temporary index with
+  a name of its own: the owner's index and files never change. The marker is
+  made on a clean tree too. The candidate base is the branch head (the copy
+  hands it back as `base`, and `prepareTurn` carries it as `copyBase` into
+  `recordResolveAttempt`), never the marker, and `worktree_diff_range` diffs
+  from the marker, so the proposal is only the agent delta.
+- Notes take one fix at a time. `readyFixBlocking` (`resolveLane.ts`) holds a
+  note fix while any fix waits for review on its branch, and holds any fix
+  while a note fix waits there; the pane shows **Apply or skip the ready fix
+  first** with both buttons, and Apply or Skip drains the queue again.
+  `owner_tree_on` refuses a start that is not the branch head, a candidate
+  with more than one marker, or one whose first commit is not the marker, is
+  refused, and a run that carries a note is never split into fixes.
+- `integrate_onto_owner_tree` applies the fix commits to a private index built
+  from the files on disk, then writes it with `read-tree -m -u`. The journal
+  keeps the trees before and after, the head and the branch; both trees sit
+  under `refs/goodboy/recovery/<candidate>` until the landing is finished, so
+  `git gc` never takes them. A crash mid landing is finished on the next
+  accept when every file sits at one of the two trees, and a replay of a
+  finished landing checks the branch and the files first. Submodule moves and
+  merge commits are refused.
+- `read-tree -m -u` overwrites an ignored file. Every write of the files of a
+  fix (`branch_move.rs`, the note landing too) first lists the paths it
+  writes or removes and refuses when one of them, or a folder above it, is on
+  disk but not tracked by the index it uses.
+- A comment fix that fast forwards and a capture in the shared worktree
+  (`shouldKeepUncommitted`, crash recovery included) go through `move_branch`:
+  it captures the branch name and head before planning, refuses staged
+  entries on the files of the fix, moves the files with a two tree
+  `read-tree -m -u`, then updates that branch by name with the old head, never
+  `HEAD`. A branch switch in between, or a refused ref update, moves the files
+  back unless the owner edited them since. It never runs `git add --update`
+  and keeps the owner's other staged entries. Crash recovery of a copy run
+  quarantines the copy, never the owner's worktree.
 - A resolver started through a batch (`startBatch`, `resolve_attempts.batch_id`
   set) never writes the real branch. `drainResolveQueue` makes it a detached
-  copy at the branch head (`resolve_copy_prepare`, under the history copy
+  copy at the branch head, or at the working tree snapshot for a note
+  (`resolve_copy_prepare`, under the history copy
   reservations with the slug `resolve-<attemptId>`) and hands `sendTurn` the
   `resolveCopyPath`. The copy mirrors every `node_modules` of the main tree
   (root and workspace packages, depth 3): the folders are real, `.pnpm` and

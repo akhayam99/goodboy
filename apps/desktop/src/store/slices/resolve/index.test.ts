@@ -1111,7 +1111,7 @@ describe('durable resolve store', () => {
     const [attempt] = await listResolveAttempts({ db, sessionId: SESSION_ID });
     expect(attempt).toMatchObject({
       phase: 'failed',
-      failureCause: 'provider_error',
+      failureCause: 'no_result',
       error: 'No result from the run',
     });
   });
@@ -1178,7 +1178,7 @@ describe('durable resolve store', () => {
     const rows = await listResolveThreads({ db, sessionId: SESSION_ID });
     expect(rows.every((row) => row.state === 'failed')).toBe(true);
     const [attempt] = await listResolveAttempts({ db, sessionId: SESSION_ID });
-    expect(attempt).toMatchObject({ phase: 'failed', failureCause: 'provider_error' });
+    expect(attempt).toMatchObject({ phase: 'failed', failureCause: 'no_result' });
   });
 
   it('keeps the launch, the batch, the copy and the choice on a follow-up turn of the same agent', async () => {
