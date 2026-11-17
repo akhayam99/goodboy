@@ -118,20 +118,23 @@ describe('journey: the Terminal and Browser docks beside the tools rail', () => 
     },
   );
 
-  it('moves between the two docks from the rail and hands the dock back to the one under it', async () => {
+  it('opens the two docks together from the rail and closes each with its own button', async () => {
     await journey.mount({ name: 'panel-frame-terminal' });
     expect(dockKind()).toBe('terminal');
 
     await pressTool({ name: 'Browser' });
-    expect(dockKind()).toBe('browser');
     expect(
-      within(toolsRail())
-        .getByRole('button', { name: /^Browser/ })
-        .getAttribute('aria-pressed'),
-    ).toBe('true');
-
-    await pressTool({ name: 'Terminal' });
-    expect(dockKind()).toBe('terminal');
+      ['Terminal', 'Browser'].map((name) =>
+        within(toolsRail())
+          .getByRole('button', { name: new RegExp(`^${name}`) })
+          .getAttribute('aria-pressed'),
+      ),
+    ).toEqual(['true', 'true']);
+    expect(
+      Array.from(document.querySelectorAll('[data-dock-pane]')).map((pane) =>
+        pane.getAttribute('data-dock-pane'),
+      ),
+    ).toEqual(['terminal', 'browser']);
 
     await pressTool({ name: 'Terminal' });
     expect(dockKind()).toBe('browser');
