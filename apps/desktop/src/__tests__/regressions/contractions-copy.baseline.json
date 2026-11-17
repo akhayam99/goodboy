@@ -17,7 +17,7 @@
   "features/branch/checks/buildAnalyzeChecksPrompt.ts": 2,
   "features/branch/components/CheckAnalysisDrawer/index.tsx": 1,
   "features/branch/pullRequestCapabilityReason.ts": 1,
-  "features/bug-report/components/ReportComposer.tsx": 3,
+  "features/bug-report/components/ReportComposer.tsx": 1,
   "features/chat/components/ArtifactCaptureNoticeCard/index.tsx": 1,
   "features/chat/spawn-from-comment.ts": 2,
   "features/chat/utils/operatorNotesGuidance.ts": 1,

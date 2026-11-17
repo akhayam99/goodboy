@@ -4,18 +4,31 @@ import { Button, CopyButton, ICON_SIZE, Reveal, useEscapeLayer } from '@goodboy/
 import { InlineTerminal } from '../../../providers/components/InlineTerminal';
 
 import { openLink } from '../../../open/openLink';
-import type { AgentRow } from '../agentRowOf';
+import type { AgentRow, AgentRowUpdate } from '../agentRowOf';
 import { TerminalLines } from './TerminalLines';
 
 type Props = {
   readonly row: AgentRow;
   readonly isLocked: boolean;
   readonly onRun: () => void;
+  readonly update: AgentRowUpdate | null;
 };
 
-export const AgentRowPanel = ({ row, isLocked, onRun }: Props) => {
+export const AgentRowPanel = ({ row, isLocked, onRun, update }: Props) => {
   const [isTerminalOpen, setIsTerminalOpen] = useState(false);
   useEscapeLayer(() => setIsTerminalOpen(false), isTerminalOpen);
+
+  if (row.state === 'outdated' && update !== null) {
+    return (
+      <TerminalLines command={update.command}>
+        <span className={update.hasFailed ? 'text-foreground' : undefined}>
+          {update.hasFailed
+            ? (update.failure ?? "The update didn't finish.")
+            : 'Updating. This can take a minute.'}
+        </span>
+      </TerminalLines>
+    );
+  }
 
   if (row.state === 'missing' && row.installCommand !== null) {
     return (

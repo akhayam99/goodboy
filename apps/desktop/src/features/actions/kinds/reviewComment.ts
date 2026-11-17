@@ -40,15 +40,12 @@ import { diffThreadIdOf } from '../../diff/lib/threadIds';
 import { acceptReviewItem } from '../../resolve/acceptReviewItem';
 import { acceptUpToLabel } from '../../resolve/laneCopy';
 import { FAILED_RUN_COPY } from '../../resolve/failedRunCopy';
-import { verdictReply } from '../../resolve/commentVerdict';
+import { remoteReplyOf } from '../../resolve/remoteReplyOf';
 import { postReplyWhenNothingWaits } from '../../resolve/replyDelivery';
 import { replyOf, rowStateOf, threadRowsOf } from '../../resolve/reviewRows';
 import type { ReviewCommentState } from '../../resolve/reviewCommentState';
 import { REMOTE_LABEL, commitUrlOf, remoteActionLabel, remoteOf } from '../../resolve/reviewRemote';
-import type {
-  ThreadGitFacts,
-  ThreadRemoteKind,
-} from '../../../store/slices/resolve/threadGitState';
+import type { ThreadRemoteKind } from '../../../store/slices/resolve/threadGitState';
 import { requestReview, type ReviewComposeMode } from '../../review/reviewRequest';
 import type { AppStore } from '../../../store/store';
 import type { ActionEnv, ObjectKindDefinition, ReviewCommentActionTarget } from '../types';
@@ -94,20 +91,6 @@ const canRepostVerdict = ({ facts }: { readonly facts: ReviewCommentFacts }): bo
   isMissing({ facts }) && !facts.isChecking && !facts.isPushedMissing;
 
 const shortOf = ({ sha }: { readonly sha: string | null }): string => (sha ?? '').slice(0, 7);
-
-const remoteReplyOf = ({
-  gitFacts,
-  draftReply,
-}: {
-  readonly gitFacts: ThreadGitFacts | null;
-  readonly draftReply: string | null;
-}): string | null => {
-  if (draftReply !== null && draftReply.trim() !== '') {
-    return draftReply;
-  }
-  const verdict = gitFacts?.verdict ?? null;
-  return verdict === null || verdict.kind === 'refix' ? null : verdictReply({ verdict });
-};
 
 const REWRITABLE: ReadonlySet<ReviewCommentState> = new Set(['ready', 'edited']);
 
@@ -461,7 +444,7 @@ export const REVIEW_COMMENT_KIND: ObjectKindDefinition<
       id: 'reviewComment.edit',
       label: ({ facts }) => {
         if (facts.state === 'failed') {
-          return 'Add a hint';
+          return facts.runSuggestion === null ? 'Add a hint' : 'Retry with a hint';
         }
         return editLabel(facts);
       },
@@ -472,7 +455,7 @@ export const REVIEW_COMMENT_KIND: ObjectKindDefinition<
         (DRAFTED.has(facts.state) || facts.state === 'failed') &&
         facts.lane !== 'in_run' &&
         !hasOverlay({ facts }),
-      slot: ({ facts }) => (isRedraft(facts) ? 'primary' : 'menu'),
+      slot: ({ facts }) => (isRedraft(facts) && facts.runSuggestion === null ? 'primary' : 'menu'),
       run: (params) => compose(params, isRedraft(params.facts) ? 'redraft' : 'edit'),
     },
     {

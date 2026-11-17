@@ -1,8 +1,8 @@
-import type { ResolveAttempt } from '@goodboy/types';
+import type { ResolveAttempt, ResolveFailureCause } from '@goodboy/types';
 import { NAMES } from '../../shared/utils/names';
 import type { RemoteView } from './reviewRemote';
 import type { ReviewCommentState } from './reviewCommentState';
-import { causeOfAttempt, failureSentence } from './failureSentence';
+import { causeOfThread, failureSentence } from './failureSentence';
 
 export type ResolveWord =
   | 'open'
@@ -20,7 +20,7 @@ export type ResolveWord =
 
 export type ResolveGroup = 'needs_you' | 'working' | 'done' | 'left_open';
 
-type ResolveSub = 'queued' | 'pushing' | 'stopped' | 'resolved_remote';
+type ResolveSub = 'queued' | 'pushing' | 'stopped' | 'needs_run' | 'resolved_remote';
 
 export const RESOLVE_WORD_LABEL: Readonly<Record<ResolveWord, string>> = {
   open: 'Open',
@@ -101,6 +101,7 @@ const SUB_LABEL: Readonly<Record<Exclude<ResolveSub, 'resolved_remote'>, string>
   queued: NAMES.queued,
   pushing: 'Pushing',
   stopped: 'Stopped',
+  needs_run: 'Needs a run',
 };
 
 const RESOLVE_WORD_OF_STATE: Readonly<Record<ReviewCommentState, ResolveWord>> = {
@@ -159,10 +160,23 @@ export type ResolveCommentFacts = {
   readonly isPushFailure: boolean;
   readonly sourceLabel: string;
   readonly attempt: Pick<ResolveAttempt, 'failureCause' | 'phase'> | null;
+  readonly stateReason: string | null;
   readonly gitChip: RemoteView | null;
   readonly hasFailedChecks: boolean;
   readonly run?: ResolveCommentRun | null;
   readonly isSourceChanged?: boolean;
+};
+
+type FactsParams = {
+  readonly facts: ResolveCommentFacts;
+};
+
+const causeOfFacts = ({ facts }: FactsParams): ResolveFailureCause | null =>
+  causeOfThread({ thread: { stateReason: facts.stateReason }, attempt: facts.attempt });
+
+const FAILED_SUB: Partial<Record<ResolveFailureCause, ResolveSub>> = {
+  stopped: 'stopped',
+  needs_a_run: 'needs_run',
 };
 
 export type ResolveCommentProjection = {
@@ -187,11 +201,13 @@ const subOf = ({ facts }: { readonly facts: ResolveCommentFacts }): ResolveSub |
       return null;
     case 'drafting':
       return facts.isWaitingForSlot || facts.isHeld === true ? 'queued' : null;
-    case 'failed':
+    case 'failed': {
       if (facts.isPushFailure) {
         return null;
       }
-      return causeOfAttempt({ attempt: facts.attempt }) === 'stopped' ? 'stopped' : null;
+      const cause = causeOfFacts({ facts });
+      return cause === null ? null : (FAILED_SUB[cause] ?? null);
+    }
     case 'accepted':
     case 'replied':
       return facts.isPublishing ? 'pushing' : null;
@@ -252,9 +268,7 @@ export const projectResolveComment = (facts: ResolveCommentFacts): ResolveCommen
   const sub = word === ownWord ? subOf({ facts }) : null;
   const isChanged = facts.state === 'outdated';
   const sentence =
-    word === 'couldnt_fix'
-      ? failureSentence({ cause: causeOfAttempt({ attempt: facts.attempt }) })
-      : null;
+    word === 'couldnt_fix' ? failureSentence({ cause: causeOfFacts({ facts }) }) : null;
   const hasFailedChecks = facts.hasFailedChecks && (word === 'to_review' || word === 'ready');
   return {
     word,

@@ -239,7 +239,6 @@
   "apps/desktop/src/app/components/MockScene/scenes/u27/start-page.test.tsx": 1,
   "apps/desktop/src/app/components/PanelBoundary/index.test.tsx": 1,
   "apps/desktop/src/app/components/SideColumn/index.test.tsx": 1,
-  "apps/desktop/src/app/components/SideColumn/shellLeftFold.test.tsx": 1,
   "apps/desktop/src/features/actions/components/ObjectOverflowMenu/index.test.tsx": 1,
   "apps/desktop/src/features/branch/components/BranchChecks.test.tsx": 1,
   "apps/desktop/src/features/branch/components/BranchHeader/index.test.tsx": 1,

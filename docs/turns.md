@@ -495,8 +495,9 @@ continuation never resumes, because it runs in another directory.
   `--allowedTools` with scoped `Read(...)` grants only (`is_scoped_read_grant`),
   and a deny list with Bash, the edit tools and the native subagent tools; Codex runs `-s read-only` with no extra roots,
   which blocks writes but still lets it run read-only commands; Cursor, Gemini and Copilot lose
-  their bypass flags; opencode keeps `--dangerously-skip-permissions`, so a reading role on an
-  opencode binary is refused before any probe runs (`ensure_confinement`). For `implementer`, `tester` and
+  their bypass flags; opencode loses `--dangerously-skip-permissions` too, but `opencode run`
+  without it is unproven, so a reading role on an opencode binary is refused before any probe
+  runs (`ensure_confinement`). For `implementer`, `tester` and
   `docs` the session mode stays and Claude loses `Task` and `Agent`. An unknown
   role is read-only. Before the spawn, `providers/cli_probe.rs` reads
   `--version` and `--help` of the binary once per file (resolved path, size and

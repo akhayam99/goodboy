@@ -105,6 +105,7 @@ const resolveFactsOfRow = ({
   isPushFailure: isPushFailure({ row }),
   sourceLabel: REVIEW_SOURCE_LABEL[row.thread.sourceKind ?? 'github'],
   attempt: row.attempt,
+  stateReason: row.thread.stateReason,
   gitChip,
   hasFailedChecks,
   run,

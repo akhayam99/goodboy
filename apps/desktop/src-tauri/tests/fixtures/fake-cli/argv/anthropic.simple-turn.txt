@@ -1,4 +1,4 @@
-cli-version: 2.1.4 (Claude Code)
+cli-version: 2.1.90 (Claude Code)
 -p
 --output-format
 stream-json

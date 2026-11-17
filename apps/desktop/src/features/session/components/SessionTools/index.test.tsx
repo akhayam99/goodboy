@@ -29,7 +29,7 @@ import {
 } from '../../../../app/components/MockScene/scenes/activityRunSeed';
 import { SessionTools } from '.';
 import { RAIL_TOOLS } from './sessionTools';
-import { SESSION_TOOL_RAIL_WIDTH } from './sessionToolRailWidth';
+import { TOOL_RAIL_WIDTH_PX } from '@goodboy/ui';
 
 let useAppStore: StoryStore;
 
@@ -44,7 +44,21 @@ beforeEach(async () => {
 
 afterEach(() => {
   cleanup();
+  vi.unstubAllGlobals();
 });
+
+type WindowWidthParams = {
+  readonly width: number;
+};
+
+const stubWindowWidth = ({ width }: WindowWidthParams) => {
+  vi.stubGlobal('matchMedia', (query: string) => ({
+    matches: width <= Number.parseFloat(query.replace('(max-width:', '')),
+    media: query,
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+  }));
+};
 
 type ToolName = 'terminal' | 'browser' | 'scripts' | 'ask' | 'monitoring';
 
@@ -82,8 +96,8 @@ describe('SessionTools', () => {
     expect(within(toolbar).queryByRole('separator')).toBeNull();
     expect(toolbar.firstElementChild?.getAttribute('data-slot')).toBe('session-tool');
     expect(toolbar.textContent).toBe(RAIL_TEXT);
-    expect(SESSION_TOOL_RAIL_WIDTH).toBe(56);
-    expect(toolbar.style.width).toBe(`${SESSION_TOOL_RAIL_WIDTH}px`);
+    expect(TOOL_RAIL_WIDTH_PX.wide).toBe(56);
+    expect(toolbar.style.width).toBe(`${TOOL_RAIL_WIDTH_PX.wide}px`);
     const source = readFileSync(join(__dirname, 'SessionToolButton.tsx'), 'utf8');
     expect(source).toContain('[@media(max-height:480px)]:hidden');
   });
@@ -237,10 +251,35 @@ describe('SessionTools', () => {
   });
 
   it('keeps every label inside the rail at the 9px caption size', () => {
-    const contentWidth = SESSION_TOOL_RAIL_WIDTH - 2 * 2;
+    const contentWidth = TOOL_RAIL_WIDTH_PX.wide - 2 * 2;
     for (const tool of RAIL_TOOLS) {
       expect(tool.label.length * 0.55 * 9).toBeLessThanOrEqual(contentWidth);
     }
+  });
+
+  it('turns to icons only, 44 wide, under a 1100px window, the name in the tooltip', () => {
+    stubWindowWidth({ width: 1024 });
+    render(<SessionTools sessionId={SESSION_ID} />);
+    const toolbar = screen.getByRole('toolbar', { name: 'Tools' });
+
+    expect(toolbar.getAttribute('data-tool-rail')).toBe('narrow');
+    expect(toolbar.style.width).toBe(`${TOOL_RAIL_WIDTH_PX.narrow}px`);
+    expect(toolbar.querySelector('[data-slot="tool-caption"]')).toBeNull();
+    expect(toolbar.textContent).toBe('');
+    for (const tool of RAIL_TOOLS) {
+      const text = tooltipTextOf({ element: screen.getByTestId(`pane-toggle-${tool.pane}`) });
+      expect(text).toContain(tool.fullLabel ?? tool.label);
+    }
+  });
+
+  it('keeps the words under the icons from a 1100px window', () => {
+    stubWindowWidth({ width: 1100 });
+    render(<SessionTools sessionId={SESSION_ID} />);
+    const toolbar = screen.getByRole('toolbar', { name: 'Tools' });
+
+    expect(toolbar.getAttribute('data-tool-rail')).toBe('wide');
+    expect(toolbar.style.width).toBe(`${TOOL_RAIL_WIDTH_PX.wide}px`);
+    expect(toolbar.textContent).toBe(RAIL_TEXT);
   });
 
   it('keeps one tab stop and moves it with the arrow keys, Home and End', () => {

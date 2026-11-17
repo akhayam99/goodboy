@@ -59,7 +59,7 @@ The strip ends with the same controls on every scope.
 **Reload and restart**
 
 - Shells survive a reload. The tabs come back in the same order with the same active tab.
-- A restart reopens each tab on its folder with the saved scrollback. That is up to 256 KiB per tab, kept in the app data in files only you can read. They go with the tab, or after a week if it never comes back.
+- A restart reopens each tab on its folder with the saved scrollback. That is up to 256 KiB per tab, kept in the app data in files only you can read, with keys and tokens masked. They go with the tab, or after a week if it never comes back.
 - The tab shows the line "Session restored. The previous process ended." It says so when the folder is gone.
 
 **Dot on Terminal**
@@ -204,6 +204,7 @@ Browse the session folder as a file tree on the **Changes** page of a branch. **
 Open your dev server, a port or a link beside the session or on a page of its own, without leaving Goodboy.
 
 - **Browser** at the foot of the right rail, or Go › **Show or Hide Browser**, shows or hides the browser beside the work, on any page. The Session pages fold to icons while it is open. Its tooltip counts the open tabs; the button shows no number.
+- In a window narrower than 1100 pixels the right rail keeps its icons only, with the names in the tooltips, so a narrow panel still opens beside the page. The Browser then lies over the page, left of the rail, behind a veil. A click on the veil or **⌘⇧W** closes it; **Esc** does too once you click outside the web page, since the page keeps Esc for itself.
 - The address bar shows the page, not its address: the icon, the title and the host. Click it, or press **⌘L**, to see the full address selected and type a new one. **Esc** puts the title back. The icon is the site's own when it has one, and a letter when it has none.
 - While a page loads, a thin line breathes under the address row and Reload becomes **Stop**. A page that never finishes says so after 30 seconds. **Back** and **Forward** turn off when there is nothing behind or ahead.
 - **More** holds **Send to the agent**, Open in your browser, **Open full page**, Copy address, Duplicate and Close tab. On macOS it also holds **Inspect in Safari**, which shows the tab in Safari's Develop menu.

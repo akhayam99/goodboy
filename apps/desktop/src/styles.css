@@ -257,6 +257,7 @@
 
   --animate-soft-pulse: soft-pulse var(--loop-pulse) ease-in-out infinite;
   --animate-pulse: soft-pulse var(--loop-pulse) ease-in-out infinite;
+  --animate-arrival-breath: soft-pulse var(--loop-pulse) ease-in-out 3;
 
   @keyframes soft-pulse {
     0%,

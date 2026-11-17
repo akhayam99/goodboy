@@ -176,7 +176,8 @@ panel and the tool rail: one surface (`bg-drawer`, one step quieter than
 corners (`rounded-l-frame`), with a `frame-edge` border on three sides, 12px from
 the page container (the resize handle sits in that gap). The page container
 rounds all four corners whenever the rail is there. Closed, the container is the
-rail alone, 56px wide (`SESSION_TOOL_RAIL_WIDTH`), and its aside is that plus
+rail alone, 56px wide, 44px and icons only under a 1100px window
+(`TOOL_RAIL_WIDTH_PX`, the same form as the places rail), and its aside is that plus
 `DRAWER_GUTTER`, the 12px `SHELL_GUTTER_PX`. `DrawerDockBox` draws one rail host
 (`data-drawer-edge`) as the last child of the container. `DrawerColumn` hands
 it to the page through `DrawerEdgeContext`; `ShellToolRail` (and `SessionFrame` in a frame without the
@@ -192,7 +193,8 @@ for a side drawer or 560px for a reader, plus 48px of gutters. `drawerLayoutOf`
 owns this rule and takes the measured rail width as the content inset and as
 `edgeWidth`; `DrawerContentContext` supplies the whole column width. A side
 drawer at 400 pushes from 984px of column width (928 of content plus the 56px
-rail); a reader at 720 pushes from 1400px. The 8px `DRAWER_INSET` remains part
+rail), 972px beside the 44px rail, so at the smallest window (1024 by 700, a
+980px column) a narrow panel still pushes; a reader at 720 pushes from 1400px. The 8px `DRAWER_INSET` remains part
 of the sizing reserve in `pushReserveOf`. Below its threshold the drawer lies
 over the page, full height, with a scrim and an `inert` page, never squeezed. Over the
 page the aside is absolute at the window edge and a spacer of the closed width
@@ -251,14 +253,21 @@ stack in one column; then a detail lies over the page while the grid still
 pushes; only then does everything lie over the page, ending at the rail and
 starting at least 24 from the page's left edge. `dockLayout.test.ts` pins the
 window table (1728, 1440, 1280 and 1024) and sweeps every window from 900 to
-2600; `regressions/drawer-rule.test.ts` keeps its sizes in their owners.
-`DrawerColumn` runs it for a `dockGrid` of two tools or more (`useDockGrid`,
-`DockGrid`, a CSS grid whose tracks are the column widths and 12px gutters, so
-a pane keeps its node when the pair turns or stacks); one tool, the detail
-alone and `placement="overlay"` keep `panelPairLayoutOf`. A detail that the
-solver lays over the page while the grid pushes floats the whole aside for
-now. `DrawerColumnGrid.test.tsx` pins the order, the widths, the stack, the
-focus border and the turn key.
+2600; `regressions/drawer-rule.test.ts` keeps its sizes in their owners. It
+also picks the rail form: under a 1100px window (`shellRailFormOf`) both rails
+turn 44 wide, icons only (`SHELL_RAIL_WIDTH_PX`, `TOOL_RAIL_WIDTH_PX`), and
+reports it as `railForm`; a caller may still pass its own rail widths. At 1024
+by 700 a narrow pane pushes beside a page of 524 and the Browser lies over the
+page, left of the rail that stays at the edge. `DrawerColumn` runs it for a
+`dockGrid` of two tools or more, passing the measured column and the rail it
+hosts (`useDockGrid`, `DockGrid`, a CSS grid whose tracks are the column widths
+and 12px gutters, so a pane keeps its node when the pair turns or stacks); one
+tool, the detail alone and `placement="overlay"` keep `panelPairLayoutOf`, and
+the narrow tool rail is what lets its narrow panel push at 1024
+(`DrawerColumnNarrowWindow.test.tsx`). A detail that the solver lays over the
+page while the grid pushes floats the whole aside for now.
+`DrawerColumnGrid.test.tsx` pins the order, the widths, the stack, the focus
+border and the turn key.
 
 **The places rail never folds.** `AppShell` takes it as `leftRail` and gives
 it an `auto` grid column, so the rail's own width (64px, 44px under a 1100px
@@ -773,12 +782,14 @@ scroll in any ancestor moves the trigger. A card that sits beside its anchor
 instead of under it (the rail flyout, the session hover card) takes both from
 `useFloatingPlace` in `@goodboy/ui`, never from a copy of the clamp. A surface
 that is open while its box shows (the composer quick actions, the queued line
-over an input, a failed switch under the identity) floats through
-`AnchoredLayer`: it portals, places from the element it is rendered in and
+over an input, a failed switch beside the workspace mark) floats through
+`AnchoredLayer` (`top`, `bottom` or `right` of its anchor): it portals, places from the element it is rendered in and
 keeps `SHELL_GUTTER_PX` (12px) from every window edge, so a clipping parent
 never cuts it. A class line that is `absolute` and `top-full`, `bottom-full`,
 `left-full`, `right-full` or `z-popover` is the `absolute-popover` forbidden
-pattern, held at zero. A popover
+pattern, held at zero. A popover that opens from a `ShellRailItem` spreads
+`SHELL_RAIL_POPOVER` into `useDropdown`, so it opens to the right of the rail,
+start aligned, with the same gutter. A popover
 width comes from `POPOVER_WIDTH_CLASS` and `POPOVER_WIDTH_PX`, and its height is
 measured, not written down.
 

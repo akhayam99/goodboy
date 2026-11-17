@@ -33,7 +33,6 @@
   "apps/desktop/src/features/workspace/components/SessionActivityBar/index.tsx": 1,
   "apps/desktop/src/features/workspace/components/SessionActivityBar/NewSessionRow.tsx": 1,
   "apps/desktop/src/features/workspace/components/SessionActivityBar/SessionActivityItem.tsx": 1,
-  "apps/desktop/src/features/workspace/components/WorkspaceIdentityRow/index.tsx": 1,
   "apps/desktop/src/features/workspace/components/WorkspaceSwitcher/OtherWorkspaceRow.tsx": 1,
   "apps/desktop/src/shared/components/Conversation/ResolvedThreadRow.tsx": 1,
   "apps/desktop/src/shared/components/NewWorkspaceForm/DropZone.tsx": 1,

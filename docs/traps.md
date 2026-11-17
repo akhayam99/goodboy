@@ -450,6 +450,13 @@ status` directly. A branch cut from a remote-tracking ref (`worktree add -b
   three apart: a probe with no answer never changes the standing, a lost sign-in needs two
   answers 10 seconds apart, and only a refused run or a `verified` answer speaks for the
   server. Do not collapse them back into one connected flag.
+- A CLI that does not know a subcommand may treat it as a prompt. Claude Code before
+  2.1.41 reads `claude auth status` as a message, sends it to the model and prints a
+  chat reply, so every sign-in probe spent a subscription request and the provider sat
+  at cannot check. Never add an argument to a check or a login command without the
+  version that ships it: `claude_version::has_auth_subcommand` gates the status check
+  and `lifecycle_refusal` gates login and logout, and the fake claude records every
+  call so `claude_auth_never_sends_a_prompt_to_an_old_cli` fails if one slips through.
 - Explore decides text from content, not from the extension. `explore_read`
   sends an image or a PDF extension as a data URL, and reads the first 8 KB of
   anything else: a NUL byte or invalid UTF-8 returns `Binary { size }` with no
@@ -1099,6 +1106,10 @@ Every local page shares one origin, `gblocal://localhost` (`http://gblocal.local
 ## The launch reads once and hands the answers down
 
 `hydrate` runs its independent reads together, then opens the workspace with `setCurrentWorkspace({ id, launch })`. `launch` (`LaunchReads`) carries the projects of every workspace and the `turn_list_live` answer the ghost reconcile used, so the first workspace load reads neither again (`bootBudgets.test.ts` holds both at 1). Pass it only from the launch chain: a later switch that reused it would cancel or keep runs on a stale live set. Two orders must hold inside the group's `Promise.all`: the ghost reconcile finishes before `setCurrentWorkspace` reads the agents, and `runDbMigrations` (which also purges step agents a deleted workflow left behind) finishes before any member starts. `launchOrder.test.ts` pins both, with the restart restore and the error screen. A new launch step that reads agents or projects goes after the group, not into it; one that writes what the workspace load reads goes into `runDbMigrations` or the group, never after ready. Hygiene that only prunes goes to `runEachOnIdle` after ready.
+
+## No query runs before the migrations of this build
+
+`App` starts its subscriptions (the resolve drain, the Auto runtime, the polls) in the same render that calls `hydrate`, before the migrations finish. Before the schema gate, the resolve drain read `resolve_attempts` on the old schema at the first launch after an update, crash capture saved the unhandled rejection, and the next launch said "Goodboy hit an error last time" with "no such table" or "no such column". Now `tauriDatabase` waits on `schemaGate` (`shared/lib/schemaGate.ts`) before every statement. `main.tsx` closes it before the first render, `runDbMigrations` opens it once the runner returned, a failed migration leaves it closed behind the launch error screen, and `wipeDb` closes it while it replays the schema. Only the migration runner and its version probe use `migrationDatabase`, which never waits: a query on it from anywhere else can see the old schema, and a query on `tauriDatabase` inside the migration path never returns. Tests and the mock entry run with the gate open; a test of the gate closes it and opens it again in `afterEach` (`dbBoot.test.ts`). The gate covers SQL from the window only: a Rust command that reads a table runs whenever it is invoked.
 
 ## A session you did not open holds light agent rows
 

@@ -7,6 +7,7 @@ import { openLink } from '../../open/openLink';
 import { ghStatus, tauriGhRunner } from '../../integrations/github/github';
 import { DEFAULT_ISSUE_TYPE } from '../reportIssueTypes';
 import { collectCrashContext } from '../crashReport';
+import { openedLinkMessage } from '../openedLinkMessage';
 import { contextParts, type ReportPart } from '../reportBody';
 import type { ReportFiled } from '../reportDestination';
 import { ReportComposer, type ReportDraft, type ReportLinkOpened } from './ReportComposer';
@@ -92,11 +93,7 @@ export const CrashReport = ({ heading, initialLine, errorPart }: Props) => {
         placement="inline"
         role="status"
         title="Finish on GitHub"
-        body={
-          outcome.opened.overflows
-            ? 'The rest did not fit the link and is on your clipboard. Paste it into the issue, then submit.'
-            : 'Submit the form in your browser to file the issue.'
-        }
+        body={openedLinkMessage({ opened: outcome.opened })}
       />
     );
   }

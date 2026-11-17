@@ -610,6 +610,15 @@ the six places and Settings share one axis at either width.
 `places-rail.test.tsx` reads the order and the width in the `r4-column-dark`
 and `r4-column-light` scenes, and with an old folded choice.
 
+The foot of the rail is Settings, Report (with its word) and the logo. An update
+turns the logo into one more `ShellRailItem`: `tint="primary"` paints the tile
+`primary-subtle` with `primary` text and word (`danger` on `danger-subtle` when it
+failed), `isEdged` adds a `primary-edge` ring once the update is ready, and the
+`ring` mark draws the download as a fill around the tile with the percent as its
+word. The tile never reads `brand-accent`, which stays with the logo, and the card
+it opens goes to the right of the rail through `placeFloating`, 12px inside the
+window. `rail-foot-*` scenes show the rest state and the six update states.
+
 A stat card holds its label to two lines (`line-clamp-2`), pins the figure to
 the bottom of the card with `mt-auto`, and puts the delta and the hint on their
 own row under the figure, never beside the label. A row of cards that carry
@@ -733,7 +742,7 @@ The label tooltip is `FLOATING_SURFACE` with the `md` radius and a soft border: 
 
 A side drawer reserves 464px of content plus gutters; a reader reserves 560px.
 `drawerLayoutOf` excludes the tool rail's measured width as a content inset.
-A right drawer is its own container, never a card inside the sheet: it holds the tool dock (Terminal, Browser, Monitor) and the tool rail on one `drawer` surface (see Surfaces), flush with the window edge, `frame-edge` and `rounded-l-frame`, with the 56px rail pinned to the window's right edge and the dock opening to its left. `DrawerDockBox` keeps the rail last, and `SESSION_TOOL_RAIL_WIDTH` owns its width. `DRAWER_GUTTER` takes the 12px shell gutter between containers. A detail panel (artifact, Scripts, Ask, plan part, check analysis, transcript) is a second container between the page and the dock, on the page's `background`, `rounded-frame` with a `frame-edge` border on four sides; both can be open together. A `DrawerFrame` takes the surface of the container it sits in (`bg-panel-surface` over `panel-on-page` or `panel-on-rail`, pinned header `sticky-surface-panel`), so it never paints a third step. Over the page both add `shadow-xl`. A panel opening or closing eases its own width (`duration-200 ease-enter`, `motion-safe`), and the page content beside it slides with it. Outside the tooltip, `shadow-md` belongs
+A right drawer is its own container, never a card inside the sheet: it holds the tool dock (Terminal, Browser, Monitor) and the tool rail on one `drawer` surface (see Surfaces), flush with the window edge, `frame-edge` and `rounded-l-frame`, with the 56px rail pinned to the window's right edge and the dock opening to its left. `DrawerDockBox` keeps the rail last, and `TOOL_RAIL_WIDTH_PX` owns its width (56, or 44 with icons only under a 1100px window). `DRAWER_GUTTER` takes the 12px shell gutter between containers. A detail panel (artifact, Scripts, Ask, plan part, check analysis, transcript) is a second container between the page and the dock, on the page's `background`, `rounded-frame` with a `frame-edge` border on four sides; both can be open together. A `DrawerFrame` takes the surface of the container it sits in (`bg-panel-surface` over `panel-on-page` or `panel-on-rail`, pinned header `sticky-surface-panel`), so it never paints a third step. Over the page both add `shadow-xl`. A panel opening or closing eases its own width (`duration-200 ease-enter`, `motion-safe`), and the page content beside it slides with it. Outside the tooltip, `shadow-md` belongs
 only to a dragged card.
 
 **One floating surface.** Level 4 is the constant `FLOATING_SURFACE`
@@ -1358,6 +1367,12 @@ update only themselves.
   `studio-body-in` (opacity and 4px) when a new version arrives, then holds
   still in the soft primary tone. The arrival card announces it; nothing
   sweeps, rings or repeats on focus.
+- The update mark on the rail foot breathes three times when it appears
+  (`animate-arrival-breath`, the `soft-pulse` keyframes at `--loop-pulse` with an
+  iteration count of 3, under `motion-safe:`), then holds still in `primary` on
+  `primary-subtle`. It never blinks and never repeats; with reduced motion only
+  the tint shows. It is a rail item (`ShellRailItem` with `tint`, `isEdged`,
+  `isBreathing`), and a download is its `ring` mark.
 - Skeleton pulse (`animate-pulse` inside `Skeleton` only): loading.
 
 `no-token-bypass.test.ts` rejects any `animate-pulse` or `animate-ping`

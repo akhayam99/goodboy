@@ -1,13 +1,12 @@
 import { useEffect, useRef } from 'react';
-import { StatusDot, Tooltip, cn, FOCUS_RING } from '@goodboy/ui';
+import { Tooltip, cn, FOCUS_RING } from '@goodboy/ui';
 import { useUpdateCardState } from '../../../features/updater/hooks/useUpdateCardState';
-import { updatePillLabel } from '../../../features/updater/updateCardCopy';
 import { UpdatePill } from '../../../features/updater/components/UpdatePill';
+import { UpdateRailMark } from '../../../features/updater/components/UpdateRailMark';
 import { hydrateOnboardingFromDb } from '../../../features/onboarding/onboardingSettings';
 import { useIsMainWindow } from '../../../features/workspace/useIsMainWindow';
 import { useInstalledVersion } from '../../../features/changelog/hooks/useInstalledVersion';
 import { NAMES } from '../../../shared/utils/names';
-import { useAppStore } from '../../../store';
 import { GoodboyChipLabel, type GoodboyChipState } from './GoodboyChipLabel';
 import { GoodboyChipEffects } from './GoodboyChipEffects';
 
@@ -39,20 +38,13 @@ export const GoodboyChip = ({
   const update = useUpdateCardState();
   const version = useInstalledVersion();
   const anchorRef = useRef<HTMLDivElement>(null);
-  const isChangelogOpen = useAppStore((state) => state.appStudio?.kind === 'changelog');
   const hasUpdate = update.state !== null;
   const state: GoodboyChipState = hasUpdate ? 'update' : 'rest';
   const isInMainWindow = useIsMainWindow();
   const hasRowPill = variant === 'column' && hasUpdate;
-  const isRailUpdate = variant === 'rail' && update.state !== null;
-  const label =
-    update.state !== null && variant === 'rail'
-      ? `${DOOR_LABEL}, ${updatePillLabel({
-          state: update.state,
-          version: update.version,
-          runningCount: update.runningCount,
-        })}`
-      : DOOR_LABEL;
+  const isRailUpdate = variant === 'rail' && hasUpdate;
+  const label = DOOR_LABEL;
+  const tip = variant === 'rail' && version !== null ? `${DOOR_LABEL}, v${version}` : label;
 
   useEffect(() => {
     if (!isPrimary || isInMainWindow) {
@@ -65,6 +57,21 @@ export const GoodboyChip = ({
     return () => window.removeEventListener('focus', onFocus);
   }, [isPrimary, isInMainWindow]);
 
+  if (isRailUpdate) {
+    return (
+      <div ref={anchorRef} data-goodboy-chip="rail-update" className="flex w-full">
+        {isPrimary ? (
+          <GoodboyChipEffects
+            anchorRef={anchorRef}
+            onOpenChangelog={onOpenChangelog}
+            isBesideAnchor
+          />
+        ) : null}
+        <UpdateRailMark />
+      </div>
+    );
+  }
+
   return (
     <div
       ref={anchorRef}
@@ -73,15 +80,11 @@ export const GoodboyChip = ({
       {isPrimary ? (
         <GoodboyChipEffects anchorRef={anchorRef} onOpenChangelog={onOpenChangelog} />
       ) : null}
-      <Tooltip content={label} side={variant === 'rail' ? 'right' : 'top'}>
+      <Tooltip content={tip} side={variant === 'rail' ? 'right' : 'top'}>
         <button
           type="button"
           onClick={() => {
-            if (isRailUpdate && !isChangelogOpen) {
-              onOpenChangelog();
-              return;
-            }
-            if (isCurrent || isRailUpdate) {
+            if (isCurrent) {
               return;
             }
             onOpenHelp();
@@ -102,9 +105,6 @@ export const GoodboyChip = ({
             installedVersion={version}
             isMarkOnly={variant === 'rail'}
           />
-          {isRailUpdate ? (
-            <StatusDot tone="primary" size="sm" className="absolute right-1 top-1" />
-          ) : null}
         </button>
       </Tooltip>
       {hasRowPill ? <UpdatePill tooltipSide="top" /> : null}

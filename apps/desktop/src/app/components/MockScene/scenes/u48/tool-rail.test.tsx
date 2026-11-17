@@ -93,7 +93,7 @@ describe('the u48 tool rail scenes', () => {
     expect(container()?.firstElementChild?.hasAttribute('data-drawer-card')).toBe(true);
     expect(container()?.lastElementChild?.contains(tools())).toBe(true);
     expect(screen.getByTestId('pane-toggle-monitoring').getAttribute('aria-pressed')).toBe('true');
-    expect(screen.getByRole('region', { name: 'Monitoring' })).not.toBeNull();
+    screen.getByRole('region', { name: 'Monitoring' });
   });
 
   it('u48-tool-rail-detail-monitor reads page, detail, Monitor, rail from left to right', async () => {

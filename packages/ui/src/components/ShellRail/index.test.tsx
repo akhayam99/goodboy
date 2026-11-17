@@ -89,6 +89,66 @@ describe('ShellRail', () => {
     expect(onTasks).toHaveBeenCalledTimes(1);
   });
 
+  it('tints a tile with its tone, in the word too, and keeps motion behind motion-safe', () => {
+    render(
+      <ShellRail label="Places" form="wide">
+        <ShellRailItem
+          id="update"
+          icon={Inbox}
+          label="Update"
+          tint="primary"
+          isEdged
+          isBreathing
+          onSelect={vi.fn()}
+        />
+      </ShellRail>,
+    );
+    const tile = within(railOf()).getByRole('button', { name: 'Update' });
+    expect(tile.className).toContain('bg-primary-subtle');
+    expect(tile.className).toContain('text-primary');
+    expect(tile.className).toContain('ring-primary-edge');
+    expect(tile.className).toContain('motion-safe:animate-arrival-breath');
+    expect(tile.className).not.toContain('brand-accent');
+    expect(within(railOf()).getByText('Update').className).toContain('text-primary');
+  });
+
+  it('draws a ring that fills with the percent and names it', () => {
+    render(
+      <ShellRail label="Places" form="wide">
+        <ShellRailItem
+          id="update"
+          icon={Inbox}
+          label="Update"
+          word="25%"
+          tint="primary"
+          mark={{ kind: 'ring', percent: 25, name: 'downloading, 25%' }}
+          onSelect={vi.fn()}
+        />
+      </ShellRail>,
+    );
+    within(railOf()).getByRole('button', { name: 'Update, downloading, 25%' });
+    expect(
+      railOf().querySelector('[data-slot="rail-ring-arc"]')?.getAttribute('stroke-dasharray'),
+    ).toBe('25 100');
+  });
+
+  it('draws only the track while the size is not known', () => {
+    render(
+      <ShellRail label="Places" form="wide">
+        <ShellRailItem
+          id="update"
+          icon={Inbox}
+          label="Update"
+          tint="primary"
+          mark={{ kind: 'ring', percent: null, name: 'downloading' }}
+          onSelect={vi.fn()}
+        />
+      </ShellRail>,
+    );
+    expect(railOf().querySelector('[data-slot="rail-ring"]')).not.toBeNull();
+    expect(railOf().querySelector('[data-slot="rail-ring-arc"]')).toBeNull();
+  });
+
   it('draws the word under the icon and the count on the glyph', () => {
     renderRail({ form: 'wide' });
     within(railOf()).getByRole('button', { name: 'Board, 3 need you' });
@@ -200,5 +260,60 @@ describe('ShellRail', () => {
     renderRail({});
     expect(railOf().style.width).toBe('64px');
     within(railOf()).getByText('Tasks');
+  });
+
+  it('draws a count in the tone its mark names, warning by default', () => {
+    render(
+      <ShellRail label="Places" form="wide">
+        <ShellRailItem
+          id="a"
+          icon={Inbox}
+          label="Alpha"
+          mark={{ kind: 'count', count: 2, name: '2 broken', tone: 'danger' }}
+          onSelect={vi.fn()}
+        />
+        <ShellRailItem
+          id="b"
+          icon={Mail}
+          label="Beta"
+          mark={{ kind: 'count', count: 1, name: '1 waits' }}
+          onSelect={vi.fn()}
+        />
+      </ShellRail>,
+    );
+    const tones = Array.from(railOf().querySelectorAll('[data-count-badge]'), (badge) =>
+      badge.getAttribute('data-count-badge'),
+    );
+    expect(tones).toEqual(['danger', 'warning']);
+  });
+
+  it('says it opens a popover, shows the open state, and holds the tooltip back while open', () => {
+    render(
+      <ShellRail label="Places" form="wide">
+        <ShellRailItem
+          id="workspace"
+          icon={Inbox}
+          label="Switch workspace: Acme"
+          word="Acme"
+          tooltip="Acme, 1 project"
+          shortcut="session.new"
+          hasPopup="dialog"
+          isExpanded
+          isBusy
+          onSelect={vi.fn()}
+        />
+      </ShellRail>,
+    );
+    const mark = within(railOf()).getByRole('button', { name: 'Switch workspace: Acme' });
+    expect(mark.getAttribute('aria-haspopup')).toBe('dialog');
+    expect(mark.getAttribute('aria-expanded')).toBe('true');
+    expect(mark.getAttribute('aria-busy')).toBe('true');
+    vi.useFakeTimers();
+    fireEvent.mouseEnter(mark.parentElement ?? mark);
+    act(() => {
+      vi.advanceTimersByTime(400);
+    });
+    vi.useRealTimers();
+    expect(screen.queryByRole('tooltip')).toBeNull();
   });
 });

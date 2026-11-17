@@ -102,6 +102,7 @@ export const AutoDockPlan = ({
         planner={dockPlan.planner}
         reason={planBlockedReasonOf({ plan: dockPlan }) ?? ''}
         openPlan={openPlan}
+        isApproveHidden={isApproveHidden}
       />
     );
   }

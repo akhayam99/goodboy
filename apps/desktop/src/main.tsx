@@ -11,6 +11,7 @@ import { App } from './App';
 import { installBackends } from './app/installBackends';
 import { ScrollerStyleProvider } from './shared/components/ScrollerStyleProvider';
 import { MOCK_ENABLED } from './shared/lib/mockMode';
+import { schemaGate } from './shared/lib/schemaGate';
 import { bootstrapContrast } from './shared/lib/contrast';
 import { bootstrapTheme } from './shared/lib/theme';
 import { loadAvatarImage, loadRemoteImage } from './shared/lib/remoteImage';
@@ -41,6 +42,10 @@ const MockEntry =
         return { default: entry.MockEntry };
       })
     : null;
+
+if (MockEntry === null) {
+  schemaGate.close();
+}
 
 const renderCrashReport = ({ error, componentStack }: ErrorReportRequest) => (
   <CrashReport

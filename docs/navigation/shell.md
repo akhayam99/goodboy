@@ -355,6 +355,14 @@ wears a small ring and is named waiting, and a signal dot sits with either (see
 
 **The places rail** (`app/components/SideColumn/ShellLeft/`, on the `ShellRail`
 primitive) is on every screen with a workspace, in the same shape everywhere:
+the workspace mark first (`WorkspaceIdentityRow`: the workspace's tile with its
+name under it; ⌘O or a click opens the switcher popover to the right of the
+rail through `SHELL_RAIL_POPOVER`, 12px inside the window, and ⌘1 to ⌘9 switch
+without opening it; the number of sessions that need you in other workspaces is
+its count, amber, or red when one is broken, and a dot says another workspace
+had activity; while a switch loads the word names the target and the mark is
+busy, a failed switch keeps the workspace you were in and says
+`Couldn't open {name}.` with **Retry** beside the mark), then
 New (⌘N, an outlined tile; a dot and `New session, draft in progress` while a
 draft waits), then Board (⌘⇧H), Tasks, Workflows, Chat, Connect and Impact,
 then at the foot Settings (⌘,), the bug and the Goodboy mark. Each item is an
@@ -474,7 +482,8 @@ drops never lets another zone slide into its column. When the right zone
 outgrows its half, the command center slides off the midpoint instead of being
 covered.
 
-- Left: Sessions, the workspace identity, then Repositories. The bar holds
+- Left: Sessions, then Repositories. The workspace mark lives at the top of the
+  places rail, not in the bar. The bar holds
   no sidebar toggle: the places rail never folds. Sessions (`SessionsPopover`,
   ⌘B from any screen, `sessions.toggle`) opens a studio wide (500px) popover
   through the one placement rule: the 12px shell gutter from every window
@@ -483,8 +492,7 @@ covered.
   (Pinned, then by state; the Needs you number is `attentionCountOf`), typing
   filters by title or project, the arrows and Enter open a row, and the pin
   calls `pinSession` or `unpinSession`, which leave the row in place when the
-  write fails. The identity has a 200px limit and truncates, with the full name
-  in its tooltip.
+  write fails.
 - Centre: the movement cluster, then the command center. `Back` and `Forward`
   (24px icons) name their destination in the label and the tooltip
   (`Back: Comments`, the session on a second line, `Hold to show history` on a
@@ -611,43 +619,48 @@ only drop under zoom.
   and the version are about Goodboy itself, so they live at the foot of the
   column: the Goodboy line. The setup checklist is a card on the Board.
 
-## The column foot
+## The rail foot
 
-The foot is the app's corner. It holds three things and nothing that goes to a
-page of the workspace: Settings, Help and Report a bug. It has no menu. The open
-column draws two lines. Line one is Settings (⌘,). Line two is the Goodboy line, a
-door to Help, with the update pill beside it when an update waits and, at the end
-of the line, a 24px bug icon, Report a bug (⌘I), which says "Draft saved" in its
-name while a report is half written. The folded rail keeps the same three in the
-same order: the Settings icon, the bug and the Goodboy mark, which carries a dot
-while an update waits.
+The foot is the app's corner, the last three places of the places rail, from the
+top: Settings (⌘,), Report (⌘I) and the Goodboy logo. Each is a rail item with its
+word under the icon (`ShellRailItem`), and none goes to a page of the workspace.
+Report says "Report a bug, draft saved" in its name, with the draft dot, while a
+report is half written. Before a workspace exists the rail is only this foot.
 
-The Goodboy line (`app/components/GoodboyChip`, variants `column` and `rail`) is
-a door like the rows above it: it opens Help on the Guide, it is selected
-(`bg-selected`, `aria-current="page"`) while a Help tab is open, and a click on
-it then does nothing. Its label says one thing, in this order: an update is
-pending (the bare lockup, then the version pill), or the brand lockup with
-"Beta" and the installed version. The lockup
-(`GoodboyChip/BrandLockup.tsx`) is one dark chip holding only the dog mark and
-"Goodboy", the same in light and dark; "Beta" and "v<version>" sit after it in
-theme text. The version is
-`APP_VERSION` (`shared/lib/appVersion.ts`), which the build stamps from
-`apps/desktop/package.json` as `__APP_VERSION__`, so it never waits on Tauri
-and shows in mock scenes too. The update pill (`features/updater/components/UpdatePill`)
-is soft, enters once and holds still. It is its own button beside the lockup and
-shows only the new version and a state icon; the state ("is ready", "did not
-install") lives in its tooltip and accessible name. The lockup drops to the dog
-mark when a pill sits beside it and the line is too narrow for both (a container
-query on `[data-column-corner]`, under 12.25rem), so the pill and the bug icon
-stay on one line at every column width; the pill truncates before the lockup
-does. At rest the lockup drops to the mark under 13.5rem, so the bug icon keeps
-its room, and above that only a version too long for the row truncates. The whole line is set in the meta size. `validate-scenes.mjs --only update-pill` pins this at 200, 240 and
-400px. The pill opens the update card. On the rail, which has no room for a
-pill, the mark carries the update dot, and a click opens Help on What's new
-(also while the Guide is open),
-where the release that is the pending update carries the update verbs. The mark
-on the places rail also owns the update arrival card and the restart when idle
-(`isPrimary`).
+The logo (`app/components/GoodboyChip`, variant `rail`) is a door to Help: it opens
+the Guide, it is selected (`bg-selected`, `aria-current="page"`) while a Help tab is
+open, and a click on it then does nothing. The dog mark in its dark tile is the same
+in light and dark. The rail shows no version line: it is in the logo's tooltip, in Settings and in What's new.
+
+With an update the logo becomes the update mark
+(`features/updater/components/UpdateRailMark.tsx`): one place and one shape, so no
+dot, no pill and no version line beside it. It is a rail item with the word
+**Update**, in `primary` on `primary-subtle` (never `brand-accent`, which stays with
+the logo). `updateMarkOf` (`features/updater/updateMark.ts`) gives it by state:
+
+| State          | Mark                                                                     | Card                                         |
+| -------------- | ------------------------------------------------------------------------ | -------------------------------------------- |
+| None           | The logo                                                                 | None                                         |
+| Available      | Arrow, word Update                                                       | Later, Update now                            |
+| Downloading    | Arrow with a ring that fills, the word is the percent (`updateProgress`) | The bar fills, the button is busy            |
+| Ready          | Arrow, with a `primary-edge` ring                                        | Later, Restart now                           |
+| Agents running | Same as Ready                                                            | Later, Restart now, Restart when they finish |
+| Queued         | Same as Ready                                                            | Later, Cancel restart, Restart now           |
+| Failed         | Alert glyph, `danger` on `danger-subtle`                                 | Later, Retry (nothing changed on the Mac)    |
+
+The mark breathes three times when it first appears (`animate-arrival-breath`, the
+`soft-pulse` keyframes with three iterations, under `motion-safe`) and then holds
+still; with reduced motion only the tint shows. A click on the mark opens or closes
+the update card (`toggleUpdateCard`). The card opens to the right of the rail,
+aligned with the foot, through `useDropdownDirection` (side `right`, align `end`),
+12px inside every window edge. The card, its copy, the automatic arrival and the
+snooze are unchanged (`UpdateArrivalCard`, `updateCardCopy`, `updateSnoozeGate`).
+Without the logo on screen, the new version is in the mark's tooltip and in Settings.
+The mark owns the card and the restart when idle (`isPrimary`).
+
+The `column` variant of `GoodboyChip`, `ColumnFoot` and the `UpdatePill` pill stay
+for the mock scenes and the workspace launcher, which has no rail, until the column
+code is retired.
 
 Pair an iPhone lives in Settings, iPhone (`goodboy:open-pair-device` lands on
 `{ scope: 'app', section: 'iphone' }`) and in the palette. Keyboard shortcuts
@@ -745,7 +758,7 @@ order or in name (the two dock tools read Show or Hide and their name).
 One sheet files every report. `ReportSheetHost`
 (`features/bug-report/components/ReportSheetHost`) floats it at the bottom of
 the window, centred, with no overlay: the page under it stays live. Every door
-lands there: ⌘I from anywhere, the bug icon in the places rail foot
+lands there: ⌘I from anywhere, Report in the places rail foot
 (`app/components/SideColumn/ReportBugButton.tsx`), Report a bug in the
 palette (it also answers bug, issue, feedback, crash and broken),
 **Help > Report a Bug** in the macOS menu bar (`app_menu.rs` emits

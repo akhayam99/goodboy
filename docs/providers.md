@@ -590,12 +590,26 @@ log with the provider, the kind and the milliseconds.
 - The sign-in parsers read the exit code and the output together. `claude auth status`
   and `codex login status` exit 1 when you are signed out, and that is read as
   disconnected. Output the parser does not recognise is `unknown`, with a `reason`.
+- The Claude check runs `claude --version` first and asks `claude auth status` only
+  from `CLAUDE_AUTH_MIN_VERSION` (2.1.41, `providers/claude_version.rs`). An older
+  or unreadable version never gets the subcommand: Goodboy reads
+  `oauthAccount.emailAddress` from `.claude.json` (in `CLAUDE_CONFIG_DIR`, else the
+  home folder) and answers `connected` with `verified: false`, or `unknown`, both with
+  the reason `cli_too_old`. Sign in and sign out are refused before they start on that
+  version (`lifecycle_refusal`). The setup Agents row shows Update needed with an
+  Update button.
+- An install that is `npm install -g` runs through `shell_command` in
+  `provider_commands.rs`. When it fails and `npm ping` cannot reach the configured
+  registry, it retries once with `--registry=https://registry.npmjs.org/` for that
+  install only and says so in the terminal. The npm settings are never written. A
+  failed Claude install also prints the official installer line.
 - `AuthState.reason` is a typed `AuthReason` (`providers/auth_reason.rs`), never a
   sentence: `timed_out` with its `secs` (the budget the check ran under),
   `not_installed`, `spawn_failed` and `cli_said` with a `detail` (the OS or CLI words),
   `printed_nothing`, `exited_with_code` with its `code`, `no_exit_code`,
   `empty_command`, `no_access_token`, `not_confirmed_by_server`, `no_status`,
-  `unknown_provider` and `check_unfinished`. `authReasonSentence` in
+  `unknown_provider`, `check_unfinished`, and `cli_too_old` with the `version`
+  found (or null) and the `minimum`. `authReasonSentence` in
   `features/providers` writes the one sentence for each kind, and
   `probeOutcomeOf` hands it to the connection history. A chat that cannot run
   read-only fails with the kind `not_read_only`; `chatStartError` in
@@ -737,7 +751,9 @@ Docs from each CLI: [Claude Code](https://docs.anthropic.com/en/docs/claude-code
 
 ### Claude CLI
 
-- `claude` has no top-level `login`. Its sign-in commands are `claude auth login|logout|status`
+- `claude` has no top-level `login`. Its sign-in commands are `claude auth login|logout|status`,
+  from 2.1.41. An older claude reads `auth status` as a prompt, so Goodboy never sends it
+  there (see How the checks read the answer)
 - `--claudeai` signs in with your subscription and is the default. `--console`
   switches to Console billing. `--sso` forces SSO
 - The status check returns JSON by default (`--text` gives the readable form).
@@ -943,14 +959,14 @@ mode a CLI can't honor runs as the next stricter one it has, never a looser one.
 - Copilot's Read only is a set of deny rules over `--allow-all-tools`. The CLI documents
   that a deny rule wins, but no real turn has exercised it, so `modeSupport.ts` marks the
   Copilot cells Partly. The Auto role runs on Copilot like on Cursor, on that basis
-- opencode turns always carry `--dangerously-skip-permissions`, including the read-only roles
-  (scout, planner, investigator, reviewer): the `plan` agent denies edits but asks before a shell
-  command, and the flag approves the ask, so those roles can still run a shell there. Auto is the
-  one role kept off the whole family (opencode, OpenRouter, Moonshot) because of it
-  (`AUTO_UNCONFINED_PROVIDERS`; `ensure_confinement` refuses the role `auto` on an opencode
-  binary). Dropping the flag is not done: no probe proves that `opencode run` then denies the ask
-  instead of waiting for an answer. Side jobs (planner and summarizer runs of the app itself) do
-  not pass the flag
+- opencode turns carry `--dangerously-skip-permissions` in every mode, except a confined
+  read-only role (scout, planner, investigator, reviewer, Auto, an unknown role), which never
+  gets it. The `plan` agent denies edits but asks before a shell command, and the flag approves
+  the ask, so a session in Read only on opencode can still run a shell. No probe proves that
+  `opencode run` without the flag denies the ask instead of waiting for an answer, so
+  `ensure_confinement` still refuses every reading role on an opencode binary, and Auto stays off
+  the whole family (opencode, OpenRouter, Moonshot, `AUTO_UNCONFINED_PROVIDERS`). Side jobs
+  (planner and summarizer runs of the app itself) do not pass the flag
 - Claude 2.1.282 lists `manual` in place of `default` but still accepts `default`
   as a hidden alias, so Goodboy keeps sending `default` for Ask first: `manual`
   is not in older CLIs and would break them

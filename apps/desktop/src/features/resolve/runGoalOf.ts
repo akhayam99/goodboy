@@ -6,6 +6,7 @@ export type RunGoalComment = {
   readonly body: string;
   readonly path: string | null;
   readonly line: number | null;
+  readonly finding?: string | null;
 };
 
 type Params = {
@@ -22,6 +23,7 @@ type PlacesParams = {
 
 const MAX_BODY = 600;
 const MAX_NAMED_PLACES = 3;
+const FOUND_LEAD = 'The fix agent found:';
 const NAMED_MODEL =
   /\b(?:follow|use|copy|mirror) (the [a-z][\w.-]*(?: [a-z][\w.-]*){0,3}) as (?:the|a|an) (?:model|example|reference|template)\b/i;
 const WAY_MODEL = /\bthe way (the [a-z][\w.-]*(?: [a-z][\w.-]*){0,3}) does it\b/i;
@@ -46,6 +48,17 @@ const placesSentenceOf = ({ places }: PlacesParams): string => {
     return places[0] ?? '';
   }
   return `${places.slice(0, -1).join(', ')} and ${places[places.length - 1] ?? ''}`;
+};
+
+const closedSentenceOf = ({ text }: TextParams): string =>
+  /[.!?]$/.test(text) ? text : `${text}.`;
+
+const foundOf = ({ comments }: Params): string => {
+  const findings = comments.flatMap((comment) => {
+    const finding = comment.finding?.trim() ?? '';
+    return finding === '' ? [] : [closedSentenceOf({ text: finding })];
+  });
+  return findings.length === 0 ? '' : ` ${FOUND_LEAD} ${findings.join(' ')}`;
 };
 
 const modelOf = ({ text }: TextParams): string | null => {
@@ -78,5 +91,5 @@ export const runGoalOf = ({ comments }: Params): string => {
         .filter((sentence) => sentence !== '')
         .join(' ')
     : clippedBodyOf({ text: plains[0] ?? '' });
-  return body === '' ? lead : `${lead} ${body}`;
+  return `${body === '' ? lead : `${lead} ${body}`}${foundOf({ comments })}`;
 };

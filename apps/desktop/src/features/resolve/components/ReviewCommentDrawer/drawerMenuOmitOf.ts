@@ -2,6 +2,8 @@ import { overflowCutOf } from '../../../actions/overflowCutOf';
 import type { ResolvedAction } from '../../../actions/types';
 
 const REACHABLE_ELSEWHERE: ReadonlyArray<string> = [
+  'reviewComment.retryFix',
+  'reviewComment.startOver',
   'reviewComment.copyLink',
   'reviewComment.transcript',
   'reviewComment.openInDiff',

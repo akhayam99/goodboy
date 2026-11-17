@@ -24,6 +24,7 @@ import { BoardFactsFrame } from './BoardFactsFrame';
 import { BoardSkeleton } from './BoardSkeleton';
 import { BoardEmpty } from './BoardEmpty';
 import { BoardLanes } from './BoardLanes';
+import { BOARD_SELECTION_BAR } from './boardSelectionBar';
 import { BOARD_STAGES } from './boardStages';
 import { useBoardLayout } from './useBoardLayout';
 import { useBoardNavigation } from './useBoardNavigation';
@@ -36,13 +37,6 @@ import { SessionsHeader } from './SessionsHeader';
 import { SessionHoverCard } from '../SessionHoverCard';
 import { useHoverCardTarget } from '../SessionHoverCard/useHoverCardTarget';
 import { useClearSessionFilters } from '../SessionActivityBar/useClearSessionFilters';
-
-const SELECTION_VERB_IDS = [
-  'sessions.markRead',
-  'sessions.archive',
-  'sessions.restore',
-  'sessions.delete',
-];
 
 type OpenAttention = {
   readonly sessionId: SessionId;
@@ -253,13 +247,14 @@ export const StageBoard = ({ workspaceId, sessions }: Props) => {
 
       <ObjectSelectionBar
         controls={selectionControls}
-        verbIds={SELECTION_VERB_IDS}
+        verbIds={BOARD_SELECTION_BAR.verbIds}
         count={selectedIds.length}
         total={selection.total}
         onClear={selection.clearAll}
         onSelectAll={selection.selectAll}
         onDone={selection.clearAll}
         onFocusReturn={focusFirstCard}
+        hint={BOARD_SELECTION_BAR.hint}
       />
     </div>
   );

@@ -7,10 +7,14 @@ import {
   pushReserveOf,
 } from '../drawerGeometry';
 import { SHELL_GUTTER_PX } from '../frameGeometry';
+import {
+  SHELL_RAIL_NARROW_BELOW_PX,
+  SHELL_RAIL_WIDTH_PX,
+  TOOL_RAIL_WIDTH_PX,
+} from '../components/ShellRail/shellRailGeometry';
 
 const HEIGHT = 900;
 const TOP = 40;
-const COMPACT_BELOW = 1100;
 
 const TERMINAL: DockPane = { id: 'terminal', sizing: 'side', savedWidth: RIGHT_DRAWER_DEFAULT };
 const SCRIPTS: DockPane = { id: 'scripts', sizing: 'side', savedWidth: RIGHT_DRAWER_DEFAULT };
@@ -33,18 +37,14 @@ type LayoutParams = {
   readonly detail?: DockPane | null;
 };
 
-const layoutAt = ({ width, columns, detail = null }: LayoutParams) => {
-  const isCompact = width < COMPACT_BELOW;
-  return dockLayoutOf({
+const layoutAt = ({ width, columns, detail = null }: LayoutParams) =>
+  dockLayoutOf({
     windowWidth: width,
     windowHeight: HEIGHT,
     top: TOP,
-    leftRailWidth: isCompact ? 44 : 64,
-    toolRailWidth: isCompact ? 44 : 56,
     detail,
     columns,
   });
-};
 
 type Box = {
   readonly x: number;
@@ -267,5 +267,67 @@ describe('who gives way', () => {
     );
 
     expect(offenders).toEqual([]);
+  });
+});
+
+describe('a narrow window of 1024 by 700', () => {
+  const SMALLEST = { windowWidth: 1024, windowHeight: 700, top: TOP } as const;
+
+  it('turns both rails to icons only, 44 wide, and keeps the tool rail at the edge', () => {
+    const layout = dockLayoutOf({ ...SMALLEST, detail: null, columns: [] });
+
+    expect(layout.railForm).toBe('narrow');
+    expect(layout.page.x).toBe(SHELL_RAIL_WIDTH_PX.narrow);
+    expect(layout.rail).toMatchObject({ x: 1024 - TOOL_RAIL_WIDTH_PX.narrow, width: 44 });
+  });
+
+  it('pushes one narrow pane beside a page of 524', () => {
+    const layout = dockLayoutOf({ ...SMALLEST, detail: null, columns: NARROW });
+    const [column] = layout.columns;
+
+    expect(layout.mode).toBe('push');
+    expect(layout.page.width).toBe(524);
+    expect(column?.box.x).toBe(rightOf({ box: layout.page }) + SHELL_GUTTER_PX);
+    expect(rightOf({ box: column?.box ?? layout.page })).toBe(layout.rail.x);
+    expect((column?.box.y ?? 0) + (column?.box.height ?? 0)).toBe(700 - SHELL_GUTTER_PX);
+  });
+
+  it('lays the browser over the page, to the left of the rail that stays at the edge', () => {
+    const layout = dockLayoutOf({ ...SMALLEST, detail: null, columns: WIDE });
+    const browser = layout.columns[0]?.box;
+
+    expect(layout.mode).toBe('over');
+    expect(layout.page).toMatchObject({ x: 44, width: 1024 - 88 });
+    expect(rightOf({ box: browser ?? layout.page })).toBe(layout.rail.x);
+    expect(rightOf({ box: layout.rail })).toBe(1024);
+    expect(browser?.x).toBeGreaterThanOrEqual(layout.page.x + SHELL_GUTTER_PX * 2);
+  });
+
+  it('stacks browser and terminal in one column over the page', () => {
+    const layout = dockLayoutOf({ ...SMALLEST, detail: null, columns: PAIR });
+
+    expect(layout).toMatchObject({ mode: 'over', isStacked: true });
+    expect(layout.columns[0]?.panes.map((pane) => pane.id)).toEqual(['browser', 'terminal']);
+    expect(rightOf({ box: layout.columns[0]?.box ?? layout.page })).toBe(layout.rail.x);
+  });
+
+  it('keeps the rails wide from 1100 and narrow just below', () => {
+    const wide = dockLayoutOf({
+      ...SMALLEST,
+      windowWidth: SHELL_RAIL_NARROW_BELOW_PX,
+      detail: null,
+      columns: [],
+    });
+    const narrow = dockLayoutOf({
+      ...SMALLEST,
+      windowWidth: SHELL_RAIL_NARROW_BELOW_PX - 1,
+      detail: null,
+      columns: [],
+    });
+
+    expect(wide.railForm).toBe('wide');
+    expect(wide.rail.width).toBe(TOOL_RAIL_WIDTH_PX.wide);
+    expect(narrow.railForm).toBe('narrow');
+    expect(narrow.rail.width).toBe(TOOL_RAIL_WIDTH_PX.narrow);
   });
 });

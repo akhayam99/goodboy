@@ -1988,11 +1988,6 @@
       "count": 8
     }
   },
-  "apps/desktop/src/features/bug-report/components/ReportSheetHost.tsx": {
-    "@typescript-eslint/naming-convention": {
-      "count": 1
-    }
-  },
   "apps/desktop/src/features/bug-report/crashReport.ts": {
     "@typescript-eslint/naming-convention": {
       "count": 1
@@ -9159,11 +9154,6 @@
   },
   "apps/desktop/src/store/slices/resolve/outcomePatch.test.ts": {
     "@typescript-eslint/consistent-type-assertions": {
-      "count": 1
-    }
-  },
-  "apps/desktop/src/store/slices/resolve/persistResolveTurn.ts": {
-    "@typescript-eslint/naming-convention": {
       "count": 1
     }
   },

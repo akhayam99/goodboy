@@ -184,6 +184,8 @@ export const useStartRun = ({
   onLaunched,
 }: Params): StartRunModel => {
   const [localText, setLocalText] = useState(seedText);
+  const seedRef = useRef({ text: seedText, branch: seedBranch });
+  seedRef.current = { text: seedText, branch: seedBranch };
   const draftText = useAppStore((state) =>
     sessionId === null ? selectSessionDraft({ state, workspaceId }).workflowGoal : '',
   );
@@ -327,12 +329,13 @@ export const useStartRun = ({
 
   useEffect(() => {
     const latest = latestRef.current;
+    const seed = seedRef;
     return () => {
       latest.cancel({ key: DRAFT_KEY });
       isStartingRef.current = false;
-      setLocalText('');
+      setLocalText(seed.current.text);
       setFile(null);
-      setBranch(null);
+      setBranch(seed.current.branch);
       setRunAs(AUTO_RUN_AS);
       setPickedLevel(null);
       setPickedAutonomy(null);

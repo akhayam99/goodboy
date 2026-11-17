@@ -403,7 +403,9 @@ writing to it reopens it to **Deciding**.
   delegates after a waiting plan replaces it (`planLineOf`): the line reads
   "Updating plan v1 to v2" with the planner's state and time, Approve and
   **Ask for changes** stay disabled with the reason as tooltip
-  (`planBlockedReasonOf`), and the new plan counts on as v2 while v1 reads
+  (`planBlockedReasonOf`); when the Next step already asks for that
+  revision, Approve is left out so Continue stays the one primary. The new
+  plan counts on as v2 while v1 reads
   Superseded. An open revise and a change sent for v1 read the same way. A
   planner that failed reads "Plan v2 failed" with the reason, **Retry plan
   v2** and **Keep plan v1**; Keep stores `request.keptBase` on the failed
@@ -2108,9 +2110,9 @@ refuses to its children for the acts above.
 Auto itself runs on Claude, Codex, Cursor, Gemini and Copilot (`AUTO_OWN_PROVIDERS`), because it only reads
 there. It never runs on the opencode family (opencode, OpenRouter, Moonshot,
 `AUTO_UNCONFINED_PROVIDERS`): the `plan` agent of opencode denies edits but asks before a shell
-command, and Goodboy always passes `--dangerously-skip-permissions` to opencode, which approves the
-ask, so a read-only turn there could still run a shell. Whether opencode can run without that flag
-and deny the ask is unproven, so Auto is kept off it instead. Three layers hold the line: the
+command. A read-only role no longer gets `--dangerously-skip-permissions`, the flag that approves
+the ask, but whether `opencode run` then denies the ask instead of waiting is unproven, so Auto is
+kept off it instead. Three layers hold the line: the
 composer lists only `AUTO_OWN_PROVIDERS` and shows "Auto needs a connected provider" when nothing
 else is connected; `kindRouting` for Auto never resolves to the family (the role default, a stored
 role pick and the model of the chat are all skipped) and `spawnAgent` refuses an Auto agent on it;

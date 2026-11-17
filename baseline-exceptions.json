@@ -355,5 +355,12 @@
     "count": 26,
     "reason": "first measure of the raw colour guard that ux45 PR8 adds; the ledger only falls from here",
     "release": "0.39.0"
+  },
+  {
+    "rule": "popover-anchoring",
+    "file": "apps/desktop/src/features/notifications/components/NotificationCenter/index.tsx",
+    "count": 1,
+    "reason": "reason renamed, count unchanged: the bell list now ends on the bell like the rest of the top bar right cluster",
+    "release": "0.39.2"
   }
 ]
