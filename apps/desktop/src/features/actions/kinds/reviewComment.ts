@@ -15,7 +15,20 @@ import {
   TextCursorInput,
   Undo2,
 } from '@goodboy/ui/icons';
-import type { AgentId, ResolveVerdict, SessionId } from '@goodboy/types';
+import type {
+  Agent,
+  AgentId,
+  DiffComment,
+  ResolveVerdict,
+  SessionId,
+  SessionMountView,
+} from '@goodboy/types';
+import { commentMountIdOf } from '../../resolve/commentMountIdOf';
+import { COMMENT_RUN_COPY } from '../../resolve/commentRunCopy';
+import { commentRunOf } from '../../resolve/commentRunOf';
+import { commentRunQuoteOf } from '../../resolve/commentRunQuoteOf';
+import { commentRunSourceLabelOf } from '../../resolve/commentRunSourceLabelOf';
+import { joinableCommentRunsOf } from '../../resolve/joinableCommentRunsOf';
 import {
   REVIEW_SOURCE_CAPABILITIES,
   REVIEW_SOURCE_LABEL,
@@ -25,7 +38,10 @@ import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
 import { hostIconOf } from '../../../shared/components/hostIconOf';
 import { openWebAction } from '../openWebAction';
 import { branchPlace, fixRunTranscript } from '../../../store/slices/navigation/place';
-import { activeReviewSourceOf } from '../../../store/slices/review-source/activeReviewSource';
+import {
+  activeReviewSourceOf,
+  selectedReviewEntryOf,
+} from '../../../store/slices/review-source/activeReviewSource';
 import { diffThreadIdOf } from '../../diff/lib/threadIds';
 import { acceptReviewItem } from '../../resolve/acceptReviewItem';
 import { laneAcceptCountOf, laneAcceptNotesOf } from '../../resolve/laneAcceptCount';
@@ -73,7 +89,29 @@ export type ReviewCommentFacts = {
   readonly hasFixOnBranch: boolean;
   readonly laneAcceptCount: number;
   readonly laneAcceptNotes: number;
+  readonly runAgentId: AgentId | null;
+  readonly joinRuns: ReadonlyArray<JoinRun>;
+  readonly quote: string;
 };
+
+type JoinRun = {
+  readonly agentId: AgentId;
+  readonly name: string;
+};
+
+const JOINABLE: ReadonlySet<ReviewCommentState> = new Set(['new', 'needs', 'failed']);
+
+const NO_AGENTS: ReadonlyArray<Agent> = [];
+
+const NO_NOTES: ReadonlyArray<DiffComment> = [];
+
+const NO_MOUNTS: ReadonlyArray<SessionMountView> = [];
+
+type RunFactsParams = {
+  readonly facts: Pick<ReviewCommentFacts, 'runAgentId'>;
+};
+
+const isOutsideRun = ({ facts }: RunFactsParams): boolean => facts.runAgentId === null;
 
 const UNDECIDED: ReadonlySet<ReviewCommentState> = new Set([
   'new',
@@ -195,13 +233,22 @@ export const REVIEW_COMMENT_KIND: ObjectKindDefinition<
     const draft = state.resolveItemDrafts[target.sessionId]?.[target.threadId];
     const rowState = rowStateOf({ state, sessionId: target.sessionId, row });
     const gitFacts = state.sessionThreadGit?.[target.sessionId]?.[target.threadId] ?? null;
+    const agents = state.sessionPhaseRuns[target.sessionId] ?? NO_AGENTS;
+    const isNote = row.thread.originKind === 'diff_comment';
+    const note = row.reviewerNote;
+    const mountId = commentMountIdOf({
+      thread: row.thread,
+      notes: state.diffComments[target.sessionId] ?? NO_NOTES,
+      mounts: state.sessionMounts[target.sessionId] ?? NO_MOUNTS,
+      sourceMountId: selectedReviewEntryOf({ state, sessionId: target.sessionId })?.mountId ?? null,
+    });
     return {
       sessionId: target.sessionId,
       threadId: target.threadId,
       itemId: row.item.id,
       revision: row.thread.revision,
       state: rowState,
-      isNote: row.thread.originKind === 'diff_comment',
+      isNote,
       hasPr: activeReviewSourceOf({ state, sessionId: target.sessionId }) !== null,
       provider: REVIEW_SOURCE_LABEL[row.thread.sourceKind ?? 'github'],
       host: row.thread.sourceKind ?? 'github',
@@ -243,6 +290,28 @@ export const REVIEW_COMMENT_KIND: ObjectKindDefinition<
             .map((entry) => entry.item.id),
         ),
       }),
+      runAgentId: commentRunOf({ agents, threadId: target.threadId }),
+      joinRuns: joinableCommentRunsOf({ agents, threadId: target.threadId, mountId }).map(
+        (agent) => ({ agentId: agent.id, name: agent.name }),
+      ),
+      quote:
+        note === null
+          ? ''
+          : commentRunQuoteOf({
+              comments: [
+                {
+                  source: isNote
+                    ? COMMENT_RUN_COPY.localNoteSource
+                    : COMMENT_RUN_COPY.hostSource({
+                        label: commentRunSourceLabelOf({ thread: row.thread }),
+                      }),
+                  author: note.author,
+                  body: note.body,
+                  path: note.path,
+                  line: note.line,
+                },
+              ],
+            }),
     };
   },
   actions: [
@@ -447,7 +516,8 @@ export const REVIEW_COMMENT_KIND: ObjectKindDefinition<
       icon: CONCEPT_ICONS.agents,
       group: 'act',
       shortcut: 'review.fix',
-      when: ({ facts }) => facts.state === 'new' && !hasOverlay({ facts }),
+      when: ({ facts }) =>
+        facts.state === 'new' && !hasOverlay({ facts }) && isOutsideRun({ facts }),
       slot: () => 'primary',
       run: ({ facts, env }) =>
         requestReview({
@@ -455,6 +525,31 @@ export const REVIEW_COMMENT_KIND: ObjectKindDefinition<
           sessionId: facts.sessionId,
           request: { kind: 'fix', threadIds: [facts.threadId] },
         }),
+    },
+    {
+      id: 'reviewComment.addToRun',
+      label: COMMENT_RUN_COPY.addToRun,
+      ariaLabel: ({ facts }) =>
+        COMMENT_RUN_COPY.addToRunNamed({ title: facts.joinRuns[0]?.name ?? '' }),
+      description: ({ facts }) => facts.joinRuns[0]?.name ?? null,
+      icon: CONCEPT_ICONS.auto,
+      group: 'act',
+      when: ({ facts }) =>
+        facts.joinRuns.length > 0 && JOINABLE.has(facts.state) && !hasOverlay({ facts }),
+      slot: () => 'menu',
+      run: async ({ facts, env }) => {
+        const [run] = facts.joinRuns;
+        if (run === undefined) {
+          return;
+        }
+        await env.getState().addToCommentRun({
+          sessionId: facts.sessionId,
+          agentId: run.agentId,
+          threadId: facts.threadId,
+          quote: facts.quote,
+        });
+        env.showToast({ kind: 'success', message: COMMENT_RUN_COPY.added({ title: run.name }) });
+      },
     },
     {
       id: 'reviewComment.answer',
@@ -504,7 +599,9 @@ export const REVIEW_COMMENT_KIND: ObjectKindDefinition<
       group: 'act',
       shortcut: 'review.edit',
       when: ({ facts }) =>
-        (DRAFTED.has(facts.state) || facts.state === 'failed') && !hasOverlay({ facts }),
+        (DRAFTED.has(facts.state) || facts.state === 'failed') &&
+        !hasOverlay({ facts }) &&
+        isOutsideRun({ facts }),
       slot: ({ facts }) => (isRedraft(facts) ? 'primary' : 'menu'),
       run: (params) => compose(params, isRedraft(params.facts) ? 'redraft' : 'edit'),
     },
@@ -513,7 +610,8 @@ export const REVIEW_COMMENT_KIND: ObjectKindDefinition<
       label: FAILED_RUN_COPY.anotherModel,
       icon: Cpu,
       group: 'act',
-      when: ({ facts }) => facts.state === 'failed' && !hasOverlay({ facts }),
+      when: ({ facts }) =>
+        facts.state === 'failed' && !hasOverlay({ facts }) && isOutsideRun({ facts }),
       slot: () => 'menu',
       run: ({ facts, env }) =>
         requestReview({
@@ -628,7 +726,7 @@ export const REVIEW_COMMENT_KIND: ObjectKindDefinition<
       group: 'act',
       shortcut: 'review.skip',
       when: ({ facts }) =>
-        UNDECIDED.has(facts.state) ||
+        (UNDECIDED.has(facts.state) && isOutsideRun({ facts })) ||
         (isMissing({ facts }) && !facts.isPushedMissing && !facts.isChecking),
       slot: () => 'secondary',
       run: ({ facts, env }) =>

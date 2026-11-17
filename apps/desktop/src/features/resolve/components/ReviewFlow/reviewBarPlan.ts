@@ -28,6 +28,8 @@ const PLANS: Partial<Record<ResolveWord, ReadonlyArray<BarItem>>> = {
   ready: [action('reviewComment.undo', 'secondary'), { kind: 'pushOnly' }],
   left_open: [action('reviewComment.undo', 'secondary')],
   done: [{ kind: 'viewOnHost' }],
+  in_run: [action('reviewComment.reply', 'ghost')],
+  run_finished: [action('reviewComment.reply', 'ghost')],
 };
 
 const TO_REVIEW: ReadonlyArray<BarItem> = [

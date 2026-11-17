@@ -1,6 +1,7 @@
 import type { SessionId } from '@goodboy/types';
 import type { AppStore } from '../../store';
 import type { SliceDeps } from '../../slice-types';
+import { addToCommentRun } from './addToCommentRun';
 import { commentRunStartInitialState, type CommentRunDraft, type CommentRunStart } from './state';
 import type {
   CloseCommentRunStartParams,
@@ -41,8 +42,9 @@ const withDraft = ({ start, threadId, draft }: DraftParams): CommentRunStart['dr
   [threadId]: { ...(start.drafts[threadId] ?? EMPTY_DRAFT), ...draft },
 });
 
-export const createCommentRunStartSlice = ({ set }: SliceDeps): CommentRunStartSlice => ({
+export const createCommentRunStartSlice = ({ set, get }: SliceDeps): CommentRunStartSlice => ({
   ...commentRunStartInitialState,
+  addToCommentRun: addToCommentRun({ set, get }),
   openCommentRunStart: ({ sessionId, threadId }: CommentRunThreadParams) =>
     set((state) =>
       patched({ state, sessionId, patch: ({ start }) => ({ ...start, openThreadId: threadId }) }),

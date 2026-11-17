@@ -289,11 +289,13 @@ export {
   stringifyRoutingJson,
 } from './queries/workflowRoutingCodec';
 export {
+  addAgentSourceThread,
   insertAgent,
   insertAgentBatch,
   markAgentUnviewed,
   markAgentViewed,
   recordAgentStatus,
+  removeAgentSourceThread,
   revertAgentStart,
   setAgentDone,
   setAgentProviderSession,

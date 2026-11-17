@@ -324,6 +324,50 @@ export const setAgentVerbosity = async (
   });
 };
 
+type SourceThreadParams = {
+  readonly db: Database;
+  readonly id: AgentId;
+  readonly threadId: string;
+};
+
+export const addAgentSourceThread = async ({
+  db,
+  id,
+  threadId,
+}: SourceThreadParams): Promise<boolean> => {
+  const { rowsAffected } = await db.execute(
+    `UPDATE agents
+        SET source_thread_ids = json_insert(COALESCE(source_thread_ids, '[]'), '$[#]', ?)
+      WHERE id = ?
+        AND source_kind = 'comment_run'
+        AND status != 'stopped'
+        AND deleted_at IS NULL
+        AND done_at IS NULL
+        AND NOT EXISTS (
+          SELECT 1 FROM json_each(COALESCE(agents.source_thread_ids, '[]')) WHERE value = ?
+        )`,
+    [threadId, id, threadId],
+  );
+  return rowsAffected > 0;
+};
+
+export const removeAgentSourceThread = async ({
+  db,
+  id,
+  threadId,
+}: SourceThreadParams): Promise<void> => {
+  await requireApplied(db, id, {
+    sql: `UPDATE agents
+             SET source_thread_ids = (
+               SELECT json_group_array(value)
+                 FROM json_each(COALESCE(agents.source_thread_ids, '[]'))
+                WHERE value != ?
+             )
+           WHERE id = ?`,
+    params: [threadId, id],
+  });
+};
+
 type ProviderSessionParams = {
   readonly id: AgentId;
   readonly providerSessionId: string;
