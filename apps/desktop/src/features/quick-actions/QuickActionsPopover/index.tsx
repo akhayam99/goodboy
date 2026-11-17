@@ -1,5 +1,14 @@
 import { useEffect, useRef, useState } from 'react';
-import { FLOATING_SURFACE, ScrollFade, useEscapeLayer, EmptyState, Eyebrow, cn } from '@goodboy/ui';
+import {
+  AnchoredLayer,
+  FLOATING_SURFACE,
+  POPOVER_WIDTH_PX,
+  ScrollFade,
+  useEscapeLayer,
+  EmptyState,
+  Eyebrow,
+  cn,
+} from '@goodboy/ui';
 import { AgentKindChip } from '../../../shared/components/AgentKindChip';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../shared/components/conceptIcons';
 import type { QuickActionItem } from '../types';
@@ -47,11 +56,11 @@ export const QuickActionsPopover = ({ items, emptyHint, onSelect, onDismiss }: P
   }, [activeIndex]);
 
   return (
-    <div
-      className={cn(
-        FLOATING_SURFACE,
-        'absolute bottom-full left-0 z-popover mb-1 w-full max-w-125 overflow-hidden',
-      )}
+    <AnchoredLayer
+      side="top"
+      isAnchorWidth
+      maxWidth={POPOVER_WIDTH_PX.studio}
+      className={cn(FLOATING_SURFACE, 'flex flex-col overflow-hidden')}
     >
       {items.length === 0 ? (
         <EmptyState
@@ -61,7 +70,7 @@ export const QuickActionsPopover = ({ items, emptyHint, onSelect, onDismiss }: P
           title={emptyHint}
         />
       ) : (
-        <ScrollFade className="max-h-48" viewportClassName="py-1">
+        <ScrollFade className="max-h-48 min-h-0" viewportClassName="py-1">
           <ul ref={listRef}>
             {items.map((item, i) => (
               <li
@@ -96,6 +105,6 @@ export const QuickActionsPopover = ({ items, emptyHint, onSelect, onDismiss }: P
           </ul>
         </ScrollFade>
       )}
-    </div>
+    </AnchoredLayer>
   );
 };

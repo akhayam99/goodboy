@@ -366,6 +366,7 @@
     "packages/ui/src/components/Popover.tsx": 1
   },
   "tone-border-rail": {},
+  "absolute-popover": {},
   "footer-cta-bar": {},
   "diff-font-sans": {
     "apps/desktop/src/features/diff/components/DiffView/DiffFile.tsx": 1
