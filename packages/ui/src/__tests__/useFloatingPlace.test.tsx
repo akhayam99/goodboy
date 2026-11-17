@@ -69,7 +69,7 @@ describe('useFloatingPlace', () => {
         edge: 8,
       }),
     );
-    expect(result.current).toEqual({ top: 92, left: 68, side: 'right' });
+    expect(result.current).toMatchObject({ top: 92, left: 68, side: 'right' });
   });
 
   it('is null while inactive, so nothing paints before a measurement', () => {
@@ -172,7 +172,7 @@ describe('useFloatingPlace', () => {
         edge: 8,
       }),
     );
-    expect(result.current).toEqual({ top: 92, left: 572, side: 'left' });
+    expect(result.current).toMatchObject({ top: 92, left: 572, side: 'left' });
   });
 
   it('stops listening once the card closes', () => {

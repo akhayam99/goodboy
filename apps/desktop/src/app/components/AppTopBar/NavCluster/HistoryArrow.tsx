@@ -29,7 +29,6 @@ type Props = {
 
 export const HistoryArrow = ({ direction, target, items, onGo, onJump }: Props) => {
   const dropdown = useDropdown({
-    align: direction === 'back' ? 'start' : 'center',
     expectedHeight: 30 * items.length + 8,
     expectedWidth: 320,
     width: 'w-80 max-w-[calc(100vw-2rem)]',

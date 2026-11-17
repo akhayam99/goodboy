@@ -4,7 +4,7 @@ import { cn } from '../../cn';
 import { FLOATING_SURFACE } from '../../floatingSurface';
 import { ScrollFade } from '../ScrollFade';
 import { MenuList } from './MenuList';
-import { placeContextMenu } from './placeContextMenu';
+import { placeFloating, type FloatingCoords } from '../../placeFloating';
 import { useEscapeLayer } from '../../useEscapeLayer';
 import type { MenuEntry, MenuPoint } from './menuTypes';
 
@@ -15,9 +15,11 @@ type Props = {
   readonly onClose: () => void;
 };
 
+const WINDOW_EDGE = 8;
+
 export const ContextMenu = ({ label, point, entries, onClose }: Props) => {
   const menuRef = useRef<HTMLDivElement>(null);
-  const [placed, setPlaced] = useState<MenuPoint | null>(null);
+  const [placed, setPlaced] = useState<FloatingCoords | null>(null);
   const onCloseRef = useRef(onClose);
   onCloseRef.current = onClose;
   useEscapeLayer(() => onCloseRef.current());
@@ -28,11 +30,20 @@ export const ContextMenu = ({ label, point, entries, onClose }: Props) => {
       return;
     }
     setPlaced(
-      placeContextMenu({
-        point,
-        width: node.offsetWidth,
-        height: node.offsetHeight,
-        viewport: { width: window.innerWidth, height: window.innerHeight },
+      placeFloating({
+        anchor: {
+          top: point.y,
+          bottom: point.y,
+          left: point.x,
+          right: point.x,
+          width: 0,
+          height: 0,
+        },
+        tip: { width: node.offsetWidth, height: node.offsetHeight },
+        side: 'right',
+        gap: 0,
+        edge: WINDOW_EDGE,
+        alignment: 'start',
       }),
     );
   }, [point, entries.length]);
@@ -69,13 +80,14 @@ export const ContextMenu = ({ label, point, entries, onClose }: Props) => {
       data-menu-portal
       onContextMenu={(event) => event.preventDefault()}
       style={{
-        left: placed?.x ?? point.x,
-        top: placed?.y ?? point.y,
+        left: placed?.left ?? point.x,
+        top: placed?.top ?? point.y,
+        maxHeight: placed?.maxHeight,
         visibility: placed === null ? 'hidden' : 'visible',
       }}
       className={cn(
         FLOATING_SURFACE,
-        'fixed z-popover flex max-h-[calc(100vh-16px)] max-w-80 flex-col text-meta motion-safe:animate-popover-in',
+        'fixed z-popover flex max-w-80 flex-col text-meta motion-safe:animate-popover-in',
       )}
     >
       <ScrollFade

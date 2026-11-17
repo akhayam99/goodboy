@@ -50,7 +50,7 @@ describe('useDropdown', () => {
     expect(result.current.popupClassName).toContain('w-80');
   });
 
-  it('centres the popup on its trigger when asked', () => {
+  it('keeps the end edge on the trigger end edge when asked, never centred', () => {
     Object.defineProperty(window, 'innerWidth', { configurable: true, value: 1024 });
     Object.defineProperty(window, 'innerHeight', { configurable: true, value: 768 });
     const trigger = document.createElement('div');
@@ -58,7 +58,7 @@ describe('useDropdown', () => {
     trigger.getBoundingClientRect = () =>
       DOMRect.fromRect({ x: 500, y: 40, width: 40, height: 24 });
     const { result } = renderHook(() =>
-      useDropdown({ align: 'center', expectedWidth: 384, width: 'w-96' }),
+      useDropdown({ align: 'end', expectedWidth: 384, width: 'w-96' }),
     );
 
     act(() => {
@@ -66,7 +66,7 @@ describe('useDropdown', () => {
       result.current.toggle();
     });
 
-    expect(result.current.popupStyle).toMatchObject({ left: 328 });
+    expect(result.current.popupStyle).toMatchObject({ left: 156, top: 68 });
     trigger.remove();
   });
 
@@ -267,6 +267,26 @@ describe('useDropdown', () => {
     });
 
     expect(result.current.popupStyle).toMatchObject({ left: 508, top: 20 });
+    trigger.remove();
+  });
+
+  it('opens to the left of a trigger on the right tool rail', () => {
+    Object.defineProperty(window, 'innerWidth', { configurable: true, value: 1024 });
+    Object.defineProperty(window, 'innerHeight', { configurable: true, value: 768 });
+    const trigger = document.createElement('div');
+    document.body.append(trigger);
+    trigger.getBoundingClientRect = () =>
+      DOMRect.fromRect({ x: 990, y: 200, width: 28, height: 28 });
+    const { result } = renderHook(() =>
+      useDropdown({ side: 'left', expectedHeight: 300, expectedWidth: 320, width: 'w-80' }),
+    );
+
+    act(() => {
+      result.current.containerRef.current = trigger;
+      result.current.toggle();
+    });
+
+    expect(result.current.popupStyle).toMatchObject({ left: 662, top: 200 });
     trigger.remove();
   });
 
