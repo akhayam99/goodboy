@@ -7,6 +7,7 @@ vi.mock('@tauri-apps/api/event', async () =>
   (await import('../../../../../store/storyHarness')).tauriEventModuleMock(),
 );
 
+import { StrictMode } from 'react';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { ToastProvider } from '../../../../../shared/components/Toast';
@@ -60,9 +61,11 @@ afterEach(() => {
 const mount = async ({ name }: MountParams): Promise<void> => {
   const Scene = U47_COMMENT_NEEDS_RUN_SCENES[name];
   render(
-    <ToastProvider>
-      <Scene />
-    </ToastProvider>,
+    <StrictMode>
+      <ToastProvider>
+        <Scene />
+      </ToastProvider>
+    </StrictMode>,
   );
   await act(async () => {
     await vi.advanceTimersByTimeAsync(SETTLE_MS);
@@ -136,5 +139,15 @@ describe('u47 comment needs a run scenes', () => {
         node.getAttribute('data-comment-run-source'),
       ),
     ).toEqual([THREAD_IDS.idempotency]);
+  });
+
+  it('seeds the goal of a start form that was already open when the comments loaded', async () => {
+    await mount({ name: 'u47-comment-needs-run-compose' });
+
+    const form = screen.getByRole('region', { name: COMMENT_RUN_COPY.label });
+    const goal = within(form).getByRole<HTMLTextAreaElement>('textbox', {
+      name: COMMENT_RUN_COPY.goal,
+    });
+    expect(goal.value.endsWith(`The fix agent found: ${NEEDS_RUN_FOUND}`)).toBe(true);
   });
 });
