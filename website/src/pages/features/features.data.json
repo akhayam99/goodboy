@@ -460,12 +460,6 @@
           "shown": true
         },
         {
-          "title": "New runs start as",
-          "text": "Pick how a new ask starts in this workspace: a Lead, a Lead with a preset or one agent.",
-          "group": "Workspaces and folders",
-          "also": "run default"
-        },
-        {
           "title": "Stops for your OK",
           "text": "Choose when a new run in this workspace stops for your go: every step, after the plan or never.",
           "group": "Workspaces and folders",

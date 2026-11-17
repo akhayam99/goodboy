@@ -55,8 +55,9 @@ stops reading the old one. `legacy-state-sunset.test.ts` fails when the
 running version reaches that release while the row is still listed: remove the
 read in the code, then delete the row.
 
-| State | Old shape | New shape written since | Old shape read until (excluded) |
-| ----- | --------- | ----------------------- | ------------------------------- |
+| State                                                                                  | Old shape                                          | New shape written since                                               | Old shape read until (excluded) |
+| -------------------------------------------------------------------------------------- | -------------------------------------------------- | --------------------------------------------------------------------- | ------------------------------- |
+| settings `runs.defaultShape.<workspaceId>` and `runs.defaultShape.session.<sessionId>` | Start as in Run defaults: `auto`, `lead` or `plan` | 0.39.1 writes nothing: the Plan row of the start form chooses per run | 0.41.0                          |
 
 Gone already:
 

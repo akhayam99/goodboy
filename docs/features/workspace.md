@@ -122,10 +122,6 @@ Keep Goodboy's own folder out of your commits with one click. The card shows up 
 
 Choose how new session branches are named, under **Naming** on the **Branches** page: a **Branch prefix**, with or without the task id, or a **Custom** template. Each choice shows the name it would give your last session, and existing branches keep their names.
 
-### New runs start as
-
-Choose how **Start a run** handles a new ask in this workspace with **Start as** in **Run defaults**: **Lead with a preset that fits** or **Lead**. A **Workflow** default saved before reads as **Lead**. With a session open, a second row, **New runs in this session start as**, sets that session's own default, which wins over the workspace one. Either reaches new runs only, and each change shows a toast with **Undo**.
-
 ### Stops for your OK
 
 Choose when a new run in this workspace stops for your go: every step, after the plan or never. One row in **Run defaults** sets it for workflows and for the Lead alike. One click saves both, and a failed save keeps both old levels and shows the error under the row.

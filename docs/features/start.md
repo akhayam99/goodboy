@@ -18,16 +18,19 @@ Write what you want done and press Start. A Lead runs it: it plans first, then s
 
 The pick is a rule table in the app, with no model call. Goodboy reads it top to bottom until a row holds.
 
-| Order | If                                                                                                       | Goodboy starts                                                                                               |
-| ----- | -------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
-| 1     | You said it: `~Fix a layout` or `@Scout`, or a default you set in Settings                               | A Lead with that preset as its plan, or that role at once. A session default wins over the workspace one.    |
-| 2     | The ask names a preset of the workspace, or shares at least two words of its description and step titles | A Lead with that preset as its plan, free to change it. A name match ranks first, then the preset last used. |
-| 3     | A task is linked, or the ask is a list or names many places ("every page")                               | A Lead                                                                                                       |
-| 4     | The session's open pull request fails its checks or has changes requested, and the ask is about it       | A Lead                                                                                                       |
-| 5     | A question, a check or one file                                                                          | A Lead                                                                                                       |
-| 6     | Nothing above                                                                                            | A Lead                                                                                                       |
+| Order | If                                                                                                 | Goodboy starts                                              |
+| ----- | -------------------------------------------------------------------------------------------------- | ----------------------------------------------------------- |
+| 1     | You said it: `~Fix a layout` or `@Scout`                                                           | A Lead with that workflow as its plan, or that role at once |
+| 2     | A task is linked, or the ask is a list or names many places ("every page")                         | A Lead                                                      |
+| 3     | The session's open pull request fails its checks or has changes requested, and the ask is about it | A Lead                                                      |
+| 4     | A question, a check or one file                                                                    | A Lead                                                      |
+| 5     | Nothing above                                                                                      | A Lead                                                      |
 
-- **Start as** sets the default for the workspace. **New runs in this session start as** sets it for the open session. Both are in Settings, under **Run defaults**. Every value starts a Lead. Only **Lead with a preset that fits** lets row 2 hand it a preset. A default saved as Workflow before reads as **Lead**.
+- A Lead never follows a workflow you did not pick.
+- When the ask names a saved workflow, or shares two words of its description and steps, a line under the Plan row reads "Looks like your workflow Fix a layout."
+- **Use it** picks **Follow a workflow** with it, and the Lead may change its steps.
+- A name match ranks first, then the workflow last used in the session.
+- A **Lead** default saved in Settings by an older version hides that line.
 - A preset becomes the Lead's plan: its brief lists the steps in order, with **Keep steps** or **May change steps**. A step pinned to a model keeps that model: the child the Lead starts for its role runs on it. A role you named starts that one agent, with no Lead.
 - New runs never start the orchestrator. A run started on it before keeps its engine, its line and its page.
 - The reason is kept with the run.
@@ -235,6 +238,7 @@ This part is for contributors and agents who change the feature.
 - Settings sentence: `StartSettingsRow` reads the words of each setting in `START_SENTENCE_ORDER` and keeps the controls under **Change**. `startSettingWordsOf` writes those words from the values the controls show: `useStartEditsMode` and `useDraftProjects` are shared with `StartEditsSetting` and `WhereChip` (`StartSettingsRow/index.test.tsx`). `startFormNoteOf` writes the line by Start.
 - Branch chip: `StartRunBranchChip` sits in the Where slot of `RunsStartForm` and lists the attached mounts through `startRunBranchOptionsOf`. `openStartRun` takes the branch, `startRunBranchOf` reads it from the event, and `askOnBranchOf` adds it to the ask. `BranchTools` is the branch page door; `startRunDoors.scenes.test.tsx` and `BranchPage/overviewDoors.test.tsx` cover the doors.
 - Kind to route: `runAsOfStartFormKind` turns a pressed kind into the `RunAs` that `runAsRouteOf` turns into the route Start uses, with a typed token ahead of the kind. `routeLineOf` builds the live "Starts as" line.
+- Workflow suggestion: `runRouteOf` never picks a workflow. `suggestedWorkflowOf` scores the saved ones against the ask, and `useStartRun` hands the best one to both forms. `StartWorkflowSuggestion` draws the line under the Plan row. **Use it** sets the kind and workflow the Plan row would, with `adapt` (`runRouteOf.test.ts`, `StartRun.test.tsx`, `newSession.test.tsx`). The old `runs.defaultShape` keys are read only until 0.41.0 (`docs/versioning.md`, Retired state).
 - Edits: `StartEditsSetting` reads the draft, or the session on Runs. `applyStartEdits` calls `setSessionPermissionMode` before the first agent starts and does nothing when no mode was picked.
 - Model chip: `RunModelChip` is the one control on every door and kind, the Agent kind of the New session page included. Its `pill` variant sits in the `model` slot of the start box (`StartRun`, `StartTaskField`) with the composer pill look (`ROUTING_PILL_CLASS`); `START_KIND_SETTINGS` has no model key. `SessionKickoff` picks the view once and hands it to the box and to `NewSessionStartForm`. There `useDraftAgentModel` wraps the `useRunModel` view so a pick lands in the draft's `agentRouting`. `useRunModel` resolves the default of the slot the route lands on and keeps this start's pins by slot. `runModelSlotOf` maps a plan to the `workflow_orchestrator` task and a lead to its role, `auto` by default.
 - Run page: `OrchestratorModelChip` reads `useOrchestratorModel`, which writes `setWorkflowOrchestratorRouting`. An agent page keeps its model in `ComposerToolbar` (`ComposerRoutingPicker`); `AgentSettingsLine` draws no model (`modelInComposer.test.tsx`).
