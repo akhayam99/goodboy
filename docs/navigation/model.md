@@ -204,10 +204,8 @@
   their exact position. The update control comes and goes with a pending update,
   because an update is an event, not a count.
 - **Hidden is not gone.** Anything the user can put away must come back without
-  a hunt. ⌘B folds the column into its rail of doors, which keeps every
-  destination; the full column, sessions included, peeks back when the pointer
-  rests at the window edge. Peek floats the one column over the page instead of
-  laying it out.
+  a hunt. The places rail stays visible and never folds. Page lists keep
+  their own fold controls (see [Studios](studios.md)).
 - **Navigation chrome is neutral at rest.** Selection shows as a muted fill,
   never an inversion. The app has no inverted navigation control. New session
   is the only emphasised column control. Doors, Board included, are neutral at

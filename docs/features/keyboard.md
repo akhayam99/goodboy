@@ -122,7 +122,7 @@ Move through Goodboy, change a shortcut and stop an agent without leaving the ke
 
 **Fold a column**
 
-- **⌘B** folds the sidebar. **⌥⌘B** folds the column inside the page you are on.
+- **⌥⌘B** folds the column inside the page you are on. The places rail stays visible.
 - That column is the Session pages column, the Chat and Terminal lists, the Guide chapters, the changelog versions, the Settings scopes or the notification filters.
 - Each remembers it per page. On a page with no inner column the key does nothing and Search or run leaves the entry out.
 
@@ -251,3 +251,5 @@ This part is for contributors and agents who change the feature.
 - Files: the Changes page switches between **Changed** and **All files** (`useChangesMode`); the file chord opens it on All files.
 
 - Context entry: `togglePane` and `openContextDrawer` default to Goal; `withoutRemovedPages` restores former Context addresses beside Overview.
+
+- Places rail: `apps/desktop/src/App.tsx` supplies `AppShell.leftRail` without a fold control; `apps/desktop/src/app/components/SideColumn/ShellLeft/index.tsx` keeps it visible beside the page.

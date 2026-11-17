@@ -387,7 +387,7 @@ session waits reads the same table, `ATTENTION_REASON_META` in
 `features/session/session-stage.ts`: one mark, one tone and one sentence per
 reason. A state has one glyph: `attentionMarkOf` turns a reason into its
 `StatusMark`, and `sessionMarkOf` turns a session into its mark through it. The
-sidebar row, the folded rail, the pinned rows, the switcher row, the hover
+session list row, the pinned rows, the switcher row, the hover
 card, the Board card signal, the Now chip rows, the palette's Needs you rows and
 the Guide legend all draw that `StatusMark`, so a Lead that needs you is the
 same amber hand everywhere, and the node's accessible label is the sentence.

@@ -837,19 +837,18 @@ Weight is one rule, `ICON_WEIGHT` in the same file: Phosphor bold at `mark`
 and `row` and on a check mark, regular at `control`, `notice` and `hero`, so
 every icon draws a line about 1px wide. Bold is drawn as the regular outline
 widened by a round stroke ([iconography.md](../../docs/iconography.md#sizes)). A call site passes the token, never a
-literal; `iconWeightOf({ size })` picks it from the size, and `IconButton` and
-the folded rail's `RailButton` use it.
+literal; `iconWeightOf({ size })` picks it from the size, and `IconButton`
+uses it.
 
 One size per place, so a column never mixes sizes:
 
-| Place                                        | Size      | Notes                                           |
-| -------------------------------------------- | --------- | ----------------------------------------------- |
-| Left column doors, New session, door actions | `row`     | concept glyph, `navRail.icon` slot              |
-| Left column trailing marks                   | `row`     | `StatusMark` glyphs in the 16px box             |
-| Folded rail (doors, Settings)                | `control` | `RailButton`, regular weight                    |
-| Tools rail (Terminal, Browser)               | `notice`  | icon over its caption, both centred on the rail |
-| Page and session header actions              | `control` | `IconButton` `sm` and `md`                      |
-| List and table rows                          | `row`     | leading and trailing glyphs                     |
+| Place                               | Size      | Notes                                           |
+| ----------------------------------- | --------- | ----------------------------------------------- |
+| Places rail (New, places, Settings) | `hero`    | `ShellRailItem`, regular weight                 |
+| Session list trailing marks         | `row`     | `StatusMark` glyphs in the 16px box             |
+| Tools rail (Terminal, Browser)      | `notice`  | icon over its caption, both centred on the rail |
+| Page and session header actions     | `control` | `IconButton` `sm` and `md`                      |
+| List and table rows                 | `row`     | leading and trailing glyphs                     |
 
 ## Status marks
 
@@ -1376,18 +1375,12 @@ column has the only width cap and truncates first. Everything to its right is
 way. In the rail, the label truncates and the count is `shrink-0`, so a long
 label loses characters before a count disappears.
 
-**The top bar's left edge belongs to the window.** The collapsed rail is
-`COLLAPSED_RAIL_WIDTH` (44px, exported by `AppShell`) and its buttons center on
-22px. The top bar's left zone starts at `--titlebar-inset`, which clears the
-macOS traffic lights. The main sidebar has one toggle, `ColumnToggleButton`,
-the first control of that zone, above the column it folds and before the
-workspace identity (⌘B). It is a 28px top bar control (`TOP_BAR_CONTROL`), so
-in full screen, where the inset is 0, its center lands on the rail's 22px axis
-(`collapsed-rail-width.test.tsx`). It is the same button whether the column is
-open or folded, its label and `aria-pressed` read the column you see ("Hide
-sidebar" / "Show sidebar"), and neither the column nor its 44px rail draws a
-toggle row (`sidebar-toggle-axis.test.tsx`). Widening the rail to fix a padding is
-the wrong trade, because chrome pays rent.
+**The top bar's left edge belongs to the window.** Its left zone starts at
+`--titlebar-inset`, which clears the macOS traffic lights. `AppTopBar` starts
+with the workspace identity and Repositories. It holds no sidebar toggle:
+`App.tsx` supplies the places rail through `AppShell.leftRail`, with no fold
+control. `ShellRail` owns its width through `shellRailGeometry`, 64px or 44px
+under 1100px (see [The left column](design/layout.md#the-left-column)).
 
 **An inline trigger inside `AnchoredPopover` passes `anchorClassName="flex"`.**
 The anchor is a block `div`, so an `inline-flex` trigger (a `Chip`, a pill)

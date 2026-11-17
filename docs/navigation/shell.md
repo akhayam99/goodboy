@@ -735,8 +735,8 @@ order or in name (the two dock tools read Show or Hide and their name).
 One sheet files every report. `ReportSheetHost`
 (`features/bug-report/components/ReportSheetHost`) floats it at the bottom of
 the window, centred, with no overlay: the page under it stays live. Every door
-lands there: ⌘I from anywhere, the bug icon in the column foot and on the folded
-rail, Report a bug in the
+lands there: ⌘I from anywhere, the bug icon in the places rail foot
+(`app/components/SideColumn/ReportBugButton.tsx`), Report a bug in the
 palette (it also answers bug, issue, feedback, crash and broken),
 **Help > Report a Bug** in the macOS menu bar (`app_menu.rs` emits
 `goodboy://menu` with `report.open` to the focused window; `useMenuCommands`

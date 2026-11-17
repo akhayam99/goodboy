@@ -221,9 +221,9 @@ Keep tokens out of what you save, move your setup between machines, and update w
 
 ## Search and navigation
 
-Find any session, message, plan or action, and reach it from the keyboard. One sidebar holds every place you go, and **⌘K** and **⌘F** cover the rest.
+Find any session, message, plan or action, and reach it from the keyboard. The places rail keeps workspace navigation on the left, and **⌘K** and **⌘F** cover the rest.
 
-- **Sidebar**: Every place you go sits in one sidebar on the left.
+- **Sidebar**: Move between Board, Tasks, Workflows, Chat, Connect and Impact from the places rail on the left.
 - **Go anywhere**: Reach any screen without the mouse.
 - **Search or run**: Press ⌘K, or click Search or run in the top bar, to act on what you are looking at.
 - **Search**: Find a message, a plan, a decision, an issue or a branch with ⌘F.

@@ -287,7 +287,7 @@
         },
         {
           "title": "Sidebar",
-          "text": "One column on the left holds Board, Tasks, Workflows, Chat, Impact, Monitoring and your sessions, on every screen. Terminal and Browser sit in the tools column on the right of every page and stay open as you move. An open session has one head with the tabs Overview, Runs, Artifacts, Questions and Context, and crumbs replace the tabs on a branch, an artifact or a run. Fold the sidebar with ⌘B and the icons stay.",
+          "text": "Move between Board, Tasks, Workflows, Chat, Connect and Impact from the places rail on the left. New opens a session, Board counts sessions that need you, and Tasks marks new tasks with a dot. The rail never folds; in a narrow window its words move into tooltips.",
           "group": "Search and navigation",
           "also": "sidebar"
         },

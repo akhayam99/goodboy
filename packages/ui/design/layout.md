@@ -4,28 +4,20 @@
 
 ## The left column
 
-`AppShell` lays out one left column on the chrome, a resize handle and the
-content sheet. The column is 240px by default, resizable from 200 to 400
-(`LEFT_SIDEBAR_*`), and its one reduced state is a 44px rail
-(`COLLAPSED_RAIL_WIDTH`). The desktop fills it with `SideColumn`; the rules for
-what it holds live in [docs/navigation/shell.md](../../../docs/navigation/shell.md) → Surfaces.
+`AppShell` takes the desktop's places rail in `leftRail`. Its grid column is
+`auto`, with no resize handle. `app/components/SideColumn/ShellLeft/` fills it
+with `ShellRail`: New, the six places and the foot. The content and signals
+are owned by [docs/navigation/shell.md](../../../docs/navigation/shell.md) → Surfaces.
 
-| part        | shape                                                                                                    |
-| ----------- | -------------------------------------------------------------------------------------------------------- |
-| toggle      | none in the column: the one sidebar toggle is `ColumnToggleButton`, first in the top bar left zone (⌘B)  |
-| New session | a 28px row, `text-row`, the primary tint (`bg` and `ring` of `tintClasses('primary')`), `+` in primary   |
-| door        | a 28px row: 14px concept icon, the word in `text-row` muted, the shortcut in `text-chip` on hover        |
-| current     | `bg-selected`, `text-foreground`, `cursor-default`, `aria-current="page"`, one per frame                 |
-| foot        | Settings as a door, then the Goodboy line and the 24px bug icon in `[data-column-corner]`                |
-| rail button | its open row without the word: `h-7 w-full px-2`, the icon at the row's x, the word in a right `Tooltip` |
+`ShellRail` reads `useShellRailForm` and `shellRailGeometry`: 64px with words,
+or 44px with icons and tooltips in a window under 1100px. `ShellRailItem`
+keeps the full accessible name when a shorter word is shown. The rail never
+folds, never resizes and saves no width. `App.tsx` supplies neither a top bar
+fold toggle nor a peek overlay.
 
-Rows sit 4px apart (`gap-1`); the doors start 4px under New session. The
-column never changes its content: no page swaps it, and only the sidebar toggle
-and ⌘B fold it. A studio never covers it: a studio is a page in the one main
-slot, drawn inside the content sheet over the page it replaces, and
-`StudioFrame` with `placement="content"` draws its band on that sheet instead
-of on the chrome. Settings is such a page, with its
-scopes in a page rail beside its detail.
+A studio is a page in the main slot, inside the content sheet beside the live
+places rail. `StudioFrame` with `placement="content"` draws its band on that
+sheet. Settings keeps its scopes in a page rail beside its detail.
 
 **A session has its own rail, not a card.** The workspace list keeps every
 session a flat row and never changes level; the open one is set in medium
