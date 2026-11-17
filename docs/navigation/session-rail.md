@@ -466,16 +466,22 @@ only. The Board's default order uses the same key. With no grouping the first
 eight rows show and the rest sit under **Show N more**, remembered per
 workspace. A session that needs you and the open session are never folded. A
 grouped list shows every group, finished groups start collapsed, and nothing
-folds. `⌘⇧[` and `⌘⇧]` walk this same displayed order and skip folded rows, so
-pressing `⌘⇧]` four times from the first row visits the next four sessions.
+folds.
+
+**`⌘⇧[` and `⌘⇧]` walk one order by state, kept in the data.** Pinned sessions come
+first in pin order, then the sessions that need you (longest waiting first), running,
+in review and building, each by last activity (`sessionOrderOf`, read by
+`useSessionOrder`). Done and archived sessions stay out of the walk unless pinned. The
+order covers the whole workspace, whatever the project filter, the Board sort or the
+fold, and needs no list on screen. Pressing `⌘⇧]` four times from the first session
+visits the next four.
 
 **Finished sessions close the list in one Done group.** One word names the end:
 a session whose stage is done (a merged or closed pull request, or an answer,
 a report, a plan or a finished edit once its reply is read) leaves the live
 rows and sits in a **Done** group at the end of the column, shut by default,
 with its count from two, in the order the sort gives (`splitDoneSessions`, key
-`done`). Opening the header shows the rows and `⌘⇧[` and `⌘⇧]` walk them only
-while it is open; the open or shut choice is remembered like any group
+`done`). Opening the header shows the rows; the open or shut choice is remembered like any group
 (`sessionGroupExpanded`). The group opens by itself while the Status filter
 asks for Done, unless you shut it. The open session and a pinned session
 never move into it. A list grouped by stage already has a Done group and gets

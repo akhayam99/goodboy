@@ -27,6 +27,7 @@ import { DEFAULT_PREFS, type GroupedSessions } from './types';
 import { attentionCountOf, type AttentionCount } from './attentionCountOf';
 import { cachedStageInfoOf } from './cachedStageInfoOf';
 import { stageInfosOf } from './stageInfosOf';
+import { sessionOrderOf, type SessionOrder } from './sessionOrderOf';
 
 export const useSessionViewPrefs = (workspaceId: WorkspaceId | null): SessionViewPrefs => {
   const prefs = useAppStore((s) =>
@@ -407,7 +408,7 @@ export const useWorkspaceAttention = ({
   workspaceId,
   sessions,
 }: AttentionParams): WorkspaceAttention => {
-  const { filteredSessions, infos } = useStageSources({
+  const { filteredSessions, stages, infos } = useStageSources({
     workspaceId,
     sessions,
     isFilterIgnored: true,
@@ -419,11 +420,32 @@ export const useWorkspaceAttention = ({
     });
     const attention = attentionCountOf({ items });
     const counted = new Set(attention.countedIds);
+    const [waiting] = sortAndGroupSessions({
+      sessions: filteredSessions.filter((session) => counted.has(session.id)),
+      prefs: DEFAULT_PREFS,
+      githubState: {},
+      stageBySession: stages,
+      attentionSinceBySession: attentionSinceOfInfos({ infos }),
+    });
     return {
       ...attention,
       reasons: reasonWordsOf({ items, isCounted: true, counted }),
       quietReasons: reasonWordsOf({ items, isCounted: false, counted }),
-      countedSessions: filteredSessions.filter((session) => counted.has(session.id)),
+      countedSessions: waiting?.sessions ?? [],
     };
-  }, [filteredSessions, infos]);
+  }, [filteredSessions, stages, infos]);
+};
+
+export const useSessionOrder = ({ workspaceId, sessions }: AttentionParams): SessionOrder => {
+  const pinnedIds = usePinnedSessionIds({ workspaceId });
+  const { filteredSessions, infos } = useStageSources({
+    workspaceId,
+    sessions,
+    isFilterIgnored: true,
+  });
+  const lastTurnBySession = useLastTurnBySession(filteredSessions);
+  return useMemo(
+    () => sessionOrderOf({ sessions: filteredSessions, pinnedIds, infos, lastTurnBySession }),
+    [filteredSessions, pinnedIds, infos, lastTurnBySession],
+  );
 };

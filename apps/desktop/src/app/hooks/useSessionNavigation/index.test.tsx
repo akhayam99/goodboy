@@ -13,9 +13,7 @@ vi.mock('../../../shared/lib/db', async () =>
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, renderHook } from '@testing-library/react';
-import type { IsoDateTime, Session, SessionId } from '@goodboy/types';
-import { brandId } from '@goodboy/types';
-import { anAgent } from '@goodboy/types/testing';
+import type { Session } from '@goodboy/types';
 import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
@@ -25,7 +23,9 @@ import {
 import { sessionPlace } from '../../../store/slices/navigation/place';
 import {
   harborline,
+  ledgerCore,
   mergedGithub,
+  paymentsApi,
   runningState,
   seedColumn,
   sessionOf,
@@ -58,28 +58,36 @@ const opened = (hour: number, goal: string): Session =>
     updatedAt: `2026-10-06T${String(hour).padStart(2, '0')}:00:00.000Z`,
   });
 
-const idOf = (session: Session) => session.id as SessionId;
+const idOf = (session: Session) => session.id;
 
-const mount = ({
-  sessions,
-  current,
-  questions = [],
-}: {
+type MountParams = {
   readonly sessions: ReadonlyArray<Session>;
   readonly current: Session | null;
   readonly questions?: ReadonlyArray<Session>;
-}) => {
+  readonly pinned?: ReadonlyArray<Session>;
+  readonly mounts?: ReadonlyArray<readonly [Session, typeof paymentsApi]>;
+};
+
+const mount = ({ sessions, current, questions = [], pinned = [], mounts = [] }: MountParams) => {
   seedColumn({
     store: useAppStore,
     sessions,
     currentSessionId: current === null ? null : idOf(current),
     questions,
+    mounts,
   });
-  useAppStore.setState({ navigate });
+  useAppStore.setState({
+    navigate,
+    sessionPins: {
+      [harborline.id]: pinned.map((session, index) => ({ id: idOf(session), at: index + 1 })),
+    },
+  });
   return renderHook(() => useSessionNavigation());
 };
 
 const lastTarget = () => navigate.mock.calls.at(-1)?.[0];
+
+const placeOf = (session: Session) => ({ to: sessionPlace({ sessionId: idOf(session) }) });
 
 describe('stepping from session to session', () => {
   const first = opened(12, 'Opened last');
@@ -87,34 +95,34 @@ describe('stepping from session to session', () => {
   const third = opened(10, 'Opened first');
   const waiting = sessionOf({ goal: 'Waits on you', updatedAt: '2026-10-01T09:00:00.000Z' });
 
-  it('follows the order of the list, needs you first', () => {
+  it('puts the sessions that need you first', () => {
     const { result } = mount({
       sessions: [first, second, third, waiting],
       current: waiting,
       questions: [waiting],
     });
     result.current({ delta: 1 });
-    expect(lastTarget()).toEqual({ to: sessionPlace({ sessionId: idOf(first) }) });
+    expect(lastTarget()).toEqual(placeOf(first));
   });
 
-  it('goes back to the previous row', () => {
+  it('goes back to the previous session', () => {
     const { result } = mount({ sessions: [first, second, third], current: second });
     result.current({ delta: -1 });
-    expect(lastTarget()).toEqual({ to: sessionPlace({ sessionId: idOf(first) }) });
+    expect(lastTarget()).toEqual(placeOf(first));
   });
 
-  it('stays put at the end of the list', () => {
+  it('stays put at the end of the order', () => {
     const { result } = mount({ sessions: [first, second, third], current: third });
     result.current({ delta: 1 });
     expect(navigate).not.toHaveBeenCalled();
   });
 
-  it('opens the first or last row when none is open', () => {
+  it('opens the first or last session when none is open', () => {
     const { result } = mount({ sessions: [first, second, third], current: null });
     result.current({ delta: 1 });
     result.current({ delta: -1 });
-    expect(navigate).toHaveBeenNthCalledWith(1, { to: sessionPlace({ sessionId: idOf(first) }) });
-    expect(navigate).toHaveBeenNthCalledWith(2, { to: sessionPlace({ sessionId: idOf(third) }) });
+    expect(navigate).toHaveBeenNthCalledWith(1, placeOf(first));
+    expect(navigate).toHaveBeenNthCalledWith(2, placeOf(third));
   });
 
   it('does nothing without sessions', () => {
@@ -124,7 +132,7 @@ describe('stepping from session to session', () => {
   });
 });
 
-describe('walking a list while opening each row', () => {
+describe('walking while opening each session', () => {
   const first = opened(20, 'A');
   const rows = [first, opened(19, 'B'), opened(18, 'C'), opened(17, 'D'), opened(16, 'E')];
 
@@ -149,7 +157,7 @@ describe('walking a list while opening each row', () => {
   });
 });
 
-describe('the rows the list folds', () => {
+describe('an order that lives in the data, not in a drawn list', () => {
   const twelve = Array.from({ length: 12 }, (_, index) =>
     opened(23 - index, `Session ${index + 1}`),
   );
@@ -161,96 +169,90 @@ describe('the rows the list folds', () => {
     return found;
   };
 
-  it('never steps into a row the fold hides', () => {
-    const { result } = mount({ sessions: twelve, current: twelve[7] ?? null });
+  it('walks past the eighth session, with no fold', () => {
+    const { result } = mount({ sessions: twelve, current: twelveAt(7) });
     result.current({ delta: 1 });
-    expect(navigate).not.toHaveBeenCalled();
+    expect(lastTarget()).toEqual(placeOf(twelveAt(8)));
   });
 
-  it('walks every row once the fold is open', () => {
-    seedColumn({
-      store: useAppStore,
-      sessions: twelve,
-      currentSessionId: idOf(twelveAt(7)),
-    });
+  it('keeps the same order whatever the Board sort says', () => {
+    const { result } = mount({ sessions: twelve, current: twelveAt(0) });
     useAppStore
       .getState()
-      .setSessionViewPrefs({ workspaceId: harborline.id, patch: { isFoldOpen: true } });
-    useAppStore.setState({ navigate });
-    const { result } = renderHook(() => useSessionNavigation());
+      .setSessionViewPrefs({ workspaceId: harborline.id, patch: { sort: 'goal', group: 'pr' } });
     result.current({ delta: 1 });
-    expect(lastTarget()).toEqual({ to: sessionPlace({ sessionId: idOf(twelveAt(8)) }) });
+    expect(lastTarget()).toEqual(placeOf(twelveAt(1)));
   });
 
-  it('keeps the open session in reach even when it sits below the fold', () => {
-    const { result } = mount({ sessions: twelve, current: twelve[10] ?? null });
-    result.current({ delta: -1 });
-    expect(lastTarget()).toEqual({ to: sessionPlace({ sessionId: idOf(twelveAt(7)) }) });
+  it('walks the sessions the project filter hides', () => {
+    const inPayments = opened(12, 'In payments-api');
+    const inLedger = opened(11, 'In ledger-core');
+    const { result } = mount({
+      sessions: [inPayments, inLedger],
+      current: inPayments,
+      mounts: [
+        [inPayments, paymentsApi],
+        [inLedger, ledgerCore],
+      ],
+    });
+    act(() => {
+      useAppStore.getState().setSelectedProjectIds({
+        workspaceId: harborline.id,
+        selectedProjectIds: [paymentsApi.id],
+      });
+    });
+    result.current({ delta: 1 });
+    expect(lastTarget()).toEqual(placeOf(inLedger));
   });
 });
 
-describe('a grouped list', () => {
+describe('the order by state', () => {
   const running = sessionOf({
     goal: 'Still going',
     state: runningState(),
-    updatedAt: '2026-10-06T12:00:00.000Z',
+    updatedAt: '2026-10-06T08:00:00.000Z',
   });
-  const merged = opened(11, 'Merged long ago');
+  const merged = opened(12, 'Merged long ago');
   const idle = opened(10, 'Quiet');
+  const waiting = sessionOf({ goal: 'Waits on you', updatedAt: '2026-10-01T09:00:00.000Z' });
 
-  const wroteAfterMerge = anAgent({
-    sessionId: idOf(merged),
-    kind: 'implementer',
-    status: 'completed',
-    lastFinishedAt: brandId<IsoDateTime>({ value: '2026-10-06T10:00:00.000Z' }),
-    lastViewedAt: brandId<IsoDateTime>({ value: '2026-10-06T10:00:00.000Z' }),
-  });
-
-  const mountGrouped = (isDoneExpanded: boolean, isMergedLive = true) => {
-    seedColumn({
-      store: useAppStore,
-      sessions: [running, merged, idle],
-      currentSessionId: idOf(idle),
+  const mountStates = ({
+    current,
+    pinned = [],
+  }: {
+    readonly current: Session;
+    readonly pinned?: ReadonlyArray<Session>;
+  }) => {
+    const rendered = mount({
+      sessions: [idle, merged, running, waiting],
+      current,
+      questions: [waiting],
+      pinned,
     });
-    useAppStore.setState({
-      navigate,
-      sessionPhaseRuns: isMergedLive ? { [merged.id]: [wroteAfterMerge] } : {},
-      sessionGithub: { [merged.id]: mergedGithub() },
-      sessionGroupExpanded: isDoneExpanded ? { done: true } : {},
+    act(() => {
+      useAppStore.setState({ sessionGithub: { [merged.id]: mergedGithub() } });
     });
-    useAppStore
-      .getState()
-      .setSessionViewPrefs({ workspaceId: harborline.id, patch: { group: 'stage' } });
-    return renderHook(() => useSessionNavigation());
+    rendered.rerender();
+    return rendered;
   };
 
-  it('skips a group the list collapses by default', () => {
-    const { result } = mountGrouped(false);
+  it('walks needs you, then running, then the rest', () => {
+    const { result } = mountStates({ current: waiting });
+    result.current({ delta: 1 });
+    expect(lastTarget()).toEqual(placeOf(running));
+  });
+
+  it('leaves a done session out of the walk', () => {
+    const { result } = mountStates({ current: idle });
     result.current({ delta: 1 });
     expect(navigate).not.toHaveBeenCalled();
   });
 
-  it('walks into the group once the list expands it', () => {
-    const { result } = mountGrouped(true);
-    result.current({ delta: 1 });
-    expect(lastTarget()).toEqual({ to: sessionPlace({ sessionId: idOf(merged) }) });
-  });
-
-  it('walks the groups in the order of the list, needs you and running first', () => {
-    const { result } = mountGrouped(true);
+  it('puts the pinned sessions first, in pin order, done ones included', () => {
+    const { result } = mountStates({ current: idle, pinned: [merged, idle] });
     result.current({ delta: -1 });
-    expect(lastTarget()).toEqual({ to: sessionPlace({ sessionId: idOf(running) }) });
-  });
-
-  it('keeps a merged session nobody wrote to after the merge in the shut Done group, out of the walk', () => {
-    const { result } = mountGrouped(false, false);
+    expect(lastTarget()).toEqual(placeOf(merged));
     result.current({ delta: 1 });
-    expect(navigate).not.toHaveBeenCalled();
-  });
-
-  it('walks into that Done group once the list opens it', () => {
-    const { result } = mountGrouped(true, false);
-    result.current({ delta: 1 });
-    expect(lastTarget()).toEqual({ to: sessionPlace({ sessionId: idOf(merged) }) });
+    expect(lastTarget()).toEqual(placeOf(waiting));
   });
 });
