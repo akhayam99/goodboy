@@ -559,7 +559,13 @@ it; Esc inside the page goes to the page.
   tooltip, page or drag). While a `SplitHandle` drags, the body carries
   `SPLIT_DRAG_ATTRIBUTE` and every view in the window hides under a drag
   cover, so the page is placed once at the release instead of once per frame
-  (`splitDragCover.test.ts`). The cover goes one frame after the host showed the view
+  (`splitDragCover.test.ts`, a column and a row drag). The mark stays while the
+  parent renders mid drag and goes only on release or unmount. The host only
+  hides the view under the cover: a hide never sleeps a tab inside the live
+  cap, and the release place lands before the show, so the page comes back at
+  the panel's new rect without a reload (`registry.rs`,
+  `keeps_a_page_live_under_a_drag_cover_and_shows_it_at_the_release_place`).
+  The cover goes one frame after the host showed the view
   again (`onShown` of `createNativePlacement`), so no frame has neither, and it
   stays when the show fails. Toasts keep left of the pane, even when it lies over
   the page (`toastRightOf`), and left of the Browser page's view, so they

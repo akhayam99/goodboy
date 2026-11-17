@@ -341,6 +341,10 @@ shows a key that turns the pair (`DockPairTurnContext` in `DrawerFrame`,
 `turnDockPair` with `turnedDockColumnsOf`); the write names the panel it came
 from and does nothing once that panel left the grid. When the page would lose
 its minimum side by side the solver stacks the pair and the key hides.
+Browser and Terminal share the grid like any tool: a handle drag hides the
+Browser page under its cover and places it once at the release
+([browser.md](../browser.md#the-pane)), and a Terminal sends only its newest
+size, one at a time ([keyboard.md](../features/keyboard.md)).
 **The open drawer is part of the
 history entry's focus; the chip is not.** A forward move (crumb, sidebar, Search or run, a child such
 as an agent) arrives with it closed; Back and Forward bring it back as it was;

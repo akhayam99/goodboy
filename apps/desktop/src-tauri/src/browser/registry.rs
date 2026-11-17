@@ -1112,6 +1112,28 @@ mod tests {
     }
 
     #[test]
+    fn keeps_a_page_live_under_a_drag_cover_and_shows_it_at_the_release_place() {
+        let registry = BrowserRegistry::default();
+        for id in ["a", "b", "c", "d"] {
+            open(&registry, id, "harborline", true);
+        }
+        hide_at(&registry, "a", 1_000);
+        assert!(registry.over_cap("main", 4).is_empty());
+        let released = Rect {
+            position: LogicalPosition::new(1020.0, 96.0).into(),
+            size: LogicalSize::new(420.0, 360.0).into(),
+        };
+        registry.set_rect("a", released);
+        let shown = registry.set_shown("a", true, 1_200).expect("tab exists");
+        assert_eq!(shown.state, TabState::Live);
+        assert!(shown.is_shown);
+        assert_eq!(
+            format!("{:?}", registry.rect_of("a")),
+            format!("{:?}", Some(released))
+        );
+    }
+
+    #[test]
     fn wire_shape_tab_facts() {
         assert_wire_value(
             &TabFacts {
