@@ -277,6 +277,12 @@ export const RETIRED_NAMES: ReadonlyArray<RetiredName> = [
     use: NAMES.lead,
   },
   {
+    id: 'auto-as-the-lead',
+    pattern:
+      /\bAuto(?:'s answer| needs you| is (?:reading|answering|choosing|still starting|working|resolving|rebasing|not available)| tried to| asks which| asked for| couldn't| can't| has already| was stopped| decides what| resolves| resolved| resolving| works from)\b|\b(?:Detach from|Open|Resolve with|Rebased by|Returned to|Stopped by|Waiting for|Moved to|Let|Message) Auto\b|\bbefore Auto starts\b/,
+    use: NAMES.lead,
+  },
+  {
     id: 'start-work-verb',
     pattern: /\bStart work\b(?! from (?:chat|this)\b)/,
     use: NAMES.startARun,

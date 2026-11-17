@@ -236,10 +236,10 @@ describe('c07 Auto scenes', () => {
     expect(sessionHead().getAttribute('data-head-nav')).toBe('crumbs');
   });
 
-  it('c07-auto-child-done shows what came back and says Returned to Auto', async () => {
+  it('c07-auto-child-done shows what came back and says Returned to the Lead', async () => {
     mount({ id: 'c07-auto-child-done' });
 
-    expect(await screen.findByText('Returned to Auto', undefined, WAIT)).toBeDefined();
+    expect(await screen.findByText('Returned to the Lead', undefined, WAIT)).toBeDefined();
     expect(
       screen.getAllByText('Three tests added in payments-api, all pass.').length,
     ).toBeGreaterThan(0);
@@ -407,7 +407,7 @@ describe('c07 Auto scenes', () => {
     const retry = await screen.findByRole('button', { name: 'Retry' }, WAIT);
     fireEvent.click(retry);
 
-    const title = await screen.findByText("Couldn't retry Auto", undefined, WAIT);
+    const title = await screen.findByText("Couldn't retry the Lead", undefined, WAIT);
     const alert = title.closest('[role="alert"]');
     expect(alert?.closest('[data-conversation-dock]')).not.toBeNull();
     expect(alert?.textContent).toContain('This conversation reached its time limit.');
@@ -419,7 +419,7 @@ describe('c07 Auto scenes', () => {
     const title = await screen.findByText("Couldn't stop the run", undefined, WAIT);
     const alert = title.closest('[role="alert"]');
     expect(alert?.closest('[data-conversation-dock]')).not.toBeNull();
-    expect(alert?.textContent).toContain('Auto is still starting. Retry in a moment.');
+    expect(alert?.textContent).toContain('The Lead is still starting. Retry in a moment.');
   });
 
   it('c07-auto-list lists every Auto conversation on one grid and opens one', async () => {

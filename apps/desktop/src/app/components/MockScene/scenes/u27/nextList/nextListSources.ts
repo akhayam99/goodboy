@@ -53,8 +53,8 @@ type ApproveParams = {
 const approveOf = ({ rootAgentId }: ApproveParams): AutoActionTarget => ({
   agentId: rootAgentId,
   rootAgentId,
-  role: 'Auto',
-  noun: 'Auto',
+  role: 'Lead',
+  noun: 'Lead',
   kind: 'approve',
   reason: null,
   reasonCode: null,

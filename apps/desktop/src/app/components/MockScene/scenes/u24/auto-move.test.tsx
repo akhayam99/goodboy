@@ -62,19 +62,19 @@ describe('the Move to Auto scenes', () => {
     mount({ id: 'auto-move-panel' });
 
     expect(
-      await screen.findByRole('textbox', { name: 'What should Auto do next?' }, WAIT),
+      await screen.findByRole('textbox', { name: 'What should the Lead do next?' }, WAIT),
     ).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Let Auto take it from here' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Let the Lead take it from here' })).toBeDefined();
     expect(screen.getByRole('button', { name: 'Cancel' })).toBeDefined();
     expect(screen.getByText(/The cap is in postCredit/)).toBeDefined();
   });
 
-  it('auto-move-moved reads Moved to Auto with Detach and Open Auto, and no composer', async () => {
+  it('auto-move-moved reads Moved to the Lead with Detach and Open the Lead, and no composer', async () => {
     mount({ id: 'auto-move-moved' });
 
-    expect(await screen.findByText(/Moved to Auto\./, undefined, WAIT)).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Detach from Auto' })).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Open Auto' })).toBeDefined();
-    expect(screen.queryByRole('textbox', { name: 'What should Auto do next?' })).toBeNull();
+    expect(await screen.findByText(/Moved to the Lead\./, undefined, WAIT)).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Detach from the Lead' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Open the Lead' })).toBeDefined();
+    expect(screen.queryByRole('textbox', { name: 'What should the Lead do next?' })).toBeNull();
   });
 });

@@ -204,7 +204,7 @@ const autoSeed = (): Pick<CentralNowSeed, 'model' | 'agents' | 'cards' | 'source
           role: 'Fix the ledger-core retry',
           kind: 'neverStarted',
           noun: 'Fixer',
-          reason: 'Auto created it, no first message reached it.',
+          reason: 'The Lead created it, no first message reached it.',
           reasonCode: null,
           mountId: null,
           plan: null,

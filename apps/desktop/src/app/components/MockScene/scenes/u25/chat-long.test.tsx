@@ -45,7 +45,7 @@ describe('the delivery transcript scene', () => {
     expect(queryByText(/STATE OF THIS CONVERSATION/)).toBeNull();
     expect(container.textContent).not.toContain('Reserved 0.00 USD');
 
-    fireEvent.click(await findByText('What Auto was told'));
+    fireEvent.click(await findByText('What the Lead was told'));
     expect(container.textContent).toContain('STATE OF THIS CONVERSATION');
   });
 });

@@ -104,7 +104,7 @@ describe('the u26 rebase scenes', () => {
       throw new Error('no conflict prompt');
     }
     const inPrompt = within(prompt);
-    expect(inPrompt.getByRole('button', { name: 'Resolve with Auto' })).toBeDefined();
+    expect(inPrompt.getByRole('button', { name: 'Resolve with the Lead' })).toBeDefined();
     expect(inPrompt.getByRole('button', { name: 'Resolve in terminal' })).toBeDefined();
     expect(inPrompt.getByRole('button', { name: 'Abort rebase' })).toBeDefined();
     expect(inPrompt.getByRole('button', { name: /Add a hint/ })).toBeDefined();
@@ -136,7 +136,7 @@ describe('the u26 rebase scenes', () => {
     if (prompt === undefined) {
       throw new Error('no conflict prompt');
     }
-    fireEvent.click(within(prompt).getByRole('button', { name: 'Resolve with Auto' }));
+    fireEvent.click(within(prompt).getByRole('button', { name: 'Resolve with the Lead' }));
     await settle();
 
     expect(resolveRebaseWithAuto).toHaveBeenCalledWith(
@@ -204,7 +204,7 @@ describe('the u26 rebase scenes', () => {
     expect(screen.getByRole('status').textContent).toContain('Stopping after this branch');
   });
 
-  it('says who does what on each branch row once Auto has the rest, with no list', async () => {
+  it('says who does what on each branch row once The Lead has the rest, with no list', async () => {
     await mount({ name: 'u26-rebase-all-auto-dark' });
 
     const rowOf = ({ name }: NameParams) =>
@@ -214,10 +214,10 @@ describe('the u26 rebase scenes', () => {
     const textOf = ({ name }: NameParams) => chipOf({ name })?.textContent ?? null;
 
     expect(document.querySelector('[data-rebase-all-branch]')).toBeNull();
-    expect(screen.getByRole('status').textContent).toBe('Auto has the rest');
+    expect(screen.getByRole('status').textContent).toBe('The Lead has the rest');
     expect(textOf({ name: 'fix-duplicate-credit' })).toBeNull();
-    expect(textOf({ name: 'webhook-backoff' })).toBe('Auto resolving');
-    expect(textOf({ name: 'retry-copy' })).toBe('Rebased by Auto');
+    expect(textOf({ name: 'webhook-backoff' })).toBe('Lead resolving');
+    expect(textOf({ name: 'retry-copy' })).toBe('Rebased by the Lead');
     expect(textOf({ name: 'delivery-metrics' })).toBe('Rebase stopped');
     expect(textOf({ name: 'export-batch' })).toBe('Failed');
     expect(
@@ -248,7 +248,7 @@ describe('the u26 rebase scenes', () => {
     ).toBe(true);
   });
 
-  it('drops Rebased by Auto once every branch Auto took has settled', async () => {
+  it('drops Rebased by the Lead once every branch Auto took has settled', async () => {
     await mount({ name: 'u26-rebase-all-auto-dark' });
     const run = useAppStore.getState().rebaseAllRuns[SESSION_ID];
     if (run === undefined) {

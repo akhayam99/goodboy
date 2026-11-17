@@ -62,7 +62,7 @@ const AUTO_AGENT: Agent = {
   id: AUTO_ROOT_ID,
   sessionId: AUTO_SESSION.id,
   ordinal: 2,
-  name: 'Auto',
+  name: 'Lead',
   status: 'pending',
   kind: 'auto',
   startedAt: at({ time: '09:21:00' }),

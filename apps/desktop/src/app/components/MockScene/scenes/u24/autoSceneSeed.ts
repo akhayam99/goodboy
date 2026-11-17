@@ -528,7 +528,7 @@ export const autoSceneOf = ({ state }: SceneParams): AutoSceneData => {
   const root = (status: Agent['status'], endTime?: string) =>
     agentOf({
       id: AUTO_ROOT_ID,
-      name: 'Auto',
+      name: 'Lead',
       kind: 'auto',
       status,
       startTime: '12:04:00',
