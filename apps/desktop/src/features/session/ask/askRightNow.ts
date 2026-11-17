@@ -1,4 +1,5 @@
-import { RESOLVE_WORD_LABEL, type ResolveWord } from '../../resolve/commentProjection';
+import type { ResolveWord } from '../../resolve/commentProjection';
+import { resolveWordCountText } from '../../resolve/resolveWordCountText';
 import { pluralize } from '../../../shared/utils/pluralize';
 
 type AskRightNowTone = 'running' | 'needs' | 'failed' | 'done' | 'idle' | 'cost';
@@ -53,7 +54,7 @@ const commentLine = ({
   const noun = pluralize(live.length, 'comment');
   const counts = COUNTED_WORDS.flatMap((word) => {
     const count = live.filter((candidate) => candidate === word).length;
-    return count === 0 ? [] : [`${count} ${RESOLVE_WORD_LABEL[word].toLowerCase()}`];
+    return count === 0 ? [] : [resolveWordCountText({ word, count })];
   });
   return {
     key: 'comments',
@@ -140,7 +141,7 @@ export const askSuggestions = ({
   const candidates = [
     needsYou ? 'What needs me?' : null,
     failed === undefined ? null : `Why did ${failed} fail?`,
-    commentWords.includes('couldnt_fix') ? 'Why couldn’t the fix run fix a comment?' : null,
+    commentWords.includes('couldnt_fix') ? 'Why did a comment fix fail?' : null,
     'What changed since I last looked?',
     'What is happening right now?',
     prNumber === null ? null : `Is #${prNumber} ready to merge?`,
