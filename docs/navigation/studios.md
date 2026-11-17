@@ -359,11 +359,13 @@ matches "x".` and points to ⌘K for actions. `settingRows.test.tsx` renders
   `Workspace` band that opens the Projects page, and its name is written once
   on that page, in the top bar. The page ends in a `Danger zone` band whose
   row says `Disconnect this workspace`, confirmed in place.
-  Replies and commits holds the `Replies` band (the voice and the
-  attribution line), the templates with the seven placeholders shown once
-  under both and added to the template last in focus (`ReplyTemplatesBand`),
-  `Mark thread as resolved` and the commit style (`review-replies` stays its
-  page id and anchor); Run defaults is its own page of the workspace
+  Replies and commits is one column: `How replies read` (the voice, the
+  preview right under it, `Sign replies`, then `Reply wording`, a closed
+  disclosure with the two templates and an `Insert` popover per template
+  that puts a placeholder at the caret, `ReplyTemplatesBand`), `After a
+reply` (`Resolve the thread`, `Update the reply after a squash`) and
+  `Commits` (`review-replies` stays its page id and anchor; a search hit on a
+  template opens the disclosure); Run defaults is its own page of the workspace
   settings and holds no branch or reply setting. Branches opens on a Naming
   band (`WorkspaceBranchNamingBand`: Branch prefix and Branch name), then
   After merge. Each field's page is `FIELD_PAGE` in

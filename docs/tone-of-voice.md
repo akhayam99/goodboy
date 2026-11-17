@@ -96,7 +96,7 @@ talking to a market. There are two voices:
 - **A state or reason starts with a capital.** "The agent is waiting for you",
   not "the agent is waiting for you", even when it sits under a label.
 - **Options never say "I", "me" or "my".** An option says what the app does:
-  "Write it", "Your replies", "Run in terminal", "Warn only".
+  "Write it", "Like your replies", "Run in terminal", "Warn only".
 - **One verb per intention.** Delete, Remove, Archive, Disconnect, Stop,
   Dismiss, Clear and Retry each mean one thing, and the table is in
   [concepts.md](concepts.md) → Vocabulary rules. A failed action offers
