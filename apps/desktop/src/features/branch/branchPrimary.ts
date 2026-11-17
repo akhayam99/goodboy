@@ -218,7 +218,7 @@ const checkStepOf = ({ step, checkNote }: CheckStepParams): BranchPrimary => {
     return stepAction({ action: 'checks', label: 'Push fix', icon: ArrowUp });
   }
   if (step === 'startCheckFix') {
-    return stepAction({ action: 'checks', label: 'Start fix', icon: Wrench });
+    return stepAction({ action: 'checks', label: NAMES.applyFix, icon: Wrench });
   }
   return stepAction({ action: 'checks', label: 'Fix checks', icon: Wrench, note: checkNote });
 };

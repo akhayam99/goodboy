@@ -39,7 +39,7 @@ const firstStepOf = ({ chain, hasFixLanded }: StepParams) => {
     return { name: 'Analyze', detail: 'Running', tone: 'info' as const };
   }
   if (chain.state === 'no-fix' && !chain.isDismissed) {
-    return { name: 'Analyze', detail: 'No fix proposed', tone: 'neutral' as const };
+    return { name: 'Analyze', detail: 'No fix found', tone: 'neutral' as const };
   }
   if (hasFixLanded) {
     return { name: 'Analyze', detail: 'Done', tone: 'success' as const };
