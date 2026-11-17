@@ -22,7 +22,7 @@ export const BoardRowAction = ({ rowId, index = 0, isLead = true, text }: Props)
     setIsConfirming(false);
   }, [cardId]);
   const isLoose = rowId === LOOSE_ROW_ID;
-  if (!isLoose && (row === undefined || row.isMerged)) {
+  if (!isLoose && (row === undefined || row.isSettled)) {
     return null;
   }
   if (card === undefined) {

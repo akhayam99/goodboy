@@ -22,13 +22,17 @@ const GROUP_ORDER: ReadonlyArray<BoardGroupId> = [
   'needs-you',
   'in-progress',
   'merged',
+  'closed',
   'not-on-branch',
 ];
+
+const FOLDED_GROUPS: ReadonlySet<BoardGroupId> = new Set<BoardGroupId>(['merged', 'closed']);
 
 const GROUP_LABEL: Record<BoardGroupId, string> = {
   'needs-you': 'Needs you',
   'in-progress': 'In progress',
   merged: 'Merged',
+  closed: 'Closed',
   'not-on-branch': 'Not on a branch',
 };
 
@@ -75,16 +79,25 @@ const ownerOf = ({ mountId, knownMountIds }: OwnerParams): string | null =>
 
 type GroupParams = {
   readonly isMerged: boolean;
+  readonly isClosed: boolean;
   readonly isBranchless: boolean;
   readonly isAttention: boolean;
 };
 
-const boardGroupIdOf = ({ isMerged, isBranchless, isAttention }: GroupParams): BoardGroupId => {
+const boardGroupIdOf = ({
+  isMerged,
+  isClosed,
+  isBranchless,
+  isAttention,
+}: GroupParams): BoardGroupId => {
   if (isBranchless) {
     return 'not-on-branch';
   }
   if (isMerged) {
     return 'merged';
+  }
+  if (isClosed) {
+    return 'closed';
   }
   return isAttention ? 'needs-you' : 'in-progress';
 };
@@ -109,7 +122,10 @@ const rowOf = ({
   elapsedMs,
 }: RowParams): BoardRow => {
   const stage = deriveSessionStage(branchFactsFor({ session, branch, asks, agents, leads }));
-  const isMerged = branch !== null && (branch.isFinished || stage.prState === 'merged');
+  const isClosed = branch !== null && stage.prState === 'closed';
+  const isMerged =
+    branch !== null && !isClosed && (branch.isFinished || stage.prState === 'merged');
+  const isSettled = isMerged || isClosed;
   const askIds = asks.map((ask) => ask.id);
   const attentionId =
     stage.attention !== null && stage.attention !== 'open-question'
@@ -134,16 +150,19 @@ const rowOf = ({
     branch: branch?.branch ?? null,
     group: boardGroupIdOf({
       isMerged,
+      isClosed,
       isBranchless: branch === null,
-      isAttention: stage.stage === 'attention' && !isMerged,
+      isAttention: stage.stage === 'attention' && !isSettled,
     }),
     isMerged,
+    isClosed,
+    isSettled,
     stage,
-    checks: request === null || isMerged ? null : request.checks,
+    checks: request === null || isSettled ? null : request.checks,
     askIds,
     agentIds: agents.map((agent) => agent.id),
     leadIds: [...leadIds],
-    needsYouIds: isMerged ? [] : [...askIds, ...attentionId],
+    needsYouIds: isSettled ? [] : [...askIds, ...attentionId],
     spendUsd,
     elapsedMs,
   };
@@ -228,16 +247,17 @@ type GroupsParams = {
 
 const boardGroupsOf = ({ rows, recencyByMountId }: GroupsParams): ReadonlyArray<BoardGroup> => {
   const hasOtherBranchGroup = rows.some(
-    (row) => row.group !== 'merged' && row.group !== 'not-on-branch',
+    (row) => !FOLDED_GROUPS.has(row.group) && row.group !== 'not-on-branch',
   );
   return GROUP_ORDER.flatMap((id): ReadonlyArray<BoardGroup> => {
     const members = rows.filter((row) => row.group === id);
     if (members.length === 0) {
       return [];
     }
-    const ordered = id === 'merged' ? newestFirst({ rows: members, recencyByMountId }) : members;
+    const isFoldable = FOLDED_GROUPS.has(id);
+    const ordered = isFoldable ? newestFirst({ rows: members, recencyByMountId }) : members;
     const rowIds = ordered.map((row) => row.id);
-    const isFolded = id === 'merged' && hasOtherBranchGroup && rowIds.length > MERGED_FOLD_LIMIT;
+    const isFolded = isFoldable && hasOtherBranchGroup && rowIds.length > MERGED_FOLD_LIMIT;
     const visibleRowIds = isFolded ? rowIds.slice(0, MERGED_FOLD_LIMIT) : rowIds;
     return [
       {

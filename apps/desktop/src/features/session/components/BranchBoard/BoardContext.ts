@@ -13,7 +13,7 @@ export type BoardContextValue = Readonly<{
   rowById: ReadonlyMap<string, BoardRow>;
   entryByRowId: ReadonlyMap<string, BranchEntry>;
   runningByRowId: ReadonlyMap<string, number>;
-  mergedAtByMountId: ReadonlyMap<string, number>;
+  settledAtByMountId: ReadonlyMap<string, number>;
   newRowIds: ReadonlySet<string>;
   diffStatByPath: ReadonlyMap<string, MountDiffStat>;
   cardsByRowId: ReadonlyMap<string, ReadonlyArray<ActionCardModel>>;

@@ -36,7 +36,7 @@ const BoardTileView = ({ rowId }: Props) => {
       ? boardRowCellsOf({
           row,
           entry,
-          mergedAt: null,
+          settledAt: null,
           now,
           runningCount,
           nextTitle: cardsByRowId.get(rowId)?.[0]?.title ?? null,

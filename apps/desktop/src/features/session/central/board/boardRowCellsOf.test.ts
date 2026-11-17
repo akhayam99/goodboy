@@ -28,7 +28,7 @@ const session: Session = {
 type BranchParams = {
   readonly id: string;
   readonly checks: 'success' | 'failure' | 'pending' | null;
-  readonly state: 'open' | 'merged';
+  readonly state: 'open' | 'merged' | 'closed';
 };
 
 const branchOf = ({ id, checks, state }: BranchParams): BranchFacts => ({
@@ -54,7 +54,7 @@ const branchOf = ({ id, checks, state }: BranchParams): BranchFacts => ({
   checkedAgo: null,
   liveCount: 0,
   liveTitle: null,
-  isFinished: state === 'merged',
+  isFinished: state !== 'open',
   status: null,
   series: null,
 });
@@ -86,6 +86,8 @@ type CellsParams = {
   readonly agents?: ReadonlyArray<BoardAgent>;
   readonly runningCount?: number;
   readonly nextTitle?: string | null;
+  readonly settledAt?: number | null;
+  readonly now?: number;
 };
 
 const cellsOf = ({
@@ -94,6 +96,8 @@ const cellsOf = ({
   agents = [],
   runningCount = 0,
   nextTitle = null,
+  settledAt = null,
+  now = 0,
 }: CellsParams) => {
   const branches = branch === null ? [] : [branch];
   const board = branchBoardOf({ session, branches, asks, agents, leads: [] });
@@ -103,7 +107,7 @@ const cellsOf = ({
   }
   const entries = branchEntriesOf({ facts: branches, detailByMountId: new Map() });
   const entry = [...entries.live, ...entries.finished][0] ?? null;
-  return boardRowCellsOf({ row, entry, mergedAt: null, now: 0, runningCount, nextTitle });
+  return boardRowCellsOf({ row, entry, settledAt, now, runningCount, nextTitle });
 };
 
 type WordsParams = {
@@ -136,6 +140,27 @@ describe('boardRowCellsOf', () => {
       branch: branchOf({ id: 'idempotency', checks: 'success', state: 'merged' }),
     });
     expect(cells.checks.text).toBe('');
+  });
+
+  it('says Closed with its age on a closed request and drops the checks word', () => {
+    const now = Date.parse('2026-08-06T00:00:00.000Z');
+    const cells = cellsOf({
+      branch: branchOf({ id: 'retired-fix', checks: 'success', state: 'closed' }),
+      settledAt: Date.parse('2026-08-04T00:00:00.000Z'),
+      now,
+    });
+    expect(cells.stage).toBe('Closed 2d ago');
+    expect(cells.checks.text).toBe('');
+  });
+
+  it('keeps Merged with its age on a merged branch', () => {
+    const now = Date.parse('2026-08-06T00:00:00.000Z');
+    const cells = cellsOf({
+      branch: branchOf({ id: 'idempotency', checks: 'success', state: 'merged' }),
+      settledAt: Date.parse('2026-08-04T00:00:00.000Z'),
+      now,
+    });
+    expect(cells.stage).toBe('Merged 2d ago');
   });
 
   it('titles a branchless question row by its question, not by its count', () => {

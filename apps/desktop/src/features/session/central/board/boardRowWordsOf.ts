@@ -11,14 +11,16 @@ export type ChecksWords = Readonly<{
 type StageParams = {
   readonly row: BoardRow;
   readonly entry: BranchEntry | null;
-  readonly mergedAt: number | null;
+  readonly settledAt: number | null;
   readonly now: number;
 };
 
-export const stageWordOf = ({ row, entry, mergedAt, now }: StageParams): string => {
-  if (row.isMerged) {
-    const age = mergedAt === null ? '' : formatAge({ from: new Date(mergedAt).toISOString(), now });
-    return age === '' ? 'Merged' : `Merged ${age}`;
+export const stageWordOf = ({ row, entry, settledAt, now }: StageParams): string => {
+  if (row.isSettled) {
+    const word = row.isMerged ? 'Merged' : 'Closed';
+    const age =
+      settledAt === null ? '' : formatAge({ from: new Date(settledAt).toISOString(), now });
+    return age === '' ? word : `${word} ${age}`;
   }
   if (entry === null) {
     return row.stage.reason;
