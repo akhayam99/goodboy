@@ -54,7 +54,7 @@
   neutral and still; it steps under the selection box while one shows): a goal
   of up to two lines (the full goal in the
   tooltip) is the card's one button, the quick action sits at its right (or,
-  when it answers the reason the signal names, `isActionForReason`, the signal
+  when it answers the reason the signal names, `signalActionOf`, the signal
   itself is the button and no icon shows), the
   lifecycle menu is the right click and Shift F10, and the bottom line holds the project
   in gray (`projectLineOf`, "payments-api +1" for several) and one signal at the

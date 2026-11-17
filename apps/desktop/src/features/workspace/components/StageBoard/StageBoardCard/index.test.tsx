@@ -411,7 +411,7 @@ describe('StageBoardCard one signal', () => {
   it('marks the slot offline when GitHub could not be reached', () => {
     hooks.prFetchState = 'unreachable';
     render(<StageBoardCard session={session} nav={nav} />);
-    expect(screen.getByLabelText('Could not reach GitHub, will retry')).toBeTruthy();
+    expect(screen.getByLabelText("Couldn't reach GitHub, will retry")).toBeTruthy();
   });
 
   it('keeps an archived card to its pull request, never a live signal', () => {
@@ -533,7 +533,7 @@ describe('StageBoardCard actions', () => {
     const onHoverLeave = vi.fn();
     render(<StageBoardCard session={session} nav={nav} onHoverLeave={onHoverLeave} />);
 
-    fireEvent.mouseEnter(screen.getByRole('img', { name: /Could not reach/ }));
+    fireEvent.mouseEnter(screen.getByRole('img', { name: /Couldn't reach/ }));
 
     expect(onHoverLeave).toHaveBeenCalledTimes(1);
   });
@@ -729,7 +729,7 @@ describe('StageBoardCard with the real tooltip beside the hover card', () => {
     hooks.prFetchState = 'unreachable';
     render(<CardWithSurface />);
     fireEvent.mouseEnter(screen.getByRole('article'));
-    fireEvent.mouseEnter(screen.getByRole('img', { name: /Could not reach/ }));
+    fireEvent.mouseEnter(screen.getByRole('img', { name: /Couldn't reach/ }));
     wait(500);
 
     expect(tooltips()).toHaveLength(1);

@@ -17,8 +17,8 @@ import { useSessionRowFacts } from '../../../hooks/useSessionRowFacts';
 import { sessionObjectKey } from '../../../../actions/kinds/session';
 import { sessionSelectionTarget } from '../../../../actions/sessionSelectionTarget';
 import { useSessionTitleRename } from '../../../../session/hooks/useSessionTitleRename';
-import { SessionSignal } from '../SessionSignal';
-import { isActionForReason } from '../isActionForReason';
+import { CardSignal } from './CardSignal';
+import { signalActionOf } from './signalActionOf';
 import { projectLineOf } from '../projectLineOf';
 
 type CardSelectionEvent = {
@@ -78,13 +78,7 @@ export const StageBoardCard = memo(function StageBoardCard({
   const dynamicActions = useDynamicActions(session, nav, stage);
 
   const [visibleAction = attentionAction ?? undefined] = waitingRun === null ? dynamicActions : [];
-  const signalAction =
-    !isArchived &&
-    visibleAction !== undefined &&
-    signal.kind === 'attention' &&
-    isActionForReason({ actionKey: visibleAction.key, reason: signal.reason })
-      ? visibleAction
-      : null;
+  const signalAction = signalActionOf({ signal, action: visibleAction, isArchived, waitingRun });
   const anchorKey = `board:${id}`;
   const rename = useSessionTitleRename({ sessionId: id, goal: session.goal, ...rowTitle });
   useRenameRequest({
@@ -252,20 +246,13 @@ export const StageBoardCard = memo(function StageBoardCard({
         >
           {projectLine}
         </span>
-        <span
-          data-slot="card-signal"
-          className="flex min-w-fit max-w-full flex-1 items-center justify-end"
-        >
-          <span data-slot="card-signal-reserve" className="inline-flex min-w-14 justify-end">
-            <SessionSignal
-              signal={signal}
-              onOpenRequest={handlePrClick}
-              {...(signalAction !== null && { onOpenAttention: signalAction.onClick })}
-              onGlyphEnter={leaveCard}
-              onGlyphLeave={resumeCard}
-            />
-          </span>
-        </span>
+        <CardSignal
+          signal={signal}
+          action={signalAction}
+          onOpenRequest={handlePrClick}
+          onGlyphEnter={leaveCard}
+          onGlyphLeave={resumeCard}
+        />
       </div>
     </article>
   );
