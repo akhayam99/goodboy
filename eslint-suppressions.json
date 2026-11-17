@@ -9177,11 +9177,6 @@
       "count": 1
     }
   },
-  "apps/desktop/src/store/slices/resolve/persistResolveTurn.ts": {
-    "@typescript-eslint/naming-convention": {
-      "count": 1
-    }
-  },
   "apps/desktop/src/store/slices/resolve/publication/deliverPublicationThread.ts": {
     "@typescript-eslint/naming-convention": {
       "count": 1
