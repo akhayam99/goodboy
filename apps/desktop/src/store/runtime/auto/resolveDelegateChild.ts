@@ -5,6 +5,7 @@ import {
   composeBranchFacts,
   composeBriefDecisions,
   composeDelegationKickoff,
+  DELEGATE_REVISES_SHAPE,
   delegationDepthOf,
   commandMentionOf,
   roleCannotRunCommandsMessage,
@@ -230,12 +231,12 @@ const reviseTargetOf = async ({
       latestRevision: live.revision,
     });
   }
-  if (live.revision !== revises.expectedRevision) {
+  const expectedRevision = revises.expectedRevision ?? live.revision;
+  if (live.revision !== expectedRevision) {
     return refuse({
       slot,
       code: 'stale_revision',
-      message:
-        'the artifact in "revises" has a newer version. Set "expectedRevision" to the latest version below and send it again.',
+      message: `the artifact in "revises" is now at version ${live.revision}. Send ${DELEGATE_REVISES_SHAPE} with ${live.revision} as the version.`,
       latestRevision: live.revision,
     });
   }
@@ -259,7 +260,7 @@ const reviseTargetOf = async ({
     role,
     agentId: registered.ownerAgentId,
     artifactId,
-    expectedRevision: revises.expectedRevision,
+    expectedRevision,
     producerMountId:
       producer === null ? null : textFieldOf({ source: producer.target, key: 'mountId' }),
     producerRouting: producer?.routing ?? {},

@@ -278,6 +278,7 @@ c07-auto-child-done
 c07-auto-child-push
 c07-auto-idle
 c07-auto-images
+c07-auto-lead-tidy
 c07-auto-limit-popover
 c07-auto-list
 c07-auto-plan

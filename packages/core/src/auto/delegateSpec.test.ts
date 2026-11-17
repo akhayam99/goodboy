@@ -103,13 +103,58 @@ describe('parsing the spec of an agent delegate call', () => {
     });
   });
 
-  it('refuses a revise without a positive whole revision', () => {
-    for (const expectedRevision of [0, 1.5, '2', null]) {
+  it('refuses a revise without a positive whole revision and names the shape', () => {
+    for (const expectedRevision of [0, 1.5, 'two', '']) {
       const outcome = parseDelegateSpec({
         text: spec([{ reason: 'r', revises: { artifactId: 'artifact-plan', expectedRevision } }]),
       });
       expect(outcome).toMatchObject({ kind: 'refused', code: 'spec_invalid' });
+      expect(outcome.kind === 'refused' ? outcome.message : '').toContain(
+        '"revises":{"artifactId":"<artifact id>","expectedRevision":<version number>}',
+      );
     }
+  });
+
+  it('reads the revise shapes a Lead writes and leaves the version to the latest when missing', () => {
+    const shapes: ReadonlyArray<Readonly<{ value: unknown; revision: number | null }>> = [
+      { value: { artifactId: 'artifact-plan', expectedRevision: 1 }, revision: 1 },
+      { value: { artifactId: 'artifact-plan', revision: 1 }, revision: 1 },
+      { value: { artifactId: 'artifact-plan', version: 'v1' }, revision: 1 },
+      { value: { artifactId: 'artifact-plan', expectedRevision: '1' }, revision: 1 },
+      { value: { artifactId: 'artifact-plan' }, revision: null },
+      { value: 'artifact-plan', revision: null },
+    ];
+    for (const { value, revision } of shapes) {
+      const outcome = parseDelegateSpec({
+        text: spec([{ revises: value, changeFrom: ['outbox-user-1'], task: 'start over' }]),
+      });
+      expect(outcome).toMatchObject({
+        kind: 'ok',
+        children: [
+          {
+            revises: { artifactId: 'artifact-plan', expectedRevision: revision },
+            reason: 'The user asked for changes to this artifact.',
+          },
+        ],
+      });
+    }
+  });
+
+  it('reads a revise that also names a retry as the revise', () => {
+    const outcome = parseDelegateSpec({
+      text: spec([
+        {
+          retryOf: 'delegation-planner-1',
+          revises: { artifactId: 'artifact-plan', expectedRevision: 1 },
+          changeFrom: ['outbox-user-1'],
+          reason: 'the first replan failed',
+        },
+      ]),
+    });
+    expect(outcome).toMatchObject({
+      kind: 'ok',
+      children: [{ retryOf: null, revises: { artifactId: 'artifact-plan', expectedRevision: 1 } }],
+    });
   });
 
   it('refuses text that is not json or has no children list', () => {

@@ -2,6 +2,8 @@ import { NAMES } from '../../../shared/utils/names';
 import type { AutoDelegation, AutoOutcome } from '@goodboy/db';
 import type { Agent, TurnState } from '@goodboy/types';
 import { autoSettledStateOf } from '../../auto/autoSettledStateOf';
+import { closedSentenceOf } from '../../auto/closedSentenceOf';
+import { delegationClosedOf } from '../../auto/delegationClosedOf';
 import { delegationSentenceOf } from '../../auto/delegationSentenceOf';
 import { TAIL_ACTION } from '../tailAction';
 import type { TailFacts } from '../tailFacts';
@@ -10,7 +12,8 @@ import { stoppedPhraseOf } from '../stoppedPhraseOf';
 import { agentTurnLive } from './agentTurnLive';
 
 export type AutoChildLiveParams = Readonly<{
-  delegation: Pick<AutoDelegation, 'state' | 'outcome' | 'reason' | 'result'>;
+  delegation: Pick<AutoDelegation, 'state' | 'outcome' | 'reason' | 'result'> &
+    Partial<Pick<AutoDelegation, 'request'>>;
   isReplaced: boolean;
   turn: TurnState | null;
   agent: Pick<Agent, 'status' | 'stoppedBy' | 'stoppedAt'>;
@@ -91,6 +94,18 @@ export const autoChildLive = ({
   lastTool,
   project,
 }: AutoChildLiveParams): TailFacts | null => {
+  const closed =
+    delegation.request === undefined
+      ? null
+      : delegationClosedOf({ delegation: { request: delegation.request } });
+  if (delegation.state === 'settled' && closed !== null) {
+    return {
+      state: 'idle',
+      phrase: closedSentenceOf({ mark: closed }),
+      startedAt: null,
+      actions: [],
+    };
+  }
   if (delegation.state === 'settled') {
     if (delegation.outcome === 'stopped') {
       return {

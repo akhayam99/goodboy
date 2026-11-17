@@ -13,6 +13,7 @@ import { AUTO_BRIDGE_EVENT, type AutoArtifactsChanged } from '../../bridge/autoB
 import { tauriAutoBridgeBus } from '../../bridge/tauriAutoBridgeBus';
 import { useAutoTreeViews } from '../../useAutoTreeViews';
 import { approveAutoPlan } from '../approveAutoPlan';
+import { dropAutoPlan } from '../dropAutoPlan';
 
 type Params = {
   readonly sessionId: SessionId;
@@ -28,6 +29,7 @@ export type AutoPlanApprovalModel = Readonly<{
   approve: () => Promise<void>;
   tellAuto: () => Promise<void>;
   askForChanges: () => void;
+  drop: () => Promise<void>;
 }>;
 
 export const useAutoPlanApproval = ({
@@ -185,6 +187,28 @@ export const useAutoPlanApproval = ({
     }
   }, [closeDrawer, isBusy, reportError, rootAgentId, sendTurn, sessionId, toldFailedRevision]);
 
+  const treeId = found?.view.tree.id ?? null;
+
+  const drop = useCallback(async (): Promise<void> => {
+    if (treeId === null || isBusy) {
+      return;
+    }
+    setIsBusy(true);
+    try {
+      await dropAutoPlan({ db: tauriDatabase, treeId, artifactId });
+      await onWritten();
+    } catch (error) {
+      await reportError({
+        recovery: NOTHING_CHANGED,
+        title: "Couldn't drop the plan",
+        error,
+        sessionId,
+      });
+    } finally {
+      setIsBusy(false);
+    }
+  }, [artifactId, isBusy, onWritten, reportError, sessionId, treeId]);
+
   const askForChanges = useCallback(() => {
     if (rootAgentId === null) {
       return;
@@ -209,5 +233,6 @@ export const useAutoPlanApproval = ({
     approve,
     tellAuto,
     askForChanges,
+    drop,
   };
 };

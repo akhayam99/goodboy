@@ -15,8 +15,13 @@ export const AUTO_BLOCK_ACTIONS = [
   'release',
   'message',
   'stop',
+  'close',
   'finish',
 ] as const;
+
+export const AUTO_CLOSE_AS = ['done', 'skipped', 'discarded'] as const;
+
+export type AutoCloseAs = (typeof AUTO_CLOSE_AS)[number];
 
 const FIELD_CHARS = 1_000;
 const ANSWER_CHARS = 8_000;
@@ -36,6 +41,7 @@ export type AutoBlock =
   | Readonly<{ action: 'release'; delegation: string; reason: string }>
   | Readonly<{ action: 'message'; delegation: string; text: string }>
   | Readonly<{ action: 'stop'; delegation: string; reason: string }>
+  | Readonly<{ action: 'close'; target: string; as: AutoCloseAs; reason: string }>
   | Readonly<{ action: 'finish'; summary: string }>;
 
 export type AutoBlockOutcome =
@@ -216,6 +222,21 @@ const stopOf = ({ fields }: FieldsParams): AutoBlockOutcome => {
   return { kind: 'block', block: { action: 'stop', delegation, reason } };
 };
 
+export const AUTO_CLOSE_SHAPE = `{"action":"close","target":"<delegation id or artifact id>","as":"${AUTO_CLOSE_AS.join('|')}","reason":"<one line>"}`;
+
+const closeOf = ({ fields }: FieldsParams): AutoBlockOutcome => {
+  const target = clippedTextOf({
+    value: fields['target'] ?? fields['delegation'] ?? fields['artifact'],
+    max: FIELD_CHARS,
+  });
+  const reason = clippedTextOf({ value: fields['reason'], max: FIELD_CHARS });
+  const as = AUTO_CLOSE_AS.find((candidate) => candidate === fields['as']);
+  if (target === null || reason === null || as === undefined) {
+    return invalid({ reason: `write a close block as ${AUTO_CLOSE_SHAPE}` });
+  }
+  return { kind: 'block', block: { action: 'close', target, as, reason } };
+};
+
 const finishOf = ({ fields }: FieldsParams): AutoBlockOutcome => {
   const summary = clippedTextOf({ value: fields['summary'], max: SUMMARY_CHARS });
   if (summary === null) {
@@ -250,6 +271,8 @@ export const parseAutoBlock = ({ text }: ParseAutoBlockParams): AutoBlockOutcome
       return childMessageOf({ fields: parsed });
     case 'stop':
       return stopOf({ fields: parsed });
+    case 'close':
+      return closeOf({ fields: parsed });
     case 'finish':
       return finishOf({ fields: parsed });
     default:
@@ -258,3 +281,31 @@ export const parseAutoBlock = ({ text }: ParseAutoBlockParams): AutoBlockOutcome
       });
   }
 };
+
+const completeSlices = ({ text }: BlockSliceParams): ReadonlyArray<string> => {
+  const slices: string[] = [];
+  let from = 0;
+  for (;;) {
+    const start = text.indexOf(AUTO_BLOCK_OPEN, from);
+    if (start < 0) {
+      return slices;
+    }
+    const contentStart = start + AUTO_BLOCK_OPEN.length;
+    const end = text.indexOf(AUTO_BLOCK_CLOSE, contentStart);
+    if (end < 0) {
+      return slices;
+    }
+    slices.push(text.slice(contentStart, end));
+    from = end + AUTO_BLOCK_CLOSE.length;
+  }
+};
+
+export const parseAutoCloseBlocks = ({
+  text,
+}: ParseAutoBlockParams): ReadonlyArray<AutoBlockOutcome> =>
+  completeSlices({ text })
+    .slice(0, -1)
+    .flatMap((slice): ReadonlyArray<AutoBlockOutcome> => {
+      const parsed = parseJson({ value: slice });
+      return isRecord(parsed) && parsed['action'] === 'close' ? [closeOf({ fields: parsed })] : [];
+    });

@@ -5,6 +5,7 @@ import { useConversationAsks } from '../../../store/hooks/useConversationAsks';
 import type { AutoTreeView } from '../../../store/slices/auto-view/state';
 import { dockPlanRowOf } from '../dockPlanRowOf';
 import { isAutoPlanAwaitingApproval } from '../isAutoPlanAwaitingApproval';
+import { planDiscardAskOf } from '../planDiscardAskOf';
 import { askBarsOf } from './askBarOf';
 import { AutoDockAsk } from './AutoDockAsk';
 import { AutoDockLive } from './AutoDockLive';
@@ -55,6 +56,7 @@ export const AutoDock = ({ sessionId, view, rootAgent, onOpenArtifact, actions }
           isApproveHidden={isRevisionAsked}
           isChangeSent={isPlanChangeSentOf({ view, row: plan })}
           isSettledHidden={AT_REST.has(view.tree.phase)}
+          discardAsk={planDiscardAskOf({ view, row: plan })}
         />
       )}
       {!isNextShown ? null : (
