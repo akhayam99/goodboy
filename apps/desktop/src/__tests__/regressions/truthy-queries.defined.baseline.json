@@ -436,7 +436,6 @@
   "apps/desktop/src/features/workspace/components/StageBoard/selection.test.tsx": 14,
   "apps/desktop/src/features/workspace/components/StageBoard/StageBoard.perf.test.tsx": 1,
   "apps/desktop/src/features/workspace/components/StageBoard/StageBoardCard/index.test.tsx": 4,
-  "apps/desktop/src/features/workspace/components/StageBoard/StageColumn/index.test.tsx": 10,
   "apps/desktop/src/features/workspace/components/TrackWithGitFlow/index.test.tsx": 9,
   "apps/desktop/src/features/workspace/components/WorkspaceLauncher/index.test.tsx": 9,
   "apps/desktop/src/features/workspace/components/WorkspaceLinkStudio/index.test.tsx": 1,
