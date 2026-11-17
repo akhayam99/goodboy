@@ -47,11 +47,7 @@ import { useSessionSidebarVisibility } from '../../features/workspace/hooks/useS
 import { useLevelCardFold } from '../../app/components/SessionRail/SessionLevel/useLevelCardFold';
 import { useRailTreeOpen } from '../../app/components/SessionRail/SessionLevel/useRailTreeOpen';
 import { PREVIOUS_BUILD_BLOBS } from './previousBuildBlobs';
-import {
-  DOCK_SEED_KEYS_READ_UNTIL,
-  READER_DRAWER_STORAGE_KEY,
-  RIGHT_DRAWER_STORAGE_KEY,
-} from '@goodboy/ui';
+import { READER_DRAWER_STORAGE_KEY, RIGHT_DRAWER_STORAGE_KEY } from '@goodboy/ui';
 import { selectGridTool } from '../../store/slices/drawer/selectGridTool';
 import { watchSessionDockGrid } from '../../features/workspace/hooks/useSessionDockGrid/watchSessionDockGrid';
 
@@ -360,7 +356,9 @@ describe('the dock grid on a database the previous build left', () => {
     }
 
     await restoredFrom({ entry });
-    await new Promise((resolve) => setTimeout(resolve, 0));
+    await vi.waitFor(() => {
+      expect(selectGridTool({ state: useAppStore.getState(), kind: 'terminal' })).not.toBeNull();
+    });
     stop();
 
     const state = useAppStore.getState();
@@ -375,6 +373,6 @@ describe('the dock grid on a database the previous build left', () => {
       .find((line) => line.startsWith('|') && line.includes(RIGHT_DRAWER_STORAGE_KEY));
 
     expect(row).toContain(READER_DRAWER_STORAGE_KEY);
-    expect(row?.split('|').map((cell) => cell.trim())[4]).toBe(DOCK_SEED_KEYS_READ_UNTIL);
+    expect(row?.split('|').map((cell) => cell.trim())[4]).toBe('0.42.0');
   });
 });

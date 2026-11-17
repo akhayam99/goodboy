@@ -142,13 +142,7 @@ export {
 } from './queries/session';
 export { getSessionContextSeenAt, setSessionContextSeenAt } from './queries/session-context-seen';
 export { getSessionDockGrid, saveSessionDockGrid } from './queries/session-dock-grid';
-export {
-  insertSessionContextItems,
-  listSessionContextItems,
-  listSessionContextItemsForRole,
-  listWorkspaceLearnings,
-  setSessionContextItemStatus,
-} from './queries/session-context-item';
+export * from './queries/session-context-item';
 export { listSessionDecisions, saveSessionDecisions } from './queries/session-decision';
 export {
   attachWorkflowToSession,

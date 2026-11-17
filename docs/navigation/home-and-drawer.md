@@ -705,7 +705,7 @@ window has; they save nothing.
 - A column handle writes the width on the grid (`resizeDockColumn`), not in
   the shared `goodboy:*-drawer-width:v1` keys. A double click writes the tier
   default. A column with no saved width starts from its tier's key: the keys
-  are read that way until 0.42.0 (`DOCK_SEED_KEYS_READ_UNTIL`), then retired
+  are read that way until 0.42.0, then retired
   ([versioning.md](../versioning.md#retired-state)). The detail column keeps
   its key.
 

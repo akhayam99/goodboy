@@ -40,14 +40,14 @@ type KindsParams = ValueParams & {
 const toolKindOf = ({ value }: ValueParams): WorkspaceToolKind | null =>
   TOOL_KINDS.find((kind) => kind === value) ?? null;
 
-const sessionIdOf = ({ value }: ValueParams): SessionId | null | undefined => {
+const storedSessionIdOf = ({ value }: ValueParams): SessionId | null | undefined => {
   if (value === null) {
     return null;
   }
   return typeof value === 'string' && value !== '' ? brandId<SessionId>({ value }) : undefined;
 };
 
-const entryOf = ({ kind, sessionId, payload }: EntryParams): OpenDrawer | null => {
+const storedEntryOf = ({ kind, sessionId, payload }: EntryParams): OpenDrawer | null => {
   if (kind === 'terminal') {
     if (!isRecord(payload) || typeof payload.terminalId !== 'string') {
       return null;
@@ -68,11 +68,11 @@ const panelOf = ({ value }: ValueParams): OpenDrawer | null => {
     return null;
   }
   const kind = toolKindOf({ value: value.kind });
-  const sessionId = sessionIdOf({ value: value.sessionId });
+  const sessionId = storedSessionIdOf({ value: value.sessionId });
   if (kind === null || sessionId === undefined) {
     return null;
   }
-  return entryOf({ kind, sessionId, payload: value.payload ?? null });
+  return storedEntryOf({ kind, sessionId, payload: value.payload ?? null });
 };
 
 const columnsOf = ({ value }: ValueParams): DrawerGrid['columns'] | null => {
@@ -101,7 +101,7 @@ const usedOf = ({ value, kinds }: KindsParams): DrawerGrid['used'] => {
   return [...kinds.filter((kind) => !used.includes(kind)), ...used];
 };
 
-const focusOf = ({ value, kinds }: KindsParams): DrawerFocus => {
+const storedFocusOf = ({ value, kinds }: KindsParams): DrawerFocus => {
   if (!isRecord(value)) {
     return { at: 'page' };
   }
@@ -153,7 +153,7 @@ export const parseStoredDockGrid = ({ raw }: RawParams): DrawerGrid | null => {
   return {
     columns,
     used: usedOf({ value: value.used, kinds }),
-    focus: focusOf({ value: value.focus, kinds }),
+    focus: storedFocusOf({ value: value.focus, kinds }),
     widths: widthsOf({ value: value.widths }),
   };
 };

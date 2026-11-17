@@ -95,9 +95,7 @@ beforeAll(async () => {
 const state = () => store.getState();
 
 const settle = async () => {
-  for (let round = 0; round < 4; round += 1) {
-    await new Promise((resolve) => setTimeout(resolve, 0));
-  }
+  await vi.advanceTimersByTimeAsync(10);
 };
 
 const toolKinds = () => state().drawerGrid.columns.map((column) => column.map((p) => p.kind));
@@ -122,6 +120,7 @@ const watch = () => {
 };
 
 beforeEach(async () => {
+  vi.useFakeTimers();
   db.rows.clear();
   db.failSaves = false;
   db.holdLoads = false;
@@ -143,6 +142,7 @@ beforeEach(async () => {
 afterEach(() => {
   stop?.();
   stop = null;
+  vi.useRealTimers();
 });
 
 describe('the dock grid saved on the session', () => {
