@@ -39,6 +39,13 @@ const BASE: ReviewCommentFacts = {
   laneAcceptCount: 1,
   laneAcceptNotes: 0,
   runAgentId: null,
+  runEnd: null,
+  noteId: null,
+  runTitle: '',
+  runMountId: null,
+  runReply: '',
+  isSourceChanged: false,
+  changedQuote: '',
   joinRuns: [],
   quote: '',
 };
@@ -515,6 +522,116 @@ const MATRIX: ReadonlyArray<Row> = [
     ],
   },
   {
+    name: 'a note whose run finished: resolve it or keep it open, never a reply',
+    facts: {
+      state: 'new',
+      agentId: null,
+      isNote: true,
+      hasPr: false,
+      url: null,
+      runEnd: 'finished',
+      runReply: 'Moved the header into AppLayout.',
+    },
+    expected: [
+      ...OPEN,
+      'reviewComment.draft menu Fix',
+      'reviewComment.resolveRunNote primary Resolve note',
+      'reviewComment.keepOpen secondary Keep open',
+    ],
+  },
+  {
+    name: 'a GitHub comment whose run finished: reply and resolve with the draft',
+    facts: {
+      state: 'new',
+      agentId: null,
+      runEnd: 'finished',
+      runReply: 'Moved the header into AppLayout.',
+    },
+    expected: [
+      ...OPEN,
+      ...GITHUB,
+      'reviewComment.draft menu Fix',
+      'reviewComment.replyFromRun primary Reply and resolve on GitHub',
+      'reviewComment.keepOpen secondary Keep open',
+      'reviewComment.reply secondary Reply',
+      'reviewComment.resolveNoReply menu Resolve',
+      ...COPY,
+    ],
+  },
+  {
+    name: 'a GitLab comment whose run finished replies and resolves on GitLab',
+    facts: {
+      state: 'new',
+      agentId: null,
+      provider: 'GitLab',
+      host: 'gitlab',
+      runEnd: 'finished',
+      runReply: 'Moved the header into AppLayout.',
+    },
+    expected: [
+      ...OPEN,
+      ...GITHUB,
+      'reviewComment.draft menu Fix',
+      'reviewComment.replyFromRun primary Reply and resolve on GitLab',
+      'reviewComment.keepOpen secondary Keep open',
+      'reviewComment.reply secondary Reply',
+      'reviewComment.resolveNoReply menu Resolve',
+      ...COPY,
+    ],
+  },
+  {
+    name: 'a Bitbucket comment whose run finished only replies',
+    facts: {
+      ...BITBUCKET,
+      state: 'new',
+      agentId: null,
+      runEnd: 'finished',
+      runReply: 'Moved the header into AppLayout.',
+    },
+    expected: [
+      ...OPEN,
+      ...BITBUCKET_LINK,
+      'reviewComment.draft menu Fix',
+      'reviewComment.replyFromRun primary Reply on Bitbucket',
+      'reviewComment.keepOpen secondary Keep open',
+      'reviewComment.reply secondary Reply',
+      ...COPY,
+    ],
+  },
+  {
+    name: 'a host comment whose run left no reply waits for one',
+    facts: { state: 'new', agentId: null, runEnd: 'finished', runReply: '  ' },
+    expected: [
+      ...OPEN,
+      ...GITHUB,
+      'reviewComment.draft menu Fix',
+      'reviewComment.replyFromRun primary Reply and resolve on GitHub (Write the reply first.)',
+      'reviewComment.keepOpen secondary Keep open',
+      'reviewComment.reply secondary Reply',
+      'reviewComment.resolveNoReply menu Resolve',
+      ...COPY,
+    ],
+  },
+  {
+    name: 'a comment that changed while its run works asks before the run hears of it',
+    facts: {
+      state: 'new',
+      agentId: null,
+      runAgentId: LEDGER_RUN,
+      runEnd: 'working',
+      isSourceChanged: true,
+    },
+    expected: [
+      ...OPEN,
+      ...GITHUB,
+      'reviewComment.sendChangeToRun primary Send the new text to the run',
+      'reviewComment.keepRunAsIs secondary Keep the run as it is',
+      'reviewComment.reply secondary Reply',
+      'reviewComment.resolveNoReply menu Resolve',
+      ...COPY,
+    ],
+  },
+  {
     name: 'a fix still working is never offered to a run',
     facts: { state: 'drafting', joinRuns: JOIN },
     expected: [...OPEN, ...TRANSCRIPT, ...GITHUB, 'reviewComment.stop menu Stop drafting', ...COPY],
@@ -523,6 +640,32 @@ const MATRIX: ReadonlyArray<Row> = [
 
 const resolved = (facts: ReviewCommentFacts) =>
   resolveActions({ definitions: REVIEW_COMMENT_KIND.actions, facts });
+
+describe('a comment whose run stopped or failed', () => {
+  it('offers what an open comment offers, nothing from the run', () => {
+    const ids = (facts: Partial<ReviewCommentFacts>) =>
+      resolved({ ...BASE, ...facts }).map((action) => `${action.id} ${action.slot}`);
+    expect(ids({ state: 'new', agentId: null, runEnd: 'stopped' })).toEqual(
+      ids({ state: 'new', agentId: null }),
+    );
+  });
+});
+
+describe('a note the run resolved', () => {
+  it('offers Reopen', () => {
+    const ids = resolved({
+      ...BASE,
+      state: 'pushed',
+      agentId: null,
+      isNote: true,
+      hasPr: false,
+      url: null,
+      runEnd: 'finished',
+      noteId: 'note-ledger-header',
+    }).map((action) => `${action.id} ${action.slot} ${action.label}`);
+    expect(ids).toContain('reviewComment.reopenRunNote secondary Reopen');
+  });
+});
 
 describe.each(MATRIX)('review comment, $name', ({ facts, expected }) => {
   const all = { ...BASE, ...facts };

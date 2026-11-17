@@ -5,7 +5,7 @@ import { COMMENT_RUN_COPY } from '../../../features/resolve/commentRunCopy';
 import { commentRunOf } from '../../../features/resolve/commentRunOf';
 import { agentThreadIds } from '../../../features/session/agentThreadIds';
 import type { SliceDeps } from '../../slice-types';
-import { readAgentQueue, writeAgentQueue } from '../agentQueue/queueStore';
+import { queueCommentRunMessage } from './queueCommentRunMessage';
 import type { AddToCommentRunParams } from './types';
 
 const NO_AGENTS: ReadonlyArray<Agent> = [];
@@ -27,22 +27,13 @@ export const addToCommentRun = ({ set, get }: SliceDeps) => {
     if (!isLinked) {
       throw new Error(COMMENT_RUN_COPY.runEnded);
     }
-    const turnId = crypto.randomUUID();
-    const isSaved = await get().enqueueAgentMessage({
-      turn: {
-        id: turnId,
-        agentId,
-        content: messageOf({ quote }),
-        attachments: [],
-        override: undefined,
-      },
+    const isSaved = await queueCommentRunMessage({
+      set,
+      get,
+      agentId,
+      content: messageOf({ quote }),
     });
     if (!isSaved) {
-      writeAgentQueue({
-        set,
-        agentId,
-        queue: readAgentQueue({ get, agentId }).filter((item) => item.id !== turnId),
-      });
       await removeAgentSourceThread({ db: tauriDatabase, id: agentId, threadId });
       throw new Error(COMMENT_RUN_COPY.notSaved);
     }

@@ -14,6 +14,11 @@ type LabelParams = {
   readonly label: string;
 };
 
+type VerbParams = {
+  readonly verb: string;
+  readonly label: string;
+};
+
 type HostParams = {
   readonly label: string | null;
 };
@@ -59,4 +64,28 @@ export const COMMENT_RUN_COPY = {
   addedMessage: 'One more comment for this run. Work it into the plan, without starting over.',
   runEnded: 'The run ended, so the comment was not added.',
   notSaved: "The message to the run couldn't be saved, so the comment was not added.",
+  finished: 'Run finished',
+  resolveNote: 'Resolve note',
+  keepOpen: 'Keep open',
+  reopen: 'Reopen',
+  hostVerb: ({ verb, label }: VerbParams): string => `${verb} on ${label}`,
+  whatRunDid: 'What the run did',
+  keptWithNote: 'from the Lead, kept with the note',
+  reply: 'Reply',
+  draftedReply: ({ label }: LabelParams): string =>
+    `drafted by the Lead, posted on ${label} when you press it`,
+  noSummary: 'The run left no summary. Open run to read what it did.',
+  noReply: 'Write the reply first.',
+  stoppedTitle: 'The run stopped. Nothing was resolved.',
+  stoppedBody: 'The comment is open again. The run keeps its plan and its transcript.',
+  resolvedByRun: ({ title }: TitleParams): string => `Resolved by the run ${title}`,
+  notPushed: "The run's commits are not on origin yet, so nothing was posted. Push them first.",
+  statusUnread: "Goodboy couldn't read the branch, so nothing was posted. Try again.",
+  changedTitle: 'The comment changed after the run started.',
+  changedBody: 'The run still works from the text it started with.',
+  sendChange: 'Send the new text to the run',
+  keepRunAsIs: 'Keep the run as it is',
+  changedMessage: 'The reviewer edited this comment. Here is the new text; weigh it in the plan.',
+  changeSent: ({ title }: TitleParams): string => `New text sent to the run ${title}`,
+  changeNotSaved: "The message to the run couldn't be saved. The comment change is still here.",
 } as const;

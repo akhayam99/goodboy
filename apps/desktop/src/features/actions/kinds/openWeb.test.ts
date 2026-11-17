@@ -111,6 +111,13 @@ const reviewCommentFacts: ReviewCommentFacts = {
   laneAcceptCount: 1,
   laneAcceptNotes: 0,
   runAgentId: null,
+  runEnd: null,
+  noteId: null,
+  runTitle: '',
+  runMountId: null,
+  runReply: '',
+  isSourceChanged: false,
+  changedQuote: '',
   joinRuns: [],
   quote: '',
 };

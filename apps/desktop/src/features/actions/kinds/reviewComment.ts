@@ -19,13 +19,17 @@ import type {
   Agent,
   AgentId,
   DiffComment,
+  MountId,
   ResolveVerdict,
   SessionId,
   SessionMountView,
 } from '@goodboy/types';
+import type { ResolveQueueRow } from '../../resolve/buildResolveQueueRows';
 import { commentMountIdOf } from '../../resolve/commentMountIdOf';
 import { COMMENT_RUN_COPY } from '../../resolve/commentRunCopy';
-import { commentRunOf } from '../../resolve/commentRunOf';
+import { commentRunViewOfStore } from '../../resolve/commentRunViewOfStore';
+import type { CommentRunEnd } from '../../resolve/commentRunViewsOf';
+import { noteIdOfThread } from '../../resolve/notes/noteThread';
 import { commentRunQuoteOf } from '../../resolve/commentRunQuoteOf';
 import { commentRunSourceLabelOf } from '../../resolve/commentRunSourceLabelOf';
 import { joinableCommentRunsOf } from '../../resolve/joinableCommentRunsOf';
@@ -90,6 +94,13 @@ export type ReviewCommentFacts = {
   readonly laneAcceptCount: number;
   readonly laneAcceptNotes: number;
   readonly runAgentId: AgentId | null;
+  readonly runEnd: CommentRunEnd | null;
+  readonly noteId: string | null;
+  readonly runTitle: string;
+  readonly runMountId: MountId | null;
+  readonly runReply: string;
+  readonly isSourceChanged: boolean;
+  readonly changedQuote: string;
   readonly joinRuns: ReadonlyArray<JoinRun>;
   readonly quote: string;
 };
@@ -113,6 +124,39 @@ type RunFactsParams = {
 
 const isOutsideRun = ({ facts }: RunFactsParams): boolean => facts.runAgentId === null;
 
+type ChangeParams = {
+  readonly facts: Pick<ReviewCommentFacts, 'runAgentId' | 'isSourceChanged'>;
+};
+
+const isRunChanged = ({ facts }: ChangeParams): boolean =>
+  facts.runAgentId !== null && facts.isSourceChanged;
+
+type QuoteParams = {
+  readonly row: ResolveQueueRow;
+  readonly isNote: boolean;
+  readonly body: string;
+};
+
+const quoteOf = ({ row, isNote, body }: QuoteParams): string => {
+  const note = row.reviewerNote;
+  if (note === null) {
+    return '';
+  }
+  return commentRunQuoteOf({
+    comments: [
+      {
+        source: isNote
+          ? COMMENT_RUN_COPY.localNoteSource
+          : COMMENT_RUN_COPY.hostSource({ label: commentRunSourceLabelOf({ thread: row.thread }) }),
+        author: note.author,
+        body,
+        path: note.path,
+        line: note.line,
+      },
+    ],
+  });
+};
+
 const UNDECIDED: ReadonlySet<ReviewCommentState> = new Set([
   'new',
   'needs',
@@ -123,6 +167,14 @@ const UNDECIDED: ReadonlySet<ReviewCommentState> = new Set([
 ]);
 const DRAFTED: ReadonlySet<ReviewCommentState> = new Set(['ready', 'edited', 'outdated']);
 const DECIDED: ReadonlySet<ReviewCommentState> = new Set(['accepted', 'replied', 'skipped']);
+const CLOSED_NOTE: ReadonlySet<ReviewCommentState> = new Set(['resolved', 'pushed']);
+
+type RunEndParams = {
+  readonly facts: Pick<ReviewCommentFacts, 'runEnd' | 'state'>;
+};
+
+const isRunFinished = ({ facts }: RunEndParams): boolean =>
+  facts.runEnd === 'finished' && UNDECIDED.has(facts.state);
 
 const hasOverlay = ({ facts }: { readonly facts: ReviewCommentFacts }): boolean =>
   facts.remote !== null;
@@ -242,6 +294,13 @@ export const REVIEW_COMMENT_KIND: ObjectKindDefinition<
       mounts: state.sessionMounts[target.sessionId] ?? NO_MOUNTS,
       sourceMountId: selectedReviewEntryOf({ state, sessionId: target.sessionId })?.mountId ?? null,
     });
+    const run = commentRunViewOfStore({
+      state,
+      sessionId: target.sessionId,
+      threadId: target.threadId,
+    });
+    const changed =
+      state.sessionResolveSourceSnapshots[target.sessionId]?.[target.threadId]?.changed ?? null;
     return {
       sessionId: target.sessionId,
       threadId: target.threadId,
@@ -290,28 +349,20 @@ export const REVIEW_COMMENT_KIND: ObjectKindDefinition<
             .map((entry) => entry.item.id),
         ),
       }),
-      runAgentId: commentRunOf({ agents, threadId: target.threadId }),
+      runAgentId: run !== null && run.end === 'working' ? run.agentId : null,
+      runEnd: run?.end ?? null,
+      noteId: isNote
+        ? (row.thread.diffCommentId ?? noteIdOfThread({ threadId: target.threadId }))
+        : null,
+      runTitle: run?.title ?? '',
+      runMountId: run?.mountId ?? null,
+      runReply: draft?.reply ?? run?.summary ?? '',
+      isSourceChanged: changed !== null,
+      changedQuote: changed === null ? '' : quoteOf({ row, isNote, body: changed.body }),
       joinRuns: joinableCommentRunsOf({ agents, threadId: target.threadId, mountId }).map(
         (agent) => ({ agentId: agent.id, name: agent.name }),
       ),
-      quote:
-        note === null
-          ? ''
-          : commentRunQuoteOf({
-              comments: [
-                {
-                  source: isNote
-                    ? COMMENT_RUN_COPY.localNoteSource
-                    : COMMENT_RUN_COPY.hostSource({
-                        label: commentRunSourceLabelOf({ thread: row.thread }),
-                      }),
-                  author: note.author,
-                  body: note.body,
-                  path: note.path,
-                  line: note.line,
-                },
-              ],
-            }),
+      quote: note === null ? '' : quoteOf({ row, isNote, body: note.body }),
     };
   },
   actions: [
@@ -518,7 +569,7 @@ export const REVIEW_COMMENT_KIND: ObjectKindDefinition<
       shortcut: 'review.fix',
       when: ({ facts }) =>
         facts.state === 'new' && !hasOverlay({ facts }) && isOutsideRun({ facts }),
-      slot: () => 'primary',
+      slot: ({ facts }) => (isRunFinished({ facts }) ? 'menu' : 'primary'),
       run: ({ facts, env }) =>
         requestReview({
           getState: env.getState,
@@ -550,6 +601,105 @@ export const REVIEW_COMMENT_KIND: ObjectKindDefinition<
         });
         env.showToast({ kind: 'success', message: COMMENT_RUN_COPY.added({ title: run.name }) });
       },
+    },
+    {
+      id: 'reviewComment.resolveRunNote',
+      label: COMMENT_RUN_COPY.resolveNote,
+      icon: CircleCheck,
+      group: 'act',
+      shortcut: 'review.accept',
+      when: ({ facts }) => facts.isNote && isRunFinished({ facts }),
+      slot: () => 'primary',
+      run: ({ facts, env }) =>
+        env.getState().closeResolvedNote({ sessionId: facts.sessionId, threadId: facts.threadId }),
+    },
+    {
+      id: 'reviewComment.replyFromRun',
+      label: ({ facts }) =>
+        COMMENT_RUN_COPY.hostVerb({
+          verb: remoteActionLabel({ action: 'replyAndResolve', canResolve: facts.canResolve }),
+          label: facts.provider,
+        }),
+      icon: CircleCheck,
+      group: 'act',
+      shortcut: 'review.accept',
+      when: ({ facts }) =>
+        !facts.isNote && facts.hasPr && isRunFinished({ facts }) && !hasOverlay({ facts }),
+      blockedReason: ({ facts }) =>
+        facts.runReply.trim() === '' ? COMMENT_RUN_COPY.noReply : null,
+      slot: () => 'primary',
+      run: ({ facts, env }) =>
+        env.getState().replyFromCommentRun({
+          sessionId: facts.sessionId,
+          threadId: facts.threadId,
+          mountId: facts.runMountId,
+          reply: facts.runReply,
+        }),
+    },
+    {
+      id: 'reviewComment.reopenRunNote',
+      label: COMMENT_RUN_COPY.reopen,
+      icon: Undo2,
+      group: 'act',
+      shortcut: 'review.undo',
+      when: ({ facts }) =>
+        facts.isNote &&
+        facts.runEnd !== null &&
+        CLOSED_NOTE.has(facts.state) &&
+        facts.noteId !== null,
+      slot: () => 'secondary',
+      run: ({ facts, env }) =>
+        facts.noteId === null
+          ? undefined
+          : env.getState().reopenDiffComment(facts.sessionId, facts.noteId),
+    },
+    {
+      id: 'reviewComment.keepOpen',
+      label: COMMENT_RUN_COPY.keepOpen,
+      icon: SkipForward,
+      group: 'act',
+      shortcut: 'review.skip',
+      when: ({ facts }) => isRunFinished({ facts }),
+      slot: () => 'secondary',
+      run: ({ facts, env }) =>
+        env.getState().deferResolveQueueItem({ sessionId: facts.sessionId, itemId: facts.itemId }),
+    },
+    {
+      id: 'reviewComment.sendChangeToRun',
+      label: COMMENT_RUN_COPY.sendChange,
+      icon: Send,
+      group: 'act',
+      when: ({ facts }) => isRunChanged({ facts }),
+      slot: () => 'primary',
+      run: async ({ facts, env }) => {
+        if (facts.runAgentId === null) {
+          return;
+        }
+        await env.getState().sendChangeToCommentRun({
+          sessionId: facts.sessionId,
+          agentId: facts.runAgentId,
+          threadId: facts.threadId,
+          quote: facts.changedQuote,
+        });
+        env.showToast({
+          kind: 'success',
+          message: COMMENT_RUN_COPY.changeSent({ title: facts.runTitle }),
+        });
+      },
+    },
+    {
+      id: 'reviewComment.keepRunAsIs',
+      label: COMMENT_RUN_COPY.keepRunAsIs,
+      icon: SkipForward,
+      group: 'act',
+      when: ({ facts }) => isRunChanged({ facts }),
+      slot: () => 'secondary',
+      run: ({ facts, env }) =>
+        env.getState().settleResolveSourceChange({
+          sessionId: facts.sessionId,
+          threadId: facts.threadId,
+          keepDraft: false,
+        }),
     },
     {
       id: 'reviewComment.answer',
@@ -601,7 +751,8 @@ export const REVIEW_COMMENT_KIND: ObjectKindDefinition<
       when: ({ facts }) =>
         (DRAFTED.has(facts.state) || facts.state === 'failed') &&
         !hasOverlay({ facts }) &&
-        isOutsideRun({ facts }),
+        isOutsideRun({ facts }) &&
+        !isRunFinished({ facts }),
       slot: ({ facts }) => (isRedraft(facts) ? 'primary' : 'menu'),
       run: (params) => compose(params, isRedraft(params.facts) ? 'redraft' : 'edit'),
     },
@@ -726,7 +877,7 @@ export const REVIEW_COMMENT_KIND: ObjectKindDefinition<
       group: 'act',
       shortcut: 'review.skip',
       when: ({ facts }) =>
-        (UNDECIDED.has(facts.state) && isOutsideRun({ facts })) ||
+        (UNDECIDED.has(facts.state) && isOutsideRun({ facts }) && !isRunFinished({ facts })) ||
         (isMissing({ facts }) && !facts.isPushedMissing && !facts.isChecking),
       slot: () => 'secondary',
       run: ({ facts, env }) =>
@@ -759,7 +910,10 @@ export const REVIEW_COMMENT_KIND: ObjectKindDefinition<
       label: ({ facts }) => (facts.isNote ? 'Close the comment' : NAMES.resolve),
       icon: CircleCheck,
       group: 'act',
-      when: ({ facts }) => UNDECIDED.has(facts.state) && facts.canResolve,
+      when: ({ facts }) =>
+        UNDECIDED.has(facts.state) &&
+        facts.canResolve &&
+        !(facts.isNote && isRunFinished({ facts })),
       slot: () => 'menu',
       run: ({ facts, env }) =>
         facts.isNote
