@@ -515,12 +515,13 @@ describe('StoragePage', () => {
 
   it('holds the artifact row while it keeps and reports a refused keep', async () => {
     let fail: (error: Error) => void = () => undefined;
-    state.keepStorageArtifact.mockImplementationOnce(
+    const keepStorageArtifact = vi.fn(
       () =>
         new Promise<undefined>((_resolve, reject) => {
           fail = reject;
         }),
     );
+    state.keepStorageArtifact = keepStorageArtifact;
     render(<StoragePage />);
     const row = screen.getAllByTestId('storage-artifact-row')[1];
 
@@ -534,7 +535,7 @@ describe('StoragePage', () => {
 
     fail(new Error('database is locked'));
     await waitFor(() => expect(keep.hasAttribute('disabled')).toBe(false));
-    expect(state.keepStorageArtifact).toHaveBeenCalledOnce();
+    expect(keepStorageArtifact).toHaveBeenCalledOnce();
     expect(state.reportError).toHaveBeenCalledWith(
       expect.objectContaining({ title: "Couldn't keep this artifact" }),
     );

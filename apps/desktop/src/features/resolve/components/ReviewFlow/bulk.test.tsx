@@ -368,7 +368,7 @@ describe('accept in bulk', () => {
     const alert = await screen.findByRole('alert');
     expect(alert.textContent).toContain("Couldn't undo the accept");
     expect(alert.textContent).toContain('The thread is locked');
-    expect(screen.getByText('5 accepted')).toBeDefined();
+    screen.getByText('5 accepted');
   });
 
   it('keeps accepted comments under Done, as Fixed, until they are pushed', async () => {

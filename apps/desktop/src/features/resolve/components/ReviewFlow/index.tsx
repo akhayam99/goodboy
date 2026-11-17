@@ -16,7 +16,6 @@ import {
   Notice,
   PageColumn,
   ScrollFade,
-  formatError,
   appScrollIntoView,
 } from '@goodboy/ui';
 import { REVIEW_SOURCE_LABEL } from '@goodboy/core/review-source';
@@ -26,7 +25,6 @@ import { selectOpenDrawer } from '../../../../store/slices/drawer/selectOpenDraw
 import { eventMatches } from '../../../../shared/keyboard/dispatcher';
 import { isTypingTarget } from '../../../../shared/keyboard/isTypingTarget';
 import { SHORTCUTS, shortcutGlyphs, type ShortcutId } from '../../../../shared/keyboard/registry';
-import { isReportedError } from '../../../../store/slices/notifications/reportedError';
 import { reviewFocusThreadId } from '../../../../store/slices/review-navigation';
 import { bindTarget, runObjectAction } from '../../../actions/registry';
 import { useActionEnv } from '../../../actions/useActionEnv';
@@ -40,7 +38,7 @@ import { reviewCommentDrawerSlot } from '../../reviewCommentDrawerSlot';
 import { ReviewCommentDrawer } from '../ReviewCommentDrawer';
 import { useReviewCommentController } from '../../hooks/useReviewCommentController';
 import { isUndoableAccept } from '../../bulkAccept';
-import { REVIEW_BULK_LABEL, bulkAcceptFailureLine } from '../../reviewBulkCopy';
+import { useBulkAccept } from './useBulkAccept';
 import { resolveQueueRefreshLabel } from '../../resolveQueueCopy';
 import { isPushFailure } from '../../reviewCommentState';
 import { bulkRunOf } from './bulkRun';
@@ -81,11 +79,6 @@ const COMMENT_KEYS: ReadonlyArray<readonly [ShortcutId, ReadonlyArray<string>]> 
   ['review.undo', ['reviewComment.undo']],
   ['review.fix', ['reviewComment.draft', 'reviewComment.fixAnyway', 'reviewComment.fixAgain']],
 ];
-
-type BulkError = {
-  readonly title: string;
-  readonly body: string;
-};
 
 type FixLaunchParams = {
   readonly threadIds: ReadonlyArray<string>;
@@ -195,12 +188,8 @@ export const ReviewFlow = ({ session, mountId = null, push }: Props) => {
   });
   const { compose, editingReplyId, runVerb } = controller;
   const [isAnswering, setIsAnswering] = useState(false);
-  const [isAccepting, setIsAccepting] = useState(false);
-  const [isUndoing, setIsUndoing] = useState(false);
   const [dockHeight, setDockHeight] = useState(0);
-  const [acceptError, setAcceptError] = useState<BulkError | null>(null);
-  const acceptReviewComments = useAppStore((s) => s.acceptReviewComments);
-  const undoReviewAccepts = useAppStore((s) => s.undoReviewAccepts);
+  const bulk = useBulkAccept({ sessionId });
   const lastBulkAccept = useAppStore((s) => s.reviewBulkAccepts[sessionId] ?? null);
   const bulkRun = useMemo(() => bulkRunOf({ run, entries }), [entries, run]);
   const bulkQuestions = useBulkQuestions({ sessionId, run: bulkRun });
@@ -340,54 +329,6 @@ export const ReviewFlow = ({ session, mountId = null, push }: Props) => {
       setIsAnswering(false);
     }
   }, [bulkQuestions.length, isAnswering]);
-
-  const acceptMany = useCallback(
-    async (threadIds: ReadonlyArray<string>): Promise<void> => {
-      if (isAccepting || threadIds.length === 0) {
-        return;
-      }
-      setIsAccepting(true);
-      setAcceptError(null);
-      try {
-        const result = await acceptReviewComments({ sessionId, threadIds });
-        clearReviewSelection({ sessionId });
-        const [first] = result.failures;
-        if (first !== undefined) {
-          setAcceptError({
-            title: REVIEW_BULK_LABEL.acceptFailed,
-            body: bulkAcceptFailureLine({
-              count: result.failures.length,
-              message: first.message,
-            }),
-          });
-        }
-      } catch (caught) {
-        if (!isReportedError(caught)) {
-          setAcceptError({ title: REVIEW_BULK_LABEL.acceptFailed, body: formatError(caught) });
-        }
-      } finally {
-        setIsAccepting(false);
-      }
-    },
-    [acceptReviewComments, clearReviewSelection, isAccepting, sessionId],
-  );
-
-  const undoBulk = useCallback(async (): Promise<void> => {
-    if (isUndoing) {
-      return;
-    }
-    setIsUndoing(true);
-    setAcceptError(null);
-    try {
-      await undoReviewAccepts({ sessionId });
-    } catch (caught) {
-      if (!isReportedError(caught)) {
-        setAcceptError({ title: REVIEW_BULK_LABEL.undoFailed, body: formatError(caught) });
-      }
-    } finally {
-      setIsUndoing(false);
-    }
-  }, [isUndoing, sessionId, undoReviewAccepts]);
 
   useEffect(() => {
     if (launchRequest === null || !hasComments) {
@@ -610,14 +551,14 @@ export const ReviewFlow = ({ session, mountId = null, push }: Props) => {
           total={shownFixableIds.length}
           fixCount={fixSelectedIds.length}
           acceptCount={acceptSelectedIds.length}
-          isAccepting={isAccepting}
+          isAccepting={bulk.isAccepting}
           note={
             undoableCount > 0 && selectedIds.length === 0 ? (
               <BulkUndoBar
                 count={undoableCount}
                 hint={shortcutGlyphs('app.undo')}
-                isBusy={isUndoing}
-                onUndo={() => void undoBulk()}
+                isBusy={bulk.isUndoing}
+                onUndo={() => void bulk.undo()}
               />
             ) : null
           }
@@ -625,7 +566,7 @@ export const ReviewFlow = ({ session, mountId = null, push }: Props) => {
           onClear={() => clearReviewSelection({ sessionId })}
           onSelectAll={selectAllFixable}
           onFix={() => openLaunch({ threadIds: fixSelectedIds })}
-          onAccept={() => void acceptMany(acceptSelectedIds)}
+          onAccept={() => void bulk.accept(acceptSelectedIds)}
         />
       </div>
     );
@@ -667,13 +608,13 @@ export const ReviewFlow = ({ session, mountId = null, push }: Props) => {
         )}
         <ReviewTargetNotices sessionId={sessionId} />
         <LaneNotices sessionId={sessionId} lane={lane} mountId={source?.mountId ?? null} />
-        {acceptError !== null && (
+        {bulk.error !== null && (
           <Notice
             tone="danger"
             placement="banner"
             role="alert"
-            title={acceptError.title}
-            body={acceptError.body}
+            title={bulk.error.title}
+            body={bulk.error.body}
           />
         )}
         <ReviewToolbar

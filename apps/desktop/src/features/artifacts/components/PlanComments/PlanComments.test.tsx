@@ -14,7 +14,7 @@ import {
   PlanCommentsContext,
   type PlanCommentsApi,
 } from '../../../plans/planComments/planCommentsContext';
-import { useAppStore } from '../../../../store';
+import { importStore } from '../../../../store/storyHarness';
 import { PartCommentFrame } from './PartCommentFrame';
 import { PlanCommentBar } from './PlanCommentBar';
 import { PlanProse } from './PlanProse';
@@ -120,7 +120,7 @@ describe('PartCommentFrame', () => {
 
   it('keeps Remove busy while it removes, removes once, and reports a failed remove', async () => {
     const reportError = vi.fn(async () => undefined);
-    useAppStore.setState({ reportError });
+    (await importStore()).setState({ reportError });
     let fail: (error: Error) => void = () => undefined;
     const remove = vi.fn(
       () =>
@@ -148,7 +148,7 @@ describe('PartCommentFrame', () => {
 
     fail(new Error('database is locked'));
     await waitFor(() => expect(button.getAttribute('aria-busy')).toBeNull());
-    expect(screen.getByText('Limit the backfill to 90 days')).toBeDefined();
+    screen.getByText('Limit the backfill to 90 days');
     expect(reportError).toHaveBeenCalledWith(
       expect.objectContaining({ title: "Couldn't remove the comment", sessionId: 'session' }),
     );
