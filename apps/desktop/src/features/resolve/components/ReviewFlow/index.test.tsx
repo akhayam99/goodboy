@@ -249,11 +249,26 @@ describe('Review as one flow', () => {
     expect(within(comment()).queryByRole('button', { name: 'Resolve' })).toBeNull();
   });
 
-  it('keeps Fix off the rows: the row is the button and the detail bar fixes', async () => {
+  it('puts Fix on a not started row, answers with Starting and ignores a second click', async () => {
+    const createResolveBatch = vi.fn<StoreState['createResolveBatch']>(
+      () => new Promise<ResolveBatch>(() => undefined),
+    );
+    stub({ createResolveBatch });
     await mount({ threadId: NOT_STARTED_THREAD_ID });
 
-    expect(list().querySelectorAll('[data-fix-row]')).toHaveLength(0);
-    expect(within(list()).queryAllByRole('button', { name: /^Fix$/ })).toHaveLength(0);
+    const item = list().querySelector(`[data-thread-id="${NOT_STARTED_THREAD_ID}"]`)?.closest('li');
+    if (item === null || item === undefined) {
+      throw new Error('no row item');
+    }
+    const fix = within(item).getByRole('button', { name: 'Fix' });
+    fireEvent.click(fix);
+    await waitFor(() => expect(fix.getAttribute('aria-busy')).toBe('true'));
+    expect(item.querySelector('[data-item-work-word]')?.textContent).toBe('Starting');
+    fireEvent.click(fix);
+    await settle();
+
+    expect(createResolveBatch).toHaveBeenCalledOnce();
+    expect(createResolveBatch.mock.calls[0]?.[0].threadIds).toEqual([NOT_STARTED_THREAD_ID]);
     expect(bar().querySelector('[data-review-verb="reviewComment.draft"]')).not.toBeNull();
   });
 
@@ -644,7 +659,7 @@ describe('Review as one flow', () => {
     line.getByText('Fixing');
     line.getByRole('button', { name: 'Open transcript' });
     fireEvent.click(line.getByRole('button', { name: 'Stop' }));
-    expect(await screen.findByText('Stop this fix run?')).toBeDefined();
+    expect(await screen.findByText('Stop the fix for 4 comments?')).toBeDefined();
   });
 
   it('opens the not started comment with Fix as its one primary, last at the right', async () => {

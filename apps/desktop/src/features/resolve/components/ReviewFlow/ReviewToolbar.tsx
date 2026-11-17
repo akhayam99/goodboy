@@ -1,10 +1,12 @@
 import type { ComponentProps } from 'react';
-import type { SessionId } from '@goodboy/types';
+import type { PullRequestHost, SessionId } from '@goodboy/types';
 import type { FixRun } from '../../fixRun';
+import type { FixRunReady } from '../../fixRunReady';
 import type { LaneStatus } from '../../laneStatus';
 import type { BulkRun } from './bulkRun';
 import { FixRunChecks } from './FixRunChecks';
 import { FixRunCount } from './FixRunCount';
+import { FixRunReadyCount } from './FixRunReadyCount';
 import { ReviewScopeBar } from './ReviewScopeBar';
 import { RunStatusBulkActions } from './RunStatusBulkActions';
 
@@ -13,6 +15,8 @@ type Props = Omit<ComponentProps<typeof ReviewScopeBar>, 'trailing'> & {
   readonly run: FixRun | null;
   readonly lane: LaneStatus | null;
   readonly bulkRun: BulkRun | null;
+  readonly ready: FixRunReady | null;
+  readonly sourceKind: PullRequestHost | null;
   readonly isChecksShown: boolean;
   readonly onOpenAnswers: () => void;
 };
@@ -22,6 +26,8 @@ export const ReviewToolbar = ({
   run,
   lane,
   bulkRun,
+  ready,
+  sourceKind,
   isChecksShown,
   onOpenAnswers,
   ...bar
@@ -40,6 +46,7 @@ export const ReviewToolbar = ({
               />
             )}
             <FixRunCount sessionId={sessionId} run={run} lane={lane} />
+            {ready === null ? null : <FixRunReadyCount ready={ready} sourceKind={sourceKind} />}
           </div>
         )
       }

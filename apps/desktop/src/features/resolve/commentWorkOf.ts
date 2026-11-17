@@ -6,6 +6,7 @@ export type CommentWork = {
   readonly state: 'fixing' | 'queued';
   readonly detail: string | null;
   readonly agentId: AgentId | null;
+  readonly batchSize: number;
 };
 
 type WorkEntry = {
@@ -50,9 +51,14 @@ export const commentWorkOf = ({
   return new Map(
     working.map((entry): [string, CommentWork] => {
       const ownAgentId = entry.row.attempt?.agentId ?? null;
-      const runAgent = inRun.has(entry.threadId) ? runAgentId : null;
+      const isInRun = inRun.has(entry.threadId);
+      const runAgent = isInRun ? runAgentId : null;
+      const batchSize = isInRun ? runThreadIds.length : 1;
       if (!entry.isQueued) {
-        return [entry.threadId, { state: 'fixing', detail: null, agentId: ownAgentId ?? runAgent }];
+        return [
+          entry.threadId,
+          { state: 'fixing', detail: null, agentId: ownAgentId ?? runAgent, batchSize },
+        ];
       }
       const place = places.get(entry.threadId) ?? null;
       return [
@@ -61,6 +67,7 @@ export const commentWorkOf = ({
           state: 'queued',
           detail: place === null ? null : queuedPlaceText({ place }),
           agentId: runAgent ?? ownAgentId,
+          batchSize,
         },
       ];
     }),

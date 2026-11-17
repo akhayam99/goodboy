@@ -1,4 +1,4 @@
-import { useContext, type ReactNode } from 'react';
+import { useContext } from 'react';
 import { REVIEW_SOURCE_LABEL } from '@goodboy/core/review-source';
 import type { SessionId } from '@goodboy/types';
 import { TEXT_ROLE, cn } from '@goodboy/ui';
@@ -25,15 +25,12 @@ type Props = {
   readonly onSelect: (threadId: string) => void;
   readonly checked: ReadonlySet<string>;
   readonly onToggle: (threadId: string) => void;
-  readonly runHeader?: ReactNode;
 };
 
 type LabelParams = {
   readonly group: ResolveGroup;
   readonly entries: ReadonlyArray<ReviewEntry>;
 };
-
-const FIX_RUN_GROUP_LABEL = 'Fix run comments';
 
 const labelOf = ({ group, entries }: LabelParams): string => {
   if (group !== 'left_open') {
@@ -62,7 +59,6 @@ export const ReviewList = ({
   onSelect,
   checked,
   onToggle,
-  runHeader = null,
 }: Props) => {
   const isSourceShown = isMixedOf({ groups });
   const unreadThreadIds = useContext(ThreadVisitContext);
@@ -73,18 +69,16 @@ export const ReviewList = ({
       className="group/select-list flex min-w-0 flex-col gap-4"
     >
       <IdentityQuietLine sessionId={sessionId} />
-      {groups.map(({ group, entries, isRun = false }) => {
-        const name = isRun ? FIX_RUN_GROUP_LABEL : labelOf({ group, entries });
+      {groups.map(({ group, entries }) => {
+        const name = labelOf({ group, entries });
         const count = countSlotText({ count: entries.length, isBesideGlyph: true });
         return (
           <section
-            key={isRun ? 'fix_run' : group}
+            key={group}
             aria-label={name}
             className={cn('flex min-w-0 flex-col gap-1', group === 'left_open' && 'opacity-80')}
           >
-            {isRun ? (
-              runHeader
-            ) : groups.length < 2 ? null : (
+            {groups.length < 2 ? null : (
               <h2 className="flex h-7 min-w-0 items-center gap-2 px-3 text-row">
                 <span className={cn('truncate', TEXT_ROLE.secondary)}>{name}</span>
                 {count === null ? null : (

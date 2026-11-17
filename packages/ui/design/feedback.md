@@ -153,8 +153,12 @@ the place of its work from the click to the result.
   agent; it says what you can do next. A result you read before acting opens
   under the item, not in a drawer: Review fix shows a check's proposal with
   Apply fix and Dismiss below its row, and the drawer keeps the full detail.
-  Failing checks do this today (`checkRowResultOf`, `CheckProposalInline`).
-  Retry starts a new attempt; the row reads the newest one.
+  Failing checks do this today (`checkRowResultOf`, `CheckProposalInline`),
+  and so do review comments (`commentRowResultOf`, `CommentFixReview`:
+  Review shows the diff with Apply, Retry with a hint and Discard). Retry
+  starts a new attempt; the row reads the newest one, and while it starts the
+  line reads Starting with the Retry busy. A finished batch adds no group or
+  banner: each row keeps its result and the header only counts them.
 - **A card is one item.** A card that holds one thing (a failed push, a
   stopped rebase) keeps its title and puts the line under it. Its verbs sit
   in the `action` slot, visible at rest, since there is no row to hover. While
@@ -169,8 +173,8 @@ the place of its work from the click to the result.
   Review comments do this today: `commentWorkOf` gives each comment Fixing,
   or Queued with "2nd in this fix", and `FixRunCount` draws the count as one
   `ItemWorkLine` (Fixing · 2 of 3, with the time). One agent fixes the whole
-  batch, so Stop on any of its rows stops all of it, behind the same confirm
-  as the comment drawer.
+  batch, so Stop on any of its rows stops all of it, behind a confirm and a
+  tooltip that name the batch ("Stop the fix for 3 comments").
 - **The place.** While you are on the tab, an item that changes state keeps
   its group and its place; the groups sort again when you come back to the
   tab. The list component holds the order, never the store. Failing checks

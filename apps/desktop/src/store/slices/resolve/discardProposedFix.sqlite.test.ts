@@ -1,6 +1,15 @@
-// @vitest-environment node
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { createStore } from 'zustand/vanilla';
+// @vitest-environment happy-dom
+vi.mock('@tauri-apps/api/core', async () =>
+  (await import('../../storyHarness')).tauriCoreModuleMock(),
+);
+vi.mock('@tauri-apps/api/event', async () =>
+  (await import('../../storyHarness')).tauriEventModuleMock(),
+);
+vi.mock('../../../shared/lib/db', async () =>
+  (await import('../../storyHarness')).sqliteDbLibModuleMock(),
+);
+
+import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   insertResolveCandidate,
   insertResolveCandidateItem,
@@ -11,22 +20,17 @@ import {
   upsertResolveThread,
   type Database,
 } from '@goodboy/db';
-import { makeMigratedTestDatabase } from '@goodboy/db/test-helpers';
-import type { ResolveQueueItem, ResolveThread, SessionId } from '@goodboy/types';
-import { DISCARD_FIX_ERROR } from './discardProposedFix';
-import { createResolveSlice } from './index';
-import { resolveInitialState } from './state';
-import type { GetFn, SetFn } from './types';
+import { brandId, type ResolveQueueItem, type ResolveThread, type SessionId } from '@goodboy/types';
+import {
+  STORE_IMPORT_TIMEOUT_MS,
+  importStore,
+  openStorySqlite,
+  resetStoryStore,
+  type StoryStore,
+} from '../../storyHarness';
+import { DISCARD_FIX_ERROR } from './discardFixError';
 
-const h = vi.hoisted(() => ({
-  execute: vi.fn(),
-  select: vi.fn(),
-  exec: vi.fn(),
-  transaction: vi.fn(),
-}));
-vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: h }));
-
-const sessionId = 'session' as SessionId;
+const sessionId = brandId<SessionId>({ value: 'session' });
 const WORKTREE = '/repo/payments-api';
 
 const thread: ResolveThread = {
@@ -78,16 +82,11 @@ const item: ResolveQueueItem = {
 };
 
 let db: Database;
+let useAppStore: StoryStore;
 
-const createHarness = () => {
-  const store = createStore(() => ({
-    ...resolveInitialState,
-    sessionResolveThreads: { [sessionId]: [thread] },
-  }));
-  const set = store.setState as unknown as SetFn;
-  const get = store.getState as unknown as GetFn;
-  return { store, actions: createResolveSlice({ set, get }) };
-};
+beforeAll(async () => {
+  useAppStore = await importStore();
+}, STORE_IMPORT_TIMEOUT_MS);
 
 type CandidateParams = {
   readonly id: string;
@@ -126,11 +125,8 @@ const candidateStates = async (): Promise<ReadonlyArray<string>> =>
   (await listResolveCandidates({ db, sessionId })).map((candidate) => candidate.state);
 
 beforeEach(async () => {
-  db = await makeMigratedTestDatabase();
-  h.exec.mockReset().mockImplementation(db.exec);
-  h.execute.mockReset().mockImplementation(db.execute);
-  h.select.mockReset().mockImplementation(db.select);
-  h.transaction.mockReset().mockImplementation(db.transaction);
+  await resetStoryStore();
+  db = await openStorySqlite();
   await db.execute(
     "INSERT INTO workspaces (id, name, slug, created_at, updated_at) VALUES ('workspace', 'Workspace', 'workspace', 1, 1)",
   );
@@ -139,14 +135,14 @@ beforeEach(async () => {
   );
   await upsertResolveThread({ db, row: thread, expectedRevision: null });
   await insertResolveQueueItem({ db, item });
+  useAppStore.setState({ sessionResolveThreads: { [sessionId]: [thread] } });
 });
 
 describe('discarding the proposed fix of one comment', () => {
   it('throws the patch away and puts the comment back to open with nothing applied', async () => {
     await stageCandidate({ id: 'candidate', queueItemIds: ['item'] });
-    const live = createHarness();
 
-    await live.actions.discardProposedFix({
+    await useAppStore.getState().discardProposedFix({
       sessionId,
       threadId: 'thread',
       worktreePath: WORKTREE,
@@ -163,7 +159,7 @@ describe('discarding the proposed fix of one comment', () => {
     const [entry] = await listResolveQueueItems({ db, sessionId });
     expect(entry?.item).toMatchObject({ approvalState: 'none', integratedSha: null });
     expect(
-      live.store
+      useAppStore
         .getState()
         .sessionResolveThreads[sessionId]?.find((row) => row.threadId === 'thread')?.stage,
     ).toBe('new');
@@ -171,10 +167,9 @@ describe('discarding the proposed fix of one comment', () => {
 
   it('leaves everything as it was when the fix belongs to another worktree', async () => {
     await stageCandidate({ id: 'candidate', queueItemIds: ['item'] });
-    const live = createHarness();
 
     await expect(
-      live.actions.discardProposedFix({
+      useAppStore.getState().discardProposedFix({
         sessionId,
         threadId: 'thread',
         worktreePath: '/repo/ledger-core',
@@ -188,10 +183,11 @@ describe('discarding the proposed fix of one comment', () => {
   it('refuses a fix that also answers another comment', async () => {
     await insertResolveQueueItem({ db, item: { ...item, id: 'item-2', threadId: 'thread-2' } });
     await stageCandidate({ id: 'candidate', queueItemIds: ['item', 'item-2'] });
-    const live = createHarness();
 
     await expect(
-      live.actions.discardProposedFix({ sessionId, threadId: 'thread', worktreePath: WORKTREE }),
+      useAppStore
+        .getState()
+        .discardProposedFix({ sessionId, threadId: 'thread', worktreePath: WORKTREE }),
     ).rejects.toThrow(DISCARD_FIX_ERROR.shared);
 
     expect(await candidateStates()).toEqual(['ready']);
@@ -199,10 +195,10 @@ describe('discarding the proposed fix of one comment', () => {
   });
 
   it('refuses a fix already committed on the branch', async () => {
-    const live = createHarness();
-
     await expect(
-      live.actions.discardProposedFix({ sessionId, threadId: 'thread', worktreePath: WORKTREE }),
+      useAppStore
+        .getState()
+        .discardProposedFix({ sessionId, threadId: 'thread', worktreePath: WORKTREE }),
     ).rejects.toThrow(DISCARD_FIX_ERROR.onBranch);
 
     expect((await storedThread())?.commitShas).toEqual(['90b1d57']);
@@ -210,8 +206,7 @@ describe('discarding the proposed fix of one comment', () => {
 
   it('does nothing a second time once the fix is gone', async () => {
     await stageCandidate({ id: 'candidate', queueItemIds: ['item'] });
-    const live = createHarness();
-    await live.actions.discardProposedFix({
+    await useAppStore.getState().discardProposedFix({
       sessionId,
       threadId: 'thread',
       worktreePath: WORKTREE,
@@ -219,7 +214,9 @@ describe('discarding the proposed fix of one comment', () => {
     const after = await storedThread();
 
     await expect(
-      live.actions.discardProposedFix({ sessionId, threadId: 'thread', worktreePath: WORKTREE }),
+      useAppStore
+        .getState()
+        .discardProposedFix({ sessionId, threadId: 'thread', worktreePath: WORKTREE }),
     ).rejects.toThrow(DISCARD_FIX_ERROR.noFix);
 
     expect(await storedThread()).toEqual(after);

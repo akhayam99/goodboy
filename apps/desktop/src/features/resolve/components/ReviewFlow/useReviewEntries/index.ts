@@ -72,7 +72,6 @@ export type ReviewEntry = {
 
 export type ReviewGroup = {
   readonly group: ResolveGroup;
-  readonly isRun?: boolean;
   readonly entries: ReadonlyArray<ReviewEntry>;
 };
 

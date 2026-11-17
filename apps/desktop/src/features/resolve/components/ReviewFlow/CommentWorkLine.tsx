@@ -40,7 +40,7 @@ export const CommentWorkLine = ({ sessionId, work, onStop }: Props) => {
       verbs={
         agentId === null ? null : (
           <>
-            <StopRunButton onStop={() => onStop({ agentId })} />
+            <StopRunButton onStop={() => onStop({ agentId })} batchSize={work.batchSize} />
             <Button
               size="xs"
               variant="quiet"

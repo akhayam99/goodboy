@@ -1,12 +1,12 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import { applyFixesLabel } from './commentProjection';
-import { fixRunReadyBody, fixRunReadyTitle } from './fixRunReadyCopy';
+import { fixRunReadyBody, fixesReadyText } from './fixRunReadyCopy';
 
 describe('fix run ready copy', () => {
-  it('counts the fixes in the title', () => {
-    expect(fixRunReadyTitle({ count: 4 })).toBe('Fix run finished: 4 fixes ready for you');
-    expect(fixRunReadyTitle({ count: 1 })).toBe('Fix run finished: 1 fix ready for you');
+  it('counts the fixes ready in a few quiet words', () => {
+    expect(fixesReadyText({ count: 4 })).toBe('4 fixes ready');
+    expect(fixesReadyText({ count: 1 })).toBe('1 fix ready');
   });
 
   it('names the commit and what the next push does', () => {
