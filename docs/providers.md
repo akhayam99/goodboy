@@ -943,14 +943,14 @@ mode a CLI can't honor runs as the next stricter one it has, never a looser one.
 - Copilot's Read only is a set of deny rules over `--allow-all-tools`. The CLI documents
   that a deny rule wins, but no real turn has exercised it, so `modeSupport.ts` marks the
   Copilot cells Partly. The Auto role runs on Copilot like on Cursor, on that basis
-- opencode turns always carry `--dangerously-skip-permissions`, including the read-only roles
-  (scout, planner, investigator, reviewer): the `plan` agent denies edits but asks before a shell
-  command, and the flag approves the ask, so those roles can still run a shell there. Auto is the
-  one role kept off the whole family (opencode, OpenRouter, Moonshot) because of it
-  (`AUTO_UNCONFINED_PROVIDERS`; `ensure_confinement` refuses the role `auto` on an opencode
-  binary). Dropping the flag is not done: no probe proves that `opencode run` then denies the ask
-  instead of waiting for an answer. Side jobs (planner and summarizer runs of the app itself) do
-  not pass the flag
+- opencode turns carry `--dangerously-skip-permissions` in every mode, except a confined
+  read-only role (scout, planner, investigator, reviewer, Auto, an unknown role), which never
+  gets it. The `plan` agent denies edits but asks before a shell command, and the flag approves
+  the ask, so a session in Read only on opencode can still run a shell. No probe proves that
+  `opencode run` without the flag denies the ask instead of waiting for an answer, so
+  `ensure_confinement` still refuses every reading role on an opencode binary, and Auto stays off
+  the whole family (opencode, OpenRouter, Moonshot, `AUTO_UNCONFINED_PROVIDERS`). Side jobs
+  (planner and summarizer runs of the app itself) do not pass the flag
 - Claude 2.1.282 lists `manual` in place of `default` but still accepts `default`
   as a hidden alias, so Goodboy keeps sending `default` for Ask first: `manual`
   is not in older CLIs and would break them
