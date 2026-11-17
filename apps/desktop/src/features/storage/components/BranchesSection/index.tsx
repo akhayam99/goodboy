@@ -2,7 +2,7 @@ import { BRANCH_TAB_EMPTY_COPY } from './BRANCH_TAB_EMPTY_COPY';
 import { CHECK_STATE, READ_FAILED } from '../../../../store/slices/notifications/errorRecovery';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { DeletedBranch, Project, ProjectId } from '@goodboy/types';
-import { Band, Listbox, SectionHeader, SkeletonRow, type ListboxOption } from '@goodboy/ui';
+import { Band, SkeletonRow } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
 import type { BranchScanEntry } from '../../../../store/slices/branch-cleanup';
 import { repoDeletesMergedBranches } from '../../../../store/slices/branch-cleanup/repoDeletesMergedBranches';
@@ -20,6 +20,7 @@ import {
 } from '../../branches/classifyBranch';
 import { useBranchProjects } from '../../hooks/useBranchProjects';
 import { BranchBulkBar, type SelectedBranch } from './BranchBulkBar';
+import { BranchesHeader } from './BranchesHeader';
 import { BranchRow } from './BranchRow';
 
 type Props = {
@@ -37,12 +38,6 @@ type DeleteTarget = {
   readonly entry: ClassifiedBranch;
   readonly alsoOrigin: boolean;
 };
-
-const TAB_OPTIONS: ReadonlyArray<ListboxOption<BranchTab>> = [
-  { value: 'safe', label: 'Safe to delete' },
-  { value: 'needs-look', label: 'Check first' },
-  { value: 'all', label: 'All' },
-];
 
 const keyOf = (projectId: ProjectId, branch: string): string => `${projectId}:${branch}`;
 
@@ -120,6 +115,7 @@ export const BranchesSection = ({ scope }: Props) => {
       })),
   );
   const isLoading = projects.some((project) => scans[project.id]?.status === 'loading');
+  const hasScan = projects.some((project) => scans[project.id]?.status === 'ready');
   const allInView = visibleGroups.flatMap((group) =>
     group.entries.map((entry) => keyOf(group.project.id, entry.branch.name)),
   );
@@ -228,22 +224,13 @@ export const BranchesSection = ({ scope }: Props) => {
       data-selecting={selected.size > 0}
       className="group/select-list flex flex-col gap-2"
     >
-      <SectionHeader
-        label="Branches"
-        headingLevel={2}
-        action={
-          <Listbox
-            ariaLabel="Show branches"
-            trigger="quiet"
-            size="sm"
-            value={tab}
-            options={TAB_OPTIONS}
-            onChange={(next) => {
-              clearSelection();
-              setTab(next);
-            }}
-          />
-        }
+      <BranchesHeader
+        tab={tab}
+        entries={hasScan ? groups.flatMap((group) => group.entries) : null}
+        onTabChange={(next) => {
+          clearSelection();
+          setTab(next);
+        }}
       />
       <Band>
         {visibleGroups.length === 0 && isLoading ? (

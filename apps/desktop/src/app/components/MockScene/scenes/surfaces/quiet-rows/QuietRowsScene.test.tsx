@@ -78,11 +78,14 @@ describe('the quiet rows scenes', () => {
     expect(screen.getByRole('button', { name: /Remove 3 safe folders/ })).toBeDefined();
   });
 
-  it('u26s-rows-branches lists four columns with Delete in a hover cell', async () => {
+  it('u26s-rows-branches lists the branches on Storage with Delete in a hover cell', async () => {
     mount({ id: 'u26s-rows-branches' });
 
     await waitFor(
-      () => expect(document.querySelectorAll('[data-select-id]').length).toBeGreaterThan(1),
+      () =>
+        expect(
+          document.querySelectorAll('#storage-branches li[data-select-id]').length,
+        ).toBeGreaterThan(1),
       WAIT,
     );
 

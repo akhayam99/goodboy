@@ -78,7 +78,6 @@
   "apps/desktop/src/features/session/central/next/useOpenNeedsYou": 1,
   "apps/desktop/src/features/session/central/now/useLiveGroups": 1,
   "apps/desktop/src/features/session/central/useSessionWorkModel": 1,
-  "apps/desktop/src/features/storage/useBranchesMeta": 1,
   "apps/desktop/src/features/storage/useStorageMeta": 1,
   "apps/desktop/src/features/suggestions/useMountProposalActions": 1,
   "apps/desktop/src/features/suggestions/useNextStepOutcomes": 1,

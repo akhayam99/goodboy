@@ -31,7 +31,7 @@ const HOVERS: Readonly<Record<Variant, Hover | null>> = {
   commits: { selector: '[role="listitem"]', index: 1 },
   menu: null,
   storage: { selector: '[data-testid="storage-folder-row"]', index: 1 },
-  branches: { selector: 'li[data-select-id]', index: 1 },
+  branches: { selector: '#storage-branches li[data-select-id]', index: 1 },
 };
 
 const CLICKS: Readonly<Record<Variant, ReadonlyArray<string>>> = {
@@ -65,6 +65,13 @@ const seedQuietStorage = (): void => {
   });
 };
 
+const seedStorageBranches = (): void => {
+  seedStorageScene();
+  window.setTimeout(() => {
+    document.getElementById('storage-branches')?.scrollIntoView({ block: 'start' });
+  }, CLICK_MS);
+};
+
 const QuietRowsScene = ({ variant }: Props) => {
   useSceneHover({ hover: HOVERS[variant] });
   useSceneClicks({
@@ -80,10 +87,7 @@ const QuietRowsScene = ({ variant }: Props) => {
       {variant === 'storage' ? (
         <SettingsFrame focus={{ scope: 'app', section: 'storage' }} seed={seedQuietStorage} />
       ) : variant === 'branches' ? (
-        <SettingsFrame
-          focus={{ scope: 'workspace', section: 'branches' }}
-          seed={seedStorageScene}
-        />
+        <SettingsFrame focus={{ scope: 'app', section: 'storage' }} seed={seedStorageBranches} />
       ) : (
         <CommitsBranchScene isPlanned={false} />
       )}
