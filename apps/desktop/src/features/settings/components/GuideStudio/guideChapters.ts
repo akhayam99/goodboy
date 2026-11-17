@@ -309,7 +309,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Overview',
-        desc: 'Tiles, a board of each branch by state with its next step, and the Log at the end, always open. Open the full log scrolls to it.',
+        desc: 'Tiles, a board of each branch by state, grouped by project, with its next step, and the Log at the end, always open. Open the full log scrolls to it.',
       },
     ],
     links: [],
@@ -334,7 +334,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Stops for your OK and pause',
-        desc: 'Every step, After the plan or Never sets how often workflows and the Lead stop for you, one row in Runs in Settings. Pause run lets the step in flight finish, and Stop run asks first.',
+        desc: 'Every step, After the plan or Never sets how often workflows and the Lead stop for you, one row in Runs in Settings.',
       },
       {
         term: 'Runs in Settings',
@@ -442,7 +442,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Comments',
-        desc: 'Review threads and your own notes in one list, grouped Needs you, Working and Done. A row opens a drawer with the code, the thread and Fix, Reply and Skip on F, R and S.',
+        desc: 'Review threads and your own notes in one list, grouped Needs you, Working and Done. A row opens a drawer with the code, the thread and Fix, Reply and Skip on F, R and S. A comment that asks for a rework offers Start a run.',
       },
       {
         term: 'Fix comments',

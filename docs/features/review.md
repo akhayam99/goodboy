@@ -50,6 +50,12 @@ When a run stops or fails, its comments are open again with **The run stopped. N
 
 <sub>Screenshot from Goodboy 0.27.1</sub>
 
+### Run from a comment
+
+A comment that asks for a rework starts a run instead of a quick fix. **Start a run** opens a form in the comment pane with the goal written from the comment, a Plan row and the branch.
+
+Pick up to three more open comments from the branch to start with. The run reads each comment word for word, and every comment shows the same run. Your own notes and host comments work alike.
+
 ### Failed drafts
 
 When a fix fails, the comment says why in one sentence and links to the agent's transcript. Retry it in the same run, start over with a new agent, try another model or add a hint.
