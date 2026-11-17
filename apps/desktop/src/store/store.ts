@@ -54,6 +54,7 @@ import { createSettingsLastPageSlice } from './slices/settings-last-page';
 import { createMonitoringViewSlice } from './slices/monitoring-view';
 import { createLocalChecksSlice } from './slices/local-checks';
 import { createChatLastOpenSlice } from './slices/chat-last-open';
+import { createLeadPermissionsSlice } from './slices/lead-permissions';
 import { createSessionGroupingSlice } from './slices/session-grouping';
 import { createNextViewSlice } from './slices/next-view';
 import { createTrackerMovesSlice } from './slices/tracker-moves';
@@ -190,6 +191,7 @@ import { settingsLastPageInitialState } from './slices/settings-last-page/state'
 import { monitoringViewInitialState } from './slices/monitoring-view/state';
 import { localChecksInitialState } from './slices/local-checks/state';
 import { chatLastOpenInitialState } from './slices/chat-last-open/state';
+import { leadPermissionsInitialState } from './slices/lead-permissions/state';
 import { sessionGroupingInitialState } from './slices/session-grouping/state';
 import { nextViewInitialState } from './slices/next-view/state';
 import { trackerMovesInitialState } from './slices/tracker-moves/state';
@@ -266,6 +268,7 @@ export type AppStore = AppState &
   ReturnType<typeof createMonitoringViewSlice> &
   ReturnType<typeof createLocalChecksSlice> &
   ReturnType<typeof createChatLastOpenSlice> &
+  ReturnType<typeof createLeadPermissionsSlice> &
   ReturnType<typeof createSessionGroupingSlice> &
   ReturnType<typeof createNextViewSlice> &
   ReturnType<typeof createTrackerMovesSlice> &
@@ -399,6 +402,7 @@ const initialState: AppState = {
   ...monitoringViewInitialState,
   ...localChecksInitialState,
   ...chatLastOpenInitialState,
+  ...leadPermissionsInitialState,
   ...sessionGroupingInitialState,
   ...nextViewInitialState,
   ...trackerMovesInitialState,
@@ -472,6 +476,7 @@ const appStoreApi = createStore<AppStore>((set, get) => ({
   ...createMonitoringViewSlice({ set, get }),
   ...createLocalChecksSlice({ set, get }),
   ...createChatLastOpenSlice({ set, get }),
+  ...createLeadPermissionsSlice({ set, get }),
   ...createSessionGroupingSlice({ set, get }),
   ...createNextViewSlice({ set, get }),
   ...createTrackerMovesSlice({ set, get }),
