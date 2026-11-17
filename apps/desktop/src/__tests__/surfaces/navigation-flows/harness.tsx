@@ -618,6 +618,14 @@ export const settingsPage = async (): Promise<void> => {
   expect(document.querySelector('[data-column-layer="nav"][inert]')).toBeNull();
 };
 
+export const searchSettingsForConnections = async (): Promise<void> => {
+  const field = await screen.findByRole('searchbox', { name: 'Search settings' });
+  fireEvent.change(field, { target: { value: 'Providers' } });
+  await settle();
+  const results = await screen.findByRole('listbox', { name: 'Matching settings' });
+  await click(within(results).getByRole('option', { name: 'Go to Connections' }));
+};
+
 export const lens = (lensName: string | null) => async (ctx: Ctx) => {
   await waitFor(
     () => expect(useAppStore.getState().activeLens[ctx.sessionId] ?? null).toBe(lensName),

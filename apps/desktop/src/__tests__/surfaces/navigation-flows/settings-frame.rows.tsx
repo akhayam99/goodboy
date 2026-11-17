@@ -16,6 +16,7 @@ import {
   click,
   clickButton,
   heading,
+  searchSettingsForConnections,
   settingsPage,
   settle,
   useAppStore,
@@ -49,7 +50,8 @@ const goToModels = async (): Promise<void> => {
 
 const goToClaude = async (): Promise<void> => {
   const nav = await screen.findByRole('navigation', { name: 'Settings scopes' });
-  await click(within(nav).getByRole('button', { name: 'Open Connections' }));
+  expect(within(nav).queryByRole('button', { name: /Connections/ })).toBeNull();
+  await searchSettingsForConnections();
   await heading('Connections');
   await click(await screen.findByRole('button', { name: /^Claude, / }));
   await heading('Claude');
@@ -304,8 +306,8 @@ export const SETTINGS_FRAME_ROWS: ReadonlyArray<Row> = [
     },
   },
   {
-    name: 'settings frame: the moved row leads to a provider about to run out, with the notice on its page',
-    covers: ['openSettings', 'studio:connections', 'settings:moved-to-connections'],
+    name: 'settings frame: Search settings leads to a provider about to run out, with the notice on its page',
+    covers: ['openSettings', 'studio:connections'],
     door: 'visible',
     open: async () => {
       seedPolicyScene({ workspaceId: useAppStore.getState().currentWorkspaceId as WorkspaceId });
