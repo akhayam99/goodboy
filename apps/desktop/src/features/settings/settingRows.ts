@@ -1,6 +1,5 @@
 import { AFTER_MERGE_NEVER } from '../../shared/utils/afterMergeCopy';
 import { NAMES, formerNamesOf } from '../../shared/utils/names';
-import { RUN_ROUTE_COPY } from '../session/startRun/runRouteCopy';
 import { STOPS_LEVEL_COPY } from '../workflows/stopsLevelCopy';
 import type { WorkspaceSettingField } from './pageKeys';
 import type { SettingsPageScope } from './settingsFocus';
@@ -301,14 +300,6 @@ export const SETTING_ROWS: ReadonlyArray<SettingRow> = [
       'Auto asks you',
       'Auto runs ask you',
     ],
-  }),
-  row({
-    key: 'start-as',
-    label: RUN_ROUTE_COPY.workspaceDefault,
-    help: RUN_ROUTE_COPY.workspaceDefaultHelp,
-    page: RUN_DEFAULTS,
-    band: NEW_RUNS,
-    formerNames: ['New runs start as'],
   }),
   row({
     key: 'spend-limit',

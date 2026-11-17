@@ -27,6 +27,8 @@ export const START_KIND_COPY = {
         : `The Lead runs the ${count} steps as written.`,
     adaptLine: ({ name }: NameParams) =>
       `The Lead starts from ${name} and says why when it changes a step.`,
+    suggest: 'Looks like your workflow',
+    useIt: 'Use it',
   },
   settings: 'Run settings',
   change: 'Change',

@@ -23,6 +23,7 @@ import { startFormKindOfDraft, startShapeOfFormKind, type StartFormKind } from '
 import { StartPlanRow } from './StartPlanRow';
 import { StartWorkflowPick } from './StartWorkflowPick';
 import { StartWorkflowSteps } from './StartWorkflowSteps';
+import { StartWorkflowSuggestion } from './StartWorkflowSuggestion';
 import { useStartEditsMode } from './useStartEditsMode';
 import {
   startAsksOf,
@@ -99,6 +100,7 @@ export const NewSessionStartForm = ({
   const edits = useStartEditsMode({ workspaceId, sessionId: null, picked: draft.permissionMode });
   const reason = startReasonOf({ hasGoal, kind, hasPreset: workflow !== null });
   const { route } = autoRun;
+  const suggestion = kind === null ? autoRun.suggestion : null;
   const isAutoLead = route.route.shape === 'lead' && route.role === null;
   const isPlan = route.route.shape === 'plan';
   const asks = startAsksOf({ kind, isAutoLead, isPlan });
@@ -205,7 +207,26 @@ export const NewSessionStartForm = ({
             ) : null
           }
           detail={
-            kind === 'preset' && steps.length > 0 ? <StartWorkflowSteps steps={steps} /> : null
+            kind === 'preset' && steps.length > 0 ? (
+              <StartWorkflowSteps steps={steps} />
+            ) : suggestion !== null ? (
+              <StartWorkflowSuggestion
+                workflow={suggestion}
+                isDisabled={isDisabled}
+                onUse={() =>
+                  patchSessionDraft({
+                    workspaceId,
+                    patch: {
+                      startKind: 'workflow',
+                      startShape: 'preset',
+                      workflowId: suggestion.id,
+                      presetCloseness: 'adapt',
+                      hasChosenStart: true,
+                    },
+                  })
+                }
+              />
+            ) : null
           }
         />
       }

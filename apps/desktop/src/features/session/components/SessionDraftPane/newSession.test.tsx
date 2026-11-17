@@ -44,6 +44,7 @@ const STAMP = brandedId<IsoDateTime>({ value: '2026-10-14T09:00:00.000Z' });
 const WORKSPACE_GUIDANCE = 'Keep every change inside payments-api.';
 const RUN_GUIDANCE = 'Skip the ledger-core migration.';
 const GOAL = 'Stop retried webhooks posting a second credit in payments-api';
+const FITTING_GOAL = 'Scout the retry path in payments-api, then build the fix';
 const PRESET_ID = brandedId<WorkflowId>({ value: 'wf-new-session-preset' });
 
 const PRESET: Workflow = {
@@ -489,6 +490,42 @@ describe('New session page', () => {
       expect.objectContaining({ sessionId: cameFrom.id, level: 'run' }),
     );
     expect(attach).not.toHaveBeenCalled();
+  });
+
+  it('suggests a workflow that fits under the Lead, and Use it picks it, free to change steps', async () => {
+    useAppStore.setState({
+      generateWorkflowTitle: vi.fn(async () => undefined),
+      startSessionFromDraft: startThenRun,
+      loadSetting: noSetting,
+    });
+    await openPage();
+    typeGoal(GOAL);
+    expect(document.querySelector('[data-start-suggestion]')).toBeNull();
+
+    typeGoal(FITTING_GOAL);
+    expect(document.querySelector('[data-start-suggestion]')?.textContent).toBe(
+      'Looks like your workflow Scout, plan, build.Use it',
+    );
+    expect(document.querySelector('[data-run-route-line]')?.textContent).not.toContain(
+      'Scout, plan, build',
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Use it' }));
+    await settle();
+
+    expect(isPicked({ name: /^Preset/ })).toBe(true);
+    expect(
+      screen.getByRole<HTMLInputElement>('checkbox', { name: 'Keep its steps as written' }).checked,
+    ).toBe(false);
+    screen.getByText(
+      'The Lead starts from Scout, plan, build and says why when it changes a step.',
+    );
+    expect(document.querySelector('[data-start-suggestion]')).toBeNull();
+    fireEvent.click(startButton());
+
+    await waitFor(() => expect(spawnAgent).toHaveBeenCalledTimes(1));
+    const brief = spawnAgent.mock.calls[0]?.[1].initialPrompt ?? '';
+    expect(brief).toContain('Plan: follow the preset "Scout, plan, build".');
+    expect(brief).toContain('You may add, skip or move a step. Say why when you do.');
   });
 
   it('starts the preset you picked and follows it when you say so', async () => {

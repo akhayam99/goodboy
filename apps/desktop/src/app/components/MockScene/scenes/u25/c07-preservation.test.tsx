@@ -55,6 +55,7 @@ describe('Auto: every capability keeps a home in Auto', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'Start a run' }, WAIT));
     const start = await screen.findByRole('region', { name: 'Start a run' }, WAIT);
     expect(within(start).getByRole('textbox', { name: 'Start a run' })).toBeDefined();
+    fireEvent.click(within(start).getByRole('button', { name: 'Change' }));
     expect(within(start).getByText('Limit: none')).toBeDefined();
     expect(screen.queryByText(/Spend cap/)).toBeNull();
   });

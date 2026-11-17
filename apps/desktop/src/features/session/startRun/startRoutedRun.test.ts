@@ -34,6 +34,7 @@ import {
 } from '../../../store/storyHarness';
 import { aMountView } from '../testing/aMountView';
 import { olderPlanRouteOf } from './routeChoiceOf';
+import { runAsRouteOf } from './runAsOf';
 import { runRouteOf, type RunRouteFacts, type RunRouteResult } from './runRouteOf';
 import { parseRunRoutes, runRoutesKey } from './runRoutesSetting';
 import { startRoutedRun } from './startRoutedRun';
@@ -146,7 +147,7 @@ describe('startRoutedRun keeps the reason with the run', () => {
     expect((await readRoutes())[AGENT]).toMatchObject({
       shape: 'lead',
       row: 5,
-      why: 'A question or a check, and no workflow fits',
+      why: 'A question or a check',
       ask: 'Why does the ledger-core importer drop rows?',
     });
   });
@@ -232,9 +233,24 @@ describe('startRoutedRun keeps the reason with the run', () => {
     expect(engines.spawnAgent.mock.calls[0]?.[1]).not.toHaveProperty('stepLocks');
   });
 
-  it('starts a Lead for an ask that matches a preset, free to adapt it', async () => {
+  it('starts a Lead with no workflow for an ask that only matches one', async () => {
     const engines = mockEngines();
     const result = routeOf({ text: 'Fix the layout on every billing page' });
+
+    await startRoutedRun({ sessionId: SESSION.id, result });
+
+    expect(engines.attachWorkflowToSession).not.toHaveBeenCalled();
+    expect(engines.spawnAgent.mock.calls[0]?.[1]?.initialPrompt).toBe(
+      'Fix the layout on every billing page',
+    );
+  });
+
+  it('starts a Lead free to adapt the workflow Use it picked', async () => {
+    const engines = mockEngines();
+    const result = runAsRouteOf({
+      runAs: { kind: 'preset', presetId: LAYOUT.id, closeness: 'adapt' },
+      facts: { ...FACTS, text: 'Fix the layout on every billing page' },
+    });
 
     await startRoutedRun({ sessionId: SESSION.id, result });
 
