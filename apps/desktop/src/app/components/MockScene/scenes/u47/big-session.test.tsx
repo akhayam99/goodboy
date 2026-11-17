@@ -89,10 +89,10 @@ describe('the u47 big session scenes', () => {
   it('draws one page of the log and offers the older rows', async () => {
     const log = await mount({ name: 'u47-big-session-log' });
 
+    const older = within(log).getByRole('button', { name: `Show ${LOG_PAGE_ROWS} older rows` });
+
     expect(logRowCount()).toBe(LOG_PAGE_ROWS);
-    expect(
-      within(log).getByRole('button', { name: `Show ${LOG_PAGE_ROWS} older rows` }),
-    ).toBeDefined();
+    expect(older.hasAttribute('disabled')).toBe(false);
   });
 
   it('draws the next page when the older rows are asked for', async () => {
