@@ -708,60 +708,37 @@ export type ExtractedCommentWontfix = {
   readonly reason: string;
 };
 
-export const extractCommentWontfix = (assistantText: string): ExtractedCommentWontfix | null => {
-  let last: ExtractedCommentWontfix | null = null;
-  for (const inner of extractSelfClosingInner(assistantText, COMMENT_WONTFIX_OPEN)) {
-    const attrs = parseHandoffAttrs(inner);
-    const threadId = (attrs.threadid ?? attrs.thread ?? '').trim();
-    const reason = (attrs.reason ?? '').trim();
-    if (threadId.length === 0 || reason.length === 0) {
-      continue;
-    }
-    last = { threadId, reason };
-  }
-  return last;
-};
-
-export const extractAllCommentWontfix = (
-  assistantText: string,
-): ReadonlyArray<ExtractedCommentWontfix> => {
-  const markers: Array<ExtractedCommentWontfix> = [];
-  for (const inner of extractSelfClosingInner(assistantText, COMMENT_WONTFIX_OPEN)) {
-    const attrs = parseHandoffAttrs(inner);
-    const threadId = (attrs.threadid ?? attrs.thread ?? '').trim();
-    const reason = (attrs.reason ?? '').trim();
-    if (threadId.length === 0 || reason.length === 0) {
-      continue;
-    }
-    markers.push({ threadId, reason });
-  }
-  return markers;
-};
-
-export type ExtractedCommentNeedsRun = {
-  readonly threadId: string;
-  readonly reason: string;
-};
-
-type CommentNeedsRunParams = {
+type MarkerTextParams = {
   readonly assistantText: string;
 };
 
-export const extractAllCommentNeedsRun = ({
+type ThreadReasonParams = MarkerTextParams & { readonly open: string };
+
+const threadReasonMarkers = ({
   assistantText,
-}: CommentNeedsRunParams): ReadonlyArray<ExtractedCommentNeedsRun> => {
-  const markers: Array<ExtractedCommentNeedsRun> = [];
-  for (const inner of extractSelfClosingInner(assistantText, COMMENT_NEEDS_RUN_OPEN)) {
+  open,
+}: ThreadReasonParams): ReadonlyArray<ExtractedCommentWontfix> =>
+  extractSelfClosingInner(assistantText, open).flatMap((inner) => {
     const attrs = parseHandoffAttrs(inner);
     const threadId = (attrs.threadid ?? attrs.thread ?? '').trim();
     const reason = (attrs.reason ?? '').trim();
-    if (threadId.length === 0 || reason.length === 0) {
-      continue;
-    }
-    markers.push({ threadId, reason });
-  }
-  return markers;
-};
+    return threadId.length === 0 || reason.length === 0 ? [] : [{ threadId, reason }];
+  });
+
+export const extractCommentWontfix = (assistantText: string): ExtractedCommentWontfix | null =>
+  threadReasonMarkers({ assistantText, open: COMMENT_WONTFIX_OPEN }).at(-1) ?? null;
+
+export const extractAllCommentWontfix = (
+  assistantText: string,
+): ReadonlyArray<ExtractedCommentWontfix> =>
+  threadReasonMarkers({ assistantText, open: COMMENT_WONTFIX_OPEN });
+
+export type ExtractedCommentNeedsRun = ExtractedCommentWontfix;
+
+export const extractAllCommentNeedsRun = ({
+  assistantText,
+}: MarkerTextParams): ReadonlyArray<ExtractedCommentNeedsRun> =>
+  threadReasonMarkers({ assistantText, open: COMMENT_NEEDS_RUN_OPEN });
 
 const NEEDS_INPUT_OPEN_RE = /<<needs-input((?:\s+[\w-]+="[^"]*")*)\s*>>/g;
 const NEEDS_INPUT_CLOSE = '<</needs-input>>';

@@ -59,7 +59,7 @@
   "apps/desktop/src/store/slices/workflows/orchestrateNextStep.ts": 954,
   "apps/desktop/src/store/slices/workflows/scoutTree.ts": 659,
   "packages/core/src/artifacts/wireframe/validateWireframeDocument.ts": 1928,
-  "packages/core/src/context/marker-parsing.ts": 1187,
+  "packages/core/src/context/marker-parsing.ts": 1185,
   "packages/core/src/providers/cursor/catalog.ts": 845,
   "packages/core/src/providers/openrouter/catalog.ts": 781,
   "packages/db/src/index.ts": 817,

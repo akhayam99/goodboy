@@ -22,7 +22,7 @@ import { createResolveThread } from './createResolveThread';
 import { resolveTurnPatchOf } from './resolveTurnPatch';
 import { projectResolveRows } from './projectResolveRows';
 import { threadOutcome } from './threadOutcome';
-import { turnAttemptPhase } from './turnAttemptPhase';
+import { turnAttemptPhase } from '../../../features/resolve/turnAttemptPhase';
 import type { SliceParams, TurnParams } from './types';
 import { activeReviewSourceOf } from '../review-source/activeReviewSource';
 

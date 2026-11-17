@@ -18,7 +18,7 @@ import { isTurnSettling } from '../turn/turnSettled';
 import { projectResolveRows } from './projectResolveRows';
 import { resolveTurnPatchOf } from './resolveTurnPatch';
 import { resolveWorktreePath } from './resolveWorktreePath';
-import { turnAttemptPhase } from './turnAttemptPhase';
+import { turnAttemptPhase } from '../../../features/resolve/turnAttemptPhase';
 import type { SessionParams, SliceParams } from './types';
 
 type Params = SliceParams &

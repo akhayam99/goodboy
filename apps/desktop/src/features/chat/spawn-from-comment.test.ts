@@ -264,7 +264,7 @@ describe('spawn-from-comment', () => {
     const prompt = buildResolverAgentArgs({ threads: threadsOf(2), pr: PR }).initialPrompt;
 
     expect(prompt).toContain(
-      '<<comment-needs-run threadId="the id above" reason="one plain-text line: what you found">>',
+      '<<comment-needs-run threadId="the thread id" reason="one plain-text line: what you found">>',
     );
     expect(prompt).toContain('Stop early on that thread: change nothing for it');
     expect(prompt).toContain('A thread reported this way has no commit and no reply block.');
