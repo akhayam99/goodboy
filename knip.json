@@ -9,7 +9,7 @@
         "scripts/make-perf-fixture.mjs"
       ],
       "ignore": ["scripts/rules/forbiddenPatterns.d.mts"],
-      "ignoreBinaries": ["cwebp", "vite", "preview"]
+      "ignoreBinaries": ["cwebp", "preview"]
     },
     "apps/desktop": {
       "entry": ["src/__tests__/regressions/console-guard/*.fixture.ts"],
@@ -65,7 +65,7 @@
     "website": {
       "entry": ["src/prerender/renderSite.tsx"],
       "project": ["src/**/*.{ts,tsx}", "src/**/*.css"],
-      "ignoreDependencies": ["tailwindcss", "lucide-react"]
+      "ignoreDependencies": ["tailwindcss"]
     }
   },
   "ignoreExportsUsedInFile": true

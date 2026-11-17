@@ -5701,11 +5701,6 @@
       "count": 1
     }
   },
-  "apps/desktop/src/features/settings/components/SettingsStudio/WorkspaceDefaultsGrid.tsx": {
-    "@typescript-eslint/naming-convention": {
-      "count": 1
-    }
-  },
   "apps/desktop/src/features/settings/components/SettingsStudio/WorkspaceProfileSection.test.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 3
@@ -6247,7 +6242,7 @@
   },
   "apps/desktop/src/features/workflows/components/WorkflowRulesPanel/index.test.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
-      "count": 4
+      "count": 3
     }
   },
   "apps/desktop/src/features/workflows/components/WorkflowStudio/ImportPopover/ImportGroupSection.tsx": {
