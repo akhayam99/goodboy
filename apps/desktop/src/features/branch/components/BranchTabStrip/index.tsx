@@ -4,7 +4,7 @@ import type { BranchTabEntry } from '../../branchTabs';
 import type { BranchTabFacts } from '../../branchTabFactsOf';
 import { DiffStatText } from '../../../../shared/components/DiffStatText';
 
-export type BranchTabLive = Readonly<Partial<Record<BranchTab, string>>>;
+type BranchTabLive = Readonly<Partial<Record<BranchTab, string>>>;
 
 type Props = {
   readonly tabs: ReadonlyArray<BranchTabEntry>;
