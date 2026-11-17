@@ -321,7 +321,36 @@ describe('the reviewers', () => {
     fireEvent.click(await screen.findByText('rio-k'));
     expect(stubs.requestReview).toHaveBeenCalledWith(SESSION.id, 318, ['rio-k'], {
       mountId: shownMountOf().mountId,
+      hasFailureSurface: expect.any(Function),
     });
+  });
+
+  it('shows the request as busy while the host answers and refuses a second one', async () => {
+    let finish: () => void = () => undefined;
+    stubs.requestReview.mockImplementationOnce(
+      () =>
+        new Promise<void>((resolve) => {
+          finish = resolve;
+        }),
+    );
+    await show();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Request review' }));
+    fireEvent.click(await screen.findByText('rio-k'));
+
+    const reviewers = screen.getByRole('region', { name: 'Reviewers' });
+    const trigger = within(reviewers).getByRole('button', { name: 'Request review' });
+    expect(trigger.getAttribute('aria-busy')).toBe('true');
+    expect(within(reviewers).getByRole('status').textContent).toBe('Asking rio-k');
+    fireEvent.click(trigger);
+    expect(document.querySelector('[data-dropdown-portal]')).toBeNull();
+
+    await act(async () => {
+      finish();
+    });
+    await waitFor(() => expect(trigger.getAttribute('aria-busy')).toBeNull());
+    expect(within(reviewers).queryByRole('status')).toBeNull();
+    expect(stubs.requestReview).toHaveBeenCalledTimes(1);
   });
 
   it('searches and asks in the repository on screen while another one takes the writes', async () => {
@@ -354,11 +383,12 @@ describe('the reviewers', () => {
 
     expect(stubs.requestReview).toHaveBeenCalledWith(SESSION.id, 318, ['rio-k'], {
       mountId: shown.mountId,
+      hasFailureSurface: expect.any(Function),
     });
     expect(collaboratorSearchRoots()).toEqual(['~/code/harborline/payments-api']);
   });
 
-  it('says why the request failed and keeps the list as it was', async () => {
+  it('says why the request failed, keeps the list as it was and retries the same person', async () => {
     await show();
     stubs.requestReview.mockRejectedValueOnce(new Error('Resource not accessible'));
     useAppStore.setState(stubs);
@@ -367,8 +397,17 @@ describe('the reviewers', () => {
     fireEvent.click(await screen.findByText('rio-k'));
 
     const reviewers = await screen.findByRole('region', { name: 'Reviewers' });
-    expect(await within(reviewers).findByText(/Resource not accessible/)).toBeDefined();
+    const alert = await within(reviewers).findByRole('alert');
+    expect(alert.textContent).toContain("Couldn't request a review");
+    expect(alert.textContent).toContain('Resource not accessible');
     expect(within(reviewers).queryByText('rio-k')).toBeNull();
+    const [, , , options] = stubs.requestReview.mock.calls[0] ?? [];
+    expect(options?.hasFailureSurface?.()).toBe(true);
+
+    fireEvent.click(within(alert).getByRole('button', { name: 'Retry' }));
+    await waitFor(() => expect(stubs.requestReview).toHaveBeenCalledTimes(2));
+    expect(stubs.requestReview.mock.calls[1]?.[2]).toEqual(['rio-k']);
+    await waitFor(() => expect(within(reviewers).queryByRole('alert')).toBeNull());
   });
 
   it('leaves out the people already in the list', async () => {

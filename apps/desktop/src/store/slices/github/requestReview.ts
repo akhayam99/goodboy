@@ -1,7 +1,7 @@
 import type { SessionId } from '@goodboy/types';
 import { prWriteContext } from './prWriteContext';
 import { runPortWrite } from './runPortWrite';
-import type { PrWriteOptions } from './prWriteOptions';
+import { noFailureSurface, type PrWriteOptions } from './prWriteOptions';
 import type { GetFn, SetFn } from './types';
 
 const REQUEST_REVIEW_FAILURE_TITLE = "Couldn't request a review";
@@ -11,7 +11,7 @@ export const requestReview = (_set: SetFn, get: GetFn) => {
     sessionId: SessionId,
     prNumber: number,
     reviewers: ReadonlyArray<string>,
-    { mountId }: PrWriteOptions = {},
+    { mountId, hasFailureSurface = noFailureSurface }: PrWriteOptions = {},
   ) => {
     const logins = reviewers.map((r) => r.trim()).filter(Boolean);
     if (logins.length === 0) {
@@ -30,6 +30,7 @@ export const requestReview = (_set: SetFn, get: GetFn) => {
       sessionId,
       workspaceId: session.workspaceId,
       title: REQUEST_REVIEW_FAILURE_TITLE,
+      hasFailureSurface,
       run: () => port.requestReviewers({ logins }),
     });
     await get().refreshSessionPrDetail(sessionId, {
