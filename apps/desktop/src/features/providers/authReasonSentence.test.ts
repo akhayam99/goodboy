@@ -19,6 +19,14 @@ const CASES: readonly Case[] = [
   [{ kind: 'no_status' }, 'The CLI gave no status'],
   [{ kind: 'unknown_provider' }, 'Unknown provider'],
   [{ kind: 'check_unfinished' }, "The check didn't finish"],
+  [
+    { kind: 'cli_too_old', version: '2.1.37', minimum: '2.1.41' },
+    "Version 2.1.37 can't report sign in. Update to 2.1.41 or later",
+  ],
+  [
+    { kind: 'cli_too_old', version: null, minimum: '2.1.41' },
+    'The CLI version is unreadable. Update to 2.1.41 or later',
+  ],
 ];
 
 describe('authReasonSentence', () => {

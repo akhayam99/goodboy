@@ -36,6 +36,7 @@ const copilotRowOf = ({ status, auth = null }: Params) => {
     status: statusOfInfo({ id: 'copilot', info }),
     connect: INITIAL_CONNECT_MAP.copilot,
     check: CHECK,
+    authReason: auth?.reason ?? null,
   });
 };
 

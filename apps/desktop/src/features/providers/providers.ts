@@ -26,7 +26,8 @@ export type AuthReason =
   | { readonly kind: 'not_confirmed_by_server' }
   | { readonly kind: 'no_status' }
   | { readonly kind: 'unknown_provider' }
-  | { readonly kind: 'check_unfinished' };
+  | { readonly kind: 'check_unfinished' }
+  | { readonly kind: 'cli_too_old'; readonly version: string | null; readonly minimum: string };
 
 export type AuthState = {
   readonly state: AuthStateKind;
