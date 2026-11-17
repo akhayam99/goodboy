@@ -8,22 +8,22 @@ export type CaretLine = {
 };
 
 const MIRRORED = [
-  'box-sizing',
-  'padding-top',
-  'padding-right',
-  'padding-bottom',
-  'padding-left',
-  'font-family',
-  'font-size',
-  'font-weight',
-  'font-style',
-  'letter-spacing',
-  'line-height',
-  'text-transform',
-  'text-indent',
-  'word-spacing',
-  'tab-size',
-] as const;
+  'boxSizing',
+  'paddingTop',
+  'paddingRight',
+  'paddingBottom',
+  'paddingLeft',
+  'fontFamily',
+  'fontSize',
+  'fontWeight',
+  'fontStyle',
+  'letterSpacing',
+  'lineHeight',
+  'textTransform',
+  'textIndent',
+  'wordSpacing',
+  'tabSize',
+] as const satisfies ReadonlyArray<keyof CSSStyleDeclaration>;
 
 const FALLBACK_LINE_PX = 20;
 
@@ -31,7 +31,7 @@ export const caretLineOf = ({ field }: Params): CaretLine => {
   const style = getComputedStyle(field);
   const mirror = document.createElement('div');
   for (const name of MIRRORED) {
-    mirror.style.setProperty(name, style.getPropertyValue(name));
+    mirror.style[name] = style[name];
   }
   mirror.style.position = 'absolute';
   mirror.style.visibility = 'hidden';

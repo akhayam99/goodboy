@@ -38,11 +38,13 @@ beforeEach(async () => {
 afterEach(cleanup);
 
 describe('ClassifyRequestsRow', () => {
-  it('ships off and says Auto starts on the request as typed', () => {
+  it('ships off and says the Lead starts on the request as typed', () => {
     render(<ClassifyRequestsRow />);
 
     expect(toggle().getAttribute('aria-checked')).toBe('false');
-    expect(screen.queryByText(/Auto starts on the request exactly as you typed it/)).not.toBeNull();
+    expect(
+      screen.queryByText(/the Lead starts on the request exactly as you typed it/),
+    ).not.toBeNull();
   });
 
   it('saves the choice and says which model reads the request once it is on', async () => {
