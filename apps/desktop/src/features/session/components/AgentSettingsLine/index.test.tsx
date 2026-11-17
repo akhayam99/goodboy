@@ -170,18 +170,20 @@ describe('the Auto level chip of the settings line', () => {
 
   it('shows the permission rows at After the plan on a Lead and nothing on another agent', async () => {
     showLevel({ isAuto: true });
-    await screen.findByRole('button', { name: 'Asks you: After the plan' });
+    await screen.findByRole('button', { name: 'Stops for your OK: After the plan' });
     cleanup();
 
     showLevel({ isAuto: false });
-    expect(screen.queryByRole('button', { name: /^Asks you/ })).toBeNull();
+    expect(screen.queryByRole('button', { name: /^Stops for your OK/ })).toBeNull();
   });
 
-  it('saves a preset as the level of this session only', async () => {
+  it('saves a level as the level of this session only', async () => {
     showLevel({ isAuto: true });
-    fireEvent.click(await screen.findByRole('button', { name: 'Asks you: After the plan' }));
-    const panel = within(screen.getByRole('dialog', { name: 'Asks you' }));
-    fireEvent.click(await panel.findByRole('tab', { name: 'Every step' }));
+    fireEvent.click(
+      await screen.findByRole('button', { name: 'Stops for your OK: After the plan' }),
+    );
+    const menu = within(screen.getByRole('menu', { name: 'Stops for your OK' }));
+    fireEvent.click(menu.getByRole('menuitemradio', { name: /^Every step/ }));
 
     await waitFor(async () =>
       expect(await readAutoLevel({ db: storySqlite(), target })).toBe('step'),
@@ -189,19 +191,21 @@ describe('the Auto level chip of the settings line', () => {
     expect(await readAutoLevel({ db: storySqlite(), target: { workspaceId: WORKSPACE_ID } })).toBe(
       'plan',
     );
-    await screen.findByRole('button', { name: 'Asks you: Every step' });
+    await screen.findByRole('button', { name: 'Stops for your OK: Every step' });
   });
 
-  it('keeps the old preset and says why when the write fails', async () => {
+  it('keeps the old level and says why when the write fails', async () => {
     showLevel({ isAuto: true });
-    fireEvent.click(await screen.findByRole('button', { name: 'Asks you: After the plan' }));
-    const panel = within(screen.getByRole('dialog', { name: 'Asks you' }));
-    const never = await panel.findByRole('tab', { name: 'Never' });
+    fireEvent.click(
+      await screen.findByRole('button', { name: 'Stops for your OK: After the plan' }),
+    );
+    const menu = within(screen.getByRole('menu', { name: 'Stops for your OK' }));
+    const never = menu.getByRole('menuitemradio', { name: /^Never/ });
     await storySqlite().execute('DELETE FROM sessions WHERE id = ?', [AUTO_SEED_SESSION]);
     fireEvent.click(never);
 
-    const alert = await panel.findByRole('alert');
+    const alert = await screen.findByRole('alert');
     expect(alert.textContent).toContain("Couldn't change it.");
-    screen.getByRole('button', { name: 'Asks you: After the plan' });
+    screen.getByRole('button', { name: 'Stops for your OK: After the plan' });
   });
 });

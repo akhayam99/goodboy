@@ -1,17 +1,20 @@
-import { useState } from 'react';
 import {
   AnchoredPopover,
   Button,
-  POPOVER_WIDTH_CLASS,
-  POPOVER_WIDTH_PX,
+  MENU_MAX_WIDTH,
   cn,
   useDropdown,
+  type MenuEntry,
 } from '@goodboy/ui';
 import type { AutoTreeId, SessionId, WorkspaceId } from '@goodboy/types';
-import { NAMES } from '../../../../shared/utils/names';
+import { useAppStore } from '../../../../store';
+import { AppMenuList } from '../../../actions/AppMenuList';
+import { openRunDefaults } from '../../../settings/openRunDefaults';
 import { RUN_AUTONOMY_OPTIONS } from '../../../workflows/runAutonomy';
-import { LeadPermissionsPanel } from '../LeadPermissionsPanel';
-import { useLeadPermissions, type LeadPermissionScope } from '../../hooks/useLeadPermissions';
+import { useLeadPermissions } from '../../hooks/useLeadPermissions';
+import { leadDetailsDifferOf } from '../leadDetailsDifferOf';
+import { levelSelectOf } from '../levelSelectOf';
+import { LEAD_LEVEL_COPY } from '../leadLevelCopy';
 
 export type LeadPermissionsTarget = Readonly<{
   workspaceId: WorkspaceId;
@@ -23,80 +26,101 @@ type Props = {
   readonly target: LeadPermissionsTarget;
 };
 
-const LABEL = NAMES.asksYou;
-
-type WordParams = {
-  readonly preset: string | null;
-};
-
-const presetWordOf = ({ preset }: WordParams): string => {
-  if (preset === null) {
-    return 'Loading';
-  }
-  return RUN_AUTONOMY_OPTIONS.find((option) => option.key === preset)?.label ?? 'Custom';
-};
-
 export const LeadPermissionsChip = ({ target }: Props) => {
   const dropdown = useDropdown({
-    expectedHeight: 640,
-    expectedWidth: POPOVER_WIDTH_PX.studio,
-    width: POPOVER_WIDTH_CLASS.studio,
+    width: 'min-w-50',
+    maxWidth: MENU_MAX_WIDTH,
+    expectedHeight: 320,
   });
-  const [scope, setScope] = useState<LeadPermissionScope>(
-    target.treeId === null ? 'default' : 'lead',
-  );
+  const openDrawer = useAppStore((state) => state.openDrawer);
   const model = useLeadPermissions({
     workspaceId: target.workspaceId,
     sessionId: target.sessionId,
     treeId: target.treeId,
-    scope,
+    scope: target.treeId === null ? 'default' : 'lead',
   });
   const { permissions } = model;
-  return (
-    <AnchoredPopover
-      dropdown={dropdown}
-      role="dialog"
-      ariaLabel={LABEL}
-      anchorClassName="inline-flex min-w-0"
-      className="flex flex-col"
-      trigger={
-        <Button
-          size="xs"
-          variant="setting"
-          aria-haspopup="dialog"
-          aria-expanded={dropdown.open}
-          aria-label={`${LABEL}: ${presetWordOf({ preset: permissions?.preset ?? null })}`}
-          data-setting-chip={LABEL}
-          onClick={dropdown.toggle}
-          className={cn('max-w-full', dropdown.open && 'border-border bg-selected')}
-        >
-          <span className="shrink-0 text-faint-foreground">{LABEL}:</span>
-          <span className="min-w-0 max-w-56 truncate text-eyebrow text-foreground">
-            {presetWordOf({ preset: permissions?.preset ?? null })}
-          </span>
-        </Button>
+  const level = permissions?.level ?? null;
+  const differ = permissions === null ? 0 : leadDetailsDifferOf({ permissions });
+  const word = level === null ? 'Loading' : LEAD_LEVEL_COPY.word({ level, differ });
+  const { sessionId, treeId, workspaceId } = target;
+  const isOnRun = sessionId !== null && treeId !== null;
+  const fineTune: MenuEntry = {
+    kind: 'item',
+    key: 'fine-tune',
+    label: isOnRun ? LEAD_LEVEL_COPY.fineTuneRun : LEAD_LEVEL_COPY.fineTuneSettings,
+    description: isOnRun ? LEAD_LEVEL_COPY.fineTuneRunLine : LEAD_LEVEL_COPY.fineTuneSettingsLine,
+    onSelect: () => {
+      if (sessionId === null || treeId === null) {
+        openRunDefaults();
+        return;
       }
-    >
-      {permissions === null ? (
-        <p
-          role={model.readError === null ? 'status' : 'alert'}
-          className="p-4 text-meta text-muted-foreground"
-        >
-          {model.readError ?? 'Reading the permissions.'}
-        </p>
-      ) : (
-        <LeadPermissionsPanel
-          permissions={permissions}
-          scope={scope}
-          rowErrors={model.rowErrors}
-          presetError={model.presetError}
-          isDisabled={model.isBusy}
-          onChange={({ key, value }) => void model.change({ key, value })}
-          onReset={({ key }) => void model.reset({ key })}
-          onPreset={({ level }) => void model.pickPreset({ level })}
-          {...(target.treeId === null ? {} : { onScope: ({ scope: next }) => setScope(next) })}
-        />
+      openDrawer({ kind: 'lead-details', sessionId, payload: { workspaceId, treeId } });
+    },
+  };
+  const entries: ReadonlyArray<MenuEntry> =
+    level === null
+      ? []
+      : [
+          {
+            kind: 'radio',
+            key: 'level',
+            label: LEAD_LEVEL_COPY.menu,
+            isDisabled: model.isBusy,
+            choices: RUN_AUTONOMY_OPTIONS.map((option) => ({
+              id: option.key,
+              label: option.label,
+              description: LEAD_LEVEL_COPY.line({ level: option.key }),
+              isCurrent: differ === 0 && option.key === level,
+            })),
+            onSelect: levelSelectOf({
+              onPick: ({ level: next }) => void model.pickLevel({ level: next }),
+            }),
+          },
+          ...(differ === 0
+            ? []
+            : [
+                {
+                  kind: 'item',
+                  key: 'reset',
+                  label: LEAD_LEVEL_COPY.reset({ level }),
+                  isDisabled: model.isBusy,
+                  onSelect: () => void model.pickLevel({ level }),
+                } satisfies MenuEntry,
+              ]),
+          { kind: 'separator', key: 'details' },
+          fineTune,
+        ];
+  const error = model.levelError ?? model.readError;
+  return (
+    <span className="inline-flex min-w-0 items-center gap-2">
+      <AnchoredPopover
+        dropdown={dropdown}
+        anchorClassName="inline-flex min-w-0"
+        trigger={
+          <Button
+            size="xs"
+            variant="setting"
+            aria-haspopup="menu"
+            aria-expanded={dropdown.open}
+            aria-label={`${LEAD_LEVEL_COPY.menu}: ${word}`}
+            data-setting-chip={LEAD_LEVEL_COPY.menu}
+            disabled={level === null}
+            onClick={dropdown.toggle}
+            className={cn('max-w-full', dropdown.open && 'border-border bg-selected')}
+          >
+            <span className="shrink-0 text-faint-foreground">{LEAD_LEVEL_COPY.chip}:</span>
+            <span className="min-w-0 max-w-56 truncate text-eyebrow text-foreground">{word}</span>
+          </Button>
+        }
+      >
+        <AppMenuList label={LEAD_LEVEL_COPY.menu} entries={entries} onClose={dropdown.close} />
+      </AnchoredPopover>
+      {error === null ? null : (
+        <span role="alert" className="text-meta text-danger">
+          {error}
+        </span>
       )}
-    </AnchoredPopover>
+    </span>
   );
 };
