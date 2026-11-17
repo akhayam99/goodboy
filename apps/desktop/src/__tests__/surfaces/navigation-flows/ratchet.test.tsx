@@ -62,6 +62,9 @@ const EXEMPT: Readonly<Record<string, string>> = {
   openDiffLens: 'only resolver thread cards and the resolve publish strip call it',
   openScribePullRequest: 'the engine pushing and opening the pull request, not a page',
   openSessionAgents: 'loads the full agent rows of a session on open, a read, not a page',
+  openCommentRunStart:
+    'opens the start form inside the comment drawer already on screen, not a page',
+  openThreadId: 'a field of the comment run start slice, not an action',
   openMountRequest:
     'the registry verb behind the pull request link of the retired Overview mount rows; the worktree level entry opens the page through navigate',
 };
