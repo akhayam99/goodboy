@@ -251,14 +251,9 @@ window table (1728, 1440, 1280 and 1024) and sweeps every window from 900 to
 2600; `regressions/drawer-rule.test.ts` keeps its sizes in their owners. No
 host mounts it yet: `DrawerColumn` still runs `panelPairLayoutOf`.
 
-**A fold never re-centres an icon.** The main sidebar (⌘B) and the session
-rail fold through `FoldLayers` (`packages/ui/src/components/FoldLayers.tsx`):
-the grid column or the rail width eases in 220ms, the open layer keeps its full
-width pinned to the left edge and clipped, so no label wraps or truncates anew,
-and its words fade over the icon layer, which draws each icon at its open row's
-x and y. Unfolding fades the words in after 60ms. Tokens and timings are in
-[DESIGN-SYSTEM.md](../packages/ui/DESIGN-SYSTEM.md#motion-registry); under
-reduced motion each one is an instant swap.
+**The places rail never folds.** `AppShell` takes it as `leftRail` and gives
+it an `auto` grid column, so the rail's own width (64px, 44px under a 1100px
+window) sizes the track: no resize handle, no saved width, no fold layers.
 
 The top bar's 6px left padding puts the workspace tile on the collapsed rail's
 22px axis. The identity row adds `--titlebar-inset`, which defaults to 0px in

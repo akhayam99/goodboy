@@ -603,13 +603,10 @@ Browser address row and tab list, a studio band) uses the same token, so the
 row grid of a page follows from it. `paneRhythm.test.ts` holds the edges, the
 gaps and the first row.
 
-The main sidebar has one icon column. Every leading glyph (New session, the
-doors, the session state nodes, Settings, and the same buttons on the folded
-rail) sits in `navRail.icon`, a 12px slot that centers a glyph of any size at
-22px, the folded rail's axis and the workspace tile's center in the top bar
-while `--titlebar-inset` is 0. `sidebar-icon-column.test.tsx` reads the centers
-in the `r4-column-dark` and `r4-column-light` scenes and on the folded rail,
-within 1px.
+The places rail has one icon column: `ShellRail` centers every item, so New,
+the six places and Settings share one axis at either width.
+`places-rail.test.tsx` reads the order and the width in the `r4-column-dark`
+and `r4-column-light` scenes, and with an old folded choice.
 
 A stat card holds its label to two lines (`line-clamp-2`), pins the figure to
 the bottom of the card with `mt-auto`, and puts the delta and the hint on their
@@ -1266,18 +1263,16 @@ Reduced motion swaps in place at the same times.
 to its token. A literal duration or `cubic-bezier` in `styles.css` outside the
 token block fails the same test.
 
-**Motion tokens.** A width that opens or folds (the main sidebar grid column,
-the session rail, the drawer track, the diff file rail) eases in
-`--duration-base` (`DURATION_BASE_MS`); words fade in `--duration-quick`
-(`fold-label-out`, and `fold-label-in` after one `--delay-step`, so they arrive
-once there is room); drawer content fades in
+**Motion tokens.** A width that opens or folds (the session rail, the drawer
+track, the diff file rail) eases in
+`--duration-base` (`DURATION_BASE_MS`); drawer content fades in
 `--duration-quick` after one `--delay-step` (`drawer-content-in`) and out in
 `--duration-quick` (`drawer-content-out`).
 Width moves only on the one element that owns it; what moves inside it is
 opacity and `transform`, and the content keeps its final width, so nothing
 reflows or wraps mid move. Every new keyframe lives under
 `prefers-reduced-motion: no-preference`, and the hooks that stage a move
-(`useFoldPhase`, `useDrawerExit`) check `canAnimate` first: under
+(`useDrawerExit`) check `canAnimate` first: under
 reduced motion, or with nothing laid out, the state changes in place.
 
 **A floating control stays mounted and fades.** A control that comes and goes
@@ -1298,18 +1293,6 @@ pauses every running animation under it: no per-element observer, nothing to
 unsubscribe. Under `forced-colors: active` a pulsing dot or arc takes the
 system `Highlight` colour and the `spin-border` ring traces in `Highlight`, so
 the "who is working" sign never vanishes with the author palette.
-
-**A fold keeps every icon where it is.** `FoldLayers` holds a rail's two
-states as two layers pinned to its left edge and clipped (`overflow-clip`): the
-open layer at its full width and the 44px icon layer under it. Folding, the
-width eases to 44px while the open layer, on the rail's own surface
-(`bg-inherit`), fades out over the icons and is removed at the end; unfolding is
-the reverse, and the icon layer leaves once the words are in. The icon layer
-draws each icon at the x and y of its open row: a `RailButton` is the open row
-without its word, the session rail's icon level starts with the session node on
-the identity row's line and its pages on 28px rows, and the main rail's New
-and doors sit on the column's rows. Neither layer carries a toggle: the one
-sidebar toggle sits in the top bar, so it never moves when the column folds.
 
 The `Trail` closes a crumb label with `grid-template-columns` from
 `1fr` to `0fr` (`--duration-base`, `--ease-enter`, 40ms cascade), the same

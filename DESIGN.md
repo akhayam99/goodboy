@@ -402,12 +402,13 @@ rule with the exception in Status & signals.
 
 ### Doors and tools
 
-A place you go to and read full width is a door in the left column (Board,
-Tasks, Workflows, Chat, Connections, Impact, Monitoring). A tool you open beside
-your work is an icon on the tools rail and opens the dock, with Open full page
-(Terminal, Browser). Chat and Impact are places. Monitoring is the one tool-like
-door, glanced at beside Terminal, and it stays a door until it has a dock body
-([docs/navigation/model.md](docs/navigation/model.md)).
+A place you go to and read full width is a place on the left rail, an icon with
+one word under it (Board, Tasks, Workflows, Chat, Connect, Impact), under New.
+A tool you open beside your work is an icon on the tools rail and opens the
+dock, with Open full page (Terminal, Browser). Chat and Impact are places.
+Monitoring is a tool you glance at beside Terminal: it left the places rail and
+opens from the Go menu and the palette until it has a dock body on the tools
+rail ([docs/navigation/model.md](docs/navigation/model.md)).
 
 An object the app connects to has one home, and Settings is not it. Providers
 and integrations live in Connections; Settings keeps only preferences (App and

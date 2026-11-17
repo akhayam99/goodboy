@@ -81,26 +81,21 @@
   the session back with its agents reading Stopped (`archiveTask`,
   `archiveConfirmOf`).
 - **Three surfaces, three jobs, no competition.** The top bar is now ("what is
-  happening, where am I and what is it costing"). The left column is access and
-  presence ("where do I go, what else is going on"): its doors and the sessions
-  list. The ⌘K palette is transit ("where do I want to be"). There is no footer.
+  happening, where am I and what is it costing"). The places rail is access
+  ("where do I go"): New and the six places; the sessions live on the Board.
+  The ⌘K palette is transit ("where do I want to be"). There is no footer.
 - **The top bar carries state, identity and movement.** Movement is Back,
   Forward and Search or run, clustered in the centre. It never holds a
   destination. Every chip opens the home of the number it shows: the Now chip
   ends on Monitoring, the Spend chip opens Impact on its Spend tab (the bar
-  holds no Impact icon), and the Usage chips open the Providers menu. The only
-  control it holds for another container is the sidebar toggle. The bar never
-  edits a record in place.
-- **The column holds every door and never changes level.** New session comes first, then the doors Board (the board, ⌘⇧H),
-  Tasks, Workflows, Chat, Connections, Impact and Monitoring as rows, Impact and Monitoring quiet; Chat ends in a plus
-  (New chat) that is always visible. No separator: the Pinned and
-  Sessions lists follow, and Settings and the Goodboy line, with the bug icon, sit at the foot, the app's corner. A
-  door's trailing slot is one `StatusMark` (`doorMarkOf`): a 6px dot (unread, warning, neutral)
-  or a number; the reasons are in its tooltip and accessible name. Board carries
-  the number of sessions that need you, the number alone in its tone (amber, red
-  as soon as one of them is broken, 9+ above nine), with no dot before it; a
-  port count on Monitoring is the same number, faint. It is named "Board, 2 sessions need you: Checks failing, 1
-  question for you" (`doorSignalOf`). It reads `useNowSessions().attention`, which
+  holds no Impact icon), and the Usage chips open the Providers menu. It holds
+  no control for another container. The bar never edits a record in place.
+- **The places rail holds every place and never changes level.** New comes first, then Board (the board, ⌘⇧H),
+  Tasks, Workflows, Chat, Connect and Impact, Impact quiet and last; Settings, the bug and the
+  Goodboy mark sit at the foot, the app's corner. It carries two marks only (`railMarkOf`):
+  Board carries the number of sessions that need you as a warning count on its glyph, and Tasks
+  a dot for new tasks; the reasons are in the accessible name. Board is named "Board, 2
+  sessions need you: Checks failing, 1 question for you" (`doorSignalOf`). It reads `useNowSessions().attention`, which
   is `useWorkspaceAttention` over every session of the workspace, whatever the
   project filter. The Now chip does not show it. The palette's
   Needs you rows, the Now chip's idle word and the screen reader line read the
@@ -110,10 +105,9 @@
   Providers and Integrations in ⌘K. Its index shows a tile per set up provider and integration
   in a fixed order (`connectionGroups`), and a low Not set up row under each group with the verb
   that sets it up. Health changes a tile's word and border, never its place. The tile word, the
-  word in a provider page's head, the header counts and the amber dot on the door all come from
+  word in a provider page's head and the header counts all come from
   `connectionStateOf`, which takes a tool's word from `toolStateOf`, the same word the tool
-  page's head shows; the dot names what needs fixing, such as "Connections, Linear: Key
-  missing" (`connectionsAttentionOf`, named by `doorSignalOf`). The key check of each tool lives
+  page's head shows. The key check of each tool lives
   in memory in the store, one entry per key with its time (`integrationKeyChecks`, written by
   `checkIntegrationKey`, latest only); the index checks every key of the workspace at most once a
   minute unless its refresh forces it (`checkTools`), and a failed read keeps the last answer and
@@ -150,31 +144,30 @@
   card in Needs you names the run that waits (`waitingRunOf`). A stored Work place, whatever the
   old Work switch row says, opens the Board with no drawer (`withoutRemovedPages`), in each window
   on its own. ⌘K lists one "Lead: title" row per open Lead (`leadEntries`).
-  Monitoring is the row after Impact, its page has no band and no Close, and
-  it is the one way to the page in the chrome: the top bar holds no Monitoring
-  icon. The column holds no tool: Terminal and Browser live on the right rail
-  (see The session tools), and the folded rail shows the same seven doors.
-  The test for a home: a place you go to and read full width is a door; a tool
+  Monitoring has no place on the rail; its page has no band and no Close, and
+  it opens from the Go menu, the palette and the Now chip: the top bar holds no
+  Monitoring icon. The rail holds no tool: Terminal and Browser live on the
+  right rail (see The session tools).
+  The test for a home: a place you go to and read full width is a place; a tool
   you open beside your work, in the dock with Open full page, is a rail icon.
   Chat (a conversation list and its transcript) and Impact (a report of tiles
-  and tables) are places and stay doors. Monitoring (ports and processes) is
-  the one tool-like door, used beside Terminal, but it has no dock body and its
-  address is a page target per branch, so it stays a door until a dock body
-  exists. A pinned port that is down puts the warning dot on it, named "Monitoring,
-  pinned port :5173 is down" (`monitoringSignal` lists the down pins,
-  `doorSignalOf` names them). Inside a session the column stays the same and marks the open
-  session's row; the session's own pages are the page tabs under
-  its title (see Session page tabs). The column is on every screen with a workspace: the board, a
-  session, the draft and every studio, Settings included. No page changes it:
-  Settings is a page with its own scopes rail beside the live column (see
-  Studios).
+  and tables) are places. Monitoring (ports and processes) is a tool used
+  beside Terminal, but it has no dock body yet and its address is a page
+  target per branch, so it waits off the rails until a dock body exists.
+  Inside a session the rail stays the same and keeps the Board lit, since the
+  session is a child of the Board (`railPlaceOf`); the session's own pages are
+  the page tabs under its title (see Session page tabs). The rail is on every
+  screen with a workspace: the board, a session, the draft and every studio,
+  Settings included. No page changes it: Settings is a page with its own scopes
+  rail beside the live places rail (see Studios).
 - **One list names every destination.** `DESTINATIONS`
   (`shared/navigation/destinations.ts`) owns the name, the glyph, the shortcut,
   the menu id, the former names, the scope (`app` or `workspace`) and the home
-  (`column`, `rail`, `topBar` or `foot`) of Board, Tasks, Workflows, Chat,
+  (`column`, `rail`, `menu`, `topBar` or `foot`) of Board, Tasks, Workflows, Chat,
   Connections, Impact, Monitoring, Notifications, Terminal, Browser, Settings,
-  Guide and What's new, in one order. The column rows, the folded rail, the foot
-  of the column, the Go menu, the palette rows and the
+  Guide and What's new, in one order, and the short rail word where the name is
+  too long (`railWord`, Connect). The places rail, its foot, the Go menu, the
+  palette rows and the
   shortcut sheet all read it, so a destination has one word and one glyph in
   every place. Settings, Guide and What's new have the `foot` home and the `app`
   scope; the ten others are `workspace` pages. `openDestination` is the one way
