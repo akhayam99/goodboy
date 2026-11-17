@@ -1445,6 +1445,9 @@ u47-overview-rows-two-projects-light
 u47-scripts-branch-step
 u48-item-work-line
 u48-item-work-line-light
+u48-tool-rail-closed
+u48-tool-rail-detail-monitor
+u48-tool-rail-monitor
 update-card
 update-card-long-version
 update-card-narrow

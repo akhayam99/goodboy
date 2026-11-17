@@ -5,4 +5,4 @@ type Params = {
 };
 
 export const isWorkspaceTool = ({ content }: Params): boolean =>
-  content.kind === 'terminal' || content.kind === 'browser';
+  content.kind === 'terminal' || content.kind === 'browser' || content.kind === 'monitoring';

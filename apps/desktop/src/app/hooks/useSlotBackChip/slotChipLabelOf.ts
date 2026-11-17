@@ -94,6 +94,8 @@ export const slotChipLabelOf = ({ drawer, artifacts }: Params): SlotChipLabel =>
       return { kind: 'Definition', title: drawer.payload.word };
     case 'browser':
       return { kind: 'Browser', title: null };
+    case 'monitoring':
+      return { kind: 'Monitor', title: null };
     case 'lead-details':
       return { kind: LEAD_LEVEL_COPY.drawerTitle, title: null };
     default: {

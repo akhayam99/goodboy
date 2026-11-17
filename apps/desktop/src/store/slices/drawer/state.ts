@@ -109,6 +109,10 @@ export type DrawerContent =
       readonly payload: null;
     }
   | {
+      readonly kind: 'monitoring';
+      readonly payload: null;
+    }
+  | {
       readonly kind: 'history-versions';
       readonly payload: { readonly mountId: MountId; readonly worktreePath: string };
     }
@@ -149,7 +153,7 @@ export type FileDiffSource =
   | { readonly kind: 'worktree'; readonly worktreePath: string }
   | { readonly kind: 'commit'; readonly repo: string; readonly sha: string };
 
-export type WorkspaceToolKind = 'terminal' | 'browser';
+export type WorkspaceToolKind = 'terminal' | 'browser' | 'monitoring';
 
 export type WorkspaceToolContent = Extract<DrawerContent, { readonly kind: WorkspaceToolKind }>;
 
