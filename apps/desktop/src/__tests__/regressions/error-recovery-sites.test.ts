@@ -15,6 +15,10 @@ const SITES: ReadonlyArray<Site> = [
     title: 'title: failureTitle',
   },
   {
+    file: 'features/session/components/StartRun/useStartRun/index.ts',
+    title: 'RUN_ROUTE_COPY.readFailed',
+  },
+  {
     file: 'features/settings/components/SettingsStudio/WorkspaceTerminalFolderRow.tsx',
     title: "Couldn't save the terminal folder",
   },

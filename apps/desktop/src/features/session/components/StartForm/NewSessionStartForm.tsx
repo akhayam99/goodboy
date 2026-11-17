@@ -1,7 +1,7 @@
 import { useId, useMemo } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { Button } from '@goodboy/ui';
-import type { Workflow, WorkspaceId } from '@goodboy/types';
+import type { Workflow, WorkflowId, WorkspaceId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import type { ProjectMatch } from '../../../../shared/components/ProjectPicker/projectMatch';
 import { selectSessionDraft } from '../../../../store/slices/sessionDraft/selectSessionDraft';
@@ -45,6 +45,7 @@ type Props = {
 
 type PickParams = {
   readonly next: StartFormKind;
+  readonly workflowId?: WorkflowId;
 };
 
 const NO_PRESETS: ReadonlyArray<Workflow> = [];
@@ -122,7 +123,7 @@ export const NewSessionStartForm = ({
       })
     : null;
 
-  const pickKind = ({ next }: PickParams): void => {
+  const pickKind = ({ next, workflowId }: PickParams): void => {
     if (next === 'lead') {
       patchSessionDraft({
         workspaceId,
@@ -136,6 +137,7 @@ export const NewSessionStartForm = ({
         startKind: next === 'preset' ? 'workflow' : 'agent',
         startShape: startShapeOfFormKind({ kind: next }),
         hasChosenStart: true,
+        ...(workflowId !== undefined && { workflowId, presetCloseness: 'adapt' }),
       },
     });
   };
@@ -213,18 +215,7 @@ export const NewSessionStartForm = ({
               <StartWorkflowSuggestion
                 workflow={suggestion}
                 isDisabled={isDisabled}
-                onUse={() =>
-                  patchSessionDraft({
-                    workspaceId,
-                    patch: {
-                      startKind: 'workflow',
-                      startShape: 'preset',
-                      workflowId: suggestion.id,
-                      presetCloseness: 'adapt',
-                      hasChosenStart: true,
-                    },
-                  })
-                }
+                onUse={() => pickKind({ next: 'preset', workflowId: suggestion.id })}
               />
             ) : null
           }

@@ -17,7 +17,6 @@ import {
   getWorkspaceValue,
   insertSession,
   insertWorkspace,
-  setSetting,
   setWorkspaceValue,
 } from '@goodboy/db';
 import {
@@ -46,7 +45,6 @@ import {
 import { ToastProvider } from '../../../../shared/components/Toast';
 import { providerBudgetStatusFor } from '../../../budget/testing/providerBudgetFixture';
 import type { ProviderDisplayInfo } from '../../../providers/providers';
-import { runDefaultKey } from '../../startRun/runDefaultSetting';
 import { runRoutesKey } from '../../startRun/runRoutesSetting';
 import { startRunEventName } from '../../startRun/startRunEventName';
 import { chooseListboxValue } from '../../../../__tests__/helpers/listbox';
@@ -101,12 +99,6 @@ type SaveFn = StoryState['savePhaseTemplate'];
 type AttachFn = StoryState['attachWorkflowToSession'];
 
 const field = () => screen.getByRole('textbox', { name: 'Start a run' });
-
-const LAYOUT_ASK = 'Fix the layout of the Harborline billing page';
-
-const SUGGESTION = 'Looks like your workflow Fix a layout.Use it';
-
-const suggestionLine = () => document.querySelector('[data-start-suggestion]');
 
 type KindParams = {
   readonly name: string;
@@ -228,111 +220,6 @@ describe('StartRun', () => {
     expect(attachWorkflowToSession).not.toHaveBeenCalled();
     const raw = await getSetting(storySqlite(), runRoutesKey({ sessionId: SESSION.id }));
     expect(JSON.parse(raw ?? '{}')[AGENT]).toMatchObject({ row: 3, shape: 'lead' });
-  });
-
-  it('boots from a stored auto default: suggests the workflow, then starts a Lead without it', async () => {
-    const spawnAgent = vi.fn<SpawnFn>(async () => AGENT);
-    const attachWorkflowToSession = vi.fn<AttachFn>(async () => undefined);
-    useAppStore.setState({
-      spawnAgent,
-      attachWorkflowToSession,
-      phaseTemplates: { [WORKSPACE.id]: [FIX_A_LAYOUT] },
-    });
-    await setSetting(
-      storySqlite(),
-      runDefaultKey({ scope: { kind: 'workspace', workspaceId: WORKSPACE.id } }),
-      'auto',
-    );
-    renderField({ sessionId: SESSION.id });
-
-    fireEvent.change(field(), { target: { value: LAYOUT_ASK } });
-
-    await waitFor(() => expect(suggestionLine()?.textContent).toBe(SUGGESTION));
-    expect(routeLine()).not.toContain('Fix a layout');
-    ask({ text: LAYOUT_ASK });
-
-    await waitFor(() => expect(spawnAgent).toHaveBeenCalledTimes(1));
-    expect(attachWorkflowToSession).not.toHaveBeenCalled();
-    expect(spawnAgent.mock.calls[0]?.[1].initialPrompt).toBe(LAYOUT_ASK);
-    const raw = await getSetting(storySqlite(), runRoutesKey({ sessionId: SESSION.id }));
-    expect(JSON.parse(raw ?? '{}')[AGENT]).toMatchObject({ shape: 'lead', presetName: null });
-  });
-
-  it('gives a Lead the suggested workflow on Use it, free to change its steps', async () => {
-    const spawnAgent = vi.fn<SpawnFn>(async () => AGENT);
-    useAppStore.setState({ spawnAgent, phaseTemplates: { [WORKSPACE.id]: [FIX_A_LAYOUT] } });
-    renderField({ sessionId: SESSION.id });
-
-    fireEvent.change(field(), { target: { value: LAYOUT_ASK } });
-    fireEvent.click(screen.getByRole('button', { name: 'Use it' }));
-
-    expect(isPicked({ name: 'Preset' })).toBe(true);
-    expect(screen.getByRole('checkbox', { name: 'Keep its steps as written' })).toHaveProperty(
-      'checked',
-      false,
-    );
-    expect(suggestionLine()).toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: 'Start' }));
-
-    await waitFor(() => expect(spawnAgent).toHaveBeenCalledTimes(1));
-    expect(spawnAgent.mock.calls[0]?.[1].initialPrompt).toBe(
-      [
-        LAYOUT_ASK,
-        'Plan: follow the preset "Fix a layout".',
-        '1. Find (scout)\n2. Center',
-        'You may add, skip or move a step. Say why when you do.',
-      ].join('\n\n'),
-    );
-    const raw = await getSetting(storySqlite(), runRoutesKey({ sessionId: SESSION.id }));
-    expect(JSON.parse(raw ?? '{}')[AGENT]).toMatchObject({
-      row: 1,
-      closeness: 'adapt',
-      presetName: 'Fix a layout',
-    });
-  });
-
-  it('boots from a stored lead default: no suggestion and a Lead with no workflow', async () => {
-    const spawnAgent = vi.fn<SpawnFn>(async () => AGENT);
-    useAppStore.setState({ spawnAgent, phaseTemplates: { [WORKSPACE.id]: [FIX_A_LAYOUT] } });
-    await setSetting(
-      storySqlite(),
-      runDefaultKey({ scope: { kind: 'workspace', workspaceId: WORKSPACE.id } }),
-      'lead',
-    );
-    renderField({ sessionId: SESSION.id });
-    const key = runDefaultKey({ scope: { kind: 'workspace', workspaceId: WORKSPACE.id } });
-    await waitFor(() => expect(useAppStore.getState().settings[key]).toBe('lead'));
-
-    fireEvent.change(field(), { target: { value: LAYOUT_ASK } });
-
-    expect(suggestionLine()).toBeNull();
-    ask({ text: LAYOUT_ASK });
-
-    await waitFor(() => expect(spawnAgent).toHaveBeenCalledTimes(1));
-    const raw = await getSetting(storySqlite(), runRoutesKey({ sessionId: SESSION.id }));
-    expect(JSON.parse(raw ?? '{}')[AGENT]).toMatchObject({ shape: 'lead', presetName: null });
-  });
-
-  it('lets a stored session plan default win over the workspace one, with no suggestion', async () => {
-    const spawnAgent = vi.fn<SpawnFn>(async () => AGENT);
-    useAppStore.setState({ spawnAgent, phaseTemplates: { [WORKSPACE.id]: [FIX_A_LAYOUT] } });
-    await setSetting(
-      storySqlite(),
-      runDefaultKey({ scope: { kind: 'workspace', workspaceId: WORKSPACE.id } }),
-      'auto',
-    );
-    await setSetting(
-      storySqlite(),
-      runDefaultKey({ scope: { kind: 'session', sessionId: SESSION.id } }),
-      'plan',
-    );
-    renderField({ sessionId: SESSION.id });
-    const key = runDefaultKey({ scope: { kind: 'session', sessionId: SESSION.id } });
-    await waitFor(() => expect(useAppStore.getState().settings[key]).toBe('plan'));
-
-    fireEvent.change(field(), { target: { value: LAYOUT_ASK } });
-
-    expect(suggestionLine()).toBeNull();
   });
 
   it('keeps the text and offers Retry when the start fails', async () => {
@@ -510,7 +397,6 @@ describe('StartRun run as', () => {
     fireEvent.change(field(), { target: { value: QUESTION } });
     expect(routeLine()).toContain('Starts as Lead');
     expect(routeLine()).toContain('A question or a check');
-    expect(suggestionLine()).toBeNull();
 
     pickKind({ name: 'Preset' });
 
