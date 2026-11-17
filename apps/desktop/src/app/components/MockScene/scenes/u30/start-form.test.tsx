@@ -104,11 +104,15 @@ describe('the u30 start form scenes', () => {
     expect(await screen.findByRole('button', { name: 'Start' }, WAIT)).toBeDefined();
   });
 
-  it('draws the unpicked state that lets Auto pick', async () => {
+  it('draws the unpicked state with the workflow it suggests, never one it took', async () => {
     mount({ id: 'u30-start-form-auto-picks' });
 
     await settingsRow();
-    screen.getByText(/^Starts[ ]as/);
+    const line = screen.getByText(/^Starts[ ]as/);
+    expect(line.textContent).not.toContain('Fix a layout');
+    expect(document.querySelector('[data-start-suggestion]')?.textContent).toBe(
+      'Looks like your workflow Fix a layout.Use it',
+    );
   });
 
   it('opens the Edits and the Limit popovers inside the window', async () => {

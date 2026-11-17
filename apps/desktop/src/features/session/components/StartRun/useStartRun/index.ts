@@ -361,13 +361,6 @@ export const useStartRun = ({
     setError(null);
     try {
       const limit = prepare();
-      const { loadSetting } = useAppStore.getState();
-      await Promise.all([
-        loadSetting(runDefaultKey({ scope: { kind: 'workspace', workspaceId } })),
-        ...(sessionId === null
-          ? []
-          : [loadSetting(runDefaultKey({ scope: { kind: 'session', sessionId } }))]),
-      ]);
       const session =
         sessionId === null
           ? null
