@@ -894,6 +894,7 @@ sessions-funnel-open
 sessions-hidden
 sessions-menu
 sessions-nomatch
+sessions-popover
 settings-app
 settings-general-pinned
 settings-links
