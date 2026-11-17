@@ -67,11 +67,13 @@ export const BranchNotices = ({ sessionId, controls, isPushNext, isSetupOfferSho
                 pushFailure.confirmedOnlyOnline?.map((commit) => commit.sha) ?? null
               }
               confirmedRemoteSha={pushFailure.confirmedRemoteSha}
+              isOriginMoved={pushFailure.isOriginMoved}
               message={pushFailure.message}
               onResolved={controls.diffControls.dismissFailure}
             />
           )
         }
+        canRetry={pushFailure === null || !pushFailure.isOriginMoved}
       />
       <ActionConfirmPanel controls={controls.diffControls} />
       <ActionStatusLine controls={controls.pullRequestControls} showReasons={false} />

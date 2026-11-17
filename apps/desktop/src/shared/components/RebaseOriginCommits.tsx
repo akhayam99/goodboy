@@ -1,8 +1,12 @@
 import { TruncatedText } from '@goodboy/ui';
 import type { HistoryRebaseCommit } from '@goodboy/types';
 
+type Commit = HistoryRebaseCommit & {
+  readonly author?: string;
+};
+
 type Props = {
-  readonly commits: ReadonlyArray<HistoryRebaseCommit>;
+  readonly commits: ReadonlyArray<Commit>;
 };
 
 const SHORT_SHA = 7;
@@ -16,12 +20,19 @@ export const RebaseOriginCommits = ({ commits }: Props) => {
       {commits.map((commit) => (
         <li
           key={commit.sha}
-          className="grid min-h-7 min-w-0 grid-cols-[auto_minmax(0,1fr)] items-center gap-2"
+          className={
+            commit.author === undefined
+              ? 'grid min-h-7 min-w-0 grid-cols-[auto_minmax(0,1fr)] items-center gap-2'
+              : 'grid min-h-7 min-w-0 grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2'
+          }
         >
           <span className="text-code text-faint-foreground">{commit.sha.slice(0, SHORT_SHA)}</span>
           <TruncatedText className="min-w-0 truncate text-meta text-foreground">
             {commit.subject}
           </TruncatedText>
+          {commit.author !== undefined && (
+            <span className="text-meta text-muted-foreground">{commit.author}</span>
+          )}
         </li>
       ))}
     </ul>

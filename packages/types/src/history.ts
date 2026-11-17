@@ -134,7 +134,7 @@ export type HistoryOriginAhead = {
   readonly remoteSha: string;
   readonly knownRemoteSha: string | null;
   readonly commits: ReadonlyArray<HistoryRebaseCommit>;
-  readonly onlyOnline: ReadonlyArray<HistoryRebaseCommit>;
+  readonly onlyOnline: ReadonlyArray<HistoryRebaseCommit & { readonly author: string }>;
   readonly fetchError: string | null;
 };
 

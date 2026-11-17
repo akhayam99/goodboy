@@ -10,6 +10,7 @@ vi.mock('@tauri-apps/api/event', async () =>
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { brandId, type AgentId } from '@goodboy/types';
+import { aProject } from '@goodboy/types/testing';
 import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
@@ -109,6 +110,164 @@ const actions = ({ onResolved = vi.fn() }: Handlers = {}) => (
   />
 );
 
+const MOVED_ORIGIN = {
+  remoteSha: 'newer-sha',
+  knownRemoteSha: 'newer-sha',
+  commits: [],
+  onlyOnline: [{ sha: 'late-commit-sha', subject: 'Add the Harborline export', author: 'Acme' }],
+  fetchError: null,
+};
+
+const movedActions = ({ onResolved = vi.fn() }: Handlers = {}) => (
+  <PushFailureActions
+    sessionId={SESSION.id}
+    mountId={MOUNT_TARGET.mountId}
+    isForce
+    confirmedOnlyOnline={['early-commit']}
+    confirmedRemoteSha="remote-sha"
+    isOriginMoved
+    message="Origin changed. Check again before force pushing."
+    onResolved={onResolved}
+  />
+);
+
+type LeaseArgs = {
+  readonly expectedRemoteSha: string;
+};
+
+type OriginStubParams = {
+  readonly origins: ReadonlyArray<typeof MOVED_ORIGIN>;
+  readonly leases?: Array<LeaseArgs>;
+};
+
+const stubOrigin = ({ origins, leases = [] }: OriginStubParams) => {
+  let read = 0;
+  stubStoryInvoke({
+    worktree_deps_check: () => world.check,
+    history_origin_ahead: () => {
+      const origin = origins[Math.min(read, origins.length - 1)];
+      read += 1;
+      return origin;
+    },
+    git_push_with_lease: (args: LeaseArgs) => {
+      leases.push(args);
+      return { kind: 'pushed' };
+    },
+  });
+};
+
+const checkAgain = async () => {
+  await act(async () => {
+    fireEvent.click(screen.getByRole('button', { name: 'Check again' }));
+  });
+};
+
+describe('PushFailureActions after origin moved', () => {
+  beforeEach(() => {
+    store.setState({
+      projects: [
+        aProject({
+          id: FIX_RUN_MOUNT.projectId,
+          workspaceId: SESSION.workspaceId,
+          name: 'payments-api',
+        }),
+      ],
+    });
+  });
+
+  it('offers Check again first and keeps the agent and the terminal', () => {
+    render(movedActions());
+
+    screen.getByRole('button', { name: 'Check again' });
+    screen.getByRole('button', { name: 'Fix with an agent' });
+    screen.getByRole('button', { name: 'Open terminal here' });
+  });
+
+  it('lists what is new on origin with author and subject and asks again', async () => {
+    stubOrigin({ origins: [MOVED_ORIGIN] });
+    render(movedActions());
+
+    await checkAgain();
+
+    const list = await screen.findByRole('list', { name: 'New on origin' });
+    expect(list.textContent).toContain('Add the Harborline export');
+    expect(list.textContent).toContain('Acme');
+    screen.getByText(
+      'Origin has 1 commit this branch lacks. Force push drops them, a rebase keeps them.',
+    );
+    screen.getByRole('button', { name: 'Force push anyway' });
+    screen.getByRole('button', { name: 'Rebase on their commits' });
+    expect(screen.queryByRole('button', { name: 'Check again' })).toBeNull();
+  });
+
+  it('force pushes with the sha it just checked', async () => {
+    const onResolved = vi.fn();
+    const leases: Array<LeaseArgs> = [];
+    stubOrigin({ origins: [MOVED_ORIGIN], leases });
+    store.setState({ refreshSessionPr: vi.fn(async () => undefined) });
+    render(movedActions({ onResolved }));
+    await checkAgain();
+
+    await act(async () => {
+      fireEvent.click(await screen.findByRole('button', { name: 'Force push anyway' }));
+    });
+
+    await vi.waitFor(() => expect(onResolved).toHaveBeenCalledOnce());
+    expect(leases).toEqual([expect.objectContaining({ expectedRemoteSha: 'newer-sha' })]);
+  });
+
+  it('goes back to Check again when another window pushed after the check', async () => {
+    const leases: Array<LeaseArgs> = [];
+    stubOrigin({
+      origins: [
+        MOVED_ORIGIN,
+        { ...MOVED_ORIGIN, knownRemoteSha: 'newest-sha', remoteSha: 'newest-sha' },
+      ],
+      leases,
+    });
+    render(movedActions());
+    await checkAgain();
+
+    await act(async () => {
+      fireEvent.click(await screen.findByRole('button', { name: 'Force push anyway' }));
+    });
+
+    await screen.findByRole('button', { name: 'Check again' });
+    screen.getByText('Origin changed. Check again before force pushing.');
+    expect(leases).toEqual([]);
+  });
+
+  it('opens the terminal on fresh state after origin moved', async () => {
+    stubOrigin({ origins: [MOVED_ORIGIN] });
+    render(movedActions());
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Open terminal here' }));
+    });
+
+    const prefills = Object.values(store.getState().terminalTabs)
+      .flat()
+      .map((tab) => tab.prefill);
+    expect(prefills).toContain(
+      `git rebase 'newer-sha' && git push origin '${FIX_RUN_MOUNT.branch}'`,
+    );
+  });
+
+  it('starts the agent on fresh state after origin moved', async () => {
+    const fixBranchPushWithAgent = vi.fn(async (_input: unknown) => undefined);
+    store.setState({ fixBranchPushWithAgent });
+    render(movedActions());
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Fix with an agent' }));
+    });
+
+    expect(fixBranchPushWithAgent).toHaveBeenCalledWith(
+      expect.objectContaining({ isOriginMoved: true }),
+    );
+  });
+});
+
 describe('PushFailureActions', () => {
   it('offers the agent and the terminal while no fix runs', async () => {
     render(actions());
@@ -163,6 +322,23 @@ describe('PushFailureActions', () => {
     await screen.findByRole('button', { name: 'Fix with an agent' });
 
     expect(screen.queryByRole('button', { name: 'Reinstall dependencies' })).toBeNull();
+  });
+
+  it('shows a failed start inline instead of in a toast', async () => {
+    const reportError = vi.fn(async () => undefined);
+    store.setState({ reportError });
+    stubStoryInvoke({
+      worktree_deps_check: () => world.check,
+      history_origin_ahead: () => ({ ...MOVED_ORIGIN, fetchError: 'could not reach origin' }),
+    });
+    render(movedActions());
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Fix with an agent' }));
+    });
+
+    screen.getByText("Couldn't start the agent. could not reach origin");
+    expect(reportError).not.toHaveBeenCalled();
   });
 
   it('starts the fix with the failure output', async () => {

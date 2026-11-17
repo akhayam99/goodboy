@@ -828,9 +828,10 @@ describe('BranchHeader push failure', () => {
 
   type FailPushWithParams = {
     readonly error: string;
+    readonly reason?: 'moved' | 'failed';
   };
 
-  const failPushWith = ({ error }: FailPushWithParams) => {
+  const failPushWith = ({ error, reason = 'failed' }: FailPushWithParams) => {
     const fixBranchPushWithAgent = vi.fn<StoreState['fixBranchPushWithAgent']>(async () => {});
     const prefillBranchPushTerminal = vi.fn<StoreState['prefillBranchPushTerminal']>(
       async () => {},
@@ -839,7 +840,7 @@ describe('BranchHeader push failure', () => {
       pushBranch: vi.fn<StoreState['pushBranch']>(async () => ({
         ok: false,
         error,
-        reason: 'failed',
+        reason,
       })),
       fixBranchPushWithAgent,
       prefillBranchPushTerminal,
@@ -867,6 +868,7 @@ describe('BranchHeader push failure', () => {
       isForce: false,
       confirmedOnlyOnline: null,
       confirmedRemoteSha: null,
+      isOriginMoved: false,
       message: 'pre-push hook declined',
       hint: '',
       onAccepted: expect.any(Function),
@@ -925,6 +927,36 @@ describe('BranchHeader push failure', () => {
     await waitFor(() =>
       expect(prefillBranchPushTerminal).toHaveBeenCalledWith(
         expect.objectContaining({ isForce: true }),
+      ),
+    );
+  });
+
+  it('leads with Check again and drops Retry when origin moved between the confirm and the push', async () => {
+    withRequest(open);
+    status = upstreamAt({ ahead: 2, behind: 1 });
+    const { fixBranchPushWithAgent, prefillBranchPushTerminal } = failPushWith({
+      error: 'Origin changed. Check again before force pushing.',
+      reason: 'moved',
+    });
+    renderHeader({ pr: open });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Branch actions' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: /Force push 3 commits/ }));
+    fireEvent.click(await screen.findByRole('button', { name: /^Force push$/ }));
+    const alert = await screen.findByRole('alert');
+
+    within(alert).getByRole('button', { name: 'Check again' });
+    expect(within(alert).queryByRole('button', { name: 'Retry' })).toBeNull();
+    fireEvent.click(within(alert).getByRole('button', { name: 'Fix with an agent' }));
+    await waitFor(() =>
+      expect(fixBranchPushWithAgent).toHaveBeenCalledWith(
+        expect.objectContaining({ isOriginMoved: true }),
+      ),
+    );
+    fireEvent.click(within(alert).getByRole('button', { name: 'Open terminal here' }));
+    await waitFor(() =>
+      expect(prefillBranchPushTerminal).toHaveBeenCalledWith(
+        expect.objectContaining({ isOriginMoved: true }),
       ),
     );
   });

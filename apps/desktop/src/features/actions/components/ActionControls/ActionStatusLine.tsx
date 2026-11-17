@@ -10,6 +10,7 @@ type Props = {
   readonly failureActions?: ReactNode;
   readonly failureHint?: ReactNode;
   readonly failureDetail?: ReactNode;
+  readonly canRetry?: boolean;
 };
 
 const failureTitleOf = ({ controls }: Pick<Props, 'controls'>): string => {
@@ -42,6 +43,7 @@ export const ActionStatusLine = ({
   failureActions = null,
   failureHint = null,
   failureDetail = null,
+  canRetry = true,
 }: Props) => {
   const visible = showReasons
     ? [...controls.inSlot({ slot: 'primary' }), ...controls.inSlot({ slot: 'secondary' })]
@@ -81,6 +83,7 @@ export const ActionStatusLine = ({
         failureActions={failureActions}
         failureHint={failureHint}
         failureDetail={failureDetail}
+        canRetry={canRetry}
       />
     </div>
   );

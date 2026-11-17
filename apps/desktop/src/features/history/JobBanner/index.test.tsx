@@ -113,7 +113,9 @@ const ORIGIN_AHEAD: HistoryOriginAhead = {
   remoteSha: 'online-sha',
   knownRemoteSha: 'old-online-sha',
   commits: [{ sha: '7c41e0a9b8c7', subject: 'Fix the avatar size on narrow screens' }],
-  onlyOnline: [{ sha: '7c41e0a9b8c7', subject: 'Fix the avatar size on narrow screens' }],
+  onlyOnline: [
+    { sha: '7c41e0a9b8c7', subject: 'Fix the avatar size on narrow screens', author: 'Northwind' },
+  ],
   fetchError: null,
 };
 
