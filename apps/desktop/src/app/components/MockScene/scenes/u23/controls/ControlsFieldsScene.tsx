@@ -62,8 +62,8 @@ export const ControlsFieldsScene = () => {
       <SceneRow name="Switch names the setting">
         <Switch ariaLabel="Parallel agents" checked={isParallel} onChange={setIsParallel} />
         <span className="text-meta text-foreground">Parallel agents</span>
-        <Switch ariaLabel="Attribution line" checked={isAttributed} onChange={setIsAttributed} />
-        <span className="text-meta text-foreground">Attribution line</span>
+        <Switch ariaLabel="Sign replies" checked={isAttributed} onChange={setIsAttributed} />
+        <span className="text-meta text-foreground">Sign replies</span>
       </SceneRow>
       <SceneRow name="Segmented xs and sm">
         <SegmentedTabs

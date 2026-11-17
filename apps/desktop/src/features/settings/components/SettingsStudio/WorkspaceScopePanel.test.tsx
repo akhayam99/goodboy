@@ -291,7 +291,7 @@ describe('WorkspaceScopePanel pages', () => {
     cleanup();
 
     renderPage({ section: 'review-replies' });
-    screen.getByRole('region', { name: 'Replies' });
+    screen.getByRole('region', { name: 'How replies read' });
     cleanup();
 
     renderPage({ section: 'permissions' });
@@ -315,22 +315,22 @@ describe('WorkspaceScopePanel pages', () => {
     ).toBeTruthy();
   });
 
-  it('keeps the branch names and the attribution line off Run defaults', () => {
+  it('keeps the branch names and Sign replies off Run defaults', () => {
     renderPage({ section: 'general' });
-    expect(screen.queryByText('Attribution line')).toBeNull();
+    expect(screen.queryByText('Sign replies')).toBeNull();
     expect(screen.queryByLabelText('Branch prefix')).toBeNull();
     expect(screen.queryByText('Branch name')).toBeNull();
     cleanup();
 
     renderPage({ section: 'review-replies' });
-    within(screen.getByRole('region', { name: 'Replies' })).getByText('Attribution line');
+    within(screen.getByRole('region', { name: 'How replies read' })).getByText('Sign replies');
   });
 
   it('persists the attribution switch through the queued writer', async () => {
     renderPage({ section: 'review-replies' });
-    const region = screen.getByRole('region', { name: 'Replies' });
+    const region = screen.getByRole('region', { name: 'How replies read' });
 
-    fireEvent.click(within(region).getByRole('switch', { name: 'Attribution line' }));
+    fireEvent.click(within(region).getByRole('switch', { name: 'Sign replies' }));
 
     await waitFor(() => expect(savedPatches()).toHaveLength(1));
     expect(savedPatches()[0]).toEqual({ attributionFooter: false });
@@ -488,7 +488,7 @@ describe('copy from another workspace', () => {
     fireEvent.click(within(flow).getByRole('button', { name: 'Preview changes' }));
 
     expect(flow.textContent).toContain('Will change 3 settings on 1 page.');
-    within(flow).getByText('Voice: Friendly → Formal, Mark thread as resolved: On → Off, 1 more');
+    within(flow).getByText('Voice: Friendly → Formal, Resolve the thread: On → Off, 1 more');
     expect(flow.textContent).toContain('Stays: folders, accounts, permission history.');
     fireEvent.click(within(flow).getByRole('button', { name: 'Copy 3 settings' }));
 

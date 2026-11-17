@@ -63,7 +63,18 @@ export const RETIRED_NAMES: ReadonlyArray<RetiredName> = [
   {
     id: 'resolve-after-replying',
     pattern: /\bResolve the thread after replying\b/,
-    use: NAMES.markThreadResolved,
+    use: NAMES.resolveTheThread,
+  },
+  {
+    id: 'mark-thread-resolved',
+    pattern: /\bMark thread as resolved\b/,
+    use: NAMES.resolveTheThread,
+  },
+  { id: 'attribution-line', pattern: /\bAttribution line\b/, use: NAMES.signReplies },
+  {
+    id: 'edit-posted-reply',
+    pattern: /\bEdit the posted reply\b/,
+    use: NAMES.updateReplyAfterSquash,
   },
   { id: 'with-a-session', pattern: /\bWith a session\b/, use: NAMES.hasASession },
   { id: 'standing-guidance', pattern: /\bStanding guidance\b/i, use: NAMES.guidance },
