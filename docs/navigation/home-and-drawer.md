@@ -270,7 +270,8 @@ only the panel of its class (`slotAfterOpen`), each panel's X closes only itself
 `DrawerHost` renders one slot (`slot="dock"` or `slot="detail"`; with no slot,
 the top of the store, for scenes that draw one panel). Escape and ⌘⇧W close the
 newer of the two. When both slots hold the same class, the rules below apply. `openDrawer` puts the request in the slot and what it replaced in
-`drawerBack` (`slotAfterOpen`), so a third open drops the oldest; reopening the
+`drawerBack` (`slotAfterOpen`), so a third open drops the oldest from the slot
+(a tool still waits in the grid, below); reopening the
 drawer in the slot, an artifact on another tab included (`slotKey`), keeps the
 chip; a drawer of another session clears it, unless one of the two is a
 workspace tool (`sharesSlot`). A second Terminal replaces the first in the
@@ -285,6 +286,21 @@ plan approved onto the run page, View transcript,
 Write title and goal from linked work); the chip does not come back after it.
 A tool keeps its state while it waits: Terminal keeps its shell, Explore its
 open folders. A second window has its own store, so its own slot.
+
+**The slice holds a grid of tools beside the slot.** `drawerGrid` keeps every
+open tool in at most two columns of two (`DOCK_GRID_CAP` in `packages/ui`, the
+dock solver's own cap), the order of use, and the focus: the page, the detail
+or one tool. A new tool opens in a new column next to the rail while one is
+free, otherwise under the column with fewer panels, the one without Browser
+first; a fifth takes the place of the least recently used (`gridAfterOpen`).
+There is one panel per kind, so a second Terminal takes the first one's place.
+The dock in the slot is always the latest tool of the grid (`settledSlot`): a
+tool the slot dropped waits in the grid and comes back when the panel beside
+it closes, and closing a tool takes it out of the grid. `focusDrawerPanel`
+names the page or the panel's entry, and an entry already replaced or closed
+changes nothing. Archiving or deleting a session takes its tools out of the
+grid, and `clearDrawer` empties it with the slot. `panelsOf` hands the frame
+the dock, the detail, the grid's columns and the focus.
 **The open drawer is part of the
 history entry's focus; the chip is not.** A forward move (crumb, sidebar, Search or run, a child such
 as an agent) arrives with it closed; Back and Forward bring it back as it was;
