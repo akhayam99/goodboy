@@ -15,6 +15,8 @@ import type { ReviewEntry } from '../ReviewFlow/useReviewEntries';
 import { CommentDrawerActions } from './CommentDrawerActions';
 import { CommentDrawerAuthor } from './CommentDrawerAuthor';
 import { CommentRunStart } from './CommentRunStart';
+import { CommentRunSuggestion } from './CommentRunSuggestion';
+import { COMMENT_DRAWER_VERB } from './commentDrawerVerbs';
 import { useAppStore } from '../../../../store';
 import { sessionById } from '../../../../store/slices/sessions/sessionIndex';
 import { SessionMediaScope } from '../../../../shared/components/SessionMediaScope';
@@ -77,6 +79,9 @@ export const CommentDrawerFrame = ({
   const workspaceId = useAppStore(
     (state) => sessionById(state.sessions, sessionId)?.workspaceId ?? null,
   );
+  const isBarIdle = binding.compose === null && !binding.isEditingReply;
+  const suggested =
+    isBarIdle && plan.shown.includes(COMMENT_DRAWER_VERB.startRun) ? entry.row.reviewerNote : null;
   const menu =
     plan.rare.length === 0 || lone !== null ? undefined : (
       <ThreadOverflowMenu
@@ -127,6 +132,9 @@ export const CommentDrawerFrame = ({
         ) : (
           <>
             <ThreadProperties sessionId={sessionId} entry={entry} />
+            {suggested === null ? null : (
+              <CommentRunSuggestion body={suggested.body} path={suggested.path} />
+            )}
             <CommentDrawerActions
               entry={entry}
               push={push}

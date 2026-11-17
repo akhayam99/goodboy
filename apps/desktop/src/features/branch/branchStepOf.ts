@@ -9,6 +9,7 @@ export type BranchStepKind =
   | 'apply'
   | 'retryPush'
   | 'fixComments'
+  | 'suggestRun'
   | 'pushCheckFix'
   | 'push'
   | 'publish'
@@ -26,6 +27,7 @@ export type BranchCommentFacts = {
   readonly questionThreadId: string | null;
   readonly waitingFixes: number;
   readonly fixable: number;
+  readonly runSuggested: number;
   readonly isFixRunLive: boolean;
 };
 
@@ -33,6 +35,7 @@ export type BranchStepComments = {
   readonly facts: BranchCommentFacts;
   readonly readyThreadIds: ReadonlyArray<string>;
   readonly fixableThreadIds: ReadonlyArray<string>;
+  readonly runSuggestedThreadIds: ReadonlyArray<string>;
 };
 
 export type BranchCheckFacts = {
@@ -69,6 +72,7 @@ export const NO_COMMENT_FACTS: BranchCommentFacts = {
   questionThreadId: null,
   waitingFixes: 0,
   fixable: 0,
+  runSuggested: 0,
   isFixRunLive: false,
 };
 
@@ -84,6 +88,7 @@ const OPEN_STEP_ORDER = [
   'apply',
   'retryPush',
   'fixComments',
+  'suggestRun',
   'pushCheckFix',
   'push',
   'publish',
@@ -100,6 +105,7 @@ const OPEN_STEP_DUE: Readonly<Record<OpenStepKey, (params: OpenParams) => boolea
   apply: ({ comments }) => comments.waitingFixes > 0,
   retryPush: ({ push }) => push.failed > 0,
   fixComments: ({ comments }) => comments.fixable > 0,
+  suggestRun: ({ comments }) => comments.runSuggested > 0,
   pushCheckFix: ({ checks }) => checks.isFailing && checks.chain === 'fixed-local',
   push: ({ push }) => push.canPush,
   publish: ({ push }) => push.replies > 0,
@@ -114,6 +120,7 @@ const OPEN_STEP_OF: Readonly<Record<OpenStepKey, (params: OpenParams) => BranchS
   apply: () => 'apply',
   retryPush: () => 'retryPush',
   fixComments: () => 'fixComments',
+  suggestRun: () => 'suggestRun',
   pushCheckFix: () => 'pushCheckFix',
   push: () => 'push',
   publish: () => 'publish',
@@ -149,6 +156,7 @@ const startStepsOf = ({ lifecycle, comments, checks }: OpenParams): ReadonlyArra
       comments.isFixRunLive || isCheckAgentLive(checks) ? 'working' : null,
       comments.waitingFixes > 0 ? 'apply' : null,
       comments.fixable > 0 ? 'fixComments' : null,
+      comments.runSuggested > 0 ? 'suggestRun' : null,
       lifecycle,
     ],
   });

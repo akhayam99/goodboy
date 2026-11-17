@@ -3,6 +3,7 @@ import type { Agent, AgentSourceKind, ResolveStage } from '@goodboy/types';
 import { anAgent } from '@goodboy/types/testing';
 import { agentIdOf } from '../../__tests__/helpers/brandedIds';
 import { SESSION_ID } from '../../app/components/MockScene/scenes/resolveSeed';
+import type { CommentLane } from './commentLaneOf';
 import { COMMENT_RUN_COPY } from './commentRunCopy';
 import { commentRunSourcesOf } from './commentRunSourcesOf';
 import { noteThreadId } from './notes/noteThread';
@@ -26,12 +27,21 @@ type EntryParams = {
   readonly state?: ReviewCommentState;
   readonly stage?: ResolveStage;
   readonly fix?: RowFix | null;
+  readonly lane?: CommentLane | null;
 };
 
-const entryOf = ({ threadId, path, state = 'new', stage = 'new', fix = null }: EntryParams) => ({
+const entryOf = ({
+  threadId,
+  path,
+  state = 'new',
+  stage = 'new',
+  fix = null,
+  lane = 'fix',
+}: EntryParams) => ({
   threadId,
   state,
   fix,
+  lane,
   row: { reviewerNote: { path }, thread: { stage } },
 });
 
@@ -64,6 +74,7 @@ const FILTERS = entryOf({ threadId: FILTERS_NOTE, path: FILTERS_PATH });
 const TOTALS = entryOf({ threadId: TOTALS_THREAD, path: PAGE });
 const EXPORT = entryOf({ threadId: EXPORT_THREAD, path: EXPORT_PATH });
 const IMPORT = entryOf({ threadId: IMPORT_THREAD, path: 'src/import/parseRows.ts' });
+const IMPORT_SMALL = entryOf({ threadId: SUMMARY_THREAD, path: 'src/import/readRows.ts' });
 
 describe('commentRunSourcesOf', () => {
   it('offers the open comments of the same folder, same file first, at most three, never picked', () => {
@@ -81,6 +92,34 @@ describe('commentRunSourcesOf', () => {
       EXPORT_THREAD,
     ]);
     expect(sources.blocked).toBeNull();
+  });
+
+  it('offers a comment elsewhere on the branch that suggests a run too, after the near ones', () => {
+    const broadImport = entryOf({
+      threadId: IMPORT_THREAD,
+      path: 'src/import/parseRows.ts',
+      lane: 'run',
+    });
+    const sources = commentRunSourcesOf({
+      entries: [HEADER, broadImport, FILTERS, IMPORT_SMALL],
+      agents: [],
+      threadId: HEADER_NOTE,
+      extraThreadIds: [],
+    });
+    expect(idsOf({ entries: sources.candidates })).toEqual([FILTERS_NOTE, IMPORT_THREAD]);
+  });
+
+  it('never offers a broad comment another run already holds', () => {
+    const sources = commentRunSourcesOf({
+      entries: [
+        HEADER,
+        entryOf({ threadId: IMPORT_THREAD, path: 'src/import/parseRows.ts', lane: 'in_run' }),
+      ],
+      agents: [runOf({ id: 'run-import', threadIds: [IMPORT_THREAD] })],
+      threadId: HEADER_NOTE,
+      extraThreadIds: [],
+    });
+    expect(sources.candidates).toEqual([]);
   });
 
   it('picks the extras in order, deduped, and drops them from the offer, notes and host comments mixed', () => {

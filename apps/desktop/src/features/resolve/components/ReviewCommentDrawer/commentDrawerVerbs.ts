@@ -5,4 +5,5 @@ export const COMMENT_DRAWER_VERB = {
   transcript: 'reviewComment.transcript',
   stop: 'reviewComment.stop',
   postReplyNow: 'reviewComment.postReplyNow',
+  startRun: 'reviewComment.startRun',
 } as const;
