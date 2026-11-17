@@ -52,6 +52,7 @@ import { createReviewDraftsSlice } from './slices/review-drafts';
 import { reviewDraftsInitialState } from './slices/review-drafts/state';
 import { createIntegrationsSlice } from './slices/integrations';
 import { createSidebarSlice } from './slices/sidebar';
+import { createSessionsCardSlice } from './slices/sessions-card';
 import { createSettingsLastPageSlice } from './slices/settings-last-page';
 import { createMonitoringViewSlice } from './slices/monitoring-view';
 import { createLocalChecksSlice } from './slices/local-checks';
@@ -188,6 +189,7 @@ import { transcriptsInitialState } from './slices/transcripts/state';
 import { worktreesInitialState } from './slices/worktrees/state';
 import { overridesInitialState } from './slices/overrides/state';
 import { sidebarInitialState } from './slices/sidebar/state';
+import { sessionsCardInitialState } from './slices/sessions-card/state';
 import { settingsLastPageInitialState } from './slices/settings-last-page/state';
 import { monitoringViewInitialState } from './slices/monitoring-view/state';
 import { localChecksInitialState } from './slices/local-checks/state';
@@ -265,6 +267,7 @@ export type AppStore = AppState &
   ReturnType<typeof createDrawerSlice> &
   ReturnType<typeof createNavigationSlice> &
   ReturnType<typeof createSidebarSlice> &
+  ReturnType<typeof createSessionsCardSlice> &
   ReturnType<typeof createSettingsLastPageSlice> &
   ReturnType<typeof createMonitoringViewSlice> &
   ReturnType<typeof createLocalChecksSlice> &
@@ -398,6 +401,7 @@ const initialState: AppState = {
   ...agentsInitialState,
   ...overridesInitialState,
   ...sidebarInitialState,
+  ...sessionsCardInitialState,
   ...settingsLastPageInitialState,
   ...monitoringViewInitialState,
   ...localChecksInitialState,
@@ -472,6 +476,7 @@ const appStoreApi = createStore<AppStore>((set, get) => ({
   ...createReviewDraftsSlice({ set, get }),
   ...createIntegrationsSlice({ set, get }),
   ...createSidebarSlice({ set, get }),
+  ...createSessionsCardSlice({ set, get }),
   ...createSettingsLastPageSlice({ set, get }),
   ...createMonitoringViewSlice({ set, get }),
   ...createLocalChecksSlice({ set, get }),

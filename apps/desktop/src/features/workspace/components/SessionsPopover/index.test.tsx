@@ -9,6 +9,8 @@ vi.mock('@tauri-apps/api/event', async () =>
 vi.mock('@goodboy/db', async () =>
   (await import('../../../../store/storyHarness')).dbModuleMock({
     listLiveSessionIds: vi.fn(async () => []),
+    getSetting: vi.fn(async () => null),
+    setSetting: vi.fn(async () => undefined),
   }),
 );
 vi.mock('../../../../shared/lib/db', async () =>
@@ -17,7 +19,7 @@ vi.mock('../../../../shared/lib/db', async () =>
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
-import { listLiveSessionIds } from '@goodboy/db';
+import { getSetting, listLiveSessionIds, setSetting } from '@goodboy/db';
 import { brandId, type Session, type SessionId } from '@goodboy/types';
 import {
   STORE_IMPORT_TIMEOUT_MS,
@@ -251,5 +253,66 @@ describe('the Sessions popover in the bar', () => {
     expect(
       (useAppStore.getState().sessionPins[harborline.id] ?? []).map((pinEntry) => pinEntry.id),
     ).not.toContain(idOf({ session: quiet }));
+  });
+});
+
+describe('the one-time Sessions card', () => {
+  const card = (): HTMLElement | null =>
+    screen.queryByRole('dialog', { name: 'Your sessions moved here' });
+
+  it('shows once under the control and says where sessions went', () => {
+    useAppStore.setState({ sessionsCardPhase: 'open' });
+    mount();
+    expect(card()?.textContent).toContain('The sidebar list is gone.');
+    expect(card()?.textContent).toContain('Press');
+  });
+
+  it('stays away on a fresh install and after it was closed', () => {
+    useAppStore.setState({ sessionsCardPhase: 'closed' });
+    mount();
+    expect(card()).toBeNull();
+  });
+
+  it('closes for good the first time Sessions opens, with the key', async () => {
+    useAppStore.setState({ sessionsCardPhase: 'open' });
+    mount();
+    toggle();
+    await waitFor(() => expect(useAppStore.getState().sessionsCardPhase).toBe('closed'));
+    expect(setSetting).toHaveBeenCalledWith(expect.anything(), 'shell.sessionsCardClosed', '1');
+    toggle();
+    expect(card()).toBeNull();
+  });
+
+  it('opens Sessions from Show sessions and closes the card', async () => {
+    useAppStore.setState({ sessionsCardPhase: 'open' });
+    mount();
+    fireEvent.click(screen.getByRole('button', { name: 'Show sessions' }));
+    expect(dialog()).toBeTruthy();
+    await waitFor(() => expect(useAppStore.getState().sessionsCardPhase).toBe('closed'));
+    expect(card()).toBeNull();
+  });
+
+  it('comes back after a failed save once Sessions closes, and the next open retries', async () => {
+    vi.mocked(setSetting).mockRejectedValueOnce(new Error('disk full'));
+    useAppStore.setState({ sessionsCardPhase: 'open', reportError: vi.fn(async () => undefined) });
+    mount();
+    toggle();
+    await waitFor(() => expect(useAppStore.getState().reportError).toHaveBeenCalledTimes(1));
+    expect(useAppStore.getState().sessionsCardPhase).toBe('open');
+    toggle();
+    expect(card()).not.toBeNull();
+    toggle();
+    await waitFor(() => expect(useAppStore.getState().sessionsCardPhase).toBe('closed'));
+  });
+
+  it('closes when another window already saved the close and this one regains focus', async () => {
+    useAppStore.setState({ sessionsCardPhase: 'open' });
+    mount();
+    expect(card()).not.toBeNull();
+    vi.mocked(getSetting).mockResolvedValueOnce('1');
+    act(() => {
+      window.dispatchEvent(new Event('focus'));
+    });
+    await waitFor(() => expect(card()).toBeNull());
   });
 });

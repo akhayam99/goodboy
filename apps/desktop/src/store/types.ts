@@ -69,6 +69,7 @@ import type { WorktreesState } from './slices/worktrees/state';
 import type { ProjectMountsState } from './slices/project-mounts/state';
 import type { OverridesState } from './slices/overrides/state';
 import type { SidebarState } from './slices/sidebar/state';
+import type { SessionsCardState } from './slices/sessions-card/state';
 import type { SettingsLastPageState } from './slices/settings-last-page/state';
 import type { MonitoringViewState } from './slices/monitoring-view/state';
 import type { LocalChecksState } from './slices/local-checks/state';
@@ -194,6 +195,7 @@ type AppSliceState = ArtifactsState &
   PrSeriesState &
   OverridesState &
   SidebarState &
+  SessionsCardState &
   SettingsLastPageState &
   MonitoringViewState &
   LocalChecksState &
