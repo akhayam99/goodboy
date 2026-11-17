@@ -5,6 +5,7 @@ export { StudioSlotContext } from './studioSlotContext';
 export { ShellDockContext } from './shellDockContext';
 export type { ShellDock } from './shellDockContext';
 export { DOCK_FOCUS_DETAIL, DOCK_FOCUS_PAGE } from './dockGridSpec';
+export { DockCellContext } from './dockCellContext';
 export type { DockGridCell, DockGridSpec } from './dockGridSpec';
 export { turnedDockColumnsOf } from './turnedDockColumnsOf';
 export { ShellRailContext } from './shellRailContext';

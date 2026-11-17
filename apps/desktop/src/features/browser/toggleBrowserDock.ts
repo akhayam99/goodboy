@@ -1,5 +1,5 @@
 import { useAppStore } from '../../store';
-import { selectDockDrawer } from '../../store/slices/drawer/selectDockDrawer';
+import { selectGridTool } from '../../store/slices/drawer/selectGridTool';
 import { selectSlotBack } from '../../store/slices/drawer/selectSlotBack';
 
 type Params = {
@@ -11,8 +11,8 @@ export const toggleBrowserDock = ({ isToggle }: Params): void => {
   if (state.currentWorkspaceId === null || state.appStudio?.kind === 'browser') {
     return;
   }
-  const shown = selectDockDrawer({ state });
-  if (shown?.kind === 'browser') {
+  const shown = selectGridTool({ state, kind: 'browser' });
+  if (shown !== null) {
     if (isToggle) {
       state.closeDrawerEntry({ entry: shown });
     }

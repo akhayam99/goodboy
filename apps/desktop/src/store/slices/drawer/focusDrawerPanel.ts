@@ -30,8 +30,12 @@ type SwapParams = Pick<ToolParams, 'dock' | 'entry'> & {
   readonly slot: OpenDrawer | null;
 };
 
-const swap = ({ slot, dock, entry }: SwapParams): OpenDrawer | null =>
-  slot !== null && slot === dock ? entry : slot;
+const swap = ({ slot, dock, entry }: SwapParams): OpenDrawer | null => {
+  if (slot !== null && slot === dock) {
+    return entry;
+  }
+  return slot !== null && slot === entry ? dock : slot;
+};
 
 const focusedTool = ({ state, grid, entry, dock }: ToolParams): DrawerSliceState =>
   settledSlot({

@@ -1,21 +1,34 @@
 import { useAppStore } from '../../store';
-import { selectDockDrawer } from '../../store/slices/drawer/selectDockDrawer';
+import { panelFocusKeyOf } from '../../store/slices/drawer/panelFocusKeyOf';
+import { selectGridTool } from '../../store/slices/drawer/selectGridTool';
+import { shellPanelsOf } from '../../store/slices/drawer/shellPanelsOf';
+import { focusPanelElement } from '../../shared/shellFocus/focusPanelElement';
+import { focusShellPanel } from '../../shared/shellFocus/focusShellPanel';
 import { selectSlotBack } from '../../store/slices/drawer/selectSlotBack';
 import { openWorkspaceTerminal } from './openWorkspaceTerminal';
 import { toggleSessionTerminal } from './toggleSessionTerminal';
 
 type Params = {
   readonly isToggle: boolean;
+  readonly shouldFocusFirst?: boolean;
 };
 
-export const toggleTerminalDock = ({ isToggle }: Params): void => {
+const TERMINAL = 'terminal';
+
+export const toggleTerminalDock = ({ isToggle, shouldFocusFirst = false }: Params): void => {
   const state = useAppStore.getState();
   const workspaceId = state.currentWorkspaceId;
   if (workspaceId === null || state.appStudio?.kind === 'terminal') {
     return;
   }
-  const shown = selectDockDrawer({ state });
-  if (shown?.kind === 'terminal') {
+  const shown = selectGridTool({ state, kind: TERMINAL });
+  if (shown !== null) {
+    const isFocused = panelFocusKeyOf({ panels: shellPanelsOf({ state }) }) === TERMINAL;
+    if (shouldFocusFirst && !isFocused) {
+      focusShellPanel({ key: TERMINAL });
+      focusPanelElement({ key: TERMINAL });
+      return;
+    }
     if (isToggle) {
       state.closeDrawerEntry({ entry: shown });
     }

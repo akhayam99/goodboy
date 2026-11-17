@@ -2,6 +2,7 @@ import { registerShortcutGlyphs } from '@goodboy/ui';
 import { currentPlatform } from '../platform';
 import { NAMES } from '../utils/names';
 import { BROWSER_SHORTCUTS } from './browserShortcuts';
+import { WINDOW_SHORTCUTS } from './windowShortcuts';
 import { overrideState } from './overrides/overrideState';
 
 type ShortcutPlane = 'app' | 'session' | 'lens' | 'pane';
@@ -844,20 +845,7 @@ export const SHORTCUTS = {
     scope: 'home',
   },
   'chat.new': { combo: 'cmd+shift+KeyN', label: 'New chat', plane: 'session', group: 'general' },
-  'app.close': {
-    combo: 'cmd+KeyW',
-    offMacCombo: 'ctrl+shift+KeyW',
-    label: 'Close the nearest thing',
-    plane: 'app',
-    group: 'window',
-  },
-  'slot.close': {
-    combo: 'cmd+shift+KeyW',
-    offMacCombo: 'ctrl+F4',
-    label: 'Close the drawer',
-    plane: 'session',
-    group: 'window',
-  },
+  ...WINDOW_SHORTCUTS,
   'terminal.closeTab': {
     combo: 'cmd+KeyW',
     offMacCombo: 'ctrl+shift+KeyW',

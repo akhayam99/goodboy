@@ -251,8 +251,14 @@ stack in one column; then a detail lies over the page while the grid still
 pushes; only then does everything lie over the page, ending at the rail and
 starting at least 24 from the page's left edge. `dockLayout.test.ts` pins the
 window table (1728, 1440, 1280 and 1024) and sweeps every window from 900 to
-2600; `regressions/drawer-rule.test.ts` keeps its sizes in their owners. No
-host mounts it yet: `DrawerColumn` still runs `panelPairLayoutOf`.
+2600; `regressions/drawer-rule.test.ts` keeps its sizes in their owners.
+`DrawerColumn` runs it for a `dockGrid` of two tools or more (`useDockGrid`,
+`DockGrid`, a CSS grid whose tracks are the column widths and 12px gutters, so
+a pane keeps its node when the pair turns or stacks); one tool, the detail
+alone and `placement="overlay"` keep `panelPairLayoutOf`. A detail that the
+solver lays over the page while the grid pushes floats the whole aside for
+now. `DrawerColumnGrid.test.tsx` pins the order, the widths, the stack, the
+focus border and the turn key.
 
 **The places rail never folds.** `AppShell` takes it as `leftRail` and gives
 it an `auto` grid column, so the rail's own width (64px, 44px under a 1100px

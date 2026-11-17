@@ -1,5 +1,10 @@
-import { createElement, type ReactNode } from 'react';
-import type { DrawerPlacement, DrawerSizing } from '@goodboy/ui';
+import { createElement, useMemo, type ReactNode } from 'react';
+import type { DockGridSpec, DrawerPlacement, DrawerSizing } from '@goodboy/ui';
+import { DRAWER_KINDS } from '../../../store/slices/drawer/drawerKinds';
+import { panelFocusKeyOf } from '../../../store/slices/drawer/panelFocusKeyOf';
+import { shellPanelsOf } from '../../../store/slices/drawer/shellPanelsOf';
+import { focusShellPanel } from '../../../shared/shellFocus/focusShellPanel';
+import { turnShellPair } from '../../../shared/shellFocus/turnShellPair';
 import { selectDrawerPlacement } from '../../../store/slices/drawer/selectDrawerPlacement';
 import { useAppStore } from '../../../store';
 import { drawerSizingOf } from '../../../store/slices/drawer/drawerSizingOf';
@@ -11,6 +16,7 @@ import { STUDIO_META } from '../../components/StudioFrame/studioMeta';
 type Params = Record<never, never>;
 
 type ShellRight = {
+  readonly dockGrid: DockGridSpec;
   readonly rightRail: ReactNode;
   readonly isDrawerMounted: boolean;
   readonly isDrawerParked: boolean;
@@ -38,10 +44,29 @@ export const useShellRight = ({}: Params): ShellRight => {
     drawerSizingOf({ drawer: selectDetailDrawer({ state }) }),
   );
   const placement = useAppStore(selectDrawerPlacement);
+  const drawer = useAppStore((state) => state.drawer);
+  const drawerBack = useAppStore((state) => state.drawerBack);
+  const drawerGrid = useAppStore((state) => state.drawerGrid);
+  const currentSessionId = useAppStore((state) => state.currentSessionId);
+  const appStudio = useAppStore((state) => state.appStudio);
+  const dockGrid = useMemo<DockGridSpec>(() => {
+    const panels = shellPanelsOf({
+      state: { drawer, drawerBack, drawerGrid, currentSessionId, appStudio },
+    });
+    return {
+      columns: panels.tools.map((column) =>
+        column.map((panel) => ({ key: panel.kind, sizing: DRAWER_KINDS[panel.kind].sizing })),
+      ),
+      focus: panelFocusKeyOf({ panels }),
+      onFocus: focusShellPanel,
+      onTurn: turnShellPair,
+    };
+  }, [drawer, drawerBack, drawerGrid, currentSessionId, appStudio]);
   return {
+    dockGrid,
     placement,
     rightRail: isRailInStudio ? null : createElement(ShellToolRail),
-    isDrawerMounted,
+    isDrawerMounted: isDrawerMounted || dockGrid.columns.length > 0,
     isDrawerParked: false,
     isDockInStudio: isRailInStudio,
     isDetailMounted,

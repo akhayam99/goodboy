@@ -184,7 +184,8 @@ export const StudioFrame = ({ kind, onClose, children, placement = 'cover' }: Pr
                 <ShellToolRail />
               </div>
             }
-            drawer={dock}
+            drawer={dock?.node ?? null}
+            dockGrid={dock?.grid ?? null}
             sizing={dockSizing}
             detail={
               drawerSpec?.node == null ? null : (

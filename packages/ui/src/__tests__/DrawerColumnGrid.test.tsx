@@ -1,6 +1,7 @@
 // @vitest-environment happy-dom
 
 import { useContext } from 'react';
+import { DockCellContext } from '../dockCellContext';
 import { createPortal } from 'react-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
@@ -55,6 +56,15 @@ const ToolRail = () => {
   return host === null ? rail : createPortal(rail, host);
 };
 
+const GridCell = () => {
+  const key = useContext(DockCellContext) ?? 'none';
+  return (
+    <DrawerFrame title={key} onClose={() => undefined}>
+      <p>{`${key} body`}</p>
+    </DrawerFrame>
+  );
+};
+
 type SpecParams = {
   readonly columns: DockGridSpec['columns'];
   readonly focus: string;
@@ -66,11 +76,6 @@ const specOf = ({ columns, focus }: SpecParams) => {
   const spec: DockGridSpec = {
     columns,
     focus,
-    renderCell: ({ key }) => (
-      <DrawerFrame title={key} onClose={() => undefined}>
-        <p>{`${key} body`}</p>
-      </DrawerFrame>
-    ),
     onFocus,
     onTurn,
   };
@@ -86,7 +91,7 @@ const renderGrid = ({ spec, detail }: RenderParams) =>
   render(
     <DrawerColumn
       main={<ToolRail />}
-      drawer={null}
+      drawer={<GridCell />}
       dockGrid={spec}
       detail={detail === undefined ? null : <p>{detail}</p>}
       frame="sheet"

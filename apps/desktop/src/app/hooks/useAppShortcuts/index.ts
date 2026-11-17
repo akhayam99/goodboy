@@ -35,6 +35,7 @@ import { useMenuCommands } from '../useMenuCommands';
 import { usePageKeys } from '../../../features/browser/hooks/usePageKeys';
 import { closeCurrentLevel } from './closeCurrentLevel';
 import { closeSlot } from './closeSlot';
+import { stepPanelFocus } from '../../../shared/shellFocus/stepPanelFocus';
 import { goUp } from './goUp';
 import { useGoToBoard } from '../useGoToBoard';
 import { useSessionNavigation } from '../useSessionNavigation';
@@ -237,7 +238,11 @@ export const useAppShortcuts = ({
   useShortcut('session.prev', () => navigateSession({ delta: -1 }));
   useShortcut('session.next', () => navigateSession({ delta: 1 }));
   useShortcut('session.board', goToBoard);
-  useShortcut('terminal.studio', () => toggleTerminalDock({ isToggle: true }));
+  useShortcut('terminal.studio', () =>
+    toggleTerminalDock({ isToggle: true, shouldFocusFirst: true }),
+  );
+  useShortcut('panel.focusNext', () => stepPanelFocus({ step: 1 }));
+  useShortcut('panel.focusPrevious', () => stepPanelFocus({ step: -1 }));
   useShortcut('app.close', () => closeCurrentLevel({}));
   useShortcut('slot.close', () => closeSlot({}));
   useMenuCommands();

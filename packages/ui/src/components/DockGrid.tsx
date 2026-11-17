@@ -1,4 +1,5 @@
-import type { CSSProperties, Ref } from 'react';
+import type { CSSProperties, ReactNode, Ref } from 'react';
+import { DockCellContext } from '../dockCellContext';
 import { cn } from '../cn';
 import type { DockGridColumnBox } from '../dockGridColumnBox';
 import { dockGridTracksOf } from '../dockGridTracksOf';
@@ -9,6 +10,7 @@ import { SplitHandle, type SplitHandleProps } from './SplitHandle';
 type Props = {
   readonly gridRef: Ref<HTMLDivElement>;
   readonly spec: DockGridSpec;
+  readonly cell: ReactNode;
   readonly columns: ReadonlyArray<DockGridColumnBox>;
   readonly handles: ReadonlyArray<SplitHandleProps | null>;
   readonly turn: Omit<DockPairTurn, 'onTurn'> | null;
@@ -22,6 +24,7 @@ const SINGLE_TRACK = 'minmax(0,1fr)';
 export const DockGrid = ({
   gridRef,
   spec,
+  cell,
   columns,
   handles,
   turn,
@@ -77,7 +80,7 @@ export const DockGrid = ({
                   turn === null ? null : { ...turn, onTurn: () => spec.onTurn({ key: pane.key }) }
                 }
               >
-                {spec.renderCell({ key: pane.key })}
+                <DockCellContext.Provider value={pane.key}>{cell}</DockCellContext.Provider>
               </DockPairTurnContext.Provider>
             </div>
           );

@@ -4,7 +4,7 @@ import { PANE_RHYTHM, cn } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
 import { selectBrowserTabCount } from '../../../../store/slices/browser/selectBrowserTabCount';
 import { selectDetailDrawer } from '../../../../store/slices/drawer/selectDetailDrawer';
-import { selectDockDrawer } from '../../../../store/slices/drawer/selectDockDrawer';
+import { shellPanelsOf } from '../../../../store/slices/drawer/shellPanelsOf';
 import { selectSlotBack } from '../../../../store/slices/drawer/selectSlotBack';
 import { monitoringSignalOf } from '../../../monitoring/monitoringSignalOf';
 import { runningTerminalCount } from '../../../terminal/runningTerminalCount';
@@ -32,7 +32,12 @@ const isFocusOnBody = (): boolean =>
   document.activeElement === null || document.activeElement === document.body;
 
 export const ToolRailFrame = ({ sessionId, terminalSignal }: Props) => {
-  const dockKind = useAppStore((state) => selectDockDrawer({ state })?.kind ?? null);
+  const gridKinds = useAppStore((state) =>
+    shellPanelsOf({ state })
+      .tools.flat()
+      .map((panel) => panel.kind)
+      .join(' '),
+  );
   const detailKind = useAppStore((state) =>
     state.appStudio === null ? (selectDetailDrawer({ state })?.kind ?? null) : null,
   );
@@ -126,7 +131,7 @@ export const ToolRailFrame = ({ sessionId, terminalSignal }: Props) => {
           <SessionToolButton
             key={tool.pane}
             tool={tool}
-            isOpen={dockKind === tool.pane || detailKind === tool.pane}
+            isOpen={gridKinds.split(' ').includes(tool.pane) || detailKind === tool.pane}
             isWaiting={waitingKind === tool.pane}
             isCurrent={pageKind === tool.pane}
             isDisabled={isSessionMissing}

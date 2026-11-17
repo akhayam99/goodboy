@@ -268,7 +268,8 @@ only the panel of its class (`slotAfterOpen`), each panel's X closes only itself
 (`closeDrawerEntry`), and a rail button toggles only its own panel
 (`toggleDrawer`, `toggleTerminalDock`, `toggleBrowserDock`, `togglePane`).
 `DrawerHost` renders one slot (`slot="dock"` or `slot="detail"`; with no slot,
-the top of the store, for scenes that draw one panel). Escape and ⌘⇧W close the
+the top of the store, for scenes that draw one panel), or the grid cell its
+`DockCellContext` names. Escape and ⌘⇧W close the
 newer of the two. When both slots hold the same class, the rules below apply. `openDrawer` puts the request in the slot and what it replaced in
 `drawerBack` (`slotAfterOpen`), so a third open drops the oldest from the slot
 (a tool still waits in the grid, below); reopening the
@@ -301,6 +302,36 @@ names the page or the panel's entry, and an entry already replaced or closed
 changes nothing. Archiving or deleting a session takes its tools out of the
 grid, and `clearDrawer` empties it with the slot. `panelsOf` hands the frame
 the dock, the detail, the grid's columns and the focus.
+
+**The frame draws the whole grid.** `useShellRight` reads `shellPanelsOf` (the
+grid without the tool whose page is open, the detail only with no studio) and
+hands `AppShell` a `dockGrid`: the columns by kind and sizing, the focus as a
+key (`page`, `detail` or the tool's kind, `panelFocusKeyOf`) and two writes.
+`DockGrid` draws the one `<DrawerHost slot="dock" />` of App once per cell
+inside `DockCellContext`, and the host renders that cell's tool
+(`selectGridTool`); a studio that hosts the dock gets the same grid through
+`ShellDockContext`. One tool keeps the single dock card of before. Two or more
+go through `dockLayoutOf` inside `DrawerColumn`: every pane is its own card,
+12px apart, in the order page, detail, grid, rail, and the rail stays last
+in the dock box on the window edge whether the grid pushes or lies over the
+page. Each column has its handle on its left edge and sizes its lead tier's
+saved width; rows keep the solver's share until the grid is saved per session.
+With two panels or more on screen the focused one draws a `focus-ring` border.
+A click or a focus inside a panel or the page names it (`focusShellPanel`,
+which writes only when the key changes). F6 and ⇧F6 (`panel.focusNext`,
+`panel.focusPrevious`) walk page, detail, then the tools column by column, top
+to bottom, and move the keyboard into the panel (`stepPanelFocus`,
+`panelFocusRingOf`). ⌘⇧W closes the focused panel (`focusedShellPanelOf`); with
+the page focused it closes the top of the slot as before. ``⌃` `` focuses an
+open Terminal that is not focused and closes a focused one; the rail button
+still opens and closes. A rail button is pressed while its tool is anywhere in
+the grid, and a second click closes it (`toggleTerminalDock`,
+`toggleBrowserDock`, `toggleDrawer` read `selectGridTool`). When exactly two
+tools are open and both shapes push (side by side and stacked), each head
+shows a key that turns the pair (`DockPairTurnContext` in `DrawerFrame`,
+`turnDockPair` with `turnedDockColumnsOf`); the write names the panel it came
+from and does nothing once that panel left the grid. When the page would lose
+its minimum side by side the solver stacks the pair and the key hides.
 **The open drawer is part of the
 history entry's focus; the chip is not.** A forward move (crumb, sidebar, Search or run, a child such
 as an agent) arrives with it closed; Back and Forward bring it back as it was;
