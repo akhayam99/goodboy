@@ -14,7 +14,7 @@ import {
 } from '@goodboy/ui';
 import { useAppStore } from '../../../store';
 import { updateMarkOf } from '../updateMark';
-import { useIsAnchorInert } from '../hooks/useIsAnchorInert';
+import { useIsAnchorInert } from '../../../shared/hooks/useIsAnchorInert';
 import { useUpdateArrivalCard } from '../hooks/useUpdateArrivalCard';
 import { useUpdateCard } from '../hooks/useUpdateCard';
 import type { UpdateCardState } from '../updateCardState';

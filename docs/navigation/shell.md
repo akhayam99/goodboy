@@ -494,7 +494,7 @@ covered.
   calls `pinSession` or `unpinSession`, which leave the row in place when the
   write fails.
   After an update from a build that had the sidebar list, a one-time card
-  under the Sessions control (`SessionsCard`, 300px wide, the same placement
+  under the Sessions control (`SessionsCard`, 320px wide, the same placement
   rule) reads "Your sessions moved here" with **Show sessions**. It is not a
   dialog and blocks nothing. Opening Sessions in any way, the key included,
   closes it for good: the close is saved (`shell.sessionsCardClosed`) before

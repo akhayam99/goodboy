@@ -2,6 +2,8 @@ import { useEffect, useRef, type RefObject } from 'react';
 import { createPortal } from 'react-dom';
 import {
   Button,
+  POPOVER_WIDTH_CLASS,
+  POPOVER_WIDTH_PX,
   Popover,
   SHELL_GUTTER_PX,
   cn,
@@ -10,9 +12,8 @@ import {
 } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
 import { shortcutGlyphs } from '../../../../shared/keyboard/registry';
-import { useIsAnchorInert } from '../../../updater/hooks/useIsAnchorInert';
+import { useIsAnchorInert } from '../../../../shared/hooks/useIsAnchorInert';
 
-const CARD_WIDTH_PX = 300;
 const CARD_EXPECTED_HEIGHT_PX = 120;
 
 type Props = {
@@ -42,11 +43,11 @@ export const SessionsCard = ({ anchorRef, isSessionsOpen, onShow }: Props) => {
     popupRef,
     open: isVisible,
     expectedHeight: CARD_EXPECTED_HEIGHT_PX,
-    expectedWidth: CARD_WIDTH_PX,
+    expectedWidth: POPOVER_WIDTH_PX.standard,
     align: 'start',
     shouldMatchTriggerWidth: false,
     viewportMargin: SHELL_GUTTER_PX,
-    maxWidth: CARD_WIDTH_PX,
+    maxWidth: POPOVER_WIDTH_PX.standard,
   });
 
   if (!isVisible) {
@@ -62,7 +63,11 @@ export const SessionsCard = ({ anchorRef, isSessionsOpen, onShow }: Props) => {
         role="dialog"
         ariaLabel="Your sessions moved here"
         style={placement}
-        className={cn('fixed z-popover w-75', placement === undefined ? 'invisible' : '')}
+        className={cn(
+          'fixed z-popover',
+          POPOVER_WIDTH_CLASS.standard,
+          placement === undefined ? 'invisible' : '',
+        )}
       >
         <div data-sessions-card="" className="flex min-w-0 flex-col gap-3 p-3">
           <div className="flex min-w-0 flex-col gap-0.5">
