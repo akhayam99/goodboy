@@ -914,6 +914,7 @@ settings-theme-system
 settings-tools
 settings-workspace
 shell
+shell-rail
 side-info-doors
 side-info-framed
 side-signals-idle

@@ -598,6 +598,21 @@ leaves, and Esc closes it and returns focus to the button. `New` shows a 6px
 primary dot (`data-slot="draft-dot"`) while a written draft waits, and its label
 and tooltip read `New session, draft in progress`.
 
+## Shell rail
+
+`ShellRail` and `ShellRailItem` draw the compact rail of the new shell. An item
+is an 18px icon on a 32px `IconButton` tile, the way the session tool rail
+draws its tools, with one word under it in `text-rail`. The
+current place takes `aria-current="page"` and the selected tile, a tool that is
+open takes `aria-pressed` and the same tile, and the lit icon takes the caller's
+tone. An item carries at most one mark on the glyph's top end corner: a count, a
+warning `CountBadge` for what needs you, or the quiet `unread` dot. The mark's
+words join the item's name (`Board, 3 need you`). The rail is 64px wide; under a
+1100px window it turns 44px wide, icons only, and the word moves into a tooltip
+on the right. A wide item shows a tooltip only when it has a shortcut. Arrow up
+and down, Home and End move focus between the items of one rail. Scene
+`shell-rail` shows both forms and a pressed tool.
+
 ## Work meta
 
 The right end of a work row is `WorkMeta` in
