@@ -1,0 +1,1 @@
+export const SHELL_RAIL_SCENE_HEIGHT_PX = 520;
