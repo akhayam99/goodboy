@@ -12,6 +12,7 @@ import { lastCrashPart } from '../crashReport';
 import { LAST_CRASH_TITLE, type LastCrashKind } from '../lastCrash';
 import { OPEN_REPORT_SHEET_EVENT, type OpenReportSheetDetail } from '../openReportSheet';
 import { contextParts, noticePart, type ReportPart } from '../reportBody';
+import { openedLinkMessage } from '../openedLinkMessage';
 import type { ReportFiled } from '../reportDestination';
 import { reportNames } from '../reportNames';
 import { ReportComposer, type ReportDraft, type ReportLinkOpened } from './ReportComposer';
@@ -166,14 +167,12 @@ export const ReportSheetHost = () => {
   );
 
   const onOpenedLink = useCallback(
-    ({ overflows }: ReportLinkOpened) => {
+    (opened: ReportLinkOpened) => {
       setOpened(null);
       showToast({
         kind: 'info',
         title: 'Finish on GitHub',
-        message: overflows
-          ? 'The rest did not fit the link and is on your clipboard. Paste it into the issue, then submit.'
-          : 'Submit the form in your browser to file the issue.',
+        message: openedLinkMessage({ opened }),
       });
     },
     [showToast],

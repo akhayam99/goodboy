@@ -3,6 +3,7 @@
 const bridge = vi.hoisted(() => ({
   mode: 'gh-cli' as 'gh-cli' | 'absent',
   similar: '[]',
+  createFailure: '',
   lastCrash: null as null | Record<string, unknown>,
   menuHandlers: [] as Array<(event: { readonly payload: unknown }) => void>,
   calls: [] as Array<{
@@ -42,6 +43,9 @@ vi.mock('@tauri-apps/api/core', () => ({
         return { stdout: bridge.similar, stderr: '', exitCode: 0 };
       }
       if (command === 'gh_run' && args[0] === 'issue' && args[1] === 'create') {
+        if (bridge.createFailure !== '') {
+          return { stdout: '', stderr: bridge.createFailure, exitCode: 1 };
+        }
         return {
           stdout: 'https://github.com/akhayam99/goodboy/issues/1917\n',
           stderr: '',
@@ -114,6 +118,7 @@ beforeEach(async () => {
   seedBoardScene();
   bridge.mode = 'gh-cli';
   bridge.similar = '[]';
+  bridge.createFailure = '';
   bridge.calls = [];
   bridge.lastCrash = null;
   bridge.menuHandlers = [];
@@ -228,6 +233,55 @@ describe('report sheet on the real store', () => {
     expect(useAppStore.getState().bugReportDraft.title).toBe('');
   });
 
+  it('opens the same report as a prefilled GitHub issue when gh cannot file it', async () => {
+    bridge.createFailure = 'error connecting to api.github.com';
+    const sheet = await openFromTerminal();
+    const line = within(sheet).getByRole('textbox', { name: /one line/i });
+    fireEvent.change(line, { target: { value: 'Board columns jump when a session moves' } });
+    fireEvent.keyDown(line, { key: 'Enter', metaKey: true });
+
+    await waitFor(() =>
+      expect(bridge.calls.filter((call) => call.command === 'open_url')).toHaveLength(1),
+    );
+    expect(ghRuns('create')).toHaveLength(1);
+    const body = ghRuns('create')[0]?.args.at(-1) ?? '';
+    const url = bridge.calls.find((call) => call.command === 'open_url')?.url ?? '';
+    expect(
+      url.startsWith(
+        'https://github.com/akhayam99/goodboy/issues/new?title=Board%20columns%20jump%20when%20a%20session%20moves',
+      ),
+    ).toBe(true);
+    expect(decodeURIComponent(url)).toContain(body);
+    expect(await screen.findByText('Finish on GitHub')).toBeDefined();
+    screen.getByText(/GitHub didn't take the report: error connecting/);
+    expect(screen.queryByRole('dialog', { name: 'Report a bug' })).toBeNull();
+    expect(useAppStore.getState().bugReportDraft.title).toBe('');
+  });
+
+  it('keeps the draft and says both failures when the fallback link cannot open', async () => {
+    bridge.createFailure = 'HTTP 401: Bad credentials';
+    const sheet = await openFromTerminal();
+    Object.defineProperty(navigator, 'clipboard', {
+      configurable: true,
+      value: { writeText: vi.fn(async () => Promise.reject(new Error('denied'))) },
+    });
+    const line = within(sheet).getByRole('textbox', { name: /one line/i });
+    fireEvent.change(line, { target: { value: 'Board columns jump' } });
+    fireEvent.click(within(sheet).getByRole('button', { name: /add detail/i }));
+    fireEvent.change(within(sheet).getByRole('textbox', { name: 'Detail' }), {
+      target: { value: 'steps '.repeat(1200) },
+    });
+    fireEvent.keyDown(line, { key: 'Enter', metaKey: true });
+
+    expect(
+      await within(sheet).findByText(
+        /GitHub didn't take the report: HTTP 401: Bad credentials\. Couldn't copy/,
+      ),
+    ).toBeDefined();
+    expect(bridge.calls.filter((call) => call.command === 'open_url')).toHaveLength(0);
+    expect(useAppStore.getState().bugReportDraft.title).toBe('Board columns jump');
+  });
+
   it('shows every attached part in the preview and drops the one you remove', async () => {
     const sheet = await openFromTerminal();
     fireEvent.change(within(sheet).getByRole('textbox', { name: /one line/i }), {
@@ -322,7 +376,7 @@ describe('report sheet on the real store', () => {
     fireEvent.click(within(sheet).getByRole('button', { name: /open on github/i }));
 
     expect(
-      await within(sheet).findByText(/Could not copy the report to your clipboard/),
+      await within(sheet).findByText(/Couldn't copy the report to your clipboard/),
     ).toBeDefined();
     expect(bridge.calls.filter((call) => call.command === 'open_url')).toHaveLength(0);
     expect(screen.queryByText('Finish on GitHub')).toBeNull();

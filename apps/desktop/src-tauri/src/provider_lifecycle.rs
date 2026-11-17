@@ -152,15 +152,19 @@ pub async fn provider_lifecycle_run(
     rows: u16,
     env: Option<HashMap<String, String>>,
 ) -> Result<(), LifecycleError> {
-    let command = crate::provider_commands::lifecycle_command(&provider_id, &action)
-        .map_err(|e| LifecycleError::Refused(e.to_string()))?
-        .to_string();
+    let command = crate::provider_commands::shell_command(&provider_id, &action)
+        .map_err(|e| LifecycleError::Refused(e.to_string()))?;
     let env = crate::provider_commands::checked_env(env)
         .map_err(|e| LifecycleError::Refused(e.to_string()))?;
     let registry_arc = Arc::clone(&registry.runs);
     let active_arc = Arc::clone(&registry.active);
 
     tauri::async_runtime::spawn_blocking(move || {
+        if let Some(refusal) =
+            crate::providers::claude_version::lifecycle_refusal(&provider_id, &action)
+        {
+            return Err(LifecycleError::Refused(refusal));
+        }
         if !reserve_provider(&active_arc, &provider_id, &run_id) {
             return Err(LifecycleError::Busy(provider_id));
         }

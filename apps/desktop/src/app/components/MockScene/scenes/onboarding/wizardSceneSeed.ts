@@ -27,7 +27,7 @@ import { setupSceneAnswer } from './setupSceneAnswer';
 import { startSampleScout } from './startSampleScout';
 import { sampleScoutRuns } from './sampleScoutRuns';
 
-export type WizardSceneAgents = 'ready' | 'signin' | 'none' | 'error';
+export type WizardSceneAgents = 'ready' | 'signin' | 'none' | 'error' | 'outdated';
 
 export type WizardSceneWorkspace = 'none' | 'repo' | 'folder';
 
@@ -36,6 +36,7 @@ export const WIZARD_SCENE_AGENTS: ReadonlyArray<WizardSceneAgents> = [
   'signin',
   'none',
   'error',
+  'outdated',
 ];
 
 export const WIZARD_SCENE_WORKSPACES: ReadonlyArray<WizardSceneWorkspace> = [
@@ -205,6 +206,23 @@ const agentsFor = ({ agents }: AgentsParams): Agents => {
         }),
       },
       auth: { anthropic: SIGNED_IN },
+    };
+  }
+  if (agents === 'outdated') {
+    return {
+      statuses: {
+        ...BASE_AGENTS.statuses,
+        anthropic: status({ id: 'anthropic', binary: 'claude', version: '2.1.37 (Claude Code)' }),
+      },
+      auth: {
+        anthropic: {
+          state: 'unknown',
+          identity: null,
+          verified: false,
+          reason: { kind: 'cli_too_old', version: '2.1.37', minimum: '2.1.41' },
+        },
+        codex: SIGNED_OUT,
+      },
     };
   }
   return BASE_AGENTS;

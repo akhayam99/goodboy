@@ -3,12 +3,20 @@ use serde::Serialize;
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 #[serde(tag = "kind", rename_all = "snake_case")]
 pub enum AuthReason {
-    TimedOut { secs: u64 },
+    TimedOut {
+        secs: u64,
+    },
     NotInstalled,
-    SpawnFailed { detail: String },
-    CliSaid { detail: String },
+    SpawnFailed {
+        detail: String,
+    },
+    CliSaid {
+        detail: String,
+    },
     PrintedNothing,
-    ExitedWithCode { code: i32 },
+    ExitedWithCode {
+        code: i32,
+    },
     NoExitCode,
     EmptyCommand,
     NoAccessToken,
@@ -16,6 +24,10 @@ pub enum AuthReason {
     NoStatus,
     UnknownProvider,
     CheckUnfinished,
+    CliTooOld {
+        version: Option<String>,
+        minimum: String,
+    },
 }
 
 #[cfg(test)]
@@ -59,6 +71,24 @@ mod tests {
         assert_eq!(
             wire(AuthReason::ExitedWithCode { code: 2 }),
             serde_json::json!({ "kind": "exited_with_code", "code": 2 })
+        );
+    }
+
+    #[test]
+    fn cli_too_old_carries_the_version_and_the_minimum() {
+        assert_eq!(
+            wire(AuthReason::CliTooOld {
+                version: Some("2.1.37".into()),
+                minimum: "2.1.41".into()
+            }),
+            serde_json::json!({ "kind": "cli_too_old", "version": "2.1.37", "minimum": "2.1.41" })
+        );
+        assert_eq!(
+            wire(AuthReason::CliTooOld {
+                version: None,
+                minimum: "2.1.41".into()
+            }),
+            serde_json::json!({ "kind": "cli_too_old", "version": null, "minimum": "2.1.41" })
         );
     }
 

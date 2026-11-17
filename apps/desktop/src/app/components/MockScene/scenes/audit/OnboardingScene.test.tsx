@@ -106,6 +106,21 @@ describe('onboarding scene', () => {
     expect(connected).toEqual([]);
   });
 
+  it('shows an old Claude CLI as needing an update, with the action on the row', async () => {
+    await mountOpen({ query: '&step=agents&agents=outdated' });
+
+    const row = await waitFor(() => {
+      const found = document.querySelector<HTMLElement>('[data-row="anthropic"]');
+      if (found === null) {
+        throw new Error('no Claude row');
+      }
+      return within(found);
+    });
+    await row.findByText('Update needed');
+    row.getByText('Claude Code 2.1.37 found. Goodboy needs 2.1.41 or later');
+    row.getByRole('button', { name: 'Update Claude Code' });
+  });
+
   it('connects Linear with a mock account and asks for no key', async () => {
     await mountOpen({ query: '&step=tools' });
     expect(shownStep()).toBe('tools');

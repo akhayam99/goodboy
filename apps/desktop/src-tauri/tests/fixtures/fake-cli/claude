@@ -1,14 +1,25 @@
 #!/bin/sh
 . "$(dirname "$0")/common.sh"
+printf '%s\n' "$*" >> "$fake_dir/claude-calls.txt"
 case "$1" in
   --version)
-    fake_version "2.1.4 (Claude Code)"
+    case "$fake_mode" in
+      too-old)
+        fake_version "2.1.37 (Claude Code)"
+        ;;
+      *)
+        fake_version "2.1.90 (Claude Code)"
+        ;;
+    esac
     ;;
   --help)
     printf 'Options:\n  %s  Include partial message chunks\n' '--include-partial-messages'
     ;;
   auth)
     case "$fake_mode" in
+      too-old)
+        printf "I'd be happy to help you with authentication!\n"
+        ;;
       logged-out)
         printf '{"loggedIn":false,"authMethod":"none","apiProvider":"firstParty"}\n'
         exit 1
