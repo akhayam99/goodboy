@@ -150,7 +150,11 @@ the place of its work from the click to the result.
 - **The result.** The same line says what happened in one sentence and offers
   one action in its `action` slot, visible at rest: Review fix, Review, Apply,
   Push, Retry, Analyze again, Open changes. A word never only describes the
-  agent; it says what you can do next.
+  agent; it says what you can do next. A result you read before acting opens
+  under the item, not in a drawer: Review fix shows a check's proposal with
+  Apply fix and Dismiss below its row, and the drawer keeps the full detail.
+  Failing checks do this today (`checkRowResultOf`, `CheckProposalInline`).
+  Retry starts a new attempt; the row reads the newest one.
 - **The batch.** A batch puts its state on every item (Fixing, Queued with its
   place, Fix ready) and one quiet count in the list's header, with Stop all in
   its `⋯`. The tab that holds live work carries a breathing dot on every

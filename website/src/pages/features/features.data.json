@@ -884,7 +884,7 @@
         },
         {
           "title": "Checks",
-          "text": "Checks lists CI runs with their durations and the failing step, or says why it can't read them and names the fix. Analyze on a failing check starts the Debugger, and Start fix hands its proposal to an Implementer in one click.",
+          "text": "Checks lists CI runs with their durations and the failing step, or says why it can't read them and names the fix. Analyze on a failing check starts the Debugger, and Apply fix hands its proposal to an Implementer in one click.",
           "group": "Review and resolve on the Branch page",
           "also": "checks",
           "shown": true

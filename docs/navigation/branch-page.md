@@ -61,17 +61,18 @@ disabled. One function picks the step, the same on every tab (`branchStepOf`), i
 already going up; `Answer` when a fix asks something, which opens that comment; no fill while an
 agent works on the branch; `Apply N fixes`; `Retry push`; `Fix N comments`, which opens the Fix
 comments drawer; `Push fix` for a check fix not yet on origin; `Push N commits`; `Publish N
-replies`; `Rebase on main` when the host says the request conflicts and the base moved; `Start fix`
+replies`; `Rebase on main` when the host says the request conflicts and the base moved; `Apply fix`
 once the Debugger proposed one; `Fix checks` while a check fails; then the pull request's own step.
 Comments come before the push so the branch is pushed once, a conflict is rebased before the checks
 (a host may not re-run a conflicting request), and the checks still red come last, but not while a
 pushed fix waits for the new run (`isAwaitingRun`: no check step until the check reports on the push).
 Every verb does the work where you stand and never just opens a tab: `Fix
-checks`, `Start fix` and `Push fix` run the same chain as the Overview row (`checkChainActionOf`),
+checks`, `Apply fix` and `Push fix` run the same chain as the Overview row (`checkChainActionOf`),
 and `Fix checks` starts one Debugger at the first press, its tooltip naming the model and effort.
 While a fix run works, a line under the tabs says what runs, with `Stop`
 (`BranchWorkLines`; the Comments tab keeps its own run line). A check agent has no line there: it
-works on its check row (`AnalyzedCheckWork`), and the Checks tab carries a live dot on every tab
+works on its check row (`AnalyzedCheckWork`), its result stays there with one button (`Review fix`,
+`Push`, `Retry` or `Analyze again`, from `checkRowResultOf`), and the Checks tab carries a live dot on every tab
 (`checkTabLiveOf`). One agent works per branch: a check
 agent live on any check of the mount (`liveCheckWorkOf`, read from the agent rows, so a second window
 sees it too; a fixer that ended never counts, even while its commit is unread) draws the dot and no fill, and the other doors that start an agent (row Analyze,
