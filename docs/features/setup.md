@@ -15,7 +15,7 @@ Three short steps take you from install to a first agent reading your code. The 
 
 ### Your agents
 
-Goodboy runs the coding agents already on this Mac, and one ready agent is enough. Each row says where its CLI stands: **Ready** with its version and account, **Not signed in** with **Sign in**, **Not installed** with **Install** and the exact command, or **Can't start** with the CLI's output and **Check again**. Claude, Codex, Cursor, Gemini and Copilot each have a row. Rows check again when you come back to the window. The agent marked **Default** becomes the default of your first workspace, and providers billed by API key sit behind **Use an API key instead**.
+Goodboy runs the coding agents already on this Mac, and one ready agent is enough. Each row says where its CLI stands: **Ready** with its version and account, **Not signed in** with **Sign in**, **Not installed** with **Install** and the exact command, **Can't start** with the CLI's output and **Check again**, or **Update needed** with **Update** when the CLI is too old to report its sign in. Claude, Codex, Cursor, Gemini and Copilot each have a row. Rows check again when you come back to the window. The agent marked **Default** becomes the default of your first workspace, and providers billed by API key sit behind **Use an API key instead**.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/setup-agents-dark.webp">
@@ -115,5 +115,6 @@ Settings opens from the foot of the sidebar or with **⌘,**, on the page you us
 
 This part is for contributors and agents who change the feature.
 
+- Update needed: `agentRowOf` turns a found CLI whose auth reason is `cli_too_old` into the `outdated` row, and its button runs `updateProviderCli`. The version gate is in `docs/providers.md`, How the checks read the answer.
 - Settings in several windows: `listenSettingChanges` reads the `goodboy:data-changed` event described in `docs/event-bus.md`.
 - Settings rail: `settingsDirectory` builds both groups. `appSectionOf` opens the old `updates` id on General. `workspacePageOf` opens `models` and every model row id on Models. iPhone is hidden until `useIsIphonePaired` reads a paired phone from `bridge_status`.

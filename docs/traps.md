@@ -450,6 +450,13 @@ status` directly. A branch cut from a remote-tracking ref (`worktree add -b
   three apart: a probe with no answer never changes the standing, a lost sign-in needs two
   answers 10 seconds apart, and only a refused run or a `verified` answer speaks for the
   server. Do not collapse them back into one connected flag.
+- A CLI that does not know a subcommand may treat it as a prompt. Claude Code before
+  2.1.41 reads `claude auth status` as a message, sends it to the model and prints a
+  chat reply, so every sign-in probe spent a subscription request and the provider sat
+  at cannot check. Never add an argument to a check or a login command without the
+  version that ships it: `claude_version::has_auth_subcommand` gates the status check
+  and `lifecycle_refusal` gates login and logout, and the fake claude records every
+  call so `claude_auth_never_sends_a_prompt_to_an_old_cli` fails if one slips through.
 - Explore decides text from content, not from the extension. `explore_read`
   sends an image or a PDF extension as a data URL, and reads the first 8 KB of
   anything else: a NUL byte or invalid UTF-8 returns `Binary { size }` with no
