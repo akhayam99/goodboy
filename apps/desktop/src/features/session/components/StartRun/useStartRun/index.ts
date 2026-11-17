@@ -13,6 +13,7 @@ import { EMPTY_ARRAY, useAppStore } from '../../../../../store';
 import { selectSessionDraft } from '../../../../../store/slices/sessionDraft/selectSessionDraft';
 import { sessionById } from '../../../../../store/slices/sessions/sessionIndex';
 import { createLatestOnly } from '../../../../../store/runtime/state-writes/latestOnly';
+import { READ_FAILED } from '../../../../../store/slices/notifications/errorRecovery';
 import { agentKindPalette, visibleAgentKinds, type AgentKind } from '../../../agent-kind';
 import { useStartFromDraft } from '../../SessionKickoff/useStartFromDraft';
 import { roleRunOf } from '../../../startRun/roleRunOf';
@@ -27,6 +28,7 @@ import { guidanceToSendOf } from '../../../startRun/guidanceToSendOf';
 import { runDefaultOf } from '../../../startRun/runDefaultOf';
 import { runDefaultKey } from '../../../startRun/runDefaultSetting';
 import { startRoutedRun } from '../../../startRun/startRoutedRun';
+import { suggestedWorkflowOf } from '../../../startRun/suggestedWorkflowOf';
 import { workspaceGuidanceOf } from '../../../startRun/workspaceGuidanceOf';
 import type { StartLimit } from '../../../../auto/startLimitOf';
 import {
@@ -73,6 +75,7 @@ export type StartRunModel = Readonly<{
   runAs: RunAs;
   setRunAs: (runAs: RunAs) => void;
   route: RunRouteResult;
+  suggestion: Workflow | null;
   level: AutoLevel;
   workspaceLevel: AutoLevel;
   pickedLevel: AutoLevel | null;
@@ -266,6 +269,16 @@ export const useStartRun = ({
     }),
     [sessionDefaultKey, sessionDefaultRaw, workspaceDefaultKey, workspaceDefaultRaw],
   );
+  const loadSetting = useAppStore((state) => state.loadSetting);
+  const reportError = useAppStore((state) => state.reportError);
+  useEffect(() => {
+    Promise.all([
+      loadSetting(workspaceDefaultKey),
+      ...(sessionDefaultKey === null ? [] : [loadSetting(sessionDefaultKey)]),
+    ]).catch((cause: unknown) => {
+      void reportError({ recovery: READ_FAILED, title: RUN_ROUTE_COPY.readFailed, error: cause });
+    });
+  }, [loadSetting, reportError, sessionDefaultKey, workspaceDefaultKey]);
   const sessionRow = useAppStore((state) =>
     sessionId === null ? null : (sessionById(state.sessions, sessionId) ?? null),
   );
@@ -276,23 +289,22 @@ export const useStartRun = ({
     () => (templates ?? NO_WORKFLOWS).filter((workflow) => workflow.isPreset === true),
     [templates],
   );
-  const route = useMemo(() => {
+  const { route, suggestion } = useMemo(() => {
     const asked = text.trim();
     if (role !== null) {
-      return roleRunOf({ text: asked, role });
+      return { route: roleRunOf({ text: asked, role }), suggestion: null };
     }
-    return runAsRouteOf({
-      runAs,
-      facts: factsOf({
-        text: asked,
-        workspaceId,
-        session: sessionRow,
-        fileCount: file === null ? 0 : 1,
-        hasPickedTask: pickedCount > 0,
-        presets,
-        settings,
-      }),
+    const facts = factsOf({
+      text: asked,
+      workspaceId,
+      session: sessionRow,
+      fileCount: file === null ? 0 : 1,
+      hasPickedTask: pickedCount > 0,
+      presets,
+      settings,
     });
+    const result = runAsRouteOf({ runAs, facts });
+    return { route: result, suggestion: suggestedWorkflowOf({ facts, result }) };
   }, [file, pickedCount, presets, role, runAs, sessionRow, settings, text, workspaceId]);
   const slot = useMemo(
     (): RunModelSlot => (role === null ? runModelSlotOf({ result: route }) : AUTO_AGENT_SLOT),
@@ -349,13 +361,6 @@ export const useStartRun = ({
     setError(null);
     try {
       const limit = prepare();
-      const { loadSetting } = useAppStore.getState();
-      await Promise.all([
-        loadSetting(runDefaultKey({ scope: { kind: 'workspace', workspaceId } })),
-        ...(sessionId === null
-          ? []
-          : [loadSetting(runDefaultKey({ scope: { kind: 'session', sessionId } }))]),
-      ]);
       const session =
         sessionId === null
           ? null
@@ -505,6 +510,7 @@ export const useStartRun = ({
     runAs,
     setRunAs,
     route,
+    suggestion,
     level: pickedLevel ?? appliedLevel,
     workspaceLevel,
     pickedLevel,

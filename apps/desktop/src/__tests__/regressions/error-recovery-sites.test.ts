@@ -15,8 +15,8 @@ const SITES: ReadonlyArray<Site> = [
     title: 'title: failureTitle',
   },
   {
-    file: 'features/settings/components/SettingsStudio/RunDefaultRow.tsx',
-    title: "Couldn't save how new runs start",
+    file: 'features/session/components/StartRun/useStartRun/index.ts',
+    title: 'RUN_ROUTE_COPY.readFailed',
   },
   {
     file: 'features/settings/components/SettingsStudio/WorkspaceTerminalFolderRow.tsx',

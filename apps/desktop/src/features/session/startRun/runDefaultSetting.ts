@@ -1,9 +1,3 @@
-import {
-  getSetting,
-  insertSettingIfAbsent,
-  replaceSettingIfUnchanged,
-  type Database,
-} from '@goodboy/db';
 import type { RunRouteShape, SessionId, WorkspaceId } from '@goodboy/types';
 
 export type RunDefault = 'auto' | RunRouteShape;
@@ -29,7 +23,7 @@ export const parseRunDefault = ({ raw }: RawParams): RunDefault | null =>
   raw === 'auto' || raw === 'plan' || raw === 'lead' ? raw : null;
 
 type LeadDefault = Readonly<{
-  shouldMatchPreset: boolean;
+  shouldSuggestWorkflow: boolean;
   shouldAskPlan: boolean;
 }>;
 
@@ -38,32 +32,6 @@ type ShapeParams = {
 };
 
 export const leadDefaultOf = ({ shape }: ShapeParams): LeadDefault => ({
-  shouldMatchPreset: shape === 'auto',
+  shouldSuggestWorkflow: shape === 'auto',
   shouldAskPlan: shape === 'plan',
 });
-
-type WriteParams = {
-  readonly db: Database;
-  readonly scope: RunDefaultScope;
-  readonly shape: RunDefault;
-};
-
-const MAX_ATTEMPTS = 2;
-
-export const writeRunDefault = async ({ db, scope, shape }: WriteParams): Promise<void> => {
-  const key = runDefaultKey({ scope });
-  for (let tries = 0; tries < MAX_ATTEMPTS; tries += 1) {
-    const raw = await getSetting(db, key);
-    if (raw === shape) {
-      return;
-    }
-    const isWritten =
-      raw === null
-        ? await insertSettingIfAbsent({ db, key, value: shape })
-        : await replaceSettingIfUnchanged(db, { key, expected: raw, value: shape });
-    if (isWritten) {
-      return;
-    }
-  }
-  throw new Error('The default changed in another window, try again');
-};

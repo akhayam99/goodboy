@@ -19,6 +19,7 @@ import type { StartFormKind } from './startFormKinds';
 import { StartPlanRow } from './StartPlanRow';
 import { StartWorkflowPick } from './StartWorkflowPick';
 import { StartWorkflowSteps } from './StartWorkflowSteps';
+import { StartWorkflowSuggestion } from './StartWorkflowSuggestion';
 import { useStartEditsMode } from './useStartEditsMode';
 import {
   startAsksOf,
@@ -86,6 +87,7 @@ export const RunsStartForm = ({
       : null;
   const closeness = runAs.kind === 'preset' ? (runAs.closeness ?? 'follow') : 'follow';
   const steps = liveStepsOf({ workflow });
+  const suggestion = kind === null ? run.suggestion : null;
   const edits = useStartEditsMode({ workspaceId, sessionId, picked: run.edits });
 
   const pickKind = ({ next }: PickParams): void => {
@@ -159,7 +161,19 @@ export const RunsStartForm = ({
                 />
               ) : null
             }
-            detail={steps.length > 0 ? <StartWorkflowSteps steps={steps} /> : null}
+            detail={
+              steps.length > 0 ? (
+                <StartWorkflowSteps steps={steps} />
+              ) : suggestion !== null ? (
+                <StartWorkflowSuggestion
+                  workflow={suggestion}
+                  isDisabled={isStarting}
+                  onUse={() =>
+                    run.setRunAs({ kind: 'preset', presetId: suggestion.id, closeness: 'adapt' })
+                  }
+                />
+              ) : null
+            }
           />
         )
       }

@@ -1696,7 +1696,6 @@
     "apps/desktop/src/store/slices/sessions/titleLimit.ts": 1,
     "apps/desktop/src/store/slices/sessions/unarchiveTask.ts": 1,
     "apps/desktop/src/store/slices/settings/loadSetting.ts": 1,
-    "apps/desktop/src/store/slices/settings/removeSettingIfUnchanged.ts": 1,
     "apps/desktop/src/store/slices/settings/saveSetting.ts": 1,
     "apps/desktop/src/store/slices/sidebar/refreshUnreadWorkspaces.ts": 1,
     "apps/desktop/src/store/slices/sidebar/selectors.ts": 2,

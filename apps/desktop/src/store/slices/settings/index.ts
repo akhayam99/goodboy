@@ -4,7 +4,6 @@ import { changeStopsLevel } from './changeStopsLevel';
 import { loadSetting } from './loadSetting';
 import { readLeadPermissionsAction } from './readLeadPermissionsAction';
 import { loadWorkspaceValue } from './loadWorkspaceValue';
-import { removeSettingIfUnchanged } from './removeSettingIfUnchanged';
 import { readProjectValue } from './readProjectValue';
 import { saveSetting } from './saveSetting';
 import { writeProjectValue } from './writeProjectValue';
@@ -21,6 +20,5 @@ export const createSettingsSlice = ({ set, get }: SliceDeps) => {
     readProjectValue: readProjectValue(),
     writeProjectValue: writeProjectValue(),
     saveSetting: saveSetting(set, get),
-    removeSettingIfUnchanged: removeSettingIfUnchanged(set),
   };
 };

@@ -1,7 +1,7 @@
 import { useId, useMemo } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { Button } from '@goodboy/ui';
-import type { Workflow, WorkspaceId } from '@goodboy/types';
+import type { Workflow, WorkflowId, WorkspaceId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import type { ProjectMatch } from '../../../../shared/components/ProjectPicker/projectMatch';
 import { selectSessionDraft } from '../../../../store/slices/sessionDraft/selectSessionDraft';
@@ -23,6 +23,7 @@ import { startFormKindOfDraft, startShapeOfFormKind, type StartFormKind } from '
 import { StartPlanRow } from './StartPlanRow';
 import { StartWorkflowPick } from './StartWorkflowPick';
 import { StartWorkflowSteps } from './StartWorkflowSteps';
+import { StartWorkflowSuggestion } from './StartWorkflowSuggestion';
 import { useStartEditsMode } from './useStartEditsMode';
 import {
   startAsksOf,
@@ -44,6 +45,7 @@ type Props = {
 
 type PickParams = {
   readonly next: StartFormKind;
+  readonly workflowId?: WorkflowId;
 };
 
 const NO_PRESETS: ReadonlyArray<Workflow> = [];
@@ -99,6 +101,7 @@ export const NewSessionStartForm = ({
   const edits = useStartEditsMode({ workspaceId, sessionId: null, picked: draft.permissionMode });
   const reason = startReasonOf({ hasGoal, kind, hasPreset: workflow !== null });
   const { route } = autoRun;
+  const suggestion = kind === null ? autoRun.suggestion : null;
   const isAutoLead = route.route.shape === 'lead' && route.role === null;
   const isPlan = route.route.shape === 'plan';
   const asks = startAsksOf({ kind, isAutoLead, isPlan });
@@ -120,7 +123,7 @@ export const NewSessionStartForm = ({
       })
     : null;
 
-  const pickKind = ({ next }: PickParams): void => {
+  const pickKind = ({ next, workflowId }: PickParams): void => {
     if (next === 'lead') {
       patchSessionDraft({
         workspaceId,
@@ -134,6 +137,7 @@ export const NewSessionStartForm = ({
         startKind: next === 'preset' ? 'workflow' : 'agent',
         startShape: startShapeOfFormKind({ kind: next }),
         hasChosenStart: true,
+        ...(workflowId !== undefined && { workflowId, presetCloseness: 'adapt' }),
       },
     });
   };
@@ -205,7 +209,15 @@ export const NewSessionStartForm = ({
             ) : null
           }
           detail={
-            kind === 'preset' && steps.length > 0 ? <StartWorkflowSteps steps={steps} /> : null
+            kind === 'preset' && steps.length > 0 ? (
+              <StartWorkflowSteps steps={steps} />
+            ) : suggestion !== null ? (
+              <StartWorkflowSuggestion
+                workflow={suggestion}
+                isDisabled={isDisabled}
+                onUse={() => pickKind({ next: 'preset', workflowId: suggestion.id })}
+              />
+            ) : null
           }
         />
       }

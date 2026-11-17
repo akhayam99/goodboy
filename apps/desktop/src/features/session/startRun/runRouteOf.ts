@@ -1,7 +1,8 @@
 import type { RunRoute, Workflow } from '@goodboy/types';
 import type { AgentKind } from '../agent-kind';
 import { leadRouteOf, presetRouteOf, roleRouteOf } from './routeChoiceOf';
-import { leadDefaultOf, type RunDefault } from './runDefaultSetting';
+import { routeWordsOf } from './routeWordsOf';
+import type { RunDefault } from './runDefaultSetting';
 import { RUN_ROUTE_COPY } from './runRouteCopy';
 
 type RunRouteRole = Readonly<{
@@ -31,37 +32,6 @@ export type RunRouteResult = Readonly<{
 type Params = {
   readonly facts: RunRouteFacts;
 };
-
-const WORD_MIN = 4;
-
-const DETAIL_WORD_MIN = 5;
-
-const DETAIL_HITS_MIN = 2;
-
-const NAME_MATCH_SCORE = 100;
-
-const GENERIC_WORDS: ReadonlySet<string> = new Set([
-  'about',
-  'after',
-  'agent',
-  'before',
-  'change',
-  'changes',
-  'every',
-  'files',
-  'first',
-  'other',
-  'pages',
-  'their',
-  'there',
-  'these',
-  'thing',
-  'things',
-  'where',
-  'which',
-  'while',
-  'write',
-]);
 
 const SPREAD_WORDS: ReadonlySet<string> = new Set(['every', 'all', 'each', 'across', 'everywhere']);
 
@@ -98,12 +68,6 @@ type TextParams = {
   readonly text: string;
 };
 
-const wordsOf = ({ text }: TextParams): ReadonlyArray<string> =>
-  text
-    .toLowerCase()
-    .split(/[^a-z0-9#]+/)
-    .filter((word) => word !== '');
-
 type PickParams = {
   readonly text: string;
   readonly names: ReadonlyArray<string>;
@@ -134,30 +98,8 @@ const pickedOf = ({ text, names, sign }: PickParams): Picked | null => {
   return null;
 };
 
-type MatchParams = {
-  readonly words: ReadonlyArray<string>;
-  readonly preset: Workflow;
-};
-
-const presetScoreOf = ({ words, preset }: MatchParams): number => {
-  const named = wordsOf({ text: preset.name }).filter((word) => word.length >= WORD_MIN);
-  if (named.length > 0 && named.every((word) => words.includes(word))) {
-    return NAME_MATCH_SCORE;
-  }
-  const detail = new Set(
-    wordsOf({
-      text: [
-        preset.description,
-        ...preset.steps.filter((step) => step.deletedAt == null).map((step) => step.name),
-      ].join(' '),
-    }).filter((word) => word.length >= DETAIL_WORD_MIN && !GENERIC_WORDS.has(word)),
-  );
-  const hits = [...detail].filter((word) => words.includes(word)).length;
-  return hits >= DETAIL_HITS_MIN ? hits : 0;
-};
-
 const isQuestionOrCheck = ({ text }: TextParams): boolean => {
-  const words = wordsOf({ text });
+  const words = routeWordsOf({ text });
   const [first = ''] = words;
   return (
     text.trim().endsWith('?') ||
@@ -167,7 +109,7 @@ const isQuestionOrCheck = ({ text }: TextParams): boolean => {
 };
 
 const isSpread = ({ text }: TextParams): boolean => {
-  const words = wordsOf({ text });
+  const words = routeWordsOf({ text });
   const lines = text.split('\n').filter((line) => /^\s*(?:[-*]|\d+[.)])\s/.test(line));
   return words.some((word) => SPREAD_WORDS.has(word)) || lines.length >= 2;
 };
@@ -210,34 +152,7 @@ export const runRouteOf = ({ facts }: Params): RunRouteResult => {
       role: pickedRole.kind,
     };
   }
-  if (!leadDefaultOf({ shape: facts.defaultShape }).shouldMatchPreset) {
-    return {
-      route: leadRouteOf({ row: 1, why: RUN_ROUTE_COPY.why.yourDefault }),
-      ask: text,
-      preset: null,
-      role: null,
-    };
-  }
-  const words = wordsOf({ text });
-  const scored = facts.presets
-    .map((preset) => ({ preset, score: presetScoreOf({ words, preset }) }))
-    .filter((entry) => entry.score > 0);
-  const best = Math.max(0, ...scored.map((entry) => entry.score));
-  const matches = scored.filter((entry) => entry.score === best).map((entry) => entry.preset);
-  const matched = matches.find((preset) => preset.id === facts.lastPresetId) ?? matches[0] ?? null;
-  if (matched !== null) {
-    return {
-      route: presetRouteOf({
-        preset: matched,
-        closeness: 'adapt',
-        row: 2,
-        why: RUN_ROUTE_COPY.why.matches,
-      }),
-      ask: text,
-      preset: matched,
-      role: null,
-    };
-  }
+  const words = routeWordsOf({ text });
   if (facts.hasTask || isSpread({ text })) {
     return {
       route: leadRouteOf({

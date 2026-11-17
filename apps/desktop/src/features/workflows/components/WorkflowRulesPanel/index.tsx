@@ -11,11 +11,10 @@ import { NOTHING_CHANGED } from '../../../../store/slices/notifications/errorRec
 
 type Props = {
   readonly workspaceId: WorkspaceId;
-  readonly runRows?: ReactNode;
   readonly children?: ReactNode;
 };
 
-export const WorkflowRulesPanel = ({ workspaceId, runRows, children }: Props) => {
+export const WorkflowRulesPanel = ({ workspaceId, children }: Props) => {
   const { rules, patch } = useWorkflowRules({ workspaceId });
   const reportError = useAppStore((state) => state.reportError);
   const save = (next: Partial<WorkflowRules>) => {
@@ -38,7 +37,6 @@ export const WorkflowRulesPanel = ({ workspaceId, runRows, children }: Props) =>
         headingLevel={2}
       >
         <DefaultAsksSetting workspaceId={workspaceId} />
-        {runRows}
         <DefaultLimitSetting workspaceId={workspaceId} rules={rules} patch={patch} />
         <DefaultModelsSetting workspaceId={workspaceId} />
       </Band>

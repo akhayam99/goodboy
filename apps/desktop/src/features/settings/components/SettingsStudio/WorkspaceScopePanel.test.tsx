@@ -127,7 +127,7 @@ beforeEach(async () => {
 afterEach(cleanup);
 
 const RUN_DEFAULT_ROWS: ReadonlyArray<readonly [string, ReadonlyArray<string>]> = [
-  ['New runs', ['Stops for your OK', 'Start as', NAMES.spendCap, NAMES.models]],
+  ['New runs', ['Stops for your OK', NAMES.spendCap, NAMES.models]],
   ['Agents', ['Parallel agents', 'Reply length']],
 ];
 
@@ -158,7 +158,7 @@ describe('WorkspaceScopePanel pages', () => {
     expect(screen.queryByRole('button', { name: /^Asks you: / })).toBeNull();
   });
 
-  it('keeps the session row in New runs with a session open, the one place that sets it', () => {
+  it('leaves how a run starts to the start form, with or without a session open', () => {
     const session = aSession({ workspaceId: HARBORLINE.id, goal: 'Retry webhooks with backoff' });
     useAppStore.setState({ sessions: [session], currentSessionId: session.id });
     renderPage({ section: 'general' });
@@ -166,10 +166,10 @@ describe('WorkspaceScopePanel pages', () => {
     const newRuns = within(screen.getByRole('region', { name: 'New runs' }));
     expect(newRuns.getAllByRole('tablist').map((row) => row.getAttribute('aria-label'))).toEqual([
       'Stops for your OK',
-      'Start as',
-      'New runs in this session start as',
       'At the limit',
     ]);
+    expect(screen.queryByText('Start as')).toBeNull();
+    expect(screen.queryByText('New runs in this session start as')).toBeNull();
   });
 
   it('opens on Projects with the workspace name, and one page per section', () => {

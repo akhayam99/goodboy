@@ -60,7 +60,7 @@ describe('the u28 start run scenes', () => {
     mount({ id: 'u28-start-run-route-line' });
 
     const line = await screen.findByText(/^Starts[ ]as[ ]Lead/, {}, WAIT);
-    expect(line.textContent).toContain('A question or a check, and no workflow fits');
+    expect(line.textContent).toContain('A question or a check');
     screen.getByRole('button', { name: 'Attach files' });
     const kinds = screen.getByRole('tablist', { name: 'Plan' });
     expect(within(kinds).getAllByRole('tab')).toHaveLength(3);

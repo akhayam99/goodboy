@@ -11,6 +11,7 @@ vi.mock('../../../shared/lib/db', async () =>
 );
 
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { setSetting } from '@goodboy/db';
 import { AUTO_SEED_SESSION, seedAutoSession } from '@goodboy/db/test-helpers/auto-seeds';
 import { brandId, type AgentId, type SessionId, type WorkspaceId } from '@goodboy/types';
 import { aSession } from '@goodboy/types/testing';
@@ -26,7 +27,7 @@ import { isAdmissionPlanGateOn } from '@goodboy/core/auto';
 import { readAutoLevel } from '../../../store/runtime/auto/level/readAutoLevel';
 import { readLeadPermissions } from '../../../store/runtime/auto/level/readLeadPermissions';
 import { writeAutoLevel } from '../../../store/runtime/auto/level/writeAutoLevel';
-import { writeRunDefault } from './runDefaultSetting';
+import { runDefaultKey } from './runDefaultSetting';
 import { runRouteOf, type RunRouteFacts } from './runRouteOf';
 import { startRoutedRun } from './startRoutedRun';
 
@@ -122,11 +123,11 @@ describe('startRoutedRun stores the Auto level', () => {
   it('makes a Lead started with the plan default wait for plan approval before a writer', async () => {
     const spawnAgent = mockSpawn();
     await writeAutoLevel({ db: storySqlite(), target: { workspaceId: WORKSPACE }, level: 'run' });
-    await writeRunDefault({
-      db: storySqlite(),
-      scope: { kind: 'workspace', workspaceId: WORKSPACE },
-      shape: 'plan',
-    });
+    await setSetting(
+      storySqlite(),
+      runDefaultKey({ scope: { kind: 'workspace', workspaceId: WORKSPACE } }),
+      'plan',
+    );
     spawnAgent.mockImplementationOnce(async () => {
       const { rows } = await readLeadPermissions({
         db: storySqlite(),
@@ -153,11 +154,11 @@ describe('startRoutedRun stores the Auto level', () => {
   it('keeps a stricter level, and a level the person picked, over the plan default', async () => {
     mockSpawn();
     await writeAutoLevel({ db: storySqlite(), target: { workspaceId: WORKSPACE }, level: 'step' });
-    await writeRunDefault({
-      db: storySqlite(),
-      scope: { kind: 'session', sessionId: AUTO_SEED_SESSION },
-      shape: 'plan',
-    });
+    await setSetting(
+      storySqlite(),
+      runDefaultKey({ scope: { kind: 'session', sessionId: AUTO_SEED_SESSION } }),
+      'plan',
+    );
 
     await startRoutedRun({ sessionId: AUTO_SEED_SESSION, result });
 

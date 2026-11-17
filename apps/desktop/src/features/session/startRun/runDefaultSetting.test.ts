@@ -13,18 +13,18 @@ describe('runDefaultSetting', () => {
 
   it('reads a saved plan default as a Lead that asks before the plan', () => {
     expect(leadDefaultOf({ shape: 'plan' })).toEqual({
-      shouldMatchPreset: false,
+      shouldSuggestWorkflow: false,
       shouldAskPlan: true,
     });
   });
 
-  it('lets only the pick default give the Lead a preset that fits', () => {
+  it('lets only the pick default suggest a workflow that fits', () => {
     expect(leadDefaultOf({ shape: 'auto' })).toEqual({
-      shouldMatchPreset: true,
+      shouldSuggestWorkflow: true,
       shouldAskPlan: false,
     });
     expect(leadDefaultOf({ shape: 'lead' })).toEqual({
-      shouldMatchPreset: false,
+      shouldSuggestWorkflow: false,
       shouldAskPlan: false,
     });
   });

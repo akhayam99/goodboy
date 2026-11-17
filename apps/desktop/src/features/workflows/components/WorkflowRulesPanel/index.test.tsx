@@ -236,18 +236,19 @@ describe('WorkflowRulesPanel', () => {
     expect(newRuns().queryByRole('button', { name: 'Save' })).toBeNull();
   });
 
-  it('puts the rows it gets after Stops for your OK and the bands it gets before Guidance', () => {
+  it('keeps New runs to stops, limit and models, and puts the bands it gets before Guidance', () => {
     render(
-      <WorkflowRulesPanel workspaceId={HARBORLINE.id} runRows={<p>Start as row</p>}>
+      <WorkflowRulesPanel workspaceId={HARBORLINE.id}>
         <section aria-label="Agents" />
       </WorkflowRulesPanel>,
     );
 
     expect(
       newRuns()
-        .getAllByText(/^(Stops for your OK|Start as row|Limit|Models)$/)
+        .getAllByText(/^(Stops for your OK|Limit|Models)$/)
         .map((node) => node.textContent),
-    ).toEqual(['Stops for your OK', 'Start as row', 'Limit', 'Models']);
+    ).toEqual(['Stops for your OK', 'Limit', 'Models']);
+    expect(newRuns().queryByText('Start as')).toBeNull();
     expect(screen.getAllByRole('region').map((band) => band.getAttribute('aria-label'))).toEqual([
       'New runs',
       'Agents',

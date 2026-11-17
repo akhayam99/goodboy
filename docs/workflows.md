@@ -172,8 +172,7 @@ still carry them and list them as Workflow rules in the preview.
 
 The page is titled **Run defaults** and has three bands, one row per setting
 (`FieldRow`). `WorkspaceDefaultsGrid` draws the page: `WorkflowRulesPanel` owns
-the **New runs** and **Guidance** bands and takes the settings rows it does not
-own (`runRows`: **Start as**) and the **Agents** band
+the **New runs** and **Guidance** bands and takes the **Agents** band
 (children: **Parallel agents**, **Reply length**) from it. A change reaches new
 runs only, since every run keeps its own copy of the rules
 (`attachWorkflowToSession` copies them at start). A failed save keeps the old
@@ -190,14 +189,6 @@ value and shows the error under its row.
   selects none, and nothing is written until you pick. Both keys reach the
   other windows on the data-changed bus (`announceWorkspaceChange`, read back
   by `listenSettingChanges`). `auto.permissions` is not touched
-- **Start as** (`RunDefaultField`): every value starts a Lead. `auto` lets the
-  router give it a matching preset, `lead` takes no preset on its own, and
-  `plan` (written by older versions) takes no preset and makes the Lead ask
-  before acting on its plan: when the session level is Never and the start
-  picked no level, `startRoutedRun` sets the session to After the plan before
-  the Lead starts, and a stricter level stays (`planFirstLevelOf`). With a
-  session of this workspace open, a second row sets that session's default;
-  it is the only writer of the session default (`changeRunDefault`)
 - **Limit** (`DefaultLimitSetting`): the amount per run, applied on Enter (a
   blank amount is no limit) or when the field loses focus, and what happens at
   the limit, Pause or Warn only, applied on click (`useLimitAmountDraft` in
@@ -688,8 +679,7 @@ keep theirs. The route also keeps the ask, so a second run can start from it.
 `RunKindChip` (`features/session/components/RunRoute/`) shows the stored route
 as the first chip of the run settings line (`OrchestratedFacts` passes it in)
 and on an agent's page, named by `runKindOfRoute`; its popover holds the why
-with the count of `rules.planChanges` ("Why: Your ask matches the preset · 1
-change"), the closeness and the other kinds (`runKindChoicesOf`). The facts
+with the count of `rules.planChanges` ("Why: you picked it · 1 change"), the closeness and the other kinds (`runKindChoicesOf`). The facts
 line then leaves the preset out, so it is said once. A pick calls
 `changeRunRoute`. Follow or Adapt, and a new preset before the first step, only
 rewrite `rules.route` (`updateWorkflowRunRules`) and the run's `processText`.
@@ -706,15 +696,17 @@ with the findings (`runFindingsOf`: the run summary's done entries and the
 settled steps' summaries). On a stopped run the first run is then closed
 (`closeWorkflowRun`), so two runs never edit one branch; on a finished run, or
 an agent that finished, nothing is written to the first (`route.changedTo` is
-only parsed, for older runs). The defaults live in
-the settings keys `runs.defaultShape.session.<sessionId>` and
-`runs.defaultShape.<workspaceId>` (`runDefaultSetting.ts`), read by row 1
-through `runDefaultOf`; `changeRunDefault` writes compare and swap and records
-an undo that refuses when the stored value moved. A missing session key means
-the session inherits the workspace default, so undo of a first session default
-deletes the key while it still holds the shape it set
-(`removeSettingIfUnchanged` in the settings slice, which also drops it from
-`settings`) instead of writing `auto`. Opening a preset run shows its page; the session rail stays
+only parsed, for older runs). The router never adopts a workflow: a typed
+`~name` or the Plan row picks one, and `suggestedWorkflowOf` only names the
+best match for the "Looks like your workflow" line (`StartWorkflowSuggestion`).
+The settings keys `runs.defaultShape.session.<sessionId>` and
+`runs.defaultShape.<workspaceId>` (`runDefaultSetting.ts`), once written by
+**Start as**, are read only until 0.41.0 ([versioning.md](versioning.md),
+Retired state): `useStartRun` loads them, `runDefaultOf` lets the session key
+win, `lead` and `plan` hide the suggestion, and `plan` still makes the Lead
+ask before acting on its plan: when the session level is Never and the start
+picked no level, `startRoutedRun` sets the session to After the plan before
+the Lead starts, and a stricter level stays (`planFirstLevelOf`). Opening a preset run shows its page; the session rail stays
 on the session and the run's agents are in the Agents column.
 
 Orchestrated runs have no page of their own since ux27 one flow unit 1: they

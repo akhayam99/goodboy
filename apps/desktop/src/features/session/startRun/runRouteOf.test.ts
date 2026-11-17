@@ -10,6 +10,7 @@ import {
   type WorkspaceId,
 } from '@goodboy/types';
 import { runRouteOf, type RunRouteFacts } from './runRouteOf';
+import { suggestedWorkflowOf } from './suggestedWorkflowOf';
 
 const NOW = brandId<IsoDateTime>({ value: '2026-10-22T09:00:00.000Z' });
 
@@ -101,22 +102,6 @@ describe('runRouteOf, row 1: you said it', () => {
     expect(result.ask).toBe('where does payments-api validate a refund?');
   });
 
-  it.each(['plan', 'lead'] as const)(
-    'reads the default %s as a Lead that takes no preset on its own',
-    (defaultShape) => {
-      const result = routeOf({ text: 'Fix the layout of every page', defaultShape });
-
-      expect(result.route).toMatchObject({
-        row: 1,
-        shape: 'lead',
-        presetName: null,
-        choice: 'Lead',
-        why: 'your default',
-      });
-      expect(result.preset).toBeNull();
-    },
-  );
-
   it('wins over every later row', () => {
     const result = routeOf({ text: '@Scout check every page', hasTask: true });
 
@@ -130,29 +115,60 @@ describe('runRouteOf, row 1: you said it', () => {
   });
 });
 
-describe('runRouteOf, row 2: a preset matches the ask', () => {
-  it('gives a Lead the preset whose name the ask holds, free to adapt it', () => {
-    const result = routeOf({ text: 'Fix the layout of the Harborline billing page' });
+const suggestionOf = (overrides: Partial<RunRouteFacts>) => {
+  const facts = factsOf(overrides);
+  return suggestedWorkflowOf({ facts, result: runRouteOf({ facts }) });
+};
 
-    expect(result.route).toMatchObject({
-      row: 2,
-      shape: 'lead',
-      closeness: 'adapt',
-      presetName: 'Fix a layout',
-      choice: 'Lead · plan Fix a layout · May change steps',
-      why: 'Your ask matches the workflow',
-    });
-    expect(result.ask).toBe('Fix the layout of the Harborline billing page');
+describe('runRouteOf, a workflow that matches the ask is suggested, never adopted', () => {
+  it.each(['auto', 'lead', 'plan'] as const)(
+    'starts a Lead with no workflow when the stored default is %s',
+    (defaultShape) => {
+      const result = routeOf({
+        text: 'Fix the layout of the Harborline billing page',
+        defaultShape,
+      });
+
+      expect(result.route).toMatchObject({
+        shape: 'lead',
+        presetName: null,
+        closeness: null,
+        choice: 'Lead',
+      });
+      expect(result.route.row).not.toBe(2);
+      expect(result.preset).toBeNull();
+      expect(result.ask).toBe('Fix the layout of the Harborline billing page');
+    },
+  );
+
+  it('suggests the workflow whose name the ask holds', () => {
+    expect(suggestionOf({ text: 'Fix the layout of the Harborline billing page' })?.id).toBe(
+      FIX_A_LAYOUT.id,
+    );
   });
 
-  it('prefers the preset last used in this session when two match', () => {
-    const result = routeOf({
+  it.each(['lead', 'plan'] as const)(
+    'suggests nothing when the stored default is %s, as Start as said before',
+    (defaultShape) => {
+      expect(
+        suggestionOf({ text: 'Fix the layout of the Harborline billing page', defaultShape }),
+      ).toBeNull();
+    },
+  );
+
+  it('suggests nothing once the ask names a workflow or a role', () => {
+    expect(suggestionOf({ text: '~Fix a layout center the billing page' })).toBeNull();
+    expect(suggestionOf({ text: '@Scout fix the layout of the billing page' })).toBeNull();
+  });
+
+  it('prefers the workflow last used in this session when two match', () => {
+    const suggestion = suggestionOf({
       text: 'layout audit of the Northwind pages',
       presets: [FIX_A_LAYOUT, LAYOUT_AUDIT],
       lastPresetId: LAYOUT_AUDIT.id,
     });
 
-    expect(result.preset?.id).toBe(LAYOUT_AUDIT.id);
+    expect(suggestion?.id).toBe(LAYOUT_AUDIT.id);
   });
 
   it('matches the description and step titles when the name is not in the ask', () => {
@@ -165,16 +181,12 @@ describe('runRouteOf, row 2: a preset matches the ask', () => {
       description: 'Stop retried webhooks from posting twice.',
     };
 
-    const result = routeOf({
+    const suggestion = suggestionOf({
       text: 'notify-relay posts duplicate credits when webhooks are retried',
       presets: [FIX_A_LAYOUT, relay],
     });
 
-    expect(result.route).toMatchObject({
-      row: 2,
-      closeness: 'adapt',
-      presetName: 'Webhook hygiene',
-    });
+    expect(suggestion?.name).toBe('Webhook hygiene');
   });
 
   it('needs two words of the description or steps, so one shared word is not a match', () => {
@@ -183,12 +195,10 @@ describe('runRouteOf, row 2: a preset matches the ask', () => {
       description: 'Stop retried webhooks from posting twice.',
     };
 
-    const result = routeOf({ text: 'rename the webhooks folder', presets: [relay] });
-
-    expect(result.route.row).not.toBe(2);
+    expect(suggestionOf({ text: 'rename the webhooks folder', presets: [relay] })).toBeNull();
   });
 
-  it('prefers a preset whose name the ask holds over one that only shares step words', () => {
+  it('prefers a workflow whose name the ask holds over one that only shares step words', () => {
     const scan = {
       ...aPreset({
         key: 'scan',
@@ -198,13 +208,13 @@ describe('runRouteOf, row 2: a preset matches the ask', () => {
       description: '',
     };
 
-    const result = routeOf({
+    const suggestion = suggestionOf({
       text: 'fix the layout: center billing and profile',
       presets: [scan, FIX_A_LAYOUT],
       lastPresetId: scan.id,
     });
 
-    expect(result.preset?.id).toBe(FIX_A_LAYOUT.id);
+    expect(suggestion?.id).toBe(FIX_A_LAYOUT.id);
   });
 });
 
@@ -269,7 +279,7 @@ describe('runRouteOf, row 5: a question, a check or one file', () => {
       row: 5,
       shape: 'lead',
       choice: 'Lead',
-      why: 'A question or a check, and no workflow fits',
+      why: 'A question or a check',
     });
   });
 
