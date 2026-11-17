@@ -19,6 +19,10 @@ type Props = {
   readonly mark?: ShellRailMark | null;
   readonly tone?: Tone;
   readonly shortcut?: string;
+  readonly tooltip?: string;
+  readonly isExpanded?: boolean;
+  readonly hasPopup?: 'dialog' | 'menu';
+  readonly isBusy?: boolean;
   readonly isCurrent?: boolean;
   readonly isPressed?: boolean;
   readonly isQuiet?: boolean;
@@ -43,6 +47,10 @@ export const ShellRailItem = ({
   mark = null,
   tone,
   shortcut,
+  tooltip,
+  isExpanded,
+  hasPopup,
+  isBusy = false,
   isCurrent = false,
   isPressed,
   isQuiet = false,
@@ -62,15 +70,21 @@ export const ShellRailItem = ({
         <IconButton
           icon={icon}
           label={name}
+          tooltip={tooltip}
           shortcut={shortcut}
+          busy={isBusy}
           tooltipSide="right"
-          isTooltipSuppressed={form === 'wide' && shortcut === undefined && word === label}
+          isTooltipSuppressed={
+            isExpanded === true || (form === 'wide' && shortcut === undefined && word === label)
+          }
           size="md"
           variant={isOutlined ? 'outline' : 'ghost'}
           iconSize={ICON_SIZE.hero}
           data-shell-rail-item={id}
           aria-current={isCurrent ? 'page' : undefined}
           aria-pressed={isPressed}
+          aria-expanded={isExpanded}
+          aria-haspopup={hasPopup}
           className={cn(
             isCurrent && 'cursor-default',
             isFaint && 'text-faint-foreground',
@@ -84,7 +98,12 @@ export const ShellRailItem = ({
           className="pointer-events-none absolute left-1/2 top-1/2 size-4.5 -translate-x-1/2 -translate-y-1/2"
         >
           {mark?.kind === 'count' ? (
-            <CountBadge count={mark.count} tone="warning" placement="corner" isAnnounced={false} />
+            <CountBadge
+              count={mark.count}
+              tone={mark.tone ?? 'warning'}
+              placement="corner"
+              isAnnounced={false}
+            />
           ) : null}
           {mark?.kind === 'dot' ? (
             <StatusDot

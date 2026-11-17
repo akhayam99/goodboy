@@ -201,4 +201,59 @@ describe('ShellRail', () => {
     expect(railOf().style.width).toBe('64px');
     within(railOf()).getByText('Tasks');
   });
+
+  it('draws a count in the tone its mark names, warning by default', () => {
+    render(
+      <ShellRail label="Places" form="wide">
+        <ShellRailItem
+          id="a"
+          icon={Inbox}
+          label="Alpha"
+          mark={{ kind: 'count', count: 2, name: '2 broken', tone: 'danger' }}
+          onSelect={vi.fn()}
+        />
+        <ShellRailItem
+          id="b"
+          icon={Mail}
+          label="Beta"
+          mark={{ kind: 'count', count: 1, name: '1 waits' }}
+          onSelect={vi.fn()}
+        />
+      </ShellRail>,
+    );
+    const tones = Array.from(railOf().querySelectorAll('[data-count-badge]'), (badge) =>
+      badge.getAttribute('data-count-badge'),
+    );
+    expect(tones).toEqual(['danger', 'warning']);
+  });
+
+  it('says it opens a popover, shows the open state, and holds the tooltip back while open', () => {
+    render(
+      <ShellRail label="Places" form="wide">
+        <ShellRailItem
+          id="workspace"
+          icon={Inbox}
+          label="Switch workspace: Acme"
+          word="Acme"
+          tooltip="Acme, 1 project"
+          shortcut="session.new"
+          hasPopup="dialog"
+          isExpanded
+          isBusy
+          onSelect={vi.fn()}
+        />
+      </ShellRail>,
+    );
+    const mark = within(railOf()).getByRole('button', { name: 'Switch workspace: Acme' });
+    expect(mark.getAttribute('aria-haspopup')).toBe('dialog');
+    expect(mark.getAttribute('aria-expanded')).toBe('true');
+    expect(mark.getAttribute('aria-busy')).toBe('true');
+    vi.useFakeTimers();
+    fireEvent.mouseEnter(mark.parentElement ?? mark);
+    act(() => {
+      vi.advanceTimersByTime(400);
+    });
+    vi.useRealTimers();
+    expect(screen.queryByRole('tooltip')).toBeNull();
+  });
 });

@@ -200,6 +200,7 @@ export type { FieldRowProps } from './components/FieldRow';
 export { ShellRail } from './components/ShellRail';
 export { ShellRailItem } from './components/ShellRail/ShellRailItem';
 export type { ShellRailMark } from './components/ShellRail/shellRailMark';
+export { SHELL_RAIL_POPOVER } from './components/ShellRail/shellRailPopover';
 export type { GhostActionButtonProps } from './components/GhostActionButton';
 export { IconButton } from './components/IconButton';
 export type { IconButtonProps } from './components/IconButton';

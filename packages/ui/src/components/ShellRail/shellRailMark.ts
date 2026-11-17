@@ -3,6 +3,7 @@ export type ShellRailMark =
       readonly kind: 'count';
       readonly count: number;
       readonly name: string;
+      readonly tone?: 'warning' | 'danger';
     }
   | {
       readonly kind: 'dot';

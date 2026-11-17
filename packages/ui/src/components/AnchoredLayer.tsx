@@ -9,7 +9,7 @@ import { useFloatingPlace } from '../useFloatingPlace';
 const LAYER_GAP_PX = 4;
 
 type Props = {
-  readonly side: 'top' | 'bottom';
+  readonly side: 'top' | 'bottom' | 'right';
   readonly children: ReactNode;
   readonly isAnchorWidth?: boolean;
   readonly maxWidth?: number;
