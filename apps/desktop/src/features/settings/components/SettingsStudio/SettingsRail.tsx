@@ -1,7 +1,6 @@
 import { PANE_RHYTHM, cn } from '@goodboy/ui';
 import type { SettingsPageScope, SettingsScopeChange } from '../../settingsFocus';
 import type { SettingsGroup } from './settingsDirectory';
-import { MovedToConnectionsRow } from './MovedToConnectionsRow';
 import { SettingsRailPageGroup } from './SettingsRailPageGroup';
 import { SettingsRailPlaceholder } from './SettingsRailPlaceholder';
 
@@ -41,7 +40,6 @@ export const SettingsRail = ({ pageKey, groups, workspaceName, onSelect }: Props
       ) : (
         <SettingsRailPageGroup group={workspace} pageKey={pageKey} onSelect={onSelect} />
       )}
-      <MovedToConnectionsRow />
     </nav>
   );
 };
