@@ -55,6 +55,7 @@ fn quarantine(root: &Path, id: &str, base: &str) -> Option<String> {
         candidate_id: id.to_string(),
         base_sha: base.to_string(),
         stack: false,
+        should_keep_uncommitted: false,
     })
     .unwrap()
     .sha
@@ -66,6 +67,7 @@ fn quarantine_stacked(root: &Path, id: &str, base: &str) -> Option<String> {
         candidate_id: id.to_string(),
         base_sha: base.to_string(),
         stack: true,
+        should_keep_uncommitted: false,
     })
     .unwrap()
     .sha
@@ -568,7 +570,7 @@ fn resolve_copy(root: &Path, scratch: &Path, attempt: &str) -> PathBuf {
     let copy = scratch
         .join(format!("goodboy-history-resolve-{attempt}"))
         .join("copy");
-    let made = crate::history::prepare_resolve_copy_at(root, &copy, None).unwrap();
+    let made = crate::history::prepare_resolve_copy_at(root, &copy, None, false).unwrap();
     assert_eq!(made.head, head(root), "the copy is not at the branch head");
     copy
 }

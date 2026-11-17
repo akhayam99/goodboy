@@ -243,6 +243,8 @@ pub struct QuarantineCandidateArgs {
     pub base_sha: String,
     #[serde(default)]
     pub stack: bool,
+    #[serde(default)]
+    pub should_keep_uncommitted: bool,
 }
 
 #[derive(Debug, Deserialize)]

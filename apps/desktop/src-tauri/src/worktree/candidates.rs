@@ -68,6 +68,17 @@ fn worktree_integrate_candidate_blocking(
         std::fs::remove_file(&picking)?;
     }
     let actual = resolve_commit(path, "HEAD")?;
+    if let Some(snapshot) = owner_tree::owner_tree_under(path, &actual, &candidate) {
+        let sha = owner_tree::integrate_onto_owner_tree(owner_tree::OwnerTreeIntegration {
+            path,
+            journal: &journal,
+            snapshot: &snapshot,
+            expected: &expected,
+            candidate: &candidate,
+            actual: &actual,
+        })?;
+        return Ok(IntegratedCandidate { sha });
+    }
     if journal.exists() {
         let recorded = std::fs::read_to_string(&journal)?;
         let mut lines = recorded.lines().map(str::trim);
@@ -161,6 +172,25 @@ fn write_journal(journal: &Path, lines: &[&str]) -> Result<(), WorktreeError> {
     Ok(())
 }
 
+fn move_head_back(
+    path: &Path,
+    rest_at: &str,
+    raw_tip: &str,
+    is_keeping_uncommitted: bool,
+) -> Result<(), WorktreeError> {
+    if is_keeping_uncommitted {
+        if git(path, &["reset", "--keep", "--quiet", rest_at]).is_err() {
+            return Err(WorktreeError::Git {
+                message: "your uncommitted changes touch the files of the fix, so the branch was left as the agent left it".to_string(),
+            });
+        }
+        return Ok(());
+    }
+    git(path, &["update-ref", "HEAD", rest_at, raw_tip])?;
+    git(path, &["reset", "--hard", "--quiet", rest_at])?;
+    Ok(())
+}
+
 #[tauri::command]
 pub async fn worktree_quarantine_candidate(
     args: QuarantineCandidateArgs,
@@ -192,7 +222,7 @@ fn worktree_quarantine_candidate_blocking(
             })
         }
     };
-    if is_dirty {
+    if is_dirty && !args.should_keep_uncommitted {
         git(path, &["add", "--update"])?;
         let staged = git(path, &["diff", "--cached", "--name-only"])?;
         if !staged.trim().is_empty() {
@@ -217,8 +247,7 @@ fn worktree_quarantine_candidate_blocking(
     }
     let tip = scrub::scrub_environment(path, &base, &raw_tip, &args.candidate_id)?;
     if tip == base {
-        git(path, &["update-ref", "HEAD", &base, &raw_tip])?;
-        git(path, &["reset", "--hard", "--quiet", &base])?;
+        move_head_back(path, &base, &raw_tip, args.should_keep_uncommitted)?;
         return Ok(QuarantinedCandidate {
             sha: None,
             base_sha: base,
@@ -229,8 +258,7 @@ fn worktree_quarantine_candidate_blocking(
         &["update-ref", &candidate_ref(&args.candidate_id), &tip],
     )?;
     let rest_at = if args.stack { &tip } else { &base };
-    git(path, &["update-ref", "HEAD", rest_at, &raw_tip])?;
-    git(path, &["reset", "--hard", "--quiet", rest_at])?;
+    move_head_back(path, rest_at, &raw_tip, args.should_keep_uncommitted)?;
     Ok(QuarantinedCandidate {
         sha: Some(tip),
         base_sha: base,
@@ -355,7 +383,10 @@ fn split_one(
     Ok(Some(tip))
 }
 
+mod owner_tree;
 mod scrub;
+
+pub(crate) use owner_tree::snapshot_owner_tree;
 
 #[cfg(test)]
 mod tests;

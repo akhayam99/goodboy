@@ -6,7 +6,7 @@ use super::reservation::{
 };
 use super::trial::TRIAL_SLUG_PREFIX;
 use crate::app_paths::AppPathsError;
-use crate::worktree::{git, resolve_commit, WorktreeError};
+use crate::worktree::{git, resolve_commit, snapshot_owner_tree, WorktreeError};
 use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
 
@@ -281,6 +281,8 @@ pub struct ResolveCopyArgs {
     pub attempt_id: String,
     #[serde(default)]
     pub start_sha: Option<String>,
+    #[serde(default)]
+    pub should_carry_working_tree: bool,
 }
 
 #[derive(Debug, Serialize, PartialEq, Eq)]
@@ -298,11 +300,17 @@ pub(crate) fn prepare_resolve_copy_at(
     cwd: &Path,
     copy: &Path,
     start: Option<&str>,
+    should_carry_working_tree: bool,
 ) -> Result<ResolveCopy, WorktreeError> {
     if copy.exists() && is_owned_copy(copy) {
         discard_copy(&copy.to_string_lossy());
     }
-    let head = resolve_commit(cwd, start.unwrap_or("HEAD"))?;
+    let tip = resolve_commit(cwd, start.unwrap_or("HEAD"))?;
+    let carried = match start {
+        None if should_carry_working_tree => snapshot_owner_tree(cwd, &tip)?,
+        _ => None,
+    };
+    let head = carried.unwrap_or(tip);
     let mut guard = create_copy(cwd, copy, &head)?;
     deps::link_dependencies(cwd, copy);
     guard.is_kept = true;
@@ -329,7 +337,12 @@ pub async fn resolve_copy_prepare(args: ResolveCopyArgs) -> Result<ResolveCopy, 
         }
         let copy = resolve_copy_path_of(&args.attempt_id)
             .map_err(|_| plan_error("there is no folder for the temporary copy"))?;
-        prepare_resolve_copy_at(&cwd, &copy, args.start_sha.as_deref())
+        prepare_resolve_copy_at(
+            &cwd,
+            &copy,
+            args.start_sha.as_deref(),
+            args.should_carry_working_tree,
+        )
     })
     .await
     .map_err(|e| WorktreeError::Io(std::io::Error::other(e.to_string())))?
