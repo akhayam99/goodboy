@@ -42,7 +42,7 @@ import { verbEntries, type VerbSelectParams } from '../../sources/verbEntries';
 import { hasOwnPreviewOf, paletteBodyLayoutOf, paletteListMaxHeightOf } from './paletteBodyLayout';
 import { liveAgentVerbs, sessionOwnFirst } from '../../sources/liveAgentEntries';
 import { runRow, runSection } from '../../sources/runEntries';
-import type { PaletteEntry } from '../../types';
+import type { PaletteEntry, PaletteStep } from '../../types';
 import { PaletteInputRow } from '../PaletteOverlay/PaletteInputRow';
 import { ScopeChip } from '../PaletteOverlay/ScopeChip';
 import { CommandsList } from './CommandsList';
@@ -58,6 +58,7 @@ type Level = {
   readonly title: string;
   readonly key: string;
   readonly choicesOf: ResolvedAction | null;
+  readonly step: PaletteStep | null;
 };
 
 type RunVerbParams = {
@@ -369,15 +370,23 @@ export const CommandsBody = ({
             needsYou: scope?.kind === 'workspace' ? needsYou : [],
             extra,
           })
-        : level.choicesOf !== null
+        : level.step !== null
           ? buildChoiceList({
               query: filter,
-              title: level.choicesOf.label,
-              choices: levelChoices,
+              title: level.step.title,
+              choices: level.step.entries,
               frecency,
               now,
             })
-          : buildActionList({ query: filter, verbs: levelVerbs, frecency, now }),
+          : level.choicesOf !== null
+            ? buildChoiceList({
+                query: filter,
+                title: level.choicesOf.label,
+                choices: levelChoices,
+                frecency,
+                now,
+              })
+            : buildActionList({ query: filter, verbs: levelVerbs, frecency, now }),
     [
       level,
       query,
@@ -464,6 +473,7 @@ export const CommandsBody = ({
       title: entry.label,
       key: entry.key,
       choicesOf: null,
+      step: null,
     });
     setFilter('');
   };
@@ -474,6 +484,12 @@ export const CommandsBody = ({
     }
     if (entry.level !== undefined) {
       openLevel(entry);
+      return;
+    }
+    const step = entry.step?.() ?? null;
+    if (step !== null) {
+      setLevel({ target: null, title: entry.label, key: entry.key, choicesOf: null, step });
+      setFilter('');
       return;
     }
     if (confirmOf(entry) !== null) {
@@ -490,6 +506,7 @@ export const CommandsBody = ({
         title: entry.label,
         key: level?.key ?? scopeInfo?.key ?? entry.key,
         choicesOf: entry.action,
+        step: null,
       });
       setFilter('');
       return;
@@ -510,6 +527,7 @@ export const CommandsBody = ({
       title: entry.label,
       key: entry.key,
       choicesOf: null,
+      step: null,
     });
     setFilter('');
   };
@@ -616,7 +634,7 @@ export const CommandsBody = ({
   const prefix = parseQuery(query).prefix;
   const placeholder =
     level !== null
-      ? 'Filter actions…'
+      ? (level.step?.placeholder ?? 'Filter actions…')
       : prefix !== null
         ? `Search ${prefix.hint}…`
         : NAMES.searchOrRun;

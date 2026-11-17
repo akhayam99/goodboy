@@ -1,5 +1,4 @@
 import { pullPaletteRepos } from '../pullPaletteRepos';
-import { CHECK_STATE } from '../../../store/slices/notifications/errorRecovery';
 import { destinationEntryOf } from '../destinationEntryOf';
 import { destinationPaletteKeyOf } from '../destinationPaletteKeyOf';
 import { footDestinationEntryOf } from '../footDestinationEntryOf';
@@ -60,9 +59,10 @@ import { artifactEntries } from '../sources/artifactEntries';
 import { sessionEntries } from '../sources/sessionEntries';
 import { markAllReadEntries } from '../sources/markAllReadEntries';
 import { workspaceEntries } from '../sources/workspaceEntries';
-import { scriptPinEntries, type PinnedScriptTarget } from '../sources/scriptPinEntries';
+import { scriptPinEntries } from '../sources/scriptPinEntries';
 import { useScriptPins } from '../../scripts';
-import { runPinnedScript } from '../../scripts/runPinnedScript';
+import { scriptPinId } from '../../scripts/scriptPinId';
+import { paletteScriptRunner } from '../paletteScriptRunner';
 import { repoEntries } from '../sources/repoEntries';
 import { leadEntries } from '../sources/leadEntries';
 import { useOpenLeadRows } from './useOpenLeadRows';
@@ -130,7 +130,6 @@ export const useCommandEntries = (): ReadonlyArray<PaletteEntry> => {
   );
   const isInSession = useAppStore((s) => sessionId !== null && s.appStudio === null);
   const destinations = useLensDestinations({ sessionId });
-  const runScript = useAppStore((s) => s.runScript);
   const workspaceProjects = useMemo(
     () =>
       currentWorkspace === null
@@ -331,45 +330,18 @@ export const useCommandEntries = (): ReadonlyArray<PaletteEntry> => {
       });
     }
 
-    const runPinned = (target: PinnedScriptTarget) => {
-      const missing = `Open a session with ${target.projectName} to run ${target.name}.`;
-      if (sessionId === null || currentWorkspace === null) {
-        showToast({ kind: 'warning', message: missing });
-        return;
-      }
-      const failureTitle = `Couldn't run ${target.name}`;
-      void runPinnedScript({
-        sessionId,
-        workspaceId: currentWorkspace.id,
-        projectId: target.projectId,
-        pinId: target.pinId,
-      })
-        .then((outcome) => {
-          if (outcome.kind === 'not-here') {
-            showToast({ kind: 'warning', message: missing });
-            return;
-          }
-          if (outcome.result.exitCode !== 0) {
-            void reportError({
-              title: failureTitle,
-              error: `Exited with code ${outcome.result.exitCode}.`,
-              sessionId,
-              recovery: { action: { kind: 'open-lens', sessionId, lens: 'scripts' } },
-            });
-            return;
-          }
-          showToast({ kind: 'success', message: `${target.name} finished.` });
-        })
-        .catch((error: unknown) =>
-          reportError({ recovery: CHECK_STATE, title: failureTitle, error, sessionId }),
-        );
-    };
+    const runner = paletteScriptRunner({
+      sessionId,
+      workspaceId: currentWorkspace?.id ?? null,
+      showToast,
+      reportError,
+    });
     out.push(
       ...scriptPinEntries({
         projects: workspaceProjects,
         pins: scriptPins,
         saved: scripts,
-        run: runPinned,
+        runner,
       }),
     );
 
@@ -382,37 +354,23 @@ export const useCommandEntries = (): ReadonlyArray<PaletteEntry> => {
     );
 
     for (const script of scripts) {
+      const projectName = projectById(projects, script.projectId)?.name ?? 'Folder script';
+      const target = {
+        projectId: script.projectId,
+        projectName,
+        pinId: scriptPinId({ source: 'saved', relDir: '', name: script.name, savedId: script.id }),
+        name: script.name,
+      };
       out.push({
         key: `script:${script.id}`,
         label: script.name,
         kind: 'script',
         group: 'script',
         icon: CONCEPT_ICONS.scripts,
-        detail: projectById(projects, script.projectId)?.name ?? 'Folder script',
+        detail: projectName,
         tag: 'Script',
-        run: () => {
-          if (sessionId === null) {
-            showToast({ kind: 'warning', message: `Open a session to run ${script.name}.` });
-            return;
-          }
-          const failureTitle = `Couldn't run ${script.name}`;
-          void runScript({ sessionId, scriptId: script.id })
-            .then((result) => {
-              if (result.exitCode !== 0) {
-                void reportError({
-                  title: failureTitle,
-                  error: `Exited with code ${result.exitCode}.`,
-                  sessionId,
-                  recovery: { action: { kind: 'open-lens', sessionId, lens: 'scripts' } },
-                });
-                return;
-              }
-              showToast({ kind: 'success', message: `${script.name} finished.` });
-            })
-            .catch((error: unknown) =>
-              reportError({ recovery: CHECK_STATE, title: failureTitle, error, sessionId }),
-            );
-        },
+        step: () => runner.stepFor({ target }),
+        run: () => runner.runHere({ target }),
       });
     }
 
@@ -522,7 +480,6 @@ export const useCommandEntries = (): ReadonlyArray<PaletteEntry> => {
     openWorkspace,
     navigate,
     openStudio,
-    runScript,
     reportError,
     markSessionsRead,
     unreadSessionIds,

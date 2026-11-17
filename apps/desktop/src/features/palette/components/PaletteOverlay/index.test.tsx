@@ -10,9 +10,20 @@ vi.mock('../../hooks/useSessionsEverywhere', () => ({
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
-import type { AgentId, ChatId, IsoDateTime, SessionId, WorkspaceId } from '@goodboy/types';
+import type {
+  AgentId,
+  ChatId,
+  IsoDateTime,
+  MountId,
+  ProjectScript,
+  ProjectScriptId,
+  SessionId,
+  SessionMountView,
+  SessionProjectMount,
+  WorkspaceId,
+} from '@goodboy/types';
 import type { SessionTitleRef } from '@goodboy/db';
-import { anAgent } from '@goodboy/types/testing';
+import { TEST_NOW, anAgent } from '@goodboy/types/testing';
 import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
@@ -460,6 +471,163 @@ describe('PaletteOverlay, copy worktree path', () => {
     fireEvent.keyDown(second.input, { key: 'Enter', metaKey: true });
     expect(writeText).toHaveBeenLastCalledWith('/worktrees/ledger-core\n/worktrees/notify-relay');
     expect(second.onClose).toHaveBeenCalledOnce();
+  });
+});
+
+describe('PaletteOverlay, run a script', () => {
+  const SCRIPT_NAME = 'Replay settlement batch';
+
+  const isMountId = (value: string): value is MountId => value.startsWith('mount-');
+  const isScriptId = (value: string): value is ProjectScriptId => value.startsWith('script-');
+
+  const mountIdOf = ({ branch }: { readonly branch: string }): MountId => {
+    const value = `mount-${branch.replace('/', '-')}`;
+    if (!isMountId(value)) {
+      throw new Error(`Not a mount id: ${value}`);
+    }
+    return value;
+  };
+
+  const REPLAY_ID = 'script-replay';
+
+  const replayIdOf = (): ProjectScriptId => {
+    if (!isScriptId(REPLAY_ID)) {
+      throw new Error(`Not a script id: ${REPLAY_ID}`);
+    }
+    return REPLAY_ID;
+  };
+
+  const seedScriptMounts = (branches: ReadonlyArray<string>) => {
+    act(() => {
+      useAppStore.setState((state) => {
+        const workspaceId = state.currentWorkspaceId;
+        const project = state.projects.find((candidate) => candidate.workspaceId === workspaceId);
+        if (workspaceId === null || project === undefined) {
+          throw new Error('the board scene has no project');
+        }
+        const mounts = branches.map((branch): SessionProjectMount => ({
+          mountId: mountIdOf({ branch }),
+          sessionId: PAYOUT,
+          projectId: project.id,
+          mountName: project.name,
+          worktreePath: `/worktrees/${branch.replace('/', '-')}`,
+          lastWorktreePath: null,
+          repoRoot: project.rootPath,
+          branch,
+          baseBranch: 'main',
+          parallelIndex: 0,
+          isAttached: true,
+          diskState: 'present',
+          revision: 1,
+        }));
+        const views = mounts.map((mount): SessionMountView => ({
+          ...mount,
+          id: mount.mountId,
+          repoSlug: null,
+          createdAt: TEST_NOW,
+          updatedAt: TEST_NOW,
+        }));
+        const script: ProjectScript = {
+          id: replayIdOf(),
+          projectId: project.id,
+          name: SCRIPT_NAME,
+          body: 'pnpm replay',
+          sortOrder: 0,
+          createdAt: TEST_NOW,
+          updatedAt: TEST_NOW,
+        };
+        return {
+          sessionProjectMounts: { ...state.sessionProjectMounts, [PAYOUT]: mounts },
+          sessionMounts: { ...state.sessionMounts, [PAYOUT]: views },
+          projectScripts: { ...state.projectScripts, [workspaceId]: [script] },
+        };
+      });
+    });
+  };
+
+  it('asks which branch on the session level when the project has two', () => {
+    seedScriptMounts(['hl/payout-export', 'hl/payout-webhook']);
+    const { input, onClose } = openIn(PAYOUT);
+    type(input, SCRIPT_NAME);
+
+    fireEvent.keyDown(input, { key: 'Enter' });
+
+    expect(onClose).not.toHaveBeenCalled();
+    expect(screen.getByText(`Run ${SCRIPT_NAME} on which branch?`)).not.toBeNull();
+    expect(optionNames()).toEqual(['hl/payout-export', 'hl/payout-webhook']);
+    expect(input.getAttribute('placeholder')).toBe('Filter branches…');
+    expect(selectedName()).toBe('hl/payout-export');
+
+    type(input, 'webhook');
+    fireEvent.keyDown(input, { key: 'Enter' });
+    expect(onClose).toHaveBeenCalledOnce();
+    expect(useAppStore.getState().scriptRuns[PAYOUT]?.['script-replay']?.mountId).toBe(
+      'mount-hl-payout-webhook',
+    );
+  });
+
+  it('puts the branch that ran a script last first', () => {
+    seedScriptMounts(['hl/payout-export', 'hl/payout-webhook']);
+    act(() => {
+      useAppStore.setState({
+        scriptRuns: {
+          [PAYOUT]: {
+            'script-other': {
+              status: 'ok',
+              result: null,
+              runId: 'run-before',
+              startedAt: 1,
+              mountId: mountIdOf({ branch: 'hl/payout-webhook' }),
+            },
+          },
+        },
+      });
+    });
+    const { input } = openIn(PAYOUT);
+    type(input, SCRIPT_NAME);
+
+    fireEvent.keyDown(input, { key: 'Enter' });
+
+    expect(optionNames()).toEqual(['hl/payout-webhook', 'hl/payout-export']);
+  });
+
+  it('runs at once on the only branch of the project', () => {
+    seedScriptMounts(['hl/payout-export']);
+    const { input, onClose } = openIn(PAYOUT);
+    type(input, SCRIPT_NAME);
+
+    fireEvent.keyDown(input, { key: 'Enter' });
+
+    expect(onClose).toHaveBeenCalledOnce();
+    expect(useAppStore.getState().scriptRuns[PAYOUT]?.['script-replay']?.mountId).toBe(
+      'mount-hl-payout-export',
+    );
+  });
+
+  it('runs on the branch page the user is on without asking', () => {
+    seedScriptMounts(['hl/payout-export', 'hl/payout-webhook']);
+    act(() => useAppStore.getState().navigate({ to: sessionPlace({ sessionId: PAYOUT }) }));
+    act(() => {
+      useAppStore.setState((state) => ({
+        activeLens: { ...state.activeLens, [PAYOUT]: 'branch' },
+        diffMountPath: { ...state.diffMountPath, [PAYOUT]: '/worktrees/hl-payout-webhook' },
+      }));
+    });
+    const onClose = vi.fn();
+    render(
+      <ToastProvider>
+        <PaletteOverlay onClose={onClose} />
+      </ToastProvider>,
+    );
+    const input = screen.getByRole('combobox', { name: 'Search or run' });
+    type(input, SCRIPT_NAME);
+
+    fireEvent.keyDown(input, { key: 'Enter' });
+
+    expect(onClose).toHaveBeenCalledOnce();
+    expect(useAppStore.getState().scriptRuns[PAYOUT]?.['script-replay']?.mountId).toBe(
+      'mount-hl-payout-webhook',
+    );
   });
 });
 
