@@ -87,7 +87,9 @@ If someone pushed after you applied, Goodboy lists their new commits and offers 
 - The Commits base row reads `Based on main 9d4b1f7`. It offers a rebase only onto another base.
 - If your uncommitted files are in the way, Goodboy asks once to set them aside. It brings them back after the move.
 - While the rebase runs, the status line reads it (`Rebasing · 3 of 7 · 1 conflict`), with **Abort**.
-- Once it settles, the panel under the Branch header says what happened and what you can do.
+- Once it settles, a card above the Branch title says what happened and what you can do. It sits in the page flow, so it never covers the title, at any width.
+- Every card, stopped or done, has **Dismiss** on its title row. Dismiss hides that card in this window, a reload included. It keeps the backup, and a new stop shows a new card.
+- A branch shows one card at most, the newest. A rebase that finishes settles every older stop of the branch, so dismissing it shows nothing behind it.
 - **Force push** replaces the branch on origin only if nobody pushed since you last looked. A failed Push or Force push in the Branch header offers the same two actions.
 - If origin changed between your confirm and the push, the failure leads with **Check again**. It fetches and lists the commits only on origin, with author and subject. Then it asks again: **Force push anyway** drops them, **Rebase on their commits** keeps them. It offers no **Retry**, since that would reuse the old check.
 - There, **Fix with an agent** and **Open terminal here** read origin again first. Since nobody confirmed the new commits, they keep everything on origin: the agent rebases on it, and the terminal gets a rebase on origin, then a push. A failed start shows in the card, not in a toast.
@@ -97,7 +99,7 @@ If someone pushed after you applied, Goodboy lists their new commits and offers 
 
 **When a rebase stops**
 
-Nothing starts by itself. The Branch page shows one panel under the header, on every tab. The rail keeps one line with **Open rebase**.
+Nothing starts by itself. The Branch page shows one card above the title, on every tab. The rail keeps one line with **Open rebase**.
 
 On a conflict or a commit hook, the panel does three things.
 
@@ -136,7 +138,6 @@ On a conflict or a commit hook, the panel does three things.
 - A failed push keeps **Fix with an agent**, **Open terminal here** and **Retry push**.
 - It reads **Stopped: hook stopped the push** only when its error names `pre-push`. A remote `pre-receive hook declined` reads **Stopped: push failed**. The Local checks cell uses the same test.
 - A dirty tree, a moved branch, a blocked move, a result that differs and a failed rebase offer **Retry rebase** and **Open terminal**.
-- Only the last two of these can **Dismiss**: a result that differs and a failed rebase. **Dismiss** records the stop like Keep. A stop that blocks the branch has no Dismiss.
 - A verb that fails keeps the panel with its error and **Retry**, on the branch it failed on.
 - The error is kept per branch. It names the branch when the session has more than one. Moving to another branch neither shows it nor locks that branch's verbs.
 - A rebase can be in progress in the worktree without a Goodboy stop. A terminal or an agent can start it.
@@ -196,6 +197,14 @@ Then the row chip, the line under the Branch header, the inline conflict prompt 
 
 A rebase still in progress keeps **Conflict**. So does one the agent aborted back to the old head, and an unrelated commit that leaves the branch behind its base.
 
+The other stops settle the same way when their cause is gone:
+
+- **Rebased here, but someone pushed to origin** and a failed push settle once origin has every local commit and no rebase or merge is in progress. One quiet line, **Origin now has your rebased commits**, shows and fades. It is never a toast.
+- A dirty tree settles once the tree is clean or the head moved.
+- A moved branch settles like a conflict.
+
+A git read that started before the stop never settles it. The backup stays, so **Undo** is still in the commits history.
+
 ### After a pull request merges
 
 Decide what happens to a merged branch: **Ask first**, **Delete on this Mac** or **Also on origin**, per workspace or project, with 14 days to restore it. A branch with later commits, uncommitted changes, or one Goodboy did not create is left alone.
@@ -220,4 +229,6 @@ This part is for contributors and agents who change the feature.
 - Rebase started elsewhere: `apps/desktop/src/features/history/JobBanner/GitRebaseRow.tsx` draws the row.
 - Open stop: `hasOpenRebaseStopOf` in `apps/desktop/src/features/branch/hasOpenRebaseStopOf.ts` is the one test for a Goodboy stop in the phase `stopped` or a rebase in progress. `apps/desktop/src/features/history/historyRecovery.ts` and `apps/desktop/src/features/history/rebaseStopOf.ts` bring a stop back after a restart, a reload or in a second window.
 - Rebase all: `apps/desktop/src/features/history/RebaseAllCard/index.tsx` draws the card. **Update all** calls `bringOriginInAndPush` with `canStartRewriter: false` in `apps/desktop/src/store/slices/rebaseAll/updateAll.ts`.
-- Settled stops: `apps/desktop/src/features/history/isRebaseStopSettled.ts` and `apps/desktop/src/store/slices/rebaseAll/settleStaleRebases.ts` clear a stop once git shows the rebase is done.
+- Settled stops: `apps/desktop/src/features/history/isRebaseStopRelevant.ts` is the one judge per stop reason, and `apps/desktop/src/store/slices/rebaseAll/settleStaleRebases.ts` clears a stop once a newer git read shows its cause gone. `useRebaseStop` and `useRebaseStatuses` run it on every status read, upstream distance and dirty count included.
+- One card per branch: `setHistoryRun` settles every older stop event of the mount when a rebase run reaches applied or pushed. `dismissRebaseCard` drops the run and settles its stop events. Settled stops live per window in sessionStorage (`apps/desktop/src/store/slices/rebaseAll/settledStopsMemory.ts`).
+- The card sits in the Branch page header column above `BranchHeader`, not in the `PaneShell` lead (`apps/desktop/src/features/branch/components/BranchPage/index.tsx`).
