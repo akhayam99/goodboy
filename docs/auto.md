@@ -397,11 +397,22 @@ writing to it reopens it to **Deciding**.
   **Resend approval**, and the dock that approved it reads "Plan v1 approved.
   Couldn't send it to Auto." with the same **Resend approval**: it sends
   "Approved plan v1." again.
-  When two plans exist the dock shows the one that waits for your OK, else the
-  newest (`dockPlanRowOf`). An approved plan is the
+  One selector decides the dock line (`dockPlanOf`): waiting, updating,
+  failed or settled. A plan whose planner the Lead discarded, or whose
+  artifact is discarded or superseded, never asks. A planner the Lead
+  delegates after a waiting plan replaces it (`planLineOf`): the line reads
+  "Updating plan v1 to v2" with the planner's state and time, Approve and
+  **Ask for changes** stay disabled with the reason as tooltip
+  (`planBlockedReasonOf`), and the new plan counts on as v2 while v1 reads
+  Superseded. An open revise and a change sent for v1 read the same way. A
+  planner that failed reads "Plan v2 failed" with the reason, **Retry plan
+  v2** and **Keep plan v1**; Keep stores `request.keptBase` on the failed
+  delegation (`keepAutoPlanBase`, refused once v1 is no longer current), and
+  only then does v1 ask again. A late failure or change for an older version
+  says nothing. The glance, the composer placeholder and the retry targets
+  read the same selector. An approved plan is the
   artifact colour (`AUTO_STATE_TONE.artifact`), never green, and the line does
-  not unmount: it settles to "Plan v1 approved" with **Open plan**. While the
-  plan is revised it reads "Plan v1 · changes asked". A plan a writer took
+  not unmount: it settles to "Plan v1 approved" with **Open plan**. A plan a writer took
   reads "Plan v1 used", and at the level **Never** it reads
   "Plan v1 · no approval needed" (`planAwaitsYou`): neither is an ask.
   Without a plan the dock folds to the live row (`DockLiveLine`): what runs,
@@ -817,7 +828,7 @@ rows read the stored `agents.autoPlanApproval` setting through
 off. There is no screen for that setting yet. **Ask for changes** opens the
 chat of Auto: a change written there makes Auto rework the same plan into
 the next version. The dock shows the newest plan that waits for the user and never a
-discarded one (`dockPlanRowOf`, `planAwaitsYou` reads only `active` plans), so a plan the
+discarded one (`dockPlanOf`, `planAwaitsYou` reads only `active` plans), so a plan the
 Lead dropped stops asking for approval.
 
 A writer admitted with a plan marks that plan used in the admission
