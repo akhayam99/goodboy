@@ -6,7 +6,7 @@ Open a session to see what it is for, what needs you and what happened so far.
 
 Read a session as one page: the goal, what needs you, what runs and where each branch stands.
 
-Every page of a session shares one head. The title row holds the session name, with its linked issue key in gray before it, then **New**, **Ask**, pin, refresh and more. A single click on the name renames it in place. Enter saves and Escape cancels. A small ring at the end of the field fills toward the 120 character limit and turns amber near it.
+Every page of a session shares one head. The title row holds the session name, with its linked issue key in gray before it, then **New** and **⋯**, which holds Ask, pin, refresh, archive and delete. A single click on the name renames it in place. Enter saves and Escape cancels. A small ring at the end of the field fills toward the 120 character limit and turns amber near it.
 
 Under the title sit the tabs **Overview**, **Runs**, **Artifacts**, **Questions** and **Context**. Runs, Artifacts and Questions carry a count. No tab draws a title of its own, because the tab names the page. A session with exactly one branch adds a **Changes** shortcut that opens that branch's changes. With more branches there is no shortcut, since changes belong to a branch and its pull request.
 
@@ -18,7 +18,7 @@ The Overview reads top to bottom:
 - One board with a row per branch.
 - A session with no agent, no run and no branch shows the start form and nothing else.
 
-**New** in the header starts an agent, a workflow or a write-up. **Ask** opens a panel beside the page. A branch, a pull request, an artifact or a run opens under the same head, and crumbs such as **Overview › Artifacts › Plan** replace the tabs. Each crumb is a link, and Esc goes one crumb up.
+**New** in the header starts an agent, a workflow or a write-up. **Ask about this session** in the **⋯**, or ⌘L, opens a panel beside the page. A branch, a pull request, an artifact or a run opens under the same head, and crumbs such as **Overview › Artifacts › Plan** replace the tabs. Each crumb is a link, and Esc goes one crumb up.
 
 **Reading the task without a diff.** A product manager understands where a task stands from the page alone, never from a raw diff or a file list.
 

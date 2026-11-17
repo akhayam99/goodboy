@@ -347,33 +347,31 @@ type MenuItemParams = {
 const menuItem = ({ name }: MenuItemParams): HTMLElement =>
   within(openSessionMenu()).getByRole('menuitem', { name });
 
+const shownMenuItem = ({ name }: MenuItemParams): HTMLElement =>
+  within(screen.queryByRole('menu') ?? openSessionMenu()).getByRole('menuitem', { name });
+
 describe('the session rail top row and its menu', () => {
-  it('holds Pin, Refresh and the session menu in the title row, with no foot', () => {
+  it('holds only the session menu in the title row, with no foot', () => {
     seed();
     mountColumn();
     expect(sessionLayer().querySelector('[data-level-identity]')).toBeNull();
     const top = within(rail());
 
     expect(top.getAllByRole('button').map((button) => button.getAttribute('aria-label'))).toEqual([
-      'Pin session',
-      'Refresh session',
       'More session actions',
     ]);
     expect(rail().querySelector('[data-session-foot]')).toBeNull();
-    expect(top.getByRole('button', { name: 'Pin session' }).getAttribute('aria-pressed')).toBe(
-      'false',
-    );
   });
 
-  it('pins through the registry action and shows Pin pressed once pinned', async () => {
+  it('pins through the registry action from the menu and offers Unpin once pinned', async () => {
     seed();
     const pinSession = vi.fn(async () => undefined);
     useAppStore.setState({ pinSession });
     mountColumn();
-    const top = within(rail());
+    const pin = menuItem({ name: /^Pin session/ });
 
     await act(async () => {
-      fireEvent.click(top.getByRole('button', { name: 'Pin session' }));
+      fireEvent.click(pin);
     });
     expect(pinSession).toHaveBeenCalledWith(openId);
 
@@ -382,9 +380,7 @@ describe('the session rail top row and its menu', () => {
         sessionPins: { [harborline.id]: [{ id: openId, at: 1 }] },
       });
     });
-    expect(top.getByRole('button', { name: 'Pin session' }).getAttribute('aria-pressed')).toBe(
-      'true',
-    );
+    expect(shownMenuItem({ name: /^Unpin session/ })).toBeDefined();
   });
 
   it('keeps the pin as it was and says why when pinning fails, with Retry', async () => {
@@ -395,15 +391,13 @@ describe('the session rail top row and its menu', () => {
       .mockResolvedValueOnce(undefined);
     useAppStore.setState({ pinSession });
     mountColumn();
-    const top = within(rail());
+    const pin = menuItem({ name: /^Pin session/ });
 
     await act(async () => {
-      fireEvent.click(top.getByRole('button', { name: 'Pin session' }));
+      fireEvent.click(pin);
     });
     screen.getByText(/database is locked/);
-    expect(top.getByRole('button', { name: 'Pin session' }).getAttribute('aria-pressed')).toBe(
-      'false',
-    );
+    expect(shownMenuItem({ name: /^Pin session/ })).toBeDefined();
 
     await act(async () => {
       fireEvent.click(within(titleRow()).getByRole('button', { name: 'Retry' }));
@@ -444,7 +438,7 @@ describe('the session rail top row and its menu', () => {
     expect(labels.some((label) => label.startsWith('Delete'))).toBe(true);
   });
 
-  it('holds five rows at most, with no row that has a control beside it, and shows the values', () => {
+  it('holds five rows at most: Ask, Pin, Refresh, Archive and Delete', () => {
     seed();
     mountColumn();
 
@@ -454,10 +448,11 @@ describe('the session rail top row and its menu', () => {
     expect(labels.length).toBeLessThanOrEqual(5);
     expect(labels.length).toBeGreaterThan(0);
     for (const label of labels) {
-      expect(label).toMatch(/^(Limit: |Asks you: |Stop running|Archive|Delete)/);
+      expect(label).toMatch(
+        /^(Ask about this session|Pin session|Unpin session|Refresh session|Archive|Delete)/,
+      );
     }
-    expect(labels.some((label) => /^(Pin|Unpin|Refresh|Rename)/.test(label))).toBe(false);
-    expect(labels.some((label) => label.startsWith('Limit: none'))).toBe(true);
+    expect(labels.some((label) => /^(Limit|Asks you|Stop running|Rename)/.test(label))).toBe(false);
   });
 
   it('keeps Delete behind its confirm', async () => {

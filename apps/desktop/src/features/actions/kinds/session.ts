@@ -105,6 +105,8 @@ const NO_MOUNT_REASON = 'Add a folder to this session first';
 
 const REFRESHING_REASON = 'Already refreshing';
 
+const ASK_SESSION_LABEL = 'Ask about this session';
+
 const deleteDescription = ({ isBranchless }: { readonly isBranchless: boolean }): string =>
   `${DELETE_REMOVED_LINE} ${deleteKeptLine({ isBranchless })} ${DELETE_CANNOT_UNDO}`;
 
@@ -353,6 +355,21 @@ const SESSION_ACTIONS: ReadonlyArray<ActionDefinition<SessionFacts>> = [
         objectKey: sessionObjectKey({ sessionId: facts.sessionId }),
         anchorKey: env.anchorKey,
       });
+    },
+  },
+  {
+    id: 'session.ask',
+    label: ASK_SESSION_LABEL,
+    icon: CONCEPT_ICONS.ask,
+    group: 'act',
+    shortcut: 'ask.open',
+    when: isUnarchived,
+    run: ({ facts, env }) => {
+      const state = env.getState();
+      if (state.currentSessionId !== facts.sessionId) {
+        state.navigate({ to: lensPlace({ state, sessionId: facts.sessionId, lens: null }) });
+      }
+      env.getState().openAsk({ sessionId: facts.sessionId });
     },
   },
   {

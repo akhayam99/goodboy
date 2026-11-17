@@ -18,7 +18,7 @@ in `features/session/pageRegistry.ts`); the sidebar flyout of the open session
 - **One session head.** `SessionFrame` hands `SessionHead` (`app/components/SessionHead`) to
   `SessionWorkspace` through `SessionHeadContext`, and `SessionWorkspace` draws it once, above
   every page and overlay, on the page column: the title row (the session title, renamed in
-  place, then **New**, **Ask**, Pin, Refresh and More session actions) and under it the tab
+  place, then **New** and More session actions) and under it the tab
   strip, whose bottom rule spans the column like the branch page tabs. A detail page drops More
   session actions from the title row (`SessionHeadActions` `isDetail`), so a page shows one `⋯`,
   the menu of what it shows (the run, the artifact, the pull request); the session menu is one
@@ -80,23 +80,18 @@ The text below was written for the rail. The cards it names (`SessionLevel/Level
   F2 on the focused title, renames it in place with the same rename as the
   sidebar row (an archived session's title stays read only), and "Overview" is only the
   rail entry's label. The rail's top row holds the rail
-  toggle at the left (with ⌥⌘B in its tooltip) and three buttons at the right
-  (`SessionLevel/SessionLevelActions`): **Pin session**, a toggle that shows
-  pressed while on and runs its registry action (`session.pin` / `unpin`; a
-  failure keeps the old state and shows under the row with Retry,
-  `ActionStatusLine`),
-  **Refresh session** (⌘R, `useSessionRefresh`, the same call as the key and
-  the palette) and **More session actions** (`⋯`, `ObjectOverflowMenu` over
-  the `session` registry kind), which holds five rows at most:
-  **Limit: none** or **Limit: $5.00** (`session.spend`), **Asks you: Every
-  step** or **Asks you: Never** (`session.asksNever` / `asksEveryStep`, a
-  press flips it),
-  **Stop running (2)** while agents run, **Archive** and **Delete**
-  (`sessionMenuOf`). A row that has a control beside it (Pin, Refresh, the
-  title for Rename, the rail entries for the lenses and the log) is not in
-  this menu. The sidebar row's right click menu and the palette keep the full
-  set. An archived session shows only the `⋯`, with **Restore** and
-  **Delete**. The rail has no foot: **Limit** and
+  toggle at the left (with ⌥⌘B in its tooltip) and one button at the right
+  (`SessionLevel/SessionLevelActions`): **More session actions** (`⋯`,
+  `ObjectOverflowMenu` over the `session` registry kind), which holds five rows:
+  **Ask about this session** (`session.ask`, ⌘L), **Pin session** or **Unpin
+  session** (`session.pin` / `unpin`), **Refresh session** (`session.refresh`,
+  ⌘R), **Archive** and **Delete** (`sessionMenuOf`). Each row runs through the
+  head's `useActionControls`, so a failure keeps the old state and shows under
+  the row with Retry (`ActionStatusLine`). The limit, the asks state and Stop
+  running are not in this menu: the run status line, the agent's Limit chip,
+  the sidebar row's right click menu and the palette keep them. An archived
+  session shows only the `⋯`, with **Restore** and **Delete**. The rail has no
+  foot: **Limit** and
   **Raise limit** on a paused run open the session spend popover from the edit
   host in `SessionFrame` (`SessionCostChip` with `placement="editHost"`,
   `requestSessionSpendLimitEdit`, `sessionSpendLines`). **Limit** on
@@ -719,7 +714,7 @@ activity yet show the plain overview with its actions.
   (`SessionOverviewPane/OverviewTitle`, see above) on every tab, and on the main sidebar row.
   It holds **New** (`OverviewActions`, ⌘N, a menu from the `newForm` kind of the action
   registry whose pick opens its form in the New drawer) and, on an archived session,
-  Restore, then Ask, Pin, Refresh and More session actions. **Archive session** is also the
+  Restore, then More session actions. **Archive session** is also the
   filled button of the row when every branch is merged, no agent works and no question is
   open (`ArchivePrimary`, `isArchivePrimaryOf`); otherwise Archive stays in the menu with
   the same guards. Below the head the Overview is five tiles and a board with one row per

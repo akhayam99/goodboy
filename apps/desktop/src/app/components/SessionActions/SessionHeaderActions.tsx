@@ -21,7 +21,7 @@ export const SessionHeaderActions = ({ session, isMenuShown = true }: Props) => 
           <ActionStatusLine controls={controls} showReasons={false} />
         </div>
       )}
-      <SessionLevelActions session={session} controls={controls} isMenuShown={isMenuShown} />
+      {isMenuShown ? <SessionLevelActions session={session} controls={controls} /> : null}
     </>
   );
 };

@@ -91,7 +91,7 @@ describe('r4 session rail scenes', () => {
     expect(within(tabs()).queryByRole('toolbar', { name: 'Tools' })).toBeNull();
     expect(within(tools()).getAllByRole('button')).toHaveLength(2);
     screen.getByRole('button', { name: 'More session actions' });
-    screen.getByRole('button', { name: 'Refresh session' });
+    expect(screen.queryByRole('button', { name: 'Refresh session' })).toBeNull();
   });
 
   it('r4-rail-cards-folded folds both cards and keeps the failing check as one header dot', async () => {

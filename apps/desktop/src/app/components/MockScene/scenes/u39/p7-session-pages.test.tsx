@@ -90,8 +90,8 @@ describe('the ux39 P7 session pages scenes', () => {
         .getByRole('tab', { name: /^Questions/ })
         .querySelector('[data-tab-count]')?.textContent,
     ).toBe('1');
-    expect(screen.getByRole('button', { name: 'Refresh session' }).tagName).toBe('BUTTON');
-    expect(within(tabs()).queryByRole('button', { name: 'Refresh session' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'More session actions' }).tagName).toBe('BUTTON');
+    expect(within(tabs()).queryByRole('button', { name: 'More session actions' })).toBeNull();
   });
 
   it('ux39-p7-open-branchless draws the pages of a plain folder', async () => {
