@@ -80,7 +80,6 @@ export const OrchestratedFacts = ({ session, view }: Props) => {
           frame={({ spentUsd, chips }) => (
             <RunGlanceLine
               isStateShown={false}
-              id={run.id}
               glance={glance}
               spend={spendTextOf({ spentUsd })}
               settings={isOpen ? chips : null}

@@ -140,15 +140,18 @@ describe('the c08 preset run scenes', () => {
     expect(tail().getAttribute('data-run-tail')).toBe('openStep');
   });
 
-  it('u35-preset-run-glance draws one glance line with the run spend once and Run settings', async () => {
+  it('u35-preset-run-glance draws one glance line with the run spend once and its settings as words', async () => {
     await mount('u35-preset-run-glance');
 
     const glance = document.querySelector<HTMLElement>('[data-glance]');
     expect(glance).not.toBeNull();
-    expect(glance?.textContent?.match(/\$/g)?.length ?? 0).toBeLessThanOrEqual(1);
     expect(
-      within(glance ?? document.body).getByRole('button', { name: 'Run settings' }),
-    ).toBeDefined();
+      within(glance ?? document.body).queryByRole('button', { name: 'Run settings' }),
+    ).toBeNull();
+    const facts = within(glance ?? document.body).getByRole('group', { name: 'Run settings' });
+    expect(facts.querySelectorAll('button[data-variant="fact"]').length).toBeGreaterThan(0);
+    const spendText = (glance?.textContent ?? '').replace(facts.textContent ?? '', '');
+    expect(spendText.match(/\$/g)?.length ?? 0).toBeLessThanOrEqual(1);
     expect(document.querySelectorAll('[data-glance]')).toHaveLength(1);
   });
 

@@ -817,6 +817,8 @@ rewriter-transcript-finished
 role-model-set-add
 rules-no-limits
 rules-teleport
+run-head-menu
+run-head-menu-light
 run-header-archived
 run-header-failed
 run-header-held

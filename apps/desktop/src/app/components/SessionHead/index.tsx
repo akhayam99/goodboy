@@ -49,14 +49,14 @@ export const SessionHead = ({ session }: Props) => {
               <SessionPageTabs session={session} />
             </div>
           )}
-          {isDetail && slots !== null ? (
-            <div
-              ref={slots.setMeta}
-              data-session-head-meta=""
-              className="flex shrink-0 items-center gap-2 empty:hidden"
-            />
-          ) : null}
         </div>
+        {isDetail && slots !== null ? (
+          <div
+            ref={slots.setMeta}
+            data-session-head-meta=""
+            className="flex min-w-0 items-center gap-2 empty:hidden"
+          />
+        ) : null}
       </header>
     </PageColumn>
   );

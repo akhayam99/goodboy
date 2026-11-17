@@ -507,7 +507,13 @@ Nothing appears on hover; a shortcut lives in the tooltip.
 `SettingChip` is the one setting of a header line: a faint label and a
 `text-eyebrow` value at level 5, no border and no chevron at rest. Hover and
 keyboard focus draw the 1px border and the chevron, and an open popover keeps
-both. The line sits under the title, the model in the same line.
+both. The line sits under the title, the model in the same line. In the
+status line of a run or an agent page the same setting is a fact instead: the
+`fact` Button variant, a muted word with a dotted underline, the hover fill on
+point and while its menu is open, no label and no border, a faint `·` before
+it ("Stops after the plan · Ask first · Limit $10.00"). `SettingLookContext`
+picks the look, so one setting component serves both; its tooltip says what the
+word changes.
 A page uses the five levels: its title is level 1 (or `text-lead` in a list
 surface), its sections are level 2, its prose is level 3, its names are level
 4 (`text-row` for a row's name and a group label, `text-ui` for the rest of a

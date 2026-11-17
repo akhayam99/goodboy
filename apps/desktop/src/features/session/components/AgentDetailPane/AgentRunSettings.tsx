@@ -4,7 +4,6 @@ import { useAppStore } from '../../../../store';
 import { autoChildStatusOf } from '../../../auto/autoChildStatusOf';
 import { delegationGlanceOf } from '../../glance/delegationGlanceOf';
 import type { useAutoChat } from '../../../auto/chat/useAutoChat';
-import { autoLimitOpenEvent } from '../../../auto/chat/autoLimitOpenEvent';
 import { useAgentSpend } from '../../hooks/useAgentSpend';
 import { spendTextOf } from '../../glance/spendTextOf';
 import { useConversationGlance } from '../../../../store/hooks/useConversationGlance';
@@ -57,11 +56,9 @@ export const AgentRunSettings = ({
     childStatus === null ? conversationGlance : delegationGlanceOf({ status: childStatus });
   return (
     <RunGlanceLine
-      id={agent.id}
       glance={{ ...glance, sentence: '' }}
       spend={spendTextOf({ spentUsd: budget === null ? agentSpendUsd : budget.spentUsd })}
       settings={line}
-      revealEvent={autoView === null ? undefined : autoLimitOpenEvent({ treeId: autoView.tree.id })}
       isInHead={isInHead}
       trailing={trailing}
       leading={state}

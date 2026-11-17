@@ -6,6 +6,7 @@ import { ATTACHMENT_ACCEPT } from '../../../attachment-kinds';
 import { ATTACHMENT_LIMIT } from '../../../../attachments/pendingAttachment';
 import { ComposerAttachmentCount } from '../../../../../shared/components/ComposerSurface/ComposerAttachmentCount';
 import { ComposerFooter } from '../../../../../shared/components/ComposerSurface/ComposerFooter';
+import { SettingLookContext } from '../../../../../shared/components/SettingChip/settingLookContext';
 import type { ComposerControlSlots } from '../composerControlSlots';
 import type { useTurnRouting } from '../hooks/useTurnRouting';
 import { ComposerPlusMenu } from './ComposerPlusMenu';
@@ -95,7 +96,10 @@ export const ComposerToolbar = ({
       />
       {controlSlots === undefined || controlSlots.asks === null || asks === null
         ? null
-        : createPortal(asks, controlSlots.asks)}
+        : createPortal(
+            <SettingLookContext.Provider value="fact">{asks}</SettingLookContext.Provider>,
+            controlSlots.asks,
+          )}
     </div>
   );
 };

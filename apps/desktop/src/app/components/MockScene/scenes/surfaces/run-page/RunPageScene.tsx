@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { leadPermissionsOf } from '@goodboy/core/auto';
 import { AutoReleaseContext } from '../../../../../../features/auto/autoReleaseContext';
 import { SessionWorkspace } from '../../../../../../features/session/components/SessionWorkspace';
 import { applyDocumentTheme } from '../../../../../../shared/lib/theme';
@@ -33,6 +34,16 @@ type Props = {
 };
 
 const keepScene = ({ scene }: ExtendParams): AutoSceneData => scene;
+
+const LEAD_PERMISSIONS = leadPermissionsOf({
+  leadRows: {},
+  defaultRows: {},
+  sessionLevel: 'plan',
+  workspaceLevel: null,
+  isPlanApprovalOff: false,
+  isWorkFlowOn: true,
+  spendLimitUsd: 10,
+});
 
 export const RunPageScene = ({
   state,
@@ -69,6 +80,7 @@ export const RunPageScene = ({
       agentEffortOverride: { [AUTO_ROOT_ID]: 'medium' },
       autoTreeViews: { [AUTO_SESSION.id]: [scene.view] },
       loadAutoTrees: async () => undefined,
+      readLeadPermissions: async () => LEAD_PERMISSIONS,
       selectedAgentId: { [AUTO_SESSION.id]: shownAgentId },
       agentTurnState: { [AUTO_ROOT_ID]: scene.rootTurn },
       agentQueue: { [AUTO_ROOT_ID]: [] },

@@ -1,63 +1,39 @@
-import { useContext, useEffect, useState, type ReactNode } from 'react';
-import { ChevronDown, SlidersHorizontal } from '@goodboy/ui/icons';
-import { Button, ICON_SIZE, IconButton, cn, tintClasses } from '@goodboy/ui';
-import { PRESSED_TOGGLE } from '../../../../shared/components/pressedToggle';
+import { useContext, type ReactNode } from 'react';
+import { cn, tintClasses } from '@goodboy/ui';
+import { FactDot } from '../../../../shared/components/SettingChip/FactDot';
+import { SettingLookContext } from '../../../../shared/components/SettingChip/settingLookContext';
 import type { Glance } from '../../glance/glanceOf';
 import { SessionHeadSlotsContext } from '../../sessionHeadSlotsContext';
 import { HeadSlotPortal } from '../HeadSlotPortal';
 
 type Props = {
-  readonly id: string;
   readonly glance: Glance;
   readonly spend: string | null;
   readonly settings: ReactNode;
-  readonly revealEvent?: string;
   readonly isStateShown?: boolean;
   readonly isInHead?: boolean;
   readonly trailing?: ReactNode;
   readonly leading?: ReactNode;
 };
 
-const CHIP_OPEN_EVENTS: ReadonlyArray<string> = [
-  'goodboy:open-model-picker',
-  'goodboy:open-permission-picker',
-];
-
 export const RunGlanceLine = ({
-  id,
   glance,
   spend,
   settings,
-  revealEvent,
   isStateShown = true,
   isInHead = false,
   trailing = null,
   leading = null,
 }: Props) => {
-  const [isOpen, setIsOpen] = useState(false);
   const slots = useContext(SessionHeadSlotsContext);
   const isHeadRow = isInHead && slots !== null;
   const tint = tintClasses(glance.tone);
-  const settingsId = `run-settings-${id}`;
-
-  useEffect(() => {
-    const names = revealEvent === undefined ? CHIP_OPEN_EVENTS : [...CHIP_OPEN_EVENTS, revealEvent];
-    const reveal = () => setIsOpen(true);
-    for (const name of names) {
-      window.addEventListener(name, reveal);
-    }
-    return () => {
-      for (const name of names) {
-        window.removeEventListener(name, reveal);
-      }
-    };
-  }, [revealEvent]);
 
   const row = (
     <div
       data-glance={glance.state}
       data-glance-place={isHeadRow ? 'head' : 'page'}
-      className="flex min-h-6 min-w-0 items-center gap-2 text-meta"
+      className="flex min-h-6 min-w-0 flex-1 flex-wrap items-center gap-x-2 gap-y-1 text-meta"
     >
       {leading}
       {isStateShown ? (
@@ -70,7 +46,11 @@ export const RunGlanceLine = ({
           )}
         />
       ) : null}
-      <span role="status" aria-live="polite" className="flex min-w-0 items-center gap-2">
+      <span
+        role="status"
+        aria-live="polite"
+        className="flex min-w-0 items-center gap-2 empty:hidden"
+      >
         {isStateShown ? (
           <span
             className={cn(
@@ -83,92 +63,33 @@ export const RunGlanceLine = ({
         ) : null}
         {glance.sentence === '' ? null : (
           <>
-            {isStateShown ? (
-              <span aria-hidden="true" className="text-faint-foreground">
-                ·
-              </span>
-            ) : null}
+            {isStateShown ? <FactDot /> : null}
             <span className="min-w-0 truncate text-muted-foreground">{glance.sentence}</span>
           </>
         )}
       </span>
-      {isHeadRow ? null : <span className="flex-1" />}
       {spend === null ? null : (
         <>
-          {isHeadRow ? (
-            <span aria-hidden="true" className="text-faint-foreground">
-              ·
-            </span>
-          ) : null}
+          <FactDot />
           <span className="shrink-0 tabular-nums text-faint-foreground">{spend}</span>
         </>
       )}
-      {isHeadRow ? (
-        <span data-glance-actions="" className="flex shrink-0 items-center gap-1">
-          {settings === null ? null : (
-            <IconButton
-              icon={SlidersHorizontal}
-              label="Run settings"
-              aria-expanded={isOpen}
-              aria-pressed={isOpen}
-              aria-controls={settingsId}
-              className={PRESSED_TOGGLE}
-              onClick={() => setIsOpen((wasOpen) => !wasOpen)}
-            />
-          )}
-          {trailing}
-        </span>
-      ) : (
+      {settings === null ? null : (
+        <SettingLookContext.Provider value="fact">{settings}</SettingLookContext.Provider>
+      )}
+      {trailing === null ? null : (
         <>
-          {settings === null ? null : (
-            <Button
-              variant="quiet"
-              size="xs"
-              aria-expanded={isOpen}
-              aria-label="Run settings"
-              aria-controls={settingsId}
-              onClick={() => setIsOpen((wasOpen) => !wasOpen)}
-            >
-              Settings
-              <ChevronDown
-                size={ICON_SIZE.row}
-                aria-hidden
-                className={cn(isOpen && 'rotate-180')}
-              />
-            </Button>
-          )}
-          {trailing}
+          <span className="flex-1" />
+          <span data-glance-actions="" className="flex shrink-0 items-center gap-1">
+            {trailing}
+          </span>
         </>
       )}
     </div>
   );
 
-  const panel =
-    settings === null ? null : (
-      <div
-        id={settingsId}
-        data-open={isOpen}
-        className={cn(
-          'min-w-0 flex-wrap items-center gap-2 rounded-lg bg-subtle px-3 py-3',
-          isOpen ? 'flex' : 'hidden',
-        )}
-      >
-        {settings}
-      </div>
-    );
-
   if (isHeadRow) {
-    return (
-      <>
-        <HeadSlotPortal slot="meta">{row}</HeadSlotPortal>
-        {panel}
-      </>
-    );
+    return <HeadSlotPortal slot="meta">{row}</HeadSlotPortal>;
   }
-  return (
-    <div className="flex min-w-0 flex-col gap-2">
-      {row}
-      {panel}
-    </div>
-  );
+  return row;
 };

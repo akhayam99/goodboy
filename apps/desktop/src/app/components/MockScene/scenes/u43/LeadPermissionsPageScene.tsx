@@ -10,9 +10,8 @@ type Props = {
   readonly step: LeadPermissionsStep;
 };
 
-const OPEN_ROW_AFTER_MS = 400;
-const OPEN_MENU_AFTER_MS = 900;
-const OPEN_DRAWER_AFTER_MS = 1300;
+const OPEN_MENU_AFTER_MS = 500;
+const OPEN_DRAWER_AFTER_MS = 900;
 
 type ClickParams = {
   readonly selector: string;
@@ -34,11 +33,10 @@ export const LeadPermissionsPageScene = ({ leadRows, step }: Props) => {
       spendLimitUsd: 10,
     });
     useAppStore.setState({ readLeadPermissions: async () => permissions });
-    const openRow = () => clickOn({ selector: 'button[aria-label="Run settings"]' });
     const openMenu = () => clickOn({ selector: '[data-setting-chip="Stops for your OK"]' });
     const openDrawer = () =>
       clickOn({ selector: '[role="menuitem"][data-menu-label="Fine-tune this run"]' });
-    const timers = [setTimeout(openRow, OPEN_ROW_AFTER_MS)];
+    const timers: Array<ReturnType<typeof setTimeout>> = [];
     if (step !== 'head') {
       timers.push(setTimeout(openMenu, OPEN_MENU_AFTER_MS));
     }

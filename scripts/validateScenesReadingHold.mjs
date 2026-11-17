@@ -9,10 +9,7 @@ export const readingHoldProbe = async () => {
   const glance = document.querySelector('[data-glance]');
   const page = glance?.closest('.\\@container') ?? null;
   const scroller = page?.querySelector('.mask-fade-y') ?? null;
-  const toggle =
-    [...(page?.querySelectorAll('button') ?? [])].find(
-      (button) => button.getAttribute('aria-label') === 'Run settings',
-    ) ?? null;
+  const toggle = glance?.querySelector('button[data-variant="fact"]') ?? null;
   if (scroller === null || toggle === null) {
     return null;
   }
@@ -42,16 +39,14 @@ export const readingHoldFailures = ({
   tolerance = READING_HOLD_TOLERANCE_PX,
 }) => {
   if (measured === null || measured.isReadable === false) {
-    return [
-      { scene, width, check: 'the agent page has a transcript to read and a Settings toggle' },
-    ];
+    return [{ scene, width, check: 'the agent page has a transcript to read and a setting word' }];
   }
   const failures = [];
   if (Math.abs(measured.opened) > tolerance) {
     failures.push({
       scene,
       width,
-      check: 'opening Settings does not move the text being read',
+      check: 'opening a setting does not move the text being read',
       moved: Math.round(measured.opened * 10) / 10,
     });
   }
@@ -59,7 +54,7 @@ export const readingHoldFailures = ({
     failures.push({
       scene,
       width,
-      check: 'closing Settings puts the text being read back',
+      check: 'closing a setting puts the text being read back',
       moved: Math.round(measured.closed * 10) / 10,
     });
   }

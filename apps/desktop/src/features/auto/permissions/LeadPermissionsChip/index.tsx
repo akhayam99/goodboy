@@ -2,10 +2,14 @@ import {
   AnchoredPopover,
   Button,
   MENU_MAX_WIDTH,
+  Tooltip,
   cn,
   useDropdown,
   type MenuEntry,
 } from '@goodboy/ui';
+import { FactButton } from '../../../../shared/components/SettingChip/FactButton';
+import { FactDot } from '../../../../shared/components/SettingChip/FactDot';
+import { useIsSettingFact } from '../../../../shared/components/SettingChip/settingLookContext';
 import type { AutoTreeId, SessionId, WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { AppMenuList } from '../../../actions/AppMenuList';
@@ -92,27 +96,48 @@ export const LeadPermissionsChip = ({ target }: Props) => {
           fineTune,
         ];
   const error = model.levelError ?? model.readError;
+  const ariaLabel = `${LEAD_LEVEL_COPY.menu}: ${word}`;
+  const isFact = useIsSettingFact();
+  const fact = (
+    <Tooltip
+      content={level === null ? LEAD_LEVEL_COPY.menu : LEAD_LEVEL_COPY.help({ level, differ })}
+      isSuppressed={dropdown.open}
+    >
+      <FactButton
+        aria-haspopup="menu"
+        aria-expanded={dropdown.open}
+        aria-label={ariaLabel}
+        data-setting-chip={LEAD_LEVEL_COPY.menu}
+        disabled={level === null}
+        onClick={dropdown.toggle}
+      >
+        {level === null ? word : LEAD_LEVEL_COPY.fact({ level, differ })}
+      </FactButton>
+    </Tooltip>
+  );
+  const chip = (
+    <Button
+      size="xs"
+      variant="setting"
+      aria-haspopup="menu"
+      aria-expanded={dropdown.open}
+      aria-label={ariaLabel}
+      data-setting-chip={LEAD_LEVEL_COPY.menu}
+      disabled={level === null}
+      onClick={dropdown.toggle}
+      className={cn('max-w-full', dropdown.open && 'border-border bg-selected')}
+    >
+      <span className="shrink-0 text-faint-foreground">{LEAD_LEVEL_COPY.chip}:</span>
+      <span className="min-w-0 max-w-56 truncate text-eyebrow text-foreground">{word}</span>
+    </Button>
+  );
   return (
     <span className="inline-flex min-w-0 items-center gap-2">
+      {isFact ? <FactDot /> : null}
       <AnchoredPopover
         dropdown={dropdown}
         anchorClassName="inline-flex min-w-0"
-        trigger={
-          <Button
-            size="xs"
-            variant="setting"
-            aria-haspopup="menu"
-            aria-expanded={dropdown.open}
-            aria-label={`${LEAD_LEVEL_COPY.menu}: ${word}`}
-            data-setting-chip={LEAD_LEVEL_COPY.menu}
-            disabled={level === null}
-            onClick={dropdown.toggle}
-            className={cn('max-w-full', dropdown.open && 'border-border bg-selected')}
-          >
-            <span className="shrink-0 text-faint-foreground">{LEAD_LEVEL_COPY.chip}:</span>
-            <span className="min-w-0 max-w-56 truncate text-eyebrow text-foreground">{word}</span>
-          </Button>
-        }
+        trigger={isFact ? fact : chip}
       >
         <AppMenuList label={LEAD_LEVEL_COPY.menu} entries={entries} onClose={dropdown.close} />
       </AnchoredPopover>

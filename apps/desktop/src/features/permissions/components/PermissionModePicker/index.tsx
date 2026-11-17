@@ -23,6 +23,9 @@ import {
 } from '../../modeCopy';
 import { openPermissionSettings } from '../../openPermissionSettings';
 import { NAMES } from '../../../../shared/utils/names';
+import { FactButton } from '../../../../shared/components/SettingChip/FactButton';
+import { FactDot } from '../../../../shared/components/SettingChip/FactDot';
+import { useIsSettingFact } from '../../../../shared/components/SettingChip/settingLookContext';
 
 type Props = {
   readonly session: Session;
@@ -59,138 +62,157 @@ export const PermissionModePicker = ({ session, activeProvider }: Props) => {
       : `${currentUnavailable}. Runs as ${modeCopyOf({ mode: runsAs }).label}`;
   const tooltipLabel = `${current.label}. ${triggerLabel}`;
   const CurrentIcon = current.icon;
+  const isFact = useIsSettingFact();
 
   const onPick = (mode: ClaudePermissionMode) => {
     void setSessionPermissionMode(session.id, mode);
     close();
   };
 
-  return (
-    <AnchoredPopover
-      dropdown={dropdown}
-      role="dialog"
-      ariaLabel={NAMES.edits}
-      className="rounded-lg border-0 bg-subtle py-2 ring-1 ring-border-soft"
-      trigger={
-        <Tooltip content={tooltipLabel} shortcut="session.permissions" isSuppressed={open}>
-          <Chip
-            kind="reference"
-            tone="neutral"
-            bordered={false}
-            as="button"
-            onClick={toggle}
-            hasPopup="dialog"
-            expanded={open}
-            ariaLabel={`${NAMES.edits}: ${current.label}`}
-            className="gap-2 whitespace-nowrap bg-subtle px-3 py-0.5 hover:bg-hover hover:opacity-100 @max-sm:px-2"
-            icon={
-              <CurrentIcon
-                size={ICON_SIZE.row}
-                aria-hidden
-                className={tintClasses(current.tone).icon}
-              />
-            }
-            label={
-              <span className="text-foreground @max-sm:hidden">
-                <span className="text-faint-foreground">{`${NAMES.edits}: `}</span>
-                {current.label}
-              </span>
-            }
-            trailing={
-              <ChevronDown
-                size={ICON_SIZE.row}
-                aria-hidden
-                className="text-faint-foreground @max-sm:hidden"
-              />
-            }
+  const fact = (
+    <Tooltip content={triggerLabel} shortcut="session.permissions" isSuppressed={open}>
+      <FactButton
+        aria-haspopup="dialog"
+        aria-expanded={open}
+        aria-label={`${NAMES.edits}: ${current.label}`}
+        onClick={toggle}
+      >
+        {current.label}
+      </FactButton>
+    </Tooltip>
+  );
+
+  const chip = (
+    <Tooltip content={tooltipLabel} shortcut="session.permissions" isSuppressed={open}>
+      <Chip
+        kind="reference"
+        tone="neutral"
+        bordered={false}
+        as="button"
+        onClick={toggle}
+        hasPopup="dialog"
+        expanded={open}
+        ariaLabel={`${NAMES.edits}: ${current.label}`}
+        className="gap-2 whitespace-nowrap bg-subtle px-3 py-0.5 hover:bg-hover hover:opacity-100 @max-sm:px-2"
+        icon={
+          <CurrentIcon
+            size={ICON_SIZE.row}
+            aria-hidden
+            className={tintClasses(current.tone).icon}
           />
-        </Tooltip>
-      }
-    >
-      <div className="flex items-center px-3 pb-1 pt-1">
-        <span className="text-meta text-muted-foreground">What can agents do?</span>
-      </div>
-      {PICKER_MODES.map((mode) => {
-        const copy = MODE_COPY[mode];
-        const Icon = copy.icon;
-        const isActive = pickerModeOf({ mode: session.permissionMode }) === mode;
-        const reason = unavailableReason(mode);
-        const isUnavailable = reason !== null;
-        return (
-          <button
-            key={mode}
-            type="button"
-            disabled={isUnavailable}
-            onClick={() => onPick(mode)}
-            className={cn(
-              'flex w-full items-start gap-2 px-3 py-2 text-left motion-safe:transition-colors',
-              isUnavailable ? 'cursor-not-allowed' : 'hover:bg-hover',
-            )}
-          >
-            <Icon
-              size={ICON_SIZE.control}
-              aria-hidden
+        }
+        label={
+          <span className="text-foreground @max-sm:hidden">
+            <span className="text-faint-foreground">{`${NAMES.edits}: `}</span>
+            {current.label}
+          </span>
+        }
+        trailing={
+          <ChevronDown
+            size={ICON_SIZE.row}
+            aria-hidden
+            className="text-faint-foreground @max-sm:hidden"
+          />
+        }
+      />
+    </Tooltip>
+  );
+
+  return (
+    <>
+      {isFact ? <FactDot /> : null}
+      <AnchoredPopover
+        dropdown={dropdown}
+        role="dialog"
+        ariaLabel={NAMES.edits}
+        className="rounded-lg border-0 bg-subtle py-2 ring-1 ring-border-soft"
+        trigger={isFact ? fact : chip}
+      >
+        <div className="flex items-center px-3 pb-1 pt-1">
+          <span className="text-meta text-muted-foreground">What can agents do?</span>
+        </div>
+        {PICKER_MODES.map((mode) => {
+          const copy = MODE_COPY[mode];
+          const Icon = copy.icon;
+          const isActive = pickerModeOf({ mode: session.permissionMode }) === mode;
+          const reason = unavailableReason(mode);
+          const isUnavailable = reason !== null;
+          return (
+            <button
+              key={mode}
+              type="button"
+              disabled={isUnavailable}
+              onClick={() => onPick(mode)}
               className={cn(
-                'mt-0.5 shrink-0',
-                isUnavailable ? 'text-disabled-foreground' : tintClasses(copy.tone).icon,
+                'flex w-full items-start gap-2 px-3 py-2 text-left motion-safe:transition-colors',
+                isUnavailable ? 'cursor-not-allowed' : 'hover:bg-hover',
               )}
-            />
-            <span className="flex min-w-0 flex-1 flex-col">
-              <span className="flex items-center gap-2">
+            >
+              <Icon
+                size={ICON_SIZE.control}
+                aria-hidden
+                className={cn(
+                  'mt-0.5 shrink-0',
+                  isUnavailable ? 'text-disabled-foreground' : tintClasses(copy.tone).icon,
+                )}
+              />
+              <span className="flex min-w-0 flex-1 flex-col">
+                <span className="flex items-center gap-2">
+                  <span
+                    className={cn(
+                      'text-meta',
+                      isUnavailable ? 'text-disabled-foreground' : 'text-foreground',
+                    )}
+                  >
+                    {copy.label}
+                  </span>
+                  {defaultCopy.mode === mode ? (
+                    <span className="rounded-sm bg-muted px-1 text-chip text-muted-foreground">
+                      Default
+                    </span>
+                  ) : null}
+                </span>
                 <span
                   className={cn(
                     'text-meta',
-                    isUnavailable ? 'text-disabled-foreground' : 'text-foreground',
+                    isUnavailable ? 'text-disabled-foreground' : 'text-muted-foreground',
                   )}
                 >
-                  {copy.label}
+                  {copy.promise}
                 </span>
-                {defaultCopy.mode === mode ? (
-                  <span className="rounded-sm bg-muted px-1 text-chip text-muted-foreground">
-                    Default
+                {isUnavailable ? (
+                  <span className="flex items-center gap-1 text-meta text-muted-foreground">
+                    <X size={ICON_SIZE.mark} aria-hidden />
+                    {reason}
                   </span>
                 ) : null}
               </span>
-              <span
-                className={cn(
-                  'text-meta',
-                  isUnavailable ? 'text-disabled-foreground' : 'text-muted-foreground',
-                )}
-              >
-                {copy.promise}
-              </span>
-              {isUnavailable ? (
-                <span className="flex items-center gap-1 text-meta text-muted-foreground">
-                  <X size={ICON_SIZE.mark} aria-hidden />
-                  {reason}
-                </span>
+              {isActive ? (
+                <Check
+                  size={ICON_SIZE.row}
+                  aria-label="Current mode"
+                  className="mt-0.5 shrink-0 text-primary"
+                />
               ) : null}
-            </span>
-            {isActive ? (
-              <Check
-                size={ICON_SIZE.row}
-                aria-label="Current mode"
-                className="mt-0.5 shrink-0 text-primary"
-              />
-            ) : null}
-          </button>
-        );
-      })}
-      <div className="flex items-center gap-2 px-3 pt-2">
-        <span className="min-w-0 flex-1 truncate text-meta text-faint-foreground">
-          Workspace default: {defaultCopy.label}
-        </span>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => {
-            close();
-            openPermissionSettings();
-          }}
-        >
-          Rules
-        </Button>
-      </div>
-    </AnchoredPopover>
+            </button>
+          );
+        })}
+        <div className="flex items-center gap-2 px-3 pt-2">
+          <span className="min-w-0 flex-1 truncate text-meta text-faint-foreground">
+            Workspace default: {defaultCopy.label}
+          </span>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              close();
+              openPermissionSettings();
+            }}
+          >
+            Rules
+          </Button>
+        </div>
+      </AnchoredPopover>
+    </>
   );
 };
