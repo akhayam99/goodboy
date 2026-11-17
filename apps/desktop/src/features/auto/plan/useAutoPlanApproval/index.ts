@@ -118,7 +118,7 @@ export const useAutoPlanApproval = ({
         setToldFailedRevision(result.revision);
         await reportError({
           recovery: CHECK_STATE,
-          title: "The plan is approved, but Auto wasn't told",
+          title: "The plan is approved, but the Lead wasn't told",
           error: result.error,
           sessionId,
         });
@@ -176,7 +176,7 @@ export const useAutoPlanApproval = ({
     } catch (error) {
       await reportError({
         recovery: CHECK_STATE,
-        title: "Couldn't send the approval to Auto",
+        title: "Couldn't send the approval to the Lead",
         error,
         sessionId,
       });

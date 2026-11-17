@@ -101,7 +101,7 @@ beforeEach(() => {
 });
 
 describe('AgentFollowUps inside an Auto tree', () => {
-  it('offers nothing when Auto owns the agent, because Auto decides what comes next', () => {
+  it('offers nothing when Auto owns the agent, because The Lead decides what comes next', () => {
     state.autoTreeViews = {
       [sessionId]: [
         {

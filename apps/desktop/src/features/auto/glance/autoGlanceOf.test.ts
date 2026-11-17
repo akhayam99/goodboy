@@ -98,7 +98,7 @@ describe('autoGlanceOf', () => {
       state: 'failed',
       word: 'Failed',
       tone: 'danger',
-      sentence: "Auto couldn't reply",
+      sentence: "The Lead couldn't reply",
     });
   });
 

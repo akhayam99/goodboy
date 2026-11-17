@@ -46,12 +46,45 @@ describe('retired names match whatever the casing', () => {
     expect(retiredIdsIn({ text })).toContain(id);
   });
 
-  it.each(['Start a run', 'Start workflow', 'Orchestrated', 'Let Auto take it from here'])(
+  it.each(['Start a run', 'Start workflow', 'Orchestrated', 'Let the Lead take it from here'])(
     'leaves the start verb %s alone',
     (text) => {
       expect(retiredIdsIn({ text })).toEqual([]);
     },
   );
+
+  it.each([
+    'Auto needs you',
+    'Auto is reading the results',
+    'Auto is rebasing on main',
+    "Auto's answer to an agent was not sent",
+    'Auto tried to start an Implementer',
+    'Let Auto take it from here',
+    'Detach from Auto',
+    'Open Auto',
+    'Message Auto',
+    'Resolve with Auto',
+    'Returned to Auto',
+    'Stopped by Auto',
+    'before Auto starts',
+  ])('flags the old Lead wording %s', (text) => {
+    expect(retiredIdsIn({ text })).toContain('auto-as-the-lead');
+  });
+
+  it.each([
+    'Lead needs you',
+    'Message Lead',
+    'Resolve with the Lead',
+    'Auto',
+    'Auto picks the model',
+    'Auto in Models',
+    'Auto on Claude',
+    'Use as an Auto check',
+    'Auto checks',
+    'Auto · main',
+  ])('keeps the current wording %s', (text) => {
+    expect(retiredIdsIn({ text })).toEqual([]);
+  });
 
   it.each([
     ['Auto agent', 'auto-agent'],

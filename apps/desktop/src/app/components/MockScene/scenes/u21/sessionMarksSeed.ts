@@ -195,7 +195,7 @@ const SESSIONS: ReadonlyArray<Session> = [
   }),
   sessionOf({
     slug: 'autowait',
-    goal: 'Let Auto split the payments-api retries',
+    goal: 'Let the Lead split the payments-api retries',
     openedAt: '2026-10-07T09:04:00.000Z',
   }),
   sessionOf({
@@ -370,7 +370,7 @@ const stepAgentFor = ({ slug }: SlugParams): Agent => ({
 
 const autoRootFor = ({ slug }: SlugParams): Agent => ({
   ...agentFor({ slug, status: 'running', isUnread: false }),
-  name: 'Auto',
+  name: 'Lead',
   kind: 'auto',
 });
 

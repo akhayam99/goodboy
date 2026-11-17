@@ -114,7 +114,7 @@ export const ATTENTION_REASON_META: Record<SessionAttentionReason, AttentionEntr
     icon: 'auto',
     tone: 'warning',
     mark: 'approval',
-    words: 'Auto needs you',
+    words: `${NAMES.lead} needs you`,
   }),
   'slack-reply-waiting': entryOf({
     icon: 'slack',

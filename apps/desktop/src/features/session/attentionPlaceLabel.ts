@@ -23,7 +23,7 @@ const LABEL = {
   'run-stopped': 'Open run',
   'run-paused-at-limit': 'Open run',
   'run-waits-for-go': 'Open run',
-  'auto-needs-you': 'Open Auto',
+  'auto-needs-you': 'Open the Lead',
   'slack-reply-waiting': 'Open agent',
   'history-stopped': 'Open branch',
 } as const satisfies Record<NotificationPlaceReason, string>;

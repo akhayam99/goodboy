@@ -77,7 +77,7 @@ describe('queuedRowsOf', () => {
     });
     expect(none).toMatchObject({
       statusText: 'Not delivered',
-      reason: 'Auto was stopped.',
+      reason: 'The Lead was stopped.',
       action: null,
     });
   });

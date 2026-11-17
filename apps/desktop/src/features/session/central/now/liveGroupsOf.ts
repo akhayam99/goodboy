@@ -306,7 +306,7 @@ const autoGroupModelOf = ({ group, agents }: AutoParams): LiveAutoGroup | null =
   return {
     kind: 'auto',
     id: group.rootAgentId,
-    title: group.title ?? 'Auto',
+    title: group.title ?? 'Lead',
     state,
     mountId: mountIdOf({ agents: owned }),
     startedAt: timeOf({ value: byId.get(group.rootAgentId)?.startedAt }),

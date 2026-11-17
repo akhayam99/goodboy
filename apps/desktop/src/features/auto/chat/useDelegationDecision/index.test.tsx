@@ -68,7 +68,7 @@ describe('answering an Auto question', () => {
 
     expect(reportError).toHaveBeenCalledWith({
       recovery: { clause: 'check-state' },
-      title: 'Auto has already moved on',
+      title: 'The Lead has already moved on',
       error: new Error('This question is no longer open.'),
     });
     expect(result.current.busyId).toBeNull();
@@ -88,7 +88,7 @@ describe('answering an Auto question', () => {
 
     expect(reportError).toHaveBeenCalledWith({
       recovery: { clause: 'check-state' },
-      title: "Couldn't answer Auto",
+      title: "Couldn't answer the Lead",
       error: failure,
     });
     expect(result.current.busyId).toBeNull();
@@ -103,8 +103,8 @@ describe('answering an Auto question', () => {
 
     expect(reportError).toHaveBeenCalledWith({
       recovery: { clause: 'nothing-changed' },
-      title: "Couldn't answer Auto",
-      error: new Error("Auto can't take this answer here yet."),
+      title: "Couldn't answer the Lead",
+      error: new Error("The Lead can't take this answer here yet."),
     });
     expect(result.current.busyId).toBeNull();
   });

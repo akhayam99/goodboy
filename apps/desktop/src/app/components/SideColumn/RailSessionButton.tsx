@@ -1,12 +1,13 @@
 import type { FocusEvent, KeyboardEvent, MouseEvent } from 'react';
-import { cn, Tooltip } from '@goodboy/ui';
+import { cn, StatusMark, Tooltip, type StatusMarkSpec } from '@goodboy/ui';
 import type { Session } from '@goodboy/types';
 import { useSessionRowFacts } from '../../../features/workspace/hooks/useSessionRowFacts';
-import { StateNode } from '../../../shared/components/StateNode';
 import { useObjectMenuTrigger } from '../../../features/actions/useObjectMenuTrigger';
 import { RAIL_BUTTON_IDLE, RAIL_NODE_BUTTON, RAIL_NODE_CURRENT } from './RailButton';
 
 export type RailSessionSign = 'current' | 'remembered' | 'none';
+
+const QUIET_DOT: StatusMarkSpec = { kind: 'dot', tone: 'neutral' };
 
 type Props = {
   readonly session: Session;
@@ -29,7 +30,7 @@ export const RailSessionButton = ({
   onLeave,
   onKeyDown,
 }: Props) => {
-  const { summary, node, plainTitle: text, unreadLabel } = useSessionRowFacts({ session });
+  const { summary, mark, plainTitle: text, unreadLabel } = useSessionRowFacts({ session });
   const words = summary.words ?? summary.reason;
   const base = words === '' ? text : `${text}, ${words}`;
   const label = unreadLabel === null ? base : `${base}, ${unreadLabel}`;
@@ -67,7 +68,7 @@ export const RailSessionButton = ({
         sign === 'remembered' && 'text-foreground',
       )}
     >
-      <StateNode node={node} isUnreadDot />
+      <StatusMark mark={mark.kind === 'empty' ? QUIET_DOT : mark} />
     </button>
   );
   if (onEnter !== undefined) {

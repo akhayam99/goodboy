@@ -27,7 +27,7 @@ const FAILURE_SENTENCE = {
   timed_out: 'The agent ran out of time.',
 } as const satisfies Record<Exclude<AutoOutcome, 'completed' | 'stopped' | 'blocked'>, string>;
 
-const RETURNED_PHRASE = 'Returned to Auto';
+const RETURNED_PHRASE = 'Returned to the Lead';
 
 type ReturnedParams = {
   readonly delegation: Pick<AutoDelegation, 'outcome' | 'reason' | 'result'>;

@@ -307,7 +307,7 @@ const WORDS: Readonly<Record<RebaseJobState, string>> = {
   conflict: 'Conflict',
   'rebasing-here': 'Rebasing',
   'rebased-here': 'Done',
-  'auto-resolving': 'Auto',
+  'auto-resolving': 'Lead',
   'auto-done': 'Done',
   pushed: 'Done',
   failed: 'Stopped',
@@ -469,14 +469,14 @@ const copyOf = ({
     case 'auto-resolving':
       return {
         tone: 'info',
-        title: `Auto is rebasing on ${baseBranch}`,
+        title: `The Lead is rebasing on ${baseBranch}`,
         line: autoLineOf({ files }),
       };
     case 'auto-done':
       return {
         tone: 'ok',
         title: `Rebased on ${baseBranch}`,
-        line: `${commitsOf({ count: commitCount })} Auto resolved the conflict. Origin still has the old copy.`.trim(),
+        line: `${commitsOf({ count: commitCount })} The Lead resolved the conflict. Origin still has the old copy.`.trim(),
       };
     case 'rebased-here':
       return {

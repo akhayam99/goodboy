@@ -222,6 +222,22 @@ describe('what the hover card says', () => {
     return within(card() as HTMLElement);
   };
 
+  it.each(['Retry policy for 429s', 'Fix webhook retries'])(
+    'draws the same mark as the row of %s',
+    (title) => {
+      mount();
+      const markOf = (scope: HTMLElement) => {
+        const box = scope.querySelector('[data-status-mark]');
+        return [box?.getAttribute('data-status-mark'), box?.getAttribute('data-status-state')];
+      };
+      const row = markOf(rowOf(title));
+      fireEvent.mouseEnter(rowOf(title));
+      rest(500);
+      expect(markOf(card() as HTMLElement)).toEqual(row);
+      expect(row[0]).toBe('state');
+    },
+  );
+
   it('says what waits on you in the words of the reason table', () => {
     const view = openCard('Retry policy for 429s');
     expect(view.getByText('1 question for you')).toBeDefined();

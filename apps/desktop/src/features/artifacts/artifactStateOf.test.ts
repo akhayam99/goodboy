@@ -82,7 +82,7 @@ describe('artifactStateOf', () => {
     expect(state).toMatchObject({
       key: 'autoApproved',
       label: 'Approved',
-      reason: 'Auto works from this plan',
+      reason: 'The Lead works from this plan',
       tone: 'success',
       group: 'consumed',
       detail: '2 parts',

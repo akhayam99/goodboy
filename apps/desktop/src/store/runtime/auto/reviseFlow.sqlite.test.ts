@@ -242,7 +242,7 @@ describe('revising an artifact the tree already has', () => {
     ).toMatchObject({
       state: 'settled',
       outcome: 'stopped',
-      reason: 'Stopped by Auto: The user changed their mind.',
+      reason: 'Stopped by the Lead: The user changed their mind.',
     });
     expect(await planOf(world)).toMatchObject({ revision: 1 });
   });
@@ -274,7 +274,7 @@ describe('revising an artifact the tree already has', () => {
     ).toMatchObject({
       state: 'settled',
       outcome: 'stopped',
-      reason: 'Stopped by Auto: The user changed their mind.',
+      reason: 'Stopped by the Lead: The user changed their mind.',
     });
   });
 

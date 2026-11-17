@@ -225,8 +225,8 @@ describe('autoRetryTargetsOf', () => {
       {
         agentId: FIXTURE_ROOT,
         rootAgentId: FIXTURE_ROOT,
-        role: 'Auto',
-        noun: 'Auto',
+        role: 'Lead',
+        noun: 'Lead',
         kind: 'approve',
         reason: null,
         reasonCode: null,

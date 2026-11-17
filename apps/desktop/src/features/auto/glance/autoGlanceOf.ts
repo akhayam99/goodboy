@@ -49,13 +49,13 @@ export const autoGlanceOf = ({ view, rootTurn }: Params): Glance => {
     }
     return glanceOf({
       state: 'failed',
-      sentence: hasReason ? reason : "Auto couldn't reply",
+      sentence: hasReason ? reason : "The Lead couldn't reply",
     });
   }
   const isRootTurnLive = rootTurn?.kind === 'running' || rootTurn?.kind === 'starting';
   if (phase === 'done' || phase === 'answering') {
     return isRootTurnLive
-      ? glanceOf({ state: 'running', sentence: 'Auto is answering' })
+      ? glanceOf({ state: 'running', sentence: 'The Lead is answering' })
       : glanceOf({ state: 'idle', sentence: 'Write to continue' });
   }
   const plan = dockPlanRowOf({ view });
@@ -67,7 +67,7 @@ export const autoGlanceOf = ({ view, rootTurn }: Params): Glance => {
     });
   }
   if (projectAskOf({ view }) !== null) {
-    return glanceOf({ state: 'waiting', sentence: 'Auto asks which project to use' });
+    return glanceOf({ state: 'waiting', sentence: 'The Lead asks which project to use' });
   }
   if (isAutoPausedAtLimit({ view })) {
     return glanceOf({ state: 'paused', sentence: 'At the limit' });

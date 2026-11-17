@@ -669,7 +669,7 @@ describe('Auto messages a working child', () => {
 });
 
 describe('Auto stops a child', () => {
-  it('runs the stop, keeps the work and reads Stopped by Auto with the reason', async () => {
+  it('runs the stop, keeps the work and reads Stopped by the Lead with the reason', async () => {
     const world = await runningScout();
     const original = await onlyDelegation(world);
 
@@ -689,7 +689,7 @@ describe('Auto stops a child', () => {
     expect(await onlyDelegation(world)).toMatchObject({
       state: 'settled',
       outcome: 'stopped',
-      reason: 'Stopped by Auto: The user no longer needs it.',
+      reason: 'Stopped by the Lead: The user no longer needs it.',
     });
   });
 
@@ -714,7 +714,7 @@ describe('Auto stops a child', () => {
     expect(await onlyDelegation(world)).toMatchObject({
       state: 'settled',
       outcome: 'stopped',
-      reason: 'Stopped by Auto: The user no longer needs it.',
+      reason: 'Stopped by the Lead: The user no longer needs it.',
     });
   });
 
@@ -785,7 +785,7 @@ describe('Auto stops a child', () => {
     expect(await onlyDelegation(world)).toMatchObject({
       state: 'settled',
       outcome: 'stopped',
-      reason: 'Stopped by Auto: The user no longer needs it.',
+      reason: 'Stopped by the Lead: The user no longer needs it.',
     });
   });
 

@@ -32,7 +32,7 @@ describe('searchChapters', () => {
 
   it('finds the rail, the tools and the rebase prompt by their names', () => {
     expect(hits('session pages')).toContain('shell: Session pages');
-    expect(hits('resolve with auto')).toEqual(['commits: A rebase conflict asks']);
+    expect(hits('resolve with the lead')).toEqual(['commits: A rebase conflict asks']);
     expect(hits('hint the orchestrator')[0]).toBe('workflows: Older runs');
   });
 

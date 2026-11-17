@@ -50,7 +50,7 @@ describe('agentFollowUpMoves', () => {
     }
   });
 
-  it('offers no follow-up inside an Auto tree, where Auto decides what comes next', () => {
+  it('offers no follow-up inside an Auto tree, where The Lead decides what comes next', () => {
     for (const kind of ['reviewer', 'planner', 'scout', 'debugger'] as const) {
       expect(agentFollowUpMoves({ sourceKind: kind, isInAutoTree: true })).toHaveLength(0);
       expect(agentFollowUpMoves({ sourceKind: kind, isInAutoTree: false }).length).toBeGreaterThan(

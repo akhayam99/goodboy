@@ -76,7 +76,7 @@ describe('agentTurnLive', () => {
     expect(idsOf(facts)).toEqual(['continue']);
   });
 
-  it('says Stopped by Auto for an agent Auto stopped', () => {
+  it('says Stopped by the Lead for an agent Auto stopped', () => {
     const facts = agentTurnLive({
       turn: null,
       agent: STOPPED_BY_AUTO,
@@ -84,7 +84,7 @@ describe('agentTurnLive', () => {
       project: null,
       hasQueuedMessage: false,
     });
-    expect(facts?.phrase).toBe('Stopped by Auto');
+    expect(facts?.phrase).toBe('Stopped by the Lead');
   });
 
   it('draws nothing for an idle agent: a finished turn is read from its summary', () => {
@@ -176,7 +176,7 @@ describe('autoTreeLive', () => {
     };
     const facts = autoTreeLive({ ...base, view, rootTurn: null });
     expect(facts?.state).toBe('working');
-    expect(facts?.phrase).toMatch(/^Auto tried to start an Implementer\. Not started:/);
+    expect(facts?.phrase).toMatch(/^The Lead tried to start an Implementer\. Not started:/);
   });
 
   it('keeps a mounted row out of the rail word', () => {
@@ -296,12 +296,12 @@ describe('autoChildLive', () => {
     expect(idsOf(facts)).toEqual(['retryThroughAuto']);
   });
 
-  it("reads Stopped by Auto with Auto's reason when Auto stopped the child", () => {
+  it("reads Stopped by the Lead with Auto's reason when Auto stopped the child", () => {
     const facts = autoChildLive({
       delegation: {
         state: 'settled',
         outcome: 'stopped',
-        reason: 'Stopped by Auto: The user no longer needs it.',
+        reason: 'Stopped by the Lead: The user no longer needs it.',
         result: null,
       },
       isReplaced: false,
@@ -310,7 +310,7 @@ describe('autoChildLive', () => {
       lastTool: null,
       project: null,
     });
-    expect(facts?.phrase).toBe('Stopped by Auto: The user no longer needs it.');
+    expect(facts?.phrase).toBe('Stopped by the Lead: The user no longer needs it.');
   });
 
   it('stops a running child with Stop agent', () => {
@@ -436,7 +436,7 @@ describe('autoChildLive', () => {
     });
     expect(facts).toMatchObject({
       state: 'idle',
-      phrase: 'Returned to Auto: Needs a shell to read the commits of payments-api.',
+      phrase: 'Returned to the Lead: Needs a shell to read the commits of payments-api.',
     });
     expect(idsOf(facts)).toEqual([]);
   });
@@ -453,12 +453,12 @@ describe('autoChildLive', () => {
         project: null,
       });
       expect(facts?.state).toBe('idle');
-      expect(facts?.phrase.startsWith('Returned to Auto: ')).toBe(true);
+      expect(facts?.phrase.startsWith('Returned to the Lead: ')).toBe(true);
       expect(facts?.phrase).not.toContain('_');
     },
   );
 
-  it('reads a returned child with no sentence as plain Returned to Auto', () => {
+  it('reads a returned child with no sentence as plain Returned to the Lead', () => {
     const facts = autoChildLive({
       delegation: { state: 'settled', outcome: 'blocked', reason: null, result: null },
       isReplaced: false,
@@ -467,7 +467,7 @@ describe('autoChildLive', () => {
       lastTool: null,
       project: null,
     });
-    expect(facts).toMatchObject({ state: 'idle', phrase: 'Returned to Auto' });
+    expect(facts).toMatchObject({ state: 'idle', phrase: 'Returned to the Lead' });
   });
 
   it('draws no tail for a returned child that Auto replaced, it reads Done', () => {

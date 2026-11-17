@@ -293,14 +293,14 @@ const MOUNT_ACTIONS: ReadonlyArray<ActionDefinition<MountFacts>> = [
   },
   {
     id: 'mount.resolveRebaseWithAuto',
-    label: 'Resolve rebase conflicts with Auto',
-    shortLabel: () => 'Resolve with Auto',
+    label: 'Resolve rebase conflicts with the Lead',
+    shortLabel: () => 'Resolve with the Lead',
     icon: CONCEPT_ICONS.auto,
     group: 'act',
     when: ({ facts }) => isOpen({ facts }) && isAsking({ facts }),
     blockedReason: ({ facts }) => facts.autoBlockedReason,
     slot: () => 'notice',
-    pendingLabel: () => 'Starting Auto…',
+    pendingLabel: () => 'Starting the Lead…',
     run: async ({ facts, env }) => {
       const state = env.getState();
       const capture = captureStartHint({

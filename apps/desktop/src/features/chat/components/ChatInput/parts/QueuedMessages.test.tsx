@@ -198,7 +198,7 @@ describe('QueuedMessages', () => {
       autoRow('outbox-1', {
         status: 'notDelivered',
         statusText: 'Not delivered',
-        reason: 'Auto was stopped.',
+        reason: 'The Lead was stopped.',
         action: null,
       }),
     ]);

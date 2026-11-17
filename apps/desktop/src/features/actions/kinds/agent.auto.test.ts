@@ -72,7 +72,7 @@ beforeEach(async () => {
   });
 });
 
-describe('the Move to Auto and Detach from Auto verbs of an agent', () => {
+describe('the Move to Auto and Detach from the Lead verbs of an agent', () => {
   it('keeps Auto on even when an old experiment row still says false', () => {
     useAppStore.setState({ settings: { 'agents.autoExperiment': 'false' } });
     expect(factsOf().isAutoOn).toBe(true);
@@ -89,7 +89,7 @@ describe('the Move to Auto and Detach from Auto verbs of an agent', () => {
     const found = resolveActions({ definitions: AGENT_KIND.actions, facts }).find(
       (action) => action.id === 'agent.moveToAuto',
     );
-    expect(found).toMatchObject({ label: 'Let Auto take it from here', blockedReason: null });
+    expect(found).toMatchObject({ label: 'Let the Lead take it from here', blockedReason: null });
   });
 
   it('blocks it with a reason while a turn is running', () => {
@@ -150,7 +150,7 @@ describe('the Move to Auto and Detach from Auto verbs of an agent', () => {
     expect(factsOf({ isAutoOn: true }).canMoveToAuto).toBe(true);
   });
 
-  it('is not offered inside a tree, and offers Detach from Auto on an adopted agent', async () => {
+  it('is not offered inside a tree, and offers Detach from the Lead on an adopted agent', async () => {
     let counter = 0;
     await adoptAgent({
       db,
@@ -203,11 +203,11 @@ describe('the Move to Auto and Detach from Auto verbs of an agent', () => {
     expect(idsViewing(null)).toContain('agent.message');
   });
 
-  it('keeps Detach from Auto while the experiment is off, because it is the way back', () => {
+  it('keeps Detach from the Lead while the experiment is off, because it is the way back', () => {
     expect(idsOf(factsOf({ isAutoOn: false, isAdopted: true }))).toContain('agent.detachFromAuto');
   });
 
-  it('does not offer Detach from Auto on an agent that was never moved', () => {
+  it('does not offer Detach from the Lead on an agent that was never moved', () => {
     expect(idsOf(factsOf({ isAdopted: false }))).not.toContain('agent.detachFromAuto');
   });
 });
@@ -309,7 +309,7 @@ describe('running the verbs', () => {
 
     expect(outcome).toBe('unchanged');
     expect(reportError).toHaveBeenCalledWith(
-      expect.objectContaining({ title: "Couldn't detach from Auto" }),
+      expect.objectContaining({ title: "Couldn't detach from the Lead" }),
     );
   });
 });

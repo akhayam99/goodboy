@@ -1228,7 +1228,7 @@ kept.
   the start of this runtime (`readAgentLastEventAt`), so a past `deadline_at` on an old
   row never expires it at load; a tool call without its end (`hasAgentOpenToolCall`)
   counts as activity. The cancel goes with `by: 'auto'`, so the agent reads
-  Stopped by Auto, never Stopped by you. It settles `timed_out` with reason `no_activity` only
+  Stopped by the Lead, never Stopped by you. It settles `timed_out` with reason `no_activity` only
   after the exit is confirmed, and Auto continues it with `retryOf`. A child paused on
   a question still expires at `deadline_at` and needs no process to expire.
   `expireStaleDecide.ts` handles a tree still `deciding` `AUTO_STALE_DECIDE_MS` (10

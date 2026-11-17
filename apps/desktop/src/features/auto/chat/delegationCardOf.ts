@@ -126,7 +126,9 @@ const routingNoteOf = ({ routing, modelLine }: NoteParams): string | null => {
   });
   const why = textField({ source: routing, key: 'reason' });
   const asked =
-    requested === null ? 'Auto asked for another model' : `Auto asked for ${requested.name}`;
+    requested === null
+      ? 'The Lead asked for another model'
+      : `The Lead asked for ${requested.name}`;
   const used = modelLine === null ? 'the app chose' : `used ${modelLine.name}`;
   return why === null ? `${asked}, ${used}.` : `${asked}, ${used}: ${why}`;
 };

@@ -81,7 +81,7 @@ describe('the auto-child-returned scenes', () => {
   it('Returned: the child reads Idle with the request it declared, never Failed', async () => {
     mount({ id: 'auto-child-returned' });
 
-    await screen.findByText(`Returned to Auto: ${REQUEST}`, undefined, WAIT);
+    await screen.findByText(`Returned to the Lead: ${REQUEST}`, undefined, WAIT);
     expect(screen.queryByText(/Failed/)).toBeNull();
     expect(document.body.textContent).not.toContain('declared_blocked');
   });
@@ -109,7 +109,7 @@ describe('the auto-child-returned scenes', () => {
     await screen.findAllByText('Done', undefined, WAIT);
     expect(screen.queryByText(/Failed/)).toBeNull();
     expect(screen.queryByText(/Blocked/)).toBeNull();
-    expect(screen.queryByText(/Returned to Auto/)).toBeNull();
+    expect(screen.queryByText(/Returned to the Lead/)).toBeNull();
     expect(screen.queryByRole('button', { name: 'Retry' })).toBeNull();
   });
 
@@ -118,7 +118,7 @@ describe('the auto-child-returned scenes', () => {
 
     await screen.findAllByText('Done', undefined, WAIT);
     expect(screen.queryByText(/Failed/)).toBeNull();
-    expect(screen.queryByText(/Returned to Auto/)).toBeNull();
+    expect(screen.queryByText(/Returned to the Lead/)).toBeNull();
   });
 
   it('Auto asks you: the proposal that replaces the return waits for you, the child does not', async () => {
@@ -126,7 +126,7 @@ describe('the auto-child-returned scenes', () => {
 
     await screen.findAllByRole('list', { name: 'Delegations' }, WAIT);
     expect(screen.queryByText(/Failed/)).toBeNull();
-    expect(screen.queryByText(`Returned to Auto: ${REQUEST}`)).toBeNull();
+    expect(screen.queryByText(`Returned to the Lead: ${REQUEST}`)).toBeNull();
   });
 
   it('Asks you: Needs you is on Auto, never on the returned child', async () => {

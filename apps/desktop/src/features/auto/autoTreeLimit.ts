@@ -44,7 +44,7 @@ export const writeAutoTreeLimit = async ({ db, workspaceId, usd }: WriteParams):
     return;
   }
   if (!Number.isFinite(usd) || usd <= 0) {
-    throw new Error('The Auto limit must be more than zero');
+    throw new Error('The Lead limit must be more than zero');
   }
   const value = String(usd);
   for (let tries = 0; tries < MAX_ATTEMPTS; tries += 1) {
@@ -60,5 +60,5 @@ export const writeAutoTreeLimit = async ({ db, workspaceId, usd }: WriteParams):
       return;
     }
   }
-  throw new Error('The Auto limit changed in another window, try again');
+  throw new Error('The Lead limit changed in another window, try again');
 };

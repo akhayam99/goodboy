@@ -240,7 +240,7 @@ const agentOf = ({ id, name, kind, status }: AgentParams): Agent => ({
 });
 
 export const RESULTS_AGENTS: ReadonlyArray<Agent> = [
-  agentOf({ id: RESULTS_ROOT_ID, name: 'Auto', kind: 'auto', status: 'completed' }),
+  agentOf({ id: RESULTS_ROOT_ID, name: 'Lead', kind: 'auto', status: 'completed' }),
   agentOf({ id: FIRST_REVIEWER, name: 'Reviewer', kind: 'reviewer', status: 'completed' }),
   agentOf({ id: SECOND_REVIEWER, name: 'Reviewer', kind: 'reviewer', status: 'completed' }),
   agentOf({ id: TESTER, name: 'Tester', kind: 'tester', status: 'failed' }),

@@ -68,7 +68,7 @@ describe('a chat you can scan', () => {
       const { container } = mount({ id: `u36-p11-done-${theme}` });
       const answer = await screen.findByText(/^Fixed\. The retry loop/);
       const review = screen.getByRole('group', { name: 'Review' });
-      const deliveries = screen.getAllByRole('button', { name: /What Auto was told/ });
+      const deliveries = screen.getAllByRole('button', { name: /What the Lead was told/ });
       const delivery = deliveries.at(-1);
       if (delivery === undefined) {
         throw new Error('The final delivery is missing');

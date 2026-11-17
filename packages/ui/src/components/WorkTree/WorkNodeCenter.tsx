@@ -1,4 +1,4 @@
-import { Check, Minus, Shield } from '../../icons';
+import { Check, Hand, Minus } from '../../icons';
 import { cn } from '../../cn';
 import { ICON_WEIGHT } from '../../iconSize';
 import { WORK_NODE_GLYPH_SIZE, type WorkNodeMark, type WorkNodeState } from './workNodeSpec';
@@ -83,7 +83,7 @@ export const WorkNodeCenter = ({
     case 'budget':
       return signOf({ sign: '$', className: 'text-warning' });
     case 'approval':
-      return <Shield size={glyphSize} weight={ICON_WEIGHT.check} className="text-warning" />;
+      return <Hand size={glyphSize} weight={ICON_WEIGHT.check} className="text-warning" />;
     case 'alert':
       return signOf({ sign: '!', className: 'text-warning' });
     case 'failed':

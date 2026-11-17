@@ -162,7 +162,7 @@ describe('one agent, one page', () => {
   it('gives the child page the result and the back row a real parent', async () => {
     mount({ id: 'u36-p10-child-result' });
 
-    expect(await screen.findByText('Returned to Auto', undefined, WAIT)).toBeDefined();
+    expect(await screen.findByText('Returned to the Lead', undefined, WAIT)).toBeDefined();
     screen.getByText('1 file changed');
     expect([...document.querySelectorAll('[data-session-crumbs] li')].at(-2)?.textContent).toMatch(
       /^Why does the ledger retry post a second credit/,
@@ -296,7 +296,7 @@ describe('one agent, one page', () => {
     'keeps the %s child overflow within five rows and keeps Rename',
     async (status) => {
       mount({ id: 'u36-p10-child-result' });
-      await screen.findByText('Returned to Auto', undefined, WAIT);
+      await screen.findByText('Returned to the Lead', undefined, WAIT);
       act(() => {
         useAppStore.setState((state) => ({
           sessionPhaseRuns: {

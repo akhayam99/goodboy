@@ -19,7 +19,7 @@ export const AutoHandoffChip = ({ reason, agentId }: Props) => {
   }
   return (
     <HandoffCardShell>
-      <span className="text-row text-foreground">Agent suggests: Auto</span>
+      <span className="text-row text-foreground">Agent suggests: the Lead</span>
       {reason.length > 0 ? <span className="text-muted-foreground">{reason}</span> : null}
       <div className="flex min-h-5 items-center gap-1">
         <button

@@ -24,21 +24,8 @@ const needing = (attention: SessionAttentionReason, over: NodeOver = {}) =>
   nodeOf({ stage: 'attention', attention, ...over });
 
 describe('the node of a session that needs you', () => {
-  it.each<[SessionAttentionReason, string]>([
-    ['agent-error', 'failed'],
-    ['push-failed', 'failed'],
-    ['ci-failed', 'failed'],
-    ['open-question', 'question'],
-    ['fix-needs-you', 'question'],
-    ['needs-approval', 'approval'],
-    ['plan-approval', 'approval'],
-    ['changes-requested', 'alert'],
-    ['fix-couldnt-fix', 'alert'],
-    ['pr-queued', 'merging'],
-    ['pr-approved', 'approved'],
-    ['unread-reply', 'marker'],
-  ])('draws %s as the %s node', (attention, state) => {
-    expect(needing(attention)).toMatchObject({ kind: 'needs', state });
+  it.each(REASONS)('holds %s as its reason', (attention) => {
+    expect(needing(attention)).toMatchObject({ kind: 'needs', reason: attention });
   });
 
   it.each(REASONS)('reads the tone of %s from the reason table', (attention) => {
@@ -49,12 +36,6 @@ describe('the node of a session that needs you', () => {
     const danger = REASONS.filter((attention) => needing(attention).tone === 'danger');
 
     expect(danger).toEqual(['agent-error', 'push-failed', 'ci-failed', 'run-stopped']);
-  });
-
-  it('draws a pull request waiting to merge as a solid approval, never as a failure', () => {
-    expect(needing('pr-approved')).toMatchObject({ state: 'approved', tone: 'success' });
-    expect(needing('changes-requested')).toMatchObject({ state: 'alert', tone: 'warning' });
-    expect(needing('fix-couldnt-fix')).toMatchObject({ state: 'alert', tone: 'warning' });
   });
 
   it.each(REASONS)('describes %s to a screen reader with its words', (attention) => {
@@ -69,20 +50,11 @@ describe('the node of a session that needs you', () => {
     );
   });
 
-  it('keeps an unread reply as a quiet ring with the row dot instead of a mark', () => {
+  it('keeps an unread reply quiet, with the dot instead of a mark', () => {
     expect(needing('unread-reply')).toMatchObject({
-      state: 'marker',
       tone: 'info',
       hasUnread: true,
       label: 'New reply',
-    });
-  });
-
-  it('spins the ring only when an agent works while the reason holds the session', () => {
-    expect(needing('open-question').isSpinning).toBe(false);
-    expect(needing('open-question', { isRunning: true })).toMatchObject({
-      state: 'question',
-      isSpinning: true,
     });
   });
 
@@ -91,10 +63,10 @@ describe('the node of a session that needs you', () => {
     expect(needing('pr-approved').hasUnread).toBe(false);
   });
 
-  it('keeps a bare needs you stage on the question node', () => {
+  it('keeps a bare needs you stage without a reason', () => {
     expect(nodeOf({ stage: 'attention' })).toMatchObject({
       kind: 'needs',
-      state: 'question',
+      reason: null,
       tone: 'warning',
       label: 'Needs you',
     });
@@ -102,25 +74,14 @@ describe('the node of a session that needs you', () => {
 });
 
 describe('the node of a session in the merge queue', () => {
-  it('draws the queue mark in the calm primary tone, with its words', () => {
+  it('holds the queue in the calm primary tone, with its words', () => {
     expect(nodeOf({ stage: 'review', attention: 'pr-queued' })).toMatchObject({
       kind: 'queue',
-      state: 'merging',
+      reason: 'pr-queued',
       tone: 'primary',
       label: 'In merge queue',
-      isSpinning: false,
       hasUnread: false,
     });
-  });
-
-  it('keeps it apart from approved, done and the dashed pending ring', () => {
-    const queue = nodeOf({ stage: 'review', attention: 'pr-queued' });
-
-    expect(queue.state).not.toBe('approved');
-    expect(queue.state).not.toBe('finished');
-    expect(queue.state).not.toBe('queued');
-    expect(queue.tone).not.toBe('success');
-    expect(queue.tone).not.toBe('merged');
   });
 
   it('shows the unread dot while a reply waits behind the queue', () => {
@@ -128,67 +89,50 @@ describe('the node of a session in the merge queue', () => {
       nodeOf({ stage: 'review', attention: 'pr-queued', otherReasons: ['unread-reply'] }).hasUnread,
     ).toBe(true);
   });
-
-  it('yields to a running agent and to what needs you', () => {
-    expect(nodeOf({ stage: 'running', isRunning: true }).state).toBe('running');
-    expect(needing('open-question').state).toBe('question');
-  });
 });
 
 describe('the node of every other session', () => {
-  it('draws a running session with the running ring', () => {
+  it('names a running session', () => {
     expect(nodeOf({ stage: 'running', isRunning: true })).toMatchObject({
       kind: 'running',
-      state: 'running',
+      reason: null,
       tone: 'info',
       label: 'Running',
-      isSpinning: false,
     });
   });
 
-  it('draws a finished session as a solid violet disc with a check, never an empty ring', () => {
+  it('names a finished session in the merged tone', () => {
     expect(nodeOf({ stage: 'done' })).toMatchObject({
       kind: 'done',
-      state: 'finished',
       tone: 'merged',
       label: 'Done',
-    });
-    expect(nodeOf({ stage: 'done', prState: 'merged' })).toMatchObject({
-      state: 'finished',
-      tone: 'merged',
+      isClosed: false,
     });
   });
 
-  it('keeps the muted check for a session whose pull request closed unmerged', () => {
+  it('keeps the neutral tone for a session whose pull request closed unmerged', () => {
     expect(nodeOf({ stage: 'done', prState: 'closed' })).toMatchObject({
       kind: 'done',
-      state: 'closed',
       tone: 'neutral',
       label: 'Done',
+      isClosed: true,
     });
   });
 
   it.each<[SessionStage, string]>([
     ['review', 'In review'],
     ['building', 'Building'],
-  ])('draws a %s session as a quiet ring named by its stage', (stage, label) => {
-    expect(nodeOf({ stage })).toMatchObject({ kind: 'idle', state: 'marker', label });
+  ])('names a %s session by its stage', (stage, label) => {
+    expect(nodeOf({ stage })).toMatchObject({ kind: 'idle', label });
   });
 
-  it('draws an archived session as the dashed ring whatever its stage', () => {
+  it('names an archived session whatever its stage', () => {
     expect(nodeOf({ stage: 'running', isArchived: true })).toMatchObject({
       kind: 'archived',
-      state: 'queued',
       label: 'Archived',
     });
     expect(needing('open-question', { isArchived: true }).kind).toBe('archived');
     expect(needing('unread-reply', { isArchived: true }).hasUnread).toBe(false);
-  });
-
-  it('never draws a glyph on the quiet, done or archived nodes beyond their own', () => {
-    expect(nodeOf({ stage: 'building' }).mark).toEqual({ kind: 'glyph', glyph: null });
-    expect(nodeOf({ stage: 'done' }).mark).toEqual({ kind: 'glyph', glyph: null });
-    expect(nodeOf({ isArchived: true }).mark).toEqual({ kind: 'glyph', glyph: null });
   });
 
   it('shows the unread dot on a running session with a reply waiting', () => {

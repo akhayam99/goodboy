@@ -88,7 +88,7 @@ const FIXER_NEVER_STARTED: AutoActionTarget = {
   role: 'Fixer',
   kind: 'neverStarted',
   noun: 'Fixer',
-  reason: 'Auto created it at 10:21, no first message reached it.',
+  reason: 'The Lead created it at 10:21, no first message reached it.',
   reasonCode: null,
   mountId: null,
   plan: null,

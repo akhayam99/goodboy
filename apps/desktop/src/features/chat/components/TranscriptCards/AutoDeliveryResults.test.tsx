@@ -119,7 +119,7 @@ describe('AutoDeliveryResults', () => {
     seed();
     renderDelivery({ runId: brandId<ProviderRunId>({ value: 'run-auto-3' }) });
 
-    expect(screen.getByText('What Auto was told')).toBeDefined();
+    expect(screen.getByText('What the Lead was told')).toBeDefined();
     expect(screen.queryByRole('list', { name: 'What the agents reported' })).toBeNull();
   });
 

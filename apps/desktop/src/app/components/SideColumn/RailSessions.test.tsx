@@ -352,7 +352,7 @@ describe('the pinned sessions on the rail', () => {
     expect(buttons[0]?.getAttribute('aria-label')).toContain('Pinned work 1');
     const tail = document.querySelector('[data-slot="rail-open-tail"]');
     expect(tail?.getAttribute('data-rail-session')).toBe(open.id);
-    expect(tail?.querySelector('[data-node-kind]')).not.toBeNull();
+    expect(tail?.querySelector('[data-status-mark="dot"]')).not.toBeNull();
     expect(currentNodes()).toEqual([open.id]);
   });
 

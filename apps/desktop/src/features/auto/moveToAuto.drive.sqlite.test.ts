@@ -138,7 +138,7 @@ describe('the first turn of Auto after a move', () => {
     expect(outcome.kind).toBe('adopted');
     expect(reportError).toHaveBeenCalledWith(
       expect.objectContaining({
-        title: "Auto didn't start right away",
+        title: "The Lead didn't start right away",
         sessionId: AUTO_SEED_SESSION,
       }),
     );

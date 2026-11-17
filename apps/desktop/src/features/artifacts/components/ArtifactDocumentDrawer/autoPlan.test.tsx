@@ -196,7 +196,7 @@ describe('the plan drawer of an Auto plan', () => {
 
     fireEvent.click(screen.getByRole('button', { name: /Approve and start Build/ }));
     const tell = await screen.findByRole('button', { name: 'Resend approval' });
-    screen.getByText("Approved. Couldn't send it to Auto.");
+    screen.getByText("Approved. Couldn't send it to the Lead.");
     expect(useAppStore.getState().drawer).not.toBeNull();
     fireEvent.click(tell);
 

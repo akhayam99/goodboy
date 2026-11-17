@@ -1,9 +1,9 @@
 import {
   cn,
-  ICON_SIZE,
   InlineMarkdown,
   ROW_INTERACTIVE,
-  tintClasses,
+  StatusMark,
+  type StatusMarkSpec,
   type Tone,
 } from '@goodboy/ui';
 import type { Session, SessionAttentionReason, SessionId } from '@goodboy/types';
@@ -12,8 +12,8 @@ import {
   ATTENTION_REASON_META,
   attentionWordsOf,
 } from '../../../../features/session/session-stage';
+import { attentionMarkOf } from '../../../../features/session/attentionMarkOf';
 import { sessionTitle } from '../../../../shared/utils/sessionTitle';
-import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 
 type SelectParams = {
   readonly sessionId: SessionId;
@@ -46,7 +46,8 @@ export const NeedsYouSessionRow = ({
   const words =
     attention === null ? info.reason : attentionWordsOf({ reason: attention, counts: info });
   const tone = meta?.tone ?? fallbackTone;
-  const Icon = CONCEPT_ICONS[meta?.icon ?? 'sessions'];
+  const mark: StatusMarkSpec =
+    attention === null ? { kind: 'dot', tone } : attentionMarkOf({ reason: attention });
   const sessionId = session.id as SessionId;
 
   return (
@@ -63,12 +64,9 @@ export const NeedsYouSessionRow = ({
           ROW_INTERACTIVE,
         )}
       >
-        <Icon
-          size={ICON_SIZE.control}
-          aria-hidden
-          data-attention-tone={tone}
-          className={cn('mt-px shrink-0', tintClasses(tone).icon)}
-        />
+        <span data-attention-tone={tone} className="inline-flex shrink-0">
+          <StatusMark mark={mark} />
+        </span>
         <span className="flex min-w-0 flex-1 flex-col gap-0.5">
           <InlineMarkdown
             text={sessionTitle({ session })}

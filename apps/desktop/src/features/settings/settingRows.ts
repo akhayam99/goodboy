@@ -370,7 +370,7 @@ export const SETTING_ROWS: ReadonlyArray<SettingRow> = [
   row({
     key: 'typed-requests',
     label: 'Typed requests',
-    help: 'Let a small model read typed requests before Auto starts.',
+    help: 'Let a small model read typed requests before the Lead starts.',
     page: MODELS,
     band: 'Choosing models',
   }),

@@ -121,7 +121,7 @@ describe('names', () => {
     expect([NAMES.startARun, NAMES.startRun, NAMES.letAutoTakeIt]).toEqual([
       'Start a run',
       'Start workflow',
-      'Let Auto take it from here',
+      'Let the Lead take it from here',
     ]);
     expect(formerNamesOf(NAMES.startARun)).toEqual(
       expect.arrayContaining(['Start an agent', 'Start an auto', 'Start another run']),
@@ -129,7 +129,10 @@ describe('names', () => {
     expect(formerNamesOf(NAMES.startRun)).toEqual(
       expect.arrayContaining(['Run a workflow', 'Run an orchestrator', 'Orchestrate']),
     );
-    expect(formerNamesOf(NAMES.letAutoTakeIt)).toEqual(['Move to Auto']);
+    expect(formerNamesOf(NAMES.letAutoTakeIt)).toEqual([
+      'Move to Auto',
+      'Let Auto take it from here',
+    ]);
   });
 
   it('names the send and stop buttons once and keeps the old label findable', () => {

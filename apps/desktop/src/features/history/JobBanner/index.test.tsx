@@ -682,7 +682,7 @@ describe('a stop saved before a restart', () => {
     const saved = screen.getByRole('alert');
     expect(saved.textContent).toBe(liveTitle);
     expect(verbsIn({ node: saved })).toEqual(liveVerbs);
-    expect(liveVerbs).toEqual(['Resolve with Auto', 'Resolve in terminal', 'Abort rebase']);
+    expect(liveVerbs).toEqual(['Resolve with the Lead', 'Resolve in terminal', 'Abort rebase']);
   });
 
   it('starts Auto from the saved stop and then says Auto has it', async () => {
@@ -693,7 +693,7 @@ describe('a stop saved before a restart', () => {
     useAppStore.setState({ providers: CONNECTED, spawnAgent });
     await showSaved({ at: PAST });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Resolve with Auto' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Resolve with the Lead' }));
     await settle();
 
     expect(spawnAgent).toHaveBeenCalledTimes(1);
@@ -701,7 +701,7 @@ describe('a stop saved before a restart', () => {
     expect(useAppStore.getState().historyRuns[A_REBASE_MOUNT_ID]?.rebaseConflict?.autoAgentId).toBe(
       A_REBASE_AGENT_ID,
     );
-    screen.getByText('Auto is rebasing on main');
+    screen.getByText('The Lead is rebasing on main');
   });
 
   it('leaves once a fresh git read shows the rebase finished', async () => {
@@ -770,12 +770,14 @@ describe('the rebase stop panel', () => {
     expect(within(panel()).getByText('src/settlement/ledger.ts')).toBeDefined();
     expect(fileStates()).toEqual(['conflict', 'conflict']);
     expect(verbsIn({ node: panel() })).toEqual([
-      'Resolve with Auto',
+      'Resolve with the Lead',
       'Resolve in terminal',
       'Abort rebase',
     ]);
     expect(
-      within(panel()).getByRole('button', { name: 'Resolve with Auto' }).hasAttribute('disabled'),
+      within(panel())
+        .getByRole('button', { name: 'Resolve with the Lead' })
+        .hasAttribute('disabled'),
     ).toBe(true);
   });
 
@@ -883,7 +885,7 @@ describe('the rebase stop panel', () => {
     });
   });
 
-  it('shows Auto at work with the files it resolves and Open Auto only', async () => {
+  it('shows Auto at work with the files it resolves and Open the Lead only', async () => {
     gitNow.isRebasing = true;
     gitNow.unmerged = 1;
     conflictsNow.files = [
@@ -900,10 +902,10 @@ describe('the rebase stop panel', () => {
       }),
     );
 
-    expect(panel().textContent).toContain('Auto is rebasing on main');
+    expect(panel().textContent).toContain('The Lead is rebasing on main');
     expect(panel().textContent).toContain('1 of 2 files resolved.');
     expect(fileStates()).toEqual(['resolved', 'conflict']);
-    expect(verbsIn({ node: panel() })).toEqual(['Open Auto']);
+    expect(verbsIn({ node: panel() })).toEqual(['Open the Lead']);
   });
 
   it('offers Push with the lease once Auto rebased, and says pushed once origin has it', async () => {
@@ -924,7 +926,7 @@ describe('the rebase stop panel', () => {
     );
 
     expect(panel().textContent).toContain('Rebased on main');
-    expect(verbsIn({ node: panel() })).toEqual(['Push', 'Open Auto']);
+    expect(verbsIn({ node: panel() })).toEqual(['Push', 'Open the Lead']);
 
     gitNow.upstreamAhead = 0;
     await refresh();
@@ -949,7 +951,7 @@ describe('the rebase stop panel', () => {
       }),
     );
 
-    expect(verbsIn({ node: panel() })).toEqual(['Push', 'Open Auto']);
+    expect(verbsIn({ node: panel() })).toEqual(['Push', 'Open the Lead']);
 
     fireEvent.click(within(panel()).getByRole('button', { name: 'Push' }));
     await settle();

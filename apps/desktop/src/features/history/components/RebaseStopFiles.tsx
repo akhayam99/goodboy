@@ -15,7 +15,7 @@ const fileStateLabelOf = ({ file }: FileStateParams): string => {
     return 'Resolved';
   }
   if (file.isWorking) {
-    return 'Auto is resolving';
+    return 'The Lead is resolving';
   }
   return 'Still conflicts';
 };

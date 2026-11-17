@@ -937,7 +937,7 @@ describe('spawnAgent for an Auto agent', () => {
       ).rejects.toThrow('Auto only reads');
 
       expect(reportError).toHaveBeenCalledWith(
-        expect.objectContaining({ title: "Auto can't run on this provider" }),
+        expect.objectContaining({ title: "The Lead can't run on this provider" }),
       );
       expect(sendTurn).not.toHaveBeenCalled();
     }

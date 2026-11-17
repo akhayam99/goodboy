@@ -27,7 +27,7 @@ export const AutoDeliveryRow = ({ text }: Props) => {
             )}
           >
             <TranscriptChevron open={isOpen} />
-            What Auto was told
+            What the Lead was told
           </button>
         </div>
       }

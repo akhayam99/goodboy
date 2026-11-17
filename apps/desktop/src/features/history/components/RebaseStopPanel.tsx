@@ -90,7 +90,7 @@ const DISMISSABLE: ReadonlySet<RebaseJobState> = new Set<RebaseJobState>([
 
 const FILES_LABEL: Partial<Record<RebaseJobState, string>> = {
   'rebasing-here': 'Files to resolve',
-  'auto-resolving': 'Files Auto resolves',
+  'auto-resolving': 'Files the Lead resolves',
 };
 
 export const RebaseStopPanel = ({ sessionId, worktreePath, controls, actions }: Props) => {
@@ -124,7 +124,7 @@ export const RebaseStopPanel = ({ sessionId, worktreePath, controls, actions }: 
         return [
           {
             key: 'resolve-auto',
-            label: 'Resolve with Auto',
+            label: 'Resolve with the Lead',
             variant: 'primary',
             run: actions.resolveWithAuto,
             blockedReason: autoBlocked,
@@ -166,7 +166,7 @@ export const RebaseStopPanel = ({ sessionId, worktreePath, controls, actions }: 
           : [
               {
                 key: 'open-auto',
-                label: 'Open Auto',
+                label: 'Open the Lead',
                 variant: 'secondary',
                 run: controls.seeWhatItDid,
               },
@@ -204,7 +204,7 @@ export const RebaseStopPanel = ({ sessionId, worktreePath, controls, actions }: 
             verbs: [
               {
                 key: 'see-auto',
-                label: 'Open Auto',
+                label: 'Open the Lead',
                 variant: 'ghost',
                 run: controls.seeWhatItDid,
               },

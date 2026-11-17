@@ -380,7 +380,7 @@ describe('delegationCardOf', () => {
     expect(card.result).toBeNull();
   });
 
-  it('says when the app changed the model Auto asked for', () => {
+  it('says when the app changed the model The Lead asked for', () => {
     const adjusted = delegationCardOf({
       delegation: aDelegation({
         key: 'x',
@@ -406,7 +406,7 @@ describe('delegationCardOf', () => {
     });
 
     expect(adjusted.routingNote).toBe(
-      'Auto asked for Opus 5.5, used Sonnet 5.5: not in the role set',
+      'The Lead asked for Opus 5.5, used Sonnet 5.5: not in the role set',
     );
     expect(kept.routingNote).toBeNull();
   });
@@ -484,7 +484,7 @@ describe('batches, waiting text and composer line', () => {
 
     expect(waitingTextOf({ view: waiting })).toBe('Waiting for Implementer and Tester');
     expect(waitingTextOf({ view: aView({ phase: 'merging' }) })).toBe(
-      'Auto is reading the results',
+      'The Lead is reading the results',
     );
     expect(waitingTextOf({ view: aView({ phase: 'answering' }) })).toBeNull();
     expect(waitingTextOf({ view: aView({ phase: 'deciding' }) })).toBe('Deciding what to do next');

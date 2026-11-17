@@ -43,13 +43,13 @@ const whatOf = ({ roles }: NounsParams): string => {
 export const refusalNoticeOf = ({ refusal }: Params): string => {
   const reason = autoRefusalUserReason({ code: refusal.code });
   if (refusal.action === 'answer') {
-    return `Auto's answer to an agent was not sent: ${reason}. Auto is choosing again.`;
+    return `The Lead's answer to an agent was not sent: ${reason}. The Lead is choosing again.`;
   }
   if (refusal.action === 'finish') {
-    return `Auto tried to finish. Not finished: ${reason}. Auto is choosing again.`;
+    return `The Lead tried to finish. Not finished: ${reason}. The Lead is choosing again.`;
   }
   if (refusal.action === 'mount') {
-    return `Auto tried to add a project. Not added: ${reason}. Auto is choosing again.`;
+    return `The Lead tried to add a project. Not added: ${reason}. The Lead is choosing again.`;
   }
-  return `Auto tried to start ${whatOf({ roles: refusal.roles })}. Not started: ${reason}. Auto is choosing again.`;
+  return `The Lead tried to start ${whatOf({ roles: refusal.roles })}. Not started: ${reason}. The Lead is choosing again.`;
 };
