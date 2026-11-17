@@ -49,12 +49,12 @@ describe('ProposedChange', () => {
   it('says so in one quiet line when the change misses the commented code', () => {
     render(<ProposedChange files={FILES} isLoading={false} error={null} isOffTarget />);
 
-    expect(screen.getByText('This change does not touch the commented code.')).toBeTruthy();
+    screen.getByText("This change doesn't touch the commented code.");
   });
 
   it('adds no line when the change is on target', () => {
     render(<ProposedChange files={FILES} isLoading={false} error={null} />);
 
-    expect(screen.queryByText('This change does not touch the commented code.')).toBeNull();
+    expect(screen.queryByText("This change doesn't touch the commented code.")).toBeNull();
   });
 });

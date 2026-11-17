@@ -18,7 +18,7 @@ import type {
 } from '@goodboy/types';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { rulesOfKickoff } from '../../../features/chat/utils/resolverKickoffParts';
-import { noteIdOfThread } from '../../../features/resolve/notes/noteThread';
+import { carriesWorkingTree } from '../../../features/resolve/notes/carriesWorkingTree';
 import { invokeAgentList } from '../../../features/workflows/workflows';
 import {
   acquireWorktreeWriter,
@@ -391,9 +391,7 @@ const startCopyAttempt = async ({
     worktreePath,
     attemptId: attempt.id,
     ...(startSha !== null && { startSha }),
-    shouldCarryWorkingTree: attempt.threadIds.some(
-      (threadId) => noteIdOfThread({ threadId }) !== null,
-    ),
+    shouldCarryWorkingTree: carriesWorkingTree({ threadIds: attempt.threadIds }),
   }).catch((error: unknown) => formatError(error));
   if (typeof copy === 'string') {
     await failStart({

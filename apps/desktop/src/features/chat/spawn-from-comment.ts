@@ -120,7 +120,7 @@ const isNoteThread = ({ thread }: NoteThreadParams): boolean =>
 
 const workingTreeSection = (): ReadonlyArray<string> => [
   RESOLVER_KICKOFF_LABELS.workingTree,
-  'A note is written by the owner in Goodboy on the current working tree of this branch, uncommitted and unpushed changes included. The code it points at can exist only on this machine: it is not on a remote and not in a pull request.',
+  'A note is written by the owner in Goodboy on the current working tree of this branch, uncommitted and unpushed changes included. The code it points at can exist only on this machine, missing from the remote and from any pull request.',
   "Your copy starts on that working tree as it is. When the owner had uncommitted work, it sits in the last commit of your copy, named `goodboy: your working tree before the fix`. That work is the owner's: never revert, rewrite or amend it, and never assume it is committed or pushed.",
   'Never fetch, never pull, never check out another branch or a pull request head, and never push. Read the code where it is.',
   'Commit only your own change. Goodboy hands it back to the owner as uncommitted changes on top of their work.',

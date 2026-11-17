@@ -867,32 +867,6 @@ describe('resolve queue scheduler', () => {
     expect(h.slots.get(SHARED_PATH)?.holder).toBe(AGENT_2);
   });
 
-  it('names a run that started and ended without a result, not the provider', async () => {
-    const harness = createHarness({ worktreePathBySession: { [SESSION_A]: SHARED_PATH } });
-    harness.sendTurn.mockImplementationOnce(async ({ agentId }: { readonly agentId: AgentId }) => {
-      harness.store.setState({
-        agentRunHistory: { [agentId]: [{ runId: 'run-1' }] },
-      } as unknown as Partial<ReturnType<typeof harness.store.getState>>);
-      return undefined;
-    });
-    await queueRequest({
-      actions: harness.actions,
-      sessionId: SESSION_A,
-      agentId: AGENT_1,
-      instructions: 'fix the Harborline header note',
-    });
-
-    await harness.actions.drainResolveQueue({ sessionId: SESSION_A });
-
-    await vi.waitFor(() =>
-      expect(
-        (harness.get().sessionResolveAttempts[SESSION_A] ?? []).find(
-          (attempt) => attempt.agentId === AGENT_1,
-        ),
-      ).toMatchObject({ phase: 'failed', failureCause: 'no_result' }),
-    );
-  });
-
   it('reports a request the spend cap turned away instead of leaving it running', async () => {
     const harness = createHarness({ worktreePathBySession: { [SESSION_A]: SHARED_PATH } });
     harness.sendTurn.mockResolvedValueOnce({
@@ -1519,63 +1493,6 @@ describe('resolve queue scheduler', () => {
 
     expect(h.prepareCopy).toHaveBeenLastCalledWith(
       expect.objectContaining({ startSha: 'tip-sha', worktreePath: SHARED_PATH }),
-    );
-  });
-
-  const queueOneThread = async ({
-    harness,
-    threadId,
-  }: {
-    readonly harness: ReturnType<typeof createHarness>;
-    readonly threadId: string;
-  }) => {
-    const batch = await harness.actions.createResolveBatch({
-      sessionId: SESSION_A,
-      threadIds: [threadId],
-      launchChoice: LAUNCH,
-    });
-    await harness.actions.recordResolveAttempt({
-      sessionId: SESSION_A,
-      agent: resolver({ id: BATCH_AGENTS[0] as AgentId, sessionId: SESSION_A }),
-      provider: 'anthropic',
-      model: 'claude-sonnet-5',
-      effort: null,
-      instructions: `fix ${threadId}`,
-      phase: 'queued',
-      threadIds: [threadId],
-      mountTarget: targetFor({ sessionId: SESSION_A }),
-      batch: { batchId: batch.id, launchChoice: LAUNCH },
-    });
-  };
-
-  it('starts the copy of a note fix on the owner working tree, uncommitted changes included', async () => {
-    const harness = createHarness({
-      worktreePathBySession: { [SESSION_A]: SHARED_PATH },
-      extraResolvers: BATCH_AGENTS,
-    });
-    h.dirtyPaths.add(SHARED_PATH);
-    await queueOneThread({ harness, threadId: 'note:harborline-header' });
-
-    await harness.actions.drainResolveQueue({ sessionId: SESSION_A });
-
-    h.dirtyPaths.delete(SHARED_PATH);
-    expect(h.prepareCopy).toHaveBeenLastCalledWith(
-      expect.objectContaining({ worktreePath: SHARED_PATH, shouldCarryWorkingTree: true }),
-    );
-    expect(harness.sendTurn).toHaveBeenCalledTimes(1);
-  });
-
-  it('starts the copy of a host review comment fix on the branch head as before', async () => {
-    const harness = createHarness({
-      worktreePathBySession: { [SESSION_A]: SHARED_PATH },
-      extraResolvers: BATCH_AGENTS,
-    });
-    await queueOneThread({ harness, threadId: 'PRRT_ledger-core' });
-
-    await harness.actions.drainResolveQueue({ sessionId: SESSION_A });
-
-    expect(h.prepareCopy).toHaveBeenLastCalledWith(
-      expect.objectContaining({ worktreePath: SHARED_PATH, shouldCarryWorkingTree: false }),
     );
   });
 

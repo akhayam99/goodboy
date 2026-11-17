@@ -55,14 +55,8 @@ export type QuarantinedCandidate = {
   readonly baseSha: string;
 };
 
-export const integrateWorktreeCandidate = async (
-  args: IntegrateCandidateParams,
-): Promise<string> => {
-  const result = await invokeCommand<{ readonly sha: string }>('worktree_integrate_candidate', {
-    args,
-  });
-  return result.sha;
-};
+export const integrateWorktreeCandidate = async (args: IntegrateCandidateParams): Promise<string> =>
+  (await invokeCommand<{ readonly sha: string }>('worktree_integrate_candidate', { args })).sha;
 
 export const quarantineWorktreeCandidate = async (
   args: QuarantineCandidateParams,
