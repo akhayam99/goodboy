@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { cn, useDropdownDirection } from '@goodboy/ui';
+import { SHELL_GUTTER_PX, cn, useDropdownDirection } from '@goodboy/ui';
 import { useToast } from '../../../shared/components/Toast';
 import { openLink } from '../../open/openLink';
 import { useShortcut } from '../../../shared/keyboard/useShortcut';
@@ -27,8 +27,6 @@ const REPORT_TRIGGER = '[data-report-bug]';
 const SHEET_WIDTH_PX = 560;
 
 const SHEET_EXPECTED_HEIGHT_PX = 260;
-
-const WINDOW_MARGIN_PX = 12;
 
 const visibleTrigger = (): HTMLElement | null =>
   [...document.querySelectorAll<HTMLElement>(REPORT_TRIGGER)].find(
@@ -98,7 +96,7 @@ export const ReportSheetHost = () => {
     side: 'right',
     align: 'end',
     shouldMatchTriggerWidth: false,
-    viewportMargin: WINDOW_MARGIN_PX,
+    viewportMargin: SHELL_GUTTER_PX,
     maxWidth: SHEET_WIDTH_PX,
   });
 

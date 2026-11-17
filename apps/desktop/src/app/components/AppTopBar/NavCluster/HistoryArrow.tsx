@@ -5,6 +5,8 @@ import {
   cn,
   DISABLED,
   ICON_SIZE,
+  POPOVER_WIDTH_CLASS,
+  POPOVER_WIDTH_PX,
   Tooltip,
   TOP_BAR_CONTROL,
   type MenuEntry,
@@ -30,8 +32,8 @@ type Props = {
 export const HistoryArrow = ({ direction, target, items, onGo, onJump }: Props) => {
   const dropdown = useDropdown({
     expectedHeight: 30 * items.length + 8,
-    expectedWidth: 320,
-    width: 'w-80 max-w-[calc(100vw-2rem)]',
+    expectedWidth: POPOVER_WIDTH_PX.standard,
+    width: POPOVER_WIDTH_CLASS.standard,
   });
   const { open, close, toggle } = dropdown;
   const holdTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
