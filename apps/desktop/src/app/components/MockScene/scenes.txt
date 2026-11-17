@@ -283,6 +283,9 @@ c07-auto-limit-popover
 c07-auto-list
 c07-auto-plan
 c07-auto-plan-changes
+c07-auto-plan-failed
+c07-auto-plan-replanning
+c07-auto-plan-v2
 c07-auto-project
 c07-auto-session-level
 c07-auto-start

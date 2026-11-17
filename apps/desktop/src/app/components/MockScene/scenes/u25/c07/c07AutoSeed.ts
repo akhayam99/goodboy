@@ -24,6 +24,7 @@ import {
   autoSceneOf,
   type AutoSceneState,
 } from '../../u24/autoSceneSeed';
+import { withPlanDockOf, type C07PlanDock } from './withPlanDockOf';
 
 type C07Place = 'auto' | 'list' | 'start' | 'session' | 'child';
 
@@ -36,6 +37,7 @@ export type C07Seed = Readonly<{
   isSubstep?: boolean;
   isChangeSent?: boolean;
   isLeadTidying?: boolean;
+  planDock?: C07PlanDock;
   blockedReason?: string;
 }>;
 
@@ -316,12 +318,14 @@ export const seedC07 = ({
   isSubstep = false,
   isChangeSent = false,
   isLeadTidying = false,
+  planDock,
   blockedReason,
 }: C07Seed): void => {
   const { navigate, openExternalTaskLens } = useAppStore.getInitialState();
   seedActivityRunScene();
   const plain = autoSceneOf({ state });
-  const base = isLeadTidying ? withLeadTidyOf({ scene: plain }) : plain;
+  const tidied = isLeadTidying ? withLeadTidyOf({ scene: plain }) : plain;
+  const base = planDock === undefined ? tidied : withPlanDockOf({ scene: tidied, dock: planDock });
   const stepped = isSubstep ? withSubstepOf({ scene: base }) : base;
   const blocked =
     blockedReason === undefined
