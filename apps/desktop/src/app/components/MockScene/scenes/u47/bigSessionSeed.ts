@@ -1,12 +1,13 @@
-import type {
-  Agent,
-  AgentId,
-  IsoDateTime,
-  ProviderRunId,
-  SessionEvent,
-  SessionEventId,
-  TelemetryRecord,
-  TelemetryRecordId,
+import {
+  brandId,
+  type Agent,
+  type AgentId,
+  type IsoDateTime,
+  type ProviderRunId,
+  type SessionEvent,
+  type SessionEventId,
+  type TelemetryRecord,
+  type TelemetryRecordId,
 } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
 import { SESSION_ID, seedActivityRunScene } from '../activityRunSeed';
@@ -38,15 +39,17 @@ type AtParams = {
 };
 
 const at = ({ minutes }: AtParams): IsoDateTime =>
-  new Date(BASE_MS + minutes * MINUTE_MS).toISOString() as IsoDateTime;
+  brandId<IsoDateTime>({ value: new Date(BASE_MS + minutes * MINUTE_MS).toISOString() });
 
 type IndexParams = {
   readonly index: number;
 };
 
-const parentIdOf = ({ index }: IndexParams): AgentId => `mock-big-agent-${index}` as AgentId;
+const parentIdOf = ({ index }: IndexParams): AgentId =>
+  brandId<AgentId>({ value: `mock-big-agent-${index}` });
 
-const runIdOf = ({ index }: IndexParams): ProviderRunId => `mock-big-run-${index}` as ProviderRunId;
+const runIdOf = ({ index }: IndexParams): ProviderRunId =>
+  brandId<ProviderRunId>({ value: `mock-big-run-${index}` });
 
 const parentOf = ({ index }: IndexParams): Agent => ({
   id: parentIdOf({ index }),
@@ -65,7 +68,7 @@ const childOf = ({ index }: IndexParams): Agent => {
   const parent = index % BIG_SESSION_SIZE.parents;
   const slot = Math.floor(index / BIG_SESSION_SIZE.parents) + 1;
   return {
-    id: `mock-big-child-${index}` as AgentId,
+    id: brandId<AgentId>({ value: `mock-big-child-${index}` }),
     sessionId: SESSION_ID,
     parentAgentId: parentIdOf({ index: parent }),
     ordinal: 1_000 + parent * 4 + slot,
@@ -85,7 +88,7 @@ export const bigSessionAgents = (): ReadonlyArray<Agent> => [
 ];
 
 const eventOf = ({ index }: IndexParams): SessionEvent => ({
-  id: `mock-big-event-${index}` as SessionEventId,
+  id: brandId<SessionEventId>({ value: `mock-big-event-${index}` }),
   sessionId: SESSION_ID,
   kind: 'branch_switched',
   payload: null,
@@ -93,7 +96,7 @@ const eventOf = ({ index }: IndexParams): SessionEvent => ({
 });
 
 const telemetryOf = ({ index }: IndexParams): TelemetryRecord => ({
-  id: `mock-big-telemetry-${index}` as TelemetryRecordId,
+  id: brandId<TelemetryRecordId>({ value: `mock-big-telemetry-${index}` }),
   runId: runIdOf({ index: index % (BIG_SESSION_SIZE.parents * 4) }),
   sessionId: SESSION_ID,
   kind: 'turn',

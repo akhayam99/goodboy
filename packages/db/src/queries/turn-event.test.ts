@@ -1,5 +1,12 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import type { AgentId, IsoDateTime, ProviderRunId, SessionId, WorkspaceId } from '@goodboy/types';
+import {
+  brandId,
+  type AgentId,
+  type IsoDateTime,
+  type ProviderRunId,
+  type SessionId,
+  type WorkspaceId,
+} from '@goodboy/types';
 import type { Database } from '../client';
 import { makeMigratedTestDatabase } from '../test-helpers/test-db';
 import {
@@ -346,20 +353,25 @@ describe('turn event queries', () => {
   });
 
   it('lists each run of each agent once, in the order it first spoke', async () => {
-    const secondRun = 'run-2' as ProviderRunId;
-    const rows: ReadonlyArray<readonly [AgentId, ProviderRunId, string]> = [
-      [agentId, runId, '2026-07-30T10:00:00.000Z'],
-      [otherAgentId, secondRun, '2026-07-30T10:01:00.000Z'],
-      [agentId, runId, '2026-07-30T10:02:00.000Z'],
-      [agentId, secondRun, '2026-07-30T10:03:00.000Z'],
-      [agentId, 'history' as ProviderRunId, '2026-07-30T10:04:00.000Z'],
+    const secondRun = brandId<ProviderRunId>({ value: 'run-2' });
+    const rows: ReadonlyArray<readonly [AgentId, ProviderRunId]> = [
+      [agentId, runId],
+      [otherAgentId, secondRun],
+      [agentId, runId],
+      [agentId, secondRun],
+      [agentId, brandId<ProviderRunId>({ value: 'history' })],
     ];
-    for (const [index, [owner, run, when]] of rows.entries()) {
+    for (const [index, [owner, run]] of rows.entries()) {
       await insertTurnEvent(db, {
         id: `event-run-${index}`,
         sessionId,
         agentId: owner,
-        event: { kind: 'assistant_text', runId: run, delta: 'step', at: when as IsoDateTime },
+        event: {
+          kind: 'assistant_text',
+          runId: run,
+          delta: 'step',
+          at: brandId<IsoDateTime>({ value: `2026-07-30T10:0${index}:00.000Z` }),
+        },
       });
     }
     await db.execute(
@@ -383,7 +395,7 @@ describe('turn event queries', () => {
         agentId: index % 2 === 0 ? agentId : otherAgentId,
         event: {
           kind: 'assistant_text',
-          runId: `run-${index % 3}` as ProviderRunId,
+          runId: brandId<ProviderRunId>({ value: `run-${index % 3}` }),
           delta: 'x'.repeat(2_000),
           at,
         },

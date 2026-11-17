@@ -1,10 +1,16 @@
 import { describe, expect, it } from 'vitest';
-import type { Agent, AgentId, IsoDateTime, SessionId } from '@goodboy/types';
+import {
+  brandId,
+  type Agent,
+  type AgentId,
+  type IsoDateTime,
+  type SessionId,
+} from '@goodboy/types';
 import { buildTimelineGroups } from '../buildTimelineGroups';
 import { buildTimelineStream, type TimelineStream } from '.';
 import { dayLabel } from '../dayLabel';
 
-const SESSION_ID = 'session-open' as SessionId;
+const SESSION_ID = brandId<SessionId>({ value: 'session-open' });
 const NOW = new Date(2026, 8, 30, 12, 0);
 const BASE = Date.parse('2026-09-30T08:00:00.000Z');
 
@@ -15,14 +21,18 @@ type AgentParams = {
 };
 
 const agentOf = ({ id, ordinal, parentAgentId }: AgentParams): Agent => ({
-  id: id as AgentId,
+  id: brandId<AgentId>({ value: id }),
   sessionId: SESSION_ID,
   ordinal,
   name: `Map ledger-core call site ${ordinal}`,
   status: 'completed',
-  startedAt: new Date(BASE + ordinal * 60_000).toISOString() as IsoDateTime,
-  completedAt: new Date(BASE + ordinal * 60_000 + 30_000).toISOString() as IsoDateTime,
-  ...(parentAgentId === undefined ? {} : { parentAgentId: parentAgentId as AgentId }),
+  startedAt: brandId<IsoDateTime>({ value: new Date(BASE + ordinal * 60_000).toISOString() }),
+  completedAt: brandId<IsoDateTime>({
+    value: new Date(BASE + ordinal * 60_000 + 30_000).toISOString(),
+  }),
+  ...(parentAgentId === undefined
+    ? {}
+    : { parentAgentId: brandId<AgentId>({ value: parentAgentId }) }),
 });
 
 const agents = Array.from({ length: 6 }, (_, chain) => {
