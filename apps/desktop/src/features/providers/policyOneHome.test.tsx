@@ -142,16 +142,13 @@ describe('the provider policy has one home', () => {
     expect(popover.getByText('Needs a provider that reports limits')).toBeDefined();
   });
 
-  it('shows Run defaults a summary and a link, never a second switch for the policy', () => {
+  it('leaves the policy to Models: Runs has no switch, summary or link for it', () => {
     seed({ policy: POLICY, rules: { spreadByHeadroom: true } });
     render(<WorkflowRulesPanel workspaceId={WORKSPACE.id} />);
 
-    const band = screen.getByRole('region', { name: 'New runs' });
-    expect(within(band).queryAllByRole('switch')).toEqual([]);
-    expect(within(band).getByRole('button', { name: 'Open Models' })).toBeDefined();
-    expect(within(band).getByTestId('rules-policy-summary').textContent).toBe(
-      'Claude, Codex · Cursor as backup',
-    );
+    expect(screen.queryAllByRole('switch')).toEqual([]);
+    expect(screen.queryByRole('button', { name: 'Open Models' })).toBeNull();
+    expect(screen.queryByText('Claude, Codex · Cursor as backup')).toBeNull();
   });
 
   it('keeps the two screens in step after the policy changes in Providers', async () => {
@@ -168,7 +165,6 @@ describe('the provider policy has one home', () => {
     render(<WorkflowRulesPanel workspaceId={WORKSPACE.id} />);
 
     expect(screen.queryAllByRole('switch', { name: SPREAD_LABEL })).toEqual([]);
-    expect(screen.getByTestId('rules-policy-summary')).toBeDefined();
     cleanup();
     const reopened = openPopover();
     expect(reopened.getByRole('switch', { name: SPREAD_LABEL }).getAttribute('aria-checked')).toBe(

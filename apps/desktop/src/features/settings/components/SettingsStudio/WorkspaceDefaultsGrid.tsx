@@ -1,10 +1,11 @@
 import type { WorkspaceId } from '@goodboy/types';
-import { Band, Switch } from '@goodboy/ui';
+import { Band } from '@goodboy/ui';
 import { VerbositySelect } from '../../../../features/session/components/VerbositySelect';
 import { useAppStore } from '../../../../store';
 import { selectWorkspaceResolvedSettings } from '../../../../store/slices/overrides/selectResolvedSettings';
 import { WorkflowRulesPanel } from '../../../workflows/workflowRulesPanel';
 import { useWorkspaceOverrideSave } from '../../hooks/useWorkspaceOverrideSave';
+import { RunsAdvancedBand } from './RunsAdvancedBand';
 import { WorkspaceFieldRow } from './WorkspaceFieldRow';
 
 type Props = {
@@ -15,15 +16,6 @@ export const WorkspaceDefaultsGrid = ({ workspaceId }: Props) => {
   const verbosity = useAppStore(
     (s) => selectWorkspaceResolvedSettings({ state: s, workspaceId }).defaultVerbosity,
   );
-  const parallelAgents = useAppStore(
-    (s) => selectWorkspaceResolvedSettings({ state: s, workspaceId }).parallelAgents,
-  );
-  const parallelSave = useWorkspaceOverrideSave({
-    workspaceId,
-    field: 'parallelAgents',
-    saved: parallelAgents,
-    patchOf: ({ value: isOn }) => ({ parallelAgents: isOn }),
-  });
   const verbositySave = useWorkspaceOverrideSave({
     workspaceId,
     field: 'verbosity',
@@ -32,19 +24,11 @@ export const WorkspaceDefaultsGrid = ({ workspaceId }: Props) => {
   });
 
   return (
-    <WorkflowRulesPanel workspaceId={workspaceId}>
+    <WorkflowRulesPanel
+      workspaceId={workspaceId}
+      advanced={<RunsAdvancedBand workspaceId={workspaceId} />}
+    >
       <Band inset="content" label="Agents" ariaLabel="Agents" headingLevel={2}>
-        <WorkspaceFieldRow
-          workspaceId={workspaceId}
-          field="parallelAgents"
-          help="Eligible agents split independent work, then merge one result."
-        >
-          <Switch
-            ariaLabel="Parallel agents"
-            checked={parallelSave.value}
-            onChange={(isNext) => void parallelSave.save({ value: isNext })}
-          />
-        </WorkspaceFieldRow>
         <WorkspaceFieldRow
           workspaceId={workspaceId}
           field="verbosity"

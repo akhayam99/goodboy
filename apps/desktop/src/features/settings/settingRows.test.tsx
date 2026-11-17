@@ -62,12 +62,18 @@ afterEach(() => {
   clearSceneInvoke();
 });
 
+const FOLDED: ReadonlySet<string> = new Set(['parallel-agents', 'reply-template-fixed']);
+
 type MountParams = {
   readonly page: SettingRowPage;
 };
 
 const mountPage = async ({ page }: MountParams): Promise<Element> => {
-  const { container } = render(<SettingsFrame focus={page} seed={seedPage} />);
+  const folded = SETTING_ROWS.find(
+    (row) => pageId(row.page) === pageId(page) && FOLDED.has(row.key),
+  );
+  const focus = folded === undefined ? page : { ...page, row: folded.key };
+  const { container } = render(<SettingsFrame focus={focus} seed={seedPage} />);
   await act(async () => {
     await vi.advanceTimersByTimeAsync(SETTLE_MS);
   });
@@ -102,6 +108,7 @@ describe('setting rows registry', () => {
   it.each([
     { scope: 'app', section: 'general', row: 'theme' },
     { scope: 'workspace', section: 'branches', row: 'branch-prefix' },
+    { scope: 'workspace', section: 'general', row: 'parallel-agents' },
   ] as const)('opens $section and lights the $row row itself', async (focus) => {
     const { container } = render(<SettingsFrame focus={focus} seed={seedPage} />);
     await act(async () => {

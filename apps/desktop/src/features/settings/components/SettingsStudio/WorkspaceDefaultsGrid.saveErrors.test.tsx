@@ -187,6 +187,7 @@ describe('WorkspaceDefaultsGrid save errors', () => {
 
   it('keeps only the latest change when an older one fails after it', async () => {
     render(<Pages />);
+    fireEvent.click(screen.getByRole('button', { name: 'Advanced' }));
     const parallel = screen.getByRole('switch', { name: 'Parallel agents' });
 
     fireEvent.click(parallel);

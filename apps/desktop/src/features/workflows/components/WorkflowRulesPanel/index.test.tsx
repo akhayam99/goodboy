@@ -89,15 +89,17 @@ const claudeAt = ({ used }: { readonly used: number }): ProviderLimits => ({
 
 const panel = () => render(<WorkflowRulesPanel workspaceId={HARBORLINE.id} />);
 
-const newRuns = () => within(screen.getByRole('region', { name: 'New runs' }));
+const stopsBand = () => within(screen.getByRole('region', { name: 'When a run stops for you' }));
+
+const spendingBand = () => within(screen.getByRole('region', { name: 'Spending' }));
 
 const asksTab = ({ name }: { readonly name: RegExp }) =>
-  within(newRuns().getByRole('tablist', { name: 'Stops for your OK' })).getByRole('tab', {
+  within(stopsBand().getByRole('tablist', { name: 'Stops for your OK' })).getByRole('tab', {
     name,
   });
 
 const selectedLevels = () =>
-  within(newRuns().getByRole('tablist', { name: 'Stops for your OK' }))
+  within(stopsBand().getByRole('tablist', { name: 'Stops for your OK' }))
     .getAllByRole('tab')
     .filter((tab) => tab.getAttribute('aria-selected') === 'true')
     .map((tab) => tab.textContent);
@@ -215,13 +217,12 @@ describe('WorkflowRulesPanel', () => {
   it('starts on the defaults with one row per setting and the guidance field', () => {
     panel();
 
-    expect(screen.getByRole('heading', { level: 2, name: 'New runs' })).toBeDefined();
+    expect(
+      screen.getByRole('heading', { level: 2, name: 'When a run stops for you' }),
+    ).toBeDefined();
     expect(selectedLevels()).toEqual([]);
-    expect(newRuns().getByLabelText<HTMLInputElement>('Limit in dollars').value).toBe('');
-    expect(newRuns().getByTestId('rules-policy-summary').textContent).toBe(
-      'Claude, Codex · Cursor as backup',
-    );
-    expect(newRuns().queryAllByRole('button', { name: /^(Asks you|Limit|Models):/ })).toEqual([]);
+    expect(spendingBand().getByLabelText<HTMLInputElement>('Limit in dollars').value).toBe('');
+    expect(screen.queryAllByRole('button', { name: /^(Asks you|Limit|Models):/ })).toEqual([]);
     expect(screen.getByRole('textbox', { name: 'Guidance' })).toBeDefined();
   });
 
@@ -229,31 +230,47 @@ describe('WorkflowRulesPanel', () => {
     panel();
 
     expect(
-      within(newRuns().getByRole('tablist', { name: 'Stops for your OK' }))
+      within(stopsBand().getByRole('tablist', { name: 'Stops for your OK' }))
         .getAllByRole('tab')
         .map((tab) => tab.textContent),
     ).toEqual(RUN_AUTONOMY_OPTIONS.map((option) => option.label));
-    expect(newRuns().queryByRole('button', { name: 'Save' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Save' })).toBeNull();
   });
 
-  it('keeps New runs to stops, limit and models, and puts the bands it gets before Guidance', () => {
+  it('asks one question per band, then the bands it gets, Guidance and Advanced last', () => {
     render(
-      <WorkflowRulesPanel workspaceId={HARBORLINE.id}>
+      <WorkflowRulesPanel workspaceId={HARBORLINE.id} advanced={<section aria-label="Advanced" />}>
         <section aria-label="Agents" />
       </WorkflowRulesPanel>,
     );
 
     expect(
-      newRuns()
+      stopsBand()
         .getAllByText(/^(Stops for your OK|Limit|Models)$/)
         .map((node) => node.textContent),
-    ).toEqual(['Stops for your OK', 'Limit', 'Models']);
-    expect(newRuns().queryByText('Start as')).toBeNull();
+    ).toEqual(['Stops for your OK']);
+    expect(
+      spendingBand()
+        .getAllByText(/^(Stops for your OK|Limit|Models)$/)
+        .map((node) => node.textContent),
+    ).toEqual(['Limit']);
+    expect(screen.queryByText('Start as')).toBeNull();
     expect(screen.getAllByRole('region').map((band) => band.getAttribute('aria-label'))).toEqual([
-      'New runs',
+      'When a run stops for you',
+      'Spending',
       'Agents',
       'Guidance',
+      'Advanced',
     ]);
+  });
+
+  it('has no Models row and no button that opens another Settings page', () => {
+    panel();
+
+    expect(screen.queryByText('Models')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Open Models' })).toBeNull();
+    expect(screen.queryByTestId('rules-policy-summary')).toBeNull();
+    expect(screen.queryAllByRole('switch')).toHaveLength(0);
   });
 
   it('says when workflows and the Lead stop at different points, until you pick', () => {
@@ -263,7 +280,7 @@ describe('WorkflowRulesPanel', () => {
 
     expect(selectedLevels()).toEqual([]);
     expect(
-      newRuns().getByText(/^Workflows: Every step · Lead: After the plan\. Pick one\.$/),
+      stopsBand().getByText(/^Workflows: Every step · Lead: After the plan\. Pick one\.$/),
     ).toBeDefined();
     expect(savedRules()).toEqual([]);
     expect(leadWrites).not.toHaveBeenCalled();
@@ -275,7 +292,7 @@ describe('WorkflowRulesPanel', () => {
     panel();
 
     expect(selectedLevels()).toEqual(['Never']);
-    expect(newRuns().getByText(/Workflows and the Lead follow it\./)).toBeDefined();
+    expect(stopsBand().getByText(/Workflows and the Lead follow it\./)).toBeDefined();
   });
 
   it('writes workflows and the Lead together, for this workspace, from one pick', async () => {
@@ -303,7 +320,7 @@ describe('WorkflowRulesPanel', () => {
 
     fireEvent.click(asksTab({ name: /After the plan/ }));
 
-    expect((await newRuns().findByRole('alert')).textContent).toContain('disk full');
+    expect((await stopsBand().findByRole('alert')).textContent).toContain('disk full');
     expect(selectedLevels()).toEqual(['Every step']);
     expect(leadWrites).not.toHaveBeenCalled();
     expect(leadLevel()).toBe('step');
@@ -317,7 +334,7 @@ describe('WorkflowRulesPanel', () => {
 
     fireEvent.click(asksTab({ name: /^Never/ }));
 
-    expect((await newRuns().findByRole('alert')).textContent).toContain('database is locked');
+    expect((await stopsBand().findByRole('alert')).textContent).toContain('database is locked');
     expect(savedRules().map((rules) => rules?.autonomy)).toEqual(['run', 'step']);
     expect(useAppStore.getState().workspaceOverrides[HARBORLINE.id]?.workflowRules?.autonomy).toBe(
       'step',
@@ -356,9 +373,11 @@ describe('WorkflowRulesPanel', () => {
     const change = withDetails({ defaultRows: { push: 'ask' } });
     panel();
 
-    await newRuns().findByText(/^Custom: 1 detail differs from After the plan\.$/);
+    await stopsBand().findByText(/^Custom: 1 detail differs from After the plan\.$/);
     expect(selectedLevels()).toEqual([]);
-    fireEvent.click(newRuns().getByRole('button', { name: 'Reset Stops for your OK to default' }));
+    fireEvent.click(
+      stopsBand().getByRole('button', { name: 'Reset Stops for your OK to default' }),
+    );
 
     await waitFor(() =>
       expect(change).toHaveBeenCalledWith({
@@ -373,9 +392,9 @@ describe('WorkflowRulesPanel', () => {
     panel();
 
     fireEvent.click(
-      await newRuns().findByRole('button', { name: 'Fine-tune what the Lead does alone' }),
+      await stopsBand().findByRole('button', { name: 'Fine-tune what the Lead does alone' }),
     );
-    const row = await newRuns().findByRole('tablist', { name: 'Open or update a pull request' });
+    const row = await stopsBand().findByRole('tablist', { name: 'Open or update a pull request' });
     fireEvent.click(within(row).getByRole('tab', { name: 'Ask first' }));
 
     await waitFor(() =>
@@ -384,15 +403,15 @@ describe('WorkflowRulesPanel', () => {
         change: { key: 'pullRequest', value: 'ask' },
       }),
     );
-    expect(newRuns().queryByRole('tablist', { name: 'Applies to' })).toBeNull();
-    expect(newRuns().queryByRole('tablist', { name: 'Start from' })).toBeNull();
+    expect(stopsBand().queryByRole('tablist', { name: 'Applies to' })).toBeNull();
+    expect(stopsBand().queryByRole('tablist', { name: 'Start from' })).toBeNull();
   });
 
   it('a level pick on Custom saves the level and then clears the details', async () => {
     const change = withDetails({ defaultRows: { push: 'ask' } });
     panel();
 
-    await newRuns().findByText(/^Custom: 1 detail/);
+    await stopsBand().findByText(/^Custom: 1 detail/);
     fireEvent.click(asksTab({ name: /^Never/ }));
 
     await waitFor(() =>
@@ -429,13 +448,13 @@ describe('WorkflowRulesPanel', () => {
   it('applies the spend limit on Enter and the behaviour at the limit on click', async () => {
     panel();
 
-    const amount = newRuns().getByLabelText('Limit in dollars');
+    const amount = spendingBand().getByLabelText('Limit in dollars');
     fireEvent.focus(amount);
     fireEvent.change(amount, { target: { value: '40' } });
-    fireEvent.submit(newRuns().getByRole('form', { name: 'Limit for new runs' }));
+    fireEvent.submit(spendingBand().getByRole('form', { name: 'Limit for new runs' }));
     await waitFor(() => expect(savedRules().at(-1)).toMatchObject({ spendLimitUsd: 40 }));
     fireEvent.click(
-      within(newRuns().getByRole('tablist', { name: 'At the limit' })).getByRole('tab', {
+      within(spendingBand().getByRole('tablist', { name: 'At the limit' })).getByRole('tab', {
         name: 'Warn only',
       }),
     );
@@ -450,40 +469,28 @@ describe('WorkflowRulesPanel', () => {
     failSaves();
     panel();
 
-    const amount = newRuns().getByLabelText<HTMLInputElement>('Limit in dollars');
+    const amount = spendingBand().getByLabelText<HTMLInputElement>('Limit in dollars');
     expect(amount.value).toBe('20');
     fireEvent.focus(amount);
     fireEvent.change(amount, { target: { value: '40' } });
-    fireEvent.submit(newRuns().getByRole('form', { name: 'Limit for new runs' }));
+    fireEvent.submit(spendingBand().getByRole('form', { name: 'Limit for new runs' }));
 
-    expect((await newRuns().findByRole('alert')).textContent).toContain('disk full');
+    expect((await spendingBand().findByRole('alert')).textContent).toContain('disk full');
     expect(
       useAppStore.getState().workspaceOverrides[HARBORLINE.id]?.workflowRules?.spendLimitUsd,
     ).toBe(20);
   });
 
-  it('opens the workspace Models page from the Models row', () => {
-    const received: Array<unknown> = [];
-    const listener = (event: Event) => received.push((event as CustomEvent).detail);
-    window.addEventListener('goodboy:open-settings', listener);
+  it('writes guidance in one field, with no Write or Preview tabs', () => {
     panel();
 
-    fireEvent.click(newRuns().getByRole('button', { name: 'Open Models' }));
-    window.removeEventListener('goodboy:open-settings', listener);
-
-    expect(received).toEqual([{ scope: 'workspace', section: 'models' }]);
-  });
-
-  it('shows the policy in one line, with no switch and no provider list', () => {
-    panel();
-
-    expect(newRuns().queryAllByRole('switch')).toHaveLength(0);
-    expect(screen.getByTestId('rules-policy-summary').textContent).toBe(
-      'Claude, Codex · Cursor as backup',
+    const guidance = within(screen.getByRole('region', { name: 'Guidance' }));
+    expect(guidance.queryByRole('tab', { name: 'Preview' })).toBeNull();
+    expect(guidance.queryByRole('tab', { name: 'Write' })).toBeNull();
+    expect(guidance.getByRole('textbox', { name: 'Guidance' }).getAttribute('placeholder')).toBe(
+      'One rule per line. Every new run reads these first.',
     );
-    expect(screen.getByRole('region', { name: 'New runs' }).textContent).not.toMatch(
-      /most room|room left/,
-    );
+    guidance.getByRole('button', { name: 'Polish guidance' });
   });
 
   it('saves guidance, polishes it into one rule per line and undoes the polish', async () => {
