@@ -3,13 +3,16 @@ import { leadPermissionsOf, type StoredLeadPermissionRows } from '@goodboy/core/
 import { useAppStore } from '../../../../../store';
 import { RunPageScene } from '../surfaces/run-page/RunPageScene';
 
+type LeadPermissionsStep = 'head' | 'menu' | 'drawer';
+
 type Props = {
   readonly leadRows: StoredLeadPermissionRows;
-  readonly isOpen: boolean;
+  readonly step: LeadPermissionsStep;
 };
 
 const OPEN_ROW_AFTER_MS = 400;
-const OPEN_PANEL_AFTER_MS = 900;
+const OPEN_MENU_AFTER_MS = 900;
+const OPEN_DRAWER_AFTER_MS = 1300;
 
 type ClickParams = {
   readonly selector: string;
@@ -19,7 +22,7 @@ const clickOn = ({ selector }: ClickParams): void => {
   document.querySelector<HTMLElement>(selector)?.click();
 };
 
-export const LeadPermissionsPageScene = ({ leadRows, isOpen }: Props) => {
+export const LeadPermissionsPageScene = ({ leadRows, step }: Props) => {
   useEffect(() => {
     const permissions = leadPermissionsOf({
       leadRows,
@@ -32,12 +35,17 @@ export const LeadPermissionsPageScene = ({ leadRows, isOpen }: Props) => {
     });
     useAppStore.setState({ readLeadPermissions: async () => permissions });
     const openRow = () => clickOn({ selector: 'button[aria-label="Run settings"]' });
-    const openPanel = () => clickOn({ selector: '[data-setting-chip="Asks you"]' });
+    const openMenu = () => clickOn({ selector: '[data-setting-chip="Stops for your OK"]' });
+    const openDrawer = () =>
+      clickOn({ selector: '[role="menuitem"][data-menu-label="Fine-tune this run"]' });
     const timers = [setTimeout(openRow, OPEN_ROW_AFTER_MS)];
-    if (isOpen) {
-      timers.push(setTimeout(openPanel, OPEN_PANEL_AFTER_MS));
+    if (step !== 'head') {
+      timers.push(setTimeout(openMenu, OPEN_MENU_AFTER_MS));
+    }
+    if (step === 'drawer') {
+      timers.push(setTimeout(openDrawer, OPEN_DRAWER_AFTER_MS));
     }
     return () => timers.forEach((timer) => clearTimeout(timer));
-  }, [leadRows, isOpen]);
+  }, [leadRows, step]);
   return <RunPageScene state="working" theme="dark" isLead />;
 };

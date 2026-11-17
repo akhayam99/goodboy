@@ -546,7 +546,9 @@ inbox-error
 inbox-source
 inbox-states
 integration-issue-focused
+lead-details-drawer
 lead-permissions-head
+lead-permissions-level-menu
 lead-permissions-page
 limit-continue
 link-scope
@@ -893,6 +895,7 @@ settings-providers-rail
 settings-providers-scope
 settings-run-defaults-link
 settings-runs-split
+settings-runs-tuned
 settings-theme-dark
 settings-theme-light
 settings-theme-system
