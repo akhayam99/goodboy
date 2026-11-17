@@ -25,7 +25,8 @@ export const CommentRunSuggestion = ({ body, path }: Props) => {
       <div className="flex min-w-0 flex-col gap-1">
         <p className="text-row text-foreground">{COMMENT_RUN_COPY.suggestTitle}</p>
         <p className="text-meta text-muted-foreground">
-          {sentence} {COMMENT_RUN_COPY.suggestWhy}
+          {sentence.length > 0 ? `${sentence} ` : ''}
+          {COMMENT_RUN_COPY.suggestWhy}
         </p>
       </div>
     </div>
