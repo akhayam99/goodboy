@@ -187,7 +187,7 @@ export type PushFixFollowUp = {
   readonly sentence: string;
 };
 
-export type PushFixOutcomeKind = 'pushed' | 'agent_failed' | 'push_failed';
+export type PushFixOutcomeKind = 'pushed' | 'agent_failed' | 'agent_stopped' | 'push_failed';
 
 export type PushFixOutcome = {
   readonly agentId: AgentId;
