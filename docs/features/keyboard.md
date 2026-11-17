@@ -122,7 +122,7 @@ Move through Goodboy, change a shortcut and stop an agent without leaving the ke
 
 **Fold a column**
 
-- **⌘B** folds the sidebar. **⌥⌘B** folds the column inside the page you are on.
+- **⌘B** opens and closes Sessions. **⇧⌘B** folds the sidebar. **⌥⌘B** folds the column inside the page you are on.
 - That column is the Session pages column, the Chat and Terminal lists, the Guide chapters, the changelog versions, the Settings scopes or the notification filters.
 - Each remembers it per page. On a page with no inner column the key does nothing and Search or run leaves the entry out.
 

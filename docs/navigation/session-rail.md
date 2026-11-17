@@ -337,7 +337,7 @@ characters`, in the warning tone from 90%. A longer draft is blocked before
   rail: a thin icon toolbar at the right edge of the session content, between
   the page and the open drawer (see The session tools), the same on every
   page of the session, folded rail or not.
-- **Nothing folds.** The page tabs have no folded state. ⌘B folds the column only, which
+- **Nothing folds.** The page tabs have no folded state. ⇧⌘B folds the column only, which
   shows New, the doors and the pinned session nodes on every screen. The diff page's file
   rail keeps its own fold.
 - **A preset run keeps the rail on the session.** Opening a run with a fixed

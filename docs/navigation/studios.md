@@ -11,7 +11,7 @@ page under it stays mounted and inert. Every drawer belongs to a session today,
 so every drawer parks (mounted, hidden and inert) until the studio closes, and
 the sheet takes its width. The column
 never changes for a studio: it stays live in both sidebar states, so another
-door or a session row is one click away, and ⌘B and the sidebar toggle fold it
+door or a session row is one click away, and ⇧⌘B and the sidebar toggle fold it
 on every page (`shellArrangement` takes no studio). **Settings is a page with
 its own scopes rail**: the 40px band holds `‹ Back to app` (with its Esc hint)
 and no crumb, since the scopes rail already shows where you are, and below it `SettingsScopesLayout` draws a

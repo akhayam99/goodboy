@@ -64,6 +64,10 @@ Jump between workspaces and folders from one search. The current workspace sits 
 
 A workspace you are not looking at can still need you. Its row in the list says **2 need you** in amber, or red when one of them is broken, with the reasons in place of the folder line, for a workspace open in another window as well as for one that is open nowhere. The same sessions are added up as a number on the workspace name in the top bar when any other workspace needs you, and the bell can widen to **All workspaces**. The count of a workspace nobody shows is read from the database every 30 seconds and counts what is saved there: an open question, a fix run waiting for your answer, a failed push, failing checks and an errored session. The window that shows a workspace also knows what lives only in memory, such as a plan or a permission waiting, so it sends its own count to the other windows and that count wins while the window is open.
 
+### Sessions in the bar
+
+**Sessions**, at the top left of the bar, or **⌘B** from any screen, opens your sessions in one list: Pinned first, then Needs you, Running, In review and Building. Type to filter by title or project, use the arrows and **Enter** to open one, and click a pin to move a row in or out of Pinned. A pin that cannot be saved leaves the row where it was and says so. **Open Board** at its foot shows the finished ones too.
+
 ### New worktrees start usable
 
 A new worktree is a clean checkout, so the folder settings carry what it lacks. **Worktree setup**, under a repository folder in Settings, lists its git-ignored files (`.env.local`, `config/local.json`), none ticked, a secret marked **secret: only when ticked**; the ticked ones are copied into every new worktree, only when git ignores them and never over a file that is already there. **Setup after creation** is prefilled from the lockfile (`pnpm install`) and says where it came from. When a session cuts a worktree, the overview shows **Worktree payments-api/retry-webhook is ready**, what was copied and the proposed setup with **Run** and **Not now**; the setup never runs without that click. Dependencies are never copied byte by byte: that is what the setup is for.
@@ -151,6 +155,8 @@ This part is for contributors and agents who change the feature.
 - Switch chip: `WorkspaceIdentityRow` reads `switchingToWorkspaceId` and `workspaceSwitchError` through `useWorkspaceSwitchState`; **Retry** calls `setCurrentWorkspace` with the failed id, and `StageBoard` draws its skeleton while a switch is set. The failed line floats in `AnchoredLayer`, so the top bar never cuts it.
 
 - Attention count of an open workspace: the window that shows it sends its count to the other windows on `goodboy:attention`.
+
+- Sessions popover: `SessionsPopover` (`features/workspace/components/SessionsPopover/`) reads the groups of `useSessionOrder`, filters them with `sessionsShownOf`, and registers `sessions.toggle` (⌘B). The pin calls `pinSession` or `unpinSession`; `index.test.tsx` covers a failed write.
 
 - Page memory: the `monitoring-view` slice (`store/slices/monitoring-view/`) holds the Monitoring search text and open folds (`monitoringViews`) and the Terminal Archived fold (`terminalArchivedOpen`). Both are stored per workspace, and every write names its workspace.
 - Process folds: a fold on a process is keyed `proc:<pid>:<birthId>:...` (`processFoldKey`); `birthId` is the native birth time (macOS seconds and microseconds, Linux boot time and start ticks). `startedAt` stays milliseconds for display. A reused pid starts closed. A failed lookup (another user's process) gives a null `birthId`. The key then uses the pid and the command line. The fold is pruned only when the pid disappears. A full snapshot drops the keys of processes it no longer lists (`pruneProcessFolds`, called from `createMonitorRefresh`).

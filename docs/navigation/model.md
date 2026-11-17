@@ -211,7 +211,7 @@
   their exact position. The update control comes and goes with a pending update,
   because an update is an event, not a count.
 - **Hidden is not gone.** Anything the user can put away must come back without
-  a hunt. ⌘B folds the column into its rail of doors, which keeps every
+  a hunt. ⇧⌘B folds the column into its rail of doors, which keeps every
   destination; the full column, sessions included, peeks back when the pointer
   rests at the window edge. Peek floats the one column over the page instead of
   laying it out.
