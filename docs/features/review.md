@@ -68,6 +68,8 @@ Point at an open comment for **Fix** to fix that comment alone. The button is bu
 
 **Apply** accepts that fix only, and the row reads **Applied, not pushed**. The undo bar under the list takes it back, as after a bulk apply. **Discard** throws the fix away: nothing is applied and no reply is posted. The comment is open again, with **Fix**. A fix shared with other comments, made in another worktree or already on the branch stays, and the error says why.
 
+The Fix comments drawer reads the same: its **Discard** throws the fix away, and parking a comment is **Skip**. After a run, **Retry 2 failed** puts every failed comment back in the same run. The session marks, the board, Ask and the transcript line use the words of the rows, such as **2 comments failed** or **Fixed**.
+
 A comment the run could not fix reads **Failed** and says why in one sentence. A stopped one reads **Stopped**. Both offer **Retry** in the same run, and a menu with **Retry with a hint**, **Start over** with a new agent and **Open transcript**. A comment that changed after its fix keeps **Fixed in 90b1d57 · Review the fix** and its choice in the drawer. The state comes from the thread, so it is still there when you come back to Comments. Starting a fix takes its comments out of the selection. Leaving the list drops a selection that sits on comments nobody can act on.
 
 When the run has finished with fixes ready, every comment keeps its result on its row and in its group. The bar above the list counts them quietly, **4 fixes ready**. Resting on the count says what Apply does: it accepts the fixes, and the next push sends them. The push replies to the threads and resolves them where the host can. With two or more ready the header offers **Apply N fixes**.

@@ -62,7 +62,7 @@ const REASON_TEXT: Record<SessionAttentionReason, (params: ReasonTextParams) => 
   'ci-failed': ({ label }) => `${label}: checks failing`,
   'changes-requested': ({ label }) => `${label}: changes requested`,
   'fix-couldnt-fix': ({ fixCouldntFixCount, noteCouldntFixCount }) =>
-    couldntFixWords({ comments: fixCouldntFixCount, notes: noteCouldntFixCount, form: 'status' }),
+    couldntFixWords({ comments: fixCouldntFixCount, notes: noteCouldntFixCount }),
   'pr-queued': ({ label }) => `${label} in the merge queue`,
   'pr-approved': ({ label }) => `${label} approved, ready to merge`,
   'unread-reply': () => 'Unread reply',

@@ -10,7 +10,7 @@ export const FAILED_RUN_COPY = {
   openTranscript: 'Open transcript',
   moreActions: 'More actions',
   modelList: 'Model for a new agent',
-  usedAndFailed: "couldn't fix it",
+  usedAndFailed: 'failed',
   attemptsRegion: 'Previous attempts',
 } as const;
 

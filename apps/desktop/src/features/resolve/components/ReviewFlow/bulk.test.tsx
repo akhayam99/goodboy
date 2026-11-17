@@ -514,7 +514,7 @@ describe('retry in bulk', () => {
     stub({ retryCouldntFix });
     await mount({ stage: 'retry' });
 
-    fireEvent.click(within(toolbar()).getByRole('button', { name: "Retry 1 that couldn't fix" }));
+    fireEvent.click(within(toolbar()).getByRole('button', { name: 'Retry 1 failed' }));
 
     await waitFor(() => expect(retryCouldntFix).toHaveBeenCalledOnce());
     expect(retryCouldntFix).toHaveBeenCalledWith({
@@ -528,7 +528,7 @@ describe('retry in bulk', () => {
   it('is absent when nothing could not be fixed', async () => {
     await mount({ stage: 'answers' });
 
-    expect(screen.queryByRole('button', { name: /^Retry \d+ that couldn't fix/ })).toBeNull();
+    expect(screen.queryByRole('button', { name: /^Retry \d+ failed/ })).toBeNull();
   });
 });
 
