@@ -31,15 +31,14 @@ import { acceptReviewItem } from '../../resolve/acceptReviewItem';
 import { laneAcceptCountOf, laneAcceptNotesOf } from '../../resolve/laneAcceptCount';
 import { acceptUpToLabel } from '../../resolve/laneCopy';
 import { FAILED_RUN_COPY } from '../../resolve/failedRunCopy';
-import { verdictReply } from '../../resolve/commentVerdict';
+import { remoteReplyOf } from '../../resolve/remoteReplyOf';
+import { runSuggestionOf } from '../../resolve/runSuggestionOf';
 import { postReplyWhenNothingWaits } from '../../resolve/replyDelivery';
 import { replyOf, rowStateOf, threadRowsOf } from '../../resolve/reviewRows';
 import type { ReviewCommentState } from '../../resolve/reviewCommentState';
 import { REMOTE_LABEL, commitUrlOf, remoteActionLabel, remoteOf } from '../../resolve/reviewRemote';
-import type {
-  ThreadGitFacts,
-  ThreadRemoteKind,
-} from '../../../store/slices/resolve/threadGitState';
+import type { ThreadRemoteKind } from '../../../store/slices/resolve/threadGitState';
+import { REVIEW_COMMENT_RUN_ACTIONS } from './reviewCommentRunActions';
 import { requestReview, type ReviewComposeMode } from '../../review/reviewRequest';
 import type { AppStore } from '../../../store/store';
 import type { ActionEnv, ObjectKindDefinition, ReviewCommentActionTarget } from '../types';
@@ -70,6 +69,7 @@ export type ReviewCommentFacts = {
   readonly remoteReply: string | null;
   readonly isReplyOnly: boolean;
   readonly isReplyFailure: boolean;
+  readonly runSuggestion: string | null;
   readonly hasFixOnBranch: boolean;
   readonly laneAcceptCount: number;
   readonly laneAcceptNotes: number;
@@ -96,20 +96,6 @@ const canRepostVerdict = ({ facts }: { readonly facts: ReviewCommentFacts }): bo
   isMissing({ facts }) && !facts.isChecking && !facts.isPushedMissing;
 
 const shortOf = ({ sha }: { readonly sha: string | null }): string => (sha ?? '').slice(0, 7);
-
-const remoteReplyOf = ({
-  gitFacts,
-  draftReply,
-}: {
-  readonly gitFacts: ThreadGitFacts | null;
-  readonly draftReply: string | null;
-}): string | null => {
-  if (draftReply !== null && draftReply.trim() !== '') {
-    return draftReply;
-  }
-  const verdict = gitFacts?.verdict ?? null;
-  return verdict === null || verdict.kind === 'refix' ? null : verdictReply({ verdict });
-};
 
 const REWRITABLE: ReadonlySet<ReviewCommentState> = new Set(['ready', 'edited']);
 
@@ -222,6 +208,7 @@ export const REVIEW_COMMENT_KIND: ObjectKindDefinition<
         row.item.approvalState === 'wont_fix' ||
         (row.proposalKind !== 'fix' && row.thread.disposition !== 'fix'),
       isReplyFailure: row.thread.stateReason?.startsWith('publication_failed:') === true,
+      runSuggestion: runSuggestionOf({ state, thread: row.thread }),
       hasFixOnBranch:
         row.thread.disposition === 'fix' &&
         (row.thread.commitShas?.length ?? 0) > 0 &&
@@ -441,6 +428,7 @@ export const REVIEW_COMMENT_KIND: ObjectKindDefinition<
         return openWebAction({ url, env, sessionId: facts.sessionId });
       },
     },
+    ...REVIEW_COMMENT_RUN_ACTIONS,
     {
       id: 'reviewComment.draft',
       label: 'Fix',
@@ -496,7 +484,7 @@ export const REVIEW_COMMENT_KIND: ObjectKindDefinition<
       id: 'reviewComment.edit',
       label: ({ facts }) => {
         if (facts.state === 'failed') {
-          return 'Add a hint';
+          return facts.runSuggestion === null ? 'Add a hint' : 'Retry with a hint';
         }
         return editLabel(facts);
       },
@@ -505,7 +493,7 @@ export const REVIEW_COMMENT_KIND: ObjectKindDefinition<
       shortcut: 'review.edit',
       when: ({ facts }) =>
         (DRAFTED.has(facts.state) || facts.state === 'failed') && !hasOverlay({ facts }),
-      slot: ({ facts }) => (isRedraft(facts) ? 'primary' : 'menu'),
+      slot: ({ facts }) => (isRedraft(facts) && facts.runSuggestion === null ? 'primary' : 'menu'),
       run: (params) => compose(params, isRedraft(params.facts) ? 'redraft' : 'edit'),
     },
     {

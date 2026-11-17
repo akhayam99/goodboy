@@ -36,6 +36,7 @@ import type {
 } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import type { ProviderDisplayInfo } from '../../../../features/providers/providers';
+import { NEEDS_RUN_REASON } from '../../../../features/resolve/needsRunReason';
 import type { ResolveCandidateWithItems } from '../../../../store/slices/resolve/state';
 import { EMPTY_RESOLVE_QUEUE_VIEW } from '../../../../store/slices/session-view';
 import { remoteMovedError } from '../../../../store/slices/resolve/remoteMovedError';
@@ -1009,7 +1010,10 @@ const EMPTY_GITHUB = {
   detailError: null,
 };
 
-type ResolveFailure = 'run' | 'history';
+type ResolveFailure = 'run' | 'history' | 'needs_run';
+
+export const NEEDS_RUN_FOUND =
+  'It needs a unique index on event_id, a migration for the deliveries table and a retry worker change.';
 
 type SeedParams = {
   readonly expandedThreadId: string | null;
@@ -1106,7 +1110,8 @@ const PUSH_FAILURE_REASON = `publication_failed:${JSON.stringify({
 
 const failureSeed = ({ failure }: { readonly failure: ResolveFailure }) => {
   const isHistory = failure === 'history';
-  const active = failedAttempt({
+  const isNeedsRun = failure === 'needs_run';
+  const failedOn = failedAttempt({
     id: FAILED_ATTEMPT_ID,
     agentId: FAILED_AGENT_ID,
     provider: isHistory ? 'codex' : 'anthropic',
@@ -1115,6 +1120,13 @@ const failureSeed = ({ failure }: { readonly failure: ResolveFailure }) => {
     startedMinutesAgo: 26,
     endedMinutesAgo: 22,
   });
+  const active: ResolveAttempt = isNeedsRun
+    ? {
+        ...failedOn,
+        error: 'The fix agent found work bigger than one change',
+        failureCause: 'needs_a_run',
+      }
+    : failedOn;
   const first = failedAttempt({
     id: FIRST_ATTEMPT_ID,
     agentId: FIRST_AGENT_ID,
@@ -1128,7 +1140,7 @@ const failureSeed = ({ failure }: { readonly failure: ResolveFailure }) => {
     ...THREAD_IDEMPOTENCY,
     state: 'failed',
     stage: 'failed',
-    stateReason: null,
+    stateReason: isNeedsRun ? NEEDS_RUN_REASON.stateReasonOf({ reason: NEEDS_RUN_FOUND }) : null,
     activeAttemptId: FAILED_ATTEMPT_ID,
   };
   const pushThread: ResolveThread = {

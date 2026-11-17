@@ -107,6 +107,7 @@ const reviewCommentFacts: ReviewCommentFacts = {
   remoteReply: null,
   isReplyOnly: false,
   isReplyFailure: false,
+  runSuggestion: null,
   hasFixOnBranch: false,
   laneAcceptCount: 1,
   laneAcceptNotes: 0,

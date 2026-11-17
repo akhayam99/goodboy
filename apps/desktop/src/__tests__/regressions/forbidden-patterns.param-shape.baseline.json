@@ -183,7 +183,7 @@
     "apps/desktop/src/features/actions/kinds/pullRequest.ts": 9,
     "apps/desktop/src/features/actions/kinds/pullRequestFacts.ts": 4,
     "apps/desktop/src/features/actions/kinds/review.ts": 6,
-    "apps/desktop/src/features/actions/kinds/reviewComment.ts": 16,
+    "apps/desktop/src/features/actions/kinds/reviewComment.ts": 15,
     "apps/desktop/src/features/actions/kinds/session.ts": 9,
     "apps/desktop/src/features/actions/kinds/sessions.ts": 1,
     "apps/desktop/src/features/actions/kinds/task.ts": 1,

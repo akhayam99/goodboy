@@ -472,6 +472,7 @@ const replyOnlyFactsOf = ({ state }: ReplyOnlyParams): ReviewCommentFacts => ({
   remoteReply: null,
   isReplyOnly: true,
   isReplyFailure: false,
+  runSuggestion: null,
   hasFixOnBranch: false,
   laneAcceptCount: 1,
   laneAcceptNotes: 0,
