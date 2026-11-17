@@ -186,8 +186,8 @@ segment raised on it (`bg-segment-active`, white in light and white 10% in dark,
 with `shadow-sm`) and outlined in the quiet `border`; the shadow and the white
 step carry it, not the edge. A
 selected nav entry also lights its icon in its own kind color, never the
-label: `selectedIconClass` (`SelectableRow selectedIconTone`, the column
-doors, `RailButton` and the pressed session tool) over one function,
+label: `selectedIconClass` (`SelectableRow selectedIconTone`, the places
+rail items and the pressed session tool) over one function,
 `navEntryToneOf`, which reads the icon's `CONCEPT_TONE` (Agents and Auto agents
 primary, Artifacts draft, questions warning, files and comments info, checks
 success) and falls back to
@@ -726,7 +726,7 @@ together, and there is no arbitrary shadow.
 
 The label tooltip is `FLOATING_SURFACE` with the `md` radius and a soft border: foreground text in `text-meta` medium, `px-2 py-1`, at most 280px wide, fading in over 120ms when motion is allowed. Its shortcut is a plain `Kbd` in the faint color. The shared `Tooltip` gives its node an `id` and sets `aria-describedby` on the trigger while it is open, unless its text equals the trigger's `aria-label`, so a screen reader never hears a name twice. `Tooltip` has no variant; a mark with two facts or more uses the fact card below. It opens on the side it is given and flips to the other side when it would cross the window edge by the gap, so it never sits under the edge or over its own target; along the edge it shifts instead. A trigger that opens a popover passes `isSuppressed` with the popover state, so its label never lies over the popover it opened.
 
-**One hover shows one thing.** A floating surface that opens on hover (`FactCard`, the session hover card, the rail flyout) registers with `useHoverSurface({ isActive })` and marks its element `data-hover-surface`. While one is open, every `Tooltip` outside it stays quiet and one already up closes, so a card never carries a label on top of it; a `Tooltip` inside the surface keeps working. A `Tooltip` placed inside another `Tooltip`'s trigger returns its bare child, so the outer label is the only one (a `StatusDot` `title` in a labelled button no longer stacks). A caller that wants its own label over a card pauses the card instead: the board card pauses its hover card while the pointer is on its quick action or on the unreachable mark. A new hover surface must call the hook; `hover-surfaces-register` fails otherwise. Text that feeds a `Tooltip` is plain: a session title or an agent summary goes through `plainText` (`shared/utils`) first, because `Tooltip` itself never strips markdown (a path or code may hold `*` or `_`).
+**One hover shows one thing.** A floating surface that opens on hover (`FactCard`, the session hover card) registers with `useHoverSurface({ isActive })` and marks its element `data-hover-surface`. While one is open, every `Tooltip` outside it stays quiet and one already up closes, so a card never carries a label on top of it; a `Tooltip` inside the surface keeps working. A `Tooltip` placed inside another `Tooltip`'s trigger returns its bare child, so the outer label is the only one (a `StatusDot` `title` in a labelled button no longer stacks). A caller that wants its own label over a card pauses the card instead: the board card pauses its hover card while the pointer is on its quick action or on the unreachable mark. A new hover surface must call the hook; `hover-surfaces-register` fails otherwise. Text that feeds a `Tooltip` is plain: a session title or an agent summary goes through `plainText` (`shared/utils`) first, because `Tooltip` itself never strips markdown (a path or code may hold `*` or `_`).
 
 **Fact card.** `FactCard` (`packages/ui/src/components/FactCard`) is the hover card for a mark that has two facts or more, built from the session hover card: `FLOATING_SURFACE`, `p-3`, `gap-3` between parts, 320px wide, `z-tooltip`, with `pointer-events-none` so it never covers the next row. It takes data, never JSX: a `FactCardSpec` of an optional decorative glyph, a title with an optional sub, an optional state (a tone dot, the words, a pulse only for running work), one to six facts (label in muted, value in foreground with tabular numbers, an optional faint note, an optional tone) and an optional faint footnote. The label column is `fit-content(40%)`: a short label takes its width, a long one (a session title) cuts at 40% of the card so the value stays in view. More than six facts throws in development and names the card; a production build shows the first six. One sentence is a `Tooltip`, text that is already visible needs nothing or `TruncatedText`. A fact card holds no buttons: the click on the trigger acts and the footnote says what it does. It opens after 500ms of rest, closes after 180ms of grace, opens at once within 300ms of another card closing (`useRestHover`, shared with the session hover card), and opens at once on keyboard focus (the rested-focus prop makes a list with arrow keys wait the rest instead). Escape closes it and still reaches the layer beneath. A touch never opens it, so the tap does what the trigger does; the tap-open prop is for a trigger whose only job is the card, and a tap outside closes it. the suppressed prop keeps it shut under an open menu. The card is `aria-hidden`: `factCardSentence` writes one sentence from the data into a node that is always mounted, and the trigger points at it with `aria-describedby`, so a screen reader hears the card once, even before it opens. The trigger must be a native element or a component that forwards `ref`, the pointer, focus and click handlers and `aria-describedby`.
 
@@ -759,7 +759,7 @@ pill, the toast overflow chip and the drag ghost of the history. A tone may
 change the border colour (`border-danger`) and a pill may change the radius
 (`rounded-full`); nothing else leaves the constant. `floating-surface-is-one-constant`
 fails on any tsx file that writes `bg-floating` without importing it, bar a
-fixed list that only falls: the edge-to-edge sidebar peek, the inline rename
+fixed list that only falls: the inline rename
 field, the `Dialog` surface table and the mock scenes.
 
 **One width scale.** A floating surface is 240px wide when it is a menu (never
@@ -798,8 +798,8 @@ a list taller than the window, a right rail tooltip and the pointer menu.
 1024 by 700 window and checks each stays 12px inside every edge, the bell and
 Now on their end edge, the history lists on their start edge.
 
-**Side cards place with `useFloatingPlace`.** The rail flyout and the session
-hover card open beside their anchor through `useFloatingPlace`, which wraps
+**Side cards place with `useFloatingPlace`.** The session
+hover card opens beside its anchor through `useFloatingPlace`, which wraps
 `placeFloating` (side `right`, alignment `start`, an 8px gap and edge, flipping to
 the left when the card does not fit). It paints nothing until the first
 measurement and measures again on a resize and on a scroll of any ancestor
@@ -856,7 +856,7 @@ One size per place, so a column never mixes sizes:
 | Place                                                 | Size      | Notes                                           |
 | ----------------------------------------------------- | --------- | ----------------------------------------------- |
 | Places rail (New, places, Settings)                   | `hero`    | `ShellRailItem`, regular weight                 |
-| Session list trailing marks                           | `row`     | `StatusMark` glyphs in the 16px box             |
+| Sessions row trailing marks                           | `row`     | `StatusMark` glyphs in the 16px box             |
 | Tools rail (Terminal, Browser, Scripts, Ask, Monitor) | `notice`  | icon over its caption, both centred on the rail |
 | Page and session header actions                       | `control` | `IconButton` `sm` and `md`                      |
 | List and table rows                                   | `row`     | leading and trailing glyphs                     |
@@ -864,8 +864,8 @@ One size per place, so a column never mixes sizes:
 ## Status marks
 
 `StatusMark` (`packages/ui/src/components/StatusMark/`) is the one trailing
-mark of a sidebar row: a door, the New session row and every session row draw
-it, and other surfaces take it as they move to it. It is one 16px box
+mark of a session row: every Sessions row and switcher row draw it, and other
+surfaces take it as they move to it. It is one 16px box
 (`size-4`), the drawing centred in it on both axes, and one mark per box:
 never a glyph inside a second ring, never a dot on its corner. The spec is
 `{ kind: 'state', state }`, `{ kind: 'dot', tone }`, `{ kind: 'count', tone, text }`
@@ -899,12 +899,9 @@ circled glyph, the circle part of the glyph, never a container. Glyphs
 are `ICON_SIZE.row` with the row weight.
 
 A session row picks one mark (`sessionMarkOf`): what asks you or failed, then
-running, then the unread dot, then the settled glyph, then empty. A door picks
-one (`doorMarkOf`): a count when the signal has one, else its dot. Board's count
-is amber or red, Monitoring's port count faint. The row-start probe
-(`scripts/validateScenesRowStart.mjs`, `sidebarMarkFailures`) fails a sidebar
-mark that is not 16px, not on the column's one centre x, or off its row's
-centre line, on every scene with the app sidebar.
+running, then the unread dot, then the settled glyph, then empty. A place on
+the rail picks one (`railMarkOf`): Board's needs-you count, Tasks' unread dot,
+else nothing.
 
 One glyph has one import spelling, the one `conceptIcons.ts` uses
 (`TriangleAlert`, `CircleAlert`, `CircleX`, `CircleCheck`,

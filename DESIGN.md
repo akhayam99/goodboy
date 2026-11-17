@@ -320,7 +320,7 @@ about its effect is a worse defect than one that reads badly.
   [packages/ui/design/feedback.md](packages/ui/design/feedback.md) → Notices.
 
 - **The element is the signal.** A running session shows a moving signal, not a
-  spinner placed beside it. On a board card or a sidebar row, its `ToneBar`
+  spinner placed beside it. On a board card, its `ToneBar`
   breathes the info tone, because that is where a card keeps its tone: every
   stage carries the bar, running is the one that breathes. A card never gets a
   tinted box around it.
@@ -420,11 +420,9 @@ and integrations live in Connections; Settings keeps only preferences (App and
 This workspace, workspace Models included). Every link to a provider or a tool
 opens its Connections page, never a Settings scope.
 
-Every sidebar row ends on one trailing column: one `StatusMark` per row, 16px,
-centred on the row, the same x on doors and session rows. A ring means still
-moving, a bare glyph means it asks you, a circled glyph means settled, a dot
-means something new, a number counts. A door's action (Board's filter, Chat's
-plus) sits on its own column just before it
+Every session row ends on one trailing column: one `StatusMark` per row, 16px,
+centred on the row. A ring means still moving, a bare glyph means it asks you,
+a circled glyph means settled, a dot means something new, a number counts
 ([packages/ui/DESIGN-SYSTEM.md](packages/ui/DESIGN-SYSTEM.md#status-marks)).
 
 ### Action zones

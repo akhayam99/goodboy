@@ -109,7 +109,7 @@ describe('the chapter list', () => {
         'Providers and limits',
         'New session',
         'Board',
-        'Sidebar and session pages',
+        'Places rail and session pages',
         'Agents and roles',
         'Workflows',
         'Shared context',
@@ -248,12 +248,12 @@ describe('the labels the Guide cites', () => {
 });
 
 describe('the shell chapter', () => {
-  it('lists every door of the sidebar by the name the sidebar draws', () => {
-    const sidebar = pointOf('shell', 'Sidebar');
-    expect(sidebar).toContain('New session');
-    COLUMN_DOORS.forEach((door) => expect(sidebar).toContain(door.label));
-    expect(sidebar).toContain('amber dot');
-    expect(sidebar).toContain('pinned port is down');
+  it('lists every place of the rail by the name the rail draws', () => {
+    const rail = pointOf('shell', 'Places rail');
+    expect(rail).toContain('New session');
+    COLUMN_DOORS.forEach((door) => expect(rail).toContain(door.label));
+    expect(rail).toContain('amber number on Board');
+    expect(rail).not.toContain('Monitoring');
   });
 
   it('lists every page of the session pages by its registry label', () => {

@@ -40,8 +40,7 @@ unit that changes the skeleton edits this section first.
 What holds today and is guarded:
 
 - **One selected sign.** A control lights from `isCurrent` and never from its
-  own state, in the places rail, the page tabs, the session list, the Goodboy row
-  and the bell; every one of them reads the one column place (`useColumnPlace`),
+  own state, in the places rail, the page tabs, the Goodboy mark and the bell; every one of them reads the one column place (`useColumnPlace`),
   New session included; the page tabs read the session pages sign
   (`currentSignOf`). Every page except the New workspace flow names a place, so
   exactly one control is lit, and the open session is never lit under a page. `__tests__/navigation/oneDoor.test.ts`.
@@ -80,7 +79,7 @@ never exists on one surface only.
   for linking work to a session or workspace. Moving a task is one verb,
   `Move to`: in the linked row's menu (Shift+F10), in the focused issue's
   `Linked to` row and in the palette.
-- **The sidebar session row.** Its right click (and Shift+F10) opens the
+- **The Board session card.** Its right click (and Shift+F10) opens the
   session kind's menu, the full set of session verbs: **Go to** (a submenu
   with Open, Comments, Changes, Open in editor and Open in terminal app; a verb
   that cannot run stays in it with its reason as a tooltip), Open the full log,
@@ -211,20 +210,17 @@ never exists on one surface only.
   multi-selection acts on the whole selection (the several sessions kind, and
   the several chats kind in the chat list). On an unselected row it clears the
   selection and acts on that row alone.
-- **One selection bar.** The Board, the session list, the chat list, Review,
+- **One selection bar.** The Board, the chat list, Review,
   Branches and the Storage lists share `SelectionBar` (`packages/ui`). The
-  sidebar session rows and the Board cards draw no checkbox at all: a row is
+  Board cards draw no checkbox at all: a card is
   its optional ticket key, its title, then its state node at the right (the node
   never hides), and the selection is the modifier click (Shift for a range,
   Option, Command or Control to add or remove one), Shift+Enter, Alt+Enter and
-  Alt+Space on the focused row, Shift+Arrow in the sidebar, X on the hovered or
+  Alt+Space on the focused card, Shift+Arrow on the Board, X on the hovered or
   focused one, Command A, and **Select** in the row menu (`session.select`,
   shown only when the menu is opened from a row or card, through
   `viewing: { kind: 'selection' }`, and delivered to that row by
-  `requestSelect` and `useSelectRequest` like Rename). The sidebar lists are
-  listboxes (`aria-multiselectable`, each row an option with `aria-selected`,
-  the rows of a list falling back to buttons with `aria-pressed` while a rename
-  field sits in it, since a text field is not allowed in a listbox); a Board
+  `requestSelect` and `useSelectRequest` like Rename). A Board
   card keeps `aria-pressed` on its title button because it holds quick
   actions, and its state word is the button's description. The bar's
   `aria-live="polite"` dock announces `n selected`. Once a session is selected, a
@@ -353,7 +349,7 @@ wears a small ring and is named waiting, and a signal dot sits with either (see
 [session-rail.md](./session-rail.md), The session tools). The rules, the store and the navigation cases are in
 [home-and-drawer.md](./home-and-drawer.md) (One drawer at a time).
 
-**The places rail** (`app/components/SideColumn/ShellLeft/`, on the `ShellRail`
+**The places rail** (`app/components/ShellLeft/`, on the `ShellRail`
 primitive) is on every screen with a workspace, in the same shape everywhere:
 the workspace mark first (`WorkspaceIdentityRow`: the workspace's tile with its
 name under it; ⌘O or a click opens the switcher popover to the right of the
@@ -382,11 +378,12 @@ and Goodboy-run ports every 30 seconds (`monitor_snapshot` with a port list,
 merged into the snapshot), only while the window is visible and the snapshot
 is older than 15 seconds, and never beside another scan. Under a 1100px window
 the rail drops to 44px icons and each word moves into its tooltip. The rail
-never folds, never resizes and saves no width. The legacy keys
-`goodboy:left-sidebar-width:v3` and `goodboy:sessions-sidebar-collapsed` do not
-size or fold it: `App.tsx` passes neither width nor collapsed state to the rail.
-The shortcut registry still assigns ⇧⌘B to `column.toggle`, which changes the
-legacy sidebar preference without changing the places rail. Before any workspace exists the rail keeps only its foot.
+never folds, never resizes and saves no width. The sidebar list, its fold, its
+peek and its flyout are gone, and ⇧⌘B has no command: the sessions live on the
+Board and in Sessions (⌘B). A 0.39 build saved `goodboy:left-sidebar-width:v3`
+and `goodboy:sessions-sidebar-collapsed`; neither sizes or folds anything,
+and neither is deleted, so a return to 0.39 finds its sidebar (`restore-previous-build.test.ts`
+boots from a folded sidebar 320 wide). Before any workspace exists the rail keeps only its foot.
 
 **Header actions.** One grammar draws the actions of every page header and
 drawer header (`HeaderActions`): secondary controls, at most one secondary
@@ -656,11 +653,10 @@ aligned with the foot, through `useDropdownDirection` (side `right`, align `end`
 12px inside every window edge. The card, its copy, the automatic arrival and the
 snooze are unchanged (`UpdateArrivalCard`, `updateCardCopy`, `updateSnoozeGate`).
 Without the logo on screen, the new version is in the mark's tooltip and in Settings.
-The mark owns the card and the restart when idle (`isPrimary`).
+The mark owns the card and the restart when idle (`useRestartWhenIdle`).
 
-The `column` variant of `GoodboyChip`, `ColumnFoot` and the `UpdatePill` pill stay
-for the mock scenes and the workspace launcher, which has no rail, until the column
-code is retired.
+`GoodboyChip` has one shape, the mark on the rail. The workspace launcher, which
+has no rail, shows the update as the `UpdatePill` pill.
 
 Pair an iPhone lives in Settings, iPhone (`goodboy:open-pair-device` lands on
 `{ scope: 'app', section: 'iphone' }`) and in the palette. Keyboard shortcuts
@@ -680,7 +676,7 @@ page on the `guideChapter` reader frame, with Previous and Next; the Help search
 opens the first hit and flashes its point, Escape clears it. The chapter
 "Listens" holds one table of prefixes (`PrefixTable`, read from
 `quick-actions/grammar.ts`): `$` means Scripts in the palette and the composer. The chapter
-"Sidebar and session pages" restates this shell in `guideChapters.ts`, and
+"Places rail and session pages" restates this shell in `guideChapters.ts`, and
 `guideChapters.test.ts` pins its names against `COLUMN_DOORS`, the page
 registry and `NEW_DRAWER_FORMS`, and pins the word budget; the Legend draws its session marks through
 `sessionNodeOf`, so a new mark appears there without a second table. The addresses live in
@@ -759,7 +755,7 @@ One sheet files every report. `ReportSheetHost`
 (`features/bug-report/components/ReportSheetHost`) floats it at the bottom of
 the window, centred, with no overlay: the page under it stays live. Every door
 lands there: ⌘I from anywhere, Report in the places rail foot
-(`app/components/SideColumn/ReportBugButton.tsx`), Report a bug in the
+(`app/components/ShellLeft/ReportBugButton.tsx`), Report a bug in the
 palette (it also answers bug, issue, feedback, crash and broken),
 **Help > Report a Bug** in the macOS menu bar (`app_menu.rs` emits
 `goodboy://menu` with `report.open` to the focused window; `useMenuCommands`
@@ -835,9 +831,8 @@ workspaces load together, so the phase word moves to the first of the three stil
 loading and never steps back. The app shows before its data: once the launch
 knows which workspace it opens, `showLaunchShell` sets `isShellReady` with that
 workspace current and `boardReady` false, and `App` mounts the real top bar, the
-sidebar (doors, then `SessionRowsSkeleton` in place of the rows), the Board
-(`BoardSkeleton` lanes) and the tool rail, so the palette and the workspace switch
-already work. The rows and the cards replace their skeletons in the one commit
+places rail, the Board (`BoardSkeleton` lanes) and the tool rail, so the palette
+and the workspace switch already work. The cards replace their skeletons in the one commit
 that sets `boardReady`; no session empty state ("No sessions yet", "Add a folder
 first") draws before it (`empty-before-loaded.test.ts`). The last session then
 opens in place and its parts swap from their own skeletons; the idle loads come

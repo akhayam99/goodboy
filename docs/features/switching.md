@@ -2,56 +2,40 @@
 
 Move between the tasks of a workspace without losing your place, and see from any screen which one needs you.
 
-### Session list
+### Sessions
 
-The left column lists the sessions of the workspace, one line each. The title is on the left. A sign on the right says whether an agent is working, you must act, or the task is done. Sessions that need you sit on top, and the open one marks its row.
+Every session of the workspace in one list, from any screen with **⌘B**. Press it, or click **Sessions** in the top bar: your pins come on top, then the sessions grouped by state, one line each. The title is on the left and a sign on the right says whether an agent is working, you must act, or the task is done. Type to filter, move with the arrows and press **Enter** to open one; **Open Board** sits at the foot. The places rail on the left holds no session list: the **Board** shows every session as a card, and an amber number on **Board** counts the ones that need you.
 
-**Pick several sessions**
+**Pick several sessions on the Board**
 
 There is no checkbox.
 
-- **Shift** click picks a range.
+- **Shift** click picks a range of cards.
 - **Option** click adds or removes one.
 - **Shift+Enter** and **Shift+Arrow** extend a range from the keyboard.
-- **Select** in the right click menu picks the row.
-- A quiet line under the list says so until you pick something.
-- **Mark as unread** in the same menu keeps a row lit until you open it again. **Mark as read** clears it. With several rows picked, the bar says **Mark 3 as read**.
+- **Select** in the right click menu picks the card.
+- A quiet line under the cards says so until you pick something.
+- **Mark as unread** in the same menu keeps a card lit until you open it again. **Mark as read** clears it. With several cards picked, the bar says **Mark 3 as read**.
 
 **Done**
 
-A finished session moves to a **Done** group at the end of the list. It starts shut, so the list stays short; open it to reopen a merged session. The open session and a pinned one never move there.
+A finished session moves to the **Done** lane of the Board, and an archived one to the **Archived** lane.
 
-A session nobody touched for three days stays where it is and fades. Rest the pointer on it to see when it last moved. Touching it brings it back to full tone.
+**Flip through recent sessions.** Hold **Control** and press **Tab** to flip through recent sessions without opening Sessions.
 
-**Flip through recent sessions.** Hold **Control** and press **Tab** to flip through recent sessions without the list.
+**Sort and filter.** The funnel in the **Board** header sorts the cards and filters them by project. The lanes are the statuses. **Reset** shows once anything is changed.
 
-**Sort, group and filter.** The funnel at the right of the **Board** row sorts, groups and filters the list, and the funnel on the Board page is the same menu. **Sort** and **Group** come on top. Then come checkboxes for the statuses and projects that have sessions, **Show archived**, **Mark all as read**, and **Reset** once anything is changed.
+**Right click.** A right click on any card opens all its actions: pin, refresh, rename, archive and delete. Archive and delete ask first. An archived session comes back with Undo or Restore.
 
-**Right click.** A right click on any session opens all its actions: pin, refresh, rename, archive and delete. Archive and delete ask first. An archived session comes back with Undo or Restore.
-
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/switch-rail-dark.webp">
-  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/switch-rail-light.webp" width="760" alt="The Northwind Sessions list in one-line rows with a state sign, Show 10 more, and a card over the open session Fix webhook retries">
-</picture>
-
-<sub>Screenshot from Goodboy 0.33.0</sub>
-
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/switch-display-options-dark.webp">
-  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/switch-display-options-light.webp" alt="The Sessions options menu open in the left column of the Northwind workspace, with Status, Project, Archive with Show archived, Sort set to Needs you first, Alphabetical, Last activity and Created, and Group set to None, PR state, Stage and Project">
-</picture>
-
-<sub>Screenshot from Goodboy 0.33.0</sub>
-
-The Sessions options menu ends with **Mark all as read**, which clears every reply you have not opened and is off when there is none. The session you are looking at counts as read, so **Mark as unread** is not offered on it while its last agent is the one on screen.
+The Board filter menu ends with **Mark all as read**, which clears every reply you have not opened and is off when there is none. The session you are looking at counts as read, so **Mark as unread** is not offered on it while its last agent is the one on screen.
 
 ### Pin a session to keep it at the top
 
-Keep the sessions you return to at the top of the list. **Pin session** in a row's right-click menu moves it to a **Pinned** group that ignores sort and filters, and **Unpin session** puts it back. Pinned sessions keep their order on the Board.
+Keep the sessions you return to at the top of Sessions. **Pin session** in a card's right-click menu, or the pin on a Sessions row, moves it to the **Pinned** group, and **Unpin session** puts it back. The pins keep their order in Sessions and in the switcher.
 
 ### Now chip
 
-Know what runs from any screen. The chip in the top bar counts the sessions and scripts running, and reads a muted **Idle** when nothing does, so the chips beside it stay put. With a session that needs you it reads **Needs you** instead. A click opens a list where each row jumps to its session. Sessions that need you show as an amber number on **Board** in the sidebar, red when one of them is broken, 9+ above nine. The top bar does not repeat it; **⌥⌘↓** goes to the next one. Rest on the door for the reasons, and click it for the board, where **Needs you** comes first. The count ignores the project filter, so a session in another project is still counted, and the board says **2 more need you in other projects** with a way to clear the filter. A reply to read or an approval to merge shows only a quiet gray dot, not a number. A run that stopped, paused at its limit or waits for you to continue, an Auto agent waiting for your OK and a Slack reply waiting for approval count like a question does.
+Know what runs from any screen. The chip in the top bar counts the sessions and scripts running, and reads a muted **Idle** when nothing does, so the chips beside it stay put. With a session that needs you it reads **Needs you** instead. A click opens a list where each row jumps to its session. Sessions that need you show as an amber number on **Board** in the places rail, 9+ above nine. The top bar does not repeat it; **⌥⌘↓** goes to the next one. Rest on it for the reasons, and click it for the board, where **Needs you** comes first. The count ignores the project filter, so a session in another project is still counted, and the board says **2 more need you in other projects** with a way to clear the filter. A reply to read or an approval to merge shows only a quiet gray dot, not a number. A run that stopped, paused at its limit or waits for you to continue, an Auto agent waiting for your OK and a Slack reply waiting for approval count like a question does.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/switch-now-chip-dark.webp">

@@ -23,10 +23,6 @@ const SHARED_STYLE_ROWS: ReadonlyArray<string> = [
   `${CHANGE_TREE}/FolderRow.tsx`,
 ];
 
-const COMPOSED_ROWS: ReadonlyArray<string> = [
-  `apps/desktop/src/app/components/SessionRail/SessionPageRow.tsx`,
-];
-
 const OWN_HOVER_LAYER = /hover:bg-hover/;
 const OWN_FOCUS_RING = /focus-visible:ring-2/;
 const SHARED_STYLE = /ROW_INTERACTIVE|ROW_HOVER/;
@@ -44,14 +40,6 @@ describe('a clickable row takes its hover and focus from ROW_INTERACTIVE', () =>
 
   it.each(SHARED_STYLE_ROWS)('%s reads the shared style', (path) => {
     expect(SHARED_STYLE.test(sourceOf({ path }))).toBe(true);
-  });
-
-  it.each(COMPOSED_ROWS)('%s builds on SelectableRow and copies neither', (path) => {
-    const source = sourceOf({ path });
-
-    expect(source).toMatch(/SelectableRow/);
-    expect(OWN_HOVER_LAYER.test(source)).toBe(false);
-    expect(OWN_FOCUS_RING.test(source)).toBe(false);
   });
 
   it('keeps the shared style as the one place that names the layer', () => {

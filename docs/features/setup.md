@@ -119,4 +119,4 @@ This part is for contributors and agents who change the feature.
 - Settings in several windows: `listenSettingChanges` reads the `goodboy:data-changed` event described in `docs/event-bus.md`.
 - Settings rail: `settingsDirectory` builds both groups. `appSectionOf` opens the old `updates` id on General. `workspacePageOf` opens `models` and every model row id on Models. iPhone is hidden until `useIsIphonePaired` reads a paired phone from `bridge_status`.
 
-- Settings beside the places rail: `apps/desktop/src/App.tsx` supplies `AppShell.leftRail`; `apps/desktop/src/app/components/SideColumn/ShellLeft/index.tsx` keeps Settings in its foot.
+- Settings beside the places rail: `apps/desktop/src/App.tsx` supplies `AppShell.leftRail`; `apps/desktop/src/app/components/ShellLeft/index.tsx` keeps Settings in its foot.

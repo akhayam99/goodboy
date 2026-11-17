@@ -9492,16 +9492,6 @@
       "count": 2
     }
   },
-  "apps/desktop/src/store/slices/session-view/layoutSessionColumn.test.ts": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 28
-    }
-  },
-  "apps/desktop/src/store/slices/session-view/layoutSessionColumn.ts": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 2
-    }
-  },
   "apps/desktop/src/store/slices/session-view/markSessionOpened.test.ts": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 13

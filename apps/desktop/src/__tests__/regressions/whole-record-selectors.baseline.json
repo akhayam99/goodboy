@@ -40,6 +40,5 @@
   "apps/desktop/src/features/workspace/components/WorkspaceSwitcher/useWorkspaceWindowState/index.ts": 1,
   "apps/desktop/src/features/worktree/BranchSwitchPanel/index.tsx": 1,
   "apps/desktop/src/store/slices/session-view/selectors.ts": 16,
-  "apps/desktop/src/store/slices/session-view/useSessionInactivity/index.ts": 2,
   "apps/desktop/src/store/slices/sidebar/selectors.ts": 1
 }

@@ -91,12 +91,6 @@ describe('one selected sign across the navigation surfaces', () => {
     expect(shown.map(({ path }) => path).sort()).toEqual([...SHOWN_ROWS].sort());
   });
 
-  it('reads the session pages sign through ariaCurrent', () => {
-    const pages = marksOf().filter(({ path }) => path.endsWith('SessionRail/SessionPageRow.tsx'));
-
-    expect(pages.map(({ expression }) => expression)).toEqual([CURRENT_MARK]);
-  });
-
   it('derives every place current from the one column place', () => {
     const currents = railSources.flatMap(({ path, source }) =>
       Array.from(source.matchAll(/isCurrent=\{([^}]*)\}/g), (match) => `${path}: ${match[1]}`),

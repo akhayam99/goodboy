@@ -201,7 +201,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Chat',
-        desc: 'A sidebar door that answers questions about the workspace and never changes a file. Start work from chat drafts a session from an answer.',
+        desc: 'A place on the rail that answers questions about the workspace and never changes a file. Start work from chat drafts a session from an answer.',
       },
     ],
     links: [{ label: 'Start a new session', target: { kind: 'newSession' } }],
@@ -210,15 +210,15 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
     id: 'board',
     group: 'daily',
     title: 'Board',
-    lead: 'The Board of the sidebar. Each session sits in a lane for what is happening in it, so you never move cards by hand.',
+    lead: 'The first place on the rail. Each session sits in a lane for what is happening in it, so you never move cards by hand.',
     points: [
       {
         term: 'Session card',
         desc: 'The title, the folder and one signal: an open question, a failed check, the pull request in its state color or the agents at work. Rest on it for age, issues and cost.',
       },
       {
-        term: 'Board and sidebar list',
-        desc: 'Lanes on the Board. The sidebar lists the same sessions, and its filter menu sorts, groups and narrows them.',
+        term: 'Board and Sessions',
+        desc: `Lanes on the Board; its filter sorts the cards and narrows them by project. ${shortcutGlyphs('sessions.toggle')} opens Sessions: the same sessions, pins on top.`,
       },
       {
         term: 'Done and archived',
@@ -230,11 +230,11 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Select many',
-        desc: 'Shift or Option click, or Select in a row menu, then Archive, Restore or Delete from the bar.',
+        desc: 'Shift or Option click, or Select in a card menu, then Archive, Restore or Delete from the bar.',
       },
       {
         term: 'Now chip',
-        desc: 'Counts running sessions and scripts from any screen, and a click lists them. Sessions that need you put an amber dot on Board in the sidebar.',
+        desc: 'Counts running sessions and scripts from any screen, and a click lists them. Sessions that need you put an amber number on Board in the places rail.',
       },
       {
         term: 'Top bar',
@@ -247,20 +247,20 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
   {
     id: 'shell',
     group: 'daily',
-    title: 'Sidebar and session pages',
-    lead: 'The sidebar looks the same on every screen, and a session opens its pages beside it.',
+    title: 'Places rail and session pages',
+    lead: 'The places rail looks the same on every screen, and a session opens its pages beside it.',
     points: [
       {
-        term: 'Sidebar',
-        desc: 'New session, then Board, Tasks, Workflows, Chat, Connections, Impact and Monitoring, your sessions, Settings, and the Goodboy line with the bug icon. An amber dot says sessions need you, or on Monitoring that a pinned port is down.',
+        term: 'Places rail',
+        desc: 'The workspace, New session, then Board, Tasks, Workflows, Chat, Connections and Impact, then Settings, Report and the Goodboy mark. An amber number on Board says sessions need you.',
       },
       {
-        term: 'Session rows',
-        desc: 'One line each, its mark amber when you must act and red when something broke. The funnel on Board holds Sort, Group, Filter and Show archived.',
+        term: 'Sessions',
+        desc: `${shortcutGlyphs('sessions.toggle')} lists every session, its mark amber when you must act and red when something broke.`,
       },
       {
         term: 'Pin a session',
-        desc: "Pin session, in a row's right click menu, keeps it in a Pinned group on top, and Move up and Move down reorder it.",
+        desc: "Pin session, in a card's right click menu or on a Sessions row, keeps it in a Pinned group on top, and Move up and Move down reorder it.",
       },
       {
         term: 'Session pages',
@@ -670,7 +670,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
     points: [
       {
         term: 'Settings rail',
-        desc: `Settings, or ${shortcutGlyphs('settings.open')}, opens as a page beside the sidebar, on the page you used last. Its rail groups This Mac and the workspace; providers and integrations moved to ${NAMES.connections}. Search settings finds any setting, and a dot marks a page that needs you.`,
+        desc: `Settings, or ${shortcutGlyphs('settings.open')}, opens as a page beside the places rail, on the page you used last. Its rail groups This Mac and the workspace; providers and integrations moved to ${NAMES.connections}. Search settings finds any setting, and a dot marks a page that needs you.`,
       },
       {
         term: 'Copy and restore',
@@ -727,7 +727,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Report a bug',
-        desc: `The bug icon at the foot of the sidebar, or ${shortcutGlyphs('report.open')}, opens Report a bug from any screen, and What gets sent shows exactly what leaves.`,
+        desc: `Report at the foot of the places rail, or ${shortcutGlyphs('report.open')}, opens Report a bug from any screen, and What gets sent shows exactly what leaves.`,
       },
     ],
     links: [

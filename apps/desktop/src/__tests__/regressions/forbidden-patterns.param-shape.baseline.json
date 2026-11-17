@@ -1638,7 +1638,6 @@
     "apps/desktop/src/store/slices/session-view/attentionFactsOf.ts": 1,
     "apps/desktop/src/store/slices/session-view/deriveSessionStage.ts": 3,
     "apps/desktop/src/store/slices/session-view/getSessionViewPrefs.ts": 1,
-    "apps/desktop/src/store/slices/session-view/layoutSessionColumn.ts": 1,
     "apps/desktop/src/store/slices/session-view/markSessionOpened.ts": 2,
     "apps/desktop/src/store/slices/session-view/resolveItemDrafts.ts": 1,
     "apps/desktop/src/store/slices/session-view/resolveSurface.ts": 1,

@@ -61,6 +61,12 @@ read in the code, then delete the row.
 
 Gone already:
 
+- The sidebar is gone in 0.40.0. The local storage keys
+  `goodboy:left-sidebar-width:v3` and `goodboy:sessions-sidebar-collapsed`
+  (written by 0.39 and earlier) size and fold nothing since 0.40.0: the places
+  rail has no width and no fold. Neither key is deleted, so a return to
+  0.39 finds its sidebar as it was. `restore-previous-build.test.ts` boots from
+  a folded sidebar 320 wide and finds the rail at 64px with both keys untouched.
 - The Skills feature is removed in 0.31.0, with the `<project-root>/.kay/skills`
   read. Skill files in a project folder are no longer scanned or run. The
   `skills` tables stay in the database so a downgrade still finds them.

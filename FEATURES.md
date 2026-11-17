@@ -71,14 +71,14 @@ The board shows every session of a workspace in lanes by stage, so you see where
 
 [More on the board](docs/features/board.md)
 
-<a id="session-list"></a><a id="pin-a-session-to-keep-it-at-the-top"></a><a id="now-chip"></a><a id="notifications"></a><a id="open-in-new-window"></a>
+<a id="session-list"></a><a id="sessions"></a><a id="pin-a-session-to-keep-it-at-the-top"></a><a id="now-chip"></a><a id="notifications"></a><a id="open-in-new-window"></a>
 
 ## Switch between tasks
 
 Move between the tasks of a workspace without losing your place, and see from any screen which one needs you.
 
-- **Session list**: The left column lists the sessions of the workspace, one line each.
-- **Pin a session to keep it at the top**: Keep the sessions you return to at the top of the list.
+- **Sessions**: Every session of the workspace in one list, from any screen with ⌘B.
+- **Pin a session to keep it at the top**: Keep the sessions you return to at the top of Sessions.
 - **Now chip**: Know what runs from any screen.
 - **Notifications**: Catch up in one place.
 
