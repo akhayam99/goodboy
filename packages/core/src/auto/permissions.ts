@@ -96,6 +96,7 @@ export type EffectiveLeadPermissionRows = {
 export type LeadPermissions = Readonly<{
   rows: EffectiveLeadPermissionRows;
   preset: AutoLevel | 'custom';
+  level: AutoLevel;
   spendLimitUsd: number | null;
   locked: ReadonlyArray<LeadLockedRow>;
 }>;
@@ -157,6 +158,11 @@ type ResolveParams<K extends LeadPermissionKey> = {
   readonly layers: LeadPermissionLayers;
 };
 
+type LevelParams = { readonly layers: LeadPermissionLayers };
+
+const levelOf = ({ layers }: LevelParams): AutoLevel =>
+  layers.sessionLevel ?? layers.workspaceLevel ?? DEFAULT_AUTO_LEVEL;
+
 const resolveRow = <K extends LeadPermissionKey>({
   key,
   layers,
@@ -175,7 +181,7 @@ const resolveRow = <K extends LeadPermissionKey>({
     const skip: LeadPermissionRows[K] = LEAD_PERMISSION_PRESETS.run[key];
     return { value: skip, source: 'setting', note: null };
   }
-  const level = sessionLevel ?? workspaceLevel ?? DEFAULT_AUTO_LEVEL;
+  const level = levelOf({ layers });
   const preset: LeadPermissionRows[K] = LEAD_PERMISSION_PRESETS[level][key];
   return { value: preset, source: sessionLevel === null ? 'workspace' : 'session', note: null };
 };
@@ -232,5 +238,11 @@ export const leadPermissionsOf = ({
     addProject: resolveRow({ key: 'addProject', layers }),
     closeWork: resolveRow({ key: 'closeWork', layers }),
   };
-  return { rows, preset: presetOf({ rows }), spendLimitUsd, locked: LEAD_LOCKED_ROWS };
+  return {
+    rows,
+    preset: presetOf({ rows }),
+    level: levelOf({ layers }),
+    spendLimitUsd,
+    locked: LEAD_LOCKED_ROWS,
+  };
 };
