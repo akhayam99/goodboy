@@ -26,6 +26,7 @@ import {
 import { useProjectFilterOptions } from '../../../hooks/useProjectFilterOptions';
 import { useSidebarPeekHold } from '../../SidebarPeekOverlay/hold';
 import { useUnreadSessionIds } from '../../../../../shared/hooks/useUnreadSessionIds';
+import { usePendingAction } from '../../../../../shared/hooks/usePendingAction';
 import { DEFAULT_PREFS } from '../../../../../store/slices/session-view/types';
 import { DisplayValueRow } from './DisplayValueRow';
 import { FilterCheckRow } from './FilterCheckRow';
@@ -60,6 +61,7 @@ const GROUP_OPTIONS: ReadonlyArray<ListboxOption<SessionGroupKey>> = [
 const MENU_WIDTH = 240;
 const MIN_PROJECTS_FOR_FACET = 2;
 const FILTER_LABEL = 'Filter sessions';
+const MARK_READ_KEY = 'mark-all-read';
 const SUBHEAD = 'px-2 text-meta text-faint-foreground';
 
 type Props = {
@@ -86,6 +88,7 @@ export const SessionFilterPopover = ({
   const projectOptions = useProjectFilterOptions({ workspaceId, sessions });
   const stageBySession = useSessionStages(sessions);
   const markSessionsRead = useAppStore((state) => state.markSessionsRead);
+  const { pendingKeys, run } = usePendingAction({ workspaceId });
   const unreadIds = useUnreadSessionIds({ sessions });
 
   const { hold, release } = useSidebarPeekHold();
@@ -257,7 +260,14 @@ export const SessionFilterPopover = ({
             size="sm"
             variant="ghost"
             disabled={unreadIds.length === 0}
-            onClick={() => void markSessionsRead({ sessionIds: unreadIds })}
+            isBusy={pendingKeys.has(MARK_READ_KEY)}
+            onClick={() =>
+              void run({
+                key: MARK_READ_KEY,
+                failureTitle: "Couldn't mark the sessions as read",
+                task: () => markSessionsRead({ sessionIds: unreadIds }),
+              })
+            }
           >
             Mark all as read
           </Button>
