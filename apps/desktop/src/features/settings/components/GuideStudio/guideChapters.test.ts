@@ -350,9 +350,9 @@ describe('the start, agent and workflow chapters', () => {
     ['Classic', 'drawer', 'Running row'].forEach((gone) => expect(overview).not.toContain(gone));
   });
 
-  it('names the Lead of each new run and its asks, with no Work switch', () => {
+  it('names the Lead of each new run and its fine-tune, with no Work switch', () => {
     const lead = pointOf('agents', 'The Lead');
-    ['Leads each new run', 'agents it needs', 'Asks you'].forEach((entry) =>
+    ['Leads each new run', 'agents it needs', 'Fine-tune this run'].forEach((entry) =>
       expect(lead).toContain(entry),
     );
     expect(lead).not.toContain('Work');

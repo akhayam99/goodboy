@@ -12,6 +12,82 @@ file is in `.prettierignore`: the meta comment sits on the line right below
 each entry's heading, with no blank line, and a formatter would push it down
 onto its own paragraph.
 
+## Goodboy v0.39.1
+
+Cleaner flows: one stop rule for workflows and the Lead, a Plan row to start a run, and fewer buttons on every session page.
+
+### New
+
+#### Fine-tune one run of the Lead
+<!-- gb area=agents image=lead-details -->
+
+Fine-tune this run, the last row of the Stops menu on a run, opens the Lead details beside the chat, like Terminal and Browser. Each row says Ask first or Go ahead, in three groups: Agents, Git and publishing, and Project. What you change there holds for this run only.
+
+### Improved
+
+#### One stop rule for workflows and the Lead
+<!-- gb area=workflows image=runs-page -->
+
+Stops for your OK, on Runs in Settings, sets how often a new run waits for you: Every step, After the plan or Never. Workflows and the Lead follow the same level. When the two saved levels differ, the row names both until you pick one.
+
+Fine-tune what the Lead does alone opens the Lead's rows under it. When they differ from the level, the row reads Custom with Reset, and picking a level resets them.
+
+#### Stops on a run is a menu of three levels
+<!-- gb area=agents image=stops-menu -->
+
+On a Lead's run, Stops opens Every step, After the plan and Never, each with one line on what it does. When the run's details differ, it reads Custom and the menu adds Reset to the level. A run never changes the default for new runs.
+
+#### Run settings read as words on the run page
+<!-- gb area=sessions -->
+
+The line under the crumbs reads like a sentence: the state, the spend, then Stops after the plan, Ask first and the limit. Each word opens its own menu, and the action, such as Stop run, sits at the end. The settings panel and its toggle are gone, and a Lead and an agent page show the same line.
+
+#### A Plan row on the start field
+<!-- gb area=sessions image=start-suggest -->
+
+New session and Start a run ask for a Plan: The Lead plans it, Follow a workflow or One agent. Follow a workflow picks one and offers Keep its steps as written. The run settings read as one sentence, with Change to open them, and the field says workflow, never preset.
+
+#### Workflows are suggested, not taken
+<!-- gb area=workflows -->
+
+When your ask matches a saved workflow, the Plan row says Looks like your workflow, with its name and Use it. The Lead no longer takes it on its own. Use it picks Follow a workflow with that workflow, and its steps may still change. Start as is gone from Settings.
+
+#### Run defaults is now Runs
+<!-- gb area=settings -->
+
+The Run defaults page in Settings is called Runs and asks one thing per band: When a run stops for you, Spending, Agents and Guidance. Parallel agents sits in a closed Advanced, and Guidance is one field with Polish. Searching Run defaults, Rules, Workflow rules or Start as still finds it.
+
+The Models row and the Moved to Connections row are gone from Settings: Models is the next page, and Connections sits in the sidebar.
+
+#### Replies and commits in one column
+<!-- gb area=review screen=settings/workspace/review-replies image=replies -->
+
+Voice shows a reply preview right under it. Sign replies and Reply wording follow, with the two templates closed until you open them, and Insert puts a placeholder where you type. After a reply and Commits end the page.
+
+Attribution line is now Sign replies, Mark thread as resolved is Resolve the thread, and Edit the posted reply is Update the reply after a squash. Search still finds the old names.
+
+#### Branch cleanup sits in Storage
+<!-- gb area=storage screen=settings/app/storage image=storage-branches -->
+
+The branches safe to delete and Recently deleted sit under Worktrees on Storage, for the workspace you pick there, and Check again reads them again. Settings, Branches keeps Naming and After merge.
+
+#### Fewer buttons on a session
+<!-- gb area=sessions image=overview-tiles -->
+
+The session head keeps New and one menu with Ask about this session, Pin, Refresh, Archive and Delete. The Overview keeps the Branches, Spend and Time tiles, since Questions and Artifacts count on their tabs. Runs drops its Start a run row, because New starts one, and the agent dock drops its Next row.
+
+New artifact shows only on an empty Artifacts page. On the Board, a card's reason, such as 1 question for you, is now the button that opens it.
+
+#### A quiet Tools rail
+<!-- gb area=sessions image=tools-rail -->
+
+Terminal and Browser show no tab count at rest. The count stays in the tooltip, and a dot shows only when a tab changes, no longer while one runs.
+
+### Fixed
+
+- An agent the Lead started says The Lead started this agent in its brief, instead of naming Auto. <!-- gb area=agents -->
+- The empty Browser says Type an address, or open a link from a run. <!-- gb area=sessions -->
+
 ## Goodboy v0.39.0
 
 A new palette in both themes: blue for what you can press, cyan for what is running, and a light mode without heavy borders.
