@@ -173,17 +173,23 @@ still carry them and list them as Workflow rules in the preview.
 The page is titled **Run defaults** and has three bands, one row per setting
 (`FieldRow`). `WorkspaceDefaultsGrid` draws the page: `WorkflowRulesPanel` owns
 the **New runs** and **Guidance** bands and takes the settings rows it does not
-own (`runRows`: **Lead asks you** and **Start as**) and the **Agents** band
+own (`runRows`: **Start as**) and the **Agents** band
 (children: **Parallel agents**, **Reply length**) from it. A change reaches new
 runs only, since every run keeps its own copy of the rules
 (`attachWorkflowToSession` copies them at start). A failed save keeps the old
 value and shows the error under its row.
 
-- **Workflow asks you** (`DefaultAsksSetting`): Every step, After the plan or
-  Never, applied on click. The hints are the ones the builder shows
-  (`RUN_AUTONOMY_OPTIONS`)
-- **Lead asks you** (`AutoLevelDefaultRow`): holds `LeadPermissionsChip` on
-  the workspace default, so there is no separate Asks you band
+- **Stops for your OK** (`DefaultAsksSetting`, `useStopsLevel`): Every step,
+  After the plan or Never, one level for workflows and the Lead. A pick runs
+  `changeStopsLevel`, which writes `WorkflowRules.autonomy` and then the
+  workspace `auto.level` for the named workspace; if the second write fails
+  it puts the first back and the row shows the error. The tabs keep the old
+  level until both writes land, and a second pick waits for the first.
+  `stopsLevelOf` reads both keys, an unsaved key as its own default
+  (workflows `step`, Lead `plan`): when they differ, the row names both and
+  selects none, and nothing is written until you pick. Both keys reach the
+  other windows on the data-changed bus (`announceWorkspaceChange`, read back
+  by `listenSettingChanges`). `auto.permissions` is not touched
 - **Start as** (`RunDefaultField`): every value starts a Lead. `auto` lets the
   router give it a matching preset, `lead` takes no preset on its own, and
   `plan` (written by older versions) takes no preset and makes the Lead ask

@@ -466,10 +466,10 @@
           "also": "run default"
         },
         {
-          "title": "Lead asks you",
-          "text": "Choose how much a Lead may do alone in a workspace: every step, after the plan or never, or one permission row at a time.",
+          "title": "Stops for your OK",
+          "text": "Choose when a new run in this workspace stops for your go: every step, after the plan or never.",
           "group": "Workspaces and folders",
-          "also": "Asks you"
+          "also": "Lead asks you"
         },
         {
           "title": "Copy settings from another workspace",

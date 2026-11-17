@@ -1154,11 +1154,13 @@ workspace default through `useAutoLevel` and `startRoutedRun` writes the pick
 with `changeAutoLevel`.
 
 The chip lives in the settings line of an Auto agent (`AutoLevelSetting`, next
-to the Limit chip) and the workspace default in Settings, workspace defaults
-(`AutoLevelDefaultRow`). Both go through `useAutoLevel` in `shared/hooks/`,
+to the Limit chip). The workspace default is the **Stops for your OK** row of
+Run defaults, shared with workflows: `changeStopsLevel` writes it with the
+workflow level, see [workflows.md](./workflows.md). The chip goes through `useAutoLevel` in `shared/hooks/`,
 which reads `auto.level`, writes through the `changeAutoLevel` store action
-(`writeAutoLevel` on a named session or workspace, then a reload of the value)
-and keeps only the latest pick. A
+(`writeAutoLevel` on a named session or workspace, then a reload of the value
+and a note to the other windows, which read it again) and keeps only the
+latest pick. A
 failed write keeps the old level and shows the reason. The chip is rendered by
 `AgentSettingsLine` itself, never through the composer slot, so the message
 field is not affected.
@@ -1225,9 +1227,8 @@ would still disagree with the preset. `LeadPermissionsChip` mounts the panel
 from `AutoLevelChip` wherever a session or a Lead exists: the start field of a
 session and the Lead page. With no Lead yet it reads the session, and a preset
 writes that session's level only. A new session draft has no session to
-name, so it keeps the level chip, applied to the session once it exists. In the
-workspace settings the **Lead asks you** row of Run defaults holds the
-chip on the workspace default (`AutoLevelDefaultRow`).
+name, so it keeps the level chip, applied to the session once it exists. The
+workspace settings hold no chip: **Stops for your OK** sets the level only.
 A row tightened while an agent runs applies to its next start. The tests are
 `permissions.test.ts` (the compatibility table for each level, each
 precedence step, the stale pair) and
