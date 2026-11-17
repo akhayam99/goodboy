@@ -89,6 +89,66 @@ describe('ShellRail', () => {
     expect(onTasks).toHaveBeenCalledTimes(1);
   });
 
+  it('tints a tile with its tone, in the word too, and keeps motion behind motion-safe', () => {
+    render(
+      <ShellRail label="Places" form="wide">
+        <ShellRailItem
+          id="update"
+          icon={Inbox}
+          label="Update"
+          tint="primary"
+          isEdged
+          isBreathing
+          onSelect={vi.fn()}
+        />
+      </ShellRail>,
+    );
+    const tile = within(railOf()).getByRole('button', { name: 'Update' });
+    expect(tile.className).toContain('bg-primary-subtle');
+    expect(tile.className).toContain('text-primary');
+    expect(tile.className).toContain('ring-primary-edge');
+    expect(tile.className).toContain('motion-safe:animate-arrival-breath');
+    expect(tile.className).not.toContain('brand-accent');
+    expect(within(railOf()).getByText('Update').className).toContain('text-primary');
+  });
+
+  it('draws a ring that fills with the percent and names it', () => {
+    render(
+      <ShellRail label="Places" form="wide">
+        <ShellRailItem
+          id="update"
+          icon={Inbox}
+          label="Update"
+          word="25%"
+          tint="primary"
+          mark={{ kind: 'ring', percent: 25, name: 'downloading, 25%' }}
+          onSelect={vi.fn()}
+        />
+      </ShellRail>,
+    );
+    within(railOf()).getByRole('button', { name: 'Update, downloading, 25%' });
+    expect(
+      railOf().querySelector('[data-slot="rail-ring-arc"]')?.getAttribute('stroke-dasharray'),
+    ).toBe('25 100');
+  });
+
+  it('draws only the track while the size is not known', () => {
+    render(
+      <ShellRail label="Places" form="wide">
+        <ShellRailItem
+          id="update"
+          icon={Inbox}
+          label="Update"
+          tint="primary"
+          mark={{ kind: 'ring', percent: null, name: 'downloading' }}
+          onSelect={vi.fn()}
+        />
+      </ShellRail>,
+    );
+    expect(railOf().querySelector('[data-slot="rail-ring"]')).not.toBeNull();
+    expect(railOf().querySelector('[data-slot="rail-ring-arc"]')).toBeNull();
+  });
+
   it('draws the word under the icon and the count on the glyph', () => {
     renderRail({ form: 'wide' });
     within(railOf()).getByRole('button', { name: 'Board, 3 need you' });

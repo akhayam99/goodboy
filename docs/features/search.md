@@ -12,7 +12,7 @@ An amber number on **Board** counts sessions that need you. A dot on **Tasks** m
 
 The rail keeps the same places on every page. It never folds or resizes. In a window narrower than 1100 pixels, the words below the icons move into tooltips.
 
-**Settings**, the bug icon for **Report a bug**, and the **Goodboy** mark sit at the foot. Before you create a workspace, only this foot appears.
+At the foot sit **Settings**, then **Report**, then the **Goodboy** mark. With an update waiting, the mark becomes an **Update** mark. Before you create a workspace, only this foot appears.
 
 Open **Sessions** in the top bar, or press **⌘B**, to find a session by title or project. Pinned sessions come first. **Open Board** shows finished sessions too.
 

@@ -98,11 +98,11 @@ const CASES: ReadonlyArray<Case> = [
   },
   {
     name: 'update card from the rail foot',
-    trigger: { x: 8, y: WINDOW_HEIGHT - 40, width: 224 },
-    side: 'bottom',
-    align: 'start',
-    width: 300,
-    height: 112,
+    trigger: { x: 0, y: WINDOW_HEIGHT - 96, width: 64 },
+    side: 'right',
+    align: 'end',
+    width: 360,
+    height: 140,
     edge: 'clamped',
   },
   {

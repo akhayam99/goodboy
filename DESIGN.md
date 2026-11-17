@@ -497,6 +497,11 @@ second home for them.
   and a clear ask. Motion means the machine is working, so animating "waiting
   for you" puts the work on the wrong party. A surface that shimmers for hours
   teaches that its motion means nothing.
+- **A new arrival may breathe three times.** The update mark at the foot of the
+  rail breathes slowly, three times, when it first appears, then holds still. It
+  reuses the `soft-pulse` keyframes with an iteration count of 3, so it adds no
+  animation to the closed list. Reduced motion keeps the tint and drops the
+  breath. Nothing else in the app is allowed a finite repeat.
 - **One animation, one meaning.** The list of animations is closed, and a test
   fails on a keyframe the Motion registry does not name. Adding one is a
   design-system change, not a feature decision. Time is closed too: three

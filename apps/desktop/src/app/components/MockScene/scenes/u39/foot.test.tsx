@@ -89,14 +89,14 @@ describe('the foot scenes', () => {
     rail.getByRole('button', { name: 'Goodboy, help' });
   });
 
-  it('puts the update pill in the open column and the dot on the folded mark', async () => {
+  it('puts the update pill in the open column and the update mark on the rail', async () => {
     const container = mount({ id: 'u39-foot-update' });
 
     await waitFor(() => expect(container.querySelectorAll('[data-foot-panel]')).toHaveLength(4));
     const open = within(panel({ container, name: 'Open column' }));
     open.getByRole('button', { name: 'Goodboy 0.33.1 is available' });
     const rail = within(panel({ container, name: 'Folded rail' }));
-    expect(rail.queryByRole('button', { name: 'Goodboy 0.33.1 is available' })).toBeNull();
-    rail.getByRole('button', { name: /^Goodboy, help, Goodboy 0.33.1 is available/ });
+    expect(rail.queryByRole('button', { name: 'Goodboy, help' })).toBeNull();
+    rail.getByRole('button', { name: 'Goodboy 0.33.1 is available' });
   });
 });

@@ -610,6 +610,15 @@ the six places and Settings share one axis at either width.
 `places-rail.test.tsx` reads the order and the width in the `r4-column-dark`
 and `r4-column-light` scenes, and with an old folded choice.
 
+The foot of the rail is Settings, Report (with its word) and the logo. An update
+turns the logo into one more `ShellRailItem`: `tint="primary"` paints the tile
+`primary-subtle` with `primary` text and word (`danger` on `danger-subtle` when it
+failed), `isEdged` adds a `primary-edge` ring once the update is ready, and the
+`ring` mark draws the download as a fill around the tile with the percent as its
+word. The tile never reads `brand-accent`, which stays with the logo, and the card
+it opens goes to the right of the rail through `placeFloating`, 12px inside the
+window. `rail-foot-*` scenes show the rest state and the six update states.
+
 A stat card holds its label to two lines (`line-clamp-2`), pins the figure to
 the bottom of the card with `mt-auto`, and puts the delta and the hint on their
 own row under the figure, never beside the label. A row of cards that carry
@@ -1358,6 +1367,12 @@ update only themselves.
   `studio-body-in` (opacity and 4px) when a new version arrives, then holds
   still in the soft primary tone. The arrival card announces it; nothing
   sweeps, rings or repeats on focus.
+- The update mark on the rail foot breathes three times when it appears
+  (`animate-arrival-breath`, the `soft-pulse` keyframes at `--loop-pulse` with an
+  iteration count of 3, under `motion-safe:`), then holds still in `primary` on
+  `primary-subtle`. It never blinks and never repeats; with reduced motion only
+  the tint shows. It is a rail item (`ShellRailItem` with `tint`, `isEdged`,
+  `isBreathing`), and a download is its `ring` mark.
 - Skeleton pulse (`animate-pulse` inside `Skeleton` only): loading.
 
 `no-token-bypass.test.ts` rejects any `animate-pulse` or `animate-ping`

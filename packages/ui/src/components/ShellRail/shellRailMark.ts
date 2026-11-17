@@ -8,4 +8,9 @@ export type ShellRailMark =
   | {
       readonly kind: 'dot';
       readonly name: string;
+    }
+  | {
+      readonly kind: 'ring';
+      readonly percent: number | null;
+      readonly name: string;
     };

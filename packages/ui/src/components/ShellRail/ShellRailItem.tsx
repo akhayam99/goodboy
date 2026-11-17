@@ -4,11 +4,12 @@ import { cn } from '../../cn';
 import { ICON_SIZE } from '../../iconSize';
 import { selectedIconClass } from '../../selectedIcon';
 import { TEXT_ROLE } from '../../textRoles';
-import type { Tone } from '../../tint';
+import { tintClasses, type Tone } from '../../tint';
 import { CountBadge } from '../CountBadge';
 import { IconButton } from '../IconButton';
 import { StatusDot } from '../StatusDot';
 import { ShellRailFormContext } from './shellRailFormContext';
+import { ShellRailRing } from './ShellRailRing';
 import type { ShellRailMark } from './shellRailMark';
 
 type Props = {
@@ -27,6 +28,9 @@ type Props = {
   readonly isPressed?: boolean;
   readonly isQuiet?: boolean;
   readonly isOutlined?: boolean;
+  readonly tint?: Tone;
+  readonly isEdged?: boolean;
+  readonly isBreathing?: boolean;
   readonly onSelect: () => void;
 };
 
@@ -37,7 +41,7 @@ type MarkParams = {
 const LIT_TILE = 'bg-selected text-foreground hover:bg-selected';
 
 const isMarkShown = ({ mark }: MarkParams): boolean =>
-  mark !== null && (mark.kind === 'dot' || mark.count > 0);
+  mark !== null && (mark.kind !== 'count' || mark.count > 0);
 
 export const ShellRailItem = ({
   id,
@@ -55,11 +59,15 @@ export const ShellRailItem = ({
   isPressed,
   isQuiet = false,
   isOutlined = false,
+  tint,
+  isEdged = false,
+  isBreathing = false,
   onSelect,
 }: Props) => {
   const form = useContext(ShellRailFormContext);
   const isLit = isCurrent || isPressed === true;
   const isFaint = isQuiet && !isLit;
+  const tinted = tint === undefined ? null : tintClasses(tint);
   const name = mark !== null && isMarkShown({ mark }) ? `${label}, ${mark.name}` : label;
   return (
     <span
@@ -78,9 +86,11 @@ export const ShellRailItem = ({
             isExpanded === true || (form === 'wide' && shortcut === undefined && word === label)
           }
           size="md"
+          {...(tint !== undefined && { tone: tint, 'data-tint': tint })}
           variant={isOutlined ? 'outline' : 'ghost'}
           iconSize={ICON_SIZE.hero}
           data-shell-rail-item={id}
+          {...(isEdged && { 'data-edged': '' })}
           aria-current={isCurrent ? 'page' : undefined}
           aria-pressed={isPressed}
           aria-expanded={isExpanded}
@@ -90,6 +100,9 @@ export const ShellRailItem = ({
             isFaint && 'text-faint-foreground',
             isLit && LIT_TILE,
             isLit && tone !== undefined && selectedIconClass({ tone }),
+            tinted !== null && !isLit && tinted.bg,
+            tinted !== null && isEdged && ['ring-1', tinted.ring],
+            isBreathing && 'motion-safe:animate-arrival-breath',
           )}
           onClick={isCurrent ? undefined : onSelect}
         />
@@ -104,6 +117,9 @@ export const ShellRailItem = ({
               placement="corner"
               isAnnounced={false}
             />
+          ) : null}
+          {mark?.kind === 'ring' && tint !== undefined ? (
+            <ShellRailRing percent={mark.percent} tone={tint} />
           ) : null}
           {mark?.kind === 'dot' ? (
             <StatusDot
@@ -120,7 +136,7 @@ export const ShellRailItem = ({
           data-slot="rail-word"
           className={cn(
             'max-w-full truncate px-0.5 text-rail',
-            isLit ? TEXT_ROLE.label : TEXT_ROLE.secondary,
+            isLit ? TEXT_ROLE.label : tinted === null ? TEXT_ROLE.secondary : tinted.text,
             isFaint && TEXT_ROLE.hint,
           )}
         >
