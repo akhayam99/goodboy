@@ -138,10 +138,13 @@ const TERMINAL: DrawerRequest = {
 
 const BROWSER: DrawerRequest = { kind: 'browser', sessionId: S1, payload: null };
 
+const MONITOR: DrawerRequest = { kind: 'monitoring', sessionId: null, payload: null };
+
 describe('a workspace tool stays across every move inside the window', () => {
   it.each([
     ['Terminal', TERMINAL],
     ['Browser', BROWSER],
+    ['Monitor', MONITOR],
   ] as const)('keeps %s on another session, on the Board and on Back', (_name, tool) => {
     state().openDrawer(tool);
 
@@ -162,6 +165,27 @@ describe('a workspace tool stays across every move inside the window', () => {
     state().switchStudio({ studio: { kind: 'terminal', terminalId: null, sessionId: null } });
     expect(selectDrawerPanel(state())).toBeNull();
     expect(state().drawer).toEqual(TERMINAL);
+  });
+
+  it('parks Monitor under the Monitoring page and brings it back when the page closes', () => {
+    state().openDrawer(MONITOR);
+
+    state().openStudio({ studio: { kind: 'monitoring' } });
+    expect(selectDrawerPanel(state())).toBeNull();
+    expect(state().drawer).toEqual(MONITOR);
+
+    state().closeStudio();
+    expect(selectDrawerPanel(state())).toEqual(MONITOR);
+  });
+
+  it('closes Monitor on a second press from the rail, on the Board and in a session', () => {
+    state().navigate({ to: BOARD_PLACE });
+    state().toggleDrawer(MONITOR);
+    expect(state().drawer).toEqual(MONITOR);
+
+    state().navigate({ to: sessionPlace({ sessionId: S2 }) });
+    state().toggleDrawer(MONITOR);
+    expect(state().drawer).toBeNull();
   });
 
   it('parks a session tool under a page and keeps Terminal in its chip', () => {

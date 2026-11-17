@@ -102,15 +102,16 @@ describe('journey: the Terminal and Browser docks beside the tools rail', () => 
     ['panel-frame-terminal', 'terminal'],
     ['panel-frame-browser', 'browser'],
   ] as const)(
-    'draws the tools rail on the left edge of the %s dock, the dock card after it',
+    'draws the %s dock card first and the tools rail after it, on the window edge',
     async (name, kind) => {
       await journey.mount({ name });
 
       expect(dockKind()).toBe(kind);
       const container = journey.partOf({ selector: '[data-container="drawer"]' });
-      expect(container.children[0]?.hasAttribute('data-drawer-edge')).toBe(true);
-      expect(container.children[0]?.contains(toolsRail())).toBe(true);
-      expect(container.children[1]?.hasAttribute('data-drawer-card')).toBe(true);
+      expect(container.children[0]?.hasAttribute('data-drawer-card')).toBe(true);
+      expect(container.children[1]?.hasAttribute('data-drawer-edge')).toBe(true);
+      expect(container.children[1]?.contains(toolsRail())).toBe(true);
+      expect(container.lastElementChild).toBe(container.children[1]);
       expect(
         journey.partOf({ selector: '[aria-label="Side panel"]' }).getAttribute('data-drawer-mode'),
       ).toBe('push');

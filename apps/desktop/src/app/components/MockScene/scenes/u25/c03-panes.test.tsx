@@ -126,7 +126,7 @@ describe('c03 session tools scenes', () => {
     expect(frame?.contains(tools)).toBe(false);
     expect(tools.closest('[data-drawer-main]')).toBeNull();
     expect(tools.closest('[data-container="drawer"]')).not.toBeNull();
-    expect(tools.closest('[data-drawer-edge]')?.previousElementSibling).toBeNull();
+    expect(tools.closest('[data-drawer-edge]')?.nextElementSibling).toBeNull();
     const headers = [...document.querySelectorAll('[data-slot="pane-title-row"]')];
     expect(headers.length).toBeGreaterThan(0);
     expect(

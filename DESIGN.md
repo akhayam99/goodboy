@@ -184,10 +184,13 @@ model in [docs/navigation/model.md](./docs/navigation/model.md).
   centre shows (the Files of a pull request, the Agents of a run) is a rail on
   the left of the content, with its own first row, scroll and remembered width.
   It folds to a toggle on a narrow window.
-- **Panels open to the right, in one order.** Page content, then the detail
-  panel (an artifact, Ask, a check analysis), then the tools rail, then the tool
-  dock (Terminal, Browser). The content slides to re-centre when a panel opens
-  or closes, and every dock follows the same push or overlay rule.
+- **Panels keep one order.** Page content, then the detail
+  panel (an artifact, Ask, a check analysis), then the tool dock (Terminal,
+  Browser, Monitor), then the tools rail pinned to the window's right
+  edge. Tools open to the rail's left. `DrawerDockBox` keeps the rail last;
+  `DrawerColumn` leaves 12px between shell containers (`DRAWER_GUTTER`). The
+  content slides to re-centre when a panel opens or closes, and every dock
+  follows the same push or overlay rule.
 - **One fact, said once per row.** A row never repeats a state in two columns
   or in its title and its status. One function decides which cell says it.
 - **One state word per thing, from one source.** A run, an agent and a pull
@@ -405,10 +408,12 @@ rule with the exception in Status & signals.
 A place you go to and read full width is a place on the left rail, an icon with
 one word under it (Board, Tasks, Workflows, Chat, Connect, Impact), under New.
 A tool you open beside your work is an icon on the tools rail and opens the
-dock, with Open full page (Terminal, Browser). Chat and Impact are places.
-Monitoring is a tool you glance at beside Terminal: it left the places rail and
-opens from the Go menu and the palette until it has a dock body on the tools
-rail ([docs/navigation/model.md](docs/navigation/model.md)).
+dock, with Open full page (Terminal, Browser, Monitor). Scripts and Ask also
+open panels from the rail. Chat and Impact are places. Monitoring is a tool you
+glance at beside Terminal: it left the places rail, Monitor on the tools rail
+(`toggleRailTool`) opens `MonitoringDrawer` beside the page, and its Open full
+page opens the Monitoring page, also reachable from the Go menu and the palette
+([docs/navigation/model.md](docs/navigation/model.md)).
 
 An object the app connects to has one home, and Settings is not it. Providers
 and integrations live in Connections; Settings keeps only preferences (App and

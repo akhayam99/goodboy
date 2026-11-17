@@ -11,7 +11,7 @@ import type {
   WorkspaceId,
 } from '@goodboy/types';
 import {
-  DRAWER_INSET,
+  DRAWER_GUTTER,
   LEFT_SIDEBAR_DEFAULT,
   LEFT_SIDEBAR_MAX,
   READER_DRAWER_DEFAULT,
@@ -219,8 +219,8 @@ describe('every drawer fits inside its aside at 1280 and 1440', () => {
     expect(sizingOf(transcript)).toBe('side');
   });
 
-  it('slides an overlay card in by at most its 8px inset and grows a pushing card in place', () => {
-    expect(slideOf('drawer-overlay-in')).toBeLessThanOrEqual(DRAWER_INSET);
+  it('slides an overlay card in by at most its gutter and grows a pushing card in place', () => {
+    expect(slideOf('drawer-overlay-in')).toBeLessThanOrEqual(DRAWER_GUTTER);
     expect(fromFrameOf({ keyframes: 'fold-fade-in' })).not.toContain('transform');
   });
 
@@ -236,7 +236,7 @@ describe('every drawer fits inside its aside at 1280 and 1440', () => {
       const mode = pair.mode;
       const drawerWidthPx = pair.dock.width;
       const asidePx = drawerAsideWidthOf({ width: drawerWidthPx, mode });
-      const cardRight = columnWidth - asidePx + DRAWER_INSET + drawerWidthPx;
+      const cardRight = columnWidth - asidePx + DRAWER_GUTTER + drawerWidthPx;
 
       expect(asidePx).toBeLessThanOrEqual(columnWidth);
       if (mode === 'push') {

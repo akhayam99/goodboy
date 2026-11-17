@@ -1,22 +1,26 @@
 import { useLayoutEffect, useRef, useState } from 'react';
+import type { SessionId } from '@goodboy/types';
 import { PANE_RHYTHM, cn } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
 import { selectBrowserTabCount } from '../../../../store/slices/browser/selectBrowserTabCount';
+import { selectDetailDrawer } from '../../../../store/slices/drawer/selectDetailDrawer';
 import { selectDockDrawer } from '../../../../store/slices/drawer/selectDockDrawer';
 import { selectSlotBack } from '../../../../store/slices/drawer/selectSlotBack';
-import { toggleBrowserDock } from '../../../browser/toggleBrowserDock';
+import { monitoringSignalOf } from '../../../monitoring/monitoringSignalOf';
 import { runningTerminalCount } from '../../../terminal/runningTerminalCount';
-import { toggleTerminalDock } from '../../../terminal/toggleTerminalDock';
-import type { ClusterPane } from '../../panes/clusterPane';
+import { portsFactOf } from './portsFactOf';
 import { SESSION_TOOL_RAIL_WIDTH } from './sessionToolRailWidth';
-import { RAIL_TOOLS, type SessionTool } from './sessionTools';
+import { RAIL_TOOLS, type RailToolId } from './sessionTools';
 import { SessionToolButton } from './SessionToolButton';
 import { railFocusMemo } from './railFocusMemo';
+import { toggleRailTool } from './toggleRailTool';
 import { toolbarIndexAfter } from './toolbarIndexAfter';
 import { toolFactOf } from './toolFactOf';
+import { toolCountOf } from './toolCountOf';
 import type { ToolSignal } from './ToolSignal';
 
 type Props = {
+  readonly sessionId: SessionId | null;
   readonly terminalSignal: ToolSignal | null;
 };
 
@@ -24,28 +28,26 @@ type IndexParams = {
   readonly index: number;
 };
 
-type ToggleParams = {
-  readonly tool: SessionTool;
-};
-
 const isFocusOnBody = (): boolean =>
   document.activeElement === null || document.activeElement === document.body;
 
-const toggleWorkspaceTool = ({ tool }: ToggleParams): void => {
-  if (tool.pane === 'terminal') {
-    toggleTerminalDock({ isToggle: true });
-    return;
-  }
-  toggleBrowserDock({ isToggle: true });
-};
-
-export const ToolRailFrame = ({ terminalSignal }: Props) => {
+export const ToolRailFrame = ({ sessionId, terminalSignal }: Props) => {
   const dockKind = useAppStore((state) => selectDockDrawer({ state })?.kind ?? null);
+  const detailKind = useAppStore((state) =>
+    state.appStudio === null ? (selectDetailDrawer({ state })?.kind ?? null) : null,
+  );
   const pageKind = useAppStore((state) => state.appStudio?.kind ?? null);
   const waitingKind = useAppStore((state) => selectSlotBack({ state })?.kind ?? null);
   const runningCount = useAppStore((state) => runningTerminalCount({ tabs: state.terminalTabs }));
   const workspaceId = useAppStore((state) => state.currentWorkspaceId);
   const tabCount = useAppStore((state) => selectBrowserTabCount({ state, workspaceId }));
+  const portsFact = useAppStore((state) =>
+    portsFactOf({ monitoring: monitoringSignalOf({ state }) }),
+  );
+  const portsInUse = useAppStore((state) => monitoringSignalOf({ state })?.inUse ?? 0);
+  const hasDownPin = useAppStore(
+    (state) => (monitoringSignalOf({ state })?.downPins.length ?? 0) > 0,
+  );
   const tools = RAIL_TOOLS;
   const count = tools.length;
   const [focusIndex, setFocusIndex] = useState(() =>
@@ -56,7 +58,7 @@ export const ToolRailFrame = ({ terminalSignal }: Props) => {
   );
   const activeIndex = Math.min(focusIndex, count - 1);
   const railRef = useRef<HTMLDivElement | null>(null);
-  const activePaneRef = useRef<ClusterPane | null>(null);
+  const activePaneRef = useRef<RailToolId | null>(null);
   activePaneRef.current = tools[activeIndex]?.pane ?? null;
   useLayoutEffect(() => {
     const rail = railRef.current;
@@ -118,19 +120,30 @@ export const ToolRailFrame = ({ terminalSignal }: Props) => {
         PANE_RHYTHM.headerInset,
       )}
     >
-      {tools.map((tool, index) => (
-        <SessionToolButton
-          key={tool.pane}
-          tool={tool}
-          isOpen={dockKind === tool.pane}
-          isWaiting={waitingKind === tool.pane}
-          isCurrent={pageKind === tool.pane}
-          fact={toolFactOf({ pane: tool.pane, runningCount, tabCount })}
-          signal={tool.pane === 'terminal' ? terminalSignal : null}
-          {...rovingOf({ index })}
-          onToggle={() => toggleWorkspaceTool({ tool })}
-        />
-      ))}
+      {tools.map((tool, index) => {
+        const isSessionMissing = tool.isSessionOnly && sessionId === null;
+        return (
+          <SessionToolButton
+            key={tool.pane}
+            tool={tool}
+            isOpen={dockKind === tool.pane || detailKind === tool.pane}
+            isWaiting={waitingKind === tool.pane}
+            isCurrent={pageKind === tool.pane}
+            isDisabled={isSessionMissing}
+            fact={toolFactOf({
+              pane: tool.pane,
+              runningCount,
+              tabCount,
+              portsFact,
+              isSessionMissing,
+            })}
+            count={toolCountOf({ pane: tool.pane, portsInUse, hasDownPin })}
+            signal={tool.pane === 'terminal' ? terminalSignal : null}
+            {...rovingOf({ index })}
+            onToggle={() => toggleRailTool({ pane: tool.pane, sessionId })}
+          />
+        );
+      })}
     </div>
   );
 };

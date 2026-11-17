@@ -1,7 +1,7 @@
-import type { ClusterPane } from '../../panes/clusterPane';
+import type { RailToolId } from './sessionTools';
 
 type RailFocus = {
-  pane: ClusterPane | null;
+  pane: RailToolId | null;
   hasFocus: boolean;
   isDrawerOpener: boolean;
 };

@@ -42,11 +42,6 @@ export const DrawerDockBox = ({
         panel.isOverlayExit && 'motion-safe:animate-drawer-dock-out',
       )}
     >
-      <div
-        ref={setEdgeHost}
-        data-drawer-edge=""
-        className="relative z-10 flex shrink-0 bg-drawer empty:hidden"
-      />
       {isOpen || panel.exit.isExiting ? (
         <DrawerPanelCard
           slot="drawer"
@@ -61,6 +56,11 @@ export const DrawerDockBox = ({
           pushWidthClass={PUSH_CONTENT}
         />
       ) : null}
+      <div
+        ref={setEdgeHost}
+        data-drawer-edge=""
+        className="relative z-10 flex shrink-0 bg-drawer empty:hidden"
+      />
     </div>
   );
 };

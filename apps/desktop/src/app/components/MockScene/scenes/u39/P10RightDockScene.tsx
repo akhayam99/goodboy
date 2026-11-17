@@ -12,8 +12,15 @@ import { devServerLines, terminalSnapshotAnswer } from '../terminalSceneOutput';
 import { seedFrame, type FrameContext } from '../audit/frameSeed';
 import { seedBrowserTab } from './seedBrowserTab';
 import { seedArtifactDetail } from '../u42/seedArtifactDetail';
+import { PORTS_SNAPSHOT } from '../u25/portsSeed';
 
-export type RightDock = 'terminal' | 'browser' | null;
+export type RightDock = 'terminal' | 'browser' | 'monitoring' | null;
+
+const PORT_ANSWERS: ReadonlyMap<string, unknown> = new Map<string, unknown>([
+  ['monitor_snapshot', PORTS_SNAPSHOT],
+  ['process_ledger_list', []],
+  ['monitor_watched_ports', []],
+]);
 
 type Props = {
   readonly context: FrameContext;
@@ -76,6 +83,14 @@ const seedDock = ({ context, view, held, hasDetail }: SeedParams): void => {
         ? { kind: 'browser', sessionId: null, payload: null }
         : { kind: 'browser', sessionId, payload: null },
     );
+  }
+  if (held === 'monitoring') {
+    mockSceneIpc((command) => PORT_ANSWERS.get(command) ?? null);
+    useAppStore.setState({
+      monitorSnapshot: PORTS_SNAPSHOT,
+      monitorPinned: [{ port: 9000, description: 'Mock API' }],
+    });
+    state.openDrawer({ kind: 'monitoring', sessionId: null, payload: null });
   }
 };
 
