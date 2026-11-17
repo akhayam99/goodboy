@@ -19,8 +19,6 @@ type Props = {
   readonly isChangeSent: boolean;
   readonly isSettledHidden: boolean;
   readonly discardAsk: PlanDiscardAsk | null;
-  readonly isDropping: boolean;
-  readonly onDrop: () => void;
 };
 
 const SETTLED_COPY = {
@@ -40,8 +38,6 @@ export const AutoDockPlan = ({
   isChangeSent,
   isSettledHidden,
   discardAsk,
-  isDropping,
-  onDrop,
 }: Props) => {
   const model = useAutoPlanApproval({
     sessionId,
@@ -126,20 +122,13 @@ export const AutoDockPlan = ({
         </span>
         <span className="flex-1" />
         {openPlan}
-        <Button
-          variant="quiet"
-          size="xs"
-          disabled={isDropping}
-          isBusy={isDropping}
-          busyLabel="Dropping"
-          onClick={onDrop}
-        >
+        <Button variant="quiet" size="xs" disabled={model.isBusy} onClick={() => void model.drop()}>
           {`Drop plan v${model.version}`}
         </Button>
         <Button
           variant="primary"
           size="sm"
-          disabled={model.isBusy || isDropping}
+          disabled={model.isBusy}
           onClick={() => void model.approve()}
         >
           {AUTO_PLAN_APPROVE_LABEL}

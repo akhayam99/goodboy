@@ -1076,8 +1076,10 @@ It decides by ending its final reply with at most one block:
   only be discarded: when the Approve plan row is Ask and the plan waits for the user, the ask
   is stored on the planner delegation (`request_json.planDiscardAsk`) and the dock reads
   **The Lead wants to drop plan vN**, with **Drop plan vN** next to Approve
-  (`planDiscardAskOf`, `useDropAutoPlan`). Otherwise `discardAutoPlan` sets the plan
-  `discarded` at once. The user's Drop goes through the same `discardAutoPlan`.
+  (`planDiscardAskOf`, `drop` on `useAutoPlanApproval`). Otherwise `discardAutoPlan` sets the plan
+  `discarded` at once. The user's Drop goes through the same `discardAutoPlan`, then reloads
+  the runs and tells the other windows, as an approval does. The `c07-auto-lead-tidy` scene
+  shows the dock ask and a child closed by the Lead.
 - `finish` says the work is done (`summary`). It is refused while an agent is open or a result
   waits, and the refusal says why. With Close the work at You it stores nothing: the tree still
   rests as Idle until the user marks it finished, and the prompt asks Auto to suggest **Mark
