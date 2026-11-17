@@ -1,5 +1,6 @@
 import { REVIEW_SOURCE_LABEL } from '@goodboy/core/review-source';
 import { NAMES } from '../../shared/utils/names';
+import { ITEM_WORK_WORDS } from '../live-state/itemWork/itemWorkWords';
 import type { ReviewComposeMode } from '../review/reviewRequest';
 
 export const REVIEW_FLOW_LABEL = {
@@ -195,11 +196,11 @@ export const FIX_RUN_COPY = {
   openBatch: 'Open them in Comments',
   openBatchNotes: 'Open them in Notes',
   noCommit: 'No commits yet',
-  statusWorking: 'Working',
-  statusQueued: 'Queued',
-  statusDone: 'Done',
+  statusWorking: ITEM_WORK_WORDS.state.fixing.word,
+  statusQueued: ITEM_WORK_WORDS.state.queued.word,
+  statusDone: ITEM_WORK_WORDS.state.fixed.word,
   sharedState: ({ word, count }: SharedStateParams): string => `${count} ${word.toLowerCase()}`,
-  statusWaiting: NAMES.needsYou,
+  statusWaiting: ITEM_WORK_WORDS.state.question.word,
   gone: 'This comment is no longer on the branch.',
   comment: 'Comment',
   rewritten: 'no longer on this branch, it was squashed or rewritten',

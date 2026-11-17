@@ -295,7 +295,7 @@ describe('the fix run summary', () => {
     await mount({ agentId: WORKING });
 
     const status = within(screen.getByTestId('fix-run-status'));
-    expect(status.getByText(/^Working · /)).toBeDefined();
+    expect(status.getByText(/^Fixing · /)).toBeDefined();
     expect(screen.queryByRole('heading', { name: 'What it did' })).toBeNull();
     expect(screen.queryByRole('heading', { name: 'Commits' })).toBeNull();
     expect(screen.queryByText('No commits yet')).toBeNull();
@@ -318,21 +318,21 @@ describe('the fix run summary', () => {
     });
   });
 
-  it('reads Done in the status line once the run ended, with the state every comment shares', async () => {
+  it('reads Fixed in the status line once the run ended, with the state every comment shares', async () => {
     await mount({ agentId: SINGLE });
 
     const status = within(screen.getByTestId('fix-run-status'));
-    expect(status.getByText(/^Done · /)).toBeDefined();
+    expect(status.getByText(/^Fixed · /)).toBeDefined();
     expect(screen.getByText('Capped the retry loop and added jitter.')).toBeDefined();
   });
 
   it('says the state every comment shares once in the status line, not on each row', async () => {
     await mount({ agentId: SINGLE });
 
-    const status = within(screen.getByTestId('fix-run-status')).getByText(/^Done · /);
+    const status = within(screen.getByTestId('fix-run-status')).getByText(/^Fixed · /);
     expect(status.textContent).toMatch(/ · 1 [a-z ]+ · /);
     const row = within(screen.getByRole('list')).getByRole('button');
-    expect(within(row).queryByText(/^(Fix ready|Open|Working|Question for you)$/)).toBeNull();
+    expect(within(row).queryByText(/^(Fix ready|Open|Fixing|Question for you)$/)).toBeNull();
   });
 
   it('keeps a state chip first on every row while the comments differ', async () => {

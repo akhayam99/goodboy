@@ -112,7 +112,7 @@ On a conflict or a commit hook, the panel does three things.
 - It starts one Lead run. The run picks the agent and the model, rebases the branch in its worktree and resolves the conflict.
 - It asks you in the session only when a conflict is ambiguous. It never pushes.
 - Until the Lead took the goal, the panel stays. A failed start keeps your hint and you can try again.
-- While the Lead works, the panel reads **The Lead is rebasing on main** with **1 of 2 files resolved** and **Open the Lead**.
+- While the Lead works, the panel reads **The Lead is rebasing on main** with **1 of 2 files resolved** and **Open transcript**. The word on the card reads **Resolving**, as on a check or a comment.
 
 **Resolve in terminal**
 

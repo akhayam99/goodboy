@@ -153,7 +153,7 @@ export const RebaseStopPanel = ({ sessionId, worktreePath, controls, actions }: 
           : [
               {
                 key: 'open-auto',
-                label: 'Open the Lead',
+                label: NAMES.openTranscript,
                 variant: 'secondary',
                 run: controls.seeWhatItDid,
               },
@@ -191,7 +191,7 @@ export const RebaseStopPanel = ({ sessionId, worktreePath, controls, actions }: 
             verbs: [
               {
                 key: 'see-auto',
-                label: 'Open the Lead',
+                label: NAMES.openTranscript,
                 variant: 'ghost',
                 run: controls.seeWhatItDid,
               },
