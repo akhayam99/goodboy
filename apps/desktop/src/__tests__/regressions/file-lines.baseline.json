@@ -62,7 +62,7 @@
   "packages/core/src/context/marker-parsing.ts": 1185,
   "packages/core/src/providers/cursor/catalog.ts": 845,
   "packages/core/src/providers/openrouter/catalog.ts": 781,
-  "packages/db/src/index.ts": 815,
+  "packages/db/src/index.ts": 810,
   "packages/db/src/migrations/m118-workspace-containers.ts": 701,
   "packages/db/src/migrations/m125-normalize-timestamps.ts": 767,
   "packages/db/src/queries/impact.ts": 773,

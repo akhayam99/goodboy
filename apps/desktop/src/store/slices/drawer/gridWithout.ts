@@ -15,5 +15,6 @@ export const gridWithout = ({ grid, kinds }: Params): DrawerGrid => {
       .filter((column) => column.length > 0),
     used: grid.used.filter((kind) => !kinds.includes(kind)),
     focus: grid.focus,
+    widths: grid.widths,
   };
 };

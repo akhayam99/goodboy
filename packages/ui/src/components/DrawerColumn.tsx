@@ -113,7 +113,7 @@ export const DrawerColumn = ({
     solve: solveDock,
     resizeLabel,
   });
-  const { isOpen, resizable, detailWidths, layout } = dock;
+  const { isOpen, detailWidths, layout } = dock;
   const mode: DrawerMode = isOpen || isDetailOpen ? layout.mode : 'closed';
   const isOverlay = mode === 'overlay';
   const dockPanel = useDrawerPanel({ isOpen, layoutMode: layout.mode, isParked });
@@ -149,7 +149,7 @@ export const DrawerColumn = ({
 
   return (
     <DrawerContentContext.Provider
-      value={{ columnWidth: column.width, savedWidth: resizable.width, mode }}
+      value={{ columnWidth: column.width, savedWidth: dock.savedWidth, mode }}
     >
       <div
         ref={column.ref}

@@ -329,6 +329,12 @@ const ENTRIES: ReadonlyArray<Entry> = [
     drawer: { kind: 'browser', sessionId: SESSION, payload: null },
   },
   {
+    kind: 'monitoring',
+    region: 'Monitoring',
+    seed: seedSession,
+    drawer: { kind: 'monitoring', sessionId: null, payload: null },
+  },
+  {
     kind: 'plan-part',
     region: 'Part 1 of 2',
     seed: () => {

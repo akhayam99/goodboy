@@ -84,15 +84,15 @@ describe('journey: the run page, its Agents rail and an agent in the centre', ()
 });
 
 describe('journey: the board scene draws the tools rail', () => {
-  it('lists Terminal and Browser on the rail of the board, both closed', async () => {
+  it('lists the five tools on the rail of the board, all closed', async () => {
     await journey.mount({ name: 'ux39-p10-board' });
 
     screen.getByRole('heading', { name: 'Board' });
     expect(journey.location().place.at).toBe('board');
-    const names = within(toolsRail())
+    const pressed = within(toolsRail())
       .getAllByRole('button')
       .map((button) => button.getAttribute('aria-pressed'));
-    expect(names).toEqual(['false', 'false']);
+    expect(pressed).toEqual(['false', 'false', 'false', 'false', 'false']);
     expect(dockKind()).toBeNull();
   });
 });

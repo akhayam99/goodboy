@@ -323,8 +323,9 @@ inside `DockCellContext`, and the host renders that cell's tool
 go through `dockLayoutOf` inside `DrawerColumn`: every pane is its own card,
 12px apart, in the order page, detail, grid, rail, and the rail stays last
 in the dock box on the window edge whether the grid pushes or lies over the
-page. Each column has its handle on its left edge and sizes its lead tier's
-saved width; rows keep the solver's share until the grid is saved per session.
+page. Each column has its handle on its left edge. It takes the width the
+session saved for its lead tool (`drawerGrid.widths`), else its lead tier's
+shared key; rows keep the solver's share, 50/50 or 58/42 with Browser on top.
 With two panels or more on screen the focused one draws a `focus-ring` border.
 A click or a focus inside a panel or the page names it (`focusShellPanel`,
 which writes only when the key changes). F6 and ⇧F6 (`panel.focusNext`,
@@ -687,3 +688,42 @@ does not move. See [session-rail.md](./session-rail.md) for what it shows.
 There is no drawer for notes: a note lives on its line in Changes and as a row in
 Comments, and `Fix comments` (kind `fix-comments`) is the one fix action. A note
 without a branch sits in `Unassigned comments` on the Session overview.
+
+### The grid saved on the session
+
+Each session remembers its dock grid: the panels, the columns, the width of
+each tool's column and the focus. It lives in `session_dock_grids` (m244), one
+row per session, deleted with it. The Board and the pages keep the grid the
+window has; they save nothing.
+
+- `useSessionDockGrid` (started by `useWindowLayout`) runs
+  `watchSessionDockGrid`. It keys on `currentSessionId`.
+- Entering a session reads its row (`recallDockGrid`). A row puts its grid in
+  place of the open tools (`slotWithGrid`), and a tool of a session that no
+  longer exists drops out. No row keeps the open tools, so a session saved by
+  0.39 opens with the dock of its window layout. A Terminal whose tab is gone
+  closes itself (`TerminalDrawer`), and the next save leaves it out.
+- A change on a session waits 300ms, then `rememberDockGrid` writes it. The
+  write names the session the change was made on. Leaving the session writes
+  the waiting change at once, still on that session.
+- A column handle writes the width on the grid (`resizeDockColumn`), not in
+  the shared `goodboy:*-drawer-width:v1` keys. A double click writes the tier
+  default. A column with no saved width starts from its tier's key: the keys
+  are read that way until 0.42.0, then retired
+  ([versioning.md](../versioning.md#retired-state)). The detail column keeps
+  its key.
+
+| Write or read   | What happens                                                                                                                                         |
+| --------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Target          | The session the change was made on, read when it happened.                                                                                           |
+| State change    | The live grid moves at once; the row changes only when the write lands.                                                                              |
+| Failed save     | The row keeps the grid before it, and `reportError` shows the error on the session. Opening the session again brings that grid back.                 |
+| Retry           | The next change writes the whole grid again.                                                                                                         |
+| Late read       | A row that answers after the window left the session, or after the user opened or closed a tool, is dropped (`dockGridRecalls`).                     |
+| Order           | The writes and the read of one session queue in call order (`dockGridWrites`).                                                                       |
+| Second window   | The last write wins: a write older than the row (`updated_at`) changes nothing. A window shows the other's grid the next time it enters the session. |
+| Deleted session | The row goes with the session; a write for it writes nothing.                                                                                        |
+
+`watchSessionDockGrid.test.ts`, `storedDockGrid.test.ts`,
+`session-dock-grid.test.ts` and `restore-previous-build.test.ts` cover each
+row.

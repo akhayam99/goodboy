@@ -2,8 +2,14 @@ import { useCallback, useRef } from 'react';
 import { columnPairLayoutOf } from '../columnPairLayoutOf';
 import type { SolvedDockFrame } from '../dockGridFrameOf';
 import { DOCK_FOCUS_DETAIL, type DockGridCell, type DockGridSpec } from '../dockGridSpec';
-import type { DrawerPlacement, DrawerSizing, PanelPairLayout } from '../drawerGeometry';
+import {
+  DRAWER_TIERS,
+  type DrawerPlacement,
+  type DrawerSizing,
+  type PanelPairLayout,
+} from '../drawerGeometry';
 import type { SplitHandleProps } from '../components/SplitHandle';
+import { savedHandleOf } from '../savedHandleOf';
 import { useDockGrid, type DockSolveParams } from '../useDockGrid';
 import { useDrawerTierWidths } from '../useDrawerTierWidths';
 import { useDrawerTierWidthSet } from '../useDrawerTierWidthSet';
@@ -31,6 +37,7 @@ type DockFrame = {
   readonly cells: ReadonlyArray<DockGridCell>;
   readonly isOpen: boolean;
   readonly resizable: ResizableWidth<HTMLElement>;
+  readonly savedWidth: number;
   readonly detailWidths: ResizableWidth<HTMLElement>;
   readonly layout: PanelPairLayout;
   readonly grid: ReturnType<typeof useDockGrid>;
@@ -68,12 +75,14 @@ export const useDockFrame = ({
   const routeDock = useCallback((next: number) => dockRoute.current(next), []);
   const tiers = useDrawerTierWidthSet({ onPreview: routeDock });
   const resizable = tiers[sizing];
+  const single = cells.length === 1 ? (cells[0] ?? null) : null;
+  const savedWidth = single?.savedWidth ?? resizable.width;
   const detailWidths = useDrawerTierWidths({ sizing: detailSizing, onPreview: previewDetail });
   const pairLayout = columnPairLayoutOf({
     columnWidth,
     railWidth,
     placement,
-    dock: { sizing, savedWidth: resizable.width, isOpen },
+    dock: { sizing, savedWidth, isOpen },
     detail: { sizing: detailSizing, savedWidth: detailWidths.width, isOpen: isDetailOpen },
   });
   const isDetailShown = isDetailOpen && !isDetailParked;
@@ -102,11 +111,17 @@ export const useDockFrame = ({
     cells,
     isOpen,
     resizable,
+    savedWidth,
     detailWidths,
     layout,
     grid,
     dockHandle: grid.handles[0] ?? {
-      ...resizable.handleProps,
+      ...savedHandleOf({
+        handle: resizable.handleProps,
+        key: single?.key ?? null,
+        baseWidth: DRAWER_TIERS[sizing].fallback,
+        onResize: dockGrid?.onResize,
+      }),
       max: layout.dock.dragMax,
       value: layout.dock.width,
       side: 'right',

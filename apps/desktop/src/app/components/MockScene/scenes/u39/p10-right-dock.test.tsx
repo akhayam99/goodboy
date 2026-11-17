@@ -184,13 +184,14 @@ describe('the ux39 right dock scenes', () => {
     );
   });
 
-  it('ux39-p4-column-folded shows New, the six places and Settings, no tool, on the places rail', async () => {
+  it('ux39-p4-column-folded shows the workspace, New, the six places, Settings and Report, no tool, on the places rail', async () => {
     await mount('ux39-p4-column-folded');
 
     const places = Array.from(
       screen.getByRole('navigation', { name: 'Places' }).querySelectorAll('[data-shell-rail-item]'),
     ).map((item) => item.getAttribute('data-shell-rail-item'));
     expect(places).toEqual([
+      'workspace',
       'new',
       'board',
       'inbox',
@@ -199,6 +200,7 @@ describe('the ux39 right dock scenes', () => {
       'connections',
       'impact',
       'settings',
+      'report',
     ]);
   });
 });

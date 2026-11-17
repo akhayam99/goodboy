@@ -5,6 +5,7 @@ import { panelFocusKeyOf } from '../../../store/slices/drawer/panelFocusKeyOf';
 import { shellPanelsOf } from '../../../store/slices/drawer/shellPanelsOf';
 import { focusShellPanel } from '../../../shared/shellFocus/focusShellPanel';
 import { turnShellPair } from '../../../shared/shellFocus/turnShellPair';
+import { resizeShellColumn } from '../../../shared/shellFocus/resizeShellColumn';
 import { selectDrawerPlacement } from '../../../store/slices/drawer/selectDrawerPlacement';
 import { useAppStore } from '../../../store';
 import { drawerSizingOf } from '../../../store/slices/drawer/drawerSizingOf';
@@ -55,11 +56,16 @@ export const useShellRight = ({}: Params): ShellRight => {
     });
     return {
       columns: panels.tools.map((column) =>
-        column.map((panel) => ({ key: panel.kind, sizing: DRAWER_KINDS[panel.kind].sizing })),
+        column.map((panel) => ({
+          key: panel.kind,
+          sizing: DRAWER_KINDS[panel.kind].sizing,
+          savedWidth: drawerGrid.widths[panel.kind],
+        })),
       ),
       focus: panelFocusKeyOf({ panels }),
       onFocus: focusShellPanel,
       onTurn: turnShellPair,
+      onResize: resizeShellColumn,
     };
   }, [drawer, drawerBack, drawerGrid, currentSessionId, appStudio]);
   return {

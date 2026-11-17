@@ -47,6 +47,9 @@ import { useSessionSidebarVisibility } from '../../features/workspace/hooks/useS
 import { useLevelCardFold } from '../../app/components/SessionRail/SessionLevel/useLevelCardFold';
 import { useRailTreeOpen } from '../../app/components/SessionRail/SessionLevel/useRailTreeOpen';
 import { PREVIOUS_BUILD_BLOBS } from './previousBuildBlobs';
+import { READER_DRAWER_STORAGE_KEY, RIGHT_DRAWER_STORAGE_KEY } from '@goodboy/ui';
+import { selectGridTool } from '../../store/slices/drawer/selectGridTool';
+import { watchSessionDockGrid } from '../../features/workspace/hooks/useSessionDockGrid/watchSessionDockGrid';
 
 const WS = brandId<WorkspaceId>({ value: 'ws-harborline' });
 const SESSION = brandId<SessionId>({ value: 'session-ledger-core' });
@@ -341,5 +344,35 @@ describe('fold states saved by the previous build', () => {
         isOpenByDefault: true,
       }),
     ).toBe(true);
+  });
+});
+
+describe('the dock grid on a database the previous build left', () => {
+  it('keeps the Terminal dock of a saved layout on a session that saved no grid', async () => {
+    const stop = watchSessionDockGrid({ store: useAppStore, delayMs: 0 });
+    const entry = PREVIOUS_BUILD_BLOBS.drawers.find((blob) => blob.kind === 'terminal');
+    if (entry === undefined) {
+      throw new Error('no Terminal blob of the previous build');
+    }
+
+    await restoredFrom({ entry });
+    await vi.waitFor(() => {
+      expect(selectGridTool({ state: useAppStore.getState(), kind: 'terminal' })).not.toBeNull();
+    });
+    stop();
+
+    const state = useAppStore.getState();
+    expect(state.currentSessionId).toBe(SESSION);
+    expect(state.drawer?.kind).toBe('terminal');
+    expect(selectGridTool({ state, kind: 'terminal' })).not.toBeNull();
+  });
+
+  it('names the release that stops reading the width keys a dock column starts from', () => {
+    const row = readFileSync(join(SRC, '..', '..', '..', 'docs', 'versioning.md'), 'utf8')
+      .split('\n')
+      .find((line) => line.startsWith('|') && line.includes(RIGHT_DRAWER_STORAGE_KEY));
+
+    expect(row).toContain(READER_DRAWER_STORAGE_KEY);
+    expect(row?.split('|').map((cell) => cell.trim())[4]).toBe('0.42.0');
   });
 });
