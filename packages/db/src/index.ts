@@ -141,6 +141,7 @@ export {
   type SessionTitleRef,
 } from './queries/session';
 export { getSessionContextSeenAt, setSessionContextSeenAt } from './queries/session-context-seen';
+export { getSessionDockGrid, saveSessionDockGrid } from './queries/session-dock-grid';
 export {
   insertSessionContextItems,
   listSessionContextItems,
