@@ -68,11 +68,12 @@ const stateOf = ({ view, entry }: EntryParams): DockPlan => {
   }
   const attempt = latestAttemptOf({ view, entry });
   const open = row.artifact.openReviseDelegationId;
-  if (open !== null) {
-    const planner = view.delegations.find((delegation) => delegation.id === open) ?? null;
-    return { ...shared, kind: 'updating', by: 'planner', planner };
+  const openPlanner =
+    open === null ? null : (view.delegations.find((delegation) => delegation.id === open) ?? null);
+  if (open !== null && openPlanner?.state !== 'awaiting_confirm') {
+    return { ...shared, kind: 'updating', by: 'planner', planner: openPlanner };
   }
-  if (attempt !== null && attempt.state !== 'settled') {
+  if (attempt !== null && attempt.state !== 'settled' && attempt.state !== 'awaiting_confirm') {
     return { ...shared, kind: 'updating', by: 'planner', planner: attempt };
   }
   const sent = view.sentChange ?? null;

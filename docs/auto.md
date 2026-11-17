@@ -406,7 +406,8 @@ writing to it reopens it to **Deciding**.
   (`planBlockedReasonOf`); when the Next step already asks for that
   revision, Approve is left out so Continue stays the one primary. The new
   plan counts on as v2 while v1 reads
-  Superseded. An open revise and a change sent for v1 read the same way. A
+  Superseded. An open revise and a change sent for v1 read the same way. A planner still waiting for your go (`awaiting_confirm`) does not, so the plan keeps
+  asking for v1. A
   planner that failed reads "Plan v2 failed" with the reason, **Retry plan
   v2** and **Keep plan v1**; Keep stores `request.keptBase` on the failed
   delegation (`keepAutoPlanBase`, refused once v1 is no longer current), and
