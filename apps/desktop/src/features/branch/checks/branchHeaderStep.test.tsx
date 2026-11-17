@@ -303,12 +303,12 @@ describe('the branch header step runs the Overview chain on any tab', () => {
     await waitFor(() => expect(store.getState().sessionPhaseRuns[seed.sessionId]?.length).toBe(1));
   });
 
-  it('moves on to Start fix once the Debugger proposed one, and starts the fixer', async () => {
+  it('moves on to Apply fix once the Debugger proposed one, and starts the fixer', async () => {
     showStep({ phase: 'proposal' });
     const spawn = vi.spyOn(store.getState(), 'spawnAgent');
 
-    expect(headerStep()?.textContent).toBe('Start fix');
-    fireEvent.click(screen.getByRole('button', { name: 'Start fix' }));
+    expect(headerStep()?.textContent).toBe('Apply fix');
+    fireEvent.click(screen.getByRole('button', { name: 'Apply fix' }));
 
     await waitFor(() => expect(spawn).toHaveBeenCalledTimes(1));
     expect(spawn).toHaveBeenCalledWith(
@@ -369,8 +369,8 @@ describe('the branch header step runs the Overview chain on any tab', () => {
         </ToastProvider>,
       );
 
-      expect(headerStep()?.textContent).toBe('Start fix');
-      fireEvent.click(screen.getByRole('button', { name: 'Start fix' }));
+      expect(headerStep()?.textContent).toBe('Apply fix');
+      fireEvent.click(screen.getByRole('button', { name: 'Apply fix' }));
 
       await waitFor(() => expect(startFollowUp).toHaveBeenCalledTimes(1));
       expect(startFollowUp).toHaveBeenCalledWith(
@@ -568,8 +568,8 @@ describe('the branch header step runs the Overview chain on any tab', () => {
       </ToastProvider>,
     );
 
-    expect(headerStep()?.textContent).toBe('Start fix');
-    fireEvent.click(screen.getByRole('button', { name: 'Start fix' }));
+    expect(headerStep()?.textContent).toBe('Apply fix');
+    fireEvent.click(screen.getByRole('button', { name: 'Apply fix' }));
 
     await waitFor(() => expect(startFollowUp).toHaveBeenCalledTimes(1));
     expect(startFollowUp).toHaveBeenCalledWith(
@@ -774,7 +774,7 @@ describe('one agent per branch, whichever door starts it', () => {
     await expect(actions.primary?.run()).rejects.toThrow(ANALYZING);
   });
 
-  it('refuses Start fix on one check while a Debugger works on another', async () => {
+  it('refuses Apply fix on one check while a Debugger works on another', async () => {
     seed = checksAnalyzeSeed({ phase: 'proposal' });
     const lint = anAgent({
       sessionId: seed.sessionId,

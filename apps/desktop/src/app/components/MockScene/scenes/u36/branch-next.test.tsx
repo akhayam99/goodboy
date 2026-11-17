@@ -95,10 +95,10 @@ describe('the u36 branch next step scenes', () => {
     expect(headerStep()).toBeNull();
   });
 
-  it('moves on to Start fix once the Debugger proposed one', async () => {
+  it('moves on to Apply fix once the Debugger proposed one', async () => {
     mount({ id: 'u36-p16-start-fix' });
 
-    await waitFor(() => expect(headerStep()?.textContent).toBe('Start fix'));
+    await waitFor(() => expect(headerStep()?.textContent).toBe('Apply fix'));
   });
 
   it('ends a merged branch with Remove worktree while the folder is there', async () => {

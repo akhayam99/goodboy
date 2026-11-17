@@ -53,7 +53,7 @@ describe('Debugger scenes', () => {
   it('opens the options scene on the recommended option', () => {
     show({ name: 'debugger-drawer-options' });
     const drawer = screen.getByRole('region', { name: 'Debugger' });
-    expect(within(drawer).getByRole('button', { name: 'Start option A' })).toBeDefined();
+    expect(within(drawer).getByRole('button', { name: 'Apply option A' })).toBeDefined();
   });
   it('opens the log scene with the log folded', () => {
     show({ name: 'debugger-drawer-ci-log' });

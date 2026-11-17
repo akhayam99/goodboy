@@ -52,10 +52,10 @@ const show = ({ name }: Params) => {
 const needsYou = (): HTMLElement => screen.getByRole('region', { name: 'Branches' });
 
 describe('next follow-ups scenes', () => {
-  it('offers Start fix once, on the Fix row of Needs you, once the analyze run proposed a fix', () => {
+  it('offers Apply fix once, on the Fix row of Needs you, once the analyze run proposed a fix', () => {
     show({ name: 'overview-after-analyze-light' });
-    expect(screen.getAllByRole('button', { name: 'Start fix' })).toHaveLength(1);
-    expect(within(needsYou()).getAllByRole('button', { name: 'Start fix' })).toHaveLength(1);
+    expect(screen.getAllByRole('button', { name: 'Apply fix' })).toHaveLength(1);
+    expect(within(needsYou()).getAllByRole('button', { name: 'Apply fix' })).toHaveLength(1);
   });
   it('offers Push once, on the Fix row of Needs you, once the fix committed on the branch', () => {
     show({ name: 'overview-after-fix-dark' });

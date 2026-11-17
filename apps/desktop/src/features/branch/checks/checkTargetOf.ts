@@ -30,7 +30,8 @@ export const checkTargetOf = ({
     (latest, agent) =>
       agent.sourceKind !== 'failed_check' ||
       agent.sourceCommentUrl === undefined ||
-      selectCheckMount({ state, url: agent.sourceCommentUrl }) !== mountId ||
+      (agent.mountId !== mountId &&
+        selectCheckMount({ state, url: agent.sourceCommentUrl }) !== mountId) ||
       agent.parentAgentId !== undefined ||
       agent.deletedAt !== undefined ||
       (latest !== null && latest.ordinal > agent.ordinal)

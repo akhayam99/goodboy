@@ -63,15 +63,27 @@ const rowWord = (): string | null =>
     ?.getAttribute('data-item-work-state') ?? null;
 
 describe('analyze fix scenes', () => {
-  it('opens the Debugger from the proposal row, Start fix beside Dismiss in the drawer only', () => {
+  it('reads Cause found with Review fix, and opens the proposal under the row', () => {
     show({ name: 'checks-proposal' });
     expect(rowWord()).toBe('causeFound');
-    expect(document.querySelector('[data-check-status]')?.textContent).toContain('Cause found');
+    expect(document.querySelector('[data-check-status]')?.textContent).toContain(
+      'Cause found·The retry path does not check whether the invoice was already credited.',
+    );
     expect(screen.queryByText('Fix proposed')).toBeNull();
-    expect(screen.queryByRole('button', { name: 'Start fix' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Apply fix' })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Review fix' }));
+    const proposal = screen.getByRole('region', { name: 'Proposed fix for payments-api / test' });
+    within(proposal).getByRole('button', { name: 'Apply fix' });
+    within(proposal).getByRole('button', { name: 'Dismiss' });
+    within(proposal).getByText(/^Implementer · /);
+  });
+  it('opens the Debugger from the proposal row, Apply fix beside Dismiss in the drawer only', () => {
+    show({ name: 'checks-proposal' });
+    fireEvent.click(screen.getByRole('button', { name: 'Review fix' }));
     openRow();
     const drawer = screen.getByRole('region', { name: 'Debugger' });
-    expect(within(drawer).getByRole('button', { name: 'Start fix' })).toBeDefined();
+    expect(screen.getAllByRole('button', { name: 'Apply fix' })).toHaveLength(1);
+    expect(within(drawer).getByRole('button', { name: 'Apply fix' })).toBeDefined();
     expect(within(drawer).getByText(/^Implementer · /)).toBeDefined();
     const chain = within(drawer).getByRole('list', { name: 'Agent chain' });
     expect(within(chain).getByText('Proposal')).toBeDefined();
@@ -81,12 +93,13 @@ describe('analyze fix scenes', () => {
       within(drawer).getByText('Dismissed. Analyze again for another proposal.'),
     ).toBeDefined();
     expect(within(chain).getByText('Dismissed')).toBeDefined();
-    expect(within(drawer).queryByRole('button', { name: 'Start fix' })).toBeNull();
+    expect(within(drawer).queryByRole('button', { name: 'Apply fix' })).toBeNull();
   });
   it('shows the Implementer fixing in the row and in the chain', () => {
     show({ name: 'checks-fixing' });
     expect(rowWord()).toBe('fixing');
-    expect(screen.queryByRole('button', { name: 'Start fix' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Apply fix' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Review fix' })).toBeNull();
     openRow();
     const drawer = screen.getByRole('region', { name: 'Debugger' });
     expect(within(drawer).getByText('Implementer is applying it on the branch.')).toBeDefined();
