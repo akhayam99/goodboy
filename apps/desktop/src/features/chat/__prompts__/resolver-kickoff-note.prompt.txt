@@ -23,6 +23,7 @@ Pick one outcome marker per thread:
 <<comment-resolved threadId="the id above" commitSha="the sha you committed">> after a commit.
 <<comment-wontfix threadId="the id above" reason="one plain-text line">> without a change.
 <<needs-input id="the thread id" options="first option|second option" recommended="the option you recommend, copied from the list">>one sentence naming the choice<</needs-input>> when the comment reads two ways that lead to different code. Give two or three options. A thread reported this way has no reply block yet.
+<<comment-needs-run threadId="the id above" reason="one plain-text line: what you found">> when reading the code shows the comment asks for more than one focused change: a rewrite across several files, new routes or new components. Stop early on that thread: change nothing for it, name what it touches in the reason and go on. The owner can start a run for it with what you found. A thread reported this way has no commit and no reply block.
 The reply block carries the answer the reviewer reads, and it posts only on the thread whose id it names:
 <<comment-reply id="the id above">>the answer for that thread<</comment-reply>>
 A complete report for the 1 thread of this run reads exactly like this:

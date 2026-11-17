@@ -259,6 +259,36 @@ describe('spawn-from-comment', () => {
     expect(prompt).toContain('<<needs-input id="the thread id"');
     expect(prompt).not.toContain('Can I commit');
   });
+
+  it('offers needs-run as a fourth outcome that stops early, per thread, with no commit or reply', () => {
+    const prompt = buildResolverAgentArgs({ threads: threadsOf(2), pr: PR }).initialPrompt;
+
+    expect(prompt).toContain(
+      '<<comment-needs-run threadId="the id above" reason="one plain-text line: what you found">>',
+    );
+    expect(prompt).toContain('Stop early on that thread: change nothing for it');
+    expect(prompt).toContain('A thread reported this way has no commit and no reply block.');
+    expect(prompt).toContain('exactly one outcome marker for each of the 2 thread ids');
+  });
+
+  it('tells a retry of a needs-run thread to make one change, and only for that thread', () => {
+    const prompt = buildResolverAgentArgs({
+      threads: threadsOf(2),
+      pr: PR,
+      priorContext: [
+        {
+          threadId: 'PRRT_1',
+          intent: 'retry',
+          needsRun: 'It touches the ledger layout and two new components.',
+        },
+        { threadId: 'PRRT_2', intent: 'retry', needsRun: null },
+      ],
+    }).initialPrompt;
+
+    expect(prompt).toContain('> It touches the ledger layout and two new components.');
+    expect(prompt.match(/The owner asked for it as one change anyway/g)).toHaveLength(1);
+    expect(prompt).toContain('never with comment-needs-run again');
+  });
 });
 
 describe('the re-check agent', () => {

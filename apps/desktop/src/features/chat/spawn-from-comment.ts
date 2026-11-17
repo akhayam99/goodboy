@@ -200,6 +200,7 @@ const reportingSection = ({
     '<<comment-resolved threadId="the id above" commitSha="the sha you committed">> after a commit.',
     '<<comment-wontfix threadId="the id above" reason="one plain-text line">> without a change.',
     '<<needs-input id="the thread id" options="first option|second option" recommended="the option you recommend, copied from the list">>one sentence naming the choice<</needs-input>> when the comment reads two ways that lead to different code. Give two or three options. A thread reported this way has no reply block yet.',
+    '<<comment-needs-run threadId="the id above" reason="one plain-text line: what you found">> when reading the code shows the comment asks for more than one focused change: a rewrite across several files, new routes or new components. Stop early on that thread: change nothing for it, name what it touches in the reason and go on. The owner can start a run for it with what you found. A thread reported this way has no commit and no reply block.',
     'The reply block carries the answer the reviewer reads, and it posts only on the thread whose id it names:',
     '<<comment-reply id="the id above">>the answer for that thread<</comment-reply>>',
     `A complete report for the ${count} ${noun} of this run reads exactly like this:`,
@@ -230,6 +231,7 @@ export type PriorContext = {
   readonly commitShas?: ReadonlyArray<string>;
   readonly question?: string | null;
   readonly answer?: string | null;
+  readonly needsRun?: string | null;
   readonly intent: PriorContextIntent;
 };
 
@@ -240,6 +242,9 @@ const INTENT_SENTENCE: Record<PriorContextIntent, string> = {
   answer:
     'The owner answered the question you asked on this thread. Finish it the way the answer says.',
 };
+
+const NEEDS_RUN_RETRY_SENTENCE =
+  'The owner asked for it as one change anyway. Make the smallest change that answers the comment and report it with comment-resolved or comment-wontfix, never with comment-needs-run again.';
 
 const amendInstruction = ({ sha }: { readonly sha: string }): string =>
   `You already committed ${sha} for this thread. If that exact commit is still HEAD and \`git branch -r --contains ${sha}\` prints nothing, apply the new changes and run \`git commit --amend --no-edit\` to keep one commit for this thread. If HEAD moved past it or a remote contains it, make a normal new commit instead. Never rebase or force-push.`;
@@ -269,6 +274,14 @@ const priorContextBlock = ({
       lines.push(`- commits recorded last time: ${shas.join(', ')}`);
     }
     lines.push(`- ${INTENT_SENTENCE[entry.intent]}`);
+    const needsRun = entry.needsRun?.trim() ?? '';
+    if (needsRun !== '' && entry.intent === 'retry') {
+      lines.push(
+        '- last time you reported that this thread needs a run:',
+        ...quotedBody({ body: needsRun }),
+        `- ${NEEDS_RUN_RETRY_SENTENCE}`,
+      );
+    }
     const first = shas[0];
     if (first !== undefined && entry.intent === 'retry') {
       lines.push(`- ${amendInstruction({ sha: first })}`);
