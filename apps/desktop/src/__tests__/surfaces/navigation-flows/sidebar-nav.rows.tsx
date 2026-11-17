@@ -18,6 +18,7 @@ import {
   heading,
   openCrumb,
   openPalette,
+  pressBoardKey,
   sessionLevel,
   settle,
   useAppStore,
@@ -27,25 +28,52 @@ const SECOND_MOUNT_ID = 'navigation-mount-sidebar-second' as MountId;
 const SECOND_BRANCH = 'cs/second-sidebar-branch';
 const SECOND_PATH = '/work/cascade-second-sidebar-branch';
 
-const sessionsList = (): HTMLElement => {
-  const list = document.querySelector<HTMLElement>('[data-column-sessions]');
-  expect(list).not.toBeNull();
-  return list as HTMLElement;
+const sessionsList = (): HTMLElement | null =>
+  document.querySelector<HTMLElement>('[role="listbox"][aria-label="Sessions"]');
+
+const idOfRow = (row: Element): string => {
+  const text = row.textContent ?? '';
+  const session = useAppStore
+    .getState()
+    .sessions.filter((candidate) => text.startsWith(candidate.goal))
+    .sort((a, b) => b.goal.length - a.goal.length)[0];
+  return session?.id ?? '';
 };
 
-const rowOf = (sessionId: string): HTMLElement => {
-  const row = document.querySelector<HTMLElement>(
-    `[data-column-sessions] button[data-select-id="${sessionId}"]`,
-  );
-  expect(row).not.toBeNull();
-  return row as HTMLElement;
+const rowIds = (): ReadonlyArray<string> => {
+  const list = sessionsList();
+  return list === null ? [] : Array.from(list.querySelectorAll('[role="option"]'), idOfRow);
 };
 
-const rowIds = (): ReadonlyArray<string> =>
-  Array.from(
-    document.querySelectorAll('[data-column-sessions] button[data-select-id]'),
-    (row) => row.getAttribute('data-select-id') ?? '',
-  );
+const openSessions = async (): Promise<void> => {
+  if (sessionsList() !== null) {
+    return;
+  }
+  fireEvent.click(screen.getByRole('button', { name: 'Sessions' }));
+  await settle();
+};
+
+const closeSessions = async (): Promise<void> => {
+  if (sessionsList() === null) {
+    return;
+  }
+  fireEvent.click(screen.getByRole('button', { name: 'Sessions' }));
+  await settle();
+};
+
+const cardOf = (sessionId: string): HTMLElement => {
+  const card = document.querySelector<HTMLElement>(`article[data-select-id="${sessionId}"]`);
+  expect(card).not.toBeNull();
+  return card as HTMLElement;
+};
+
+const onBoard = async (): Promise<void> => {
+  await closeSessions();
+  if (document.querySelector('article[data-select-id]') !== null) {
+    return;
+  }
+  await pressBoardKey();
+};
 
 const addSecondBranch = ({ sessionId }: Ctx): void => {
   const state = useAppStore.getState();
@@ -90,7 +118,7 @@ const addSecondBranch = ({ sessionId }: Ctx): void => {
 };
 
 const currentSigns = (): ReadonlyArray<Element> =>
-  Array.from(sessionsList().querySelectorAll('[aria-current="page"]'));
+  Array.from(document.querySelectorAll('[data-shell-rail] [aria-current="page"]'));
 
 const sessionTabs = (): HTMLElement => screen.getByRole('tablist', { name: 'Session pages' });
 
@@ -98,8 +126,10 @@ const tabSigns = (): ReadonlyArray<Element> =>
   Array.from(sessionTabs().querySelectorAll('[aria-selected="true"]'));
 
 const otherSessionId = (current: SessionId): string => {
-  const last = rowIds()
-    .filter((id) => id !== current)
+  const last = useAppStore
+    .getState()
+    .sessions.filter((session) => session.id !== current)
+    .map((session) => session.id)
     .at(-1);
   expect(last).toBeDefined();
   return last as string;
@@ -115,7 +145,7 @@ let otherId = '';
 
 export const SIDEBAR_NAV_ROWS: ReadonlyArray<Row> = [
   {
-    name: 'sidebar: a session keeps the workspace level with its row selected under the session tabs',
+    name: 'rail: a session keeps the Board lit on the places rail above no session level',
     covers: ['navigate', 'sidebar:current-sign', 'rail:session-level'],
     open: async () => {
       await openCrumb(/^Overview/);
@@ -124,10 +154,10 @@ export const SIDEBAR_NAV_ROWS: ReadonlyArray<Row> = [
       await waitFor(() => {
         const signs = currentSigns();
         expect(signs).toHaveLength(1);
-        expect(signs[0]).toBe(rowOf(ctx.sessionId));
+        expect(signs[0]?.getAttribute('data-shell-rail-item')).toBe('board');
       }, WAIT);
       expect(useAppStore.getState().currentSessionId).toBe(ctx.sessionId);
-      expect(document.querySelector('[data-column-layer="nav"] [data-level-layer]')).toBeNull();
+      expect(document.querySelector('[data-shell-rail] [data-level-layer]')).toBeNull();
       expect(sessionTabs()).toBeDefined();
       expect(screen.queryByRole('button', { name: 'Back to Sessions' })).toBeNull();
     },
@@ -187,7 +217,7 @@ export const SIDEBAR_NAV_ROWS: ReadonlyArray<Row> = [
     },
   },
   {
-    name: 'pins: pin from the session head menu, Move down from the row menu, and the order survives a reload',
+    name: 'pins: pin from the session head menu, Move down from the card menu, and the order survives a reload',
     covers: ['pin:head-menu', 'row menu: Move down'],
     open: async (ctx) => {
       otherId = otherSessionId(ctx.sessionId);
@@ -196,7 +226,8 @@ export const SIDEBAR_NAV_ROWS: ReadonlyArray<Row> = [
       await waitFor(() => expect(pinnedIds()).toEqual([ctx.sessionId]), WAIT);
       await useAppStore.getState().pinSession(otherId as SessionId);
       await waitFor(() => expect(pinnedIds()).toEqual([ctx.sessionId, otherId]), WAIT);
-      fireEvent.contextMenu(rowOf(ctx.sessionId));
+      await onBoard();
+      fireEvent.contextMenu(cardOf(ctx.sessionId));
       await click(await screen.findByRole('menuitem', { name: 'Move down' }, WAIT));
       await waitFor(() => expect(pinnedIds()).toEqual([otherId, ctx.sessionId]), WAIT);
       useAppStore.setState({ sessionPins: {} });
@@ -206,6 +237,7 @@ export const SIDEBAR_NAV_ROWS: ReadonlyArray<Row> = [
     },
     lands: async (ctx) => {
       await waitFor(() => expect(pinnedIds()).toEqual([otherId, ctx.sessionId]), WAIT);
+      await openSessions();
       await waitFor(() => expect(rowIds().slice(0, 2)).toEqual([otherId, ctx.sessionId]), WAIT);
     },
   },

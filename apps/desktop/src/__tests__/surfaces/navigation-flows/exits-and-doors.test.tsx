@@ -179,11 +179,17 @@ describe('doors replace the open studio and content links stack', () => {
   it('replaces the open studio when another door is pressed', async () => {
     await boot({ seed: 'pr' });
 
-    await openDoor({ door: { name: 'Tasks', kind: 'inbox', isSidebarPage: true } });
+    await openDoor({
+      door: { name: 'Tasks', kind: 'inbox', isSidebarPage: true, isRailPlace: true },
+    });
     const withOneStudio = stack()?.entries.length ?? 0;
-    await openDoor({ door: { name: 'Workflows', kind: 'workflow', isSidebarPage: true } });
+    await openDoor({
+      door: { name: 'Workflows', kind: 'workflow', isSidebarPage: true, isRailPlace: true },
+    });
     await clickButton(/^Spend today/);
-    await openDoor({ door: { name: 'Chat', kind: 'chat', isSidebarPage: true } });
+    await openDoor({
+      door: { name: 'Chat', kind: 'chat', isSidebarPage: true, isRailPlace: true },
+    });
 
     expect(appStudioKind()).toBe('chat');
     expect(stack()?.entries.length).toBe(withOneStudio);
@@ -327,7 +333,9 @@ describe('the foot controls are doors that replace the open page', () => {
       const startSession = useAppStore.getState().currentSessionId;
       const startIndex = stack()?.index ?? 0;
 
-      await openDoor({ door: { name: 'Tasks', kind: 'inbox', isSidebarPage: true } });
+      await openDoor({
+        door: { name: 'Tasks', kind: 'inbox', isSidebarPage: true, isRailPlace: true },
+      });
       expect(appStudioKind()).toBe('inbox');
       const withOneStudio = stack()?.entries.length ?? 0;
 

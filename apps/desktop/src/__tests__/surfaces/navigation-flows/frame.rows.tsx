@@ -15,6 +15,7 @@ import {
   openCrumb,
   openPalette,
   settle,
+  pressBoardKey,
 } from './harness';
 
 const QUESTIONS_ROW = CRUMB_ROWS.find((row) => row.label === 'Questions');
@@ -126,7 +127,7 @@ export const FRAME_ROWS: ReadonlyArray<Row> = [
     name: 'frame: the Board title sits on one header row, no band above it',
     covers: ['navigate'],
     open: async () => {
-      await clickButton(/^Board/);
+      await pressBoardKey();
     },
     lands: async () => {
       await heading('Board');

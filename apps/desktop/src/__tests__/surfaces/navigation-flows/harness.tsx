@@ -35,6 +35,7 @@ import {
 import { hydrateOnboardingFromDb } from '../../../features/onboarding/onboardingSettings';
 import type { MountGithubState } from '../../../store/types';
 import { seedSessionWithMounts } from '../../helpers/seedSessionWithMounts';
+import { pressShortcut } from '../../helpers/pressKey';
 import { App } from '../../../App';
 import { STORAGE_KEYS } from '../../../shared/lib/storage-keys';
 import { openQuestionFor } from '../../../features/workspace/testing/sessionColumn';
@@ -302,6 +303,13 @@ export const settle = async (rounds = 4): Promise<void> => {
       await new Promise((resolve) => setTimeout(resolve, 25));
     });
   }
+};
+
+export const pressBoardKey = async (): Promise<void> => {
+  const anchor = await screen.findByRole('button', { name: /^Search or run \(/ });
+  anchor.focus();
+  pressShortcut({ id: 'session.board' });
+  await settle();
 };
 
 const traceActions = (): void => {
