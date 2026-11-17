@@ -84,7 +84,11 @@ export const IntegrationDetail = ({ workspaceId, workspaceName, tool, onUp }: Pr
         actions={
           page.isConnected ? (
             <>
-              <RefreshIconButton label={`Check ${label} again`} onClick={() => void page.check()} />
+              <RefreshIconButton
+                label={`Check ${label} again`}
+                isLoading={page.isChecking}
+                onClick={() => void page.check()}
+              />
               <IntegrationMenu target={page.target} />
             </>
           ) : null
