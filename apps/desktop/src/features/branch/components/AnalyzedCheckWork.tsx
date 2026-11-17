@@ -10,6 +10,7 @@ type Props = {
   readonly sessionId: SessionId;
   readonly chain: CheckChain;
   readonly state: ItemWorkState;
+  readonly detail: string | null;
 };
 
 type LiveParams = Pick<Props, 'chain' | 'state'>;
@@ -24,7 +25,7 @@ const liveAgentOf = ({ chain, state }: LiveParams) => {
   return null;
 };
 
-export const AnalyzedCheckWork = ({ sessionId, chain, state }: Props) => {
+export const AnalyzedCheckWork = ({ sessionId, chain, state, detail }: Props) => {
   const agentId = liveAgentOf({ chain, state })?.id ?? null;
   const step = useAppStore((store) => {
     if (agentId === null) {
@@ -39,7 +40,7 @@ export const AnalyzedCheckWork = ({ sessionId, chain, state }: Props) => {
   return (
     <ItemWorkLine
       state={state}
-      detail={step}
+      detail={agentId === null ? detail : step}
       agentId={agentId}
       isAgentWaiting={isAgentWaiting}
       verbs={agentId === null ? null : <ItemAgentVerbs sessionId={sessionId} agentId={agentId} />}

@@ -65,6 +65,7 @@ export const startCheckFix = ({
     origin: { sourceKind: 'failed_check', sourceCommentUrl: url },
     focus: 'none',
     mountId,
+    isRetry: chain.state === 'fix-failed',
     ...(onAccepted !== undefined && { onKickoffAccepted: onAccepted }),
   });
 };
