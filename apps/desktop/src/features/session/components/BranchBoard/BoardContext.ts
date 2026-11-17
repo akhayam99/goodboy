@@ -21,6 +21,7 @@ export type BoardContextValue = Readonly<{
   actionsFor: ActionCardActions['actionsFor'];
   openFor: ActionCardActions['openFor'];
   removal: RemoveWorktrees;
+  isMultiProject: boolean;
 }>;
 
 export const BoardContext = createContext<BoardContextValue | null>(null);

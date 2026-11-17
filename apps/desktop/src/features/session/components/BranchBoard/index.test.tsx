@@ -28,6 +28,7 @@ import { resetWorktreeStatusCache } from '../../../../store/runtime/worktreeStat
 import userEvent from '@testing-library/user-event';
 import { branchPlace } from '../../../../store/slices/navigation/place';
 import { AutoReleaseContext } from '../../../auto/autoReleaseContext';
+import { ObjectMenuProvider } from '../../../actions/components/ObjectMenuProvider';
 import {
   COLUMN_SESSION_ID,
   seedCentralColumn,
@@ -107,11 +108,22 @@ const setRequestState = ({ state }: StateParams) => {
 
 const element = () => (
   <ToastProvider>
-    <AutoReleaseContext.Provider value>
-      <SessionOverviewPane session={mountedSession()} />
-    </AutoReleaseContext.Provider>
+    <ObjectMenuProvider>
+      <AutoReleaseContext.Provider value>
+        <SessionOverviewPane session={mountedSession()} />
+      </AutoReleaseContext.Provider>
+    </ObjectMenuProvider>
   </ToastProvider>
 );
+
+type VerbsParams = {
+  readonly tile: HTMLElement;
+};
+
+const verbsOf = ({ tile }: VerbsParams): ReadonlyArray<HTMLElement> =>
+  within(tile)
+    .queryAllByRole('button')
+    .filter((button) => button.closest('[data-board-actions]') === null);
 
 const show = async () => {
   const view = render(element());
@@ -178,12 +190,15 @@ describe('the branch board on the Overview', () => {
     screen.getByRole('region', { name: 'Branches' });
   });
 
-  it('draws one tile per branch: its name, its project and one state chip', async () => {
+  it('draws one tile per branch under its project: its name and one state chip', async () => {
     seedCentralColumn({ kind: 'branches' });
     await show();
 
     const tenant = tileOf({ branch: TENANT });
-    expect(tenant.textContent).toContain('payments-api');
+    expect(tenant.closest('[data-board-project]')?.getAttribute('data-board-project')).toBe(
+      'payments-api',
+    );
+    expect(tenant.textContent).not.toContain('payments-api');
     expect(tenant.querySelectorAll('[data-board-chip]')).toHaveLength(1);
     expect(tenant.querySelector('[data-board-chip]')?.textContent).toBe('Waits for you');
     await vi.waitFor(() =>
@@ -192,8 +207,54 @@ describe('the branch board on the Overview', () => {
       ),
     );
     const ledger = tileOf({ branch: LEDGER });
-    expect(ledger.textContent).toContain('ledger-core');
+    expect(ledger.closest('[data-board-project]')?.getAttribute('data-board-project')).toBe(
+      'ledger-core',
+    );
     expect(ledger.querySelector('[data-board-chip]')?.textContent).toBe('Running');
+  });
+
+  it('groups the branches of two projects under one quiet head each, with its count', async () => {
+    seedCentralColumn({ kind: 'branches' });
+    await show();
+    const board = screen.getByRole('region', { name: 'Branches' });
+
+    const sections = [...board.querySelectorAll<HTMLElement>('[data-board-project]')];
+    const names = new Set(sections.map((section) => section.getAttribute('data-board-project')));
+    expect([...names].sort()).toEqual(['ledger-core', 'payments-api']);
+    for (const section of sections) {
+      const head = section.querySelector('[data-board-project-head]');
+      const tiles = section.querySelectorAll('[data-board-row]');
+      expect(head?.textContent).toBe(
+        `${section.getAttribute('data-board-project')}${tiles.length}`,
+      );
+      for (const tile of tiles) {
+        expect(tile.textContent).not.toContain(section.getAttribute('data-board-project') ?? '');
+      }
+    }
+  });
+
+  it('names the one project once above the board when every branch is from it', async () => {
+    seedCentralColumn({ kind: 'branches' });
+    const tenant = (useAppStore.getState().sessionProjectMounts[COLUMN_SESSION_ID] ?? []).find(
+      (mount) => mount.branch === TENANT,
+    );
+    act(() => {
+      useAppStore.setState((store) => ({
+        sessionProjectMounts: {
+          ...store.sessionProjectMounts,
+          [COLUMN_SESSION_ID]: (store.sessionProjectMounts[COLUMN_SESSION_ID] ?? []).filter(
+            (mount) => mount.projectId === tenant?.projectId,
+          ),
+        },
+      }));
+    });
+    await show();
+    const board = screen.getByRole('region', { name: 'Branches' });
+
+    expect(board.querySelectorAll('[data-board-project]')).toHaveLength(0);
+    const heads = [...board.querySelectorAll('[data-board-project-head]')];
+    expect(heads.map((head) => head.textContent)).toEqual(['payments-api']);
+    expect(board.textContent?.split('payments-api')).toHaveLength(2);
   });
 
   it('carries one button at most: Answer before the Rebase that also waits', async () => {
@@ -204,9 +265,9 @@ describe('the branch board on the Overview', () => {
     });
     await show();
 
-    const tenant = within(tileOf({ branch: TENANT })).getAllByRole('button');
+    const tenant = verbsOf({ tile: tileOf({ branch: TENANT }) });
     expect(tenant.map((button) => button.textContent)).toEqual(['Answer']);
-    expect(within(tileOf({ branch: LEDGER })).queryAllByRole('button')).toHaveLength(0);
+    expect(verbsOf({ tile: tileOf({ branch: LEDGER }) })).toHaveLength(0);
 
     const [answer] = tenant;
     fireEvent.click(answer ?? document.body);
@@ -221,7 +282,7 @@ describe('the branch board on the Overview', () => {
     });
     await show();
 
-    const tenant = within(tileOf({ branch: TENANT })).getAllByRole('button');
+    const tenant = verbsOf({ tile: tileOf({ branch: TENANT }) });
     expect(tenant.map((button) => button.textContent)).toEqual(['Rebase']);
     expect(tileOf({ branch: TENANT }).querySelector('[data-board-chip]')?.textContent).toBe(
       'Checks failing',
@@ -283,7 +344,11 @@ describe('the branch board on the Overview', () => {
     await show();
     const board = screen.getByRole('region', { name: 'Branches' });
 
-    expect(board.querySelector('[aria-expanded]')).toBeNull();
+    expect(
+      [...board.querySelectorAll('[aria-expanded]')].filter(
+        (node) => node.closest('[data-board-actions]') === null,
+      ),
+    ).toHaveLength(0);
     expect(document.querySelector('[data-slot="branch-work"]')).toBeNull();
     for (const word of [
       'Also waiting for you',
@@ -306,7 +371,7 @@ describe('the branch board on the Overview', () => {
     const tenant = tileOf({ branch: TENANT });
     expect(tenant.closest('[data-board-group]')?.getAttribute('data-board-group')).toBe('merged');
     expect(tenant.querySelector('[data-board-chip]')?.textContent).toBe('Merged');
-    expect(within(tenant).queryAllByRole('button')).toHaveLength(0);
+    expect(verbsOf({ tile: tenant })).toHaveLength(0);
   });
 
   it('shows Branches, Spend and Time tiles and leaves Questions and Artifacts to the tabs', async () => {

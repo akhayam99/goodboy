@@ -64,6 +64,7 @@ const context: BoardContextValue = {
     sizeLabel: null,
     run: async () => undefined,
   },
+  isMultiProject: false,
 };
 
 describe('the props of a board tile', () => {

@@ -6,6 +6,8 @@ import type { ActionCardModel } from '../../central/next/actionCardsOf';
 import type { ActionCardActions } from '../../central/next/useActionCardActions';
 import { cardRowIdOf } from '../../central/board/cardRowIdOf';
 import { visibleGroupsOf } from '../../central/board/visibleGroupsOf';
+import { boardProjectNamesOf } from '../../central/board/boardProjectNamesOf';
+import { BoardProjectHead } from './BoardProjectHead';
 import { BoardContext, type BoardContextValue } from './BoardContext';
 import { BoardLooseCards } from './BoardLooseCards';
 import { LOOSE_ROW_ID } from './looseRowId';
@@ -62,6 +64,8 @@ export const BranchBoard = ({ session, entries, cards: allCards, actionsFor, ope
     return byRow;
   }, [cards, rowIds, rowIdByAskId]);
   const mergeCard = useMemo(() => cards.find((card) => card.kind === MERGE_KIND) ?? null, [cards]);
+  const projectNames = useMemo(() => boardProjectNamesOf({ rows: board.rows }), [board.rows]);
+  const soleProjectName = projectNames.length === 1 ? (projectNames[0] ?? null) : null;
   const groups = visibleGroupsOf({ board, isMergedExpanded });
   const firstOpenGroup = groups.find((group) => group.id !== 'merged')?.id ?? null;
   const value: BoardContextValue = {
@@ -78,6 +82,7 @@ export const BranchBoard = ({ session, entries, cards: allCards, actionsFor, ope
     actionsFor,
     openFor,
     removal,
+    isMultiProject: projectNames.length > 1,
   };
   return (
     <div data-slot="branch-board-section" className="flex min-w-0 flex-col gap-4">
@@ -91,6 +96,9 @@ export const BranchBoard = ({ session, entries, cards: allCards, actionsFor, ope
             data-slot="branch-board"
             className="flex min-w-0 flex-col gap-4 rounded-lg bg-subtle p-3"
           >
+            {soleProjectName === null ? null : (
+              <BoardProjectHead projectName={soleProjectName} count={null} />
+            )}
             {groups.map((group) => (
               <BoardGroup
                 key={group.id}
