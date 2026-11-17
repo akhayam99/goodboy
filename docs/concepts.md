@@ -1188,6 +1188,19 @@ comments`, the tally of those words (each count filters the list), the model and
 Open transcript and Stop; a component with an `actions` slot, so bulk buttons
 sit on the same line.
 
+A run can start from comments instead of a fix. `startRoutedRun` takes
+`sourceThreadIds` and the `sourceMountId` of the comments' branch, and the Lead
+(or the one agent of a role run) is born with `sourceKind` `comment_run` and
+those thread ids, a note (`note:<id>`) and a host thread alike. No new table:
+the link is the agent's `source_kind` and `source_thread_ids`. A plan start
+with comments is refused before it writes anything, and so is a branch that
+left the session. `commentRunOf` (`features/resolve/commentRunOf.ts`) is the
+one answer to which run works on a thread: the newest `comment_run` agent that
+lists it. A stopped or deleted run frees only its own threads, and a fix
+or a re-check on the thread is never read as a run. It reads
+`sourceThreadIds`, which a light agent row leaves out (see the light rows trap
+in [traps.md](./traps.md)), so call it on a session whose agents are full.
+
 The state word carries the tone: Needs you is the only warning, Ready is neutral
 (the Apply fix button is the signal), Failed is the danger tone, except a stop
 by you.
