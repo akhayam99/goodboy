@@ -3,7 +3,7 @@ import type { ItemWorkState } from '../../live-state/itemWork/itemWorkWords';
 
 export type CheckRowAction = 'reviewFix' | 'push' | 'retryFix' | 'retryAnalysis' | 'analyzeAgain';
 
-export type CheckRowResult = {
+type CheckRowResult = {
   readonly detail: string | null;
   readonly action: CheckRowAction | null;
 };

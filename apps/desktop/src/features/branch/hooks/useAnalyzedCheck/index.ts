@@ -9,7 +9,7 @@ type Params = {
   readonly mountId: MountId | null;
 };
 
-export type AnalyzedCheck = {
+type AnalyzedCheck = {
   readonly url: string;
   readonly name: string | null;
   readonly isPushed: boolean;
