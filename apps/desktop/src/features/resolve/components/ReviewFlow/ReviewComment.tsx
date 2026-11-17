@@ -23,6 +23,8 @@ import { conversationSha } from '../../conversationAgentResult';
 import { FAILED_RUN_COPY, tryAgainLabel } from '../../failedRunCopy';
 import type { ReviewCommentBinding, ReviewCompose } from '../../hooks/useReviewCommentController';
 import { useResolveCandidateDiff } from '../../hooks/useResolveCandidateDiff';
+import { isOffTargetFix } from '../../isOffTargetFix';
+import { threadLocationOf } from '../../threadLocationOf';
 import { useResolveItemDraft } from '../../hooks/useResolveItemDraft';
 import { isResolveOnly } from '../../reviewCommentState';
 import { RESOLVE_COMMENT_UNAVAILABLE } from '../../resolveQueueCopy';
@@ -124,6 +126,7 @@ export const ReviewComment = ({
     [candidates, row.item.id],
   );
   const diff = useResolveCandidateDiff({ candidate });
+  const location = threadLocationOf({ row });
   const members = useMemo(
     () =>
       sharedCandidateThreadIds({
@@ -298,7 +301,16 @@ export const ReviewComment = ({
       {state === 'needs' && <ResolverQuestionCard sessionId={sessionId} row={row} />}
 
       {hasChange && state !== 'drafting' && (
-        <ProposedChange files={diff.files} isLoading={diff.isLoading} error={diff.error} />
+        <ProposedChange
+          files={diff.files}
+          isLoading={diff.isLoading}
+          error={diff.error}
+          isOffTarget={isOffTargetFix({
+            files: diff.files,
+            path: location?.path ?? null,
+            line: location?.line ?? null,
+          })}
+        />
       )}
 
       {members.length > 0 && remote === null && (state === 'ready' || state === 'edited') && (

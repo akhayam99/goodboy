@@ -16,6 +16,7 @@ export const REVIEW_FLOW_LABEL = {
   cancel: 'Cancel',
   noChangeCaptured: 'The agent changed no code for this comment.',
   tooLarge: 'The change is too large to show here.',
+  offTarget: 'This change does not touch the commented code.',
 } as const;
 
 export const sourceChangeLine = ({

@@ -10,11 +10,18 @@ type Props = {
   readonly isLoading: boolean;
   readonly error: string | null;
   readonly isCompact?: boolean;
+  readonly isOffTarget?: boolean;
 };
 
 const COMPACT_LINE_LIMIT = 8;
 
-export const ProposedChange = ({ files, isLoading, error, isCompact = false }: Props) => {
+export const ProposedChange = ({
+  files,
+  isLoading,
+  error,
+  isCompact = false,
+  isOffTarget = false,
+}: Props) => {
   const plan = inlineChangePlan({ files });
   let budget = COMPACT_LINE_LIMIT;
   const shownFiles = isCompact
@@ -45,6 +52,9 @@ export const ProposedChange = ({ files, isLoading, error, isCompact = false }: P
       {!isCompact && <SectionHeader label={REVIEW_FLOW_LABEL.proposedChange} headingLevel={2} />}
       {isLoading && <Skeleton className="h-16 w-full rounded-md" />}
       {error !== null && <p className="text-meta text-warning">{error}</p>}
+      {!isLoading && error === null && isOffTarget && (
+        <p className="text-meta text-muted-foreground">{REVIEW_FLOW_LABEL.offTarget}</p>
+      )}
       {!isLoading && error === null && files.length === 0 && (
         <p className="text-meta text-muted-foreground">{REVIEW_FLOW_LABEL.noChangeCaptured}</p>
       )}
