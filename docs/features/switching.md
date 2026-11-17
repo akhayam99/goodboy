@@ -4,50 +4,28 @@ Move between the tasks of a workspace without losing your place, and see from an
 
 ### Session list
 
-The left column lists the sessions of the workspace, one line each. The title is on the left. A sign on the right says whether an agent is working, you must act, or the task is done. Sessions that need you sit on top, and the open one marks its row.
+Sessions in the top bar opens the list of the workspace's sessions, from any screen. **⌘B** opens and closes it. The first time you open Goodboy after an update that took the sessions out of the left column, a card under the control says **Your sessions moved here**. **Show sessions** opens the list, and opening it in any way closes the card for good. It does not come back, and a new install never shows it.
 
-**Pick several sessions**
+The list is a search field, then the sessions in groups: **Pinned** first, then one group per state. Type to narrow by title or project, move with the arrows and press **Enter** to open a row on its Overview. **Open Board** at the foot opens the Board. The list keeps a margin from every window edge and scrolls inside.
 
-There is no checkbox.
+**Where each row of the old sidebar went**
 
-- **Shift** click picks a range.
-- **Option** click adds or removes one.
-- **Shift+Enter** and **Shift+Arrow** extend a range from the keyboard.
-- **Select** in the right click menu picks the row.
-- A quiet line under the list says so until you pick something.
-- **Mark as unread** in the same menu keeps a row lit until you open it again. **Mark as read** clears it. With several rows picked, the bar says **Mark 3 as read**.
+| In the sidebar                                     | Now                                                                  |
+| -------------------------------------------------- | -------------------------------------------------------------------- |
+| New session                                        | Top of the places rail, **⌘N**                                       |
+| Board, Tasks, Workflows, Chat, Connections, Impact | The places rail, in that order (**⌘⇧H** opens Board)                 |
+| Monitoring                                         | The right rail, as **Monitor**                                       |
+| The session list, Pinned and Done                  | Sessions in the top bar (**⌘B**) and the Board                       |
+| The workspace name                                 | The workspace mark at the top of the rail (**⌘O**, **⌘1** to **⌘9**) |
+| Settings, the bug icon, the Goodboy line           | The foot of the rail (**⌘,**, **⌘I**)                                |
 
-**Done**
+**⌘⇧[** and **⌘⇧]** still go to the previous and next session, in the order of the list. **Control+Tab** still flips through recent sessions without the list.
 
-A finished session moves to a **Done** group at the end of the list. It starts shut, so the list stays short; open it to reopen a merged session. The open session and a pinned one never move there.
-
-A session nobody touched for three days stays where it is and fades. Rest the pointer on it to see when it last moved. Touching it brings it back to full tone.
-
-**Flip through recent sessions.** Hold **Control** and press **Tab** to flip through recent sessions without the list.
-
-**Sort, group and filter.** The funnel at the right of the **Board** row sorts, groups and filters the list, and the funnel on the Board page is the same menu. **Sort** and **Group** come on top. Then come checkboxes for the statuses and projects that have sessions, **Show archived**, **Mark all as read**, and **Reset** once anything is changed.
-
-**Right click.** A right click on any session opens all its actions: pin, refresh, rename, archive and delete. Archive and delete ask first. An archived session comes back with Undo or Restore.
-
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/switch-rail-dark.webp">
-  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/switch-rail-light.webp" width="760" alt="The Northwind Sessions list in one-line rows with a state sign, Show 10 more, and a card over the open session Fix webhook retries">
-</picture>
-
-<sub>Screenshot from Goodboy 0.33.0</sub>
-
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/switch-display-options-dark.webp">
-  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/switch-display-options-light.webp" alt="The Sessions options menu open in the left column of the Northwind workspace, with Status, Project, Archive with Show archived, Sort set to Needs you first, Alphabetical, Last activity and Created, and Group set to None, PR state, Stage and Project">
-</picture>
-
-<sub>Screenshot from Goodboy 0.33.0</sub>
-
-The Sessions options menu ends with **Mark all as read**, which clears every reply you have not opened and is off when there is none. The session you are looking at counts as read, so **Mark as unread** is not offered on it while its last agent is the one on screen.
+**Sort, group and filter.** The funnel in the Board header sorts, groups and filters the sessions of the board. Pick several sessions and archive, restore or delete them on the Board: see [the board](board.md#bulk-select).
 
 ### Pin a session to keep it at the top
 
-Keep the sessions you return to at the top of the list. **Pin session** in a row's right-click menu moves it to a **Pinned** group that ignores sort and filters, and **Unpin session** puts it back. Pinned sessions keep their order on the Board.
+Keep the sessions you return to at the top of the list. The pin on a row of the Sessions list, or **Pin session** in the session's action menu, moves it to a **Pinned** group that ignores sort and filters, and **Unpin session** puts it back. Pinned sessions keep their order on the Board.
 
 ### Now chip
 

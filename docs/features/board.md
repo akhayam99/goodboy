@@ -1,6 +1,6 @@
 # The board
 
-The Board shows every session of a workspace, as a board in lanes by stage, so you see where each task stands and which ones need you. Sessions move between lanes by themselves as their work changes. The list of sessions lives in the sidebar, so the page stays a board. Open a session and come back: the board is as you left it, with the same scroll and the same cards selected.
+The Board shows every session of a workspace, as a board in lanes by stage, so you see where each task stands and which ones need you. Sessions move between lanes by themselves as their work changes. Sessions in the top bar lists the same sessions, so the page stays a board. Open a session and come back: the board is as you left it, with the same scroll and the same cards selected.
 
 ### Stage board
 
@@ -15,7 +15,7 @@ See where each task stands without moving cards around. Six lanes, **building**,
 
 ### Done and Archived lanes
 
-Finished work stays in view. In the sidebar, finished sessions close the list in a **Done** group that starts shut, so a merged session is one click from reopening. A session that never opens a pull request reaches **Done** too: an answer from a read-only agent, a report, a plan, or a finished edit in a folder with no branch reads **Done** with the reason "answered", "report ready", "plan ready" or "finished" in the hover card, once its reply is read and nothing is running or open; writing again brings it back. A session whose pull request merged or closed also leaves the sidebar's live list at once, unless you wrote after the merge. The **Done** lane header carries a **⋯** menu with **Archive all in Done** and **Archive done older than 7 days** (by the session's last activity), each archiving at once with **Undo**, or asking first when an agent there is still live, like the card menu. **Done** and **archived** are lanes like the others, and **Restore** on an archived card puts the session back where it belongs. On a narrow window the two share the last lane.
+Finished work stays in view. In Sessions, in the top bar, finished sessions sit in a **Done** group after the others, so a merged session is one click from reopening. A session that never opens a pull request reaches **Done** too: an answer from a read-only agent, a report, a plan, or a finished edit in a folder with no branch reads **Done** with the reason "answered", "report ready", "plan ready" or "finished" in the hover card, once its reply is read and nothing is running or open; writing again brings it back. A session whose pull request merged or closed also leaves the sidebar's live list at once, unless you wrote after the merge. The **Done** lane header carries a **⋯** menu with **Archive all in Done** and **Archive done older than 7 days** (by the session's last activity), each archiving at once with **Undo**, or asking first when an agent there is still live, like the card menu. **Done** and **archived** are lanes like the others, and **Restore** on an archived card puts the session back where it belongs. On a narrow window the two share the last lane.
 
 ### Session card
 

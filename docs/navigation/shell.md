@@ -493,6 +493,13 @@ covered.
   filters by title or project, the arrows and Enter open a row, and the pin
   calls `pinSession` or `unpinSession`, which leave the row in place when the
   write fails.
+  After an update from a build that had the sidebar list, a one-time card
+  under the Sessions control (`SessionsCard`, 300px wide, the same placement
+  rule) reads "Your sessions moved here" with **Show sessions**. It is not a
+  dialog and blocks nothing. Opening Sessions in any way, the key included,
+  closes it for good: the close is saved (`shell.sessionsCardClosed`) before
+  the card goes, so a failed save keeps it and the next open retries. A fresh
+  install never shows it (`store/slices/sessions-card/`).
 - Centre: the movement cluster, then the command center. `Back` and `Forward`
   (24px icons) name their destination in the label and the tooltip
   (`Back: Comments`, the session on a second line, `Hold to show history` on a
@@ -680,7 +687,7 @@ page on the `guideChapter` reader frame, with Previous and Next; the Help search
 opens the first hit and flashes its point, Escape clears it. The chapter
 "Listens" holds one table of prefixes (`PrefixTable`, read from
 `quick-actions/grammar.ts`): `$` means Scripts in the palette and the composer. The chapter
-"Sidebar and session pages" restates this shell in `guideChapters.ts`, and
+"Rail, Sessions and session pages" restates this shell in `guideChapters.ts`, and
 `guideChapters.test.ts` pins its names against `COLUMN_DOORS`, the page
 registry and `NEW_DRAWER_FORMS`, and pins the word budget; the Legend draws its session marks through
 `sessionNodeOf`, so a new mark appears there without a second table. The addresses live in

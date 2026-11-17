@@ -254,7 +254,7 @@
         },
         {
           "title": "Session list",
-          "text": "The left column lists the sessions of the workspace, one line each.",
+          "text": "Sessions in the top bar opens the list of the workspace's sessions, from any screen.",
           "group": "Switch between tasks",
           "main": true
         },
