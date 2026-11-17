@@ -177,13 +177,13 @@ export const persistResolveTurn = async ({
     await saveResolveThread({ db, row: next, expectedRevision: previous?.revision ?? null });
   }
   if (!isCandidate && attempt !== undefined) {
-    const waiting = (await listResolveThreads({ db, sessionId })).some(
+    const isWaiting = (await listResolveThreads({ db, sessionId })).some(
       (row) => processed.includes(row.threadId) && row.state === 'needs_answer',
     );
     await setResolveAttemptPhase({
       db,
       id: attempt.id,
-      ...turnAttemptPhase({ hasSilentThread, hasNeedsRun, isWaiting: waiting }),
+      ...turnAttemptPhase({ hasSilentThread, hasNeedsRun, isWaiting }),
     });
   }
   if (!isCandidate) {

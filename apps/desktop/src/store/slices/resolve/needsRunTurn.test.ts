@@ -165,7 +165,7 @@ describe('a fixer that says a comment needs a run', () => {
     const db = storySqlite();
     await db.execute('UPDATE resolve_attempts SET started_at = 1 WHERE id = ?', [attemptId]);
     await insertMessage(db, {
-      id: crypto.randomUUID() as MessageId,
+      id: brandId<MessageId>({ value: crypto.randomUUID() }),
       sessionId: session.id,
       agentId: resolver.id,
       role: 'assistant',
