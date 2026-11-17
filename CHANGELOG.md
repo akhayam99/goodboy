@@ -97,6 +97,7 @@ Menus and popovers open inside the window and keep 12 pixels from every edge.
 
 - A branch whose pull request was closed without merging reads Closed on the session board, in its own group, instead of Merged. <!-- gb area=sessions -->
 - Long text fields keep the caret in view while you type. <!-- gb area=app -->
+- A message you send lands just below the page header instead of behind it. <!-- gb area=sessions -->
 - Goodboy no longer opens with Goodboy hit an error last time after an update. Queries wait for the database to finish updating. <!-- gb area=storage -->
 - Onboarding with an older Claude CLI shows Update needed, with an Update button, and no longer spends a request on the check. <!-- gb area=providers -->
 - Installing a CLI with npm falls back to the public registry when your registry is unreachable. <!-- gb area=providers -->
