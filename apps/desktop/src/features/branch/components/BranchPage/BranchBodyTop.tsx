@@ -1,41 +1,25 @@
 import type { ReactNode } from 'react';
 import { PageColumn } from '@goodboy/ui';
 import type { Session } from '@goodboy/types';
-import type { FixRun } from '../../../resolve/fixRun';
-import type { LaneStatus } from '../../../resolve/laneStatus';
 import type { BranchControls } from '../../hooks/useBranchControls';
 import { BranchNotices } from '../BranchNotices';
-import { BranchWorkLines } from '../BranchWorkLines';
 
 type Props = {
   readonly session: Session;
   readonly controls: BranchControls;
-  readonly review: { readonly run: FixRun | null; readonly lane: LaneStatus | null };
-  readonly isFixRunShown: boolean;
   readonly isPushNext: boolean;
   readonly isSetupOfferShown: boolean;
   readonly baseRow: ReactNode;
-  readonly onOpenComments: () => void;
 };
 
 export const BranchBodyTop = ({
   session,
   controls,
-  review,
-  isFixRunShown,
   isPushNext,
   isSetupOfferShown,
   baseRow,
-  onOpenComments,
 }: Props) => (
   <PageColumn width="column" className="flex shrink-0 flex-col gap-2 pb-3 empty:hidden">
-    <BranchWorkLines
-      session={session}
-      run={review.run}
-      lane={review.lane}
-      isFixRunShown={isFixRunShown}
-      onOpenComments={onOpenComments}
-    />
     <BranchNotices
       sessionId={session.id}
       controls={controls}

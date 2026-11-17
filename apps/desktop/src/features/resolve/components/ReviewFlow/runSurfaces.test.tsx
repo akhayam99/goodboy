@@ -79,16 +79,26 @@ const list = (): HTMLElement => screen.getByRole('navigation', { name: 'Comments
 
 const comment = (): HTMLElement => screen.getByRole('article', { name: 'Comment' });
 
-describe('Fix run status line', () => {
-  it('shows one tail line for the run with its controls, the counts left to the groups', async () => {
+const counter = (): HTMLElement => {
+  const count = document.querySelector<HTMLElement>('[data-fix-run-count]');
+  if (count === null) {
+    throw new Error('no fix run count');
+  }
+  return count;
+};
+
+describe('Fix run count', () => {
+  it('counts the run quietly in the toolbar, with its verbs in one menu and no status line', async () => {
     await mount({ threadId: null });
 
-    const status = within(screen.getByTestId('resolve-run-status'));
-    expect(status.getByText('Fixing 1 of 4 comments')).toBeDefined();
-    expect(status.queryByRole('button', { name: /need you|working|ready to push/ })).toBeNull();
-    expect(status.queryByText('Sonnet 5 · Medium')).toBeNull();
-    expect(status.getByRole('button', { name: 'Open transcript' })).toBeDefined();
-    expect(status.getByRole('button', { name: 'Stop' })).toBeDefined();
+    const count = within(counter());
+    expect(count.getByRole('status').textContent).toMatch(/^Fixing·4 of 4/);
+    expect(count.queryByRole('button', { name: /need you|working|ready to push/ })).toBeNull();
+    expect(count.queryByText('Sonnet 5 · Medium')).toBeNull();
+    expect(screen.queryByTestId('resolve-run-status')).toBeNull();
+    fireEvent.click(count.getByRole('button', { name: 'Fix actions' }));
+    expect(await screen.findByRole('menuitem', { name: 'Open transcript' })).toBeDefined();
+    expect(screen.getByRole('menuitem', { name: 'Stop all' })).toBeDefined();
   });
 
   it('runs every comment of the launch on the model the status line names', async () => {
@@ -103,14 +113,31 @@ describe('Fix run status line', () => {
     expect(models.size).toBe(1);
   });
 
-  it('stops the run from the status line', async () => {
+  it('stops the run from the counter menu, behind a confirm that names the comments', async () => {
     const forceCloseResolver = vi.fn<StoreState['forceCloseResolver']>(async () => undefined);
     stub({ forceCloseResolver });
     await mount({ threadId: null });
 
-    fireEvent.click(
-      within(screen.getByTestId('resolve-run-status')).getByRole('button', { name: 'Stop' }),
+    fireEvent.click(within(counter()).getByRole('button', { name: 'Fix actions' }));
+    fireEvent.click(await screen.findByRole('menuitem', { name: 'Stop all' }));
+    expect(await screen.findByText('Stop the fix for 4 comments?')).toBeDefined();
+    expect(forceCloseResolver).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: 'Stop all' }));
+
+    await waitFor(() =>
+      expect(forceCloseResolver).toHaveBeenCalledWith(SESSION.id, 'mock-resolve-agent-idempotency'),
     );
+  });
+
+  it('stops a comment in work from its own row, behind the same confirm as the drawer', async () => {
+    const forceCloseResolver = vi.fn<StoreState['forceCloseResolver']>(async () => undefined);
+    stub({ forceCloseResolver });
+    await mount({ threadId: null });
+
+    const item = list().querySelector(`[data-thread-id="${WORKING_THREAD_ID}"]`)?.closest('li');
+    const work = item?.querySelector<HTMLElement>('[data-row-work]') ?? null;
+    expect(work).not.toBeNull();
+    fireEvent.click(within(work ?? list()).getByRole('button', { name: 'Stop' }));
     const confirm = await screen.findByRole('dialog', { name: 'Stop this fix run?' });
     fireEvent.click(within(confirm).getByRole('button', { name: 'Stop' }));
 

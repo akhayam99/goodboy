@@ -4,8 +4,9 @@ import type { FixRun } from '../../fixRun';
 import type { LaneStatus } from '../../laneStatus';
 import type { BulkRun } from './bulkRun';
 import { FixRunChecks } from './FixRunChecks';
-import { FixRunSection } from './FixRunSection';
+import { FixRunCount } from './FixRunCount';
 import { ReviewScopeBar } from './ReviewScopeBar';
+import { RunStatusBulkActions } from './RunStatusBulkActions';
 
 type Props = Omit<ComponentProps<typeof ReviewScopeBar>, 'trailing'> & {
   readonly sessionId: SessionId;
@@ -30,14 +31,16 @@ export const ReviewToolbar = ({
       {...bar}
       trailing={
         run === null ? null : (
-          <FixRunSection
-            sessionId={sessionId}
-            run={run}
-            lane={lane}
-            bulkRun={bulkRun}
-            isChecksShown={false}
-            onOpenAnswers={onOpenAnswers}
-          />
+          <div className="flex min-w-0 flex-wrap items-center justify-end gap-2">
+            {bulkRun === null ? null : (
+              <RunStatusBulkActions
+                sessionId={sessionId}
+                run={bulkRun}
+                onOpenAnswers={onOpenAnswers}
+              />
+            )}
+            <FixRunCount sessionId={sessionId} run={run} lane={lane} />
+          </div>
         )
       }
     />

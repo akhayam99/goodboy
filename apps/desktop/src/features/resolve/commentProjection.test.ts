@@ -125,11 +125,17 @@ describe('projectResolveComment', () => {
     });
   });
 
-  it('says Waiting for a comment queued behind another launch, and Fixing otherwise', () => {
+  it('says Queued for a comment waiting for its turn in a fix, and Fixing otherwise', () => {
     expect(projectResolveComment(facts({ state: 'drafting' })).label).toBe('Fixing');
     expect(
       projectResolveComment(facts({ state: 'drafting', isWaitingForSlot: true })),
-    ).toMatchObject({ word: 'working', sub: 'waiting', label: 'Waiting' });
+    ).toMatchObject({ word: 'working', sub: 'queued', label: 'Queued' });
+    expect(projectResolveComment(facts({ state: 'drafting', isHeld: true }))).toMatchObject({
+      word: 'working',
+      sub: 'queued',
+      label: 'Queued',
+    });
+    expect(projectResolveComment(facts({ state: 'new', isHeld: true })).sub).toBeNull();
   });
 
   it('shows a stop by the user as Stopped, a comment that could not be fixed, with its sentence', () => {

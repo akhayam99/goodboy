@@ -189,7 +189,9 @@ describe('fixableThreadIdsOf', () => {
 
 const SURFACES = [
   'features/resolve/components/ReviewFlow/ReviewList.tsx',
-  'features/resolve/components/ReviewFlow/ResolveRunStatus.tsx',
+  'features/resolve/components/ReviewFlow/FixRunCount.tsx',
+  'features/resolve/commentWorkOf.ts',
+  'features/resolve/commentTabLiveOf.ts',
   'features/resolve/components/ReviewFlow/PushBanner.tsx',
   'features/resolve/components/ReviewFlow/index.tsx',
   'features/resolve/fixRun.ts',

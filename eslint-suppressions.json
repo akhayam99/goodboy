@@ -4529,11 +4529,6 @@
       "count": 2
     }
   },
-  "apps/desktop/src/features/resolve/components/ReviewFlow/ResolveRunStatus.test.tsx": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 2
-    }
-  },
   "apps/desktop/src/features/resolve/components/ReviewFlow/ReviewComment.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 1

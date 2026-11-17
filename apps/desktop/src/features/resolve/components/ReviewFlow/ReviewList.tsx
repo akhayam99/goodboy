@@ -8,7 +8,9 @@ import {
   leftOpenGroupLabel,
   type ResolveGroup,
 } from '../../commentProjection';
+import type { CommentWork } from '../../commentWorkOf';
 import { REVIEW_FLOW_LABEL } from '../../reviewFlowCopy';
+import type { StopWorkParams } from './CommentWorkLine';
 import { IdentityQuietLine } from './IdentityQuietLine';
 import { ReviewListRow } from './ReviewListRow';
 import { ThreadVisitContext } from './threadVisitContext';
@@ -17,6 +19,8 @@ import type { ReviewEntry, ReviewGroup } from './useReviewEntries';
 type Props = {
   readonly sessionId: SessionId;
   readonly groups: ReadonlyArray<ReviewGroup>;
+  readonly works: ReadonlyMap<string, CommentWork>;
+  readonly onStopWork: (params: StopWorkParams) => void;
   readonly focusedThreadId: string | null;
   readonly onSelect: (threadId: string) => void;
   readonly checked: ReadonlySet<string>;
@@ -52,6 +56,8 @@ const isMixedOf = ({ groups }: MixedParams): boolean => {
 export const ReviewList = ({
   sessionId,
   groups,
+  works,
+  onStopWork,
   focusedThreadId,
   onSelect,
   checked,
@@ -95,6 +101,8 @@ export const ReviewList = ({
                   <ReviewListRow
                     sessionId={sessionId}
                     entry={entry}
+                    work={works.get(entry.threadId) ?? null}
+                    onStopWork={onStopWork}
                     isUnread={unreadThreadIds.has(entry.threadId)}
                     isSelected={entry.threadId === focusedThreadId}
                     isSourceShown={isSourceShown}

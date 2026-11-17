@@ -6,7 +6,7 @@ vi.mock('@tauri-apps/api/core', () => ({
 vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn(async () => () => undefined) }));
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { ToastProvider } from '../../../../../shared/components/Toast';
 import {
   STORE_IMPORT_TIMEOUT_MS,
@@ -158,8 +158,8 @@ describe('the u23 comments scenes', () => {
     await renderScene({ name: 'comments-ready-to-push' });
 
     expect(screen.getAllByRole('tab', { name: /^Comments\s*8$/ })).toHaveLength(1);
-    expect(screen.getAllByText('Fixing 1 of 4 comments').length).toBeGreaterThan(0);
-    expect(screen.queryByText('Fixing 4 comments')).toBeNull();
+    expect(document.querySelector('[data-tab-live="comments"]')).not.toBeNull();
+    expect(screen.queryByTestId('resolve-run-status')).toBeNull();
     const first = within(list())
       .getByRole('region', { name: 'Done' })
       .querySelector<HTMLElement>('button[data-thread-id]');
@@ -204,11 +204,11 @@ describe('the u23 comments scenes', () => {
     expect(within(bar()).getByText('R', { selector: 'kbd' })).toBeDefined();
   });
 
-  it('stops a working comment only behind a confirm, from its one live line', async () => {
+  it('stops a working comment only behind a confirm, from its own row', async () => {
     await renderScene({ name: 'comments-working' });
 
-    const line = screen.queryByTestId('resolve-run-status');
-    const home = line === null ? bar() : line;
+    await waitFor(() => expect(list().querySelector('[data-row-work]')).not.toBeNull());
+    const home = list().querySelector<HTMLElement>('[data-row-work]') ?? bar();
     expect(
       within(home).getByRole('button', {
         name: 'Open transcript',

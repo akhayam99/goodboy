@@ -94,6 +94,13 @@ const mount = async ({
 };
 
 const list = (): HTMLElement => screen.getByRole('navigation', { name: 'Comments' });
+const toolbar = (): HTMLElement => {
+  const bar = document.querySelector<HTMLElement>('[data-slot="review-scope-bar"]');
+  if (bar === null) {
+    throw new Error('no comments toolbar');
+  }
+  return bar;
+};
 const press = (key: string, code: string, init: KeyboardEventInit = {}): void => {
   fireEvent.keyDown(document.activeElement ?? list(), { key, code, ...init });
 };
@@ -184,10 +191,10 @@ describe('answers in bulk', () => {
   const answersButton = (): HTMLElement =>
     screen.getByRole('button', { name: 'Use the recommended answers (2)' });
 
-  it('offers the recommended answers in the run status line when two or more questions are open', async () => {
+  it('offers the recommended answers in the comments toolbar when two or more questions are open', async () => {
     await mount({ stage: 'answers' });
 
-    const status = screen.getByRole('region', { name: 'Fix run status' });
+    const status = toolbar();
     expect(within(status).getByRole('button', { name: 'Use the recommended answers (2)' })).toBe(
       answersButton(),
     );
@@ -484,8 +491,7 @@ describe('retry in bulk', () => {
     stub({ retryCouldntFix });
     await mount({ stage: 'retry' });
 
-    const status = screen.getByRole('region', { name: 'Fix run status' });
-    fireEvent.click(within(status).getByRole('button', { name: "Retry 1 that couldn't fix" }));
+    fireEvent.click(within(toolbar()).getByRole('button', { name: "Retry 1 that couldn't fix" }));
 
     await waitFor(() => expect(retryCouldntFix).toHaveBeenCalledOnce());
     expect(retryCouldntFix).toHaveBeenCalledWith({

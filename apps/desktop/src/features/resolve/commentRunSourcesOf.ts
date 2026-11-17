@@ -4,12 +4,10 @@ import { COMMENT_RUN_COPY } from './commentRunCopy';
 import { commentRunOf } from './commentRunOf';
 import { isOpenThread } from './isOpenThread';
 import type { ReviewCommentState } from './reviewCommentState';
-import type { RowFix } from './rowFix';
 
 type SourceEntry = {
   readonly threadId: string;
   readonly state: ReviewCommentState;
-  readonly fix: RowFix | null;
   readonly lane: CommentLane | null;
   readonly row: {
     readonly reviewerNote: { readonly path: string | null } | null;
@@ -56,8 +54,7 @@ const folderOf = ({ path }: PathParams): string | null => {
 
 const pathOf = ({ entry }: EntryParams): string | null => entry.row.reviewerNote?.path ?? null;
 
-const isFixing = ({ entry }: EntryParams): boolean =>
-  entry.state === 'drafting' || entry.fix?.kind === 'fixing';
+const isFixing = ({ entry }: EntryParams): boolean => entry.state === 'drafting';
 
 export const commentRunSourcesOf = <Entry extends SourceEntry>({
   entries,

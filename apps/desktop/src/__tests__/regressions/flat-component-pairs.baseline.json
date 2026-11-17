@@ -113,7 +113,6 @@
   "apps/desktop/src/features/providers/components/ProviderStudio/ProviderPage/ProviderAttentionNotice.tsx": 1,
   "apps/desktop/src/features/resolve/components/FixRunSummary/FixRunLead.tsx": 1,
   "apps/desktop/src/features/resolve/components/ReviewFlow/PushBanner.tsx": 1,
-  "apps/desktop/src/features/resolve/components/ReviewFlow/ResolveRunStatus.tsx": 1,
   "apps/desktop/src/features/resolve/components/ReviewFlow/ReviewerCommentBlock.tsx": 1,
   "apps/desktop/src/features/resolve/components/ReviewFlow/SourceChangeLine.tsx": 1,
   "apps/desktop/src/features/review/components/WriteReview/ReviewPanelButton.tsx": 1,

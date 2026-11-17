@@ -17,6 +17,8 @@ import { useNow } from '../../../../shared/hooks/useNow';
 import { REVIEW_LAUNCH_LABEL } from '../../reviewLaunchCopy';
 import { COMMENT_RUN_COPY } from '../../commentRunCopy';
 import { REVIEW_COMMENT_NODE } from '../../reviewCommentState';
+import type { CommentWork } from '../../commentWorkOf';
+import { CommentWorkLine, type StopWorkParams } from './CommentWorkLine';
 import { entryBodyOf, entryTitleOf } from './entryTitle';
 import { rowQualifierOf } from './rowQualifier';
 import { RowFixDiffLink } from './RowFixDiffLink';
@@ -32,6 +34,8 @@ type RowSelection = {
 type Props = {
   readonly sessionId: SessionId;
   readonly entry: ReviewEntry;
+  readonly work: CommentWork | null;
+  readonly onStopWork: (params: StopWorkParams) => void;
   readonly isUnread: boolean;
   readonly isSelected: boolean;
   readonly isSourceShown: boolean;
@@ -42,6 +46,8 @@ type Props = {
 export const ReviewListRow = ({
   sessionId,
   entry,
+  work,
+  onStopWork,
   isUnread,
   isSelected,
   isSourceShown,
@@ -73,7 +79,7 @@ export const ReviewListRow = ({
     <div
       onContextMenu={menu.onContextMenu}
       onKeyDown={menu.onKeyDown}
-      className="group/review-row group/select-row relative min-w-0"
+      className="group/review-row group/select-row group/row relative min-w-0"
     >
       <button
         type="button"
@@ -82,7 +88,8 @@ export const ReviewListRow = ({
         aria-description={qualifier ?? undefined}
         onClick={onSelect}
         className={cn(
-          'flex w-full min-w-0 items-start gap-3 rounded-md px-3 py-2 text-left',
+          'flex w-full min-w-0 items-start gap-3 rounded-md px-3 pt-2 text-left',
+          work === null ? 'pb-2' : 'pb-1',
           ROW_INTERACTIVE,
           isSelected && 'bg-selected',
         )}
@@ -123,7 +130,11 @@ export const ReviewListRow = ({
               data-row-trailing
               className="flex shrink-0 items-center gap-2 whitespace-nowrap tabular-nums"
             >
-              {qualifier === null ? stateWord : <Tooltip content={qualifier}>{stateWord}</Tooltip>}
+              {work !== null ? null : qualifier === null ? (
+                stateWord
+              ) : (
+                <Tooltip content={qualifier}>{stateWord}</Tooltip>
+              )}
               {age === '' ? null : (
                 <span data-row-age className="text-faint-foreground">
                   {age}
@@ -153,6 +164,13 @@ export const ReviewListRow = ({
           )}
         </span>
       </button>
+      {work === null ? null : (
+        <div data-row-work="" className="grid grid-cols-[20px_minmax(0,1fr)] gap-3 px-3 pb-2">
+          <div className="col-start-2 min-w-0">
+            <CommentWorkLine sessionId={sessionId} work={work} onStop={onStopWork} />
+          </div>
+        </div>
+      )}
       {isUnread ? (
         <StateDot
           state="unread"
