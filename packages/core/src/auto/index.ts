@@ -343,7 +343,11 @@ export {
 export {
   AUTO_BLOCK_CLOSE,
   AUTO_BLOCK_OPEN,
+  AUTO_CLOSE_AS,
+  AUTO_CLOSE_SHAPE,
   parseAutoBlock,
+  parseAutoCloseBlocks,
+  type AutoCloseAs,
   type AutoBlock,
   type AutoBlockOutcome,
   type ParseAutoBlockParams,

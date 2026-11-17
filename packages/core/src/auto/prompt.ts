@@ -71,6 +71,9 @@ export const AUTO_STOP_EXAMPLE =
 export const AUTO_REVISE_EXAMPLE =
   '<<auto>>{"action":"delegate","requestId":"r3","children":[{"revises":{"artifactId":"<artifact id>","expectedRevision":1},"changeFrom":["<message id>"],"task":"Rewrite the plan with what the user asked.","reason":"The user asked for a new plan."}]}<</auto>>';
 
+export const AUTO_CLOSE_EXAMPLE =
+  '<<auto>>{"action":"close","target":"<delegation id or artifact id>","as":"done","reason":"Not needed after the new plan."}<</auto>>';
+
 export const AUTO_FINISH_EXAMPLE =
   '<<auto>>{"action":"finish","summary":"What was done and what the user should know."}<</auto>>';
 
@@ -91,7 +94,7 @@ type DelegationRulesParams = {
 const delegationRules = ({ closer }: DelegationRulesParams): string =>
   [
     'HOW TO DECIDE',
-    '- You never call Goodboy from inside your turn. You decide by ending your final reply with at most one block, written last. Write nothing after it.',
+    '- You never call Goodboy from inside your turn. You decide by ending your final reply with at most one block, written last. Write nothing after it. Close blocks are the one exception: write any number of them before that last block.',
     `- Delegate: hand work to agents. One block with one to ${AUTO_BATCH_MAX_CHILDREN} children in the \`children\` list. Each child has a role from the list below, a title of at most eight words that says what it does, a task, the reason for that role, and optionally a mount, a difficulty and a done-when line. The difficulty is light, standard or heavy: how hard that child's work is. Goodboy turns the role and the difficulty into the model and effort, so never name a model or an effort.`,
     `  ${AUTO_DELEGATE_EXAMPLE}`,
     '- Propose: when you need a choice, never ask yes or no in prose; send <<auto>>{"action":"propose","primary":{"role":"scout","title":"Find the callers","task":"Read ledger-core callers.","reason":"Reading code."},"alternatives":[{"label":"Spawn an investigator first","role":"investigator"}]}<</auto>>. The primary is one child like a delegate, starts only after confirmation, and accepts an optional user hint; include at most two alternatives with only a label and role. At Never, delegate instead.',
@@ -109,6 +112,8 @@ const delegationRules = ({ closer }: DelegationRulesParams): string =>
     `  ${AUTO_STOP_EXAMPLE}`,
     '- Revise: to change an artifact (a new plan, a plan with changes), never start a second planner. Delegate one child with "revises" naming the artifact id and its version from the artifacts list, and "changeFrom" with the message ids that asked for it. Leave "role" out: Goodboy hands it to the role that made it, and the result is the next version of the same artifact.',
     `  ${AUTO_REVISE_EXAMPLE}`,
+    '- Close: keep your own work tidy so nothing waits for no reason. "target" is a delegation id or an artifact id. "as" is done (the agent is closed as done), skipped (that step is not needed), or discarded (an agent is stopped if it works and taken off the list, its transcript kept; a plan is dropped and the user is no longer asked to approve it). Closing a working agent stops it first. Before you end a turn, close every agent you no longer need and discard a plan you replaced. When the user approves plans, discarding a plan that waits for them asks them first.',
+    `  ${AUTO_CLOSE_EXAMPLE}`,
     '- When the user writes to one of your agents, that message continues the agent like your own continue: its answer comes back to you as a result.',
     FINISH_RULE[closer],
     `  ${AUTO_FINISH_EXAMPLE}`,

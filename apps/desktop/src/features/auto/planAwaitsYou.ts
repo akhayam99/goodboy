@@ -10,5 +10,5 @@ export const planAwaitsYou = ({ row, level }: Params): boolean =>
   row.artifact.kind === 'plan' &&
   row.artifact.approvalState === 'needs_approval' &&
   row.artifact.openReviseDelegationId === null &&
-  row.status !== 'consumed' &&
+  row.status === 'active' &&
   level !== 'run';

@@ -5,6 +5,8 @@ import { useConversationAsks } from '../../../store/hooks/useConversationAsks';
 import type { AutoTreeView } from '../../../store/slices/auto-view/state';
 import { dockPlanRowOf } from '../dockPlanRowOf';
 import { isAutoPlanAwaitingApproval } from '../isAutoPlanAwaitingApproval';
+import { planDiscardAskOf } from '../planDiscardAskOf';
+import { useDropAutoPlan } from '../plan/useDropAutoPlan';
 import { askBarsOf } from './askBarOf';
 import { AutoDockAsk } from './AutoDockAsk';
 import { AutoDockLive } from './AutoDockLive';
@@ -34,6 +36,7 @@ export const AutoDock = ({ sessionId, view, rootAgent, onOpenArtifact, actions }
   const agents = useAppStore((state) => state.sessionPhaseRuns[sessionId] ?? EMPTY_ARRAY);
   const { permissions, questions } = useConversationAsks({ sessionId, agentId: rootAgent.id });
   const [untold, setUntold] = useState<Readonly<Record<string, string>>>({});
+  const dropping = useDropAutoPlan({ sessionId });
   const hasAskAbove = permissions.length > 0 || questions.length > 0;
   const plan = dockPlanRowOf({ view });
   const isPlanWaiting = isAutoPlanAwaitingApproval({ view });
@@ -55,6 +58,11 @@ export const AutoDock = ({ sessionId, view, rootAgent, onOpenArtifact, actions }
           isApproveHidden={isRevisionAsked}
           isChangeSent={isPlanChangeSentOf({ view, row: plan })}
           isSettledHidden={AT_REST.has(view.tree.phase)}
+          discardAsk={planDiscardAskOf({ view, row: plan })}
+          isDropping={dropping.isDropping}
+          onDrop={() =>
+            void dropping.drop({ treeId: view.tree.id, artifactId: plan.artifact.artifactId })
+          }
         />
       )}
       {!isNextShown ? null : (

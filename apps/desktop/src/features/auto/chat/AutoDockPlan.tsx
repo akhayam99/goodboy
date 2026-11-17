@@ -8,6 +8,7 @@ import { AUTO_STATE_TONE } from './autoStateTone';
 import { planNeedsApprovalOf } from '../../../shared/utils/planNeedsApprovalOf';
 import { AutoDockPlanComments } from './AutoDockPlanComments';
 import { focusAgentComposer } from './focusAgentComposer';
+import type { PlanDiscardAsk } from '../planDiscardAskOf';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -17,6 +18,9 @@ type Props = {
   readonly isApproveHidden: boolean;
   readonly isChangeSent: boolean;
   readonly isSettledHidden: boolean;
+  readonly discardAsk: PlanDiscardAsk | null;
+  readonly isDropping: boolean;
+  readonly onDrop: () => void;
 };
 
 const SETTLED_COPY = {
@@ -35,6 +39,9 @@ export const AutoDockPlan = ({
   isApproveHidden,
   isChangeSent,
   isSettledHidden,
+  discardAsk,
+  isDropping,
+  onDrop,
 }: Props) => {
   const model = useAutoPlanApproval({
     sessionId,
@@ -99,6 +106,44 @@ export const AutoDockPlan = ({
         </span>
         <span className="flex-1" />
         {openPlan}
+      </div>
+    );
+  }
+  if (state === 'needs_approval' && discardAsk !== null && discardAsk.revision === model.version) {
+    return (
+      <div
+        data-dock-plan="discard_asked"
+        className="flex min-h-7 min-w-0 flex-wrap items-center gap-2 text-meta"
+      >
+        <span
+          role="status"
+          aria-live="polite"
+          className={tintClasses(AUTO_STATE_TONE.waitingOnYou).text}
+        >
+          {discardAsk.reason === ''
+            ? `The Lead wants to drop plan v${model.version}`
+            : `The Lead wants to drop plan v${model.version}: ${discardAsk.reason}`}
+        </span>
+        <span className="flex-1" />
+        {openPlan}
+        <Button
+          variant="quiet"
+          size="xs"
+          disabled={isDropping}
+          isBusy={isDropping}
+          busyLabel="Dropping"
+          onClick={onDrop}
+        >
+          {`Drop plan v${model.version}`}
+        </Button>
+        <Button
+          variant="primary"
+          size="sm"
+          disabled={model.isBusy || isDropping}
+          onClick={() => void model.approve()}
+        >
+          {AUTO_PLAN_APPROVE_LABEL}
+        </Button>
       </div>
     );
   }

@@ -4,6 +4,7 @@ import { NAMES } from '../../../shared/utils/names';
 import { planNeedsApprovalOf } from '../../../shared/utils/planNeedsApprovalOf';
 import { glanceOf, type Glance } from '../../session/glance/glanceOf';
 import { projectAskOf } from '../chat/projectAskOf';
+import { delegationClosedOf } from '../delegationClosedOf';
 import { dockPlanRowOf } from '../dockPlanRowOf';
 import { isAutoPausedAtLimit } from '../isAutoPausedAtLimit';
 import { isAutoPlanAwaitingApproval } from '../isAutoPlanAwaitingApproval';
@@ -26,7 +27,9 @@ const stepsSentenceOf = ({ view }: ViewParams): string => {
   if (total === 0) {
     return 'Nothing was delegated';
   }
-  const settled = view.delegations.filter((delegation) => delegation.state === 'settled').length;
+  const settled = view.delegations.filter(
+    (delegation) => delegation.state === 'settled' || delegationClosedOf({ delegation }) !== null,
+  ).length;
   return `${settled} of ${total} steps`;
 };
 

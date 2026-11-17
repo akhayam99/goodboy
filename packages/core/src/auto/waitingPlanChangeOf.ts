@@ -14,7 +14,7 @@ export const waitingPlanChangeOf = ({ entries, level }: Params): UserFacts['expl
   const waiting = entries.filter(
     (entry) =>
       entry.kind === 'plan' &&
-      entry.status !== 'consumed' &&
+      entry.status === 'active' &&
       entry.approval === 'needs_approval' &&
       entry.openReviseDelegationId === null,
   );

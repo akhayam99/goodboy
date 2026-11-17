@@ -7,6 +7,8 @@ type Params = {
 };
 
 export const dockPlanRowOf = ({ view }: Params): AutoArtifactLedgerRow | null => {
-  const plans = view.artifacts.filter((row) => row.artifact.kind === 'plan');
+  const plans = [
+    ...view.artifacts.filter((row) => row.artifact.kind === 'plan' && row.status !== 'discarded'),
+  ].sort((first, second) => second.artifact.createdAt - first.artifact.createdAt);
   return plans.find((row) => planAwaitsYou({ row, level: view.level })) ?? plans[0] ?? null;
 };
