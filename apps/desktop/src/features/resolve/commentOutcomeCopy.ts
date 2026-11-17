@@ -35,8 +35,6 @@ export const OUTCOME_ACTION = {
   reply: 'Reply',
   answerField: 'Your answer',
   working: 'The agent is working on this comment.',
-  discarded: 'Fix discarded',
-  discardConflict: 'This fix changed. Nothing changed.',
 } as const;
 
 type CountParams = {
