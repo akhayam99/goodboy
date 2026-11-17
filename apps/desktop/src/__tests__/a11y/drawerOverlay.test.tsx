@@ -122,13 +122,13 @@ describe('a11y, a detail panel and the Terminal dock open together', () => {
 });
 
 describe('a11y, the plan document drawer beside the page', () => {
-  it('pushes at the reader width of 720 with the page kept beside it, and has no violation', async () => {
+  it('pushes at the reader width of 720 plus the 12px gutter, the page kept beside it, no violation', async () => {
     const container = await mount({ width: 1440, scene: 'drawer-wide-push' });
     const aside = screen.getByRole('complementary', { name: 'Side panel' });
 
     expect(aside.getAttribute('data-drawer-sizing')).toBe('reader');
     expect(aside.getAttribute('data-drawer-mode')).toBe('push');
-    expect(aside.style.width).toBe('728px');
+    expect(aside.style.width).toBe('732px');
     await expectBaseline({ name: 'drawer wide push', container });
   });
 });
