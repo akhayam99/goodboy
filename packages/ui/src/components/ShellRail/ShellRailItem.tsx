@@ -1,14 +1,13 @@
 import { useContext } from 'react';
 import type { IconGlyph } from '../../icons';
 import { cn } from '../../cn';
-import { FOCUS_RING } from '../../focusRing';
-import { ICON_SIZE, iconWeightOf } from '../../iconSize';
+import { ICON_SIZE } from '../../iconSize';
 import { selectedIconClass } from '../../selectedIcon';
 import { TEXT_ROLE } from '../../textRoles';
 import type { Tone } from '../../tint';
 import { CountBadge } from '../CountBadge';
+import { IconButton } from '../IconButton';
 import { StatusDot } from '../StatusDot';
-import { Tooltip } from '../Tooltip';
 import { ShellRailFormContext } from './shellRailFormContext';
 import type { ShellRailMark } from './shellRailMark';
 
@@ -28,12 +27,14 @@ type MarkParams = {
   readonly mark: ShellRailMark | null;
 };
 
+const LIT_TILE = 'bg-selected text-foreground hover:bg-selected';
+
 const isMarkShown = ({ mark }: MarkParams): boolean =>
   mark !== null && (mark.kind === 'dot' || mark.count > 0);
 
 export const ShellRailItem = ({
   id,
-  icon: Icon,
+  icon,
   label,
   mark = null,
   tone,
@@ -45,31 +46,30 @@ export const ShellRailItem = ({
   const form = useContext(ShellRailFormContext);
   const isLit = isCurrent || isPressed === true;
   const name = mark !== null && isMarkShown({ mark }) ? `${label}, ${mark.name}` : label;
-  const button = (
-    <button
-      type="button"
-      data-shell-rail-item={id}
-      aria-label={name}
-      aria-current={isCurrent ? 'page' : undefined}
-      aria-pressed={isPressed}
-      onClick={isCurrent ? undefined : onSelect}
-      className={cn(
-        'group flex w-full shrink-0 flex-col items-center gap-0.5 rounded-md',
-        FOCUS_RING,
-        isCurrent && 'cursor-default',
-        isLit ? TEXT_ROLE.label : cn(TEXT_ROLE.secondary, 'hover:text-foreground'),
-      )}
+  return (
+    <span
+      data-slot="shell-rail-item"
+      className="grid w-full shrink-0 grid-rows-[auto_auto] justify-items-center gap-0.5"
     >
-      <span
-        data-slot="rail-tile"
-        className={cn(
-          'relative flex h-7 items-center justify-center rounded-lg motion-safe:transition-colors',
-          form === 'wide' ? 'w-9' : 'w-8',
-          isLit ? 'bg-selected' : 'group-hover:bg-hover',
-          isLit && tone !== undefined && selectedIconClass({ tone }),
-        )}
-      >
-        <Icon size={ICON_SIZE.hero} weight={iconWeightOf({ size: ICON_SIZE.hero })} aria-hidden />
+      <span className="relative flex">
+        <IconButton
+          icon={icon}
+          label={name}
+          shortcut={shortcut}
+          tooltipSide="right"
+          isTooltipSuppressed={form === 'wide' && shortcut === undefined}
+          size="md"
+          iconSize={ICON_SIZE.hero}
+          data-shell-rail-item={id}
+          aria-current={isCurrent ? 'page' : undefined}
+          aria-pressed={isPressed}
+          className={cn(
+            isCurrent && 'cursor-default',
+            isLit && LIT_TILE,
+            isLit && tone !== undefined && selectedIconClass({ tone }),
+          )}
+          onClick={isCurrent ? undefined : onSelect}
+        />
         <span
           data-slot="rail-mark"
           className="pointer-events-none absolute left-1/2 top-1/2 size-4.5 -translate-x-1/2 -translate-y-1/2"
@@ -87,18 +87,17 @@ export const ShellRailItem = ({
         </span>
       </span>
       {form === 'wide' ? (
-        <span aria-hidden data-slot="rail-word" className="max-w-full truncate px-0.5 text-rail">
+        <span
+          aria-hidden
+          data-slot="rail-word"
+          className={cn(
+            'max-w-full truncate px-0.5 text-rail',
+            isLit ? TEXT_ROLE.label : TEXT_ROLE.secondary,
+          )}
+        >
           {label}
         </span>
       ) : null}
-    </button>
-  );
-  if (form === 'wide' && shortcut === undefined) {
-    return button;
-  }
-  return (
-    <Tooltip content={name} shortcut={shortcut} side="right">
-      {button}
-    </Tooltip>
+    </span>
   );
 };

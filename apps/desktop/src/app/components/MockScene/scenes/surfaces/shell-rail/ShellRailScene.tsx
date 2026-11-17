@@ -27,7 +27,10 @@ export const ShellRailScene = () => {
       <ShellRailPlaces form="narrow" title="Narrow" current={current} onSelect={setCurrent} />
       <div className="flex flex-col gap-2">
         <Eyebrow label="Tools" />
-        <div className="rounded-lg bg-chrome" style={{ height: SHELL_RAIL_SCENE_HEIGHT_PX }}>
+        <div
+          className="rounded-lg border border-border-soft"
+          style={{ height: SHELL_RAIL_SCENE_HEIGHT_PX }}
+        >
           <ShellRail label="Tools" form="wide">
             {TOOLS.map((tool) => (
               <ShellRailItem

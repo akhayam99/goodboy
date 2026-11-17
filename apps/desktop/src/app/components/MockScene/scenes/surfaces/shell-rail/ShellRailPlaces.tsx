@@ -40,7 +40,10 @@ const PLACES: ReadonlyArray<Place> = [
 export const ShellRailPlaces = ({ form, title, current, onSelect }: Props) => (
   <div className="flex flex-col gap-2">
     <Eyebrow label={title} />
-    <div className="rounded-lg bg-chrome" style={{ height: SHELL_RAIL_SCENE_HEIGHT_PX }}>
+    <div
+      className="rounded-lg border border-border-soft"
+      style={{ height: SHELL_RAIL_SCENE_HEIGHT_PX }}
+    >
       <ShellRail label={`Places, ${title}`} form={form}>
         <ShellRailItem
           id="new"

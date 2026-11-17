@@ -598,7 +598,8 @@ and tooltip read `New session, draft in progress`.
 ## Shell rail
 
 `ShellRail` and `ShellRailItem` draw the compact rail of the new shell. An item
-is an 18px icon in a 36 by 28 tile with one word under it in `text-rail`. The
+is an 18px icon on a 32px `IconButton` tile, the way the session tool rail
+draws its tools, with one word under it in `text-rail`. The
 current place takes `aria-current="page"` and the selected tile, a tool that is
 open takes `aria-pressed` and the same tile, and the lit icon takes the caller's
 tone. An item carries at most one mark on the glyph's top end corner: a count, a

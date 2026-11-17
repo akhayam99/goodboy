@@ -48,9 +48,9 @@ describe('the shell rail scene', () => {
     mount();
     const wide = railOf({ name: 'Places, Wide' });
     const narrow = railOf({ name: 'Places, Narrow' });
-    expect(within(wide).getByText('Workflows')).toBeDefined();
+    within(wide).getByText('Workflows');
     expect(within(narrow).queryByText('Workflows')).toBeNull();
-    expect(within(narrow).getByRole('button', { name: 'Workflows' })).toBeDefined();
+    within(narrow).getByRole('button', { name: 'Workflows' });
   });
 
   it('keeps the Board current with its count and the Tasks dot in its name', () => {
@@ -58,7 +58,7 @@ describe('the shell rail scene', () => {
     const wide = railOf({ name: 'Places, Wide' });
     const board = within(wide).getByRole('button', { name: 'Board, 3 need you' });
     expect(board.getAttribute('aria-current')).toBe('page');
-    expect(within(wide).getByRole('button', { name: 'Tasks, new for you' })).toBeDefined();
+    within(wide).getByRole('button', { name: 'Tasks, new for you' });
   });
 
   it('moves the current place in both forms when a place is clicked', () => {

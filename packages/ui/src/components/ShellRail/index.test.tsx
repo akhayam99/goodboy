@@ -91,10 +91,22 @@ describe('ShellRail', () => {
 
   it('draws the word under the icon and the count on the glyph', () => {
     renderRail({ form: 'wide' });
-    const board = within(railOf()).getByRole('button', { name: 'Board, 3 need you' });
-    expect(within(board).getByText('Board')).toBeDefined();
-    expect(within(board).getByText('3')).toBeDefined();
+    within(railOf()).getByRole('button', { name: 'Board, 3 need you' });
+    within(railOf()).getByText('Board');
+    within(railOf()).getByText('3');
     expect(railOf().style.width).toBe('64px');
+  });
+
+  it('keeps a wide item without a shortcut free of a tooltip, since the word says it', () => {
+    renderRail({ form: 'wide' });
+    const board = within(railOf()).getByRole('button', { name: 'Board, 3 need you' });
+    vi.useFakeTimers();
+    fireEvent.mouseEnter(board);
+    act(() => {
+      vi.advanceTimersByTime(400);
+    });
+    vi.useRealTimers();
+    expect(screen.queryByRole('tooltip')).toBeNull();
   });
 
   it('leaves the name bare and draws nothing when the count is zero', () => {
@@ -109,8 +121,8 @@ describe('ShellRail', () => {
         />
       </ShellRail>,
     );
-    const board = within(railOf()).getByRole('button', { name: 'Board' });
-    expect(within(board).queryByText('0')).toBeNull();
+    within(railOf()).getByRole('button', { name: 'Board' });
+    expect(within(railOf()).queryByText('0')).toBeNull();
   });
 
   it('moves focus between the items with the arrows, Home and End', () => {
@@ -150,7 +162,7 @@ describe('ShellRail', () => {
     renderRail({});
     expect(railOf().style.width).toBe('44px');
     const tasks = within(railOf()).getByRole('button', { name: 'Tasks, new tasks' });
-    expect(within(tasks).queryByText('Tasks')).toBeNull();
+    expect(within(railOf()).queryByText('Tasks')).toBeNull();
     vi.useFakeTimers();
     fireEvent.mouseEnter(tasks);
     act(() => {
@@ -164,6 +176,6 @@ describe('ShellRail', () => {
     stubWindowWidth({ width: 1100 });
     renderRail({});
     expect(railOf().style.width).toBe('64px');
-    expect(within(railOf()).getByText('Tasks')).toBeDefined();
+    within(railOf()).getByText('Tasks');
   });
 });
