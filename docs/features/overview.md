@@ -65,12 +65,15 @@ See what needs you, what runs, where each branch stands and what finished, on on
 
 The board groups the branches in this order: **Needs you**, **In progress**, **Merged** and **Not on a branch**. A group with no row is not drawn. Each group names itself in bold with its count in gray.
 
+With branches from more than one project, each group splits them by project under a quiet head: the project mark, its name and its count. With one project, its name shows once at the top of the board.
+
 Each branch is one tile, like a pull request in a list:
 
-- The first line names the branch and its project. One chip on the right sums up where it stands: **Waits for you**, **Checks failing**, **Running**, **Not pushed**, **PR open** or **Merged**. The state has the same color everywhere in the app.
+- The first line names the branch. One chip on the right sums up where it stands: **Waits for you**, **Checks failing**, **Running**, **Not pushed**, **PR open** or **Merged**. The state has the same color everywhere in the app.
 - The second line holds a few quiet facts: the pull request, the lines added and removed, the runs and the questions that wait. A pull request shows its number, such as **PR #12**.
 - A tile with something to do carries one button. **Answer** comes first and opens the exact question, then the first waiting step, such as **Rebase**, **Push** or **Open a pull request**. A merged branch offers **Remove worktree** once its cleanup is proposed.
 - A click on the tile opens the branch page on Conversation. Its tabs hold the changes, commits, checks and runs, with the questions and artifacts of each run. The tile and its button are two separate stops for Tab.
+- Every tile has the same **⋯** menu as the branch in the sidebar: open, terminal, editor, copy the name, push, close the branch and the rest. It shows on hover and on focus. A right click on the tile opens the full menu at the pointer, and Shift+F10 opens it from the keyboard. Closing a branch asks first, inside the menu, and says what happens to its folder and its uncommitted changes.
 - A Lead counts as work on its own branch: a working Lead shows that branch **Running**, and a Lead that waits for you or failed puts it under **Needs you**.
 - A long branch name is cut in the middle, so its end stays readable. A dot marks what is new since you last looked.
 - The **Not on a branch** tile holds work that has no branch. It names itself by its next step, such as the open question, and opens Runs. It shows only while that work runs or needs you. A finished run with no branch adds no tile; its spend and time still count in the tiles above.
@@ -141,6 +144,8 @@ This part is for contributors and agents who change the feature.
 - Tiles: **Branches** (n of m merged), **Spend**, **Time**, all from `sessionKpisOf`, plain tiles with no click. Questions and artifacts are counted on their tabs, and an open question shows as the branch row's **Answer**. Checks belong to the pull request page.
   - A long branch name is cut in the middle (`splitMiddleOf`, `BoardBranchName`) so its end stays readable.
   - A card with a branch verb and no branch (`cardRowIdOf`) never sits on the **Not on a branch** row. A rebase with one target belongs to that branch's row.
+- Project heads: `boardProjectNamesOf` counts the projects of the board. With more than one, `BoardGroup` splits each group with `projectSectionsOf` into `BoardProjectSection`s headed by `BoardProjectHead`; with one, `BranchBoard` draws that head once at the top.
+- Tile menu: `useMountRowMenu` (the `mount` target from `useMountMenuTarget` and `useObjectMenuTrigger`) and `MountRowMenuButton` (with `MOUNT_ROW_CUTS`) serve both `BoardTile` and the rail's `WorktreeRow`, so the two rows list the same verbs (`BranchBoard/rowMenu.test.tsx`).
 - Branch tile: `BoardTile` is a link (`role="link"`) to `branchPlace` on `pr`; a tile with no branch opens Runs. `boardTileChipOf` picks the one chip from `stageWordOf`, `branchStoryOf`, `NAMES` and `STAGE_TONE`. The order: Merged, an open question, a blocked state, the Needs you group, Running, then the story word.
 - Tile facts: `BoardTileFacts` leads with the request number (`requestShortOf`, PR or MR) and reads the lines from `useMountDiffStats`, the Changes tab owner. Runs come from `branchWorkCountsOf`, the Runs tab badge. Waiting questions are the row's `askIds`, the owner of the chip. The branch page header carries **Start a run on this branch**, **Open a terminal here** and **Open the browser here** (`BranchTools`), so a tile needs no doors.
 - Tile button: `cardsByRowId` gives each tile the cards of its branch; `cardRowIdOf` puts a question card with no branch on the tile that holds its ask. `boardTileActionOf` picks one: the answer card or, with none, **Answer** on the first open question (`questionPlace`), then the first card. A merged tile takes **Remove worktree** (`BoardRemoveButton` for its one mount). `BoardTileAction` draws it through `BoardRowAction`, with its confirm and its failure. `BoardLooseCards` lists cards that fit no tile. `BoardMergeInOrder` is the series merge verb. `useRemoveWorktrees` removes the merged worktrees one by one through `resolveMountCleanup`, keeps a failed one with its reason and offers a retry for what is left.
@@ -155,7 +160,7 @@ This part is for contributors and agents who change the feature.
 - `useOverviewNotices` holds the dismissals, keyed by `mismatchDismissalKeyOf` so a new mismatch shows again, and the stranded-branch check. A dismissal expires when its observation clears (`liveDismissalsOf`). Unchanged polls stay dismissed. `CentralColumn` draws the notices in one place above the board.
 - `overviewHasContentOf` decides when the start form leaves: a card is drawn, a branch has commits, a request or a run. A folder card, an unassigned note or a closed worktree notice also keeps it away.
 - Agent count: `runAgentCountOf` is the one agent count that the Runs grid and the subagent summaries share.
-- Branch rows: `RANK_OF_STATE` in `branchStoryOf` orders the rows, `mergeSeriesInOrder` merges a series and `useMountMenuTarget` opens the branch menu.
+- Branch rows: `RANK_OF_STATE` in `branchStoryOf` orders the rows, `mergeSeriesInOrder` merges a series and `useMountRowMenu` opens the branch menu.
 - Tracker move suggestion: `trackerMoveSuggestionOf`.
 - Archive suggestion: `archiveSuggestionOf`.
 - Next rows: `nextGroupsOf` and `nextUnblockCountOf` order the moves a row offers.

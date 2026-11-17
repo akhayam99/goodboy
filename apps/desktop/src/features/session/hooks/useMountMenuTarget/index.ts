@@ -9,12 +9,14 @@ import { worktreeStatusTargetsOf } from '../useWorktreeStatuses/targets';
 
 type Params = {
   readonly sessionId: SessionId;
-  readonly mountId: MountId;
+  readonly mountId: MountId | null;
 };
 
-export const useMountMenuTarget = ({ sessionId, mountId }: Params): MountActionTarget => {
+export const useMountMenuTarget = ({ sessionId, mountId }: Params): MountActionTarget | null => {
   const mount = useAppStore((state) =>
-    findMountById({ mounts: state.sessionProjectMounts[sessionId] ?? [], mountId }),
+    mountId === null
+      ? null
+      : findMountById({ mounts: state.sessionProjectMounts[sessionId] ?? [], mountId }),
   );
   const projects = useAppStore((state) => state.projects);
   const targets = useMemo(
@@ -26,8 +28,8 @@ export const useMountMenuTarget = ({ sessionId, mountId }: Params): MountActionT
   const status =
     statusTarget === undefined ? null : (statuses.get(statusTarget.worktreePath) ?? null);
   const remoteKind = useMountRemoteHostKind({ sessionId, repoRoot: mount?.repoRoot ?? null });
-  return useMemo<MountActionTarget>(
-    () => ({ kind: 'mount', sessionId, mountId, status, remoteKind }),
+  return useMemo<MountActionTarget | null>(
+    () => (mountId === null ? null : { kind: 'mount', sessionId, mountId, status, remoteKind }),
     [mountId, remoteKind, sessionId, status],
   );
 };

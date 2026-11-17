@@ -1,18 +1,13 @@
 import { useCallback, useContext, type KeyboardEvent, type MouseEvent } from 'react';
 import { keepsNativeMenu } from '../../../app/hooks/useNativeMenuPolicy/keepsNativeMenu';
 import { ObjectMenuContext } from '../components/ObjectMenuProvider/objectMenuContext';
-import type { ActionViewing, ObjectTarget } from '../types';
+import type { ActionViewing, ObjectMenuTrigger, ObjectTarget } from '../types';
 
 type Params = {
   readonly target: ObjectTarget | null;
   readonly anchorKey?: string | null;
   readonly onBeforeOpen?: () => ObjectTarget | null;
   readonly viewing?: ActionViewing | null;
-};
-
-export type ObjectMenuTrigger = {
-  readonly onContextMenu: (event: MouseEvent<HTMLElement>) => void;
-  readonly onKeyDown: (event: KeyboardEvent<HTMLElement>) => void;
 };
 
 const KEYBOARD_INSET = 8;

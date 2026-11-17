@@ -268,7 +268,7 @@ never exists on one surface only.
   or fix comment row `reviewComment`, a Context question card `question`, a
   check run `checkRun`, a decision change `decision`, a workspace in the
   switcher `workspace`, an issue to start from `issueCandidate`, and a central
-  branch row the rail branch's `mount` target from `useMountMenuTarget` (one
+  branch row the rail branch's `mount` target from `useMountRowMenu` (one
   source for both, so the worktree status and host verbs match). A row with no
   verbs of its own reuses the nearest object's kind (a GitHub issue row takes
   `link`, a worktree page row its branch's `mount`), and a row with no object
