@@ -46,16 +46,22 @@ type PushParams = {
 
 export const DRAWER_PUSH_RESERVE = DRAWER_INSET * 2 + COLUMN_GUTTERS + COLUMN_MIN_PUSH;
 
+type ReserveParams = {
+  readonly sizing: DrawerSizing;
+};
+
+export const pushReserveOf = ({ sizing }: ReserveParams): number =>
+  DRAWER_INSET * 2 +
+  COLUMN_GUTTERS +
+  (sizing === 'side' ? COLUMN_MIN_PUSH : READER_COLUMN_MIN_PUSH);
+
 type RoomParams = {
   readonly mainWidthPx: number;
   readonly sizing: DrawerSizing;
 };
 
 const pushRoomOf = ({ mainWidthPx, sizing }: RoomParams): number =>
-  mainWidthPx -
-  DRAWER_INSET * 2 -
-  COLUMN_GUTTERS -
-  (sizing === 'side' ? COLUMN_MIN_PUSH : READER_COLUMN_MIN_PUSH);
+  mainWidthPx - pushReserveOf({ sizing });
 
 export const canDrawerPush = ({
   mainWidthPx,
