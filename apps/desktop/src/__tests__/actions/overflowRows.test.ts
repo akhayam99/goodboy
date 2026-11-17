@@ -475,6 +475,9 @@ const replyOnlyFactsOf = ({ state }: ReplyOnlyParams): ReviewCommentFacts => ({
   hasFixOnBranch: false,
   laneAcceptCount: 1,
   laneAcceptNotes: 0,
+  runAgentId: null,
+  joinRuns: [],
+  quote: '',
 });
 
 describe('a review comment drawer ⋯ for a reply-only draft', () => {

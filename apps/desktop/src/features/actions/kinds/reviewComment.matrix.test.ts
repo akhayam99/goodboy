@@ -1,6 +1,12 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
-import type { AgentId, ResolveVerdict, ResolveVerdictKind, SessionId } from '@goodboy/types';
+import {
+  brandId,
+  type AgentId,
+  type ResolveVerdict,
+  type ResolveVerdictKind,
+  type SessionId,
+} from '@goodboy/types';
 import { resolveActions } from '../resolveActions';
 import { REVIEW_COMMENT_KIND, type ReviewCommentFacts } from './reviewComment';
 
@@ -32,7 +38,13 @@ const BASE: ReviewCommentFacts = {
   hasFixOnBranch: false,
   laneAcceptCount: 1,
   laneAcceptNotes: 0,
+  runAgentId: null,
+  joinRuns: [],
+  quote: '',
 };
+
+const LEDGER_RUN = brandId<AgentId>({ value: 'lead-ledger-header' });
+const JOIN = [{ agentId: LEDGER_RUN, name: 'Move the ledger header into AppLayout' }];
 
 const verdictOf = (kind: ResolveVerdictKind, sha: string | null): ResolveVerdict => ({
   kind,
@@ -466,6 +478,46 @@ const MATRIX: ReadonlyArray<Row> = [
       'reviewComment.skip secondary Skip',
       'reviewComment.resolveNoReply menu Close the comment',
     ],
+  },
+  {
+    name: 'open while a run works on the same branch',
+    facts: { state: 'new', agentId: null, joinRuns: JOIN },
+    expected: [
+      ...OPEN,
+      ...GITHUB,
+      'reviewComment.draft primary Fix',
+      'reviewComment.addToRun menu Add to the run',
+      ...DECIDE,
+      ...COPY,
+    ],
+  },
+  {
+    name: 'in a run: no fix, no skip, reply stays',
+    facts: { state: 'new', agentId: null, runAgentId: LEDGER_RUN },
+    expected: [
+      ...OPEN,
+      ...GITHUB,
+      'reviewComment.reply secondary Reply',
+      'reviewComment.resolveNoReply menu Resolve',
+      ...COPY,
+    ],
+  },
+  {
+    name: 'a failed fix taken over by a run',
+    facts: { state: 'failed', runAgentId: LEDGER_RUN },
+    expected: [
+      ...OPEN,
+      'reviewComment.transcript menu Open transcript',
+      ...GITHUB,
+      'reviewComment.reply secondary Reply',
+      'reviewComment.resolveNoReply menu Resolve',
+      ...COPY,
+    ],
+  },
+  {
+    name: 'a fix still working is never offered to a run',
+    facts: { state: 'drafting', joinRuns: JOIN },
+    expected: [...OPEN, ...TRANSCRIPT, ...GITHUB, 'reviewComment.stop menu Stop drafting', ...COPY],
   },
 ];
 
