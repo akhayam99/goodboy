@@ -356,6 +356,34 @@ describe('Home', () => {
     expect(saveSetting).toHaveBeenCalledWith(SETTING_REOPEN_LAST, '1');
   });
 
+  it('holds the reopen-last switch while it saves and reports a failed save', async () => {
+    const reportError = vi.fn(async () => undefined);
+    useAppStore.setState({ reportError });
+    let fail: (error: Error) => void = () => undefined;
+    saveSetting.mockImplementationOnce(
+      () =>
+        new Promise<void>((_resolve, reject) => {
+          fail = reject;
+        }),
+    );
+    renderHome();
+
+    const toggle = screen.getByRole('switch', { name: 'Reopen the last workspace on launch' });
+    fireEvent.click(toggle);
+    expect(toggle.hasAttribute('disabled')).toBe(true);
+    fireEvent.click(toggle);
+    expect(saveSetting).toHaveBeenCalledTimes(1);
+
+    await act(async () => {
+      fail(new Error('database is locked'));
+    });
+    expect(toggle.hasAttribute('disabled')).toBe(false);
+    expect(toggle.getAttribute('aria-checked')).toBe('false');
+    expect(reportError).toHaveBeenCalledWith(
+      expect.objectContaining({ title: "Couldn't save the reopen setting" }),
+    );
+  });
+
   it('shows the update action when an update is available, and hides it when current', () => {
     const { unmount } = renderHome();
     expect(screen.queryByTestId('update-pill')).toBeNull();

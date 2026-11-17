@@ -31,6 +31,7 @@ import { filterWorkspaces, sortWorkspacesByRecent } from '../../recent';
 import { useFolderFacesOnFocus } from '../../hooks/useFolderFacesOnFocus';
 import { openNewWorkspace } from '../../openNewWorkspace';
 import { useIsMainWindow } from '../../useIsMainWindow';
+import { usePendingAction } from '../../../../shared/hooks/usePendingAction';
 import { LauncherEmpty } from './LauncherEmpty';
 import { WorkspaceRow } from './WorkspaceRow';
 import { useHomeFolder } from './useHomeFolder';
@@ -55,6 +56,7 @@ export const WorkspaceLauncher = ({ isCreating, onCloseCreate }: Props) => {
   const disconnectWorkspace = useAppStore((s) => s.disconnectWorkspace);
   const reportError = useAppStore((s) => s.reportError);
   const isReopenLast = useAppStore((s) => s.settings[SETTING_REOPEN_LAST] === '1');
+  const { pendingKeys, run } = usePendingAction();
   const home = useHomeFolder();
   const isInMainWindow = useIsMainWindow();
   const setup = useSetupResume({ isMainWindow: isInMainWindow });
@@ -163,7 +165,14 @@ export const WorkspaceLauncher = ({ isCreating, onCloseCreate }: Props) => {
       <Switch
         label="Reopen the last workspace on launch"
         checked={isReopenLast}
-        onChange={(next) => void saveSetting(SETTING_REOPEN_LAST, next ? '1' : '0')}
+        disabled={pendingKeys.has(SETTING_REOPEN_LAST)}
+        onChange={(next) =>
+          void run({
+            key: SETTING_REOPEN_LAST,
+            failureTitle: "Couldn't save the reopen setting",
+            task: () => saveSetting(SETTING_REOPEN_LAST, next ? '1' : '0'),
+          })
+        }
         className="w-fit"
       />
     </div>
