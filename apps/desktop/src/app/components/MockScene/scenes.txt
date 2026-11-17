@@ -1418,6 +1418,8 @@ u44-task-picker-all
 u44-task-picker-error
 u44-task-picker-loading
 u44-task-picker-sentry
+u47-comment-run-compose
+u47-comment-run-compose-one
 update-card
 update-card-long-version
 update-card-narrow

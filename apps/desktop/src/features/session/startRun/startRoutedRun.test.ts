@@ -23,7 +23,7 @@ import {
   type Workflow,
   type WorkflowId,
 } from '@goodboy/types';
-import { EMPTY_OVERRIDES, aSession, aWorkspace } from '@goodboy/types/testing';
+import { EMPTY_OVERRIDES, aSession, aWorkspace, anAgent } from '@goodboy/types/testing';
 import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
@@ -413,6 +413,58 @@ describe('startRoutedRun links a run to the comments it comes from', () => {
 
     expect(engines.spawnAgent).not.toHaveBeenCalled();
     expect(await readRoutes()).toEqual({});
+  });
+
+  it('starts no second run for a comment another window already put in a run', async () => {
+    const engines = mockEngines();
+    const running = anAgent({
+      id: brandId<AgentId>({ value: 'agent-ledger-header-run' }),
+      sessionId: SESSION.id,
+      ordinal: 1,
+      status: 'running',
+      kind: 'auto',
+      sourceKind: 'comment_run',
+      sourceThreadIds: [HEADER_NOTE],
+    });
+    useAppStore.setState({ sessionPhaseRuns: { [SESSION.id]: [running] } });
+
+    await expect(
+      startRoutedRun({
+        sessionId: SESSION.id,
+        result: routeOf({ text: 'Move the ledger header into AppLayout' }),
+        sourceThreadIds: [LAYOUT_THREAD, HEADER_NOTE],
+      }),
+    ).rejects.toThrow('A comment you picked is already in a run');
+
+    expect(engines.spawnAgent).not.toHaveBeenCalled();
+    expect(await readRoutes()).toEqual({});
+  });
+
+  it('starts a run for a comment whose earlier run was stopped', async () => {
+    const engines = mockEngines();
+    const stopped = anAgent({
+      id: brandId<AgentId>({ value: 'agent-ledger-header-stopped' }),
+      sessionId: SESSION.id,
+      ordinal: 1,
+      status: 'stopped',
+      kind: 'auto',
+      sourceKind: 'comment_run',
+      sourceThreadIds: [HEADER_NOTE],
+    });
+    useAppStore.setState({ sessionPhaseRuns: { [SESSION.id]: [stopped] } });
+
+    await startRoutedRun({
+      sessionId: SESSION.id,
+      result: routeOf({ text: 'Move the ledger header into AppLayout' }),
+      sourceThreadIds: [HEADER_NOTE],
+      findings: 'The comments this run comes from, word for word:',
+    });
+
+    expect(engines.spawnAgent.mock.calls[0]?.[1]).toMatchObject({
+      sourceThreadIds: [HEADER_NOTE],
+      initialPrompt:
+        'Move the ledger header into AppLayout\n\nThe comments this run comes from, word for word:',
+    });
   });
 
   it('refuses a plan for comments before it writes anything', async () => {

@@ -38,6 +38,10 @@ type Props = {
   readonly hint: string | null;
   readonly demoAnchor?: string;
   readonly actions: ReactNode;
+  readonly note?: string | null;
+  readonly blockedReason?: string | null;
+  readonly canDiscard?: boolean;
+  readonly isBranchLocked?: boolean;
 };
 
 type PickParams = {
@@ -53,6 +57,10 @@ export const RunsStartForm = ({
   hint,
   demoAnchor,
   actions,
+  note: fixedNote,
+  blockedReason = null,
+  canDiscard = true,
+  isBranchLocked = false,
 }: Props) => {
   const workspaceName = useAppStore(
     (state) =>
@@ -97,7 +105,11 @@ export const RunsStartForm = ({
     run.setRunAs(runAsOfStartFormKind({ kind: next, presets }));
   };
   const note =
-    isPinned || shownHint !== null ? null : startFormNoteOf({ kind, workflow, closeness });
+    fixedNote !== undefined
+      ? fixedNote
+      : isPinned || shownHint !== null
+        ? null
+        : startFormNoteOf({ kind, workflow, closeness });
 
   const settings = startSettingItemsOf({
     kind,
@@ -112,7 +124,7 @@ export const RunsStartForm = ({
           <StartRunBranchChip
             sessionId={sessionId}
             branch={run.branch}
-            isDisabled={isStarting}
+            isDisabled={isStarting || isBranchLocked}
             onChange={run.setBranch}
           />
         ),
@@ -182,18 +194,19 @@ export const RunsStartForm = ({
       settings={settings}
       note={note}
       error={run.error}
-      reason={null}
+      reason={blockedReason}
       reasonId={reasonId}
     >
       {actions}
-      {hasText && !isStarting ? (
+      {canDiscard && hasText && !isStarting ? (
         <Button variant="ghost" size="sm" onClick={run.discard}>
           {RUN_ROUTE_COPY.discard}
         </Button>
       ) : null}
       <Button
         size="sm"
-        disabled={!hasText || isStarting}
+        disabled={!hasText || isStarting || blockedReason !== null}
+        {...(blockedReason !== null && { 'aria-describedby': reasonId })}
         isBusy={isStarting}
         busyLabel={RUN_ROUTE_COPY.starting}
         onClick={() => void run.start()}
