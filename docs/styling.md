@@ -235,6 +235,22 @@ overlay container's `rounded-l-frame` and `border-l`, the overlay track's min
 width, the push track variable).
 [navigation/home-and-drawer.md](navigation/home-and-drawer.md#the-right-drawer) owns what goes in it.
 
+**The dock solver.** `dockLayoutOf` (`packages/ui/src/dockLayout.ts`) lays out
+the whole frame from left to right: page, one detail, a grid of at most two
+columns of two tool panes, and the tool rail on the window's right edge. It
+reads the tier sizes from `DRAWER_TIERS`, the page minimum from
+`pushReserveOf` (528 for narrow panes, 624 once a reader or the browser
+pushes, so the page keeps 516 or 612) and `SHELL_GUTTER_PX` (12) between
+page, detail, columns and rows and above the bottom edge. The last column
+touches the rail. It gives way in one order: panes narrow to their minimum,
+the browser first, then the reader, then narrow panes; then two single panes
+stack in one column; then a detail lies over the page while the grid still
+pushes; only then does everything lie over the page, ending at the rail and
+starting at least 24 from the page's left edge. `dockLayout.test.ts` pins the
+window table (1728, 1440, 1280 and 1024) and sweeps every window from 900 to
+2600; `regressions/drawer-rule.test.ts` keeps its sizes in their owners. No
+host mounts it yet: `DrawerColumn` still runs `panelPairLayoutOf`.
+
 **A fold never re-centres an icon.** The main sidebar (⌘B) and the session
 rail fold through `FoldLayers` (`packages/ui/src/components/FoldLayers.tsx`):
 the grid column or the rail width eases in 220ms, the open layer keeps its full

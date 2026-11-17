@@ -186,7 +186,8 @@ committed width; a drag stops at the available room and never flips the mode.
 The centred column slides left into the space beside the drawer; a full-tier
 work surface keeps its left edge. `drawerGeometry.test.ts` pins the thresholds;
 `regressions/drawer-rule.test.ts` fails a drawer that measures the window, reads
-a breakpoint or calls `drawerLayoutOf` outside `DrawerColumn`, so every
+a breakpoint or calls `drawerLayoutOf` or `dockLayoutOf` outside `DrawerColumn`
+and the two geometry files, so every
 width-dependent drawer (fix run, CI fix, terminal, the rest of `DrawerHost`)
 goes through `DrawerColumn`. A drawer that must never push, such as the New
 drawer, passes `placement="overlay"` (`drawerPlacement` on `AppShell`): it lies
