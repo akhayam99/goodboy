@@ -630,19 +630,19 @@
 
   @keyframes drawer-dock-in {
     from {
-      transform: translateX(var(--goodboy-drawer-panel));
+      clip-path: inset(0 0 0 var(--goodboy-drawer-panel) round var(--radius-frame) 0 0 var(--radius-frame));
     }
     to {
-      transform: translateX(0);
+      clip-path: inset(0 0 0 0 round var(--radius-frame) 0 0 var(--radius-frame));
     }
   }
 
   @keyframes drawer-dock-out {
     from {
-      transform: translateX(0);
+      clip-path: inset(0 0 0 0 round var(--radius-frame) 0 0 var(--radius-frame));
     }
     to {
-      transform: translateX(var(--goodboy-drawer-panel));
+      clip-path: inset(0 0 0 var(--goodboy-drawer-panel) round var(--radius-frame) 0 0 var(--radius-frame));
     }
   }
 

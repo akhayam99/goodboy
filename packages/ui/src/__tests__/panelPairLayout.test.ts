@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   COLUMN_GUTTERS,
   COLUMN_MIN_PUSH,
-  DRAWER_INSET,
+  DRAWER_GUTTER,
   READER_DRAWER_DEFAULT,
   RIGHT_DRAWER_DEFAULT,
   drawerAsideWidthOf,
@@ -73,7 +73,7 @@ describe('the page frame with a detail panel and a tool dock', () => {
     });
 
     expect(pair.mode).toBe('push');
-    expect(aside).toBe(RIGHT_DRAWER_DEFAULT * 2 + DRAWER_INSET * 2 + RAIL);
+    expect(aside).toBe(RIGHT_DRAWER_DEFAULT * 2 + DRAWER_GUTTER * 2 + RAIL);
     expect(main - aside).toBeGreaterThanOrEqual(COLUMN_MIN_PUSH + COLUMN_GUTTERS);
   });
 
@@ -88,7 +88,7 @@ describe('the page frame with a detail panel and a tool dock', () => {
         detailWidth: pair.detail.width,
         railWidth: RAIL,
       }),
-    ).toBeLessThanOrEqual(main - DRAWER_INSET);
+    ).toBeLessThanOrEqual(main - DRAWER_GUTTER);
   });
 
   it('shrinks a browser dock into the room the detail panel leaves, never below its fallback', () => {
@@ -105,7 +105,7 @@ describe('the page frame with a detail panel and a tool dock', () => {
     ).toBe(1200 - drawerAsideWidthOf({ width: 400, mode: 'push', railWidth: RAIL }));
     expect(
       mainWidthOf({ columnWidth: 1200, mode: 'overlay', drawerWidthPx: 400, railWidth: RAIL }),
-    ).toBe(1200 - RAIL - DRAWER_INSET);
+    ).toBe(1200 - RAIL - DRAWER_GUTTER);
     expect(mainWidthOf({ columnWidth: 1200, mode: 'closed', drawerWidthPx: 400 })).toBe(1200);
   });
 });

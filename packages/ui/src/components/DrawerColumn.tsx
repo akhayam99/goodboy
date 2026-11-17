@@ -146,7 +146,7 @@ export const DrawerColumn = ({
         ref={column.ref}
         className={cn(
           'relative flex min-h-0 min-w-0 flex-1 overflow-hidden',
-          isSheet && isBesideRail && 'pb-2',
+          isSheet && isBesideRail && 'pb-3',
           className,
         )}
       >
@@ -206,7 +206,7 @@ export const DrawerColumn = ({
           )}
         >
           <div
-            className={cn('flex min-h-0 min-w-0 flex-1', !isFloating && !isSheet && 'py-2')}
+            className={cn('flex min-h-0 min-w-0 flex-1', !isFloating && !isSheet && 'py-3')}
             ref={trackRef}
             style={{ minWidth: isFloating ? asideWidth : 0 }}
           >
@@ -232,7 +232,7 @@ export const DrawerColumn = ({
             ) : null}
             <div
               className={cn(
-                'flex w-2 shrink-0 justify-center',
+                'flex w-3 shrink-0 justify-center',
                 isOverlay && 'pointer-events-auto',
                 isContainerIdle && 'hidden',
               )}

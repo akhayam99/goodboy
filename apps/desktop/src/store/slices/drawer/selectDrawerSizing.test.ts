@@ -11,6 +11,7 @@ import type {
   WorkspaceId,
 } from '@goodboy/types';
 import {
+  DRAWER_GUTTER,
   DRAWER_INSET,
   LEFT_SIDEBAR_DEFAULT,
   LEFT_SIDEBAR_MAX,
@@ -236,7 +237,7 @@ describe('every drawer fits inside its aside at 1280 and 1440', () => {
       const mode = pair.mode;
       const drawerWidthPx = pair.dock.width;
       const asidePx = drawerAsideWidthOf({ width: drawerWidthPx, mode });
-      const cardRight = columnWidth - asidePx + DRAWER_INSET + drawerWidthPx;
+      const cardRight = columnWidth - asidePx + DRAWER_GUTTER + drawerWidthPx;
 
       expect(asidePx).toBeLessThanOrEqual(columnWidth);
       if (mode === 'push') {

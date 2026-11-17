@@ -1,7 +1,7 @@
 import type { ReactNode, Ref } from 'react';
 import { cn } from '../cn';
 import { DrawerContentContext } from '../drawerContentContext';
-import { DRAWER_INSET, type DrawerMode } from '../drawerGeometry';
+import { DRAWER_GUTTER, type DrawerMode } from '../drawerGeometry';
 import type { ResizableHandleProps } from '../useResizableWidth';
 import type { DrawerPanel } from '../useDrawerPanel';
 import { DrawerPanelCard } from './DrawerPanelCard';
@@ -51,10 +51,10 @@ export const DrawerDetailGroup = ({
   <div
     ref={groupRef}
     data-detail-group=""
-    style={{ width: shownWidth > 0 ? shownWidth + DRAWER_INSET : 0 }}
+    style={{ width: shownWidth > 0 ? shownWidth + DRAWER_GUTTER : 0 }}
     className={cn('flex min-h-0 shrink-0 overflow-clip', !isFloating && SLIDE)}
   >
-    <div className={cn('flex w-2 shrink-0 justify-center', isOverlay && 'pointer-events-auto')}>
+    <div className={cn('flex w-3 shrink-0 justify-center', isOverlay && 'pointer-events-auto')}>
       {isOpen && !isParked ? (
         <SplitHandle
           {...handleProps}

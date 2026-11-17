@@ -5,7 +5,7 @@ import { createPortal } from 'react-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
 import { DrawerColumn } from '../components/DrawerColumn';
-import { DRAWER_INSET, RIGHT_DRAWER_DEFAULT, panelAsideWidthOf } from '../drawerGeometry';
+import { DRAWER_GUTTER, RIGHT_DRAWER_DEFAULT, panelAsideWidthOf } from '../drawerGeometry';
 import { DrawerEdgeContext } from '../drawerEdgeContext';
 
 type ObserverCallback = (entries: ReadonlyArray<{ contentRect: { width: number } }>) => void;
@@ -89,7 +89,7 @@ const renderFrame = ({ dock, detail }: RenderParams) =>
   );
 
 describe('DrawerColumn with a detail panel and a tool dock', () => {
-  it('orders content, detail panel, rail and tool dock from left to right', () => {
+  it('orders content, detail panel, tool dock and rail from left to right', () => {
     stubColumn({ column: 1600 });
     renderFrame({ dock: 'Terminal output', detail: 'Artifact' });
     const detailGroup = group();
@@ -102,7 +102,8 @@ describe('DrawerColumn with a detail panel and a tool dock', () => {
     expect(children.indexOf(detailGroup)).toBeLessThan(children.indexOf(dock));
     expect(detailBox()?.textContent).toBe('Artifact');
     expect(dockBox()?.textContent).toContain('Terminal output');
-    expect(dockBox()?.firstElementChild?.hasAttribute('data-drawer-edge')).toBe(true);
+    expect(dockBox()?.lastElementChild?.hasAttribute('data-drawer-edge')).toBe(true);
+    expect(dockBox()?.firstElementChild?.hasAttribute('data-drawer-card')).toBe(true);
   });
 
   it('draws the dock on the rail surface and the detail panel on the page surface', () => {
@@ -122,7 +123,7 @@ describe('DrawerColumn with a detail panel and a tool dock', () => {
     expect(panel().style.width).toBe(
       `${panelAsideWidthOf({ dockWidth: RIGHT_DRAWER_DEFAULT, detailWidth: RIGHT_DRAWER_DEFAULT, railWidth: EDGE_WIDTH })}px`,
     );
-    expect(group()?.style.width).toBe(`${RIGHT_DRAWER_DEFAULT + DRAWER_INSET}px`);
+    expect(group()?.style.width).toBe(`${RIGHT_DRAWER_DEFAULT + DRAWER_GUTTER}px`);
     expect(scrim()).toBeNull();
   });
 

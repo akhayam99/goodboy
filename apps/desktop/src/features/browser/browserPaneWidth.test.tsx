@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
-import { DRAWER_INSET, DrawerColumn, READER_DRAWER_STORAGE_KEY } from '@goodboy/ui';
+import { DRAWER_GUTTER, DrawerColumn, READER_DRAWER_STORAGE_KEY } from '@goodboy/ui';
 import { aSession, nextSessionId } from '@goodboy/types/testing';
 import { importStore, resetStoryStore, type StoryStore } from '../../store/storyHarness';
 import { selectDrawerSizing } from '../../store/slices/drawer/testing/selectDrawerSizing';
@@ -58,7 +58,7 @@ const renderBrowserPane = () => {
 
 const pane = () => screen.getByRole('complementary', { name: 'Browser' });
 const handle = () => screen.getByRole('separator', { name: 'Resize browser' });
-const trackOf = (width: number): string => `${width + DRAWER_INSET}px`;
+const trackOf = (width: number): string => `${width + DRAWER_GUTTER}px`;
 
 beforeAll(async () => {
   store = await importStore();
@@ -144,6 +144,6 @@ describe('the browser pane width', () => {
     renderBrowserPane();
 
     expect(pane().getAttribute('data-drawer-mode')).toBe('overlay');
-    expect(pane().style.width).toBe(`${984 + DRAWER_INSET}px`);
+    expect(pane().style.width).toBe(`${1000 - DRAWER_GUTTER * 2 + DRAWER_GUTTER}px`);
   });
 });
