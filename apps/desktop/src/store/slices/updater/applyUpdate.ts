@@ -1,29 +1,8 @@
-import type { DownloadEvent } from '@tauri-apps/plugin-updater';
 import { formatError } from '@goodboy/ui';
 import { getPendingUpdate } from './pendingUpdate';
+import { progressFrom } from './downloadProgress';
 import { relaunchWithResume } from './prepareRestart';
 import type { GetFn, SetFn } from './types';
-
-const progressFrom = ({
-  event,
-  current,
-}: {
-  event: DownloadEvent;
-  current: { downloaded: number; total: number | null };
-}) => {
-  switch (event.event) {
-    case 'Started':
-      return { downloaded: 0, total: event.data.contentLength ?? null };
-    case 'Progress':
-      return { ...current, downloaded: current.downloaded + event.data.chunkLength };
-    case 'Finished':
-      return { ...current, downloaded: current.total ?? current.downloaded };
-    default: {
-      const _exhaustive: never = event;
-      return current;
-    }
-  }
-};
 
 export const applyUpdate = (set: SetFn, get: GetFn) => {
   return async (): Promise<void> => {

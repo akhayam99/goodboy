@@ -125,6 +125,36 @@ describe('updater slice', () => {
     expect(getState().updateNotes?.version).toBe('0.2.0');
   });
 
+  it('downloadUpdate reports progress while it downloads and clears it when ready', async () => {
+    const probe: { read: () => UpdaterState | null } = { read: () => null };
+    let seen: unknown = null;
+    const download = vi.fn(async (onEvent?: (event: unknown) => void) => {
+      onEvent?.({ event: 'Started', data: { contentLength: 200 } });
+      onEvent?.({ event: 'Progress', data: { chunkLength: 50 } });
+      seen = probe.read()?.updateProgress ?? null;
+    });
+    checkMock.mockResolvedValue({ version: '0.2.0', download, body: '' });
+    const { slice, getState } = harness({ autoDownload: 'false' });
+    probe.read = getState;
+    await slice.checkForUpdates();
+    await slice.downloadUpdate();
+    expect(seen).toEqual({ downloaded: 50, total: 200 });
+    expect(getState().updateProgress).toBeNull();
+  });
+
+  it('downloadUpdate drops the progress and keeps the failure when the download fails', async () => {
+    const download = vi.fn(async () => {
+      throw new Error('network down');
+    });
+    checkMock.mockResolvedValue({ version: '0.2.0', download, body: '' });
+    const { slice, getState } = harness({ autoDownload: 'false' });
+    await slice.checkForUpdates();
+    await slice.downloadUpdate();
+    expect(getState().updaterStatus).toBe('available');
+    expect(getState().updateProgress).toBeNull();
+    expect(getState().updateFailure?.phase).toBe('download');
+  });
+
   it('drops the answer of a check older than the last one', async () => {
     let answerFirst: (value: unknown) => void = () => undefined;
     checkMock.mockImplementationOnce(
