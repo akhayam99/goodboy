@@ -1,5 +1,5 @@
 import type { KeyboardEvent, ReactNode } from 'react';
-import type { ObjectMenuTrigger } from '../../../../../actions/useObjectMenuTrigger';
+import type { ObjectMenuTrigger } from '../../../../../actions/types';
 import { ROW_INTERACTIVE, WORK_ROW, cn, tintClasses } from '@goodboy/ui';
 import type { AgentId, SessionId } from '@goodboy/types';
 import type { MountDiffStat } from '../../../../../../store';

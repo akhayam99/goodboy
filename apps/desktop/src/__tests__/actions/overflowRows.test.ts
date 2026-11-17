@@ -43,7 +43,7 @@ import { MOUNT_KIND } from '../../features/actions/kinds/mount';
 import { PORT_KIND } from '../../features/actions/kinds/port';
 import { WORKTREE_KIND } from '../../features/actions/kinds/worktree';
 import { portRowMenuOf } from '../../features/actions/portRowMenuOf';
-import { MOUNT_ROW_CUTS } from '../../app/components/SessionRail/SessionLevel/mountRowCuts';
+import { MOUNT_ROW_CUTS } from '../../features/session/mountRowCuts';
 import { HISTORY_ROW_CUTS } from '../../features/history/components/CommitsHistory/historyRowCuts';
 import { WORKTREE_ROW_CUTS } from '../../features/storage/components/StoragePage/worktreeRowCuts';
 import { MAX_OVERFLOW_ROWS } from '../../features/actions/overflowCutOf';
@@ -522,7 +522,6 @@ describe('a notification row ⋯ holds at most five rows', () => {
 const CALLER_KINDS: Readonly<Record<string, ReadonlyArray<ObjectTarget['kind']>>> = {
   'app/components/MockScene/scenes/u30/edges/PopoversStage.tsx': ['agent'],
   'app/components/SessionActions/SessionLevelActions.tsx': ['session'],
-  'app/components/SessionRail/SessionLevel/WorktreeRow.tsx': ['mount'],
   'features/actions/ExploreFileMenu.tsx': ['exploreFile'],
   'features/actions/IntegrationMenu.tsx': ['integration'],
   'features/actions/NewFormMenuList.tsx': ['newForm'],
@@ -544,6 +543,7 @@ const CALLER_KINDS: Readonly<Record<string, ReadonlyArray<ObjectTarget['kind']>>
   'features/session/components/AgentHeaderActions.tsx': ['agent'],
   'features/session/components/AgentTree/RunOverflowMenu.tsx': ['workflowRun'],
   'features/session/components/ContextDrawer/SlotSourceActions.tsx': ['contextSlot'],
+  'features/session/components/MountRowMenuButton.tsx': ['mount'],
   'features/session/components/PresetRun/RunStepActions.tsx': ['workflowRun'],
   'features/storage/components/StoragePage/WorktreeRowActions.tsx': ['worktree'],
   'features/workspace/components/StageBoard/StageColumn/DoneLaneMenu/index.tsx': ['doneLane'],

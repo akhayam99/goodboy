@@ -1,3 +1,4 @@
+import type { KeyboardEvent, MouseEvent } from 'react';
 import type { IconGlyph } from '@goodboy/ui/icons';
 import type {
   AgentId,
@@ -598,3 +599,8 @@ export type ObjectTarget =
   | TaskActionTarget
   | SuggestionActionTarget
   | ActionCardActionTarget;
+
+export type ObjectMenuTrigger = {
+  readonly onContextMenu: (event: MouseEvent<HTMLElement>) => void;
+  readonly onKeyDown: (event: KeyboardEvent<HTMLElement>) => void;
+};
