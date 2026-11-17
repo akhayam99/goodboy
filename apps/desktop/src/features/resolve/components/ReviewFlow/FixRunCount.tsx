@@ -1,8 +1,10 @@
 import { OverflowMenu, type MenuEntry } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
+import { useAgentOutcome } from '../../../../shared/hooks/useAgentOutcome';
 import { ItemWorkLine } from '../../../live-state/itemWork/ItemWorkLine';
 import { ITEM_WORK_WORDS } from '../../../live-state/itemWork/itemWorkWords';
+import { checksSkippedLine, checksSkippedOf } from '../../checksSkipped';
 import { fixRunCountOf, type FixRun } from '../../fixRun';
 import type { LaneStatus } from '../../laneStatus';
 import { fixingPlaceText, threadCountText } from '../../reviewLaunchCopy';
@@ -22,6 +24,13 @@ export const FixRunCount = ({ sessionId, run, lane }: Props) => {
   const openDrawer = useAppStore((s) => s.openDrawer);
   const forceCloseResolver = useAppStore((s) => s.forceCloseResolver);
   const stopResolveLane = useAppStore((s) => s.stopResolveLane);
+  const outputSummary = useAppStore(
+    (s) => s.sessionPhaseRuns[sessionId]?.find((agent) => agent.id === run.agentId)?.outputSummary,
+  );
+  const outcome = useAgentOutcome({
+    agent: { id: run.agentId, ...(outputSummary !== undefined && { outputSummary }) },
+  });
+  const skipped = checksSkippedOf({ text: outcome.text });
   const count = fixRunCountOf({ run });
   if (count === null) {
     return null;
@@ -50,6 +59,12 @@ export const FixRunCount = ({ sessionId, run, lane }: Props) => {
       onSelect: () =>
         openDrawer({ kind: 'transcript', sessionId, payload: { agentId: run.agentId } }),
     },
+    ...(skipped === null
+      ? []
+      : [
+          { kind: 'separator' as const, key: 'checks-separator' },
+          { kind: 'header' as const, key: 'checks', label: checksSkippedLine({ skipped }) },
+        ]),
   ];
   return (
     <span data-fix-run-count="" className="flex min-w-0 justify-end">

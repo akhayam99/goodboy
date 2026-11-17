@@ -94,6 +94,29 @@ const mount = async ({
 };
 
 const list = (): HTMLElement => screen.getByRole('navigation', { name: 'Comments' });
+
+const undoBar = (): HTMLElement => {
+  const bar = screen.getByText('5 accepted').closest<HTMLElement>('[role="status"]');
+  if (bar === null) {
+    throw new Error('no undo bar');
+  }
+  return bar;
+};
+
+type AlertParams = {
+  readonly text: string;
+};
+
+const alertWith = ({ text }: AlertParams): Promise<HTMLElement> =>
+  waitFor(() => {
+    const alert = screen
+      .getAllByRole('alert')
+      .find((candidate) => candidate.textContent?.includes(text) === true);
+    if (alert === undefined) {
+      throw new Error(`no alert with ${text}`);
+    }
+    return alert;
+  });
 const toolbar = (): HTMLElement => {
   const bar = document.querySelector<HTMLElement>('[data-slot="review-scope-bar"]');
   if (bar === null) {
@@ -348,8 +371,7 @@ describe('accept in bulk', () => {
     stub({ undoReviewAccepts });
     await mount({ stage: 'accepted' });
 
-    expect(screen.getByText('5 accepted')).toBeDefined();
-    fireEvent.click(within(screen.getByRole('status')).getByRole('button', { name: /^Undo/ }));
+    fireEvent.click(within(undoBar()).getByRole('button', { name: /^Undo/ }));
 
     await waitFor(() => expect(undoReviewAccepts).toHaveBeenCalledWith({ sessionId: SESSION.id }));
   });
@@ -365,14 +387,14 @@ describe('accept in bulk', () => {
     stub({ undoReviewAccepts });
     await mount({ stage: 'accepted' });
 
-    const undo = within(screen.getByRole('status')).getByRole('button', { name: /^Undo/ });
+    const undo = within(undoBar()).getByRole('button', { name: /^Undo/ });
     fireEvent.click(undo);
     await waitFor(() => expect(undo.getAttribute('aria-busy')).toBe('true'));
     fireEvent.click(undo);
     expect(undoReviewAccepts).toHaveBeenCalledOnce();
 
     fail(new Error('The thread is locked'));
-    const alert = await screen.findByRole('alert');
+    const alert = await alertWith({ text: "Couldn't undo the accept" });
     expect(alert.textContent).toContain("Couldn't undo the accept");
     expect(alert.textContent).toContain('The thread is locked');
     screen.getByText('5 accepted');
@@ -383,8 +405,10 @@ describe('accept in bulk', () => {
 
     const ready = within(list()).getByRole('region', { name: 'Done' });
     expect(within(ready).getAllByRole('listitem')).toHaveLength(5);
-    expect(within(ready).getAllByText('Fixed')).toHaveLength(5);
-    expect(within(ready).queryByText('Applied')).toBeNull();
+    expect(
+      Array.from(ready.querySelectorAll('[data-item-work-word]')).map((word) => word.textContent),
+    ).toEqual(Array(5).fill('Applied, not pushed'));
+    expect(within(ready).getAllByRole('button', { name: /^Open changes of / })).toHaveLength(5);
     expect(within(ready).queryByText('Accepted')).toBeNull();
     expect(within(ready).queryByRole('button', { name: /^Apply \d+ fixes$/ })).toBeNull();
     fireEvent.click(screen.getByRole('tab', { name: /^Resolved/ }));
@@ -454,8 +478,7 @@ describe('accept in bulk', () => {
     const bar = await screen.findByRole('toolbar', { name: 'Selected comments' });
     fireEvent.click(await within(bar).findByRole('button', { name: 'Apply 7 fixes' }));
 
-    const alert = await screen.findByRole('alert');
-    expect(alert.textContent).toContain('1 comment not accepted');
+    const alert = await alertWith({ text: '1 comment not accepted' });
     expect(alert.textContent).toContain('collides with one accepted before it');
   });
 });

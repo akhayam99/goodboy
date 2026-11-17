@@ -129,7 +129,7 @@ describe('Fix run count', () => {
     );
   });
 
-  it('stops a comment in work from its own row, behind the same confirm as the drawer', async () => {
+  it('stops a comment in work from its own row, behind a confirm that names the batch', async () => {
     const forceCloseResolver = vi.fn<StoreState['forceCloseResolver']>(async () => undefined);
     stub({ forceCloseResolver });
     await mount({ threadId: null });
@@ -138,7 +138,7 @@ describe('Fix run count', () => {
     const work = item?.querySelector<HTMLElement>('[data-row-work]') ?? null;
     expect(work).not.toBeNull();
     fireEvent.click(within(work ?? list()).getByRole('button', { name: 'Stop' }));
-    const confirm = await screen.findByRole('dialog', { name: 'Stop this fix run?' });
+    const confirm = await screen.findByRole('dialog', { name: 'Stop the fix for 4 comments?' });
     fireEvent.click(within(confirm).getByRole('button', { name: 'Stop' }));
 
     expect(forceCloseResolver).toHaveBeenCalledWith(SESSION.id, 'mock-resolve-agent-idempotency');

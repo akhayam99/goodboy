@@ -27,7 +27,7 @@
   "apps/desktop/src/features/palette/components/CommandsMode/CommandsBody.tsx": 671,
   "apps/desktop/src/features/reports/buildReportContext.ts": 911,
   "apps/desktop/src/features/resolve/components/FixCommentsDrawer/index.tsx": 279,
-  "apps/desktop/src/features/resolve/components/ReviewFlow/index.tsx": 609,
+  "apps/desktop/src/features/resolve/components/ReviewFlow/index.tsx": 596,
   "apps/desktop/src/features/resolve/components/ReviewFlow/ReviewComment.tsx": 406,
   "apps/desktop/src/features/scripts/components/ScriptsPanel/index.tsx": 715,
   "apps/desktop/src/features/search/components/SearchMode/index.tsx": 311,

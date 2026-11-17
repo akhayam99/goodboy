@@ -43,11 +43,17 @@ describe('commentWorkOf', () => {
     });
 
     expect(works.get('config')).toBeUndefined();
-    expect(works.get('metrics')).toEqual({ state: 'fixing', detail: null, agentId: RUN_AGENT });
+    expect(works.get('metrics')).toEqual({
+      state: 'fixing',
+      detail: null,
+      agentId: RUN_AGENT,
+      batchSize: 4,
+    });
     expect(works.get('retry')).toEqual({
       state: 'queued',
       detail: '2nd in this fix',
       agentId: RUN_AGENT,
+      batchSize: 4,
     });
     expect(works.get('idempotency')?.detail).toBe('3rd in this fix');
   });
@@ -71,7 +77,12 @@ describe('commentWorkOf', () => {
       runAgentId: null,
     });
 
-    expect(works.get('config')).toEqual({ state: 'fixing', detail: null, agentId: OWN_AGENT });
+    expect(works.get('config')).toEqual({
+      state: 'fixing',
+      detail: null,
+      agentId: OWN_AGENT,
+      batchSize: 1,
+    });
   });
 
   it('counts the place from 1st when nothing of the fix has started yet', () => {

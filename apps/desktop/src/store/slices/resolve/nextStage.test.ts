@@ -24,6 +24,7 @@ const EVENTS: ReadonlyArray<ResolveStageEvent> = [
   { kind: 'user_answered' },
   { kind: 'user_approved' },
   { kind: 'user_unapproved' },
+  { kind: 'user_discarded' },
   { kind: 'comment_edited' },
   { kind: 'user_parked' },
   { kind: 'user_resumed', hasProposal: true },
@@ -78,6 +79,7 @@ const MOVES: Readonly<Record<ResolveStage, Readonly<Record<string, ResolveStage>
     run_reported: 'proposed',
     comment_edited: 'proposed',
     user_parked: 'parked',
+    user_discarded: 'new',
   },
   approved: {
     publish_started: 'publishing',

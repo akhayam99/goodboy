@@ -43,9 +43,8 @@ import { resolveQueueRefreshLabel } from '../../resolveQueueCopy';
 import { isPushFailure } from '../../reviewCommentState';
 import { bulkRunOf } from './bulkRun';
 import { AnswersPanel } from './AnswersPanel';
-import { FixRunGroupHeader } from './FixRunGroupHeader';
 import { useDropHandledSelection } from './useDropHandledSelection';
-import { useFixRunGroups } from './useFixRunGroups';
+import { useFixRun } from './useFixRun';
 import { useHeldReviewGroups } from './useHeldReviewGroups';
 import { BulkUndoBar } from './BulkUndoBar';
 import { focusedRowId } from './focusedRowId';
@@ -111,13 +110,9 @@ export const ReviewFlow = ({ session, mountId = null, push }: Props) => {
   const scope: CommentScope = counts.notes > 0 && counts.host > 0 ? pickedScope : 'branch';
   const [commentState, setCommentState] = useState<CommentState>('open');
   const stateCounts = useMemo(() => stateCountsInScopeOf({ entries, scope }), [entries, scope]);
-  const allGroups = useHeldReviewGroups({ groups: branchGroups, scope, state: commentState });
+  const groups = useHeldReviewGroups({ groups: branchGroups, scope, state: commentState });
   const lane = useLaneStatus({ sessionId, entries: laneEntries });
-  const { run, groups, fixRunReady, isRunLive } = useFixRunGroups({
-    lane,
-    entries,
-    groups: allGroups,
-  });
+  const { run, fixRunReady, isRunLive } = useFixRun({ lane, entries });
   const { works, stopWork } = useCommentWork({ sessionId, entries, run, lane });
   const shownEntries = useMemo(() => groups.flatMap((group) => group.entries), [groups]);
   const storedSelection = useAppStore((s) => s.reviewSelection[sessionId]);
@@ -526,16 +521,6 @@ export const ReviewFlow = ({ session, mountId = null, push }: Props) => {
               onSelect={select}
               checked={checked}
               onToggle={(threadId) => toggleReviewSelection({ sessionId, threadId })}
-              runHeader={
-                fixRunReady === null || run === null ? null : (
-                  <FixRunGroupHeader
-                    sessionId={sessionId}
-                    agentId={run.agentId}
-                    ready={fixRunReady}
-                    sourceKind={source?.kind ?? null}
-                  />
-                )
-              }
             />
           </div>
           <div
@@ -627,7 +612,9 @@ export const ReviewFlow = ({ session, mountId = null, push }: Props) => {
           run={run}
           lane={lane}
           bulkRun={bulkRun}
-          isChecksShown={!isRunLive && fixRunReady === null}
+          ready={fixRunReady}
+          sourceKind={source?.kind ?? null}
+          isChecksShown={!isRunLive}
           onOpenAnswers={openAnswers}
         />
         {body()}

@@ -1,5 +1,7 @@
 import {
+  Button,
   Chip,
+  ICON_SIZE,
   ROW_INTERACTIVE,
   SelectionCheckbox,
   StateDot,
@@ -11,18 +13,22 @@ import {
 import type { SessionId } from '@goodboy/types';
 import { useObjectMenuTrigger } from '../../../actions/useObjectMenuTrigger';
 import { isBot } from '../../../integrations/github/comment-threads';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { Person } from '../../../../shared/components/Person';
 import { formatAge } from '../../../../shared/utils/time/formatAge';
 import { useNow } from '../../../../shared/hooks/useNow';
 import { REVIEW_LAUNCH_LABEL } from '../../reviewLaunchCopy';
 import { COMMENT_RUN_COPY } from '../../commentRunCopy';
 import { REVIEW_COMMENT_NODE } from '../../reviewCommentState';
+import { ITEM_WORK_WORDS } from '../../../live-state/itemWork/itemWorkWords';
 import type { CommentWork } from '../../commentWorkOf';
-import { CommentWorkLine, type StopWorkParams } from './CommentWorkLine';
+import { CommentRowWork } from './CommentRowWork';
+import type { StopWorkParams } from './CommentWorkLine';
 import { entryBodyOf, entryTitleOf } from './entryTitle';
 import { rowQualifierOf } from './rowQualifier';
 import { RowFixDiffLink } from './RowFixDiffLink';
 import { RowFixLine } from './RowFixLine';
+import { useCommentRow } from './useCommentRow';
 import type { ReviewEntry } from './useReviewEntries';
 
 type RowSelection = {
@@ -59,6 +65,10 @@ export const ReviewListRow = ({
     target: { kind: 'reviewComment', sessionId, threadId: entry.threadId },
     anchorKey: `review-row:${entry.threadId}`,
   });
+  const row = useCommentRow({ sessionId, entry });
+  const hasLine = work !== null || row.isStarting || row.result !== null;
+  const canFix = entry.isFixable && entry.state === 'new' && work === null;
+  const FixIcon = CONCEPT_ICONS.agents;
   const note = entry.row.reviewerNote;
   const body = entryBodyOf({ entry });
   const title = entryTitleOf({ entry });
@@ -89,7 +99,7 @@ export const ReviewListRow = ({
         onClick={onSelect}
         className={cn(
           'flex w-full min-w-0 items-start gap-3 rounded-md px-3 pt-2 text-left',
-          work === null ? 'pb-2' : 'pb-1',
+          hasLine ? 'pb-1' : 'pb-2',
           ROW_INTERACTIVE,
           isSelected && 'bg-selected',
         )}
@@ -130,7 +140,7 @@ export const ReviewListRow = ({
               data-row-trailing
               className="flex shrink-0 items-center gap-2 whitespace-nowrap tabular-nums"
             >
-              {work !== null ? null : qualifier === null ? (
+              {hasLine ? null : qualifier === null ? (
                 stateWord
               ) : (
                 <Tooltip content={qualifier}>{stateWord}</Tooltip>
@@ -156,7 +166,7 @@ export const ReviewListRow = ({
           >
             {title}
           </TruncatedText>
-          {entry.fix === null ? null : <RowFixLine fix={entry.fix} />}
+          {entry.fix === null || hasLine ? null : <RowFixLine fix={entry.fix} />}
           {entry.run === null || entry.run.end === 'stopped' ? null : (
             <span data-row-run className="min-w-0 truncate text-meta text-muted-foreground">
               {COMMENT_RUN_COPY.runLine({ title: entry.run.title })}
@@ -164,12 +174,33 @@ export const ReviewListRow = ({
           )}
         </span>
       </button>
-      {work === null ? null : (
+      {!hasLine ? null : (
         <div data-row-work="" className="grid grid-cols-[20px_minmax(0,1fr)] gap-3 px-3 pb-2">
           <div className="col-start-2 min-w-0">
-            <CommentWorkLine sessionId={sessionId} work={work} onStop={onStopWork} />
+            <CommentRowWork
+              sessionId={sessionId}
+              entry={entry}
+              work={work}
+              result={row.result}
+              row={row}
+              onStopWork={onStopWork}
+            />
           </div>
         </div>
+      )}
+      {!canFix ? null : (
+        <span className={cn('absolute right-2 top-1.5', !row.isStarting && 'row-actions')}>
+          <Button
+            size="xs"
+            variant="secondary"
+            data-row-fix-start=""
+            isBusy={row.isStarting}
+            onClick={row.fix}
+          >
+            <FixIcon size={ICON_SIZE.row} aria-hidden />
+            {ITEM_WORK_WORDS.verb.fix}
+          </Button>
+        </span>
       )}
       {isUnread ? (
         <StateDot
@@ -178,8 +209,10 @@ export const ReviewListRow = ({
           className="pointer-events-none absolute left-0 top-[18px] -translate-y-1/2"
         />
       ) : null}
-      {entry.fix?.kind === 'fixed' ? (
-        <RowFixDiffLink sessionId={sessionId} entry={entry} commit={entry.fix.commit} />
+      {entry.fix?.kind === 'fixed' && !hasLine ? (
+        <span className="absolute bottom-1 right-2">
+          <RowFixDiffLink sessionId={sessionId} entry={entry} commit={entry.fix.commit} />
+        </span>
       ) : null}
       {selection !== null && (
         <SelectionCheckbox

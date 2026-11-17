@@ -89,11 +89,16 @@ describe('the resolve fix scenes', () => {
     expect(within(commentList()).getAllByRole('button', { name: /^Stop/ }).length).toBe(8);
   });
 
-  it('resolve-fix-ready counts 8 fixes ready and never says Fixing', async () => {
+  it('resolve-fix-ready gives each fix its row result and counts the 7 it can apply in the toolbar', async () => {
     await mount({ name: 'resolve-fix-ready' });
 
     expect(counter()).toBeNull();
-    expect(workWords()).toEqual([]);
+    expect(workWords()).toEqual(Array(7).fill('Fix ready'));
+    expect(document.querySelectorAll('[data-row-fix]')).toHaveLength(1);
+    expect(within(commentList()).getAllByRole('button', { name: 'Review' })).toHaveLength(7);
+    expect(within(commentList()).getAllByRole('button', { name: 'Apply' })).toHaveLength(7);
+    expect(document.querySelector('[data-fix-run-ready]')?.textContent).toBe('7 fixes ready');
+    expect(within(commentList()).queryByRole('region', { name: 'Fix run comments' })).toBeNull();
     expect(toolbarText()).not.toContain('Fixing');
     expect(toolbarText()).not.toContain('need you');
   });

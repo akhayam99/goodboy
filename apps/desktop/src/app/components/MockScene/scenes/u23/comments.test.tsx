@@ -47,6 +47,11 @@ const list = (): HTMLElement => screen.getByRole('navigation', { name: 'Comments
 
 const bar = (): HTMLElement => screen.getByRole('toolbar', { name: 'Comment actions' });
 
+const workLines = (): ReadonlyArray<string> =>
+  Array.from(list().querySelectorAll('[data-row-work]'))
+    .map((line) => line.textContent ?? '')
+    .filter((line) => /^(Fixing|Queued)/.test(line));
+
 const regionTitles = (): ReadonlyArray<string | null> =>
   within(list())
     .getAllByRole('region')
@@ -178,7 +183,9 @@ describe('the u23 comments scenes', () => {
     expect(screen.queryByText("Couldn't fix")).toBeNull();
     expect(screen.getAllByText(/2 comments didn't go out/).length).toBeGreaterThan(0);
     expect(within(bar()).getByRole('button', { name: 'Retry push' })).toBeDefined();
-    expect(screen.getByRole('alert').textContent).toContain('Push failed');
+    expect(
+      screen.getAllByRole('alert').some((alert) => alert.textContent?.includes('Push failed')),
+    ).toBe(true);
   });
 
   it('keeps a comment left open on its host, quiet, with the way back', async () => {
@@ -208,10 +215,8 @@ describe('the u23 comments scenes', () => {
   it('puts Fixing and Queued with its place on the rows of a batch, and one count in the bar', async () => {
     await renderScene({ name: 'comments-batch' });
 
-    await waitFor(() => expect(list().querySelectorAll('[data-row-work]')).toHaveLength(3));
-    const lines = Array.from(list().querySelectorAll('[data-row-work]')).map(
-      (line) => line.textContent ?? '',
-    );
+    await waitFor(() => expect(workLines()).toHaveLength(3));
+    const lines = workLines();
     expect(lines.filter((line) => line.startsWith('Fixing'))).toHaveLength(1);
     expect(lines.filter((line) => line.startsWith('Queued·2nd in this fix'))).toHaveLength(1);
     expect(lines.filter((line) => line.startsWith('Queued·3rd in this fix'))).toHaveLength(1);
@@ -220,17 +225,22 @@ describe('the u23 comments scenes', () => {
     expect(screen.queryByTestId('resolve-run-status')).toBeNull();
   });
 
-  it('stops a working comment only behind a confirm, from its own row', async () => {
+  it('stops a working comment only behind a confirm that names its batch, from its own row', async () => {
     await renderScene({ name: 'comments-working' });
 
-    await waitFor(() => expect(list().querySelector('[data-row-work]')).not.toBeNull());
-    const home = list().querySelector<HTMLElement>('[data-row-work]') ?? bar();
+    await waitFor(() => expect(workLines()).not.toHaveLength(0));
+    const home =
+      Array.from(list().querySelectorAll<HTMLElement>('[data-row-work]')).find((line) =>
+        /^(Fixing|Queued)/.test(line.textContent ?? ''),
+      ) ?? bar();
     expect(
       within(home).getByRole('button', {
         name: 'Open transcript',
       }),
     ).toBeDefined();
     fireEvent.click(within(home).getByRole('button', { name: 'Stop' }));
-    expect(await screen.findByRole('dialog', { name: 'Stop this fix run?' })).toBeDefined();
+    expect(
+      await screen.findByRole('dialog', { name: 'Stop the fix for 4 comments?' }),
+    ).toBeDefined();
   });
 });

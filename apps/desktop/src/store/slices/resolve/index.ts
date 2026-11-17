@@ -40,6 +40,7 @@ import { dismissThreadFix, refreshThreadGitState } from './refreshThreadGitState
 import { publishThreadNow } from './publication/publishThreadNow';
 import { reconcileHandReplies } from './reconcileHandReplies';
 import { switchToReplyOnly } from './switchToReplyOnly';
+import { discardProposedFix } from './discardFix/discardProposedFix';
 import { recheckThread, settleThreadRecheck } from './recheckThread';
 import { resolveThreadOnRemote } from './resolveThreadOnRemote';
 import { settleResolveSourceChange } from './settleResolveSourceChange';
@@ -65,6 +66,7 @@ import type {
   WorktreeDrainParams,
   ItemParams,
   ThreadParams,
+  DiscardFixParams,
   ItemRevisionParams,
   CandidateBeginParams,
   CandidateCaptureParams,
@@ -158,6 +160,11 @@ export const createResolveSlice = ({ set, get }: SliceParams): ResolveActions =>
       settleLane({
         sessionId: params.sessionId,
         run: () => switchToReplyOnly({ set, get, ...params }),
+      }),
+    discardProposedFix: ({ sessionId, threadId, worktreePath }: DiscardFixParams) =>
+      settleLane({
+        sessionId,
+        run: () => discardProposedFix({ set, get, sessionId, threadId, worktreePath }),
       }),
     recheckThread: (params: ThreadParams) => recheckThread({ set, get, ...params }),
     settleThreadRecheck: (
