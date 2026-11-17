@@ -207,8 +207,13 @@ type ChangeLineParams = {
 const changeLineOf = ({ change, rowId }: ChangeLineParams): string => {
   const { artifactId, baseRevision, commentIds } = change;
   const comments = commentIds.length === 0 ? '' : ` (comments ${commentIds.join(', ')})`;
-  const revises = JSON.stringify({ artifactId, expectedRevision: baseRevision });
-  return `  this asks for changes to ${artifactId} v${baseRevision}${comments}: delegate with "revises": ${revises} and "changeFrom": ["${rowId}"], then show the new version for approval`;
+  const child = JSON.stringify({
+    revises: { artifactId, expectedRevision: baseRevision },
+    changeFrom: [rowId],
+    task: '<what to change>',
+    reason: '<why>',
+  });
+  return `  this asks for changes to ${artifactId} v${baseRevision}${comments}: delegate one child ${child} (no role, Goodboy sends it to the role that made it), then show the new version for approval`;
 };
 
 type FactsLinesParams = {

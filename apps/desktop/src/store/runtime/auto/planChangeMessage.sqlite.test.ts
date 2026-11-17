@@ -85,7 +85,7 @@ describe('a message to the Lead while its plan waits for approval', () => {
       expect(world.state.ports.autoTurns).toHaveLength(1);
       expect(turn?.text).toContain(CHANGE);
       expect(turn?.text).toContain(
-        `this asks for changes to plan-1 v1: delegate with "revises": {"artifactId":"plan-1","expectedRevision":1} and "changeFrom": ["${rowId}"]`,
+        `this asks for changes to plan-1 v1: delegate one child {"revises":{"artifactId":"plan-1","expectedRevision":1},"changeFrom":["${rowId}"],"task":"<what to change>","reason":"<why>"}`,
       );
       expect(world.errors).toEqual([]);
     },
@@ -123,6 +123,36 @@ describe('a message to the Lead while its plan waits for approval', () => {
     expect(world.state.ports.autoTurns.at(-1)?.text).toContain(
       'this asks for changes to plan-1 v2',
     );
+  });
+
+  it('makes plan v2 from a replan that names the plan by id only and gives no reason', async () => {
+    const world = await planWaitingWorld({ phase: 'done' });
+    const rowId = await say({ world, text: CHANGE });
+
+    await autoDelegates({
+      world,
+      spec: {
+        children: [
+          {
+            role: 'planner',
+            revises: 'plan-1',
+            changeFrom: [rowId],
+            task: 'write a new plan with everything we said',
+          },
+        ],
+      },
+    });
+    await autoTurnEnds({ world });
+    await childTurnEnds({
+      world,
+      index: 0,
+      text: newPlan({ content: '# Plan v2 from the conversation\n' }),
+    });
+
+    expect((await getArtifact({ db: world.state.world.db, artifactId: PLAN_ID }))?.revision).toBe(
+      2,
+    );
+    expect(world.errors).toEqual([]);
   });
 
   it('waits while the Lead is working, as any message does', async () => {

@@ -68,6 +68,9 @@ export const AUTO_MESSAGE_EXAMPLE =
 export const AUTO_STOP_EXAMPLE =
   '<<auto>>{"action":"stop","delegation":"<delegation id>","reason":"The planner already covers this."}<</auto>>';
 
+export const AUTO_REVISE_EXAMPLE =
+  '<<auto>>{"action":"delegate","requestId":"r3","children":[{"revises":{"artifactId":"<artifact id>","expectedRevision":1},"changeFrom":["<message id>"],"task":"Rewrite the plan with what the user asked.","reason":"The user asked for a new plan."}]}<</auto>>';
+
 export const AUTO_FINISH_EXAMPLE =
   '<<auto>>{"action":"finish","summary":"What was done and what the user should know."}<</auto>>';
 
@@ -104,6 +107,8 @@ const delegationRules = ({ closer }: DelegationRulesParams): string =>
     `  ${AUTO_MESSAGE_EXAMPLE}`,
     '- Stop: stop a working agent whose work is no longer needed, with the reason in one line. Its work stays in its worktree and you can continue it later.',
     `  ${AUTO_STOP_EXAMPLE}`,
+    '- Revise: to change an artifact (a new plan, a plan with changes), never start a second planner. Delegate one child with "revises" naming the artifact id and its version from the artifacts list, and "changeFrom" with the message ids that asked for it. Leave "role" out: Goodboy hands it to the role that made it, and the result is the next version of the same artifact.',
+    `  ${AUTO_REVISE_EXAMPLE}`,
     '- When the user writes to one of your agents, that message continues the agent like your own continue: its answer comes back to you as a result.',
     FINISH_RULE[closer],
     `  ${AUTO_FINISH_EXAMPLE}`,
