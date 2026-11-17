@@ -14,7 +14,9 @@ export type ResolveWord =
   | 'ready'
   | 'replied'
   | 'done'
-  | 'left_open';
+  | 'left_open'
+  | 'in_run'
+  | 'run_finished';
 
 export type ResolveGroup = 'needs_you' | 'working' | 'done' | 'left_open';
 
@@ -31,6 +33,8 @@ export const RESOLVE_WORD_LABEL: Readonly<Record<ResolveWord, string>> = {
   replied: 'Replied',
   done: 'Done',
   left_open: 'Left open',
+  in_run: 'In a run',
+  run_finished: 'Run finished',
 };
 
 export const RESOLVE_VOCAB = {
@@ -74,19 +78,23 @@ export const RESOLVE_GROUP_OF_WORD: Readonly<Record<ResolveWord, ResolveGroup>> 
   replied: 'done',
   done: 'done',
   left_open: 'left_open',
+  in_run: 'working',
+  run_finished: 'needs_you',
 };
 
 export const RESOLVE_WORD_RANK: Readonly<Record<ResolveWord, number>> = {
   question: 0,
   push_failed: 1,
   to_review: 2,
-  couldnt_fix: 3,
-  working: 4,
-  ready: 5,
-  open: 6,
-  replied: 7,
-  done: 8,
-  left_open: 9,
+  run_finished: 3,
+  couldnt_fix: 4,
+  working: 5,
+  in_run: 6,
+  ready: 7,
+  open: 8,
+  replied: 9,
+  done: 10,
+  left_open: 11,
 };
 
 const SUB_LABEL: Readonly<Record<Exclude<ResolveSub, 'resolved_remote'>, string>> = {
@@ -128,6 +136,17 @@ export const resolveLabelOfState = ({
 }): string => RESOLVE_WORD_LABEL[resolveWordOfState({ state, isPushFailure })];
 
 const CHECKS_FAILED_LABEL = 'Checks failed';
+
+export type ResolveCommentRun = {
+  readonly stateWord: string;
+  readonly isFinished: boolean;
+};
+
+const RUN_TAKES: ReadonlySet<ResolveWord> = new Set<ResolveWord>([
+  'open',
+  'couldnt_fix',
+  'left_open',
+]);
 const COMMENT_CHANGED_LABEL = 'Comment changed';
 
 export type ResolveCommentFacts = {
@@ -139,6 +158,7 @@ export type ResolveCommentFacts = {
   readonly attempt: Pick<ResolveAttempt, 'failureCause' | 'phase'> | null;
   readonly gitChip: RemoteView | null;
   readonly hasFailedChecks: boolean;
+  readonly run?: ResolveCommentRun | null;
 };
 
 export type ResolveCommentProjection = {
@@ -198,9 +218,23 @@ const labelOf = ({
   return sub === 'resolved_remote' ? `Resolved on ${sourceLabel}` : SUB_LABEL[sub];
 };
 
+type RunWordParams = {
+  readonly word: ResolveWord;
+  readonly run: ResolveCommentRun | null;
+};
+
+const runWordOf = ({ word, run }: RunWordParams): ResolveWord => {
+  if (run === null || !RUN_TAKES.has(word)) {
+    return word;
+  }
+  return run.isFinished ? 'run_finished' : 'in_run';
+};
+
 export const projectResolveComment = (facts: ResolveCommentFacts): ResolveCommentProjection => {
-  const word = resolveWordOfState({ state: facts.state, isPushFailure: facts.isPushFailure });
-  const sub = subOf({ facts });
+  const run = facts.run ?? null;
+  const ownWord = resolveWordOfState({ state: facts.state, isPushFailure: facts.isPushFailure });
+  const word = runWordOf({ word: ownWord, run });
+  const sub = word === ownWord ? subOf({ facts }) : null;
   const isChanged = facts.state === 'outdated';
   const sentence =
     word === 'couldnt_fix'
@@ -210,7 +244,10 @@ export const projectResolveComment = (facts: ResolveCommentFacts): ResolveCommen
   return {
     word,
     sub,
-    label: labelOf({ word, sub, sourceLabel: facts.sourceLabel }),
+    label:
+      word === 'in_run' && run !== null
+        ? `${RESOLVE_WORD_LABEL.in_run} · ${run.stateWord}`
+        : labelOf({ word, sub, sourceLabel: facts.sourceLabel }),
     sentence,
     gitChip: facts.gitChip,
     hasFailedChecks,

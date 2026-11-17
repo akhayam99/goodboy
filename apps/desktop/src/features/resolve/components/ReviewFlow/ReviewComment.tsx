@@ -50,6 +50,7 @@ import { ThreadGitEvidence } from './ThreadGitEvidence';
 import { NewReplyNote } from './NewReplyNote';
 import { ReplyNote } from './ReplyNote';
 import { PushFailedNote } from './PushFailedNote';
+import { CommentRunStrip } from './CommentRunStrip';
 import { replyNoteKindOf } from './replyNoteKind';
 import { SourceChangeCard } from './SourceChangeCard';
 import { ThreadRecheckLine } from './ThreadRecheckLine';
@@ -182,7 +183,7 @@ export const ReviewComment = ({
     row.attempt !== null && (state === 'failed' || previous.length > 0)
       ? attemptNumberOf({ attempts, threadId, attemptId: row.attempt.id })
       : null;
-  const isFailed = state === 'failed';
+  const isFailed = state === 'failed' && entry.run === null;
   const composeCopy =
     compose !== null && isFailed && compose.mode === 'redraft'
       ? {
@@ -245,6 +246,10 @@ export const ReviewComment = ({
       <div className="min-w-0">
         <ReviewerCommentBlock commentThread={row.commentThread} />
       </div>
+
+      {entry.run === null ? null : (
+        <CommentRunStrip sessionId={sessionId} run={entry.run} isNote={isNote} />
+      )}
 
       <PreviousAttempts attempts={previous} />
 
