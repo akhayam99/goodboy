@@ -249,16 +249,16 @@ characters`, in the warning tone from 90%. A longer draft is blocked before
   a breathing `Rebasing` chip (`soft-pulse`, still under reduced motion) with
   the replay step in the tooltip, a quiet `Queued` on the ones waiting, no chip once a
   branch is rebased even while its behind count is stale, a danger `Conflict`
-  (tooltip "Waiting for Auto") on a branch Auto has not started, a breathing
-  `Auto resolving` with the Auto icon on the branch whose rebase is stopped in
-  its worktree (tooltip "Auto resolves 1 file: <path>", from the stop files of
-  its history run), `Rebased by Auto` once an Auto branch is clean again until
+  (tooltip "Waiting for the Lead") on a branch Auto has not started, a breathing
+  `Lead resolving` with the Auto icon on the branch whose rebase is stopped in
+  its worktree (tooltip "The Lead resolves 1 file: <path>", from the stop files of
+  its history run), `Rebased by the Lead` once an Auto branch is clean again until
   every Auto branch of the batch is clean (`rebaseAllBatchSettledOf`), then no
   chip, `Failed` with the cause in the row tooltip. A `Conflict` or `Failed`
   branch turns `rebased` once git shows the rebase finished outside the flow
   (`settleStaleRebases`, after the turn ends, on focus and on the poll of
-  `useRebaseStatuses`, mounted by `LevelProjects` and the central model; a pass that settles nothing writes nothing, and the list of settled stop ids keeps only events the session still holds). When Auto has the rest the
-  header line reads `Auto has the rest`, still with no list. One function
+  `useRebaseStatuses`, mounted by `LevelProjects` and the central model; a pass that settles nothing writes nothing, and the list of settled stop ids keeps only events the session still holds). When the Lead has the rest the
+  header line reads `The Lead has the rest`, still with no list. One function
   (`branchRowChipOf`) owns every chip text and tone. A late
   answer for a batch that is gone is dropped by run id; Abort lets the branch in
   flight finish and skips the queued ones. The card header carries one `+`

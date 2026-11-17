@@ -103,26 +103,26 @@ On a conflict or a commit hook, the panel does three things.
 
 - It reads **Rebase on main stopped: 2 files conflict** and **Your branch is as it was**.
 - It lists every file with **Open** (your editor).
-- It offers **Resolve with Auto**, **Resolve in terminal** and **Abort rebase**, with **Add a hint** for Auto.
+- It offers **Resolve with the Lead**, **Resolve in terminal** and **Abort rebase**, with **Add a hint** for the Lead.
 
-**Resolve with Auto**
+**Resolve with the Lead**
 
-- It starts one Auto run. The run picks the agent and the model, rebases the branch in its worktree and resolves the conflict.
+- It starts one Lead run. The run picks the agent and the model, rebases the branch in its worktree and resolves the conflict.
 - It asks you in the session only when a conflict is ambiguous. It never pushes.
-- Until Auto took the goal, the panel stays. A failed start keeps your hint and you can try again.
-- While Auto works, the panel reads **Auto is rebasing on main** with **1 of 2 files resolved** and **Open Auto**.
+- Until the Lead took the goal, the panel stays. A failed start keeps your hint and you can try again.
+- While the Lead works, the panel reads **The Lead is rebasing on main** with **1 of 2 files resolved** and **Open the Lead**.
 
 **Resolve in terminal**
 
 - It starts the rebase in the worktree and opens the terminal on it. If the stop, the mount or its branch changed while it read the base, it starts nothing and says so.
 - Then the panel reads **You are rebasing on main in the terminal**.
-- A file turns green once it has no conflict markers. Each row also names its state to a screen reader: **Resolved**, **Still conflicts** or **Auto is resolving**.
+- A file turns green once it has no conflict markers. Each row also names its state to a screen reader: **Resolved**, **Still conflicts** or **The Lead is resolving**.
 - **Continue rebase** stays off until no file is left. It stages the resolved files and continues. **Abort rebase** asks first.
 - A conflict git leaves without markers stays open until you stage it with `git add` or `git rm`. Examples are a binary file, or a file that one side deleted. The panel says so, and Continue refuses it too.
 
 **After the rebase**
 
-- Once the branch caught up, by Auto or by you, the panel reads **Rebased on main** and **Origin still has the old copy**.
+- Once the branch caught up, by the Lead or by you, the panel reads **Rebased on main** and **Origin still has the old copy**.
 - **Push** is the force push with lease of the Branch header. The panel reads **Pushed to origin** once origin has it.
 - With or without a pull request, **Push** is the branch page's one push action. It has the same confirm, force with lease and failure line as the header. It shows while the branch has commits origin lacks.
 - When someone pushed while you rebased, the panel reads **Rebased here, but origin has 1 new commit** and names the commit. It offers three verbs.
@@ -132,7 +132,7 @@ On a conflict or a commit hook, the panel does three things.
 
 **The verbs of a stopped rebase**
 
-- The verbs are one set. The banner, the panel and the Next row run the same ones. A hint typed under **Resolve with Auto** or **Fix with an agent** therefore applies from whichever place you press the verb.
+- The verbs are one set. The banner, the panel and the Next row run the same ones. A hint typed under **Resolve with the Lead** or **Fix with an agent** therefore applies from whichever place you press the verb.
 - A failed push keeps **Fix with an agent**, **Open terminal here** and **Retry push**.
 - It reads **Stopped: hook stopped the push** only when its error names `pre-push`. A remote `pre-receive hook declined` reads **Stopped: push failed**. The Local checks cell uses the same test.
 - A dirty tree, a moved branch, a blocked move, a result that differs and a failed rebase offer **Retry rebase** and **Open terminal**.
@@ -149,8 +149,8 @@ On a conflict or a commit hook, the panel does three things.
 - The test finds a Goodboy stop in the phase stopped, or a rebase in progress in the worktree. It reads the page's live status or the status cache.
 - **Abort rebase** closes the panel, leaves the branch where it was and records it. The stop leaves Next in every window, and Activity reads **Kept hl/fix-duplicate-credit as it was**. A later rebase that stops again brings a new row.
 - A stop also leaves Next once its pull request merged or closed or its branch left the session. A newer stop on the same branch replaces it, so the older History rewriter stops asking under Needs you.
-- Search or run has the same verb as **Resolve rebase conflicts with Auto**.
-- The panel does not depend on the window that ran the rebase. After a restart, a reload or in a second window, it comes back from the saved stop with the same verbs. **Resolve with Auto** reads the rebase plan again before it starts.
+- Search or run has the same verb as **Resolve rebase conflicts with the Lead**.
+- The panel does not depend on the window that ran the rebase. After a restart, a reload or in a second window, it comes back from the saved stop with the same verbs. **Resolve with the Lead** reads the rebase plan again before it starts.
 - In Next the stop is one row titled by the branch, with the panel's main verb (see Overview).
 - **Open rebase** on the stop's row in Activity, a click on its title in Next, and **Open rebase** on the transcript of a finished History rewriter all do the same. They open the branch the rebase stopped on, with this panel in view, by its mount, never the branch on screen.
 
@@ -158,35 +158,35 @@ On a conflict or a commit hook, the panel does three things.
 
 **Rebase all** rebases every clean branch of a session with git, one at a time. It sits on the session Projects card when two or more branches are behind their base. Search or run has **Rebase all behind branches**.
 
-A branch that conflicts goes to one Auto run. Auto resolves the conflicts one by one and asks only when one is ambiguous.
+A branch that conflicts goes to one Lead run. The Lead resolves the conflicts one by one and asks only when one is ambiguous.
 
-- While it runs, the card line reads **Rebasing 2 of 9** with **Abort**. Once Auto has the rest, it reads **Auto has the rest**.
+- While it runs, the card line reads **Rebasing 2 of 9** with **Abort**. Once The Lead has the rest, it reads **The Lead has the rest**.
 - **Abort** stops the branches that have not started and leaves the finished ones rebased. A failure on one branch never undoes the others.
 - Each branch shows its own state on its row in the tree.
 
-| Chip                | Means                                                                 |
-| ------------------- | --------------------------------------------------------------------- |
-| **Rebasing**        | a breathing chip, with the replay step in its tooltip                 |
-| **Queued**          | a quiet chip                                                          |
-| no chip             | the branch is rebased                                                 |
-| **Conflict**        | the branch waits for Auto                                             |
-| **Auto resolving**  | a breathing chip while Auto works on it, with the file in its tooltip |
-| **Rebased by Auto** | shown until every branch Auto took is clean, and then nothing         |
-| **Failed**          | the cause is in its tooltip                                           |
+| Chip                    | Means                                                                     |
+| ----------------------- | ------------------------------------------------------------------------- |
+| **Rebasing**            | a breathing chip, with the replay step in its tooltip                     |
+| **Queued**              | a quiet chip                                                              |
+| no chip                 | the branch is rebased                                                     |
+| **Conflict**            | the branch waits for the Lead                                             |
+| **Lead resolving**      | a breathing chip while the Lead works on it, with the file in its tooltip |
+| **Rebased by the Lead** | shown until every branch the Lead took is clean, and then nothing         |
+| **Failed**              | the cause is in its tooltip                                               |
 
 **Update all** in the Update group of Next runs the same batch with git only. It rebases behind and stopped branches, brings origin in where someone pushed and leaves every conflict to its own row.
 
 The **Rebase N branches** step in Next opens the same flow as an inline picker.
 
 - Every behind branch is checked. The button reads **Rebase all**, or **Rebase 2** after you uncheck one.
-- **Also tidy commits with Auto** is off by default. When on, it asks the same Auto run to fold fix-ups and reword messages after each rebase, locally.
+- **Also tidy commits with the Lead** is off by default. When on, it asks the same Lead run to fold fix-ups and reword messages after each rebase, locally.
 - You push from the Branch header, which asks before a force push.
 
 **When a stop settles**
 
 A **Conflict** or **Failed** from a rebase is a record of where the branch stood when the rebase stopped. It is not the branch's state forever.
 
-An agent or the terminal can finish the rebase outside this flow, for example a fixer, Auto started elsewhere, or `git rebase --continue`. The stop then settles as soon as git shows all of these:
+An agent or the terminal can finish the rebase outside this flow, for example a fixer, a Lead started elsewhere, or `git rebase --continue`. The stop then settles as soon as git shows all of these:
 
 - no rebase in progress and no unmerged file;
 - a branch no longer behind its base;

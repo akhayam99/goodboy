@@ -38,10 +38,8 @@ of work. One map, read it before a rename:
 | Lead asks you, permission rows      | `auto.permissions`, `auto_trees.permissions` (m243)                        |
 | Older run "Workflow · Orchestrated" | `session_workflows` with `execution_mode` (m091), kind `orchestrated`      |
 
-Some buttons still carry the old word: **Let Auto take it from here**, **Detach
-from Auto**, **Stopped by Auto**, **What Auto was told**, **Use as an Auto
-check** and **Resolve with Auto**. They are copy, not a second engine. New runs
-never start the orchestrator; an open orchestrated run finishes on it, and the
+Buttons and status lines name the Lead. **Use as an Auto check** keeps the
+script setting name. New runs never start the orchestrator; an open orchestrated run finishes on it, and the
 orchestrator goes no earlier than two minor releases after 0.38.0
 ([features/workflows.md](features/workflows.md#older-runs)). No migration
 moves a row between the two engines.
@@ -130,7 +128,7 @@ with `@` in the field, which starts that role at once with no Auto turn first.
   already spent. A limit exists only when a person sets one. The workspace default is the Limit
   of the Runs settings page (see [Workflows](workflows.md)), and a start never
   stores a limit: an amount typed on the form is for that run only.
-- A Next card that starts a role gets **Discuss with Auto** as the last
+- A Next card that starts a role gets **Discuss with the Lead** as the last
   entry of its more menu. It is the registry verb `suggestion.talkWithAuto`
   (`features/actions/kinds/suggestion.ts`), shown whenever the card starts a
   role. It opens **Start a run** on Runs with the card as its text
@@ -140,7 +138,7 @@ with `@` in the field, which starts that role at once with no Auto turn first.
 
 ## Moving an agent to Auto
 
-**Let Auto take it from here** (once Move to Auto) hands an agent you started
+**Let the Lead take it from here** (once Move to Auto) hands an agent you started
 yourself to Auto. It shows on old rows only: an agent that **Start a run**
 started keeps a route in `runs.routes.<sessionId>` and never offers it. It is in the menu
 of an Implementer, Tester, Scout, Planner, Reviewer, Debugger or docs agent and
@@ -150,9 +148,9 @@ the right click and Search or run agree). It is blocked with "Wait for the turn 
 end first." while the agent works.
 
 - The verb opens the chat of the agent and replaces its composer with a panel,
-  **What should Auto do next?** (`MoveToAutoPanel`). The field may stay empty. A
+  **What should the Lead do next?** (`MoveToAutoPanel`). The field may stay empty. A
   handoff marker with `kind=auto` shows the same panel from the chip **Agent
-  suggests: Auto**, which does not start an agent of its own.
+  suggests: the Lead**, which does not start an agent of its own.
 - `moveToAuto` (`features/auto/moveToAuto.ts`) checks the release gate, then
   `adoptAgent` (`store/runtime/auto/adoptAgent.ts`) writes the
   whole transfer in one guarded transaction: a new Auto agent, its tree, one
@@ -170,9 +168,9 @@ end first." while the agent works.
   whose parent or child chain holds an Auto agent. A failure writes nothing and
   leaves the source as it was.
 - The source keeps its row and its chat. Its composer is replaced by the notice
-  **Moved to Auto** (`AdoptedNotice`) with **Open Auto** and **Detach from Auto**.
+  **Moved to the Lead** (`AdoptedNotice`) with **Open the Lead** and **Detach from the Lead**.
   Inside a tree the Continue buttons and the handoff chip are hidden.
-- **Detach from Auto** (`detachAdopted`) is the undo, also offered in the toast of
+- **Detach from the Lead** (`detachAdopted`) is the undo, also offered in the toast of
   the move. It removes the adopted delegation, its artifacts and the words about it
   Auto has not read yet, and bumps the tree revision. It waits for the turn of the
   agent to end. The Auto agent stays in the session.
@@ -183,7 +181,7 @@ A rebase on main is plain git and never starts Auto. When it stops on a
 conflict or a commit hook, the run keeps `rebaseConflict` (the onto ref, the
 base, the head before the rebase) and the stop keeps the files
 (`store/slices/history/rebaseBranch.ts`); the prompt asks the person. **Resolve
-with Auto** (`mount.resolveRebaseWithAuto`) calls `resolveRebaseWithAuto`
+with the Lead** (`mount.resolveRebaseWithAuto`) calls `resolveRebaseWithAuto`
 (`store/slices/rebaseAll/resolveRebaseWithAuto.ts`): it starts one Auto agent
 with `spawnAgent` and `kindOverride: 'auto'`, the route the workspace picks for
 the role, and the goal `rebaseAutoGoal` writes, so the goal goes through the
@@ -196,9 +194,9 @@ run is marked as handed (`autoAgentId`) only once Auto took the goal and only
 when the run is still the one that was asked, so an answer that lands after
 **Abort rebase** changes nothing. **Rebase all** (`store/slices/rebaseAll/rebaseAll.ts`)
 rebases each branch with git first and hands every conflicted branch to the
-same single Auto run; with **Also tidy commits with Auto** on, the goal also
+same single Auto run; with **Also tidy commits with the Lead** on, the goal also
 lists every rebased branch to tidy, locally, after its rebase. **Resolve with
-Auto** reads why when no provider can run Auto
+the Lead** reads why when no provider can run Auto
 (`autoUnavailableReason`).
 
 ## Talking to Auto
@@ -215,7 +213,7 @@ own agent (the ledger, the budget line, the results, "MESSAGES FROM THE USER")
 is stored with `deliveredBy: 'auto'` on its `user_text` event, set in
 `startTurnRun` when the turn's origin is `delegation` (the root's deliveries
 and a child's first brief). The transcript draws such an event as one collapsed
-row, **What Auto was told**, never as a user bubble; opening it shows the text
+row, **What the Lead was told**, never as a user bubble; opening it shows the text
 as sent. A transcript written before this change has no origin on its events, so
 its delivery text still renders as a bubble: there is no text sniffing. A
 message the runtime
@@ -277,7 +275,7 @@ and its row says "Not delivered". A tree blocked by the budget shows **Change li
 delivers the row, as before). A tree blocked for any other reason but the time limit shows
 **Retry**, which resumes the tree and delivers the row (the send itself already tries one Retry).
 The time limit and a stopped or stopping tree have no action ("This conversation reached its time
-limit.", "Auto was stopped." in the tooltip): the row stays unsent, and Edit or Remove still take it
+limit.", "The Lead was stopped." in the tooltip): the row stays unsent, and Edit or Remove still take it
 back. Stopping drops the pending rows with the reason `stopped`; `readAutoTreeViews` keeps those user
 rows in `pendingMessages` while the tree is stopping or stopped, so the row still shows. A
 `finished` or `done` tree takes the message as a normal follow-up turn. Rows left from old trees
@@ -298,7 +296,7 @@ cannot be written refuses the message with "Auto could not keep the images. Atta
 nothing is dropped silently. A turn that is not an operator message or
 a child is left to the plain turn. A message to the root of an Auto tree is never a
 plain turn: with no Auto door registered at all (the runtime has not started yet)
-`routeAutoUserTurn` refuses it with "Auto is still starting. Retry in a
+`routeAutoUserTurn` refuses it with "The Lead is still starting. Retry in a
 moment." (one constant, `AUTO_STARTING_SENTENCE`, shared by every Auto action that finds no door) and the composer keeps its text.
 
 ## Overview
@@ -321,7 +319,7 @@ phase `done`) reads **Idle** in the row and the rail root, never Done. **Mark fi
 (`agent.markAutoFinished`, undoable) moves a resting tree to the stored phase
 `finished` (m231) through `moveRestingAutoTree`: one write that needs a resting
 phase, no stop, no running turn and no open delegation, so a tree that started
-working again refuses with "Auto is working again. Mark it finished once it
+working again refuses with "The Lead is working again. Mark it finished once it
 rests." A finished tree is left out of recovery and takes only user messages:
 writing to it reopens it to **Deciding**.
 
@@ -481,7 +479,7 @@ writing to it reopens it to **Deciding**.
   shows "This agent is no longer in this session. It was deleted or moved." on
   the card (`useActionCardActions`).
 - **What the agents reported.** Each child result Auto read for a turn is that
-  child's card, right after the **What Auto was told** row of that turn and
+  child's card, right after the **What the Lead was told** row of that turn and
   before Auto's reply (`AutoDeliveryResults` under the delivery row, drawing
   `AutoResultCards`): the role glyph, the name, the model
   with its provider and **Open**, which opens the child page. Under that header the card
@@ -525,7 +523,7 @@ writing to it reopens it to **Deciding**.
   `claimsReply` receives the replies `claimedRepliesOf` gives it (the first card
   that settles after the reply, the open one last), and the approval text comes
   from `approvedPlanReply`. A message you write yourself stays a bubble.
-  **What Auto was told** shows once, on the first delivery.
+  **What the Lead was told** shows once, on the first delivery.
 - **The state.** Auto's state is said once, in the dock (`AutoDock`,
   `AutoDockAttention`, phrases from `autoTreeLive`), never at the end of the chat:
   **Implementer running, Tester queued**, **Starting agents**, **Reading the results**, **Deciding what to do
@@ -542,7 +540,7 @@ writing to it reopens it to **Deciding**.
   whose turn ended draws no tail and no Stop, the rail says Idle or Done and
   **Mark finished** is in the header menu. A Stop that fails says why in the dock and a Retry on the
   tail itself, in an inline danger notice under the line ("Couldn't stop the Auto
-  agents", "Couldn't retry Auto"), never only in the notifications. While Auto's own turn runs, the
+  agents", "Couldn't retry the Lead"), never only in the notifications. While Auto's own turn runs, the
   thinking line of the conversation speaks instead. There is no separate strip
   of running children: the running rows of the cards, the rail and the dock
   already say it. The glance line under the title holds the state word, the
@@ -554,8 +552,8 @@ writing to it reopens it to **Deciding**.
   secondary. Each card row shows the short task title,
   role glyph and elapsed active time (`DelegationClock`, shared with the rail).
   A delegation line's **Open** opens that child's page (`useAutoTreeActions`
-  `openChild`). While a plan waits for approval the ask is the state. The composer says "Message Auto" while Auto
-  waits, or "Message Auto, or describe changes to plan v1", and shows **Ask
+  `openChild`). While a plan waits for approval the ask is the state. The composer says "Message Lead" while Auto
+  waits, or "Message Lead, or describe changes to plan v1", and shows **Ask
   first** like any agent composer.
 - **A child opens on its page, from every door** (`useAutoChildChat`, `AgentDetailPane`):
   a tree row, a delegation line, the Overview, a notification and Search or run land on one
@@ -574,7 +572,7 @@ writing to it reopens it to **Deciding**.
   `splitArtifactText`) and its tail (`autoChildLive`: **Queued** only while Auto has
   accepted it and not started it, its live line with **Stop agent**, **Waiting for
   your OK** with **Confirm** and **Decline**, **Asked a question** (the question is in the
-  conversation above), **Failed: <sentence>** or **Returned to Auto**). A failed child's
+  conversation above), **Failed: <sentence>** or **Returned to the Lead**). A failed child's
   end line has no recovery action: the conversation dock owns **Retry**
   through Auto, even without a closing result
   (`AutoChildEnd`, `ConversationDock/useAutoChildRecovery`, `continueStoppedAgent`). A stopped child has no tail line:
@@ -603,7 +601,7 @@ writing to it reopens it to **Deciding**.
   Auto's own `message` takes the same queue, with an `auto-message:` id keyed on the delegation,
   Auto's run and the message's position in that run; a message whose text that run already
   saved replays instead of queueing again (`messageChild`). The chat keeps the person's words
-  where they were written. A child that asked a question waits for Auto's answer, a child that
+  where they were written. A child that asked a question waits for the Lead's answer, a child that
   rewrites an artifact goes through Auto, and files are refused: each with a sentence. A child
   of a finished, stopped or detached tree, or of an older generation, keeps the plain confined
   turn, files included: `routeAutoChildTurn` passes `hasFiles` and `continueChild` refuses
@@ -855,7 +853,7 @@ colour (`AUTO_STATE_TONE.waitingOnYou`) with an inner tone bar, not a side borde
 - **Decline** declines and tells nothing.
 - A failed start keeps the pick and the hint, shows the reason in the card and
   reads **Retry** on the same delegation. A `lost` answer reads "No longer open".
-- Without a port the card says Auto can't take the answer in this window yet.
+- Without a port the card says the Lead can't take the answer in this window yet.
 
 The hint travels through the same port in every window (the multi-window bridge
 carries it).
@@ -885,7 +883,7 @@ Its row sits under Needs you, and it raises `run-paused-at-limit` (`autoLimitRoo
 A child that returned (outcome `blocked`, reasons `needs_shell`, `needs_writer`,
 `needs_role`, `needs_decision` and `needs_user`, or `declared_blocked` and
 `missing_tool` on rows from before the return) is not an error and not yours to
-move. It reads **Idle**, with "Returned to Auto: <its request>" on its tail (the
+move. It reads **Idle**, with "Returned to the Lead: <its request>" on its tail (the
 one line it wrote, `returnedRequestOf`, else its summary), while Auto decides, and **Done**
 only once Auto decided about it: continued it (`retryOf`), replaced it (`replaces`) or released it
 with a reason (`isAutoDelegationReplaced`, which reads `isAutoReturnDecided` for a returned child). A
@@ -1042,8 +1040,8 @@ It decides by ending its final reply with at most one block:
   counting it twice.
 - `stop` stops a working child (`delegation`, `reason`) with the same cancel as the dock Stop
   (`stopChild`, the `cancelRun` port with `by: 'auto'`). The agent is marked stopped by `auto`,
-  so the dock, the glance and the child row read **Stopped by Auto** (`stoppedPhraseOf`, the one
-  owner of every "Stopped by" label). It settles `stopped` with the reason "Stopped by Auto:
+  so the dock, the glance and the child row read **Stopped by the Lead** (`stoppedPhraseOf`, the one
+  owner of every "Stopped by" label). It settles `stopped` with the reason "Stopped by the Lead:
   ..." and its work stays. The agent is marked stopped by `auto` as soon as the cancel answers,
   whatever it answers, and its queued `auto-message:` items are dropped (`cancelTurnConfirmed`,
   `dropAutoMessages`), so its parked queue never reopens it. The reason is saved on the
@@ -2016,8 +2014,8 @@ names the field or phrase to drop or change ("facts" on a reviewer, "publish" on
 try. A refusal row keeps the action, the code and the roles of the
 refused children; while it is pending for the current generation, `readAutoTreeViews` reads it as
 `pendingRefusal` and the tail says it in the user voice (`refusalNoticeOf`, reasons from
-`AUTO_REFUSAL_USER_REASON`): "Auto tried to start an Implementer. Not started: more than one
-folder fits and it did not say which. Auto is choosing again." A refusal about the project
+`AUTO_REFUSAL_USER_REASON`): "The Lead tried to start an Implementer. Not started: more than one
+folder fits and it did not say which. The Lead is choosing again." A refusal about the project
 (`mount_ambiguous`, `mount_missing`) is asked instead (`projectAskOf`, `AutoProjectAsk`). When
 the refusal comes from a `mount` block, or from a writer delegate whose `mount` names a project
 of the workspace that is not added yet (`refusalMountNote`), and the project is known, the ask is one inline step:

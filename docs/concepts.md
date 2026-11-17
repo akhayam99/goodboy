@@ -789,7 +789,7 @@ pick it when you start the agent.
 - **History rewriter** is hidden: nobody picks it. Goodboy starts it only
   when a Rewrite history plan hits a conflict git cannot settle alone and
   you press **Rewrite with an agent**. A rebase on main never starts it: a
-  conflict there stops and asks, and **Resolve with Auto** hands it to Auto. It works in a throwaway
+  conflict there stops and asks, and **Resolve with the Lead** hands it to Auto. It works in a throwaway
   copy of the branch, never in a mount. Its turn carries a git config that
   points `origin` at a push URL that always fails, it has no GitHub token and
   no bridge mount. It reports with `<<history-step>>`, `<<history-done>>` or
