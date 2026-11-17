@@ -7,6 +7,7 @@ import { hasSessionDraftContent } from '../../../../store/slices/sessionDraft/ha
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { navEntryToneOf } from '../../../../shared/components/navEntryToneOf';
 import { requestNewSession } from '../../../../features/session/requestNewSession';
+import { WorkspaceIdentityRow } from '../../../../features/workspace/components/WorkspaceIdentityRow';
 import { useColumnPlace } from '../../../hooks/useColumnPlace';
 import type { ShellArrangement } from '../../../shellArrangement';
 import { GoodboyChip } from '../../GoodboyChip';
@@ -40,6 +41,7 @@ export const ShellLeft = ({ arrangement, workspaceId, actions, placeOverride }: 
     <ShellRail label="Places">
       {arrangement.columnScope === 'workspace' ? (
         <>
+          <WorkspaceIdentityRow />
           <ShellRailItem
             id="new"
             icon={Plus}

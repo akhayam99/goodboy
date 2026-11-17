@@ -14,8 +14,8 @@ const TOP_BAR = readFileSync(
   join(SOURCE_ROOT, 'app', 'components', 'AppTopBar', 'index.tsx'),
   'utf8',
 );
-const IDENTITY_ROW = readFileSync(
-  join(SOURCE_ROOT, 'features', 'workspace', 'components', 'WorkspaceIdentityRow', 'index.tsx'),
+const SHELL_LEFT = readFileSync(
+  join(SOURCE_ROOT, 'app', 'components', 'SideColumn', 'ShellLeft', 'index.tsx'),
   'utf8',
 );
 const TILE = readFileSync(
@@ -62,10 +62,9 @@ const spacingOf = ({ className, prefix }: SpacingParams): number => {
 };
 
 describe('workspace tile and collapsed rail axis', () => {
-  it('lands the sidebar toggle center on the rail button axis, with the identity after it', () => {
+  it('lands the sidebar toggle center on the rail button axis, with the workspace mark in the rail', () => {
     const bar = classNameContaining({ source: TOP_BAR, marker: 'grid h-9' });
     const leftZone = classNameContaining({ source: TOP_BAR, marker: 'col-start-1' });
-    const row = classNameContaining({ source: IDENTITY_ROW, marker: 'flex w-full' });
     const { container } = render(
       <ColumnToggleButton isCollapsed={false} onToggle={() => undefined} />,
     );
@@ -79,11 +78,11 @@ describe('workspace tile and collapsed rail axis', () => {
     expect(toggleCenter).toBe(22);
     expect(toggleCenter).toBe(COLLAPSED_RAIL_WIDTH / 2);
     expect(toggle.split(/\s+/)).toContain(TOP_BAR_CONTROL.square);
-    expect(TOP_BAR.indexOf('<ColumnToggleButton')).toBeLessThan(
-      TOP_BAR.indexOf('<WorkspaceIdentityRow'),
+    expect(TOP_BAR).not.toContain('<WorkspaceIdentityRow');
+    expect(SHELL_LEFT.indexOf('<WorkspaceIdentityRow')).toBeLessThan(
+      SHELL_LEFT.indexOf('<ShellRailItem'),
     );
     expect(leftZone).toContain('pl-(--titlebar-inset)');
-    expect(row).not.toContain('--titlebar-inset');
     expect(TILE).toContain('flex size-5');
     expect(STYLES).toContain(`--titlebar-inset: 0px;`);
   });

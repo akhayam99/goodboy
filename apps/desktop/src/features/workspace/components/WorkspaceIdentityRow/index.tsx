@@ -1,15 +1,11 @@
-import { ChevronsUpDown } from '@goodboy/ui/icons';
 import {
   AnchoredLayer,
   AnchoredPopover,
   Button,
   cn,
   FLOATING_SURFACE,
-  ICON_SIZE,
-  ROW_INTERACTIVE,
-  Skeleton,
-  StatusDot,
-  Tooltip,
+  SHELL_RAIL_POPOVER,
+  ShellRailItem,
   useDropdown,
 } from '@goodboy/ui';
 import {
@@ -20,11 +16,10 @@ import {
 } from '../../../../store';
 import { NAMES } from '../../../../shared/utils/names';
 import { folderCountLabel } from '../../folderCountLabel';
-import { needYouWords } from '../../needYouWords';
-import { WorkspaceAttentionMark } from '../WorkspaceAttentionMark';
 import { WorkspaceSwitcher } from '../WorkspaceSwitcher';
-import { WorkspaceTile } from '../WorkspaceSwitcher/WorkspaceTile';
 import { useWorkspaceSwitchState } from './useWorkspaceSwitchState';
+import { WorkspaceTileGlyph } from './WorkspaceTileGlyph';
+import { workspaceMarkOf } from './workspaceMarkOf';
 
 export const WorkspaceIdentityRow = () => {
   const currentWorkspace = useCurrentWorkspace();
@@ -35,6 +30,7 @@ export const WorkspaceIdentityRow = () => {
   const hasUnreadElsewhere = useHasUnreadElsewhere(currentWorkspace?.id ?? null);
   const elsewhere = useAttentionElsewhere({ currentId: currentWorkspace?.id ?? null });
   const dropdown = useDropdown({
+    ...SHELL_RAIL_POPOVER,
     width: 'w-96',
     expectedWidth: 340,
     expectedHeight: 480,
@@ -45,73 +41,40 @@ export const WorkspaceIdentityRow = () => {
     return null;
   }
 
+  const mark = workspaceMarkOf({
+    count: elsewhere.count,
+    tone: elsewhere.tone,
+    hasUnreadElsewhere,
+  });
+
   return (
-    <div className="flex w-full min-w-0 items-center gap-0.5">
+    <div data-workspace-mark="" className="w-full">
       <AnchoredPopover
         dropdown={dropdown}
         role="dialog"
         ariaLabel="Switch or open a workspace"
-        anchorClassName="min-w-0"
+        anchorClassName="w-full"
         hasBackdrop
         trigger={
-          <Tooltip
-            content={
-              elsewhere.count > 0
-                ? `${currentWorkspace.name}, ${subtitle}. ${needYouWords({ count: elsewhere.count })} in other workspaces`
-                : hasUnreadElsewhere
-                  ? `${currentWorkspace.name}, ${subtitle}. Activity in another workspace`
-                  : `${currentWorkspace.name}, ${subtitle}`
-            }
+          <ShellRailItem
+            id="workspace"
+            icon={WorkspaceTileGlyph}
+            label={`Switch workspace: ${currentWorkspace.name}`}
+            word={switchingToName ?? currentWorkspace.name}
+            tooltip={`${currentWorkspace.name}, ${subtitle}`}
             shortcut="workspace.switcher"
-            isSuppressed={dropdown.open}
-          >
-            <button
-              type="button"
-              onClick={dropdown.toggle}
-              data-tauri-drag-region="false"
-              aria-label={
-                elsewhere.count === 0
-                  ? `Switch workspace: ${currentWorkspace.name}`
-                  : `Switch workspace: ${currentWorkspace.name}, ${needYouWords({ count: elsewhere.count })} in other workspaces`
-              }
-              aria-expanded={dropdown.open}
-              className={cn(
-                'group flex w-full min-w-0 items-center gap-2 rounded-md px-1 py-1 text-left transition-colors',
-                ROW_INTERACTIVE,
-              )}
-            >
-              <WorkspaceTile workspace={currentWorkspace} />
-              <span
-                className={cn(
-                  'truncate text-row',
-                  switchingToName === null ? 'text-foreground' : 'text-muted-foreground',
-                )}
-                aria-busy={switchingToName !== null}
-              >
-                {switchingToName ?? currentWorkspace.name}
-              </span>
-              {switchingToName !== null ? <Skeleton className="h-3 w-8 shrink-0" /> : null}
-              {elsewhere.tone !== null ? (
-                <WorkspaceAttentionMark
-                  count={elsewhere.count}
-                  tone={elsewhere.tone}
-                  variant="pill"
-                />
-              ) : null}
-              {hasUnreadElsewhere ? <StatusDot tone="warning" size="sm" /> : null}
-              <ChevronsUpDown
-                size={ICON_SIZE.row}
-                aria-hidden
-                className="shrink-0 text-faint-foreground transition-colors group-hover:text-muted-foreground"
-              />
-            </button>
-          </Tooltip>
+            mark={mark}
+            hasPopup="dialog"
+            isExpanded={dropdown.open}
+            isBusy={switchingToName !== null}
+            onSelect={dropdown.toggle}
+          />
         }
       >
         <WorkspaceSwitcher onClose={dropdown.close} />
       </AnchoredPopover>
       {failedName !== null ? (
-        <AnchoredLayer side="bottom" className={cn(FLOATING_SURFACE, 'px-2 py-1')}>
+        <AnchoredLayer side="right" className={cn(FLOATING_SURFACE, 'px-2 py-1')}>
           <div role="alert" className="flex items-center gap-2 text-meta text-danger">
             <span>{`Couldn't open ${failedName}.`}</span>
             <Button size="sm" variant="ghost" onClick={retry}>
