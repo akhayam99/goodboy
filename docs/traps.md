@@ -249,19 +249,31 @@ The Rust files with the most comments lost them in one pass. What a reader would
   that still arrive on an attempt failed as `interrupted` are recorded rather
   than dropped.
 - A fix run for a note starts its copy on the owner's working tree, not on the
-  branch head. `drainResolveQueue` passes `shouldCarryWorkingTree` to
-  `resolve_copy_prepare` when a thread id of the attempt starts with `note:`,
-  and `snapshot_owner_tree` writes the tracked edits and untracked files as one
-  commit on `HEAD` through a temporary index: the owner's index and files never
-  change. That commit is the candidate base, so the proposal is only the agent
-  delta. Accepting a candidate built on it (`owner_tree_under` finds the
-  snapshot subject in `HEAD..candidate`) applies `git diff base candidate` to
-  the working tree with `git apply`, so the fix lands uncommitted on top of the
-  owner's work. A commit of the delta alone cannot exist: the agent edits lines
-  that live only in that uncommitted work. A capture in the shared worktree
-  (`shouldKeepUncommitted`) never runs `git add --update` and moves `HEAD` back
-  with `reset --keep`. The old sweep and `reset --hard` moved the owner's
-  uncommitted edits into the candidate and off the disk.
+  branch head. `drainResolveQueue` and `resolverLaunchCopy` pass
+  `shouldCarryWorkingTree` to `resolve_copy_prepare` when a thread id of the
+  attempt starts with `note:`. `owner_tree_on` writes the tracked edits and
+  untracked files as one marker commit (author `goodboy@localhost`, subject
+  `goodboy: your working tree before the fix`) through a temporary index with
+  a name of its own: the owner's index and files never change. The marker is
+  made on a clean tree too, and on a lane tip it holds the tip with the owner's
+  work applied (a clash refuses the start). The candidate base stays the
+  branch head or the lane tip, so the lane chains, and `worktree_diff_range`
+  diffs from the newest marker, so the proposal is only the agent delta.
+- A marker in `expected..candidate` lands the whole chain uncommitted.
+  `integrate_onto_owner_tree` applies every commit but the markers to a private
+  index built from the files on disk, then writes it with `read-tree -m -u`,
+  which refuses an untracked or ignored file in the way. The journal keeps the
+  trees before and after, the head and the branch: a crash mid landing is
+  finished on the next accept when every file sits at one of the two trees,
+  and a replay of a finished landing checks the branch and the files first.
+  Submodule moves and merge commits are refused. A comment fix that fast
+  forwards also writes with `read-tree -m -u`; `reset --hard` overwrote an
+  untracked file at a path the fix adds.
+- A capture in the shared worktree (`shouldKeepUncommitted`, crash recovery
+  included) never runs `git add --update` and moves `HEAD` back with a two tree
+  `read-tree -m -u`, which keeps the owner's staged entries; `reset --keep`
+  reset them. Crash recovery of a copy run quarantines the copy, never the
+  owner's worktree.
 - A resolver started through a batch (`startBatch`, `resolve_attempts.batch_id`
   set) never writes the real branch. `drainResolveQueue` makes it a detached
   copy at the branch head, or at the working tree snapshot for a note
