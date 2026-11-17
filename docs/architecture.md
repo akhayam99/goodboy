@@ -863,6 +863,20 @@ A database that is ahead of the build also loads it, so the downgrade guard
 still runs. The SQLite `user_version` pragma is not used: the backend blocks it
 and the runner never sets it.
 
+No query reaches a table before the migrations of this build are applied.
+`tauriDatabase` waits on one schema gate (`shared/lib/schemaGate.ts`) before
+every statement; the runner and the version probe use `migrationDatabase`,
+which does not wait. `main.tsx` closes the gate before the first render, and
+`runDbMigrations` opens it only after the runner returned, so the resolve
+drain, the polls and every slice that starts while the splash says "updating
+your library" run on the new schema. A migration that throws rolls back its
+part, records no version and leaves the gate closed: the launch error screen
+shows the error with Retry, and Retry runs the migrations again. `wipeDb`
+closes the gate while it replays the schema. `dbBoot.test.ts` upgrades
+databases left at m1, m139, m220 and m224 with the resolve queue asked for
+first, starts the resolve drain before an upgrade, and fails a migration then
+retries it.
+
 The runner splits each migration into parts wherever a `PRAGMA foreign_keys`
 line appears. Each part commits on its own and saves a checkpoint row in
 `schema_migration_segment`. If a migration stops halfway, the next start picks
