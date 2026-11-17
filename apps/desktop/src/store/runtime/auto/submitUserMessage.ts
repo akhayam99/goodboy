@@ -2,6 +2,7 @@ import {
   EMPTY_USER_FACTS,
   isResultsPayload,
   storedResultOf,
+  waitingPlanChangeOf,
   type UserFacts,
 } from '@goodboy/core/auto';
 import {
@@ -12,6 +13,7 @@ import {
   type AutoTree,
 } from '@goodboy/db';
 import { brandId, type AutoOutboxId, type MessageAttachment } from '@goodboy/types';
+import { readAutoLevel } from './level/readAutoLevel';
 import { treeArtifacts } from './treeArtifacts';
 import type { AgentVerbContext } from './verbContext';
 
@@ -61,7 +63,15 @@ const factsOf = async ({ ctx, tree, given }: FactsParams): Promise<UserFacts> =>
     : [];
   const focus = given?.focusArtifactId ?? null;
   const attached = given?.attachedArtifacts ?? [];
-  const explicit = given?.explicitChange ?? null;
+  const isBare = focus === null && attached.length === 0;
+  const explicit =
+    given?.explicitChange ??
+    (isBare
+      ? waitingPlanChangeOf({
+          entries,
+          level: await readAutoLevel({ db: ctx.db, target: { sessionId: tree.sessionId } }),
+        })
+      : null);
   const hasFact = focus !== null || attached.length > 0 || explicit !== null;
   return {
     ...EMPTY_USER_FACTS,

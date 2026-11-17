@@ -18,6 +18,7 @@ export type AutoTreeView = Readonly<{
   pendingRefusal: AutoPendingRefusal | null;
   pendingMessages: ReadonlyArray<AutoPendingMessage>;
   readMessages?: ReadonlyArray<AutoReadMessage>;
+  sentChange?: AutoSentChange | null;
   droppedMessageIds: ReadonlyArray<string>;
   deliveredResults: ReadonlyArray<AutoDeliveredResult>;
   rootAsk: string | null;
@@ -58,6 +59,11 @@ export type AutoPendingMessage = Readonly<{
   createdAt: number;
   text: string;
   images: ReadonlyArray<MessageAttachment>;
+}>;
+
+export type AutoSentChange = Readonly<{
+  artifactId: string;
+  revision: number;
 }>;
 
 export type AutoReadMessage = Readonly<{

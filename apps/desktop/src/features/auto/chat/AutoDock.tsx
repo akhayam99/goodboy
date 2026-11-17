@@ -9,6 +9,7 @@ import { askBarsOf } from './askBarOf';
 import { AutoDockAsk } from './AutoDockAsk';
 import { AutoDockLive } from './AutoDockLive';
 import { AutoDockPlan } from './AutoDockPlan';
+import { isPlanChangeSentOf } from './isPlanChangeSentOf';
 import { AutoNextAction } from './AutoNextAction';
 import { AutoProjectAsk } from './AutoProjectAsk';
 import { dockNextStepOf } from './dockNextStepOf';
@@ -52,6 +53,7 @@ export const AutoDock = ({ sessionId, view, rootAgent, onOpenArtifact, actions }
           title={plan.title}
           onOpen={onOpenArtifact}
           isApproveHidden={isRevisionAsked}
+          isChangeSent={isPlanChangeSentOf({ view, row: plan })}
           isSettledHidden={AT_REST.has(view.tree.phase)}
         />
       )}

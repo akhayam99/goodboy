@@ -199,11 +199,24 @@ const refusalsBlock = ({ payloads }: RefusalsBlockParams): string | null => {
   ].join('\n');
 };
 
-type FactsLinesParams = {
-  readonly facts: UserFacts;
+type ChangeLineParams = {
+  readonly change: NonNullable<UserFacts['explicitChange']>;
+  readonly rowId: string;
 };
 
-const factsLines = ({ facts }: FactsLinesParams): ReadonlyArray<string> => {
+const changeLineOf = ({ change, rowId }: ChangeLineParams): string => {
+  const { artifactId, baseRevision, commentIds } = change;
+  const comments = commentIds.length === 0 ? '' : ` (comments ${commentIds.join(', ')})`;
+  const revises = JSON.stringify({ artifactId, expectedRevision: baseRevision });
+  return `  this asks for changes to ${artifactId} v${baseRevision}${comments}: delegate with "revises": ${revises} and "changeFrom": ["${rowId}"], then show the new version for approval`;
+};
+
+type FactsLinesParams = {
+  readonly facts: UserFacts;
+  readonly rowId: string;
+};
+
+const factsLines = ({ facts, rowId }: FactsLinesParams): ReadonlyArray<string> => {
   const lines: string[] = [];
   if (facts.focusArtifactId !== null) {
     lines.push(`  the user had artifact ${facts.focusArtifactId} open`);
@@ -214,9 +227,7 @@ const factsLines = ({ facts }: FactsLinesParams): ReadonlyArray<string> => {
     );
   }
   if (facts.explicitChange !== null) {
-    lines.push(
-      `  this asks to change ${facts.explicitChange.artifactId} from version ${facts.explicitChange.baseRevision} (comments ${facts.explicitChange.commentIds.join(', ')})`,
-    );
+    lines.push(changeLineOf({ change: facts.explicitChange, rowId }));
   }
   if (facts.lastResultArtifactIds.length > 0) {
     lines.push(`  artifacts in the last results: ${facts.lastResultArtifactIds.join(', ')}`);
@@ -227,18 +238,23 @@ const factsLines = ({ facts }: FactsLinesParams): ReadonlyArray<string> => {
   return lines;
 };
 
+type UserRow = Readonly<{
+  id: string;
+  payload: UserPayload;
+}>;
+
 type UserBlockParams = {
-  readonly payloads: ReadonlyArray<UserPayload>;
+  readonly users: ReadonlyArray<UserRow>;
 };
 
-const userBlock = ({ payloads }: UserBlockParams): string | null => {
-  if (payloads.length === 0) {
+const userBlock = ({ users }: UserBlockParams): string | null => {
+  if (users.length === 0) {
     return null;
   }
-  const lines = payloads.flatMap((payload, index) => [
+  const lines = users.flatMap(({ id, payload }, index) => [
     `${index + 1}. The user wrote:`,
     payload.text,
-    ...factsLines({ facts: payload.facts }),
+    ...factsLines({ facts: payload.facts, rowId: id }),
   ]);
   return ['MESSAGES FROM THE USER, OLDEST FIRST', ...lines].join('\n');
 };
@@ -257,7 +273,7 @@ export const buildDeliveryText = ({
   const results: ResultsPayload[] = [];
   const questions: QuestionPayload[] = [];
   const refusals: RefusalPayload[] = [];
-  const users: UserPayload[] = [];
+  const users: UserRow[] = [];
   for (const row of rows) {
     const value = row.payload;
     if (isResultsPayload(value)) {
@@ -275,7 +291,7 @@ export const buildDeliveryText = ({
       continue;
     }
     if (isUserPayload(value)) {
-      users.push(value);
+      users.push({ id: row.id, payload: value });
     }
   }
   const blocks = [
@@ -289,7 +305,7 @@ export const buildDeliveryText = ({
     resultsBlock({ payloads: results, childLabels }),
     artifactsBlock,
     questionsBlock({ payloads: questions }),
-    userBlock({ payloads: users }),
+    userBlock({ users }),
   ];
   return blocks.filter((block): block is string => block !== null && block !== '').join('\n\n');
 };
