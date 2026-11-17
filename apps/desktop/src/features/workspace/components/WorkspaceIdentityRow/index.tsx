@@ -1,8 +1,10 @@
 import { ChevronsUpDown } from '@goodboy/ui/icons';
 import {
+  AnchoredLayer,
   AnchoredPopover,
   Button,
   cn,
+  FLOATING_SURFACE,
   ICON_SIZE,
   ROW_INTERACTIVE,
   Skeleton,
@@ -44,7 +46,7 @@ export const WorkspaceIdentityRow = () => {
   }
 
   return (
-    <div className="relative flex w-full min-w-0 items-center gap-0.5">
+    <div className="flex w-full min-w-0 items-center gap-0.5">
       <AnchoredPopover
         dropdown={dropdown}
         role="dialog"
@@ -109,15 +111,14 @@ export const WorkspaceIdentityRow = () => {
         <WorkspaceSwitcher onClose={dropdown.close} />
       </AnchoredPopover>
       {failedName !== null ? (
-        <div
-          role="alert"
-          className="absolute top-full left-0 z-10 flex items-center gap-2 text-meta text-danger"
-        >
-          <span>{`Couldn't open ${failedName}.`}</span>
-          <Button size="sm" variant="ghost" onClick={retry}>
-            {NAMES.retry}
-          </Button>
-        </div>
+        <AnchoredLayer side="bottom" className={cn(FLOATING_SURFACE, 'px-2 py-1')}>
+          <div role="alert" className="flex items-center gap-2 text-meta text-danger">
+            <span>{`Couldn't open ${failedName}.`}</span>
+            <Button size="sm" variant="ghost" onClick={retry}>
+              {NAMES.retry}
+            </Button>
+          </div>
+        </AnchoredLayer>
       ) : null}
     </div>
   );

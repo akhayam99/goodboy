@@ -1,6 +1,6 @@
 import { CHECK_STATE } from '../../../../store/slices/notifications/errorRecovery';
 import type { Agent, SessionId, WorkflowRun } from '@goodboy/types';
-import { Button, appScrollIntoView } from '@goodboy/ui';
+import { AnchoredLayer, Button, appScrollIntoView } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
 import { OrchestratorHintComposer } from '../../../workflows/components/OrchestratorStrip/OrchestratorHintComposer';
 import { OrchestratorRoutingRow } from '../../../workflows/components/OrchestratorStrip/OrchestratorRoutingRow';
@@ -39,17 +39,19 @@ export const OrchestratedComposer = ({ sessionId, run, agents }: Props) => {
   };
 
   return (
-    <div data-orchestrated-composer="" className="relative flex min-w-0 flex-col">
+    <div data-orchestrated-composer="" className="flex min-w-0 flex-col">
       {isQueueOut && queuedCount > 0 ? (
-        <p
-          data-hint-queue-line="over-the-input"
-          className="absolute bottom-full left-0 flex min-h-6 items-center gap-1 rounded-md bg-background px-2 text-ui text-muted-foreground"
-        >
-          {ORCHESTRATED_COPY.queuedHintsLine({ count: queuedCount })}
-          <Button variant="quiet" size="xs" onClick={viewQueue}>
-            {ORCHESTRATED_COPY.queuedHintsView}
-          </Button>
-        </p>
+        <AnchoredLayer side="top">
+          <p
+            data-hint-queue-line="over-the-input"
+            className="flex min-h-6 items-center gap-1 rounded-md bg-background px-2 text-ui text-muted-foreground"
+          >
+            {ORCHESTRATED_COPY.queuedHintsLine({ count: queuedCount })}
+            <Button variant="quiet" size="xs" onClick={viewQueue}>
+              {ORCHESTRATED_COPY.queuedHintsView}
+            </Button>
+          </p>
+        </AnchoredLayer>
       ) : null}
       <OrchestratorHintComposer
         isDeciding={isOrchestrating}

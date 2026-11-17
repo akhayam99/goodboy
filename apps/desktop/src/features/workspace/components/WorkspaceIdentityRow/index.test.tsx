@@ -250,5 +250,22 @@ describe('WorkspaceIdentityRow', () => {
       fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
       expect(setCurrentWorkspace).toHaveBeenCalledWith({ id: NORTHWIND });
     });
+
+    it('shows the failed switch outside a clipping 320px bar, so the bar cannot cut it', () => {
+      act(() => {
+        useAppStore.setState({
+          workspaceSwitchError: { workspaceId: NORTHWIND, message: 'boom' },
+        });
+      });
+      render(
+        <div data-testid="clip" style={{ width: 320, overflow: 'hidden' }}>
+          <WorkspaceIdentityRow />
+        </div>,
+      );
+
+      const alert = screen.getByRole('alert');
+      expect(screen.getByTestId('clip').contains(alert)).toBe(false);
+      expect(alert.closest('[data-anchored-layer]')?.parentElement).toBe(document.body);
+    });
   });
 });
