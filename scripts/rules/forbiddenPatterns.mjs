@@ -170,6 +170,8 @@ const RAW_TRACKING = /(?<![\w-])(?:[\w-]+:)*tracking-(?:\[|[a-z])/;
 const RAW_SCROLLER = /(?<![\w-])(?:[\w-]+:)*overflow-(?:x-|y-)?(?:auto|scroll)(?![\w-])/;
 const TONE_BORDER_RAIL = /(?<![\w-])(?:[\w-]+:)*border-l-(?:2|4)(?![\w-])/;
 const ROUNDED = /(?<![\w-])(?:[\w-]+:)*rounded(?:-|\b)/;
+const ABSOLUTE = /(?<![\w-])absolute(?![\w-])/;
+const OUTSIDE_OR_POPOVER = /(?<![\w-])(?:(?:top|bottom|left|right)-full|z-popover)(?![\w-])/;
 const HALF_STEP_SPACING =
   /(?<![\w-])(?:[\w-]+:)*-?(?:p|px|py|pt|pb|pl|pr|ps|pe|gap|gap-x|gap-y|m|mx|my|mt|mb|ml|mr|space-x|space-y)-[1-5]\.5(?![\w-])/;
 const ROLE_CLASS = /(?<![\w-])(?:[\w-]+:)*text-(?:row|label|heading|title)(?![\w-])/;
@@ -224,6 +226,7 @@ export const countStringifiedCaughtErrors = (file) => {
 };
 
 const SCROLL_OWNER = 'packages/ui/src/components/ScrollFade/index.tsx';
+const BADGE_CORNER_OWNER = 'packages/ui/src/countBadgeCorner.ts';
 export const FOOTER_CTA_BAR =
   /<footer\b|\bPopoverFooter\b|\bPANE_RHYTHM\.dock\b|\bdock=\{(?![^}]*\bcomposer\b)/;
 
@@ -422,6 +425,18 @@ export const RULES = [
     matches: (line) => TONE_BORDER_RAIL.test(line) && ROUNDED.test(line),
     hint: 'a tone on a rounded box is a bar inside it, not a side border',
   }),
+  {
+    id: 'absolute-popover',
+    kinds: ['ts'],
+    count: (file) =>
+      file.path === BADGE_CORNER_OWNER
+        ? 0
+        : countLines({
+            file,
+            matches: (line) => ABSOLUTE.test(line) && OUTSIDE_OR_POPOVER.test(line),
+          }),
+    hint: 'a surface that floats outside its box goes through the portal: AnchoredLayer or AnchoredPopover (docs/styling.md, Popovers)',
+  },
   lineRule({
     id: 'footer-cta-bar',
     matches: (line) => FOOTER_CTA_BAR.test(line),

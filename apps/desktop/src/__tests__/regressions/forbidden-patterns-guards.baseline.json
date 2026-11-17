@@ -41,6 +41,7 @@
   "raw-tracking": {},
   "raw-scroller": {},
   "tone-border-rail": {},
+  "absolute-popover": {},
   "footer-cta-bar": {
     "website/src/pages/home/sections/Footer.tsx": 1
   },

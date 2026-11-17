@@ -578,6 +578,11 @@ const FIXTURES = {
   'raw-tracking': { path: TS, flagged: "'tracking-wide'", allowed: "'text-eyebrow'" },
   'raw-scroller': { path: TS, flagged: "'overflow-y-auto'", allowed: "'overflow-hidden'" },
   'tone-border-rail': { path: TS, flagged: "'rounded-md border-l-2'", allowed: "'border-l-2'" },
+  'absolute-popover': {
+    path: TSX,
+    flagged: '<p className="absolute bottom-full left-0 z-popover">',
+    allowed: '<AnchoredLayer side="top">',
+  },
   'footer-cta-bar': { path: TSX, flagged: '<footer className="x">', allowed: '<FormActions />' },
   'diff-font-sans': {
     path: 'apps/desktop/src/features/diff/x.tsx',
