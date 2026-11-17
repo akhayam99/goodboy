@@ -7,7 +7,8 @@ vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn(async () => () => undefi
 vi.mock('@tauri-apps/plugin-dialog', () => ({ open: vi.fn() }));
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { startRunEventName } from '../../../../../features/session/startRun/startRunEventName';
 import { installFakeResizeObserver } from '../../../../../test/fakeResizeObserver';
 import { ToastProvider } from '../../../../../shared/components/Toast';
 import {
@@ -444,7 +445,14 @@ describe('c07 Auto scenes', () => {
   it('c07-auto-start starts Auto from the Start a run field on the Runs page, with no Auto form', async () => {
     mount({ id: 'c07-auto-start' });
 
-    fireEvent.click(await screen.findByRole('button', { name: 'Start a run' }, WAIT));
+    await screen.findByRole('list', { name: 'Runs' }, WAIT);
+    expect(screen.queryByRole('button', { name: 'Start a run' })).toBeNull();
+    const sessionId = useAppStore.getState().currentSessionId;
+    act(() => {
+      if (sessionId !== null) {
+        window.dispatchEvent(new CustomEvent(startRunEventName({ sessionId })));
+      }
+    });
     expect(await screen.findByRole('textbox', { name: 'Start a run' }, WAIT)).toBeDefined();
     expect(screen.queryByRole('button', { name: 'Start an auto' })).toBeNull();
     expect(screen.queryByRole('region', { name: 'Start an auto' })).toBeNull();

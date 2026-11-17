@@ -7,21 +7,25 @@ vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn(async () => () => undefi
 vi.mock('@tauri-apps/plugin-dialog', () => ({ open: vi.fn() }));
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import type { ComponentType } from 'react';
 import { ToastProvider } from '../../../../../shared/components/Toast';
 import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
   resetStoryStore,
+  type StoryStore,
 } from '../../../../../store/storyHarness';
+import { startRunEventName } from '../../../../../features/session/startRun/startRunEventName';
 import { U24_AUTO_CHAT_SCENES } from '../u24/auto-chat';
 import { U25_C07_AUTO_SCENES } from './c07-auto';
 
 const WAIT = { timeout: 15_000 };
 
+let useAppStore: StoryStore;
+
 beforeAll(async () => {
-  await importStore();
+  useAppStore = await importStore();
 }, STORE_IMPORT_TIMEOUT_MS);
 
 beforeEach(async () => {
@@ -52,7 +56,13 @@ describe('Auto: every capability keeps a home in Auto', () => {
   it('Start Auto from the Start a run field on the Runs page, with the Limit chip', async () => {
     mount({ Scene: U25_C07_AUTO_SCENES['c07-auto-start'] });
 
-    fireEvent.click(await screen.findByRole('button', { name: 'Start a run' }, WAIT));
+    await screen.findByRole('list', { name: 'Runs' }, WAIT);
+    const sessionId = useAppStore.getState().currentSessionId;
+    act(() => {
+      if (sessionId !== null) {
+        window.dispatchEvent(new CustomEvent(startRunEventName({ sessionId })));
+      }
+    });
     const start = await screen.findByRole('region', { name: 'Start a run' }, WAIT);
     expect(within(start).getByRole('textbox', { name: 'Start a run' })).toBeDefined();
     expect(within(start).getByText('Limit: none')).toBeDefined();
