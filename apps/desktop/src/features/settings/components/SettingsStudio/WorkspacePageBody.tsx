@@ -2,7 +2,6 @@ import type { ReactNode } from 'react';
 import type { WorkspaceId } from '@goodboy/types';
 import { PermissionsSettings } from '../../../permissions/components/PermissionsSettings';
 import { WorkspaceStorageNotice } from '../../../storage/components/WorkspaceStorageNotice';
-import { storageWorkspacePages } from '../../../storage/storageWorkspacePages';
 import { WorkspaceAfterMergeSection } from './WorkspaceAfterMergeSection';
 import { WorkspaceBranchNamingBand } from './WorkspaceBranchNamingBand';
 import { SecurityFindingsSection } from './SecurityFindingsSection';
@@ -51,7 +50,6 @@ export const WorkspacePageBody = ({
         <>
           <WorkspaceBranchNamingBand workspaceId={workspaceId} />
           <WorkspaceAfterMergeSection workspaceId={workspaceId} />
-          {storageWorkspacePages({ workspaceId }).branches.body}
         </>
       );
     case 'review-replies':

@@ -1,11 +1,11 @@
 import { useShallow } from 'zustand/react/shallow';
 import type { Project } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
-import type { BranchScope } from '../../branches/branchScope';
+import type { StorageScope } from '../../../../store/slices/storage/types';
 import { storageOwnerMatchesScope } from '../../storageOwnerMatchesScope';
 
 type Params = {
-  readonly scope: BranchScope;
+  readonly scope: StorageScope;
 };
 
 export const useBranchProjects = ({ scope }: Params): ReadonlyArray<Project> =>

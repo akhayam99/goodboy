@@ -255,22 +255,19 @@ describe('WorkspaceScopePanel pages', () => {
     expect(header?.querySelector('[data-slot="pane-meta"]')?.textContent).toBe('No projects yet');
   });
 
-  it('opens Branches with Naming, then After merge, then the branch list', () => {
+  it('opens Branches with Naming, then After merge, and no branch list', () => {
     renderPage({ section: 'branches' });
 
     expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Branches');
     const naming = screen.getByRole('region', { name: 'Naming' });
     const afterMerge = screen.getByRole('region', { name: 'After merge' });
-    const branches = screen.getByRole('region', { name: 'Branches' });
     within(naming).getByLabelText('Branch prefix');
     within(naming).getByText('Branch name');
     expect(
       naming.compareDocumentPosition(afterMerge) & Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy();
-    expect(
-      afterMerge.compareDocumentPosition(branches) & Node.DOCUMENT_POSITION_FOLLOWING,
-    ).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Check again' })).toBeDefined();
+    expect(screen.queryByRole('region', { name: 'Branches' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Check again' })).toBeNull();
     expect(screen.queryByRole('combobox', { name: 'Storage scope' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Change' })).toBeNull();
   });

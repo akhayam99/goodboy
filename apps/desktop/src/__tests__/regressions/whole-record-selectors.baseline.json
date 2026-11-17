@@ -32,7 +32,6 @@
   "apps/desktop/src/features/settings/components/SettingsStudio/WorkspaceTerminalFolderRow.tsx": 1,
   "apps/desktop/src/features/storage/components/BranchesSection/index.tsx": 1,
   "apps/desktop/src/features/storage/components/StoragePage/WorktreeGroup.tsx": 1,
-  "apps/desktop/src/features/storage/useBranchesMeta/index.ts": 1,
   "apps/desktop/src/features/storage/hooks/useRecentlyDeletedBranches/index.ts": 1,
   "apps/desktop/src/features/suggestions/useSessionSuggestions/index.ts": 2,
   "apps/desktop/src/features/terminal/hooks/useTerminalStudioModel/index.ts": 3,
