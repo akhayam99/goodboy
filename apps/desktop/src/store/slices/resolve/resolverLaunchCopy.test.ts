@@ -15,9 +15,14 @@ const h = vi.hoisted(() => ({
   candidates: [] as Array<ResolveCandidate>,
   status: vi.fn(async (_params: { worktreePath: string }) => ({ head: 'base-sha' })),
   prepare: vi.fn(
-    async (_params: { worktreePath: string; attemptId: string; startSha?: string }) => ({
+    async (_params: {
+      worktreePath: string;
+      attemptId: string;
+      startSha?: string;
+      shouldCarryWorkingTree?: boolean;
+    }) => ({
       copyPath: '/copies/fresh',
-      head: 'live-head',
+      base: 'base-sha',
     }),
   ),
 }));
@@ -148,6 +153,7 @@ describe('resolverLaunchCopy', () => {
     expect(h.prepare).toHaveBeenCalledWith({
       worktreePath: TARGET.worktreePath,
       attemptId: 'attempt-1',
+      shouldCarryWorkingTree: false,
     });
     expect(copy).toEqual({ copyPath: '/copies/fresh', mountTarget: TARGET });
   });
@@ -176,6 +182,19 @@ describe('resolverLaunchCopy', () => {
       worktreePath: TARGET.worktreePath,
       attemptId: 'attempt-1',
       startSha: 'tip-sha',
+      shouldCarryWorkingTree: false,
+    });
+  });
+
+  it('carries the owner working tree into a fresh copy for a note follow-up', async () => {
+    h.attempts = [attemptOf({ copyPath: null, threadIds: ['note:harborline-header'] })];
+
+    await resolverLaunchCopy({ get: getOf(), sessionId: SESSION_ID, agentId: AGENT_ID });
+
+    expect(h.prepare).toHaveBeenCalledWith({
+      worktreePath: TARGET.worktreePath,
+      attemptId: 'attempt-1',
+      shouldCarryWorkingTree: true,
     });
   });
 

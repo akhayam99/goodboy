@@ -1,5 +1,6 @@
 import { listResolveAttempts, listResolveCandidates } from '@goodboy/db';
 import type { AgentId, MountTargetSnapshot, SessionId } from '@goodboy/types';
+import { carriesWorkingTree } from '../../../features/resolve/notes/carriesWorkingTree';
 import { classifyAgent } from '../../../features/session/agent-kind';
 import { prepareResolveCopy } from '../../../features/worktree/worktree';
 import { tauriDatabase } from '../../../shared/lib/db';
@@ -63,6 +64,7 @@ export const resolverLaunchCopy = async ({
     worktreePath,
     attemptId: latest.id,
     ...(startSha !== null && { startSha }),
+    shouldCarryWorkingTree: carriesWorkingTree({ threadIds: latest.threadIds }),
   });
   return { copyPath: copy.copyPath, mountTarget: latest.mountTarget };
 };

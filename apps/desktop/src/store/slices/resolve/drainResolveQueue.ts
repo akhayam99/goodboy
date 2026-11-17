@@ -414,7 +414,7 @@ const startCopyAttempt = async ({
       sessionId,
       attemptId: attempt.id,
       mountTarget,
-      baseSha: copy.head,
+      baseSha: copy.base,
     });
   } catch (error) {
     await failStart({

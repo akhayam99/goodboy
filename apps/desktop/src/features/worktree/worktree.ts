@@ -82,7 +82,7 @@ export const splitWorktreeCandidates = async (
 
 export type ResolveCopy = {
   readonly copyPath: string;
-  readonly head: string;
+  readonly base: string;
 };
 
 export const prepareResolveCopy = async (args: {
