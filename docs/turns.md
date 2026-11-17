@@ -1184,8 +1184,12 @@ the bottom; the first wheel, touch, pointer or key event stops its settle loop,
 and a reader who scrolled up is never pulled back down by new rows (the "Jump
 to latest" button pins again).
 
-A message the reader sends moves to 40 px under the top of the view
-and the reply grows downward from it; the view does not follow
+A message the reader sends moves to 40 px under the top of the view, or to the
+top padding of the scroller when that is larger, and the reply grows downward
+from it. Under a pinned page header the scroller reaches under the header and
+its top padding includes the header inset (`--reveal-inset`), so `anchorTopOf`
+reads the computed padding and the message rests just below the header, where a
+turn already in view rests, never under it. The view does not follow
 the reply. `ChatView` passes `anchorKey`, the key of the last `user_text` or
 `handoff` item (`anchorKeyOf`), and only once the transcript is loaded: the
 first key after an agent opens is remembered, never anchored, so opening a
@@ -1195,8 +1199,9 @@ session lands on the bottom. A later key anchors the last `[data-turn]`
 who is then pinned only when they reach the bottom again. Under the list sits
 `[data-transcript-tail]`, the one floor of the transcript: 24 px
 (`TRANSCRIPT_FLOOR_PX`) under the last line, with no padding under the scroller.
-After a send the hook adds a spacer to it, `clientHeight - 40 - last turn - 24`
-and never below zero, so a short turn can reach the 40 px line; the spacer
+After a send the hook adds a spacer to it, `clientHeight - anchor line - last turn - 24`
+(the anchor line is the 40 px, or the padding under a header) and never below zero,
+so a short turn can reach that line; the spacer
 shrinks as the reply grows and a different agent resets it. Content starts at
 the top and grows down, it is never piled against the composer.
 
