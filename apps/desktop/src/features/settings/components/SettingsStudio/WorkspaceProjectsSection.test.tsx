@@ -142,6 +142,44 @@ describe('WorkspaceProjectsSection', () => {
     );
   });
 
+  it('keeps Locate folders busy while it looks, looks once, and reports a failed look', async () => {
+    state.projects = [
+      {
+        id: 'proj-ledger',
+        name: 'ledger-core',
+        rootPath: '/old/ledger-core',
+        kind: 'repo',
+        workspaceId: WORKSPACE_ID,
+      },
+    ];
+    state.projectGitStatus = { 'proj-ledger': { state: 'missing' } };
+    repoMocks.dialogOpen.mockResolvedValue('/new');
+    let fail: (error: Error) => void = () => undefined;
+    state.findMovedProjects.mockImplementationOnce(
+      () =>
+        new Promise<undefined>((_resolve, reject) => {
+          fail = reject;
+        }),
+    );
+    render(<WorkspaceProjectsSection workspaceId={WORKSPACE_ID} />);
+
+    const locate = screen.getByRole('button', { name: 'Locate folders' });
+    fireEvent.click(locate);
+    await waitFor(() => expect(state.findMovedProjects).toHaveBeenCalledTimes(1));
+    expect(locate.getAttribute('aria-busy')).toBe('true');
+    fireEvent.click(locate);
+
+    fail(new Error('The folder could not be read'));
+    await waitFor(() => expect(locate.getAttribute('aria-busy')).toBeNull());
+    expect(state.findMovedProjects).toHaveBeenCalledTimes(1);
+    expect(state.reportError).toHaveBeenCalledWith(
+      expect.objectContaining({
+        title: "Couldn't look for the moved folders",
+        workspaceId: WORKSPACE_ID,
+      }),
+    );
+  });
+
   it('shows repository verdicts and moves only selected candidates', () => {
     state.projectRelocationWorkspaceId = WORKSPACE_ID;
     state.projectRelocationPhase = 'preview';
