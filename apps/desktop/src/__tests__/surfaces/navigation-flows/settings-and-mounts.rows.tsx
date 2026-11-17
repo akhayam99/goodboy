@@ -14,6 +14,7 @@ import {
   lens,
   pane,
   openBranchFiles,
+  searchSettingsForConnections,
   sessionLevel,
   studio,
   useAppStore,
@@ -72,10 +73,15 @@ export const SETTINGS_AND_MOUNT_ROWS: ReadonlyArray<Row> = [
     lands: () => visible('region', 'Providers'),
   },
   {
-    name: 'settings rail: the moved row opens Connections',
-    covers: ['openSettings', 'studio:connections', 'settings:moved-to-connections'],
+    name: 'settings: no Connections row in the rail, Search settings opens Connections',
+    covers: ['openSettings', 'studio:connections'],
     door: 'visible',
-    open: () => openSettingsRail(/^Open Connections/),
+    open: async () => {
+      await clickButton('Settings');
+      const rail = await screen.findByRole('navigation', { name: 'Settings scopes' });
+      expect(within(rail).queryByRole('button', { name: /Connections/ })).toBeNull();
+      await searchSettingsForConnections();
+    },
     lands: both(
       () => studio('Connections'),
       () => heading('Connections'),
