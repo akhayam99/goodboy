@@ -69,10 +69,12 @@ pushed fix waits for the new run (`isAwaitingRun`: no check step until the check
 Every verb does the work where you stand and never just opens a tab: `Fix
 checks`, `Start fix` and `Push fix` run the same chain as the Overview row (`checkChainActionOf`),
 and `Fix checks` starts one Debugger at the first press, its tooltip naming the model and effort.
-While a fix run or a check agent works, a line under the tabs says what runs, with `Stop`
-(`BranchWorkLines`; the Comments tab keeps its own run line). One agent works per branch: a check
+While a fix run works, a line under the tabs says what runs, with `Stop`
+(`BranchWorkLines`; the Comments tab keeps its own run line). A check agent has no line there: it
+works on its check row (`AnalyzedCheckWork`), and the Checks tab carries a live dot on every tab
+(`checkTabLiveOf`). One agent works per branch: a check
 agent live on any check of the mount (`liveCheckWorkOf`, read from the agent rows, so a second window
-sees it too; a fixer that ended never counts, even while its commit is unread) draws the work line and no fill, and the other doors that start an agent (row Analyze,
+sees it too; a fixer that ended never counts, even while its commit is unread) draws the dot and no fill, and the other doors that start an agent (row Analyze,
 the Overview card, the Fix comments launch, the Debugger and Implementer runners) stay disabled with
 the name of what runs. The `Push` row of `Branch actions` takes the same route as the header push
 (`pushFromMenu`): with an accepted fix waiting it is the review push, so the replies go with the commit.
