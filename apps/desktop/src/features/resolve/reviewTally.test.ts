@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import type { ResolveStage } from '@goodboy/types';
+import type { ResolveQueueRow } from './buildResolveQueueRows';
 import type { ResolveWord } from './commentProjection';
 import {
   fixableThreadIdsOf,
@@ -14,6 +15,29 @@ import { queueRowAt } from './testing/queueRow';
 import { commentsCountOf } from './commentsCountOf';
 
 const SOURCE_ROOT = join(__dirname, '..', '..');
+
+const NO_RUNS: ReadonlySet<string> = new Set();
+
+const BROAD_BODY =
+  'Follow the payouts route as the model: AppLayout owns the header. Write new components for this.';
+
+type NoteRowParams = {
+  readonly threadId: string;
+  readonly body: string;
+};
+
+const noteRowAt = ({ threadId, body }: NoteRowParams): ResolveQueueRow => ({
+  ...queueRowAt({ stage: 'new', threadId }),
+  reviewerNote: {
+    source: 'github',
+    body,
+    author: 'mira-s',
+    createdAtMs: 1,
+    location: null,
+    path: 'src/routes/ledger/LedgerPage.tsx',
+    line: 24,
+  },
+});
 
 describe('reviewTallyOfWords', () => {
   const words: ReadonlyArray<ResolveWord> = [
@@ -80,7 +104,7 @@ describe('reviewTallyOf', () => {
       queueRowAt({ stage: 'resolved', deliveredAt: 5, threadId: 'PRRT_done' }),
     ];
 
-    expect(reviewTallyOf({ rows })).toEqual({
+    expect(reviewTallyOf({ rows, inRunThreadIds: NO_RUNS })).toEqual({
       needsYou: 6,
       question: 1,
       toReview: 2,
@@ -98,7 +122,7 @@ describe('reviewTallyOf', () => {
   it('counts the proposals that wait for your Accept as the Accept N of the group', () => {
     const rows = rowsOf(['proposed', 'proposed', 'proposed', 'asking']);
 
-    expect(reviewTallyOf({ rows }).toReview).toBe(3);
+    expect(reviewTallyOf({ rows, inRunThreadIds: NO_RUNS }).toReview).toBe(3);
   });
 });
 
@@ -116,7 +140,7 @@ describe('commentsCountOf', () => {
     ];
 
     const count = commentsCountOf({ threads: rows.map((row) => row.thread) });
-    const tally = reviewTallyOf({ rows });
+    const tally = reviewTallyOf({ rows, inRunThreadIds: NO_RUNS });
 
     expect(count.needsYou).toBe(6);
     expect(count.needsYou).toBe(tally.needsYou);
@@ -144,8 +168,22 @@ describe('fixableThreadIdsOf', () => {
       queueRowAt({ stage: 'asking', threadId: 'PRRT_asking' }),
     ];
 
-    expect(fixableThreadIdsOf({ rows })).toEqual(['PRRT_open', 'PRRT_run']);
-    expect(fixableThreadIdsOf({ rows })).toHaveLength(reviewTallyOf({ rows }).fixable);
+    const params = { rows, inRunThreadIds: NO_RUNS };
+    expect(fixableThreadIdsOf(params)).toEqual(['PRRT_open', 'PRRT_run']);
+    expect(fixableThreadIdsOf(params)).toHaveLength(reviewTallyOf(params).fixable);
+  });
+
+  it('leaves out a comment that suggests a run and a comment already in a run', () => {
+    const rows = [
+      noteRowAt({ threadId: 'PRRT_typo', body: 'Typo: "recieved" in the empty state copy.' }),
+      noteRowAt({ threadId: 'PRRT_layout', body: BROAD_BODY }),
+      noteRowAt({ threadId: 'PRRT_import', body: 'Move this import into utils/format.ts.' }),
+      noteRowAt({ threadId: 'PRRT_taken', body: 'Rename the totals row.' }),
+    ];
+    const params = { rows, inRunThreadIds: new Set(['PRRT_taken']) };
+
+    expect(fixableThreadIdsOf(params)).toEqual(['PRRT_typo', 'PRRT_import']);
+    expect(reviewTallyOf(params).fixable).toBe(2);
   });
 });
 

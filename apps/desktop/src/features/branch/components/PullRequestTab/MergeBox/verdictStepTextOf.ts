@@ -26,6 +26,8 @@ export const verdictStepTextOf = ({ step, facts }: Params): string => {
       return 'retry the push';
     case 'fixComments':
       return 'fix the comments';
+    case 'suggestRun':
+      return 'start a run for the broad comments';
     case 'pushCheckFix':
       return 'push the check fix';
     case 'push':

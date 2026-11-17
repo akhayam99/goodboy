@@ -1,4 +1,5 @@
 import type { Agent, ResolveThread } from '@goodboy/types';
+import type { CommentLane } from './commentLaneOf';
 import { COMMENT_RUN_COPY } from './commentRunCopy';
 import { commentRunOf } from './commentRunOf';
 import { isOpenThread } from './isOpenThread';
@@ -9,6 +10,7 @@ type SourceEntry = {
   readonly threadId: string;
   readonly state: ReviewCommentState;
   readonly fix: RowFix | null;
+  readonly lane: CommentLane | null;
   readonly row: {
     readonly reviewerNote: { readonly path: string | null } | null;
     readonly thread: Pick<ResolveThread, 'stage'>;
@@ -89,19 +91,18 @@ export const commentRunSourcesOf = <Entry extends SourceEntry>({
   const pickedIds = new Set(picked.map((entry) => entry.threadId));
   const path = pathOf({ entry: primary });
   const folder = folderOf({ path });
-  const candidates =
-    folder === null
-      ? []
-      : entries
-          .filter(
-            (entry) =>
-              !pickedIds.has(entry.threadId) &&
-              isJoinable({ entry }) &&
-              folderOf({ path: pathOf({ entry }) }) === folder,
-          )
-          .sort(
-            (a, b) => Number(pathOf({ entry: b }) === path) - Number(pathOf({ entry: a }) === path),
-          )
-          .slice(0, MAX_CANDIDATES);
+  const rankOf = ({ entry }: EntryParams): number => {
+    const own = pathOf({ entry });
+    if (path !== null && own === path) {
+      return 0;
+    }
+    return folder !== null && folderOf({ path: own }) === folder ? 1 : 2;
+  };
+  const isNear = ({ entry }: EntryParams): boolean =>
+    entry.lane === 'run' || (folder !== null && folderOf({ path: pathOf({ entry }) }) === folder);
+  const candidates = entries
+    .filter((entry) => !pickedIds.has(entry.threadId) && isJoinable({ entry }) && isNear({ entry }))
+    .sort((a, b) => rankOf({ entry: a }) - rankOf({ entry: b }))
+    .slice(0, MAX_CANDIDATES);
   return { blocked, picked, candidates };
 };

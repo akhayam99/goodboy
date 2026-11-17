@@ -24,6 +24,7 @@ import {
   autoSceneOf,
   type AutoSceneState,
 } from '../../u24/autoSceneSeed';
+import { withPlanDockOf, type C07PlanDock } from './withPlanDockOf';
 
 type C07Place = 'auto' | 'list' | 'start' | 'session' | 'child';
 
@@ -35,6 +36,8 @@ export type C07Seed = Readonly<{
   isCapped?: boolean;
   isSubstep?: boolean;
   isChangeSent?: boolean;
+  isLeadTidying?: boolean;
+  planDock?: C07PlanDock;
   blockedReason?: string;
 }>;
 
@@ -248,6 +251,57 @@ const withSubstepOf = ({ scene }: SubstepParams): ReturnType<typeof autoSceneOf>
   };
 };
 
+const TIDY_AT = Date.parse('2026-10-13T12:20:00.000Z');
+
+const withLeadTidyOf = ({ scene }: SubstepParams): ReturnType<typeof autoSceneOf> => {
+  const plan = scene.view.artifacts.find((row) => row.artifact.kind === 'plan');
+  const planner = scene.view.delegations.find((delegation) => delegation.role === 'planner');
+  const plannerAgent = scene.agents.find((agent) => agent.id === planner?.childAgentId);
+  if (plan === undefined || planner === undefined || plannerAgent === undefined) {
+    return scene;
+  }
+  const asked = {
+    ...planner,
+    request: {
+      ...planner.request,
+      planDiscardAsk: {
+        artifactId: plan.artifact.artifactId,
+        revision: plan.revision,
+        reason: 'a new plan with everything we said replaces it',
+        at: TIDY_AT,
+      },
+    },
+  };
+  const scout = {
+    ...planner,
+    id: brandId<AutoDelegationId>({ value: 'mock-auto-delegation-tidy-scout' }),
+    childAgentId: SCOUT_ID,
+    role: 'scout',
+    request: {
+      task: 'Read the callers of the ledger retry in payments-api.',
+      closed: { as: 'done', reason: 'not needed after the new plan', at: TIDY_AT },
+    },
+  };
+  return {
+    ...scene,
+    view: {
+      ...scene.view,
+      delegations: [
+        ...scene.view.delegations.map((delegation) =>
+          delegation.id === planner.id ? asked : delegation,
+        ),
+        scout,
+      ],
+      artifacts: scene.view.artifacts.map((row) =>
+        row === plan
+          ? { ...row, artifact: { ...row.artifact, ownerDelegationId: planner.id } }
+          : row,
+      ),
+    },
+    agents: [...scene.agents, { ...plannerAgent, id: SCOUT_ID, name: 'Scout', kind: 'scout' }],
+  };
+};
+
 const SCENE_TURNS = 4;
 
 const withTurnsOf = ({ view }: CappedParams): AutoTreeView => ({
@@ -263,11 +317,15 @@ export const seedC07 = ({
   isCapped = false,
   isSubstep = false,
   isChangeSent = false,
+  isLeadTidying = false,
+  planDock,
   blockedReason,
 }: C07Seed): void => {
   const { navigate, openExternalTaskLens } = useAppStore.getInitialState();
   seedActivityRunScene();
-  const base = autoSceneOf({ state });
+  const plain = autoSceneOf({ state });
+  const tidied = isLeadTidying ? withLeadTidyOf({ scene: plain }) : plain;
+  const base = planDock === undefined ? tidied : withPlanDockOf({ scene: tidied, dock: planDock });
   const stepped = isSubstep ? withSubstepOf({ scene: base }) : base;
   const blocked =
     blockedReason === undefined

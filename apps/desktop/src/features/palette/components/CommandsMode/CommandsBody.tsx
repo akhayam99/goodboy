@@ -7,18 +7,18 @@ import {
   useState,
   type KeyboardEvent,
 } from 'react';
-import { ChevronRight, List } from '@goodboy/ui/icons';
+import { ChevronRight } from '@goodboy/ui/icons';
+import { allActionsEntryOf } from '../../allActionsEntryOf';
 import { Divider } from '@goodboy/ui';
 import { NAMES } from '../../../../shared/utils/names';
 import { parseQuery } from '../../../quick-actions/grammar';
 import {
-  buildActionList,
-  buildChoiceList,
   buildCommandList,
   defaultCommandKey,
   flattenRows,
   type CommandRow,
 } from '../../commandList';
+import { levelListOf } from '../../levelListOf';
 import { ASK_KEYS, askEntries } from '../../sources/askEntries';
 import { choiceEntries } from '../../sources/choiceEntries';
 import { useAppStore } from '../../../../store';
@@ -42,7 +42,7 @@ import { verbEntries, type VerbSelectParams } from '../../sources/verbEntries';
 import { hasOwnPreviewOf, paletteBodyLayoutOf, paletteListMaxHeightOf } from './paletteBodyLayout';
 import { liveAgentVerbs, sessionOwnFirst } from '../../sources/liveAgentEntries';
 import { runRow, runSection } from '../../sources/runEntries';
-import type { PaletteEntry } from '../../types';
+import type { PaletteEntry, PaletteStep } from '../../types';
 import { PaletteInputRow } from '../PaletteOverlay/PaletteInputRow';
 import { ScopeChip } from '../PaletteOverlay/ScopeChip';
 import { CommandsList } from './CommandsList';
@@ -58,6 +58,7 @@ type Level = {
   readonly title: string;
   readonly key: string;
   readonly choicesOf: ResolvedAction | null;
+  readonly step: PaletteStep | null;
 };
 
 type RunVerbParams = {
@@ -70,8 +71,6 @@ type Props = PaletteModeProps & {
 };
 
 const NO_ASKS: ReadonlyArray<PaletteEntry> = [];
-
-const ALL_ACTIONS_KEY = 'level:session-actions';
 
 const REGISTRY_LENS_KEYS: ReadonlySet<string> = new Set(['lens:review', 'lens:files']);
 
@@ -282,15 +281,7 @@ export const CommandsBody = ({
     () =>
       scopeSessionId === null || activePalette === null
         ? null
-        : {
-            key: ALL_ACTIONS_KEY,
-            label: 'All actions for this session',
-            kind: 'level',
-            group: null,
-            icon: List,
-            level: { kind: 'actions', target: { kind: 'session', sessionId: scopeSessionId } },
-            run: () => undefined,
-          },
+        : allActionsEntryOf({ sessionId: scopeSessionId }),
     [scopeSessionId, activePalette],
   );
 
@@ -369,15 +360,14 @@ export const CommandsBody = ({
             needsYou: scope?.kind === 'workspace' ? needsYou : [],
             extra,
           })
-        : level.choicesOf !== null
-          ? buildChoiceList({
-              query: filter,
-              title: level.choicesOf.label,
-              choices: levelChoices,
-              frecency,
-              now,
-            })
-          : buildActionList({ query: filter, verbs: levelVerbs, frecency, now }),
+        : levelListOf({
+            level,
+            filter,
+            choices: levelChoices,
+            verbs: levelVerbs,
+            frecency,
+            now,
+          }),
     [
       level,
       query,
@@ -464,6 +454,7 @@ export const CommandsBody = ({
       title: entry.label,
       key: entry.key,
       choicesOf: null,
+      step: null,
     });
     setFilter('');
   };
@@ -474,6 +465,12 @@ export const CommandsBody = ({
     }
     if (entry.level !== undefined) {
       openLevel(entry);
+      return;
+    }
+    const step = entry.step?.() ?? null;
+    if (step !== null) {
+      setLevel({ target: null, title: entry.label, key: entry.key, choicesOf: null, step });
+      setFilter('');
       return;
     }
     if (confirmOf(entry) !== null) {
@@ -490,6 +487,7 @@ export const CommandsBody = ({
         title: entry.label,
         key: level?.key ?? scopeInfo?.key ?? entry.key,
         choicesOf: entry.action,
+        step: null,
       });
       setFilter('');
       return;
@@ -510,6 +508,7 @@ export const CommandsBody = ({
       title: entry.label,
       key: entry.key,
       choicesOf: null,
+      step: null,
     });
     setFilter('');
   };
@@ -616,7 +615,7 @@ export const CommandsBody = ({
   const prefix = parseQuery(query).prefix;
   const placeholder =
     level !== null
-      ? 'Filter actions…'
+      ? (level.step?.placeholder ?? 'Filter actions…')
       : prefix !== null
         ? `Search ${prefix.hint}…`
         : NAMES.searchOrRun;

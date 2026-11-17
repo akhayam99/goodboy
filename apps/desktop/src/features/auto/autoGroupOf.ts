@@ -10,7 +10,9 @@ import { autoChildLabelsOf } from './autoChildLabelsOf';
 import { autoRowFacts } from './autoRowFacts';
 import { isAutoChildStuck } from './isAutoChildStuck';
 import { autoSettledStateOf } from './autoSettledStateOf';
+import { closedSentenceOf } from './closedSentenceOf';
 import { declaredSummaryOf } from './declaredSummaryOf';
+import { delegationClosedOf } from './delegationClosedOf';
 import { delegationMountIdOf } from './delegationMountIdOf';
 import { delegationSentenceOf } from './delegationSentenceOf';
 import { isAutoDelegationReplaced } from './isAutoDelegationReplaced';
@@ -133,7 +135,8 @@ const childOfDelegation = (params: DelegationChildParams): AutoGroupChild => {
   const { delegation, agent, results, labels } = params;
   const role = parseAutoDelegationRole({ role: delegation.role });
   const kind: AgentKind = role === null ? 'generic' : kindForRole({ role });
-  const state = stateOf(params);
+  const closed = delegationClosedOf({ delegation });
+  const state = closed === null || delegation.state !== 'settled' ? stateOf(params) : 'done';
   const declared = declaredSummaryOf({ delegation });
   return {
     agentId: delegation.childAgentId,
@@ -144,7 +147,8 @@ const childOfDelegation = (params: DelegationChildParams): AutoGroupChild => {
     asked: textOf({ value: delegation.request.task }),
     mountId: delegationMountIdOf({ delegation }),
     state,
-    reason: delegationSentenceOf({ delegation }),
+    reason:
+      closed === null ? delegationSentenceOf({ delegation }) : closedSentenceOf({ mark: closed }),
     reasonCode: delegation.reason,
     outcome: outcomeOf({ results, agent, agentId: delegation.childAgentId, declared, state }),
     createdAt: delegation.createdAt,

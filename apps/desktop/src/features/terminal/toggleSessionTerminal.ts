@@ -2,6 +2,7 @@ import { CHECK_STATE } from '../../store/slices/notifications/errorRecovery';
 import type { SessionId } from '@goodboy/types';
 import { isBranchlessSession } from '../../shared/utils/isBranchlessSession';
 import { useAppStore } from '../../store';
+import { selectPlaceMount } from '../scripts/selectPlaceMount';
 import { resolveActiveMountPath } from '../../store/slices/worktrees/resolveActiveMountPath';
 import { openSessionFolderTerminal } from './openSessionFolderTerminal';
 import { openSessionTerminal } from './openSessionTerminal';
@@ -38,6 +39,7 @@ export const toggleSessionTerminal = ({ sessionId: requested }: Params): void =>
     .map((mount) => mount.worktreePath);
   const cwd = sessionTerminalCwd({
     mountPaths,
+    placePath: selectPlaceMount({ state, sessionId })?.worktreePath ?? null,
     remembered: state.terminalScopes[sessionId] ?? null,
     activePath: resolveActiveMountPath({ state, sessionId }),
   });

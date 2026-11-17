@@ -93,7 +93,7 @@ describe('AutoDock', () => {
     expect(screen.queryByText('Plan v1 used')).toBeNull();
   });
 
-  it('says changes asked while the plan is revised, with Open plan only', () => {
+  it('says plan v1 is updating to v2 while the plan is revised, with Approve blocked', () => {
     renderDock({
       view: aView({
         phase: 'waiting',
@@ -101,8 +101,10 @@ describe('AutoDock', () => {
       }),
     });
 
-    screen.getByText('Plan v1 · changes asked');
-    expect(screen.queryByRole('button', { name: 'Approve and start Build' })).toBeNull();
+    screen.getByText('Updating plan v1 to v2');
+    const approve = screen.getByRole('button', { name: 'Approve and start Build' });
+    expect(approve.hasAttribute('disabled')).toBe(true);
+    expect(approve.getAttribute('title')).toBe('The Planner is writing plan v2');
     screen.getByRole('button', { name: 'Open plan Retry-safe credit retries' });
   });
 

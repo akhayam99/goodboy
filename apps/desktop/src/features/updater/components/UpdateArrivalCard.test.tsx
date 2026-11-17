@@ -5,6 +5,7 @@ import { useRef } from 'react';
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { clearMocks } from '@tauri-apps/api/mocks';
 import { getSetting } from '@goodboy/db';
+import { SHELL_GUTTER_PX } from '@goodboy/ui';
 import type { AppState } from '../../../store/types';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { installSceneDatabase } from '../../../app/components/MockScene/scenes/sceneDatabase';
@@ -18,7 +19,7 @@ import { SETTING_UPDATER_SNOOZED_VERSION } from '../../settings/settings';
 import { toggleUpdateCard } from '../updateCardRequest';
 import { UpdateArrivalCard } from './UpdateArrivalCard';
 
-const MARGIN = 12;
+const MARGIN = SHELL_GUTTER_PX;
 const LONG_VERSION = '0.24.1-beta.20261010.preview.build.8f3c2a91e7d54b6fa0c1d2e3f4a5b6c7d8e9f0';
 const READY_TITLE = 'Goodboy 0.24.1 is ready';
 const STARTED_AT = '2026-10-17T09:12:00.000Z';

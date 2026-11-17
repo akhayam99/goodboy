@@ -38,10 +38,13 @@ import {
 } from '../../../commentProjection';
 import { checksFailedItemIds } from '../../../checksFailedItemIds';
 import { isBulkAcceptable } from '../../../bulkAccept';
-import { isFixableThread } from '../../../fixableComments';
+import { commentLaneOf, type CommentLane } from '../../../commentLaneOf';
+import { useCommentRunThreadIds } from '../../../hooks/useCommentRunThreadIds';
 import { rowFixOf, type RowFix } from '../../../rowFix';
 import { heldLaunchIdOf } from '../../../../../store/slices/resolve/launchTurns';
 import type { ResolveCandidateWithItems } from '../../../../../store/slices/resolve/state';
+import type { CommentRunView } from '../../../commentRunViewsOf';
+import { useCommentRuns } from '../../../hooks/useCommentRuns';
 
 export type ReviewEntry = {
   readonly row: ResolveQueueRow;
@@ -59,9 +62,11 @@ export type ReviewEntry = {
   readonly isChecking: boolean;
   readonly checkError: string | null;
   readonly checkAgentId: AgentId | null;
+  readonly lane: CommentLane | null;
   readonly isFixable: boolean;
   readonly isAcceptable: boolean;
   readonly fix: RowFix | null;
+  readonly run: CommentRunView | null;
 };
 
 export type ReviewGroup = {
@@ -76,6 +81,10 @@ const EMPTY_CHANGES: Readonly<Record<string, ResolveSourceSnapshot>> = {};
 const EMPTY_RECHECKS: Readonly<Record<string, ThreadRecheck>> = {};
 const EMPTY_CANDIDATES: ReadonlyArray<ResolveCandidateWithItems> = [];
 const EMPTY_CHECK_RUNS: ReadonlyArray<ResolveCheckRun> = [];
+const RUN_TONE: Partial<Record<ResolveWord, ReviewCommentTone>> = {
+  in_run: 'drafting',
+  run_finished: 'ready',
+};
 
 export type ReviewEntryScope = 'comments' | 'notes' | 'branch' | 'all';
 
@@ -110,14 +119,17 @@ export const useReviewEntries = ({
   const rechecks = useAppStore((s) => s.sessionThreadRechecks[sessionId] ?? EMPTY_RECHECKS);
   const candidates = useAppStore((s) => s.sessionResolveCandidates[sessionId] ?? EMPTY_CANDIDATES);
   const checkRuns = useAppStore((s) => s.sessionResolveCheckRuns[sessionId] ?? EMPTY_CHECK_RUNS);
+  const inRunThreadIds = useCommentRunThreadIds({ sessionId });
+  const commentRuns = useCommentRuns({ sessionId });
   const all = useMemo(() => {
     const failedChecks = checksFailedItemIds({ candidates, checkRuns });
     const ordered = groupConversationsByFile({ rows }).flatMap((group) => group.rows);
     return ordered.map((row): ReviewEntry => {
+      const isChanged = changes[row.thread.threadId]?.changed != null;
       const state = reviewCommentStateOf({
         row,
         isEdited: isReplyEdited({ draft: drafts[row.thread.threadId], row }),
-        isChanged: changes[row.thread.threadId]?.changed != null,
+        isChanged,
         isHeld: heldLaunchIdOf({ threadId: row.thread.threadId }) !== null,
       });
       const facts = threadGit[row.thread.threadId] ?? null;
@@ -128,17 +140,21 @@ export const useReviewEntries = ({
         remote === null
           ? null
           : remoteViewOf({ remote, verdict: facts?.verdict ?? null, isChecking });
+      const run = commentRuns.get(row.thread.threadId) ?? null;
       const projection = projectReviewComment({
         state,
         row,
         gitChip: view,
         hasFailedChecks: failedChecks.has(row.item.id),
+        run,
+        isSourceChanged: isChanged,
       });
+      const lane = commentLaneOf({ row, inRunThreadIds });
       return {
         row,
         threadId: row.thread.threadId,
         state,
-        toneKey: reviewCommentToneKeyOf({ state, row }),
+        toneKey: RUN_TONE[projection.word] ?? reviewCommentToneKeyOf({ state, row }),
         resolveWord: projection.word,
         word: projection.label,
         chips: projection.chips,
@@ -156,12 +172,24 @@ export const useReviewEntries = ({
         isChecking,
         checkError: recheck?.error ?? null,
         checkAgentId: recheck?.agentId ?? null,
-        isFixable: isFixableThread({ thread: row.thread }),
+        lane,
+        isFixable: lane === 'fix',
         isAcceptable: isBulkAcceptable({ state, remote }),
         fix: rowFixOf({ state, row, projection }),
+        run,
       };
     });
-  }, [candidates, changes, checkRuns, drafts, rechecks, rows, threadGit]);
+  }, [
+    candidates,
+    changes,
+    checkRuns,
+    commentRuns,
+    drafts,
+    inRunThreadIds,
+    rechecks,
+    rows,
+    threadGit,
+  ]);
   return useMemo(() => {
     const isNote = ({ row }: ReviewEntry): boolean => row.thread.originKind === 'diff_comment';
     const isHost = ({ row }: ReviewEntry): boolean =>

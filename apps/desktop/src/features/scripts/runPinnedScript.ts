@@ -1,4 +1,4 @@
-import type { ProjectId, SessionId, WorkspaceId } from '@goodboy/types';
+import type { MountId, ProjectId, SessionId, WorkspaceId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../store';
 import { buildSessionScripts } from './buildSessionScripts';
 import { parseScriptPins } from './parseScriptPins';
@@ -11,13 +11,16 @@ type Params = {
   readonly sessionId: SessionId;
   readonly workspaceId: WorkspaceId;
   readonly projectId: ProjectId;
+  readonly mountId: MountId;
   readonly pinId: string;
 };
 
 type PinnedScriptRun =
-  { readonly kind: 'not-here' } | { readonly kind: 'ran'; readonly result: ScriptRunResult };
+  | { readonly kind: 'not-here' }
+  | { readonly kind: 'dropped' }
+  | { readonly kind: 'ran'; readonly result: ScriptRunResult };
 
-const findPinned = ({ sessionId, workspaceId, projectId, pinId }: Params) => {
+const findPinned = ({ sessionId, workspaceId, projectId, mountId, pinId }: Params) => {
   const state = useAppStore.getState();
   const groups = buildSessionScripts({
     mounts: state.sessionProjectMounts[sessionId] ?? EMPTY_ARRAY,
@@ -26,7 +29,7 @@ const findPinned = ({ sessionId, workspaceId, projectId, pinId }: Params) => {
     discovered: state.discoveredScripts[sessionId],
     pins: { [projectId]: parseScriptPins({ raw: state.settings[scriptPinsKey({ projectId })] }) },
   });
-  const group = groups.find((candidate) => candidate.projectId === projectId && candidate.isReady);
+  const group = groups.find((candidate) => candidate.mountId === mountId && candidate.isReady);
   const script = group?.scripts.find((candidate) => scriptPinId(candidate) === pinId);
   return { group, script };
 };
@@ -41,6 +44,9 @@ export const runPinnedScript = async (params: Params): Promise<PinnedScriptRun> 
       sessionId: params.sessionId,
       worktreePath: first.group.worktreePath,
     });
+    if (useAppStore.getState().currentSessionId !== params.sessionId) {
+      return { kind: 'dropped' };
+    }
   }
   const { group, script } = first.script === undefined ? findPinned(params) : first;
   if (group === undefined || script === undefined) {

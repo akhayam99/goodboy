@@ -1,11 +1,11 @@
 import { useLayoutEffect, useState } from 'react';
 import type { CSSProperties, RefObject } from 'react';
+import { SHELL_GUTTER_PX } from './frameGeometry';
+import { placeFloating } from './placeFloating';
 
-type Direction = 'up' | 'down';
+export type DropdownSide = 'bottom' | 'right' | 'left';
 
-export type DropdownSide = 'bottom' | 'right';
-
-export type DropdownAlign = 'start' | 'end' | 'center';
+export type DropdownAlign = 'start' | 'end';
 
 type Params = {
   readonly triggerRef: RefObject<HTMLElement | null>;
@@ -22,33 +22,11 @@ type Params = {
   readonly maxWidth?: number;
 };
 
-type ResolveDesiredLeftParams = {
-  readonly rect: DOMRect;
-  readonly popupWidth: number;
-  readonly align: DropdownAlign;
-};
-
 type AnchorRectParams = {
   readonly trigger: HTMLElement;
   readonly isAnchorWrapper: boolean;
 };
 
-type PlaceOnRightParams = {
-  readonly rect: DOMRect;
-  readonly popupWidth: number;
-  readonly popupHeight: number;
-  readonly align: DropdownAlign;
-  readonly viewportMargin: number;
-};
-
-type RightPlacement = {
-  readonly left: number;
-  readonly top?: number;
-  readonly bottom?: number;
-  readonly maxHeight: number;
-};
-
-const DEFAULT_VIEWPORT_MARGIN = 8;
 const DROPDOWN_GAP = 4;
 const SIDE_GAP = 8;
 const MIN_DROPDOWN_HEIGHT = 160;
@@ -73,50 +51,6 @@ const anchorRectOf = ({ trigger, isAnchorWrapper }: AnchorRectParams): DOMRect =
   return inner.width > 0 || inner.height > 0 ? inner : own;
 };
 
-const resolveDesiredLeft = ({ rect, popupWidth, align }: ResolveDesiredLeftParams): number => {
-  if (align === 'end') {
-    return rect.right - popupWidth;
-  }
-  if (align === 'center') {
-    return rect.left + rect.width / 2 - popupWidth / 2;
-  }
-  return rect.left;
-};
-
-const placeOnRight = ({
-  rect,
-  popupWidth,
-  popupHeight,
-  align,
-  viewportMargin,
-}: PlaceOnRightParams): RightPlacement => {
-  const bottomLimit = Math.max(
-    window.innerHeight - viewportMargin - readBottomInset(),
-    Math.min(rect.bottom, window.innerHeight - viewportMargin),
-  );
-  const roomRight = window.innerWidth - viewportMargin - rect.right - SIDE_GAP;
-  const roomLeft = rect.left - SIDE_GAP - viewportMargin;
-  const desiredLeft =
-    roomRight >= popupWidth || roomRight >= roomLeft
-      ? rect.right + SIDE_GAP
-      : rect.left - SIDE_GAP - popupWidth;
-  const maxLeft = Math.max(window.innerWidth - popupWidth - viewportMargin, viewportMargin);
-  const left = Math.min(Math.max(desiredLeft, viewportMargin), maxLeft);
-  const bottomEdge = Math.min(rect.bottom, bottomLimit);
-  const roomAbove = Math.max(bottomEdge - viewportMargin, 0);
-  if (align === 'end' && popupHeight <= roomAbove) {
-    return { left, bottom: window.innerHeight - bottomEdge, maxHeight: roomAbove };
-  }
-  const maxHeight = Math.max(bottomLimit - viewportMargin, 0);
-  const shownHeight = Math.min(popupHeight, maxHeight);
-  const desiredTop = align === 'center' ? rect.top + rect.height / 2 - shownHeight / 2 : rect.top;
-  return {
-    left,
-    top: Math.min(Math.max(desiredTop, viewportMargin), bottomLimit - shownHeight),
-    maxHeight,
-  };
-};
-
 export const useDropdownDirection = ({
   triggerRef,
   popupRef,
@@ -128,7 +62,7 @@ export const useDropdownDirection = ({
   shouldMatchTriggerWidth,
   isAtLeastTriggerWidth = false,
   isAnchorWrapper = false,
-  viewportMargin = DEFAULT_VIEWPORT_MARGIN,
+  viewportMargin = SHELL_GUTTER_PX,
   maxWidth,
 }: Params): CSSProperties | undefined => {
   const [style, setStyle] = useState<CSSProperties | undefined>(undefined);
@@ -156,40 +90,28 @@ export const useDropdownDirection = ({
       const popupHeight = measuredHeight > 0 ? measuredHeight : expectedHeight;
       const shownMaxWidth =
         maxWidth === undefined ? viewportWidth : Math.min(maxWidth, viewportWidth);
-      const widthStyle: CSSProperties = {
-        ...(shouldMatchTriggerWidth ? { width: popupWidth } : {}),
-        ...(isAtLeastTriggerWidth ? { minWidth: Math.min(rect.width, viewportWidth) } : {}),
-      };
-
-      if (side === 'right') {
-        const placed = placeOnRight({ rect, popupWidth, popupHeight, align, viewportMargin });
-        setStyle({ ...placed, maxWidth: shownMaxWidth, ...widthStyle });
-        return;
-      }
-
-      const desiredLeft = resolveDesiredLeft({ rect, popupWidth, align });
-      const maxLeft = Math.max(window.innerWidth - popupWidth - viewportMargin, viewportMargin);
-      const left = Math.min(Math.max(desiredLeft, viewportMargin), maxLeft);
-      const spaceBelow = Math.max(
-        window.innerHeight - rect.bottom - DROPDOWN_GAP - viewportMargin - readBottomInset(),
-        0,
-      );
-      const spaceAbove = Math.max(rect.top - DROPDOWN_GAP - viewportMargin, 0);
-      const direction: Direction =
-        spaceBelow >= MIN_DROPDOWN_HEIGHT || spaceBelow >= spaceAbove
-          ? spaceBelow < popupHeight && spaceAbove > spaceBelow
-            ? 'up'
-            : 'down'
-          : 'up';
-      const availableHeight = direction === 'down' ? spaceBelow : spaceAbove;
+      const placed = placeFloating({
+        anchor: rect,
+        tip: { width: popupWidth, height: popupHeight },
+        side,
+        gap: side === 'bottom' ? DROPDOWN_GAP : SIDE_GAP,
+        edge: viewportMargin,
+        alignment: align,
+        minHeight: MIN_DROPDOWN_HEIGHT,
+        bottomInset: readBottomInset(),
+        viewport: { width: window.innerWidth, height: window.innerHeight },
+      });
+      const shownHeight = Math.min(popupHeight, placed.maxHeight);
+      const isGrowingUp = placed.growth === 'up';
 
       setStyle({
-        top: direction === 'down' ? rect.bottom + DROPDOWN_GAP : undefined,
-        bottom: direction === 'up' ? window.innerHeight - rect.top + DROPDOWN_GAP : undefined,
-        left,
+        top: isGrowingUp ? undefined : placed.top,
+        bottom: isGrowingUp ? window.innerHeight - placed.top - shownHeight : undefined,
+        left: placed.left,
         maxWidth: shownMaxWidth,
-        maxHeight: Math.max(availableHeight, 0),
-        ...widthStyle,
+        maxHeight: placed.maxHeight,
+        ...(shouldMatchTriggerWidth ? { width: popupWidth } : {}),
+        ...(isAtLeastTriggerWidth ? { minWidth: Math.min(rect.width, viewportWidth) } : {}),
       });
     };
 

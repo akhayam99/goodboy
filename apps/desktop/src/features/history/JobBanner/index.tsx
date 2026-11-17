@@ -10,6 +10,7 @@ import { JobBannerActions } from './JobBannerActions';
 import { JobBannerLine } from './JobBannerLine';
 import { JobBannerNote } from './JobBannerNote';
 import { JobBannerReview } from './JobBannerReview';
+import { RebaseSettledLine } from './RebaseSettledLine';
 import { RebaseStopPanel } from '../components/RebaseStopPanel';
 import { REBASE_STOP_PANEL_STATES } from '../components/rebaseStopPanelStates';
 
@@ -50,7 +51,10 @@ export const JobBanner = ({ sessionId, worktreePath }: Props) => {
   if (controls === null && isGitRebasing && worktreePath !== null) {
     return <GitRebaseRow sessionId={sessionId} worktreePath={worktreePath} actions={actions} />;
   }
-  if (controls === null || RAIL_ONLY.has(controls.job.state)) {
+  if (controls === null) {
+    return actions.mountId === null ? null : <RebaseSettledLine mountId={actions.mountId} />;
+  }
+  if (RAIL_ONLY.has(controls.job.state)) {
     return null;
   }
   const { job } = controls;

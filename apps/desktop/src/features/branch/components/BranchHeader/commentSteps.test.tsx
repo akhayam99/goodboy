@@ -209,6 +209,7 @@ describe('the branch menu keeps the push the header does not show', () => {
     facts: { ...NO_COMMENT_FACTS, fixable: 1 },
     readyThreadIds: [],
     fixableThreadIds: ['thread-ledger'],
+    runSuggestedThreadIds: [],
   };
 
   const menuLabels = (): ReadonlyArray<string> => {
@@ -259,6 +260,7 @@ describe('the branch menu keeps the push the header does not show', () => {
         facts: { ...NO_COMMENT_FACTS, questionThreadId: 'thread-ledger', fixable: 2 },
         readyThreadIds: [],
         fixableThreadIds: [],
+        runSuggestedThreadIds: [],
       },
       status: UNPUSHED,
     });
@@ -295,6 +297,7 @@ describe('the branch header comment steps do the work on any tab', () => {
         facts: { ...NO_COMMENT_FACTS, fixable: 4 },
         readyThreadIds: [],
         fixableThreadIds,
+        runSuggestedThreadIds: [],
       },
     });
 
@@ -318,6 +321,7 @@ describe('the branch header comment steps do the work on any tab', () => {
         facts: { ...NO_COMMENT_FACTS, questionThreadId: 'thread-ledger', fixable: 2 },
         readyThreadIds: [],
         fixableThreadIds: [],
+        runSuggestedThreadIds: [],
       },
     });
 
@@ -355,6 +359,7 @@ describe('the branch header comment steps do the work on any tab', () => {
         facts: { ...NO_COMMENT_FACTS, waitingFixes: 2, fixable: 1 },
         readyThreadIds: ['thread-ledger', 'thread-notify'],
         fixableThreadIds: [],
+        runSuggestedThreadIds: [],
       },
     });
 
@@ -383,6 +388,7 @@ describe('the branch header comment steps do the work on any tab', () => {
         facts: { ...NO_COMMENT_FACTS, waitingFixes: 1 },
         readyThreadIds: ['thread-ledger'],
         fixableThreadIds: [],
+        runSuggestedThreadIds: [],
       },
     });
 
@@ -408,11 +414,67 @@ describe('the branch header comment steps do the work on any tab', () => {
         facts: { ...NO_COMMENT_FACTS, fixable: 3, isFixRunLive: true },
         readyThreadIds: [],
         fixableThreadIds: [],
+        runSuggestedThreadIds: [],
       },
     });
 
     expect(primaries()).toHaveLength(0);
     expect(document.querySelectorAll('[data-branch-secondary]')).toHaveLength(0);
     expect(document.querySelectorAll('button[data-variant="primary"]')).toHaveLength(0);
+  });
+});
+
+describe('the branch header counts a comment that suggests a run apart from Fix N', () => {
+  const secondaries = (): ReadonlyArray<string | null> =>
+    [...document.querySelectorAll('[data-branch-secondary]')].map((node) => node.textContent);
+
+  it('fixes only the small comments and offers Start a run beside them', () => {
+    const navigate = vi.fn<StoreState['navigate']>();
+    useAppStore.setState({ navigate });
+    renderHeader({
+      comments: {
+        facts: { ...NO_COMMENT_FACTS, fixable: 2, runSuggested: 1 },
+        readyThreadIds: [],
+        fixableThreadIds: ['thread-typo', 'thread-import'],
+        runSuggestedThreadIds: ['thread-layout'],
+      },
+    });
+
+    expect(primaries().map((button) => button.textContent)).toEqual(['Fix 2 comments']);
+    expect(secondaries()).toEqual(['Start a run']);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Fix 2 comments' }));
+    const drawer = useAppStore.getState().drawer;
+    expect(drawer?.kind === 'fix-comments' ? drawer.payload.threadIds : null).toEqual([
+      'thread-typo',
+      'thread-import',
+    ]);
+  });
+
+  it('opens the first broad comment with its start form at Start a run', () => {
+    const navigate = vi.fn<StoreState['navigate']>();
+    useAppStore.setState({ navigate });
+    renderHeader({
+      comments: {
+        facts: { ...NO_COMMENT_FACTS, runSuggested: 2 },
+        readyThreadIds: [],
+        fixableThreadIds: [],
+        runSuggestedThreadIds: ['thread-layout', 'thread-filters'],
+      },
+    });
+
+    expect(primaries().map((button) => button.textContent)).toEqual(['Start a run']);
+    fireEvent.click(screen.getByRole('button', { name: 'Start a run' }));
+
+    expect(navigate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        drawer: {
+          kind: 'conversation',
+          sessionId: SESSION_ID,
+          payload: { threadId: 'thread-layout' },
+        },
+      }),
+    );
+    expect(useAppStore.getState().commentRunStarts[SESSION_ID]?.openThreadId).toBe('thread-layout');
   });
 });

@@ -3,13 +3,12 @@ import type { Agent, SessionId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../store';
 import { useConversationAsks } from '../../../store/hooks/useConversationAsks';
 import type { AutoTreeView } from '../../../store/slices/auto-view/state';
-import { dockPlanRowOf } from '../dockPlanRowOf';
-import { isAutoPlanAwaitingApproval } from '../isAutoPlanAwaitingApproval';
+import { dockPlanOf } from '../dockPlanOf';
+import { planDiscardAskOf } from '../planDiscardAskOf';
 import { askBarsOf } from './askBarOf';
 import { AutoDockAsk } from './AutoDockAsk';
 import { AutoDockLive } from './AutoDockLive';
 import { AutoDockPlan } from './AutoDockPlan';
-import { isPlanChangeSentOf } from './isPlanChangeSentOf';
 import { AutoNextAction } from './AutoNextAction';
 import { AutoProjectAsk } from './AutoProjectAsk';
 import { dockNextStepOf } from './dockNextStepOf';
@@ -35,10 +34,10 @@ export const AutoDock = ({ sessionId, view, rootAgent, onOpenArtifact, actions }
   const { permissions, questions } = useConversationAsks({ sessionId, agentId: rootAgent.id });
   const [untold, setUntold] = useState<Readonly<Record<string, string>>>({});
   const hasAskAbove = permissions.length > 0 || questions.length > 0;
-  const plan = dockPlanRowOf({ view });
-  const isPlanWaiting = isAutoPlanAwaitingApproval({ view });
+  const plan = dockPlanOf({ view });
+  const isPlanWaiting = plan?.kind === 'waiting';
   const nextStep = dockNextStepOf({ view, agents, untold });
-  const isRevisionAsked = nextStep !== null && nextStep.reviseOf === plan?.artifact.artifactId;
+  const isRevisionAsked = nextStep !== null && nextStep.reviseOf === plan?.row.artifact.artifactId;
   const isNextShown = !hasAskAbove && nextStep !== null && (!isPlanWaiting || isRevisionAsked);
   const projectAsk = hasAskAbove || isPlanWaiting || isNextShown ? null : projectAskOf({ view });
   const asks = askBarsOf({ view });
@@ -49,12 +48,11 @@ export const AutoDock = ({ sessionId, view, rootAgent, onOpenArtifact, actions }
       {plan === null || hasAskAbove ? null : (
         <AutoDockPlan
           sessionId={sessionId}
-          artifactId={plan.artifact.artifactId}
-          title={plan.title}
+          dockPlan={plan}
           onOpen={onOpenArtifact}
           isApproveHidden={isRevisionAsked}
-          isChangeSent={isPlanChangeSentOf({ view, row: plan })}
           isSettledHidden={AT_REST.has(view.tree.phase)}
+          discardAsk={planDiscardAskOf({ view, row: plan.row })}
         />
       )}
       {!isNextShown ? null : (

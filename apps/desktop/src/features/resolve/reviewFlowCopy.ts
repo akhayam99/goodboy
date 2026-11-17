@@ -22,12 +22,15 @@ export const REVIEW_FLOW_LABEL = {
 export const sourceChangeLine = ({
   author,
   time,
+  isRun = false,
 }: {
   readonly author: string | null;
   readonly time: string;
+  readonly isRun?: boolean;
 }): string => {
   const by = author === null ? 'Edited' : `Edited by ${author}`;
-  return time === '' ? `${by}, after the draft.` : `${by}, seen at ${time}, after the draft.`;
+  const after = isRun ? 'after the run started' : 'after the draft';
+  return time === '' ? `${by}, ${after}.` : `${by}, seen at ${time}, ${after}.`;
 };
 
 export const newReplyLine = ({ authors }: { readonly authors: ReadonlyArray<string> }): string => {

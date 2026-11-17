@@ -6,24 +6,46 @@ const LEDGER = '/work/harborline/ledger-core-payout';
 
 describe('sessionTerminalCwd', () => {
   it('falls back to the active mount when no worktree is on disk, else has none', () => {
-    expect(sessionTerminalCwd({ mountPaths: [], remembered: PAYMENTS, activePath: null })).toBe(
-      null,
-    );
-    expect(sessionTerminalCwd({ mountPaths: [], remembered: null, activePath: LEDGER })).toBe(
-      LEDGER,
-    );
+    expect(
+      sessionTerminalCwd({
+        mountPaths: [],
+        placePath: null,
+        remembered: PAYMENTS,
+        activePath: null,
+      }),
+    ).toBe(null);
+    expect(
+      sessionTerminalCwd({ mountPaths: [], placePath: null, remembered: null, activePath: LEDGER }),
+    ).toBe(LEDGER);
   });
 
   it('opens on the only worktree, whatever was remembered', () => {
     expect(
-      sessionTerminalCwd({ mountPaths: [LEDGER], remembered: PAYMENTS, activePath: PAYMENTS }),
+      sessionTerminalCwd({
+        mountPaths: [LEDGER],
+        placePath: PAYMENTS,
+        remembered: PAYMENTS,
+        activePath: PAYMENTS,
+      }),
     ).toBe(LEDGER);
   });
 
-  it('opens on the remembered worktree when the session has several', () => {
+  it('opens on the branch the user is on before the remembered worktree', () => {
     expect(
       sessionTerminalCwd({
         mountPaths: [LEDGER, PAYMENTS],
+        placePath: LEDGER,
+        remembered: PAYMENTS,
+        activePath: PAYMENTS,
+      }),
+    ).toBe(LEDGER);
+  });
+
+  it('opens on the remembered worktree when the session has several and no branch is on screen', () => {
+    expect(
+      sessionTerminalCwd({
+        mountPaths: [LEDGER, PAYMENTS],
+        placePath: null,
         remembered: PAYMENTS,
         activePath: LEDGER,
       }),
@@ -34,6 +56,7 @@ describe('sessionTerminalCwd', () => {
     expect(
       sessionTerminalCwd({
         mountPaths: [LEDGER, PAYMENTS],
+        placePath: null,
         remembered: null,
         activePath: PAYMENTS,
       }),
@@ -41,6 +64,7 @@ describe('sessionTerminalCwd', () => {
     expect(
       sessionTerminalCwd({
         mountPaths: [LEDGER, PAYMENTS],
+        placePath: null,
         remembered: '/work/harborline/gone',
         activePath: null,
       }),

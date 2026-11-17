@@ -20,6 +20,7 @@ import {
   type Database,
 } from '@goodboy/db';
 import type { SessionId } from '@goodboy/types';
+import { delegationClosedOf } from '../../../features/auto/delegationClosedOf';
 import { readAutoLevel } from '../../runtime/auto/level/readAutoLevel';
 import { userImagesOf } from '../../runtime/auto/userImagesOf';
 import { deliveredResultsOf } from './deliveredResultsOf';
@@ -128,7 +129,13 @@ export const readAutoTreeViews = async ({
         listAutoGrantsOfTree({ db, treeId: tree.id }),
         listAutoLaunchSnapshotsOfTree({ db, treeId: tree.id }),
       ]);
-      const present = presentDelegationsOf({ delegations, goneChildIds: new Set(goneChildIds) });
+      const discardedChildIds = delegations
+        .filter((delegation) => delegationClosedOf({ delegation })?.as === 'discarded')
+        .map((delegation) => delegation.childAgentId);
+      const present = presentDelegationsOf({
+        delegations,
+        goneChildIds: new Set([...goneChildIds, ...discardedChildIds]),
+      });
       return {
         tree,
         delegations: present,

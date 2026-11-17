@@ -1,5 +1,6 @@
 import type { AutoDelegation } from '@goodboy/db';
 import { recordField } from './chat/readJson';
+import { delegationClosedOf } from './delegationClosedOf';
 import { delegationReleaseOf } from './delegationReleaseOf';
 import { delegationReplacesOf } from './delegationReplacesOf';
 import { isAutoDelegationSuperseded } from './isAutoDelegationSuperseded';
@@ -23,6 +24,7 @@ const isLegacyReturnSuperseded = ({ delegation, delegations }: Params): boolean 
 
 export const isAutoReturnDecided = ({ delegation, delegations }: Params): boolean =>
   delegationReleaseOf({ delegation }) !== null ||
+  delegationClosedOf({ delegation }) !== null ||
   delegations.some(
     (later) =>
       later.id !== delegation.id &&

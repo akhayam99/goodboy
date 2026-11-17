@@ -1,6 +1,7 @@
 import type { AutoDeliveredArtifact, AutoTreeView } from '../../../store/slices/auto-view/state';
-import { artifactApprovalOf, type ArtifactApprovalView } from './artifactApprovalOf';
+import type { ArtifactApprovalView } from './artifactApprovalOf';
 import { artifactLeadOf } from './artifactLeadOf';
+import { planApprovalInViewOf } from './planApprovalInViewOf';
 
 export type ArtifactLinkModel = Readonly<{
   artifactId: string;
@@ -38,6 +39,6 @@ export const artifactLinksOf = ({ view, artifacts }: Params): ReadonlyArray<Arti
         row === undefined
           ? null
           : artifactLeadOf({ kind: artifact.kind, sourceText: row.sourceText }),
-      approval: row === undefined ? null : artifactApprovalOf({ row, level: view.level }),
+      approval: row === undefined ? null : planApprovalInViewOf({ view, row }),
     };
   });

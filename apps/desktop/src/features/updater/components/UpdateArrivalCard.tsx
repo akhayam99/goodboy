@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import {
   Button,
   Popover,
+  SHELL_GUTTER_PX,
   cn,
   useDropdownDirection,
   useEscapeLayer,
@@ -19,7 +20,6 @@ const CARD_WIDTH_PX = 300;
 const WIDE_STATES: ReadonlySet<UpdateCardState> = new Set(['running', 'queued']);
 const CARD_MAX_WIDTH_PX = 384;
 const CARD_EXPECTED_HEIGHT_PX = 112;
-const WINDOW_MARGIN_PX = 12;
 
 type Props = {
   readonly anchorRef: RefObject<HTMLElement | null>;
@@ -59,7 +59,7 @@ export const UpdateArrivalCard = ({ anchorRef, onOpenChangelog }: Props) => {
     expectedWidth: CARD_WIDTH_PX,
     align: 'start',
     shouldMatchTriggerWidth: false,
-    viewportMargin: WINDOW_MARGIN_PX,
+    viewportMargin: SHELL_GUTTER_PX,
     maxWidth: CARD_MAX_WIDTH_PX,
   });
 

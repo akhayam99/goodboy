@@ -174,9 +174,10 @@ export { autoRefusedBlockText, isAutoGateBlock } from './isAutoGateBlock';
 export { AUTO_REFUSAL_TEXT, describeAutoRefusal, type RefusalChild } from './refusalText';
 
 export {
-  AUTO_CHILD_PROVIDERS,
   AUTO_OWN_PROVIDERS,
   AUTO_UNCONFINED_PROVIDERS,
+  AUTO_WRITER_CHILD_PROVIDERS,
+  autoChildProviders,
   isAutoChildProvider,
   isAutoProviderResuming,
   isAutoOwnProvider,
@@ -186,6 +187,7 @@ export {
   DELEGATE_FIELD_CHARS,
   DELEGATE_LIST_MAX,
   DELEGATE_REASON_CHARS,
+  DELEGATE_REVISES_SHAPE,
   DELEGATE_TASK_CHARS,
   DELEGATE_TITLE_WORDS,
   hashDelegateChildren,
@@ -342,7 +344,11 @@ export {
 export {
   AUTO_BLOCK_CLOSE,
   AUTO_BLOCK_OPEN,
+  AUTO_CLOSE_AS,
+  AUTO_CLOSE_SHAPE,
   parseAutoBlock,
+  parseAutoCloseBlocks,
+  type AutoCloseAs,
   type AutoBlock,
   type AutoBlockOutcome,
   type ParseAutoBlockParams,

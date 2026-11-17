@@ -6,6 +6,10 @@ const WORKING: C07Seed = { state: 'working', place: 'auto' };
 const IDLE: C07Seed = { state: 'done', place: 'auto' };
 const PLAN: C07Seed = { state: 'plan', place: 'auto' };
 const PLAN_CHANGES: C07Seed = { state: 'plan', place: 'auto', isChangeSent: true };
+const LEAD_TIDY: C07Seed = { state: 'plan', place: 'auto', isLeadTidying: true };
+const PLAN_REPLANNING: C07Seed = { state: 'plan', place: 'auto', planDock: 'replanning' };
+const PLAN_FAILED: C07Seed = { state: 'plan', place: 'auto', planDock: 'failed' };
+const PLAN_V2: C07Seed = { state: 'plan', place: 'auto', planDock: 'v2' };
 const ANSWERING: C07Seed = { state: 'answering', place: 'auto' };
 const SESSION: C07Seed = { state: 'working', place: 'session' };
 const LIST: C07Seed = { state: 'done', place: 'list' };
@@ -27,6 +31,10 @@ export const U25_C07_AUTO_SCENES = {
   'c07-auto-idle': () => <C07AutoFrame seed={IDLE} />,
   'c07-auto-plan': () => <C07AutoFrame seed={PLAN} />,
   'c07-auto-plan-changes': () => <C07AutoFrame seed={PLAN_CHANGES} />,
+  'c07-auto-lead-tidy': () => <C07AutoFrame seed={LEAD_TIDY} />,
+  'c07-auto-plan-replanning': () => <C07AutoFrame seed={PLAN_REPLANNING} />,
+  'c07-auto-plan-failed': () => <C07AutoFrame seed={PLAN_FAILED} />,
+  'c07-auto-plan-v2': () => <C07AutoFrame seed={PLAN_V2} />,
   'c07-auto-answering': () => <C07AutoFrame seed={ANSWERING} />,
   'c07-auto-session-level': () => <C07AutoFrame seed={SESSION} />,
   'c07-auto-list': () => <C07AutoFrame seed={LIST} />,

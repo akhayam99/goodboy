@@ -1,4 +1,4 @@
-import type { SessionId } from '@goodboy/types';
+import type { AgentId, MountId, SessionId } from '@goodboy/types';
 import type { CommentRunStartState } from './state';
 
 export type CommentRunThreadParams = {
@@ -14,7 +14,22 @@ export type SetCommentRunExtrasParams = CommentRunThreadParams & {
   readonly extraThreadIds: ReadonlyArray<string>;
 };
 
+export type AddToCommentRunParams = CommentRunThreadParams & {
+  readonly agentId: AgentId;
+  readonly quote: string;
+};
+
+export type ReplyFromCommentRunParams = CommentRunThreadParams & {
+  readonly mountId: MountId | null;
+  readonly reply: string;
+};
+
+export type SendChangeToCommentRunParams = AddToCommentRunParams;
+
 export type CommentRunStartSlice = CommentRunStartState & {
+  addToCommentRun(params: AddToCommentRunParams): Promise<void>;
+  replyFromCommentRun(params: ReplyFromCommentRunParams): Promise<void>;
+  sendChangeToCommentRun(params: SendChangeToCommentRunParams): Promise<void>;
   openCommentRunStart(params: CommentRunThreadParams): void;
   closeCommentRunStart(params: CloseCommentRunStartParams): void;
   keepCommentRunGoal(params: CloseCommentRunStartParams): void;

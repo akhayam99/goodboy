@@ -87,6 +87,7 @@ export const useCommentDrawerPlan = ({
     const plan = reviewBarPlanOf({
       word: entry.resolveWord,
       state,
+      lane: entry.lane,
       hasRemote: entry.remote !== null,
       actions: actions.map((candidate) => ({ id: candidate.id, slot: candidate.slot })),
     });
@@ -110,7 +111,16 @@ export const useCommentDrawerPlan = ({
         }
       }
     });
-  }, [actions, entry.remote, entry.resolveWord, hasRunLine, isPushPanelShown, pushAction, state]);
+  }, [
+    actions,
+    entry.lane,
+    entry.remote,
+    entry.resolveWord,
+    hasRunLine,
+    isPushPanelShown,
+    pushAction,
+    state,
+  ]);
   const shown = useMemo(() => items.map((item) => idOf({ item })), [items]);
   const rare = useMemo(
     () => actions.filter((candidate) => !shown.includes(candidate.id)),

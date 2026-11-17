@@ -5,6 +5,8 @@ pub(crate) struct StoppedProcess {
     pub(crate) pid: u32,
     pub(crate) name: String,
     pub(crate) port: Option<u16>,
+    #[serde(skip)]
+    pub(crate) path: String,
 }
 
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
@@ -97,6 +99,7 @@ pub(crate) mod unix {
         pub(crate) uid: u32,
         pub(crate) stat: String,
         pub(crate) name: String,
+        pub(crate) path: String,
         pub(crate) start: u64,
     }
 
@@ -164,10 +167,11 @@ pub(crate) mod unix {
             fields.push(field);
             rest = tail.trim_start();
         }
-        let name = std::path::Path::new(rest.trim())
+        let path = rest.trim().to_string();
+        let name = std::path::Path::new(&path)
             .file_name()
             .map(|value| value.to_string_lossy().into_owned())
-            .unwrap_or_else(|| rest.trim().to_string());
+            .unwrap_or_else(|| path.clone());
         Some(ProcRow {
             pid: fields[0].parse().ok()?,
             ppid: fields[1].parse().ok()?,
@@ -175,6 +179,7 @@ pub(crate) mod unix {
             uid: fields[3].parse().ok()?,
             stat: fields[4].to_string(),
             name,
+            path,
             start: 0,
         })
     }
@@ -622,6 +627,7 @@ pub(crate) mod unix {
                         pid: selected.row.pid,
                         name: selected.row.name.clone(),
                         port: None,
+                        path: selected.row.path.clone(),
                     }),
             );
         }
@@ -862,6 +868,7 @@ mod tests {
             uid,
             stat: "S".to_string(),
             name: name.to_string(),
+            path: name.to_string(),
             start: 1000 + u64::from(pid),
         }
     }
@@ -1621,6 +1628,7 @@ mod tests {
             uid: 501,
             stat: "S".to_string(),
             name: "node".to_string(),
+            path: "node".to_string(),
             start,
         };
         let me = Me {

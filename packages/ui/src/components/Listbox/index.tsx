@@ -71,8 +71,6 @@ export type ListboxProps<T extends ListboxValue> = SingleProps<T> | MultipleProp
 
 export const LISTBOX_SEARCH_THRESHOLD = 8;
 
-const LISTBOX_VIEWPORT_MARGIN = 12;
-
 const LISTBOX_MAX_WIDTH = 360;
 
 const NO_VALUES: ReadonlyArray<never> = [];
@@ -130,7 +128,6 @@ export const Listbox = <T extends ListboxValue>(props: ListboxProps<T>) => {
     expectedWidth: 240,
     openEvent,
     isAtLeastTriggerWidth: true,
-    viewportMargin: LISTBOX_VIEWPORT_MARGIN,
   });
   const isOpen = dropdown.open;
   const isMultiple = props.multiple === true;
