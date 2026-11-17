@@ -1,42 +1,67 @@
 export type FloatingSide = 'top' | 'bottom' | 'left' | 'right';
 
+export type FloatingAlign = 'start' | 'center' | 'end';
+
+export type FloatingGrowth = 'down' | 'up';
+
+export type FloatingRect = Pick<DOMRect, 'top' | 'bottom' | 'left' | 'right' | 'width' | 'height'>;
+
+export type FloatingSize = Pick<DOMRect, 'width' | 'height'>;
+
+export type FloatingViewport = {
+  readonly width: number;
+  readonly height: number;
+};
+
 export type FloatingCoords = {
   readonly top: number;
   readonly left: number;
   readonly side: FloatingSide;
+  readonly isFlipped: boolean;
+  readonly shift: number;
+  readonly maxHeight: number;
+  readonly growth: FloatingGrowth;
 };
-
-export type FloatingRect = Pick<DOMRect, 'top' | 'bottom' | 'left' | 'right' | 'width' | 'height'>;
-
-export type FloatingAlign = 'center' | 'start';
 
 type Params = {
   readonly anchor: FloatingRect;
-  readonly tip: FloatingRect;
+  readonly tip: FloatingSize;
   readonly side: FloatingSide;
   readonly gap: number;
   readonly edge: number;
   readonly alignment?: FloatingAlign;
+  readonly crossInset?: number;
+  readonly minHeight?: number;
+  readonly bottomInset?: number;
+  readonly viewport?: FloatingViewport;
 };
 
-type Point = { readonly top: number; readonly left: number };
-
-type FlipParams = {
+type SideParams = {
   readonly side: FloatingSide;
 };
 
-const flipSide = ({ side }: FlipParams): FloatingSide => {
-  switch (side) {
-    case 'top':
-      return 'bottom';
-    case 'bottom':
-      return 'top';
-    case 'left':
-      return 'right';
-    case 'right':
-      return 'left';
-  }
+type RangeParams = {
+  readonly value: number;
+  readonly low: number;
+  readonly high: number;
 };
+
+const OPPOSITE: Readonly<Record<FloatingSide, FloatingSide>> = {
+  top: 'bottom',
+  bottom: 'top',
+  left: 'right',
+  right: 'left',
+};
+
+const isHorizontal = ({ side }: SideParams): boolean => side === 'left' || side === 'right';
+
+const insideMargin = ({ value, low, high }: RangeParams): number =>
+  Math.max(low, Math.min(value, Math.max(low, high)));
+
+const windowViewport = (): FloatingViewport => ({
+  width: window.innerWidth,
+  height: window.innerHeight,
+});
 
 export const placeFloating = ({
   anchor,
@@ -45,49 +70,69 @@ export const placeFloating = ({
   gap,
   edge,
   alignment = 'center',
+  crossInset = 0,
+  minHeight = 0,
+  bottomInset = 0,
+  viewport = windowViewport(),
 }: Params): FloatingCoords => {
-  const vw = window.innerWidth;
-  const vh = window.innerHeight;
-
-  const isStart = alignment === 'start';
-  const centeredLeft = isStart ? anchor.left - gap : anchor.left + anchor.width / 2 - tip.width / 2;
-  const centeredTop = isStart ? anchor.top - gap : anchor.top + anchor.height / 2 - tip.height / 2;
-
-  const place = (s: FloatingSide): Point => {
-    switch (s) {
-      case 'top':
-        return { top: anchor.top - tip.height - gap, left: centeredLeft };
-      case 'bottom':
-        return { top: anchor.bottom + gap, left: centeredLeft };
-      case 'left':
-        return { top: centeredTop, left: anchor.left - tip.width - gap };
-      case 'right':
-        return { top: centeredTop, left: anchor.right + gap };
-    }
+  const floor = Math.max(
+    viewport.height - edge - bottomInset,
+    Math.min(anchor.bottom, viewport.height - edge),
+  );
+  const room: Readonly<Record<FloatingSide, number>> = {
+    top: anchor.top - gap - edge,
+    bottom: floor - anchor.bottom - gap,
+    left: anchor.left - gap - edge,
+    right: viewport.width - edge - anchor.right - gap,
   };
+  const needed = isHorizontal({ side }) ? tip.width : Math.max(tip.height, minHeight);
+  const opposite = OPPOSITE[side];
+  const isFlipped = room[side] < needed && room[opposite] > room[side];
+  const chosen = isFlipped ? opposite : side;
+  const rightLimit = viewport.width - edge - tip.width;
 
-  const overflowOf = (s: FloatingSide, p: Point): number => {
-    if (s === 'top') {
-      return Math.max(0, edge - p.top);
-    }
-    if (s === 'bottom') {
-      return Math.max(0, p.top + tip.height - (vh - edge));
-    }
-    if (s === 'left') {
-      return Math.max(0, edge - p.left);
-    }
-    return Math.max(0, p.left + tip.width - (vw - edge));
+  if (isHorizontal({ side: chosen })) {
+    const roomAboveEnd = Math.min(anchor.bottom + crossInset, floor) - edge;
+    const isEndHeld = alignment === 'end' && tip.height <= roomAboveEnd;
+    const column = Math.max(floor - edge, 0);
+    const maxHeight = isEndHeld ? roomAboveEnd : column;
+    const shown = Math.min(tip.height, maxHeight);
+    const centred = anchor.top + anchor.height / 2 - shown / 2;
+    const desiredTop = isEndHeld
+      ? anchor.bottom + crossInset - shown
+      : alignment === 'center'
+        ? centred
+        : anchor.top - crossInset;
+    const top = insideMargin({ value: desiredTop, low: edge, high: floor - shown });
+    const mainLeft = chosen === 'right' ? anchor.right + gap : anchor.left - gap - tip.width;
+    return {
+      top,
+      left: insideMargin({ value: mainLeft, low: edge, high: rightLimit }),
+      side: chosen,
+      isFlipped,
+      shift: top - desiredTop,
+      maxHeight,
+      growth: isEndHeld && top <= desiredTop ? 'up' : 'down',
+    };
+  }
+
+  const maxHeight = Math.max(room[chosen], 0);
+  const shown = Math.min(tip.height, maxHeight);
+  const desiredLeft =
+    alignment === 'end'
+      ? anchor.right + crossInset - tip.width
+      : alignment === 'center'
+        ? anchor.left + anchor.width / 2 - tip.width / 2
+        : anchor.left - crossInset;
+  const left = insideMargin({ value: desiredLeft, low: edge, high: rightLimit });
+  const mainTop = chosen === 'bottom' ? anchor.bottom + gap : anchor.top - gap - shown;
+  return {
+    top: insideMargin({ value: mainTop, low: edge, high: floor - shown }),
+    left,
+    side: chosen,
+    isFlipped,
+    shift: left - desiredLeft,
+    maxHeight,
+    growth: chosen === 'top' ? 'up' : 'down',
   };
-
-  const first = place(side);
-  const flipped = flipSide({ side });
-  const second = place(flipped);
-  const isFlipped =
-    overflowOf(side, first) > 0 && overflowOf(flipped, second) < overflowOf(side, first);
-  const chosen = isFlipped ? flipped : side;
-  const pos = isFlipped ? second : first;
-
-  const left = Math.max(edge, Math.min(pos.left, vw - tip.width - edge));
-  const top = Math.max(edge, Math.min(pos.top, vh - tip.height - edge));
-  return { top, left, side: chosen };
 };

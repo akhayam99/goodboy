@@ -70,7 +70,7 @@ export const NotificationCenter = ({ isCurrent }: Props) => {
   const elsewhere = useAttentionElsewhere({ currentId: currentWorkspaceId });
   const dismissNotificationGroup = useAppStore((s) => s.dismissNotificationGroup);
   const dropdown = useDropdown({
-    align: 'center',
+    align: 'end',
     width: POPOVER_WIDTH_CLASS.wide,
     expectedWidth: POPOVER_WIDTH_PX.wide,
     openEvent: OPEN_EVENT,

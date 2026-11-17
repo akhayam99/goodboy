@@ -4,7 +4,6 @@ import { afterEach, describe, expect, it, vi, type Mock } from 'vitest';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { Archive, Cpu, Trash2 } from '../icons';
 import { ContextMenu } from '../components/ContextMenu/ContextMenu';
-import { placeContextMenu } from '../components/ContextMenu/placeContextMenu';
 import { OverflowMenu } from '../components/OverflowMenu';
 import type { MenuEntry } from '../components/ContextMenu/menuTypes';
 
@@ -167,28 +166,6 @@ describe('ContextMenu', () => {
     const { onClose } = renderMenu();
     fireEvent.mouseDown(document.body);
     expect(onClose).toHaveBeenCalled();
-  });
-});
-
-describe('placeContextMenu', () => {
-  const viewport = { width: 1000, height: 800 };
-
-  it('keeps the menu at the pointer when it fits', () => {
-    expect(
-      placeContextMenu({ point: { x: 100, y: 100 }, width: 200, height: 300, viewport }),
-    ).toEqual({
-      x: 100,
-      y: 100,
-    });
-  });
-
-  it('flips left and up so the menu stays 8px inside the window', () => {
-    expect(
-      placeContextMenu({ point: { x: 900, y: 700 }, width: 200, height: 300, viewport }),
-    ).toEqual({
-      x: 700,
-      y: 400,
-    });
   });
 });
 

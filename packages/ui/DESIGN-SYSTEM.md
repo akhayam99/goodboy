@@ -772,6 +772,19 @@ below its trigger or flips above it when the room below is smaller, and shifts a
 edge to stay at least 8px inside the window; `tooltips-and-popovers.test.tsx` proves it
 for the model picker, the run settings and Asks you, a row menu and the trigger label.
 
+**One placement rule.** `placeFloating` places every popover, menu, context menu,
+tooltip and side card. The host gives the side: under a bar or a row, right of the
+left rail, left of the right tool rail. The alignment follows the anchor, start
+by default and end when the end edge belongs to the trigger; a popover is never
+centred on its trigger (a tooltip is). The surface flips to the opposite side when
+its side is short and the other side has more room, slides along the other axis
+to stay inside the window margin (8px, 12 for the cards at the foot of the rail),
+and gets the room left as its `maxHeight`, so a long list scrolls inside while
+its head and foot stay put. A card that keeps its end on the anchor grows up from
+it; taller than that room, it hangs from the anchor top instead.
+`placeFloating.test.ts` holds the cases: the rail foot, the bell, a flipped menu,
+a list taller than the window, a right rail tooltip and the pointer menu.
+
 **Side cards place with `useFloatingPlace`.** The rail flyout and the session
 hover card open beside their anchor through `useFloatingPlace`, which wraps
 `placeFloating` (side `right`, alignment `start`, an 8px gap and edge, flipping to

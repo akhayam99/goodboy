@@ -36,7 +36,12 @@ const isSamePlace = ({ left, right }: SameParams): boolean => {
   if (left === null || right === null) {
     return left === right;
   }
-  return left.top === right.top && left.left === right.left && left.side === right.side;
+  return (
+    left.top === right.top &&
+    left.left === right.left &&
+    left.side === right.side &&
+    left.maxHeight === right.maxHeight
+  );
 };
 
 const anchorRectOf = ({ anchor, clearOf }: AnchorRectParams): FloatingRect => {
@@ -80,6 +85,7 @@ export const useFloatingPlace = ({
       gap,
       edge,
       alignment,
+      crossInset: alignment === 'start' ? gap : 0,
     });
   }, [anchor, tipRef, isActive, clearOf, side, gap, edge, alignment]);
 
