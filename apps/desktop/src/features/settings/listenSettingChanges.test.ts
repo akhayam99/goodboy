@@ -1,11 +1,20 @@
 // @vitest-environment happy-dom
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { brandId, type WorkspaceId } from '@goodboy/types';
+
+type WorkspaceChange = {
+  readonly kind: 'workspace';
+  readonly workspaceId: WorkspaceId;
+  readonly key: 'auto.level' | 'overrides';
+};
+
+type BusChange = { readonly kind: 'setting'; readonly key: string } | WorkspaceChange;
 
 const { bus } = vi.hoisted(() => ({
   bus: {
-    handlers: new Set<(change: { readonly kind: 'setting'; readonly key: string }) => void>(),
-    announced: new Array<{ readonly kind: 'setting'; readonly key: string }>(),
+    handlers: new Set<(change: BusChange) => void>(),
+    announced: new Array<BusChange>(),
     failNext: { current: false },
   },
 }));
@@ -21,11 +30,7 @@ vi.mock('../../shared/lib/db', async () =>
   (await import('../../store/storyHarness')).dbLibModuleMock(),
 );
 vi.mock('../../shared/lib/dataChanged', () => ({
-  announceDataChanged: async ({
-    change,
-  }: {
-    readonly change: { readonly kind: 'setting'; readonly key: string };
-  }) => {
+  announceDataChanged: async ({ change }: { readonly change: BusChange }) => {
     if (bus.failNext.current) {
       bus.failNext.current = false;
       throw new Error('event bus is closed');
@@ -33,11 +38,7 @@ vi.mock('../../shared/lib/dataChanged', () => ({
     bus.announced.push(change);
     bus.handlers.forEach((handler) => handler(change));
   },
-  listenDataChanged: async ({
-    onChange,
-  }: {
-    readonly onChange: (change: { readonly kind: 'setting'; readonly key: string }) => void;
-  }) => {
+  listenDataChanged: async ({ onChange }: { readonly onChange: (change: BusChange) => void }) => {
     bus.handlers.add(onChange);
     return () => bus.handlers.delete(onChange);
   },
@@ -52,6 +53,8 @@ import {
 } from '../../store/storyHarness';
 import { SETTING_REPO_CHECK_MINUTES } from './settings';
 import { listenSettingChanges } from './listenSettingChanges';
+
+const HARBORLINE = brandId<WorkspaceId>({ value: 'workspace-harborline' });
 
 let useAppStore: StoryStore;
 
@@ -122,6 +125,24 @@ describe('a setting saved in another window', () => {
     );
     await vi.waitFor(() => expect(reportError).toHaveBeenCalledTimes(1));
     expect(useAppStore.getState().settings[SETTING_REPO_CHECK_MINUTES]).toBe('5');
+  });
+
+  it('reads the stop level and the run defaults of that workspace again', async () => {
+    const loadWorkspaceValue = vi.fn(async (): Promise<string | null> => null);
+    const loadWorkspaceOverrides = vi.fn(async (): Promise<void> => undefined);
+    useAppStore.setState({ loadWorkspaceValue, loadWorkspaceOverrides });
+    await listenSettingChanges();
+
+    bus.handlers.forEach((handler) =>
+      handler({ kind: 'workspace', workspaceId: HARBORLINE, key: 'auto.level' }),
+    );
+    bus.handlers.forEach((handler) =>
+      handler({ kind: 'workspace', workspaceId: HARBORLINE, key: 'overrides' }),
+    );
+
+    await vi.waitFor(() => expect(loadWorkspaceOverrides).toHaveBeenCalledWith(HARBORLINE));
+    expect(loadWorkspaceValue).toHaveBeenCalledWith({ workspaceId: HARBORLINE, key: 'auto.level' });
+    expect(storySpies.getSetting).not.toHaveBeenCalled();
   });
 
   it('stops following once the listener is removed', async () => {

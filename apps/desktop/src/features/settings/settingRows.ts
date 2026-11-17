@@ -1,6 +1,7 @@
 import { AFTER_MERGE_NEVER } from '../../shared/utils/afterMergeCopy';
 import { NAMES, formerNamesOf } from '../../shared/utils/names';
 import { RUN_ROUTE_COPY } from '../session/startRun/runRouteCopy';
+import { STOPS_LEVEL_COPY } from '../workflows/stopsLevelCopy';
 import type { WorkspaceSettingField } from './pageKeys';
 import type { SettingsPageScope } from './settingsFocus';
 import { fieldDef } from './workspaceSettings/fields';
@@ -288,20 +289,18 @@ export const SETTING_ROWS: ReadonlyArray<SettingRow> = [
     formerNames: ['Verbosity'],
   }),
   row({
-    key: 'workflow-asks',
-    label: `${NAMES.runKind.workflow} asks you`,
-    help: `How often a run started as ${NAMES.runKind.workflow} stops for your go.`,
+    key: 'stops-for-ok',
+    label: STOPS_LEVEL_COPY.label,
+    help: STOPS_LEVEL_COPY.help,
     page: RUN_DEFAULTS,
     band: NEW_RUNS,
-    formerNames: ['Asks you'],
-  }),
-  row({
-    key: 'auto-asks',
-    label: `${NAMES.lead} asks you`,
-    help: `How often a run led by the ${NAMES.lead} stops for your go.`,
-    page: RUN_DEFAULTS,
-    band: NEW_RUNS,
-    formerNames: ['Auto asks you', 'Auto runs ask you'],
+    formerNames: [
+      'Asks you',
+      `${NAMES.runKind.workflow} asks you`,
+      `${NAMES.lead} asks you`,
+      'Auto asks you',
+      'Auto runs ask you',
+    ],
   }),
   row({
     key: 'start-as',

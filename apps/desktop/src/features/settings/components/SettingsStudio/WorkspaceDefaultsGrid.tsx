@@ -5,7 +5,6 @@ import { useAppStore } from '../../../../store';
 import { selectWorkspaceResolvedSettings } from '../../../../store/slices/overrides/selectResolvedSettings';
 import { WorkflowRulesPanel } from '../../../workflows/workflowRulesPanel';
 import { useWorkspaceOverrideSave } from '../../hooks/useWorkspaceOverrideSave';
-import { AutoLevelDefaultRow } from './AutoLevelDefaultRow';
 import { RunDefaultField } from './RunDefaultField';
 import { WorkspaceFieldRow } from './WorkspaceFieldRow';
 
@@ -36,12 +35,7 @@ export const WorkspaceDefaultsGrid = ({ workspaceId }: Props) => {
   return (
     <WorkflowRulesPanel
       workspaceId={workspaceId}
-      runRows={
-        <>
-          <AutoLevelDefaultRow workspaceId={workspaceId} />
-          <RunDefaultField workspaceId={workspaceId} />
-        </>
-      }
+      runRows={<RunDefaultField workspaceId={workspaceId} />}
     >
       <Band inset="content" label="Agents" ariaLabel="Agents" headingLevel={2}>
         <WorkspaceFieldRow

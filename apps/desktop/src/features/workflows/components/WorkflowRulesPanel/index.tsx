@@ -37,7 +37,7 @@ export const WorkflowRulesPanel = ({ workspaceId, runRows, children }: Props) =>
         hint="Each run keeps its own copy."
         headingLevel={2}
       >
-        <DefaultAsksSetting autonomy={rules.autonomy} patch={patch} />
+        <DefaultAsksSetting workspaceId={workspaceId} />
         {runRows}
         <DefaultLimitSetting workspaceId={workspaceId} rules={rules} patch={patch} />
         <DefaultModelsSetting workspaceId={workspaceId} />
