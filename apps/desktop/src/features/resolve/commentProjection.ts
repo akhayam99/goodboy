@@ -139,7 +139,7 @@ const CHECKS_FAILED_LABEL = 'Checks failed';
 
 export type ResolveCommentRun = {
   readonly stateWord: string;
-  readonly isFinished: boolean;
+  readonly end: 'working' | 'finished' | 'stopped';
 };
 
 const RUN_TAKES: ReadonlySet<ResolveWord> = new Set<ResolveWord>([
@@ -147,7 +147,9 @@ const RUN_TAKES: ReadonlySet<ResolveWord> = new Set<ResolveWord>([
   'couldnt_fix',
   'left_open',
 ]);
+const FINISHED_RUN_TAKES: ReadonlySet<ResolveWord> = new Set<ResolveWord>(['open', 'couldnt_fix']);
 const COMMENT_CHANGED_LABEL = 'Comment changed';
+const RUN_CHANGED_WORD = 'Changed';
 
 export type ResolveCommentFacts = {
   readonly state: ReviewCommentState;
@@ -159,6 +161,7 @@ export type ResolveCommentFacts = {
   readonly gitChip: RemoteView | null;
   readonly hasFailedChecks: boolean;
   readonly run?: ResolveCommentRun | null;
+  readonly isSourceChanged?: boolean;
 };
 
 export type ResolveCommentProjection = {
@@ -224,10 +227,21 @@ type RunWordParams = {
 };
 
 const runWordOf = ({ word, run }: RunWordParams): ResolveWord => {
-  if (run === null || !RUN_TAKES.has(word)) {
+  if (run === null) {
     return word;
   }
-  return run.isFinished ? 'run_finished' : 'in_run';
+  switch (run.end) {
+    case 'working':
+      return RUN_TAKES.has(word) ? 'in_run' : word;
+    case 'finished':
+      return FINISHED_RUN_TAKES.has(word) ? 'run_finished' : word;
+    case 'stopped':
+      return word;
+    default: {
+      const exhaustive: never = run.end;
+      return exhaustive;
+    }
+  }
 };
 
 export const projectResolveComment = (facts: ResolveCommentFacts): ResolveCommentProjection => {
@@ -246,7 +260,7 @@ export const projectResolveComment = (facts: ResolveCommentFacts): ResolveCommen
     sub,
     label:
       word === 'in_run' && run !== null
-        ? `${RESOLVE_WORD_LABEL.in_run} · ${run.stateWord}`
+        ? `${RESOLVE_WORD_LABEL.in_run} · ${facts.isSourceChanged === true ? RUN_CHANGED_WORD : run.stateWord}`
         : labelOf({ word, sub, sourceLabel: facts.sourceLabel }),
     sentence,
     gitChip: facts.gitChip,

@@ -4,12 +4,15 @@ import { agentThreadIds } from '../session/agentThreadIds';
 import type { SessionRun } from '../session/sessionRunsOf';
 import { commentRunOf } from './commentRunOf';
 
+export type CommentRunEnd = 'working' | 'finished' | 'stopped';
+
 export type CommentRunView = {
   readonly agentId: AgentId;
   readonly title: string;
   readonly stateWord: string;
   readonly dot: DotState;
-  readonly isFinished: boolean;
+  readonly end: CommentRunEnd;
+  readonly summary: string | null;
   readonly mountId: MountId | null;
   readonly threadIds: ReadonlyArray<string>;
 };
@@ -21,14 +24,38 @@ type Params = {
   readonly runs: ReadonlyArray<RunRow>;
 };
 
+const STOPPED_DOTS: ReadonlySet<DotState> = new Set<DotState>(['stopped', 'failed']);
+
+type EndParams = {
+  readonly agent: Agent;
+  readonly run: RunRow;
+};
+
+const endOf = ({ agent, run }: EndParams): CommentRunEnd => {
+  if (agent.status === 'stopped' || agent.status === 'failed' || STOPPED_DOTS.has(run.dot)) {
+    return 'stopped';
+  }
+  return run.isFinished ? 'finished' : 'working';
+};
+
+type SummaryParams = {
+  readonly agent: Agent;
+};
+
+const summaryOf = ({ agent }: SummaryParams): string | null => {
+  const summary = agent.outputSummary?.trim() ?? '';
+  return summary === '' ? null : summary;
+};
+
 export const commentRunViewsOf = ({
   agents,
   runs,
 }: Params): ReadonlyMap<string, CommentRunView> => {
   const views = new Map<string, CommentRunView>();
-  const linked = agents.filter(
-    (agent) => agent.deletedAt == null && agent.sourceKind === 'comment_run',
-  );
+  const stopped = new Map<string, CommentRunView>();
+  const linked = agents
+    .filter((agent) => agent.deletedAt == null && agent.sourceKind === 'comment_run')
+    .sort((left, right) => left.ordinal - right.ordinal);
   for (const agent of linked) {
     const run = runs.find(
       (candidate) => candidate.open.kind !== 'run' && candidate.open.agentId === agent.id,
@@ -42,14 +69,24 @@ export const commentRunViewsOf = ({
       title: run.title,
       stateWord: run.stateWord,
       dot: run.dot,
-      isFinished: run.isFinished,
+      end: endOf({ agent, run }),
+      summary: summaryOf({ agent }),
       mountId: agent.mountId ?? null,
       threadIds,
     };
     for (const threadId of threadIds) {
       if (commentRunOf({ agents, threadId }) === agent.id) {
         views.set(threadId, view);
+        continue;
       }
+      if (view.end === 'stopped') {
+        stopped.set(threadId, view);
+      }
+    }
+  }
+  for (const [threadId, view] of stopped) {
+    if (!views.has(threadId)) {
+      views.set(threadId, view);
     }
   }
   return views;

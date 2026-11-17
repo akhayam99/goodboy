@@ -35,15 +35,15 @@ const leadOf = ({ id, ordinal, threadIds, status = 'running' }: LeadParams): Age
 type RowParams = {
   readonly agent: Agent;
   readonly stateWord: string;
-  readonly isFinished?: boolean;
+  readonly dot?: 'running' | 'done' | 'stopped' | 'failed';
 };
 
-const rowOf = ({ agent, stateWord, isFinished = false }: RowParams) => ({
+const rowOf = ({ agent, stateWord, dot = 'running' }: RowParams) => ({
   open: { kind: 'auto' as const, agentId: agent.id },
   title: `Run ${agent.name}`,
   stateWord,
-  dot: isFinished ? ('done' as const) : ('running' as const),
-  isFinished,
+  dot,
+  isFinished: dot !== 'running',
 });
 
 describe('commentRunViewsOf gives every linked thread the run that works on it', () => {
@@ -59,7 +59,8 @@ describe('commentRunViewsOf gives every linked thread the run that works on it',
       title: 'Run header',
       stateWord: 'Planning',
       dot: 'running',
-      isFinished: false,
+      end: 'working',
+      summary: null,
       mountId: lead.mountId,
       threadIds: [HEADER_NOTE, LAYOUT_THREAD],
     });
@@ -82,7 +83,7 @@ describe('commentRunViewsOf gives every linked thread the run that works on it',
     expect(views.has(FILTERS_NOTE)).toBe(false);
   });
 
-  it('frees only the threads of a stopped run', () => {
+  it('gives the threads of a stopped run back as stopped, and only those threads', () => {
     const stopped = leadOf({
       id: 'stopped',
       ordinal: 0,
@@ -93,14 +94,55 @@ describe('commentRunViewsOf gives every linked thread the run that works on it',
     const views = commentRunViewsOf({
       agents: [stopped, working],
       runs: [
-        rowOf({ agent: stopped, stateWord: 'Stopped', isFinished: true }),
+        rowOf({ agent: stopped, stateWord: 'Stopped', dot: 'stopped' }),
         rowOf({ agent: working, stateWord: 'Working' }),
       ],
     });
 
-    expect(views.has(HEADER_NOTE)).toBe(false);
-    expect(views.has(FILTERS_NOTE)).toBe(false);
-    expect(views.get(LAYOUT_THREAD)?.agentId).toBe(working.id);
+    expect(views.get(HEADER_NOTE)?.end).toBe('stopped');
+    expect(views.get(FILTERS_NOTE)?.end).toBe('stopped');
+    expect(views.get(LAYOUT_THREAD)).toMatchObject({ agentId: working.id, end: 'working' });
+  });
+
+  it('reads a run whose tree stopped as stopped even while the Lead row is not', () => {
+    const lead = leadOf({ id: 'header', ordinal: 0, threadIds: [HEADER_NOTE] });
+    const views = commentRunViewsOf({
+      agents: [lead],
+      runs: [rowOf({ agent: lead, stateWord: 'Stopped', dot: 'stopped' })],
+    });
+
+    expect(views.get(HEADER_NOTE)?.end).toBe('stopped');
+  });
+
+  it('keeps a thread in its newer working run when an older run on it stopped', () => {
+    const older = leadOf({ id: 'older', ordinal: 0, threadIds: [HEADER_NOTE], status: 'stopped' });
+    const newer = leadOf({ id: 'newer', ordinal: 1, threadIds: [HEADER_NOTE] });
+    const views = commentRunViewsOf({
+      agents: [older, newer],
+      runs: [
+        rowOf({ agent: older, stateWord: 'Stopped', dot: 'stopped' }),
+        rowOf({ agent: newer, stateWord: 'Working' }),
+      ],
+    });
+
+    expect(views.get(HEADER_NOTE)).toMatchObject({ agentId: newer.id, end: 'working' });
+  });
+
+  it('marks a finished run with the summary the Lead left', () => {
+    const lead = {
+      ...leadOf({ id: 'header', ordinal: 0, threadIds: [HEADER_NOTE, LAYOUT_THREAD] }),
+      outputSummary: '  Moved the header into AppLayout.  ',
+    };
+    const views = commentRunViewsOf({
+      agents: [lead],
+      runs: [rowOf({ agent: lead, stateWord: 'Done', dot: 'done' })],
+    });
+
+    expect(views.get(HEADER_NOTE)).toMatchObject({
+      end: 'finished',
+      summary: 'Moved the header into AppLayout.',
+    });
+    expect(views.get(LAYOUT_THREAD)?.end).toBe('finished');
   });
 
   it('gives a thread in two runs only to the newest one', () => {
@@ -114,7 +156,7 @@ describe('commentRunViewsOf gives every linked thread the run that works on it',
     const views = commentRunViewsOf({
       agents: [older, newer],
       runs: [
-        rowOf({ agent: older, stateWord: 'Done', isFinished: true }),
+        rowOf({ agent: older, stateWord: 'Done', dot: 'done' }),
         rowOf({ agent: newer, stateWord: 'Working' }),
       ],
     });

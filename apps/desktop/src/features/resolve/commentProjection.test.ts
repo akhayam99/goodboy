@@ -230,8 +230,9 @@ describe('projectResolveComment', () => {
 });
 
 describe('a comment a run works on', () => {
-  const working = { stateWord: 'Planning', isFinished: false };
-  const finished = { stateWord: 'Done', isFinished: true };
+  const working = { stateWord: 'Planning', end: 'working' as const };
+  const finished = { stateWord: 'Done', end: 'finished' as const };
+  const stopped = { stateWord: 'Stopped', end: 'stopped' as const };
 
   it.each<ReviewCommentState>(['new', 'failed', 'skipped'])(
     'reads In a run with the run word when the thread was %s',
@@ -254,6 +255,32 @@ describe('a comment a run works on', () => {
     ).toMatchObject({ word: 'done', label: 'Resolved on GitHub' });
     expect(projectResolveComment(facts({ state: 'pushed', run: working })).word).toBe('replied');
     expect(projectResolveComment(facts({ state: 'drafting', run: working })).word).toBe('working');
+  });
+
+  it('gives a stopped or failed run thread its own word back, so it reads Open', () => {
+    expect(projectResolveComment(facts({ state: 'new', run: stopped }))).toMatchObject({
+      word: 'open',
+      label: 'Open',
+    });
+    expect(projectResolveComment(facts({ state: 'skipped', run: stopped })).word).toBe('left_open');
+  });
+
+  it('keeps a thread you kept open after the run as Left open, not Run finished', () => {
+    expect(projectResolveComment(facts({ state: 'skipped', run: finished })).word).toBe(
+      'left_open',
+    );
+  });
+
+  it('asks nothing again of a thread resolved elsewhere once the run finished', () => {
+    expect(
+      projectResolveComment(facts({ state: 'resolved', sourceLabel: 'GitHub', run: finished })),
+    ).toMatchObject({ word: 'done', label: 'Resolved on GitHub' });
+  });
+
+  it('reads In a run · Changed when the comment changed while the run works', () => {
+    expect(
+      projectResolveComment(facts({ state: 'new', run: working, isSourceChanged: true })).label,
+    ).toBe('In a run · Changed');
   });
 
   it('drops the failure sentence once a run took the thread over', () => {

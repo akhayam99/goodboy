@@ -82,6 +82,7 @@ type ProjectionExtras = {
   readonly gitChip?: RemoteView | null;
   readonly hasFailedChecks?: boolean;
   readonly run?: ResolveCommentRun | null;
+  readonly isSourceChanged?: boolean;
 };
 
 const resolveFactsOfRow = ({
@@ -90,6 +91,7 @@ const resolveFactsOfRow = ({
   gitChip = null,
   hasFailedChecks = false,
   run = null,
+  isSourceChanged = false,
 }: ProjectionExtras & {
   readonly state: ReviewCommentState;
   readonly row: ResolveQueueRow;
@@ -103,6 +105,7 @@ const resolveFactsOfRow = ({
   gitChip,
   hasFailedChecks,
   run,
+  isSourceChanged,
 });
 
 export const projectReviewComment = ({
@@ -111,11 +114,14 @@ export const projectReviewComment = ({
   gitChip,
   hasFailedChecks,
   run,
+  isSourceChanged,
 }: ProjectionExtras & {
   readonly state: ReviewCommentState;
   readonly row: ResolveQueueRow;
 }): ResolveCommentProjection =>
-  projectResolveComment(resolveFactsOfRow({ state, row, gitChip, hasFailedChecks, run }));
+  projectResolveComment(
+    resolveFactsOfRow({ state, row, gitChip, hasFailedChecks, run, isSourceChanged }),
+  );
 
 export const reviewCommentWord = ({
   state,

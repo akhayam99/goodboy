@@ -122,10 +122,11 @@ export const useReviewEntries = ({
     const failedChecks = checksFailedItemIds({ candidates, checkRuns });
     const ordered = groupConversationsByFile({ rows }).flatMap((group) => group.rows);
     return ordered.map((row): ReviewEntry => {
+      const isChanged = changes[row.thread.threadId]?.changed != null;
       const state = reviewCommentStateOf({
         row,
         isEdited: isReplyEdited({ draft: drafts[row.thread.threadId], row }),
-        isChanged: changes[row.thread.threadId]?.changed != null,
+        isChanged,
         isHeld: heldLaunchIdOf({ threadId: row.thread.threadId }) !== null,
       });
       const facts = threadGit[row.thread.threadId] ?? null;
@@ -143,6 +144,7 @@ export const useReviewEntries = ({
         gitChip: view,
         hasFailedChecks: failedChecks.has(row.item.id),
         run,
+        isSourceChanged: isChanged,
       });
       return {
         row,

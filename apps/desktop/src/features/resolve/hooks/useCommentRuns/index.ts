@@ -5,9 +5,9 @@ import { useAppStore, useSessionOpenQuestions } from '../../../../store';
 import type { AutoTreeView } from '../../../../store/slices/auto-view/state';
 import { useLiveAgentTurns } from '../../../../shared/hooks/useLiveAgentTurns';
 import { autoRootsOf } from '../../../auto/autoRootsOf';
-import { descendantAgentsOf } from '../../../session/descendantAgentsOf';
-import { sessionRunsOf } from '../../../session/sessionRunsOf';
-import { commentRunViewsOf, type CommentRunView } from '../../commentRunViewsOf';
+import { commentRunAgentsOf } from '../../commentRunAgentsOf';
+import { commentRunViewsFrom } from '../../commentRunViewsFrom';
+import type { CommentRunView } from '../../commentRunViewsOf';
 
 type Params = {
   readonly sessionId: SessionId;
@@ -16,24 +16,6 @@ type Params = {
 const NO_AGENTS: ReadonlyArray<Agent> = [];
 
 const NO_AUTO_VIEWS: ReadonlyArray<AutoTreeView> = [];
-
-const NO_VIEWS: ReadonlyMap<string, CommentRunView> = new Map();
-
-const NO_RECORD: Readonly<Record<string, never>> = {};
-
-type AgentsParams = {
-  readonly agents: ReadonlyArray<Agent>;
-};
-
-const commentRunAgentsOf = ({ agents }: AgentsParams): ReadonlyArray<Agent> => {
-  const roots = agents.filter(
-    (agent) => agent.deletedAt == null && agent.sourceKind === 'comment_run',
-  );
-  if (roots.length === 0) {
-    return NO_AGENTS;
-  }
-  return roots.flatMap((root) => [root, ...descendantAgentsOf({ agents, rootId: root.id })]);
-};
 
 export const useCommentRuns = ({ sessionId }: Params): ReadonlyMap<string, CommentRunView> => {
   const agents = useAppStore((state) => state.sessionPhaseRuns[sessionId] ?? NO_AGENTS);
@@ -54,23 +36,16 @@ export const useCommentRuns = ({ sessionId }: Params): ReadonlyMap<string, Comme
       return turns;
     }),
   );
-  return useMemo(() => {
-    if (runAgents.length === 0) {
-      return NO_VIEWS;
-    }
-    const runs = sessionRunsOf({
-      attachedRuns: [],
-      agents: runAgents,
-      kindOverride,
-      autoViews,
-      orchestrating: undefined,
-      questions,
-      rootTurns,
-      turnByAgentId,
-      revisingStarts: NO_RECORD,
-      mounts: [],
-      projects: [],
-    });
-    return commentRunViewsOf({ agents: runAgents, runs });
-  }, [autoViews, kindOverride, questions, rootTurns, runAgents, turnByAgentId]);
+  return useMemo(
+    () =>
+      commentRunViewsFrom({
+        runAgents,
+        kindOverride,
+        autoViews,
+        questions,
+        rootTurns,
+        turnByAgentId,
+      }),
+    [autoViews, kindOverride, questions, rootTurns, runAgents, turnByAgentId],
+  );
 };
