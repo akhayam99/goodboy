@@ -36,6 +36,7 @@ const facts = (over: Partial<ResolveCommentFacts> & Pick<ResolveCommentFacts, 's
     isPushFailure: false,
     sourceLabel: 'GitHub',
     attempt: null,
+    stateReason: null,
     gitChip: null,
     hasFailedChecks: false,
     ...over,
@@ -159,6 +160,7 @@ describe('projectResolveComment', () => {
       worktree_missing: 'The worktree for this comment is no longer available',
       capture_failed: "The fix couldn't be saved from its copy of the branch",
       no_result: 'The agent ended without a result for this comment',
+      needs_a_run: 'The fix agent stopped: this is bigger than one change',
     };
     const sentences = RESOLVE_FAILURE_CAUSES.map((cause) => {
       const projection = projectResolveComment(
@@ -169,6 +171,26 @@ describe('projectResolveComment', () => {
     });
     expect(sentences).toEqual(RESOLVE_FAILURE_CAUSES.map((cause) => expected[cause]));
     expect(new Set(sentences).size).toBe(RESOLVE_FAILURE_CAUSES.length);
+  });
+
+  it('says Needs a run from the thread, even when the batch attempt failed for another thread', () => {
+    const needsRun = projectResolveComment(
+      facts({
+        state: 'failed',
+        stateReason: 'needs_run:It touches the payouts route and two new components.',
+        attempt: { phase: 'failed', failureCause: 'no_result' },
+      }),
+    );
+    expect(needsRun).toMatchObject({
+      word: 'couldnt_fix',
+      sub: 'needs_run',
+      label: 'Needs a run',
+      sentence: 'The fix agent stopped: this is bigger than one change',
+    });
+    const silentSibling = projectResolveComment(
+      facts({ state: 'failed', attempt: { phase: 'failed', failureCause: 'no_result' } }),
+    );
+    expect(silentSibling).toMatchObject({ sub: null, label: 'Failed' });
   });
 
   it('says the cause is not recorded for a failure written before causes existed', () => {

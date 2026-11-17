@@ -271,6 +271,11 @@ describe('durable resolve store', () => {
       state: 'needs_answer',
       reason: 'question',
     },
+    {
+      marker: '<<comment-needs-run threadId="PRRT_1" reason="It asks for a new payouts route.">>',
+      state: 'failed',
+      reason: 'needs_run:It asks for a new payouts route.',
+    },
     { marker: 'No marker survived.', state: 'failed', reason: null },
   ])(
     'recovers an interrupted candidate as $state after the import is already stamped',
@@ -1162,6 +1167,62 @@ describe('durable resolve store', () => {
       PRRT_1: { kind: 'resolved', commitSha: 'abcdef1234567890' },
       PRRT_2: { kind: 'wontfix', reason: 'intentional' },
     });
+  });
+
+  it('marks only the thread the agent called bigger than one change, and keeps the fix of the other', async () => {
+    const live = createHarness();
+    const attemptId = await runningAttempt({ live });
+
+    await live.actions.persistResolveTurn({
+      sessionId: SESSION_ID,
+      agent,
+      attemptId,
+      assistantText: [
+        '<<comment-resolved threadId="PRRT_1" commitSha="abcdef1234567890">>',
+        '<<comment-reply id="PRRT_1">>Renamed as asked.<</comment-reply>>',
+        '<<comment-needs-run threadId="PRRT_2" reason="It touches the ledger layout and two new components.">>',
+      ].join('\n'),
+    });
+
+    const rows = await listResolveThreads({ db, sessionId: SESSION_ID });
+    expect(rows.find((row) => row.threadId === 'PRRT_1')).toMatchObject({
+      disposition: 'fix',
+      commitShas: ['abcdef1234567890'],
+    });
+    expect(rows.find((row) => row.threadId === 'PRRT_2')).toMatchObject({
+      state: 'failed',
+      stateReason: 'needs_run:It touches the ledger layout and two new components.',
+      disposition: null,
+      replyDraft: null,
+    });
+    const items = await listResolveQueueItems({ db, sessionId: SESSION_ID });
+    expect(items.map(({ thread }) => thread.threadId)).toEqual(['PRRT_1']);
+    const [attempt] = await listResolveAttempts({ db, sessionId: SESSION_ID });
+    expect(attempt).toMatchObject({ phase: 'failed', failureCause: 'needs_a_run' });
+  });
+
+  it('keeps no_result for a silent thread and Needs a run for its sibling in the same turn', async () => {
+    const live = createHarness();
+    const attemptId = await runningAttempt({ live });
+
+    await live.actions.persistResolveTurn({
+      sessionId: SESSION_ID,
+      agent,
+      attemptId,
+      assistantText:
+        '<<comment-needs-run threadId="PRRT_2" reason="It asks for a new payouts route.">>',
+    });
+
+    const rows = await listResolveThreads({ db, sessionId: SESSION_ID });
+    expect(rows.find((row) => row.threadId === 'PRRT_1')).toMatchObject({
+      state: 'failed',
+      stateReason: null,
+    });
+    expect(rows.find((row) => row.threadId === 'PRRT_2')?.stateReason).toBe(
+      'needs_run:It asks for a new payouts route.',
+    );
+    const [attempt] = await listResolveAttempts({ db, sessionId: SESSION_ID });
+    expect(attempt).toMatchObject({ phase: 'failed', failureCause: 'no_result' });
   });
 
   it('fails a turn that ended with nothing to show as a provider error', async () => {

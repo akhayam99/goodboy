@@ -22,6 +22,7 @@ import { createResolveThread } from './createResolveThread';
 import { resolveTurnPatchOf } from './resolveTurnPatch';
 import { projectResolveRows } from './projectResolveRows';
 import { threadOutcome } from './threadOutcome';
+import { turnAttemptPhase } from './turnAttemptPhase';
 import type { SliceParams, TurnParams } from './types';
 import { activeReviewSourceOf } from '../review-source/activeReviewSource';
 
@@ -88,7 +89,9 @@ export const persistResolveTurn = async ({
   }
   const hasOwnedMarkers = owned.some(
     (threadId) =>
-      parsed.turnOutcomes[threadId] !== undefined || parsed.questions[threadId] !== undefined,
+      parsed.turnOutcomes[threadId] !== undefined ||
+      parsed.questions[threadId] !== undefined ||
+      parsed.needsRun[threadId] !== undefined,
   );
   if (isCandidate && !hasOwnedMarkers) {
     return;
@@ -121,6 +124,7 @@ export const persistResolveTurn = async ({
         ?.text ??
       null);
   let hasSilentThread = false;
+  let hasNeedsRun = false;
   const processed: Array<string> = [];
   for (const threadId of owned) {
     const previous = rows.find((row) => row.threadId === threadId);
@@ -132,6 +136,7 @@ export const persistResolveTurn = async ({
     }
     const outcome = parsed.turnOutcomes[threadId];
     const asked = parsed.questions[threadId];
+    const needsRun = parsed.needsRun[threadId];
     processed.push(threadId);
     if (isCandidate && outcome === undefined) {
       continue;
@@ -150,11 +155,15 @@ export const persistResolveTurn = async ({
       previous,
       outcome,
       asked,
+      needsRun,
       analysisVerdict: parsed.analysisVerdicts[threadId],
       question,
     });
-    const isSilent = asked === undefined && outcome === undefined && patch.state === 'failed';
+    const isNeedsRun = needsRun !== undefined && patch.state === 'failed';
+    const isSilent =
+      asked === undefined && outcome === undefined && !isNeedsRun && patch.state === 'failed';
     hasSilentThread = hasSilentThread || (!isCandidate && isSilent);
+    hasNeedsRun = hasNeedsRun || (!isCandidate && isNeedsRun);
     const next = {
       ...row,
       ...patch,
@@ -171,17 +180,11 @@ export const persistResolveTurn = async ({
     const waiting = (await listResolveThreads({ db, sessionId })).some(
       (row) => processed.includes(row.threadId) && row.state === 'needs_answer',
     );
-    await setResolveAttemptPhase(
-      hasSilentThread
-        ? {
-            db,
-            id: attempt.id,
-            phase: 'failed',
-            error: 'No result from the run',
-            failureCause: 'no_result',
-          }
-        : { db, id: attempt.id, phase: waiting ? 'waiting' : 'finished' },
-    );
+    await setResolveAttemptPhase({
+      db,
+      id: attempt.id,
+      ...turnAttemptPhase({ hasSilentThread, hasNeedsRun, isWaiting: waiting }),
+    });
   }
   if (!isCandidate) {
     const updatedRows = await listResolveThreads({ db, sessionId });

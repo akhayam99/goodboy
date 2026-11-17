@@ -18,6 +18,7 @@ import { isTurnSettling } from '../turn/turnSettled';
 import { projectResolveRows } from './projectResolveRows';
 import { resolveTurnPatchOf } from './resolveTurnPatch';
 import { resolveWorktreePath } from './resolveWorktreePath';
+import { turnAttemptPhase } from './turnAttemptPhase';
 import type { SessionParams, SliceParams } from './types';
 
 type Params = SliceParams &
@@ -140,19 +141,24 @@ const reconcileWrites = async ({ get, sessionId, rows, attempts }: Params): Prom
       .join('\n');
     const parsed = resolverTurnOutcomes({ assistantText, previousOutcomes: {} });
     let hasFailure = false;
+    let hasNeedsRun = false;
     let hasQuestion = false;
     for (const row of working) {
       const outcome = parsed.turnOutcomes[row.threadId];
       const asked = parsed.questions[row.threadId];
+      const needsRun = parsed.needsRun[row.threadId];
       const patch = resolveTurnPatchOf({
         row,
         previous: row,
         outcome,
         asked,
+        needsRun,
         analysisVerdict: parsed.analysisVerdicts[row.threadId],
         question: extractMarkers(assistantText).questions[0]?.text ?? null,
       });
-      hasFailure = hasFailure || patch.state === 'failed';
+      const isNeedsRun = needsRun !== undefined && patch.state === 'failed';
+      hasFailure = hasFailure || (patch.state === 'failed' && !isNeedsRun);
+      hasNeedsRun = hasNeedsRun || isNeedsRun;
       hasQuestion = hasQuestion || patch.state === 'needs_answer';
       await saveResolveThread({
         db: tauriDatabase,
@@ -160,12 +166,20 @@ const reconcileWrites = async ({ get, sessionId, rows, attempts }: Params): Prom
         expectedRevision: row.revision,
       });
     }
+    if (hasFailure) {
+      await setResolveAttemptPhase({
+        db: tauriDatabase,
+        id: attempt.id,
+        phase: 'failed',
+        error: 'the app closed while the run was working',
+        failureCause: 'app_closed',
+      });
+      continue;
+    }
     await setResolveAttemptPhase({
       db: tauriDatabase,
       id: attempt.id,
-      phase: hasFailure ? 'failed' : hasQuestion ? 'waiting' : 'finished',
-      error: hasFailure ? 'the app closed while the run was working' : null,
-      failureCause: hasFailure ? 'app_closed' : null,
+      ...turnAttemptPhase({ hasSilentThread: false, hasNeedsRun, isWaiting: hasQuestion }),
     });
   }
 };
