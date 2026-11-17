@@ -1,4 +1,3 @@
-import { CHECK_STATE } from '../../../store/slices/notifications/errorRecovery';
 import {
   Copy,
   ListChecks,
@@ -309,20 +308,13 @@ export const WORKFLOW_RUN_KIND: ObjectKindDefinition<WorkflowRunActionTarget, Wo
       icon: StepForward,
       group: 'act',
       when: ({ facts }) => facts.stoppedAgentId !== null && isWorkflowRunLive({ facts }),
-      run: ({ facts, env }) => {
-        if (facts.stoppedAgentId !== null) {
-          void env
-            .getState()
-            .continueStoppedAgent({ sessionId: facts.sessionId, agentId: facts.stoppedAgentId })
-            .catch((error: unknown) =>
-              env.getState().reportError({
-                recovery: CHECK_STATE,
-                title: "Couldn't continue the step",
-                error,
-                sessionId: facts.sessionId,
-              }),
-            );
+      run: async ({ facts, env }) => {
+        if (facts.stoppedAgentId === null) {
+          return;
         }
+        await env
+          .getState()
+          .continueStoppedAgent({ sessionId: facts.sessionId, agentId: facts.stoppedAgentId });
       },
     },
     {

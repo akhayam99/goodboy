@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { RotateCcw, Trash2 } from '@goodboy/ui/icons';
 import { Band, Button, cn, ConfirmPopover, ICON_SIZE, tintClasses } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
+import { usePendingAction } from '../../../../shared/hooks/usePendingAction';
 
 import { NAMES } from '../../../../shared/utils/names';
 import { DANGER_ZONE } from './dangerZone';
@@ -10,11 +11,14 @@ import { SettingRow } from './SettingRow';
 
 type WipeState = 'idle' | 'confirm' | 'wiping' | 'done';
 
+const RELAUNCH_KEY = 'relaunch';
+
 export const AppResetSection = () => {
   const wipeLocalDatabase = useAppStore((s) => s.wipeLocalDatabase);
   const relaunchApp = useAppStore((s) => s.relaunchApp);
   const reportError = useAppStore((s) => s.reportError);
   const [wipeState, setWipeState] = useState<WipeState>('idle');
+  const { pendingKeys, run } = usePendingAction();
 
   const onWipe = async () => {
     setWipeState('wiping');
@@ -41,7 +45,18 @@ export const AppResetSection = () => {
         {wipeState === 'done' ? (
           <span className="flex items-center gap-3">
             <span className="text-meta text-muted-foreground">Local data deleted.</span>
-            <Button variant="secondary" size="sm" onClick={() => void relaunchApp()}>
+            <Button
+              variant="secondary"
+              size="sm"
+              isBusy={pendingKeys.has(RELAUNCH_KEY)}
+              onClick={() =>
+                void run({
+                  key: RELAUNCH_KEY,
+                  failureTitle: "Couldn't restart Goodboy",
+                  task: relaunchApp,
+                })
+              }
+            >
               <RotateCcw size={ICON_SIZE.row} aria-hidden />
               Restart now
             </Button>

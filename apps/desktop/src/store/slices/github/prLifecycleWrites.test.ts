@@ -478,8 +478,8 @@ const VERBS: ReadonlyArray<{
     name: 'requestReview',
     title: "Couldn't request a review",
     hasOptionalNumber: false,
-    call: ({ state, prNumber }) =>
-      requestReview(vi.fn(), asGet(state))(SESSION_ID, prNumber ?? 12, ['octo-reviewer']),
+    call: ({ state, prNumber, options }) =>
+      requestReview(vi.fn(), asGet(state))(SESSION_ID, prNumber ?? 12, ['octo-reviewer'], options),
   },
 ];
 
@@ -578,52 +578,43 @@ describe.each(VERBS)('$name when the host refuses', ({ title, call }) => {
   });
 });
 
-describe.each(VERBS.filter(({ hasOptionalNumber }) => hasOptionalNumber))(
-  '$name failure row',
-  ({ call }) => {
-    const refuse = () =>
-      h.run.mockResolvedValue({ exitCode: 1, stdout: '', stderr: 'Pull request is not mergeable' });
+describe.each(VERBS.filter(({ name }) => name !== 'editPr'))('$name failure row', ({ call }) => {
+  const refuse = () =>
+    h.run.mockResolvedValue({ exitCode: 1, stdout: '', stderr: 'Pull request is not mergeable' });
 
-    it('is born unread when no surface shows the failure', async () => {
-      const state = makeState();
-      refuse();
+  it('is born unread when no surface shows the failure', async () => {
+    const state = makeState();
+    refuse();
 
-      await call({ state, prNumber: 12 }).catch(() => undefined);
+    await call({ state, prNumber: 12 }).catch(() => undefined);
 
-      expect(state.emitNotification).toHaveBeenCalledWith(
-        expect.objectContaining({ isRead: false }),
-      );
-    });
+    expect(state.emitNotification).toHaveBeenCalledWith(expect.objectContaining({ isRead: false }));
+  });
 
-    it('is born read when a surface shows the failure at the time it fails', async () => {
-      const state = makeState();
-      refuse();
+  it('is born read when a surface shows the failure at the time it fails', async () => {
+    const state = makeState();
+    refuse();
 
-      await call({ state, prNumber: 12, options: { hasFailureSurface: () => true } }).catch(
-        () => undefined,
-      );
+    await call({ state, prNumber: 12, options: { hasFailureSurface: () => true } }).catch(
+      () => undefined,
+    );
 
-      expect(state.emitNotification).toHaveBeenCalledWith(
-        expect.objectContaining({ isRead: true }),
-      );
-    });
+    expect(state.emitNotification).toHaveBeenCalledWith(expect.objectContaining({ isRead: true }));
+  });
 
-    it('asks again at failure time, so a surface that left in between does not count', async () => {
-      const state = makeState();
-      refuse();
-      let isShown = true;
-      const hasFailureSurface = () => isShown;
-      const running = call({ state, prNumber: 12, options: { hasFailureSurface } });
-      isShown = false;
+  it('asks again at failure time, so a surface that left in between does not count', async () => {
+    const state = makeState();
+    refuse();
+    let isShown = true;
+    const hasFailureSurface = () => isShown;
+    const running = call({ state, prNumber: 12, options: { hasFailureSurface } });
+    isShown = false;
 
-      await running.catch(() => undefined);
+    await running.catch(() => undefined);
 
-      expect(state.emitNotification).toHaveBeenCalledWith(
-        expect.objectContaining({ isRead: false }),
-      );
-    });
-  },
-);
+    expect(state.emitNotification).toHaveBeenCalledWith(expect.objectContaining({ isRead: false }));
+  });
+});
 
 describe('pull request writes on a host without a port', () => {
   it('fails loudly instead of running gh when GitLab is not connected', async () => {

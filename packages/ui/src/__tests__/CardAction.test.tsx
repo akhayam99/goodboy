@@ -46,6 +46,17 @@ describe('CardAction', () => {
     expect(button.getAttribute('aria-expanded')).toBe('true');
   });
 
+  it('pulses its glyph and refuses a click while busy', () => {
+    const onClick = vi.fn();
+    render(<CardAction icon={Star} label="Restore" isBusy onClick={onClick} />);
+    const button = screen.getByRole('button', { name: 'Restore' });
+
+    expect(button.getAttribute('aria-busy')).toBe('true');
+    expect(button.querySelector('svg')?.getAttribute('class')).toContain('animate-soft-pulse');
+    fireEvent.click(button);
+    expect(onClick).not.toHaveBeenCalled();
+  });
+
   it('stops click propagation to the surrounding card', () => {
     const onClick = vi.fn();
     const onCardClick = vi.fn();

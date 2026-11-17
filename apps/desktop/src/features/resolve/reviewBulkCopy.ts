@@ -4,6 +4,7 @@ import { applyFixesLabel } from './commentProjection';
 export const REVIEW_BULK_LABEL = {
   runActions: 'Fix run actions',
   acceptFailed: "Couldn't accept every comment",
+  undoFailed: "Couldn't undo the accept",
   answersPanel: 'Answer the questions of the fix run',
   answerFor: 'Answer for',
   recommended: 'Recommended',

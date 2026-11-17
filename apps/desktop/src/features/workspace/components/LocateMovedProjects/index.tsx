@@ -7,9 +7,10 @@ import { countNoun } from '../../../../shared/utils/countNoun';
 type Props = {
   readonly workspaceId: WorkspaceId;
   readonly onChoose: () => void;
+  readonly isChoosing?: boolean;
 };
 
-export const LocateMovedProjects = ({ workspaceId, onChoose }: Props) => {
+export const LocateMovedProjects = ({ workspaceId, onChoose, isChoosing = false }: Props) => {
   const candidates = useAppStore((state) => state.projectRelocationCandidates);
   const completed = useAppStore((state) => state.projectRelocationCompleted);
   const phase = useAppStore((state) => state.projectRelocationPhase);
@@ -93,7 +94,13 @@ export const LocateMovedProjects = ({ workspaceId, onChoose }: Props) => {
         >
           Cancel
         </Button>
-        <Button variant="secondary" size="sm" disabled={isBusy} onClick={onChoose}>
+        <Button
+          variant="secondary"
+          size="sm"
+          disabled={isBusy}
+          isBusy={isChoosing}
+          onClick={onChoose}
+        >
           Choose another folder
         </Button>
         <Button

@@ -67,10 +67,13 @@ and answers again when the work ends. The product rules live in
 [DESIGN.md](../../../DESIGN.md) → Status & signals; the mechanics are here.
 
 - **Pending is on the control.** The button that started the action takes
-  `isBusy` (`Button`, `GhostActionButton`, `InlineConfirm`) or `busy`
-  (`IconButton`, `RefreshIconButton`): the pulsing glyph, `aria-busy`, and
-  disabled against a second submit. Never a spinner, never a toast that
-  says "started" when the control already says it.
+  `isBusy` (`Button`, `GhostActionButton`, `InlineConfirm`, `CardAction`) or
+  `busy` (`IconButton`, `RefreshIconButton`, which takes `isLoading`): the
+  pulsing glyph, `aria-busy`, and disabled against a second submit. A
+  picker that closes on its pick (the reviewer picker) keeps its trigger busy
+  and names what it is waiting for in one muted `role="status"` line under
+  the field. A switch is disabled while it saves. Never a spinner, never a
+  toast that says "started" when the control already says it.
 - **Success is the new state.** The action refetches exactly the state it
   changed (the mount's request, the worktree status, the resolve rows), so
   the screen shows the result without a reload. A toast adds nothing when the
@@ -102,7 +105,10 @@ The registry buttons run through the `action-runs` slice
 choice, task })` claims the target key, refuses a second claim while one is
 pending, and applies the result only while its token is current, so every
 surface on one target shows the same busy mark and the same line.
-`useActionControls` is its client.
+`useActionControls` is its client. A registry `run` awaits or returns its
+work, never `void`s it, or the button is idle while the work runs and the
+failure never reaches the line; `registry-runs-return-their-work.test.ts`
+fails a run block that fires its work and forgets it.
 
 `usePendingAction` (`apps/desktop/src/shared/hooks/usePendingAction`) is the
 runner for a control with no result line: `run({ key, failureTitle, task })` keeps `key` in `pendingKeys`

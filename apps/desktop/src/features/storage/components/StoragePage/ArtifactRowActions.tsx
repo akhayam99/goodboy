@@ -1,7 +1,7 @@
-import { CHECK_STATE } from '../../../../store/slices/notifications/errorRecovery';
 import { Bookmark, ChevronDown, Clock, Eye } from '@goodboy/ui/icons';
 import { Button, ICON_SIZE, OverflowMenu, type MenuEntry } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
+import { usePendingAction } from '../../../../shared/hooks/usePendingAction';
 import type { StorageArtifact } from '../../../../store/slices/storage/types';
 import { openStorageArtifact } from '../../openStorageArtifact';
 
@@ -15,7 +15,11 @@ type Props = {
   readonly onDelete: () => void;
 };
 
+const OPEN_KEY = 'open';
+const KEEP_KEY = 'keep';
+
 type AttemptParams = {
+  readonly key: typeof OPEN_KEY | typeof KEEP_KEY;
   readonly title: string;
   readonly action: () => Promise<void>;
 };
@@ -23,10 +27,11 @@ type AttemptParams = {
 export const ArtifactRowActions = ({ artifact, isKept, isBusy, onDelete }: Props) => {
   const markStorageArtifactOpened = useAppStore((state) => state.markStorageArtifactOpened);
   const keepStorageArtifact = useAppStore((state) => state.keepStorageArtifact);
-  const reportError = useAppStore((state) => state.reportError);
+  const { pendingKeys, run } = usePendingAction();
+  const isRowBusy = isBusy || pendingKeys.size > 0;
 
-  const attempt = ({ title, action }: AttemptParams) =>
-    void action().catch((error: unknown) => reportError({ recovery: CHECK_STATE, title, error }));
+  const attempt = ({ key, title, action }: AttemptParams) =>
+    void run({ key, failureTitle: title, task: action });
 
   const keepEntries: ReadonlyArray<MenuEntry> = [
     {
@@ -36,6 +41,7 @@ export const ArtifactRowActions = ({ artifact, isKept, isBusy, onDelete }: Props
       icon: Clock,
       onSelect: () =>
         attempt({
+          key: KEEP_KEY,
           title: "Couldn't keep this artifact",
           action: () => keepStorageArtifact({ id: artifact.id, days: KEEP_DAYS }),
         }),
@@ -47,6 +53,7 @@ export const ArtifactRowActions = ({ artifact, isKept, isBusy, onDelete }: Props
       icon: Bookmark,
       onSelect: () =>
         attempt({
+          key: KEEP_KEY,
           title: "Couldn't keep this artifact",
           action: () => keepStorageArtifact({ id: artifact.id, days: null }),
         }),
@@ -58,9 +65,11 @@ export const ArtifactRowActions = ({ artifact, isKept, isBusy, onDelete }: Props
       <Button
         variant="ghost"
         size="sm"
-        disabled={isBusy}
+        disabled={isRowBusy}
+        isBusy={pendingKeys.has(OPEN_KEY)}
         onClick={() =>
           attempt({
+            key: OPEN_KEY,
             title: "Couldn't open this artifact",
             action: async () => {
               await openStorageArtifact({ artifact });
@@ -76,9 +85,11 @@ export const ArtifactRowActions = ({ artifact, isKept, isBusy, onDelete }: Props
         <Button
           variant="ghost"
           size="sm"
-          disabled={isBusy}
+          disabled={isRowBusy}
+          isBusy={pendingKeys.has(KEEP_KEY)}
           onClick={() =>
             attempt({
+              key: KEEP_KEY,
               title: "Couldn't update this artifact",
               action: () => keepStorageArtifact({ id: artifact.id, days: null, isStopping: true }),
             })
@@ -90,7 +101,7 @@ export const ArtifactRowActions = ({ artifact, isKept, isBusy, onDelete }: Props
         <OverflowMenu
           entries={keepEntries}
           label="Keep"
-          disabled={isBusy}
+          disabled={isRowBusy}
           triggerClassName="flex items-center gap-1 px-2 text-meta"
           trigger={
             <>
@@ -103,7 +114,7 @@ export const ArtifactRowActions = ({ artifact, isKept, isBusy, onDelete }: Props
       <Button
         {...actionButtonLookOf({ verb: 'artifact.delete', variant: 'ghost' })}
         size="sm"
-        disabled={isBusy}
+        disabled={isRowBusy}
         onClick={onDelete}
       >
         Delete

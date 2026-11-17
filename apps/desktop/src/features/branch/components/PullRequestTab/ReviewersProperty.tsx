@@ -1,7 +1,7 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Plus } from '@goodboy/ui/icons';
 import type { PullRequestPort } from '@goodboy/core/review-source';
-import { EmptyLine, formatError, IconButton, Skeleton } from '@goodboy/ui';
+import { Button, EmptyLine, formatError, IconButton, Notice, Skeleton } from '@goodboy/ui';
 import type { MountId, PullRequestReviewer, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { PR_REQUEST_REVIEW_EVENT, pullRequestEventName } from '../../../actions/kinds/pullRequest';
@@ -26,6 +26,11 @@ type Props = {
   readonly onMutated: () => void;
 };
 
+type ReviewFailure = {
+  readonly logins: ReadonlyArray<string>;
+  readonly message: string;
+};
+
 export const ReviewersProperty = ({
   sessionId,
   mountId,
@@ -46,18 +51,37 @@ export const ReviewersProperty = ({
     async (query: string) => (port === null ? [] : await port.searchReviewers({ query })),
     [port],
   );
-  const [failure, setFailure] = useState<string | null>(null);
+  const [pendingLogins, setPendingLogins] = useState<ReadonlyArray<string> | null>(null);
+  const [failure, setFailure] = useState<ReviewFailure | null>(null);
+  const inFlight = useRef(false);
+  const isMounted = useRef(true);
+  useEffect(() => {
+    isMounted.current = true;
+    return () => {
+      isMounted.current = false;
+    };
+  }, []);
   const onAdd = useCallback(
     (logins: ReadonlyArray<string>) => {
+      if (inFlight.current) {
+        return;
+      }
+      inFlight.current = true;
+      setPendingLogins(logins);
+      setFailure(null);
       void (async () => {
-        setFailure(null);
         try {
-          await requestReview(sessionId, prNumber, logins, mountId === null ? {} : { mountId });
+          await requestReview(sessionId, prNumber, logins, {
+            ...(mountId === null ? {} : { mountId }),
+            hasFailureSurface: () => isMounted.current,
+          });
+          onMutated();
         } catch (error) {
-          setFailure(`Couldn't ask for the review. ${formatError(error)}`);
-          return;
+          setFailure({ logins, message: formatError(error) });
+        } finally {
+          inFlight.current = false;
+          setPendingLogins(null);
         }
-        onMutated();
       })();
     },
     [mountId, onMutated, prNumber, requestReview, sessionId],
@@ -70,6 +94,7 @@ export const ReviewersProperty = ({
         exclude={known}
         openEventName={pullRequestEventName({ name: PR_REQUEST_REVIEW_EVENT, sessionId })}
         onAdd={onAdd}
+        isBusy={pendingLogins !== null}
       />
     ) : request.kind === 'disabled' ? (
       <IconButton icon={Plus} size="xs" label="Request review" tooltip={request.reason} disabled />
@@ -89,10 +114,24 @@ export const ReviewersProperty = ({
       {request.kind === 'disabled' && (
         <p className="text-meta text-faint-foreground">{request.reason}</p>
       )}
-      {failure !== null && (
-        <p role="alert" className="text-meta text-danger">
-          {failure}
+      {pendingLogins !== null && (
+        <p role="status" className="text-meta text-muted-foreground">
+          Asking {pendingLogins.join(', ')}
         </p>
+      )}
+      {failure !== null && (
+        <Notice
+          tone="danger"
+          placement="inline"
+          role="alert"
+          title="Couldn't request a review"
+          body={failure.message}
+          actions={
+            <Button size="sm" variant="secondary" onClick={() => onAdd(failure.logins)}>
+              Retry
+            </Button>
+          }
+        />
       )}
     </PropertyField>
   );

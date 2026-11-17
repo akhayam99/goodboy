@@ -43,10 +43,11 @@ export const SESSION_EXTERNAL_OPEN_ACTIONS: ReadonlyArray<ActionDefinition<Sessi
     group: 'open',
     when: ({ facts }) => !facts.isArchived,
     blockedReason: ({ facts }) => (facts.worktreePath === null ? NO_WORKTREE_REASON : null),
-    run: ({ facts, env }) => {
-      if (facts.worktreePath !== null) {
-        void openInConfiguredTerminal({ path: facts.worktreePath, state: env.getState() });
+    run: async ({ facts, env }) => {
+      if (facts.worktreePath === null) {
+        return;
       }
+      await openInConfiguredTerminal({ path: facts.worktreePath, state: env.getState() });
     },
   },
 ];

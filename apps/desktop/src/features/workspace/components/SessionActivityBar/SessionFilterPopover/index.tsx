@@ -25,7 +25,7 @@ import {
 } from '../../../../../store';
 import { useProjectFilterOptions } from '../../../hooks/useProjectFilterOptions';
 import { useSidebarPeekHold } from '../../SidebarPeekOverlay/hold';
-import { useUnreadSessionIds } from '../../../../../shared/hooks/useUnreadSessionIds';
+import { MarkAllReadButton } from './MarkAllReadButton';
 import { DEFAULT_PREFS } from '../../../../../store/slices/session-view/types';
 import { DisplayValueRow } from './DisplayValueRow';
 import { FilterCheckRow } from './FilterCheckRow';
@@ -85,8 +85,6 @@ export const SessionFilterPopover = ({
   const selectedProjectIds = useSelectedProjectIds({ workspaceId });
   const projectOptions = useProjectFilterOptions({ workspaceId, sessions });
   const stageBySession = useSessionStages(sessions);
-  const markSessionsRead = useAppStore((state) => state.markSessionsRead);
-  const unreadIds = useUnreadSessionIds({ sessions });
 
   const { hold, release } = useSidebarPeekHold();
   const dropdown = useDropdown({
@@ -253,14 +251,7 @@ export const SessionFilterPopover = ({
           </div>
         ) : null}
         <div className="flex px-1">
-          <Button
-            size="sm"
-            variant="ghost"
-            disabled={unreadIds.length === 0}
-            onClick={() => void markSessionsRead({ sessionIds: unreadIds })}
-          >
-            Mark all as read
-          </Button>
+          <MarkAllReadButton workspaceId={workspaceId} sessions={sessions} />
         </div>
         {display.isDefault ? null : (
           <div className="flex px-1">
