@@ -124,6 +124,7 @@ describe('the places rail', () => {
       'Connect',
       'Impact',
       'Settings',
+      'Report',
     ]);
     expect(within(rail()).queryByRole('button', { name: /Monitoring/ })).toBeNull();
     within(rail()).getByRole('button', { name: 'Connections' });
@@ -193,6 +194,47 @@ describe('the places rail', () => {
     expect(current()).toEqual(['board']);
   });
 
+  it('ends the rail with Settings, Report and the logo, in that order', () => {
+    mount({});
+
+    const foot = Array.from(
+      rail().querySelectorAll('[data-shell-rail-item], [data-goodboy-chip]'),
+      (item) => item.getAttribute('data-shell-rail-item') ?? item.getAttribute('data-goodboy-chip'),
+    ).slice(-3);
+    expect(foot).toEqual(['settings', 'report', 'rail']);
+  });
+
+  it('opens the report sheet from Report, which names its draft once one is saved', () => {
+    mount({});
+    const onOpen = vi.fn();
+    window.addEventListener('goodboy:open-report-sheet', onOpen);
+
+    fireEvent.click(within(rail()).getByRole('button', { name: 'Report a bug' }));
+    act(() => {
+      useAppStore.setState({
+        bugReportDraft: { ...useAppStore.getState().bugReportDraft, title: 'Retries loop' },
+      });
+    });
+
+    window.removeEventListener('goodboy:open-report-sheet', onOpen);
+    expect(onOpen).toHaveBeenCalledOnce();
+    within(rail()).getByRole('button', { name: 'Report a bug, draft saved' });
+  });
+
+  it('replaces the logo with the update mark under Report while an update waits', () => {
+    mount({});
+    act(() => {
+      useAppStore.setState({ updaterStatus: 'available', updateVersion: '0.40.1' });
+    });
+
+    const foot = Array.from(rail().querySelectorAll('[data-shell-rail-item]'), (item) =>
+      item.getAttribute('data-shell-rail-item'),
+    ).slice(-3);
+    expect(foot).toEqual(['settings', 'report', 'update']);
+    expect(rail().querySelector('[data-goodboy-chip="rail"]')).toBeNull();
+    expect(wordsOf().slice(-3)).toEqual(['Settings', 'Report', 'Update']);
+  });
+
   it('shows only the foot outside a workspace', () => {
     seedColumn({ store: useAppStore, sessions: [] });
     render(
@@ -203,6 +245,6 @@ describe('the places rail', () => {
       />,
     );
 
-    expect(wordsOf()).toEqual(['Settings']);
+    expect(wordsOf()).toEqual(['Settings', 'Report']);
   });
 });

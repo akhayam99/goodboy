@@ -22,7 +22,7 @@ type Opened = {
   readonly isAnchored: boolean;
 };
 
-const REPORT_TRIGGER = '[data-report-bug]';
+const REPORT_TRIGGER = '[data-report-bug], [data-shell-rail-item="report"]';
 
 const SHEET_WIDTH_PX = 560;
 

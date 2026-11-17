@@ -5,9 +5,20 @@ import { useRestartWhenIdle } from '../../../features/updater/hooks/useRestartWh
 type Props = {
   readonly anchorRef: RefObject<HTMLElement | null>;
   readonly onOpenChangelog: () => void;
+  readonly isBesideAnchor?: boolean;
 };
 
-export const GoodboyChipEffects = ({ anchorRef, onOpenChangelog }: Props) => {
+export const GoodboyChipEffects = ({
+  anchorRef,
+  onOpenChangelog,
+  isBesideAnchor = false,
+}: Props) => {
   useRestartWhenIdle();
-  return <UpdateArrivalCard anchorRef={anchorRef} onOpenChangelog={onOpenChangelog} />;
+  return (
+    <UpdateArrivalCard
+      anchorRef={anchorRef}
+      onOpenChangelog={onOpenChangelog}
+      isBesideAnchor={isBesideAnchor}
+    />
+  );
 };

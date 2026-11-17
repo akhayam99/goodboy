@@ -773,6 +773,13 @@ r4-title-row-edit
 r4-workspace-switcher
 rail-draft-dot
 rail-flyout
+rail-foot-available
+rail-foot-downloading
+rail-foot-failed
+rail-foot-queued
+rail-foot-ready
+rail-foot-rest
+rail-foot-running
 rail-pinned
 rail-ticket-ids
 railorder

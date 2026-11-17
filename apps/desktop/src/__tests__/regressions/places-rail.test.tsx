@@ -31,6 +31,7 @@ const RAIL_ORDER = [
   'connections',
   'impact',
   'settings',
+  'report',
 ] as const;
 
 beforeAll(async () => {
@@ -88,7 +89,7 @@ const itemsOf = (): ReadonlyArray<string> =>
 
 describe('the places rail replaces the sidebar column', () => {
   it.each(['r4-column-dark', 'r4-column-light'] as const)(
-    '%s draws New, the six places and Settings in one 64px rail, with no column, no list and no fold toggle',
+    '%s draws New, the six places, Settings and Report in one 64px rail, with no column, no list and no fold toggle',
     async (name) => {
       await mount({ name });
 
