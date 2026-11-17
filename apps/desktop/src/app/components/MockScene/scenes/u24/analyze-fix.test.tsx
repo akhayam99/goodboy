@@ -58,12 +58,16 @@ const openRow = () => {
 };
 
 const rowWord = (): string | null =>
-  document.querySelector('[data-check-status]')?.textContent ?? null;
+  document
+    .querySelector('[data-check-status] [data-item-work]')
+    ?.getAttribute('data-item-work-state') ?? null;
 
 describe('analyze fix scenes', () => {
   it('opens the Debugger from the proposal row, Start fix beside Dismiss in the drawer only', () => {
     show({ name: 'checks-proposal' });
-    expect(rowWord()).toBe('Fix proposed');
+    expect(rowWord()).toBe('causeFound');
+    expect(document.querySelector('[data-check-status]')?.textContent).toContain('Cause found');
+    expect(screen.queryByText('Fix proposed')).toBeNull();
     expect(screen.queryByRole('button', { name: 'Start fix' })).toBeNull();
     openRow();
     const drawer = screen.getByRole('region', { name: 'Debugger' });
@@ -81,7 +85,7 @@ describe('analyze fix scenes', () => {
   });
   it('shows the Implementer fixing in the row and in the chain', () => {
     show({ name: 'checks-fixing' });
-    expect(rowWord()).toBe('Fixing');
+    expect(rowWord()).toBe('fixing');
     expect(screen.queryByRole('button', { name: 'Start fix' })).toBeNull();
     openRow();
     const drawer = screen.getByRole('region', { name: 'Debugger' });

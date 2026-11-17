@@ -1,5 +1,6 @@
 import type { ReviewSourceKind } from '@goodboy/core/review-source';
 import type { PrCheckRun } from '@goodboy/types';
+import type { HeldCheckGroups } from '../../integrations/github/checksRollup';
 import {
   PrChecks,
   type RenderCheckRow,
@@ -8,6 +9,7 @@ import {
 type Props = {
   readonly renderCheckRow?: RenderCheckRow;
   readonly checks: ReadonlyArray<PrCheckRun>;
+  readonly heldGroups?: HeldCheckGroups;
   readonly fallbackUrl: string;
   readonly host: ReviewSourceKind;
   readonly isLoading?: boolean;
@@ -17,6 +19,7 @@ type Props = {
 export const ChecksMode = ({
   renderCheckRow,
   checks,
+  heldGroups,
   fallbackUrl,
   host,
   isLoading,
@@ -26,6 +29,7 @@ export const ChecksMode = ({
     <PrChecks
       renderCheckRow={renderCheckRow}
       checks={checks}
+      heldGroups={heldGroups}
       fallbackUrl={fallbackUrl}
       host={host}
       isLoading={isLoading}

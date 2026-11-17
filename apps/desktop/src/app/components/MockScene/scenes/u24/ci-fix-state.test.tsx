@@ -56,7 +56,7 @@ const show = ({ name }: Params) => {
 };
 
 const rowWord = (): string | null =>
-  document.querySelector('[data-check-status]')?.textContent ?? null;
+  document.querySelector('[data-check-status] [data-item-work-word]')?.textContent ?? null;
 
 const openRowDrawer = () => {
   const row = document.querySelector<HTMLElement>('[data-check-row] button');
@@ -73,9 +73,9 @@ const rowPush = (): HTMLElement | null =>
     .find((button) => button.closest('[data-row-id]') !== null) ?? null;
 
 describe('CI fix state scenes', () => {
-  it('labels the checks row Not pushed and opens the Debugger with Push from the row', () => {
+  it('labels the checks row Fixed, not pushed and opens the Debugger with Push from the row', () => {
     show({ name: 'checks-fixed-local' });
-    expect(rowWord()).toBe('Not pushed');
+    expect(rowWord()).toBe('Fixed, not pushed');
     expect(screen.queryByRole('button', { name: 'Open' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Push' })).toBeNull();
     const drawer = openRowDrawer();
@@ -113,7 +113,7 @@ describe('CI fix state scenes', () => {
     const button = within(openRowDrawer()).getByRole('button', { name: 'Push' });
     fireEvent.click(button);
     fireEvent.click(button);
-    await waitFor(() => expect(rowWord()).toBe('Re-running'));
+    await waitFor(() => expect(rowWord()).toBe('Pushed'));
     expect(pushes).toHaveLength(1);
     expect(screen.queryByRole('button', { name: 'Push' })).toBeNull();
   });
@@ -150,7 +150,7 @@ describe('CI fix state scenes', () => {
         expect.objectContaining({ title: "Couldn't push the branch" }),
       ),
     );
-    expect(rowWord()).toBe('Not pushed');
+    expect(rowWord()).toBe('Fixed, not pushed');
     expect(screen.getByRole('button', { name: 'Push' })).toBeDefined();
   });
   it('leads the drawer with the outcome, Push as its one primary and the steps as rows', () => {

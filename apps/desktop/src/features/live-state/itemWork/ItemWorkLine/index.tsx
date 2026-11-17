@@ -50,7 +50,9 @@ export const ItemWorkLine = ({
         <span aria-hidden className="flex shrink-0">
           <WorkNode size="sm" state={node} mark={NODE_MARK} label={entry.word} />
         </span>
-        <span className="shrink-0 whitespace-nowrap text-foreground">{entry.word}</span>
+        <span data-item-work-word="" className="shrink-0 whitespace-nowrap text-foreground">
+          {entry.word}
+        </span>
         {detail === null || detail === '' ? null : (
           <>
             {SEPARATOR}

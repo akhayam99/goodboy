@@ -1,8 +1,6 @@
-import { CHECK_STATE } from '../../../store/slices/notifications/errorRecovery';
-import { useState } from 'react';
 import type { ReactNode } from 'react';
 import { useShallow } from 'zustand/react/shallow';
-import { Button, ICON_SIZE, StatusDot, Tooltip } from '@goodboy/ui';
+import { Button, ICON_SIZE, Tooltip } from '@goodboy/ui';
 import type {
   MountId,
   PrCheckRun,
@@ -13,15 +11,16 @@ import type {
 import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
 import { openLink } from '../../open/openLink';
 import { useAppStore } from '../../../store';
-import type { CheckChainState } from '../../../store/slices/agents/selectCheckChain';
-import { isReportedError } from '../../../store/slices/notifications/reportedError';
 import { captureStartHint } from '../../../store/slices/startHints/captureStartHint';
 import { START_HINT_SCOPES } from '../../../store/slices/startHints/startHintScopes';
+import { usePendingAction } from '../../../shared/hooks/usePendingAction';
 import { modelLabel } from '../../chat/utils/chat-constants';
 import { analyzeFailingChecks } from '../checks/analyzeFailingChecks';
+import { checkItemWorkStateOf } from '../checks/checkItemWorkStateOf';
 import { checkRoutingOf } from '../checks/checkRoutingOf';
 import { useCheckChain } from '../hooks/useCheckChain';
 import { useCheckWorkLock } from '../hooks/useCheckWorkLock';
+import { AnalyzedCheckWork } from './AnalyzedCheckWork';
 import { CheckAnalysisHint } from './CheckAnalysisHint';
 
 type Props = {
@@ -34,7 +33,8 @@ type Props = {
 
 type RowParts = {
   readonly footnote?: string;
-  readonly status: ReactNode;
+  readonly work: ReactNode;
+  readonly isAgentWorking: boolean;
   readonly action: ReactNode;
   readonly hint: ReactNode;
   readonly onOpen: () => void;
@@ -42,36 +42,11 @@ type RowParts = {
 
 type RenderRow = (parts: RowParts) => ReactNode;
 
-type ChainState = Exclude<CheckChainState, 'none'>;
-
-const WORDS: Readonly<Record<ChainState, string>> = {
-  analyzing: 'Analyzing',
-  proposal: 'Fix proposed',
-  fixing: 'Fixing',
-  'fixed-local': 'Not pushed',
-  'fixed-pushed': 'Re-running',
-  'fix-failed': 'Fix stopped',
-  'no-fix': 'No fix found',
-};
-
-const TONES = {
-  analyzing: 'info',
-  fixing: 'info',
-  proposal: 'warning',
-  'fixed-local': 'warning',
-  'fixed-pushed': 'info',
-  'fix-failed': 'danger',
-  'no-fix': 'neutral',
-} as const satisfies Record<ChainState, string>;
-
-const LIVE: ReadonlySet<ChainState> = new Set<ChainState>(['analyzing', 'fixing', 'fixed-pushed']);
-
 export const AnalyzedCheckRow = ({ sessionId, mountId, pullRequest, check, renderRow }: Props) => {
   const url = check.detailsUrl ?? pullRequest.url;
   const { chain } = useCheckChain({ sessionId, mountId, url });
   const lock = useCheckWorkLock({ sessionId, mountId });
   const routing = useAppStore(useShallow((state) => checkRoutingOf({ state, sessionId, mountId })));
-  const reportError = useAppStore((state) => state.reportError);
   const openDrawer = useAppStore((state) => state.openDrawer);
   const isDrawerOpen = useAppStore(
     (state) =>
@@ -79,44 +54,34 @@ export const AnalyzedCheckRow = ({ sessionId, mountId, pullRequest, check, rende
       state.drawer.payload.mountId === mountId &&
       state.drawer.payload.checkUrl === url,
   );
-  const [isStarting, setIsStarting] = useState(false);
-  const analyze = async (): Promise<void> => {
-    if (isStarting) {
-      return;
-    }
-    setIsStarting(true);
-    try {
-      const state = useAppStore.getState();
-      const capture =
-        chain.state === 'none'
-          ? null
-          : captureStartHint({
-              state,
-              sessionId,
-              scope: START_HINT_SCOPES.checkAnalyze({ mountId, url }),
-            });
-      await analyzeFailingChecks({
-        sessionId,
-        mountId,
-        pullRequest,
-        checks: [check],
-        ...(capture !== null && {
-          hint: capture.text,
-          onAccepted: () => state.settleStartHint({ capture }),
-        }),
-      });
-    } catch (error: unknown) {
-      if (!isReportedError(error)) {
-        void reportError({
-          recovery: CHECK_STATE,
-          title: "Couldn't start the Debugger",
-          error,
+  const pending = usePendingAction({ sessionId });
+  const analyzeKey = `check.analyze:${mountId}:${url}`;
+  const isStarting = pending.pendingKeys.has(analyzeKey);
+  const analyze = (): void => {
+    const state = useAppStore.getState();
+    const capture =
+      chain.state === 'none'
+        ? null
+        : captureStartHint({
+            state,
+            sessionId,
+            scope: START_HINT_SCOPES.checkAnalyze({ mountId, url }),
+          });
+    void pending.run({
+      key: analyzeKey,
+      failureTitle: "Couldn't start the Debugger",
+      task: () =>
+        analyzeFailingChecks({
           sessionId,
-        });
-      }
-    } finally {
-      setIsStarting(false);
-    }
+          mountId,
+          pullRequest,
+          checks: [check],
+          ...(capture !== null && {
+            hint: capture.text,
+            onAccepted: () => state.settleStartHint({ capture }),
+          }),
+        }),
+    });
   };
   const openAnalysis = (): void =>
     openDrawer({
@@ -124,20 +89,22 @@ export const AnalyzedCheckRow = ({ sessionId, mountId, pullRequest, check, rende
       sessionId,
       payload: { sessionId, mountId, checkUrl: url },
     });
+  const workState = checkItemWorkStateOf({
+    chain: chain.state,
+    fixStatus: chain.fix?.status ?? null,
+    isStarting,
+  });
+  const isAgentWorking = workState === 'analyzing' || workState === 'fixing';
   const canAnalyze = (chain.state === 'none' || chain.state === 'no-fix') && !isDrawerOpen;
   const AgentsIcon = CONCEPT_ICONS.agents;
   return renderRow({
     ...(chain.state === 'none' ? {} : { footnote: 'Click to open the Debugger' }),
     onOpen: chain.state === 'none' ? () => openLink({ url, sessionId }) : openAnalysis,
-    status:
-      chain.state === 'none' ? null : (
-        <>
-          <StatusDot tone={TONES[chain.state]} pulsing={LIVE.has(chain.state)} size="sm" />
-          <span role="status" className="text-meta text-muted-foreground">
-            {WORDS[chain.state]}
-          </span>
-        </>
+    work:
+      workState === null ? null : (
+        <AnalyzedCheckWork sessionId={sessionId} chain={chain} state={workState} />
       ),
+    isAgentWorking,
     action: canAnalyze ? (
       <Tooltip
         content={
@@ -148,8 +115,9 @@ export const AnalyzedCheckRow = ({ sessionId, mountId, pullRequest, check, rende
         <Button
           variant="ghost"
           size="sm"
-          disabled={isStarting || lock !== null}
-          onClick={() => void analyze()}
+          isBusy={isStarting}
+          disabled={lock !== null}
+          onClick={analyze}
         >
           <AgentsIcon size={ICON_SIZE.row} aria-hidden />
           {chain.state === 'none' ? 'Analyze' : 'Analyze again'}

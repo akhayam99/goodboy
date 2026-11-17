@@ -61,7 +61,6 @@ import { stopRequests } from '../../../store/slices/turn/stopRequests';
 import { withPullRequestViewEntry } from '../../../store/slices/pull-request-view/pullRequestViewAt';
 import type { SessionDiff } from '../../diff/hooks/useSessionDiff';
 import type { BranchReviewCounts } from '../branchPrimary';
-import { BranchCheckWorkLine } from '../components/BranchCheckWorkLine';
 import { BranchHeader } from '../components/BranchHeader';
 import { useBranchControls } from '../hooks/useBranchControls';
 import { useFixLaunch } from '../../resolve/components/FixCommentsDrawer/useFixLaunch';
@@ -180,14 +179,6 @@ const StepHeader = () => {
         canEditTitle={false}
         onMutated={() => undefined}
       />
-      {controls.checkWork.agentId === null ? null : (
-        <BranchCheckWorkLine
-          sessionId={seed.sessionId}
-          agentId={controls.checkWork.agentId}
-          isFixing={controls.checkWork.chain === 'fixing'}
-          checkName={controls.checkWork.checkName}
-        />
-      )}
       <span data-testid="step-note">{controls.primary?.note ?? ''}</span>
     </>
   );
@@ -206,6 +197,15 @@ const showStep = ({ phase = 'failing' }: ShowParams = {}) => {
 
 const headerStep = (): HTMLElement | null =>
   document.querySelector<HTMLElement>('[data-branch-primary]');
+
+type RowParams = {
+  readonly name: string;
+};
+
+const rowWorkState = ({ name }: RowParams): string | null =>
+  document
+    .querySelector(`[data-check-row="${name}"] [data-item-work]`)
+    ?.getAttribute('data-item-work-state') ?? null;
 
 type PortHost = 'gitlab' | 'bitbucket';
 
@@ -615,17 +615,21 @@ describe('the branch header step runs the Overview chain on any tab', () => {
     expect(headerStep()?.textContent).toBe('Fix checks');
   });
 
-  it('draws no fill while the Debugger works, and a line under the tabs stops it', () => {
+  it('draws no fill while the Debugger works, and the check row stops it', () => {
     const cancelCurrentTurn = vi
       .spyOn(store.getState(), 'cancelCurrentTurn')
       .mockResolvedValue(undefined);
-    showStep({ phase: 'running' });
+    seed = checksAnalyzeSeed({ phase: 'running' });
+    render(
+      <ToastProvider>
+        <StepHeader />
+        <BranchChecks sessionId={seed.sessionId} />
+      </ToastProvider>,
+    );
 
     expect(headerStep()).toBeNull();
     expect(document.querySelectorAll('button[data-variant="primary"]')).toHaveLength(0);
-    expect(screen.getByTestId('branch-check-work').textContent).toContain(
-      `Analyzing ${seed.check.name}`,
-    );
+    expect(rowWorkState({ name: seed.check.name })).toBe('analyzing');
 
     fireEvent.click(screen.getByRole('button', { name: 'Stop' }));
 
@@ -668,19 +672,19 @@ describe('one agent per branch, whichever door starts it', () => {
     store.setState({ agentTurnState: {} });
   });
 
-  it('draws the work line and no fill while a Debugger works on the second check', () => {
+  it('draws the work on the second check row and no fill while a Debugger works on it', () => {
     seed = checksAnalyzeSeed({ phase: 'running' });
     addFailingLintFirst();
     render(
       <ToastProvider>
         <StepHeader />
+        <BranchChecks sessionId={seed.sessionId} />
       </ToastProvider>,
     );
 
     expect(headerStep()).toBeNull();
-    expect(screen.getByTestId('branch-check-work').textContent).toContain(
-      `Analyzing ${seed.check.name}`,
-    );
+    expect(rowWorkState({ name: seed.check.name })).toBe('analyzing');
+    expect(rowWorkState({ name: LINT_NAME })).toBeNull();
     expect(screen.getAllByRole('button', { name: 'Stop' })).toHaveLength(1);
   });
 
@@ -708,25 +712,18 @@ describe('one agent per branch, whichever door starts it', () => {
     }
     render(
       <ToastProvider>
-        <BranchCheckWorkLine
-          sessionId={seed.sessionId}
-          agentId={seed.agent.id}
-          isFixing={false}
-          checkName={seed.check.name}
-        />
+        <BranchChecks sessionId={seed.sessionId} />
       </ToastProvider>,
     );
 
     act(() => stopRequests.request({ agentId: seed.agent.id, runId: turn.runId, at: Date.now() }));
-    expect(screen.queryByRole('button', { name: 'Stop' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Stop' }).getAttribute('aria-busy')).toBe('true');
 
     act(() =>
       stopRequests.request({ agentId: seed.agent.id, runId: turn.runId, at: Date.now() - 10_000 }),
     );
-    expect(screen.getAllByRole('button', { name: 'Stop' })).toHaveLength(1);
-    expect(screen.getByTestId('branch-check-work').textContent).toContain(
-      `Analyzing ${seed.check.name}`,
-    );
+    expect(screen.getByRole('button', { name: 'Stop' }).getAttribute('aria-busy')).toBeNull();
+    expect(rowWorkState({ name: seed.check.name })).toBe('analyzing');
     act(() => stopRequests.settle({ agentId: seed.agent.id }));
   });
 

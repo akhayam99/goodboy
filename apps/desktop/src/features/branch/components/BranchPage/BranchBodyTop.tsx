@@ -31,7 +31,6 @@ export const BranchBodyTop = ({
   <PageColumn width="column" className="flex shrink-0 flex-col gap-2 pb-3 empty:hidden">
     <BranchWorkLines
       session={session}
-      checkWork={controls.checkWork}
       run={review.run}
       lane={review.lane}
       isFixRunShown={isFixRunShown}

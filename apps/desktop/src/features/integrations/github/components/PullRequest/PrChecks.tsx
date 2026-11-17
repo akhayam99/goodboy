@@ -12,11 +12,12 @@ type RenderCheckRowParams = {
 };
 
 export type RenderCheckRow = (params: RenderCheckRowParams) => ReactNode;
-import { checksGroupsOf } from '../../checksRollup';
+import { checksGroupsOf, type HeldCheckGroups } from '../../checksRollup';
 
 type Props = {
   readonly renderCheckRow?: RenderCheckRow;
   readonly checks: ReadonlyArray<PrCheckRun>;
+  readonly heldGroups?: HeldCheckGroups;
   readonly fallbackUrl: string;
   readonly host: ReviewSourceKind;
   readonly isLoading?: boolean;
@@ -30,6 +31,7 @@ const MIN_COUNTED_ROWS = 2;
 export const PrChecks = ({
   renderCheckRow,
   checks,
+  heldGroups,
   fallbackUrl,
   host,
   isLoading = false,
@@ -72,8 +74,8 @@ export const PrChecks = ({
   }
 
   return (
-    <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_max-content_max-content] gap-x-3 gap-y-4">
-      {checksGroupsOf({ checks }).map((entry) => (
+    <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_max-content] gap-x-3 gap-y-4">
+      {checksGroupsOf({ checks, held: heldGroups ?? null }).map((entry) => (
         <section key={entry.group} className="col-span-full grid grid-cols-subgrid">
           <h2 data-list-heading="" className="col-span-full flex h-7 items-center gap-2 text-row">
             <span className={TEXT_ROLE.secondary}>{entry.label}</span>{' '}
