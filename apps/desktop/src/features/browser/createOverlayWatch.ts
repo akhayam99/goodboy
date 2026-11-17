@@ -1,3 +1,4 @@
+import { SPLIT_DRAG_ATTRIBUTE } from '@goodboy/ui';
 import { OVERLAY_SELECTOR } from '../../shared/keyboard/overlaySelector';
 
 const COVER_SELECTOR = [
@@ -11,7 +12,7 @@ const DIALOG_SELECTOR = '[role="dialog"], [role="alertdialog"]';
 
 const UNDER_OVERLAY_DRAWER = '[data-drawer-main][inert]';
 
-export type CoverReason = 'menu' | 'dialog' | 'tooltip' | 'page';
+export type CoverReason = 'menu' | 'dialog' | 'tooltip' | 'page' | 'drag';
 
 type ReasonOfParams = {
   readonly overlay: Element;
@@ -70,6 +71,9 @@ export const createOverlayWatch = () => {
   });
 
   const coverOf = ({ view, rect }: CoversParams): CoverReason | null => {
+    if (document.body.hasAttribute(SPLIT_DRAG_ATTRIBUTE)) {
+      return 'drag';
+    }
     if (view.closest(UNDER_OVERLAY_DRAWER) !== null) {
       return 'page';
     }

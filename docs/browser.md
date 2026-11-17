@@ -556,7 +556,10 @@ it; Esc inside the page goes to the page.
   hidden under an overlay the placeholder shows a cover (`BrowserCover`) on the
   subtle surface: favicon, title, host and the reason in one line
   (`coverReasonText.ts`, from `createOverlayWatch().coverOf`: menu, dialog,
-  tooltip or page). The cover goes one frame after the host showed the view
+  tooltip, page or drag). While a `SplitHandle` drags, the body carries
+  `SPLIT_DRAG_ATTRIBUTE` and every view in the window hides under a drag
+  cover, so the page is placed once at the release instead of once per frame
+  (`splitDragCover.test.ts`). The cover goes one frame after the host showed the view
   again (`onShown` of `createNativePlacement`), so no frame has neither, and it
   stays when the show fails. Toasts keep left of the pane, even when it lies over
   the page (`toastRightOf`), and left of the Browser page's view, so they

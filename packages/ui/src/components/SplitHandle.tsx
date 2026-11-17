@@ -1,6 +1,7 @@
 import { useEffect, useRef, type KeyboardEvent, type MouseEvent } from 'react';
 import { cn } from '../cn';
 import type { ResizeActivity } from '../sheet';
+import { SPLIT_DRAG_ATTRIBUTE } from '../splitDragAttribute';
 
 type Side = 'left' | 'right' | 'top' | 'bottom';
 
@@ -174,6 +175,7 @@ export const SplitHandle = ({
         commitRef.current?.(liveValueRef.current);
         document.body.style.cursor = '';
         document.body.style.userSelect = '';
+        document.body.removeAttribute(SPLIT_DRAG_ATTRIBUTE);
         report();
       },
       { signal: listeners.signal },
@@ -183,6 +185,7 @@ export const SplitHandle = ({
       if (dragStateRef.current !== null) {
         document.body.style.cursor = '';
         document.body.style.userSelect = '';
+        document.body.removeAttribute(SPLIT_DRAG_ATTRIBUTE);
       }
     };
   }, [axis, growth, max, min, onChange]);
@@ -199,6 +202,7 @@ export const SplitHandle = ({
     liveValueRef.current = value;
     document.body.style.cursor = shape.cursor;
     document.body.style.userSelect = 'none';
+    document.body.setAttribute(SPLIT_DRAG_ATTRIBUTE, axis);
     report();
   };
 

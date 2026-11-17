@@ -3,6 +3,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { SplitHandle } from '../components/SplitHandle';
+import { SPLIT_DRAG_ATTRIBUTE } from '../splitDragAttribute';
 
 afterEach(cleanup);
 
@@ -77,6 +78,29 @@ describe('SplitHandle', () => {
 
     expect(onChange).toHaveBeenCalledWith(400);
     expect(onReset).toHaveBeenCalledOnce();
+  });
+
+  it('marks the body with the drag axis until the release, and clears it on unmount', () => {
+    const view = render(
+      <SplitHandle
+        value={300}
+        min={160}
+        max={600}
+        onChange={vi.fn()}
+        side="bottom"
+        ariaLabel="resize row"
+      />,
+    );
+    const handle = screen.getByRole('separator', { name: 'resize row' });
+
+    fireEvent.mouseDown(handle, { button: 0, clientY: 300 });
+    expect(document.body.getAttribute(SPLIT_DRAG_ATTRIBUTE)).toBe('y');
+    fireEvent.mouseUp(window);
+    expect(document.body.hasAttribute(SPLIT_DRAG_ATTRIBUTE)).toBe(false);
+
+    fireEvent.mouseDown(handle, { button: 0, clientY: 300 });
+    view.unmount();
+    expect(document.body.hasAttribute(SPLIT_DRAG_ATTRIBUTE)).toBe(false);
   });
 
   it('drags a row handle on the vertical axis and ignores the horizontal one', () => {
