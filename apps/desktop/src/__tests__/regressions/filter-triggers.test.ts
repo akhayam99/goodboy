@@ -20,8 +20,8 @@ const FILTER_GLYPHS: ReadonlySet<string> = new Set([
 ]);
 
 const ALLOWED: Readonly<Record<string, string>> = {
-  'features/workspace/components/SessionActivityBar/SessionFilterPopover/index.tsx':
-    'icon-only xs trigger in the sidebar header, with its attention dot',
+  'features/workspace/components/StageBoard/SessionFilterPopover/index.tsx':
+    'icon-only xs trigger in the Board header, with its attention dot',
   'features/diff/components/ChangeTree/FilterMenu.tsx':
     'icon-only xs trigger in the file tree header, toned while a filter is on',
 };

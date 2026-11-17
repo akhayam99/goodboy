@@ -31,5 +31,5 @@ export const TaskMoveIssueScene = () => {
   if (!isReady) {
     return null;
   }
-  return <AppFrame view="session" isRailCollapsed={false} />;
+  return <AppFrame view="session" />;
 };

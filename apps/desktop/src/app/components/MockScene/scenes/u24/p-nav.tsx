@@ -10,7 +10,6 @@ import { sceneClock } from '../../sceneClock';
 import { SESSION } from '../workflowSeed';
 import { AppFrame } from '../audit/AppFrame';
 import { seedFrame } from '../audit/frameSeed';
-import { RailOrderScene } from './RailOrderScene';
 
 const clock = sceneClock({ anchor: '2026-10-09T09:00:00.000Z' });
 
@@ -75,10 +74,9 @@ const IssueFocused = () => {
   if (!isReady) {
     return null;
   }
-  return <AppFrame view="session" isRailCollapsed={false} />;
+  return <AppFrame view="session" />;
 };
 
 export const U24_P_NAV_SCENES: Readonly<Record<string, ComponentType>> = {
   'integration-issue-focused': IssueFocused,
-  railorder: RailOrderScene,
 };

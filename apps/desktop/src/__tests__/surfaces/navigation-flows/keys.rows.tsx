@@ -350,10 +350,6 @@ export const KEY_ROWS: ReadonlyArray<Row> = [
     id: 'sessions.toggle',
     lands: () => visible('dialog', 'Sessions'),
   }),
-  pressRow({
-    id: 'column.toggle',
-    lands: () => visible('button', /^Show sidebar/),
-  }),
   keyRow({
     id: 'innerColumn.toggle',
     note: 'folds the chat list, the inner column of the Chat studio',

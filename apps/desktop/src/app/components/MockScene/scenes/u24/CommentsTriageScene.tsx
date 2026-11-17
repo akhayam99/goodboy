@@ -2,14 +2,9 @@ import { useEffect, useState } from 'react';
 import { AppShell } from '@goodboy/ui';
 import { DrawerHost } from '../../../DrawerHost';
 import { BranchPage } from '../../../../../features/branch/components/BranchPage';
-import { shellArrangement } from '../../../../shellArrangement';
+import { ScenePlacesRail } from '../ScenePlacesRail';
 import { SESSION } from '../resolveSeed';
 import { commentsTriageSeed, type CommentsTriagePhase } from './commentsTriageSeed';
-
-const arrangement = shellArrangement({
-  hasWorkspace: true,
-  isSidebarCollapsed: false,
-});
 
 type Props = {
   readonly phase: CommentsTriagePhase;
@@ -27,8 +22,7 @@ export const CommentsTriageScene = ({ phase }: Props) => {
   return (
     <div className="[&>div]:w-full" style={{ width: 1440 }}>
       <AppShell
-        leftSidebarCollapsed={arrangement.leftSidebarCollapsed}
-        leftSidebar={<div aria-hidden />}
+        leftRail={<ScenePlacesRail />}
         main={<BranchPage session={SESSION} workingDir={null} />}
         drawer={<DrawerHost />}
         drawerSizing="side"

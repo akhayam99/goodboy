@@ -1,0 +1,90 @@
+import { ShellRail, ShellRailItem, type ShellRailMark } from '@goodboy/ui';
+import { Plus } from '@goodboy/ui/icons';
+import type { WorkspaceId } from '@goodboy/types';
+import { useAppStore } from '../../../store';
+import { selectSessionDraft } from '../../../store/slices/sessionDraft/selectSessionDraft';
+import { hasSessionDraftContent } from '../../../store/slices/sessionDraft/hasSessionDraftContent';
+import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
+import { navEntryToneOf } from '../../../shared/components/navEntryToneOf';
+import { requestNewSession } from '../../../features/session/requestNewSession';
+import { WorkspaceIdentityRow } from '../../../features/workspace/components/WorkspaceIdentityRow';
+import { useColumnPlace } from '../../hooks/useColumnPlace';
+import type { ShellArrangement } from '../../shellArrangement';
+import { GoodboyChip } from '../GoodboyChip';
+import { ReportBugButton } from './ReportBugButton';
+import { COLUMN_DOORS, openColumnDoor, type ColumnActions } from './columnDoors';
+import { railMarkOf } from './railMarkOf';
+import { useDoorSignals } from './useDoorSignals';
+import type { ColumnPlace } from '../../../shared/navigation/columnPlace';
+import { railPlaceOf } from '../../../shared/navigation/railPlaceOf';
+
+type Props = {
+  readonly arrangement: ShellArrangement;
+  readonly workspaceId: WorkspaceId | null;
+  readonly actions: ColumnActions;
+  readonly placeOverride?: ColumnPlace;
+};
+
+const DRAFT_MARK: ShellRailMark = { kind: 'dot', name: 'draft in progress' };
+
+export const ShellLeft = ({ arrangement, workspaceId, actions, placeOverride }: Props) => {
+  const storePlace = useColumnPlace();
+  const place = railPlaceOf({ place: placeOverride === undefined ? storePlace : placeOverride });
+  const hasDraft = useAppStore((state) =>
+    workspaceId === null
+      ? false
+      : hasSessionDraftContent({ draft: selectSessionDraft({ state, workspaceId }) }),
+  );
+  const isDraftWaiting = hasDraft && place !== 'new';
+  const signals = useDoorSignals({});
+  return (
+    <ShellRail label="Places">
+      {arrangement.columnScope === 'workspace' ? (
+        <>
+          <WorkspaceIdentityRow />
+          <ShellRailItem
+            id="new"
+            icon={Plus}
+            label="New session"
+            word="New"
+            shortcut="session.new"
+            mark={isDraftWaiting ? DRAFT_MARK : null}
+            isOutlined
+            isCurrent={place === 'new'}
+            onSelect={requestNewSession}
+          />
+          {COLUMN_DOORS.map((door) => (
+            <ShellRailItem
+              key={door.id}
+              id={door.id}
+              icon={door.icon}
+              label={door.label}
+              {...(door.word !== undefined && { word: door.word })}
+              {...(door.shortcutId !== undefined && { shortcut: door.shortcutId })}
+              tone={navEntryToneOf({ icon: door.icon })}
+              mark={railMarkOf({ id: door.id, signal: signals[door.id] })}
+              isQuiet={door.isReference === true}
+              isCurrent={place === door.id}
+              onSelect={() => openColumnDoor({ id: door.id, actions })}
+            />
+          ))}
+        </>
+      ) : null}
+      <span aria-hidden className="min-h-0 flex-1" />
+      <ShellRailItem
+        id="settings"
+        icon={CONCEPT_ICONS.settings}
+        label="Settings"
+        shortcut="settings.open"
+        isCurrent={place === 'settings'}
+        onSelect={actions.openSettings}
+      />
+      <ReportBugButton />
+      <GoodboyChip
+        isCurrent={place === 'help'}
+        onOpenChangelog={actions.openChangelog}
+        onOpenHelp={actions.openGuide}
+      />
+    </ShellRail>
+  );
+};

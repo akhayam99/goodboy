@@ -34,7 +34,6 @@ const MINOR_WORDS: ReadonlySet<string> = new Set([
 
 const MAC_NAMES: Readonly<Record<string, string>> = {
   'app.close': 'Close',
-  'column.toggle': 'Show or Hide Sidebar',
   'zoom.reset': 'Actual Size',
 };
 

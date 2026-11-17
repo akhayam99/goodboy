@@ -10,13 +10,13 @@ import type {
   SessionId,
   SessionProjectMount,
   TurnState,
+  WorkspaceGitStatus,
 } from '@goodboy/types';
 import { useAppStore } from '../../../store';
 import type { MountGithubState, SessionGithubState } from '../../../store/types';
-import type { StoryStore } from '../../../store/storyHarness';
+import { stubStoryInvoke, type StoryStore } from '../../../store/storyHarness';
 import { ToastProvider } from '../../../shared/components/Toast';
-import { SessionActivityBar } from '../components/SessionActivityBar';
-import { SidebarSessionsFilter } from '../components/SessionActivityBar/SidebarSessionsFilter';
+import { StageBoard } from '../components/StageBoard';
 
 export const harborline = aWorkspace({ name: 'Harborline', slug: 'harborline' });
 
@@ -218,51 +218,40 @@ export const seedColumn = ({
   });
 };
 
-const NO_SESSIONS: ReadonlyArray<Session> = [];
-
-type BarProps = {
-  readonly isStudioOver: boolean;
-  readonly onSelectSession: (id: SessionId) => void;
-  readonly onArchivedTabOpen?: () => void;
+type BoardParams = {
+  readonly store: StoryStore;
 };
 
-const StoreBar = ({ isStudioOver, onSelectSession, onArchivedTabOpen }: BarProps) => {
+const StoreBoard = () => {
   const sessions = useAppStore((state) => state.sessions);
-  const archived = useAppStore((state) => state.archivedSessions[harborline.id] ?? NO_SESSIONS);
-  const currentSessionId = useAppStore((state) => state.currentSessionId);
-  return (
-    <>
-      <SidebarSessionsFilter workspaceId={harborline.id} />
-      <SessionActivityBar
-        workspaceId={harborline.id}
-        sessions={sessions}
-        archivedSessions={archived}
-        currentSessionId={currentSessionId as SessionId | null}
-        isStudioOver={isStudioOver}
-        onSelectSession={onSelectSession}
-        {...(onArchivedTabOpen !== undefined && { onArchivedTabOpen })}
-      />
-    </>
-  );
+  return <StageBoard workspaceId={harborline.id} sessions={sessions} />;
 };
 
-type RenderParams = {
-  readonly isStudioOver?: boolean;
-  readonly onSelectSession?: (id: SessionId) => void;
-  readonly onArchivedTabOpen?: () => void;
+const READY_STATUS: WorkspaceGitStatus = {
+  state: 'ready',
+  branch: 'main',
+  headSubject: 'Start the ledger',
+  upstreamDistance: { kind: 'unknown', reason: 'no-upstream' },
+  workingTree: { kind: 'known', staged: 0, unstaged: 0, untracked: 0, unmerged: 0, changed: 0 },
+  upstream: null,
+  inProgress: null,
 };
 
-export const renderBar = ({
-  isStudioOver = false,
-  onSelectSession = () => undefined,
-  onArchivedTabOpen,
-}: RenderParams = {}) =>
-  render(
+export const renderBoard = ({ store }: BoardParams) => {
+  store.setState((state) => ({
+    boardReady: true,
+    projects: state.projects.map((project) => ({
+      ...project,
+      identityCheckedAt: at('2026-09-01T09:00:00.000Z'),
+    })),
+    projectGitStatus: Object.fromEntries(
+      state.projects.map((project) => [project.id, READY_STATUS]),
+    ),
+  }));
+  stubStoryInvoke({ project_git_status: READY_STATUS });
+  return render(
     <ToastProvider>
-      <StoreBar
-        isStudioOver={isStudioOver}
-        onSelectSession={onSelectSession}
-        {...(onArchivedTabOpen !== undefined && { onArchivedTabOpen })}
-      />
+      <StoreBoard />
     </ToastProvider>,
   );
+};

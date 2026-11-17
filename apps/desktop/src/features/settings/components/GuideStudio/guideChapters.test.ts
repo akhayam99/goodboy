@@ -7,7 +7,7 @@ import { WORKSPACE_FEATURES } from '../../../../shared/lib/features';
 import { NAMES } from '../../../../shared/utils/names';
 import { RETIRED_NAMES } from '../../../../__tests__/regressions/retiredNames';
 import { shortcutGlyphs } from '../../../../shared/keyboard/registry';
-import { COLUMN_DOORS } from '../../../../app/components/SideColumn/columnDoors';
+import { COLUMN_DOORS } from '../../../../app/components/ShellLeft/columnDoors';
 import { columnPagesOf } from '../../../session/pageRegistry';
 import { NEW_DRAWER_FORMS } from '../../../session/newDrawerForms';
 import { chapterStatsOf } from './chapterStatsOf';

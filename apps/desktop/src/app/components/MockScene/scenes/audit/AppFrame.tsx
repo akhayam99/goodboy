@@ -1,10 +1,10 @@
-import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, type ReactNode } from 'react';
 import { AppShell } from '@goodboy/ui';
 import { AppTopBar } from '../../../AppTopBar';
 import { KeepAliveWorkSurface } from '../../../KeepAliveWorkSurface';
-import { ShellLeft } from '../../../SideColumn/ShellLeft';
+import { ShellLeft } from '../../../ShellLeft';
 import { SessionFrame } from '../../../SessionRail/SessionFrame';
-import type { ColumnActions } from '../../../SideColumn/columnDoors';
+import type { ColumnActions } from '../../../ShellLeft/columnDoors';
 import { useAppOverlays } from '../../../../hooks/useAppOverlays';
 import { useGoToBoard } from '../../../../hooks/useGoToBoard';
 import { shellArrangement } from '../../../../shellArrangement';
@@ -21,31 +21,17 @@ import { useShellRight } from '../../../../hooks/useShellRight';
 import { selectDrawerPlacement } from '../../../../../store/slices/drawer/selectDrawerPlacement';
 import { triggerFrameView } from './frameViews';
 import { useSceneShortcuts } from '../useSceneShortcuts';
-import { isDirectedScene } from '../../../../../shared/utils/isDirectedScene';
 
 const noop = () => undefined;
 
 type Props = {
   readonly view: string;
-  readonly isRailCollapsed: boolean;
   readonly hasPane?: boolean;
-  readonly hasLiveToggle?: boolean;
   readonly hasDraft?: boolean;
   readonly center?: ReactNode;
 };
 
-export const AppFrame = ({
-  view,
-  isRailCollapsed,
-  hasPane = false,
-  hasLiveToggle = false,
-  hasDraft = false,
-  center,
-}: Props) => {
-  const [isFoldPicked, setIsFoldPicked] = useState(isRailCollapsed);
-  const isFoldLive = hasLiveToggle || isDirectedScene();
-  const isMainCollapsed = isFoldLive ? isFoldPicked : isRailCollapsed;
-  const toggleFold = () => setIsFoldPicked((isPicked) => !isPicked);
+export const AppFrame = ({ view, hasPane = false, hasDraft = false, center }: Props) => {
   const shellRight = useShellRight({});
   const drawerPlacement = useAppStore(selectDrawerPlacement);
   const currentWorkspace = useCurrentWorkspace();
@@ -56,20 +42,14 @@ export const AppFrame = ({
     hasDraft && draftWorkspaceId !== null && draftWorkspaceId === currentWorkspace?.id;
   const goToBoard = useGoToBoard();
   const isLauncher = view === 'launcher' || currentWorkspace === null;
-  const arrangement = shellArrangement({
-    hasWorkspace: currentWorkspace !== null,
-    isSidebarCollapsed: isMainCollapsed,
-  });
+  const arrangement = shellArrangement({ hasWorkspace: currentWorkspace !== null });
   const overlays = useAppOverlays({
     currentSession,
     currentWorkspace,
     workspaceProjectRoot: '/mock/root',
     isWorkspaceLauncherBranch: isLauncher,
   });
-  useSceneShortcuts({
-    openPalette: overlays.openPalette,
-    ...(isFoldLive ? { onToggleSidebar: toggleFold } : {}),
-  });
+  useSceneShortcuts({ openPalette: overlays.openPalette });
   const actions = useMemo<ColumnActions>(
     () => ({
       openBoard: goToBoard,

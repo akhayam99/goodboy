@@ -26,7 +26,6 @@ type Props = {
   readonly context: FrameContext;
   readonly view: string;
   readonly held: RightDock;
-  readonly isRailCollapsed?: boolean;
   readonly hasDetail?: boolean;
 };
 
@@ -94,13 +93,7 @@ const seedDock = ({ context, view, held, hasDetail }: SeedParams): void => {
   }
 };
 
-export const P10RightDockScene = ({
-  context,
-  view,
-  held,
-  isRailCollapsed = false,
-  hasDetail = false,
-}: Props) => {
+export const P10RightDockScene = ({ context, view, held, hasDetail = false }: Props) => {
   const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
@@ -112,5 +105,5 @@ export const P10RightDockScene = ({
   if (!isReady) {
     return null;
   }
-  return <AppFrame view={view} isRailCollapsed={isRailCollapsed} hasPane />;
+  return <AppFrame view={view} hasPane />;
 };

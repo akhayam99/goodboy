@@ -1,15 +1,11 @@
 import { useMemo, type ReactNode } from 'react';
-import type { ColumnActions } from '../../../SideColumn/columnDoors';
+import type { ColumnActions } from '../../../ShellLeft/columnDoors';
 import { useAppOverlays } from '../../../../hooks/useAppOverlays';
 import { useGoToBoard } from '../../../../hooks/useGoToBoard';
-import type { ShellArrangement } from '../../../../shellArrangement';
 import { useAppStore, useCurrentSession, useCurrentWorkspace } from '../../../../../store';
 import { useSceneShortcuts } from '../useSceneShortcuts';
 
-type Params = {
-  readonly arrangement: ShellArrangement;
-  readonly onToggleSidebar?: () => void;
-};
+type Params = Record<never, never>;
 
 type SceneShell = {
   readonly actions: ColumnActions;
@@ -18,7 +14,7 @@ type SceneShell = {
   readonly layers: ReactNode;
 };
 
-export const useSceneShell = ({ arrangement, onToggleSidebar }: Params): SceneShell => {
+export const useSceneShell = ({}: Params): SceneShell => {
   const currentWorkspace = useCurrentWorkspace();
   const currentSession = useCurrentSession();
   const isStudioOpen = useAppStore((state) => state.appStudio !== null);
@@ -29,10 +25,7 @@ export const useSceneShell = ({ arrangement, onToggleSidebar }: Params): SceneSh
     workspaceProjectRoot: null,
     isWorkspaceLauncherBranch: false,
   });
-  useSceneShortcuts({
-    openPalette: overlays.openPalette,
-    ...(onToggleSidebar === undefined ? {} : { onToggleSidebar }),
-  });
+  useSceneShortcuts({ openPalette: overlays.openPalette });
   const actions = useMemo<ColumnActions>(
     () => ({
       openBoard: goToBoard,

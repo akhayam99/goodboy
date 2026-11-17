@@ -8,8 +8,8 @@ import { shellArrangement } from '../../../../shellArrangement';
 import { DrawerHost } from '../../../DrawerHost';
 import { SessionFrame } from '../../../SessionRail/SessionFrame';
 import { SessionHead } from '../../../SessionHead';
-import type { ColumnActions } from '../../../SideColumn/columnDoors';
-import { ShellLeft } from '../../../SideColumn/ShellLeft';
+import type { ColumnActions } from '../../../ShellLeft/columnDoors';
+import { ShellLeft } from '../../../ShellLeft';
 import { SESSION } from '../activityRunSeed';
 import { seedRunningList } from '../u28/runningList/runningListSeed';
 import { seedFourBranches } from './seedFourBranches';
@@ -36,14 +36,12 @@ const LIMITS_SESSION = { ...SESSION, goal: LIMITS_GOAL };
 
 type Props = {
   readonly isDrawerOpen?: boolean;
-  readonly isFolded?: boolean;
   readonly isNarrowRow?: boolean;
   readonly isFourBranches?: boolean;
 };
 
 export const LayoutFlowScene = ({
   isDrawerOpen = true,
-  isFolded = false,
   isNarrowRow = false,
   isFourBranches = false,
 }: Props) => {
@@ -87,7 +85,7 @@ export const LayoutFlowScene = ({
       </AutoReleaseContext.Provider>
     );
   }
-  const arrangement = shellArrangement({ hasWorkspace: true, isSidebarCollapsed: isFolded });
+  const arrangement = shellArrangement({ hasWorkspace: true });
   return (
     <AutoReleaseContext.Provider value>
       <div className="h-screen bg-background text-foreground">

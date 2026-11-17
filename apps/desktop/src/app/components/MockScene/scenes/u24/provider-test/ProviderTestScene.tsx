@@ -116,5 +116,5 @@ export const ProviderTestScene = () => {
   if (!isReady) {
     return null;
   }
-  return <AppFrame view="settings-over-app" isRailCollapsed={false} />;
+  return <AppFrame view="settings-over-app" />;
 };

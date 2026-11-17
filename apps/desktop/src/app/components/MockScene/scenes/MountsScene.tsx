@@ -932,7 +932,6 @@ export const MountsScene = ({ variant = DEFAULT_VARIANT }: Props) => {
   return (
     <ShellFrame
       session={session}
-      sidebar="expanded"
       main={
         variant === 'branch-split' ? (
           <SessionContextCards session={session} />

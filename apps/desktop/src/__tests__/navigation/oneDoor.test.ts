@@ -5,25 +5,21 @@ import { describe, expect, it } from 'vitest';
 
 const SRC = join(__dirname, '..', '..');
 const SCANNED_ROOTS = ['features', 'app', 'shared'];
-const COLUMN_ROOT = join(SRC, 'app', 'components', 'SideColumn');
+const RAIL_ROOT = join(SRC, 'app', 'components', 'ShellLeft');
 const SESSION_RAIL_ROOT = join(SRC, 'app', 'components', 'SessionRail');
-const SESSION_LIST_ROOT = join(SRC, 'features', 'workspace', 'components', 'SessionActivityBar');
+const SESSIONS_ROOT = join(SRC, 'features', 'workspace', 'components', 'SessionsPopover');
 const GOODBOY_CHIP_ROOT = join(SRC, 'app', 'components', 'GoodboyChip');
 const BELL_ROOT = join(SRC, 'features', 'notifications', 'components', 'NotificationCenter');
 const TOP_BAR_ROOT = join(SRC, 'app', 'components', 'AppTopBar');
 const SIGN_ROOTS = [
-  COLUMN_ROOT,
+  RAIL_ROOT,
   SESSION_RAIL_ROOT,
-  SESSION_LIST_ROOT,
+  SESSIONS_ROOT,
   GOODBOY_CHIP_ROOT,
   BELL_ROOT,
   TOP_BAR_ROOT,
 ];
 const SESSION_RAIL_PREFIX = 'app/components/SessionRail/';
-
-const SESSION_LEVEL_PAGES: ReadonlySet<string> = new Set([
-  'app/components/SessionRail/SessionPages/index.tsx',
-]);
 
 const SHOWN_ROWS: ReadonlySet<string> = new Set([
   'app/components/SessionRail/SessionLevel/BranchRowLine.tsx',
@@ -62,7 +58,7 @@ describe('one door for navigation', () => {
 const pathOf = (path: string): string => relative(SRC, path).split(sep).join('/');
 
 describe('one selected sign across the navigation surfaces', () => {
-  const columnSources = walk(COLUMN_ROOT).map((path) => ({
+  const railSources = walk(RAIL_ROOT).map((path) => ({
     path: pathOf(path),
     source: readFileSync(path, 'utf8'),
   }));
@@ -79,7 +75,7 @@ describe('one selected sign across the navigation surfaces', () => {
       ),
     );
 
-  it('lights a row only from isCurrent, never from its own state, in the column, the session rail and the session list', () => {
+  it('lights a row only from isCurrent, never from its own state, on the places rail, the session rail and Sessions', () => {
     const marks = marksOf();
     expect(marks.length).toBeGreaterThan(0);
     expect(
@@ -101,67 +97,38 @@ describe('one selected sign across the navigation surfaces', () => {
     expect(pages.map(({ expression }) => expression)).toEqual([CURRENT_MARK]);
   });
 
-  it('builds the session list current row from the open session, never from hover or its own state', () => {
-    const list = signSources.find(({ path }) => path.endsWith('SessionActivityBar/index.tsx'));
-
-    expect(list?.source).toContain('const isActive = id === currentSessionId;');
-    expect(list?.source).toContain('isCurrent={isActive && !isStudioOver}');
-    const currents = Array.from(
-      (list?.source ?? '').matchAll(/isCurrent=\{([^}]*)\}/g),
-      (match) => match[1],
-    );
-    expect(currents).toEqual(['isActive && !isStudioOver']);
-  });
-
-  it('derives every door current from the one column place', () => {
-    const currents = columnSources.flatMap(({ path, source }) =>
+  it('derives every place current from the one column place', () => {
+    const currents = railSources.flatMap(({ path, source }) =>
       Array.from(source.matchAll(/isCurrent=\{([^}]*)\}/g), (match) => `${path}: ${match[1]}`),
     );
     expect(currents.length).toBeGreaterThan(0);
     expect(currents.filter((current) => !/place === /.test(current))).toEqual([]);
   });
 
-  it('keeps the session rail on its own sign: the session pages sign, the shown worktree, or never current', () => {
-    const railSources = signSources.filter(({ path }) => path.startsWith(SESSION_RAIL_PREFIX));
-    const marked = railSources.filter(({ source }) => /isCurrent=\{/.test(source));
-
-    expect(marked.map(({ path }) => path).sort()).toEqual([...SESSION_LEVEL_PAGES].sort());
-    const pages = railSources.find(
-      ({ path }) => path === 'app/components/SessionRail/SessionPages/index.tsx',
+  it('keeps the session rail on its own sign: the shown worktree, or never current', () => {
+    const railSessionSources = signSources.filter(({ path }) =>
+      path.startsWith(SESSION_RAIL_PREFIX),
     );
-    expect(pages?.source).toContain('isCurrent={sign === page.id}');
+
+    expect(
+      railSessionSources
+        .filter(({ source }) => /isCurrent=\{/.test(source))
+        .map(({ path }) => path),
+    ).toEqual([]);
   });
 
-  it('lights the New session row from the place it is given, never from its own selector', () => {
-    const row = signSources.find(({ path }) =>
-      path.endsWith('SessionActivityBar/NewSessionRow.tsx'),
-    );
-    const column = signSources.find(({ path }) => path === 'app/components/SideColumn/index.tsx');
-
-    expect(row?.source).not.toContain('selectIsSessionDraftShown');
-    expect(column?.source).toMatch(/<NewSessionRow[^>]*isCurrent=\{place === 'new'\}/s);
-  });
-
-  it('lights the Goodboy line for Help and the bell for Notifications, from the same place', () => {
-    const foot = signSources.find(
-      ({ path }) => path === 'app/components/SideColumn/ColumnFoot.tsx',
-    );
-    const rail = signSources.find(
-      ({ path }) => path === 'app/components/SideColumn/ShellLeft/index.tsx',
-    );
+  it('lights the logo for Help and the bell for Notifications, from the same place', () => {
+    const rail = signSources.find(({ path }) => path === 'app/components/ShellLeft/index.tsx');
     const topBar = signSources.find(({ path }) => path === 'app/components/AppTopBar/index.tsx');
     const help = "isCurrent={place === 'help'}";
 
-    expect(foot?.source).toContain(help);
     expect(rail?.source).toContain(help);
     expect(topBar?.source).toContain('useColumnPlace()');
     expect(topBar?.source).toContain("isCurrent={place === 'notifications'}");
   });
 
   it('lights the places rail from the one column place, the Board standing for an open session', () => {
-    const rail = signSources.find(
-      ({ path }) => path === 'app/components/SideColumn/ShellLeft/index.tsx',
-    );
+    const rail = signSources.find(({ path }) => path === 'app/components/ShellLeft/index.tsx');
     const railPlace = readFileSync(join(SRC, 'shared', 'navigation', 'railPlaceOf.ts'), 'utf8');
 
     expect(rail?.source).toContain(
@@ -173,7 +140,7 @@ describe('one selected sign across the navigation surfaces', () => {
   });
 
   it('reads the place from one selector, the same one the places rail reads', () => {
-    const shellLeft = readFileSync(join(COLUMN_ROOT, 'ShellLeft', 'index.tsx'), 'utf8');
+    const shellLeft = readFileSync(join(RAIL_ROOT, 'index.tsx'), 'utf8');
     const placeReaders = SCANNED_ROOTS.flatMap((root) => walk(join(SRC, root))).filter((path) =>
       readFileSync(path, 'utf8').includes('columnPlaceOf('),
     );

@@ -8,11 +8,12 @@ import { useAppStore, useSessionById } from '../../../../../store';
 import { selectDrawerSizing } from '../../../../../store/slices/drawer/testing/selectDrawerSizing';
 import { DrawerHost } from '../../../DrawerHost';
 import { SessionWorkspace } from '../../../../../features/session/components/SessionWorkspace';
-import { SideColumn } from '../../../SideColumn';
+import { ShellLeft } from '../../../ShellLeft';
+import { shellArrangement } from '../../../../shellArrangement';
 import { SessionFrame } from '../../../SessionRail/SessionFrame';
 import { isDirectedScene } from '../../../../../shared/utils/isDirectedScene';
 import { showDemoNotice } from '../../demo/director/showDemoNotice';
-import type { ColumnActions } from '../../../SideColumn/columnDoors';
+import type { ColumnActions } from '../../../ShellLeft/columnDoors';
 import {
   C08_SESSION_ID,
   C08_RUN_ID,
@@ -116,15 +117,11 @@ export const C08RunScene = ({ state, selection, click = 'none', extra, theme }: 
 
   return (
     <div data-shot className="flex h-screen min-h-0 bg-background text-foreground">
-      <div className="h-full w-60 shrink-0 border-r border-border-soft">
-        <SideColumn
-          scope="workspace"
-          workspaceId={C08_WORKSPACE_ID}
-          currentSessionId={session.id}
-          place={null}
-          actions={isDirectedScene() ? DEMO_ACTIONS : ACTIONS}
-        />
-      </div>
+      <ShellLeft
+        arrangement={shellArrangement({ hasWorkspace: true })}
+        workspaceId={C08_WORKSPACE_ID}
+        actions={isDirectedScene() ? DEMO_ACTIONS : ACTIONS}
+      />
       <main className="relative flex min-w-0 flex-1 flex-col">
         <DrawerColumn
           main={

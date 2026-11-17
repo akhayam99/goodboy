@@ -4,18 +4,13 @@ import { useAppStore } from '../../../../../store';
 import { selectDrawerPanel } from '../../../../../store/slices/drawer/selectDrawerPanel';
 import { selectDrawerSizing } from '../../../../../store/slices/drawer/testing/selectDrawerSizing';
 import { DrawerHost } from '../../../DrawerHost';
-import { shellArrangement } from '../../../../shellArrangement';
+import { ScenePlacesRail } from '../ScenePlacesRail';
 import { SESSION_ID, REPORT_ARTIFACT_ID, seedArtifactScene } from '../artifactSeed';
 import { PlanDrawerRunStub } from '../u21/PlanDrawerRunStub';
 import { seedPlanDrawerScene } from '../u21/planDrawerSeed';
 
 const WIDTH_PX = 1920;
 const WIDE_DRAWER_PX = 1000;
-
-const arrangement = shellArrangement({
-  hasWorkspace: true,
-  isSidebarCollapsed: false,
-});
 
 const saveReaderWidth = (widthPx: number | null): void => {
   try {
@@ -54,8 +49,7 @@ const ReaderDrawerStage = ({ savedWidthPx, prepare, main }: StageProps) => {
   return (
     <div data-testid="plandrawer-stage" className="[&>div]:w-full" style={{ width: WIDTH_PX }}>
       <AppShell
-        leftSidebarCollapsed={arrangement.leftSidebarCollapsed}
-        leftSidebar={<div aria-hidden />}
+        leftRail={<ScenePlacesRail />}
         main={main}
         drawer={isDrawerOpen ? <DrawerHost /> : null}
         drawerSizing={sizing}

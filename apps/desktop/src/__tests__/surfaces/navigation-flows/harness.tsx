@@ -437,7 +437,7 @@ export const boot = async ({ seed }: { readonly seed: Seed }): Promise<Ctx> => {
   traceActions();
   renderApp();
   await waitFor(() => {
-    expect(document.querySelector('[data-side-column]')).not.toBeNull();
+    expect(document.querySelector('[data-shell-rail]')).not.toBeNull();
     expect(screen.queryByTestId('boot-splash-exit')).toBeNull();
   }, WAIT);
   await settle(6);
@@ -614,8 +614,7 @@ export const settingsPage = async (): Promise<void> => {
   await visible('button', /^Back to app/);
   expect(document.querySelector('[data-studio-frame][data-studio="settings"]')).not.toBeNull();
   expect(document.querySelector('[data-studio-band]')).not.toBeNull();
-  expect(document.querySelector('[data-column-layer="settings"]')).toBeNull();
-  expect(document.querySelector('[data-column-layer="nav"][inert]')).toBeNull();
+  expect(document.querySelector('[data-shell-rail] [inert]')).toBeNull();
 };
 
 export const searchSettingsForConnections = async (): Promise<void> => {

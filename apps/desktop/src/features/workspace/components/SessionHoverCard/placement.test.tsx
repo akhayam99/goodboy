@@ -21,7 +21,7 @@ import {
 } from '../../../../store/storyHarness';
 import {
   ledgerCore,
-  renderBar,
+  renderBoard,
   runningState,
   seedColumn,
   sessionOf,
@@ -78,8 +78,11 @@ const openCardAt = ({ top }: RowBox) => {
     questions: [],
     mounts: [[webhook, ledgerCore]],
   });
-  renderBar();
-  const row = screen.getByRole('option', { name: 'Fix webhook retries' });
+  renderBoard({ store: useAppStore });
+  const row = screen.getByRole('button', { name: 'Fix webhook retries' }).closest('article');
+  if (row === null) {
+    throw new Error('no board card');
+  }
   row.getBoundingClientRect = () => boxAt({ top });
   fireEvent.mouseEnter(row);
   act(() => {

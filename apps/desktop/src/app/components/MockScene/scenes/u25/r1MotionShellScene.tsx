@@ -17,5 +17,5 @@ export const MotionShellScene = ({ isFolded }: Props) => {
   if (!isReady) {
     return null;
   }
-  return <AppFrame view="session" isRailCollapsed={isFolded} hasPane hasLiveToggle />;
+  return <AppFrame view="session" hasPane />;
 };

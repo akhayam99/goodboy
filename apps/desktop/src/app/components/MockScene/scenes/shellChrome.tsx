@@ -12,7 +12,7 @@ import type {
 import { DrawerHost } from '../../DrawerHost';
 import { useShellRight } from '../../../hooks/useShellRight';
 import { AppTopBar } from '../../AppTopBar';
-import { ShellLeft } from '../../SideColumn/ShellLeft';
+import { ShellLeft } from '../../ShellLeft';
 import { SessionFrame } from '../../SessionRail/SessionFrame';
 import { SessionHead } from '../../SessionHead';
 import { SessionHeadContext } from '../../../../features/session/sessionHeadContext';
@@ -24,7 +24,6 @@ import type { ProviderDisplayInfo } from '../../../../features/providers/provide
 import { sceneClock } from '../sceneClock';
 import { shellArrangement } from '../../../shellArrangement';
 import { useSceneShell } from './useSceneShell';
-import { useSceneSidebar } from './useSceneSidebar';
 import { isDirectedScene } from '../../../../shared/utils/isDirectedScene';
 
 const clock = sceneClock({ anchor: '2026-09-20T09:00:00.000Z' });
@@ -101,23 +100,13 @@ export const seedShellChrome = ({
 type ShellFrameProps = {
   readonly session: Session;
   readonly main: ReactNode;
-  readonly sidebar?: 'collapsed' | 'expanded';
   readonly hasOwnTrail?: boolean;
 };
 
-export const ShellFrame = ({
-  session,
-  main,
-  sidebar = 'collapsed',
-  hasOwnTrail = false,
-}: ShellFrameProps) => {
+export const ShellFrame = ({ session, main, hasOwnTrail = false }: ShellFrameProps) => {
   const shellRight = useShellRight({});
-  const rail = useSceneSidebar({ isCollapsed: sidebar === 'collapsed' });
-  const arrangement = shellArrangement({
-    hasWorkspace: true,
-    isSidebarCollapsed: rail.isCollapsed,
-  });
-  const shell = useSceneShell({ arrangement, onToggleSidebar: rail.toggle });
+  const arrangement = shellArrangement({ hasWorkspace: true });
+  const shell = useSceneShell({});
 
   return (
     <ToastProvider>

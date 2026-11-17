@@ -39,6 +39,5 @@ const SideInfoScene = ({ config, isFramed = false, isSessionLevel = false }: Pro
 };
 
 export const U25_P_SIDE_INFO_SCENES = {
-  'side-info-doors': () => <SideInfoScene config={MANY} />,
   'side-info-framed': () => <SideInfoScene config={MANY} isFramed isSessionLevel />,
 };

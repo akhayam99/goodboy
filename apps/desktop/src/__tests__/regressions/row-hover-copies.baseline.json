@@ -1,6 +1,4 @@
 {
-  "app/components/SideColumn/ColumnToggleButton.tsx": 1,
-  "app/components/SideColumn/ReportBugButton.tsx": 1,
   "features/branch/components/PullRequestTab/LinkIssueToPrPopover.tsx": 1,
   "features/chat/components/ChatView/parts/QuestionWaitingPill.tsx": 1,
   "features/inbox/components/InboxStudio/InboxFacetRail.tsx": 1,

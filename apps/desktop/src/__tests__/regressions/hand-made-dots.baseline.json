@@ -1,5 +1,4 @@
 {
-  "apps/desktop/src/app/components/SideColumn/ColumnRail.tsx": 1,
   "apps/desktop/src/features/live-state/TailGlyph.tsx": 1,
   "apps/desktop/src/features/resolve/components/ReviewFlow/AnswersPanel/AnswerCard.tsx": 1,
   "apps/desktop/src/features/session/components/SessionWorkspace/parts/TimelinePane/TimelineMoreRow.tsx": 1,

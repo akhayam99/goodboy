@@ -111,11 +111,6 @@
       "count": 1
     }
   },
-  "apps/desktop/src/__tests__/regressions/collapsed-rail-width.test.tsx": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 1
-    }
-  },
   "apps/desktop/src/__tests__/regressions/console-guard/unstubbed-calls.fixture.ts": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 2
@@ -193,11 +188,6 @@
   },
   "apps/desktop/src/__tests__/regressions/scanControls.ts": {
     "@typescript-eslint/naming-convention": {
-      "count": 1
-    }
-  },
-  "apps/desktop/src/__tests__/regressions/sidebar-toggle-axis.test.tsx": {
-    "@typescript-eslint/consistent-type-assertions": {
       "count": 1
     }
   },
@@ -1299,11 +1289,6 @@
       "count": 3
     }
   },
-  "apps/desktop/src/app/components/MockScene/scenes/u24/RailOrderScene.tsx": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 1
-    }
-  },
   "apps/desktop/src/app/components/MockScene/scenes/u24/p-composer.test.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 1
@@ -1360,36 +1345,6 @@
   "apps/desktop/src/app/components/MockScene/scenes/workspaceInboxSeed.ts": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 4
-    }
-  },
-  "apps/desktop/src/app/components/SideColumn/RailFlyoutBody.tsx": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 1
-    }
-  },
-  "apps/desktop/src/app/components/SideColumn/RailFlyoutSession.tsx": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 1
-    }
-  },
-  "apps/desktop/src/app/components/SideColumn/RailSessions.test.tsx": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 24
-    }
-  },
-  "apps/desktop/src/app/components/SideColumn/RailSessions.tsx": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 2
-    }
-  },
-  "apps/desktop/src/app/components/SideColumn/index.test.tsx": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 3
-    }
-  },
-  "apps/desktop/src/app/components/SideColumn/useRailPinned/index.ts": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 1
     }
   },
   "apps/desktop/src/app/components/StudioFrame/index.test.tsx": {
@@ -5074,16 +5029,6 @@
       "count": 2
     }
   },
-  "apps/desktop/src/features/session/components/SessionNavSidebar/index.test.tsx": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 10
-    }
-  },
-  "apps/desktop/src/features/session/components/SessionNavSidebar/index.tsx": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 1
-    }
-  },
   "apps/desktop/src/features/session/components/SessionOverviewPane/ChatOriginRow.test.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 13
@@ -6656,44 +6601,6 @@
       "count": 2
     }
   },
-  "apps/desktop/src/features/workspace/components/SessionActivityBar/SessionActivityItem.tsx": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 1
-    },
-    "@typescript-eslint/naming-convention": {
-      "count": 4
-    }
-  },
-  "apps/desktop/src/features/workspace/components/SessionActivityBar/bulkSelection.test.tsx": {
-    "@typescript-eslint/naming-convention": {
-      "count": 1
-    }
-  },
-  "apps/desktop/src/features/workspace/components/SessionActivityBar/index.tsx": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 5
-    }
-  },
-  "apps/desktop/src/features/workspace/components/SessionActivityBar/menu.test.tsx": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 2
-    }
-  },
-  "apps/desktop/src/features/workspace/components/SessionActivityBar/rowRenders.test.tsx": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 3
-    }
-  },
-  "apps/desktop/src/features/workspace/components/SessionActivityBar/rows.test.tsx": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 7
-    }
-  },
-  "apps/desktop/src/features/workspace/components/SessionActivityBar/selection.test.tsx": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 1
-    }
-  },
   "apps/desktop/src/features/workspace/components/SessionHoverCard/SessionHoverCardBody.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 1
@@ -6862,11 +6769,6 @@
   "apps/desktop/src/features/workspace/hooks/useSessionPinsSync/index.test.ts": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 2
-    }
-  },
-  "apps/desktop/src/features/workspace/hooks/useSessionSidebarVisibility/index.ts": {
-    "@typescript-eslint/naming-convention": {
-      "count": 4
     }
   },
   "apps/desktop/src/features/workspace/hooks/useSessionSummary/index.ts": {

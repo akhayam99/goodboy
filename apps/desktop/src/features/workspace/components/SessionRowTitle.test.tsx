@@ -21,7 +21,8 @@ import {
   type StoryStore,
 } from '../../../store/storyHarness';
 import { pressShortcut } from '../../../__tests__/helpers/pressKey';
-import { renderBar, seedColumn, sessionOf } from '../testing/sessionColumn';
+import { renderBoard, seedColumn, sessionOf } from '../testing/sessionColumn';
+import { SessionsRow } from './SessionsPopover/SessionsRow';
 import { SessionSwitcher } from './SessionSwitcher';
 
 let useAppStore: StoryStore;
@@ -79,20 +80,34 @@ const keysIn = (container: HTMLElement) =>
     .queryAllByTestId('session-row-keys')
     .map((node) => node.textContent);
 
-const rowOf = (name: RegExp): HTMLElement => {
-  const row = screen
-    .getAllByRole('option', { name })
-    .find((button) => button.hasAttribute('data-select-id'));
-  if (row === undefined) {
-    throw new Error(`no session row ${name}`);
-  }
-  return row;
-};
+const noop = () => undefined;
+
+const renderRows = () =>
+  render(
+    <div role="listbox" aria-label="Sessions">
+      {[linked, plain, unlinkedKey].map((session) => (
+        <SessionsRow
+          key={session.id}
+          session={session}
+          optionId={`sessions-row-${session.id}`}
+          project=""
+          isActive={false}
+          isPinned={false}
+          onOpen={noop}
+          onTogglePin={noop}
+        />
+      ))}
+    </div>,
+  );
+
+const rowOf = (name: RegExp): HTMLElement => screen.getByRole('option', { name });
+
+const cardOf = (name: RegExp): HTMLElement => screen.getByRole('button', { name });
 
 describe('the ticket key on a session row', () => {
-  it('shows the key before the title on the left column row', () => {
+  it('shows the key before the title on the Sessions row', () => {
     seed();
-    renderBar();
+    renderRows();
     const row = rowOf(/Retried webhooks post a second credit/);
     expect(keysIn(row)).toEqual(['HBL-412']);
     expect(row.textContent).toBe('HBL-412Retried webhooks post a second credit');
@@ -100,13 +115,13 @@ describe('the ticket key on a session row', () => {
 
   it('shows no key on a session without a linked task', () => {
     seed();
-    renderBar();
+    renderRows();
     expect(keysIn(rowOf(/Ledger export speedup/))).toEqual([]);
   });
 
   it('keeps a bracketed key that is not a linked task in the title', () => {
     seed();
-    renderBar();
+    renderRows();
     const row = rowOf(/Notify relay backoff/);
     expect(keysIn(row)).toEqual([]);
     expect(row.textContent).toContain('[HBL-999] Notify relay backoff');
@@ -133,8 +148,8 @@ describe('the ticket key on a session row', () => {
 
   it('shows the key in the hover card title', () => {
     seed();
-    renderBar();
-    fireEvent.mouseEnter(rowOf(/Retried webhooks post a second credit/));
+    renderBoard({ store: useAppStore });
+    fireEvent.mouseEnter(cardOf(/Retried webhooks post a second credit/));
     act(() => {
       vi.advanceTimersByTime(500);
     });

@@ -2,15 +2,13 @@ import type { ReactNode } from 'react';
 import { AppShell } from '@goodboy/ui';
 import type { Session } from '@goodboy/types';
 import { AppTopBar } from '../../../AppTopBar';
-import { ShellLeft } from '../../../SideColumn/ShellLeft';
+import { ShellLeft } from '../../../ShellLeft';
 import { SessionFrame } from '../../../SessionRail/SessionFrame';
 import { SessionWorkspace } from '../../../../../features/session/components/SessionWorkspace';
 import { useShellRight } from '../../../../hooks/useShellRight';
 import { DrawerHost } from '../../../DrawerHost';
 import { shellArrangement } from '../../../../shellArrangement';
 import { useSceneShell } from '../useSceneShell';
-import { useSceneSidebar } from '../useSceneSidebar';
-import { sceneParam } from './sceneParams';
 
 const noop = () => undefined;
 
@@ -22,12 +20,8 @@ type Props = {
 
 export const WorkspaceFrame = ({ session, main, hasRail = true }: Props) => {
   const shellRight = useShellRight({});
-  const rail = useSceneSidebar({ isCollapsed: sceneParam({ key: 'rail' }) === '1' });
-  const arrangement = shellArrangement({
-    hasWorkspace: true,
-    isSidebarCollapsed: rail.isCollapsed,
-  });
-  const shell = useSceneShell({ arrangement, onToggleSidebar: rail.toggle });
+  const arrangement = shellArrangement({ hasWorkspace: true });
+  const shell = useSceneShell({});
   return (
     <>
       <AppShell

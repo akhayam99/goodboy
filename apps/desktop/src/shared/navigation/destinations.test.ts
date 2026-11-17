@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { CONCEPT_ICONS } from '../components/conceptIcons';
 import { SHORTCUTS } from '../keyboard/registry';
 import { NAMES } from '../utils/names';
-import { COLUMN_DOORS } from '../../app/components/SideColumn/columnDoors';
+import { COLUMN_DOORS } from '../../app/components/ShellLeft/columnDoors';
 import { LENS_ICON } from '../../features/session/lens-labels';
 import { shortcutRows } from '../../features/settings/components/SettingsStudio/shortcutRows';
 import { DESTINATIONS } from './destinations';

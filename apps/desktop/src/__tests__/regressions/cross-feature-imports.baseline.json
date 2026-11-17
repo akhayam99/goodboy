@@ -65,7 +65,6 @@
     "session -> wireframes": 1,
     "session -> workTreeModel": 4,
     "session -> workflows": 14,
-    "session -> workspace": 1,
     "settings -> backup": 1,
     "settings -> changelog": 1,
     "settings -> permissions": 1,
@@ -83,7 +82,7 @@
     "workflows -> providers": 2,
     "workflows -> session": 5,
     "workspace -> integrations": 2,
-    "workspace -> session": 5,
+    "workspace -> session": 4,
     "workspace -> updater": 1
   },
   "shellImportsByFile": {

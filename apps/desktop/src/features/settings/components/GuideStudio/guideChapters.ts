@@ -756,8 +756,8 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
         desc: `The macOS menu bar carries every key. ${shortcutGlyphs('view.reload')} reloads where you are: the Browser tab when it has the keyboard, else the session. ${shortcutGlyphs('app.reload')} reloads Goodboy.`,
       },
       {
-        term: 'Sidebar, rail and panes',
-        desc: `${shortcutGlyphs('column.toggle')} collapses the sidebar, ${shortcutGlyphs('innerColumn.toggle')} the page column. ${shortcutGlyphs('nav.back')} steps the rail out or goes Back, and ${shortcutGlyphs('nav.up')} goes up. In a session, ${shortcutGlyphs('lens.explore')} opens Changes on All files, ${shortcutGlyphs('lens.context')} Context, ${shortcutGlyphs('ask.open')} Ask, ${shortcutGlyphs('session.spawned')} Runs on what is running and ${shortcutGlyphs('lens.scripts')} Scripts. ${shortcutGlyphs('browser.address')} focuses the Browser address, ${shortcutGlyphs('browser.find')} finds in its page, ${shortcutGlyphs('slot.close')} closes the drawer.`,
+        term: 'Rail and panes',
+        desc: `${shortcutGlyphs('sessions.toggle')} shows or hides Sessions, ${shortcutGlyphs('innerColumn.toggle')} folds the page column. ${shortcutGlyphs('nav.back')} steps the rail out or goes Back, and ${shortcutGlyphs('nav.up')} goes up. In a session, ${shortcutGlyphs('lens.explore')} opens Changes on All files, ${shortcutGlyphs('lens.context')} Context, ${shortcutGlyphs('ask.open')} Ask, ${shortcutGlyphs('session.spawned')} Runs on what is running and ${shortcutGlyphs('lens.scripts')} Scripts. ${shortcutGlyphs('browser.address')} focuses the Browser address, ${shortcutGlyphs('browser.find')} finds in its page, ${shortcutGlyphs('slot.close')} closes the drawer.`,
       },
       {
         term: 'Terminal',

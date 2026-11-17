@@ -54,12 +54,5 @@ export const OneFlowScene = ({ seed, center, clicks = NO_CLICKS }: Props) => {
   if (session === null) {
     return null;
   }
-  return (
-    <AppFrame
-      view="session"
-      isRailCollapsed={false}
-      hasPane
-      center={centerOf({ session, center })}
-    />
-  );
+  return <AppFrame view="session" hasPane center={centerOf({ session, center })} />;
 };

@@ -5,7 +5,6 @@ import { describe, expect, it } from 'vitest';
 
 const REPO_ROOT = join(__dirname, '..', '..', '..', '..', '..');
 const TIMELINE = 'apps/desktop/src/features/session/components/SessionWorkspace/parts/TimelinePane';
-const SESSION_BAR = 'apps/desktop/src/features/workspace/components/SessionActivityBar';
 const CHANGE_TREE = 'apps/desktop/src/features/diff/components/ChangeTree';
 
 const SHARED_STYLE_ROWS: ReadonlyArray<string> = [
@@ -20,8 +19,6 @@ const SHARED_STYLE_ROWS: ReadonlyArray<string> = [
   `${TIMELINE}/TimelineStreamRow.tsx`,
   `${TIMELINE}/TimelineCountRow.tsx`,
   `${TIMELINE}/TimelineMoreRow.tsx`,
-  `${SESSION_BAR}/SessionActivityItem.tsx`,
-  `${SESSION_BAR}/index.tsx`,
   `${CHANGE_TREE}/FileRow.tsx`,
   `${CHANGE_TREE}/FolderRow.tsx`,
 ];

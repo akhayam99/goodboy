@@ -3,7 +3,7 @@ import type { PaletteEntry } from '../../../../../features/palette/types';
 import { SHORTCUTS, shortcutGlyphs } from '../../../../../shared/keyboard/registry';
 import type { Destination, DestinationHome } from '../../../../../shared/navigation/destinations';
 import { MENU_ACTIONS } from '../../../../hooks/useMenuCommands/menuActions';
-import { COLUMN_DOORS } from '../../../SideColumn/columnDoors';
+import { COLUMN_DOORS } from '../../../ShellLeft/columnDoors';
 
 type Props = {
   readonly destination: Destination;

@@ -42,7 +42,7 @@ const SettingsOverApp = ({ context, focus, hasLimits = false }: Props) => {
   if (!isReady) {
     return null;
   }
-  return <AppFrame view="settings-over-app" isRailCollapsed={context === 'rail'} />;
+  return <AppFrame view="settings-over-app" />;
 };
 
 const GENERAL: StudioPlace = { kind: 'settings', focus: { scope: 'app', section: 'general' } };

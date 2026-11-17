@@ -3,8 +3,9 @@ import { useAppStore, useCurrentSession } from '../../../../../store';
 import { SessionLevel } from '../../../SessionRail/SessionLevel';
 import { SessionPageTabs } from '../../../SessionPageTabs';
 import { SessionHeaderActions } from '../../../SessionActions/SessionHeaderActions';
-import { SideColumn } from '../../../SideColumn';
-import type { ColumnActions } from '../../../SideColumn/columnDoors';
+import { ShellLeft } from '../../../ShellLeft';
+import { shellArrangement } from '../../../../shellArrangement';
+import { SCENE_COLUMN_ACTIONS } from '../sceneColumnActions';
 import type { ColumnPlace } from '../../../../../shared/navigation/columnPlace';
 import {
   SIDEBAR_NAV_DEFAULTS,
@@ -13,21 +14,7 @@ import {
   type SidebarNavSeed,
 } from './sidebarNavSeed';
 
-const noop = () => undefined;
-
-const ACTIONS: ColumnActions = {
-  openBoard: noop,
-  openInbox: noop,
-  openChat: noop,
-  openWorkflows: noop,
-  openNewChat: noop,
-  openConnections: noop,
-  openMonitoring: noop,
-  openImpact: noop,
-  openSettings: noop,
-  openChangelog: noop,
-  openGuide: noop,
-};
+const ARRANGEMENT = shellArrangement({ hasWorkspace: true });
 
 type Props = {
   readonly config: Partial<SidebarNavConfig>;
@@ -63,15 +50,12 @@ export const SidebarNavColumnScene = ({
   if (isFramed) {
     return (
       <div data-shot className="flex h-[600px] bg-background">
-        <div className="h-full w-72 shrink-0">
-          <SideColumn
-            scope="workspace"
-            workspaceId={seed.workspaceId}
-            currentSessionId={seed.session.id}
-            place={place}
-            actions={ACTIONS}
-          />
-        </div>
+        <ShellLeft
+          arrangement={ARRANGEMENT}
+          workspaceId={seed.workspaceId}
+          actions={SCENE_COLUMN_ACTIONS}
+          {...(place === null ? {} : { placeOverride: place })}
+        />
         {isSessionLevel ? (
           <aside
             aria-label="Session level"
@@ -91,15 +75,12 @@ export const SidebarNavColumnScene = ({
   }
   return (
     <div className="flex h-screen min-h-0 bg-background">
-      <div className="h-full w-64 shrink-0 border-r border-border-soft">
-        <SideColumn
-          scope="workspace"
-          workspaceId={seed.workspaceId}
-          currentSessionId={seed.session.id}
-          place={place}
-          actions={ACTIONS}
-        />
-      </div>
+      <ShellLeft
+        arrangement={ARRANGEMENT}
+        workspaceId={seed.workspaceId}
+        actions={SCENE_COLUMN_ACTIONS}
+        {...(place === null ? {} : { placeOverride: place })}
+      />
     </div>
   );
 };
