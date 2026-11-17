@@ -10,12 +10,18 @@ const REPOSITORY_DIRECTORY = resolve(WEBSITE_DIRECTORY, '..');
 const OUTPUT_PATH = resolve(WEBSITE_DIRECTORY, 'src/mocks/generated/icons.tsx');
 const BRAND_SOURCES_PATH = resolve(WEBSITE_DIRECTORY, 'src/components/brandIcons.source.json');
 const APP_BRAND_PATH = resolve(REPOSITORY_DIRECTORY, 'packages/ui/src/components/brandIcons.tsx');
-const COPILOT_ICON_PATH = resolve(REPOSITORY_DIRECTORY, 'packages/ui/src/components/CopilotIcon.tsx');
+const COPILOT_ICON_PATH = resolve(
+  REPOSITORY_DIRECTORY,
+  'packages/ui/src/components/CopilotIcon.tsx',
+);
 const APP_SOURCE_DIRECTORIES = [
   resolve(REPOSITORY_DIRECTORY, 'apps/desktop/src'),
   resolve(REPOSITORY_DIRECTORY, 'packages/ui/src'),
 ];
-const LUCIDE_RESOLVE_ROOT = resolve(WEBSITE_DIRECTORY, 'package.json');
+const APP_ICONS_DIRECTORY = resolve(REPOSITORY_DIRECTORY, 'packages/ui/src/icons');
+const APP_ICONS_INDEX_PATH = resolve(APP_ICONS_DIRECTORY, 'index.ts');
+const APP_ICON_EXPORT = /^export \{ (\w+)(?: as (\w+))? \} from '\.\/generated\/(\w+)';$/gm;
+const APP_GLYPH_DRAWING = /drawing: (\{[\s\S]*?\n {2}\}),\n\}\);/;
 
 const SOURCE_DIRECTORY = resolve(WEBSITE_DIRECTORY, 'src');
 const ICON_IMPORT =
@@ -46,46 +52,22 @@ const failures = [];
 
 const fail = (message) => failures.push(message);
 
-const loadLucide = () => {
-  const requireFromApp = createRequire(LUCIDE_RESOLVE_ROOT);
-  const packageJsonPath = requireFromApp.resolve('lucide-react/package.json');
-  const packageDirectory = dirname(packageJsonPath);
-  const version = JSON.parse(readFileSync(packageJsonPath, 'utf8')).version;
-  const indexSource = readFileSync(resolve(packageDirectory, 'dist/esm/lucide-react.mjs'), 'utf8');
-  const files = new Map(
-    [...indexSource.matchAll(/^export \{([^}]*)\} from '\.\/icons\/([\w-]+\.mjs)';$/gm)].flatMap(
-      (match) => [...match[1].matchAll(/default as (\w+)/g)].map((alias) => [alias[1], match[2]]),
-    ),
+const loadAppGlyphs = () =>
+  new Map(
+    [...readFileSync(APP_ICONS_INDEX_PATH, 'utf8').matchAll(APP_ICON_EXPORT)].map((match) => [
+      match[2] ?? match[1],
+      match[3],
+    ]),
   );
-  return { packageDirectory, version, files };
-};
 
-const readNodes = (source) => {
-  const data = source.match(/const __iconData = (\{[\s\S]*?\n\});\n/);
-  if (data !== null) {
-    return new Function(`return ${data[1]};`)().node;
+const readDrawing = ({ appGlyphs, name }) => {
+  const file = appGlyphs.get(name);
+  const source = readFileSync(resolve(APP_ICONS_DIRECTORY, 'generated', `${file}.ts`), 'utf8');
+  const drawing = source.match(APP_GLYPH_DRAWING);
+  if (drawing === null) {
+    throw new Error(`Could not read the drawing of ${name} in generated/${file}.ts`);
   }
-  const legacy = source.match(/const __iconNode = (\[[\s\S]*?\]);\nconst /);
-  if (legacy !== null) {
-    return new Function(`return ${legacy[1]};`)();
-  }
-  return null;
-};
-
-const readIconNode = ({ lucide, name }) => {
-  const file = lucide.files.get(name);
-  if (file === undefined) {
-    throw new Error(`lucide-react ${lucide.version} has no icon named ${name}`);
-  }
-  const source = readFileSync(resolve(lucide.packageDirectory, 'dist/esm/icons', file), 'utf8');
-  const nodes = readNodes(source);
-  if (nodes === null) {
-    throw new Error(`Could not read the icon node of ${name}`);
-  }
-  return nodes.map(([tag, attributes]) => {
-    const { key: _key, ...rest } = attributes;
-    return [tag, rest];
-  });
+  return new Function(`return ${drawing[1]};`)();
 };
 
 const listWebsiteFiles = (directory) =>
@@ -97,7 +79,7 @@ const listWebsiteFiles = (directory) =>
     return /\.tsx?$/.test(entry) && path !== OUTPUT_PATH ? [path] : [];
   });
 
-const readUsedNames = ({ lucide }) =>
+const readUsedNames = ({ appGlyphs }) =>
   [
     ...new Set(
       listWebsiteFiles(SOURCE_DIRECTORY).flatMap((file) =>
@@ -105,7 +87,7 @@ const readUsedNames = ({ lucide }) =>
           match[1]
             .split(',')
             .map((part) => part.trim().replace(/^type\s+/, ''))
-            .filter((name) => lucide.files.has(name)),
+            .filter((name) => appGlyphs.has(name)),
         ),
       ),
     ),
@@ -138,54 +120,98 @@ const readAppBrandPaths = () => {
 
 const literal = (value) => JSON.stringify(value).replace(/'/g, "\\'").replace(/"/g, "'");
 
-const objectLiteral = (attributes) =>
-  `{ ${Object.entries(attributes)
-    .map(([key, value]) => `${/^[a-zA-Z_]\w*$/.test(key) ? key : literal(key)}: ${literal(value)}`)
-    .join(', ')} }`;
-
-const buildSource = ({ lucide, brandPaths, names }) => {
-  const iconLines = names.map((name) => {
-    const nodes = readIconNode({ lucide, name });
-    const body = nodes.map(
-      ([tag, attributes]) => `[${literal(tag)}, ${objectLiteral(attributes)}]`,
+const drawingLiteral = (drawing) => {
+  const entries = [`regular: ${literal(drawing.regular)}`];
+  if (drawing.fill !== undefined) {
+    entries.push(`fill: ${literal(drawing.fill)}`);
+  }
+  if (drawing.duotone !== undefined) {
+    entries.push(
+      `duotone: { shade: ${literal(drawing.duotone.shade)}, line: ${literal(drawing.duotone.line)} }`,
     );
-    return `export const ${name} = createIcon([${body.join(', ')}]);`;
-  });
+  }
+  return `{ ${entries.join(', ')} }`;
+};
+
+const buildSource = ({ appGlyphs, brandPaths, names }) => {
+  const iconLines = names.map(
+    (name) =>
+      `export const ${name} = glyph({ drawing: ${drawingLiteral(readDrawing({ appGlyphs, name }))} });`,
+  );
   const brandLines = Object.keys(brandPaths)
     .sort()
     .map((id) => `  ${id}: ${literal(brandPaths[id])},`);
 
   return `import { createElement, type ReactElement, type SVGProps } from 'react';
 
+export type IconWeight = 'regular' | 'bold' | 'fill' | 'duotone';
+
 type IconProps = Omit<SVGProps<SVGSVGElement>, 'children'> & {
+  readonly color?: string;
   readonly size?: number;
-  readonly strokeWidth?: number;
+  readonly weight?: IconWeight;
 };
 
 export type IconComponent = (props: IconProps) => ReactElement;
 
-type IconNode = readonly (readonly [string, Record<string, string>])[];
+type GlyphDrawing = {
+  readonly regular: string;
+  readonly fill?: string;
+  readonly duotone?: { readonly shade: string; readonly line: string };
+};
 
-const createIcon =
-  (nodes: IconNode): IconComponent =>
-  ({ size = 24, strokeWidth = 2, ...rest }) =>
+type PathsParams = {
+  readonly drawing: GlyphDrawing;
+  readonly weight: IconWeight;
+  readonly color: string;
+};
+
+type GlyphParams = {
+  readonly drawing: GlyphDrawing;
+};
+
+const BOLD_STROKE_WIDTH = 8;
+
+const pathsOf = ({ drawing, weight, color }: PathsParams): ReactElement[] => {
+  if (weight === 'bold') {
+    return [
+      createElement('path', {
+        key: 'bold',
+        d: drawing.regular,
+        stroke: color,
+        strokeWidth: BOLD_STROKE_WIDTH,
+        strokeLinejoin: 'round',
+      }),
+    ];
+  }
+  if (weight === 'fill' && drawing.fill != null) {
+    return [createElement('path', { key: 'fill', d: drawing.fill })];
+  }
+  if (weight === 'duotone' && drawing.duotone != null) {
+    return [
+      createElement('path', { key: 'shade', d: drawing.duotone.shade, opacity: '0.2' }),
+      createElement('path', { key: 'line', d: drawing.duotone.line }),
+    ];
+  }
+  return [createElement('path', { key: 'regular', d: drawing.regular })];
+};
+
+const glyph =
+  ({ drawing }: GlyphParams): IconComponent =>
+  ({ color = 'currentColor', size = 24, weight = 'regular', ...rest }) =>
     createElement(
       'svg',
       {
         xmlns: 'http://www.w3.org/2000/svg',
         width: size,
         height: size,
-        viewBox: '0 0 24 24',
-        fill: 'none',
-        stroke: 'currentColor',
-        strokeWidth,
-        strokeLinecap: 'round',
-        strokeLinejoin: 'round',
+        fill: color,
+        viewBox: '0 0 256 256',
         'aria-hidden': true,
         focusable: false,
         ...rest,
       },
-      nodes.map(([tag, attributes], index) => createElement(tag, { ...attributes, key: index })),
+      pathsOf({ drawing, weight, color }),
     );
 
 ${iconLines.join('\n')}
@@ -286,10 +312,10 @@ const main = async () => {
   if (!existsSync(APP_BRAND_PATH)) {
     throw new Error(`Missing ${APP_BRAND_PATH}`);
   }
-  const lucide = loadLucide();
+  const appGlyphs = loadAppGlyphs();
   const brandPaths = readAppBrandPaths();
-  const names = readUsedNames({ lucide });
-  const expected = await formatSource(buildSource({ lucide, brandPaths, names }));
+  const names = readUsedNames({ appGlyphs });
+  const expected = await formatSource(buildSource({ appGlyphs, brandPaths, names }));
 
   checkNamesInApp({ names });
   checkBrandSources({ brandPaths });
@@ -309,8 +335,8 @@ const main = async () => {
   }
   console.log(
     IS_CHECK
-      ? `icons ok: ${names.length} lucide icons, ${Object.keys(brandPaths).length} app glyphs`
-      : `icons written: ${names.length} lucide icons, ${Object.keys(brandPaths).length} app glyphs`,
+      ? `icons ok: ${names.length} phosphor glyphs, ${Object.keys(brandPaths).length} brand glyphs`
+      : `icons written: ${names.length} phosphor glyphs, ${Object.keys(brandPaths).length} brand glyphs`,
   );
 };
 

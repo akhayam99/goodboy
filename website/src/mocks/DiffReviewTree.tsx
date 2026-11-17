@@ -23,7 +23,7 @@ export const DiffReviewTree = () => (
       {DIFF_REVIEW_FILES.map((file) => (
         <p key={file.name} className="dfrTreeFile" data-state={file.state}>
           <span className="dfrTreeMark">
-            {file.state === 'viewed' ? <Check size={11} /> : null}
+            {file.state === 'viewed' ? <Check size={11} weight="bold" /> : null}
           </span>
           <span className="dfrTreeName">{file.name}</span>
           {file.hasNote ? <span className="dfrTreeNum">1</span> : null}

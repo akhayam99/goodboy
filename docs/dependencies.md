@@ -125,8 +125,9 @@ small component per glyph into `packages/ui/src/icons/generated/`, which
   units, plus fill on one glyph and duotone on three, and draws bold from
   regular: 1,936,479 bytes gzip, under the 1,938,492 byte budget.
 
-The website keeps `lucide-react` as its own dev dependency: `sync-icons.mjs`
-copies lucide paths into the site mocks.
+The website draws the same glyphs: `website/scripts/sync-icons.mjs` copies the
+generated drawings it imports, under the names `@goodboy/ui/icons` exports,
+into the site mocks, so the site has no icon dependency of its own.
 
 The rules for internal workspace deps (the `workspace:*` protocol, no phantom deps) live in [CONVENTIONS.md](../CONVENTIONS.md) → pnpm.
 

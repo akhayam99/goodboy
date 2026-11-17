@@ -110,17 +110,17 @@ const centerOf = ({
     case 'budget':
       return <span className="gkNodeSign gkToneWarning">$</span>;
     case 'approval':
-      return <Shield size={glyphSize} strokeWidth={2.5} className="gkToneWarning" />;
+      return <Shield size={glyphSize} weight="bold" className="gkToneWarning" />;
     case 'failed':
       return <span className="gkNodeSign gkToneDanger">!</span>;
     case 'done':
-      return <Check size={glyphSize} strokeWidth={2.5} className="gkToneSuccess" />;
+      return <Check size={glyphSize} weight="bold" className="gkToneSuccess" />;
     case 'closed':
-      return <Check size={glyphSize} strokeWidth={2.5} className="gkToneMuted" />;
+      return <Check size={glyphSize} weight="bold" className="gkToneMuted" />;
     case 'stopped':
       return <span className="gkNodeSquare" />;
     case 'skipped':
-      return <Minus size={glyphSize} strokeWidth={2.5} className="gkToneFaint" />;
+      return <Minus size={glyphSize} weight="bold" className="gkToneFaint" />;
   }
 };
 
