@@ -93,6 +93,8 @@ export { AUTO_REFUSAL_USER_REASON, autoRefusalUserReason } from './refusalUserRe
 
 export { DEFAULT_AUTO_LEVEL, type AutoLevel } from './level';
 
+export { waitingPlanChangeOf } from './waitingPlanChangeOf';
+
 export {
   LEAD_LOCKED_ROWS,
   LEAD_PERMISSION_KEYS,

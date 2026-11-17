@@ -6,9 +6,11 @@ import {
   buildMountsLine,
   buildStateDigest,
   isResultsPayload,
+  isUserPayload,
   parseSubstepNeeds,
   storedResultOf,
   substepLinkOf,
+  type AutoLedgerEntry,
   type AutoSubstepRole,
   type DeliveryArtifactBody,
   type DigestDelegation,
@@ -161,6 +163,23 @@ const artifactBodies = async ({
   });
 };
 
+type CurrentChangeParams = {
+  readonly payload: unknown;
+  readonly entries: ReadonlyArray<AutoLedgerEntry>;
+};
+
+const withCurrentChange = ({ payload, entries }: CurrentChangeParams): unknown => {
+  if (!isUserPayload(payload) || payload.facts.explicitChange === null) {
+    return payload;
+  }
+  const { artifactId, baseRevision } = payload.facts.explicitChange;
+  const entry = entries.find((candidate) => candidate.artifactId === artifactId);
+  if (entry !== undefined && entry.revision === baseRevision) {
+    return payload;
+  }
+  return { ...payload, facts: { ...payload.facts, explicitChange: null } };
+};
+
 export const buildDeliveryMessage = async ({
   db,
   tree,
@@ -185,7 +204,10 @@ export const buildDeliveryMessage = async ({
     mountsLine: buildMountsLine({ mounts }),
     digestBlock: buildStateDigest({ delegations: digest, nowMs }),
     artifactsBlock: buildArtifactBodiesBlock({ artifacts: bodies }),
-    rows: rows.map((row) => ({ id: row.id, payload: row.payload })),
+    rows: rows.map((row) => ({
+      id: row.id,
+      payload: withCurrentChange({ payload: row.payload, entries }),
+    })),
     childLabels: autoChildLabelsOf({ delegations }),
     isRestart: rows.some((row) => isRestartPayload({ payload: row.payload })),
   });
