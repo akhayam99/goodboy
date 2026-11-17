@@ -11,6 +11,10 @@ import {
 
 const SESSION = 'session' as SessionId;
 
+type CauseRow = {
+  readonly failure_cause: string | null;
+};
+
 const seed = async () => {
   const db = await makeMigratedTestDatabase({ throughVersion: 224 });
   await db.execute(
@@ -98,6 +102,26 @@ describe('m225 resolve attempt failure cause', () => {
     expect(rows.find((row) => row.id === 'attempt')).toMatchObject({
       phase: 'finished',
       failureCause: 'accept_conflict',
+    });
+  });
+
+  it('stores needs_a_run as plain text, so a build before it reads no cause and never fails', async () => {
+    const db = await seed();
+    await insertResolveAttempt({ db, attempt: attempt({}) });
+    await setResolveAttemptPhase({
+      db,
+      id: 'attempt',
+      phase: 'failed',
+      failureCause: 'needs_a_run',
+    });
+    const raw = await db.select<CauseRow>(
+      "SELECT failure_cause FROM resolve_attempts WHERE id = 'attempt'",
+    );
+    expect(raw[0]?.failure_cause).toBe('needs_a_run');
+    const rows = await listResolveAttempts({ db, sessionId: SESSION });
+    expect(rows.find((row) => row.id === 'attempt')).toMatchObject({
+      phase: 'failed',
+      failureCause: 'needs_a_run',
     });
   });
 

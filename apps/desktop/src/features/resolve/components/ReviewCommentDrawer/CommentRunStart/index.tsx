@@ -7,6 +7,7 @@ import { COMMENT_RUN_COPY } from '../../../commentRunCopy';
 import { commentRunQuoteOf } from '../../../commentRunQuoteOf';
 import { commentRunSourceLabelOf } from '../../../commentRunSourceLabelOf';
 import { commentRunSourcesOf } from '../../../commentRunSourcesOf';
+import { NEEDS_RUN_REASON } from '../../../needsRunReason';
 import { runGoalOf } from '../../../runGoalOf';
 import type { ReviewEntry } from '../../ReviewFlow/useReviewEntries';
 import { CommentRunSourceChips } from './CommentRunSourceChips';
@@ -48,6 +49,7 @@ const goalOf = ({ picked }: PickedParams): string =>
               body: row.reviewerNote.body,
               path: row.reviewerNote.path,
               line: row.reviewerNote.line,
+              finding: NEEDS_RUN_REASON.reasonOf({ stateReason: row.thread.stateReason }),
             },
           ],
     ),
