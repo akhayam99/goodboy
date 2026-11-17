@@ -68,6 +68,7 @@ type Params = {
   readonly autoFactsByAgentId?: ReadonlyMap<string, AutoRowFacts>;
   readonly turnByAgentId?: ReadonlyMap<string, TurnState>;
   readonly expandedGroupIds?: ReadonlySet<string>;
+  readonly shouldExpandEveryGroup?: boolean;
   readonly fullGroupIds?: ReadonlySet<string>;
   readonly foldsFinished?: boolean;
   readonly shouldFoldHistoryBatches?: boolean;
@@ -100,6 +101,7 @@ export const buildTimelineStream = ({
   autoFactsByAgentId = NO_AUTO_FACTS,
   turnByAgentId = NO_TURNS,
   expandedGroupIds = NO_EXPANDED_GROUPS,
+  shouldExpandEveryGroup = false,
   fullGroupIds = NO_EXPANDED_GROUPS,
   foldsFinished = false,
   shouldFoldHistoryBatches = false,
@@ -132,6 +134,7 @@ export const buildTimelineStream = ({
     turnByAgentId,
     outputsByAgentEntryId: outputsByAgentEntryIdOf({ entries }),
     expandedGroupIds,
+    shouldExpandEveryGroup,
     fullGroupIds,
     mores: [],
     counts: [],
@@ -318,6 +321,7 @@ export const buildRunTreeStream = ({
     turnByAgentId,
     outputsByAgentEntryId: NO_OUTPUTS_BY_AGENT,
     expandedGroupIds: NO_EXPANDED_GROUPS,
+    shouldExpandEveryGroup: false,
     fullGroupIds: NO_EXPANDED_GROUPS,
     mores: [],
     counts: [],

@@ -174,23 +174,21 @@ export const useTimelineRows = ({ session, view, query, explode }: Params): Time
   const fullGutter = useMemo(
     () =>
       timelineFullGutterOf({
-        build: ({ expandedGroupIds, fullGroupIds }) =>
-          buildTimelineStream({
-            entries: viewEntries,
-            unreadAgentIds,
-            advanceByRunId,
-            decidingRunIds,
-            dayLabelFor: dayLabel,
-            showQuestions: view !== 'activity',
-            resolveFactsByAgentId,
-            jobFactsByAgentId,
-            autoFactsByAgentId,
-            turnByAgentId,
-            expandedGroupIds,
-            fullGroupIds,
-            foldsFinished: true,
-            shouldFoldHistoryBatches: view === 'all',
-          }),
+        openStream: buildTimelineStream({
+          entries: viewEntries,
+          unreadAgentIds,
+          advanceByRunId,
+          decidingRunIds,
+          dayLabelFor: dayLabel,
+          showQuestions: view !== 'activity',
+          resolveFactsByAgentId,
+          jobFactsByAgentId,
+          autoFactsByAgentId,
+          turnByAgentId,
+          shouldExpandEveryGroup: true,
+          foldsFinished: true,
+          shouldFoldHistoryBatches: view === 'all',
+        }),
       }),
     [
       advanceByRunId,
