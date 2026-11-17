@@ -1,6 +1,7 @@
 import { PROVIDER_IDS, type ProviderId } from '@goodboy/types';
+import { isAutoWriterRole, type AutoDelegationRole } from './roles';
 
-export const AUTO_CHILD_PROVIDERS = [
+export const AUTO_WRITER_CHILD_PROVIDERS = [
   'anthropic',
   'codex',
 ] as const satisfies ReadonlyArray<ProviderId>;
@@ -19,8 +20,17 @@ type ProviderParams = {
   readonly provider: string;
 };
 
-export const isAutoChildProvider = ({ provider }: ProviderParams): boolean =>
-  AUTO_CHILD_PROVIDERS.some((candidate) => candidate === provider);
+type ChildRoleParams = {
+  readonly role: AutoDelegationRole;
+};
+
+export const autoChildProviders = ({ role }: ChildRoleParams): ReadonlyArray<ProviderId> =>
+  isAutoWriterRole({ role }) ? AUTO_WRITER_CHILD_PROVIDERS : AUTO_OWN_PROVIDERS;
+
+type ChildProviderParams = ProviderParams & ChildRoleParams;
+
+export const isAutoChildProvider = ({ provider, role }: ChildProviderParams): boolean =>
+  autoChildProviders({ role }).some((candidate) => candidate === provider);
 
 export const isAutoOwnProvider = ({ provider }: ProviderParams): boolean =>
   AUTO_OWN_PROVIDERS.some((candidate) => candidate === provider);

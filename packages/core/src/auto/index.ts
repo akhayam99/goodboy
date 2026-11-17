@@ -174,9 +174,10 @@ export { autoRefusedBlockText, isAutoGateBlock } from './isAutoGateBlock';
 export { AUTO_REFUSAL_TEXT, describeAutoRefusal, type RefusalChild } from './refusalText';
 
 export {
-  AUTO_CHILD_PROVIDERS,
   AUTO_OWN_PROVIDERS,
   AUTO_UNCONFINED_PROVIDERS,
+  AUTO_WRITER_CHILD_PROVIDERS,
+  autoChildProviders,
   isAutoChildProvider,
   isAutoProviderResuming,
   isAutoOwnProvider,

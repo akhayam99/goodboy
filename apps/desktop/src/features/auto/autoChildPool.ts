@@ -1,6 +1,6 @@
 import type { ProviderId, ProviderPolicy, Session, SessionId, WorkflowRunId } from '@goodboy/types';
 import { runProviderPool } from '../workflows/runProviderPool';
-import { AUTO_CHILD_PROVIDERS } from '@goodboy/core/auto';
+import { autoChildProviders, type AutoDelegationRole } from '@goodboy/core/auto';
 import { workspaceProviderPool } from './workspaceProviderPool';
 
 type Params = {
@@ -8,6 +8,7 @@ type Params = {
   readonly sessionId: SessionId;
   readonly workflowRunId?: WorkflowRunId | null;
   readonly policy: ProviderPolicy | null;
+  readonly role: AutoDelegationRole;
 };
 
 export const autoChildPool = ({
@@ -15,6 +16,7 @@ export const autoChildPool = ({
   sessionId,
   workflowRunId = null,
   policy,
+  role,
 }: Params): ReadonlyArray<ProviderId> => {
   const pool = runProviderPool({
     sessions,
@@ -22,7 +24,6 @@ export const autoChildPool = ({
     workflowRunId,
     workspacePool: workspaceProviderPool({ policy }),
   });
-  return pool === null
-    ? AUTO_CHILD_PROVIDERS
-    : AUTO_CHILD_PROVIDERS.filter((provider) => pool.includes(provider));
+  const allowed = autoChildProviders({ role });
+  return pool === null ? allowed : allowed.filter((provider) => pool.includes(provider));
 };
