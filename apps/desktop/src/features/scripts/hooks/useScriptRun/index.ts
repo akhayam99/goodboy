@@ -15,6 +15,7 @@ type Target = {
 type Params = {
   readonly sessionId: SessionId;
   readonly scriptKey: string;
+  readonly mountId: MountId | null;
   readonly target: Target | null;
 };
 
@@ -47,8 +48,15 @@ const elapsedOf = ({ record, now }: ElapsedParams): number | null => {
   return Math.max(0, record.completedAt - record.startedAt);
 };
 
-export const useScriptRun = ({ sessionId, scriptKey, target }: Params): ScriptRun => {
-  const record = useAppStore((state) => state.scriptRuns[sessionId]?.[scriptKey] ?? null);
+export const useScriptRun = ({ sessionId, scriptKey, mountId, target }: Params): ScriptRun => {
+  const stored = useAppStore((state) => state.scriptRuns[sessionId]?.[scriptKey] ?? null);
+  const record =
+    stored === null ||
+    mountId === null ||
+    stored.mountId === undefined ||
+    stored.mountId === mountId
+      ? stored
+      : null;
   const cancelScript = useAppStore((state) => state.cancelScript);
   const isRunning = record?.status === 'pending';
   const now = useNow(1_000, isRunning);
@@ -61,8 +69,11 @@ export const useScriptRun = ({ sessionId, scriptKey, target }: Params): ScriptRu
   }, [isRunning, sessionId, target]);
 
   const stop = useCallback(() => {
+    if (!isRunning) {
+      return;
+    }
     void cancelScript(sessionId, scriptKey);
-  }, [cancelScript, scriptKey, sessionId]);
+  }, [cancelScript, isRunning, scriptKey, sessionId]);
 
   return {
     record,

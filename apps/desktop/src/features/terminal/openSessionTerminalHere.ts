@@ -3,6 +3,7 @@ import { homeFolder } from '../../shared/lib/homeFolder';
 import { useAppStore } from '../../store';
 import { sessionById } from '../../store/slices/sessions/sessionIndex';
 import { selectTerminalWorkspaceFolder } from '../../store/slices/terminal/selectors';
+import { selectPlaceMount } from '../../store/slices/project-mounts/selectPlaceMount';
 import { resolveActiveMountPath } from '../../store/slices/worktrees/resolveActiveMountPath';
 import { openSessionTerminal } from './openSessionTerminal';
 
@@ -15,7 +16,10 @@ export const openSessionTerminalHere = async ({
   sessionId,
   isFresh,
 }: OpenHereParams): Promise<void> => {
-  const mountPath = resolveActiveMountPath({ state: useAppStore.getState(), sessionId });
+  const current = useAppStore.getState();
+  const mountPath =
+    selectPlaceMount({ state: current, sessionId })?.worktreePath ??
+    resolveActiveMountPath({ state: current, sessionId });
   if (mountPath !== null) {
     openSessionTerminal({ state: useAppStore.getState(), sessionId, cwd: mountPath, isFresh });
     return;

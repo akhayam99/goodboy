@@ -67,6 +67,16 @@ describe('resolveScriptTarget', () => {
     expect(target?.group.branch).toBe('nw/settlement');
   });
 
+  it('never moves a run to another branch when its own mount left', () => {
+    expect(
+      resolveScriptTarget({
+        groups: [SETTLEMENT],
+        scriptKey: 'script-1',
+        mountId: ROUNDING.mountId,
+      }),
+    ).toBeNull();
+  });
+
   it('returns nothing for a script that left the session', () => {
     expect(
       resolveScriptTarget({ groups: [SETTLEMENT], scriptKey: 'gone', mountId: null }),

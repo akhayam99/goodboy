@@ -30,13 +30,9 @@ export const resolveScriptTarget = ({
   scriptKey,
   mountId,
 }: Params): ResolvedScriptTarget | null => {
-  const preferred =
-    mountId === null ? undefined : groups.find((group) => group.mountId === mountId);
-  if (preferred !== undefined) {
-    const hit = findIn({ group: preferred, scriptKey });
-    if (hit !== null) {
-      return hit;
-    }
+  if (mountId !== null) {
+    const preferred = groups.find((group) => group.mountId === mountId);
+    return preferred === undefined ? null : findIn({ group: preferred, scriptKey });
   }
   for (const group of groups) {
     const hit = findIn({ group, scriptKey });

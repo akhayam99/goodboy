@@ -58,7 +58,12 @@ export const ScriptRunDrawer = ({ sessionId, scriptKey, mountId, back, onClose }
       worktreePath: resolved.group.worktreePath,
     };
   }, [resolved]);
-  const scriptRun = useScriptRun({ sessionId, scriptKey, target });
+  const scriptRun = useScriptRun({
+    sessionId,
+    scriptKey,
+    mountId: target?.mountId ?? mountId,
+    target,
+  });
   const fileRoot = target?.worktreePath ?? null;
   const fileBaseDir =
     target === null
