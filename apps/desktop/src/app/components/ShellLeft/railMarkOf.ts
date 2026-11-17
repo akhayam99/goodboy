@@ -12,7 +12,12 @@ export const railMarkOf = ({ id, signal }: Params): ShellRailMark | null => {
     return null;
   }
   if (id === 'board' && signal.isWarning) {
-    return { kind: 'count', count: signal.count, name: signal.fact };
+    return {
+      kind: 'count',
+      count: signal.count,
+      name: signal.fact,
+      tone: signal.tone === 'danger' ? 'danger' : 'warning',
+    };
   }
   if (id === 'inbox' && signal.isUnread) {
     return { kind: 'dot', name: signal.fact };

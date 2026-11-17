@@ -62,26 +62,12 @@ const mount = async (name: string): Promise<Element> => {
   return container;
 };
 
-const pinOrder = (): ReadonlyArray<string | null> =>
-  Array.from(document.querySelectorAll<HTMLElement>('[data-rail-session]')).map((button) =>
-    button.getAttribute('data-rail-session'),
-  );
-
-const currentPins = (): ReadonlyArray<string | null> =>
-  Array.from(document.querySelectorAll<HTMLElement>('[data-rail-session]'))
-    .filter((button) => button.getAttribute('aria-current') === 'page')
-    .map((button) => button.getAttribute('data-rail-session'));
-
 describe('the navigation scenes', () => {
-  it('registers both scenes for the capture', () => {
-    expect(Object.keys(U24_P_NAV_SCENES).sort()).toEqual([
-      'integration-issue-focused',
-      'railorder',
-    ]);
+  it('registers the scene for the capture', () => {
+    expect(Object.keys(U24_P_NAV_SCENES)).toEqual(['integration-issue-focused']);
     expect(MOCK_SCENES['integration-issue-focused']).toBe(
       U24_P_NAV_SCENES['integration-issue-focused'],
     );
-    expect(MOCK_SCENES.railorder).toBe(U24_P_NAV_SCENES.railorder);
   });
 
   it('integration-issue-focused draws a back row, keeps Unlink in the menu, and no link action', async () => {
@@ -100,21 +86,6 @@ describe('the navigation scenes', () => {
       .queryAllByRole('button', { name: /^Link/ })
       .filter((button) => button.closest('[data-session-rail]') === null);
     expect(pageLinks).toEqual([]);
-  });
-
-  it('railorder moves only the frame when another pin is opened', async () => {
-    await mount('railorder');
-    const order = pinOrder();
-    expect(order).toHaveLength(7);
-    expect(currentPins()).toEqual([order[3]]);
-
-    fireEvent.click(document.querySelector(`[data-rail-session="${order[5]}"]`) as HTMLElement);
-    await act(async () => {
-      await vi.advanceTimersByTimeAsync(50);
-    });
-
-    expect(pinOrder()).toEqual(order);
-    expect(currentPins()).toEqual([order[5]]);
   });
 
   it.each(Object.keys(U24_P_NAV_SCENES))(

@@ -134,23 +134,24 @@ describe('the u23 frame scenes', () => {
     expect(screen.queryAllByRole('button', { name: /^Close/ })).toHaveLength(0);
   });
 
-  it('lights the Goodboy row alone while Help is open over a session', async () => {
+  it('lights the Goodboy mark alone while Help is open over a session', async () => {
     const { container } = await renderScene('frame-studio-guide');
 
     await waitFor(() => expect(visibleH1s()).toHaveLength(1));
     const lit = container.querySelectorAll('[aria-current="page"]');
     expect(lit).toHaveLength(1);
-    expect(lit[0]?.closest('[data-column-foot]')).not.toBeNull();
+    expect(lit[0]?.getAttribute('data-goodboy-chip')).toBe('rail');
   });
 
-  it("draws the What's new page with Back to app and no Close, the Goodboy row lit", async () => {
+  it("draws the What's new page with Back to app and no Close, the update mark in the logo's place", async () => {
     const { container } = await renderScene('changelog');
 
     await waitFor(() => expect(visibleH1s()).toHaveLength(1));
     const band = container.querySelector('[data-studio-band]');
     expect(band?.contains(screen.getByRole('button', { name: /^Back to app/ }))).toBe(true);
     expect(screen.queryAllByRole('button', { name: /^Close/ })).toHaveLength(0);
-    expect(container.querySelector('[data-column-foot] [aria-current="page"]')).not.toBeNull();
+    expect(container.querySelector('[data-goodboy-chip="rail-update"]')).not.toBeNull();
+    expect(container.querySelectorAll('[data-shell-rail] [aria-current="page"]')).toHaveLength(0);
   });
 
   it('gives Workflows its title and the tab strip with its one primary under it', async () => {

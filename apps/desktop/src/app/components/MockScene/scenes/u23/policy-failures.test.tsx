@@ -200,7 +200,11 @@ describe('the policy and failure scenes', () => {
     await settle();
 
     expect(screen.getByRole('heading', { level: 1, name: 'Projects' })).toBeDefined();
-    expect(screen.getAllByText('Harborline')).toHaveLength(1);
+    expect(
+      screen
+        .getAllByText('Harborline')
+        .filter((node) => node.closest('[data-shell-rail]') === null),
+    ).toHaveLength(1);
     const page = document.querySelector('[data-settings-detail]');
     expect(page).not.toBeNull();
     expect(within(page as HTMLElement).queryAllByText(/Harborline/)).toEqual([]);

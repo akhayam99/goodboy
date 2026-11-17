@@ -459,8 +459,10 @@ while the filter hides some of its cards or a quiet card sits in it; with only
 quiet cards it draws no number. A session counts when its stage is needs you and one of its
 reasons is `warning` or `danger`; a session waiting only on `unread-reply` or
 `pr-approved` is quiet and does not count. On the places rail the Board item
-wears the count as a warning `CountBadge` on its glyph (`railMarkOf`); with only
-quiet sessions it wears no mark. The tooltip and the label keep the
+wears the count as a `CountBadge` on its glyph (`railMarkOf`), in `warning`, or
+`danger` as soon as one counted session has a danger reason (`agent-error`,
+`run-stopped`, `push-failed`, `ci-failed`); with only quiet sessions it wears no
+mark. The tooltip and the label keep the
 reasons ("3 need you: Checks failing, 1 question for you"). The top bar holds
 no target of its own for it, because the chrome is capped at 24: the Now chip
 leads with the same count as its first segment (a dot in the worst tone, the
