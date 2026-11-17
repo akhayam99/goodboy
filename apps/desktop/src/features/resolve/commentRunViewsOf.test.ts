@@ -128,6 +128,21 @@ describe('commentRunViewsOf gives every linked thread the run that works on it',
     expect(views.get(HEADER_NOTE)).toMatchObject({ agentId: newer.id, end: 'working' });
   });
 
+  it('reads a Lead that completed as finished', () => {
+    const lead = leadOf({
+      id: 'header',
+      ordinal: 0,
+      threadIds: [HEADER_NOTE],
+      status: 'completed',
+    });
+    const views = commentRunViewsOf({
+      agents: [lead],
+      runs: [rowOf({ agent: lead, stateWord: 'Resting' })],
+    });
+
+    expect(views.get(HEADER_NOTE)?.end).toBe('finished');
+  });
+
   it('marks a finished run with the summary the Lead left', () => {
     const lead = {
       ...leadOf({ id: 'header', ordinal: 0, threadIds: [HEADER_NOTE, LAYOUT_THREAD] }),

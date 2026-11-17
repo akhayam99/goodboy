@@ -146,7 +146,7 @@ export const ReviewListRow = ({
             {title}
           </TruncatedText>
           {entry.fix === null ? null : <RowFixLine fix={entry.fix} />}
-          {entry.run === null ? null : (
+          {entry.run === null || entry.run.end === 'stopped' ? null : (
             <span data-row-run className="min-w-0 truncate text-meta text-muted-foreground">
               {COMMENT_RUN_COPY.runLine({ title: entry.run.title })}
             </span>

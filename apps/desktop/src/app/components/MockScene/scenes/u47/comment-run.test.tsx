@@ -80,6 +80,18 @@ type FormParams = {
   readonly form: HTMLElement;
 };
 
+type DrawerParams = {
+  readonly threadId: string;
+};
+
+const drawerOf = ({ threadId }: DrawerParams): HTMLElement => {
+  const drawer = document.querySelector<HTMLElement>(`[data-review-drawer="${threadId}"]`);
+  if (drawer === null) {
+    throw new Error('The comment drawer is not open.');
+  }
+  return drawer;
+};
+
 const sourcesOf = ({ form }: FormParams): ReadonlyArray<string | null> =>
   [...form.querySelectorAll('[data-comment-run-source]')].map((node) =>
     node.getAttribute('data-comment-run-source'),
@@ -141,6 +153,89 @@ describe('u47 comment run scenes', () => {
     expect(navigate).toHaveBeenCalledWith({
       to: agentPlace({ sessionId: SESSION.id, agentId: COMMENT_RUN_LEAD_ID }),
     });
+  });
+
+  it('asks for the reply and the resolve on each comment once the run finished', async () => {
+    await settle({ name: 'u47-comment-run-finished' });
+    const rowWords = COMMENT_RUN_THREAD_IDS.map(
+      (threadId) =>
+        document.querySelector(`[data-thread-id="${threadId}"] [data-row-state]`)?.textContent,
+    );
+    expect(rowWords).toEqual(['Run finished', 'Left open']);
+    const drawer = drawerOf({ threadId: THREAD_IDS.retryConstant });
+    const draft = within(drawer).getByRole<HTMLTextAreaElement>('textbox', {
+      name: new RegExp(COMMENT_RUN_COPY.reply),
+    });
+    expect(draft.value).toMatch(/^Made the retry backoff a constant per endpoint/);
+    const replyFromCommentRun = vi.fn(async () => undefined);
+    act(() => {
+      useAppStore.setState({ replyFromCommentRun });
+    });
+    await act(async () => {
+      within(drawer)
+        .getByRole('button', { name: /^Reply and resolve on GitHub/ })
+        .click();
+    });
+    expect(replyFromCommentRun).toHaveBeenCalledWith(
+      expect.objectContaining({ threadId: THREAD_IDS.retryConstant, reply: draft.value }),
+    );
+    within(drawer).getByRole('button', { name: /^Keep open/ });
+    expect(within(drawer).queryByRole('button', { name: /^Fix/ })).toBeNull();
+  });
+
+  it('keeps a comment open after the run without posting anything', async () => {
+    await settle({ name: 'u47-comment-run-finished' });
+    const drawer = drawerOf({ threadId: THREAD_IDS.retryConstant });
+    const deferResolveQueueItem = vi.fn(async () => undefined);
+    const replyFromCommentRun = vi.fn(async () => undefined);
+    act(() => {
+      useAppStore.setState({ deferResolveQueueItem, replyFromCommentRun });
+    });
+    await act(async () => {
+      within(drawer)
+        .getByRole('button', { name: /^Keep open/ })
+        .click();
+    });
+    expect(deferResolveQueueItem).toHaveBeenCalledTimes(1);
+    expect(replyFromCommentRun).not.toHaveBeenCalled();
+  });
+
+  it('opens every comment of a stopped run again, with the stopped line and Open run', async () => {
+    await settle({ name: 'u47-comment-run-stopped' });
+    const rowWords = COMMENT_RUN_THREAD_IDS.map(
+      (threadId) =>
+        document.querySelector(`[data-thread-id="${threadId}"] [data-row-state]`)?.textContent,
+    );
+    expect(rowWords).not.toContain('Run finished');
+    expect(rowWords.some((word) => word?.startsWith('In a run') === true)).toBe(false);
+    const drawer = drawerOf({ threadId: THREAD_IDS.retryConstant });
+    within(drawer).getByText(COMMENT_RUN_COPY.stoppedTitle);
+    within(drawer).getByRole('button', { name: COMMENT_RUN_COPY.openRun });
+    within(drawer).getByRole('button', { name: /^Fix/ });
+  });
+
+  it('asks before a changed comment reaches the run', async () => {
+    await settle({ name: 'u47-comment-run-changed' });
+    expect(
+      document.querySelector(`[data-thread-id="${THREAD_IDS.retryConstant}"] [data-row-state]`)
+        ?.textContent,
+    ).toBe('In a run · Changed');
+    const drawer = drawerOf({ threadId: THREAD_IDS.retryConstant });
+    const sendChangeToCommentRun = vi.fn(async () => undefined);
+    act(() => {
+      useAppStore.setState({ sendChangeToCommentRun });
+    });
+    await act(async () => {
+      within(drawer).getByRole('button', { name: COMMENT_RUN_COPY.sendChange }).click();
+    });
+    expect(sendChangeToCommentRun).toHaveBeenCalledWith(
+      expect.objectContaining({
+        agentId: COMMENT_RUN_LEAD_ID,
+        threadId: THREAD_IDS.retryConstant,
+        quote: expect.stringContaining('keep the jitter the payouts route uses'),
+      }),
+    );
+    within(drawer).getByRole('button', { name: COMMENT_RUN_COPY.keepRunAsIs });
   });
 
   it('opens the run page with the comments it comes from, each with Open comment', async () => {

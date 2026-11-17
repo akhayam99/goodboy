@@ -183,7 +183,7 @@ export const ReviewComment = ({
     row.attempt !== null && (state === 'failed' || previous.length > 0)
       ? attemptNumberOf({ attempts, threadId, attemptId: row.attempt.id })
       : null;
-  const isFailed = state === 'failed' && entry.run === null;
+  const isFailed = state === 'failed' && (entry.run === null || entry.run.end === 'stopped');
   const composeCopy =
     compose !== null && isFailed && compose.mode === 'redraft'
       ? {
@@ -248,7 +248,14 @@ export const ReviewComment = ({
       </div>
 
       {entry.run === null ? null : (
-        <CommentRunStrip sessionId={sessionId} run={entry.run} isNote={isNote} />
+        <CommentRunStrip
+          sessionId={sessionId}
+          threadId={threadId}
+          run={entry.run}
+          word={entry.resolveWord}
+          isNote={isNote}
+          hostLabel={provider}
+        />
       )}
 
       <PreviousAttempts attempts={previous} />
@@ -257,9 +264,9 @@ export const ReviewComment = ({
 
       {entry.newReplies.length > 0 && <NewReplyNote replies={entry.newReplies} />}
 
-      {state === 'outdated' && remote === null && entry.change !== null && (
-        <SourceChangeCard change={entry.change} />
-      )}
+      {(state === 'outdated' || entry.resolveWord === 'in_run') &&
+        remote === null &&
+        entry.change !== null && <SourceChangeCard change={entry.change} />}
 
       {remote === 'missing' && entry.isChecking && (
         <ThreadRecheckLine sessionId={sessionId} agentId={entry.checkAgentId} />

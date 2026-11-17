@@ -35,7 +35,7 @@ const endOf = ({ agent, run }: EndParams): CommentRunEnd => {
   if (agent.status === 'stopped' || agent.status === 'failed' || STOPPED_DOTS.has(run.dot)) {
     return 'stopped';
   }
-  return run.isFinished ? 'finished' : 'working';
+  return run.isFinished || agent.status === 'completed' ? 'finished' : 'working';
 };
 
 type SummaryParams = {

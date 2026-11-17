@@ -72,6 +72,12 @@ const statusOf = ({ ahead }: StatusParams): WorktreeStatus => ({
   inProgress: null,
 });
 
+const stubStatus = async ({ ahead }: StatusParams): Promise<void> => {
+  const base = await storySpies.worktreeStatus(MOUNT_VIEW.worktreePath ?? '');
+  storySpies.worktreeStatus.mockClear();
+  storySpies.worktreeStatus.mockResolvedValueOnce(Object.assign({}, base, statusOf({ ahead })));
+};
+
 let useAppStore: StoryStore;
 
 const replyAndResolveThread = vi.fn(async () => undefined);
@@ -103,7 +109,7 @@ const reply = (text: string = REPLY) =>
 
 describe('Reply and resolve after a comment run', () => {
   it('posts the reply once every commit of the run is on origin', async () => {
-    storySpies.worktreeStatus.mockResolvedValueOnce(statusOf({ ahead: 0 }));
+    await stubStatus({ ahead: 0 });
 
     await reply(`  ${REPLY}  `);
 
@@ -115,7 +121,7 @@ describe('Reply and resolve after a comment run', () => {
   });
 
   it('posts nothing while the run has commits to push', async () => {
-    storySpies.worktreeStatus.mockResolvedValueOnce(statusOf({ ahead: 3 }));
+    await stubStatus({ ahead: 3 });
 
     await expect(reply()).rejects.toThrow(COMMENT_RUN_COPY.notPushed);
     expect(replyAndResolveThread).not.toHaveBeenCalled();
