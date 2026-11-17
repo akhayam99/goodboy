@@ -1,5 +1,6 @@
 import type { TerminalDriver } from '../../shared/components/GenericTerminalPanel/LazyGenericTerminalPanel';
 import { trackTerminalInput } from './commandTracker';
+import { createResizeQueue } from './createResizeQueue';
 import { terminalOutputBus } from './outputBus';
 import { invokeTerminalResize, invokeTerminalSnapshot } from './terminal';
 import { writeTerminalInput } from './writeTerminalInput';
@@ -30,33 +31,38 @@ export const stringToBase64 = ({ value }: Base64Params): string => {
   return btoa(binary);
 };
 
-export const createTerminalDriver = ({ terminalId }: DriverParams): TerminalDriver => ({
-  write: (data: string) => {
-    trackTerminalInput({ terminalId, data });
-    void writeTerminalInput({ terminalId, encoded: stringToBase64({ value: data }) });
-  },
-  resize: (cols: number, rows: number) => {
-    void invokeTerminalResize(terminalId, cols, rows);
-  },
-  onOutput: async (handler) => {
-    await terminalOutputBus.register();
-    return terminalOutputBus.subscribe({ terminalId, subscriber: { onOutput: handler } });
-  },
-  onExit: async (handler) => {
-    await terminalOutputBus.register();
-    return terminalOutputBus.subscribe({ terminalId, subscriber: { onExit: handler } });
-  },
-  snapshot: async () => {
-    try {
-      const snapshot = await invokeTerminalSnapshot(terminalId);
-      return {
-        bytes: base64ToBytes({ value: snapshot.data }),
-        offset: snapshot.offset,
-        exitCode: snapshot.exitCode,
-      };
-    } catch {
-      const tail = terminalOutputBus.tailOf({ terminalId });
-      return tail === null ? null : { ...tail, exitCode: null };
-    }
-  },
-});
+export const createTerminalDriver = ({ terminalId }: DriverParams): TerminalDriver => {
+  const sizes = createResizeQueue({
+    send: ({ cols, rows }) => invokeTerminalResize(terminalId, cols, rows),
+  });
+  return {
+    write: (data: string) => {
+      trackTerminalInput({ terminalId, data });
+      void writeTerminalInput({ terminalId, encoded: stringToBase64({ value: data }) });
+    },
+    resize: (cols: number, rows: number) => {
+      sizes.push({ cols, rows });
+    },
+    onOutput: async (handler) => {
+      await terminalOutputBus.register();
+      return terminalOutputBus.subscribe({ terminalId, subscriber: { onOutput: handler } });
+    },
+    onExit: async (handler) => {
+      await terminalOutputBus.register();
+      return terminalOutputBus.subscribe({ terminalId, subscriber: { onExit: handler } });
+    },
+    snapshot: async () => {
+      try {
+        const snapshot = await invokeTerminalSnapshot(terminalId);
+        return {
+          bytes: base64ToBytes({ value: snapshot.data }),
+          offset: snapshot.offset,
+          exitCode: snapshot.exitCode,
+        };
+      } catch {
+        const tail = terminalOutputBus.tailOf({ terminalId });
+        return tail === null ? null : { ...tail, exitCode: null };
+      }
+    },
+  };
+};
