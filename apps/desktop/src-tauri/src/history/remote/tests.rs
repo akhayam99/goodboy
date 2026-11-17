@@ -533,9 +533,13 @@ fn a_commit_someone_else_pushed_is_the_only_one_online() {
         ahead
             .only_online
             .iter()
-            .map(|c| (c.sha.clone(), c.subject.clone()))
+            .map(|c| (c.sha.clone(), c.subject.clone(), c.author.clone()))
             .collect::<Vec<_>>(),
-        vec![(theirs, "Teammate adds a note".to_string())]
+        vec![(
+            theirs,
+            "Teammate adds a note".to_string(),
+            "teammate".to_string()
+        )]
     );
 }
 

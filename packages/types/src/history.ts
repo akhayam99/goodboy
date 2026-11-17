@@ -119,6 +119,10 @@ export type HistoryRebaseCommit = {
   readonly subject: string;
 };
 
+export type HistoryOnlineCommit = HistoryRebaseCommit & {
+  readonly author: string;
+};
+
 export type HistoryRebasePlan = {
   readonly setAside?: string | null;
   readonly onto: string;
@@ -134,7 +138,7 @@ export type HistoryOriginAhead = {
   readonly remoteSha: string;
   readonly knownRemoteSha: string | null;
   readonly commits: ReadonlyArray<HistoryRebaseCommit>;
-  readonly onlyOnline: ReadonlyArray<HistoryRebaseCommit>;
+  readonly onlyOnline: ReadonlyArray<HistoryOnlineCommit>;
   readonly fetchError: string | null;
 };
 

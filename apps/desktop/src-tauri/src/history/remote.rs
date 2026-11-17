@@ -11,11 +11,19 @@ pub struct OriginAhead {
     pub remote_sha: String,
     pub known_remote_sha: Option<String>,
     pub commits: Vec<RebaseCommit>,
-    pub only_online: Vec<RebaseCommit>,
+    pub only_online: Vec<OnlineCommit>,
     pub fetch_error: Option<String>,
 }
 
-fn commits_only_online(cwd: &Path, remote_sha: &str) -> Result<Vec<RebaseCommit>, WorktreeError> {
+#[derive(Debug, Serialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct OnlineCommit {
+    pub sha: String,
+    pub subject: String,
+    pub author: String,
+}
+
+fn commits_only_online(cwd: &Path, remote_sha: &str) -> Result<Vec<OnlineCommit>, WorktreeError> {
     let range = format!("HEAD...{remote_sha}");
     let raw = git(
         cwd,
@@ -24,7 +32,7 @@ fn commits_only_online(cwd: &Path, remote_sha: &str) -> Result<Vec<RebaseCommit>
             "--cherry-pick",
             "--right-only",
             "--reverse",
-            "--format=%H%x1f%s",
+            "--format=%H%x1f%an%x1f%s",
             &range,
         ],
     )?;
@@ -32,10 +40,11 @@ fn commits_only_online(cwd: &Path, remote_sha: &str) -> Result<Vec<RebaseCommit>
         .lines()
         .filter(|line| !line.trim().is_empty())
         .map(|line| {
-            let (sha, subject) = line.split_once('\u{1f}').unwrap_or((line, ""));
-            RebaseCommit {
-                sha: sha.to_string(),
-                subject: subject.to_string(),
+            let mut parts = line.splitn(3, '\u{1f}');
+            OnlineCommit {
+                sha: parts.next().unwrap_or_default().to_string(),
+                author: parts.next().unwrap_or_default().to_string(),
+                subject: parts.next().unwrap_or_default().to_string(),
             }
         })
         .collect())
