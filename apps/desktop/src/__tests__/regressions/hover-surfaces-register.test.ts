@@ -33,9 +33,21 @@ const isFloatingSurface = ({ source }: { readonly source: string }): boolean =>
     /\bcreatePortal\(|<AnchoredPopover\b/.test(source) &&
     !RENDERS_REGISTERED_SURFACE.test(source));
 
+const OPEN_WHILE_ITS_BOX_SHOWS: ReadonlySet<string> = new Set([
+  'packages/ui/src/components/AnchoredLayer.tsx',
+]);
+
 describe('a hover surface registers so tooltips stay quiet beside it', () => {
-  const surfaces = ROOTS.flatMap((root) => filesUnder({ dir: root })).filter((path) =>
-    isFloatingSurface({ source: sourceOf({ path }) }),
+  const surfaces = ROOTS.flatMap((root) => filesUnder({ dir: root })).filter(
+    (path) =>
+      !OPEN_WHILE_ITS_BOX_SHOWS.has(path) && isFloatingSurface({ source: sourceOf({ path }) }),
+  );
+
+  it.each([...OPEN_WHILE_ITS_BOX_SHOWS])(
+    'leaves out %s, open while its box shows and never on hover, so tooltips keep talking',
+    (path) => {
+      expect(sourceOf({ path })).not.toMatch(/onMouseEnter|useRestHover|useHoverCardTarget/);
+    },
   );
 
   it('finds the three known surfaces', () => {
