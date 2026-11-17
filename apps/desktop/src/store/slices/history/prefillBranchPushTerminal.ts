@@ -1,7 +1,7 @@
 import { keepOriginCommand } from '../../../features/history/keepOriginCommand';
 import { pushFixCommand } from '../../../features/history/pushFixCommand';
 import { openSessionTerminal } from '../../../features/terminal/openSessionTerminal';
-import { branchPushPlan } from './branchPushPlan';
+import { branchPushPlan } from './pushFix/branchPushPlan';
 import { identityChange, identityOf } from './historyIdentity';
 import { historyTargetOf } from './historyTargetOf';
 import type { SliceDeps } from '../../slice-types';

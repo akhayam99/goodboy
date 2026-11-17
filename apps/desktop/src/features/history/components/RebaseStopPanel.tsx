@@ -19,7 +19,7 @@ import { JobBannerDetails } from '../JobBanner/JobBannerDetails';
 import { JobBannerReview } from '../JobBanner/JobBannerReview';
 import { RebaseConflictPrompt } from './RebaseConflictPrompt';
 import { REBASE_ABORT_CONFIRM } from './rebaseAbortConfirm';
-import { RebaseOriginCommits } from './RebaseOriginCommits';
+import { RebaseOriginCommits } from '../../../shared/components/RebaseOriginCommits';
 import { RebaseStopFiles, type OpenFileParams } from './RebaseStopFiles';
 
 type Props = {

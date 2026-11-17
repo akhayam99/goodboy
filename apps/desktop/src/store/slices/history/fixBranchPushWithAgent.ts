@@ -1,5 +1,5 @@
 import { pushFixBrief } from '../../../features/history/pushFixBrief';
-import { branchPushPlan } from './branchPushPlan';
+import { branchPushPlan } from './pushFix/branchPushPlan';
 import { pushFixCommand } from '../../../features/history/pushFixCommand';
 import { identityChange, identityOf } from './historyIdentity';
 import { historyTargetOf } from './historyTargetOf';

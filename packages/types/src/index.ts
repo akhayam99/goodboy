@@ -374,7 +374,6 @@ export type {
   HistoryPlanState,
   HistoryPlanPrediction,
   HistoryPlannedStep,
-  HistoryOnlineCommit,
   HistoryRebaseCommit,
   HistoryRebasePlan,
   HistoryRemoteLease,

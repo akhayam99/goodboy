@@ -1,5 +1,5 @@
-import { readOriginAhead } from '../../../features/history/historyEngine';
-import type { BranchOriginCheck, HistoryTarget } from './types';
+import { readOriginAhead } from '../../../../features/history/historyEngine';
+import type { BranchOriginCheck, HistoryTarget } from '../types';
 
 type Params = {
   readonly target: HistoryTarget;

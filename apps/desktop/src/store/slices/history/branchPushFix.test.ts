@@ -32,9 +32,9 @@ vi.mock('../../../features/worktree/worktree', () => ({
 
 import { resetWorktreeStatusCache } from '../../runtime/worktreeStatuses/cache';
 import { useAppStore, type AppStore } from '../../store';
-import { checkBranchOrigin } from './checkBranchOrigin';
+import { checkBranchOrigin } from './pushFix/checkBranchOrigin';
 import { fixBranchPushWithAgent } from './fixBranchPushWithAgent';
-import { forcePushCheckedBranch } from './forcePushCheckedBranch';
+import { forcePushCheckedBranch } from './pushFix/forcePushCheckedBranch';
 import { prefillBranchPushTerminal } from './prefillBranchPushTerminal';
 import { settleBranchPushFix } from './settleBranchPushFix';
 

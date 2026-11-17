@@ -1,6 +1,6 @@
-import { branchPushLease } from '../../../features/history/branchPushLease';
+import { branchPushLease } from '../../../../features/history/branchPushLease';
 import { readBranchOrigin } from './readBranchOrigin';
-import type { BranchOriginCheck, BranchPushInput, HistoryTarget } from './types';
+import type { BranchOriginCheck, BranchPushInput, HistoryTarget } from '../types';
 
 type Params = {
   readonly input: BranchPushInput;

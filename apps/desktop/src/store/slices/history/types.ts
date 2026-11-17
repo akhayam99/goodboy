@@ -2,7 +2,7 @@ import type {
   AgentId,
   BranchCommit,
   HistoryGraph,
-  HistoryOnlineCommit,
+  HistoryRebaseCommit,
   HistoryRewriterCheck,
   HistoryPlanArgs,
   HistoryPlanPrediction,
@@ -214,9 +214,13 @@ export type BranchPushInput = HistoryMountInput & {
   readonly isOriginMoved?: boolean;
 };
 
+export type OriginOnlyCommit = HistoryRebaseCommit & {
+  readonly author: string;
+};
+
 export type BranchOriginCheck = {
   readonly remoteSha: string;
-  readonly onlyOnline: ReadonlyArray<HistoryOnlineCommit>;
+  readonly onlyOnline: ReadonlyArray<OriginOnlyCommit>;
 };
 
 export type HistoryTarget = {

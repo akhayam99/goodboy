@@ -1,9 +1,9 @@
-import { rememberOnlyOnline } from '../../runtime/worktreeStatuses/onlyOnline';
-import { identityChange, identityOf } from './historyIdentity';
-import { historyTargetOf } from './historyTargetOf';
+import { rememberOnlyOnline } from '../../../runtime/worktreeStatuses/onlyOnline';
+import { identityChange, identityOf } from '../historyIdentity';
+import { historyTargetOf } from '../historyTargetOf';
 import { readBranchOrigin } from './readBranchOrigin';
-import type { SliceDeps } from '../../slice-types';
-import type { BranchOriginCheck, HistoryMountInput } from './types';
+import type { SliceDeps } from '../../../slice-types';
+import type { BranchOriginCheck, HistoryMountInput } from '../types';
 
 type Params = Pick<SliceDeps, 'get'>;
 

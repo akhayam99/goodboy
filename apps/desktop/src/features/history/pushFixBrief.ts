@@ -1,9 +1,9 @@
-import type { HistoryOnlineCommit } from '@goodboy/types';
 import { withOperatorNotes } from '../chat/utils/withOperatorNotes';
+import type { OriginOnlyCommit } from '../../store/slices/history/types';
 
 type Kept = {
   readonly remoteSha: string;
-  readonly commits: ReadonlyArray<HistoryOnlineCommit>;
+  readonly commits: ReadonlyArray<OriginOnlyCommit>;
 };
 
 type Params = {
