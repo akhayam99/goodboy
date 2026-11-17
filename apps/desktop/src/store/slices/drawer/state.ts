@@ -159,12 +159,30 @@ export type DrawerRequest =
 
 export type OpenDrawer = DrawerRequest;
 
+export type DrawerFocus =
+  | { readonly at: 'page' }
+  | { readonly at: 'detail' }
+  | { readonly at: 'tool'; readonly kind: DrawerContent['kind'] };
+
+export type DrawerGrid = {
+  readonly columns: ReadonlyArray<ReadonlyArray<OpenDrawer>>;
+  readonly used: ReadonlyArray<DrawerContent['kind']>;
+  readonly focus: DrawerFocus;
+};
+
+export type DrawerFocusTarget =
+  { readonly at: 'page' } | { readonly at: 'panel'; readonly entry: OpenDrawer };
+
+export const EMPTY_DRAWER_GRID: DrawerGrid = { columns: [], used: [], focus: { at: 'page' } };
+
 export type DrawerSliceState = {
   readonly drawer: OpenDrawer | null;
   readonly drawerBack: OpenDrawer | null;
+  readonly drawerGrid: DrawerGrid;
 };
 
 export const drawerInitialState: DrawerSliceState = {
   drawer: null,
   drawerBack: null,
+  drawerGrid: EMPTY_DRAWER_GRID,
 };

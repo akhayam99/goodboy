@@ -348,6 +348,7 @@ export const NON_SESSION_STATE_KEYS = [
   'goodboyNamedSessionId',
   'drawer',
   'drawerBack',
+  'drawerGrid',
   'navigation',
   'appStudio',
   'lastSettingsFocus',

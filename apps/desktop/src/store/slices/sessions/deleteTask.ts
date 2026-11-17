@@ -242,7 +242,12 @@ export const deleteTask = (set: SetFn, get: GetFn) => {
         sessions: state.sessions.filter((s) => s.id !== sessionId),
         archivedSessions: nextArchived,
         currentSessionId: state.currentSessionId === sessionId ? null : state.currentSessionId,
-        ...slotAfterSessionGone({ drawer: state.drawer, back: state.drawerBack, sessionId }),
+        ...slotAfterSessionGone({
+          drawer: state.drawer,
+          back: state.drawerBack,
+          grid: state.drawerGrid,
+          sessionId,
+        }),
       };
     });
     void get()
