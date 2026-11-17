@@ -48,6 +48,7 @@ const HANDOFF_OPEN = '<<handoff';
 const COMMENT_ANALYSIS_OPEN = '<<comment-analysis';
 const COMMENT_RESOLVED_OPEN = '<<comment-resolved';
 const COMMENT_WONTFIX_OPEN = '<<comment-wontfix';
+const COMMENT_NEEDS_RUN_OPEN = '<<comment-needs-run';
 const COMMENT_VERDICT_OPEN = '<<comment-verdict';
 const HISTORY_STEP_OPEN = '<<history-step';
 const HISTORY_DONE_OPEN = '<<history-done';
@@ -737,6 +738,31 @@ export const extractAllCommentWontfix = (
   return markers;
 };
 
+export type ExtractedCommentNeedsRun = {
+  readonly threadId: string;
+  readonly reason: string;
+};
+
+type CommentNeedsRunParams = {
+  readonly assistantText: string;
+};
+
+export const extractAllCommentNeedsRun = ({
+  assistantText,
+}: CommentNeedsRunParams): ReadonlyArray<ExtractedCommentNeedsRun> => {
+  const markers: Array<ExtractedCommentNeedsRun> = [];
+  for (const inner of extractSelfClosingInner(assistantText, COMMENT_NEEDS_RUN_OPEN)) {
+    const attrs = parseHandoffAttrs(inner);
+    const threadId = (attrs.threadid ?? attrs.thread ?? '').trim();
+    const reason = (attrs.reason ?? '').trim();
+    if (threadId.length === 0 || reason.length === 0) {
+      continue;
+    }
+    markers.push({ threadId, reason });
+  }
+  return markers;
+};
+
 const NEEDS_INPUT_OPEN_RE = /<<needs-input((?:\s+[\w-]+="[^"]*")*)\s*>>/g;
 const NEEDS_INPUT_CLOSE = '<</needs-input>>';
 const NEEDS_INPUT_MAX_OPTIONS = 3;
@@ -1238,7 +1264,7 @@ export const assessPlanReadiness = (input: PlanReadinessInput): PlanReadinessRes
 const BLOCK_MARKER_ALT =
   'auto|plan|clusters|fan-out|scout-split|workflow|goal|ctx-decision|ctx-resolved|ctx-question|comment-reply|needs-input|oq-answer|pr-title|pr-body|commit-message|changelog-entry|outcome';
 const SELF_MARKER_ALT =
-  'handoff|comment-analysis|comment-resolved|comment-wontfix|comment-verdict|review-comment|cluster-done|cluster-stuck|step-done|step-stuck|scout-domains|history-step|history-done|history-stuck|materialize:';
+  'handoff|comment-analysis|comment-resolved|comment-wontfix|comment-needs-run|comment-verdict|review-comment|cluster-done|cluster-stuck|step-done|step-stuck|scout-domains|history-step|history-done|history-stuck|materialize:';
 
 const MARKER_ATTRS = '(?:\\s(?:"[^"]{0,2000}"|[^>"]){0,4000})?';
 const MARKER_OPEN = `<<(?:(?:${BLOCK_MARKER_ALT})${MARKER_ATTRS}>>|ctx-question${MARKER_ATTRS}>>?)`;

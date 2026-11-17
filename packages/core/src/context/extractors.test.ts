@@ -4,6 +4,7 @@ import {
   assessPlanReadiness,
   extractAllCommentAnalysis,
   extractAllCommentNeedsInput,
+  extractAllCommentNeedsRun,
   extractAllCommentReplies,
   extractAllCommentResolved,
   extractAllCommentWontfix,
@@ -555,6 +556,33 @@ describe('extractAllCommentWontfix', () => {
       { threadId: 'PRRT_1', reason: 'first' },
       { threadId: 'PRRT_2', reason: 'second' },
     ]);
+  });
+});
+
+describe('extractAllCommentNeedsRun', () => {
+  it('reads every needs-run marker with the agent sentence, one per thread', () => {
+    const text = [
+      'two threads here.',
+      '<<comment-resolved threadId="PRRT_1" commitSha="abc1234">>',
+      '<<comment-needs-run threadId="PRRT_2" reason="It touches the ledger layout, the payouts route and two new components.">>',
+      '<<comment-needs-run threadId="note:7" reason="It asks to move Map<string, Array<T>> -> a store">>',
+    ].join('\n');
+    expect(extractAllCommentNeedsRun({ assistantText: text })).toEqual([
+      {
+        threadId: 'PRRT_2',
+        reason: 'It touches the ledger layout, the payouts route and two new components.',
+      },
+      { threadId: 'note:7', reason: 'It asks to move Map<string, Array<T>> -> a store' },
+    ]);
+  });
+
+  it('drops a marker without a thread id or without a reason', () => {
+    expect(
+      extractAllCommentNeedsRun({
+        assistantText:
+          '<<comment-needs-run threadId="PRRT_1">> <<comment-needs-run reason="bigger">>',
+      }),
+    ).toEqual([]);
   });
 });
 
@@ -1249,6 +1277,14 @@ describe('stripControlMarkers', () => {
     );
     expect(
       stripControlMarkers('ok <<comment-wontfix threadid=T1 reason="Map<string, Array<T>>">> done'),
+    ).toBe('ok  done');
+  });
+
+  it('strips a needs-run marker from what the owner reads', () => {
+    expect(
+      stripControlMarkers(
+        'ok <<comment-needs-run threadId="PRRT_1" reason="It touches the payouts route -> two new components">> done',
+      ),
     ).toBe('ok  done');
   });
 
