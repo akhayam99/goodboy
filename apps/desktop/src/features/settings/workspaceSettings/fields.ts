@@ -126,7 +126,7 @@ const WORKSPACE_FIELDS: ReadonlyArray<WorkspaceFieldDef> = [
   }),
   erase({
     id: 'attribution',
-    label: 'Attribution line',
+    label: NAMES.signReplies,
     fallback: true,
     parse: asFlag,
     stored: ({ overrides }) => overrides?.attributionFooter ?? null,
@@ -198,7 +198,7 @@ const WORKSPACE_FIELDS: ReadonlyArray<WorkspaceFieldDef> = [
   }),
   erase({
     id: 'resolveOnGithub',
-    label: NAMES.markThreadResolved,
+    label: NAMES.resolveTheThread,
     fallback: REPLY_SETTINGS_DEFAULT.resolveOnGithub,
     parse: asFlag,
     stored: ({ overrides }) => overrides?.resolveOnGithub ?? null,
@@ -207,7 +207,7 @@ const WORKSPACE_FIELDS: ReadonlyArray<WorkspaceFieldDef> = [
   }),
   erase({
     id: 'editPostedReply',
-    label: 'Edit the posted reply',
+    label: NAMES.updateReplyAfterSquash,
     fallback: true,
     parse: asFlag,
     stored: ({ editPostedReply }) => (editPostedReply === null ? null : editPostedReply !== '0'),

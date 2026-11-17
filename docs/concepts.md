@@ -1398,24 +1398,28 @@ was. ⌘↵ with the list focused pushes too. Behind it runs a
 3. Posts each reply, then resolves each thread on GitHub when you are allowed
    to resolve it there. Otherwise the thread stays open for the reviewer.
 
-How a reply reads is set in Settings, Workspace, **Replies and commits**:
+How a reply reads is set in Settings, Workspace, **Replies and commits**, one
+column with three bands: How replies read, After a reply, Commits.
 
-- **Voice**: Terse (the default), Friendly, Formal, or Your replies, which
+- **Voice**: Terse (the default), Friendly, Formal, or Like your replies, which
   follows a style note you can edit. **Learn from your replies** reads your last
   20 review replies in the workspace's repositories and writes that note. The
-  voice goes into the agent's prompt
-- **Templates**: When fixed and When not changing. Goodboy fills them in code,
+  voice goes into the agent's prompt. A preview of a fixed reply sits right
+  under it and follows the voice and Sign replies as soon as they change
+- **Reply wording**, closed by default and marked Default or Custom, holds the
+  two templates: When fixed and When not changing. Each has an **Insert**
+  button that puts a placeholder at the caret. Goodboy fills them in code,
   the agent writes only `{reason}`. The other variables are `{commit}`,
   `{commit_story}`, `{fixup_of}`, `{reviewer}`, `{file}` and `{line}`.
   `{commit_story}` is the same sha as `{commit}`, plus `c81e5aa, squashed into
 e31b9f4` when a history rewrite folded the fix. Reply and page always read
   the last commit of the thread after rewrites. The defaults are the
   reason, then `Fixed in {commit_story}.` or `Leaving this as is.`
-- **Attribution line**, under Voice in the Replies band, signs everything
+- **Sign replies**, under Voice in How replies read, signs everything
   Goodboy posts with one value
-- **Mark thread as resolved** (on by default, it resolves the thread after the reply) and **Commits** (new
+- **Resolve the thread** (on by default, it resolves the thread after the reply) and **Commits** (new
   commit, or fixup of the commit that added the line)
-- **Edit the posted reply** (on by default, stored per workspace in the
+- **Update the reply after a squash** (on by default, stored per workspace in the
   `settings` table under `review.edit_posted_reply.<workspaceId>`, `0` = off).
   After a history rewrite is pushed and a reply Goodboy posted names a sha that
   moved, Goodboy edits that reply in place with `updateReviewComment`: it adds

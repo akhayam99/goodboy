@@ -81,7 +81,7 @@ The page says so before you push if the worktree has no dependencies installed o
 
 ### Review replies in your voice
 
-Choose the tone of the replies the agent drafts: **Terse**, **Friendly**, **Formal** or **Your replies**, which learns from your last 20 review replies. You can edit the style note it writes.
+Choose the tone of the replies the agent drafts: **Terse**, **Friendly**, **Formal** or **Like your replies**, which learns from your last 20 review replies. You can edit the style note it writes.
 
 ### Fixes on a branch that moved
 
