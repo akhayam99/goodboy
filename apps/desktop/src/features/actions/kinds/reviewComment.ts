@@ -24,12 +24,10 @@ import {
 import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
 import { hostIconOf } from '../../../shared/components/hostIconOf';
 import { openWebAction } from '../openWebAction';
-import { agentPlace, branchPlace, fixRunTranscript } from '../../../store/slices/navigation/place';
-import { sessionById } from '../../../store/slices/sessions/sessionIndex';
-import { commentLaneOf, type CommentLane } from '../../resolve/commentLaneOf';
-import { COMMENT_RUN_COPY } from '../../resolve/commentRunCopy';
-import { commentRunOf } from '../../resolve/commentRunOf';
-import { commentRunThreadIdsOf } from '../../resolve/commentRunThreadIdsOf';
+import { branchPlace, fixRunTranscript } from '../../../store/slices/navigation/place';
+import type { CommentLane } from '../../resolve/commentLaneOf';
+import { REVIEW_COMMENT_RUN_ACTIONS } from './reviewCommentRunActions';
+import { reviewCommentRunFactsOf } from './reviewCommentRunFactsOf';
 import { activeReviewSourceOf } from '../../../store/slices/review-source/activeReviewSource';
 import { diffThreadIdOf } from '../../diff/lib/threadIds';
 import { acceptReviewItem } from '../../resolve/acceptReviewItem';
@@ -124,13 +122,6 @@ const REWRITABLE: ReadonlySet<ReviewCommentState> = new Set(['ready', 'edited'])
 const isPostableReplyOnly = ({ facts }: { readonly facts: ReviewCommentFacts }): boolean =>
   facts.state === 'replied' && facts.isReplyOnly && facts.hasPr && !facts.isNote;
 
-type RunFirstParams = {
-  readonly facts: ReviewCommentFacts;
-};
-
-const isRunFirst = ({ facts }: RunFirstParams): boolean =>
-  facts.lane === 'run' && facts.state === 'new' && facts.canStartRun;
-
 const isRedraft = ({ state }: { readonly state: ReviewCommentState }): boolean =>
   state === 'outdated' || state === 'failed';
 
@@ -210,7 +201,6 @@ export const REVIEW_COMMENT_KIND: ObjectKindDefinition<
     const draft = state.resolveItemDrafts[target.sessionId]?.[target.threadId];
     const rowState = rowStateOf({ state, sessionId: target.sessionId, row });
     const gitFacts = state.sessionThreadGit?.[target.sessionId]?.[target.threadId] ?? null;
-    const agents = state.sessionPhaseRuns[target.sessionId] ?? [];
     return {
       sessionId: target.sessionId,
       threadId: target.threadId,
@@ -259,12 +249,7 @@ export const REVIEW_COMMENT_KIND: ObjectKindDefinition<
             .map((entry) => entry.item.id),
         ),
       }),
-      lane: commentLaneOf({
-        row,
-        inRunThreadIds: new Set(commentRunThreadIdsOf({ agents })),
-      }),
-      runAgentId: commentRunOf({ agents, threadId: target.threadId }),
-      canStartRun: sessionById(state.sessions, target.sessionId)?.workspaceId != null,
+      ...reviewCommentRunFactsOf({ state, sessionId: target.sessionId, row }),
     };
   },
   actions: [
@@ -463,56 +448,7 @@ export const REVIEW_COMMENT_KIND: ObjectKindDefinition<
         return openWebAction({ url, env, sessionId: facts.sessionId });
       },
     },
-    {
-      id: 'reviewComment.openRun',
-      label: COMMENT_RUN_COPY.openRun,
-      icon: CONCEPT_ICONS.runs,
-      group: 'open',
-      when: ({ facts }) => facts.runAgentId !== null,
-      slot: () => 'primary',
-      run: ({ facts, env }) => {
-        if (facts.runAgentId === null) {
-          return;
-        }
-        env
-          .getState()
-          .navigate({ to: agentPlace({ sessionId: facts.sessionId, agentId: facts.runAgentId }) });
-      },
-    },
-    {
-      id: 'reviewComment.startRun',
-      label: COMMENT_RUN_COPY.startRun,
-      icon: CONCEPT_ICONS.runs,
-      group: 'act',
-      description: () => COMMENT_RUN_COPY.startRunNote,
-      when: ({ facts }) =>
-        (facts.state === 'new' || facts.state === 'failed') &&
-        facts.lane !== 'in_run' &&
-        facts.canStartRun &&
-        !hasOverlay({ facts }),
-      slot: ({ facts }) => (isRunFirst({ facts }) ? 'primary' : 'menu'),
-      run: ({ facts, env }) =>
-        env
-          .getState()
-          .openCommentRunStart({ sessionId: facts.sessionId, threadId: facts.threadId }),
-    },
-    {
-      id: 'reviewComment.draft',
-      label: ({ facts }) => (isRunFirst({ facts }) ? COMMENT_RUN_COPY.fixAsOne : 'Fix'),
-      icon: CONCEPT_ICONS.agents,
-      group: 'act',
-      shortcut: 'review.fix',
-      description: ({ facts }) => (isRunFirst({ facts }) ? COMMENT_RUN_COPY.fixAsOneNote : null),
-      when: ({ facts }) =>
-        facts.state === 'new' && facts.lane !== 'in_run' && !hasOverlay({ facts }),
-      slot: ({ facts }) => (isRunFirst({ facts }) ? 'menu' : 'primary'),
-      run: ({ facts, env }) =>
-        requestReview({
-          getState: env.getState,
-          sessionId: facts.sessionId,
-          request: { kind: 'fix', threadIds: [facts.threadId] },
-        }),
-    },
+    ...REVIEW_COMMENT_RUN_ACTIONS,
     {
       id: 'reviewComment.answer',
       label: 'Answer',

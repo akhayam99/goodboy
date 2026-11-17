@@ -157,6 +157,6 @@ describe('a comment already in a run', () => {
     const bar = await mount({ runs: [stopped] });
 
     expect(verbOf({ bar, id: 'reviewComment.openRun' })).toBeNull();
-    expect(within(bar).getByText(COMMENT_RUN_COPY.startRun)).toBeTruthy();
+    within(bar).getByText(COMMENT_RUN_COPY.startRun);
   });
 });

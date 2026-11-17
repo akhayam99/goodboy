@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import type { SessionId } from '@goodboy/types';
 import { reviewTallyOf, type ReviewTally } from '../reviewTally';
-import { useCommentRunThreadIds } from '../useCommentRunThreadIds';
+import { useCommentRunThreadIds } from '../hooks/useCommentRunThreadIds';
 import { useSourceQueueRows } from '../useSourceQueueRows';
 
 type Params = {

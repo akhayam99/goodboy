@@ -39,7 +39,7 @@ import {
 import { checksFailedItemIds } from '../../../checksFailedItemIds';
 import { isBulkAcceptable } from '../../../bulkAccept';
 import { commentLaneOf, type CommentLane } from '../../../commentLaneOf';
-import { useCommentRunThreadIds } from '../../../useCommentRunThreadIds';
+import { useCommentRunThreadIds } from '../../../hooks/useCommentRunThreadIds';
 import { rowFixOf, type RowFix } from '../../../rowFix';
 import { heldLaunchIdOf } from '../../../../../store/slices/resolve/launchTurns';
 import type { ResolveCandidateWithItems } from '../../../../../store/slices/resolve/state';

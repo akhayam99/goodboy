@@ -15,7 +15,7 @@ type PartParams = {
 
 const MAX_NAMED = 3;
 
-const listOf = ({ items }: ListParams): string =>
+const andListOf = ({ items }: ListParams): string =>
   items.length <= 1
     ? (items[0] ?? '')
     : `${items.slice(0, -1).join(', ')} and ${items[items.length - 1] ?? ''}`;
@@ -27,7 +27,7 @@ const partOf = ({ sign, places }: PartParams): string => {
     case 'places':
       return places.length > MAX_NAMED
         ? `names ${places.length} other places`
-        : `names ${listOf({ items: places })}`;
+        : `names ${andListOf({ items: places })}`;
     case 'long':
       return 'is long';
     default: {
@@ -38,4 +38,4 @@ const partOf = ({ sign, places }: PartParams): string => {
 };
 
 export const commentScopeSentenceOf = ({ scope }: Params): string =>
-  `It ${listOf({ items: scope.signs.map((sign) => partOf({ sign, places: scope.places })) })}.`;
+  `It ${andListOf({ items: scope.signs.map((sign) => partOf({ sign, places: scope.places })) })}.`;

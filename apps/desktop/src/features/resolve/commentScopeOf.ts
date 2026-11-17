@@ -133,7 +133,7 @@ const FILE_ENDINGS: ReadonlyArray<string> = [
   '.html',
 ];
 
-const plainOf = ({ body }: Pick<Params, 'body'>): string =>
+const plainBodyOf = ({ body }: Pick<Params, 'body'>): string =>
   markdownPlainLinesOf({ text: body, shouldKeepOpenFence: false }).join(' ').trim();
 
 const trimmedOf = ({ word }: WordParams): string => {
@@ -157,15 +157,15 @@ const wordsOf = ({ text }: TextParams): ReadonlyArray<string> =>
 const lowerOf = ({ words }: WordsParams): ReadonlyArray<string> =>
   words.map((word) => word.toLowerCase());
 
-const isUpper = ({ word }: WordParams): boolean => word >= 'A' && word <= 'Z';
+const isCapitalLetter = ({ word }: WordParams): boolean => word >= 'A' && word <= 'Z';
 
 const isPascalName = ({ word }: WordParams): boolean => {
-  if (!isUpper({ word: word.charAt(0) })) {
+  if (!isCapitalLetter({ word: word.charAt(0) })) {
     return false;
   }
   const chars = [...word];
   const isPlain = chars.every((char) => /[\p{L}\p{N}]/u.test(char));
-  const uppers = chars.filter((char) => isUpper({ word: char })).length;
+  const uppers = chars.filter((char) => isCapitalLetter({ word: char })).length;
   return isPlain && uppers >= 2 && uppers < chars.length;
 };
 
@@ -253,7 +253,7 @@ const placesOf = ({ words, lower, own }: PlacesParams): ReadonlyArray<string> =>
 const SIGN_ORDER: ReadonlyArray<CommentScopeSign> = ['rethink', 'places', 'long'];
 
 export const commentScopeOf = ({ body, path }: Params): CommentScope => {
-  const plain = plainOf({ body });
+  const plain = plainBodyOf({ body });
   const words = wordsOf({ text: plain });
   const lower = lowerOf({ words });
   const places = placesOf({ words, lower, own: ownNamesOf({ path }) });
