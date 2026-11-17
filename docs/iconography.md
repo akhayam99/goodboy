@@ -132,14 +132,16 @@ The left column draws a session's state as one `StatusMark` (`sessionMarkOf`):
 a bare glyph for what asks you (`MessageCircleQuestionMark`, `Hand`,
 `TriangleAlert`), a ring for what moves, a circled glyph for what settled,
 never a glyph inside a ring; packages/ui/DESIGN-SYSTEM.md → Status marks has the
-table. The switcher and the hover card draw it as a `WorkNode` mark, not as the
-stage glyph, as below. The mark follows the reason that
+table. The folded rail, the pinned rows, the switcher, the hover card, the
+Board card signal, the Now chip rows, the palette's Needs you rows and the
+Guide legend draw the same `StatusMark`, never a concept icon and never a
+`WorkNode`: a state has one glyph and one tone. The mark follows the reason that
 holds the session, from `ATTENTION_REASON_META` in
-`features/session/session-stage.ts`, which gives each reason a mark, a tone and
-a sentence that the Board card, the Now chip rows and Search or run read too. Red
-`!` (`failed`) is only an agent error, a push that failed (`push-failed`, "1 comment didn't go out") and failing checks. Amber is what you must
-answer, approve or act on: `?` for a question or a comment that needs you, the
-shield for a tool permission (Needs permission) or a held plan (the plan needs approval), and an amber `!` (`alert`) for changes
+`features/session/session-stage.ts` through `attentionMarkOf`, which gives each
+reason one mark, one tone and one sentence. Red
+`failed` is only an agent error, a stopped run, a push that failed (`push-failed`, "1 comment didn't go out") and failing checks. Amber is what you must
+answer, approve or act on: `question` for a question or a comment that needs you, the
+hand for a tool permission (Needs permission), a held plan (the plan needs approval), a ready step, a Slack reply and the Lead (Lead needs you), and `alert` for changes
 requested and comments the fix could not fix. A solid green disc with a white
 check (`approved`) is a pull request ready to merge. A Bitbucket session wears
 the same marks: its commit statuses and its reviewers feed the same table, so a
@@ -149,13 +151,10 @@ queue (`pr-queued`) is the `merging` mark: a ring in the `primary` blue around a
 half-filled core, calm and in progress, because nothing is left for you to do.
 It ranks below the needs-you reasons and above approved, and the session stays
 in review, so it never enters Needs you, the Now chip or the Needs you
-rows of Search or run. A finished session
-(`finished`) is the same solid disc in the `merged` violet with a white check,
-so a done session reads as complete beside the hollow rings; a session whose
-pull request closed unmerged keeps the muted check (`closed`). The check inside
-the 14px node is 12px, never smaller. Blue is moving or new: the
-running ring, and the small dot of an unread reply. The sentence is the node's accessible
-label. DESIGN-SYSTEM.md owns the full table.
+rows of Search or run. A finished session is the `merged` check in violet; a
+session whose pull request closed unmerged keeps the faint slash (`closed`).
+Blue is moving or new: the running ring, and the small dot of an unread reply.
+The sentence is the mark's accessible label. DESIGN-SYSTEM.md owns the full table.
 
 ## Agent kinds
 

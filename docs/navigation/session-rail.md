@@ -387,19 +387,20 @@ session tools), never from a page header.
 The linked records keep their lenses for now and stay in the palette.
 
 **A sidebar row says the name and the state, and the hover card and the board
-card say the rest.** A row is one line of 28px: a 14px `WorkNode` and the
-title, with the ticket key of a linked task in front of it when the goal starts
+card say the rest.** A row is one line of 28px: the title and one trailing
+`StatusMark`, with the ticket key of a linked task in front of it when the goal starts
 with `[KEY]` (`sessionRowTitle` strips the key from the title and returns it;
 `SessionRowTitle` draws it in muted mono, the title truncates and the key never
 does; the switcher row and the hover card title do the same, the board card
-keeps its chip). It has no second line, no `ToneBar`, no marks, no age and
-no cost. The node says the state by meaning (`sessionNodeOf`, from
-`useSessionSummary`): under needs you it draws the mark of the winning reason
-from the one reason table (`?`, the approval shield, an amber `!`, a solid green
-check for an approved pull request, and a red `!` only for an agent error or
-failing checks); running is the ring, done a solid violet disc with a white check, in review and
-building a 1px hollow ring named by the stage word, and archived a dashed ring,
-only under Show archived. Colour is never the only sign. The open
+keeps its chip). It has no second line, no `ToneBar`, no age and no cost. The
+mark says the state by meaning (`sessionMarkOf`, from `useSessionRowFacts`):
+under needs you it draws the mark of the winning reason from the one reason
+table (the question glyph, the approval hand, the amber alert, the green check
+of an approved pull request, and the red failed glyph only for an agent error, a
+stopped run, a push that failed or failing checks); running is the ring, done the
+merged check, and in review, building and archived leave the box empty. The
+hover card, the switcher and the folded rail draw the same mark. Colour is never
+the only sign. The open
 session is set in medium weight and selected while its page is on screen. The row's
 accessible description carries the stage word and its reason, so nothing is
 mouse-only.
@@ -544,8 +545,8 @@ names the branch.
 **Folded sessions have names and state.** Under the doors, the workspace rail
 shows only sessions with something to say: those that need you, then running
 sessions, then unread ones (`railRankOf`), up to seven (`RAIL_PINNED_LIMIT`).
-Idle and pinned sessions with nothing new fold into `+N`. Each button carries the same state node as the
-session row (`StateNode`, with its unread dot) and a tooltip with the full title, state and
+Idle and pinned sessions with nothing new fold into `+N`. Each button carries the same `StatusMark` as the
+session row (`sessionMarkOf`), a quiet neutral dot when the row's box is empty, and a tooltip with the full title, state and
 unread reason.
 The open session keeps its slot when shown; otherwise it gets one extra
 button before `+N`. The count covers the remaining sessions and opens the

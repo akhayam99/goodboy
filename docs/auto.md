@@ -958,7 +958,7 @@ Auto is not running or another window owns the tree, the delete fails with the r
 stays and the tree stays unconfirmed; deleting again resumes the stop. The purge itself
 (`agentPurgeStatements`) never touches the tree. The lists read only trees whose root agent is
 still in the session (`liveAutoViewsOf`, through `useAutoTreeViews`): a tree
-left open on an agent that was deleted or moved raises no **Needs you** card, no **Auto needs you**
+left open on an agent that was deleted or moved raises no **Needs you** card, no **Lead needs you**
 line and no count. A child whose agent is gone is not stuck (`isAutoChildStuck`); a child Auto
 accepted and has not started has no agent yet and still counts, and so does one whose agent could
 not be created (reason `agent_not_created`, `launchChildren`): its failure and retry card stay. Plans stay readable in the plan
