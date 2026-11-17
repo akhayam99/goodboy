@@ -1,11 +1,11 @@
-import { CHECK_STATE } from '../../store/slices/notifications/errorRecovery';
+import { CHECK_STATE } from '../../../store/slices/notifications/errorRecovery';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Button } from '@goodboy/ui';
 import type { MountId, SessionId } from '@goodboy/types';
-import { useAppStore } from '../../store';
-import type { PushContinuation } from '../../store/slices/history/types';
-import { usePushFix } from '../hooks/usePushFix';
-import { NAMES } from '../utils/names';
+import { useAppStore } from '../../../store';
+import type { PushContinuation } from '../../../store/slices/history/types';
+import { usePushFix } from '../../../shared/hooks/usePushFix';
+import { NAMES } from '../../../shared/utils/names';
 import { PushFixStatusLine } from './PushFixStatusLine';
 
 type Props = {
@@ -54,13 +54,22 @@ export const PushFixAgentAction = ({ sessionId, mountId, output, pending, onSett
   };
 
   if (state.kind === 'working') {
-    return <PushFixStatusLine sessionId={sessionId} state={state} />;
+    return (
+      <div className="flex w-full min-w-0 flex-col">
+        <PushFixStatusLine sessionId={sessionId} state={state} />
+      </div>
+    );
   }
+  const isRetry = state.kind === 'failed' || state.kind === 'stopped';
   return (
     <>
-      {state.kind === 'failed' && <PushFixStatusLine sessionId={sessionId} state={state} />}
+      {isRetry && (
+        <div className="flex w-full min-w-0 flex-col">
+          <PushFixStatusLine sessionId={sessionId} state={state} />
+        </div>
+      )}
       <Button size="sm" variant="secondary" isBusy={isStarting} onClick={() => void start()}>
-        {NAMES.fixPushWithAgent}
+        {isRetry ? NAMES.retry : NAMES.fixPushWithAgent}
       </Button>
     </>
   );

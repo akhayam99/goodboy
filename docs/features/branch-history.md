@@ -134,6 +134,7 @@ On a conflict or a commit hook, the panel does three things.
 
 - The verbs are one set. The banner, the panel and the Next row run the same ones. A hint typed under **Resolve with the Lead** or **Fix with an agent** therefore applies from whichever place you press the verb.
 - A failed push keeps **Fix with an agent**, **Open terminal here** and **Retry push**.
+- While that agent works, the same panel reads **Fixing** with its step and time, with **Stop** and **Open transcript**. **Retry push** waits until it ends.
 - It reads **Stopped: hook stopped the push** only when its error names `pre-push`. A remote `pre-receive hook declined` reads **Stopped: push failed**. The Local checks cell uses the same test.
 - A dirty tree, a moved branch, a blocked move, a result that differs and a failed rebase offer **Retry rebase** and **Open terminal**.
 - Only the last two of these can **Dismiss**: a result that differs and a failed rebase. **Dismiss** records the stop like Keep. A stop that blocks the branch has no Dismiss.

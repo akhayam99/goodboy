@@ -130,6 +130,19 @@ describe('pushFixStateOf', () => {
     });
   });
 
+  it('reads a fix you stopped as stopped, not failed', () => {
+    expect(
+      stateOf({
+        outcomes: {
+          [MOUNT_ID]: outcome({
+            kind: 'agent_stopped',
+            reason: 'The agent was stopped before it finished.',
+          }),
+        },
+      }),
+    ).toEqual({ kind: 'stopped', agentId: AGENT_ID });
+  });
+
   it('prefers a running agent over an older outcome, and never reads another session outcome', () => {
     expect(
       stateOf({

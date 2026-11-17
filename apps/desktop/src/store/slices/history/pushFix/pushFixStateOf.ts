@@ -11,6 +11,7 @@ export type PushFixState =
       readonly isClaimed: boolean;
       readonly followUp: PushFixFollowUp | null;
     }
+  | { readonly kind: 'stopped'; readonly agentId: AgentId }
   | {
       readonly kind: 'failed';
       readonly agentId: AgentId;
@@ -76,6 +77,9 @@ export const pushFixStateOf = ({
         isClaimed: outcome.isClaimed,
         followUp: outcome.followUp,
       };
+    }
+    if (outcome.kind === 'agent_stopped') {
+      return { kind: 'stopped', agentId: outcome.agentId };
     }
     return {
       kind: 'failed',

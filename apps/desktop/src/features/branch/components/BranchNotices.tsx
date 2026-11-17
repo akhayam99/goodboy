@@ -2,17 +2,13 @@ import type { SessionId } from '@goodboy/types';
 import { ActionConfirmPanel } from '../../actions/components/ActionControls/ActionConfirmPanel';
 import { ActionStatusLine } from '../../actions/components/ActionControls/ActionStatusLine';
 import { pushFailureOf } from '../../actions/kinds/pushFailureOf';
-import { PushFailureBlock } from '../../../shared/components/PushFailureBlock';
-import { PushFixStatus } from '../../../shared/components/PushFixStatus';
+import { PushFixStatus } from '../../history/pushFix/PushFixStatus';
 import { StaleDepsNotice } from '../../../shared/components/StaleDepsNotice';
-import { StartHint } from '../../../shared/components/StartHint';
-import { START_HINT_COPY } from '../../../shared/components/startHintCopy';
 import { useAppStore } from '../../../store';
 import { selectActiveMountId } from '../../../store/slices/project-mounts/selectors';
-import { START_HINT_SCOPES } from '../../../store/slices/startHints/startHintScopes';
 import type { BranchControls } from '../hooks/useBranchControls';
+import { usePushFailureSlots } from '../hooks/usePushFailureSlots';
 import { BranchSetupOffer } from './BranchHeader/BranchSetupOffer';
-import { PushFailureActions } from './BranchHeader/PushFailureActions';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -24,6 +20,7 @@ type Props = {
 export const BranchNotices = ({ sessionId, controls, isPushNext, isSetupOfferShown }: Props) => {
   const pushFailure = pushFailureOf({ error: controls.diffControls.failure?.error });
   const activeMountId = useAppStore((state) => selectActiveMountId({ state, sessionId }));
+  const pushSlots = usePushFailureSlots({ sessionId, controls: controls.diffControls });
   return (
     <>
       {(isPushNext || pushFailure !== null) && activeMountId !== null && (
@@ -39,42 +36,7 @@ export const BranchNotices = ({ sessionId, controls, isPushNext, isSetupOfferSho
       {pushFailure === null && activeMountId !== null && (
         <PushFixStatus sessionId={sessionId} mountId={activeMountId} />
       )}
-      <ActionStatusLine
-        controls={controls.diffControls}
-        showReasons={false}
-        failureHint={
-          pushFailure === null ? null : (
-            <div className="w-full max-w-md">
-              <StartHint
-                sessionId={sessionId}
-                scope={START_HINT_SCOPES.pushFix({ mountId: pushFailure.mountId })}
-                label={START_HINT_COPY.implementerLabel}
-                placeholder={START_HINT_COPY.pushFix}
-              />
-            </div>
-          )
-        }
-        failureDetail={
-          pushFailure === null ? null : <PushFailureBlock output={pushFailure.message} />
-        }
-        failureActions={
-          pushFailure === null ? null : (
-            <PushFailureActions
-              sessionId={sessionId}
-              mountId={pushFailure.mountId}
-              isForce={pushFailure.isForce}
-              confirmedOnlyOnline={
-                pushFailure.confirmedOnlyOnline?.map((commit) => commit.sha) ?? null
-              }
-              confirmedRemoteSha={pushFailure.confirmedRemoteSha}
-              isOriginMoved={pushFailure.isOriginMoved}
-              message={pushFailure.message}
-              onResolved={controls.diffControls.dismissFailure}
-            />
-          )
-        }
-        canRetry={pushFailure === null || !pushFailure.isOriginMoved}
-      />
+      <ActionStatusLine controls={controls.diffControls} showReasons={false} {...pushSlots} />
       <ActionConfirmPanel controls={controls.diffControls} />
       <ActionStatusLine controls={controls.pullRequestControls} showReasons={false} />
       <ActionConfirmPanel controls={controls.pullRequestControls} />

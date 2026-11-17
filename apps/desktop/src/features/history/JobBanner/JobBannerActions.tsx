@@ -72,7 +72,6 @@ export const JobBannerActions = ({ controls, actions, isNoteOpen, onToggleNote }
         </>
       );
     case 'merging':
-    case 'fixing-push':
       return seeWhatItDid;
     case 'done':
       return (
@@ -117,6 +116,7 @@ export const JobBannerActions = ({ controls, actions, isNoteOpen, onToggleNote }
     case 'pushed':
     case 'origin-moved':
     case 'push-failed':
+    case 'fixing-push':
     case 'dirty':
     case 'head-moved':
     case 'blocked':

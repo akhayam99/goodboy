@@ -9,6 +9,7 @@ export const REBASE_STOP_PANEL_STATES: ReadonlySet<RebaseJobState> = new Set<Reb
   'pushed',
   'origin-moved',
   'push-failed',
+  'fixing-push',
   'dirty',
   'head-moved',
   'blocked',

@@ -708,6 +708,7 @@ push-failed-hook
 push-fix-agent-failed
 push-fix-push-failed
 push-fix-pushed
+push-fix-stopped
 push-fix-working
 push-fixing
 push-stale-deps-installing

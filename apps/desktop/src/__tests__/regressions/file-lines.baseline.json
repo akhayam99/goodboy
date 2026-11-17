@@ -18,7 +18,7 @@
   "apps/desktop/src/features/diff/components/DiffViewSelector/index.tsx": 421,
   "apps/desktop/src/features/history/components/CommitsHistory/HistoryCommitRow.tsx": 276,
   "apps/desktop/src/features/history/components/CommitsHistory/index.tsx": 275,
-  "apps/desktop/src/features/history/components/RebaseStopPanel.tsx": 452,
+  "apps/desktop/src/features/history/components/RebaseStopPanel.tsx": 451,
   "apps/desktop/src/features/inbox/components/InboxStudio/index.tsx": 629,
   "apps/desktop/src/features/integrations/components/CreateReviewForm/CreateReviewForm.tsx": 456,
   "apps/desktop/src/features/integrations/gitlab/client.ts": 689,

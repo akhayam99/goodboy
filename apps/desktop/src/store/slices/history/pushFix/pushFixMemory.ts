@@ -40,7 +40,12 @@ type MemoryParams = {
 
 const EMPTY: PushFixMemory = { fixes: {}, outcomes: {} };
 const KEPT_MS = 6 * 60 * 60 * 1000;
-const OUTCOME_KINDS: ReadonlyArray<PushFixOutcomeKind> = ['pushed', 'agent_failed', 'push_failed'];
+const OUTCOME_KINDS: ReadonlyArray<PushFixOutcomeKind> = [
+  'pushed',
+  'agent_failed',
+  'agent_stopped',
+  'push_failed',
+];
 
 const fieldsOf = ({ value }: FieldsParams): Readonly<Record<string, unknown>> | null =>
   typeof value === 'object' && value !== null && !Array.isArray(value)
