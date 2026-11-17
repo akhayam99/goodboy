@@ -1212,6 +1212,7 @@ describe('resolve candidates keep the branch tip approved', () => {
     agentWrites({ files: [['a.txt', 'a\n']], message: 'fix a' });
     const uncaptured = git(worktreePath, ['rev-parse', 'HEAD']);
     expect(uncaptured).not.toBe(rootSha);
+    writeFileSync(join(worktreePath, 'base.txt'), 'owner edit\n');
 
     const relaunched = makeHarness();
     const pending = await relaunched.actions.recoverUncapturedResolveWork({
@@ -1221,16 +1222,14 @@ describe('resolve candidates keep the branch tip approved', () => {
     expect(pending).toBeNull();
     expect(git(worktreePath, ['rev-parse', 'HEAD'])).toBe(rootSha);
     expect(existsSync(join(worktreePath, 'a.txt'))).toBe(false);
+    expect(readFileSync(join(worktreePath, 'base.txt'), 'utf8')).toBe('owner edit\n');
     expect(git(worktreePath, ['rev-parse', 'refs/goodboy/candidates/attempt-1'])).toBe(uncaptured);
     expect((await listResolveCandidates({ db, sessionId: SESSION_ID }))[0]).toMatchObject({
       state: 'ready',
       candidateSha: uncaptured,
     });
-    expect(
-      (await listResolveQueueItems({ db, sessionId: SESSION_ID })).find(
-        (entry) => entry.item.id === itemA,
-      )?.item.approvalState,
-    ).toBe('none');
+    const items = await listResolveQueueItems({ db, sessionId: SESSION_ID });
+    expect(items.find((entry) => entry.item.id === itemA)?.item.approvalState).toBe('none');
     await expectNoAncestryLeak();
   });
 
