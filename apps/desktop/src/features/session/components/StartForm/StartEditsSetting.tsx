@@ -1,12 +1,7 @@
 import type { ClaudePermissionMode, ProviderId, SessionId, WorkspaceId } from '@goodboy/types';
-import { useAppStore } from '../../../../store';
-import { sessionById } from '../../../../store/slices/sessions/sessionIndex';
-import {
-  DEFAULT_PERMISSION_MODE,
-  pickerModeOf,
-  type PickerMode,
-} from '../../../permissions/modeCopy';
+import type { PickerMode } from '../../../permissions/modeCopy';
 import { StartEditsChip } from './StartEditsChip';
+import { useStartEditsMode } from './useStartEditsMode';
 
 type PickParams = {
   readonly next: PickerMode;
@@ -29,20 +24,16 @@ export const StartEditsSetting = ({
   isDisabled,
   onPick,
 }: Props) => {
-  const workspace = useAppStore((state) =>
-    state.workspaces.find((candidate) => candidate.id === workspaceId),
-  );
-  const sessionMode = useAppStore((state) =>
-    sessionId === null ? null : (sessionById(state.sessions, sessionId)?.permissionMode ?? null),
-  );
-  const workspaceMode = pickerModeOf({
-    mode: workspace?.defaultPermissionMode ?? DEFAULT_PERMISSION_MODE,
+  const { mode, workspaceMode, workspaceName } = useStartEditsMode({
+    workspaceId,
+    sessionId,
+    picked,
   });
   return (
     <StartEditsChip
-      value={pickerModeOf({ mode: picked ?? sessionMode ?? workspaceMode })}
+      value={mode}
       workspaceMode={workspaceMode}
-      workspaceName={workspace?.name ?? 'the workspace'}
+      workspaceName={workspaceName}
       provider={provider}
       isDisabled={isDisabled}
       onPick={onPick}
