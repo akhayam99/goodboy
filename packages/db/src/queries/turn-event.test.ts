@@ -6,6 +6,7 @@ import {
   countUserTextEvents,
   findUndecidedPermissionAsk,
   insertTurnEvent,
+  listAgentRunIdsForSession,
   listTurnEventEntriesForAgent,
   listTurnEventsForAgent,
   readFirstUserText,
@@ -342,5 +343,66 @@ describe('turn event queries', () => {
 
     const events = await listTurnEventsForAgent(db, agentId);
     expect(events[0]).toMatchObject({ kind: 'user_text', sentVia: 'queued' });
+  });
+
+  it('lists each run of each agent once, in the order it first spoke', async () => {
+    const secondRun = 'run-2' as ProviderRunId;
+    const rows: ReadonlyArray<readonly [AgentId, ProviderRunId, string]> = [
+      [agentId, runId, '2026-07-30T10:00:00.000Z'],
+      [otherAgentId, secondRun, '2026-07-30T10:01:00.000Z'],
+      [agentId, runId, '2026-07-30T10:02:00.000Z'],
+      [agentId, secondRun, '2026-07-30T10:03:00.000Z'],
+      [agentId, 'history' as ProviderRunId, '2026-07-30T10:04:00.000Z'],
+    ];
+    for (const [index, [owner, run, when]] of rows.entries()) {
+      await insertTurnEvent(db, {
+        id: `event-run-${index}`,
+        sessionId,
+        agentId: owner,
+        event: { kind: 'assistant_text', runId: run, delta: 'step', at: when as IsoDateTime },
+      });
+    }
+    await db.execute(
+      'INSERT INTO turn_events (id, session_id, agent_id, payload, created_at) VALUES (?, ?, ?, ?, ?)',
+      ['event-broken', sessionId, agentId, '{not json', Date.now()],
+    );
+
+    const runs = await listAgentRunIdsForSession(db, sessionId);
+
+    expect([...runs.entries()]).toEqual([
+      [agentId, [runId, secondRun]],
+      [otherAgentId, [secondRun]],
+    ]);
+  });
+
+  it('reads one row per run, not one per turn event, for a long session', async () => {
+    for (let index = 0; index < 120; index += 1) {
+      await insertTurnEvent(db, {
+        id: `event-long-${index}`,
+        sessionId,
+        agentId: index % 2 === 0 ? agentId : otherAgentId,
+        event: {
+          kind: 'assistant_text',
+          runId: `run-${index % 3}` as ProviderRunId,
+          delta: 'x'.repeat(2_000),
+          at,
+        },
+      });
+    }
+    let rowsRead = 0;
+    const counting: Database = {
+      ...db,
+      select: async <T>(sql: string, params?: ReadonlyArray<unknown>) => {
+        const result = await db.select<T>(sql, params);
+        rowsRead += result.length;
+        return result;
+      },
+    };
+
+    const runs = await listAgentRunIdsForSession(counting, sessionId);
+
+    expect(rowsRead).toBe(6);
+    expect(runs.get(agentId)).toHaveLength(3);
+    expect(runs.get(otherAgentId)).toHaveLength(3);
   });
 });
