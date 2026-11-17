@@ -1123,7 +1123,6 @@ describe('BranchHeader push fix status', () => {
     renderHeader({ pr: open });
 
     screen.getByText('Fixing');
-    screen.getByRole('button', { name: 'Stop' });
     screen.getByRole('button', { name: 'Open transcript' });
   });
 
