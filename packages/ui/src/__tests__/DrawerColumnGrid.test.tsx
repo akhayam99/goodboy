@@ -9,6 +9,7 @@ import { DrawerColumn } from '../components/DrawerColumn';
 import { DrawerFrame } from '../components/DrawerFrame';
 import { DrawerEdgeContext } from '../drawerEdgeContext';
 import type { DockGridCell, DockGridSpec } from '../dockGridSpec';
+import { BROWSER_DRAWER_STORAGE_KEY, RIGHT_DRAWER_STORAGE_KEY } from '../drawerWidthKeys';
 
 type ObserverCallback = (entries: ReadonlyArray<{ contentRect: { width: number } }>) => void;
 
@@ -213,5 +214,58 @@ describe('DrawerColumn dock grid', () => {
     const detail = document.querySelector('[data-container="detail"]');
     expect(detail?.hasAttribute('data-panel-focused')).toBe(true);
     expect(detail?.className).toContain('border-focus-ring');
+  });
+});
+
+describe('DrawerColumn dock grid widths saved on the session', () => {
+  it('sizes each column from the width the session saved', () => {
+    stubColumn({ column: 2600 });
+    const { spec } = specOf({
+      columns: [[{ ...TERMINAL, savedWidth: 460 }], [{ ...BROWSER, savedWidth: 800 }]],
+      focus: 'browser',
+    });
+    renderGrid({ spec });
+
+    expect(grid()?.style.gridTemplateColumns).toBe('460px 12px 800px');
+  });
+
+  it('starts a column with no saved width from the shared width key of its size', () => {
+    localStorage.setItem(BROWSER_DRAWER_STORAGE_KEY, '840');
+    stubColumn({ column: 2600 });
+    const { spec } = specOf({ columns: [[TERMINAL], [BROWSER]], focus: 'browser' });
+    renderGrid({ spec });
+
+    expect(grid()?.style.gridTemplateColumns).toBe('400px 12px 840px');
+  });
+
+  it('hands a resized column to the session by the panel that sets its width', () => {
+    stubColumn({ column: 2600 });
+    const onResize = vi.fn();
+    const { spec } = specOf({ columns: [[TERMINAL], [BROWSER]], focus: 'browser' });
+    renderGrid({ spec: { ...spec, onResize } });
+
+    const handle = screen.getByRole('separator', { name: 'Resize side panel 2' });
+    fireEvent.keyDown(handle, { key: 'ArrowLeft' });
+    fireEvent.doubleClick(handle);
+
+    expect(onResize.mock.calls.map(([params]) => params)).toEqual([
+      { key: 'browser', width: 728 },
+      { key: 'browser', width: 720 },
+    ]);
+    expect(localStorage.getItem(BROWSER_DRAWER_STORAGE_KEY)).toBeNull();
+  });
+
+  it('hands the width of a single tool to the session too', () => {
+    stubColumn({ column: 2600 });
+    const onResize = vi.fn();
+    const { spec } = specOf({ columns: [[{ ...TERMINAL, savedWidth: 460 }]], focus: 'terminal' });
+    renderGrid({ spec: { ...spec, onResize } });
+
+    const handle = screen.getByRole('separator', { name: 'Resize side panel' });
+    expect(handle.getAttribute('aria-valuenow')).toBe('460');
+    fireEvent.keyDown(handle, { key: 'ArrowLeft' });
+
+    expect(onResize).toHaveBeenCalledWith({ key: 'terminal', width: 468 });
+    expect(localStorage.getItem(RIGHT_DRAWER_STORAGE_KEY)).toBeNull();
   });
 });

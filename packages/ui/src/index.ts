@@ -52,7 +52,11 @@ export {
   LEFT_SIDEBAR_STORAGE_KEY,
 } from './components/AppShell';
 export { DrawerColumn } from './components/DrawerColumn';
-export { READER_DRAWER_STORAGE_KEY, RIGHT_DRAWER_STORAGE_KEY } from './drawerWidthKeys';
+export {
+  DOCK_SEED_KEYS_READ_UNTIL,
+  READER_DRAWER_STORAGE_KEY,
+  RIGHT_DRAWER_STORAGE_KEY,
+} from './drawerWidthKeys';
 export type { DrawerColumnFrame, DrawerColumnProps } from './components/DrawerColumn';
 export {
   COLUMN_FRAME,

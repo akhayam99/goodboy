@@ -6,9 +6,15 @@ import { dockGridTracksOf } from '../dockGridTracksOf';
 import { dockLeadSizingOf } from '../dockLeadSizingOf';
 import type { DockPairTurn } from '../dockPairTurnContext';
 import { DOCK_FOCUS_DETAIL, type DockGridCell, type DockGridSpec } from '../dockGridSpec';
-import type { DrawerPlacement, DrawerSizing, PanelPairLayout } from '../drawerGeometry';
+import {
+  DRAWER_TIERS,
+  type DrawerPlacement,
+  type DrawerSizing,
+  type PanelPairLayout,
+} from '../drawerGeometry';
 import { ArrowLeftRight, ArrowUpDown } from '../icons';
 import { routedHandleOf } from '../routedHandleOf';
+import { savedHandleOf } from '../savedHandleOf';
 import { turnedDockColumnsOf } from '../turnedDockColumnsOf';
 import { unmeasuredDockGridOf } from '../unmeasuredDockGridOf';
 import type { DrawerTierWidthSet } from '../useDrawerTierWidthSet';
@@ -71,6 +77,10 @@ type ColumnPreviewParams = {
   readonly from: ReadonlyArray<DockGridColumnBox>;
 };
 
+type CellParams = {
+  readonly cell: DockGridCell;
+};
+
 type FitParams = {
   readonly solved: SolvedDockFrame | null;
 };
@@ -106,6 +116,8 @@ export const useDockGrid = ({
   const sizingOf = new Map(columns.flat().map((cell) => [cell.key, cell.sizing] as const));
   const leadOf = ({ keys }: KeysParams): DrawerSizing =>
     dockLeadSizingOf({ sizings: keys.map((key) => sizingOf.get(key) ?? 'side') });
+  const savedWidthOf = ({ cell }: CellParams): number =>
+    cell.savedWidth ?? tiers[cell.sizing].width;
   const solveColumns = ({ columns: shape }: ColumnsParams): SolvedDockFrame | null =>
     columnWidth === null
       ? null
@@ -119,7 +131,7 @@ export const useDockGrid = ({
             panes: column.map((cell) => ({
               id: cell.key,
               sizing: cell.sizing,
-              savedWidth: tiers[cell.sizing].width,
+              savedWidth: savedWidthOf({ cell }),
             })),
           })),
         });
@@ -132,7 +144,7 @@ export const useDockGrid = ({
     if (solved === null) {
       return unmeasuredDockGridOf({
         columns,
-        savedWidthOf: ({ cell }) => tiers[cell.sizing].width,
+        savedWidthOf,
         detail: detail.fallback,
       });
     }
@@ -165,9 +177,15 @@ export const useDockGrid = ({
     (width) =>
       previewColumn({ index, width, from: boxes });
   const handles = boxes.map((box, index) => {
-    const sizing = leadOf({ keys: box.panes.map((pane) => pane.key) });
+    const keys = box.panes.map((pane) => pane.key);
+    const sizing = leadOf({ keys });
     const routed = routedHandleOf({
-      handle: tiers[sizing].handleProps,
+      handle: savedHandleOf({
+        handle: tiers[sizing].handleProps,
+        key: keys.find((key) => sizingOf.get(key) === sizing) ?? null,
+        baseWidth: DRAWER_TIERS[sizing].fallback,
+        onResize: spec?.onResize,
+      }),
       route,
       preview: previewOf({ index }),
     });

@@ -168,16 +168,24 @@ export type DrawerFocus =
   | { readonly at: 'detail' }
   | { readonly at: 'tool'; readonly kind: DrawerContent['kind'] };
 
+export type DrawerGridWidths = Readonly<Partial<Record<DrawerContent['kind'], number>>>;
+
 export type DrawerGrid = {
   readonly columns: ReadonlyArray<ReadonlyArray<OpenDrawer>>;
   readonly used: ReadonlyArray<DrawerContent['kind']>;
   readonly focus: DrawerFocus;
+  readonly widths: DrawerGridWidths;
 };
 
 export type DrawerFocusTarget =
   { readonly at: 'page' } | { readonly at: 'panel'; readonly entry: OpenDrawer };
 
-export const EMPTY_DRAWER_GRID: DrawerGrid = { columns: [], used: [], focus: { at: 'page' } };
+export const EMPTY_DRAWER_GRID: DrawerGrid = {
+  columns: [],
+  used: [],
+  focus: { at: 'page' },
+  widths: {},
+};
 
 export type DrawerSliceState = {
   readonly drawer: OpenDrawer | null;

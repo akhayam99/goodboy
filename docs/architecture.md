@@ -873,7 +873,7 @@ your library" run on the new schema. A migration that throws rolls back its
 part, records no version and leaves the gate closed: the launch error screen
 shows the error with Retry, and Retry runs the migrations again. `wipeDb`
 closes the gate while it replays the schema. `dbBoot.test.ts` upgrades
-databases left at m1, m139, m220 and m224 with the resolve queue asked for
+databases left at m1, m139, m220, m224 and m243 (0.39) with the resolve queue asked for
 first, starts the resolve drain before an upgrade, and fails a migration then
 retries it.
 

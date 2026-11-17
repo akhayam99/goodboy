@@ -80,6 +80,7 @@ export const gridAfterOpen = ({ grid, entry }: Params): DrawerGrid => {
       columns: swapped({ columns: grid.columns, kind: entry.kind, entry }),
       used: [...grid.used.filter((kind) => kind !== entry.kind), entry.kind],
       focus,
+      widths: grid.widths,
     };
   }
   if (grid.columns.flat().length < GRID_CAP) {
@@ -87,6 +88,7 @@ export const gridAfterOpen = ({ grid, entry }: Params): DrawerGrid => {
       columns: placed({ columns: grid.columns, entry }),
       used: [...grid.used, entry.kind],
       focus,
+      widths: grid.widths,
     };
   }
   const oldest = toolsByUseOf({ grid })[0]?.kind ?? entry.kind;
@@ -94,5 +96,6 @@ export const gridAfterOpen = ({ grid, entry }: Params): DrawerGrid => {
     columns: swapped({ columns: grid.columns, kind: oldest, entry }),
     used: [...grid.used.filter((kind) => kind !== oldest), entry.kind],
     focus,
+    widths: grid.widths,
   };
 };
