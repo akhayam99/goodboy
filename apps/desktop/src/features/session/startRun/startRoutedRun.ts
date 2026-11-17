@@ -18,6 +18,7 @@ import { selectMountById } from '../../../store/slices/project-mounts/selectors'
 import { sessionById } from '../../../store/slices/sessions/sessionIndex';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { openAgentRevealEvent } from '../../../shared/utils/openAgentReveal';
+import { commentRunOf } from '../../resolve/commentRunOf';
 import { uniqueNameOf } from '../../workflows/uniqueNameOf';
 import { leadPlanBriefOf } from './leadPlanBriefOf';
 import { planFirstLevelOf } from './planFirstLevelOf';
@@ -73,6 +74,10 @@ export const startRoutedRun = async ({
   const isFromComments = threadIds.length > 0;
   if (isFromComments && result.route.shape !== 'lead') {
     throw new Error('A run from comments starts with the Lead');
+  }
+  const agents = state.sessionPhaseRuns[sessionId] ?? [];
+  if (threadIds.some((threadId) => commentRunOf({ agents, threadId }) !== null)) {
+    throw new Error('A comment you picked is already in a run');
   }
   if (
     sourceMountId !== null &&
