@@ -52,6 +52,23 @@ describe('the facts on the branch tabs', () => {
     expect(tab.textContent).toContain('+1240 -318');
   });
 
+  it('draws a live dot on the tab whose item an agent works on, and only there', () => {
+    render(
+      <BranchTabStrip
+        tabs={TABS}
+        value="pr"
+        onSelect={() => undefined}
+        facts={factsOf({})}
+        live={{ checks: 'Analyzing payments-api / test' }}
+      />,
+    );
+
+    expect(
+      screen.getByRole('tab', { name: /^Checks/ }).querySelectorAll('[data-tab-live="checks"]'),
+    ).toHaveLength(1);
+    expect(document.querySelectorAll('[data-tab-live]')).toHaveLength(1);
+  });
+
   it('draws the commit count on Commits', () => {
     draw({ notPushed: 3 });
 
