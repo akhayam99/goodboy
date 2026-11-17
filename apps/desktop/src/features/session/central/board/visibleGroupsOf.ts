@@ -1,6 +1,4 @@
-import type { BoardGroupId, BoardRow, BranchBoard } from './boardTypes';
-
-export type BoardFilter = 'questions';
+import type { BoardGroupId, BranchBoard } from './boardTypes';
 
 export type VisibleGroup = Readonly<{
   id: BoardGroupId;
@@ -10,50 +8,20 @@ export type VisibleGroup = Readonly<{
   isFoldable: boolean;
 }>;
 
-type MatchParams = {
-  readonly row: BoardRow;
-  readonly filter: BoardFilter | null;
-};
-
-export const isRowInFilter = ({ row, filter }: MatchParams): boolean => {
-  if (filter === null) {
-    return true;
-  }
-  return row.askIds.length > 0;
-};
-
 type Params = {
   readonly board: BranchBoard;
-  readonly filter: BoardFilter | null;
   readonly isMergedExpanded: boolean;
 };
 
-export const visibleGroupsOf = ({
-  board,
-  filter,
-  isMergedExpanded,
-}: Params): ReadonlyArray<VisibleGroup> => {
-  const rowById = new Map(board.rows.map((row) => [row.id, row]));
-  return board.groups.flatMap((group): ReadonlyArray<VisibleGroup> => {
-    if (filter !== null) {
-      const rowIds = group.rowIds.filter((id) => {
-        const row = rowById.get(id);
-        return row !== undefined && isRowInFilter({ row, filter });
-      });
-      return rowIds.length === 0
-        ? []
-        : [{ id: group.id, label: group.label, rowIds, hiddenCount: 0, isFoldable: false }];
-    }
+export const visibleGroupsOf = ({ board, isMergedExpanded }: Params): ReadonlyArray<VisibleGroup> =>
+  board.groups.map((group): VisibleGroup => {
     const isFoldable = group.hiddenCount > 0;
     const rowIds = isFoldable && !isMergedExpanded ? group.visibleRowIds : group.rowIds;
-    return [
-      {
-        id: group.id,
-        label: group.label,
-        rowIds,
-        hiddenCount: group.rowIds.length - rowIds.length,
-        isFoldable,
-      },
-    ];
+    return {
+      id: group.id,
+      label: group.label,
+      rowIds,
+      hiddenCount: group.rowIds.length - rowIds.length,
+      isFoldable,
+    };
   });
-};

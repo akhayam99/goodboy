@@ -663,7 +663,7 @@ activity yet show the plain overview with its actions.
 - **A branch is a row by its stored mount id, in any state.** A merged branch stays a row and a removed worktree keeps its row, because the row never reads the path. Work with no known branch lands in one row, "Not on a branch", only while an agent or Lead there runs, waits for you or failed, or a question is open, or when the session has no branch at all; finished work with no branch draws no row and `branchBoardOf` hands its spend, time and counts to the tiles through `settled`.
 - **Groups are Needs you, In progress, Merged and Not on a branch.** An empty group is not drawn. Merged shows the 3 newest (`MERGED_FOLD_LIMIT`) unless it is the only group with branches. A session with one branch draws no groups.
 - **The stage of a row comes from that branch only.** `branchFactsFor` builds its facts and `deriveSessionStage` words them; the session's own error state and unread mark never reach a row.
-- **The five tiles are counted by id.** `sessionKpisOf` reads the board: Branches (merged of total), Needs you, Checks, Spend and Time. A Lead on two branches is two rows and one Lead; the rows sum to each tile.
+- **The three tiles are counted by id.** `sessionKpisOf` reads the board: Branches (merged of total), Spend and Time. A Lead on two branches is two rows and one Lead; the rows sum to each tile.
 
 ## Crumbs
 
@@ -717,7 +717,7 @@ activity yet show the plain overview with its actions.
   Restore, then More session actions. **Archive session** is also the
   filled button of the row when every branch is merged, no agent works and no question is
   open (`ArchivePrimary`, `isArchivePrimaryOf`); otherwise Archive stays in the menu with
-  the same guards. Below the head the Overview is five tiles and a board with one row per
+  the same guards. Below the head the Overview is three tiles and a board with one row per
   branch (`BranchBoard`).
 
 ## The session tools

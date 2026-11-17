@@ -383,8 +383,8 @@ list below it is that button and filters the list: `isPressed` fills it
 that counts something no row shows (spend, time) has no `onClick` and stays a
 plain tile. `unit` is the quiet word after the number ("of 4 merged"), and
 `valueTone` colors the number (`warning` for what waits, `danger` for what
-fails, `success` for done). The session Overview draws its five tiles this way
-(`BoardTiles`) and says what is filtered in one line with a **Clear** button.
+fails, `success` for done). The session Overview draws its three tiles
+(`BoardTiles`) as plain tiles: a count its tab already shows gets no tile.
 
 ### Counts, fact lines and durations
 

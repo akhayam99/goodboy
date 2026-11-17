@@ -5,9 +5,8 @@ import type { BranchEntry } from '../../central/branches/branchStoryOf';
 import type { ActionCardModel } from '../../central/next/actionCardsOf';
 import type { ActionCardActions } from '../../central/next/useActionCardActions';
 import { cardRowIdOf } from '../../central/board/cardRowIdOf';
-import { visibleGroupsOf, type BoardFilter } from '../../central/board/visibleGroupsOf';
+import { visibleGroupsOf } from '../../central/board/visibleGroupsOf';
 import { BoardContext, type BoardContextValue } from './BoardContext';
-import { BoardFilterNote } from './BoardFilterNote';
 import { BoardLooseCards } from './BoardLooseCards';
 import { LOOSE_ROW_ID } from './looseRowId';
 import { BoardGroup } from './BoardGroup';
@@ -32,17 +31,8 @@ const MERGE_KIND = 'merge-series';
 export const BranchBoard = ({ session, entries, cards: allCards, actionsFor, openFor }: Props) => {
   const cards = session.archivedAt == null ? allCards : NO_CARDS;
   const sessionId = session.id;
-  const {
-    board,
-    kpis,
-    tileFacts,
-    entryByRowId,
-    mergedAtByMountId,
-    runningByRowId,
-    newRowIds,
-    now,
-  } = useBranchBoard({ session, entries });
-  const [filter, setFilter] = useState<BoardFilter | null>(null);
+  const { board, kpis, entryByRowId, mergedAtByMountId, runningByRowId, newRowIds, now } =
+    useBranchBoard({ session, entries });
   const [isMergedExpanded, setIsMergedExpanded] = useState(false);
   const diffStatByPath = useMountDiffStats(sessionId);
   const mergedMountIds = useMemo(
@@ -72,7 +62,7 @@ export const BranchBoard = ({ session, entries, cards: allCards, actionsFor, ope
     return byRow;
   }, [cards, rowIds, rowIdByAskId]);
   const mergeCard = useMemo(() => cards.find((card) => card.kind === MERGE_KIND) ?? null, [cards]);
-  const groups = visibleGroupsOf({ board, filter, isMergedExpanded });
+  const groups = visibleGroupsOf({ board, isMergedExpanded });
   const firstOpenGroup = groups.find((group) => group.id !== 'merged')?.id ?? null;
   const value: BoardContextValue = {
     session,
@@ -91,20 +81,7 @@ export const BranchBoard = ({ session, entries, cards: allCards, actionsFor, ope
   };
   return (
     <div data-slot="branch-board-section" className="flex min-w-0 flex-col gap-4">
-      <BoardTiles
-        kpis={kpis}
-        facts={tileFacts}
-        now={now}
-        filter={filter}
-        onFilter={({ filter: next }) => setFilter(next)}
-      />
-      {filter === null ? null : (
-        <BoardFilterNote
-          filter={filter}
-          isEmpty={groups.length === 0}
-          onClear={() => setFilter(null)}
-        />
-      )}
+      <BoardTiles kpis={kpis} />
       <BoardContext.Provider value={value}>
         <BoardLooseCards />
         {groups.length === 0 ? null : (
