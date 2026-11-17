@@ -5,4 +5,7 @@ type Params = {
 };
 
 export const isLiveCommentRun = ({ agent }: Params): boolean =>
-  agent.deletedAt == null && agent.sourceKind === 'comment_run' && agent.status !== 'stopped';
+  agent.deletedAt == null &&
+  agent.sourceKind === 'comment_run' &&
+  agent.status !== 'stopped' &&
+  agent.status !== 'failed';

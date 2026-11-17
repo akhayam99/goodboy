@@ -16,6 +16,16 @@ import {
   Undo2,
 } from '@goodboy/ui/icons';
 import type { AgentId, ResolveVerdict, SessionId } from '@goodboy/types';
+import { reviewCommentLaneFactsOf } from './reviewCommentLaneFacts';
+import { reviewCommentRunFactsOf, type ReviewCommentRunFacts } from './reviewCommentRunFacts';
+import { REVIEW_COMMENT_RUN_ACTIONS } from './reviewCommentRunActions';
+import {
+  UNDECIDED,
+  hasOverlay,
+  isOutsideRun,
+  isRunChanged,
+  isRunFinished,
+} from './reviewCommentRules';
 import {
   REVIEW_SOURCE_CAPABILITIES,
   REVIEW_SOURCE_LABEL,
@@ -25,13 +35,9 @@ import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
 import { hostIconOf } from '../../../shared/components/hostIconOf';
 import { openWebAction } from '../openWebAction';
 import { branchPlace, fixRunTranscript } from '../../../store/slices/navigation/place';
-import type { CommentLane } from '../../resolve/commentLaneOf';
-import { REVIEW_COMMENT_RUN_ACTIONS } from './reviewCommentRunActions';
-import { reviewCommentRunFactsOf } from './reviewCommentRunFactsOf';
 import { activeReviewSourceOf } from '../../../store/slices/review-source/activeReviewSource';
 import { diffThreadIdOf } from '../../diff/lib/threadIds';
 import { acceptReviewItem } from '../../resolve/acceptReviewItem';
-import { laneAcceptCountOf, laneAcceptNotesOf } from '../../resolve/laneAcceptCount';
 import { acceptUpToLabel } from '../../resolve/laneCopy';
 import { FAILED_RUN_COPY } from '../../resolve/failedRunCopy';
 import { verdictReply } from '../../resolve/commentVerdict';
@@ -76,24 +82,10 @@ export type ReviewCommentFacts = {
   readonly hasFixOnBranch: boolean;
   readonly laneAcceptCount: number;
   readonly laneAcceptNotes: number;
-  readonly lane: CommentLane | null;
-  readonly runAgentId: AgentId | null;
-  readonly canStartRun: boolean;
-};
+} & ReviewCommentRunFacts;
 
-const UNDECIDED: ReadonlySet<ReviewCommentState> = new Set([
-  'new',
-  'needs',
-  'ready',
-  'edited',
-  'outdated',
-  'failed',
-]);
 const DRAFTED: ReadonlySet<ReviewCommentState> = new Set(['ready', 'edited', 'outdated']);
 const DECIDED: ReadonlySet<ReviewCommentState> = new Set(['accepted', 'replied', 'skipped']);
-
-const hasOverlay = ({ facts }: { readonly facts: ReviewCommentFacts }): boolean =>
-  facts.remote !== null;
 
 const isMissing = ({ facts }: { readonly facts: ReviewCommentFacts }): boolean =>
   facts.remote === 'missing';
@@ -228,28 +220,8 @@ export const REVIEW_COMMENT_KIND: ObjectKindDefinition<
         row.item.approvalState === 'wont_fix' ||
         (row.proposalKind !== 'fix' && row.thread.disposition !== 'fix'),
       isReplyFailure: row.thread.stateReason?.startsWith('publication_failed:') === true,
-      hasFixOnBranch:
-        row.thread.disposition === 'fix' &&
-        (row.thread.commitShas?.length ?? 0) > 0 &&
-        !(state.sessionResolveCandidates[target.sessionId] ?? []).some(
-          (entry) =>
-            entry.candidate.state === 'ready' &&
-            entry.items.some((member) => member.queueItemId === row.item.id),
-        ),
-      laneAcceptCount: laneAcceptCountOf({
-        candidates: state.sessionResolveCandidates[target.sessionId] ?? [],
-        itemId: row.item.id,
-      }),
-      laneAcceptNotes: laneAcceptNotesOf({
-        candidates: state.sessionResolveCandidates[target.sessionId] ?? [],
-        itemId: row.item.id,
-        noteItemIds: new Set(
-          (state.sessionResolveQueueItems[target.sessionId] ?? [])
-            .filter((entry) => entry.thread.originKind === 'diff_comment')
-            .map((entry) => entry.item.id),
-        ),
-      }),
-      ...reviewCommentRunFactsOf({ state, sessionId: target.sessionId, row }),
+      ...reviewCommentLaneFactsOf({ state, sessionId: target.sessionId, row }),
+      ...reviewCommentRunFactsOf({ state, target, row, draftReply: draft?.reply ?? null }),
     };
   },
   actions: [
@@ -613,7 +585,11 @@ export const REVIEW_COMMENT_KIND: ObjectKindDefinition<
       icon: CornerDownRight,
       group: 'act',
       shortcut: 'review.reply',
-      when: ({ facts }) => UNDECIDED.has(facts.state) && !facts.isNote && !hasOverlay({ facts }),
+      when: ({ facts }) =>
+        UNDECIDED.has(facts.state) &&
+        !facts.isNote &&
+        !hasOverlay({ facts }) &&
+        !isRunChanged({ facts }),
       slot: () => 'secondary',
       run: (params) => compose(params, 'reply'),
     },
@@ -624,7 +600,7 @@ export const REVIEW_COMMENT_KIND: ObjectKindDefinition<
       group: 'act',
       shortcut: 'review.skip',
       when: ({ facts }) =>
-        UNDECIDED.has(facts.state) ||
+        (UNDECIDED.has(facts.state) && isOutsideRun({ facts }) && !isRunFinished({ facts })) ||
         (isMissing({ facts }) && !facts.isPushedMissing && !facts.isChecking),
       slot: () => 'secondary',
       run: ({ facts, env }) =>
@@ -657,7 +633,10 @@ export const REVIEW_COMMENT_KIND: ObjectKindDefinition<
       label: ({ facts }) => (facts.isNote ? 'Close the comment' : NAMES.resolve),
       icon: CircleCheck,
       group: 'act',
-      when: ({ facts }) => UNDECIDED.has(facts.state) && facts.canResolve,
+      when: ({ facts }) =>
+        UNDECIDED.has(facts.state) &&
+        facts.canResolve &&
+        !(facts.isNote && isRunFinished({ facts })),
       slot: () => 'menu',
       run: ({ facts, env }) =>
         facts.isNote
