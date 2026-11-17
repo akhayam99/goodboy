@@ -47,10 +47,7 @@ pub(super) struct TempIndex {
 impl TempIndex {
     pub(super) fn new(cwd: &Path, label: &str) -> Result<Self, WorktreeError> {
         let git_dir = git(cwd, &["rev-parse", "--absolute-git-dir"])?;
-        let nanos = std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)
-            .map(|elapsed| elapsed.as_nanos())
-            .unwrap_or_default();
+        let nanos = crate::util::now_nanos();
         let path = Path::new(git_dir.trim()).join(format!(
             "goodboy-{label}-{}-{}-{nanos}.index",
             std::process::id(),
