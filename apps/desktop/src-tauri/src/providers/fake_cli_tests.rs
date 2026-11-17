@@ -39,7 +39,7 @@ fn assert_every_probe_was_reaped(binary: &str) {
 fn detection_reads_the_version_each_fake_cli_prints() {
     let fake = FakeCli::stage("ok");
     let cases = [
-        ("anthropic", "claude", "2.1.4 (Claude Code)"),
+        ("anthropic", "claude", "2.1.90 (Claude Code)"),
         ("cursor", "cursor-agent", "2026.09.17-fake"),
         ("codex", "codex", "codex-cli 0.130.0"),
         ("gemini", "agy", "agy 1.1.9"),
@@ -121,6 +121,89 @@ fn a_slow_cli_is_never_reported_as_missing() {
 
     assert_eq!(status.error_kind, Some(ProbeErrorKind::Timeout));
     assert_ne!(status.error_kind, Some(ProbeErrorKind::NotFound));
+}
+
+fn claude_calls(binary: &str) -> Vec<String> {
+    let dir = std::path::Path::new(binary)
+        .parent()
+        .expect("the binary has a dir");
+    std::fs::read_to_string(dir.join("claude-calls.txt"))
+        .unwrap_or_default()
+        .lines()
+        .map(str::to_string)
+        .collect()
+}
+
+fn claude_config(fake: &FakeCli, body: &str) -> std::path::PathBuf {
+    let path = std::path::PathBuf::from(fake.work_dir()).join(".claude.json");
+    std::fs::write(&path, body).expect("write the claude config");
+    path
+}
+
+#[test]
+fn claude_auth_asks_the_status_subcommand_only_of_a_current_cli() {
+    let fake = FakeCli::stage("ok");
+    let binary = fake.binary("claude");
+
+    let auth = check_claude_auth_in(&binary, AUTH_BUDGET, None);
+
+    assert_eq!(auth.state, AuthStateKind::Connected);
+    assert_eq!(claude_calls(&binary), vec!["--version", "auth status"]);
+}
+
+#[test]
+fn claude_auth_never_sends_a_prompt_to_an_old_cli() {
+    let fake = FakeCli::stage("too-old");
+    let binary = fake.binary("claude");
+    let config = claude_config(
+        &fake,
+        r#"{"oauthAccount":{"emailAddress":"avery@harborline.test"}}"#,
+    );
+
+    let auth = check_claude_auth_in(&binary, AUTH_BUDGET, Some(&config));
+
+    assert_eq!(claude_calls(&binary), vec!["--version"]);
+    assert_eq!(auth.state, AuthStateKind::Connected);
+    assert_eq!(auth.identity.as_deref(), Some(EMAIL));
+    assert!(!auth.verified);
+    assert_eq!(
+        auth.reason,
+        Some(AuthReason::CliTooOld {
+            version: Some("2.1.37".into()),
+            minimum: claude_version::CLAUDE_AUTH_MIN_VERSION.into(),
+        })
+    );
+}
+
+#[test]
+fn an_old_cli_with_no_local_account_cannot_be_checked_and_asks_for_an_update() {
+    let fake = FakeCli::stage("too-old");
+    let binary = fake.binary("claude");
+    let config = claude_config(&fake, r#"{"numStartups":2}"#);
+
+    let auth = check_claude_auth_in(&binary, AUTH_BUDGET, Some(&config));
+
+    assert_eq!(claude_calls(&binary), vec!["--version"]);
+    assert_eq!(auth.state, AuthStateKind::Unknown);
+    assert!(matches!(auth.reason, Some(AuthReason::CliTooOld { .. })));
+}
+
+#[test]
+fn a_cli_whose_version_cannot_be_read_is_never_asked_for_its_status() {
+    let fake = FakeCli::stage("version-fail");
+    let binary = fake.binary("claude");
+
+    let auth = check_claude_auth_in(&binary, AUTH_BUDGET, None);
+
+    assert_eq!(claude_calls(&binary), vec!["--version"]);
+    assert_eq!(auth.state, AuthStateKind::Unknown);
+    assert_eq!(
+        auth.reason,
+        Some(AuthReason::CliTooOld {
+            version: None,
+            minimum: claude_version::CLAUDE_AUTH_MIN_VERSION.into(),
+        })
+    );
 }
 
 #[test]
