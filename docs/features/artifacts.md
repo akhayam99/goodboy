@@ -99,7 +99,7 @@ Point at what you want changed: pick elements on the wireframe, choose this scre
 
 ### Import wireframe JSON
 
-Bring in a wireframe made elsewhere, with a preview of any fixes before it lands.
+Bring in a wireframe made elsewhere, with a preview of any fixes before it lands. On an empty Artifacts page it sits in **New artifact**. Once the session has artifacts, **New** in the head makes reports and wireframes, and the folder icon **Artifact files** holds the import and **Show in Finder**.
 
 ### Revisions and Restore
 

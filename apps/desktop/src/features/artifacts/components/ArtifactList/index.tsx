@@ -122,7 +122,11 @@ export const ArtifactList = ({
               onChange={(next) => branch.onGroupByChange({ groupBy: next })}
             />
           )}
-          <ArtifactNewMenu sessionId={sessionId} onImportWireframe={importer.pick} />
+          <ArtifactNewMenu
+            sessionId={sessionId}
+            isEmpty={counts.all === 0}
+            onImportWireframe={importer.pick}
+          />
         </>
       }
     >

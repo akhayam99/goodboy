@@ -1,6 +1,13 @@
 import { useEffect } from 'react';
 import { ChevronDown, FileJson, FolderOpen, Plus } from '@goodboy/ui/icons';
-import { AnchoredPopover, Button, ICON_SIZE, useDropdown } from '@goodboy/ui';
+import {
+  AnchoredPopover,
+  Button,
+  ICON_SIZE,
+  MenuTriggerButton,
+  useDropdown,
+  type MenuEntry,
+} from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
@@ -12,10 +19,13 @@ import { AppMenuList } from '../../../actions/AppMenuList';
 
 type Props = {
   readonly sessionId: SessionId;
+  readonly isEmpty: boolean;
   readonly onImportWireframe: () => void;
 };
 
-export const ArtifactNewMenu = ({ sessionId, onImportWireframe }: Props) => {
+const FILES_LABEL = 'Artifact files';
+
+export const ArtifactNewMenu = ({ sessionId, isEmpty, onImportWireframe }: Props) => {
   const openArtifactCreation = useAppStore((state) => state.openArtifactCreation);
   const workspaceSlug = useAppStore((state) => {
     const workspaceId = sessionById(state.sessions, sessionId)?.workspaceId;
@@ -40,6 +50,50 @@ export const ArtifactNewMenu = ({ sessionId, onImportWireframe }: Props) => {
     window.addEventListener(name, listener);
     return () => window.removeEventListener(name, listener);
   }, [isOpen, toggle, sessionId]);
+
+  const fileEntries: ReadonlyArray<MenuEntry> = [
+    {
+      kind: 'item',
+      key: 'import-wireframe',
+      label: 'Import wireframe JSON…',
+      description: 'Import a .json spec',
+      icon: FileJson,
+      onSelect: onImportWireframe,
+    },
+    { kind: 'separator', key: 'folder-separator' },
+    {
+      kind: 'item',
+      key: 'show-folder',
+      label: 'Show in Finder',
+      icon: FolderOpen,
+      isDisabled: workspaceSlug === null,
+      onSelect: () => {
+        if (workspaceSlug !== null) {
+          void openArtifactsFolder({ workspaceSlug });
+        }
+      },
+    },
+  ];
+
+  if (!isEmpty) {
+    return (
+      <AnchoredPopover
+        dropdown={dropdown}
+        trigger={
+          <MenuTriggerButton
+            label={FILES_LABEL}
+            isOpen={dropdown.open}
+            size="control"
+            onClick={dropdown.toggle}
+          >
+            <FolderOpen size={ICON_SIZE.control} aria-hidden />
+          </MenuTriggerButton>
+        }
+      >
+        <AppMenuList label={FILES_LABEL} onClose={dropdown.close} entries={fileEntries} />
+      </AnchoredPopover>
+    );
+  }
 
   return (
     <AnchoredPopover
@@ -81,27 +135,7 @@ export const ArtifactNewMenu = ({ sessionId, onImportWireframe }: Props) => {
             onSelect: () =>
               openArtifactCreation({ sessionId, kind: 'wireframe', workflowRunId: null }),
           },
-          {
-            kind: 'item',
-            key: 'import-wireframe',
-            label: 'Import wireframe JSON…',
-            description: 'Import a .json spec',
-            icon: FileJson,
-            onSelect: onImportWireframe,
-          },
-          { kind: 'separator', key: 'folder-separator' },
-          {
-            kind: 'item',
-            key: 'show-folder',
-            label: 'Show in Finder',
-            icon: FolderOpen,
-            isDisabled: workspaceSlug === null,
-            onSelect: () => {
-              if (workspaceSlug !== null) {
-                void openArtifactsFolder({ workspaceSlug });
-              }
-            },
-          },
+          ...fileEntries,
         ]}
       />
     </AnchoredPopover>

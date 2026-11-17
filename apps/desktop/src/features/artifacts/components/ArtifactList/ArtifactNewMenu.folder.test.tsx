@@ -41,7 +41,7 @@ describe('ArtifactNewMenu folder item', () => {
   });
 
   const openMenu = () => {
-    render(<ArtifactNewMenu sessionId={sessionId} onImportWireframe={vi.fn()} />);
+    render(<ArtifactNewMenu sessionId={sessionId} isEmpty onImportWireframe={vi.fn()} />);
     fireEvent.click(screen.getByTestId('artifact-new'));
   };
 

@@ -108,7 +108,7 @@ describe('ArtifactList states', () => {
 });
 
 describe('ArtifactList header row', () => {
-  it('holds the tab strip and New at one 28px control height, the folder inside New', () => {
+  it('leaves New to the session head once there are artifacts, the folder inside Artifact files', () => {
     render(
       <ArtifactList
         sessionId={SESSION_ID}
@@ -122,13 +122,14 @@ describe('ArtifactList header row', () => {
     );
 
     const tabs = screen.getByRole('tablist', { name: 'Artifact kind' });
-    const create = screen.getByTestId('artifact-new');
     expect(tabs.getAttribute('data-size')).toBe('xs');
-    expect(create.getAttribute('data-size')).toBe('sm');
+    expect(screen.queryByTestId('artifact-new')).toBeNull();
     expect(screen.queryByRole('button', { name: 'Show in Finder' })).toBeNull();
-    expect(screen.queryByRole('button', { name: 'More' })).toBeNull();
-    fireEvent.click(create);
+    const files = screen.getByRole('button', { name: 'Artifact files' });
+    expect(files.getAttribute('data-size')).toBe('control');
+    fireEvent.click(files);
     expect(screen.getByRole('menuitem', { name: /Show in Finder/ })).toBeDefined();
+    expect(screen.queryByRole('menuitem', { name: /Report/ })).toBeNull();
   });
 });
 
