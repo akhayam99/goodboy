@@ -75,6 +75,11 @@ export const useLeadPermissions = ({
   const readPermissions = useAppStore((state) => state.readLeadPermissions);
   const changePermission = useAppStore((state) => state.changeLeadPermission);
   const changeAutoLevel = useAppStore((state) => state.changeAutoLevel);
+  const markChanged = useAppStore((state) => state.markLeadPermissionsChanged);
+  const revision = useAppStore(
+    (state) => state.leadPermissionsRevisionByWorkspace[workspaceId] ?? 0,
+  );
+  const seenRevisionRef = useRef(revision);
   const [permissions, setPermissions] = useState<LeadPermissions | null>(null);
   const [rowErrors, setRowErrors] = useState<Partial<Record<LeadPermissionKey, string>>>({});
   const [levelError, setLevelError] = useState<string | null>(null);
@@ -113,6 +118,18 @@ export const useLeadPermissions = ({
     return () => latest.cancel({ key: READ_KEY });
   }, [read]);
 
+  useEffect(() => {
+    if (seenRevisionRef.current === revision) {
+      return;
+    }
+    seenRevisionRef.current = revision;
+    void read();
+  }, [read, revision]);
+
+  const announce = useCallback((): void => {
+    seenRevisionRef.current = markChanged({ workspaceId });
+  }, [markChanged, workspaceId]);
+
   const change = useCallback(
     async ({ key, value }: ChangeParams): Promise<void> => {
       const next = permissionChangeOf({ key, value });
@@ -125,12 +142,13 @@ export const useLeadPermissions = ({
           target: permissionTargetOf({ treeId, workspaceId }),
           change: next,
         });
+        announce();
       } catch (failure) {
         setRowErrors((held) => ({ ...held, [key]: `Couldn't change it. ${formatError(failure)}` }));
       }
       await read();
     },
-    [changePermission, read, treeId, workspaceId],
+    [announce, changePermission, read, treeId, workspaceId],
   );
 
   const reload = useCallback(async (): Promise<void> => {
@@ -140,6 +158,7 @@ export const useLeadPermissions = ({
   const clearDetails = useCallback(async (): Promise<void> => {
     const target = permissionTargetOf({ treeId, workspaceId });
     const ownSource = isLead ? 'lead' : 'default';
+    let hasWritten = false;
     setLevelError(null);
     setIsBusy(true);
     try {
@@ -147,25 +166,31 @@ export const useLeadPermissions = ({
         const cleared = permissionChangeOf({ key, value: null });
         if (cleared !== null && permissions?.rows[key].source === ownSource) {
           await changePermission({ target, change: cleared });
+          hasWritten = true;
         }
       }
     } catch (failure) {
       setLevelError(`Couldn't reset the details. ${formatError(failure)}`);
     } finally {
+      if (hasWritten) {
+        announce();
+      }
       await read();
       setIsBusy(false);
     }
-  }, [changePermission, read, permissions, isLead, treeId, workspaceId]);
+  }, [announce, changePermission, read, permissions, isLead, treeId, workspaceId]);
 
   const pickLevel = useCallback(
     async ({ level }: LevelParams): Promise<void> => {
       const target = permissionTargetOf({ treeId, workspaceId });
       const ownSource = isLead ? 'lead' : 'default';
       const isSessionLevel = !isLead && levelSessionId !== null;
+      let hasWritten = false;
       setLevelError(null);
       setIsBusy(true);
       try {
         await changeAutoLevel({ workspaceId, sessionId: levelSessionId, level });
+        hasWritten = true;
         for (const key of isSessionLevel ? [] : LEAD_PERMISSION_KEYS) {
           const cleared = permissionChangeOf({ key, value: null });
           if (cleared !== null && permissions?.rows[key].source === ownSource) {
@@ -187,10 +212,14 @@ export const useLeadPermissions = ({
         setLevelError(`Couldn't change it. ${formatError(failure)}`);
         await read();
       } finally {
+        if (hasWritten) {
+          announce();
+        }
         setIsBusy(false);
       }
     },
     [
+      announce,
       changeAutoLevel,
       changePermission,
       read,

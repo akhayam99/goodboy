@@ -352,6 +352,7 @@ export const NON_SESSION_STATE_KEYS = [
   'appStudio',
   'lastSettingsFocus',
   'lastChatByWorkspace',
+  'leadPermissionsRevisionByWorkspace',
   'terminalNames',
   'terminalOrdinals',
   'terminalWorktreeActive',
