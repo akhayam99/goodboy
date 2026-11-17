@@ -815,7 +815,9 @@ rows read the stored `agents.autoPlanApproval` setting through
 `isAutoPlanApprovalRequired`; only the exact value `false` turns that switch
 off. There is no screen for that setting yet. **Ask for changes** opens the
 chat of Auto: a change written there makes Auto rework the same plan into
-the next version.
+the next version. The dock shows the newest plan that waits for the user and never a
+discarded one (`dockPlanRowOf`, `planAwaitsYou` reads only `active` plans), so a plan the
+Lead dropped stops asking for approval.
 
 A writer admitted with a plan marks that plan used in the admission
 transaction; a reader role (Reviewer, Scout) leaves it ready. The SQL write
@@ -1053,6 +1055,29 @@ It decides by ending its final reply with at most one block:
   transaction (`failAttempt`, `stoppedRevise`). The deadline and idle cancel of `enforceDeadlines` stops with `by: 'auto'`
   too. A stop on a child that already ended changes nothing and answers `alreadyEnded`, never a
   refusal.
+- A child spec with `revises` asks for the next version of an artifact, sent to the role that
+  made it (leave `role` out). `parseDelegateSpec` reads `{"artifactId","expectedRevision"}`, a
+  bare artifact id, the `revision` or `version` keys and a version written as text ("1", "v1");
+  a missing version means the latest one (`resolveDelegateChild`). A revise needs no `reason`
+  (`DELEGATE_REVISE_REASON`), and `retryOf` next to `revises` is read as the revise. A refusal
+  names the accepted shape in one line (`DELEGATE_REVISES_SHAPE`), and the stale refusal also
+  names the latest version.
+- `close` tidies the Lead's own work (`target` is a delegation id or an artifact id, `as` is
+  `done`, `skipped` or `discarded`, and `reason`; `AUTO_CLOSE_SHAPE`). It is the one block that
+  may also come before the last block of a turn: `parseAutoCloseBlocks` reads those, and
+  `applyAutoBlock` runs them first and writes their refusals as one row
+  (`refusal:<run>:close`). `closeTarget` stops a working agent first (`stopChild`), then stores
+  `request_json.closed` and the agent's `done_at` in one write that is guarded by the tree owner and generation. A
+  closed return counts as decided (`isAutoReturnDecided`). The rail shows the child as done,
+  with **Closed by the Lead**, **Skipped by the Lead** or **Discarded by the Lead** and the
+  reason (`closedSentenceOf`). A discarded agent leaves the rail and its transcript stays
+  (`readAutoTreeViews`). The same verb twice, or a verb for a child already gone, is a no-op.
+  An agent that waits to start or for an answer is refused with `not_running`. An artifact can
+  only be discarded: when the Approve plan row is Ask and the plan waits for the user, the ask
+  is stored on the planner delegation (`request_json.planDiscardAsk`) and the dock reads
+  **The Lead wants to drop plan vN**, with **Drop plan vN** next to Approve
+  (`planDiscardAskOf`, `useDropAutoPlan`). Otherwise `discardAutoPlan` sets the plan
+  `discarded` at once. The user's Drop goes through the same `discardAutoPlan`.
 - `finish` says the work is done (`summary`). It is refused while an agent is open or a result
   waits, and the refusal says why. With Close the work at You it stores nothing: the tree still
   rests as Idle until the user marks it finished, and the prompt asks Auto to suggest **Mark
