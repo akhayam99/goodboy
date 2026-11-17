@@ -1,6 +1,7 @@
 import { PanelRight } from '@goodboy/ui/icons';
 import type { Agent, OpenQuestionId, SessionId } from '@goodboy/types';
 import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
+import { NAMES } from '../../../shared/utils/names';
 import { openAsker } from '../../session/openAsker';
 import { openQuestion } from '../../session/openQuestion';
 import type { ObjectKindDefinition, QuestionActionTarget } from '../types';
@@ -39,7 +40,7 @@ export const QUESTION_KIND: ObjectKindDefinition<QuestionActionTarget, QuestionF
     },
     {
       id: 'question.openAsker',
-      label: 'Open the agent',
+      label: NAMES.openAgent,
       icon: CONCEPT_ICONS.agents,
       group: 'open',
       when: ({ facts }) => facts.asker !== null,

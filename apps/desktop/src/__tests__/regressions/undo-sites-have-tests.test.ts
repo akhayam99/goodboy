@@ -9,7 +9,6 @@ const UNDO_CALL = /\bundoable\(/;
 const UNDO_OWNER = 'shared/utils/undoable.ts';
 
 const EXEMPT: ReadonlyArray<string> = [
-  'features/resolve/components/FixCommentsDrawer/OutcomeFixProposed.tsx',
   'features/storage/components/BranchesSection/index.tsx',
   'features/suggestions/useSuggestionRunner/index.ts',
   'features/workflows/components/WorkflowStudio/SavedStepsList/index.tsx',

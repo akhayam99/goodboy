@@ -3,6 +3,7 @@ import { DrawerFrame, EmptyLine, FOCUS_RING, SkeletonText, cn } from '@goodboy/u
 import type { AgentId, OpenQuestion, OpenQuestionId, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../store';
 import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
+import { NAMES } from '../../../shared/utils/names';
 import { QuestionAnswerCard } from './QuestionAnswerCard';
 import { useQuestionsLens } from '../hooks/useQuestionsLens';
 import { useNow } from '../../../shared/hooks/useNow';
@@ -101,7 +102,7 @@ export const QuestionDrawer = ({ sessionId, questionId, from, onClose }: Props) 
         <button
           type="button"
           onClick={openTheAsker}
-          aria-label={`Open the agent: ${askerAgent.name}`}
+          aria-label={`${NAMES.openAgent}: ${askerAgent.name}`}
           className={cn(
             'rounded-sm underline decoration-border-soft underline-offset-3 hover:decoration-foreground',
             FOCUS_RING,

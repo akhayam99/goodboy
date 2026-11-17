@@ -1,4 +1,5 @@
 import { NAMES } from '../../shared/utils/names';
+import { ITEM_WORK_WORDS } from '../../features/live-state/itemWork/itemWorkWords';
 
 type RetiredName = {
   readonly id: string;
@@ -132,6 +133,24 @@ export const RETIRED_NAMES: ReadonlyArray<RetiredName> = [
     use: NAMES.fixPushWithAgent,
   },
   { id: 'fix-with-agent', pattern: /^Fix with agent$/, use: NAMES.fixPushWithAgent },
+  {
+    id: 'fix-proposed',
+    pattern: /^Fix proposed$|\bfixes? proposed\b/i,
+    use: ITEM_WORK_WORDS.state.causeFound.word,
+  },
+  {
+    id: 'no-fix-proposed',
+    pattern: /^No fix proposed$/,
+    use: ITEM_WORK_WORDS.state.noFixFound.word,
+  },
+  { id: 'fix-stopped', pattern: /^Fix stopped$/, use: ITEM_WORK_WORDS.state.stopped.word },
+  { id: 're-running', pattern: /^Re-running$/, use: ITEM_WORK_WORDS.state.pushedChecking.word },
+  { id: 'open-the-agent', pattern: /^Open the agent(?::.*)?$/, use: NAMES.openAgent },
+  {
+    id: 'couldnt-fix',
+    pattern: /\bcouldn['\u2019]t (?:be )?fix(?:ed)?\b/i,
+    use: ITEM_WORK_WORDS.state.failed.word,
+  },
   {
     id: 'history-rewriter-needs-you',
     pattern: /\bHistory rewriter needs you\b/,

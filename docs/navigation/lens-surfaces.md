@@ -53,7 +53,7 @@
   the run page, a step of an orchestrated run opens that step's page the same way.
   A deleted asker keeps its role with no link. A row's
   right click menu is the registry kind `question` (`features/actions/kinds/question.ts`):
-  **Open question** and **Open the agent** (the same `openAsker`, hidden for a
+  **Open question** and **Open agent** (the same `openAsker`, hidden for a
   deleted asker); the card in the drawer (variant `full`) names no asker, the head does,
   starts with the Recommended answer picked (`LiveQuestionCard`), so Enter sends it, and
   keeps one filled button: the footer holds Skip and Answer, and **More** at the top of the
@@ -165,7 +165,7 @@
   without a result for a comment reads Failed with Retry, never a question. A thread in the address is
   `s/{session}/branch/comments/t/{thread}`. A comment nobody started has `Fix` in its drawer (and `F`), which opens the **Fix comments** drawer
   (kind `fix-comments`, side tier) with that comment checked; a checkbox on hover picks comments (`X` on the focused row,
-  Cmd+A for every fixable comment, open or couldn't fix, Esc clears) and the bar `N selected ·
+  Cmd+A for every fixable comment, open or failed, Esc clears) and the bar `N selected ·
 Fix N` opens the same panel, or `Apply N fixes` for comments with a fix ready. With no fix run
   the line under the tabs says `Fix N`; the Overview card and
   the board card open that same panel pre-filled. Bulk answers, Retry N and

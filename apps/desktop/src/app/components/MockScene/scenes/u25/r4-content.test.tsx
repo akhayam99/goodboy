@@ -155,7 +155,7 @@ describe('the r4 content scenes', () => {
       useAppStore.setState({ navigate });
     });
 
-    const link = screen.getByRole('button', { name: /^Open the agent: / });
+    const link = screen.getByRole('button', { name: /^Open agent: / });
     expect(link.textContent).toBe('Implementer');
     expect(link.closest('h2')?.textContent).toBe('Implementer asks');
     await act(async () => {
@@ -188,7 +188,7 @@ describe('the r4 content scenes', () => {
       await vi.advanceTimersByTimeAsync(SETTLE_MS);
     });
     await act(async () => {
-      fireEvent.click(screen.getByRole('menuitem', { name: 'Open the agent' }));
+      fireEvent.click(screen.getByRole('menuitem', { name: 'Open agent' }));
       await vi.advanceTimersByTimeAsync(SETTLE_MS);
     });
 
@@ -211,7 +211,7 @@ describe('the r4 content scenes', () => {
       }));
     });
 
-    expect(screen.queryByRole('button', { name: /^Open the agent: / })).toBeNull();
+    expect(screen.queryByRole('button', { name: /^Open agent: / })).toBeNull();
     const drawerTitle = document.querySelector('[data-container="detail"] h2')?.textContent ?? '';
     expect(drawerTitle).toBe('Implementer asks');
     const row = document.querySelector<HTMLElement>('[data-list-grid-row][aria-current="true"]');
@@ -223,7 +223,7 @@ describe('the r4 content scenes', () => {
       await vi.advanceTimersByTimeAsync(SETTLE_MS);
     });
     screen.getByRole('menuitem', { name: 'Open question' });
-    expect(screen.queryByRole('menuitem', { name: 'Open the agent' })).toBeNull();
+    expect(screen.queryByRole('menuitem', { name: 'Open agent' })).toBeNull();
   });
 
   it('r4-overview-title answers a rename for the open session on the Overview title', async () => {
