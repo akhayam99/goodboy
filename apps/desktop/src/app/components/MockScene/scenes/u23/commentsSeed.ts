@@ -1,4 +1,4 @@
-import type { PrComment, ResolveQueueItemWithThread } from '@goodboy/types';
+import type { PrComment, ResolveAttempt, ResolveQueueItemWithThread } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
 import {
   EXPANDED_THREAD_ID,
@@ -16,7 +16,17 @@ import { prPageIpc, prPageMountState } from './prPageSeed';
 const UNPUSHED_COMMITS = 3;
 
 export type CommentsVariant =
-  'groups' | 'ready-to-push' | 'push-failed' | 'left-open' | 'action-bar' | 'working';
+  'groups' | 'ready-to-push' | 'push-failed' | 'left-open' | 'action-bar' | 'working' | 'batch';
+
+const BATCH_ID = 'mock-resolve-batch-318';
+const QUEUED_IDS: ReadonlyArray<string> = [THREAD_IDS.typo, THREAD_IDS.retryConstant];
+
+type IndexParams = {
+  readonly index: number;
+};
+
+const queuedAttemptIdOf = ({ index }: IndexParams): string =>
+  `mock-resolve-attempt-queued-${index}`;
 
 const PUSH_FAILED_THREAD_ID = 'PRRT_thread_credit_row';
 const LEFT_OPEN_THREAD_ID = 'PRRT_thread_flaky_test';
@@ -102,7 +112,46 @@ const queueOf = ({
       ACCEPTED_IDS.includes(entry.thread.threadId) ? failedPushOf(entry) : entry,
     );
   }
+  if (variant === 'batch') {
+    return QUEUE_ITEMS.map((entry) => {
+      const index = QUEUED_IDS.indexOf(entry.thread.threadId);
+      return index === -1
+        ? entry
+        : {
+            item: entry.item,
+            thread: {
+              ...entry.thread,
+              state: 'working',
+              stage: 'working',
+              activeAttemptId: queuedAttemptIdOf({ index }),
+            },
+          };
+    });
+  }
   return QUEUE_ITEMS;
+};
+
+type QueuedParams = {
+  readonly attempts: ReadonlyArray<ResolveAttempt>;
+};
+
+const queuedAttemptsOf = ({ attempts }: QueuedParams): ReadonlyArray<ResolveAttempt> => {
+  const running = attempts.find((attempt) => attempt.phase === 'running');
+  if (running === undefined) {
+    return attempts;
+  }
+  return [
+    ...attempts,
+    ...QUEUED_IDS.map((threadId, index): ResolveAttempt => ({
+      ...running,
+      id: queuedAttemptIdOf({ index }),
+      threadIds: [threadId],
+      phase: 'queued',
+      startedAt: null,
+      createdAt: running.createdAt + index + 1,
+      batchId: BATCH_ID,
+    })),
+  ];
 };
 
 const focusOf = ({ variant }: { readonly variant: CommentsVariant }): string => {
@@ -110,6 +159,7 @@ const focusOf = ({ variant }: { readonly variant: CommentsVariant }): string => 
     case 'left-open':
       return LEFT_OPEN_THREAD_ID;
     case 'working':
+    case 'batch':
       return THREAD_IDS.idempotency;
     case 'push-failed':
       return EXPANDED_THREAD_ID;
@@ -145,6 +195,13 @@ export const seedCommentsScene = ({ variant }: { readonly variant: CommentsVaria
     sessionResolveQueueItems: { [SESSION_ID]: queue },
     sessionResolveThreads: { [SESSION_ID]: queue.map((entry) => entry.thread) },
     sessionBranches: { [SESSION_ID]: RESOLVE_SCENE_PR.headBranch },
+    ...(variant === 'batch' && {
+      sessionResolveAttempts: {
+        [SESSION_ID]: queuedAttemptsOf({
+          attempts: state.sessionResolveAttempts[SESSION_ID] ?? [],
+        }),
+      },
+    }),
     ...(github === undefined
       ? {}
       : { sessionGithub: { ...state.sessionGithub, [SESSION_ID]: github } }),

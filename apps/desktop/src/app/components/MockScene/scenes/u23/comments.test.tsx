@@ -53,7 +53,7 @@ const regionTitles = (): ReadonlyArray<string | null> =>
     .map((region) => region.getAttribute('aria-label'));
 
 describe('the u23 comments scenes', () => {
-  it('registers the six scenes under the names the plan uses', () => {
+  it('registers the seven scenes under the names the plan uses', () => {
     expect(Object.keys(U23_COMMENTS_SCENES)).toEqual([
       'comments-groups',
       'comments-ready-to-push',
@@ -61,6 +61,7 @@ describe('the u23 comments scenes', () => {
       'comments-left-open',
       'comments-action-bar',
       'comments-working',
+      'comments-batch',
     ]);
     for (const name of Object.keys(U23_COMMENTS_SCENES)) {
       expect(Object.keys(MOCK_SCENES)).toContain(name);
@@ -202,6 +203,21 @@ describe('the u23 comments scenes', () => {
     expect(within(bar()).getByRole('button', { name: /^Reply only/ })).toBeDefined();
     expect(within(bar()).getByRole('button', { name: /^Skip/ })).toBeDefined();
     expect(within(bar()).getByText('R', { selector: 'kbd' })).toBeDefined();
+  });
+
+  it('puts Fixing and Queued with its place on the rows of a batch, and one count in the bar', async () => {
+    await renderScene({ name: 'comments-batch' });
+
+    await waitFor(() => expect(list().querySelectorAll('[data-row-work]')).toHaveLength(3));
+    const lines = Array.from(list().querySelectorAll('[data-row-work]')).map(
+      (line) => line.textContent ?? '',
+    );
+    expect(lines.filter((line) => line.startsWith('Fixing'))).toHaveLength(1);
+    expect(lines.filter((line) => line.startsWith('Queued·2nd in this fix'))).toHaveLength(1);
+    expect(lines.filter((line) => line.startsWith('Queued·3rd in this fix'))).toHaveLength(1);
+    expect(document.querySelector('[data-fix-run-count]')?.textContent).toMatch(/^Fixing·4 of 6/);
+    expect(document.querySelector('[data-tab-live="comments"]')).not.toBeNull();
+    expect(screen.queryByTestId('resolve-run-status')).toBeNull();
   });
 
   it('stops a working comment only behind a confirm, from its own row', async () => {
