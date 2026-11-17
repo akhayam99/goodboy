@@ -423,6 +423,44 @@ describe('Review as one flow', () => {
     expect(within(comment()).getByText('Queued, after the current fix')).toBeDefined();
   });
 
+  it('holds a note fix until the ready fix on the branch is applied or skipped', async () => {
+    seedResolveScene({ expandedThreadId: 'PRRT_thread_idempotency' });
+    const state = useAppStore.getState();
+    const ready = (state.sessionResolveCandidates[SESSION.id] ?? []).find(
+      (entry) => entry.candidate.state === 'ready',
+    )?.candidate;
+    const attempts = state.sessionResolveAttempts[SESSION.id] ?? [];
+    stub({
+      sessionResolveAttempts: {
+        ...state.sessionResolveAttempts,
+        [SESSION.id]: attempts.map((attempt) =>
+          attempt.threadIds.includes('PRRT_thread_idempotency') && ready !== undefined
+            ? {
+                ...attempt,
+                phase: 'queued' as const,
+                batchId: 'batch-1',
+                threadIds: [...attempt.threadIds, 'note:harborline-header'],
+                mountTarget: ready.mountTarget,
+              }
+            : attempt,
+        ),
+      },
+    });
+    render(
+      <ToastProvider>
+        <BranchPage session={SESSION} workingDir={null} />
+        <DrawerHost />
+      </ToastProvider>,
+    );
+    await settle();
+
+    const pane = within(comment());
+    expect(pane.getByRole('status').textContent).toContain('Apply or skip the ready fix first');
+    expect(pane.getByRole('button', { name: /^Apply/ }).textContent).toMatch(/^Apply/);
+    expect(pane.getByRole('button', { name: 'Skip' }).textContent).toBe('Skip');
+    expect(pane.queryByText('Queued, after the current fix')).toBeNull();
+  });
+
   it('accepts with A: marks it, publishes nothing, and moves to the next open comment', async () => {
     const accept = vi.fn<StoreState['acceptResolveQueueItem']>(async () => undefined);
     const publish = vi.fn<StoreState['publishConversations']>(async () => ({ kind: 'missing' }));

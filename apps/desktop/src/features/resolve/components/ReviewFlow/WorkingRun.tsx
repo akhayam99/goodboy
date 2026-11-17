@@ -8,8 +8,10 @@ import { useNow } from '../../../../shared/hooks/useNow';
 import { joinFacts } from '../../../../shared/utils/joinFacts';
 import { formatDuration } from '../../../../shared/utils/time/formatDuration';
 import { fixRunModelLabel } from '../../fixRun';
+import { useReadyFixFirst } from '../../hooks/useReadyFixFirst';
 import { LANE_QUEUED_SENTENCE } from '../../laneCopy';
 import { FIX_RUN_THREAD_COPY } from '../../reviewFlowCopy';
+import { ReadyFixFirst } from './ReadyFixFirst';
 
 type Props = {
   readonly attempt: ResolveAttempt;
@@ -26,6 +28,7 @@ export const WorkingRun = ({ attempt }: Props) => {
   const transcript = useTranscript(attempt.agentId);
   const now = useNow(1_000);
   const isWaiting = attempt.phase === 'queued';
+  const readyThreadId = useReadyFixFirst({ attempt });
   const step = useMemo(() => {
     const items = reduceTranscript(transcript);
     for (let index = items.length - 1; index >= 0; index -= 1) {
@@ -38,6 +41,9 @@ export const WorkingRun = ({ attempt }: Props) => {
   }, [transcript]);
   const since = attempt.startedAt ?? attempt.createdAt;
   const elapsed = formatDuration({ durationMs: Math.max(0, now - since) });
+  if (readyThreadId !== null) {
+    return <ReadyFixFirst sessionId={attempt.sessionId} threadId={readyThreadId} />;
+  }
   return (
     <div
       role="group"

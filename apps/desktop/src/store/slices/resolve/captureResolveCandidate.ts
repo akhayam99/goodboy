@@ -15,6 +15,7 @@ import {
   quarantineWorktreeCandidate,
   splitWorktreeCandidates,
 } from '../../../features/worktree/worktree';
+import { carriesWorkingTree } from '../../../features/resolve/notes/carriesWorkingTree';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { withCandidateLock } from './candidateLock';
 import { loadResolveCandidatesInto } from './loadResolveCandidatesInto';
@@ -177,7 +178,10 @@ export const captureResolveCandidate = async ({
         shouldKeepUncommitted: !isStacked,
       });
       const splits =
-        quarantined.sha === null || !isStacked || fixes.length < 2
+        quarantined.sha === null ||
+        !isStacked ||
+        fixes.length < 2 ||
+        carriesWorkingTree({ threadIds })
           ? []
           : await splitOneCandidatePerFix({ candidate, fixes, capturePath }).catch(
               (): ReadonlyArray<Split> => [],

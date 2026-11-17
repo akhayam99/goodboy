@@ -35,7 +35,7 @@ import { recordResolvePhase } from './recordResolvePhase';
 import { failureCauseOfError } from './resolveFailure';
 import { isSessionLaneBusy } from './isSessionLaneBusy';
 import { recheckThread } from './recheckThread';
-import { lanePathsOf, laneHolderOf, laneTipOf } from './resolveLane';
+import { lanePathsOf, laneHolderOf, laneTipOf, readyFixBlocking } from './resolveLane';
 import { releaseEndedResolveCopies, releaseResolveCopy } from './releaseResolveCopy';
 import { resolveWorktreePath } from './resolveWorktreePath';
 import {
@@ -536,6 +536,10 @@ export const drainResolveQueue = async ({
     if (attempt.batchId !== null) {
       const holder = heldLanes.get(worktreePath);
       if (holder !== undefined && holder !== attempt.agentId) {
+        continue;
+      }
+      const threadIds = attempt.threadIds;
+      if (readyFixBlocking({ candidates, attempts, worktreePath, threadIds }) !== null) {
         continue;
       }
       const hasStarted = await startCopyAttempt({
