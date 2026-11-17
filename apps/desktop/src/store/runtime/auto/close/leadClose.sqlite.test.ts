@@ -6,7 +6,7 @@ import { readAutoTreeViews } from '../../../slices/auto-view/readAutoTreeViews';
 import type { AutoTreeView } from '../../../slices/auto-view/state';
 import { autoGroupOf } from '../../../../features/auto/autoGroupOf';
 import { delegationClosedOf } from '../../../../features/auto/delegationClosedOf';
-import { dockPlanRowOf } from '../../../../features/auto/dockPlanRowOf';
+import { dockPlanOf } from '../../../../features/auto/dockPlanOf';
 import { isAutoReturnDecided } from '../../../../features/auto/isAutoReturnDecided';
 import { planDiscardAskOf } from '../../../../features/auto/planDiscardAskOf';
 import { dropAutoPlan } from '../../../../features/auto/plan/dropAutoPlan';
@@ -210,7 +210,7 @@ describe('the Lead manages its own agents and plans', () => {
     const planId = brandId<ArtifactId>({ value: 'plan-1' });
     expect((await readAutoArtifactLiveState({ db, artifactId: planId }))?.status).toBe('active');
     const view = await viewOf({ world });
-    const row = dockPlanRowOf({ view });
+    const row = dockPlanOf({ view })?.row ?? null;
     expect(row === null ? null : planDiscardAskOf({ view, row })).toEqual({
       revision: 1,
       reason: 'a new plan replaces it',
@@ -219,7 +219,7 @@ describe('the Lead manages its own agents and plans', () => {
     await dropAutoPlan({ db, treeId: world.treeId, artifactId: 'plan-1' });
 
     expect((await readAutoArtifactLiveState({ db, artifactId: planId }))?.status).toBe('discarded');
-    expect(dockPlanRowOf({ view: await viewOf({ world }) })).toBeNull();
+    expect(dockPlanOf({ view: await viewOf({ world }) })).toBeNull();
   });
 
   it('drops plan v1 at once when the user lets plans go, and the dock shows the new plan only', async () => {
@@ -246,7 +246,7 @@ describe('the Lead manages its own agents and plans', () => {
 
     expect(outcome).toMatchObject({ isOk: true, data: { discarded: 'plan-1' } });
     const view = await viewOf({ world });
-    expect(dockPlanRowOf({ view })?.artifact.artifactId).toBe('plan-2');
+    expect(dockPlanOf({ view })?.row.artifact.artifactId).toBe('plan-2');
     const again = await close({ world, target: 'plan-1', as: 'discarded', reason: 'again' });
     expect(again).toMatchObject({ isOk: true, data: { isNoop: true } });
   });

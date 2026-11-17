@@ -7,7 +7,7 @@ import { AUTO_STATE_TONE } from './autoStateTone';
 export type ArtifactApprovalView = Readonly<{
   word: string;
   tone: Tone;
-  state: 'needs_approval' | 'approved' | 'revising' | 'used' | 'not_needed';
+  state: 'needs_approval' | 'approved' | 'revising' | 'used' | 'not_needed' | 'superseded';
 }>;
 
 type Params = {
@@ -18,6 +18,9 @@ type Params = {
 export const artifactApprovalOf = ({ row, level }: Params): ArtifactApprovalView | null => {
   if (row.artifact.kind !== 'plan') {
     return null;
+  }
+  if (row.status === 'superseded') {
+    return { word: 'Superseded', tone: AUTO_STATE_TONE.artifact, state: 'superseded' };
   }
   if (row.status === 'consumed') {
     return { word: 'Used', tone: AUTO_STATE_TONE.artifact, state: 'used' };
