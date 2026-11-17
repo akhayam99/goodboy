@@ -111,37 +111,38 @@ its own size, drawn from the same top to the same bottom. With no drawer the
 page container is today's sheet: rounded on the left where the chrome wraps it,
 flush with the window's right edge. Wherever the tool rail is there (every page
 of the app) the page container rounds all four corners (`rounded-frame`) and the
-drawer container stands 8px to its right (the resize handle sits in that gap),
+drawer container stands 12px to its right (the resize handle sits in that gap),
 flush with the window's right edge and rounded on its two left corners, and the
-pair keeps an 8px inset above the window's bottom edge.
+pair keeps a 12px inset above the window's bottom edge. `DRAWER_GUTTER` in
+`packages/ui/src/drawerGeometry.ts` takes its value from `SHELL_GUTTER_PX`.
 
-**The rail is the dock's left edge, and the dock opens to its right.** The
-drawer container holds the rail and the dock: one surface, with the rail as its
-first child (`data-drawer-edge`, fed through `DrawerEdgeContext`). Closed, the
-container is the rail alone, 44px wide, on the window's right edge. A click on
-Terminal or Browser expands the dock to the right of the icon, toward the
-window edge, so the rail travels left with the opening dock and back right as
-it closes; it is the same element closed, pushing, over the page and while a
-handle drags, never a second copy. The trade: the button that closed the dock
-is no longer under the pointer after it opened, so the dock's own close (its
-header X, Esc) is the near way out, and the rail button stays one move away.
-A detail panel opens between the page and the rail.
+**The rail is the anchor.** The drawer container holds the dock and the rail
+on one surface. `DrawerDockBox` puts the rail last (`data-drawer-edge`, fed
+through `DrawerEdgeContext`), pinned to the window's right edge. Closed, the
+container is the rail alone, 56px wide (`SESSION_TOOL_RAIL_WIDTH`). Terminal,
+Browser, Scripts, Ask and Monitor each toggle their panel to its left
+(`RAIL_TOOLS`, `toggleRailTool`). Scripts and Ask are disabled without a
+session. The rail stays still while a panel opens, closes or resizes, so its
+button stays under the pointer. Monitor opens `MonitoringDrawer`, a workspace
+tool panel with Open full page, and is not restored on reload
+(`UNSAVED_DRAWER_KINDS`).
 
 **Two panels, one order.** Left to right the frame reads: sidebar, page
-content, detail panel, rail, tool dock. The tool dock (Terminal, Browser) lives
-in the drawer container, attached to the rail with no gap, line or radius
-between them, on the rail's `bg-drawer` surface, so rail and dock read as one
+content, detail panel, tool dock, rail. The tool dock (Terminal, Browser,
+Monitor) lives in the drawer container, attached to the rail with no gap,
+line or radius between them, on the rail's `bg-drawer` surface, so rail and dock read as one
 surface running to the window edge. The resize handle stays in the gap between
-the detail panel (or the page) and the rail. A detail panel (an artifact, Ask, a plan part, a check analysis, a
-transcript, a reader, every other kind) is its own container between the page
+the detail panel (or the page) and the dock container. A detail panel (an
+artifact, Scripts, Ask, a plan part, a check analysis, a transcript, a reader,
+every other kind) is its own container between the page
 and the dock: `data-container="detail"`, `rounded-frame`, `frame-edge` border,
-on the page's `bg-background`, 8px from the page and 8px from the drawer
+on the page's `bg-background`, 12px from the page and 12px from the drawer
 container, with its own resize handle in the left gutter. Both can be open at
 once. `DrawerColumn` takes the dock as `drawer` and the detail as `detail`
 (`detailSizing`, `isDetailParked`); `panelPairLayoutOf` in `drawerGeometry.ts`
 lays the pair out: alone, each panel follows the one push rule below; together
 they push while the page keeps its reserve beside both (the tier reserve of the
-wider kind, plus the 8px between them), and lie over the page together
+wider kind, plus `DRAWER_GUTTER` between them), and lie over the page together
 otherwise, each clamped so the pair and the rail fit. `panelAsideWidthOf` is
 the aside: the detail plus its gutter, then the dock plus the rail plus their
 gutter. A `DrawerFrame` paints `bg-panel-surface`, the surface its container
@@ -159,16 +160,16 @@ the list are the page container and the drawer container stands beside them from
 the slot's top to its bottom; the shell's own sheet steps aside
 (`data-studio-sheet-owner`) while the studio is open. A studio body with no
 hosting frame (a mock scene that draws the studio alone) keeps `frame="none"`,
-which draws only the drawer container as a card inset 8px on its right, top
-and bottom.
+which draws the drawer container with a 12px top and bottom inset while it
+pushes, and keeps its right edge flush.
 
 **Three tiers, one width each.** A side drawer (Ask, Context, a fix run or agent
 transcript, script output, a plan part, an artifact) opens at 400px, resizes
 from 384 to 560px and keeps `goodboy:right-drawer-width:v1`. A reader drawer
 (the plan, report and wireframe document, an Explore file, a file diff) opens at
 720px, resizes from 480 to `min(1000, room)` while it pushes and to
-`min(1000, page - 16)` over the page, and keeps its own
-`goodboy:reader-drawer-width:v1`. The browser pane has the third tier: it opens
+the room left after two shell gutters and the rail, capped at 1000px, over
+the page, and keeps its own `goodboy:reader-drawer-width:v1`. The browser pane has the third tier: it opens
 at 720px and resizes from 480 to `room` while it pushes, with no 1000 cap, so on
 a wide window it takes everything the session column does not need. It keeps its
 own `goodboy:browser-drawer-width:v1`. Each width is clamped on read and written
@@ -199,13 +200,12 @@ focus was on the page it moves into the drawer, never to the body.
 
 **Over the page, the drawer container runs the full height of the sheet.**
 Below the push width every open panel lies over the page from the right edge
-together, detail and dock, under one scrim, and the rail stays live. Rail and
-dock slide in together from the right edge (`animate-drawer-dock-in`, the
-container translates from the dock width to 0 in `duration-base`), so the rail
-leaves the window edge with the dock behind it, and slide back out together
-(`animate-drawer-dock-out`, `duration-quick`); once the exit ends the aside
-lands in the flow at its closed width with no width transition
-(`useSnapAfterFloat`), so the rail stops on the edge where it started. The
+together, detail and dock, under one scrim, and the rail stays live. The dock
+reveals to the left of the stationary rail through a clip
+(`animate-drawer-dock-in`, `duration-base`) and clips back toward it on close
+(`animate-drawer-dock-out`, `duration-quick`). These keyframes live in
+`apps/desktop/src/styles.css`. Once the exit ends, `useSnapAfterFloat` lands the
+aside in the flow at its closed width with no width transition. The
 container has no inset: flush with the sheet's top, bottom and right edges, left corners
 rounded (`rounded-l-frame`), `shadow-xl` under the whole container (panel and
 rail), the same `bg-drawer`; a spacer of the closed width keeps the page where
@@ -216,7 +216,7 @@ screen reader. A click on the scrim asks the top layer of the escape stack
 (`dismissTopEscapeLayer` in `packages/ui/src/escape.ts`), so an editor or an
 unsent draft inside the drawer answers first, exactly as it does to Esc.
 Pushing has no scrim and nothing is inert. Closed, the
-aside is the 8px gutter plus the rail (0px with no rail) and the rail stays
+aside is `DRAWER_GUTTER` plus the rail (0px with no rail) and the rail stays
 live; only the panel is `inert`. Opening and closing ease the track's width in
 220ms (`DURATION_BASE_MS`, none under reduced motion) with its right edge fixed, and the
 centred column slides with it: the card grows leftward from the window edge,
@@ -225,7 +225,7 @@ content fades in once there is room; over the page it slides in 200ms; a new kin
 an open drawer fades its content in 120ms. The detail panel's group
 (`data-detail-group`) eases its own width with the same token while the aside
 eases the sum, so the page content slides as either panel opens or closes and
-the rail rides the dock's left edge with it, never jumping; the motion is a `transition-[width]`
+the rail stays pinned to the window edge; the motion is a `transition-[width]`
 (`duration-200 ease-enter`) behind `motion-safe`, so reduced motion is instant.
 It never writes the sidebar preference: a pane folds nothing.
 

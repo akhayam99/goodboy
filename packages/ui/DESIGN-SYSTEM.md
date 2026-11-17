@@ -343,14 +343,14 @@ A session row in the left column carries one mark, a `StatusMark` from `sessionM
 
 **Marks across pages.** One colour role per meaning on every page: success for done or added, warning for what needs you, danger for what failed or was deleted, info for what runs, neutral for the rest. A mark never takes a role for a second meaning. Counts come in two drawings only.
 
-| Surface                            | Mark                     | Drawing                                                                                                                                                                                                                           |
-| ---------------------------------- | ------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Session tabs, sidebar doors, bell  | inline count             | the sidebar status mark's count drawing: one `text-chip` tabular number beside the word or icon, warning when it needs you, info while it runs, the quiet unread tone on the bell, faint otherwise; no dot beside it              |
-| Tools rail (Terminal, Browser)     | signal dot, waiting ring | no number at rest, the counts live in the tooltip; the signal dot (danger for a failure, primary for a change to look at) sits on the 16px glyph's top end corner and the waiting ring on the top start one (`TOOL_CORNER_SLOT`)  |
-| Workspace launcher row             | count badge              | `CountBadge` in its tone: warning or danger, because the number is sessions that need you                                                                                                                                         |
-| Top bar Now chip                   | state dot                | warning dot for Needs you, neutral ring for Idle, info dot for running                                                                                                                                                            |
-| Agents rail                        | node, number, meter      | `WorkNode` in the rail lane; the number in a fixed 24px right aligned slot and the spend or clock in a fixed meter slot (`LEAD_TREE_METER`, reserved on the run row too), so roles, words and costs share one column at any depth |
-| Files rail, All files, diff header | status letter            | `FileStatusMark`: one letter in one 12px slot, A success, D danger, M and R neutral                                                                                                                                               |
+| Surface                                               | Mark                                 | Drawing                                                                                                                                                                                                                                                                                                  |
+| ----------------------------------------------------- | ------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Session tabs, sidebar doors, bell                     | inline count                         | the sidebar status mark's count drawing: one `text-chip` tabular number beside the word or icon, warning when it needs you, info while it runs, the quiet unread tone on the bell, faint otherwise; no dot beside it                                                                                     |
+| Tools rail (Terminal, Browser, Scripts, Ask, Monitor) | signal dot, waiting ring, port count | Terminal and Browser counts live in the tooltip; Monitor shows ports in use from `monitoringSignal` through `toolCountOf`; the signal dot (danger for a failure, primary for a change to look at) sits on the 16px glyph's top end corner and the waiting ring on the top start one (`TOOL_CORNER_SLOT`) |
+| Workspace launcher row                                | count badge                          | `CountBadge` in its tone: warning or danger, because the number is sessions that need you                                                                                                                                                                                                                |
+| Top bar Now chip                                      | state dot                            | warning dot for Needs you, neutral ring for Idle, info dot for running                                                                                                                                                                                                                                   |
+| Agents rail                                           | node, number, meter                  | `WorkNode` in the rail lane; the number in a fixed 24px right aligned slot and the spend or clock in a fixed meter slot (`LEAD_TREE_METER`, reserved on the run row too), so roles, words and costs share one column at any depth                                                                        |
+| Files rail, All files, diff header                    | status letter                        | `FileStatusMark`: one letter in one 12px slot, A success, D danger, M and R neutral                                                                                                                                                                                                                      |
 
 **A row title keeps one weight whatever its state.** Every title of a session, pinned, done, run, run-tree or notification row stays in its row role (`text-ui`, 13/400 in the sidebar) when it is unread, live, current or selected. State lives in the trailing mark and the text colour only: unread or new activity is the quiet unread dot (in the sidebar the dot alone in the mark box; elsewhere `isUnreadDot` on the node's corner) plus full foreground; read is muted foreground; selected is the selected surface (`bg-selected`). Weight never marks state, the way Linear and Arc keep one weight down their sidebars and let a dot and colour carry unread. `row-title-weight.test.ts` fails a weight class keyed on unread, new, active, current or selected, and `@goodboy/ui` exports no unread title role.
 
@@ -372,10 +372,12 @@ glyph and never of the button, so the pill overlaps the glyph's corner by a
 few pixels and stays clear of the label under it, the way macOS dock badges
 sit. A count beside a word stays the inline number above, never a pill, the
 way Linear sidebar counts read. A count of things that are fine (terminals
-running, tabs open) is no badge at all: the Tools rail keeps it in the tooltip
+running, tabs open) is no badge at all: Terminal and Browser keep it in the tooltip
 (`session-tools-quiet`), and its signal dot takes the same corner
 (`session-tools-signal`, which `validateScenesToolSignal.mjs` fails when the
-dot covers a label, leaves the rail or the rail draws a number).
+dot covers a label, leaves the rail or a number appears inside the glyph). Monitor's port count is the rail's
+numeric exception (`toolCountOf`): it anchors to the icon button's corner
+(`SessionToolButton`), warning when a pinned port is down.
 
 ### Tile as filter
 
@@ -734,7 +736,7 @@ The label tooltip is `FLOATING_SURFACE` with the `md` radius and a soft border: 
 
 A side drawer reserves 464px of content plus gutters; a reader reserves 560px.
 `drawerLayoutOf` excludes the tool rail's measured width as a content inset.
-A right drawer is its own container, never a card inside the sheet: it holds the tool dock (Terminal, Browser) and the tool rail on one `drawer` surface (see Surfaces), flush with the window edge, `frame-edge` and `rounded-l-frame`, with the rail as the dock's left edge: closed, the rail sits on the window edge; open, the dock fills from the rail to the window edge and the rail rides its left edge. A detail panel (artifact, Ask, plan part, check analysis, transcript) is a second container between the page and the dock, on the page's `background`, `rounded-frame` with a `frame-edge` border on four sides; both can be open together. A `DrawerFrame` takes the surface of the container it sits in (`bg-panel-surface` over `panel-on-page` or `panel-on-rail`, pinned header `sticky-surface-panel`), so it never paints a third step. Over the page both add `shadow-xl`. A panel opening or closing eases its own width (`duration-200 ease-enter`, `motion-safe`), and the page content beside it slides with it. Outside the tooltip, `shadow-md` belongs
+A right drawer is its own container, never a card inside the sheet: it holds the tool dock (Terminal, Browser, Monitor) and the tool rail on one `drawer` surface (see Surfaces), flush with the window edge, `frame-edge` and `rounded-l-frame`, with the 56px rail pinned to the window's right edge and the dock opening to its left. `DrawerDockBox` keeps the rail last, and `SESSION_TOOL_RAIL_WIDTH` owns its width. `DRAWER_GUTTER` takes the 12px shell gutter between containers. A detail panel (artifact, Scripts, Ask, plan part, check analysis, transcript) is a second container between the page and the dock, on the page's `background`, `rounded-frame` with a `frame-edge` border on four sides; both can be open together. A `DrawerFrame` takes the surface of the container it sits in (`bg-panel-surface` over `panel-on-page` or `panel-on-rail`, pinned header `sticky-surface-panel`), so it never paints a third step. Over the page both add `shadow-xl`. A panel opening or closing eases its own width (`duration-200 ease-enter`, `motion-safe`), and the page content beside it slides with it. Outside the tooltip, `shadow-md` belongs
 only to a dragged card.
 
 **One floating surface.** Level 4 is the constant `FLOATING_SURFACE`
@@ -845,14 +847,14 @@ the folded rail's `RailButton` use it.
 
 One size per place, so a column never mixes sizes:
 
-| Place                                        | Size      | Notes                                           |
-| -------------------------------------------- | --------- | ----------------------------------------------- |
-| Left column doors, New session, door actions | `row`     | concept glyph, `navRail.icon` slot              |
-| Left column trailing marks                   | `row`     | `StatusMark` glyphs in the 16px box             |
-| Folded rail (doors, Settings)                | `control` | `RailButton`, regular weight                    |
-| Tools rail (Terminal, Browser)               | `notice`  | icon over its caption, both centred on the rail |
-| Page and session header actions              | `control` | `IconButton` `sm` and `md`                      |
-| List and table rows                          | `row`     | leading and trailing glyphs                     |
+| Place                                                 | Size      | Notes                                           |
+| ----------------------------------------------------- | --------- | ----------------------------------------------- |
+| Left column doors, New session, door actions          | `row`     | concept glyph, `navRail.icon` slot              |
+| Left column trailing marks                            | `row`     | `StatusMark` glyphs in the 16px box             |
+| Folded rail (doors, Settings)                         | `control` | `RailButton`, regular weight                    |
+| Tools rail (Terminal, Browser, Scripts, Ask, Monitor) | `notice`  | icon over its caption, both centred on the rail |
+| Page and session header actions                       | `control` | `IconButton` `sm` and `md`                      |
+| List and table rows                                   | `row`     | leading and trailing glyphs                     |
 
 ## Status marks
 
@@ -956,9 +958,10 @@ session page puts its head in `SessionHeadFrame`
 (`apps/desktop/src/features/session/components/`), which also owns the `lead`
 slot for a left rail (Files, Agents) and the `aside` slot for the right.
 
-**Panels.** From the page to the window edge: the detail panel, the tools rail,
-the tool dock. `DrawerColumn` draws the detail and the dock, with the rail on
-the dock's left edge, so a tool opens toward the window edge. A panel pushes the
+**Panels.** From the page to the window edge: the detail panel, the tool dock,
+the tools rail. `DrawerColumn` draws the detail and the dock; `DrawerDockBox`
+keeps the rail as its last child, pinned to the window edge. A tool opens to
+its left. `DRAWER_GUTTER` is the 12px shell gutter between containers. A panel pushes the
 page only while it leaves the page its minimum width (`drawerLayoutOf`);
 under that every panel lies over the page with a scrim, and the rail stays
 visible. The page content eases to its new width in `DURATION_BASE_MS` with the

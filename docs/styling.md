@@ -173,36 +173,38 @@ container (`data-container="page"`, the sheet shape above) and, beside it, the
 drawer container (`data-container="drawer"`). The drawer container holds the
 panel and the tool rail: one surface (`bg-drawer`, one step quieter than
 `bg-background`), flush with the window's right edge, rounded on its two left
-corners (`rounded-l-frame`), with a `frame-edge` border on three sides, 8px from
+corners (`rounded-l-frame`), with a `frame-edge` border on three sides, 12px from
 the page container (the resize handle sits in that gap). The page container
 rounds all four corners whenever the rail is there. Closed, the container is the
-rail alone, 44px wide, and its aside is that plus the 8px gutter. The rail is
-the dock's left edge: `DrawerColumn` draws one rail host (`data-drawer-edge`) as
-the first child of the container and hands it to the page through
-`DrawerEdgeContext`; `ShellToolRail` (and `SessionFrame` in a frame without the
+rail alone, 56px wide (`SESSION_TOOL_RAIL_WIDTH`), and its aside is that plus
+`DRAWER_GUTTER`, the 12px `SHELL_GUTTER_PX`. `DrawerDockBox` draws one rail host
+(`data-drawer-edge`) as the last child of the container. `DrawerColumn` hands
+it to the page through `DrawerEdgeContext`; `ShellToolRail` (and `SessionFrame` in a frame without the
 shell rail) portals the one rail tree into it. The host is the same element
-closed, pushing, over the page and while a handle drags; the dock opens to its
-right, toward the window edge, with no gap, line or radius between them, so the
-rail rides the dock's left edge as the aside eases. The
-aside is the panel width plus the 8px gutter plus the rail (`drawerAsideWidthOf`
-takes `railWidth`). The pane gives up that width and the centred column slides
+closed, pushing, over the page and while a handle drags. The rail stays pinned
+to the window's right edge and the dock opens to its left, with no gap, line or
+radius between them. `DrawerColumn` keeps a 12px bottom inset below the shell
+containers. The aside is the panel width plus `DRAWER_GUTTER` plus the rail
+(`drawerAsideWidthOf` takes `railWidth`). The pane gives up that width and the centred column slides
 left to re-centre in what is left of it (see The content column). The drawer
 pushes only while the content, excluding the session rail and tools, keeps 464px
 for a side drawer or 560px for a reader, plus 48px of gutters. `drawerLayoutOf`
 owns this rule and takes the measured rail width as the content inset and as
 `edgeWidth`; `DrawerContentContext` supplies the whole column width. A side
-drawer at 400 pushes from 972px of column width (928 of content plus the 44px
-rail); a reader at 720 pushes from 1388px. Below its threshold it lies over the
-page, full height, with a scrim and an `inert` page, never squeezed. Over the
+drawer at 400 pushes from 984px of column width (928 of content plus the 56px
+rail); a reader at 720 pushes from 1400px. The 8px `DRAWER_INSET` remains part
+of the sizing reserve in `pushReserveOf`. Below its threshold the drawer lies
+over the page, full height, with a scrim and an `inert` page, never squeezed. Over the
 page the aside is absolute at the window edge and a spacer of the closed width
 stays in the flow, so the page does not grow; the rail sits above the scrim in
 the same container, so a tool can still switch or close the panel. The host is
 measured after every commit (and by a `ResizeObserver` after that), so the
 overlay panel plus the rail always fit in the sheet and the column never covers
-the panel's primary or its Close. Over the page the container (rail and dock)
-slides in from the right edge as one piece (`animate-drawer-dock-in`) and back
-out (`animate-drawer-dock-out`), and `useSnapAfterFloat` lands the aside at its
-closed width with no width transition, so the rail stops where it started.
+the panel's primary or its Close. Over the page the dock reveals to the left
+of the rail through a clip (`animate-drawer-dock-in`) and clips back on close
+(`animate-drawer-dock-out`). The keyframes in `apps/desktop/src/styles.css`
+keep the rail still. `useSnapAfterFloat` lands the aside at its closed width
+with no width transition.
 `sizing` on `DrawerColumn` is `side` (400, drag 384 to 560), `reader`
 (720, drag 480 to 1000) and `browser` (720, drag 480 to the room the session column leaves, so
 past 1000 on a wide window; it shrinks to the room on a narrower window while 480 fits, so at
@@ -215,24 +217,25 @@ rule for a drawer that always lies over the page; the thresholds (928 for
 sweeps every main from 600 to 2400 and runs a width matrix: 1024, 1440 and
 1920 windows at zoom 0.8, 1 and 1.25, default and widest sidebar.
 `selectDrawerSizing.test.ts` takes every drawer kind at 1280 and 1440 and
-checks the pushing card ends 8px inside the aside and the overlay card ends on
-the column edge. A pushing card grows from the window's right edge: the aside
+checks the panel ends on the column edge in both modes, with `DRAWER_GUTTER`
+inside the aside. A pushing card grows from the window's right edge: the aside
 eases its width with its right edge fixed (`justify-end`, `overflow-clip`, so a
 field focused while it opens cannot scroll the track), the card follows it with
 its border and corners in view (the card clips with `overflow-clip` too: a
 `scrollIntoView` inside would scroll an `overflow-hidden` card out of reach),
 and the content keeps its final width
-(`--goodboy-drawer-track` minus the 18px of handle gutter, inset and border)
-pinned to the right edge and fades in once there is room (`drawer-content-in`).
+(`--goodboy-drawer-panel` minus its 1px border, in `DrawerDockBox`)
+pinned beside the rail and fades in once there is room (`drawer-content-in`).
 Closing, the card keeps a copy of its content for `DURATION_BASE_MS` (220ms) while the
 width eases to 0 and the copy fades (`drawer-content-out`). `drawer-overlay-in`
 slides at most the 8px inset; the overlay card starts that far outside the
 sheet and is clipped by it. `drawer-overlay-out` and `drawer-fade-out` run
 `DRAWER_EXIT_MS` (160ms) while `useDrawerExit` keeps the overlay card mounted
 after a close. `DrawerColumn.test.tsx` pins the structure that math assumes (the two
-containers as siblings, an 8px `w-2` handle gutter, the track's `pr-2`, the
-overlay container's `rounded-l-frame` and `border-l`, the overlay track's min
-width, the push track variable).
+containers as siblings, a 12px `w-3` handle gutter, the overlay container's
+`rounded-l-frame` and `border-l`, the overlay track's min width and the push
+panel variable). `DrawerColumnRail.test.tsx` checks that the rail is last and
+stays on the window edge as a panel opens or resizes.
 [navigation/home-and-drawer.md](navigation/home-and-drawer.md#the-right-drawer) owns what goes in it.
 
 **The dock solver.** `dockLayoutOf` (`packages/ui/src/dockLayout.ts`) lays out

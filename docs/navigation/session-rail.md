@@ -729,8 +729,9 @@ activity yet show the plain overview with its actions.
 
 ## The session tools
 
-The right rail is one 44px column at the window's right edge on every screen of
-a workspace, `aria-label="Tools"` (`SessionTools`, drawn by `ShellToolRail` in
+The right rail is one 56px column (`SESSION_TOOL_RAIL_WIDTH`) at the window's
+right edge on every screen of a workspace, `aria-label="Tools"` (`SessionTools`,
+drawn by `ShellToolRail` in
 the shell's `rightRail` slot, and inside their own sheet by Tasks, Chat and
 Workflows). It lives in the drawer container, never in the page container, and
 every panel opens inward of it (see home-and-drawer.md, The rail is the anchor).
@@ -740,15 +741,16 @@ rail); a record panel open with the page fades in with it, and one
 opened later keeps the drawer's own motion. Moving between the shell rail and
 a page's rail keeps keyboard focus on the same tool (`railFocusMemo`). With a
 record panel shown as an overlay the rail stays where it is, above that panel's
-scrim, as it does above the shell's. It holds two
-column holds two tools, Terminal and Browser (`RAIL_TOOLS`), with no heading
-above them (each names itself under its icon, and the toolbar is named Tools for
-the reader), on every page of the app, in a session or outside one. Explore, Agents, Scripts, Context and Ask have no button on it:
-they open from their pages and keyboard shortcuts. A test
+scrim, as it does above the shell's. It holds Terminal, Browser, Scripts, Ask
+and Monitor (`RAIL_TOOLS`), with no heading above them. Each names itself under
+its icon, and the toolbar is named Tools for the reader. All five stay visible
+on every workspace page; Scripts and Ask are disabled without a session.
+`toggleRailTool` toggles each panel to the rail's left. Explore, Agents and
+Context open from their pages and keyboard shortcuts. A test
 scene or frame without the shell rail keeps the column inside `SessionFrame`
 (`ShellRailContext`).
-Each tool keeps its pane id and shortcut; Terminal shows ``⌃` `` and Browser
-has no shortcut. `SessionToolButton` names every tool below its icon in the
+Each tool keeps its pane id and optional shortcut in `RAIL_TOOLS`.
+`SessionToolButton` names every tool below its icon in the
 9px `text-rail` caption role: secondary (`TEXT_ROLE.secondary`) when closed,
 label strength when open, so every caption keeps its contrast in light mode.
 Each tool is one grid cell, icon row over label row on one centre column, and
@@ -757,22 +759,24 @@ stay. Every icon's tooltip gives its name, shortcut and any signal reason. Ask u
 
 A tool has four states (`toolStateOf`): at rest, pressed when it holds the
 slot, waiting when it is the tool in the slot's back chip, and current when its
-page is open (Terminal and Browser only: selected, `aria-current="page"`, and a
-click does nothing). Waiting draws a
+page is open (Terminal, Browser and Monitoring: selected,
+`aria-current="page"`, and a click does nothing). Waiting draws a
 small ring on the icon (`ToolWaitingRing`) and says so in the accessible name,
-`Terminal, waiting`; pressing it opens the saved request of the chip again
-(`togglePane`), so Context comes back on the same section and view, and the
-tool it replaces moves into the chip. Terminal names the running terminals
-(`Terminal, 2 running`), Browser names its tabs (`Browser, 3 tabs`); the words
-come from `toolFactOf` over `runningTerminalCount` and `browserTabCount`, and
-the same two numbers show as a neutral `CountBadge` on the icon's corner (9+
-past nine) unless a signal dot holds that corner. Every corner mark (count,
-signal dot, waiting ring) anchors to a box the size of the 16px glyph
-(`tool-glyph`, `TOOL_CORNER_SLOT`), never to the button: the count and the dot
-share the top end corner, the ring the top start corner, and none reaches the
-label below.
+`Terminal, waiting`. Rail clicks go through `toggleRailTool`.
+Terminal names the running terminals (`Terminal, 2 running`), Browser names
+its tabs (`Browser, 3 tabs`); the words come from `toolFactOf` over
+`runningTerminalCount` and `selectBrowserTabCount`. These counts stay in the
+tooltip. Monitor shows ports in use as a
+`CountBadge` (`toolCountOf`), warning when a pinned port is down. Its count and
+fact come from `monitoringSignalOf`, which reads the same `monitoringSignal`
+as the left door. The signal dot and waiting ring anchor to the 16px glyph
+(`tool-glyph`, `TOOL_CORNER_SLOT`), at its top end and top start corners. The
+port count sits on the icon button's corner and never covers the label below.
 
-Terminal and Browser are workspace tools: their dock opens with
+Terminal, Browser and Monitor are workspace tools. Monitor opens
+`MonitoringDrawer` with `sessionId: null` through `toggleRailTool`; its header
+has Open full page, and `UNSAVED_DRAWER_KINDS` keeps it out of the saved window
+layout. Terminal and Browser open with
 `toggleTerminalDock` and `toggleBrowserDock` from the rail, the palette, the Go
 menu, ⌃`and ⌘⌥T. On a session page the dock opens on the session's terminal
 or tabs; anywhere else on the workspace's (the workspace folder terminal, or
@@ -815,30 +819,24 @@ Folding the rail leaves the column in place.
   (`withoutRemovedPages` drops the retired `sidebar-level` key); a tool it had
   open stays open. The panel is per window: the drawer belongs to the window's store.
 
-- **Outside a session only the Workspace group shows.** On the Board, the draft
-  and every page the rail holds Terminal and Browser alone; the **Chat** door
+- **Outside a session all five tools stay visible.** Terminal, Browser and
+  Monitor work on workspace pages. Scripts and Ask are disabled and say
+  "open a session first" (`ToolRailFrame`, `toolFactOf`). The **Chat** door
   (with New chat) is the workspace conversation that answers what Ask answers
-  for one session. Ask, Explore, Context and Scripts read one session, so they
-  exist only inside one, and ⌘L is bound only while a session is visible.
+  for one session. Explore and Context read one session, and ⌘L is bound only
+  while a session is visible.
 
-- **One pane at a time.** Every toggle goes through `togglePane`
-  (`features/session/panes/`): pressing the open pane's toggle closes it,
-  pressing another replaces it in the one right drawer. `openPaneOf` reads the
-  open drawer's row in `DRAWER_KINDS` (its pane, or the pane that opened it), so a script output opened from
-  Scripts keeps Scripts lit. Esc closes the pane (`DrawerFrame`).
-- **Scripts is a drawer kind** (`scripts`), not a lens, and Explore, Context and
-  Ask are no drawer kinds: Explore is **All files** on the Changes page and
-  Context and Ask are the Context tab. `ScriptsPanel` renders in a
-  `DrawerFrame`. A script output opened from Scripts replaces it and shows
-  **Back to scripts** (`DrawerFrame`'s `back`, carried by the payload's `from`);
-  Run on a Service does not open it, Run on a Command does (`NAMES.commands`,
-  the band in `ScriptsPanel`). `openExplorePane` takes the worktree to browse
-  (the mount registry's Browse files passes it), `openScriptsPane` the project
-  to scope to (Open scripts). The Scripts chord, the palette's Open Scripts,
-  toasts and stored notifications (`open-lens` scripts) go to the Terminal and
-  its **Scripts** menu through `openToolPane`, which first goes to the session
-  when another one is shown. A stored place with an `explore`, `context` or
-  `ask` drawer folds to its page (`withoutRemovedPages`).
+- **One workspace dock and one detail can stay open together.** `panelsOf`
+  pairs Terminal, Browser or Monitor with a detail panel (`isWorkspaceTool`,
+  `isPairedSlot`). `toggleRailTool` closes the selected panel when clicked
+  again, and choosing another panel in the same slot replaces it. Esc closes
+  through `DrawerFrame`.
+- **Scripts and Ask use the detail slot.** Their rail buttons name the session
+  in the drawer request (`toggleRailTool`); `DrawerHost` renders `ScriptsPanel`
+  or the registered `AskDrawer`, each in a `DrawerFrame`. The Scripts chord,
+  palette's Open Scripts, toasts and stored notifications (`open-lens`
+  scripts) still open Terminal through `openToolPane`. Explore is **All files**
+  on Changes, and Context is its tab.
 - **Browser opens a page beside the work** (drawer kind `browser`,
   `features/browser/`): the session's tabs and the project pins in a reader
   tier pane, so the session rail folds to icons while it is open.
