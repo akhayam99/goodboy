@@ -111,8 +111,17 @@ const reviewCommentFacts: ReviewCommentFacts = {
   laneAcceptCount: 1,
   laneAcceptNotes: 0,
   lane: null,
-  runAgentId: null,
   canStartRun: false,
+  runAgentId: null,
+  runEnd: null,
+  noteId: null,
+  runTitle: '',
+  runMountId: null,
+  runReply: '',
+  isSourceChanged: false,
+  changedQuote: '',
+  joinRuns: [],
+  quote: '',
 };
 
 const linkFacts: LinkFacts = { href: 'https://docs.harborline.dev/tax' };

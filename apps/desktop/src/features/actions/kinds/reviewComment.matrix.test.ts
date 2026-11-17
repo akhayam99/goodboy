@@ -1,6 +1,12 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
-import type { AgentId, ResolveVerdict, ResolveVerdictKind, SessionId } from '@goodboy/types';
+import {
+  brandId,
+  type AgentId,
+  type ResolveVerdict,
+  type ResolveVerdictKind,
+  type SessionId,
+} from '@goodboy/types';
 import { resolveActions } from '../resolveActions';
 import { REVIEW_COMMENT_KIND, type ReviewCommentFacts } from './reviewComment';
 
@@ -33,9 +39,21 @@ const BASE: ReviewCommentFacts = {
   laneAcceptCount: 1,
   laneAcceptNotes: 0,
   lane: null,
-  runAgentId: null,
   canStartRun: false,
+  runAgentId: null,
+  runEnd: null,
+  noteId: null,
+  runTitle: '',
+  runMountId: null,
+  runReply: '',
+  isSourceChanged: false,
+  changedQuote: '',
+  joinRuns: [],
+  quote: '',
 };
+
+const LEDGER_RUN = brandId<AgentId>({ value: 'lead-ledger-header' });
+const JOIN = [{ agentId: LEDGER_RUN, name: 'Move the ledger header into AppLayout' }];
 
 const verdictOf = (kind: ResolveVerdictKind, sha: string | null): ResolveVerdict => ({
   kind,
@@ -108,17 +126,26 @@ const MATRIX: ReadonlyArray<Row> = [
       state: 'new',
       agentId: null,
       lane: 'in_run',
-      runAgentId: 'run-ledger' as AgentId,
+      runAgentId: LEDGER_RUN,
+      runEnd: 'working',
       canStartRun: true,
     },
-    expected: [...OPEN, ...GITHUB, 'reviewComment.openRun primary Open run', ...DECIDE, ...COPY],
+    expected: [
+      ...OPEN,
+      ...GITHUB,
+      'reviewComment.openRun primary Open run',
+      'reviewComment.reply secondary Reply',
+      'reviewComment.resolveNoReply menu Resolve',
+      ...COPY,
+    ],
   },
   {
     name: 'failed fix, then put in a run',
     facts: {
       state: 'failed',
       lane: 'in_run',
-      runAgentId: 'run-ledger' as AgentId,
+      runAgentId: LEDGER_RUN,
+      runEnd: 'working',
       canStartRun: true,
     },
     expected: [
@@ -126,7 +153,8 @@ const MATRIX: ReadonlyArray<Row> = [
       'reviewComment.transcript menu Open transcript',
       ...GITHUB,
       'reviewComment.openRun primary Open run',
-      ...DECIDE,
+      'reviewComment.reply secondary Reply',
+      'reviewComment.resolveNoReply menu Resolve',
       ...COPY,
     ],
   },
@@ -527,10 +555,198 @@ const MATRIX: ReadonlyArray<Row> = [
       'reviewComment.resolveNoReply menu Close the comment',
     ],
   },
+  {
+    name: 'open while a run works on the same branch',
+    facts: { state: 'new', agentId: null, joinRuns: JOIN },
+    expected: [
+      ...OPEN,
+      ...GITHUB,
+      'reviewComment.draft primary Fix',
+      'reviewComment.addToRun menu Add to the run',
+      ...DECIDE,
+      ...COPY,
+    ],
+  },
+  {
+    name: 'in a run: no fix, no skip, reply stays',
+    facts: {
+      state: 'new',
+      agentId: null,
+      lane: 'in_run',
+      runAgentId: LEDGER_RUN,
+      runEnd: 'working',
+    },
+    expected: [
+      ...OPEN,
+      ...GITHUB,
+      'reviewComment.openRun primary Open run',
+      'reviewComment.reply secondary Reply',
+      'reviewComment.resolveNoReply menu Resolve',
+      ...COPY,
+    ],
+  },
+  {
+    name: 'a failed fix taken over by a run',
+    facts: { state: 'failed', lane: 'in_run', runAgentId: LEDGER_RUN, runEnd: 'working' },
+    expected: [
+      ...OPEN,
+      'reviewComment.transcript menu Open transcript',
+      ...GITHUB,
+      'reviewComment.openRun primary Open run',
+      'reviewComment.reply secondary Reply',
+      'reviewComment.resolveNoReply menu Resolve',
+      ...COPY,
+    ],
+  },
+  {
+    name: 'a note whose run finished: resolve it or keep it open, never a reply',
+    facts: {
+      state: 'new',
+      agentId: null,
+      isNote: true,
+      hasPr: false,
+      url: null,
+      lane: 'in_run',
+      runEnd: 'finished',
+      runReply: 'Moved the header into AppLayout.',
+    },
+    expected: [
+      ...OPEN,
+      'reviewComment.draft menu Fix',
+      'reviewComment.resolveRunNote primary Resolve note',
+      'reviewComment.keepOpen secondary Keep open',
+    ],
+  },
+  {
+    name: 'a GitHub comment whose run finished: reply and resolve with the draft',
+    facts: {
+      state: 'new',
+      agentId: null,
+      lane: 'in_run',
+      runEnd: 'finished',
+      runReply: 'Moved the header into AppLayout.',
+    },
+    expected: [
+      ...OPEN,
+      ...GITHUB,
+      'reviewComment.draft menu Fix',
+      'reviewComment.replyFromRun primary Reply and resolve on GitHub',
+      'reviewComment.keepOpen secondary Keep open',
+      'reviewComment.reply secondary Reply',
+      'reviewComment.resolveNoReply menu Resolve',
+      ...COPY,
+    ],
+  },
+  {
+    name: 'a GitLab comment whose run finished replies and resolves on GitLab',
+    facts: {
+      state: 'new',
+      agentId: null,
+      provider: 'GitLab',
+      host: 'gitlab',
+      lane: 'in_run',
+      runEnd: 'finished',
+      runReply: 'Moved the header into AppLayout.',
+    },
+    expected: [
+      ...OPEN,
+      ...GITHUB,
+      'reviewComment.draft menu Fix',
+      'reviewComment.replyFromRun primary Reply and resolve on GitLab',
+      'reviewComment.keepOpen secondary Keep open',
+      'reviewComment.reply secondary Reply',
+      'reviewComment.resolveNoReply menu Resolve',
+      ...COPY,
+    ],
+  },
+  {
+    name: 'a Bitbucket comment whose run finished only replies',
+    facts: {
+      ...BITBUCKET,
+      state: 'new',
+      agentId: null,
+      lane: 'in_run',
+      runEnd: 'finished',
+      runReply: 'Moved the header into AppLayout.',
+    },
+    expected: [
+      ...OPEN,
+      ...BITBUCKET_LINK,
+      'reviewComment.draft menu Fix',
+      'reviewComment.replyFromRun primary Reply on Bitbucket',
+      'reviewComment.keepOpen secondary Keep open',
+      'reviewComment.reply secondary Reply',
+      ...COPY,
+    ],
+  },
+  {
+    name: 'a host comment whose run left no reply waits for one',
+    facts: { state: 'new', agentId: null, lane: 'in_run', runEnd: 'finished', runReply: '  ' },
+    expected: [
+      ...OPEN,
+      ...GITHUB,
+      'reviewComment.draft menu Fix',
+      'reviewComment.replyFromRun primary Reply and resolve on GitHub (Write the reply first.)',
+      'reviewComment.keepOpen secondary Keep open',
+      'reviewComment.reply secondary Reply',
+      'reviewComment.resolveNoReply menu Resolve',
+      ...COPY,
+    ],
+  },
+  {
+    name: 'a comment that changed while its run works asks before the run hears of it',
+    facts: {
+      state: 'new',
+      agentId: null,
+      lane: 'in_run',
+      runAgentId: LEDGER_RUN,
+      runEnd: 'working',
+      isSourceChanged: true,
+    },
+    expected: [
+      ...OPEN,
+      ...GITHUB,
+      'reviewComment.sendChangeToRun primary Send the new text to the run',
+      'reviewComment.keepRunAsIs secondary Keep the run as it is',
+      'reviewComment.resolveNoReply menu Resolve',
+      ...COPY,
+    ],
+  },
+  {
+    name: 'a fix still working is never offered to a run',
+    facts: { state: 'drafting', joinRuns: JOIN },
+    expected: [...OPEN, ...TRANSCRIPT, ...GITHUB, 'reviewComment.stop menu Stop drafting', ...COPY],
+  },
 ];
 
 const resolved = (facts: ReviewCommentFacts) =>
   resolveActions({ definitions: REVIEW_COMMENT_KIND.actions, facts });
+
+describe('a comment whose run stopped or failed', () => {
+  it('offers what an open comment offers, nothing from the run', () => {
+    const ids = (facts: Partial<ReviewCommentFacts>) =>
+      resolved({ ...BASE, ...facts }).map((action) => `${action.id} ${action.slot}`);
+    expect(ids({ state: 'new', agentId: null, runEnd: 'stopped' })).toEqual(
+      ids({ state: 'new', agentId: null }),
+    );
+  });
+});
+
+describe('a note the run resolved', () => {
+  it('offers Reopen', () => {
+    const ids = resolved({
+      ...BASE,
+      state: 'pushed',
+      agentId: null,
+      isNote: true,
+      hasPr: false,
+      url: null,
+      runEnd: 'finished',
+      noteId: 'note-ledger-header',
+    }).map((action) => `${action.id} ${action.slot} ${action.label}`);
+    expect(ids).toContain('reviewComment.reopenRunNote secondary Reopen');
+  });
+});
 
 describe.each(MATRIX)('review comment, $name', ({ facts, expected }) => {
   const all = { ...BASE, ...facts };

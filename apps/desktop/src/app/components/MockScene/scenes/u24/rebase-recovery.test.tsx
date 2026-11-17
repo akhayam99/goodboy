@@ -1,10 +1,11 @@
 // @vitest-environment happy-dom
 
-vi.mock('@tauri-apps/api/core', async () => {
-  const { sceneInvoke } = await import('../../../../../test/sceneInvoke');
-  return { invoke: vi.fn((command: string, args?: unknown) => sceneInvoke({ command, args })) };
-});
-vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn(async () => () => undefined) }));
+vi.mock('@tauri-apps/api/core', async () =>
+  (await import('../../../../../store/storyHarness')).tauriCoreModuleMock(),
+);
+vi.mock('@tauri-apps/api/event', async () =>
+  (await import('../../../../../store/storyHarness')).tauriEventModuleMock(),
+);
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
@@ -13,8 +14,9 @@ import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
   resetStoryStore,
+  storySpies,
 } from '../../../../../store/storyHarness';
-import { clearSceneInvoke } from '../../../../../test/sceneInvoke';
+import { clearSceneInvoke, sceneInvoke } from '../../../../../test/sceneInvoke';
 import { resetWorktreeStatusCache } from '../../../../../store/runtime/worktreeStatuses/cache';
 import { U24_REBASE_RECOVERY_SCENES } from './rebase-recovery';
 import { RewriterTranscriptScene } from './RewriterTranscriptScene';
@@ -25,6 +27,9 @@ beforeAll(async () => {
 
 beforeEach(async () => {
   await resetStoryStore();
+  storySpies.tauriInvoke.mockImplementation((command, args) =>
+    sceneInvoke({ command: String(command), args }),
+  );
   resetWorktreeStatusCache();
 });
 
@@ -67,7 +72,7 @@ describe('the u24 rebase recovery scenes', () => {
     await waitForSettledReads();
 
     expect(note.getAttribute('placeholder')).toBe('What should it do differently?');
-    expect(screen.getByRole('button', { name: 'Retry' })).toBeDefined();
+    screen.getByRole('button', { name: 'Retry' });
   });
 
   it('offers to rebase on their commits when the origin moved', async () => {
@@ -76,8 +81,10 @@ describe('the u24 rebase recovery scenes', () => {
     await screen.findByRole('button', { name: 'Rebase on their commits' }, { timeout: 4_000 });
     await waitForSettledReads();
 
-    expect(screen.getByRole('button', { name: 'Resolve in terminal' })).toBeDefined();
-    expect(screen.queryByRole('button', { name: 'Dismiss' })).toBeNull();
+    screen.getByRole('button', { name: 'Resolve in terminal' });
+    expect(screen.getByRole('button', { name: 'Dismiss' }).closest('p')?.textContent).toContain(
+      'Rebased here, but',
+    );
   });
 
   it('offers a retry, the terminal and the hook output when the push failed', async () => {
@@ -87,7 +94,7 @@ describe('the u24 rebase recovery scenes', () => {
     await waitForSettledReads();
     fireEvent.click(screen.getByRole('button', { name: 'Details' }));
 
-    expect(screen.getByRole('button', { name: 'Open terminal here' })).toBeDefined();
+    screen.getByRole('button', { name: 'Open terminal here' });
     expect(screen.getByRole('dialog', { name: 'Push output' }).textContent).toContain(
       'seenEvents is assigned a value but never used',
     );
@@ -104,7 +111,7 @@ describe('the u24 rebase recovery scenes', () => {
     await waitForSettledReads();
 
     expect(screen.queryByRole('textbox')).toBeNull();
-    expect(screen.getByRole('button', { name: 'Open rebase' })).toBeDefined();
+    screen.getByRole('button', { name: 'Open rebase' });
   });
 
   it('keeps the composer on a stuck rewrite whose copy is alive', async () => {

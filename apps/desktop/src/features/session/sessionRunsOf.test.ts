@@ -129,6 +129,10 @@ const autoRoot = ({ status }: StatusParams): Agent =>
     startedAt: NOW_STARTED_AT,
   });
 
+type ThreadParams = {
+  readonly threadIds: ReadonlyArray<string>;
+};
+
 const autoChild = (): Agent =>
   anAgent({
     id: brandId<AgentId>({ value: 'agent-fixer' }),
@@ -242,6 +246,38 @@ describe('sessionRunsOf', () => {
 
     expect(routed.map((run) => run.origin)).toEqual(['Lead · plan Fix flaky tests']);
     expect(plain.map((run) => run.origin)).toEqual(['Lead']);
+  });
+
+  it('says a run started from comments comes from them, with the place when there is one', () => {
+    const fromComments = ({ threadIds }: ThreadParams) =>
+      sessionRunsOf({
+        attachedRuns: [],
+        agents: [
+          {
+            ...autoRoot({ status: 'running' }),
+            sourceKind: 'comment_run',
+            sourceThreadIds: threadIds,
+          },
+        ],
+        kindOverride: {},
+        autoViews: [aView({ phase: 'waiting' })],
+        orchestrating: {},
+        questions: [],
+        rootTurns: {},
+        turnByAgentId: new Map(),
+        revisingStarts: {},
+        mounts: [],
+        projects: [],
+        commentPlaces: { 'note:ledger-header': 'LedgerPage.tsx:24' },
+      }).map((run) => run.origin);
+
+    expect(fromComments({ threadIds: ['note:ledger-header'] })).toEqual([
+      'From comment LedgerPage.tsx:24',
+    ]);
+    expect(fromComments({ threadIds: ['PRRT_harborline_import_order'] })).toEqual(['From comment']);
+    expect(
+      fromComments({ threadIds: ['note:ledger-header', 'PRRT_harborline_import_order'] }),
+    ).toEqual(['From 2 comments']);
   });
 
   it('lists the newest request first', () => {

@@ -632,7 +632,10 @@ trail and the address row are its back row, so nothing steps aside
 and nothing in it steps aside. A page whose back sits in a trail of its own
 (the workflow editor) passes that trail as the `lead`. A
 failure banner never goes in the header: it is the page's `lead`, pinned under
-the back row (rule 13).
+the back row (rule 13). The one exception is the Branch page history card (a
+stopped or finished rebase): it is a tall card with its own verbs, so it sits in
+the header column above the title, in flow with the column gap, and can never
+cover the title row the way a pinned overlay can.
 
 ## Scroll edges fade, never hard-cut
 

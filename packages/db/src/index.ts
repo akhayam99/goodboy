@@ -289,11 +289,13 @@ export {
   stringifyRoutingJson,
 } from './queries/workflowRoutingCodec';
 export {
+  addAgentSourceThread,
   insertAgent,
   insertAgentBatch,
   markAgentUnviewed,
   markAgentViewed,
   recordAgentStatus,
+  removeAgentSourceThread,
   revertAgentStart,
   setAgentDone,
   setAgentProviderSession,
@@ -644,11 +646,7 @@ export {
   upsertResolvePublicationThread,
   listResolvePublicationThreads,
 } from './queries/resolve-publication';
-export {
-  addProjectSentryLink,
-  listProjectSentryLinks,
-  removeProjectSentryLink,
-} from './queries/project-sentry-link';
+export * from './queries/project-sentry-link';
 export {
   listStarredIssues,
   starIssue,

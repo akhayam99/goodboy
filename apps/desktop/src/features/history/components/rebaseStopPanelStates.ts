@@ -7,6 +7,7 @@ export const REBASE_STOP_PANEL_STATES: ReadonlySet<RebaseJobState> = new Set<Reb
   'auto-done',
   'rebased-here',
   'pushed',
+  'done',
   'origin-moved',
   'push-failed',
   'dirty',

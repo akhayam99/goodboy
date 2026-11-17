@@ -4,6 +4,7 @@ import type { ResolveQueueRow } from './buildResolveQueueRows';
 import {
   projectResolveComment,
   type ResolveCommentFacts,
+  type ResolveCommentRun,
   type ResolveCommentProjection,
 } from './commentProjection';
 import type { RemoteView } from './reviewRemote';
@@ -80,6 +81,8 @@ export const isResolveOnly = ({ row }: { readonly row: ResolveQueueRow }): boole
 type ProjectionExtras = {
   readonly gitChip?: RemoteView | null;
   readonly hasFailedChecks?: boolean;
+  readonly run?: ResolveCommentRun | null;
+  readonly isSourceChanged?: boolean;
 };
 
 const resolveFactsOfRow = ({
@@ -87,6 +90,8 @@ const resolveFactsOfRow = ({
   row,
   gitChip = null,
   hasFailedChecks = false,
+  run = null,
+  isSourceChanged = false,
 }: ProjectionExtras & {
   readonly state: ReviewCommentState;
   readonly row: ResolveQueueRow;
@@ -99,6 +104,8 @@ const resolveFactsOfRow = ({
   attempt: row.attempt,
   gitChip,
   hasFailedChecks,
+  run,
+  isSourceChanged,
 });
 
 export const projectReviewComment = ({
@@ -106,11 +113,15 @@ export const projectReviewComment = ({
   row,
   gitChip,
   hasFailedChecks,
+  run,
+  isSourceChanged,
 }: ProjectionExtras & {
   readonly state: ReviewCommentState;
   readonly row: ResolveQueueRow;
 }): ResolveCommentProjection =>
-  projectResolveComment(resolveFactsOfRow({ state, row, gitChip, hasFailedChecks }));
+  projectResolveComment(
+    resolveFactsOfRow({ state, row, gitChip, hasFailedChecks, run, isSourceChanged }),
+  );
 
 export const reviewCommentWord = ({
   state,

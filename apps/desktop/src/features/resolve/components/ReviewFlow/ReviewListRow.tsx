@@ -15,6 +15,7 @@ import { Person } from '../../../../shared/components/Person';
 import { formatAge } from '../../../../shared/utils/time/formatAge';
 import { useNow } from '../../../../shared/hooks/useNow';
 import { REVIEW_LAUNCH_LABEL } from '../../reviewLaunchCopy';
+import { COMMENT_RUN_COPY } from '../../commentRunCopy';
 import { REVIEW_COMMENT_NODE } from '../../reviewCommentState';
 import { entryBodyOf, entryTitleOf } from './entryTitle';
 import { rowQualifierOf } from './rowQualifier';
@@ -145,6 +146,11 @@ export const ReviewListRow = ({
             {title}
           </TruncatedText>
           {entry.fix === null ? null : <RowFixLine fix={entry.fix} />}
+          {entry.run === null || entry.run.end === 'stopped' ? null : (
+            <span data-row-run className="min-w-0 truncate text-meta text-muted-foreground">
+              {COMMENT_RUN_COPY.runLine({ title: entry.run.title })}
+            </span>
+          )}
         </span>
       </button>
       {isUnread ? (

@@ -63,7 +63,9 @@ const quoteOf = ({ picked }: PickedParams): string =>
       const label = commentRunSourceLabelOf({ thread: entry.row.thread });
       return [
         {
-          source: isNoteEntry({ entry }) ? 'A local note' : `A ${label} comment`,
+          source: isNoteEntry({ entry })
+            ? COMMENT_RUN_COPY.localNoteSource
+            : COMMENT_RUN_COPY.hostSource({ label }),
           author: note.author,
           body: note.body,
           path: note.path,

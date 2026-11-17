@@ -1,4 +1,7 @@
 import type { MountId, SessionId } from '@goodboy/types';
+import { settledStopsOfMount } from '../rebaseAll/settledStopsOfMount';
+import { writeSettledStops } from '../rebaseAll/writeSettledStops';
+import type { SettledStops } from '../rebaseAll/settledStopsMemory';
 import type { HistoryRun, HistoryRunOrigin, SetFn } from './types';
 
 type Params = {
@@ -27,11 +30,28 @@ const EMPTY_RUN = {
   commitCount: null,
 } satisfies Omit<HistoryRun, 'sessionId' | 'mountId' | 'origin' | 'updatedAt'>;
 
+type Outcome = {
+  settled: SettledStops | null;
+};
+
 export const setHistoryRun = ({ set, sessionId, mountId, origin, patch }: Params): void => {
+  const isCompleted =
+    origin === 'rebase' && (patch.phase === 'applied' || patch.phase === 'pushed');
+  const outcome: Outcome = { settled: null };
   set((state) => {
     const current = state.historyRuns[mountId];
     const base = current === undefined || current.sessionId !== sessionId ? EMPTY_RUN : current;
+    const settled = isCompleted
+      ? settledStopsOfMount({
+          settled: state.settledRebaseStops,
+          events: state.sessionEvents?.[sessionId],
+          sessionId,
+          mountId,
+        })
+      : null;
+    outcome.settled = settled;
     return {
+      ...(settled !== null && { settledRebaseStops: settled }),
       historyRuns: {
         ...state.historyRuns,
         [mountId]: {
@@ -45,4 +65,7 @@ export const setHistoryRun = ({ set, sessionId, mountId, origin, patch }: Params
       },
     };
   });
+  if (outcome.settled !== null) {
+    writeSettledStops({ stops: outcome.settled });
+  }
 };
