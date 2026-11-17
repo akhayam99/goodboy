@@ -186,10 +186,7 @@ export const App = () => {
 
   const renderedSessionIds = useMemo<ReadonlyArray<SessionId>>(() => {
     const cid = currentSession?.id ?? null;
-    if (!cid) {
-      return keepAliveIds;
-    }
-    if (keepAliveIds.includes(cid)) {
+    if (cid === null || keepAliveIds.includes(cid)) {
       return keepAliveIds;
     }
     const merged = [...keepAliveIds, cid];
@@ -256,6 +253,7 @@ export const App = () => {
           }
           drawer={shellRight.isDrawerMounted ? <DrawerHost slot="dock" /> : null}
           drawerSizing={shellRight.dockSizing}
+          dockGrid={shellRight.dockGrid}
           detail={shellRight.isDetailMounted ? <DrawerHost slot="detail" /> : null}
           detailSizing={shellRight.detailSizing}
           drawerPlacement={shellRight.placement}

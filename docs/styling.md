@@ -258,9 +258,16 @@ also picks the rail form: under a 1100px window (`shellRailFormOf`) both rails
 turn 44 wide, icons only (`SHELL_RAIL_WIDTH_PX`, `TOOL_RAIL_WIDTH_PX`), and
 reports it as `railForm`; a caller may still pass its own rail widths. At 1024
 by 700 a narrow pane pushes beside a page of 524 and the Browser lies over the
-page, left of the rail that stays at the edge. No host mounts it yet:
-`DrawerColumn` still runs `panelPairLayoutOf`, and the narrow tool rail is what
-lets its narrow panel push at 1024 (`DrawerColumnNarrowWindow.test.tsx`).
+page, left of the rail that stays at the edge. `DrawerColumn` runs it for a
+`dockGrid` of two tools or more, passing the measured column and the rail it
+hosts (`useDockGrid`, `DockGrid`, a CSS grid whose tracks are the column widths
+and 12px gutters, so a pane keeps its node when the pair turns or stacks); one
+tool, the detail alone and `placement="overlay"` keep `panelPairLayoutOf`, and
+the narrow tool rail is what lets its narrow panel push at 1024
+(`DrawerColumnNarrowWindow.test.tsx`). A detail that the solver lays over the
+page while the grid pushes floats the whole aside for now.
+`DrawerColumnGrid.test.tsx` pins the order, the widths, the stack, the focus
+border and the turn key.
 
 **The places rail never folds.** `AppShell` takes it as `leftRail` and gives
 it an `auto` grid column, so the rail's own width (64px, 44px under a 1100px

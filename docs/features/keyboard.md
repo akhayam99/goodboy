@@ -135,7 +135,8 @@ Move through Goodboy, change a shortcut and stop an agent without leaving the ke
 - While an agent runs and nothing else is open, **Esc** twice stops it. The first press says "Esc again to stop" beside the Stop button for three seconds. The second stops the agent, listed as Stop the running agent, press twice.
 - A menu, a drawer or a dialog that is open always takes the key first. The key leaves the page only when no turn runs.
 - In a session, **Esc** walks one ladder. In a box with text it leaves the box and keeps your text. Then it closes the panel on the right, and the panel it had replaced comes back. Then it closes that one. Then it does what the back row above the page does, so a step goes to its run and a list goes to the Overview. On the Overview it does nothing.
-- **⌘⇧W** closes the panel on the right from anywhere, even with the keyboard in a terminal. The panel it had replaced comes back first. Off macOS it is **Ctrl+F4**.
+- **⌘⇧W** closes the panel that has the focus, even with the keyboard in a terminal. With the page focused it closes the panel on the right. The panel it had replaced comes back first. Off macOS it is **Ctrl+F4**.
+- **F6** moves the focus to the next panel: the page, the detail, then each open tool. **⇧F6** goes back. The panel with the focus has a tinted border.
 - **⌘⌥W** and **⌘⌥P** on a run, a step, an agent or an artifact go to Runs or Artifacts. So do they from Settings or a panel over the list. Pressed on the list itself they stay.
 
 **The Mac menu bar**
@@ -236,7 +237,7 @@ Open your dev server, a port or a link beside the session or on a page of its ow
 
 This part is for contributors and agents who change the feature.
 
-- Terminal dock: ``⌃` `` (`terminal.studio`) and ⌘⌥T (`session.terminal`) both run `toggleTerminalDock`; off a session page it opens `openWorkspaceTerminal`, a drawer with `sessionId: null`. `openTerminalOnPage` and `dockTerminalPage` move between dock and page, `dockEmptyTerminalPage` docks a terminal from the empty page, and [studios.md](../navigation/studios.md) owns the Terminal page.
+- Terminal dock: ``⌃` `` (`terminal.studio`) and ⌘⌥T (`session.terminal`) both run `toggleTerminalDock`. ``⌃` `` passes `shouldFocusFirst`: an open Terminal without the focus gets it, a focused one closes. Off a session page it opens `openWorkspaceTerminal`, a drawer with `sessionId: null`. `openTerminalOnPage` and `dockTerminalPage` move between dock and page, `dockEmptyTerminalPage` docks a terminal from the empty page, and [studios.md](../navigation/studios.md) owns the Terminal page.
 - Archived sessions group: `terminalGroups` and `CloseGroupButton` build the group and its **Close all**.
 - Process on a tab: `terminal_list_live` returns `foregroundCommand`, shaped by `foregroundLabelOf`. `terminalCommandOf` is the fallback.
 - Exit status: `terminal_shell_hook.rs` writes zsh startup files under the app data `shell-integration/zsh` and points `ZDOTDIR` there. They source the user's own files. The hook runs under `emulate -L zsh`, appends to `precmd_functions` and `preexec_functions` and survives `setopt nounset`. Preexec keeps the command line, precmd prints `ESC ] 633;D;<code>;<command> BEL`. `terminal_exit_mark.rs` reads the mark, `terminal_list_live` returns `lastExitCode` and `lastExitCommand`, `terminalActivityOf` words the row from them and never from typed keys. The setting is `terminal.exitStatus`, read by Rust when a terminal opens; only `false` turns it off.

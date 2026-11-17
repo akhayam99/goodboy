@@ -126,6 +126,7 @@ export const ShellFrame = ({
         topBar={<AppTopBar onOpenSpend={noop} onOpenScript={noop} />}
         drawer={shellRight.isDrawerMounted ? <DrawerHost slot="dock" /> : null}
         drawerSizing={shellRight.dockSizing}
+        dockGrid={shellRight.dockGrid}
         detail={shellRight.isDetailMounted ? <DrawerHost slot="detail" /> : null}
         detailSizing={shellRight.detailSizing}
         isDrawerParked={shellRight.isDrawerParked}

@@ -86,6 +86,7 @@ const BoardShellSceneContent = ({ isSessionOpen }: ContentProps) => {
         rightRail={shellRight.rightRail}
         drawer={shellRight.isDrawerMounted ? <DrawerHost slot="dock" /> : null}
         drawerSizing={shellRight.dockSizing}
+        dockGrid={shellRight.dockGrid}
         detail={shellRight.isDetailMounted ? <DrawerHost slot="detail" /> : null}
         detailSizing={shellRight.detailSizing}
         isDrawerParked={shellRight.isDrawerParked}

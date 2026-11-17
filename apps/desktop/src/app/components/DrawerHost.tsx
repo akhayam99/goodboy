@@ -1,8 +1,9 @@
-import type { ReactNode } from 'react';
-import { DrawerBackChipContext } from '@goodboy/ui';
+import { useContext, type ReactNode } from 'react';
+import { DockCellContext, DrawerBackChipContext } from '@goodboy/ui';
 import { useAppStore } from '../../store';
 import { selectSlotDrawer, type DrawerSlot } from '../../store/slices/drawer/selectSlotDrawer';
 import { selectSlotBack } from '../../store/slices/drawer/selectSlotBack';
+import { selectGridTool } from '../../store/slices/drawer/selectGridTool';
 import { useSlotBackChip } from '../hooks/useSlotBackChip';
 import { ExploreFileDrawer } from '../../features/explore/components/ExploreFileDrawer';
 import { LazySessionScriptsDrawer } from '../../features/scripts/components/LazySessionScriptsDrawer';
@@ -169,8 +170,18 @@ type Props = {
   readonly slot?: DrawerSlot;
 };
 
+type HostParams = {
+  readonly state: Parameters<typeof selectGridTool>[0]['state'];
+  readonly slot: DrawerSlot;
+  readonly tool: string | null;
+};
+
+const hostedDrawerOf = ({ state, slot, tool }: HostParams): DrawerRequest | null =>
+  tool === null ? selectSlotDrawer({ state, slot }) : selectGridTool({ state, kind: tool });
+
 export const DrawerHost = ({ slot = 'top' }: Props) => {
-  const drawer = useAppStore((state) => selectSlotDrawer({ state, slot }));
+  const tool = useContext(DockCellContext);
+  const drawer = useAppStore((state) => hostedDrawerOf({ state, slot, tool }));
   const isTop = useAppStore((state) => drawer !== null && state.drawer === drawer);
   const back = useAppStore((state) => (isTop ? selectSlotBack({ state }) : null));
   const backChip = useSlotBackChip({ back });
@@ -184,7 +195,7 @@ export const DrawerHost = ({ slot = 'top' }: Props) => {
   };
   const closeQuestion = isTop ? closeTopQuestion : closeDrawer;
   const isReading = useAppStore((s) => {
-    const open = selectSlotDrawer({ state: s, slot });
+    const open = hostedDrawerOf({ state: s, slot, tool });
     return (
       open?.kind === 'artifact-document' &&
       readingArtifactOf({

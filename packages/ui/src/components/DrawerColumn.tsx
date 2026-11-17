@@ -1,12 +1,18 @@
 import { DrawerContentContext } from '../drawerContentContext';
 import { useDrawerColumnWidth } from '../useDrawerColumnWidth';
-import { useCallback, useRef, type CSSProperties, type ReactNode, type Ref } from 'react';
-import { assignRef } from '../assignRef';
+import { useRef, type CSSProperties, type ReactNode, type Ref } from 'react';
+import { dockLayoutOf } from '../dockLayout';
+import type { SolvedDockFrame } from '../dockGridFrameOf';
+import type { DockGridSpec } from '../dockGridSpec';
+import type { DockSolveParams } from '../useDockGrid';
+import { useDockFrame } from '../useDockFrame';
+import { pageFocusPropsOf } from '../pageFocusPropsOf';
+import { DrawerDockNode } from './DrawerDockNode';
+import { DrawerScrim } from './DrawerScrim';
+import { useAsideRef } from '../useAsideRef';
 import { cn } from '../cn';
-import { columnPairLayoutOf } from '../columnPairLayoutOf';
 import { DrawerEdgeContext } from '../drawerEdgeContext';
 import { DRAWER_PANEL_VARS } from '../drawerPanelVars';
-import { dismissTopEscapeLayer } from '../escape';
 import { SHEET_CLASSES, type ResizeActivity, type SheetEdge } from '../sheet';
 import { SplitHandle } from './SplitHandle';
 import { DrawerDetailGroup } from './DrawerDetailGroup';
@@ -15,9 +21,7 @@ import { useDrawerPanel } from '../useDrawerPanel';
 import { useDrawerPreview } from '../useDrawerPreview';
 import { useEdgeHost } from '../useEdgeHost';
 import { useSnapAfterFloat } from '../useSnapAfterFloat';
-import { useDrawerTierWidths } from '../useDrawerTierWidths';
 import {
-  drawerAsideWidthOf,
   panelAsideWidthOf,
   type DrawerMode,
   type DrawerPlacement,
@@ -26,20 +30,28 @@ import {
 
 export type DrawerColumnFrame = 'sheet' | 'none';
 
-const SCRIM_RADIUS: Readonly<Record<SheetEdge, string>> = {
-  wrapped: 'rounded-l-frame',
-  flush: '',
-  pushed: 'rounded-frame',
-};
-
 type PanelVar = (typeof DRAWER_PANEL_VARS)[keyof typeof DRAWER_PANEL_VARS];
 
 type PanelVars = CSSProperties & Readonly<Record<PanelVar, string>>;
+
+const ROW_WEIGHT_FRAME = 1000;
+
+const solveDock = ({ columnWidth, railWidth, detail, columns }: DockSolveParams): SolvedDockFrame =>
+  dockLayoutOf({
+    windowWidth: columnWidth,
+    windowHeight: ROW_WEIGHT_FRAME,
+    top: 0,
+    leftRailWidth: 0,
+    toolRailWidth: railWidth,
+    detail,
+    columns,
+  });
 
 export type DrawerColumnProps = {
   readonly main: ReactNode;
   readonly drawer?: ReactNode | null;
   readonly drawerKey?: string;
+  readonly dockGrid?: DockGridSpec | null;
   readonly detail?: ReactNode | null;
   readonly detailKey?: string;
   readonly detailSizing?: DrawerSizing;
@@ -61,6 +73,7 @@ export const DrawerColumn = ({
   main,
   drawer,
   drawerKey = 'drawer',
+  dockGrid = null,
   detail,
   detailKey = 'detail',
   detailSizing = 'side',
@@ -79,25 +92,28 @@ export const DrawerColumn = ({
 }: DrawerColumnProps) => {
   const column = useDrawerColumnWidth();
   const edge = useEdgeHost();
-  const asideRef = useRef<HTMLElement | null>(null);
+  const { asideRef, setAside } = useAsideRef({ drawerRef });
   const trackRef = useRef<HTMLDivElement | null>(null);
   const groupRef = useRef<HTMLDivElement | null>(null);
-  const isOpen = drawer != null;
   const isDetailOpen = detail != null;
   const preview = useDrawerPreview({ asideRef, trackRef, groupRef });
-  const resizable = useDrawerTierWidths({ sizing, onPreview: preview.previewDock });
-  const detailWidths = useDrawerTierWidths({
-    sizing: detailSizing,
-    onPreview: preview.previewDetail,
-  });
   const railWidth = edge.width;
-  const layout = columnPairLayoutOf({
+  const dock = useDockFrame({
+    dockGrid,
+    hasDrawer: drawer != null,
+    isDetailOpen,
+    isDetailParked,
     columnWidth: column.width,
     railWidth,
     placement,
-    dock: { sizing, savedWidth: resizable.width, isOpen },
-    detail: { sizing: detailSizing, savedWidth: detailWidths.width, isOpen: isDetailOpen },
+    sizing,
+    detailSizing,
+    previewDock: preview.previewDock,
+    previewDetail: preview.previewDetail,
+    solve: solveDock,
+    resizeLabel,
   });
+  const { isOpen, resizable, detailWidths, layout } = dock;
   const mode: DrawerMode = isOpen || isDetailOpen ? layout.mode : 'closed';
   const isOverlay = mode === 'overlay';
   const dockPanel = useDrawerPanel({ isOpen, layoutMode: layout.mode, isParked });
@@ -123,13 +139,6 @@ export const DrawerColumn = ({
     [DRAWER_PANEL_VARS.dock]: `${layout.dock.width}px`,
     [DRAWER_PANEL_VARS.detail]: `${layout.detail.width}px`,
   };
-  const setAside = useCallback(
-    (node: HTMLElement | null) => {
-      asideRef.current = node;
-      assignRef({ ref: drawerRef, value: node });
-    },
-    [drawerRef],
-  );
 
   const isPushed = mode === 'push' && (isDockShown || isDetailShown);
   const isSheet = frame === 'sheet';
@@ -154,9 +163,10 @@ export const DrawerColumn = ({
           data-container="page"
           data-drawer-main=""
           inert={isOverlay && (isDockShown || isDetailShown)}
+          {...pageFocusPropsOf({ dockGrid })}
           {...(isSheet && { 'data-sheet': sheetState, 'data-left-resize': leftResize })}
           className={cn(
-            'flex min-h-0 min-w-0 flex-1 flex-col',
+            'flex min-h-0 min-w-0 flex-1 flex-col focus-visible:outline-none',
             isSheet && 'overflow-hidden bg-background',
             isSheet && SHEET_CLASSES[sheetState],
           )}
@@ -164,25 +174,14 @@ export const DrawerColumn = ({
           <DrawerEdgeContext.Provider value={edge.host}>{main}</DrawerEdgeContext.Provider>
         </div>
         {isFloating ? (
-          <div
-            aria-hidden
-            data-drawer-scrim=""
-            onMouseDown={isAnyExiting ? undefined : (event) => event.preventDefault()}
-            onClick={isAnyExiting ? undefined : () => dismissTopEscapeLayer()}
-            className={cn(
-              'absolute inset-0 z-10 bg-scrim',
-              isSheet && SCRIM_RADIUS[sheetState],
-              isOverlayExit && !isOverlay && 'pointer-events-none animate-drawer-fade-out',
-              !isOverlayExit && !isResumed && 'motion-safe:animate-fade-in',
-            )}
-          />
-        ) : null}
-        {isFloating ? (
-          <div
-            aria-hidden
-            data-drawer-spacer=""
-            style={{ width: drawerAsideWidthOf({ width: 0, mode: 'closed', railWidth }) }}
-            className="shrink-0"
+          <DrawerScrim
+            isSheet={isSheet}
+            sheetState={sheetState}
+            isAnyExiting={isAnyExiting}
+            isOverlay={isOverlay}
+            isOverlayExit={isOverlayExit}
+            isResumed={isResumed}
+            railWidth={railWidth}
           />
         ) : null}
         <aside
@@ -228,6 +227,7 @@ export const DrawerColumn = ({
                 mode={mode}
                 columnWidth={column.width}
                 savedWidth={detailWidths.width}
+                {...dock.detailFocus}
               />
             ) : null}
             <div
@@ -237,20 +237,19 @@ export const DrawerColumn = ({
                 isContainerIdle && 'hidden',
               )}
             >
-              {isDockShown ? (
-                <SplitHandle
-                  {...resizable.handleProps}
-                  max={layout.dock.dragMax}
-                  value={layout.dock.width}
-                  side="right"
-                  ariaLabel={resizeLabel}
-                />
-              ) : null}
+              {isDockShown ? <SplitHandle {...dock.dockHandle} /> : null}
             </div>
             <DrawerDockBox
               panel={dockPanel}
-              node={drawer}
-              panelKey={drawerKey}
+              node={
+                <DrawerDockNode
+                  dockGrid={dockGrid}
+                  frame={dock}
+                  drawer={drawer}
+                  isFloating={isFloating}
+                />
+              }
+              panelKey={dockGrid === null ? drawerKey : dock.gridKey}
               isOpen={isOpen}
               isParked={isParked}
               isOverlay={isOverlay}
@@ -258,6 +257,8 @@ export const DrawerColumn = ({
               isIdle={isContainerIdle}
               parkedWidth={layout.dock.width}
               setEdgeHost={edge.setHost}
+              isGrid={dock.grid.frame !== null}
+              isFocused={dock.isSingleFocused}
             />
           </div>
         </aside>

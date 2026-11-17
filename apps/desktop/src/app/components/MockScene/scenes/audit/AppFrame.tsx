@@ -128,6 +128,7 @@ export const AppFrame = ({
           isDetailParked: shellRight.isDetailParked,
           isDockInStudio: shellRight.isDockInStudio,
           drawerSizing: shellRight.dockSizing,
+          dockGrid: shellRight.dockGrid,
           detailSizing: shellRight.detailSizing,
           drawerPlacement,
         })}
