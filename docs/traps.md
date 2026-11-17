@@ -248,9 +248,24 @@ The Rust files with the most comments lost them in one pass. What a reader would
   `turnSettled.ts`) besides checking the lease and the live run ids. Markers
   that still arrive on an attempt failed as `interrupted` are recorded rather
   than dropped.
+- A fix run for a note starts its copy on the owner's working tree, not on the
+  branch head. `drainResolveQueue` passes `shouldCarryWorkingTree` to
+  `resolve_copy_prepare` when a thread id of the attempt starts with `note:`,
+  and `snapshot_owner_tree` writes the tracked edits and untracked files as one
+  commit on `HEAD` through a temporary index: the owner's index and files never
+  change. That commit is the candidate base, so the proposal is only the agent
+  delta. Accepting a candidate built on it (`owner_tree_under` finds the
+  snapshot subject in `HEAD..candidate`) applies `git diff base candidate` to
+  the working tree with `git apply`, so the fix lands uncommitted on top of the
+  owner's work. A commit of the delta alone cannot exist: the agent edits lines
+  that live only in that uncommitted work. A capture in the shared worktree
+  (`shouldKeepUncommitted`) never runs `git add --update` and moves `HEAD` back
+  with `reset --keep`. The old sweep and `reset --hard` moved the owner's
+  uncommitted edits into the candidate and off the disk.
 - A resolver started through a batch (`startBatch`, `resolve_attempts.batch_id`
   set) never writes the real branch. `drainResolveQueue` makes it a detached
-  copy at the branch head (`resolve_copy_prepare`, under the history copy
+  copy at the branch head, or at the working tree snapshot for a note
+  (`resolve_copy_prepare`, under the history copy
   reservations with the slug `resolve-<attemptId>`) and hands `sendTurn` the
   `resolveCopyPath`. The copy mirrors every `node_modules` of the main tree
   (root and workspace packages, depth 3): the folders are real, `.pnpm` and
