@@ -611,7 +611,7 @@ describe('agent writes', () => {
 
     const seedCommentRun = async (id: string, status: string): Promise<AgentId> => {
       const agent = await insertAgent(db, {
-        id: id as AgentId,
+        id: brandId<AgentId>({ value: id }),
         sessionId,
         ordinal: 0,
         name: 'Move the ledger header into AppLayout',
@@ -656,7 +656,11 @@ describe('agent writes', () => {
 
       expect(await threadsOf(id)).toEqual([LAYOUT_NOTE]);
       await expect(
-        removeAgentSourceThread({ db, id: 'missing' as AgentId, threadId: FILTERS_NOTE }),
+        removeAgentSourceThread({
+          db,
+          id: brandId<AgentId>({ value: 'missing' }),
+          threadId: FILTERS_NOTE,
+        }),
       ).rejects.toThrow(new NotFoundError('agent', 'missing'));
     });
   });

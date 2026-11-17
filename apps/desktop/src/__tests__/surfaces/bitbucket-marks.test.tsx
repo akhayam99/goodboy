@@ -13,7 +13,7 @@ vi.mock('../../shared/lib/db', async () =>
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render, within } from '@testing-library/react';
-import { tintClasses } from '@goodboy/ui';
+import type { StatusMarkSpec } from '@goodboy/ui';
 import type { Session, SessionAttentionReason, SessionStageInfo } from '@goodboy/types';
 import {
   STORE_IMPORT_TIMEOUT_MS,
@@ -24,6 +24,7 @@ import {
 import { stageInfoOf } from '../../store/slices/session-view/stageInfoOf';
 import { seedBitbucketMarks } from '../../app/components/MockScene/scenes/u23/bitbucketMarksSeed';
 import { ATTENTION_REASON_META, attentionWordsOf } from '../../features/session/session-stage';
+import { attentionMarkOf } from '../../features/session/attentionMarkOf';
 import { needsYouEntries } from '../../features/palette/sources/needsYouEntries';
 import { SessionActivityItem } from '../../features/workspace/components/SessionActivityBar/SessionActivityItem';
 import { SwitcherRow } from '../../features/workspace/components/SessionSwitcher/SwitcherRow';
@@ -76,6 +77,29 @@ const nodeOf = (container: HTMLElement) => ({
   words: withoutUnseen(container.querySelector('[role="img"]')?.getAttribute('aria-label') ?? null),
 });
 
+type ContainerParams = {
+  readonly container: HTMLElement;
+};
+
+const markOf = ({ container }: ContainerParams) => {
+  const box = container.querySelector('[data-status-mark]');
+  return {
+    kind: box?.getAttribute('data-status-mark') ?? null,
+    state: box?.getAttribute('data-status-state') ?? null,
+    tone: box?.getAttribute('data-status-tone') ?? null,
+  };
+};
+
+type SpecParams = {
+  readonly mark: StatusMarkSpec;
+};
+
+const specOf = ({ mark }: SpecParams) => ({
+  kind: mark.kind,
+  state: mark.kind === 'state' ? mark.state : null,
+  tone: mark.kind === 'dot' || mark.kind === 'count' ? mark.tone : null,
+});
+
 describe.each(REASONS)('a Bitbucket session says %s the same way on every surface', (reason) => {
   const tone = ATTENTION_REASON_META[reason].tone;
 
@@ -97,16 +121,16 @@ describe.each(REASONS)('a Bitbucket session says %s the same way on every surfac
     expect(nodeOf(container)).toEqual({ tone, words: attentionWordsOf({ reason, counts: info }) });
   });
 
-  it('draws the switcher row with the same node', () => {
-    const { session, info } = waitingFor({ reason });
+  it('draws the switcher row with the same mark', () => {
+    const { session } = waitingFor({ reason });
     const { container } = render(
       <SwitcherRow session={session} isSelected={false} onChoose={noop} />,
     );
 
-    expect(nodeOf(container)).toEqual({ tone, words: attentionWordsOf({ reason, counts: info }) });
+    expect(markOf({ container })).toEqual(specOf({ mark: attentionMarkOf({ reason }) }));
   });
 
-  it('draws the hover card with the same node and says the words once', () => {
+  it('draws the hover card with the same mark and says the words once', () => {
     const { session, info } = waitingFor({ reason });
     const words = attentionWordsOf({ reason, counts: info });
     const { container } = render(
@@ -118,7 +142,7 @@ describe.each(REASONS)('a Bitbucket session says %s the same way on every surfac
       />,
     );
 
-    expect(nodeOf(container)).toEqual({ tone, words });
+    expect(markOf({ container })).toEqual(specOf({ mark: attentionMarkOf({ reason }) }));
     expect(within(container).getAllByText(words)).toHaveLength(1);
   });
 
@@ -141,12 +165,12 @@ describe.each(REASONS)('a Bitbucket session says %s the same way on every surfac
     expect(within(container).getByText(attentionWordsOf({ reason, counts: info }))).toBeDefined();
   });
 
-  it('draws the palette entry with the same tone and words', () => {
+  it('draws the palette entry with the same mark and words', () => {
     const { session, info } = waitingFor({ reason });
     const [entry] = needsYouEntries({ items: [{ session, info }], open: noop });
 
     expect(entry?.detail).toBe(attentionWordsOf({ reason, counts: info }));
-    expect(entry?.accent).toBe(tintClasses(tone).dot);
+    expect(entry?.mark).toEqual(attentionMarkOf({ reason }));
   });
 });
 
@@ -170,7 +194,9 @@ describe('a Bitbucket approval next to a failed status', () => {
     );
 
     expect(info).toMatchObject({ attention: 'ci-failed', otherReasons: ['pr-approved'] });
-    expect(nodeOf(container)).toEqual({ tone: 'danger', words: 'Checks failing' });
+    expect(markOf({ container })).toEqual(
+      specOf({ mark: attentionMarkOf({ reason: 'ci-failed' }) }),
+    );
     expect(
       Array.from(container.querySelectorAll('[data-attention-line]')).map((line) =>
         line.getAttribute('data-attention-line'),

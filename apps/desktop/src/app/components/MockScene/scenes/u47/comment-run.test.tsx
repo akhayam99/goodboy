@@ -144,9 +144,8 @@ describe('u47 comment run scenes', () => {
         document.querySelector(`[data-thread-id="${threadId}"] [data-row-state]`)?.textContent,
     );
     expect(rowWords).toEqual(['In a run · Working', 'In a run · Working']);
-    const drawer = document.querySelector(`[data-review-drawer="${THREAD_IDS.retryConstant}"]`);
-    expect(drawer).not.toBeNull();
-    expect(within(drawer as HTMLElement).queryByRole('button', { name: /^Fix/ })).toBeNull();
+    const drawer = drawerOf({ threadId: THREAD_IDS.retryConstant });
+    expect(within(drawer).queryByRole('button', { name: /^Fix/ })).toBeNull();
   });
 
   it('opens the run from the primary of the comment', async () => {

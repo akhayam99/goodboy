@@ -126,7 +126,7 @@ const MATRIX: ReadonlyArray<Row> = [
       state: 'new',
       agentId: null,
       lane: 'in_run',
-      runAgentId: 'run-ledger' as AgentId,
+      runAgentId: LEDGER_RUN,
       runEnd: 'working',
       canStartRun: true,
     },
@@ -144,7 +144,7 @@ const MATRIX: ReadonlyArray<Row> = [
     facts: {
       state: 'failed',
       lane: 'in_run',
-      runAgentId: 'run-ledger' as AgentId,
+      runAgentId: LEDGER_RUN,
       runEnd: 'working',
       canStartRun: true,
     },
