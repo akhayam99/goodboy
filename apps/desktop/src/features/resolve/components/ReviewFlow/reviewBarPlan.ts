@@ -1,3 +1,4 @@
+import type { CommentLane } from '../../commentLaneOf';
 import type { ResolveWord } from '../../commentProjection';
 import type { ReviewCommentState } from '../../reviewCommentState';
 
@@ -14,6 +15,10 @@ export type BarItem =
 type PlanAction = {
   readonly id: string;
   readonly slot: string;
+};
+
+type PlacedParams = {
+  readonly list: ReadonlyArray<BarItem>;
 };
 
 const action = (id: string, variant: BarVariant): BarItem => ({ kind: 'action', id, variant });
@@ -38,6 +43,19 @@ const TO_REVIEW: ReadonlyArray<BarItem> = [
   SKIP,
 ];
 
+const RUN_FIRST: ReadonlyArray<BarItem> = [
+  action('reviewComment.startRun', 'primary'),
+  action('reviewComment.reply', 'ghost'),
+  SKIP,
+];
+
+const IN_RUN: ReadonlyArray<BarItem> = [
+  action('reviewComment.openRun', 'primary'),
+  action('reviewComment.reply', 'ghost'),
+];
+
+const IN_RUN_WORDS: ReadonlySet<ResolveWord> = new Set<ResolveWord>(['open', 'couldnt_fix']);
+
 const OUTDATED: ReadonlyArray<BarItem> = [
   action('reviewComment.edit', 'primary'),
   action('reviewComment.keepDraft', 'secondary'),
@@ -60,12 +78,20 @@ const genericPlanOf = ({
 const stateItemsOf = ({
   word,
   state,
+  lane,
 }: {
   readonly word: ResolveWord;
   readonly state: ReviewCommentState;
+  readonly lane: CommentLane | null;
 }): ReadonlyArray<BarItem> | null => {
   if (word === 'to_review') {
     return state === 'outdated' ? OUTDATED : TO_REVIEW;
+  }
+  if (lane === 'in_run' && IN_RUN_WORDS.has(word)) {
+    return IN_RUN;
+  }
+  if (lane === 'run' && word === 'open') {
+    return RUN_FIRST;
   }
   return PLANS[word] ?? null;
 };
@@ -81,21 +107,28 @@ const hasPlace = ({
 export const reviewBarPlanOf = ({
   word,
   state,
+  lane,
   hasRemote,
   actions,
 }: {
   readonly word: ResolveWord;
   readonly state: ReviewCommentState;
+  readonly lane: CommentLane | null;
   readonly hasRemote: boolean;
   readonly actions: ReadonlyArray<PlanAction>;
 }): ReadonlyArray<BarItem> => {
   const isStateOwned = word === 'to_review' || word === 'ready';
-  const items = hasRemote && !isStateOwned ? null : stateItemsOf({ word, state });
+  const items = hasRemote && !isStateOwned ? null : stateItemsOf({ word, state, lane });
   if (items === null) {
     return genericPlanOf({ actions });
   }
   const actionIds = new Set(actions.map((candidate) => candidate.id));
-  const available = items.filter((item) => hasPlace({ item, actionIds }));
+  const placed = ({ list }: PlacedParams): ReadonlyArray<BarItem> =>
+    list.filter((item) => hasPlace({ item, actionIds }));
+  const planned = placed({ list: items });
+  const hasPrimary = planned.some((item) => item.kind === 'action' && item.variant === 'primary');
+  const available =
+    items === RUN_FIRST && !hasPrimary ? placed({ list: PLANS[word] ?? [] }) : planned;
   const hasReplyOnly = available.some(
     (item) => item.kind === 'action' && item.id === 'reviewComment.replyOnly',
   );

@@ -475,6 +475,9 @@ const replyOnlyFactsOf = ({ state }: ReplyOnlyParams): ReviewCommentFacts => ({
   hasFixOnBranch: false,
   laneAcceptCount: 1,
   laneAcceptNotes: 0,
+  lane: null,
+  runAgentId: null,
+  canStartRun: false,
 });
 
 describe('a review comment drawer ⋯ for a reply-only draft', () => {
@@ -486,12 +489,42 @@ describe('a review comment drawer ⋯ for a reply-only draft', () => {
     const shown = reviewBarPlanOf({
       word: 'to_review',
       state,
+      lane: null,
       hasRemote: false,
       actions: actions.map((candidate) => ({ id: candidate.id, slot: candidate.slot })),
     }).flatMap((item) => (item.kind === 'action' ? [item.id] : []));
     const rare = actions.filter((candidate) => !shown.includes(candidate.id));
     const rows = rowsDrawn({ actions, omit: drawerMenuOmitOf({ shown, rare }) });
     expect(rows.length).toBeGreaterThan(0);
+    expectWithinFive({ kinds: ['reviewComment'], rows });
+  });
+});
+
+describe('a review comment drawer ⋯ for a comment that suggests a run', () => {
+  it.each([
+    { state: 'new', isNote: false },
+    { state: 'new', isNote: true },
+    { state: 'failed', isNote: false },
+  ] as const)('holds at most five rows with Fix as one change, $state note $isNote', (row) => {
+    const facts: ReviewCommentFacts = {
+      ...replyOnlyFactsOf({ state: 'ready' }),
+      ...row,
+      isReplyOnly: false,
+      agentId: row.state === 'failed' ? brandId<AgentId>({ value: 'agent-fixer' }) : null,
+      lane: 'run',
+      canStartRun: true,
+    };
+    const actions = resolveActions({ definitions: REVIEW_COMMENT_KIND.actions, facts });
+    const shown = reviewBarPlanOf({
+      word: row.state === 'new' ? 'open' : 'couldnt_fix',
+      state: row.state,
+      lane: 'run',
+      hasRemote: false,
+      actions: actions.map((candidate) => ({ id: candidate.id, slot: candidate.slot })),
+    }).flatMap((item) => (item.kind === 'action' ? [item.id] : []));
+    const rare = actions.filter((candidate) => !shown.includes(candidate.id));
+    const rows = rowsDrawn({ actions, omit: drawerMenuOmitOf({ shown, rare }) });
+    expect(rows).toContain(row.state === 'new' ? 'Fix as one change' : 'Start a run');
     expectWithinFive({ kinds: ['reviewComment'], rows });
   });
 });

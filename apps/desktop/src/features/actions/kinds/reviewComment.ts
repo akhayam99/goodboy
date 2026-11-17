@@ -25,6 +25,9 @@ import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
 import { hostIconOf } from '../../../shared/components/hostIconOf';
 import { openWebAction } from '../openWebAction';
 import { branchPlace, fixRunTranscript } from '../../../store/slices/navigation/place';
+import type { CommentLane } from '../../resolve/commentLaneOf';
+import { REVIEW_COMMENT_RUN_ACTIONS } from './reviewCommentRunActions';
+import { reviewCommentRunFactsOf } from './reviewCommentRunFactsOf';
 import { activeReviewSourceOf } from '../../../store/slices/review-source/activeReviewSource';
 import { diffThreadIdOf } from '../../diff/lib/threadIds';
 import { acceptReviewItem } from '../../resolve/acceptReviewItem';
@@ -73,6 +76,9 @@ export type ReviewCommentFacts = {
   readonly hasFixOnBranch: boolean;
   readonly laneAcceptCount: number;
   readonly laneAcceptNotes: number;
+  readonly lane: CommentLane | null;
+  readonly runAgentId: AgentId | null;
+  readonly canStartRun: boolean;
 };
 
 const UNDECIDED: ReadonlySet<ReviewCommentState> = new Set([
@@ -243,6 +249,7 @@ export const REVIEW_COMMENT_KIND: ObjectKindDefinition<
             .map((entry) => entry.item.id),
         ),
       }),
+      ...reviewCommentRunFactsOf({ state, sessionId: target.sessionId, row }),
     };
   },
   actions: [
@@ -441,21 +448,7 @@ export const REVIEW_COMMENT_KIND: ObjectKindDefinition<
         return openWebAction({ url, env, sessionId: facts.sessionId });
       },
     },
-    {
-      id: 'reviewComment.draft',
-      label: 'Fix',
-      icon: CONCEPT_ICONS.agents,
-      group: 'act',
-      shortcut: 'review.fix',
-      when: ({ facts }) => facts.state === 'new' && !hasOverlay({ facts }),
-      slot: () => 'primary',
-      run: ({ facts, env }) =>
-        requestReview({
-          getState: env.getState,
-          sessionId: facts.sessionId,
-          request: { kind: 'fix', threadIds: [facts.threadId] },
-        }),
-    },
+    ...REVIEW_COMMENT_RUN_ACTIONS,
     {
       id: 'reviewComment.answer',
       label: 'Answer',
@@ -504,7 +497,9 @@ export const REVIEW_COMMENT_KIND: ObjectKindDefinition<
       group: 'act',
       shortcut: 'review.edit',
       when: ({ facts }) =>
-        (DRAFTED.has(facts.state) || facts.state === 'failed') && !hasOverlay({ facts }),
+        (DRAFTED.has(facts.state) || facts.state === 'failed') &&
+        facts.lane !== 'in_run' &&
+        !hasOverlay({ facts }),
       slot: ({ facts }) => (isRedraft(facts) ? 'primary' : 'menu'),
       run: (params) => compose(params, isRedraft(params.facts) ? 'redraft' : 'edit'),
     },
@@ -513,7 +508,8 @@ export const REVIEW_COMMENT_KIND: ObjectKindDefinition<
       label: FAILED_RUN_COPY.anotherModel,
       icon: Cpu,
       group: 'act',
-      when: ({ facts }) => facts.state === 'failed' && !hasOverlay({ facts }),
+      when: ({ facts }) =>
+        facts.state === 'failed' && facts.lane !== 'in_run' && !hasOverlay({ facts }),
       slot: () => 'menu',
       run: ({ facts, env }) =>
         requestReview({

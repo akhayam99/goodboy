@@ -110,6 +110,9 @@ const reviewCommentFacts: ReviewCommentFacts = {
   hasFixOnBranch: false,
   laneAcceptCount: 1,
   laneAcceptNotes: 0,
+  lane: null,
+  runAgentId: null,
+  canStartRun: false,
 };
 
 const linkFacts: LinkFacts = { href: 'https://docs.harborline.dev/tax' };

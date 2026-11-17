@@ -32,6 +32,9 @@ const BASE: ReviewCommentFacts = {
   hasFixOnBranch: false,
   laneAcceptCount: 1,
   laneAcceptNotes: 0,
+  lane: null,
+  runAgentId: null,
+  canStartRun: false,
 };
 
 const verdictOf = (kind: ResolveVerdictKind, sha: string | null): ResolveVerdict => ({
@@ -69,6 +72,63 @@ const MATRIX: ReadonlyArray<Row> = [
     name: 'new',
     facts: { state: 'new', agentId: null },
     expected: [...OPEN, ...GITHUB, 'reviewComment.draft primary Fix', ...DECIDE, ...COPY],
+  },
+  {
+    name: 'new and small, where a run can start',
+    facts: { state: 'new', agentId: null, lane: 'fix', canStartRun: true },
+    expected: [
+      ...OPEN,
+      ...GITHUB,
+      'reviewComment.startRun menu Start a run',
+      'reviewComment.draft primary Fix',
+      ...DECIDE,
+      ...COPY,
+    ],
+  },
+  {
+    name: 'new and broad: Start a run leads, the fix waits in the menu',
+    facts: { state: 'new', agentId: null, lane: 'run', canStartRun: true },
+    expected: [
+      ...OPEN,
+      ...GITHUB,
+      'reviewComment.startRun primary Start a run',
+      'reviewComment.draft menu Fix as one change',
+      ...DECIDE,
+      ...COPY,
+    ],
+  },
+  {
+    name: 'new and broad, no workspace to start a run in',
+    facts: { state: 'new', agentId: null, lane: 'run', canStartRun: false },
+    expected: [...OPEN, ...GITHUB, 'reviewComment.draft primary Fix', ...DECIDE, ...COPY],
+  },
+  {
+    name: 'already in a run: Open run, no fix and no second run',
+    facts: {
+      state: 'new',
+      agentId: null,
+      lane: 'in_run',
+      runAgentId: 'run-ledger' as AgentId,
+      canStartRun: true,
+    },
+    expected: [...OPEN, ...GITHUB, 'reviewComment.openRun primary Open run', ...DECIDE, ...COPY],
+  },
+  {
+    name: 'failed fix, then put in a run',
+    facts: {
+      state: 'failed',
+      lane: 'in_run',
+      runAgentId: 'run-ledger' as AgentId,
+      canStartRun: true,
+    },
+    expected: [
+      ...OPEN,
+      'reviewComment.transcript menu Open transcript',
+      ...GITHUB,
+      'reviewComment.openRun primary Open run',
+      ...DECIDE,
+      ...COPY,
+    ],
   },
   {
     name: 'agent drafting',

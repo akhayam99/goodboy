@@ -51,7 +51,7 @@ afterEach(() => {
   clearSceneInvoke();
 });
 
-const mount = async ({ name }: MountParams): Promise<HTMLElement> => {
+const settle = async ({ name }: MountParams): Promise<void> => {
   const Scene = U47_COMMENT_RUN_SCENES[name];
   render(
     <ToastProvider>
@@ -62,6 +62,10 @@ const mount = async ({ name }: MountParams): Promise<HTMLElement> => {
     await vi.advanceTimersByTimeAsync(SETTLE_MS);
   });
   expect(screen.queryByText('Something went wrong')).toBeNull();
+};
+
+const mount = async ({ name }: MountParams): Promise<HTMLElement> => {
+  await settle({ name });
   return screen.getByRole('region', { name: COMMENT_RUN_COPY.label });
 };
 
@@ -89,6 +93,17 @@ describe('u47 comment run scenes', () => {
     ).toMatch(/as the comments ask/);
     within(form).getByRole('button', { name: 'Start' });
     within(form).getByRole('button', { name: COMMENT_RUN_COPY.cancel });
+  });
+
+  it('leads a broad comment with Start a run and says why, the fix left to the menu', async () => {
+    await settle({ name: 'u47-comment-run-suggest' });
+    const bar = screen.getByRole('toolbar', { name: 'Comment actions' });
+    const primary = bar.querySelector('[data-review-verb="reviewComment.startRun"]');
+    expect(primary?.textContent).toContain(COMMENT_RUN_COPY.startRun);
+    expect(bar.querySelector('[data-review-verb="reviewComment.draft"]')).toBeNull();
+    const suggestion = document.querySelector('[data-comment-run-suggest]');
+    expect(suggestion?.textContent).toContain(COMMENT_RUN_COPY.suggestTitle);
+    expect(suggestion?.textContent).toContain('the payouts route');
   });
 
   it('draws the start form for one comment with the others to add', async () => {

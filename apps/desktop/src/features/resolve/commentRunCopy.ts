@@ -23,4 +23,13 @@ export const COMMENT_RUN_COPY = {
   inRun: 'This comment is already in a run.',
   fixing: 'A fix is already working on this comment.',
   note: 'Note',
+  startRun: 'Start a run',
+  startRunNote: 'The Lead plans it first and asks you before anything is kept.',
+  fixAsOne: 'Fix as one change',
+  fixAsOneNote: 'One agent, one quick edit. For a small change.',
+  openRun: 'Open run',
+  suggestTitle: 'This asks for a rethink, not a quick fix.',
+  suggestWhy: 'A run lets the Lead plan it first and asks you before anything is kept.',
+  runSuggested: ({ count }: CountParams): string =>
+    count === 1 ? '1 comment suggests a run' : `${count} comments suggest a run`,
 } as const;

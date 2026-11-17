@@ -48,6 +48,13 @@ export const useBranchReview = ({ sessionId, mountId }: Params): BranchReview =>
     () => branchEntries.filter((entry) => entry.isFixable).map((entry) => entry.threadId),
     [branchEntries],
   );
+  const runSuggestedThreadIds = useMemo(
+    () =>
+      branchEntries
+        .filter((entry) => entry.lane === 'run' && entry.resolveWord === 'open')
+        .map((entry) => entry.threadId),
+    [branchEntries],
+  );
   const readyThreadIds = fixRunReady?.threadIds ?? NO_THREADS;
   const comments = useMemo<BranchStepComments>(
     () => ({
@@ -55,12 +62,14 @@ export const useBranchReview = ({ sessionId, mountId }: Params): BranchReview =>
         questionThreadId,
         waitingFixes: readyThreadIds.length,
         fixable: fixableThreadIds.length,
+        runSuggested: runSuggestedThreadIds.length,
         isFixRunLive: isRunLive,
       },
       readyThreadIds,
       fixableThreadIds,
+      runSuggestedThreadIds,
     }),
-    [fixableThreadIds, isRunLive, questionThreadId, readyThreadIds],
+    [fixableThreadIds, isRunLive, questionThreadId, readyThreadIds, runSuggestedThreadIds],
   );
   return { entries, branchEntries, push, comments, run, lane, isSelecting: selectedCount > 0 };
 };
