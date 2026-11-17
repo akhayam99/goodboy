@@ -1,8 +1,24 @@
-import { describe, expect, it } from 'vitest';
+// @vitest-environment happy-dom
+
+vi.mock('@tauri-apps/api/core', async () =>
+  (await import('../../storyHarness')).tauriCoreModuleMock(),
+);
+vi.mock('@tauri-apps/api/event', async () =>
+  (await import('../../storyHarness')).tauriEventModuleMock(),
+);
+
+import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { createStore } from 'zustand/vanilla';
 import { brandId, type SessionId } from '@goodboy/types';
-import { useAppStore, type AppStore } from '../../store';
+import type { AppStore } from '../../store';
+import { STORE_IMPORT_TIMEOUT_MS, importStore, type StoryStore } from '../../storyHarness';
 import { createCommentRunStartSlice } from './index';
+
+let useAppStore: StoryStore;
+
+beforeAll(async () => {
+  useAppStore = await importStore();
+}, STORE_IMPORT_TIMEOUT_MS);
 
 const SESSION_ID = brandId<SessionId>({ value: 'session-ledger-core' });
 const OTHER_ID = brandId<SessionId>({ value: 'session-payments-api' });

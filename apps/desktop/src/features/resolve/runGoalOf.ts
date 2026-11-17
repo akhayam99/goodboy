@@ -26,10 +26,10 @@ const NAMED_MODEL =
   /\b(?:follow|use|copy|mirror) (the [a-z][\w.-]*(?: [a-z][\w.-]*){0,3}) as (?:the|a|an) (?:model|example|reference|template)\b/i;
 const WAY_MODEL = /\bthe way (the [a-z][\w.-]*(?: [a-z][\w.-]*){0,3}) does it\b/i;
 
-const plainOf = ({ text }: TextParams): string =>
+const plainCommentOf = ({ text }: TextParams): string =>
   markdownPlainLinesOf({ text, shouldKeepOpenFence: false }).join(' ').replace(/\s+/g, ' ').trim();
 
-const clipped = ({ text }: TextParams): string => {
+const clippedBodyOf = ({ text }: TextParams): string => {
   if (text.length <= MAX_BODY) {
     return text;
   }
@@ -55,7 +55,7 @@ const modelOf = ({ text }: TextParams): string | null => {
 };
 
 export const runGoalOf = ({ comments }: Params): string => {
-  const plains = comments.map((comment) => plainOf({ text: comment.body }));
+  const plains = comments.map((comment) => plainCommentOf({ text: comment.body }));
   const places = [
     ...new Set(
       comments.flatMap((comment) => {
@@ -77,6 +77,6 @@ export const runGoalOf = ({ comments }: Params): string => {
         .map((text) => firstSentence({ text }))
         .filter((sentence) => sentence !== '')
         .join(' ')
-    : clipped({ text: plains[0] ?? '' });
+    : clippedBodyOf({ text: plains[0] ?? '' });
   return body === '' ? lead : `${lead} ${body}`;
 };

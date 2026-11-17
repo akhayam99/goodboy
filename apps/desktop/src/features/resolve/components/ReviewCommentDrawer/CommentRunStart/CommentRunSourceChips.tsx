@@ -1,10 +1,10 @@
 import { Plus, X } from '@goodboy/ui/icons';
 import { Chip, ICON_SIZE, IconButton } from '@goodboy/ui';
-import { commentPlaceOf } from '../../commentPlaceOf';
-import { COMMENT_RUN_COPY } from '../../commentRunCopy';
-import { commentRunSourceLabelOf } from '../../commentRunSourceLabelOf';
-import { entryTitleOf } from '../ReviewFlow/entryTitle';
-import type { ReviewEntry } from '../ReviewFlow/useReviewEntries';
+import { commentPlaceOf } from '../../../commentPlaceOf';
+import { COMMENT_RUN_COPY } from '../../../commentRunCopy';
+import { commentRunSourceLabelOf } from '../../../commentRunSourceLabelOf';
+import { entryTitleOf } from '../../ReviewFlow/entryTitle';
+import type { ReviewEntry } from '../../ReviewFlow/useReviewEntries';
 
 type Props = {
   readonly picked: ReadonlyArray<ReviewEntry>;
@@ -19,7 +19,7 @@ type EntryParams = {
   readonly entry: ReviewEntry;
 };
 
-const placeOf = ({ entry }: EntryParams): string =>
+const chipPlaceOf = ({ entry }: EntryParams): string =>
   commentPlaceOf({
     path: entry.row.reviewerNote?.path ?? null,
     line: entry.row.reviewerNote?.line ?? null,
@@ -37,7 +37,7 @@ export const CommentRunSourceChips = ({
     <p className="text-meta text-faint-foreground">{COMMENT_RUN_COPY.sources}</p>
     <ul className="flex min-w-0 flex-wrap items-center gap-2">
       {picked.map((entry) => {
-        const place = placeOf({ entry });
+        const place = chipPlaceOf({ entry });
         return (
           <li
             key={entry.threadId}
@@ -73,7 +73,7 @@ export const CommentRunSourceChips = ({
         );
       })}
       {candidates.map((entry) => {
-        const place = placeOf({ entry });
+        const place = chipPlaceOf({ entry });
         return (
           <li
             key={entry.threadId}

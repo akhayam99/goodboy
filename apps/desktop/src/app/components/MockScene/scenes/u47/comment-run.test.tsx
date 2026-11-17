@@ -87,8 +87,8 @@ describe('u47 comment run scenes', () => {
     expect(
       within(form).getByRole<HTMLTextAreaElement>('textbox', { name: COMMENT_RUN_COPY.goal }).value,
     ).toMatch(/as the comments ask/);
-    expect(within(form).getByRole('button', { name: 'Start' })).toBeTruthy();
-    expect(within(form).getByRole('button', { name: COMMENT_RUN_COPY.cancel })).toBeTruthy();
+    within(form).getByRole('button', { name: 'Start' });
+    within(form).getByRole('button', { name: COMMENT_RUN_COPY.cancel });
   });
 
   it('draws the start form for one comment with the others to add', async () => {

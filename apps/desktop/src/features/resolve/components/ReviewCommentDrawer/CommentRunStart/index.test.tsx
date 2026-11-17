@@ -1,17 +1,17 @@
 // @vitest-environment happy-dom
 
 vi.mock('@tauri-apps/api/core', async () =>
-  (await import('../../../../store/storyHarness')).tauriCoreModuleMock(),
+  (await import('../../../../../store/storyHarness')).tauriCoreModuleMock(),
 );
 vi.mock('@tauri-apps/api/event', async () =>
-  (await import('../../../../store/storyHarness')).tauriEventModuleMock(),
+  (await import('../../../../../store/storyHarness')).tauriEventModuleMock(),
 );
-vi.mock('../../../../shared/lib/db', async () =>
-  (await import('../../../../store/storyHarness')).sqliteDbLibModuleMock(),
+vi.mock('../../../../../shared/lib/db', async () =>
+  (await import('../../../../../store/storyHarness')).sqliteDbLibModuleMock(),
 );
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { brandId, type AgentId } from '@goodboy/types';
 import { anAgent } from '@goodboy/types/testing';
 import {
@@ -21,17 +21,17 @@ import {
   resetStoryStore,
   stubStoryInvoke,
   type StoryStore,
-} from '../../../../store/storyHarness';
-import { ToastProvider } from '../../../../shared/components/Toast';
+} from '../../../../../store/storyHarness';
+import { ToastProvider } from '../../../../../shared/components/Toast';
 import {
   EXPANDED_THREAD_ID,
   SESSION,
   THREAD_IDS,
   seedResolveScene,
-} from '../../../../app/components/MockScene/scenes/resolveSeed';
-import { DrawerHost } from '../../../../app/components/DrawerHost';
-import { BranchPage } from '../../../branch/components/BranchPage';
-import { COMMENT_RUN_COPY } from '../../commentRunCopy';
+} from '../../../../../app/components/MockScene/scenes/resolveSeed';
+import { DrawerHost } from '../../../../../app/components/DrawerHost';
+import { BranchPage } from '../../../../branch/components/BranchPage';
+import { COMMENT_RUN_COPY } from '../../../commentRunCopy';
 
 type StoreState = ReturnType<StoryStore['getState']>;
 
@@ -53,12 +53,6 @@ afterEach(() => {
   cleanup();
 });
 
-const settle = async (): Promise<void> => {
-  await act(async () => {
-    await new Promise((resolve) => setTimeout(resolve, 20));
-  });
-};
-
 type SpawnParams = {
   readonly spawn: StoreState['spawnAgent'];
 };
@@ -76,24 +70,6 @@ type OpenParams = {
   readonly threadId: string;
 };
 
-const mount = async (): Promise<void> => {
-  seedResolveScene({ expandedThreadId: EXPANDED_THREAD_ID });
-  render(
-    <ToastProvider>
-      <BranchPage session={SESSION} workingDir={null} />
-      <DrawerHost />
-    </ToastProvider>,
-  );
-  await settle();
-};
-
-const openForm = async ({ threadId }: OpenParams): Promise<void> => {
-  act(() => {
-    useAppStore.getState().openCommentRunStart({ sessionId: SESSION.id, threadId });
-  });
-  await settle();
-};
-
 const form = (): HTMLElement | null =>
   screen.queryByRole('region', { name: COMMENT_RUN_COPY.label });
 
@@ -103,6 +79,24 @@ const shownForm = (): HTMLElement =>
     throw new Error('no comment run form');
   })();
 
+const mount = async (): Promise<void> => {
+  seedResolveScene({ expandedThreadId: EXPANDED_THREAD_ID });
+  render(
+    <ToastProvider>
+      <BranchPage session={SESSION} workingDir={null} />
+      <DrawerHost />
+    </ToastProvider>,
+  );
+  await screen.findByRole('toolbar', { name: 'Comment actions' });
+};
+
+const openForm = async ({ threadId }: OpenParams): Promise<void> => {
+  act(() => {
+    useAppStore.getState().openCommentRunStart({ sessionId: SESSION.id, threadId });
+  });
+  await screen.findByRole('region', { name: COMMENT_RUN_COPY.label });
+};
+
 const goal = (): HTMLTextAreaElement =>
   within(shownForm()).getByRole<HTMLTextAreaElement>('textbox', { name: COMMENT_RUN_COPY.goal });
 
@@ -111,25 +105,19 @@ const sourceIds = (): ReadonlyArray<string | null> =>
     node.getAttribute('data-comment-run-source'),
   );
 
-const firstCandidate = (): HTMLElement => {
+const addFirstCandidate = async (): Promise<string> => {
   const item = shownForm().querySelector<HTMLElement>('[data-comment-run-candidate]');
   if (item === null) {
     throw new Error('no comment to add');
   }
-  return item;
-};
-
-const addFirstCandidate = async (): Promise<string> => {
-  const item = firstCandidate();
   const threadId = item.getAttribute('data-comment-run-candidate') ?? '';
   fireEvent.click(within(item).getByRole('button'));
-  await settle();
+  await waitFor(() => expect(sourceIds()).toContain(threadId));
   return threadId;
 };
 
-const pressStart = async (): Promise<void> => {
+const pressStart = (): void => {
   fireEvent.click(within(shownForm()).getByRole('button', { name: 'Start' }));
-  await settle();
 };
 
 const openThread = (): string | null =>
@@ -143,7 +131,7 @@ describe('the start a run form in the comment drawer', () => {
     expect(goal().value).toMatch(/^Change retryPolicy\.ts:\d+ as the comment asks/);
     expect(sourceIds()).toEqual([EXPANDED_THREAD_ID]);
     expect(screen.queryByRole('toolbar', { name: 'Comment actions' })).toBeNull();
-    expect(within(shownForm()).getByText(COMMENT_RUN_COPY.hostNote)).toBeTruthy();
+    within(shownForm()).getByText(COMMENT_RUN_COPY.hostNote);
   });
 
   it('starts one Lead from the comment and an added one, quoting both, then closes the form', async () => {
@@ -154,7 +142,8 @@ describe('the start a run form in the comment drawer', () => {
 
     expect(sourceIds()).toEqual([EXPANDED_THREAD_ID, added]);
     expect(goal().value).toMatch(/as the comments ask/);
-    await pressStart();
+    pressStart();
+    await waitFor(() => expect(form()).toBeNull());
 
     expect(spawnAgent).toHaveBeenCalledTimes(1);
     const [sessionId, options] = spawnAgent.mock.calls[0] ?? [];
@@ -166,7 +155,6 @@ describe('the start a run form in the comment drawer', () => {
     });
     expect(options?.initialPrompt).toContain('The comments this run comes from, word for word:');
     expect(options?.initialPrompt?.match(/^A GitHub comment from /gm)).toHaveLength(2);
-    expect(form()).toBeNull();
     expect(openThread()).toBeNull();
     expect(useAppStore.getState().commentRunStarts[SESSION.id]?.drafts).toEqual({});
   });
@@ -178,12 +166,10 @@ describe('the start a run form in the comment drawer', () => {
     fireEvent.change(goal(), {
       target: { value: 'Rework the retry policy with a jittered backoff' },
     });
-    await settle();
 
     fireEvent.click(within(shownForm()).getByRole('button', { name: COMMENT_RUN_COPY.cancel }));
-    await settle();
+    await screen.findByRole('toolbar', { name: 'Comment actions' });
     expect(form()).toBeNull();
-    expect(screen.getByRole('toolbar', { name: 'Comment actions' })).toBeTruthy();
 
     await openForm({ threadId: EXPANDED_THREAD_ID });
     expect(goal().value).toBe('Rework the retry policy with a jittered backoff');
@@ -200,14 +186,13 @@ describe('the start a run form in the comment drawer', () => {
     await openForm({ threadId: EXPANDED_THREAD_ID });
     const added = await addFirstCandidate();
     fireEvent.change(goal(), { target: { value: 'Rework the retry policy' } });
-    await settle();
-    await pressStart();
+    pressStart();
 
+    await within(shownForm()).findByText(/The agent could not start/);
     expect(spawnAgent).toHaveBeenCalledTimes(1);
-    expect(within(shownForm()).getByText(/The agent could not start/)).toBeTruthy();
     expect(goal().value).toBe('Rework the retry policy');
     expect(sourceIds()).toEqual([EXPANDED_THREAD_ID, added]);
-    expect(within(shownForm()).getByRole('button', { name: 'Retry' })).toBeTruthy();
+    within(shownForm()).getByRole('button', { name: 'Retry' });
     expect(openThread()).toBe(EXPANDED_THREAD_ID);
   });
 
@@ -221,8 +206,8 @@ describe('the start a run form in the comment drawer', () => {
     });
     await mount();
     await openForm({ threadId: EXPANDED_THREAD_ID });
-    await pressStart();
-    expect(spawnAgent).toHaveBeenCalledTimes(1);
+    pressStart();
+    await waitFor(() => expect(spawnAgent).toHaveBeenCalledTimes(1));
 
     act(() => {
       useAppStore.getState().openDrawer({
@@ -231,16 +216,15 @@ describe('the start a run form in the comment drawer', () => {
         payload: { threadId: THREAD_IDS.retryConstant },
       });
     });
-    await settle();
-    expect(form()).toBeNull();
+    await waitFor(() => expect(form()).toBeNull());
 
     await act(async () => {
       answer(AGENT);
     });
-    await settle();
+    await waitFor(() => expect(openThread()).toBeNull());
 
     expect(spawnAgent.mock.calls[0]?.[1]).toMatchObject({ sourceThreadIds: [EXPANDED_THREAD_ID] });
-    expect(openThread()).toBeNull();
+    expect(useAppStore.getState().commentRunStarts[SESSION.id]?.drafts).toEqual({});
     expect(form()).toBeNull();
   });
 
@@ -268,9 +252,8 @@ describe('the start a run form in the comment drawer', () => {
 
     const start = within(shownForm()).getByRole<HTMLButtonElement>('button', { name: 'Start' });
     expect(start.disabled).toBe(true);
-    expect(within(shownForm()).getByText(COMMENT_RUN_COPY.inRun)).toBeTruthy();
+    within(shownForm()).getByText(COMMENT_RUN_COPY.inRun);
     fireEvent.click(start);
-    await settle();
     expect(spawnAgent).not.toHaveBeenCalled();
   });
 });

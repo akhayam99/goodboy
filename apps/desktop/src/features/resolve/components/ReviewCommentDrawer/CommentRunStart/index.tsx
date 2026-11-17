@@ -1,21 +1,14 @@
-import { useCallback, useEffect, useMemo, useRef } from 'react';
-import { Button } from '@goodboy/ui';
+import { useCallback, useMemo, useRef } from 'react';
 import type { MountId, SessionId, WorkspaceId } from '@goodboy/types';
-import { EMPTY_ARRAY, useAppStore } from '../../../../store';
-import { PromptField } from '../../../../shared/components/PromptField';
-import { useAutoTreeLimit } from '../../../auto/useAutoTreeLimit';
-import { RunsStartForm } from '../../../session/components/StartForm/RunsStartForm';
-import { RunModelChip } from '../../../session/components/StartRun/RunModelChip';
-import {
-  useStartRun,
-  type StartRunSources,
-} from '../../../session/components/StartRun/useStartRun';
-import { COMMENT_RUN_COPY } from '../../commentRunCopy';
-import { commentRunQuoteOf } from '../../commentRunQuoteOf';
-import { commentRunSourceLabelOf } from '../../commentRunSourceLabelOf';
-import { commentRunSourcesOf } from '../../commentRunSourcesOf';
-import { runGoalOf } from '../../runGoalOf';
-import type { ReviewEntry } from '../ReviewFlow/useReviewEntries';
+import { EMPTY_ARRAY, useAppStore } from '../../../../../store';
+import { StartRunFromSources } from '../../../../session/startRun/StartRunFromSources';
+import type { StartRunSources } from '../../../../session/startRun/startRunSources';
+import { COMMENT_RUN_COPY } from '../../../commentRunCopy';
+import { commentRunQuoteOf } from '../../../commentRunQuoteOf';
+import { commentRunSourceLabelOf } from '../../../commentRunSourceLabelOf';
+import { commentRunSourcesOf } from '../../../commentRunSourcesOf';
+import { runGoalOf } from '../../../runGoalOf';
+import type { ReviewEntry } from '../../ReviewFlow/useReviewEntries';
 import { CommentRunSourceChips } from './CommentRunSourceChips';
 
 type Props = {
@@ -34,8 +27,10 @@ type EntryParams = {
   readonly entry: ReviewEntry;
 };
 
-type ExtrasParams = {
+type PickParams = {
   readonly extraThreadIds: ReadonlyArray<string>;
+  readonly text: string;
+  readonly setText: (text: string) => void;
 };
 
 const NO_EXTRAS: ReadonlyArray<string> = [];
@@ -112,33 +107,16 @@ export const CommentRunStart = ({ sessionId, workspaceId, mountId, entry, entrie
     [mountId, sources.picked],
   );
   const seedText = useRef(draft?.goal ?? goalOf({ picked: sources.picked })).current;
-  const limit = useAutoTreeLimit({ workspaceId, sessionId });
+  const seedBranch = useRef(mountBranch).current;
   const onLaunched = useCallback(
     () => finishStart({ sessionId, threadId }),
     [finishStart, sessionId, threadId],
   );
-  const run = useStartRun({
-    workspaceId,
-    sessionId,
-    prepare: limit.start,
-    settleLimit: limit.settle,
-    seedText,
-    seedBranch: mountBranch,
-    sources: runSources,
-    onLaunched,
-  });
-  const textRef = useRef(run.text);
-  textRef.current = run.text;
 
-  useEffect(
-    () => () => keepGoal({ sessionId, threadId, goal: textRef.current }),
-    [keepGoal, sessionId, threadId],
-  );
-
-  const pickExtras = ({ extraThreadIds: next }: ExtrasParams): void => {
+  const pickExtras = ({ extraThreadIds: next, text, setText }: PickParams): void => {
     const nextSources = commentRunSourcesOf({ entries, agents, threadId, extraThreadIds: next });
-    if (run.text.trim() === goalOf({ picked: sources.picked }).trim()) {
-      run.setText(goalOf({ picked: nextSources.picked }));
+    if (text.trim() === goalOf({ picked: sources.picked }).trim()) {
+      setText(goalOf({ picked: nextSources.picked }));
     }
     setExtras({ sessionId, threadId, extraThreadIds: next });
   };
@@ -147,63 +125,43 @@ export const CommentRunStart = ({ sessionId, workspaceId, mountId, entry, entrie
   const pickedCount = sources.picked.length;
 
   return (
-    <section
-      aria-label={COMMENT_RUN_COPY.label}
-      data-comment-run-start={threadId}
-      className="flex min-w-0 flex-col gap-4"
-    >
-      <PromptField
-        kind="message"
-        label={COMMENT_RUN_COPY.goal}
-        value={run.text}
-        onChange={run.setText}
-        onSubmit={() => void run.start()}
-        isSubmitBlocked={run.text.trim() === '' || run.isStarting || sources.blocked !== null}
-        disabled={run.isStarting}
-        minRows={3}
-        maxRows={10}
-        keyLabels={{ send: 'start' }}
-        header={
-          <p className="px-3 pt-2 text-meta text-faint-foreground">
-            {pickedCount > 1
-              ? COMMENT_RUN_COPY.goalHintMany({ count: pickedCount })
-              : COMMENT_RUN_COPY.goalHint}
-          </p>
-        }
-        model={<RunModelChip model={run.model} isDisabled={run.isStarting} variant="pill" />}
-      />
-      <CommentRunSourceChips
-        picked={sources.picked}
-        candidates={sources.candidates}
-        primaryThreadId={threadId}
-        isDisabled={run.isStarting}
-        onAdd={(id) => pickExtras({ extraThreadIds: [...extraThreadIds, id] })}
-        onRemove={(id) =>
-          pickExtras({ extraThreadIds: extraThreadIds.filter((extra) => extra !== id) })
-        }
-      />
-      <RunsStartForm
-        workspaceId={workspaceId}
-        sessionId={sessionId}
-        role={null}
-        run={run}
-        limit={limit}
-        hint={null}
-        note={hasHost ? COMMENT_RUN_COPY.hostNote : COMMENT_RUN_COPY.localNote}
-        blockedReason={sources.blocked}
-        canDiscard={false}
-        isBranchLocked
-        actions={
-          <Button
-            variant="ghost"
-            size="sm"
-            disabled={run.isStarting}
-            onClick={() => closeStart({ sessionId, threadId, goal: run.text })}
-          >
-            {COMMENT_RUN_COPY.cancel}
-          </Button>
-        }
-      />
-    </section>
+    <StartRunFromSources
+      workspaceId={workspaceId}
+      sessionId={sessionId}
+      label={COMMENT_RUN_COPY.label}
+      fieldLabel={COMMENT_RUN_COPY.goal}
+      seedText={seedText}
+      seedBranch={seedBranch}
+      sources={runSources}
+      header={
+        <p className="px-3 pt-2 text-meta text-faint-foreground">
+          {pickedCount > 1
+            ? COMMENT_RUN_COPY.goalHintMany({ count: pickedCount })
+            : COMMENT_RUN_COPY.goalHint}
+        </p>
+      }
+      note={hasHost ? COMMENT_RUN_COPY.hostNote : COMMENT_RUN_COPY.localNote}
+      blockedReason={sources.blocked}
+      cancelLabel={COMMENT_RUN_COPY.cancel}
+      between={({ isStarting, text, setText }) => (
+        <CommentRunSourceChips
+          picked={sources.picked}
+          candidates={sources.candidates}
+          primaryThreadId={threadId}
+          isDisabled={isStarting}
+          onAdd={(id) => pickExtras({ extraThreadIds: [...extraThreadIds, id], text, setText })}
+          onRemove={(id) =>
+            pickExtras({
+              extraThreadIds: extraThreadIds.filter((extra) => extra !== id),
+              text,
+              setText,
+            })
+          }
+        />
+      )}
+      onCancel={({ text }) => closeStart({ sessionId, threadId, goal: text })}
+      onLeave={({ text }) => keepGoal({ sessionId, threadId, goal: text })}
+      onLaunched={onLaunched}
+    />
   );
 };

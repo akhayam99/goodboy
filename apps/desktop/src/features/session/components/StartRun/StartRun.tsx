@@ -9,6 +9,7 @@ import { startRunBranchOf } from '../../startRun/startRunBranchOf';
 import { startRunDetailOf } from '../../startRun/startRunDetailOf';
 import { startRunEventName } from '../../startRun/startRunEventName';
 import { startRunFileOf } from '../../startRun/startRunFileOf';
+import type { StartRunSources } from '../../startRun/startRunSources';
 import { RunsStartForm } from '../StartForm/RunsStartForm';
 import { RunModelChip } from './RunModelChip';
 import { StartRunFileChip } from './StartRunFileChip';
@@ -16,8 +17,14 @@ import { useRunPrefixMenu } from './useRunPrefixMenu';
 import type { SessionDraftMount } from '../../../../store/slices/sessionDraft/startSessionFromDraft';
 import { useStartRun } from './useStartRun';
 
-type ActionsParams = {
+type SlotParams = {
   readonly isStarting: boolean;
+  readonly text: string;
+  readonly setText: (text: string) => void;
+};
+
+type LeaveParams = {
+  readonly text: string;
 };
 
 type Props = {
@@ -25,11 +32,24 @@ type Props = {
   readonly sessionId: SessionId | null;
   readonly mount?: SessionDraftMount | null;
   readonly role?: AgentKind | null;
+  readonly label?: string;
+  readonly fieldLabel?: string;
   readonly placeholder?: string;
   readonly hint?: string | null;
   readonly demoAnchor?: string;
-  readonly actions?: (params: ActionsParams) => ReactNode;
+  readonly seedText?: string;
+  readonly seedBranch?: string | null;
+  readonly sources?: StartRunSources | null;
+  readonly header?: ReactNode;
+  readonly note?: string | null;
+  readonly blockedReason?: string | null;
+  readonly minRows?: number;
+  readonly isFromSources?: boolean;
+  readonly between?: (params: SlotParams) => ReactNode;
+  readonly actions?: (params: SlotParams) => ReactNode;
   readonly onStarted?: () => void;
+  readonly onLaunched?: () => void;
+  readonly onLeave?: (params: LeaveParams) => void;
 };
 
 export const StartRun = ({
@@ -37,11 +57,24 @@ export const StartRun = ({
   sessionId,
   mount = null,
   role = null,
+  label = RUN_ROUTE_COPY.label,
+  fieldLabel = label,
   placeholder = RUN_ROUTE_COPY.placeholder,
   hint = RUN_ROUTE_COPY.hint,
   demoAnchor,
+  seedText,
+  seedBranch,
+  sources = null,
+  header,
+  note,
+  blockedReason = null,
+  minRows,
+  isFromSources = false,
+  between,
   actions,
   onStarted,
+  onLaunched,
+  onLeave,
 }: Props) => {
   const limit = useAutoTreeLimit({ workspaceId, sessionId });
   const run = useStartRun({
@@ -49,7 +82,11 @@ export const StartRun = ({
     sessionId,
     mount,
     role,
+    seedText,
+    seedBranch,
+    sources,
     onStarted,
+    onLaunched,
     prepare: limit.start,
     settleLimit: limit.settle,
   });
@@ -62,8 +99,17 @@ export const StartRun = ({
     onPick: run.setRunAs,
   });
   const { setText, setFile, setBranch } = run;
+  const textRef = useRef(run.text);
+  textRef.current = run.text;
+  const leaveRef = useRef(onLeave);
+  leaveRef.current = onLeave;
+
+  useEffect(() => () => leaveRef.current?.({ text: textRef.current }), []);
 
   useEffect(() => {
+    if (isFromSources) {
+      return;
+    }
     const onOpen = (event: Event): void => {
       const text = startRunDetailOf({ event });
       if (text !== '') {
@@ -84,13 +130,15 @@ export const StartRun = ({
     const name = startRunEventName({ sessionId });
     window.addEventListener(name, onOpen);
     return () => window.removeEventListener(name, onOpen);
-  }, [sessionId, setBranch, setFile, setText]);
+  }, [isFromSources, sessionId, setBranch, setFile, setText]);
+
+  const slot: SlotParams = { isStarting: run.isStarting, text: run.text, setText: run.setText };
 
   return (
     <section
       ref={sectionRef}
-      aria-label={RUN_ROUTE_COPY.label}
-      className="flex min-w-0 flex-col gap-2"
+      aria-label={label}
+      className={isFromSources ? 'flex min-w-0 flex-col gap-4' : 'flex min-w-0 flex-col gap-2'}
     >
       {run.file === null ? null : (
         <StartRunFileChip
@@ -110,21 +158,23 @@ export const StartRun = ({
         ) : null}
         <PromptField
           kind="message"
-          label={RUN_ROUTE_COPY.label}
+          label={fieldLabel}
           value={run.text}
           onChange={run.setText}
           onSubmit={() => void run.start()}
-          isSubmitBlocked={!hasText || run.isStarting}
+          isSubmitBlocked={!hasText || run.isStarting || blockedReason !== null}
           placeholder={placeholder}
           disabled={run.isStarting}
-          minRows={hasText ? 2 : 1}
-          maxRows={8}
+          minRows={minRows ?? (hasText ? 2 : 1)}
+          maxRows={isFromSources ? 10 : 8}
           keyLabels={{ send: 'start' }}
           files={run.files}
           notice={run.filesNotice}
+          header={header}
           model={<RunModelChip model={run.model} isDisabled={run.isStarting} variant="pill" />}
         />
       </div>
+      {between === undefined ? null : between(slot)}
       <RunsStartForm
         workspaceId={workspaceId}
         sessionId={sessionId}
@@ -133,7 +183,11 @@ export const StartRun = ({
         limit={limit}
         hint={hint}
         demoAnchor={demoAnchor}
-        actions={actions === undefined ? null : actions({ isStarting: run.isStarting })}
+        note={note}
+        blockedReason={blockedReason}
+        canDiscard={!isFromSources}
+        isBranchLocked={isFromSources}
+        actions={actions === undefined ? null : actions(slot)}
       />
     </section>
   );

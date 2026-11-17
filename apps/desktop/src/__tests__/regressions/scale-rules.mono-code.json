@@ -35,6 +35,7 @@
   "apps/desktop/src/features/providers/components/ProviderConnect/index.tsx": "command",
   "apps/desktop/src/features/providers/components/ProviderStudio/ProviderCredentialsSection.tsx": "identifier",
   "apps/desktop/src/features/resolve/components/ReviewCommentDrawer/CommentDrawerAuthor.tsx": "path",
+  "apps/desktop/src/features/resolve/components/ReviewCommentDrawer/CommentRunStart/CommentRunSourceChips.tsx": "path",
   "apps/desktop/src/features/resolve/components/ReviewFlow/AnswersPanel/AnswerCard.tsx": "path",
   "apps/desktop/src/features/resolve/components/ReviewFlow/FailedRun.tsx": "path",
   "apps/desktop/src/features/resolve/components/FixCommentsDrawer/FixCommentRow.tsx": "path",

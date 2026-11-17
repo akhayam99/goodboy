@@ -3,7 +3,6 @@ import { formatError } from '@goodboy/ui';
 import type { AutoLevel } from '@goodboy/core/auto';
 import type {
   ClaudePermissionMode,
-  MountId,
   Session,
   SessionId,
   Workflow,
@@ -51,6 +50,7 @@ import { askWithFileOf } from '../../../startRun/askWithFileOf';
 import { draftStartOf } from '../../../startRun/draftStartOf';
 import { rememberLastStart } from '../../../startKind/rememberLastStart';
 import type { StartRunFile } from '../../../startRun/startRunFileOf';
+import type { StartRunSources } from '../../../startRun/startRunSources';
 
 type Params = {
   readonly workspaceId: WorkspaceId;
@@ -65,12 +65,6 @@ type Params = {
   readonly onStarted?: () => void;
   readonly onLaunched?: () => void;
 };
-
-export type StartRunSources = Readonly<{
-  threadIds: ReadonlyArray<string>;
-  mountId: MountId | null;
-  quote: string;
-}>;
 
 export type StartRunModel = Readonly<{
   text: string;
