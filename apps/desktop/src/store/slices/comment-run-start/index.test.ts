@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { createStore } from 'zustand/vanilla';
-import type { SessionId } from '@goodboy/types';
+import { brandId, type SessionId } from '@goodboy/types';
 import { useAppStore, type AppStore } from '../../store';
 import { createCommentRunStartSlice } from './index';
 
-const SESSION_ID = 'session-ledger-core' as SessionId;
-const OTHER_ID = 'session-payments-api' as SessionId;
+const SESSION_ID = brandId<SessionId>({ value: 'session-ledger-core' });
+const OTHER_ID = brandId<SessionId>({ value: 'session-payments-api' });
 const HEADER = 'note:note-ledger-header';
 const FILTERS = 'PRRT_harborline_ledger_filters';
 

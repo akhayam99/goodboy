@@ -113,7 +113,9 @@ describe('commentRunSourcesOf', () => {
   it('reads a fix agent on a thread as a fix, not as a run', () => {
     const sources = commentRunSourcesOf({
       entries: [HEADER, FILTERS],
-      agents: [runOf({ id: 'fix-filters', threadIds: [FILTERS_NOTE], sourceKind: 'resolve' })],
+      agents: [
+        runOf({ id: 'fix-filters', threadIds: [FILTERS_NOTE], sourceKind: 'review_comment' }),
+      ],
       threadId: HEADER_NOTE,
       extraThreadIds: [],
     });
