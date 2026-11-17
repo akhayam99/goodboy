@@ -28,7 +28,18 @@ const threadsPart = ({
   return `replies to ${canResolve ? 'and resolves ' : ''}${threads} on ${provider}`;
 };
 
+const uncommittedBody = ({ ready, provider, canResolve }: BodyParams): string => {
+  const written = `Apply writes ${commitsPart({ commits: ready.commits })} into your working tree as uncommitted changes, next to your own.`;
+  if (ready.hostThreadCount === 0) {
+    return `${written} Nothing is committed or pushed.`;
+  }
+  return `${written} Commit it yourself, then the next push sends it and ${threadsPart({ count: ready.hostThreadCount, provider, canResolve })}.`;
+};
+
 export const fixRunReadyBody = ({ ready, provider, canResolve }: BodyParams): string => {
+  if (ready.isLandingUncommitted) {
+    return uncommittedBody({ ready, provider, canResolve });
+  }
   const accepted = `Apply accepts ${commitsPart({ commits: ready.commits })}.`;
   if (ready.hostThreadCount === 0) {
     return `${accepted} The next push sends it.`;
