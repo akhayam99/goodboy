@@ -9,6 +9,7 @@ export type ResolveStageEvent =
   | { readonly kind: 'user_answered' }
   | { readonly kind: 'user_approved' }
   | { readonly kind: 'user_unapproved' }
+  | { readonly kind: 'user_discarded' }
   | { readonly kind: 'comment_edited' }
   | { readonly kind: 'user_parked' }
   | { readonly kind: 'user_resumed'; readonly hasProposal: boolean }
@@ -88,6 +89,8 @@ const fromProposed = ({ event }: { readonly event: ResolveStageEvent }): Resolve
       return 'proposed';
     case 'user_parked':
       return 'parked';
+    case 'user_discarded':
+      return 'new';
     default:
       return null;
   }

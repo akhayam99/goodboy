@@ -30,8 +30,11 @@ const threadStageEvent = ({ previous, row }: Params): ResolveStageEvent | null =
     case 'answered':
       return from === 'publishing' ? { kind: 'step_failed' } : { kind: 'run_reported' };
     case 'open':
-      return from === 'closed'
-        ? { kind: 'github_reopened', hasProposal: hasThreadProposal({ thread: row }) }
+      if (from === 'closed') {
+        return { kind: 'github_reopened', hasProposal: hasThreadProposal({ thread: row }) };
+      }
+      return from === 'fixed' || from === 'answered'
+        ? { kind: 'user_discarded' }
         : { kind: 'run_stopped' };
     default: {
       const exhaustive: never = row.state;
