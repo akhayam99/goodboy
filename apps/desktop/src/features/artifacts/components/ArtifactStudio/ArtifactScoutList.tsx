@@ -1,4 +1,4 @@
-import { ChevronRight } from 'lucide-react';
+import { ChevronRight } from '@goodboy/ui/icons';
 import { cn, ICON_SIZE, SelectableRow, TruncatedText } from '@goodboy/ui';
 import type { AgentId } from '@goodboy/types';
 import type { ArtifactScoutRow, ArtifactScoutState } from '../../artifactScoutRoster';

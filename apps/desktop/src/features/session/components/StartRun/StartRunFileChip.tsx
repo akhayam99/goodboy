@@ -1,4 +1,4 @@
-import { FileText, X } from 'lucide-react';
+import { FileText, X } from '@goodboy/ui/icons';
 import { Chip, ICON_SIZE, IconButton } from '@goodboy/ui';
 
 import { RUN_ROUTE_COPY } from '../../startRun/runRouteCopy';

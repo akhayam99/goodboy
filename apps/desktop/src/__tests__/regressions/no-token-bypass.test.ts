@@ -130,7 +130,7 @@ const RULES = [
       'apps/desktop/src/app/components/BootSplash/NewerDatabaseScreen.tsx',
       'apps/desktop/src/features/onboarding/OnboardingWizard/WizardFrame.tsx',
     ],
-    why: 'the 6% cover backdrop paints the boot splash, its error screens and the Welcome cover that follows, so the handoff has no seam; the app shell stays on the 3% backdrop',
+    why: 'the cover backdrop paints the boot splash, its error screens and the Welcome cover that follows, so the handoff has no seam',
   },
   {
     pattern: /\bduration-\[/,
@@ -168,7 +168,6 @@ const RULES = [
     pattern:
       /(?<![\w&#])#(?=[0-9a-fA-F]*[a-fA-F])(?:[0-9a-fA-F]{8}|[0-9a-fA-F]{6}|[0-9a-fA-F]{3,4})(?![\w-])/,
     allow: [
-      'apps/desktop/src/shared/components/GenericTerminalPanel/terminal-theme.ts',
       'apps/desktop/src/features/wireframes/wireframePalette.ts',
       'apps/desktop/src/app/components/MockScene/scenes/artifactSeed.ts',
       'apps/desktop/src/app/components/MockScene/scenes/InboxScene.tsx',

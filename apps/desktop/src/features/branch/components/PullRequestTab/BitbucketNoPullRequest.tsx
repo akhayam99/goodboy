@@ -1,4 +1,4 @@
-import { SquareArrowOutUpRight } from 'lucide-react';
+import { SquareArrowOutUpRight } from '@goodboy/ui/icons';
 import { Button, EmptyState, ICON_SIZE } from '@goodboy/ui';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { openLink } from '../../../open/openLink';

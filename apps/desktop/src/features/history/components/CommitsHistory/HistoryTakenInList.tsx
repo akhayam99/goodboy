@@ -1,4 +1,4 @@
-import { GitMerge } from 'lucide-react';
+import { GitMerge } from '@goodboy/ui/icons';
 import { ICON_SIZE } from '@goodboy/ui';
 import type { BranchCommit } from '@goodboy/types';
 import type { CombineMode } from '../../historyPlan';

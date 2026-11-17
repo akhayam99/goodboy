@@ -1,4 +1,4 @@
-import { Flag, FolderKanban, GitPullRequest, UserRound } from 'lucide-react';
+import { Flag, FolderKanban, GitPullRequest, UserRound } from '@goodboy/ui/icons';
 import { issuePullRequests, type LinearIssue } from '../../features/integrations/linear/client';
 import { LinearLabelChip } from '../../features/integrations/linear/LinearLabelChip';
 import { LinearPriority } from '../../features/integrations/linear/LinearPriority';

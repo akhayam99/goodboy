@@ -7,7 +7,7 @@ const SRC = join(__dirname, '..', '..');
 const SCANNED_ROOTS = ['features', 'app', 'shared'];
 const FILTER_BUTTON = 'shared/components/FilterButton.tsx';
 
-const LUCIDE_IMPORT = /import\s*\{([^}]*)\}\s*from\s*'lucide-react'/g;
+const LUCIDE_IMPORT = /import\s*\{([^}]*)\}\s*from\s*'@goodboy\/ui\/icons'/g;
 
 const FILTER_GLYPHS: ReadonlySet<string> = new Set([
   'Filter',

@@ -1,4 +1,4 @@
-import { KeyRound } from 'lucide-react';
+import { KeyRound } from '@goodboy/ui/icons';
 import { Button, Notice } from '@goodboy/ui';
 import type { BrowserPaneModel } from '../../types';
 

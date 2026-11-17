@@ -1,4 +1,4 @@
-import { Info } from 'lucide-react';
+import { Info } from '@goodboy/ui/icons';
 import { ChoiceCards, ICON_SIZE, tintClasses } from '@goodboy/ui';
 import { folderName } from '../../../store/slices/terminal/terminalOwner';
 import type { RepositoryFolder, RepositoryScope } from './folderEntry';

@@ -1,4 +1,4 @@
-import { Star } from 'lucide-react';
+import { Star } from '../../icons';
 import { cn } from '../../cn';
 import { FOCUS_RING } from '../../focusRing';
 import { ICON_SIZE } from '../../iconSize';
@@ -33,8 +33,9 @@ export const StarToggle = ({ isStarred, label, tooltip, disabled, className, onT
     >
       <Star
         size={ICON_SIZE.row}
+        weight={isStarred ? 'fill' : 'regular'}
         aria-hidden
-        className={cn('motion-safe:transition-transform', isStarred && 'fill-current')}
+        className="motion-safe:transition-transform"
       />
     </button>
   </Tooltip>

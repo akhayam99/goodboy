@@ -22,17 +22,17 @@ export type ButtonProps = Omit<ComponentProps<'button'>, 'type'> & {
 
 export const BUTTON_VARIANT_CLASSES = {
   primary:
-    'bg-primary text-on-tone hover:bg-primary/90 disabled:bg-fill disabled:text-disabled-foreground [&_svg]:text-current',
+    'bg-primary-solid text-on-primary hover:bg-primary-solid-hover disabled:bg-fill disabled:text-disabled-foreground [&_svg]:text-current',
   secondary:
-    'bg-fill text-foreground hover:bg-hover border-border disabled:bg-fill disabled:text-disabled-foreground',
+    'bg-button-secondary text-foreground shadow-button-secondary hover:bg-hover border-border disabled:bg-fill disabled:text-disabled-foreground disabled:shadow-none',
   ghost:
     'border-0 text-foreground hover:bg-hover disabled:bg-transparent disabled:text-disabled-foreground',
   quiet:
     'border-0 text-muted-foreground hover:bg-hover hover:text-foreground disabled:bg-transparent disabled:text-disabled-foreground',
   danger:
-    'bg-danger text-on-tone hover:bg-danger/90 disabled:bg-fill disabled:text-disabled-foreground [&_svg]:text-current',
+    'bg-danger-solid text-on-danger hover:bg-danger-solid-hover disabled:bg-fill disabled:text-disabled-foreground [&_svg]:text-current',
   'ghost-danger':
-    'border-0 text-danger hover:bg-danger/10 disabled:bg-transparent disabled:text-disabled-foreground [&_svg]:text-current',
+    'border-0 text-danger hover:bg-danger-subtle disabled:bg-transparent disabled:text-disabled-foreground [&_svg]:text-current',
   setting:
     'font-normal text-foreground hover:border-border hover:bg-hover focus-visible:border-border disabled:text-disabled-foreground',
 } as const satisfies Record<ButtonVariant, string>;
@@ -46,19 +46,19 @@ export const BUTTON_SIZE_CLASSES = {
 export const BUTTON_INTENT_CLASSES = {
   caution: {
     filled:
-      'bg-warning text-on-tone hover:bg-warning/90 disabled:bg-fill disabled:text-disabled-foreground [&_svg]:text-current',
+      'bg-warning-solid text-on-warning hover:bg-warning-solid-hover disabled:bg-fill disabled:text-disabled-foreground [&_svg]:text-current',
     outline:
-      'bg-transparent text-warning border-warning/40 hover:bg-warning/10 disabled:border-border disabled:bg-transparent disabled:text-disabled-foreground [&_svg]:text-current',
+      'bg-transparent text-warning border-warning-edge hover:bg-warning-subtle disabled:border-border disabled:bg-transparent disabled:text-disabled-foreground [&_svg]:text-current',
     quiet:
-      'border-0 text-warning hover:bg-warning/10 disabled:bg-transparent disabled:text-disabled-foreground [&_svg]:text-current',
+      'border-0 text-warning hover:bg-warning-subtle disabled:bg-transparent disabled:text-disabled-foreground [&_svg]:text-current',
   },
   destructive: {
     filled:
-      'bg-danger text-on-tone hover:bg-danger/90 disabled:bg-fill disabled:text-disabled-foreground [&_svg]:text-current',
+      'bg-danger-solid text-on-danger hover:bg-danger-solid-hover disabled:bg-fill disabled:text-disabled-foreground [&_svg]:text-current',
     outline:
-      'bg-transparent text-danger border-danger/40 hover:bg-danger/10 disabled:border-border disabled:bg-transparent disabled:text-disabled-foreground [&_svg]:text-current',
+      'bg-transparent text-danger border-danger-edge hover:bg-danger-subtle disabled:border-border disabled:bg-transparent disabled:text-disabled-foreground [&_svg]:text-current',
     quiet:
-      'border-0 text-danger hover:bg-danger/10 disabled:bg-transparent disabled:text-disabled-foreground [&_svg]:text-current',
+      'border-0 text-danger hover:bg-danger-subtle disabled:bg-transparent disabled:text-disabled-foreground [&_svg]:text-current',
   },
 } as const satisfies Record<ToneIntent, Record<ToneLook, string>>;
 

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ImageIcon, ImageOff } from 'lucide-react';
+import { ImageIcon, ImageOff } from '@goodboy/ui/icons';
 import type { ChatMessageAttachment } from '@goodboy/types';
 import { ImageLightbox } from '../../../../shared/components/ImageLightbox';
 import { ICON_SIZE } from '@goodboy/ui';

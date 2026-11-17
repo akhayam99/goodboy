@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Trash2 } from 'lucide-react';
+import { Trash2 } from '@goodboy/ui/icons';
 import { ICON_SIZE } from '@goodboy/ui';
 import { AnchoredConfirm } from '../../../../../shared/components/AnchoredConfirm';
 import type { useWorkflowEditor } from '../../WorkflowsPanel/useWorkflowEditor';

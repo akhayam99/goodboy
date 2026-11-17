@@ -1,4 +1,4 @@
-import { Folder } from 'lucide-react';
+import { Folder } from '@goodboy/ui/icons';
 import { ICON_SIZE } from '@goodboy/ui';
 import { PathLine } from '../PathLine';
 

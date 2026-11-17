@@ -739,17 +739,18 @@ opened later keeps the drawer's own motion. Moving between the shell rail and
 a page's rail keeps keyboard focus on the same tool (`railFocusMemo`). With a
 record panel shown as an overlay the rail stays where it is, above that panel's
 scrim, as it does above the shell's. It holds two
-column holds two tools, Terminal and Browser (`RAIL_TOOLS`), under the caption
-Tools (`ToolGroupCaption`, `text-rail`), on every page of the app, in a session
-or outside one. Explore, Agents, Scripts, Context and Ask have no button on it:
+column holds two tools, Terminal and Browser (`RAIL_TOOLS`), with no heading
+above them (each names itself under its icon, and the toolbar is named Tools for
+the reader), on every page of the app, in a session or outside one. Explore, Agents, Scripts, Context and Ask have no button on it:
 they open from their pages and keyboard shortcuts. A test
 scene or frame without the shell rail keeps the column inside `SessionFrame`
 (`ShellRailContext`).
 Each tool keeps its pane id and shortcut; Terminal shows ``⌃` `` and Browser
 has no shortcut. `SessionToolButton` names every tool below its icon in the
 9px `text-rail` caption role: secondary (`TEXT_ROLE.secondary`) when closed,
-label strength when open, and the Tools caption is secondary too, so every
-caption keeps its contrast in light mode. On a window under 480px tall all captions hide together and the tooltips
+label strength when open, so every caption keeps its contrast in light mode.
+Each tool is one grid cell, icon row over label row on one centre column, and
+the open tool is a quiet filled tile (`bg-selected`, no border). On a window under 480px tall all captions hide together and the tooltips
 stay. Every icon's tooltip gives its name, shortcut and any signal reason. Ask uses its own question glyph, distinct from Chat.
 
 A tool has four states (`toolStateOf`): at rest, pressed when it holds the
@@ -762,11 +763,12 @@ small ring on the icon (`ToolWaitingRing`) and says so in the accessible name,
 tool it replaces moves into the chip. Terminal names the running terminals
 (`Terminal, 2 running`), Browser names its tabs (`Browser, 3 tabs`); the words
 come from `toolFactOf` over `runningTerminalCount` and `browserTabCount`, and
-the same two numbers show in the icon's corner (`ToolCount`, `countTextOf`,
-9+ past nine) unless a signal dot holds that corner. Every corner mark (count,
-signal dot, waiting ring) anchors to the icon button, outside the 16px glyph
-(`TOOL_CORNER_SLOT`): the count and the dot share the top end corner, the ring
-the top start corner, and none ever covers the icon.
+the same two numbers show as a neutral `CountBadge` on the icon's corner (9+
+past nine) unless a signal dot holds that corner. Every corner mark (count,
+signal dot, waiting ring) anchors to a box the size of the 16px glyph
+(`tool-glyph`, `TOOL_CORNER_SLOT`), never to the button: the count and the dot
+share the top end corner, the ring the top start corner, and none reaches the
+label below.
 
 Terminal and Browser are workspace tools: their dock opens with
 `toggleTerminalDock` and `toggleBrowserDock` from the rail, the palette, the Go

@@ -3,6 +3,7 @@ import { readFileSync } from 'fs';
 import { join } from 'path';
 import { describe, expect, it } from 'vitest';
 import { oklchToSrgb, type Rgb } from '../../test/colorMath';
+import { THEME_BLOCKS } from '../../test/styleTokens';
 
 const STYLES = join(__dirname, '..', '..', 'styles.css');
 
@@ -14,7 +15,9 @@ const READ_SURFACES = [...SURFACES, 'drawer'] as const;
 const STEP_FLOOR = 1.04;
 const DRAWER_STEP_FLOOR = 1.03;
 const FILL_FLOOR = 1.1;
+const BOX_BORDER_FLOOR = 1.4;
 const TONES = ['primary', 'info', 'success', 'warning', 'danger', 'merged', 'draft'] as const;
+const TINT_STEPS = ['wash', 'subtle'] as const;
 // The diff viewer paints code on the canvas and on hunk rows, never on a card.
 const CODE_SURFACES = ['background', 'subtle', 'muted'] as const;
 
@@ -41,24 +44,53 @@ const swatch = (palette: Palette, token: string): Rgb => {
   return rgb;
 };
 
-const readPalette = (block: string): Palette => {
-  const palette: Record<string, Rgb> = {};
-  const pattern = /--color-([a-z0-9-]+):\s*oklch\(([\d.]+)\s+([\d.]+)\s+([\d.]+)\s*\)\s*;/g;
-  for (const match of block.matchAll(pattern)) {
-    palette[String(match[1])] = oklchToSrgb(Number(match[2]), Number(match[3]), Number(match[4]));
+const OPAQUE_OKLCH = /^oklch\(([\d.]+) ([\d.]+) ([\d.]+)\)$/;
+const HEX = /^#([0-9a-f]{6})$/i;
+const ALIAS = /^var\(--color-([a-z0-9-]+)\)$/;
+const ALIAS_DEPTH = 8;
+
+type ResolveSwatchParams = {
+  declared: ReadonlyMap<string, string>;
+  token: string;
+  depth: number;
+};
+
+const resolveSwatch = ({ declared, token, depth }: ResolveSwatchParams): Rgb | null => {
+  const value = declared.get(token);
+  if (value === undefined || depth > ALIAS_DEPTH) {
+    return null;
   }
-  const hexPattern = /--color-([a-z0-9-]+):\s*#([0-9a-f]{6})\s*;/gi;
-  for (const match of block.matchAll(hexPattern)) {
-    const value = String(match[2]);
-    palette[String(match[1])] = [
-      Number.parseInt(value.slice(0, 2), 16) / 255,
-      Number.parseInt(value.slice(2, 4), 16) / 255,
-      Number.parseInt(value.slice(4, 6), 16) / 255,
+  const oklch = value.match(OPAQUE_OKLCH);
+  if (oklch !== null) {
+    return oklchToSrgb(Number(oklch[1]), Number(oklch[2]), Number(oklch[3]));
+  }
+  const hex = value.match(HEX);
+  if (hex !== null) {
+    const digits = String(hex[1]);
+    return [
+      Number.parseInt(digits.slice(0, 2), 16) / 255,
+      Number.parseInt(digits.slice(2, 4), 16) / 255,
+      Number.parseInt(digits.slice(4, 6), 16) / 255,
     ];
   }
-  const aliasPattern = /--color-([a-z0-9-]+):\s*var\(--color-([a-z0-9-]+)\)\s*;/gi;
-  for (const match of block.matchAll(aliasPattern)) {
-    palette[String(match[1])] = swatch(palette, String(match[2]));
+  const alias = value.match(ALIAS);
+  if (alias !== null) {
+    return resolveSwatch({ declared, token: String(alias[1]), depth: depth + 1 });
+  }
+  return null;
+};
+
+const readPalette = (block: string): Palette => {
+  const declared = new Map<string, string>();
+  for (const match of block.matchAll(/--color-([a-z0-9-]+):([^;]+);/g)) {
+    declared.set(String(match[1]), String(match[2]).trim().replace(/\s+/g, ' '));
+  }
+  const palette: Record<string, Rgb> = {};
+  for (const token of declared.keys()) {
+    const rgb = resolveSwatch({ declared, token, depth: 0 });
+    if (rgb !== null) {
+      palette[token] = rgb;
+    }
   }
   return palette;
 };
@@ -96,10 +128,9 @@ const readLabs = (block: string): Readonly<Record<string, Lab>> => {
 
 const themeBlocks = (): Readonly<{ dark: string; light: string }> => {
   const css = readFileSync(STYLES, 'utf8');
-  const themeStart = css.indexOf('@theme {');
   const lightStart = css.indexOf("html[data-theme='light'] {");
   return {
-    dark: css.slice(themeStart, lightStart),
+    dark: THEME_BLOCKS.dark,
     light: css.slice(lightStart, css.indexOf('\n}', lightStart)),
   };
 };
@@ -126,8 +157,7 @@ const IDENTITY_SEPARATION = 4.5;
 
 const readThemes = (): Readonly<Record<'dark' | 'light', Palette>> => {
   const blocks = themeBlocks();
-  const dark = readPalette(blocks.dark);
-  return { dark, light: { ...dark, ...readPalette(blocks.light) } };
+  return { dark: readPalette(blocks.dark), light: readPalette(blocks.dark + blocks.light) };
 };
 
 type Translucent = Readonly<{ rgb: Rgb; alpha: number }>;
@@ -147,14 +177,17 @@ const readTranslucent = ({ block, token }: { block: string; token: string }): Tr
 };
 
 const readShadow = ({ block, name }: { block: string; name: string }): string => {
-  const match = block.match(new RegExp(`--shadow-${name}:([^;]+);`));
+  const match = block.match(new RegExp(`--elevation-${name}:([^;]+);`));
   if (match === null) {
-    throw new Error(`styles.css has no --shadow-${name}`);
+    throw new Error(`styles.css has no --elevation-${name}`);
   }
   return String(match[1]).trim();
 };
 
-describe.each(Object.entries(readThemes()))('%s palette', (_theme, palette) => {
+describe.each(['dark', 'light'] as const)('%s palette', (theme) => {
+  const palette = readThemes()[theme];
+  const block = themeBlocks()[theme];
+
   it.each(READ_SURFACES)('carries body and tone text at 4.5:1 on %s', (surface) => {
     const failures = ['foreground', 'muted-foreground', 'faint-foreground', ...TONES]
       .map((token) => ({
@@ -182,17 +215,10 @@ describe.each(Object.entries(readThemes()))('%s palette', (_theme, palette) => {
     expect(failures).toEqual([]);
   });
 
-  it.each(READ_SURFACES)('keeps tone text readable on its tint over %s', (surface) => {
+  it.each(TINT_STEPS)('keeps tone text readable on its %s step', (step) => {
     const failures = TONES.map((tone) => ({
       tone,
-      ratio: contrast(
-        swatch(palette, tone),
-        composite({
-          foreground: swatch(palette, tone),
-          background: swatch(palette, surface),
-          alpha: 0.1,
-        }),
-      ),
+      ratio: contrast(swatch(palette, tone), swatch(palette, `${tone}-${step}`)),
     })).filter(({ ratio }) => ratio < BODY_FLOOR);
     expect(failures).toEqual([]);
   });
@@ -275,9 +301,24 @@ describe.each(Object.entries(readThemes()))('%s palette', (_theme, palette) => {
 
   it.each(READ_SURFACES)('keeps the soft border visible on %s', (surface) => {
     const floor = surface === 'elevated' || surface === 'floating' ? 1.3 : 1.2;
-    expect(
-      contrast(swatch(palette, 'border-soft'), swatch(palette, surface)),
-    ).toBeGreaterThanOrEqual(floor);
+    const parent = swatch(palette, surface);
+    const soft = readTranslucent({ block, token: 'border-soft' });
+    const painted = composite({ foreground: soft.rgb, background: parent, alpha: soft.alpha });
+    expect(contrast(painted, parent)).toBeGreaterThanOrEqual(floor);
+  });
+
+  it.each(READ_SURFACES)('draws the box border above the soft border on %s', (surface) => {
+    const parent = swatch(palette, surface);
+    const edgeContrast = ({ token }: { token: string }): number => {
+      const edge = readTranslucent({ block, token });
+      return contrast(
+        composite({ foreground: edge.rgb, background: parent, alpha: edge.alpha }),
+        parent,
+      );
+    };
+    expect(edgeContrast({ token: 'border' })).toBeGreaterThan(
+      edgeContrast({ token: 'border-soft' }),
+    );
   });
 
   it.each(READ_SURFACES)('keeps the strong border at 4.5:1 on %s', (surface) => {
@@ -298,10 +339,18 @@ describe.each(Object.entries(readThemes()))('%s palette', (_theme, palette) => {
     ).toBeGreaterThanOrEqual(LARGE_FLOOR);
   });
 
-  it.each(TONES)('keeps %s solid fills readable', (tone) => {
-    expect(contrast(swatch(palette, 'on-tone'), swatch(palette, tone))).toBeGreaterThanOrEqual(
+  it.each(TONES)('keeps the %s label readable on its solid and on its solid hover', (tone) => {
+    const label = swatch(palette, `on-${tone}`);
+    expect(contrast(label, swatch(palette, `${tone}-solid`))).toBeGreaterThanOrEqual(BODY_FLOOR);
+    expect(contrast(label, swatch(palette, `${tone}-solid-hover`))).toBeGreaterThanOrEqual(
       BODY_FLOOR,
     );
+  });
+
+  it.each(TONES)('moves the %s solid when the pointer is on it', (tone) => {
+    expect(
+      contrast(swatch(palette, `${tone}-solid`), swatch(palette, `${tone}-solid-hover`)),
+    ).toBeGreaterThan(1);
   });
 
   it('keeps primary inside the 200-275 hue band', () => {
@@ -419,6 +468,16 @@ describe('surface ladder', () => {
     );
   });
 
+  it.each(['xs', 'sm', 'md', 'lg', 'xl'])(
+    'lets shadow-%s follow the theme instead of the inlined dark value',
+    (name) => {
+      expect(blocks.dark).toContain(`--shadow-${name}: var(--elevation-${name});`);
+      expect(readShadow({ block: blocks.light, name })).not.toEqual(
+        readShadow({ block: blocks.dark, name }),
+      );
+    },
+  );
+
   it.each([
     { theme: 'dark', block: blocks.dark, direction: 1 },
     { theme: 'light', block: blocks.light, direction: -1 },
@@ -447,7 +506,8 @@ type OverlayFloor = {
 };
 
 const OVERLAY_FLOORS: ReadonlyArray<OverlayFloor> = [
-  { token: 'border', surfaces: READ_SURFACES, floor: LARGE_FLOOR },
+  { token: 'border-control', surfaces: READ_SURFACES, floor: LARGE_FLOOR },
+  { token: 'border', surfaces: READ_SURFACES, floor: BOX_BORDER_FLOOR },
   { token: 'frame-edge', surfaces: ['chrome', 'background'], floor: 1.2 },
   { token: 'scrollbar-thumb', surfaces: ['background', 'subtle', 'floating'], floor: 1.8 },
   { token: 'scrollbar-thumb-active', surfaces: ['background', 'subtle', 'floating'], floor: 3 },
@@ -489,7 +549,6 @@ const UI_SOURCE = join(__dirname, '..', '..', '..', '..', '..', 'packages', 'ui'
 const TINT_SOURCE = join(UI_SOURCE, 'tint.ts');
 const CHIP_SOURCE = join(UI_SOURCE, 'components', 'Chip.tsx');
 const SELECTED_ROW_SOURCE = join(UI_SOURCE, 'selectedRow.ts');
-const REST_TINT = 0.1;
 const SELECTED_ROW_TEXT = ['foreground', 'muted-foreground'] as const;
 
 describe('composed contrast', () => {
@@ -514,22 +573,6 @@ describe('composed contrast', () => {
     expect(chip).not.toMatch(/tint\.hoverBg/);
     expect(chip).toMatch(/tint\.hoverRing/);
   });
-
-  it.each(cases)(
-    'keeps tone text at 4.5:1 on its tint over $surface in $theme',
-    ({ theme, surface }) => {
-      const palette = palettes[theme];
-      const failures = TONES.map((tone) => {
-        const tinted = composite({
-          foreground: swatch(palette, tone),
-          background: swatch(palette, surface),
-          alpha: REST_TINT,
-        });
-        return { tone, ratio: contrast(swatch(palette, tone), tinted) };
-      }).filter(({ ratio }) => ratio < BODY_FLOOR);
-      expect(failures).toEqual([]);
-    },
-  );
 
   it.each(cases)(
     'keeps the text of a selected row at 4.5:1 over $surface in $theme',

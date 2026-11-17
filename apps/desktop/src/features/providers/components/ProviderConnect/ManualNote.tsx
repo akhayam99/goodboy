@@ -1,4 +1,4 @@
-import { SquareArrowOutUpRight } from 'lucide-react';
+import { SquareArrowOutUpRight } from '@goodboy/ui/icons';
 import { ICON_SIZE } from '@goodboy/ui';
 
 type Props = {

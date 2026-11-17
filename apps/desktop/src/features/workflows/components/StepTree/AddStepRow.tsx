@@ -1,4 +1,4 @@
-import { Plus } from 'lucide-react';
+import { Plus } from '@goodboy/ui/icons';
 import { WORK_NODE_GLYPH_SIZE, WorkNode } from '@goodboy/ui';
 import type { SavedStep, SavedStepGroups } from '../../savedSteps';
 import { AddStepMenu } from '../AddStepMenu';

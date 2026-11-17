@@ -10,7 +10,7 @@ import {
   Laptop,
   RefreshCw,
   TriangleAlert,
-} from 'lucide-react';
+} from '@goodboy/ui/icons';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import {
   branchPresenceOf,

@@ -15,7 +15,7 @@ const APP_SOURCE_DIRECTORIES = [
   resolve(REPOSITORY_DIRECTORY, 'apps/desktop/src'),
   resolve(REPOSITORY_DIRECTORY, 'packages/ui/src'),
 ];
-const LUCIDE_RESOLVE_ROOT = resolve(REPOSITORY_DIRECTORY, 'apps/desktop/package.json');
+const LUCIDE_RESOLVE_ROOT = resolve(WEBSITE_DIRECTORY, 'package.json');
 
 const SOURCE_DIRECTORY = resolve(WEBSITE_DIRECTORY, 'src');
 const ICON_IMPORT =
@@ -243,7 +243,7 @@ const checkNamesInApp = ({ names }) => {
     APP_SOURCE_DIRECTORIES.flatMap(listSourceFiles).flatMap((file) =>
       [
         ...readFileSync(file, 'utf8').matchAll(
-          /import\s*(?:type\s*)?\{([^}]*)\}\s*from\s*'lucide-react'/g,
+          /import\s*(?:type\s*)?\{([^}]*)\}\s*from\s*'(?:@goodboy\/ui\/|(?:\.{1,2}\/)+)icons'/g,
         ),
       ].flatMap((match) =>
         match[1].split(',').map(

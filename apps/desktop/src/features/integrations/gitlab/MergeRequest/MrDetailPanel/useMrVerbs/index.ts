@@ -7,7 +7,7 @@ import {
   ThumbsDown,
   ThumbsUp,
   CircleX,
-} from 'lucide-react';
+} from '@goodboy/ui/icons';
 import {
   NO_RECORD_VERBS,
   type RecordSecondaryVerbs,

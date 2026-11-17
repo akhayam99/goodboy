@@ -1,5 +1,5 @@
 import { BAND_ROW_CLASS, Button, cn, ICON_SIZE } from '@goodboy/ui';
-import { SquareArrowOutUpRight } from 'lucide-react';
+import { SquareArrowOutUpRight } from '@goodboy/ui/icons';
 import { openLink } from '../../../../../open/openLink';
 
 const CLAUDE_USAGE_URL = 'https://claude.ai/settings/usage';

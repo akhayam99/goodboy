@@ -1,4 +1,4 @@
-import { ListFilter } from 'lucide-react';
+import { ListFilter } from '@goodboy/ui/icons';
 import { AnchoredPopover, IconButton, useDropdown, type MenuEntry } from '@goodboy/ui';
 import type { TreeGroup } from '../../lib/changeTree';
 import { AppMenuList } from '../../../actions/AppMenuList';

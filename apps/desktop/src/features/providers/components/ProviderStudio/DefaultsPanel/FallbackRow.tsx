@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown } from '@goodboy/ui/icons';
 import type { EffortLevel, ProviderId } from '@goodboy/types';
 import { cn, ICON_SIZE } from '@goodboy/ui';
 import { CONCEPT_ICONS } from '../../../../../shared/components/conceptIcons';

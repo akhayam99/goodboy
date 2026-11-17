@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { Lock } from 'lucide-react';
+import { Lock } from '@goodboy/ui/icons';
 import { Eyebrow, ICON_SIZE } from '@goodboy/ui';
 
 type WhatGoodboyCanDoLine = {

@@ -1,20 +1,25 @@
 import type { CSSProperties } from 'react';
-import { cn, tintClasses } from '@goodboy/ui';
+import { tintClasses } from '@goodboy/ui';
 import type { DiffHunkLine } from '@goodboy/types';
 
 const ADD = tintClasses('success');
 const DEL = tintClasses('danger');
-const SELECT = tintClasses('primary');
 
 export const LINE_FILL: Record<DiffHunkLine['kind'], string> = {
-  add: ADD.bg,
-  del: DEL.bg,
+  add: 'bg-diff-add-line',
+  del: 'bg-diff-remove-line',
+  context: '',
+};
+
+export const GUTTER_FILL: Record<DiffHunkLine['kind'], string> = {
+  add: 'bg-diff-add-gutter',
+  del: 'bg-diff-remove-gutter',
   context: '',
 };
 
 export const WORD_FILL: Record<DiffHunkLine['kind'], string> = {
-  add: cn(ADD.bg, 'rounded-sm'),
-  del: cn(DEL.bg, 'rounded-sm'),
+  add: 'bg-diff-add-word rounded-sm',
+  del: 'bg-diff-remove-word rounded-sm',
   context: '',
 };
 
@@ -24,9 +29,9 @@ export const SIGN_TEXT: Record<DiffHunkLine['kind'], string> = {
   context: 'text-transparent',
 };
 
-export const SELECTED_FILL = cn(SELECT.bg);
+export const SELECTED_FILL = 'bg-primary-subtle';
 
-export const SELECTED_RAIL = 'shadow-[inset_2px_0_0_var(--color-primary)]';
+export const SELECTED_RAIL = 'shadow-[inset_2px_0_0_var(--color-primary-solid)]';
 
 export const EMPTY_SIDE_FILL = 'bg-subtle';
 

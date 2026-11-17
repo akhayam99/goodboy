@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Check, RefreshCw } from 'lucide-react';
+import { Check, RefreshCw } from '@goodboy/ui/icons';
 import { Button, cn, Disclosure, ICON_SIZE, IconButton, PopoverBody } from '@goodboy/ui';
 import type { BaseDivergence, Project, ProjectId, WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';

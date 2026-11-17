@@ -122,8 +122,8 @@
   flex: none;
   place-items: center;
   border-radius: 10px;
-  color: var(--g-on-tone);
-  background: var(--g-primary);
+  color: var(--g-on-primary);
+  background: var(--g-primary-solid);
 }
 
 .sessionMock .smHeadText {

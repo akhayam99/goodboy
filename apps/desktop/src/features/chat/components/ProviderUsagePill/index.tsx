@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { Gauge } from 'lucide-react';
+import { Gauge } from '@goodboy/ui/icons';
 import { cn, FactCard, ICON_SIZE } from '@goodboy/ui';
 import type { ProviderId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';

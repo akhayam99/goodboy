@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { CircleCheck, CircleDashed, TriangleAlert, type LucideIcon } from 'lucide-react';
+import { CircleCheck, CircleDashed, TriangleAlert, type IconGlyph } from '@goodboy/ui/icons';
 import { ICON_SIZE, cn, tintClasses, type Tone } from '@goodboy/ui';
 import { parseSummaryDocument } from '@goodboy/core/context';
 import { summaryStatusOf, type SummaryStatusTone } from './summaryStatusOf';
@@ -7,7 +7,7 @@ import { summaryStatusWordOf } from './summaryStatusWordOf';
 import { SummaryLine } from './SummaryLine';
 
 const GLYPH: Readonly<
-  Record<SummaryStatusTone, { readonly icon: LucideIcon; readonly tone: Tone }>
+  Record<SummaryStatusTone, { readonly icon: IconGlyph; readonly tone: Tone }>
 > = {
   blocked: { icon: TriangleAlert, tone: 'warning' },
   working: { icon: CircleDashed, tone: 'info' },

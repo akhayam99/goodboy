@@ -1,5 +1,5 @@
 import { Fragment, memo, useMemo, useRef, type ReactNode } from 'react';
-import { Square, SquareCheck, SquareMinus, type LucideIcon } from 'lucide-react';
+import { Square, SquareCheck, SquareMinus, type IconGlyph } from '../../icons';
 import { cn } from '../../cn';
 import { EYEBROW_CLASS, Eyebrow } from '../Eyebrow';
 import { COMMENT_IMAGE_CLASS } from '../RemoteImage/imageClass';
@@ -151,7 +151,7 @@ const HEADING_CLASS: Record<1 | 2 | 3 | 4 | 5 | 6, string> = {
   6: 'text-eyebrow text-muted-foreground',
 };
 
-const TASK_ICON: Record<TaskState, LucideIcon> = {
+const TASK_ICON: Record<TaskState, IconGlyph> = {
   open: Square,
   done: SquareCheck,
   partial: SquareMinus,

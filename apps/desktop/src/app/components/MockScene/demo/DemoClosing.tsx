@@ -1,4 +1,4 @@
-import { Download, RotateCcw } from 'lucide-react';
+import { Download, RotateCcw } from '@goodboy/ui/icons';
 import { Button, GithubIcon, ICON_SIZE, WorkNode } from '@goodboy/ui';
 import { BrandTile } from '../../../../shared/components/BrandTile';
 import { DemoLink } from './DemoLink';

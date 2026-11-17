@@ -1,4 +1,4 @@
-import { Copy, GitBranch, Trash2 } from 'lucide-react';
+import { Copy, GitBranch, Trash2 } from '@goodboy/ui/icons';
 import { pluralize } from '../../../shared/utils/pluralize';
 import type { BranchActionTarget, ObjectKindDefinition } from '../types';
 

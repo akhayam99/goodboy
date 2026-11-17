@@ -1,4 +1,4 @@
-import { GitBranch } from 'lucide-react';
+import { GitBranch } from '@goodboy/ui/icons';
 import { Chip, ICON_SIZE } from '@goodboy/ui';
 import type { SessionExternalTaskProvider } from '@goodboy/types';
 import { IntegrationGlyph } from '../IntegrationGlyph';

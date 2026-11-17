@@ -1,4 +1,4 @@
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft } from '../icons';
 import type { DrawerChip } from '../drawerBackChipContext';
 import { ICON_SIZE } from '../iconSize';
 import { Button } from './Button';

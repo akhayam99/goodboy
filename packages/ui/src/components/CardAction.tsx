@@ -1,4 +1,4 @@
-import type { LucideIcon } from 'lucide-react';
+import type { IconGlyph } from '../icons';
 import { cn } from '../cn';
 import { FOCUS_RING } from '../focusRing';
 import { DISABLED } from '../disabledStyle';
@@ -7,7 +7,7 @@ import { tintClasses, type Tone } from '../tint';
 import { Tooltip } from './Tooltip';
 
 export type CardActionProps = {
-  readonly icon: LucideIcon;
+  readonly icon: IconGlyph;
   readonly label: string;
   readonly tooltip?: string;
   readonly tone?: Tone;

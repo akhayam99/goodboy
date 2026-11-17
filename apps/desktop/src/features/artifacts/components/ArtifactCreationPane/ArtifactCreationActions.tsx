@@ -1,4 +1,4 @@
-import { Trash2 } from 'lucide-react';
+import { Trash2 } from '@goodboy/ui/icons';
 import { Button, cn, ConfirmPopover, FormActions, ICON_SIZE } from '@goodboy/ui';
 import type { ProviderId } from '@goodboy/types';
 

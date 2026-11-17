@@ -13,7 +13,7 @@ vi.mock('@tauri-apps/api/event', () => ({
 import type { ReactNode } from 'react';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
-import { GitMerge, CircleX } from 'lucide-react';
+import { GitMerge, CircleX } from '@goodboy/ui/icons';
 import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,

@@ -1,4 +1,4 @@
-import type { LucideIcon } from 'lucide-react';
+import type { IconGlyph } from '@goodboy/ui/icons';
 import { CONCEPT_ICONS } from '../components/conceptIcons';
 import type { ShortcutId } from '../keyboard/registry';
 import { NAMES, formerNamesOf } from '../utils/names';
@@ -31,7 +31,7 @@ export type DestinationScope = 'app' | 'workspace' | 'session';
 export type Destination = {
   readonly id: DestinationId;
   readonly label: string;
-  readonly icon: LucideIcon;
+  readonly icon: IconGlyph;
   readonly menuId?: string;
   readonly home: DestinationHome;
   readonly scope: DestinationScope;

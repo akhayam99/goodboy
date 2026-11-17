@@ -1,5 +1,5 @@
-import { Check } from 'lucide-react';
-import { cn, ICON_SIZE, ICON_STROKE } from '@goodboy/ui';
+import { Check } from '@goodboy/ui/icons';
+import { cn, ICON_SIZE, ICON_WEIGHT } from '@goodboy/ui';
 import type { OpenQuestionSelectMode } from '@goodboy/types';
 
 type Props = {
@@ -13,12 +13,14 @@ export const SelectionIndicator = ({ mode, selected }: Props) => (
     className={cn(
       'grid size-4 shrink-0 translate-y-0.5 place-items-center border',
       mode === 'many' ? 'rounded-sm' : 'rounded-full',
-      selected ? 'border-primary bg-primary text-on-tone' : 'border-border bg-transparent',
+      selected
+        ? 'border-primary-solid bg-primary-solid text-on-primary'
+        : 'border-border-control bg-transparent',
     )}
   >
     {selected &&
       (mode === 'many' ? (
-        <Check size={ICON_SIZE.mark} strokeWidth={ICON_STROKE.check} aria-hidden />
+        <Check size={ICON_SIZE.mark} weight={ICON_WEIGHT.check} aria-hidden />
       ) : (
         <span className="size-1.5 rounded-full bg-current" />
       ))}

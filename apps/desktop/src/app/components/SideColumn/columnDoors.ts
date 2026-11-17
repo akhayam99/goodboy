@@ -1,4 +1,4 @@
-import type { LucideIcon } from 'lucide-react';
+import type { IconGlyph } from '@goodboy/ui/icons';
 import type { ShortcutId } from '../../../shared/keyboard/registry';
 import { DESTINATIONS, type Destination } from '../../../shared/navigation/destinations';
 import type { ColumnDoorId } from '../../../shared/navigation/columnPlace';
@@ -6,7 +6,7 @@ import type { ColumnDoorId } from '../../../shared/navigation/columnPlace';
 export type ColumnDoor = {
   readonly id: ColumnDoorId;
   readonly label: string;
-  readonly icon: LucideIcon;
+  readonly icon: IconGlyph;
   readonly shortcutId?: ShortcutId;
   readonly isReference?: boolean;
 };

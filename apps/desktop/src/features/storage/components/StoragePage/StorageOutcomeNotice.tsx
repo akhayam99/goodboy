@@ -1,4 +1,4 @@
-import { Undo2, X } from 'lucide-react';
+import { Undo2, X } from '@goodboy/ui/icons';
 import { Button, ICON_SIZE, IconButton, Notice } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
 import type {

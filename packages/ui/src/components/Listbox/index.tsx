@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
-import { Search } from 'lucide-react';
+import { Search } from '../../icons';
 import { cn } from '../../cn';
 import { useDropdown } from '../../useDropdown';
 import { AnchoredPopover } from '../AnchoredPopover';

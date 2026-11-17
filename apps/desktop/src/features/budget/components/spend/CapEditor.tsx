@@ -9,7 +9,7 @@ import {
   Input,
   SectionHeader,
 } from '@goodboy/ui';
-import { Trash2 } from 'lucide-react';
+import { Trash2 } from '@goodboy/ui/icons';
 import { parseCap } from '../../../../shared/lib/parse-cap';
 
 export type SaveLimitParams = {

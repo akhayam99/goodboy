@@ -1,8 +1,8 @@
 import { DrawerContentContext } from '../drawerContentContext';
 import { DrawerBackChipContext } from '../drawerBackChipContext';
 import { useContext, useEffect, useRef, useState, type ReactNode } from 'react';
-import type { LucideIcon } from 'lucide-react';
-import { ArrowUpRight, X } from 'lucide-react';
+import type { IconGlyph } from '../icons';
+import { ArrowUpRight, X } from '../icons';
 import { cn } from '../cn';
 import { useEscapeLayer } from '../useEscapeLayer';
 import { lastFocusedElement } from '../useLastFocused';
@@ -30,7 +30,7 @@ export type DrawerPage = {
 export type DrawerFrameProps = {
   readonly title: string;
   readonly titleContent?: ReactNode;
-  readonly icon?: LucideIcon;
+  readonly icon?: IconGlyph;
   readonly iconClassName?: string;
   readonly count?: ReactNode;
   readonly meta?: ReactNode;

@@ -1,4 +1,4 @@
-import { Pin } from 'lucide-react';
+import { Pin } from '@goodboy/ui/icons';
 import { IconButton, InteractiveRow, SELECTED_ROW_CLASSES, Tooltip } from '@goodboy/ui';
 
 import type { RunnableScript } from '../../buildSessionScripts';

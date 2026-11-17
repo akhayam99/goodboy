@@ -5,7 +5,7 @@ import { ClipboardAddon } from '@xterm/addon-clipboard';
 import { Unicode11Addon } from '@xterm/addon-unicode11';
 import { SearchAddon } from '@xterm/addon-search';
 import '@xterm/xterm/css/xterm.css';
-import { RotateCcw } from 'lucide-react';
+import { RotateCcw } from '@goodboy/ui/icons';
 import { getAppliedTheme, subscribeAppliedTheme } from '../../lib/theme';
 import { resolveTerminalTheme } from './terminal-theme';
 import { IconButton } from '@goodboy/ui';
@@ -109,7 +109,7 @@ export const GenericTerminalPanel = ({
       fontFamily: "'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace",
       fontSize: 12,
       lineHeight: 1.4,
-      theme: resolveTerminalTheme(getAppliedTheme()),
+      theme: resolveTerminalTheme({ theme: getAppliedTheme() }),
       disableStdin: readOnly,
       allowProposedApi: true,
     });
@@ -291,7 +291,7 @@ export const GenericTerminalPanel = ({
         if (!term) {
           return;
         }
-        term.options.theme = resolveTerminalTheme(getAppliedTheme());
+        term.options.theme = resolveTerminalTheme({ theme: getAppliedTheme() });
       }),
     [],
   );

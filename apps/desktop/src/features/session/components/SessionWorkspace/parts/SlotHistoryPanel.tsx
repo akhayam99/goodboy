@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { RotateCcw } from 'lucide-react';
+import { RotateCcw } from '@goodboy/ui/icons';
 import { EmptyState, ICON_SIZE, Markdown, Tooltip } from '@goodboy/ui';
 import type { ContextSlotHistoryEntry } from '@goodboy/types';
 import { AuthorshipChip } from './AuthorshipChip';

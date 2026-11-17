@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from 'react';
-import { Download, Search } from 'lucide-react';
+import { Download, Search } from '@goodboy/ui/icons';
 import {
   AnchoredPopover,
   Button,

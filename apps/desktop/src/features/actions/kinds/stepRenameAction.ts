@@ -1,4 +1,4 @@
-import { Pencil } from 'lucide-react';
+import { Pencil } from '@goodboy/ui/icons';
 import type { ActionDefinition } from '../types';
 import type { WorkflowRunFacts } from './workflowRun';
 import { agentObjectKey } from '../agentObjectKey';

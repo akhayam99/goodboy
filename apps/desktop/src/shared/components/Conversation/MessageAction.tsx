@@ -1,8 +1,8 @@
-import type { LucideIcon } from 'lucide-react';
+import type { IconGlyph } from '@goodboy/ui/icons';
 import { cn, FOCUS_RING, ICON_SIZE, OptionalTooltip } from '@goodboy/ui';
 
 type Props = {
-  readonly icon: LucideIcon;
+  readonly icon: IconGlyph;
   readonly label: string;
   readonly tooltip: string | null;
   readonly isDisabled?: boolean;

@@ -1,4 +1,4 @@
-import { Ban, CheckCheck, CircleHelp, Lock, Search } from 'lucide-react';
+import { Ban, CheckCheck, CircleHelp, Lock, Search } from '@goodboy/ui/icons';
 import { Chip, ICON_SIZE, type Tone } from '@goodboy/ui';
 import type { ResolverThreadVerdictKind } from './resolverThreadVerdicts';
 import { RESOLVER_OUTCOME_LABEL, resolverOutcome } from './resolverOutcome';

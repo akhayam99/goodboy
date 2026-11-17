@@ -1,4 +1,4 @@
-import { CircleAlert, ArrowUp, Check, GitMerge, X, type LucideIcon } from 'lucide-react';
+import { CircleAlert, ArrowUp, Check, GitMerge, X, type IconGlyph } from '@goodboy/ui/icons';
 import {
   Button,
   Chip,
@@ -42,7 +42,7 @@ const RECOVERY_LABEL = {
   sync: SYNC_COPY.action,
 } as const;
 
-const RECOVERY_ICON: Record<keyof typeof RECOVERY_LABEL, LucideIcon> = {
+const RECOVERY_ICON: Record<keyof typeof RECOVERY_LABEL, IconGlyph> = {
   open_diff: CONCEPT_ICONS.diff,
   view_work: CONCEPT_ICONS.agents,
   see_missing: CONCEPT_ICONS.review,

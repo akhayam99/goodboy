@@ -1,5 +1,5 @@
 import type { KeyboardEvent, ReactNode, RefObject } from 'react';
-import { Search } from 'lucide-react';
+import { Search } from '@goodboy/ui/icons';
 import { ICON_SIZE } from '@goodboy/ui';
 
 type Props = {

@@ -193,6 +193,12 @@ any zoom, follows the theme and ships no raster file.
   stage, `MockWindow` is the app window chrome, and `mocks.css` holds the shared
   look. Each scene (`SessionMock`, `BoardMock`, `InboxMock` and the rest) has its
   own `.tsx` and `.css`.
+- A mock takes its colours from the `--g-*` copy that
+  `website/scripts/sync-app-tokens.mjs` writes from `apps/desktop/src/styles.css`:
+  neutrals, every tone with its steps (`-wash` to `-solid-hover` and `on-T`,
+  resolved to values), identities, agents, providers and syntax. A filled mark
+  with a label is `T-solid` under `on-T`, as in the app. The page's own
+  `--accent` never comes from that copy.
 - A mock that plays runs once, when it scrolls into view, through
   `usePlayOnce`. It rests on its final state under `prefers-reduced-motion`.
 - The hero is `HeroShot`, the one `MockStage` with `isHero`, which sets

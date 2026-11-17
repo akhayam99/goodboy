@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { Plus } from 'lucide-react';
+import { Plus } from '@goodboy/ui/icons';
 import { IconButton, ScrollFade, cn } from '@goodboy/ui';
 
 type Props = {

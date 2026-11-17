@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from 'react';
-import { PanelLeftClose, PanelLeftOpen } from 'lucide-react';
+import { PanelLeftClose, PanelLeftOpen } from '../icons';
 import { cn } from '../cn';
 import { INNER_COLUMN_SHORTCUT } from '../innerColumnStore';
 import { useInnerColumn } from '../useInnerColumn';

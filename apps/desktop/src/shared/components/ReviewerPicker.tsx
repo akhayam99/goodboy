@@ -10,7 +10,7 @@ import {
   Skeleton,
   useDropdown,
 } from '@goodboy/ui';
-import { Plus, Search } from 'lucide-react';
+import { Plus, Search } from '@goodboy/ui/icons';
 import type { PullRequestPerson } from '@goodboy/types';
 import { CONCEPT_ICONS } from './conceptIcons';
 

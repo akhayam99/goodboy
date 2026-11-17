@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Button, ICON_SIZE, Markdown, Notice } from '@goodboy/ui';
-import { RotateCw } from 'lucide-react';
+import { RotateCw } from '@goodboy/ui/icons';
 
 import type { ScribeProposal } from '../../utils/scribeProposal';
 import type { ScribeProposalState } from '../../hooks/useScribeProposal';

@@ -1,4 +1,4 @@
-import { TriangleAlert } from 'lucide-react';
+import { TriangleAlert } from '@goodboy/ui/icons';
 import { Button, EmptyLine, ICON_SIZE, SkeletonRow } from '@goodboy/ui';
 import type { InboxProvider } from '../../../../inbox/types';
 import { TASK_PICKER_COPY } from './taskPickerCopy';

@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { Plus, X } from 'lucide-react';
+import { Plus, X } from '../../icons';
 import { cn } from '../../cn';
 import { FOCUS_RING } from '../../focusRing';
 import { tintClasses } from '../../tint';

@@ -1,5 +1,5 @@
 import { useRef } from 'react';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight } from '@goodboy/ui/icons';
 import { IconButton } from '@goodboy/ui';
 import type { DemoChapter } from './demoChapters';
 import type { Steps } from './hints/stepsOf';

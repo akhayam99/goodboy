@@ -1,5 +1,5 @@
 import type { PointerEvent } from 'react';
-import { Plus } from 'lucide-react';
+import { Plus } from '@goodboy/ui/icons';
 import { cn, ICON_SIZE, FOCUS_RING } from '@goodboy/ui';
 import type { DiffCommentSide } from '@goodboy/types';
 
@@ -72,9 +72,9 @@ export const LineGutter = ({
         {showPlus ? (
           <span
             aria-hidden
-            className="absolute left-1 top-0.5 hidden size-4 items-center justify-center rounded-sm bg-primary text-on-tone group-hover/line:flex"
+            className="absolute left-1 top-0.5 hidden size-4 items-center justify-center rounded-sm bg-primary-solid text-on-primary group-hover/line:flex"
           >
-            <Plus size={ICON_SIZE.mark} strokeWidth={2.5} />
+            <Plus size={ICON_SIZE.mark} weight="bold" />
           </span>
         ) : null}
         {lineNumber}

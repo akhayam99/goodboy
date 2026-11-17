@@ -1,4 +1,4 @@
-import { Plus } from 'lucide-react';
+import { Plus } from '@goodboy/ui/icons';
 import { Button, cn, EmptyState, Eyebrow, ICON_SIZE, PANE_RHYTHM, ScrollFade } from '@goodboy/ui';
 import { CONCEPT_ICONS } from '../../../../../shared/components/conceptIcons';
 import { dispatchWindowEvent } from '../../../../../shared/lib/dispatchWindowEvent';

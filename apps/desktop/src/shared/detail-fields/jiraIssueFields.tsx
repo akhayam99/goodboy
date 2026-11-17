@@ -1,4 +1,4 @@
-import { Flag, Shapes, Tag, UserRound } from 'lucide-react';
+import { Flag, Shapes, Tag, UserRound } from '@goodboy/ui/icons';
 import type { JiraIssue, JiraStatusCategoryKey } from '../../features/integrations/jira/client';
 import type { InboxState } from '../../features/inbox/types';
 import type { FactRegistry } from './factTypes';

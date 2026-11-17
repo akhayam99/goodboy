@@ -13,7 +13,6 @@ import { SESSION_TOOL_RAIL_WIDTH } from './sessionToolRailWidth';
 import { RAIL_TOOLS, type SessionTool } from './sessionTools';
 import { SessionToolButton } from './SessionToolButton';
 import { railFocusMemo } from './railFocusMemo';
-import { ToolGroupCaption } from './ToolGroupCaption';
 import { toolbarIndexAfter } from './toolbarIndexAfter';
 import { toolFactOf } from './toolFactOf';
 import type { ToolSignal } from './ToolSignal';
@@ -121,7 +120,6 @@ export const ToolRailFrame = ({ terminalSignal }: Props) => {
         PANE_RHYTHM.headerInset,
       )}
     >
-      <ToolGroupCaption />
       {tools.map((tool, index) => (
         <SessionToolButton
           key={tool.pane}

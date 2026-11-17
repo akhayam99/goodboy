@@ -1,4 +1,4 @@
-import { Square } from 'lucide-react';
+import { Square } from '@goodboy/ui/icons';
 import { ICON_SIZE, Tooltip, type TooltipSide } from '@goodboy/ui';
 
 type Props = {

@@ -1,4 +1,4 @@
-import { PenLine } from 'lucide-react';
+import { PenLine } from '@goodboy/ui/icons';
 import { Chip, ICON_SIZE } from '@goodboy/ui';
 
 import { HOST_GLYPH, kindLabelOf } from './threadKind';

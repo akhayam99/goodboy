@@ -1,6 +1,6 @@
 import { CHECK_STATE } from '../../../../store/slices/notifications/errorRecovery';
 import { useState } from 'react';
-import { RotateCcw, Trash2 } from 'lucide-react';
+import { RotateCcw, Trash2 } from '@goodboy/ui/icons';
 import { Band, Button, cn, ConfirmPopover, ICON_SIZE, tintClasses } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
 

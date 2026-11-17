@@ -1,4 +1,4 @@
-import { ChevronRight } from 'lucide-react';
+import { ChevronRight } from '@goodboy/ui/icons';
 import { ICON_SIZE, ROW_INTERACTIVE, cn } from '@goodboy/ui';
 import type { MonitorProcess, PortRow } from '@goodboy/core/monitoring';
 import { groupPortRows } from '../../groupPortRows';

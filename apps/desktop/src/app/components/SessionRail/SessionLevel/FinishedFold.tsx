@@ -1,5 +1,5 @@
 import { useId, type ReactNode } from 'react';
-import { ChevronRight } from 'lucide-react';
+import { ChevronRight } from '@goodboy/ui/icons';
 import { cn, ICON_SIZE, Reveal, SelectableRow } from '@goodboy/ui';
 
 import type { RailTreeNode, RailTreeOpen } from './useRailTreeOpen';

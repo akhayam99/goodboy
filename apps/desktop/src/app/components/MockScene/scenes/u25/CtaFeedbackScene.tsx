@@ -1,4 +1,4 @@
-import { ArrowUp } from 'lucide-react';
+import { ArrowUp } from '@goodboy/ui/icons';
 import { Button, ICON_SIZE } from '@goodboy/ui';
 
 import { actionButtonStateOf } from '../../../../../features/actions/actionButtonStateOf';

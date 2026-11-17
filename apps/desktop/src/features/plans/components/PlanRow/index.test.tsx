@@ -2,6 +2,8 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { Play } from '@goodboy/ui/icons';
+import { findGlyph } from '@goodboy/ui/icons/testing/findGlyph';
 import type { PlanArtifact, PlanWithCount, ProviderRunId, TurnState } from '@goodboy/types';
 import { anAgent } from '@goodboy/types/testing';
 import { useAppStore } from '../../../../store';
@@ -134,7 +136,7 @@ describe('PlanRow primary for a plan that belongs to a run', () => {
 
     const primary = screen.getByTestId('plan-primary');
     expect(primary.textContent).toBe('Approve and start Implement');
-    expect(primary.querySelector('.lucide-play')).not.toBeNull();
+    expect(findGlyph({ root: primary, icon: Play })).not.toBeNull();
     expect(primary.getAttribute('data-filled')).toBe('true');
     fireEvent.click(primary);
 

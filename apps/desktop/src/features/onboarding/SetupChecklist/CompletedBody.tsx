@@ -1,4 +1,4 @@
-import { X } from 'lucide-react';
+import { X } from '@goodboy/ui/icons';
 import { finish } from '../onboardingSettings';
 import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
 import { ICON_SIZE, IconButton } from '@goodboy/ui';

@@ -1,5 +1,5 @@
 import { useEffect, useState, type ClipboardEvent, type MouseEvent } from 'react';
-import { Pencil } from 'lucide-react';
+import { Pencil } from '@goodboy/ui/icons';
 import {
   Button,
   EmptyLine,

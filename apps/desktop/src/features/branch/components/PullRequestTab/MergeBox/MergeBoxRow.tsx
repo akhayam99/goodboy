@@ -11,8 +11,8 @@ import {
   MessageSquareWarning,
   TriangleAlert,
   UserPlus,
-  type LucideIcon,
-} from 'lucide-react';
+  type IconGlyph,
+} from '@goodboy/ui/icons';
 import { ICON_SIZE, SelectableRow, cn, tintClasses } from '@goodboy/ui';
 import { NAMES } from '../../../../../shared/utils/names';
 import type { MergeBoxGlyph, MergeBoxRow as Row, MergeBoxTarget } from './mergeBox';
@@ -22,7 +22,7 @@ type Props = {
   readonly onOpen: (target: MergeBoxTarget) => void;
 };
 
-const GLYPH: Readonly<Record<MergeBoxGlyph, LucideIcon>> = {
+const GLYPH: Readonly<Record<MergeBoxGlyph, IconGlyph>> = {
   failing: CircleX,
   running: CircleDashed,
   unknown: CircleQuestionMark,

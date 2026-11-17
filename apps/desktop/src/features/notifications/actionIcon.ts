@@ -1,11 +1,11 @@
-import { ChevronRight, RotateCcw, type LucideIcon } from 'lucide-react';
+import { ChevronRight, RotateCcw, type IconGlyph } from '@goodboy/ui/icons';
 import type { NotificationAction } from '@goodboy/db';
 
 type ActionIconParams = {
   readonly kind: NotificationAction['kind'];
 };
 
-export const notificationActionIcon = ({ kind }: ActionIconParams): LucideIcon => {
+export const notificationActionIcon = ({ kind }: ActionIconParams): IconGlyph => {
   switch (kind) {
     case 'retry-summarizer':
     case 'retry-step-summary':

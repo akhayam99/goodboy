@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Check, MessageSquare, SkipForward, type LucideIcon } from 'lucide-react';
+import { Check, MessageSquare, SkipForward, type IconGlyph } from '@goodboy/ui/icons';
 import { formatError, type Tone } from '@goodboy/ui';
 import type {
   Agent,
@@ -28,7 +28,7 @@ import type { BoardNavigation } from '../../useBoardNavigation';
 
 export type DynamicAction = {
   readonly key: string;
-  readonly icon: LucideIcon;
+  readonly icon: IconGlyph;
   readonly tone: Extract<Tone, 'primary' | 'warning' | 'danger'>;
   readonly label: string;
   readonly onClick: () => void;

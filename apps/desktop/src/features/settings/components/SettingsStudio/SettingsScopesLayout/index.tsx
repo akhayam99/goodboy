@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useId, useRef, useState, type ReactNode } from 'react';
-import { Search } from 'lucide-react';
+import { Search } from '@goodboy/ui/icons';
 import {
   IconButton,
   ScrollFade,

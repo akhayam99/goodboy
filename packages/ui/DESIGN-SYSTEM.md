@@ -51,8 +51,13 @@ test.
 `faint-foreground` clears 4.5:1 on every surface step and on a `fill` chip sunk
 into `background`, `subtle` or `muted`, in both themes, and the syntax tokens
 clear 4.5:1 on the plain diff background and on an added or removed line, word
-fill included. `text-contrast.test.ts` reads the tokens from `styles.css` and
-fails when one drifts under.
+fill included, while the line number clears it on the diff gutter. Each syntax
+token keeps one hue in both themes. `text-contrast.test.ts` reads the tokens
+from `styles.css` and fails when one drifts under. The terminal reads every
+ANSI color from a scale step (step 11 for a hue, grays for black and white);
+each clears 4.5:1 on the terminal background, except dark black and light
+bright white (3:1), pinned by `terminal-ansi-contrast.test.ts`. Its search
+highlights use the amber steps and its selection the `selection` token.
 
 ## Surface ladder
 
@@ -69,59 +74,68 @@ between them instead of mixing one surface through opacity.
 | 5    | floating | `bg-floating`   | popovers, menus, centred dialogs, toasts, the palette |
 | 6    | tooltip  | `bg-floating`   | the label tooltip, one line on the floating surface   |
 
-Dark mode brightens one step at a time, 1.06 to 1.09:1 between neighbours.
-Light mode is ink on paper, read on two axes. On the elevation axis (what sits
-in front) chrome < content < raised = floating: nothing is brighter than white,
-so above raised the lift is `shadow-lg` plus `border`. On the nesting axis
-(what sits inside) content > panel > inset: the deeper, the darker. The sheet
-sits near white (`0.984`) and the chrome a clear step under it (1.09:1), so the
-left column reads as a frame and not as a grey slab; panel and inset step down
-from the sheet at 1.07:1 and 1.06:1, and the neutrals carry almost no hue, so
-nothing tints blue. Light `shadow-sm` is a soft contact shadow, enough to seat a
-raised card or a picked segment on the page.
+The neutrals are one cool gray scale (hue 264, chroma under 0.014), twelve
+steps per theme in `--gray-1` to `--gray-12`, and the surface and text tokens
+take their values from it. Dark mode brightens one step at a time, at least
+1.04:1 between neighbours. Light mode is ink on paper, read on two axes. On the
+elevation axis (what sits in front) chrome < content < raised = floating:
+nothing is brighter than white, so above raised the lift is `shadow-lg`, whose
+first layer is a 1px ring. On the nesting axis (what sits inside) content >
+panel > inset: the deeper, the darker. The sheet sits near white (`0.984`) and
+the chrome a step under it, so the left column reads as a frame and not as a
+grey slab; panel and inset step down from the sheet at 1.04:1 or more
+(`token-contrast-floor.test.ts`). Light `shadow-sm` is a soft contact shadow,
+enough to seat a raised card or a picked segment on the page.
 
-The window backdrop is step 0 plus one glow: `bg-backdrop` paints `chrome`
-under `--app-backdrop`, a radial of `primary` from the top-left corner (the
-website accent hue). `--app-backdrop-strength` is its alpha in percent, 3 by
-default, a faint glow over chrome (0 turns it off); light mode scales it by
-`--app-backdrop-scale: 2.5` (3% sidebar becomes 7.5%, the 6% cover 15%) so the glow
-reads on the light chrome as it does on the dark one. Only `AppShell` (and the c02 levels scene that stands in for it) paints it,
-under the top bar and
-the left column; the sheet, the session rail and every drawer stay opaque and
-flat. Mock scenes preview a strength with `?backdrop=<n>`. The boot splash and
-the Welcome cover that follows it paint `bg-backdrop-cover` instead: the same
-radial at `--app-backdrop-cover-strength` (6), so the handoff has no seam.
+Every shadow step (`shadow-xs` to `shadow-xl`) reads a per-theme
+`--elevation-*` variable. Tailwind writes a theme shadow into its utility, so a
+light value declared under the same name would never reach the class; the
+indirection is what lets light draw its own shadows, cool ink at 6 to 18%
+instead of the dark black.
+
+The window backdrop is step 0 and flat: `bg-backdrop` paints `chrome` under the
+top bar and the left column, and only `AppShell` (and the c02 levels scene that
+stands in for it) paints it; the sheet, the session rail and every drawer stay
+opaque and flat. The boot splash and the Welcome cover that follows it paint
+`bg-backdrop-cover`, the same chrome, so the handoff has no seam. No glow sits
+behind the window.
 
 `drawer` sits beside the page surface, not on the ladder: a right drawer is its
 own container next to the sheet and is painted one step quieter than
 `background`, between `chrome` and `background` in both themes (dark
-`oklch(0.187 0.006 255)`, light `oklch(0.968 0.002 250)`: the same hue and no
+`oklch(0.174 0.004 264)`, light `oklch(0.972 0.002 264)`: the same hue and no
 more chroma than `background`, so it recedes and never tints). It carries every
 text token at 4.5:1 and every border at the floors of the ladder, held by
 `token-contrast-floor.test.ts`. A drawer container never fakes the difference
 with a border.
 
 Two tokens are relations, not steps. `fill` is one step inside whatever parent
-it sits on (white 6% in dark, black 5% in light), so a neutral chip, a
-secondary button or a skeleton moves the right way on any surface. `idle` is
+it sits on (white 6% in dark, ink 6% in light), so a neutral chip or a
+skeleton moves the right way on any surface. The secondary button paints
+`button-secondary`: `fill` in dark, white with `shadow-xs` (its
+`shadow-button-secondary`) in light, so it stands on the page instead of
+sinking into it. `idle` is
 the single grey for "not yet" and "off": pending and queued dots, an off switch
 track, inactive bars. States that share it differ by shape (filled, ring,
 dash), never by another opacity.
 
-Three borders, each with one job:
+Four borders, each with one job:
 
-| token           | job                                                              | floor                           |
-| --------------- | ---------------------------------------------------------------- | ------------------------------- |
-| `border-soft`   | decorative hairline: dividers, image frames, resting raised card | 1.2:1, 1.3:1 on raised/floating |
-| `border`        | controls, the floating edge, card hover                          | 3:1 on every step               |
-| `border-strong` | emphasis: control hover                                          | 4.5:1 on every step             |
+| token            | job                                                              | floor                           |
+| ---------------- | ---------------------------------------------------------------- | ------------------------------- |
+| `border-soft`    | decorative hairline: dividers, image frames, resting raised card | 1.2:1, 1.3:1 on raised/floating |
+| `border`         | the quiet box edge: card hover, secondary button, dark floating  | 1.4:1, above `border-soft`      |
+| `border-control` | fields, checkboxes, search and listbox fields, listbox ticks     | 3:1 on every step               |
+| `border-strong`  | emphasis: control hover                                          | 4.5:1 on every step             |
 
-`border` is an alpha overlay (foreground at 38% in dark, 45% in light), never a
-solid value, so it holds 3:1 on every step from `chrome` to `floating` and sits
-near 3.3:1 on the base sheet instead of 4.5:1.
+The first three are alpha overlays of one ink (white in dark, `gray-12` in
+light), never a solid value, so each keeps its floor on every step from
+`chrome` to `floating`: `border-soft` at 9% and 13.5%, `border` at 15% and 20%,
+`border-control` at 40% and 52%. A box reads by its quiet edge; only a control
+the user acts on carries the 3:1 edge (`token-contrast-floor.test.ts`).
 
 Three translucent tokens paint over whatever sits below them: `frame-edge`
-(white 8% in dark, black 8.5% in light) draws the content sheet and the right
+(white 8% in dark, ink 10.5% in light) draws the content sheet and the right
 drawer container at 1.2:1 or more on chrome and background, and
 `scrollbar-thumb` and `scrollbar-thumb-active` clear 1.8:1 and 3:1 on
 background, panel and floating.
@@ -150,17 +164,18 @@ is `pt-3 pb-5` for the pinned back row, whose 24px line holds 4px above its text
 write their own blur, alpha or shadow.
 
 A clickable card at rest carries two signals together (a fill one step above
-its parent plus the hairline). Its states clear 3:1: hover `border`, selection
-`bg-selected`, focus ring. `token-contrast-floor.test.ts` holds the ladder
+its parent plus the hairline). Its states: hover `border`, selection
+`bg-selected`, focus ring at 3:1. `token-contrast-floor.test.ts` holds the ladder
 order and every floor on all six steps, and `no-token-bypass.test.ts` fails on
 any colour class with no `--color-*` token behind it.
 
 `bg-hover` and `bg-selected` are interaction overlays painted as a
 background-image layer, so they stack on whatever fill the element rests on
 instead of replacing it, and `cn` keeps them beside a surface class. Hover is
-8.5% white in dark and 7.5% black in light, about 19 of 255 levels on a row and
-on a tinted waiting or unread row, enough to notice while moving down a list;
-selected is 13% and 12%, so a selected row always reads above a hovered one.
+8.5% white in dark and 8.8% ink in light, about 19 of 255 levels on a row and
+on a waiting or unread row (`warning-wash`, `primary-wash`), enough to notice
+while moving down a list; selected is 13% and 12.5%, so a selected row always
+reads above a hovered one.
 `row-hover-wash.test.ts` holds both floors. `scrim` is reserved for modal backdrops and the backdrop of a drawer over the page.
 
 A selected row has one treatment everywhere: `bg-selected`, foreground text and
@@ -168,8 +183,8 @@ medium weight, driven by `data-selected` (`selectedRow.ts`, used by
 `SelectableRow`). `SegmentedTabs` is the one exception, because a segment that
 only darkens read as disabled in light mode: a `fill` track, and the active
 segment raised on it (`bg-segment-active`, white in light and white 10% in dark,
-with `shadow-sm`) and outlined in `border`, whose edge clears 3:1 in both
-themes. A
+with `shadow-sm`) and outlined in the quiet `border`; the shadow and the white
+step carry it, not the edge. A
 selected nav entry also lights its icon in its own kind color, never the
 label: `selectedIconClass` (`SelectableRow selectedIconTone`, the column
 doors, `RailButton` and the pressed session tool) over one function,
@@ -316,7 +331,7 @@ state is a `StateDot` or a glyph in a 16px column.
 
 `StateDot` is the one state mark of a list or a sidebar slot: a 6px
 `StatusDot` named by its state word (the tooltip and the accessible name),
-`running` (info), `needsYou` (warning), `failed` (danger), `unread` (the quiet `unread` tone: a reduced-chroma cyan, 6.3:1 on dark and 3.8:1 on light, never used on a button),
+`running` (info), `needsYou` (warning), `failed` (danger), `unread` (the quiet `unread` tone: a reduced-chroma blue, 6.9:1 on the dark page and 4.5:1 on the light one, never used on a button),
 `done` (success), and `idle` and `stopped`, a neutral ring with a transparent
 fill on every background. A running dot pulses (under `motion-safe`) only when
 the caller passes `isLive`, on the item that runs (a list row, a tail glyph);
@@ -331,7 +346,8 @@ A session row in the left column carries one mark, a `StatusMark` from `sessionM
 | Surface                            | Mark                                   | Drawing                                                                                                                                                                                                                           |
 | ---------------------------------- | -------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Session tabs, sidebar doors, bell  | inline count                           | the sidebar status mark's count drawing: one `text-chip` tabular number beside the word or icon, warning when it needs you, info while it runs, the quiet unread tone on the bell, faint otherwise; no dot beside it              |
-| Tools rail (Terminal, Browser)     | corner count, signal dot, waiting ring | `TOOL_CORNER_SLOT`: a 14px box on the icon button's corner, outside the 16px glyph, so it never covers the icon; the count is a `bg-hover` pill                                                                                   |
+| Tools rail (Terminal, Browser)     | corner count, signal dot, waiting ring | `CountBadge` with `placement="corner"` (see Count badge) on the 16px glyph's top end corner; the signal dot shares that corner and the waiting ring takes the top start one (`TOOL_CORNER_SLOT`)                                  |
+| Workspace launcher row             | count badge                            | `CountBadge` in its tone: warning or danger, because the number is sessions that need you                                                                                                                                         |
 | Top bar Now chip                   | state dot                              | warning dot for Needs you, neutral ring for Idle, info dot for running                                                                                                                                                            |
 | Agents rail                        | node, number, meter                    | `WorkNode` in the rail lane; the number in a fixed 24px right aligned slot and the spend or clock in a fixed meter slot (`LEAD_TREE_METER`, reserved on the run row too), so roles, words and costs share one column at any depth |
 | Files rail, All files, diff header | status letter                          | `FileStatusMark`: one letter in one 12px slot, A success, D danger, M and R neutral                                                                                                                                               |
@@ -340,6 +356,24 @@ A session row in the left column carries one mark, a `StatusMark` from `sessionM
 
 Scenes `c01-grid-list`, `c01-grid-groups`, `c01-grid-dots` and `c01-grid-type`
 show the grid, its groups, every dot and the type specimen.
+
+### Count badge
+
+`CountBadge` is the one count pill: a 14px tall `text-chip` tabular number on
+a full round, at least as wide as it is tall. It draws nothing at 0, and past
+nine it reads `9+` (`countTextOf`, the one cap every count, door and bell
+uses). It is neutral by default, `bg-selected` under muted text, so it steps
+one level on any surface, the selected tile included; `warning` and `danger`
+paint the tone's solid and are for a number that needs you. It names itself
+`n open` (`label` overrides it), and a control whose own name already says the
+number passes `isAnnounced={false}`. `placement="corner"` hangs it off the top
+end corner of the box it sits in (`COUNT_BADGE_CORNER`), a box the size of the
+glyph and never of the button, so the pill overlaps the glyph's corner by a
+few pixels and stays clear of the label under it, the way macOS dock badges
+sit. A count beside a word stays the inline number above, never a pill, the
+way Linear sidebar counts read. The `session-tools-counts` scene shows it, and
+`validateScenesToolBadge.mjs` fails a badge that covers a label or leaves the
+rail.
 
 ### Tile as filter
 
@@ -671,7 +705,7 @@ together, and there is no arbitrary shadow.
 | 1 sheet    | `background`                    | none        | `frame-edge`                  | `frame` where chrome wraps | content, studio detail           |
 | 2 band     | `fill` (band), `subtle` (panel) | none        | none                          | `lg`                       | groups, panels on the sheet      |
 | 3 card     | `elevated`                      | `shadow-sm` | `border-soft`, hover `border` | `lg`                       | board cards                      |
-| 4 floating | `floating`                      | `shadow-lg` | `border`                      | `lg`                       | popovers, menus, toasts, dialogs |
+| 4 floating | `floating`                      | `shadow-lg` | `floating-edge`               | `lg`                       | popovers, menus, toasts, dialogs |
 | 5 tooltip  | `floating`                      | `shadow-lg` | `border-soft`                 | `md`                       | label tooltips                   |
 
 The label tooltip is `FLOATING_SURFACE` with the `md` radius and a soft border: foreground text in `text-meta` medium, `px-2 py-1`, at most 280px wide, fading in over 120ms when motion is allowed. Its shortcut is a plain `Kbd` in the faint color. The shared `Tooltip` gives its node an `id` and sets `aria-describedby` on the trigger while it is open, unless its text equals the trigger's `aria-label`, so a screen reader never hears a name twice. `Tooltip` has no variant; a mark with two facts or more uses the fact card below. It opens on the side it is given and flips to the other side when it would cross the window edge by the gap, so it never sits under the edge or over its own target; along the edge it shifts instead. A trigger that opens a popover passes `isSuppressed` with the popover state, so its label never lies over the popover it opened.
@@ -696,8 +730,10 @@ A right drawer is its own container, never a card inside the sheet: it holds the
 only to a dragged card.
 
 **One floating surface.** Level 4 is the constant `FLOATING_SURFACE`
-(`rounded-lg border border-border bg-floating shadow-lg`, from
-`packages/ui/src/floatingSurface.ts`). `Popover`, `ContextMenu`,
+(`rounded-lg border border-floating-edge bg-floating shadow-lg`, from
+`packages/ui/src/floatingSurface.ts`). `floating-edge` is `border` in dark and
+transparent in light, where the 1px ring inside `shadow-lg` draws the edge;
+`Dialog` takes the same edge. `Popover`, `ContextMenu`,
 `MenuChoicePanel`, `MenuSubmenuPanel` (a row with `children` opens its rows beside it: ArrowRight opens, ArrowLeft closes and returns focus to the row, Escape closes the whole menu), the crumb menu, the history arrow menu, the session hover
 card, the session switcher, the update arrival card and the delete confirm
 take it as it is; a site adds layout and padding only, never a border, a fill or
@@ -764,19 +800,20 @@ ternary. `icon-size-uses-a-token.test.ts` scans the app and `packages/ui`.
 | `ICON_SIZE.notice`  | 16  | the tone icon of a `Notice`, the `DogMascot` default      |
 | `ICON_SIZE.hero`    | 18  | empty states, studio headers, choice tiles                |
 
-Stroke is one rule, `ICON_STROKE` in the same file: 2 at `mark` and `row`, 1.75
-at `control` and `notice`, 1.5 at `hero`, and 2.5 on a check mark, so every
-icon draws a line about 1px wide. A call site passes the token, never a number;
-`iconStrokeOf({ size })` picks it from the size, and `IconButton` and the
-folded rail's `RailButton` use it.
+Weight is one rule, `ICON_WEIGHT` in the same file: Phosphor bold at `mark`
+and `row` and on a check mark, regular at `control`, `notice` and `hero`, so
+every icon draws a line about 1px wide. Bold is drawn as the regular outline
+widened by a round stroke ([iconography.md](../../docs/iconography.md#sizes)). A call site passes the token, never a
+literal; `iconWeightOf({ size })` picks it from the size, and `IconButton` and
+the folded rail's `RailButton` use it.
 
 One size per place, so a column never mixes sizes:
 
 | Place                                        | Size      | Notes                                           |
 | -------------------------------------------- | --------- | ----------------------------------------------- |
-| Left column doors, New session, door actions | `row`     | lucide concept glyph, `navRail.icon` slot       |
+| Left column doors, New session, door actions | `row`     | concept glyph, `navRail.icon` slot              |
 | Left column trailing marks                   | `row`     | `StatusMark` glyphs in the 16px box             |
-| Folded rail (doors, Settings)                | `control` | `RailButton`, stroke 1.75                       |
+| Folded rail (doors, Settings)                | `control` | `RailButton`, regular weight                    |
 | Tools rail (Terminal, Browser)               | `notice`  | icon over its caption, both centred on the rail |
 | Page and session header actions              | `control` | `IconButton` `sm` and `md`                      |
 | List and table rows                          | `row`     | leading and trailing glyphs                     |
@@ -815,8 +852,8 @@ from the reader. `STATUS_MARK_DRAWING` in `statusMarkSpec.ts` is the table.
 
 The circle carries meaning only where something moves: a ring is progress. A
 mark that asks you is one bare glyph in warning; a settled outcome is a single
-circled lucide glyph, the circle part of the glyph, never a container. Glyphs
-are `ICON_SIZE.row` with the row stroke.
+circled glyph, the circle part of the glyph, never a container. Glyphs
+are `ICON_SIZE.row` with the row weight.
 
 A session row picks one mark (`sessionMarkOf`): what asks you or failed, then
 running, then the unread dot, then the settled glyph, then empty. A door picks
@@ -931,22 +968,54 @@ the outline look, `ghost` and `quiet` the quiet look.
   Stage colors go through `STAGE_TONE`. No per-file tone maps.
 - The stage tones: attention `warning`, running `info`, in review `success`,
   done `merged`, building neutral.
-- Each tone keeps one job: `primary` is the one accent for the main action,
-  `warning` (amber) only says something needs you, `danger` (red) only marks
-  stop and destructive, and `info` marks a neutral fact such as a setting that
-  differs from its default (**Changed**). Light `warning` sits at amber gold (hue 70) so it never reads as a second red beside `danger` (hue 22), and
-  `warning-mark` clears 3:1 as a dot on every surface.
+- Each tone keeps one job: `primary` (blue) is the one accent for the main
+  action, a link, a selection and focus, `warning` (amber) only says something
+  needs you, `danger` (red) only marks stop and destructive, and `info` (cyan)
+  marks a neutral fact or work in progress, such as a setting that differs from
+  its default (**Changed**). Cyan sits 44 degrees from the action blue, so the
+  two never read as one. `merged` (purple) is merged and done, `draft` is a
+  quiet gray. `warning-mark` clears 3:1 as a dot on every surface.
+- Each tone token (`danger`, `primary` ...) is step 11 of its scale: text, an
+  icon, a dot, a bar (`draft`, a step quieter, is gray step 10). A fill that carries a label is `T-solid` (step 9) with
+  `on-T` on it, never the bare tone. `on-T` is white in both themes, except on
+  amber, which takes a dark ink. The focus ring has its own `focus-ring` value,
+  a stronger blue than `primary` text, and an open menu's trigger draws the same
+  ring. Find highlights (`find-match`, `find-current`) are opaque amber steps.
 - Surfaces follow the six-role ladder above. To lift something, move it to the
   role it plays; to sink something inside a parent, use `fill`. Never invent a
   shade.
-- Tone variants have fixed names, all owned by `tintClasses`: `solid` (full
-  fill plus `on-tone`, only the primary CTA and confirmed destructive buttons),
-  `bg` (10% wash, never a signal on its own), `text` (tone text, readable on its
-  own wash), `border` (40%, decoration, never the only signal), `rail` (full
-  tone left border, for a card or strip whose edge carries meaning; neutral is
-  `border-l-border`) and `bgSoft` (5%, only for washing a whole card). The
+- Tone variants have fixed names, all owned by `tintClasses`: `solid`
+  (`T-solid` plus `on-T`, only the primary CTA and confirmed destructive
+  buttons), `bg` (`T-subtle`, never a signal on its own), `text` (tone text,
+  readable on its own wash), `border` (`T-edge`, decoration, never the only
+  signal), `rail` (full tone left border, for a card or strip whose edge carries
+  meaning; neutral is `border-l-border`) and `bgSoft` (`T-wash`, only for
+  washing a whole card). The
   neutral `bg`, `bgSoft` and `solid` sit on `fill`, so a neutral chip sinks one
   step into any parent.
+- Seven raw scales of twelve steps each, per theme, sit outside the `--color-`
+  namespace so Tailwind makes no class from them: `--gray-1` to `--gray-12`,
+  and the same for `blue`, `green`, `amber`, `red`, `purple` and `cyan`. Steps 1
+  and 2 are backgrounds, 3 to 5 component fills, 6 to 8 borders, 9 and 10
+  solids, 11 and 12 text. Only `styles.css` and the terminal read them; code
+  speaks in roles. A hex or an `oklch(`, `rgb(` or `hsl(` literal in product
+  code is counted by the `raw-color` rule, and that count only falls. Text steps on background steps and the ink on each solid
+  clear 4.5:1 and an APCA floor (Lc 60 for content, 45 for labels), pinned by
+  `palette-scales-contrast.test.ts`.
+- Each tone also has step tokens: `T-wash`, `T-subtle`, `T-edge`, `T-solid`,
+  `T-solid-hover` and `on-T`, plus `border-control`, `selection`, `brand-accent`
+  and the six `diff-` line tokens. Each tone step is opaque and equals its
+  scale step (`danger-subtle` is red step 3), so a chip reads the same on every
+  surface. A `::selection` rule paints selected text with `selection`.
+  `tintClasses`, `Button` and the solid marks read the steps: rings and soft
+  borders on `T-edge`, strong and hover rings on `T-solid`, and `unread` fills on
+  the primary steps. `tone-opacity.test.ts` counts what is left on opacity. That
+  count only falls. The text fields, checkboxes and listbox fields use
+  `border-control`. The diff paints added and removed lines, line numbers and
+  words with the opaque `diff-` steps (line, gutter, word, each a step darker in
+  light and lighter in dark), and the selected line with `primary-subtle` and a
+  `primary-solid` rail. The brand chip sets `primary` to `brand-accent` inside
+  itself, so a later primary change leaves the logo alone.
 
 ## Icon and tone vocabulary
 
@@ -955,7 +1024,7 @@ the other maps it to its tone. The second map's type comes from the first, so a
 concept cannot get an icon without a tone, or a tone without an icon.
 
 - **One icon per concept.** If a concept already has an entry, never import a
-  lucide symbol for it locally. Add the concept to the map instead.
+  glyph for it locally. Add the concept to the map instead.
 - **One tone per concept, passed alongside the icon** as a pair where it is
   used.
 - **Tone is meaning, not decoration.** `questions` is `warning` because a
@@ -984,15 +1053,15 @@ concept cannot get an icon without a tone, or a tone without an icon.
 Eight tones (`success`, `info`, `warning`, `danger`, `primary`, `merged`,
 `draft`, `neutral`). Each one resolves through the single accessor
 `tintClasses(tone)`. Components take a `Tone` and call it. They never
-hand-write `bg-warning/10`. Every solid semantic fill uses the shared `on-tone`
-text colour.
+hand-write `bg-warning/10`. Every solid semantic fill takes its own tone's ink,
+`on-T` on `T-solid` (`on-danger` on `danger-solid`).
 
 An icon inside a solid fill, a `primary` or `danger` button or a `ghost-danger`
 button takes the label colour (`[&_svg]:text-current` in `tintClasses(tone).solid`
 and `BUTTON_VARIANT_CLASSES`), so a toned icon passed in never draws a dim tint
 on the fill. `ButtonIconColor.test.tsx` pins it per variant and per tone; the
-`on-tone` contrast on every tone in both themes is pinned by
-`token-contrast-floor.test.ts`.
+`on-T` contrast on `T-solid` and on `T-solid-hover`, for every tone in both
+themes, is pinned by `token-contrast-floor.test.ts`.
 
 ### Avatar
 
@@ -1019,8 +1088,10 @@ tell apart. So a run and a workspace get a colour that says "this one" and
 nothing more.
 
 One set serves every object that needs a name: `--color-identity-1` to
-`--color-identity-8` in `apps/desktop/src/styles.css`, chroma 0.09 on eight
-hues, with no red and no amber, so a lane never reads as failed or waiting
+`--color-identity-8` in `apps/desktop/src/styles.css`, one lightness and one
+chroma per theme on eight hues (0.74 and 0.1 in dark, 0.51 and 0.11 in light,
+less chroma where the gamut ends), so no slot weighs more than another. No red
+and no amber, so a lane never reads as failed or waiting
 (`identity-palette-avoids-state-hues.test.ts` keeps every hue 30 degrees or
 more from the danger and warning hues). Two accessors read it, and nothing
 else does:
@@ -1071,7 +1142,9 @@ block, not in a chip: see "Needs you and the two views" below.
 
 Agent kinds (`--color-agent-*`) and provider glyphs (`--color-provider-*`) are
 identity palettes of their own. Each has a single accessor and is held to the
-same floor test. Anything else that reaches for an identity colour is a bug.
+same floor test. Agent kinds keep their hue and share one lightness and chroma
+per theme (0.78 and 0.12 in dark, 0.465 in light), so no kind shouts louder
+than another. Anything else that reaches for an identity colour is a bug.
 Add a tone instead.
 
 The rail, work node and row vocabulary continues in [Rail and work vocabulary](design/rail-and-work.md).

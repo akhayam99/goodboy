@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
-import { ArrowUp } from 'lucide-react';
+import { ArrowUp } from '@goodboy/ui/icons';
 import { IconButton, Textarea, Kbd, useEscapeLayer } from '@goodboy/ui';
 import { composerPlaceholder } from './composerPlaceholder';
 import { ReplyBar } from './ReplyBar';

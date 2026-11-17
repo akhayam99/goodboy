@@ -1,6 +1,6 @@
 import { READ_FAILED } from '../../../../store/slices/notifications/errorRecovery';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { TriangleAlert, Pause } from 'lucide-react';
+import { TriangleAlert, Pause } from '@goodboy/ui/icons';
 import {
   AnchoredPopover,
   Button,

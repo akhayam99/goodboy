@@ -1,4 +1,4 @@
-import { Lock } from 'lucide-react';
+import { Lock } from '@goodboy/ui/icons';
 import { ICON_SIZE } from '@goodboy/ui';
 
 export const KeychainLine = () => (

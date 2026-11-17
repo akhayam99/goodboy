@@ -1,4 +1,4 @@
-import { Mail, MailOpen, Pencil, Pin, PinOff } from 'lucide-react';
+import { Mail, MailOpen, Pencil, Pin, PinOff } from '@goodboy/ui/icons';
 import type { ChatId } from '@goodboy/types';
 import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
 import { requestRename } from '../../../shared/utils/renameRequest';

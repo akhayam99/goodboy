@@ -1,4 +1,4 @@
-import type { LucideIcon } from 'lucide-react';
+import type { IconGlyph } from '@goodboy/ui/icons';
 import type { ProviderId } from '@goodboy/types';
 import {
   ClaudeIcon,
@@ -12,7 +12,7 @@ import {
 } from '@goodboy/ui';
 
 export type ProviderBrand = {
-  readonly icon: LucideIcon;
+  readonly icon: IconGlyph;
   readonly cssVar: string;
 };
 

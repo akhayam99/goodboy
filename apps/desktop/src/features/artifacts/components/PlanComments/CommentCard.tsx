@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Check, Pencil, X } from 'lucide-react';
+import { Check, Pencil, X } from '@goodboy/ui/icons';
 import { Chip, cn, ICON_SIZE, IconButton, tintClasses } from '@goodboy/ui';
 import type { ArtifactComment } from '@goodboy/types';
 

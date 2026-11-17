@@ -1,4 +1,4 @@
-import { CircleCheck } from 'lucide-react';
+import { CircleCheck } from '@goodboy/ui/icons';
 import { ICON_SIZE, FOCUS_RING, Tooltip, cn } from '@goodboy/ui';
 
 type Props = {

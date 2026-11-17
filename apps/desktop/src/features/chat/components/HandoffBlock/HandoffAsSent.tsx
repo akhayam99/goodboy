@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Code } from 'lucide-react';
+import { Code } from '@goodboy/ui/icons';
 import { CopyButton, Eyebrow, GhostActionButton, ScrollFade } from '@goodboy/ui';
 import type { AgentHandoff } from '@goodboy/types';
 import { PROVIDER_LABEL } from '../../../providers/providerLabel';

@@ -1,15 +1,14 @@
-import { Bell } from 'lucide-react';
-import { cn, FOCUS_RING, ICON_SIZE, tintClasses, Tooltip, TOP_BAR_CONTROL } from '@goodboy/ui';
+import { Bell } from '@goodboy/ui/icons';
+import {
+  cn,
+  countTextOf,
+  FOCUS_RING,
+  ICON_SIZE,
+  tintClasses,
+  Tooltip,
+  TOP_BAR_CONTROL,
+} from '@goodboy/ui';
 import { NAMES } from '../../../../shared/utils/names';
-
-const BELL_COUNT_CAP = 9;
-
-type CountParams = {
-  readonly count: number;
-};
-
-const bellCountLabel = ({ count }: CountParams): string =>
-  count > BELL_COUNT_CAP ? `${BELL_COUNT_CAP}+` : String(count);
 
 type Props = {
   readonly isOpen: boolean;
@@ -48,7 +47,7 @@ export const BellButton = ({ isOpen, isCurrent, unread, hasUnreadDebt, onClick }
             tintClasses(hasUnreadDebt ? 'warning' : 'unread').text,
           )}
         >
-          {bellCountLabel({ count: unread })}
+          {countTextOf({ count: unread })}
         </span>
       )}
     </button>

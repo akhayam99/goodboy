@@ -2,7 +2,7 @@
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
-import { Circle, Square } from 'lucide-react';
+import { Circle, Square } from '../icons';
 import { Trail } from '../components/Trail';
 import type { CrumbMenuModel, CrumbMenuRow } from '../components/Trail/crumbMenuTypes';
 

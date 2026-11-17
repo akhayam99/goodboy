@@ -1,4 +1,4 @@
-import { ChevronRight } from 'lucide-react';
+import { ChevronRight } from '@goodboy/ui/icons';
 import { cn, ICON_SIZE, ROW_INTERACTIVE, StatusDot, Tooltip, treeIndentPx } from '@goodboy/ui';
 
 import { ViewedRing } from '../ViewedRing';

@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useState } from 'react';
-import { Plus } from 'lucide-react';
+import { Plus } from '@goodboy/ui/icons';
 import type { PullRequestPort } from '@goodboy/core/review-source';
 import { EmptyLine, formatError, IconButton, Skeleton } from '@goodboy/ui';
 import type { MountId, PullRequestReviewer, SessionId } from '@goodboy/types';

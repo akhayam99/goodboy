@@ -1,4 +1,4 @@
-import { X } from 'lucide-react';
+import { X } from '@goodboy/ui/icons';
 import { EmptyLine, Eyebrow, IconButton, SelectableRow, WorkNode } from '@goodboy/ui';
 import type { WireframeNodeNote, WireframeScreenLink } from '../../wireframeNotes';
 

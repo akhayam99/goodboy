@@ -1,4 +1,4 @@
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown } from '@goodboy/ui/icons';
 import { Chip, cn, ICON_SIZE } from '@goodboy/ui';
 import type { HandoffSection, HandoffSectionKind } from '@goodboy/types';
 import { handoffChipLabel } from '../../utils/handoffLabels';

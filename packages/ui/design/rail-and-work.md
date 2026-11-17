@@ -219,7 +219,7 @@ icon column), and sits on the canvas so the lane never shows through it.
 | `approval` | 1.5px `warning`                         | shield, warning           |
 | `alert`    | 1.5px `warning`                         | `!`, warning              |
 | `failed`   | 1.5px `danger`                          | `!`, danger               |
-| `approved` | 1px `success` over a solid `success`    | check, `on-tone` (white)  |
+| `approved` | 1px over a solid `success-solid` disc   | check, `on-success`       |
 | `merging`  | 1.5px `primary`                         | half-filled core, primary |
 | `done`     | 1px `success` over a `success/18` fill  | check, success            |
 | `closed`   | 1px `border`                            | check, muted              |
@@ -244,9 +244,9 @@ glyph.
 `failed` is the red `!` and means something broke. `alert` is the same sign in
 `warning` for what you must act on while nothing is broken (changes requested,
 comments the fix could not fix), so red stays rare. `approved` is a solid
-`success` disc with a white check, 12px at `md` and at `sm`: ready to ship.
-`finished` is its twin in `merged` violet: the same solid disc, ring and 12px
-white check, for a session that is done. `merging` is a pull request waiting in
+`success-solid` disc with an `on-success` check, 12px at `md` and at `sm`: ready to ship.
+`finished` is its twin in `merged-solid` violet: the same solid disc, ring and 12px
+`on-merged` check, for a session that is done. `merging` is a pull request waiting in
 the merge queue: a hollow `primary` ring around a core filled on its right half,
 drawn to the node's own scale, so it reads as in progress and never as a solid
 disc, a check or the dashed pending ring. Neither is `done`, which is an outline
@@ -396,8 +396,8 @@ agree on tone and words, and the node's accessible label is the sentence.
 Every row of that family reads its facts from `useSessionRowFacts` (summary, node, row title, task keys and plain title): a surface never repeats the three calls, and a surface that prints a session name uses `sessionTitle`, so a blank goal reads `Untitled session` on the rail, the switcher, the Now popover and a toast. A workspace row reads `useWorkspaceRowFacts` (last seen through `formatAdaptiveAge`, unread) and `NEW_WINDOW_TOOLTIP`. A suggestion card in the transcript (`NudgeCard`) draws its actions with `Button` and its dismiss with `IconButton`.
 
 Red means broken, amber means you must answer, approve or act, green means
-ready to ship, teal (`primary`) means waiting in the merge queue, violet means
-done, blue means moving or new. A pictogram under 12px is unreadable, so the
+ready to ship, blue (`primary`) means waiting in the merge queue, violet means
+done, cyan (`info`) means moving, and the quieter blue of `unread` means new. A pictogram under 12px is unreadable, so the
 marks inside the ring are typographic or 12px: `?`, `!`, the approval shield,
 the check and the half-filled core of the queue.
 
@@ -558,7 +558,7 @@ glyph, the branch cut at the end in `text-code`, and the pull request glyph;
 the current branch reads in `foreground`. Every row and button takes its hover
 wash and focus ring from `ROW_INTERACTIVE`, never a copy.
 
-The hover card is `bg-floating`, `border`, `shadow-lg`, 320px wide and `p-3`,
+The hover card is `bg-floating`, `floating-edge`, `shadow-lg`, 320px wide and `p-3`,
 and its title row, state rows and facts line are the `FactCard` parts
 (`FactCardHeader`, `FactCardState`, `FactCardFootnote`), so it and every fact
 card share one anatomy and cannot drift; only its chips and actions are its own,

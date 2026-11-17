@@ -372,7 +372,7 @@ composer and the transcript reply field (`useToastLift`).
 
 **Floating surfaces are one surface.** Menus, popovers, the hover card, the
 session switcher, the update card and the delete confirm are all
-`FLOATING_SURFACE` from `@goodboy/ui` (rounded-lg, border, `bg-floating`,
+`FLOATING_SURFACE` from `@goodboy/ui` (rounded-lg, `floating-edge`, `bg-floating`,
 `shadow-lg`), with no per-site border, fill or shadow. Their widths come from
 one scale: menus 240 (never under 200), popovers 320 and 384, toast 360, hover
 card 320, session switcher 420. `regressions/popover-widths.test.ts` counts the

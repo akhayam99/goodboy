@@ -2,12 +2,12 @@ import { modeSupportFor } from '@goodboy/core/permissions';
 import { providerFlags } from '@goodboy/core/providers';
 import type { ClaudePermissionMode, ProviderId } from '@goodboy/types';
 import type { Tone } from '@goodboy/ui';
-import { Check, EqualApproximately, X, type LucideIcon } from 'lucide-react';
+import { Check, EqualApproximately, X, type IconGlyph } from '@goodboy/ui/icons';
 import { modeCopyOf } from '../../permissions/modeCopy';
 
 type Verdict = {
   readonly tone: Tone;
-  readonly icon: LucideIcon;
+  readonly icon: IconGlyph;
   readonly word: string;
   readonly isFull: boolean;
 };

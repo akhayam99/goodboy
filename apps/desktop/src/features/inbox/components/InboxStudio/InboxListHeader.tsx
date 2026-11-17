@@ -1,6 +1,6 @@
 import { ISSUE_SEARCH_PLACEHOLDER } from '../../../integrations/issueCode/lookupCopy';
 import type { ReactNode, RefObject } from 'react';
-import { X } from 'lucide-react';
+import { X } from '@goodboy/ui/icons';
 import { Chip, ICON_SIZE, KbdPill, SearchField, SegmentedTabs } from '@goodboy/ui';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { shortcutGlyphs } from '../../../../shared/keyboard/registry';

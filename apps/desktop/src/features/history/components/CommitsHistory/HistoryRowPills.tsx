@@ -1,4 +1,4 @@
-import { Cloud, GitPullRequest } from 'lucide-react';
+import { Cloud, GitPullRequest } from '@goodboy/ui/icons';
 import { cn, ICON_SIZE, tintClasses } from '@goodboy/ui';
 import { NAMES } from '../../../../shared/utils/names';
 

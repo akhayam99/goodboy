@@ -273,7 +273,7 @@ about its effect is a worse defect than one that reads badly.
   holds the choice; the palette toggle sets the opposite of what is showing.
 - **More contrast is one switch, not a slider.** `data-contrast="more"` on the
   root, set by `prefers-contrast: more` or by Settings > App > General > More
-  contrast, moves the soft border to the border value, lifts the hover and
+  contrast, moves the soft border to the control border value, lifts the hover and
   selected washes one step, draws idle marks and disabled text at the faint
   text color and the frame edge at 2:1. It overrides tokens only, in both
   themes; `more-contrast-tokens.test.ts` holds the floors for each.
@@ -282,10 +282,11 @@ about its effect is a worse defect than one that reads badly.
   favicon and the site ([docs/brand.md](docs/brand.md)).
 - Color comes from **semantic tokens**: `success`, `warning`, `danger`, `info`,
   `merged`, the elevation ramp, per-provider accents. A raw hex or `oklch` in a
-  component is a bug. Raw colors are allowed in two places only, because they
-  paint content the app does not theme: the xterm palette (`terminal-theme.ts`)
-  and the wireframe content palette (`wireframePalette.ts`), low-fidelity
-  placeholder included. `no-token-bypass.test.ts` rejects hex anywhere else.
+  component is a bug. Raw colors are allowed in one place only, because it
+  paints content the app does not theme: the wireframe content palette
+  (`wireframePalette.ts`), low-fidelity placeholder included. The terminal
+  reads its colors from the palette scales. `no-token-bypass.test.ts` rejects
+  hex anywhere else.
 - **The stage palette tracks the life of the work**, not its mood. Done uses
   the merged purple on purpose. A finished session is almost always a merged
   pull request, and one outcome must not show in two colors.

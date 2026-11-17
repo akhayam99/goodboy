@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Chip, ConfirmPopover, formatError, ICON_SIZE, IconButton } from '@goodboy/ui';
-import { TriangleAlert, Unplug } from 'lucide-react';
+import { TriangleAlert, Unplug } from '@goodboy/ui/icons';
 import type { IntegrationCredentialId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { selectIntegrationKeyCheck } from '../../../../store/slices/integrations/selectIntegrationKeyCheck';

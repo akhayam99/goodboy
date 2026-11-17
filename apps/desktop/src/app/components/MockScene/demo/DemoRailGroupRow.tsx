@@ -1,5 +1,5 @@
 import { useRef } from 'react';
-import { Lock } from 'lucide-react';
+import { Lock } from '@goodboy/ui/icons';
 import {
   FOCUS_RING,
   ICON_SIZE,

@@ -818,9 +818,9 @@ A step that did not finish is `skipped` with a reason in `outputSummary`; there 
   pins the rule; widen no other directive for an image.
 - Three frames paint before the splash: the native window, the `index.html`
   shell, then React. Each must paint the same chrome, so `backgroundColor` in
-  `tauri.conf.json` is the dark chrome (`#0e1012`, never the old gray) and the
-  shell restates the `styles.css` chrome, primary and 6% cover strength as
-  literals, because the stylesheet is not loaded yet. Change a token and
+  `tauri.conf.json` is the dark chrome (`#0d0e10`, never the old gray) and the
+  shell restates the `styles.css` chrome as a literal, because the stylesheet
+  is not loaded yet. Change a token and
   `boot-shell-paints-the-chrome.test.ts` fails until `index.html` follows. The
   window is created hidden and shown by `useRevealWindow` after first paint;
   never show it in Rust setup again, or light users see dark first.

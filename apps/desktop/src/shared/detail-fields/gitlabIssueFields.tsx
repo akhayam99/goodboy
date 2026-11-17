@@ -1,4 +1,4 @@
-import { FolderGit2, Tag } from 'lucide-react';
+import { FolderGit2, Tag } from '@goodboy/ui/icons';
 import type { GitlabIssue } from '../../features/integrations/gitlab/client';
 import type { FactRegistry } from './factTypes';
 import { timeFact } from './timeFact';

@@ -1,5 +1,5 @@
 import { useContext } from 'react';
-import { Copy, SquareTerminal } from 'lucide-react';
+import { Copy, SquareTerminal } from '@goodboy/ui/icons';
 import { Button, ICON_SIZE, useCopyLink, type CodeBlockActionsProps } from '@goodboy/ui';
 import { RUN_IN_TERMINAL_LABEL, useRunInTerminal } from '../../hooks/useRunInTerminal';
 import { shellCommandOf } from '../../utils/shellCommandOf';

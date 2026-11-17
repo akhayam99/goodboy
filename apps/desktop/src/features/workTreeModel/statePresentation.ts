@@ -1,4 +1,4 @@
-import { Check, CheckCheck, Reply, SkipForward, type LucideIcon } from 'lucide-react';
+import { Check, CheckCheck, Reply, SkipForward, type IconGlyph } from '@goodboy/ui/icons';
 import type { Tone } from '@goodboy/ui';
 import { CONCEPT_ICONS } from '../../shared/components/conceptIcons';
 import type { ReviewCommentState } from '../resolve/reviewCommentState';
@@ -9,10 +9,10 @@ export type StatePresentation = {
   readonly word: string;
   readonly short: string;
   readonly tone: Tone;
-  readonly icon: LucideIcon | null;
+  readonly icon: IconGlyph | null;
 };
 
-const REVIEW_ICON: Record<ReviewCommentState, LucideIcon | null> = {
+const REVIEW_ICON: Record<ReviewCommentState, IconGlyph | null> = {
   new: null,
   drafting: null,
   needs: null,
@@ -27,7 +27,7 @@ const REVIEW_ICON: Record<ReviewCommentState, LucideIcon | null> = {
   resolved: CheckCheck,
 };
 
-const REASON_ICON: Record<RowStateReason['kind'], LucideIcon | null> = {
+const REASON_ICON: Record<RowStateReason['kind'], IconGlyph | null> = {
   ready: null,
   question: null,
   stepAsking: null,
@@ -61,7 +61,7 @@ const REASON_ICON: Record<RowStateReason['kind'], LucideIcon | null> = {
   review: null,
 };
 
-const iconOf = ({ reason }: { readonly reason: RowStateReason }): LucideIcon | null =>
+const iconOf = ({ reason }: { readonly reason: RowStateReason }): IconGlyph | null =>
   reason.kind === 'review' ? REVIEW_ICON[reason.state] : REASON_ICON[reason.kind];
 
 export const statePresentationOf = ({

@@ -42,7 +42,7 @@ vi.mock('../../../../shared/lib/repo', async () =>
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, renderHook, waitFor } from '@testing-library/react';
-import { CircleDot } from 'lucide-react';
+import { CircleDot } from '@goodboy/ui/icons';
 import {
   brandId,
   type AgentId,

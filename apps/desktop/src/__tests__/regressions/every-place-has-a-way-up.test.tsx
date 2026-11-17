@@ -43,6 +43,7 @@ const CRUMBS = '[data-session-crumbs] li';
 const OLD_WAYS_UP = '[data-slot="trail"]';
 const HEAD_BACK = '[data-session-head] [data-slot="pane-title-row"] [data-session-back]';
 const BACK_ICON = /\b(ArrowLeft|ChevronLeft)\b/;
+const ICON_MODULE = /from '(?:@goodboy\/ui\/|(?:\.{1,2}\/)+)icons'/;
 const FIRST_MOUNT_PATH = FLOW_MOUNTS[0]?.worktreePath ?? null;
 const FIRST_ARTIFACT_ID = CHAT_ARTIFACTS[0]?.id ?? null;
 
@@ -210,7 +211,7 @@ type SourceParams = {
 const importsBackIcon = ({ source }: SourceParams): boolean =>
   source
     .split(';')
-    .filter((statement) => statement.includes("from 'lucide-react'"))
+    .filter((statement) => ICON_MODULE.test(statement))
     .some((statement) => BACK_ICON.test(statement));
 
 const keyOf = (path: string): string =>

@@ -1,5 +1,5 @@
 import { useEffect, useId, useMemo, useState } from 'react';
-import { BookOpen } from 'lucide-react';
+import { BookOpen } from '@goodboy/ui/icons';
 import { ICON_SIZE, Reveal } from '@goodboy/ui';
 import type { SessionContextItem, WorkspaceId } from '@goodboy/types';
 import { sessionPlace, useAppStore } from '../../../store';

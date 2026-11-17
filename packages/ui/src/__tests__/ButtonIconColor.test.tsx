@@ -2,15 +2,15 @@
 
 import { afterEach, describe, expect, it } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
-import { GitBranch } from 'lucide-react';
+import { GitBranch } from '../icons';
 import { BUTTON_VARIANT_CLASSES, Button, type ButtonVariant } from '../components/Button';
 import { tintClasses, type Tone } from '../tint';
 
 const ICON_FOLLOWS_TEXT = '[&_svg]:text-current';
 
 const TEXT_TOKEN_BY_VARIANT = {
-  primary: 'text-on-tone',
-  danger: 'text-on-tone',
+  primary: 'text-on-primary',
+  danger: 'text-on-danger',
   'ghost-danger': 'text-danger',
 } as const satisfies Partial<Record<ButtonVariant, string>>;
 
@@ -50,13 +50,13 @@ describe('Button icon color', () => {
     const button = screen.getByRole('button', { name: 'Rebase' });
 
     expect(classesOf({ value: button.className })).toContain(ICON_FOLLOWS_TEXT);
-    expect(button.querySelector('svg')?.getAttribute('stroke')).toBe('currentColor');
+    expect(button.querySelector('svg')?.getAttribute('fill')).toBe('currentColor');
   });
 
   it.each(SOLID_TONES)('draws icons on the %s solid fill in the on-tone label color', (tone) => {
     const classes = classesOf({ value: tintClasses(tone).solid });
 
-    expect(classes).toContain('text-on-tone');
+    expect(classes).toContain(`text-on-${tone}`);
     expect(classes).toContain(ICON_FOLLOWS_TEXT);
   });
 });

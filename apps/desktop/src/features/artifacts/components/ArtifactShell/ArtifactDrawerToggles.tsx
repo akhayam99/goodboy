@@ -1,5 +1,5 @@
 import { useRef } from 'react';
-import { PanelRight } from 'lucide-react';
+import { PanelRight } from '@goodboy/ui/icons';
 import { Button, ICON_SIZE } from '@goodboy/ui';
 import type { ArtifactId, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';

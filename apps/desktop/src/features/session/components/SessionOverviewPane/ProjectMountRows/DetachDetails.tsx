@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ChevronDown, ChevronRight } from 'lucide-react';
+import { ChevronDown, ChevronRight } from '@goodboy/ui/icons';
 import { Button, ICON_SIZE } from '@goodboy/ui';
 import type { DetachDetails as Details } from './detachPlan';
 

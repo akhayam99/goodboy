@@ -1,5 +1,5 @@
 import { cn, ICON_SIZE, tintClasses } from '@goodboy/ui';
-import { Plus } from 'lucide-react';
+import { Plus } from '@goodboy/ui/icons';
 
 type Props = {
   readonly ghost: { label: string; x: number; y: number } | null;

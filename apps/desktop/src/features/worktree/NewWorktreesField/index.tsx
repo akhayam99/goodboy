@@ -1,6 +1,6 @@
 import { CHECK_STATE, READ_FAILED } from '../../../store/slices/notifications/errorRecovery';
 import { useEffect, useState } from 'react';
-import { TriangleAlert } from 'lucide-react';
+import { TriangleAlert } from '@goodboy/ui/icons';
 import type { Project } from '@goodboy/types';
 import { Button, Checkbox, EmptyLine, Eyebrow, ICON_SIZE, formatError } from '@goodboy/ui';
 import { useAppStore } from '../../../store';

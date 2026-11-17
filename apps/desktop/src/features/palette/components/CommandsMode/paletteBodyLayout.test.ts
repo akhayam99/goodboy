@@ -1,5 +1,5 @@
 // @vitest-environment node
-import { Inbox } from 'lucide-react';
+import { Inbox } from '@goodboy/ui/icons';
 import { describe, expect, it } from 'vitest';
 import type { SessionId } from '@goodboy/types';
 import type { PaletteEntry } from '../../types';

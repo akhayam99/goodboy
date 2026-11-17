@@ -1,4 +1,4 @@
-import { X } from 'lucide-react';
+import { X } from '@goodboy/ui/icons';
 import {
   Button,
   cn,

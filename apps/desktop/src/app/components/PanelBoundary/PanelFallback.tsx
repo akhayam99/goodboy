@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { TriangleAlert } from 'lucide-react';
+import { TriangleAlert } from '@goodboy/ui/icons';
 import { Button, EmptyState, ScrollFade, type ErrorFallbackRequest } from '@goodboy/ui';
 import { CrashReport } from '../../../features/bug-report/components/CrashReport';
 import { crashKind, crashPart } from '../../../features/bug-report/crashReport';

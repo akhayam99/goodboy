@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { ChevronDown, ChevronUp, X } from 'lucide-react';
+import { ChevronDown, ChevronUp, X } from '@goodboy/ui/icons';
 import { FLOATING_SURFACE, IconButton, cn, useEscapeLayer, appScrollIntoView } from '@goodboy/ui';
 import { useAppStore } from '../../../store';
 import type { ViewFind } from '../../../store/slices/search-index/state';

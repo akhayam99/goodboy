@@ -1,4 +1,4 @@
-import { Clock } from 'lucide-react';
+import { Clock } from '@goodboy/ui/icons';
 import { formatDateTime } from '../utils/time/formatDateTime';
 import type { Fact } from './factTypes';
 import { RelativeTime } from '../components/RelativeTime';

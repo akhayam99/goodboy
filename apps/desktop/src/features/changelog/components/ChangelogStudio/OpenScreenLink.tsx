@@ -1,4 +1,4 @@
-import { ChevronRight } from 'lucide-react';
+import { ChevronRight } from '@goodboy/ui/icons';
 import { ICON_SIZE } from '@goodboy/ui';
 import { changelogScreenLabel } from '../../changelogScreens';
 import type { ChangelogScreen } from '../../changelogScreens';

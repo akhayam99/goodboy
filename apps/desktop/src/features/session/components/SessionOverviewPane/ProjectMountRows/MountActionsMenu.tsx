@@ -1,6 +1,6 @@
 import { CHECK_STATE } from '../../../../../store/slices/notifications/errorRecovery';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Unlink } from 'lucide-react';
+import { Unlink } from '@goodboy/ui/icons';
 import { useShallow } from 'zustand/react/shallow';
 import { ICON_SIZE, IconButton } from '@goodboy/ui';
 import type { MountId, ProjectId, SessionId, WorkspaceId } from '@goodboy/types';

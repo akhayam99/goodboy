@@ -1,7 +1,7 @@
 import { OptionalTooltip } from './OptionalTooltip';
 import { useRef } from 'react';
 import type { CSSProperties, ReactNode } from 'react';
-import type { LucideIcon } from 'lucide-react';
+import type { IconGlyph } from '../icons';
 import { cn } from '../cn';
 import { DISABLED } from '../disabledStyle';
 import { FOCUS_RING } from '../focusRing';
@@ -13,7 +13,7 @@ import { moveTabFocus } from './tabListKeys';
 export type SegmentedTabOption<T extends string = string> = {
   readonly value: T;
   readonly label: string;
-  readonly icon?: LucideIcon;
+  readonly icon?: IconGlyph;
   readonly glyph?: ReactNode;
   readonly hint?: string;
   readonly tooltip?: string;

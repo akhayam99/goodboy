@@ -1,9 +1,9 @@
 import type { ReactNode } from 'react';
 import type { Tone } from '@goodboy/ui';
-import type { LucideIcon } from 'lucide-react';
+import type { IconGlyph } from '@goodboy/ui/icons';
 
 export type StudioShellProps = {
-  readonly icon?: LucideIcon;
+  readonly icon?: IconGlyph;
   readonly tone?: Tone;
   readonly glyph?: ReactNode;
   readonly title: string;

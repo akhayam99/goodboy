@@ -1,4 +1,4 @@
-import { X } from 'lucide-react';
+import { X } from '@goodboy/ui/icons';
 import { Button, cn, ICON_SIZE, IconButton, PANE_RHYTHM } from '@goodboy/ui';
 
 import { SUGGESTION_ICONS } from '../../suggestionIcons';

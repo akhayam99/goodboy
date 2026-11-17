@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Rocket } from 'lucide-react';
+import { Rocket } from '@goodboy/ui/icons';
 import { AnchoredPopover, Button, ICON_SIZE, Kbd, useDropdown } from '@goodboy/ui';
 import type { WorkspaceId } from '@goodboy/types';
 

@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { ChevronRight, Package } from 'lucide-react';
+import { ChevronRight, Package } from '@goodboy/ui/icons';
 import { cn, ICON_SIZE, StatusDot, FOCUS_RING } from '@goodboy/ui';
 
 import type { ScriptPackageSection as Section } from '../../groupScriptsByPackage';

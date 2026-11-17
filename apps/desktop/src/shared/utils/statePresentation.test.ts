@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
-import { CircleCheck } from 'lucide-react';
+import { CircleCheck } from '@goodboy/ui/icons';
 import { stateDescription, type StatePresentation } from './statePresentation';
 
 const merged: StatePresentation = {

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { CircleUser, Copy, GitBranch, Pencil } from 'lucide-react';
+import { CircleUser, Copy, GitBranch, Pencil } from '@goodboy/ui/icons';
 import { cn, FLOATING_SURFACE, ICON_SIZE, Popover, type MenuEntry } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 

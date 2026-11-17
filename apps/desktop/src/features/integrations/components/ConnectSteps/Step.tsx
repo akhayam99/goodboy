@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { Check } from 'lucide-react';
+import { Check } from '@goodboy/ui/icons';
 import { cn, ICON_SIZE, tintClasses } from '@goodboy/ui';
 
 type StepStatus = 'done' | 'current' | 'later';

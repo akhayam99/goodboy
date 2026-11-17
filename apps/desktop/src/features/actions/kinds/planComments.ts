@@ -1,4 +1,4 @@
-import { Check, Trash2 } from 'lucide-react';
+import { Check, Trash2 } from '@goodboy/ui/icons';
 import type { ObjectKindDefinition, PlanCommentsActionTarget } from '../types';
 
 export type PlanCommentsFacts = {

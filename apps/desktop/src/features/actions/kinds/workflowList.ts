@@ -1,4 +1,4 @@
-import { Download, RotateCcw } from 'lucide-react';
+import { Download, RotateCcw } from '@goodboy/ui/icons';
 import type { ObjectKindDefinition, WorkflowListActionTarget } from '../types';
 
 export type WorkflowListFacts = {

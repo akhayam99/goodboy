@@ -1,4 +1,4 @@
-import { SquareArrowOutUpRight, TriangleAlert } from 'lucide-react';
+import { SquareArrowOutUpRight, TriangleAlert } from '@goodboy/ui/icons';
 import { ICON_SIZE } from '@goodboy/ui';
 
 export const GhMissingNotice = () => (

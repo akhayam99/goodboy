@@ -1,4 +1,4 @@
-import { CircleAlert, CheckCheck, CircleDashed, GitBranch, ListChecks } from 'lucide-react';
+import { CircleAlert, CheckCheck, CircleDashed, GitBranch, ListChecks } from '@goodboy/ui/icons';
 import type { PrCheckRun, PullRequestState } from '@goodboy/types';
 import { RecordState } from '../components/StudioDetail/RecordState';
 import { pullRequestKindOf } from '../utils/pullRequestKind';

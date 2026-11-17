@@ -3,7 +3,7 @@ import { NAMES } from '../../../../shared/utils/names';
 
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { useShallow } from 'zustand/react/shallow';
-import { Link2, ListPlus, Plus } from 'lucide-react';
+import { Link2, ListPlus, Plus } from '@goodboy/ui/icons';
 import {
   AnchoredPopover,
   Button,

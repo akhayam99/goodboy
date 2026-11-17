@@ -1,4 +1,4 @@
-import { Ellipsis } from 'lucide-react';
+import { Ellipsis } from '@goodboy/ui/icons';
 import {
   AnchoredPopover,
   ICON_SIZE,

@@ -1,4 +1,4 @@
-import { CircleCheck, Copy, Link, ListChecks, SquareArrowOutUpRight } from 'lucide-react';
+import { CircleCheck, Copy, Link, ListChecks, SquareArrowOutUpRight } from '@goodboy/ui/icons';
 import { openWebAction } from '../openWebAction';
 import type { IssueCandidateActionTarget, ObjectKindDefinition } from '../types';
 

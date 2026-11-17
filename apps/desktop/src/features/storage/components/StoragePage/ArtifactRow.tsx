@@ -1,6 +1,6 @@
 import { CHECK_STATE } from '../../../../store/slices/notifications/errorRecovery';
 import { useState } from 'react';
-import { Trash2 } from 'lucide-react';
+import { Trash2 } from '@goodboy/ui/icons';
 import { cn, EmptyLine, ICON_SIZE, SelectionCheckbox } from '@goodboy/ui';
 import { AnchoredConfirm } from '../../../../shared/components/AnchoredConfirm';
 import { useAppStore } from '../../../../store';

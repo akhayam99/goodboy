@@ -1,4 +1,4 @@
-import { Keyboard } from 'lucide-react';
+import { Keyboard } from '@goodboy/ui/icons';
 import { AnchoredPopover, IconButton, useDropdown } from '@goodboy/ui';
 import { KEY_HELP, KEY_HELP_ROWS } from './keyHelp';
 

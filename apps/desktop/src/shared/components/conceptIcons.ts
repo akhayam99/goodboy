@@ -1,4 +1,4 @@
-import type { LucideIcon } from 'lucide-react';
+import type { IconGlyph } from '@goodboy/ui/icons';
 import type { Project } from '@goodboy/types';
 import type { Tone } from '@goodboy/ui';
 import {
@@ -98,7 +98,7 @@ import {
   Wallet,
   Waypoints,
   Wrench,
-} from 'lucide-react';
+} from '@goodboy/ui/icons';
 import {
   BitbucketIcon,
   GithubIcon,
@@ -217,7 +217,7 @@ export const CONCEPT_ICONS = {
   workspace: LayoutGrid,
   worktree: FolderTree,
   writerWait: Hourglass,
-} satisfies Record<string, LucideIcon>;
+} satisfies Record<string, IconGlyph>;
 
 type Concept = keyof typeof CONCEPT_ICONS;
 
@@ -335,5 +335,5 @@ type ProjectGlyphParams = {
   readonly kind: Project['kind'] | null | undefined;
 };
 
-export const projectGlyph = ({ kind }: ProjectGlyphParams): LucideIcon =>
+export const projectGlyph = ({ kind }: ProjectGlyphParams): IconGlyph =>
   kind === 'repo' ? CONCEPT_ICONS.projectRepo : CONCEPT_ICONS.projectFolder;

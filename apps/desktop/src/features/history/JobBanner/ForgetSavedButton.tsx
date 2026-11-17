@@ -1,4 +1,4 @@
-import { Archive } from 'lucide-react';
+import { Archive } from '@goodboy/ui/icons';
 import { Button, ConfirmPopover, ICON_SIZE } from '@goodboy/ui';
 
 type Props = {

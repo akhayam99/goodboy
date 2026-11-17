@@ -1,4 +1,11 @@
-import { File, FileCode, FileJson, FileSpreadsheet, FileText, type LucideIcon } from 'lucide-react';
+import {
+  File,
+  FileCode,
+  FileJson,
+  FileSpreadsheet,
+  FileText,
+  type IconGlyph,
+} from '@goodboy/ui/icons';
 
 const IMAGE_EXTENSIONS = new Set(['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg', 'bmp']);
 
@@ -53,7 +60,7 @@ export const resolveAttachmentMime = (file: {
   return DOC_MIME_BY_EXTENSION[extensionOf(file.name)] ?? 'application/octet-stream';
 };
 
-export const fileIconFor = (mimeType: string): LucideIcon => {
+export const fileIconFor = (mimeType: string): IconGlyph => {
   if (mimeType === 'application/json') {
     return FileJson;
   }

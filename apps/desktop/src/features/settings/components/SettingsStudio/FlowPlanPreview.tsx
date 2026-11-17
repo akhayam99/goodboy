@@ -1,4 +1,4 @@
-import { ChevronDown, ChevronRight } from 'lucide-react';
+import { ChevronDown, ChevronRight } from '@goodboy/ui/icons';
 import { Checkbox, Chip, EmptyLine, IconButton } from '@goodboy/ui';
 import { pluralize } from '../../../../shared/utils/pluralize';
 import type { PagePlan, PlanItem } from '../../workspaceSettings/plan';

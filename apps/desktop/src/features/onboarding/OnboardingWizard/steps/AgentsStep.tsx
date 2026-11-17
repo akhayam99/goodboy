@@ -1,5 +1,5 @@
 import { useEffect, useId, useState, type KeyboardEvent } from 'react';
-import { RotateCw } from 'lucide-react';
+import { RotateCw } from '@goodboy/ui/icons';
 import {
   Button,
   FormActions,

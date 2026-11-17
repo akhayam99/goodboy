@@ -1,4 +1,4 @@
-import { RotateCcw, TriangleAlert } from 'lucide-react';
+import { RotateCcw, TriangleAlert } from '@goodboy/ui/icons';
 import { Button, EmptyState, ICON_SIZE, PAGE_MEASURE, PageColumn, PANE_RHYTHM } from '@goodboy/ui';
 import { useSettleElapsed } from '../../../hooks/useSettleElapsed';
 import { SessionOverviewSkeleton } from './SessionOverviewSkeleton';

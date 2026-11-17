@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { SquareArrowOutUpRight } from 'lucide-react';
+import { SquareArrowOutUpRight } from '@goodboy/ui/icons';
 import type { GhTokenStatus } from '@goodboy/types';
 import { Button, ICON_SIZE, Notice } from '@goodboy/ui';
 

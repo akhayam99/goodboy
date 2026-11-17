@@ -1,5 +1,5 @@
 import { useCallback, useContext, useEffect, useRef, useState } from 'react';
-import { ImageOff } from 'lucide-react';
+import { ImageOff } from '../../icons';
 import { cn } from '../../cn';
 import { formatError } from '../../formatError';
 import { Button } from '../Button';

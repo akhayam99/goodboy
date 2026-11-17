@@ -1,6 +1,6 @@
 import type { MouseEvent } from 'react';
 import { cn, ICON_SIZE, tintClasses, Tooltip } from '@goodboy/ui';
-import { GitPullRequest } from 'lucide-react';
+import { GitPullRequest } from '@goodboy/ui/icons';
 import type { LinearLinkedPr } from '../client';
 import { linearPrStateKind } from '../linearPrStateKind';
 import {

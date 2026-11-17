@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { RotateCcw } from 'lucide-react';
+import { RotateCcw } from '@goodboy/ui/icons';
 import { Band, Button, Collapsible, EmptyLine, Eyebrow, ICON_SIZE, Skeleton } from '@goodboy/ui';
 import type { ArtifactKind, ArtifactProvenance, SessionArtifact } from '@goodboy/types';
 import { loadArtifactProvenance } from '../../../artifactProvenance';

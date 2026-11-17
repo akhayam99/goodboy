@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { Check, MessageSquare, Pencil, CircleX } from 'lucide-react';
+import { Check, MessageSquare, Pencil, CircleX } from '@goodboy/ui/icons';
 import { ICON_SIZE, cn, tintClasses } from '@goodboy/ui';
 import type { PullRequestNouns } from '@goodboy/types';
 import { CONCEPT_ICONS } from '../conceptIcons';

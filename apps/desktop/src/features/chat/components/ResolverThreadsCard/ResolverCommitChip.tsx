@@ -1,4 +1,4 @@
-import { GitCommit } from 'lucide-react';
+import { GitCommit } from '@goodboy/ui/icons';
 import { cn, ICON_SIZE, Tooltip } from '@goodboy/ui';
 
 type Props = {

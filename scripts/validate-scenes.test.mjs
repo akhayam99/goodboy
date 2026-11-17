@@ -27,6 +27,7 @@ import {
   unmeasuredFailures,
 } from './validateScenesBrowser.mjs';
 import { headerLineFailures } from './validateScenesHeaderLine.mjs';
+import { toolBadgeFailures } from './validateScenesToolBadge.mjs';
 import { updatePillFailures } from './validateScenesUpdatePill.mjs';
 import { listGridFitFailures } from './validateScenesListGridFit.mjs';
 import { modelsGridFailures } from './validateScenesModelsGrid.mjs';
@@ -1240,6 +1241,57 @@ describe('updatePillFailures', () => {
     assert.equal(
       updatePillFailures({ scene: 'fixture', width: 1024, measured: null })[0]?.check,
       'the Goodboy row shows the update pill',
+    );
+  });
+});
+
+describe('toolBadgeFailures', () => {
+  const measured = {
+    rail: { left: 980, right: 1024, top: 0, bottom: 400 },
+    tools: [
+      {
+        name: 'Terminal',
+        badge: { left: 1004, right: 1018, top: 12, bottom: 26 },
+        caption: { left: 990, right: 1014, top: 52, bottom: 64 },
+        glyph: { left: 994, right: 1010, top: 22, bottom: 38 },
+      },
+      { name: 'Browser', badge: null, caption: null, glyph: null },
+    ],
+  };
+
+  it('passes a badge on the glyph corner, above the label and inside the rail', () => {
+    assert.deepEqual(toolBadgeFailures({ scene: 'fixture', width: 1024, measured }), []);
+  });
+
+  it('fails a badge over the label, past the rail edge and off the glyph corner', () => {
+    const [tool] = measured.tools;
+    const checks = toolBadgeFailures({
+      scene: 'fixture',
+      width: 1024,
+      measured: {
+        ...measured,
+        tools: [{ ...tool, badge: { left: 990, right: 1030, top: 44, bottom: 58 } }],
+      },
+    }).map((failure) => failure.check);
+    assert.deepEqual(checks, [
+      'the count badge never covers the tool label',
+      'the count badge stays inside the rail',
+      'the count badge sits on the top end corner of the glyph',
+    ]);
+  });
+
+  it('fails a scene without the rail or without a badge', () => {
+    assert.equal(
+      toolBadgeFailures({ scene: 'fixture', width: 1024, measured: null })[0]?.check,
+      'the scene shows the Tools rail',
+    );
+    assert.equal(
+      toolBadgeFailures({
+        scene: 'fixture',
+        width: 1024,
+        measured: { ...measured, tools: [measured.tools[1]] },
+      })[0]?.check,
+      'the Tools rail shows a count badge',
     );
   });
 });

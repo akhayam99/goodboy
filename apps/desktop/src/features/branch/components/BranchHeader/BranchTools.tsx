@@ -1,4 +1,4 @@
-import { Plus } from 'lucide-react';
+import { Plus } from '@goodboy/ui/icons';
 import { IconButton } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';

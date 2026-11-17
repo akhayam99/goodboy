@@ -1,5 +1,5 @@
 import { useId, useMemo, useState } from 'react';
-import type { LucideIcon } from 'lucide-react';
+import type { IconGlyph } from '@goodboy/ui/icons';
 import { Button, EmptyLine } from '@goodboy/ui';
 import { ContextBlock } from './ContextBlock';
 import { SummaryFactList } from './SummaryFactList';
@@ -11,7 +11,7 @@ const PREVIEW_COUNT = 3;
 type Props = {
   readonly title: string;
   readonly body: string;
-  readonly icon?: LucideIcon;
+  readonly icon?: IconGlyph;
   readonly isOrdered?: boolean;
 };
 

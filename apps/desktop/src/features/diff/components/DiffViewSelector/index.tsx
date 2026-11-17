@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ChevronDown, Search } from 'lucide-react';
+import { ChevronDown, Search } from '@goodboy/ui/icons';
 import {
   AnchoredPopover,
   Chip,
@@ -416,7 +416,7 @@ export const DiffViewSelector = ({
                         className={cn(
                           'size-1.5 shrink-0 rounded-full ring-1 ring-inset',
                           isActive
-                            ? cn('bg-primary', tintClasses('primary').ringStrong)
+                            ? cn('bg-primary-solid', tintClasses('primary').ringStrong)
                             : 'bg-transparent ring-transparent',
                         )}
                       />

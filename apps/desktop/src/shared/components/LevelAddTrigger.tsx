@@ -1,5 +1,5 @@
 import type { ComponentProps } from 'react';
-import { Plus } from 'lucide-react';
+import { Plus } from '@goodboy/ui/icons';
 import { IconButton } from '@goodboy/ui';
 
 type Props = Omit<

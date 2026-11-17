@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
-import { Circle } from 'lucide-react';
+import { Circle } from '../icons';
 import { Trail } from '../components/Trail';
 import type { CrumbMenuModel, CrumbMenuRow } from '../components/Trail/crumbMenuTypes';
 

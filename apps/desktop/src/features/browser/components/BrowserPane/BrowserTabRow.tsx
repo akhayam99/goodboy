@@ -1,4 +1,4 @@
-import { Moon, X } from 'lucide-react';
+import { Moon, X } from '@goodboy/ui/icons';
 import { ICON_SIZE, IconButton, SelectableRow, cn } from '@goodboy/ui';
 import { BrowserFavicon } from './BrowserFavicon';
 

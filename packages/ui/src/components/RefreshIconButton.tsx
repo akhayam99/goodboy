@@ -1,5 +1,5 @@
 import { IconButton } from './IconButton';
-import { RefreshCw } from 'lucide-react';
+import { RefreshCw } from '../icons';
 
 type Props = {
   readonly label: string;

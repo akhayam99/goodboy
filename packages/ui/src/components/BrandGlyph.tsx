@@ -1,5 +1,5 @@
 import { cn } from '../cn';
-import type { LucideIcon } from 'lucide-react';
+import type { IconGlyph } from '../icons';
 
 const MARK_SIZE = {
   xs: 12,
@@ -9,7 +9,7 @@ const MARK_SIZE = {
 type Size = number | keyof typeof MARK_SIZE;
 
 type Props = {
-  readonly icon: LucideIcon;
+  readonly icon: IconGlyph;
   readonly cssVar: string;
   readonly size?: Size;
   readonly className?: string;

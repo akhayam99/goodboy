@@ -62,7 +62,7 @@ const stateOf = (name: 'terminal' | 'browser') =>
   toggle(name).closest('[data-slot="session-tool"]')?.getAttribute('data-state');
 
 describe('SessionTools', () => {
-  it('holds Terminal and Browser only, as icons in a vertical toolbar under the Tools caption', () => {
+  it('holds Terminal and Browser only, as labelled icons in a vertical toolbar with no heading', () => {
     render(<SessionTools sessionId={SESSION_ID} />);
     const toolbar = screen.getByRole('toolbar', { name: 'Tools' });
     expect(toolbar.getAttribute('aria-orientation')).toBe('vertical');
@@ -73,16 +73,10 @@ describe('SessionTools', () => {
     ]);
     expect(buttons.every((button) => button.querySelector('svg') !== null)).toBe(true);
     expect(within(toolbar).queryByRole('separator')).toBeNull();
-    const order = Array.from(
-      toolbar.querySelectorAll('[data-slot="tool-group-caption"], [data-testid^="pane-toggle-"]'),
-    ).map((node) =>
-      node.getAttribute('data-slot') === 'tool-group-caption'
-        ? `caption:${node.textContent}`
-        : node.getAttribute('data-testid')?.replace('pane-toggle-', ''),
-    );
-    expect(order).toEqual(['caption:Tools', 'terminal', 'browser']);
+    expect(toolbar.firstElementChild?.getAttribute('data-slot')).toBe('session-tool');
+    expect(toolbar.textContent).toBe('TerminalBrowser');
     expect(toolbar.style.width).toBe(`${SESSION_TOOL_RAIL_WIDTH}px`);
-    const source = readFileSync(join(__dirname, 'ToolGroupCaption.tsx'), 'utf8');
+    const source = readFileSync(join(__dirname, 'SessionToolButton.tsx'), 'utf8');
     expect(source).toContain('[@media(max-height:480px)]:hidden');
   });
 
@@ -94,7 +88,31 @@ describe('SessionTools', () => {
         .getAllByRole('button')
         .map((button) => button.getAttribute('data-testid')),
     ).toEqual(['pane-toggle-terminal', 'pane-toggle-browser']);
-    expect(toolbar.querySelector('[data-slot="tool-group-caption"]')?.textContent).toBe('Tools');
+  });
+
+  it('lays every tool on one grid: icon row over label row, centred on one column', () => {
+    render(<SessionTools sessionId={SESSION_ID} />);
+    const tools = Array.from(document.querySelectorAll('[data-slot="session-tool"]'));
+    expect(tools).toHaveLength(RAIL_TOOLS.length);
+    for (const tool of tools) {
+      expect(tool.className.split(' ')).toEqual(
+        expect.arrayContaining(['grid', 'w-full', 'grid-rows-[auto_auto]', 'justify-items-center']),
+      );
+      expect(Array.from(tool.children).map((child) => child.getAttribute('data-slot'))).toEqual([
+        'tool-icon',
+        'tool-caption',
+      ]);
+    }
+  });
+
+  it('fills the pressed tool as a quiet tile with no border', () => {
+    render(<SessionTools sessionId={SESSION_ID} />);
+    act(() => {
+      useAppStore.setState({ drawer: BROWSER });
+    });
+    const classes = toggle('browser').className.split(' ');
+    expect(classes).toContain('aria-pressed:bg-selected');
+    expect(classes.some((name) => name.startsWith('aria-pressed:border'))).toBe(false);
   });
 
   it('keeps each tool on its pane id and chord', () => {
@@ -273,12 +291,18 @@ describe('SessionTools', () => {
     expect(toggle('terminal').getAttribute('aria-label')).toBe('Terminal, 2 running');
     const tool = toggle('terminal').closest('[data-slot="session-tool"]');
     expect(tool?.querySelector('[data-testid="tool-count"]')?.textContent).toBe('2');
-    expect(
-      toggle('terminal')
-        .closest('[data-slot="tool-icon"]')
-        ?.querySelector('[data-testid="tool-count"]')
-        ?.className.split(' '),
-    ).toEqual(expect.arrayContaining(['left-1/2', 'translate-x-1.5', '-top-1.5']));
+    const glyph = toggle('terminal')
+      .closest('[data-slot="tool-icon"]')
+      ?.querySelector('[data-slot="tool-glyph"]');
+    expect(glyph?.className.split(' ')).toEqual(
+      expect.arrayContaining(['absolute', 'left-1/2', 'top-1/2', 'size-4']),
+    );
+    expect(glyph?.querySelector('[data-testid="tool-count"]')?.getAttribute('data-placement')).toBe(
+      'corner',
+    );
+    expect(glyph?.querySelector('[data-testid="tool-count"]')?.className.split(' ')).toEqual(
+      expect.arrayContaining(['bottom-full', 'left-full']),
+    );
     expect(tool?.querySelector('[data-signal]')).toBeNull();
     expect(
       toggle('browser')

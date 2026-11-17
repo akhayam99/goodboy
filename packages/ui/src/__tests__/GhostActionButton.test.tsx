@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
-import { RefreshCw } from 'lucide-react';
+import { RefreshCw } from '../icons';
 import { GhostActionButton } from '../components/GhostActionButton';
 
 afterEach(cleanup);

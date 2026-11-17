@@ -1,6 +1,6 @@
-import { Check, Minus, Shield } from 'lucide-react';
+import { Check, Minus, Shield } from '../../icons';
 import { cn } from '../../cn';
-import { ICON_STROKE } from '../../iconSize';
+import { ICON_WEIGHT } from '../../iconSize';
 import { WORK_NODE_GLYPH_SIZE, type WorkNodeMark, type WorkNodeState } from './workNodeSpec';
 
 type Props = {
@@ -83,13 +83,13 @@ export const WorkNodeCenter = ({
     case 'budget':
       return signOf({ sign: '$', className: 'text-warning' });
     case 'approval':
-      return <Shield size={glyphSize} strokeWidth={2.5} className="text-warning" />;
+      return <Shield size={glyphSize} weight={ICON_WEIGHT.check} className="text-warning" />;
     case 'alert':
       return signOf({ sign: '!', className: 'text-warning' });
     case 'failed':
       return signOf({ sign: '!', className: 'text-danger' });
     case 'approved':
-      return <Check size={glyphSize} strokeWidth={ICON_STROKE.check} className="text-on-tone" />;
+      return <Check size={glyphSize} weight={ICON_WEIGHT.check} className="text-on-success" />;
     case 'merging':
       return (
         <svg viewBox="0 0 20 20" className="size-full fill-primary">
@@ -97,15 +97,19 @@ export const WorkNodeCenter = ({
         </svg>
       );
     case 'done':
-      return <Check size={glyphSize} strokeWidth={2.5} className="text-success" />;
+      return <Check size={glyphSize} weight={ICON_WEIGHT.check} className="text-success" />;
     case 'finished':
-      return <Check size={glyphSize} strokeWidth={ICON_STROKE.check} className="text-on-tone" />;
+      return <Check size={glyphSize} weight={ICON_WEIGHT.check} className="text-on-merged" />;
     case 'closed':
-      return <Check size={glyphSize} strokeWidth={2.5} className="text-muted-foreground" />;
+      return (
+        <Check size={glyphSize} weight={ICON_WEIGHT.check} className="text-muted-foreground" />
+      );
     case 'stopped':
       return <span className="size-1.5 rounded-sm bg-muted-foreground" />;
     case 'skipped':
-      return <Minus size={glyphSize} strokeWidth={2.5} className="text-faint-foreground" />;
+      return (
+        <Minus size={glyphSize} weight={ICON_WEIGHT.check} className="text-faint-foreground" />
+      );
     default: {
       const exhaustive: never = state;
       return exhaustive;

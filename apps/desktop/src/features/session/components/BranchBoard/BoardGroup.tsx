@@ -1,4 +1,4 @@
-import { CircleAlert } from 'lucide-react';
+import { CircleAlert } from '@goodboy/ui/icons';
 import { Button, ICON_SIZE } from '@goodboy/ui';
 import type { VisibleGroup } from '../../central/board/visibleGroupsOf';
 import { BoardMergeInOrder } from './BoardMergeInOrder';

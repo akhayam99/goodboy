@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Wrench } from 'lucide-react';
+import { Wrench } from '@goodboy/ui/icons';
 import { Button, DrawerFrame, ScrollFade, SectionHeader, SegmentedTabs } from '@goodboy/ui';
 import type { MountId, OpenQuestion, ResolveAttempt, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';

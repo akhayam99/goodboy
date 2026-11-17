@@ -1,4 +1,4 @@
-import { Compass } from 'lucide-react';
+import { Compass } from '@goodboy/ui/icons';
 import { formatError, type MenuEntry, type MenuItemEntry } from '@goodboy/ui';
 import { shortcutGlyphs } from '../../shared/keyboard/registry';
 import type { ActionEnv, ActionPreviewParams, ActionSubmenu, ResolvedAction } from './types';

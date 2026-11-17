@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Monitor, Moon, Search, Sun } from 'lucide-react';
+import { Monitor, Moon, Search, Sun } from '@goodboy/ui/icons';
 import { Eyebrow, filterOptions, ICON_SIZE, Listbox, ListboxList } from '@goodboy/ui';
 import type { ListboxOption } from '@goodboy/ui';
 import { ListboxScenePanel } from './ListboxScenePanel';

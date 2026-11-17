@@ -8,8 +8,8 @@ import {
   Hourglass,
   ListOrdered,
   TriangleAlert,
-  type LucideIcon,
-} from 'lucide-react';
+  type IconGlyph,
+} from '@goodboy/ui/icons';
 import { ICON_SIZE, cn, tintClasses } from '@goodboy/ui';
 import type { MergeBoxVerdict as Verdict, MergeBoxVerdictKind } from './mergeBox';
 
@@ -17,7 +17,7 @@ type Props = {
   readonly verdict: Verdict;
 };
 
-const GLYPH: Readonly<Record<MergeBoxVerdictKind, LucideIcon>> = {
+const GLYPH: Readonly<Record<MergeBoxVerdictKind, IconGlyph>> = {
   blocked: CircleX,
   waiting: Hourglass,
   checking: CircleDashed,
@@ -28,7 +28,7 @@ const GLYPH: Readonly<Record<MergeBoxVerdictKind, LucideIcon>> = {
   closed: GitPullRequestClosed,
 };
 
-const glyphOf = ({ verdict }: Props): LucideIcon =>
+const glyphOf = ({ verdict }: Props): IconGlyph =>
   verdict.kind === 'blocked' && verdict.tone === 'warning' ? TriangleAlert : GLYPH[verdict.kind];
 
 export const MergeBoxVerdict = ({ verdict }: Props) => {

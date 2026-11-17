@@ -1,4 +1,4 @@
-import { Bot, RotateCcw } from 'lucide-react';
+import { Bot, RotateCcw } from '@goodboy/ui/icons';
 import { cn, ICON_SIZE, Tooltip, FOCUS_RING } from '@goodboy/ui';
 import { PromptField } from '../../../../../shared/components/PromptField';
 import type { ProviderId } from '@goodboy/types';

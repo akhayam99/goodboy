@@ -1,4 +1,4 @@
-import { X } from 'lucide-react';
+import { X } from '@goodboy/ui/icons';
 import { Button, FLOATING_SURFACE, IconButton, cn } from '@goodboy/ui';
 import type { OffscreenHint } from './useDemoHints';
 

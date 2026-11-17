@@ -1,4 +1,4 @@
-import { Inbox } from 'lucide-react';
+import { Inbox } from '@goodboy/ui/icons';
 import { describe, expect, it } from 'vitest';
 import type { AgentId, SessionId } from '@goodboy/types';
 import { aSession, anAgent } from '@goodboy/types/testing';

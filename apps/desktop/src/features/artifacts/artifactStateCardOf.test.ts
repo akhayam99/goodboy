@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { CircleAlert } from 'lucide-react';
+import { CircleAlert } from '@goodboy/ui/icons';
 import { artifactStateCardOf } from './artifactStateCardOf';
 import type { ArtifactState } from './artifactStateOf';
 

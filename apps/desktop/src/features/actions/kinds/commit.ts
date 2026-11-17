@@ -8,7 +8,7 @@ import {
   PenLine,
   Trash2,
   Undo2,
-} from 'lucide-react';
+} from '@goodboy/ui/icons';
 import type { CommitActionTarget, ObjectKindDefinition } from '../types';
 
 export type CommitFacts = {

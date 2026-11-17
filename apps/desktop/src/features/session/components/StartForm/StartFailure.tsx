@@ -1,4 +1,4 @@
-import { CircleAlert } from 'lucide-react';
+import { CircleAlert } from '@goodboy/ui/icons';
 import { Button, ICON_SIZE } from '@goodboy/ui';
 import { useCopyText } from '../../../../shared/hooks/useCopyText';
 import { openConnection } from '../../../connections/openConnection';

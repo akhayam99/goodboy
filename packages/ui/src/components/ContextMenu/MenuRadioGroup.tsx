@@ -1,4 +1,4 @@
-import { Check } from 'lucide-react';
+import { Check } from '../../icons';
 import { cn } from '../../cn';
 import { OptionalTooltip } from '../OptionalTooltip';
 import type { MenuRadioEntry } from './menuTypes';

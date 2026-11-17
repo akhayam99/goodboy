@@ -1,4 +1,4 @@
-import { SquareArrowOutUpRight, MessageSquare } from 'lucide-react';
+import { SquareArrowOutUpRight, MessageSquare } from '@goodboy/ui/icons';
 import { Chip, ICON_SIZE, IconButton } from '@goodboy/ui';
 import type { CommentThread } from '../../../integrations/github/comment-threads';
 import { isBot } from '../../../integrations/github/comment-threads';

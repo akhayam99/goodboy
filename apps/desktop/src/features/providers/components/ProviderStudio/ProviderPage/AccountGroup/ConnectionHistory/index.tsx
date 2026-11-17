@@ -1,5 +1,5 @@
 import { EmptyLine, IconButton, ScrollFade, Tooltip, useEscapeLayer } from '@goodboy/ui';
-import { X } from 'lucide-react';
+import { X } from '@goodboy/ui/icons';
 import type { ProviderId } from '@goodboy/types';
 import { useAppStore } from '../../../../../../../store/store';
 import { useNow } from '../../../../../../../shared/hooks/useNow';

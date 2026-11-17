@@ -1,6 +1,6 @@
 import { CHECK_STATE } from '../../../../store/slices/notifications/errorRecovery';
 import { useMemo, useState } from 'react';
-import { Plus } from 'lucide-react';
+import { Plus } from '@goodboy/ui/icons';
 import {
   Button,
   cn,

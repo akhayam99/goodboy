@@ -8,7 +8,7 @@ import {
   type ReactNode,
 } from 'react';
 import { createPortal } from 'react-dom';
-import { TriangleAlert, MessageSquare } from 'lucide-react';
+import { TriangleAlert, MessageSquare } from '@goodboy/ui/icons';
 import {
   Button,
   EmptyState,

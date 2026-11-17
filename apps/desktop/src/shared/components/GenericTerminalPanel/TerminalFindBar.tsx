@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import type { KeyboardEvent } from 'react';
-import { ChevronDown, ChevronUp, X } from 'lucide-react';
+import { ChevronDown, ChevronUp, X } from '@goodboy/ui/icons';
 import { FLOATING_SURFACE, IconButton, cn } from '@goodboy/ui';
 import { terminalFindKey } from './terminalFindKey';
 

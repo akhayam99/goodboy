@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { CircleHelp } from 'lucide-react';
+import { CircleHelp } from '@goodboy/ui/icons';
 import { Button, formatError, ICON_SIZE, Input, Markdown, tintClasses } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../store';

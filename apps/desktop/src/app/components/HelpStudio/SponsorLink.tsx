@@ -1,4 +1,4 @@
-import { Heart, SquareArrowOutUpRight } from 'lucide-react';
+import { Heart, SquareArrowOutUpRight } from '@goodboy/ui/icons';
 import { Button, ICON_SIZE } from '@goodboy/ui';
 import { openLink } from '../../../features/open/openLink';
 import { SPONSOR_URL } from '../../../shared/lib/productLinks';

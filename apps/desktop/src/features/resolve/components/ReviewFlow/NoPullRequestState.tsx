@@ -1,4 +1,4 @@
-import { GitPullRequest } from 'lucide-react';
+import { GitPullRequest } from '@goodboy/ui/icons';
 import { Button, EmptyState } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { actionButtonLookOf } from '../../../actions/actionButtonLookOf';

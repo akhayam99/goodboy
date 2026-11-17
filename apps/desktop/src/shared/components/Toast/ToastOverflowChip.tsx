@@ -1,4 +1,4 @@
-import { Bell } from 'lucide-react';
+import { Bell } from '@goodboy/ui/icons';
 import { cn, FLOATING_SURFACE, ICON_SIZE } from '@goodboy/ui';
 
 type ToastOverflowChipProps = {

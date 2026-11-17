@@ -1,4 +1,4 @@
-import { CircleAlert, TriangleAlert } from 'lucide-react';
+import { CircleAlert, TriangleAlert } from '@goodboy/ui/icons';
 import { ICON_SIZE, cn, tintClasses } from '@goodboy/ui';
 import type { ConnectionState } from '../../model/connectionState';
 

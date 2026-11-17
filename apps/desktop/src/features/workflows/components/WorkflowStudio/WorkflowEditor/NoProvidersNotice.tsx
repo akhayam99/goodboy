@@ -1,4 +1,4 @@
-import { Boxes } from 'lucide-react';
+import { Boxes } from '@goodboy/ui/icons';
 import { Button, EmptyState } from '@goodboy/ui';
 import { openConnection } from '../../../../connections/openConnection';
 

@@ -80,6 +80,7 @@ counts of the original rules over files they did not scan before (tests, CSS,
 | `if-without-braces`                          | an `if` whose body is not a block                                 | own      |
 | `unused-import`                              | an imported name nothing in the file reads                        | own      |
 | `entity-keyed-setting`                       | a `settings` key built with a workspace, project or session id    | own      |
+| `raw-color`                                  | a hex or `oklch(`, `rgb(`, `hsl(` colour in product TS and TSX    | own      |
 | `rust-else`                                  | `} else` in `apps/desktop/src-tauri/src`                          | guards   |
 | `sibling-margin`                             | `m*-` and `ml-auto` classes in TSX and CSS (`mx-auto` is allowed) | guards   |
 | `optical-nudge`                              | a `mt-0.5` or `-mt-px` nudge, counted apart from `sibling-margin` | guards   |
@@ -94,9 +95,13 @@ TypeScript compiler, no type information) and keeps a baseline file of its own:
 `forbidden-patterns.param-shape.baseline.json`,
 `forbidden-patterns.boolean-name.baseline.json`,
 `forbidden-patterns.if-without-braces.baseline.json`,
-`forbidden-patterns.unused-import.baseline.json` and
+`forbidden-patterns.unused-import.baseline.json`,
 `forbidden-patterns.entity-keyed-setting.baseline.json` (a line rule, not a
-syntax tree rule; its hint points at `workspace_values` and `project_values`).
+syntax tree rule; its hint points at `workspace_values` and `project_values`)
+and `forbidden-patterns.raw-color.baseline.json` (a line rule in
+`scripts/rules/rawColor.mjs`: it reads `apps/desktop/src` and
+`packages/ui/src`, skips the mock scenes, and leaves `styles.css` alone because
+the palette lives there).
 Each was created once at the measured count, so `check:baselines` read it as a new ratchet. They replace
 `unbraced-if`, `inline-object-param`, `positional-param` and `boolean-prefix`,
 retired once every file counted at least as high under the syntax tree. The
@@ -139,6 +144,7 @@ test file, unless its row above says otherwise.
 | `row-hover-copies.baseline.json`                         | hand-copied row hover styles                                                                         |
 | `scale-rules.baseline.json`                              | type, icon and spacing scale violations                                                              |
 | `disabled-opacity.baseline.json`                         | a disabled control dimmed by hand, not by the role                                                   |
+| `tone-opacity.baseline.json`                             | a tone with an opacity modifier (`bg-danger/10`) instead of its step token                           |
 | `loading-is-a-skeleton.baseline.json`                    | a visible Loading, or a bare Checking, Reading, Fetching or Searching word, where a skeleton belongs |
 | `empty-before-loaded.baseline.json`                      | a file with an empty state, a data read and no loaded flag                                           |
 | `rust-reason-copy.baseline.json`                         | a failure sentence written in Rust instead of a reason code                                          |

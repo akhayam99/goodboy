@@ -1,4 +1,4 @@
-import type { LucideIcon } from 'lucide-react';
+import type { IconGlyph } from '@goodboy/ui/icons';
 import type { SessionEvent, SessionEventKind, SessionEventPayload } from '@goodboy/types';
 import type { Tone } from '@goodboy/ui';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../shared/components/conceptIcons';
@@ -64,7 +64,7 @@ const EMPHASIS: Record<SessionEventKind, SessionEventEmphasis> = {
 };
 
 export type SessionEventGlyph = {
-  readonly icon: LucideIcon;
+  readonly icon: IconGlyph;
   readonly tone: Tone;
   readonly label: string;
 };

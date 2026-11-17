@@ -1,5 +1,5 @@
 import { useCallback, useId, type ReactNode } from 'react';
-import { Eye } from 'lucide-react';
+import { Eye } from '@goodboy/ui/icons';
 import { matchRoleLibrary } from '@goodboy/core/profile';
 import type { WorkspaceProfile } from '@goodboy/types';
 import { ICON_SIZE, Textarea } from '@goodboy/ui';

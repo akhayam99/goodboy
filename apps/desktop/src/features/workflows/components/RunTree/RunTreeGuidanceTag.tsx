@@ -1,4 +1,4 @@
-import { SlidersHorizontal } from 'lucide-react';
+import { SlidersHorizontal } from '@goodboy/ui/icons';
 import { cn, ICON_SIZE, tintClasses, Tooltip } from '@goodboy/ui';
 import { guidanceTagTip } from '../../../../store/slices/workflows/standingGuidance';
 

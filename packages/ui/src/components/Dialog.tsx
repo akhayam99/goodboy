@@ -185,7 +185,7 @@ export const Dialog = ({
       aria-labelledby={titleId}
       aria-describedby={descId}
       className={cn(
-        'overflow-hidden rounded-lg border border-border p-0 text-foreground shadow-lg',
+        'overflow-hidden rounded-lg border border-floating-edge p-0 text-foreground shadow-lg',
         SURFACE[surface],
         size === 'full' && 'max-h-none max-w-none rounded-none border-0 shadow-none',
         fullScreenOnSmall &&

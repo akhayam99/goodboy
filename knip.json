@@ -65,7 +65,7 @@
     "website": {
       "entry": ["src/prerender/renderSite.tsx"],
       "project": ["src/**/*.{ts,tsx}", "src/**/*.css"],
-      "ignoreDependencies": ["tailwindcss"]
+      "ignoreDependencies": ["tailwindcss", "lucide-react"]
     }
   },
   "ignoreExportsUsedInFile": true

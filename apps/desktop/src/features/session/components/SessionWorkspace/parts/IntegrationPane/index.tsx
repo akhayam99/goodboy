@@ -6,7 +6,7 @@ import type {
   WorkspaceId,
 } from '@goodboy/types';
 import { PaneShell, cn, formatError } from '@goodboy/ui';
-import { Unlink } from 'lucide-react';
+import { Unlink } from '@goodboy/ui/icons';
 import { EMPTY_ARRAY, useAppStore } from '../../../../../../store';
 import { resolveIntegrationConnection } from '../../../../../integrations/connection';
 import { useGithubConnection } from '../../../../../integrations/github/useGithubConnection';

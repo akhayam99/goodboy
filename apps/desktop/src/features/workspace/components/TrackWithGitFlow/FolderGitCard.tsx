@@ -1,6 +1,6 @@
 import { READ_FAILED } from '../../../../store/slices/notifications/errorRecovery';
 import { useState } from 'react';
-import { Upload } from 'lucide-react';
+import { Upload } from '@goodboy/ui/icons';
 import { Button, formatError, ICON_SIZE, Notice } from '@goodboy/ui';
 import type { ProjectId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';

@@ -1,5 +1,5 @@
 import type { FolderPurpose } from '@goodboy/types';
-import { CircleAlert, TriangleAlert } from 'lucide-react';
+import { CircleAlert, TriangleAlert } from '@goodboy/ui/icons';
 import { Checkbox, ChoiceCards, ICON_SIZE, tintClasses } from '@goodboy/ui';
 import { FOLDER_FACE_COPY } from '../../../features/workspace/folderFaceCopy';
 import { folderSignalsLine } from '../../../features/workspace/folderSignalsLine';

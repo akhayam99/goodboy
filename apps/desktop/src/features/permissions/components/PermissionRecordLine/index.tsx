@@ -1,4 +1,4 @@
-import { Check, X } from 'lucide-react';
+import { Check, X } from '@goodboy/ui/icons';
 import { ICON_SIZE, tintClasses } from '@goodboy/ui';
 import type { AgentId, SessionId } from '@goodboy/types';
 import type { TranscriptItem } from '../../../chat/utils/transcript-items';

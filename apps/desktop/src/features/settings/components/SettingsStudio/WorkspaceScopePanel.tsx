@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import type { WorkspaceId } from '@goodboy/types';
 import { OverflowMenu, PaneShell, type MenuEntry } from '@goodboy/ui';
-import { Copy, RotateCcw } from 'lucide-react';
+import { Copy, RotateCcw } from '@goodboy/ui/icons';
 import { useAppStore } from '../../../../store';
 import { pluralize } from '../../../../shared/utils/pluralize';
 import { pageKeys } from '../../pageKeys';

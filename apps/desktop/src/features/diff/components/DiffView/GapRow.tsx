@@ -1,4 +1,4 @@
-import { ArrowDown, ArrowUp } from 'lucide-react';
+import { ArrowDown, ArrowUp } from '@goodboy/ui/icons';
 import { Button, ICON_SIZE, Skeleton } from '@goodboy/ui';
 
 import type { ContextGap } from '../../lib/contextGaps';

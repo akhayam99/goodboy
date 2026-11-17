@@ -1,5 +1,5 @@
 import type { KeyboardEvent } from 'react';
-import { ChevronDown, ChevronUp, Search } from 'lucide-react';
+import { ChevronDown, ChevronUp, Search } from '@goodboy/ui/icons';
 import { Button, ICON_SIZE, IconButton, cn } from '@goodboy/ui';
 import type { FindInPage, FindOutcome } from '../../hooks/useFindInPage';
 import { findOutcomeText } from '../../findOutcomeText';

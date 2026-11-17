@@ -1,6 +1,6 @@
 import { useLayoutEffect, useRef, useState, type KeyboardEvent } from 'react';
 import { createPortal } from 'react-dom';
-import { Check } from 'lucide-react';
+import { Check } from '../../icons';
 import { cn } from '../../cn';
 import { FLOATING_SURFACE } from '../../floatingSurface';
 import { ScrollFade } from '../ScrollFade';

@@ -1,4 +1,4 @@
-import { Bug, Check, Copy, SquareArrowOutUpRight, Trash2, Undo2 } from 'lucide-react';
+import { Bug, Check, Copy, SquareArrowOutUpRight, Trash2, Undo2 } from '@goodboy/ui/icons';
 import type { NotificationSeverity } from '@goodboy/db';
 import { openReportSheet } from '../../bug-report/openReportSheet';
 import type { NotificationActionTarget, ObjectKindDefinition } from '../types';

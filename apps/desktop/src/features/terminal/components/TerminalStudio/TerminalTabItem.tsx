@@ -1,4 +1,4 @@
-import { RotateCcw } from 'lucide-react';
+import { RotateCcw } from '@goodboy/ui/icons';
 import { Chip, IconButton, StateDot, Tooltip } from '@goodboy/ui';
 import type { TerminalTab } from '../../../../shared/types/terminal';
 import { toolTabClassName } from '../../../../shared/utils/toolTabClassName';

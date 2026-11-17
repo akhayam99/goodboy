@@ -1,5 +1,5 @@
 import { useId, type ReactNode } from 'react';
-import { ChevronRight, RefreshCw } from 'lucide-react';
+import { ChevronRight, RefreshCw } from '@goodboy/ui/icons';
 import { cn, ICON_SIZE, IconButton, FOCUS_RING } from '@goodboy/ui';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import type { SessionScriptGroup } from '../../buildSessionScripts';

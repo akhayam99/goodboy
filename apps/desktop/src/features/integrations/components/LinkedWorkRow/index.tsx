@@ -1,5 +1,5 @@
 import type { MouseEvent, ReactNode } from 'react';
-import { ArrowRight, ArrowUpRight, type LucideIcon } from 'lucide-react';
+import { ArrowRight, ArrowUpRight, type IconGlyph } from '@goodboy/ui/icons';
 import { cn, ICON_SIZE, tintClasses, Tooltip, FOCUS_RING } from '@goodboy/ui';
 import type { Tone } from '@goodboy/ui';
 import {
@@ -9,7 +9,7 @@ import {
 
 type IconLeading = {
   readonly kind: 'icon';
-  readonly icon: LucideIcon;
+  readonly icon: IconGlyph;
   readonly tone: Tone;
   readonly label: string;
 };

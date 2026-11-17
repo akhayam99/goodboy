@@ -1,6 +1,6 @@
 import { CHECK_STATE } from '../../../../store/slices/notifications/errorRecovery';
 import { useState } from 'react';
-import { Trash2 } from 'lucide-react';
+import { Trash2 } from '@goodboy/ui/icons';
 import { ICON_SIZE, SelectionBar, SelectionConfirm } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
 import type { StorageFolder } from '../../../../store/slices/storage/types';

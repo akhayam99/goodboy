@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Trash2 } from 'lucide-react';
+import { Trash2 } from '@goodboy/ui/icons';
 import { Button, ConfirmPopover, Eyebrow, FieldRow, ICON_SIZE } from '@goodboy/ui';
 
 export const ResetAppScene = () => {

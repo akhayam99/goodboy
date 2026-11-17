@@ -7,7 +7,7 @@ import {
   useState,
   type KeyboardEvent,
 } from 'react';
-import { ChevronRight, List } from 'lucide-react';
+import { ChevronRight, List } from '@goodboy/ui/icons';
 import { Divider } from '@goodboy/ui';
 import { NAMES } from '../../../../shared/utils/names';
 import { parseQuery } from '../../../quick-actions/grammar';

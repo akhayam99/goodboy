@@ -1,4 +1,4 @@
-import { Plus } from 'lucide-react';
+import { Plus } from '@goodboy/ui/icons';
 import { cn, COLLAPSED_RAIL_WIDTH, ICON_SIZE, PANE_RHYTHM } from '@goodboy/ui';
 import type { SessionId, WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../store';

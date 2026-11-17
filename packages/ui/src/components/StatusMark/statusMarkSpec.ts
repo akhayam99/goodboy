@@ -10,8 +10,8 @@ import {
   Play,
   TriangleAlert,
   Wallet,
-  type LucideIcon,
-} from 'lucide-react';
+  type IconGlyph,
+} from '../../icons';
 import type { Tone } from '../../tint';
 
 export type StatusMarkState =
@@ -42,7 +42,7 @@ type StatusMarkDrawing =
   | {
       readonly kind: 'glyph';
       readonly family: 'ring' | 'ask' | 'settled';
-      readonly icon: LucideIcon;
+      readonly icon: IconGlyph;
       readonly className: string;
     };
 

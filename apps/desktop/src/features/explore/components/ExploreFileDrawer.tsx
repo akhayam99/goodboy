@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from 'react';
-import { SquareArrowOutUpRight, WrapText } from 'lucide-react';
+import { SquareArrowOutUpRight, WrapText } from '@goodboy/ui/icons';
 import {
   Button,
   DrawerFrame,

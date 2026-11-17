@@ -1,4 +1,4 @@
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight } from '@goodboy/ui/icons';
 import { ICON_SIZE, InteractiveRow, cn, tintClasses } from '@goodboy/ui';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { NAMES } from '../../../../shared/utils/names';

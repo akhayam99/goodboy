@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown } from '@goodboy/ui/icons';
 import { Button, cn, ICON_SIZE, tintClasses } from '@goodboy/ui';
 
 type Props = {

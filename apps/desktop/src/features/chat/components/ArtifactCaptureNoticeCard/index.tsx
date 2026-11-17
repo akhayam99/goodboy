@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { FileWarning } from 'lucide-react';
+import { FileWarning } from '@goodboy/ui/icons';
 import { Button, ICON_SIZE } from '@goodboy/ui';
 import type { AgentId, SessionId } from '@goodboy/types';
 import type { TranscriptItem } from '../../utils/transcript-items';

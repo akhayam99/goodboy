@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { KeyboardEvent } from 'react';
-import { ChevronDown, Folder, GitBranch, Plus } from 'lucide-react';
+import { ChevronDown, Folder, GitBranch, Plus } from '@goodboy/ui/icons';
 import {
   AnchoredPopover,
   Button,

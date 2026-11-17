@@ -1,4 +1,4 @@
-import { Plus } from 'lucide-react';
+import { Plus } from '@goodboy/ui/icons';
 import type { ProviderId } from '@goodboy/types';
 import { cn, ICON_SIZE, Tooltip } from '@goodboy/ui';
 import { PROVIDER_LABEL } from '../../../features/providers/providerLabel';

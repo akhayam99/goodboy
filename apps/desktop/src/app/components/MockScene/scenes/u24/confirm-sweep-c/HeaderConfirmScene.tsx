@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { GitMerge, GitPullRequestClosed } from 'lucide-react';
+import { GitMerge, GitPullRequestClosed } from '@goodboy/ui/icons';
 import { Button, ConfirmPopover, ICON_SIZE, type ConfirmRole } from '@goodboy/ui';
 
 type Props = {

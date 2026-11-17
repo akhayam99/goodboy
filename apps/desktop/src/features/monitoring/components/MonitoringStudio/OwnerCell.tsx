@@ -1,5 +1,5 @@
 import { Fragment } from 'react';
-import { ChevronRight } from 'lucide-react';
+import { ChevronRight } from '@goodboy/ui/icons';
 import { Tooltip, TruncatedText, cn, FOCUS_RING, ICON_SIZE } from '@goodboy/ui';
 import type { PortRow } from '@goodboy/core/monitoring';
 import { useAppStore } from '../../../../store';

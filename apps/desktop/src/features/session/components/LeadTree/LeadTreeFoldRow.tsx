@@ -1,5 +1,5 @@
 import { memo } from 'react';
-import { ChevronDown, ChevronRight } from 'lucide-react';
+import { ChevronDown, ChevronRight } from '@goodboy/ui/icons';
 import { cn, ICON_SIZE } from '@goodboy/ui';
 import { SpawnedRailCell } from '../SessionWorkspace/parts/TimelinePane/SpawnedRailCell';
 import type { RailRow } from '../../../workTreeModel/railGeometry';

@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { GitBranch } from 'lucide-react';
+import { GitBranch } from '@goodboy/ui/icons';
 import { ICON_SIZE, InteractiveRow, TruncatedText } from '@goodboy/ui';
 
 const SHOW_AFTER_MS = 450;

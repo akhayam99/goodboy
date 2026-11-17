@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
-import { Star } from 'lucide-react';
+import { Star } from '../icons';
 import { CardAction } from '../components/CardAction';
 
 afterEach(cleanup);
@@ -33,7 +33,7 @@ describe('CardAction', () => {
     const { className } = screen.getByRole('button', { name: 'Pin' });
     expect(className).toContain('text-muted-foreground');
     expect(className).toContain('hover:text-success');
-    expect(className).toContain('hover:bg-success/5');
+    expect(className).toContain('hover:bg-success-wash');
     expect(className).not.toMatch(/(^| )bg-success/);
     expect(className).not.toMatch(/(^| )text-success/);
   });

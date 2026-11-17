@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
-import { Copy } from 'lucide-react';
+import { Copy } from '@goodboy/ui/icons';
 import { queryTooltipTextOf, tooltipTextOf } from '../../../__tests__/helpers/tooltip';
 import { MessageAction } from './MessageAction';
 

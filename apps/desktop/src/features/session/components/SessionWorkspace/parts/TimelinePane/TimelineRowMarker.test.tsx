@@ -3,7 +3,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
 import { WORK_NODE_SIZE, tintClasses } from '@goodboy/ui';
-import { CONCEPT_TONE } from '../../../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../../../shared/components/conceptIcons';
 import type {
   TimelineRowItem,
   TimelineStreamEntry,
@@ -72,6 +72,25 @@ describe('TimelineRowMarker', () => {
     expect(plan.innerHTML).toContain(tintClasses(CONCEPT_TONE.plans).icon);
     expect(plan.innerHTML).not.toContain('text-warning');
   });
+
+  it('shades the plan glyph in duotone and keeps the branch glyph plain', () => {
+    render(<TimelineRowMarker item={itemOf({ entry: planEntry() })} />);
+    render(<TimelineRowMarker item={itemOf({ entry: branchEntry() })} />);
+
+    expect(nodeOf({ label: 'Plan' }).querySelector('path[opacity="0.2"]')).not.toBeNull();
+    expect(nodeOf({ label: 'Branch' }).querySelector('path[opacity="0.2"]')).toBeNull();
+  });
+
+  it.each(['plans', 'report', 'wireframe'] as const)(
+    'draws the %s glyph in duotone, since an emphasized marker asks for it',
+    (concept) => {
+      const Glyph = CONCEPT_ICONS[concept];
+      const { container } = render(<Glyph weight="duotone" />);
+
+      expect(container.querySelectorAll('path')).toHaveLength(2);
+      expect(container.querySelector('path[opacity="0.2"]')).not.toBeNull();
+    },
+  );
 
   it('occludes the lane behind the plan marker as well', () => {
     render(<TimelineRowMarker item={itemOf({ entry: planEntry() })} />);

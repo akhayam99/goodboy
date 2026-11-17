@@ -1,4 +1,4 @@
-import { ArrowRight, Folder } from 'lucide-react';
+import { ArrowRight, Folder } from '@goodboy/ui/icons';
 import { gitlabSessionOf } from '../../../../store/slices/mount-request/requestOf';
 import {
   Chip,

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ChevronRight, KeyRound } from 'lucide-react';
+import { ChevronRight, KeyRound } from '@goodboy/ui/icons';
 import { useShallow } from 'zustand/react/shallow';
 import { isApiProvider } from '@goodboy/core/providers';
 import { Button, Chip, cn, FOCUS_RING, ICON_SIZE, Reveal } from '@goodboy/ui';

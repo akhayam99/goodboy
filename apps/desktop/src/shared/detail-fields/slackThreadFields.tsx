@@ -1,4 +1,4 @@
-import { MessagesSquare } from 'lucide-react';
+import { MessagesSquare } from '@goodboy/ui/icons';
 import type { IsoDateTime } from '@goodboy/types';
 import { RecordState } from '../components/StudioDetail/RecordState';
 import type { FactRegistry } from './factTypes';

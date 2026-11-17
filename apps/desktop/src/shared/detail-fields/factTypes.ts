@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import type { LucideIcon } from 'lucide-react';
+import type { IconGlyph } from '@goodboy/ui/icons';
 
 export type FactSlot =
   'state' | 'person' | 'weight' | 'place' | 'labels' | 'measure' | 'links' | 'time';
@@ -22,7 +22,7 @@ type FactEditorParams = {
 export type Fact = {
   readonly key: string;
   readonly label: string;
-  readonly icon: LucideIcon | null;
+  readonly icon: IconGlyph | null;
   readonly node: ReactNode;
   readonly hint?: string;
   readonly editor?: (params: FactEditorParams) => ReactNode;

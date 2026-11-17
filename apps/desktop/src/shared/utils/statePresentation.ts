@@ -1,11 +1,11 @@
-import type { LucideIcon } from 'lucide-react';
+import type { IconGlyph } from '@goodboy/ui/icons';
 import type { Tone } from '@goodboy/ui';
 
 export type StatePresentation = {
   readonly label: string;
   readonly reason: string;
   readonly tone: Tone;
-  readonly icon: LucideIcon;
+  readonly icon: IconGlyph;
 };
 
 type DescriptionParams = {

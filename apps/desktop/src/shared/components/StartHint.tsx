@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { X } from 'lucide-react';
+import { X } from '@goodboy/ui/icons';
 import { Button, ICON_SIZE, IconButton, useEscapeLayer } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../store';

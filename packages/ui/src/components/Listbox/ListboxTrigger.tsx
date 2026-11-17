@@ -1,5 +1,5 @@
 import type { KeyboardEvent, ReactNode, Ref } from 'react';
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown } from '../../icons';
 import { cn } from '../../cn';
 import { FOCUS_RING } from '../../focusRing';
 import { chipClasses } from '../Chip';
@@ -59,7 +59,7 @@ const variantClasses = ({
     FIELD_SIZE[size],
     disabled
       ? 'border-border-soft text-disabled-foreground'
-      : 'border-border text-foreground hover:border-border-strong',
+      : 'border-border-control text-foreground hover:border-border-strong',
     isOpen && 'border-border-strong',
   );
 };

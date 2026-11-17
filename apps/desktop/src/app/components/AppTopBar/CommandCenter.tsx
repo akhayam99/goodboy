@@ -1,4 +1,4 @@
-import { Search } from 'lucide-react';
+import { Search } from '@goodboy/ui/icons';
 import { cn, FOCUS_RING, ICON_SIZE, Kbd, Tooltip, TOP_BAR_CONTROL } from '@goodboy/ui';
 import { useCurrentWorkspace } from '../../../store';
 import { OPEN_COMMAND_PALETTE_EVENT } from '../../../features/onboarding/openCommandPaletteEvent';

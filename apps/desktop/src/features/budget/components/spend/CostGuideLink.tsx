@@ -1,4 +1,4 @@
-import { ChevronRight } from 'lucide-react';
+import { ChevronRight } from '@goodboy/ui/icons';
 import { ICON_SIZE, FOCUS_RING, cn } from '@goodboy/ui';
 import { openGuideChapter } from '../../../settings/openGuideChapter';
 

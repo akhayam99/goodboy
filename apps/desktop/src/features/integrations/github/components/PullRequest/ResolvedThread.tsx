@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { CheckCheck } from 'lucide-react';
+import { CheckCheck } from '@goodboy/ui/icons';
 import { Chip, ICON_SIZE } from '@goodboy/ui';
 import type { CommentThread } from '../../comment-threads';
 import { TranscriptDisclosure } from '../../../../chat/components/TranscriptDisclosure';

@@ -1,4 +1,4 @@
-import { CircleDollarSign } from 'lucide-react';
+import { CircleDollarSign } from '@goodboy/ui/icons';
 import {
   AnchoredPopover,
   Button,

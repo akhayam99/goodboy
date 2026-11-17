@@ -1,4 +1,4 @@
-import { ShieldCheck } from 'lucide-react';
+import { ShieldCheck } from '@goodboy/ui/icons';
 import { ICON_SIZE } from '@goodboy/ui';
 
 const TRUST_COPY =

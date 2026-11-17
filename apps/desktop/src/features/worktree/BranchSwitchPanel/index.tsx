@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Check, Copy, GitBranch } from 'lucide-react';
+import { Check, Copy, GitBranch } from '@goodboy/ui/icons';
 import {
   Button,
   formatError,

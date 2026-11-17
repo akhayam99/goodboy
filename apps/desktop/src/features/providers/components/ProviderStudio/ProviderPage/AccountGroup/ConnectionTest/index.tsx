@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { BAND_ROW_CLASS, cn, ICON_SIZE } from '@goodboy/ui';
-import { Check } from 'lucide-react';
+import { Check } from '@goodboy/ui/icons';
 import { useAppStore } from '../../../../../../../store/store';
 
 import type { ProviderDisplayInfo } from '../../../../../providers';

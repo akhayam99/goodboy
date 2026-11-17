@@ -1,1 +1,1 @@
-export const FLOATING_SURFACE = 'rounded-lg border border-border bg-floating shadow-lg';
+export const FLOATING_SURFACE = 'rounded-lg border border-floating-edge bg-floating shadow-lg';

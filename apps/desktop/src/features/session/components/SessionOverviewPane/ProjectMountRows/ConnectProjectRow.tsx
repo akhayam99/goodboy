@@ -1,4 +1,4 @@
-import { FolderPlus } from 'lucide-react';
+import { FolderPlus } from '@goodboy/ui/icons';
 import { Button, cn, ICON_SIZE, ROW_INTERACTIVE } from '@goodboy/ui';
 import type { Project, WorkspaceId } from '@goodboy/types';
 

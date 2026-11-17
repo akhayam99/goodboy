@@ -1,5 +1,5 @@
 import { SegmentedTabs, type SegmentedTabOption } from '@goodboy/ui';
-import { Monitor, Moon, Sun } from 'lucide-react';
+import { Monitor, Moon, Sun } from '@goodboy/ui/icons';
 import {
   DEFAULT_THEME_PREFERENCE,
   switchTheme,

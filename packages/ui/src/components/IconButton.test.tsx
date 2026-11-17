@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 
-import { Trash2 } from 'lucide-react';
+import { Trash2 } from '../icons';
 import { afterEach, describe, expect, it } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { registerShortcutGlyphs } from '../shortcutGlyphs';
@@ -25,7 +25,7 @@ describe('IconButton', () => {
     );
 
     const button = getByRole('button', { name: 'Delete session' });
-    expect(button.className).toMatch(/\bborder-danger\/\d+/);
+    expect(button.className).toMatch(/\bborder-danger-edge\b/);
   });
 
   it('reads busy and refuses a second click while its action runs', () => {

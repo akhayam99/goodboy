@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import type { ProviderBudgetStatus, ProviderId } from '@goodboy/types';
 import { BAND_ROW_CLASS, Button, cn, formatUsd, ICON_SIZE, Tooltip } from '@goodboy/ui';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight } from '@goodboy/ui/icons';
 import { useAppStore } from '../../../../../../store';
 import { openImpactStudio } from '../../../../../impact/openImpactStudio';
 import { useProviderBudgetOverview } from '../../../../hooks/useProviderBudgetOverview';

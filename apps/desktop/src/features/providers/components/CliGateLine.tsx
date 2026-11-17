@@ -1,4 +1,4 @@
-import { TriangleAlert } from 'lucide-react';
+import { TriangleAlert } from '@goodboy/ui/icons';
 import type { CliGate } from '@goodboy/core/providers';
 import { cn, FOCUS_RING, ICON_SIZE, tintClasses } from '@goodboy/ui';
 

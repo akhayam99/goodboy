@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { Eye } from 'lucide-react';
+import { Eye } from '@goodboy/ui/icons';
 import { AnchoredPopover, Button, ICON_SIZE, useDropdown } from '@goodboy/ui';
 import type { PrReviewDraft, SessionId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';

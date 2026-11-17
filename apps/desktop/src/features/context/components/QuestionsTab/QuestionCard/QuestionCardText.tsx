@@ -1,4 +1,4 @@
-import { FileText } from 'lucide-react';
+import { FileText } from '@goodboy/ui/icons';
 import { cn, ICON_SIZE, Markdown } from '@goodboy/ui';
 import type { QuestionParts } from '../questionParts';
 

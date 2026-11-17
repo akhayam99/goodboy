@@ -19,7 +19,7 @@ export const Input = ({ className, type = 'text', size = 'sm', ...rest }: InputP
       type={type}
       data-size={size}
       className={cn(
-        'w-full rounded-md border border-border bg-background text-ui text-foreground placeholder:text-faint-foreground',
+        'w-full rounded-md border border-border-control bg-background text-ui text-foreground placeholder:text-faint-foreground',
         FOCUS_RING,
         'disabled:bg-fill disabled:text-disabled-foreground',
         FIELD_SIZE_CLASSES[size],

@@ -13,7 +13,7 @@ import {
   Tooltip,
   FOCUS_RING,
 } from '@goodboy/ui';
-import { KeyRound, Plus, Trash2 } from 'lucide-react';
+import { KeyRound, Plus, Trash2 } from '@goodboy/ui/icons';
 import { type CredentialId, type ProviderId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';

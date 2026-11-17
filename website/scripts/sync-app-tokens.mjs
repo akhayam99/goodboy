@@ -26,10 +26,20 @@ const AGENT_TOKEN_NAMES = [
   'wireframe',
 ];
 
+const TONE_NAMES = ['primary', 'info', 'success', 'warning', 'danger', 'merged', 'draft'];
+
+const TONE_STEP_NAMES = TONE_NAMES.flatMap((tone) => [
+  `${tone}-wash`,
+  `${tone}-subtle`,
+  `${tone}-edge`,
+  `${tone}-solid`,
+  `${tone}-solid-hover`,
+  `on-${tone}`,
+]);
+
 const STATE_TOKEN_NAMES = [
   'border',
   'primary',
-  'on-tone',
   'success',
   'info',
   'warning',
@@ -39,7 +49,9 @@ const STATE_TOKEN_NAMES = [
   'faint-foreground',
   'muted-foreground',
   'border-soft',
+  'border-control',
   'fill',
+  ...TONE_STEP_NAMES,
   ...Array.from({ length: 8 }, (_, index) => `identity-${index + 1}`),
   'provider-anthropic',
   'provider-cursor',
@@ -73,7 +85,7 @@ const STATE_TOKEN_NAMES = [
 const readTheme = ({ source, start, end }) => {
   const declarations = new Map();
   const block = source.slice(start, end);
-  const declarationPattern = /--color-([\w-]+):\s*([^;]+);/g;
+  const declarationPattern = /--([\w-]+):\s*([^;]+);/g;
   for (const match of block.matchAll(declarationPattern)) {
     declarations.set(match[1], match[2].trim());
   }
@@ -86,19 +98,28 @@ const getThemes = ({ source }) => {
   const lightStart = source.indexOf("html[data-theme='light']");
   const lightBlockStart = source.indexOf('{', lightStart) + 1;
   const lightEnd = source.indexOf('\n}', lightBlockStart) + 2;
+  const dark = readTheme({ source, start: themeStart, end: themeEnd });
+  const light = readTheme({ source, start: lightBlockStart, end: lightEnd });
   return {
-    dark: readTheme({ source, start: themeStart, end: themeEnd }),
-    light: readTheme({ source, start: lightBlockStart, end: lightEnd }),
+    dark,
+    light: new Map([...dark, ...light]),
   };
 };
 
-const getValue = ({ theme, name }) => {
-  const value = theme.get(name);
+const resolveValue = ({ theme, property, seen }) => {
+  const value = theme.get(property);
   if (value === undefined) {
-    throw new Error(`Missing app token: --color-${name}`);
+    throw new Error(`Missing app token: --${property}`);
   }
-  return value;
+  if (seen.includes(property)) {
+    throw new Error(`Circular app token: --${property}`);
+  }
+  return value.replace(/var\(--([\w-]+)\)/g, (_reference, name) =>
+    resolveValue({ theme, property: name, seen: [...seen, property] }),
+  );
 };
+
+const getValue = ({ theme, name }) => resolveValue({ theme, property: `color-${name}`, seen: [] });
 
 const renderTheme = ({ selector, theme }) => {
   const lines = [`${selector} {`];

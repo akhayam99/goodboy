@@ -1,9 +1,9 @@
-import { ArrowLeft, type LucideIcon } from 'lucide-react';
+import { ArrowLeft, type IconGlyph } from '@goodboy/ui/icons';
 import { Button, EmptyState, ICON_SIZE } from '@goodboy/ui';
 
 type Props = {
   readonly noun: string;
-  readonly icon: LucideIcon;
+  readonly icon: IconGlyph;
   readonly onBack?: () => void;
 };
 

@@ -47,7 +47,7 @@ describe('the floating fill', () => {
 
 describe('the floating surface', () => {
   it('is one border, one fill and one shadow', () => {
-    expect(FLOATING_SURFACE).toBe('rounded-lg border border-border bg-floating shadow-lg');
+    expect(FLOATING_SURFACE).toBe('rounded-lg border border-floating-edge bg-floating shadow-lg');
   });
 
   it.each([

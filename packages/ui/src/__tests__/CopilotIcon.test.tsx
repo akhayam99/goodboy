@@ -18,12 +18,12 @@ describe('CopilotIcon', () => {
     expect(paths[1]?.getAttribute('d')?.startsWith('M14.5 14.25a1 1 0 0 1 1 1v2')).toBe(true);
   });
 
-  it('takes the size from its prop and drops stroke props the other brand marks drop', () => {
-    const { container } = render(<CopilotIcon size={16} strokeWidth={3} />);
+  it('takes the size from its prop and drops glyph props the other brand marks drop', () => {
+    const { container } = render(<CopilotIcon size={16} weight="bold" />);
 
     const svg = container.querySelector('svg');
     expect(svg?.getAttribute('width')).toBe('16');
     expect(svg?.getAttribute('height')).toBe('16');
-    expect(svg?.hasAttribute('stroke-width')).toBe(false);
+    expect(svg?.hasAttribute('weight')).toBe(false);
   });
 });

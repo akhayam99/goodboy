@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { Globe, History, SquareArrowOutUpRight, type LucideIcon } from 'lucide-react';
+import { Globe, History, SquareArrowOutUpRight, type IconGlyph } from '@goodboy/ui/icons';
 import { ICON_SIZE, KeyHint, cn } from '@goodboy/ui';
 import { shortcutGlyphs } from '../../../../../shared/keyboard/registry';
 import type { CommandRow } from '../../../types';
@@ -38,7 +38,7 @@ const ICONS = {
   open: Globe,
   outside: SquareArrowOutUpRight,
   visit: History,
-} satisfies Record<Exclude<CommandRow['kind'], 'tab'>, LucideIcon>;
+} satisfies Record<Exclude<CommandRow['kind'], 'tab'>, IconGlyph>;
 
 const commandIconOf = ({ row }: RowParams): ReactNode => {
   if (row.kind === 'tab') {

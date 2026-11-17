@@ -1,5 +1,5 @@
 import type { MouseEvent } from 'react';
-import { CloudOff } from 'lucide-react';
+import { CloudOff } from '@goodboy/ui/icons';
 import { REVIEW_SOURCE_LABEL } from '@goodboy/core/review-source';
 import { cn, ICON_SIZE, StateDot, Tooltip, FOCUS_RING, tintClasses } from '@goodboy/ui';
 import { PullRequestChip } from '../../../integrations/github/components/PullRequestChip';

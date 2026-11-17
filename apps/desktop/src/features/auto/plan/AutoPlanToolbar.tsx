@@ -1,4 +1,4 @@
-import { Check, MessageSquare } from 'lucide-react';
+import { Check, MessageSquare } from '@goodboy/ui/icons';
 import { Button, Chip, ICON_SIZE } from '@goodboy/ui';
 import { PLAN_REVISING_REASON } from '../../plans/planRevising';
 import { AUTO_PLAN_APPROVE_LABEL } from './autoPlanApproveLabel';

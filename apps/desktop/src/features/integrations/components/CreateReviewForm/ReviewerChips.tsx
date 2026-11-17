@@ -1,5 +1,5 @@
 import { useCallback, useMemo } from 'react';
-import { X } from 'lucide-react';
+import { X } from '@goodboy/ui/icons';
 import { Chip, EmptyLine, ICON_SIZE, IconButton } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 

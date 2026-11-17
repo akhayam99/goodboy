@@ -1,4 +1,4 @@
-import { Copy, History, LogIn, RefreshCw, Unplug } from 'lucide-react';
+import { Copy, History, LogIn, RefreshCw, Unplug } from '@goodboy/ui/icons';
 import type { ObjectKindDefinition, ProviderActionTarget } from '../types';
 
 export type ProviderFacts = {

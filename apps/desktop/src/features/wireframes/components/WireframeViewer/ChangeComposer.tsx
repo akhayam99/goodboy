@@ -1,4 +1,4 @@
-import { Crosshair, X } from 'lucide-react';
+import { Crosshair, X } from '@goodboy/ui/icons';
 import { Button, Chip, ICON_SIZE, Kbd, SegmentedTabs } from '@goodboy/ui';
 import type { WireframeChangeScope, WireframePickedNode } from '../../buildWireframeChangeRequest';
 

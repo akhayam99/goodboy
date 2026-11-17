@@ -10,7 +10,7 @@ import {
   type ReactNode,
   type RefObject,
 } from 'react';
-import { Paperclip } from 'lucide-react';
+import { Paperclip } from '@goodboy/ui/icons';
 import { cn, IconButton, SegmentedTabs, Textarea } from '@goodboy/ui';
 import { ATTACHMENT_ACCEPT } from '../../../features/chat/attachment-kinds';
 import {

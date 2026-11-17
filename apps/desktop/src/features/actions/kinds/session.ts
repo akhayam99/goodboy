@@ -18,7 +18,7 @@ import {
   Pin,
   PinOff,
   Rocket,
-} from 'lucide-react';
+} from '@goodboy/ui/icons';
 import type { MountId, Session, SessionId, SessionProjectMount, WorkspaceId } from '@goodboy/types';
 import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
 import { isBranchlessSession } from '../../../shared/utils/isBranchlessSession';

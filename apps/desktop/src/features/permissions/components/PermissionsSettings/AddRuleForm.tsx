@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Plus } from 'lucide-react';
+import { Plus } from '@goodboy/ui/icons';
 import { Button, ICON_SIZE, Input, SegmentedTabs } from '@goodboy/ui';
 
 import type { NewRule } from '../../hooks/usePermissionRules';

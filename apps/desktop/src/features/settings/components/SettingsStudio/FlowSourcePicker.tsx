@@ -1,4 +1,4 @@
-import { Check } from 'lucide-react';
+import { Check } from '@goodboy/ui/icons';
 import type { WorkspaceId } from '@goodboy/types';
 import { cn, EmptyLine, ICON_SIZE, FOCUS_RING } from '@goodboy/ui';
 

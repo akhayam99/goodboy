@@ -1,5 +1,5 @@
 import { useId, useState } from 'react';
-import { ChevronRight } from 'lucide-react';
+import { ChevronRight } from '@goodboy/ui/icons';
 import { cn, ICON_SIZE, Reveal } from '@goodboy/ui';
 
 type Props = {

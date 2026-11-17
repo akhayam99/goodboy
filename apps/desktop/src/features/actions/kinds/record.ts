@@ -1,4 +1,4 @@
-import { ArrowUpRight, Hash, Link, PlayCircle, RefreshCw, Star } from 'lucide-react';
+import { ArrowUpRight, Hash, Link, PlayCircle, RefreshCw, Star } from '@goodboy/ui/icons';
 import type { SessionId } from '@goodboy/types';
 import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
 import { openWebAction } from '../openWebAction';
