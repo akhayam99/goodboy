@@ -19,7 +19,13 @@ import type { AgentId, ResolveVerdict, SessionId } from '@goodboy/types';
 import { reviewCommentLaneFactsOf } from './reviewCommentLaneFacts';
 import { reviewCommentRunFactsOf, type ReviewCommentRunFacts } from './reviewCommentRunFacts';
 import { REVIEW_COMMENT_RUN_ACTIONS } from './reviewCommentRunActions';
-import { UNDECIDED, hasOverlay, isOutsideRun, isRunFinished } from './reviewCommentRules';
+import {
+  UNDECIDED,
+  hasOverlay,
+  isOutsideRun,
+  isRunChanged,
+  isRunFinished,
+} from './reviewCommentRules';
 import {
   REVIEW_SOURCE_CAPABILITIES,
   REVIEW_SOURCE_LABEL,
@@ -602,7 +608,11 @@ export const REVIEW_COMMENT_KIND: ObjectKindDefinition<
       icon: CornerDownRight,
       group: 'act',
       shortcut: 'review.reply',
-      when: ({ facts }) => UNDECIDED.has(facts.state) && !facts.isNote && !hasOverlay({ facts }),
+      when: ({ facts }) =>
+        UNDECIDED.has(facts.state) &&
+        !facts.isNote &&
+        !hasOverlay({ facts }) &&
+        !isRunChanged({ facts }),
       slot: () => 'secondary',
       run: (params) => compose(params, 'reply'),
     },

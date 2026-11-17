@@ -256,7 +256,9 @@ export const ReviewComment = ({
 
       {(state === 'outdated' || entry.resolveWord === 'in_run') &&
         remote === null &&
-        entry.change !== null && <SourceChangeCard change={entry.change} />}
+        entry.change !== null && (
+          <SourceChangeCard change={entry.change} isRun={entry.resolveWord === 'in_run'} />
+        )}
 
       <ThreadMissingLines sessionId={sessionId} entry={entry} />
 

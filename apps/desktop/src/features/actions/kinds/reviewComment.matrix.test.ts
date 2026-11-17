@@ -626,7 +626,6 @@ const MATRIX: ReadonlyArray<Row> = [
       ...GITHUB,
       'reviewComment.sendChangeToRun primary Send the new text to the run',
       'reviewComment.keepRunAsIs secondary Keep the run as it is',
-      'reviewComment.reply secondary Reply',
       'reviewComment.resolveNoReply menu Resolve',
       ...COPY,
     ],
