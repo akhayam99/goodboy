@@ -26,6 +26,7 @@ import { deliveredResultsOf } from './deliveredResultsOf';
 import { hiddenChildIdsOf } from './hiddenChildIdsOf';
 import { presentDelegationsOf } from './presentDelegationsOf';
 import { readMessagesOf } from './readMessagesOf';
+import { sentChangeOf } from './sentChangeOf';
 import type { AutoPendingMessage, AutoPendingRefusal, AutoTreeView } from './state';
 
 type Params = {
@@ -137,6 +138,7 @@ export const readAutoTreeViews = async ({
         pendingRefusal: pendingRefusalOf({ tree, pending }),
         pendingMessages: pendingMessagesOf({ tree, pending }),
         readMessages: readMessagesOf({ tree, accepted, delegations }),
+        sentChange: sentChangeOf({ tree, rows: [...pending, ...accepted] }),
         droppedMessageIds: droppedMessageIdsOf({ tree, pending }),
         deliveredResults: deliveredResultsOf({ accepted }),
         rootAsk,

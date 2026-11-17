@@ -15,6 +15,7 @@ type Props = {
   readonly title: string;
   readonly onOpen: (artifactId: string) => void;
   readonly isApproveHidden: boolean;
+  readonly isChangeSent: boolean;
   readonly isSettledHidden: boolean;
 };
 
@@ -32,6 +33,7 @@ export const AutoDockPlan = ({
   title,
   onOpen,
   isApproveHidden,
+  isChangeSent,
   isSettledHidden,
 }: Props) => {
   const model = useAutoPlanApproval({
@@ -79,6 +81,24 @@ export const AutoDockPlan = ({
         >
           Resend approval
         </Button>
+      </div>
+    );
+  }
+  if (state === 'needs_approval' && isChangeSent) {
+    return (
+      <div
+        data-dock-plan="change_sent"
+        className="flex min-h-7 min-w-0 flex-wrap items-center gap-2 text-meta"
+      >
+        <span
+          role="status"
+          aria-live="polite"
+          className={tintClasses(AUTO_STATE_TONE.running).text}
+        >
+          {`Sent as changes to plan v${model.version}`}
+        </span>
+        <span className="flex-1" />
+        {openPlan}
       </div>
     );
   }

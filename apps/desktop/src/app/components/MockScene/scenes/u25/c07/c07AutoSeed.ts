@@ -34,6 +34,7 @@ export type C07Seed = Readonly<{
   hasImages?: boolean;
   isCapped?: boolean;
   isSubstep?: boolean;
+  isChangeSent?: boolean;
   blockedReason?: string;
 }>;
 
@@ -261,19 +262,30 @@ export const seedC07 = ({
   hasImages = false,
   isCapped = false,
   isSubstep = false,
+  isChangeSent = false,
   blockedReason,
 }: C07Seed): void => {
   const { navigate, openExternalTaskLens } = useAppStore.getInitialState();
   seedActivityRunScene();
   const base = autoSceneOf({ state });
   const stepped = isSubstep ? withSubstepOf({ scene: base }) : base;
-  const scene =
+  const blocked =
     blockedReason === undefined
       ? stepped
       : {
           ...stepped,
           view: { ...stepped.view, tree: { ...stepped.view.tree, blockedReason } },
         };
+  const scene = isChangeSent
+    ? {
+        ...blocked,
+        view: {
+          ...blocked.view,
+          tree: { ...blocked.view.tree, phase: 'deciding' as const },
+          sentChange: { artifactId: AUTO_PLAN.id, revision: 1 },
+        },
+      }
+    : blocked;
   useAppStore.setState((current) => ({
     navigate,
     openExternalTaskLens,
