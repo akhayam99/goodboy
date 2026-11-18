@@ -12,6 +12,10 @@ import {
 
 const FORM = 'shared/components/NewWorkspaceForm';
 
+const LAZY_FORM = `${FORM}/LazyNewWorkspaceForm`;
+
+const FORM_TARGETS: ReadonlySet<string> = new Set([FORM, `${FORM}/index`, LAZY_FORM]);
+
 const WIZARD_STEPS = 'features/onboarding/OnboardingWizard/steps/';
 
 const SCENES = 'app/components/MockScene/';
@@ -89,7 +93,7 @@ describe('every door opens the one form', () => {
     [
       ...new Set(
         importsInSources(productSources())
-          .filter(({ target }) => target === FORM || target === `${FORM}/index`)
+          .filter(({ from, target }) => FORM_TARGETS.has(target) && from !== `${LAZY_FORM}.tsx`)
           .map(({ from }) => from),
       ),
     ].sort();

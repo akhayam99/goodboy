@@ -48,7 +48,7 @@ describe('home scenes', () => {
 
   it('opens the one form in place', async () => {
     await mount({ state: 'new' });
-    expect(screen.getByRole('form', { name: 'New workspace' })).toBeDefined();
+    expect(await screen.findByRole('form', { name: 'New workspace' })).toBeDefined();
   });
 
   it('says no workspace yet with setup paused at Workspace', async () => {

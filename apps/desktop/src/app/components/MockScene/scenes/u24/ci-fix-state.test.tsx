@@ -26,6 +26,7 @@ let store: StoryStore;
 
 beforeAll(async () => {
   store = await importStore();
+  await import('../../../../../features/branch/components/CheckAnalysisDrawer');
 }, STORE_IMPORT_TIMEOUT_MS);
 beforeEach(async () => {
   await resetStoryStore();
@@ -64,7 +65,7 @@ const openRowDrawer = () => {
     throw new Error('The failing check row is missing');
   }
   fireEvent.click(row);
-  return screen.getByRole('region', { name: 'Debugger' });
+  return screen.findByRole('region', { name: 'Debugger' });
 };
 
 const rowPush = (): HTMLElement | null =>
@@ -73,12 +74,12 @@ const rowPush = (): HTMLElement | null =>
     .find((button) => button.closest('[data-row-id]') !== null) ?? null;
 
 describe('CI fix state scenes', () => {
-  it('labels the checks row Not pushed and opens the Debugger with Push from the row', () => {
+  it('labels the checks row Not pushed and opens the Debugger with Push from the row', async () => {
     show({ name: 'checks-fixed-local' });
     expect(rowWord()).toBe('Not pushed');
     expect(screen.queryByRole('button', { name: 'Open' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Push' })).toBeNull();
-    const drawer = openRowDrawer();
+    const drawer = await openRowDrawer();
     expect(within(drawer).getByRole('button', { name: 'Push' })).toBeDefined();
   });
   it('pushes once from the drawer of the row and moves the row to re-running', async () => {
@@ -110,7 +111,7 @@ describe('CI fix state scenes', () => {
       }
       return null;
     });
-    const button = within(openRowDrawer()).getByRole('button', { name: 'Push' });
+    const button = within(await openRowDrawer()).getByRole('button', { name: 'Push' });
     fireEvent.click(button);
     fireEvent.click(button);
     await waitFor(() => expect(rowWord()).toBe('Re-running'));
@@ -144,7 +145,7 @@ describe('CI fix state scenes', () => {
       }
       return null;
     });
-    fireEvent.click(within(openRowDrawer()).getByRole('button', { name: 'Push' }));
+    fireEvent.click(within(await openRowDrawer()).getByRole('button', { name: 'Push' }));
     await waitFor(() =>
       expect(reportError).toHaveBeenCalledWith(
         expect.objectContaining({ title: "Couldn't push the branch" }),
@@ -153,9 +154,9 @@ describe('CI fix state scenes', () => {
     expect(rowWord()).toBe('Not pushed');
     expect(screen.getByRole('button', { name: 'Push' })).toBeDefined();
   });
-  it('leads the drawer with the outcome, Push as its one primary and the steps as rows', () => {
+  it('leads the drawer with the outcome, Push as its one primary and the steps as rows', async () => {
     show({ name: 'debugger-drawer-fixed-local' });
-    const drawer = screen.getByRole('region', { name: 'Debugger' });
+    const drawer = await screen.findByRole('region', { name: 'Debugger' });
     expect(within(drawer).getByText('payments-api / test is fixed on your branch')).toBeDefined();
     expect(
       within(drawer).getByText(
@@ -176,9 +177,9 @@ describe('CI fix state scenes', () => {
       );
     }
   });
-  it('shows one Push, in the drawer, and the row carries none once it closes', () => {
+  it('shows one Push, in the drawer, and the row carries none once it closes', async () => {
     show({ name: 'debugger-drawer-fixed-local' });
-    const drawer = screen.getByRole('region', { name: 'Debugger' });
+    const drawer = await screen.findByRole('region', { name: 'Debugger' });
     const pushes = screen.getAllByRole('button', { name: 'Push' });
     expect(pushes).toHaveLength(1);
     expect(drawer.contains(pushes[0] ?? null)).toBe(true);
@@ -215,7 +216,7 @@ describe('CI fix state scenes', () => {
       }
       return null;
     });
-    const drawer = screen.getByRole('region', { name: 'Debugger' });
+    const drawer = await screen.findByRole('region', { name: 'Debugger' });
     fireEvent.click(within(drawer).getByRole('button', { name: 'Push' }));
     await waitFor(() =>
       expect(within(drawer).getByText('payments-api / test is running again')).toBeDefined(),

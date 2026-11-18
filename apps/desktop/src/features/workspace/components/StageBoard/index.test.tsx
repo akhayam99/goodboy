@@ -302,10 +302,10 @@ describe('StageBoard loading gate', () => {
 });
 
 describe('StageBoard empty-projects gate', () => {
-  it('leads with the add-projects surface instead of session creation when no project exists', () => {
+  it('leads with the add-projects surface instead of session creation when no project exists', async () => {
     state.projects = [];
     render(<StageBoard workspaceId={wsId} sessions={[]} />);
-    expect(screen.getByTestId('projects-step').textContent).toBe('fresh-idea');
+    expect((await screen.findByTestId('projects-step')).textContent).toBe('fresh-idea');
     expect(screen.queryByText('No sessions yet')).toBeNull();
     expect(screen.queryByRole('button', { name: 'New session' })).toBeNull();
   });
