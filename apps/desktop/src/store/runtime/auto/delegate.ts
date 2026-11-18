@@ -1,4 +1,4 @@
-import { parseDelegateSpec, parseProposeSpec } from '@goodboy/core/auto';
+import { AUTO_MAX_RUNNING_CHILDREN, parseDelegateSpec, parseProposeSpec } from '@goodboy/core/auto';
 import { getAutoTree } from '@goodboy/db';
 import {
   brandId,
@@ -48,7 +48,7 @@ const receiptOutcome = async ({
       accepted: true,
       replayed: isReplay,
       ...receipt,
-      next: 'End your turn now. The agents start when it is over, and their results come back to you as a message.',
+      next: `End your turn now. Up to ${AUTO_MAX_RUNNING_CHILDREN} agents start when it is over and the rest start as those end; their results come back to you as a message.`,
     },
   };
 };
