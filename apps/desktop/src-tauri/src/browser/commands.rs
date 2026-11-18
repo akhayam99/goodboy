@@ -288,7 +288,9 @@ pub async fn browser_favicon(
     webview: Webview,
     args: TabArgs,
 ) -> Result<Option<TabFavicon>, MessageError> {
-    let page = owned_tab(&webview, &args.tab_id)?.url().map_err(failed)?;
+    let Some(page) = web_url::live_url_of(&owned_tab(&webview, &args.tab_id)?) else {
+        return Ok(None);
+    };
     let Some(origin) = favicon::host_key(&page) else {
         return Ok(None);
     };
