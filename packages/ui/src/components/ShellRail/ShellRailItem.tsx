@@ -25,6 +25,7 @@ type Props = {
   readonly hasPopup?: 'dialog' | 'menu';
   readonly isBusy?: boolean;
   readonly isCurrent?: boolean;
+  readonly canReselect?: boolean;
   readonly isPressed?: boolean;
   readonly isQuiet?: boolean;
   readonly isOutlined?: boolean;
@@ -56,6 +57,7 @@ export const ShellRailItem = ({
   hasPopup,
   isBusy = false,
   isCurrent = false,
+  canReselect = false,
   isPressed,
   isQuiet = false,
   isOutlined = false,
@@ -66,6 +68,7 @@ export const ShellRailItem = ({
 }: Props) => {
   const form = useContext(ShellRailFormContext);
   const isLit = isCurrent || isPressed === true;
+  const isInert = isCurrent && !canReselect;
   const isFaint = isQuiet && !isLit;
   const tinted = tint === undefined ? null : tintClasses(tint);
   const name = mark !== null && isMarkShown({ mark }) ? `${label}, ${mark.name}` : label;
@@ -96,7 +99,7 @@ export const ShellRailItem = ({
           aria-expanded={isExpanded}
           aria-haspopup={hasPopup}
           className={cn(
-            isCurrent && 'cursor-default',
+            isInert && 'cursor-default',
             isFaint && 'text-faint-foreground',
             isLit && LIT_TILE,
             isLit && tone !== undefined && selectedIconClass({ tone }),
@@ -104,7 +107,7 @@ export const ShellRailItem = ({
             tinted !== null && isEdged && ['ring-1', tinted.ring],
             isBreathing && 'motion-safe:animate-arrival-breath',
           )}
-          onClick={isCurrent ? undefined : onSelect}
+          onClick={isInert ? undefined : onSelect}
         />
         <span
           data-slot="rail-mark"

@@ -29,7 +29,9 @@ const DRAFT_MARK: ShellRailMark = { kind: 'dot', name: 'draft in progress' };
 
 export const ShellLeft = ({ arrangement, workspaceId, actions, placeOverride }: Props) => {
   const storePlace = useColumnPlace();
-  const place = railPlaceOf({ place: placeOverride === undefined ? storePlace : placeOverride });
+  const columnPlace = placeOverride === undefined ? storePlace : placeOverride;
+  const place = railPlaceOf({ place: columnPlace });
+  const isInSession = columnPlace === null;
   const hasDraft = useAppStore((state) =>
     workspaceId === null
       ? false
@@ -65,6 +67,7 @@ export const ShellLeft = ({ arrangement, workspaceId, actions, placeOverride }: 
               mark={railMarkOf({ id: door.id, signal: signals[door.id] })}
               isQuiet={door.isReference === true}
               isCurrent={place === door.id}
+              canReselect={isInSession && door.id === 'board'}
               onSelect={() => openColumnDoor({ id: door.id, actions })}
             />
           ))}

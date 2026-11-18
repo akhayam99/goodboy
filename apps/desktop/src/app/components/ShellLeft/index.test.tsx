@@ -190,8 +190,16 @@ describe('the places rail', () => {
     expect(actions.openSettings).toHaveBeenCalledOnce();
   });
 
-  it('keeps the Board lit while a session is open, since the session is its child', () => {
+  it('keeps the Board lit while a session is open, and a click on it goes to the Board', () => {
     const actions = mount({ currentSessionId: OPEN_ID });
+
+    expect(current()).toEqual(['board']);
+    fireEvent.click(within(rail()).getByRole('button', { name: 'Board' }));
+    expect(actions.openBoard).toHaveBeenCalledOnce();
+  });
+
+  it('does nothing on a click of the Board while the Board is open', () => {
+    const actions = mount({});
 
     expect(current()).toEqual(['board']);
     fireEvent.click(within(rail()).getByRole('button', { name: 'Board' }));

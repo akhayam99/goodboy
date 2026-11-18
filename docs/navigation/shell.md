@@ -368,7 +368,8 @@ and quiet. The rail holds no tool: Terminal and Browser live on the right rail
 (The session tools). Monitoring has no item: it opens from the Go menu and the
 palette (`home: 'menu'` in `destinations.ts`). One item is lit, from the one
 column place through `railPlaceOf`: an open session keeps the Board lit, a page
-lights its own item, and a current item does nothing. Two signals only, read
+lights its own item, and a current item does nothing, except the Board lit
+under a session, which goes to the Board (`canReselect` on `ShellRailItem`). Two signals only, read
 from the store (`useDoorSignals`) and chosen by `railMarkOf`: the needs-you
 count on the Board, the dot on Tasks for new tasks; the fact goes into the
 accessible name. The running terminals and the browser tabs count on the right
@@ -505,8 +506,8 @@ covered.
   Chat left the bar for the places rail. Board, the rail's first place, is pressed
   (`aria-current="page"`) on the board and does nothing; over a studio on the
   board it closes the studio; in a session it stays lit, since the session is
-  its child, and does nothing (`ShellLeft`): ⌘⇧H and Open Board in Sessions go
-  to the board as a history entry. Chat is a door to the `chat` studio on the
+  its child, and a click on it goes to the board as a history entry, like ⌘⇧H
+  and Open Board in Sessions (`ShellLeft`). Chat is a door to the `chat` studio on the
   chat you had open last in this workspace (`lastChatByWorkspace`, memory only,
   `selectChatDoor`), else the most recent chat by activity, else a new chat; after
   you press New chat (in the Chat page header on an open chat, `ChatHeader`, or
