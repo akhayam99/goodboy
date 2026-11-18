@@ -274,9 +274,6 @@ describe('resolve queue actions', () => {
         reply: '   ',
       }),
     ).rejects.toThrow('Write the reply the reviewer will read before you refuse');
-    expect('Write the reply the reviewer will read before you refuse').toBe(
-      'Write the reply the reviewer will read before you refuse',
-    );
     expect((await listResolveQueueItems({ db, sessionId }))[0]?.item.approvalState).toBe('none');
     await live.actions.refuseResolveQueueItem({
       sessionId,
@@ -358,7 +355,6 @@ describe('resolve queue actions', () => {
         reply: 'Reply',
       }),
     ).rejects.toThrow('Fix already integrated');
-    expect('Fix already integrated').toBe('Fix already integrated');
     expect((await listResolveQueueItems({ db, sessionId }))[0]?.item.approvalState).toBe('none');
   });
 
