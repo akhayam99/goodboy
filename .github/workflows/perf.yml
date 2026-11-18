@@ -120,7 +120,7 @@ jobs:
           LABEL: perf
           TITLE: perf tests are failing
           MESSAGE: The perf tests failed on ${{ github.event_name }}.
-        run: bash scripts/report-ci-issue.sh
+        run: node scripts/report-ci-issue.mjs
 
   report-audit:
     name: report audit failure
@@ -145,4 +145,4 @@ jobs:
           LABEL: security
           TITLE: a production dependency has a known advisory
           MESSAGE: The nightly pnpm audit found an advisory.
-        run: bash scripts/report-ci-issue.sh
+        run: node scripts/report-ci-issue.mjs
