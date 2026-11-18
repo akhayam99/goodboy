@@ -1,12 +1,18 @@
 import { ObjectOverflowMenu } from '../../../actions/components/ObjectOverflowMenu';
-import type { ReviewCommentActionTarget } from '../../../actions/types';
+import type { FixRunActionTarget, ReviewCommentActionTarget } from '../../../actions/types';
 
 type Props = {
-  readonly target: ReviewCommentActionTarget;
+  readonly target: ReviewCommentActionTarget | FixRunActionTarget;
   readonly label: string;
-  readonly omit: ReadonlyArray<string>;
+  readonly omit?: ReadonlyArray<string>;
+  readonly isDisabled?: boolean;
 };
 
-export const ThreadOverflowMenu = ({ target, label, omit }: Props) => (
-  <ObjectOverflowMenu target={target} label={label} omit={omit} />
+export const ThreadOverflowMenu = ({ target, label, omit, isDisabled = false }: Props) => (
+  <ObjectOverflowMenu
+    target={target}
+    label={label}
+    disabled={isDisabled}
+    {...(omit !== undefined && { omit })}
+  />
 );

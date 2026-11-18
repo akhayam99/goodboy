@@ -1,9 +1,9 @@
 import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { useAgentOutcome } from '../../../../shared/hooks/useAgentOutcome';
-import { ObjectOverflowMenu } from '../../../actions/components/ObjectOverflowMenu';
-import type { ObjectTarget } from '../../../actions/types';
+import type { FixRunActionTarget } from '../../../actions/types';
 import { ItemWorkLine } from '../../../live-state/itemWork/ItemWorkLine';
+import { ThreadOverflowMenu } from './ThreadOverflowMenu';
 import { checksSkippedLine, checksSkippedOf } from '../../checksSkipped';
 import { fixRunCountOf, type FixRun } from '../../fixRun';
 import type { LaneStatus } from '../../laneStatus';
@@ -35,7 +35,7 @@ export const FixRunCount = ({ sessionId, run, lane }: Props) => {
   if (count === null) {
     return null;
   }
-  const target: ObjectTarget = {
+  const target: FixRunActionTarget = {
     kind: 'fixRun',
     facts: {
       stop: {
@@ -60,7 +60,7 @@ export const FixRunCount = ({ sessionId, run, lane }: Props) => {
         state="fixing"
         detail={fixingPlaceText(count)}
         agentId={run.agentId}
-        action={<ObjectOverflowMenu label={FIX_RUN_COUNT_COPY.menu} target={target} />}
+        action={<ThreadOverflowMenu label={FIX_RUN_COUNT_COPY.menu} target={target} />}
       />
     </span>
   );

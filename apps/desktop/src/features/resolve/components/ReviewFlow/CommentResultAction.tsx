@@ -2,12 +2,12 @@ import { Button } from '@goodboy/ui';
 import type { AgentId, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import type { AppStore } from '../../../../store/store';
-import { ObjectOverflowMenu } from '../../../actions/components/ObjectOverflowMenu';
-import type { ObjectTarget } from '../../../actions/types';
+import type { FixRunActionTarget } from '../../../actions/types';
 import { ITEM_WORK_WORDS } from '../../../live-state/itemWork/itemWorkWords';
 import type { CommentRowAction } from '../../commentRowResultOf';
 import type { CommentRow } from './useCommentRow';
 import { RowFixDiffLink } from './RowFixDiffLink';
+import { ThreadOverflowMenu } from './ThreadOverflowMenu';
 import type { ReviewEntry } from './useReviewEntries';
 
 type Props = {
@@ -31,7 +31,12 @@ const COMMENT_RESULT_COPY = {
   startOverDescription: 'Begins a new agent on this comment',
 } as const;
 
-const retryTargetOf = ({ sessionId, agentId, row, openDrawer }: TargetParams): ObjectTarget => ({
+const retryTargetOf = ({
+  sessionId,
+  agentId,
+  row,
+  openDrawer,
+}: TargetParams): FixRunActionTarget => ({
   kind: 'fixRun',
   facts: {
     stop: null,
@@ -79,9 +84,9 @@ export const CommentResultAction = ({
         <Button variant="secondary" size="sm" isBusy={row.isStarting} onClick={row.retry}>
           {ITEM_WORK_WORDS.verb.retry}
         </Button>
-        <ObjectOverflowMenu
+        <ThreadOverflowMenu
           label={COMMENT_RESULT_COPY.menu}
-          disabled={row.isStarting}
+          isDisabled={row.isStarting}
           target={retryTargetOf({
             sessionId,
             agentId: entry.row.attempt?.agentId ?? null,
