@@ -668,6 +668,12 @@ the setup buttons, Start session on a task, the Start button of the New session
 page, Auto's approve button, Start fix and the storage Remove button. Every group is walked to
 its last step in a test.
 
+The story, review and Storage frames seed Harborline through
+`activityRunSeed.ts`, `resolveSeed.ts` and `audit/settingsSeed.ts`, and all
+three take its id from `BRAND_WORKSPACE_ID` in `brand/canon.ts`. The avatar
+color is a hash of the workspace id, so a seed with its own id paints
+Harborline another color (`scenes/demo/harborlineAccent.test.ts`).
+
 While a hint points at something on screen, the stage dims and lightly blurs
 everything except the context of the step (`DemoSpotlight`): one `bg-surround`
 layer at 50 percent with `backdrop-blur-xs`, cut by a single rounded SVG mask,

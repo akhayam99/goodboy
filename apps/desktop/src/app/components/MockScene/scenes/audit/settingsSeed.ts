@@ -20,6 +20,7 @@ import {
 import type { StorageFolder } from '../../../../../store/slices/storage/types';
 import { sceneClock } from '../../sceneClock';
 import { sceneParam } from './sceneParams';
+import { BRAND_WORKSPACE_ID } from '../brand/canon';
 import {
   LEARNING_TOPICS,
   sceneSetContextItemStatus,
@@ -41,7 +42,7 @@ type ChangeAutoLevelParams = AutoLevelParams & {
   readonly workspaceId: WorkspaceId;
 };
 
-export const SETTINGS_WORKSPACE_ID = 'mock-settings-workspace-harborline' as WorkspaceId;
+export const SETTINGS_WORKSPACE_ID = BRAND_WORKSPACE_ID;
 const SETTINGS_NOW = clock.iso({ at: '2026-09-22T10:12:00.000Z' });
 
 const SETTINGS_OVERRIDES: OverrideSettings = {
