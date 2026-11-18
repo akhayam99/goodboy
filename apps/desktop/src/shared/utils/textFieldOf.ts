@@ -4,6 +4,6 @@ type Params = {
 };
 
 export const textFieldOf = ({ source, key }: Params): string | null => {
-  const value = source[key];
-  return typeof value === 'string' && value !== '' ? value : null;
+  const field = source[key];
+  return typeof field === 'string' && field !== '' ? field : null;
 };
