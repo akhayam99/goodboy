@@ -446,6 +446,49 @@ describe('substeps', () => {
     expect(resumed.at(-1)?.runId).not.toBeNull();
   });
 
+  it('keeps a paused parent alive while its helper waits more than 35 minutes for a slot', async () => {
+    const { world, parents } = await pausedParents({ count: 1 });
+    const parent = firstParent(parents);
+    const areas = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
+    const admitted = await autoDelegates({
+      world,
+      requestId: 'request-2',
+      spec: { children: [...areas.map((area) => SCOUT(`look at ${area}`)), helperFor(parent)] },
+    });
+    expect(admitted).toMatchObject({ isOk: true });
+    await autoTurnEnds({ world });
+    const first = world.state.ports.childTurns.length - 4;
+
+    world.state.world.clock.advance({ ms: 25 * 60_000 });
+    for (let index = first; index < first + 4; index += 1) {
+      const turn = world.state.ports.childTurns[index];
+      await childTurnEnds({ world, index, text: done(String(turn?.childAgentId)) });
+    }
+    world.state.world.clock.advance({ ms: 11 * 60_000 });
+    await world.runtime.drive(world.treeId);
+
+    const [helperQueued] = await helpersOf(world);
+    expect(helperQueued?.state).toBe('accepted');
+    expect((await delegationOf(world, parent.delegationId)).state).toBe('paused');
+
+    const fifth = world.state.ports.childTurns[first + 4];
+    await childTurnEnds({ world, index: first + 4, text: done(String(fifth?.childAgentId)) });
+
+    const [helper] = await helpersOf(world);
+    expect(helper?.state).toBe('running');
+    const kept = await delegationOf(world, parent.delegationId);
+    expect(kept.state).toBe('paused');
+    expect(kept.deadlineAt).toBeGreaterThanOrEqual(
+      (helper?.deadlineAt ?? 0) + AUTO_SUBSTEP_PARENT_SLACK_MS,
+    );
+    const attempts = await listAutoAttemptsOfDelegation({
+      db: world.state.world.db,
+      delegationId: brandId<AutoDelegationId>({ value: parent.delegationId }),
+    });
+    expect(attempts.at(-1)?.state).toBe('paused');
+    expect(world.errors).toEqual([]);
+  });
+
   it('stops the substeps before the parent', async () => {
     const { world, parents } = await pausedParents({ count: 1 });
     const parent = firstParent(parents);

@@ -1870,7 +1870,10 @@ A paused delegation holds no running slot, so four paused parents can each get a
 answer to a parent is always admitted: the parent waits in `accepted` and takes the next free slot,
 so the helper's slot passes back to it. Admitting a helper moves the parent's deadline to the
 helper's deadline plus `AUTO_SUBSTEP_PARENT_SLACK_MS`, in the same transaction, and the helper's
-start moves it again from its real start, so a waiting parent is not expired. Cost per
+start moves it again from its real start. While a helper waits in `accepted` for a slot, the
+parent never times out, however long the wait: `enforceDeadlines` expires a paused parent only in
+a statement that rechecks its deadline and finds no queued helper, so a helper that starts in the
+same tick still finds its parent paused. Cost per
 ask: one delegation and two attempts from the tree's counters and budget; the digest and the question
 block say so (`substepNeedsLine`).
 
