@@ -14,7 +14,6 @@ export const AUTO_REFUSAL_USER_REASON = {
   not_owner: 'another window runs this conversation',
   limit_calls: 'too many hand overs in one turn',
   limit_refusals: 'too many refused hand overs in this conversation',
-  limit_wall_clock: 'the conversation reached its time limit',
   artifact_unknown: 'the artifact it named is not in this conversation',
   stale_revision: 'the artifact it named has a newer version',
   artifact_consumed: 'the artifact it named was already used',

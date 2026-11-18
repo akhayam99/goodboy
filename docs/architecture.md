@@ -1215,7 +1215,7 @@ kept.
   budget block resumes by itself once the limit covers a turn, and every other block waits
   for `retryBlockedTree.ts` (Retry, a message from the user, or the recovery after a
   restart for a block that is not a gate). Retry resets the no progress streak and refuses
-  past the time limit or the budget. `settleAutoTurn.ts` picks the next
+  at the budget. `settleAutoTurn.ts` picks the next
   phase when the turn ends (delegating, waiting, merging, done or answering), puts the
   batch back when the turn failed, and counts a turn with no answer and no work, or whose
   block was refused. The text it delivers (`buildDeliveryMessage.ts`) starts with a digest of the

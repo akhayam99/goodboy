@@ -79,13 +79,27 @@ describe('autoRetryTargetsOf', () => {
     const failed = aView({ phase: 'blocked' });
     const limited = {
       ...failed,
-      tree: { ...failed.tree, blockedReason: AUTO_BLOCK_TEXT.limit_wall_clock },
+      tree: { ...failed.tree, blockedReason: AUTO_BLOCK_TEXT.budget },
     };
     const targetsOf = ({ view }: TargetsParams) =>
       autoRetryTargetsOf({ views: [view], agents: [ROOT], now: FIXTURE_NOW });
 
     expect(targetsOf({ view: failed }).map((target) => target.kind)).toEqual(['blocked']);
     expect(targetsOf({ view: limited })).toEqual([]);
+  });
+
+  it('targets an Auto stored as blocked at the retired time limit, so Retry resumes it', () => {
+    const failed = aView({ phase: 'blocked' });
+    const retired = {
+      ...failed,
+      tree: { ...failed.tree, blockedReason: 'This conversation reached its time limit.' },
+    };
+
+    expect(
+      autoRetryTargetsOf({ views: [retired], agents: [ROOT], now: FIXTURE_NOW }).map(
+        (target) => target.kind,
+      ),
+    ).toEqual(['blocked']);
   });
 
   it('targets failed, timed out and blocked children with their reason', () => {

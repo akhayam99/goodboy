@@ -25,7 +25,6 @@ export const AUTO_TREE_LIMITS = {
   refusals: 10,
   questionCyclesPerDelegation: 3,
   noProgressStreak: 3,
-  wallClockHours: 24,
   returnsPerDelegation: 2,
   rebriefsPerTask: 3,
   returnsPerTreeWindow: 6,

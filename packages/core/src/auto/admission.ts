@@ -112,9 +112,6 @@ const treeRefusal = ({ snapshot, tree, count }: TreeChecksParams): AutoRefusalCo
   if (tree.refusalsUsed >= AUTO_TREE_LIMITS.refusals) {
     return 'limit_refusals';
   }
-  if (snapshot.nowMs >= tree.hardDeadlineAt) {
-    return 'limit_wall_clock';
-  }
   if (snapshot.openCount + count > AUTO_MAX_OPEN_CHILDREN) {
     return 'breadth_cap';
   }

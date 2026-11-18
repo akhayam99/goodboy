@@ -13,7 +13,12 @@ type Params = {
   readonly reason: string | null;
 };
 
-const GATE_TEXTS: ReadonlyArray<string> = Object.values(AUTO_BLOCK_TEXT);
+const LEGACY_TIME_LIMIT_BLOCK_TEXT = 'This conversation reached its time limit.';
+
+const GATE_TEXTS: ReadonlyArray<string> = [
+  ...Object.values(AUTO_BLOCK_TEXT),
+  LEGACY_TIME_LIMIT_BLOCK_TEXT,
+];
 
 export const isAutoGateBlock = ({ reason }: Params): boolean =>
   reason !== null && (GATE_TEXTS.includes(reason) || reason.startsWith(AUTO_REFUSED_BLOCK_LEAD));

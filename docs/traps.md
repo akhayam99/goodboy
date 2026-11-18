@@ -663,9 +663,9 @@ fails silently at runtime.
   its telemetry while it runs (`autoLiveUsdSql`) and its reconciled cost after;
   `autoReservedUsdSql` skips `owner_kind = 'attempt'` so old rows with an amount
   hold nothing.
-- Never add a fixed count of agents, runs or turns as a hard stop of an Auto tree.
-  The spend cap, the no progress streak and the time limit already guard it, and a
-  count ends a useful tree with no way forward. `delegations_used`, `attempts_used`
+- Never add a fixed count of agents, runs or turns, or a clock, as a hard stop of an
+  Auto tree. The spend cap and the no progress streak already guard it, and a count
+  or a clock the user cannot see ends a useful tree with no way forward. `delegations_used`, `attempts_used`
   and `turns_used` are information only, and `grants` is a dead column kept for old
   rows.
 - The admission rule is written twice on purpose: as one guarded SQL statement

@@ -64,7 +64,7 @@ const mainPorts = () => {
   const stop = vi.fn<TreeStopPort>(async () => 'stopped');
   const retry = vi.fn<TreeRetryPort>(async () => ({
     kind: 'refused',
-    message: 'This conversation reached its time limit.',
+    message: 'The budget left does not cover another Auto turn. Raise the limit to go on.',
   }));
   const userTurn = vi.fn<AutoUserTurnPort>(async () => 'queued');
   const decision = vi.fn<DelegationDecisionPort>(async () => 'confirmed');
@@ -184,7 +184,7 @@ describe('Auto in a window without the runtime', () => {
 
     expect(await client.ports.retry({ treeId: 'tree-harborline' })).toEqual({
       kind: 'refused',
-      message: 'This conversation reached its time limit.',
+      message: 'The budget left does not cover another Auto turn. Raise the limit to go on.',
     });
   });
 

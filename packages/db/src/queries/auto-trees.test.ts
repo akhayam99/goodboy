@@ -54,7 +54,6 @@ describe('auto trees', () => {
         primaryMountId: null,
         capUsd: 9,
         nowMs: AUTO_SEED_NOW,
-        hardDeadlineAt: AUTO_SEED_NOW + 1,
       },
     });
     expect(again.isCreated).toBe(false);

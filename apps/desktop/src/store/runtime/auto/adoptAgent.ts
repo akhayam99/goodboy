@@ -30,8 +30,6 @@ import {
 import { EFFORT_LEVELS } from '../../../features/chat/utils/chat-constants';
 
 const AUTO_AGENT_NAME = 'Auto';
-const HOUR_MS = 60 * 60 * 1000;
-const WALL_CLOCK_HOURS = 24;
 const MAX_ORDINAL_ATTEMPTS = 3;
 
 type AdoptSource = Readonly<{
@@ -265,7 +263,6 @@ export const adoptAgent = async ({
           treeId,
           primaryMountId,
           capUsd,
-          hardDeadlineAt: nowMs + WALL_CLOCK_HOURS * HOUR_MS,
           delegation: {
             id: delegationId,
             requestId: `adopt-${sourceAgentId}`,

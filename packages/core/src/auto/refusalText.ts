@@ -17,7 +17,6 @@ export const AUTO_REFUSAL_TEXT = {
   not_owner: 'Another window runs this conversation. Try again in a moment.',
   limit_calls: `You may call delegate ${AUTO_TREE_LIMITS.delegateCallsPerTurn} times in one turn. End your turn.`,
   limit_refusals: 'Too many delegate calls were refused in this conversation. Tell the user.',
-  limit_wall_clock: 'This conversation reached its time limit.',
   artifact_unknown: 'That artifact does not belong to this conversation.',
   stale_revision: 'That artifact has a newer version. Read it again and retry once.',
   artifact_consumed:

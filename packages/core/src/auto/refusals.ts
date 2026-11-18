@@ -12,7 +12,6 @@ export const AUTO_REFUSAL_CODES = [
   'not_owner',
   'limit_calls',
   'limit_refusals',
-  'limit_wall_clock',
   'artifact_unknown',
   'stale_revision',
   'artifact_consumed',
@@ -48,7 +47,6 @@ export type AutoRefusalCode = (typeof AUTO_REFUSAL_CODES)[number];
 export const AUTO_LIMIT_REFUSAL_CODES = [
   'limit_calls',
   'limit_refusals',
-  'limit_wall_clock',
 ] as const satisfies ReadonlyArray<AutoRefusalCode>;
 
 export const AUTO_MOUNTED_CODE = 'mounted';

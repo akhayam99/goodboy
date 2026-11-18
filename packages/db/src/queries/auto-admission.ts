@@ -39,7 +39,7 @@ export const autoAdmissionTreeStatement = ({
     WHERE id = ? AND root_agent_id = ? AND generation = ? AND phase = 'deciding'
       AND is_yield_requested = 0 AND stop_state = 'none' AND active_run_id = ?
       AND ${AUTO_OWNER_GUARD_SQL}
-      AND turn_delegate_calls < ? AND refusals_used < ? AND ? < hard_deadline_at
+      AND turn_delegate_calls < ? AND refusals_used < ?
       AND (SELECT COUNT(*) FROM auto_delegations
             WHERE tree_id = auto_trees.id AND state NOT IN ('settled', 'paused')) + ? <= ?
       AND ${autoBudgetLeftSql({ treeRef: 'auto_trees.id' })}`,
@@ -54,7 +54,6 @@ export const autoAdmissionTreeStatement = ({
     ...autoOwnerGuardParams({ ownerId, nowMs }),
     limits.maxCallsPerTurn,
     limits.maxRefusals,
-    nowMs,
     count,
     limits.maxOpenChildren,
   ],
@@ -245,7 +244,6 @@ export const autoResumeTreeStatement = ({
     WHERE id = ? AND root_agent_id = ? AND generation = ?
       AND phase IN ('deciding', 'delegating') AND stop_state = 'none' AND active_run_id = ?
       AND ${AUTO_OWNER_GUARD_SQL}
-      AND ? < hard_deadline_at
       AND (SELECT COUNT(*) FROM auto_delegations
             WHERE tree_id = auto_trees.id AND state NOT IN ('settled', 'paused')) + 1 <= ?
       AND ${autoBudgetLeftSql({ treeRef: 'auto_trees.id' })}`,
@@ -256,7 +254,6 @@ export const autoResumeTreeStatement = ({
     generation,
     runId,
     ...autoOwnerGuardParams({ ownerId, nowMs }),
-    nowMs,
     maxOpenChildren,
   ],
   abortWhen: 'noChanges',
@@ -287,18 +284,10 @@ export const autoContinueTreeStatement = ({
     WHERE id = ? AND generation = ? AND stop_state = 'none'
       AND phase NOT IN ('finished', 'blocked', 'stopping', 'stopped')
       AND ${AUTO_OWNER_GUARD_SQL}
-      AND ? < hard_deadline_at
       AND (SELECT COUNT(*) FROM auto_delegations
             WHERE tree_id = auto_trees.id AND state NOT IN ('settled', 'paused')) + 1 <= ?
       AND ${autoBudgetLeftSql({ treeRef: 'auto_trees.id' })}`,
-  params: [
-    nowMs,
-    treeId,
-    generation,
-    ...autoOwnerGuardParams({ ownerId, nowMs }),
-    nowMs,
-    maxOpenChildren,
-  ],
+  params: [nowMs, treeId, generation, ...autoOwnerGuardParams({ ownerId, nowMs }), maxOpenChildren],
   abortWhen: 'noChanges',
   abortCode: AUTO_CONTINUE_TREE_ABORT,
 });

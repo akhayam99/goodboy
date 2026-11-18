@@ -1,5 +1,4 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { AUTO_BLOCK_TEXT } from '@goodboy/core/auto';
 import { getAutoTree, listAutoDelegations, listAutoOutbox } from '@goodboy/db';
 import { brandId, type SessionId } from '@goodboy/types';
 import { readAutoTreeViews } from '../../slices/auto-view/readAutoTreeViews';
@@ -249,20 +248,24 @@ describe('a message sent to a tree that cannot take it', () => {
   const drive = (world: RuntimeWorld) =>
     deliverNext({ ctx: world.state.ctx, treeId: world.treeId, onEnded: world.state.onEnded });
 
-  it('stays pending, never sent, when the time limit blocked the tree', async () => {
+  it('is delivered when the retired time limit blocked the tree', async () => {
     const world = await makeRuntimeWorld();
-    await setPhase({ world, phase: 'blocked', reason: AUTO_BLOCK_TEXT.limit_wall_clock });
-    await addUserRow({ world: world.state.world, id: MESSAGE_ID, text: 'one more thing' });
-
-    expect(await drive(world)).toMatchObject({ kind: 'idle', reason: 'blocked' });
-    expect(world.state.ports.autoTurns).toHaveLength(0);
-    expect(await pendingIds(world)).toEqual([MESSAGE_ID]);
-    const views = await readAutoTreeViews({
-      db: world.state.world.db,
-      sessionId: brandId<SessionId>({ value: 'session-harborline' }),
+    await setPhase({
+      world,
+      phase: 'blocked',
+      reason: 'This conversation reached its time limit.',
     });
-    expect(views[0]?.pendingMessages).toHaveLength(1);
-    expect(views[0]?.tree.phase).toBe('blocked');
+    await world.state.world.db.execute('UPDATE auto_trees SET hard_deadline_at = 0');
+
+    const said = await world.runtime.say({ treeId: world.treeId, text: 'one more thing' });
+    await world.runtime.settled();
+
+    expect(said.kind).toBe('queued');
+    expect(world.state.ports.autoTurns[0]?.text).toContain('one more thing');
+    expect(await pendingIds(world)).toEqual([]);
+    expect((await getAutoTree({ db: world.state.world.db, treeId: WORLD_TREE }))?.phase).toBe(
+      'deciding',
+    );
   });
 
   it('is delivered after Retry when a provider problem blocked the tree', async () => {

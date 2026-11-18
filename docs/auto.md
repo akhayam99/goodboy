@@ -274,10 +274,9 @@ keeps the row.
 
 **A message the tree cannot take.** A `user` row is never sent to a tree that cannot run a turn,
 and its row says "Not delivered". A tree blocked by the budget shows **Change limit** (raising it
-delivers the row, as before). A tree blocked for any other reason but the time limit shows
+delivers the row, as before). A tree blocked for any other reason shows
 **Retry**, which resumes the tree and delivers the row (the send itself already tries one Retry).
-The time limit and a stopped or stopping tree have no action ("This conversation reached its time
-limit.", "Auto was stopped." in the tooltip): the row stays unsent, and Edit or Remove still take it
+A stopped or stopping tree has no action ("Auto was stopped." in the tooltip): the row stays unsent, and Edit or Remove still take it
 back. Stopping drops the pending rows with the reason `stopped`; `readAutoTreeViews` keeps those user
 rows in `pendingMessages` while the tree is stopping or stopped, so the row still shows. A
 `finished` or `done` tree takes the message as a normal follow-up turn. Rows left from old trees
@@ -548,7 +547,7 @@ writing to it reopens it to **Deciding**.
   popover on the Auto page) and **Stop run**, plus a line on the agents still
   running when there are any, the block reason with a filled **Retry** and **View
   transcript** (a block at the budget offers **Raise limit**, **Change limit**
-  and **Stop** instead, one at the time limit only **Open transcript**). The
+  and **Stop** instead). The
   reason is never cut to one line: the phrase wraps to two lines and, when it is
   longer, the whole text opens in a tooltip on hover and on keyboard focus
   (`TailLine` with `TruncatedText` `lines={2}` and `isFocusable`). Only `deciding` reads
@@ -880,7 +879,7 @@ carries it).
 ## Blocked and Retry
 
 A tree is blocked when a guard stops the next delivery (three answers in a
-row with no progress, the time limit, the budget, more than six returns in 30 minutes), when the provider refuses to
+row with no progress, the budget, more than six returns in 30 minutes), when the provider refuses to
 start Auto's turn, or when Auto stopped answering: a tree still deciding 10 minutes
 after its delivery (`AUTO_STALE_DECIDE_MS`) with no live root run settles from what
 the run left behind, or, with nothing stored, blocks with "Auto stopped answering
@@ -894,7 +893,7 @@ the same reason a failed plain agent raises, and it does not count as a wait for
 typed `AutoTreeState`, never on a display word).
 
 A tree at its limit reads **Waits for you** with the reason `limit` (`leadStopOf`),
-whether the budget is spent or a guard blocked it for the budget or the wall clock
+whether the budget is spent or a guard blocked it for the budget
 (`isAutoPausedAtLimit`, the one function the word, the glance and the row facts read).
 Its row sits under Needs you, and it raises `run-paused-at-limit` (`autoLimitRootsOf`), not
 `auto-needs-you`. It has no Retry card: the limit is raised, not retried.
@@ -925,10 +924,16 @@ while Auto decides and **Done** once Auto replaced it (`delegationCardOf`).
 A blocked tree writes nothing while it waits. It resumes by itself only after a
 budget block, once the limit is raised. Otherwise **Retry** on the tail
 (`retryBlockedTree`, through the retry port) resumes it: it clears the reason,
-resets the no progress streak and redelivers what waits. Past the time limit or at
-the budget it refuses with the reason on the tail. A message from the user to
+resets the no progress streak and redelivers what waits. At the budget it refuses
+with the reason on the tail. A message from the user to
 a blocked tree is a Retry too, and the first recovery after a restart retries a
 block that no limit caused.
+
+No clock blocks a tree, however long it runs. Older builds blocked a tree 24 hours
+after it began ("This conversation reached its time limit."). A tree stored with
+that reason reads **Failed** like any other block: Retry or a message resumes it,
+and the recovery after a restart leaves it for the user (`isAutoGateBlock`). The
+`hard_deadline_at` column stays in `auto_trees`, written and never read.
 
 ## What stops an Auto tree
 
@@ -947,7 +952,7 @@ stops it is a guard that protects the user:
   "cost unknown". Old attempt reservations from before this rule are read as
   holding nothing;
 - `AUTO_TREE_LIMITS`: delegate calls per turn, refused hand overs, question cycles
-  per delegation, the no progress streak and the wall clock hours;
+  per delegation and the no progress streak;
 - the caps on returns, in the same table. Both count the whole lineage, from the root of the chain
   down every branch (`lineageOf`). A `retryOf` or `replaces` may name only a return no one decided
   yet (`targetRefusalOf`, refused with `retry_unavailable`): the latest agent of the

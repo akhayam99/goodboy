@@ -1,18 +1,12 @@
 import { AUTO_RETURNS_WINDOW_MS, AUTO_TREE_LIMITS, AUTO_TURN_CEILING_USD } from './limits';
 
-export const AUTO_BLOCK_REASONS = [
-  'limit_no_progress',
-  'limit_wall_clock',
-  'budget',
-  'limit_returns',
-] as const;
+export const AUTO_BLOCK_REASONS = ['limit_no_progress', 'budget', 'limit_returns'] as const;
 
 export type AutoBlockReason = (typeof AUTO_BLOCK_REASONS)[number];
 
 export const AUTO_BLOCK_TEXT = {
   limit_no_progress:
     'Auto answered three times in a row without handing work over or saying anything. Retry to try again.',
-  limit_wall_clock: 'This conversation reached its time limit.',
   budget: 'The budget left does not cover another Auto turn. Raise the limit to go on.',
   limit_returns: `Agents came back to Auto more than ${AUTO_TREE_LIMITS.returnsPerTreeWindow} times in ${AUTO_RETURNS_WINDOW_MS / 60_000} minutes. Retry to let Auto decide again, or tell it what to change.`,
 } as const satisfies Readonly<Record<AutoBlockReason, string>>;
@@ -22,20 +16,13 @@ export const AUTO_STALE_DECIDE_TEXT =
 
 export type TurnGateParams = Readonly<{
   noProgressStreak: number;
-  hardDeadlineAt: number;
-  nowMs: number;
   remainingUsd: number;
 }>;
 
 export const turnGate = ({
   noProgressStreak,
-  hardDeadlineAt,
-  nowMs,
   remainingUsd,
 }: TurnGateParams): AutoBlockReason | null => {
-  if (nowMs >= hardDeadlineAt) {
-    return 'limit_wall_clock';
-  }
   if (noProgressStreak >= AUTO_TREE_LIMITS.noProgressStreak) {
     return 'limit_no_progress';
   }

@@ -38,7 +38,6 @@ const tree = (patch: Partial<AutoTree> = {}): AutoTree => ({
   grants: 0,
   createdAt: NOW,
   updatedAt: NOW,
-  hardDeadlineAt: NOW + 86_400_000,
   schedulerOwner: 'window-a',
   ownerLeaseExpiresAt: NOW + 30_000,
   ...patch,
@@ -209,7 +208,6 @@ describe('diagnoseAdmission', () => {
     const cases: ReadonlyArray<readonly [Partial<AutoTree>, string]> = [
       [{ turnDelegateCalls: 6 }, 'limit_calls'],
       [{ refusalsUsed: 10 }, 'limit_refusals'],
-      [{ hardDeadlineAt: NOW }, 'limit_wall_clock'],
     ];
     for (const [patch, code] of cases) {
       expect(
@@ -224,6 +222,14 @@ describe('diagnoseAdmission', () => {
         codeOf(diagnoseAdmission({ snapshot: snapshot({ tree: old }), children: [scout()] })),
       ).toBe('ok');
     }
+  });
+
+  it('admits children in a tree older than a day while spend is left', () => {
+    const old = tree({ createdAt: NOW - 3 * 86_400_000 });
+
+    expect(
+      codeOf(diagnoseAdmission({ snapshot: snapshot({ tree: old }), children: [scout()] })),
+    ).toBe('ok');
   });
 
   it('refuses at the spend cap, then admits once the limit is raised', () => {

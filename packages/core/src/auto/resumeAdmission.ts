@@ -35,9 +35,6 @@ export const diagnoseResume = ({ snapshot }: DiagnoseResumeParams): ResumeVerdic
   if (!isTurnOpen || tree.activeRunId !== snapshot.expectedRunId) {
     return { kind: 'refused', code: 'not_deciding' };
   }
-  if (snapshot.nowMs >= tree.hardDeadlineAt) {
-    return { kind: 'refused', code: 'limit_wall_clock' };
-  }
   if (snapshot.openCount + 1 > AUTO_MAX_OPEN_CHILDREN) {
     return { kind: 'refused', code: 'breadth_cap' };
   }

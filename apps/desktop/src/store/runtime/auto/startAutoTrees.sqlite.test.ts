@@ -148,7 +148,7 @@ describe('starting the tree of an Auto agent', () => {
     expect(rows[0]?.n).toBe(2);
   });
 
-  it('gives the tree a wall clock and no mount when the session has none it can use', async () => {
+  it('gives the tree no mount when the session has none it can use', async () => {
     const state = await worldWithAutoAgent();
     state.ports.setMounts([]);
 
@@ -160,6 +160,5 @@ describe('starting the tree of an Auto agent', () => {
 
     const tree = await treeOf(state);
     expect(tree?.primaryMountId).toBeNull();
-    expect((tree?.hardDeadlineAt ?? 0) > state.world.clock.now()).toBe(true);
   });
 });

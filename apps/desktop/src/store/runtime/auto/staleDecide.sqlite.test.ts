@@ -1,7 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { AUTO_BLOCK_TEXT, AUTO_STALE_DECIDE_MS, AUTO_STALE_DECIDE_TEXT } from '@goodboy/core/auto';
-import { getAutoTree, listAutoOutbox, listAutoReservations } from '@goodboy/db';
 import {
+  getAutoTree,
+  listAutoDelegations,
+  listAutoOutbox,
+  listAutoReservations,
+} from '@goodboy/db';
+import {
+  autoDelegates,
   makeRuntimeWorld,
   restartedWorld,
   userSays,
@@ -30,6 +36,8 @@ const deciding = async (): Promise<RuntimeWorld> => {
   world.state.ports.autoTurns.push(...earlier.state.ports.autoTurns);
   return world;
 };
+
+const RETIRED_TIME_LIMIT_TEXT = 'This conversation reached its time limit.';
 
 const pastStale = (world: RuntimeWorld) =>
   world.state.world.clock.advance({ ms: AUTO_STALE_DECIDE_MS + 1_000 });
@@ -197,17 +205,75 @@ describe('a blocked tree', () => {
     expect(world.state.ports.autoTurns).toHaveLength(1);
   });
 
-  it('refuses Retry past the time limit and writes nothing', async () => {
-    const world = await deciding();
-    pastStale(world);
-    await tick(world);
-    await world.state.world.db.execute(`UPDATE auto_trees SET hard_deadline_at = 0`);
-    const before = await treeOf(world);
+  it('resumes an old tree blocked at the retired time limit on Retry', async () => {
+    const world = await makeRuntimeWorld({ capUsd: 10 });
+    await world.state.world.db.execute(
+      `UPDATE auto_trees SET phase = 'blocked', hard_deadline_at = 0, blocked_reason = ?`,
+      [RETIRED_TIME_LIMIT_TEXT],
+    );
+    await userSays({ world, id: 'outbox-user-1', text: 'Keep going' });
+    expect((await world.runtime.retry(world.treeId)).kind).toBe('retried');
+    await world.runtime.settled();
 
-    expect(await world.runtime.retry(world.treeId)).toEqual({
-      kind: 'refused',
-      message: AUTO_BLOCK_TEXT.limit_wall_clock,
+    expect(await treeOf(world)).toMatchObject({ phase: 'deciding', blockedReason: null });
+    expect(world.state.ports.autoTurns).toHaveLength(1);
+  });
+});
+
+describe('a tree older than a day', () => {
+  const dayLater = (world: RuntimeWorld) =>
+    world.state.world.clock.advance({ ms: 25 * 60 * 60 * 1000 });
+
+  it('keeps deciding while spend is left', async () => {
+    const world = await makeRuntimeWorld({ capUsd: 10 });
+    dayLater(world);
+    await userSays({ world, id: 'outbox-user-1', text: 'Keep going' });
+    await world.runtime.settled();
+
+    expect(await treeOf(world)).toMatchObject({ phase: 'deciding', blockedReason: null });
+    expect(world.state.ports.autoTurns).toHaveLength(1);
+  });
+
+  it('admits the children Auto hands over', async () => {
+    const world = await makeRuntimeWorld({ capUsd: 10 });
+    await userSays({ world, id: 'outbox-user-1', text: 'Keep going' });
+    await world.state.world.db.execute(`UPDATE auto_trees SET hard_deadline_at = 0`);
+
+    const outcome = await autoDelegates({
+      world,
+      spec: { children: [{ role: 'scout', task: 'find the export callers', reason: 'search' }] },
     });
-    expect((await treeOf(world))?.phaseRev).toBe(before?.phaseRev);
+
+    expect(outcome).toMatchObject({ isOk: true });
+    expect(
+      await listAutoDelegations({ db: world.state.world.db, treeId: world.treeId }),
+    ).toHaveLength(1);
+  });
+
+  it('still blocks at the no progress limit', async () => {
+    const world = await makeRuntimeWorld({ capUsd: 10 });
+    await world.state.world.db.execute(
+      `UPDATE auto_trees SET phase = 'merging', no_progress_streak = 3`,
+    );
+    dayLater(world);
+    await userSays({ world, id: 'outbox-user-1', text: 'Keep going' });
+
+    expect(await treeOf(world)).toMatchObject({
+      phase: 'blocked',
+      blockedReason: AUTO_BLOCK_TEXT.limit_no_progress,
+    });
+    expect(world.state.ports.autoTurns).toHaveLength(0);
+  });
+
+  it('still blocks at the spend limit', async () => {
+    const world = await makeRuntimeWorld({ capUsd: 0.1 });
+    dayLater(world);
+    await userSays({ world, id: 'outbox-user-1', text: 'Keep going' });
+
+    expect(await treeOf(world)).toMatchObject({
+      phase: 'blocked',
+      blockedReason: AUTO_BLOCK_TEXT.budget,
+    });
+    expect(world.state.ports.autoTurns).toHaveLength(0);
   });
 });

@@ -126,11 +126,9 @@ describe('autoGlanceOf', () => {
     });
   });
 
-  it.each([
-    ['the budget', AUTO_BLOCK_TEXT.budget],
-    ['the wall clock', AUTO_BLOCK_TEXT.limit_wall_clock],
-  ])('says Paused, with the reason, for a tree blocked by %s', (_name, blockedReason) => {
+  it('says Paused, with the reason, for a tree blocked by the budget', () => {
     const view = aView({ phase: 'blocked' });
+    const blockedReason = AUTO_BLOCK_TEXT.budget;
     const glance = autoGlanceOf({
       view: { ...view, tree: { ...view.tree, blockedReason } },
       rootTurn: null,

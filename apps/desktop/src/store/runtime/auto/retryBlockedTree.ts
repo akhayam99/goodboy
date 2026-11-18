@@ -67,8 +67,6 @@ export const retryBlockedTree = async ({
   const spend = await readAutoTreeSpend({ db: ctx.db, treeId });
   const gate = turnGate({
     noProgressStreak: 0,
-    hardDeadlineAt: tree.hardDeadlineAt,
-    nowMs,
     remainingUsd: autoRemainingForGates({ spend }),
   });
   if (gate !== null) {

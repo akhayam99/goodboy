@@ -60,7 +60,6 @@ export const seedWorkWorld = async ({ db, sessions }: Params): Promise<void> => 
         primaryMountId: session.primaryMountId,
         capUsd: 5,
         nowMs: AUTO_SEED_NOW,
-        hardDeadlineAt: AUTO_SEED_NOW + AUTO_SEED_DAY_MS,
       },
     });
     for (const [slot, mountId] of session.delegatedMountIds.entries()) {

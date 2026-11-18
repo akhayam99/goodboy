@@ -33,7 +33,6 @@ const tree = (patch: Partial<AutoTree> = {}): AutoTree => ({
   grants: 0,
   createdAt: NOW,
   updatedAt: NOW,
-  hardDeadlineAt: NOW + 86_400_000,
   schedulerOwner: 'window-a',
   ownerLeaseExpiresAt: NOW + 30_000,
   ...patch,
@@ -64,6 +63,11 @@ describe('admitting the resume of a child that asked a question', () => {
   it('admits the new attempt when the conversation has no limit', () => {
     const unbounded = snapshot({ remainingUsd: Number.POSITIVE_INFINITY });
     expect(diagnoseResume({ snapshot: unbounded })).toEqual({ kind: 'ok' });
+  });
+
+  it('admits the new attempt in a tree older than a day', () => {
+    const old = tree({ createdAt: NOW - 3 * 86_400_000 });
+    expect(diagnoseResume({ snapshot: snapshot({ tree: old }) })).toEqual({ kind: 'ok' });
   });
 
   it('still answers after the same turn handed other work over', () => {

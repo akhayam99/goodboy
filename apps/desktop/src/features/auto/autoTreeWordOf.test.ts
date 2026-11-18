@@ -65,11 +65,9 @@ describe('autoTreeWordOf', () => {
     });
   });
 
-  it.each([
-    ['the budget', AUTO_BLOCK_TEXT.budget],
-    ['the wall clock', AUTO_BLOCK_TEXT.limit_wall_clock],
-  ])('reads a tree blocked by %s as paused at its limit, not failed', (_name, blockedReason) => {
+  it('reads a tree blocked by the budget as paused at its limit, not failed', () => {
     const view = aView({ phase: 'blocked' });
+    const blockedReason = AUTO_BLOCK_TEXT.budget;
 
     expect(
       autoTreeWordOf({ view: { ...view, tree: { ...view.tree, blockedReason } }, rootTurn: null }),

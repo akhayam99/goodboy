@@ -251,7 +251,7 @@ describe('Remove, Send now and Retry on an Auto row', () => {
   it('Retry resumes the tree and shows the refusal when it cannot', async () => {
     const retry = vi.fn<TreeRetryPort>(async () => ({
       kind: 'refused',
-      message: 'This conversation reached its time limit.',
+      message: 'The budget left does not cover another Auto turn. Raise the limit to go on.',
     }));
     registerTreeRetryPort({ port: retry });
     const { current } = mountRows();
@@ -259,6 +259,6 @@ describe('Remove, Send now and Retry on an Auto row', () => {
     await act(async () => current().onRetry(MESSAGE.rowId));
 
     expect(retry).toHaveBeenCalledWith({ treeId: VIEW.tree.id });
-    expect(current().failure?.message).toContain('time limit');
+    expect(current().failure?.message).toContain('budget left');
   });
 });

@@ -57,7 +57,6 @@ export const aTree = ({ phase = 'answering', capUsd = 10 }: TreeParams = {}): Au
   grants: 0,
   createdAt: FIXTURE_NOW,
   updatedAt: FIXTURE_NOW,
-  hardDeadlineAt: FIXTURE_NOW + 86_400_000,
   schedulerOwner: null,
   ownerLeaseExpiresAt: null,
 });

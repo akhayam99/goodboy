@@ -21,6 +21,8 @@ export const AUTO_STOP_STATES = ['none', 'requested', 'confirming', 'confirmed']
 
 export type AutoStopState = (typeof AUTO_STOP_STATES)[number];
 
+export const AUTO_TREE_NO_DEADLINE_AT = Number.MAX_SAFE_INTEGER;
+
 export type AutoTree = Readonly<{
   id: AutoTreeId;
   rootAgentId: AgentId;
@@ -45,7 +47,6 @@ export type AutoTree = Readonly<{
   grants: number;
   createdAt: number;
   updatedAt: number;
-  hardDeadlineAt: number;
   schedulerOwner: string | null;
   ownerLeaseExpiresAt: number | null;
 }>;
@@ -74,7 +75,6 @@ type TreeRow = {
   readonly grants: number;
   readonly created_at: number;
   readonly updated_at: number;
-  readonly hard_deadline_at: number;
   readonly scheduler_owner: string | null;
   readonly owner_lease_expires_at: number | null;
 };
@@ -86,7 +86,7 @@ type ValueParams = {
 const TREE_SELECT = `SELECT id, root_agent_id, session_id, primary_mount_id, generation, phase, phase_rev,
   blocked_reason, active_run_id, active_delivery_id, is_yield_requested, stop_state, cap_usd,
   turns_used, delegations_used, attempts_used, refusals_used, turn_delegate_calls,
-  no_progress_streak, question_cycles, grants, created_at, updated_at, hard_deadline_at,
+  no_progress_streak, question_cycles, grants, created_at, updated_at,
   scheduler_owner, owner_lease_expires_at FROM auto_trees`;
 
 const asPhase = ({ value }: ValueParams): AutoPhase =>
@@ -123,7 +123,6 @@ const toTree = ({ row }: ToTreeParams): AutoTree => ({
   grants: row.grants,
   createdAt: row.created_at,
   updatedAt: row.updated_at,
-  hardDeadlineAt: row.hard_deadline_at,
   schedulerOwner: row.scheduler_owner,
   ownerLeaseExpiresAt: row.owner_lease_expires_at,
 });
@@ -233,7 +232,6 @@ export type NewAutoTree = Readonly<{
   primaryMountId: string | null;
   capUsd: number | null;
   nowMs: number;
-  hardDeadlineAt: number;
 }>;
 
 type InsertAutoTreeParams = {
@@ -263,7 +261,7 @@ export const insertAutoTree = async ({
       tree.capUsd,
       tree.nowMs,
       tree.nowMs,
-      tree.hardDeadlineAt,
+      AUTO_TREE_NO_DEADLINE_AT,
     ],
   );
   const stored = await getAutoTreeByRootAgent({ db, rootAgentId: tree.rootAgentId });

@@ -311,8 +311,6 @@ export const deliverNext = async ({
   const spend = await readAutoTreeSpend({ db: ctx.db, treeId });
   const gate = turnGate({
     noProgressStreak: tree.noProgressStreak,
-    hardDeadlineAt: tree.hardDeadlineAt,
-    nowMs: ctx.now(),
     remainingUsd: autoRemainingForGates({ spend }),
   });
   if (gate !== null) {
