@@ -84,7 +84,7 @@ describe('the drawer split scenes', () => {
     const drawer = container.querySelector('[data-container="drawer"]');
     expect(panel().getAttribute('data-drawer-sizing')).toBe('reader');
     expect(panel().getAttribute('data-drawer-mode')).toBe('push');
-    expect(panel().style.width).toBe('728px');
+    expect(panel().style.width).toBe('732px');
     expect(page?.contains(drawer ?? null)).toBe(false);
     expect(page?.getAttribute('data-sheet')).toBe('pushed');
   });
@@ -94,7 +94,7 @@ describe('the drawer split scenes', () => {
 
     await screen.findByTestId('plan-drawer');
     expect(panel().getAttribute('data-drawer-mode')).toBe('overlay');
-    expect(panel().style.width).toBe('728px');
+    expect(panel().style.width).toBe('732px');
     expect(container.querySelector('[data-drawer-scrim]')).not.toBeNull();
     expect(container.querySelector('[data-container="page"]')?.hasAttribute('inert')).toBe(true);
     expect(container.querySelector('[data-container="page"]')?.getAttribute('data-sheet')).toBe(
@@ -109,7 +109,7 @@ describe('the drawer split scenes', () => {
     expect(useAppStore.getState().drawer?.kind).toBe('scripts');
     expect(panel().getAttribute('data-drawer-sizing')).toBe('side');
     expect(panel().getAttribute('data-drawer-mode')).toBe('push');
-    expect(panel().style.width).toBe('408px');
+    expect(panel().style.width).toBe('412px');
   });
 
   it('opens the Explore file drawer in the reader tier, pushed at 1920', async () => {
