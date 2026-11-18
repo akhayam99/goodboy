@@ -84,20 +84,20 @@ afterEach(() => {
 });
 
 describe('ProjectLinkList', () => {
-  it('opens the one form in add mode for this workspace behind Add project', () => {
+  it('opens the one form in add mode for this workspace behind Add project', async () => {
     render(<ProjectLinkList workspaceId={NORTHWIND.id} emptyHint="No folders yet" />);
 
     expect(screen.queryByRole('form', { name: 'Add a folder' })).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Add project' }));
 
-    expect(screen.getByRole('form', { name: 'Add a folder' })).toBeDefined();
+    expect(await screen.findByRole('form', { name: 'Add a folder' })).toBeDefined();
     expect(screen.queryByRole('button', { name: 'Start from scratch' })).toBeNull();
   });
 
   it('adds the picked folder to this workspace and closes the form once it lands', async () => {
     render(<ProjectLinkList workspaceId={NORTHWIND.id} emptyHint="No folders yet" />);
     fireEvent.click(screen.getByRole('button', { name: 'Add project' }));
-    fireEvent.click(screen.getByRole('button', { name: /choose folder/i }));
+    fireEvent.click(await screen.findByRole('button', { name: /choose folder/i }));
     await screen.findByRole('list', { name: 'Projects' });
 
     fireEvent.click(screen.getByRole('button', { name: /^add 1 folder/i }));
@@ -110,11 +110,11 @@ describe('ProjectLinkList', () => {
     expect(screen.getByText('notify-relay')).toBeDefined();
   });
 
-  it('closes the form on Cancel without writing anything', () => {
+  it('closes the form on Cancel without writing anything', async () => {
     render(<ProjectLinkList workspaceId={NORTHWIND.id} emptyHint="No folders yet" />);
     fireEvent.click(screen.getByRole('button', { name: 'Add project' }));
 
-    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Cancel' }));
 
     expect(screen.queryByRole('form', { name: 'Add a folder' })).toBeNull();
     expect(createWorkspaceWithFolders).not.toHaveBeenCalled();
