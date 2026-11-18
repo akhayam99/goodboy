@@ -45,6 +45,10 @@ const CASES: ReadonlyArray<Case> = [
     run: () => stripControlMarkers('<<plan '.repeat(8_000)),
   },
   {
+    name: 'stripControlMarkers on repeated block opening tags before one close',
+    run: () => stripControlMarkers(`${'<<plan '.repeat(8_000)}<</plan>>`),
+  },
+  {
     name: 'unwrapEdgeFence on tabs after an opening fence',
     run: () => unwrapEdgeFence({ text: `\`\`\`${'\t'.repeat(RUN)}x` }),
   },

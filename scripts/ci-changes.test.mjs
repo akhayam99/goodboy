@@ -3,7 +3,15 @@ import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { dirname, join, relative, resolve } from 'node:path';
 import { describe, it } from 'node:test';
 import { fileURLToPath } from 'node:url';
-import { shouldRunTests, isInertPath } from './ci-changes.mjs';
+import {
+  DESKTOP_SHARDS,
+  MAX_RELATED_PATHS,
+  isInertPath,
+  lintScopeOf,
+  shouldRunTests,
+  testPlanOf,
+  testScopeOf,
+} from './ci-changes.mjs';
 
 const shouldRunTestsForPullRequest = ({ paths }) =>
   shouldRunTests({ eventName: 'pull_request', paths });
@@ -77,6 +85,149 @@ describe('shouldRunTests', () => {
     assert.equal(shouldRunTestsForPullRequest({ paths: ['apps/desktop/docs/notes.md'] }), true);
     assert.equal(shouldRunTestsForPullRequest({ paths: ['docsx/a.md'] }), true);
     assert.equal(shouldRunTestsForPullRequest({ paths: ['.github/nested/a.png'] }), true);
+  });
+});
+
+const scopeForPullRequest = ({ paths }) => testScopeOf({ eventName: 'pull_request', paths });
+
+describe('testScopeOf', () => {
+  it('runs the full suite on main, on a merge group and on an unreadable diff', () => {
+    const leaf = ['apps/desktop/src/features/palette/rank.ts'];
+    assert.equal(testScopeOf({ eventName: 'push', paths: leaf }), 'full');
+    assert.equal(testScopeOf({ eventName: 'merge_group', paths: leaf }), 'full');
+    assert.equal(scopeForPullRequest({ paths: null }), 'full');
+    assert.equal(scopeForPullRequest({ paths: [] }), 'full');
+  });
+
+  it('runs nothing when every path is inert', () => {
+    assert.equal(scopeForPullRequest({ paths: ['docs/testing.md'] }), 'none');
+  });
+
+  it('runs the related tests for source files of the app, the packages and the Rust crate', () => {
+    assert.equal(
+      scopeForPullRequest({
+        paths: [
+          'apps/desktop/src/features/palette/rank.ts',
+          'packages/core/src/slug/branchName.ts',
+          'apps/desktop/src-tauri/src/lib.rs',
+          'docs/testing.md',
+        ],
+      }),
+      'related',
+    );
+  });
+
+  it('runs everything when a path touches shared config, scripts, workflows or guards', () => {
+    const touchesEverything = [
+      'pnpm-lock.yaml',
+      'package.json',
+      'apps/desktop/package.json',
+      'turbo.json',
+      'tsconfig.base.json',
+      'eslint.config.mjs',
+      'eslint-suppressions.json',
+      '.github/workflows/ci.yml',
+      '.github/actions/setup-workspace/action.yml',
+      'scripts/ci-changes.mjs',
+      'apps/desktop/vitest.config.ts',
+      'apps/desktop/src/__tests__/regressions/forbidden-patterns.test.ts',
+      'apps/desktop/src/test/failOnConsole.ts',
+      'packages/core/src/test/hostileSweep.ts',
+      'apps/desktop/src/test/console-baseline.json',
+      'apps/desktop/src/app/components/MockScene/scenes.txt',
+      'apps/desktop/src/styles/tokens.css',
+      'CHANGELOG.md',
+      'docs/features/board.md',
+    ];
+    for (const path of touchesEverything) {
+      assert.equal(
+        scopeForPullRequest({ paths: ['apps/desktop/src/features/palette/rank.ts', path] }),
+        'full',
+        path,
+      );
+    }
+  });
+
+  it('runs everything when more files changed than a related run is worth', () => {
+    const many = Array.from(
+      { length: MAX_RELATED_PATHS + 1 },
+      (_, index) => `apps/desktop/src/features/palette/file${index}.ts`,
+    );
+    assert.equal(scopeForPullRequest({ paths: many }), 'full');
+    assert.equal(scopeForPullRequest({ paths: many.slice(1) }), 'related');
+  });
+});
+
+describe('lintScopeOf', () => {
+  it('lints the whole tree off a pull request and when shared config changed', () => {
+    assert.equal(lintScopeOf({ eventName: 'push', paths: [] }), 'all');
+    assert.equal(
+      lintScopeOf({ eventName: 'pull_request', paths: ['eslint-suppressions-strict.json'] }),
+      'all',
+    );
+    assert.equal(lintScopeOf({ eventName: 'pull_request', paths: null }), 'all');
+  });
+
+  it('lints the changed files of a narrow change, website and docs included', () => {
+    assert.equal(
+      lintScopeOf({
+        eventName: 'pull_request',
+        paths: ['apps/desktop/src/features/palette/rank.ts', 'website/src/pages/index.tsx'],
+      }),
+      'changed',
+    );
+    assert.equal(lintScopeOf({ eventName: 'pull_request', paths: ['docs/testing.md'] }), 'changed');
+  });
+});
+
+describe('testPlanOf', () => {
+  const selection = ({ desktop, zones = 1, isA11yReached = true }) => ({
+    desktop: Array.from({ length: desktop }, (_, index) => `src/t${index}.test.ts`),
+    desktopTotal: 600,
+    zones: Array.from({ length: zones }, (_, index) => `src/z${index}.test.ts`),
+    isA11yReached,
+    packages: [],
+  });
+
+  it('keeps six shards for a full run', () => {
+    const plan = testPlanOf({ scope: 'full', selection: null });
+    assert.equal(plan.desktopShards.length, DESKTOP_SHARDS);
+    assert.deepEqual([plan.tests, plan.zones, plan.a11y], [true, true, true]);
+  });
+
+  it('turns every test job off when nothing runs', () => {
+    const plan = testPlanOf({ scope: 'none', selection: null });
+    assert.deepEqual([plan.tests, plan.zones, plan.a11y], [false, false, false]);
+  });
+
+  it('gives a related run one shard per half a full shard of files', () => {
+    assert.deepEqual(
+      testPlanOf({ scope: 'related', selection: selection({ desktop: 40 }) }).desktopShards,
+      ['1/1'],
+    );
+    assert.deepEqual(
+      testPlanOf({ scope: 'related', selection: selection({ desktop: 120 }) }).desktopShards,
+      ['1/3', '2/3', '3/3'],
+    );
+    assert.equal(
+      testPlanOf({ scope: 'related', selection: selection({ desktop: 300 }) }).desktopShards.length,
+      DESKTOP_SHARDS,
+    );
+  });
+
+  it('falls back to the full run when the related tests are more than half the suite', () => {
+    assert.equal(
+      testPlanOf({ scope: 'related', selection: selection({ desktop: 301 }) }).scope,
+      'full',
+    );
+  });
+
+  it('skips the time zones and a11y only when no related test needs them', () => {
+    const plan = testPlanOf({
+      scope: 'related',
+      selection: selection({ desktop: 10, zones: 0, isA11yReached: false }),
+    });
+    assert.deepEqual([plan.zones, plan.a11y], [false, false]);
   });
 });
 

@@ -1243,7 +1243,7 @@ const BLOCK_MARKER_ALT =
 const SELF_MARKER_ALT =
   'handoff|comment-analysis|comment-resolved|comment-wontfix|comment-needs-run|comment-verdict|review-comment|cluster-done|cluster-stuck|step-done|step-stuck|scout-domains|history-step|history-done|history-stuck|materialize:';
 
-const MARKER_ATTRS = '(?:\\s(?:"[^"]{0,2000}"|[^>"]){0,4000})?';
+const MARKER_ATTRS = '(?:\\s(?:"[^"]{0,2000}"|[^<>"]|<(?!<)){0,4000})?';
 const MARKER_OPEN = `<<(?:(?:${BLOCK_MARKER_ALT})${MARKER_ATTRS}>>|ctx-question${MARKER_ATTRS}>>?)`;
 const CONTROL_BLOCK_STRIP_RE = new RegExp(
   `${MARKER_OPEN}[\\s\\S]*?<<\\/(?:${BLOCK_MARKER_ALT})>>`,
@@ -1280,11 +1280,11 @@ export const stripControlMarkers = (rawText: string): string => {
   CONTROL_BLOCK_STRIP_RE.lastIndex = 0;
   CONTROL_STRAY_TAG_RE.lastIndex = 0;
   UNSUMMARIZED_STEP_OUTPUT_RE.lastIndex = 0;
-  return stripSelfMarkers(text.replace(CONTROL_BLOCK_STRIP_RE, ''))
+  const stripped = stripSelfMarkers(text.replace(CONTROL_BLOCK_STRIP_RE, ''))
     .replace(UNSUMMARIZED_STEP_OUTPUT_RE, '')
     .replace(CONTROL_OPEN_TAIL_RE, '')
-    .replace(CONTROL_STRAY_TAG_RE, '')
-    .replace(CONTROL_PARTIAL_TAIL_RE, '')
-    .replace(/\n{3,}/g, '\n\n')
-    .trim();
+    .replace(CONTROL_STRAY_TAG_RE, '');
+  const cut = stripped.lastIndexOf('>') + 1;
+  const kept = stripped.slice(0, cut) + stripped.slice(cut).replace(CONTROL_PARTIAL_TAIL_RE, '');
+  return kept.replace(/\n{3,}/g, '\n\n').trim();
 };
