@@ -1,6 +1,5 @@
 import { AUTO_USD_EPSILON, type AutoArtifact, type AutoTree } from '@goodboy/db';
 import { admissionChildRefusals } from './admissionChildRefusals';
-import { AUTO_BATCH_MAX_CHILDREN, AUTO_MAX_OPEN_CHILDREN, AUTO_TREE_LIMITS } from './limits';
 import type { AutoRefusalCode } from './refusals';
 import type { AutoDelegationRole } from './roles';
 import type { LeadPermissionRows } from './permissions';
@@ -43,7 +42,6 @@ export type AdmissionSnapshot = Readonly<{
   callerAgentId: string;
   expectedGeneration: number;
   expectedRunId: string;
-  openCount: number;
   openChildAgentIds: ReadonlyArray<string>;
   remainingUsd: number;
   artifacts: ReadonlyArray<AdmissionArtifactFacts & { readonly artifactId: string }>;
@@ -102,18 +100,6 @@ const treeRefusal = ({ snapshot, tree, count }: TreeChecksParams): AutoRefusalCo
   }
   if (count === 0) {
     return 'empty_batch';
-  }
-  if (count > AUTO_BATCH_MAX_CHILDREN) {
-    return 'breadth_cap';
-  }
-  if (tree.turnDelegateCalls >= AUTO_TREE_LIMITS.delegateCallsPerTurn) {
-    return 'limit_calls';
-  }
-  if (tree.refusalsUsed >= AUTO_TREE_LIMITS.refusals) {
-    return 'limit_refusals';
-  }
-  if (snapshot.openCount + count > AUTO_MAX_OPEN_CHILDREN) {
-    return 'breadth_cap';
   }
   return null;
 };

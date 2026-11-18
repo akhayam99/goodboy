@@ -120,7 +120,7 @@ describe('the mount action of the block', () => {
     });
 
     const tree = await getAutoTree({ db: world.state.world.db, treeId: world.treeId });
-    expect(tree).toMatchObject({ refusalsUsed: 0, noProgressStreak: 0 });
+    expect(tree).toMatchObject({ noProgressStreak: 0 });
     expect((await refusalOf(world)).payload.code).toBe('mounted');
   });
 

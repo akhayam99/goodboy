@@ -40,8 +40,6 @@ export type AutoTree = Readonly<{
   turnsUsed: number;
   delegationsUsed: number;
   attemptsUsed: number;
-  refusalsUsed: number;
-  turnDelegateCalls: number;
   noProgressStreak: number;
   questionCycles: number;
   grants: number;
@@ -68,8 +66,6 @@ type TreeRow = {
   readonly turns_used: number;
   readonly delegations_used: number;
   readonly attempts_used: number;
-  readonly refusals_used: number;
-  readonly turn_delegate_calls: number;
   readonly no_progress_streak: number;
   readonly question_cycles: number;
   readonly grants: number;
@@ -85,8 +81,7 @@ type ValueParams = {
 
 const TREE_SELECT = `SELECT id, root_agent_id, session_id, primary_mount_id, generation, phase, phase_rev,
   blocked_reason, active_run_id, active_delivery_id, is_yield_requested, stop_state, cap_usd,
-  turns_used, delegations_used, attempts_used, refusals_used, turn_delegate_calls,
-  no_progress_streak, question_cycles, grants, created_at, updated_at,
+  turns_used, delegations_used, attempts_used, no_progress_streak, question_cycles, grants, created_at, updated_at,
   scheduler_owner, owner_lease_expires_at FROM auto_trees`;
 
 const asPhase = ({ value }: ValueParams): AutoPhase =>
@@ -116,8 +111,6 @@ const toTree = ({ row }: ToTreeParams): AutoTree => ({
   turnsUsed: row.turns_used,
   delegationsUsed: row.delegations_used,
   attemptsUsed: row.attempts_used,
-  refusalsUsed: row.refusals_used,
-  turnDelegateCalls: row.turn_delegate_calls,
   noProgressStreak: row.no_progress_streak,
   questionCycles: row.question_cycles,
   grants: row.grants,
@@ -376,7 +369,7 @@ export const autoTreePhaseStatement = ({
     sets.push('generation = generation + 1');
   }
   if (patch.isNewTurn === true) {
-    sets.push('turns_used = turns_used + 1', 'turn_delegate_calls = 0');
+    sets.push('turns_used = turns_used + 1');
   }
   if (patch.noProgressStreak !== undefined) {
     sets.push('no_progress_streak = ?');
@@ -467,40 +460,6 @@ export const casAutoTreePhase = async ({
     return { kind: 'applied', tree };
   }
   return { kind: 'lost', reason: await diagnoseAutoTreeLoss({ db, treeId, ownerId, nowMs }) };
-};
-
-type RecordAutoRefusalParams = {
-  readonly db: Database;
-  readonly treeId: AutoTreeId;
-  readonly ownerId: string;
-  readonly nowMs: number;
-  readonly generation: number;
-  readonly runId: string;
-};
-
-const autoRefusalKey = ({
-  generation,
-  runId,
-}: Pick<RecordAutoRefusalParams, 'generation' | 'runId'>): string => `${generation}:${runId}`;
-
-export const recordAutoRefusal = async ({
-  db,
-  treeId,
-  ownerId,
-  nowMs,
-  generation,
-  runId,
-}: RecordAutoRefusalParams): Promise<boolean> => {
-  const key = autoRefusalKey({ generation, runId });
-  const result = await db.execute(
-    `UPDATE auto_trees
-     SET refusals_used = refusals_used + 1, turn_delegate_calls = turn_delegate_calls + 1,
-         last_refusal_key = ?, updated_at = ?
-     WHERE id = ? AND (last_refusal_key IS NULL OR last_refusal_key <> ?)
-       AND ${AUTO_OWNER_GUARD_SQL}`,
-    [key, nowMs, treeId, key, ...autoOwnerGuardParams({ ownerId, nowMs })],
-  );
-  return result.rowsAffected === 1;
 };
 
 type SetAutoTreeCapParams = {

@@ -143,8 +143,6 @@ describe('the delegate command', () => {
     expect(await getAutoTree({ db: state.world.db, treeId: WORLD_TREE })).toMatchObject({
       phase: 'deciding',
       isYieldRequested: false,
-      refusalsUsed: 1,
-      turnDelegateCalls: 1,
     });
   });
 
@@ -500,23 +498,31 @@ describe('the delegate command', () => {
       grant: { ...WORLD_GRANT, runId: 'run-later' },
     });
     expect(broken).toMatchObject({ isOk: false, code: 'spec_invalid' });
-    expect(await getAutoTree({ db: state.world.db, treeId: WORLD_TREE })).toMatchObject({
-      refusalsUsed: 2,
-    });
   });
 
-  it('counts the refusals of one run once and those of two runs twice', async () => {
+  it('admits the seventh delegate call of one turn', async () => {
+    const state = await setup();
+    await state.world.db.execute('UPDATE auto_trees SET turn_delegate_calls = 6 WHERE id = ?', [
+      WORLD_TREE,
+    ]);
+    const outcome = await run(state, delegateCommand(scoutAndImplementer));
+    expect(outcome.isOk).toBe(true);
+    expect(await listAutoDelegations({ db: state.world.db, treeId: WORLD_TREE })).toHaveLength(2);
+  });
+
+  it('still admits work after eleven refused calls in the conversation', async () => {
     const state = await setup();
     const refused = { children: [{ role: 'generic', task: 'x', reason: 'y' }] };
-    await run(state, delegateCommand(refused));
-    await run(state, delegateCommand(refused));
-    await run(state, {
-      ...delegateCommand(refused),
-      grant: { ...WORLD_GRANT, runId: 'run-later' },
-    });
-    expect(await getAutoTree({ db: state.world.db, treeId: WORLD_TREE })).toMatchObject({
-      refusalsUsed: 2,
-    });
+    for (const index of Array.from({ length: 11 }, (_, at) => at)) {
+      const outcome = await run(state, {
+        ...delegateCommand(refused, `request-refused-${index}`),
+        grant: { ...WORLD_GRANT, runId: `run-earlier-${index}` },
+      });
+      expect(outcome).toMatchObject({ isOk: false, code: 'role_unknown' });
+    }
+    const outcome = await run(state, delegateCommand(scoutAndImplementer));
+    expect(outcome.isOk).toBe(true);
+    expect(await listAutoDelegations({ db: state.world.db, treeId: WORLD_TREE })).toHaveLength(2);
   });
 
   it('refuses a batch whose model cannot be resolved', async () => {
@@ -537,20 +543,21 @@ describe('the delegate command', () => {
     expect(again).toMatchObject({ isOk: false, code: 'already_yielded' });
   });
 
-  it('refuses more than four children and writes none', async () => {
+  it('admits six children in one batch, all queued until they start', async () => {
     const state = await setup();
     const outcome = await run(
       state,
       delegateCommand({
-        children: Array.from({ length: 5 }, (_, index) => ({
+        children: Array.from({ length: 6 }, (_, index) => ({
           role: 'scout',
           task: `look at area ${index}`,
           reason: 'read only search',
         })),
       }),
     );
-    expect(outcome).toMatchObject({ isOk: false, code: 'breadth_cap' });
-    expect(await listAutoDelegations({ db: state.world.db, treeId: WORLD_TREE })).toHaveLength(0);
+    expect(outcome.isOk).toBe(true);
+    const rows = await listAutoDelegations({ db: state.world.db, treeId: WORLD_TREE });
+    expect(rows.map((row) => row.state)).toEqual(Array.from({ length: 6 }, () => 'accepted'));
   });
 
   it('leaves a window that does not own the tree out', async () => {

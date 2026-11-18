@@ -951,8 +951,10 @@ stops it is a guard that protects the user:
   settles at 0 with its cost marked unknown, never at a ceiling; its result says
   "cost unknown". Old attempt reservations from before this rule are read as
   holding nothing;
-- `AUTO_TREE_LIMITS`: delegate calls per turn, refused hand overs, question cycles
-  per delegation and the no progress streak;
+- `AUTO_TREE_LIMITS`: question cycles per delegation and the no progress streak. No count
+  of delegate calls in a turn and no count of refused calls in a conversation refuses
+  anything; the old `turn_delegate_calls`, `refusals_used` and `last_refusal_key` columns stay
+  and are never written or read;
 - the caps on returns, in the same table. Both count the whole lineage, from the root of the chain
   down every branch (`lineageOf`). A `retryOf` or `replaces` may name only a return no one decided
   yet (`targetRefusalOf`, refused with `retry_unavailable`): the latest agent of the
@@ -970,8 +972,26 @@ stops it is a guard that protects the user:
   fifth is refused with `message_limit`, so Auto stops or continues it instead. The person is not
   capped. `returnsPerTreeWindow` (6 in `AUTO_RETURNS_WINDOW_MS`, 30 minutes): the seventh return row
   carries `isOverWindow`, `deliverNext` blocks the tree with that reason (`AUTO_BLOCK_TEXT.limit_returns`)
-  and **Retry** clears the mark and delivers it;
-- four open children and four per batch.
+  and **Retry** clears the mark and delivers it.
+
+A batch has any number of children and is never refused for its size or for the agents
+already running. At most `AUTO_MAX_RUNNING_CHILDREN` (4) children run at once, because each
+one holds memory on the machine: a child runs while its latest attempt is `starting` or
+`running` and its delegation is too (`countAutoRunningChildren`; a child that ended waits for
+its batch to join without holding a slot). The children past the free slots wait in
+`accepted`, the state of any child not started yet, and read **Queued** like it. Each start
+takes a slot in one guarded update (`autoTakeRunSlotStatement`, through `runSlotStatements` in
+`startAttempt` and `startQueuedAttempt`): the delegation moves from `accepted` to `starting`
+only while fewer than four run, the tree is owned by this window and money is left under the
+limit. So two windows or a restart never start one child twice, and a restarted window starts
+the waiting children itself (`launchChildren` after `recover`). `launchChildren` offers only as
+many waiting children as `readFreeSlots` allows, oldest first, in `delegating`, `waiting` and
+`merging`, never while Auto answers or while the tree is blocked. A child's delegation deadline
+and its idle clock start when it takes its slot, not when it was queued, and a substep that
+starts moves its paused parent's deadline the same way. An answer to a paused child is
+admitted at once and the child waits in `accepted` with its new attempt until a slot frees.
+Stop settles the waiting children with the others, so none starts later. At the spend limit
+the waiting children keep waiting; raising the limit starts them.
 
 Deleting the root agent of a tree first runs the stop protocol on the tree (`stopAutoTreeForDelete`,
 through the tree stop port and `stopTree`): the generation advances, every running child is
@@ -1846,13 +1866,11 @@ substep 2), `substep_cap` (a parent has `AUTO_SUBSTEPS_PER_PARENT` = 2 helpers, 
 and the same batch counts). A user message bumps the generation first, so the admit comes back
 `generation_changed`.
 
-A paused delegation no longer counts as open: `autoAdmissionTreeStatement` and
-`autoResumeTreeStatement` count `state NOT IN ('settled', 'paused')`, and the snapshot's `openCount`
-does the same. Four paused parents can each get a helper. The resume of a parent checks a free running
-slot (`breadth_cap` from `diagnoseResume`, the same guard in SQL), so the helper's slot passes back
-to the parent; a refused resume leaves the child paused and the answer is sent again once a slot frees.
-Admitting a helper moves the parent's deadline to the helper's deadline plus
-`AUTO_SUBSTEP_PARENT_SLACK_MS`, in the same transaction, so a waiting parent is not expired. Cost per
+A paused delegation holds no running slot, so four paused parents can each get a helper. The
+answer to a parent is always admitted: the parent waits in `accepted` and takes the next free slot,
+so the helper's slot passes back to it. Admitting a helper moves the parent's deadline to the
+helper's deadline plus `AUTO_SUBSTEP_PARENT_SLACK_MS`, in the same transaction, and the helper's
+start moves it again from its real start, so a waiting parent is not expired. Cost per
 ask: one delegation and two attempts from the tree's counters and budget; the digest and the question
 block say so (`substepNeedsLine`).
 
@@ -2103,8 +2121,7 @@ refused `mount_missing` while Add a project is not Ask, `pickChildMount` lets it
 [mounts.md](mounts.md#who-picks-the-folders)): the workspace project its `mount` names, or, with
 no mount named and none usable, the only repo, the repo of a linked task, or the repos its task
 names by exact name. Inside the session's allowance they are mounted and the pick runs again;
-past it a mount proposal waits for the user and the refusal says so. The refusal counters (`refusals_used`, the limit on refusals)
-move once per generation and run, so a duplicate settle of the same turn cannot spend the limit twice. Each result line in a delivery starts with the name the user
+past it a mount proposal waits for the user and the refusal says so. Each result line in a delivery starts with the name the user
 sees on its card ("- Reviewer 2 (reviewer <agent id>, <delegation id>): completed"), and the
 results block says the user sees each result as that card above the reply; the system prompt
 tells Auto never to repeat or paste what an agent said, to name the agent that way and to write

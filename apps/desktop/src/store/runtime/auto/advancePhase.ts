@@ -3,9 +3,11 @@ import {
   listAutoDelegations,
   listAutoOutbox,
   listOpenAutoDelegations,
+  type AutoDelegation,
   type AutoPhase,
   type AutoTree,
 } from '@goodboy/db';
+import { readFreeSlots } from './slots/readFreeSlots';
 import type { AgentVerbContext } from './verbContext';
 
 export type AdvancePhaseParams = Readonly<{
@@ -67,6 +69,17 @@ const targetPhaseOf = ({
   }
 };
 
+type LaunchableParams = {
+  readonly open: ReadonlyArray<AutoDelegation>;
+  readonly free: number;
+};
+
+const launchableCountOf = ({ open, free }: LaunchableParams): number => {
+  const starting = open.filter((delegation) => delegation.state === 'starting').length;
+  const queued = open.filter((delegation) => delegation.state === 'accepted').length;
+  return starting + Math.min(queued, free);
+};
+
 type ReopenParams = {
   readonly ctx: AgentVerbContext;
   readonly tree: AutoTree;
@@ -106,9 +119,10 @@ export const advancePhase = async ({ ctx, treeId }: AdvancePhaseParams): Promise
   const target = targetPhaseOf({
     tree,
     openCount: open.length,
-    launchableCount: open.filter(
-      (delegation) => delegation.state === 'accepted' || delegation.state === 'starting',
-    ).length,
+    launchableCount: launchableCountOf({
+      open,
+      free: await readFreeSlots({ db: ctx.db, treeId }),
+    }),
     pendingResultsCount: pending.filter((row) => row.kind === 'results').length,
     pendingCount: pending.length,
     hasDelegations: all.length > 0,

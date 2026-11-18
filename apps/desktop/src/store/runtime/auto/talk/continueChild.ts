@@ -1,5 +1,4 @@
 import {
-  AUTO_MAX_OPEN_CHILDREN,
   admissionChildRefusals,
   autoRefusalUserReason,
   type AdmissionChild,
@@ -337,7 +336,6 @@ export const continueChild = async ({
     ownerId: ctx.scheduler.ownerId,
     nowMs,
     generation: tree.generation,
-    maxOpenChildren: AUTO_MAX_OPEN_CHILDREN,
   });
   const outcome = await ctx.db.transaction({
     statements: [

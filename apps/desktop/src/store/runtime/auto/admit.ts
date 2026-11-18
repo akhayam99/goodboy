@@ -1,8 +1,6 @@
 import {
-  AUTO_MAX_OPEN_CHILDREN,
   AUTO_SUBSTEP_PARENT_SLACK_MS,
   AUTO_SUBSTEPS_PER_PARENT,
-  AUTO_TREE_LIMITS,
   diagnoseAdmission,
   type AdmissionChild,
   type AdmissionChildRefusal,
@@ -22,7 +20,6 @@ import {
   insertAutoDelegationStatement,
   insertAutoReservationStatement,
   listAutoDelegationsOfRequest,
-  recordAutoRefusal,
   type AutoDelegation,
   type AutoJsonObject,
   type Database,
@@ -170,11 +167,6 @@ const buildStatements = ({ params, snapshot }: BuildStatementsParams): ReadonlyA
       generation: params.generation,
       runId: params.runId,
       count: params.children.length,
-      limits: {
-        maxCallsPerTurn: AUTO_TREE_LIMITS.delegateCallsPerTurn,
-        maxRefusals: AUTO_TREE_LIMITS.refusals,
-        maxOpenChildren: AUTO_MAX_OPEN_CHILDREN,
-      },
     }),
   ];
   for (const [slot, child] of params.children.entries()) {
@@ -279,21 +271,6 @@ const buildStatements = ({ params, snapshot }: BuildStatementsParams): ReadonlyA
   return statements;
 };
 
-type RecordRefusalParams = {
-  readonly params: AdmitBatchParams;
-};
-
-const countRefusal = async ({ params }: RecordRefusalParams): Promise<void> => {
-  await recordAutoRefusal({
-    db: params.db,
-    treeId: params.treeId,
-    ownerId: params.ownerId,
-    nowMs: params.nowMs,
-    generation: params.generation,
-    runId: params.runId,
-  });
-};
-
 type ReplayParams = {
   readonly db: Database;
   readonly treeId: AutoTreeId;
@@ -357,7 +334,6 @@ export const admitBatch = async (params: AdmitBatchParams): Promise<AdmitOutcome
     });
     const verdict = diagnoseAdmission({ snapshot, children });
     if (verdict.kind === 'refused') {
-      await countRefusal({ params });
       return { kind: 'refused', code: verdict.code, perChild: verdict.perChild };
     }
     const outcome = await params.db.transaction({
@@ -384,6 +360,5 @@ export const admitBatch = async (params: AdmitBatchParams): Promise<AdmitOutcome
       throw new Error(`Auto admission aborted on ${outcome.abortCode}`);
     }
   }
-  await countRefusal({ params });
   return { kind: 'refused', code: 'tree_busy', perChild: [] };
 };

@@ -1,7 +1,4 @@
 import {
-  AUTO_OWNER_GUARD_SQL,
-  autoOwnerGuardParams,
-  casAutoDelegationStateStatement,
   getAutoAttempt,
   getAutoDelegation,
   insertAutoAttemptStatement,
@@ -13,6 +10,7 @@ import {
 import type { LaunchGuardRows } from '@goodboy/core/auto';
 import type { AutoDelegationId, AutoTreeId } from '@goodboy/types';
 import { launchGuardStart } from './launchGuard/launchGuardStart';
+import { runSlotStatements } from './slots/runSlotStatements';
 
 export type StartAttemptParams = Readonly<{
   db: Database;
@@ -52,19 +50,13 @@ export const startAttempt = async ({
   }
   const guarded = await launchGuardStart({ db, nowMs, delegation, writeSet, rows: guardRows });
   const statements: Statement[] = [
-    {
-      sql: `SELECT 1 FROM auto_trees
-        WHERE id = ? AND generation = ? AND stop_state = 'none' AND ${AUTO_OWNER_GUARD_SQL}`,
-      params: [treeId, generation, ...autoOwnerGuardParams({ ownerId, nowMs })],
-      abortWhen: 'noRows',
-      abortCode: ABORT_START_TREE,
-    },
-    casAutoDelegationStateStatement({
-      delegationId,
+    ...runSlotStatements({
+      delegation,
+      ownerId,
       generation,
-      from: ['accepted'],
-      to: 'starting',
-      abortCode: ABORT_START_DELEGATION,
+      nowMs,
+      treeAbortCode: ABORT_START_TREE,
+      slotAbortCode: ABORT_START_DELEGATION,
     }),
     ...guarded.statements,
     insertAutoAttemptStatement({

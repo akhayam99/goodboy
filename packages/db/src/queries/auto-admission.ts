@@ -3,12 +3,6 @@ import type { GuardedStatement, PlainStatement } from '../client';
 import { autoBudgetLeftSql } from './auto-reservations';
 import { AUTO_OWNER_GUARD_SQL, autoOwnerGuardParams } from './auto-trees';
 
-type AutoAdmissionLimits = Readonly<{
-  maxCallsPerTurn: number;
-  maxRefusals: number;
-  maxOpenChildren: number;
-}>;
-
 type AdmissionTreeStatementParams = {
   readonly treeId: AutoTreeId;
   readonly rootAgentId: AgentId;
@@ -17,7 +11,6 @@ type AdmissionTreeStatementParams = {
   readonly generation: number;
   readonly runId: string;
   readonly count: number;
-  readonly limits: AutoAdmissionLimits;
 };
 
 export const AUTO_ADMISSION_TREE_ABORT = 'admission_tree';
@@ -30,18 +23,13 @@ export const autoAdmissionTreeStatement = ({
   generation,
   runId,
   count,
-  limits,
 }: AdmissionTreeStatementParams): GuardedStatement => ({
   sql: `UPDATE auto_trees
     SET phase = 'delegating', is_yield_requested = 1, phase_rev = phase_rev + 1, updated_at = ?,
-        delegations_used = delegations_used + ?, attempts_used = attempts_used + ?,
-        turn_delegate_calls = turn_delegate_calls + 1
+        delegations_used = delegations_used + ?, attempts_used = attempts_used + ?
     WHERE id = ? AND root_agent_id = ? AND generation = ? AND phase = 'deciding'
       AND is_yield_requested = 0 AND stop_state = 'none' AND active_run_id = ?
       AND ${AUTO_OWNER_GUARD_SQL}
-      AND turn_delegate_calls < ? AND refusals_used < ?
-      AND (SELECT COUNT(*) FROM auto_delegations
-            WHERE tree_id = auto_trees.id AND state NOT IN ('settled', 'paused')) + ? <= ?
       AND ${autoBudgetLeftSql({ treeRef: 'auto_trees.id' })}`,
   params: [
     nowMs,
@@ -52,10 +40,6 @@ export const autoAdmissionTreeStatement = ({
     generation,
     runId,
     ...autoOwnerGuardParams({ ownerId, nowMs }),
-    limits.maxCallsPerTurn,
-    limits.maxRefusals,
-    count,
-    limits.maxOpenChildren,
   ],
   abortWhen: 'noChanges',
   abortCode: AUTO_ADMISSION_TREE_ABORT,
@@ -224,7 +208,6 @@ type ResumeTreeStatementParams = {
   readonly nowMs: number;
   readonly generation: number;
   readonly runId: string;
-  readonly maxOpenChildren: number;
 };
 
 export const AUTO_RESUME_TREE_ABORT = 'resume_tree';
@@ -236,7 +219,6 @@ export const autoResumeTreeStatement = ({
   nowMs,
   generation,
   runId,
-  maxOpenChildren,
 }: ResumeTreeStatementParams): GuardedStatement => ({
   sql: `UPDATE auto_trees
     SET phase = 'delegating', is_yield_requested = 1, phase_rev = phase_rev + 1, updated_at = ?,
@@ -244,8 +226,6 @@ export const autoResumeTreeStatement = ({
     WHERE id = ? AND root_agent_id = ? AND generation = ?
       AND phase IN ('deciding', 'delegating') AND stop_state = 'none' AND active_run_id = ?
       AND ${AUTO_OWNER_GUARD_SQL}
-      AND (SELECT COUNT(*) FROM auto_delegations
-            WHERE tree_id = auto_trees.id AND state NOT IN ('settled', 'paused')) + 1 <= ?
       AND ${autoBudgetLeftSql({ treeRef: 'auto_trees.id' })}`,
   params: [
     nowMs,
@@ -254,7 +234,6 @@ export const autoResumeTreeStatement = ({
     generation,
     runId,
     ...autoOwnerGuardParams({ ownerId, nowMs }),
-    maxOpenChildren,
   ],
   abortWhen: 'noChanges',
   abortCode: AUTO_RESUME_TREE_ABORT,
@@ -265,7 +244,6 @@ type ContinueTreeStatementParams = {
   readonly ownerId: string;
   readonly nowMs: number;
   readonly generation: number;
-  readonly maxOpenChildren: number;
 };
 
 const AUTO_CONTINUE_TREE_ABORT = 'continue_tree';
@@ -275,7 +253,6 @@ export const autoContinueTreeStatement = ({
   ownerId,
   nowMs,
   generation,
-  maxOpenChildren,
 }: ContinueTreeStatementParams): GuardedStatement => ({
   sql: `UPDATE auto_trees
     SET phase = CASE WHEN phase IN ('done', 'answering') THEN 'waiting' ELSE phase END,
@@ -284,10 +261,8 @@ export const autoContinueTreeStatement = ({
     WHERE id = ? AND generation = ? AND stop_state = 'none'
       AND phase NOT IN ('finished', 'blocked', 'stopping', 'stopped')
       AND ${AUTO_OWNER_GUARD_SQL}
-      AND (SELECT COUNT(*) FROM auto_delegations
-            WHERE tree_id = auto_trees.id AND state NOT IN ('settled', 'paused')) + 1 <= ?
       AND ${autoBudgetLeftSql({ treeRef: 'auto_trees.id' })}`,
-  params: [nowMs, treeId, generation, ...autoOwnerGuardParams({ ownerId, nowMs }), maxOpenChildren],
+  params: [nowMs, treeId, generation, ...autoOwnerGuardParams({ ownerId, nowMs })],
   abortWhen: 'noChanges',
   abortCode: AUTO_CONTINUE_TREE_ABORT,
 });

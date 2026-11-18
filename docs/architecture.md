@@ -1156,10 +1156,14 @@ kept.
   lost race comes back as a typed answer.
 - `admit.ts` takes a whole batch or nothing. The guarded statement in
   `packages/db/src/queries/auto-admission.ts` is the rule: phase, run, lease,
-  the guards of `AUTO_TREE_LIMITS`, four open children (a paused delegation is not open, so a
-  paused parent leaves its slot to a substep), remaining budget, plan approval and
+  remaining budget, plan approval and
   revision. A substep adds its own guard (`autoSubstepStatements`): the parent is
   paused on that question in this generation and has fewer than two helpers. `core/auto/admission.ts` only names the refusal for the caller.
+  No count of agents refuses a batch: the cap of four running children is a start
+  rule, not an admission rule. A child starts only through `autoTakeRunSlotStatement`,
+  which moves it from `accepted` to `starting` while fewer than four children have a
+  live attempt, the lease holds and money is left ([auto.md](./auto.md) → What stops an
+  Auto tree).
 - Money has one source, `treeSpend`: settled, live (what running children spent,
   from their telemetry), reserved and remaining. It feeds admission, the prompt
   line and the screen through `autoBudgetOf`; remaining is `autoRemainingUsdSql`
@@ -1192,11 +1196,9 @@ kept.
   ok on the current run of a tree that is `deciding` and not stopping, and calls `delegate.ts`,
   `answerQuestion.ts` or `finishTree.ts` through `runAutoCommand.ts`. A refusal, or a block that
   does not parse, becomes a `refusal` outbox row (join key `refusal:<run id>`, so a recovered
-  turn writes it once) that the next delivery shows. The refusal counters count a refusal once
-  per run: `recordAutoRefusal` takes the generation and the run id, stores them in
-  `auto_trees.last_refusal_key` in the same guarded update that adds to `refusals_used` and
-  `turn_delegate_calls`, and does nothing when the key is already there, so two duplicate
-  settles of one turn move the counters once. `delegate.ts` parses the
+  turn writes it once) that the next delivery shows. No refusal is counted: the
+  `refusals_used`, `turn_delegate_calls` and `last_refusal_key` columns of `auto_trees`
+  stay from m230 and nothing writes or reads them. `delegate.ts` parses the
   spec (`core/auto/delegateSpec.ts`: a closed role list, rejected before any
   normalization), resolves each child (`resolveDelegateChild.ts`: the mount through
   `core/auto/mountPick.ts`, the model through `resolveProposedRouting`, the artifact

@@ -1,4 +1,4 @@
-import { AUTO_BATCH_MAX_CHILDREN, AUTO_SUBSTEPS_PER_PARENT, AUTO_TREE_LIMITS } from './limits';
+import { AUTO_SUBSTEPS_PER_PARENT, AUTO_TREE_LIMITS } from './limits';
 import type { AutoRefusalCode } from './refusals';
 
 export const AUTO_REFUSAL_TEXT = {
@@ -6,7 +6,6 @@ export const AUTO_REFUSAL_TEXT = {
     'That request id was already used with a different spec. Send the same spec again to repeat the call, or use a new id.',
   depth_cap: 'Only the Auto agent of a conversation hands work over. An agent never delegates.',
   substep_cap: `A paused agent can have ${AUTO_SUBSTEPS_PER_PARENT} substeps at most, and a substep never has its own. Answer it yourself.`,
-  breadth_cap: `At most ${AUTO_BATCH_MAX_CHILDREN} agents can run at once. Wait for results, or send fewer children.`,
   empty_batch: 'The batch has no children.',
   budget: 'This conversation reached its limit. Ask the user to raise the limit.',
   already_yielded:
@@ -15,8 +14,6 @@ export const AUTO_REFUSAL_TEXT = {
   tree_stopped: 'This conversation was stopped.',
   generation_changed: 'The work was restarted since this turn began.',
   not_owner: 'Another window runs this conversation. Try again in a moment.',
-  limit_calls: `You may call delegate ${AUTO_TREE_LIMITS.delegateCallsPerTurn} times in one turn. End your turn.`,
-  limit_refusals: 'Too many delegate calls were refused in this conversation. Tell the user.',
   artifact_unknown: 'That artifact does not belong to this conversation.',
   stale_revision: 'That artifact has a newer version. Read it again and retry once.',
   artifact_consumed:

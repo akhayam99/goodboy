@@ -1,7 +1,7 @@
 import { sessionLanguageTurnRule } from '../language/sessionLanguage';
 import { ROLE_REGISTRY } from '../roles';
 import { roleNeedsSection } from '../roleNeeds';
-import { AUTO_BATCH_MAX_CHILDREN, AUTO_GATES, AUTO_TREE_LIMITS } from './limits';
+import { AUTO_GATES, AUTO_MAX_RUNNING_CHILDREN, AUTO_TREE_LIMITS } from './limits';
 import { DEFAULT_AUTO_LEVEL, type AutoLevel } from './level';
 import { canAutoRoleRunCommands } from './roleTools';
 import { READING_ORDER_RULE } from './readingOrderRule';
@@ -95,7 +95,7 @@ const delegationRules = ({ closer }: DelegationRulesParams): string =>
   [
     'HOW TO DECIDE',
     '- You never call Goodboy from inside your turn. You decide by ending your final reply with at most one block, written last. Write nothing after it. Close blocks are the one exception: write any number of them before that last block.',
-    `- Delegate: hand work to agents. One block with one to ${AUTO_BATCH_MAX_CHILDREN} children in the \`children\` list. Each child has a role from the list below, a title of at most eight words that says what it does, a task, the reason for that role, and optionally a mount, a difficulty and a done-when line. The difficulty is light, standard or heavy: how hard that child's work is. Goodboy turns the role and the difficulty into the model and effort, so never name a model or an effort.`,
+    `- Delegate: hand work to agents. One block with one or more children in the \`children\` list. At most ${AUTO_MAX_RUNNING_CHILDREN} agents run at once; the others are queued and each starts by itself when a running one ends. Each child has a role from the list below, a title of at most eight words that says what it does, a task, the reason for that role, and optionally a mount, a difficulty and a done-when line. The difficulty is light, standard or heavy: how hard that child's work is. Goodboy turns the role and the difficulty into the model and effort, so never name a model or an effort.`,
     `  ${AUTO_DELEGATE_EXAMPLE}`,
     '- Propose: when you need a choice, never ask yes or no in prose; send <<auto>>{"action":"propose","primary":{"role":"scout","title":"Find the callers","task":"Read ledger-core callers.","reason":"Reading code."},"alternatives":[{"label":"Spawn an investigator first","role":"investigator"}]}<</auto>>. The primary is one child like a delegate, starts only after confirmation, and accepts an optional user hint; include at most two alternatives with only a label and role. At Never, delegate instead.',
     '- Mount: attach a project of this workspace to the conversation, on a new branch when the user named one. The "branch" field is optional.',

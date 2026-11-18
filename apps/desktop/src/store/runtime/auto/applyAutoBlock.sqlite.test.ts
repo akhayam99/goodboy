@@ -411,7 +411,7 @@ describe('settling more than once, late, or after a crash', () => {
     expect(world.errors).toEqual([]);
   });
 
-  it('counts the refusal of an invalid spec once when two duplicate settles race', async () => {
+  it('writes the refusal of an invalid spec once when two duplicate settles race', async () => {
     const world = await started();
     const turn = world.state.ports.autoTurns.at(-1);
     if (turn === undefined) {
@@ -424,20 +424,17 @@ describe('settling more than once, late, or after a crash', () => {
         delegateBlock([{ role: 'implementer', task: 'change it', reason: 'a code change' }]),
       ),
     });
-    const before = await treeOf(world);
 
     turn.onEnded(ended);
     turn.onEnded(ended);
     await world.runtime.settled();
 
-    const after = await treeOf(world);
-    expect(after?.refusalsUsed).toBe((before?.refusalsUsed ?? 0) + 1);
     expect(await refusalsOf(world)).toHaveLength(1);
     expect(await delegationsOf(world)).toHaveLength(0);
     expect(world.errors).toEqual([]);
   });
 
-  it('counts the refusal of a spec the parser rejects once when two duplicate settles race', async () => {
+  it('writes the refusal of a spec the parser rejects once when two duplicate settles race', async () => {
     const world = await started();
     const turn = world.state.ports.autoTurns.at(-1);
     if (turn === undefined) {
@@ -448,19 +445,16 @@ describe('settling more than once, late, or after a crash', () => {
       deliveryId: turn.deliveryId,
       assistantText: autoBlockText(delegateBlock([{ role: 'wizard', task: 'x', reason: 'y' }])),
     });
-    const before = await treeOf(world);
 
     turn.onEnded(ended);
     turn.onEnded(ended);
     turn.onEnded(ended);
     await world.runtime.settled();
 
-    const after = await treeOf(world);
-    expect(after?.refusalsUsed).toBe((before?.refusalsUsed ?? 0) + 1);
     expect(await refusalsOf(world)).toHaveLength(1);
   });
 
-  it('counts the next run refusal again, so the limit still bounds a stubborn Auto', async () => {
+  it('blocks a stubborn Auto on the no progress streak, never on a count of refusals', async () => {
     const world = await started();
     const blockText = autoBlockText(
       delegateBlock([{ role: 'implementer', task: 'change it', reason: 'a code change' }]),
@@ -468,8 +462,10 @@ describe('settling more than once, late, or after a crash', () => {
 
     await autoTurnEnds({ world, text: blockText });
     await autoTurnEnds({ world, text: blockText });
+    expect(await treeOf(world)).toMatchObject({ noProgressStreak: 2 });
+    await autoTurnEnds({ world, text: blockText });
 
-    expect((await treeOf(world))?.refusalsUsed).toBe(2);
+    expect(await treeOf(world)).toMatchObject({ phase: 'blocked', noProgressStreak: 3 });
   });
 
   it('drops a settle that arrives after the stop and admits nothing', async () => {

@@ -50,8 +50,6 @@ export const aTree = ({ phase = 'answering', capUsd = 10 }: TreeParams = {}): Au
   turnsUsed: 0,
   delegationsUsed: 0,
   attemptsUsed: 0,
-  refusalsUsed: 0,
-  turnDelegateCalls: 0,
   noProgressStreak: 0,
   questionCycles: 0,
   grants: 0,
