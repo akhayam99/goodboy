@@ -70,7 +70,7 @@ describe('the guide shell scenes', () => {
     const chapter = within(
       screen.getByRole('region', { name: 'Rail, Sessions and session pages' }),
     );
-    ['Left rail', 'Session pages', 'Agents rail', 'Tools rail'].forEach((term) =>
+    ['Places rail', 'Session pages', 'Agents rail', 'Tools rail'].forEach((term) =>
       expect(chapter.getByText(term)).toBeDefined(),
     );
   });

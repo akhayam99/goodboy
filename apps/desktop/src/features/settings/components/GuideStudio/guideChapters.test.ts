@@ -249,7 +249,7 @@ describe('the labels the Guide cites', () => {
 
 describe('the shell chapter', () => {
   it('lists every door of the rail by the name the rail draws', () => {
-    const rail = pointOf('shell', 'Left rail');
+    const rail = pointOf('shell', 'Places rail');
     expect(rail).toContain('New session');
     COLUMN_DOORS.forEach((door) => expect(rail).toContain(door.label));
     expect(rail).toContain('amber number on Board');

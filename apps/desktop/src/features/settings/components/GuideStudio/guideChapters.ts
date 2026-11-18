@@ -210,7 +210,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
     id: 'board',
     group: 'daily',
     title: 'Board',
-    lead: 'The Board of the left rail. Each session sits in a lane for what is happening in it, so you never move cards by hand.',
+    lead: 'The Board of the places rail. Each session sits in a lane for what is happening in it, so you never move cards by hand.',
     points: [
       {
         term: 'Session card',
@@ -251,7 +251,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
     lead: 'The rail looks the same on every screen, Sessions is one key away, and a session opens its pages beside it.',
     points: [
       {
-        term: 'Left rail',
+        term: 'Places rail',
         desc: 'The workspace mark, New session, Board, Tasks, Workflows, Chat, Connections (Connect on the rail) and Impact. Settings, the bug icon and the Goodboy mark sit at the foot. An amber number on Board says sessions need you; Monitor on the right rail says when a pinned port is down.',
       },
       {
