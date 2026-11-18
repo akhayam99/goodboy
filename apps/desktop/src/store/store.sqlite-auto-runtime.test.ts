@@ -98,7 +98,6 @@ const seedTree = async (db: StoryDb): Promise<void> => {
     sessionId: AUTO_SEED_SESSION,
     primaryMountId: null,
     capUsd: 5,
-    hardDeadlineAt: Date.now() + 86_400_000,
   });
 };
 

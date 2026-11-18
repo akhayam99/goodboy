@@ -59,11 +59,9 @@ describe('autoRowFacts', () => {
     );
   });
 
-  it.each([
-    ['the budget', AUTO_BLOCK_TEXT.budget],
-    ['the wall clock', AUTO_BLOCK_TEXT.limit_wall_clock],
-  ])('says Paused, waiting on you, for a tree blocked by %s', (_name, blockedReason) => {
+  it('says Paused, waiting on you, for a tree blocked by the budget', () => {
     const view = aView({ phase: 'blocked' });
+    const blockedReason = AUTO_BLOCK_TEXT.budget;
 
     expect(autoRowFacts({ view: { ...view, tree: { ...view.tree, blockedReason } } })).toEqual({
       phase: 'waiting',

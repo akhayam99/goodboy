@@ -408,7 +408,7 @@ describe('substeps', () => {
     );
   });
 
-  it('keeps a paused parent paused while the running slots are full, and resumes it when one frees', async () => {
+  it('answers a paused parent beside four new agents, runs four at once and starts the fifth when one ends', async () => {
     const { world, parents } = await pausedParents({ count: 1, ask: ASK_PLAIN });
     const parent = firstParent(parents);
     const fill = await autoDelegates({
@@ -417,27 +417,76 @@ describe('substeps', () => {
       spec: { children: ['a', 'b', 'c', 'd'].map((area) => SCOUT(`look at ${area}`)) },
     });
     expect(fill).toMatchObject({ isOk: true });
-    const answer = {
+
+    const answered = await autoAnswers({
       world,
       delegationId: parent.delegationId,
       questionId: parent.questionId,
       text: 'Use the default.',
-    };
+    });
 
-    const refused = await autoAnswers(answer);
+    expect(answered).toMatchObject({ isOk: true, data: { answered: true } });
+    expect((await delegationOf(world, parent.delegationId)).state).toBe('accepted');
+    const before = world.state.ports.childTurns.length;
+    await autoTurnEnds({ world });
+    const open = (await allOf(world)).filter((row) => row.state !== 'settled');
+    expect(open.filter((row) => row.state === 'running')).toHaveLength(4);
+    expect(open.filter((row) => row.state === 'accepted')).toHaveLength(1);
+    expect(world.state.ports.childTurns).toHaveLength(before + 4);
 
-    expect(refused).toMatchObject({ isOk: false, code: 'breadth_cap' });
+    const first = world.state.ports.childTurns[before];
+    await childTurnEnds({ world, index: before, text: done(String(first?.childAgentId)) });
+
+    expect(world.state.ports.childTurns).toHaveLength(before + 5);
+    expect((await allOf(world)).filter((row) => row.state === 'accepted')).toHaveLength(0);
+    const resumed = await listAutoAttemptsOfDelegation({
+      db: world.state.world.db,
+      delegationId: brandId<AutoDelegationId>({ value: parent.delegationId }),
+    });
+    expect(resumed.at(-1)?.runId).not.toBeNull();
+  });
+
+  it('keeps a paused parent alive while its helper waits more than 35 minutes for a slot', async () => {
+    const { world, parents } = await pausedParents({ count: 1 });
+    const parent = firstParent(parents);
+    const areas = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
+    const admitted = await autoDelegates({
+      world,
+      requestId: 'request-2',
+      spec: { children: [...areas.map((area) => SCOUT(`look at ${area}`)), helperFor(parent)] },
+    });
+    expect(admitted).toMatchObject({ isOk: true });
+    await autoTurnEnds({ world });
+    const first = world.state.ports.childTurns.length - 4;
+
+    world.state.world.clock.advance({ ms: 25 * 60_000 });
+    for (let index = first; index < first + 4; index += 1) {
+      const turn = world.state.ports.childTurns[index];
+      await childTurnEnds({ world, index, text: done(String(turn?.childAgentId)) });
+    }
+    world.state.world.clock.advance({ ms: 11 * 60_000 });
+    await world.runtime.drive(world.treeId);
+
+    const [helperQueued] = await helpersOf(world);
+    expect(helperQueued?.state).toBe('accepted');
     expect((await delegationOf(world, parent.delegationId)).state).toBe('paused');
-    const firstOpen = (await plainOf(world)).find((row) => row.state !== 'paused');
-    await world.state.world.db.execute(
-      `UPDATE auto_delegations SET state = 'settled', outcome = 'completed', settled_at = ? WHERE id = ?`,
-      [world.state.world.clock.now(), firstOpen?.id ?? ''],
+
+    const fifth = world.state.ports.childTurns[first + 4];
+    await childTurnEnds({ world, index: first + 4, text: done(String(fifth?.childAgentId)) });
+
+    const [helper] = await helpersOf(world);
+    expect(helper?.state).toBe('running');
+    const kept = await delegationOf(world, parent.delegationId);
+    expect(kept.state).toBe('paused');
+    expect(kept.deadlineAt).toBeGreaterThanOrEqual(
+      (helper?.deadlineAt ?? 0) + AUTO_SUBSTEP_PARENT_SLACK_MS,
     );
-
-    const accepted = await autoAnswers(answer);
-
-    expect(accepted).toMatchObject({ isOk: true, data: { answered: true } });
-    expect((await delegationOf(world, parent.delegationId)).state).toBe('starting');
+    const attempts = await listAutoAttemptsOfDelegation({
+      db: world.state.world.db,
+      delegationId: brandId<AutoDelegationId>({ value: parent.delegationId }),
+    });
+    expect(attempts.at(-1)?.state).toBe('paused');
+    expect(world.errors).toEqual([]);
   });
 
   it('stops the substeps before the parent', async () => {

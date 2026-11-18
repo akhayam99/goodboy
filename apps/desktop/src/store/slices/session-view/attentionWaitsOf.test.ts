@@ -201,19 +201,19 @@ describe('attentionWaitsOf and Auto', () => {
       }),
     });
     const blocked = aView({ phase: 'blocked' });
-    const walled = waitsOf({
+    const capped = waitsOf({
       state: stateOf({
         views: [
           {
             ...blocked,
-            tree: { ...blocked.tree, blockedReason: AUTO_BLOCK_TEXT.limit_wall_clock },
+            tree: { ...blocked.tree, blockedReason: AUTO_BLOCK_TEXT.budget },
           },
         ],
         agents: [ROOT],
       }),
     });
 
-    for (const waits of [spent, walled]) {
+    for (const waits of [spent, capped]) {
       expect(waits.hasLimitPausedRun).toBe(true);
       expect(waits.hasAutoFailed).toBe(false);
       expect(waits.hasAutoNeedsYou).toBe(false);

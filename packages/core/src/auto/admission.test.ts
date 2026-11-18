@@ -31,14 +31,11 @@ const tree = (patch: Partial<AutoTree> = {}): AutoTree => ({
   turnsUsed: 1,
   delegationsUsed: 0,
   attemptsUsed: 0,
-  refusalsUsed: 0,
-  turnDelegateCalls: 0,
   noProgressStreak: 0,
   questionCycles: 0,
   grants: 0,
   createdAt: NOW,
   updatedAt: NOW,
-  hardDeadlineAt: NOW + 86_400_000,
   schedulerOwner: 'window-a',
   ownerLeaseExpiresAt: NOW + 30_000,
   ...patch,
@@ -51,7 +48,6 @@ const snapshot = (patch: Partial<AdmissionSnapshot> = {}): AdmissionSnapshot => 
   callerAgentId: ROOT,
   expectedGeneration: 1,
   expectedRunId: 'run-1',
-  openCount: 0,
   openChildAgentIds: [],
   remainingUsd: 5,
   artifacts: [],
@@ -205,25 +201,21 @@ describe('diagnoseAdmission', () => {
     ).toBe('not_owner');
   });
 
-  it('names the guard that tripped and never stops on a count of agents or runs', () => {
-    const cases: ReadonlyArray<readonly [Partial<AutoTree>, string]> = [
-      [{ turnDelegateCalls: 6 }, 'limit_calls'],
-      [{ refusalsUsed: 10 }, 'limit_refusals'],
-      [{ hardDeadlineAt: NOW }, 'limit_wall_clock'],
-    ];
-    for (const [patch, code] of cases) {
-      expect(
-        codeOf(
-          diagnoseAdmission({ snapshot: snapshot({ tree: tree(patch) }), children: [scout()] }),
-        ),
-      ).toBe(code);
-    }
+  it('never stops on a count of agents, runs or turns', () => {
     for (const used of [12, 13, 40, 500]) {
       const old = tree({ delegationsUsed: used, attemptsUsed: used + 8, grants: 3 });
       expect(
         codeOf(diagnoseAdmission({ snapshot: snapshot({ tree: old }), children: [scout()] })),
       ).toBe('ok');
     }
+  });
+
+  it('admits children in a tree older than a day while spend is left', () => {
+    const old = tree({ createdAt: NOW - 3 * 86_400_000 });
+
+    expect(
+      codeOf(diagnoseAdmission({ snapshot: snapshot({ tree: old }), children: [scout()] })),
+    ).toBe('ok');
   });
 
   it('refuses at the spend cap, then admits once the limit is raised', () => {
@@ -233,18 +225,11 @@ describe('diagnoseAdmission', () => {
     expect(codeOf(diagnoseAdmission({ snapshot: raised, children: [scout()] }))).toBe('ok');
   });
 
-  it('caps the batch at four and the open children at four', () => {
-    const five = ['a', 'b', 'c', 'd', 'e'].map((suffix) => scout(`agent-${suffix}`));
-    expect(codeOf(diagnoseAdmission({ snapshot: snapshot(), children: five }))).toBe('breadth_cap');
+  it('admits a batch of any size while agents already run, and refuses only an empty one', () => {
+    const six = ['a', 'b', 'c', 'd', 'e', 'f'].map((suffix) => scout(`agent-${suffix}`));
+    const busy = snapshot({ openChildAgentIds: ['agent-x', 'agent-y', 'agent-z', 'agent-w'] });
+    expect(codeOf(diagnoseAdmission({ snapshot: busy, children: six }))).toBe('ok');
     expect(codeOf(diagnoseAdmission({ snapshot: snapshot(), children: [] }))).toBe('empty_batch');
-    expect(
-      codeOf(
-        diagnoseAdmission({
-          snapshot: snapshot({ openCount: 3 }),
-          children: [scout(), scout('agent-s2')],
-        }),
-      ),
-    ).toBe('breadth_cap');
   });
 
   describe('substeps', () => {
@@ -281,7 +266,7 @@ describe('diagnoseAdmission', () => {
         ...scout(`agent-scout-${n + 10}`),
         substep: { parentDelegationId: `delegation-parent-${n}`, questionId: `question-${n}` },
       }));
-      expect(codeOf(verdictOf(parents, children, { openCount: 0 }))).toBe('ok');
+      expect(codeOf(verdictOf(parents, children))).toBe('ok');
     });
 
     it('refuses a parent that is not paused, paused on another question, or unknown', () => {

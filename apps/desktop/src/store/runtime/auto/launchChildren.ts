@@ -29,6 +29,8 @@ import { launchSnapshotFor } from './launchSnapshot/launchSnapshotFor';
 import { readLaunchPermissions } from './level/readLaunchPermissions';
 import type { ChildMountTarget, ChildStartOutcome, ChildTurnEnded } from './ports';
 import { routedModelOf } from '../../slices/turn/childTurn/routedModelOf';
+import { readFreeSlots } from './slots/readFreeSlots';
+import { startQueuedAttempt } from './slots/startQueuedAttempt';
 import { readSnapshot } from './readSnapshot';
 import type { AgentVerbContext } from './verbContext';
 
@@ -44,6 +46,22 @@ export type LaunchChildrenOutcome = Readonly<{
 }>;
 
 const launching = new Set<string>();
+
+const LAUNCH_PHASES: ReadonlyArray<AutoTree['phase']> = ['delegating', 'waiting', 'merging'];
+
+type QueuedParams = {
+  readonly open: ReadonlyArray<AutoDelegation>;
+  readonly free: number;
+};
+
+const queuedToStartOf = ({ open, free }: QueuedParams): ReadonlyArray<AutoDelegation> => {
+  const claiming = open.filter(
+    (delegation) => delegation.state === 'accepted' && launching.has(delegation.id),
+  ).length;
+  return open
+    .filter((delegation) => delegation.state === 'accepted' && !launching.has(delegation.id))
+    .slice(0, Math.max(0, free - claiming));
+};
 
 type MountTargetParams = {
   readonly delegation: AutoDelegation;
@@ -79,7 +97,9 @@ const attemptToLaunch = async ({
   target,
 }: AttemptToLaunchParams): Promise<AutoAttempt | null> => {
   const isWriter = isAutoWriterRole({ role });
-  if (delegation.state === 'accepted') {
+  const attempts = await listAutoAttemptsOfDelegation({ db: ctx.db, delegationId: delegation.id });
+  const latest = attempts[attempts.length - 1];
+  if (delegation.state === 'accepted' && latest === undefined) {
     if (await isStartRowHeld({ ctx, delegation, role })) {
       return null;
     }
@@ -101,10 +121,21 @@ const attemptToLaunch = async ({
     });
     return started.kind === 'started' ? started.attempt : null;
   }
-  const attempts = await listAutoAttemptsOfDelegation({ db: ctx.db, delegationId: delegation.id });
-  const latest = attempts[attempts.length - 1];
   if (latest === undefined || latest.state !== 'starting' || latest.runId !== null) {
     return null;
+  }
+  if (delegation.state === 'accepted') {
+    const claimed = await startQueuedAttempt({
+      db: ctx.db,
+      ownerId: ctx.scheduler.ownerId,
+      nowMs: ctx.now(),
+      delegation,
+      attemptId: latest.id,
+      generation: tree.generation,
+    });
+    if (claimed === null) {
+      return null;
+    }
   }
   const isSnapshotMissing = snapshotOf({ baseline: latest.baseline }) === null;
   const isRemoteMissing = isWriter && remoteOf({ baseline: latest.baseline }) === null;
@@ -285,16 +316,17 @@ export const launchChildren = async ({
     tree === null ||
     tree.stopState !== 'none' ||
     tree.activeRunId !== null ||
-    (tree.phase !== 'delegating' && tree.phase !== 'waiting')
+    !LAUNCH_PHASES.includes(tree.phase)
   ) {
     return none;
   }
   const open = await listOpenAutoDelegations({ db: ctx.db, treeId });
-  const launchable = open.filter(
-    (delegation) =>
-      (delegation.state === 'accepted' || delegation.state === 'starting') &&
-      !launching.has(delegation.id),
-  );
+  const launchable = [
+    ...open.filter(
+      (delegation) => delegation.state === 'starting' && !launching.has(delegation.id),
+    ),
+    ...queuedToStartOf({ open, free: await readFreeSlots({ db: ctx.db, treeId }) }),
+  ];
   for (const delegation of launchable) {
     launching.add(delegation.id);
   }

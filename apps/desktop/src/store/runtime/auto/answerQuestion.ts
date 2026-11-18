@@ -1,7 +1,5 @@
 import {
-  AUTO_DELEGATION_DEADLINE_MINUTES,
   AUTO_DELIVERY_ARTIFACT_CHARS,
-  AUTO_MAX_OPEN_CHILDREN,
   diagnoseResume,
   isAutoWriterRole,
   storedLaunchGuardOf,
@@ -226,19 +224,14 @@ export const answerQuestion = async ({
       nowMs,
       generation: grant.generation,
       runId: grant.runId,
-      maxOpenChildren: AUTO_MAX_OPEN_CHILDREN,
     }),
     casAutoDelegationStateStatement({
       delegationId: delegation.id,
       generation: grant.generation,
       from: ['paused'],
-      to: 'starting',
+      to: 'accepted',
       abortCode: ABORT_DELEGATION,
     }),
-    {
-      sql: 'UPDATE auto_delegations SET deadline_at = ? WHERE id = ?',
-      params: [nowMs + AUTO_DELEGATION_DEADLINE_MINUTES * 60_000, delegation.id],
-    },
     insertAutoAttemptStatement({
       id: attemptId,
       delegationId: delegation.id,

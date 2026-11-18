@@ -26,14 +26,11 @@ const tree = (patch: Partial<AutoTree> = {}): AutoTree => ({
   turnsUsed: 1,
   delegationsUsed: 1,
   attemptsUsed: 1,
-  refusalsUsed: 0,
-  turnDelegateCalls: 0,
   noProgressStreak: 0,
   questionCycles: 0,
   grants: 0,
   createdAt: NOW,
   updatedAt: NOW,
-  hardDeadlineAt: NOW + 86_400_000,
   schedulerOwner: 'window-a',
   ownerLeaseExpiresAt: NOW + 30_000,
   ...patch,
@@ -46,7 +43,6 @@ const snapshot = (patch: Partial<AdmissionSnapshot> = {}): AdmissionSnapshot => 
   callerAgentId: ROOT,
   expectedGeneration: 1,
   expectedRunId: 'run-1',
-  openCount: 1,
   openChildAgentIds: ['agent-scout-1'],
   remainingUsd: 5,
   artifacts: [],
@@ -66,19 +62,21 @@ describe('admitting the resume of a child that asked a question', () => {
     expect(diagnoseResume({ snapshot: unbounded })).toEqual({ kind: 'ok' });
   });
 
+  it('admits the new attempt in a tree older than a day', () => {
+    const old = tree({ createdAt: NOW - 3 * 86_400_000 });
+    expect(diagnoseResume({ snapshot: snapshot({ tree: old }) })).toEqual({ kind: 'ok' });
+  });
+
   it('still answers after the same turn handed other work over', () => {
     const handed = snapshot({ tree: tree({ phase: 'delegating', isYieldRequested: true }) });
     expect(diagnoseResume({ snapshot: handed }).kind).toBe('ok');
   });
 
-  it('refuses the resume of a paused child when the running slots are full', () => {
-    const full = snapshot({ openCount: 4 });
-    expect(diagnoseResume({ snapshot: full })).toEqual({
-      kind: 'refused',
-      code: 'breadth_cap',
+  it('admits the resume of a paused child while four agents run', () => {
+    const full = snapshot({
+      openChildAgentIds: ['agent-scout-1', 'agent-scout-2', 'agent-scout-3', 'agent-scout-4'],
     });
-    const free = snapshot({ openCount: 3 });
-    expect(diagnoseResume({ snapshot: free }).kind).toBe('ok');
+    expect(diagnoseResume({ snapshot: full })).toEqual({ kind: 'ok' });
   });
 
   it('refuses outside the turn it was called from', () => {

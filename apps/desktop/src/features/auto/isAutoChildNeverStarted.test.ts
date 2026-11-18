@@ -16,6 +16,7 @@ describe('isAutoChildNeverStarted', () => {
         delegation: QUEUED,
         childAgent: CHILD,
         now: FIXTURE_NOW + NEVER_STARTED_MS - 1000,
+        startableSince: FIXTURE_NOW,
       }),
     ).toBe(false);
   });
@@ -26,6 +27,7 @@ describe('isAutoChildNeverStarted', () => {
         delegation: QUEUED,
         childAgent: CHILD,
         now: FIXTURE_NOW + NEVER_STARTED_MS,
+        startableSince: FIXTURE_NOW,
       }),
     ).toBe(true);
   });
@@ -36,6 +38,7 @@ describe('isAutoChildNeverStarted', () => {
         delegation: { ...QUEUED, state: 'starting' },
         childAgent: null,
         now: FIXTURE_NOW + 120_000,
+        startableSince: FIXTURE_NOW,
       }),
     ).toBe(true);
   });
@@ -50,6 +53,29 @@ describe('isAutoChildNeverStarted', () => {
         delegation: QUEUED,
         childAgent: started,
         now: FIXTURE_NOW + 61_000,
+        startableSince: FIXTURE_NOW,
+      }),
+    ).toBe(false);
+  });
+
+  it('never blames a child that waits for a running agent to end', () => {
+    expect(
+      isAutoChildNeverStarted({
+        delegation: QUEUED,
+        childAgent: null,
+        now: FIXTURE_NOW + 600_000,
+        startableSince: null,
+      }),
+    ).toBe(false);
+  });
+
+  it('counts the minute from when a slot came free, not from the hand over', () => {
+    expect(
+      isAutoChildNeverStarted({
+        delegation: QUEUED,
+        childAgent: null,
+        now: FIXTURE_NOW + 600_000,
+        startableSince: FIXTURE_NOW + 590_000,
       }),
     ).toBe(false);
   });
@@ -60,6 +86,7 @@ describe('isAutoChildNeverStarted', () => {
         delegation: { ...QUEUED, state: 'awaiting_confirm' },
         childAgent: CHILD,
         now: FIXTURE_NOW + 600_000,
+        startableSince: FIXTURE_NOW,
       }),
     ).toBe(false);
   });
@@ -70,6 +97,7 @@ describe('isAutoChildNeverStarted', () => {
         delegation: { ...QUEUED, settledAt: FIXTURE_NOW + 1000 },
         childAgent: CHILD,
         now: FIXTURE_NOW + 600_000,
+        startableSince: FIXTURE_NOW,
       }),
     ).toBe(false);
   });

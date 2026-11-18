@@ -56,8 +56,6 @@ describe('atomic admission', () => {
       isYieldRequested: true,
       delegationsUsed: 2,
       attemptsUsed: 2,
-      turnDelegateCalls: 1,
-      refusalsUsed: 0,
       phaseRev: 2,
     });
     const rows = await listAutoDelegations({ db: world.db, treeId: WORLD_TREE });
@@ -96,7 +94,7 @@ describe('atomic admission', () => {
     expect(await rowCounts({ world })).toEqual({ delegations: 1, reservations: 1 });
   });
 
-  it('writes nothing for a refused batch, and counts the refusal and the call', async () => {
+  it('writes nothing for a refused batch', async () => {
     const world = await makeAutoWorld({ capUsd: 0 });
     const outcome = await world.scheduler.admit(
       batchInput({
@@ -111,8 +109,6 @@ describe('atomic admission', () => {
       isYieldRequested: false,
       delegationsUsed: 0,
       attemptsUsed: 0,
-      refusalsUsed: 1,
-      turnDelegateCalls: 1,
     });
   });
 
@@ -154,8 +150,6 @@ describe('atomic admission', () => {
     expect(outcomes.filter((outcome) => outcome.kind === 'accepted')).toHaveLength(1);
     expect(outcomes.filter((outcome) => outcome.kind === 'refused')).toHaveLength(3);
     expect(await rowCounts({ world })).toEqual({ delegations: 1, reservations: 1 });
-    const tree = await getAutoTree({ db: world.db, treeId: WORLD_TREE });
-    expect(tree?.refusalsUsed).toBe(1);
   });
 
   it('refuses a window that does not own the tree and writes nothing', async () => {
@@ -165,7 +159,7 @@ describe('atomic admission', () => {
     expect(outcome).toMatchObject({ kind: 'refused', code: 'not_owner' });
     expect(await rowCounts({ world })).toEqual({ delegations: 0, reservations: 0 });
     const tree = await getAutoTree({ db: world.db, treeId: WORLD_TREE });
-    expect(tree).toMatchObject({ refusalsUsed: 0, phase: 'deciding' });
+    expect(tree).toMatchObject({ phase: 'deciding' });
   });
 
   it('hands the tree to the second window once the lease ran out, and refuses the first', async () => {
@@ -179,7 +173,7 @@ describe('atomic admission', () => {
     expect(next.kind).toBe('accepted');
   });
 
-  it('keeps the breadth at four open children across turns', async () => {
+  it('admits children past four open ones across turns, and queues them', async () => {
     const world = await makeAutoWorld();
     await world.scheduler.admit(
       batchInput({
@@ -193,18 +187,16 @@ describe('atomic admission', () => {
       to: 'deciding',
       patch: { isYieldRequested: false, isNewTurn: true },
     });
-    const tooMany = await world.scheduler.admit(
+    const more = await world.scheduler.admit(
       batchInput({
         requestId: 'request-2',
         children: ['d', 'e'].map((key) => childInput({ key })),
       }),
     );
-    expect(tooMany).toMatchObject({ kind: 'refused', code: 'breadth_cap' });
-    const fits = await world.scheduler.admit(
-      batchInput({ requestId: 'request-3', children: [childInput({ key: 'd' })] }),
-    );
-    expect(fits.kind).toBe('accepted');
-    expect(await rowCounts({ world })).toEqual({ delegations: 4, reservations: 4 });
+    expect(more.kind).toBe('accepted');
+    expect(await rowCounts({ world })).toEqual({ delegations: 5, reservations: 5 });
+    const rows = await listAutoDelegations({ db: world.db, treeId: WORLD_TREE });
+    expect(rows.map((row) => row.state)).toEqual(Array.from({ length: 5 }, () => 'accepted'));
   });
 
   it('refuses an old generation, a stop in progress and another run', async () => {
@@ -243,28 +235,17 @@ describe('atomic admission', () => {
         generation: 1,
         runId: WORLD_RUN,
         count,
-        limits: {
-          maxCallsPerTurn: 6,
-          maxRefusals: 10,
-          maxOpenChildren: 4,
-        },
       });
       return world.db.transaction({ statements: [guard] });
     };
 
-    it('commits while the limit has money left, inside the breadth', async () => {
+    it('commits while the limit has money left, whatever the batch size', async () => {
       expect((await statement({ capUsd: 0.01, count: 4 })).status).toBe('committed');
+      expect((await statement({ capUsd: 5, count: 9 })).status).toBe('committed');
     });
 
     it('aborts when nothing is left under the limit', async () => {
       expect(await statement({ capUsd: 0, count: 1 })).toMatchObject({
-        status: 'aborted',
-        abortCode: AUTO_ADMISSION_TREE_ABORT,
-      });
-    });
-
-    it('aborts above the breadth', async () => {
-      expect(await statement({ capUsd: 5, count: 5 })).toMatchObject({
         status: 'aborted',
         abortCode: AUTO_ADMISSION_TREE_ABORT,
       });

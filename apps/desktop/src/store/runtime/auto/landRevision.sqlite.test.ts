@@ -423,7 +423,6 @@ describe('a result names its own tree', () => {
         primaryMountId: null,
         capUsd: 5,
         nowMs: WORLD_NOW,
-        hardDeadlineAt: WORLD_NOW + 86_400_000,
       },
     });
     await claimAutoTree({

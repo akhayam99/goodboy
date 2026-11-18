@@ -663,11 +663,19 @@ fails silently at runtime.
   its telemetry while it runs (`autoLiveUsdSql`) and its reconciled cost after;
   `autoReservedUsdSql` skips `owner_kind = 'attempt'` so old rows with an amount
   hold nothing.
-- Never add a fixed count of agents, runs or turns as a hard stop of an Auto tree.
-  The spend cap, the no progress streak and the time limit already guard it, and a
-  count ends a useful tree with no way forward. `delegations_used`, `attempts_used`
-  and `turns_used` are information only, and `grants` is a dead column kept for old
-  rows.
+- Never add a fixed count of agents, runs, turns, delegate calls or refusals, or a clock,
+  as a hard stop of an Auto tree or a refusal of a hand over. The spend cap and the no
+  progress streak already guard it, and a count or a clock the user cannot see ends a
+  useful tree with no way forward. `delegations_used`, `attempts_used` and `turns_used` are
+  information only; `grants`, `refusals_used`, `turn_delegate_calls` and `last_refusal_key`
+  are dead columns kept for old rows.
+- The limit of four running children is a start rule, never a refusal: a child past the
+  free slots waits in `accepted`. Count the running children with
+  `readAutoRunSlots` (a live attempt on a `starting` or `running` delegation), in the
+  runtime and on screen alike, never with the delegation state alone: a child that ended
+  stays `running` until its batch joins, so a batch that waits on its own queued member would
+  never start it, and the screen would hide a stalled one as **Queued** forever. Start a
+  waiting child only through `runSlotStatements`, the one guarded update that takes the slot.
 - The admission rule is written twice on purpose: as one guarded SQL statement
   (`autoAdmissionTreeStatement`), which decides, and as `diagnoseAdmission`,
   which only names the refusal. A new limit goes into both, and

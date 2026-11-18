@@ -89,14 +89,6 @@ const blocked = ({ view }: ViewParams): TailFacts => {
       actions: AT_LIMIT,
     };
   }
-  if (reason === AUTO_BLOCK_TEXT.limit_wall_clock) {
-    return {
-      state: 'failed',
-      phrase: reason,
-      startedAt: null,
-      actions: [TAIL_ACTION.viewTranscript, ...stopOf({ view })],
-    };
-  }
   return {
     state: 'failed',
     phrase: reason === null || reason === '' ? "The Lead couldn't reply" : reason,

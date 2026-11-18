@@ -399,6 +399,7 @@ export const centralAutoSeedOf = ({ variant }: SeedParams): CentralAutoSeed => (
     pendingMessages: [],
     droppedMessageIds: [],
     deliveredResults: DELIVERED_BY_VARIANT[variant],
+    runSlots: { running: 0, freedAt: 0 },
     hiddenChildIds: [],
     rootAsk: null,
   },

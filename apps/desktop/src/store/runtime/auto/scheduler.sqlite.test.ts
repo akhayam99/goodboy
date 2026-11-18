@@ -104,8 +104,7 @@ describe('a restart keeps what the tree counted', () => {
       generation: 1,
       delegationsUsed: 2,
       attemptsUsed: 2,
-      turnDelegateCalls: 1,
-      refusalsUsed: before?.refusalsUsed,
+      turnsUsed: before?.turnsUsed,
       schedulerOwner: 'window-after',
     });
     const toRecover = await listAutoTreesToRecover({ db: world.db });
@@ -126,7 +125,6 @@ describe('a restart keeps what the tree counted', () => {
     const tree = await getAutoTree({ db: world.db, treeId: WORLD_TREE });
     expect(tree).toMatchObject({
       turnsUsed: 2,
-      turnDelegateCalls: 0,
       delegationsUsed: 1,
       attemptsUsed: 1,
     });

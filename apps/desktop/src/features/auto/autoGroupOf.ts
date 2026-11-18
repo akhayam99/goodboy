@@ -18,6 +18,7 @@ import { delegationSentenceOf } from './delegationSentenceOf';
 import { isAutoDelegationReplaced } from './isAutoDelegationReplaced';
 import { isAutoChildGone } from './isAutoChildGone';
 import { isAutoChildNeverStarted } from './isAutoChildNeverStarted';
+import { autoStartableSinceOf } from './autoStartableSinceOf';
 
 export type AutoChildState =
   | 'running'
@@ -100,16 +101,23 @@ type StateParams = {
   readonly agent: Agent | null;
   readonly isReplaced: boolean;
   readonly now: number;
+  readonly startableSince: number | null;
 };
 
-const stateOf = ({ delegation, agent, isReplaced, now }: StateParams): AutoChildState => {
+const stateOf = ({
+  delegation,
+  agent,
+  isReplaced,
+  now,
+  startableSince,
+}: StateParams): AutoChildState => {
   if (isReplaced && delegation.outcome !== 'blocked') {
     return 'retried';
   }
   switch (delegation.state) {
     case 'accepted':
     case 'starting':
-      return isAutoChildNeverStarted({ delegation, childAgent: agent, now })
+      return isAutoChildNeverStarted({ delegation, childAgent: agent, now, startableSince })
         ? 'neverStarted'
         : 'queued';
     case 'awaiting_confirm':
@@ -230,6 +238,11 @@ export const autoGroupOf = ({ view, agents, now }: Params): AutoGroup | null => 
         agent: byId.get(delegation.childAgentId) ?? null,
         isReplaced: isAutoDelegationReplaced({ delegation, delegations: view.delegations }),
         now,
+        startableSince: autoStartableSinceOf({
+          tree: view.tree,
+          runSlots: view.runSlots,
+          delegation,
+        }),
         results: view.deliveredResults,
         labels,
       }),

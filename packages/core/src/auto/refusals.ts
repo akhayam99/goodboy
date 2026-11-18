@@ -2,7 +2,6 @@ export const AUTO_REFUSAL_CODES = [
   'request_conflict',
   'depth_cap',
   'substep_cap',
-  'breadth_cap',
   'empty_batch',
   'budget',
   'already_yielded',
@@ -10,9 +9,6 @@ export const AUTO_REFUSAL_CODES = [
   'tree_stopped',
   'generation_changed',
   'not_owner',
-  'limit_calls',
-  'limit_refusals',
-  'limit_wall_clock',
   'artifact_unknown',
   'stale_revision',
   'artifact_consumed',
@@ -45,12 +41,6 @@ export const AUTO_REFUSAL_CODES = [
 
 export type AutoRefusalCode = (typeof AUTO_REFUSAL_CODES)[number];
 
-export const AUTO_LIMIT_REFUSAL_CODES = [
-  'limit_calls',
-  'limit_refusals',
-  'limit_wall_clock',
-] as const satisfies ReadonlyArray<AutoRefusalCode>;
-
 export const AUTO_MOUNTED_CODE = 'mounted';
 
 type MountedCodeParams = {
@@ -59,10 +49,3 @@ type MountedCodeParams = {
 
 export const isAutoMountedCode = ({ code }: MountedCodeParams): boolean =>
   code === AUTO_MOUNTED_CODE;
-
-type RefusalCodeParams = {
-  readonly code: AutoRefusalCode;
-};
-
-export const isAutoLimitRefusal = ({ code }: RefusalCodeParams): boolean =>
-  AUTO_LIMIT_REFUSAL_CODES.some((candidate) => candidate === code);

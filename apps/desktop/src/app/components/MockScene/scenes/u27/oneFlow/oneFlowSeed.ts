@@ -457,6 +457,7 @@ const autoViewOf = (): AutoTreeView => ({
   pendingMessages: [],
   droppedMessageIds: [],
   deliveredResults: [],
+  runSlots: { running: 0, freedAt: 0 },
   hiddenChildIds: [],
   rootAsk: AUTO_ASK,
 });

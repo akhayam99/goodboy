@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { ROLE_REGISTRY } from '../roles';
 import { parseAutoBlock } from './autoBlock';
-import { AUTO_BATCH_MAX_CHILDREN } from './limits';
+import { AUTO_MAX_RUNNING_CHILDREN } from './limits';
 import { parseDelegateSpec } from './delegateSpec';
 import {
   AUTO_ANSWER_EXAMPLE,
@@ -93,7 +93,8 @@ describe('buildAutoSystemPrompt', () => {
     expect(prompt).toContain(AUTO_FINISH_EXAMPLE);
     expect(prompt).toContain(AUTO_RELEASE_EXAMPLE);
     expect(prompt).toContain('WAITING FOR YOUR DECISION');
-    expect(prompt).toContain(`one to ${AUTO_BATCH_MAX_CHILDREN} children`);
+    expect(prompt).toContain('one or more children');
+    expect(prompt).toContain(`At most ${AUTO_MAX_RUNNING_CHILDREN} agents run at once`);
     expect(prompt).not.toContain('not available yet');
   });
 

@@ -1,6 +1,5 @@
 import { AUTO_USD_EPSILON } from '@goodboy/db';
 import type { AdmissionSnapshot } from './admission';
-import { AUTO_MAX_OPEN_CHILDREN } from './limits';
 import type { AutoRefusalCode } from './refusals';
 
 export type DiagnoseResumeParams = Readonly<{
@@ -34,12 +33,6 @@ export const diagnoseResume = ({ snapshot }: DiagnoseResumeParams): ResumeVerdic
   const isTurnOpen = tree.phase === 'deciding' || tree.phase === 'delegating';
   if (!isTurnOpen || tree.activeRunId !== snapshot.expectedRunId) {
     return { kind: 'refused', code: 'not_deciding' };
-  }
-  if (snapshot.nowMs >= tree.hardDeadlineAt) {
-    return { kind: 'refused', code: 'limit_wall_clock' };
-  }
-  if (snapshot.openCount + 1 > AUTO_MAX_OPEN_CHILDREN) {
-    return { kind: 'refused', code: 'breadth_cap' };
   }
   if (snapshot.remainingUsd <= AUTO_USD_EPSILON) {
     return { kind: 'refused', code: 'budget' };

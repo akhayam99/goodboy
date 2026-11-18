@@ -73,7 +73,6 @@ export const seedAutoTree = async ({
       primaryMountId,
       capUsd,
       nowMs: AUTO_SEED_NOW,
-      hardDeadlineAt: AUTO_SEED_NOW + AUTO_SEED_DAY_MS,
     },
   });
   return outcome.tree;

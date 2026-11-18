@@ -155,7 +155,6 @@ export const readAdmissionSnapshot = async ({
     callerAgentId,
     expectedGeneration,
     expectedRunId,
-    openCount: open.filter((delegation) => delegation.state !== 'paused').length,
     parents,
     openChildAgentIds: open.map((delegation) => delegation.childAgentId),
     remainingUsd: autoRemainingForGates({ spend }),

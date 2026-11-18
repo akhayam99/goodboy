@@ -1,5 +1,3 @@
-import { FAN_OUT_MAX_CHILDREN } from '../roles';
-
 export const AUTO_GATES = { isDelegationEnabled: true } as const;
 
 export const AUTO_TURN_CEILING_USD = 0.5;
@@ -12,8 +10,6 @@ export const AUTO_STALE_DECIDE_MS = 10 * 60 * 1000;
 
 export const AUTO_BATCH_MIN_CHILDREN = 1;
 
-export const AUTO_BATCH_MAX_CHILDREN = FAN_OUT_MAX_CHILDREN;
-
 export const AUTO_TREE_DEPTH = 2;
 
 export const AUTO_SUBSTEPS_PER_PARENT = 2;
@@ -21,11 +17,8 @@ export const AUTO_SUBSTEPS_PER_PARENT = 2;
 export const AUTO_SUBSTEP_PARENT_SLACK_MS = 5 * 60_000;
 
 export const AUTO_TREE_LIMITS = {
-  delegateCallsPerTurn: 6,
-  refusals: 10,
   questionCyclesPerDelegation: 3,
   noProgressStreak: 3,
-  wallClockHours: 24,
   returnsPerDelegation: 2,
   rebriefsPerTask: 3,
   returnsPerTreeWindow: 6,
@@ -36,7 +29,7 @@ export const AUTO_CHILD_MESSAGE_CHARS = 2_000;
 
 export const AUTO_RETURNS_WINDOW_MS = 30 * 60_000;
 
-export const AUTO_MAX_OPEN_CHILDREN = AUTO_BATCH_MAX_CHILDREN;
+export const AUTO_MAX_RUNNING_CHILDREN = 4;
 
 export const AUTO_AUX_RESERVATION_USD = 0.05;
 

@@ -32,8 +32,5 @@ export const pendingMessageLineOf = ({ view }: Params): PendingMessageLine => {
   if (blockedReason === AUTO_BLOCK_TEXT.budget) {
     return { tone: 'notDelivered', text: NOT_DELIVERED, reason, action: 'raiseLimit' };
   }
-  if (blockedReason === AUTO_BLOCK_TEXT.limit_wall_clock) {
-    return { tone: 'notDelivered', text: NOT_DELIVERED, reason, action: null };
-  }
   return { tone: 'notDelivered', text: NOT_DELIVERED, reason, action: 'retry' };
 };

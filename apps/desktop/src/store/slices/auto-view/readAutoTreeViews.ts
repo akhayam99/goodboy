@@ -13,6 +13,7 @@ import {
   listAutoOutbox,
   listAutoTreesOfSession,
   listGoneAutoChildIds,
+  readAutoRunSlots,
   readAutoTreeSpend,
   readFirstUserText,
   type AutoOutboxRow,
@@ -118,6 +119,7 @@ export const readAutoTreeViews = async ({
         rootAsk,
         grantAsks,
         snapshots,
+        runSlots,
       ] = await Promise.all([
         listAutoDelegations({ db, treeId: tree.id }),
         listGoneAutoChildIds({ db, treeId: tree.id, sessionId }),
@@ -128,6 +130,7 @@ export const readAutoTreeViews = async ({
         readFirstUserText({ db, agentId: tree.rootAgentId }),
         listAutoGrantsOfTree({ db, treeId: tree.id }),
         listAutoLaunchSnapshotsOfTree({ db, treeId: tree.id }),
+        readAutoRunSlots({ db, treeId: tree.id }),
       ]);
       const discardedChildIds = delegations
         .filter((delegation) => delegationClosedOf({ delegation })?.as === 'discarded')
@@ -139,6 +142,7 @@ export const readAutoTreeViews = async ({
       return {
         tree,
         delegations: present,
+        runSlots,
         hiddenChildIds: hiddenChildIdsOf({ delegations, present }),
         artifacts,
         budget: spend === null ? null : autoBudgetOf({ spend }),

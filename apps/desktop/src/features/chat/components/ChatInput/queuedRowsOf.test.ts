@@ -82,18 +82,18 @@ describe('queuedRowsOf', () => {
     });
   });
 
-  it('offers Change limit for the budget and nothing for the time limit', () => {
+  it('offers Change limit for the budget and Retry for the retired time limit', () => {
     const budget = blockedView({
       reason: AUTO_BLOCK_TEXT.budget,
       pendingMessages: [message('a', 0)],
     });
     const clock = blockedView({
-      reason: AUTO_BLOCK_TEXT.limit_wall_clock,
+      reason: 'This conversation reached its time limit.',
       pendingMessages: [message('a', 0)],
     });
 
     expect(queuedRowsOf({ queue: [], view: budget, ...AT_REST })[0]?.action).toBe('raiseLimit');
-    expect(queuedRowsOf({ queue: [], view: clock, ...AT_REST })[0]?.action).toBeNull();
+    expect(queuedRowsOf({ queue: [], view: clock, ...AT_REST })[0]?.action).toBe('retry');
   });
 
   it('says Not read yet without Send now, since a message reaches the Lead at once', () => {

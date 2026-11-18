@@ -1,5 +1,5 @@
-import { parseDelegateSpec, parseProposeSpec } from '@goodboy/core/auto';
-import { getAutoTree, recordAutoRefusal } from '@goodboy/db';
+import { AUTO_MAX_RUNNING_CHILDREN, parseDelegateSpec, parseProposeSpec } from '@goodboy/core/auto';
+import { getAutoTree } from '@goodboy/db';
 import {
   brandId,
   type AutoBatchId,
@@ -22,28 +22,6 @@ export type DelegateParams = Readonly<{
   command: AgentCommand;
   isProposal?: boolean;
 }>;
-
-type CountedRefusalParams = {
-  readonly ctx: AgentVerbContext;
-  readonly command: AgentCommand;
-  readonly outcome: BridgeOutcome;
-};
-
-const countedRefusal = async ({
-  ctx,
-  command,
-  outcome,
-}: CountedRefusalParams): Promise<BridgeOutcome> => {
-  await recordAutoRefusal({
-    db: ctx.db,
-    treeId: command.grant.treeId,
-    ownerId: ctx.scheduler.ownerId,
-    nowMs: ctx.now(),
-    generation: command.grant.generation,
-    runId: command.grant.runId,
-  });
-  return outcome;
-};
 
 type ReceiptOutcomeParams = {
   readonly ctx: AgentVerbContext;
@@ -70,7 +48,7 @@ const receiptOutcome = async ({
       accepted: true,
       replayed: isReplay,
       ...receipt,
-      next: 'End your turn now. The agents start when it is over, and their results come back to you as a message.',
+      next: `End your turn now. Up to ${AUTO_MAX_RUNNING_CHILDREN} agents start when it is over and the rest start as those end; their results come back to you as a message.`,
     },
   };
 };
@@ -138,14 +116,10 @@ export const delegate = async ({
     ? parseProposeSpec({ text: specText })
     : parseDelegateSpec({ text: specText });
   if (parsed.kind === 'refused') {
-    return countedRefusal({
-      ctx,
-      command,
-      outcome: refuseOutcome({
-        code: parsed.code,
-        message: parsed.message,
-        perChild: parsed.perChild,
-      }),
+    return refuseOutcome({
+      code: parsed.code,
+      message: parsed.message,
+      perChild: parsed.perChild,
     });
   }
   const replay = await replayAdmission({
@@ -246,15 +220,11 @@ export const delegate = async ({
   const firstRefusal = refusals[0];
   if (firstRefusal !== undefined) {
     const mount = refusals.find((refusal) => refusal.mount !== undefined)?.mount;
-    return countedRefusal({
-      ctx,
-      command,
-      outcome: refuseOutcome({
-        code: firstRefusal.code,
-        message: firstRefusal.message,
-        perChild: refusals,
-        ...(mount === undefined ? {} : { mount }),
-      }),
+    return refuseOutcome({
+      code: firstRefusal.code,
+      message: firstRefusal.message,
+      perChild: refusals,
+      ...(mount === undefined ? {} : { mount }),
     });
   }
   if (recoveries.length > 0) {

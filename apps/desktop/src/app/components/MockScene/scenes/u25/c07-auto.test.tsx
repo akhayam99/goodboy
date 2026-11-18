@@ -8,6 +8,7 @@ vi.mock('@tauri-apps/plugin-dialog', () => ({ open: vi.fn() }));
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { AUTO_BLOCK_TEXT } from '@goodboy/core/auto';
 import { startRunEventName } from '../../../../../features/session/startRun/startRunEventName';
 import { installFakeResizeObserver } from '../../../../../test/fakeResizeObserver';
 import { ToastProvider } from '../../../../../shared/components/Toast';
@@ -400,7 +401,7 @@ describe('c07 Auto scenes', () => {
 
   it('c07-auto-blocked shows a refused Retry in the dock, not in a notification', async () => {
     registerTreeRetryPort({
-      port: async () => ({ kind: 'refused', message: 'This conversation reached its time limit.' }),
+      port: async () => ({ kind: 'refused', message: AUTO_BLOCK_TEXT.budget }),
     });
     mount({ id: 'c07-auto-blocked' });
 
@@ -410,7 +411,7 @@ describe('c07 Auto scenes', () => {
     const title = await screen.findByText("Couldn't retry the Lead", undefined, WAIT);
     const alert = title.closest('[role="alert"]');
     expect(alert?.closest('[data-conversation-dock]')).not.toBeNull();
-    expect(alert?.textContent).toContain('This conversation reached its time limit.');
+    expect(alert?.textContent).toContain(AUTO_BLOCK_TEXT.budget);
   });
 
   it('c07-auto-stop-failed shows the failed Stop inline in the dock', async () => {

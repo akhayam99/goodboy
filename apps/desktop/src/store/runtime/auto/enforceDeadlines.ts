@@ -48,8 +48,26 @@ const expirePaused = async ({ ctx, tree, delegation, attempt }: ExpireParams): P
       {
         sql: `UPDATE auto_attempts
           SET state = 'ended', outcome = 'timed_out', end_reason = ?, ended_at = ?
-          WHERE id = ? AND generation = ? AND state = 'paused'`,
-        params: [DEADLINE_REASON, nowMs, attempt.id, tree.generation],
+          WHERE id = ? AND generation = ? AND state = 'paused'
+            AND EXISTS (
+              SELECT 1 FROM auto_delegations parent
+              WHERE parent.id = ? AND parent.deadline_at <= ?
+            )
+            AND NOT EXISTS (
+              SELECT 1 FROM auto_delegations helper
+              WHERE helper.tree_id = ? AND helper.state = 'accepted'
+                AND json_extract(helper.request_json, '$.parent.delegationId') = ?
+            )`,
+        params: [
+          DEADLINE_REASON,
+          nowMs,
+          attempt.id,
+          tree.generation,
+          delegation.id,
+          nowMs,
+          tree.id,
+          delegation.id,
+        ],
         abortWhen: 'noChanges',
         abortCode: 'expire_paused',
       },

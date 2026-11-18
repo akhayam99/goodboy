@@ -9,6 +9,7 @@ import type { Database, GuardedStatement, PlainStatement, Statement } from '../c
 import { agentInsertStatement, type AgentInsertInput } from './agent-write';
 import type { AutoArtifactKind } from './auto-artifacts';
 import { getAutoDelegation, type AutoDelegation, type AutoJsonObject } from './auto-delegations';
+import { AUTO_TREE_NO_DEADLINE_AT } from './auto-trees';
 import { HELD_ADMISSION_SQL, heldAdmissionParams } from './turn-admission';
 
 export const AUTO_ADOPT_ABORT = {
@@ -39,7 +40,6 @@ export type AdoptAgentStatementsParams = Readonly<{
   treeId: AutoTreeId;
   primaryMountId: string | null;
   capUsd: number | null;
-  hardDeadlineAt: number;
   delegation: Readonly<{
     id: AutoDelegationId;
     requestId: string;
@@ -98,7 +98,6 @@ export const adoptAgentStatements = ({
   treeId,
   primaryMountId,
   capUsd,
-  hardDeadlineAt,
   delegation,
   artifacts,
   outbox,
@@ -142,7 +141,16 @@ export const adoptAgentStatements = ({
         id, root_agent_id, session_id, primary_mount_id, phase, cap_usd, created_at, updated_at,
         hard_deadline_at
       ) VALUES (?, ?, ?, ?, 'merging', ?, ?, ?, ?)`,
-    params: [treeId, autoAgent.id, sessionId, primaryMountId, capUsd, nowMs, nowMs, hardDeadlineAt],
+    params: [
+      treeId,
+      autoAgent.id,
+      sessionId,
+      primaryMountId,
+      capUsd,
+      nowMs,
+      nowMs,
+      AUTO_TREE_NO_DEADLINE_AT,
+    ],
   };
   const delegationRow: PlainStatement = {
     sql: `INSERT INTO auto_delegations (
@@ -162,7 +170,7 @@ export const adoptAgentStatements = ({
       JSON.stringify(delegation.request),
       JSON.stringify(delegation.target),
       JSON.stringify(delegation.routing),
-      hardDeadlineAt,
+      nowMs,
       JSON.stringify(delegation.result),
       nowMs,
       nowMs,

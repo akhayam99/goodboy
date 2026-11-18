@@ -80,7 +80,7 @@ describe('answering the question of a child', () => {
       phase: 'delegating',
       isYieldRequested: true,
     });
-    expect((await delegationOf(world)).state).toBe('starting');
+    expect((await delegationOf(world)).state).toBe('accepted');
 
     await autoTurnEnds({ world });
 

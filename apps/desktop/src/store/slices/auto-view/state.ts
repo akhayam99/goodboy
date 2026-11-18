@@ -4,6 +4,7 @@ import type {
   AutoDelegation,
   AutoGrant,
   AutoOutcome,
+  AutoRunSlots,
   AutoTree,
 } from '@goodboy/db';
 import type { AutoBudgetFacts, MountNote, OutcomeLine } from '@goodboy/core/auto';
@@ -12,6 +13,7 @@ import type { AgentId, MessageAttachment, ProviderRunId, SessionId } from '@good
 export type AutoTreeView = Readonly<{
   tree: AutoTree;
   delegations: ReadonlyArray<AutoDelegation>;
+  runSlots: AutoRunSlots;
   hiddenChildIds: ReadonlyArray<AgentId>;
   artifacts: ReadonlyArray<AutoArtifactLedgerRow>;
   budget: AutoBudgetFacts | null;

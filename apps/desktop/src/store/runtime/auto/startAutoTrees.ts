@@ -1,4 +1,4 @@
-import { AUTO_TREE_LIMITS, autoTreeCapUsd, isUsableMount } from '@goodboy/core/auto';
+import { autoTreeCapUsd, isUsableMount } from '@goodboy/core/auto';
 import {
   listAutoAgentsWithoutTree,
   type AutoAgentWithoutTree,
@@ -7,8 +7,6 @@ import {
 import { brandId, type AutoTreeId, type SessionId, type WorkspaceId } from '@goodboy/types';
 import { readRunLimit, type RunLimitChoice } from '../runLimit/readRunLimit';
 import type { AgentVerbContext } from './verbContext';
-
-const HOUR_MS = 60 * 60 * 1000;
 
 type ChosenLimitParams = Readonly<{ choice: Exclude<RunLimitChoice, { kind: 'inherited' }> }>;
 
@@ -46,7 +44,6 @@ export const startAutoTree = async ({
     runLimit.kind === 'inherited'
       ? await workspaceLimitUsd({ workspaceId: agent.workspaceId })
       : runLimitUsdOf({ choice: runLimit });
-  const nowMs = ctx.now();
   return ctx.scheduler.createTree({
     id: brandId<AutoTreeId>({ value: ctx.ports.newId() }),
     rootAgentId: agent.agentId,
@@ -56,7 +53,6 @@ export const startAutoTree = async ({
       sessionCapUsd: sessionCapUsd({ sessionId: agent.sessionId }),
       workspaceLimitUsd: limitUsd,
     }),
-    hardDeadlineAt: nowMs + AUTO_TREE_LIMITS.wallClockHours * HOUR_MS,
   });
 };
 

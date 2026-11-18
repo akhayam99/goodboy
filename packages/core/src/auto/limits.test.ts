@@ -1,13 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { FAN_OUT_MAX_CHILDREN } from '../roles';
 import {
-  AUTO_BATCH_MAX_CHILDREN,
   AUTO_BATCH_MIN_CHILDREN,
   AUTO_AUX_RESERVATION_USD,
   AUTO_GATES,
   AUTO_LEDGER_CHAR_BUDGET,
   AUTO_LEDGER_MAX_ARTIFACTS,
-  AUTO_MAX_OPEN_CHILDREN,
+  AUTO_MAX_RUNNING_CHILDREN,
   AUTO_RETURNS_WINDOW_MS,
   AUTO_SUBSTEPS_PER_PARENT,
   AUTO_TREE_DEPTH,
@@ -21,11 +19,8 @@ describe('Auto limits', () => {
   });
   it('holds the guards that protect the user and no fixed count of agents, runs or turns', () => {
     expect(AUTO_TREE_LIMITS).toEqual({
-      delegateCallsPerTurn: 6,
-      refusals: 10,
       questionCyclesPerDelegation: 3,
       noProgressStreak: 3,
-      wallClockHours: 24,
       returnsPerDelegation: 2,
       rebriefsPerTask: 3,
       returnsPerTreeWindow: 6,
@@ -34,10 +29,9 @@ describe('Auto limits', () => {
     expect(AUTO_RETURNS_WINDOW_MS).toBe(30 * 60_000);
   });
 
-  it('batches one to four children, one level deep, like the fan-out cap', () => {
+  it('batches one child or more, runs four at once, one level deep', () => {
     expect(AUTO_BATCH_MIN_CHILDREN).toBe(1);
-    expect(AUTO_BATCH_MAX_CHILDREN).toBe(FAN_OUT_MAX_CHILDREN);
-    expect(AUTO_BATCH_MAX_CHILDREN).toBe(4);
+    expect(AUTO_MAX_RUNNING_CHILDREN).toBe(4);
     expect(AUTO_TREE_DEPTH).toBe(2);
     expect(AUTO_SUBSTEPS_PER_PARENT).toBe(2);
   });
@@ -48,8 +42,7 @@ describe('Auto limits', () => {
 });
 
 describe('registry constants', () => {
-  it('keeps the open children at the batch cap and the ledger bounded', () => {
-    expect(AUTO_MAX_OPEN_CHILDREN).toBe(AUTO_BATCH_MAX_CHILDREN);
+  it('keeps the ledger bounded', () => {
     expect(AUTO_LEDGER_MAX_ARTIFACTS).toBe(20);
     expect(AUTO_LEDGER_CHAR_BUDGET).toBe(3000);
     expect(AUTO_AUX_RESERVATION_USD).toBeGreaterThan(0);
