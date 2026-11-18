@@ -81,6 +81,8 @@ A file name or a baseline key that still says `preservation` moves with its base
 
 ## Desktop unit tests run in six shards
 
+Proof line for the docs-only run of this pull request.
+
 CI splits the desktop `unit` project with `vitest run --project unit --shard=i/6`, and each job stops at 20 minutes. That is the full run, on every push to `main`, in the merge queue and on a pull request that touches shared config. A narrow pull request runs only the tests its changed files reach through the import graph, plus the regression guards and the tests that read files from disk, in as few shards as that work fills ([CONVENTIONS.md](../CONVENTIONS.md#ci-pipeline), `changes`). Vitest sorts the files by the hash of their path and cuts the list into six equal slices, so adding or removing a test file can move other files to a different shard. To reproduce one CI job locally: `pnpm --filter @goodboy/desktop exec vitest run --project unit --shard=2/6`. `node scripts/check-test-shards.mjs` runs in the `checks` job. Coverage holds by construction, so it guards an empty shard and a custom sequencer that drops or repeats a file.
 
 ## Test environment
