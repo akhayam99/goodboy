@@ -54,14 +54,13 @@ describe('rail order and badge scenes', () => {
       'session-tools-order',
       'session-tools-quiet',
       'session-tools-signal',
-      'sessions-door-counts',
     ]);
     for (const name of Object.keys(U28_RAIL_ORDER_BADGE_SCENES)) {
       expect(MOCK_SCENES[name]).toBe(U28_RAIL_ORDER_BADGE_SCENES[name]);
     }
   });
 
-  it('session-tools-order reads the terminal, then the browser, with no heading above them', () => {
+  it('session-tools-order reads the terminal, the browser, scripts, ask and monitoring, with no heading above them', () => {
     mount({ name: 'session-tools-order' });
 
     const toolbar = screen.getByRole('toolbar', { name: 'Tools' });
@@ -69,8 +68,8 @@ describe('rail order and badge scenes', () => {
       within(toolbar)
         .getAllByRole('button')
         .map((button) => button.getAttribute('aria-label')),
-    ).toEqual(['Terminal', 'Browser']);
-    expect(toolbar.textContent).toBe('TerminalBrowser');
+    ).toEqual(['Terminal', 'Browser', 'Scripts', 'Ask', 'Monitoring']);
+    expect(toolbar.textContent).toBe('TerminalBrowserScriptsAskMonitor');
     expect(within(toolbar).queryByRole('separator')).toBeNull();
   });
 
@@ -78,12 +77,13 @@ describe('rail order and badge scenes', () => {
     mount({ name: 'session-tools-quiet' });
 
     const toolbar = await screen.findByRole('toolbar', { name: 'Tools' });
-    expect(toolbar.textContent).toBe('TerminalBrowser');
+    expect(toolbar.textContent).toBe('TerminalBrowserScriptsAskMonitor');
     expect(toolbar.querySelector('[data-signal]')).toBeNull();
     expect(
       within(toolbar)
         .getAllByRole('button')
-        .map((button) => button.getAttribute('aria-label')),
+        .map((button) => button.getAttribute('aria-label'))
+        .slice(0, 2),
     ).toEqual(['Terminal, 1 running', 'Browser, 12 tabs']);
     expect(screen.getByTestId('pane-toggle-browser').getAttribute('aria-pressed')).toBe('true');
   });
@@ -98,21 +98,7 @@ describe('rail order and badge scenes', () => {
     expect(screen.getByTestId('pane-toggle-terminal').getAttribute('aria-label')).toBe(
       'Terminal, 1 running, pnpm test retry finished after 42s',
     );
-    expect(toolbar.textContent).toBe('TerminalBrowser');
-  });
-
-  it('sessions-door-counts draws a tone dot and a muted number, red only for a broken one', () => {
-    mount({ name: 'sessions-door-counts' });
-
-    const counts = Array.from(document.querySelectorAll('[data-door-count]'));
-    expect(counts.map((count) => count.textContent)).toEqual(['1', '3', '9+']);
-    expect(counts.map((count) => count.getAttribute('data-door-signal'))).toEqual([
-      'warning',
-      'warning',
-      'danger',
-    ]);
-    expect(document.querySelector('[data-door-pill]')).toBeNull();
-    expect(screen.getAllByRole('button', { name: 'Filter sessions' })).toHaveLength(3);
+    expect(toolbar.textContent).toBe('TerminalBrowserScriptsAskMonitor');
   });
 
   it.each(Object.keys(U28_RAIL_ORDER_BADGE_SCENES))(

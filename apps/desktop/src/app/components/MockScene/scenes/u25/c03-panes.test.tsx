@@ -81,7 +81,7 @@ describe('c03 session tools scenes', () => {
     await mount('c03-panes-ask');
     expect(useAppStore.getState().drawer).toMatchObject({ kind: 'ask', sessionId: SESSION_ID });
     screen.getByRole('region', { name: 'Ask' });
-    expect(pressed()).toEqual([]);
+    expect(pressed()).toEqual(['Ask']);
   });
 
   it('opens the terminal on the worktree this session last used, with the scope picker', async () => {
@@ -97,7 +97,7 @@ describe('c03 session tools scenes', () => {
     await mount('c03-panes-explore-file');
     expect(useAppStore.getState().drawer?.kind).toBe('explore-file');
     expect(pressed()).toEqual([]);
-    expect(document.querySelector('[data-column-layer="nav"]')).not.toBeNull();
+    expect(document.querySelector('[data-shell-rail]')).not.toBeNull();
   });
 
   it('opens Scripts and a script output with the way back', async () => {
@@ -134,19 +134,28 @@ describe('c03 session tools scenes', () => {
     ).toEqual([]);
   });
 
-  it('keeps Terminal and Browser on the rail with the open one pressed', async () => {
+  it('keeps the five tools on the rail with the open one pressed', async () => {
     await mount('c03-panes-terminal');
     const icons = within(cluster()).getAllByRole('button');
     expect(icons.map((icon) => icon.getAttribute('aria-label')?.split(',')[0])).toEqual([
       'Terminal',
       'Browser',
+      'Scripts',
+      'Ask',
+      'Monitoring',
     ]);
-    expect(icons.map((icon) => icon.getAttribute('aria-pressed'))).toEqual(['true', 'false']);
+    expect(icons.map((icon) => icon.getAttribute('aria-pressed'))).toEqual([
+      'true',
+      'false',
+      'false',
+      'false',
+      'false',
+    ]);
   });
 
-  it('c03-panes-scripts opens its pane, never the closed layout, with no rail button lit', async () => {
+  it('c03-panes-scripts opens its pane, never the closed layout, with Scripts lit on the rail', async () => {
     await mount('c03-panes-scripts');
     expect(useAppStore.getState().drawer).not.toBeNull();
-    expect(pressed()).toEqual([]);
+    expect(pressed()).toEqual(['Scripts']);
   });
 });

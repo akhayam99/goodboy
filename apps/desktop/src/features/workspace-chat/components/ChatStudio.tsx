@@ -68,10 +68,12 @@ export const ChatStudio = ({ workspaceId, chatId, onClose }: Props) => {
   const select = (next: ChatId | null): void =>
     amendStudio({ studio: { kind: 'chat', chatId: next } });
 
-  useShortcut('chat.newHere', () => {
+  const startNewChat = (): void => {
     setHasStarted(true);
     select(null);
-  });
+  };
+
+  useShortcut('chat.newHere', startNewChat);
 
   const leave = ({ removedIds }: LeaveParams): void => {
     if (chatId === null || !removedIds.includes(chatId)) {
@@ -139,6 +141,7 @@ export const ChatStudio = ({ workspaceId, chatId, onClose }: Props) => {
                   chat={activeChat}
                   onCreated={select}
                   onRemoved={() => leave({ removedIds: chatId === null ? [] : [chatId] })}
+                  onNewChat={startNewChat}
                 />
               </StudioDetail>
             )

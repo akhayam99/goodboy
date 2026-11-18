@@ -464,11 +464,6 @@
       "count": 1
     }
   },
-  "apps/desktop/src/features/session/components/SessionNavSidebar/index.tsx": {
-    "@typescript-eslint/strict-boolean-expressions": {
-      "count": 2
-    }
-  },
   "apps/desktop/src/features/session/components/SessionOverviewPane/linkWorkRows.ts": {
     "@typescript-eslint/strict-boolean-expressions": {
       "count": 1

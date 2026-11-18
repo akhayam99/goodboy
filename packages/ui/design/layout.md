@@ -5,7 +5,7 @@
 ## The left column
 
 `AppShell` takes the desktop's places rail in `leftRail`. Its grid column is
-`auto`, with no resize handle. `app/components/SideColumn/ShellLeft/` fills it
+`auto`, with no resize handle. `app/components/ShellLeft/` fills it
 with `ShellRail`: New, the six places and the foot. The content and signals
 are owned by [docs/navigation/shell.md](../../../docs/navigation/shell.md) → Surfaces.
 

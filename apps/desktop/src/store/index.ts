@@ -17,7 +17,6 @@ export { useSessionPrFetchState, useSessionRequestHost } from './slices/github/s
 export { useMountDiffStats, type MountDiffStat } from './slices/project-mounts/useMountDiffStats';
 export { useProjectMountsForSessions } from './slices/project-mounts/useProjectMountsForSessions';
 export {
-  useSessionColumn,
   useSessionOrder,
   useSessionStageInfo,
   useSessionStages,

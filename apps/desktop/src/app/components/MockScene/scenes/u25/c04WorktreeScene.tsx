@@ -5,11 +5,12 @@ import { brandedId } from '../../../../../features/history/testing/brandedId';
 import type { BranchTab } from '../../../../../store/slices/navigation/types';
 import { branchPlace, sessionPlace } from '../../../../../store/slices/navigation/place';
 import { BranchPage } from '../../../../../features/branch/components/BranchPage';
-import { SideColumn } from '../../../SideColumn';
+import { ShellLeft } from '../../../ShellLeft';
+import { shellArrangement } from '../../../../shellArrangement';
 import { SessionFrame } from '../../../SessionRail/SessionFrame';
 import { SessionContextCards } from '../../../SessionContextCards';
 import { useSceneFileRailFold } from '../useSceneFileRailFold';
-import type { ColumnActions } from '../../../SideColumn/columnDoors';
+import type { ColumnActions } from '../../../ShellLeft/columnDoors';
 import { CTX_COMMITS, CTX_STATUS } from '../brand/contextBranch';
 import { handlersFor } from '../brand/DiffStage';
 import { APPLY_WEBHOOK_PATH, BRANCH_FILES_PATCH } from '../brand/contextDiffPatch';
@@ -275,15 +276,11 @@ export const WorktreeScene = ({ config, children = null }: Props) => {
 
   return (
     <div data-shot className="flex h-screen min-h-0 bg-background">
-      <div className="h-full w-60 shrink-0 border-r border-border-soft">
-        <SideColumn
-          scope="workspace"
-          workspaceId={SESSION.workspaceId}
-          currentSessionId={SESSION_ID}
-          place={null}
-          actions={ACTIONS}
-        />
-      </div>
+      <ShellLeft
+        arrangement={shellArrangement({ hasWorkspace: true })}
+        workspaceId={SESSION.workspaceId}
+        actions={ACTIONS}
+      />
       <main
         className="flex min-w-0 flex-1 flex-col"
         style={config.fileRail === 'narrow' ? { maxWidth: NARROW_PAGE_PX } : undefined}

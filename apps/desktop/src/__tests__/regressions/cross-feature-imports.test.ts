@@ -91,7 +91,7 @@ describe('cross-feature imports only ever shrink', () => {
       "import { D } from '../../../workflows/activeWorkflowRuns';",
       "import { E } from '../../components/Local';",
       "import { F } from '../../../../shared/components/Toast';",
-      "import { G } from '../../../../app/components/SideColumn/columnDoors';",
+      "import { G } from '../../../../app/components/ShellLeft/columnDoors';",
     ].join('\n');
     const found = importsOf({ path: 'features/session/components/Pane/index.tsx', text });
 
@@ -101,7 +101,7 @@ describe('cross-feature imports only ever shrink', () => {
       'features/integrations/github/components/PullRequest/PrChecks',
     ]);
     expect(found.filter(isShellImport).map(({ target }) => target)).toEqual([
-      'app/components/SideColumn/columnDoors',
+      'app/components/ShellLeft/columnDoors',
     ]);
   });
 

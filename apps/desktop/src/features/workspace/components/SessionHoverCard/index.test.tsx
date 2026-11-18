@@ -26,12 +26,11 @@ import {
   ledgerCore,
   openQuestionFor,
   paymentsApi,
-  renderBar,
+  renderBoard,
   runningState,
   seedColumn,
   sessionOf,
 } from '../../testing/sessionColumn';
-import { peekGuideChapter } from '../../../settings/components/GuideStudio/guideChapterRequest';
 
 let useAppStore: StoryStore;
 
@@ -132,10 +131,18 @@ const mount = () => {
       ],
     },
   });
-  return renderBar();
+  return renderBoard({ store: useAppStore });
 };
 
-const rowOf = (title: string) => screen.getByRole('option', { name: title });
+const buttonOf = (title: string): HTMLElement => screen.getByRole('button', { name: title });
+
+const rowOf = (title: string): HTMLElement => {
+  const card = buttonOf(title).closest('article');
+  if (card === null) {
+    throw new Error(`no board card for ${title}`);
+  }
+  return card;
+};
 
 const rest = (ms: number) => {
   act(() => {
@@ -146,7 +153,7 @@ const rest = (ms: number) => {
 const card = () => screen.queryByTestId('session-hover-card');
 
 describe('the hover card', () => {
-  it('opens after the pointer rests on a row for half a second', () => {
+  it('opens after the pointer rests on a board card for half a second', () => {
     mount();
     fireEvent.mouseEnter(rowOf('Fix webhook retries'));
     rest(499);
@@ -166,7 +173,7 @@ describe('the hover card', () => {
 
   it('opens when a row takes the keyboard focus, after the same rest', () => {
     mount();
-    act(() => rowOf('Fix webhook retries').focus());
+    act(() => buttonOf('Fix webhook retries').focus());
     rest(499);
     expect(card()).toBeNull();
     rest(1);
@@ -209,14 +216,6 @@ describe('the hover card', () => {
     rest(1000);
     expect(card()).not.toBeNull();
   });
-
-  it('closes when the session opens', () => {
-    mount();
-    fireEvent.mouseEnter(rowOf('Fix webhook retries'));
-    rest(500);
-    fireEvent.click(rowOf('Fix webhook retries'));
-    expect(card()).toBeNull();
-  });
 });
 
 describe('what the hover card says', () => {
@@ -227,33 +226,28 @@ describe('what the hover card says', () => {
     return within(screen.getByTestId('session-hover-card'));
   };
 
-  it.each(['Retry policy for 429s', 'Fix webhook retries'])(
-    'draws the same mark as the row of %s',
-    (title) => {
-      mount();
-      const markOf = (scope: HTMLElement) => {
-        const box = scope.querySelector('[data-status-mark]');
-        return [box?.getAttribute('data-status-mark'), box?.getAttribute('data-status-state')];
-      };
-      const row = markOf(rowOf(title));
-      fireEvent.mouseEnter(rowOf(title));
-      rest(500);
-      expect(markOf(screen.getByTestId('session-hover-card'))).toEqual(row);
-      expect(row[0]).toBe('state');
-    },
-  );
+  it.each(['Retry policy for 429s'])('draws the same mark as the board card of %s', (title) => {
+    mount();
+    const markOf = (scope: HTMLElement) => {
+      const box = scope.querySelector('[data-status-mark]');
+      return [box?.getAttribute('data-status-mark'), box?.getAttribute('data-status-state')];
+    };
+    const row = markOf(rowOf(title));
+    fireEvent.mouseEnter(rowOf(title));
+    rest(500);
+    expect(markOf(screen.getByTestId('session-hover-card'))).toEqual(row);
+    expect(row[0]).toBe('state');
+  });
 
   it('says what waits on you in the words of the reason table', () => {
     const view = openCard('Retry policy for 429s');
     view.getByText('1 question for you');
   });
 
-  it('agrees with what the row tells a screen reader', () => {
+  it('agrees with what the board card tells a screen reader', () => {
     mount();
-    const described = rowOf('Retry policy for 429s').getAttribute('aria-describedby') ?? '';
-    expect(document.getElementById(described)?.textContent ?? '').toBe(
-      'needs you, 1 question for you',
-    );
+    const described = buttonOf('Retry policy for 429s').getAttribute('aria-describedby') ?? '';
+    expect(document.getElementById(described)?.textContent ?? '').toBe('1 question for you');
     fireEvent.mouseEnter(rowOf('Retry policy for 429s'));
     rest(500);
     within(screen.getByTestId('session-hover-card')).getByText('1 question for you');
@@ -270,26 +264,6 @@ describe('what the hover card says', () => {
     const view = openCard('Fix webhook retries');
     view.getByText(/^2 agents/);
     view.getByText(/5m ago$/);
-  });
-
-  it('offers to open what needs you, and lands on the questions', () => {
-    const view = openCard('Retry policy for 429s');
-    fireEvent.click(view.getByRole('button', { name: 'Open what needs you' }));
-    expect(useAppStore.getState().activeLens[retry.id]).toBe('questions');
-    expect(card()).toBeNull();
-  });
-
-  it('ends with a link to the legend that opens the Guide and closes the card', () => {
-    const view = openCard('Fix webhook retries');
-    fireEvent.click(view.getByRole('button', { name: 'What do these marks mean?' }));
-    expect(useAppStore.getState().appStudio).toEqual({ kind: 'guide' });
-    expect(peekGuideChapter()).toBe('legend');
-    expect(card()).toBeNull();
-  });
-
-  it('offers no action for a session that needs nothing', () => {
-    const view = openCard('Fix webhook retries');
-    expect(view.queryByRole('button', { name: 'Open what needs you' })).toBeNull();
   });
 
   const failingApproved = (): PullRequestState => ({

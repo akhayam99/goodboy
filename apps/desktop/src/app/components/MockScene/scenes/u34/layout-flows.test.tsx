@@ -49,15 +49,19 @@ it.each(Object.entries(U34_LAYOUT_FLOW_SCENES))('mounts %s', async (id, Scene) =
   expect(title.textContent).not.toMatch(/webhooks/);
   expect(container.querySelector('[data-slot="branch-board"]')).not.toBeNull();
   if (id !== 'u34-u29-narrow-running') {
-    expect(container.querySelector('[data-side-column], [data-column-rail]')).not.toBeNull();
+    expect(container.querySelector('[data-shell-rail]')).not.toBeNull();
   }
   if (id === 'u34-u30-active-tool') {
     const rail = screen.getByRole('toolbar', { name: 'Tools' });
-    expect(rail.querySelector('[data-slot="tool-caption"][data-tone="open"]')).toBeNull();
+    expect(
+      [...rail.querySelectorAll('[data-slot="tool-caption"][data-tone="open"]')].map(
+        (caption) => caption.textContent,
+      ),
+    ).toEqual(['Ask']);
     expect(
       [...rail.querySelectorAll('[data-slot="tool-caption"]')].map(
         (caption) => caption.textContent,
       ),
-    ).toEqual(['Terminal', 'Browser']);
+    ).toEqual(['Terminal', 'Browser', 'Scripts', 'Ask', 'Monitor']);
   }
 });

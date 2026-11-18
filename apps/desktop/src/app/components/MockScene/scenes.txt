@@ -226,7 +226,6 @@ c01-tail-stopped
 c01-tail-waiting
 c01-tail-working
 c02-level-branchless
-c02-level-main-folded
 c02-level-session
 c02-level-session-agents
 c02-level-studio-over
@@ -375,10 +374,6 @@ checks-fixed-local
 checks-fixing
 checks-proposal
 code-layers
-column-create-draft
-column-create-draftopen
-column-create-row
-column-rail
 command-card
 command-palette
 comments-action-bar
@@ -541,7 +536,6 @@ header-branch-push-confirm
 header-overview-overflow
 header-run
 header-scripts
-hovercard-legend-link
 image-lightbox
 impact
 impact-deleted
@@ -722,8 +716,6 @@ questions-empty
 queue-composer-primary
 queue-read-finished
 queue-stopped-resume
-r1-motion-shell-folded
-r1-motion-shell-open
 r4-brand-dark
 r4-brand-light
 r4-chatlist-selecting
@@ -765,14 +757,9 @@ r4-repos-dirty
 r4-repos-failed
 r4-repos-mix
 r4-repos-quiet
-r4-sidebar-filter
-r4-sidebar-row-menu
 r4-title-edit
 r4-title-edit-near-limit
-r4-title-row-edit
 r4-workspace-switcher
-rail-draft-dot
-rail-flyout
 rail-foot-available
 rail-foot-downloading
 rail-foot-failed
@@ -780,9 +767,7 @@ rail-foot-queued
 rail-foot-ready
 rail-foot-rest
 rail-foot-running
-rail-pinned
 rail-ticket-ids
-railorder
 readme-hero
 rebase-bring-back
 rebase-choosing
@@ -897,12 +882,7 @@ session-tools-order
 session-tools-quiet
 session-tools-signal
 sessions-card
-sessions-door-counts
-sessions-funnel
-sessions-funnel-open
-sessions-hidden
 sessions-menu
-sessions-nomatch
 sessions-popover
 settings-app
 settings-general-pinned
@@ -925,15 +905,11 @@ settings-tools
 settings-workspace
 shell
 shell-rail
-side-info-doors
 side-info-framed
 side-signals-idle
 side-signals-running
 side-tiles-dark
 side-tiles-light
-sidebar-frame-dark
-sidebar-frame-light
-sidebar-rhythm
 slack-permissions
 slot-back-chip
 slot-back-chip-narrow
@@ -1019,8 +995,6 @@ u26-central-orchestrated-dark
 u26-central-orchestrated-light
 u26-central-stuck-dark
 u26-central-stuck-light
-u26-filter-active
-u26-filter-default
 u26-intros-runs
 u26-intros-runs-empty
 u26-nogit-changes-added-dark
@@ -1074,12 +1048,7 @@ u26-rebase-all-settled-dark
 u26-rebase-all-settled-light
 u26-rebase-conflict-dark
 u26-rebase-conflict-light
-u26-sessions-base-dark
-u26-sessions-base-light
-u26-sessions-multi-dark
-u26-sessions-multi-light
 u26-sidebar-impact
-u26-sidebar-ports
 u26-sidebar-signals
 u26-view-archived-dark
 u26-view-archived-light
@@ -1120,7 +1089,6 @@ u26s-settings-updates
 u26s-update-available
 u26s-update-failed
 u26s-update-ready
-u26s-update-row
 u26s-update-running
 u26s-update-settings
 u26s-whatsnew-release
@@ -1265,10 +1233,7 @@ u34-u12-failure
 u34-u12-provider
 u34-u18-ask-answer
 u34-u18-ask-first
-u34-u19-column-done-closed
-u34-u19-column-done-open
 u34-u22-row-marks
-u34-u24-folded-sessions
 u34-u26-board
 u34-u27-empty-board
 u34-u27-foot-board
@@ -1278,7 +1243,6 @@ u34-u28-agents-open
 u34-u28-drawer-closed
 u34-u29-narrow-running
 u34-u30-active-tool
-u34-u31-folded-branches
 u34-u32-branch-tabs
 u34-u33-branches
 u34-u34-draft
@@ -1426,8 +1390,6 @@ u37-running-here-more
 u37-runs-order
 u37-runs-order-light
 u39-destinations
-u39-foot
-u39-foot-update
 u44-branch-runs-linked
 u44-branch-tiles
 u44-run-page

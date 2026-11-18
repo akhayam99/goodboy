@@ -78,8 +78,8 @@ Right click a session, agent, run, artifact, pull request, file or message to se
 
 ## Under the hood
 
-- **Sidebar**: `apps/desktop/src/app/components/SideColumn/ShellLeft/index.tsx` renders New, the places and the foot. `apps/desktop/src/shared/navigation/destinations.ts` owns their order, Connect's full name and Monitoring's menu home. `apps/desktop/src/shared/navigation/railPlaceOf.ts` keeps Board current for an open session.
-- **Sidebar signals**: `apps/desktop/src/app/components/SideColumn/railMarkOf.ts` selects Board's count and Tasks' dot from `apps/desktop/src/app/components/SideColumn/useDoorSignals/index.ts`. New's draft mark is derived in `apps/desktop/src/app/components/SideColumn/ShellLeft/index.tsx`.
+- **Sidebar**: `apps/desktop/src/app/components/ShellLeft/index.tsx` renders New, the places and the foot. `apps/desktop/src/shared/navigation/destinations.ts` owns their order, Connect's full name and Monitoring's menu home. `apps/desktop/src/shared/navigation/railPlaceOf.ts` keeps Board current for an open session.
+- **Sidebar signals**: `apps/desktop/src/app/components/ShellLeft/railMarkOf.ts` selects Board's count and Tasks' dot from `apps/desktop/src/app/components/ShellLeft/useDoorSignals/index.ts`. New's draft mark is derived in `apps/desktop/src/app/components/ShellLeft/index.tsx`.
 - **Sidebar size**: `apps/desktop/src/App.tsx` supplies the rail to `packages/ui/src/components/AppShell.tsx` without a fold or resize control. `packages/ui/src/components/ShellRail/useShellRailForm/index.ts`, `packages/ui/src/components/ShellRail/shellRailGeometry.ts` and `packages/ui/src/components/ShellRail/ShellRailItem.tsx` own the width breakpoint, words and tooltips.
 
 - **Sessions**: `apps/desktop/src/app/components/AppTopBar/index.tsx` mounts `apps/desktop/src/features/workspace/components/SessionsPopover/index.tsx`. Its panel owns title and project filtering, keyboard selection and pin actions.

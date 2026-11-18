@@ -350,10 +350,6 @@ export const KEY_ROWS: ReadonlyArray<Row> = [
     id: 'sessions.toggle',
     lands: () => visible('dialog', 'Sessions'),
   }),
-  pressRow({
-    id: 'column.toggle',
-    lands: () => visible('button', /^Show sidebar/),
-  }),
   keyRow({
     id: 'innerColumn.toggle',
     note: 'folds the chat list, the inner column of the Chat studio',
@@ -1988,7 +1984,7 @@ export const SESSION_KEY_ROWS: ReadonlyArray<Row> = [
       await screen.findByRole('heading', { name: 'No terminal yet' });
       const [newTerminal] = screen
         .getAllByRole('button', { name: /^New terminal$/ })
-        .filter((button) => button.closest('[data-side-column]') === null);
+        .filter((button) => button.closest('[data-shell-rail]') === null);
       if (newTerminal === undefined) {
         throw new Error('The empty terminal page has no New terminal button');
       }

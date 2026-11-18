@@ -1,4 +1,4 @@
-import { ArrowRight, Folder } from '@goodboy/ui/icons';
+import { Folder } from '@goodboy/ui/icons';
 import { gitlabSessionOf } from '../../../../store/slices/mount-request/requestOf';
 import {
   Chip,
@@ -6,12 +6,11 @@ import {
   FactCardHeader,
   FactCardState,
   formatUsd,
-  GhostActionButton,
   ICON_SIZE,
   StatusDot,
   StatusMark,
 } from '@goodboy/ui';
-import type { Session, SessionAttentionReason, SessionId } from '@goodboy/types';
+import type { Session, SessionId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import { NAMES } from '../../../../shared/utils/names';
 import { useReviewDraftCount } from './useReviewDraftCount';
@@ -20,32 +19,17 @@ import { useSessionRowFacts } from '../../hooks/useSessionRowFacts';
 import { getLinkedRequest } from '../StageBoard/StageBoardCard/getLinkedRequest';
 import { ExternalTaskChip } from '../../../integrations/components/ExternalTaskChip';
 import { SessionRowTitle } from '../SessionRowTitle';
-import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { pullRequestStateToneOf } from '../../../branch/pullRequestStateToneOf';
 import { requestChipLabel } from './requestChipLabel';
 import { stageWord } from './stageWord';
 import { CountsSkeleton } from './CountsSkeleton';
 
-type OpenAttention = {
-  readonly sessionId: SessionId;
-  readonly reason: SessionAttentionReason | null;
-};
-
 type Props = {
   readonly session: Session;
   readonly isArchived: boolean;
-  readonly onOpenAttention: (params: OpenAttention) => void;
-  readonly onOpenLegend: () => void;
-  readonly isFactsOnly?: boolean;
 };
 
-export const SessionHoverCardBody = ({
-  session,
-  isArchived,
-  onOpenAttention,
-  onOpenLegend,
-  isFactsOnly = false,
-}: Props) => {
+export const SessionHoverCardBody = ({ session, isArchived }: Props) => {
   const sessionId = session.id as SessionId;
   const { summary, mark, keys, title, unreadLabel } = useSessionRowFacts({ session, isArchived });
   const pullRequest = useAppStore((state) => state.sessionGithub[sessionId]?.pr ?? null);
@@ -152,20 +136,6 @@ export const SessionHoverCardBody = ({
         <FactCardFootnote text={facts.join(' · ')} />
         {summary.isCountsLoading ? <CountsSkeleton /> : null}
       </div>
-      {needsYou && !isFactsOnly ? (
-        <GhostActionButton
-          icon={ArrowRight}
-          label="Open what needs you"
-          onClick={() => onOpenAttention({ sessionId, reason: summary.attention })}
-        />
-      ) : null}
-      {isFactsOnly ? null : (
-        <GhostActionButton
-          icon={CONCEPT_ICONS.help}
-          label="What do these marks mean?"
-          onClick={onOpenLegend}
-        />
-      )}
     </div>
   );
 };

@@ -230,8 +230,6 @@ export const NowChip = ({ onOpenScript }: Props) => {
         onKeep={hover.keep}
         onLeave={hover.leave}
         onClose={hover.close}
-        onOpenAttention={selectSession}
-        isFactsOnly
       />
     </AnchoredPopover>
   );

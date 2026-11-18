@@ -20,7 +20,7 @@ import { NewSessionBridge } from './features/session/components/NewSessionBridge
 import { SessionArchiveBridge } from './features/session/components/SessionArchiveBridge';
 import { SessionRefreshBridge } from './features/session/components/SessionRefreshBridge';
 import { RowActionsCueBridge } from './app/components/RowActionsCueBridge';
-import { ShellLeft } from './app/components/SideColumn/ShellLeft';
+import { ShellLeft } from './app/components/ShellLeft';
 import { useColumnActions } from './app/hooks/useColumnActions';
 import { useGoToBoard } from './app/hooks/useGoToBoard';
 import { useWindowPresence } from './features/workspace/hooks/useWindowPresence';
@@ -53,7 +53,6 @@ import { useSessionFocusRecheck } from './features/session/hooks/useSessionFocus
 import { useSessionPinsSync } from './features/workspace/hooks/useSessionPinsSync';
 import { useUpdaterPolling } from './features/updater/hooks/useUpdaterPolling';
 import { useAsyncSubscription } from './app/hooks/useAsyncSubscription';
-import { useSessionSidebarVisibility } from './features/workspace/hooks/useSessionSidebarVisibility';
 import { shellArrangement } from './app/shellArrangement';
 import { DrawerHost } from './app/components/DrawerHost';
 import { useShellRight } from './app/hooks/useShellRight';
@@ -80,13 +79,9 @@ export const App = () => {
   );
   const currentSession = useCurrentSession();
   const isDraftShown = useAppStore((s) => selectIsSessionDraftShown({ state: s }));
-  const sessionSidebar = useSessionSidebarVisibility({ hasSidebar: true });
   const [keepAliveIds, setKeepAliveIds] = useState<ReadonlyArray<SessionId>>([]);
   const isWorkspaceLauncherBranch = currentWorkspace === null;
-  const arrangement = shellArrangement({
-    hasWorkspace: currentWorkspace != null,
-    isSidebarCollapsed: sessionSidebar.isCollapsed,
-  });
+  const arrangement = shellArrangement({ hasWorkspace: currentWorkspace != null });
   const goToBoard = useGoToBoard();
   const {
     armDeleteConfirm,
@@ -181,7 +176,6 @@ export const App = () => {
     openSettings,
     openNewChat,
     openShortcutHelp,
-    toggleSidebar: sessionSidebar.toggle,
   });
 
   const renderedSessionIds = useMemo<ReadonlyArray<SessionId>>(() => {

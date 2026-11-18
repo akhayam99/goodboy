@@ -44,14 +44,7 @@ export { TERMINAL_DIM } from './terminalDim';
 export { formatError } from './formatError';
 export { splitErrorMessage } from './splitErrorMessage';
 export { formatTokens, formatUsd, formatUsdPrecise } from './format-cost';
-export {
-  AppShell,
-  COLLAPSED_RAIL_WIDTH,
-  LEFT_SIDEBAR_DEFAULT,
-  LEFT_SIDEBAR_MAX,
-  LEFT_SIDEBAR_MIN,
-  LEFT_SIDEBAR_STORAGE_KEY,
-} from './components/AppShell';
+export { AppShell, COLLAPSED_RAIL_WIDTH } from './components/AppShell';
 export { DrawerColumn } from './components/DrawerColumn';
 export { READER_DRAWER_STORAGE_KEY, RIGHT_DRAWER_STORAGE_KEY } from './drawerWidthKeys';
 export type { DrawerColumnFrame, DrawerColumnProps } from './components/DrawerColumn';

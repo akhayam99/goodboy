@@ -4,7 +4,7 @@ import { ChatStudio } from '../../../../../features/workspace-chat/components/Ch
 import { mockChatSessions } from '../../backends/chat/mockChatSessions';
 import type { ProviderDisplayInfo } from '../../../../../features/providers/providers';
 import { useAppStore } from '../../../../../store';
-import { shellArrangement } from '../../../../shellArrangement';
+import { ScenePlacesRail } from '../ScenePlacesRail';
 import { StudioFrame } from '../../../StudioFrame';
 import { WORKSPACE_ID, seedBoardScene } from '../BoardScene';
 import { CONSENT_CHAT_ID } from '../ChatRoomScene';
@@ -15,11 +15,6 @@ import { seedStudioChrome } from '../shellChrome';
 const WINDOW_WIDTH_PX = 1440;
 
 const noop = () => undefined;
-
-const arrangement = shellArrangement({
-  hasWorkspace: true,
-  isSidebarCollapsed: false,
-});
 
 const CLAUDE: ProviderDisplayInfo = {
   id: 'anthropic',
@@ -68,8 +63,7 @@ const DrawerSplitChat = () => {
       style={{ width: WINDOW_WIDTH_PX }}
     >
       <AppShell
-        leftSidebarCollapsed={arrangement.leftSidebarCollapsed}
-        leftSidebar={<div aria-hidden />}
+        leftRail={<ScenePlacesRail />}
         main={<div />}
         studio={
           <StudioFrame kind="chat" placement="content" onClose={noop}>

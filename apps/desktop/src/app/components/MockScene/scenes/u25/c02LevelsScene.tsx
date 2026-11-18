@@ -5,9 +5,9 @@ import { useSceneRailFold } from '../useSceneRailFold';
 import { SessionFrame } from '../../../SessionRail/SessionFrame';
 import { AppTopBar } from '../../../AppTopBar';
 import { SessionWorkspace } from '../../../../../features/session/components/SessionWorkspace';
-import { SideColumn } from '../../../SideColumn';
-import { ColumnRail } from '../../../SideColumn/ColumnRail';
-import type { ColumnActions } from '../../../SideColumn/columnDoors';
+import { ShellLeft } from '../../../ShellLeft';
+import { shellArrangement } from '../../../../shellArrangement';
+import { SCENE_COLUMN_ACTIONS } from '../sceneColumnActions';
 import type { ColumnPlace } from '../../../../../shared/navigation/columnPlace';
 import { sceneClock } from '../../sceneClock';
 import { SIDEBAR_NAV_DEFAULTS, seedSidebarNav, type SidebarNavSeed } from '../u23/sidebarNavSeed';
@@ -19,25 +19,12 @@ const at = (iso: string): IsoDateTime => clock.iso({ at: iso });
 
 const noop = () => undefined;
 
-const ACTIONS: ColumnActions = {
-  openBoard: noop,
-  openInbox: noop,
-  openChat: noop,
-  openWorkflows: noop,
-  openNewChat: noop,
-  openConnections: noop,
-  openMonitoring: noop,
-  openImpact: noop,
-  openSettings: noop,
-  openChangelog: noop,
-  openGuide: noop,
-};
+const ARRANGEMENT = shellArrangement({ hasWorkspace: true });
 
 export type LevelsSceneConfig = {
   readonly lens: LensKind | null;
   readonly branches: number;
   readonly isBusy: boolean;
-  readonly isMainFolded: boolean;
   readonly isRailFolded: boolean;
   readonly place: ColumnPlace;
 };
@@ -99,33 +86,14 @@ export const LevelsScene = ({ config }: Props) => {
   const currentSessionId = place === 'board' ? null : seed.session.id;
   return (
     <div data-shot className="flex h-screen min-h-0 flex-col bg-backdrop">
-      <AppTopBar
-        sidebar={{ isCollapsed: config.isMainFolded === true, onToggle: noop }}
-        onOpenSpend={noop}
-        onOpenScript={noop}
-      />
+      <AppTopBar onOpenSpend={noop} onOpenScript={noop} />
       <div className="flex min-h-0 flex-1 bg-background">
-        <div className="h-full shrink-0 border-r border-border-soft">
-          {config.isMainFolded === true ? (
-            <ColumnRail
-              scope="workspace"
-              workspaceId={seed.workspaceId}
-              currentSessionId={currentSessionId}
-              place={place}
-              actions={ACTIONS}
-            />
-          ) : (
-            <div className="h-full w-60">
-              <SideColumn
-                scope="workspace"
-                workspaceId={seed.workspaceId}
-                currentSessionId={currentSessionId}
-                place={place}
-                actions={ACTIONS}
-              />
-            </div>
-          )}
-        </div>
+        <ShellLeft
+          arrangement={ARRANGEMENT}
+          workspaceId={seed.workspaceId}
+          actions={SCENE_COLUMN_ACTIONS}
+          {...(place === null ? {} : { placeOverride: place })}
+        />
         {currentSessionId === null || place !== null ? (
           <main className="flex min-w-0 flex-1 flex-col gap-2 p-6" />
         ) : (

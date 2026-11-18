@@ -9,7 +9,6 @@ vi.mock('@tauri-apps/plugin-dialog', () => ({ open: vi.fn() }));
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, render, screen, within } from '@testing-library/react';
-import { LEFT_SIDEBAR_MIN, LEFT_SIDEBAR_STORAGE_KEY } from '@goodboy/ui';
 import { ToastProvider } from '../../../../../../shared/components/Toast';
 import {
   STORE_IMPORT_TIMEOUT_MS,
@@ -47,7 +46,6 @@ const SCENE_IDS: ReadonlyArray<SceneId> = [
   'u26s-update-ready',
   'u26s-update-running',
   'u26s-update-failed',
-  'u26s-update-row',
   'u26s-update-settings',
 ];
 
@@ -136,17 +134,6 @@ describe('the update card scenes', () => {
 
     expect(verbsOfCard({ name: 'Goodboy 0.27.2 did not install' })).toEqual(['Later', 'Retry']);
     screen.getByText('The download was cut off at 61%.');
-  });
-
-  it('u26s-update-row draws the pill in the Goodboy row at the narrowest sidebar', async () => {
-    await mount({ id: 'u26s-update-row' });
-
-    expect(window.localStorage.getItem(LEFT_SIDEBAR_STORAGE_KEY)).toBe(String(LEFT_SIDEBAR_MIN));
-    expect(screen.queryByRole('dialog')).toBeNull();
-    expect(pill().textContent).toBe('0.27.2');
-    expect(pill().getAttribute('aria-label')).toBe('Goodboy 0.27.2 is available');
-    const row = pill().closest('[data-column-foot]');
-    expect(row?.contains(screen.getByTestId('goodboy-chip')) ?? false).toBe(true);
   });
 
   it('u26s-update-settings puts the same verbs on the Updates band of Settings, General', async () => {

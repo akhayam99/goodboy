@@ -137,4 +137,38 @@ describe('StageBoard card rename', () => {
     expect(screen.queryByRole('textbox', { name: 'Session title' })).toBeNull();
     expect(renameSession).not.toHaveBeenCalled();
   });
+
+  it('says Saving while the write runs, on the card', async () => {
+    let finish: () => void = () => undefined;
+    renameSession.mockImplementationOnce(
+      () =>
+        new Promise<void>((resolve) => {
+          finish = resolve;
+        }),
+    );
+    askToRename();
+    fireEvent.change(field(), { target: { value: 'Key webhook retries by event id' } });
+    fireEvent.keyDown(field(), { key: 'Enter' });
+
+    expect((await screen.findByRole('status')).textContent).toBe('Saving');
+    expect(field().getAttribute('aria-busy')).toBe('true');
+    await act(async () => {
+      finish();
+    });
+    await waitFor(() =>
+      expect(screen.queryByRole('textbox', { name: 'Session title' })).toBeNull(),
+    );
+  });
+
+  it('shows a refused name with its reason and no Retry, and writes nothing', async () => {
+    askToRename();
+    fireEvent.change(field(), { target: { value: 'x'.repeat(200) } });
+    await act(async () => {
+      fireEvent.keyDown(field(), { key: 'Enter' });
+    });
+
+    expect(screen.getByRole('alert').textContent).toContain('name is too long');
+    expect(screen.queryByRole('button', { name: 'Retry' })).toBeNull();
+    expect(renameSession).not.toHaveBeenCalled();
+  });
 });

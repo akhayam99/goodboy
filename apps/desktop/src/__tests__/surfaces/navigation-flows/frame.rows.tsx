@@ -15,16 +15,17 @@ import {
   openCrumb,
   openPalette,
   settle,
+  pressBoardKey,
 } from './harness';
 
 const QUESTIONS_ROW = CRUMB_ROWS.find((row) => row.label === 'Questions');
 
 const doorOf = (name: string): HTMLElement => {
   const door = document.querySelector<HTMLElement>(
-    `[data-side-column] [data-column-door="${name}"]`,
+    `[data-shell-rail] [data-shell-rail-item="${name}"]`,
   );
   if (door === null) {
-    throw new Error(`no ${name} door in the side column`);
+    throw new Error(`no ${name} place on the rail`);
   }
   return door;
 };
@@ -126,7 +127,7 @@ export const FRAME_ROWS: ReadonlyArray<Row> = [
     name: 'frame: the Board title sits on one header row, no band above it',
     covers: ['navigate'],
     open: async () => {
-      await clickButton(/^Board/);
+      await pressBoardKey();
     },
     lands: async () => {
       await heading('Board');

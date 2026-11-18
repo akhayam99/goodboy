@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useRef } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { cn, ScrollFade } from '@goodboy/ui';
-import type { Session, SessionAttentionReason, SessionId, WorkspaceId } from '@goodboy/types';
+import type { Session, SessionId, WorkspaceId } from '@goodboy/types';
 import {
   EMPTY_ARRAY,
   useAppStore,
@@ -15,7 +15,6 @@ import { useActionControls } from '../../../actions/useActionControls';
 import { ObjectSelectionBar } from '../../../../shared/components/ObjectSelectionBar';
 import type { ObjectTarget } from '../../../actions/types';
 import { useSessionArchive } from '../../../session/hooks/useSessionArchive';
-import { attentionPlace } from '../../../session/attentionPlace';
 import { NewWorkspaceForm } from '../../../../shared/components/NewWorkspaceForm';
 import { SetupCard } from '../../../onboarding/SetupCard';
 import { useIsMainWindow } from '../../useIsMainWindow';
@@ -36,12 +35,7 @@ import { useNeedsYouElsewhere } from './useNeedsYouElsewhere';
 import { SessionsHeader } from './SessionsHeader';
 import { SessionHoverCard } from '../SessionHoverCard';
 import { useHoverCardTarget } from '../SessionHoverCard/useHoverCardTarget';
-import { useClearSessionFilters } from '../SessionActivityBar/useClearSessionFilters';
-
-type OpenAttention = {
-  readonly sessionId: SessionId;
-  readonly reason: SessionAttentionReason | null;
-};
+import { useClearSessionFilters } from './useClearSessionFilters';
 
 type Props = {
   readonly workspaceId: WorkspaceId;
@@ -51,12 +45,9 @@ type Props = {
 export const StageBoard = ({ workspaceId, sessions }: Props) => {
   const groups = useStageGroupedSessions(workspaceId, sessions);
   const needsYou = useNeedsYouElsewhere({ workspaceId, sessions });
-  const setSessionViewPrefs = useAppStore((s) => s.setSessionViewPrefs);
-  const navigate = useAppStore((s) => s.navigate);
   const clearFilters = useClearSessionFilters({ workspaceId });
   const nav = useBoardNavigation();
   const hover = useHoverCardTarget();
-  const { close: closeHover } = hover;
   const archivedList = useAppStore((s) => s.archivedSessions[workspaceId]);
   const archived = archivedList ?? EMPTY_ARRAY;
   const projectArchived = useProjectFilteredSessions({ workspaceId, sessions: archived });
@@ -78,18 +69,6 @@ export const StageBoard = ({ workspaceId, sessions }: Props) => {
     (session: Session) => sessionArchive.restore({ sessions: [session] }),
     [sessionArchive],
   );
-  const onArchivedShownChange = useCallback(
-    (isShown: boolean) => setSessionViewPrefs({ workspaceId, patch: { isArchivedShown: isShown } }),
-    [setSessionViewPrefs, workspaceId],
-  );
-  const openAttention = useCallback(
-    ({ sessionId, reason }: OpenAttention) => {
-      closeHover();
-      navigate({ to: attentionPlace({ state: useAppStore.getState(), sessionId, reason }) });
-    },
-    [closeHover, navigate],
-  );
-
   useArchivedSessionsLoad({ workspaceId, isReady: boardReady });
 
   const byStage = useMemo(() => {
@@ -179,8 +158,6 @@ export const StageBoard = ({ workspaceId, sessions }: Props) => {
           isShown={pending || !empty || hasProjects}
           workspaceId={workspaceId}
           filterSessions={filterSessions}
-          archivedCount={archived.length}
-          onArchivedShownChange={onArchivedShownChange}
           hiddenCount={pending || empty ? 0 : hiddenCount}
           needsYouElsewhere={pending || empty ? 0 : needsYou.elsewhere}
           onClearFilters={clearFilters}
@@ -241,8 +218,6 @@ export const StageBoard = ({ workspaceId, sessions }: Props) => {
         onKeep={hover.keep}
         onLeave={hover.leave}
         onClose={hover.close}
-        onOpenAttention={openAttention}
-        isFactsOnly
       />
 
       <ObjectSelectionBar

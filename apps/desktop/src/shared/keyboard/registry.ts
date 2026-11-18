@@ -210,12 +210,6 @@ export const SHORTCUTS = {
     plane: 'app',
     group: 'navigate',
   },
-  'column.toggle': {
-    combo: 'cmd+shift+KeyB',
-    label: 'Show or hide the sidebar',
-    plane: 'session',
-    group: 'navigate',
-  },
   'innerColumn.toggle': {
     combo: 'cmd+alt+KeyB',
     offMacCombo: 'ctrl+shift+alt+KeyB',

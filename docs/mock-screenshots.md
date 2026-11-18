@@ -147,7 +147,7 @@ Use real branded id casts (e.g. `'x' as Agent['id']`) and real enum values.
 Pass it straight in. No store involved.
 
 **The component reads the zustand store.** `SessionOverviewPane`,
-`OrchestratedRunPage`, `DefaultsPanel` and `SessionNavSidebar` work
+`OrchestratedRunPage`, `DefaultsPanel` and `StageBoard` work
 this way. `useAppStore` is a bare `create()` store: no `persist` middleware,
 and no Tauri side effect on `setState`. So it is safe to fill it directly:
 
@@ -521,13 +521,11 @@ A hint can name the controls its step does not want pressed (`isBlocked`): the g
 now forces dark the same way `&theme=light` forces light, so a frame never
 follows a stored preference.
 
-Keys inside a frame: a directed frame registers `palette.open` (Cmd+K),
-`search.open` (Cmd+F) and `column.toggle` (Shift+Cmd+B) itself, through
-`scenes/useSceneShortcuts` (palette) and `scenes/useSceneSidebar` (the fold
-state retained by the shell frames), since `App` and `useAppShortcuts` never mount in a
-scene. Frames that supply `AppShell.leftRail` show the same places rail
-after `column.toggle`; that legacy state does not fold it. When the focus is on the playground and not in the frame, `useDemoKeys`
-hands those three chords to the stage, which focuses the frame and sends a
+Keys inside a frame: a directed frame registers `palette.open` (Cmd+K) and
+`search.open` (Cmd+F) itself, through `scenes/useSceneShortcuts`, since `App`
+and `useAppShortcuts` never mount in a scene. Every shell frame supplies
+`AppShell.leftRail`, the places rail, which has no fold. When the focus is on the playground and not in the frame, `useDemoKeys`
+hands Cmd+K, Cmd+F and Cmd+B to the stage, which focuses the frame and sends a
 `shortcut` command; the frame replays it as a keydown for the same shortcut.
 The wrapper's own keys (arrows, H, R) ignore a text field, and a frame that has
 the focus keeps its keys to itself. Search answers from the simulated store

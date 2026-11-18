@@ -28,7 +28,7 @@ import {
   seedColumn,
   sessionOf,
 } from '../features/workspace/testing/sessionColumn';
-import { useDoorSignals } from '../app/components/SideColumn/useDoorSignals';
+import { useDoorSignals } from '../app/components/ShellLeft/useDoorSignals';
 import { useNeedsYouElsewhere } from '../features/workspace/components/StageBoard/useNeedsYouElsewhere';
 import { useNowSessions } from '../shared/hooks/useNowSessions';
 import { useSessionOrder } from '../store/slices/session-view/selectors';

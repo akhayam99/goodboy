@@ -20,6 +20,7 @@ import {
   click,
   clickButton,
   installNavigationHooks,
+  openPalette,
   settle,
   useAppStore,
   type BridgeArgs,
@@ -31,16 +32,17 @@ type Door = {
   readonly name: string;
   readonly kind: string;
   readonly isSidebarPage: boolean;
+  readonly isRailPlace: boolean;
 };
 
 const DOORS: ReadonlyArray<Door> = [
-  { name: 'Tasks', kind: 'inbox', isSidebarPage: true },
-  { name: 'Workflows', kind: 'workflow', isSidebarPage: true },
-  { name: 'Impact', kind: 'impact', isSidebarPage: true },
-  { name: 'Settings', kind: 'settings', isSidebarPage: false },
-  { name: 'Chat', kind: 'chat', isSidebarPage: true },
-  { name: 'Monitoring', kind: 'monitoring', isSidebarPage: true },
-  { name: 'Connections', kind: 'connections', isSidebarPage: true },
+  { name: 'Tasks', kind: 'inbox', isSidebarPage: true, isRailPlace: true },
+  { name: 'Workflows', kind: 'workflow', isSidebarPage: true, isRailPlace: true },
+  { name: 'Impact', kind: 'impact', isSidebarPage: true, isRailPlace: true },
+  { name: 'Settings', kind: 'settings', isSidebarPage: false, isRailPlace: true },
+  { name: 'Chat', kind: 'chat', isSidebarPage: true, isRailPlace: true },
+  { name: 'Monitoring', kind: 'monitoring', isSidebarPage: true, isRailPlace: false },
+  { name: 'Connections', kind: 'connections', isSidebarPage: true, isRailPlace: true },
 ];
 
 const historyButton = (verb: 'Back' | 'Forward'): HTMLElement => {
@@ -97,8 +99,7 @@ const appStudioKind = (): string | null => useAppStore.getState().appStudio?.kin
 const currentMarks = (): ReadonlyArray<string> => {
   const roots = [
     document.querySelector('[data-top-bar]'),
-    document.querySelector('[data-side-column] [data-column-layer="nav"]'),
-    document.querySelector('[data-column-rail]'),
+    document.querySelector('[data-shell-rail]'),
     document.querySelector('[data-app-footer]'),
   ];
   return roots.flatMap((root) =>
@@ -110,10 +111,17 @@ const currentMarks = (): ReadonlyArray<string> => {
   );
 };
 
+const marksOf = ({ door }: { readonly door: Door }): ReadonlyArray<string> =>
+  door.isRailPlace ? [door.name] : [];
+
 const openDoor = async ({ door }: { readonly door: Door }) => {
+  if (!door.isRailPlace) {
+    await openPalette(new RegExp(`^${door.name}`), door.name);
+    return;
+  }
   const id = door.kind === 'workflow' ? 'workflows' : door.kind;
   const control = document.querySelector<HTMLElement>(
-    `[data-side-column] [data-column-door="${id}"]`,
+    `[data-shell-rail] [data-shell-rail-item="${id}"]`,
   );
   expect(control).not.toBeNull();
   await click(requireValue({ value: control }));
@@ -171,11 +179,17 @@ describe('doors replace the open studio and content links stack', () => {
   it('replaces the open studio when another door is pressed', async () => {
     await boot({ seed: 'pr' });
 
-    await openDoor({ door: { name: 'Tasks', kind: 'inbox', isSidebarPage: true } });
+    await openDoor({
+      door: { name: 'Tasks', kind: 'inbox', isSidebarPage: true, isRailPlace: true },
+    });
     const withOneStudio = stack()?.entries.length ?? 0;
-    await openDoor({ door: { name: 'Workflows', kind: 'workflow', isSidebarPage: true } });
+    await openDoor({
+      door: { name: 'Workflows', kind: 'workflow', isSidebarPage: true, isRailPlace: true },
+    });
     await clickButton(/^Spend today/);
-    await openDoor({ door: { name: 'Chat', kind: 'chat', isSidebarPage: true } });
+    await openDoor({
+      door: { name: 'Chat', kind: 'chat', isSidebarPage: true, isRailPlace: true },
+    });
 
     expect(appStudioKind()).toBe('chat');
     expect(stack()?.entries.length).toBe(withOneStudio);
@@ -241,11 +255,8 @@ describe('exactly one door in the frame is marked current', () => {
 
       await openDoor({ door });
 
-      expect(currentMarks()).toEqual([door.name]);
-      expect(document.querySelector('[data-column-layer="settings"]')).toBeNull();
-      expect(document.querySelector('[data-column-layer="nav"]')?.hasAttribute('inert')).toBe(
-        false,
-      );
+      expect(currentMarks()).toEqual(marksOf({ door }));
+      expect(document.querySelector('[data-shell-rail] [inert]')).toBeNull();
     },
   );
 
@@ -254,7 +265,7 @@ describe('exactly one door in the frame is marked current', () => {
 
     for (const door of DOORS) {
       await openDoor({ door });
-      expect(currentMarks()).toEqual([door.name]);
+      expect(currentMarks()).toEqual(marksOf({ door }));
     }
   });
 
@@ -267,11 +278,18 @@ describe('exactly one door in the frame is marked current', () => {
   it('marks Board once the board is shown', async () => {
     await boot({ seed: 'pr' });
 
-    await clickButton(/^Board/);
+    await pressBoardKey();
 
     expect(currentMarks()).toEqual([expect.stringMatching(/^Board\b/)]);
   });
 });
+
+const pressBoardKey = async (): Promise<void> => {
+  const anchor = await screen.findByRole('button', { name: /^Search or run \(/ });
+  anchor.focus();
+  pressShortcut({ id: 'session.board' });
+  await settle();
+};
 
 const pressBack = async (): Promise<void> => {
   const anchor = await screen.findByRole('button', { name: /^Search or run \(/ });
@@ -315,7 +333,9 @@ describe('the foot controls are doors that replace the open page', () => {
       const startSession = useAppStore.getState().currentSessionId;
       const startIndex = stack()?.index ?? 0;
 
-      await openDoor({ door: { name: 'Tasks', kind: 'inbox', isSidebarPage: true } });
+      await openDoor({
+        door: { name: 'Tasks', kind: 'inbox', isSidebarPage: true, isRailPlace: true },
+      });
       expect(appStudioKind()).toBe('inbox');
       const withOneStudio = stack()?.entries.length ?? 0;
 

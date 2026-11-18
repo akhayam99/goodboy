@@ -7,7 +7,7 @@ import { WORKSPACE_FEATURES } from '../../../../shared/lib/features';
 import { NAMES } from '../../../../shared/utils/names';
 import { RETIRED_NAMES } from '../../../../__tests__/regressions/retiredNames';
 import { shortcutGlyphs } from '../../../../shared/keyboard/registry';
-import { COLUMN_DOORS } from '../../../../app/components/SideColumn/columnDoors';
+import { COLUMN_DOORS } from '../../../../app/components/ShellLeft/columnDoors';
 import { columnPagesOf } from '../../../session/pageRegistry';
 import { NEW_DRAWER_FORMS } from '../../../session/newDrawerForms';
 import { chapterStatsOf } from './chapterStatsOf';
@@ -252,8 +252,9 @@ describe('the shell chapter', () => {
     const rail = pointOf('shell', 'Left rail');
     expect(rail).toContain('New session');
     COLUMN_DOORS.forEach((door) => expect(rail).toContain(door.label));
-    expect(rail).toContain('amber number');
+    expect(rail).toContain('amber number on Board');
     expect(rail).toContain('pinned port is down');
+    expect(rail).not.toContain('Monitoring');
   });
 
   it('says where the sessions went and when the one-time card closes', () => {

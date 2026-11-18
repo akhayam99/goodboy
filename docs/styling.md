@@ -385,9 +385,9 @@ row (New session) against the page's first row (the topmost visible controls of
 tops within 1px when the two rows are the same height, and the mark check
 (`sidebarMarkFailures`): every trailing mark of a sidebar door or session row
 is a 16px box on one centre x, on its row's centre line, within 1px. It waits for running
-animations to finish and skips controls hidden behind a sticky header. The
-`sidebar-frame-dark` and `sidebar-frame-light` scenes, Settings, New session, a
-session overview, Board, Tasks, Chat, Impact and Workflows are on its list.
+animations to finish and skips controls hidden behind a sticky header. Settings,
+New session, a session overview, Board, Tasks, Chat, Impact and Workflows are
+on its list.
 
 A page root names its kind (`page="overview"`, `page="terminal"`) and
 `PAGE_MEASURE` in `packages/ui/src/frameGeometry.ts` gives the column it sits on:

@@ -3,8 +3,8 @@ import { ToastProvider } from '../../../../../shared/components/Toast';
 import { useAppStore } from '../../../../../store';
 import type { AppState } from '../../../../../store/types';
 import { shellArrangement } from '../../../../shellArrangement';
-import type { ColumnActions } from '../../../SideColumn/columnDoors';
-import { ShellLeft } from '../../../SideColumn/ShellLeft';
+import type { ColumnActions } from '../../../ShellLeft/columnDoors';
+import { ShellLeft } from '../../../ShellLeft';
 import { installSceneDatabase } from '../sceneDatabase';
 
 export type RailFootKind =
@@ -26,7 +26,7 @@ type TurnsParams = {
 const VERSION = '0.40.1';
 const CLICK_DELAY_MS = 250;
 const STARTED_AT = '2026-11-17T09:12:00.000Z';
-const ARRANGEMENT = shellArrangement({ hasWorkspace: false, isSidebarCollapsed: false });
+const ARRANGEMENT = shellArrangement({ hasWorkspace: false });
 
 const noop = () => undefined;
 

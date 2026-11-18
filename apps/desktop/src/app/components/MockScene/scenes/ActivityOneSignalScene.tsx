@@ -26,7 +26,6 @@ export const ActivityOneSignalScene = () => {
   return (
     <ShellFrame
       session={ACTIVITY_QUESTION_SESSION}
-      sidebar="expanded"
       main={<SessionOverviewPane session={ACTIVITY_QUESTION_SESSION} />}
     />
   );

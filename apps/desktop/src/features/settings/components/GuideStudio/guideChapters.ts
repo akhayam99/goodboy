@@ -201,7 +201,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Chat',
-        desc: 'A sidebar door that answers questions about the workspace and never changes a file. Start work from chat drafts a session from an answer.',
+        desc: 'A place on the rail that answers questions about the workspace and never changes a file. Start work from chat drafts a session from an answer.',
       },
     ],
     links: [{ label: 'Start a new session', target: { kind: 'newSession' } }],
@@ -230,7 +230,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Select many',
-        desc: 'Shift or Option click, or Select in a row menu, then Archive, Restore or Delete from the bar.',
+        desc: 'Shift or Option click, or Select in a card menu, then Archive, Restore or Delete from the bar.',
       },
       {
         term: 'Now chip',
@@ -252,7 +252,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
     points: [
       {
         term: 'Left rail',
-        desc: 'The workspace mark, New session, Board, Tasks, Workflows, Chat, Connections (Connect on the rail) and Impact. Settings, the bug icon and the Goodboy mark sit at the foot. An amber number on Board says sessions need you; Monitor says when a pinned port is down.',
+        desc: 'The workspace mark, New session, Board, Tasks, Workflows, Chat, Connections (Connect on the rail) and Impact. Settings, the bug icon and the Goodboy mark sit at the foot. An amber number on Board says sessions need you; Monitor on the right rail says when a pinned port is down.',
       },
       {
         term: 'Sessions',

@@ -326,7 +326,6 @@ export const BASE_SCENES = {
   workspace: WorkspaceScene,
   workflow: WorkflowScene,
   shell: ShellScene,
-  'column-rail': () => createElement(ShellScene, { isRail: true }),
   'chat-shell': ChatShellScene,
   'chat-room': ChatRoomScene,
   inbox: InboxScene,

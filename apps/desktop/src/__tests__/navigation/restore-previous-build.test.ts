@@ -29,7 +29,9 @@ vi.mock('../../shared/lib/db', async () =>
 import { readFileSync } from 'fs';
 import { join } from 'path';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, renderHook } from '@testing-library/react';
+import { cleanup, render, renderHook, screen } from '@testing-library/react';
+import { createElement } from 'react';
+import { AppShell } from '@goodboy/ui';
 import { brandId, type AgentId, type SessionId, type WorkspaceId } from '@goodboy/types';
 import { anAgent, aSession } from '@goodboy/types/testing';
 import {
@@ -43,13 +45,14 @@ import { DRAWER_KINDS } from '../../store/slices/drawer/drawerKinds';
 import { UNSAVED_DRAWER_KINDS } from '../../store/slices/drawer/unsavedDrawerKinds';
 import { IPHONE_SETTINGS_PLACE } from '../../features/settings/iphoneSettingsPlace';
 import { listWindowLayouts } from '../../features/workspace/windowLayout';
-import { useSessionSidebarVisibility } from '../../features/workspace/hooks/useSessionSidebarVisibility';
 import { useLevelCardFold } from '../../app/components/SessionRail/SessionLevel/useLevelCardFold';
 import { useRailTreeOpen } from '../../app/components/SessionRail/SessionLevel/useRailTreeOpen';
 import { PREVIOUS_BUILD_BLOBS } from './previousBuildBlobs';
 import { READER_DRAWER_STORAGE_KEY, RIGHT_DRAWER_STORAGE_KEY } from '@goodboy/ui';
 import { selectGridTool } from '../../store/slices/drawer/selectGridTool';
 import { watchSessionDockGrid } from '../../features/workspace/hooks/useSessionDockGrid/watchSessionDockGrid';
+import { ShellLeft } from '../../app/components/ShellLeft';
+import { shellArrangement } from '../../app/shellArrangement';
 
 const WS = brandId<WorkspaceId>({ value: 'ws-harborline' });
 const SESSION = brandId<SessionId>({ value: 'session-ledger-core' });
@@ -63,7 +66,8 @@ const RETIRED_DRAWER_KINDS: ReadonlyArray<string> = [
 ];
 
 const FORMER_KEYS = {
-  sessionSidebarCollapsed: 'goodboy:sessions-sidebar-collapsed',
+  sidebarCollapsed: 'goodboy:sessions-sidebar-collapsed',
+  sidebarWidth: 'goodboy:left-sidebar-width:v3',
   sessionRailFoldedCards: 'goodboy:session-rail-folded-cards:v1',
   sessionRailTreeOpen: 'goodboy:session-rail-tree-open:v1',
 } as const;
@@ -282,16 +286,6 @@ describe('layouts saved by the previous build', () => {
 });
 
 describe('fold states saved by the previous build', () => {
-  it('reads the folded main sidebar and the open one', () => {
-    localStorage.setItem(FORMER_KEYS.sessionSidebarCollapsed, '1');
-    const folded = renderHook(() => useSessionSidebarVisibility({ hasSidebar: true }));
-    expect(folded.result.current.isCollapsed).toBe(true);
-
-    localStorage.setItem(FORMER_KEYS.sessionSidebarCollapsed, '0');
-    const open = renderHook(() => useSessionSidebarVisibility({ hasSidebar: true }));
-    expect(open.result.current.isCollapsed).toBe(false);
-  });
-
   it('reads the folded cards of the session level and ignores a name it does not know', () => {
     localStorage.setItem(
       FORMER_KEYS.sessionRailFoldedCards,
@@ -326,14 +320,9 @@ describe('fold states saved by the previous build', () => {
   });
 
   it('falls back to the defaults on a value no build wrote', () => {
-    localStorage.setItem(FORMER_KEYS.sessionSidebarCollapsed, 'maybe');
     localStorage.setItem(FORMER_KEYS.sessionRailFoldedCards, '{');
     localStorage.setItem(FORMER_KEYS.sessionRailTreeOpen, '[');
 
-    expect(
-      renderHook(() => useSessionSidebarVisibility({ hasSidebar: true })).result.current
-        .isCollapsed,
-    ).toBe(false);
     expect(renderHook(() => useLevelCardFold({ card: 'projects' })).result.current.isOpen).toBe(
       true,
     );
@@ -374,5 +363,58 @@ describe('the dock grid on a database the previous build left', () => {
 
     expect(row).toContain(READER_DRAWER_STORAGE_KEY);
     expect(row?.split('|').map((cell) => cell.trim())[4]).toBe('0.42.0');
+  });
+});
+
+describe('the sidebar a 0.39 build saved', () => {
+  const noop = () => undefined;
+
+  const bootShell = () =>
+    render(
+      createElement(AppShell, {
+        leftRail: createElement(ShellLeft, {
+          arrangement: shellArrangement({ hasWorkspace: true }),
+          workspaceId: WS,
+          actions: {
+            openBoard: noop,
+            openInbox: noop,
+            openChat: noop,
+            openWorkflows: noop,
+            openNewChat: noop,
+            openConnections: noop,
+            openMonitoring: noop,
+            openImpact: noop,
+            openSettings: noop,
+            openChangelog: noop,
+            openGuide: noop,
+          },
+        }),
+        main: createElement('div'),
+      }),
+    );
+
+  it('boots on the places rail from a folded sidebar 320 wide, and leaves both keys for a return to 0.39', () => {
+    localStorage.setItem(FORMER_KEYS.sidebarCollapsed, '1');
+    localStorage.setItem(FORMER_KEYS.sidebarWidth, '320');
+
+    bootShell();
+
+    const rail = screen.getByRole('navigation', { name: 'Places' });
+    expect(rail.style.width).toBe('64px');
+    screen.getByRole('button', { name: 'Board' });
+    const grid = rail.closest('aside')?.parentElement;
+    expect(grid?.style.gridTemplateColumns.split(' ').slice(0, 2)).toEqual(['auto', '0px']);
+    expect(screen.queryByRole('separator', { name: 'Resize left sidebar' })).toBeNull();
+    expect(localStorage.getItem(FORMER_KEYS.sidebarCollapsed)).toBe('1');
+    expect(localStorage.getItem(FORMER_KEYS.sidebarWidth)).toBe('320');
+  });
+
+  it('draws the same rail from an open sidebar, so the old fold changes nothing', () => {
+    localStorage.setItem(FORMER_KEYS.sidebarCollapsed, '0');
+    localStorage.setItem(FORMER_KEYS.sidebarWidth, '320');
+
+    bootShell();
+
+    expect(screen.getByRole('navigation', { name: 'Places' }).style.width).toBe('64px');
   });
 });

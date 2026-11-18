@@ -77,7 +77,7 @@ vi.mock('../../../onboarding/SetupCard', () => ({
   SetupCard: () => <div data-testid="setup-card" />,
 }));
 
-vi.mock('../SessionActivityBar/SessionFilterPopover', () => ({
+vi.mock('./SessionFilterPopover', () => ({
   SessionFilterPopover: () => <span data-testid="session-filter" />,
 }));
 

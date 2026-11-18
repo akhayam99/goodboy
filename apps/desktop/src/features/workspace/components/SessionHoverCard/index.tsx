@@ -8,18 +8,12 @@ import {
   useFloatingPlace,
   useHoverSurface,
 } from '@goodboy/ui';
-import type { Session, SessionAttentionReason, SessionId } from '@goodboy/types';
-import { openGuideChapter } from '../../../settings/openGuideChapter';
+import type { Session } from '@goodboy/types';
 import { SessionHoverCardBody } from './SessionHoverCardBody';
 
 const CARD_WIDTH = POPOVER_WIDTH_PX.standard;
 const GAP = 8;
 const EDGE = 8;
-
-type OpenAttention = {
-  readonly sessionId: SessionId;
-  readonly reason: SessionAttentionReason | null;
-};
 
 type Props = {
   readonly session: Session | null;
@@ -29,8 +23,6 @@ type Props = {
   readonly onKeep: () => void;
   readonly onLeave: () => void;
   readonly onClose: () => void;
-  readonly onOpenAttention: (params: OpenAttention) => void;
-  readonly isFactsOnly?: boolean;
 };
 
 export const SessionHoverCard = ({
@@ -41,8 +33,6 @@ export const SessionHoverCard = ({
   onKeep,
   onLeave,
   onClose,
-  onOpenAttention,
-  isFactsOnly = false,
 }: Props) => {
   const isShown = session !== null && anchor !== null;
   const cardRef = useRef<HTMLDivElement | null>(null);
@@ -85,16 +75,7 @@ export const SessionHoverCard = ({
         place !== null && 'motion-safe:animate-popover-in',
       )}
     >
-      <SessionHoverCardBody
-        session={session}
-        isArchived={isArchived}
-        isFactsOnly={isFactsOnly}
-        onOpenAttention={onOpenAttention}
-        onOpenLegend={() => {
-          openGuideChapter({ id: 'legend' });
-          onClose();
-        }}
-      />
+      <SessionHoverCardBody session={session} isArchived={isArchived} />
     </div>,
     document.body,
   );

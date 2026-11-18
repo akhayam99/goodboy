@@ -379,7 +379,7 @@ each case.
 
 ## Session row, hover card and switcher
 
-A session in the left column is one 28px line: the title and one trailing
+A session row in Sessions is one line: the title and one trailing
 `StatusMark`. It has no second line, no `ToneBar`, no age and no cost.
 `sessionNodeOf` picks the node (kind, tone, words, unread) from the stage and,
 under needs you, from the winning reason, and every surface that says why a
@@ -387,7 +387,7 @@ session waits reads the same table, `ATTENTION_REASON_META` in
 `features/session/session-stage.ts`: one mark, one tone and one sentence per
 reason. A state has one glyph: `attentionMarkOf` turns a reason into its
 `StatusMark`, and `sessionMarkOf` turns a session into its mark through it. The
-session list row, the pinned rows, the switcher row, the hover
+Sessions row, the switcher row, the hover
 card, the Board card signal, the Now chip rows, the palette's Needs you rows and
 the Guide legend all draw that `StatusMark`, so a Lead that needs you is the
 same amber hand everywhere, and the node's accessible label is the sentence.
@@ -426,10 +426,9 @@ queue.
 below the needs-you reasons and above `pr-approved`, and it is mutually exclusive
 with it: a pull request in the merge queue is never also approved, ready to merge,
 whatever its review decision. The session stays in the review stage, so the Board
-card sits in In review with the `primary` tone bar, the sidebar, the switcher
-and the hover card draw the `merging` mark and the words, and the Now chip and
-the palette's Needs you rows never list it. The hover card shows no Needs you
-action for it. With several mounts, a mount in review or approved speaks for the
+card sits in In review with the `primary` tone bar, the Sessions row, the
+switcher and the hover card draw the `merging` mark and the words, and the Now
+chip and the palette's Needs you rows never list it. With several mounts, a mount in review or approved speaks for the
 session ahead of a mount in the queue, and failing checks speak ahead of both.
 
 `plan-approval` names the plan's version when it is known and says "The plan
@@ -447,11 +446,11 @@ set while the dismissed fingerprint of its suggestion holds, and a reason that
 asks for input is never deferred. A session waiting for you also carries
 `attentionSince`, the time its winning reason became true when the store keeps
 one (a blocked turn, a question, a failed turn, an unread reply, a Slack draft),
-and the Needs you order follows it, falling back to the last edit. Mark as unread stamps the latest finished agent unseen (`markAgentUnviewed`, `lastViewedAt` cleared in the store and the database) and never the agent on screen in the open session, which counts as seen; Mark as read and Mark all as read stamp every unread agent (`markAllAgentsSeen`, `markSessionsRead`), and `sessionHasUnread` is the one test for a row's dot. An unread reply is not a mark: in the left column it is the row's 6px dot alone
+and the Needs you order follows it, falling back to the last edit. Mark as unread stamps the latest finished agent unseen (`markAgentUnviewed`, `lastViewedAt` cleared in the store and the database) and never the agent on screen in the open session, which counts as seen; Mark as read and Mark all as read stamp every unread agent (`markAllAgentsSeen`, `markSessionsRead`), and `sessionHasUnread` is the one test for a row's dot. An unread reply is not a mark: in a Sessions row it is the row's 6px dot alone
 in the mark box, unless the session asks you, failed or runs, which outranks it
 (`sessionMarkOf`), and the switcher and the hover card draw the same mark.
 
-The door pill. The Board door, the folded rail, the top bar, the number on the
+The Board count. The Board item of the places rail, the top bar, the number on the
 Board's Needs you lane and the Needs you group of the session order
 (`sessionOrderOf`) say how many sessions need you with one function,
 `attentionCountOf` (read through `useWorkspaceAttention`), over every session
@@ -459,12 +458,11 @@ of the workspace and never the project filter. The lane keeps that number
 while the filter hides some of its cards or a quiet card sits in it; with only
 quiet cards it draws no number. A session counts when its stage is needs you and one of its
 reasons is `warning` or `danger`; a session waiting only on `unread-reply` or
-`pr-approved` is quiet and does not count. On the Board door the count is the
-number alone in a `StatusMark` (`9+` above nine, `text-chip`), in `warning`, or
+`pr-approved` is quiet and does not count. On the places rail the Board item
+wears the count as a `CountBadge` on its glyph (`railMarkOf`), in `warning`, or
 `danger` as soon as one counted session has a danger reason (`agent-error`,
-`run-stopped`, `push-failed`, `ci-failed`); the folded rail, with no room for a
-number, shows the dot in that tone. A door with only quiet sessions shows the
-neutral dot and no number. The tooltip and the label keep the
+`run-stopped`, `push-failed`, `ci-failed`); with only quiet sessions it wears no
+mark. The tooltip and the label keep the
 reasons ("3 need you: Checks failing, 1 question for you"). The top bar holds
 no target of its own for it, because the chrome is capped at 24: the Now chip
 leads with the same count as its first segment (a dot in the worst tone, the
@@ -534,34 +532,16 @@ adds a line, An agent is working. An agent error and a stopped run keep their pl
 Failing checks, changes requested, comments it couldn't fix, approved and unread
 rank below running, because an agent may be working on exactly that.
 
-The title is `text-row`. Needs you and running read in `foreground`, idle, done
-and archived in `muted-foreground`. The open session is medium weight, and its
-row has no fill while its pages are nested under it. The pages are 28px
-child rows in a `SelectableRow` (the five work pages, and Questions while one is
-open, warning-toned), with no indent of their own because the card
-groups them (see The left column): the page icon in its concept tone, centred
-in a 14px box so it sits in the node's column, then its word starting at the
-title's x, and its count word in `faint-foreground`. There is one current sign,
-from `currentSignOf`: the page that matches takes `bg-selected` and
-`aria-current="page"` alone; where no row matches (Tools, linked records) or
-the pages are folded, the session row takes `bg-selected` and
-`aria-current="page"`; while a studio sits over it the session row keeps medium
-weight and `text-foreground` with no fill and no `aria-current` (`remembered`).
-The row carries `data-current-sign`. A 16px chevron button sits at the right end
-of the open row (visible on hover and focus, always visible while folded,
-`aria-expanded`), and a 20px ghost pin button in the same slot on hover and
-focus of any live row (the checkbox owns the left slot). With two or more
-branches the card nests a 28px row per branch under the Branch page while it
-is current, at the page indent, up to five and then `All branches`: the repo
-glyph, the branch cut at the end in `text-code`, and the pull request glyph;
-the current branch reads in `foreground`. Every row and button takes its hover
-wash and focus ring from `ROW_INTERACTIVE`, never a copy.
+A Sessions row (`SessionsRow`) is a 32px `SelectableRow` option: the mark, the
+title in `text-ui`, the project in `faint-foreground` and a pin toggle, quiet at
+rest and `muted-foreground` while pinned. Its hover wash and focus ring come from
+`ROW_INTERACTIVE` through `SelectableRow`, never a copy.
 
 The hover card is `bg-floating`, `floating-edge`, `shadow-lg`, 320px wide and `p-3`,
 and its title row, state rows and facts line are the `FactCard` parts
 (`FactCardHeader`, `FactCardState`, `FactCardFootnote`), so it and every fact
 card share one anatomy and cannot drift; only its chips and actions are its own,
-at `z-popover`, 8px to the right of the column and aligned to its row, with a
+at `z-popover`, 8px to the right of its board card and aligned to its top, with a
 `gap-3` between its blocks: the title in `text-heading`, the node with the stage
 word and its reason in `text-meta` (under needs you, the winning reason's
 words, then each other reason that holds on its own line behind a small tone
@@ -569,8 +549,8 @@ dot, so a red mark is always explained),
 the run progress, the chips (`Chip` `xs`:
 the pull request in its presentation tone, linked tasks as the compact task
 chip, projects with the folder glyph), a `text-meta` line of agents, spend and
-age in `faint-foreground`, and one `GhostActionButton` when the session needs
-you. It opens after a 500ms rest or keyboard focus, swaps at once between rows,
+age in `faint-foreground`. It holds facts only. It opens after a 500ms rest or
+keyboard focus, swaps at once between cards,
 and enters with `popover-in` once, never on a swap.
 
 The switcher is the palette frame (`z-command-palette`, a scrim, the floating
@@ -581,22 +561,6 @@ work and live in the Keyboard shortcuts list. It stays hidden for the first
 120ms of a hold, so a quick tap flips sessions without drawing it. With pins it
 adds a `Pinned` eyebrow and listbox of up to eight sessions above `Recent
 sessions`; the first `Tab` still selects the previous session wherever it sits.
-
-## Rail
-
-The 44px rail (`ColumnRail`) keeps its 32px door buttons and adds 28px node
-buttons (`RAIL_NODE_BUTTON` in `RailButton.tsx`) under the doors, in the
-workspace scope only: the open session (the row's `StatusMark`, a quiet neutral dot when the row has none, current
-fill on its page, no fill and `text-foreground` while a studio sits over it),
-then up to seven pinned sessions with the title and the stage words in a
-tooltip, then `+N` in `text-meta`. The open session and `+N` open a flyout
-instead of a tooltip: the floating surface, 288px wide, `z-popover`, 8px to the
-right of the button, holding the title and stage words, the pages list (the
-same `SessionPages`), the branches and a `Pinned` eyebrow with one row per pin.
-It opens after a 150ms rest or keyboard focus, closes 180ms after the pointer
-leaves, and Esc closes it and returns focus to the button. `New` shows a 6px
-primary dot (`data-slot="draft-dot"`) while a written draft waits, and its label
-and tooltip read `New session, draft in progress`.
 
 ## Shell rail
 

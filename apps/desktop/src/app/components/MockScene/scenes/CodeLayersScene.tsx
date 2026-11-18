@@ -41,5 +41,5 @@ export const CodeLayersScene = () => {
     return null;
   }
 
-  return <AppFrame view="session" isRailCollapsed />;
+  return <AppFrame view="session" />;
 };

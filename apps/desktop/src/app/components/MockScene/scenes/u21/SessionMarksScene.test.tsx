@@ -6,7 +6,7 @@ vi.mock('@tauri-apps/api/core', () => ({
 vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn(async () => () => undefined) }));
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
@@ -111,36 +111,36 @@ const MARKS: ReadonlyArray<Mark> = [
     state: 'merging',
     words: 'In merge queue',
   },
-  {
-    title: 'Northwind CSV export',
-    tone: 'merged',
-    state: 'merged',
-    words: 'Done',
-  },
 ];
 
-const rowOf = (title: string): HTMLElement => screen.getByRole('option', { name: title });
+const openSessions = async (): Promise<HTMLElement> => {
+  render(
+    <ToastProvider>
+      <SessionMarksScene />
+    </ToastProvider>,
+  );
+  const trigger = await screen.findByRole('button', { name: 'Sessions' });
+  fireEvent.click(trigger);
+  return screen.findByRole('listbox', { name: 'Sessions' });
+};
 
-const unreadTitles = (): ReadonlyArray<string> =>
-  screen
+const rowOf = (list: HTMLElement, title: string): HTMLElement => {
+  const row = within(list)
     .getAllByRole('option')
-    .filter((row) => row.hasAttribute('data-unread'))
-    .map((row) => row.getAttribute('aria-label') ?? row.textContent ?? '');
+    .find((option) => option.textContent?.startsWith(title) === true);
+  if (row === undefined) {
+    throw new Error(`Sessions has no row ${title}`);
+  }
+  return row;
+};
 
 describe('the session marks scene', () => {
   it.each(MARKS.map((mark) => [mark.title, mark] as const))(
-    'marks "%s" by what it means',
+    'marks "%s" by what it means in Sessions',
     async (_title, mark) => {
-      render(
-        <ToastProvider>
-          <SessionMarksScene />
-        </ToastProvider>,
-      );
-      await waitFor(() => expect(rowOf(mark.title)).toBeDefined());
-      const row = rowOf(mark.title);
-      const node = row.querySelector('[data-row-state] [role="img"]');
+      const list = await openSessions();
+      const node = rowOf(list, mark.title).querySelector('[role="img"]');
 
-      expect(row.querySelector('[data-node-tone]')?.getAttribute('data-node-tone')).toBe(mark.tone);
       expect(
         node?.getAttribute('data-status-state') ?? node?.getAttribute('data-status-mark'),
       ).toBe(mark.state);
@@ -161,83 +161,24 @@ describe('the session marks scene', () => {
   });
 
   it('keeps an empty slot on a row with nothing to say, so the titles stay aligned', async () => {
-    render(
-      <ToastProvider>
-        <SessionMarksScene />
-      </ToastProvider>,
-    );
-    await waitFor(() => expect(rowOf('Add a Harborline export schema')).toBeDefined());
-    const row = rowOf('Add a Harborline export schema');
+    const list = await openSessions();
+    const row = rowOf(list, 'Add a Harborline export schema');
 
     expect(row.querySelector('[role="img"]')).toBeNull();
-    expect(row.querySelector('[data-row-state] [data-status-mark="empty"]')).not.toBeNull();
+    expect(row.querySelector('[data-status-mark="empty"]')).not.toBeNull();
   });
 
-  it('sets the unread reply in the strong row weight and nothing else', async () => {
-    render(
-      <ToastProvider>
-        <SessionMarksScene />
-      </ToastProvider>,
+  it('counts the sessions that need you on the Board of the rail alone, red as one is broken', async () => {
+    await openSessions();
+
+    const board = document.querySelector('[data-shell-rail-item="board"]');
+    const mark = board
+      ?.closest('[data-slot="shell-rail-item"]')
+      ?.querySelector('[data-slot="rail-mark"]');
+    expect(mark?.textContent).toBe('9+');
+    expect(mark?.querySelector('[data-count-badge]')?.getAttribute('data-count-badge')).toBe(
+      'danger',
     );
-    await waitFor(() => expect(rowOf('Review the Acme import mapper')).toBeDefined());
-
-    expect(unreadTitles()).toEqual(['Review the Acme import mapper']);
-  });
-
-  it('clears the unread reply with Mark all as read in the Sessions options menu, then turns the button off', async () => {
-    render(
-      <ToastProvider>
-        <SessionMarksScene />
-      </ToastProvider>,
-    );
-    await waitFor(() => expect(rowOf('Review the Acme import mapper')).toBeDefined());
-    expect(unreadTitles()).toHaveLength(1);
-
-    fireEvent.click(screen.getByRole('button', { name: 'Filter sessions' }));
-    const menu = screen.getByRole('dialog', { name: 'Filter sessions' });
-    await act(async () => {
-      fireEvent.click(within(menu).getByRole('button', { name: 'Mark all as read' }));
-    });
-
-    expect(unreadTitles()).toHaveLength(0);
-    expect(
-      within(menu).getByRole('button', { name: 'Mark all as read' }).hasAttribute('disabled'),
-    ).toBe(true);
-  });
-
-  it('counts the sessions that need you on the Sessions door alone, red as one is broken', async () => {
-    render(
-      <ToastProvider>
-        <SessionMarksScene />
-      </ToastProvider>,
-    );
-    await waitFor(() => expect(rowOf('Billing export fails on large files')).toBeDefined());
-
-    const count = document.querySelector('[data-column-door="board"] [data-door-count]');
-    expect(count?.textContent).toBe('9+');
-    expect(count?.getAttribute('data-door-signal')).toBe('danger');
     expect(document.querySelector('[data-top-bar] [data-now-needs-you]')).toBeNull();
-  });
-
-  it('keeps red for the error, a stopped run, a push that failed and failing checks only', async () => {
-    render(
-      <ToastProvider>
-        <SessionMarksScene />
-      </ToastProvider>,
-    );
-    await waitFor(() => expect(rowOf('Billing export fails on large files')).toBeDefined());
-
-    const red = Array.from(document.querySelectorAll('[data-node-tone="danger"]')).map(
-      (node) => node.closest('button')?.firstElementChild?.textContent ?? '',
-    );
-    expect(red.sort()).toEqual(
-      [
-        'Billing export fails on large files',
-        'Send the Harborline ledger fixes',
-        'Ship the refund webhook',
-        'Stop notify-relay retries on a 409',
-        'Sync the Northwind ledger nightly',
-      ].sort(),
-    );
   });
 });

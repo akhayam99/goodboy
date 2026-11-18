@@ -120,7 +120,7 @@ describe('session tools rows stay reachable', () => {
     expect(mounts.map((mount) => mount.worktreePath)).toContain(tab?.cwd);
   });
 
-  it('the tools column holds Terminal and Browser only, no Explore, Agents or Scripts button', async () => {
+  it('the tools column holds the five tools, no Explore or Agents button', async () => {
     const sessionId = seedSessionWithMounts({ useAppStore });
     await mountSession({ sessionId });
 
@@ -128,8 +128,14 @@ describe('session tools rows stay reachable', () => {
       within(tools())
         .getAllByRole('button')
         .map((button) => button.getAttribute('data-testid')),
-    ).toEqual(['pane-toggle-terminal', 'pane-toggle-browser']);
-    for (const name of ['Explore', 'Agents', /^Scripts/]) {
+    ).toEqual([
+      'pane-toggle-terminal',
+      'pane-toggle-browser',
+      'pane-toggle-scripts',
+      'pane-toggle-ask',
+      'pane-toggle-monitoring',
+    ]);
+    for (const name of ['Explore', 'Agents']) {
       expect(within(tools()).queryByRole('button', { name })).toBeNull();
     }
   });

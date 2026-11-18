@@ -39,9 +39,10 @@ import {
 import { brandedId } from '../../../features/history/testing/brandedId';
 import { testTurn } from '../../../features/file-versions/testing/testTurn';
 import type { AppStore } from '../../../store/store';
-import type { ColumnActions } from '../SideColumn/columnDoors';
+import type { ColumnActions } from '../ShellLeft/columnDoors';
 import type { ColumnPlace } from '../../../shared/navigation/columnPlace';
-import { SideColumn } from '../SideColumn';
+import { ShellLeft } from '../ShellLeft';
+import { shellArrangement } from '../../shellArrangement';
 import { SessionContextCards } from '../SessionContextCards';
 import { SessionFrame } from './SessionFrame';
 import { SessionHead } from '../SessionHead';
@@ -131,12 +132,11 @@ const Shell = ({ place = null }: MountParams) => {
   const currentSessionId = current?.id ?? null;
   return (
     <ToastProvider>
-      <SideColumn
-        scope="workspace"
+      <ShellLeft
+        arrangement={shellArrangement({ hasWorkspace: true })}
         workspaceId={harborline.id}
-        currentSessionId={currentSessionId}
-        place={place}
         actions={actions()}
+        {...(place === null ? {} : { placeOverride: place })}
       />
       {current === null ? null : (
         <SessionFrame session={current}>

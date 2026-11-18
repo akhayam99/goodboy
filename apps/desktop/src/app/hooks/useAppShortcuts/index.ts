@@ -47,7 +47,6 @@ type AppShortcutsParams = {
   readonly openSettings: () => void;
   readonly openNewChat: () => void;
   readonly openShortcutHelp: () => void;
-  readonly toggleSidebar: () => void;
 };
 
 type IndexParams = {
@@ -85,7 +84,6 @@ export const useAppShortcuts = ({
   openSettings,
   openNewChat,
   openShortcutHelp,
-  toggleSidebar,
 }: AppShortcutsParams): void => {
   useShortcutOverrides();
   const workspaces = useWorkspaces();
@@ -214,7 +212,6 @@ export const useAppShortcuts = ({
   );
   const goToBoard = useGoToBoard();
 
-  useShortcut('column.toggle', toggleSidebar);
   useShortcut('innerColumn.toggle', () => {
     innerColumnStore.toggleCurrent();
   });

@@ -30,7 +30,7 @@ export const BrowserPaneScene = ({ state, theme }: Props) => {
   }
   return (
     <>
-      <AppFrame view={state === 'page' ? 'browser' : 'session'} isRailCollapsed={false} hasPane />
+      <AppFrame view={state === 'page' ? 'browser' : 'session'} hasPane />
       {state === 'keys' ? <PaletteOverlay initialQuery="dev" onClose={noop} /> : null}
       {state === 'cover' ? <BrowserCoverMenu /> : null}
     </>

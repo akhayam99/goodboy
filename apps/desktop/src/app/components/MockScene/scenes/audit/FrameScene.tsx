@@ -38,5 +38,5 @@ export const FrameScene = () => {
   if (!isReady) {
     return null;
   }
-  return <AppFrame view={VIEW} isRailCollapsed={CONTEXT === 'rail'} />;
+  return <AppFrame view={VIEW} />;
 };

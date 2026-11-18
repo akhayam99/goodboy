@@ -1,21 +1,11 @@
 import { useEffect, useState, type ComponentType } from 'react';
 import { useAppStore } from '../../../../../store';
-import { GoodboyChip } from '../../../GoodboyChip';
-import { ReportBugButton } from '../../../SideColumn/ReportBugButton';
+import { ScenePlacesRail } from '../ScenePlacesRail';
 import { installSceneDatabase } from '../sceneDatabase';
 
-const SIDEBAR_WIDTH_PX = 240;
 const NARROW_WINDOW = { width: 900, height: 600 } as const;
 const VERSION = '0.24.1';
 const LONG_VERSION = '0.24.1-beta.20261010.preview.build.8f3c2a91e7d54b6fa0c1d2e3f4a5b6c7d8e9f0';
-
-const ROWS: ReadonlyArray<string> = [
-  'Reconcile the ledger export',
-  'Paginate the payments list',
-  'Retry failed notify-relay sends',
-];
-
-const noop = () => undefined;
 
 type FrameProps = {
   readonly version: string;
@@ -40,28 +30,7 @@ const UpdaterCardFrame = ({ version, size }: FrameProps) => {
       className="relative flex overflow-hidden bg-background text-foreground"
       style={size === undefined ? { height: '100vh' } : size}
     >
-      <aside
-        aria-label="Sidebar"
-        className="flex min-h-0 translate-x-0 flex-col justify-between overflow-hidden border-r border-border bg-background p-2"
-        style={{ width: SIDEBAR_WIDTH_PX }}
-      >
-        <ul className="flex flex-col gap-1">
-          {ROWS.map((row) => (
-            <li key={row} className="truncate px-2 py-1 text-meta text-muted-foreground">
-              {row}
-            </li>
-          ))}
-        </ul>
-        <div className="@container flex min-w-0 items-center gap-1">
-          <GoodboyChip
-            variant="column"
-            isCurrent={false}
-            onOpenChangelog={noop}
-            onOpenHelp={noop}
-          />
-          <ReportBugButton />
-        </div>
-      </aside>
+      <ScenePlacesRail />
     </main>
   );
 };

@@ -56,12 +56,7 @@ export const FloatingSurfacesScene = () => {
         <p className="text-meta text-faint-foreground">Robin reviews payments-api changes.</p>
       </Popover>
       <div className={cn(FLOATING_SURFACE, 'w-80 p-3 text-meta')}>
-        <SessionHoverCardBody
-          session={SESSION}
-          isArchived={false}
-          onOpenAttention={noop}
-          onOpenLegend={noop}
-        />
+        <SessionHoverCardBody session={SESSION} isArchived={false} />
       </div>
       <SwitcherPanel
         sessions={SWITCHER_SESSIONS}

@@ -16,7 +16,7 @@ const REASONS: ReadonlyArray<SessionAttentionReason> = Object.keys(ATTENTION_REA
   (key): key is SessionAttentionReason => Object.hasOwn(ATTENTION_REASON_META, key),
 );
 
-const ROW = 'features/workspace/components/SessionActivityBar/SessionActivityItem.tsx';
+const ROW = 'features/workspace/components/SessionsPopover/SessionsRow.tsx';
 
 const HOVER_CARD = 'features/workspace/components/SessionHoverCard/SessionHoverCardBody.tsx';
 
@@ -25,8 +25,6 @@ const SESSION_STATE_SURFACES: ReadonlyArray<string> = [
   HOVER_CARD,
   'features/workspace/components/SessionSwitcher/SwitcherRow.tsx',
   'features/workspace/components/StageBoard/SignalBody.tsx',
-  'app/components/SideColumn/RailSessionButton.tsx',
-  'app/components/SideColumn/RailPinnedRow.tsx',
   'app/components/AppTopBar/NowChip/NeedsYouSessionRow.tsx',
   'features/palette/sources/needsYouEntries.ts',
   'features/settings/components/GuideStudio/parts/LegendSessionMarks.tsx',

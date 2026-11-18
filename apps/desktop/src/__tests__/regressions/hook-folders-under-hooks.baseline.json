@@ -98,6 +98,5 @@
   "apps/desktop/src/shared/keyboard/overrides/useShortcutOverrides": 1,
   "apps/desktop/src/shared/lib/usePoll": 1,
   "apps/desktop/src/store/slices/project-mounts/useMountDiffRevision": 1,
-  "apps/desktop/src/store/slices/project-mounts/useMountDiffTick": 1,
-  "apps/desktop/src/store/slices/session-view/useSessionInactivity": 1
+  "apps/desktop/src/store/slices/project-mounts/useMountDiffTick": 1
 }

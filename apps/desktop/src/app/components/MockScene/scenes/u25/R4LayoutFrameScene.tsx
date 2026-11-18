@@ -17,5 +17,5 @@ export const R4LayoutFrameScene = ({ view, context }: Props) => {
   if (!isReady) {
     return null;
   }
-  return <AppFrame view={view} isRailCollapsed={false} />;
+  return <AppFrame view={view} />;
 };

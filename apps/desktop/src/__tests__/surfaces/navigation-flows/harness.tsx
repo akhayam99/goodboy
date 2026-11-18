@@ -35,6 +35,7 @@ import {
 import { hydrateOnboardingFromDb } from '../../../features/onboarding/onboardingSettings';
 import type { MountGithubState } from '../../../store/types';
 import { seedSessionWithMounts } from '../../helpers/seedSessionWithMounts';
+import { pressShortcut } from '../../helpers/pressKey';
 import { App } from '../../../App';
 import { STORAGE_KEYS } from '../../../shared/lib/storage-keys';
 import { openQuestionFor } from '../../../features/workspace/testing/sessionColumn';
@@ -304,6 +305,13 @@ export const settle = async (rounds = 4): Promise<void> => {
   }
 };
 
+export const pressBoardKey = async (): Promise<void> => {
+  const anchor = await screen.findByRole('button', { name: /^Search or run \(/ });
+  anchor.focus();
+  pressShortcut({ id: 'session.board' });
+  await settle();
+};
+
 const traceActions = (): void => {
   const state = useAppStore.getState() as unknown as Record<string, unknown>;
   const traced = Object.fromEntries(
@@ -437,7 +445,7 @@ export const boot = async ({ seed }: { readonly seed: Seed }): Promise<Ctx> => {
   traceActions();
   renderApp();
   await waitFor(() => {
-    expect(document.querySelector('[data-side-column]')).not.toBeNull();
+    expect(document.querySelector('[data-shell-rail]')).not.toBeNull();
     expect(screen.queryByTestId('boot-splash-exit')).toBeNull();
   }, WAIT);
   await settle(6);
@@ -614,8 +622,7 @@ export const settingsPage = async (): Promise<void> => {
   await visible('button', /^Back to app/);
   expect(document.querySelector('[data-studio-frame][data-studio="settings"]')).not.toBeNull();
   expect(document.querySelector('[data-studio-band]')).not.toBeNull();
-  expect(document.querySelector('[data-column-layer="settings"]')).toBeNull();
-  expect(document.querySelector('[data-column-layer="nav"][inert]')).toBeNull();
+  expect(document.querySelector('[data-shell-rail] [inert]')).toBeNull();
 };
 
 export const searchSettingsForConnections = async (): Promise<void> => {

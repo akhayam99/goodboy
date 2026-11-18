@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import { AppShell } from '@goodboy/ui';
 import type { FooterTarget } from '../../../hooks/useAppOverlays/overlayState';
 import { AppTopBar } from '../../AppTopBar';
-import { ShellLeft } from '../../SideColumn/ShellLeft';
+import { ShellLeft } from '../../ShellLeft';
 import type { ColumnPlace } from '../../../../shared/navigation/columnPlace';
 import { ToastProvider } from '../../../../shared/components/Toast';
 import { useAppStore } from '../../../../store';
@@ -21,8 +21,8 @@ type StudioFrameProps = {
 export const StudioFrame = ({ target, main, columnPlace }: StudioFrameProps) => {
   const workspaceId = useAppStore((state) => state.currentWorkspaceId);
   const isSettingsOpen = useAppStore((state) => state.appStudio?.kind === 'settings');
-  const arrangement = shellArrangement({ hasWorkspace: true, isSidebarCollapsed: false });
-  const shell = useSceneShell({ arrangement });
+  const arrangement = shellArrangement({ hasWorkspace: true });
+  const shell = useSceneShell({});
   const place = columnPlace === undefined ? sceneColumnPlace({ target }) : columnPlace;
 
   return (

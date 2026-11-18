@@ -19,5 +19,5 @@ export const SideTilesScene = ({ theme }: Props) => {
   if (!isReady) {
     return null;
   }
-  return <AppFrame view="board" isRailCollapsed={false} hasPane />;
+  return <AppFrame view="board" hasPane />;
 };

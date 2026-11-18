@@ -45,47 +45,19 @@ afterEach(() => {
 });
 
 type RenderParams = {
-  readonly variant?: 'column' | 'rail';
   readonly isCurrent?: boolean;
 };
 
-const renderChip = ({ variant = 'column', isCurrent = false }: RenderParams = {}) => {
+const renderChip = ({ isCurrent = false }: RenderParams = {}) => {
   const onOpenChangelog = vi.fn();
   const onOpenHelp = vi.fn();
   render(
-    <GoodboyChip
-      variant={variant}
-      isCurrent={isCurrent}
-      onOpenChangelog={onOpenChangelog}
-      onOpenHelp={onOpenHelp}
-    />,
+    <GoodboyChip isCurrent={isCurrent} onOpenChangelog={onOpenChangelog} onOpenHelp={onOpenHelp} />,
   );
   return { onOpenChangelog, onOpenHelp };
 };
 
-describe('GoodboyChip in the column', () => {
-  it('names Goodboy, beta and the version the build stamped at rest', () => {
-    renderChip();
-
-    const chip = screen.getByRole('button', { name: DOOR_LABEL });
-    expect(chip.textContent).toBe(`GoodboyBetav${APP_VERSION}`);
-    expect(chip.getAttribute('data-goodboy-chip')).toBe('column');
-  });
-
-  it.each(['dark', 'light'] as const)(
-    'wraps only the mark and the name in the brand chip in %s mode',
-    (theme) => {
-      applyDocumentTheme({ theme });
-      renderChip();
-
-      const chip = screen.getByRole('button', { name: DOOR_LABEL });
-      expect(chip.className).not.toContain('goodboy-brand-chip');
-      const brand = chip.querySelector('[data-brand-chip]');
-      expect(brand?.className).toContain('goodboy-brand-chip');
-      expect(brand?.textContent).toBe('Goodboy');
-    },
-  );
-
+describe('GoodboyChip on the rail', () => {
   it('is a door to Help, not a menu', () => {
     const { onOpenHelp, onOpenChangelog } = renderChip();
     const chip = screen.getByRole('button', { name: DOOR_LABEL });
@@ -109,35 +81,8 @@ describe('GoodboyChip in the column', () => {
     expect(onOpenHelp).not.toHaveBeenCalled();
   });
 
-  it('puts the update pill beside the bare lockup', () => {
-    useAppStore.setState({ updaterStatus: 'available' });
-    renderChip();
-
-    const chip = screen.getByTestId('goodboy-chip');
-    expect(chip.getAttribute('aria-label')).toBe(DOOR_LABEL);
-    expect(chip.querySelector('[data-lockup-wide]')?.textContent).toBe('Goodboy');
-    const pill = screen.getByRole('button', { name: 'Goodboy 0.5.2 is available' });
-    expect(pill.textContent).toBe('0.5.2');
-    expect(chip.contains(pill)).toBe(false);
-    expect(chip.parentElement?.contains(pill) ?? false).toBe(true);
-  });
-
-  it('opens the update card from the pill and leaves Help closed', () => {
-    useAppStore.setState({ updaterStatus: 'available' });
-    const { onOpenHelp, onOpenChangelog } = renderChip();
-
-    fireEvent.click(screen.getByRole('button', { name: 'Goodboy 0.5.2 is available' }));
-
-    const card = screen.getByRole('dialog', { name: 'Goodboy 0.5.2 is available' });
-    within(card).getByRole('button', { name: 'Update now' });
-    expect(onOpenHelp).not.toHaveBeenCalled();
-    expect(onOpenChangelog).not.toHaveBeenCalled();
-  });
-});
-
-describe('GoodboyChip on the rail', () => {
   it('keeps only the mark, as the same door to Help', () => {
-    const { onOpenHelp } = renderChip({ variant: 'rail' });
+    const { onOpenHelp } = renderChip();
 
     const chip = screen.getByRole('button', { name: DOOR_LABEL });
     expect(chip.textContent).toBe('');
@@ -148,7 +93,7 @@ describe('GoodboyChip on the rail', () => {
   });
 
   it('names the installed version in the logo tooltip, since no line shows it', () => {
-    renderChip({ variant: 'rail' });
+    renderChip();
     vi.useFakeTimers();
     fireEvent.mouseEnter(screen.getByRole('button', { name: DOOR_LABEL }));
     act(() => {
@@ -161,7 +106,7 @@ describe('GoodboyChip on the rail', () => {
 
   it('swaps the logo for the update mark: one place, one shape, no version line', () => {
     useAppStore.setState({ updaterStatus: 'available' });
-    const { onOpenHelp, onOpenChangelog } = renderChip({ variant: 'rail' });
+    const { onOpenHelp, onOpenChangelog } = renderChip();
 
     expect(screen.queryByTestId('goodboy-chip')).toBeNull();
     expect(screen.queryByRole('button', { name: DOOR_LABEL })).toBeNull();
@@ -180,14 +125,14 @@ describe('GoodboyChip on the rail', () => {
 
   it('tints the mark primary, and draws its edge only once the update is ready', () => {
     useAppStore.setState({ updaterStatus: 'available' });
-    renderChip({ variant: 'rail' });
+    renderChip();
     const available = screen.getByRole('button', { name: 'Goodboy 0.5.2 is available' });
     expect(available.getAttribute('data-tint')).toBe('primary');
     expect(available.hasAttribute('data-edged')).toBe(false);
     cleanup();
 
     useAppStore.setState({ updaterStatus: 'ready' });
-    renderChip({ variant: 'rail' });
+    renderChip();
     const ready = screen.getByRole('button', { name: 'Goodboy 0.5.2 is ready' });
     expect(ready.getAttribute('data-tint')).toBe('primary');
     expect(ready.hasAttribute('data-edged')).toBe(true);
@@ -198,7 +143,7 @@ describe('GoodboyChip on the rail', () => {
       updaterStatus: 'downloading-bg',
       updateProgress: { downloaded: 42, total: 100 },
     });
-    renderChip({ variant: 'rail' });
+    renderChip();
 
     const mark = screen.getByRole('button', {
       name: 'Goodboy 0.5.2 is available, downloading, 42%',
@@ -213,7 +158,7 @@ describe('GoodboyChip on the rail', () => {
   it('names the agents when some are running and keeps the ready look', () => {
     runningCount.value = 2;
     useAppStore.setState({ updaterStatus: 'ready' });
-    renderChip({ variant: 'rail' });
+    renderChip();
 
     const mark = screen.getByRole('button', { name: 'Goodboy 0.5.2 is ready' });
     expect(mark.hasAttribute('data-edged')).toBe(true);
@@ -225,7 +170,7 @@ describe('GoodboyChip on the rail', () => {
   it('keeps the ready look while the restart waits for the agents', () => {
     runningCount.value = 1;
     useAppStore.setState({ updaterStatus: 'ready', updateQueuedUntilIdle: true });
-    renderChip({ variant: 'rail' });
+    renderChip();
 
     const mark = screen.getByRole('button', { name: 'Restarts when the agent finishes' });
     expect(mark.hasAttribute('data-edged')).toBe(true);
@@ -241,7 +186,7 @@ describe('GoodboyChip on the rail', () => {
       updateFailure: { phase: 'install', message: 'disk is full' },
       applyUpdate,
     });
-    renderChip({ variant: 'rail' });
+    renderChip();
 
     const mark = screen.getByRole('button', { name: 'Goodboy 0.5.2 did not install' });
     expect(mark.getAttribute('data-tint')).toBe('danger');
@@ -255,7 +200,7 @@ describe('GoodboyChip on the rail', () => {
 
   it('puts the logo back once the update is gone', () => {
     useAppStore.setState({ updaterStatus: 'available' });
-    renderChip({ variant: 'rail' });
+    renderChip();
     expect(screen.queryByTestId('goodboy-chip')).toBeNull();
 
     act(() => {
@@ -263,19 +208,5 @@ describe('GoodboyChip on the rail', () => {
     });
 
     expect(screen.getByTestId('goodboy-chip').getAttribute('aria-label')).toBe(DOOR_LABEL);
-  });
-});
-
-describe('GoodboyChip sizing in the column', () => {
-  it('holds the full lockup and the bare mark at rest, so a narrow column falls to the mark', () => {
-    renderChip();
-
-    const chip = screen.getByRole('button', { name: DOOR_LABEL });
-    expect(chip.querySelector('[data-lockup-wide]')?.textContent).toBe(
-      `GoodboyBetav${APP_VERSION}`,
-    );
-    const narrow = chip.querySelector('[data-lockup-narrow]');
-    expect(narrow?.textContent).toBe('');
-    expect(narrow?.querySelector('[data-brand-chip]')).not.toBeNull();
   });
 });

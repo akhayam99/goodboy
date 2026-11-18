@@ -114,12 +114,7 @@ describe('New session draft and the New forms', () => {
     useAppStore.setState({ sessions: [session], goodboyNamedSessionId: session.id });
     render(
       <ToastProvider>
-        <SessionHoverCardBody
-          session={session}
-          isArchived={false}
-          onOpenAttention={() => undefined}
-          onOpenLegend={() => undefined}
-        />
+        <SessionHoverCardBody session={session} isArchived={false} />
       </ToastProvider>,
     );
     await settle();

@@ -231,8 +231,6 @@ describe('the r4 content scenes', () => {
     const sessionId = brandId<SessionId>({ value: 'mock-session-mount-rows' });
     const title = (): HTMLElement | null =>
       screen.queryByRole('heading', { level: 1 })?.querySelector('input') ?? null;
-    const sidebarField = (): HTMLElement | null =>
-      document.querySelector('[data-select-id] input, nav input[aria-label="Session title"]');
 
     act(() => {
       requestRename({ objectKey: sessionObjectKey({ sessionId }), anchorKey: null });
@@ -245,100 +243,5 @@ describe('the r4 content scenes', () => {
     }
     fireEvent.keyDown(editing, { key: 'Escape' });
     expect(title()).toBeNull();
-
-    act(() => {
-      requestRename({
-        objectKey: sessionObjectKey({ sessionId }),
-        anchorKey: `sidebar:${sessionId}`,
-      });
-    });
-    expect(title()).not.toBeNull();
-    expect(sidebarField()).toBeNull();
-  });
-
-  it('r4-overview-title renames a session whose Overview is not open on its sidebar row', async () => {
-    await mount('r4-overview-title');
-    const sibling = brandId<SessionId>({ value: 'mock-mounts-sibling-dunning' });
-
-    act(() => {
-      requestRename({
-        objectKey: sessionObjectKey({ sessionId: sibling }),
-        anchorKey: `sidebar:${sibling}`,
-      });
-    });
-
-    const field = screen.getByRole('textbox', { name: 'Session title' });
-    expect(field.closest('h1')).toBeNull();
-    expect(field).toHaveProperty('value', 'Retry failed card payments on a dunning schedule');
-  });
-
-  it('r4-overview-title shows a sidebar rename pending, then its error with Retry', async () => {
-    await mount('r4-overview-title');
-    const sibling = brandId<SessionId>({ value: 'mock-mounts-sibling-dunning' });
-    const answers: Array<{ resolve: () => void; reject: (error: Error) => void }> = [];
-    const renameTask = vi.fn(
-      () =>
-        new Promise<void>((resolve, reject) => {
-          answers.push({ resolve, reject });
-        }),
-    );
-    useAppStore.setState({ renameTask });
-    act(() => {
-      requestRename({
-        objectKey: sessionObjectKey({ sessionId: sibling }),
-        anchorKey: `sidebar:${sibling}`,
-      });
-    });
-    const field = screen.getByRole('textbox', { name: 'Session title' });
-    fireEvent.change(field, { target: { value: 'Retry card payments on a schedule' } });
-
-    const row = field.closest('[data-title-field]')?.parentElement;
-    if (!(row instanceof HTMLElement)) {
-      throw new Error('no title field host');
-    }
-    fireEvent.keyDown(field, { key: 'Enter' });
-    expect(within(row).getByRole('status').textContent).toBe('Saving');
-    expect(field.getAttribute('aria-busy')).toBe('true');
-    await act(async () => {
-      answers[0]?.reject(new Error('The database is locked'));
-    });
-
-    expect(within(row).getByRole('alert').textContent).toContain('The database is locked');
-    fireEvent.click(within(row).getByRole('button', { name: 'Retry' }));
-    expect(renameTask).toHaveBeenCalledTimes(2);
-    await act(async () => {
-      answers[1]?.resolve();
-    });
-
-    expect(screen.queryByRole('textbox', { name: 'Session title' })).toBeNull();
-    expect(within(row).queryByRole('alert')).toBeNull();
-    expect(within(row).queryByRole('button', { name: 'Retry' })).toBeNull();
-  });
-
-  it('r4-overview-title shows a refused name without Retry', async () => {
-    await mount('r4-overview-title');
-    const sibling = brandId<SessionId>({ value: 'mock-mounts-sibling-dunning' });
-    const renameTask = vi.fn(async () => undefined);
-    useAppStore.setState({ renameTask });
-    act(() => {
-      requestRename({
-        objectKey: sessionObjectKey({ sessionId: sibling }),
-        anchorKey: `sidebar:${sibling}`,
-      });
-    });
-    const field = screen.getByRole('textbox', { name: 'Session title' });
-    const row = field.closest('[data-title-field]')?.parentElement ?? null;
-    if (row === null) {
-      throw new Error('the rename field has no row');
-    }
-
-    fireEvent.change(field, { target: { value: 'x'.repeat(200) } });
-    await act(async () => {
-      fireEvent.keyDown(field, { key: 'Enter' });
-    });
-
-    expect(within(row).getByRole('alert').textContent).toContain('name is too long');
-    expect(within(row).queryByRole('button', { name: 'Retry' })).toBeNull();
-    expect(renameTask).not.toHaveBeenCalled();
   });
 });

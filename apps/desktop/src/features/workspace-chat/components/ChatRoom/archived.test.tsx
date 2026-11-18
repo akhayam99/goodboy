@@ -62,7 +62,13 @@ const chatOf = (archivedAt: IsoDateTime | null): ChatSummary => ({
 
 const renderRoom = (chat: ChatSummary) =>
   render(
-    <ChatRoom workspaceId={WORKSPACE_ID} chat={chat} onCreated={vi.fn()} onRemoved={vi.fn()} />,
+    <ChatRoom
+      workspaceId={WORKSPACE_ID}
+      chat={chat}
+      onCreated={vi.fn()}
+      onRemoved={vi.fn()}
+      onNewChat={vi.fn()}
+    />,
   );
 
 afterEach(() => {

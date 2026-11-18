@@ -15,4 +15,4 @@ Tell us what broke in one line. Press **Report** at the foot of the places rail,
 
 ## Under the hood
 
-- Report a bug: `apps/desktop/src/app/components/SideColumn/ShellLeft/index.tsx` renders `ReportBugButton` in the rail foot, as a rail item with the word Report; `apps/desktop/src/app/components/SideColumn/ReportBugButton.tsx` opens the report sheet.
+- Report a bug: `apps/desktop/src/app/components/ShellLeft/index.tsx` renders `ReportBugButton` in the rail foot, as a rail item with the word Report; `apps/desktop/src/app/components/ShellLeft/ReportBugButton.tsx` opens the report sheet.

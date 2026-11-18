@@ -7,7 +7,6 @@ export const MENU_BOUND_IDS: ReadonlyArray<string> = [
   'slot.close',
   'search.open',
   'sessions.toggle',
-  'column.toggle',
   'palette.open',
   'zoom.in',
   'zoom.out',

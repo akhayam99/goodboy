@@ -12,7 +12,6 @@
   "apps/desktop/src/features/workflows/components/AddStepMenu/index.tsx": 1,
   "apps/desktop/src/features/workflows/components/WorkflowStudio/ImportPopover/index.tsx": 1,
   "apps/desktop/src/features/workspace-chat/components/ChatList/ChatListRow.tsx": 1,
-  "apps/desktop/src/features/workspace/components/SessionActivityBar/index.tsx": 1,
   "apps/desktop/src/features/workspace/components/StageBoard/StageBoardCard/index.tsx": 2,
   "apps/desktop/src/features/workspace/components/WorkspaceLauncher/index.tsx": 1
 }

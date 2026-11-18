@@ -66,5 +66,5 @@ export const BellFrame = ({ notifications, clicks = NO_CLICKS }: Props) => {
   if (!isReady) {
     return null;
   }
-  return <AppFrame view="board" isRailCollapsed={false} />;
+  return <AppFrame view="board" />;
 };

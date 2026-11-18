@@ -343,35 +343,42 @@ describe('the Checks tab on Bitbucket', () => {
 });
 
 describe('the session marks scene on Bitbucket', () => {
-  const rowOf = (title: string): HTMLElement => screen.getByRole('option', { name: title });
+  const rowOf = (title: string): HTMLElement => {
+    const row = within(screen.getByRole('listbox', { name: 'Sessions' }))
+      .getAllByRole('option')
+      .find((option) => option.textContent?.startsWith(title) === true);
+    if (row === undefined) {
+      throw new Error(`Sessions has no row ${title}`);
+    }
+    return row;
+  };
 
   const markOf = (title: string) => {
-    const row = rowOf(title);
-    const node = row.querySelector('[data-row-state] [role="img"]');
+    const node = rowOf(title).querySelector('[role="img"]');
     return {
-      tone: row.querySelector('[data-node-tone]')?.getAttribute('data-node-tone'),
       state: node?.getAttribute('data-status-state'),
       words: (node?.getAttribute('aria-label') ?? '').replace(/, unseen$/, ''),
     };
   };
 
   it.each([
-    ['Stop notify-relay retries on a 409', 'danger', 'failed', 'Checks failing'],
-    ['Move the ledger export to a queue', 'warning', 'alert', 'Changes requested'],
-    ['Paginate the payments list', 'success', 'approved', 'Approved, ready to merge'],
-    ['Ship the refund webhook', 'danger', 'failed', 'Checks failing'],
+    ['Stop notify-relay retries on a 409', 'failed', 'Checks failing'],
+    ['Move the ledger export to a queue', 'alert', 'Changes requested'],
+    ['Paginate the payments list', 'approved', 'Approved, ready to merge'],
+    ['Ship the refund webhook', 'failed', 'Checks failing'],
   ] as const)(
-    'marks "%s" by what its statuses and reviewers say',
-    async (title, tone, state, words) => {
+    'marks "%s" in Sessions by what its statuses and reviewers say',
+    async (title, state, words) => {
       const Scene = U23_BITBUCKET_SCENES['session-marks-bitbucket'];
       render(
         <ToastProvider>
           <Scene />
         </ToastProvider>,
       );
+      fireEvent.click(await screen.findByRole('button', { name: 'Sessions' }));
       await waitFor(() => expect(rowOf(title)).toBeDefined());
 
-      expect(markOf(title)).toEqual({ tone, state, words });
+      expect(markOf(title)).toEqual({ state, words });
     },
   );
 });

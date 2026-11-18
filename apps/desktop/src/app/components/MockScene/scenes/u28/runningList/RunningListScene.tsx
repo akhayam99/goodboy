@@ -5,15 +5,13 @@ import { applyDocumentTheme } from '../../../../../../shared/lib/theme';
 import { useAppStore } from '../../../../../../store';
 import { selectDrawerPlacement } from '../../../../../../store/slices/drawer/selectDrawerPlacement';
 import { selectDrawerSizing } from '../../../../../../store/slices/drawer/testing/selectDrawerSizing';
-import { shellArrangement } from '../../../../../shellArrangement';
+import { ScenePlacesRail } from '../../ScenePlacesRail';
 import { CentralColumnPane } from '../../u26/CentralColumnPane';
 import { seedRunningList } from './runningListSeed';
 
 type Props = {
   readonly theme: 'dark' | 'light';
 };
-
-const arrangement = shellArrangement({ hasWorkspace: true, isSidebarCollapsed: true });
 
 const WIDTH = 1180;
 const HEIGHT = 760;
@@ -38,8 +36,7 @@ export const RunningListScene = ({ theme }: Props) => {
         className="[&>div]:h-full [&>div]:w-full"
       >
         <AppShell
-          leftSidebarCollapsed={arrangement.leftSidebarCollapsed}
-          leftSidebar={<div aria-hidden />}
+          leftRail={<ScenePlacesRail />}
           main={<CentralColumnPane />}
           drawer={null}
           drawerSizing={drawerSizing}

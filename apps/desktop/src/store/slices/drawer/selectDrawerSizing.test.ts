@@ -12,8 +12,6 @@ import type {
 } from '@goodboy/types';
 import {
   DRAWER_GUTTER,
-  LEFT_SIDEBAR_DEFAULT,
-  LEFT_SIDEBAR_MAX,
   READER_DRAWER_DEFAULT,
   READER_DRAWER_MAX,
   RIGHT_DRAWER_MAX,
@@ -32,7 +30,11 @@ import { selectDrawerSizing } from './testing/selectDrawerSizing';
 const MOUNT_ID: MountId = JSON.parse(JSON.stringify('mount-1'));
 const SESSION_ID = brandId<SessionId>({ value: 'session-1' });
 const WINDOWS = [1280, 1440] as const;
-const SIDEBARS = [LEFT_SIDEBAR_DEFAULT, LEFT_SIDEBAR_MAX] as const;
+const NARROW_COLUMN_PX = 240;
+
+const WIDE_COLUMN_PX = 400;
+
+const SIDEBARS = [NARROW_COLUMN_PX, WIDE_COLUMN_PX] as const;
 const SAVED_WIDTHS: Readonly<Record<DrawerSizing, ReadonlyArray<number>>> = {
   side: [400, RIGHT_DRAWER_MAX],
   reader: [READER_DRAWER_DEFAULT, READER_DRAWER_MAX],
