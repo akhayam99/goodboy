@@ -1,9 +1,4 @@
 {
-  "apps/desktop/src/App.tsx": {
-    "@typescript-eslint/strict-boolean-expressions": {
-      "count": 1
-    }
-  },
   "apps/desktop/src/__tests__/regressions/no-unstable-zustand-selectors.test.ts": {
     "@typescript-eslint/strict-boolean-expressions": {
       "count": 1
