@@ -128,8 +128,8 @@ button stays under the pointer. Monitor opens `MonitoringDrawer`, a workspace
 tool panel with Open full page, and is not restored on reload
 (`UNSAVED_DRAWER_KINDS`).
 
-**Two panels, one order.** Left to right the frame reads: sidebar, page
-content, detail panel, tool dock, rail. The tool dock (Terminal, Browser,
+**Two panels, one order.** Left to right the frame reads: places rail, page
+content, detail panel, tool dock, tool rail. The tool dock (Terminal, Browser,
 Monitor) lives in the drawer container, attached to the rail with no gap,
 line or radius between them, on the rail's `bg-drawer` surface, so rail and dock read as one
 surface running to the window edge. The resize handle stays in the gap between
@@ -236,7 +236,6 @@ an open drawer fades its content in 120ms. The detail panel's group
 eases the sum, so the page content slides as either panel opens or closes and
 the rail stays pinned to the window edge; the motion is a `transition-[width]`
 (`duration-200 ease-enter`) behind `motion-safe`, so reduced motion is instant.
-It never writes the sidebar preference: a pane folds nothing.
 
 **Closing never moves the page behind a drawer.** `DrawerColumn` remembers the
 last mode the drawer was open in (`useDrawerExit`). Closed from pushing, the
@@ -347,7 +346,7 @@ Browser page under its cover and places it once at the release
 ([browser.md](../browser.md#the-pane)), and a Terminal sends only its newest
 size, one at a time ([keyboard.md](../features/keyboard.md)).
 **The open drawer is part of the
-history entry's focus; the chip is not.** A forward move (crumb, sidebar, Search or run, a child such
+history entry's focus; the chip is not.** A forward move (crumb, places rail, Sessions, Search or run, a child such
 as an agent) arrives with it closed; Back and Forward bring it back as it was;
 Escape and its X close it in place. The exception is a tool (Ask, Context, Explore,
 Scripts, Agents): a forward move that stays in its session keeps it open
@@ -432,16 +431,18 @@ whose page draws above every toast, so the stack keeps left of it there too
 ([browser.md](../browser.md#the-pane)). It still lifts above the Ask
 composer and the transcript reply field (`useToastLift`).
 
-**Floating surfaces are one surface.** Menus, popovers, the hover card, the
-session switcher, the update card and the delete confirm are all
+**Floating surfaces are one surface.** Menus, popovers, the hover card,
+Sessions, the update card and the delete confirm are all
 `FLOATING_SURFACE` from `@goodboy/ui` (rounded-lg, `floating-edge`, `bg-floating`,
 `shadow-lg`), with no per-site border, fill or shadow. Their widths come from
-one scale: menus 240 (never under 200), popovers 320 and 384, toast 360, hover
-card 320, session switcher 420. `regressions/popover-widths.test.ts` counts the
-off-scale widths a floating surface declares per file and never lets one
-grow.
+one scale (`POPOVER_WIDTH_PX`): menus 240 (never under 200), popovers 320 and
+384, Sessions 500, toast 360, hover card 320. Every one keeps `SHELL_GUTTER_PX`
+from each window edge and caps its height at the room left
+([styling.md](../styling.md#a-dialog-is-the-last-resort-not-the-default)).
+`regressions/popover-widths.test.ts` counts the off-scale widths a floating
+surface declares per file and never lets one grow.
 
-**The update card is never clipped.** It is a `Popover` in the popover layer, anchored above the Goodboy line with 12px to the window edge, 300px wide and never wider than `min(384px, window - 24px)`: a title, one line and the verbs of its state ([release.md](../release.md#auto-update)), no bullets. It stays away while its row is inert (`useIsAnchorInert`) and comes back with the row. A `fixed` card inside the sidebar would resolve against the sidebar, which has a transform and `overflow-hidden`.
+**The update card is never clipped.** It is a `Popover` in the popover layer, 300px wide and never wider than `min(384px, window - 24px)`: a title, one line and the verbs of its state ([release.md](../release.md#auto-update)), no bullets. On the places rail it opens to the right of the Update mark, 8px from it, bottom aligned and 12px from the window edge (`isBesideAnchor`, `useFloatingPlace`); elsewhere it opens from its anchor with the same 12px. It stays away while its anchor is inert (`useIsAnchorInert`) and comes back with it.
 
 **An object that belongs to where you are opens in a drawer; the page changes
 only by an explicit command.** A plan read from the planner that wrote it (the

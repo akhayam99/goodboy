@@ -150,13 +150,13 @@ Top bar and left column are one chrome field, and the page container is a
 **sheet** on it (`SHEET_CLASSES` in `packages/ui/src/sheet.ts`, drawn by
 `DrawerColumn` with `frame="sheet"`; `AppShell`'s `main` is the grid cell it
 sits in). A sheet corner rounds only
-where the chrome wraps it on two sides: with the sidebar, the top-left and
+where the chrome wraps it on two sides: beside the places rail, the top-left and
 bottom-left corners take `rounded-frame` (10px) and one uniform 1px
-`frame-edge` border runs along the top, left and bottom; the right side meets
-the window square. With no sidebar, or while it is hidden, the sheet has no
-radius and only a top and bottom edge. The left resize handle draws no line at
-rest: on hover and drag its `data-left-resize` state turns the sheet's left
-edge to `border` in 120ms, so the sheet edge is the handle. A studio is drawn
+`frame-edge` border runs along the top, left and bottom (`sheetEdge`
+`wrapped`); with the tool rail there the page rounds all four corners
+(`pushed`). With no left column the sheet has no radius and only a top and
+bottom edge (`flush`). The places rail has no resize handle, so the sheet's
+left edge never changes colour on hover. A studio is drawn
 inside this sheet, over the page it replaces (`[data-studio-slot]`, `z-studio`),
 so it keeps the sheet's shape. A studio that draws its own sheets beside a
 panel (Tasks, Chat, Workflows, `data-studio-sheet-owner`) turns the outer
@@ -217,7 +217,8 @@ rule for a drawer that always lies over the page; the thresholds (928 for
 `packages/ui/src/drawerGeometry.ts` (`drawerLayoutOf`, with `drawerWidthOf`,
 `drawerModeOf` and `mainWidthOf` on top of it) and `drawerGeometry.test.ts`
 sweeps every main from 600 to 2400 and runs a width matrix: 1024, 1440 and
-1920 windows at zoom 0.8, 1 and 1.25, default and widest sidebar.
+1920 windows at zoom 0.8, 1 and 1.25, beside a left column as wide as the
+retired sidebar's default and widest (`LEFT_SIDEBAR_DEFAULT`, `LEFT_SIDEBAR_MAX`).
 `selectDrawerSizing.test.ts` takes every drawer kind at 1280 and 1440 and
 checks the panel ends on the column edge in both modes, with `DRAWER_GUTTER`
 inside the aside. A pushing card grows from the window's right edge: the aside
@@ -378,16 +379,12 @@ drifts over 1px between columns, a toolbar whose controls share no center line,
 a grid row whose top or bottom differs between columns, and a list heading
 (`data-list-heading`) whose left edge is more than 1px off the title row above
 it; its line names how many list headings it compared, so Runs and Questions
-cannot pass by measuring nothing. On every scene that
-renders the app frame it also runs the frame check: the main sidebar's first
-row (New session) against the page's first row (the topmost visible controls of
-`[data-studio-host]` and the controls on their line), centres within 1px and
-tops within 1px when the two rows are the same height, and the mark check
-(`sidebarMarkFailures`): every trailing mark of a sidebar door or session row
-is a 16px box on one centre x, on its row's centre line, within 1px. It waits for running
-animations to finish and skips controls hidden behind a sticky header. Settings,
-New session, a session overview, Board, Tasks, Chat, Impact and Workflows are
-on its list.
+cannot pass by measuring nothing. It waits for running animations to finish
+and skips controls hidden behind a sticky header. Settings, New session, a
+session overview, Board, Tasks, Chat, Impact and Workflows are on its list.
+Its frame check and mark check (`sidebarMarkFailures`) still look for the
+retired sidebar (`[data-side-column]`), so on the places rail they find no
+column and measure nothing until they are pointed at the rail.
 
 A page root names its kind (`page="overview"`, `page="terminal"`) and
 `PAGE_MEASURE` in `packages/ui/src/frameGeometry.ts` gives the column it sits on:
@@ -773,13 +770,16 @@ Anything that belongs to a control opens next to it, as a `Popover`. The
 popover is portaled to `document.body` and positioned from the trigger's
 `getBoundingClientRect()`. One hook owns the whole mechanism: fixed
 coordinates, backdrop, portal, Escape, and flipping above the trigger when
-there is no room below. Use it instead of rebuilding any piece by hand. A
+there is no room below. Use it instead of rebuilding any piece by hand. Under
+it, `placeFloating` (`packages/ui/src/placeFloating.ts`) places every popover,
+menu and tooltip: it keeps `SHELL_GUTTER_PX` (12px) from every window edge and
+caps the height at the room left, so a long list scrolls inside. A
 centred overlay for a menu that clearly belongs to something on screen is a
 bug, not a style choice. A hand-rolled version gets two things wrong without
 any error. First, paint nothing until the first measurement, or the panel
 flashes at `0,0`. Second, recompute on `scroll` with capture `true`, because a
 scroll in any ancestor moves the trigger. A card that sits beside its anchor
-instead of under it (the rail flyout, the session hover card) takes both from
+instead of under it (the update card beside the rail mark, the session hover card) takes both from
 `useFloatingPlace` in `@goodboy/ui`, never from a copy of the clamp. A surface
 that is open while its box shows (the composer quick actions, the queued line
 over an input, a failed switch beside the workspace mark) floats through
