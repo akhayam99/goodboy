@@ -3,6 +3,7 @@ import type { DemoHint, HintProbe } from '../hints/demoHintTypes';
 import { dwellOf } from '../hints/dwellOf';
 import { DEMO_PROTOCOL, type DemoHintReport, type DemoRect } from './demoProtocol';
 import type { DirectorStore } from './directorTypes';
+import { chromeRectsOf } from './chromeRectsOf';
 import { createResultTracker } from './createResultTracker';
 import { focusRegionOf } from './focusRegionOf';
 import { unionOf } from './unionOf';
@@ -467,11 +468,13 @@ export const createHintEngine = ({
       arrivingId = null;
     }
     const opened = rect === null ? [] : resultRects;
+    const chrome = rect === null ? [] : chromeRectsOf({ root });
     const signature = JSON.stringify({
       hintId,
       rect,
       focus,
       opened,
+      chrome,
       isOffscreen,
       isClicked,
       isPressed,
@@ -515,6 +518,7 @@ export const createHintEngine = ({
         rect,
         focus,
         opened,
+        chrome,
         isOffscreen,
         isClicked,
         isPressed,

@@ -608,7 +608,11 @@ they talk about; a hint with `align: 'end'` lines the callout up with the far
 end of its control, as the question step does so the callout above the wide
 answer row clears the question); only the callout takes clicks. The callout touches the 4px outline with a 6px gap and never
 overlaps the control or the rects the last press opened (`opened` on the anchor
-report, `avoid` in `placeCallout`); `hints/coachPlacement.test.ts` measures the
+report, `avoid` in `placeCallout`). It never covers the app rails either: the
+anchor report carries `chrome`, the boxes of `[data-shell-rail]` and
+`[data-tool-rail]` (`director/chromeRectsOf.ts`), and `placeCallout` slides the
+callout along its side until it clears them, unless its control sits in that
+rail; `hints/coachPlacement.test.ts` measures the
 callout against the target for every hint of every group. The note goes away as
 soon as the visitor presses that control (`isPressed`, the press on the very
 element the hint anchors; a click that only focuses the composer keeps it), so
@@ -673,6 +677,16 @@ The story, review and Storage frames seed Harborline through
 three take its id from `BRAND_WORKSPACE_ID` in `brand/canon.ts`. The avatar
 color is a hash of the workspace id, so a seed with its own id paints
 Harborline another color (`scenes/demo/harborlineAccent.test.ts`).
+
+To walk the playground in a real browser, start the mock dev server on 5230,
+then run `pnpm demo:walk --out-dir <folder>` (`scripts/demo-walk.mjs`). It
+presses every step's control in headless Chrome, as a visitor would, and saves a
+coach and a result picture per step plus `walk-<size>-<theme>.json`. A step fails
+when its coach never shows, its result never shows, or the callout covers its
+control or an app rail. `--window 1000x628` gives the compact nav, `--theme
+light` the light theme, and `--only fix-start,fix-push` keeps the pictures of
+those steps while it still walks every step before them. The exit code is 1 when
+a step failed.
 
 While a hint points at something on screen, the stage dims and lightly blurs
 everything except the context of the step (`DemoSpotlight`): one `bg-surround`

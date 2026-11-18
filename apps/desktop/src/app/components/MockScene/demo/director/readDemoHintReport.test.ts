@@ -34,4 +34,15 @@ describe('reading a hint report from the demo frame', () => {
   it('drops a report whose flag is not a boolean', () => {
     expect(readDemoHintReport({ data: anchorOf({ isRecovering: 'yes' }) })).toBeNull();
   });
+
+  it('keeps the app chrome the frame measured', () => {
+    const toolRail = { x: 1228, y: 0, width: 54, height: 842 };
+    const data = { ...anchorOf({}), chrome: [toolRail] };
+    expect(readDemoHintReport({ data })).toMatchObject({ chrome: [toolRail] });
+  });
+
+  it('drops a report whose chrome is not a list of rects', () => {
+    const data = { ...anchorOf({}), chrome: [{ x: 1 }] };
+    expect(readDemoHintReport({ data })).toBeNull();
+  });
 });

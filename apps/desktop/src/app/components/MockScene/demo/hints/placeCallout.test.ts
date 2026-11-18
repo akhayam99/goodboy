@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { placeCallout } from './placeCallout';
 import { GUIDE_HINTS } from './guideHints';
+import { SHIP_HINTS } from './shipHints';
 import type { DemoRect } from '../director/demoProtocol';
 
 const BOUNDS = { width: 1000, height: 600 };
@@ -163,5 +164,64 @@ describe('callout placement', () => {
     expect(placement.side).toBe('bottom');
     expect(placement.y).toBeGreaterThanOrEqual(button.y + button.height);
     expect(placement.y).toBeGreaterThan(commentText.y + commentText.height);
+  });
+
+  describe.each(['fix-start', 'fix-push'])('the %s callout beside the tool rail', (id) => {
+    const step = SHIP_HINTS.find((hint) => hint.id === id);
+    const button = { x: 958, y: 208, width: 95, height: 33 };
+    const toolRail = { x: 1076, y: 0, width: 48, height: 740 };
+    const appRail = { x: 0, y: 0, width: 56, height: 740 };
+    const callout = { width: 240, height: 50 };
+    const placement = placeCallout({
+      target: button,
+      avoid: [],
+      chrome: [appRail, toolRail],
+      lit: null,
+      callout,
+      bounds: { width: 1124, height: 740 },
+      side: step?.side,
+      isLocked: step?.isSideLocked,
+      align: step?.align,
+      gap: 6,
+      margin: 16,
+    });
+
+    it('stays clear of the rail labels', () => {
+      expect(placement.x + callout.width).toBeLessThanOrEqual(toolRail.x);
+    });
+
+    it('still sits against its button', () => {
+      const reach = {
+        x: placement.x - 7,
+        y: placement.y - 7,
+        width: callout.width + 14,
+        height: callout.height + 14,
+      };
+      expect(overlaps({ target: button, x: placement.x, y: placement.y })).toBe(false);
+      expect(
+        reach.x < button.x + button.width &&
+          reach.x + reach.width > button.x &&
+          reach.y < button.y + button.height &&
+          reach.y + reach.height > button.y,
+      ).toBe(true);
+    });
+  });
+
+  it('lets a callout sit beside a control that lives in the rail', () => {
+    const toolRail = { x: 952, y: 0, width: 48, height: 600 };
+    const railButton = { x: 956, y: 100, width: 40, height: 40 };
+    const placement = placeCallout({
+      target: railButton,
+      avoid: [],
+      chrome: [toolRail],
+      lit: null,
+      callout: CALLOUT,
+      bounds: BOUNDS,
+      side: 'left',
+      gap: 12,
+      margin: 16,
+    });
+    expect(placement.side).toBe('left');
+    expect(overlaps({ target: railButton, x: placement.x, y: placement.y })).toBe(false);
   });
 });

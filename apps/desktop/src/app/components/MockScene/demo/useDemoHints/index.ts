@@ -37,6 +37,7 @@ type AnchorState = {
   readonly rect: DemoRect | null;
   readonly focus: DemoRect | null;
   readonly opened: ReadonlyArray<DemoRect>;
+  readonly chrome: ReadonlyArray<DemoRect>;
   readonly isOffscreen: boolean;
   readonly isClicked: boolean;
   readonly isPressed: boolean;
@@ -216,6 +217,7 @@ export const useDemoHints = ({ chapter, progressControls }: Params): DemoHints =
         rect: report.rect,
         focus: report.focus ?? null,
         opened: report.opened ?? [],
+        chrome: report.chrome ?? [],
         isOffscreen: report.isOffscreen,
         isClicked: report.isClicked === true,
         isPressed: report.isPressed === true,
@@ -266,6 +268,7 @@ export const useDemoHints = ({ chapter, progressControls }: Params): DemoHints =
       rect: current.rect,
       focus: current.focus,
       opened: current.opened,
+      chrome: current.chrome,
       isDimmed: activeHint.isDimmed !== false,
       pulse,
       isWarning: warning?.hintId === activeHint.id,
