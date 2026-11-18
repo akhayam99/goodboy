@@ -12,6 +12,22 @@ file is in `.prettierignore`: the meta comment sits on the line right below
 each entry's heading, with no blank line, and a formatter would push it down
 onto its own paragraph.
 
+## Goodboy v0.40.1
+
+A Lead keeps going for as long as your settings allow: no hidden time limit, and no cap on the agents it hands work to.
+
+### Improved
+
+#### A Lead starts as many agents as the work needs
+<!-- gb area=agents pr=2244 -->
+
+A Lead can hand work to as many agents as it wants. Four run at once. The others wait under Queued, and each starts by itself when a running one ends. Stop clears the queued ones too.
+
+### Fixed
+
+- A Lead conversation was blocked for good 24 hours after it started, and Retry did nothing. That limit is gone: Retry or your next message brings it back. <!-- gb area=agents pr=2244 -->
+- A Lead was refused after 6 hand overs in one turn, or after 10 refused hand overs in a conversation. Both caps are gone. <!-- gb area=agents pr=2244 -->
+
 ## Goodboy v0.40.0
 
 A new frame: places on the left, tools on the right, your sessions one key away, and every fix shows its work on the row you clicked.
