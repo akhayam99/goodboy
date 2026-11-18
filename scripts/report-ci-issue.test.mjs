@@ -20,7 +20,12 @@ describe('nextIssueBody', () => {
   });
 
   it('keeps the first failure, moves the latest and counts up on the next one', () => {
-    const first = nextIssueBody({ previous: null, message: 'm', runUrl: RUN_A, at: '2026-11-18 00:40' });
+    const first = nextIssueBody({
+      previous: null,
+      message: 'm',
+      runUrl: RUN_A,
+      at: '2026-11-18 00:40',
+    });
     const second = nextIssueBody({
       previous: first,
       message: 'The perf tests failed on schedule.',

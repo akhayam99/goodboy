@@ -35,17 +35,42 @@ const runCli = () => {
     process.exit(1);
   }
   try {
-    gh({ args: ['label', 'create', LABEL, '--description', TITLE, '--color', process.env.COLOR ?? 'd93f0b'] });
+    gh({
+      args: [
+        'label',
+        'create',
+        LABEL,
+        '--description',
+        TITLE,
+        '--color',
+        process.env.COLOR ?? 'd93f0b',
+      ],
+    });
   } catch {
     console.log(`label ${LABEL} already exists`);
   }
   const at = new Date().toISOString().slice(0, 16).replace('T', ' ');
   const existing = gh({
-    args: ['issue', 'list', '--label', LABEL, '--state', 'open', '--limit', '1', '--json', 'number', '--jq', '.[0].number // empty'],
+    args: [
+      'issue',
+      'list',
+      '--label',
+      LABEL,
+      '--state',
+      'open',
+      '--limit',
+      '1',
+      '--json',
+      'number',
+      '--jq',
+      '.[0].number // empty',
+    ],
   });
   if (existing === '') {
     const body = nextIssueBody({ previous: null, message: MESSAGE, runUrl: RUN_URL, at });
-    const url = gh({ args: ['issue', 'create', '--label', LABEL, '--title', TITLE, '--body', body] });
+    const url = gh({
+      args: ['issue', 'create', '--label', LABEL, '--title', TITLE, '--body', body],
+    });
     summarize({ line: `${MESSAGE} Opened ${url}` });
     return;
   }

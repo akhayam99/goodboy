@@ -20,6 +20,10 @@ jobs:
     timeout-minutes: 3
     outputs:
       tests: ${{ steps.decide.outputs.tests }}
+      scope: ${{ steps.decide.outputs.scope }}
+      desktop_shards: ${{ steps.decide.outputs.desktop_shards }}
+      zones: ${{ steps.decide.outputs.zones }}
+      a11y: ${{ steps.decide.outputs.a11y }}
     steps:
       - name: checkout
         uses: actions/checkout@v7.0.1
@@ -67,11 +71,31 @@ jobs:
       - name: website deps
         run: pnpm install --ignore-workspace --dir website --frozen-lockfile
 
+      - name: lint scope
+        id: lint
+        run: node scripts/ci-changes.mjs --lint
+
       - name: typed lint
-        run: pnpm run lint:ts
+        env:
+          LINT: ${{ steps.lint.outputs.lint }}
+          FILES: ${{ steps.lint.outputs.files }}
+        run: |
+          if [ "$LINT" = "all" ]; then
+            pnpm run lint:ts
+            exit 0
+          fi
+          printf '%s\n' "$FILES" | grep -v '^$' | tr '\n' '\0' | xargs -0 -r node --max-old-space-size=6144 node_modules/eslint/bin/eslint.js --no-warn-ignored
 
       - name: typed lint, strict pass
-        run: pnpm run lint:ts:strict
+        env:
+          LINT: ${{ steps.lint.outputs.lint }}
+          FILES: ${{ steps.lint.outputs.files }}
+        run: |
+          if [ "$LINT" = "all" ]; then
+            pnpm run lint:ts:strict
+            exit 0
+          fi
+          printf '%s\n' "$FILES" | grep -v '^$' | tr '\n' '\0' | xargs -0 -r node --max-old-space-size=6144 node_modules/eslint/bin/eslint.js -c eslint.strict.config.mjs --suppressions-location eslint-suppressions-strict.json --no-warn-ignored
 
       - name: website token and icon drift
         run: pnpm --dir website run sync:tokens -- --check && pnpm --dir website exec node scripts/sync-icons.mjs --check
@@ -151,7 +175,7 @@ jobs:
         run: printf '%s\n' "$PR_TITLE" | pnpm exec commitlint
 
   test-desktop:
-    name: desktop tests ${{ matrix.shard }}/6
+    name: desktop tests ${{ matrix.shard }}
     needs: changes
     if: needs.changes.outputs.tests == 'true'
     runs-on: ubuntu-latest
@@ -159,21 +183,32 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        shard: [1, 2, 3, 4, 5, 6]
+        shard: ${{ fromJSON(needs.changes.outputs.desktop_shards) }}
     steps:
       - name: checkout
         uses: actions/checkout@v7.0.1
+        with:
+          fetch-depth: 2
 
       - name: setup workspace
         uses: ./.github/actions/setup-workspace
 
       - name: test
-        run: pnpm --filter @goodboy/desktop exec vitest run --project unit --no-passWithNoTests --shard=${{ matrix.shard }}/6
+        env:
+          SCOPE: ${{ needs.changes.outputs.scope }}
+          SHARD: ${{ matrix.shard }}
+        run: |
+          if [ "$SCOPE" = "full" ]; then
+            pnpm --filter @goodboy/desktop exec vitest run --project unit --no-passWithNoTests --shard="$SHARD"
+            exit 0
+          fi
+          node scripts/ci-changes.mjs --desktop-tests > "$RUNNER_TEMP/related-tests"
+          xargs -0 -s 1048576 -a "$RUNNER_TEMP/related-tests" pnpm --filter @goodboy/desktop exec vitest run --project unit --no-passWithNoTests --shard="$SHARD"
 
   test-time-zones:
     name: scene tests in ${{ matrix.zone }}
     needs: changes
-    if: needs.changes.outputs.tests == 'true'
+    if: needs.changes.outputs.tests == 'true' && needs.changes.outputs.zones == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     strategy:
@@ -183,6 +218,8 @@ jobs:
     steps:
       - name: checkout
         uses: actions/checkout@v7.0.1
+        with:
+          fetch-depth: 2
 
       - name: setup workspace
         uses: ./.github/actions/setup-workspace
@@ -190,10 +227,16 @@ jobs:
       - name: test
         env:
           ZONE: ${{ matrix.zone }}
+          SCOPE: ${{ needs.changes.outputs.scope }}
         run: |
           export TZ="$(node scripts/test-time-zone.mjs "$ZONE")"
           echo "TZ=$TZ"
-          node scripts/scene-backed-tests.mjs | xargs pnpm --filter @goodboy/desktop exec vitest run --project unit --no-passWithNoTests
+          if [ "$SCOPE" = "full" ]; then
+            node scripts/scene-backed-tests.mjs | xargs pnpm --filter @goodboy/desktop exec vitest run --project unit --no-passWithNoTests
+            exit 0
+          fi
+          node scripts/ci-changes.mjs --zone-tests > "$RUNNER_TEMP/related-tests"
+          xargs -0 -s 1048576 -a "$RUNNER_TEMP/related-tests" pnpm --filter @goodboy/desktop exec vitest run --project unit --no-passWithNoTests
 
   test-packages:
     name: packages tests + a11y
@@ -212,7 +255,7 @@ jobs:
         run: pnpm turbo run test --filter='./packages/*' --continue
 
       - name: a11y
-        if: ${{ !cancelled() }}
+        if: ${{ !cancelled() && needs.changes.outputs.a11y == 'true' }}
         run: pnpm --filter @goodboy/desktop test:a11y --no-passWithNoTests
 
   gate:
