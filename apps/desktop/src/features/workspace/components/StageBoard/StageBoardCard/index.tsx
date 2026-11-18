@@ -2,8 +2,8 @@ import { memo, useEffect, useId, useRef } from 'react';
 import { cn, Input, Tooltip, InlineMarkdown, ToneBar } from '@goodboy/ui';
 import type { Session, SessionId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../../store';
+import { RestoreCardAction } from './RestoreCardAction';
 import { CardAction, CardActionSlot, FOCUS_RING } from '@goodboy/ui';
-import { CONCEPT_ICONS } from '../../../../../shared/components/conceptIcons';
 import { sessionCardShell } from '../../../../session/components/sessionCardShell';
 import { stageTrackOf } from '../../../../session/stageTrackOf';
 import type { BoardNavigation } from '../useBoardNavigation';
@@ -43,7 +43,7 @@ type StageBoardCardProps = {
   readonly getSelectedIds?: () => ReadonlyArray<SessionId>;
   readonly onClearSelection?: () => void;
   readonly onModifierClick?: (id: SessionId, event: CardSelectionEvent) => void;
-  readonly onRestore?: (session: Session) => void;
+  readonly onRestore?: (session: Session) => Promise<void>;
   readonly onHoverEnter?: (target: CardHover) => void;
   readonly onHoverLeave?: () => void;
 };
@@ -228,12 +228,7 @@ export const StageBoardCard = memo(function StageBoardCard({
             />
           )}
           {isArchived && (
-            <CardAction
-              icon={CONCEPT_ICONS.restore}
-              tone="primary"
-              label="Restore"
-              onClick={() => onRestore?.(session)}
-            />
+            <RestoreCardAction session={session} sessionId={id} onRestore={onRestore} />
           )}
         </CardActionSlot>
       </span>

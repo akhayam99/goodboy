@@ -4,7 +4,7 @@ import { Button, ICON_SIZE } from '@goodboy/ui';
 import type { Project, WorkspaceId } from '@goodboy/types';
 import { useProjectLinking } from '../../hooks/useProjectLinking';
 
-import { NewWorkspaceForm } from '../NewWorkspaceForm';
+import { LazyNewWorkspaceForm } from '../NewWorkspaceForm/LazyNewWorkspaceForm';
 import { ProjectGroups } from './ProjectGroups';
 
 const FILTER_VISIBLE_FROM = 10;
@@ -68,7 +68,7 @@ export const ProjectLinkList = ({
       {hint !== undefined && <p className="text-meta text-faint-foreground">{hint}</p>}
       {isAdding ? (
         <div className="rounded-lg p-4 ring-1 ring-inset ring-border-soft">
-          <NewWorkspaceForm
+          <LazyNewWorkspaceForm
             mode="add"
             workspaceId={workspaceId}
             titleRole="heading"

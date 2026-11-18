@@ -21,7 +21,7 @@ const nounOf = ({ kind }: NounParams): string | null => {
   if (kind === null) {
     return null;
   }
-  return kind === 'auto' ? 'Auto' : AGENT_KIND_META[kind].noun;
+  return AGENT_KIND_META[kind].noun;
 };
 
 export const composerView = ({

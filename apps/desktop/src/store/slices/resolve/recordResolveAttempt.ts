@@ -33,6 +33,7 @@ export const recordResolveAttempt = async ({
   batch,
   launch,
   copyPath,
+  copyBase,
 }: Params): Promise<string> => {
   const db = tauriDatabase;
   const attempts = await listResolveAttempts({ db, sessionId });
@@ -76,10 +77,11 @@ export const recordResolveAttempt = async ({
   if (phase === 'running' && (candidateMode === 'propose' || launchChoice?.mode === 'propose')) {
     try {
       const baseSha =
-        attempt.copyPath === null
+        copyBase ??
+        (attempt.copyPath === null
           ? undefined
           : ((await worktreeStatus({ worktreePath: attempt.copyPath }).catch(() => null))?.head ??
-            undefined);
+            undefined));
       await beginResolveCandidate({
         set,
         get,

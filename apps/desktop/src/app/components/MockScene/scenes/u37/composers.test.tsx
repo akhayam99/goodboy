@@ -31,6 +31,7 @@ const SCENE_NAMES = Object.keys(U37_COMPOSER_SCENES).filter(
 
 beforeAll(async () => {
   await importStore();
+  await import('../../../../../features/session/ask/components/AskDrawer');
 }, STORE_IMPORT_TIMEOUT_MS);
 
 beforeEach(async () => {
@@ -77,10 +78,12 @@ describe('the u37 composer scenes', () => {
     async (name) => {
       await mount(name);
 
-      const withModel = composerBoxes().filter(
-        (box) => within(box).queryAllByRole('button', { name: MODEL_PICKER }).length > 0,
-      );
-      expect(withModel.length).toBeGreaterThan(0);
+      await vi.waitFor(() => {
+        const withModel = composerBoxes().filter(
+          (box) => within(box).queryAllByRole('button', { name: MODEL_PICKER }).length > 0,
+        );
+        expect(withModel.length).toBeGreaterThan(0);
+      });
     },
     TEST_TIMEOUT_MS,
   );

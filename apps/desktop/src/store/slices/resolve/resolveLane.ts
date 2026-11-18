@@ -1,4 +1,5 @@
 import type { Agent, ResolveAttempt, ResolveCandidate } from '@goodboy/types';
+import { carriesWorkingTree } from '../../../features/resolve/notes/carriesWorkingTree';
 import { hasLaunchTurns } from './launchTurns';
 import { launchKeyOf } from './resolveLaunch';
 
@@ -144,6 +145,33 @@ export const attemptOfCandidate = ({
 
 export const laneTipOf = <T extends Chained>(params: ChainParams<T>): string | null =>
   laneChainOf(params).chain.at(-1)?.candidate.candidateSha ?? null;
+
+type BlockingParams = ChainParams<Chained> & {
+  readonly attempts: ReadonlyArray<ResolveAttempt>;
+  readonly threadIds: ReadonlyArray<string>;
+};
+
+export const readyFixBlocking = ({
+  candidates,
+  attempts,
+  worktreePath,
+  threadIds,
+}: BlockingParams): ResolveCandidate | null => {
+  const chain = laneChainOf({ candidates, worktreePath }).chain.map(({ candidate }) => candidate);
+  const first = chain[0];
+  if (first === undefined) {
+    return null;
+  }
+  const isNoteWaiting = chain.some((candidate) =>
+    carriesWorkingTree({
+      threadIds: attemptOfCandidate({ attempts, candidateId: candidate.id })?.threadIds ?? [],
+    }),
+  );
+  if (isNoteWaiting || carriesWorkingTree({ threadIds })) {
+    return first;
+  }
+  return null;
+};
 
 export const lanePathsOf = ({
   attempts,

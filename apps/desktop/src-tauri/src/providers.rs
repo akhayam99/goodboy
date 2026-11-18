@@ -11,6 +11,7 @@ use crate::proc::probe::{self, Budget, ProbeOutput};
 use auth_reason::AuthReason;
 
 pub(crate) mod auth_reason;
+pub(crate) mod claude_version;
 pub(crate) mod cli_args;
 pub(crate) mod cli_probe;
 pub(crate) mod launch_guard;
@@ -385,6 +386,25 @@ fn check_claude_auth() -> AuthState {
 }
 
 fn check_claude_auth_with(binary: &str, budget: Budget) -> AuthState {
+    check_claude_auth_in(binary, budget, claude_version::config_file().as_deref())
+}
+
+fn check_claude_auth_in(
+    binary: &str,
+    budget: Budget,
+    config: Option<&std::path::Path>,
+) -> AuthState {
+    let version = match run_auth("anthropic", &[binary, "--version"], budget) {
+        Ok(out) if out.code == Some(0) => claude_version::version_number(out.primary_text()),
+        Ok(_) => None,
+        Err(state) => return state,
+    };
+    if !version
+        .as_deref()
+        .is_some_and(claude_version::has_auth_subcommand)
+    {
+        return claude_version::local_auth(version, config);
+    }
     match run_auth("anthropic", &[binary, "auth", "status"], budget) {
         Ok(out) => parse_claude_auth_output(&out),
         Err(state) => state,

@@ -271,6 +271,10 @@ cwd, startedAt }`. A turn, a chat, a planner or a summary joins it in
 - **What the user sees.** When a turn's reap stopped something, the turn emits a
   `reaped` envelope before its end, and the transcript shows one line under the
   turn: "Stopped 2 processes this turn left running: next-server, 1 more."
+  The CLI's own helpers are stopped but not named: a process whose executable
+  lives in the folder a symlinked CLI resolves to (Cursor's bundled `node`) is
+  left out of the line (`proc::provider_helpers`). A CLI that is no link, and
+  Linux, where `ps` gives no path, keep every process in the line.
 - **Boot reconcile.** At boot one update marks every `running` agent row whose
   provider run is not live as stopped (`reconcileGhostAgents`), in all
   workspaces, not only the open one. Runs the backend still holds, runs
@@ -859,6 +863,20 @@ A database that is ahead of the build also loads it, so the downgrade guard
 still runs. The SQLite `user_version` pragma is not used: the backend blocks it
 and the runner never sets it.
 
+No query reaches a table before the migrations of this build are applied.
+`tauriDatabase` waits on one schema gate (`shared/lib/schemaGate.ts`) before
+every statement; the runner and the version probe use `migrationDatabase`,
+which does not wait. `main.tsx` closes the gate before the first render, and
+`runDbMigrations` opens it only after the runner returned, so the resolve
+drain, the polls and every slice that starts while the splash says "updating
+your library" run on the new schema. A migration that throws rolls back its
+part, records no version and leaves the gate closed: the launch error screen
+shows the error with Retry, and Retry runs the migrations again. `wipeDb`
+closes the gate while it replays the schema. `dbBoot.test.ts` upgrades
+databases left at m1, m139, m220 and m224 with the resolve queue asked for
+first, starts the resolve drain before an upgrade, and fails a migration then
+retries it.
+
 The runner splits each migration into parts wherever a `PRAGMA foreign_keys`
 line appears. Each part commits on its own and saves a checkpoint row in
 `schema_migration_segment`. If a migration stops halfway, the next start picks
@@ -1228,7 +1246,7 @@ kept.
   the start of this runtime (`readAgentLastEventAt`), so a past `deadline_at` on an old
   row never expires it at load; a tool call without its end (`hasAgentOpenToolCall`)
   counts as activity. The cancel goes with `by: 'auto'`, so the agent reads
-  Stopped by Auto, never Stopped by you. It settles `timed_out` with reason `no_activity` only
+  Stopped by the Lead, never Stopped by you. It settles `timed_out` with reason `no_activity` only
   after the exit is confirmed, and Auto continues it with `retryOf`. A child paused on
   a question still expires at `deadline_at` and needs no process to expire.
   `expireStaleDecide.ts` handles a tree still `deciding` `AUTO_STALE_DECIDE_MS` (10

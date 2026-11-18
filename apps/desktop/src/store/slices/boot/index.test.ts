@@ -393,6 +393,25 @@ describe('store contract', () => {
       expect(storySpies.runDbMigrations).toHaveBeenCalledTimes(2);
     });
 
+    it('stops on a failed migration with its error and boots on retry', async () => {
+      const store = useAppStore;
+      storySpies.runDbMigrations.mockRejectedValueOnce(
+        new Error('sqlite error: no such table: resolve_attempts'),
+      );
+
+      await store.getState().hydrate();
+
+      expect(store.getState().bootPhase).toBe('error');
+      expect(store.getState().bootFailedPhase).toBe('migrating');
+      expect(store.getState().error).toContain('no such table: resolve_attempts');
+      expect(storySpies.listWorkspaces).not.toHaveBeenCalled();
+
+      await store.getState().retryHydrate();
+
+      expect(store.getState().bootPhase).toBe('ready');
+      expect(storySpies.runDbMigrations).toHaveBeenCalledTimes(2);
+    });
+
     it('blocks on a database from a newer build and boots after restoring its backup', async () => {
       const store = useAppStore;
       const snapshot = '/tmp/data.db.pre-m174-from-m173-20260901T120000000Z.bak';

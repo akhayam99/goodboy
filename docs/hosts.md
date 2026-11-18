@@ -155,6 +155,15 @@ of the checked commit) and the pull request before the
 is unchanged. No host carries its own gate. `docs/auto.md` (Publish gates) holds
 the rules; `publishGates.sqlite.test.ts` runs both gates on one mount per host.
 
+## A note is not a host comment
+
+A note (thread id `note:`, origin `diff_comment`) is written in Goodboy on the
+working tree and never comes from a host. Its fix run calls no host and no
+fetch: the brief says the note is local and uncommitted, the copy starts on the
+working tree (`docs/traps.md` has the mechanism), and the reply stays a note
+reply. Only **Post to GitHub** moves a note to a host. A host review comment
+keeps the host path: a copy at the branch head and a reply the host receives.
+
 ## Branch push counts
 
 The branch header counts commits ahead of origin through `branchPushFactsOf`,

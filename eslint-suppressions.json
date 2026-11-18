@@ -1998,11 +1998,6 @@
       "count": 8
     }
   },
-  "apps/desktop/src/features/bug-report/components/ReportSheetHost.tsx": {
-    "@typescript-eslint/naming-convention": {
-      "count": 1
-    }
-  },
   "apps/desktop/src/features/bug-report/crashReport.ts": {
     "@typescript-eslint/naming-convention": {
       "count": 1
@@ -6722,11 +6717,6 @@
       "count": 1
     }
   },
-  "apps/desktop/src/features/workspace/components/SessionHoverCard/index.test.tsx": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 15
-    }
-  },
   "apps/desktop/src/features/workspace/components/SessionRowTitle.test.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 4
@@ -9179,11 +9169,6 @@
   },
   "apps/desktop/src/store/slices/resolve/outcomePatch.test.ts": {
     "@typescript-eslint/consistent-type-assertions": {
-      "count": 1
-    }
-  },
-  "apps/desktop/src/store/slices/resolve/persistResolveTurn.ts": {
-    "@typescript-eslint/naming-convention": {
       "count": 1
     }
   },
@@ -12696,14 +12681,6 @@
   "packages/db/src/queries/turn-event.test.ts": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 6
-    }
-  },
-  "packages/db/src/queries/turn-event.ts": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 2
-    },
-    "@typescript-eslint/strict-boolean-expressions": {
-      "count": 1
     }
   },
   "packages/db/src/queries/workflow-save.test.ts": {

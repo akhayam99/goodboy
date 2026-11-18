@@ -99,6 +99,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  document.body.replaceChildren();
   vi.unstubAllGlobals();
   vi.useRealTimers();
 });
@@ -309,6 +310,30 @@ describe('useScrollPin send anchor', () => {
     expect(tailPx({ tail })).toBe(TAIL_FLOOR + (500 - ANCHOR_TOP - 60 - TAIL_FLOOR));
     expect(result.current.pinned).toBe(false);
     expect(result.current.isBehind).toBe(false);
+  });
+
+  it('lands the sent message under a header inset: the content padding of the scroller', () => {
+    const inset = 120;
+    const box = { turnTop: 900, turnHeight: 60, scrollTop: 700, clientHeight: 500 };
+    const { rerender, el, tail } = openTurn({ box });
+    document.body.appendChild(el);
+    el.style.paddingTop = `${inset}px`;
+
+    sendOn({ rerender });
+
+    expect(box.scrollTop).toBe(900 - inset);
+    expect(tailPx({ tail })).toBe(TAIL_FLOOR + (500 - inset - 60 - TAIL_FLOOR));
+  });
+
+  it('keeps the 40px line when the scroller padding is smaller', () => {
+    const box = { turnTop: 900, turnHeight: 60, scrollTop: 700, clientHeight: 500 };
+    const { rerender, el } = openTurn({ box });
+    document.body.appendChild(el);
+    el.style.paddingTop = '24px';
+
+    sendOn({ rerender });
+
+    expect(box.scrollTop).toBe(900 - ANCHOR_TOP);
   });
 
   it('does not anchor the message already there when a session opens', () => {

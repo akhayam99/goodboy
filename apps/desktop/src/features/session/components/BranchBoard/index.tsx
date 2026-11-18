@@ -4,8 +4,11 @@ import { useMountDiffStats } from '../../../../store';
 import type { BranchEntry } from '../../central/branches/branchStoryOf';
 import type { ActionCardModel } from '../../central/next/actionCardsOf';
 import type { ActionCardActions } from '../../central/next/useActionCardActions';
+import type { BoardGroupId } from '../../central/board/boardTypes';
 import { cardRowIdOf } from '../../central/board/cardRowIdOf';
 import { visibleGroupsOf } from '../../central/board/visibleGroupsOf';
+import { boardProjectNamesOf } from '../../central/board/boardProjectNamesOf';
+import { BoardProjectHead } from './BoardProjectHead';
 import { BoardContext, type BoardContextValue } from './BoardContext';
 import { BoardLooseCards } from './BoardLooseCards';
 import { LOOSE_ROW_ID } from './looseRowId';
@@ -31,9 +34,9 @@ const MERGE_KIND = 'merge-series';
 export const BranchBoard = ({ session, entries, cards: allCards, actionsFor, openFor }: Props) => {
   const cards = session.archivedAt == null ? allCards : NO_CARDS;
   const sessionId = session.id;
-  const { board, kpis, entryByRowId, mergedAtByMountId, runningByRowId, newRowIds, now } =
+  const { board, kpis, entryByRowId, settledAtByMountId, runningByRowId, newRowIds, now } =
     useBranchBoard({ session, entries });
-  const [isMergedExpanded, setIsMergedExpanded] = useState(false);
+  const [expandedGroupIds, setExpandedGroupIds] = useState<ReadonlySet<BoardGroupId>>(new Set());
   const diffStatByPath = useMountDiffStats(sessionId);
   const mergedMountIds = useMemo(
     () =>
@@ -62,15 +65,18 @@ export const BranchBoard = ({ session, entries, cards: allCards, actionsFor, ope
     return byRow;
   }, [cards, rowIds, rowIdByAskId]);
   const mergeCard = useMemo(() => cards.find((card) => card.kind === MERGE_KIND) ?? null, [cards]);
-  const groups = visibleGroupsOf({ board, isMergedExpanded });
-  const firstOpenGroup = groups.find((group) => group.id !== 'merged')?.id ?? null;
+  const projectNames = useMemo(() => boardProjectNamesOf({ rows: board.rows }), [board.rows]);
+  const soleProjectName = projectNames.length === 1 ? (projectNames[0] ?? null) : null;
+  const groups = visibleGroupsOf({ board, expandedGroupIds });
+  const firstOpenGroup =
+    groups.find((group) => group.id !== 'merged' && group.id !== 'closed')?.id ?? null;
   const value: BoardContextValue = {
     session,
     now,
     rowById,
     entryByRowId,
     runningByRowId,
-    mergedAtByMountId,
+    settledAtByMountId,
     newRowIds,
     diffStatByPath,
     cardsByRowId,
@@ -78,6 +84,7 @@ export const BranchBoard = ({ session, entries, cards: allCards, actionsFor, ope
     actionsFor,
     openFor,
     removal,
+    isMultiProject: projectNames.length > 1,
   };
   return (
     <div data-slot="branch-board-section" className="flex min-w-0 flex-col gap-4">
@@ -91,12 +98,23 @@ export const BranchBoard = ({ session, entries, cards: allCards, actionsFor, ope
             data-slot="branch-board"
             className="flex min-w-0 flex-col gap-4 rounded-lg bg-subtle p-3"
           >
+            {soleProjectName === null ? null : (
+              <BoardProjectHead projectName={soleProjectName} count={null} />
+            )}
             {groups.map((group) => (
               <BoardGroup
                 key={group.id}
                 group={group}
                 isFirstOpenGroup={group.id === firstOpenGroup}
-                onShowMore={() => setIsMergedExpanded((isExpanded) => !isExpanded)}
+                onShowMore={() =>
+                  setExpandedGroupIds((current) => {
+                    const next = new Set(current);
+                    if (!next.delete(group.id)) {
+                      next.add(group.id);
+                    }
+                    return next;
+                  })
+                }
               />
             ))}
           </div>

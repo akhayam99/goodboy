@@ -72,7 +72,7 @@ const ARTIFACT_STATE_PRESENTATION = {
   autoApproved: {
     key: 'autoApproved',
     label: 'Approved',
-    reason: 'Auto works from this plan',
+    reason: 'The Lead works from this plan',
     tone: 'success',
     icon: CircleCheck,
     group: 'consumed',

@@ -1,4 +1,5 @@
-import type { ResolveAttempt, ResolveFailureCause } from '@goodboy/types';
+import type { ResolveAttempt, ResolveFailureCause, ResolveThread } from '@goodboy/types';
+import { NEEDS_RUN_REASON } from './needsRunReason';
 
 const FAILURE_CAUSE_SENTENCE: Readonly<Record<ResolveFailureCause, string>> = {
   start_failed: "The fix didn't start",
@@ -9,6 +10,8 @@ const FAILURE_CAUSE_SENTENCE: Readonly<Record<ResolveFailureCause, string>> = {
   accept_conflict: 'It conflicts with a fix you accepted before',
   worktree_missing: 'The worktree for this comment is no longer available',
   capture_failed: "The fix couldn't be saved from its copy of the branch",
+  no_result: 'The agent ended without a result for this comment',
+  needs_a_run: 'The fix agent stopped: this is bigger than one change',
 };
 
 const UNRECORDED_CAUSE_SENTENCE = "Goodboy didn't record why";
@@ -38,3 +41,21 @@ export const attemptFailureSentence = ({
 }: {
   readonly attempt: Pick<ResolveAttempt, 'failureCause' | 'phase'> | null;
 }): string => failureSentence({ cause: causeOfAttempt({ attempt }) });
+
+type ThreadCauseParams = {
+  readonly thread: Pick<ResolveThread, 'stateReason'>;
+  readonly attempt: Pick<ResolveAttempt, 'failureCause' | 'phase'> | null;
+};
+
+export const causeOfThread = ({
+  thread,
+  attempt,
+}: ThreadCauseParams): ResolveFailureCause | null => {
+  if (NEEDS_RUN_REASON.reasonOf({ stateReason: thread.stateReason }) !== null) {
+    return 'needs_a_run';
+  }
+  return causeOfAttempt({ attempt });
+};
+
+export const threadFailureSentence = ({ thread, attempt }: ThreadCauseParams): string =>
+  failureSentence({ cause: causeOfThread({ thread, attempt }) });

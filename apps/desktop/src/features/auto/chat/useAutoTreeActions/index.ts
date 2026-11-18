@@ -91,7 +91,7 @@ export const useAutoTreeActions = ({ sessionId }: Params): AutoTreeActions => {
     } catch (error) {
       setFailure({
         treeId: view.tree.id,
-        title: "Couldn't retry Auto",
+        title: "Couldn't retry the Lead",
         message: formatError(error),
       });
     }

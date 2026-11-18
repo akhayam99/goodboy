@@ -155,6 +155,7 @@ export const pushMount = async ({
       isForce,
       confirmedOnlyOnline,
       confirmedRemoteSha,
+      isOriginMoved: isForce && result.reason === 'moved',
     });
   }
   await refreshWorktreeStatus({ worktreePath, baseBranch });

@@ -226,7 +226,7 @@ export const AGENT_KIND: ObjectKindDefinition<AgentActionTarget, AgentFacts> = {
       label: NAMES.letAutoTakeIt,
       icon: CONCEPT_ICONS.auto,
       group: 'act',
-      description: () => 'Auto takes over this work and decides what comes next',
+      description: () => 'The Lead takes over this work and decides what comes next',
       when: ({ facts }) => facts.isAutoOn && facts.canMoveToAuto,
       blockedReason: ({ facts }) => (facts.isTurnLive ? WAIT_FOR_TURN_REASON : null),
       run: ({ facts, env }) => {
@@ -239,10 +239,10 @@ export const AGENT_KIND: ObjectKindDefinition<AgentActionTarget, AgentFacts> = {
     },
     {
       id: 'agent.detachFromAuto',
-      label: 'Detach from Auto',
+      label: 'Detach from the Lead',
       icon: CONCEPT_ICONS.auto,
       group: 'act',
-      description: () => 'Stops Auto from managing this agent',
+      description: () => 'Stops the Lead from managing this agent',
       when: ({ facts }) => facts.isAdopted,
       blockedReason: ({ facts }) => (facts.isTurnLive ? WAIT_FOR_TURN_REASON : null),
       run: async ({ facts, env }) => {
@@ -257,7 +257,7 @@ export const AGENT_KIND: ObjectKindDefinition<AgentActionTarget, AgentFacts> = {
         }
         await env.getState().reportError({
           recovery: CHECK_STATE,
-          title: "Couldn't detach from Auto",
+          title: "Couldn't detach from the Lead",
           error: new Error(outcome.message),
           sessionId: facts.sessionId,
         });
@@ -270,7 +270,7 @@ export const AGENT_KIND: ObjectKindDefinition<AgentActionTarget, AgentFacts> = {
       icon: CircleCheck,
       group: 'act',
       isUndoable: true,
-      description: () => 'Closes this Auto conversation. Write to reopen it.',
+      description: () => 'Closes this Lead conversation. Write to reopen it.',
       when: ({ facts }) => facts.autoRest !== null && facts.autoRest.phase !== 'finished',
       run: async ({ facts, env }) => {
         const rest = facts.autoRest;
@@ -289,7 +289,7 @@ export const AGENT_KIND: ObjectKindDefinition<AgentActionTarget, AgentFacts> = {
         } catch (error) {
           await env.getState().reportError({
             recovery: NOTHING_CHANGED,
-            title: "Couldn't mark Auto finished",
+            title: "Couldn't mark the Lead finished",
             error,
             sessionId: facts.sessionId,
           });
@@ -298,8 +298,8 @@ export const AGENT_KIND: ObjectKindDefinition<AgentActionTarget, AgentFacts> = {
         await env.getState().loadAutoTrees({ sessionId: facts.sessionId });
         env.getState().undoable({
           showToast: env.showToast,
-          title: 'Auto finished',
-          message: 'Write to Auto to reopen it.',
+          title: 'Lead finished',
+          message: 'Write to the Lead to reopen it.',
           undo: async () => {
             await moveAutoRestingPhase({
               db: tauriDatabase,

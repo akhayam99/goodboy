@@ -3,11 +3,7 @@ import { Undo2 } from '@goodboy/ui/icons';
 import { Button, ConfirmPopover, ICON_SIZE, Notice, Tooltip, type NoticeTone } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../store';
-import { openFile } from '../../open/openFile';
 import { NAMES } from '../../../shared/utils/names';
-import { START_HINT_SCOPES } from '../../../store/slices/startHints/startHintScopes';
-import { StartHint } from '../../../shared/components/StartHint';
-import { START_HINT_COPY } from '../../../shared/components/startHintCopy';
 import { autoUnavailableReason } from '../../auto/autoUnavailableReason';
 import { actionButtonLookOf } from '../../actions/actionButtonLookOf';
 import type { ActionConfirm, DiffActionTarget } from '../../actions/types';
@@ -17,10 +13,9 @@ import type { RebaseJobState, RebaseJobTone } from '../rebaseJob';
 import type { RebaseJobControls } from '../useRebaseJob';
 import { JobBannerDetails } from '../JobBanner/JobBannerDetails';
 import { JobBannerReview } from '../JobBanner/JobBannerReview';
-import { RebaseConflictPrompt } from './RebaseConflictPrompt';
+import { RebaseStopBody } from './RebaseStopBody';
+import { RebaseCardTitle } from './RebaseCardTitle';
 import { REBASE_ABORT_CONFIRM } from './rebaseAbortConfirm';
-import { RebaseOriginCommits } from './RebaseOriginCommits';
-import { RebaseStopFiles, type OpenFileParams } from './RebaseStopFiles';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -83,18 +78,13 @@ type VerbParams = {
   readonly verb: Verb;
 };
 
-const DISMISSABLE: ReadonlySet<RebaseJobState> = new Set<RebaseJobState>([
-  'result-differs',
-  'failed',
+const WORKING: ReadonlySet<RebaseJobState> = new Set<RebaseJobState>([
+  'rebasing-here',
+  'auto-resolving',
 ]);
 
-const FILES_LABEL: Partial<Record<RebaseJobState, string>> = {
-  'rebasing-here': 'Files to resolve',
-  'auto-resolving': 'Files Auto resolves',
-};
-
 export const RebaseStopPanel = ({ sessionId, worktreePath, controls, actions }: Props) => {
-  const { job, stop, agentId, status, files, originCommits } = controls;
+  const { job, stop, agentId, status, files } = controls;
   const mountId = stop.run.mountId;
   const autoBlocked = useAppStore((state) => autoUnavailableReason({ state }));
   const target = useMemo<DiffActionTarget>(
@@ -112,9 +102,6 @@ export const RebaseStopPanel = ({ sessionId, worktreePath, controls, actions }: 
   const registry = useActionControls({ target });
   const pushAction = registry.actions.find((action) => action.id === PUSH_ID);
   const isBusy = actions.pendingKeys.size > 0 || registry.pendingId !== null;
-  const openStopFile = ({ path }: OpenFileParams): void => {
-    void openFile({ path, root: worktreePath, sessionId });
-  };
   const state = job.state;
   const left = files?.left ?? null;
 
@@ -124,7 +111,7 @@ export const RebaseStopPanel = ({ sessionId, worktreePath, controls, actions }: 
         return [
           {
             key: 'resolve-auto',
-            label: 'Resolve with Auto',
+            label: 'Resolve with the Lead',
             variant: 'primary',
             run: actions.resolveWithAuto,
             blockedReason: autoBlocked,
@@ -166,7 +153,7 @@ export const RebaseStopPanel = ({ sessionId, worktreePath, controls, actions }: 
           : [
               {
                 key: 'open-auto',
-                label: 'Open Auto',
+                label: 'Open the Lead',
                 variant: 'secondary',
                 run: controls.seeWhatItDid,
               },
@@ -204,15 +191,18 @@ export const RebaseStopPanel = ({ sessionId, worktreePath, controls, actions }: 
             verbs: [
               {
                 key: 'see-auto',
-                label: 'Open Auto',
+                label: 'Open the Lead',
                 variant: 'ghost',
                 run: controls.seeWhatItDid,
               },
             ],
           }),
         ];
-      case 'pushed':
-        return [{ key: 'dismiss', label: 'Dismiss', variant: 'ghost', run: controls.dismiss }];
+      case 'done':
+        return verbsWhen({
+          isOn: controls.canUndo,
+          verbs: [{ key: 'undo', label: 'Undo rewrite', variant: 'ghost', run: controls.undo }],
+        });
       case 'origin-moved':
         return [
           { key: 'bring-in', label: NAMES.rebaseOnThem, variant: 'primary', run: actions.bringIn },
@@ -273,10 +263,6 @@ export const RebaseStopPanel = ({ sessionId, worktreePath, controls, actions }: 
             variant: 'secondary',
             run: controls.openTerminal,
           },
-          ...verbsWhen({
-            isOn: DISMISSABLE.has(state),
-            verbs: [{ key: 'keep', label: 'Dismiss', variant: 'ghost', run: actions.keep }],
-          }),
         ];
       case 'choosing':
       case 'restore-conflict':
@@ -288,7 +274,7 @@ export const RebaseStopPanel = ({ sessionId, worktreePath, controls, actions }: 
       case 'waiting':
       case 'moving':
       case 'updating-online':
-      case 'done':
+      case 'pushed':
       case 'stuck':
       case 'no-provider':
       case 'fixing-push':
@@ -364,67 +350,6 @@ export const RebaseStopPanel = ({ sessionId, worktreePath, controls, actions }: 
   };
 
   const failure = actions.failure ?? null;
-  const conflictFiles = files?.files ?? [];
-
-  const body = (() => {
-    switch (state) {
-      case 'conflict':
-        return (
-          <RebaseConflictPrompt
-            sessionId={sessionId}
-            mountId={mountId}
-            files={conflictFiles}
-            isHintDisabled={isBusy}
-            onOpenFile={openStopFile}
-          />
-        );
-      case 'rebasing-here':
-      case 'auto-resolving':
-        return (
-          <RebaseStopFiles
-            label={FILES_LABEL[state] ?? 'Files'}
-            files={conflictFiles}
-            onOpen={state === 'rebasing-here' ? openStopFile : null}
-          />
-        );
-      case 'origin-moved':
-        return <RebaseOriginCommits commits={originCommits ?? []} />;
-      case 'push-failed':
-        return (
-          <StartHint
-            sessionId={sessionId}
-            scope={START_HINT_SCOPES.pushFix({ mountId })}
-            label={START_HINT_COPY.implementerLabel}
-            placeholder={START_HINT_COPY.pushFix}
-          />
-        );
-      case 'auto-done':
-      case 'rebased-here':
-      case 'pushed':
-      case 'dirty':
-      case 'head-moved':
-      case 'blocked':
-      case 'result-differs':
-      case 'failed':
-      case 'choosing':
-      case 'restore-conflict':
-      case 'set-aside':
-      case 'checking':
-      case 'replaying':
-      case 'merging':
-      case 'checking-result':
-      case 'waiting':
-      case 'moving':
-      case 'updating-online':
-      case 'done':
-      case 'stuck':
-      case 'no-provider':
-      case 'fixing-push':
-        return null;
-      default:
-        return state satisfies never;
-    }
-  })();
 
   return (
     <section
@@ -434,14 +359,24 @@ export const RebaseStopPanel = ({ sessionId, worktreePath, controls, actions }: 
       className="flex min-w-0 flex-col"
     >
       <Notice
-        role={job.isRunning ? 'status' : 'alert'}
+        role={job.isRunning || job.tone === 'ok' ? 'status' : 'alert'}
         tone={TONE_OF[job.tone]}
         placement="banner"
-        title={job.title}
+        title={
+          <RebaseCardTitle
+            title={job.title}
+            onDismiss={job.isRunning || WORKING.has(state) ? null : controls.dismissCard}
+          />
+        }
         body={job.line}
       >
         <div className="flex min-w-0 flex-col gap-3">
-          {body}
+          <RebaseStopBody
+            sessionId={sessionId}
+            worktreePath={worktreePath}
+            controls={controls}
+            isBusy={isBusy}
+          />
           <JobBannerReview sessionId={sessionId} mountId={mountId} />
           {failure === null && registry.failure === null ? null : (
             <div role="alert" className="flex min-w-0 items-center gap-2 text-meta text-danger">

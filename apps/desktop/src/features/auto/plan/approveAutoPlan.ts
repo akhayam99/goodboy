@@ -39,7 +39,7 @@ const REFUSAL_TEXT: Readonly<Partial<Record<AutoRefusalCode, string>>> = {
   stale_revision: 'A newer version arrived. Review it before approving.',
   artifact_consumed: 'This plan was already used.',
   artifact_discarded: 'This plan was discarded.',
-  artifact_unknown: "This plan isn't part of an Auto conversation.",
+  artifact_unknown: "This plan isn't part of a Lead conversation.",
 };
 
 const refusalText = ({ code, expectedRevision, latestRevision }: RefusalParams): string => {

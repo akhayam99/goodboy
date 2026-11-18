@@ -13,7 +13,8 @@ import { DiffBaseBranchRow } from '../../../diff/components/ChangesPage/DiffBase
 import { useSessionDiff } from '../../../diff/hooks/useSessionDiff';
 import { useGithubConnection } from '../../../integrations/github/useGithubConnection';
 import { useMountRemoteHostKind } from '../../../worktree/useMountRemoteHostKind';
-import { BranchLead } from './BranchLead';
+import { JobBanner } from '../../../history/JobBanner';
+import { PushBanner } from '../../../resolve/components/ReviewFlow/PushBanner';
 import { ReviewFlowVisit } from '../../../resolve/components/ReviewFlow/ReviewFlowVisit';
 import { useActiveReviewSource } from '../../../resolve/hooks/useActiveReviewSource';
 import { useBranchReview } from '../../../resolve/hooks/useBranchReview';
@@ -398,15 +399,11 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
         revealKey={tab}
         headerRhythm="section"
         lead={
-          <BranchLead
-            sessionId={sessionId}
-            mountId={historyMountId}
-            worktreePath={identity.mountPath}
-            push={branchReview.push}
-          />
+          <PushBanner sessionId={sessionId} mountId={historyMountId} push={branchReview.push} />
         }
         header={
           <div className={cn('flex min-w-0 flex-col', PANE_RHYTHM.block)}>
+            <JobBanner sessionId={sessionId} worktreePath={identity.mountPath} />
             <BranchHeader
               sessionId={sessionId}
               host={host}

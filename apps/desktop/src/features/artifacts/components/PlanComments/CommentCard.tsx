@@ -3,7 +3,10 @@ import { Check, Pencil, X } from '@goodboy/ui/icons';
 import { Chip, cn, ICON_SIZE, IconButton, tintClasses } from '@goodboy/ui';
 import type { ArtifactComment } from '@goodboy/types';
 
+import { usePendingAction } from '../../../../shared/hooks/usePendingAction';
 import { CommentComposer } from './CommentComposer';
+
+const REMOVE_KEY = 'remove-comment';
 
 type Props = {
   readonly comment: ArtifactComment;
@@ -61,6 +64,7 @@ export const CommentCard = ({
   onRemove,
 }: Props) => {
   const [isEditing, setIsEditing] = useState(false);
+  const { pendingKeys, run } = usePendingAction({ sessionId: comment.sessionId });
   const { anchor } = comment;
   const quote = anchor.kind === 'quote' ? anchor.text : null;
 
@@ -92,7 +96,14 @@ export const CommentCard = ({
               icon={X}
               iconSize={ICON_SIZE.row}
               variant="ghost"
-              onClick={() => void onRemove({ commentId: comment.id })}
+              busy={pendingKeys.has(REMOVE_KEY)}
+              onClick={() =>
+                void run({
+                  key: REMOVE_KEY,
+                  failureTitle: "Couldn't remove the comment",
+                  task: () => onRemove({ commentId: comment.id }),
+                })
+              }
             />
           </>
         ) : null}

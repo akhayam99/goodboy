@@ -93,7 +93,8 @@ native `<select>`: the WebKit menu ignores theme, density and keyboard.
   measures the trigger itself when the anchor wrapper holds one element, so a
   wrapper stretched by a column never pushes the popover to the far edge.
   `side: 'right'` opens beside the trigger (the terminal picker, the bug report)
-  and flips left when the right is short. An override of either needs a reason
+  and flips left when the right is short; `side: 'left'` is the mirror for a
+  trigger on the right tool rail. `align` is `start` or `end`, never centred. An override of either needs a reason
   in `regressions/popover-anchoring.baseline.json`, which only falls. It keeps 12px from
   the viewport edge. `popupWidth="trigger"` fixes the width to the trigger's
   (160px at least) so a long title truncates instead of widening the popover;
@@ -160,8 +161,8 @@ never differ ([docs/navigation/shell.md](../../../docs/navigation/shell.md#conte
   truncates its label and clamps its description at three lines),
   padding 4, rows at `rounded-sm`, scrolling in a `ScrollFade`. It enters with
   `animate-popover-in` (120ms, opacity and a 0.98 scale). `ContextMenu` opens
-  at the pointer and flips left or up to stay 8px inside the window
-  (`placeContextMenu`).
+  at the pointer, flips left at the right edge and slides up to stay 8px inside
+  the window, its height capped to the window (`placeFloating`).
 - **Row**: a 16px leading slot for the icon, the label, the shortcut glyphs on
   the right in `text-meta text-faint-foreground`, and a chevron when the
   row opens a submenu. Verb groups are split by a hairline, never by headers. A

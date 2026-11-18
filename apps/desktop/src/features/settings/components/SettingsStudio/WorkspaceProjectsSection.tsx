@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import type { WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { usePickFolder } from '../../../../shared/hooks/usePickFolder';
+import { usePendingAction } from '../../../../shared/hooks/usePendingAction';
 import { ProjectLinkList } from '../../../../shared/components/ProjectLinkList';
 import { GoodboyIgnoreCard } from '../../../workspace/components/GoodboyIgnoreCard';
 import { GoodboyIgnoreField } from './GoodboyIgnoreField';
@@ -15,6 +16,8 @@ import { WorkspaceTerminalFolderRow } from './WorkspaceTerminalFolderRow';
 import { PlainFolderOptions } from './PlainFolderOptions';
 import { FolderGitCard } from '../../../workspace/folderGitCard';
 import { useFolderGitOpening } from '../../../workspace/folderGitOpening';
+
+const LOCATE_KEY = 'locate-moved-folders';
 
 type Props = {
   readonly workspaceId: WorkspaceId;
@@ -46,12 +49,20 @@ export const WorkspaceProjectsSection = ({
   const owner = useAppStore((state) => state.projectRelocationWorkspaceId);
   const findMovedProjects = useAppStore((state) => state.findMovedProjects);
   const pickFolder = usePickFolder();
-  const chooseFolder = async (): Promise<void> => {
-    const picked = await pickFolder();
-    if (picked === null) {
-      return;
-    }
-    await findMovedProjects({ workspaceId, parent: picked });
+  const { pendingKeys, run } = usePendingAction({ workspaceId });
+  const isChoosing = pendingKeys.has(LOCATE_KEY);
+  const chooseFolder = (): void => {
+    void run({
+      key: LOCATE_KEY,
+      failureTitle: "Couldn't look for the moved folders",
+      task: async () => {
+        const picked = await pickFolder();
+        if (picked === null) {
+          return;
+        }
+        await findMovedProjects({ workspaceId, parent: picked });
+      },
+    });
   };
   const isRelocationOpen = owner === workspaceId && phase !== 'idle';
 
@@ -71,13 +82,17 @@ export const WorkspaceProjectsSection = ({
           title={`${missing.length} ${missing.length === 1 ? 'folder is' : 'folders are'} not where Goodboy left ${missing.length === 1 ? 'it' : 'them'}.`}
           body={`${missing.map((entry) => entry.project.name).join(', ')} ${missing.length === 1 ? 'was' : 'were'} at the saved folder. Sessions that use ${missing.length === 1 ? 'it are' : 'them are'} paused until you locate ${missing.length === 1 ? 'it' : 'them'}. Nothing was deleted.`}
           actions={
-            <Button variant="secondary" size="sm" onClick={() => void chooseFolder()}>
+            <Button variant="secondary" size="sm" isBusy={isChoosing} onClick={chooseFolder}>
               Locate folders
             </Button>
           }
         />
       )}
-      <LocateMovedProjects workspaceId={workspaceId} onChoose={() => void chooseFolder()} />
+      <LocateMovedProjects
+        workspaceId={workspaceId}
+        isChoosing={isChoosing}
+        onChoose={chooseFolder}
+      />
       <GoodboyIgnoreCard workspaceId={workspaceId} />
       {hasProjects ? <WorkspaceTerminalFolderRow workspaceId={workspaceId} /> : null}
       <ProjectLinkList

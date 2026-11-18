@@ -21,6 +21,7 @@ import { U25_DEBUGGER_SCENES } from './debugger';
 
 beforeAll(async () => {
   await importStore();
+  await import('../../../../../features/branch/components/CheckAnalysisDrawer');
 }, STORE_IMPORT_TIMEOUT_MS);
 beforeEach(async () => {
   await resetStoryStore();
@@ -50,14 +51,14 @@ const show = ({ name }: Params) => {
 };
 
 describe('Debugger scenes', () => {
-  it('opens the options scene on the recommended option', () => {
+  it('opens the options scene on the recommended option', async () => {
     show({ name: 'debugger-drawer-options' });
-    const drawer = screen.getByRole('region', { name: 'Debugger' });
+    const drawer = await screen.findByRole('region', { name: 'Debugger' });
     expect(within(drawer).getByRole('button', { name: 'Start option A' })).toBeDefined();
   });
-  it('opens the log scene with the log folded', () => {
+  it('opens the log scene with the log folded', async () => {
     show({ name: 'debugger-drawer-ci-log' });
-    const drawer = screen.getByRole('region', { name: 'Debugger' });
+    const drawer = await screen.findByRole('region', { name: 'Debugger' });
     fireEvent.click(within(drawer).getByRole('button', { name: 'Failed log tail' }));
     expect(
       within(drawer)

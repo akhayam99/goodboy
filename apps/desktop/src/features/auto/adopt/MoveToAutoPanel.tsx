@@ -15,8 +15,9 @@ type Props = {
   readonly onClose: () => void;
 };
 
-const PLACEHOLDER = 'Optional. Leave it empty and Auto decides from the transcript.';
-const UNDO_CONFLICT = 'Auto is working with it now. Use Detach from Auto when its turn ends.';
+const PLACEHOLDER = 'Optional. Leave it empty and the Lead decides from the transcript.';
+const UNDO_CONFLICT =
+  'The Lead is working with it now. Use Detach from the Lead when its turn ends.';
 
 export const MoveToAutoPanel = ({ sessionId, agent, onClose }: Props) => {
   const [instruction, setInstruction] = useState('');
@@ -42,8 +43,8 @@ export const MoveToAutoPanel = ({ sessionId, agent, onClose }: Props) => {
         if (outcome.kind === 'adopted') {
           undoable({
             showToast,
-            title: `Auto took ${agent.name} from here`,
-            message: 'Auto reads its work and decides what comes next.',
+            title: `The Lead took ${agent.name} from here`,
+            message: 'The Lead reads its work and decides what comes next.',
             conflictMessage: UNDO_CONFLICT,
             undo: async () =>
               (
@@ -70,15 +71,15 @@ export const MoveToAutoPanel = ({ sessionId, agent, onClose }: Props) => {
   return (
     <div className="flex min-w-0 flex-col gap-3">
       <div className="flex flex-col gap-1">
-        <span className="text-row text-foreground">What should Auto do next?</span>
+        <span className="text-row text-foreground">What should the Lead do next?</span>
         <p className="text-meta text-muted-foreground">
-          {agent.name} keeps its chat and its files. Auto takes over from here and hands new work to
-          new agents.
+          {agent.name} keeps its chat and its files. The Lead takes over from here and hands new
+          work to new agents.
         </p>
       </div>
       <PromptField
         kind="document"
-        label="What should Auto do next?"
+        label="What should the Lead do next?"
         value={instruction}
         onChange={setInstruction}
         disabled={isMoving}

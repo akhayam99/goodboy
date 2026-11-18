@@ -1622,6 +1622,7 @@ const COMMENT_OPEN = [
   'reviewComment.transcript',
   'reviewComment.openOnGithub',
 ];
+const COMMENT_LINKS = ['reviewComment.openInDiff', 'reviewComment.openOnGithub'];
 const COMMENT_DECIDE = [
   'reviewComment.reply',
   'reviewComment.skip',
@@ -1633,8 +1634,8 @@ const REVIEW_COMMENT_STATES: ReadonlyArray<readonly [string, string, ReadonlyArr
     'not started',
     'PRRT_thread_retry_constant',
     [
-      'reviewComment.openInDiff',
-      'reviewComment.openOnGithub',
+      ...COMMENT_LINKS,
+      'reviewComment.startRun',
       'reviewComment.draft',
       ...COMMENT_DECIDE,
       'reviewComment.copyLink',
@@ -1666,29 +1667,18 @@ const REVIEW_COMMENT_STATES: ReadonlyArray<readonly [string, string, ReadonlyArr
   [
     'accepted',
     'PRRT_thread_log_redact',
-    [
-      'reviewComment.openInDiff',
-      'reviewComment.openOnGithub',
-      'reviewComment.undo',
-      'reviewComment.copyLink',
-    ],
+    [...COMMENT_LINKS, 'reviewComment.undo', 'reviewComment.copyLink'],
   ],
   [
     'skipped',
     'PRRT_thread_flaky_test',
-    [
-      'reviewComment.openInDiff',
-      'reviewComment.openOnGithub',
-      'reviewComment.undo',
-      'reviewComment.copyLink',
-    ],
+    [...COMMENT_LINKS, 'reviewComment.undo', 'reviewComment.copyLink'],
   ],
   [
     'outdated',
     'PRRT_thread_typo',
     [
-      'reviewComment.openInDiff',
-      'reviewComment.openOnGithub',
+      ...COMMENT_LINKS,
       'reviewComment.keepDraft',
       'reviewComment.edit',
       ...COMMENT_DECIDE,

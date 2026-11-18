@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { cn, useDropdownDirection } from '@goodboy/ui';
+import { SHELL_GUTTER_PX, cn, useDropdownDirection } from '@goodboy/ui';
 import { useToast } from '../../../shared/components/Toast';
 import { openLink } from '../../open/openLink';
 import { useShortcut } from '../../../shared/keyboard/useShortcut';
@@ -12,6 +12,7 @@ import { lastCrashPart } from '../crashReport';
 import { LAST_CRASH_TITLE, type LastCrashKind } from '../lastCrash';
 import { OPEN_REPORT_SHEET_EVENT, type OpenReportSheetDetail } from '../openReportSheet';
 import { contextParts, noticePart, type ReportPart } from '../reportBody';
+import { openedLinkMessage } from '../openedLinkMessage';
 import type { ReportFiled } from '../reportDestination';
 import { reportNames } from '../reportNames';
 import { ReportComposer, type ReportDraft, type ReportLinkOpened } from './ReportComposer';
@@ -27,8 +28,6 @@ const REPORT_TRIGGER = '[data-report-bug]';
 const SHEET_WIDTH_PX = 560;
 
 const SHEET_EXPECTED_HEIGHT_PX = 260;
-
-const WINDOW_MARGIN_PX = 12;
 
 const visibleTrigger = (): HTMLElement | null =>
   [...document.querySelectorAll<HTMLElement>(REPORT_TRIGGER)].find(
@@ -98,7 +97,7 @@ export const ReportSheetHost = () => {
     side: 'right',
     align: 'end',
     shouldMatchTriggerWidth: false,
-    viewportMargin: WINDOW_MARGIN_PX,
+    viewportMargin: SHELL_GUTTER_PX,
     maxWidth: SHEET_WIDTH_PX,
   });
 
@@ -168,14 +167,12 @@ export const ReportSheetHost = () => {
   );
 
   const onOpenedLink = useCallback(
-    ({ overflows }: ReportLinkOpened) => {
+    (opened: ReportLinkOpened) => {
       setOpened(null);
       showToast({
         kind: 'info',
         title: 'Finish on GitHub',
-        message: overflows
-          ? 'The rest did not fit the link and is on your clipboard. Paste it into the issue, then submit.'
-          : 'Submit the form in your browser to file the issue.',
+        message: openedLinkMessage({ opened }),
       });
     },
     [showToast],

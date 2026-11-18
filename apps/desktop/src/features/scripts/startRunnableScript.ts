@@ -1,5 +1,6 @@
 import type { MountId, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../store';
+import { selectWritableMounts } from '../../store/slices/project-mounts/selectors';
 import type { RunnableScript } from './buildSessionScripts';
 import { discoveredScriptCwd, type ScriptRunResult } from './scripts';
 
@@ -19,7 +20,15 @@ export const startRunnableScript = ({
   const state = useAppStore.getState();
   const liveRecord = state.scriptRuns[sessionId]?.[script.savedId ?? script.key];
   if (liveRecord !== undefined && liveRecord.status === 'pending') {
-    return Promise.resolve({ stdout: '', stderr: 'Already running', exitCode: -1 });
+    const elsewhere =
+      liveRecord.mountId === undefined || liveRecord.mountId === mountId
+        ? undefined
+        : selectWritableMounts({ state, sessionId }).find(
+            (mount) => mount.mountId === liveRecord.mountId,
+          );
+    const where =
+      elsewhere === undefined || elsewhere.branch === '' ? '' : ` on ${elsewhere.branch}`;
+    return Promise.resolve({ stdout: '', stderr: `Already running${where}`, exitCode: -1 });
   }
   if (script.savedId !== null) {
     return state.runScript({ sessionId, scriptId: script.savedId, mountId });

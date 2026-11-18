@@ -14,6 +14,11 @@ import type { ReviewPush } from '../ReviewFlow/useReviewPush';
 import type { ReviewEntry } from '../ReviewFlow/useReviewEntries';
 import { CommentDrawerActions } from './CommentDrawerActions';
 import { CommentDrawerAuthor } from './CommentDrawerAuthor';
+import { CommentRunStart } from './CommentRunStart';
+import { CommentRunSuggestion } from './CommentRunSuggestion';
+import { COMMENT_DRAWER_VERB } from './commentDrawerVerbs';
+import { useAppStore } from '../../../../store';
+import { sessionById } from '../../../../store/slices/sessions/sessionIndex';
 import { SessionMediaScope } from '../../../../shared/components/SessionMediaScope';
 import { REVIEW_COMMENT_DRAWER_COPY } from './reviewCommentDrawerCopy';
 import { useCommentDrawerPlan } from './useCommentDrawerPlan';
@@ -68,6 +73,15 @@ export const CommentDrawerFrame = ({
   const plan = useCommentDrawerPlan({ sessionId, entry, push, hasRunLine });
   const lone = loneOf({ rare: plan.rare });
   const isNote = entry.row.thread.originKind === 'diff_comment';
+  const isComposing = useAppStore(
+    (state) => state.commentRunStarts[sessionId]?.openThreadId === entry.threadId,
+  );
+  const workspaceId = useAppStore(
+    (state) => sessionById(state.sessions, sessionId)?.workspaceId ?? null,
+  );
+  const isBarIdle = binding.compose === null && !binding.isEditingReply;
+  const suggested =
+    isBarIdle && plan.shown.includes(COMMENT_DRAWER_VERB.startRun) ? entry.row.reviewerNote : null;
   const menu =
     plan.rare.length === 0 || lone !== null ? undefined : (
       <ThreadOverflowMenu
@@ -107,15 +121,30 @@ export const CommentDrawerFrame = ({
             onStartOver={onStartOver}
           />
         </SessionMediaScope>
-        <ThreadProperties sessionId={sessionId} entry={entry} />
-        <CommentDrawerActions
-          entry={entry}
-          push={push}
-          plan={plan}
-          lone={lone}
-          extra={isNote ? <NoteThreadActions sessionId={sessionId} entry={entry} /> : null}
-          binding={binding}
-        />
+        {isComposing && workspaceId !== null ? (
+          <CommentRunStart
+            sessionId={sessionId}
+            workspaceId={workspaceId}
+            mountId={mountId}
+            entry={entry}
+            entries={entries}
+          />
+        ) : (
+          <>
+            <ThreadProperties sessionId={sessionId} entry={entry} />
+            {suggested === null ? null : (
+              <CommentRunSuggestion body={suggested.body} path={suggested.path} />
+            )}
+            <CommentDrawerActions
+              entry={entry}
+              push={push}
+              plan={plan}
+              lone={lone}
+              extra={isNote ? <NoteThreadActions sessionId={sessionId} entry={entry} /> : null}
+              binding={binding}
+            />
+          </>
+        )}
       </div>
     </DrawerFrame>
   );

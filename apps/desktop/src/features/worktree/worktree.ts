@@ -47,6 +47,7 @@ type QuarantineCandidateParams = {
   readonly candidateId: string;
   readonly baseSha: string;
   readonly stack?: boolean;
+  readonly shouldKeepUncommitted?: boolean;
 };
 
 export type QuarantinedCandidate = {
@@ -54,14 +55,8 @@ export type QuarantinedCandidate = {
   readonly baseSha: string;
 };
 
-export const integrateWorktreeCandidate = async (
-  args: IntegrateCandidateParams,
-): Promise<string> => {
-  const result = await invokeCommand<{ readonly sha: string }>('worktree_integrate_candidate', {
-    args,
-  });
-  return result.sha;
-};
+export const integrateWorktreeCandidate = async (args: IntegrateCandidateParams): Promise<string> =>
+  (await invokeCommand<{ readonly sha: string }>('worktree_integrate_candidate', { args })).sha;
 
 export const quarantineWorktreeCandidate = async (
   args: QuarantineCandidateParams,
@@ -87,13 +82,14 @@ export const splitWorktreeCandidates = async (
 
 export type ResolveCopy = {
   readonly copyPath: string;
-  readonly head: string;
+  readonly base: string;
 };
 
 export const prepareResolveCopy = async (args: {
   readonly worktreePath: string;
   readonly attemptId: string;
   readonly startSha?: string;
+  readonly shouldCarryWorkingTree?: boolean;
 }): Promise<ResolveCopy> => invokeCommand<ResolveCopy>('resolve_copy_prepare', { args });
 
 export type WorktreeWriterLease = {

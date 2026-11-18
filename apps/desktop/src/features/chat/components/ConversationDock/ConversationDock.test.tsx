@@ -424,7 +424,7 @@ describe('Auto child recovery by outcome', () => {
     expect(screen.getAllByRole('button', { name: 'Retry' })).toHaveLength(1);
   });
 
-  it('hides Retry while Auto is working, so a second click cannot queue twice', () => {
+  it('hides Retry while The Lead is working, so a second click cannot queue twice', () => {
     useAppStore.setState({
       agentTurnState: { [ROOT_ID]: { kind: 'running', runId: RUN_ID, startedAt: AT } },
     });

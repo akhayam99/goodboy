@@ -18,7 +18,7 @@ export const PLAN_COMMENTS_KIND: ObjectKindDefinition<PlanCommentsActionTarget, 
         label: 'Approve anyway',
         icon: Check,
         group: 'act',
-        blockedReason: ({ facts }) => (facts.isBusy ? 'Auto is taking your answer' : null),
+        blockedReason: ({ facts }) => (facts.isBusy ? 'The Lead is taking your answer' : null),
         when: () => true,
         run: ({ facts }) => {
           if (facts.isBusy) {

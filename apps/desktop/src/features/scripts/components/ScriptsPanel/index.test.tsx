@@ -216,6 +216,10 @@ vi.mock('../../../../store', () => {
     runDiscoveredScript: state.runDiscoveredScript,
     openDrawer: state.openDrawer,
     toggleDrawer: state.toggleDrawer,
+    terminalTabs: {},
+    addTerminalTab: () => 'terminal-1',
+    setTerminalPrefill: vi.fn(),
+    rememberTerminalScope: vi.fn(),
     settings: settingsOf(),
     loadScriptPins: noPins,
     toggleScriptPin: state.toggleScriptPin,
@@ -285,7 +289,7 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe('ScriptsPanel', () => {
-  it('groups scripts by mount, saved first, in a Commands band with no source column', () => {
+  it('groups scripts by mount, saved first, in one list with no band and no source column', () => {
     renderPanel();
 
     expect(screen.getByRole('heading', { name: 'Scripts' })).toBeDefined();
@@ -300,8 +304,9 @@ describe('ScriptsPanel', () => {
       'Show test output',
       'Show lint output',
     ]);
-    expect(within(settlement).getByRole('region', { name: /^Commands of /u })).toBeDefined();
-    expect(within(settlement).queryByRole('region', { name: /^Services of /u })).toBeNull();
+    expect(within(settlement).getByRole('region', { name: /^Scripts of /u })).toBeDefined();
+    expect(within(settlement).queryByText('Commands')).toBeNull();
+    within(settlement).getByText('pnpm run test');
     expect(within(settlement).queryByText('package.json')).toBeNull();
     expect(within(rounding).getByText('Replay settlement batch')).toBeDefined();
   });
@@ -355,11 +360,10 @@ describe('ScriptsPanel', () => {
         .getAllByRole('region')
         .map((region) => region.getAttribute('aria-label')),
     ).toEqual([
-      'Services of ledger-core · nw/settlement',
+      'Scripts of ledger-core · nw/settlement',
       'northwind scripts',
       '@acme/api scripts',
       '@northwind/web scripts',
-      'Commands of ledger-core · nw/settlement',
       'Saved scripts',
     ]);
     const web = within(settlement).getByRole('region', { name: '@northwind/web scripts' });
@@ -381,7 +385,7 @@ describe('ScriptsPanel', () => {
       within(group('ledger-core · nw/settlement'))
         .getAllByRole('region')
         .map((region) => region.getAttribute('aria-label')),
-    ).toEqual(['Services of ledger-core · nw/settlement', '@acme/api scripts']);
+    ).toEqual(['Scripts of ledger-core · nw/settlement', '@acme/api scripts']);
   });
 
   it('copies the workspace-scoped invocation for a nested package, not the package-local one', () => {
@@ -472,8 +476,7 @@ describe('ScriptsPanel', () => {
 
     state.mounts = [];
     renderPanel();
-    expect(screen.getByRole('heading', { level: 3, name: 'No scripts yet' })).toBeDefined();
-    expect(screen.getByText('Scripts run inside a folder of this session.')).toBeDefined();
+    screen.getByText('No branch in this session to run scripts on.');
     expect(screen.getByRole('button', { name: 'Add project' })).toBeDefined();
   });
 
@@ -885,7 +888,7 @@ describe('ScriptsPanel', () => {
     expect(within(settlement).queryByRole('region', { name: /^Suggested of /u })).toBeNull();
   });
 
-  it('splits a project into Services and Commands with a count on each band', () => {
+  it('lists services before commands in one list, each row with its command in mono', () => {
     state.mounts = [SETTLEMENT];
     state.saved = [];
     state.discovered = {
@@ -898,12 +901,24 @@ describe('ScriptsPanel', () => {
     renderPanel();
 
     const settlement = group('ledger-core · nw/settlement');
-    const services = within(settlement).getByRole('region', { name: /^Services of /u });
-    const tasks = within(settlement).getByRole('region', { name: /^Commands of /u });
-    expect(within(services).getAllByRole('button', { name: /^Show .* output$/ })).toHaveLength(2);
-    expect(within(services).getByText('2')).toBeDefined();
-    expect(within(tasks).getAllByRole('button', { name: /^Show .* output$/ })).toHaveLength(1);
-    expect(within(tasks).queryByText('1')).toBeNull();
+    const list = within(settlement).getByRole('region', { name: /^Scripts of /u });
+    expect(
+      within(list)
+        .getAllByRole('button', { name: /^Show .* output$/ })
+        .map((button) => button.getAttribute('aria-label')),
+    ).toEqual(['Show dev output', 'Show preview output', 'Show test output']);
+    within(list).getByText('pnpm run preview');
+    expect(within(settlement).queryByText('Services')).toBeNull();
+  });
+
+  it('opens a script in the terminal of its branch from the row menu', () => {
+    state.mounts = [SETTLEMENT];
+    renderPanel();
+
+    rowMenu(group('ledger-core · nw/settlement'), 'test');
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Open in terminal' }));
+
+    expect(state.openDrawer).toHaveBeenCalledWith(expect.objectContaining({ kind: 'terminal' }));
   });
 
   it('asks the agent about a failed task from its row menu, naming the script, exit and worktree', () => {
@@ -990,7 +1005,7 @@ describe('ScriptsPanel', () => {
     expect(state.openDrawer).toHaveBeenCalledTimes(1);
   });
 
-  it('starts every idle Service of a project from the Services band and skips running ones', () => {
+  it('starts every idle Service of a project from its header and skips running ones', () => {
     state.mounts = [SETTLEMENT];
     state.saved = [];
     state.discovered = {
@@ -1011,11 +1026,9 @@ describe('ScriptsPanel', () => {
       },
     };
     renderPanel();
-    const services = within(group('ledger-core · nw/settlement')).getByRole('region', {
-      name: /^Services of /u,
-    });
+    const settlement = group('ledger-core · nw/settlement');
 
-    fireEvent.click(within(services).getByRole('button', { name: /^Start all services/u }));
+    fireEvent.click(within(settlement).getByRole('button', { name: /^Start all services/u }));
 
     expect(state.openDrawer).not.toHaveBeenCalled();
     expect(state.runDiscoveredScript).toHaveBeenCalledTimes(2);

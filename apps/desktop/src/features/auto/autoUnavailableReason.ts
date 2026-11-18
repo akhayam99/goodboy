@@ -1,8 +1,8 @@
 import { AUTO_GATES, AUTO_OWN_PROVIDERS } from '@goodboy/core/auto';
 import type { AppStore } from '../../store/store';
 
-const OFF_REASON = 'Auto is not available in this build.';
-const NO_PROVIDER_REASON = 'Connect Claude, Codex, Cursor or Gemini to use Auto.';
+const OFF_REASON = 'The Lead is not available in this build.';
+const NO_PROVIDER_REASON = 'Connect Claude, Codex, Cursor or Gemini to use the Lead.';
 
 type Params = {
   readonly state: Pick<AppStore, 'providers'>;

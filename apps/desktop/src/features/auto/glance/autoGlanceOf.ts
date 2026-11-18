@@ -4,10 +4,11 @@ import { NAMES } from '../../../shared/utils/names';
 import { planNeedsApprovalOf } from '../../../shared/utils/planNeedsApprovalOf';
 import { glanceOf, type Glance } from '../../session/glance/glanceOf';
 import { projectAskOf } from '../chat/projectAskOf';
-import { dockPlanRowOf } from '../dockPlanRowOf';
+import { delegationClosedOf } from '../delegationClosedOf';
+import { dockPlanOf } from '../dockPlanOf';
 import { isAutoPausedAtLimit } from '../isAutoPausedAtLimit';
-import { isAutoPlanAwaitingApproval } from '../isAutoPlanAwaitingApproval';
 import { joinNouns } from '../joinNouns';
+import { planBlockedReasonOf } from '../planBlockedReasonOf';
 import { openRoleNouns } from '../openRoleNouns';
 import { needsYouRoleNouns } from '../needsYouRoleNouns';
 import { runningRoleNouns } from '../runningRoleNouns';
@@ -26,7 +27,9 @@ const stepsSentenceOf = ({ view }: ViewParams): string => {
   if (total === 0) {
     return 'Nothing was delegated';
   }
-  const settled = view.delegations.filter((delegation) => delegation.state === 'settled').length;
+  const settled = view.delegations.filter(
+    (delegation) => delegation.state === 'settled' || delegationClosedOf({ delegation }) !== null,
+  ).length;
   return `${settled} of ${total} steps`;
 };
 
@@ -49,34 +52,31 @@ export const autoGlanceOf = ({ view, rootTurn }: Params): Glance => {
     }
     return glanceOf({
       state: 'failed',
-      sentence: hasReason ? reason : "Auto couldn't reply",
+      sentence: hasReason ? reason : "The Lead couldn't reply",
     });
   }
   const isRootTurnLive = rootTurn?.kind === 'running' || rootTurn?.kind === 'starting';
   if (phase === 'done' || phase === 'answering') {
     return isRootTurnLive
-      ? glanceOf({ state: 'running', sentence: 'Auto is answering' })
+      ? glanceOf({ state: 'running', sentence: 'The Lead is answering' })
       : glanceOf({ state: 'idle', sentence: 'Write to continue' });
   }
-  const plan = dockPlanRowOf({ view });
-  if (isAutoPlanAwaitingApproval({ view })) {
+  const plan = dockPlanOf({ view });
+  if (plan?.kind === 'waiting') {
     return glanceOf({
       state: 'waiting',
       word: NAMES.needsApproval,
-      sentence: planNeedsApprovalOf({ version: plan?.revision ?? 1 }),
+      sentence: planNeedsApprovalOf({ version: plan.version }),
     });
   }
   if (projectAskOf({ view }) !== null) {
-    return glanceOf({ state: 'waiting', sentence: 'Auto asks which project to use' });
+    return glanceOf({ state: 'waiting', sentence: 'The Lead asks which project to use' });
   }
   if (isAutoPausedAtLimit({ view })) {
     return glanceOf({ state: 'paused', sentence: 'At the limit' });
   }
-  if (plan !== null && plan.artifact.approvalState === 'revising') {
-    return glanceOf({
-      state: 'running',
-      sentence: `The Planner is revising plan v${plan.revision}`,
-    });
+  if (plan?.kind === 'updating') {
+    return glanceOf({ state: 'running', sentence: planBlockedReasonOf({ plan }) ?? '' });
   }
   const nouns = openRoleNouns({ delegations: view.delegations });
   if (phase === 'waiting' && nouns.length > 0) {

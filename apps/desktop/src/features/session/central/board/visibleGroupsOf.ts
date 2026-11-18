@@ -10,13 +10,14 @@ export type VisibleGroup = Readonly<{
 
 type Params = {
   readonly board: BranchBoard;
-  readonly isMergedExpanded: boolean;
+  readonly expandedGroupIds: ReadonlySet<BoardGroupId>;
 };
 
-export const visibleGroupsOf = ({ board, isMergedExpanded }: Params): ReadonlyArray<VisibleGroup> =>
+export const visibleGroupsOf = ({ board, expandedGroupIds }: Params): ReadonlyArray<VisibleGroup> =>
   board.groups.map((group): VisibleGroup => {
     const isFoldable = group.hiddenCount > 0;
-    const rowIds = isFoldable && !isMergedExpanded ? group.visibleRowIds : group.rowIds;
+    const rowIds =
+      isFoldable && !expandedGroupIds.has(group.id) ? group.visibleRowIds : group.rowIds;
     return {
       id: group.id,
       label: group.label,

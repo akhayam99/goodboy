@@ -8,6 +8,7 @@ import {
 import { joinKickoffParts } from '../../../features/chat/utils/resolverKickoffParts';
 import { invokeAgentUpdateStatus } from '../../../features/workflows/workflows';
 import type { ResolveQueueRow } from '../../../features/resolve/buildResolveQueueRows';
+import { NEEDS_RUN_REASON } from '../../../features/resolve/needsRunReason';
 import { resolveFixupTargets } from '../../../features/resolve/resolveFixupTargets';
 import { launchRowsOf } from '../../../features/resolve/reviewRows';
 import { sessionResolveStyle } from '../../sessionReplySettings';
@@ -127,6 +128,7 @@ export const continueResolveLaunch = async ({
       ...(row.thread.commitShas != null && { commitShas: row.thread.commitShas }),
       ...(entry.question != null && { question: entry.question }),
       ...(entry.answer != null && { answer: entry.answer }),
+      needsRun: NEEDS_RUN_REASON.reasonOf({ stateReason: row.thread.stateReason }),
       intent: entry.intent,
     }));
     const content = joinKickoffParts(

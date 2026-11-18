@@ -41,7 +41,7 @@ export const useAutoLevel = ({ workspaceId, sessionId }: Params): AutoLevelModel
     loadWorkspaceValue({ workspaceId, key: LEVEL_KEY }).catch((failure: unknown) => {
       void reportError({
         recovery: READ_FAILED,
-        title: "Couldn't read the Auto level",
+        title: "Couldn't read the Lead level",
         error: failure,
         workspaceId,
       });

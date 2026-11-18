@@ -37,7 +37,7 @@ const nav = {} as BoardNavigation;
 const makeSession = (id: string, goal: string): Session =>
   ({ id: id as SessionId, goal }) as unknown as Session;
 
-const noop = () => undefined;
+const noop = async () => undefined;
 
 const archiveNothing = async () => ({ failed: [] });
 

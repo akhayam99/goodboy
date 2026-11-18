@@ -12,6 +12,7 @@ type Params = {
   readonly text: string;
   readonly roles: ReadonlyArray<string>;
   readonly mount?: MountNote;
+  readonly joinKey?: string;
 };
 
 export const writeRefusal = async ({
@@ -23,6 +24,7 @@ export const writeRefusal = async ({
   text,
   roles,
   mount,
+  joinKey = `refusal:${runId}`,
 }: Params): Promise<void> => {
   const payload: RefusalPayload = {
     kind: 'refusal',
@@ -40,7 +42,7 @@ export const writeRefusal = async ({
       treeId: tree.id,
       generation: tree.generation,
       kind: 'refusal',
-      joinKey: `refusal:${runId}`,
+      joinKey,
       payload,
       nowMs: ctx.now(),
     },

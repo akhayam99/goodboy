@@ -1,4 +1,4 @@
-import { planAwaitsYou } from './planAwaitsYou';
+import { dockPlanOf } from './dockPlanOf';
 import type { Agent, AgentId } from '@goodboy/types';
 import type { AutoTreeView } from '../../store/slices/auto-view/state';
 import { autoRetryRouteOf } from '../../store/slices/turn/autoRetryRouteOf';
@@ -7,6 +7,7 @@ import { autoStuckKindOf, type AutoStuckKind } from './autoStuckKindOf';
 import { textField } from './chat/readJson';
 import { isAutoPausedAtLimit } from './isAutoPausedAtLimit';
 import { isAutoPlanAwaitingApproval } from './isAutoPlanAwaitingApproval';
+import { NAMES } from '../../shared/utils/names';
 
 type AutoRetryTargetKind = AutoStuckKind | 'approve' | 'blocked';
 
@@ -71,10 +72,8 @@ type ViewParams = {
 };
 
 const planOf = ({ view }: ViewParams): AutoPlanFacts | null => {
-  const row = view.artifacts.find((candidate) =>
-    planAwaitsYou({ row: candidate, level: view.level }),
-  );
-  if (row === undefined || row.title.trim() === '') {
+  const plan = dockPlanOf({ view });
+  if (plan?.kind !== 'waiting' || plan.row.title.trim() === '') {
     return null;
   }
   const branches = new Set(
@@ -83,7 +82,7 @@ const planOf = ({ view }: ViewParams): AutoPlanFacts | null => {
       return mountId === null ? [] : [mountId];
     }),
   );
-  return { name: row.title.trim(), version: row.revision, branchCount: branches.size };
+  return { name: plan.row.title.trim(), version: plan.version, branchCount: branches.size };
 };
 
 type OwnParams = ViewParams & {
@@ -93,8 +92,8 @@ type OwnParams = ViewParams & {
 const ownTargetOf = ({ view, kind }: OwnParams): AutoRetryTarget => ({
   agentId: view.tree.rootAgentId,
   rootAgentId: view.tree.rootAgentId,
-  role: 'Auto',
-  noun: 'Auto',
+  role: NAMES.lead,
+  noun: NAMES.lead,
   kind,
   reason: null,
   reasonCode: null,

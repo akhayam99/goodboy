@@ -29,10 +29,10 @@ const BLOCKED_STATES: ReadonlySet<BranchState> = new Set<BranchState>([
 ]);
 
 export const boardTileChipOf = ({ row, entry, runningCount }: Params): BoardTileChip => {
-  if (row.isMerged) {
+  if (row.isSettled) {
     return {
-      word: stageWordOf({ row, entry, mergedAt: null, now: 0 }),
-      tone: BRANCH_STATE_TONE.merged,
+      word: stageWordOf({ row, entry, settledAt: null, now: 0 }),
+      tone: row.isMerged ? BRANCH_STATE_TONE.merged : BRANCH_STATE_TONE.closed,
     };
   }
   if (row.askIds.length > 0) {

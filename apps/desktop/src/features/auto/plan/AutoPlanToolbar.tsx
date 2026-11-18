@@ -9,18 +9,20 @@ type Props = {
 };
 
 export const AutoPlanToolbar = ({ model }: Props) => {
-  const isRevising = model.approval.state === 'revising';
+  const blockedReason =
+    model.blockedReason ?? (model.approval.state === 'revising' ? PLAN_REVISING_REASON : null);
+  const isBlocked = blockedReason !== null;
   return (
     <div data-testid="auto-plan-toolbar" className="@container flex min-w-0 items-center gap-2">
       <Chip kind="state" tone={model.approval.tone} label={model.approval.word} />
       <span className="shrink-0 text-meta tabular-nums text-muted-foreground">
-        v{model.version}
+        v{model.shownVersion}
       </span>
       <span aria-hidden className="min-w-0 flex-1" />
       {model.isToldFailed ? (
         <>
           <span className="min-w-0 truncate text-meta text-muted-foreground">
-            Approved. Couldn&apos;t send it to Auto.
+            Approved. Couldn&apos;t send it to the Lead.
           </span>
           <Button
             size="sm"
@@ -33,18 +35,26 @@ export const AutoPlanToolbar = ({ model }: Props) => {
           </Button>
         </>
       ) : null}
-      {model.approval.state === 'approved' || model.approval.state === 'used' ? null : (
+      {model.approval.state === 'approved' ||
+      model.approval.state === 'used' ||
+      model.approval.state === 'superseded' ? null : (
         <>
-          <Button variant="ghost" size="sm" onClick={model.askForChanges}>
+          <Button
+            variant="ghost"
+            size="sm"
+            disabled={isBlocked}
+            title={blockedReason ?? undefined}
+            onClick={model.askForChanges}
+          >
             <MessageSquare size={ICON_SIZE.control} aria-hidden />
             Ask for changes
           </Button>
           <Button
             size="sm"
-            disabled={isRevising || model.isBusy}
+            disabled={isBlocked || model.isBusy}
             isBusy={model.isBusy}
             busyLabel="Approving"
-            title={isRevising ? PLAN_REVISING_REASON : undefined}
+            title={blockedReason ?? undefined}
             onClick={() => void model.approve()}
           >
             <Check size={ICON_SIZE.control} aria-hidden />

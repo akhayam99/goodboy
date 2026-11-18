@@ -66,6 +66,7 @@ const NO_COMMENTS: BranchStepComments = {
   facts: NO_COMMENT_FACTS,
   readyThreadIds: [],
   fixableThreadIds: [],
+  runSuggestedThreadIds: [],
 };
 
 type ApplyParams = {
@@ -206,6 +207,7 @@ export const useBranchControls = ({
   });
   const navigate = useAppStore((s) => s.navigate);
   const openDrawer = useAppStore((s) => s.openDrawer);
+  const openCommentRunStart = useAppStore((s) => s.openCommentRunStart);
   const acceptReviewComments = useAppStore((s) => s.acceptReviewComments);
   const clearReviewSelection = useAppStore((s) => s.clearReviewSelection);
   const reportError = useAppStore((s) => s.reportError);
@@ -320,6 +322,14 @@ export const useBranchControls = ({
         });
         return;
       }
+      if (actionId === BRANCH_STEP_ID.suggestRun) {
+        const [threadId] = comments.runSuggestedThreadIds;
+        if (threadId !== undefined) {
+          openReviewComment({ navigate, sessionId, threadId, mountPath: worktreePath });
+          openCommentRunStart({ sessionId, threadId });
+        }
+        return;
+      }
       if (actionId === BRANCH_STEP_ID.apply) {
         await applyFixes({ threadIds: comments.readyThreadIds });
         return;
@@ -332,8 +342,10 @@ export const useBranchControls = ({
       comments.facts.questionThreadId,
       comments.fixableThreadIds,
       comments.readyThreadIds,
+      comments.runSuggestedThreadIds,
       mountId,
       navigate,
+      openCommentRunStart,
       openDrawer,
       sessionId,
       worktreePath,

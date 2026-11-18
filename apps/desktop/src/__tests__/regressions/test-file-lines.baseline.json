@@ -1,5 +1,5 @@
 {
-  "apps/desktop/src/__tests__/actions/stateMatrix.test.ts": 1878,
+  "apps/desktop/src/__tests__/actions/stateMatrix.test.ts": 1868,
   "apps/desktop/src/app/components/SessionRail/branchTree.test.tsx": 1096,
   "apps/desktop/src/features/chat/components/ChatInput/index.test.tsx": 1162,
   "apps/desktop/src/features/companion/commandExecutor.commands.test.ts": 1226,
@@ -9,7 +9,7 @@
   "apps/desktop/src/shared/components/RoutingPicker/index.test.tsx": 1096,
   "apps/desktop/src/store/slices/artifacts/artifactScoutRun.test.ts": 1107,
   "apps/desktop/src/store/slices/history/index.test.ts": 1678,
-  "apps/desktop/src/store/slices/resolve/candidateIntegration.test.ts": 1649,
+  "apps/desktop/src/store/slices/resolve/candidateIntegration.test.ts": 1648,
   "apps/desktop/src/store/slices/resolve/drainResolveQueue.test.ts": 1475,
   "apps/desktop/src/store/slices/resolve/index.test.ts": 1650,
   "apps/desktop/src/store/slices/resolve/publication/publishConversations.test.ts": 1630,

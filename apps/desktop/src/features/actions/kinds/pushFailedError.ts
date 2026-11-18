@@ -8,6 +8,7 @@ type Params = {
   readonly isForce: boolean;
   readonly confirmedOnlyOnline: ReadonlyArray<OnlineCommit> | null;
   readonly confirmedRemoteSha: string | null;
+  readonly isOriginMoved?: boolean;
 };
 
 export type PushFailedError = Error & {
@@ -16,6 +17,7 @@ export type PushFailedError = Error & {
   readonly isForce: boolean;
   readonly confirmedOnlyOnline: ReadonlyArray<OnlineCommit> | null;
   readonly confirmedRemoteSha: string | null;
+  readonly isOriginMoved: boolean;
 };
 
 export const pushFailedError = ({
@@ -24,6 +26,7 @@ export const pushFailedError = ({
   isForce,
   confirmedOnlyOnline,
   confirmedRemoteSha,
+  isOriginMoved = false,
 }: Params): PushFailedError => {
   const failure = Object.assign(new Error(message), {
     name: 'PushFailedError',
@@ -32,6 +35,7 @@ export const pushFailedError = ({
     isForce,
     confirmedOnlyOnline,
     confirmedRemoteSha,
+    isOriginMoved,
   });
   pushFailures.set(failure, failure);
   return failure;

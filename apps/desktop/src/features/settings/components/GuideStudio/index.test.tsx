@@ -108,7 +108,7 @@ describe('HelpStudio on the Guide', () => {
   it('lists chapters and points that match the search, and Enter opens the first and flashes its point', () => {
     render(<HelpStudio tab="guide" onClose={vi.fn()} onOpenScreen={vi.fn()} />);
 
-    fireEvent.change(search(), { target: { value: 'resolve with auto' } });
+    fireEvent.change(search(), { target: { value: 'resolve with the lead' } });
 
     const results = screen.getByRole('list', { name: 'Help results' });
 
@@ -269,8 +269,8 @@ describe('HelpStudio on the Guide', () => {
 
     const legend = page('Legend');
     const marks = within(legend).getByText('Session marks').parentElement;
-    const states = Array.from(marks?.querySelectorAll('[data-node-state]') ?? []).map((node) =>
-      node.getAttribute('data-node-state'),
+    const states = Array.from(marks?.querySelectorAll('[data-status-mark]') ?? []).map(
+      (node) => node.getAttribute('data-status-state') ?? node.getAttribute('data-status-mark'),
     );
     expect(states).toEqual([
       'running',
@@ -280,11 +280,10 @@ describe('HelpStudio on the Guide', () => {
       'failed',
       'approved',
       'merging',
-      'marker',
-      'marker',
-      'finished',
+      'dot',
+      'merged',
       'closed',
-      'queued',
+      'empty',
     ]);
     expect(within(legend).getByText('Dots in the sidebar, rail and panes')).toBeDefined();
   });

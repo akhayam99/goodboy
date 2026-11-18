@@ -10,6 +10,8 @@ import { createReviewBulkSlice } from './slices/review-bulk';
 import { reviewBulkInitialState } from './slices/review-bulk/state';
 import { createReviewLaunchSlice } from './slices/review-launch';
 import { reviewLaunchInitialState } from './slices/review-launch/state';
+import { createCommentRunStartSlice } from './slices/comment-run-start';
+import { commentRunStartInitialState } from './slices/comment-run-start/state';
 import { createOutputHandoffsSlice } from './slices/output-handoffs';
 import { outputHandoffsInitialState } from './slices/output-handoffs/state';
 import { createReviewSelectionSlice } from './slices/review-selection';
@@ -231,6 +233,7 @@ export type AppStore = AppState &
   ReturnType<typeof createReviewNavigationSlice> &
   ReturnType<typeof createReviewBulkSlice> &
   ReturnType<typeof createReviewLaunchSlice> &
+  ReturnType<typeof createCommentRunStartSlice> &
   ReturnType<typeof createOutputHandoffsSlice> &
   ReturnType<typeof createReviewSelectionSlice> &
   ReturnType<typeof createReviewSourceSlice> &
@@ -418,6 +421,7 @@ const initialState: AppState = {
   ...reviewNavigationInitialState,
   ...reviewBulkInitialState,
   ...reviewLaunchInitialState,
+  ...commentRunStartInitialState,
   ...outputHandoffsInitialState,
   ...reviewSelectionInitialState,
   ...reviewSourceInitialState,
@@ -502,6 +506,7 @@ const appStoreApi = createStore<AppStore>((set, get) => ({
   ...createReviewNavigationSlice({ set, get }),
   ...createReviewBulkSlice({ set, get }),
   ...createReviewLaunchSlice({ set, get }),
+  ...createCommentRunStartSlice({ set, get }),
   ...createOutputHandoffsSlice({ set, get }),
   ...createReviewSelectionSlice({ set, get }),
   ...createReviewSourceSlice({ set, get }),

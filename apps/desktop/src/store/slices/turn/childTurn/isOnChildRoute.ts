@@ -5,13 +5,14 @@ import type { ChildTurn } from './resolveChildTurn';
 
 type Params = Readonly<{
   route: ChildTurn['route'];
+  role: ChildTurn['role'];
   override: TurnProviderOverride;
 }>;
 
-export const isOnChildRoute = ({ route, override }: Params): boolean => {
+export const isOnChildRoute = ({ route, role, override }: Params): boolean => {
   if (
     override.providerId !== route.provider ||
-    !isAutoChildProvider({ provider: route.provider })
+    !isAutoChildProvider({ provider: route.provider, role })
   ) {
     return false;
   }

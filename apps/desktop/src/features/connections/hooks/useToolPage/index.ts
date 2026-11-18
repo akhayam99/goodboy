@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { WorkspaceId } from '@goodboy/types';
 import type { IntegrationGlyphProvider } from '../../../../shared/components/IntegrationGlyph';
 import { integrationLabel } from '../../../../shared/utils/integrationLabel';
@@ -33,6 +33,8 @@ export const useToolPage = ({ workspaceId, tool }: Params) => {
   const githubCheckedAt = useAppStore((state) => state.githubCheckedAt[workspaceId] ?? null);
   const github = useGithubConnection({ workspaceId });
   const [checkError, setCheckError] = useState<string | null>(null);
+  const [isChecking, setIsChecking] = useState(false);
+  const inFlight = useRef(false);
 
   const isGithub = tool === 'github';
   const isConnected = isGithub
@@ -41,7 +43,7 @@ export const useToolPage = ({ workspaceId, tool }: Params) => {
   const toolState = toolStateOf({ isConnected, hasKey: !isGithub, keyCheck });
   const refreshGithub = github.refresh;
 
-  const check = useCallback(async (): Promise<void> => {
+  const verify = useCallback(async (): Promise<void> => {
     if (isGithub) {
       await refreshGithubStatus();
       refreshGithub();
@@ -57,6 +59,20 @@ export const useToolPage = ({ workspaceId, tool }: Params) => {
       setCheckError(`Couldn't check the ${integrationLabel({ provider: tool })} key.`);
     }
   }, [isGithub, credentialId, checkIntegrationKey, refreshGithubStatus, refreshGithub, tool]);
+
+  const check = useCallback(async (): Promise<void> => {
+    if (inFlight.current) {
+      return;
+    }
+    inFlight.current = true;
+    setIsChecking(true);
+    try {
+      await verify();
+    } finally {
+      inFlight.current = false;
+      setIsChecking(false);
+    }
+  }, [verify]);
 
   useEffect(() => {
     if (isGithub || credentialId === null) {
@@ -91,6 +107,7 @@ export const useToolPage = ({ workspaceId, tool }: Params) => {
     keyCheck,
     checkedAt: isGithub ? githubCheckedAt : (keyCheck?.checkedAt ?? null),
     checkError,
+    isChecking,
     github,
     githubStatus: globalGithub,
     githubIdentity: github.user ?? globalGithub?.user ?? null,

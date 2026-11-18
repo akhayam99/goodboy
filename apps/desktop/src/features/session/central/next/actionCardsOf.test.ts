@@ -314,8 +314,8 @@ describe('actionCardsOf', () => {
         {
           ...NEVER_STARTED,
           agentId: brandId<AgentId>({ value: 'agent-auto' }),
-          role: 'Auto',
-          noun: 'Auto',
+          role: 'Lead',
+          noun: 'Lead',
           kind: 'approve',
           reason: null,
           plan: { name: 'Center pages rollout', version: 3, branchCount: 4 },

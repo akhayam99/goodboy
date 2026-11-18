@@ -11,7 +11,6 @@ import { useSessionTitleRename } from '../../../session/hooks/useSessionTitleRen
 import { useSessionRowFacts } from '../../hooks/useSessionRowFacts';
 import { overviewTitleHost } from '../../../session/overviewTitleHost';
 import { TitleField } from '../../../../shared/components/TitleField';
-import { sessionMarkOf } from '../../../session/sessionMarkOf';
 
 type SelectionClickEvent = {
   readonly shiftKey: boolean;
@@ -63,7 +62,10 @@ const SessionActivityItemView = ({
   onRowEnter,
   onRowLeave,
 }: Props) => {
-  const { summary, node, rowTitle, keys, title } = useSessionRowFacts({ session, isArchived });
+  const { summary, node, mark, rowTitle, keys, title } = useSessionRowFacts({
+    session,
+    isArchived,
+  });
   const sessionId = session.id as SessionId;
   const descriptionId = useId();
   const anchorKey = `sidebar:${sessionId}`;
@@ -142,7 +144,6 @@ const SessionActivityItemView = ({
     node.kind === 'done' ||
     node.kind === 'archived';
   const isQuiet = isCalm && !node.hasUnread && !isActive;
-  const mark = sessionMarkOf({ node });
 
   return (
     <div className="relative">

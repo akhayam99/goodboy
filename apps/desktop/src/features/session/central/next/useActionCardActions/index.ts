@@ -330,7 +330,7 @@ export const useActionCardActions = ({ session }: Params): ActionCardActions => 
     switch (row.verb) {
       case 'resolve-auto':
         return {
-          label: 'Resolve with Auto',
+          label: 'Resolve with the Lead',
           isDisabled: autoBlockedReason !== null,
           run: runIt({ task: verbs.resolveWithAuto }),
         };
@@ -412,7 +412,7 @@ export const useActionCardActions = ({ session }: Params): ActionCardActions => 
     const key = card.id;
     const isBusy = busyIds.has(key);
     const failure = failures.get(key) ?? null;
-    const open = verbOf({ label: 'Open Auto', run: () => openAuto({ target }) });
+    const open = verbOf({ label: 'Open the Lead', run: () => openAuto({ target }) });
     const review = verbOf({ label: 'Review plan', run: () => openAuto({ target }) });
     const canRetry = target.canRetry && target.kind !== 'approve' && target.kind !== 'blocked';
     const view =

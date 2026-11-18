@@ -258,8 +258,8 @@ describe('forcePushSessionBranch', () => {
       knownRemoteSha: 'origin-sha',
       commits: [],
       onlyOnline: [
-        { sha: 'seen', subject: 'Fix rounding' },
-        { sha: 'new', subject: 'Add retry' },
+        { sha: 'seen', subject: 'Fix rounding', author: 'Acme' },
+        { sha: 'new', subject: 'Add retry', author: 'Acme' },
       ],
       fetchError: null,
     });
@@ -319,7 +319,7 @@ describe('forcePushSessionBranch', () => {
       remoteSha: 'origin-sha',
       knownRemoteSha: 'origin-sha',
       commits: [],
-      onlyOnline: [{ sha: 'seen', subject: 'Fix rounding' }],
+      onlyOnline: [{ sha: 'seen', subject: 'Fix rounding', author: 'Acme' }],
       fetchError: null,
     });
 
@@ -352,7 +352,7 @@ describe('forcePushSessionBranch', () => {
       remoteSha: 'origin-sha',
       knownRemoteSha: 'origin-sha',
       commits: [],
-      onlyOnline: [{ sha: 'new', subject: 'Add retry' }],
+      onlyOnline: [{ sha: 'new', subject: 'Add retry', author: 'Acme' }],
       fetchError: null,
     });
 
@@ -376,7 +376,7 @@ describe('forcePushSessionBranch', () => {
       remoteSha: 'origin-sha',
       knownRemoteSha: 'origin-sha',
       commits: [],
-      onlyOnline: [{ sha: 'merge', subject: 'Merge side into feature' }],
+      onlyOnline: [{ sha: 'merge', subject: 'Merge side into feature', author: 'Acme' }],
       fetchError: null,
     });
 

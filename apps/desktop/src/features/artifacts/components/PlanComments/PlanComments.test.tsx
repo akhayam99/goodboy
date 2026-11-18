@@ -14,6 +14,7 @@ import {
   PlanCommentsContext,
   type PlanCommentsApi,
 } from '../../../plans/planComments/planCommentsContext';
+import { importStore } from '../../../../store/storyHarness';
 import { PartCommentFrame } from './PartCommentFrame';
 import { PlanCommentBar } from './PlanCommentBar';
 import { PlanProse } from './PlanProse';
@@ -115,6 +116,42 @@ describe('PartCommentFrame', () => {
     expect(screen.queryByText('Name the index')).toBeNull();
     fireEvent.click(within(card).getByRole('button', { name: 'Remove comment' }));
     expect(value.remove).toHaveBeenCalledWith({ commentId: 'mine' });
+  });
+
+  it('keeps Remove busy while it removes, removes once, and reports a failed remove', async () => {
+    const reportError = vi.fn(async () => undefined);
+    (await importStore()).setState({ reportError });
+    let fail: (error: Error) => void = () => undefined;
+    const remove = vi.fn(
+      () =>
+        new Promise<void>((_resolve, reject) => {
+          fail = reject;
+        }),
+    );
+    const value = api({
+      remove,
+      comments: [
+        comment({
+          id: 'mine',
+          anchor: { kind: 'part', index: 2, title: ROW.title },
+          body: 'Limit the backfill to 90 days',
+        }),
+      ],
+    });
+    render(withApi({ value, children: <Framed>row</Framed> }));
+
+    const button = screen.getByRole('button', { name: 'Remove comment' });
+    fireEvent.click(button);
+    expect(button.getAttribute('aria-busy')).toBe('true');
+    fireEvent.click(button);
+    expect(remove).toHaveBeenCalledTimes(1);
+
+    fail(new Error('database is locked'));
+    await waitFor(() => expect(button.getAttribute('aria-busy')).toBeNull());
+    screen.getByText('Limit the backfill to 90 days');
+    expect(reportError).toHaveBeenCalledWith(
+      expect.objectContaining({ title: "Couldn't remove the comment", sessionId: 'session' }),
+    );
   });
 
   it('tags a draft Not sent once the plan ran', () => {

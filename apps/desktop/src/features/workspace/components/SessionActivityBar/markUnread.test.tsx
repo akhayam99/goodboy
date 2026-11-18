@@ -123,6 +123,35 @@ describe('Mark all as read in the Sessions options menu', () => {
     expect(isLit(rowOf('Another reply'))).toBe(false);
   });
 
+  it('holds while it marks, marks once, and keeps the rows lit when the write fails', async () => {
+    let fail: (error: Error) => void = () => undefined;
+    const markSessionsRead = vi.fn(
+      () =>
+        new Promise<void>((_resolve, reject) => {
+          fail = reject;
+        }),
+    );
+    const reportError = vi.fn(async () => undefined);
+    mount();
+    useAppStore.setState({ markSessionsRead, reportError });
+    const menu = openMenu();
+
+    const button = within(menu).getByRole('button', { name: 'Mark all as read' });
+    fireEvent.click(button);
+    expect(button.getAttribute('aria-busy')).toBe('true');
+    fireEvent.click(button);
+    expect(markSessionsRead).toHaveBeenCalledTimes(1);
+
+    await act(async () => {
+      fail(new Error('database is locked'));
+    });
+    expect(button.getAttribute('aria-busy')).toBeNull();
+    expect(isLit(rowOf('Reply to read'))).toBe(true);
+    expect(reportError).toHaveBeenCalledWith(
+      expect.objectContaining({ title: "Couldn't mark the sessions as read" }),
+    );
+  });
+
   it('is disabled while nothing is unread', async () => {
     mount();
     const menu = openMenu();

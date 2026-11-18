@@ -3,10 +3,12 @@ import { describe, expect, it } from 'vitest';
 import {
   AUTO_OWN_PROVIDERS,
   AUTO_UNCONFINED_PROVIDERS,
+  autoChildProviders,
   isAutoChildProvider,
   isAutoOwnProvider,
   isAutoProviderResuming,
 } from './providers';
+import { AUTO_WRITER_ROLES } from './roles';
 
 describe('auto providers', () => {
   it('lets Auto itself run on every provider that confines a read-only role', () => {
@@ -31,11 +33,20 @@ describe('auto providers', () => {
     }
   });
 
-  it('keeps the child pool to the providers that confine a role', () => {
-    expect(isAutoChildProvider({ provider: 'anthropic' })).toBe(true);
-    expect(isAutoChildProvider({ provider: 'codex' })).toBe(true);
-    expect(isAutoChildProvider({ provider: 'cursor' })).toBe(false);
-    expect(isAutoChildProvider({ provider: 'opencode' })).toBe(false);
+  it('runs a reading child wherever Auto itself runs read-only', () => {
+    for (const role of ['scout', 'planner', 'investigator', 'reviewer'] as const) {
+      expect(autoChildProviders({ role })).toEqual(AUTO_OWN_PROVIDERS);
+      expect(isAutoChildProvider({ provider: 'cursor', role })).toBe(true);
+      expect(isAutoChildProvider({ provider: 'opencode', role })).toBe(false);
+    }
+  });
+
+  it('keeps a writing child on Claude and Codex, the CLIs that deny a push', () => {
+    for (const role of AUTO_WRITER_ROLES) {
+      expect(autoChildProviders({ role })).toEqual(['anthropic', 'codex']);
+      expect(isAutoChildProvider({ provider: 'cursor', role })).toBe(false);
+      expect(isAutoChildProvider({ provider: 'gemini', role })).toBe(false);
+    }
   });
 
   it('names Claude as the only child provider that resumes a session', () => {

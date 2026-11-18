@@ -6,7 +6,13 @@ use super::types::{
     GitWorkingTree, IntegrateCandidateArgs, IntegratedCandidate, QuarantineCandidateArgs,
     QuarantinedCandidate, SplitCandidate, SplitCandidatePick, SplitCandidatesArgs,
 };
+use branch_move::{move_branch, BranchMove, BranchTarget};
 use std::path::{Path, PathBuf};
+
+const FIX_IN_THE_WAY: &str =
+    "the fix no longer applies on the branch: a file in your working tree is in its way";
+const KEPT_IN_THE_WAY: &str =
+    "your uncommitted changes touch the files of the fix, so the branch was left as the agent left it";
 
 fn candidate_ref(candidate_id: &str) -> String {
     format!("refs/goodboy/candidates/{}", sanitize_slug(candidate_id))
@@ -67,7 +73,19 @@ fn worktree_integrate_candidate_blocking(
         crate::logging::note_failure("cherry-pick abort", git(path, &["cherry-pick", "--abort"]));
         std::fs::remove_file(&picking)?;
     }
-    let actual = resolve_commit(path, "HEAD")?;
+    let target = BranchTarget::capture(path)?;
+    let actual = target.head.clone();
+    if owner_tree::carries_owner_tree(path, &expected, &candidate)? {
+        let sha = owner_tree::integrate_onto_owner_tree(owner_tree::OwnerTreeIntegration {
+            path,
+            id: &args.candidate_id,
+            journal: &journal,
+            expected: &expected,
+            candidate: &candidate,
+            target: &target,
+        })?;
+        return Ok(IntegratedCandidate { sha });
+    }
     if journal.exists() {
         let recorded = std::fs::read_to_string(&journal)?;
         let mut lines = recorded.lines().map(str::trim);
@@ -103,8 +121,12 @@ fn worktree_integrate_candidate_blocking(
     std::fs::create_dir_all(journal_dir)?;
     if actual == expected {
         write_journal(&journal, &[&candidate])?;
-        git(path, &["update-ref", "HEAD", &candidate, &expected])?;
-        git(path, &["reset", "--hard", "--quiet", &candidate])?;
+        move_branch(BranchMove {
+            path,
+            target: &target,
+            to: &candidate,
+            in_the_way: FIX_IN_THE_WAY,
+        })?;
         return Ok(IntegratedCandidate { sha: candidate });
     }
     if let Some(integrated) = landed_equivalent(path, &expected, &candidate, &actual)? {
@@ -161,6 +183,25 @@ fn write_journal(journal: &Path, lines: &[&str]) -> Result<(), WorktreeError> {
     Ok(())
 }
 
+fn move_head_back(
+    path: &Path,
+    rest_at: &str,
+    raw_tip: &str,
+    keeping: Option<&BranchTarget>,
+) -> Result<(), WorktreeError> {
+    if let Some(target) = keeping {
+        return move_branch(BranchMove {
+            path,
+            target,
+            to: rest_at,
+            in_the_way: KEPT_IN_THE_WAY,
+        });
+    }
+    git(path, &["update-ref", "HEAD", rest_at, raw_tip])?;
+    git(path, &["reset", "--hard", "--quiet", rest_at])?;
+    Ok(())
+}
+
 #[tauri::command]
 pub async fn worktree_quarantine_candidate(
     args: QuarantineCandidateArgs,
@@ -178,7 +219,9 @@ fn worktree_quarantine_candidate_blocking(
         return Err(WorktreeError::RepoNotFound(args.worktree_path));
     }
     let base = resolve_commit(path, &args.base_sha)?;
-    let head = resolve_commit(path, "HEAD")?;
+    let target = BranchTarget::capture(path)?;
+    let head = target.head.clone();
+    let keeping = args.should_keep_uncommitted.then_some(&target);
     if !is_ancestor(path, &base, &head) {
         return Err(WorktreeError::Git {
             message: "the branch head is not built on the recorded candidate base".to_string(),
@@ -192,7 +235,7 @@ fn worktree_quarantine_candidate_blocking(
             })
         }
     };
-    if is_dirty {
+    if is_dirty && !args.should_keep_uncommitted {
         git(path, &["add", "--update"])?;
         let staged = git(path, &["diff", "--cached", "--name-only"])?;
         if !staged.trim().is_empty() {
@@ -209,7 +252,7 @@ fn worktree_quarantine_candidate_blocking(
         }
     }
     let raw_tip = resolve_commit(path, "HEAD")?;
-    if raw_tip == base {
+    if raw_tip == base || owner_tree::holds_only_owner_tree(path, &base, &raw_tip)? {
         return Ok(QuarantinedCandidate {
             sha: None,
             base_sha: base,
@@ -217,8 +260,7 @@ fn worktree_quarantine_candidate_blocking(
     }
     let tip = scrub::scrub_environment(path, &base, &raw_tip, &args.candidate_id)?;
     if tip == base {
-        git(path, &["update-ref", "HEAD", &base, &raw_tip])?;
-        git(path, &["reset", "--hard", "--quiet", &base])?;
+        move_head_back(path, &base, &raw_tip, keeping)?;
         return Ok(QuarantinedCandidate {
             sha: None,
             base_sha: base,
@@ -229,8 +271,7 @@ fn worktree_quarantine_candidate_blocking(
         &["update-ref", &candidate_ref(&args.candidate_id), &tip],
     )?;
     let rest_at = if args.stack { &tip } else { &base };
-    git(path, &["update-ref", "HEAD", rest_at, &raw_tip])?;
-    git(path, &["reset", "--hard", "--quiet", rest_at])?;
+    move_head_back(path, rest_at, &raw_tip, keeping)?;
     Ok(QuarantinedCandidate {
         sha: Some(tip),
         base_sha: base,
@@ -301,8 +342,11 @@ fn split_stacked(
     if !merges.trim().is_empty() {
         return Ok(unsplit(picks));
     }
-    let listed = git(path, &["rev-list", "--reverse", &range])?;
-    let order: Vec<&str> = listed.lines().map(str::trim).collect();
+    let commits = owner_tree::commits_between(path, base, &head)?;
+    if commits.iter().any(|commit| commit.is_owner_tree) {
+        return Ok(unsplit(picks));
+    }
+    let order: Vec<String> = commits.into_iter().map(|commit| commit.sha).collect();
     let mut placed: Vec<(usize, String, String)> = Vec::with_capacity(picks.len());
     for pick in &picks {
         let Ok(commit) = resolve_commit(path, &pick.commit_sha) else {
@@ -355,7 +399,11 @@ fn split_one(
     Ok(Some(tip))
 }
 
+mod branch_move;
+mod owner_tree;
 mod scrub;
+
+pub(crate) use owner_tree::{owner_tree_base, owner_tree_on};
 
 #[cfg(test)]
 mod tests;

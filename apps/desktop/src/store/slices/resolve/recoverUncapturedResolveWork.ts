@@ -16,7 +16,11 @@ import { hasOtherLiveWriter } from './resolveCandidateMode';
 import type { SessionParams, SliceParams } from './types';
 
 type Params = SliceParams & SessionParams;
-type CandidateParams = { readonly candidate: ResolveCandidate; readonly head: string };
+type CandidateParams = {
+  readonly candidate: ResolveCandidate;
+  readonly head: string;
+  readonly copyPath: string | null;
+};
 
 export const UNCAPTURED_WORK_ON_BRANCH =
   'The branch carries work that was never captured. Reload the review to park it first';
@@ -53,19 +57,23 @@ export const recoverUncapturedResolveWork = async ({
   const park = async ({
     candidate,
     head,
+    copyPath,
   }: CandidateParams): Promise<ResolveUncapturedWork | null> => {
     if (head === candidate.baseSha) {
       await setResolveCandidateState({ db, candidateId: candidate.id, state: 'discarded' });
       return null;
     }
+    const capturePath = copyPath ?? candidate.worktreePath;
     const quarantined = await withCandidateLock({
-      worktreePath: candidate.worktreePath,
+      worktreePath: capturePath,
       holder: `recover:${candidate.id}`,
       run: () =>
         quarantineWorktreeCandidate({
-          worktreePath: candidate.worktreePath,
+          worktreePath: capturePath,
           candidateId: candidate.id,
           baseSha: candidate.baseSha,
+          stack: copyPath !== null,
+          shouldKeepUncommitted: copyPath === null,
         }),
     }).catch((error: unknown) => ({ failure: messageOf({ error }) }));
     if ('failure' in quarantined) {
@@ -135,7 +143,12 @@ export const recoverUncapturedResolveWork = async ({
         continue;
       }
     }
-    const head = await headOf({ worktreePath: candidate.worktreePath });
+    const copyPath = attempt?.copyPath ?? null;
+    const head = await headOf({ worktreePath: copyPath ?? candidate.worktreePath });
+    if (head === '' && copyPath !== null) {
+      await setResolveCandidateState({ db, candidateId: candidate.id, state: 'discarded' });
+      continue;
+    }
     if (head === '') {
       return remember({
         pending: {
@@ -148,7 +161,7 @@ export const recoverUncapturedResolveWork = async ({
         },
       });
     }
-    const failure = await park({ candidate, head });
+    const failure = await park({ candidate, head, copyPath });
     if (failure !== null) {
       return remember({ pending: failure });
     }

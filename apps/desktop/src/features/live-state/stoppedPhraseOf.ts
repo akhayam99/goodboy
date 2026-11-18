@@ -9,7 +9,7 @@ type Params = {
 const SHORT = {
   you: 'Stopped by you',
   app: 'Stopped by restart',
-  auto: 'Stopped by Auto',
+  auto: 'Stopped by the Lead',
 } as const satisfies Record<AgentStoppedBy, string>;
 
 const LONG = {

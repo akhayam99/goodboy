@@ -1,6 +1,9 @@
 import { memo } from 'react';
 import { Button, Chip, cn, ROW_HOVER, StatusDot, Tooltip } from '@goodboy/ui';
 import { branchPlace, sessionPlace, useAppStore } from '../../../../store';
+import { TRAIL_SLOT } from '../../../../shared/components/trailingSlot';
+import { useMountRowMenu } from '../../hooks/useMountRowMenu';
+import { MountRowMenuButton } from '../MountRowMenuButton';
 import { boardRowCellsOf } from '../../central/board/boardRowCellsOf';
 import { boardTileChipOf } from '../../central/board/boardTileChipOf';
 import { BoardBranchName } from './BoardBranchName';
@@ -16,11 +19,16 @@ const BoardTileView = ({ rowId }: Props) => {
   const { session, rowById, entryByRowId, runningByRowId, cardsByRowId, newRowIds, now } =
     useBoardContext();
   const navigate = useAppStore((state) => state.navigate);
+  const entry = entryByRowId.get(rowId) ?? null;
+  const menu = useMountRowMenu({
+    sessionId: session.id,
+    mountId: entry === null ? null : entry.fact.mountId,
+    anchorKey: `board-mount-${rowId}`,
+  });
   const row = rowById.get(rowId);
   if (row === undefined) {
     return null;
   }
-  const entry = entryByRowId.get(rowId) ?? null;
   const runningCount = runningByRowId.get(rowId) ?? 0;
   const chip = boardTileChipOf({ row, entry, runningCount });
   const title =
@@ -28,7 +36,7 @@ const BoardTileView = ({ rowId }: Props) => {
       ? boardRowCellsOf({
           row,
           entry,
-          mergedAt: null,
+          settledAt: null,
           now,
           runningCount,
           nextTitle: cardsByRowId.get(rowId)?.[0]?.title ?? null,
@@ -44,8 +52,10 @@ const BoardTileView = ({ rowId }: Props) => {
   return (
     <div
       data-board-row={rowId}
+      onContextMenu={menu.onContextMenu}
+      onKeyDown={menu.onKeyDown}
       className={cn(
-        'relative flex min-h-14 min-w-0 items-center gap-3 rounded-md bg-background px-3 py-2',
+        'group/row relative flex min-h-14 min-w-0 items-center gap-3 rounded-md bg-background px-3 py-2',
         ROW_HOVER,
       )}
     >
@@ -70,11 +80,6 @@ const BoardTileView = ({ rowId }: Props) => {
           ) : (
             <BoardBranchName name={row.branch} />
           )}
-          {row.projectName === null ? null : (
-            <span className="min-w-0 shrink-[2] truncate text-meta text-muted-foreground">
-              {row.projectName}
-            </span>
-          )}
         </span>
         {entry === null ? null : <BoardTileFacts rowId={rowId} />}
       </span>
@@ -89,6 +94,15 @@ const BoardTileView = ({ rowId }: Props) => {
           />
         </span>
         <BoardTileAction rowId={rowId} />
+        {entry === null ? null : (
+          <span data-board-actions="" className={cn(TRAIL_SLOT, 'pointer-events-auto row-actions')}>
+            <MountRowMenuButton
+              target={menu.target}
+              projectName={entry.fact.projectName}
+              branch={entry.fact.branch}
+            />
+          </span>
+        )}
       </span>
     </div>
   );

@@ -54,6 +54,7 @@ fn wire_shape_turn_event_envelope_error_and_reaped() {
                     pid: 10,
                     name: "node".to_string(),
                     port: Some(3000),
+                    path: "/opt/acme/node".to_string(),
                 }],
             },
         },

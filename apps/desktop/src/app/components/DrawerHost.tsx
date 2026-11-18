@@ -7,7 +7,7 @@ import { useSlotBackChip } from '../hooks/useSlotBackChip';
 import { ExploreFileDrawer } from '../../features/explore/components/ExploreFileDrawer';
 import { LazySessionScriptsDrawer } from '../../features/scripts/components/LazySessionScriptsDrawer';
 import { ArtifactShellDrawer } from '../../features/artifacts/components/ArtifactShell/ArtifactShellDrawer';
-import { ArtifactDocumentDrawer } from '../../features/artifacts/components/ArtifactDocumentDrawer';
+import { LazyArtifactDocumentDrawer } from '../../features/artifacts/components/ArtifactDocumentDrawer/LazyArtifactDocumentDrawer';
 import { LazyScriptRunDrawer } from '../../features/scripts/components/LazyScriptRunDrawer';
 import { QuestionDrawer } from '../../features/session/components/QuestionDrawer';
 import { WritePanel } from '../../features/artifacts/components/WritePanel';
@@ -71,7 +71,7 @@ const renderDrawer = ({
           onClose={closeDrawer}
         />
       ) : (
-        <ArtifactDocumentDrawer
+        <LazyArtifactDocumentDrawer
           key={drawerKey(drawer)}
           sessionId={drawer.sessionId}
           artifactId={drawer.payload.artifactId}

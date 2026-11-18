@@ -334,12 +334,12 @@ describe('the start, agent and workflow chapters', () => {
 
   it('says a rebase conflict asks, and Rebase all hands the conflicts to one Lead', () => {
     const asks = pointOf('commits', 'A rebase conflict asks');
-    ['Resolve with Auto', 'Resolve in terminal', 'Abort rebase', 'never pushes'].forEach((word) =>
-      expect(asks).toContain(word),
+    ['Resolve with the Lead', 'Resolve in terminal', 'Abort rebase', 'never pushes'].forEach(
+      (word) => expect(asks).toContain(word),
     );
     const all = pointOf('commits', 'Rebase all');
     expect(all).toContain('one Lead run');
-    expect(all).toContain('Also tidy commits with Auto');
+    expect(all).toContain('Also tidy commits with the Lead');
   });
 
   it('names the Overview tiles and ends the page with the Log', () => {

@@ -9,9 +9,10 @@ import { SourceChangeLine } from './SourceChangeLine';
 
 type Props = {
   readonly change: ReviewSourceChange;
+  readonly isRun?: boolean;
 };
 
-export const SourceChangeCard = ({ change }: Props) => {
+export const SourceChangeCard = ({ change, isRun = false }: Props) => {
   const diff = wordDiff({ before: change.before, after: change.after });
   return (
     <section aria-label={REVIEW_FLOW_LABEL.commentEdited} className="flex min-w-0 flex-col">
@@ -23,6 +24,7 @@ export const SourceChangeCard = ({ change }: Props) => {
               {sourceChangeLine({
                 author: change.author,
                 time: formatClock({ at: change.seenAt }),
+                isRun,
               })}
             </span>
           </p>

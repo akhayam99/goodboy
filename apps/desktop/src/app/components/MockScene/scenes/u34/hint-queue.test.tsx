@@ -106,8 +106,13 @@ describe('the queued hints on the run line', () => {
     act(() => reportQueue({ isIntersecting: false }));
     const input = screen.getByPlaceholderText('Hint the orchestrator');
     const line = document.querySelector<HTMLElement>('[data-hint-queue-line]');
-    expect(line?.getAttribute('data-hint-queue-line')).toBe('over-the-input');
-    expect(line?.contains(input)).toBe(false);
+    if (line === null) {
+      throw new Error('The queued line over the input is missing.');
+    }
+    expect(line.getAttribute('data-hint-queue-line')).toBe('over-the-input');
+    expect(line.contains(input)).toBe(false);
+    expect(composerOf().contains(line)).toBe(false);
+    expect(line.closest('[data-anchored-layer]')?.parentElement).toBe(document.body);
 
     act(() => reportQueue({ isIntersecting: true }));
     expect(document.querySelector('[data-hint-queue-line]')).toBeNull();
@@ -162,8 +167,12 @@ describe('the queued hints on the run line', () => {
     ).toHaveLength(0);
 
     act(() => reportQueue({ isIntersecting: false }));
-    within(composerOf()).getByText(/hints queued/);
-    fireEvent.click(within(composerOf()).getByRole('button', { name: 'Show' }));
+    const line = document.querySelector<HTMLElement>('[data-hint-queue-line]');
+    if (line === null) {
+      throw new Error('The queued line over the input is missing.');
+    }
+    within(line).getByText(/hints queued/);
+    fireEvent.click(within(line).getByRole('button', { name: 'Show' }));
     expect(scrollIntoView.mock.contexts.at(-1)).toBe(
       document.querySelector(`[data-hint-queue="${HINT_NODE_SEED.runId}"]`),
     );

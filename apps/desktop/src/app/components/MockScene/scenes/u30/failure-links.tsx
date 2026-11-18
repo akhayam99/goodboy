@@ -4,7 +4,7 @@ import type { C07Seed } from '../u25/c07/c07AutoSeed';
 import { C09OrchestratedScene } from '../u25/C09OrchestratedScene';
 
 const LONG_REASON =
-  'Auto stopped answering before it replied, twice in a row, while it was checking the retry ledger in payments-api against the Northwind export and waiting on the notify-relay queue to drain.';
+  'The Lead stopped answering before it replied, twice in a row, while it was checking the retry ledger in payments-api against the Northwind export and waiting on the notify-relay queue to drain.';
 
 const BLOCKED_LONG: C07Seed = { state: 'blocked', place: 'auto', blockedReason: LONG_REASON };
 

@@ -137,7 +137,7 @@ describe('approveAutoPlan', () => {
 
     expect(result).toMatchObject({
       kind: 'refused',
-      message: "This plan isn't part of an Auto conversation.",
+      message: "This plan isn't part of a Lead conversation.",
     });
   });
 

@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import './kit.css';
-import { Check, Minus, Shield } from '../generated/icons';
+import { Check, Hand, Minus } from '../generated/icons';
 import { cx } from './cx';
 import {
   MIXED_TONE_STROKE,
@@ -110,7 +110,7 @@ const centerOf = ({
     case 'budget':
       return <span className="gkNodeSign gkToneWarning">$</span>;
     case 'approval':
-      return <Shield size={glyphSize} weight="bold" className="gkToneWarning" />;
+      return <Hand size={glyphSize} weight="bold" className="gkToneWarning" />;
     case 'failed':
       return <span className="gkNodeSign gkToneDanger">!</span>;
     case 'done':

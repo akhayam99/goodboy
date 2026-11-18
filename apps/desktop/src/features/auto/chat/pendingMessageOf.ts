@@ -15,7 +15,7 @@ type Params = {
   readonly view: AutoTreeView;
 };
 
-const STOPPED_REASON = 'Auto was stopped.';
+const STOPPED_REASON = 'The Lead was stopped.';
 
 const NOT_DELIVERED = 'Not delivered';
 
@@ -28,7 +28,7 @@ export const pendingMessageLineOf = ({ view }: Params): PendingMessageLine => {
     return { tone: 'waits', text: noteWordOf({ turn: null }), reason: null, action: null };
   }
   const reason =
-    blockedReason === null || blockedReason === '' ? "Auto couldn't reply." : blockedReason;
+    blockedReason === null || blockedReason === '' ? "The Lead couldn't reply." : blockedReason;
   if (blockedReason === AUTO_BLOCK_TEXT.budget) {
     return { tone: 'notDelivered', text: NOT_DELIVERED, reason, action: 'raiseLimit' };
   }

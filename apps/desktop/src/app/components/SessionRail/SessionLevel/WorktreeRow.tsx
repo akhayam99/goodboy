@@ -4,10 +4,8 @@ import { useAppStore } from '../../../../store';
 import type { MountRowView } from '../../../../store/slices/project-mounts/mountRowModel';
 import { branchPushFactsOf } from '../../../../shared/lib/branchPushState';
 import { mainBehindOf, unmergedCount } from '../../../../shared/lib/gitStatus';
-import { useObjectMenuTrigger } from '../../../../features/actions/useObjectMenuTrigger';
-import { ObjectOverflowMenu } from '../../../../features/actions/components/ObjectOverflowMenu';
-import { ROW_MENU_TOOLTIP } from '../../../../features/actions/rowMenuTooltip';
-import { useMountMenuTarget } from '../../../../features/session/hooks/useMountMenuTarget';
+import { useMountRowMenu } from '../../../../features/session/hooks/useMountRowMenu';
+import { MountRowMenuButton } from '../../../../features/session/components/MountRowMenuButton';
 import { branchRowFactsOf } from '../../../../features/branch/branchRowFactsOf';
 import { switchBranchMount } from '../../../../features/branch/switchBranchMount';
 import { rebaseAllBranchOf } from '../../../../features/history/RebaseAllCard/rebaseAllBranchOf';
@@ -18,7 +16,6 @@ import { TRAIL_SLOT } from '../../../../shared/components/trailingSlot';
 import { BranchRowAnchors } from './BranchRowAnchors';
 import { BranchRowLine } from './BranchRowLine';
 import { branchRowChipOf } from './branchRowChipOf';
-import { MOUNT_ROW_CUTS } from './mountRowCuts';
 import { useWorktreeCheckRuns } from './useWorktreeCheckRuns';
 import { useWorktreeRowState } from './useWorktreeRowState';
 
@@ -77,8 +74,11 @@ export const WorktreeRow = ({
   });
   const state = useWorktreeRowState({ sessionId, row, status });
   const reason = chip === null ? state.reason : null;
-  const target = useMountMenuTarget({ sessionId, mountId: row.mountId });
-  const menu = useObjectMenuTrigger({ target, anchorKey: `mount-${row.mountId}` });
+  const menu = useMountRowMenu({
+    sessionId,
+    mountId: row.mountId,
+    anchorKey: `mount-${row.mountId}`,
+  });
   const isDropTarget = row.branch !== '' && row.isAttached && !row.isFinished;
   const dropState = useTaskDropState({ target: { projectId: row.projectId, branch: row.branch } });
   const isDragLive = isDropTarget && dropState !== 'idle';
@@ -132,13 +132,10 @@ export const WorktreeRow = ({
             !isOpened && 'row-actions',
           )}
         >
-          <ObjectOverflowMenu
-            target={target}
-            label={`${row.projectName} · ${facts.branch} actions`}
-            tooltip={ROW_MENU_TOOLTIP}
-            size="compact"
-            cuts={MOUNT_ROW_CUTS}
-            hideWhenEmpty
+          <MountRowMenuButton
+            target={menu.target}
+            projectName={row.projectName}
+            branch={facts.branch}
           />
         </span>
       </div>

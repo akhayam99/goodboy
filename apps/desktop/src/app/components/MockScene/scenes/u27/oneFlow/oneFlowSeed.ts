@@ -466,7 +466,7 @@ const AUTO_AGENTS: ReadonlyArray<Agent> = [
     id: AUTO_ROOT_ID,
     sessionId: SESSION_ID,
     ordinal: 8,
-    name: 'Auto',
+    name: 'Lead',
     kind: 'auto',
     status: 'running',
     startedAt: iso({ minute: 32 }),

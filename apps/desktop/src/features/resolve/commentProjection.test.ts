@@ -36,6 +36,7 @@ const facts = (over: Partial<ResolveCommentFacts> & Pick<ResolveCommentFacts, 's
     isPushFailure: false,
     sourceLabel: 'GitHub',
     attempt: null,
+    stateReason: null,
     gitChip: null,
     hasFailedChecks: false,
     ...over,
@@ -158,6 +159,8 @@ describe('projectResolveComment', () => {
       accept_conflict: 'It conflicts with a fix you accepted before',
       worktree_missing: 'The worktree for this comment is no longer available',
       capture_failed: "The fix couldn't be saved from its copy of the branch",
+      no_result: 'The agent ended without a result for this comment',
+      needs_a_run: 'The fix agent stopped: this is bigger than one change',
     };
     const sentences = RESOLVE_FAILURE_CAUSES.map((cause) => {
       const projection = projectResolveComment(
@@ -168,6 +171,26 @@ describe('projectResolveComment', () => {
     });
     expect(sentences).toEqual(RESOLVE_FAILURE_CAUSES.map((cause) => expected[cause]));
     expect(new Set(sentences).size).toBe(RESOLVE_FAILURE_CAUSES.length);
+  });
+
+  it('says Needs a run from the thread, even when the batch attempt failed for another thread', () => {
+    const needsRun = projectResolveComment(
+      facts({
+        state: 'failed',
+        stateReason: 'needs_run:It touches the payouts route and two new components.',
+        attempt: { phase: 'failed', failureCause: 'no_result' },
+      }),
+    );
+    expect(needsRun).toMatchObject({
+      word: 'couldnt_fix',
+      sub: 'needs_run',
+      label: 'Needs a run',
+      sentence: 'The fix agent stopped: this is bigger than one change',
+    });
+    const silentSibling = projectResolveComment(
+      facts({ state: 'failed', attempt: { phase: 'failed', failureCause: 'no_result' } }),
+    );
+    expect(silentSibling).toMatchObject({ sub: null, label: 'Failed' });
   });
 
   it('says the cause is not recorded for a failure written before causes existed', () => {
@@ -225,6 +248,69 @@ describe('projectResolveComment', () => {
     expect(projectResolveComment(facts({ state: 'pushed', hasFailedChecks: true })).chips).toEqual(
       [],
     );
+  });
+});
+
+describe('a comment a run works on', () => {
+  const working = { stateWord: 'Planning', end: 'working' as const };
+  const finished = { stateWord: 'Done', end: 'finished' as const };
+  const stopped = { stateWord: 'Stopped', end: 'stopped' as const };
+
+  it.each<ReviewCommentState>(['new', 'failed', 'skipped'])(
+    'reads In a run with the run word when the thread was %s',
+    (state) => {
+      const projection = projectResolveComment(facts({ state, run: working }));
+      expect(projection).toMatchObject({ word: 'in_run', sub: null, label: 'In a run · Planning' });
+      expect(RESOLVE_GROUP_OF_WORD[projection.word]).toBe('working');
+    },
+  );
+
+  it('reads Run finished under Needs you once the run is done', () => {
+    const projection = projectResolveComment(facts({ state: 'new', run: finished }));
+    expect(projection).toMatchObject({ word: 'run_finished', label: 'Run finished' });
+    expect(RESOLVE_GROUP_OF_WORD[projection.word]).toBe('needs_you');
+  });
+
+  it('keeps the word of a thread resolved or replied elsewhere while the run works', () => {
+    expect(
+      projectResolveComment(facts({ state: 'resolved', sourceLabel: 'GitHub', run: working })),
+    ).toMatchObject({ word: 'done', label: 'Resolved on GitHub' });
+    expect(projectResolveComment(facts({ state: 'pushed', run: working })).word).toBe('replied');
+    expect(projectResolveComment(facts({ state: 'drafting', run: working })).word).toBe('working');
+  });
+
+  it('gives a stopped or failed run thread its own word back, so it reads Open', () => {
+    expect(projectResolveComment(facts({ state: 'new', run: stopped }))).toMatchObject({
+      word: 'open',
+      label: 'Open',
+    });
+    expect(projectResolveComment(facts({ state: 'skipped', run: stopped })).word).toBe('left_open');
+  });
+
+  it('keeps a thread you kept open after the run as Left open, not Run finished', () => {
+    expect(projectResolveComment(facts({ state: 'skipped', run: finished })).word).toBe(
+      'left_open',
+    );
+  });
+
+  it('asks nothing again of a thread resolved elsewhere once the run finished', () => {
+    expect(
+      projectResolveComment(facts({ state: 'resolved', sourceLabel: 'GitHub', run: finished })),
+    ).toMatchObject({ word: 'done', label: 'Resolved on GitHub' });
+  });
+
+  it('reads In a run · Changed when the comment changed while the run works', () => {
+    expect(
+      projectResolveComment(facts({ state: 'new', run: working, isSourceChanged: true })).label,
+    ).toBe('In a run · Changed');
+  });
+
+  it('drops the failure sentence once a run took the thread over', () => {
+    expect(
+      projectResolveComment(
+        facts({ state: 'failed', attempt: { phase: 'failed', failureCause: null }, run: working }),
+      ).sentence,
+    ).toBeNull();
   });
 });
 

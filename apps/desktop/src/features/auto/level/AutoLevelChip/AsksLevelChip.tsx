@@ -17,7 +17,7 @@ type Props = {
 };
 
 const HELP =
-  'How much Auto may do alone. A change applies to what Auto starts next; an agent already waiting for your go keeps waiting.';
+  'How much the Lead may do alone. A change applies to what the Lead starts next; an agent already waiting for your go keeps waiting.';
 
 export const AsksLevelChip = ({
   value,

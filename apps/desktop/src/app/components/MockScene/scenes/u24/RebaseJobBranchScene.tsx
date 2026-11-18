@@ -36,18 +36,29 @@ const DRAFT: HistoryDraft = {
   loadError: null,
 };
 
+const UNPUSHED_STATES: ReadonlySet<RebaseJobSceneState> = new Set<RebaseJobSceneState>([
+  'origin-moved',
+  'push-failed',
+  'fixing-push',
+]);
+
 type StatusOfParams = {
   readonly state: RebaseJobSceneState;
+  readonly isCaughtUp: boolean;
 };
 
-const statusOf = ({ state }: StatusOfParams): WorktreeStatus => {
+const statusOf = ({ state, isCaughtUp }: StatusOfParams): WorktreeStatus => {
   const changed = dirtyCountOfRebaseJobState({ state });
   return {
     branch: 'hl/fix-duplicate-credit',
     head: CTX_COMMITS[0]?.sha ?? null,
     headSubject: CTX_COMMITS[0]?.subject ?? null,
     upstream: 'origin/hl/fix-duplicate-credit',
-    upstreamDistance: { kind: 'known', ahead: 0, behind: 0 },
+    upstreamDistance: {
+      kind: 'known',
+      ahead: UNPUSHED_STATES.has(state) && !isCaughtUp ? CTX_COMMITS.length : 0,
+      behind: 0,
+    },
     mainDistance: { kind: 'known', ahead: CTX_COMMITS.length, behind: 18 },
     workingTree: {
       kind: 'known',
@@ -63,10 +74,15 @@ const statusOf = ({ state }: StatusOfParams): WorktreeStatus => {
 
 const BaseScene = U21_BRANCH_SCENES['branch-description-open'];
 
+const LONG_TITLE =
+  'Retry the payments-api webhook delivery with backoff, keep the idempotency key across every attempt, and settle the ledger-core postings in one batch';
+
 export const RebaseJobBranchScene = () => {
   useEffect(() => {
     const state = rebaseJobSceneStateOf();
-    const tab = new URLSearchParams(window.location.search).get('tab') === 'pr' ? 'pr' : 'commits';
+    const query = new URLSearchParams(window.location.search);
+    const tab = query.get('tab') === 'pr' ? 'pr' : 'commits';
+    const isCaughtUp = query.get('origin') === 'caught-up';
     mockSceneIpc((command, payload) => {
       if (command === 'gh_run') {
         const args =
@@ -84,11 +100,20 @@ export const RebaseJobBranchScene = () => {
         return { stdout: isGraphql ? JSON.stringify(empty) : '[]', stderr: '', exitCode: 0 };
       }
       if (command === 'worktree_status') {
-        return statusOf({ state });
+        return statusOf({ state, isCaughtUp });
       }
       return HANDLERS[command]?.(undefined) ?? null;
     });
+    const isLongTitle = query.get('title') === 'long';
+    const github = useAppStore.getState().mountGithub[REBASE_JOB_MOUNT_ID];
     useAppStore.setState((current) => ({
+      ...(isLongTitle &&
+        github?.pr != null && {
+          mountGithub: {
+            ...current.mountGithub,
+            [REBASE_JOB_MOUNT_ID]: { ...github, pr: { ...github.pr, title: LONG_TITLE } },
+          },
+        }),
       branchTab: { ...current.branchTab, [SESSION_ID]: tab },
       historyDrafts: { ...current.historyDrafts, [REBASE_JOB_MOUNT_ID]: DRAFT },
       historyRuns: {

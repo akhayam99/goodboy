@@ -95,9 +95,19 @@ export const createResolveSlice = ({ set, get }: SliceParams): ResolveActions =>
           ...(comments !== undefined && { comments }),
         }),
     });
+  const startWaitingFixes = ({ sessionId }: SessionParams): void => {
+    const isFixWaiting = (get().sessionResolveAttempts?.[sessionId] ?? []).some(
+      (attempt) => attempt.phase === 'queued' && attempt.batchId !== null,
+    );
+    if (!isFixWaiting) {
+      return;
+    }
+    void serialize({ sessionId, run: () => drainResolveQueue({ set, get, sessionId }) });
+  };
   const settleLane = async <T>({ sessionId, run }: WriteParams<T>): Promise<T> => {
     const result = await serialize({ sessionId, run });
     await reconcileLane({ sessionId }).catch(() => undefined);
+    startWaitingFixes({ sessionId });
     return result;
   };
   return {
@@ -109,6 +119,7 @@ export const createResolveSlice = ({ set, get }: SliceParams): ResolveActions =>
         });
       } finally {
         await reconcileLane({ sessionId: params.sessionId }).catch(() => undefined);
+        startWaitingFixes({ sessionId: params.sessionId });
       }
     },
     refuseResolveQueueItem: (params: ItemRevisionParams) =>

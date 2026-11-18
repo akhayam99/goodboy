@@ -38,19 +38,19 @@ describe('AutoDeliveryRow', () => {
       />,
     );
 
-    expect(screen.queryByRole('button', { name: 'What Auto was told' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'What the Lead was told' })).toBeNull();
   });
 
   it('keeps the text built for Auto out of the transcript until it is asked for', () => {
     renderRow();
 
-    screen.getByRole('button', { name: 'What Auto was told' });
+    screen.getByRole('button', { name: 'What the Lead was told' });
     expect(screen.queryByText(/STATE OF THIS CONVERSATION/)).toBeNull();
   });
 
   it('shows the text on request and hides it again', () => {
     renderRow();
-    const toggle = screen.getByRole('button', { name: 'What Auto was told' });
+    const toggle = screen.getByRole('button', { name: 'What the Lead was told' });
 
     fireEvent.click(toggle);
     expect(toggle.getAttribute('aria-expanded')).toBe('true');

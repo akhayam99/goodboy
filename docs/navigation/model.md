@@ -399,25 +399,32 @@ and the tab opens on the session's folder.
 In the composer, `$` lists the scripts of the session's mounted projects
 (`useSessionScripts`): saved scripts first, then the `package.json` and
 `composer.json` scripts pinned for the project, by category. The Scripts pane
-lists the same set in two bands per project: **Services** (category `dev`, or a
-script named `start`, `serve`, `watch` or `preview`, decided by `isService`) and
-**Tasks** (the rest), each with a count from two, on one grid: glyph, name,
-a fixed meta cell and one **Run** or **Stop** glyph. A running service row shows
+lists the same set in one region per mount, `Scripts of <project> · <branch>`:
+Services first (category `dev`, or a script named `start`, `serve`, `watch` or
+`preview`, decided by `isService`), then Commands, with no band labels, on one
+grid: glyph, name with its invocation in mono, a fixed meta cell and one
+**Run** or **Stop** glyph. **Start all services** sits on the mount header, and
+**Open in terminal** in the row menu opens `openScriptInTerminal` in that
+mount's worktree with the command prefilled. A script from the palette runs on
+`resolveScriptMount`: the mount named by the caller, else `selectPlaceMount`
+(the branch page in `diffMountPath`, the selected agent's or run's mount), else
+the only attached mount of the project, else a second palette step lists the
+candidates, the mount of the latest run first. The terminal chord and Ctrl+`open on`selectPlaceMount`before the remembered scope. A running service row shows
 the last output line, its uptime (CPU and memory, the monitor snapshot for the
 run's pid polled only while the lens is open, in the tooltip) and its port as a
 link once a listener owned by the run exists; an idle one shows its expected
-port as a chip, or `:5005 in use` in warning when another worktree holds it.
+port as a chip, or`:5005 in use`in warning when another worktree holds it.
 A task row shows a result glyph, its duration and age in gray, and the last
 line of a failure. **Pin**, **Restart** and the rest are in the row's right
 click menu. A project with nothing pinned shows a dimmed **Suggested** band (its
-root `dev`, `build`, `test`, `lint` and `typecheck`, first match each) with a
+root`dev`, `build`, `test`, `lint`and`typecheck`, first match each) with a
 **Run** on every row (a Run leaves its last result on the row, a running row swaps Run for **Stop**
 and opens its output, and a row with a result stays after another script is pinned) and a quiet **Pin**. Scripts that are not pinned stay on the workspace Projects
 page in Settings, where they are pinned. A row's sublabel names its package (the
 manifest name, or `root`) and shows the script's body, not its invocation; the
 trailing badge is `Running` or the package's short name (`web`, not
-`package.json`) so twenty `dev` rows in a monorepo read apart. Manifests are
-read from each mount the first time `$` is typed. With more than one mount a
+`package.json`) so twenty `dev`rows in a monorepo read apart. Manifests are
+read from each mount the first time`$` is typed. With more than one mount a
 row also names its project. An empty list says why: no project in the
 session, no pinned script in the project, or no match for the filter. Enter runs the
 row and opens its output in the right drawer; the composer text is cleared.

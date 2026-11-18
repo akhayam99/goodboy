@@ -21,6 +21,7 @@ import { U24_CHECKS_ANALYZE_SCENES } from './checks-analyze';
 
 beforeAll(async () => {
   await importStore();
+  await import('../../../../../features/branch/components/CheckAnalysisDrawer');
 }, STORE_IMPORT_TIMEOUT_MS);
 beforeEach(async () => {
   await resetStoryStore();
@@ -58,7 +59,7 @@ describe('checks analysis scenes', () => {
       throw new Error('The failing check row is missing');
     }
     fireEvent.click(row);
-    const drawer = screen.getByRole('region', { name: 'Debugger' });
+    const drawer = await screen.findByRole('region', { name: 'Debugger' });
     expect(
       screen.getByRole('complementary', { name: 'Side panel' }).getAttribute('data-drawer-sizing'),
     ).toBe('side');
@@ -73,9 +74,9 @@ describe('checks analysis scenes', () => {
     }
     expect(within(drawer).queryByRole('heading', { level: 3, name: 'Status' })).toBeNull();
   });
-  it('renders the proposal as a mini diff with its file and counts', () => {
+  it('renders the proposal as a mini diff with its file and counts', async () => {
     show({ name: 'debugger-drawer-proposal' });
-    const drawer = screen.getByRole('region', { name: 'Debugger' });
+    const drawer = await screen.findByRole('region', { name: 'Debugger' });
     expect(
       within(
         within(drawer).getByRole('region', { name: 'Proposed diff for src/ledger.ts' }),

@@ -32,6 +32,8 @@ import {
 } from './agent-kind';
 import { autoRootTitleOf } from './components/AutoAgentsPane/autoRootTitleOf';
 import { agentCountLabelOf } from './agentCountLabelOf';
+import { agentThreadIds } from './agentThreadIds';
+import { commentRunOriginOf } from './commentRunOriginOf';
 import { descendantAgentsOf } from './descendantAgentsOf';
 import { runAgentCountOf } from './runAgentCountOf';
 import { placedAgentsOf } from './placedAgentsOf';
@@ -94,9 +96,23 @@ type Params = {
   readonly mounts: ReadonlyArray<SessionMountView>;
   readonly projects: ReadonlyArray<WorkBranchProject>;
   readonly routes?: Readonly<Record<string, RunRoute>>;
+  readonly commentPlaces?: Readonly<Record<string, string>>;
 };
 
 const NO_ROUTES: Readonly<Record<string, RunRoute>> = {};
+
+const NO_PLACES: Readonly<Record<string, string>> = {};
+
+type OriginParams = {
+  readonly agent: Agent;
+  readonly places: Readonly<Record<string, string>>;
+  readonly fallback: () => string;
+};
+
+const originOf = ({ agent, places, fallback }: OriginParams): string =>
+  agent.sourceKind === 'comment_run'
+    ? commentRunOriginOf({ threadIds: agentThreadIds(agent), places })
+    : fallback();
 
 const NO_AGENTS: ReadonlyArray<Agent> = [];
 
@@ -263,6 +279,7 @@ type AutoRowParams = {
   readonly autoViews: ReadonlyArray<AutoTreeView>;
   readonly rootTurns: Params['rootTurns'];
   readonly route: RunRoute | null;
+  readonly places: Readonly<Record<string, string>>;
 };
 
 type RestingParams = {
@@ -276,7 +293,14 @@ const restingWordOf = ({ root }: RestingParams): Pick<AutoTreeWord, 'state' | 'w
   return { state: 'idle', word: LEAD_STOP_WORDS.resting };
 };
 
-const autoRowOf = ({ root, agents, autoViews, rootTurns, route }: AutoRowParams): SessionRunRow => {
+const autoRowOf = ({
+  root,
+  agents,
+  autoViews,
+  rootTurns,
+  route,
+  places,
+}: AutoRowParams): SessionRunRow => {
   const view = autoViews.find((candidate) => candidate.tree.rootAgentId === root.id);
   const state =
     view === undefined
@@ -290,7 +314,12 @@ const autoRowOf = ({ root, agents, autoViews, rootTurns, route }: AutoRowParams)
     kind: 'auto',
     shape: 'lead',
     title: autoRootTitleOf({ name: root.name, ask: view?.rootAsk ?? null, events: NO_EVENTS }),
-    origin: runKindLineOf({ line: { kind: 'lead', planName: route?.presetName ?? null } }),
+    origin: originOf({
+      agent: root,
+      places,
+      fallback: () =>
+        runKindLineOf({ line: { kind: 'lead', planName: route?.presetName ?? null } }),
+    }),
     dot,
     stateWord: state.word,
     ...progressStateOf({ dot }),
@@ -316,9 +345,17 @@ type AgentRowParams = {
   readonly agents: ReadonlyArray<Agent>;
   readonly questions: ReadonlyArray<OpenQuestion>;
   readonly turn: TurnState | undefined;
+  readonly places: Readonly<Record<string, string>>;
 };
 
-const agentRowOf = ({ agent, kind, agents, questions, turn }: AgentRowParams): SessionRunRow => {
+const agentRowOf = ({
+  agent,
+  kind,
+  agents,
+  questions,
+  turn,
+  places,
+}: AgentRowParams): SessionRunRow => {
   const state = agentStateOf({
     agent,
     turn,
@@ -333,7 +370,12 @@ const agentRowOf = ({ agent, kind, agents, questions, turn }: AgentRowParams): S
     kind: 'agent',
     shape: 'lead',
     title: agent.name,
-    origin: runKindLineOf({ line: { kind: 'agent', role: agentKindPalette({ kind }).label } }),
+    origin: originOf({
+      agent,
+      places,
+      fallback: () =>
+        runKindLineOf({ line: { kind: 'agent', role: agentKindPalette({ kind }).label } }),
+    }),
     dot: state.dot,
     stateWord: state.word,
     ...progressStateOf({ dot: state.dot }),
@@ -383,6 +425,7 @@ export const sessionRunsOf = ({
   mounts,
   projects,
   routes = NO_ROUTES,
+  commentPlaces = NO_PLACES,
 }: Params): ReadonlyArray<SessionRun> => {
   const standalone = agents.filter((agent) => isStandaloneAgent({ agent }));
   const kinds = standalone.map((agent) => ({
@@ -392,12 +435,26 @@ export const sessionRunsOf = ({
   const autoRows = kinds
     .filter(({ kind }) => kind === 'auto')
     .map(({ agent }) =>
-      autoRowOf({ root: agent, agents, autoViews, rootTurns, route: routes[agent.id] ?? null }),
+      autoRowOf({
+        root: agent,
+        agents,
+        autoViews,
+        rootTurns,
+        route: routes[agent.id] ?? null,
+        places: commentPlaces,
+      }),
     );
   const agentRows = kinds
     .filter(({ kind }) => isAgentsPageKind({ kind }))
     .map(({ agent, kind }) =>
-      agentRowOf({ agent, kind, agents, questions, turn: turnByAgentId.get(agent.id) }),
+      agentRowOf({
+        agent,
+        kind,
+        agents,
+        questions,
+        turn: turnByAgentId.get(agent.id),
+        places: commentPlaces,
+      }),
     );
   const placedAgents = placedAgentsOf({ agents, autoViews, mounts });
   return [

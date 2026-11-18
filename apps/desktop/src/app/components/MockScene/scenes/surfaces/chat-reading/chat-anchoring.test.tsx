@@ -25,6 +25,8 @@ import { SENT_QUESTION } from './chatAnchoringSeed';
 
 const WAIT = { timeout: 15_000 };
 const CLIENT_HEIGHT = 700;
+const HEADER_INSET_PX = 120;
+const TURN_TOP_PX = 900;
 
 beforeAll(async () => {
   installFakeResizeObserver();
@@ -80,7 +82,9 @@ describe('the chat anchoring scene', () => {
     const turns = container.querySelectorAll('[data-turn]');
     expect(turns).toHaveLength(3);
     expect(turns[turns.length - 1]?.textContent).toContain(SENT_QUESTION);
-    expect(container.querySelector('[data-dock-live]')?.textContent).toContain('Auto is answering');
+    expect(container.querySelector('[data-dock-live]')?.textContent).toContain(
+      'The Lead is answering',
+    );
   });
 
   it('makes room under the sent message and leaves Jump to latest hidden while it fits', async () => {
@@ -95,5 +99,46 @@ describe('the chat anchoring scene', () => {
     expect(container.querySelector('[data-jump-to-latest]')?.getAttribute('data-visible')).toBe(
       'false',
     );
+  });
+
+  it('lands the sent message under a pinned header inset, not under the header', async () => {
+    const real = window.getComputedStyle.bind(window);
+    vi.spyOn(HTMLElement.prototype, 'clientHeight', 'get').mockReturnValue(CLIENT_HEIGHT);
+    vi.spyOn(HTMLElement.prototype, 'scrollHeight', 'get').mockReturnValue(3000);
+    vi.spyOn(window, 'getComputedStyle').mockImplementation((element, pseudo) => {
+      const style = real(element, pseudo);
+      return element.querySelector('[data-scroll-content]') !== null
+        ? new Proxy(style, {
+            get: (target, key) =>
+              key === 'paddingTop' ? `${HEADER_INSET_PX}px` : Reflect.get(target, key),
+          })
+        : style;
+    });
+    vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function (
+      this: HTMLElement,
+    ) {
+      const top = this.hasAttribute('data-turn') ? TURN_TOP_PX : 0;
+      return DOMRect.fromRect({ x: 0, y: top, width: 0, height: 60 });
+    });
+    const writes: number[] = [];
+    const top = Object.getOwnPropertyDescriptor(Element.prototype, 'scrollTop');
+    Object.defineProperty(Element.prototype, 'scrollTop', {
+      configurable: true,
+      get: () => 0,
+      set: (value: number) => {
+        writes.push(value);
+      },
+    });
+    try {
+      mount();
+      await screen.findByText(SENT_QUESTION, undefined, WAIT);
+      await waitFor(() => {
+        expect(writes).toContain(TURN_TOP_PX - HEADER_INSET_PX);
+      });
+    } finally {
+      if (top !== undefined) {
+        Object.defineProperty(Element.prototype, 'scrollTop', top);
+      }
+    }
   });
 });

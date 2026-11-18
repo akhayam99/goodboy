@@ -354,7 +354,7 @@ describe('a rebase that stopped on a conflict', () => {
     ).toBe('rebasing-here');
   });
 
-  it('counts what Auto resolved and names the new online commits', () => {
+  it('counts what The Lead resolved and names the new online commits', () => {
     const files = rebaseFileStatesOf({
       files: ['webhook.ts', 'dedupe.ts'],
       conflicts: [{ path: 'dedupe.ts', hasMarkers: true, isStageOnly: false }],
@@ -377,7 +377,7 @@ describe('a rebase that stopped on a conflict', () => {
       }),
     ).toMatchObject({
       state: 'auto-resolving',
-      title: 'Auto is rebasing on main',
+      title: 'The Lead is rebasing on main',
       line: '1 of 2 files resolved. It asks you here if a conflict is not clear.',
     });
     expect(

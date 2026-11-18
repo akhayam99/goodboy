@@ -16,6 +16,16 @@ import {
   Undo2,
 } from '@goodboy/ui/icons';
 import type { AgentId, ResolveVerdict, SessionId } from '@goodboy/types';
+import { reviewCommentLaneFactsOf } from './reviewCommentLaneFacts';
+import { reviewCommentRunFactsOf, type ReviewCommentRunFacts } from './reviewCommentRunFacts';
+import { REVIEW_COMMENT_RUN_ACTIONS } from './reviewCommentRunActions';
+import {
+  UNDECIDED,
+  hasOverlay,
+  isOutsideRun,
+  isRunChanged,
+  isRunFinished,
+} from './reviewCommentRules';
 import {
   REVIEW_SOURCE_CAPABILITIES,
   REVIEW_SOURCE_LABEL,
@@ -28,18 +38,14 @@ import { branchPlace, fixRunTranscript } from '../../../store/slices/navigation/
 import { activeReviewSourceOf } from '../../../store/slices/review-source/activeReviewSource';
 import { diffThreadIdOf } from '../../diff/lib/threadIds';
 import { acceptReviewItem } from '../../resolve/acceptReviewItem';
-import { laneAcceptCountOf, laneAcceptNotesOf } from '../../resolve/laneAcceptCount';
 import { acceptUpToLabel } from '../../resolve/laneCopy';
 import { FAILED_RUN_COPY } from '../../resolve/failedRunCopy';
-import { verdictReply } from '../../resolve/commentVerdict';
+import { remoteReplyOf } from '../../resolve/remoteReplyOf';
 import { postReplyWhenNothingWaits } from '../../resolve/replyDelivery';
 import { replyOf, rowStateOf, threadRowsOf } from '../../resolve/reviewRows';
 import type { ReviewCommentState } from '../../resolve/reviewCommentState';
 import { REMOTE_LABEL, commitUrlOf, remoteActionLabel, remoteOf } from '../../resolve/reviewRemote';
-import type {
-  ThreadGitFacts,
-  ThreadRemoteKind,
-} from '../../../store/slices/resolve/threadGitState';
+import type { ThreadRemoteKind } from '../../../store/slices/resolve/threadGitState';
 import { requestReview, type ReviewComposeMode } from '../../review/reviewRequest';
 import type { AppStore } from '../../../store/store';
 import type { ActionEnv, ObjectKindDefinition, ReviewCommentActionTarget } from '../types';
@@ -73,21 +79,10 @@ export type ReviewCommentFacts = {
   readonly hasFixOnBranch: boolean;
   readonly laneAcceptCount: number;
   readonly laneAcceptNotes: number;
-};
+} & ReviewCommentRunFacts;
 
-const UNDECIDED: ReadonlySet<ReviewCommentState> = new Set([
-  'new',
-  'needs',
-  'ready',
-  'edited',
-  'outdated',
-  'failed',
-]);
 const DRAFTED: ReadonlySet<ReviewCommentState> = new Set(['ready', 'edited', 'outdated']);
 const DECIDED: ReadonlySet<ReviewCommentState> = new Set(['accepted', 'replied', 'skipped']);
-
-const hasOverlay = ({ facts }: { readonly facts: ReviewCommentFacts }): boolean =>
-  facts.remote !== null;
 
 const isMissing = ({ facts }: { readonly facts: ReviewCommentFacts }): boolean =>
   facts.remote === 'missing';
@@ -96,20 +91,6 @@ const canRepostVerdict = ({ facts }: { readonly facts: ReviewCommentFacts }): bo
   isMissing({ facts }) && !facts.isChecking && !facts.isPushedMissing;
 
 const shortOf = ({ sha }: { readonly sha: string | null }): string => (sha ?? '').slice(0, 7);
-
-const remoteReplyOf = ({
-  gitFacts,
-  draftReply,
-}: {
-  readonly gitFacts: ThreadGitFacts | null;
-  readonly draftReply: string | null;
-}): string | null => {
-  if (draftReply !== null && draftReply.trim() !== '') {
-    return draftReply;
-  }
-  const verdict = gitFacts?.verdict ?? null;
-  return verdict === null || verdict.kind === 'refix' ? null : verdictReply({ verdict });
-};
 
 const REWRITABLE: ReadonlySet<ReviewCommentState> = new Set(['ready', 'edited']);
 
@@ -222,27 +203,8 @@ export const REVIEW_COMMENT_KIND: ObjectKindDefinition<
         row.item.approvalState === 'wont_fix' ||
         (row.proposalKind !== 'fix' && row.thread.disposition !== 'fix'),
       isReplyFailure: row.thread.stateReason?.startsWith('publication_failed:') === true,
-      hasFixOnBranch:
-        row.thread.disposition === 'fix' &&
-        (row.thread.commitShas?.length ?? 0) > 0 &&
-        !(state.sessionResolveCandidates[target.sessionId] ?? []).some(
-          (entry) =>
-            entry.candidate.state === 'ready' &&
-            entry.items.some((member) => member.queueItemId === row.item.id),
-        ),
-      laneAcceptCount: laneAcceptCountOf({
-        candidates: state.sessionResolveCandidates[target.sessionId] ?? [],
-        itemId: row.item.id,
-      }),
-      laneAcceptNotes: laneAcceptNotesOf({
-        candidates: state.sessionResolveCandidates[target.sessionId] ?? [],
-        itemId: row.item.id,
-        noteItemIds: new Set(
-          (state.sessionResolveQueueItems[target.sessionId] ?? [])
-            .filter((entry) => entry.thread.originKind === 'diff_comment')
-            .map((entry) => entry.item.id),
-        ),
-      }),
+      ...reviewCommentLaneFactsOf({ state, sessionId: target.sessionId, row }),
+      ...reviewCommentRunFactsOf({ state, target, row, draftReply: draft?.reply ?? null }),
     };
   },
   actions: [
@@ -441,21 +403,7 @@ export const REVIEW_COMMENT_KIND: ObjectKindDefinition<
         return openWebAction({ url, env, sessionId: facts.sessionId });
       },
     },
-    {
-      id: 'reviewComment.draft',
-      label: 'Fix',
-      icon: CONCEPT_ICONS.agents,
-      group: 'act',
-      shortcut: 'review.fix',
-      when: ({ facts }) => facts.state === 'new' && !hasOverlay({ facts }),
-      slot: () => 'primary',
-      run: ({ facts, env }) =>
-        requestReview({
-          getState: env.getState,
-          sessionId: facts.sessionId,
-          request: { kind: 'fix', threadIds: [facts.threadId] },
-        }),
-    },
+    ...REVIEW_COMMENT_RUN_ACTIONS,
     {
       id: 'reviewComment.answer',
       label: 'Answer',
@@ -496,7 +444,7 @@ export const REVIEW_COMMENT_KIND: ObjectKindDefinition<
       id: 'reviewComment.edit',
       label: ({ facts }) => {
         if (facts.state === 'failed') {
-          return 'Add a hint';
+          return facts.runSuggestion === null ? 'Add a hint' : 'Retry with a hint';
         }
         return editLabel(facts);
       },
@@ -504,8 +452,10 @@ export const REVIEW_COMMENT_KIND: ObjectKindDefinition<
       group: 'act',
       shortcut: 'review.edit',
       when: ({ facts }) =>
-        (DRAFTED.has(facts.state) || facts.state === 'failed') && !hasOverlay({ facts }),
-      slot: ({ facts }) => (isRedraft(facts) ? 'primary' : 'menu'),
+        (DRAFTED.has(facts.state) || facts.state === 'failed') &&
+        facts.lane !== 'in_run' &&
+        !hasOverlay({ facts }),
+      slot: ({ facts }) => (isRedraft(facts) && facts.runSuggestion === null ? 'primary' : 'menu'),
       run: (params) => compose(params, isRedraft(params.facts) ? 'redraft' : 'edit'),
     },
     {
@@ -513,7 +463,8 @@ export const REVIEW_COMMENT_KIND: ObjectKindDefinition<
       label: FAILED_RUN_COPY.anotherModel,
       icon: Cpu,
       group: 'act',
-      when: ({ facts }) => facts.state === 'failed' && !hasOverlay({ facts }),
+      when: ({ facts }) =>
+        facts.state === 'failed' && facts.lane !== 'in_run' && !hasOverlay({ facts }),
       slot: () => 'menu',
       run: ({ facts, env }) =>
         requestReview({
@@ -617,7 +568,11 @@ export const REVIEW_COMMENT_KIND: ObjectKindDefinition<
       icon: CornerDownRight,
       group: 'act',
       shortcut: 'review.reply',
-      when: ({ facts }) => UNDECIDED.has(facts.state) && !facts.isNote && !hasOverlay({ facts }),
+      when: ({ facts }) =>
+        UNDECIDED.has(facts.state) &&
+        !facts.isNote &&
+        !hasOverlay({ facts }) &&
+        !isRunChanged({ facts }),
       slot: () => 'secondary',
       run: (params) => compose(params, 'reply'),
     },
@@ -628,7 +583,7 @@ export const REVIEW_COMMENT_KIND: ObjectKindDefinition<
       group: 'act',
       shortcut: 'review.skip',
       when: ({ facts }) =>
-        UNDECIDED.has(facts.state) ||
+        (UNDECIDED.has(facts.state) && isOutsideRun({ facts }) && !isRunFinished({ facts })) ||
         (isMissing({ facts }) && !facts.isPushedMissing && !facts.isChecking),
       slot: () => 'secondary',
       run: ({ facts, env }) =>
@@ -661,7 +616,10 @@ export const REVIEW_COMMENT_KIND: ObjectKindDefinition<
       label: ({ facts }) => (facts.isNote ? 'Close the comment' : NAMES.resolve),
       icon: CircleCheck,
       group: 'act',
-      when: ({ facts }) => UNDECIDED.has(facts.state) && facts.canResolve,
+      when: ({ facts }) =>
+        UNDECIDED.has(facts.state) &&
+        facts.canResolve &&
+        !(facts.isNote && isRunFinished({ facts })),
       slot: () => 'menu',
       run: ({ facts, env }) =>
         facts.isNote

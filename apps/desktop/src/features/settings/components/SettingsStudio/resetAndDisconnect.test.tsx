@@ -75,6 +75,31 @@ describe('AppResetSection', () => {
     expect(await screen.findByText('Local data deleted.')).toBeDefined();
     expect(screen.getByRole('button', { name: 'Restart now' })).toBeDefined();
   });
+
+  it('holds Restart now while it restarts and reports a refused restart', async () => {
+    let fail: (error: Error) => void = () => undefined;
+    actions.relaunchApp.mockImplementationOnce(
+      () =>
+        new Promise<undefined>((_resolve, reject) => {
+          fail = reject;
+        }),
+    );
+    render(<AppResetSection />);
+    fireEvent.click(screen.getByRole('button', { name: 'Delete all data' }));
+    fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Delete' }));
+    const restart = await screen.findByRole('button', { name: 'Restart now' });
+
+    fireEvent.click(restart);
+    expect(restart.getAttribute('aria-busy')).toBe('true');
+    fireEvent.click(restart);
+    expect(actions.relaunchApp).toHaveBeenCalledOnce();
+
+    fail(new Error('The updater is busy'));
+    await waitFor(() => expect(restart.getAttribute('aria-busy')).toBeNull());
+    expect(actions.reportError).toHaveBeenCalledWith(
+      expect.objectContaining({ title: "Couldn't restart Goodboy" }),
+    );
+  });
 });
 
 describe('WorkspaceDisconnectBand', () => {

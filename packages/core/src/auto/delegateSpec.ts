@@ -11,9 +11,14 @@ export const DELEGATE_REASON_CHARS = 240;
 export const DELEGATE_LIST_MAX = 8;
 export const DELEGATE_TITLE_WORDS = 8;
 
+export const DELEGATE_REVISES_SHAPE =
+  '"revises":{"artifactId":"<artifact id>","expectedRevision":<version number>}';
+
+export const DELEGATE_REVISE_REASON = 'The user asked for changes to this artifact.';
+
 export type DelegateRevise = Readonly<{
   artifactId: string;
-  expectedRevision: number;
+  expectedRevision: number | null;
 }>;
 
 export type DelegateChildSpec = Readonly<{
@@ -93,19 +98,41 @@ type ReviseParams = {
   readonly value: unknown;
 };
 
+const REVISION_KEYS = ['expectedRevision', 'revision', 'version'] as const;
+
+const revisionOf = ({ value }: ReviseParams): number | null | 'invalid' => {
+  if (value === undefined || value === null) {
+    return null;
+  }
+  const text = typeof value === 'string' ? value.trim().replace(/^v/i, '') : null;
+  const revision = text === null ? value : Number(text === '' ? Number.NaN : text);
+  if (typeof revision !== 'number' || !Number.isInteger(revision) || revision < 1) {
+    return 'invalid';
+  }
+  return revision;
+};
+
 const reviseOf = ({ value }: ReviseParams): DelegateRevise | null | 'invalid' => {
   if (value === undefined || value === null) {
     return null;
   }
+  if (typeof value === 'string') {
+    const artifactId = clippedTextOf({ value, max: DELEGATE_FIELD_CHARS });
+    return artifactId === null ? 'invalid' : { artifactId, expectedRevision: null };
+  }
   if (!isRecord(value)) {
     return 'invalid';
   }
-  const artifactId = clippedTextOf({ value: value['artifactId'], max: DELEGATE_FIELD_CHARS });
-  const revision = value['expectedRevision'];
-  if (artifactId === null || typeof revision !== 'number' || !Number.isInteger(revision)) {
+  const artifactId = clippedTextOf({
+    value: value['artifactId'] ?? value['artifact'] ?? value['id'],
+    max: DELEGATE_FIELD_CHARS,
+  });
+  const key = REVISION_KEYS.find((candidate) => value[candidate] !== undefined);
+  const revision = revisionOf({ value: key === undefined ? null : value[key] });
+  if (artifactId === null || revision === 'invalid') {
     return 'invalid';
   }
-  return revision >= 1 ? { artifactId, expectedRevision: revision } : 'invalid';
+  return { artifactId, expectedRevision: revision };
 };
 
 type ChildParams = {
@@ -213,11 +240,11 @@ const parseChild = ({ raw, slot }: ChildParams): ChildOutcome => {
     return refuse({
       slot,
       code: 'spec_invalid',
-      message: `child ${slot + 1}: revises needs artifactId and expectedRevision`,
+      message: `child ${slot + 1}: write it as ${DELEGATE_REVISES_SHAPE}, with the artifact id and the version from the artifacts list`,
     });
   }
   const retryOf = clippedTextOf({ value: raw['retryOf'], max: DELEGATE_FIELD_CHARS });
-  if (retryOf !== null) {
+  if (retryOf !== null && revises === null) {
     return retryChild({ raw, slot, retryOf });
   }
   const publish = parseDelegatePublish({ value: raw['publish'] });
@@ -245,7 +272,9 @@ const parseChild = ({ raw, slot }: ChildParams): ChildOutcome => {
   if (revises === null && task === null) {
     return refuse({ slot, code: 'spec_invalid', message: `child ${slot + 1} needs a task` });
   }
-  const reason = clippedTextOf({ value: raw['reason'], max: DELEGATE_REASON_CHARS });
+  const reason =
+    clippedTextOf({ value: raw['reason'], max: DELEGATE_REASON_CHARS }) ??
+    (revises === null ? null : DELEGATE_REVISE_REASON);
   if (reason === null) {
     return refuse({
       slot,

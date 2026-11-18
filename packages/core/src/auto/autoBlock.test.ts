@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { parseDelegateSpec } from './delegateSpec';
-import { parseAutoBlock } from './autoBlock';
+import { parseAutoBlock, parseAutoCloseBlocks } from './autoBlock';
 
 const CHILD = { role: 'scout', task: 'Find the retry limit.', reason: 'Reading code.' };
 
@@ -117,6 +117,36 @@ describe('parseAutoBlock', () => {
     expect(parseAutoBlock({ text: block({ action: 'stop', delegation: 'd1' }) }).kind).toBe(
       'invalid',
     );
+  });
+
+  it('reads a close block and names the shape when it is wrong', () => {
+    expect(
+      parseAutoBlock({
+        text: block({ action: 'close', target: 'd1', as: 'skipped', reason: 'Not needed.' }),
+      }),
+    ).toEqual({
+      kind: 'block',
+      block: { action: 'close', target: 'd1', as: 'skipped', reason: 'Not needed.' },
+    });
+    const wrong = parseAutoBlock({ text: block({ action: 'close', target: 'd1', as: 'gone' }) });
+    expect(wrong).toMatchObject({ kind: 'invalid' });
+    expect(wrong.kind === 'invalid' ? wrong.reason : '').toContain('"as":"done|skipped|discarded"');
+  });
+
+  it('reads the close blocks written before the last block, and leaves the last to parseAutoBlock', () => {
+    const closeScout = { action: 'close', target: 'd-scout', as: 'done', reason: 'Not needed.' };
+    const dropPlan = { action: 'close', target: 'plan-1', as: 'discarded', reason: 'Replaced.' };
+    const text = `I tidy up.\n${block(closeScout)}\n${block(dropPlan)}\n${block({ action: 'delegate', children: [CHILD] })}`;
+
+    expect(parseAutoCloseBlocks({ text })).toEqual([
+      { kind: 'block', block: { ...closeScout } },
+      { kind: 'block', block: { ...dropPlan } },
+    ]);
+    expect(parseAutoBlock({ text })).toMatchObject({
+      kind: 'block',
+      block: { action: 'delegate' },
+    });
+    expect(parseAutoCloseBlocks({ text: block(closeScout) })).toEqual([]);
   });
 
   it('is invalid for an unknown action, a missing field and a non-object', () => {

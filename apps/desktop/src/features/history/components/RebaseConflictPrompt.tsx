@@ -13,7 +13,7 @@ type Props = {
   readonly onOpenFile: (params: OpenFileParams) => void;
 };
 
-const HINT_LABEL = 'Hint for Auto';
+const HINT_LABEL = 'Hint for the Lead';
 
 export const RebaseConflictPrompt = ({
   sessionId,

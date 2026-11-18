@@ -170,7 +170,7 @@ The Rust files with the most comments lost them in one pass. What a reader would
   through `PrWriteOptions`: a write without one lands on the active mount's repository, where
   another pull request can carry the same number. So do `requestReview`, `editPr`, the reviewer search port (`usePullRequestPort({ mountId })`), the create form's reviewer step and the Scribe settle (`work.mountId`). `refreshMountPr` keeps the known request when a poll of
   the same branch and repository answers empty.
-- The verbs of a stopped rebase (Resolve with Auto, Resolve in terminal, Abort rebase, Rebase on their commits, Undo rebase, Retry rebase, Fix with an agent, Retry push) are built once by `rebaseStopVerbs` and called by `useJobBannerActions` (banner and panel) and `useActionCardActions` (Next rows). A new surface calls the factory; it never rebuilds a verb, because the copy that does drops the start hint or the `adoptRebaseStop` step.
+- The verbs of a stopped rebase (Resolve with the Lead, Resolve in terminal, Abort rebase, Rebase on their commits, Undo rebase, Retry rebase, Fix with an agent, Retry push) are built once by `rebaseStopVerbs` and called by `useJobBannerActions` (banner and panel) and `useActionCardActions` (Next rows). A new surface calls the factory; it never rebuilds a verb, because the copy that does drops the start hint or the `adoptRebaseStop` step.
 - There is one push verb, `pushBranch({ sessionId, mountId, mode })` (github slice):
   `plain` pushes the branch, `lease` force pushes with lease, either behind a `confirmed` guard
   (the commits the confirm listed, re-read from origin first) or an `expected` guard (the remote
@@ -248,9 +248,49 @@ The Rust files with the most comments lost them in one pass. What a reader would
   `turnSettled.ts`) besides checking the lease and the live run ids. Markers
   that still arrive on an attempt failed as `interrupted` are recorded rather
   than dropped.
+- A fix run for a note starts its copy on the owner's working tree, not on the
+  branch head. `drainResolveQueue` and `resolverLaunchCopy` pass
+  `shouldCarryWorkingTree` to `resolve_copy_prepare` when a thread id of the
+  attempt starts with `note:`. `owner_tree_on` writes the tracked edits and
+  untracked files as one marker commit (author `goodboy@localhost`, subject
+  `goodboy: your working tree before the fix`) through a temporary index with
+  a name of its own: the owner's index and files never change. The marker is
+  made on a clean tree too. The candidate base is the branch head (the copy
+  hands it back as `base`, and `prepareTurn` carries it as `copyBase` into
+  `recordResolveAttempt`), never the marker, and `worktree_diff_range` diffs
+  from the marker, so the proposal is only the agent delta.
+- Notes take one fix at a time. `readyFixBlocking` (`resolveLane.ts`) holds a
+  note fix while any fix waits for review on its branch, and holds any fix
+  while a note fix waits there; the pane shows **Apply or skip the ready fix
+  first** with both buttons, and Apply or Skip drains the queue again.
+  `owner_tree_on` refuses a start that is not the branch head, a candidate
+  with more than one marker, or one whose first commit is not the marker, is
+  refused, and a run that carries a note is never split into fixes.
+- `integrate_onto_owner_tree` applies the fix commits to a private index built
+  from the files on disk, then writes it with `read-tree -m -u`. The journal
+  keeps the trees before and after, the head and the branch; both trees sit
+  under `refs/goodboy/recovery/<candidate>` until the landing is finished, so
+  `git gc` never takes them. A crash mid landing is finished on the next
+  accept when every file sits at one of the two trees, and a replay of a
+  finished landing checks the branch and the files first. Submodule moves and
+  merge commits are refused.
+- `read-tree -m -u` overwrites an ignored file. Every write of the files of a
+  fix (`branch_move.rs`, the note landing too) first lists the paths it
+  writes or removes and refuses when one of them, or a folder above it, is on
+  disk but not tracked by the index it uses.
+- A comment fix that fast forwards and a capture in the shared worktree
+  (`shouldKeepUncommitted`, crash recovery included) go through `move_branch`:
+  it captures the branch name and head before planning, refuses staged
+  entries on the files of the fix, moves the files with a two tree
+  `read-tree -m -u`, then updates that branch by name with the old head, never
+  `HEAD`. A branch switch in between, or a refused ref update, moves the files
+  back unless the owner edited them since. It never runs `git add --update`
+  and keeps the owner's other staged entries. Crash recovery of a copy run
+  quarantines the copy, never the owner's worktree.
 - A resolver started through a batch (`startBatch`, `resolve_attempts.batch_id`
   set) never writes the real branch. `drainResolveQueue` makes it a detached
-  copy at the branch head (`resolve_copy_prepare`, under the history copy
+  copy at the branch head, or at the working tree snapshot for a note
+  (`resolve_copy_prepare`, under the history copy
   reservations with the slug `resolve-<attemptId>`) and hands `sendTurn` the
   `resolveCopyPath`. The copy mirrors every `node_modules` of the main tree
   (root and workspace packages, depth 3): the folders are real, `.pnpm` and
@@ -410,6 +450,13 @@ status` directly. A branch cut from a remote-tracking ref (`worktree add -b
   three apart: a probe with no answer never changes the standing, a lost sign-in needs two
   answers 10 seconds apart, and only a refused run or a `verified` answer speaks for the
   server. Do not collapse them back into one connected flag.
+- A CLI that does not know a subcommand may treat it as a prompt. Claude Code before
+  2.1.41 reads `claude auth status` as a message, sends it to the model and prints a
+  chat reply, so every sign-in probe spent a subscription request and the provider sat
+  at cannot check. Never add an argument to a check or a login command without the
+  version that ships it: `claude_version::has_auth_subcommand` gates the status check
+  and `lifecycle_refusal` gates login and logout, and the fake claude records every
+  call so `claude_auth_never_sends_a_prompt_to_an_old_cli` fails if one slips through.
 - Explore decides text from content, not from the extension. `explore_read`
   sends an image or a PDF extension as a data URL, and reads the first 8 KB of
   anything else: a NUL byte or invalid UTF-8 returns `Binary { size }` with no
@@ -915,6 +962,7 @@ The hint a person types before a fix is plain text carried as a field, never re-
 
 - There is one overview: the cards of `CentralColumn`, in the order `overviewCardsOf` returns. An `overview.layout` row left by an older version is never read, so a stored Classic shows the cards; do not bring back a reader or a switch. The timeline of earlier versions is the Log section at the end of the Overview (`OverviewLog` around `LogPane`, view `all`); `session.openLog` lands on it through `LOG_LANDING`. There is no Log drawer: a stored `session-log` panel of an older build opens the session Overview (`withoutRemovedPages`).
 - `buildTimelineStream` is a folder (`features/session/timeline/buildTimelineStream/`), and its callers still import `from '.../buildTimelineStream'`. `index.ts` holds the entry points (`buildTimelineStream`, `buildRunTreeStream`) and re-exports the stream types, `countRowIdOf` and `liveFoldRootIds`; `streamTypes.ts` the items and drafts, `mergeRows.ts` the folding of consecutive decision, project, stopped and history rows, `agentRows.ts` the agent and subagent rows, `runRows.ts` the run row and its lane shape, `laneFolds.ts` the lane and run folds, `ordering.ts` the order (newest first, then the execution order of a run), and `decorate.ts` the count, day and more rows. The tests sit beside them. A new rule about one kind of row goes in its piece, never back into `index.ts`.
+- A large session (171 agents, 15,937 turn events in a real database) froze the Overview. Opening a session reads summaries, never every turn event: `listAgentRunIdsForSession` returns one row per agent run from SQL, and its test bounds the rows read. The Log mounts after the frame (`useDeferredValue` in `LogPane`) and draws `LOG_PAGE_ROWS` at a time. The 100 ms long-task target is guarded by deterministic work bounds in `CentralColumn.bigSession.test.tsx`: no log rows in the first frame, one full page after settling, at most six React commits and 30 IPC calls on open. Wall-clock assertions vary with runner load. `timelineFullGutterOf` takes one stream built with `shouldExpandEveryGroup`; never go back to rebuilding the stream once per newly found group. The test and the `u47-big-session-*` scenes hold the size; measure there before adding work to the Overview's first render.
 - Three shared pieces keep their old defaults for the other callers: `buildTimelineStream` folds a batch of rebase events only with `shouldFoldHistoryBatches` (the Overview log, view `all`), `deriveNextSteps` drops a check fix follow-up and a run's next step only with `isActivityShown` (the palette's Next group, the default; the cards pass `false` through `useNextCards`, so the Fix card offers **Push** and **Start fix**, as the branch header does through `checkChainActionOf`; no log row offers them any more), and `useSessionSuggestionsFrom` takes the runs the column already holds. Do not flip those defaults to fix one surface.
 - `batchId` is a payload key and must also sit in the whitelist of `packages/db/src/queries/session-event.ts`, or it is dropped when events are read back. It is written only for `origin` rebase while the history run is a rebase of the same session. Events recorded before it existed fold by origin and a 2 minute gap (`HISTORY_BATCH_WINDOW_MS`).
 - The branch story has one reader of the facts: `branchStoryOf`. Never compute a step word, a tone or a rank in `BranchRow`. A row is named by the branch (`mount.branch`), never by the folder. The per branch card gate (`isMountBusyOf`) and the branch in card titles (`mountLabelOf`) are one rule for every overview; never add a second gate keyed on `isActivityShown`.
@@ -1059,10 +1107,14 @@ Every local page shares one origin, `gblocal://localhost` (`http://gblocal.local
 
 `hydrate` runs its independent reads together, then opens the workspace with `setCurrentWorkspace({ id, launch })`. `launch` (`LaunchReads`) carries the projects of every workspace and the `turn_list_live` answer the ghost reconcile used, so the first workspace load reads neither again (`bootBudgets.test.ts` holds both at 1). Pass it only from the launch chain: a later switch that reused it would cancel or keep runs on a stale live set. Two orders must hold inside the group's `Promise.all`: the ghost reconcile finishes before `setCurrentWorkspace` reads the agents, and `runDbMigrations` (which also purges step agents a deleted workflow left behind) finishes before any member starts. `launchOrder.test.ts` pins both, with the restart restore and the error screen. A new launch step that reads agents or projects goes after the group, not into it; one that writes what the workspace load reads goes into `runDbMigrations` or the group, never after ready. Hygiene that only prunes goes to `runEachOnIdle` after ready.
 
+## No query runs before the migrations of this build
+
+`App` starts its subscriptions (the resolve drain, the Auto runtime, the polls) in the same render that calls `hydrate`, before the migrations finish. Before the schema gate, the resolve drain read `resolve_attempts` on the old schema at the first launch after an update, crash capture saved the unhandled rejection, and the next launch said "Goodboy hit an error last time" with "no such table" or "no such column". Now `tauriDatabase` waits on `schemaGate` (`shared/lib/schemaGate.ts`) before every statement. `main.tsx` closes it before the first render, `runDbMigrations` opens it once the runner returned, a failed migration leaves it closed behind the launch error screen, and `wipeDb` closes it while it replays the schema. Only the migration runner and its version probe use `migrationDatabase`, which never waits: a query on it from anywhere else can see the old schema, and a query on `tauriDatabase` inside the migration path never returns. Tests and the mock entry run with the gate open; a test of the gate closes it and opens it again in `afterEach` (`dbBoot.test.ts`). The gate covers SQL from the window only: a Rust command that reads a table runs whenever it is invoked.
+
 ## A session you did not open holds light agent rows
 
 At launch a session with no live work holds light rows in `sessionPhaseRuns` (marked in `lightAgentSessions`): no `outputSummary` (but the newest unread one), no `domains`, no `sourceThreadIds`, no routing fields. The `Agent` type keeps those fields optional, so the compiler does not tell a light row from a full one. A shell number reads only light fields, and `store.sqlite-light-agents.test.ts` checks the stage, the unread state and the label are the same with either. Code that reads one of the heavy fields of a session that may not be open (a turn, a workflow advance, an orchestration step, anything an engine runs in the background) awaits `ensureFullAgents` first, as `sendTurn`, `maybeAutoAdvanceWorkflow` and `orchestrateNextStep` do. A new shell input that reads a heavy field must be added to the light row and to `agent-summary.test.ts` instead.
 
 ## Some drawers load on first open
 
-The terminal, scripts, script run and fix comments drawers load their code when they first open (`LazyTerminalDrawer`, `LazySessionScriptsDrawer`, `LazyScriptRunDrawer`, `LazyFixCommentsDrawer`), so the app's first load stays under `bundle-budget.json`. Until the code arrives the drawer shows one status line. A test that renders one of them through `DrawerHost` and queries it right away fails when the runner is loaded: it awaits a `findBy` query, or imports the drawer module in `beforeAll` (as `b-terminal-drawer.test.tsx` and `object-rows-open-our-menu.test.tsx` do). A drawer that many tests render synchronously, like `CheckAnalysisDrawer`, stays eager. The Context tab loads the same way from `SessionLensPane` and shows a lens skeleton first, so a test that opens it awaits `findByTestId('context-tab')`.
+The terminal, scripts, script run, fix comments and artifact document drawers load their code when they first open (`LazyTerminalDrawer`, `LazySessionScriptsDrawer`, `LazyScriptRunDrawer`, `LazyFixCommentsDrawer`, `LazyArtifactDocumentDrawer`), so the app's first load stays under `bundle-budget.json`. Until the code arrives the drawer shows one status line. The ask, check analysis, history versions, plan part, lead details, identifier peek and file diff drawers load the same way from their registration (`lazyNamed` inside a `Suspense`), and so do the new workspace form (`LazyNewWorkspaceForm`) and the write form of the New drawer (`WritePanel`). A test that renders one of them and queries it right away fails when the runner is loaded: it awaits a `findBy` query (`vi.waitFor` under fake timers), or imports the module in `beforeAll` (as `b-terminal-drawer.test.tsx` and `checks-analyze.test.tsx` do). The Context tab loads the same way from `SessionLensPane` and shows a lens skeleton first, so a test that opens it awaits `findByTestId('context-tab')`.

@@ -22,6 +22,13 @@ export type OnlineCommit = {
   readonly subject: string;
 };
 
+type RememberParams = {
+  readonly mountId: string;
+  readonly branch: string;
+  readonly knownRemoteSha: string | null;
+  readonly commits: ReadonlyArray<OnlineCommit>;
+};
+
 type Entry = {
   readonly branch: string;
   readonly knownRemoteSha: string | null;
@@ -48,6 +55,16 @@ export const readOnlineRemoteSha = ({ mountId }: ClearParams): string | null =>
 export const clearOnlyOnline = ({ mountId }: ClearParams): void => {
   requestByMount.set(mountId, (requestByMount.get(mountId) ?? 0) + 1);
   entryByMount.delete(mountId);
+};
+
+export const rememberOnlyOnline = ({
+  mountId,
+  branch,
+  knownRemoteSha,
+  commits,
+}: RememberParams): void => {
+  requestByMount.set(mountId, (requestByMount.get(mountId) ?? 0) + 1);
+  entryByMount.set(mountId, { branch, knownRemoteSha, commits });
 };
 
 export const loadOnlyOnline = async ({

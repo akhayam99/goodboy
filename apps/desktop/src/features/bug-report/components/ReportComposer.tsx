@@ -11,8 +11,6 @@ import {
 import type { GhRunner } from '@goodboy/core/github';
 import type { GhTokenStatus } from '@goodboy/types';
 import {
-  copyToClipboard,
-  formatError,
   ICON_SIZE,
   Listbox,
   ReportSheet,
@@ -20,8 +18,8 @@ import {
   type ReportSheetVariant,
 } from '@goodboy/ui';
 import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
-import { openLinkOrThrow } from '../../open/openLinkOrThrow';
 import { shortcutGlyphs } from '../../../shared/keyboard/registry';
+import { openReportLink } from '../openReportLink';
 import { ISSUE_TYPE_OPTIONS, type IssueTypeValue } from '../reportIssueTypes';
 import {
   NEVER_SENT,
@@ -48,6 +46,11 @@ export type ReportDraft = {
 
 export type ReportLinkOpened = {
   readonly overflows: boolean;
+  readonly sendFailure: string | null;
+};
+
+type OpenOnGithubParams = {
+  readonly sendFailure: string | null;
 };
 
 type Props = {
@@ -201,38 +204,37 @@ export const ReportComposer = ({
     onFiled(filed);
   };
 
+  const openOnGithub = async ({ sendFailure }: OpenOnGithubParams): Promise<string | null> => {
+    const opened = await openReportLink({ title: report.title, body: report.body });
+    if (!opened.isOpened) {
+      return opened.message;
+    }
+    onDraftClear();
+    onOpenedLink({ overflows: opened.link.overflows, sendFailure });
+    return null;
+  };
+
   const submit = async () => {
     if (report.title === '' || github == null || sendState !== 'idle') {
       return;
     }
     setError(null);
     if (!direct) {
-      const opened = link ?? buildReportLink({ title: report.title, body: report.body });
-      if (opened.overflows) {
-        try {
-          await copyToClipboard({ text: `${report.title}\n\n${report.body}` });
-        } catch (err) {
-          setError(`Could not copy the report to your clipboard. ${formatError(err)}`);
-          return;
-        }
-      }
-      try {
-        await openLinkOrThrow({ url: opened.url, sessionId: null, place: 'outside' });
-        onDraftClear();
-        onOpenedLink({ overflows: opened.overflows });
-      } catch (err) {
-        setError(`Could not open GitHub. ${formatError(err)}`);
-      }
+      setError(await openOnGithub({ sendFailure: null }));
       return;
     }
     setSendState('sending');
     const result = await fileReportIssue({ runner, title: report.title, body: report.body });
-    if (!result.ok) {
-      setSendState('idle');
-      setError(result.message);
+    if (result.ok) {
+      finish(result.filed);
       return;
     }
-    finish(result.filed);
+    const failure = await openOnGithub({ sendFailure: result.message });
+    if (failure === null) {
+      return;
+    }
+    setSendState('idle');
+    setError(`GitHub didn't take the report: ${result.message}. ${failure}`);
   };
 
   const addToSimilar = async () => {

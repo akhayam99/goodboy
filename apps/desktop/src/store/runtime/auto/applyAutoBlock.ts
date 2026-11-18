@@ -1,6 +1,8 @@
 import {
+  AUTO_CLOSE_SHAPE,
   describeAutoRefusal,
   parseAutoBlock,
+  parseAutoCloseBlocks,
   parseDelegateSpec,
   parseProposeSpec,
   type AutoBlock,
@@ -85,6 +87,12 @@ const commandOf = ({ block, grant }: CommandParams): AgentCommand => {
         args: { delegation: block.delegation, reason: block.reason },
         grant,
       };
+    case 'close':
+      return {
+        verb: 'close',
+        args: { target: block.target, as: block.as, reason: block.reason },
+        grant,
+      };
     case 'finish':
       return { verb: 'finish', args: { summary: block.summary }, grant };
     default: {
@@ -112,6 +120,50 @@ const rolesOf = ({ block }: RolesParams): ReadonlyArray<string> => {
   return spec.children.flatMap((child) => (child.role === null ? [] : [child.role]));
 };
 
+const grantOf = async ({ ctx, tree, ended }: GrantParams): Promise<AgentCommand['grant']> => ({
+  agentId: ended.agentId,
+  treeId: tree.id,
+  generation: ended.generation,
+  workspaceId: await workspaceOf({ ctx, tree }),
+  sessionId: tree.sessionId,
+  runId: ended.runId,
+});
+
+const runEarlierCloses = async ({ ctx, tree, ended }: GrantParams): Promise<void> => {
+  const lines: string[] = [];
+  let code: string = INVALID_BLOCK_CODE;
+  for (const parsed of parseAutoCloseBlocks({ text: ended.assistantText })) {
+    if (parsed.kind !== 'block' || parsed.block.action !== 'close') {
+      lines.push(parsed.kind === 'invalid' ? parsed.reason : AUTO_CLOSE_SHAPE);
+      continue;
+    }
+    const grant = await grantOf({ ctx, tree, ended });
+    const outcome = await runAutoCommand({
+      ctx,
+      command: commandOf({ block: parsed.block, grant }),
+    });
+    if (!outcome.isOk) {
+      code = outcome.code ?? INVALID_BLOCK_CODE;
+      lines.push(
+        `${parsed.block.target}: ${outcome.error ?? describeAutoRefusal({ code: INVALID_BLOCK_CODE })}`,
+      );
+    }
+  }
+  if (lines.length === 0) {
+    return;
+  }
+  await writeRefusal({
+    ctx,
+    tree,
+    runId: ended.runId,
+    action: 'close',
+    code,
+    text: lines.join('\n'),
+    roles: [],
+    joinKey: `refusal:${ended.runId}:close`,
+  });
+};
+
 type RunBlockParams = {
   readonly ctx: AgentVerbContext;
   readonly tree: AutoTree;
@@ -132,17 +184,7 @@ const runBlock = async ({
     }
     return { kind: 'refused', action: 'mount', code: 'mount_missing' };
   }
-  const command = commandOf({
-    block,
-    grant: {
-      agentId: ended.agentId,
-      treeId: tree.id,
-      generation: ended.generation,
-      workspaceId: await workspaceOf({ ctx, tree }),
-      sessionId: tree.sessionId,
-      runId: ended.runId,
-    },
-  });
+  const command = commandOf({ block, grant: await grantOf({ ctx, tree, ended }) });
   const outcome = await runAutoCommand({ ctx, command });
   if (outcome.isOk) {
     return { kind: 'applied', action: block.action };
@@ -235,6 +277,7 @@ export const applyAutoBlock = async ({
   if (!isCurrent) {
     return answerPastTurn({ ctx, tree, ended });
   }
+  await runEarlierCloses({ ctx, tree, ended });
   const parsed = parseAutoBlock({ text: ended.assistantText });
   if (parsed.kind === 'none') {
     return { kind: 'skipped', reason: 'no_block' };

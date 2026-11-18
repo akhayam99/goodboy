@@ -5,9 +5,6 @@
   "apps/desktop/src/app/components/AppTopBar/LimitsStrip/LimitsProvidersMenu.tsx": {
     "top bar right cluster: the end edge stays on the trigger": 1
   },
-  "apps/desktop/src/app/components/AppTopBar/NavCluster/HistoryArrow.tsx": {
-    "the forward history list centres under its arrow": 1
-  },
   "apps/desktop/src/app/components/AppTopBar/NowChip/index.tsx": {
     "top bar right cluster: the end edge stays on the trigger": 1
   },
@@ -44,7 +41,7 @@
     "header action at the end of the Monitoring header": 1
   },
   "apps/desktop/src/features/notifications/components/NotificationCenter/index.tsx": {
-    "the notification list centres under the bell": 1
+    "top bar right cluster: the end edge stays on the bell": 1
   },
   "apps/desktop/src/features/permissions/components/PermissionRequestCard/index.tsx": {
     "more actions at the end of the permission card actions": 1

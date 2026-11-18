@@ -4,6 +4,7 @@ import { aSession } from '@goodboy/types/testing';
 import type { SessionId, SessionStageInfo } from '@goodboy/types';
 import { needsYouEntries } from '../palette/sources/needsYouEntries';
 import { sessionNodeOf } from './sessionNode';
+import { sessionMarkOf } from './sessionMarkOf';
 import { ATTENTION_REASON_META, attentionWordsOf, describeSessionStage } from './session-stage';
 
 const SESSION = aSession({
@@ -33,7 +34,13 @@ describe('every consumer of the session reasons agrees on a push that failed', (
 
     expect(words).toBe(count === 1 ? "1 comment didn't go out" : "3 comments didn't go out");
     expect(ATTENTION_REASON_META['push-failed']).toMatchObject({ tone: 'danger', mark: '!' });
-    expect(node).toMatchObject({ kind: 'needs', state: 'failed', tone: 'danger', label: words });
+    expect(node).toMatchObject({
+      kind: 'needs',
+      reason: 'push-failed',
+      tone: 'danger',
+      label: words,
+    });
+    expect(sessionMarkOf({ node })).toEqual({ kind: 'state', state: 'failed' });
     expect(entry?.detail).toBe(words);
     expect(presentation.tone).toBe('danger');
   });

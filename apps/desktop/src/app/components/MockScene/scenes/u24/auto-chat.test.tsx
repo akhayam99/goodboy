@@ -253,7 +253,7 @@ describe('the Auto chat scenes', () => {
     expect(
       await screen.findByText('Where should the Implementer work?', undefined, WAIT),
     ).toBeDefined();
-    expect(screen.queryByText('Auto is reading the results')).toBeNull();
+    expect(screen.queryByText('The Lead is reading the results')).toBeNull();
     expect(screen.queryByRole('article')).toBeNull();
     expect(screen.queryByText('Delegated to')).toBeNull();
   });
@@ -292,7 +292,7 @@ describe('the Auto chat scenes', () => {
 
     const brief = await screen.findByRole('region', { name: 'Why the Lead started it' }, WAIT);
     within(brief).getByText('The Lead started this agent and reads your messages to it.');
-    expect(screen.queryByRole('button', { name: 'Open Auto' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Open the Lead' })).toBeNull();
     expect(screen.getByPlaceholderText('Message Planner')).toBeDefined();
     expect(screen.getAllByRole('textbox')).toHaveLength(1);
   });

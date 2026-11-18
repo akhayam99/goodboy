@@ -2,7 +2,9 @@ import { useMemo } from 'react';
 import { CircleAlert, RefreshCw, SquareTerminal } from '@goodboy/ui/icons';
 import { Button, ICON_SIZE, KeyHint, FOCUS_RING, cn } from '@goodboy/ui';
 import type { ResolveAttempt, SessionId } from '@goodboy/types';
+import { useAppStore } from '../../../../store';
 import { useTranscript } from '../../../../store/slices/transcripts/selectors';
+import { NEEDS_RUN_REASON } from '../../needsRunReason';
 
 import { shortcutGlyphs } from '../../../../shared/keyboard/registry';
 import { reduceTranscript } from '../../../chat/utils/transcript-items';
@@ -13,6 +15,7 @@ import { FIX_RUN_THREAD_COPY, REPLY_NOTE_COPY } from '../../reviewFlowCopy';
 import { lastRunStep } from '../../lastRunStep';
 import type { ResolveRowState } from '../../resolveRowState';
 import { DraftRoutingBody } from './DraftRoutingBody';
+import { NeedsRunNote } from './NeedsRunNote';
 import { ThreadOverflowMenu } from './ThreadOverflowMenu';
 
 type Props = {
@@ -41,6 +44,13 @@ const RUN_ONLY_IN_MENU: ReadonlyArray<string> = [
   'reviewComment.edit',
 ];
 
+const NEEDS_RUN_MENU: ReadonlyArray<string> = [
+  'reviewComment.retryFix',
+  'reviewComment.edit',
+  'reviewComment.startOver',
+  'reviewComment.transcript',
+];
+
 export const FailedRun = ({
   sessionId,
   target,
@@ -55,6 +65,14 @@ export const FailedRun = ({
   onToggleModel,
   onRun,
 }: Props) => {
+  const needsRunFound = useAppStore((state) =>
+    NEEDS_RUN_REASON.reasonOf({
+      stateReason:
+        state.sessionResolveQueueItems[sessionId]?.find(
+          (entry) => entry.thread.threadId === target.threadId,
+        )?.thread.stateReason ?? null,
+    }),
+  );
   const transcript = useTranscript(attempt?.agentId ?? null);
   const step = useMemo(() => lastRunStep({ items: reduceTranscript(transcript) }), [transcript]);
   const isRun = rowState.failedStep === 'run' || rowState.failedStep === null;
@@ -74,6 +92,26 @@ export const FailedRun = ({
   const menu = (
     <ThreadOverflowMenu target={target} label={FAILED_RUN_COPY.moreActions} omit={omitted} />
   );
+
+  if (needsRunFound !== null) {
+    return (
+      <NeedsRunNote
+        sentence={sentence}
+        found={needsRunFound}
+        canOpenTranscript={canOpenTranscript}
+        onOpenTranscript={() => onRun('reviewComment.transcript')}
+        menu={
+          <ThreadOverflowMenu
+            target={target}
+            label={FAILED_RUN_COPY.moreActions}
+            omit={actions
+              .filter((action) => !NEEDS_RUN_MENU.includes(action.id))
+              .map((action) => action.id)}
+          />
+        }
+      />
+    );
+  }
 
   return (
     <div className="flex min-w-0 flex-col gap-3">

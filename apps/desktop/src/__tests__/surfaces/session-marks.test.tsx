@@ -13,7 +13,6 @@ vi.mock('../../shared/lib/db', async () =>
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render, within } from '@testing-library/react';
-import { tintClasses } from '@goodboy/ui';
 import type { Session, SessionAttentionReason, SessionStageInfo } from '@goodboy/types';
 import {
   STORE_IMPORT_TIMEOUT_MS,
@@ -24,6 +23,7 @@ import {
 import { stageInfoOf } from '../../store/slices/session-view/stageInfoOf';
 import { seedSessionMarks } from '../../app/components/MockScene/scenes/u21/sessionMarksSeed';
 import { ATTENTION_REASON_META, attentionWordsOf } from '../../features/session/session-stage';
+import { attentionMarkOf } from '../../features/session/attentionMarkOf';
 import { needsYouEntries } from '../../features/palette/sources/needsYouEntries';
 import { SessionActivityItem } from '../../features/workspace/components/SessionActivityBar/SessionActivityItem';
 import { SwitcherRow } from '../../features/workspace/components/SessionSwitcher/SwitcherRow';
@@ -85,8 +85,27 @@ const nodeOf = (container: HTMLElement) => ({
   words: withoutUnseen(container.querySelector('[role="img"]')?.getAttribute('aria-label') ?? null),
 });
 
+const markOf = (container: HTMLElement) => {
+  const box = container.querySelector('[data-status-mark]');
+  return {
+    kind: box?.getAttribute('data-status-mark') ?? null,
+    state: box?.getAttribute('data-status-state') ?? null,
+    tone: box?.getAttribute('data-status-tone') ?? null,
+  };
+};
+
+const tableMarkOf = ({ reason }: { readonly reason: SessionAttentionReason }) => {
+  const mark = attentionMarkOf({ reason });
+  return {
+    kind: mark.kind,
+    state: mark.kind === 'state' ? mark.state : null,
+    tone: mark.kind === 'dot' || mark.kind === 'count' ? mark.tone : null,
+  };
+};
+
 describe.each(NEEDS_YOU_REASONS)('every surface says %s the same way', (reason) => {
   const tone = ATTENTION_REASON_META[reason].tone;
+  const mark = tableMarkOf({ reason });
 
   it('draws the sidebar row with the tone and words of the table', () => {
     const { session, info } = waitingFor({ reason });
@@ -105,24 +124,22 @@ describe.each(NEEDS_YOU_REASONS)('every surface says %s the same way', (reason) 
     );
 
     expect(nodeOf(container)).toEqual({ tone, words });
+    expect(markOf(container)).toEqual(mark);
     expect(container.querySelector('.sr-only')?.textContent).toContain(
       words.charAt(0).toLowerCase() + words.slice(1),
     );
   });
 
-  it('draws the switcher row with the same node', () => {
-    const { session, info } = waitingFor({ reason });
+  it('draws the switcher row with the same mark', () => {
+    const { session } = waitingFor({ reason });
     const { container } = render(
       <SwitcherRow session={session} isSelected={false} onChoose={noop} />,
     );
 
-    expect(nodeOf(container)).toEqual({
-      tone,
-      words: attentionWordsOf({ reason, counts: info }),
-    });
+    expect(markOf(container)).toEqual(mark);
   });
 
-  it('draws the hover card with the same node and says the words once', () => {
+  it('draws the hover card with the same mark and says the words once', () => {
     const { session, info } = waitingFor({ reason });
     const words = attentionWordsOf({ reason, counts: info });
     const { container } = render(
@@ -134,7 +151,7 @@ describe.each(NEEDS_YOU_REASONS)('every surface says %s the same way', (reason) 
       />,
     );
 
-    expect(nodeOf(container)).toEqual({ tone, words });
+    expect(markOf(container)).toEqual(mark);
     expect(within(container).getAllByText(words)).toHaveLength(1);
   });
 
@@ -157,17 +174,18 @@ describe.each(NEEDS_YOU_REASONS)('every surface says %s the same way', (reason) 
     expect(within(container).getByText(attentionWordsOf({ reason, counts: info }))).toBeDefined();
   });
 
-  it('draws the palette entry with the same tone and words', () => {
+  it('draws the palette entry with the same mark and words', () => {
     const { session, info } = waitingFor({ reason });
     const [entry] = needsYouEntries({ items: [{ session, info }], open: noop });
 
     expect(entry?.detail).toBe(attentionWordsOf({ reason, counts: info }));
-    expect(entry?.accent).toBe(tintClasses(tone).dot);
+    expect(entry?.mark).toEqual(attentionMarkOf({ reason }));
   });
 });
 
 describe('a session in the merge queue', () => {
   const tone = ATTENTION_REASON_META['pr-queued'].tone;
+  const mark = tableMarkOf({ reason: 'pr-queued' });
   const words = 'In merge queue';
 
   it('stays in review, so it never fills the Now chip or the palette Needs you rows', () => {
@@ -198,19 +216,17 @@ describe('a session in the merge queue', () => {
     );
   });
 
-  it('draws the switcher row with the same node', () => {
+  it('draws the switcher row with the same mark', () => {
     const { session } = queuedSession();
     const { container } = render(
       <SwitcherRow session={session} isSelected={false} onChoose={noop} />,
     );
 
-    expect(nodeOf(container)).toEqual({ tone, words });
-    expect(container.querySelector('[role="img"]')?.getAttribute('data-node-state')).toBe(
-      'merging',
-    );
+    expect(markOf(container)).toEqual(mark);
+    expect(markOf(container).state).toBe('merging');
   });
 
-  it('draws the hover card with the same node, the words once and no Needs you action', () => {
+  it('draws the hover card with the same mark, the words once and no Needs you action', () => {
     const { session } = queuedSession();
     const { container } = render(
       <SessionHoverCardBody
@@ -221,7 +237,7 @@ describe('a session in the merge queue', () => {
       />,
     );
 
-    expect(nodeOf(container)).toEqual({ tone, words });
+    expect(markOf(container)).toEqual(mark);
     expect(within(container).getAllByText(words)).toHaveLength(1);
     expect(within(container).queryByRole('button', { name: 'Open what needs you' })).toBeNull();
   });

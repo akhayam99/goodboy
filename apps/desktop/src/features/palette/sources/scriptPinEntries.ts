@@ -1,5 +1,6 @@
 import type { Project, ProjectId, ProjectScript } from '@goodboy/types';
 import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
+import type { PaletteScriptRunner } from '../paletteScriptRunner';
 import type { PaletteEntry } from '../types';
 
 export type PinnedScriptTarget = {
@@ -13,7 +14,7 @@ type Params = {
   readonly projects: ReadonlyArray<Project>;
   readonly pins: Readonly<Record<ProjectId, ReadonlyArray<string>>>;
   readonly saved: ReadonlyArray<ProjectScript>;
-  readonly run: (target: PinnedScriptTarget) => void;
+  readonly runner: PaletteScriptRunner;
 };
 
 const nameOfPin = ({
@@ -45,7 +46,7 @@ export const scriptPinEntries = ({
   projects,
   pins,
   saved,
-  run,
+  runner,
 }: Params): ReadonlyArray<PaletteEntry> =>
   projects.flatMap((project) =>
     (pins[project.id] ?? []).flatMap((pinId): ReadonlyArray<PaletteEntry> => {
@@ -68,7 +69,8 @@ export const scriptPinEntries = ({
           icon: CONCEPT_ICONS.scripts,
           detail: project.name,
           tag: 'Pinned',
-          run: () => run(target),
+          step: () => runner.stepFor({ target }),
+          run: () => runner.runHere({ target }),
         },
       ];
     }),

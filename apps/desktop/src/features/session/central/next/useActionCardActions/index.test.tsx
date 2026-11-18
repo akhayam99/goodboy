@@ -204,16 +204,16 @@ describe('Auto retry on a never started child', () => {
     expect(result.current.isHidden({ card })).toBe(false);
   });
 
-  it('offers Open Auto as the second verb and folds it when the column is narrow', () => {
+  it('offers Open the Lead as the second verb and folds it when the column is narrow', () => {
     const { result } = renderHook(() => useActionCardActions({ session: SESSION }), { wrapper });
     const card = autoCard();
 
     const wide = result.current.actionsFor({ card });
     const narrow = result.current.actionsFor({ card, isNarrow: true });
 
-    expect(wide.second?.label).toBe('Open Auto');
+    expect(wide.second?.label).toBe('Open the Lead');
     expect(narrow.second).toBeNull();
-    expect(narrow.foldedTarget?.verbs.map((verb) => verb.label)).toEqual(['Open Auto']);
+    expect(narrow.foldedTarget?.verbs.map((verb) => verb.label)).toEqual(['Open the Lead']);
   });
 });
 

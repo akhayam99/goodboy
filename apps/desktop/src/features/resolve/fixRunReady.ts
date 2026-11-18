@@ -1,10 +1,12 @@
 import type { FixRun } from './fixRun';
 import type { ReviewEntry } from './components/ReviewFlow/useReviewEntries';
+import { carriesWorkingTree } from './notes/carriesWorkingTree';
 
 export type FixRunReady = {
   readonly threadIds: ReadonlyArray<string>;
   readonly commits: ReadonlyArray<string>;
   readonly hostThreadCount: number;
+  readonly isLandingUncommitted: boolean;
 };
 
 type Params = {
@@ -36,5 +38,6 @@ export const fixRunReadyOf = ({ run, entries, isLive }: Params): FixRunReady | n
       ...new Set(ready.flatMap((entry) => (entry.fix?.kind === 'fixed' ? [entry.fix.sha] : []))),
     ],
     hostThreadCount: ready.filter((entry) => !isNote({ entry })).length,
+    isLandingUncommitted: carriesWorkingTree({ threadIds: run.threadIds }),
   };
 };

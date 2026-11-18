@@ -84,19 +84,19 @@ const mount = ({ isTurnLive = false, onOpenAuto = () => undefined }: MountParams
 };
 
 describe('the notice on an agent that moved to Auto', () => {
-  it('says the chat is read only and offers Open Auto and Detach from Auto', () => {
+  it('says the chat is read only and offers Open the Lead and Detach from the Lead', () => {
     const onOpenAuto = vi.fn();
     mount({ onOpenAuto });
 
-    expect(screen.getByText(/Moved to Auto\./)).toBeDefined();
-    fireEvent.click(screen.getByRole('button', { name: 'Open Auto' }));
+    expect(screen.getByText(/Moved to the Lead\./)).toBeDefined();
+    fireEvent.click(screen.getByRole('button', { name: 'Open the Lead' }));
     expect(onOpenAuto).toHaveBeenCalledOnce();
   });
 
   it('detaches the agent and refreshes the Auto views', async () => {
     mount();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Detach from Auto' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Detach from the Lead' }));
 
     await waitFor(async () => expect(await getAdoptionOfAgent({ db, agentId: SOURCE })).toBeNull());
     await waitFor(() =>
@@ -107,7 +107,7 @@ describe('the notice on an agent that moved to Auto', () => {
   it('waits for the turn to end before it lets the person detach', () => {
     mount({ isTurnLive: true });
 
-    expect(screen.getByRole('button', { name: 'Detach from Auto' })).toHaveProperty(
+    expect(screen.getByRole('button', { name: 'Detach from the Lead' })).toHaveProperty(
       'disabled',
       true,
     );
@@ -117,7 +117,7 @@ describe('the notice on an agent that moved to Auto', () => {
     mount();
     await db.execute("UPDATE agents SET status = 'running' WHERE id = ?", [SOURCE]);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Detach from Auto' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Detach from the Lead' }));
 
     expect(await screen.findByRole('alert')).toHaveProperty(
       'textContent',

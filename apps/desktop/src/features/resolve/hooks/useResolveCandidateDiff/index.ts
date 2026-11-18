@@ -4,19 +4,26 @@ import { formatError } from '@goodboy/ui';
 import type { FileDiff, ResolveCandidate } from '@goodboy/types';
 import { orderLikeTree } from '../../../diff/lib/changeTree';
 import { worktreeDiffRange } from '../../../worktree/worktree';
+import type { ResolveQueueRow } from '../../buildResolveQueueRows';
+import { isOffTargetFix } from '../../isOffTargetFix';
 import { candidateHeadSha } from '../../selectResolveCandidate';
+import { threadLocationOf } from '../../threadLocationOf';
 
-type Params = { readonly candidate: ResolveCandidate | null };
+type Params = {
+  readonly candidate: ResolveCandidate | null;
+  readonly row?: ResolveQueueRow;
+};
 
 type Result = {
   readonly files: ReadonlyArray<FileDiff>;
   readonly isLoading: boolean;
   readonly error: string | null;
+  readonly isOffTarget: boolean;
 };
 
 const NO_FILES: ReadonlyArray<FileDiff> = [];
 
-export const useResolveCandidateDiff = ({ candidate }: Params): Result => {
+export const useResolveCandidateDiff = ({ candidate, row }: Params): Result => {
   const [files, setFiles] = useState<ReadonlyArray<FileDiff>>(NO_FILES);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -55,5 +62,11 @@ export const useResolveCandidateDiff = ({ candidate }: Params): Result => {
     };
   }, [baseSha, headSha, worktreePath]);
 
-  return { files, isLoading, error };
+  const location = row === undefined ? null : threadLocationOf({ row });
+  const isOffTarget = isOffTargetFix({
+    files,
+    path: location?.path ?? null,
+    line: location?.line ?? null,
+  });
+  return { files, isLoading, error, isOffTarget };
 };

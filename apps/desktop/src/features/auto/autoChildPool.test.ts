@@ -1,5 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
+import { AUTO_OWN_PROVIDERS, type AutoDelegationRole } from '@goodboy/core/auto';
 import type { ProviderPolicy } from '@goodboy/types';
 import { aSession, aWorkflowRun } from '@goodboy/types/testing';
 import { autoChildPool } from './autoChildPool';
@@ -18,20 +19,35 @@ const EVERY_PROVIDER: ProviderPolicy = [
 type PoolParams = {
   readonly policy: ProviderPolicy | null;
   readonly isInRun?: boolean;
+  readonly role?: AutoDelegationRole;
 };
 
-const poolOf = ({ policy, isInRun = false }: PoolParams) =>
+const poolOf = ({ policy, isInRun = false, role = 'implementer' }: PoolParams) =>
   autoChildPool({
     sessions: [SESSION],
     sessionId: SESSION.id,
     workflowRunId: isInRun ? POOLED_RUN.id : null,
     policy,
+    role,
   });
 
 describe('allowed providers of an Auto tree', () => {
-  it('offers Claude and Codex to children and never Cursor or Gemini', () => {
+  it('offers Claude and Codex to a writing child and never Cursor or Gemini', () => {
     expect(poolOf({ policy: null })).toEqual(['anthropic', 'codex']);
     expect(poolOf({ policy: EVERY_PROVIDER })).toEqual(['anthropic', 'codex']);
+  });
+
+  it('offers a reading child every provider Auto runs on that the workspace left on', () => {
+    expect(poolOf({ policy: null, role: 'planner' })).toEqual(AUTO_OWN_PROVIDERS);
+    expect(
+      poolOf({
+        policy: [
+          { id: 'anthropic', state: 'off' },
+          { id: 'cursor', state: 'on' },
+        ],
+        role: 'scout',
+      }),
+    ).toEqual(['cursor']);
   });
 
   it('drops a provider the workspace turned off', () => {

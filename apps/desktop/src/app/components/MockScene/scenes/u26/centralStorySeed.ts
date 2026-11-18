@@ -191,6 +191,8 @@ const TOPICS: ReadonlyArray<string> = [
   'daily-rollup',
 ];
 
+const CLOSED_INDEX = 10;
+
 const REPOS: ReadonlyArray<string> = ['payments-api', 'ledger-core', 'notify-relay'];
 
 type ExtraParams = {
@@ -218,7 +220,11 @@ const extraOf = ({ index }: ExtraParams): StorySpec => {
     case 2:
       return {
         ...base,
-        request: { number: 320 + index, state: 'merged', checks: 'success' },
+        request: {
+          number: 320 + index,
+          state: index === CLOSED_INDEX ? 'closed' : 'merged',
+          checks: 'success',
+        },
         isFinished: true,
       };
     default:

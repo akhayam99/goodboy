@@ -105,7 +105,7 @@ describe('agentGlanceOf', () => {
 
     expect(byRestart.sentence).toBe('Stopped by a restart of the app. What it wrote is kept.');
     expect(byYou.sentence).toBe('Stopped by you. What it wrote is kept.');
-    expect(byAuto.sentence).toBe('Stopped by Auto. What it wrote is kept.');
+    expect(byAuto.sentence).toBe('Stopped by the Lead. What it wrote is kept.');
   });
 
   it('carries the error message as the sentence', () => {

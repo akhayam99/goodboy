@@ -45,4 +45,16 @@ describe('ProposedChange', () => {
     expect(code?.style.textIndent).toBe('-2ch');
     expect(code?.style.paddingInlineStart).toBe('2ch');
   });
+
+  it('says so in one quiet line when the change misses the commented code', () => {
+    render(<ProposedChange files={FILES} isLoading={false} error={null} isOffTarget />);
+
+    screen.getByText("This change doesn't touch the commented code.");
+  });
+
+  it('adds no line when the change is on target', () => {
+    render(<ProposedChange files={FILES} isLoading={false} error={null} />);
+
+    expect(screen.queryByText("This change doesn't touch the commented code.")).toBeNull();
+  });
 });

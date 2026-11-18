@@ -15,6 +15,7 @@ import {
   laneQueueOf,
   laneTipOf,
   lanePathsOf,
+  readyFixBlocking,
 } from './resolveLane';
 
 const PATH_A = '/repo/ledger-core';
@@ -307,6 +308,57 @@ describe('lane attempts', () => {
           agentOf({ id: 'agent-waits', doneAt: '2026-10-06T10:00:00.000Z' as Agent['doneAt'] }),
         ],
         worktreePath: PATH_A,
+      }),
+    ).toBeNull();
+  });
+});
+
+describe('readyFixBlocking', () => {
+  const NOTE = 'note:harborline-header';
+  const ready = [candidateOf({ id: 'ready', revision: 1, baseSha: 'root', candidateSha: 'c1' })];
+  const commentRun = attemptOf({ id: 'ready', phase: 'waiting', path: PATH_A, createdAt: 1 });
+  const noteRun = { ...commentRun, threadIds: [NOTE] };
+
+  it('holds a note fix while any fix waits for review on its branch', () => {
+    const blocker = readyFixBlocking({
+      candidates: ready,
+      attempts: [commentRun],
+      worktreePath: PATH_A,
+      threadIds: [NOTE],
+    });
+
+    expect(blocker?.id).toBe('ready');
+  });
+
+  it('holds a comment fix while a note fix waits for review on its branch', () => {
+    const blocker = readyFixBlocking({
+      candidates: ready,
+      attempts: [noteRun],
+      worktreePath: PATH_A,
+      threadIds: ['thread-next'],
+    });
+
+    expect(blocker?.id).toBe('ready');
+  });
+
+  it('lets a comment fix stack on a waiting comment fix', () => {
+    expect(
+      readyFixBlocking({
+        candidates: ready,
+        attempts: [commentRun],
+        worktreePath: PATH_A,
+        threadIds: ['thread-next'],
+      }),
+    ).toBeNull();
+  });
+
+  it('lets a note fix start when nothing waits on its branch', () => {
+    expect(
+      readyFixBlocking({
+        candidates: ready,
+        attempts: [commentRun],
+        worktreePath: PATH_B,
+        threadIds: [NOTE],
       }),
     ).toBeNull();
   });

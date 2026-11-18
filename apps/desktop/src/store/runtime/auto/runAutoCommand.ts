@@ -1,4 +1,5 @@
 import { answerQuestion } from './answerQuestion';
+import { closeTarget } from './close/closeTarget';
 import { delegate } from './delegate';
 import { finishTree } from './finishTree';
 import type { AgentCommand, BridgeOutcome } from './ports';
@@ -29,6 +30,8 @@ export const runAutoCommand = async ({
       return messageChild({ ctx, command });
     case 'stop':
       return stopChild({ ctx, command });
+    case 'close':
+      return closeTarget({ ctx, command });
     case 'finish':
       return finishTree({ ctx, command });
     default:

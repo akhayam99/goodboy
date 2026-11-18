@@ -21,7 +21,8 @@ const SAVED: ProjectScript = {
 
 describe('scriptPinEntries', () => {
   it('lists pinned scripts with the name of their project and runs the right one', () => {
-    const run = vi.fn();
+    const runHere = vi.fn();
+    const stepFor = vi.fn(() => null);
     const testPin = scriptPinId({
       source: 'package-json',
       relDir: '',
@@ -40,7 +41,7 @@ describe('scriptPinEntries', () => {
       projects: [LEDGER, RELAY],
       pins: { [LEDGER.id]: [testPin, savedPin], [RELAY.id]: [devPin] },
       saved: [SAVED],
-      run,
+      runner: { runHere, stepFor },
     });
 
     expect(entries.map((entry) => [entry.label, entry.detail, entry.tag])).toEqual([
@@ -48,13 +49,16 @@ describe('scriptPinEntries', () => {
       ['Replay settlement batch', 'ledger-core', 'Pinned'],
       ['dev', 'notify-relay', 'Pinned'],
     ]);
-    entries[2]?.run();
-    expect(run).toHaveBeenCalledWith({
+    const devTarget = {
       projectId: RELAY.id,
       projectName: 'notify-relay',
       pinId: devPin,
       name: 'dev',
-    });
+    };
+    expect(entries[2]?.step?.()).toBeNull();
+    expect(stepFor).toHaveBeenCalledWith({ target: devTarget });
+    entries[2]?.run();
+    expect(runHere).toHaveBeenCalledWith({ target: devTarget });
   });
 
   it('drops a pin whose saved script is gone or whose id does not parse', () => {
@@ -62,7 +66,7 @@ describe('scriptPinEntries', () => {
       projects: [LEDGER],
       pins: { [LEDGER.id]: ['not json', JSON.stringify(['saved', '', 'script-gone'])] },
       saved: [SAVED],
-      run: vi.fn(),
+      runner: { runHere: vi.fn(), stepFor: vi.fn(() => null) },
     });
 
     expect(entries).toEqual([]);

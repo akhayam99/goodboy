@@ -43,7 +43,7 @@ import { MOUNT_KIND } from '../../features/actions/kinds/mount';
 import { PORT_KIND } from '../../features/actions/kinds/port';
 import { WORKTREE_KIND } from '../../features/actions/kinds/worktree';
 import { portRowMenuOf } from '../../features/actions/portRowMenuOf';
-import { MOUNT_ROW_CUTS } from '../../app/components/SessionRail/SessionLevel/mountRowCuts';
+import { MOUNT_ROW_CUTS } from '../../features/session/mountRowCuts';
 import { HISTORY_ROW_CUTS } from '../../features/history/components/CommitsHistory/historyRowCuts';
 import { WORKTREE_ROW_CUTS } from '../../features/storage/components/StoragePage/worktreeRowCuts';
 import { MAX_OVERFLOW_ROWS } from '../../features/actions/overflowCutOf';
@@ -472,9 +472,22 @@ const replyOnlyFactsOf = ({ state }: ReplyOnlyParams): ReviewCommentFacts => ({
   remoteReply: null,
   isReplyOnly: true,
   isReplyFailure: false,
+  runSuggestion: null,
   hasFixOnBranch: false,
   laneAcceptCount: 1,
   laneAcceptNotes: 0,
+  lane: null,
+  canStartRun: false,
+  runAgentId: null,
+  runEnd: null,
+  noteId: null,
+  runTitle: '',
+  runMountId: null,
+  runReply: '',
+  isSourceChanged: false,
+  changedQuote: '',
+  joinRuns: [],
+  quote: '',
 });
 
 describe('a review comment drawer ⋯ for a reply-only draft', () => {
@@ -486,12 +499,42 @@ describe('a review comment drawer ⋯ for a reply-only draft', () => {
     const shown = reviewBarPlanOf({
       word: 'to_review',
       state,
+      lane: null,
       hasRemote: false,
       actions: actions.map((candidate) => ({ id: candidate.id, slot: candidate.slot })),
     }).flatMap((item) => (item.kind === 'action' ? [item.id] : []));
     const rare = actions.filter((candidate) => !shown.includes(candidate.id));
     const rows = rowsDrawn({ actions, omit: drawerMenuOmitOf({ shown, rare }) });
     expect(rows.length).toBeGreaterThan(0);
+    expectWithinFive({ kinds: ['reviewComment'], rows });
+  });
+});
+
+describe('a review comment drawer ⋯ for a comment that suggests a run', () => {
+  it.each([
+    { state: 'new', isNote: false },
+    { state: 'new', isNote: true },
+    { state: 'failed', isNote: false },
+  ] as const)('holds at most five rows with Fix as one change, $state note $isNote', (row) => {
+    const facts: ReviewCommentFacts = {
+      ...replyOnlyFactsOf({ state: 'ready' }),
+      ...row,
+      isReplyOnly: false,
+      agentId: row.state === 'failed' ? brandId<AgentId>({ value: 'agent-fixer' }) : null,
+      lane: 'run',
+      canStartRun: true,
+    };
+    const actions = resolveActions({ definitions: REVIEW_COMMENT_KIND.actions, facts });
+    const shown = reviewBarPlanOf({
+      word: row.state === 'new' ? 'open' : 'couldnt_fix',
+      state: row.state,
+      lane: 'run',
+      hasRemote: false,
+      actions: actions.map((candidate) => ({ id: candidate.id, slot: candidate.slot })),
+    }).flatMap((item) => (item.kind === 'action' ? [item.id] : []));
+    const rare = actions.filter((candidate) => !shown.includes(candidate.id));
+    const rows = rowsDrawn({ actions, omit: drawerMenuOmitOf({ shown, rare }) });
+    expect(rows).toContain(row.state === 'new' ? 'Fix as one change' : 'Start a run');
     expectWithinFive({ kinds: ['reviewComment'], rows });
   });
 });
@@ -522,7 +565,6 @@ describe('a notification row ⋯ holds at most five rows', () => {
 const CALLER_KINDS: Readonly<Record<string, ReadonlyArray<ObjectTarget['kind']>>> = {
   'app/components/MockScene/scenes/u30/edges/PopoversStage.tsx': ['agent'],
   'app/components/SessionActions/SessionLevelActions.tsx': ['session'],
-  'app/components/SessionRail/SessionLevel/WorktreeRow.tsx': ['mount'],
   'features/actions/ExploreFileMenu.tsx': ['exploreFile'],
   'features/actions/IntegrationMenu.tsx': ['integration'],
   'features/actions/NewFormMenuList.tsx': ['newForm'],
@@ -544,6 +586,7 @@ const CALLER_KINDS: Readonly<Record<string, ReadonlyArray<ObjectTarget['kind']>>
   'features/session/components/AgentHeaderActions.tsx': ['agent'],
   'features/session/components/AgentTree/RunOverflowMenu.tsx': ['workflowRun'],
   'features/session/components/ContextDrawer/SlotSourceActions.tsx': ['contextSlot'],
+  'features/session/components/MountRowMenuButton.tsx': ['mount'],
   'features/session/components/PresetRun/RunStepActions.tsx': ['workflowRun'],
   'features/storage/components/StoragePage/WorktreeRowActions.tsx': ['worktree'],
   'features/workspace/components/StageBoard/StageColumn/DoneLaneMenu/index.tsx': ['doneLane'],

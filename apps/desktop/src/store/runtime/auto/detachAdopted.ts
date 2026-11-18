@@ -18,7 +18,7 @@ export type DetachOutcome =
   | Readonly<{ kind: 'refused'; code: 'not_adopted' | 'turn_running'; message: string }>
   | Readonly<{ kind: 'failed'; message: string }>;
 
-const NOT_ADOPTED = 'This agent is not part of an Auto conversation.';
+const NOT_ADOPTED = 'This agent is not part of a Lead conversation.';
 const TURN_RUNNING = 'Wait for the turn to end first.';
 
 export const detachAdopted = async ({

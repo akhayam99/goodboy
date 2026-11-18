@@ -50,10 +50,10 @@ import { ThreadGitEvidence } from './ThreadGitEvidence';
 import { NewReplyNote } from './NewReplyNote';
 import { ReplyNote } from './ReplyNote';
 import { PushFailedNote } from './PushFailedNote';
+import { CommentRunStrip } from './CommentRunStrip';
 import { replyNoteKindOf } from './replyNoteKind';
 import { SourceChangeCard } from './SourceChangeCard';
-import { ThreadRecheckLine } from './ThreadRecheckLine';
-import { ThreadVerdictCard } from './ThreadVerdictCard';
+import { ThreadMissingLines } from './ThreadMissingLines';
 import type { ReviewEntry } from './useReviewEntries';
 
 type Props = ReviewCommentBinding & {
@@ -123,7 +123,7 @@ export const ReviewComment = ({
     () => selectResolveCandidate({ candidates, itemId: row.item.id }),
     [candidates, row.item.id],
   );
-  const diff = useResolveCandidateDiff({ candidate });
+  const diff = useResolveCandidateDiff({ candidate, row });
   const members = useMemo(
     () =>
       sharedCandidateThreadIds({
@@ -182,7 +182,7 @@ export const ReviewComment = ({
     row.attempt !== null && (state === 'failed' || previous.length > 0)
       ? attemptNumberOf({ attempts, threadId, attemptId: row.attempt.id })
       : null;
-  const isFailed = state === 'failed';
+  const isFailed = state === 'failed' && (entry.run === null || entry.run.end === 'stopped');
   const composeCopy =
     compose !== null && isFailed && compose.mode === 'redraft'
       ? {
@@ -246,29 +246,21 @@ export const ReviewComment = ({
         <ReviewerCommentBlock commentThread={row.commentThread} />
       </div>
 
+      <CommentRunStrip sessionId={sessionId} entry={entry} hostLabel={provider} />
+
       <PreviousAttempts attempts={previous} />
 
       {remote !== null && <ThreadGitEvidence sessionId={sessionId} entry={entry} />}
 
       {entry.newReplies.length > 0 && <NewReplyNote replies={entry.newReplies} />}
 
-      {state === 'outdated' && remote === null && entry.change !== null && (
-        <SourceChangeCard change={entry.change} />
-      )}
+      {(state === 'outdated' || entry.resolveWord === 'in_run') &&
+        remote === null &&
+        entry.change !== null && (
+          <SourceChangeCard change={entry.change} isRun={entry.resolveWord === 'in_run'} />
+        )}
 
-      {remote === 'missing' && entry.isChecking && (
-        <ThreadRecheckLine sessionId={sessionId} agentId={entry.checkAgentId} />
-      )}
-
-      {remote === 'missing' && !entry.isChecking && verdict !== null && (
-        <ThreadVerdictCard sessionId={sessionId} verdict={verdict} isPushed={isPushedMissing} />
-      )}
-
-      {remote === 'missing' && !entry.isChecking && entry.checkError !== null && (
-        <p role="status" className="text-meta text-warning">
-          {entry.checkError}
-        </p>
-      )}
+      <ThreadMissingLines sessionId={sessionId} entry={entry} />
 
       {row.attempt !== null && !isOwnFixGone && isFailed && (
         <AgentLine
@@ -297,9 +289,7 @@ export const ReviewComment = ({
 
       {state === 'needs' && <ResolverQuestionCard sessionId={sessionId} row={row} />}
 
-      {hasChange && state !== 'drafting' && (
-        <ProposedChange files={diff.files} isLoading={diff.isLoading} error={diff.error} />
-      )}
+      {hasChange && state !== 'drafting' && <ProposedChange {...diff} />}
 
       {members.length > 0 && remote === null && (state === 'ready' || state === 'edited') && (
         <div className="flex min-w-0 flex-col gap-1 text-meta text-muted-foreground">

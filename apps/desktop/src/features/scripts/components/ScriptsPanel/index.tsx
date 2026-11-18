@@ -5,7 +5,6 @@ import {
   Button,
   DrawerFrame,
   EmptyLine,
-  EmptyState,
   formatError,
   ICON_SIZE,
   IconButton,
@@ -30,7 +29,8 @@ import { useServiceStarts } from '../../hooks/useServiceStarts';
 import { useSessionScripts } from '../../hooks/useSessionScripts';
 import { isScriptOpenIn } from '../../isScriptOpenIn';
 import { useNow } from '../../../../shared/hooks/useNow';
-import { NAMES } from '../../../../shared/utils/names';
+import { openScriptInTerminal } from '../../openScriptInTerminal';
+import { scriptGroupScopeOf } from '../../scriptGroupScopeOf';
 import { scriptRunRecordFor } from '../../scriptRunRecordFor';
 import { scriptOutcomeLabel } from '../../scriptOutcomeLabel';
 import { scriptRecordOutput } from '../../scriptRecordOutput';
@@ -44,7 +44,6 @@ import { ScriptEditor } from '../ScriptEditor';
 import { ScriptRow } from '../ScriptRow';
 import { DiscardDraftConfirm } from './DiscardDraftConfirm';
 import { EndedServicesRow } from './EndedServicesRow';
-import { ScriptBand } from './ScriptBand';
 import { ScriptGroupSection } from './ScriptGroupSection';
 import { ScriptPackageSection } from './ScriptPackageSection';
 import { ScriptSavedSection } from './ScriptSavedSection';
@@ -71,6 +70,10 @@ const FILTER_FROM_ROWS = 9;
 type SuggestedParams = {
   readonly group: SessionScriptGroup;
   readonly hasManifestScripts: boolean;
+};
+
+type GroupParams = {
+  readonly group: SessionScriptGroup;
 };
 
 type RowParams = {
@@ -275,6 +278,15 @@ export const ScriptsPanel = ({ workspaceId, sessionId, onClose }: Props) => {
             : null,
         onDelete: savedId === null ? null : () => onDelete({ savedId }),
         onRestart: () => void onRestart({ group, script }),
+        ...(group.isReady && {
+          onOpenInTerminal: () =>
+            openScriptInTerminal({
+              sessionId,
+              group,
+              script,
+              savedBody: saved.find((candidate) => candidate.id === savedId)?.body ?? null,
+            }),
+        }),
         pin: {
           isPinned: isPinned({ group, script }),
           onToggle: () => togglePin({ group, script }),
@@ -378,13 +390,10 @@ export const ScriptsPanel = ({ workspaceId, sessionId, onClose }: Props) => {
     const hasManifestScripts = manifest.some((entry) => entry.scripts.length > 0);
     return (
       <>
-        <EmptyState
-          size="section"
+        <EmptyLine
           className="px-2"
-          icon={CONCEPT_ICONS.scripts}
-          title={`No scripts in ${group.projectName}`}
           action={
-            <div className="flex items-center gap-2">
+            <span className="flex items-center gap-1">
               {hasManifestScripts ? (
                 <Button
                   variant="ghost"
@@ -406,9 +415,11 @@ export const ScriptsPanel = ({ workspaceId, sessionId, onClose }: Props) => {
                 <Plus size={ICON_SIZE.row} aria-hidden />
                 New script
               </Button>
-            </div>
+            </span>
           }
-        />
+        >
+          No scripts in {group.projectName}
+        </EmptyLine>
         {picker}
       </>
     );
@@ -568,7 +579,14 @@ export const ScriptsPanel = ({ workspaceId, sessionId, onClose }: Props) => {
     );
   };
 
-  const renderGroupBands = ({ group }: { readonly group: SessionScriptGroup }) => {
+  const startAllOf = ({ group }: GroupParams) => {
+    const services = group.scripts.filter((script) => isService({ script }));
+    return services.length > 1 && group.isReady && query.trim() === '' ? (
+      <StartAllServices group={group} services={services} runs={runs} onStart={onStartAll} />
+    ) : null;
+  };
+
+  const renderGroupBands = ({ group }: GroupParams) => {
     const services = group.scripts.filter((script) => isService({ script }));
     const tasks = group.scripts.filter((script) => !isService({ script }));
     const hasManifestScripts = (discovered?.[group.worktreePath] ?? []).some(
@@ -576,29 +594,14 @@ export const ScriptsPanel = ({ workspaceId, sessionId, onClose }: Props) => {
     );
     return (
       <>
-        {services.length === 0 ? null : (
-          <ScriptBand
-            label="Services"
-            group={group}
-            count={services.length}
-            action={
-              services.length > 1 && group.isReady && query.trim() === '' ? (
-                <StartAllServices
-                  group={group}
-                  services={services}
-                  runs={runs}
-                  onStart={onStartAll}
-                />
-              ) : null
-            }
+        {group.scripts.length === 0 ? null : (
+          <section
+            aria-label={`Scripts of ${scriptGroupScopeOf({ group })}`}
+            className="flex flex-col gap-0.5"
           >
             {renderScripts({ group, scripts: services, band: 'services' })}
-          </ScriptBand>
-        )}
-        {tasks.length === 0 ? null : (
-          <ScriptBand label={NAMES.commands} group={group} count={tasks.length}>
             {renderScripts({ group, scripts: tasks, band: 'tasks' })}
-          </ScriptBand>
+          </section>
         )}
         {renderSuggested({ group, hasManifestScripts })}
       </>
@@ -639,6 +642,7 @@ export const ScriptsPanel = ({ workspaceId, sessionId, onClose }: Props) => {
               isRefreshing={scans?.[group.worktreePath]?.status === 'loading'}
               editor={isNewHere ? editorNode : null}
               note={groupNote({ group })}
+              action={startAllOf({ group })}
               onToggle={() =>
                 setGroupCollapsed({ mountId: group.mountId, isCollapsed: !isCollapsed })
               }
@@ -697,12 +701,8 @@ export const ScriptsPanel = ({ workspaceId, sessionId, onClose }: Props) => {
     >
       <div className="flex flex-col gap-4">
         {groups.length === 0 ? (
-          <EmptyState
-            size="section"
-            headingLevel={3}
-            icon={CONCEPT_ICONS.scripts}
-            title="No scripts yet"
-            description="Scripts run inside a folder of this session."
+          <EmptyLine
+            className="px-2"
             action={
               <MountProjectAction
                 sessionId={sessionId}
@@ -710,7 +710,9 @@ export const ScriptsPanel = ({ workspaceId, sessionId, onClose }: Props) => {
                 presentation="button"
               />
             }
-          />
+          >
+            No branch in this session to run scripts on.
+          </EmptyLine>
         ) : null}
         {ended.count === 0 ? null : <EndedServicesRow {...ended} />}
         {pageError === null ? null : (

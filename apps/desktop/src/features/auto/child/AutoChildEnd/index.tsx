@@ -26,7 +26,7 @@ type DecideParams = {
 
 const RETURNED: TailFacts = {
   state: 'idle',
-  phrase: 'Returned to Auto',
+  phrase: 'Returned to the Lead',
   startedAt: null,
   actions: [],
 };

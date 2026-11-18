@@ -121,8 +121,8 @@ never exists on one surface only.
   could not archive above the bar, with Retry for those only. Archive instead
   on the Delete N confirm archives at once, with no second ask. An agent: Open agent, Show its
   changes; Message this agent (not on the agent's own page, where the composer is), Interrupt while a turn runs, Close or Reopen,
-  Let Auto take it from here on an old standalone agent of a standard role,
-  Detach from Auto on an agent that was moved, Change model (one submenu); copy the name; Delete agent. A
+  Let the Lead take it from here on an old standalone agent of a standard role,
+  Detach from the Lead on an agent that was moved, Change model (one submenu); copy the name; Delete agent. A
   workflow run: Open run, Open changes; Answer, Start run, Continue, Restart
   step, Start the next step, Restore; Copy run summary; Stop run, Archive
   run and Delete run, each confirmed. An artifact: the viewer's verbs by kind and status,
@@ -268,7 +268,7 @@ never exists on one surface only.
   or fix comment row `reviewComment`, a Context question card `question`, a
   check run `checkRun`, a decision change `decision`, a workspace in the
   switcher `workspace`, an issue to start from `issueCandidate`, and a central
-  branch row the rail branch's `mount` target from `useMountMenuTarget` (one
+  branch row the rail branch's `mount` target from `useMountRowMenu` (one
   source for both, so the worktree status and host verbs match). A row with no
   verbs of its own reuses the nearest object's kind (a GitHub issue row takes
   `link`, a worktree page row its branch's `mount`), and a row with no object

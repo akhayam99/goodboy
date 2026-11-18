@@ -7,6 +7,7 @@ pub(crate) mod kernel;
 pub(crate) mod ledger;
 pub(crate) mod open;
 pub(crate) mod probe;
+pub(crate) mod provider_helpers;
 pub(crate) mod pty;
 pub(crate) mod reap;
 pub(crate) mod rename;

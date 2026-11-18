@@ -1,8 +1,8 @@
-import type { ResolveAttempt } from '@goodboy/types';
+import type { ResolveAttempt, ResolveFailureCause } from '@goodboy/types';
 import { NAMES } from '../../shared/utils/names';
 import type { RemoteView } from './reviewRemote';
 import type { ReviewCommentState } from './reviewCommentState';
-import { causeOfAttempt, failureSentence } from './failureSentence';
+import { causeOfThread, failureSentence } from './failureSentence';
 
 export type ResolveWord =
   | 'open'
@@ -14,11 +14,13 @@ export type ResolveWord =
   | 'ready'
   | 'replied'
   | 'done'
-  | 'left_open';
+  | 'left_open'
+  | 'in_run'
+  | 'run_finished';
 
 export type ResolveGroup = 'needs_you' | 'working' | 'done' | 'left_open';
 
-type ResolveSub = 'waiting' | 'pushing' | 'stopped' | 'resolved_remote';
+type ResolveSub = 'waiting' | 'pushing' | 'stopped' | 'needs_run' | 'resolved_remote';
 
 export const RESOLVE_WORD_LABEL: Readonly<Record<ResolveWord, string>> = {
   open: 'Open',
@@ -31,6 +33,8 @@ export const RESOLVE_WORD_LABEL: Readonly<Record<ResolveWord, string>> = {
   replied: 'Replied',
   done: 'Done',
   left_open: 'Left open',
+  in_run: 'In a run',
+  run_finished: 'Run finished',
 };
 
 export const RESOLVE_VOCAB = {
@@ -74,25 +78,30 @@ export const RESOLVE_GROUP_OF_WORD: Readonly<Record<ResolveWord, ResolveGroup>> 
   replied: 'done',
   done: 'done',
   left_open: 'left_open',
+  in_run: 'working',
+  run_finished: 'needs_you',
 };
 
 export const RESOLVE_WORD_RANK: Readonly<Record<ResolveWord, number>> = {
   question: 0,
   push_failed: 1,
   to_review: 2,
-  couldnt_fix: 3,
-  working: 4,
-  ready: 5,
-  open: 6,
-  replied: 7,
-  done: 8,
-  left_open: 9,
+  run_finished: 3,
+  couldnt_fix: 4,
+  working: 5,
+  in_run: 6,
+  ready: 7,
+  open: 8,
+  replied: 9,
+  done: 10,
+  left_open: 11,
 };
 
 const SUB_LABEL: Readonly<Record<Exclude<ResolveSub, 'resolved_remote'>, string>> = {
   waiting: 'Waiting',
   pushing: 'Pushing',
   stopped: 'Stopped',
+  needs_run: 'Needs a run',
 };
 
 const RESOLVE_WORD_OF_STATE: Readonly<Record<ReviewCommentState, ResolveWord>> = {
@@ -128,7 +137,20 @@ export const resolveLabelOfState = ({
 }): string => RESOLVE_WORD_LABEL[resolveWordOfState({ state, isPushFailure })];
 
 const CHECKS_FAILED_LABEL = 'Checks failed';
+
+export type ResolveCommentRun = {
+  readonly stateWord: string;
+  readonly end: 'working' | 'finished' | 'stopped';
+};
+
+const RUN_TAKES: ReadonlySet<ResolveWord> = new Set<ResolveWord>([
+  'open',
+  'couldnt_fix',
+  'left_open',
+]);
+const FINISHED_RUN_TAKES: ReadonlySet<ResolveWord> = new Set<ResolveWord>(['open', 'couldnt_fix']);
 const COMMENT_CHANGED_LABEL = 'Comment changed';
+const RUN_CHANGED_WORD = 'Changed';
 
 export type ResolveCommentFacts = {
   readonly state: ReviewCommentState;
@@ -137,8 +159,23 @@ export type ResolveCommentFacts = {
   readonly isPushFailure: boolean;
   readonly sourceLabel: string;
   readonly attempt: Pick<ResolveAttempt, 'failureCause' | 'phase'> | null;
+  readonly stateReason: string | null;
   readonly gitChip: RemoteView | null;
   readonly hasFailedChecks: boolean;
+  readonly run?: ResolveCommentRun | null;
+  readonly isSourceChanged?: boolean;
+};
+
+type FactsParams = {
+  readonly facts: ResolveCommentFacts;
+};
+
+const causeOfFacts = ({ facts }: FactsParams): ResolveFailureCause | null =>
+  causeOfThread({ thread: { stateReason: facts.stateReason }, attempt: facts.attempt });
+
+const FAILED_SUB: Partial<Record<ResolveFailureCause, ResolveSub>> = {
+  stopped: 'stopped',
+  needs_a_run: 'needs_run',
 };
 
 export type ResolveCommentProjection = {
@@ -163,11 +200,13 @@ const subOf = ({ facts }: { readonly facts: ResolveCommentFacts }): ResolveSub |
       return null;
     case 'drafting':
       return facts.isWaitingForSlot ? 'waiting' : null;
-    case 'failed':
+    case 'failed': {
       if (facts.isPushFailure) {
         return null;
       }
-      return causeOfAttempt({ attempt: facts.attempt }) === 'stopped' ? 'stopped' : null;
+      const cause = causeOfFacts({ facts });
+      return cause === null ? null : (FAILED_SUB[cause] ?? null);
+    }
     case 'accepted':
     case 'replied':
       return facts.isPublishing ? 'pushing' : null;
@@ -198,19 +237,45 @@ const labelOf = ({
   return sub === 'resolved_remote' ? `Resolved on ${sourceLabel}` : SUB_LABEL[sub];
 };
 
+type RunWordParams = {
+  readonly word: ResolveWord;
+  readonly run: ResolveCommentRun | null;
+};
+
+const runWordOf = ({ word, run }: RunWordParams): ResolveWord => {
+  if (run === null) {
+    return word;
+  }
+  switch (run.end) {
+    case 'working':
+      return RUN_TAKES.has(word) ? 'in_run' : word;
+    case 'finished':
+      return FINISHED_RUN_TAKES.has(word) ? 'run_finished' : word;
+    case 'stopped':
+      return word;
+    default: {
+      const exhaustive: never = run.end;
+      return exhaustive;
+    }
+  }
+};
+
 export const projectResolveComment = (facts: ResolveCommentFacts): ResolveCommentProjection => {
-  const word = resolveWordOfState({ state: facts.state, isPushFailure: facts.isPushFailure });
-  const sub = subOf({ facts });
+  const run = facts.run ?? null;
+  const ownWord = resolveWordOfState({ state: facts.state, isPushFailure: facts.isPushFailure });
+  const word = runWordOf({ word: ownWord, run });
+  const sub = word === ownWord ? subOf({ facts }) : null;
   const isChanged = facts.state === 'outdated';
   const sentence =
-    word === 'couldnt_fix'
-      ? failureSentence({ cause: causeOfAttempt({ attempt: facts.attempt }) })
-      : null;
+    word === 'couldnt_fix' ? failureSentence({ cause: causeOfFacts({ facts }) }) : null;
   const hasFailedChecks = facts.hasFailedChecks && (word === 'to_review' || word === 'ready');
   return {
     word,
     sub,
-    label: labelOf({ word, sub, sourceLabel: facts.sourceLabel }),
+    label:
+      word === 'in_run' && run !== null
+        ? `${RESOLVE_WORD_LABEL.in_run} · ${facts.isSourceChanged === true ? RUN_CHANGED_WORD : run.stateWord}`
+        : labelOf({ word, sub, sourceLabel: facts.sourceLabel }),
     sentence,
     gitChip: facts.gitChip,
     hasFailedChecks,

@@ -15,9 +15,9 @@ export const rebaseAllSummaryOf = ({ run }: SummaryParams): string => {
         ? 'Stopping after this branch'
         : `Rebasing ${Math.min(settledCountOf({ run }) + 1, total)} of ${total}`;
     case 'handing':
-      return 'Handing the rest to Auto';
+      return 'Handing the rest to the Lead';
     case 'handed':
-      return 'Auto has the rest';
+      return 'The Lead has the rest';
     case 'aborted':
       return 'Stopped. Finished branches stay rebased.';
     case 'done':

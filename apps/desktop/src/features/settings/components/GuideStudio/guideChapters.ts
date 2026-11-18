@@ -304,12 +304,12 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
         desc: 'Leads each new run: it plans first, answers what it can and starts the agents it needs, each of the narrowest role that fits, under a limit. Fine-tune this run sets one row per decision.',
       },
       {
-        term: 'Let Auto take it from here',
-        desc: 'Hands the Lead an older agent you started yourself; Detach from Auto takes it back. When the Lead cannot decide, it reads Blocked with Retry.',
+        term: NAMES.letAutoTakeIt,
+        desc: 'Hands the Lead an agent you started; Detach from the Lead takes it back. A Lead that cannot decide reads Blocked with Retry.',
       },
       {
         term: 'Overview',
-        desc: 'Tiles, a board of each branch by state with its next step, and the Log at the end, always open. Open the full log scrolls to it.',
+        desc: 'Tiles, a board of each branch by state, grouped by project, with its next step, and the Log at the end, always open. Open the full log scrolls to it.',
       },
     ],
     links: [],
@@ -334,7 +334,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Stops for your OK and pause',
-        desc: 'Every step, After the plan or Never sets how often workflows and the Lead stop for you, one row in Runs in Settings. Pause run lets the step in flight finish, and Stop run asks first.',
+        desc: 'Every step, After the plan or Never sets how often workflows and the Lead stop for you, one row in Runs in Settings.',
       },
       {
         term: 'Runs in Settings',
@@ -442,7 +442,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Comments',
-        desc: 'Review threads and your own notes in one list, grouped Needs you, Working and Done. A row opens a drawer with the code, the thread and Fix, Reply and Skip on F, R and S.',
+        desc: 'Review threads and your own notes in one list, grouped Needs you, Working and Done. A row opens a drawer with the code, the thread and Fix, Reply and Skip on F, R and S. A comment that asks for a rework offers Start a run.',
       },
       {
         term: 'Fix comments',
@@ -491,11 +491,11 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'A rebase conflict asks',
-        desc: 'A conflict leaves the branch as it was and asks: Resolve with Auto, Resolve in terminal or Abort rebase, with Add a hint. A Lead resolves in the worktree and never pushes; Resolve in terminal starts the rebase there.',
+        desc: 'A conflict keeps the branch and asks: Resolve with the Lead, Resolve in terminal or Abort rebase, with Add a hint. A Lead resolves in the worktree and never pushes; Resolve in terminal starts the rebase there.',
       },
       {
         term: 'Rebase all',
-        desc: "With two or more branches behind, Rebase all on the Projects card rebases the clean ones with git and sends conflicts to one Lead run. Rows show Rebasing, Queued or Conflict; the header has Abort. Next's rebase picker adds Also tidy commits with Auto.",
+        desc: "With two or more branches behind, Rebase all on the Projects card rebases the clean ones with git and sends conflicts to one Lead run. Rows show Rebasing, Queued or Conflict; the header has Abort. Next's rebase picker adds Also tidy commits with the Lead.",
       },
       {
         term: 'Force push',

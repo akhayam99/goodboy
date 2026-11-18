@@ -789,7 +789,7 @@ pick it when you start the agent.
 - **History rewriter** is hidden: nobody picks it. Goodboy starts it only
   when a Rewrite history plan hits a conflict git cannot settle alone and
   you press **Rewrite with an agent**. A rebase on main never starts it: a
-  conflict there stops and asks, and **Resolve with Auto** hands it to Auto. It works in a throwaway
+  conflict there stops and asks, and **Resolve with the Lead** hands it to Auto. It works in a throwaway
   copy of the branch, never in a mount. Its turn carries a git config that
   points `origin` at a push URL that always fails, it has no GitHub token and
   no bridge mount. It reports with `<<history-step>>`, `<<history-done>>` or
@@ -1187,6 +1187,19 @@ it). While a fix run exists one status line under the tabs shows `Fixing N
 comments`, the tally of those words (each count filters the list), the model and
 Open transcript and Stop; a component with an `actions` slot, so bulk buttons
 sit on the same line.
+
+A run can start from comments instead of a fix. `startRoutedRun` takes
+`sourceThreadIds` and the `sourceMountId` of the comments' branch, and the Lead
+(or the one agent of a role run) is born with `sourceKind` `comment_run` and
+those thread ids, a note (`note:<id>`) and a host thread alike. No new table:
+the link is the agent's `source_kind` and `source_thread_ids`. A plan start
+with comments is refused before it writes anything, and so is a branch that
+left the session. `commentRunOf` (`features/resolve/commentRunOf.ts`) is the
+one answer to which run works on a thread: the newest `comment_run` agent that
+lists it. A stopped or deleted run frees only its own threads, and a fix
+or a re-check on the thread is never read as a run. It reads
+`sourceThreadIds`, which a light agent row leaves out (see the light rows trap
+in [traps.md](./traps.md)), so call it on a session whose agents are full.
 
 The state word carries the tone: Needs you is the only warning, Ready is neutral
 (the Apply fix button is the signal), Failed is the danger tone, except a stop
@@ -1923,7 +1936,7 @@ session up again in Goodboy.
   is what the **Tasks** door lists and what a task link attaches to a
   session. A session is never called a task, the field that holds its goal
   says **Goal**, and a script that runs and ends is a **Command** (the Scripts
-  pane groups **Services** and **Commands**). The setup wizard follows the
+  pane lists Services before Commands, in one list per branch). The setup wizard follows the
   same rule: step 3 connects the tools your tasks come from, step 4 starts
   your first session.
 - Internal words stay in code and technical docs. The screen says the word the

@@ -73,7 +73,7 @@ describe('the New drawer scenes', () => {
     show({ id: 'new-drawer-write' });
 
     const inDrawer = await drawer({ id: 'new-drawer-write' });
-    expect(inDrawer.getByTestId('artifact-brief')).toBeDefined();
+    expect(await inDrawer.findByTestId('artifact-brief')).toBeDefined();
     expect(inDrawer.queryByRole('tablist', { name: 'Write format' })).toBeNull();
   });
 

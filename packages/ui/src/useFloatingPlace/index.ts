@@ -18,6 +18,7 @@ type Params = {
   readonly alignment?: FloatingAlign;
   readonly clearOf?: HTMLElement | null;
   readonly contentKey?: string | number;
+  readonly crossInset?: number;
 };
 
 type SameParams = {
@@ -36,7 +37,12 @@ const isSamePlace = ({ left, right }: SameParams): boolean => {
   if (left === null || right === null) {
     return left === right;
   }
-  return left.top === right.top && left.left === right.left && left.side === right.side;
+  return (
+    left.top === right.top &&
+    left.left === right.left &&
+    left.side === right.side &&
+    left.maxHeight === right.maxHeight
+  );
 };
 
 const anchorRectOf = ({ anchor, clearOf }: AnchorRectParams): FloatingRect => {
@@ -65,6 +71,7 @@ export const useFloatingPlace = ({
   alignment = 'center',
   clearOf = null,
   contentKey,
+  crossInset,
 }: Params): FloatingCoords | null => {
   const [place, setPlace] = useState<FloatingCoords | null>(null);
 
@@ -80,8 +87,9 @@ export const useFloatingPlace = ({
       gap,
       edge,
       alignment,
+      crossInset: crossInset ?? (alignment === 'start' ? gap : 0),
     });
-  }, [anchor, tipRef, isActive, clearOf, side, gap, edge, alignment]);
+  }, [anchor, tipRef, isActive, clearOf, side, gap, edge, alignment, crossInset]);
 
   const remeasure = useCallback(() => {
     const next = measure();

@@ -259,6 +259,36 @@ describe('spawn-from-comment', () => {
     expect(prompt).toContain('<<needs-input id="the thread id"');
     expect(prompt).not.toContain('Can I commit');
   });
+
+  it('offers needs-run as a fourth outcome that stops early, per thread, with no commit or reply', () => {
+    const prompt = buildResolverAgentArgs({ threads: threadsOf(2), pr: PR }).initialPrompt;
+
+    expect(prompt).toContain(
+      '<<comment-needs-run threadId="the thread id" reason="one plain-text line: what you found">>',
+    );
+    expect(prompt).toContain('Stop early on that thread: change nothing for it');
+    expect(prompt).toContain('A thread reported this way has no commit and no reply block.');
+    expect(prompt).toContain('exactly one outcome marker for each of the 2 thread ids');
+  });
+
+  it('tells a retry of a needs-run thread to make one change, and only for that thread', () => {
+    const prompt = buildResolverAgentArgs({
+      threads: threadsOf(2),
+      pr: PR,
+      priorContext: [
+        {
+          threadId: 'PRRT_1',
+          intent: 'retry',
+          needsRun: 'It touches the ledger layout and two new components.',
+        },
+        { threadId: 'PRRT_2', intent: 'retry', needsRun: null },
+      ],
+    }).initialPrompt;
+
+    expect(prompt).toContain('> It touches the ledger layout and two new components.');
+    expect(prompt.match(/The owner asked for it as one change anyway/g)).toHaveLength(1);
+    expect(prompt).toContain('never with comment-needs-run again');
+  });
 });
 
 describe('the re-check agent', () => {
@@ -334,5 +364,55 @@ describe('the reply voice in the resolver prompt', () => {
     expect(prompt).toContain('Short. Starts lowercase.');
     expect(prompt).not.toContain('Voice: terse.');
     expect(promptWith({ voice: 'mine', styleNote: '  ' })).toContain('Voice: terse.');
+  });
+});
+
+describe('the brief for a note the owner wrote in Goodboy', () => {
+  const note = {
+    head: makeComment({
+      id: 'note-harborline',
+      threadId: 'note:harborline-header',
+      author: 'You',
+      url: '',
+      path: 'features/branch/components/ThreadProperties.tsx',
+      body: 'move this header into the layout, like the payments-api route',
+    }),
+    replies: [],
+  };
+
+  it('says the note is local, uncommitted work and never a host review comment', () => {
+    const prompt = buildResolverKickoff({ threads: [note], pr: PR, hint: '' });
+
+    expect(prompt).toContain('a note the owner wrote in Goodboy on this machine');
+    expect(prompt).toContain('not a review comment from GitHub, GitLab or Bitbucket');
+    expect(prompt).toContain('uncommitted and unpushed changes included');
+    expect(prompt).toContain('never assume it is committed or pushed');
+    expect(prompt).toContain('Never fetch, never pull, never check out another branch');
+    expect(prompt).toContain('It is never posted to a host.');
+    expect(prompt).toContain('left as notes on branch `kay/foo`');
+    expect(prompt).not.toContain('- link: ');
+  });
+
+  it('keeps the brief of a host review comment as it was', () => {
+    const prompt = buildResolverKickoff({ threads: threadsOf(1), pr: PR, hint: '' });
+
+    expect(prompt).toContain('Resolve 1 thread on PR #9108, branch `kay/foo`.');
+    expect(prompt).toContain('- link: https://github.com/o/r/pull/9108#discussion_r1');
+    expect(prompt).not.toContain('uncommitted');
+    expect(prompt).not.toContain('Never fetch');
+  });
+
+  it('keeps the note context on a retry with a hint', () => {
+    const args = buildResolverAgentArgs({
+      threads: [note],
+      pr: PR,
+      hint: 'the work is done locally, check it',
+      priorContext: [{ threadId: 'note:harborline-header', intent: 'retry' }],
+    });
+
+    expect(args.initialPrompt).toContain('uncommitted and unpushed changes included');
+    expect(args.initialPrompt).toContain('An earlier try on this thread did not finish.');
+    expect(args.initialPrompt).toContain('the work is done locally, check it');
+    expect(args.humanPrompt).not.toContain('Never fetch');
   });
 });

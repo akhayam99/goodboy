@@ -19,11 +19,18 @@ type Props = {
   readonly exclude: ReadonlySet<string>;
   readonly openEventName: string;
   readonly onAdd: (logins: ReadonlyArray<string>) => void;
+  readonly isBusy?: boolean;
 };
 
 const MAX_CANDIDATES = 8;
 
-export const ReviewerPicker = ({ search, exclude, openEventName, onAdd }: Props) => {
+export const ReviewerPicker = ({
+  search,
+  exclude,
+  openEventName,
+  onAdd,
+  isBusy = false,
+}: Props) => {
   const [query, setQuery] = useState('');
   const [people, setPeople] = useState<ReadonlyArray<PullRequestPerson> | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -32,13 +39,13 @@ export const ReviewerPicker = ({ search, exclude, openEventName, onAdd }: Props)
 
   useEffect(() => {
     const onOpen = () => {
-      if (!isOpen) {
+      if (!isOpen && !isBusy) {
         toggle();
       }
     };
     window.addEventListener(openEventName, onOpen);
     return () => window.removeEventListener(openEventName, onOpen);
-  }, [isOpen, openEventName, toggle]);
+  }, [isBusy, isOpen, openEventName, toggle]);
 
   useEffect(() => {
     if (!isOpen || people !== null) {
@@ -69,6 +76,7 @@ export const ReviewerPicker = ({ search, exclude, openEventName, onAdd }: Props)
           label="Request review"
           aria-haspopup="dialog"
           aria-expanded={isOpen}
+          busy={isBusy}
           onClick={toggle}
         />
       }

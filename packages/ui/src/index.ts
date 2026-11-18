@@ -230,6 +230,7 @@ export { inlineMarkdownText } from './components/Markdown/inlineMarkdownText';
 export { InlineMarkdown } from './components/Markdown/InlineMarkdown';
 export { MetaRow } from './components/MetaRow';
 export type { MetaRowProps } from './components/MetaRow';
+export { AnchoredLayer } from './components/AnchoredLayer';
 export { AnchoredPopover } from './components/AnchoredPopover';
 export type { AnchoredPopoverProps } from './components/AnchoredPopover';
 export { Popover, PopoverBody } from './components/Popover';
@@ -443,6 +444,7 @@ export {
   FRAME_TYPES,
   PAGE_FRAME,
   PAGE_MEASURE,
+  SHELL_GUTTER_PX,
   frameGeometryOf,
   frameTierOf,
 } from './frameGeometry';

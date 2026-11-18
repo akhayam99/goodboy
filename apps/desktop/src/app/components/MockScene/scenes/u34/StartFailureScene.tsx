@@ -15,7 +15,7 @@ export const StartFailureScene = ({ isProviderMissing }: Props) => (
       note={null}
       error={
         isProviderMissing
-          ? 'Connect Claude, Codex, Cursor or Gemini to use Auto.'
+          ? 'Connect Claude, Codex, Cursor or Gemini to use the Lead.'
           : 'The payments-api project could not be opened.'
       }
       reason={null}

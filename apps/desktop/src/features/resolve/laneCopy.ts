@@ -8,6 +8,8 @@ export const LANE_REBUILD_FAILED_LABEL = "A fix couldn't be rebuilt on top of th
 
 export const LANE_QUEUED_SENTENCE = 'Queued, after the current fix';
 
+export const LANE_READY_FIX_FIRST = 'Apply or skip the ready fix first';
+
 export const isLaneRebuildAttempt = ({ attempt }: { readonly attempt: ResolveAttempt }): boolean =>
   attempt.launchChoice?.hint?.includes(LANE_REBUILD_HINT) === true;
 

@@ -1,6 +1,16 @@
 import { useMemo } from 'react';
 import { useShallow } from 'zustand/react/shallow';
-import type { Agent, Session, SessionMountView, TurnState } from '@goodboy/types';
+import type {
+  Agent,
+  DiffComment,
+  PrComment,
+  Session,
+  SessionMountView,
+  TurnState,
+} from '@goodboy/types';
+import { activeReviewSourceOf } from '../../../../store/slices/review-source/activeReviewSource';
+import { commentRunPlacesOf } from '../../../resolve/commentRunPlacesOf';
+import { agentThreadIds } from '../../agentThreadIds';
 import { planRevisingStartIn } from '../../../plans/planRevisingStartIn';
 import { useAppStore, useSessionOpenQuestions } from '../../../../store';
 import type { AutoTreeView } from '../../../../store/slices/auto-view/state';
@@ -20,6 +30,10 @@ const NO_AUTO_VIEWS: ReadonlyArray<AutoTreeView> = [];
 
 const NO_MOUNTS: ReadonlyArray<SessionMountView> = [];
 
+const NO_NOTES: ReadonlyArray<DiffComment> = [];
+
+const NO_COMMENTS: ReadonlyArray<PrComment> = [];
+
 export const useSessionRuns = ({ session }: Params): ReadonlyArray<SessionRun> => {
   const sessionId = session.id;
   const attachedRuns = useAttachedWorkflowRuns({ session });
@@ -32,6 +46,22 @@ export const useSessionRuns = ({ session }: Params): ReadonlyArray<SessionRun> =
   const projects = useAppStore((state) => state.projects);
   const turnByAgentId = useLiveAgentTurns({ agents });
   const routes = useRunRoutes({ sessionId });
+  const notes = useAppStore((state) => state.diffComments[sessionId] ?? NO_NOTES);
+  const comments = useAppStore((state) => {
+    const loaded = activeReviewSourceOf({ state, sessionId })?.comments ?? NO_COMMENTS;
+    return loaded.length === 0 ? NO_COMMENTS : loaded;
+  });
+  const commentPlaces = useMemo(
+    () =>
+      commentRunPlacesOf({
+        threadIds: agents.flatMap((agent) =>
+          agent.sourceKind === 'comment_run' ? agentThreadIds(agent) : [],
+        ),
+        notes,
+        comments,
+      }),
+    [agents, comments, notes],
+  );
   const revisingStarts = useAppStore(
     useShallow((state) => {
       const starts: Record<string, number> = {};
@@ -71,9 +101,11 @@ export const useSessionRuns = ({ session }: Params): ReadonlyArray<SessionRun> =
         mounts,
         projects,
         routes,
+        commentPlaces,
       }),
     [
       routes,
+      commentPlaces,
       attachedRuns,
       agents,
       kindOverride,

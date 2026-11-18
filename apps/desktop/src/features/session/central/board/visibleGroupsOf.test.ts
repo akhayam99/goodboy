@@ -29,6 +29,8 @@ const rowOf = (
     branch: `feat/${id}`,
     group,
     isMerged,
+    isClosed: false,
+    isSettled: isMerged,
     stage,
     checks,
     askIds: needsYouIds,
@@ -75,7 +77,7 @@ const shownCount = (groups: ReturnType<typeof visibleGroupsOf>) =>
 
 describe('visibleGroupsOf', () => {
   it('shows every row in its group', () => {
-    const groups = visibleGroupsOf({ board, isMergedExpanded: false });
+    const groups = visibleGroupsOf({ board, expandedGroupIds: new Set() });
 
     expect(shownCount(groups)).toBe(4);
     expect(groups.map((group) => group.id)).toEqual(['needs-you', 'in-progress', 'merged']);
@@ -96,10 +98,38 @@ describe('visibleGroupsOf', () => {
       ),
     };
 
-    const closed = visibleGroupsOf({ board: folded, isMergedExpanded: false });
-    const open = visibleGroupsOf({ board: folded, isMergedExpanded: true });
+    const closed = visibleGroupsOf({ board: folded, expandedGroupIds: new Set() });
+    const open = visibleGroupsOf({ board: folded, expandedGroupIds: new Set(['merged']) });
 
     expect(closed.find((group) => group.id === 'merged')?.rowIds).toHaveLength(3);
     expect(open.find((group) => group.id === 'merged')?.rowIds).toHaveLength(4);
+  });
+
+  it('expands one folded group without opening the other', () => {
+    const folded: BranchBoard = {
+      ...board,
+      groups: [
+        ...board.groups.filter((group) => group.id !== 'merged'),
+        {
+          id: 'merged',
+          label: 'Merged',
+          rowIds: ['d', 'e', 'f', 'g'],
+          visibleRowIds: ['d', 'e', 'f'],
+          hiddenCount: 1,
+        },
+        {
+          id: 'closed',
+          label: 'Closed',
+          rowIds: ['h', 'i', 'j', 'k'],
+          visibleRowIds: ['h', 'i', 'j'],
+          hiddenCount: 1,
+        },
+      ],
+    };
+
+    const groups = visibleGroupsOf({ board: folded, expandedGroupIds: new Set(['closed']) });
+
+    expect(groups.find((group) => group.id === 'merged')?.rowIds).toHaveLength(3);
+    expect(groups.find((group) => group.id === 'closed')?.rowIds).toHaveLength(4);
   });
 });

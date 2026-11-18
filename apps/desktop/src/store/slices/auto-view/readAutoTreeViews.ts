@@ -20,12 +20,14 @@ import {
   type Database,
 } from '@goodboy/db';
 import type { SessionId } from '@goodboy/types';
+import { delegationClosedOf } from '../../../features/auto/delegationClosedOf';
 import { readAutoLevel } from '../../runtime/auto/level/readAutoLevel';
 import { userImagesOf } from '../../runtime/auto/userImagesOf';
 import { deliveredResultsOf } from './deliveredResultsOf';
 import { hiddenChildIdsOf } from './hiddenChildIdsOf';
 import { presentDelegationsOf } from './presentDelegationsOf';
 import { readMessagesOf } from './readMessagesOf';
+import { sentChangeOf } from './sentChangeOf';
 import type { AutoPendingMessage, AutoPendingRefusal, AutoTreeView } from './state';
 
 type Params = {
@@ -127,7 +129,13 @@ export const readAutoTreeViews = async ({
         listAutoGrantsOfTree({ db, treeId: tree.id }),
         listAutoLaunchSnapshotsOfTree({ db, treeId: tree.id }),
       ]);
-      const present = presentDelegationsOf({ delegations, goneChildIds: new Set(goneChildIds) });
+      const discardedChildIds = delegations
+        .filter((delegation) => delegationClosedOf({ delegation })?.as === 'discarded')
+        .map((delegation) => delegation.childAgentId);
+      const present = presentDelegationsOf({
+        delegations,
+        goneChildIds: new Set([...goneChildIds, ...discardedChildIds]),
+      });
       return {
         tree,
         delegations: present,
@@ -137,6 +145,7 @@ export const readAutoTreeViews = async ({
         pendingRefusal: pendingRefusalOf({ tree, pending }),
         pendingMessages: pendingMessagesOf({ tree, pending }),
         readMessages: readMessagesOf({ tree, accepted, delegations }),
+        sentChange: sentChangeOf({ tree, rows: [...pending, ...accepted] }),
         droppedMessageIds: droppedMessageIdsOf({ tree, pending }),
         deliveredResults: deliveredResultsOf({ accepted }),
         rootAsk,

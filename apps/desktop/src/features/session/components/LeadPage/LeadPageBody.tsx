@@ -6,6 +6,7 @@ import type { LeadTreeDataModel } from '../../../auto/tree/LeadTreeData';
 import { AgentDetailPane } from '../AgentDetailPane';
 import { SessionHeadSlotsContext } from '../../sessionHeadSlotsContext';
 import { RunAgentsRail } from '../RunAgentsRail';
+import { CommentRunSources } from './CommentRunSources';
 import { LeadHeaderWord } from './LeadHeaderWord';
 
 type Props = {
@@ -61,6 +62,7 @@ export const LeadPageBody = ({
               agent={agent}
               isChatActive={isChatActive}
               onBack={onBack}
+              context={<CommentRunSources sessionId={session.id} agent={agent} />}
               headerState={<LeadHeaderWord sessionId={session.id} rootAgentId={agent.id} />}
             />
           </QueuedNotesReportContext.Provider>

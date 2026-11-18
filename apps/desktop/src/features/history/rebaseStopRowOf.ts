@@ -91,7 +91,7 @@ const sentenceOf = ({ state, title, files, isHook, baseBranch }: SentenceParams)
     return `You are resolving ${filesOf({ count: files.length })} in the terminal.`;
   }
   if (state === 'auto-resolving') {
-    return `Auto is resolving ${filesOf({ count: files.length })}.`;
+    return `The Lead is resolving ${filesOf({ count: files.length })}.`;
   }
   if (state === 'auto-done' || state === 'rebased-here') {
     return `Rebased on ${baseBranch}. Push to update origin.`;

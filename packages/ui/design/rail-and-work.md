@@ -216,7 +216,7 @@ icon column), and sits on the canvas so the lane never shows through it.
 | `running`  | 2px `border-soft` track + `spin-border` | local index, or info dot  |
 | `question` | 1.5px `warning`                         | `?`, warning              |
 | `budget`   | 1.5px `warning`                         | `$`, warning              |
-| `approval` | 1.5px `warning`                         | shield, warning           |
+| `approval` | 1.5px `warning`                         | hand, warning             |
 | `alert`    | 1.5px `warning`                         | `!`, warning              |
 | `failed`   | 1.5px `danger`                          | `!`, danger               |
 | `approved` | 1px over a solid `success-solid` disc   | check, `on-success`       |
@@ -379,54 +379,55 @@ each case.
 
 ## Session row, hover card and switcher
 
-A session in the left column is one 28px line: a 14px `WorkNode` (`size="sm"`)
-and the title, with a `gap-2` between them and `px-2` inside the pill. It has
-no second line, no `ToneBar`, no marks, no age and no cost. A `WorkNode`
-fills its disc with `bg-background` to mask a rail line behind it; on a
-selected or current row it takes `isTransparent` (`StateNode`
-`isOnSelectedRow`), so an idle node stays a ring on `bg-selected` and never
-reads as a solid dot. `sessionNodeOf`
-picks the node from the stage and, under needs you, from the winning reason,
-and every surface that says why a session waits reads the same table,
-`ATTENTION_REASON_META` in `features/session/session-stage.ts`: one mark, one
-tone and one sentence per reason. The sidebar node, the switcher row, the hover
-card, the Board card tone, the Now chip rows and the palette's Needs you rows
-agree on tone and words, and the node's accessible label is the sentence.
+A session in the left column is one 28px line: the title and one trailing
+`StatusMark`. It has no second line, no `ToneBar`, no age and no cost.
+`sessionNodeOf` picks the node (kind, tone, words, unread) from the stage and,
+under needs you, from the winning reason, and every surface that says why a
+session waits reads the same table, `ATTENTION_REASON_META` in
+`features/session/session-stage.ts`: one mark, one tone and one sentence per
+reason. A state has one glyph: `attentionMarkOf` turns a reason into its
+`StatusMark`, and `sessionMarkOf` turns a session into its mark through it. The
+sidebar row, the folded rail, the pinned rows, the switcher row, the hover
+card, the Board card signal, the Now chip rows, the palette's Needs you rows and
+the Guide legend all draw that `StatusMark`, so a Lead that needs you is the
+same amber hand everywhere, and the node's accessible label is the sentence.
 
-Every row of that family reads its facts from `useSessionRowFacts` (summary, node, row title, task keys and plain title): a surface never repeats the three calls, and a surface that prints a session name uses `sessionTitle`, so a blank goal reads `Untitled session` on the rail, the switcher, the Now popover and a toast. A workspace row reads `useWorkspaceRowFacts` (last seen through `formatAdaptiveAge`, unread) and `NEW_WINDOW_TOOLTIP`. A suggestion card in the transcript (`NudgeCard`) draws its actions with `Button` and its dismiss with `IconButton`.
+Every row of that family reads its facts from `useSessionRowFacts` (summary, node, mark, row title, task keys and plain title): a surface never repeats the three calls, and a surface that prints a session name uses `sessionTitle`, so a blank goal reads `Untitled session` on the rail, the switcher, the Now popover and a toast. A workspace row reads `useWorkspaceRowFacts` (last seen through `formatAdaptiveAge`, unread) and `NEW_WINDOW_TOOLTIP`. A suggestion card in the transcript (`NudgeCard`) draws its actions with `Button` and its dismiss with `IconButton`.
 
 Red means broken, amber means you must answer, approve or act, green means
 ready to ship, blue (`primary`) means waiting in the merge queue, violet means
-done, cyan (`info`) means moving, and the quieter blue of `unread` means new. A pictogram under 12px is unreadable, so the
-marks inside the ring are typographic or 12px: `?`, `!`, the approval shield,
-the check and the half-filled core of the queue.
+done, cyan (`info`) means moving, and the quieter blue of `unread` means new.
+A `WorkNode` in a tree draws the same meaning inside its ring, typographic or
+12px: `?`, `!`, the approval hand, the check and the half-filled core of the
+queue.
 
-| reason                | node                 | tone    | words                                    |
-| --------------------- | -------------------- | ------- | ---------------------------------------- |
-| `agent-error`         | `failed`, `!`        | danger  | An agent stopped on an error             |
-| `run-stopped`         | `failed`, `!`        | danger  | Failed (Not finished for a halted step)  |
-| `ci-failed`           | `failed`, `!`        | danger  | Checks failing                           |
-| `open-question`       | `question`, `?`      | warning | 1 question for you (plural by the count) |
-| `fix-needs-you`       | `question`, `?`      | warning | 3 comments need you                      |
-| `needs-approval`      | `approval`, shield   | warning | Waiting for your permission              |
-| `plan-approval`       | `approval`, shield   | warning | Plan v2 waits for your approval          |
-| `run-waits-for-go`    | `approval`, shield   | warning | A run waits for you to continue          |
-| `auto-needs-you`      | `approval`, shield   | warning | Auto waits for you                       |
-| `slack-reply-waiting` | `approval`, shield   | warning | A Slack reply waits for your OK          |
-| `run-paused-at-limit` | `alert`, `!`         | warning | A run paused at its limit                |
-| `changes-requested`   | `alert`, `!`         | warning | Changes requested                        |
-| `fix-couldnt-fix`     | `alert`, `!`         | warning | 2 comments it couldn't fix               |
-| `pr-queued`           | `merging`, half core | primary | In merge queue                           |
-| `pr-approved`         | `approved`, solid    | success | Approved, ready to merge                 |
-| `unread-reply`        | `marker` and its dot | info    | New reply                                |
-| stage `done`          | `finished`, solid    | merged  | Done                                     |
+| reason                | mark                   | tone    | words                                    |
+| --------------------- | ---------------------- | ------- | ---------------------------------------- |
+| `agent-error`         | `failed`, `CircleX`    | danger  | An agent failed                          |
+| `run-stopped`         | `failed`, `CircleX`    | danger  | Failed (Not finished for a halted step)  |
+| `ci-failed`           | `failed`, `CircleX`    | danger  | Checks failing                           |
+| `push-failed`         | `failed`, `CircleX`    | danger  | 1 comment didn't go out                  |
+| `open-question`       | `question`             | warning | 1 question for you (plural by the count) |
+| `fix-needs-you`       | `question`             | warning | 3 comments need you                      |
+| `needs-approval`      | `approval`, `Hand`     | warning | Needs permission                         |
+| `plan-approval`       | `approval`, `Hand`     | warning | The plan needs approval                  |
+| `run-waits-for-go`    | `approval`, `Hand`     | warning | Step is ready                            |
+| `auto-needs-you`      | `approval`, `Hand`     | warning | Lead needs you                           |
+| `slack-reply-waiting` | `approval`, `Hand`     | warning | A Slack reply needs approval             |
+| `run-paused-at-limit` | `alert`                | warning | A run paused at its limit                |
+| `changes-requested`   | `alert`                | warning | Changes requested                        |
+| `fix-couldnt-fix`     | `alert`                | warning | 2 comments it couldn't fix               |
+| `pr-queued`           | `merging`, primary arc | primary | In merge queue                           |
+| `pr-approved`         | `approved`             | success | Approved, ready to merge                 |
+| `unread-reply`        | the unread dot         | info    | New reply                                |
+| stage `done`          | `merged`               | merged  | Done                                     |
 
 `pr-queued` is the one reason in the table that does not need you. It ranks
 below the needs-you reasons and above `pr-approved`, and it is mutually exclusive
 with it: a pull request in the merge queue is never also approved, ready to merge,
 whatever its review decision. The session stays in the review stage, so the Board
 card sits in In review with the `primary` tone bar, the sidebar, the switcher
-and the hover card draw the `merging` node and the words, and the Now chip and
+and the hover card draw the `merging` mark and the words, and the Now chip and
 the palette's Needs you rows never list it. The hover card shows no Needs you
 action for it. With several mounts, a mount in review or approved speaks for the
 session ahead of a mount in the queue, and failing checks speak ahead of both.
@@ -448,8 +449,7 @@ asks for input is never deferred. A session waiting for you also carries
 one (a blocked turn, a question, a failed turn, an unread reply, a Slack draft),
 and the Needs you order follows it, falling back to the last edit. Mark as unread stamps the latest finished agent unseen (`markAgentUnviewed`, `lastViewedAt` cleared in the store and the database) and never the agent on screen in the open session, which counts as seen; Mark as read and Mark all as read stamp every unread agent (`markAllAgentsSeen`, `markSessionsRead`), and `sessionHasUnread` is the one test for a row's dot. An unread reply is not a mark: in the left column it is the row's 6px dot alone
 in the mark box, unless the session asks you, failed or runs, which outranks it
-(`sessionMarkOf`); on a `WorkNode` (switcher, hover card) the node takes the dot
-on its corner (`hasUnread`).
+(`sessionMarkOf`), and the switcher and the hover card draw the same mark.
 
 The door pill. The Board door, the folded rail and the top bar say how many
 sessions need you with one function, `attentionCountOf` (read through
@@ -518,19 +518,15 @@ every stage with its state ("Commit done, Push done, Pull request current,
 Checks to do, ..."). Never use the run step meter (segments of a run) or `WorkNode`
 (one node) for stages with connectors.
 
-The other nodes are the stage's own. Running is the ring with the centre dot,
-done is `finished`: a solid `merged` violet disc with a white 12px check, the
-same size and weight as the green approved disc, so it reads as complete next
-to the hollow rings (a session whose pull request closed unmerged keeps
-`closed`, the muted check), in review and building are a 1px hollow ring named
-by the stage word (never "Idle"), and archived is `queued`, a dashed faint
-ring, only under Show archived.
+The other marks are the stage's own. Running is the turning ring, done is the
+`merged` check (a session whose pull request closed unmerged keeps `closed`,
+the faint slash), and in review, building and archived leave the box empty; the
+words name the stage (never "Idle").
 
 Human-input reasons (`open-question`, `fix-needs-you`, `needs-approval`,
 `plan-approval`, `run-waits-for-go`, `run-paused-at-limit`, `auto-needs-you` and
 `slack-reply-waiting`) outrank running: the stage is needs you and, while an agent
-works, the node keeps the reason's mark and takes the running `spin-border`
-(`isSpinning`), the Board card breathes as a running card, and the hover card
+works, the row keeps the reason's mark, the Board card breathes as a running card, and the hover card
 adds a line, An agent is working. An agent error and a stopped run keep their place above running.
 Failing checks, changes requested, comments it couldn't fix, approved and unread
 rank below running, because an agent may be working on exactly that.
@@ -587,7 +583,7 @@ sessions`; the first `Tab` still selects the previous session wherever it sits.
 
 The 44px rail (`ColumnRail`) keeps its 32px door buttons and adds 28px node
 buttons (`RAIL_NODE_BUTTON` in `RailButton.tsx`) under the doors, in the
-workspace scope only: the open session (the row's `StateNode`, current
+workspace scope only: the open session (the row's `StatusMark`, a quiet neutral dot when the row has none, current
 fill on its page, no fill and `text-foreground` while a studio sits over it),
 then up to seven pinned sessions with the title and the stage words in a
 tooltip, then `+N` in `text-meta`. The open session and `+N` open a flyout

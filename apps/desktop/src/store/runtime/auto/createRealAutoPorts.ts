@@ -29,7 +29,7 @@ import {
   type MakeBranchFactsReadersParams,
 } from './makeBranchFactsReaders';
 import { readBranchFactsOf } from './branchFacts/readBranchFactsOf';
-import { resolveChildRouting } from './resolveChildRouting';
+import { resolveChildRouting } from './childRouting/resolveChildRouting';
 import { runAutoCheckScript } from './runAutoCheckScript';
 import { createHistoryBackup } from '../../../features/history/historyEngine';
 import { publishScribePullRequest } from './publishScribePullRequest';

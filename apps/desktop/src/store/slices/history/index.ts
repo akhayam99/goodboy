@@ -28,6 +28,8 @@ import { dismissPushFixOutcome } from './pushFix/dismissPushFixOutcome';
 import { completePushFixOutcome } from './pushFix/completePushFixOutcome';
 import { releasePushFixClaim } from './pushFix/releasePushFixClaim';
 import { prefillBranchPushTerminal } from './prefillBranchPushTerminal';
+import { checkBranchOrigin } from './pushFix/checkBranchOrigin';
+import { forcePushCheckedBranch } from './pushFix/forcePushCheckedBranch';
 import { settleHistoryRewriter } from './settleHistoryRewriter';
 import { startHistoryRewriter } from './startHistoryRewriter';
 import { syncBranchWithRemote } from './syncBranchWithRemote';
@@ -63,6 +65,8 @@ export const createHistorySlice = ({ set, get }: SliceDeps) => {
     completePushFixOutcome: completePushFixOutcome({ set, get }),
     releasePushFixClaim: releasePushFixClaim({ set, get }),
     prefillBranchPushTerminal: prefillBranchPushTerminal({ get }),
+    checkBranchOrigin: checkBranchOrigin({ get }),
+    forcePushCheckedBranch: forcePushCheckedBranch({ get }),
     loadHistoryDraft: loadHistoryDraft(set, get),
     editHistoryDraft: editHistoryDraft(set, get),
     undoHistoryDraft: undoHistoryDraft(set, get),

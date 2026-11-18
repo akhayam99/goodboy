@@ -772,6 +772,24 @@ below its trigger or flips above it when the room below is smaller, and shifts a
 edge to stay at least 8px inside the window; `tooltips-and-popovers.test.tsx` proves it
 for the model picker, the run settings and Asks you, a row menu and the trigger label.
 
+**One placement rule.** `placeFloating` places every popover, menu, context menu,
+tooltip and side card. The host gives the side: under a bar or a row, right of the
+left rail, left of the right tool rail. The alignment follows the anchor, start
+by default and end when the end edge belongs to the trigger; a popover is never
+centred on its trigger (a tooltip is). The surface flips to the opposite side when
+its side is short and the other side has more room, slides along the other axis
+to stay inside the window margin, and gets the room left as its `maxHeight`, so a
+long list scrolls inside while its head and foot stay put. A card that keeps its
+end on the anchor grows up from it; taller than that room, it hangs from the
+anchor top instead. The margin is the shell gutter, `SHELL_GUTTER_PX` (12px), the
+same for every popover, menu, context menu, update card and report sheet; no
+surface keeps a margin of its own. Tooltips and side cards keep 8px.
+`placeFloating.test.ts` holds the cases: the rail foot, the bell, a flipped menu,
+a list taller than the window, a right rail tooltip and the pointer menu.
+`barPopoverGutter.test.ts` opens every bar popover and both rail foot cards in a
+1024 by 700 window and checks each stays 12px inside every edge, the bell and
+Now on their end edge, the history lists on their start edge.
+
 **Side cards place with `useFloatingPlace`.** The rail flyout and the session
 hover card open beside their anchor through `useFloatingPlace`, which wraps
 `placeFloating` (side `right`, alignment `start`, an 8px gap and edge, flipping to
@@ -779,6 +797,16 @@ the left when the card does not fit). It paints nothing until the first
 measurement and measures again on a resize and on a scroll of any ancestor
 (capture), skipping a scroll inside the card itself. A new hover card or flyout
 calls the hook; it does not copy the clamp.
+
+**A layer that stays open floats through `AnchoredLayer`.** A list or a line
+that hangs off its box while the box shows (the composer quick actions, the
+queued hints line, a failed workspace switch) is never `absolute` inside it:
+a clipping parent would cut it. `AnchoredLayer` portals it to the popover
+layer and places it from the element it is rendered in, through
+`useFloatingPlace` with side `top` or `bottom`, start aligned, a 4px gap and
+`SHELL_GUTTER_PX` (12px) from every window edge. It can take the width of its
+box under a scale width (`isAnchorWidth`, `maxWidth`). The `absolute-popover`
+forbidden pattern holds the hand-made kind at zero.
 
 ## Spacing scale
 

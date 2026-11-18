@@ -279,12 +279,12 @@ describe('Home', () => {
     expect(screen.queryByText('Start a new project')).toBeNull();
   });
 
-  it('swaps the list for the one form in place, and Cancel or Escape goes back', () => {
+  it('swaps the list for the one form in place, and Cancel or Escape goes back', async () => {
     const onCloseCreate = vi.fn();
     renderHome({ isCreating: true, onCloseCreate });
 
     expect(screen.getByRole('heading', { level: 1, name: 'Goodboy' })).toBeDefined();
-    expect(screen.getByRole('form', { name: 'New workspace' })).toBeDefined();
+    expect(await screen.findByRole('form', { name: 'New workspace' })).toBeDefined();
     expect(screen.queryByRole('list', { name: 'Workspaces' })).toBeNull();
 
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
@@ -298,7 +298,7 @@ describe('Home', () => {
     renderHome({ isCreating: true, onCloseCreate });
 
     dialog.picks = [NOTES];
-    fireEvent.click(screen.getByRole('button', { name: /choose folder/i }));
+    fireEvent.click(await screen.findByRole('button', { name: /choose folder/i }));
     await screen.findByRole('list', { name: 'Projects' });
     fireEvent.click(screen.getByRole('button', { name: /create workspace/i }));
 
@@ -323,7 +323,7 @@ describe('Home', () => {
     renderHome({ isCreating: true, onCloseCreate });
 
     dialog.picks = [NOTES];
-    fireEvent.click(screen.getByRole('button', { name: /choose folder/i }));
+    fireEvent.click(await screen.findByRole('button', { name: /choose folder/i }));
     await screen.findByRole('list', { name: 'Projects' });
     fireEvent.click(screen.getByRole('button', { name: /create workspace/i }));
 
@@ -354,6 +354,34 @@ describe('Home', () => {
     fireEvent.click(screen.getByRole('switch', { name: 'Reopen the last workspace on launch' }));
 
     expect(saveSetting).toHaveBeenCalledWith(SETTING_REOPEN_LAST, '1');
+  });
+
+  it('holds the reopen-last switch while it saves and reports a failed save', async () => {
+    const reportError = vi.fn(async () => undefined);
+    useAppStore.setState({ reportError });
+    let fail: (error: Error) => void = () => undefined;
+    saveSetting.mockImplementationOnce(
+      () =>
+        new Promise<void>((_resolve, reject) => {
+          fail = reject;
+        }),
+    );
+    renderHome();
+
+    const toggle = screen.getByRole('switch', { name: 'Reopen the last workspace on launch' });
+    fireEvent.click(toggle);
+    expect(toggle.hasAttribute('disabled')).toBe(true);
+    fireEvent.click(toggle);
+    expect(saveSetting).toHaveBeenCalledTimes(1);
+
+    await act(async () => {
+      fail(new Error('database is locked'));
+    });
+    expect(toggle.hasAttribute('disabled')).toBe(false);
+    expect(toggle.getAttribute('aria-checked')).toBe('false');
+    expect(reportError).toHaveBeenCalledWith(
+      expect.objectContaining({ title: "Couldn't save the reopen setting" }),
+    );
   });
 
   it('shows the update action when an update is available, and hides it when current', () => {

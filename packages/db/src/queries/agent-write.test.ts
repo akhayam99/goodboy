@@ -19,11 +19,13 @@ import { InvalidWorkflowNodeError, NodeNotMutableError, NotFoundError } from '..
 import { makeMigratedTestDatabase } from '../test-helpers/test-db';
 import { getAgentById } from './agent';
 import {
+  addAgentSourceThread,
   insertAgent,
   insertAgentBatch,
   markAgentUnviewed,
   markAgentViewed,
   recordAgentStatus,
+  removeAgentSourceThread,
   revertAgentStart,
   setAgentDone,
   setAgentProviderSession,
@@ -599,6 +601,67 @@ describe('agent writes', () => {
       await expect(write('missing' as AgentId)).rejects.toThrow(
         new NotFoundError('agent', 'missing'),
       );
+    });
+  });
+
+  describe('comment run sources', () => {
+    const LAYOUT_NOTE = 'note:ledger-layout';
+    const FILTERS_NOTE = 'note:ledger-filters';
+    const IMPORT_THREAD = 'PRRT_harborline_import_order';
+
+    const seedCommentRun = async (id: string, status: string): Promise<AgentId> => {
+      const agent = await insertAgent(db, {
+        id: brandId<AgentId>({ value: id }),
+        sessionId,
+        ordinal: 0,
+        name: 'Move the ledger header into AppLayout',
+        status: 'pending',
+        kind: 'auto',
+        sourceKind: 'comment_run',
+        sourceThreadIds: [LAYOUT_NOTE],
+      });
+      await db.execute('UPDATE agents SET status = ? WHERE id = ?', [status, agent.id]);
+      return agent.id;
+    };
+
+    const threadsOf = async (id: AgentId) => (await getAgentById(db, id))?.sourceThreadIds;
+
+    it('adds a thread once, keeping the threads the run started from', async () => {
+      const id = await seedCommentRun('lead-1', 'running');
+
+      expect(await addAgentSourceThread({ db, id, threadId: FILTERS_NOTE })).toBe(true);
+      expect(await addAgentSourceThread({ db, id, threadId: IMPORT_THREAD })).toBe(true);
+      expect(await addAgentSourceThread({ db, id, threadId: FILTERS_NOTE })).toBe(false);
+
+      expect(await threadsOf(id)).toEqual([LAYOUT_NOTE, FILTERS_NOTE, IMPORT_THREAD]);
+    });
+
+    it('refuses a stopped run, a run marked done and an agent that is not a comment run', async () => {
+      const stopped = await seedCommentRun('lead-stopped', 'stopped');
+      const done = await seedCommentRun('lead-done', 'idle');
+      await setAgentDone(db, done, true, STOPPED_AT);
+      const fixer = await seedAgent('fixer', 'running');
+
+      expect(await addAgentSourceThread({ db, id: stopped, threadId: FILTERS_NOTE })).toBe(false);
+      expect(await addAgentSourceThread({ db, id: done, threadId: FILTERS_NOTE })).toBe(false);
+      expect(await addAgentSourceThread({ db, id: fixer, threadId: FILTERS_NOTE })).toBe(false);
+      expect(await threadsOf(stopped)).toEqual([LAYOUT_NOTE]);
+    });
+
+    it('removes only the thread it names', async () => {
+      const id = await seedCommentRun('lead-1', 'running');
+      await addAgentSourceThread({ db, id, threadId: FILTERS_NOTE });
+
+      await removeAgentSourceThread({ db, id, threadId: FILTERS_NOTE });
+
+      expect(await threadsOf(id)).toEqual([LAYOUT_NOTE]);
+      await expect(
+        removeAgentSourceThread({
+          db,
+          id: brandId<AgentId>({ value: 'missing' }),
+          threadId: FILTERS_NOTE,
+        }),
+      ).rejects.toThrow(new NotFoundError('agent', 'missing'));
     });
   });
 

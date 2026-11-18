@@ -10,7 +10,7 @@ import type {
 import type { AgentKind } from '../session/agent-kind';
 import type { CommentThread } from '../integrations/github/comment-threads';
 import { prCommentLocation } from '../session/pr-comment-location';
-import { NOTE_AUTHOR_YOU } from '../resolve/notes/noteThread';
+import { NOTE_AUTHOR_YOU, noteIdOfThread } from '../resolve/notes/noteThread';
 import { OPERATOR_NOTES_GUIDANCE } from './utils/operatorNotesGuidance';
 import { RESOLVER_KICKOFF_LABELS } from './utils/resolverKickoffLabels';
 import {
@@ -110,6 +110,23 @@ const threadIdOf = ({ comment }: { readonly comment: PrComment }): string => {
   return comment.source === 'review' ? threadId.trim() : '';
 };
 
+const NOTE_SOURCE =
+  'a note the owner wrote in Goodboy on this machine, not a review comment from GitHub, GitLab or Bitbucket';
+
+type NoteThreadParams = { readonly thread: CommentThread };
+
+const isNoteThread = ({ thread }: NoteThreadParams): boolean =>
+  noteIdOfThread({ threadId: thread.head.threadId ?? '' }) !== null;
+
+const workingTreeSection = (): ReadonlyArray<string> => [
+  RESOLVER_KICKOFF_LABELS.workingTree,
+  'A note is written by the owner in Goodboy on the current working tree of this branch, uncommitted and unpushed changes included. The code it points at can exist only on this machine, missing from the remote and from any pull request.',
+  "Your copy starts on that working tree as it is. When the owner had uncommitted work, it sits in the last commit of your copy, named `goodboy: your working tree before the fix`. That work is the owner's: never revert, rewrite or amend it, and never assume it is committed or pushed.",
+  'Never fetch, never pull, never check out another branch or a pull request head, and never push. Read the code where it is.',
+  'Commit only your own change. Goodboy hands it back to the owner as uncommitted changes on top of their work.',
+  'Your reply to a note stays in Goodboy as a note reply. It is never posted to a host.',
+];
+
 const threadBlock = ({
   thread,
   position,
@@ -130,7 +147,12 @@ const threadBlock = ({
   if (location !== null) {
     lines.push(`${RESOLVER_KICKOFF_LABELS.location}${location}`);
   }
-  lines.push(`${RESOLVER_KICKOFF_LABELS.link}${head.url}`);
+  if (isNoteThread({ thread })) {
+    lines.push(`${RESOLVER_KICKOFF_LABELS.source}${NOTE_SOURCE}`);
+  }
+  if (head.url !== '') {
+    lines.push(`${RESOLVER_KICKOFF_LABELS.link}${head.url}`);
+  }
   lines.push(RESOLVER_KICKOFF_LABELS.comment, ...quotedBody({ body: head.body }));
   for (const reply of replies) {
     lines.push(`- reply from ${reply.author}:`, ...quotedBody({ body: reply.body }));
@@ -178,6 +200,7 @@ const reportingSection = ({
     '<<comment-resolved threadId="the id above" commitSha="the sha you committed">> after a commit.',
     '<<comment-wontfix threadId="the id above" reason="one plain-text line">> without a change.',
     '<<needs-input id="the thread id" options="first option|second option" recommended="the option you recommend, copied from the list">>one sentence naming the choice<</needs-input>> when the comment reads two ways that lead to different code. Give two or three options. A thread reported this way has no reply block yet.',
+    '<<comment-needs-run threadId="the thread id" reason="one plain-text line: what you found">> when reading the code shows the comment asks for more than one focused change: a rewrite across several files, new routes or new components. Stop early on that thread: change nothing for it, name what it touches in the reason and go on. The owner can start a run for it with what you found. A thread reported this way has no commit and no reply block.',
     'The reply block carries the answer the reviewer reads, and it posts only on the thread whose id it names:',
     '<<comment-reply id="the id above">>the answer for that thread<</comment-reply>>',
     `A complete report for the ${count} ${noun} of this run reads exactly like this:`,
@@ -208,6 +231,7 @@ export type PriorContext = {
   readonly commitShas?: ReadonlyArray<string>;
   readonly question?: string | null;
   readonly answer?: string | null;
+  readonly needsRun?: string | null;
   readonly intent: PriorContextIntent;
 };
 
@@ -218,6 +242,9 @@ const INTENT_SENTENCE: Record<PriorContextIntent, string> = {
   answer:
     'The owner answered the question you asked on this thread. Finish it the way the answer says.',
 };
+
+const NEEDS_RUN_RETRY_SENTENCE =
+  'The owner asked for it as one change anyway. Make the smallest change that answers the comment and report it with comment-resolved or comment-wontfix, never with comment-needs-run again.';
 
 const amendInstruction = ({ sha }: { readonly sha: string }): string =>
   `You already committed ${sha} for this thread. If that exact commit is still HEAD and \`git branch -r --contains ${sha}\` prints nothing, apply the new changes and run \`git commit --amend --no-edit\` to keep one commit for this thread. If HEAD moved past it or a remote contains it, make a normal new commit instead. Never rebase or force-push.`;
@@ -247,6 +274,14 @@ const priorContextBlock = ({
       lines.push(`- commits recorded last time: ${shas.join(', ')}`);
     }
     lines.push(`- ${INTENT_SENTENCE[entry.intent]}`);
+    const needsRun = entry.needsRun?.trim() ?? '';
+    if (needsRun !== '' && entry.intent === 'retry') {
+      lines.push(
+        '- last time you reported that this thread needs a run:',
+        ...quotedBody({ body: needsRun }),
+        `- ${NEEDS_RUN_RETRY_SENTENCE}`,
+      );
+    }
     const first = shas[0];
     if (first !== undefined && entry.intent === 'retry') {
       lines.push(`- ${amendInstruction({ sha: first })}`);
@@ -297,6 +332,23 @@ type KickoffParams = {
   readonly style?: ResolverStyle;
 };
 
+type OpeningParams = {
+  readonly count: number;
+  readonly noun: string;
+  readonly pr: PullRequestState | null;
+  readonly isAllNotes: boolean;
+};
+
+const resolverOpening = ({ count, noun, pr, isAllNotes }: OpeningParams): string => {
+  if (pr === null) {
+    return `Resolve ${count} ${noun} left as notes on this branch. There is no pull request: never push, and never open one.`;
+  }
+  if (isAllNotes) {
+    return `Resolve ${count} ${noun} left as notes on branch \`${pr.headBranch}\` of PR #${pr.number}. Never push: the owner pushes after accepting the fix.`;
+  }
+  return `Resolve ${count} ${noun} on PR #${pr.number}, branch \`${pr.headBranch}\`.`;
+};
+
 export const buildResolverKickoffParts = ({
   threads,
   pr,
@@ -306,10 +358,10 @@ export const buildResolverKickoffParts = ({
 }: KickoffParams): KickoffParts => {
   const { commitStyle = 'new', fixupTargets = [], voice = 'terse', styleNote = null } = style;
   const noun = threads.length === 1 ? 'thread' : 'threads';
+  const noteCount = threads.filter((thread) => isNoteThread({ thread })).length;
+  const hasNotes = noteCount > 0;
   const head: Array<string> = [
-    pr === null
-      ? `Resolve ${threads.length} ${noun} left as notes on this branch. There is no pull request: never push, and never open one.`
-      : `Resolve ${threads.length} ${noun} on PR #${pr.number}, branch \`${pr.headBranch}\`.`,
+    resolverOpening({ count: threads.length, noun, pr, isAllNotes: noteCount === threads.length }),
   ];
   for (const [index, thread] of threads.entries()) {
     head.push('', ...threadBlock({ thread, position: index + 1, total: threads.length }));
@@ -317,7 +369,10 @@ export const buildResolverKickoffParts = ({
   if (priorContext !== undefined && priorContext.length > 0) {
     head.push('', ...priorContextBlock({ entries: priorContext }));
   }
-  const rules: Array<string> = [...instructionsSection({ count: threads.length })];
+  const rules: Array<string> = [
+    ...(hasNotes ? [...workingTreeSection(), ''] : []),
+    ...instructionsSection({ count: threads.length }),
+  ];
   const threadIds = threads.flatMap((thread) => {
     const threadId = threadIdOf({ comment: thread.head });
     return threadId === '' ? [] : [threadId];

@@ -397,11 +397,25 @@ writing to it reopens it to **Deciding**.
   **Resend approval**, and the dock that approved it reads "Plan v1 approved.
   Couldn't send it to Auto." with the same **Resend approval**: it sends
   "Approved plan v1." again.
-  When two plans exist the dock shows the one that waits for your OK, else the
-  newest (`dockPlanRowOf`). An approved plan is the
+  One selector decides the dock line (`dockPlanOf`): waiting, updating,
+  failed or settled. A plan whose planner the Lead discarded, or whose
+  artifact is discarded or superseded, never asks. A planner the Lead
+  delegates after a waiting plan replaces it (`planLineOf`): the line reads
+  "Updating plan v1 to v2" with the planner's state and time, Approve and
+  **Ask for changes** stay disabled with the reason as tooltip
+  (`planBlockedReasonOf`); when the Next step already asks for that
+  revision, Approve is left out so Continue stays the one primary. The new
+  plan counts on as v2 while v1 reads
+  Superseded. An open revise and a change sent for v1 read the same way. A planner still waiting for your go (`awaiting_confirm`) does not, so the plan keeps
+  asking for v1. A
+  planner that failed reads "Plan v2 failed" with the reason, **Retry plan
+  v2** and **Keep plan v1**; Keep stores `request.keptBase` on the failed
+  delegation (`keepAutoPlanBase`, refused once v1 is no longer current), and
+  only then does v1 ask again. A late failure or change for an older version
+  says nothing. The glance, the composer placeholder and the retry targets
+  read the same selector. An approved plan is the
   artifact colour (`AUTO_STATE_TONE.artifact`), never green, and the line does
-  not unmount: it settles to "Plan v1 approved" with **Open plan**. While the
-  plan is revised it reads "Plan v1 · changes asked". A plan a writer took
+  not unmount: it settles to "Plan v1 approved" with **Open plan**. A plan a writer took
   reads "Plan v1 used", and at the level **Never** it reads
   "Plan v1 · no approval needed" (`planAwaitsYou`): neither is an ask.
   Without a plan the dock folds to the live row (`DockLiveLine`): what runs,
@@ -554,8 +568,8 @@ writing to it reopens it to **Deciding**.
   secondary. Each card row shows the short task title,
   role glyph and elapsed active time (`DelegationClock`, shared with the rail).
   A delegation line's **Open** opens that child's page (`useAutoTreeActions`
-  `openChild`). While a plan waits for approval the ask is the state. The composer says "Message Auto" while Auto
-  waits, or "Message Auto, or describe changes to plan v1", and shows **Ask
+  `openChild`). While a plan waits for approval the ask is the state. The composer says "Message Lead" at rest and while
+  the Lead waits, or "Message Lead, or describe changes to plan v1", and shows **Ask
   first** like any agent composer.
 - **A child opens on its page, from every door** (`useAutoChildChat`, `AgentDetailPane`):
   a tree row, a delegation line, the Overview, a notification and Search or run land on one
@@ -637,8 +651,8 @@ writing to it reopens it to **Deciding**.
   that loads the workspace or launches in between leaves the claimed agent
   running and an adoption or detach is still refused as a running turn
   ([turns.md](turns.md#turn-admission)). The turn
-  runs only on the routed provider and model, and only on a provider in
-  `AUTO_CHILD_PROVIDERS`: a model picked in the child's composer or a retry
+  runs only on the routed provider and model, and only on a provider
+  `autoChildProviders` allows for its role: a model picked in the child's composer or a retry
   aimed elsewhere is refused, agent pins are ignored, a provider fallback that
   leaves the route is dropped so the failure reaches Auto, and a cooldown or
   budget move off the route is refused. Each refusal shows the person a plain
@@ -655,7 +669,8 @@ writing to it reopens it to **Deciding**.
   take shows in the child's transcript. A reading role (Scout, Planner,
   Investigator, Reviewer) cannot write: on Claude it keeps Read, Grep and Glob
   in plan mode with no shell; on Codex it runs in the read-only sandbox, which
-  blocks writes but can still run read-only commands.
+  blocks writes but can still run read-only commands; on Cursor it runs in
+  `--mode plan` without `--force`, as Auto itself does there.
   The dock's **Continue** asks Auto to continue
   a stopped child, naming its delegation so Auto sends `retryOf` and the same
   agent goes on in its worktree; it never runs a plain turn on it
@@ -815,7 +830,9 @@ rows read the stored `agents.autoPlanApproval` setting through
 `isAutoPlanApprovalRequired`; only the exact value `false` turns that switch
 off. There is no screen for that setting yet. **Ask for changes** opens the
 chat of Auto: a change written there makes Auto rework the same plan into
-the next version.
+the next version. The dock shows the newest plan that waits for the user and never a
+discarded one (`dockPlanOf`, `planAwaitsYou` reads only `active` plans), so a plan the
+Lead dropped stops asking for approval.
 
 A writer admitted with a plan marks that plan used in the admission
 transaction; a reader role (Reviewer, Scout) leaves it ready. The SQL write
@@ -1053,6 +1070,31 @@ It decides by ending its final reply with at most one block:
   transaction (`failAttempt`, `stoppedRevise`). The deadline and idle cancel of `enforceDeadlines` stops with `by: 'auto'`
   too. A stop on a child that already ended changes nothing and answers `alreadyEnded`, never a
   refusal.
+- A child spec with `revises` asks for the next version of an artifact, sent to the role that
+  made it (leave `role` out). `parseDelegateSpec` reads `{"artifactId","expectedRevision"}`, a
+  bare artifact id, the `revision` or `version` keys and a version written as text ("1", "v1");
+  a missing version means the latest one (`resolveDelegateChild`). A revise needs no `reason`
+  (`DELEGATE_REVISE_REASON`), and `retryOf` next to `revises` is read as the revise. A refusal
+  names the accepted shape in one line (`DELEGATE_REVISES_SHAPE`), and the stale refusal also
+  names the latest version.
+- `close` tidies the Lead's own work (`target` is a delegation id or an artifact id, `as` is
+  `done`, `skipped` or `discarded`, and `reason`; `AUTO_CLOSE_SHAPE`). It is the one block that
+  may also come before the last block of a turn: `parseAutoCloseBlocks` reads those, and
+  `applyAutoBlock` runs them first and writes their refusals as one row
+  (`refusal:<run>:close`). `closeTarget` stops a working agent first (`stopChild`), then stores
+  `request_json.closed` and the agent's `done_at` in one write that is guarded by the tree owner and generation. A
+  closed return counts as decided (`isAutoReturnDecided`). The rail shows the child as done,
+  with **Closed by the Lead**, **Skipped by the Lead** or **Discarded by the Lead** and the
+  reason (`closedSentenceOf`). A discarded agent leaves the rail and its transcript stays
+  (`readAutoTreeViews`). The same verb twice, or a verb for a child already gone, is a no-op.
+  An agent that waits to start or for an answer is refused with `not_running`. An artifact can
+  only be discarded: when the Approve plan row is Ask and the plan waits for the user, the ask
+  is stored on the planner delegation (`request_json.planDiscardAsk`) and the dock reads
+  **The Lead wants to drop plan vN**, with **Drop plan vN** next to Approve
+  (`planDiscardAskOf`, `drop` on `useAutoPlanApproval`). Otherwise `discardAutoPlan` sets the plan
+  `discarded` at once. The user's Drop goes through the same `discardAutoPlan`, then reloads
+  the runs and tells the other windows, as an approval does. The `c07-auto-lead-tidy` scene
+  shows the dock ask and a child closed by the Lead.
 - `finish` says the work is done (`summary`). It is refused while an agent is open or a result
   waits, and the refusal says why. With Close the work at You it stores nothing: the tree still
   rests as Idle until the user marks it finished, and the prompt asks Auto to suggest **Mark
@@ -2076,16 +2118,23 @@ refuses to its children for the acts above.
 Auto itself runs on Claude, Codex, Cursor, Gemini and Copilot (`AUTO_OWN_PROVIDERS`), because it only reads
 there. It never runs on the opencode family (opencode, OpenRouter, Moonshot,
 `AUTO_UNCONFINED_PROVIDERS`): the `plan` agent of opencode denies edits but asks before a shell
-command, and Goodboy always passes `--dangerously-skip-permissions` to opencode, which approves the
-ask, so a read-only turn there could still run a shell. Whether opencode can run without that flag
-and deny the ask is unproven, so Auto is kept off it instead. Three layers hold the line: the
+command. A read-only role no longer gets `--dangerously-skip-permissions`, the flag that approves
+the ask, but whether `opencode run` then denies the ask instead of waiting is unproven, so Auto is
+kept off it instead. Three layers hold the line: the
 composer lists only `AUTO_OWN_PROVIDERS` and shows "Auto needs a connected provider" when nothing
 else is connected; `kindRouting` for Auto never resolves to the family (the role default, a stored
 role pick and the model of the chat are all skipped) and `spawnAgent` refuses an Auto agent on it;
 and `turn_spawn` refuses `auto` and every reading role on an opencode binary (`ensure_confinement`).
-Its children run on Claude and Codex, never on Cursor, Gemini or Copilot, which cannot confine a role
-(`AUTO_CHILD_PROVIDERS`): `routeTurn` refuses a child turn whose final provider is outside the list,
-and `turn_spawn` refuses it again (`ensure_auto_child`). The pool of a tree is the run
+A reading child (scout, planner, investigator, reviewer) runs wherever Auto itself runs, under the
+same read-only confinement (Cursor `--mode plan` included). A writing child runs only on Claude and
+Codex (`AUTO_WRITER_CHILD_PROVIDERS`): a Cursor writer turn passes `--force` and has no flag that
+denies `git push` or `--no-verify`, and the launch guard runs only on Claude and Codex.
+`autoChildProviders` gives the list per role; `routeTurn` refuses a child turn whose final provider
+is outside it, and `turn_spawn` refuses it again (`ensure_auto_child`). Routing resolves the role
+default only over the providers of that list that are connected, not cooling down and not over
+budget, so a Claude usage limit moves a reading child to Cursor instead of blocking it. When nothing
+is left, `childRoutingRefusal` names each connected provider with its reason (usage limit until a
+time, budget reached, no visible model, reading roles only) and points to Settings › Models. The pool of a tree is the run
 pool when there is one, else the workspace pool (the providers the workspace
 policy on the Models page does not turn off), else every allowed provider
 (`autoChildPool`, `runProviderPool`).

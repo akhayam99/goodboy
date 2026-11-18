@@ -83,7 +83,7 @@ describe('agentStoppedCopy', () => {
       isRunStep: false,
     });
 
-    expect(copy.title).toBe('Stopped by you. Auto reads the result.');
+    expect(copy.title).toBe('Stopped by you. The Lead reads the result.');
     expect(copy.body).toBeNull();
     expect(copy.canContinue).toBe(true);
   });

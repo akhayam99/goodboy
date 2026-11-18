@@ -31,6 +31,15 @@ export const useAgentRows = (): AgentRows => {
       gemini: state.geminiStatus,
     })),
   );
+  const authReasons = useAppStore(
+    useShallow((state) => ({
+      anthropic: state.authResults?.anthropic?.reason ?? null,
+      codex: state.authResults?.codex?.reason ?? null,
+      cursor: state.authResults?.cursor?.reason ?? null,
+      gemini: state.authResults?.gemini?.reason ?? null,
+      copilot: state.authResults?.copilot?.reason ?? null,
+    })),
+  );
   const infoOf = ({ id }: InfoParams) => providers.find((provider) => provider.id === id) ?? null;
   const statuses: Readonly<Record<AgentProviderId, ProviderStatus | null>> = {
     ...stored,
@@ -43,6 +52,7 @@ export const useAgentRows = (): AgentRows => {
       status: statuses[id],
       connect: connect[id],
       check: detection.checks[id],
+      authReason: authReasons[id],
     }),
   );
   return { rows, ready: readyAgents({ providers }), detection };

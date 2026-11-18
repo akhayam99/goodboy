@@ -54,6 +54,7 @@ export type AgentSourceKind =
   | 'diff_comment'
   | 'open_question'
   | 'comment_recheck'
+  | 'comment_run'
   | 'failed_check';
 
 export type StepDef = Readonly<{

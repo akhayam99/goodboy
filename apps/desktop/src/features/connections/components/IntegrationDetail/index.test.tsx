@@ -87,6 +87,28 @@ describe('IntegrationDetail', () => {
     within(account).getByText('gitlab.northwind.dev');
   });
 
+  it('keeps Check again busy while the key is checked and checks once', async () => {
+    let answer: (hasSecret: boolean) => void = () => undefined;
+    const hasSecret = vi.fn(
+      () =>
+        new Promise<boolean>((resolve) => {
+          answer = resolve;
+        }),
+    );
+    stubStoryInvoke({ integration_credential_has_secret: hasSecret });
+    renderGitlab();
+
+    const again = await screen.findByRole('button', { name: 'Check GitLab again' });
+    await waitFor(() => expect(again.getAttribute('aria-busy')).toBe('true'));
+    fireEvent.click(again);
+    expect(hasSecret).toHaveBeenCalledTimes(1);
+
+    answer(true);
+    await waitFor(() => expect(again.getAttribute('aria-busy')).toBeNull());
+    fireEvent.click(again);
+    await waitFor(() => expect(hasSecret).toHaveBeenCalledTimes(2));
+  });
+
   it('pauses the uses and offers a new key in place when the key is missing', async () => {
     stubStoryInvoke({ integration_credential_has_secret: false });
     renderGitlab();

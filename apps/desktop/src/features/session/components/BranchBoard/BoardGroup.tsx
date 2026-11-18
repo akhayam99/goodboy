@@ -1,7 +1,9 @@
 import { CircleAlert } from '@goodboy/ui/icons';
 import { Button, ICON_SIZE } from '@goodboy/ui';
 import type { VisibleGroup } from '../../central/board/visibleGroupsOf';
+import { projectSectionsOf } from '../../central/board/projectSectionsOf';
 import { BoardMergeInOrder } from './BoardMergeInOrder';
+import { BoardProjectSection } from './BoardProjectSection';
 import { BoardRemoveButton } from './BoardRemoveButton';
 import { BoardTile } from './BoardTile';
 import { useBoardContext } from './useBoardContext';
@@ -13,7 +15,7 @@ type Props = {
 };
 
 export const BoardGroup = ({ group, isFirstOpenGroup, onShowMore }: Props) => {
-  const { removal } = useBoardContext();
+  const { removal, rowById, isMultiProject } = useBoardContext();
   const isMerged = group.id === 'merged';
   return (
     <div
@@ -47,9 +49,11 @@ export const BoardGroup = ({ group, isFirstOpenGroup, onShowMore }: Props) => {
           ))}
         </ul>
       ) : null}
-      {group.rowIds.map((rowId) => (
-        <BoardTile key={rowId} rowId={rowId} />
-      ))}
+      {isMultiProject
+        ? projectSectionsOf({ rowIds: group.rowIds, rowById }).map((section) => (
+            <BoardProjectSection key={section.projectName ?? ''} section={section} />
+          ))
+        : group.rowIds.map((rowId) => <BoardTile key={rowId} rowId={rowId} />)}
       {group.hiddenCount > 0 ? (
         <div className="flex px-2">
           <Button size="sm" variant="quiet" onClick={onShowMore}>

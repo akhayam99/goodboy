@@ -18,6 +18,8 @@ import {
 import type { PullRequestPresentationState } from '../../shared/utils/pullRequestPresentation';
 import type { ResolvedAction } from '../actions/types';
 import { applyFixesLabel } from '../resolve/commentProjection';
+import { COMMENT_RUN_COPY } from '../resolve/commentRunCopy';
+import { CONCEPT_ICONS } from '../../shared/components/conceptIcons';
 import {
   branchStepsOf,
   type BranchCheckFacts,
@@ -30,7 +32,7 @@ import {
 
 type BranchPrimarySource = 'diff' | 'pullRequest' | 'review' | 'session' | 'step';
 
-export type BranchStepAction = 'answer' | 'apply' | 'fixComments' | 'checks';
+export type BranchStepAction = 'answer' | 'apply' | 'fixComments' | 'suggestRun' | 'checks';
 
 export type BranchPrimary = {
   readonly source: BranchPrimarySource;
@@ -86,6 +88,7 @@ export const BRANCH_STEP_ID: Readonly<Record<BranchStepAction, string>> = {
   answer: 'step.answer',
   apply: 'step.apply',
   fixComments: 'step.fixComments',
+  suggestRun: 'step.suggestRun',
   checks: 'step.checks',
 };
 
@@ -134,6 +137,27 @@ const stepAction = ({ action, label, icon, note = null }: StepActionParams): Bra
   note,
   isExpanded: null,
 });
+
+type SuggestParams = Pick<Params, 'comments'>;
+
+const suggestRunOf = ({ comments }: SuggestParams): BranchPrimary =>
+  stepAction({
+    action: 'suggestRun',
+    label: COMMENT_RUN_COPY.startRun,
+    icon: CONCEPT_ICONS.runs,
+    note: COMMENT_RUN_COPY.runSuggested({ count: comments.runSuggested }),
+  });
+
+const fixCommentsOf = ({ comments }: SuggestParams): BranchPrimary =>
+  stepAction({
+    action: 'fixComments',
+    label: `Fix ${countNoun({ count: comments.fixable, one: 'comment', many: 'comments' })}`,
+    icon: Wrench,
+    note:
+      comments.runSuggested > 0
+        ? COMMENT_RUN_COPY.runSuggested({ count: comments.runSuggested })
+        : null,
+  });
 
 type ReviewActionParams = {
   readonly label: string;
@@ -279,11 +303,9 @@ const stepPrimaryOf = ({
         ? push()
         : reviewAction({ label: NAMES.retryPush, icon: RotateCw });
     case 'fixComments':
-      return stepAction({
-        action: 'fixComments',
-        label: `Fix ${countNoun({ count: comments.fixable, one: 'comment', many: 'comments' })}`,
-        icon: Wrench,
-      });
+      return fixCommentsOf({ comments });
+    case 'suggestRun':
+      return suggestRunOf({ comments });
     case 'publish':
       return reviewAction({
         label: `Publish ${countNoun({ count: review.replies, one: 'reply', many: 'replies' })}`,
@@ -400,7 +422,11 @@ export const branchActionsOf = ({ ...facts }: Params): BranchActions => {
   if (isRebaseStopped(facts) || primary.blockedReason !== null) {
     return { steps, step, primary: null, secondary: null };
   }
-  return { steps, step, primary, secondary: null };
+  const secondary =
+    step === 'fixComments' && facts.comments.runSuggested > 0
+      ? suggestRunOf({ comments: facts.comments })
+      : null;
+  return { steps, step, primary, secondary };
 };
 
 export const BRANCH_MENU_PULL_REQUEST: ReadonlyArray<string> = [

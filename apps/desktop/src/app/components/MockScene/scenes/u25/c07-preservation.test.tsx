@@ -90,10 +90,10 @@ describe('Auto: every capability keeps a home in Auto', () => {
     expect(screen.queryByText(/Reserved up to/)).toBeNull();
   });
 
-  it('Delegation result and Returned to Auto: the end of the child page', async () => {
+  it('Delegation result and Returned to the Lead: the end of the child page', async () => {
     mount({ Scene: U25_C07_AUTO_SCENES['c07-auto-child-done'] });
 
-    expect(await screen.findByText('Returned to Auto', undefined, WAIT)).toBeDefined();
+    expect(await screen.findByText('Returned to the Lead', undefined, WAIT)).toBeDefined();
     expect(screen.getByText('Not checked: timed out')).toBeDefined();
   });
 
@@ -160,7 +160,7 @@ describe('Auto: every capability keeps a home in Auto', () => {
         WAIT,
       ),
     ).toBeDefined();
-    expect(screen.queryByText('Open Auto')).toBeNull();
+    expect(screen.queryByText('Open the Lead')).toBeNull();
     expect([...document.querySelectorAll('[data-session-crumbs] li')].at(-2)?.textContent).toMatch(
       /^Why does the ledger retry post a second credit/,
     );

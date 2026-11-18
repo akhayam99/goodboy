@@ -1,4 +1,5 @@
 import type { ResolveQueueRow } from './buildResolveQueueRows';
+import { commentLaneOf } from './commentLaneOf';
 import { resolveWordOfState, type ResolveWord } from './commentProjection';
 import { isPushFailure, reviewCommentStateOf } from './reviewCommentState';
 
@@ -52,20 +53,31 @@ const resolveWordOfRow = ({ row }: { readonly row: ResolveQueueRow }): ResolveWo
 const isFixableWord = ({ word }: { readonly word: ResolveWord }): boolean =>
   word === 'open' || word === 'couldnt_fix';
 
-export const fixableThreadIdsOf = ({
-  rows,
-}: {
+type RowsParams = {
   readonly rows: ReadonlyArray<ResolveQueueRow>;
-}): ReadonlyArray<string> =>
+  readonly inRunThreadIds: ReadonlySet<string>;
+};
+
+type ElsewhereParams = Pick<RowsParams, 'inRunThreadIds'> & {
+  readonly row: ResolveQueueRow;
+};
+
+const isElsewhere = ({ row, inRunThreadIds }: ElsewhereParams): boolean => {
+  const lane = commentLaneOf({ row, inRunThreadIds });
+  return lane === 'run' || lane === 'in_run';
+};
+
+export const fixableThreadIdsOf = ({ rows, inRunThreadIds }: RowsParams): ReadonlyArray<string> =>
   rows.flatMap((row) =>
-    isFixableWord({ word: resolveWordOfRow({ row }) }) ? [row.thread.threadId] : [],
+    isFixableWord({ word: resolveWordOfRow({ row }) }) && !isElsewhere({ row, inRunThreadIds })
+      ? [row.thread.threadId]
+      : [],
   );
 
-export const reviewTallyOf = ({
-  rows,
-}: {
-  readonly rows: ReadonlyArray<ResolveQueueRow>;
-}): ReviewTally => reviewTallyOfWords({ words: rows.map((row) => resolveWordOfRow({ row })) });
+export const reviewTallyOf = ({ rows, inRunThreadIds }: RowsParams): ReviewTally => ({
+  ...reviewTallyOfWords({ words: rows.map((row) => resolveWordOfRow({ row })) }),
+  fixable: fixableThreadIdsOf({ rows, inRunThreadIds }).length,
+});
 
 export const reviewTallyParts = ({
   tally,

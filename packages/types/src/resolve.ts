@@ -27,6 +27,8 @@ export const RESOLVE_FAILURE_CAUSES = [
   'accept_conflict',
   'worktree_missing',
   'capture_failed',
+  'no_result',
+  'needs_a_run',
 ] as const;
 export type ResolveFailureCause = (typeof RESOLVE_FAILURE_CAUSES)[number];
 export type ResolveThread = Readonly<{

@@ -132,7 +132,7 @@ export const useJobBannerActions = ({ sessionId, worktreePath, agentId }: Params
       }
       runInline({
         key: 'resolve-auto',
-        failureTitle: "Couldn't start Auto.",
+        failureTitle: "Couldn't start the Lead.",
         task: verbs.resolveWithAuto,
       });
     },

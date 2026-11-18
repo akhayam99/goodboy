@@ -7,7 +7,7 @@ import {
   readWorktreeStatus,
   subscribe,
 } from '../../../store/runtime/worktreeStatuses/cache';
-import { unmergedCount } from '../../../shared/lib/gitStatus';
+import { changedCount, unmergedCount } from '../../../shared/lib/gitStatus';
 import { pickKeys } from '../../../shared/utils/pickKeys';
 import { rebaseStatusTargetsOf } from '../behindBranchesOf';
 
@@ -29,8 +29,10 @@ const fingerprintOf = ({ status }: FingerprintParams): string =>
     : JSON.stringify([
         status.head,
         status.mainDistance,
+        status.upstreamDistance,
         status.inProgress ?? null,
         unmergedCount({ workingTree: status.workingTree }),
+        changedCount({ workingTree: status.workingTree }),
       ]);
 
 export const useRebaseStatuses = ({

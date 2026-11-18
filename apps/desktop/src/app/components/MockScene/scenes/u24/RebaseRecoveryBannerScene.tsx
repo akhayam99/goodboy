@@ -5,17 +5,18 @@ import type { RebaseJobSceneState } from './rebaseJobSeed';
 type Props = {
   readonly state: RebaseJobSceneState;
   readonly isNoteOpen?: boolean;
+  readonly query?: string;
 };
 
 const OPEN_DELAY_MS = 500;
 
-export const RebaseRecoveryBannerScene = ({ state, isNoteOpen = false }: Props) => {
+export const RebaseRecoveryBannerScene = ({ state, isNoteOpen = false, query = '' }: Props) => {
   const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
-    window.history.replaceState(null, '', `/?state=${state}`);
+    window.history.replaceState(null, '', `/?state=${state}${query === '' ? '' : `&${query}`}`);
     setIsReady(true);
-  }, [state]);
+  }, [query, state]);
 
   useEffect(() => {
     if (!isReady || !isNoteOpen) {
