@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { describe, it } from 'node:test';
 import { fileURLToPath } from 'node:url';
+import { testPlanOf } from './ci-changes.mjs';
 import { verifyShards } from './check-test-shards.mjs';
 
 describe('verifyShards', () => {
@@ -37,8 +38,19 @@ describe('ci.yml shard matrix', () => {
     'utf8',
   );
 
-  it('runs the six shards this check covers', () => {
-    assert.match(workflow, /shard: \[1, 2, 3, 4, 5, 6\]/);
-    assert.match(workflow, /--shard=\$\{\{ matrix\.shard \}\}\/6/);
+  it('runs the six shards this check covers on a full run', () => {
+    assert.match(
+      workflow,
+      /shard: \$\{\{ fromJSON\(needs\.changes\.outputs\.desktop_shards\) \}\}/,
+    );
+    assert.match(workflow, /--shard="\$SHARD"/);
+    assert.deepEqual(testPlanOf({ scope: 'full', selection: null }).desktopShards, [
+      '1/6',
+      '2/6',
+      '3/6',
+      '4/6',
+      '5/6',
+      '6/6',
+    ]);
   });
 });

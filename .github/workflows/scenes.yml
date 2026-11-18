@@ -2,30 +2,32 @@ name: scene measures
 
 on:
   workflow_dispatch:
+  schedule:
+    - cron: '41 2 * * *'
   pull_request:
     paths:
       - 'apps/desktop/src/**'
       - 'packages/ui/**'
+      - 'scripts/validate-scenes.mjs'
+      - 'scripts/validateScenes*.mjs'
+      - '.github/workflows/scenes.yml'
 
 permissions:
   contents: read
 
+concurrency:
+  group: scenes-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   scenes:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: ${{ github.event_name == 'pull_request' && 30 || 75 }}
     steps:
       - name: checkout
         uses: actions/checkout@v7.0.1
-      - name: setup pnpm
-        uses: pnpm/action-setup@v6
-      - name: setup node
-        uses: actions/setup-node@v7.1.0
-        with:
-          node-version: 22
-          cache: pnpm
-      - name: install
-        run: pnpm install --frozen-lockfile
+      - name: setup workspace
+        uses: ./.github/actions/setup-workspace
       - name: build mock bundle
         run: VITE_GOODBOY_MOCK=1 pnpm --filter @goodboy/desktop exec vite build --outDir "$RUNNER_TEMP/scenes-dist" --emptyOutDir
       - name: start preview
@@ -47,9 +49,11 @@ jobs:
       - name: scene measures
         id: measures
         continue-on-error: true
-        timeout-minutes: 25
+        timeout-minutes: ${{ github.event_name == 'pull_request' && 22 || 65 }}
+        env:
+          SKIP: ${{ github.event_name == 'pull_request' && 'menus' || 'none' }}
         run: |
-          VALIDATE_CHROME="$(command -v google-chrome)" node scripts/validate-scenes.mjs --app http://127.0.0.1:5230
+          VALIDATE_CHROME="$(command -v google-chrome)" node scripts/validate-scenes.mjs --app http://127.0.0.1:5230 --skip "$SKIP"
       - name: scene measures verdict
         if: always() && steps.measures.outcome == 'failure'
         run: |

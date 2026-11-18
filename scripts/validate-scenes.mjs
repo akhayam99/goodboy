@@ -783,9 +783,9 @@ const sceneIds = () =>
 
 const menuScenes = ({ only: filter }) => {
   const ids = sceneIds();
-  if (filter === undefined || filter === 'menus') return ids;
-  const wanted = filter.split(',');
-  return ids.filter((id) => wanted.includes(id));
+  if (filter === undefined) return args.skip === 'menus' ? [] : ids;
+  if (filter === 'menus') return ids;
+  return ids.filter((id) => filter.split(',').includes(id));
 };
 
 const readyOnly = async () => {

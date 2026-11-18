@@ -8,12 +8,13 @@ import { evaluateGate } from './ci-gate.mjs';
 const needs = ({
   changes = 'success',
   tests = 'true',
+  zonesWanted = 'true',
   checks = 'success',
   desktop = 'success',
   zones = 'success',
   packages = 'success',
 }) => ({
-  changes: { result: changes, outputs: { tests } },
+  changes: { result: changes, outputs: { tests, zones: zonesWanted } },
   checks: { result: checks, outputs: {} },
   'test-desktop': { result: desktop, outputs: {} },
   'test-time-zones': { result: zones, outputs: {} },
@@ -47,6 +48,24 @@ describe('evaluateGate', () => {
   it('is red when a time zone run was skipped although changes wanted the tests', () => {
     assert.equal(
       evaluateGate({ needs: needs({ tests: 'true', zones: 'skipped' }) }).isGreen,
+      false,
+    );
+  });
+
+  it('is green when the time zone runs are skipped because no related test reads a scene', () => {
+    assert.equal(
+      evaluateGate({ needs: needs({ zonesWanted: 'false', zones: 'skipped' }) }).isGreen,
+      true,
+    );
+  });
+
+  it('never lets the zones output excuse a skipped desktop or packages job', () => {
+    assert.equal(
+      evaluateGate({ needs: needs({ zonesWanted: 'false', desktop: 'skipped' }) }).isGreen,
+      false,
+    );
+    assert.equal(
+      evaluateGate({ needs: needs({ zonesWanted: 'false', packages: 'skipped' }) }).isGreen,
       false,
     );
   });

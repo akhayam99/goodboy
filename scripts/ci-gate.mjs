@@ -1,7 +1,11 @@
 import { fileURLToPath } from 'node:url';
 
 const REQUIRED_JOBS = ['changes', 'checks', 'test-desktop', 'test-time-zones', 'test-packages'];
-const SKIPPABLE_JOBS = ['test-desktop', 'test-time-zones', 'test-packages'];
+const SKIP_OUTPUTS = {
+  'test-desktop': ['tests'],
+  'test-time-zones': ['tests', 'zones'],
+  'test-packages': ['tests'],
+};
 
 export const evaluateGate = ({ needs }) => {
   const failures = [];
@@ -9,8 +13,9 @@ export const evaluateGate = ({ needs }) => {
   if (changesResult !== 'success') {
     failures.push(`changes: ${changesResult ?? 'missing'}, expected success`);
   }
-  const hasChangesSkippedTests =
-    changesResult === 'success' && needs.changes.outputs?.tests === 'false';
+  const isSkipAllowed = ({ job }) =>
+    changesResult === 'success' &&
+    (SKIP_OUTPUTS[job] ?? []).some((output) => needs.changes.outputs?.[output] === 'false');
   for (const job of REQUIRED_JOBS) {
     if (!(job in needs)) {
       failures.push(`${job}: missing from needs`);
@@ -23,7 +28,7 @@ export const evaluateGate = ({ needs }) => {
     if (result === 'success') {
       continue;
     }
-    if (result === 'skipped' && SKIPPABLE_JOBS.includes(job) && hasChangesSkippedTests) {
+    if (result === 'skipped' && isSkipAllowed({ job })) {
       continue;
     }
     failures.push(`${job}: ${result}`);

@@ -12,6 +12,8 @@ const SKIPPED_STEPS = {
   audit: 'network advisory lookup, only on a pull request that changes the lockfile',
   'lockfile changed': 'decides whether the audit runs',
   'detect rust changes': 'the gate decides with git diff against the base',
+  'lint scope':
+    'gate:quick lints the changed files with its own git diff, the full gate lints the tree',
   'toolchain pin': 'compares workflow files, not a code check',
   'stub frontend dist': 'ensure_frontend_dist in scripts/gate.sh',
 };

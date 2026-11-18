@@ -9,9 +9,16 @@ on:
       - 'rust-toolchain.toml'
       - '.github/workflows/rust.yml'
       - '.github/actions/tauri-linux-setup/**'
+      - 'packages/db/src/migrations/**'
+      - 'packages/core/src/auto/roles.ts'
+      - 'packages/core/src/slug/*.fixture.json'
 
 permissions:
   contents: read
+
+concurrency:
+  group: rust-${{ github.event.pull_request.number || github.sha }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   check:
@@ -36,7 +43,7 @@ jobs:
             echo "rust=true" >> "$GITHUB_OUTPUT"
             exit 0
           fi
-          if printf '%s\n' "$files" | grep -qE '^(apps/desktop/src-tauri/|rust-toolchain\.toml$|\.github/workflows/rust\.yml$|\.github/actions/tauri-linux-setup/)'; then
+          if printf '%s\n' "$files" | grep -qE '^(apps/desktop/src-tauri/|rust-toolchain\.toml$|\.github/workflows/rust\.yml$|\.github/actions/tauri-linux-setup/|packages/db/src/migrations/|packages/core/src/auto/roles\.ts$|packages/core/src/slug/[^/]*\.fixture\.json$)'; then
             echo "rust=true" >> "$GITHUB_OUTPUT"
           else
             echo "rust=false" >> "$GITHUB_OUTPUT"
