@@ -30,6 +30,7 @@ let useAppStore: StoryStore;
 beforeAll(async () => {
   useAppStore = await importStore();
   await import('../../../../../features/terminal/components/TerminalDrawer');
+  await import('../../../../../features/session/ask/components/AskDrawer');
 }, STORE_IMPORT_TIMEOUT_MS);
 
 beforeEach(async () => {
@@ -80,7 +81,7 @@ describe('c03 session tools scenes', () => {
   it('opens Ask as a detail panel', async () => {
     await mount('c03-panes-ask');
     expect(useAppStore.getState().drawer).toMatchObject({ kind: 'ask', sessionId: SESSION_ID });
-    screen.getByRole('region', { name: 'Ask' });
+    await vi.waitFor(() => screen.getByRole('region', { name: 'Ask' }));
     expect(pressed()).toEqual([]);
   });
 

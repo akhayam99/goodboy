@@ -23,6 +23,7 @@ const SCENES = { ...U24_CHECKS_ANALYZE_SCENES, ...U25_DEBUGGER_SCENES };
 
 beforeAll(async () => {
   await importStore();
+  await import('./index');
 }, STORE_IMPORT_TIMEOUT_MS);
 beforeEach(async () => {
   await resetStoryStore();
@@ -49,12 +50,12 @@ const showDrawer = ({ name }: Params) => {
       <Scene />
     </ToastProvider>,
   );
-  return screen.getByRole('region', { name: 'Debugger' });
+  return screen.findByRole('region', { name: 'Debugger' });
 };
 
 describe('the Debugger drawer', () => {
-  it('reads as steps and prose, with the references behind rows', () => {
-    const drawer = showDrawer({ name: 'debugger-drawer-proposal' });
+  it('reads as steps and prose, with the references behind rows', async () => {
+    const drawer = await showDrawer({ name: 'debugger-drawer-proposal' });
     for (const name of ['Finding', 'Proposed fix']) {
       expect(within(drawer).getByRole('heading', { level: 3, name })).toBeDefined();
     }
@@ -73,8 +74,8 @@ describe('the Debugger drawer', () => {
     expect(within(drawer).queryByText('Sonnet 5.5')).toBeNull();
     expect(within(drawer).getByRole('button', { name: /^Transcript of / })).toBeDefined();
   });
-  it('says Running with the live step while the analysis works', () => {
-    const drawer = showDrawer({ name: 'debugger-drawer-running' });
+  it('says Running with the live step while the analysis works', async () => {
+    const drawer = await showDrawer({ name: 'debugger-drawer-running' });
     expect(
       within(drawer).getByText('Running · Running the retry reproduction in ledger-core.'),
     ).toBeDefined();
@@ -83,8 +84,8 @@ describe('the Debugger drawer', () => {
     expect(within(chain).getByText('Analyze')).toBeDefined();
     expect(within(drawer).queryByRole('button', { name: /^Start/ })).toBeNull();
   });
-  it('reads what it was given as facts and hides the paths behind a file count', () => {
-    const drawer = showDrawer({ name: 'debugger-drawer-proposal' });
+  it('reads what it was given as facts and hides the paths behind a file count', async () => {
+    const drawer = await showDrawer({ name: 'debugger-drawer-proposal' });
     fireEvent.click(within(drawer).getByRole('button', { name: 'What it was given' }));
     expect(within(drawer).getByText('Pull request').nextElementSibling?.textContent).toBe('#318');
     expect(within(drawer).getByText('Head').nextElementSibling?.textContent).toBe('a13bc4d');
@@ -103,16 +104,16 @@ describe('the Debugger drawer', () => {
       within(within(drawer).getByRole('list', { name: 'Paths' })).getAllByRole('listitem'),
     ).toHaveLength(2);
   });
-  it('offers one fix as a plain box with Start fix', () => {
-    const drawer = showDrawer({ name: 'debugger-drawer-proposal' });
+  it('offers one fix as a plain box with Start fix', async () => {
+    const drawer = await showDrawer({ name: 'debugger-drawer-proposal' });
     expect(within(drawer).queryByRole('tablist', { name: 'Fix options' })).toBeNull();
     expect(within(drawer).getByRole('button', { name: 'Start fix' })).toBeDefined();
     expect(
       within(drawer).getByRole('region', { name: 'Proposed diff for src/ledger.ts' }),
     ).toBeDefined();
   });
-  it('shows the options as cards with the recommended one selected and tagged', () => {
-    const drawer = showDrawer({ name: 'debugger-drawer-options' });
+  it('shows the options as cards with the recommended one selected and tagged', async () => {
+    const drawer = await showDrawer({ name: 'debugger-drawer-options' });
     const tabs = within(within(drawer).getByRole('tablist', { name: 'Fix options' })).getAllByRole(
       'tab',
     );
@@ -138,8 +139,8 @@ describe('the Debugger drawer', () => {
     expect(within(drawer).getByRole('button', { name: 'Start option A' })).toBeDefined();
     expect(within(drawer).queryByRole('button', { name: 'Start fix' })).toBeNull();
   });
-  it('follows the picked option in the body and in the CTA', () => {
-    const drawer = showDrawer({ name: 'debugger-drawer-options' });
+  it('follows the picked option in the body and in the CTA', async () => {
+    const drawer = await showDrawer({ name: 'debugger-drawer-options' });
     fireEvent.click(within(drawer).getByRole('tab', { name: /Option B/ }));
     expect(within(drawer).getByRole('button', { name: 'Start option B' })).toBeDefined();
     const panel = within(drawer).getByRole('tabpanel', { name: 'Option B' });
@@ -151,8 +152,8 @@ describe('the Debugger drawer', () => {
     fireEvent.click(within(drawer).getByRole('tab', { name: /Option C/ }));
     expect(within(drawer).getByRole('button', { name: 'Start option C' })).toBeDefined();
   });
-  it('keeps the failed log collapsed and shows it without escape codes or CI prefixes', () => {
-    const drawer = showDrawer({ name: 'debugger-drawer-ci-log' });
+  it('keeps the failed log collapsed and shows it without escape codes or CI prefixes', async () => {
+    const drawer = await showDrawer({ name: 'debugger-drawer-ci-log' });
     fireEvent.click(within(drawer).getByRole('button', { name: 'Failed log tail' }));
     const toggle = within(drawer).getByRole('button', { name: /payments-api \/ test\s*\d+ lines/ });
     expect(toggle.getAttribute('aria-expanded')).toBe('false');
