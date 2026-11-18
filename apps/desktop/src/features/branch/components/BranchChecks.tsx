@@ -127,7 +127,15 @@ export const BranchChecks = ({ sessionId, mountId = null }: Props) => {
 
   const analyzed = useAnalyzedCheck({ sessionId, mountId: repo?.mountId ?? null });
   const shownChecks = view.kind === 'ready' ? view.checks : NO_CHECKS;
-  const heldGroups = useHeldCheckGroups({ checks: shownChecks });
+  const heldGroups = useHeldCheckGroups({
+    scope: [
+      sessionId,
+      repo?.mountId ?? mountId ?? '',
+      host.kind,
+      prNumber ?? host.number ?? '',
+    ].join(' '),
+    checks: shownChecks,
+  });
   const fallbackUrl = pr?.url ?? host.url ?? '';
   const createAction = create.actions.find((action) => action.id === CREATE_ACTION_ID);
 

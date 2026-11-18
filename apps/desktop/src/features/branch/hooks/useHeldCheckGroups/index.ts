@@ -4,18 +4,26 @@ import type { HeldCheckGroups } from '../../../integrations/github/checksRollup'
 import { heldCheckGroupsOf } from '../../checks/heldCheckGroupsOf';
 
 type Params = {
+  readonly scope: string;
   readonly checks: ReadonlyArray<PrCheckRun>;
+};
+
+type Held = {
+  readonly scope: string;
+  readonly groups: HeldCheckGroups;
 };
 
 const NONE: HeldCheckGroups = new Map();
 
-export const useHeldCheckGroups = ({ checks }: Params): HeldCheckGroups => {
-  const [held, setHeld] = useState<HeldCheckGroups>(() =>
-    heldCheckGroupsOf({ held: NONE, checks }),
-  );
-  const next = heldCheckGroupsOf({ held, checks });
-  if (next !== held) {
-    setHeld(next);
+export const useHeldCheckGroups = ({ scope, checks }: Params): HeldCheckGroups => {
+  const [held, setHeld] = useState<Held>(() => ({
+    scope,
+    groups: heldCheckGroupsOf({ held: NONE, checks }),
+  }));
+  const isSameScope = held.scope === scope;
+  const groups = heldCheckGroupsOf({ held: isSameScope ? held.groups : NONE, checks });
+  if (!isSameScope || groups !== held.groups) {
+    setHeld({ scope, groups });
   }
-  return next;
+  return groups;
 };
