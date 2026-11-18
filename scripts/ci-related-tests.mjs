@@ -1,5 +1,5 @@
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
-import { dirname, join, relative, resolve } from 'node:path';
+import { dirname, join, posix, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { isSceneBacked } from './scene-backed-tests.mjs';
 
@@ -124,7 +124,7 @@ const fileExists = ({ root, path }) =>
 export const resolveSpecifier = ({ root, from, specifier, packages }) => {
   if (specifier.startsWith('.')) {
     const base = toPosix({ path: join(dirname(from), specifier) });
-    const candidates = RESOLVE_SUFFIXES.map((suffix) => `${base}${suffix}`);
+    const candidates = RESOLVE_SUFFIXES.map((suffix) => posix.normalize(`${base}${suffix}`));
     const jsTwin = base.endsWith('.js')
       ? [`${base.slice(0, -3)}.ts`, `${base.slice(0, -3)}.tsx`]
       : [];

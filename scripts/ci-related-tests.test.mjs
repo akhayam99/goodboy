@@ -22,6 +22,8 @@ const FIXTURES = [
   ['apps/desktop/src/features/palette/rank.test.ts', "vi.mock('./rank', () => ({}));"],
   ['apps/desktop/src/features/palette/rank.perf.test.ts', "import { rank } from './rank';"],
   ['apps/desktop/src/features/icons/dog.test.ts', "import { dog } from '@goodboy/core/icons/dog';"],
+  ['apps/desktop/src/features/board/BoardEmpty/index.tsx', 'export const BoardEmpty = () => null;'],
+  ['apps/desktop/src/features/board/BoardEmpty/index.test.tsx', "import { BoardEmpty } from './';"],
   [
     'apps/desktop/src/app/scenes/registry.ts',
     "export const all = import.meta.glob(['./u*/*.tsx', '!./u*/*.test.tsx'], { eager: true });",
@@ -94,6 +96,14 @@ describe('relatedSelection', () => {
   it('resolves a wildcard package export', () => {
     const selection = selectionFor({ graph, path: 'packages/core/src/icons/dog.ts' });
     assert.ok(selection.desktop.includes('src/features/icons/dog.test.ts'));
+  });
+
+  it('resolves an import that ends in a slash to the folder entry', () => {
+    const selection = selectionFor({
+      graph,
+      path: 'apps/desktop/src/features/board/BoardEmpty/index.tsx',
+    });
+    assert.ok(selection.desktop.includes('src/features/board/BoardEmpty/index.test.tsx'));
   });
 
   it('always keeps the regression guards and the tests that read files from disk', () => {

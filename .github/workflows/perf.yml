@@ -101,6 +101,9 @@ jobs:
     name: report perf failure
     needs: perf
     if: ${{ failure() && (github.event_name == 'schedule' || github.event_name == 'push') }}
+    concurrency:
+      group: perf-report-issue
+      cancel-in-progress: false
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
@@ -126,6 +129,9 @@ jobs:
     name: report audit failure
     needs: audit
     if: ${{ failure() && github.event_name == 'schedule' }}
+    concurrency:
+      group: perf-report-audit-issue
+      cancel-in-progress: false
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
