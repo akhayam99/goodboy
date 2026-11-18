@@ -200,14 +200,18 @@ describe('testPlanOf', () => {
     assert.deepEqual([plan.tests, plan.zones, plan.a11y], [false, false, false]);
   });
 
-  it('gives a related run one shard per full shard of work', () => {
+  it('gives a related run one shard per half a full shard of files', () => {
     assert.deepEqual(
       testPlanOf({ scope: 'related', selection: selection({ desktop: 40 }) }).desktopShards,
       ['1/1'],
     );
     assert.deepEqual(
-      testPlanOf({ scope: 'related', selection: selection({ desktop: 250 }) }).desktopShards,
+      testPlanOf({ scope: 'related', selection: selection({ desktop: 120 }) }).desktopShards,
       ['1/3', '2/3', '3/3'],
+    );
+    assert.equal(
+      testPlanOf({ scope: 'related', selection: selection({ desktop: 300 }) }).desktopShards.length,
+      DESKTOP_SHARDS,
     );
   });
 

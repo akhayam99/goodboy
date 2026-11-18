@@ -108,7 +108,7 @@ export const testPlanOf = ({ scope, selection }) => {
   if (selection.desktop.length * 2 > selection.desktopTotal) {
     return full;
   }
-  const perShard = Math.ceil(selection.desktopTotal / DESKTOP_SHARDS);
+  const perShard = Math.ceil(selection.desktopTotal / (DESKTOP_SHARDS * 2));
   const count = Math.min(
     DESKTOP_SHARDS,
     Math.max(1, Math.ceil(selection.desktop.length / perShard)),
