@@ -327,7 +327,9 @@ load finishes, under the session the registry holds for that tab, so a tab an
 agent opened counts too and no reply travels back. One row per address and
 session: a new visit moves it to the top, a document title change renames the
 row of the address the webview shows, and the oldest rows past 200 per session
-go. Only `http` and `https` addresses outside the app's own origins land, with
+go. The title keeps the tab's navigation count from when it came in; a page
+load that starts before the address is read drops the rename
+(`titled_address`). Only `http` and `https` addresses outside the app's own origins land, with
 the username, password and fragment dropped. The row goes with the session's
 tab rows (`browser_session_tab_rows_delete`), the stale sweep also names an
 archived session that holds only visits, and a deleted session takes its rows
