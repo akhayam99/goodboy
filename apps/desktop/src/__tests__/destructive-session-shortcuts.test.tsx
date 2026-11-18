@@ -139,6 +139,9 @@ vi.mock('../shared/hooks/useProviderRefreshOnFocus', () => ({
 vi.mock('../features/workspace/hooks/useSessionPinsSync', () => ({
   useSessionPinsSync: vi.fn(),
 }));
+vi.mock('../features/workspace/hooks/useSessionDockGrid', () => ({
+  useSessionDockGrid: vi.fn(),
+}));
 vi.mock('../shared/hooks/useCommitLinkInterceptor', () => ({
   useCommitLinkInterceptor: () => ({ commitDiff: null, setCommitDiff: vi.fn() }),
 }));

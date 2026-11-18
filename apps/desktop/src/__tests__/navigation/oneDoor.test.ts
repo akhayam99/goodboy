@@ -126,8 +126,9 @@ describe('one selected sign across the navigation surfaces', () => {
     const railPlace = readFileSync(join(SRC, 'shared', 'navigation', 'railPlaceOf.ts'), 'utf8');
 
     expect(rail?.source).toContain(
-      'railPlaceOf({ place: placeOverride === undefined ? storePlace : placeOverride })',
+      'const columnPlace = placeOverride === undefined ? storePlace : placeOverride;',
     );
+    expect(rail?.source).toContain('railPlaceOf({ place: columnPlace })');
     expect(rail?.source).toContain('isCurrent={place === door.id}');
     expect(rail?.source).toContain("isCurrent={place === 'new'}");
     expect(railPlace).toContain("place === null ? 'board' : place");
