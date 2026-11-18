@@ -218,13 +218,13 @@ Keep tokens out of what you save, move your setup between machines, and update w
 
 [More on security, backup and updates](docs/features/security.md)
 
-<a id="sidebar"></a><a id="go-anywhere"></a><a id="command-palette"></a><a id="search-or-run"></a><a id="search"></a><a id="right-click-menus"></a>
+<a id="places-rail"></a><a id="sidebar"></a><a id="go-anywhere"></a><a id="command-palette"></a><a id="search-or-run"></a><a id="search"></a><a id="right-click-menus"></a>
 
 ## Search and navigation
 
 Find any session, message, plan or action, and reach it from the keyboard. The places rail keeps workspace navigation on the left, and **⌘K** and **⌘F** cover the rest.
 
-- **Sidebar**: Move between Board, Tasks, Workflows, Chat, Connect and Impact from the places rail on the left.
+- **Places rail**: Move between Board, Tasks, Workflows, Chat, Connect and Impact from the places rail on the left.
 - **Go anywhere**: Reach any screen without the mouse.
 - **Search or run**: Press ⌘K, or click Search or run in the top bar, to act on what you are looking at.
 - **Search**: Find a message, a plan, a decision, an issue or a branch with ⌘F.
