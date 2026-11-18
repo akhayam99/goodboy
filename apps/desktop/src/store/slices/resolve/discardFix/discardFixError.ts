@@ -4,6 +4,7 @@ export const DISCARD_FIX_ERROR = {
   noFix: 'This comment has no proposed fix to discard',
   onBranch:
     'This fix is already on the branch, so it cannot be discarded here. Revert it on the branch first',
-  shared: 'This fix also answers other comments. Discard it from each of them, or keep it',
+  sharedDecided:
+    'This fix also answers a comment you already decided. Undo that decision first, or keep the fix',
   otherWorktree: 'This fix was made in another worktree. Open that branch to discard it',
 } as const;

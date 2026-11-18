@@ -185,7 +185,7 @@ describe('a comment fix ready on its row', () => {
 
   it('keeps the row as it was and logs the failure when the discard fails', async () => {
     const discardProposedFix = vi.fn<StoreState['discardProposedFix']>(async () => {
-      throw new Error('This fix also answers other comments');
+      throw new Error('This fix was made in another worktree');
     });
     const reportError = vi.fn<StoreState['reportError']>(async () => undefined);
     stub({ discardProposedFix, reportError });

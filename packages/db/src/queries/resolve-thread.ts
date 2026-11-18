@@ -65,7 +65,10 @@ export const listResolveThreads = async ({
 
 type UpsertStatementParams = Omit<UpsertParams, 'db'>;
 
-const upsertStatement = ({ row, expectedRevision }: UpsertStatementParams): PlainStatement => ({
+export const upsertResolveThreadStatement = ({
+  row,
+  expectedRevision,
+}: UpsertStatementParams): PlainStatement => ({
   sql: `INSERT INTO resolve_threads (id, session_id, project_id, pr_number, thread_id, origin_kind, diff_comment_id, state, stage, state_reason, revision, generation, reopened_from_thread_id, active_attempt_id, disposition, reply_draft, commit_shas_json, fixup_of_sha, replaces_sha, question, reply_posted_at, reply_id, github_resolved, closed_at, closed_source, created_at, updated_at, source_kind, provider_thread_id)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
      ON CONFLICT (session_id, thread_id) DO UPDATE SET
@@ -135,7 +138,7 @@ export const upsertResolveThread = async ({
     statements: [
       ...bookkeepingRebaseStatements({ row, expectedRevision }),
       {
-        ...upsertStatement({ row, expectedRevision }),
+        ...upsertResolveThreadStatement({ row, expectedRevision }),
         abortWhen: 'noChanges',
         abortCode: 'THREAD_CHANGED',
       },

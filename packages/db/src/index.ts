@@ -606,13 +606,13 @@ export {
   setResolveThreadGitState,
   setResolveThreadVerdict,
   setResolveThreadSourceSnapshot,
-  setResolveThreadSource,
 } from './queries/resolve-thread-facts';
 export {
   keepResolveDraftCurrent,
   repairLaggingResolveQueueItems,
 } from './queries/resolve-draft-current';
 export { hasResolveImport, commitResolveImport } from './queries/resolve-import';
+export { discardResolveFix } from './queries/resolve-discard';
 export {
   insertResolveCandidate,
   insertResolveCandidateItem,

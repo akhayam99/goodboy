@@ -128,19 +128,3 @@ export const setResolveThreadSourceSnapshot = async ({
     [snapshot === null ? null : JSON.stringify(snapshot), sessionId, threadId],
   );
 };
-
-export const setResolveThreadSource = async ({
-  db,
-  sessionId,
-  threadId,
-  sourceKind,
-  providerThreadId,
-}: ThreadParams & {
-  readonly sourceKind: ResolveSourceKind;
-  readonly providerThreadId: string | null;
-}): Promise<void> => {
-  await db.execute(
-    'UPDATE resolve_threads SET source_kind = ?, provider_thread_id = ? WHERE session_id = ? AND thread_id = ?',
-    [sourceKind, providerThreadId, sessionId, threadId],
-  );
-};

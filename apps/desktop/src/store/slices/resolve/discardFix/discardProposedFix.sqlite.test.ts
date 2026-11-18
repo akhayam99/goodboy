@@ -180,15 +180,52 @@ describe('discarding the proposed fix of one comment', () => {
     expect(await candidateStates()).toEqual(['ready']);
   });
 
-  it('refuses a fix that also answers another comment', async () => {
+  it('throws a shared fix away for every comment it answers at once', async () => {
+    await upsertResolveThread({
+      db,
+      row: { ...thread, id: 'thread-row-2', threadId: 'thread-2' },
+      expectedRevision: null,
+    });
     await insertResolveQueueItem({ db, item: { ...item, id: 'item-2', threadId: 'thread-2' } });
+    await stageCandidate({ id: 'candidate', queueItemIds: ['item', 'item-2'] });
+
+    await useAppStore
+      .getState()
+      .discardProposedFix({ sessionId, threadId: 'thread', worktreePath: WORKTREE });
+
+    const rows = await listResolveThreads({ db, sessionId });
+    expect(rows.map((row) => [row.threadId, row.state, row.stage, row.commitShas])).toEqual([
+      ['thread', 'open', 'new', null],
+      ['thread-2', 'open', 'new', null],
+    ]);
+    expect(await candidateStates()).toEqual(['discarded']);
+    const entries = await listResolveQueueItems({ db, sessionId });
+    expect(entries.map((entry) => entry.item.candidateRevision === entry.thread.revision)).toEqual([
+      true,
+      true,
+    ]);
+    expect(
+      (useAppStore.getState().sessionResolveThreads[sessionId] ?? []).map((row) => row.stage),
+    ).toEqual(['new', 'new']);
+  });
+
+  it('keeps a shared fix when another comment it answers is already decided', async () => {
+    await upsertResolveThread({
+      db,
+      row: { ...thread, id: 'thread-row-2', threadId: 'thread-2' },
+      expectedRevision: null,
+    });
+    await insertResolveQueueItem({
+      db,
+      item: { ...item, id: 'item-2', threadId: 'thread-2', approvalState: 'accepted' },
+    });
     await stageCandidate({ id: 'candidate', queueItemIds: ['item', 'item-2'] });
 
     await expect(
       useAppStore
         .getState()
         .discardProposedFix({ sessionId, threadId: 'thread', worktreePath: WORKTREE }),
-    ).rejects.toThrow(DISCARD_FIX_ERROR.shared);
+    ).rejects.toThrow(DISCARD_FIX_ERROR.sharedDecided);
 
     expect(await candidateStates()).toEqual(['ready']);
     expect((await storedThread())?.stage).toBe('proposed');
