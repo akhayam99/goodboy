@@ -60,7 +60,7 @@ describe('fix-hints scenes', () => {
       expect.stringContaining('Keep the guard inside ledger.ts'),
     );
     const drawer = screen.getByRole('region', { name: 'Debugger' });
-    expect(within(drawer).getByRole('button', { name: 'Start fix' })).toBeDefined();
+    expect(within(drawer).getByRole('button', { name: 'Apply fix' })).toBeDefined();
   });
 
   it('clears the hint with the x and keeps the line for another try', async () => {

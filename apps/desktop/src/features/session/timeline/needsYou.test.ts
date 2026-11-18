@@ -396,7 +396,7 @@ describe('needsYouOwners', () => {
         resolveFactsByAgentId: new Map([one.facts]),
       });
 
-      expect(owners.map((owner) => owner.text)).toEqual(['#318 · 5 to review · 1 question']);
+      expect(owners.map((owner) => owner.text)).toEqual(['#318 · 5 fixes ready · 1 question']);
       expect(owners[0]?.kind).toBe('fixRun');
     });
 
@@ -470,8 +470,8 @@ describe('needsYouOwners', () => {
       });
 
       expect(owners.map((owner) => owner.text)).toEqual([
-        "#318 · 4 to review · 2 couldn't fix",
-        "#402 · 2 couldn't fix",
+        '#318 · 4 fixes ready · 2 failed',
+        '#402 · 2 failed',
       ]);
       expect(owners[0]?.owed?.target?.threadId).toBe('t1');
     });

@@ -5,8 +5,8 @@ type CountParams = {
   readonly count: number;
 };
 
-export const fixRunReadyTitle = ({ count }: CountParams): string =>
-  `Fix run finished: ${countNoun({ count: count, one: 'fix', many: 'fixes' })} ready for you`;
+export const fixesReadyText = ({ count }: CountParams): string =>
+  `${countNoun({ count, one: 'fix', many: 'fixes' })} ready`;
 
 type BodyParams = {
   readonly ready: FixRunReady;
@@ -46,7 +46,3 @@ export const fixRunReadyBody = ({ ready, provider, canResolve }: BodyParams): st
   }
   return `${accepted} The next push sends it and ${threadsPart({ count: ready.hostThreadCount, provider, canResolve })}.`;
 };
-
-export const FIX_RUN_READY_LABEL = {
-  region: 'Fix run result',
-} as const;

@@ -443,9 +443,7 @@ describe('QuestionDrawer', () => {
     setupDrawer({ questionId: Q1.id });
     const card = screen.getByRole('article');
     expect(screen.getAllByText('Planner')).toHaveLength(1);
-    expect(screen.getByRole('button', { name: 'Open the agent: Planner' }).textContent).toBe(
-      'Planner',
-    );
+    expect(screen.getByRole('button', { name: 'Open agent: Planner' }).textContent).toBe('Planner');
     expect(within(card).queryByText('Planner')).toBeNull();
     expect(screen.getAllByText('Which queue should retries run on?').length).toBeGreaterThanOrEqual(
       1,

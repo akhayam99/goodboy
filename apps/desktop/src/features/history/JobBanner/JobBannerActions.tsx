@@ -1,4 +1,5 @@
 import { Button } from '@goodboy/ui';
+import { NAMES } from '../../../shared/utils/names';
 import type { RebaseJobControls } from '../useRebaseJob';
 import type { useJobBannerActions } from '../hooks/useJobBannerActions';
 import { ForgetSavedButton } from './ForgetSavedButton';
@@ -16,7 +17,7 @@ export const JobBannerActions = ({ controls, actions, isNoteOpen, onToggleNote }
   const seeWhatItDid =
     agentId === null ? null : (
       <Button size="sm" variant="ghost" onClick={controls.seeWhatItDid}>
-        Open agent
+        {NAMES.openTranscript}
       </Button>
     );
   const dismiss = (
@@ -72,7 +73,6 @@ export const JobBannerActions = ({ controls, actions, isNoteOpen, onToggleNote }
         </>
       );
     case 'merging':
-    case 'fixing-push':
       return seeWhatItDid;
     case 'stuck':
       return (
@@ -107,6 +107,7 @@ export const JobBannerActions = ({ controls, actions, isNoteOpen, onToggleNote }
     case 'pushed':
     case 'origin-moved':
     case 'push-failed':
+    case 'fixing-push':
     case 'dirty':
     case 'head-moved':
     case 'blocked':

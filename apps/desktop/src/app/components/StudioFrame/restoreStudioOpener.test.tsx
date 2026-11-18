@@ -12,7 +12,7 @@ type SceneProps = {
 
 const Scene = ({ frameKey }: SceneProps) => (
   <>
-    <button type="button" data-column-door="settings">
+    <button type="button" data-shell-rail-item="settings">
       Settings
     </button>
     {frameKey === null ? null : (
@@ -33,7 +33,7 @@ describe('restoreStudioOpener', () => {
     expect(screen.getByText('settings body').isConnected).toBe(true);
   });
 
-  it('returns focus to the door once the studio closes', () => {
+  it('returns focus to the rail place once the studio closes', () => {
     const { rerender } = render(<Scene frameKey="first" />);
 
     rerender(<Scene frameKey={null} />);

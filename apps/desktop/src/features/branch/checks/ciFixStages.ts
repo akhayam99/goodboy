@@ -1,4 +1,6 @@
 import type { CheckChain } from '../../../store/slices/agents/selectCheckChain';
+import { NAMES } from '../../../shared/utils/names';
+import { ITEM_WORK_WORDS } from '../../live-state/itemWork/itemWorkWords';
 
 type CiFixStageId = 'analyze' | 'fix' | 'push';
 
@@ -34,7 +36,7 @@ export const ciFixProgressOf = ({ chain, isAnalysisFailed }: Params): CiFixProgr
   ) {
     return {
       stages: [{ id: 'analyze', label: 'Analyze', status: 'failed' }],
-      word: 'Analysis stopped',
+      word: NAMES.failed,
       phase: 'failed',
     };
   }
@@ -52,13 +54,13 @@ export const ciFixProgressOf = ({ chain, isAnalysisFailed }: Params): CiFixProgr
     case 'proposal':
       return {
         stages: [ANALYZE_DONE, { id: 'fix', label: 'Fix', status: 'need' }],
-        word: 'Fix proposed',
+        word: ITEM_WORK_WORDS.state.causeFound.word,
         phase: 'waiting',
       };
     case 'no-fix':
       return {
         stages: [ANALYZE_DONE],
-        word: chain.isDismissed ? 'Dismissed' : 'No fix proposed',
+        word: chain.isDismissed ? 'Dismissed' : ITEM_WORK_WORDS.state.noFixFound.word,
         phase: 'done',
       };
     case 'fixing':
@@ -84,13 +86,13 @@ export const ciFixProgressOf = ({ chain, isAnalysisFailed }: Params): CiFixProgr
           { id: 'fix', label: 'Fix', status: 'done' },
           { id: 'push', label: 'Push', status: 'need' },
         ],
-        word: 'Ready to push',
+        word: ITEM_WORK_WORDS.state.fixedNotPushed.word,
         phase: 'waiting',
       };
     case 'fix-failed':
       return {
         stages: [ANALYZE_DONE, { id: 'fix', label: 'Fix', status: 'failed' }],
-        word: 'Fix stopped',
+        word: NAMES.failed,
         phase: 'failed',
       };
     default: {

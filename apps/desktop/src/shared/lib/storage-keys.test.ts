@@ -1,6 +1,5 @@
 // @vitest-environment happy-dom
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { LEFT_SIDEBAR_STORAGE_KEY } from '@goodboy/ui';
 import { STORAGE_KEYS, STORAGE_PREFIXES, persistedPref } from './storage-keys';
 
 afterEach(() => {
@@ -10,10 +9,6 @@ afterEach(() => {
 });
 
 describe('storage keys', () => {
-  it('registers the shell sidebar width key used by AppShell', () => {
-    expect(STORAGE_KEYS.leftSidebarWidth).toBe(LEFT_SIDEBAR_STORAGE_KEY);
-  });
-
   it('keeps every registered key under the goodboy namespace', () => {
     for (const key of [...Object.values(STORAGE_KEYS), ...Object.values(STORAGE_PREFIXES)]) {
       expect(key.startsWith('goodboy:')).toBe(true);

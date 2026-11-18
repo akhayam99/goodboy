@@ -147,7 +147,7 @@ Use real branded id casts (e.g. `'x' as Agent['id']`) and real enum values.
 Pass it straight in. No store involved.
 
 **The component reads the zustand store.** `SessionOverviewPane`,
-`OrchestratedRunPage`, `DefaultsPanel` and `SessionNavSidebar` work
+`OrchestratedRunPage`, `DefaultsPanel` and `StageBoard` work
 this way. `useAppStore` is a bare `create()` store: no `persist` middleware,
 and no Tauri side effect on `setState`. So it is safe to fill it directly:
 
@@ -521,12 +521,11 @@ A hint can name the controls its step does not want pressed (`isBlocked`): the g
 now forces dark the same way `&theme=light` forces light, so a frame never
 follows a stored preference.
 
-Keys inside a frame: a directed frame registers `palette.open` (Cmd+K),
-`search.open` (Cmd+F) and `column.toggle` (Cmd+B) itself, through
-`scenes/useSceneShortcuts` (palette) and `scenes/useSceneSidebar` (the fold
-state of the shell frames), since `App` and `useAppShortcuts` never mount in a
-scene. When the focus is on the playground and not in the frame, `useDemoKeys`
-hands those three chords to the stage, which focuses the frame and sends a
+Keys inside a frame: a directed frame registers `palette.open` (Cmd+K) and
+`search.open` (Cmd+F) itself, through `scenes/useSceneShortcuts`, since `App`
+and `useAppShortcuts` never mount in a scene. Every shell frame supplies
+`AppShell.leftRail`, the places rail, which has no fold. When the focus is on the playground and not in the frame, `useDemoKeys`
+hands Cmd+K, Cmd+F and Cmd+B to the stage, which focuses the frame and sends a
 `shortcut` command; the frame replays it as a keydown for the same shortcut.
 The wrapper's own keys (arrows, H, R) ignore a text field, and a frame that has
 the focus keeps its keys to itself. Search answers from the simulated store
@@ -769,10 +768,9 @@ the key form, the way Sign in works for agents.
 
 The Settings frames of the default shell are `settings-general-pinned` and
 `settings-providers-rail`; they live in `scenes/u21/settings.tsx`. Each mounts `audit/AppFrame` and opens
-Settings through the store, so the column, the rail and the page behave as in
-the app: `settings-general-pinned` shows the page with the column open, and
-`settings-providers-rail` folds the sidebar to its rail and opens the Claude
-page in Connections, where provider pages moved, with Claude seeded near its
+Settings through the store. Both use the same places rail through
+`AppShell.leftRail`: `settings-general-pinned` shows General, and
+`settings-providers-rail` opens the Claude page in Connections, where provider pages moved, with Claude seeded near its
 limit to show the notice on its page. The audit scenes `settings-providers` and
 `settings-tools` keep their names: with a `provider` or `tool` they open that
 page in Connections (`audit/ConnectionsFrame`), and `settings-providers` without

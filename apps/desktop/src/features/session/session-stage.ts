@@ -77,7 +77,7 @@ export const ATTENTION_REASON_META: Record<SessionAttentionReason, AttentionEntr
     icon: 'review',
     tone: 'warning',
     mark: '!',
-    words: "1 comment it couldn't fix",
+    words: '1 comment failed',
   }),
   'pr-queued': entryOf({
     icon: 'merge',
@@ -164,10 +164,9 @@ export const attentionWordsOf = ({ reason, counts = {} }: WordsParams): string =
     );
   }
   if (reason === 'fix-couldnt-fix') {
-    return couldntFixWords({
-      ...fixCountsOf({ comments: counts.fixCouldntFixCount, notes: counts.noteCouldntFixCount }),
-      form: 'chip',
-    });
+    return couldntFixWords(
+      fixCountsOf({ comments: counts.fixCouldntFixCount, notes: counts.noteCouldntFixCount }),
+    );
   }
   if (reason === 'push-failed') {
     return pushFailedWords({ count: countOf({ count: counts.pushFailedCount }) });

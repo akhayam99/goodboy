@@ -1,9 +1,4 @@
 {
-  "apps/desktop/src/App.tsx": {
-    "@typescript-eslint/strict-boolean-expressions": {
-      "count": 1
-    }
-  },
   "apps/desktop/src/__tests__/regressions/no-unstable-zustand-selectors.test.ts": {
     "@typescript-eslint/strict-boolean-expressions": {
       "count": 1
@@ -462,11 +457,6 @@
   "apps/desktop/src/features/session/central/branches/branchStoryOf.ts": {
     "@typescript-eslint/strict-boolean-expressions": {
       "count": 1
-    }
-  },
-  "apps/desktop/src/features/session/components/SessionNavSidebar/index.tsx": {
-    "@typescript-eslint/strict-boolean-expressions": {
-      "count": 2
     }
   },
   "apps/desktop/src/features/session/components/SessionOverviewPane/linkWorkRows.ts": {

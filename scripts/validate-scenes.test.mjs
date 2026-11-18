@@ -28,7 +28,6 @@ import {
 } from './validateScenesBrowser.mjs';
 import { headerLineFailures } from './validateScenesHeaderLine.mjs';
 import { toolSignalFailures } from './validateScenesToolSignal.mjs';
-import { updatePillFailures } from './validateScenesUpdatePill.mjs';
 import { listGridFitFailures } from './validateScenesListGridFit.mjs';
 import { modelsGridFailures } from './validateScenesModelsGrid.mjs';
 import { questionCardFailures } from './validateScenesQuestionCard.mjs';
@@ -1191,56 +1190,6 @@ describe('frostFailures', () => {
         measured: read({ inset: 0, hasContentUnder: false }),
       }),
       [],
-    );
-  });
-});
-
-describe('updatePillFailures', () => {
-  const measured = {
-    pill: { left: 48, right: 112, top: 868, height: 20 },
-    row: { left: 16, right: 184, top: 864, height: 28 },
-    bug: { left: 164, right: 188, top: 866, height: 24 },
-    versionHeight: 16,
-    lineHeight: 16,
-    versionScroll: 34,
-    versionClient: 34,
-    text: '0.27.2',
-  };
-
-  it('passes a pill that keeps its whole version on one line inside the row', () => {
-    assert.deepEqual(updatePillFailures({ scene: 'fixture', width: 1024, measured }), []);
-  });
-
-  it('fails a version that wraps onto a second line', () => {
-    const checks = updatePillFailures({
-      scene: 'fixture',
-      width: 1024,
-      measured: { ...measured, versionHeight: 32 },
-    }).map((failure) => failure.check);
-    assert.deepEqual(checks, ['the update pill holds its version on one line']);
-  });
-
-  it('fails a truncated version and a pill that runs out of its row', () => {
-    const checks = updatePillFailures({
-      scene: 'fixture',
-      width: 1024,
-      measured: {
-        ...measured,
-        versionClient: 20,
-        pill: { ...measured.pill, right: 190 },
-      },
-    }).map((failure) => failure.check);
-    assert.deepEqual(checks, [
-      'the update pill shows its whole version',
-      'the update pill stays inside the Goodboy row',
-      'the update pill never runs under the bug button',
-    ]);
-  });
-
-  it('fails a scene without the pill', () => {
-    assert.equal(
-      updatePillFailures({ scene: 'fixture', width: 1024, measured: null })[0]?.check,
-      'the Goodboy row shows the update pill',
     );
   });
 });

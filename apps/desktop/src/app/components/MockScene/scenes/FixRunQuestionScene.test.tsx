@@ -68,15 +68,13 @@ describe('the fix run transcript drawer scene', () => {
     expect(screen.queryByRole('textbox', { name: 'Message to Fix run' })).toBeNull();
   });
 
-  it('says the same number in the banner and in the drawer', async () => {
-    renderScene();
+  it('says the size of the run once, in the drawer, with no count in the bar while it asks', async () => {
+    const { container } = renderScene();
 
     const lead = await screen.findByTestId('fix-run-lead');
-    const banner = await screen.findByTestId('resolve-run-status');
 
     expect(within(lead).getByRole('heading', { name: 'Covers 3 comments' })).toBeDefined();
-    expect(within(banner).getByText('Fix run · 3 comments')).toBeDefined();
-    expect(within(banner).queryByRole('button', { name: 'Open transcript' })).toBeNull();
+    expect(container.querySelector('[data-fix-run-count]')).toBeNull();
   });
 
   it('keeps the other comment of the branch out of this run', async () => {

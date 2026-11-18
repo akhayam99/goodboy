@@ -46,5 +46,5 @@ export const NotificationsScene = ({ openLabels }: Props) => {
   if (!isReady) {
     return null;
   }
-  return <AppFrame view="board" isRailCollapsed={false} />;
+  return <AppFrame view="board" />;
 };

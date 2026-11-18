@@ -46,7 +46,7 @@ export const checkChainActionOf = ({
           prNumber,
         });
         if (target === null) {
-          throw new Error('Refresh the failing checks and try Start fix again.');
+          throw new Error('Refresh the failing checks and try Apply fix again.');
         }
         await startCheckFix({ sessionId, url: target.url, mountId });
       },

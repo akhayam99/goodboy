@@ -112,7 +112,7 @@ On a conflict or a commit hook, the panel does three things.
 - It starts one Lead run. The run picks the agent and the model, rebases the branch in its worktree and resolves the conflict.
 - It asks you in the session only when a conflict is ambiguous. It never pushes.
 - Until the Lead took the goal, the panel stays. A failed start keeps your hint and you can try again.
-- While the Lead works, the panel reads **The Lead is rebasing on main** with **1 of 2 files resolved** and **Open the Lead**.
+- While the Lead works, the panel reads **The Lead is rebasing on main** with **1 of 2 files resolved** and **Open transcript**. The word on the card reads **Resolving**, as on a check or a comment.
 
 **Resolve in terminal**
 
@@ -136,6 +136,7 @@ On a conflict or a commit hook, the panel does three things.
 
 - The verbs are one set. The banner, the panel and the Next row run the same ones. A hint typed under **Resolve with the Lead** or **Fix with an agent** therefore applies from whichever place you press the verb.
 - A failed push keeps **Fix with an agent**, **Open terminal here** and **Retry push**.
+- While that agent works, the same panel reads **Fixing** with its step and time, with **Stop** and **Open transcript**. **Retry push** waits until it ends.
 - It reads **Stopped: hook stopped the push** only when its error names `pre-push`. A remote `pre-receive hook declined` reads **Stopped: push failed**. The Local checks cell uses the same test.
 - A dirty tree, a moved branch, a blocked move, a result that differs and a failed rebase offer **Retry rebase** and **Open terminal**.
 - A verb that fails keeps the panel with its error and **Retry**, on the branch it failed on.

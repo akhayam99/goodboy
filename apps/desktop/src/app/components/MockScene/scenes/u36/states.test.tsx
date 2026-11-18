@@ -101,13 +101,13 @@ describe('the u36 states scenes', () => {
   );
 
   it.each(['light', 'dark'])(
-    'u36-states-auto-paused-%s says Waits for you, paused at its limit',
+    'u36-states-auto-paused-%s says Waits for you, at the limit with no new agent',
     async (theme) => {
       await show({ name: `u36-states-auto-paused-${theme}` });
 
       await waitFor(() => {
         expect(document.body.textContent).toContain('Waits for you');
-        expect(document.body.textContent).toContain('paused at its limit');
+        expect(document.body.textContent).toContain('At the $10.00 limit. No new agent starts.');
       }, WAIT);
       for (const word of WORDS) {
         expect(document.body.textContent).not.toContain(word);

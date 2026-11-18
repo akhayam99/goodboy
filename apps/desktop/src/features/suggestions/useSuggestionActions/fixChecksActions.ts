@@ -1,4 +1,5 @@
 import type { SessionId } from '@goodboy/types';
+import { NAMES } from '../../../shared/utils/names';
 import { checkChainActionOf } from '../../branch/checks/checkChainActionOf';
 import type { SessionSuggestion } from '../types';
 import type { SuggestionActions } from '.';
@@ -25,7 +26,7 @@ export const fixChecksActions = ({ sessionId, payload, lock }: Params): Suggesti
   if (action.kind === 'startFix') {
     return {
       primary: {
-        label: 'Start fix',
+        label: NAMES.applyFix,
         agentKind: 'implementer',
         ...blocked,
         failureTitle: action.failureTitle,

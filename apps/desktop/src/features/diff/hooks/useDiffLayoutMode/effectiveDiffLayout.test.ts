@@ -1,7 +1,8 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
-import { LEFT_SIDEBAR_DEFAULT } from '@goodboy/ui';
 import { SPLIT_MIN_INNER_PX, effectiveDiffLayout } from './effectiveDiffLayout';
+
+const COLUMN_PX = 240;
 
 const TREE_AND_GUTTERS_PX = 321;
 const GUTTERS_PX = 40;
@@ -13,7 +14,7 @@ type InnerParams = {
 };
 
 const innerOf = ({ windowPx, zoom, fixedPx }: InnerParams) =>
-  Math.round(windowPx / zoom) - LEFT_SIDEBAR_DEFAULT - fixedPx;
+  Math.round(windowPx / zoom) - COLUMN_PX - fixedPx;
 
 describe('effectiveDiffLayout', () => {
   it('keeps unified as chosen at any width and says whether split is open', () => {

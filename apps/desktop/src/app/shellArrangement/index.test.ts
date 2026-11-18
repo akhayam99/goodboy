@@ -24,34 +24,19 @@ const shellMounts = (): ReadonlyArray<{ readonly path: string; readonly source: 
     .map((path) => ({ path, source: readFileSync(path, 'utf8') }))
     .filter(({ source }) => source.includes('<AppShell'));
 
-describe('shellArrangement, the column', () => {
-  it('lays out the one column on the board with studios beside it', () => {
-    expect(shellArrangement({ hasWorkspace: true, isSidebarCollapsed: false })).toEqual({
-      columnScope: 'workspace',
-      leftSidebarCollapsed: false,
-      isLeftRail: false,
-      leftSlot: 'column',
-      leftOverlaySlot: 'none',
-    });
+describe('shellArrangement, the places rail', () => {
+  it('scopes the rail to the workspace once one is open', () => {
+    expect(shellArrangement({ hasWorkspace: true })).toEqual({ columnScope: 'workspace' });
   });
 
-  it('collapses to the rail of doors and arms the peek', () => {
-    expect(shellArrangement({ hasWorkspace: true, isSidebarCollapsed: true })).toMatchObject({
-      leftSidebarCollapsed: true,
-      leftSlot: 'rail',
-      leftOverlaySlot: 'peek',
-    });
+  it('keeps only the app half of the rail before any workspace exists', () => {
+    expect(shellArrangement({ hasWorkspace: false })).toEqual({ columnScope: 'app' });
   });
 
-  it('keeps only the app half of the column before any workspace exists', () => {
-    expect(shellArrangement({ hasWorkspace: false, isSidebarCollapsed: false })).toMatchObject({
-      columnScope: 'app',
-      leftSlot: 'column',
-    });
-    expect(shellArrangement({ hasWorkspace: false, isSidebarCollapsed: true })).toMatchObject({
-      leftSlot: 'rail',
-      leftOverlaySlot: 'none',
-    });
+  it('takes no fold and no width, so nothing can fold or size the rail', () => {
+    const source = readFileSync(join(__dirname, 'index.ts'), 'utf8');
+
+    expect(source).not.toMatch(/collapsed|folded|width|peek/i);
   });
 
   it('takes no page as input, so no page can open or fold the column', () => {
@@ -84,20 +69,21 @@ describe('every shell mount, the app and the mock scenes alike', () => {
   it('derives its arrangement from the helper instead of hand picking one', () => {
     expect(shellMounts().length).toBeGreaterThan(0);
     const handPicked = shellMounts()
+      .filter(({ source }) => source.includes('arrangement={'))
       .filter(({ source }) => !/from '[^']*shellArrangement'/.test(source))
       .map(({ path }) => path);
     expect(handPicked).toEqual([]);
   });
 
-  it('never writes a literal into the shell layout props', () => {
+  it('draws the places rail in every mount and never the retired sidebar column', () => {
     expect(shellMounts().length).toBeGreaterThan(0);
-    const literals = shellMounts()
-      .filter(({ source }) =>
-        /leftSidebarCollapsed/.test(
-          source.replace(/leftSidebarCollapsed=\{arrangement\.\w+\}/g, ''),
-        ),
-      )
+    const withoutRail = shellMounts()
+      .filter(({ source }) => !source.includes('leftRail='))
       .map(({ path }) => path);
-    expect(literals).toEqual([]);
+    const withColumn = shellMounts()
+      .filter(({ source }) => /leftSidebar|leftOverlay=|leftHidden/.test(source))
+      .map(({ path }) => path);
+    expect(withoutRail).toEqual([]);
+    expect(withColumn).toEqual([]);
   });
 });

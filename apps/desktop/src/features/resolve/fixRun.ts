@@ -125,20 +125,21 @@ export const fixRunNameOf = ({
   });
 };
 
-type FixRunCount = Pick<FixRun, 'total' | 'tally'>;
-
-type FixingParams = {
-  readonly run: FixRunCount;
+type CountParams = {
+  readonly run: Pick<FixRun, 'total' | 'tally' | 'isLive'>;
 };
 
-const fixingOf = ({ run }: FixingParams): FixingCount => ({
-  working: run.tally.working,
-  total: run.total,
-});
+export const fixRunCountOf = ({ run }: CountParams): FixingCount | null =>
+  !run.isLive || run.total < 2
+    ? null
+    : { place: run.total - run.tally.working + 1, total: run.total };
 
-export const fixRunTitle = ({ run }: { readonly run: FixRun }): string => {
-  if (run.isLive) {
-    return fixingCountText(fixingOf({ run }));
+export const fixRunPhraseOf = ({ run }: CountParams): string | null => {
+  if (!run.isLive) {
+    return null;
   }
-  return `Fix run · ${threadCountText({ count: run.total })}`;
+  const count = fixRunCountOf({ run });
+  return count === null
+    ? `Fixing ${threadCountText({ count: run.total })}`
+    : fixingCountText(count);
 };

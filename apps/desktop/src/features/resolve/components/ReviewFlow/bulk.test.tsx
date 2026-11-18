@@ -94,6 +94,36 @@ const mount = async ({
 };
 
 const list = (): HTMLElement => screen.getByRole('navigation', { name: 'Comments' });
+
+const undoBar = (): HTMLElement => {
+  const bar = screen.getByText('5 accepted').closest<HTMLElement>('[role="status"]');
+  if (bar === null) {
+    throw new Error('no undo bar');
+  }
+  return bar;
+};
+
+type AlertParams = {
+  readonly text: string;
+};
+
+const alertWith = ({ text }: AlertParams): Promise<HTMLElement> =>
+  waitFor(() => {
+    const alert = screen
+      .getAllByRole('alert')
+      .find((candidate) => candidate.textContent?.includes(text) === true);
+    if (alert === undefined) {
+      throw new Error(`no alert with ${text}`);
+    }
+    return alert;
+  });
+const toolbar = (): HTMLElement => {
+  const bar = document.querySelector<HTMLElement>('[data-slot="review-scope-bar"]');
+  if (bar === null) {
+    throw new Error('no comments toolbar');
+  }
+  return bar;
+};
 const press = (key: string, code: string, init: KeyboardEventInit = {}): void => {
   fireEvent.keyDown(document.activeElement ?? list(), { key, code, ...init });
 };
@@ -184,10 +214,10 @@ describe('answers in bulk', () => {
   const answersButton = (): HTMLElement =>
     screen.getByRole('button', { name: 'Use the recommended answers (2)' });
 
-  it('offers the recommended answers in the run status line when two or more questions are open', async () => {
+  it('offers the recommended answers in the comments toolbar when two or more questions are open', async () => {
     await mount({ stage: 'answers' });
 
-    const status = screen.getByRole('region', { name: 'Fix run status' });
+    const status = toolbar();
     expect(within(status).getByRole('button', { name: 'Use the recommended answers (2)' })).toBe(
       answersButton(),
     );
@@ -341,8 +371,7 @@ describe('accept in bulk', () => {
     stub({ undoReviewAccepts });
     await mount({ stage: 'accepted' });
 
-    expect(screen.getByText('5 accepted')).toBeDefined();
-    fireEvent.click(within(screen.getByRole('status')).getByRole('button', { name: /^Undo/ }));
+    fireEvent.click(within(undoBar()).getByRole('button', { name: /^Undo/ }));
 
     await waitFor(() => expect(undoReviewAccepts).toHaveBeenCalledWith({ sessionId: SESSION.id }));
   });
@@ -358,14 +387,14 @@ describe('accept in bulk', () => {
     stub({ undoReviewAccepts });
     await mount({ stage: 'accepted' });
 
-    const undo = within(screen.getByRole('status')).getByRole('button', { name: /^Undo/ });
+    const undo = within(undoBar()).getByRole('button', { name: /^Undo/ });
     fireEvent.click(undo);
     await waitFor(() => expect(undo.getAttribute('aria-busy')).toBe('true'));
     fireEvent.click(undo);
     expect(undoReviewAccepts).toHaveBeenCalledOnce();
 
     fail(new Error('The thread is locked'));
-    const alert = await screen.findByRole('alert');
+    const alert = await alertWith({ text: "Couldn't undo the accept" });
     expect(alert.textContent).toContain("Couldn't undo the accept");
     expect(alert.textContent).toContain('The thread is locked');
     screen.getByText('5 accepted');
@@ -376,8 +405,10 @@ describe('accept in bulk', () => {
 
     const ready = within(list()).getByRole('region', { name: 'Done' });
     expect(within(ready).getAllByRole('listitem')).toHaveLength(5);
-    expect(within(ready).getAllByText('Fixed')).toHaveLength(5);
-    expect(within(ready).queryByText('Applied')).toBeNull();
+    expect(
+      Array.from(ready.querySelectorAll('[data-item-work-word]')).map((word) => word.textContent),
+    ).toEqual(Array(5).fill('Applied, not pushed'));
+    expect(within(ready).getAllByRole('button', { name: /^Open changes of / })).toHaveLength(5);
     expect(within(ready).queryByText('Accepted')).toBeNull();
     expect(within(ready).queryByRole('button', { name: /^Apply \d+ fixes$/ })).toBeNull();
     fireEvent.click(screen.getByRole('tab', { name: /^Resolved/ }));
@@ -447,8 +478,7 @@ describe('accept in bulk', () => {
     const bar = await screen.findByRole('toolbar', { name: 'Selected comments' });
     fireEvent.click(await within(bar).findByRole('button', { name: 'Apply 7 fixes' }));
 
-    const alert = await screen.findByRole('alert');
-    expect(alert.textContent).toContain('1 comment not accepted');
+    const alert = await alertWith({ text: '1 comment not accepted' });
     expect(alert.textContent).toContain('collides with one accepted before it');
   });
 });
@@ -484,8 +514,7 @@ describe('retry in bulk', () => {
     stub({ retryCouldntFix });
     await mount({ stage: 'retry' });
 
-    const status = screen.getByRole('region', { name: 'Fix run status' });
-    fireEvent.click(within(status).getByRole('button', { name: "Retry 1 that couldn't fix" }));
+    fireEvent.click(within(toolbar()).getByRole('button', { name: 'Retry 1 failed' }));
 
     await waitFor(() => expect(retryCouldntFix).toHaveBeenCalledOnce());
     expect(retryCouldntFix).toHaveBeenCalledWith({
@@ -499,7 +528,7 @@ describe('retry in bulk', () => {
   it('is absent when nothing could not be fixed', async () => {
     await mount({ stage: 'answers' });
 
-    expect(screen.queryByRole('button', { name: /^Retry \d+ that couldn't fix/ })).toBeNull();
+    expect(screen.queryByRole('button', { name: /^Retry \d+ failed/ })).toBeNull();
   });
 });
 

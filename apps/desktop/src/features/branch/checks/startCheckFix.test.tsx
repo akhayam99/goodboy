@@ -130,14 +130,14 @@ const show = () =>
   );
 
 const rowWord = (): string | null =>
-  document.querySelector('[data-check-status]')?.textContent ?? null;
+  document.querySelector('[data-check-status] [data-item-work-word]')?.textContent ?? null;
 
 const fixers = () =>
   (store.getState().sessionPhaseRuns[seed.sessionId] ?? []).filter(
     (agent) => agent.kind === 'ci-fixer',
   );
 
-describe('Start fix with the real store and SQLite', () => {
+describe('Apply fix with the real store and SQLite', () => {
   beforeEach(async () => {
     seed = checksAnalyzeSeed({ phase: 'proposal' });
     await insertAgent(storySqlite(), {
@@ -154,7 +154,7 @@ describe('Start fix with the real store and SQLite', () => {
   it('spawns one CI fixer under the CI debugger with the proposal and the check origin', async () => {
     const spawn = vi.spyOn(store.getState(), 'spawnAgent');
     show();
-    fireEvent.click(screen.getByRole('button', { name: 'Start fix' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Apply fix' }));
     await waitFor(() => expect(spawn).toHaveBeenCalledTimes(1));
     expect(spawn).toHaveBeenCalledWith(
       seed.sessionId,
@@ -189,7 +189,7 @@ describe('Start fix with the real store and SQLite', () => {
       }),
     );
     expect(rowWord()).toBe('Fixing');
-    expect(screen.queryByRole('button', { name: 'Start fix' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Apply fix' })).toBeNull();
     storySpies.listBranchCommits.mockResolvedValue([
       {
         sha: '9e4c1a7d3b5f60718293a4b5c6d7e8f901234567',
@@ -238,7 +238,7 @@ describe('Start fix with the real store and SQLite', () => {
         },
       }),
     );
-    await waitFor(() => expect(rowWord()).toBe('Not pushed'));
+    await waitFor(() => expect(rowWord()).toBe('Fixed, not pushed'));
     expect(store.getState().checkFixCommits[child.id]).toMatchObject({
       kind: 'found',
       sha: '9e4c1a7',
@@ -262,7 +262,7 @@ describe('Start fix with the real store and SQLite', () => {
         fixAgentId: child.id,
       }),
     );
-    expect(rowWord()).toBe('Re-running');
+    expect(rowWord()).toBe('Pushed');
   });
   it.each([
     {
@@ -310,7 +310,7 @@ describe('Start fix with the real store and SQLite', () => {
       </ToastProvider>,
     );
     fireEvent.click(screen.getByRole('tab', { name: /Option C/ }));
-    fireEvent.click(screen.getByRole('button', { name: 'Start option C' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Apply option C' }));
     await waitFor(() => expect(spawn).toHaveBeenCalledTimes(1));
     const prompt = spawn.mock.calls[0]?.[1].initialPrompt ?? '';
     expect(prompt).toContain('Option C: Make credits idempotent by key');
@@ -367,7 +367,7 @@ describe('Start fix with the real store and SQLite', () => {
       const spawn = vi.spyOn(store.getState(), 'spawnAgent');
       showDrawer();
       writeHint('Keep the guard inside ledger.ts.');
-      fireEvent.click(screen.getByRole('button', { name: 'Start fix' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Apply fix' }));
       await waitFor(() => expect(spawn).toHaveBeenCalledTimes(1));
       expect(spawn.mock.calls[0]?.[1].initialPrompt).toContain(
         '## Operator notes\nKeep the guard inside ledger.ts.',
@@ -379,7 +379,7 @@ describe('Start fix with the real store and SQLite', () => {
       const spawn = vi.spyOn(store.getState(), 'spawnAgent');
       showDrawer();
       writeHint('Keep the guard inside ledger.ts.');
-      fireEvent.click(screen.getByRole('button', { name: 'Start fix' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Apply fix' }));
       await waitFor(() => expect(spawn).toHaveBeenCalledTimes(1));
       await waitFor(() => expect(fixers().length).toBe(1));
       expect(draft()).toBe('Keep the guard inside ledger.ts.');
@@ -388,8 +388,8 @@ describe('Start fix with the real store and SQLite', () => {
       vi.spyOn(store.getState(), 'spawnAgent').mockRejectedValueOnce(new Error('No provider'));
       showDrawer();
       writeHint('Keep the guard inside ledger.ts.');
-      fireEvent.click(screen.getByRole('button', { name: 'Start fix' }));
-      await waitFor(() => expect(screen.getByRole('button', { name: 'Start fix' })).toBeDefined());
+      fireEvent.click(screen.getByRole('button', { name: 'Apply fix' }));
+      await waitFor(() => expect(screen.getByRole('button', { name: 'Apply fix' })).toBeDefined());
       expect(draft()).toBe('Keep the guard inside ledger.ts.');
     });
   });
@@ -473,10 +473,10 @@ describe('Start fix with the real store and SQLite', () => {
     ).rejects.toThrow('The proposal is no longer available');
     expect(fixers()).toEqual([]);
   });
-  it('shows the failure and keeps Start fix to retry when the spawn fails', async () => {
+  it('shows the failure and keeps Apply fix to retry when the spawn fails', async () => {
     injectDbFault({ match: /INSERT INTO agents/, message: 'provider unavailable' });
     show();
-    fireEvent.click(screen.getByRole('button', { name: 'Start fix' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Apply fix' }));
     await waitFor(() =>
       expect(
         store
@@ -486,11 +486,11 @@ describe('Start fix with the real store and SQLite', () => {
     );
     expect(fixers()).toEqual([]);
     await waitFor(() =>
-      expect(screen.getByRole('button', { name: 'Start fix' }).hasAttribute('disabled')).toBe(
+      expect(screen.getByRole('button', { name: 'Apply fix' }).hasAttribute('disabled')).toBe(
         false,
       ),
     );
-    fireEvent.click(screen.getByRole('button', { name: 'Start fix' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Apply fix' }));
     await waitFor(() => expect(fixers().length).toBe(1));
   });
 });

@@ -14,6 +14,7 @@ type Params = {
   readonly sessionId: SessionId;
   readonly agentId: AgentId;
   readonly hasFailed: boolean;
+  readonly wasStopped?: boolean;
   readonly reason?: string | null;
 };
 
@@ -23,7 +24,13 @@ type OutcomeBase = Pick<
 >;
 
 export const settleBranchPushFix = ({ set, get }: SliceDeps) => {
-  return async ({ sessionId, agentId, hasFailed, reason = null }: Params): Promise<void> => {
+  return async ({
+    sessionId,
+    agentId,
+    hasFailed,
+    wasStopped = false,
+    reason = null,
+  }: Params): Promise<void> => {
     const fix = get().branchPushFixes[agentId];
     if (fix === undefined || fix.sessionId !== sessionId) {
       return;
@@ -52,7 +59,11 @@ export const settleBranchPushFix = ({ set, get }: SliceDeps) => {
       followUp: null,
     };
     if (hasFailed) {
-      recordPushFixOutcome({ set, get, outcome: { ...base, kind: 'agent_failed', reason } });
+      recordPushFixOutcome({
+        set,
+        get,
+        outcome: { ...base, kind: wasStopped ? 'agent_stopped' : 'agent_failed', reason },
+      });
       return;
     }
     const change = identityChange({ get, sessionId, mountId, identity });

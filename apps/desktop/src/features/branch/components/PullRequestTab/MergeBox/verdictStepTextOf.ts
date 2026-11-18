@@ -35,7 +35,7 @@ export const verdictStepTextOf = ({ step, facts }: Params): string => {
     case 'publish':
       return 'publish your replies';
     case 'startCheckFix':
-      return 'start the check fix';
+      return 'apply the check fix';
     case 'fixChecks':
       return facts.failing === 1 ? 'fix the failing check' : 'fix the failing checks';
     case 'rebase':

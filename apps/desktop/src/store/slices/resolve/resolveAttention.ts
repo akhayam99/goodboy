@@ -163,7 +163,7 @@ export const resolveAttentionNotices = ({
         {
           kind: 'error',
           severity: 'warning',
-          title: `A fix run couldn't fix ${after.couldntFix === 1 ? 'a comment' : `${after.couldntFix} comments`}`,
+          title: `A fix run failed on ${after.couldntFix === 1 ? 'a comment' : `${after.couldntFix} comments`}`,
           body: 'Retry it in the run or start over from the Comments tab.',
           sessionId,
           action: {
@@ -202,7 +202,7 @@ export const resolveAttentionNotices = ({
         {
           kind: 'error',
           severity: 'warning',
-          title: `A fix run couldn't fix ${after.notesCouldntFix === 1 ? 'a note' : `${after.notesCouldntFix} notes`}`,
+          title: `A fix run failed on ${after.notesCouldntFix === 1 ? 'a note' : `${after.notesCouldntFix} notes`}`,
           body: 'Retry it in the run or start over from your notes.',
           sessionId,
           action: {

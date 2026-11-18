@@ -25,7 +25,7 @@ import { seedBitbucketMarks } from '../../app/components/MockScene/scenes/u23/bi
 import { ATTENTION_REASON_META, attentionWordsOf } from '../../features/session/session-stage';
 import { attentionMarkOf } from '../../features/session/attentionMarkOf';
 import { needsYouEntries } from '../../features/palette/sources/needsYouEntries';
-import { SessionActivityItem } from '../../features/workspace/components/SessionActivityBar/SessionActivityItem';
+import { SessionsRow } from '../../features/workspace/components/SessionsPopover/SessionsRow';
 import { SwitcherRow } from '../../features/workspace/components/SessionSwitcher/SwitcherRow';
 import { SessionHoverCardBody } from '../../features/workspace/components/SessionHoverCard/SessionHoverCardBody';
 import { NeedsYouSessionRow } from '../../app/components/AppTopBar/NowChip/NeedsYouSessionRow';
@@ -71,10 +71,8 @@ const noop = () => undefined;
 const withoutUnseen = (label: string | null): string | null =>
   label === null ? null : label.replace(/, unseen$/, '');
 
-const nodeOf = (container: HTMLElement) => ({
-  tone: container.querySelector('[data-node-tone]')?.getAttribute('data-node-tone') ?? null,
-  words: withoutUnseen(container.querySelector('[role="img"]')?.getAttribute('aria-label') ?? null),
-});
+const wordsOf = (container: HTMLElement): string | null =>
+  withoutUnseen(container.querySelector('[role="img"]')?.getAttribute('aria-label') ?? null);
 
 const markOf = (container: HTMLElement) => {
   const box = container.querySelector('[data-status-mark]');
@@ -98,22 +96,21 @@ describe.each(REASONS)('a Bitbucket session says %s the same way on every surfac
   const tone = ATTENTION_REASON_META[reason].tone;
   const mark = tableMarkOf({ reason });
 
-  it('draws the sidebar row with the tone and words of the table', () => {
+  it('draws the Sessions row with the mark and words of the table', () => {
     const { session, info } = waitingFor({ reason });
     const { container } = render(
-      <SessionActivityItem
+      <SessionsRow
         session={session}
+        optionId="sessions-row"
+        project=""
         isActive={false}
-        getSelectedIds={() => []}
-        onClearSelection={noop}
-        onModifierClick={noop}
-        onSelect={noop}
-        onRowEnter={noop}
-        onRowLeave={noop}
+        isPinned={false}
+        onOpen={noop}
+        onTogglePin={noop}
       />,
     );
 
-    expect(nodeOf(container)).toEqual({ tone, words: attentionWordsOf({ reason, counts: info }) });
+    expect(wordsOf(container)).toBe(attentionWordsOf({ reason, counts: info }));
     expect(markOf(container)).toEqual(mark);
   });
 
@@ -129,14 +126,7 @@ describe.each(REASONS)('a Bitbucket session says %s the same way on every surfac
   it('draws the hover card with the same mark and says the words once', () => {
     const { session, info } = waitingFor({ reason });
     const words = attentionWordsOf({ reason, counts: info });
-    const { container } = render(
-      <SessionHoverCardBody
-        session={session}
-        isArchived={false}
-        onOpenAttention={noop}
-        onOpenLegend={noop}
-      />,
-    );
+    const { container } = render(<SessionHoverCardBody session={session} isArchived={false} />);
 
     expect(markOf(container)).toEqual(mark);
     expect(within(container).getAllByText(words)).toHaveLength(1);
@@ -180,14 +170,7 @@ describe('a Bitbucket approval next to a failed status', () => {
       throw new Error('the Bitbucket seed has no session with an approval and a failed status');
     }
     const info = stageInfoOf(state, session);
-    const { container } = render(
-      <SessionHoverCardBody
-        session={session}
-        isArchived={false}
-        onOpenAttention={noop}
-        onOpenLegend={noop}
-      />,
-    );
+    const { container } = render(<SessionHoverCardBody session={session} isArchived={false} />);
 
     expect(info).toMatchObject({ attention: 'ci-failed', otherReasons: ['pr-approved'] });
     expect(markOf(container)).toEqual(tableMarkOf({ reason: 'ci-failed' }));

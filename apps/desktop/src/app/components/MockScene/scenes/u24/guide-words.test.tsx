@@ -52,15 +52,9 @@ const mount = async (name: string): Promise<Element> => {
 };
 
 describe('the guide words scenes', () => {
-  it('registers both scenes for the capture', () => {
-    expect(Object.keys(U24_GUIDE_WORDS_SCENES).sort()).toEqual([
-      'guide-words',
-      'hovercard-legend-link',
-    ]);
+  it('registers the scene for the capture', () => {
+    expect(Object.keys(U24_GUIDE_WORDS_SCENES)).toEqual(['guide-words']);
     expect(MOCK_SCENES['guide-words']).toBe(U24_GUIDE_WORDS_SCENES['guide-words']);
-    expect(MOCK_SCENES['hovercard-legend-link']).toBe(
-      U24_GUIDE_WORDS_SCENES['hovercard-legend-link'],
-    );
   });
 
   it('guide-words lists What is Goodboy then Words, with its terms drawn', async () => {
@@ -75,12 +69,6 @@ describe('the guide words scenes', () => {
       expect(chapter.getByText(term)).toBeDefined(),
     );
     expect(chapter.getByText('Worktree and branch')).toBeDefined();
-  });
-
-  it('hovercard-legend-link ends the card with the link to the legend', async () => {
-    await mount('hovercard-legend-link');
-
-    expect(screen.getByRole('button', { name: 'What do these marks mean?' })).toBeDefined();
   });
 
   it.each(Object.keys(U24_GUIDE_WORDS_SCENES))(

@@ -21,7 +21,7 @@ export const C07AutoFrame = ({ seed, clicks = NO_CLICKS, widthPx }: Props) => {
   if (!isReady) {
     return null;
   }
-  const frame = <AppFrame view="session" isRailCollapsed={false} hasPane />;
+  const frame = <AppFrame view="session" hasPane />;
   if (widthPx === undefined) {
     return frame;
   }

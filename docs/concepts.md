@@ -546,7 +546,7 @@ opens the Commits tab, which owns it; no Activity row has a `⋯`.
 
 A **Needs you** block sits on top of Activity, and only while something waits
 on you: one row per owner, never per child. A pull request's fix runs read
-"#318 · 1 question · 5 to review" (the actions you owe, counted in comments), a
+"#318 · 1 question · 5 fixes ready" (the actions you owe, counted in comments, in the words of the rows: **fixes ready**, **questions**, **push failed**, **failed**), a
 run "Retry policy · 1 question", a stopped rebase
 "Rebase of feat/export stopped ×2 · needs you" (a short cause, never the engine
 sentence). Each row has **Open**, which goes to
@@ -1244,7 +1244,7 @@ comment` when the reviewer changed it, `Add a hint` when the run failed), `Reply
 comment) until the push and `Fix` (F) on a comment nobody started, which opens
 the Fix comments drawer in its place, with **Back to the comment** at its top
 (the launch request carries `fromThreadId`). They sit at the end of the comment drawer (`CommentDrawerActions` in `FormActions`), the primary last on the right, each with its key; a verb that fails says why there and its button reads Retry. `Retry push` shows on a comment whose push failed. J and K, or the arrow keys while the drawer is open, move; Escape closes the drawer. A checkbox appears on hover on the comments you
-can fix (open, or couldn't fix) and on comments to review (X toggles the focused
+can fix (open, or failed) and on comments to review (X toggles the focused
 row, Cmd+A picks every fixable one, Esc clears): the bar `3 selected · Fix 3`
 opens the panel for the fixable pick and `Apply 3 fixes` applies the pick to review, and
 a batch is born only from a selection or one `Fix`. Edit, Answer and Reply share one text box, a document: ⌘Enter sends, Enter
@@ -1301,7 +1301,7 @@ with a local commit and never pushes.
 - Every start goes through one path (`startBatch`): `Fix` on the row of a
   comment nobody started (hover) or in its detail, `F` on the focused row, the
   `Fix N` line (no run going), the Overview card or the board
-  card. Every door shares one set, the fixable comments: open plus couldn't fix
+  card. Every door shares one set, the fixable comments: open plus failed
   (`isFixableThread`, `features/resolve/fixableComments.ts`); a comment that
   needs you is answered, never relaunched, and a failed push is retried from
   the push. The header has no separate fix button: a batch is
@@ -1333,14 +1333,14 @@ N`, the `apply` mode of today. The choice is `ResolveLaunchChoice.mode`
 - Bulk actions on the Comments tab, each one a single store action. With no run
   (`fixRunOf` finds no launch with a live comment) the line under the
   tabs is `N open comments · Fix N ⌘A`, which opens the panel on
-  the fixable set. With a run, `RunStatusBulkActions` sits in the `actions`
-  slot of the run status line (`ResolveRunStatus`, before the model) and
+  the fixable set. With a run, `RunStatusBulkActions` sits at the end of the
+  comments bar, before the batch count (`FixRunCount`), and
   `bulkRunOf` hands it the entries of that run:
   `Use the recommended answers (N)` (two or more open questions that carry a
   recommended answer) opens the `Answer N questions` panel in the right column,
   where each question has its recommended option chosen, `Drop` leaves one in
   Needs you, and `Continue with N answers` calls `answerQuestions` once for the
-  launch (the same agent, no new one); `Retry N that couldn't fix` calls
+  launch (the same agent, no new one); `Retry N failed` calls
   `retryCouldntFix` with every could-not-fix comment of the launch. `Apply N fixes`
   in the selection bar (group labels carry no verbs) calls
   `acceptReviewComments` (`review-bulk` slice): it walks the comments in order

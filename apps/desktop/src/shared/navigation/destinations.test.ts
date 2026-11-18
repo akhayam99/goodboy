@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { CONCEPT_ICONS } from '../components/conceptIcons';
 import { SHORTCUTS } from '../keyboard/registry';
 import { NAMES } from '../utils/names';
-import { COLUMN_DOORS } from '../../app/components/SideColumn/columnDoors';
+import { COLUMN_DOORS } from '../../app/components/ShellLeft/columnDoors';
 import { LENS_ICON } from '../../features/session/lens-labels';
 import { shortcutRows } from '../../features/settings/components/SettingsStudio/shortcutRows';
 import { DESTINATIONS } from './destinations';
@@ -97,6 +97,13 @@ describe('the destination list', () => {
     const rail = DESTINATIONS.filter((destination) => destination.home === 'rail');
 
     expect(rail.map((destination) => destination.id)).toEqual(['terminal', 'browser']);
+  });
+
+  it('takes Monitoring off the places rail and keeps it in the menu bar and the palette', () => {
+    const menu = DESTINATIONS.filter((destination) => destination.home === 'menu');
+
+    expect(menu.map((destination) => destination.id)).toEqual(['monitoring']);
+    expect(menu.map((destination) => destination.menuId)).toEqual(['menu.monitoring']);
   });
 
   it('lists the keyed destinations of the Navigate group in the order of the list', () => {

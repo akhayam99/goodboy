@@ -97,9 +97,6 @@ vi.mock('../app/components/NeedsYouAnnouncementBridge', () => ({
 vi.mock('../features/notifications/components/AwayAlertsBridge', () => ({
   AwayAlertsBridge: () => null,
 }));
-vi.mock('../features/session/components/SessionNavSidebar', () => ({
-  SessionNavSidebar: () => null,
-}));
 vi.mock('../features/workspace/hooks/useWindowPresence', () => ({ useWindowPresence: vi.fn() }));
 vi.mock('../features/workspace/components/WorkspaceLinkStudio', () => ({
   WorkspaceLinkStudio: () => null,
@@ -142,6 +139,9 @@ vi.mock('../shared/hooks/useProviderRefreshOnFocus', () => ({
 vi.mock('../features/workspace/hooks/useSessionPinsSync', () => ({
   useSessionPinsSync: vi.fn(),
 }));
+vi.mock('../features/workspace/hooks/useSessionDockGrid', () => ({
+  useSessionDockGrid: vi.fn(),
+}));
 vi.mock('../shared/hooks/useCommitLinkInterceptor', () => ({
   useCommitLinkInterceptor: () => ({ commitDiff: null, setCommitDiff: vi.fn() }),
 }));
@@ -158,7 +158,7 @@ vi.mock('../store', () => {
     useSessionById: (sessionId: string | null) =>
       state.sessions.find((session) => session.id === sessionId) ?? null,
     useSessions: () => state.sessions,
-    useSessionColumn: () => ({ order: state.sessions.map((session) => session.id) }),
+    useSessionOrder: () => ({ order: state.sessions.map((session) => session.id) }),
     useWorkspaces: () => state.workspaces,
   };
 });

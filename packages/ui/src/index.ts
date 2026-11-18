@@ -3,9 +3,15 @@ export { TYPE_ROLES } from './typeRoles';
 export { SHEET_CLASSES } from './sheet';
 export { StudioSlotContext } from './studioSlotContext';
 export { ShellDockContext } from './shellDockContext';
+export type { ShellDock } from './shellDockContext';
+export { DOCK_FOCUS_DETAIL, DOCK_FOCUS_PAGE } from './dockGridSpec';
+export { DockCellContext } from './dockCellContext';
+export type { DockGridCell, DockGridSpec } from './dockGridSpec';
+export { turnedDockColumnsOf } from './turnedDockColumnsOf';
 export { ShellRailContext } from './shellRailContext';
 export { UnderHeadContext } from './underHeadContext';
 export { HEAD_INSET_VAR } from './headInsetVar';
+export { SPLIT_DRAG_ATTRIBUTE } from './splitDragAttribute';
 export { DrawerEdgeContext } from './drawerEdgeContext';
 export { DrawerBackChipContext } from './drawerBackChipContext';
 export type { DrawerChip } from './drawerBackChipContext';
@@ -38,14 +44,7 @@ export { TERMINAL_DIM } from './terminalDim';
 export { formatError } from './formatError';
 export { splitErrorMessage } from './splitErrorMessage';
 export { formatTokens, formatUsd, formatUsdPrecise } from './format-cost';
-export {
-  AppShell,
-  COLLAPSED_RAIL_WIDTH,
-  LEFT_SIDEBAR_DEFAULT,
-  LEFT_SIDEBAR_MAX,
-  LEFT_SIDEBAR_MIN,
-  LEFT_SIDEBAR_STORAGE_KEY,
-} from './components/AppShell';
+export { AppShell, COLLAPSED_RAIL_WIDTH } from './components/AppShell';
 export { DrawerColumn } from './components/DrawerColumn';
 export { READER_DRAWER_STORAGE_KEY, RIGHT_DRAWER_STORAGE_KEY } from './drawerWidthKeys';
 export type { DrawerColumnFrame, DrawerColumnProps } from './components/DrawerColumn';
@@ -53,7 +52,7 @@ export {
   COLUMN_FRAME,
   DRAWER_EXIT_MS,
   DRAWER_EXIT_MAX_ELEMENTS,
-  DRAWER_INSET,
+  DRAWER_GUTTER,
   READER_DRAWER_DEFAULT,
   READER_DRAWER_MAX,
   READER_DRAWER_MIN,
@@ -197,6 +196,12 @@ export { FacetRow } from './components/FacetRail/FacetRow';
 export { FacetSection } from './components/FacetRail/FacetSection';
 export { FieldRow } from './components/FieldRow';
 export type { FieldRowProps } from './components/FieldRow';
+export { ShellRail } from './components/ShellRail';
+export { ShellRailItem } from './components/ShellRail/ShellRailItem';
+export type { ShellRailMark } from './components/ShellRail/shellRailMark';
+export { SHELL_RAIL_POPOVER } from './components/ShellRail/shellRailPopover';
+export { TOOL_RAIL_WIDTH_PX } from './components/ShellRail/shellRailGeometry';
+export { useShellRailForm } from './components/ShellRail/useShellRailForm';
 export type { GhostActionButtonProps } from './components/GhostActionButton';
 export { IconButton } from './components/IconButton';
 export type { IconButtonProps } from './components/IconButton';
@@ -250,10 +255,8 @@ export type {
   RemoteVideoFile,
   RemoteVideoLoader,
 } from './components/RemoteImage/loaderContext';
-export { ResizeHandle } from './components/ResizeHandle';
+export { SplitHandle } from './components/SplitHandle';
 export { Reveal } from './components/Reveal';
-export { FoldLayers } from './components/FoldLayers';
-export type { FoldLayersProps } from './components/FoldLayers';
 export {
   DURATION_BASE_MS,
   DURATION_QUICK_MS,
@@ -264,11 +267,10 @@ export {
 } from './motionTimings';
 export { canAnimate } from './canAnimate';
 export { prefersReducedMotion } from './prefersReducedMotion';
-export { useFoldPhase } from './useFoldPhase';
 export { exitSnapshotOf, mountExitSnapshot } from './exitSnapshot';
 export type { ExitSnapshot } from './exitSnapshot';
 export type { RevealProps } from './components/Reveal';
-export type { ResizeHandleProps } from './components/ResizeHandle';
+export type { SplitHandleProps } from './components/SplitHandle';
 export { PaneShell } from './components/PaneShell';
 export { PaneTitleRow } from './components/PaneShell/PaneTitleRow';
 export { PageHeader } from './components/PaneShell/PageHeader';
@@ -413,6 +415,7 @@ export type { KbdLook, KbdProps } from './components/Kbd';
 export { ROW_HOVER, ROW_INTERACTIVE } from './rowInteractive';
 export { SELECTED_ROW_CLASSES } from './selectedRow';
 export { drawerAsideWidthOf, panelPairLayoutOf } from './drawerGeometry';
+export { DOCK_GRID_CAP } from './dockGridCap';
 export type { DrawerLayout, DrawerPanelSpec, PanelPairLayout } from './drawerGeometry';
 export type { ChipKind } from './components/Chip';
 export type { IconButtonSize } from './components/IconButton';

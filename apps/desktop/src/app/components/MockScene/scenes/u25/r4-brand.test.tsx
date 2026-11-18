@@ -68,14 +68,13 @@ describe('the brand lockup scenes', () => {
     }
   });
 
-  it.each(NAMES)('%s chips only the mark and the name, in the foot', async (name) => {
+  it.each(NAMES)('%s draws the Goodboy mark alone at the foot of the places rail', async (name) => {
     await mount({ name });
 
-    const chips = Array.from(document.querySelectorAll('[data-lockup-wide] [data-brand-chip]'));
+    const chips = Array.from(document.querySelectorAll('[data-brand-chip]'));
     expect(chips).toHaveLength(1);
-    expect(document.querySelectorAll('[data-lockup-narrow] [data-brand-chip]')).toHaveLength(1);
-    expect(chips.map((chip) => chip.textContent)).toEqual(['Goodboy']);
-    expect(chips[0]?.closest('[data-column-corner]')).not.toBeNull();
+    expect(chips[0]?.textContent).toBe('');
+    expect(chips[0]?.closest('[data-shell-rail]')).not.toBeNull();
     expect(screen.queryByRole('dialog', { name: 'Goodboy' })).toBeNull();
   });
 

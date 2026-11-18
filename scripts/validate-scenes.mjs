@@ -51,7 +51,6 @@ import {
   headerLineFailures,
   headerLineProbe,
 } from './validateScenesHeaderLine.mjs';
-import { runUpdatePill } from './validateScenesUpdatePill.mjs';
 import {
   CHAT_MEASURE_READY,
   CHAT_MEASURE_SCENE,
@@ -850,7 +849,6 @@ const main = async () => {
     for (const scene of only === undefined || only === 'header-line' ? HEADER_LINE_SCENES : []) {
       await measure({ scene, task: () => measureHeaderLine({ send, scene }) });
     }
-    await runUpdatePill({ send, only, measure, open, run });
     await runFitProbes({ send, only, measure, open, run });
     if (only === undefined || only === 'chat') {
       await measure({ scene: CHAT_MEASURE_SCENE, task: () => measureChatRoom({ send }) });

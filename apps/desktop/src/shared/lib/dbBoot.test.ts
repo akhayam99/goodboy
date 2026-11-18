@@ -179,7 +179,7 @@ describe('database boot', () => {
     expect(failure).toMatchObject({ restorableSnapshot: safe });
   });
 
-  it.each([1, 139, 220, 224])(
+  it.each([1, 139, 220, 224, 243])(
     'upgrades a database left at m%i while the resolve queue is already asked for',
     async (version) => {
       const db = await databaseAt({ version });

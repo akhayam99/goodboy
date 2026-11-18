@@ -1,13 +1,11 @@
 import type { ProviderId } from '@goodboy/types';
-import { cn } from '@goodboy/ui';
 import { NotificationCenter } from '../../../features/notifications/components/NotificationCenter';
-import { WorkspaceIdentityRow } from '../../../features/workspace/components/WorkspaceIdentityRow';
+import { SessionsPopover } from '../../../features/workspace/components/SessionsPopover';
 import { RepoEntry } from '../../../features/workspace/components/RepoEntry';
 import { FolderGitWatch } from '../../../features/workspace/components/FolderGitWatch';
 import { useCurrentWorkspace } from '../../../store';
 import type { RunningScript } from '../../../features/scripts/hooks/useRunningScripts';
 import { useColumnPlace } from '../../hooks/useColumnPlace';
-import { ColumnToggleButton } from '../SideColumn/ColumnToggleButton';
 import { CommandCenter } from './CommandCenter';
 import { HostReachabilityLine } from './HostReachabilityLine';
 import { LimitsStrip } from './LimitsStrip';
@@ -16,22 +14,15 @@ import { NowChip } from './NowChip';
 import { NavCluster } from './NavCluster';
 import { SpendButton } from './SpendButton';
 
-type SidebarToggle = {
-  readonly isCollapsed: boolean;
-  readonly onToggle: () => void;
-};
-
 type Props = {
   readonly onOpenSpend: () => void;
   readonly onOpenScript: (run: RunningScript) => void;
   readonly openProviderId?: ProviderId | null;
-  readonly sidebar?: SidebarToggle;
 };
 
-export const AppTopBar = ({ onOpenSpend, onOpenScript, openProviderId = null, sidebar }: Props) => {
+export const AppTopBar = ({ onOpenSpend, onOpenScript, openProviderId = null }: Props) => {
   const workspace = useCurrentWorkspace();
   const place = useColumnPlace();
-  const isColumnOpen = sidebar?.isCollapsed === false;
   return (
     <>
       <div
@@ -39,18 +30,8 @@ export const AppTopBar = ({ onOpenSpend, onOpenScript, openProviderId = null, si
         data-top-bar=""
         className="@container/topbar grid h-9 shrink-0 grid-cols-[minmax(0,1fr)_auto_minmax(max-content,1fr)] items-center gap-2 px-2"
       >
-        <div
-          className={cn(
-            'col-start-1 flex pl-(--titlebar-inset) min-w-0 items-center gap-1',
-            isColumnOpen && 'max-w-(--goodboy-left-sidebar-width)',
-          )}
-        >
-          {sidebar === undefined ? null : (
-            <ColumnToggleButton isCollapsed={sidebar.isCollapsed} onToggle={sidebar.onToggle} />
-          )}
-          <div className="flex min-w-0 max-w-50 items-center">
-            <WorkspaceIdentityRow />
-          </div>
+        <div className="col-start-1 flex pl-(--titlebar-inset) min-w-0 items-center gap-1">
+          <SessionsPopover />
           {workspace === null || workspace === undefined ? null : (
             <>
               <FolderGitWatch workspaceId={workspace.id} />

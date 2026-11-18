@@ -119,8 +119,9 @@ const RULES = [
     allow: [
       'packages/ui/src/components/AppShell.tsx',
       'apps/desktop/src/app/components/MockScene/scenes/u25/c02LevelsScene.tsx',
+      'apps/desktop/src/app/components/MockScene/scenes/u42/SidebarFrameColumn.tsx',
     ],
-    why: 'the window backdrop is painted once, on the app shell (or the levels scene that stands in for it), behind the top bar and the sidebar column',
+    why: 'the window backdrop is painted once, on the app shell (or a scene that stands in for it), behind the top bar and the sidebar column',
   },
   {
     pattern: /(?<![\w-])bg-backdrop-cover(?![\w-])/,

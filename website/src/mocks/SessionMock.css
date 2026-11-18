@@ -30,78 +30,80 @@
 
 .sessionMock .smShell {
   display: grid;
-  grid-template-columns: 208px minmax(0, 1fr) 40px;
+  grid-template-columns: 64px minmax(0, 1fr) 56px;
 }
 
+.sessionMock .smRail,
 .sessionMock .smTools {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 6px;
-  padding-top: 12px;
-  border-left: 1px solid var(--line-soft);
-}
-
-.sessionMock .smTool {
-  display: inline-flex;
-  width: 26px;
-  height: 26px;
-  align-items: center;
-  justify-content: center;
-  border-radius: 6px;
-  color: var(--g-muted-foreground);
-}
-
-.sessionMock .smCol {
   display: flex;
   min-width: 0;
   flex-direction: column;
-  gap: 12px;
-  padding: 12px 8px;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 0;
   background: var(--raise);
 }
 
-.sessionMock .smNew {
-  justify-content: flex-start;
+.sessionMock .smTools {
+  border-left: 1px solid var(--line-soft);
 }
 
-.sessionMock .smDoors,
-.sessionMock .smSessions {
+.sessionMock .smRailItem {
   display: flex;
+  max-width: 100%;
   flex-direction: column;
-  gap: 2px;
-}
-
-.sessionMock .smDoor {
-  display: flex;
-  height: 28px;
   align-items: center;
-  gap: 8px;
-  padding: 0 8px;
-  border-radius: 6px;
-  font: 400 12px / 16px var(--sans);
+  gap: 2px;
+  font: 400 9px / 12px var(--sans);
+  white-space: nowrap;
   color: var(--g-muted-foreground);
 }
 
-.sessionMock .smDoor svg {
-  flex: none;
-  color: var(--g-faint-foreground);
+.sessionMock .smRailItem[data-current='true'] {
+  color: var(--t1);
 }
 
-.sessionMock .smColLabel {
-  padding: 0 8px;
+.sessionMock .smRailTile {
+  position: relative;
+  display: grid;
+  width: 32px;
+  height: 32px;
+  place-items: center;
+  border-radius: 8px;
 }
 
-.sessionMock .smSession {
-  flex: none;
-  font: 400 12px / 16px var(--sans);
+.sessionMock .smRailItem[data-current='true'] .smRailTile {
+  background: var(--g-border-soft);
 }
 
-.sessionMock .smSessionTitle {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+.sessionMock .smRailNew {
+  box-shadow: 0 0 0 1px var(--g-border-soft);
+}
+
+.sessionMock .smRailCount {
+  position: absolute;
+  top: -3px;
+  right: -3px;
+  display: grid;
+  min-width: 14px;
+  height: 14px;
+  place-items: center;
+  padding: 0 3px;
+  border-radius: 7px;
+  font: 600 9px / 1 var(--sans);
+  color: var(--g-on-warning);
+  background: var(--g-warning);
+}
+
+.sessionMock .smMark {
+  display: grid;
+  width: 24px;
+  height: 24px;
+  place-items: center;
+  border-radius: 6px;
+  font: 600 11px / 1 var(--sans);
+  color: var(--g-identity-3);
+  background: color-mix(in oklab, var(--g-identity-3) 22%, transparent);
 }
 
 .sessionMock .smBody {
@@ -160,7 +162,7 @@
     grid-template-columns: minmax(0, 1fr);
   }
 
-  .sessionMock .smCol,
+  .sessionMock .smRail,
   .sessionMock .smTools {
     display: none;
   }
@@ -175,7 +177,7 @@
     grid-template-columns: minmax(0, 1fr);
   }
 
-  .sessionMock .smCol,
+  .sessionMock .smRail,
   .sessionMock .smTools {
     display: none;
   }

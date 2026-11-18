@@ -20,7 +20,7 @@ export const recommendedAnswersLabel = ({ count }: { readonly count: number }): 
   `Use the recommended answers (${count})`;
 
 export const retryCouldntFixLabel = ({ count }: { readonly count: number }): string =>
-  `Retry ${count} that couldn't fix`;
+  `Retry ${count} failed`;
 
 export const answersTitle = ({ count }: { readonly count: number }): string =>
   `Answer ${countNoun({ count, one: 'question', many: 'questions' })}`;

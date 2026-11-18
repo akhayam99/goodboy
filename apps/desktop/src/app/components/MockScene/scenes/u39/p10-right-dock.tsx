@@ -19,7 +19,5 @@ export const U39_P10_SCENES = {
   'ux39-p12-tasks-terminal': () => (
     <P10RightDockScene context="board" view="inbox" held="terminal" />
   ),
-  'ux39-p4-column-folded': () => (
-    <P10RightDockScene context="board" view="board" held={null} isRailCollapsed />
-  ),
+  'ux39-p4-column-folded': () => <P10RightDockScene context="board" view="board" held={null} />,
 } satisfies Readonly<Record<string, ComponentType>>;

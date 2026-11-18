@@ -91,7 +91,6 @@ export const TaskLinksScene = ({ state = 'idle', isCardsShown = false }: Props) 
   return (
     <ShellFrame
       session={session}
-      sidebar="expanded"
       main={
         isCardsShown ? (
           <SessionContextCards session={session} />

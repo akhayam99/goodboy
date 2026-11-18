@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { AgentId, ResolveAttempt, SessionId } from '@goodboy/types';
 import { resolveWordOfState } from './commentProjection';
-import { fixRunOf, fixRunTitle, type FixRunSource } from './fixRun';
+import { fixRunCountOf, fixRunOf, fixRunPhraseOf, type FixRunSource } from './fixRun';
 import type { ReviewCommentState } from './reviewCommentState';
 
 const attempt = ({
@@ -154,19 +154,36 @@ describe('fixRunOf', () => {
   });
 });
 
-describe('fixRunTitle', () => {
-  it('says Fixing while the run works and Fix run once it waits on you', () => {
-    const live = fixRunOf({
-      sources: [source('t1', 'drafting', FIRST), source('t2', 'ready', FIRST)],
+describe('fixRunCountOf and fixRunPhraseOf', () => {
+  it('counts the place of the comment in work, after the ones already done', () => {
+    const second = fixRunOf({
+      sources: [
+        source('t1', 'ready', FIRST),
+        source('t2', 'drafting', FIRST),
+        source('t3', 'drafting', FIRST),
+      ],
     });
-    const idle = fixRunOf({ sources: [source('t1', 'ready', FIRST)] });
-
-    const allWorking = fixRunOf({
+    const first = fixRunOf({
       sources: [source('t1', 'drafting', FIRST), source('t2', 'drafting', FIRST)],
     });
 
-    expect(live === null ? '' : fixRunTitle({ run: live })).toBe('Fixing 1 of 2 comments');
-    expect(allWorking === null ? '' : fixRunTitle({ run: allWorking })).toBe('Fixing 2 comments');
-    expect(idle === null ? '' : fixRunTitle({ run: idle })).toBe('Fix run · 1 comment');
+    expect(second === null ? null : fixRunCountOf({ run: second })).toEqual({
+      place: 2,
+      total: 3,
+    });
+    expect(second === null ? null : fixRunPhraseOf({ run: second })).toBe('Fixing 2 of 3 comments');
+    expect(first === null ? null : fixRunCountOf({ run: first })).toEqual({ place: 1, total: 2 });
+  });
+
+  it('keeps one comment and a run that waits on you out of the count', () => {
+    const one = fixRunOf({ sources: [source('t1', 'drafting', FIRST)] });
+    const idle = fixRunOf({
+      sources: [source('t1', 'ready', FIRST), source('t2', 'ready', FIRST)],
+    });
+
+    expect(one === null ? 'none' : fixRunCountOf({ run: one })).toBeNull();
+    expect(one === null ? null : fixRunPhraseOf({ run: one })).toBe('Fixing 1 comment');
+    expect(idle === null ? 'none' : fixRunCountOf({ run: idle })).toBeNull();
+    expect(idle === null ? 'none' : fixRunPhraseOf({ run: idle })).toBeNull();
   });
 });

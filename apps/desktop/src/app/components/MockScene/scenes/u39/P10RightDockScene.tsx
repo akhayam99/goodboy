@@ -12,14 +12,20 @@ import { devServerLines, terminalSnapshotAnswer } from '../terminalSceneOutput';
 import { seedFrame, type FrameContext } from '../audit/frameSeed';
 import { seedBrowserTab } from './seedBrowserTab';
 import { seedArtifactDetail } from '../u42/seedArtifactDetail';
+import { PORTS_SNAPSHOT } from '../u25/portsSeed';
 
-export type RightDock = 'terminal' | 'browser' | null;
+export type RightDock = 'terminal' | 'browser' | 'monitoring' | null;
+
+const PORT_ANSWERS: ReadonlyMap<string, unknown> = new Map<string, unknown>([
+  ['monitor_snapshot', PORTS_SNAPSHOT],
+  ['process_ledger_list', []],
+  ['monitor_watched_ports', []],
+]);
 
 type Props = {
   readonly context: FrameContext;
   readonly view: string;
   readonly held: RightDock;
-  readonly isRailCollapsed?: boolean;
   readonly hasDetail?: boolean;
 };
 
@@ -77,15 +83,17 @@ const seedDock = ({ context, view, held, hasDetail }: SeedParams): void => {
         : { kind: 'browser', sessionId, payload: null },
     );
   }
+  if (held === 'monitoring') {
+    mockSceneIpc((command) => PORT_ANSWERS.get(command) ?? null);
+    useAppStore.setState({
+      monitorSnapshot: PORTS_SNAPSHOT,
+      monitorPinned: [{ port: 9000, description: 'Mock API' }],
+    });
+    state.openDrawer({ kind: 'monitoring', sessionId: null, payload: null });
+  }
 };
 
-export const P10RightDockScene = ({
-  context,
-  view,
-  held,
-  isRailCollapsed = false,
-  hasDetail = false,
-}: Props) => {
+export const P10RightDockScene = ({ context, view, held, hasDetail = false }: Props) => {
   const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
@@ -97,5 +105,5 @@ export const P10RightDockScene = ({
   if (!isReady) {
     return null;
   }
-  return <AppFrame view={view} isRailCollapsed={isRailCollapsed} hasPane />;
+  return <AppFrame view={view} hasPane />;
 };

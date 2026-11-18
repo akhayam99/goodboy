@@ -141,6 +141,7 @@ export type PublishParams = SessionParams & {
 };
 
 export type ThreadParams = SessionParams & { readonly threadId: string };
+export type DiscardFixParams = ThreadParams & { readonly worktreePath: string | null };
 export type SourceSnapshotsParams = SessionParams &
   CurrentParams & {
     readonly prNumber: number;
@@ -179,6 +180,7 @@ export type ResolveActions = {
   readonly publishThreadNow: (params: ThreadParams) => Promise<void>;
   readonly reconcileHandReplies: (params: SourceSnapshotsParams) => Promise<number>;
   readonly switchToReplyOnly: (params: ThreadParams) => Promise<void>;
+  readonly discardProposedFix: (params: DiscardFixParams) => Promise<void>;
   readonly recheckThread: (params: ThreadParams) => Promise<RecheckOutcome>;
   readonly settleThreadRecheck: (
     params: SessionParams & {

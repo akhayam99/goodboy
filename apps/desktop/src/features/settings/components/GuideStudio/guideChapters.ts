@@ -201,7 +201,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Chat',
-        desc: 'A sidebar door that answers questions about the workspace and never changes a file. Start work from chat drafts a session from an answer.',
+        desc: 'A place on the rail that answers questions about the workspace and never changes a file. Start work from chat drafts a session from an answer.',
       },
     ],
     links: [{ label: 'Start a new session', target: { kind: 'newSession' } }],
@@ -210,15 +210,15 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
     id: 'board',
     group: 'daily',
     title: 'Board',
-    lead: 'The Board of the sidebar. Each session sits in a lane for what is happening in it, so you never move cards by hand.',
+    lead: 'The Board of the places rail. Each session sits in a lane for what is happening in it, so you never move cards by hand.',
     points: [
       {
         term: 'Session card',
         desc: 'The title, the folder and one signal: an open question, a failed check, the pull request in its state color or the agents at work. Rest on it for age, issues and cost.',
       },
       {
-        term: 'Board and sidebar list',
-        desc: 'Lanes on the Board. The sidebar lists the same sessions, and its filter menu sorts, groups and narrows them.',
+        term: 'Board and Sessions',
+        desc: 'Lanes on the Board. Sessions in the top bar lists the same sessions, and the funnel in the Board header sorts, groups and narrows them.',
       },
       {
         term: 'Done and archived',
@@ -230,11 +230,11 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Select many',
-        desc: 'Shift or Option click, or Select in a row menu, then Archive, Restore or Delete from the bar.',
+        desc: 'Shift or Option click, or Select in a card menu, then Archive, Restore or Delete from the bar.',
       },
       {
         term: 'Now chip',
-        desc: 'Counts running sessions and scripts from any screen, and a click lists them. Sessions that need you put an amber dot on Board in the sidebar.',
+        desc: 'Counts running sessions and scripts from any screen, and a click lists them. Sessions that need you put an amber number on Board in the rail.',
       },
       {
         term: 'Top bar',
@@ -247,20 +247,20 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
   {
     id: 'shell',
     group: 'daily',
-    title: 'Sidebar and session pages',
-    lead: 'The sidebar looks the same on every screen, and a session opens its pages beside it.',
+    title: 'Rail, Sessions and session pages',
+    lead: 'The rail looks the same on every screen, Sessions is one key away, and a session opens its pages beside it.',
     points: [
       {
-        term: 'Sidebar',
-        desc: 'New session, then Board, Tasks, Workflows, Chat, Connections, Impact and Monitoring, your sessions, Settings, and the Goodboy line with the bug icon. An amber dot says sessions need you, or on Monitoring that a pinned port is down.',
+        term: 'Places rail',
+        desc: 'The workspace mark, New session, Board, Tasks, Workflows, Chat, Connections (Connect on the rail) and Impact. Settings, the bug icon and the Goodboy mark sit at the foot. An amber number on Board says sessions need you; Monitor on the right rail says when a pinned port is down.',
       },
       {
-        term: 'Session rows',
-        desc: 'One line each, its mark amber when you must act and red when something broke. The funnel on Board holds Sort, Group, Filter and Show archived.',
+        term: 'Sessions',
+        desc: `${shortcutGlyphs('sessions.toggle')} opens Sessions. Type to narrow, Enter opens. A card says where they moved, and closes the first time you open Sessions.`,
       },
       {
         term: 'Pin a session',
-        desc: "Pin session, in a row's right click menu, keeps it in a Pinned group on top, and Move up and Move down reorder it.",
+        desc: 'The pin on a row of Sessions keeps it in Pinned on top.',
       },
       {
         term: 'Session pages',
@@ -276,7 +276,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Tools rail',
-        desc: 'Terminal and Browser, at the right of every screen. A click opens the tool beside its icon, and it stays open as you move. Open full page turns it into a page.',
+        desc: 'Terminal, Browser, Scripts, Ask and Monitor, at the right edge of every screen, each opening to its left. Up to four share two columns of two, saved per session. Open full page makes one a page.',
       },
     ],
     links: [],
@@ -442,7 +442,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Comments',
-        desc: 'Review threads and your own notes in one list, grouped Needs you, Working and Done. A row opens a drawer with the code, the thread and Fix, Reply and Skip on F, R and S. A comment that asks for a rework offers Start a run.',
+        desc: 'Threads and your notes in one list, grouped Needs you, Working and Done. Fixes report on their row. A row opens a drawer with the code, the thread and Fix, Reply and Skip on F, R and S. A rework comment offers Start a run.',
       },
       {
         term: 'Fix comments',
@@ -454,7 +454,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Checks',
-        desc: 'CI runs grouped as Failing, Running, Passed and Skipped. Analyze on a failing one starts the Debugger, which proposes a fix, with Start fix and Push in its drawer.',
+        desc: 'CI runs grouped Failing, Running, Passed and Skipped. Analyze on a failing row shows the Debugger at work, then Cause found, Review fix, Apply fix and Push.',
       },
     ],
     links: [
@@ -595,7 +595,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'A pinned port down',
-        desc: 'When a pinned port stops listening, Monitoring in the sidebar shows an amber dot. Rest on it to read which port.',
+        desc: 'When a pinned port stops listening, Monitor on the right rail names the port when you rest on it.',
       },
       {
         term: 'Rows',
@@ -670,7 +670,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
     points: [
       {
         term: 'Settings rail',
-        desc: `Settings, or ${shortcutGlyphs('settings.open')}, opens as a page beside the sidebar, on the page you used last. Its rail groups This Mac and the workspace; providers and integrations moved to ${NAMES.connections}. Search settings finds any setting, and a dot marks a page that needs you.`,
+        desc: `Settings, or ${shortcutGlyphs('settings.open')}, opens as a page beside the rail, on the page you used last. Its rail groups This Mac and the workspace; providers and integrations moved to ${NAMES.connections}. Search settings finds any setting, and a dot marks a page that needs you.`,
       },
       {
         term: 'Copy and restore',
@@ -727,7 +727,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Report a bug',
-        desc: `The bug icon at the foot of the sidebar, or ${shortcutGlyphs('report.open')}, opens Report a bug from any screen, and What gets sent shows exactly what leaves.`,
+        desc: `The bug icon at the foot of the rail, or ${shortcutGlyphs('report.open')}, opens Report a bug from any screen, and What gets sent shows exactly what leaves.`,
       },
     ],
     links: [
@@ -756,8 +756,8 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
         desc: `The macOS menu bar carries every key. ${shortcutGlyphs('view.reload')} reloads where you are: the Browser tab when it has the keyboard, else the session. ${shortcutGlyphs('app.reload')} reloads Goodboy.`,
       },
       {
-        term: 'Sidebar, rail and panes',
-        desc: `${shortcutGlyphs('column.toggle')} collapses the sidebar, ${shortcutGlyphs('innerColumn.toggle')} the page column. ${shortcutGlyphs('nav.back')} steps the rail out or goes Back, and ${shortcutGlyphs('nav.up')} goes up. In a session, ${shortcutGlyphs('lens.explore')} opens Changes on All files, ${shortcutGlyphs('lens.context')} Context, ${shortcutGlyphs('ask.open')} Ask, ${shortcutGlyphs('session.spawned')} Runs on what is running and ${shortcutGlyphs('lens.scripts')} Scripts. ${shortcutGlyphs('browser.address')} focuses the Browser address, ${shortcutGlyphs('browser.find')} finds in its page, ${shortcutGlyphs('slot.close')} closes the drawer.`,
+        term: 'Rail and panes',
+        desc: `${shortcutGlyphs('sessions.toggle')} opens Sessions, ${shortcutGlyphs('innerColumn.toggle')} folds the page column. ${shortcutGlyphs('nav.back')} goes Back, ${shortcutGlyphs('nav.up')} goes up. In a session, ${shortcutGlyphs('lens.explore')} opens Changes on All files, ${shortcutGlyphs('lens.context')} Context, ${shortcutGlyphs('ask.open')} Ask, ${shortcutGlyphs('session.spawned')} Runs and ${shortcutGlyphs('lens.scripts')} Scripts. ${shortcutGlyphs('browser.address')} focuses the Browser address, ${shortcutGlyphs('browser.find')} finds in its page. ${shortcutGlyphs('panel.focusNext')} walks the panels, ${shortcutGlyphs('slot.close')} closes the focused one.`,
       },
       {
         term: 'Terminal',

@@ -160,6 +160,22 @@ describe('the triage actions', () => {
     expect(publish.mock.calls[0]?.[0]).toEqual({ sessionId: SESSION.id, threadId: 'PRRT_bulk_r2' });
   });
 
+  it('discards a proposed fix through discardProposedFix, like the row', async () => {
+    const discard = vi.fn<StoreState['discardProposedFix']>(async () => undefined);
+    const defer = vi.fn<StoreState['deferResolveQueueItem']>(async () => undefined);
+    useAppStore.setState({ discardProposedFix: discard, deferResolveQueueItem: defer });
+    await mount({ phase: 'mixed' });
+
+    const [first] = within(drawer()).getAllByRole('button', { name: 'Discard' });
+    if (first !== undefined) {
+      fireEvent.click(first);
+    }
+
+    await waitFor(() => expect(discard).toHaveBeenCalledOnce());
+    expect(discard.mock.calls[0]?.[0]).toMatchObject({ sessionId: SESSION.id });
+    expect(defer).not.toHaveBeenCalled();
+  });
+
   it('closes a local note with Close comment', async () => {
     const close = vi.fn<StoreState['closeResolvedNote']>(async () => undefined);
     useAppStore.setState({ closeResolvedNote: close });

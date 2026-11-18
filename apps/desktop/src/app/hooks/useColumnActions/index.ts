@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import type { ColumnActions } from '../../components/SideColumn/columnDoors';
+import type { ColumnActions } from '../../components/ShellLeft/columnDoors';
 import { openDestination } from '../../../shared/navigation/openDestination';
 
 type Params = Omit<ColumnActions, 'openConnections'>;

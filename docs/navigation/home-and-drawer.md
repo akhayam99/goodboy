@@ -111,37 +111,39 @@ its own size, drawn from the same top to the same bottom. With no drawer the
 page container is today's sheet: rounded on the left where the chrome wraps it,
 flush with the window's right edge. Wherever the tool rail is there (every page
 of the app) the page container rounds all four corners (`rounded-frame`) and the
-drawer container stands 8px to its right (the resize handle sits in that gap),
+drawer container stands 12px to its right (the resize handle sits in that gap),
 flush with the window's right edge and rounded on its two left corners, and the
-pair keeps an 8px inset above the window's bottom edge.
+pair keeps a 12px inset above the window's bottom edge. `DRAWER_GUTTER` in
+`packages/ui/src/drawerGeometry.ts` takes its value from `SHELL_GUTTER_PX`.
 
-**The rail is the dock's left edge, and the dock opens to its right.** The
-drawer container holds the rail and the dock: one surface, with the rail as its
-first child (`data-drawer-edge`, fed through `DrawerEdgeContext`). Closed, the
-container is the rail alone, 44px wide, on the window's right edge. A click on
-Terminal or Browser expands the dock to the right of the icon, toward the
-window edge, so the rail travels left with the opening dock and back right as
-it closes; it is the same element closed, pushing, over the page and while a
-handle drags, never a second copy. The trade: the button that closed the dock
-is no longer under the pointer after it opened, so the dock's own close (its
-header X, Esc) is the near way out, and the rail button stays one move away.
-A detail panel opens between the page and the rail.
+**The rail is the anchor.** The drawer container holds the dock and the rail
+on one surface. `DrawerDockBox` puts the rail last (`data-drawer-edge`, fed
+through `DrawerEdgeContext`), pinned to the window's right edge. Closed, the
+container is the rail alone, 56px wide, 44px and icons only under a 1100px
+window, the name in the tooltip (`TOOL_RAIL_WIDTH_PX`). Terminal,
+Browser, Scripts, Ask and Monitor each toggle their panel to its left
+(`RAIL_TOOLS`, `toggleRailTool`). Scripts and Ask are disabled without a
+session. The rail stays still while a panel opens, closes or resizes, so its
+button stays under the pointer. Monitor opens `MonitoringDrawer`, a workspace
+tool panel with Open full page, and is not restored on reload
+(`UNSAVED_DRAWER_KINDS`).
 
-**Two panels, one order.** Left to right the frame reads: sidebar, page
-content, detail panel, rail, tool dock. The tool dock (Terminal, Browser) lives
-in the drawer container, attached to the rail with no gap, line or radius
-between them, on the rail's `bg-drawer` surface, so rail and dock read as one
+**Two panels, one order.** Left to right the frame reads: places rail, page
+content, detail panel, tool dock, tool rail. The tool dock (Terminal, Browser,
+Monitor) lives in the drawer container, attached to the rail with no gap,
+line or radius between them, on the rail's `bg-drawer` surface, so rail and dock read as one
 surface running to the window edge. The resize handle stays in the gap between
-the detail panel (or the page) and the rail. A detail panel (an artifact, Ask, a plan part, a check analysis, a
-transcript, a reader, every other kind) is its own container between the page
+the detail panel (or the page) and the dock container. A detail panel (an
+artifact, Scripts, Ask, a plan part, a check analysis, a transcript, a reader,
+every other kind) is its own container between the page
 and the dock: `data-container="detail"`, `rounded-frame`, `frame-edge` border,
-on the page's `bg-background`, 8px from the page and 8px from the drawer
+on the page's `bg-background`, 12px from the page and 12px from the drawer
 container, with its own resize handle in the left gutter. Both can be open at
 once. `DrawerColumn` takes the dock as `drawer` and the detail as `detail`
 (`detailSizing`, `isDetailParked`); `panelPairLayoutOf` in `drawerGeometry.ts`
 lays the pair out: alone, each panel follows the one push rule below; together
 they push while the page keeps its reserve beside both (the tier reserve of the
-wider kind, plus the 8px between them), and lie over the page together
+wider kind, plus `DRAWER_GUTTER` between them), and lie over the page together
 otherwise, each clamped so the pair and the rail fit. `panelAsideWidthOf` is
 the aside: the detail plus its gutter, then the dock plus the rail plus their
 gutter. A `DrawerFrame` paints `bg-panel-surface`, the surface its container
@@ -159,16 +161,16 @@ the list are the page container and the drawer container stands beside them from
 the slot's top to its bottom; the shell's own sheet steps aside
 (`data-studio-sheet-owner`) while the studio is open. A studio body with no
 hosting frame (a mock scene that draws the studio alone) keeps `frame="none"`,
-which draws only the drawer container as a card inset 8px on its right, top
-and bottom.
+which draws the drawer container with a 12px top and bottom inset while it
+pushes, and keeps its right edge flush.
 
 **Three tiers, one width each.** A side drawer (Ask, Context, a fix run or agent
 transcript, script output, a plan part, an artifact) opens at 400px, resizes
 from 384 to 560px and keeps `goodboy:right-drawer-width:v1`. A reader drawer
 (the plan, report and wireframe document, an Explore file, a file diff) opens at
 720px, resizes from 480 to `min(1000, room)` while it pushes and to
-`min(1000, page - 16)` over the page, and keeps its own
-`goodboy:reader-drawer-width:v1`. The browser pane has the third tier: it opens
+the room left after two shell gutters and the rail, capped at 1000px, over
+the page, and keeps its own `goodboy:reader-drawer-width:v1`. The browser pane has the third tier: it opens
 at 720px and resizes from 480 to `room` while it pushes, with no 1000 cap, so on
 a wide window it takes everything the session column does not need. It keeps its
 own `goodboy:browser-drawer-width:v1`. Each width is clamped on read and written
@@ -186,7 +188,8 @@ committed width; a drag stops at the available room and never flips the mode.
 The centred column slides left into the space beside the drawer; a full-tier
 work surface keeps its left edge. `drawerGeometry.test.ts` pins the thresholds;
 `regressions/drawer-rule.test.ts` fails a drawer that measures the window, reads
-a breakpoint or calls `drawerLayoutOf` outside `DrawerColumn`, so every
+a breakpoint or calls `drawerLayoutOf` or `dockLayoutOf` outside `DrawerColumn`
+and the two geometry files, so every
 width-dependent drawer (fix run, CI fix, terminal, the rest of `DrawerHost`)
 goes through `DrawerColumn`. A drawer that must never push, such as the New
 drawer, passes `placement="overlay"` (`drawerPlacement` on `AppShell`): it lies
@@ -198,13 +201,12 @@ focus was on the page it moves into the drawer, never to the body.
 
 **Over the page, the drawer container runs the full height of the sheet.**
 Below the push width every open panel lies over the page from the right edge
-together, detail and dock, under one scrim, and the rail stays live. Rail and
-dock slide in together from the right edge (`animate-drawer-dock-in`, the
-container translates from the dock width to 0 in `duration-base`), so the rail
-leaves the window edge with the dock behind it, and slide back out together
-(`animate-drawer-dock-out`, `duration-quick`); once the exit ends the aside
-lands in the flow at its closed width with no width transition
-(`useSnapAfterFloat`), so the rail stops on the edge where it started. The
+together, detail and dock, under one scrim, and the rail stays live. The dock
+reveals to the left of the stationary rail through a clip
+(`animate-drawer-dock-in`, `duration-base`) and clips back toward it on close
+(`animate-drawer-dock-out`, `duration-quick`). These keyframes live in
+`apps/desktop/src/styles.css`. Once the exit ends, `useSnapAfterFloat` lands the
+aside in the flow at its closed width with no width transition. The
 container has no inset: flush with the sheet's top, bottom and right edges, left corners
 rounded (`rounded-l-frame`), `shadow-xl` under the whole container (panel and
 rail), the same `bg-drawer`; a spacer of the closed width keeps the page where
@@ -214,8 +216,16 @@ card, and the page is `inert`, so nothing under it takes a click, a Tab or a
 screen reader. A click on the scrim asks the top layer of the escape stack
 (`dismissTopEscapeLayer` in `packages/ui/src/escape.ts`), so an editor or an
 unsent draft inside the drawer answers first, exactly as it does to Esc.
+The scrim and the floating aside are no overlay for the keys (`OVERLAY_SELECTOR`
+leaves them out), so Esc, ⌘W in a terminal and ⌘⇧W still reach the panels.
+In the smallest window (1024 by 700) a narrow panel pushes beside the icon rail
+and the Browser lies over the page, left of the rail at the edge. A focused web
+page keeps a bare Esc (only ⌘ chords leave it, see [browser.md](../browser.md)), so that
+Browser closes with ⌘⇧W (File, Close the Drawer, in the menu bar), a click on
+the scrim, or Esc once the keyboard is outside the page
+(`DrawerColumnNarrowWindow.test.tsx`).
 Pushing has no scrim and nothing is inert. Closed, the
-aside is the 8px gutter plus the rail (0px with no rail) and the rail stays
+aside is `DRAWER_GUTTER` plus the rail (0px with no rail) and the rail stays
 live; only the panel is `inert`. Opening and closing ease the track's width in
 220ms (`DURATION_BASE_MS`, none under reduced motion) with its right edge fixed, and the
 centred column slides with it: the card grows leftward from the window edge,
@@ -224,9 +234,8 @@ content fades in once there is room; over the page it slides in 200ms; a new kin
 an open drawer fades its content in 120ms. The detail panel's group
 (`data-detail-group`) eases its own width with the same token while the aside
 eases the sum, so the page content slides as either panel opens or closes and
-the rail rides the dock's left edge with it, never jumping; the motion is a `transition-[width]`
+the rail stays pinned to the window edge; the motion is a `transition-[width]`
 (`duration-200 ease-enter`) behind `motion-safe`, so reduced motion is instant.
-It never writes the sidebar preference: a pane folds nothing.
 
 **Closing never moves the page behind a drawer.** `DrawerColumn` remembers the
 last mode the drawer was open in (`useDrawerExit`). Closed from pushing, the
@@ -267,9 +276,11 @@ only the panel of its class (`slotAfterOpen`), each panel's X closes only itself
 (`closeDrawerEntry`), and a rail button toggles only its own panel
 (`toggleDrawer`, `toggleTerminalDock`, `toggleBrowserDock`, `togglePane`).
 `DrawerHost` renders one slot (`slot="dock"` or `slot="detail"`; with no slot,
-the top of the store, for scenes that draw one panel). Escape and ⌘⇧W close the
+the top of the store, for scenes that draw one panel), or the grid cell its
+`DockCellContext` names. Escape and ⌘⇧W close the
 newer of the two. When both slots hold the same class, the rules below apply. `openDrawer` puts the request in the slot and what it replaced in
-`drawerBack` (`slotAfterOpen`), so a third open drops the oldest; reopening the
+`drawerBack` (`slotAfterOpen`), so a third open drops the oldest from the slot
+(a tool still waits in the grid, below); reopening the
 drawer in the slot, an artifact on another tab included (`slotKey`), keeps the
 chip; a drawer of another session clears it, unless one of the two is a
 workspace tool (`sharesSlot`). A second Terminal replaces the first in the
@@ -284,8 +295,58 @@ plan approved onto the run page, View transcript,
 Write title and goal from linked work); the chip does not come back after it.
 A tool keeps its state while it waits: Terminal keeps its shell, Explore its
 open folders. A second window has its own store, so its own slot.
+
+**The slice holds a grid of tools beside the slot.** `drawerGrid` keeps every
+open tool in at most two columns of two (`DOCK_GRID_CAP` in `packages/ui`, the
+dock solver's own cap), the order of use, and the focus: the page, the detail
+or one tool. A new tool opens in a new column next to the rail while one is
+free, otherwise under the column with fewer panels, the one without Browser
+first; a fifth takes the place of the least recently used (`gridAfterOpen`).
+There is one panel per kind, so a second Terminal takes the first one's place.
+The dock in the slot is always the latest tool of the grid (`settledSlot`): a
+tool the slot dropped waits in the grid and comes back when the panel beside
+it closes, and closing a tool takes it out of the grid. `focusDrawerPanel`
+names the page or the panel's entry, and an entry already replaced or closed
+changes nothing. Archiving or deleting a session takes its tools out of the
+grid, and `clearDrawer` empties it with the slot. `panelsOf` hands the frame
+the dock, the detail, the grid's columns and the focus.
+
+**The frame draws the whole grid.** `useShellRight` reads `shellPanelsOf` (the
+grid without the tool whose page is open, the detail only with no studio) and
+hands `AppShell` a `dockGrid`: the columns by kind and sizing, the focus as a
+key (`page`, `detail` or the tool's kind, `panelFocusKeyOf`) and two writes.
+`DockGrid` draws the one `<DrawerHost slot="dock" />` of App once per cell
+inside `DockCellContext`, and the host renders that cell's tool
+(`selectGridTool`); a studio that hosts the dock gets the same grid through
+`ShellDockContext`. One tool keeps the single dock card of before. Two or more
+go through `dockLayoutOf` inside `DrawerColumn`: every pane is its own card,
+12px apart, in the order page, detail, grid, rail, and the rail stays last
+in the dock box on the window edge whether the grid pushes or lies over the
+page. Each column has its handle on its left edge. It takes the width the
+session saved for its lead tool (`drawerGrid.widths`), else its lead tier's
+shared key; rows keep the solver's share, 50/50 or 58/42 with Browser on top.
+With two panels or more on screen the focused one draws a `focus-ring` border.
+A click or a focus inside a panel or the page names it (`focusShellPanel`,
+which writes only when the key changes). F6 and ⇧F6 (`panel.focusNext`,
+`panel.focusPrevious`) walk page, detail, then the tools column by column, top
+to bottom, and move the keyboard into the panel (`stepPanelFocus`,
+`panelFocusRingOf`). ⌘⇧W closes the focused panel (`focusedShellPanelOf`); with
+the page focused it closes the top of the slot as before. ``⌃` `` focuses an
+open Terminal that is not focused and closes a focused one; the rail button
+still opens and closes. A rail button is pressed while its tool is anywhere in
+the grid, and a second click closes it (`toggleTerminalDock`,
+`toggleBrowserDock`, `toggleDrawer` read `selectGridTool`). When exactly two
+tools are open and both shapes push (side by side and stacked), each head
+shows a key that turns the pair (`DockPairTurnContext` in `DrawerFrame`,
+`turnDockPair` with `turnedDockColumnsOf`); the write names the panel it came
+from and does nothing once that panel left the grid. When the page would lose
+its minimum side by side the solver stacks the pair and the key hides.
+Browser and Terminal share the grid like any tool: a handle drag hides the
+Browser page under its cover and places it once at the release
+([browser.md](../browser.md#the-pane)), and a Terminal sends only its newest
+size, one at a time ([keyboard.md](../features/keyboard.md)).
 **The open drawer is part of the
-history entry's focus; the chip is not.** A forward move (crumb, sidebar, Search or run, a child such
+history entry's focus; the chip is not.** A forward move (crumb, places rail, Sessions, Search or run, a child such
 as an agent) arrives with it closed; Back and Forward bring it back as it was;
 Escape and its X close it in place. The exception is a tool (Ask, Context, Explore,
 Scripts, Agents): a forward move that stays in its session keeps it open
@@ -370,16 +431,18 @@ whose page draws above every toast, so the stack keeps left of it there too
 ([browser.md](../browser.md#the-pane)). It still lifts above the Ask
 composer and the transcript reply field (`useToastLift`).
 
-**Floating surfaces are one surface.** Menus, popovers, the hover card, the
-session switcher, the update card and the delete confirm are all
+**Floating surfaces are one surface.** Menus, popovers, the hover card,
+Sessions, the update card and the delete confirm are all
 `FLOATING_SURFACE` from `@goodboy/ui` (rounded-lg, `floating-edge`, `bg-floating`,
 `shadow-lg`), with no per-site border, fill or shadow. Their widths come from
-one scale: menus 240 (never under 200), popovers 320 and 384, toast 360, hover
-card 320, session switcher 420. `regressions/popover-widths.test.ts` counts the
-off-scale widths a floating surface declares per file and never lets one
-grow.
+one scale (`POPOVER_WIDTH_PX`): menus 240 (never under 200), popovers 320 and
+384, Sessions 500, toast 360, hover card 320. Every one keeps `SHELL_GUTTER_PX`
+from each window edge and caps its height at the room left
+([styling.md](../styling.md#a-dialog-is-the-last-resort-not-the-default)).
+`regressions/popover-widths.test.ts` counts the off-scale widths a floating
+surface declares per file and never lets one grow.
 
-**The update card is never clipped.** It is a `Popover` in the popover layer, anchored above the Goodboy line with 12px to the window edge, 300px wide and never wider than `min(384px, window - 24px)`: a title, one line and the verbs of its state ([release.md](../release.md#auto-update)), no bullets. It stays away while its row is inert (`useIsAnchorInert`) and comes back with the row. A `fixed` card inside the sidebar would resolve against the sidebar, which has a transform and `overflow-hidden`.
+**The update card is never clipped.** It is a `Popover` in the popover layer, 300px wide and never wider than `min(384px, window - 24px)`: a title, one line and the verbs of its state ([release.md](../release.md#auto-update)), no bullets. On the places rail it opens to the right of the Update mark, 8px from it, bottom aligned and 12px from the window edge (`isBesideAnchor`, `useFloatingPlace`); elsewhere it opens from its anchor with the same 12px. It stays away while its anchor is inert (`useIsAnchorInert`) and comes back with it.
 
 **An object that belongs to where you are opens in a drawer; the page changes
 only by an explicit command.** A plan read from the planner that wrote it (the
@@ -626,3 +689,46 @@ does not move. See [session-rail.md](./session-rail.md) for what it shows.
 There is no drawer for notes: a note lives on its line in Changes and as a row in
 Comments, and `Fix comments` (kind `fix-comments`) is the one fix action. A note
 without a branch sits in `Unassigned comments` on the Session overview.
+
+### The grid saved on the session
+
+Each session remembers its dock grid: the panels, the columns, the width of
+each tool's column and the focus. It lives in `session_dock_grids` (m244), one
+row per session, deleted with it. The Board and the pages keep the grid the
+window has; they save nothing.
+
+- `useSessionDockGrid` (started by `useWindowLayout`) runs
+  `watchSessionDockGrid`. It keys on `currentSessionId`.
+- Entering a session reads its row (`recallDockGrid`). A row puts its grid in
+  place of the open tools (`slotWithGrid`), and a tool of a session that no
+  longer exists drops out. No row keeps the open tools, so a session saved by
+  0.39 opens with the dock of its window layout. A Terminal whose tab is gone
+  closes itself (`TerminalDrawer`), and the next save leaves it out.
+- A row this window has not saved since it loaded comes back without the
+  `UNSAVED_DRAWER_KINDS` (`appliedDockGrid`), so Monitor stays closed after a
+  reload or a restart. A row it saved in this run brings Monitor back with the
+  session (`isSavedThisRun`).
+- A change on a session waits 300ms, then `rememberDockGrid` writes it. The
+  write names the session the change was made on. Leaving the session writes
+  the waiting change at once, still on that session.
+- A column handle writes the width on the grid (`resizeDockColumn`), not in
+  the shared `goodboy:*-drawer-width:v1` keys. A double click writes the tier
+  default. A column with no saved width starts from its tier's key: the keys
+  are read that way until 0.42.0, then retired
+  ([versioning.md](../versioning.md#retired-state)). The detail column keeps
+  its key.
+
+| Write or read   | What happens                                                                                                                                         |
+| --------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Target          | The session the change was made on, read when it happened.                                                                                           |
+| State change    | The live grid moves at once; the row changes only when the write lands.                                                                              |
+| Failed save     | The row keeps the grid before it, and `reportError` shows the error on the session. Opening the session again brings that grid back.                 |
+| Retry           | The next change writes the whole grid again.                                                                                                         |
+| Late read       | A row that answers after the window left the session, or after the user opened or closed a tool, is dropped (`dockGridRecalls`).                     |
+| Order           | The writes and the read of one session queue in call order (`dockGridWrites`).                                                                       |
+| Second window   | The last write wins: a write older than the row (`updated_at`) changes nothing. A window shows the other's grid the next time it enters the session. |
+| Deleted session | The row goes with the session; a write for it writes nothing.                                                                                        |
+
+`watchSessionDockGrid.test.ts`, `storedDockGrid.test.ts`,
+`session-dock-grid.test.ts` and `restore-previous-build.test.ts` cover each
+row.

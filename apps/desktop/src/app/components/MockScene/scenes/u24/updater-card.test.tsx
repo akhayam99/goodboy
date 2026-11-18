@@ -45,7 +45,7 @@ describe('the updater card scenes', () => {
       'update-card-long-version',
       'Goodboy 0.24.1-beta.20261010.preview.build.8f3c2a91e7d54b6fa0c1d2e3f4a5b6c7d8e9f0 is ready',
     ],
-  ])('%s shows the card beside the chip with its three actions', async (id, name) => {
+  ])('%s shows the card beside the rail with its three actions', async (id, name) => {
     const Scene = U24_UPDATER_CARD_SCENES[id];
     if (Scene === undefined) {
       throw new Error(`missing scene ${id}`);
@@ -53,7 +53,7 @@ describe('the updater card scenes', () => {
     render(<Scene />);
 
     const dialog = await screen.findByRole('dialog', { name });
-    expect(screen.getByRole('complementary', { name: 'Sidebar' }).contains(dialog)).toBe(false);
+    expect(screen.getByRole('navigation', { name: 'Places' }).contains(dialog)).toBe(false);
     for (const label of ['Later', "What's new", 'Restart now']) {
       expect(within(dialog).getByRole('button', { name: label }).textContent).toBe(label);
     }

@@ -24,6 +24,10 @@ export const togglePane = ({ sessionId, pane }: Params): void => {
     toggleBrowserDock({ isToggle: true });
     return;
   }
+  if (pane === 'monitoring') {
+    useAppStore.getState().toggleDrawer({ kind: 'monitoring', sessionId: null, payload: null });
+    return;
+  }
   const isOnPage = useAppStore.getState().appStudio !== null;
   if (isOnPage) {
     leaveStudio({ get: useAppStore.getState });

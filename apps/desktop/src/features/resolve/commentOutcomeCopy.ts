@@ -2,6 +2,7 @@ import type { Tone } from '@goodboy/ui';
 import type { CommentOutcomeKind } from './commentOutcome';
 import { RESOLVE_VOCAB, RESOLVE_WORD_LABEL } from './commentProjection';
 import { countNoun } from '../../shared/utils/countNoun';
+import { fixesReadyText } from './fixRunReadyCopy';
 
 export const OUTCOME_LABEL: Readonly<Record<CommentOutcomeKind, string>> = {
   waiting: 'Waiting',
@@ -35,8 +36,6 @@ export const OUTCOME_ACTION = {
   reply: 'Reply',
   answerField: 'Your answer',
   working: 'The agent is working on this comment.',
-  discarded: 'Fix discarded',
-  discardConflict: 'This fix changed. Nothing changed.',
 } as const;
 
 type CountParams = {
@@ -69,7 +68,7 @@ const part = ({ count, one, many }: PartParams): ReadonlyArray<string> =>
 
 export const outcomeSummaryLine = ({ fixes, questions, replies }: SummaryParams): string =>
   [
-    ...part({ count: fixes, one: 'fix proposed', many: 'fixes proposed' }),
+    ...(fixes === 0 ? [] : [fixesReadyText({ count: fixes })]),
     ...part({ count: questions, one: 'question', many: 'questions' }),
     ...part({ count: replies, one: 'reply', many: 'replies' }),
   ].join(', ');

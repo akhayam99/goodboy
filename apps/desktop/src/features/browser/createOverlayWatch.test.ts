@@ -1,5 +1,6 @@
 // @vitest-environment happy-dom
 import { afterEach, describe, expect, it } from 'vitest';
+import { SPLIT_DRAG_ATTRIBUTE } from '@goodboy/ui';
 import { createOverlayWatch } from './createOverlayWatch';
 
 type Rect = {
@@ -55,6 +56,7 @@ const coversView = (): boolean => {
 };
 
 afterEach(() => {
+  document.body.removeAttribute(SPLIT_DRAG_ATTRIBUTE);
   document.body.replaceChildren();
 });
 
@@ -120,6 +122,29 @@ describe('createOverlayWatch', () => {
     watch.stop();
   });
 
+  it('keeps a Browser laid over the page in a narrow window shown above its veil', () => {
+    const column = document.createElement('div');
+    const main = document.createElement('div');
+    main.setAttribute('data-drawer-main', '');
+    main.setAttribute('inert', '');
+    const veil = document.createElement('div');
+    veil.setAttribute('aria-hidden', 'true');
+    veil.setAttribute('data-drawer-scrim', '');
+    giveRect({ element: veil, rect: { x: 44, y: 40, width: 936, height: 648 } });
+    const aside = document.createElement('aside');
+    aside.setAttribute('data-drawer-mode', 'overlay');
+    giveRect({ element: aside, rect: { x: 248, y: 40, width: 776, height: 648 } });
+    const browser = document.createElement('div');
+    giveRect({ element: browser, rect: { x: 260, y: 96, width: 720, height: 580 } });
+    aside.append(browser);
+    column.append(main, veil, aside);
+    document.body.append(column);
+    const watch = createOverlayWatch();
+
+    expect(watch.coverOf({ view: browser, rect: browser.getBoundingClientRect() })).toBeNull();
+    watch.stop();
+  });
+
   it('names the reason per overlay kind', () => {
     const reasons = [
       { role: 'menu', reason: 'menu' },
@@ -158,6 +183,17 @@ describe('createOverlayWatch', () => {
 
     expect(clear.coverOf({ view: under, rect: under.getBoundingClientRect() })).toBeNull();
     clear.stop();
+  });
+
+  it('covers the view while a split handle drags, and uncovers it on release', () => {
+    const view = placedView();
+    const watch = createOverlayWatch();
+
+    document.body.setAttribute(SPLIT_DRAG_ATTRIBUTE, 'x');
+    expect(watch.coverOf({ view, rect: view.getBoundingClientRect() })).toBe('drag');
+    document.body.removeAttribute(SPLIT_DRAG_ATTRIBUTE);
+    expect(watch.coverOf({ view, rect: view.getBoundingClientRect() })).toBeNull();
+    watch.stop();
   });
 
   it('leaves the view alone for a tooltip parked off screen', () => {

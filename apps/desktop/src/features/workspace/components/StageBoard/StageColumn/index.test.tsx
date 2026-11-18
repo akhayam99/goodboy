@@ -55,6 +55,7 @@ type RenderParams = {
   readonly spec?: StageColumnProps['spec'];
   readonly placement?: StageColumnProps['placement'];
   readonly isLoading?: boolean;
+  readonly count?: number;
 };
 
 const renderColumn = ({
@@ -63,12 +64,14 @@ const renderColumn = ({
   spec = { kind: 'stage', stage: 'building' },
   placement,
   isLoading,
+  count,
 }: RenderParams = {}) =>
   render(
     <ToastProvider>
       <StageColumn
         spec={spec}
         sessions={sessions}
+        {...(count !== undefined && { count })}
         nav={nav}
         selection={selection}
         onClearSelection={noop}
@@ -161,8 +164,8 @@ describe('StageColumn', () => {
     renderColumn({ spec: { kind: 'stage', stage: 'attention' } });
     const lane = screen.getByRole('group', { name: 'needs you' });
 
-    expect(within(lane).getByText('Needs you')).toBeDefined();
-    expect(within(lane).getByText('Nothing needs you')).toBeDefined();
+    within(lane).getByText('Needs you');
+    within(lane).getByText('Nothing needs you');
     expect(within(lane).queryByText(/when an agent asks you something/)).toBeNull();
     expect(within(lane).queryByText('0')).toBeNull();
   });
@@ -178,14 +181,14 @@ describe('StageColumn', () => {
     renderColumn({ spec });
     const lane = screen.getByRole('group', { name: label });
 
-    expect(within(lane).getByText(EMPTY_COPY[key].title)).toBeDefined();
+    within(lane).getByText(EMPTY_COPY[key].title);
   });
 
   it('renders the count and stage label once the lane has cards', () => {
     renderColumn({ sessions: [makeSession('s-1', 'one')] });
     const lane = screen.getByRole('group', { name: 'building' });
-    expect(within(lane).getByText('1')).toBeDefined();
-    expect(within(lane).getByText('Building')).toBeDefined();
+    within(lane).getByText('1');
+    within(lane).getByText('Building');
     expect(within(lane).queryByText('Nothing in progress')).toBeNull();
 
     cleanup();
@@ -193,14 +196,38 @@ describe('StageColumn', () => {
       sessions: [makeSession('s-1', 'one')],
       spec: { kind: 'stage', stage: 'running' },
     });
-    expect(screen.getByRole('group', { name: 'running' })).toBeDefined();
+    screen.getByRole('group', { name: 'running' });
+  });
+
+  it('reads the workspace needs you count, not the cards the filter leaves', () => {
+    renderColumn({
+      sessions: [makeSession('s-1', 'one')],
+      spec: { kind: 'stage', stage: 'attention' },
+      count: 3,
+    });
+    const lane = screen.getByRole('group', { name: 'needs you' });
+
+    within(lane).getByText('3');
+    expect(within(lane).queryByText('1')).toBeNull();
+  });
+
+  it('draws no number over cards that only ask for a look', () => {
+    renderColumn({
+      sessions: [makeSession('s-1', 'one')],
+      spec: { kind: 'stage', stage: 'attention' },
+      count: 0,
+    });
+    const lane = screen.getByRole('group', { name: 'needs you' });
+
+    expect(within(lane).queryByText('0')).toBeNull();
+    expect(within(lane).queryByText('1')).toBeNull();
   });
 
   it('shows a muted Loading line instead of the empty line while its list is unknown', () => {
     renderColumn({ spec: { kind: 'archived' }, isLoading: true });
     const lane = screen.getByRole('group', { name: 'archived' });
 
-    expect(within(lane).getByRole('status', { name: 'Loading sessions' })).toBeDefined();
+    within(lane).getByRole('status', { name: 'Loading sessions' });
     expect(within(lane).queryByText('Nothing archived')).toBeNull();
     expect(lane.getAttribute('aria-busy')).toBe('true');
   });
@@ -210,7 +237,7 @@ describe('StageColumn', () => {
     const lane = screen.getByRole('group', { name: 'archived' });
 
     expect(within(lane).queryByRole('status', { name: 'Loading sessions' })).toBeNull();
-    expect(within(lane).getByText('Nothing archived')).toBeDefined();
+    within(lane).getByText('Nothing archived');
     expect(lane.getAttribute('aria-busy')).toBe('false');
   });
 
@@ -221,7 +248,7 @@ describe('StageColumn', () => {
     });
     const half = screen.getByRole('group', { name: 'done' });
 
-    expect(within(half).getByText('Nothing done yet')).toBeDefined();
+    within(half).getByText('Nothing done yet');
 
     cleanup();
     renderColumn({
@@ -230,7 +257,7 @@ describe('StageColumn', () => {
       placement: 'half',
     });
     const filled = screen.getByRole('group', { name: 'done' });
-    expect(within(filled).getByText('2')).toBeDefined();
+    within(filled).getByText('2');
     expect(within(filled).getAllByRole('button', { name: /^card / })).toHaveLength(2);
   });
 

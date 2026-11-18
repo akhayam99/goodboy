@@ -70,7 +70,7 @@ describe('useNeedsYouElsewhere', () => {
   it('is zero with no project filter, since nothing is hidden', () => {
     seed();
 
-    expect(render().result.current).toBe(0);
+    expect(render().result.current).toEqual({ count: 3, elsewhere: 0 });
   });
 
   it('counts the sessions that need you in the projects the filter leaves out', () => {
@@ -82,7 +82,7 @@ describe('useNeedsYouElsewhere', () => {
       });
     });
 
-    expect(render().result.current).toBe(2);
+    expect(render().result.current).toEqual({ count: 3, elsewhere: 2 });
   });
 
   it('falls to zero once the question in the other project is answered', () => {
@@ -104,6 +104,6 @@ describe('useNeedsYouElsewhere', () => {
       });
     });
 
-    expect(result.current).toBe(0);
+    expect(result.current).toEqual({ count: 1, elsewhere: 0 });
   });
 });

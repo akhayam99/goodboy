@@ -581,7 +581,7 @@ const CALLER_KINDS: Readonly<Record<string, ReadonlyArray<ObjectTarget['kind']>>
   'features/notifications/components/NotificationsStudio/NotificationsHeaderActions.tsx': [
     'notifications',
   ],
-  'features/resolve/components/ReviewFlow/ThreadOverflowMenu.tsx': ['reviewComment'],
+  'features/resolve/components/ReviewFlow/ThreadOverflowMenu.tsx': ['reviewComment', 'fixRun'],
   'features/review/components/WriteReview/index.tsx': ['writeReview'],
   'features/session/components/AgentHeaderActions.tsx': ['agent'],
   'features/session/components/AgentTree/RunOverflowMenu.tsx': ['workflowRun'],

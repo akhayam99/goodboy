@@ -14,5 +14,5 @@ export const SessionToolsLive = ({ sessionId }: Props) => {
     sessionId,
     isTerminalOpen: openPane === 'terminal',
   });
-  return <ToolRailFrame terminalSignal={terminalSignal} />;
+  return <ToolRailFrame sessionId={sessionId} terminalSignal={terminalSignal} />;
 };

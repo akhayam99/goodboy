@@ -873,7 +873,7 @@ your library" run on the new schema. A migration that throws rolls back its
 part, records no version and leaves the gate closed: the launch error screen
 shows the error with Retry, and Retry runs the migrations again. `wipeDb`
 closes the gate while it replays the schema. `dbBoot.test.ts` upgrades
-databases left at m1, m139, m220 and m224 with the resolve queue asked for
+databases left at m1, m139, m220, m224 and m243 (0.39) with the resolve queue asked for
 first, starts the resolve drain before an upgrade, and fails a migration then
 retries it.
 
@@ -1090,6 +1090,7 @@ The count only falls: remove a line when the write moves behind a command.
 | `session_budgets`             | rust   | `budget.rs`                                                                                                                                                                                                                                                                                                                            |
 | `session_context_items`       | ts     | Learnings and role notes. They outlive the session; only a workspace delete removes them.                                                                                                                                                                                                                                              |
 | `session_decisions`           | ts     |                                                                                                                                                                                                                                                                                                                                        |
+| `session_dock_grids`          | ts     | The dock grid of a session (m244, written by `saveSessionDockGrid`): the last write wins between windows, and the row goes with its session ([home-and-drawer.md](navigation/home-and-drawer.md#the-grid-saved-on-the-session)).                                                                                                       |
 | `session_events`              | ts     |                                                                                                                                                                                                                                                                                                                                        |
 | `session_external_tasks`      | ts     |                                                                                                                                                                                                                                                                                                                                        |
 | `session_workflows`           | ts     |                                                                                                                                                                                                                                                                                                                                        |

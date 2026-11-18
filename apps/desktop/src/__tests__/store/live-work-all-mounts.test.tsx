@@ -207,7 +207,7 @@ describe('live work across every mount of a session', () => {
   let agent: Agent;
   let NowChip: Awaited<typeof import('../../app/components/AppTopBar/NowChip')>['NowChip'];
   let useDoorSignals: Awaited<
-    typeof import('../../app/components/SideColumn/useDoorSignals')
+    typeof import('../../app/components/ShellLeft/useDoorSignals')
   >['useDoorSignals'];
   let useRunningAgentCount: Awaited<
     typeof import('../../features/updater/hooks/useRunningAgentCount')
@@ -216,8 +216,7 @@ describe('live work across every mount of a session', () => {
   beforeAll(async () => {
     useAppStore = await importStore();
     NowChip = (await import('../../app/components/AppTopBar/NowChip')).NowChip;
-    useDoorSignals = (await import('../../app/components/SideColumn/useDoorSignals'))
-      .useDoorSignals;
+    useDoorSignals = (await import('../../app/components/ShellLeft/useDoorSignals')).useDoorSignals;
     useRunningAgentCount = (await import('../../features/updater/hooks/useRunningAgentCount'))
       .useRunningAgentCount;
   }, STORE_IMPORT_TIMEOUT_MS);

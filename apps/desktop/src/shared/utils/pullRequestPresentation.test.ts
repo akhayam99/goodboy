@@ -1,7 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import {
-  PR_GROUP_PRESENTATION,
   PULL_REQUEST_PRESENTATION,
   type PullRequestPresentationState,
 } from './pullRequestPresentation';
@@ -52,14 +51,5 @@ describe('pull request presentation', () => {
     expect(
       stateDescription({ presentation: PULL_REQUEST_PRESENTATION.closed, subject: 'PR #9' }),
     ).toBe('PR #9 closed, closed without being merged');
-  });
-
-  it('labels every pull request group, including the merge queue', () => {
-    expect(PR_GROUP_PRESENTATION.queued.label).toBe('queued');
-    expect(PR_GROUP_PRESENTATION.merged.tone).not.toBe(PR_GROUP_PRESENTATION.closed.tone);
-    for (const presentation of Object.values(PR_GROUP_PRESENTATION)) {
-      expect(presentation.label.length).toBeGreaterThan(0);
-      expect(presentation.reason.length).toBeGreaterThan(0);
-    }
   });
 });

@@ -8,9 +8,15 @@ const DESKTOP_SRC = join(__dirname, '..', '..');
 const UI_SRC = join(DESKTOP_SRC, '..', '..', '..', 'packages', 'ui', 'src');
 const SKIP_SEGMENTS = new Set(['__tests__', 'node_modules', 'dist', 'MockScene']);
 
-const GEOMETRY_OWNERS = new Set(['drawerGeometry.ts', join('components', 'DrawerColumn.tsx')]);
+const SOLVER = 'dockLayout.ts';
+const GEOMETRY_OWNERS = new Set([
+  'drawerGeometry.ts',
+  SOLVER,
+  join('components', 'DrawerColumn.tsx'),
+]);
 const GEOMETRY_NAMES =
-  /\b(drawerLayoutOf|canDrawerPush|drawerModeOf|drawerWidthOf|COLUMN_MIN_PUSH)\b/;
+  /\b(drawerLayoutOf|dockLayoutOf|pushReserveOf|canDrawerPush|drawerModeOf|drawerWidthOf|COLUMN_MIN_PUSH)\b/;
+const RAW_FRAME_NUMBERS = /\b(12|384|400|464|480|516|528|560|612|624|720)\b/;
 const OWN_WIDTH_RULES = /\b(ResizeObserver|matchMedia|innerWidth|useMeasuredWidth)\b/;
 const COLUMN_HOSTS = [
   join('app', 'components', 'StudioFrame', 'index.tsx'),
@@ -54,8 +60,8 @@ const UI = sourcesOf(UI_SRC);
 const isDrawerFile = ({ rel }: Source): boolean =>
   rel.split(sep).some((segment) => segment.includes('Drawer'));
 
-describe('the one drawer rule', () => {
-  it('keeps the push or overlay decision inside drawerGeometry and DrawerColumn', () => {
+describe('the one frame rule', () => {
+  it('keeps the push, stack or overlay decision inside drawerGeometry, dockLayout and DrawerColumn', () => {
     const owned = ({ rel }: Source): boolean => GEOMETRY_OWNERS.has(rel) || rel === 'index.ts';
     const offenders = [
       ...DESKTOP.map(({ rel, text }) => ({ rel: `desktop:${rel}`, text })),
@@ -66,8 +72,22 @@ describe('the one drawer rule', () => {
 
     expect(
       offenders,
-      `Only drawerGeometry.ts and DrawerColumn.tsx may decide push or overlay. Move this to DrawerColumn:\n${offenders.join('\n')}`,
+      `Only drawerGeometry.ts, dockLayout.ts and DrawerColumn.tsx may decide push, stack or overlay. Move this to DrawerColumn:\n${offenders.join('\n')}`,
     ).toEqual([]);
+  });
+
+  it('gives the dock solver its sizes from drawerGeometry and its gutter from frameGeometry', () => {
+    const solver = UI.find(({ rel }) => rel === SOLVER);
+
+    expect(solver?.text).toMatch(/import \{[^}]*\bDRAWER_TIERS\b[^}]*\} from '\.\/drawerGeometry'/);
+    expect(solver?.text).toMatch(
+      /import \{[^}]*\bpushReserveOf\b[^}]*\} from '\.\/drawerGeometry'/,
+    );
+    expect(solver?.text).toMatch(/import \{ SHELL_GUTTER_PX \} from '\.\/frameGeometry'/);
+    expect(
+      solver?.text.match(RAW_FRAME_NUMBERS),
+      'dockLayout.ts reads tier sizes, page minimums and the gutter from their owners, never a copy.',
+    ).toBeNull();
   });
 
   it('gives no drawer file its own width rule', () => {

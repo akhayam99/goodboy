@@ -47,7 +47,7 @@
   "terminal -> monitoring": 2,
   "workflows -> actions": 1,
   "workflows -> plans": 1,
-  "workspace -> actions": 7,
+  "workspace -> actions": 4,
   "workspace -> onboarding": 2,
   "workspace -> resolve": 1,
   "workspace -> workflows": 2,

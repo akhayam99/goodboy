@@ -53,7 +53,7 @@
   the run page, a step of an orchestrated run opens that step's page the same way.
   A deleted asker keeps its role with no link. A row's
   right click menu is the registry kind `question` (`features/actions/kinds/question.ts`):
-  **Open question** and **Open the agent** (the same `openAsker`, hidden for a
+  **Open question** and **Open agent** (the same `openAsker`, hidden for a
   deleted asker); the card in the drawer (variant `full`) names no asker, the head does,
   starts with the Recommended answer picked (`LiveQuestionCard`), so Enter sends it, and
   keeps one filled button: the footer holds Skip and Answer, and **More** at the top of the
@@ -154,7 +154,7 @@
   contract of its header and tabs is in [The Branch page](branch-page.md#the-branch-page).
   Comments is one flow: the list grouped by delivery (Needs you, Working,
   Done and Left open on its host, the last two closed)
-  under the run status line, across the page, and the open comment in the drawer beside it
+  under the Open and Resolved bar (with the quiet count of a batch fix), across the page, and the open comment in the drawer beside it
   (kind `conversation`, side tier), the same pattern as a check opening the Debugger. A comment reads one word (Question, Fix ready,
   Push failed, Failed, Fixing, Fixed, Replied, Done, Left open, Open), all from `RESOLVE_WORD_LABEL`
   in `commentProjection.ts` (Fixed is a fix on the branch whose reply is not sent, Replied is a
@@ -165,7 +165,7 @@
   without a result for a comment reads Failed with Retry, never a question. A thread in the address is
   `s/{session}/branch/comments/t/{thread}`. A comment nobody started has `Fix` in its drawer (and `F`), which opens the **Fix comments** drawer
   (kind `fix-comments`, side tier) with that comment checked; a checkbox on hover picks comments (`X` on the focused row,
-  Cmd+A for every fixable comment, open or couldn't fix, Esc clears) and the bar `N selected ·
+  Cmd+A for every fixable comment, open or failed, Esc clears) and the bar `N selected ·
 Fix N` opens the same panel, or `Apply N fixes` for comments with a fix ready. With no fix run
   the line under the tabs says `Fix N`; the Overview card and
   the board card open that same panel pre-filled. Bulk answers, Retry N and
@@ -189,7 +189,7 @@ pull request`) and Comments lists the session's notes. Every door to a pull
   state word, and while it drafts the last thing it said). Its transcript opens
   as a drawer of kind `transcript` on the Comments tab of its Branch, in the
   space on the right, so the list and the thread stay where they are: from the
-  run status line (**Open transcript** opens the drawer in place and is gone while that run's drawer is open), from `…` →
+  comment's row while it works (**Open transcript** opens the drawer in place), from the menu of the batch count, from `…` →
   Agent transcript on a thread, from the thread crumb menu, from a fix run row
   in Activity, from a notification, the agent-started toast and Search or run.
   `fixRunTranscript({ sessionId, agentId, threadId })` builds the move (the

@@ -1,7 +1,7 @@
 import { Notice, formatError } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { PushFailureBlock } from '../../../../shared/components/PushFailureBlock';
-import { PushFixAgentAction } from '../../../../shared/components/PushFixAgentAction';
+import { PushFixAgentAction } from '../../../history/pushFix/PushFixAgentAction';
 import { StaleDepsAction } from '../../../../shared/components/StaleDepsAction';
 import { PrPushFailedError } from '../../../../store/slices/github/PrPushFailedError';
 import type { PushFixFollowUp } from '../../../../store/slices/history/types';

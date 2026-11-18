@@ -10,6 +10,7 @@ import { drawerKey } from '../../store/slices/drawer/drawerKey';
 import { IdentifierPeekSource } from './IdentifierPeekSource';
 import { historyVersionsDrawerRegistration } from '../../features/history/historyVersionsDrawerRegistration';
 import { leadDetailsDrawerRegistration } from '../../features/auto/permissions/leadDetailsDrawerRegistration';
+import { monitoringDrawerRegistration } from '../../features/monitoring/monitoringDrawerRegistration';
 import { planPartDrawerRegistration } from '../../features/plans/planPartDrawerRegistration';
 import { terminalDrawerRegistration } from '../../features/terminal/terminalDrawerRegistration';
 
@@ -29,6 +30,7 @@ type RegisteredDrawer = Extract<
       | 'history-versions'
       | 'identifier-peek'
       | 'lead-details'
+      | 'monitoring'
       | 'plan-part'
       | 'terminal';
   }
@@ -80,6 +82,8 @@ export const renderRegisteredDrawer = ({
       );
     case 'lead-details':
       return leadDetailsDrawerRegistration.render({ drawer, closeDrawer, openDrawer });
+    case 'monitoring':
+      return monitoringDrawerRegistration.render({ drawer, closeDrawer, openDrawer });
     case 'plan-part':
       return planPartDrawerRegistration.render({ drawer, closeDrawer, openDrawer });
     case 'terminal':

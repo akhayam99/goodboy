@@ -4,7 +4,7 @@ import { useSessionPageLens } from '../../../features/session/hooks/useSessionPa
 import { openSessionPage } from '../../../features/session/openSessionPage';
 import { pageSlotOf } from '../../../features/session/pageSlot';
 import type { Page } from '../../../features/session/pageRegistry';
-import { currentSignOf } from '../../../features/workspace/components/SessionActivityBar/currentSign';
+import { currentSignOf } from './currentSign';
 import { useCardPages } from '../../../features/workspace/hooks/useCardPages';
 
 type Props = {

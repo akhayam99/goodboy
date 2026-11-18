@@ -12,7 +12,6 @@
   "apps/desktop/src/features/chat/components/TranscriptCards/index.test.tsx": 2,
   "apps/desktop/src/features/integrations/bitbucket/BitbucketStudio/usePrVerbs/index.test.tsx": 1,
   "apps/desktop/src/features/search/components/SearchMode/index.test.tsx": 4,
-  "apps/desktop/src/features/session/components/SessionNavSidebar/index.test.tsx": 1,
   "apps/desktop/src/features/session/components/SessionWorkspace/parts/FileVersionsPane/index.test.tsx": 1,
   "apps/desktop/src/features/settings/components/SettingsStudio/AppGeneralSection.test.tsx": 2,
   "apps/desktop/src/features/settings/components/SettingsStudio/SearchIndexBand.test.tsx": 2,

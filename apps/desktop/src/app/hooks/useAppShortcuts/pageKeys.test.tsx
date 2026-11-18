@@ -44,7 +44,6 @@ const Harness = () => {
     openSettings: () => undefined,
     openNewChat: () => undefined,
     openShortcutHelp: () => undefined,
-    toggleSidebar: () => undefined,
   });
   return null;
 };

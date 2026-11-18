@@ -338,7 +338,7 @@ const sidebarNamesTheBranches = (): void => {
 
 export const COMMENTS_WORDS_ROWS: ReadonlyArray<Row> = [
   {
-    name: 'comments: accepting two reads two on the group, the push line and the sidebar, and the question still leads',
+    name: 'comments: accepting two reads Fixed on both rows in place, no push line, and the question still leads',
     covers: ['navigate'],
     open: async (ctx) => {
       installComments({ sessionId: ctx.sessionId, seeds: SEEDS });
@@ -349,8 +349,15 @@ export const COMMENTS_WORDS_ROWS: ReadonlyArray<Row> = [
       await applyNeedsYou({ count: 2 });
     },
     lands: async () => {
-      await waitFor(() => expect(nodeText(group('Done'))).toContain('Done 2'), WAIT);
-      expect(rowCount(group('Needs you'))).toBe(1);
+      await waitFor(
+        () => expect(within(group('Needs you')).getAllByText('Fixed')).toHaveLength(2),
+        WAIT,
+      );
+      expect(within(list()).queryByRole('region', { name: 'Done' })).toBeNull();
+      expect(rowCount(group('Needs you'))).toBe(3);
+      expect(
+        nodeText(within(group('Needs you')).getAllByRole('listitem')[0] ?? document.body),
+      ).toContain('Question');
       expect(screen.queryByTestId('review-push-line')).toBeNull();
       expect(document.querySelector('[data-branch-primary]')?.textContent).toBe('Answer');
       sidebarNamesTheBranches();

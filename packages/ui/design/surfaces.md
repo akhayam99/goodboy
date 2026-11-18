@@ -9,7 +9,7 @@ props and reads no store, so it also renders inside `ErrorBoundary` after the
 app below it has crashed.
 
 - **Variants**: `floating` is level 4 (`FLOATING_SURFACE`), placed by the host
-  to the right of the sidebar bug icon (`side: 'right'`, `align: 'end'`, inside
+  to the right of the rail's Report item (`side: 'right'`, `align: 'end'`, inside
   the window) with no overlay, or at the bottom centre when the icon is not on
   screen. `inline` drops the shadow onto `subtle`, for the crash and startup
   screens. The body scrolls in a `ScrollFade` between the head and the action

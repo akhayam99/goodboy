@@ -8,6 +8,7 @@ import { BOARD_STAGES } from './boardStages';
 import { StageColumn } from './StageColumn';
 import type { BoardNavigation } from './useBoardNavigation';
 import type { BoardSelection } from './useBoardSelection';
+import { useBoardArrowKeys } from './useBoardArrowKeys';
 import { useLaneTravel } from './useLaneTravel';
 
 const LANE_STAGES = BOARD_STAGES.filter((stage) => stage !== 'done');
@@ -23,6 +24,7 @@ type Props = {
   readonly layout: BoardLanesLayout;
   readonly scrollLaneRem: number;
   readonly byStage: ReadonlyMap<string, ReadonlyArray<Session>>;
+  readonly needsYouCount: number;
   readonly archived: ReadonlyArray<Session>;
   readonly isArchivedLoading: boolean;
   readonly nav: BoardNavigation;
@@ -42,6 +44,7 @@ export const BoardLanes = ({
   layout,
   scrollLaneRem,
   byStage,
+  needsYouCount,
   archived,
   isArchivedLoading,
   nav,
@@ -67,6 +70,7 @@ export const BoardLanes = ({
     (ids: ReadonlyArray<SessionId>, mode: 'replace' | 'add') => selectIds(ids, mode),
     [selectIds],
   );
+  const onArrowKeyDown = useBoardArrowKeys({ selection });
   const lasso = useDragLasso<SessionId>({ containerRef: columnsRef, onSelect: onLassoSelect });
   const placement = layout.stacked ? 'half' : 'lane';
   const travelerIds = useLaneTravel({
@@ -116,6 +120,7 @@ export const BoardLanes = ({
       <div
         ref={columnsRef}
         onPointerDown={lasso.onPointerDown}
+        onKeyDown={onArrowKeyDown}
         data-selecting={selectedIds.length > 0}
         style={isScrolling ? { gridTemplateColumns: `repeat(5,${scrollLaneRem}rem)` } : undefined}
         className={cn(
@@ -129,6 +134,7 @@ export const BoardLanes = ({
             key={stage}
             spec={{ kind: 'stage', stage }}
             sessions={byStage.get(stage) ?? EMPTY_ARRAY}
+            {...(stage === 'attention' && { count: needsYouCount })}
             nav={nav}
             selection={selection}
             onClearSelection={selection.clearAll}

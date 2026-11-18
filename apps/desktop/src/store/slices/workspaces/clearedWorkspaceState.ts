@@ -1,8 +1,11 @@
+import { EMPTY_DRAWER_GRID } from '../drawer/state';
+
 export const clearedWorkspaceState = () => ({
   currentSessionId: null,
   appStudio: null,
   drawer: null,
   drawerBack: null,
+  drawerGrid: EMPTY_DRAWER_GRID,
   sessions: [],
   archivedSessions: {},
   sessionSummary: null,

@@ -5,6 +5,8 @@ import { DrawerPanelCard } from './DrawerPanelCard';
 
 const PUSH_CONTENT = 'w-[calc(var(--goodboy-drawer-panel)-1px)]';
 
+const GRID_CONTENT = 'w-[var(--goodboy-drawer-panel)]';
+
 type Props = {
   readonly panel: DrawerPanel;
   readonly node: ReactNode;
@@ -16,6 +18,8 @@ type Props = {
   readonly isIdle: boolean;
   readonly parkedWidth: number;
   readonly setEdgeHost: (node: HTMLDivElement | null) => void;
+  readonly isGrid?: boolean;
+  readonly isFocused?: boolean;
 };
 
 export const DrawerDockBox = ({
@@ -29,24 +33,25 @@ export const DrawerDockBox = ({
   isIdle,
   parkedWidth,
   setEdgeHost,
+  isGrid = false,
+  isFocused = false,
 }: Props) => {
   const isSlidingIn = isOverlay && isOpen && !isParked && !panel.exit.isResumed;
   return (
     <div
       data-container="drawer"
+      data-panel-focused={isFocused ? '' : undefined}
       className={cn(
-        'panel-on-rail relative flex min-h-0 min-w-0 flex-1 overflow-clip rounded-l-frame border-y border-l border-frame-edge bg-drawer',
-        isFloating && 'pointer-events-auto shadow-xl',
+        'panel-on-rail relative flex min-h-0 min-w-0 flex-1 overflow-clip rounded-l-frame border-y border-l',
+        isFocused ? 'border-focus-ring' : 'border-frame-edge',
+        isGrid ? 'border-0 bg-transparent' : 'bg-drawer',
+        isFloating && 'pointer-events-auto',
+        isFloating && !isGrid && 'shadow-xl',
         isIdle && 'border-0',
         isSlidingIn && 'motion-safe:animate-drawer-dock-in',
         panel.isOverlayExit && 'motion-safe:animate-drawer-dock-out',
       )}
     >
-      <div
-        ref={setEdgeHost}
-        data-drawer-edge=""
-        className="relative z-10 flex shrink-0 bg-drawer empty:hidden"
-      />
       {isOpen || panel.exit.isExiting ? (
         <DrawerPanelCard
           slot="drawer"
@@ -58,9 +63,14 @@ export const DrawerDockBox = ({
           isOverlay={isOverlay}
           isFloating={isFloating}
           parkedWidth={parkedWidth}
-          pushWidthClass={PUSH_CONTENT}
+          pushWidthClass={isGrid ? GRID_CONTENT : PUSH_CONTENT}
         />
       ) : null}
+      <div
+        ref={setEdgeHost}
+        data-drawer-edge=""
+        className="relative z-10 flex shrink-0 bg-drawer empty:hidden"
+      />
     </div>
   );
 };

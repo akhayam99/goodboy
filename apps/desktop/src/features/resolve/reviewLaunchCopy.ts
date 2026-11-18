@@ -1,3 +1,5 @@
+import { ordinalOf } from '../../shared/utils/ordinalOf';
+
 export const REVIEW_LAUNCH_LABEL = {
   fix: 'Fix',
   selectRow: 'Select the comment by',
@@ -16,11 +18,18 @@ export const threadCountText = ({ count }: CountParams): string =>
   count === 1 ? '1 comment' : `${count} comments`;
 
 export type FixingCount = {
-  readonly working: number;
+  readonly place: number;
   readonly total: number;
 };
 
-export const fixingCountText = ({ working, total }: FixingCount): string =>
-  working >= total
-    ? `Fixing ${threadCountText({ count: total })}`
-    : `Fixing ${working} of ${threadCountText({ count: total })}`;
+export const fixingCountText = ({ place, total }: FixingCount): string =>
+  `Fixing ${place} of ${threadCountText({ count: total })}`;
+
+export const fixingPlaceText = ({ place, total }: FixingCount): string => `${place} of ${total}`;
+
+type PlaceParams = {
+  readonly place: number;
+};
+
+export const queuedPlaceText = ({ place }: PlaceParams): string =>
+  `${ordinalOf({ n: place })} in this fix`;

@@ -107,5 +107,5 @@ export const BoardStatesScene = () => {
   if (!isReady) {
     return null;
   }
-  return <AppFrame view="board" isRailCollapsed={false} />;
+  return <AppFrame view="board" />;
 };

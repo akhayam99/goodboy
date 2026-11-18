@@ -1,5 +1,5 @@
 {
-  "apps/desktop/src/app/components/SideColumn/useDoorSignals/index.ts": 2,
+  "apps/desktop/src/app/components/ShellLeft/useDoorSignals/index.ts": 1,
   "apps/desktop/src/features/artifacts/components/ArtifactStudio/index.tsx": 1,
   "apps/desktop/src/features/artifacts/useArtifactScoutRoster/index.ts": 1,
   "apps/desktop/src/features/backup/components/BackupPage/index.tsx": 1,
@@ -40,6 +40,5 @@
   "apps/desktop/src/features/workspace/components/WorkspaceSwitcher/useWorkspaceWindowState/index.ts": 1,
   "apps/desktop/src/features/worktree/BranchSwitchPanel/index.tsx": 1,
   "apps/desktop/src/store/slices/session-view/selectors.ts": 16,
-  "apps/desktop/src/store/slices/session-view/useSessionInactivity/index.ts": 2,
   "apps/desktop/src/store/slices/sidebar/selectors.ts": 1
 }

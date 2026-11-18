@@ -81,9 +81,7 @@ describe('the u36 tools and questions scenes', () => {
         'Dedicated retry queue',
       ]);
       within(card).getByRole('button', { name: 'More' });
-      expect(screen.getByRole('button', { name: /^Open the agent: / }).textContent).toBe(
-        'Implementer',
-      );
+      expect(screen.getByRole('button', { name: /^Open agent: / }).textContent).toBe('Implementer');
     },
   );
 });

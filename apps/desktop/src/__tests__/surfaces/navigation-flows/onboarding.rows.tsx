@@ -59,7 +59,7 @@ const closed = async (): Promise<void> => {
     () => expect(screen.queryByRole('dialog', { name: 'Goodboy setup' })).toBeNull(),
     WAIT,
   );
-  await waitFor(() => expect(document.querySelector('[data-side-column]')).not.toBeNull(), WAIT);
+  await waitFor(() => expect(document.querySelector('[data-shell-rail]')).not.toBeNull(), WAIT);
 };
 
 export const ONBOARDING_ROWS: ReadonlyArray<Row> = [

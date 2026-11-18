@@ -4,12 +4,8 @@ import { useAppStore } from '../../../../store';
 import type { BranchStepComments } from '../../../branch/branchStepOf';
 import type { FixRun } from '../../fixRun';
 import type { LaneStatus } from '../../laneStatus';
-import { useFixRunGroups } from '../../components/ReviewFlow/useFixRunGroups';
-import {
-  useReviewEntries,
-  type ReviewEntry,
-  type ReviewGroup,
-} from '../../components/ReviewFlow/useReviewEntries';
+import { useFixRun } from '../../components/ReviewFlow/useFixRun';
+import { useReviewEntries, type ReviewEntry } from '../../components/ReviewFlow/useReviewEntries';
 import { useReviewPush, type ReviewPush } from '../../components/ReviewFlow/useReviewPush';
 import { useLaneStatus } from '../useLaneStatus';
 
@@ -28,7 +24,6 @@ type BranchReview = {
   readonly isSelecting: boolean;
 };
 
-const NO_GROUPS: ReadonlyArray<ReviewGroup> = [];
 const NO_THREADS: ReadonlyArray<string> = [];
 
 export const useBranchReview = ({ sessionId, mountId }: Params): BranchReview => {
@@ -36,11 +31,7 @@ export const useBranchReview = ({ sessionId, mountId }: Params): BranchReview =>
   const push = useReviewPush({ sessionId, mountId });
   const { entries: branchEntries } = useReviewEntries({ sessionId, scope: 'branch', mountId });
   const lane = useLaneStatus({ sessionId, entries: branchEntries });
-  const { run, fixRunReady, isRunLive } = useFixRunGroups({
-    lane,
-    entries: branchEntries,
-    groups: NO_GROUPS,
-  });
+  const { run, fixRunReady, isRunLive } = useFixRun({ lane, entries: branchEntries });
   const selectedCount = useAppStore((s) => s.reviewSelection[sessionId]?.length ?? 0);
   const questionThreadId =
     branchEntries.find((entry) => entry.resolveWord === 'question')?.threadId ?? null;

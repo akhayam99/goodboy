@@ -20,7 +20,6 @@ const LOADED_SIGNAL =
 
 const SHELL_SESSION_REGIONS = [
   'apps/desktop/src/features/workspace/components/StageBoard/index.tsx',
-  'apps/desktop/src/features/session/components/SessionNavSidebar/index.tsx',
 ];
 
 const READS_BOARD_READY = /\bs\.boardReady\b/;

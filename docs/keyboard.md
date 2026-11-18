@@ -22,10 +22,14 @@ back with the session. The Board does nothing.
 `terminal.closeTab` is the scoped entry that declines when a popover is open or
 no tab is selected, so `app.close` takes the press.
 
-⌘⇧W (`slot.close`, Ctrl+F4 elsewhere) closes the top of the side slot and
-nothing else (`closeSlot`): the drawer in the back chip comes back, a second
-press empties the slot, and with no drawer shown (none open, or one parked
-under a studio) it does nothing. On macOS the
+⌘⇧W (`slot.close`, Ctrl+F4 elsewhere) closes the focused panel of the frame
+(`closeSlot` reads `focusedShellPanelOf`): a tool of the grid or the detail.
+With the page focused it closes the top of the side slot and nothing else: the
+drawer in the back chip comes back, a second press empties the slot, and with
+no drawer shown (none open, or one parked under a studio) it does nothing.
+F6 and ⇧F6 (`panel.focusNext`, `panel.focusPrevious`, kept with the two close
+keys in `windowShortcuts.ts`) move the focus through page, detail and the
+grid's panels and back to the page (`stepPanelFocus`). On macOS the
 File menu item Close the Drawer owns the chord, so the press reaches the app
 even when a terminal or a web page has the keyboard.
 

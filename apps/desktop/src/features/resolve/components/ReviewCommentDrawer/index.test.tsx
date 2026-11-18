@@ -204,7 +204,7 @@ describe('the comment drawer', () => {
       THREAD_IDS.retryConstant,
     );
 
-    fireEvent.click(screen.getByRole('button', { name: 'Back to the comment' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Back to the comment' }));
     await settle();
 
     expect(openThread()).toBe(THREAD_IDS.retryConstant);

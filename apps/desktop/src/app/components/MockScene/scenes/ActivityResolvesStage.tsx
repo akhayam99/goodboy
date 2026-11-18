@@ -21,7 +21,6 @@ export const ActivityResolvesStage = ({ step }: { readonly step: ActivityResolve
   return (
     <ShellFrame
       session={ACTIVITY_RESOLVES_SESSION}
-      sidebar="collapsed"
       main={
         step === 'log' ? (
           <LogPane session={ACTIVITY_RESOLVES_SESSION} />

@@ -7,4 +7,5 @@ export const U23_COMMENTS_SCENES = {
   'comments-left-open': () => <CommentsScene variant="left-open" />,
   'comments-action-bar': () => <CommentsScene variant="action-bar" />,
   'comments-working': () => <CommentsScene variant="working" />,
+  'comments-batch': () => <CommentsScene variant="batch" />,
 };

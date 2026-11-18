@@ -7,7 +7,6 @@ vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn(async () => () => undefi
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { invoke } from '@tauri-apps/api/core';
-import { LEFT_SIDEBAR_MAX } from '@goodboy/ui';
 import type {
   BranchCommit,
   DiffComment,
@@ -270,6 +269,8 @@ const aNote = (): DiffComment => ({
   projectId: PROJECT_ID,
   branch: MOUNT.branch,
 });
+
+const NARROW_PAGE_PX = 624;
 
 describe('Branch page header and sections', () => {
   it('names the pull request and lists Conversation, Changes, Commits, Checks, Work and Comments in the rail', async () => {
@@ -708,8 +709,8 @@ describe('Branch page Comments', () => {
     }
   });
 
-  it('keeps the full list in a 1024px window with a wide sidebar while the drawer reads the thread', async () => {
-    await mountAt({ width: 1024 - LEFT_SIDEBAR_MAX });
+  it('keeps the full list in a narrow 624px page while the drawer reads the thread', async () => {
+    await mountAt({ width: NARROW_PAGE_PX });
     act(() => {
       useAppStore.getState().openDrawer({
         kind: 'conversation',

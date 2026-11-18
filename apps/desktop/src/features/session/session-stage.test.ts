@@ -118,7 +118,7 @@ describe('the reason table', () => {
     ['needs-approval', 'approval', 'warning', 'Needs permission'],
     ['plan-approval', 'approval', 'warning', 'The plan needs approval'],
     ['changes-requested', '!', 'warning', 'Changes requested'],
-    ['fix-couldnt-fix', '!', 'warning', "1 comment it couldn't fix"],
+    ['fix-couldnt-fix', '!', 'warning', '1 comment failed'],
     ['pr-approved', 'approved', 'success', 'Approved, ready to merge'],
     ['unread-reply', 'none', 'info', 'New reply'],
     ['run-stopped', '!', 'danger', 'Failed'],
@@ -143,7 +143,7 @@ describe('attentionWordsOf', () => {
       '3 comments need you',
     );
     expect(attentionWordsOf({ reason: 'fix-couldnt-fix', counts: { fixCouldntFixCount: 2 } })).toBe(
-      "2 comments it couldn't fix",
+      '2 comments failed',
     );
   });
 

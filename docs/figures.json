@@ -251,10 +251,6 @@
     "version": "0.27.1",
     "recipe": "--scene 'r4-report-bug&brand=1' --window 1280x800 --clip 225,560,600,235 --wait 8000"
   },
-  "features/switch-display-options": {
-    "version": "0.33.0",
-    "recipe": "--scene 'sessions-menu&brand=1' --window 1280x900 --wait 8000"
-  },
   "features/switch-notifications": {
     "version": "0.33.0",
     "recipe": "--scene 'notifications&brand=1' --click 'Needs action' --window 1280x800 --wait 8000"
@@ -262,10 +258,6 @@
   "features/switch-now-chip": {
     "version": "0.33.0",
     "recipe": "--scene 'board-shell&brand=1' --click 2 --window 1500x600 --wait 8000"
-  },
-  "features/switch-rail": {
-    "version": "0.33.0",
-    "recipe": "--scene 'session-hover&brand=1' --clip 0,0,640,720 --window 1800x720 --wait 8000"
   },
   "features/workflow-hints": {
     "version": "0.27.1",

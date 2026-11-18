@@ -2,7 +2,6 @@ import { fixedInLine } from './commentOutcomeCopy';
 import type { RowFix } from './rowFix';
 
 export const ROW_FIX_COPY = {
-  fixing: 'In the fix run',
   seeDiff: 'Open changes',
   seeDiffOf: 'Open changes of',
   review: 'Review the fix',
@@ -14,8 +13,6 @@ type Params = {
 
 export const rowFixLineOf = ({ fix }: Params): string => {
   switch (fix.kind) {
-    case 'fixing':
-      return ROW_FIX_COPY.fixing;
     case 'fixed':
       return fix.isReview
         ? `${fixedInLine({ sha: fix.sha })} · ${ROW_FIX_COPY.review}`

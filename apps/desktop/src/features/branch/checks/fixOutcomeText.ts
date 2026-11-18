@@ -20,7 +20,7 @@ export const fixOutcomeText = ({ state, commit, checkName }: Params): string | n
         ? `Pushed. ${subject} runs again.`
         : `Pushed ${commit}. ${subject} runs again.`;
     case 'fix-failed':
-      return 'The fix ended without a commit. Open the Implementer to see why.';
+      return 'The fix ended without a commit. Open transcript to see why.';
     case 'none':
     case 'analyzing':
     case 'proposal':

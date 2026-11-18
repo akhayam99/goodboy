@@ -5,7 +5,6 @@ import { describe, expect, it } from 'vitest';
 
 const REPO_ROOT = join(__dirname, '..', '..', '..', '..', '..');
 const TIMELINE = 'apps/desktop/src/features/session/components/SessionWorkspace/parts/TimelinePane';
-const SESSION_BAR = 'apps/desktop/src/features/workspace/components/SessionActivityBar';
 const CHANGE_TREE = 'apps/desktop/src/features/diff/components/ChangeTree';
 
 const SHARED_STYLE_ROWS: ReadonlyArray<string> = [
@@ -20,14 +19,8 @@ const SHARED_STYLE_ROWS: ReadonlyArray<string> = [
   `${TIMELINE}/TimelineStreamRow.tsx`,
   `${TIMELINE}/TimelineCountRow.tsx`,
   `${TIMELINE}/TimelineMoreRow.tsx`,
-  `${SESSION_BAR}/SessionActivityItem.tsx`,
-  `${SESSION_BAR}/index.tsx`,
   `${CHANGE_TREE}/FileRow.tsx`,
   `${CHANGE_TREE}/FolderRow.tsx`,
-];
-
-const COMPOSED_ROWS: ReadonlyArray<string> = [
-  `apps/desktop/src/app/components/SessionRail/SessionPageRow.tsx`,
 ];
 
 const OWN_HOVER_LAYER = /hover:bg-hover/;
@@ -47,14 +40,6 @@ describe('a clickable row takes its hover and focus from ROW_INTERACTIVE', () =>
 
   it.each(SHARED_STYLE_ROWS)('%s reads the shared style', (path) => {
     expect(SHARED_STYLE.test(sourceOf({ path }))).toBe(true);
-  });
-
-  it.each(COMPOSED_ROWS)('%s builds on SelectableRow and copies neither', (path) => {
-    const source = sourceOf({ path });
-
-    expect(source).toMatch(/SelectableRow/);
-    expect(OWN_HOVER_LAYER.test(source)).toBe(false);
-    expect(OWN_FOCUS_RING.test(source)).toBe(false);
   });
 
   it('keeps the shared style as the one place that names the layer', () => {

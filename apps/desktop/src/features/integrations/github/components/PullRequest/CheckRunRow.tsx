@@ -8,7 +8,8 @@ import { checkCardOf, checkFootnoteOf } from './checkCardOf';
 
 export type CheckRunRowParts = {
   readonly footnote?: string;
-  readonly status?: ReactNode;
+  readonly work?: ReactNode;
+  readonly isAgentWorking?: boolean;
   readonly action?: ReactNode;
   readonly hint?: ReactNode;
   readonly onOpen: () => void;
@@ -23,7 +24,15 @@ type DurationParams = Pick<Props, 'check'>;
 const durationOf = ({ check }: DurationParams): string =>
   check.durationMs === null ? '' : (formatDuration({ durationMs: check.durationMs }) ?? '');
 
-export const CheckRunRow = ({ check, footnote, status, action, hint, onOpen }: Props) => {
+export const CheckRunRow = ({
+  check,
+  footnote,
+  work,
+  isAgentWorking = false,
+  action,
+  hint,
+  onOpen,
+}: Props) => {
   const menu = useObjectMenuTrigger({
     target: { kind: 'checkRun', facts: { name: check.name, url: check.detailsUrl, onOpen } },
     anchorKey: `check-run:${check.name}`,
@@ -33,7 +42,7 @@ export const CheckRunRow = ({ check, footnote, status, action, hint, onOpen }: P
       data-check-row={check.name}
       onContextMenu={menu.onContextMenu}
       onKeyDown={menu.onKeyDown}
-      className="col-span-full grid grid-cols-subgrid items-center"
+      className="group/row col-span-full grid grid-cols-subgrid items-center"
     >
       <FactCard
         card={checkCardOf({
@@ -53,16 +62,20 @@ export const CheckRunRow = ({ check, footnote, status, action, hint, onOpen }: P
           <CheckConclusionIcon conclusion={check.conclusion} />
           <span className="min-w-0 truncate text-foreground">{check.name}</span>
           <span className="text-right text-meta tabular-nums text-faint-foreground">
-            {durationOf({ check })}
+            {isAgentWorking ? null : durationOf({ check })}
           </span>
         </button>
       </FactCard>
-      <span data-check-status="" className="flex min-w-0 items-center gap-2">
-        {status}
-      </span>
       <span data-check-action="" className="flex items-center justify-end">
         {action}
       </span>
+      {work === null || work === undefined ? null : (
+        <div className="col-span-full grid grid-cols-[16px_minmax(0,1fr)] gap-2 px-2">
+          <div data-check-status="" className="col-start-2 min-w-0">
+            {work}
+          </div>
+        </div>
+      )}
       {hint === null || hint === undefined ? null : <div className="col-span-full">{hint}</div>}
     </li>
   );

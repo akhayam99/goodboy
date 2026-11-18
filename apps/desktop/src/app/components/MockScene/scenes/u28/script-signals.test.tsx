@@ -45,11 +45,11 @@ describe('script signals scene', () => {
     expect(MOCK_SCENES['script-signals']).toBe(U28_SCRIPT_SIGNALS_SCENES['script-signals']);
   });
 
-  it('shows the finished command on the tools column and no Scripts button', () => {
+  it('shows the finished command on the Terminal tool, with Scripts as its own tool', () => {
     const Scene = U28_SCRIPT_SIGNALS_SCENES['script-signals'];
     render(<Scene />);
 
-    expect(screen.queryByTestId('pane-toggle-scripts')).toBeNull();
+    screen.getByTestId('pane-toggle-scripts');
     expect(screen.getByTestId('pane-toggle-terminal').getAttribute('aria-label')).toBe(
       'Terminal, pnpm test finished after 42s',
     );

@@ -6,15 +6,10 @@ import { SessionOverviewPane } from '../../../../../features/session/components/
 import { BranchChecks } from '../../../../../features/branch/components/BranchChecks';
 import { LOG_LANDING } from '../../../../../features/session/central/log/logLanding';
 import { DrawerHost } from '../../../DrawerHost';
-import { shellArrangement } from '../../../../shellArrangement';
+import { ScenePlacesRail } from '../ScenePlacesRail';
 import { SESSION, SESSION_ID } from '../activityRunSeed';
 import { analyzeFixSeed, type AnalyzeFixPhase } from './analyzeFixSeed';
 import { unloadedDetailSeed } from './unloadedDetailSeed';
-
-const arrangement = shellArrangement({
-  hasWorkspace: true,
-  isSidebarCollapsed: false,
-});
 
 type Props = {
   readonly phase: AnalyzeFixPhase;
@@ -61,8 +56,7 @@ export const AnalyzeFixScene = ({
   return (
     <div className="[&>div]:w-full" style={{ width: 1440 }}>
       <AppShell
-        leftSidebarCollapsed={arrangement.leftSidebarCollapsed}
-        leftSidebar={<div aria-hidden />}
+        leftRail={<ScenePlacesRail />}
         main={main}
         drawer={isDrawerOpen ? <DrawerHost /> : null}
         drawerSizing="side"

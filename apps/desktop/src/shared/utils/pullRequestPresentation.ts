@@ -7,7 +7,7 @@ import {
   GitPullRequestDraft,
   ListChecks,
 } from '@goodboy/ui/icons';
-import type { PullRequestStateKind, SessionPrGroup } from '@goodboy/types';
+import type { PullRequestStateKind } from '@goodboy/types';
 import type { StatePresentation } from './statePresentation';
 
 export type PullRequestPresentationState = PullRequestStateKind | 'none';
@@ -67,13 +67,3 @@ export const PULL_REQUEST_PRESENTATION = {
     tone: 'neutral',
   },
 } satisfies Record<PullRequestPresentationState, PullRequestPresentation>;
-
-export const PR_GROUP_PRESENTATION = {
-  'not-open': { ...PULL_REQUEST_PRESENTATION.none, label: 'no PR' },
-  draft: { ...PULL_REQUEST_PRESENTATION.draft, label: 'draft' },
-  reviewable: { ...PULL_REQUEST_PRESENTATION.open, label: 'in review' },
-  reviewed: { ...PULL_REQUEST_PRESENTATION.approved, label: 'approved' },
-  queued: { ...PULL_REQUEST_PRESENTATION.queued, label: 'queued' },
-  closed: { ...PULL_REQUEST_PRESENTATION.closed, label: 'closed' },
-  merged: { ...PULL_REQUEST_PRESENTATION.merged, label: 'merged' },
-} satisfies Record<SessionPrGroup, PullRequestPresentation>;

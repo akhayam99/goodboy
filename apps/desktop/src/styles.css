@@ -257,6 +257,7 @@
 
   --animate-soft-pulse: soft-pulse var(--loop-pulse) ease-in-out infinite;
   --animate-pulse: soft-pulse var(--loop-pulse) ease-in-out infinite;
+  --animate-arrival-breath: soft-pulse var(--loop-pulse) ease-in-out 3;
 
   @keyframes soft-pulse {
     0%,
@@ -346,11 +347,6 @@
     var(--delay-step) both;
 
   --animate-drawer-content-out: fold-fade-out var(--duration-quick) var(--ease-exit) forwards;
-
-  --animate-fold-label-in: fold-fade-in var(--duration-quick) var(--ease-enter) var(--delay-step)
-    both;
-
-  --animate-fold-label-out: fold-fade-out var(--duration-quick) var(--ease-exit) forwards;
 
   --animate-layer-in: layer-in var(--duration-quick) var(--ease-enter);
 
@@ -630,19 +626,19 @@
 
   @keyframes drawer-dock-in {
     from {
-      transform: translateX(var(--goodboy-drawer-panel));
+      clip-path: inset(0 0 0 var(--goodboy-drawer-panel) round var(--radius-frame) 0 0 var(--radius-frame));
     }
     to {
-      transform: translateX(0);
+      clip-path: inset(0 0 0 0 round var(--radius-frame) 0 0 var(--radius-frame));
     }
   }
 
   @keyframes drawer-dock-out {
     from {
-      transform: translateX(0);
+      clip-path: inset(0 0 0 0 round var(--radius-frame) 0 0 var(--radius-frame));
     }
     to {
-      transform: translateX(var(--goodboy-drawer-panel));
+      clip-path: inset(0 0 0 var(--goodboy-drawer-panel) round var(--radius-frame) 0 0 var(--radius-frame));
     }
   }
 

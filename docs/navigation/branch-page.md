@@ -61,18 +61,20 @@ disabled. One function picks the step, the same on every tab (`branchStepOf`), i
 already going up; `Answer` when a fix asks something, which opens that comment; no fill while an
 agent works on the branch; `Apply N fixes`; `Retry push`; `Fix N comments`, which opens the Fix
 comments drawer; `Push fix` for a check fix not yet on origin; `Push N commits`; `Publish N
-replies`; `Rebase on main` when the host says the request conflicts and the base moved; `Start fix`
+replies`; `Rebase on main` when the host says the request conflicts and the base moved; `Apply fix`
 once the Debugger proposed one; `Fix checks` while a check fails; then the pull request's own step.
 Comments come before the push so the branch is pushed once, a conflict is rebased before the checks
 (a host may not re-run a conflicting request), and the checks still red come last, but not while a
 pushed fix waits for the new run (`isAwaitingRun`: no check step until the check reports on the push).
 Every verb does the work where you stand and never just opens a tab: `Fix
-checks`, `Start fix` and `Push fix` run the same chain as the Overview row (`checkChainActionOf`),
+checks`, `Apply fix` and `Push fix` run the same chain as the Overview row (`checkChainActionOf`),
 and `Fix checks` starts one Debugger at the first press, its tooltip naming the model and effort.
-While a fix run or a check agent works, a line under the tabs says what runs, with `Stop`
-(`BranchWorkLines`; the Comments tab keeps its own run line). One agent works per branch: a check
+No line under the tabs says what runs. A comment fix works on its comment row (`CommentWorkLine`)
+and the Comments tab carries a live dot on every tab (`commentTabLiveOf`). A check agent works on its check row (`AnalyzedCheckWork`), its result stays there with one button (`Review fix`,
+`Push`, `Retry` or `Analyze again`, from `checkRowResultOf`), and the Checks tab carries a live dot on every tab
+(`checkTabLiveOf`). One agent works per branch: a check
 agent live on any check of the mount (`liveCheckWorkOf`, read from the agent rows, so a second window
-sees it too; a fixer that ended never counts, even while its commit is unread) draws the work line and no fill, and the other doors that start an agent (row Analyze,
+sees it too; a fixer that ended never counts, even while its commit is unread) draws the dot and no fill, and the other doors that start an agent (row Analyze,
 the Overview card, the Fix comments launch, the Debugger and Implementer runners) stay disabled with
 the name of what runs. The `Push` row of `Branch actions` takes the same route as the header push
 (`pushFromMenu`): with an accepted fix waiting it is the review push, so the replies go with the commit.
@@ -148,12 +150,13 @@ Retry, kept per branch and named with the branch when the session has more than 
 running on one branch never locks another). A rebase that is in progress in the worktree with no
 Goodboy stop (started in a terminal) draws one minimal row, `GitRebaseRow`: Continue rebase, Open
 terminal, Abort rebase. The other states keep the strip (Stash and rebase, Restore stashed files, Undo rewrite, Retry
-with a note, Open providers, Open agent). A failed push after
+with a note, Open providers, Open transcript). A failed push after
 a rebase offers `Fix with an agent` (the primary: an Implementer on that worktree briefed with the
 command and git output, `fixPushWithAgent`; it commits the fix and never pushes, Goodboy then
-pushes again with the same lease, `settlePushFix`, and the banner follows it with a link to its
-transcript), `Open terminal here` (the session terminal drawer at the worktree with the exact
-push typed at the prompt and not run, `openSessionTerminal` with `prefill`) and `Retry push`.
+pushes again with the same lease, `settlePushFix`), `Open terminal here` (the session terminal
+drawer at the worktree with the exact push typed at the prompt and not run, `openSessionTerminal`
+with `prefill`) and `Retry push`. While the agent works the same panel stays (`fixing-push` is a
+stop panel state) and holds the push fix line with Stop and Open transcript, and no Retry push.
 The same two actions sit beside Retry on the inline failure line of the header Push and Force
 push (`PushFailureActions`, shown when the failed action's error is a push failure (`pushFailedError`)): the
 agent is `fixBranchPushWithAgent`, its finish runs `settleBranchPushFix` (plain push, or force push
@@ -179,16 +182,23 @@ the latest text of the screen that registered it. A continuation may return what
 or the reason it failed). A retry that finds nothing new while the last publication failed on its
 push shows that failure, never `Nothing is waiting for the push` (`failedPushPublication`).
 The card does not depend on staying mounted. The fix of a branch is kept in the store
-(`branchPushFixes`) and its result in `pushFixOutcomes` by mount (`pushed`, `agent_failed` or
-`push_failed`, with the reason and the follow up), both written through to browser storage
-(`pushFixMemory`, six hours, read when the store starts) so a window reload keeps them.
-`pushFixStateOf` reads one answer from them and from the saved agents, so a running `Fix the
-push` agent of the branch is found again even when the window forgot the fix: `working`, `pushed`,
-`failed` or `none`. Every push surface draws it with `usePushFix` and `PushFixStatusLine`: the
-failure card and the header line replace their button while the agent works and show why it
-stopped or what stopped the push after it; the Comments banner (`PushFixIdle`), the header
-(`PushFixStatus`) and the create form (`CreateNotices`) show the same line when no failure is on
-screen, so leaving the page and coming back shows the agent, its progress and its result. A
+(`branchPushFixes`) and its result in `pushFixOutcomes` by mount (`pushed`, `agent_failed`,
+`agent_stopped` when you stopped it, or `push_failed`, with the reason and the follow up), both
+written through to browser storage (`pushFixMemory`, six hours, read when the store starts) so a
+window reload keeps them. `pushFixStateOf` reads one answer from them and from the saved agents,
+so a running `Fix the push` agent of the branch is found again even when the window forgot the
+fix: `working`, `pushed`, `stopped`, `failed` or `none`. Every push surface draws it with
+`usePushFix` and one line, `PushFixStatusLine` (in `features/history/pushFix/`, on
+`ItemWorkLine`): Fixing with the agent's step and active time, Stop and Open transcript while it
+works; then Pushed with the follow up, Stopped ("Nothing was pushed; its edits stay on the
+branch."), or Failed with the reason, each with Open transcript. On the push failure card of the
+Branch header (`usePushFailureSlots`) the line sits under the Push failed title, above the hook
+output; while the agent works the card has no Retry, no hint box and no Fix with an agent, and
+after Failed or Stopped the agent button reads Retry and is the only Retry. The Comments failure
+card and the create form (`PushFixAgentAction`) show the same line with Retry. The Comments banner
+(`PushFixIdle`), the header (`PushFixStatus`) and the create form (`CreateNotices`) show the line
+when no failure is on screen, so leaving the page and coming back shows the agent, its progress
+and its result. A
 result nobody took (the fix pushed while no continuation was registered) is claimed once by the
 first surface that mounts with a continuation (`claimPushFixOutcome`) and run there. The claim is held
 in memory (`pushFixClaims`) while it runs. `completePushFixOutcome` marks the result taken and records
@@ -793,4 +803,4 @@ the branch has no pull request, its thread in Comments when it has one (`openRev
 `notes` destination, `reviewRequest` for a compose request, `Open in Changes` from a thread).
 Opening the run transcript of a note keeps its drawer beside Changes.
 
-The numbers on the Comments surfaces each count one thing, and each comes from one function. `commentStateCountsOf` counts threads: `open` is every thread that is not done or replied, a thread left open on the host included, and `need you` is the asking, proposed, failed and fixable ones. The Comments tab count is those two over every thread on the branch, notes included, read by `pullRequestThreadCountsOf`, the function the merge box reads too, so until the queue loads both show the unresolved host thread heads, and its open count is the `Open` count of the switch on the Comments page, so the tab and the switch agree under `All`; under `Notes` or `On GitHub` the switch counts only that source while the tab keeps every branch thread. The pull request page counts the `On GitHub` source: the merge box, the Activity line and the review apps read it. `commentsCountOf` counts the same open threads for the merge label and the merge actions, with a thread left open on the host unresolved too. While a fix run works, `Fixing 1 of 4 threads` (`fixingCountText`, used by the header button and by `fixRunTitle`) says how many of the run are still being fixed out of all its threads, and reads `Fixing 4 threads` when all of them are. The drawer position reads `1 of 8 comments`: the length of the list being walked, which includes every thread of the branch, notes and the thread left open on the host.
+The numbers on the Comments surfaces each count one thing, and each comes from one function. `commentStateCountsOf` counts threads: `open` is every thread that is not done or replied, a thread left open on the host included, and `need you` is the asking, proposed, failed and fixable ones. The Comments tab count is those two over every thread on the branch, notes included, read by `pullRequestThreadCountsOf`, the function the merge box reads too, so until the queue loads both show the unresolved host thread heads, and its open count is the `Open` count of the switch on the Comments page, so the tab and the switch agree under `All`; under `Notes` or `On GitHub` the switch counts only that source while the tab keeps every branch thread. The pull request page counts the `On GitHub` source: the merge box, the Activity line and the review apps read it. `commentsCountOf` counts the same open threads for the merge label and the merge actions, with a thread left open on the host unresolved too. While a fix of two or more comments works, the count in the comments bar reads `Fixing · 2 of 3` (`fixRunCountOf`): the place of the comment in work, after the ones the fix already finished, and the tooltip of the Comments tab dot reads `Fixing 2 of 3 comments` (`fixRunPhraseOf`) from the same function. The drawer position reads `1 of 8 comments`: the length of the list being walked, which includes every thread of the branch, notes and the thread left open on the host.

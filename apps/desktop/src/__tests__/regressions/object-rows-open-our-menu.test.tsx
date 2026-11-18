@@ -27,7 +27,7 @@ type RowCase = {
 };
 
 const ROW_CASES: ReadonlyArray<RowCase> = [
-  { row: 'rail session', scene: 'rail-pinned', selector: '[data-rail-session]' },
+  { row: 'board card', scene: 'board', selector: 'article[data-select-id]', isFirstOnly: true },
   { row: 'project folder', scene: 'c04-session-worktrees', selector: '[data-project-row] > *' },
   {
     row: 'changed file and folder',

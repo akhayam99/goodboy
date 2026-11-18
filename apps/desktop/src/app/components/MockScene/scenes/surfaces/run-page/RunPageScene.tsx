@@ -114,7 +114,6 @@ export const RunPageScene = ({
     <AutoReleaseContext.Provider value>
       <ShellFrame
         session={AUTO_SESSION}
-        sidebar="expanded"
         main={
           <div className="relative h-full w-full">
             <SessionWorkspace session={AUTO_SESSION} />

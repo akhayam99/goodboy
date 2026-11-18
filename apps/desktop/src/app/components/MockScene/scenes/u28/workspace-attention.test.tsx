@@ -79,14 +79,16 @@ describe('the workspace attention scene', () => {
     ).toBe('warning');
   });
 
-  it('puts the sum of the other workspaces on the workspace name', async () => {
+  it('puts the sum of the other workspaces on the workspace mark', async () => {
     const container = await mount();
 
     const trigger = container.querySelector('button[aria-label^="Switch workspace"]');
     expect(trigger?.getAttribute('aria-label')).toBe(
       'Switch workspace: Harborline, 3 sessions need you in other workspaces',
     );
-    expect(trigger?.querySelector('[data-workspace-attention="danger"]')?.textContent).toBe('3');
+    expect(
+      container.querySelector('[data-workspace-mark] [data-count-badge="danger"]')?.textContent,
+    ).toBe('3');
   });
 
   it('has no accessibility violation', async () => {

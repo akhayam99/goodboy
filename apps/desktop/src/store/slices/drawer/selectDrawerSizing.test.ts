@@ -11,9 +11,7 @@ import type {
   WorkspaceId,
 } from '@goodboy/types';
 import {
-  DRAWER_INSET,
-  LEFT_SIDEBAR_DEFAULT,
-  LEFT_SIDEBAR_MAX,
+  DRAWER_GUTTER,
   READER_DRAWER_DEFAULT,
   READER_DRAWER_MAX,
   RIGHT_DRAWER_MAX,
@@ -32,7 +30,11 @@ import { selectDrawerSizing } from './testing/selectDrawerSizing';
 const MOUNT_ID: MountId = JSON.parse(JSON.stringify('mount-1'));
 const SESSION_ID = brandId<SessionId>({ value: 'session-1' });
 const WINDOWS = [1280, 1440] as const;
-const SIDEBARS = [LEFT_SIDEBAR_DEFAULT, LEFT_SIDEBAR_MAX] as const;
+const NARROW_COLUMN_PX = 240;
+
+const WIDE_COLUMN_PX = 400;
+
+const SIDEBARS = [NARROW_COLUMN_PX, WIDE_COLUMN_PX] as const;
 const SAVED_WIDTHS: Readonly<Record<DrawerSizing, ReadonlyArray<number>>> = {
   side: [400, RIGHT_DRAWER_MAX],
   reader: [READER_DRAWER_DEFAULT, READER_DRAWER_MAX],
@@ -219,8 +221,8 @@ describe('every drawer fits inside its aside at 1280 and 1440', () => {
     expect(sizingOf(transcript)).toBe('side');
   });
 
-  it('slides an overlay card in by at most its 8px inset and grows a pushing card in place', () => {
-    expect(slideOf('drawer-overlay-in')).toBeLessThanOrEqual(DRAWER_INSET);
+  it('slides an overlay card in by at most its gutter and grows a pushing card in place', () => {
+    expect(slideOf('drawer-overlay-in')).toBeLessThanOrEqual(DRAWER_GUTTER);
     expect(fromFrameOf({ keyframes: 'fold-fade-in' })).not.toContain('transform');
   });
 
@@ -236,7 +238,7 @@ describe('every drawer fits inside its aside at 1280 and 1440', () => {
       const mode = pair.mode;
       const drawerWidthPx = pair.dock.width;
       const asidePx = drawerAsideWidthOf({ width: drawerWidthPx, mode });
-      const cardRight = columnWidth - asidePx + DRAWER_INSET + drawerWidthPx;
+      const cardRight = columnWidth - asidePx + DRAWER_GUTTER + drawerWidthPx;
 
       expect(asidePx).toBeLessThanOrEqual(columnWidth);
       if (mode === 'push') {

@@ -304,7 +304,7 @@ describe('deriveSessionStage', () => {
     });
   });
 
-  it("a comment the fix run couldn't fix → attention", () => {
+  it('a comment the fix run failed on → attention', () => {
     const info = deriveSessionStage({
       session: base(1),
       pr: makePr(),
@@ -313,7 +313,7 @@ describe('deriveSessionStage', () => {
     });
     expect(info).toMatchObject({
       stage: 'attention',
-      reason: "2 comments couldn't be fixed",
+      reason: '2 comments failed',
       attention: 'fix-couldnt-fix',
     });
   });

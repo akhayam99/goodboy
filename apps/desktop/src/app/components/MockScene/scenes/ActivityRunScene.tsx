@@ -159,7 +159,6 @@ export const ActivityRunScene = ({
   return (
     <ShellFrame
       session={session}
-      sidebar="expanded"
       hasOwnTrail={isPageFollowed}
       main={
         contextSection !== undefined ? (

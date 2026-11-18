@@ -6,7 +6,7 @@ vi.mock('@tauri-apps/api/core', () => ({
 vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn(async () => () => undefined) }));
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { ToastProvider } from '../../../../../shared/components/Toast';
 import {
   STORE_IMPORT_TIMEOUT_MS,
@@ -47,13 +47,18 @@ const list = (): HTMLElement => screen.getByRole('navigation', { name: 'Comments
 
 const bar = (): HTMLElement => screen.getByRole('toolbar', { name: 'Comment actions' });
 
+const workLines = (): ReadonlyArray<string> =>
+  Array.from(list().querySelectorAll('[data-row-work]'))
+    .map((line) => line.textContent ?? '')
+    .filter((line) => /^(Fixing|Queued)/.test(line));
+
 const regionTitles = (): ReadonlyArray<string | null> =>
   within(list())
     .getAllByRole('region')
     .map((region) => region.getAttribute('aria-label'));
 
 describe('the u23 comments scenes', () => {
-  it('registers the six scenes under the names the plan uses', () => {
+  it('registers the seven scenes under the names the plan uses', () => {
     expect(Object.keys(U23_COMMENTS_SCENES)).toEqual([
       'comments-groups',
       'comments-ready-to-push',
@@ -61,6 +66,7 @@ describe('the u23 comments scenes', () => {
       'comments-left-open',
       'comments-action-bar',
       'comments-working',
+      'comments-batch',
     ]);
     for (const name of Object.keys(U23_COMMENTS_SCENES)) {
       expect(Object.keys(MOCK_SCENES)).toContain(name);
@@ -158,8 +164,8 @@ describe('the u23 comments scenes', () => {
     await renderScene({ name: 'comments-ready-to-push' });
 
     expect(screen.getAllByRole('tab', { name: /^Comments\s*8$/ })).toHaveLength(1);
-    expect(screen.getAllByText('Fixing 1 of 4 comments').length).toBeGreaterThan(0);
-    expect(screen.queryByText('Fixing 4 comments')).toBeNull();
+    expect(document.querySelector('[data-tab-live="comments"]')).not.toBeNull();
+    expect(screen.queryByTestId('resolve-run-status')).toBeNull();
     const first = within(list())
       .getByRole('region', { name: 'Done' })
       .querySelector<HTMLElement>('button[data-thread-id]');
@@ -175,9 +181,11 @@ describe('the u23 comments scenes', () => {
     const needsYou = within(list()).getByRole('region', { name: 'Needs you' });
     expect(within(needsYou).getAllByText('Push failed').length).toBe(2);
     expect(screen.queryByText("Couldn't fix")).toBeNull();
-    expect(screen.getAllByText(/2 comments didn't go out/).length).toBeGreaterThan(0);
+    expect(screen.getAllByLabelText(/2 comments didn't go out/).length).toBeGreaterThan(0);
     expect(within(bar()).getByRole('button', { name: 'Retry push' })).toBeDefined();
-    expect(screen.getByRole('alert').textContent).toContain('Push failed');
+    expect(
+      screen.getAllByRole('alert').some((alert) => alert.textContent?.includes('Push failed')),
+    ).toBe(true);
   });
 
   it('keeps a comment left open on its host, quiet, with the way back', async () => {
@@ -204,17 +212,35 @@ describe('the u23 comments scenes', () => {
     expect(within(bar()).getByText('R', { selector: 'kbd' })).toBeDefined();
   });
 
-  it('stops a working comment only behind a confirm, from its one live line', async () => {
+  it('puts Fixing and Queued with its place on the rows of a batch, and one count in the bar', async () => {
+    await renderScene({ name: 'comments-batch' });
+
+    await waitFor(() => expect(workLines()).toHaveLength(3));
+    const lines = workLines();
+    expect(lines.filter((line) => line.startsWith('Fixing'))).toHaveLength(1);
+    expect(lines.filter((line) => line.startsWith('Queued·2nd in this fix'))).toHaveLength(1);
+    expect(lines.filter((line) => line.startsWith('Queued·3rd in this fix'))).toHaveLength(1);
+    expect(document.querySelector('[data-fix-run-count]')?.textContent).toMatch(/^Fixing·4 of 6/);
+    expect(document.querySelector('[data-tab-live="comments"]')).not.toBeNull();
+    expect(screen.queryByTestId('resolve-run-status')).toBeNull();
+  });
+
+  it('stops a working comment only behind a confirm that names its batch, from its own row', async () => {
     await renderScene({ name: 'comments-working' });
 
-    const line = screen.queryByTestId('resolve-run-status');
-    const home = line === null ? bar() : line;
+    await waitFor(() => expect(workLines()).not.toHaveLength(0));
+    const home =
+      Array.from(list().querySelectorAll<HTMLElement>('[data-row-work]')).find((line) =>
+        /^(Fixing|Queued)/.test(line.textContent ?? ''),
+      ) ?? bar();
     expect(
       within(home).getByRole('button', {
         name: 'Open transcript',
       }),
     ).toBeDefined();
     fireEvent.click(within(home).getByRole('button', { name: 'Stop' }));
-    expect(await screen.findByRole('dialog', { name: 'Stop this fix run?' })).toBeDefined();
+    expect(
+      await screen.findByRole('dialog', { name: 'Stop the fix for 4 comments?' }),
+    ).toBeDefined();
   });
 });

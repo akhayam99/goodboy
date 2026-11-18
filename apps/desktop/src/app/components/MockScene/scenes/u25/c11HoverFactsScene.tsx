@@ -6,8 +6,6 @@ import { useAppStore } from '../../../../../store';
 import { selectSessionById } from '../../../../../store/slices/sessions/selectSessionById';
 import { WORKSPACE_ID, seedBoardScene } from '../BoardScene';
 
-const noop = (): undefined => undefined;
-
 const sessionWithPullRequest = (): SessionId | null => {
   const entry = Object.entries(useAppStore.getState().sessionGithub).find(
     ([, github]) => (github?.pr ?? null) !== null,
@@ -35,13 +33,7 @@ export const HoverFactsScene = () => {
   return (
     <main className="flex h-screen items-start justify-center bg-background p-12 text-foreground">
       <div className={cn(FLOATING_SURFACE, 'w-80 p-3 text-meta')}>
-        <SessionHoverCardBody
-          session={session}
-          isArchived={false}
-          isFactsOnly
-          onOpenAttention={noop}
-          onOpenLegend={noop}
-        />
+        <SessionHoverCardBody session={session} isArchived={false} />
       </div>
     </main>
   );

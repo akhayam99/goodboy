@@ -71,13 +71,13 @@ The board shows every session of a workspace in lanes by stage, so you see where
 
 [More on the board](docs/features/board.md)
 
-<a id="session-list"></a><a id="pin-a-session-to-keep-it-at-the-top"></a><a id="now-chip"></a><a id="notifications"></a><a id="open-in-new-window"></a>
+<a id="session-list"></a><a id="sessions"></a><a id="pin-a-session-to-keep-it-at-the-top"></a><a id="now-chip"></a><a id="notifications"></a><a id="open-in-new-window"></a>
 
 ## Switch between tasks
 
 Move between the tasks of a workspace without losing your place, and see from any screen which one needs you.
 
-- **Session list**: The left column lists the sessions of the workspace, one line each.
+- **Sessions**: Sessions in the top bar opens the list of the workspace's sessions, from any screen.
 - **Pin a session to keep it at the top**: Keep the sessions you return to at the top of the list.
 - **Now chip**: Know what runs from any screen.
 - **Notifications**: Catch up in one place.
@@ -179,7 +179,7 @@ Watch how much of each plan is left, keep work moving when a provider runs out, 
 
 [More on providers, limits and cost](docs/features/providers.md)
 
-<a id="start-from-scratch"></a><a id="start-a-project-from-nothing"></a><a id="track-a-folder-with-git-later"></a><a id="workspace-with-several-folders"></a><a id="workspace-with-several-projects"></a><a id="starred-folders-descriptions-and-base-branch"></a><a id="starred-projects-descriptions-and-base-branch"></a><a id="worktrees"></a><a id="several-branches-per-repo"></a><a id="several-branches-per-project"></a><a id="workspace-switcher-and-reconnect"></a><a id="repo-status-across-folders"></a><a id="repo-status-across-projects"></a><a id="repository-status"></a><a id="locate-moved-folders"></a><a id="locate-moved-projects"></a><a id="keep-goodboy-out-of-git"></a><a id="branch-names"></a><a id="new-runs-start-as"></a><a id="copy-settings-from-another-workspace"></a><a id="monitoring"></a><a id="workspace-and-projects"></a><a id="new-worktrees-start-usable"></a><a id="auto-asks-you"></a><a id="lead-asks-you"></a><a id="stops-for-your-ok"></a>
+<a id="start-from-scratch"></a><a id="start-a-project-from-nothing"></a><a id="track-a-folder-with-git-later"></a><a id="workspace-with-several-folders"></a><a id="workspace-with-several-projects"></a><a id="starred-folders-descriptions-and-base-branch"></a><a id="starred-projects-descriptions-and-base-branch"></a><a id="worktrees"></a><a id="several-branches-per-repo"></a><a id="several-branches-per-project"></a><a id="workspace-switcher-and-reconnect"></a><a id="sessions-in-the-bar"></a><a id="repo-status-across-folders"></a><a id="repo-status-across-projects"></a><a id="repository-status"></a><a id="locate-moved-folders"></a><a id="locate-moved-projects"></a><a id="keep-goodboy-out-of-git"></a><a id="branch-names"></a><a id="new-runs-start-as"></a><a id="copy-settings-from-another-workspace"></a><a id="monitoring"></a><a id="workspace-and-projects"></a><a id="new-worktrees-start-usable"></a><a id="auto-asks-you"></a><a id="lead-asks-you"></a><a id="stops-for-your-ok"></a>
 
 ## Workspaces and folders
 
@@ -218,13 +218,13 @@ Keep tokens out of what you save, move your setup between machines, and update w
 
 [More on security, backup and updates](docs/features/security.md)
 
-<a id="sidebar"></a><a id="go-anywhere"></a><a id="command-palette"></a><a id="search-or-run"></a><a id="search"></a><a id="right-click-menus"></a>
+<a id="places-rail"></a><a id="sidebar"></a><a id="go-anywhere"></a><a id="command-palette"></a><a id="search-or-run"></a><a id="search"></a><a id="right-click-menus"></a>
 
 ## Search and navigation
 
-Find any session, message, plan or action, and reach it from the keyboard. One sidebar holds every place you go, and **⌘K** and **⌘F** cover the rest.
+Find any session, message, plan or action, and reach it from the keyboard. The places rail keeps workspace navigation on the left, and **⌘K** and **⌘F** cover the rest.
 
-- **Sidebar**: Every place you go sits in one sidebar on the left.
+- **Places rail**: Move between Board, Tasks, Workflows, Chat, Connect and Impact from the places rail on the left.
 - **Go anywhere**: Reach any screen without the mouse.
 - **Search or run**: Press ⌘K, or click Search or run in the top bar, to act on what you are looking at.
 - **Search**: Find a message, a plan, a decision, an issue or a branch with ⌘F.

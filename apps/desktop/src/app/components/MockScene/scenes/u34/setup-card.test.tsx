@@ -42,18 +42,14 @@ const mount = (Scene: ComponentType) =>
     </ToastProvider>,
   );
 
-it('u34-u27-foot-board keeps Settings, the Goodboy line and the bug icon in the foot, no setup line', async () => {
+it('u34-u27-foot-board keeps Settings, Report and the Goodboy mark at the foot of the rail, no setup line', async () => {
   mount(U34_SETUP_CARD_SCENES['u34-u27-foot-board']);
 
-  await waitFor(() => expect(document.querySelector('[data-column-foot]')).not.toBeNull());
-  const foot = document.querySelector<HTMLElement>('[data-column-foot]');
-  if (foot === null) {
-    throw new Error('no column foot');
-  }
-  within(foot).getByRole('button', { name: 'Settings' });
-  within(foot).getByTestId('goodboy-chip');
-  within(foot).getByRole('button', { name: 'Report a bug' });
-  expect(foot.textContent).not.toContain('Setup');
+  const rail = await screen.findByRole('navigation', { name: 'Places' });
+  within(rail).getByRole('button', { name: 'Settings' });
+  within(rail).getByTestId('goodboy-chip');
+  within(rail).getByRole('button', { name: 'Report a bug' });
+  expect(rail.textContent).not.toContain('Setup');
 });
 
 it('u34-u27-empty-board draws the setup card on the empty board until it is hidden', async () => {

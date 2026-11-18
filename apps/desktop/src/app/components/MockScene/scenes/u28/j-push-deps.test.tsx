@@ -67,32 +67,50 @@ describe('the u28 push and dependencies scenes', () => {
     }
   });
 
-  it('shows the fix agent working on a failure line that was left and came back', async () => {
+  it('turns the push failed card into the card of the fix while the agent works', async () => {
     show({ name: 'push-fix-working' });
 
-    await screen.findByText('An agent is fixing the push');
-    screen.getByRole('button', { name: 'Open the agent' });
+    const line = await screen.findByRole('status');
+    within(line).getByText('Fixing');
+    within(line).getByText('Running pnpm typecheck');
+    screen.getByText('Push failed');
+    screen.getByRole('button', { name: 'Stop' });
+    screen.getByRole('button', { name: 'Open transcript' });
+    expect(screen.queryByRole('button', { name: 'Retry' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Fix with an agent' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Open the agent' })).toBeNull();
   });
 
   it('shows a pushed fix and the pull request it opened', async () => {
     show({ name: 'push-fix-pushed' });
 
-    await screen.findByText("The agent's fix is pushed. Pull request #318 is open.");
+    const line = await screen.findByRole('status');
+    within(line).getByText('Pushed');
+    within(line).getByText('Pull request #318 is open.');
   });
 
-  it('shows why the agent did not finish', async () => {
+  it('shows why the agent failed on the push card, with one Retry', async () => {
     show({ name: 'push-fix-agent-failed' });
 
-    expect((await screen.findByRole('alert')).textContent).toBe(
-      'The agent was stopped before it finished.',
-    );
+    await screen.findByText('The agent was stopped before it finished.');
+    screen.getByText('Failed');
+    expect(screen.getAllByRole('button', { name: 'Retry' })).toHaveLength(1);
+    screen.getByRole('button', { name: 'Open transcript' });
+    screen.getByRole('button', { name: 'Open terminal here' });
+  });
+
+  it('says what stays on the branch after you stopped the fix', async () => {
+    show({ name: 'push-fix-stopped' });
+
+    await screen.findByText('Nothing was pushed; its edits stay on the branch.');
+    screen.getByText('Stopped');
+    expect(screen.getAllByRole('button', { name: 'Retry' })).toHaveLength(1);
   });
 
   it('shows which check stopped the push after the fix', async () => {
     show({ name: 'push-fix-push-failed' });
 
-    expect((await screen.findByRole('alert')).textContent).toBe(
+    within(await screen.findByRole('alert')).getByText(
       "The fix couldn't be pushed: pre-push: pnpm knip failed.",
     );
   });

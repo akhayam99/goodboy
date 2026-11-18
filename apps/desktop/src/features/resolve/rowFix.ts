@@ -4,7 +4,6 @@ import type { ReviewCommentState } from './reviewCommentState';
 import { threadFixSha } from './threadFixSha';
 
 export type RowFix =
-  | { readonly kind: 'fixing' }
   | {
       readonly kind: 'fixed';
       readonly sha: string;
@@ -38,9 +37,6 @@ type ShaParams = {
 export const shortShaOf = ({ sha }: ShaParams): string => sha.slice(0, SHORT_SHA_LENGTH);
 
 export const rowFixOf = ({ state, row, projection }: Params): RowFix | null => {
-  if (state === 'drafting') {
-    return { kind: 'fixing' };
-  }
   if (state === 'failed') {
     return projection.word === 'couldnt_fix' && projection.sentence !== null
       ? { kind: 'failed', sentence: projection.sentence }

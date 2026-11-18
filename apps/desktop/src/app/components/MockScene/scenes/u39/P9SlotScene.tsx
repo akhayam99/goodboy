@@ -47,5 +47,5 @@ export const P9SlotScene = ({ view }: Props) => {
     return null;
   }
 
-  return <AppFrame view={view} isRailCollapsed={false} hasPane />;
+  return <AppFrame view={view} hasPane />;
 };

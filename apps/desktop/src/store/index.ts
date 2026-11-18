@@ -17,7 +17,7 @@ export { useSessionPrFetchState, useSessionRequestHost } from './slices/github/s
 export { useMountDiffStats, type MountDiffStat } from './slices/project-mounts/useMountDiffStats';
 export { useProjectMountsForSessions } from './slices/project-mounts/useProjectMountsForSessions';
 export {
-  useSessionColumn,
+  useSessionOrder,
   useSessionStageInfo,
   useSessionStages,
   useSessionViewPrefs,
@@ -26,6 +26,7 @@ export {
   useWorkspaceRollup,
   type WorkspaceAttention,
 } from './slices/session-view/selectors';
+export type { SessionOrder } from './slices/session-view/sessionOrderOf';
 export { useDormantSpend } from './slices/dormant-spend/selectors';
 export { useActionRun } from './slices/action-runs/selectors';
 export {

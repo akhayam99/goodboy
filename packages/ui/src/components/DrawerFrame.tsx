@@ -2,13 +2,14 @@ import { DrawerContentContext } from '../drawerContentContext';
 import { DrawerBackChipContext } from '../drawerBackChipContext';
 import { useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 import type { IconGlyph } from '../icons';
-import { ArrowUpRight, X } from '../icons';
+import { X } from '../icons';
 import { cn } from '../cn';
 import { useEscapeLayer } from '../useEscapeLayer';
 import { lastFocusedElement } from '../useLastFocused';
 import { DrawerBackChip } from './DrawerBackChip';
 import { DrawerBackLink } from './DrawerBackLink';
 import { DrawerHeaderMore } from './DrawerHeaderMore';
+import { DrawerHeadKeys } from './DrawerHeadKeys';
 import { IconButton } from './IconButton';
 import { ScrollFade } from './ScrollFade';
 import { DrawerRegion } from './DrawerRegion';
@@ -171,16 +172,7 @@ export const DrawerFrame = ({
       <div className={cn('flex shrink-0 items-center gap-1', hasToolbar && 'h-5')}>
         {action}
         {menu}
-        {page === undefined ? null : (
-          <IconButton
-            icon={ArrowUpRight}
-            label={page.label ?? 'Open page'}
-            tooltip={page.tooltip ?? page.label ?? 'Open page'}
-            variant="ghost"
-            iconSize={ICON_SIZE.control}
-            onClick={page.onOpen}
-          />
-        )}
+        <DrawerHeadKeys page={page} />
         <IconButton icon={X} label={closeLabel} variant="ghost" onClick={onClose} />
       </div>
     </>

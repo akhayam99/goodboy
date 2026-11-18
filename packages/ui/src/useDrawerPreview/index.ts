@@ -1,5 +1,5 @@
 import { useCallback, useRef, type MutableRefObject, type RefObject } from 'react';
-import { DRAWER_INSET, panelAsideWidthOf, type DrawerMode } from '../drawerGeometry';
+import { DRAWER_GUTTER, panelAsideWidthOf, type DrawerMode } from '../drawerGeometry';
 import { DRAWER_PANEL_VARS } from '../drawerPanelVars';
 
 type LiveWidths = {
@@ -43,7 +43,7 @@ export const useDrawerPreview = ({ asideRef, trackRef, groupRef }: Params): Draw
     (next: number) => {
       live.current = { ...live.current, detail: next };
       asideRef.current?.style.setProperty(DRAWER_PANEL_VARS.detail, `${next}px`);
-      groupRef.current?.style.setProperty('width', `${next + DRAWER_INSET}px`);
+      groupRef.current?.style.setProperty('width', `${next + DRAWER_GUTTER}px`);
       previewAside();
     },
     [asideRef, groupRef, previewAside],

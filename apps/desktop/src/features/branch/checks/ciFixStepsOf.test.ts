@@ -37,7 +37,7 @@ describe('ciFixStepsOf', () => {
       'Analyze:Running',
     ]);
     expect(rowsOf({ chain: chainOf({ state: 'no-fix', proposal: null }) })).toEqual([
-      'Analyze:No fix proposed',
+      'Analyze:No fix found',
     ]);
   });
   it('asks for the push once the fix is local', () => {

@@ -7,6 +7,7 @@ import { conflictFilesLabelOf } from './rebaseConflictLine';
 import type { RebaseFileStates } from './rebaseFileStatesOf';
 import { countNoun } from '../../shared/utils/countNoun';
 import { NAMES } from '../../shared/utils/names';
+import { ITEM_WORK_WORDS } from '../live-state/itemWork/itemWorkWords';
 
 export type RebaseJobState =
   | 'choosing'
@@ -302,12 +303,12 @@ const WORDS: Readonly<Record<RebaseJobState, string>> = {
   'origin-moved': 'Stopped',
   'head-moved': 'Stopped',
   'push-failed': 'Stopped',
-  'fixing-push': 'Fixing',
+  'fixing-push': ITEM_WORK_WORDS.state.fixing.word,
   blocked: 'Stopped',
   conflict: 'Conflict',
   'rebasing-here': 'Rebasing',
   'rebased-here': 'Done',
-  'auto-resolving': 'Lead',
+  'auto-resolving': ITEM_WORK_WORDS.state.resolving.word,
   'auto-done': 'Done',
   pushed: 'Done',
   failed: 'Stopped',
