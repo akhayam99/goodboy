@@ -84,7 +84,7 @@ Move between the tasks of a workspace without losing your place, and see from an
 
 [More on switching between tasks](docs/features/switching.md)
 
-<a id="resolve"></a><a id="hints-when-a-fix-starts"></a><a id="bulk-actions"></a><a id="review-sources"></a><a id="comment-states"></a><a id="failed-drafts"></a><a id="see-what-a-resolve-did"></a><a id="fixes-already-on-the-branch"></a><a id="a-fix-that-went-missing"></a><a id="close-on-github"></a><a id="review-replies-in-your-voice"></a><a id="fixes-on-a-branch-that-moved"></a><a id="squash-and-fold-the-resolve-commits"></a><a id="notes-before-a-pull-request"></a><a id="github-pull-request-page"></a><a id="pull-request-diff-and-review-as-layers"></a><a id="write-it-for-me"></a><a id="write-it"></a><a id="pr-description-follows-the-push"></a><a id="diff"></a><a id="write-review"></a><a id="read-the-code"></a><a id="pull-request-on-the-branch-page"></a><a id="one-trail-to-the-branch-page"></a><a id="work-behind-a-branch"></a>
+<a id="resolve"></a><a id="hints-when-a-fix-starts"></a><a id="bulk-actions"></a><a id="review-sources"></a><a id="comment-states"></a><a id="run-from-a-comment"></a><a id="failed-drafts"></a><a id="see-what-a-resolve-did"></a><a id="fixes-already-on-the-branch"></a><a id="a-fix-that-went-missing"></a><a id="close-on-github"></a><a id="review-replies-in-your-voice"></a><a id="fixes-on-a-branch-that-moved"></a><a id="squash-and-fold-the-resolve-commits"></a><a id="notes-before-a-pull-request"></a><a id="github-pull-request-page"></a><a id="pull-request-diff-and-review-as-layers"></a><a id="write-it-for-me"></a><a id="write-it"></a><a id="pr-description-follows-the-push"></a><a id="diff"></a><a id="write-review"></a><a id="read-the-code"></a><a id="pull-request-on-the-branch-page"></a><a id="one-trail-to-the-branch-page"></a><a id="work-behind-a-branch"></a>
 
 ## Review and resolve on the Branch page
 
@@ -92,6 +92,7 @@ The Branch page holds one branch: its pull request, review comments, changed fil
 
 - **Resolve**: Turn review comments into commits without writing the fixes yourself.
 - **Review sources**: Read pull request comments and your own notes in one list in the Comments section.
+- **Run from a comment**: A comment that asks for a rework starts a run instead of a quick fix.
 - **Close on GitHub**: Finish a review with Push N fixes in the Branch header.
 - **Read the code**: Read the branch against its base in Changes, unified or split.
 

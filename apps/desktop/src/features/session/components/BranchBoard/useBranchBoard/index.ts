@@ -26,7 +26,7 @@ type Result = Readonly<{
   board: BranchBoard;
   kpis: SessionKpis;
   entryByRowId: ReadonlyMap<string, BranchEntry>;
-  mergedAtByMountId: ReadonlyMap<string, number>;
+  settledAtByMountId: ReadonlyMap<string, number>;
   runningByRowId: ReadonlyMap<string, number>;
   newRowIds: ReadonlySet<string>;
   now: number;
@@ -64,12 +64,14 @@ export const useBranchBoard = ({ session, entries }: Params): Result => {
     () => agentSpendById({ records: telemetry, agents, agentRunHistory }),
     [agentRunHistory, agents, telemetry],
   );
-  const mergedAtByMountId = useMemo(() => {
+  const settledAtByMountId = useMemo(() => {
     const byMount = new Map<string, number>();
     for (const entry of entries) {
-      const mergedAt = Date.parse(mountGithub?.[entry.fact.mountId]?.pr?.mergedAt ?? '');
-      if (Number.isFinite(mergedAt)) {
-        byMount.set(entry.fact.mountId, mergedAt);
+      const pr = mountGithub?.[entry.fact.mountId]?.pr;
+      const isClosed = entry.fact.request?.state === 'closed';
+      const settledAt = Date.parse((isClosed ? pr?.updatedAt : pr?.mergedAt) ?? '');
+      if (Number.isFinite(settledAt)) {
+        byMount.set(entry.fact.mountId, settledAt);
       }
     }
     return byMount;
@@ -88,9 +90,9 @@ export const useBranchBoard = ({ session, entries }: Params): Result => {
         session,
         branches: entries.map((entry) => entry.fact),
         ...inputs,
-        recencyByMountId: mergedAtByMountId,
+        recencyByMountId: settledAtByMountId,
       }),
-    [entries, inputs, mergedAtByMountId, session],
+    [entries, inputs, settledAtByMountId, session],
   );
   const runningByRowId = useMemo(
     () => runningByRowIdOf({ rows: board.rows, agents: inputs.agents, leads: inputs.leads }),
@@ -113,7 +115,7 @@ export const useBranchBoard = ({ session, entries }: Params): Result => {
     board,
     kpis,
     entryByRowId,
-    mergedAtByMountId,
+    settledAtByMountId,
     runningByRowId,
     newRowIds,
     now,

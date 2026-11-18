@@ -1,10 +1,11 @@
+import { Suspense } from 'react';
 import type { ReactNode } from 'react';
 import type { DrawerRequest } from '../../store/slices/drawer/state';
+import { lazyNamed } from '../../shared/lib/lazyNamed';
 import { askDrawerRegistration } from '../../features/session/ask/askDrawerRegistration';
 import { browserDrawerRegistration } from '../../features/browser/browserDrawerRegistration';
 import { checkAnalysisDrawerRegistration } from '../../features/branch/checkAnalysisDrawerRegistration';
 import { fileDiffDrawerRegistration } from '../../features/diff/fileDiffDrawerRegistration';
-import { IdentifierPeekDrawer } from '../../features/diff/components/IdentifierPeekDrawer';
 import { drawerKey } from '../../store/slices/drawer/drawerKey';
 import { IdentifierPeekSource } from './IdentifierPeekSource';
 import { historyVersionsDrawerRegistration } from '../../features/history/historyVersionsDrawerRegistration';
@@ -12,6 +13,11 @@ import { leadDetailsDrawerRegistration } from '../../features/auto/permissions/l
 import { monitoringDrawerRegistration } from '../../features/monitoring/monitoringDrawerRegistration';
 import { planPartDrawerRegistration } from '../../features/plans/planPartDrawerRegistration';
 import { terminalDrawerRegistration } from '../../features/terminal/terminalDrawerRegistration';
+
+const IdentifierPeekDrawer = lazyNamed({
+  load: () => import('../../features/diff/components/IdentifierPeekDrawer'),
+  pick: ({ IdentifierPeekDrawer }) => IdentifierPeekDrawer,
+});
 
 type RegisteredDrawer = Extract<
   DrawerRequest,
@@ -54,17 +60,25 @@ export const renderRegisteredDrawer = ({
       return historyVersionsDrawerRegistration.render({ drawer, closeDrawer, openDrawer });
     case 'identifier-peek':
       return (
-        <IdentifierPeekDrawer
+        <Suspense
           key={drawerKey(drawer)}
-          sessionId={drawer.sessionId}
-          worktreePath={drawer.payload.worktreePath}
-          word={drawer.payload.word}
-          selected={drawer.payload.selected}
-          renderSource={({ worktreePath, path, line }) => (
-            <IdentifierPeekSource worktreePath={worktreePath} path={path} line={line} />
-          )}
-          onClose={closeDrawer}
-        />
+          fallback={
+            <p role="status" className="px-4 py-3 text-meta text-muted-foreground">
+              Opening the search
+            </p>
+          }
+        >
+          <IdentifierPeekDrawer
+            sessionId={drawer.sessionId}
+            worktreePath={drawer.payload.worktreePath}
+            word={drawer.payload.word}
+            selected={drawer.payload.selected}
+            renderSource={({ worktreePath, path, line }) => (
+              <IdentifierPeekSource worktreePath={worktreePath} path={path} line={line} />
+            )}
+            onClose={closeDrawer}
+          />
+        </Suspense>
       );
     case 'lead-details':
       return leadDetailsDrawerRegistration.render({ drawer, closeDrawer, openDrawer });

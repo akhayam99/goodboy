@@ -37,5 +37,9 @@ const partOf = ({ sign, places }: PartParams): string => {
   }
 };
 
-export const commentScopeSentenceOf = ({ scope }: Params): string =>
-  `It ${andListOf({ items: scope.signs.map((sign) => partOf({ sign, places: scope.places })) })}.`;
+export const commentScopeSentenceOf = ({ scope }: Params): string => {
+  if (scope.signs.length === 0) {
+    return '';
+  }
+  return `It ${andListOf({ items: scope.signs.map((sign) => partOf({ sign, places: scope.places })) })}.`;
+};

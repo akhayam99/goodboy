@@ -7,6 +7,7 @@ import type { BootstrapState } from './slices/bootstrap/state';
 import type { FolderPurposeState } from './slices/folder-purpose/state';
 import type { ReviewBulkState } from './slices/review-bulk/state';
 import type { ReviewLaunchState } from './slices/review-launch/state';
+import type { CommentRunStartState } from './slices/comment-run-start/state';
 import type { OutputHandoffsState } from './slices/output-handoffs/state';
 import type { ReviewSelectionState } from './slices/review-selection/state';
 import type { ReviewSourceState } from './slices/review-source/state';
@@ -74,6 +75,7 @@ import type { SettingsLastPageState } from './slices/settings-last-page/state';
 import type { MonitoringViewState } from './slices/monitoring-view/state';
 import type { LocalChecksState } from './slices/local-checks/state';
 import type { ChatLastOpenState } from './slices/chat-last-open/state';
+import type { LeadPermissionsState } from './slices/lead-permissions/state';
 import type { SessionGroupingState } from './slices/session-grouping/state';
 import type { NextViewState } from './slices/next-view/state';
 import type { TrackerMovesState } from './slices/tracker-moves/state';
@@ -148,6 +150,7 @@ type AppSliceState = ArtifactsState &
   ReviewNavigationState &
   ReviewBulkState &
   ReviewLaunchState &
+  CommentRunStartState &
   OutputHandoffsState &
   ReviewSelectionState &
   ReviewSourceState &
@@ -200,6 +203,7 @@ type AppSliceState = ArtifactsState &
   MonitoringViewState &
   LocalChecksState &
   ChatLastOpenState &
+  LeadPermissionsState &
   SessionGroupingState &
   NextViewState &
   TrackerMovesState &

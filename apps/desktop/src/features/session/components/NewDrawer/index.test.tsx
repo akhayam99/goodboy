@@ -173,34 +173,36 @@ describe('NewDrawer (shell)', () => {
 });
 
 describe('NewDrawer (Write)', () => {
-  it('writes a report with every field the page had, and no format tabs', () => {
+  it('writes a report with every field the page had, and no format tabs', async () => {
     openDrawer({ payload: { form: 'report' } });
 
     expect(screen.getByRole('region', { name: 'Write a report' })).toBeDefined();
+    expect(await screen.findByTestId('artifact-brief')).toBeDefined();
     expect(screen.queryByText('A report written from this session.')).toBeNull();
     expect(screen.queryByRole('tablist', { name: 'Write format' })).toBeNull();
-    expect(screen.getByTestId('artifact-brief')).toBeDefined();
     expect(screen.getByText('Context')).toBeDefined();
     expect(screen.queryByRole('button', { name: /^add guidance/i })).toBeNull();
   });
 
-  it('opens the wireframe form and back without losing the report draft', () => {
+  it('opens the wireframe form and back without losing the report draft', async () => {
     const view = openDrawer({ payload: { form: 'report' } });
-    fireEvent.change(screen.getByTestId('artifact-brief'), { target: { value: 'the rounding' } });
+    fireEvent.change(await screen.findByTestId('artifact-brief'), {
+      target: { value: 'the rounding' },
+    });
 
     view.rerender(drawerWith({ payload: { form: 'wireframe' } }));
     expect(screen.getByRole('region', { name: 'Draw a wireframe' })).toBeDefined();
     view.rerender(drawerWith({ payload: { form: 'report' } }));
 
-    expect(textAreaOf(screen.getByTestId('artifact-brief')).value).toBe('the rounding');
+    expect(textAreaOf(await screen.findByTestId('artifact-brief')).value).toBe('the rounding');
   });
 
-  it('shows the note a retry carries', () => {
+  it('shows the note a retry carries', async () => {
     openDrawer({
       payload: { form: 'report', note: 'Retrying the last report' },
     });
 
-    expect(screen.getByTestId('artifact-creation-note').textContent).toBe(
+    expect((await screen.findByTestId('artifact-creation-note')).textContent).toBe(
       'Retrying the last report',
     );
   });

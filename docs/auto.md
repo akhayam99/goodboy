@@ -406,7 +406,8 @@ writing to it reopens it to **Deciding**.
   (`planBlockedReasonOf`); when the Next step already asks for that
   revision, Approve is left out so Continue stays the one primary. The new
   plan counts on as v2 while v1 reads
-  Superseded. An open revise and a change sent for v1 read the same way. A
+  Superseded. An open revise and a change sent for v1 read the same way. A planner still waiting for your go (`awaiting_confirm`) does not, so the plan keeps
+  asking for v1. A
   planner that failed reads "Plan v2 failed" with the reason, **Retry plan
   v2** and **Keep plan v1**; Keep stores `request.keptBase` on the failed
   delegation (`keepAutoPlanBase`, refused once v1 is no longer current), and
@@ -1266,7 +1267,14 @@ level the rows fall back to, and `leadDetailsDifferOf` counts the rows that
 differ from it: that count is the only source of "Custom, 2 details". A row
 saves when you change it; there is no draft. A failed write keeps the old
 value and shows the error under its row, and the panel reads again after
-every write. Picking a level writes the level and clears the own rows; on a
+every write. A read that fails after the rows loaded keeps them and shows the
+error above them. Every reader of a workspace (`useLeadPermissions`: the chip,
+the drawer, the Settings disclosure) listens to one revision per workspace
+(`leadPermissionsRevisionByWorkspace`, slice `lead-permissions`); a write that
+landed bumps it and the other readers read again, a failed write bumps
+nothing, and each reader keeps only its latest answer
+(`LeadDetailsDrawer/index.chip.test.tsx`). Picking a level writes the level
+and clears the own rows; on a
 Lead it pins a row only where a workspace default would still disagree with
 the level. Reset is a pick of the current level.
 

@@ -19,7 +19,7 @@ import type { Workspace } from '@goodboy/types';
 import { useAppStore, useWorkspaces } from '../../../../store';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { BrandTile } from '../../../../shared/components/BrandTile';
-import { NewWorkspaceForm } from '../../../../shared/components/NewWorkspaceForm';
+import { LazyNewWorkspaceForm } from '../../../../shared/components/NewWorkspaceForm/LazyNewWorkspaceForm';
 import { APP_VERSION } from '../../../../shared/lib/appVersion';
 import { NAMES } from '../../../../shared/utils/names';
 import { shortcutGlyphs } from '../../../../shared/keyboard/registry';
@@ -180,7 +180,7 @@ export const WorkspaceLauncher = ({ isCreating, onCloseCreate }: Props) => {
 
   const body = isCreating ? (
     <div key="new" className={swap}>
-      <NewWorkspaceForm
+      <LazyNewWorkspaceForm
         mode="new"
         titleRole="title"
         onCreated={onCloseCreate}

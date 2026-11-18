@@ -125,6 +125,15 @@ describe('dockPlanOf', () => {
     expect(plan?.row.artifact.artifactId).toBe('artifact-plan-2');
   });
 
+  it('keeps plan v1 waiting while a new planner only waits for your go', () => {
+    const asked = aView({
+      delegations: [owner, newPlannerOf({ state: 'awaiting_confirm' })],
+      artifacts: [aPlanRow()],
+    });
+
+    expect(dockPlanOf({ view: asked })).toMatchObject({ kind: 'waiting', version: 1 });
+  });
+
   it('reads a change sent for v1 as updating, and drops it once v2 is there', () => {
     const sent = { artifactId: 'artifact-plan', revision: 1 };
     const atOne = { ...aView({ artifacts: [aPlanRow()] }), sentChange: sent };

@@ -16,6 +16,9 @@ type BoardTileAction =
 const ANSWER_KINDS: ReadonlySet<string> = new Set(['question', 'answer-questions']);
 
 export const boardTileActionOf = ({ row, cards }: Params): BoardTileAction => {
+  if (row.isClosed) {
+    return { kind: 'none' };
+  }
   if (row.isMerged) {
     return row.mountId === null ? { kind: 'none' } : { kind: 'remove', mountId: row.mountId };
   }

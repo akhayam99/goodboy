@@ -1,5 +1,11 @@
+import { Suspense } from 'react';
+import { lazyNamed } from '../../../shared/lib/lazyNamed';
 import type { WritePanelProps } from '../writePanelProps';
-import { ArtifactCreationPane } from './ArtifactCreationPane';
+
+const ArtifactCreationPane = lazyNamed({
+  load: () => import('./ArtifactCreationPane'),
+  pick: ({ ArtifactCreationPane }) => ArtifactCreationPane,
+});
 
 export const WritePanel = ({
   session,
@@ -9,14 +15,15 @@ export const WritePanel = ({
   onStarted,
   onClose,
 }: WritePanelProps) => (
-  <ArtifactCreationPane
-    key={kind}
-    sessionId={session.id}
-    session={session}
-    kind={kind}
-    note={note}
-    actionsHost={actionsHost}
-    onClose={onClose}
-    onStarted={onStarted}
-  />
+  <Suspense key={kind} fallback={null}>
+    <ArtifactCreationPane
+      sessionId={session.id}
+      session={session}
+      kind={kind}
+      note={note}
+      actionsHost={actionsHost}
+      onClose={onClose}
+      onStarted={onStarted}
+    />
+  </Suspense>
 );

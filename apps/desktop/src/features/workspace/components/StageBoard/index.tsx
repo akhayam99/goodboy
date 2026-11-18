@@ -15,7 +15,7 @@ import { useActionControls } from '../../../actions/useActionControls';
 import { ObjectSelectionBar } from '../../../../shared/components/ObjectSelectionBar';
 import type { ObjectTarget } from '../../../actions/types';
 import { useSessionArchive } from '../../../session/hooks/useSessionArchive';
-import { NewWorkspaceForm } from '../../../../shared/components/NewWorkspaceForm';
+import { LazyNewWorkspaceForm } from '../../../../shared/components/NewWorkspaceForm/LazyNewWorkspaceForm';
 import { SetupCard } from '../../../onboarding/SetupCard';
 import { useIsMainWindow } from '../../useIsMainWindow';
 import { BlockedBoard } from './BlockedBoard';
@@ -172,7 +172,7 @@ export const StageBoard = ({ workspaceId, sessions }: Props) => {
               viewportClassName="flex items-center justify-center"
             >
               <div className="w-full max-w-xl py-6">
-                <NewWorkspaceForm mode="add" workspaceId={workspace.id} />
+                <LazyNewWorkspaceForm mode="add" workspaceId={workspace.id} />
               </div>
             </ScrollFade>
           )}

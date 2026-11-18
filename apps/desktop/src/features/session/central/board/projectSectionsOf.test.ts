@@ -24,6 +24,8 @@ const rowOf = ({ id, projectName }: RowParams): BoardRow => ({
   branch: projectName === null ? null : `ak/${id}`,
   group: 'in-progress',
   isMerged: false,
+  isClosed: false,
+  isSettled: false,
   stage: STAGE,
   checks: null,
   askIds: [],

@@ -21,6 +21,7 @@ import { U24_ANALYZE_FIX_SCENES } from './analyze-fix';
 
 beforeAll(async () => {
   await importStore();
+  await import('../../../../../features/branch/components/CheckAnalysisDrawer');
 }, STORE_IMPORT_TIMEOUT_MS);
 beforeEach(async () => {
   await resetStoryStore();
@@ -77,11 +78,11 @@ describe('analyze fix scenes', () => {
     within(proposal).getByRole('button', { name: 'Dismiss' });
     within(proposal).getByText(/^Implementer · /);
   });
-  it('opens the Debugger from the proposal row, Apply fix beside Dismiss in the drawer only', () => {
+  it('opens the Debugger from the proposal row, Apply fix beside Dismiss in the drawer only', async () => {
     show({ name: 'checks-proposal' });
     fireEvent.click(screen.getByRole('button', { name: 'Review fix' }));
     openRow();
-    const drawer = screen.getByRole('region', { name: 'Debugger' });
+    const drawer = await screen.findByRole('region', { name: 'Debugger' });
     expect(screen.getAllByRole('button', { name: 'Apply fix' })).toHaveLength(1);
     expect(within(drawer).getByRole('button', { name: 'Apply fix' })).toBeDefined();
     expect(within(drawer).getByText(/^Implementer · /)).toBeDefined();
@@ -95,13 +96,13 @@ describe('analyze fix scenes', () => {
     expect(within(chain).getByText('Dismissed')).toBeDefined();
     expect(within(drawer).queryByRole('button', { name: 'Apply fix' })).toBeNull();
   });
-  it('shows the Implementer fixing in the row and in the chain', () => {
+  it('shows the Implementer fixing in the row and in the chain', async () => {
     show({ name: 'checks-fixing' });
     expect(rowWord()).toBe('fixing');
     expect(screen.queryByRole('button', { name: 'Apply fix' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Review fix' })).toBeNull();
     openRow();
-    const drawer = screen.getByRole('region', { name: 'Debugger' });
+    const drawer = await screen.findByRole('region', { name: 'Debugger' });
     expect(within(drawer).getByText('Implementer is applying it on the branch.')).toBeDefined();
     const chain = within(drawer).getByRole('list', { name: 'Agent chain' });
     expect(within(chain).getByText('Accepted')).toBeDefined();
@@ -116,14 +117,14 @@ describe('analyze fix scenes', () => {
     expect(screen.queryByRole('button', { name: 'Push' })).toBeNull();
     expect(screen.queryByText('Review the changes')).toBeNull();
   });
-  it('opens the CI fix drawer from the Activity row while the pull request detail is unloaded', () => {
+  it('opens the CI fix drawer from the Activity row while the pull request detail is unloaded', async () => {
     show({ name: 'activity-ci-fix-unloaded' });
     const row = screen
       .getAllByRole('button')
       .find((button) => button.getAttribute('aria-description') === 'Open CI fix, Enter');
     expect(row).toBeDefined();
     fireEvent.click(row!);
-    expect(screen.getByRole('region', { name: 'Debugger' })).toBeDefined();
+    expect(await screen.findByRole('region', { name: 'Debugger' })).toBeDefined();
   });
   it.each(Object.keys(U24_ANALYZE_FIX_SCENES))(
     '%s has no accessibility violations',

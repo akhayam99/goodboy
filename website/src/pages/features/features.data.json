@@ -773,6 +773,12 @@
           "shown": true
         },
         {
+          "title": "Run from a comment",
+          "text": "A comment that asks for a rework starts a run instead of a quick fix. The form opens in the comment pane with the goal written from the comment, and the comment shows its run until it ends.",
+          "group": "Review and resolve on the Branch page",
+          "also": "run from a comment"
+        },
+        {
           "title": "Failed drafts",
           "text": "A comment that could not be fixed says why in plain words and links to the transcript. Retry it in the same run, start over on another model or add a hint.",
           "group": "Review and resolve on the Branch page",

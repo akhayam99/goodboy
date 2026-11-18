@@ -27,7 +27,7 @@ export type BoardLead = Readonly<{
   isFailed: boolean;
 }>;
 
-export type BoardGroupId = 'needs-you' | 'in-progress' | 'merged' | 'not-on-branch';
+export type BoardGroupId = 'needs-you' | 'in-progress' | 'merged' | 'closed' | 'not-on-branch';
 
 export type BoardRow = Readonly<{
   id: string;
@@ -36,6 +36,8 @@ export type BoardRow = Readonly<{
   branch: string | null;
   group: BoardGroupId;
   isMerged: boolean;
+  isClosed: boolean;
+  isSettled: boolean;
   stage: SessionStageInfo;
   checks: 'success' | 'failure' | 'pending' | null;
   askIds: ReadonlyArray<string>;

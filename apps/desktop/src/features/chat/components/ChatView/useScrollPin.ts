@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { appScrollTo } from '@goodboy/ui';
+import { anchorTopOf } from './anchorTopOf';
 
 const PIN_TOLERANCE_PX = 32;
 const SETTLE_FRAMES = 30;
@@ -56,11 +57,18 @@ type TurnFitParams = {
 const turnTopOf = ({ scroller, turn }: TurnFitParams): number =>
   turn.getBoundingClientRect().top - scroller.getBoundingClientRect().top + scroller.scrollTop;
 
+type SentTopParams = {
+  readonly scroller: HTMLElement;
+};
+
+const sentTopOf = ({ scroller }: SentTopParams): number =>
+  anchorTopOf({ scroller, minimumPx: ANCHOR_TOP_PX });
+
 const spacerOf = ({ scroller, turn }: TurnFitParams): number =>
   Math.max(
     0,
     scroller.clientHeight -
-      ANCHOR_TOP_PX -
+      sentTopOf({ scroller }) -
       turn.getBoundingClientRect().height -
       TRANSCRIPT_FLOOR_PX,
   );
@@ -171,7 +179,7 @@ export const useScrollPin = ({ deps, resetKey, anchorKey, onRevealOverflow }: Pa
     const turn = isTurnAnchorRef.current ? lastTurnOf() : null;
     if (turn !== null) {
       const turnBottom = Math.max(0, el.scrollHeight - el.clientHeight);
-      const turnTop = Math.max(0, turnTopOf({ scroller: el, turn }) - ANCHOR_TOP_PX);
+      const turnTop = Math.max(0, turnTopOf({ scroller: el, turn }) - sentTopOf({ scroller: el }));
       appScrollTo({ viewport: el, top: Math.min(turnBottom, turnTop) });
       ownTopRef.current = el.scrollTop;
       const turnKeys = overflowKeysOf({ scroller: el, answers });

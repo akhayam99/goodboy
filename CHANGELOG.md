@@ -12,6 +12,98 @@ file is in `.prettierignore`: the meta comment sits on the line right below
 each entry's heading, with no blank line, and a formatter would push it down
 onto its own paragraph.
 
+## Goodboy v0.39.2
+
+A comment that asks for a rework becomes a run, the Lead hears changes to a waiting plan, and every action answers where you clicked.
+
+### New
+
+#### Start a run from a comment
+<!-- gb area=review image=comment-run-start -->
+
+A comment that asks for a rework offers Start a run next to Reply. The form opens in the comment pane with the goal written from the comment, a Plan row and the branch. It works for your own notes and for comments from GitHub, GitLab and Bitbucket.
+
+The run is linked to the comment. The comment reads In a run, with the run's state and Open run, and the run's page names the comments it came from. Start with several comments by picking more from the branch, or use Add to the run while it works.
+
+When the fix agent finds a comment is bigger than one change, it reads Needs a run and Start a run is its one main button. Fix N comments counts only the small ones. A reply on the host waits for the push you allow.
+
+#### The Lead closes what it no longer needs
+<!-- gb area=agents -->
+
+The Lead can close an agent, skip it or discard it, and does the same with a plan. The Agents list reads Closed by the Lead, Skipped by the Lead or Discarded by the Lead, with the reason, and a discarded agent leaves the list.
+
+When plan approval is Ask first, the dock reads The Lead wants to drop plan v1, with Drop plan v1 next to Approve.
+
+### Improved
+
+#### The plan dock follows the plan
+<!-- gb area=agents image=plan-dock -->
+
+A message sent while a plan waits goes to the Lead as changes to that plan. The dock reads Updating plan v1 to v2 and Approve stays off until v2 is ready. When the update fails, it reads Plan v2 failed with Retry plan v2 and Keep plan v1.
+
+The composer on a Lead's page reads Message Lead.
+
+#### Push lists what is new on origin
+<!-- gb area=review image=push-check-again -->
+
+When origin moved while you pushed, the card leads with Check again. It lists the commits that are only on origin, with author and subject, then asks Force push anyway or Rebase on their commits. Fix with an agent and Open terminal here start from what origin holds now.
+
+#### Stale rebase cards settle by themselves
+<!-- gb area=review image=rebase-dismiss -->
+
+A rebase card that no longer applies settles once the branch is fixed, also after a push or a fetch, and a short line says so. A branch keeps one card, and Dismiss hides it for good. The card sits above the title, so it no longer covers it.
+
+#### Overview branches group by project
+<!-- gb area=sessions image=overview-branches -->
+
+With branches from two projects, the Overview board groups them under their project. Each branch tile has the menu of its row in the session rail: dots on hover, right click and Shift+F10. It lists the actions that fit a branch of a project attached to the session, and the tile shows a pointer.
+
+#### Every action answers where you click
+<!-- gb area=app -->
+
+Request review, Mark all as read, Restart now, Restore on an archived card, Locate folders and Check again on a tool page now show they are working and report a failure in place, with Retry where one helps.
+
+#### Big sessions open fast
+<!-- gb area=sessions -->
+
+The Overview log of a long session loads in pages after the first frame and ends in Show 50 older rows. Opening a session with a very long log is much faster.
+
+#### One note fix at a time on a branch
+<!-- gb area=review -->
+
+A fix for a note starts from your working tree and keeps your uncommitted edits. It waits while a ready fix on the same branch is applied or skipped, so fixes land one at a time.
+
+#### Scripts run on the branch you are on
+<!-- gb area=scripts -->
+
+The Scripts shortcut, the terminal and Search or run start on the branch, agent or run on screen. On a session with several branches, Search or run asks Run on which branch, with the last used first. The Scripts pane is one list per branch, with Start all services in each branch head.
+
+#### One mark for each session state
+<!-- gb area=sessions -->
+
+Each session state draws one icon in the sidebar, the hover card, the collapsed rail, the Board and Search or run. Where Auto meant the Lead, it now says Lead.
+
+#### Reading roles fall back to Cursor
+<!-- gb area=providers -->
+
+When Claude and Codex reach their usage limits, the Lead's reading agents run on Cursor. An agent that cannot start lists each connected provider with its reason and points to Models in Settings. The Stopped N processes line no longer names a CLI's own helpers after each turn.
+
+#### Popovers keep a margin from the window edge
+<!-- gb area=app -->
+
+Menus and popovers open inside the window and keep 12 pixels from every edge.
+
+### Fixed
+
+- A branch whose pull request was closed without merging reads Closed on the session board, in its own group, instead of Merged. <!-- gb area=sessions -->
+- Long text fields keep the caret in view while you type. <!-- gb area=app -->
+- A message you send lands just below the page header instead of behind it. <!-- gb area=sessions -->
+- Goodboy no longer opens with Goodboy hit an error last time after an update. Queries wait for the database to finish updating. <!-- gb area=storage -->
+- Onboarding with an older Claude CLI shows Update needed, with an Update button, and no longer spends a request on the check. <!-- gb area=providers -->
+- Installing a CLI with npm falls back to the public registry when your registry is unreachable. <!-- gb area=providers -->
+- When GitHub refuses a bug report, Goodboy opens it as a prefilled issue in your browser. <!-- gb area=app -->
+- Two security issues, one in how agents run and one in how terminal history is saved, are fixed. <!-- gb area=settings -->
+
 ## Goodboy v0.39.1
 
 Cleaner flows: one stop rule for workflows and the Lead, a Plan row to start a run, and fewer buttons on every session page.

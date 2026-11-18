@@ -374,6 +374,30 @@ describe('the branch board on the Overview', () => {
     expect(verbsOf({ tile: tenant })).toHaveLength(0);
   });
 
+  it('moves a tile to Closed with the Closed chip, then back out when the request is reopened', async () => {
+    seedCentralColumn({ kind: 'branches' });
+    await show();
+
+    setRequestState({ state: 'closed' });
+    await settle();
+
+    const closed = tileOf({ branch: TENANT });
+    expect(closed.closest('[data-board-group]')?.getAttribute('data-board-group')).toBe('closed');
+    expect(closed.querySelector('[data-board-chip]')?.textContent).toBe('Closed');
+    expect(verbsOf({ tile: closed })).toHaveLength(0);
+    expect(document.querySelector('[data-board-group="merged"]')).toBeNull();
+    expect(screen.queryAllByRole('button', { name: /^Remove \d worktrees?/ })).toHaveLength(0);
+
+    setRequestState({ state: 'open' });
+    await settle();
+
+    const reopened = tileOf({ branch: TENANT });
+    expect(reopened.closest('[data-board-group]')?.getAttribute('data-board-group')).not.toBe(
+      'closed',
+    );
+    expect(document.querySelector('[data-board-group="closed"]')).toBeNull();
+  });
+
   it('shows Branches, Spend and Time tiles and leaves Questions and Artifacts to the tabs', async () => {
     seedCentralColumn({ kind: 'branches' });
     await show();

@@ -25,4 +25,8 @@ describe('commentScopeSentenceOf says why a comment suggests a run', () => {
       }),
     ).toBe('It asks for a rework, names 4 other places and is long.');
   });
+
+  it('says nothing when no sign made the comment broad', () => {
+    expect(commentScopeSentenceOf({ scope: { isBroad: false, signs: [], places: [] } })).toBe('');
+  });
 });
