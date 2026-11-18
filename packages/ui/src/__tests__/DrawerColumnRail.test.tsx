@@ -6,7 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { DrawerColumn } from '../components/DrawerColumn';
 import {
-  DRAWER_INSET,
+  DRAWER_GUTTER,
   READER_DRAWER_DEFAULT,
   RIGHT_DRAWER_DEFAULT,
   drawerAsideWidthOf,
@@ -189,28 +189,29 @@ describe('DrawerColumn rail', () => {
     expect(box()?.contains(railHost())).toBe(true);
   });
 
-  it('closed, is the tools alone: the aside is the 8px gutter and the rail wide, and stays live', () => {
+  it('closed, is the tools alone: the aside is the 12px gutter and the rail wide, and stays live', () => {
     stubEdgeWidths({ column: 1300 });
     renderWithTools(null);
 
-    expect(panel().style.width).toBe(`${EDGE_WIDTH + DRAWER_INSET}px`);
+    expect(panel().style.width).toBe(`${EDGE_WIDTH + DRAWER_GUTTER}px`);
     expect(panel().hasAttribute('inert')).toBe(false);
     expect(card()).toBeNull();
     expect(handle()).toBeNull();
     expect(railHost()?.closest('[inert]')).toBeNull();
   });
 
-  it('opens the dock to the right of the rail: the rail is the dock left edge', () => {
+  it('opens the dock to the left of the rail: the rail stays on the window edge', () => {
     stubEdgeWidths({ column: 1300 });
     renderWithTools('Scripts');
 
-    expect(railHost()?.nextElementSibling).toBe(card());
-    expect(card()?.nextElementSibling).toBeNull();
-    expect(box()?.firstElementChild).toBe(railHost());
-    expect(panel().style.width).toBe(`${RIGHT_DRAWER_DEFAULT + DRAWER_INSET + EDGE_WIDTH}px`);
+    expect(card()?.nextElementSibling).toBe(railHost());
+    expect(railHost()?.nextElementSibling).toBeNull();
+    expect(box()?.lastElementChild).toBe(railHost());
+    expect(panel().className).toContain('justify-end');
+    expect(panel().style.width).toBe(`${RIGHT_DRAWER_DEFAULT + DRAWER_GUTTER + EDGE_WIDTH}px`);
   });
 
-  it('keeps one rail element, first in the container, closed, pushing and over', () => {
+  it('keeps one rail element, last in the container, closed, pushing and over', () => {
     const resize = driveEdgeColumn({ column: 1300 });
     const view = renderWithTools(null);
     const closedHost = railHost();
@@ -233,11 +234,11 @@ describe('DrawerColumn rail', () => {
     expect(panel().getAttribute('data-drawer-mode')).toBe('overlay');
     expect(railHost()).toBe(closedHost);
     expect(railHost()?.parentElement).toBe(closedParent);
-    expect(railHost()?.previousElementSibling).toBeNull();
+    expect(railHost()?.nextElementSibling).toBeNull();
     expect(panel().className).toContain('right-0');
   });
 
-  it('keeps the rail on the dock edge while a resize drags the panel', () => {
+  it('keeps the rail on the window edge while a resize drags the panel', () => {
     stubEdgeWidths({ column: 1300 });
     renderWithTools('Scripts');
     const host = railHost();
@@ -246,9 +247,9 @@ describe('DrawerColumn rail', () => {
     fireEvent.mouseMove(window, { clientX: 960 });
 
     expect(railHost()).toBe(host);
-    expect(box()?.firstElementChild).toBe(host);
+    expect(box()?.lastElementChild).toBe(host);
     expect(handleOf().parentElement?.nextElementSibling).toBe(box());
-    expect(panel().style.width).toBe(`${RIGHT_DRAWER_DEFAULT + 40 + DRAWER_INSET + EDGE_WIDTH}px`);
+    expect(panel().style.width).toBe(`${RIGHT_DRAWER_DEFAULT + 40 + DRAWER_GUTTER + EDGE_WIDTH}px`);
     fireEvent.mouseUp(window);
   });
 
@@ -257,7 +258,7 @@ describe('DrawerColumn rail', () => {
     const { container } = renderWithTools('Scripts');
     const spacer = container.querySelector<HTMLElement>('[data-drawer-spacer]');
 
-    expect(spacer?.style.width).toBe(`${EDGE_WIDTH + DRAWER_INSET}px`);
+    expect(spacer?.style.width).toBe(`${EDGE_WIDTH + DRAWER_GUTTER}px`);
     expect(panel().className).toContain('absolute');
   });
 
@@ -269,15 +270,15 @@ describe('DrawerColumn rail', () => {
     expect(panel().style.width).toBe(
       `${drawerAsideWidthOf({ width: READER_DRAWER_DEFAULT, mode: 'overlay', railWidth: EDGE_WIDTH })}px`,
     );
-    expect(Number.parseFloat(panel().style.width)).toBeLessThanOrEqual(852 - DRAWER_INSET);
+    expect(Number.parseFloat(panel().style.width)).toBeLessThanOrEqual(852 - DRAWER_GUTTER);
   });
 
   it('narrows the overlay panel so panel and rail fit a narrow sheet', () => {
     stubEdgeWidths({ column: 640 });
     renderReaderWithTools();
 
-    expect(Number.parseFloat(panel().style.width)).toBeLessThanOrEqual(640 - DRAWER_INSET);
-    expect(panel().style.width).toBe(`${640 - DRAWER_INSET}px`);
+    expect(Number.parseFloat(panel().style.width)).toBeLessThanOrEqual(640 - DRAWER_GUTTER);
+    expect(panel().style.width).toBe(`${640 - DRAWER_GUTTER}px`);
   });
 
   it('measures the rail once it mounts, without waiting for an observer', () => {
@@ -320,7 +321,7 @@ describe('DrawerColumn rail', () => {
     expect(pageOf(container)?.dataset['sheet']).toBe('pushed');
   });
 
-  it('slides rail and dock in together over the page, the rail itself never animating alone', () => {
+  it('reveals the dock out of the rail over the page, the rail itself never moving', () => {
     stubEdgeWidths({ column: 852 });
     renderWithTools('Scripts');
 

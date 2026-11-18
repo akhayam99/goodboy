@@ -145,9 +145,6 @@ vi.mock('../features/session/components/NewSessionBridge', () => ({
 vi.mock('../features/workflows/components/WorkflowFollowToastBridge', () => ({
   WorkflowFollowToastBridge: () => null,
 }));
-vi.mock('../features/session/components/SessionNavSidebar', () => ({
-  SessionNavSidebar: () => null,
-}));
 vi.mock('../features/workspace/hooks/useWindowPresence', () => ({ useWindowPresence: vi.fn() }));
 vi.mock('../features/workspace/components/WorkspaceLinkStudio', () => ({
   WorkspaceLinkStudio: () => null,
@@ -234,7 +231,7 @@ vi.mock('../store', async () => {
     useCurrentWorkspace: () => (state.currentWorkspaceId === null ? null : workspace),
     useSessionById: () => null,
     useSessions: () => state.sessions,
-    useSessionColumn: () => ({ order: state.sessions.map((session) => session.id) }),
+    useSessionOrder: () => ({ order: state.sessions.map((session) => session.id) }),
     useWorkspaces: () => state.workspaces,
   };
 });

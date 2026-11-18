@@ -57,7 +57,7 @@ const show = ({ name }: Params) => {
 };
 
 const rowWord = (): string | null =>
-  document.querySelector('[data-check-status]')?.textContent ?? null;
+  document.querySelector('[data-check-status] [data-item-work-word]')?.textContent ?? null;
 
 const openRowDrawer = () => {
   const row = document.querySelector<HTMLElement>('[data-check-row] button');
@@ -68,18 +68,27 @@ const openRowDrawer = () => {
   return screen.findByRole('region', { name: 'Debugger' });
 };
 
+const rowPushOnChecks = (): HTMLElement | null =>
+  screen
+    .queryAllByRole('button', { name: 'Push' })
+    .find((button) => button.closest('[data-check-action]') !== null) ?? null;
+
 const rowPush = (): HTMLElement | null =>
   screen
     .queryAllByRole('button', { name: 'Push' })
     .find((button) => button.closest('[data-row-id]') !== null) ?? null;
 
 describe('CI fix state scenes', () => {
-  it('labels the checks row Not pushed and opens the Debugger with Push from the row', async () => {
+  it('labels the checks row Fixed, not pushed with Push on the row, and one Push with the drawer open', async () => {
     show({ name: 'checks-fixed-local' });
-    expect(rowWord()).toBe('Not pushed');
+    expect(rowWord()).toBe('Fixed, not pushed');
+    expect(document.querySelector('[data-check-status]')?.textContent).toContain(
+      'Committed 9e4c1a7. Push it so the check runs again.',
+    );
     expect(screen.queryByRole('button', { name: 'Open' })).toBeNull();
-    expect(screen.queryByRole('button', { name: 'Push' })).toBeNull();
+    expect(rowPushOnChecks()).not.toBeNull();
     const drawer = await openRowDrawer();
+    expect(screen.getAllByRole('button', { name: 'Push' })).toHaveLength(1);
     expect(within(drawer).getByRole('button', { name: 'Push' })).toBeDefined();
   });
   it('pushes once from the drawer of the row and moves the row to re-running', async () => {
@@ -114,7 +123,7 @@ describe('CI fix state scenes', () => {
     const button = within(await openRowDrawer()).getByRole('button', { name: 'Push' });
     fireEvent.click(button);
     fireEvent.click(button);
-    await waitFor(() => expect(rowWord()).toBe('Re-running'));
+    await waitFor(() => expect(rowWord()).toBe('Pushed'));
     expect(pushes).toHaveLength(1);
     expect(screen.queryByRole('button', { name: 'Push' })).toBeNull();
   });
@@ -151,7 +160,7 @@ describe('CI fix state scenes', () => {
         expect.objectContaining({ title: "Couldn't push the branch" }),
       ),
     );
-    expect(rowWord()).toBe('Not pushed');
+    expect(rowWord()).toBe('Fixed, not pushed');
     expect(screen.getByRole('button', { name: 'Push' })).toBeDefined();
   });
   it('leads the drawer with the outcome, Push as its one primary and the steps as rows', async () => {
@@ -177,7 +186,7 @@ describe('CI fix state scenes', () => {
       );
     }
   });
-  it('shows one Push, in the drawer, and the row carries none once it closes', async () => {
+  it('shows one Push, in the drawer, and the row takes it back once the drawer closes', async () => {
     show({ name: 'debugger-drawer-fixed-local' });
     const drawer = await screen.findByRole('region', { name: 'Debugger' });
     const pushes = screen.getAllByRole('button', { name: 'Push' });
@@ -186,7 +195,9 @@ describe('CI fix state scenes', () => {
     act(() => {
       store.getState().closeDrawer();
     });
-    expect(screen.queryAllByRole('button', { name: 'Push' })).toHaveLength(0);
+    const rowPushes = screen.getAllByRole('button', { name: 'Push' });
+    expect(rowPushes).toHaveLength(1);
+    expect(rowPushes[0]?.closest('[data-check-row]')).not.toBeNull();
     expect(screen.queryByRole('region', { name: 'Debugger' })).toBeNull();
   });
   it('pushes from the drawer and then reads the three green steps and the check', async () => {

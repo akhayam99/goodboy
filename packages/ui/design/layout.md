@@ -4,46 +4,27 @@
 
 ## The left column
 
-`AppShell` lays out one left column on the chrome, a resize handle and the
-content sheet. The column is 240px by default, resizable from 200 to 400
-(`LEFT_SIDEBAR_*`), and its one reduced state is a 44px rail
-(`COLLAPSED_RAIL_WIDTH`). The desktop fills it with `SideColumn`; the rules for
-what it holds live in [docs/navigation/shell.md](../../../docs/navigation/shell.md) → Surfaces.
+`AppShell` takes the desktop's places rail in `leftRail`. Its grid column is
+`auto`, with no resize handle. `app/components/ShellLeft/` fills it
+with `ShellRail`: New, the six places and the foot. The content and signals
+are owned by [docs/navigation/shell.md](../../../docs/navigation/shell.md) → Surfaces.
 
-| part        | shape                                                                                                    |
-| ----------- | -------------------------------------------------------------------------------------------------------- |
-| toggle      | none in the column: the one sidebar toggle is `ColumnToggleButton`, first in the top bar left zone (⌘B)  |
-| New session | a 28px row, `text-row`, the primary tint (`bg` and `ring` of `tintClasses('primary')`), `+` in primary   |
-| door        | a 28px row: 14px concept icon, the word in `text-row` muted, the shortcut in `text-chip` on hover        |
-| current     | `bg-selected`, `text-foreground`, `cursor-default`, `aria-current="page"`, one per frame                 |
-| foot        | Settings as a door, then the Goodboy line and the 24px bug icon in `[data-column-corner]`                |
-| rail button | its open row without the word: `h-7 w-full px-2`, the icon at the row's x, the word in a right `Tooltip` |
+`ShellRail` reads `useShellRailForm` and `shellRailGeometry`: 64px with words,
+or 44px with icons and tooltips in a window under 1100px. `ShellRailItem`
+keeps the full accessible name when a shorter word is shown. The rail never
+folds, never resizes and saves no width. `App.tsx` supplies neither a top bar
+fold toggle nor a peek overlay.
 
-Rows sit 4px apart (`gap-1`); the doors start 4px under New session. The
-column never changes its content: no page swaps it, and only the sidebar toggle
-and ⌘B fold it. A studio never covers it: a studio is a page in the one main
-slot, drawn inside the content sheet over the page it replaces, and
-`StudioFrame` with `placement="content"` draws its band on that sheet instead
-of on the chrome. Settings is such a page, with its
-scopes in a page rail beside its detail.
+A studio is a page in the main slot, inside the content sheet beside the live
+places rail. `StudioFrame` with `placement="content"` draws its band on that
+sheet. Settings keeps its scopes in a page rail beside its detail.
 
-**A session has its own rail, not a card.** The workspace list keeps every
-session a flat row and never changes level; the open one is set in medium
-weight and takes `bg-selected` while its page is on screen. Its pages, projects
-and linked work live on the session level of the session rail
-(`SessionRail/SessionLevel`; Projects and Linked as `LevelCard`s, a level 2
-`bg-subtle` panel with its header row inside), at the left of the page on the page background
-with the column's row recipe, and its deeper levels slide in there over 180ms,
-so no card nests inside the list. A page
-entry ends in one fixed 40px right-aligned slot: the count in tabular gray and
-a 6px dot for running (info) or open questions (warning).
-
-**Pinned sessions are a group.** A **Pinned** group sits first in the sessions
-list, above every other group, in pin order. Its header is an `Eyebrow` with the
-count, the same header as a group's: a toggle in a grouped list, a plain label
-in a flat one (the rest of the flat list then reads Sessions, so the
-boundary is named, with no divider). A pinned row is the same row as any other,
-with no glyph at rest.
+**Sessions open from the top bar.** `SessionsPopover` holds the searchable
+list, with Pinned first and the remaining sessions grouped by state. A row
+opens the session on Overview. Its pages are tabs below the title, replaced
+by crumbs on a detail; Projects and Linked live in Context. The places rail
+keeps Board current while a session is open. The session head and cards are
+owned by [the session page tabs](../../../docs/navigation/session-rail.md).
 
 A list that belongs to a studio's page (Chat's chats, Changelog's releases) or
 its filters (Tasks, Notifications) uses `StudioRailLayout` with
@@ -66,6 +47,20 @@ filters, opening the same facets in a popover. Every filter trigger renders
 through `FilterButton` (Tasks included); `filter-triggers.test.ts` allows only
 the two icon-only `xs` triggers (the Board header and the file tree), and
 that list only falls.
+
+**One handle sizes every split.** `SplitHandle` is the only resize primitive,
+for columns and for rows. Its `side` names where the panel it sizes sits:
+`left` and `right` make a 6px vertical bar that follows the pointer's x,
+`top` and `bottom` a 6px horizontal bar that follows its y. The handle's edge
+follows the pointer one to one, so the panel's far edge (the tool rail beside a
+right panel) stays where it is. A focused handle moves 8px per arrow on its
+own axis, 32 with Shift; a double click returns the base size. It is a
+`separator` with the matching `aria-orientation` and its min, max and current
+size as values, updated live during a drag. While a drag runs the body carries
+`SPLIT_DRAG_ATTRIBUTE` with the axis, so a native web page in the window hides
+under its cover and is placed once at the release. The handle reads its
+bounds and callbacks from a ref, so a parent render mid drag keeps the drag,
+the cursor and the mark.
 
 ## Pane anatomy
 

@@ -104,10 +104,10 @@ describe('the Debugger drawer', () => {
       within(within(drawer).getByRole('list', { name: 'Paths' })).getAllByRole('listitem'),
     ).toHaveLength(2);
   });
-  it('offers one fix as a plain box with Start fix', async () => {
+  it('offers one fix as a plain box with Apply fix', async () => {
     const drawer = await showDrawer({ name: 'debugger-drawer-proposal' });
     expect(within(drawer).queryByRole('tablist', { name: 'Fix options' })).toBeNull();
-    expect(within(drawer).getByRole('button', { name: 'Start fix' })).toBeDefined();
+    expect(within(drawer).getByRole('button', { name: 'Apply fix' })).toBeDefined();
     expect(
       within(drawer).getByRole('region', { name: 'Proposed diff for src/ledger.ts' }),
     ).toBeDefined();
@@ -136,13 +136,13 @@ describe('the Debugger drawer', () => {
         { exact: false },
       ),
     ).toBeDefined();
-    expect(within(drawer).getByRole('button', { name: 'Start option A' })).toBeDefined();
-    expect(within(drawer).queryByRole('button', { name: 'Start fix' })).toBeNull();
+    expect(within(drawer).getByRole('button', { name: 'Apply option A' })).toBeDefined();
+    expect(within(drawer).queryByRole('button', { name: 'Apply fix' })).toBeNull();
   });
   it('follows the picked option in the body and in the CTA', async () => {
     const drawer = await showDrawer({ name: 'debugger-drawer-options' });
     fireEvent.click(within(drawer).getByRole('tab', { name: /Option B/ }));
-    expect(within(drawer).getByRole('button', { name: 'Start option B' })).toBeDefined();
+    expect(within(drawer).getByRole('button', { name: 'Apply option B' })).toBeDefined();
     const panel = within(drawer).getByRole('tabpanel', { name: 'Option B' });
     expect(within(panel).getByText('Drop repeated invoice ids', { exact: false })).toBeDefined();
     expect(within(panel).queryByText('Skip applyCredit', { exact: false })).toBeNull();
@@ -150,7 +150,7 @@ describe('the Debugger drawer', () => {
       within(drawer).queryByRole('region', { name: 'Proposed diff for src/ledger.ts' }),
     ).toBeNull();
     fireEvent.click(within(drawer).getByRole('tab', { name: /Option C/ }));
-    expect(within(drawer).getByRole('button', { name: 'Start option C' })).toBeDefined();
+    expect(within(drawer).getByRole('button', { name: 'Apply option C' })).toBeDefined();
   });
   it('keeps the failed log collapsed and shows it without escape codes or CI prefixes', async () => {
     const drawer = await showDrawer({ name: 'debugger-drawer-ci-log' });

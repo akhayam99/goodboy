@@ -1,4 +1,4 @@
-import type { Session, SessionStage } from '@goodboy/types';
+import type { Session } from '@goodboy/types';
 
 type ExemptParams = {
   readonly sessions: ReadonlyArray<Session>;
@@ -16,29 +16,4 @@ export const withExemptSessions = ({
   }
   const kept = new Set(matched.map((session) => session.id));
   return sessions.filter((session) => kept.has(session.id) || exemptIds.has(session.id));
-};
-
-type StatusParams = {
-  readonly sessions: ReadonlyArray<Session>;
-  readonly statusFilter: ReadonlyArray<SessionStage>;
-  readonly stageBySession: Readonly<Record<string, SessionStage>>;
-  readonly exemptIds: ReadonlySet<string>;
-};
-
-export const filterSessionsByStatus = ({
-  sessions,
-  statusFilter,
-  stageBySession,
-  exemptIds,
-}: StatusParams): ReadonlyArray<Session> => {
-  if (statusFilter.length === 0) {
-    return sessions;
-  }
-  return sessions.filter((session) => {
-    if (exemptIds.has(session.id)) {
-      return true;
-    }
-    const stage = stageBySession[session.id];
-    return stage !== undefined && statusFilter.includes(stage);
-  });
 };

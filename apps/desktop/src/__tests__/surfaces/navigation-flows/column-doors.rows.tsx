@@ -3,6 +3,7 @@ import { fireEvent, screen, waitFor } from '@testing-library/react';
 import type { ChatId } from '@goodboy/types';
 import { brandedId } from '../../../features/history/testing/brandedId';
 import { useThemeStore, type ThemePreference } from '../../../shared/lib/theme';
+import { pressShortcut } from '../../helpers/pressKey';
 import {
   type Row,
   WAIT,
@@ -22,7 +23,7 @@ let clipboardWrites: Array<string> = [];
 
 const doorIn = (name: string): HTMLElement => {
   const door = document.querySelector<HTMLElement>(
-    `[data-side-column] [data-column-door="${name}"]`,
+    `[data-shell-rail] [data-shell-rail-item="${name}"]`,
   );
   expect(door).not.toBeNull();
   return door as HTMLElement;
@@ -30,7 +31,7 @@ const doorIn = (name: string): HTMLElement => {
 
 const createIn = (name: string): HTMLElement => {
   const button = document.querySelector<HTMLElement>(
-    `[data-side-column] [data-create="${name}"], [data-side-column] [data-door-create="${name}"]`,
+    `[data-shell-rail] [data-shell-rail-item="${name === 'session' ? 'new' : name}"]`,
   );
   if (button === null) {
     throw new Error(`The column has no create button ${name}`);
@@ -45,17 +46,16 @@ const DOOR_ORDER: ReadonlyArray<string> = [
   'chat',
   'connections',
   'impact',
-  'monitoring',
 ];
 
-const railTool = (name: 'terminal' | 'browser'): HTMLElement => {
+const railTool = (name: 'terminal' | 'browser' | 'monitoring'): HTMLElement => {
   return screen.getByTestId(`pane-toggle-${name}`);
 };
 
 const doorIdsInColumn = (): ReadonlyArray<string> =>
-  Array.from(document.querySelectorAll<HTMLElement>('[data-side-column] [data-column-door]')).map(
-    (door) => door.getAttribute('data-column-door') ?? '',
-  );
+  Array.from(
+    document.querySelectorAll<HTMLElement>('[data-shell-rail] [data-shell-rail-item]'),
+  ).map((door) => door.getAttribute('data-shell-rail-item') ?? '');
 
 const themeRow = ({ choice }: { readonly choice: ThemePreference }): Row => ({
   name: `palette: Theme: ${choice} sets the theme`,
@@ -69,13 +69,13 @@ const themeRow = ({ choice }: { readonly choice: ThemePreference }): Row => ({
 export const COLUMN_DOOR_ROWS: ReadonlyArray<Row> = [
   ...(['dark', 'light', 'system'] as const).map((choice) => themeRow({ choice })),
   {
-    name: 'column: the doors stand in the ranked order',
+    name: 'rail: the places stand in the ranked order',
     covers: [],
     open: async () => undefined,
     lands: async () => {
       expect(doorIdsInColumn().filter((id) => DOOR_ORDER.includes(id))).toEqual(DOOR_ORDER);
-      expect(doorIn('board').textContent).toContain('Board');
-      expect(doorIn('inbox').textContent).toContain('Tasks');
+      expect(doorIn('board').getAttribute('aria-label')).toMatch(/^Board/);
+      expect(doorIn('inbox').getAttribute('aria-label')).toMatch(/^Tasks/);
     },
   },
   {
@@ -236,13 +236,17 @@ export const COLUMN_DOOR_ROWS: ReadonlyArray<Row> = [
     ),
   },
   {
-    name: 'column: monitoring',
+    name: 'right rail: Monitoring grows into its page from its panel, lighting no place',
     covers: ['openMonitoring', 'studio:monitoring'],
     door: 'visible',
-    open: () => click(doorIn('monitoring')),
+    open: async () => {
+      await click(railTool('monitoring'));
+      await clickButton(/^Open full page$/);
+    },
     lands: both(
       () => studio('Monitoring'),
-      async () => expect(doorIn('monitoring').getAttribute('aria-current')).toBe('page'),
+      async () =>
+        expect(document.querySelector('[data-shell-rail] [aria-current="page"]')).toBe(null),
       async () =>
         expect(document.querySelector('[data-top-bar] [aria-label^="Monitoring"]')).toBe(null),
     ),
@@ -288,7 +292,7 @@ export const COLUMN_DOOR_ROWS: ReadonlyArray<Row> = [
     ),
   },
   {
-    name: 'column: settings opens a page and leaves the column live',
+    name: 'rail: settings opens a page and leaves the rail live',
     covers: ['openSettings', 'studio:settings', 'scope:home'],
     door: 'visible',
     open: () => click(doorIn('settings')),
@@ -297,23 +301,26 @@ export const COLUMN_DOOR_ROWS: ReadonlyArray<Row> = [
       () => visible('button', /^Back to app/),
       () => visible('searchbox', 'Search settings'),
       async () => {
-        const nav = document.querySelector('[data-column-layer="nav"]');
-        expect(nav?.hasAttribute('inert')).toBe(false);
+        expect(document.querySelector('[data-shell-rail]')?.closest('[inert]')).toBe(null);
         expect(doorIn('settings').getAttribute('aria-current')).toBe('page');
       },
     ),
   },
   {
-    name: 'column: board from a session',
+    name: 'key: board from a session, whose Board place stays lit',
     covers: ['navigate'],
-    open: () => click(doorIn('board')),
+    open: async () => {
+      expect(doorIn('board').getAttribute('aria-current')).toBe('page');
+      pressShortcut({ id: 'session.board' });
+      await settle();
+    },
     lands: both(
       () => heading('Board'),
       async () => expect(useAppStore.getState().currentSessionId).toBeNull(),
     ),
   },
   {
-    name: 'column: new session opens the draft',
+    name: 'rail: new session opens the draft',
     covers: ['column:new'],
     open: () => click(createIn('session')),
     lands: async () => {
@@ -324,7 +331,7 @@ export const COLUMN_DOOR_ROWS: ReadonlyArray<Row> = [
     },
   },
   {
-    name: 'column: new chat opens an empty chat even with a last chat',
+    name: 'key: New chat opens an empty chat even with a last chat',
     covers: ['openNewChat'],
     open: async () => {
       const state = useAppStore.getState();
@@ -338,7 +345,8 @@ export const COLUMN_DOOR_ROWS: ReadonlyArray<Row> = [
           [workspaceId]: brandedId<ChatId>({ value: 'doors-last-chat' }),
         },
       });
-      await click(createIn('chat'));
+      pressShortcut({ id: 'chat.new' });
+      await settle();
     },
     lands: both(
       () => studio('Chat'),

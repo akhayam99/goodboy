@@ -35,8 +35,6 @@ export const ROW_START_SCENES = [
   'workflow-run',
   'c12-tasks-all',
   'tasks-rail',
-  'sidebar-frame-dark',
-  'sidebar-frame-light',
   'board-shell',
   'u37-composer-new-session-dark',
   'u37-composer-new-session-light',

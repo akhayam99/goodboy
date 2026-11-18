@@ -4,16 +4,16 @@
 
 ## Session page tabs
 
-**No session column.** The sidebar always shows the workspace: New session, the doors, then the
-Pinned and Sessions lists. A session row opens the session on its Overview. The session's
+**No session column.** The places rail always shows New and the workspace places,
+with Board current while a session is open. Sessions in the top bar (⌘B) opens
+the searchable list, Pinned first, then grouped by state. A row opens its session on Overview. The session's
 pages are page tabs directly under the session title (`SessionPageTabs`, built on `PageTabs`):
 Overview, Runs, Artifacts, Questions and Context, on every session, with or without a
 branch. A session with exactly one branch adds a **Changes** shortcut last: it opens that
 branch's Changes tab on the Branch page; with no branch or more than one it is absent, since
 changes belong to a branch and its pull request. Counts sit on Runs, Artifacts and Questions
-(`pageSlotOf`, the same words as the sidebar flyout). The pages come from one list (`pagesOf`
-in `features/session/pageRegistry.ts`); the sidebar flyout of the open session
-(`SessionPages`) draws the same list.
+(`pageSlotOf`). The pages come from one list (`pagesOf`
+in `features/session/pageRegistry.ts`).
 
 - **One session head.** `SessionFrame` hands `SessionHead` (`app/components/SessionHead`) to
   `SessionWorkspace` through `SessionHeadContext`, and `SessionWorkspace` draws it once, above
@@ -74,11 +74,10 @@ The text below was written for the rail. The cards it names (`SessionLevel/Level
 
 - **Level 1 reads top to bottom:** the pages, then the Projects card and the
   Linked card, then the foot. The session level has no identity row: the
-  selected main sidebar row is the session's identity (its title and state
-  node). The Overview h1 is the session title, the linked key in gray mono
+  Overview title is the session's identity. The Overview h1 is the session title, the linked key in gray mono
   before it (`SessionOverviewPane/OverviewTitle`); a single click, or Enter or
   F2 on the focused title, renames it in place with the same rename as the
-  sidebar row (an archived session's title stays read only), and "Overview" is only the
+  board card (an archived session's title stays read only), and "Overview" is only the
   rail entry's label. The rail's top row holds the rail
   toggle at the left (with ⌥⌘B in its tooltip) and one button at the right
   (`SessionLevel/SessionLevelActions`): **More session actions** (`⋯`,
@@ -89,20 +88,20 @@ The text below was written for the rail. The cards it names (`SessionLevel/Level
   head's `useActionControls`, so a failure keeps the old state and shows under
   the row with Retry (`ActionStatusLine`). The limit, the asks state and Stop
   running are not in this menu: the run status line, the agent's Limit chip,
-  the sidebar row's right click menu and the palette keep them. An archived
+  the board card's right click menu and the palette keep them. An archived
   session shows only the `⋯`, with **Restore** and **Delete**. The rail has no
   foot: **Limit** and
   **Raise limit** on a paused run open the session spend popover from the edit
   host in `SessionFrame` (`SessionCostChip` with `placement="editHost"`,
   `requestSessionSpendLimitEdit`, `sessionSpendLines`). **Limit** on
-  another session, from its sidebar row or the workspace board, opens that
+  another session, from its board card, opens that
   session and holds the request by its id until its edit host mounts and takes
   it once (`openSessionSpendLimitEdit`, `pendingSpendEdit`); going anywhere else
   first drops it, so it never opens on another session. An agent page's
   **Limit** chip edits the same session limit. Archive asks first: the registry
   verb carries a confirm (`archiveConfirmOf`, "Archive session?", saying how
   many agents are still running in the session when any run, from
-  `runningAgentCountOf`, and that they keep running after the archive), so the `⋯`, the sidebar row's right click menu, the
+  `runningAgentCountOf`, and that they keep running after the archive), so the `⋯`, the board card's right click menu, the
   palette and ⌘⇧A (`SessionArchiveBridge` triggers the same verb and anchors
   its confirm at the window corner) all ask the same way, and Undo on the toast
   still restores it; the `⋯` anchors the confirm to itself (`ArmedActionPopover`
@@ -110,15 +109,15 @@ The text below was written for the rail. The cards it names (`SessionLevel/Level
   Retry). Restore never asks. Delete asks with the registry's delete confirm
   ("Delete session?"). Rename has no rail
   control: a rename
-  request (`session-header`, from the palette, the sidebar row's right click
+  request (`session-header`, from the palette, the board card's right click
   menu or the shortcut) edits the Overview title in place while that session's
-  Overview is open, else the main sidebar row. Both edit in one primitive,
+  Overview is open, else the board card (`CardRenameField`). Both edit in one primitive,
   `shared/components/TitleField`: on the Overview it spans the title row up to
   the header actions in the h1 type role with a quiet underline, the linked key
   stays outside the field and is written back before the name, and a click puts
   the caret where you clicked (Enter, F2 and a rename request select the name),
-  so the text does not move; on the sidebar row it is the compact density, the
-  row's state node and key before it. At the far right of the field a
+  so the text does not move; on the board card it is the compact density, the
+  card's key before it. At the far right of the field a
   `LimitRing` fills toward the 120 character limit (`SESSION_TITLE_MAX_LENGTH`
   in `@goodboy/types`, the one number the store clamp, the field, the goal card
   and the issue brief prompt read), with no number, its label `84 of 120
@@ -128,7 +127,7 @@ characters`, in the warning tone from 90%. A longer draft is blocked before
   write lands (`renameTask`); the field shows pending while it writes, and a
   failed write keeps the old title and shows the error with Retry beside the field,
   which stays open; a name it refuses (empty, too long) shows the reason with no
-  Retry (`useInlineRename` `canRetry`). Every one of these verbs is also in the sidebar row's right
+  Retry (`useInlineRename` `canRetry`). Every one of these verbs is also in the board card's right
   click menu and the palette. A title Goodboy wrote reads "Named by Goodboy" on
   the session hover card. A tab has no crumbs: the column beside it is the way
   to another place. Only one level shows, so a session never carries a nested
@@ -174,11 +173,9 @@ characters`, in the warning tone from 90%. A longer draft is blocked before
   count under its title: Runs, Artifacts and a tracker list
   (Linear, Jira and the rest) carry their counts on their group rows or filter
   tabs only. Every number comes from
-  one function, `pageSlotOf` over `usePageCountFacts`. One row draws a page in
-  all three places, the open list, the folded icons and the column flyout
-  (`SessionPageRow` under `SessionPages`, variant `row` or `icon`), so the
-  label, the count and the dot never differ, and its tooltip holds the label,
-  the count word and the page's shortcut (⌘⌥O, W, P, Q, F) in each of them; the Runs count is `sessionRunCountsOf`
+  one function, `pageSlotOf` over `usePageCountFacts`, so the label, the count
+  and the dot never differ between the page tabs and their tooltips, which hold
+  the label, the count word and the page's shortcut (⌘⌥O, W, P, Q, F); the Runs count is `sessionRunCountsOf`
   over the same `sessionRunsOf` rows the page lists, and a test pins it to the
   Now card (`sessionRunsOf.test.ts`); the Artifacts count is
   `liveArtifactCountOf`, pinned equal to the page's All tab.
@@ -331,15 +328,15 @@ characters`, in the warning tone from 90%. A longer draft is blocked before
   (a row click, a page key, a link from the palette, a notification) starts a
   fresh history entry. A
   studio over the session (Tasks, Chat, Workflows, Terminal, Monitoring,
-  Impact) covers the page and its rail; the column selects that studio's door
-  and leaves the session row unselected.
+  Impact) covers the page and its rail; the places rail lights that studio's
+  place.
 - **The tools sit in their own column and never drill.** They are not in the
   rail: a thin icon toolbar at the right edge of the session content, between
   the page and the open drawer (see The session tools), the same on every
-  page of the session, folded rail or not.
-- **Nothing folds.** The page tabs have no folded state. ⌘B folds the column only, which
-  shows New, the doors and the pinned session nodes on every screen. The diff page's file
-  rail keeps its own fold.
+  page of the session.
+- **The page tabs and places rail never fold.** The places rail shows New
+  and the six places beside every session, without session rows
+  (`app/components/ShellLeft/`). The diff page's file rail keeps its own fold.
 - **A preset run keeps the rail on the session.** Opening a run with a fixed
   step list (a saved workflow or Describe steps; `executionMode` not
   `dynamic`) shows the run page in the center and leaves the rail on level 1;
@@ -350,8 +347,7 @@ characters`, in the warning tone from 90%. A longer draft is blocked before
   ([The orchestrated document](../workflows.md#the-orchestrated-document)).
 - **An orchestrated run opens from Runs.** Runs stays selected while any run,
   agent or Auto conversation is in the center (the Runs page lists every
-  current lens, `pageLensOf` read by `useSessionPageLens` in the open, folded
-  and flyout session levels). Esc on an orchestrated run and going up to Runs
+  current lens, `pageLensOf` read by `useSessionPageLens`). Esc on an orchestrated run and going up to Runs
   from a run land on the list, because a place with no run is the list.
 - **Esc is one ladder in a session** (`escapeLadder`, the base escape layer of
   `SessionWorkspace`, the same steps as ⌘W below its studio). A popover or a
@@ -386,175 +382,98 @@ they open from the right rail at the right of the content (see The
 session tools), never from a page header.
 The linked records keep their lenses for now and stay in the palette.
 
-**A sidebar row says the name and the state, and the hover card and the board
-card say the rest.** A row is one line of 28px: the title and one trailing
-`StatusMark`, with the ticket key of a linked task in front of it when the goal starts
-with `[KEY]` (`sessionRowTitle` strips the key from the title and returns it;
+**A session row says the name and the state, and the hover card and the board
+card say the rest.** The sidebar list is gone (the places rail has no session
+rows): the sessions live on the Board and in Sessions (⌘B, `SessionsPopover`).
+A Sessions row is one line: the title and one trailing `StatusMark`, with the
+ticket key of a linked task in front of it when the goal starts with `[KEY]`
+(`sessionRowTitle` strips the key from the title and returns it;
 `SessionRowTitle` draws it in muted mono, the title truncates and the key never
 does; the switcher row and the hover card title do the same, the board card
-keeps its chip). It has no second line, no `ToneBar`, no age and no cost. The
-mark says the state by meaning (`sessionMarkOf`, from `useSessionRowFacts`):
-under needs you it draws the mark of the winning reason from the one reason
-table (the question glyph, the approval hand, the amber alert, the green check
-of an approved pull request, and the red failed glyph only for an agent error, a
-stopped run, a push that failed or failing checks); running is the ring, done the
-merged check, and in review, building and archived leave the box empty. The
-hover card, the switcher and the folded rail draw the same mark. Colour is never
-the only sign. The open
-session is set in medium weight and selected while its page is on screen. The row's
-accessible description carries the stage word and its reason, so nothing is
-mouse-only.
+keeps its chip). The mark says the state by meaning (`sessionMarkOf`, from
+`useSessionRowFacts`): under needs you it draws the mark of the winning reason
+from the one reason table (the question glyph, the approval hand, the amber
+alert, the green check of an approved pull request, and the red failed glyph
+only for an agent error, a stopped run, a push that failed or failing checks);
+running is the ring, done the merged check, and in review, building and
+archived leave the box empty. The hover card and the switcher draw the same
+mark. Colour is never the only sign.
 
-The rest is one rest away. After a 500ms rest on a row, or on keyboard focus
-after the same delay, the hover card opens beside the column: the full title,
+The rest is one rest away. After a 500ms rest on a Board card, or on keyboard
+focus after the same delay, the hover card opens beside it: the full title,
 the stage word with its reason when the reason adds a fact (under needs you, the
 words of the winning reason, then each other reason that holds on its own line),
 the run progress
 (`Implement · 3 of 5`, counted from the steps that started, never estimated),
 the pull request with its checks (the state word only for Draft, Merged or
 Closed: the stage line already says In review), the linked task chips, one chip
-per project, the
-agent count, the spend and the age, and one ghost action, **Open what needs
-you**, when the session needs you. That action lands where the palette's Needs
-you rows land (`attentionPlace`), and so does the board card's **unread reply** button
-(`openUnreadReply`): the latest agent with an unread reply, never the first agent. Moving to another row swaps the card at once, with no second
-wait. Esc and opening a session close it, and the pointer may move onto the
-card. The row, the card and the board card all read `useSessionSummary`, so they
-say the same things in the same words. The board card keeps one signal and
-hands the rest of the summary to the hover card; the session header keeps its
-chips.
+per project, the agent count, the spend and the age. The card holds facts only:
+the board card's signal opens what needs you (`attentionPlace`), and so does its
+**unread reply** button (`openUnreadReply`): the latest agent with an unread
+reply, never the first agent. Moving to another card swaps the hover card at
+once, with no second wait. Esc closes it, and the pointer may move onto the
+card. The Sessions row, the hover card and the board card all read
+`useSessionSummary`, so they say the same things in the same words. The board
+card keeps one signal and hands the rest of the summary to the hover card; the
+session header keeps its chips.
 
-**The user chooses what the list shows and in what order.** The sidebar list
-has no "Sessions" eyebrow and no filter row of its own: the Board door row
-holds one funnel button in its action slot at the right, **Filter sessions**
-(`SidebarSessionsFilter` over `SessionFilterPopover`), with a primary 6px dot
-while a filter is on (a status, a project or Show archived; `displayStateOf`
-owns that count). The door row never regroups, so the popover stays open
-while the list under it changes grouping. The Board header holds the
-same button. Its popover is a labelled dialog laid out like a display menu,
-in sections spaced by `gap-3` (no unlabeled line inside a floating surface, see
-docs/styling.md). On top, Display: two compact rows, **Sort**
-and **Group**, the label at the left and the current value at the right
-(`DisplayValueRow`); the value is a quiet `Listbox` that opens its choices.
-Sort offers Needs you first [default], Alphabetical, Last activity and Created;
-Group offers None [default], PR state, Stage and Project (the Board
-drops Group). Then **Filter** (an `Eyebrow`), with the captions Status and
-Project over real `Checkbox` rows (`FilterCheckRow`), each named with its count
-("Running, 3"). Status lists only the stages that have sessions, from Needs
-you, Running, In review, Building and Done (`statusFilter` in the prefs; a
-checked stage stays listed at zero so it can be cleared). Project lists the
-projects of the sessions with their counts and shows only when two or more
-projects have sessions (the same selection as the board's project filter).
-Last in Filter, **Show archived**, a `Switch` with the archived count. **Reset** shows
-only while the popover is off its default (a filter on, or Sort or Group
-changed) and puts every choice back. The choices persist per workspace in the browser storage
-(`goodboy:session-view:<workspace id>`, version 3: a version 2 record loads with
-an empty status filter); nothing goes to the database.
+**The Board header holds the one session filter.** **Filter sessions**
+(`StageBoard/SessionFilterPopover`) sits in the Board header, with a primary
+6px dot while a project filter is on (`displayStateOf` owns that count). Its
+popover is a labelled dialog: **Sort** on top (`DisplayValueRow`, a quiet
+`Listbox`: Needs you first [default], Alphabetical, Last activity and Created),
+then **Project**, real `Checkbox` rows (`FilterCheckRow`) named with their
+counts ("ledger-core, 2"), shown only when two or more projects have sessions,
+then **Mark all as read**, and **Reset** while the sort or a project is off its
+default. The lanes are the status and the Archived lane is the archive, so the
+Board has no Status, Group or Show archived choice. The choices persist per
+workspace in the browser storage (`goodboy:session-view:<workspace id>`,
+version 3); nothing goes to the database. When a filter hides sessions, the
+Board header reads "N hidden" with a ghost **Clear** (`HiddenByFilters`).
 
-A filter never hides a pinned session or the open session
-(`withExemptSessions`, `filterSessionsByStatus`). When filters hide other
-sessions, one quiet line under the list reads "N hidden" with a ghost
-**Clear**; a list that filters out everything says "No sessions match".
+**`⌘⇧[` and `⌘⇧]` walk one order by state, kept in the data.** Pinned sessions come
+first in pin order, then the sessions that need you (longest waiting first), running,
+in review and building, each by last activity (`sessionOrderOf`, read by
+`useSessionOrder`). Done and archived sessions stay out of the walk unless pinned. The
+order covers the whole workspace, whatever the project filter or the Board sort,
+and needs no list on screen. Pressing `⌘⇧]` four times from the first session
+visits the next four.
 
-By default the sessions that need you sit on top, the one that has waited longest
-first, and the rest follow their last activity (`activityKeyOf`: the later of
-the last finished turn and `sessions.updated_at`). Opening a session writes
-`sessions.last_opened_at` and never moves a row, so the list holds still while
-you click through it. A row moves only when its session has new activity or
-starts needing you, or when it leaves or rejoins the Done group below. `last_opened_at` feeds `⌃Tab` and the switcher's recents
-only. The Board's default order uses the same key. With no grouping the first
-eight rows show and the rest sit under **Show N more**, remembered per
-workspace. A session that needs you and the open session are never folded. A
-grouped list shows every group, finished groups start collapsed, and nothing
-folds. `⌘⇧[` and `⌘⇧]` walk this same displayed order and skip folded rows, so
-pressing `⌘⇧]` four times from the first row visits the next four sessions.
-
-**Finished sessions close the list in one Done group.** One word names the end:
-a session whose stage is done (a merged or closed pull request, or an answer,
-a report, a plan or a finished edit once its reply is read) leaves the live
-rows and sits in a **Done** group at the end of the column, shut by default,
-with its count from two, in the order the sort gives (`splitDoneSessions`, key
-`done`). Opening the header shows the rows and `⌘⇧[` and `⌘⇧]` walk them only
-while it is open; the open or shut choice is remembered like any group
-(`sessionGroupExpanded`). The group opens by itself while the Status filter
-asks for Done, unless you shut it. The open session and a pinned session
-never move into it. A list grouped by stage already has a Done group and gets
-no second one. Archived stays a lane of the Board and the **Show archived**
-switch of the column filter.
-
-**A session nobody touched for three days fades, in place.** One pure function,
-`sessionInactivityOf` (`store/slices/session-view/sessionInactivityOf.ts`), owns
-the decision. A session is idle only when every one of these holds: it is not
-pinned, not the open session, has no queued message (`agentQueue`) and no
-unsent draft (`agentDraft`) on any of its agents, its own state is not
-starting, running, blocked or error, its stage info is quiet (so a question, an
-approval, a permission, a failed check, a merge queue or an unread reply all
-keep it up), it was not opened in the last 24 hours (`RECENTLY_OPENED_MS`), and
-its last activity is more than 72 hours old (`INACTIVE_AFTER_MS`). The last
-activity is the latest of `created_at`, `updated_at`, `last_opened_at`, the
-state's own time, each run's start and each hint sent to its orchestrator, and
-what `inactivityInputsOf` saw (agent starts, finishes and views, and the
-`updatedAt` and `mergedAt` of the session's pull and merge requests).
-`useSessionInactivity` runs the function for every listed session on a one
-minute clock (`useNow`). An idle row keeps its place and draws its title in the
-calm tone; the age lives on the hover card. A change to any input recomputes at
-once, so opening, an agent starting, a new reply, a draft or a pull request
-event brings the row back to full tone.
-
-**Pin a session and it stays at the top of the list.** **Pin session** and
-**Unpin session** are session actions (the row's right-click menu, `⌘K` and
-every other menu of a session), shown for a live session only, one at a time
-by whether it is pinned. Pinned sessions form a **Pinned** group above
-everything, in the order they were pinned (oldest first), under every sort,
-group, project filter and fold: a pinned session shows once, under Pinned, and
-leaves its own group and the fold's count; a stage group still counts its
-pinned members, so the sidebar and the List say one number per stage. In a
-grouped list the Pinned header is a toggle like the others; in a flat list it
-is a label and the rest of the list reads **Sessions**. Pinned and Sessions
-carry no count (the "Show N more" foot does); stage and project groups show
-their count from two, in sentence case words from `stageWord`. Archiving a pinned session
+**Pin a session and it stays at the top of Sessions.** **Pin session** and
+**Unpin session** are session actions (the board card's right-click menu, `⌘K`
+and every other menu of a session), shown for a live session only, one at a
+time by whether it is pinned; the pin on a Sessions row toggles it too. Pinned
+sessions form a **Pinned** group at the top of Sessions and of the switcher, in
+the order they were pinned (oldest first). Archiving a pinned session
 hides it with the archive; the pin is kept, so Restore and Undo bring it back
 under Pinned. Pins are stored per workspace in the `workspace_values` table (key
 `sessions.pinned`, a JSON list of `{ id, at }`), written by
 compare and swap with one retry so two windows never drop each other's pin,
 read when a workspace opens and when the window regains focus, and pruned of
-deleted sessions on read (`store/slices/session-pins`). The pin shows in six
-places: the list's Pinned group, the row's `⋯` and right click menu
+deleted sessions on read (`store/slices/session-pins`). The pin shows in five
+places: the Pinned group of Sessions, the board card's right click menu
 (`Pin session` and `Unpin session`), a pin toggle in the
-Overview title row, a "Pinned" fact in the session hover card, the rail buttons, and the
+Overview title row, a "Pinned" fact in the session hover card, and the
 switcher's Pinned section. **Move up** and **Move down** (`session.pinnedUp`,
-`session.pinnedDown`) reorder a pinned session from the row menu and `⌘K`, only
+`session.pinnedDown`) reorder a pinned session from the card menu and `⌘K`, only
 while it can move; `movePin` swaps the `at` of two neighbours and goes through
 the same compare and swap. Dragging is not built.
 
-**The session level of the rail carries one current sign.** `currentSignOf`
-(`SessionActivityBar/currentSign.ts`) returns a page id, `session` or
+**The session page tabs carry one current sign.** `currentSignOf`
+(`SessionPageTabs/currentSign.ts`) returns a page id, `session` or
 `remembered`. A page with an entry (Overview, Changes, Runs, Agents,
 Artifacts, and Questions while one is open) takes `bg-selected` and
 `aria-current="page"`; on the Branch page the worktree row of the shown mount
-(`useBranchIdentity`) takes it instead. In the column the open session row
-takes the sign while its page is on screen. While a studio (Tasks, Chat,
-Workflows, Terminal, Impact) sits over the session the column selects that
-studio's door and shows the session row in medium weight with no fill. A worktree row click goes through `switchBranchMount` and
+(`useBranchIdentity`) takes it instead. While a studio (Tasks, Chat,
+Workflows, Terminal, Impact) sits over the session the places rail lights that
+studio's place. A worktree row click goes through `switchBranchMount` and
 lands on the landing tab of that branch (`branchLandingTabOf`: Pull request, which is
 the branch page while the branch has no pull request), never on the tab, thread or diff
 focus of the branch it leaves. The Pull request entry under a branch row names the request
 by its number alone (`#9998`, `MR !42`), so the label is never cut; the row above already
 names the branch.
 
-**Folded sessions have names and state.** Under the doors, the workspace rail
-shows only sessions with something to say: those that need you, then running
-sessions, then unread ones (`railRankOf`), up to seven (`RAIL_PINNED_LIMIT`).
-Idle and pinned sessions with nothing new fold into `+N`. Each button carries the same `StatusMark` as the
-session row (`sessionMarkOf`), a quiet neutral dot when the row's box is empty, and a tooltip with the full title, state and
-unread reason.
-The open session keeps its slot when shown; otherwise it gets one extra
-button before `+N`. The count covers the remaining sessions and opens the
-session flyout. A studio leaves the current button remembered. Hover or focus
-on the current button opens its pages; Esc returns focus, and Right or Down
-moves into the flyout. `RailSessions` owns this list and its count.
-
-**Two keys switch sessions without the list.** `⌃Tab` opens a list of the
+**Two keys switch sessions without opening Sessions.** `⌃Tab` opens a list of the
 pinned sessions (a **Pinned** section, up to eight, in pin order) and then the
 recent sessions in last-opened order, the open one first among them; a pinned
 session is listed once. The first press still lands on the previous session
@@ -563,14 +482,6 @@ move while `⌃` is held, releasing `⌃` opens the chosen session and Esc cance
 A quick tap flips to the previous session and never draws the list. `⌥⌘↓`
 lands on the next session that needs you, in the board's Needs you order, on its
 `attentionPlace`. A focused terminal and an open dialog keep both keys.
-
-**Peek is a way of showing the column, not a second column.** The overlay
-renders the same `SideColumn` (through `ShellLeft`), and the codebase has one
-sessions list. Only the pinned column's Goodboy line reports an update
-arrival; the peeked copy is quiet. Peek is wider than the pinned
-column. The extra width applies at read time, so widening the peek never moves
-the column. It opens after a short rest at the screen edge, so a graze does not
-open it.
 
 **The session overview is the reference page.** It shows the whole surface
 grammar on one screen, so read it before designing a new surface. Here is its
@@ -712,7 +623,7 @@ activity yet show the plain overview with its actions.
   bound once per visible session (`useAskOpenShortcut` in `SessionWorkspace`), not by the
   button, so two mounted pages never bind it twice.
 - **The title row** reads the session title, renamed in place
-  (`SessionOverviewPane/OverviewTitle`, see above) on every tab, and on the main sidebar row.
+  (`SessionOverviewPane/OverviewTitle`, see above) on every tab, and on its board card.
   It holds **New** (`OverviewActions`, ⌘N, a menu from the `newForm` kind of the action
   registry whose pick opens its form in the New drawer) and, on an archived session,
   Restore, then More session actions. **Archive session** is also the
@@ -723,8 +634,10 @@ activity yet show the plain overview with its actions.
 
 ## The session tools
 
-The right rail is one 44px column at the window's right edge on every screen of
-a workspace, `aria-label="Tools"` (`SessionTools`, drawn by `ShellToolRail` in
+The right rail is one 56px column (`TOOL_RAIL_WIDTH_PX`; 44px, icons only, the
+name in the tooltip, under a 1100px window, as the places rail) at the window's
+right edge on every screen of a workspace, `aria-label="Tools"` (`SessionTools`,
+drawn by `ShellToolRail` in
 the shell's `rightRail` slot, and inside their own sheet by Tasks, Chat and
 Workflows). It lives in the drawer container, never in the page container, and
 every panel opens inward of it (see home-and-drawer.md, The rail is the anchor).
@@ -734,15 +647,16 @@ rail); a record panel open with the page fades in with it, and one
 opened later keeps the drawer's own motion. Moving between the shell rail and
 a page's rail keeps keyboard focus on the same tool (`railFocusMemo`). With a
 record panel shown as an overlay the rail stays where it is, above that panel's
-scrim, as it does above the shell's. It holds two
-column holds two tools, Terminal and Browser (`RAIL_TOOLS`), with no heading
-above them (each names itself under its icon, and the toolbar is named Tools for
-the reader), on every page of the app, in a session or outside one. Explore, Agents, Scripts, Context and Ask have no button on it:
-they open from their pages and keyboard shortcuts. A test
+scrim, as it does above the shell's. It holds Terminal, Browser, Scripts, Ask
+and Monitor (`RAIL_TOOLS`), with no heading above them. Each names itself under
+its icon, and the toolbar is named Tools for the reader. All five stay visible
+on every workspace page; Scripts and Ask are disabled without a session.
+`toggleRailTool` toggles each panel to the rail's left. Explore, Agents and
+Context open from their pages and keyboard shortcuts. A test
 scene or frame without the shell rail keeps the column inside `SessionFrame`
 (`ShellRailContext`).
-Each tool keeps its pane id and shortcut; Terminal shows ``⌃` `` and Browser
-has no shortcut. `SessionToolButton` names every tool below its icon in the
+Each tool keeps its pane id and optional shortcut in `RAIL_TOOLS`.
+`SessionToolButton` names every tool below its icon in the
 9px `text-rail` caption role: secondary (`TEXT_ROLE.secondary`) when closed,
 label strength when open, so every caption keeps its contrast in light mode.
 Each tool is one grid cell, icon row over label row on one centre column, and
@@ -751,22 +665,26 @@ stay. Every icon's tooltip gives its name, shortcut and any signal reason. Ask u
 
 A tool has four states (`toolStateOf`): at rest, pressed when it holds the
 slot, waiting when it is the tool in the slot's back chip, and current when its
-page is open (Terminal and Browser only: selected, `aria-current="page"`, and a
-click does nothing). Waiting draws a
+page is open (Terminal, Browser and Monitoring: selected,
+`aria-current="page"`, and a click does nothing). Waiting draws a
 small ring on the icon (`ToolWaitingRing`) and says so in the accessible name,
-`Terminal, waiting`; pressing it opens the saved request of the chip again
-(`togglePane`), so Context comes back on the same section and view, and the
-tool it replaces moves into the chip. Terminal names the running terminals
-(`Terminal, 2 running`), Browser names its tabs (`Browser, 3 tabs`); the words
-come from `toolFactOf` over `runningTerminalCount` and `browserTabCount`, and
-the same two numbers show as a neutral `CountBadge` on the icon's corner (9+
-past nine) unless a signal dot holds that corner. Every corner mark (count,
-signal dot, waiting ring) anchors to a box the size of the 16px glyph
-(`tool-glyph`, `TOOL_CORNER_SLOT`), never to the button: the count and the dot
-share the top end corner, the ring the top start corner, and none reaches the
-label below.
+`Terminal, waiting`. Rail clicks go through `toggleRailTool`.
+Terminal names the running terminals (`Terminal, 2 running`), Browser names
+its tabs (`Browser, 3 tabs`); the words come from `toolFactOf` over
+`runningTerminalCount` and `selectBrowserTabCount`. These counts stay in the
+tooltip. Monitor shows ports in use as a
+`CountBadge` (`toolCountOf`, `ToolCountMark`), warning when a pinned port is down.
+With no port in use, a down pin still shows a warning `StatusDot` in that
+corner (`tool-warning`), since a zero `CountBadge` draws nothing. Its count and
+fact come from `monitoringSignalOf`, which reads the same `monitoringSignal`
+as the left door. The signal dot and waiting ring anchor to the 16px glyph
+(`tool-glyph`, `TOOL_CORNER_SLOT`), at its top end and top start corners. The
+port count sits on the icon button's corner and never covers the label below.
 
-Terminal and Browser are workspace tools: their dock opens with
+Terminal, Browser and Monitor are workspace tools. Monitor opens
+`MonitoringDrawer` with `sessionId: null` through `toggleRailTool`; its header
+has Open full page, and `UNSAVED_DRAWER_KINDS` keeps it out of the saved window
+layout. Terminal and Browser open with
 `toggleTerminalDock` and `toggleBrowserDock` from the rail, the palette, the Go
 menu, ⌃`and ⌘⌥T. On a session page the dock opens on the session's terminal
 or tabs; anywhere else on the workspace's (the workspace folder terminal, or
@@ -809,30 +727,24 @@ Folding the rail leaves the column in place.
   (`withoutRemovedPages` drops the retired `sidebar-level` key); a tool it had
   open stays open. The panel is per window: the drawer belongs to the window's store.
 
-- **Outside a session only the Workspace group shows.** On the Board, the draft
-  and every page the rail holds Terminal and Browser alone; the **Chat** door
+- **Outside a session all five tools stay visible.** Terminal, Browser and
+  Monitor work on workspace pages. Scripts and Ask are disabled and say
+  "open a session first" (`ToolRailFrame`, `toolFactOf`). The **Chat** door
   (with New chat) is the workspace conversation that answers what Ask answers
-  for one session. Ask, Explore, Context and Scripts read one session, so they
-  exist only inside one, and ⌘L is bound only while a session is visible.
+  for one session. Explore and Context read one session, and ⌘L is bound only
+  while a session is visible.
 
-- **One pane at a time.** Every toggle goes through `togglePane`
-  (`features/session/panes/`): pressing the open pane's toggle closes it,
-  pressing another replaces it in the one right drawer. `openPaneOf` reads the
-  open drawer's row in `DRAWER_KINDS` (its pane, or the pane that opened it), so a script output opened from
-  Scripts keeps Scripts lit. Esc closes the pane (`DrawerFrame`).
-- **Scripts is a drawer kind** (`scripts`), not a lens, and Explore, Context and
-  Ask are no drawer kinds: Explore is **All files** on the Changes page and
-  Context and Ask are the Context tab. `ScriptsPanel` renders in a
-  `DrawerFrame`. A script output opened from Scripts replaces it and shows
-  **Back to scripts** (`DrawerFrame`'s `back`, carried by the payload's `from`);
-  Run on a Service does not open it, Run on a Command does (`NAMES.commands`,
-  the band in `ScriptsPanel`). `openExplorePane` takes the worktree to browse
-  (the mount registry's Browse files passes it), `openScriptsPane` the project
-  to scope to (Open scripts). The Scripts chord, the palette's Open Scripts,
-  toasts and stored notifications (`open-lens` scripts) go to the Terminal and
-  its **Scripts** menu through `openToolPane`, which first goes to the session
-  when another one is shown. A stored place with an `explore`, `context` or
-  `ask` drawer folds to its page (`withoutRemovedPages`).
+- **One workspace dock and one detail can stay open together.** `panelsOf`
+  pairs Terminal, Browser or Monitor with a detail panel (`isWorkspaceTool`,
+  `isPairedSlot`). `toggleRailTool` closes the selected panel when clicked
+  again, and choosing another panel in the same slot replaces it. Esc closes
+  through `DrawerFrame`.
+- **Scripts and Ask use the detail slot.** Their rail buttons name the session
+  in the drawer request (`toggleRailTool`); `DrawerHost` renders `ScriptsPanel`
+  or the registered `AskDrawer`, each in a `DrawerFrame`. The Scripts chord,
+  palette's Open Scripts, toasts and stored notifications (`open-lens`
+  scripts) still open Terminal through `openToolPane`. Explore is **All files**
+  on Changes, and Context is its tab.
 - **Browser opens a page beside the work** (drawer kind `browser`,
   `features/browser/`): the session's tabs and the project pins in a reader
   tier pane, so the session rail folds to icons while it is open.
@@ -956,7 +868,7 @@ still running.` on Merge, reads in the meta line as well as in the tooltip) sits
   the one mount with its `+x -y` diff beside it on the open session's row only (a review note is not
   a branch fact and is not counted here), Runs
   `2 running` in the info tone (else `4 runs`, every kept run), Agents `1 running` (else `3 agents`), Artifacts
-  `4 artifacts`, Questions `2 open`. The sidebar row and the menu read it
+  `4 artifacts`, Questions `2 open`. The page tabs and the menu read it
   through `pageSlotOf` (`features/session/pageSlot.ts`); `Session`
   has no menu once it has children. A run lists the session's runs (Running,
   Finished, a chained run indented under its own with `after ...`); a step

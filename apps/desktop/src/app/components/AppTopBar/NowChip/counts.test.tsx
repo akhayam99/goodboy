@@ -27,8 +27,9 @@ import {
   sessionOf,
 } from '../../../../features/workspace/testing/sessionColumn';
 import { NowChip } from './index';
-import { SideColumn } from '../../SideColumn';
-import type { ColumnActions } from '../../SideColumn/columnDoors';
+import { ShellLeft } from '../../ShellLeft';
+import { shellArrangement } from '../../../shellArrangement';
+import type { ColumnActions } from '../../ShellLeft/columnDoors';
 
 let useAppStore: StoryStore;
 
@@ -80,25 +81,35 @@ const renderShell = () =>
   render(
     <>
       <NowChip onOpenScript={vi.fn()} />
-      <SideColumn
-        scope="workspace"
+      <ShellLeft
+        arrangement={shellArrangement({ hasWorkspace: true })}
         workspaceId={useAppStore.getState().currentWorkspaceId}
-        currentSessionId={null}
-        place={null}
         actions={ACTIONS}
       />
     </>,
   );
 
 const sessionsDoor = (): HTMLElement => {
-  const door = document.querySelector<HTMLElement>('[data-side-column] [data-column-door="board"]');
+  const door = document.querySelector<HTMLElement>(
+    '[data-shell-rail] [data-shell-rail-item="board"]',
+  );
   if (door === null) {
     throw new Error('no Board door');
   }
   return door;
 };
 
-describe('the Board door and the Now chip count sessions by their stage', () => {
+const markOf = (): Element => {
+  const mark = sessionsDoor()
+    .closest('[data-slot="shell-rail-item"]')
+    ?.querySelector('[data-slot="rail-mark"]');
+  if (mark === null || mark === undefined) {
+    throw new Error('no rail mark on the Board');
+  }
+  return mark;
+};
+
+describe('the Board on the rail and the Now chip count sessions by their stage', () => {
   it('marks a running session that has a question on the Board door and in the Now chip', () => {
     seed([asking], [asking]);
     renderShell();
@@ -106,7 +117,7 @@ describe('the Board door and the Now chip count sessions by their stage', () => 
     expect(sessionsDoor().getAttribute('aria-label')).toBe(
       'Board, 1 session needs you: 1 question for you',
     );
-    expect(sessionsDoor().querySelector('[data-door-signal="warning"]')).not.toBeNull();
+    expect(markOf().childElementCount).toBe(1);
     expect(document.querySelector('[data-now-needs-you]')).toBeNull();
     expect(screen.queryByRole('button', { name: /running/ })).toBeNull();
   });
@@ -139,6 +150,6 @@ describe('the Board door and the Now chip count sessions by their stage', () => 
     renderShell();
 
     expect(sessionsDoor().getAttribute('aria-label')).toBe('Board');
-    expect(sessionsDoor().querySelector('[data-door-signal]')).toBeNull();
+    expect(markOf().childElementCount).toBe(0);
   });
 });

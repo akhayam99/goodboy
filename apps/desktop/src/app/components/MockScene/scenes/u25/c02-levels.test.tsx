@@ -67,7 +67,7 @@ const openContext = async (): Promise<void> => {
 };
 
 const mainSidebar = (): HTMLElement => {
-  const nav = document.querySelector<HTMLElement>('[data-column-layer="nav"], [data-column-rail]');
+  const nav = document.querySelector<HTMLElement>('[data-shell-rail]');
   if (nav === null) {
     throw new Error('no main sidebar');
   }
@@ -89,26 +89,24 @@ describe('the c02 sidebar and session rail scenes', () => {
     }
   });
 
-  it('c02-level-workspace shows New session, the doors and the sessions, with Sessions current', async () => {
+  it('c02-level-workspace shows New session and the places on the rail, with the Board current', async () => {
     await mount('c02-level-workspace');
 
     expect(tablist()).toBeNull();
     expect(screen.getByRole('button', { name: 'New session' })).toBeDefined();
-    expect(document.querySelector('[data-column-door="board"]')?.getAttribute('aria-current')).toBe(
-      'page',
-    );
+    expect(
+      document.querySelector('[data-shell-rail-item="board"]')?.getAttribute('aria-current'),
+    ).toBe('page');
     expect(document.querySelector('[data-level-layer="session"]')).toBeNull();
   });
 
-  it('c02-level-session keeps the workspace sidebar, draws the pages as tabs and the projects and linked work in the Context tab', async () => {
+  it('c02-level-session keeps the places rail, draws the pages as tabs and the projects and linked work in the Context tab', async () => {
     await mount('c02-level-session');
 
     expect(tablist()).not.toBeNull();
-    expect(mainSidebar().querySelector('[data-column-door="board"]')).not.toBeNull();
+    expect(mainSidebar().querySelector('[data-shell-rail-item="board"]')).not.toBeNull();
     expect(mainSidebar().querySelector('[data-level-layer]')).toBeNull();
-    expect(
-      within(mainSidebar()).getByRole('option', { name: /^Retry failed webhook deliveries/ }),
-    ).toBeDefined();
+    expect(within(mainSidebar()).queryByRole('option')).toBeNull();
     expect(tabNames().slice(0, 5)).toEqual([
       'Overview',
       'Runs',
@@ -150,20 +148,13 @@ describe('the c02 sidebar and session rail scenes', () => {
     expect(within(sessionLayer()).queryByRole('group', { name: 'Projects' })).toBeNull();
   });
 
-  it('c02-level-main-folded folds the main sidebar to its icons and keeps the page tabs', async () => {
-    await mount('c02-level-main-folded');
-
-    expect(document.querySelector('[data-column-rail]')).not.toBeNull();
-    expect(tablist()).not.toBeNull();
-  });
-
-  it('c02-level-studio-over selects Tasks in the sidebar while it sits over the session', async () => {
+  it('c02-level-studio-over lights Tasks on the rail while it sits over the session', async () => {
     await mount('c02-level-studio-over');
 
     expect(tablist()).toBeNull();
-    expect(document.querySelector('[data-column-door="inbox"]')?.getAttribute('aria-current')).toBe(
-      'page',
-    );
+    expect(
+      document.querySelector('[data-shell-rail-item="inbox"]')?.getAttribute('aria-current'),
+    ).toBe('page');
   });
 
   it('c02-shell-overview draws the session head (the session name) with Ask and no trail band', async () => {

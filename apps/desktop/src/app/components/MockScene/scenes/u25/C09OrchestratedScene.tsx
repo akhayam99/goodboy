@@ -4,9 +4,10 @@ import { useAppStore, useSessionById } from '../../../../../store';
 import { selectDrawerSizing } from '../../../../../store/slices/drawer/testing/selectDrawerSizing';
 import { SessionWorkspace } from '../../../../../features/session/components/SessionWorkspace';
 import { DrawerHost } from '../../../DrawerHost';
-import { SideColumn } from '../../../SideColumn';
+import { ShellLeft } from '../../../ShellLeft';
+import { shellArrangement } from '../../../../shellArrangement';
 import { SessionFrame } from '../../../SessionRail/SessionFrame';
-import type { ColumnActions } from '../../../SideColumn/columnDoors';
+import type { ColumnActions } from '../../../ShellLeft/columnDoors';
 import { ORCHESTRATED_COPY } from '../../../../../features/workflows/orchestratedCopy';
 import {
   C09_SESSION_ID,
@@ -91,15 +92,11 @@ export const C09OrchestratedScene = ({
 
   return (
     <div data-shot className="flex h-screen min-h-0 bg-background text-foreground">
-      <div className="h-full w-60 shrink-0 border-r border-border-soft">
-        <SideColumn
-          scope="workspace"
-          workspaceId={C09_WORKSPACE_ID}
-          currentSessionId={session.id}
-          place={null}
-          actions={ACTIONS}
-        />
-      </div>
+      <ShellLeft
+        arrangement={shellArrangement({ hasWorkspace: true })}
+        workspaceId={C09_WORKSPACE_ID}
+        actions={ACTIONS}
+      />
       <main className="relative flex min-w-0 flex-1">
         <DrawerColumn
           main={

@@ -17,6 +17,7 @@ type Params = {
   readonly origin?: { readonly sourceKind: AgentSourceKind; readonly sourceCommentUrl: string };
   readonly focus?: SpawnFocus;
   readonly onKickoffAccepted?: () => void;
+  readonly isRetry?: boolean;
 };
 
 const pending = new Map<string, Promise<AgentId>>();
@@ -35,6 +36,7 @@ export const startFollowUp = (get: GetFn) => {
     origin,
     focus = 'agent',
     onKickoffAccepted,
+    isRetry = false,
   }: Params): Promise<AgentId> => {
     const key = JSON.stringify([sessionId, sourceAgentId, kind, origin?.sourceCommentUrl ?? null]);
     const inFlight = pending.get(key);
@@ -48,7 +50,7 @@ export const startFollowUp = (get: GetFn) => {
     if (source === undefined) {
       return Promise.reject(new Error('The agent to follow up on is no longer available.'));
     }
-    if (origin !== undefined) {
+    if (origin !== undefined && !isRetry) {
       const existing = (state.sessionPhaseRuns[sessionId] ?? []).find(
         (agent) =>
           agent.parentAgentId === sourceAgentId &&

@@ -2,7 +2,7 @@ import type { Session, SessionId } from '@goodboy/types';
 import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
 import { liveAgentsOf } from '../../../store/runtime/live-work/liveAgentsOf';
 import { inactivityInputsOf } from '../../../store/slices/session-view/inactivityInputsOf';
-import { sessionLastActivityMs } from '../../../store/slices/session-view/sessionInactivityOf';
+import { sessionLastActivityMs } from '../../../store/slices/session-view/sessionLastActivityMs';
 import { archiveConfirmOf } from '../../session/archiveConfirmOf';
 import { archiveSessions } from '../../session/sessionArchive';
 import type { ActionDefinition, DoneLaneActionTarget, ObjectKindDefinition } from '../types';

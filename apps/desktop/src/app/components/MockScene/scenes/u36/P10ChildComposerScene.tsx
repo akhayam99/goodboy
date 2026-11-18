@@ -29,5 +29,5 @@ export const P10ChildComposerScene = ({ theme }: Props) => {
   if (!isReady) {
     return null;
   }
-  return <AppFrame view="session" isRailCollapsed={false} hasPane />;
+  return <AppFrame view="session" hasPane />;
 };

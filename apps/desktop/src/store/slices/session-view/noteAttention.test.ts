@@ -85,6 +85,6 @@ describe('a waiting note and a waiting comment are counted once each, apart', ()
     );
     expect(
       attentionWordsOf({ reason: 'fix-couldnt-fix', counts: { noteCouldntFixCount: 2 } }),
-    ).toBe("2 notes it couldn't fix");
+    ).toBe('2 notes failed');
   });
 });

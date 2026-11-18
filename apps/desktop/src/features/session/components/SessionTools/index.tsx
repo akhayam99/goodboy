@@ -8,7 +8,7 @@ type Props = {
 
 export const SessionTools = ({ sessionId }: Props) =>
   sessionId === null ? (
-    <ToolRailFrame terminalSignal={null} />
+    <ToolRailFrame sessionId={null} terminalSignal={null} />
   ) : (
     <SessionToolsLive key={sessionId} sessionId={sessionId} />
   );

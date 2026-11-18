@@ -21,7 +21,9 @@ const BugReportBesideIconScene = () => {
   }, []);
   useEffect(() => {
     const timer = window.setInterval(() => {
-      const bug = document.querySelector<HTMLElement>('[data-report-bug]');
+      const bug = document.querySelector<HTMLElement>(
+        '[data-report-bug], [data-shell-rail-item="report"]',
+      );
       if (bug === null) {
         return;
       }

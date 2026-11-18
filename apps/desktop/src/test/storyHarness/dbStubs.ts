@@ -22,6 +22,8 @@ export const storyDbStubs = () => ({
   listSessionDecisions: vi.fn(async () => []),
   getSessionContextSeenAt: vi.fn(async (): Promise<string | null> => null),
   setSessionContextSeenAt: vi.fn(async () => undefined),
+  getSessionDockGrid: vi.fn(async (): Promise<string | null> => null),
+  saveSessionDockGrid: vi.fn(async () => undefined),
   listSessionContextItemsForRole: vi.fn(async () => []),
   listSessionContextItems: vi.fn(async () => []),
   listWorkspaceLearnings: vi.fn(async () => []),

@@ -5,6 +5,7 @@ import { ARTIFACT_KIND } from './kinds/artifact';
 import { DIFF_KIND } from './kinds/diff';
 import { LINK_KIND } from './kinds/link';
 import { CHECK_RUN_KIND } from './kinds/checkRun';
+import { FIX_RUN_KIND } from './kinds/fixRun';
 import { DECISION_KIND } from './kinds/decision';
 import { WORKSPACE_KIND } from './kinds/workspace';
 import { ISSUE_CANDIDATE_KIND } from './kinds/issueCandidate';
@@ -87,6 +88,7 @@ const KINDS: ReadonlyArray<readonly [string, ReadonlyArray<AnyDefinition>]> = [
   ['projectAsk', PROJECT_ASK_KIND.actions],
   ['link', LINK_KIND.actions],
   ['checkRun', CHECK_RUN_KIND.actions],
+  ['fixRun', FIX_RUN_KIND.actions],
   ['decision', DECISION_KIND.actions],
   ['workspace', WORKSPACE_KIND.actions],
   ['issueCandidate', ISSUE_CANDIDATE_KIND.actions],

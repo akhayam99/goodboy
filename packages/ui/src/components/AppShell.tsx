@@ -3,7 +3,8 @@ import { cn } from '../cn';
 import type { ResizeActivity } from '../sheet';
 import { DrawerColumn } from './DrawerColumn';
 import type { DrawerPlacement, DrawerSizing } from '../drawerGeometry';
-import { ResizeHandle } from './ResizeHandle';
+import type { DockGridSpec } from '../dockGridSpec';
+import { SplitHandle } from './SplitHandle';
 import { ShellDockContext } from '../shellDockContext';
 import { ShellRailContext } from '../shellRailContext';
 import { StudioSlotContext } from '../studioSlotContext';
@@ -13,12 +14,14 @@ export type AppShellProps = {
   readonly topBar?: ReactNode;
   readonly footer?: ReactNode;
   readonly leftSidebar?: ReactNode;
+  readonly leftRail?: ReactNode;
   readonly leftHidden?: boolean;
   readonly leftSidebarCollapsed?: boolean;
   readonly leftOverlay?: ReactNode;
   readonly main: ReactNode;
   readonly drawer?: ReactNode;
   readonly drawerSizing?: DrawerSizing;
+  readonly dockGrid?: DockGridSpec | null;
   readonly detail?: ReactNode;
   readonly detailSizing?: DrawerSizing;
   readonly isDetailParked?: boolean;
@@ -48,6 +51,7 @@ type LayoutParams = {
   readonly leftCollapsed: boolean;
   readonly leftHidden: boolean;
   readonly hasLeftSidebar: boolean;
+  readonly isLeftRail: boolean;
   readonly hasFooter: boolean;
 };
 
@@ -60,9 +64,13 @@ type Layout = {
 const leftColumnWidth = ({
   leftCollapsed,
   leftHidden,
-}: Pick<LayoutParams, 'leftCollapsed' | 'leftHidden'>): string => {
+  isLeftRail,
+}: Pick<LayoutParams, 'leftCollapsed' | 'leftHidden' | 'isLeftRail'>): string => {
   if (leftHidden) {
     return '0px';
+  }
+  if (isLeftRail) {
+    return 'auto';
   }
   if (leftCollapsed) {
     return `${COLLAPSED_RAIL_WIDTH}px`;
@@ -74,6 +82,7 @@ const buildLayout = ({
   leftCollapsed,
   leftHidden,
   hasLeftSidebar,
+  isLeftRail,
   hasFooter,
 }: LayoutParams): Layout => {
   const rows = hasFooter ? 'minmax(0,1fr) auto' : 'minmax(0,1fr)';
@@ -84,8 +93,8 @@ const buildLayout = ({
       templateRows: rows,
     };
   }
-  const leftCol = leftColumnWidth({ leftCollapsed, leftHidden });
-  const handleCol = leftHidden || leftCollapsed ? '0px' : `${HANDLE_WIDTH}px`;
+  const leftCol = leftColumnWidth({ leftCollapsed, leftHidden, isLeftRail });
+  const handleCol = leftHidden || leftCollapsed || isLeftRail ? '0px' : `${HANDLE_WIDTH}px`;
   return {
     templateAreas: hasFooter ? '"left lhandle main" "footer footer footer"' : '"left lhandle main"',
     templateColumns: `${leftCol} ${handleCol} minmax(0,1fr)`,
@@ -97,12 +106,14 @@ export const AppShell = ({
   topBar,
   footer,
   leftSidebar,
+  leftRail,
   leftHidden = false,
   leftSidebarCollapsed = false,
   leftOverlay,
   main,
   drawer,
   drawerSizing,
+  dockGrid = null,
   detail,
   detailSizing,
   isDetailParked,
@@ -114,8 +125,10 @@ export const AppShell = ({
   className,
 }: AppShellProps) => {
   const hasFooter = footer != null;
-  const hasLeftSidebar = leftSidebar != null;
-  const isLeftResizeDisabled = leftHidden || leftSidebarCollapsed;
+  const isLeftRail = leftRail != null;
+  const leftContent = isLeftRail ? leftRail : leftSidebar;
+  const hasLeftSidebar = leftContent != null;
+  const isLeftResizeDisabled = leftHidden || leftSidebarCollapsed || isLeftRail;
   const left = useResizableWidth<HTMLDivElement>({
     storageKey: LEFT_SIDEBAR_STORAGE_KEY,
     defaultWidth: LEFT_SIDEBAR_DEFAULT,
@@ -132,6 +145,7 @@ export const AppShell = ({
     leftCollapsed: leftSidebarCollapsed,
     leftHidden,
     hasLeftSidebar,
+    isLeftRail,
     hasFooter,
   });
   const gridStyle = {
@@ -166,17 +180,17 @@ export const AppShell = ({
             style={{ gridArea: 'left' }}
             inert={leftHidden}
           >
-            {leftSidebar}
+            {leftContent}
           </aside>
         ) : null}
         {hasLeftSidebar ? (
           <div className="min-h-0" style={{ gridArea: 'lhandle' }}>
             {isLeftResizeDisabled ? null : (
-              <ResizeHandle
+              <SplitHandle
                 {...left.handleProps}
                 ariaLabel="Resize left sidebar"
                 onActivityChange={setLeftResize}
-                drawsEdge={false}
+                shouldDrawEdge={false}
               />
             )}
           </div>
@@ -200,7 +214,9 @@ export const AppShell = ({
                       className="absolute inset-0 z-studio flex min-h-0 min-w-0 flex-col overflow-hidden bg-background empty:hidden has-[[data-studio-sheet-owner]]:bg-chrome"
                     >
                       <StudioSlotContext.Provider value>
-                        <ShellDockContext.Provider value={isDockHosted ? (drawer ?? null) : null}>
+                        <ShellDockContext.Provider
+                          value={isDockHosted ? { node: drawer ?? null, grid: dockGrid } : null}
+                        >
                           {studio}
                         </ShellDockContext.Provider>
                       </StudioSlotContext.Provider>
@@ -211,6 +227,7 @@ export const AppShell = ({
               </div>
             }
             drawer={isDockHosted ? null : (drawer ?? null)}
+            dockGrid={isDockHosted ? null : dockGrid}
             sizing={drawerSizing}
             detail={detail ?? null}
             detailSizing={detailSizing}

@@ -32,7 +32,7 @@ export const slotAfterArtifactFocus = ({
   drawer,
   back,
   artifactId,
-}: Params): DrawerSliceState => {
+}: Params): Pick<DrawerSliceState, 'drawer' | 'drawerBack'> => {
   const current = drawer ?? null;
   const chipped = back ?? null;
   const waiting =

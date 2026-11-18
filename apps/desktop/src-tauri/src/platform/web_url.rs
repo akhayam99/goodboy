@@ -62,3 +62,43 @@ mod tests {
         assert_eq!(super::read_view_url(std::ptr::null_mut()), None);
     }
 }
+
+#[cfg(test)]
+mod guard {
+    use std::path::Path;
+
+    const RAW_READS: [&str; 2] = ["webview.url()", ")?.url()"];
+
+    fn raw_reads_in(dir: &Path, found: &mut Vec<String>) {
+        let Ok(entries) = std::fs::read_dir(dir) else {
+            return;
+        };
+        for entry in entries.flatten() {
+            let path = entry.path();
+            if path.is_dir() {
+                raw_reads_in(&path, found);
+                continue;
+            }
+            let name = path.file_name().and_then(|n| n.to_str()).unwrap_or("");
+            if !name.ends_with(".rs") || name == "tests.rs" || name == "web_url.rs" {
+                continue;
+            }
+            let text = std::fs::read_to_string(&path).unwrap_or_default();
+            for (index, line) in text.lines().enumerate() {
+                if RAW_READS.iter().any(|raw| line.contains(raw)) {
+                    found.push(format!("{}:{}", path.display(), index + 1));
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn no_tab_reads_its_address_through_the_panicking_getter() {
+        let mut found = Vec::new();
+        raw_reads_in(
+            &Path::new(env!("CARGO_MANIFEST_DIR")).join("src"),
+            &mut found,
+        );
+        assert!(found.is_empty(), "use live_url_of instead: {found:?}");
+    }
+}

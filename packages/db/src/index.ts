@@ -141,13 +141,8 @@ export {
   type SessionTitleRef,
 } from './queries/session';
 export { getSessionContextSeenAt, setSessionContextSeenAt } from './queries/session-context-seen';
-export {
-  insertSessionContextItems,
-  listSessionContextItems,
-  listSessionContextItemsForRole,
-  listWorkspaceLearnings,
-  setSessionContextItemStatus,
-} from './queries/session-context-item';
+export { getSessionDockGrid, saveSessionDockGrid } from './queries/session-dock-grid';
+export * from './queries/session-context-item';
 export { listSessionDecisions, saveSessionDecisions } from './queries/session-decision';
 export {
   attachWorkflowToSession,
@@ -611,13 +606,13 @@ export {
   setResolveThreadGitState,
   setResolveThreadVerdict,
   setResolveThreadSourceSnapshot,
-  setResolveThreadSource,
 } from './queries/resolve-thread-facts';
 export {
   keepResolveDraftCurrent,
   repairLaggingResolveQueueItems,
 } from './queries/resolve-draft-current';
 export { hasResolveImport, commitResolveImport } from './queries/resolve-import';
+export { discardResolveFix } from './queries/resolve-discard';
 export {
   insertResolveCandidate,
   insertResolveCandidateItem,

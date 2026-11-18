@@ -4,13 +4,8 @@ import { AppShell, ScrollFade } from '@goodboy/ui';
 import { applyDocumentTheme } from '../../../../../shared/lib/theme';
 import { useAppStore } from '../../../../../store';
 import { LogPane } from '../../../../../features/session/central/log/LogPane';
-import { shellArrangement } from '../../../../shellArrangement';
+import { ScenePlacesRail } from '../ScenePlacesRail';
 import { SESSION, SESSION_ID, seedActivityRunScene } from '../activityRunSeed';
-
-const arrangement = shellArrangement({
-  hasWorkspace: true,
-  isSidebarCollapsed: false,
-});
 
 const AUTO_AGENT_ID: AgentId = JSON.parse(JSON.stringify('mock-u26-auto-agent'));
 
@@ -66,8 +61,7 @@ export const ActivityKindsScene = ({ theme }: Props) => {
   return (
     <div className="[&>div]:w-full" style={{ width: 1440 }}>
       <AppShell
-        leftSidebarCollapsed={arrangement.leftSidebarCollapsed}
-        leftSidebar={<div aria-hidden />}
+        leftRail={<ScenePlacesRail />}
         main={
           <ScrollFade className="min-h-0 flex-1">
             <div className="px-6 py-4">

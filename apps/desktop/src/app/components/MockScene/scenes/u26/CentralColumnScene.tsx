@@ -9,7 +9,7 @@ import { selectDrawerPlacement } from '../../../../../store/slices/drawer/select
 import { selectDrawerSizing } from '../../../../../store/slices/drawer/testing/selectDrawerSizing';
 import { LOG_LANDING } from '../../../../../features/session/central/log/logLanding';
 import { DrawerHost } from '../../../DrawerHost';
-import { shellArrangement } from '../../../../shellArrangement';
+import { ScenePlacesRail } from '../ScenePlacesRail';
 import { CentralColumnPane } from './CentralColumnPane';
 import { COLUMN_SESSION_ID, seedCentralColumn, type ColumnKind } from './centralColumnSeed';
 
@@ -20,8 +20,6 @@ type Props = {
   readonly isArchived?: boolean;
   readonly search?: string;
 };
-
-const arrangement = shellArrangement({ hasWorkspace: true, isSidebarCollapsed: true });
 
 const ARCHIVED_AT = brandId<IsoDateTime>({ value: '2026-10-18T09:00:00.000Z' });
 
@@ -79,8 +77,7 @@ export const CentralColumnScene = ({
         className="[&>div]:h-full [&>div]:w-full"
       >
         <AppShell
-          leftSidebarCollapsed={arrangement.leftSidebarCollapsed}
-          leftSidebar={<div aria-hidden />}
+          leftRail={<ScenePlacesRail />}
           main={<CentralColumnPane />}
           drawer={isDrawerOpen ? <DrawerHost /> : null}
           drawerSizing={drawerSizing}

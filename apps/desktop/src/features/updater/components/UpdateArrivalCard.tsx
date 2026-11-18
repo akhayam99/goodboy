@@ -1,15 +1,20 @@
-import { useRef, type RefObject } from 'react';
+import { useRef, type CSSProperties, type RefObject } from 'react';
 import { createPortal } from 'react-dom';
 import {
   Button,
+  Meter,
   Popover,
   SHELL_GUTTER_PX,
   cn,
   useDropdownDirection,
   useEscapeLayer,
+  useFloatingPlace,
+  useHoverSurface,
   usePopoverPortalTarget,
 } from '@goodboy/ui';
-import { useIsAnchorInert } from '../hooks/useIsAnchorInert';
+import { useAppStore } from '../../../store';
+import { updateMarkOf } from '../updateMark';
+import { useIsAnchorInert } from '../../../shared/hooks/useIsAnchorInert';
 import { useUpdateArrivalCard } from '../hooks/useUpdateArrivalCard';
 import { useUpdateCard } from '../hooks/useUpdateCard';
 import type { UpdateCardState } from '../updateCardState';
@@ -20,13 +25,19 @@ const CARD_WIDTH_PX = 300;
 const WIDE_STATES: ReadonlySet<UpdateCardState> = new Set(['running', 'queued']);
 const CARD_MAX_WIDTH_PX = 384;
 const CARD_EXPECTED_HEIGHT_PX = 112;
+const BESIDE_GAP_PX = 8;
 
 type Props = {
   readonly anchorRef: RefObject<HTMLElement | null>;
   readonly onOpenChangelog: () => void;
+  readonly isBesideAnchor?: boolean;
 };
 
-export const UpdateArrivalCard = ({ anchorRef, onOpenChangelog }: Props) => {
+export const UpdateArrivalCard = ({
+  anchorRef,
+  onOpenChangelog,
+  isBesideAnchor = false,
+}: Props) => {
   const popupRef = useRef<HTMLDivElement>(null);
   const layerTarget = usePopoverPortalTarget();
 
@@ -43,6 +54,10 @@ export const UpdateArrivalCard = ({ anchorRef, onOpenChangelog }: Props) => {
     onOpenChangelog,
   });
   const { isVisible: isWanted, snooze } = useUpdateArrivalCard({ state: card.state });
+  const status = useAppStore((store) => store.updaterStatus);
+  const progress = useAppStore((store) => store.updateProgress);
+  const download =
+    card.state === null ? null : updateMarkOf({ state: card.state, status, progress });
   const isAnchorInert = useIsAnchorInert({ anchorRef });
   const isVisible = isWanted && !isAnchorInert;
 
@@ -54,7 +69,7 @@ export const UpdateArrivalCard = ({ anchorRef, onOpenChangelog }: Props) => {
   const placement = useDropdownDirection({
     triggerRef: anchorRef,
     popupRef,
-    open: isVisible,
+    open: isVisible && !isBesideAnchor,
     expectedHeight: CARD_EXPECTED_HEIGHT_PX,
     expectedWidth: CARD_WIDTH_PX,
     align: 'start',
@@ -63,6 +78,18 @@ export const UpdateArrivalCard = ({ anchorRef, onOpenChangelog }: Props) => {
     maxWidth: CARD_MAX_WIDTH_PX,
   });
 
+  const beside = useFloatingPlace({
+    anchor: isBesideAnchor ? anchorRef.current : null,
+    tipRef: popupRef,
+    isActive: isVisible && isBesideAnchor,
+    side: 'right',
+    alignment: 'end',
+    gap: BESIDE_GAP_PX,
+    edge: SHELL_GUTTER_PX,
+    contentKey: `${String(card.state)}-${String(download?.isDownloading)}`,
+  });
+
+  useHoverSurface({ isActive: isVisible && isBesideAnchor });
   useEscapeLayer(dismiss, isVisible);
 
   if (!isVisible || card.state === null || card.copy === null) {
@@ -70,19 +97,24 @@ export const UpdateArrivalCard = ({ anchorRef, onOpenChangelog }: Props) => {
   }
 
   const { state, copy } = card;
+  const style: CSSProperties | undefined = isBesideAnchor
+    ? beside === null
+      ? undefined
+      : { top: beside.top, left: beside.left, maxHeight: beside.maxHeight }
+    : placement;
   const portalTarget = layerTarget ?? anchorRef.current?.closest('dialog[open]') ?? document.body;
 
   return createPortal(
-    <div data-dropdown-portal>
+    <div data-dropdown-portal data-hover-surface="">
       <Popover
         innerRef={popupRef}
         role="dialog"
         ariaLabel={copy.title}
-        style={placement}
+        style={style}
         className={cn(
           'fixed z-popover',
           WIDE_STATES.has(state) ? 'w-90' : 'w-75',
-          placement === undefined ? 'invisible' : '',
+          style === undefined ? 'invisible' : '',
         )}
       >
         <div data-update-card={state} className="flex min-w-0 flex-col gap-3 p-3">
@@ -118,6 +150,9 @@ export const UpdateArrivalCard = ({ anchorRef, onOpenChangelog }: Props) => {
               )}
             </div>
           </div>
+          {download !== null && download.isDownloading && download.percent !== null ? (
+            <Meter label="Download progress" value={download.percent} />
+          ) : null}
           <div className="flex flex-wrap items-center justify-end gap-2">
             <UpdateVerbButtons verbs={card.verbs} />
           </div>

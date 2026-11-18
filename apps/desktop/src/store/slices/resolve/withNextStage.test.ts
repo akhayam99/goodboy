@@ -72,6 +72,8 @@ const CASES: ReadonlyArray<Case> = [
     expected: 'proposed',
   },
   { from: 'closed', stage: 'resolved', to: 'open', expected: 'new' },
+  { from: 'fixed', stage: 'proposed', to: 'open', expected: 'new' },
+  { from: 'answered', stage: 'proposed', to: 'open', expected: 'new' },
 ];
 
 describe('withNextStage', () => {

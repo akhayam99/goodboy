@@ -22,7 +22,7 @@ import { U25_P_SIDE_INFO_SCENES } from './p-side-info';
 
 const SETTLE_MS = 2_000;
 
-const NAMES = ['side-info-doors', 'side-info-framed'] as const;
+const NAMES = ['side-info-framed'] as const;
 
 type SceneName = (typeof NAMES)[number];
 
@@ -65,19 +65,6 @@ describe('the side column signal scenes', () => {
     for (const name of NAMES) {
       expect(MOCK_SCENES[name]).toBe(U25_P_SIDE_INFO_SCENES[name]);
     }
-  });
-
-  it('side-info-doors keeps one trailing slot, a dot only for unread, and the chat plus', async () => {
-    await mount({ name: 'side-info-doors' });
-
-    expect(screen.queryByRole('button', { name: /^Terminal/ })).toBeNull();
-    const chat = screen.getByRole('button', { name: 'Chat, unread' });
-    expect(chat.querySelector('[data-door-signal="unread"]')).not.toBeNull();
-    expect(screen.getByRole('button', { name: 'New chat' }).getAttribute('data-door-create')).toBe(
-      'chat',
-    );
-    expect(screen.queryByRole('button', { name: 'New terminal' })).toBeNull();
-    expect(document.querySelectorAll('[data-door-slot="signal"]').length).toBe(8);
   });
 
   it('side-info-framed gives every counted session page its number in a shot frame', async () => {

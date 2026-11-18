@@ -59,7 +59,12 @@ export const archiveTask = (set: SetFn, get: GetFn) => {
       throw err;
     }
     set((state) =>
-      slotAfterSessionGone({ drawer: state.drawer, back: state.drawerBack, sessionId }),
+      slotAfterSessionGone({
+        drawer: state.drawer,
+        back: state.drawerBack,
+        grid: state.drawerGrid,
+        sessionId,
+      }),
     );
 
     void get()

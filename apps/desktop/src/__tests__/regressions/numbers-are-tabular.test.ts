@@ -8,7 +8,6 @@ const css = readFileSync(join(__dirname, '..', '..', 'styles.css'), 'utf8');
 
 const NUMBER_CARRIERS: ReadonlyArray<string> = [
   'apps/desktop/src/shared/components/RelativeTime/index.tsx',
-  'apps/desktop/src/shared/components/toneCountClass.ts',
   'apps/desktop/src/features/notifications/components/NotificationsStudio/FacetCount.tsx',
   'apps/desktop/src/features/notifications/components/NotificationRow/index.tsx',
   'apps/desktop/src/features/notifications/components/NotificationRow/NotificationRowDetail.tsx',

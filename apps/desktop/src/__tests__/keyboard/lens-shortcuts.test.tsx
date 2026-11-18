@@ -14,7 +14,7 @@ const { platform } = vi.hoisted(() => {
 
 vi.mock('../../shared/platform', () => ({ currentPlatform: () => platform.current }));
 
-const { sessionList, sidebarOrder, state } = vi.hoisted(() => {
+const { sessionList, stateOrder, state } = vi.hoisted(() => {
   const sessions = [
     { id: 'session-0', workspaceId: 'workspace-1' },
     { id: 'session-1', workspaceId: 'workspace-1' },
@@ -84,10 +84,10 @@ const { sessionList, sidebarOrder, state } = vi.hoisted(() => {
     selectedAgentId: Record<string, string | null>;
   };
   const state: State = initialState;
-  const sidebarOrder: { current: ReadonlyArray<string> | null } = { current: null };
+  const stateOrder: { current: ReadonlyArray<string> | null } = { current: null };
   return {
     sessionList: { current: sessions },
-    sidebarOrder,
+    stateOrder,
     state,
   };
 });
@@ -111,9 +111,6 @@ vi.mock('../../app/components/HelpStudio', () => ({ HelpStudio: () => null }));
 vi.mock('../../shared/components/Toast', () => ({ ToastProvider: () => null }));
 vi.mock('../../features/notifications/components/NotificationToastBridge', () => ({
   NotificationToastBridge: () => null,
-}));
-vi.mock('../../features/session/components/SessionNavSidebar', () => ({
-  SessionNavSidebar: () => null,
 }));
 vi.mock('../../features/workspace/hooks/useWindowPresence', () => ({ useWindowPresence: vi.fn() }));
 vi.mock('../../features/workspace/components/WorkspaceLinkStudio', () => ({
@@ -177,8 +174,8 @@ vi.mock('../../store', async () => {
     useSessionById: (sessionId: string | null) =>
       sessionList.current.find((s) => s.id === sessionId) ?? null,
     useSessions: () => sessionList.current,
-    useSessionColumn: () => {
-      const order = sidebarOrder.current;
+    useSessionOrder: () => {
+      const order = stateOrder.current;
       const sessions =
         order === null
           ? sessionList.current
@@ -228,7 +225,7 @@ beforeEach(() => {
     { id: 'session-1', workspaceId: 'workspace-1' },
   ];
   sessionList.current = state.sessions;
-  sidebarOrder.current = null;
+  stateOrder.current = null;
   state.sessionBranches = { 'session-1': 'feature/branch' };
   state.currentWorkspaceId = 'workspace-1';
   state.currentSessionId = 'session-1';
@@ -434,8 +431,8 @@ describe('App lens shortcuts on darwin', () => {
     });
   });
 
-  it('walks to the next session in the order the sidebar shows', () => {
-    sidebarOrder.current = ['session-1', 'session-0'];
+  it('walks to the next session in the order by state', () => {
+    stateOrder.current = ['session-1', 'session-0'];
     render(<App />);
 
     press({ code: 'BracketRight', key: '}', metaKey: true, shiftKey: true });

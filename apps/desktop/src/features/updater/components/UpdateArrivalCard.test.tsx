@@ -81,9 +81,14 @@ const runAgents = ({ count }: RunningParams): void => {
 type HarnessProps = {
   readonly onOpenChangelog?: () => void;
   readonly isInert?: boolean;
+  readonly isBesideAnchor?: boolean;
 };
 
-const Harness = ({ onOpenChangelog = () => undefined, isInert = false }: HarnessProps) => {
+const Harness = ({
+  onOpenChangelog = () => undefined,
+  isInert = false,
+  isBesideAnchor = false,
+}: HarnessProps) => {
   const anchorRef = useRef<HTMLDivElement>(null);
   return (
     <div inert={isInert}>
@@ -97,7 +102,11 @@ const Harness = ({ onOpenChangelog = () => undefined, isInert = false }: Harness
             0.24.1
           </button>
         </div>
-        <UpdateArrivalCard anchorRef={anchorRef} onOpenChangelog={onOpenChangelog} />
+        <UpdateArrivalCard
+          anchorRef={anchorRef}
+          onOpenChangelog={onOpenChangelog}
+          isBesideAnchor={isBesideAnchor}
+        />
       </aside>
     </div>
   );
@@ -269,6 +278,29 @@ describe('UpdateArrivalCard', () => {
     expect(dialog.style.top).toBe('');
     expect(dialog.style.bottom).toBe('44px');
     expect(Number.parseFloat(dialog.style.maxWidth)).toBeLessThanOrEqual(384);
+  });
+
+  it('opens to the right of the rail foot, 12px inside the window at 1024 by 700', async () => {
+    window.innerWidth = 1024;
+    window.innerHeight = 700;
+    vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function (
+      this: HTMLElement,
+    ) {
+      if (this.getAttribute('role') === 'dialog') {
+        return rectOf({ left: 0, top: 0, width: 300, height: 140 });
+      }
+      return rectOf({ left: 0, top: 604, width: 64, height: 94 });
+    });
+    render(<Harness isBesideAnchor />);
+    const dialog = await screen.findByRole('dialog', { name: READY_TITLE });
+
+    await waitFor(() => expect(dialog.style.left).not.toBe(''));
+    const left = Number.parseFloat(dialog.style.left);
+    const floor = Number.parseFloat(dialog.style.top) + 140;
+    expect(left).toBe(64 + 8);
+    expect(left + 300).toBeLessThanOrEqual(1024 - MARGIN);
+    expect(floor).toBeLessThanOrEqual(700 - MARGIN);
+    expect(Number.parseFloat(dialog.style.maxHeight)).toBeLessThanOrEqual(700 - MARGIN * 2);
   });
 
   it('caps its width to the window minus the margins in a narrow window', async () => {

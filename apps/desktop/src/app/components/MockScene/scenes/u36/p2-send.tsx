@@ -64,7 +64,7 @@ const SendScene = ({ isStopped }: SceneProps) => {
   if (!isReady) {
     return null;
   }
-  return <AppFrame view="session" isRailCollapsed={false} hasPane />;
+  return <AppFrame view="session" hasPane />;
 };
 
 export const U36_P2_SEND_SCENES = {

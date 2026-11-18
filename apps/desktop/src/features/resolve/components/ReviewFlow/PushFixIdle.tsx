@@ -1,5 +1,5 @@
 import type { MountId, SessionId } from '@goodboy/types';
-import { PushFixStatus } from '../../../../shared/components/PushFixStatus';
+import { PushFixStatus } from '../../../history/pushFix/PushFixStatus';
 import { useAppStore } from '../../../../store';
 import type { ReviewPush } from './useReviewPush';
 import { selectActiveMountId } from '../../../../store/slices/project-mounts/selectors';

@@ -37,6 +37,7 @@ import type { ContextSlotFacts } from './kinds/contextSlot';
 import type { PlanCommentsFacts } from './kinds/planComments';
 import type { ProjectAskFacts } from './kinds/projectAsk';
 import type { CheckRunFacts } from './kinds/checkRun';
+import type { FixRunFacts } from './kinds/fixRun';
 import type { DecisionFacts } from './kinds/decision';
 import type { WorkspaceFacts } from './kinds/workspace';
 import type { IssueCandidateFacts } from './kinds/issueCandidate';
@@ -481,6 +482,11 @@ export type CheckRunActionTarget = {
   readonly facts: CheckRunFacts;
 };
 
+export type FixRunActionTarget = {
+  readonly kind: 'fixRun';
+  readonly facts: FixRunFacts;
+};
+
 export type DecisionActionTarget = {
   readonly kind: 'decision';
   readonly facts: DecisionFacts;
@@ -589,6 +595,7 @@ export type ObjectTarget =
   | ProjectAskActionTarget
   | LinkActionTarget
   | CheckRunActionTarget
+  | FixRunActionTarget
   | DecisionActionTarget
   | WorkspaceActionTarget
   | IssueCandidateActionTarget

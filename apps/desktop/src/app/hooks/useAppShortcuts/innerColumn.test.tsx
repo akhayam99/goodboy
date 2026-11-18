@@ -42,18 +42,16 @@ const Probe = ({ id, toggle, isActive }: ProbeProps) => {
 };
 
 type Props = {
-  readonly toggleSidebar: () => void;
   readonly columns: ReadonlyArray<ProbeProps>;
 };
 
-const Harness = ({ toggleSidebar, columns }: Props) => {
+const Harness = ({ columns }: Props) => {
   useAppShortcuts({
     armDeleteConfirm: () => undefined,
     openPalette: () => undefined,
     openSettings: () => undefined,
     openNewChat: () => undefined,
     openShortcutHelp: () => undefined,
-    toggleSidebar,
   });
   return (
     <>
@@ -65,13 +63,11 @@ const Harness = ({ toggleSidebar, columns }: Props) => {
 };
 
 describe('the inner column key', () => {
-  it('folds the inner column of the page on top, and leaves the sidebar alone', () => {
-    const toggleSidebar = vi.fn();
+  it('folds the inner column of the page on top only', () => {
     const session = vi.fn();
     const chat = vi.fn();
     render(
       <Harness
-        toggleSidebar={toggleSidebar}
         columns={[
           { id: 'session-rail', toggle: session, isActive: true },
           { id: 'chat', toggle: chat, isActive: true },
@@ -83,17 +79,11 @@ describe('the inner column key', () => {
 
     expect(chat).toHaveBeenCalledTimes(1);
     expect(session).not.toHaveBeenCalled();
-    expect(toggleSidebar).not.toHaveBeenCalled();
   });
 
   it('skips a column whose page is not shown', () => {
     const session = vi.fn();
-    render(
-      <Harness
-        toggleSidebar={() => undefined}
-        columns={[{ id: 'session-rail', toggle: session, isActive: false }]}
-      />,
-    );
+    render(<Harness columns={[{ id: 'session-rail', toggle: session, isActive: false }]} />);
 
     pressShortcut({ id: 'innerColumn.toggle' });
 
@@ -101,12 +91,10 @@ describe('the inner column key', () => {
   });
 
   it('does nothing on a page with no inner column', () => {
-    const toggleSidebar = vi.fn();
-    render(<Harness toggleSidebar={toggleSidebar} columns={[]} />);
+    render(<Harness columns={[]} />);
 
     pressShortcut({ id: 'innerColumn.toggle' });
 
     expect(innerColumnStore.current()).toBeNull();
-    expect(toggleSidebar).not.toHaveBeenCalled();
   });
 });

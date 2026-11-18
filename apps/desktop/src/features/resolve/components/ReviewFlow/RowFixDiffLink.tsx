@@ -17,25 +17,23 @@ export const RowFixDiffLink = ({ sessionId, entry, commit }: Props) => {
   const fallbackMountPath = useAppStore((s) => s.diffMountPath[sessionId] ?? null);
   const mountPath = entry.row.attempt?.mountTarget?.worktreePath ?? fallbackMountPath;
   return (
-    <span className="absolute bottom-1 right-2">
-      <Button
-        size="sm"
-        variant="ghost"
-        data-row-fix-diff=""
-        aria-label={`${ROW_FIX_COPY.seeDiffOf} ${shortShaOf({ sha: commit })}`}
-        onClick={() =>
-          navigate({
-            to: branchPlace({
-              sessionId,
-              mountPath,
-              tab: 'files',
-              focus: { kind: 'commit', sha: commit, path: null },
-            }),
-          })
-        }
-      >
-        {ROW_FIX_COPY.seeDiff}
-      </Button>
-    </span>
+    <Button
+      size="sm"
+      variant="ghost"
+      data-row-fix-diff=""
+      aria-label={`${ROW_FIX_COPY.seeDiffOf} ${shortShaOf({ sha: commit })}`}
+      onClick={() =>
+        navigate({
+          to: branchPlace({
+            sessionId,
+            mountPath,
+            tab: 'files',
+            focus: { kind: 'commit', sha: commit, path: null },
+          }),
+        })
+      }
+    >
+      {ROW_FIX_COPY.seeDiff}
+    </Button>
   );
 };

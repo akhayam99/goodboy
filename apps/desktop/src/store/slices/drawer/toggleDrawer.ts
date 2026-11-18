@@ -2,7 +2,7 @@ import { leaveStudio } from '../navigation/leaveStudio';
 import { drawerKey } from './drawerKey';
 import { isWorkspaceTool } from './isWorkspaceTool';
 import { selectDetailDrawer } from './selectDetailDrawer';
-import { selectDockDrawer } from './selectDockDrawer';
+import { selectGridTool } from './selectGridTool';
 import type { DrawerRequest, OpenDrawer } from './state';
 import type { GetFn } from './types';
 
@@ -13,7 +13,7 @@ type ShownParams = {
 
 const shownFor = ({ state, request }: ShownParams): OpenDrawer | null => {
   if (isWorkspaceTool({ content: request })) {
-    return selectDockDrawer({ state });
+    return selectGridTool({ state, kind: request.kind });
   }
   return state.appStudio === null ? selectDetailDrawer({ state }) : null;
 };

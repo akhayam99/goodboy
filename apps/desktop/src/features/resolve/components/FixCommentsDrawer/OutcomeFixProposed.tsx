@@ -20,7 +20,7 @@ const NO_CANDIDATES: ReadonlyArray<ResolveCandidateWithItems> = [];
 export const OutcomeFixProposed = ({ sessionId, entry }: Props) => {
   const candidates = useAppStore((s) => s.sessionResolveCandidates[sessionId] ?? NO_CANDIDATES);
   const acceptReviewComments = useAppStore((s) => s.acceptReviewComments);
-  const deferResolveQueueItem = useAppStore((s) => s.deferResolveQueueItem);
+  const discardProposedFix = useAppStore((s) => s.discardProposedFix);
   const { isBusy, error, run } = useOutcomeRun();
   const candidate = useMemo(
     () => selectResolveCandidate({ candidates, itemId: entry.row.item.id }),
@@ -37,15 +37,10 @@ export const OutcomeFixProposed = ({ sessionId, entry }: Props) => {
   };
 
   const discard = async (): Promise<void> => {
-    const { item } = entry.row;
-    await deferResolveQueueItem({ sessionId, itemId: item.id });
-    useAppStore.getState().undoable({
-      message: OUTCOME_ACTION.discarded,
-      conflictMessage: OUTCOME_ACTION.discardConflict,
-      undo: async () => {
-        await useAppStore.getState().takeUpResolveQueueItem({ sessionId, itemId: item.id });
-        return true;
-      },
+    await discardProposedFix({
+      sessionId,
+      threadId: entry.threadId,
+      worktreePath: candidate?.worktreePath ?? null,
     });
   };
 

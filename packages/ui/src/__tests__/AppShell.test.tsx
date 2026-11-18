@@ -299,6 +299,18 @@ describe('AppShell studio in the main slot', () => {
     expect(peek.style.gridColumn).toBe('1 / -1');
   });
 
+  it('sizes a left rail by its own width, with no resize handle and no saved width', () => {
+    const setItem = vi.spyOn(localStorage, 'setItem');
+    render(<AppShell leftRail={<nav aria-label="Places">places</nav>} main={<div>main</div>} />);
+
+    const grid = screen.getByText('main').closest<HTMLElement>('[style*="grid-template-columns"]');
+    expect(grid?.style.gridTemplateColumns).toBe('auto 0px minmax(0,1fr)');
+    const places = screen.getByRole('navigation', { name: 'Places' });
+    expect(places.parentElement?.tagName).toBe('ASIDE');
+    expect(screen.queryByRole('separator', { name: 'Resize left sidebar' })).toBeNull();
+    expect(setItem).not.toHaveBeenCalled();
+  });
+
   it('opens the column at 240px by default within 200 to 400, on a fresh saved key', () => {
     expect(LEFT_SIDEBAR_DEFAULT).toBe(240);
     expect(LEFT_SIDEBAR_STORAGE_KEY).toBe('goodboy:left-sidebar-width:v3');

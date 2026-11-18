@@ -155,8 +155,12 @@ and one hook gives every surface the same verbs (`useUpdateCard`, state from
 | Failed         | Goodboy 0.27.2 did not install, with the reason | Later, **Retry** (downloads or installs again, without a new check)                                 |
 | Queued         | Restarts when 2 agents finish                   | Later, Cancel restart, **Restart now**                                                              |
 
-The version pill in the Goodboy line, and in the corner of Home
-(`WorkspaceLauncher`), opens and closes the card (`toggleUpdateCard`). The card
+The update mark at the foot of the places rail (the logo turns into it while an
+update waits; `UpdateRailMark`, state from `updateMarkOf`), and the version pill in
+the corner of Home (`WorkspaceLauncher`), open and close the card
+(`toggleUpdateCard`). The card opens to the right of the rail mark, inside the window
+margin, and a download shows as a ring with the percent on the mark and a bar in the
+card. The card
 also opens by itself once an update is ready, runs into agents or fails. Later
 and Esc close it and snooze that version for three days (`updateSnoozeGate`);
 the pill stays. The Updates band of **Settings > This Mac > General** is the

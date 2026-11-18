@@ -21,7 +21,6 @@ import {
 } from '../../../../store/storyHarness';
 import { ToastProvider } from '../../../../shared/components/Toast';
 import { harborline, seedColumn, sessionOf } from '../../testing/sessionColumn';
-import { SidebarSessionsFilter } from '../SessionActivityBar/SidebarSessionsFilter';
 import { SessionsHeader } from './SessionsHeader';
 
 let useAppStore: StoryStore;
@@ -41,22 +40,19 @@ beforeEach(async () => {
 
 afterEach(cleanup);
 
-const mountBoth = () =>
+const mountHeader = () =>
   render(
     <ToastProvider>
       <SessionsHeader
         isShown
         workspaceId={harborline.id}
         filterSessions={[]}
-        archivedCount={0}
-        onArchivedShownChange={() => undefined}
         hiddenCount={0}
         needsYouElsewhere={0}
         onClearFilters={() => undefined}
       >
         {null}
       </SessionsHeader>
-      <SidebarSessionsFilter workspaceId={harborline.id} />
     </ToastProvider>,
   );
 
@@ -80,37 +76,28 @@ const openAt = ({ index }: IndexParams): HTMLElement => {
   return screen.getByRole('dialog', { name: 'Filter sessions' });
 };
 
-describe('the Sessions page and the column share one filter', () => {
-  it('draws no view switch on the page header: the page is the Board', () => {
-    mountBoth();
+describe('the Board holds the one session filter', () => {
+  it('draws no view switch and one filter button, in the Board header', () => {
+    mountHeader();
 
     expect(screen.queryByRole('tablist', { name: 'Sessions view' })).toBeNull();
-    expect(triggers()).toHaveLength(2);
+    expect(triggers()).toHaveLength(1);
   });
 
-  it('keeps one sort in the store whichever of the two menus changes it', () => {
-    mountBoth();
+  it('keeps the sort in the store for the workspace', () => {
+    mountHeader();
 
-    const fromBoard = openAt({ index: 0 });
-    fireEvent.click(within(fromBoard).getByRole('combobox', { name: 'Sort' }));
+    const dialog = openAt({ index: 0 });
+    fireEvent.click(within(dialog).getByRole('combobox', { name: 'Sort' }));
     fireEvent.click(screen.getByRole('option', { name: 'Alphabetical' }));
+
     expect(useAppStore.getState().sessionViewPrefs[harborline.id]?.sort).toBe('goal');
-    clickAt({ index: 0 });
-
-    const fromColumn = openAt({ index: 1 });
-    expect(within(fromColumn).getByRole('combobox', { name: 'Sort' }).textContent).toContain(
-      'Alphabetical',
-    );
-    fireEvent.click(within(fromColumn).getByRole('combobox', { name: 'Sort' }));
-    fireEvent.click(screen.getByRole('option', { name: 'Last activity' }));
-
-    expect(useAppStore.getState().sessionViewPrefs[harborline.id]?.sort).toBe('updatedAt');
   });
 
   it('keeps Mark all as read at the foot of the menu, off while nothing is unread', () => {
-    mountBoth();
+    mountHeader();
 
-    const dialog = openAt({ index: 1 });
+    const dialog = openAt({ index: 0 });
     const mark = within(dialog).getByRole('button', { name: 'Mark all as read' });
 
     expect(mark.hasAttribute('disabled')).toBe(true);

@@ -23,6 +23,7 @@ export const DRAWER_KINDS = {
   scripts: { ...TOOL, pane: 'scripts' },
   terminal: { ...TOOL, pane: 'terminal' },
   browser: { ...TOOL, sizing: 'browser', pane: 'browser' },
+  monitoring: { ...TOOL, sizing: 'reader', pane: 'monitoring' },
   'explore-file': WIDE_READER,
   scriptRun: { ...READER, surface: 'tool', openerPane: 'scripts' },
   ask: READER,

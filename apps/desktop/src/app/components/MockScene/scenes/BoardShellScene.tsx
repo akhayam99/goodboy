@@ -2,7 +2,7 @@ import { Suspense, lazy, useEffect, useState } from 'react';
 import { AppShell } from '@goodboy/ui';
 import { AppTopBar } from '../../AppTopBar';
 import { DrawerHost } from '../../DrawerHost';
-import { ShellLeft } from '../../SideColumn/ShellLeft';
+import { ShellLeft } from '../../ShellLeft';
 import { ToastProvider } from '../../../../shared/components/Toast';
 import { StageBoard } from '../../../../features/workspace/components/StageBoard';
 import { useAppStore, useCurrentSession, useSessions } from '../../../../store';
@@ -13,7 +13,6 @@ import { SETTINGS_STORAGE_FOLDERS } from './audit/settingsSeed';
 import { shellArrangement } from '../../../shellArrangement';
 import { useShellRight } from '../../../hooks/useShellRight';
 import { useSceneShell } from './useSceneShell';
-import { useSceneSidebar } from './useSceneSidebar';
 
 const noop = () => undefined;
 
@@ -72,12 +71,8 @@ const BoardShellSceneContent = ({ isSessionOpen }: ContentProps) => {
   const sessions = useSessions();
   const current = useCurrentSession();
   const currentSession = isDirectedScene() || isSessionOpen ? current : null;
-  const rail = useSceneSidebar({ isCollapsed: sceneParam({ key: 'rail' }) === '1' });
-  const arrangement = shellArrangement({
-    hasWorkspace: true,
-    isSidebarCollapsed: rail.isCollapsed,
-  });
-  const shell = useSceneShell({ arrangement, onToggleSidebar: rail.toggle });
+  const arrangement = shellArrangement({ hasWorkspace: true });
+  const shell = useSceneShell({});
   const shellRight = useShellRight({});
 
   return (
@@ -86,26 +81,18 @@ const BoardShellSceneContent = ({ isSessionOpen }: ContentProps) => {
         rightRail={shellRight.rightRail}
         drawer={shellRight.isDrawerMounted ? <DrawerHost slot="dock" /> : null}
         drawerSizing={shellRight.dockSizing}
+        dockGrid={shellRight.dockGrid}
         detail={shellRight.isDetailMounted ? <DrawerHost slot="detail" /> : null}
         detailSizing={shellRight.detailSizing}
         isDrawerParked={shellRight.isDrawerParked}
         isDetailParked={shellRight.isDetailParked}
         studio={shell.studio}
         isDockInStudio={shellRight.isDockInStudio}
-        topBar={
-          <AppTopBar
-            sidebar={{ isCollapsed: arrangement.isLeftRail, onToggle: rail.toggle }}
-            onOpenSpend={noop}
-            onOpenScript={noop}
-          />
-        }
-        leftSidebarCollapsed={arrangement.leftSidebarCollapsed}
-        leftSidebar={
+        topBar={<AppTopBar onOpenSpend={noop} onOpenScript={noop} />}
+        leftRail={
           <ShellLeft
             arrangement={arrangement}
             workspaceId={WORKSPACE_ID}
-            currentSessionId={currentSession?.id ?? null}
-            isDraftShown={false}
             actions={shell.actions}
             {...(shell.isStudioOpen || currentSession !== null
               ? {}

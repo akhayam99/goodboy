@@ -32,6 +32,15 @@ describe('isOverlayOpen', () => {
     }
   });
 
+  it('is false for panels laid over the page behind their veil, so Esc and the close keys reach them', () => {
+    document.body.innerHTML = [
+      '<div data-drawer-main inert></div>',
+      '<div aria-hidden="true" data-drawer-scrim></div>',
+      '<aside aria-label="Side panel" data-drawer-mode="overlay"></aside>',
+    ].join('');
+    expect(isOverlayOpen({})).toBe(false);
+  });
+
   it('stays true for a multi select listbox inside a dropdown portal', () => {
     document.body.innerHTML =
       '<div data-dropdown-portal><ul role="listbox" aria-multiselectable="true"></ul></div>';

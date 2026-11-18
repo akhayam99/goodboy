@@ -124,7 +124,13 @@ afterEach(cleanup);
 const renderBothSides = () =>
   render(
     <>
-      <ChatRoom workspaceId={WORKSPACE_ID} chat={CHAT} onCreated={vi.fn()} onRemoved={vi.fn()} />
+      <ChatRoom
+        workspaceId={WORKSPACE_ID}
+        chat={CHAT}
+        onCreated={vi.fn()}
+        onRemoved={vi.fn()}
+        onNewChat={vi.fn()}
+      />
       <section aria-label="Overview">
         <ChatOriginRow session={SESSION} />
       </section>

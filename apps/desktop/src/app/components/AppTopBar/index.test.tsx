@@ -148,14 +148,15 @@ const zones = (container: HTMLElement) =>
   Array.from(container.querySelector('[data-tauri-drag-region]')?.children ?? []);
 
 describe('AppTopBar', () => {
-  it('seats identity, command center and now in one three column grid that drags the window', () => {
+  it('seats the sessions button, command center and now in one three column grid that drags the window', () => {
     const { container } = renderBar();
     const bar = container.querySelector('[data-tauri-drag-region]');
     const children = zones(container);
 
     expect(bar?.getAttribute('data-tauri-drag-region')).toBe('deep');
     expect(children).toHaveLength(3);
-    expect(children[0]?.contains(screen.getByLabelText('Switch workspace: Harborline'))).toBe(true);
+    expect(children[0]?.contains(screen.getByRole('button', { name: 'Sessions' }))).toBe(true);
+    expect(screen.queryByLabelText('Switch workspace: Harborline')).toBeNull();
     expect(children[1]?.contains(screen.getByRole('button', { name: /^Search/ }))).toBe(true);
   });
 

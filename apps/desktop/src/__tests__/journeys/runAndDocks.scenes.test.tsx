@@ -84,15 +84,15 @@ describe('journey: the run page, its Agents rail and an agent in the centre', ()
 });
 
 describe('journey: the board scene draws the tools rail', () => {
-  it('lists Terminal and Browser on the rail of the board, both closed', async () => {
+  it('lists the five tools on the rail of the board, all closed', async () => {
     await journey.mount({ name: 'ux39-p10-board' });
 
     screen.getByRole('heading', { name: 'Board' });
     expect(journey.location().place.at).toBe('board');
-    const names = within(toolsRail())
+    const pressed = within(toolsRail())
       .getAllByRole('button')
       .map((button) => button.getAttribute('aria-pressed'));
-    expect(names).toEqual(['false', 'false']);
+    expect(pressed).toEqual(['false', 'false', 'false', 'false', 'false']);
     expect(dockKind()).toBeNull();
   });
 });
@@ -102,35 +102,39 @@ describe('journey: the Terminal and Browser docks beside the tools rail', () => 
     ['panel-frame-terminal', 'terminal'],
     ['panel-frame-browser', 'browser'],
   ] as const)(
-    'draws the tools rail on the left edge of the %s dock, the dock card after it',
+    'draws the %s dock card first and the tools rail after it, on the window edge',
     async (name, kind) => {
       await journey.mount({ name });
 
       expect(dockKind()).toBe(kind);
       const container = journey.partOf({ selector: '[data-container="drawer"]' });
-      expect(container.children[0]?.hasAttribute('data-drawer-edge')).toBe(true);
-      expect(container.children[0]?.contains(toolsRail())).toBe(true);
-      expect(container.children[1]?.hasAttribute('data-drawer-card')).toBe(true);
+      expect(container.children[0]?.hasAttribute('data-drawer-card')).toBe(true);
+      expect(container.children[1]?.hasAttribute('data-drawer-edge')).toBe(true);
+      expect(container.children[1]?.contains(toolsRail())).toBe(true);
+      expect(container.lastElementChild).toBe(container.children[1]);
       expect(
         journey.partOf({ selector: '[aria-label="Side panel"]' }).getAttribute('data-drawer-mode'),
       ).toBe('push');
     },
   );
 
-  it('moves between the two docks from the rail and hands the dock back to the one under it', async () => {
+  it('opens the two docks together from the rail and closes each with its own button', async () => {
     await journey.mount({ name: 'panel-frame-terminal' });
     expect(dockKind()).toBe('terminal');
 
     await pressTool({ name: 'Browser' });
-    expect(dockKind()).toBe('browser');
     expect(
-      within(toolsRail())
-        .getByRole('button', { name: /^Browser/ })
-        .getAttribute('aria-pressed'),
-    ).toBe('true');
-
-    await pressTool({ name: 'Terminal' });
-    expect(dockKind()).toBe('terminal');
+      ['Terminal', 'Browser'].map((name) =>
+        within(toolsRail())
+          .getByRole('button', { name: new RegExp(`^${name}`) })
+          .getAttribute('aria-pressed'),
+      ),
+    ).toEqual(['true', 'true']);
+    expect(
+      Array.from(document.querySelectorAll('[data-dock-pane]')).map((pane) =>
+        pane.getAttribute('data-dock-pane'),
+      ),
+    ).toEqual(['terminal', 'browser']);
 
     await pressTool({ name: 'Terminal' });
     expect(dockKind()).toBe('browser');

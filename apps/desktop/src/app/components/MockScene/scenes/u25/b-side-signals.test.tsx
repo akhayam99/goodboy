@@ -72,19 +72,25 @@ describe('the side column signal scenes', () => {
     }
   });
 
-  it('side-signals-running keeps the running terminals off the column, they count on the right rail', async () => {
+  it('side-signals-running keeps the running terminals off the places rail, they count on the right rail', async () => {
     await mount({ name: 'side-signals-running' });
 
-    expect(screen.queryByRole('button', { name: /^Terminal/ })).toBeNull();
+    const places = screen.getByRole('navigation', { name: 'Places' });
+    expect(within(places).queryByRole('button', { name: /^Terminal/ })).toBeNull();
   });
 
   it.each(['side-tiles-dark', 'side-tiles-light'] as const)(
-    '%s draws Monitoring as a quiet row with its count, and no tiles',
+    '%s numbers Monitoring with its ports in use on the tool rail, and no tiles',
     async (name) => {
       await mount({ name });
 
-      const row = screen.getByRole('button', { name: 'Monitoring, 3 in use' });
-      expect(row.querySelector('[data-door-count]')?.textContent).toBe('3');
+      const toolbar = screen.getByRole('toolbar', { name: 'Tools' });
+      const tool = within(toolbar).getByTestId('pane-toggle-monitoring');
+      expect(tool.getAttribute('aria-label')).toBe('Monitoring, 3 in use');
+      expect(
+        tool.closest('[data-slot="tool-icon"]')?.querySelector('[data-testid="tool-count"]')
+          ?.textContent,
+      ).toBe('3');
       expect(document.querySelector('[data-column-tile]')).toBeNull();
     },
   );
@@ -97,19 +103,20 @@ describe('the side column signal scenes', () => {
       const toolbar = screen.getByRole('toolbar', { name: 'Tools' });
       const tool = within(toolbar).getByTestId('pane-toggle-terminal');
       expect(tool.getAttribute('aria-label')).toBe('Terminal, 2 running');
-      expect(toolbar.textContent).toBe('TerminalBrowser');
+      expect(toolbar.textContent).toBe('TerminalBrowserScriptsAsk3Monitor');
     },
   );
 
-  it('side-signals-idle shows nothing on the work rows, only the Sessions dot for who needs you', async () => {
+  it('side-signals-idle marks no place but the Board for who needs you', async () => {
     await mount({ name: 'side-signals-idle' });
 
-    expect(screen.getByRole('button', { name: 'Monitoring' }).textContent).toBe('Monitoring');
-    expect(
-      document.querySelector(
-        '[data-column-door]:not([data-column-door="board"]):not([data-column-door="connections"]) [data-door-signal]',
-      ),
-    ).toBeNull();
+    const places = screen.getByRole('navigation', { name: 'Places' });
+    const marked = Array.from(places.querySelectorAll('[data-slot="shell-rail-item"]'))
+      .filter((item) => (item.querySelector('[data-slot="rail-mark"]')?.childElementCount ?? 0) > 0)
+      .map((item) =>
+        item.querySelector('[data-shell-rail-item]')?.getAttribute('data-shell-rail-item'),
+      );
+    expect(marked.filter((id) => id !== 'board')).toEqual([]);
   });
 
   it.each(NAMES)('%s has no accessibility violation', async (name) => {

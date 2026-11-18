@@ -2,6 +2,7 @@ import { registerShortcutGlyphs } from '@goodboy/ui';
 import { currentPlatform } from '../platform';
 import { NAMES } from '../utils/names';
 import { BROWSER_SHORTCUTS } from './browserShortcuts';
+import { WINDOW_SHORTCUTS } from './windowShortcuts';
 import { overrideState } from './overrides/overrideState';
 
 type ShortcutPlane = 'app' | 'session' | 'lens' | 'pane';
@@ -203,9 +204,9 @@ export const SHORTCUTS = {
     group: 'navigate',
     scope: 'find',
   },
-  'column.toggle': {
+  'sessions.toggle': {
     combo: 'cmd+KeyB',
-    label: 'Show or hide the sidebar',
+    label: 'Show or hide Sessions',
     plane: 'app',
     group: 'navigate',
   },
@@ -593,13 +594,7 @@ export const SHORTCUTS = {
     scope: 'scripts',
   },
 
-  'list.next': {
-    combo: 'KeyJ',
-    label: 'Next row',
-    plane: 'pane',
-    group: 'lists',
-    scope: 'list',
-  },
+  'list.next': { combo: 'KeyJ', label: 'Next row', plane: 'pane', group: 'lists', scope: 'list' },
   'list.previous': {
     combo: 'KeyK',
     label: 'Previous row',
@@ -629,13 +624,7 @@ export const SHORTCUTS = {
     group: 'lists',
     scope: 'list',
   },
-  'list.dismiss': {
-    combo: 'KeyE',
-    label: 'Dismiss',
-    plane: 'pane',
-    group: 'lists',
-    scope: 'list',
-  },
+  'list.dismiss': { combo: 'KeyE', label: 'Dismiss', plane: 'pane', group: 'lists', scope: 'list' },
   'list.search': {
     combo: 'Slash',
     label: 'Search the list',
@@ -850,20 +839,7 @@ export const SHORTCUTS = {
     scope: 'home',
   },
   'chat.new': { combo: 'cmd+shift+KeyN', label: 'New chat', plane: 'session', group: 'general' },
-  'app.close': {
-    combo: 'cmd+KeyW',
-    offMacCombo: 'ctrl+shift+KeyW',
-    label: 'Close the nearest thing',
-    plane: 'app',
-    group: 'window',
-  },
-  'slot.close': {
-    combo: 'cmd+shift+KeyW',
-    offMacCombo: 'ctrl+F4',
-    label: 'Close the drawer',
-    plane: 'session',
-    group: 'window',
-  },
+  ...WINDOW_SHORTCUTS,
   'terminal.closeTab': {
     combo: 'cmd+KeyW',
     offMacCombo: 'ctrl+shift+KeyW',

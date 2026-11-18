@@ -264,11 +264,7 @@ const seedChatOrigin = (): void => {
   });
 };
 
-type Props = {
-  readonly isRail?: boolean;
-};
-
-export const ShellScene = ({ isRail = false }: Props) => {
+export const ShellScene = () => {
   const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
@@ -288,7 +284,6 @@ export const ShellScene = ({ isRail = false }: Props) => {
   return (
     <ShellFrame
       session={SESSION}
-      sidebar={isRail ? 'collapsed' : 'expanded'}
       hasOwnTrail
       main={
         <div className="relative h-full w-full">

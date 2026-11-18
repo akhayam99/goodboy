@@ -1,3 +1,4 @@
+import { closeSlotEntry } from './closeSlotEntry';
 import type { OpenDrawer } from './state';
 import type { SetFn } from './types';
 
@@ -11,14 +12,6 @@ type EntryParams = {
 
 export const closeDrawerEntry = ({ set }: Params) => {
   return ({ entry }: EntryParams): void => {
-    set((state) => {
-      if (state.drawer === entry) {
-        return { drawer: state.drawerBack ?? null, drawerBack: null };
-      }
-      if (state.drawerBack === entry) {
-        return { drawerBack: null };
-      }
-      return state;
-    });
+    set((state) => closeSlotEntry({ state, entry }));
   };
 };

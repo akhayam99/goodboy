@@ -184,10 +184,21 @@ model in [docs/navigation/model.md](./docs/navigation/model.md).
   centre shows (the Files of a pull request, the Agents of a run) is a rail on
   the left of the content, with its own first row, scroll and remembered width.
   It folds to a toggle on a narrow window.
-- **Panels open to the right, in one order.** Page content, then the detail
-  panel (an artifact, Ask, a check analysis), then the tools rail, then the tool
-  dock (Terminal, Browser). The content slides to re-centre when a panel opens
-  or closes, and every dock follows the same push or overlay rule.
+- **Panels keep one order.** Page content, then the detail
+  panel (an artifact, Ask, a check analysis), then the tool dock (Terminal,
+  Browser, Monitor), then the tools rail pinned to the window's right
+  edge. Tools open to the rail's left. `DrawerDockBox` keeps the rail last;
+  `DrawerColumn` leaves 12px between shell containers (`DRAWER_GUTTER`). The
+  content slides to re-centre when a panel opens or closes, and every dock
+  follows the same push or overlay rule.
+- **Tools share one grid and give way in one order.** Up to four tools sit in
+  at most two columns of two beside the rail, each its own card. When room runs
+  out, panes narrow first, then two stack in one column, then the detail lies
+  over the page, and only then does everything lie over it. The page never
+  drops under its minimum and the rail never moves (`dockLayoutOf`).
+- **Nothing floating touches the window edge.** A popover, a menu or a card
+  keeps 12px from every window edge (`SHELL_GUTTER_PX`), caps its height at
+  the room left and scrolls inside. It can be large, never edge to edge.
 - **One fact, said once per row.** A row never repeats a state in two columns
   or in its title and its status. One function decides which cell says it.
 - **One state word per thing, from one source.** A run, an agent and a pull
@@ -223,7 +234,7 @@ about its effect is a worse defect than one that reads badly.
   side effect of looking at something (opening a terminal, a popover or a
   diff) is a defect.
 - **One term per concept, one canonical home per object.** A concept keeps a
-  single name in chat, board, sidebar and docs. An object has one surface that
+  single name in chat, board, rail and docs. An object has one surface that
   manages it. Every other surface links there instead of growing a second set
   of actions. Two surfaces with different powers over the same object are a
   defect, not a convenience.
@@ -317,7 +328,7 @@ about its effect is a worse defect than one that reads badly.
   [packages/ui/design/feedback.md](packages/ui/design/feedback.md) → Notices.
 
 - **The element is the signal.** A running session shows a moving signal, not a
-  spinner placed beside it. On a board card or a sidebar row, its `ToneBar`
+  spinner placed beside it. On a board card, its `ToneBar`
   breathes the info tone, because that is where a card keeps its tone: every
   stage carries the bar, running is the one that breathes. A card never gets a
   tinted box around it.
@@ -402,11 +413,14 @@ rule with the exception in Status & signals.
 
 ### Doors and tools
 
-A place you go to and read full width is a door in the left column (Board,
-Tasks, Workflows, Chat, Connections, Impact, Monitoring). A tool you open beside
-your work is an icon on the tools rail and opens the dock, with Open full page
-(Terminal, Browser). Chat and Impact are places. Monitoring is the one tool-like
-door, glanced at beside Terminal, and it stays a door until it has a dock body
+A place you go to and read full width is a place on the left rail, an icon with
+one word under it (Board, Tasks, Workflows, Chat, Connect, Impact), under New.
+A tool you open beside your work is an icon on the tools rail and opens the
+dock, with Open full page (Terminal, Browser, Monitor). Scripts and Ask also
+open panels from the rail. Chat and Impact are places. Monitoring is a tool you
+glance at beside Terminal: it left the places rail, Monitor on the tools rail
+(`toggleRailTool`) opens `MonitoringDrawer` beside the page, and its Open full
+page opens the Monitoring page, also reachable from the Go menu and the palette
 ([docs/navigation/model.md](docs/navigation/model.md)).
 
 An object the app connects to has one home, and Settings is not it. Providers
@@ -414,11 +428,9 @@ and integrations live in Connections; Settings keeps only preferences (App and
 This workspace, workspace Models included). Every link to a provider or a tool
 opens its Connections page, never a Settings scope.
 
-Every sidebar row ends on one trailing column: one `StatusMark` per row, 16px,
-centred on the row, the same x on doors and session rows. A ring means still
-moving, a bare glyph means it asks you, a circled glyph means settled, a dot
-means something new, a number counts. A door's action (Board's filter, Chat's
-plus) sits on its own column just before it
+Every session row ends on one trailing column: one `StatusMark` per row, 16px,
+centred on the row. A ring means still moving, a bare glyph means it asks you,
+a circled glyph means settled, a dot means something new, a number counts
 ([packages/ui/DESIGN-SYSTEM.md](packages/ui/DESIGN-SYSTEM.md#status-marks)).
 
 ### Action zones
@@ -491,6 +503,11 @@ second home for them.
   and a clear ask. Motion means the machine is working, so animating "waiting
   for you" puts the work on the wrong party. A surface that shimmers for hours
   teaches that its motion means nothing.
+- **A new arrival may breathe three times.** The update mark at the foot of the
+  rail breathes slowly, three times, when it first appears, then holds still. It
+  reuses the `soft-pulse` keyframes with an iteration count of 3, so it adds no
+  animation to the closed list. Reduced motion keeps the tint and drops the
+  breath. Nothing else in the app is allowed a finite repeat.
 - **One animation, one meaning.** The list of animations is closed, and a test
   fails on a keyframe the Motion registry does not name. Adding one is a
   design-system change, not a feature decision. Time is closed too: three

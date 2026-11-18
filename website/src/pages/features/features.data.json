@@ -253,14 +253,14 @@
           "also": "changes, file versions"
         },
         {
-          "title": "Session list",
-          "text": "The left column lists the sessions of the workspace, one line each.",
+          "title": "Sessions",
+          "text": "Sessions in the top bar opens the list of the workspace's sessions, from any screen.",
           "group": "Switch between tasks",
           "main": true
         },
         {
           "title": "Pin a session to keep it at the top",
-          "text": "Pin the sessions you return to. They sit in a Pinned group above the rest, in the order you pinned them, whatever the sort or filter.",
+          "text": "Pin the sessions you return to. They sit in a Pinned group at the top of Sessions, in the order you pinned them.",
           "group": "Switch between tasks",
           "also": "pinned sessions",
           "shown": true
@@ -286,10 +286,10 @@
           "shown": true
         },
         {
-          "title": "Sidebar",
-          "text": "One column on the left holds Board, Tasks, Workflows, Chat, Impact, Monitoring and your sessions, on every screen. Terminal and Browser sit in the tools column on the right of every page and stay open as you move. An open session has one head with the tabs Overview, Runs, Artifacts, Questions and Context, and crumbs replace the tabs on a branch, an artifact or a run. Fold the sidebar with ⌘B and the icons stay.",
+          "title": "Places rail",
+          "text": "Move between Board, Tasks, Workflows, Chat, Connect and Impact from the places rail on the left. New opens a session, Board counts sessions that need you, and Tasks marks new tasks with a dot. The rail never folds; in a narrow window its words move into tooltips.",
           "group": "Search and navigation",
-          "also": "sidebar"
+          "also": "places rail"
         },
         {
           "title": "Go anywhere",
@@ -496,6 +496,13 @@
           "text": "See which ports are taken and by whom, a worktree or a script, terminal or agent Goodboy started, traced back to its session, run and branch. Show one branch from its Branch page. Stop what you started and clear what an earlier run left behind.",
           "group": "Workspaces and folders",
           "also": "monitoring",
+          "shown": true
+        },
+        {
+          "title": "Sessions in the bar",
+          "text": "Sessions, at the top left of the bar, or ⌘B from any screen, opens your sessions in one list: Pinned first, then Needs you, Running, In review and Building. Type to filter, and Enter opens one.",
+          "group": "Workspaces and folders",
+          "also": "sessions in the bar",
           "shown": true
         },
         {
@@ -767,7 +774,7 @@
         },
         {
           "title": "Comment states",
-          "text": "A comment reads Question, To review, Push failed, Couldn't fix, Working, Ready, Done or Left open. One not in a fix run yet reads Open. The list groups them, and one tally counts what needs you.",
+          "text": "A comment reads Question, Push failed, Failed, Fixing, Queued, Fix ready, Done or Left open. One not in a fix run yet reads Open. The list groups them, and one tally counts what needs you.",
           "group": "Review and resolve on the Branch page",
           "also": "comment states",
           "shown": true
@@ -890,7 +897,7 @@
         },
         {
           "title": "Checks",
-          "text": "Checks lists CI runs with their durations and the failing step, or says why it can't read them and names the fix. Analyze on a failing check starts the Debugger, and Start fix hands its proposal to an Implementer in one click.",
+          "text": "Checks lists CI runs with their durations and the failing step, or says why it can't read them and names the fix. Analyze on a failing check starts the Debugger, and Apply fix hands its proposal to an Implementer in one click.",
           "group": "Review and resolve on the Branch page",
           "also": "checks",
           "shown": true
@@ -1492,10 +1499,10 @@
           "shown": true
         },
         {
-          "title": "Update pill",
-          "text": "A single light sweep shows when an update is ready.",
+          "title": "Update mark",
+          "text": "The Goodboy mark at the foot of the rail reads Update when an update is ready, with the download percent while it downloads.",
           "group": "Security, backup and updates",
-          "also": "update pill",
+          "also": "update mark",
           "shown": true
         }
       ]

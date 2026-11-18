@@ -8,6 +8,7 @@ import type { RebaseJobState } from '../rebaseJob';
 import type { RebaseJobControls } from '../useRebaseJob';
 import { RebaseConflictPrompt } from './RebaseConflictPrompt';
 import { RebaseStopFiles, type OpenFileParams } from './RebaseStopFiles';
+import { PushFixWorkingLine } from '../pushFix/PushFixWorkingLine';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -22,7 +23,7 @@ const FILES_LABEL: Partial<Record<RebaseJobState, string>> = {
 };
 
 export const RebaseStopBody = ({ sessionId, worktreePath, controls, isBusy }: Props) => {
-  const { job, stop, files, originCommits } = controls;
+  const { job, stop, agentId, files, originCommits } = controls;
   const state = job.state;
   const mountId = stop.run.mountId;
   const conflictFiles = files?.files ?? [];
@@ -61,6 +62,8 @@ export const RebaseStopBody = ({ sessionId, worktreePath, controls, isBusy }: Pr
           placeholder={START_HINT_COPY.pushFix}
         />
       );
+    case 'fixing-push':
+      return <PushFixWorkingLine sessionId={sessionId} agentId={agentId} />;
     case 'auto-done':
     case 'rebased-here':
     case 'pushed':
@@ -82,7 +85,6 @@ export const RebaseStopBody = ({ sessionId, worktreePath, controls, isBusy }: Pr
     case 'done':
     case 'stuck':
     case 'no-provider':
-    case 'fixing-push':
       return null;
     default:
       return state satisfies never;

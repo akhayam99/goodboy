@@ -60,6 +60,7 @@ import { installNavigationHooks, runNavigationRows, type BridgeArgs } from './ha
 import { reloads, worldDatabase, zoomFactors } from './keys.effects';
 import { SCRIPT_KEY_ROWS } from './keys.scripts';
 import { HISTORY_KEY_ROWS } from './keys.history';
+import { PANEL_KEY_ROWS } from './keys.panels';
 import {
   KEY_ROWS,
   MORE_KEY_ROWS,
@@ -89,6 +90,7 @@ const ALL_ROWS = [
   ...SESSION_KEY_ROWS,
   ...SCRIPT_KEY_ROWS,
   ...HISTORY_KEY_ROWS,
+  ...PANEL_KEY_ROWS,
 ];
 
 runNavigationRows({ rows: ALL_ROWS });

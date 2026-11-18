@@ -13,5 +13,5 @@ export const RulesTeleportScene = () => {
   if (!isReady) {
     return null;
   }
-  return <AppFrame view="settings" isRailCollapsed={false} />;
+  return <AppFrame view="settings" />;
 };

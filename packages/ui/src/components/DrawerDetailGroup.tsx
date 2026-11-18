@@ -1,11 +1,12 @@
 import type { ReactNode, Ref } from 'react';
 import { cn } from '../cn';
 import { DrawerContentContext } from '../drawerContentContext';
-import { DRAWER_INSET, type DrawerMode } from '../drawerGeometry';
+import { DOCK_FOCUS_DETAIL } from '../dockGridSpec';
+import { DRAWER_GUTTER, type DrawerMode } from '../drawerGeometry';
 import type { ResizableHandleProps } from '../useResizableWidth';
 import type { DrawerPanel } from '../useDrawerPanel';
 import { DrawerPanelCard } from './DrawerPanelCard';
-import { ResizeHandle } from './ResizeHandle';
+import { SplitHandle } from './SplitHandle';
 
 const DETAIL_CONTENT = 'w-[calc(var(--goodboy-detail-panel)-2px)]';
 
@@ -28,6 +29,8 @@ type Props = {
   readonly mode: DrawerMode;
   readonly columnWidth: number | null;
   readonly savedWidth: number;
+  readonly isFocused?: boolean;
+  readonly onFocus?: (() => void) | null;
 };
 
 export const DrawerDetailGroup = ({
@@ -47,16 +50,18 @@ export const DrawerDetailGroup = ({
   mode,
   columnWidth,
   savedWidth,
+  isFocused = false,
+  onFocus = null,
 }: Props) => (
   <div
     ref={groupRef}
     data-detail-group=""
-    style={{ width: shownWidth > 0 ? shownWidth + DRAWER_INSET : 0 }}
+    style={{ width: shownWidth > 0 ? shownWidth + DRAWER_GUTTER : 0 }}
     className={cn('flex min-h-0 shrink-0 overflow-clip', !isFloating && SLIDE)}
   >
-    <div className={cn('flex w-2 shrink-0 justify-center', isOverlay && 'pointer-events-auto')}>
+    <div className={cn('flex w-3 shrink-0 justify-center', isOverlay && 'pointer-events-auto')}>
       {isOpen && !isParked ? (
-        <ResizeHandle
+        <SplitHandle
           {...handleProps}
           max={dragMax}
           value={width}
@@ -67,8 +72,16 @@ export const DrawerDetailGroup = ({
     </div>
     <div
       data-container="detail"
+      {...(onFocus !== null && {
+        'data-dock-focus': DOCK_FOCUS_DETAIL,
+        tabIndex: -1,
+        onFocusCapture: onFocus,
+        onPointerDownCapture: onFocus,
+      })}
+      data-panel-focused={isFocused ? '' : undefined}
       className={cn(
-        'panel-on-page relative flex min-h-0 min-w-0 flex-1 overflow-clip rounded-frame border border-frame-edge bg-background',
+        'panel-on-page relative flex min-h-0 min-w-0 flex-1 overflow-clip rounded-frame border bg-background focus-visible:outline-none',
+        isFocused ? 'border-focus-ring' : 'border-frame-edge',
         isFloating && 'pointer-events-auto shadow-xl',
       )}
     >

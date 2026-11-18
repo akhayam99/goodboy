@@ -4,6 +4,7 @@ import {
   COLUMN_FRAME,
   COLUMN_GUTTERS,
   COLUMN_MIN_PUSH,
+  DRAWER_GUTTER,
   DRAWER_INSET,
   DRAWER_PUSH_RESERVE,
   MEASURE_FRAME,
@@ -147,8 +148,8 @@ describe('the browser tier', () => {
   it('lies over the page once even the narrowest browser does not fit', () => {
     expect(drawerLayoutOf({ main: 1100, sizing: 'browser', savedWidth: 1400 })).toEqual({
       mode: 'overlay',
-      width: 1084,
-      dragMax: 1084,
+      width: 1076,
+      dragMax: 1076,
     });
   });
 
@@ -181,7 +182,7 @@ describe.each(TIERS)('one push rule for the %s tier', (sizing) => {
         const expected =
           room >= savedWidth
             ? { mode: 'push', width: savedWidth }
-            : { mode: 'overlay', width: Math.min(savedWidth, main - 16) };
+            : { mode: 'overlay', width: Math.min(savedWidth, main - DRAWER_GUTTER * 2) };
         return layout.mode !== expected.mode || layout.width !== expected.width;
       });
 
@@ -247,12 +248,12 @@ describe.each(TIERS)('one push rule for the %s tier', (sizing) => {
     expect(narrowed).toEqual([]);
   });
 
-  it('takes its drag ceiling from the room while it pushes, and from the page minus 16 over it', () => {
+  it('takes its drag ceiling from the room while it pushes, and from the page minus two gutters over it', () => {
     const offenders = MAINS.filter((main) => {
       const layout = drawerLayoutOf({ main, sizing, savedWidth: tier.fallback });
       return layout.mode === 'push'
         ? layout.dragMax !== Math.min(tier.max, roomOf({ main, sizing }))
-        : layout.dragMax !== Math.min(tier.max, main - 16);
+        : layout.dragMax !== Math.min(tier.max, main - DRAWER_GUTTER * 2);
     });
 
     expect(offenders).toEqual([]);
@@ -279,7 +280,7 @@ describe.each(TIERS)('one push rule for the %s tier', (sizing) => {
   it('keeps an overlaid drawer inside the page up to its ceiling', () => {
     const offenders = MAINS.filter((main) => {
       const rest = drawerLayoutOf({ main, sizing, savedWidth: tier.fallback });
-      return rest.mode === 'overlay' && rest.dragMax > main - 16;
+      return rest.mode === 'overlay' && rest.dragMax > main - DRAWER_GUTTER * 2;
     });
 
     expect(offenders).toEqual([]);
@@ -318,16 +319,16 @@ describe('the named widths of the plan', () => {
     expect(drawerLayoutOf({ main: 1344, sizing: 'reader', savedWidth: 720 }).mode).toBe('push');
   });
 
-  it('keeps a reader over the page at min(saved, page - 16) on a narrow window', () => {
+  it('keeps a reader over the page at min(saved, page - 24) on a narrow window', () => {
     expect(drawerLayoutOf({ main: 600, sizing: 'reader', savedWidth: 720 })).toMatchObject({
       mode: 'overlay',
-      width: 584,
-      dragMax: 584,
+      width: 576,
+      dragMax: 576,
     });
     expect(drawerLayoutOf({ main: 900, sizing: 'reader', savedWidth: 1000 })).toMatchObject({
       mode: 'overlay',
-      width: 884,
-      dragMax: 884,
+      width: 876,
+      dragMax: 876,
     });
   });
 
@@ -343,19 +344,19 @@ describe('the named widths of the plan', () => {
 describe('the aside of each mode', () => {
   it('is 0 closed, the card plus the handle gutter pushing or over the page', () => {
     expect(drawerAsideWidthOf({ width: 400, mode: 'closed' })).toBe(0);
-    expect(drawerAsideWidthOf({ width: 400, mode: 'push' })).toBe(400 + DRAWER_INSET);
-    expect(drawerAsideWidthOf({ width: 400, mode: 'overlay' })).toBe(400 + DRAWER_INSET);
+    expect(drawerAsideWidthOf({ width: 400, mode: 'push' })).toBe(400 + DRAWER_GUTTER);
+    expect(drawerAsideWidthOf({ width: 400, mode: 'overlay' })).toBe(400 + DRAWER_GUTTER);
   });
 
   it('adds the rail to every mode, and keeps the gutter and the rail when closed', () => {
     expect(drawerAsideWidthOf({ width: 400, mode: 'closed', railWidth: 44 })).toBe(
-      DRAWER_INSET + 44,
+      DRAWER_GUTTER + 44,
     );
     expect(drawerAsideWidthOf({ width: 400, mode: 'push', railWidth: 44 })).toBe(
-      400 + DRAWER_INSET + 44,
+      400 + DRAWER_GUTTER + 44,
     );
     expect(drawerAsideWidthOf({ width: 400, mode: 'overlay', railWidth: 44 })).toBe(
-      400 + DRAWER_INSET + 44,
+      400 + DRAWER_GUTTER + 44,
     );
   });
 });
@@ -596,7 +597,7 @@ describe('the one drawer rule: fixed thresholds', () => {
       placement: 'overlay',
     });
 
-    expect(layout.width).toBe(600 - DRAWER_INSET * 2);
+    expect(layout.width).toBe(600 - DRAWER_GUTTER * 2);
   });
 
   it('reads auto placement as the plain rule', () => {
@@ -628,7 +629,7 @@ describe('drawerLayoutOf beside an edge column', () => {
       expect(drawerAsideWidthOf({ width: layout.width, mode: 'overlay' }) + 44).toBeLessThanOrEqual(
         main,
       );
-      expect(layout.dragMax + DRAWER_INSET * 2 + 44).toBeLessThanOrEqual(main);
+      expect(layout.dragMax + DRAWER_GUTTER * 2 + 44).toBeLessThanOrEqual(main);
     },
   );
 

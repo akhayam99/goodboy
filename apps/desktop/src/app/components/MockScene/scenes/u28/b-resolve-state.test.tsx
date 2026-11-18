@@ -59,6 +59,16 @@ const list = async (): Promise<HTMLElement> =>
 const rowLines = (container: HTMLElement): ReadonlyArray<string> =>
   Array.from(container.querySelectorAll('[data-row-fix]')).map((line) => line.textContent ?? '');
 
+const workWords = (container: HTMLElement): ReadonlyArray<string> =>
+  Array.from(container.querySelectorAll('[data-row-work] [data-item-work-word]')).map(
+    (word) => word.textContent ?? '',
+  );
+
+const rowDetails = (container: HTMLElement): ReadonlyArray<string> =>
+  Array.from(container.querySelectorAll('[data-row-work] [data-item-work-word]')).map(
+    (word) => word.parentElement?.querySelector('.truncate')?.textContent ?? '',
+  );
+
 describe('resolve-state scenes', () => {
   it('registers four scenes', () => {
     expect(Object.keys(U28_B_RESOLVE_STATE_SCENES).sort()).toEqual([
@@ -69,22 +79,18 @@ describe('resolve-state scenes', () => {
     ]);
   });
 
-  it('ready: says the run finished, what Apply does and gives every row its sha and a diff link', async () => {
+  it('ready: gives every row its result, Review and Apply, and counts the fixes in the toolbar', async () => {
     show({ name: 'resolve-state-ready' });
     const comments = await list();
 
-    const banner = await screen.findByTestId('fix-run-ready');
-    within(banner).getByText('Fix run finished: 4 fixes ready for you');
-    expect(banner.textContent).toContain('Apply accepts the fix made in 90b1d57.');
-    expect(banner.textContent).toContain('replies to and resolves the 4 comments on GitHub');
-    expect(within(banner).queryAllByRole('button')).toHaveLength(0);
-    expect(rowLines(comments)).toEqual(Array(4).fill('Fixed in 90b1d57 · Review the fix'));
-    expect(
-      within(comments).getAllByRole('button', { name: 'Open changes of 90b1d57' }),
-    ).toHaveLength(4);
-    const group = within(comments).getByRole('region', { name: 'Fix run comments' });
-    expect(within(group).getByTestId('fix-run-ready')).toBe(banner);
-    expect(group.querySelectorAll('[data-thread-id]')).toHaveLength(4);
+    expect(workWords(comments)).toEqual(Array(4).fill('Fix ready'));
+    expect(rowDetails(comments)).toEqual(Array(4).fill('Fixed in 90b1d57'));
+    expect(within(comments).getAllByRole('button', { name: 'Review' })).toHaveLength(4);
+    expect(within(comments).getAllByRole('button', { name: 'Apply' })).toHaveLength(4);
+    expect(within(comments).queryByRole('region', { name: 'Fix run comments' })).toBeNull();
+    expect(screen.queryByTestId('fix-run-ready')).toBeNull();
+    const count = document.querySelector('[data-fix-run-ready]');
+    expect(count?.textContent).toBe('4 fixes ready');
     expect(screen.queryByText(/Checks were skipped/)).toBeNull();
     expect(screen.queryByRole('toolbar', { name: 'Selected comments' })).toBeNull();
   });
@@ -97,11 +103,13 @@ describe('resolve-state scenes', () => {
       useAppStore.setState({ navigate });
     });
 
-    const [first] = within(comments).getAllByRole('button', { name: 'Open changes of 90b1d57' });
-    if (first === undefined) {
-      throw new Error('no diff link');
+    const [review] = within(comments).getAllByRole('button', { name: 'Review' });
+    if (review === undefined) {
+      throw new Error('no Review');
     }
-    fireEvent.click(first);
+    fireEvent.click(review);
+    const panel = within(comments).getByRole('region', { name: 'Proposed fix' });
+    fireEvent.click(within(panel).getByRole('button', { name: 'Open changes of 90b1d57' }));
 
     expect(navigate).toHaveBeenCalledTimes(1);
     const text = JSON.stringify(navigate.mock.calls[0]?.[0]);
@@ -117,16 +125,18 @@ describe('resolve-state scenes', () => {
       "Checks were skipped: deps aren't installed in this copy",
     );
     expect(warning.closest('[data-tone]')?.getAttribute('data-tone')).toBe('warning');
-    screen.getByText('Fix run finished: 4 fixes ready for you');
+    expect(document.querySelector('[data-fix-run-ready]')?.textContent).toBe('4 fixes ready');
   });
 
   it('working: every row says Fixing, none can be selected, and there is no finished header', async () => {
     show({ name: 'resolve-state-working' });
     const comments = await list();
 
-    expect(rowLines(comments)).toEqual(Array(4).fill('In the fix run'));
+    expect(rowLines(comments)).toEqual([]);
+    expect(workWords(comments)).toEqual(Array(4).fill('Fixing'));
+    expect(comments.textContent).not.toContain('In the fix run');
     expect(within(comments).queryAllByRole('checkbox')).toHaveLength(0);
-    expect(screen.queryByTestId('fix-run-ready')).toBeNull();
+    expect(document.querySelector('[data-fix-run-ready]')).toBeNull();
     expect(screen.queryByText(/Checks were skipped/)).toBeNull();
   });
 
@@ -149,16 +159,19 @@ describe('resolve-state scenes', () => {
     show({ name: 'resolve-state-failed' });
     const comments = await list();
 
-    expect([...rowLines(comments)].sort()).toEqual(
+    expect([...workWords(comments)].sort()).toEqual(
+      ['Failed', 'Failed', 'Fix ready', 'Fix ready'].sort(),
+    );
+    expect([...rowDetails(comments)].sort()).toEqual(
       [
-        'Fixed in 90b1d57 · Review the fix',
-        'Fixed in 90b1d57 · Review the fix',
+        'Fixed in 90b1d57',
+        'Fixed in 90b1d57',
         'The provider stopped the run',
         'The provider stopped the run',
       ].sort(),
     );
-    screen.getByText('Fix run finished: 2 fixes ready for you');
-    expect(within(screen.getByTestId('fix-run-ready')).queryAllByRole('button')).toHaveLength(0);
+    expect(within(comments).getAllByRole('button', { name: 'Retry' })).toHaveLength(2);
+    expect(document.querySelector('[data-fix-run-ready]')?.textContent).toBe('2 fixes ready');
   });
 
   it.each(Object.keys(U28_B_RESOLVE_STATE_SCENES))(

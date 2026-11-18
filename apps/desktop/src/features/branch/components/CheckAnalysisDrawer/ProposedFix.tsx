@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Button, ChoiceCards, Markdown, StateBadge } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { StartHint } from '../../../../shared/components/StartHint';
+import { NAMES } from '../../../../shared/utils/names';
 import { START_HINT_COPY } from '../../../../shared/components/startHintCopy';
 import { optionSummary } from '../../checks/optionSummary';
 import type { ProposalOptions } from '../../checks/proposalOptionsOf';
@@ -18,6 +19,7 @@ type Props = {
   readonly options: ProposalOptions | null;
   readonly isActionable: boolean;
   readonly isStarting: boolean;
+  readonly isInline?: boolean;
   readonly routing: string;
   readonly onStart: (params: StartParams) => void;
   readonly onDismiss: () => void;
@@ -30,6 +32,7 @@ export const ProposedFix = ({
   options,
   isActionable,
   isStarting,
+  isInline = false,
   routing,
   onStart,
   onDismiss,
@@ -87,12 +90,12 @@ export const ProposedFix = ({
       {isActionable ? (
         <div className="flex items-center gap-2">
           <Button
-            variant="primary"
+            variant={isInline ? 'secondary' : 'primary'}
             size="sm"
-            disabled={isStarting}
+            isBusy={isStarting}
             onClick={() => onStart({ optionKey: selected?.key })}
           >
-            {selected === undefined ? 'Start fix' : `Start option ${selected.key}`}
+            {selected === undefined ? NAMES.applyFix : `Apply option ${selected.key}`}
           </Button>
           <Button variant="ghost" size="sm" onClick={onDismiss}>
             Dismiss

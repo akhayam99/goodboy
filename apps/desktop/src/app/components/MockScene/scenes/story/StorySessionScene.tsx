@@ -56,7 +56,7 @@ export const StorySessionScene = ({ stage }: Props) => {
       <style>{SETTLED_MOTION}</style>
       <NewSessionBridge />
       <div className="contents" inert={stage === 'draft' && isWizardUp}>
-        <AppFrame view="session" isRailCollapsed={false} hasPane hasDraft />
+        <AppFrame view="session" hasPane hasDraft />
       </div>
       {stage === 'draft' ? <OnboardingWizard /> : null}
     </>

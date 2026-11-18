@@ -1,10 +1,18 @@
 import type { SessionId } from '@goodboy/types';
+import { gridWithout } from './gridWithout';
 import { isWorkspaceTool } from './isWorkspaceTool';
-import type { DrawerSliceState, OpenDrawer } from './state';
+import { settledSlot } from './settledSlot';
+import {
+  EMPTY_DRAWER_GRID,
+  type DrawerGrid,
+  type DrawerSliceState,
+  type OpenDrawer,
+} from './state';
 
 type Params = {
   readonly drawer: OpenDrawer | null;
   readonly back: OpenDrawer | null;
+  readonly grid: DrawerGrid | undefined;
   readonly sessionId: SessionId;
 };
 
@@ -18,8 +26,23 @@ const keptEntry = ({ entry, sessionId }: KeepParams): OpenDrawer | null =>
     ? null
     : entry;
 
-export const slotAfterSessionGone = ({ drawer, back, sessionId }: Params): DrawerSliceState => {
+export const slotAfterSessionGone = ({
+  drawer,
+  back,
+  grid,
+  sessionId,
+}: Params): DrawerSliceState => {
   const top = keptEntry({ entry: drawer, sessionId });
   const below = keptEntry({ entry: back, sessionId });
-  return top === null ? { drawer: below, drawerBack: null } : { drawer: top, drawerBack: below };
+  const tools = grid ?? EMPTY_DRAWER_GRID;
+  const kept = gridWithout({
+    grid: tools,
+    kinds: tools.columns
+      .flat()
+      .filter((panel) => panel.sessionId === sessionId)
+      .map((panel) => panel.kind),
+  });
+  return top === null
+    ? settledSlot({ drawer: below, back: null, grid: kept })
+    : settledSlot({ drawer: top, back: below, grid: kept });
 };

@@ -1,11 +1,10 @@
 import { useCallback } from 'react';
-import type { SessionId } from '@goodboy/types';
 import {
   sessionPlace,
   useAppStore,
   useCurrentSession,
   useCurrentWorkspace,
-  useSessionColumn,
+  useSessionOrder,
   useSessions,
 } from '../../../store';
 
@@ -18,14 +17,14 @@ export const useSessionNavigation = () => {
   const currentSession = useCurrentSession();
   const sessions = useSessions();
   const navigate = useAppStore((state) => state.navigate);
-  const { order } = useSessionColumn(currentWorkspace?.id ?? null, sessions);
+  const { order } = useSessionOrder({ workspaceId: currentWorkspace?.id ?? null, sessions });
 
   return useCallback(
     ({ delta }: DeltaParams) => {
       if (order.length === 0) {
         return;
       }
-      const index = currentSession == null ? -1 : order.indexOf(currentSession.id as SessionId);
+      const index = currentSession == null ? -1 : order.indexOf(currentSession.id);
       if (index === -1) {
         const target = delta >= 0 ? order[0] : order[order.length - 1];
         if (target !== undefined) {

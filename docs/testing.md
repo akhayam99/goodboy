@@ -316,10 +316,9 @@ At boot, those runs are marked as deciding, in memory only. Seed the operator
 stop as a normal `session_workflows` row keyed by `workflow_run_id`. A
 non-empty `orchestration_error` carries the message. Empty means no stop at all
 (see `toStop` in `packages/db/src/queries/session-workflow.ts`). And
-`orchestration_stop_kind` must be `'operator'`. That shows the plain
-**Stopping** pill on the rail card and on the collapsed sidebar row. The fuller orchestrator strip needs `execution_mode = 'dynamic'`
-and the sidebar row expanded. The plain pill then hides itself and the strip
-shows instead. Nothing is written back. Relaunch without the variable and it
+`orchestration_stop_kind` must be `'operator'`. The run reads **Stopping**
+while its decision remains in flight (`runStateOf` and `orchestratorState` in
+`features/workflows/`). Nothing is written back. Relaunch without the variable and it
 shows **Stopped** again. Never persist the in-flight flag.
 
 ## Keys are pressed on the real app
@@ -378,7 +377,7 @@ their own; the menu sweep stays advisory.
 
 ### Frame probe
 
-A layout claim is proved by geometry, here, and by no class or attribute in a unit test. `scripts/validateScenesFrame.mjs` exports `FRAME_SCENES`, the one list of about thirty scenes, and the scene job measures each at 1100, 1440 and 1920 wide with the sidebar pinned and on the rail (one viewport change and one reload per pair). A failure names the scene, the width, the sidebar and the rule. The rules, with a tolerance of 1px:
+A layout claim is proved by geometry, here, and by no class or attribute in a unit test. `scripts/validateScenesFrame.mjs` exports `FRAME_SCENES`, the one list of about thirty scenes, and the scene job measures each at 1100, 1440 and 1920 wide with the default frame and its legacy rail query (one viewport change and one reload per pair). A failure names the scene, the width, the variant and the rule. Frames using `AppShell.leftRail` keep the same places rail for both variants. The rules, with a tolerance of 1px:
 
 - the h1, the trail's first crumb when the page draws one (only studio pages under a trail still do) and the first body column share one left edge, and a scene with no h1 fails this rule instead of skipping it; an h1 under an overlay drawer's scrim (an `inert` page) is still measured (an entry marked `isBare: true` is a pane mounted without its studio frame or a drawer with no page title, so it is held to the sheet rules only);
 - every `[data-slot]` inside the page container lies inside it (a slot under a scroller may sit below the fold, and one a horizontal scroller moved out sideways, like a Board lane, is not counted);
@@ -388,7 +387,7 @@ A layout claim is proved by geometry, here, and by no class or attribute in a un
 - a `data-container="drawer"` is a sibling of its `data-container="page"`, never inside one;
 - on the empty chat scene, the stage centre is on the detail centre in x and at 40 to 52 percent of the detail height in y.
 
-To add a scene, add its id to `scenes.txt` through the scene registry, then one entry to `FRAME_SCENES`: `{ scene, rail }`, where `rail` is the query that collapses the sidebar (`&rail=1` for a scene on `WorkspaceFrame` or `BoardShellScene`, `&ctx=rail` for `frame&view=...`) or `null` when the scene draws no sidebar. A scene with no `data-container="page"` fails the probe (wrap a bare scene in `PageSheet`, which is the real `DrawerColumn`), and a crumb that sits outside the detail column is not measured, and an id missing from `scenes.txt` fails before any measure, because an unknown id would silently render the workspace scene. Run one scene with `pnpm validate:scenes --only frames:<text>` against `vite preview` of a mock build; the rule functions have fixtures in `scripts/validate-scenes.test.mjs`.
+To add a scene, add its id to `scenes.txt` through the scene registry, then one entry to `FRAME_SCENES`: `{ scene, rail }`, where `rail` is the legacy folded-sidebar query (`&rail=1` for a scene on `WorkspaceFrame` or `BoardShellScene`, `&ctx=rail` for `frame&view=...`) or `null` when no second variant is needed. A scene with no `data-container="page"` fails the probe (wrap a bare scene in `PageSheet`, which is the real `DrawerColumn`), and a crumb that sits outside the detail column is not measured, and an id missing from `scenes.txt` fails before any measure, because an unknown id would silently render the workspace scene. Run one scene with `pnpm validate:scenes --only frames:<text>` against `vite preview` of a mock build; the rule functions have fixtures in `scripts/validate-scenes.test.mjs`.
 
 ### Layer probe
 

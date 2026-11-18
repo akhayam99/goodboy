@@ -1,5 +1,5 @@
 import { expect } from 'vitest';
-import { fireEvent, screen, waitFor } from '@testing-library/react';
+import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import type {
   IntegrationBinding,
   IntegrationBindingId,
@@ -92,10 +92,15 @@ const goalOf = (ctx: Ctx): string => {
   return goal;
 };
 
-const sidebarTones = async (ctx: Ctx): Promise<ReadonlyArray<string | null>> => {
-  await screen.findAllByRole('button', { name: goalOf(ctx) }, WAIT);
-  const row = document.querySelector(`[data-select-id="${ctx.sessionId}"]`);
-  return [row?.querySelector('[data-node-tone]')?.getAttribute('data-node-tone') ?? null];
+const sessionsMarks = async (ctx: Ctx): Promise<ReadonlyArray<string | null>> => {
+  if (document.querySelector('[role="listbox"][aria-label="Sessions"]') === null) {
+    fireEvent.click(screen.getByRole('button', { name: 'Sessions' }));
+  }
+  const list = await screen.findByRole('listbox', { name: 'Sessions' }, WAIT);
+  const row = within(list)
+    .getAllByRole('option')
+    .find((option) => option.textContent?.startsWith(goalOf(ctx)) === true);
+  return [row?.querySelector('[data-status-mark]')?.getAttribute('data-status-state') ?? null];
 };
 
 export const BITBUCKET_PAGE_ROWS: ReadonlyArray<Row> = [
@@ -146,26 +151,26 @@ export const BITBUCKET_PAGE_ROWS: ReadonlyArray<Row> = [
     },
   },
   {
-    name: 'bitbucket page: a failed status turns the sidebar mark red',
+    name: 'bitbucket page: a failed status turns the Sessions mark to failed',
     covers: ['bitbucket-page:marks'],
     seed: 'issue',
     open: async (ctx) => {
       await connectBitbucket({ ctx, statuses: ['FAILED'] });
     },
     lands: async (ctx) => {
-      await waitFor(async () => expect(await sidebarTones(ctx)).toContain('danger'), WAIT);
+      await waitFor(async () => expect(await sessionsMarks(ctx)).toContain('failed'), WAIT);
     },
   },
   {
-    name: 'bitbucket page: green statuses and an approval mark the sidebar row ready, never red',
+    name: 'bitbucket page: green statuses and an approval mark the Sessions row ready, never failed',
     covers: ['bitbucket-page:marks'],
     seed: 'issue',
     open: async (ctx) => {
       await connectBitbucket({ ctx, statuses: ['SUCCESSFUL'] });
     },
     lands: async (ctx) => {
-      await waitFor(async () => expect(await sidebarTones(ctx)).toContain('success'), WAIT);
-      expect(await sidebarTones(ctx)).not.toContain('danger');
+      await waitFor(async () => expect(await sessionsMarks(ctx)).toContain('approved'), WAIT);
+      expect(await sessionsMarks(ctx)).not.toContain('failed');
     },
   },
 ];

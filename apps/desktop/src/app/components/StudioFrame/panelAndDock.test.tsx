@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render } from '@testing-library/react';
-import { AppShell } from '@goodboy/ui';
+import { useContext } from 'react';
+import { AppShell, DockCellContext, type DockGridSpec } from '@goodboy/ui';
 import { useStudioDrawer } from '../../../shared/hooks/useStudioDrawer';
 import { StudioFrame } from './index';
 
@@ -43,13 +44,20 @@ const Body = ({ onClosePanel }: BodyProps) => {
 type ShellParams = {
   readonly hasDock: boolean;
   readonly onClosePanel: () => void;
+  readonly dockGrid?: DockGridSpec | null;
 };
 
-const shell = ({ hasDock, onClosePanel }: ShellParams) => (
+const DockCell = () => {
+  const key = useContext(DockCellContext);
+  return <p>{key === null ? 'Terminal dock' : `${key} pane`}</p>;
+};
+
+const shell = ({ hasDock, onClosePanel, dockGrid = null }: ShellParams) => (
   <AppShell
     leftSidebar={<div>sessions</div>}
     main={<div>board</div>}
-    drawer={hasDock ? <p>Terminal dock</p> : null}
+    drawer={hasDock ? <DockCell /> : null}
+    dockGrid={dockGrid}
     isDockInStudio
     studio={
       <StudioFrame kind="inbox" placement="content" onClose={() => undefined}>
@@ -96,6 +104,37 @@ describe('the page panel and the tool dock on Tasks', () => {
 
     expect(containerOf('detail')?.textContent).toContain('payments-api task');
     expect(containerOf('drawer')?.textContent).toContain('Terminal dock');
+    expect(onClosePanel).not.toHaveBeenCalled();
+  });
+
+  it('draws the grid of tools inside the page frame, between the page panel and the rail', () => {
+    stubColumnWidth({ width: 2600 });
+    const onClosePanel = vi.fn();
+    const dockGrid: DockGridSpec = {
+      columns: [[{ key: 'terminal', sizing: 'side' }], [{ key: 'browser', sizing: 'browser' }]],
+      focus: 'terminal',
+      onFocus: () => undefined,
+      onTurn: () => undefined,
+    };
+    render(shell({ hasDock: true, onClosePanel, dockGrid }));
+
+    const drawer = containerOf('drawer');
+    const panes = Array.from(drawer?.querySelectorAll('[data-dock-pane]') ?? []).map((pane) =>
+      pane.getAttribute('data-dock-pane'),
+    );
+    expect(panes).toEqual(['terminal', 'browser']);
+    expect(drawer?.textContent).toContain('terminal pane');
+    expect(drawer?.textContent).toContain('browser pane');
+    expect(drawer?.textContent).not.toContain('Terminal dock');
+    const detail = containerOf('detail');
+    expect(
+      detail !== null &&
+        drawer !== null &&
+        (detail.compareDocumentPosition(drawer) & Node.DOCUMENT_POSITION_FOLLOWING) !== 0,
+    ).toBe(true);
+    const rail = drawer?.querySelector('[data-drawer-edge]');
+    expect(rail?.querySelector('[role="toolbar"]')).not.toBeNull();
+    expect(drawer?.lastElementChild).toBe(rail);
     expect(onClosePanel).not.toHaveBeenCalled();
   });
 });

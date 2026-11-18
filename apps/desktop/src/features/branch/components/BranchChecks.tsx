@@ -17,6 +17,8 @@ import { useGithubConnection } from '../../integrations/github/useGithubConnecti
 import { openIntegration } from '../../integrations/openIntegration';
 import { ChecksMode } from '../../review/components/ChecksMode';
 import { checksViewOf, type ChecksHost, type ChecksHostKind } from '../checksViewOf';
+import { useAnalyzedCheck } from '../hooks/useAnalyzedCheck';
+import { useHeldCheckGroups } from '../hooks/useHeldCheckGroups';
 import { usePullRequestView } from '../hooks/usePullRequestView';
 import { repoNameOf } from '../repoNameOf';
 import { AnalyzedCheckRow } from './AnalyzedCheckRow';
@@ -34,6 +36,8 @@ const HOST_NOUN: Readonly<Record<ChecksHost, string>> = {
 };
 
 const CREATE_ACTION_ID = 'pullRequest.create';
+
+const NO_CHECKS: ReadonlyArray<PrCheckRun> = [];
 
 const FAILED_CONCLUSIONS: ReadonlySet<PrCheckRun['conclusion']> = new Set<PrCheckRun['conclusion']>(
   ['failure', 'timed_out', 'cancelled'],
@@ -121,6 +125,17 @@ export const BranchChecks = ({ sessionId, mountId = null }: Props) => {
         : { kind: portView.errorKind === 'denied' ? 'denied' : 'failed', error: portView.error },
   });
 
+  const analyzed = useAnalyzedCheck({ sessionId, mountId: repo?.mountId ?? null });
+  const shownChecks = view.kind === 'ready' ? view.checks : NO_CHECKS;
+  const heldGroups = useHeldCheckGroups({
+    scope: [
+      sessionId,
+      repo?.mountId ?? mountId ?? '',
+      host.kind,
+      prNumber ?? host.number ?? '',
+    ].join(' '),
+    checks: shownChecks,
+  });
   const fallbackUrl = pr?.url ?? host.url ?? '';
   const createAction = create.actions.find((action) => action.id === CREATE_ACTION_ID);
 
@@ -200,12 +215,18 @@ export const BranchChecks = ({ sessionId, mountId = null }: Props) => {
             analysisRequest === null || repo === null
               ? undefined
               : ({ check, renderRow }) =>
-                  FAILED_CONCLUSIONS.has(check.conclusion) ? (
+                  FAILED_CONCLUSIONS.has(check.conclusion) ||
+                  (analyzed?.name === check.name && analyzed.isPushed) ? (
                     <AnalyzedCheckRow
                       sessionId={sessionId}
                       mountId={repo.mountId}
                       pullRequest={analysisRequest}
                       check={check}
+                      url={
+                        analyzed?.name === check.name
+                          ? analyzed.url
+                          : (check.detailsUrl ?? analysisRequest.url)
+                      }
                       renderRow={renderRow}
                     />
                   ) : (
@@ -214,7 +235,8 @@ export const BranchChecks = ({ sessionId, mountId = null }: Props) => {
                     })
                   )
           }
-          checks={view.kind === 'ready' ? view.checks : []}
+          checks={shownChecks}
+          heldGroups={heldGroups}
           fallbackUrl={fallbackUrl}
           host={isPortHost ? host.kind : 'github'}
           isLoading={view.kind === 'loading'}

@@ -327,7 +327,9 @@ load finishes, under the session the registry holds for that tab, so a tab an
 agent opened counts too and no reply travels back. One row per address and
 session: a new visit moves it to the top, a document title change renames the
 row of the address the webview shows, and the oldest rows past 200 per session
-go. Only `http` and `https` addresses outside the app's own origins land, with
+go. The title keeps the tab's navigation count from when it came in; a page
+load that starts before the address is read drops the rename
+(`titled_address`). Only `http` and `https` addresses outside the app's own origins land, with
 the username, password and fragment dropped. The row goes with the session's
 tab rows (`browser_session_tab_rows_delete`), the stale sweep also names an
 archived session that holds only visits, and a deleted session takes its rows
@@ -556,7 +558,16 @@ it; Esc inside the page goes to the page.
   hidden under an overlay the placeholder shows a cover (`BrowserCover`) on the
   subtle surface: favicon, title, host and the reason in one line
   (`coverReasonText.ts`, from `createOverlayWatch().coverOf`: menu, dialog,
-  tooltip or page). The cover goes one frame after the host showed the view
+  tooltip, page or drag). While a `SplitHandle` drags, the body carries
+  `SPLIT_DRAG_ATTRIBUTE` and every view in the window hides under a drag
+  cover, so the page is placed once at the release instead of once per frame
+  (`splitDragCover.test.ts`, a column and a row drag). The mark stays while the
+  parent renders mid drag and goes only on release or unmount. The host only
+  hides the view under the cover: a hide never sleeps a tab inside the live
+  cap, and the release place lands before the show, so the page comes back at
+  the panel's new rect without a reload (`registry.rs`,
+  `keeps_a_page_live_under_a_drag_cover_and_shows_it_at_the_release_place`).
+  The cover goes one frame after the host showed the view
   again (`onShown` of `createNativePlacement`), so no frame has neither, and it
   stays when the show fails. Toasts keep left of the pane, even when it lies over
   the page (`toastRightOf`), and left of the Browser page's view, so they
@@ -744,7 +755,9 @@ sits in and the address, and one function opens it (`openInBrowser`).
   and ⌘C, ⌘V, ⌘A and ⌘Z are never pushed. `usePageKeys` replays the combo on
   `window` through `replayCombo`, so the dispatcher and the scopes decide what it
   does; a chord from a tab that is already closed is dropped. ⌘R and ⌘⇧R are
-  never page keys: the menu bar brings them to the window (see ⌘R above).
+  never page keys: the menu bar brings them to the window (see ⌘R above), and
+  so does ⌘⇧W (File, Close the Drawer), the way out of a Browser laid over the
+  page in a narrow window. A bare Escape never leaves the page.
   On Linux and Windows there is no monitor: after a click inside a tab none of
   these chords fire until focus returns to Goodboy's chrome (a click on the
   address row, a tab or the rail). The find bar and the command field keep focus

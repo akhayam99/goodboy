@@ -116,7 +116,7 @@ const SavedModelsOverApp = () => {
   if (!isReady) {
     return null;
   }
-  return <AppFrame view="settings-over-app" isRailCollapsed={false} />;
+  return <AppFrame view="settings-over-app" />;
 };
 
 export const U24_RESOLVER_RUNTIME_SCENES: Readonly<Record<string, ComponentType>> = {

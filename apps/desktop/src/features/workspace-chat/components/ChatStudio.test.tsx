@@ -198,7 +198,17 @@ describe('the Chat door', () => {
     await waitFor(() => expect(openedChat()).toBe(chatIdOf({ key: 'consent' })));
   });
 
-  it('opens a new chat from the sidebar add, then leaving and coming back', async () => {
+  it('opens a new chat from New chat in the Chat header, which the new chat page leaves out', async () => {
+    await renderStudio();
+    expect(openedChat()).toBe(chatIdOf({ key: 'consent' }));
+
+    fireEvent.click(screen.getByRole('button', { name: 'New chat' }));
+
+    expect(openedChat()).toBeNull();
+    expect(screen.queryByRole('button', { name: 'New chat' })).toBeNull();
+  });
+
+  it('opens a new chat from the store request, then leaving and coming back', async () => {
     await renderStudio();
     expect(openedChat()).toBe(chatIdOf({ key: 'consent' }));
 

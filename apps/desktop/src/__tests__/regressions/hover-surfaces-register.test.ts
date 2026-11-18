@@ -50,9 +50,9 @@ describe('a hover surface registers so tooltips stay quiet beside it', () => {
     },
   );
 
-  it('finds the three known surfaces', () => {
+  it('finds the known surfaces', () => {
     expect(surfaces.map((path) => path.split('/').at(-2))).toEqual(
-      expect.arrayContaining(['SideColumn', 'SessionHoverCard', 'FactCard']),
+      expect.arrayContaining(['SessionHoverCard', 'FactCard']),
     );
   });
 

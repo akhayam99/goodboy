@@ -11,20 +11,24 @@ import type { PushContinuation } from '../../../store/slices/history/types';
 
 type Params = {
   readonly sessionId: SessionId;
-  readonly mountId: MountId;
+  readonly mountId: MountId | null;
   readonly onSettled?: PushContinuation['resume'];
 };
+
+const NONE: PushFixState = { kind: 'none' };
 
 export const usePushFix = ({ sessionId, mountId, onSettled }: Params): PushFixState => {
   const state = useAppStore(
     useShallow((current) =>
-      pushFixStateOf({
-        fixes: current.branchPushFixes,
-        outcomes: current.pushFixOutcomes,
-        agents: current.sessionPhaseRuns[sessionId],
-        sessionId,
-        mountId,
-      }),
+      mountId === null
+        ? NONE
+        : pushFixStateOf({
+            fixes: current.branchPushFixes,
+            outcomes: current.pushFixOutcomes,
+            agents: current.sessionPhaseRuns[sessionId],
+            sessionId,
+            mountId,
+          }),
     ),
   );
   const latest = useRef(onSettled);
@@ -36,7 +40,7 @@ export const usePushFix = ({ sessionId, mountId, onSettled }: Params): PushFixSt
   const unclaimedAgentId = state.kind === 'pushed' && !state.isClaimed ? state.agentId : null;
 
   useEffect(() => {
-    if (unclaimedAgentId === null || latest.current === undefined) {
+    if (unclaimedAgentId === null || mountId === null || latest.current === undefined) {
       return;
     }
     const isClaimed = useAppStore

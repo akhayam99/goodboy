@@ -79,6 +79,7 @@ export const isResolveOnly = ({ row }: { readonly row: ResolveQueueRow }): boole
   (row.thread.replyDraft ?? '').trim() === '' && row.proposalKind !== 'fix';
 
 type ProjectionExtras = {
+  readonly isHeld?: boolean;
   readonly gitChip?: RemoteView | null;
   readonly hasFailedChecks?: boolean;
   readonly run?: ResolveCommentRun | null;
@@ -88,6 +89,7 @@ type ProjectionExtras = {
 const resolveFactsOfRow = ({
   state,
   row,
+  isHeld = false,
   gitChip = null,
   hasFailedChecks = false,
   run = null,
@@ -99,6 +101,7 @@ const resolveFactsOfRow = ({
   state,
   isPublishing: row.thread.stage === 'publishing',
   isWaitingForSlot: isWaitingForSlot({ row }),
+  isHeld,
   isPushFailure: isPushFailure({ row }),
   sourceLabel: REVIEW_SOURCE_LABEL[row.thread.sourceKind ?? 'github'],
   attempt: row.attempt,
@@ -112,6 +115,7 @@ const resolveFactsOfRow = ({
 export const projectReviewComment = ({
   state,
   row,
+  isHeld,
   gitChip,
   hasFailedChecks,
   run,
@@ -121,7 +125,7 @@ export const projectReviewComment = ({
   readonly row: ResolveQueueRow;
 }): ResolveCommentProjection =>
   projectResolveComment(
-    resolveFactsOfRow({ state, row, gitChip, hasFailedChecks, run, isSourceChanged }),
+    resolveFactsOfRow({ state, row, isHeld, gitChip, hasFailedChecks, run, isSourceChanged }),
   );
 
 export const reviewCommentWord = ({

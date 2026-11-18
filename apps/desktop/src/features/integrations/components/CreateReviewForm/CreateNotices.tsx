@@ -1,5 +1,5 @@
 import type { MountId, SessionId } from '@goodboy/types';
-import { PushFixStatus } from '../../../../shared/components/PushFixStatus';
+import { PushFixStatus } from '../../../history/pushFix/PushFixStatus';
 import { StaleDepsNotice } from '../../../../shared/components/StaleDepsNotice';
 import type { PushFixFollowUp } from '../../../../store/slices/history/types';
 import { CreateFailureNotice } from './CreateFailureNotice';

@@ -326,16 +326,34 @@ fn builder_for<R: Runtime>(
                 return;
             };
             lifecycle::announce(app, &facts);
-            let Ok(live) = webview.url() else {
+            let Some(navigation) = registry.navigation_of(&title_tab) else {
                 return;
             };
-            visit_rows::save_visit_title(
-                app,
-                &facts.session_id,
-                &local::shown_address(&live),
-                &title,
-            );
+            let webview = webview.clone();
+            let tab_id = title_tab.clone();
+            tauri::async_runtime::spawn_blocking(move || {
+                let live = crate::platform::web_url::live_url_of(&webview);
+                let app = webview.app_handle();
+                let Some(address) =
+                    titled_address(&app.state::<BrowserRegistry>(), &tab_id, navigation, live)
+                else {
+                    return;
+                };
+                visit_rows::save_visit_title(app, &facts.session_id, &address, &title);
+            });
         })
+}
+
+pub(crate) fn titled_address(
+    registry: &BrowserRegistry,
+    tab_id: &str,
+    navigation: u64,
+    live: Option<Url>,
+) -> Option<String> {
+    if registry.navigation_of(tab_id) != Some(navigation) {
+        return None;
+    }
+    live.map(|url| local::shown_address(&url))
 }
 
 fn open_popup<R: Runtime>(app: &AppHandle<R>, opener_id: &str, url: Url) {
@@ -571,6 +589,86 @@ mod tests {
 
     use super::*;
     use crate::util::wire_shape::assert_wire_value;
+
+    fn registry_with_tab() -> BrowserRegistry {
+        let registry = BrowserRegistry::default();
+        registry.insert(NewTab {
+            id: "0f1e",
+            session_id: "harborline",
+            window_label: "main",
+            profile: ProfileId::of_workspace("harborline").expect("workspace id is valid"),
+            url: "https://example.com/",
+            rect: Rect {
+                position: LogicalPosition::new(0.0, 0.0).into(),
+                size: LogicalSize::new(100.0, 100.0).into(),
+            },
+            is_shown: true,
+            opener_id: None,
+            now_ms: 0,
+        });
+        registry
+    }
+
+    fn page(address: &str) -> Option<Url> {
+        Some(Url::parse(address).expect("address"))
+    }
+
+    #[test]
+    fn saves_a_title_on_the_page_that_reported_it() {
+        let registry = registry_with_tab();
+        let navigation = registry.navigation_of("0f1e").expect("a tab");
+
+        assert_eq!(
+            titled_address(
+                &registry,
+                "0f1e",
+                navigation,
+                page("https://example.com/docs")
+            ),
+            Some("https://example.com/docs".to_string())
+        );
+        assert_eq!(titled_address(&registry, "0f1e", navigation, None), None);
+        assert_eq!(
+            titled_address(&registry, "gone", navigation, page("https://example.com/")),
+            None
+        );
+    }
+
+    #[test]
+    fn drops_a_title_when_the_tab_moved_before_its_address_was_read() {
+        let registry = registry_with_tab();
+        let navigation = registry.navigation_of("0f1e").expect("a tab");
+
+        registry.mark_navigated("0f1e");
+
+        assert_eq!(
+            titled_address(
+                &registry,
+                "0f1e",
+                navigation,
+                page("https://example.com/pricing")
+            ),
+            None
+        );
+    }
+
+    #[test]
+    fn binds_the_title_to_the_navigation_it_was_reported_on() {
+        let source = include_str!("host.rs");
+        let start = source
+            .find(".on_document_title_changed(")
+            .expect("the title handler");
+        let body = &source[start..start + source[start..].find("\n}\n").expect("end")];
+        let checked = body.find("navigation_of(&title_tab)").expect("captured");
+        let spawned = body.find("spawn_blocking").expect("spawned");
+        let live = body.find("live_url_of(&webview)").expect("live");
+        let bound = body.find("titled_address(").expect("bound");
+        let saved = body.find("save_visit_title(").expect("saved");
+        assert!(
+            checked < spawned && spawned < live && live < bound && bound < saved,
+            "{body}"
+        );
+    }
 
     #[test]
     fn wire_shape_session_closed() {

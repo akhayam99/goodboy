@@ -1,1 +1,0 @@
-export const SESSION_TOOL_RAIL_WIDTH = 44;

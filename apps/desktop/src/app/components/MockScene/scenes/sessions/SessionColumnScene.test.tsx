@@ -17,6 +17,8 @@ import { ToastProvider } from '../../../../../shared/components/Toast';
 import { SessionHoverScene } from './SessionHoverScene';
 import { SessionSwitcherScene } from './SessionSwitcherScene';
 import { SessionsMenuScene } from './SessionsMenuScene';
+import { SessionsCardScene } from './SessionsCardScene';
+import { SessionsPopoverScene } from './SessionsPopoverScene';
 
 beforeAll(async () => {
   await importStore();
@@ -34,6 +36,8 @@ const SCENES: ReadonlyArray<readonly [string, ComponentType]> = [
   ['sessions-menu', SessionsMenuScene],
   ['session-hover', SessionHoverScene],
   ['session-switcher', SessionSwitcherScene],
+  ['sessions-popover', SessionsPopoverScene],
+  ['sessions-card', SessionsCardScene],
 ];
 
 describe('the session column scenes render the open session', () => {

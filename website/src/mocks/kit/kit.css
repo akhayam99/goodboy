@@ -831,16 +831,22 @@
   gap: 6px;
 }
 
-.gkTopTile {
-  display: grid;
-  width: 20px;
-  height: 20px;
+.gkTopSessions {
+  display: inline-flex;
   flex: none;
-  place-items: center;
+  align-items: center;
+  gap: 6px;
+  height: 24px;
+  padding: 0 6px;
   border-radius: 6px;
-  font: 600 11px / 1 var(--sans);
-  color: var(--g-identity-3);
-  background: color-mix(in oklab, var(--g-identity-3) 22%, transparent);
+  white-space: nowrap;
+  font-weight: 500;
+  color: var(--t1);
+}
+
+.gkTopSessions svg {
+  flex: none;
+  color: var(--g-muted-foreground);
 }
 
 .gkTopRepos {
@@ -854,37 +860,7 @@
   color: var(--g-muted-foreground);
 }
 
-.gkTopName {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font-weight: 500;
-  color: var(--t1);
-}
-
-.gkTopChevron {
-  flex: none;
-  color: var(--g-faint-foreground);
-}
-
-.gkTopNav {
-  display: flex;
-  min-width: 0;
-  align-items: center;
-  gap: 12px;
-  margin-left: 8px;
-  white-space: nowrap;
-}
-
-.gkTopNavItem {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.gkTopNavItem svg {
-  flex: none;
+.gkTopSessions .gkTopChevron {
   color: var(--g-faint-foreground);
 }
 
@@ -939,12 +915,6 @@
   gap: 4px;
 }
 
-@container gktop (width < 720px) {
-  .gkTopNav {
-    display: none;
-  }
-}
-
 @container gktop (width < 620px) {
   .gkTopToday {
     display: none;
@@ -974,7 +944,7 @@
   .gkRowTitleNested,
   .gkNodeIndex,
   .gkNodeSign,
-  .gkTopTile {
+  .gkTopSessions {
     font-size: 13px;
   }
 

@@ -32,7 +32,6 @@ export const ActivityQuestionScene = ({ afterSeed }: Props) => {
   return (
     <ShellFrame
       session={ACTIVITY_QUESTION_SESSION}
-      sidebar="expanded"
       main={<SessionOverviewPane session={ACTIVITY_QUESTION_SESSION} />}
     />
   );

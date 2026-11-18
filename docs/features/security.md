@@ -80,10 +80,10 @@ See a change instead of reading about it. Release notes can show **Before** and 
 
 ### Guide
 
-Learn how Goodboy works in short chapters, one per page with Previous and Next. Help holds two tabs, **Guide** and **What's new**, with one search over both. Results lead with title matches, show a line of context, and list three **What's new** versions with a button for the rest. Press Enter to land on the point you need, and the links at the end of a chapter open its screen. **Back to app** at the top left, or Esc, leaves Help. **Sponsor on GitHub** sits in its band. Open it from the Goodboy line at the foot of the sidebar, or from Search or run.
+Learn how Goodboy works in short chapters, one per page with Previous and Next. Help holds two tabs, **Guide** and **What's new**, with one search over both. Results lead with title matches, show a line of context, and list three **What's new** versions with a button for the rest. Press Enter to land on the point you need, and the links at the end of a chapter open its screen. **Back to app** at the top left, or Esc, leaves Help. **Sponsor on GitHub** sits in its band. Open it from the Goodboy mark at the foot of the places rail, or from Search or run.
 
 **Also in this area**
 
-| Feature     | What it does for you                 |
-| ----------- | ------------------------------------ |
-| Update pill | A quiet pill when an update is ready |
+| Feature     | What it does for you                                         |
+| ----------- | ------------------------------------------------------------ |
+| Update mark | A quiet mark at the foot of the rail when an update is ready |

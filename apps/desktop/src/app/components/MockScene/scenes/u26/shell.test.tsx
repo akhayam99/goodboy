@@ -117,54 +117,23 @@ describe('the u26 shell scenes', () => {
   it('u26-sidebar-signals marks Board with the count and says nothing about it in the top bar', async () => {
     await mount('u26-sidebar-signals');
 
-    const door = document.querySelector('[data-side-column] [data-column-door="board"]');
+    const door = document.querySelector('[data-shell-rail] [data-shell-rail-item="board"]');
     expect(door?.getAttribute('aria-label')).toMatch(/^Board, 2 sessions need you: /);
-    expect(door?.querySelector('[data-door-count]')?.textContent).toBe('2');
+    expect(
+      door?.closest('[data-slot="shell-rail-item"]')?.querySelector('[data-slot="rail-mark"]')
+        ?.textContent,
+    ).toBe('2');
     expect(document.querySelector('[data-top-bar] [data-now-needs-you]')).toBeNull();
-    expect(document.querySelector('[data-column-door="impact"]')).not.toBeNull();
-  });
-
-  it('u26-sidebar-ports puts the pinned port down dot on the Monitoring door, none in the top bar', async () => {
-    await mount('u26-sidebar-ports');
-
-    const door = document.querySelector('[data-side-column] [data-column-door="monitoring"]');
-    expect(door?.getAttribute('aria-label')).toBe('Monitoring, pinned port :5173 is down');
-    expect(door?.querySelector('[data-door-signal="warning"]')).not.toBeNull();
-    expect(document.querySelector('[data-top-bar] [aria-label^="Monitoring"]')).toBeNull();
-    expect(document.querySelector('[data-top-bar]')?.textContent ?? '').not.toMatch(/port down/);
+    expect(document.querySelector('[data-shell-rail-item="impact"]')).not.toBeNull();
   });
 
   it('u26-sidebar-impact marks the Impact door current with no band', async () => {
     const container = await mount('u26-sidebar-impact');
 
     expect(
-      container.querySelector('[data-column-door="impact"]')?.getAttribute('aria-current'),
+      container.querySelector('[data-shell-rail-item="impact"]')?.getAttribute('aria-current'),
     ).toBe('page');
     expect(container.querySelector('[data-studio-band]')).toBeNull();
-  });
-
-  it('u26-filter-default opens on Sort and Group with no Reset', async () => {
-    await mount('u26-filter-default');
-
-    const dialog = within(screen.getByRole('dialog', { name: 'Filter sessions' }));
-    expect(dialog.getByRole('combobox', { name: 'Sort' })).toBeDefined();
-    expect(dialog.getByRole('combobox', { name: 'Group' })).toBeDefined();
-    expect(dialog.queryByRole('button', { name: 'Reset' })).toBeNull();
-    expect(document.querySelector('[data-filter-dot]')).toBeNull();
-  });
-
-  it('u26-filter-active checks the stage, turns on Show archived and offers Reset', async () => {
-    await mount('u26-filter-active');
-
-    const dialog = within(screen.getByRole('dialog', { name: 'Filter sessions' }));
-    const needsYou = dialog.getByRole('checkbox', { name: /^Needs you, / });
-    expect(needsYou instanceof HTMLInputElement && needsYou.checked).toBe(true);
-    expect(
-      dialog.getByRole('switch', { name: /^Show archived/ }).getAttribute('aria-checked'),
-    ).toBe('true');
-    expect(dialog.getByRole('combobox', { name: 'Sort' }).textContent).toContain('Last activity');
-    expect(dialog.getByRole('button', { name: 'Reset' })).toBeDefined();
-    expect(document.querySelector('[data-filter-dot="active"]')).not.toBeNull();
   });
 
   it('u26-rail-foot-archive asks from the session menu before archiving and names the running agent', async () => {

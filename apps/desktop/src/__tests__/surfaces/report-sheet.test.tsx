@@ -101,7 +101,7 @@ import { ReportSheetHost } from '../../features/bug-report/components/ReportShee
 import { useMenuCommands } from '../../app/hooks/useMenuCommands';
 import { openReportSheet } from '../../features/bug-report/openReportSheet';
 import { LastCrashBridge } from '../../features/bug-report/components/LastCrashBridge';
-import { ReportBugButton } from '../../app/components/SideColumn/ReportBugButton';
+import { ReportBugButton } from '../../app/components/ShellLeft/ReportBugButton';
 
 const MAC_AGENT = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15';
 

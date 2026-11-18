@@ -871,6 +871,23 @@ describe('push fix outcome', () => {
     expect(h.gitPush).not.toHaveBeenCalled();
   });
 
+  it('keeps a fix you stopped as stopped and pushes nothing', async () => {
+    const { read } = harness();
+    await read().fixBranchPushWithAgent({ ...input({ isForce: false }), message: HOOK_OUTPUT });
+
+    await read().settleBranchPushFix({
+      sessionId: SESSION_ID,
+      agentId: AGENT_ID,
+      hasFailed: true,
+      wasStopped: true,
+      reason: 'The agent was stopped before it finished.',
+    });
+
+    expect(read().pushFixOutcomes[MOUNT_ID]).toMatchObject({ kind: 'agent_stopped' });
+    expect(read().branchPushFixes[AGENT_ID]).toBeUndefined();
+    expect(h.gitPush).not.toHaveBeenCalled();
+  });
+
   it('keeps which check stopped the push after the fix', async () => {
     h.gitPush.mockResolvedValue({
       exitCode: 1,

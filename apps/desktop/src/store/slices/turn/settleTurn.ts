@@ -94,6 +94,7 @@ export const settleTurn = async ({ set, get, ctx }: Params) => {
       sessionId,
       agentId: activeAgentId,
       hasFailed: lastError !== null || turnWasCancelled,
+      wasStopped: turnWasCancelled && lastError === null,
       reason: lastError === null ? STOPPED_REASON : formatError(lastError),
     })
     .catch((error: unknown) =>

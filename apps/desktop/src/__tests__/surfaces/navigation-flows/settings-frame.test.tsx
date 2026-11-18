@@ -9,15 +9,10 @@ vi.mock('@tauri-apps/api/event', () => ({
 }));
 vi.mock('@tauri-apps/plugin-dialog', () => ({ open: vi.fn() }));
 
-import { beforeEach, vi } from 'vitest';
-import { STORAGE_KEYS } from '../../../shared/lib/storage-keys';
+import { vi } from 'vitest';
 import { bridge, installNavigationHooks, runNavigationRows, type BridgeArgs } from './harness';
 import { SETTINGS_FRAME_ROWS } from './settings-frame.rows';
 
 installNavigationHooks();
-
-beforeEach(() => {
-  window.localStorage.removeItem(STORAGE_KEYS.sessionSidebarCollapsed);
-});
 
 runNavigationRows({ rows: SETTINGS_FRAME_ROWS });

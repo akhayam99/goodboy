@@ -72,11 +72,17 @@ describe('the ux39 right dock scenes', () => {
   });
 
   it.each(['ux39-p10-board', 'ux39-p10-tasks'] as const)(
-    '%s keeps only Terminal and Browser on the right rail',
+    '%s keeps the five tools on the right rail',
     async (name) => {
       await mount(name);
 
-      expect(railTools()).toEqual(['pane-toggle-terminal', 'pane-toggle-browser']);
+      expect(railTools()).toEqual([
+        'pane-toggle-terminal',
+        'pane-toggle-browser',
+        'pane-toggle-scripts',
+        'pane-toggle-ask',
+        'pane-toggle-monitoring',
+      ]);
     },
   );
 
@@ -88,10 +94,49 @@ describe('the ux39 right dock scenes', () => {
     expect(rail().closest('[data-studio-motion]')).toBeNull();
   });
 
-  it('ux39-p10-session holds Terminal and Browser only on the rail', async () => {
+  it('ux39-p10-session holds the five tools on the rail', async () => {
     await mount('ux39-p10-session');
 
-    expect(railTools()).toEqual(['pane-toggle-terminal', 'pane-toggle-browser']);
+    expect(railTools()).toEqual([
+      'pane-toggle-terminal',
+      'pane-toggle-browser',
+      'pane-toggle-scripts',
+      'pane-toggle-ask',
+      'pane-toggle-monitoring',
+    ]);
+  });
+
+  it('ux39-p11-terminal-board draws Browser beside Terminal, both pressed, the rail last on the edge', async () => {
+    await mount('ux39-p11-terminal-board');
+
+    await act(async () => {
+      within(rail()).getByTestId('pane-toggle-browser').click();
+      await vi.advanceTimersByTimeAsync(SETTLE_MS);
+    });
+
+    const panes = Array.from(document.querySelectorAll('[data-dock-pane]')).map((pane) =>
+      pane.getAttribute('data-dock-pane'),
+    );
+    expect(panes).toEqual(['terminal', 'browser']);
+    expect(within(rail()).getByTestId('pane-toggle-terminal').getAttribute('aria-pressed')).toBe(
+      'true',
+    );
+    expect(within(rail()).getByTestId('pane-toggle-browser').getAttribute('aria-pressed')).toBe(
+      'true',
+    );
+    const box = document.querySelector('[data-container="drawer"]');
+    expect(box?.lastElementChild?.contains(rail())).toBe(true);
+
+    await act(async () => {
+      within(rail()).getByTestId('pane-toggle-terminal').click();
+      await vi.advanceTimersByTimeAsync(SETTLE_MS);
+    });
+
+    expect(
+      Array.from(document.querySelectorAll('[data-dock-pane]')).map((pane) =>
+        pane.getAttribute('data-dock-pane'),
+      ),
+    ).toEqual(['browser']);
   });
 
   it.each(['ux39-p11-terminal-board', 'ux39-p12-tasks-terminal'] as const)(
@@ -139,13 +184,14 @@ describe('the ux39 right dock scenes', () => {
     );
   });
 
-  it('ux39-p4-column-folded shows the seven doors and no tool on the folded rail', async () => {
+  it('ux39-p4-column-folded shows the workspace, New, the six places, Settings and Report, no tool, on the places rail', async () => {
     await mount('ux39-p4-column-folded');
 
-    const doors = Array.from(
-      document.querySelectorAll('[data-column-rail] [data-column-door]'),
-    ).map((door) => door.getAttribute('data-column-door'));
-    expect(doors).toEqual([
+    const places = Array.from(
+      screen.getByRole('navigation', { name: 'Places' }).querySelectorAll('[data-shell-rail-item]'),
+    ).map((item) => item.getAttribute('data-shell-rail-item'));
+    expect(places).toEqual([
+      'workspace',
       'new',
       'board',
       'inbox',
@@ -153,8 +199,8 @@ describe('the ux39 right dock scenes', () => {
       'chat',
       'connections',
       'impact',
-      'monitoring',
       'settings',
+      'report',
     ]);
   });
 });

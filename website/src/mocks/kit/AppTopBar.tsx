@@ -1,33 +1,28 @@
 import type { ReactNode } from 'react';
 import './kit.css';
-import { ChevronDown, GitGraph } from '../generated/icons';
+import { ChevronDown, GitGraph, List } from '../generated/icons';
 import { cx } from './cx';
 
 type Props = {
-  readonly workspace: string;
-  readonly tile?: ReactNode;
   readonly search?: string;
   readonly shortcut?: string;
-  readonly nav?: ReactNode;
   readonly end?: ReactNode;
   readonly className?: string;
 };
 
 export const AppTopBar = ({
-  workspace,
-  tile,
   search = 'Search or run a command',
   shortcut = '⌘K',
-  nav,
   end,
   className,
 }: Props) => (
   <div className={cx('gkTop', className)}>
     <div className="gkTopStart">
-      <span className="gkTopTile">{tile ?? workspace.slice(0, 1)}</span>
-      <span className="gkTopName">{workspace}</span>
-      {nav === undefined ? null : <ChevronDown size={12} className="gkTopChevron" />}
-      {nav === undefined ? null : <div className="gkTopNav">{nav}</div>}
+      <span className="gkTopSessions">
+        <List size={13} />
+        Sessions
+        <ChevronDown size={12} className="gkTopChevron" />
+      </span>
       <span className="gkTopRepos" aria-label="Repositories">
         <GitGraph size={13} />
       </span>

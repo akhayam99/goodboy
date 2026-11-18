@@ -1,3 +1,4 @@
+import { SHELL_GUTTER_PX } from './frameGeometry';
 import { DURATION_QUICK_MS } from './motionTimings';
 
 export const RIGHT_DRAWER_MIN = 384;
@@ -11,6 +12,7 @@ export const COLUMN_MIN_PUSH = 464;
 const READER_COLUMN_MIN_PUSH = 560;
 export const COLUMN_GUTTERS = 48;
 export const DRAWER_INSET = 8;
+export const DRAWER_GUTTER = SHELL_GUTTER_PX;
 export const DRAWER_EXIT_MS = DURATION_QUICK_MS;
 export const DRAWER_EXIT_MAX_ELEMENTS = 2000;
 
@@ -46,16 +48,22 @@ type PushParams = {
 
 export const DRAWER_PUSH_RESERVE = DRAWER_INSET * 2 + COLUMN_GUTTERS + COLUMN_MIN_PUSH;
 
+type ReserveParams = {
+  readonly sizing: DrawerSizing;
+};
+
+export const pushReserveOf = ({ sizing }: ReserveParams): number =>
+  DRAWER_INSET * 2 +
+  COLUMN_GUTTERS +
+  (sizing === 'side' ? COLUMN_MIN_PUSH : READER_COLUMN_MIN_PUSH);
+
 type RoomParams = {
   readonly mainWidthPx: number;
   readonly sizing: DrawerSizing;
 };
 
 const pushRoomOf = ({ mainWidthPx, sizing }: RoomParams): number =>
-  mainWidthPx -
-  DRAWER_INSET * 2 -
-  COLUMN_GUTTERS -
-  (sizing === 'side' ? COLUMN_MIN_PUSH : READER_COLUMN_MIN_PUSH);
+  mainWidthPx - pushReserveOf({ sizing });
 
 export const canDrawerPush = ({
   mainWidthPx,
@@ -97,7 +105,7 @@ export const drawerLayoutOf = ({
       dragMax: Math.min(tier.max, room),
     };
   }
-  const overlayRoom = main - DRAWER_INSET * 2 - edgeWidth;
+  const overlayRoom = main - DRAWER_GUTTER * 2 - edgeWidth;
   return {
     mode: 'overlay',
     width: Math.min(savedWidth, overlayRoom),
@@ -149,7 +157,7 @@ export const panelPairLayoutOf = ({
   const dockTier = DRAWER_TIERS[dock.sizing];
   const detailTier = DRAWER_TIERS[detail.sizing];
   const sizing = dock.sizing === 'side' && detail.sizing === 'side' ? 'side' : 'reader';
-  const room = pushRoomOf({ mainWidthPx: main - contentInset, sizing }) - DRAWER_INSET;
+  const room = pushRoomOf({ mainWidthPx: main - contentInset, sizing }) - DRAWER_GUTTER;
   const dockRoom = room - detail.savedWidth;
   const dockWidth =
     dockTier.isShrinkable === true && dockRoom >= dockTier.min
@@ -162,7 +170,7 @@ export const panelPairLayoutOf = ({
       detail: { width: detail.savedWidth, dragMax: Math.min(detailTier.max, room - dockWidth) },
     };
   }
-  const overlayRoom = main - DRAWER_INSET * 3 - edgeWidth;
+  const overlayRoom = main - DRAWER_GUTTER * 3 - edgeWidth;
   const detailWidth = Math.max(0, Math.min(detail.savedWidth, overlayRoom - dockTier.min));
   const overlayDock = Math.min(dock.savedWidth, overlayRoom - detailWidth);
   return {
@@ -185,8 +193,8 @@ export const panelAsideWidthOf = ({
 }: PairAsideParams): number => {
   const container = dockWidth + railWidth;
   return (
-    (detailWidth > 0 ? detailWidth + DRAWER_INSET : 0) +
-    (container > 0 ? container + DRAWER_INSET : 0)
+    (detailWidth > 0 ? detailWidth + DRAWER_GUTTER : 0) +
+    (container > 0 ? container + DRAWER_GUTTER : 0)
   );
 };
 

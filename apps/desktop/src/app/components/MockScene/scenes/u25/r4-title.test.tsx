@@ -86,13 +86,4 @@ describe('the r4 title scenes', () => {
     );
     expect(ring().hasAttribute('data-near-limit')).toBe(true);
   });
-
-  it('r4-title-row-edit renames a sidebar row in the compact field with the same ring', async () => {
-    await mount('r4-title-row-edit');
-
-    expect(field().closest('h1')).toBeNull();
-    expect(field().closest('[data-title-field]')?.getAttribute('data-title-field')).toBe('row');
-    expect(field().value).toBe('Retry failed card payments on a dunning schedule');
-    expect(ring().getAttribute('aria-label')).toBe('48 of 120 characters');
-  });
 });

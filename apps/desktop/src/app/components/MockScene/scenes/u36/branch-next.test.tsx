@@ -80,22 +80,25 @@ describe('the u36 branch next step scenes', () => {
     mount({ id: 'u36-p16-fix-checks' });
 
     await waitFor(() => expect(headerStep()?.textContent).toBe('Fix checks'));
-    expect(screen.queryByTestId('branch-check-work')).toBeNull();
+    expect(document.querySelector('[data-tab-live]')).toBeNull();
   });
 
-  it('draws no fill and one line with Stop while the Debugger works', async () => {
+  it('draws no fill and no line above the list, the work on the row and a dot on Checks', async () => {
     mount({ id: 'u36-p16-checks-working' });
 
-    const line = await screen.findByTestId('branch-check-work');
-    expect(line.textContent).toMatch(/^Analyzing /);
+    await waitFor(() => expect(document.querySelector('[data-tab-live="checks"]')).not.toBeNull());
+    expect(screen.queryByRole('region', { name: 'Check fix status' })).toBeNull();
+    const work = document.querySelectorAll('[data-item-work]');
+    expect(work).toHaveLength(1);
+    expect(work[0]?.closest('[data-check-row]')).not.toBeNull();
     screen.getByRole('button', { name: 'Stop' });
     expect(headerStep()).toBeNull();
   });
 
-  it('moves on to Start fix once the Debugger proposed one', async () => {
+  it('moves on to Apply fix once the Debugger proposed one', async () => {
     mount({ id: 'u36-p16-start-fix' });
 
-    await waitFor(() => expect(headerStep()?.textContent).toBe('Start fix'));
+    await waitFor(() => expect(headerStep()?.textContent).toBe('Apply fix'));
   });
 
   it('ends a merged branch with Remove worktree while the folder is there', async () => {

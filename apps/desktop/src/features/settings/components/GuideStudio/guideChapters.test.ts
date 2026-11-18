@@ -7,7 +7,7 @@ import { WORKSPACE_FEATURES } from '../../../../shared/lib/features';
 import { NAMES } from '../../../../shared/utils/names';
 import { RETIRED_NAMES } from '../../../../__tests__/regressions/retiredNames';
 import { shortcutGlyphs } from '../../../../shared/keyboard/registry';
-import { COLUMN_DOORS } from '../../../../app/components/SideColumn/columnDoors';
+import { COLUMN_DOORS } from '../../../../app/components/ShellLeft/columnDoors';
 import { columnPagesOf } from '../../../session/pageRegistry';
 import { NEW_DRAWER_FORMS } from '../../../session/newDrawerForms';
 import { chapterStatsOf } from './chapterStatsOf';
@@ -109,7 +109,7 @@ describe('the chapter list', () => {
         'Providers and limits',
         'New session',
         'Board',
-        'Sidebar and session pages',
+        'Rail, Sessions and session pages',
         'Agents and roles',
         'Workflows',
         'Shared context',
@@ -248,12 +248,20 @@ describe('the labels the Guide cites', () => {
 });
 
 describe('the shell chapter', () => {
-  it('lists every door of the sidebar by the name the sidebar draws', () => {
-    const sidebar = pointOf('shell', 'Sidebar');
-    expect(sidebar).toContain('New session');
-    COLUMN_DOORS.forEach((door) => expect(sidebar).toContain(door.label));
-    expect(sidebar).toContain('amber dot');
-    expect(sidebar).toContain('pinned port is down');
+  it('lists every door of the rail by the name the rail draws', () => {
+    const rail = pointOf('shell', 'Places rail');
+    expect(rail).toContain('New session');
+    COLUMN_DOORS.forEach((door) => expect(rail).toContain(door.label));
+    expect(rail).toContain('amber number on Board');
+    expect(rail).toContain('pinned port is down');
+    expect(rail).not.toContain('Monitoring');
+  });
+
+  it('says where the sessions went and when the one-time card closes', () => {
+    const sessions = pointOf('shell', 'Sessions');
+    expect(sessions).toContain('where they moved');
+    expect(sessions).toContain(shortcutGlyphs('sessions.toggle'));
+    expect(sessions).toContain('closes the first time you open Sessions');
   });
 
   it('lists every page of the session pages by its registry label', () => {
@@ -295,12 +303,12 @@ describe('the shell chapter', () => {
     expect(branchPage).not.toContain('steps into');
   });
 
-  it('names the two tools of the rail at the right of every screen', () => {
+  it('names the five tools of the rail at the right edge of every screen', () => {
     const tools = pointOf('shell', 'Tools rail');
-    ['Terminal', 'Browser', 'right of every screen', 'Open full page'].forEach((tool) =>
-      expect(tools).toContain(tool),
+    ['Terminal', 'Browser', 'Scripts', 'Ask', 'Monitor', 'right edge', 'Open full page'].forEach(
+      (tool) => expect(tools).toContain(tool),
     );
-    ['Explore', 'Scripts', 'Dock'].forEach((gone) => expect(tools).not.toContain(gone));
+    ['Explore', 'Dock'].forEach((gone) => expect(tools).not.toContain(gone));
   });
 });
 

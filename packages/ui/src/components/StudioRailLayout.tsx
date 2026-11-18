@@ -7,7 +7,7 @@ import { PANE_RHYTHM } from '../paneRhythm';
 import { SHEET_CLASSES, type ResizeActivity } from '../sheet';
 import { readStoredWidth, useResizableWidth } from '../useResizableWidth';
 import { IconButton } from './IconButton';
-import { ResizeHandle } from './ResizeHandle';
+import { SplitHandle } from './SplitHandle';
 
 export const STUDIO_RAIL_WIDTHS = {
   narrow: 256,
@@ -153,11 +153,11 @@ export const StudioRailLayout = ({
           ) : null}
           {rail}
           <div className="absolute inset-y-0 -right-1 z-10 flex">
-            <ResizeHandle
+            <SplitHandle
               {...resizable.handleProps}
               ariaLabel={`Resize ${railLabel.toLowerCase()}`}
               onActivityChange={setActivity}
-              drawsEdge={isPage}
+              shouldDrawEdge={isPage}
             />
           </div>
         </aside>

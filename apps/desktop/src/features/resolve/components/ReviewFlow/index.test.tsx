@@ -200,7 +200,7 @@ describe('Review as one flow', () => {
 
     const leftOpen = within(list()).getByRole('region', { name: 'Left open on GitHub' });
     expect(within(leftOpen).getAllByRole('listitem').length).toBeGreaterThan(0);
-    expect(list().querySelectorAll('[aria-expanded]')).toHaveLength(0);
+    expect(list().querySelectorAll('[aria-expanded]:not([aria-haspopup])')).toHaveLength(0);
 
     showResolved();
     expect(within(list()).getByRole('region', { name: 'Done' })).toBeDefined();
@@ -249,11 +249,26 @@ describe('Review as one flow', () => {
     expect(within(comment()).queryByRole('button', { name: 'Resolve' })).toBeNull();
   });
 
-  it('keeps Fix off the rows: the row is the button and the detail bar fixes', async () => {
+  it('puts Fix on a not started row, answers with Starting and ignores a second click', async () => {
+    const createResolveBatch = vi.fn<StoreState['createResolveBatch']>(
+      () => new Promise<ResolveBatch>(() => undefined),
+    );
+    stub({ createResolveBatch });
     await mount({ threadId: NOT_STARTED_THREAD_ID });
 
-    expect(list().querySelectorAll('[data-fix-row]')).toHaveLength(0);
-    expect(within(list()).queryAllByRole('button', { name: /^Fix$/ })).toHaveLength(0);
+    const item = list().querySelector(`[data-thread-id="${NOT_STARTED_THREAD_ID}"]`)?.closest('li');
+    if (item === null || item === undefined) {
+      throw new Error('no row item');
+    }
+    const fix = within(item).getByRole('button', { name: 'Fix' });
+    fireEvent.click(fix);
+    await waitFor(() => expect(fix.getAttribute('aria-busy')).toBe('true'));
+    expect(item.querySelector('[data-item-work-word]')?.textContent).toBe('Starting');
+    fireEvent.click(fix);
+    await settle();
+
+    expect(createResolveBatch).toHaveBeenCalledOnce();
+    expect(createResolveBatch.mock.calls[0]?.[0].threadIds).toEqual([NOT_STARTED_THREAD_ID]);
     expect(bar().querySelector('[data-review-verb="reviewComment.draft"]')).not.toBeNull();
   });
 
@@ -397,7 +412,7 @@ describe('Review as one flow', () => {
     });
   });
 
-  it('says a queued batch comment is waiting for a free slot', async () => {
+  it('says a queued batch comment is Queued on its row', async () => {
     seedResolveScene({ expandedThreadId: 'PRRT_thread_idempotency' });
     const state = useAppStore.getState();
     const attempts = state.sessionResolveAttempts[SESSION.id] ?? [];
@@ -419,7 +434,11 @@ describe('Review as one flow', () => {
     );
     await settle();
 
-    expect(row(/idempotency\.ts/).textContent).toContain('Waiting');
+    const work = row(/idempotency\.ts/)
+      .closest('li')
+      ?.querySelector('[data-row-work]');
+    expect(work?.textContent).toContain('Queued');
+    expect(row(/idempotency\.ts/).textContent).not.toContain('Queued');
     expect(within(comment()).getByText('Queued, after the current fix')).toBeDefined();
   });
 
@@ -623,19 +642,24 @@ describe('Review as one flow', () => {
     expect(within(comment()).queryByRole('textbox', { name: 'Your answer' })).toBeNull();
   });
 
-  it('leaves Stop and the transcript of a drafting comment to the run line, behind a confirm', async () => {
+  it('leaves Stop and the transcript of a drafting comment to its row, behind a confirm', async () => {
     await mount({ threadId: null });
     const working = within(list()).getByRole('region', { name: 'Working' });
-    fireEvent.click(firstOf({ items: within(working).getAllByRole('button') }));
+    const first = firstOf({ items: within(working).getAllByRole('listitem') });
+    fireEvent.click(firstOf({ items: within(first).getAllByRole('button') }));
     await settle();
 
     const drawer = within(drawerOf());
     expect(drawer.queryAllByRole('button', { name: /^Apply fix|^Edit|^Reply/ })).toEqual([]);
     expect(drawer.queryByRole('button', { name: 'Open transcript' })).toBeNull();
-    const line = within(screen.getByTestId('resolve-run-status'));
-    expect(line.getByRole('button', { name: 'Open transcript' })).toBeDefined();
+    expect(screen.queryByTestId('resolve-run-status')).toBeNull();
+    const work = first.querySelector<HTMLElement>('[data-row-work]');
+    expect(work).not.toBeNull();
+    const line = within(work ?? first);
+    line.getByText('Fixing');
+    line.getByRole('button', { name: 'Open transcript' });
     fireEvent.click(line.getByRole('button', { name: 'Stop' }));
-    expect(await screen.findByText('Stop this fix run?')).toBeDefined();
+    expect(await screen.findByText('Stop the fix for 4 comments?')).toBeDefined();
   });
 
   it('opens the not started comment with Fix as its one primary, last at the right', async () => {

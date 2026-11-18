@@ -427,9 +427,9 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
         }, WAIT);
       },
       async () =>
-        expect(
-          (await screen.findAllByRole('option', { name: /^Untitled session$/ }, WAIT)).length,
-        ).toBeGreaterThan(0),
+        expect((await screen.findAllByText(/^Untitled session$/, {}, WAIT)).length).toBeGreaterThan(
+          0,
+        ),
       async () => expect(await screen.findByTestId('session-tools')).toBeDefined(),
     ),
   },

@@ -3,7 +3,7 @@ import type { ChecksSummary } from '../../../shared/components/OverviewRail/Chec
 
 export type { ChecksSummary };
 
-type ChecksGroup = 'failing' | 'running' | 'passed' | 'skipped';
+export type ChecksGroup = 'failing' | 'running' | 'passed' | 'skipped';
 
 type ChecksGroupRuns = {
   readonly group: ChecksGroup;
@@ -24,7 +24,7 @@ type GroupParams = {
   readonly conclusion: PrCheckConclusion;
 };
 
-const groupOf = ({ conclusion }: GroupParams): ChecksGroup => {
+export const checkGroupOf = ({ conclusion }: GroupParams): ChecksGroup => {
   switch (conclusion) {
     case 'failure':
     case 'timed_out':
@@ -48,17 +48,26 @@ const groupOf = ({ conclusion }: GroupParams): ChecksGroup => {
 };
 
 export const isFailingConclusion = ({ conclusion }: GroupParams): boolean =>
-  groupOf({ conclusion }) === 'failing';
+  checkGroupOf({ conclusion }) === 'failing';
 
 type Params = {
   readonly checks: ReadonlyArray<PrCheckRun>;
 };
 
-export const checksGroupsOf = ({ checks }: Params): ReadonlyArray<ChecksGroupRuns> =>
+export type HeldCheckGroups = ReadonlyMap<string, ChecksGroup>;
+
+type GroupsParams = Params & {
+  readonly held?: HeldCheckGroups | null;
+};
+
+export const checksGroupsOf = ({ checks, held }: GroupsParams): ReadonlyArray<ChecksGroupRuns> =>
   GROUP_ORDER.map((group) => ({
     group,
     label: GROUP_LABEL[group],
-    runs: checks.filter((check) => groupOf({ conclusion: check.conclusion }) === group),
+    runs: checks.filter(
+      (check) =>
+        (held?.get(check.name) ?? checkGroupOf({ conclusion: check.conclusion })) === group,
+    ),
   })).filter((entry) => entry.runs.length > 0);
 
 export type ChecksCounts = {
@@ -70,7 +79,7 @@ export type ChecksCounts = {
 
 export const checksCountsOf = ({ checks }: Params): ChecksCounts => {
   const sizeOf = (group: ChecksGroup): number =>
-    checks.filter((check) => groupOf({ conclusion: check.conclusion }) === group).length;
+    checks.filter((check) => checkGroupOf({ conclusion: check.conclusion }) === group).length;
   return {
     failing: sizeOf('failing'),
     running: sizeOf('running'),

@@ -26,6 +26,7 @@ type Props = {
   readonly chat: ChatSummary | null;
   readonly onCreated: (chatId: ChatId) => void;
   readonly onRemoved: () => void;
+  readonly onNewChat: () => void;
 };
 
 const NO_MESSAGES: ReadonlyArray<ChatMessage> = [];
@@ -37,7 +38,7 @@ type SendParams = Pick<ChatComposerMessage, 'text'> & Partial<Pick<ChatComposerM
 const NEW_CHAT_HEADING = 'New chat';
 const RESIZE_LABEL = 'Resize the work panel';
 
-export const ChatRoom = ({ workspaceId, chat, onCreated, onRemoved }: Props) => {
+export const ChatRoom = ({ workspaceId, chat, onCreated, onRemoved, onNewChat }: Props) => {
   const chatId = chat?.id ?? null;
   const workspaceName = useAppStore(
     (state) => state.workspaces.find((workspace) => workspace.id === workspaceId)?.name ?? '',
@@ -187,6 +188,7 @@ export const ChatRoom = ({ workspaceId, chat, onCreated, onRemoved }: Props) => 
         linked={linked}
         onOpenSession={openSession}
         onRemoved={onRemoved}
+        onNewChat={onNewChat}
       >
         {isEmpty ? (
           <PageColumn width="measure" className="flex min-h-0 flex-1 flex-col">

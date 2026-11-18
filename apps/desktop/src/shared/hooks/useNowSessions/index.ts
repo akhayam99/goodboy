@@ -29,7 +29,7 @@ export const useNowSessions = ({}: Params): NowSessions => {
       return { needsYou: EMPTY_ARRAY, running: EMPTY_ARRAY, attention };
     }
     return {
-      needsYou: groups.find((group) => group.key === 'attention')?.sessions ?? EMPTY_ARRAY,
+      needsYou: attention.countedSessions,
       running: groups.find((group) => group.key === 'running')?.sessions ?? EMPTY_ARRAY,
       attention,
     };

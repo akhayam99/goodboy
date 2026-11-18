@@ -1,8 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { Tone } from '@goodboy/ui';
-import type { SessionAttentionReason, SessionPrGroup } from '@goodboy/types';
+import type { SessionAttentionReason } from '@goodboy/types';
 import {
-  PR_GROUP_PRESENTATION,
   PULL_REQUEST_PRESENTATION,
   type PullRequestPresentationState,
 } from '../../../../shared/utils/pullRequestPresentation';
@@ -41,16 +40,6 @@ const REQUEST_PAIRS: ReadonlyArray<readonly [PullRequestPresentationState, Branc
   ['closed', 'closed'],
 ];
 
-const GROUP_PAIRS: ReadonlyArray<readonly [SessionPrGroup, BranchState]> = [
-  ['not-open', 'no-request'],
-  ['draft', 'draft'],
-  ['reviewable', 'in-review'],
-  ['reviewed', 'approved'],
-  ['queued', 'queued'],
-  ['closed', 'closed'],
-  ['merged', 'merged'],
-];
-
 const REASON_PAIRS: ReadonlyArray<readonly [SessionAttentionReason, BranchState]> = [
   ['ci-failed', 'checks-failing'],
   ['changes-requested', 'changes-requested'],
@@ -62,12 +51,9 @@ describe('one tone per state', () => {
     expect(BRANCH_STATE_TONE).toEqual(EXPECTED_TONE);
   });
 
-  it('walks every pull request state and every pull request group', () => {
+  it('walks every pull request state', () => {
     expect(REQUEST_PAIRS.map(([state]) => state).sort()).toEqual(
       Object.keys(PULL_REQUEST_PRESENTATION).sort(),
-    );
-    expect(GROUP_PAIRS.map(([group]) => group).sort()).toEqual(
-      Object.keys(PR_GROUP_PRESENTATION).sort(),
     );
   });
 
@@ -77,13 +63,6 @@ describe('one tone per state', () => {
       const tone = BRANCH_STATE_TONE[branchState];
       expect(PULL_REQUEST_PRESENTATION[state].tone).toBe(tone);
       expect(pullRequestStateToneOf({ state }).tone).toBe(tone);
-    },
-  );
-
-  it.each(GROUP_PAIRS)(
-    'paints the pull request group %s like the branch state %s',
-    (group, branchState) => {
-      expect(PR_GROUP_PRESENTATION[group].tone).toBe(BRANCH_STATE_TONE[branchState]);
     },
   );
 

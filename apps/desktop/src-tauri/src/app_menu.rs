@@ -100,7 +100,7 @@ const EDIT_ROWS: &[Row] = &[
 ];
 
 const VIEW_ROWS: &[Row] = &[
-    command("column.toggle", "Show or Hide Sidebar", Some("cmd+KeyB")),
+    command("sessions.toggle", "Show or Hide Sessions", Some("cmd+KeyB")),
     command("palette.open", "Search or Run", Some("cmd+KeyK")),
     SEPARATOR,
     command("zoom.in", "Zoom In", Some("cmd+Equal")),

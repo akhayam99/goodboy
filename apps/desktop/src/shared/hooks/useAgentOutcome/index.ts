@@ -21,7 +21,11 @@ const lastReplyOf = (items: ReturnType<typeof reduceTranscript>): string => {
   return '';
 };
 
-export const useAgentOutcome = ({ agent }: { readonly agent: Agent }): AgentOutcome => {
+type Params = {
+  readonly agent: Pick<Agent, 'id' | 'outputSummary'>;
+};
+
+export const useAgentOutcome = ({ agent }: Params): AgentOutcome => {
   const transcript = useTranscript(agent.id);
   const lastReply = useMemo(() => lastReplyOf(reduceTranscript(transcript)), [transcript]);
   const summary = agent.outputSummary?.trim() ?? '';

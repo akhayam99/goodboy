@@ -1,6 +1,8 @@
-import { ICON_SIZE, IconButton, TEXT_ROLE, cn, selectedIconClass } from '@goodboy/ui';
+import { DISABLED, ICON_SIZE, IconButton, TEXT_ROLE, cn, selectedIconClass } from '@goodboy/ui';
 import { navEntryToneOf } from '../../../../shared/components/navEntryToneOf';
 import type { SessionTool } from './sessionTools';
+import type { ToolCount } from './ToolCount';
+import { ToolCountMark } from './ToolCountMark';
 import { ToolSignalDot } from './ToolSignalDot';
 import { ToolWaitingRing } from './ToolWaitingRing';
 import { toolStateOf } from './toolStateOf';
@@ -11,7 +13,10 @@ type Props = {
   readonly isOpen: boolean;
   readonly isWaiting: boolean;
   readonly isCurrent?: boolean;
+  readonly isDisabled?: boolean;
+  readonly isCaptioned?: boolean;
   readonly fact?: string | null;
+  readonly count?: ToolCount | null;
   readonly signal: ToolSignal | null;
   readonly tabIndex: number;
   readonly onFocus: () => void;
@@ -26,7 +31,10 @@ export const SessionToolButton = ({
   isOpen,
   isWaiting,
   isCurrent = false,
+  isDisabled = false,
+  isCaptioned = true,
   fact = null,
+  count = null,
   signal,
   tabIndex,
   onFocus,
@@ -39,6 +47,7 @@ export const SessionToolButton = ({
   const label = signal === null ? stateName : `${stateName}, ${signal.note}`;
   const tone = navEntryToneOf({ icon: tool.icon });
   const isLit = isOpen || isCurrent;
+  const isInert = isCurrent || isDisabled;
   return (
     <span
       data-slot="session-tool"
@@ -55,12 +64,13 @@ export const SessionToolButton = ({
           iconSize={ICON_SIZE.notice}
           aria-pressed={isLit}
           aria-current={isCurrent ? 'page' : undefined}
+          aria-disabled={isDisabled ? true : undefined}
           tabIndex={tabIndex}
           data-testid={`pane-toggle-${tool.pane}`}
           data-icon-tone={isLit ? tone : undefined}
-          className={cn(QUIET_TILE, isLit && selectedIconClass({ tone }))}
+          className={cn(QUIET_TILE, isLit && selectedIconClass({ tone }), isDisabled && DISABLED)}
           onFocus={onFocus}
-          onClick={isCurrent ? undefined : onToggle}
+          onClick={isInert ? undefined : onToggle}
         />
         <span
           data-slot="tool-glyph"
@@ -69,18 +79,22 @@ export const SessionToolButton = ({
           {state === 'waiting' ? <ToolWaitingRing /> : null}
           {signal === null ? null : <ToolSignalDot signal={signal} />}
         </span>
+        {count === null ? null : <ToolCountMark count={count} />}
       </span>
-      <span
-        aria-hidden
-        data-slot="tool-caption"
-        data-tone={isLit ? 'open' : 'closed'}
-        className={cn(
-          'whitespace-nowrap text-rail [@media(max-height:480px)]:hidden',
-          isLit ? TEXT_ROLE.label : TEXT_ROLE.secondary,
-        )}
-      >
-        {tool.label}
-      </span>
+      {isCaptioned ? (
+        <span
+          aria-hidden
+          data-slot="tool-caption"
+          data-tone={isLit ? 'open' : 'closed'}
+          className={cn(
+            'whitespace-nowrap text-rail [@media(max-height:480px)]:hidden',
+            isLit ? TEXT_ROLE.label : TEXT_ROLE.secondary,
+            isDisabled && DISABLED,
+          )}
+        >
+          {tool.label}
+        </span>
+      ) : null}
     </span>
   );
 };

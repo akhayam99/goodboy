@@ -52,6 +52,7 @@ export type ReviewEntry = {
   readonly state: ReviewCommentState;
   readonly toneKey: ReviewCommentTone;
   readonly resolveWord: ResolveWord;
+  readonly isQueued: boolean;
   readonly word: string;
   readonly chips: ReadonlyArray<string>;
   readonly change: ReviewSourceChange | null;
@@ -71,7 +72,6 @@ export type ReviewEntry = {
 
 export type ReviewGroup = {
   readonly group: ResolveGroup;
-  readonly isRun?: boolean;
   readonly entries: ReadonlyArray<ReviewEntry>;
 };
 
@@ -126,11 +126,12 @@ export const useReviewEntries = ({
     const ordered = groupConversationsByFile({ rows }).flatMap((group) => group.rows);
     return ordered.map((row): ReviewEntry => {
       const isChanged = changes[row.thread.threadId]?.changed != null;
+      const isHeld = heldLaunchIdOf({ threadId: row.thread.threadId }) !== null;
       const state = reviewCommentStateOf({
         row,
         isEdited: isReplyEdited({ draft: drafts[row.thread.threadId], row }),
         isChanged,
-        isHeld: heldLaunchIdOf({ threadId: row.thread.threadId }) !== null,
+        isHeld,
       });
       const facts = threadGit[row.thread.threadId] ?? null;
       const remote = remoteOf({ state, facts });
@@ -144,6 +145,7 @@ export const useReviewEntries = ({
       const projection = projectReviewComment({
         state,
         row,
+        isHeld,
         gitChip: view,
         hasFailedChecks: failedChecks.has(row.item.id),
         run,
@@ -156,6 +158,7 @@ export const useReviewEntries = ({
         state,
         toneKey: RUN_TONE[projection.word] ?? reviewCommentToneKeyOf({ state, row }),
         resolveWord: projection.word,
+        isQueued: projection.sub === 'queued',
         word: projection.label,
         chips: projection.chips,
         change: sourceChangeOf({ snapshot: changes[row.thread.threadId] }),

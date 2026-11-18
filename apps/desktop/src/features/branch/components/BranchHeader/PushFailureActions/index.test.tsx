@@ -276,34 +276,48 @@ describe('PushFailureActions', () => {
     screen.getByRole('button', { name: 'Open terminal here' });
   });
 
-  it('follows the running fix agent after the failure line was left and came back', () => {
+  it('offers nothing while the fix agent works, after the failure line was left and came back', () => {
     seedFixAgent({ status: 'running' });
 
     const first = render(actions());
-    screen.getByText('An agent is fixing the push');
+    expect(screen.queryAllByRole('button')).toHaveLength(0);
     first.unmount();
     render(actions());
 
-    screen.getByText('An agent is fixing the push');
-    screen.getByRole('button', { name: 'Open the agent' });
     expect(screen.queryByRole('button', { name: 'Fix with an agent' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Retry' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Open terminal here' })).toBeNull();
   });
 
-  it('says why the agent stopped and offers another try', () => {
+  it('offers Retry after the agent failed or you stopped it', () => {
     seedFixAgent({ status: 'failed' });
     store.setState({
       pushFixOutcomes: {
         [MOUNT_TARGET.mountId]: outcome({
           kind: 'agent_failed',
-          reason: 'The agent was stopped before it finished.',
+          reason: 'The provider is offline.',
         }),
       },
     });
 
+    const failed = render(actions());
+
+    screen.getByRole('button', { name: 'Retry' });
+    screen.getByRole('button', { name: 'Open terminal here' });
+    expect(screen.queryByRole('button', { name: 'Fix with an agent' })).toBeNull();
+    failed.unmount();
+
+    store.setState({
+      pushFixOutcomes: {
+        [MOUNT_TARGET.mountId]: outcome({
+          kind: 'agent_stopped',
+          reason: 'The agent was stopped before it finished.',
+        }),
+      },
+    });
     render(actions());
 
-    expect(screen.getByRole('alert').textContent).toBe('The agent was stopped before it finished.');
-    screen.getByRole('button', { name: 'Fix with an agent' });
+    screen.getByRole('button', { name: 'Retry' });
   });
 
   it('clears the failure once the fix pushed while the line was not on screen', () => {

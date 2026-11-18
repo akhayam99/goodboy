@@ -65,6 +65,7 @@ export const checksAnalyzeSeed = ({
     workflowRunId: undefined,
     stepId: undefined,
     sessionId: SESSION_ID,
+    mountId: repo.mountId,
     name: ciFixName({ check, pullRequest }),
     kind: 'ci-debugger',
     status: phase === 'running' ? 'running' : 'completed',

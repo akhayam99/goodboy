@@ -87,9 +87,11 @@ monitor takes an Objective-C block, and `block2` builds one from a Rust
 closure. It already resolved as a transitive dep of `objc2-app-kit` at 0.6.2,
 so this adds zero new crates and a one-line `Cargo.lock` diff.
 
-`tauri-plugin-notification` 2.7.0 (crate) and `@tauri-apps/plugin-notification`
-2.7.0 (npm) raise the local banner when an agent needs you while no window is in
-front. Both are pinned exactly and checked on 24 October 2026 against the
+`tauri-plugin-notification` 2.8.1 (crate) and `@tauri-apps/plugin-notification`
+2.8.1 (npm) raise the local banner when an agent needs you while no window is in
+front. Both are pinned exactly and move in the same commit: `tauri build` refuses
+a crate and npm package on different minors, and the cargo and npm dependabot
+groups each bump only one side. Checked on 24 October 2026 against the
 registries:
 
 - **In-house**: no. The banner goes through the operating system's notification

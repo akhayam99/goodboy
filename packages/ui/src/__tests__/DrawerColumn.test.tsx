@@ -7,7 +7,7 @@ import { LEFT_SIDEBAR_DEFAULT, LEFT_SIDEBAR_MAX } from '../components/AppShell';
 import { DrawerColumn, type DrawerColumnFrame } from '../components/DrawerColumn';
 import { READER_DRAWER_STORAGE_KEY, RIGHT_DRAWER_STORAGE_KEY } from '../drawerWidthKeys';
 import {
-  DRAWER_INSET,
+  DRAWER_GUTTER,
   READER_DRAWER_DEFAULT,
   READER_DRAWER_MAX,
   READER_DRAWER_MIN,
@@ -112,18 +112,18 @@ describe('DrawerColumn pushing', () => {
     renderColumn('drafts');
 
     expect(panel().getAttribute('data-drawer-mode')).toBe('push');
-    expect(panel().style.width).toBe(`${RIGHT_DRAWER_DEFAULT + DRAWER_INSET}px`);
+    expect(panel().style.width).toBe(`${RIGHT_DRAWER_DEFAULT + DRAWER_GUTTER}px`);
     expect(box()?.dataset['container']).toBe('drawer');
     expect(box()?.className).toContain('rounded-l-frame');
     expect(box()?.className).toContain('bg-drawer');
     expect(box()?.className).not.toContain('shadow');
   });
 
-  it('keeps the 8px gap to the page, flush on the right, with a border on three sides', () => {
+  it('keeps the 12px gap to the page, flush on the right, with a border on three sides', () => {
     stubColumnWidth(1094);
     renderColumn('drafts');
 
-    expect(box()?.parentElement?.className).toContain('py-2');
+    expect(box()?.parentElement?.className).toContain('py-3');
     expect(box()?.parentElement?.className).not.toContain('pr-2');
     expect(box()?.className).toContain('border-l');
     expect(box()?.className).toContain('border-y');
@@ -136,7 +136,7 @@ describe('DrawerColumn pushing', () => {
 
     expect(panel().getAttribute('data-drawer-sizing')).toBe('reader');
     expect(panel().getAttribute('data-drawer-mode')).toBe('push');
-    expect(panel().style.width).toBe(`${READER_DRAWER_DEFAULT + DRAWER_INSET}px`);
+    expect(panel().style.width).toBe(`${READER_DRAWER_DEFAULT + DRAWER_GUTTER}px`);
     expect(handle()).not.toBeNull();
   });
 
@@ -145,7 +145,7 @@ describe('DrawerColumn pushing', () => {
     renderSized('reader');
 
     expect(panel().getAttribute('data-drawer-mode')).toBe('overlay');
-    expect(panel().style.width).toBe(`${READER_DRAWER_DEFAULT + DRAWER_INSET}px`);
+    expect(panel().style.width).toBe(`${READER_DRAWER_DEFAULT + DRAWER_GUTTER}px`);
   });
 
   it('shows the handle for the side tier and for the reader tier', () => {
@@ -235,7 +235,7 @@ describe('DrawerColumn over the page', () => {
     expect(panel().className).toContain('top-0');
     expect(panel().className).toContain('bottom-0');
     expect(panel().className).toContain('right-0');
-    expect(panel().style.width).toBe(`${RIGHT_DRAWER_DEFAULT + DRAWER_INSET}px`);
+    expect(panel().style.width).toBe(`${RIGHT_DRAWER_DEFAULT + DRAWER_GUTTER}px`);
   });
 
   it('draws the overlay card with left corners, a left border only and a large shadow', () => {
@@ -244,7 +244,7 @@ describe('DrawerColumn over the page', () => {
     const className = box()?.className ?? '';
     expect(className).toContain('bg-drawer');
 
-    expect(box()?.parentElement?.className).not.toContain('py-2');
+    expect(box()?.parentElement?.className).not.toContain('py-3');
     expect(box()?.parentElement?.className).not.toContain('pr-2');
     expect(className).toContain('rounded-l-frame');
     expect(className).not.toMatch(/(^|\s)rounded-frame(\s|$)/);
@@ -258,12 +258,12 @@ describe('DrawerColumn over the page', () => {
     stubColumnWidth(900);
     renderSized('reader');
     expect(panel().getAttribute('data-drawer-mode')).toBe('overlay');
-    expect(panel().style.width).toBe(`${READER_DRAWER_DEFAULT + DRAWER_INSET}px`);
+    expect(panel().style.width).toBe(`${READER_DRAWER_DEFAULT + DRAWER_GUTTER}px`);
     cleanup();
 
     stubColumnWidth(600);
     renderSized('reader');
-    expect(panel().style.width).toBe(`${600 - 16 + DRAWER_INSET}px`);
+    expect(panel().style.width).toBe(`${600 - DRAWER_GUTTER * 2 + DRAWER_GUTTER}px`);
   });
 
   it('covers the page with a scrim only while it lies over it', () => {
@@ -430,7 +430,7 @@ describe('DrawerColumn sizes', () => {
     localStorage.setItem(RIGHT_DRAWER_STORAGE_KEY, '900');
     renderColumn('drafts');
 
-    expect(panel().style.width).toBe(`${RIGHT_DRAWER_MAX + DRAWER_INSET}px`);
+    expect(panel().style.width).toBe(`${RIGHT_DRAWER_MAX + DRAWER_GUTTER}px`);
   });
 
   it('reads a width saved before the 384 floor back at the floor', () => {
@@ -438,18 +438,18 @@ describe('DrawerColumn sizes', () => {
     localStorage.setItem(RIGHT_DRAWER_STORAGE_KEY, '340');
     renderColumn('drafts');
 
-    expect(panel().style.width).toBe(`${RIGHT_DRAWER_MIN + DRAWER_INSET}px`);
+    expect(panel().style.width).toBe(`${RIGHT_DRAWER_MIN + DRAWER_GUTTER}px`);
   });
 
   it('keeps the two tiers apart: each reads and writes only its own saved width', () => {
     stubColumnWidth(2400);
     localStorage.setItem(RIGHT_DRAWER_STORAGE_KEY, '500');
     const side = renderSized('side');
-    expect(panel().style.width).toBe(`${500 + DRAWER_INSET}px`);
+    expect(panel().style.width).toBe(`${500 + DRAWER_GUTTER}px`);
     side.unmount();
 
     const reader = renderSized('reader');
-    expect(panel().style.width).toBe(`${READER_DRAWER_DEFAULT + DRAWER_INSET}px`);
+    expect(panel().style.width).toBe(`${READER_DRAWER_DEFAULT + DRAWER_GUTTER}px`);
     fireEvent.keyDown(handleOf(), { key: 'ArrowLeft' });
 
     expect(localStorage.getItem(READER_DRAWER_STORAGE_KEY)).toBe(String(READER_DRAWER_DEFAULT + 8));
@@ -457,19 +457,19 @@ describe('DrawerColumn sizes', () => {
     reader.unmount();
 
     renderSized('side');
-    expect(panel().style.width).toBe(`${500 + DRAWER_INSET}px`);
+    expect(panel().style.width).toBe(`${500 + DRAWER_GUTTER}px`);
   });
 
   it('reads the reader width back clamped to 480 and 1000', () => {
     stubColumnWidth(2600);
     localStorage.setItem(READER_DRAWER_STORAGE_KEY, '1500');
     const high = renderSized('reader');
-    expect(panel().style.width).toBe(`${READER_DRAWER_MAX + DRAWER_INSET}px`);
+    expect(panel().style.width).toBe(`${READER_DRAWER_MAX + DRAWER_GUTTER}px`);
     high.unmount();
 
     localStorage.setItem(READER_DRAWER_STORAGE_KEY, '300');
     renderSized('reader');
-    expect(panel().style.width).toBe(`${READER_DRAWER_MIN + DRAWER_INSET}px`);
+    expect(panel().style.width).toBe(`${READER_DRAWER_MIN + DRAWER_GUTTER}px`);
   });
 
   it('writes the reader width once, at the end of a drag', () => {
@@ -482,7 +482,7 @@ describe('DrawerColumn sizes', () => {
     fireEvent.mouseMove(window, { clientX: 800 });
 
     expect(setItem).not.toHaveBeenCalled();
-    expect(panel().style.width).toBe(`${READER_DRAWER_DEFAULT + 200 + DRAWER_INSET}px`);
+    expect(panel().style.width).toBe(`${READER_DRAWER_DEFAULT + 200 + DRAWER_GUTTER}px`);
 
     fireEvent.mouseUp(window);
 
@@ -496,11 +496,11 @@ describe('DrawerColumn sizes', () => {
     stubColumnWidth(2600);
     localStorage.setItem(READER_DRAWER_STORAGE_KEY, '900');
     renderSized('reader');
-    expect(panel().style.width).toBe(`${900 + DRAWER_INSET}px`);
+    expect(panel().style.width).toBe(`${900 + DRAWER_GUTTER}px`);
 
     fireEvent.doubleClick(handleOf());
 
-    expect(panel().style.width).toBe(`${READER_DRAWER_DEFAULT + DRAWER_INSET}px`);
+    expect(panel().style.width).toBe(`${READER_DRAWER_DEFAULT + DRAWER_GUTTER}px`);
     expect(localStorage.getItem(READER_DRAWER_STORAGE_KEY)).toBe(String(READER_DRAWER_DEFAULT));
   });
 
@@ -541,7 +541,7 @@ describe('DrawerColumn sizes', () => {
     );
 
     expect(setItem).not.toHaveBeenCalled();
-    expect(panel().style.width).toBe(`${RIGHT_DRAWER_DEFAULT + 49 + DRAWER_INSET}px`);
+    expect(panel().style.width).toBe(`${RIGHT_DRAWER_DEFAULT + 49 + DRAWER_GUTTER}px`);
 
     fireEvent.mouseUp(window);
 
@@ -562,7 +562,7 @@ describe('DrawerColumn sizes', () => {
     fireEvent.mouseDown(handle, { button: 0, clientX: 1000 });
     fireEvent.mouseMove(window, { clientX: 0 });
 
-    expect(panel().style.width).toBe(`${room + DRAWER_INSET}px`);
+    expect(panel().style.width).toBe(`${room + DRAWER_GUTTER}px`);
 
     fireEvent.mouseUp(window);
 
@@ -591,7 +591,7 @@ describe('DrawerColumn sizes', () => {
     fireEvent.mouseMove(window, { clientX: 0 });
     fireEvent.mouseUp(window);
 
-    expect(panel().style.width).toBe(`${RIGHT_DRAWER_MAX + DRAWER_INSET}px`);
+    expect(panel().style.width).toBe(`${RIGHT_DRAWER_MAX + DRAWER_GUTTER}px`);
     expect(panel().getAttribute('data-drawer-mode')).toBe('overlay');
   });
 
@@ -629,7 +629,7 @@ describe('DrawerColumn sizes', () => {
       expect(aside).toBeLessThanOrEqual(columnWidth);
       expect(panel().getAttribute('data-drawer-mode')).toBe(mode);
       expect(panel().style.width).toBe(`${aside}px`);
-      expect(gutter?.className).toContain('w-2');
+      expect(gutter?.className).toContain('w-3');
       expect(gutter?.className).toContain('shrink-0');
       expect(box()?.className).toContain('min-w-0');
       expect(box()?.className).toContain('overflow-clip');
@@ -675,7 +675,7 @@ describe('DrawerColumn as two containers', () => {
     expect(page?.className).toContain('border-frame-edge');
     expect(drawer?.className).toContain('rounded-l-frame');
     expect(drawer?.className).toContain('border-frame-edge');
-    expect(drawer?.parentElement?.className).not.toContain('py-2');
+    expect(drawer?.parentElement?.className).not.toContain('py-3');
   });
 
   it('keeps the wrapped sheet shape while the drawer is closed or lies over the page', () => {
@@ -748,7 +748,7 @@ describe('DrawerColumn one rule for every width', () => {
     );
 
     expect(panel().getAttribute('data-drawer-mode')).toBe('overlay');
-    expect(panel().style.width).toBe(`${READER_DRAWER_DEFAULT + DRAWER_INSET}px`);
+    expect(panel().style.width).toBe(`${READER_DRAWER_DEFAULT + DRAWER_GUTTER}px`);
     expect(scrim()).not.toBeNull();
   });
 

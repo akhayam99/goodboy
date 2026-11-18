@@ -19,14 +19,7 @@ const phraseOf = ({ comments, notes }: Counts): string => {
 export const needsYouWords = (counts: Counts): string =>
   `${phraseOf(counts)} ${counts.comments + counts.notes === 1 ? 'needs' : 'need'} you`;
 
-export const couldntFixWords = ({
-  comments,
-  notes,
-  form,
-}: Counts & { readonly form: 'status' | 'chip' }): string =>
-  form === 'status'
-    ? `${phraseOf({ comments, notes })} couldn't be fixed`
-    : `${phraseOf({ comments, notes })} it couldn't fix`;
+export const couldntFixWords = (counts: Counts): string => `${phraseOf(counts)} failed`;
 
 export const pushFailedWords = ({ count }: { readonly count: number }): string =>
   count === 1 ? "1 comment didn't go out" : `${count} comments didn't go out`;

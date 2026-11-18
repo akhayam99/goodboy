@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { AppShell, DrawerFrame, PaneShell } from '@goodboy/ui';
 import { StudioFrame } from '../../../StudioFrame';
-import { shellArrangement } from '../../../../shellArrangement';
+import { ScenePlacesRail } from '../ScenePlacesRail';
 import { CONCEPT_ICONS } from '../../../../../shared/components/conceptIcons';
 import { InboxStudioLayout } from '../../../../../features/inbox/components/InboxStudio/InboxStudioLayout';
 import { seedBoardScene } from '../BoardScene';
@@ -10,11 +10,6 @@ import { seedStudioChrome } from '../shellChrome';
 const WINDOW_WIDTH_PX = 1440;
 
 const noop = () => undefined;
-
-const arrangement = shellArrangement({
-  hasWorkspace: true,
-  isSidebarCollapsed: false,
-});
 
 const ROWS = [
   'Refunds on split payments leave the second charge captured',
@@ -43,8 +38,7 @@ const DrawerSplitTasks = () => {
       style={{ width: WINDOW_WIDTH_PX }}
     >
       <AppShell
-        leftSidebarCollapsed={arrangement.leftSidebarCollapsed}
-        leftSidebar={<div aria-hidden />}
+        leftRail={<ScenePlacesRail />}
         main={<div />}
         studio={
           <StudioFrame kind="inbox" placement="content" onClose={noop}>

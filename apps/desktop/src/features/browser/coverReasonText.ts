@@ -14,6 +14,8 @@ export const coverReasonText = ({ reason }: Params): string => {
       return 'Hidden while a tip shows';
     case 'page':
       return 'Hidden while a page is open';
+    case 'drag':
+      return 'Hidden while you resize';
     default: {
       const unreachable: never = reason;
       return unreachable;
