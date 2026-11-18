@@ -116,15 +116,16 @@ describe('demo playground chrome', () => {
   });
 
   it('offers Download for macOS in exactly one place, the Get Goodboy screen', () => {
-    seedDone({ ids: ALL_IDS });
     visitOn({ userAgent: MAC_AGENT });
-    const groupIds = DEMO_CHAPTERS.map((chapter) => chapter.id);
-    for (const id of groupIds) {
+    for (const [index, id] of ALL_IDS.entries()) {
+      seedDone({ ids: ALL_IDS.slice(0, index) });
       window.history.replaceState(null, '', `/?scene=demo#${id}`);
       const view = render(<DemoPlayground />);
+      expect(window.location.hash).toBe(`#${id}`);
       expect(screen.queryAllByRole('link', { name: /Download for macOS/ })).toHaveLength(0);
       view.unmount();
     }
+    seedDone({ ids: ALL_IDS });
     window.history.replaceState(null, '', '/?scene=demo#get');
     render(<DemoPlayground />);
     expect(screen.getAllByRole('link', { name: /Download for macOS/ })).toHaveLength(1);
@@ -188,7 +189,7 @@ describe('demo playground chrome', () => {
     ]);
   });
 
-  it('checks the Get Goodboy node on the rail once the visitor has opened it', () => {
+  it('checks the Get Goodboy node on the rail once the story has reached it', () => {
     seedDone({ ids: ALL_IDS });
     window.history.replaceState(null, '', '/?scene=demo#ship');
     render(<DemoPlayground />);
@@ -198,12 +199,28 @@ describe('demo playground chrome', () => {
           .getByRole('navigation', { name: 'Playground groups' })
           .querySelectorAll('button[data-access]'),
       ).at(-1);
-    expect(closingRow()?.getAttribute('data-access')).toBe('open');
-    fireEvent.click(closingRow() ?? document.body);
+    expect(window.location.hash).toBe('#get');
     expect(closingRow()?.getAttribute('data-access')).toBe('done');
+  });
+
+  it('replays Review and ship when the visitor steps back from Get Goodboy', () => {
+    seedDone({ ids: ALL_IDS });
+    window.history.replaceState(null, '', '/?scene=demo#get');
+    render(<DemoPlayground />);
     fireEvent.keyDown(rootOf(), { key: 'ArrowLeft', code: 'ArrowLeft' });
     expect(window.location.hash).toBe('#ship');
-    expect(closingRow()?.getAttribute('data-access')).toBe('done');
+    const rows = Array.from(
+      screen
+        .getByRole('navigation', { name: 'Playground groups' })
+        .querySelectorAll('button[data-access]'),
+    );
+    expect(rows.map((row) => row.getAttribute('data-access'))).toEqual([
+      'done',
+      'done',
+      'done',
+      'open',
+      'locked',
+    ]);
   });
 
   it('offers the Linux download to a Linux visitor', () => {
@@ -363,7 +380,7 @@ describe('demo playground chrome', () => {
   });
 
   it('drops a held shortcut when another group opens before its frame is ready', () => {
-    seedDone({ ids: ['bring', 'direction'] });
+    seedDone({ ids: ['bring'] });
     window.history.replaceState(null, '', '/?scene=demo#direction');
     render(<DemoPlayground />);
     const first = visibleFrame();
@@ -371,7 +388,7 @@ describe('demo playground chrome', () => {
     fireEvent.keyDown(rootOf(), { key: 'k', code: 'KeyK', metaKey: isMac, ctrlKey: !isMac });
     fireEvent.click(
       within(screen.getByRole('navigation', { name: 'Playground groups' })).getByRole('button', {
-        name: /^Guide the work/,
+        name: /^Bring your repositories/,
       }),
     );
     const frames = Array.from(document.querySelectorAll('iframe')).filter(
@@ -438,21 +455,6 @@ describe('demo playground chrome', () => {
     expect(focus).toHaveBeenCalled();
   });
 
-  it('gives focus to the Next button of a done group when its frame grabs it', () => {
-    seedDone({ ids: ['bring'] });
-    window.history.replaceState(null, '', '/?scene=demo#bring');
-    render(<DemoPlayground />);
-    const shown = visibleFrame();
-    ready({ frame: shown });
-    const next = screen.getByRole('button', { name: /Next: Set the direction/ });
-    rootOf().focus();
-    expect(document.activeElement).not.toBe(next);
-    act(() => {
-      shown.dispatchEvent(new FocusEvent('focusin', { bubbles: true }));
-    });
-    expect(document.activeElement).toBe(next);
-  });
-
   it('leaves focus on the shown frame when the visitor works inside it', () => {
     seedDone({ ids: ['bring', 'direction', 'guide'] });
     window.history.replaceState(null, '', '/?scene=demo#ship');
@@ -464,13 +466,5 @@ describe('demo playground chrome', () => {
       shown.dispatchEvent(new FocusEvent('focusin', { bubbles: true }));
     });
     expect(document.activeElement).toBe(shown);
-  });
-
-  it('keeps the arrow keys moving between groups beside the Next button of a done group', () => {
-    seedDone({ ids: ['bring', 'direction'] });
-    window.history.replaceState(null, '', '/?scene=demo#direction');
-    render(<DemoPlayground />);
-    fireEvent.keyDown(rootOf(), { key: 'ArrowRight', code: 'ArrowRight' });
-    expect(window.location.hash).toBe('#guide');
   });
 });
