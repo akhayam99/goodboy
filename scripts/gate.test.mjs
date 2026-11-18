@@ -155,6 +155,11 @@ describe('scripts/gate.sh against the CI jobs', () => {
     assert.doesNotMatch(gateText, /CARGO_TARGET_DIR=/);
   });
 
+  it('picks the quick gate tests with the import graph CI uses', () => {
+    assert.match(gateText, /node scripts\/ci-related-tests\.mjs/);
+    assert.doesNotMatch(gateText, /vitest related/);
+  });
+
   it('prints the output contract', () => {
     assert.match(gateText, /echo "gate ok"/);
     assert.match(gateText, /echo "gate failed at \$name: \$log"/);

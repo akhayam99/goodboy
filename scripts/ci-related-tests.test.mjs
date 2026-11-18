@@ -3,7 +3,13 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { after, describe, it } from 'node:test';
-import { buildGraph, globMatchesOf, relatedSelection, specifiersOf } from './ci-related-tests.mjs';
+import {
+  buildGraph,
+  globMatchesOf,
+  relatedSelection,
+  selectionLines,
+  specifiersOf,
+} from './ci-related-tests.mjs';
 
 const CORE_MANIFEST = JSON.stringify({
   name: '@goodboy/core',
@@ -121,6 +127,21 @@ describe('relatedSelection', () => {
     assert.ok(selection.desktop.includes('src/features/palette/rank.test.ts'));
     assert.ok(!selection.desktop.some(isOtherProject));
     assert.equal(selection.isA11yReached, false);
+  });
+
+  it('selects the package tests a change reaches, by package', () => {
+    const selection = selectionFor({ graph, path: 'packages/core/src/slug/branchName.ts' });
+    assert.deepEqual(selection.packages, { core: ['src/slug/branchName.test.ts'] });
+    const unrelated = selectionFor({ graph, path: 'packages/core/src/icons/dog.ts' });
+    assert.deepEqual(unrelated.packages, {});
+  });
+
+  it('prints one line per test with its package for the quick gate', () => {
+    const selection = selectionFor({ graph, path: 'packages/core/src/slug/branchName.ts' });
+    const lines = selectionLines({ selection });
+    assert.ok(lines.includes('desktop src/features/branch/label.test.tsx'));
+    assert.ok(lines.includes('desktop src/__tests__/regressions/rules.test.ts'));
+    assert.ok(lines.includes('core src/slug/branchName.test.ts'));
   });
 
   it('records an import it cannot resolve instead of dropping it silently', () => {

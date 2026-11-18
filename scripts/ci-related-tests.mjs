@@ -205,19 +205,54 @@ const isDesktopUnitTest = ({ file }) =>
   !A11Y_TEST.test(file) &&
   !PERF_TEST.test(file);
 
+const isPackageUnitTest = ({ file }) =>
+  file.startsWith('packages/') && TEST_FILE.test(file) && !PERF_TEST.test(file);
+
+const isAlwaysRun = ({ graph, file }) =>
+  ALWAYS_RUN.test(file) || DISK_READER.test(graph.sources.get(file) ?? '');
+
+const packageTestsOf = ({ graph, reached }) => {
+  const packages = {};
+  for (const file of graph.files) {
+    if (!isPackageUnitTest({ file }) || !(reached.has(file) || isAlwaysRun({ graph, file }))) {
+      continue;
+    }
+    const [, name, ...rest] = file.split('/');
+    packages[name] = [...(packages[name] ?? []), rest.join('/')];
+  }
+  return packages;
+};
+
 export const relatedSelection = ({ graph, changed }) => {
   const reached = reachedFrom({ graph, changed });
   const desktopTests = graph.files.filter((file) => isDesktopUnitTest({ file }));
-  const alwaysRun = desktopTests.filter(
-    (file) => ALWAYS_RUN.test(file) || DISK_READER.test(graph.sources.get(file) ?? ''),
-  );
-  const desktop = desktopTests.filter((file) => reached.has(file) || alwaysRun.includes(file));
+  const desktop = desktopTests.filter((file) => reached.has(file) || isAlwaysRun({ graph, file }));
   const zones = desktop.filter((file) => isSceneBacked({ source: graph.sources.get(file) ?? '' }));
   const isA11yReached = graph.files.some((file) => A11Y_TEST.test(file) && reached.has(file));
   return {
     desktop: desktop.map((file) => file.slice(`${DESKTOP}/`.length)),
     desktopTotal: desktopTests.length,
     zones: zones.map((file) => file.slice(`${DESKTOP}/`.length)),
+    packages: packageTestsOf({ graph, reached }),
     isA11yReached,
   };
 };
+
+export const selectionLines = ({ selection }) => [
+  ...selection.desktop.map((file) => `desktop ${file}`),
+  ...Object.entries(selection.packages).flatMap(([name, files]) =>
+    files.map((file) => `${name} ${file}`),
+  ),
+];
+
+const runCli = () => {
+  const changed = readFileSync(0, 'utf8')
+    .split('\n')
+    .filter((line) => line.length > 0);
+  const selection = relatedSelection({ graph: buildGraph(), changed });
+  process.stdout.write(selectionLines({ selection }).join('\n'));
+};
+
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  runCli();
+}
