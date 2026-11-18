@@ -1,20 +1,9 @@
 import './SessionMock.css';
 import { MockStage } from './MockStage';
 import { Plus, Waypoints } from './generated/icons';
-import {
-  AppButton,
-  AppRow,
-  AppTopBar,
-  GroupLabel,
-  NeedsYouChip,
-  RunTree,
-  StartsInChip,
-  WorkNode,
-  useIsCoarse,
-} from './kit';
+import { AppTopBar, NeedsYouChip, RunTree, StartsInChip, useIsCoarse } from './kit';
 import { SESSION_DOORS } from './SESSION_DOORS';
 import { SESSION_GROUPS } from './SESSION_GROUPS';
-import { SESSION_LIST } from './SESSION_LIST';
 import { SESSION_PHONE_ROWS } from './SESSION_PHONE_ROWS';
 import { SESSION_ROWS } from './SESSION_ROWS';
 import { SESSION_TOOLS } from './SESSION_TOOLS';
@@ -24,11 +13,10 @@ export const SessionMock = () => {
   return (
     <MockStage
       className="sessionMock"
-      label="The session Duplicate credit fix open beside the left column of places and sessions and the column of session tools, with a run of five steps. Steps one to three are done, step four is running, one of its subagents failed and another waits on your answer, and step five is queued."
+      label="The session Duplicate credit fix open between the places rail on the left and the tools rail on the right, with Sessions in the top bar and a run of five steps. Steps one to three are done, step four is running, one of its subagents failed and another waits on your answer, and step five is queued."
     >
       <div className="smApp">
         <AppTopBar
-          workspace="Harborline"
           search="Search or ask"
           end={
             <>
@@ -44,33 +32,32 @@ export const SessionMock = () => {
           }
         />
         <div className="smShell">
-          <nav className="smCol" aria-label="Places and sessions">
-            <AppButton className="smNew">
-              <Plus size={14} />
-              New session
-            </AppButton>
-            <div className="smDoors">
-              {SESSION_DOORS.map(({ label, Icon }) => (
-                <span key={label} className="smDoor">
-                  <Icon size={14} />
-                  {label}
+          <nav className="smRail" aria-label="Places">
+            <span className="smRailItem">
+              <span className="smMark" aria-hidden="true">
+                H
+              </span>
+              Harborline
+            </span>
+            <span className="smRailItem">
+              <span className="smRailTile smRailNew">
+                <Plus size={16} />
+              </span>
+              New
+            </span>
+            {SESSION_DOORS.map(({ label, Icon, isCurrent }) => (
+              <span key={label} className="smRailItem" data-current={isCurrent}>
+                <span className="smRailTile">
+                  <Icon size={16} />
+                  {isCurrent ? (
+                    <span className="smRailCount" aria-label="1 session needs you">
+                      1
+                    </span>
+                  ) : null}
                 </span>
-              ))}
-            </div>
-            <GroupLabel label="Sessions" muted className="smColLabel" />
-            <div className="smSessions">
-              {SESSION_LIST.map((session) => (
-                <AppRow
-                  key={session.id}
-                  isSelected={session.isSelected}
-                  height={28}
-                  className="smSession"
-                >
-                  <WorkNode state={session.state} label={session.stateLabel} size="sm" />
-                  <span className="smSessionTitle">{session.title}</span>
-                </AppRow>
-              ))}
-            </div>
+                {label}
+              </span>
+            ))}
           </nav>
           <div className="smBody">
             <div className="smHead">
@@ -100,9 +87,12 @@ export const SessionMock = () => {
             />
           </div>
           <div className="smTools" aria-hidden="true">
-            {SESSION_TOOLS.map((Tool, index) => (
-              <span key={index} className="smTool">
-                <Tool size={14} />
+            {SESSION_TOOLS.map(({ label, Icon }) => (
+              <span key={label} className="smRailItem">
+                <span className="smRailTile">
+                  <Icon size={16} />
+                </span>
+                {label}
               </span>
             ))}
           </div>

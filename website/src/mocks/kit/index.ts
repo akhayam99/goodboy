@@ -1,4 +1,3 @@
-export { AppButton } from './AppButton';
 export { AppRow } from './AppRow';
 export { AppTopBar } from './AppTopBar';
 export { Chip } from './Chip';
@@ -12,5 +11,5 @@ export { StateBadge } from './StateBadge';
 export { ToneBar } from './ToneBar';
 export { WorkNode } from './WorkNode';
 export type { RailGroupInput } from './railGeometry';
-export { type Tone, type WorkNodeState } from './spec';
+export { type Tone } from './spec';
 export { useIsCoarse } from './useIsCoarse';

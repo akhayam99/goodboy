@@ -499,6 +499,13 @@
           "shown": true
         },
         {
+          "title": "Sessions in the bar",
+          "text": "Sessions, at the top left of the bar, or ⌘B from any screen, opens your sessions in one list: Pinned first, then Needs you, Running, In review and Building. Type to filter, and Enter opens one.",
+          "group": "Workspaces and folders",
+          "also": "sessions in the bar",
+          "shown": true
+        },
+        {
           "title": "Locate moved folders",
           "text": "If you moved your repos, pick the parent folder. Goodboy finds them again, fixes the paths and repairs the worktrees, with Undo move.",
           "group": "Workspaces and folders",
@@ -767,7 +774,7 @@
         },
         {
           "title": "Comment states",
-          "text": "A comment reads Question, To review, Push failed, Couldn't fix, Working, Ready, Done or Left open. One not in a fix run yet reads Open. The list groups them, and one tally counts what needs you.",
+          "text": "A comment reads Question, Push failed, Failed, Fixing, Queued, Fix ready, Done or Left open. One not in a fix run yet reads Open. The list groups them, and one tally counts what needs you.",
           "group": "Review and resolve on the Branch page",
           "also": "comment states",
           "shown": true
@@ -1492,10 +1499,10 @@
           "shown": true
         },
         {
-          "title": "Update pill",
-          "text": "A single light sweep shows when an update is ready.",
+          "title": "Update mark",
+          "text": "The Goodboy mark at the foot of the rail reads Update when an update is ready, with the download percent while it downloads.",
           "group": "Security, backup and updates",
-          "also": "update pill",
+          "also": "update mark",
           "shown": true
         }
       ]

@@ -12,6 +12,73 @@ file is in `.prettierignore`: the meta comment sits on the line right below
 each entry's heading, with no blank line, and a formatter would push it down
 onto its own paragraph.
 
+## Goodboy v0.40.0
+
+A new frame: places on the left, tools on the right, your sessions one key away, and every fix shows its work on the row you clicked.
+
+This version updates your data in one direction. To go back to 0.39, restore the backup Goodboy made before updating.
+
+### New
+
+#### Your sessions moved to Sessions in the top bar
+<!-- gb area=sessions image=sessions -->
+
+The sidebar list is gone. Click Sessions at the left of the top bar, or press `⌘B` from anywhere, to find a session by title or project. Pinned sessions come first, then Needs you, Running, In review and Building, each with its count. Arrows move, Enter opens, and Open Board shows finished sessions too.
+
+After the update, a card under Sessions says where your sessions went, with Show sessions. It closes the first time you open Sessions.
+
+The Board still holds every session. Board in the left rail opens it, and stays lit while a session is open: click it to go back to the Board.
+
+#### Places on the left, in one narrow rail
+<!-- gb area=app image=shell -->
+
+A narrow rail on the left holds the workspace mark, New, then Board, Tasks, Workflows, Chat, Connect and Impact, with Settings, Report and the Goodboy mark at the foot. It never folds or resizes. An amber number on Board counts the sessions that need you, and a dot on Tasks marks new tasks. New chat sits in the Chat page header.
+
+With an update waiting, the Goodboy mark reads Update and shows the download percent while it downloads. A failed download shows an alert on the mark.
+
+#### Tools open from a rail at the right edge
+<!-- gb area=app image=tool-rail -->
+
+The tools rail sits at the right edge of every page: Terminal, Browser, Scripts, Ask and Monitor. A click opens the tool to its left, and the rail never moves. Monitor is now a panel with the ports in use, and Open full page still makes it a page.
+
+Open more tools and they share the space, up to four in two columns of two. `F6` moves between page and panels, `⌘⇧W` closes the focused one, and a button in their heads stacks two tools or sets them side by side. Each session keeps its layout and brings it back. Goodboy saves it in its database, so an older build cannot open the database after this update.
+
+### Improved
+
+#### Fixes show their work on the row you clicked
+<!-- gb area=review image=check-row -->
+
+A failing check, a review comment and a failed push show their agent where you clicked. The row reads Starting, then Analyzing or Fixing with the current step and time, with Stop and Open transcript on hover. The line above the tabs is gone, and a dot on Checks or Comments says work goes on while you are elsewhere. While you stay on a tab, rows keep their place.
+
+The result lands on the same row with one action: Cause found with Review fix, Fixed, not pushed with Push, Failed or Stopped with Retry, and No fix found with Analyze again. Review fix opens the proposal under the row with Apply fix.
+
+#### Comment fixes answer on their row
+<!-- gb area=review image=fix-run-count -->
+
+Point at an open comment for Fix to fix that comment alone. A ready fix reads Fix ready with Review and Apply, and Review shows the change under the row with Apply, Retry with a hint, Discard and Open changes. Discard throws the fix away and the comment is open again. In the Fix comments drawer, Discard means the same, and parking a comment is Skip.
+
+A batch shows one quiet count above the list, with Stop all, Open transcript and any skipped checks in its menu. Waiting comments read Queued with their place, and when the run ends each comment keeps its result on its row. The board, the session marks and Ask use the same words, such as 2 comments failed.
+
+#### A failed push shows the agent fixing it
+<!-- gb area=review -->
+
+The Push failed card shows the agent's step and time with Stop and Open transcript, and no Retry while it works. It then reads Pushed, Stopped or Failed, with one Retry. A stopped fix no longer reads as failed, and the rebase card does the same when its push fails.
+
+#### The Board takes over from the list
+<!-- gb area=sessions image=board -->
+
+Rename a session on its Board card, with Retry when the save fails. Up and Down move through a lane, Shift with them selects several, and the bar says how to select. The Board header keeps the one session filter: sort, project and Mark all as read.
+
+#### Narrow windows keep the page in view
+<!-- gb area=app -->
+
+In a window narrower than 1100 pixels both rails show icons only, with their names on hover. A narrow tool still sits beside the page, and the Browser lies over it. `⌘⇧W`, `Esc` outside the page or a click beside it closes it.
+
+### Fixed
+
+- Goodboy no longer crashes when a Browser tab opens or comes back before its page has an address. <!-- gb area=app -->
+- A plan stays ready to approve while a new Planner only waits for your go, instead of reading Updating. <!-- gb area=agents -->
+
 ## Goodboy v0.39.2
 
 A comment that asks for a rework becomes a run, the Lead hears changes to a waiting plan, and every action answers where you clicked.

@@ -41,15 +41,15 @@ Pull requests opened outside Goodboy, by an agent or from a terminal, show up wh
 
 ### Full log
 
-Follow what happened in a session in one list. The **Log** is the last section of the Overview, always open, and scrolls with the page. **Open the full log** in the session's **⋯** menu, in the sidebar row's menu and in ⌘K opens the Overview on that section.
+Follow what happened in a session in one list. The **Log** is the last section of the Overview, always open, and scrolls with the page. **Open the full log** in the session's **⋯** menu, in the Board card's menu and in ⌘K opens the Overview on that section.
 
 - One row per agent, workflow run or fix run shows its state, model, time and cost.
 - Plain facts get a row too, such as context changes, branch events and links.
 - Rows go newest first, with a search box.
-- Rows hold no buttons. The next step for a row, such as **Push** or **Start fix**, stays on its branch row above, so a step is offered once on the page.
+- Rows hold no buttons. The next step for a row, such as **Push** or **Apply fix**, stays on its branch row above, so a step is offered once on the page.
 - The rail draws like the Agents column of a run: one thin line, the same nodes and elbows, the same step height. A day starts under a thin rule with its name.
 - A long log stays smooth. The search box shows at once and the rows fill in right after the page. The log shows the newest 50 rows, and **Show 50 older rows** adds the next 50. Rows far from the screen are skipped but keep their height. Rows a screen away are drawn before you reach them.
-- Every row carries the glyph its concept has in the sidebar and the **New** menu. A workflow run has the Workflows glyph, an orchestrated run the orchestrator glyph, and an agent its role.
+- Every row carries the glyph its concept has in the places rail and the **New** menu. A workflow run has the Workflows glyph, an orchestrated run the orchestrator glyph, and an agent its role.
 - **Mark as read** clears the unread marks.
 
 <picture>
@@ -73,7 +73,7 @@ Each branch is one tile, like a pull request in a list:
 - The second line holds a few quiet facts: the pull request, the lines added and removed, the runs and the questions that wait. A pull request shows its number, such as **PR #12**.
 - A tile with something to do carries one button. **Answer** comes first and opens the exact question, then the first waiting step, such as **Rebase**, **Push** or **Open a pull request**. A merged branch offers **Remove worktree** once its cleanup is proposed.
 - A click on the tile opens the branch page on Conversation. Its tabs hold the changes, commits, checks and runs, with the questions and artifacts of each run. The tile and its button are two separate stops for Tab.
-- Every tile has the same **⋯** menu as the branch in the sidebar: open, terminal, editor, copy the name, push, close the branch and the rest. It shows on hover and on focus. A right click on the tile opens the full menu at the pointer, and Shift+F10 opens it from the keyboard. Closing a branch asks first, inside the menu, and says what happens to its folder and its uncommitted changes.
+- Every tile has the same **⋯** menu as the branch on the **Projects** card: open, terminal, editor, copy the name, push, close the branch and the rest. It shows on hover and on focus. A right click on the tile opens the full menu at the pointer, and Shift+F10 opens it from the keyboard. Closing a branch asks first, inside the menu, and says what happens to its folder and its uncommitted changes.
 - A Lead counts as work on its own branch: a working Lead shows that branch **Running**, and a Lead that waits for you or failed puts it under **Needs you**.
 - A long branch name is cut in the middle, so its end stays readable. A dot marks what is new since you last looked.
 - The **Not on a branch** tile holds work that has no branch. It names itself by its next step, such as the open question, and opens Runs. It shows only while that work runs or needs you. A finished run with no branch adds no tile; its spend and time still count in the tiles above.

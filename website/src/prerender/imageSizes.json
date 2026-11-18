@@ -503,14 +503,6 @@
     "width": 2040,
     "height": 945
   },
-  "features/switch-display-options-dark.webp": {
-    "width": 4080,
-    "height": 2940
-  },
-  "features/switch-display-options-light.webp": {
-    "width": 4080,
-    "height": 2940
-  },
   "features/switch-notifications-dark.webp": {
     "width": 4080,
     "height": 2640
@@ -526,14 +518,6 @@
   "features/switch-now-chip-light.webp": {
     "width": 4740,
     "height": 2040
-  },
-  "features/switch-rail-dark.webp": {
-    "width": 2160,
-    "height": 2400
-  },
-  "features/switch-rail-light.webp": {
-    "width": 2160,
-    "height": 2400
   },
   "features/workflow-hints-dark.webp": {
     "width": 3030,

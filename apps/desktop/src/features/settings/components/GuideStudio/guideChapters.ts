@@ -442,7 +442,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Comments',
-        desc: 'Review threads and your own notes in one list, grouped Needs you, Working and Done. A row opens a drawer with the code, the thread and Fix, Reply and Skip on F, R and S. A rework comment offers Start a run.',
+        desc: 'Threads and your notes in one list, grouped Needs you, Working and Done. Fixes report on their row. A row opens a drawer with the code, the thread and Fix, Reply and Skip on F, R and S. A rework comment offers Start a run.',
       },
       {
         term: 'Fix comments',
@@ -454,7 +454,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Checks',
-        desc: 'CI runs grouped as Failing, Running, Passed and Skipped. Analyze on a failing one starts the Debugger, which proposes a fix, with Start fix and Push in its drawer.',
+        desc: 'CI runs grouped Failing, Running, Passed and Skipped. Analyze on a failing row shows the Debugger at work, then Cause found, Review fix, Apply fix and Push.',
       },
     ],
     links: [
