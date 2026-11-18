@@ -20,6 +20,7 @@ const viewWithScout = ({ isAdopted = false }: ViewParams = {}): AutoTreeView => 
   pendingMessages: [],
   droppedMessageIds: [],
   deliveredResults: [],
+  runSlots: { running: 0, freedAt: 0 },
   hiddenChildIds: [],
   rootAsk: null,
 });

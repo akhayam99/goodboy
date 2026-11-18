@@ -13,20 +13,29 @@ const autoRunningChildrenSql = ({ treeRef }: TreeRefParams): string =>
        AND holder.state IN ('starting', 'running')
        AND live.state IN ('starting', 'running'))`;
 
-type CountRunningParams = {
+export type AutoRunSlots = Readonly<{
+  running: number;
+  freedAt: number;
+}>;
+
+type ReadRunSlotsParams = {
   readonly db: Database;
   readonly treeId: AutoTreeId;
 };
 
-export const countAutoRunningChildren = async ({
+export const readAutoRunSlots = async ({
   db,
   treeId,
-}: CountRunningParams): Promise<number> => {
-  const rows = await db.select<{ readonly running: number }>(
-    `SELECT ${autoRunningChildrenSql({ treeRef: '?' })} AS running`,
-    [treeId],
+}: ReadRunSlotsParams): Promise<AutoRunSlots> => {
+  const rows = await db.select<{ readonly running: number; readonly freed_at: number }>(
+    `SELECT ${autoRunningChildrenSql({ treeRef: '?' })} AS running,
+       MAX(
+         COALESCE((SELECT MAX(ended_at) FROM auto_attempts WHERE tree_id = ?), 0),
+         COALESCE((SELECT MAX(settled_at) FROM auto_delegations WHERE tree_id = ?), 0)
+       ) AS freed_at`,
+    [treeId, treeId, treeId],
   );
-  return rows[0]?.running ?? 0;
+  return { running: rows[0]?.running ?? 0, freedAt: rows[0]?.freed_at ?? 0 };
 };
 
 type TakeRunSlotStatementParams = {

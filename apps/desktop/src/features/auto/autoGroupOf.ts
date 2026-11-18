@@ -240,7 +240,7 @@ export const autoGroupOf = ({ view, agents, now }: Params): AutoGroup | null => 
         now,
         startableSince: autoStartableSinceOf({
           tree: view.tree,
-          delegations: view.delegations,
+          runSlots: view.runSlots,
           delegation,
         }),
         results: view.deliveredResults,

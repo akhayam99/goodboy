@@ -214,6 +214,7 @@ export const RESULTS_VIEW: AutoTreeView = {
   pendingMessages: [],
   droppedMessageIds: [],
   deliveredResults: CHILDREN.map((child) => deliveredOf(child)),
+  runSlots: { running: 0, freedAt: 0 },
   hiddenChildIds: [],
   rootAsk: null,
 };

@@ -707,7 +707,7 @@ export { readRunCostUsd } from './queries/auto-cost';
 export { readAgentLastEventAt } from './queries/agent-last-event';
 export { hasAgentOpenToolCall } from './queries/agent-open-tool-call';
 export { readRunLedgerOutcome, type RunLedgerOutcome } from './queries/auto-run-outcome';
-export { autoTakeRunSlotStatement, countAutoRunningChildren } from './queries/auto-run-slots';
+export * from './queries/auto-run-slots';
 export {
   AUTO_DELEGATION_STATES,
   AUTO_OUTCOMES,

@@ -4,6 +4,7 @@ import type {
   AutoDelegation,
   AutoOutcome,
   AutoPhase,
+  AutoRunSlots,
   AutoTree,
 } from '@goodboy/db';
 import {
@@ -196,6 +197,7 @@ type ViewParams = {
   readonly pendingMessages?: ReadonlyArray<AutoPendingMessage>;
   readonly deliveredResults?: ReadonlyArray<AutoDeliveredResult>;
   readonly rootAsk?: string | null;
+  readonly runSlots?: AutoRunSlots;
 };
 
 export const aView = ({
@@ -209,7 +211,9 @@ export const aView = ({
   pendingMessages = [],
   deliveredResults = [],
   rootAsk = null,
+  runSlots = { running: 0, freedAt: 0 },
 }: ViewParams = {}): AutoTreeView => ({
+  runSlots,
   hiddenChildIds: [],
   pendingRefusal,
   pendingMessages,

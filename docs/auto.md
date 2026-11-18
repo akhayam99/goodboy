@@ -977,9 +977,12 @@ stops it is a guard that protects the user:
 A batch has any number of children and is never refused for its size or for the agents
 already running. At most `AUTO_MAX_RUNNING_CHILDREN` (4) children run at once, because each
 one holds memory on the machine: a child runs while its latest attempt is `starting` or
-`running` and its delegation is too (`countAutoRunningChildren`; a child that ended waits for
+`running` and its delegation is too (`readAutoRunSlots`; a child that ended waits for
 its batch to join without holding a slot). The children past the free slots wait in
-`accepted`, the state of any child not started yet, and read **Queued** like it. Each start
+`accepted`, the state of any child not started yet, and read **Queued** like it. The screen
+reads the same `readAutoRunSlots` into the view (`runSlots`: the running count and the last
+time a slot freed), so a waiting child that a free slot did not start within a minute reads
+**Never started** with its recovery controls (`autoStartableSinceOf`). Each start
 takes a slot in one guarded update (`autoTakeRunSlotStatement`, through `runSlotStatements` in
 `startAttempt` and `startQueuedAttempt`): the delegation moves from `accepted` to `starting`
 only while fewer than four run, the tree is owned by this window and money is left under the

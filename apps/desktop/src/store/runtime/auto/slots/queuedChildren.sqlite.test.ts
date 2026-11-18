@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { AUTO_DELEGATION_DEADLINE_MINUTES } from '@goodboy/core/auto';
-import { countAutoRunningChildren, listAutoDelegations } from '@goodboy/db';
+import { getAutoTree, listAutoDelegations, readAutoRunSlots } from '@goodboy/db';
+import { autoGroupOf } from '../../../../features/auto/autoGroupOf';
+import { readAutoTreeViews } from '../../../slices/auto-view/readAutoTreeViews';
 import {
   childTurnEnds,
   makeRuntimeWorld,
@@ -36,8 +38,8 @@ const rowsOf = (world: RuntimeWorld) =>
 const waitingOf = async (world: RuntimeWorld) =>
   (await rowsOf(world)).filter((row) => row.state === 'accepted').length;
 
-const runningOf = (world: RuntimeWorld) =>
-  countAutoRunningChildren({ db: world.state.world.db, treeId: world.treeId });
+const runningOf = async (world: RuntimeWorld) =>
+  (await readAutoRunSlots({ db: world.state.world.db, treeId: world.treeId })).running;
 
 const endChild = async (world: RuntimeWorld, index: number) => {
   const turn = world.state.ports.childTurns[index];
@@ -77,6 +79,38 @@ describe('children past the four running slots', () => {
     expect(await waitingOf(world)).toBe(0);
     expect(new Set(world.state.ports.childTurns.map((turn) => turn.delegationId)).size).toBe(6);
     expect(world.errors).toEqual([]);
+  });
+
+  it('shows a waiting child as never started once the running attempts ended and its launch stalls', async () => {
+    const world = await started();
+    const db = world.state.world.db;
+    const endedAt = world.state.world.clock.now() + 60_000;
+    await db.execute(
+      `UPDATE auto_attempts SET state = 'ended', outcome = 'completed', ended_at = ?
+        WHERE tree_id = ? AND state = 'running'`,
+      [endedAt, world.treeId],
+    );
+
+    const tree = await getAutoTree({ db, treeId: world.treeId });
+    if (tree === null) {
+      throw new Error('the auto tree was expected');
+    }
+    const [view] = await readAutoTreeViews({ db, sessionId: tree.sessionId });
+    if (view === undefined) {
+      throw new Error('an auto view was expected');
+    }
+    const group = autoGroupOf({ view, agents: [], now: endedAt + 2 * 60_000 });
+
+    expect(view.runSlots).toEqual({ running: 0, freedAt: endedAt });
+    expect((await rowsOf(world)).filter((row) => row.state === 'running')).toHaveLength(4);
+    expect(group?.children.map((child) => child.state)).toEqual([
+      'running',
+      'running',
+      'running',
+      'running',
+      'neverStarted',
+      'neverStarted',
+    ]);
   });
 
   it('stops the waiting children with the conversation, so none starts later', async () => {

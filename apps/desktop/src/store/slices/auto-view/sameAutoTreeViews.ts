@@ -28,6 +28,7 @@ const signatureOf = (view: AutoTreeView): string =>
       checksRunOfResult({ result: delegation.result }),
       verifiedChecksOf({ result: delegation.result }),
     ]),
+    view.runSlots,
     view.hiddenChildIds,
     view.artifacts.map((row) => [
       row.artifact.artifactId,

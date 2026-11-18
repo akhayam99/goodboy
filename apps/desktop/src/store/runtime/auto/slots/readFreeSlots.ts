@@ -1,10 +1,5 @@
 import { AUTO_MAX_RUNNING_CHILDREN, autoRemainingForGates } from '@goodboy/core/auto';
-import {
-  AUTO_USD_EPSILON,
-  countAutoRunningChildren,
-  readAutoTreeSpend,
-  type Database,
-} from '@goodboy/db';
+import { AUTO_USD_EPSILON, readAutoRunSlots, readAutoTreeSpend, type Database } from '@goodboy/db';
 import type { AutoTreeId } from '@goodboy/types';
 
 type Params = {
@@ -17,6 +12,6 @@ export const readFreeSlots = async ({ db, treeId }: Params): Promise<number> => 
   if (autoRemainingForGates({ spend }) <= AUTO_USD_EPSILON) {
     return 0;
   }
-  const running = await countAutoRunningChildren({ db, treeId });
+  const { running } = await readAutoRunSlots({ db, treeId });
   return Math.max(0, AUTO_MAX_RUNNING_CHILDREN - running);
 };
