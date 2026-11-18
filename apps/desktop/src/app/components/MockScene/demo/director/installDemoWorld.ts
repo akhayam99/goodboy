@@ -5,6 +5,7 @@ import { installDiffNotes } from './installDiffNotes';
 import { installSessionChrome } from './installSessionChrome';
 import { installStopTurn } from './installStopTurn';
 import { installArtifactAgents } from './installArtifactAgents';
+import { installLeadPermissions } from './installLeadPermissions';
 
 type Params = {
   readonly store: DirectorStore;
@@ -33,6 +34,7 @@ export const installDemoWorld = ({ store }: Params): void => {
   installSessionChrome({ store });
   installStopTurn({ store });
   installArtifactAgents({ store });
+  installLeadPermissions({ store });
   if (store.getState().providers.some((provider) => provider.connection === 'connected')) {
     return;
   }

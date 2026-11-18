@@ -6,7 +6,8 @@ type Params = {
   readonly store: DirectorStore;
 };
 
-const COMPOSER_FIELD = '[data-testid="plan-comment-composer"] textarea';
+const COMPOSER = '[data-testid="plan-comment-composer"]';
+const COMPOSER_FIELD = `${COMPOSER} textarea`;
 const PREFILLED = 'demoPrefilled';
 
 export const installPlanCommentPrefill = ({ store }: Params): void => {
@@ -22,6 +23,7 @@ export const installPlanCommentPrefill = ({ store }: Params): void => {
     const setter = Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value')?.set;
     setter?.call(field, STORY_COMMENT);
     field.dispatchEvent(new Event('input', { bubbles: true }));
+    field.closest(COMPOSER)?.scrollIntoView({ block: 'center' });
   };
   new MutationObserver(fill).observe(document.body, { childList: true, subtree: true });
 };

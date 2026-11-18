@@ -50,7 +50,7 @@ export const DIRECTION_HINTS: ReadonlyArray<DemoHint> = [
     label: 'Draft issue brief',
     copy: 'Draft the issue brief',
     instruction: 'Press **Draft the brief** to use HBL-412 as the task.',
-    result: 'The brief is drafted from HBL-412, with the **Orchestrated** workflow ready.',
+    result: 'The brief is drafted from HBL-412. **The Lead plans it** and stops after the plan.',
     beat: 0,
     anchor: DRAFT,
     focus: '[data-testid="wizard-column"]',

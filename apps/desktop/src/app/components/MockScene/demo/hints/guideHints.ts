@@ -129,7 +129,7 @@ export const GUIDE_HINTS: ReadonlyArray<DemoHint> = [
       hasElement({ root, selector: ADD_COMMENT }) ? ADD_COMMENT : replayAnchorOf({ root }),
     recoveryAnchor: PLAN_OPEN,
     recovery: PLAN_RECOVERY,
-    side: 'left',
+    side: 'bottom',
     isSideLocked: true,
     revealWhen: ({ root, state }) =>
       anchorOrRecovery({ root, own: ADD_COMMENT }) !== null || hasCommented({ state }),

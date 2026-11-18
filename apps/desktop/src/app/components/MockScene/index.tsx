@@ -13,6 +13,7 @@ import { UnknownScene } from './UnknownScene';
 import { quietSceneRepoCheck } from './scenes/quietSceneRepoCheck';
 import { DemoDirector } from './demo/DemoDirector';
 import { installDemoIpc } from './demo/director/installDemoIpc';
+import { guardInertFocus } from './demo/director/guardInertFocus';
 
 export { MOCK_SCENES } from './registry';
 
@@ -32,6 +33,7 @@ export const MockScene = () => {
 
   if (params.has('director')) {
     installDemoIpc();
+    guardInertFocus({ view: window });
   }
 
   if (params.get('brand') === '1') {

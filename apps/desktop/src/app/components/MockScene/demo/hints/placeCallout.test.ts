@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { placeCallout } from './placeCallout';
+import { GUIDE_HINTS } from './guideHints';
 import type { DemoRect } from '../director/demoProtocol';
 
 const BOUNDS = { width: 1000, height: 600 };
@@ -141,5 +142,26 @@ describe('callout placement', () => {
     expect(placeCallout({ ...base, target: wide, avoid: [], previousSide: 'right' }).side).toBe(
       'bottom',
     );
+  });
+
+  it('puts the Add comment callout under the button, clear of the prepared comment above it', () => {
+    const step = GUIDE_HINTS.find((hint) => hint.id === 'plan-comment');
+    const button = { x: 865, y: 180, width: 70, height: 30 };
+    const commentText = { x: 588, y: 139, width: 340, height: 12 };
+    const placement = placeCallout({
+      target: button,
+      avoid: [],
+      lit: null,
+      callout: { width: 240, height: 50 },
+      bounds: { width: 966, height: 398 },
+      side: step?.side,
+      isLocked: step?.isSideLocked,
+      align: step?.align,
+      gap: 6,
+      margin: 16,
+    });
+    expect(placement.side).toBe('bottom');
+    expect(placement.y).toBeGreaterThanOrEqual(button.y + button.height);
+    expect(placement.y).toBeGreaterThan(commentText.y + commentText.height);
   });
 });
