@@ -326,15 +326,18 @@ fn builder_for<R: Runtime>(
                 return;
             };
             lifecycle::announce(app, &facts);
-            let Ok(live) = webview.url() else {
-                return;
-            };
-            visit_rows::save_visit_title(
-                app,
-                &facts.session_id,
-                &local::shown_address(&live),
-                &title,
-            );
+            let webview = webview.clone();
+            tauri::async_runtime::spawn_blocking(move || {
+                let Some(live) = crate::platform::web_url::live_url_of(&webview) else {
+                    return;
+                };
+                visit_rows::save_visit_title(
+                    webview.app_handle(),
+                    &facts.session_id,
+                    &local::shown_address(&live),
+                    &title,
+                );
+            });
         })
 }
 
