@@ -9,10 +9,11 @@ import { EMPTY_DRAWER_GRID } from './state';
 
 type RecallParams = {
   readonly sessionId: SessionId;
+  readonly isSavedThisRun: boolean;
 };
 
 export const recallDockGrid = ({ set, get }: SliceDeps) => {
-  return async ({ sessionId }: RecallParams): Promise<string | null> => {
+  return async ({ sessionId, isSavedThisRun }: RecallParams): Promise<string | null> => {
     const claim = dockGridRecalls.claim({ key: DOCK_GRID_RECALL_KEY });
     const before = get().drawerGrid ?? EMPTY_DRAWER_GRID;
     const result = await commitAfterConfirm({
@@ -30,6 +31,8 @@ export const recallDockGrid = ({ set, get }: SliceDeps) => {
           }),
       commit: () => undefined,
     });
-    return result.isOk ? appliedDockGrid({ set, get, raw: result.value, claim, before }) : null;
+    return result.isOk
+      ? appliedDockGrid({ set, get, raw: result.value, claim, before, isSavedThisRun })
+      : null;
   };
 };

@@ -189,16 +189,50 @@ describe('the dock grid saved on the session', () => {
     saveRow({ sessionId: S1, grid: SAVED });
     saveRow({
       sessionId: S2,
-      grid: { columns: [[MONITOR]], used: ['monitoring'], focus: { at: 'page' }, widths: {} },
+      grid: { columns: [[TERMINAL]], used: ['terminal'], focus: { at: 'page' }, widths: {} },
     });
     watch();
 
     await goTo({ sessionId: S1 });
     expect(toolKinds()).toEqual([['browser'], ['terminal']]);
     await goTo({ sessionId: S2 });
-    expect(toolKinds()).toEqual([['monitoring']]);
+    expect(toolKinds()).toEqual([['terminal']]);
     await goTo({ sessionId: S1 });
     expect(toolKinds()).toEqual([['browser'], ['terminal']]);
+  });
+
+  it('leaves Monitor closed when a session saved before a restart opens', async () => {
+    saveRow({
+      sessionId: S1,
+      grid: {
+        columns: [[BROWSER], [MONITOR]],
+        used: ['browser', 'monitoring'],
+        focus: { at: 'tool', kind: 'monitoring' },
+        widths: {},
+      },
+    });
+    watch();
+
+    await goTo({ sessionId: S1 });
+
+    expect(toolKinds()).toEqual([['browser']]);
+  });
+
+  it('brings Monitor back when the session opens again in the same run', async () => {
+    saveRow({
+      sessionId: S2,
+      grid: { columns: [[TERMINAL]], used: ['terminal'], focus: { at: 'page' }, widths: {} },
+    });
+    watch();
+    await goTo({ sessionId: S1 });
+    state().openDrawer(MONITOR);
+    await settle();
+
+    await goTo({ sessionId: S2 });
+    expect(toolKinds().flat()).not.toContain('monitoring');
+    await goTo({ sessionId: S1 });
+
+    expect(toolKinds().flat()).toContain('monitoring');
   });
 
   it('keeps the previous grid when a save fails, and says so on the session', async () => {

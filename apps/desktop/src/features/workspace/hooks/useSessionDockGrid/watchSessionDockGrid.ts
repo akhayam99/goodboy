@@ -36,6 +36,7 @@ export const watchSessionDockGrid = ({
   now = Date.now,
 }: Params): (() => void) => {
   const known = new Map<SessionId, string>();
+  const savedThisRun = new Set<SessionId>();
   let pending: PendingSave | null = null;
   let timer: ReturnType<typeof setTimeout> | null = null;
   let owner = store.getState().currentSessionId;
@@ -61,6 +62,7 @@ export const watchSessionDockGrid = ({
       .then((isSaved) => {
         if (isSaved) {
           known.set(job.sessionId, stored);
+          savedThisRun.add(job.sessionId);
         }
       });
   };
@@ -69,7 +71,7 @@ export const watchSessionDockGrid = ({
     queueMicrotask(() => {
       void store
         .getState()
-        .recallDockGrid({ sessionId })
+        .recallDockGrid({ sessionId, isSavedThisRun: savedThisRun.has(sessionId) })
         .then((stored) => {
           if (stored !== null) {
             known.set(sessionId, stored);

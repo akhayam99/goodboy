@@ -704,6 +704,10 @@ window has; they save nothing.
   longer exists drops out. No row keeps the open tools, so a session saved by
   0.39 opens with the dock of its window layout. A Terminal whose tab is gone
   closes itself (`TerminalDrawer`), and the next save leaves it out.
+- A row this window has not saved since it loaded comes back without the
+  `UNSAVED_DRAWER_KINDS` (`appliedDockGrid`), so Monitor stays closed after a
+  reload or a restart. A row it saved in this run brings Monitor back with the
+  session (`isSavedThisRun`).
 - A change on a session waits 300ms, then `rememberDockGrid` writes it. The
   write names the session the change was made on. Leaving the session writes
   the waiting change at once, still on that session.
