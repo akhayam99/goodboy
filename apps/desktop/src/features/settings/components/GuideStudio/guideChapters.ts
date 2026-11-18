@@ -442,7 +442,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Comments',
-        desc: 'Review threads and your own notes in one list, grouped Needs you, Working and Done. A row opens a drawer with the code, the thread and Fix, Reply and Skip on F, R and S. A comment that asks for a rework offers Start a run.',
+        desc: 'Review threads and your own notes in one list, grouped Needs you, Working and Done. A row opens a drawer with the code, the thread and Fix, Reply and Skip on F, R and S. A rework comment offers Start a run.',
       },
       {
         term: 'Fix comments',
@@ -595,7 +595,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'A pinned port down',
-        desc: 'When a pinned port stops listening, Monitor on the right rail says which port is down when you rest on it.',
+        desc: 'When a pinned port stops listening, Monitor on the right rail names the port when you rest on it.',
       },
       {
         term: 'Rows',
