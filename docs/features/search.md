@@ -2,7 +2,7 @@
 
 Find any session, message, plan or action, and reach it from the keyboard. The places rail keeps workspace navigation on the left, and **⌘K** and **⌘F** cover the rest.
 
-### Sidebar
+### Places rail
 
 Move between Board, Tasks, Workflows, Chat, Connect and Impact from the places rail on the left.
 
@@ -24,9 +24,13 @@ The **⋯** holds **Ask about this session**, **Pin session**, **Refresh session
 
 A branch, an artifact or a run keeps the head and shows crumbs such as **Overview › Artifacts › Plan** in place of the tabs. Each crumb is a link, and **Esc** goes one crumb up.
 
-**Ask about this session**, from the **⋯** or ⌘L, opens a detail panel beside the page. From left to right a window holds the places rail, the page, the detail panel, the tools column and the dock. On a narrow window a panel lies over the page with a scrim.
+**Ask about this session**, from the **⋯** or ⌘L, opens a detail panel beside the page. From left to right a window holds the places rail, the page, the detail panel, the open tools and the tools rail. On a narrow window a panel lies over the page with a scrim.
 
-At the right of every page, a column of icons is named with its shortcut on hover. Under the caption **Tools**, on every page, it holds **Terminal** and **Browser**. Neither shows a number: the tooltip says how many terminals run and how many tabs are open. With a dock open, the column sits on the dock's left edge. They stay open as you move between pages. **Open full page** in the dock header makes either one full size, and **Dock**, last in the page's first row, puts either one back. The active tool shows its name below its icon.
+The tools rail sits at the right edge of every page: **Terminal**, **Browser**, **Scripts**, **Ask** and **Monitor**, each named with its shortcut on hover. A click opens the tool to its left, and the rail never moves. Tools stay open as you move between pages. **Open full page** in a tool's header makes it a page, and **Dock**, last in the page's first row, puts it back.
+
+Open more tools and they share the space, up to four in two columns of two, each in its own card. **F6** moves between the page and the panels, and **⌘⇧W** closes the one with the focus. With two tools open, a button in their heads stacks them or puts them side by side. Each session keeps its own layout and brings it back when you return.
+
+In a window narrower than 1100 pixels the tools rail shows icons only. A narrow tool still sits beside the page, and the Browser lies over it.
 
 **⌥⌘B** folds the list beside the page you are on, such as the files of the Changes page, Chat, Terminal, the Guide or Settings. Each of those lists has its Hide button at its top left.
 
@@ -78,8 +82,10 @@ Right click a session, agent, run, artifact, pull request, file or message to se
 
 ## Under the hood
 
-- **Sidebar**: `apps/desktop/src/app/components/ShellLeft/index.tsx` renders New, the places and the foot. `apps/desktop/src/shared/navigation/destinations.ts` owns their order, Connect's full name and Monitoring's menu home. `apps/desktop/src/shared/navigation/railPlaceOf.ts` keeps Board current for an open session.
-- **Sidebar signals**: `apps/desktop/src/app/components/ShellLeft/railMarkOf.ts` selects Board's count and Tasks' dot from `apps/desktop/src/app/components/ShellLeft/useDoorSignals/index.ts`. New's draft mark is derived in `apps/desktop/src/app/components/ShellLeft/index.tsx`.
-- **Sidebar size**: `apps/desktop/src/App.tsx` supplies the rail to `packages/ui/src/components/AppShell.tsx` without a fold or resize control. `packages/ui/src/components/ShellRail/useShellRailForm/index.ts`, `packages/ui/src/components/ShellRail/shellRailGeometry.ts` and `packages/ui/src/components/ShellRail/ShellRailItem.tsx` own the width breakpoint, words and tooltips.
+- **Places rail**: `apps/desktop/src/app/components/ShellLeft/index.tsx` renders New, the places and the foot. `apps/desktop/src/shared/navigation/destinations.ts` owns their order, Connect's full name and Monitoring's menu home. `apps/desktop/src/shared/navigation/railPlaceOf.ts` keeps Board current for an open session.
+- **Places rail signals**: `apps/desktop/src/app/components/ShellLeft/railMarkOf.ts` selects Board's count and Tasks' dot from `apps/desktop/src/app/components/ShellLeft/useDoorSignals/index.ts`. New's draft mark is derived in `apps/desktop/src/app/components/ShellLeft/index.tsx`.
+- **Places rail size**: `apps/desktop/src/App.tsx` supplies the rail to `packages/ui/src/components/AppShell.tsx` without a fold or resize control. `packages/ui/src/components/ShellRail/useShellRailForm/index.ts`, `packages/ui/src/components/ShellRail/shellRailGeometry.ts` and `packages/ui/src/components/ShellRail/ShellRailItem.tsx` own the width breakpoint, words and tooltips.
+
+- **Tools rail and grid**: `apps/desktop/src/app/components/ShellToolRail.tsx` puts the rail on the window edge, and `apps/desktop/src/features/session/components/SessionTools/sessionTools.ts` lists the five tools. `apps/desktop/src/store/slices/drawer/gridAfterOpen.ts` places a new tool, `packages/ui/src/dockLayout.ts` lays out the page, detail, grid and rail, and `apps/desktop/src/features/workspace/hooks/useSessionDockGrid/watchSessionDockGrid.ts` saves and restores the grid per session.
 
 - **Sessions**: `apps/desktop/src/app/components/AppTopBar/index.tsx` mounts `apps/desktop/src/features/workspace/components/SessionsPopover/index.tsx`. Its panel owns title and project filtering, keyboard selection and pin actions.

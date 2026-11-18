@@ -286,10 +286,10 @@
           "shown": true
         },
         {
-          "title": "Sidebar",
+          "title": "Places rail",
           "text": "Move between Board, Tasks, Workflows, Chat, Connect and Impact from the places rail on the left. New opens a session, Board counts sessions that need you, and Tasks marks new tasks with a dot. The rail never folds; in a narrow window its words move into tooltips.",
           "group": "Search and navigation",
-          "also": "sidebar"
+          "also": "places rail"
         },
         {
           "title": "Go anywhere",

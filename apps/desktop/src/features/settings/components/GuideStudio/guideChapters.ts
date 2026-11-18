@@ -276,7 +276,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Tools rail',
-        desc: 'Terminal, Browser, Scripts, Ask and Monitor, at the right edge of every screen. A click opens the tool to its left and it stays open. Open full page makes it a page.',
+        desc: 'Terminal, Browser, Scripts, Ask and Monitor, at the right edge of every screen, each opening to its left. Up to four share two columns of two, saved per session. Open full page makes one a page.',
       },
     ],
     links: [],
@@ -757,7 +757,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Rail and panes',
-        desc: `${shortcutGlyphs('sessions.toggle')} opens Sessions, ${shortcutGlyphs('innerColumn.toggle')} folds the page column. ${shortcutGlyphs('nav.back')} steps the rail out or goes Back, and ${shortcutGlyphs('nav.up')} goes up. In a session, ${shortcutGlyphs('lens.explore')} opens Changes on All files, ${shortcutGlyphs('lens.context')} Context, ${shortcutGlyphs('ask.open')} Ask, ${shortcutGlyphs('session.spawned')} Runs on what is running and ${shortcutGlyphs('lens.scripts')} Scripts. ${shortcutGlyphs('browser.address')} focuses the Browser address, ${shortcutGlyphs('browser.find')} finds in its page, ${shortcutGlyphs('slot.close')} closes the drawer.`,
+        desc: `${shortcutGlyphs('sessions.toggle')} opens Sessions, ${shortcutGlyphs('innerColumn.toggle')} folds the page column. ${shortcutGlyphs('nav.back')} goes Back, ${shortcutGlyphs('nav.up')} goes up. In a session, ${shortcutGlyphs('lens.explore')} opens Changes on All files, ${shortcutGlyphs('lens.context')} Context, ${shortcutGlyphs('ask.open')} Ask, ${shortcutGlyphs('session.spawned')} Runs and ${shortcutGlyphs('lens.scripts')} Scripts. ${shortcutGlyphs('browser.address')} focuses the Browser address, ${shortcutGlyphs('browser.find')} finds in its page. ${shortcutGlyphs('panel.focusNext')} walks the panels, ${shortcutGlyphs('slot.close')} closes the focused one.`,
       },
       {
         term: 'Terminal',

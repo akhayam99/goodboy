@@ -191,6 +191,14 @@ model in [docs/navigation/model.md](./docs/navigation/model.md).
   `DrawerColumn` leaves 12px between shell containers (`DRAWER_GUTTER`). The
   content slides to re-centre when a panel opens or closes, and every dock
   follows the same push or overlay rule.
+- **Tools share one grid and give way in one order.** Up to four tools sit in
+  at most two columns of two beside the rail, each its own card. When room runs
+  out, panes narrow first, then two stack in one column, then the detail lies
+  over the page, and only then does everything lie over it. The page never
+  drops under its minimum and the rail never moves (`dockLayoutOf`).
+- **Nothing floating touches the window edge.** A popover, a menu or a card
+  keeps 12px from every window edge (`SHELL_GUTTER_PX`), caps its height at
+  the room left and scrolls inside. It can be large, never edge to edge.
 - **One fact, said once per row.** A row never repeats a state in two columns
   or in its title and its status. One function decides which cell says it.
 - **One state word per thing, from one source.** A run, an agent and a pull
@@ -226,7 +234,7 @@ about its effect is a worse defect than one that reads badly.
   side effect of looking at something (opening a terminal, a popover or a
   diff) is a defect.
 - **One term per concept, one canonical home per object.** A concept keeps a
-  single name in chat, board, sidebar and docs. An object has one surface that
+  single name in chat, board, rail and docs. An object has one surface that
   manages it. Every other surface links there instead of growing a second set
   of actions. Two surfaces with different powers over the same object are a
   defect, not a convenience.
