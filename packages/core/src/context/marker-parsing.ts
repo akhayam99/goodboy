@@ -1275,15 +1275,6 @@ const stripSelfMarkers = (text: string): string => {
   return out + text.slice(cursor);
 };
 
-type StripPartialTailParams = {
-  readonly text: string;
-};
-
-const stripPartialTail = ({ text }: StripPartialTailParams): string => {
-  const tailStart = text.lastIndexOf('>') + 1;
-  return text.slice(0, tailStart) + text.slice(tailStart).replace(CONTROL_PARTIAL_TAIL_RE, '');
-};
-
 export const stripControlMarkers = (rawText: string): string => {
   const text = canonicalizeMarkers({ text: rawText });
   CONTROL_BLOCK_STRIP_RE.lastIndex = 0;
@@ -1293,7 +1284,7 @@ export const stripControlMarkers = (rawText: string): string => {
     .replace(UNSUMMARIZED_STEP_OUTPUT_RE, '')
     .replace(CONTROL_OPEN_TAIL_RE, '')
     .replace(CONTROL_STRAY_TAG_RE, '');
-  return stripPartialTail({ text: stripped })
-    .replace(/\n{3,}/g, '\n\n')
-    .trim();
+  const cut = stripped.lastIndexOf('>') + 1;
+  const kept = stripped.slice(0, cut) + stripped.slice(cut).replace(CONTROL_PARTIAL_TAIL_RE, '');
+  return kept.replace(/\n{3,}/g, '\n\n').trim();
 };

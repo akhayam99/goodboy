@@ -107,7 +107,6 @@ const args = Object.fromEntries(
 const app = args.app ?? 'http://localhost:5230';
 const wait = Number(args.wait ?? 2500);
 const only = args.only;
-const skipped = (args.skip ?? '').split(',');
 
 const pause = (ms) => new Promise((resolvePromise) => setTimeout(resolvePromise, ms));
 
@@ -785,10 +784,9 @@ const sceneIds = () =>
 
 const menuScenes = ({ only: filter }) => {
   const ids = sceneIds();
-  if (filter === undefined && skipped.includes('menus')) return [];
-  if (filter === undefined || filter === 'menus') return ids;
-  const wanted = filter.split(',');
-  return ids.filter((id) => wanted.includes(id));
+  if (filter === undefined) return args.skip === 'menus' ? [] : ids;
+  if (filter === 'menus') return ids;
+  return ids.filter((id) => filter.split(',').includes(id));
 };
 
 const readyOnly = async () => {
