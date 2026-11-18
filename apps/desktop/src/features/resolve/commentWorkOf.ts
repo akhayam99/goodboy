@@ -42,11 +42,13 @@ export const commentWorkOf = ({
   ).length;
   const queue = working
     .filter((entry) => entry.isQueued && inRun.has(entry.threadId))
-    .sort(
-      (left, right) =>
-        queueAtOf({ entry: left }) - queueAtOf({ entry: right }) ||
-        (order.get(left.threadId) ?? 0) - (order.get(right.threadId) ?? 0),
-    );
+    .sort((left, right) => {
+      const byQueue = queueAtOf({ entry: left }) - queueAtOf({ entry: right });
+      if (byQueue !== 0) {
+        return byQueue;
+      }
+      return (order.get(left.threadId) ?? 0) - (order.get(right.threadId) ?? 0);
+    });
   const places = new Map(queue.map((entry, index) => [entry.threadId, fixingInRun + index + 1]));
   return new Map(
     working.map((entry): [string, CommentWork] => {

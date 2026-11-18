@@ -1,9 +1,9 @@
-import { OverflowMenu, type MenuEntry } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { useAgentOutcome } from '../../../../shared/hooks/useAgentOutcome';
+import { ObjectOverflowMenu } from '../../../actions/components/ObjectOverflowMenu';
+import type { ObjectTarget } from '../../../actions/types';
 import { ItemWorkLine } from '../../../live-state/itemWork/ItemWorkLine';
-import { ITEM_WORK_WORDS } from '../../../live-state/itemWork/itemWorkWords';
 import { checksSkippedLine, checksSkippedOf } from '../../checksSkipped';
 import { fixRunCountOf, type FixRun } from '../../fixRun';
 import type { LaneStatus } from '../../laneStatus';
@@ -35,44 +35,32 @@ export const FixRunCount = ({ sessionId, run, lane }: Props) => {
   if (count === null) {
     return null;
   }
-  const entries: ReadonlyArray<MenuEntry> = [
-    {
-      kind: 'item',
-      key: 'stop-all',
-      label: ITEM_WORK_WORDS.verb.stopAll,
-      isDestructive: true,
-      confirm: {
+  const target: ObjectTarget = {
+    kind: 'fixRun',
+    facts: {
+      stop: {
         title: `Stop the fix for ${threadCountText({ count: run.total })}?`,
         description: FIX_RUN_COUNT_COPY.stopDescription,
-        confirmLabel: ITEM_WORK_WORDS.verb.stopAll,
-        role: 'danger',
+        onStop: () =>
+          lane === null
+            ? forceCloseResolver(sessionId, run.agentId)
+            : stopResolveLane({ sessionId, worktreePath: lane.worktreePath }),
       },
-      onSelect: () =>
-        lane === null
-          ? forceCloseResolver(sessionId, run.agentId)
-          : stopResolveLane({ sessionId, worktreePath: lane.worktreePath }),
-    },
-    {
-      kind: 'item',
-      key: 'open-transcript',
-      label: ITEM_WORK_WORDS.verb.openTranscript,
-      onSelect: () =>
+      transcriptNote: skipped === null ? null : checksSkippedLine({ skipped }),
+      onOpenTranscript: () =>
         openDrawer({ kind: 'transcript', sessionId, payload: { agentId: run.agentId } }),
+      onRetryWithHint: null,
+      startOverNote: null,
+      onStartOver: null,
     },
-    ...(skipped === null
-      ? []
-      : [
-          { kind: 'separator' as const, key: 'checks-separator' },
-          { kind: 'header' as const, key: 'checks', label: checksSkippedLine({ skipped }) },
-        ]),
-  ];
+  };
   return (
     <span data-fix-run-count="" className="flex min-w-0 justify-end">
       <ItemWorkLine
         state="fixing"
         detail={fixingPlaceText(count)}
         agentId={run.agentId}
-        action={<OverflowMenu label={FIX_RUN_COUNT_COPY.menu} entries={entries} />}
+        action={<ObjectOverflowMenu label={FIX_RUN_COUNT_COPY.menu} target={target} />}
       />
     </span>
   );

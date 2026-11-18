@@ -73,9 +73,9 @@ const list = (): HTMLElement => screen.getByRole('navigation', { name: 'Comments
 
 const rowAt = ({ index }: RowParams): HTMLElement => {
   const items = list().querySelectorAll<HTMLElement>('li');
-  const item = Array.from(items).filter((candidate) => candidate.querySelector('[data-row-work]'))[
-    index
-  ];
+  const item = Array.from(items).filter(
+    (candidate) => candidate.querySelector('[data-row-work]') !== null,
+  )[index];
   if (item === undefined) {
     throw new Error(`no row ${index}`);
   }

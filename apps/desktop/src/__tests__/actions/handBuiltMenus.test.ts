@@ -25,10 +25,6 @@ const ALLOWED: Readonly<Record<string, string>> = {
     'artifact files from deleted sessions: storage keep and delete',
   'features/session/components/TaskPlacement/PutOnBranchPopover.tsx':
     'task picker: chooses a linked task for a branch, a value picker',
-  'features/resolve/components/ReviewFlow/FixRunCount.tsx':
-    'fix run count in the comments bar: Stop all and Open transcript act on the batch run, not on an object',
-  'features/resolve/components/ReviewFlow/CommentResultAction.tsx':
-    'failed comment fix row: retry with a hint, start over and the transcript of the attempt',
 };
 
 const isSource = (path: string): boolean =>

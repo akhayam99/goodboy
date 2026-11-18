@@ -10,6 +10,7 @@ import { DIFF_FILE_KIND } from './kinds/diffFile';
 import { EXPLORE_FILE_KIND } from './kinds/exploreFile';
 import { LINK_KIND } from './kinds/link';
 import { CHECK_RUN_KIND } from './kinds/checkRun';
+import { FIX_RUN_KIND } from './kinds/fixRun';
 import { DECISION_KIND } from './kinds/decision';
 import { WORKSPACE_KIND } from './kinds/workspace';
 import { ISSUE_CANDIDATE_KIND } from './kinds/issueCandidate';
@@ -201,6 +202,8 @@ export const bindTarget = ({ state, target }: TargetParams): BoundObject | null 
       return bind({ definition: LINK_KIND, state, target });
     case 'checkRun':
       return bind({ definition: CHECK_RUN_KIND, state, target });
+    case 'fixRun':
+      return bind({ definition: FIX_RUN_KIND, state, target });
     case 'decision':
       return bind({ definition: DECISION_KIND, state, target });
     case 'workspace':
