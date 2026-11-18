@@ -160,6 +160,11 @@ describe('scripts/gate.sh against the CI jobs', () => {
     assert.doesNotMatch(gateText, /vitest related/);
   });
 
+  it('runs the full unit suites when the change scope CI computes is full', () => {
+    assert.match(gateText, /testScopeOf/);
+    assert.match(gateText, /\[ "\$scope" = full \] && \{ check_full_tests/);
+  });
+
   it('prints the output contract', () => {
     assert.match(gateText, /echo "gate ok"/);
     assert.match(gateText, /echo "gate failed at \$name: \$log"/);

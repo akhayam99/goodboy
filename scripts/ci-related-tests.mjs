@@ -5,7 +5,7 @@ import { isSceneBacked } from './scene-backed-tests.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const DESKTOP = 'apps/desktop';
-const SOURCE_ROOTS = ['apps/desktop/src', 'packages'];
+const SOURCE_ROOTS = ['apps/desktop/src', 'apps/desktop/vite', 'packages'];
 const SOURCE_FILE = /\.tsx?$/;
 const TEST_FILE = /\.test\.tsx?$/;
 const A11Y_TEST = /^apps[/]desktop[/]src[/]__tests__[/]a11y[/]/;

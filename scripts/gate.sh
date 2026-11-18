@@ -106,8 +106,30 @@ run_selected() {
   sed -n "s#^$name ##p" | tr '\n' '\0' | xargs -0 pnpm --filter "@goodboy/$name" exec vitest run "$@" --no-passWithNoTests --maxWorkers="$WORKERS"
 }
 
+touched_paths() {
+  {
+    git diff --name-only "$MERGE_BASE"
+    git ls-files --others --exclude-standard
+  } | sort -u
+}
+
+test_scope() {
+  touched_paths | node --input-type=module -e "import { readFileSync } from 'node:fs'; import { testScopeOf } from './scripts/ci-changes.mjs'; const paths = readFileSync(0, 'utf8').split('\\n').filter((path) => path.length > 0); console.log(testScopeOf({ eventName: 'pull_request', paths }));"
+}
+
+check_full_tests() {
+  local status=0
+  pnpm turbo run test --filter='./packages/*' --continue || status=1
+  pnpm --filter @goodboy/desktop exec vitest run --project unit --no-passWithNoTests --maxWorkers="$WORKERS" || status=1
+  return $status
+}
+
 check_related_tests() {
-  local selection name status=0
+  local selection name scope status=0
+  scope=$(test_scope) || return 1
+  echo "test scope: $scope"
+  [ "$scope" = none ] && return 0
+  [ "$scope" = full ] && { check_full_tests; return $?; }
   selection=$(changed_files | node scripts/ci-related-tests.mjs) || return 1
   echo "$selection"
   echo "$selection" | run_selected desktop --project unit || status=1

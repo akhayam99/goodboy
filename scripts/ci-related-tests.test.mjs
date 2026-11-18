@@ -28,6 +28,11 @@ const FIXTURES = [
   ['apps/desktop/src/features/palette/rank.test.ts', "vi.mock('./rank', () => ({}));"],
   ['apps/desktop/src/features/palette/rank.perf.test.ts', "import { rank } from './rank';"],
   ['apps/desktop/src/features/icons/dog.test.ts', "import { dog } from '@goodboy/core/icons/dog';"],
+  ['apps/desktop/vite/demoHtml.ts', 'export const demoHtml = () => 1;'],
+  [
+    'apps/desktop/vite/demoHtml.test.ts',
+    "import { readFileSync } from 'node:fs';\nimport { demoHtml } from './demoHtml';",
+  ],
   ['apps/desktop/src/features/board/BoardEmpty/index.tsx', 'export const BoardEmpty = () => null;'],
   ['apps/desktop/src/features/board/BoardEmpty/index.test.tsx', "import { BoardEmpty } from './';"],
   [
@@ -104,6 +109,11 @@ describe('relatedSelection', () => {
     assert.ok(selection.desktop.includes('src/features/icons/dog.test.ts'));
   });
 
+  it('keeps the desktop vite tests that read files from disk', () => {
+    const selection = selectionFor({ graph, path: 'apps/desktop/src/features/palette/rank.ts' });
+    assert.ok(selection.desktop.includes('vite/demoHtml.test.ts'));
+  });
+
   it('resolves an import that ends in a slash to the folder entry', () => {
     const selection = selectionFor({
       graph,
@@ -117,6 +127,7 @@ describe('relatedSelection', () => {
     assert.deepEqual(selection.desktop.sort(), [
       'src/__tests__/regressions/rules.test.ts',
       'src/shared/readsDocs.test.ts',
+      'vite/demoHtml.test.ts',
     ]);
     assert.equal(selection.isA11yReached, false);
   });
