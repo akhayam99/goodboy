@@ -100,7 +100,7 @@ const exportTargetOf = ({ exportsMap, subpath }) => {
     }
     const middle = subpath.slice(head.length, subpath.length - tail.length);
     const target = typeof value === 'string' ? value : value.default;
-    return target.replace('*', middle);
+    return target.replaceAll('*', middle);
   }
   return null;
 };
