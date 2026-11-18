@@ -568,29 +568,10 @@ column, the label and the value's first line both 28px so their centres match,
 a wrapping value flowing below, groups 24px apart. `spacing-grid.test.ts`
 holds the work rail, the tree row and the property grid on the scale.
 
-The Sessions block shares one left edge and one gap. The `Sessions` eyebrow
-(`sessionList.headerInset`, 16px), the door icons (`navRail.inset` plus
-`navRail.door`) and the session row icons (`sessionList.pad` plus
-`sessionList.rowInset`) all start at 16px, and the doors and the session rows
-share one vertical gap (`navRail.doorGap` equals `sessionList.rowGap`). The view
-menu trigger is a 28px target (`sessionList.menuTrigger`).
-
-The column reads as two groups, the way Linear and Arc split their nav from
-their lists. The nav block (New session, Board, Tasks, Workflows, Chat, Impact,
-Monitoring) and the lists (Pinned, Sessions, Done) are siblings 16px apart
-(`navRail.groupGap`, the parent's `gap`). A section label (Pinned, Sessions,
-Done) is its own 24px row in `text-eyebrow`, with 12px above it
-(`sessionList.listGap`) and 4px under it (`sessionList.labelGap`), so it belongs
-to the list below; a fold chevron follows the label, so every label starts on
-the 16px edge. Every row is 28px. Titles truncate at one right edge, and every
-trailing mark (a door's signal, a row's state, the New session draft dot)
-is one `StatusMark` in one 16px column at the row's right padding
-(`navRail.mark`), so the marks read down one vertical line. A door's action
-(Chat's New chat, Board's filter) sits in a 24px slot just before that column
-(`navRail.action`), only on the doors that have one, visible at rest. A ticket key renders before the title in muted
-`text-code` (mono 12/18) on the title's baseline, never in the title's colour.
-Scene `sidebar-frame-dark` and `sidebar-frame-light` show pinned, unread,
-keyed and done rows in the app frame.
+A session row in Sessions (`SessionsRow`) is one line on `SelectableRow`: the
+`StatusMark` first, the title, the project and the pin toggle. A ticket key
+renders before the title in muted `text-code` (mono 12/18) on the title's
+baseline, never in the title's colour.
 
 **The sidebar and every page share one first row.** The frame's first row is
 40px from the top of the page sheet, its controls centred 24px down

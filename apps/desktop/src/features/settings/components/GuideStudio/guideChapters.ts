@@ -595,7 +595,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'A pinned port down',
-        desc: 'When a pinned port stops listening, Monitoring in the sidebar shows an amber dot. Rest on it to read which port.',
+        desc: 'When a pinned port stops listening, Monitoring on the tool rail turns amber. Rest on it to read which port.',
       },
       {
         term: 'Rows',

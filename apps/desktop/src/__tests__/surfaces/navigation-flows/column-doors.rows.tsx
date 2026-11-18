@@ -48,7 +48,7 @@ const DOOR_ORDER: ReadonlyArray<string> = [
   'impact',
 ];
 
-const railTool = (name: 'terminal' | 'browser'): HTMLElement => {
+const railTool = (name: 'terminal' | 'browser' | 'monitoring'): HTMLElement => {
   return screen.getByTestId(`pane-toggle-${name}`);
 };
 
@@ -236,10 +236,13 @@ export const COLUMN_DOOR_ROWS: ReadonlyArray<Row> = [
     ),
   },
   {
-    name: 'palette: Monitoring opens its page and lights no place on the rail',
+    name: 'right rail: Monitoring grows into its page from its panel, lighting no place',
     covers: ['openMonitoring', 'studio:monitoring'],
-    door: 'palette',
-    open: () => openPalette(/^Monitoring/, 'Monitoring'),
+    door: 'visible',
+    open: async () => {
+      await click(railTool('monitoring'));
+      await clickButton(/^Open full page$/);
+    },
     lands: both(
       () => studio('Monitoring'),
       async () =>
