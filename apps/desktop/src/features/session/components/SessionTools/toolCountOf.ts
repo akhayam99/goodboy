@@ -8,7 +8,7 @@ type Params = {
 };
 
 export const toolCountOf = ({ pane, portsInUse, hasDownPin }: Params): ToolCount | null => {
-  if (pane !== 'monitoring' || portsInUse === 0) {
+  if (pane !== 'monitoring' || (portsInUse === 0 && !hasDownPin)) {
     return null;
   }
   return { count: portsInUse, tone: hasDownPin ? 'warning' : 'neutral' };

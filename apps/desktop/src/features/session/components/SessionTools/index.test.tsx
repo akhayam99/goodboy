@@ -183,6 +183,24 @@ describe('SessionTools', () => {
     expect(screen.queryAllByTestId('tool-count')).toHaveLength(1);
   });
 
+  it('keeps the warning on Monitor when a pinned port is down and no port is in use', () => {
+    useAppStore.setState({
+      monitorSnapshot: { listeners: [], processes: [], takenAt: 1, isPlatformSupported: true },
+      monitorPinned: [{ port: 5173, description: 'Vite' }],
+    });
+    render(<SessionTools sessionId={null} />);
+
+    const icon = toggle('monitoring').closest('[data-slot="tool-icon"]');
+    expect(icon?.querySelector('[data-testid="tool-count"]')).toBeNull();
+    expect(icon?.querySelector('[data-testid="tool-warning"]')?.getAttribute('data-tone')).toBe(
+      'warning',
+    );
+    expect(toggle('monitoring').getAttribute('aria-label')).toBe(
+      'Monitoring, pinned port :5173 is down',
+    );
+    expect(screen.queryAllByTestId('tool-warning')).toHaveLength(1);
+  });
+
   it('draws no number on Monitor before the first port snapshot', () => {
     render(<SessionTools sessionId={null} />);
 

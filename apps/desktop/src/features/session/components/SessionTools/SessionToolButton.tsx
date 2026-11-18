@@ -1,15 +1,8 @@
-import {
-  CountBadge,
-  DISABLED,
-  ICON_SIZE,
-  IconButton,
-  TEXT_ROLE,
-  cn,
-  selectedIconClass,
-} from '@goodboy/ui';
+import { DISABLED, ICON_SIZE, IconButton, TEXT_ROLE, cn, selectedIconClass } from '@goodboy/ui';
 import { navEntryToneOf } from '../../../../shared/components/navEntryToneOf';
 import type { SessionTool } from './sessionTools';
 import type { ToolCount } from './ToolCount';
+import { ToolCountMark } from './ToolCountMark';
 import { ToolSignalDot } from './ToolSignalDot';
 import { ToolWaitingRing } from './ToolWaitingRing';
 import { toolStateOf } from './toolStateOf';
@@ -86,16 +79,7 @@ export const SessionToolButton = ({
           {state === 'waiting' ? <ToolWaitingRing /> : null}
           {signal === null ? null : <ToolSignalDot signal={signal} />}
         </span>
-        {count === null ? null : (
-          <CountBadge
-            count={count.count}
-            tone={count.tone}
-            placement="corner"
-            isAnnounced={false}
-            testId="tool-count"
-            className="pointer-events-none"
-          />
-        )}
+        {count === null ? null : <ToolCountMark count={count} />}
       </span>
       {isCaptioned ? (
         <span

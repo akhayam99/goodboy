@@ -673,7 +673,9 @@ Terminal names the running terminals (`Terminal, 2 running`), Browser names
 its tabs (`Browser, 3 tabs`); the words come from `toolFactOf` over
 `runningTerminalCount` and `selectBrowserTabCount`. These counts stay in the
 tooltip. Monitor shows ports in use as a
-`CountBadge` (`toolCountOf`), warning when a pinned port is down. Its count and
+`CountBadge` (`toolCountOf`, `ToolCountMark`), warning when a pinned port is down.
+With no port in use, a down pin still shows a warning `StatusDot` in that
+corner (`tool-warning`), since a zero `CountBadge` draws nothing. Its count and
 fact come from `monitoringSignalOf`, which reads the same `monitoringSignal`
 as the left door. The signal dot and waiting ring anchor to the 16px glyph
 (`tool-glyph`, `TOOL_CORNER_SLOT`), at its top end and top start corners. The
