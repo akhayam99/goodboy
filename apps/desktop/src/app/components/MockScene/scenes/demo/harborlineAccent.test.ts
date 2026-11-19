@@ -7,8 +7,8 @@ import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
   resetStoryStore,
+  type StoryStore,
 } from '../../../../../store/storyHarness';
-import { useAppStore } from '../../../../../store';
 import { workspaceAccent } from '../../../../../features/workspace/color';
 import { seedSettingsBase } from '../audit/settingsSeed';
 import { BRAND_WORKSPACE_ID } from '../brand/canon';
@@ -16,8 +16,10 @@ import { seedStoryReview } from '../story/storyReviewSeed';
 import { seedStoryWorld } from '../story/storyWorld';
 import { seedDemoStorage } from './demoStorageSeed';
 
+let useAppStore: StoryStore;
+
 beforeAll(async () => {
-  await importStore();
+  useAppStore = await importStore();
 }, STORE_IMPORT_TIMEOUT_MS);
 
 beforeEach(async () => {
