@@ -21,7 +21,7 @@ import { installSceneDatabase } from '../sceneDatabase';
 import { installScenePlanEngine } from '../scenePlanEngine';
 import { RESOLVE_SCENE_PR } from '../resolveSeed';
 import { prViewsOf } from '../prViewsOf';
-import { BRAND_LEDGER_EXPORT } from '../brand/canon';
+import { BRAND_LEDGER_EXPORT, BRAND_PROJECTS } from '../brand/canon';
 import { LEDGER_PR } from '../brand/historySceneSeed';
 
 type Props = { readonly mode: 'edited' | 'busy' | 'conflict' | 'stash' };
@@ -60,7 +60,24 @@ export const LiveEditScene = ({ mode }: Props) => {
   const hasStarted = useRef(false);
   const live = useAppStore((state) => state.historyLiveSessions[A_REBASE_MOUNT_ID]);
   useEffect(() => {
-    const { input, mount } = seedLiveHistory({ store: useAppStore });
+    const seededLive = seedLiveHistory({ store: useAppStore });
+    const { input } = seededLive;
+    const project = {
+      ...seededLive.project,
+      name: BRAND_PROJECTS.ledger.name,
+      rootPath: BRAND_PROJECTS.ledger.rootPath,
+    };
+    const mount = {
+      ...seededLive.mount,
+      mountName: BRAND_PROJECTS.ledger.name,
+      worktreePath: BRAND_LEDGER_EXPORT.worktree,
+      repoRoot: BRAND_PROJECTS.ledger.rootPath,
+      branch: BRAND_LEDGER_EXPORT.branch,
+    };
+    useAppStore.setState({
+      projects: [project],
+      sessionProjectMounts: { [mount.sessionId]: [mount] },
+    });
     installScenePlanEngine({ sessionId: input.sessionId });
     const editedCommits =
       mode === 'stash' ? commitsBefore.filter((commit) => commit.sha !== LEDGER.f) : commitsAfter;
@@ -205,7 +222,7 @@ export const LiveEditScene = ({ mode }: Props) => {
           mountId: input.mountId,
           projectId: mount.projectId,
           revision: mount.revision,
-          repository: 'harborline/ledger-core',
+          repository: `harborline/${BRAND_PROJECTS.ledger.name}`,
           host: 'github.com',
           branch: mount.branch,
           prs: [],
@@ -260,7 +277,7 @@ export const LiveEditScene = ({ mode }: Props) => {
   return (
     <div className="flex h-screen flex-col bg-background">
       <WorktreeSceneColumn>
-        <BranchPage session={session} workingDir="/w/payments-api" />
+        <BranchPage session={session} workingDir={BRAND_LEDGER_EXPORT.worktree} />
       </WorktreeSceneColumn>
     </div>
   );

@@ -33,7 +33,7 @@ import {
 
 const LEDGER_BRANCH = BRAND_LEDGER_EXPORT.branch;
 const LEDGER_MOUNT_ID = brandId<MountId>({ value: 'mock-brand-ctx-mount-ledger-export' });
-const LEDGER_WORKTREE = '~/code/harborline/ledger-core-ledger-export';
+const LEDGER_WORKTREE = BRAND_LEDGER_EXPORT.worktree;
 
 const reconcileSession = CTX_SIBLINGS.find(
   (session) => session.goal === BRAND_LEDGER_EXPORT.session,

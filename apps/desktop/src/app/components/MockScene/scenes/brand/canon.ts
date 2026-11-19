@@ -53,6 +53,7 @@ const RECONCILE_SESSION = {
 export const BRAND_LEDGER_EXPORT = {
   session: RECONCILE_SESSION.title,
   branch: 'hl/ledger-export',
+  worktree: `${BRAND_PROJECTS.ledger.rootPath}-ledger-export`,
   prTitle: 'Export the ledger as CSV',
   pr: RECONCILE_SESSION.pr,
 } as const;
