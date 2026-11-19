@@ -2,6 +2,7 @@ import { spawn } from 'node:child_process';
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
+import { demoStepProblemOf } from './lib/demoStepProblemOf.mjs';
 import { chromePathOf, DEFAULT_SHOT_URL } from './lib/figures.mjs';
 
 const USAGE = `usage: node scripts/demo-walk.mjs --out-dir <folder>
@@ -261,14 +262,10 @@ const walkStep = async ({ page, chapter, hint, index, shoot }) => {
       ms: ADVANCE_WAIT_MS,
     });
     entry.advancedTo = moved.state?.hash ?? null;
+    entry.advanceMs = moved.ms;
   }
-  if (done.ms < 0) {
-    return { ...entry, problem: `result never showed; header: ${entry.headerAfter}` };
-  }
-  if (entry.calloutCoversTarget || entry.calloutCoversChrome) {
-    return { ...entry, problem: 'callout covers its target or the app chrome' };
-  }
-  return entry;
+  const problem = demoStepProblemOf({ entry });
+  return problem === undefined ? entry : { ...entry, problem };
 };
 
 const main = async () => {

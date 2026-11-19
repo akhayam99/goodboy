@@ -683,8 +683,9 @@ To walk the playground in a real browser, start the mock dev server on 5230,
 then run `pnpm demo:walk --out-dir <folder>` (`scripts/demo-walk.mjs`). It
 presses every step's control in headless Chrome, as a visitor would, and saves a
 coach and a result picture per step plus `walk-<size>-<theme>.json`. A step fails
-when its coach never shows, its result never shows, or the callout covers its
-control or an app rail. `--window 1000x628` gives the compact nav, `--theme
+when its coach never shows, its result never shows, its group's last step never
+moves on to the next group, or the callout covers its control or an app rail
+(`scripts/lib/demoStepProblemOf.mjs`). `--window 1000x628` gives the compact nav, `--theme
 light` the light theme, and `--only fix-start,fix-push` keeps the pictures of
 those steps while it still walks every step before them. The exit code is 1 when
 a step failed.
