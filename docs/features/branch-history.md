@@ -12,7 +12,7 @@ A mark on a planned row (squash into, fixup into, reworded) opens a fact card on
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/history-rewrite-dark.webp">
-  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/history-rewrite-light.webp" alt="The Commits page of the branch hl/fix-duplicate-credit in payments-api: five commits on the graph with You are here, Not pushed marks, the On origin mark, Based on main, Previous versions 1 and the Push 3 commits button in the header">
+  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/history-rewrite-light.webp" alt="The Commits page of the branch hl/fix-duplicate-credit in payments-api: five commits on the graph with You are here, Not pushed marks, the On origin mark, Based on main at Release 2.14, Previous versions 1 and the Push 3 commits button in the header">
 </picture>
 
 <sub>Screenshot from Goodboy 0.40.1</sub>

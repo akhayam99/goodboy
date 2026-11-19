@@ -58,7 +58,7 @@ Get updates in the background, then see what is new. When one is ready, the vers
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/security-updates-dark.webp">
-  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/security-updates-light.webp" width="460" alt="The Update button at the foot of the places rail with its card open: Goodboy 0.24.1 is ready, Nothing is running, What's new, and the buttons Later and Restart now">
+  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/security-updates-light.webp" width="460" alt="The Update button at the foot of the places rail with its card open: Goodboy 0.40.2 is ready, Nothing is running, What's new, and the buttons Later and Restart now">
 </picture>
 
 <sub>Screenshot from Goodboy 0.40.1</sub>

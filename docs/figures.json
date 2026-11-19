@@ -241,7 +241,7 @@
   },
   "features/storage-worktrees": {
     "version": "0.40.1",
-    "recipe": "--scene 'settings-app&section=storage&brand=1' --window 1280x800 --wait 8000 --frozen-at 2026-11-05T16:00:00"
+    "recipe": "--scene 'settings-app&section=storage&brand=1' --window 1280x800 --clip 330,48,941,467 --wait 8000 --frozen-at 2026-11-05T16:00:00"
   },
   "features/support-report-bug": {
     "version": "0.40.1",

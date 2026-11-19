@@ -18,7 +18,7 @@ Keep your repos together as one workspace, and let one session work across sever
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workspace-several-projects-dark.webp">
-  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workspace-several-projects-light.webp" alt="A Harborline session on its Overview: below the Branches, Spend and Time tiles and the Next row with Start, In progress 6 lists ledger-core with four branches and notify-relay with two, each branch with its pull request state, and Merge in order">
+  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workspace-several-projects-light.webp" alt="A Harborline session on its Overview: the tiles Branches 2 of 8 merged, Spend $8.07 for 5 agents and Time 3.3h, the next step Review the changes with Continue, then In progress 6 lists ledger-core with four branches and notify-relay with two, each branch with its pull request state, and Merge in order">
 </picture>
 
 <sub>Screenshot from Goodboy 0.40.1</sub>

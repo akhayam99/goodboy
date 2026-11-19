@@ -145,7 +145,7 @@ A branch with no pull request gets its own page: the branch name, whether it is 
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/review-pr-page-dark.webp">
-  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/review-pr-page-light.webp" alt="The Conversation tab of the Branch page for hl/fix-duplicate-credit, between the tabs Conversation, Changes, Commits, Checks 1, Runs and Comments 9, with #318 into main by nadia-p and the Fix checks button, the Not ready to merge card listing 1 check failing, Changes requested by omar-t and 3 commits behind main, the reviewers, the checks, the author, the linked issue, the description with its Edit button and the start of the activity">
+  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/review-pr-page-light.webp" alt="The Conversation tab of the Branch page for hl/fix-duplicate-credit under the session Stop retried webhooks posting a second credit, between the tabs Conversation, Changes, Commits, Checks 1, Runs and Comments 9, with #318 into main by nadia-p and the Fix checks button, the Not ready to merge card listing 1 check failing, Changes requested by omar-t and 3 commits behind main, the reviewers, the checks, the author, the linked issue, the description with its Edit button and the start of the activity">
 </picture>
 
 <sub>Screenshot from Goodboy 0.40.1</sub>
