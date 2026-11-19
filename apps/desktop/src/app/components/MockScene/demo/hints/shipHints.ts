@@ -73,7 +73,7 @@ export const SHIP_HINTS: ReadonlyArray<DemoHint> = [
     label: 'Rebase on main',
     copy: 'Rebase your branch on the latest main',
     progressCopy: 'Rebasing on main',
-    instruction: "Press **Rebase** to bring main's newer commits under your branch.",
+    instruction: "Press **Rebase on main** to bring main's newer commits under your branch.",
     progress: 'Goodboy is rebasing your branch on main and keeping a backup.',
     result: 'Your branch now sits on the latest main, and a backup was kept.',
     beat: 0,

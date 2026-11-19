@@ -28,6 +28,7 @@ const coachOf = ({
   rect,
   focus: null,
   opened: [],
+  chrome: [],
   isDimmed: false,
   pulse,
   isWarning,

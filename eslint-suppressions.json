@@ -693,7 +693,7 @@
   },
   "apps/desktop/src/app/components/MockScene/scenes/activityRunSeed.ts": {
     "@typescript-eslint/consistent-type-assertions": {
-      "count": 65
+      "count": 64
     }
   },
   "apps/desktop/src/app/components/MockScene/scenes/agentBriefResolverLive.test.ts": {
@@ -817,7 +817,7 @@
   },
   "apps/desktop/src/app/components/MockScene/scenes/audit/settingsSeed.ts": {
     "@typescript-eslint/consistent-type-assertions": {
-      "count": 7
+      "count": 6
     }
   },
   "apps/desktop/src/app/components/MockScene/scenes/audit/workflowRulesSeed.ts": {
@@ -1048,7 +1048,7 @@
   },
   "apps/desktop/src/app/components/MockScene/scenes/resolveSeed.ts": {
     "@typescript-eslint/consistent-type-assertions": {
-      "count": 13
+      "count": 12
     },
     "@typescript-eslint/naming-convention": {
       "count": 2

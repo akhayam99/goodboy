@@ -225,3 +225,14 @@ describe('artifact runs in the demo', () => {
     expect(store.getState().agentTurnState[agentId]?.kind).toBe('idle');
   });
 });
+
+describe('the Lead in the demo', () => {
+  it('reads its permissions from the demo instead of a database row the demo never wrote', async () => {
+    seed();
+    const permissions = await store
+      .getState()
+      .readLeadPermissions({ target: { treeId: brandId({ value: 'demo-story-tree' }) } });
+    expect(permissions.level).toBe('plan');
+    expect(permissions.spendLimitUsd).toBe(10);
+  });
+});

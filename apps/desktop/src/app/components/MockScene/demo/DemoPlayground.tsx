@@ -20,6 +20,9 @@ import { groupAccessOf } from './hints/groupAccessOf';
 import { headerInstruction } from './hints/headerInstruction';
 import { useDemoHints, type DemoHints } from './useDemoHints';
 import { useHintProgress } from './useHintProgress';
+import { useAutoAdvance } from './useAutoAdvance';
+import { dwellOf } from './hints/dwellOf';
+import { RESULT_DWELL_MS } from './hints/resultDwellMs';
 
 type ChapterParams = {
   readonly id: string;
@@ -158,6 +161,34 @@ export const DemoPlayground = () => {
     replay();
     focusFrame();
   }, [resetHints, replay, focusFrame]);
+  const advanceId =
+    RAIL_IDS.slice(railIndex + 1).find((id) => accessOf({ id }) !== 'done') ?? CLOSING_ID;
+  const onAdvance = useCallback(() => goToChapter({ id: advanceId }), [goToChapter, advanceId]);
+  const storyId =
+    DEMO_CHAPTERS.find((entry) => access.groups.get(entry.id) === 'open')?.id ?? CLOSING_ID;
+  const onLoadDone = useCallback(
+    () => selectChapter({ id: storyId, isRedirect: true }),
+    [selectChapter, storyId],
+  );
+  const lastHint = chapter.hints.at(-1);
+  useAutoAdvance({
+    chapterId,
+    isDone: isGroupDone,
+    dwellMs: lastHint === undefined ? RESULT_DWELL_MS : dwellOf({ hint: lastHint }),
+    onLoadDone,
+    onArriveDone: onReplay,
+    onAdvance,
+  });
+  const onSelectGroup = useCallback(
+    ({ id }: ChapterParams) => {
+      if (id === chapterId && isGroupDone) {
+        onReplay();
+        return;
+      }
+      goToChapter({ id });
+    },
+    [chapterId, isGroupDone, onReplay, goToChapter],
+  );
   const firstChapter = DEMO_CHAPTERS[0];
   const onRestart = useCallback(() => {
     restartHints();
@@ -225,7 +256,7 @@ export const DemoPlayground = () => {
           access={access}
           steps={hints}
           tallyOf={hints.tallyOf}
-          onSelect={goToChapter}
+          onSelect={onSelectGroup}
           onIntent={onIntent}
           upNextId={upNextId}
           isClosingVisited={hasVisitedClosing}
@@ -241,7 +272,7 @@ export const DemoPlayground = () => {
                     held: hints.held,
                     acting: hints.acting,
                     active: hints.activeHint,
-                    nextTitle: nextTitle ?? CLOSING_TITLE,
+                    last: lastHint,
                     isRecovering: hints.isRecovering,
                   })
             }
@@ -273,17 +304,6 @@ export const DemoPlayground = () => {
               onHideHint={hints.dismiss}
               onRevealHint={hints.revealHint}
               working={hints.acting?.progressCopy ?? hints.acting?.progress}
-              done={
-                isGroupDone
-                  ? {
-                      title: chapter.title,
-                      outro: chapter.outro,
-                      nextTitle: nextTitle ?? CLOSING_TITLE,
-                    }
-                  : undefined
-              }
-              onNext={onNext}
-              onReplay={onReplay}
             />
           )}
           <p className="sr-only" aria-live="polite">
@@ -295,8 +315,6 @@ export const DemoPlayground = () => {
           <DemoCompactNav
             title={isClosing ? CLOSING_TITLE : chapter.title}
             chapter={isClosing ? undefined : chapter}
-            groupNumber={chapterIndex + 1}
-            groupCount={DEMO_CHAPTERS.length}
             steps={hints}
             hasPrevious={previousId !== undefined}
             onPrevious={onPrevious}

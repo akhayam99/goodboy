@@ -121,6 +121,7 @@ export const DemoRail = ({
                   access={access.groups.get(chapter.id) ?? 'locked'}
                   isActive={isActive}
                   isUpNext={chapter.id === upNextId}
+                  canReplay
                   tally={tallyOf({ chapter })}
                   isTooltipSuppressed={!isSettled}
                   onSelect={() => onSelect({ id: chapter.id })}
@@ -162,6 +163,7 @@ export const DemoRail = ({
                 access={access.closing === 'open' && isClosingVisited ? 'done' : access.closing}
                 isActive={activeId === CLOSING_ID}
                 isUpNext={upNextId === CLOSING_ID}
+                canReplay={false}
                 isTooltipSuppressed={!isSettled}
                 onSelect={() => onSelect({ id: CLOSING_ID })}
                 onIntent={() => onIntent({ id: CLOSING_ID })}

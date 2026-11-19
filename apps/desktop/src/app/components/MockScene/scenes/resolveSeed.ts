@@ -32,7 +32,6 @@ import type {
   SessionId,
   SessionProjectMount,
   Workspace,
-  WorkspaceId,
 } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import type { ProviderDisplayInfo } from '../../../../features/providers/providers';
@@ -41,10 +40,11 @@ import type { ResolveCandidateWithItems } from '../../../../store/slices/resolve
 import { EMPTY_RESOLVE_QUEUE_VIEW } from '../../../../store/slices/session-view';
 import { remoteMovedError } from '../../../../store/slices/resolve/remoteMovedError';
 import { sceneClock } from '../sceneClock';
+import { BRAND_WORKSPACE_ID } from './brand/canon';
 
 const clock = sceneClock({ anchor: '2026-09-04T14:20:00.000Z' });
 
-export const WORKSPACE_ID = 'mock-resolve-workspace-harborline' as WorkspaceId;
+export const WORKSPACE_ID = BRAND_WORKSPACE_ID;
 export const SESSION_ID = 'mock-resolve-session-webhook-retry' as SessionId;
 const PROJECT_ID = 'mock-resolve-project-payments-api' as ProjectId;
 

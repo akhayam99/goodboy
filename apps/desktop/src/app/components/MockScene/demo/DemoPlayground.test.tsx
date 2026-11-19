@@ -314,16 +314,17 @@ describe('demo playground', () => {
     expect(window.location.hash).toBe('#bring');
   });
 
-  it('moves between the groups it may open with the arrow keys', () => {
+  it('moves back to a finished group with the arrow keys and replays it, never past a locked one', () => {
     seedProgress({ ids: ['bring'] });
     window.history.replaceState(null, '', '/?scene=demo#direction');
     render(<DemoPlayground />);
+    fireEvent.keyDown(playgroundRoot(), { key: 'ArrowRight' });
+    expect(window.location.hash).toBe(`#${DEMO_CHAPTERS[1]?.id ?? ''}`);
     fireEvent.keyDown(playgroundRoot(), { key: 'ArrowLeft' });
     expect(window.location.hash).toBe(`#${DEMO_CHAPTERS[0].id}`);
+    expect(stepStates().some((state) => state === 'done')).toBe(false);
     fireEvent.keyDown(playgroundRoot(), { key: 'ArrowRight' });
-    expect(window.location.hash).toBe(`#${DEMO_CHAPTERS[1]?.id ?? ''}`);
-    fireEvent.keyDown(playgroundRoot(), { key: 'ArrowRight' });
-    expect(window.location.hash).toBe(`#${DEMO_CHAPTERS[1]?.id ?? ''}`);
+    expect(window.location.hash).toBe(`#${DEMO_CHAPTERS[0].id}`);
   });
 
   it('replays the group in a fresh frame', () => {
@@ -436,7 +437,7 @@ describe('demo playground', () => {
       expect(stepStates().filter((state) => state === 'done')).toHaveLength(index);
       expect(stepStates()[index]).toBe('current');
       tried({ frame, hintId: entry.id });
-      elapse({ ms: RESULT_DWELL_MS });
+      elapse({ ms: index < hints.length - 1 ? RESULT_DWELL_MS : 0 });
     }
     expect(screen.queryByTestId('demo-counter')).toBeNull();
     expect(stepStates().every((state) => state === 'done')).toBe(true);
@@ -504,7 +505,7 @@ describe('demo playground', () => {
     expect(instruction()).toBe(plain(second?.instruction));
   });
 
-  it('says the group is done as soon as its last step is done', () => {
+  it('keeps the last result in the header until the next group opens by itself', () => {
     seedProgress({ ids: ['bring'] });
     const { hints } = chapterOf({ id: 'direction' });
     window.history.replaceState(null, '', '/?scene=demo#direction');
@@ -518,9 +519,13 @@ describe('demo playground', () => {
     const last = hints.at(-1);
     hint({ frame, hintId: last?.id ?? '' });
     tried({ frame, hintId: last?.id ?? '' });
-    expect(instruction()).toBe('Done. Next: Guide the work.');
-    elapse({ ms: last === undefined ? RESULT_DWELL_MS : dwellOf({ hint: last }) });
-    expect(instruction()).toBe('Done. Next: Guide the work.');
+    expect(instruction()).toBe(plain(last?.result));
+    elapse({ ms: (last === undefined ? RESULT_DWELL_MS : dwellOf({ hint: last })) - 1 });
+    expect(instruction()).toBe(plain(last?.result));
+    expect(window.location.hash).toBe('#direction');
+    elapse({ ms: 1 });
+    expect(window.location.hash).toBe('#guide');
+    expect(instruction()).not.toContain('Done.');
   });
 
   it('changes the scene only when a step that lives in another scene becomes the next one', () => {
@@ -594,21 +599,6 @@ describe('demo playground', () => {
     expect(tracks.length).toBeGreaterThan(0);
     hint({ frame: next, hintId: crossingHint.id });
     expect(screen.getByRole('note').textContent).toContain(crossingHint.copy);
-  });
-
-  it('asks a group frame for its hint again when the visitor comes back to it', () => {
-    seedProgress({ ids: ['bring'] });
-    window.history.replaceState(null, '', '/?scene=demo#direction');
-    render(<DemoPlayground />);
-    const frame = visibleFrame();
-    report({ frame, type: 'ready' });
-    fireEvent.click(rowOf({ title: 'Bring your repositories' }));
-    const back = vi.spyOn(frame.contentWindow ?? window, 'postMessage');
-    fireEvent.click(rowOf({ title: 'Set the direction' }));
-    const tracks = back.mock.calls.filter(
-      ([message]) => typeof message === 'object' && message !== null && message.type === 'hints',
-    );
-    expect(tracks.length).toBeGreaterThan(0);
   });
 
   it('keeps the result line until the next control is on screen', () => {

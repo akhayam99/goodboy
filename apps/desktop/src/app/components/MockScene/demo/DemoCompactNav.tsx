@@ -9,8 +9,6 @@ import { useUpNextBreath } from './useUpNextBreath';
 type Props = {
   readonly title: string;
   readonly chapter: DemoChapter | undefined;
-  readonly groupNumber: number;
-  readonly groupCount: number;
   readonly steps: Steps;
   readonly hasPrevious: boolean;
   readonly onPrevious: () => void;
@@ -23,8 +21,6 @@ type Props = {
 export const DemoCompactNav = ({
   title,
   chapter,
-  groupNumber,
-  groupCount,
   steps,
   hasPrevious,
   onPrevious,
@@ -46,10 +42,7 @@ export const DemoCompactNav = ({
           disabled={!hasPrevious}
           onClick={onPrevious}
         />
-        <p className="min-w-0 truncate text-ui text-muted-foreground">
-          <span className="text-foreground">{title}</span>{' '}
-          {chapter === undefined ? null : `${groupNumber} of ${groupCount}`}
-        </p>
+        <p className="min-w-0 truncate text-ui text-foreground">{title}</p>
         {nextTitle === undefined ? null : (
           <span
             ref={nextRef}

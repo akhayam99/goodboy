@@ -81,6 +81,15 @@ describe('the prepared plan comment', () => {
     expect(fieldOf({ id: 'first' })?.value).toBe(STORY_COMMENT);
   });
 
+  it('brings the filled composer to the middle of the plan, so the next hint has room below it', async () => {
+    const scroll = vi.spyOn(HTMLElement.prototype, 'scrollIntoView').mockImplementation(() => {});
+    installPlanCommentPrefill({ store });
+    await mount({ id: 'first' });
+    expect(scroll).toHaveBeenCalledWith({ block: 'center' });
+    expect(scroll.mock.contexts[0]).toBe(document.querySelector('#first'));
+    scroll.mockRestore();
+  });
+
   it('leaves a composer opened after the comment was added empty, so it cannot be kept as a second draft', async () => {
     installPlanCommentPrefill({ store });
     await mount({ id: 'first' });

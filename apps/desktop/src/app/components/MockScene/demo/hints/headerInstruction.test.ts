@@ -5,8 +5,9 @@ import { SHIP_HINTS } from './shipHints';
 
 const fix = SHIP_HINTS.find((hint) => hint.id === 'fix-start');
 const apply = SHIP_HINTS.find((hint) => hint.id === 'fix-apply');
+const remove = SHIP_HINTS.at(-1);
 
-if (fix === undefined || apply === undefined) {
+if (fix === undefined || apply === undefined || remove === undefined) {
   throw new Error('missing ship fixtures');
 }
 
@@ -17,7 +18,7 @@ describe('the header line', () => {
         held: undefined,
         acting: undefined,
         active: fix,
-        nextTitle: 'Get Goodboy',
+        last: remove,
         isRecovering: false,
       }),
     ).toBe(fix.instruction);
@@ -29,7 +30,7 @@ describe('the header line', () => {
         held: undefined,
         acting: fix,
         active: fix,
-        nextTitle: 'Get Goodboy',
+        last: remove,
         isRecovering: false,
       }),
     ).toBe(fix.progress);
@@ -41,7 +42,7 @@ describe('the header line', () => {
         held: undefined,
         acting: apply,
         active: apply,
-        nextTitle: 'Get Goodboy',
+        last: remove,
         isRecovering: false,
       }),
     ).toBe(apply.instruction);
@@ -53,34 +54,34 @@ describe('the header line', () => {
         held: fix,
         acting: fix,
         active: apply,
-        nextTitle: 'Get Goodboy',
+        last: remove,
         isRecovering: false,
       }),
     ).toBe(fix.result);
   });
 
-  it('says the group is done and names the next one once every step is done', () => {
+  it('keeps the result of the last step on screen once the group is done', () => {
+    expect(
+      headerInstruction({
+        held: remove,
+        acting: undefined,
+        active: undefined,
+        last: remove,
+        isRecovering: false,
+      }),
+    ).toBe(remove.result);
+  });
+
+  it('still names the last result after its hold ends, until the next group opens', () => {
     expect(
       headerInstruction({
         held: undefined,
         acting: undefined,
         active: undefined,
-        nextTitle: 'Get Goodboy',
+        last: remove,
         isRecovering: false,
       }),
-    ).toBe('Done. Next: Get Goodboy.');
-  });
-
-  it('says the group is done at once, while the done card carries the last result', () => {
-    expect(
-      headerInstruction({
-        held: fix,
-        acting: undefined,
-        active: undefined,
-        nextTitle: 'Set the direction',
-        isRecovering: false,
-      }),
-    ).toBe('Done. Next: Set the direction.');
+    ).toBe(remove.result);
   });
 
   it('points back at the plan when its drawer was closed', () => {
@@ -93,7 +94,7 @@ describe('the header line', () => {
         held: undefined,
         acting: undefined,
         active: comment,
-        nextTitle: 'Review and ship',
+        last: GUIDE_HINTS.at(-1),
         isRecovering: true,
       }),
     ).toBe("Press the plan's title to open it again and go on.");

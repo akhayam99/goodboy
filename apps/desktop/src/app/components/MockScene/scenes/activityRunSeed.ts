@@ -32,17 +32,17 @@ import type {
   WorkflowRunId,
   WireframeArtifact,
   Workspace,
-  WorkspaceId,
 } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { sceneClock } from '../sceneClock';
 import { sceneParam } from './audit/sceneParams';
+import { BRAND_WORKSPACE_ID } from './brand/canon';
 import type { SummarizerRound } from '../../../../store/slices/summaries/state';
 import { sceneSetContextItemStatus, sessionLearningsSeed } from './learningsSeed';
 
 const clock = sceneClock({ anchor: '2026-09-18T10:05:00.000Z' });
 
-const WORKSPACE_ID = 'mock-run-workspace-harborline' as WorkspaceId;
+const WORKSPACE_ID = BRAND_WORKSPACE_ID;
 export const SESSION_ID = 'mock-run-session-webhooks' as SessionId;
 const PAYMENTS_ID = 'mock-run-project-payments-api' as ProjectId;
 const CONSOLE_ID = 'mock-run-project-notify-relay' as ProjectId;

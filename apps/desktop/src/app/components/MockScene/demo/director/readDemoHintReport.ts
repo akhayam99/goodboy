@@ -47,10 +47,10 @@ const rectOf = ({ value }: ValueParams): DemoRect | null | undefined => {
     : { x, y, width, height };
 };
 
-const MAX_OPENED = 16;
+const MAX_RECTS = 16;
 
-const openedOf = ({ value }: ValueParams): ReadonlyArray<DemoRect> | undefined => {
-  if (!Array.isArray(value) || value.length > MAX_OPENED) {
+const rectListOf = ({ value }: ValueParams): ReadonlyArray<DemoRect> | undefined => {
+  if (!Array.isArray(value) || value.length > MAX_RECTS) {
     return undefined;
   }
   const rects: Array<DemoRect> = [];
@@ -93,10 +93,17 @@ export const readDemoHintReport = ({ data }: Params): DemoHintReport | null => {
   const hasFocus = Reflect.has(envelope.data, 'focus');
   const focus = hasFocus ? rectOf({ value: Reflect.get(envelope.data, 'focus') }) : undefined;
   const hasOpened = Reflect.has(envelope.data, 'opened');
-  const opened = hasOpened ? openedOf({ value: Reflect.get(envelope.data, 'opened') }) : undefined;
+  const opened = hasOpened
+    ? rectListOf({ value: Reflect.get(envelope.data, 'opened') })
+    : undefined;
+  const hasChrome = Reflect.has(envelope.data, 'chrome');
+  const chrome = hasChrome
+    ? rectListOf({ value: Reflect.get(envelope.data, 'chrome') })
+    : undefined;
   const hasValidHint = hintValue === null || hintId !== null;
   const hasValidFocus = !hasFocus || focus !== undefined;
   const hasValidOpened = !hasOpened || opened !== undefined;
+  const hasValidChrome = !hasChrome || chrome !== undefined;
   const hasValidClick = isClicked === undefined || typeof isClicked === 'boolean';
   const hasValidPress = isPressed === undefined || typeof isPressed === 'boolean';
   const hasValidRecovery = isRecovering === undefined || typeof isRecovering === 'boolean';
@@ -104,6 +111,7 @@ export const readDemoHintReport = ({ data }: Params): DemoHintReport | null => {
     !hasValidHint ||
     !hasValidFocus ||
     !hasValidOpened ||
+    !hasValidChrome ||
     !hasValidClick ||
     !hasValidPress ||
     !hasValidRecovery ||
@@ -120,6 +128,7 @@ export const readDemoHintReport = ({ data }: Params): DemoHintReport | null => {
     isOffscreen,
     ...(focus === undefined ? {} : { focus }),
     ...(opened === undefined ? {} : { opened }),
+    ...(chrome === undefined ? {} : { chrome }),
     ...(isClicked === undefined ? {} : { isClicked }),
     ...(isPressed === undefined ? {} : { isPressed }),
     ...(isRecovering === undefined ? {} : { isRecovering }),
