@@ -15,6 +15,7 @@ import { STORY_ISSUE, STORY_REVIEW } from './storyContent';
 export const STORY_REVIEW_THREAD = THREAD_IDS.retryConstant;
 export const STORY_REVIEW_SESSION_ID = SESSION_ID;
 export const STORY_REVIEW_MOUNT_ID = MOUNT_TARGET.mountId;
+export const STORY_REVIEW_SESSION = { ...SESSION, goal: STORY_ISSUE.title };
 
 const PR_AUTHOR = { login: 'dana-r', name: 'Dana R.', avatarUrl: null };
 
@@ -71,8 +72,12 @@ export const seedStoryReview = (): void => {
     };
     return {
       sessions: state.sessions.map((session) =>
-        session.id === SESSION_ID ? { ...SESSION, goal: STORY_ISSUE.title } : session,
+        session.id === SESSION_ID ? STORY_REVIEW_SESSION : session,
       ),
+      sessionSlots: {
+        ...state.sessionSlots,
+        [SESSION_ID]: [{ key: 'goal', value: STORY_ISSUE.title, enabled: true }],
+      },
       sessionResolveQueueItems: { ...state.sessionResolveQueueItems, [SESSION_ID]: queue },
       sessionResolveAttempts: { ...state.sessionResolveAttempts, [SESSION_ID]: [] },
       sessionResolveCandidates: {

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Scrim, cn } from '@goodboy/ui';
+import { cn } from '@goodboy/ui';
 import { useStageBox } from './useStageBox';
 import { stageFitOf } from './stageFitOf';
 import { isHoleTooBig } from './hints/isHoleTooBig';
@@ -15,7 +15,6 @@ import { readDemoHintReport } from './director/readDemoHintReport';
 import { readDemoThemeMessage } from './director/readDemoThemeMessage';
 import { DemoCoachMark, type CoachMark } from './DemoCoachMark';
 import { DemoHintSlot } from './DemoHintSlot';
-import { DemoChapterDone, type ChapterDone } from './DemoChapterDone';
 import { DemoWorkingPill } from './DemoWorkingPill';
 import type { FrameCommand, FrameReportParams, StageFrame } from './useBeatPlayer';
 import type { HintReportParams, HintReveal, HintTrack, OffscreenHint } from './useDemoHints';
@@ -64,9 +63,6 @@ type Props = {
   readonly onHideHint: () => void;
   readonly onRevealHint: () => void;
   readonly working: string | undefined;
-  readonly done: ChapterDone | undefined;
-  readonly onNext: () => void;
-  readonly onReplay: () => void;
 };
 
 type FocusTargetParams = {
@@ -124,9 +120,6 @@ export const DemoStage = ({
   onHideHint,
   onRevealHint,
   working,
-  done,
-  onNext,
-  onReplay,
 }: Props) => {
   const { ref, box, hasRoom } = useStageBox();
   const activeFit = stageFitOf({ box });
@@ -380,10 +373,6 @@ export const DemoStage = ({
   const visibleKeyRef = useRef(visibleKey);
   visibleKeyRef.current = visibleKey;
 
-  const isDoneRef = useRef(done !== undefined);
-  isDoneRef.current = done !== undefined;
-  const doneNextRef = useRef<HTMLButtonElement>(null);
-
   useEffect(() => {
     const listener = new AbortController();
     const reclaim = ({ target }: FocusTargetParams) => {
@@ -392,10 +381,6 @@ export const DemoStage = ({
       }
       const entry = [...elements.current].find(([, element]) => element === target);
       if (entry === undefined) {
-        return;
-      }
-      if (isDoneRef.current) {
-        doneNextRef.current?.focus({ preventScroll: true });
         return;
       }
       if (entry[0] === visibleKeyRef.current) {
@@ -471,23 +456,10 @@ export const DemoStage = ({
           {working !== undefined && coach === undefined && isLanded ? (
             <DemoWorkingPill copy={working} />
           ) : null}
-          {done === undefined ? null : (
-            <>
-              <Scrim testId="demo-stage-scrim" className="z-30" />
-              <DemoChapterDone
-                key={done.title}
-                done={done}
-                nextRef={doneNextRef}
-                onNext={onNext}
-                onReplay={onReplay}
-              />
-            </>
-          )}
           {frames.map((frame) => {
             const isVisible = frame.key === visibleKey && shownKey !== undefined;
             const isFading = frame.key === fadingKey;
-            const isInert =
-              done !== undefined || (!isVisible && !isFading && frame.key !== currentKey);
+            const isInert = !isVisible && !isFading && frame.key !== currentKey;
             const fit = stageFitOf({ box });
             return (
               <iframe

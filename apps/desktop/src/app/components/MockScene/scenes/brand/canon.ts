@@ -1,4 +1,8 @@
+import { brandId, type WorkspaceId } from '@goodboy/types';
+
 export const BRAND_WORKSPACE_NAME = 'Harborline';
+
+export const BRAND_WORKSPACE_ID = brandId<WorkspaceId>({ value: 'mock-workspace-harborline' });
 
 export const BRAND_PROJECTS = {
   payments: { name: 'payments-api', rootPath: '~/code/harborline/payments-api' },

@@ -5,7 +5,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { DemoPlayground } from './DemoPlayground';
 import { DEMO_CHAPTERS } from './demoChapters';
-import { DEMO_GROUPS } from './demoGroups';
 import { DEMO_PROTOCOL, type DemoRect, type DemoReportType } from './director/demoProtocol';
 import { HINT_PROGRESS_KEY } from './hints/hintProgressKey';
 import { dwellOf } from './hints/dwellOf';
@@ -235,14 +234,14 @@ afterEach(() => {
 describe('demo playground stage states', () => {
   it('draws the coach only once the new frame has faded in after a group switch', () => {
     seedProgress({ ids: ['bring'] });
-    window.history.replaceState(null, '', '/?scene=demo#bring');
+    window.history.replaceState(null, '', '/?scene=demo#direction');
     render(<DemoPlayground />);
     report({ frame: visibleFrame(), type: 'ready' });
-    fireEvent.click(rowOf({ title: 'Set the direction' }));
-    const next = frameOf({ scene: chapterOf({ id: 'direction' }).beats[0]?.scene ?? '' });
+    fireEvent.click(rowOf({ title: 'Bring your repositories' }));
+    const next = frameOf({ scene: chapterOf({ id: 'bring' }).beats[0]?.scene ?? '' });
     report({ frame: next, type: 'ready' });
     expect(visibleFrame()).toBe(next);
-    hint({ frame: next, hintId: chapterOf({ id: 'direction' }).hints[0]?.id ?? '' });
+    hint({ frame: next, hintId: chapterOf({ id: 'bring' }).hints[0]?.id ?? '' });
     expect(screen.queryByTestId('demo-coach-mark')).toBeNull();
     expect(screen.queryByTestId('demo-spotlight')).toBeNull();
     elapse({ ms: 319 });
@@ -264,7 +263,10 @@ describe('demo playground stage states', () => {
   });
 
   describe('when a group is done', () => {
-    const doneCard = (): HTMLElement => screen.getByTestId('demo-chapter-done');
+    const dwellOfLast = ({ id }: ChapterParams): number => {
+      const last = chapterOf({ id }).hints.at(-1);
+      return last === undefined ? RESULT_DWELL_MS : dwellOf({ hint: last });
+    };
 
     const finishBring = () => {
       render(<DemoPlayground />);
@@ -275,103 +277,150 @@ describe('demo playground stage states', () => {
         tried({ frame, hintId: entry.id });
         elapse({ ms: dwellOf({ hint: entry }) });
       }
-      expect(screen.queryByTestId('demo-chapter-done')).toBeNull();
       const last = hints.at(-1);
       tried({ frame, hintId: last?.id ?? '' });
       return { frame, last };
     };
 
-    it('ends the group on the stage in the same tick as its last result, with Next and Replay', () => {
+    const heading = (): string => screen.getByRole('heading', { level: 1 }).textContent ?? '';
+
+    it('keeps the last result on the open frame for its dwell, with nothing to click', () => {
       const { frame, last } = finishBring();
-      expect(instruction()).toBe('Done. Next: Set the direction.');
-      expect(within(doneCard()).getByRole('heading').textContent).toBe(
-        'Bring your repositories is done',
-      );
-      expect(doneCard().textContent).toContain(DEMO_GROUPS.bring.outro);
-      const next = within(doneCard()).getByRole('button', { name: /Next: Set the direction/ });
-      within(doneCard()).getByRole('button', { name: 'Replay this chapter' });
-      expect(document.activeElement).toBe(next);
-      expect(frame.hasAttribute('inert')).toBe(true);
-      screen.getByTestId('demo-stage-scrim');
-      elapse({ ms: last === undefined ? RESULT_DWELL_MS : dwellOf({ hint: last }) });
-      expect(instruction()).toBe('Done. Next: Set the direction.');
+      const result = last?.result.replaceAll('**', '');
+      expect(instruction()).toBe(result);
+      expect(frame.hasAttribute('inert')).toBe(false);
+      expect(within(screen.getByTestId('demo-stage')).queryAllByRole('button')).toHaveLength(0);
+      elapse({ ms: dwellOfLast({ id: 'bring' }) - 1 });
+      expect(heading()).toBe('Bring your repositories');
+      expect(instruction()).toBe(result);
     });
 
-    it('opens the next group from the card and drops the card', () => {
+    it('opens the next group by itself once the dwell ends, as Next would', () => {
       finishBring();
-      fireEvent.click(within(doneCard()).getByRole('button', { name: /Next: Set the direction/ }));
+      const historyLength = window.history.length;
+      elapse({ ms: dwellOfLast({ id: 'bring' }) });
       expect(window.location.hash).toBe('#direction');
-      expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Set the direction');
-      expect(screen.queryByTestId('demo-chapter-done')).toBeNull();
+      expect(window.history.length).toBe(historyLength + 1);
+      expect(heading()).toBe('Set the direction');
+      expect(rowOf({ title: 'Set the direction' }).getAttribute('aria-current')).toBe('page');
+      expect(rowOf({ title: 'Bring your repositories' }).getAttribute('data-access')).toBe('done');
+      expect(document.activeElement).toBe(playgroundRoot());
+      expect(
+        frameOf({ scene: chapterOf({ id: 'direction' }).beats[0]?.scene ?? '' }),
+      ).toBeDefined();
     });
 
-    it('focuses Next again when it opens a group that is done too', () => {
-      seedProgress({ ids: ['bring', 'direction'] });
-      window.history.replaceState(null, '', '/?scene=demo#bring');
+    it('flows from the last group into Get Goodboy', () => {
+      seedProgress({ ids: ['bring', 'direction', 'guide'] });
+      window.history.replaceState(null, '', '/?scene=demo#ship');
       render(<DemoPlayground />);
-      fireEvent.click(within(doneCard()).getByRole('button', { name: /Next: Set the direction/ }));
-      expect(window.location.hash).toBe('#direction');
-      expect(within(doneCard()).getByRole('heading').textContent).toBe('Set the direction is done');
-      expect(document.activeElement).toBe(
-        within(doneCard()).getByRole('button', { name: /Next:/ }),
-      );
+      const { hints, beats } = chapterOf({ id: 'ship' });
+      for (const entry of hints) {
+        const scene = beats[entry.beat]?.scene ?? '';
+        const frame = frameOf({ scene });
+        report({ frame, type: 'ready' });
+        elapse({ ms: 320 });
+        tried({ frame, hintId: entry.id });
+        elapse({ ms: entry === hints.at(-1) ? 0 : dwellOf({ hint: entry }) });
+      }
+      expect(heading()).toBe('Review and ship');
+      elapse({ ms: dwellOfLast({ id: 'ship' }) });
+      expect(window.location.hash).toBe('#get');
+      expect(heading()).toBe('Get Goodboy');
     });
 
-    it('keeps the playground keys after Replay this chapter', () => {
+    it('stays on the group when the visitor replays it from the rail during the dwell', () => {
+      finishBring();
+      fireEvent.click(rowOf({ title: 'Bring your repositories' }));
+      expect(stepStates().filter((state) => state === 'done')).toHaveLength(0);
+      elapse({ ms: dwellOfLast({ id: 'bring' }) * 2 });
+      expect(heading()).toBe('Bring your repositories');
+    });
+
+    it('replays a finished group the rail jumps back to, and only that group', () => {
       seedProgress({ ids: ['bring', 'direction'] });
-      window.history.replaceState(null, '', '/?scene=demo#direction');
+      window.history.replaceState(null, '', '/?scene=demo#guide');
       render(<DemoPlayground />);
-      const replay = within(doneCard()).getByRole('button', { name: 'Replay this chapter' });
-      replay.focus();
-      fireEvent.click(replay);
-      expect(screen.queryByTestId('demo-chapter-done')).toBeNull();
+      const before = visibleFrame();
+      fireEvent.click(rowOf({ title: 'Bring your repositories' }));
+      expect(window.location.hash).toBe('#bring');
+      expect(heading()).toBe('Bring your repositories');
+      expect(stepStates().filter((state) => state === 'done')).toHaveLength(0);
+      expect(rowOf({ title: 'Set the direction' }).getAttribute('data-access')).toBe('done');
+      expect(visibleFrame()).not.toBe(before);
+      elapse({ ms: dwellOfLast({ id: 'bring' }) * 2 });
+      expect(heading()).toBe('Bring your repositories');
       expect(document.activeElement).toBe(playgroundRoot());
     });
 
-    it('takes the arrow key from the focused Next button to the next group', () => {
-      finishBring();
-      fireEvent.keyDown(within(doneCard()).getByRole('button', { name: /Next:/ }), {
-        key: 'ArrowRight',
-      });
-      expect(window.location.hash).toBe('#direction');
-    });
-
-    it('replays only this group from the card', () => {
-      seedProgress({ ids: ['bring', 'direction'] });
+    it('starts an unfinished group over when a replay of an earlier group drops its frame', () => {
+      seedProgress({ ids: ['bring'] });
       window.history.replaceState(null, '', '/?scene=demo#direction');
       render(<DemoPlayground />);
-      const before = visibleFrame();
-      fireEvent.click(within(doneCard()).getByRole('button', { name: 'Replay this chapter' }));
-      expect(screen.queryByTestId('demo-chapter-done')).toBeNull();
-      expect(stepStates().filter((state) => state === 'done')).toHaveLength(0);
+      const direction = visibleFrame();
+      report({ frame: direction, type: 'ready' });
+      const [draft, start] = chapterOf({ id: 'direction' }).hints;
+      for (const entry of [draft, start]) {
+        tried({ frame: direction, hintId: entry?.id ?? '' });
+        elapse({ ms: entry === undefined ? RESULT_DWELL_MS : dwellOf({ hint: entry }) });
+      }
+      expect(stepStates().filter((state) => state === 'done')).toHaveLength(2);
+
+      fireEvent.click(rowOf({ title: 'Bring your repositories' }));
+      expect(JSON.parse(window.sessionStorage.getItem(HINT_PROGRESS_KEY) ?? '{}')).toMatchObject({
+        direction: { tried: [] },
+      });
+
+      const bring = frameOf({ scene: chapterOf({ id: 'bring' }).beats[0]?.scene ?? '' });
+      report({ frame: bring, type: 'ready' });
+      elapse({ ms: 320 });
+      for (const entry of chapterOf({ id: 'bring' }).hints) {
+        tried({ frame: bring, hintId: entry.id });
+        elapse({ ms: dwellOf({ hint: entry }) });
+      }
+      elapse({ ms: dwellOfLast({ id: 'bring' }) });
+
+      expect(heading()).toBe('Set the direction');
       expect(rowOf({ title: 'Bring your repositories' }).getAttribute('data-access')).toBe('done');
-      expect(
-        Array.from(document.querySelectorAll('iframe')).some((frame) => frame !== before),
-      ).toBe(true);
+      expect(stepStates()[0]).toBe('current');
+      expect(stepStates().filter((state) => state === 'done')).toHaveLength(0);
+      expect(instruction()).toBe(draft?.instruction.replaceAll('**', ''));
     });
 
-    it('shows the card over a dimmed, inert frame on a revisit, with no coach', () => {
+    it('clears only the unfinished group it leaves and keeps every finished one', () => {
+      seedProgress({ ids: ['bring', 'direction'] });
+      window.history.replaceState(null, '', '/?scene=demo#guide');
+      render(<DemoPlayground />);
+      const guide = visibleFrame();
+      report({ frame: guide, type: 'ready' });
+      tried({ frame: guide, hintId: chapterOf({ id: 'guide' }).hints[0]?.id ?? '' });
+
+      fireEvent.click(rowOf({ title: 'Set the direction' }));
+
+      expect(JSON.parse(window.sessionStorage.getItem(HINT_PROGRESS_KEY) ?? '{}')).toMatchObject({
+        bring: { tried: idsOf({ id: 'bring' }) },
+        guide: { tried: [] },
+      });
+      expect(rowOf({ title: 'Bring your repositories' }).getAttribute('data-access')).toBe('done');
+    });
+
+    it('opens the group where the story stands when a page load names a finished one', () => {
       seedProgress({ ids: ['bring', 'direction', 'guide'] });
       window.history.replaceState(null, '', '/?scene=demo#bring');
+      const historyLength = window.history.length;
       render(<DemoPlayground />);
-      const frame = visibleFrame();
-      report({ frame, type: 'ready' });
-      hint({ frame, hintId: chapterOf({ id: 'bring' }).hints.at(-1)?.id ?? '' });
-      expect(within(doneCard()).getByRole('heading').textContent).toBe(
-        'Bring your repositories is done',
-      );
-      expect(screen.queryByTestId('demo-coach-mark')).toBeNull();
-      expect(frame.hasAttribute('inert')).toBe(true);
-      expect(instruction()).toBe('Done. Next: Set the direction.');
-      expect(railOf().textContent).not.toContain('Up next');
+      expect(window.location.hash).toBe('#ship');
+      expect(window.history.length).toBe(historyLength);
+      expect(heading()).toBe('Review and ship');
+      expect(rowOf({ title: 'Bring your repositories' }).getAttribute('data-access')).toBe('done');
     });
 
-    it('names Get Goodboy on the card of the last group', () => {
+    it('opens Get Goodboy when a page load names a group and every group is done', () => {
       seedProgress({ ids: ['bring', 'direction', 'guide', 'ship'] });
-      window.history.replaceState(null, '', '/?scene=demo#ship');
+      window.history.replaceState(null, '', '/?scene=demo#direction');
       render(<DemoPlayground />);
-      within(doneCard()).getByRole('button', { name: /Next: Get Goodboy/ });
-      expect(instruction()).toBe('Done. Next: Get Goodboy.');
+      expect(window.location.hash).toBe('#get');
+      expect(heading()).toBe('Get Goodboy');
     });
   });
 

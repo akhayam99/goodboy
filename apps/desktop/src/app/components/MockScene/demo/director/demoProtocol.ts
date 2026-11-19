@@ -56,6 +56,7 @@ type DemoAnchorReport = {
   readonly rect: DemoRect | null;
   readonly focus?: DemoRect | null;
   readonly opened?: ReadonlyArray<DemoRect>;
+  readonly chrome?: ReadonlyArray<DemoRect>;
   readonly isOffscreen: boolean;
   readonly isClicked?: boolean;
   readonly isPressed?: boolean;

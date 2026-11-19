@@ -26,11 +26,14 @@ type Props = {
   readonly access: GroupAccess;
   readonly isActive: boolean;
   readonly isUpNext: boolean;
+  readonly canReplay: boolean;
   readonly tally?: HintTally;
   readonly isTooltipSuppressed: boolean;
   readonly onSelect: () => void;
   readonly onIntent: () => void;
 };
+
+const REPLAY_HINT = 'Replay this chapter';
 
 type NodeStateParams = {
   readonly access: GroupAccess;
@@ -52,6 +55,7 @@ export const DemoRailGroupRow = ({
   access,
   isActive,
   isUpNext,
+  canReplay,
   tally,
   isTooltipSuppressed,
   onSelect,
@@ -62,6 +66,7 @@ export const DemoRailGroupRow = ({
   const isLocked = access === 'locked';
   const unlockHint =
     isLocked && previousTitle !== undefined ? unlockHintOf({ previousTitle }) : undefined;
+  const hint = canReplay && access === 'done' ? REPLAY_HINT : unlockHint;
   const marker = (
     <WorkNode
       state={nodeStateOf({ access })}
@@ -124,7 +129,7 @@ export const DemoRailGroupRow = ({
   );
   return (
     <Tooltip
-      content={unlockHint}
+      content={hint}
       side="right"
       anchorClassName="flex w-full"
       isSuppressed={isTooltipSuppressed}

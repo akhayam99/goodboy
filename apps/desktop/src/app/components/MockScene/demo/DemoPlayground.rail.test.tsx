@@ -128,13 +128,15 @@ const tried = ({ hintId }: TriedParams) => {
   }
 };
 
-const finish = ({ id }: ChapterParams) => {
-  for (const entry of chapterOf({ id }).hints) {
+const finishWithoutDwell = ({ id }: ChapterParams) => {
+  const { hints } = chapterOf({ id });
+  for (const entry of hints.slice(0, -1)) {
     tried({ hintId: entry.id });
     act(() => {
       vi.advanceTimersByTime(RESULT_DWELL_MS);
     });
   }
+  tried({ hintId: hints.at(-1)?.id ?? '' });
 };
 
 beforeEach(() => {
@@ -249,10 +251,11 @@ describe('demo rail', () => {
 
   it('holds the tooltips back again when the open group changes under a resting pointer', () => {
     seedDone({ ids: ['bring'] });
+    window.history.replaceState(null, '', '/?scene=demo#direction');
     render(<DemoPlayground />);
     fireEvent.pointerMove(railOf());
     expect(railOf().getAttribute('data-settled')).toBe('true');
-    fireEvent.click(rowOf({ title: 'Set the direction' }));
+    fireEvent.click(rowOf({ title: 'Bring your repositories' }));
     expect(railOf().getAttribute('data-settled')).toBe('false');
   });
 
@@ -272,15 +275,35 @@ describe('demo rail', () => {
     expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Bring your repositories');
   });
 
-  it('keeps a finished group open to revisit and unlocks the next one only when it is done', () => {
+  it('keeps a finished group open to replay and unlocks the next one only when it is done', () => {
     seedDone({ ids: ['bring', 'direction'] });
-    window.history.replaceState(null, '', '/?scene=demo#direction');
+    window.history.replaceState(null, '', '/?scene=demo#guide');
     render(<DemoPlayground />);
     expect(rowOf({ title: 'Set the direction' }).getAttribute('data-access')).toBe('done');
     expect(isLockedRow(rowOf({ title: 'Set the direction' }))).toBe(false);
     expect(rowOf({ title: 'Guide the work' }).getAttribute('data-access')).toBe('open');
     expect(rowOf({ title: 'Review and ship' }).getAttribute('data-access')).toBe('locked');
-    expect(stepRows().every((step) => step.getAttribute('data-state') === 'done')).toBe(true);
+    fireEvent.click(rowOf({ title: 'Set the direction' }));
+    expect(window.location.hash).toBe('#direction');
+    expect(stepRows().some((step) => step.getAttribute('data-state') === 'done')).toBe(false);
+    expect(rowOf({ title: 'Bring your repositories' }).getAttribute('data-access')).toBe('done');
+    expect(rowOf({ title: 'Guide the work' }).getAttribute('data-access')).toBe('locked');
+  });
+
+  it('says a finished group replays, on the rail, once the pointer has moved', () => {
+    seedDone({ ids: ['bring'] });
+    window.history.replaceState(null, '', '/?scene=demo#direction');
+    render(<DemoPlayground />);
+    const anchor = rowOf({ title: 'Bring your repositories' }).parentElement;
+    if (anchor === null) {
+      throw new Error('no tooltip anchor');
+    }
+    fireEvent.pointerMove(railOf());
+    fireEvent.mouseEnter(anchor);
+    act(() => {
+      vi.advanceTimersByTime(1000);
+    });
+    expect(screen.getByRole('tooltip').textContent).toBe('Replay this chapter');
   });
 
   it('lights Up next on the next group only once the current one is fully done', () => {
@@ -304,18 +327,17 @@ describe('demo rail', () => {
     expect(row().textContent).toContain('Up next');
     expect(row().textContent).toContain('Guide the work');
     act(() => {
-      vi.advanceTimersByTime(10000);
+      vi.advanceTimersByTime(RESULT_DWELL_MS);
     });
-    expect(row().getAttribute('data-up-next')).toBe('ready');
-    expect(row().getAttribute('data-pulsing')).toBe('false');
-    fireEvent.click(row());
     expect(window.location.hash).toBe('#guide');
+    expect(row().getAttribute('aria-current')).toBe('page');
+    expect(row().getAttribute('data-up-next')).toBe('none');
   });
 
   it('lights Up next for the first group as soon as its last step is done, with no other group glowing before', () => {
     render(<DemoPlayground />);
     expect(railOf().querySelector('[data-up-next="ready"]')).toBeNull();
-    finish({ id: 'bring' });
+    finishWithoutDwell({ id: 'bring' });
     expect(rowOf({ title: 'Set the direction' }).getAttribute('data-up-next')).toBe('ready');
     expect(railOf().querySelectorAll('[data-up-next="ready"]')).toHaveLength(1);
   });
@@ -329,22 +351,25 @@ describe('demo rail', () => {
     expect(last?.getAttribute('data-access')).toBe('locked');
     expect(isLockedRow(last)).toBe(true);
     expect(last?.getAttribute('data-up-next')).toBe('none');
-    finish({ id: 'ship' });
+    finishWithoutDwell({ id: 'ship' });
     expect(last?.getAttribute('data-access')).toBe('open');
     expect(isLockedRow(last)).toBe(false);
     expect(last?.getAttribute('data-up-next')).toBe('ready');
     expect(last?.textContent).toContain('Up next');
-    fireEvent.click(last ?? document.body);
+    act(() => {
+      vi.advanceTimersByTime(RESULT_DWELL_MS);
+    });
     expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Get Goodboy');
+    expect(last?.getAttribute('data-access')).toBe('done');
   });
 
-  it('offers a compact group switcher with the current step for narrow windows', () => {
+  it('offers a compact group switcher with one counter, the current step, for narrow windows', () => {
     seedDone({ ids: ['bring', 'direction'] });
     window.history.replaceState(null, '', '/?scene=demo#guide');
     render(<DemoPlayground />);
     const compact = screen.getByRole('navigation', { name: 'Playground navigation' });
     expect(compact.textContent).toContain('Guide the work');
-    expect(compact.textContent).toContain('3 of 4');
+    expect(compact.textContent?.match(/\d+ of \d+/g)).toHaveLength(1);
     const first = chapterOf({ id: 'guide' }).hints[0];
     expect(within(compact).getByLabelText('Current step').textContent).toBe(
       `Step 1 of ${chapterOf({ id: 'guide' }).hints.length}: ${first?.label}`,

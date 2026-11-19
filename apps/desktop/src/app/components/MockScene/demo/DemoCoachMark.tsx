@@ -16,6 +16,7 @@ export type CoachMark = {
   readonly rect: DemoRect;
   readonly focus: DemoRect | null;
   readonly opened: ReadonlyArray<DemoRect>;
+  readonly chrome: ReadonlyArray<DemoRect>;
   readonly isDimmed: boolean;
   readonly pulse: number;
   readonly isWarning: boolean;
@@ -152,6 +153,7 @@ export const DemoCoachMark = ({ coach, scale, bounds, isSpotlit, onHide }: Props
       : placeCallout({
           target,
           avoid: coach.opened.map((rect) => scaledOf({ rect, scale })),
+          chrome: coach.chrome.map((rect) => scaledOf({ rect, scale })),
           lit: hole,
           callout: { width: CALLOUT_WIDTH, height },
           bounds,

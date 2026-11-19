@@ -30,6 +30,7 @@ export const useRestHover = <T>({
 }: Params): RestHover<T> => {
   const [target, setTarget] = useState<T | null>(null);
   const isOpenRef = useRef(false);
+  const isMountedRef = useRef(false);
   const restTimer = useRef<Timer | null>(null);
   const leaveTimer = useRef<Timer | null>(null);
 
@@ -69,6 +70,9 @@ export const useRestHover = <T>({
   const enter = useCallback(
     (next: T) => {
       clearTimers();
+      if (!isMountedRef.current) {
+        return;
+      }
       const isWarm = hasWarmWindow && Date.now() - lastClosedAt < REST_HOVER_WARM_MS;
       if (isOpenRef.current || isWarm) {
         openNow(next);
@@ -84,6 +88,9 @@ export const useRestHover = <T>({
 
   const leave = useCallback(() => {
     clearTimers();
+    if (!isMountedRef.current) {
+      return;
+    }
     leaveTimer.current = setTimeout(() => {
       leaveTimer.current = null;
       shut();
@@ -97,7 +104,13 @@ export const useRestHover = <T>({
     }
   }, []);
 
-  useEffect(() => clearTimers, [clearTimers]);
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+      clearTimers();
+    };
+  }, [clearTimers]);
 
   return { target, enter, openNow, leave, keep, close };
 };
