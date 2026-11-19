@@ -69,6 +69,7 @@ impl From<&str> for MessageError {
 
 impl_error_serialize!(MessageError);
 
+mod atomic_write;
 mod encoding;
 mod ids;
 pub(crate) mod limits;
@@ -82,6 +83,7 @@ mod time;
 #[cfg(test)]
 pub(crate) mod wire_shape;
 
+pub(crate) use atomic_write::write_atomic;
 pub(crate) use encoding::percent_encode;
 pub(crate) use ids::uuid_v4;
 pub(crate) use lock::lock_or_recover;

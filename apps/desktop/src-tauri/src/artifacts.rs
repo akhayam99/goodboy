@@ -87,36 +87,6 @@ fn validate_destination(path: &Path) -> Result<(), ArtifactExportError> {
     Ok(())
 }
 
-fn temp_sibling(path: &Path) -> PathBuf {
-    let name = path
-        .file_name()
-        .and_then(|value| value.to_str())
-        .unwrap_or("artifact");
-    let parent = path.parent().unwrap_or_else(|| Path::new("."));
-    parent.join(format!(".{name}.{}.part", crate::util::uuid_v4()))
-}
-
-fn write_synced(path: &Path, contents: &str) -> std::io::Result<()> {
-    use std::io::Write;
-
-    let mut file = std::fs::File::create(path)?;
-    file.write_all(contents.as_bytes())?;
-    file.sync_all()
-}
-
-pub(crate) fn write_atomic(path: &Path, contents: &str) -> Result<(), ArtifactExportError> {
-    let temp = temp_sibling(path);
-    if let Err(error) = write_synced(&temp, contents) {
-        let _ = std::fs::remove_file(&temp);
-        return Err(ArtifactExportError::Io(error));
-    }
-    if let Err(error) = std::fs::rename(&temp, path) {
-        let _ = std::fs::remove_file(&temp);
-        return Err(ArtifactExportError::Io(error));
-    }
-    Ok(())
-}
-
 #[tauri::command]
 pub async fn export_artifact_to_file(
     path: String,
@@ -125,7 +95,7 @@ pub async fn export_artifact_to_file(
     validate_contents(&contents)?;
     let destination = PathBuf::from(&path);
     validate_destination(&destination)?;
-    write_atomic(&destination, &contents)?;
+    crate::util::write_atomic(&destination, contents.as_bytes())?;
     Ok(destination.to_string_lossy().into_owned())
 }
 
@@ -186,7 +156,7 @@ mod tests {
         let path = scratch("onboarding-flow.json");
         validate_destination(&path).expect("a json destination is accepted");
         let body = "{\n  \"screens\": []\n}\n";
-        write_atomic(&path, body).expect("write");
+        crate::util::write_atomic(&path, body.as_bytes()).expect("write");
         assert_eq!(std::fs::read_to_string(&path).expect("read"), body);
         let _ = std::fs::remove_dir_all(path.parent().expect("parent"));
     }
@@ -207,22 +177,5 @@ mod tests {
         let error = validate_destination(&dir).unwrap_err();
         assert!(error.to_string().contains("directory"));
         let _ = std::fs::remove_dir_all(&dir);
-    }
-
-    #[test]
-    fn the_write_is_atomic_and_leaves_no_temp_file() {
-        let path = scratch("report.md");
-        write_atomic(&path, "# report\n").expect("write");
-        assert_eq!(std::fs::read_to_string(&path).expect("read"), "# report\n");
-        let parent = path.parent().expect("parent");
-        let leftovers = std::fs::read_dir(parent)
-            .expect("read dir")
-            .filter_map(|entry| entry.ok())
-            .filter(|entry| entry.file_name().to_string_lossy().ends_with(".part"))
-            .count();
-        assert_eq!(leftovers, 0);
-        write_atomic(&path, "# second\n").expect("overwrite");
-        assert_eq!(std::fs::read_to_string(&path).expect("read"), "# second\n");
-        let _ = std::fs::remove_dir_all(parent);
     }
 }
