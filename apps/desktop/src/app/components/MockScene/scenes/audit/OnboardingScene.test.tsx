@@ -249,6 +249,11 @@ type ClickParams = {
 };
 
 const visitorClick = async ({ element }: ClickParams): Promise<boolean> => {
+  await act(async () => {
+    await new Promise<void>((resolve) => {
+      window.requestAnimationFrame(() => resolve());
+    });
+  });
   const event = new MouseEvent('click', { bubbles: true, cancelable: true });
   Object.defineProperty(event, 'isTrusted', { value: true });
   await act(async () => {
