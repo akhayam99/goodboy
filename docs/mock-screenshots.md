@@ -687,8 +687,12 @@ when its coach never shows, its result never shows, its group's last step never
 moves on to the next group, or the callout covers its control or an app rail
 (`scripts/lib/demoStepProblemOf.mjs`). `--window 1000x628` gives the compact nav, `--theme
 light` the light theme, and `--only fix-start,fix-push` keeps the pictures of
-those steps while it still walks every step before them. The exit code is 1 when
-a step failed.
+those steps while it still walks every step before them. `--stop-after
+fix-push` ends the walk after that step, with no closing picture, `--clip
+8,64,1420,824` saves each step picture as a WebP at quality 80 cut to that box
+(x, y, width, height in CSS pixels), the shape a changelog picture takes, and `--base
+http://localhost:5251` walks a dev server on another port, such as the one of
+an older tag. The exit code is 1 when a step failed.
 
 While a hint points at something on screen, the stage dims and lightly blurs
 everything except the context of the step (`DemoSpotlight`): one `bg-surround`

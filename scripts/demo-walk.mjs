@@ -1,13 +1,10 @@
 import { spawn } from 'node:child_process';
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join, resolve } from 'node:path';
+import { join } from 'node:path';
 import { demoStepProblemOf } from './lib/demoStepProblemOf.mjs';
+import { demoWalkArgsOf } from './lib/demoWalkArgsOf.mjs';
 import { chromePathOf, DEFAULT_SHOT_URL } from './lib/figures.mjs';
-
-const USAGE = `usage: node scripts/demo-walk.mjs --out-dir <folder>
-  [--window 1440x900] [--theme dark|light] [--only fix-start,fix-push]
-  [--base http://localhost:5230]`;
 
 const CHAPTERS_MODULE = '/src/app/components/MockScene/demo/demoChapters.ts';
 const COACH_WAIT_MS = 25_000;
@@ -16,33 +13,6 @@ const ADVANCE_WAIT_MS = 10_000;
 const EVALUATE_WAIT_MS = 15_000;
 const LOAD_ATTEMPTS = 4;
 const WALK_LIMIT_MS = 8 * 60 * 1000;
-
-const parseArgs = (argv) => {
-  const args = {};
-  for (let index = 0; index < argv.length; index += 2) {
-    const key = argv[index]?.replace(/^--/, '');
-    if (!key || argv[index + 1] === undefined) {
-      throw new Error(USAGE);
-    }
-    args[key] = argv[index + 1];
-  }
-  if (!args['out-dir']) {
-    throw new Error(USAGE);
-  }
-  const [width, height] = (args.window ?? '1440x900').split('x').map(Number);
-  const theme = args.theme ?? 'dark';
-  if (theme !== 'dark' && theme !== 'light') {
-    throw new Error(USAGE);
-  }
-  return {
-    outDir: resolve(args['out-dir']),
-    width,
-    height,
-    theme,
-    only: args.only ? new Set(args.only.split(',')) : null,
-    base: args.base ?? process.env.GOODBOY_SHOT_URL ?? DEFAULT_SHOT_URL,
-  };
-};
 
 const sleep = (ms) => new Promise((done) => setTimeout(done, ms));
 
@@ -248,8 +218,9 @@ const walkStep = async ({ page, chapter, hint, index, shoot }) => {
   await page.click(center);
   const isLast = index === chapter.hints.length - 1;
   const result = hint.result.replace(/\*\*/g, '');
+  const hasMoved = ({ state }) => state.hash !== '' && state.hash !== `#${chapter.id}`;
   const done = await page.waitFor({
-    isDone: ({ state }) => state.header === result || (isLast && state.hash !== `#${chapter.id}`),
+    isDone: ({ state }) => state.header === result || (isLast && hasMoved({ state })),
     ms: RESULT_WAIT_MS,
   });
   entry.resultMs = done.ms;
@@ -258,7 +229,7 @@ const walkStep = async ({ page, chapter, hint, index, shoot }) => {
   await shoot({ kind: 'result' });
   if (isLast) {
     const moved = await page.waitFor({
-      isDone: ({ state }) => state.hash !== `#${chapter.id}`,
+      isDone: hasMoved,
       ms: ADVANCE_WAIT_MS,
     });
     entry.advancedTo = moved.state?.hash ?? null;
@@ -269,8 +240,11 @@ const walkStep = async ({ page, chapter, hint, index, shoot }) => {
 };
 
 const main = async () => {
-  const options = parseArgs(process.argv.slice(2));
-  const { outDir, width, height, theme, only, base } = options;
+  const options = demoWalkArgsOf({
+    argv: process.argv.slice(2),
+    fallbackBase: process.env.GOODBOY_SHOT_URL ?? DEFAULT_SHOT_URL,
+  });
+  const { outDir, width, height, theme, only, stopAfter, clip, base } = options;
   mkdirSync(outDir, { recursive: true });
   const tag = `${width}x${height}-${theme}`;
   const chrome = await openChrome({ width, height });
@@ -309,17 +283,26 @@ const main = async () => {
       JSON.stringify({ log, closing, errors }, null, 2),
     );
   let step = 0;
+  let isStopped = false;
   for (const chapter of chapters) {
     for (const [index, hint] of chapter.hints.entries()) {
+      if (isStopped) {
+        break;
+      }
       step += 1;
       const number = String(step).padStart(2, '0');
       const shoot = async ({ kind }) => {
         if (only !== null && !only.has(hint.id)) {
           return;
         }
-        const shot = await send('Page.captureScreenshot', { format: 'png' });
+        const shot = await send(
+          'Page.captureScreenshot',
+          clip === null
+            ? { format: 'png' }
+            : { format: 'webp', quality: 80, clip: { ...clip, scale: 1 } },
+        );
         writeFileSync(
-          join(outDir, `${number}-${hint.id}-${kind}-${tag}.png`),
+          join(outDir, `${number}-${hint.id}-${kind}-${tag}.${clip === null ? 'png' : 'webp'}`),
           Buffer.from(shot.result.data, 'base64'),
         );
       };
@@ -333,11 +316,12 @@ const main = async () => {
         chrome.close();
         process.exit(1);
       }
+      isStopped = hint.id === stopAfter;
     }
   }
   await sleep(1500);
-  const closing = await page.evaluate({ expression: stateSource });
-  if (only === null) {
+  const closing = isStopped ? null : await page.evaluate({ expression: stateSource });
+  if (only === null && !isStopped) {
     const shot = await send('Page.captureScreenshot', { format: 'png' });
     writeFileSync(join(outDir, `99-closing-${tag}.png`), Buffer.from(shot.result.data, 'base64'));
   }
