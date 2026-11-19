@@ -104,14 +104,25 @@ const ArtifactCreationScene = ({
       createdAt: AT,
       updatedAt: AT,
     };
-    const agents: ReadonlyArray<Agent> = (store.sessionPhaseRuns[SESSION_ID] ?? []).map((agent) =>
-      agent.kind === 'report' || agent.kind === 'wireframe'
-        ? agent
-        : { ...agent, workflowRunId: RUN_ID },
+    const seededAgents = store.sessionPhaseRuns[SESSION_ID] ?? [];
+    const runningIds = new Set(
+      seededAgents.filter((agent) => agent.status === 'running').map((agent) => agent.id),
     );
+    const agents: ReadonlyArray<Agent> = seededAgents
+      .filter(
+        (agent) =>
+          !runningIds.has(agent.id) &&
+          (agent.parentAgentId == null || !runningIds.has(agent.parentAgentId)),
+      )
+      .map((agent) =>
+        agent.kind === 'report' || agent.kind === 'wireframe'
+          ? agent
+          : { ...agent, workflowRunId: RUN_ID },
+      );
     useAppStore.setState({
       sessions: [session],
       sessionPhaseRuns: { [SESSION_ID]: agents },
+      agentTurnState: {},
       sessionActiveMount: { [SESSION_ID]: (mount as SessionProjectMount).mountId },
       providers: [ANTHROPIC],
       phaseTemplates: { [seeded.workspaceId]: [workflow] },

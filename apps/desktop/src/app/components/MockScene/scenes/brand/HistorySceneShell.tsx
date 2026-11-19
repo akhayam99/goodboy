@@ -4,9 +4,9 @@ import { useAppStore } from '../../../../../store';
 import type { HistoryDraft, HistoryRun } from '../../../../../store/slices/history/types';
 import type { MountGithubState } from '../../../../../store/types';
 import { ShellFrame } from '../shellChrome';
-import { CTX_PAYMENTS_MOUNT_ID, CTX_SESSION, CTX_SESSION_ID, seedContextBase } from './contextBase';
+import { seedContextBase } from './contextBase';
 import { HistoryStage } from './HistoryStage';
-import { LEDGER_MOUNTS } from './historySceneSeed';
+import { CTX_HISTORY_SCOPE, LEDGER_SCOPE } from './historySceneSeed';
 
 type Props = {
   readonly draft: HistoryDraft;
@@ -17,34 +17,58 @@ type Props = {
 
 export const HistorySceneShell = ({ draft, run, github, isLedger }: Props) => {
   const [isReady, setIsReady] = useState(false);
+  const scope = isLedger ? LEDGER_SCOPE : CTX_HISTORY_SCOPE;
 
   useEffect(() => {
-    seedContextBase({ lens: 'branch' });
-    useAppStore.setState({
-      ...(isLedger ? { sessionProjectMounts: { [CTX_SESSION_ID]: [...LEDGER_MOUNTS] } } : {}),
+    const sessionId = scope.session.id;
+    seedContextBase({ lens: 'branch', current: scope.session });
+    useAppStore.setState((state) => ({
+      sessionProjectMounts: { ...state.sessionProjectMounts, [sessionId]: [...scope.mounts] },
+      sessionActiveProject: { ...state.sessionActiveProject, [sessionId]: scope.projectId },
+      sessionActiveMount: { ...state.sessionActiveMount, [sessionId]: scope.mountId },
+      sessionWorktrees: {
+        ...state.sessionWorktrees,
+        [sessionId]: scope.mounts.map((mount) => mount.worktreePath),
+      },
+      sessionLoading: {
+        ...state.sessionLoading,
+        [sessionId]: {
+          agents: false,
+          transcript: false,
+          telemetry: false,
+          slots: false,
+          plans: false,
+          summary: false,
+        },
+      },
       diffFocus: {},
-      branchTab: { [CTX_SESSION_ID]: 'commits' },
+      branchTab: { [sessionId]: 'commits' },
       branchThreadId: {},
-      historyDrafts: { [CTX_PAYMENTS_MOUNT_ID]: draft },
-      historyRuns: run === null ? {} : { [CTX_PAYMENTS_MOUNT_ID]: run },
-      mountGithub: github === null ? {} : { [CTX_PAYMENTS_MOUNT_ID]: github },
+      historyDrafts: { [scope.mountId]: draft },
+      historyRuns: run === null ? {} : { [scope.mountId]: run },
+      mountGithub: github === null ? {} : { [scope.mountId]: github },
       pullRequestViews:
         github?.pr == null
           ? {}
           : prViewsOf({
-              sessionId: CTX_SESSION_ID,
-              mountId: CTX_PAYMENTS_MOUNT_ID,
+              sessionId,
+              mountId: scope.mountId,
               pr: github.pr,
               commits: draft.commits,
             }),
       loadHistoryDraft: async () => undefined,
-    });
+    }));
     setIsReady(true);
-  }, [draft, github, isLedger, run]);
+  }, [draft, github, run, scope]);
 
   if (!isReady) {
     return null;
   }
 
-  return <ShellFrame session={CTX_SESSION} main={<HistoryStage commits={draft.commits} />} />;
+  return (
+    <ShellFrame
+      session={scope.session}
+      main={<HistoryStage commits={draft.commits} scope={scope} />}
+    />
+  );
 };

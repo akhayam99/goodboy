@@ -251,10 +251,28 @@ const buildTelemetry = (): Record<string, ReadonlyArray<TelemetryRecord>> => {
   return Object.fromEntries(bySession);
 };
 
+const TELEMETRY = buildTelemetry();
+
+type SpendParams = {
+  readonly provider: TelemetryRecord['provider'];
+};
+
+const spendOf = ({ provider }: SpendParams): number =>
+  Math.round(
+    Object.values(TELEMETRY)
+      .flat()
+      .filter((record) => record.provider === provider)
+      .reduce((total, record) => total + record.estimatedCostUsd, 0) * 100,
+  ) / 100;
+
+const CLAUDE_SPENT_USD = spendOf({ provider: 'anthropic' });
+const CODEX_SPENT_USD = spendOf({ provider: 'codex' });
+const CURSOR_SPENT_USD = spendOf({ provider: 'cursor' });
+
 const PROVIDER_SPEND: ReadonlyArray<ProviderSpendEntry> = [
-  { provider: 'anthropic', spentUsd: 152.37 },
-  { provider: 'codex', spentUsd: 61.8 },
-  { provider: 'cursor', spentUsd: 36.6 },
+  { provider: 'anthropic', spentUsd: CLAUDE_SPENT_USD },
+  { provider: 'codex', spentUsd: CODEX_SPENT_USD },
+  { provider: 'cursor', spentUsd: CURSOR_SPENT_USD },
 ];
 
 const MONTH_START_MS = Date.UTC(new Date(NOW).getUTCFullYear(), new Date(NOW).getUTCMonth(), 1);
@@ -283,9 +301,9 @@ const monthStatus = ({ spentUsd, capUsd, thresholdPct }: StatusParams): Provider
 };
 
 const PROVIDER_BUDGET_STATUS: ProviderBudgetStatuses = {
-  anthropic: monthStatus({ spentUsd: 152.37, capUsd: 170, thresholdPct: 80 }),
-  codex: monthStatus({ spentUsd: 61.8, capUsd: 150, thresholdPct: 85 }),
-  cursor: monthStatus({ spentUsd: 36.6, capUsd: 100, thresholdPct: 80 }),
+  anthropic: monthStatus({ spentUsd: CLAUDE_SPENT_USD, capUsd: 170, thresholdPct: 80 }),
+  codex: monthStatus({ spentUsd: CODEX_SPENT_USD, capUsd: 150, thresholdPct: 85 }),
+  cursor: monthStatus({ spentUsd: CURSOR_SPENT_USD, capUsd: 100, thresholdPct: 80 }),
 };
 
 const BUDGET_RULES: ReadonlyArray<BudgetRule> = [
@@ -323,7 +341,7 @@ const BUDGET_ALERTS: ReadonlyArray<BudgetAlert> = [
     id: 'mock-impact-alert-anthropic-threshold',
     kind: 'provider-threshold',
     provider: 'anthropic',
-    currentUsd: 152.37,
+    currentUsd: CLAUDE_SPENT_USD,
     capUsd: 170,
     createdAt: iso(1),
   },
@@ -338,7 +356,7 @@ export const seedImpactScene = (): void => {
     sessions: SESSIONS,
     currentSessionId: PAYMENTS_ID,
     currentWorkspaceId: WORKSPACE_ID,
-    sessionTelemetry: buildTelemetry(),
+    sessionTelemetry: TELEMETRY,
     providerSpendBreakdown: PROVIDER_SPEND,
     providerBudgetStatus: PROVIDER_BUDGET_STATUS,
     budgetRules: BUDGET_RULES,

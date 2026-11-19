@@ -66,9 +66,9 @@ describe('the secondary Impact scenes', () => {
 
     expect(await screen.findByText('Claude this month', {}, WAIT)).toBeDefined();
     expect(screen.getByText('Spent this month')).toBeDefined();
-    expect(screen.getByText('$152.37')).toBeDefined();
+    expect(screen.getByText('$151.72')).toBeDefined();
     expect(screen.getByText('$170.00')).toBeDefined();
-    expect(screen.getByText('$17.63')).toBeDefined();
+    expect(screen.getByText('$18.28')).toBeDefined();
     expect(screen.getByRole('button', { name: 'Save limit' })).toBeDefined();
     expect(screen.getByRole('button', { name: 'Remove limit' })).toBeDefined();
     expect(screen.getByText('By model')).toBeDefined();

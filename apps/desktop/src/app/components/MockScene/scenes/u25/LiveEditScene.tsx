@@ -21,10 +21,19 @@ import { installSceneDatabase } from '../sceneDatabase';
 import { installScenePlanEngine } from '../scenePlanEngine';
 import { RESOLVE_SCENE_PR } from '../resolveSeed';
 import { prViewsOf } from '../prViewsOf';
+import { BRAND_LEDGER_EXPORT } from '../brand/canon';
+import { LEDGER_PR } from '../brand/historySceneSeed';
 
 type Props = { readonly mode: 'edited' | 'busy' | 'conflict' | 'stash' };
 
 const clock = sceneClock({ anchor: '2026-10-12T09:00:00.000Z' });
+const SCENE_PR = {
+  ...RESOLVE_SCENE_PR,
+  number: LEDGER_PR.number,
+  title: LEDGER_PR.title,
+  url: LEDGER_PR.url,
+  author: LEDGER_PR.author,
+};
 const now = clock.iso({ at: '2026-10-12T09:00:00.000Z' });
 const commitsBefore = LEDGER_COMMITS.map((commit, index) => ({
   ...commit,
@@ -163,7 +172,12 @@ export const LiveEditScene = ({ mode }: Props) => {
     if (seeded === undefined) {
       throw new Error('The live-edit scene needs its session.');
     }
-    const shown = { ...seeded, title: 'Guard the ledger export', createdAt: now, updatedAt: now };
+    const shown = {
+      ...seeded,
+      title: BRAND_LEDGER_EXPORT.session,
+      createdAt: now,
+      updatedAt: now,
+    };
     useAppStore.setState({
       sessions: [shown],
       branchTab: { [input.sessionId]: 'commits' },
@@ -183,17 +197,15 @@ export const LiveEditScene = ({ mode }: Props) => {
           detailLoading: false,
           detailError: null,
           pr: {
-            ...RESOLVE_SCENE_PR,
-            title: 'Guard the ledger export',
+            ...SCENE_PR,
             headBranch: mount.branch,
             headSha: LEDGER.c,
-            author: { login: 'nadia-p', avatarUrl: null },
             updatedAt: now,
           },
           mountId: input.mountId,
           projectId: mount.projectId,
           revision: mount.revision,
-          repository: 'harborline/payments-api',
+          repository: 'harborline/ledger-core',
           host: 'github.com',
           branch: mount.branch,
           prs: [],
@@ -203,11 +215,7 @@ export const LiveEditScene = ({ mode }: Props) => {
       pullRequestViews: prViewsOf({
         sessionId: input.sessionId,
         mountId: input.mountId,
-        pr: {
-          ...RESOLVE_SCENE_PR,
-          author: { login: 'nadia-p', avatarUrl: null },
-          headBranch: mount.branch,
-        },
+        pr: { ...SCENE_PR, headBranch: mount.branch },
         commits: mode === 'stash' ? commitsBefore : commitsAfter,
       }),
       refreshSessionPr: async () => undefined,

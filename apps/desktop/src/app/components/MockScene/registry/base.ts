@@ -63,7 +63,7 @@ import {
   ArtifactCreateWireframeScene,
 } from '../scenes/ArtifactCreationScenes';
 import { ActivityTimelineScene } from '../scenes/ActivityScenes';
-import { ActivityRunScene } from '../scenes/ActivityRunScene';
+import { ActivityRunOverviewScene } from '../scenes/ActivityRunOverviewScene';
 import { ActivityRunFinishedScene } from '../scenes/ActivityRunFinishedScene';
 import { ActivityLogScene } from '../scenes/ActivityLogScene';
 import { ActivityResolvesScene } from '../scenes/ActivityResolvesScene';
@@ -388,7 +388,7 @@ export const BASE_SCENES = {
   'artifact-create-wireframe': ArtifactCreateWireframeScene,
   activity: ActivityTimelineScene,
   'activity-log': ActivityLogScene,
-  'activity-run': ActivityRunScene,
+  'activity-run': ActivityRunOverviewScene,
   'activity-run-finished': ActivityRunFinishedScene,
   'activity-resolves': ActivityResolvesScene,
   'activity-question': ActivityQuestionScene,

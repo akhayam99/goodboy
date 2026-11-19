@@ -43,13 +43,22 @@ export const BRAND_DECISIONS = [
   },
 ] as const;
 
+const RECONCILE_SESSION = {
+  title: 'Reconcile the settlement export against the ledger snapshot',
+  stage: 'in review',
+  project: 'ledger-core',
+  pr: 90,
+} as const;
+
+export const BRAND_LEDGER_EXPORT = {
+  session: RECONCILE_SESSION.title,
+  branch: 'hl/ledger-export',
+  prTitle: 'Export the ledger as CSV',
+  pr: RECONCILE_SESSION.pr,
+} as const;
+
 export const BRAND_OTHER_SESSIONS = [
-  {
-    title: 'Reconcile the settlement export against the ledger snapshot',
-    stage: 'in review',
-    project: 'ledger-core',
-    pr: 90,
-  },
+  RECONCILE_SESSION,
   { title: 'Per-tenant limits on the public API', stage: 'building', project: 'payments-api' },
   { title: 'Retire the legacy export cron job', stage: 'done', project: 'ledger-core' },
   {
