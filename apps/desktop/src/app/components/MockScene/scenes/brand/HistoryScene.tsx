@@ -2,7 +2,7 @@ import type { HistoryGraph, HistoryPlanPrediction, HistoryStep } from '@goodboy/
 import { combineInto, initialPlanItems } from '../../../../../features/history/historyPlan';
 import type { HistoryDraft } from '../../../../../store/slices/history/types';
 import { useSceneClicks } from '../audit/useSceneClicks';
-import { BRAND_SESSION } from './canon';
+import { BRAND_BASE_RELEASE, BRAND_SESSION } from './canon';
 import { CTX_PAYMENTS_MOUNT_ID, CTX_SESSION_ID } from './contextBase';
 import { CTX_BASE_SHA, CTX_COMMITS } from './contextBranch';
 import { HistorySceneShell } from './HistorySceneShell';
@@ -27,7 +27,7 @@ const GRAPH: HistoryGraph = {
   baseRef: 'origin/main',
   mergeBase: {
     sha: CTX_BASE_SHA,
-    subject: 'Release 4.8',
+    subject: BRAND_BASE_RELEASE,
     author: 'Harborline Lead',
     timestamp: hoursAgo(6),
   },

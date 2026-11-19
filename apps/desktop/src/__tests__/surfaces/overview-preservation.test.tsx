@@ -9,6 +9,7 @@ vi.mock('@tauri-apps/plugin-dialog', () => ({ open: vi.fn() }));
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { formatUsd } from '@goodboy/ui';
 import { ToastProvider } from '../../shared/components/Toast';
 import { installFakeResizeObserver } from '../../test/fakeResizeObserver';
 import { STORE_IMPORT_TIMEOUT_MS, importStore, resetStoryStore } from '../../store/storyHarness';
@@ -278,6 +279,35 @@ describe('Overview capabilities from the session Overview', () => {
       'open',
       'planned',
     ]);
+  });
+
+  it('sums the seeded agents into the session tiles of a plan under way, with no Start', async () => {
+    render(
+      <ToastProvider>
+        <MountsScene />
+      </ToastProvider>,
+    );
+    await advance();
+    const state = useAppStore.getState();
+    const sessionId = state.currentSessionId;
+    if (sessionId === null) {
+      throw new Error('no current session');
+    }
+    const agents = state.sessionPhaseRuns[sessionId] ?? [];
+    const spend = (state.sessionTelemetry[sessionId] ?? []).reduce(
+      (sum, record) => sum + record.estimatedCostUsd,
+      0,
+    );
+    const tiles = present({
+      value: document.querySelector<HTMLElement>('[data-slot="session-kpis"]'),
+      what: 'session tiles',
+    });
+
+    expect(agents.length).toBeGreaterThan(0);
+    expect(tiles.textContent).toContain(formatUsd(spend));
+    expect(tiles.textContent).toContain(`${agents.length} agents`);
+    expect(tiles.textContent).not.toMatch(/Time0m/);
+    expect(screen.queryByRole('button', { name: /^Start$/ })).toBeNull();
   });
 
   it('keeps the exact ask one press away: Answer on the Needs you row navigates to the question', async () => {

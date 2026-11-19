@@ -20,7 +20,7 @@ import {
 } from '../../../../../features/history/historyPlan';
 import type { HistoryDraft, HistoryRun } from '../../../../../store/slices/history/types';
 import type { MountGithubState } from '../../../../../store/types';
-import { BRAND_LEDGER_EXPORT, BRAND_PROJECTS, BRAND_SESSION } from './canon';
+import { BRAND_BASE_RELEASE, BRAND_LEDGER_EXPORT, BRAND_PROJECTS, BRAND_SESSION } from './canon';
 import {
   CTX_LEDGER_ID,
   CTX_MOUNTS,
@@ -131,7 +131,7 @@ const LEDGER_SCENE_GRAPH: HistoryGraph = {
   baseRef: 'origin/main',
   mergeBase: {
     sha: BASE,
-    subject: 'Release 2.14',
+    subject: BRAND_BASE_RELEASE,
     author: 'Harborline Lead',
     timestamp: hoursAgo(53),
   },

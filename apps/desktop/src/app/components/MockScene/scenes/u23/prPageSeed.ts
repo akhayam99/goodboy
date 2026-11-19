@@ -22,10 +22,12 @@ import { CTX_STATUS } from '../brand/contextBranch';
 import type { FakeHandlers } from '../brand/fakeTauri';
 import { mockSceneIpc } from '../mockSceneIpc';
 import type { IpcHandler } from '../sceneIpcAnswer';
+import { BRAND_SESSION } from '../brand/canon';
 import {
   NOW_ISO,
   QUEUE_ITEMS,
   RESOLVE_SCENE_PR,
+  SESSION,
   SESSION_ID,
   WORKSPACE_ID,
   buildItem,
@@ -50,6 +52,7 @@ export type PrPageVariant =
 const PROJECT_ID = 'mock-u23-project-payments-api' as ProjectId;
 const MOUNT_ID = 'mock-u23-mount-fix-duplicate-credit' as MountId;
 export const PR_PAGE_WORKTREE = '~/code/harborline/payments-api-fix-duplicate-credit';
+export const PR_PAGE_SESSION = { ...SESSION, goal: BRAND_SESSION.title };
 const MOCK_AVATAR_HOST = 'https://avatars.harborline.example';
 const PR_URL = 'https://github.com/harborline/payments-api/pull/318';
 const DAY = 1440;
@@ -296,6 +299,8 @@ type Shape = {
 
 const BASE_PR: PullRequestState = {
   ...RESOLVE_SCENE_PR,
+  number: BRAND_SESSION.paymentsPr,
+  title: BRAND_SESSION.title,
   url: PR_URL,
   body: PR_BODY,
   author: { login: 'nadia-p', avatarUrl: null },
@@ -738,7 +743,10 @@ export const applyPrPageSeed = ({ variant }: { readonly variant: PrPageVariant }
   };
   const projected = isRebasing ? writeGithub : mountGithub;
   const noop = async (): Promise<void> => undefined;
-  useAppStore.setState({
+  useAppStore.setState((state) => ({
+    sessions: state.sessions.map((session) =>
+      session.id === SESSION_ID ? PR_PAGE_SESSION : session,
+    ),
     projects: [projectOf()],
     sessionProjectMounts: { [SESSION_ID]: isRebasing ? [MOUNT, WRITE_MOUNT] : [MOUNT] },
     sessionActiveMount: { [SESSION_ID]: isRebasing ? WRITE_MOUNT.mountId : MOUNT_ID },
@@ -781,6 +789,6 @@ export const applyPrPageSeed = ({ variant }: { readonly variant: PrPageVariant }
     loadPullRequestView: noop,
     refreshSessionPr: noop,
     refreshSessionPrDetail: noop,
-  });
+  }));
   installPrPageIpc({ behind: shape.behind, unpushed: prPageUnpushedOf({ variant }), isRebasing });
 };

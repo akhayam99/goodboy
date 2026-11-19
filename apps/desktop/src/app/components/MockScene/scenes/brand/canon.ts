@@ -24,6 +24,8 @@ export const BRAND_SESSION = {
   cost: 3.47,
 } as const;
 
+export const BRAND_BASE_RELEASE = 'Release 2.14';
+
 export const BRAND_DECISIONS = [
   { number: 1, text: 'Dedupe in the webhook handler', state: 'replaced', by: 'Plan', turn: 1 },
   {

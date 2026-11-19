@@ -4,6 +4,7 @@ import { initialPlanItems, setVerb } from '../../../../../features/history/histo
 import { useAppStore } from '../../../../../store';
 import type { HistoryDraft } from '../../../../../store/slices/history/types';
 import { sceneClock } from '../../sceneClock';
+import { BRAND_BASE_RELEASE } from '../brand/canon';
 import { handlersFor } from '../brand/DiffStage';
 import { CTX_BASE_SHA, CTX_COMMITS } from '../brand/contextBranch';
 import { BRANCH_FILES_PATCH } from '../brand/contextDiffPatch';
@@ -31,7 +32,7 @@ const GRAPH: HistoryGraph = {
   baseRef: 'origin/main',
   mergeBase: {
     sha: CTX_BASE_SHA,
-    subject: 'Release 2.14',
+    subject: BRAND_BASE_RELEASE,
     author: 'Harborline Lead',
     timestamp: Math.floor(clock.ms({ at: '2026-10-07T09:12:00.000Z' }) / 1000),
   },
