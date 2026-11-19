@@ -19,7 +19,7 @@ The live demo runs on the new frame and plays its chapters back to back, and eve
 ### Improved
 
 #### The live demo runs on the 0.40 app
-<!-- gb area=app pr=2247 -->
+<!-- gb area=app image=demo-chapter-end pr=2247 -->
 
 The live demo on the Goodboy site now shows the 0.40 frame. When a chapter ends, its result stays on screen for a moment, then the next chapter opens by itself, and the last one leads to Get Goodboy. A finished chapter plays again from its row in the chapter list.
 
