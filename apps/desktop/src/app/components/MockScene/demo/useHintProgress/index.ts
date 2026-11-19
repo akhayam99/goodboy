@@ -18,6 +18,7 @@ export type HintProgressControls = {
   readonly progress: HintProgress;
   readonly markTried: (params: MarkParams) => void;
   readonly reset: (params: ResetParams) => void;
+  readonly settle: (params: ResetParams) => void;
   readonly resetAll: () => void;
 };
 
@@ -104,9 +105,19 @@ export const useHintProgress = (): HintProgressControls => {
     [apply],
   );
 
+  const settle = useCallback(
+    ({ chapterId }: ResetParams) => {
+      const chapters = DEMO_CHAPTERS.filter((entry) => entry.id === chapterId);
+      apply({
+        change: ({ progress: stored }) => settledProgressOf({ chapters, progress: stored }),
+      });
+    },
+    [apply],
+  );
+
   const resetAll = useCallback(() => {
     apply({ change: ({ progress: stored }) => withoutAnyProgress({ progress: stored }) });
   }, [apply]);
 
-  return { progress, markTried, reset, resetAll };
+  return { progress, markTried, reset, settle, resetAll };
 };

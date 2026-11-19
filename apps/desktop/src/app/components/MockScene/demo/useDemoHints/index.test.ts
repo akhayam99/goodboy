@@ -34,6 +34,7 @@ describe('the demo hints on a way back', () => {
           progress,
           markTried: () => undefined,
           reset: () => undefined,
+          settle: () => undefined,
           resetAll: () => undefined,
         },
       }),

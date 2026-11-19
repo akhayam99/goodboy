@@ -353,6 +353,57 @@ describe('demo playground stage states', () => {
       expect(document.activeElement).toBe(playgroundRoot());
     });
 
+    it('starts an unfinished group over when a replay of an earlier group drops its frame', () => {
+      seedProgress({ ids: ['bring'] });
+      window.history.replaceState(null, '', '/?scene=demo#direction');
+      render(<DemoPlayground />);
+      const direction = visibleFrame();
+      report({ frame: direction, type: 'ready' });
+      const [draft, start] = chapterOf({ id: 'direction' }).hints;
+      for (const entry of [draft, start]) {
+        tried({ frame: direction, hintId: entry?.id ?? '' });
+        elapse({ ms: entry === undefined ? RESULT_DWELL_MS : dwellOf({ hint: entry }) });
+      }
+      expect(stepStates().filter((state) => state === 'done')).toHaveLength(2);
+
+      fireEvent.click(rowOf({ title: 'Bring your repositories' }));
+      expect(JSON.parse(window.sessionStorage.getItem(HINT_PROGRESS_KEY) ?? '{}')).toMatchObject({
+        direction: { tried: [] },
+      });
+
+      const bring = frameOf({ scene: chapterOf({ id: 'bring' }).beats[0]?.scene ?? '' });
+      report({ frame: bring, type: 'ready' });
+      elapse({ ms: 320 });
+      for (const entry of chapterOf({ id: 'bring' }).hints) {
+        tried({ frame: bring, hintId: entry.id });
+        elapse({ ms: dwellOf({ hint: entry }) });
+      }
+      elapse({ ms: dwellOfLast({ id: 'bring' }) });
+
+      expect(heading()).toBe('Set the direction');
+      expect(rowOf({ title: 'Bring your repositories' }).getAttribute('data-access')).toBe('done');
+      expect(stepStates()[0]).toBe('current');
+      expect(stepStates().filter((state) => state === 'done')).toHaveLength(0);
+      expect(instruction()).toBe(draft?.instruction.replaceAll('**', ''));
+    });
+
+    it('clears only the unfinished group it leaves and keeps every finished one', () => {
+      seedProgress({ ids: ['bring', 'direction'] });
+      window.history.replaceState(null, '', '/?scene=demo#guide');
+      render(<DemoPlayground />);
+      const guide = visibleFrame();
+      report({ frame: guide, type: 'ready' });
+      tried({ frame: guide, hintId: chapterOf({ id: 'guide' }).hints[0]?.id ?? '' });
+
+      fireEvent.click(rowOf({ title: 'Set the direction' }));
+
+      expect(JSON.parse(window.sessionStorage.getItem(HINT_PROGRESS_KEY) ?? '{}')).toMatchObject({
+        bring: { tried: idsOf({ id: 'bring' }) },
+        guide: { tried: [] },
+      });
+      expect(rowOf({ title: 'Bring your repositories' }).getAttribute('data-access')).toBe('done');
+    });
+
     it('opens the group where the story stands when a page load names a finished one', () => {
       seedProgress({ ids: ['bring', 'direction', 'guide'] });
       window.history.replaceState(null, '', '/?scene=demo#bring');

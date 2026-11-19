@@ -660,9 +660,10 @@ next step lives in another frame. Simulated replies speak as the agent on the
 sample project and never mention the app or the demo. Progress is the list of
 done steps per group, kept in `sessionStorage` under `goodboy-demo-hints`
 (every read and write survives blocked storage), so a new tab starts fresh,
-and Replay clears the open group only. A page load drops the done steps of a
-group that is not fully done, because its scene restarts from the beginning
-(`hints/settledProgressOf.ts`); a finished group keeps its check and its unlock. Replay bumps the group's `epoch`; a mark
+and Replay clears the open group only. A page load, or leaving the group for
+another one, drops the done steps of a group that is not fully done, because its
+scene restarts from the beginning (`hints/settledProgressOf.ts`, `settle` in
+`useHintProgress`); a finished group keeps its check and its unlock. Replay bumps the group's `epoch`; a mark
 made against an older epoch is dropped, so a stale tab cannot bring a replayed
 group back. A `tried` report is accepted only for the step that is next, in
 `useDemoHints`, as well as in the engine. Every group has its data file:

@@ -96,6 +96,7 @@ export const useDemoHints = ({ chapter, progressControls }: Params): DemoHints =
     progress,
     markTried,
     reset: resetProgress,
+    settle: settleProgress,
     resetAll: resetAllProgress,
   } = progressControls;
   const { isEnabled, setEnabled } = useHintsEnabled();
@@ -122,6 +123,15 @@ export const useDemoHints = ({ chapter, progressControls }: Params): DemoHints =
   useEffect(() => {
     pendingIdsRef.current.clear();
   }, [settledKey, chapter.id]);
+
+  const shownChapterIdRef = useRef(chapter.id);
+  useEffect(() => {
+    const leftId = shownChapterIdRef.current;
+    shownChapterIdRef.current = chapter.id;
+    if (leftId !== chapter.id) {
+      settleProgress({ chapterId: leftId });
+    }
+  }, [chapter.id, settleProgress]);
 
   const track = useMemo((): HintTrack | undefined => {
     if (hints.length === 0) {
