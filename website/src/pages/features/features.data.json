@@ -19,7 +19,7 @@
       "items": [
         {
           "title": "Your agents",
-          "text": "Setup opens on your agents, the first of three short steps that take you from install to a first agent reading your code.",
+          "text": "Setup opens on your agents, step one of three from install to a first agent reading your code.",
           "group": "Set up",
           "main": true
         },

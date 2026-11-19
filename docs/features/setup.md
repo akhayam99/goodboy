@@ -4,7 +4,7 @@ Get from install to a first agent. Check the agents on this Mac, make a workspac
 
 ### Your agents
 
-Setup opens on your agents, the first of three short steps that take you from install to a first agent reading your code. The steps are **Agents**, **Workspace** and **First session**, and the first one opens with the welcome and the line that nothing is pushed until you say so.
+Setup opens on your agents, step one of three from install to a first agent reading your code. The steps are **Agents**, **Workspace** and **First session**, and the first one opens with the welcome and the line that nothing is pushed until you say so.
 
 Goodboy runs the coding agents already on this Mac, and one ready agent is enough. Each row says where its CLI stands: **Ready** with its version and account, **Not signed in** with **Sign in**, **Not installed** with **Install** and the exact command, **Can't start** with the CLI's output and **Check again**, or **Update needed** with **Update** when the CLI is too old to report its sign in. Claude, Codex, Cursor, Gemini and Copilot each have a row. Rows check again when you come back to the window. The agent marked **Default** becomes the default of your first workspace, and providers billed by API key sit behind **Use an API key instead**.
 

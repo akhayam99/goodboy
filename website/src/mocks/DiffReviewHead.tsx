@@ -14,11 +14,8 @@ export const DiffReviewHead = () => (
       />
     </p>
     <p className="dfrMeta">
-      <span>#318</span>
-      <span>{'·'}</span>
-      <span className="dfrMono">hl/fix-duplicate-credit</span>
-      <span>into</span>
-      <span className="dfrMono">main</span>
+      <span>#318</span> <span>{'·'}</span> <span className="dfrMono">hl/fix-duplicate-credit</span>{' '}
+      <span>into</span> <span className="dfrMono">main</span>
     </p>
   </div>
 );

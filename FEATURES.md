@@ -12,7 +12,7 @@ Most pictures follow one team and one task. Harborline keeps three repos, paymen
 
 Get from install to a first agent. Check the agents on this Mac, make a workspace from your folders, link your tools and tell agents who you are.
 
-- **Your agents**: Setup opens on your agents, the first of three short steps that take you from install to a first agent reading your code.
+- **Your agents**: Setup opens on your agents, step one of three from install to a first agent reading your code.
 - **Your first workspace**: A workspace is what you work on: one repository, or a folder that holds several.
 - **Home**: A window with no workspace open shows Home, which lists your workspaces with their folder count and where their folders live.
 - **Integrations**: Connect GitHub, GitLab, Bitbucket, Linear, Jira, Sentry and Slack from Connections, and see the account behind each.
