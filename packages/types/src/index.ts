@@ -43,7 +43,6 @@ export type {
   MountBranchObservationState,
   MountBranchResolution,
   MountCleanupDecision,
-  MountCleanupDisposition,
   MountCleanupProposal,
   BranchOrigin,
   MountDiskState,
@@ -185,9 +184,7 @@ export {
 export {
   EXTERNAL_TASK_RELATIONS,
   EXTERNAL_TASK_SCOPES,
-  isIntegrationBindingProvider,
   isSessionExternalTaskProvider,
-  INTEGRATION_BINDING_PROVIDERS,
   SESSION_EXTERNAL_TASK_PROVIDERS,
   SESSION_TITLE_MAX_LENGTH,
 } from './workspace';
@@ -310,7 +307,7 @@ export type {
   BudgetAlertKind,
   BudgetAlert,
 } from './budget';
-export type { TelemetrySummary, TelemetryPeriodSummary } from './telemetry-period';
+export type { TelemetrySummary } from './telemetry-period';
 export type {
   ProviderLimitStatus,
   ProviderLimitWindow,
@@ -345,7 +342,6 @@ export type {
   RoleModelFallback,
   RoleModelPreference,
   RoleModelPreferences,
-  SettingsScope,
   TaskModelFallback,
   TaskModelPreference,
   TaskModelPreferences,
@@ -575,13 +571,7 @@ export type {
 export type { LinkedRemote, PublishOutcome, PublishStep } from './publish';
 export type { RemoteProbe } from './remote-probe';
 export type { ChildRepo, GitRepoCheck, GitRepoErrorKind } from './repo-check';
-export type {
-  FolderCodeMarker,
-  FolderFileKind,
-  FolderPurpose,
-  FolderSignals,
-  FolderSignalsErrorKind,
-} from './folder';
+export type { FolderCodeMarker, FolderFileKind, FolderPurpose, FolderSignals } from './folder';
 export type {
   FirstCommit,
   FirstCommitAuthor,

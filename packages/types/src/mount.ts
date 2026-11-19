@@ -183,8 +183,6 @@ export type MountRecoveryCode =
 
 export type MountBranchResolution = 'adopt-observed' | 'keep-both' | 'restore-recorded' | 'recheck';
 
-export type MountCleanupDisposition = 'removed' | 'missing' | 'kept';
-
 export type MountCleanupDecision =
   | { readonly kind: 'removed'; readonly path: string }
   | { readonly kind: 'missing'; readonly path: string }

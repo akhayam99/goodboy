@@ -1,4 +1,4 @@
-import type { ProjectId, SessionId, WorkflowId, WorkspaceId } from './ids';
+import type { WorkflowId } from './ids';
 import type { ProviderPolicy } from './provider-policy';
 import type { EffortLevel, ProviderId } from './provider-registry';
 import type { AgentRole } from './workflow';
@@ -113,9 +113,3 @@ export type GlobalSettings = Readonly<{
   parallelEnabled: boolean;
   defaultVerbosity: VerbosityLevel;
 }>;
-
-export type SettingsScope =
-  | { kind: 'global' }
-  | { kind: 'workspace'; workspaceId: WorkspaceId }
-  | { kind: 'project'; projectId: ProjectId }
-  | { kind: 'session'; sessionId: SessionId };
