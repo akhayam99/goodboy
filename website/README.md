@@ -184,8 +184,10 @@ table row) it has in the area file. Check the page fails when they drift.
 
 ## Product views
 
-The hero is the one screenshot on the page: the same picture as the README
-hero, a real app capture of the `readme-hero` mock scene. Every other product
+The hero is the one screenshot on the page, a real app capture of the
+`readme-hero` mock scene, the scene of the README hero too. The two keep their
+own files (`website/public/hero/` and `docs/readme/`), so they show the same
+scene but not always the same capture. Every other product
 view is a React mock, built from the same tokens as the page, so it is sharp at
 any zoom, follows the theme and ships no raster file.
 

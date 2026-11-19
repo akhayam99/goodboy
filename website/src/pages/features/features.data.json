@@ -18,14 +18,8 @@
       ],
       "items": [
         {
-          "title": "Welcome to Goodboy",
-          "text": "Three short steps take you from install to a first agent reading your code.",
-          "group": "Set up",
-          "main": true
-        },
-        {
           "title": "Your agents",
-          "text": "Goodboy runs the coding agents already on this Mac, and one ready agent is enough.",
+          "text": "Setup opens on your agents, the first of three short steps that take you from install to a first agent reading your code.",
           "group": "Set up",
           "main": true
         },
@@ -371,7 +365,7 @@
         },
         {
           "title": "See why each decision was made",
-          "text": "The reason behind a decision stays visible in the drawer, as a muted line under the decision itself.",
+          "text": "The reason behind a decision stays visible in the Context tab, as a muted line under the decision itself.",
           "group": "Shared context",
           "also": "decision reasons",
           "shown": true
@@ -383,10 +377,10 @@
           "main": true
         },
         {
-          "title": "Context drawer",
+          "title": "Context tab",
           "text": "Open goal, decisions, summary and explanations in the Context tab of a session, with Projects and Linked beside them, and copy them all with Copy context. A changed decision carries a mark until Mark as read.",
           "group": "Shared context",
-          "also": "context drawer"
+          "also": "Context tab"
         },
         {
           "title": "Who receives what",

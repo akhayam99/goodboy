@@ -71,7 +71,7 @@ Set a monthly cap per provider and hear about it before you reach it. In **Spend
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/providers-monthly-cap-dark.webp">
-  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/providers-monthly-cap-light.webp" alt="Impact, Spend, Claude: 90% of the limit with $152.37 spent this month, a $170.00 limit and $17.63 left, and the Monthly limit form with a $170 limit, a warning at 80%, and the note that Goodboy warns you and tries another provider">
+  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/providers-monthly-cap-light.webp" alt="Impact, Spend, Claude: $151.72 spent in 30 days, then 89% of the limit with $151.72 spent this month, a $170.00 limit and $18.28 left, and the Monthly limit form with a $170 limit, a warning at 80%, and the note that Goodboy warns you and tries another provider">
 </picture>
 
 <sub>Screenshot from Goodboy 0.40.1</sub>

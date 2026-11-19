@@ -2,24 +2,17 @@
 
 Get from install to a first agent. Check the agents on this Mac, make a workspace from your folders, link your tools and tell agents who you are.
 
-### Welcome to Goodboy
-
-Three short steps take you from install to a first agent reading your code. The steps are **Agents**, **Workspace** and **First session**, and the first one opens with the welcome and the line that nothing is pushed until you say so. Nothing is saved until you create a workspace. **Set up later** sits in the header, Escape goes back one step and never ends setup, and the next launch opens at the step you left. If one step of the launch takes ten seconds, the splash says so and offers **Restart**. If making the workspace fails, the reason shows in the action row of the Workspace step and the buttons stay. A setup card on the Board counts the three steps, **Setup · 2 of 3** beside a small meter, folds finished steps into one line, gives the open step the one button, and offers **Resume setup** while setup is paused. The last step is the same **Start a run** field a session uses, filled with a starter and set to Scout, which reads the folder and changes nothing. A Scout run has no Limit chip. With a task tool connected and an open issue it opens on **Pick an issue** with the first issue selected, and **Draft the brief** takes it to the New session page; with a tool and no open issue, or no tool, it stays on **Ask about the code**, with a **Connect Linear or Jira** link that opens the tools and brings you back.
-
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/setup-welcome-dark.webp">
-  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/setup-welcome-light.webp" alt="The first setup screen, Welcome to Goodboy: the line Goodboy runs coding agents side by side on your own repositories, one session for each goal, the agents found on this Mac with Claude Ready and Codex found, and the steps Agents, Workspace and First session with Set up later along the top">
-</picture>
-
-<sub>Screenshot from Goodboy 0.40.1</sub>
-
 ### Your agents
+
+Setup opens on your agents, the first of three short steps that take you from install to a first agent reading your code. The steps are **Agents**, **Workspace** and **First session**, and the first one opens with the welcome and the line that nothing is pushed until you say so.
 
 Goodboy runs the coding agents already on this Mac, and one ready agent is enough. Each row says where its CLI stands: **Ready** with its version and account, **Not signed in** with **Sign in**, **Not installed** with **Install** and the exact command, **Can't start** with the CLI's output and **Check again**, or **Update needed** with **Update** when the CLI is too old to report its sign in. Claude, Codex, Cursor, Gemini and Copilot each have a row. Rows check again when you come back to the window. The agent marked **Default** becomes the default of your first workspace, and providers billed by API key sit behind **Use an API key instead**.
 
+Nothing is saved until you create a workspace. **Set up later** sits in the header, Escape goes back one step and never ends setup, and the next launch opens at the step you left. If one step of the launch takes ten seconds, the splash says so and offers **Restart**. If making the workspace fails, the reason shows in the action row of the Workspace step and the buttons stay. A setup card on the Board counts the three steps, **Setup · 2 of 3** beside a small meter, folds finished steps into one line, gives the open step the one button, and offers **Resume setup** while setup is paused. The last step is the same **Start a run** field a session uses, filled with a starter and set to Scout, which reads the folder and changes nothing. A Scout run has no Limit chip. With a task tool connected and an open issue it opens on **Pick an issue** with the first issue selected, and **Draft the brief** takes it to the New session page; with a tool and no open issue, or no tool, it stays on **Ask about the code**, with a **Connect Linear or Jira** link that opens the tools and brings you back.
+
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/setup-agents-dark.webp">
-  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/setup-agents-light.webp" alt="The Agents step of setup: Claude Ready and marked Default with Claude Code 2.1.280 and its account, Codex Not signed in with Sign in, Cursor and Copilot Not installed with Install, Gemini Not installed with Set up, the Use an API key instead row, the line 1 ready, checks again when you come back, and Continue">
+  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/setup-agents-light.webp" alt="The first setup screen, the Agents step under the heading Welcome to Goodboy, with the steps Agents, Workspace and First session and Set up later along the top: Claude Ready and marked Default with Claude Code 2.1.280 and its account, Codex Not signed in with Sign in, Cursor and Copilot Not installed with Install, Gemini Not installed with Set up, the Use an API key instead row, the line 1 ready, checks again when you come back, and Continue">
 </picture>
 
 <sub>Screenshot from Goodboy 0.40.1</sub>

@@ -65,7 +65,7 @@
   },
   "features/history-result": {
     "version": "0.40.1",
-    "recipe": "--scene 'live-edit-after&brand=1' --window 1280x650 --wait 8000 --frozen-at 2026-11-05T16:00:00"
+    "recipe": "--scene 'live-edit-after&brand=1' --window 1280x650 --wait 8000 --click 'Branch actions' --frozen-at 2026-11-05T16:00:00"
   },
   "features/history-rewrite": {
     "version": "0.40.1",
@@ -117,7 +117,7 @@
   },
   "features/overview-session": {
     "version": "0.40.1",
-    "recipe": "--scene 'activity-run&brand=1' --selector main --pad 0 --window 1280x790 --frozen-at 2026-11-05T16:00:00 --wait 8000"
+    "recipe": "--scene 'activity-run&brand=1' --selector main --pad 0 --window 1280x840--frozen-at 2026-11-05T16:00:00 --wait 8000"
   },
   "features/providers-codex-reset": {
     "version": "0.40.1",
@@ -234,10 +234,6 @@
   "features/setup-provider-page": {
     "version": "0.40.1",
     "recipe": "--scene 'settings-providers&provider=anthropic&brand=1' --window 1280x800 --wait 8000 --frozen-at 2026-11-05T16:00:00"
-  },
-  "features/setup-welcome": {
-    "version": "0.40.1",
-    "recipe": "--scene 'onboarding&step=welcome&brand=1' --window 1280x600 --wait 8000 --frozen-at 2026-11-05T16:00:00"
   },
   "features/setup-workspace": {
     "version": "0.40.1",

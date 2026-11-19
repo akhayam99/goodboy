@@ -12,7 +12,7 @@ Under the title sit the tabs **Overview**, **Runs**, **Artifacts**, **Questions*
 
 The Overview reads top to bottom:
 
-- The goal, then one status block: a line that says what is happening and, under it, one sentence of where the work stands. A chat the session came from sits under them.
+- The goal, when it says more than the title. A chat the session came from sits under it.
 - Notices come first when a branch needs a decision. Examples: a branch that moved, a branch off its pull request's commits, a project not yet published, a stopped rebase. A closed worktree shows a notice with **Reopen**.
 - Three tiles: **Branches**, **Spend** and **Time**. Questions and artifacts are counted on their tabs.
 - One board with a row per branch.
@@ -23,14 +23,14 @@ The Overview reads top to bottom:
 **Reading the task without a diff.** A product manager understands where a task stands from the page alone, never from a raw diff or a file list.
 
 1. **The goal.** The page opens on what the task is for, in the words you gave it.
-2. **The state.** One sentence from the running summary says where the work stands, with when it was written. It turns gray when it is older than a day.
+2. **The state.** The **State** at the top of the **Context** tab says where the work stands, in the first sentence of the running summary.
 3. **What waits for you.** The **Needs you** group of the board comes first, and each row says why in words. A fix run reads **#318 · 2 fixes ready · 1 failed**, the words of its rows.
 4. **Where each branch stands.** Every row shows the six stages of its branch and the one step it stands at.
 5. **What it costs.** The **Spend** and **Time** tiles add up every branch. Spend names its Leads and agents, and leaves out Leads when there are none.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/overview-session-dark.webp">
-  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/overview-session-light.webp" alt="The overview of Stop retried webhooks posting a second credit: the Branches, Spend and Time tiles, In progress 2 with hl/fix-duplicate-credit in review in payments-api and hl/surface-retry-state with checks running in notify-relay, Merged 1, and one open question under Not on a branch with Answer">
+  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/overview-session-light.webp" alt="The overview of Stop retried webhooks posting a second credit: the goal, that payments-api credits a redelivered event once and ledger-core shows one posting per event id, then the Branches, Spend and Time tiles, In progress 2 with hl/fix-duplicate-credit in review in payments-api and hl/surface-retry-state with checks running in notify-relay, Merged 1, and one open question under Not on a branch with Answer">
 </picture>
 
 <sub>Screenshot from Goodboy 0.40.1</sub>

@@ -23,7 +23,7 @@ A mark on a planned row (squash into, fixup into, reworded) opens a fact card on
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/history-trial-dark.webp">
-  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/history-trial-light.webp" alt="The Commits page of hl/ledger-export while an edit is checked: the notice Trying your changes on a temporary copy, Your branch is untouched until this finishes, and a progress bar at Step 3 of 7, Add retries to the export job, above seven commits and a Push 4 commits button">
+  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/history-trial-light.webp" alt="The Commits page of hl/ledger-export, pull request 90 of the session Reconcile the settlement export against the ledger snapshot, while an edit is checked: the notice Trying your changes on a temporary copy, Your branch is untouched until this finishes, and a progress bar at Step 3 of 7, Add retries to the export job, above seven commits and a Push 4 commits button">
 </picture>
 
 <sub>Screenshot from Goodboy 0.40.1</sub>
@@ -34,7 +34,7 @@ A conflicting edit names the file and leaves the branch as it was. **Rewrite wit
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/history-conflicts-dark.webp">
-  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/history-conflicts-light.webp" alt="The Commits page with the notice Could not edit the history, The edit conflicts in export.ts, Nothing was changed, with the buttons Rewrite with an agent and Undo and an Add a hint row above the commit list">
+  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/history-conflicts-light.webp" alt="The Commits page of pull request 90 on hl/ledger-export with the notice Could not edit the history, The edit conflicts in export.ts, Nothing was changed, with the buttons Rewrite with an agent and Undo and an Add a hint row above the commit list">
 </picture>
 
 <sub>Screenshot from Goodboy 0.40.1</sub>
@@ -52,11 +52,11 @@ When a step stops on a conflict, the notice names the step and the file, and you
 
 ### Push with lease and restore
 
-**Force push** updates the online branch separately after a local edit. It is one verb, whichever button started it. A push that used the lease also finishes the waiting rebase or rewrite, with the edited replies, the pushed event and the pull request description. While the branch is behind main it sits in **Branch actions**. It checks origin with a lease so a teammate's newer push is never overwritten. Undo and Redo remain local, and leaving the page clears their stack while keeping the backup refs.
+**Force push** updates the online branch separately after a local edit. It sits in **Branch actions** and says your branch and origin differ. It is one verb, whichever button started it. A push that used the lease also finishes the waiting rebase or rewrite, with the edited replies, the pushed event and the pull request description. It checks origin with a lease so a teammate's newer push is never overwritten. Undo and Redo remain local, and leaving the page clears their stack while keeping the backup refs.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/history-result-dark.webp">
-  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/history-result-light.webp" alt="The Commits page of hl/ledger-export after local edits: the Undo and Redo icons beside Rebase on main, and seven commits with the top five marked Not pushed">
+  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/history-result-light.webp" alt="The Commits page of pull request 90, Export the ledger as CSV on hl/ledger-export, after local edits: Branch actions open on Force push 7 commits, with the line Your branch and origin differ, Force push replaces the branch on origin (with lease), above seven commits with the top five marked Not pushed">
 </picture>
 
 <sub>Screenshot from Goodboy 0.40.1</sub>

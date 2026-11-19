@@ -16,11 +16,7 @@ const FEATURES = resolve(ROOT, 'FEATURES.md');
 const CARDS = resolve(ROOT, 'website/src/pages/features/features.data.json');
 const DIRECTORY = resolve(ROOT, 'docs/features');
 const AREAS = [
-  [
-    'setup',
-    'Set up',
-    ['Welcome to Goodboy', 'Your agents', 'Your first workspace', 'Home', 'Integrations'],
-  ],
+  ['setup', 'Set up', ['Your agents', 'Your first workspace', 'Home', 'Integrations']],
   [
     'start',
     'Start a task',
@@ -53,7 +49,7 @@ const AREAS = [
   ['workflows', 'Workflows', ['Workflow builder', 'Older runs', 'Workflow run', 'Spend cap']],
   ['inbox', 'Tasks and your tools', ['Tasks', 'Trackers', 'Code hosts', 'Start from any item']],
   ['artifacts', 'Plans, reports and wireframes', ['Artifacts', 'Create a wireframe', 'Compare']],
-  ['context', 'Shared context', ['Decisions', 'Running summary', 'Context drawer']],
+  ['context', 'Shared context', ['Decisions', 'Running summary', 'Context tab']],
   [
     'providers',
     'Providers, limits and cost',

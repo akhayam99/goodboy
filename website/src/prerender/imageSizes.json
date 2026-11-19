@@ -233,11 +233,11 @@
   },
   "features/overview-session-dark.webp": {
     "width": 3888,
-    "height": 2502
+    "height": 2652
   },
   "features/overview-session-light.webp": {
     "width": 3888,
-    "height": 2502
+    "height": 2652
   },
   "features/providers-codex-reset-dark.webp": {
     "width": 4080,
@@ -470,14 +470,6 @@
   "features/setup-provider-page-light.webp": {
     "width": 4080,
     "height": 2640
-  },
-  "features/setup-welcome-dark.webp": {
-    "width": 4080,
-    "height": 2040
-  },
-  "features/setup-welcome-light.webp": {
-    "width": 4080,
-    "height": 2040
   },
   "features/setup-workspace-dark.webp": {
     "width": 4080,

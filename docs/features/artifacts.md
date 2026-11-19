@@ -62,7 +62,7 @@ Describe the screen, add attachments, and choose how faithful it is and which de
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/artifact-create-dark.webp">
-  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/artifact-create-light.webp" alt="The Draw a wireframe form with a Brief, Fidelity set to Repository styled wireframe, Target set to Phone and desktop, a Context line of 10 sections and the Model chooser above Generate wireframe">
+  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/artifact-create-light.webp" alt="The Draw a wireframe form with a Brief, Fidelity set to Repository styled wireframe, Target set to Phone and desktop, a Context line of 10 sections and the Model chooser beside Discard and Generate wireframe, ready to press">
 </picture>
 
 <sub>Screenshot from Goodboy 0.40.1</sub>

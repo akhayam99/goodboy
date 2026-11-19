@@ -4,7 +4,7 @@ What one agent learns, the next one reads. The goal, decisions and a running sum
 
 ### Decisions
 
-Record a decision once and have the agents after it read it. Each one gets a number, and replacing or withdrawing it needs a reason that stays next to it. Changed decisions appear first with **Added**, **Reworded**, **Withdrawn** or their replacement number. Each decision appears once, and closed rows stay struck through until **Mark as read** succeeds. Click a decision for **Edit** and **Remove**; **Undo** stays while the drawer is open.
+Record a decision once and have the agents after it read it. Each one gets a number, and replacing or withdrawing it needs a reason that stays next to it. Changed decisions appear first with **Added**, **Reworded**, **Withdrawn** or their replacement number. Each decision appears once, and closed rows stay struck through until **Mark as read** succeeds. Click a decision for **Edit** and **Remove**; **Undo** stays while the **Context** tab is open.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/context-decisions-dark.webp">
@@ -28,9 +28,11 @@ Hand the next agent where things stand. After a reply the Context tab opens on t
 
 <sub>Screenshot from Goodboy 0.40.1</sub>
 
-### Context drawer
+### Context tab
 
-Open goal, decisions, summary and explanations in the **Context** tab, with Projects and Linked beside them, and copy them with **Copy context**. It opens on Goal. Every card has the same head: its title, a count from two, and its actions on the right. Goal, Decisions and Summary each have one menu: **Edit**, **Versions** and **Change visibility**. **Context updates** heads the tab with **Copy context** on the same line; it shows the last update and its model and cost, and **Update now** runs one on demand. An empty card says what it will hold and offers one action. The Goal section can write a title and goal from linked work, and nothing changes until you apply it.
+Open goal, decisions, summary and explanations in the **Context** tab, with Projects and Linked beside them, and copy them with **Copy context**. The **State** of the running summary leads the tab, then Projects and Linked, then the cards from Goal down.
+
+Every card has the same head: its title, a count from two, and its actions on the right. Goal, Decisions and Summary each have one menu: **Edit**, **Versions** and **Change visibility**. **Context updates** heads the tab with **Copy context** on the same line; it shows the last update and its model and cost, and **Update now** runs one on demand. An empty card says what it will hold and offers one action. The Goal section can write a title and goal from linked work, and nothing changes until you apply it.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/context-drawer-dark.webp">
