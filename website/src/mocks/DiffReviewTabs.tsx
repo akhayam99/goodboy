@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { DIFF_REVIEW_FILES } from './diffReviewFiles';
+import { DIFF_REVIEW_TOTALS } from './DIFF_REVIEW_TOTALS';
 
 type Tab = {
   readonly label: string;
@@ -11,13 +11,7 @@ const TABS: readonly Tab[] = [
   { label: 'Conversation' },
   {
     label: 'Changes',
-    end: (
-      <>
-        <span className="dfrTabCount">{DIFF_REVIEW_FILES.length}</span>
-        <span className="dfrAdd">+20</span>
-        <span className="dfrDel">{'−'}10</span>
-      </>
-    ),
+    end: <span className="dfrTabCount">{DIFF_REVIEW_TOTALS.files}</span>,
     isActive: true,
   },
   {
