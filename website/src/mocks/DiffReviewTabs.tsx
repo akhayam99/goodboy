@@ -8,8 +8,7 @@ type Tab = {
 };
 
 const TABS: readonly Tab[] = [
-  { label: 'Pull request' },
-  { label: 'Comments', end: <span className="dfrTabCount">2</span> },
+  { label: 'Conversation' },
   {
     label: 'Changes',
     end: (
@@ -32,6 +31,7 @@ const TABS: readonly Tab[] = [
   },
   { label: 'Checks' },
   { label: 'Runs' },
+  { label: 'Comments', end: <span className="dfrTabCount">2</span> },
 ];
 
 export const DiffReviewTabs = () => (
