@@ -18,6 +18,7 @@ import {
 import { findSectionRow, sectionNames } from '../../../../../test/branchRail';
 import { U23_PR_PAGE_SCENES } from './pr-page';
 import { PrPageScene } from './PrPageScene';
+import { BRAND_SESSION } from '../brand/canon';
 import { QUEUE_ITEMS, SESSION_ID } from '../resolveSeed';
 import { prPageGhStdout, prPageHandlers, prPageUnpushedOf } from './prPageSeed';
 
@@ -113,6 +114,17 @@ describe('the pull request page scenes', () => {
     expect(screen.getByRole('heading', { level: 1 }).textContent).toBe(
       'Stop retried webhooks posting a second credit',
     );
+  });
+
+  it('branch-pr-github names the session after the story its pull request tells', async () => {
+    draw({ name: 'branch-pr-github' });
+
+    await screen.findByRole('heading', { level: 1 });
+    expect(store.getState().sessions.find((entry) => entry.id === SESSION_ID)?.goal).toBe(
+      BRAND_SESSION.title,
+    );
+    expect(screen.getAllByText(BRAND_SESSION.title).length).toBeGreaterThan(1);
+    expect(screen.queryByText(/webhook retry backoff/)).toBeNull();
   });
 
   it('branch-pr-github ranks what blocks the merge in one box, people and links on the side', async () => {

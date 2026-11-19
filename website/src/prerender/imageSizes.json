@@ -16,12 +16,12 @@
     "height": 2640
   },
   "features/agents-what-received-dark.webp": {
-    "width": 3060,
-    "height": 936
+    "width": 2976,
+    "height": 1164
   },
   "features/agents-what-received-light.webp": {
-    "width": 3060,
-    "height": 936
+    "width": 2976,
+    "height": 1164
   },
   "features/agents-workspace-chat-dark.webp": {
     "width": 3160,
@@ -72,12 +72,12 @@
     "height": 1230
   },
   "features/board-card-dark.webp": {
-    "width": 1866,
-    "height": 942
+    "width": 2028,
+    "height": 918
   },
   "features/board-card-light.webp": {
-    "width": 1866,
-    "height": 942
+    "width": 2028,
+    "height": 918
   },
   "features/board-stage-dark.webp": {
     "width": 4000,
@@ -88,12 +88,12 @@
     "height": 1400
   },
   "features/context-decisions-dark.webp": {
-    "width": 4080,
-    "height": 2640
+    "width": 3192,
+    "height": 2448
   },
   "features/context-decisions-light.webp": {
-    "width": 4080,
-    "height": 2640
+    "width": 3192,
+    "height": 2448
   },
   "features/context-drawer-dark.webp": {
     "width": 3520,
@@ -104,19 +104,19 @@
     "height": 1940
   },
   "features/context-summary-dark.webp": {
-    "width": 4080,
-    "height": 2640
+    "width": 3192,
+    "height": 1134
   },
   "features/context-summary-light.webp": {
-    "width": 4080,
-    "height": 2640
+    "width": 3192,
+    "height": 1134
   },
   "features/history-backups-dark.webp": {
-    "width": 4080,
+    "width": 5040,
     "height": 2340
   },
   "features/history-backups-light.webp": {
-    "width": 4080,
+    "width": 5040,
     "height": 2340
   },
   "features/history-conflicts-dark.webp": {
@@ -145,11 +145,11 @@
   },
   "features/history-stopped-dark.webp": {
     "width": 4080,
-    "height": 2640
+    "height": 2880
   },
   "features/history-stopped-light.webp": {
     "width": 4080,
-    "height": 2640
+    "height": 2880
   },
   "features/history-trial-dark.webp": {
     "width": 4080,
@@ -192,12 +192,12 @@
     "height": 2460
   },
   "features/inbox-slack-permissions-dark.webp": {
-    "width": 3210,
-    "height": 2205
+    "width": 3198,
+    "height": 1836
   },
   "features/inbox-slack-permissions-light.webp": {
-    "width": 3210,
-    "height": 2205
+    "width": 3198,
+    "height": 1836
   },
   "features/inbox-slack-reply-dark.webp": {
     "width": 4080,
@@ -232,12 +232,12 @@
     "height": 2940
   },
   "features/overview-session-dark.webp": {
-    "width": 3342,
-    "height": 1752
+    "width": 3888,
+    "height": 2652
   },
   "features/overview-session-light.webp": {
-    "width": 3342,
-    "height": 1752
+    "width": 3888,
+    "height": 2652
   },
   "features/providers-codex-reset-dark.webp": {
     "width": 4080,
@@ -249,11 +249,11 @@
   },
   "features/providers-fallback-auto-dark.webp": {
     "width": 4080,
-    "height": 2640
+    "height": 4140
   },
   "features/providers-fallback-auto-light.webp": {
     "width": 4080,
-    "height": 2640
+    "height": 4140
   },
   "features/providers-impact-overview-dark.webp": {
     "width": 4080,
@@ -264,12 +264,12 @@
     "height": 2340
   },
   "features/providers-limits-chip-dark.webp": {
-    "width": 1380,
-    "height": 858
+    "width": 1326,
+    "height": 852
   },
   "features/providers-limits-chip-light.webp": {
-    "width": 1380,
-    "height": 858
+    "width": 1326,
+    "height": 852
   },
   "features/providers-model-picker-dark.webp": {
     "width": 4080,
@@ -289,11 +289,11 @@
   },
   "features/review-comment-states-dark.webp": {
     "width": 1596,
-    "height": 2508
+    "height": 3072
   },
   "features/review-comment-states-light.webp": {
     "width": 1596,
-    "height": 2508
+    "height": 3072
   },
   "features/review-diff-dark.webp": {
     "width": 4740,
@@ -321,11 +321,11 @@
   },
   "features/review-resolve-dark.webp": {
     "width": 3540,
-    "height": 2640
+    "height": 2985
   },
   "features/review-resolve-light.webp": {
     "width": 3540,
-    "height": 2640
+    "height": 2985
   },
   "features/review-write-dark.webp": {
     "width": 4080,
@@ -368,12 +368,12 @@
     "height": 2640
   },
   "features/security-backup-notice-dark.webp": {
-    "width": 2400,
-    "height": 1020
+    "width": 2958,
+    "height": 792
   },
   "features/security-backup-notice-light.webp": {
-    "width": 2400,
-    "height": 1020
+    "width": 2958,
+    "height": 792
   },
   "features/security-changelog-update-dark.webp": {
     "width": 4080,
@@ -456,12 +456,12 @@
     "height": 2640
   },
   "features/setup-permissions-dark.webp": {
-    "width": 2487,
-    "height": 1044
+    "width": 3198,
+    "height": 1068
   },
   "features/setup-permissions-light.webp": {
-    "width": 2487,
-    "height": 1044
+    "width": 3198,
+    "height": 1068
   },
   "features/setup-provider-page-dark.webp": {
     "width": 4080,
@@ -470,14 +470,6 @@
   "features/setup-provider-page-light.webp": {
     "width": 4080,
     "height": 2640
-  },
-  "features/setup-welcome-dark.webp": {
-    "width": 4080,
-    "height": 2040
-  },
-  "features/setup-welcome-light.webp": {
-    "width": 4080,
-    "height": 2040
   },
   "features/setup-workspace-dark.webp": {
     "width": 4080,
@@ -488,20 +480,20 @@
     "height": 2820
   },
   "features/storage-worktrees-dark.webp": {
-    "width": 4080,
-    "height": 2640
+    "width": 3063,
+    "height": 1641
   },
   "features/storage-worktrees-light.webp": {
-    "width": 4080,
-    "height": 2640
+    "width": 3063,
+    "height": 1641
   },
   "features/support-report-bug-dark.webp": {
-    "width": 2040,
-    "height": 945
+    "width": 1962,
+    "height": 954
   },
   "features/support-report-bug-light.webp": {
-    "width": 2040,
-    "height": 945
+    "width": 1962,
+    "height": 954
   },
   "features/switch-notifications-dark.webp": {
     "width": 4080,
@@ -520,12 +512,12 @@
     "height": 2040
   },
   "features/workflow-hints-dark.webp": {
-    "width": 3030,
-    "height": 810
+    "width": 3240,
+    "height": 834
   },
   "features/workflow-hints-light.webp": {
-    "width": 3030,
-    "height": 810
+    "width": 3240,
+    "height": 834
   },
   "features/workflow-question-agent-dark.webp": {
     "width": 4740,
@@ -569,19 +561,19 @@
   },
   "features/workspace-branches-dark.webp": {
     "width": 3264,
-    "height": 840
+    "height": 876
   },
   "features/workspace-branches-light.webp": {
     "width": 3264,
-    "height": 840
+    "height": 876
   },
   "features/workspace-locate-dark.webp": {
-    "width": 3066,
-    "height": 1134
+    "width": 3192,
+    "height": 1092
   },
   "features/workspace-locate-light.webp": {
-    "width": 3066,
-    "height": 1134
+    "width": 3192,
+    "height": 1092
   },
   "features/workspace-repo-status-dark.webp": {
     "width": 2220,
@@ -593,11 +585,11 @@
   },
   "features/workspace-several-projects-dark.webp": {
     "width": 4080,
-    "height": 2340
+    "height": 2904
   },
   "features/workspace-several-projects-light.webp": {
     "width": 4080,
-    "height": 2340
+    "height": 2904
   },
   "features/workspace-starred-dark.webp": {
     "width": 3540,
@@ -609,10 +601,10 @@
   },
   "features/workspace-worktrees-dark.webp": {
     "width": 4080,
-    "height": 2340
+    "height": 2940
   },
   "features/workspace-worktrees-light.webp": {
     "width": 4080,
-    "height": 2340
+    "height": 2940
   }
 }

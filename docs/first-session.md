@@ -11,7 +11,7 @@ Go from install to a merged pull request in one session. The steps use Harborlin
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/setup-workspace-light.webp" alt="The Workspace step of setup with a drop area for a folder">
 </picture>
 
-<sub>Screenshot from Goodboy 0.33.0</sub>
+<sub>Screenshot from Goodboy 0.40.1</sub>
 
 ### 2. Write the ask
 
@@ -23,10 +23,10 @@ The Board shows every session in lanes: **Building**, **Running**, **Needs you**
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/board-stage-dark.webp">
-  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/board-stage-light.webp" alt="The Harborline board in six lanes: Needs you holds four sessions, each with a question waiting">
+  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/board-stage-light.webp" alt="The Harborline board in six lanes: Needs you holds two sessions, each with a question waiting">
 </picture>
 
-<sub>Screenshot from Goodboy 0.33.0</sub>
+<sub>Screenshot from Goodboy 0.40.1</sub>
 
 ### 4. Review in place
 
@@ -37,7 +37,7 @@ When the work is ready, Next in the session offers **Open a pull request for hl/
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/review-resolve-light.webp" alt="The Comments tab of the Branch page for pull request 318 with its comments grouped by state">
 </picture>
 
-<sub>Screenshot from Goodboy 0.27.1</sub>
+<sub>Screenshot from Goodboy 0.40.1</sub>
 
 ### 5. Merge from the session
 
@@ -45,10 +45,10 @@ Press **Push** in the Branch header. A short confirm counts the fixes, replies a
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/review-push-confirm-dark.webp">
-  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/review-push-confirm-light.webp" alt="The Branch header with Push and Merge, and a confirm that counts the fixes and replies to send">
+  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/review-push-confirm-light.webp" alt="The Branch header with Push, and a confirm that counts the fixes and replies to send">
 </picture>
 
-<sub>Screenshot from Goodboy 0.27.1</sub>
+<sub>Screenshot from Goodboy 0.40.1</sub>
 
 ### Next
 

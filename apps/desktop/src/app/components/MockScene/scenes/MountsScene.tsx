@@ -1,11 +1,15 @@
 import { useEffect, useState } from 'react';
 import type {
+  Agent,
   AgentId,
   ContextSlot,
   DiffComment,
   IsoDateTime,
+  PlanConsumption,
+  PlanConsumptionId,
   PlanId,
   PlanWithCount,
+  ProviderRunId,
   SessionEvent,
   SessionEventId,
   MountId,
@@ -21,6 +25,8 @@ import type {
   Session,
   SessionId,
   SessionMountView,
+  TelemetryRecord,
+  TelemetryRecordId,
   WorkflowId,
   WorkflowRun,
   WorkflowRunId,
@@ -363,9 +369,136 @@ const CONTEXT_SLOTS: ReadonlyArray<ContextSlot> = [
   },
 ];
 
+const PLAN_ID = 'mock-mounts-plan-split' as PlanId;
+
+type WorkSeed = {
+  readonly key: string;
+  readonly name: string;
+  readonly kind: string;
+  readonly mountId: MountId;
+  readonly fromMinutes: number;
+  readonly toMinutes: number;
+  readonly costUsd: number;
+  readonly isPlanPart: boolean;
+};
+
+const WORK_SEEDS: ReadonlyArray<WorkSeed> = [
+  {
+    key: 'rounding',
+    name: 'Fix the rounding drift',
+    kind: 'implementer',
+    mountId: ROUNDING_MOUNT,
+    fromMinutes: -232,
+    toMinutes: -188,
+    costUsd: 1.92,
+    isPlanPart: true,
+  },
+  {
+    key: 'boundaries',
+    name: 'Settle the period boundaries',
+    kind: 'implementer',
+    mountId: BOUNDARIES_MOUNT,
+    fromMinutes: -184,
+    toMinutes: -149,
+    costUsd: 1.37,
+    isPlanPart: true,
+  },
+  {
+    key: 'postings',
+    name: 'Make postings idempotent',
+    kind: 'implementer',
+    mountId: POSTINGS_MOUNT,
+    fromMinutes: -142,
+    toMinutes: -94,
+    costUsd: 2.18,
+    isPlanPart: true,
+  },
+  {
+    key: 'ledgerbook',
+    name: 'Write the ledgerbook in one transaction',
+    kind: 'implementer',
+    mountId: LEDGERBOOK_MOUNT,
+    fromMinutes: -90,
+    toMinutes: -51,
+    costUsd: 1.64,
+    isPlanPart: true,
+  },
+  {
+    key: 'relay',
+    name: 'Back off the relay on rate limits',
+    kind: 'implementer',
+    mountId: RELAY_MOUNT,
+    fromMinutes: -121,
+    toMinutes: -87,
+    costUsd: 0.96,
+    isPlanPart: false,
+  },
+];
+
+type WorkKeyParams = {
+  readonly key: string;
+};
+
+const workAgentIdOf = ({ key }: WorkKeyParams): AgentId =>
+  brandedId<AgentId>({ value: `mock-mounts-agent-${key}` });
+
+const workRunIdOf = ({ key }: WorkKeyParams): ProviderRunId =>
+  brandedId<ProviderRunId>({ value: `mock-mounts-provider-run-${key}` });
+
+const WORK_AGENTS: ReadonlyArray<Agent> = WORK_SEEDS.map((seed, index) => ({
+  id: workAgentIdOf({ key: seed.key }),
+  sessionId: SESSION_ID,
+  ordinal: index,
+  name: seed.name,
+  kind: seed.kind,
+  status: 'completed',
+  runId: workRunIdOf({ key: seed.key }),
+  ...(seed.isPlanPart ? { workflowRunId: STARTED_RUN.id } : {}),
+  startedAt: later(seed.fromMinutes),
+  completedAt: later(seed.toMinutes),
+  mountId: seed.mountId,
+}));
+
+const WORK_TELEMETRY: ReadonlyArray<TelemetryRecord> = WORK_SEEDS.map((seed) => ({
+  id: brandedId<TelemetryRecordId>({ value: `mock-mounts-telemetry-${seed.key}` }),
+  runId: workRunIdOf({ key: seed.key }),
+  sessionId: SESSION_ID,
+  kind: 'turn',
+  provider: 'codex',
+  model: 'gpt-5.6-sol',
+  inputTokens: Math.round(seed.costUsd * 9_000),
+  outputTokens: Math.round(seed.costUsd * 2_100),
+  estimatedCostUsd: seed.costUsd,
+  recordedAt: later(seed.toMinutes),
+}));
+
+const PLAN_CONSUMPTIONS: ReadonlyArray<PlanConsumption> = WORK_SEEDS.filter(
+  (seed) => seed.isPlanPart,
+).map((seed) => ({
+  id: brandedId<PlanConsumptionId>({ value: `mock-mounts-consumption-${seed.key}` }),
+  planId: PLAN_ID,
+  agentId: workAgentIdOf({ key: seed.key }),
+  agentName: seed.name,
+  consumedAt: later(seed.fromMinutes),
+}));
+
+type MountWorkParams = {
+  readonly mountIds: ReadonlySet<MountId>;
+};
+
+const workAgentsOn = ({ mountIds }: MountWorkParams): ReadonlyArray<Agent> =>
+  WORK_AGENTS.filter((agent) => agent.mountId != null && mountIds.has(agent.mountId));
+
+type WorkTelemetryParams = {
+  readonly agents: ReadonlyArray<Agent>;
+};
+
+const workTelemetryOf = ({ agents }: WorkTelemetryParams): ReadonlyArray<TelemetryRecord> =>
+  WORK_TELEMETRY.filter((record) => agents.some((agent) => agent.runId === record.runId));
+
 const PLANS: ReadonlyArray<PlanWithCount> = [
   {
-    id: 'mock-mounts-plan-split' as PlanId,
+    id: PLAN_ID,
     sessionId: SESSION_ID,
     agentId: 'mock-mounts-agent-planner' as AgentId,
     title: 'Split the reconciliation rewrite into six parts',
@@ -373,7 +506,7 @@ const PLANS: ReadonlyArray<PlanWithCount> = [
     status: 'active',
     createdAt: later(-240),
     updatedAt: later(-240),
-    consumptionCount: 3,
+    consumptionCount: PLAN_CONSUMPTIONS.length,
   },
 ];
 
@@ -762,6 +895,8 @@ export const MountsScene = ({ variant = DEFAULT_VARIANT }: Props) => {
   const views = viewsOf(seeds);
   const projectMounts = toProjectMounts(views);
   const session = sessionOf({ variant });
+  const workAgents =
+    variant === 'blank' ? [] : workAgentsOn({ mountIds: new Set(seeds.map((seed) => seed.id)) });
 
   useEffect(() => {
     useAppStore.setState({
@@ -860,11 +995,12 @@ export const MountsScene = ({ variant = DEFAULT_VARIANT }: Props) => {
           lastAttempt: null,
         },
       },
-      sessionPhaseRuns: { [SESSION_ID]: [] },
+      sessionPhaseRuns: { [SESSION_ID]: workAgents },
       sessionPlans: { [SESSION_ID]: variant === 'blank' ? [] : PLANS },
+      planConsumptions: { [PLAN_ID]: variant === 'blank' ? [] : PLAN_CONSUMPTIONS },
       sessionWorkflows: { [SESSION_ID]: [] },
       phaseTemplates: { [WORKSPACE_ID]: [] },
-      sessionTelemetry: { [SESSION_ID]: [] },
+      sessionTelemetry: { [SESSION_ID]: workTelemetryOf({ agents: workAgents }) },
       sessionEvents: { [SESSION_ID]: variant === 'blank' ? [] : SESSION_EVENTS },
       loadSessionEvents: async () => undefined,
       sessionExternalTasks: {

@@ -4,8 +4,13 @@ import { BranchPage } from '../../../../../features/branch/components/BranchPage
 import { WorktreeSceneColumn } from '../WorktreeSceneColumn';
 import { useAppStore } from '../../../../../store';
 import { branchPlace } from '../../../../../store/slices/navigation/place';
-import { SESSION, SESSION_ID } from '../resolveSeed';
-import { PR_PAGE_WORKTREE, applyPrPageSeed, type PrPageVariant } from './prPageSeed';
+import { SESSION_ID } from '../resolveSeed';
+import {
+  PR_PAGE_SESSION,
+  PR_PAGE_WORKTREE,
+  applyPrPageSeed,
+  type PrPageVariant,
+} from './prPageSeed';
 
 const NARROW_PANE_PX = 860;
 const OPEN_DELAY_MS = 500;
@@ -79,8 +84,8 @@ export const PrPageScene = ({ variant }: Props) => {
       style={variant === 'narrow' ? { width: NARROW_PANE_PX } : undefined}
     >
       <RemoteImageLoaderProvider load={loadMockPicture} loadAvatar={loadMockPicture}>
-        <WorktreeSceneColumn headSession={SESSION}>
-          <BranchPage session={SESSION} workingDir={PR_PAGE_WORKTREE} />
+        <WorktreeSceneColumn headSession={PR_PAGE_SESSION}>
+          <BranchPage session={PR_PAGE_SESSION} workingDir={PR_PAGE_WORKTREE} />
         </WorktreeSceneColumn>
       </RemoteImageLoaderProvider>
     </main>

@@ -8,10 +8,10 @@ Ask about the workspace without starting a session. **Chat**, in the places rail
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/agents-workspace-chat-dark.webp">
-  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/agents-workspace-chat-light.webp" alt="Chat in Harborline, with the sessions rail on the left: the chat list grouped by Pinned, Today, This week and Idle with Archive idle and Archived 4, and the chat Where is the consent step defined?: a table of three source files, Read 4 files, Start work from chat and Sonnet 5.5 Medium, above a message box that reads Read only. Nothing is changed.">
+  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/agents-workspace-chat-light.webp" alt="Chat in Harborline, with the places rail on the left and the chat list beside it, grouped by Pinned, Today, This week and Idle with Archive idle and Archived 4, and the chat Where is the consent step defined?: a table of three source files, Read 4 files, Start work from chat and Sonnet 5.5 Medium, above a message box that reads Read only. Nothing is changed.">
 </picture>
 
-<sub>Screenshot from Goodboy 0.31.12</sub>
+<sub>Screenshot from Goodboy 0.40.1</sub>
 
 ### Ask in a session
 
@@ -43,10 +43,10 @@ Check exactly what an agent was told. The top of each chat shows the message and
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/agents-what-received-dark.webp">
-  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/agents-what-received-light.webp" alt="The top of an agent chat: an Also received row with the chips Goal, Plan, 2 files and All, the Asked line holding what the agent was told, and its first answers each reduced to one line such as Searched the code, read applyWebhook.ts">
+  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/agents-what-received-light.webp" alt="The top of an agent chat: an Also received row with the chips Goal, Plan, 2 files and All, the message the agent was given, and its first answers each reduced to one line such as Searched the code, read applyWebhook.ts">
 </picture>
 
-<sub>Screenshot from Goodboy 0.27.1</sub>
+<sub>Screenshot from Goodboy 0.40.1</sub>
 
 ### Agent transcript
 
@@ -57,7 +57,7 @@ Follow one agent's work as one conversation you can write in. Each finished turn
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/agents-transcript-light.webp" alt="An Implementer agent in a session of Harborline: its turns each reduced to one line such as Read package.json, ran a command, the checklist Remove node_modules in payments-api, Install with pnpm and Run the export tests, and the Steps drawer open beside the conversation with each step of the turn">
 </picture>
 
-<sub>Screenshot from Goodboy 0.31.12</sub>
+<sub>Screenshot from Goodboy 0.40.1</sub>
 
 ### Agent suggests
 
@@ -122,10 +122,10 @@ Do more from the message box. The **+** opens **Attach files**, **Run a script**
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/agents-composer-menu-dark.webp">
-  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/agents-composer-menu-light.webp" alt="The message box of a chat with the plus menu open, listing Attach files, Run a script ($), Run a workflow (~) and Ask another agent (@), next to Ask first and the GPT-5.6 Sol model">
+  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/agents-composer-menu-light.webp" alt="The message box of a chat with the plus menu open, listing Attach files, Run a script ($), Start workflow (~) and Ask another agent (@), next to Ask first and the GPT-5.6 Sol model">
 </picture>
 
-<sub>Screenshot from Goodboy 0.27.1</sub>
+<sub>Screenshot from Goodboy 0.40.1</sub>
 
 ### Attach files
 

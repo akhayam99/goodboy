@@ -3,8 +3,13 @@ import type {
   HistoryGraph,
   HistoryPlanPrediction,
   HistoryStep,
+  MountId,
+  ProjectId,
   PullRequestState,
+  Session,
+  SessionProjectMount,
 } from '@goodboy/types';
+import { brandId } from '@goodboy/types';
 import { historyBackupRef } from '../../../../../features/history/testing/historyBackupRef';
 import {
   combineInto,
@@ -15,9 +20,69 @@ import {
 } from '../../../../../features/history/historyPlan';
 import type { HistoryDraft, HistoryRun } from '../../../../../store/slices/history/types';
 import type { MountGithubState } from '../../../../../store/types';
-import { CTX_MOUNTS, CTX_PAYMENTS_ID, CTX_PAYMENTS_MOUNT_ID, CTX_SESSION_ID } from './contextBase';
+import { BRAND_BASE_RELEASE, BRAND_LEDGER_EXPORT, BRAND_PROJECTS, BRAND_SESSION } from './canon';
+import {
+  CTX_LEDGER_ID,
+  CTX_MOUNTS,
+  CTX_PAYMENTS_ID,
+  CTX_PAYMENTS_MOUNT_ID,
+  CTX_PAYMENTS_WORKTREE,
+  CTX_SESSION,
+  CTX_SIBLINGS,
+} from './contextBase';
 
-const LEDGER_BRANCH = 'hl/ledger-export';
+const LEDGER_BRANCH = BRAND_LEDGER_EXPORT.branch;
+const LEDGER_MOUNT_ID = brandId<MountId>({ value: 'mock-brand-ctx-mount-ledger-export' });
+const LEDGER_WORKTREE = BRAND_LEDGER_EXPORT.worktree;
+
+const reconcileSession = CTX_SIBLINGS.find(
+  (session) => session.goal === BRAND_LEDGER_EXPORT.session,
+);
+if (reconcileSession === undefined) {
+  throw new Error('The ledger history scenes need the reconcile session.');
+}
+
+export type HistoryScope = {
+  readonly session: Session;
+  readonly mountId: MountId;
+  readonly projectId: ProjectId;
+  readonly mounts: ReadonlyArray<SessionProjectMount>;
+  readonly worktree: string;
+  readonly branch: string;
+  readonly backupSubject: string;
+};
+
+export const CTX_HISTORY_SCOPE: HistoryScope = {
+  session: CTX_SESSION,
+  mountId: CTX_PAYMENTS_MOUNT_ID,
+  projectId: CTX_PAYMENTS_ID,
+  mounts: CTX_MOUNTS,
+  worktree: CTX_PAYMENTS_WORKTREE,
+  branch: BRAND_SESSION.branch,
+  backupSubject: 'Dedupe webhook retries in the handler',
+};
+
+const LEDGER_SESSION: Session = {
+  ...reconcileSession,
+  activeProjectId: CTX_LEDGER_ID,
+  activeMountId: LEDGER_MOUNT_ID,
+};
+
+export const LEDGER_SCOPE: HistoryScope = {
+  session: LEDGER_SESSION,
+  mountId: LEDGER_MOUNT_ID,
+  projectId: CTX_LEDGER_ID,
+  mounts: CTX_MOUNTS.filter((mount) => mount.projectId === CTX_LEDGER_ID).map((mount) => ({
+    ...mount,
+    mountId: LEDGER_MOUNT_ID,
+    sessionId: LEDGER_SESSION.id,
+    worktreePath: LEDGER_WORKTREE,
+    branch: LEDGER_BRANCH,
+  })),
+  worktree: LEDGER_WORKTREE,
+  branch: LEDGER_BRANCH,
+  backupSubject: 'Stream rows in batches of 500',
+};
 
 const hoursAgo = (hours: number): number =>
   Math.floor(Date.now() / 1000) - Math.round(hours * 3600);
@@ -66,7 +131,7 @@ const LEDGER_SCENE_GRAPH: HistoryGraph = {
   baseRef: 'origin/main',
   mergeBase: {
     sha: BASE,
-    subject: 'Release 2.14',
+    subject: BRAND_BASE_RELEASE,
     author: 'Harborline Lead',
     timestamp: hoursAgo(53),
   },
@@ -175,8 +240,8 @@ export const ledgerDraft = ({
   readonly graph?: HistoryGraph;
   readonly hasConflict?: boolean;
 }): HistoryDraft => ({
-  sessionId: CTX_SESSION_ID,
-  mountId: CTX_PAYMENTS_MOUNT_ID,
+  sessionId: LEDGER_SESSION.id,
+  mountId: LEDGER_MOUNT_ID,
   planId: 'mock-ledger-history-plan',
   branch: LEDGER_BRANCH,
   baseSha: BASE,
@@ -221,8 +286,8 @@ export const LEDGER_RESULT_GRAPH: HistoryGraph = {
 };
 
 const baseRun = {
-  sessionId: CTX_SESSION_ID,
-  mountId: CTX_PAYMENTS_MOUNT_ID,
+  sessionId: LEDGER_SESSION.id,
+  mountId: LEDGER_MOUNT_ID,
   origin: 'plan',
   planId: 'mock-ledger-history-plan',
   agentId: null,
@@ -315,10 +380,12 @@ export const LEDGER_RESULT_RUN: HistoryRun = {
   },
 };
 
-const PR: PullRequestState = {
-  number: 214,
-  title: 'Export the ledger as CSV',
-  url: 'https://example.invalid/harborline/payments-api/pull/214',
+const LEDGER_REPOSITORY = `harborline/${BRAND_PROJECTS.ledger.name}`;
+
+export const LEDGER_PR: PullRequestState = {
+  number: BRAND_LEDGER_EXPORT.pr,
+  title: BRAND_LEDGER_EXPORT.prTitle,
+  url: `https://example.invalid/${LEDGER_REPOSITORY}/pull/${BRAND_LEDGER_EXPORT.pr}`,
   state: 'open',
   mergeable: true,
   checks: 'success',
@@ -333,7 +400,7 @@ const PR: PullRequestState = {
 };
 
 export const ledgerGithub = ({ headSha }: { readonly headSha: string }): MountGithubState => ({
-  pr: { ...PR, headSha },
+  pr: { ...LEDGER_PR, headSha },
   linkedIssues: [],
   fetchedAt: null,
   failedAt: null,
@@ -343,18 +410,14 @@ export const ledgerGithub = ({ headSha }: { readonly headSha: string }): MountGi
   detailFetchedAt: null,
   detailLoading: false,
   detailError: null,
-  mountId: CTX_PAYMENTS_MOUNT_ID,
-  projectId: CTX_PAYMENTS_ID,
+  mountId: LEDGER_MOUNT_ID,
+  projectId: CTX_LEDGER_ID,
   revision: 1,
-  repository: 'harborline/payments-api',
+  repository: LEDGER_REPOSITORY,
   host: 'github.com',
   branch: LEDGER_BRANCH,
-  prs: [{ ...PR, headSha }],
+  prs: [{ ...LEDGER_PR, headSha }],
   links: [],
 });
-
-export const LEDGER_MOUNTS = CTX_MOUNTS.map((mount) =>
-  mount.mountId === CTX_PAYMENTS_MOUNT_ID ? { ...mount, branch: LEDGER_BRANCH } : mount,
-);
 
 export const LEDGER_HEAD_SHAS = { plan: SHA.c, result: RESULT_SHA.c } as const;

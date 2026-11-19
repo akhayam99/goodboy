@@ -93,6 +93,7 @@ type Props = {
   readonly isContextRead?: boolean;
   readonly seedRuns?: () => void;
   readonly isLogShown?: boolean;
+  readonly goal?: string;
 };
 
 const IDLE_SESSION: Session = {
@@ -108,6 +109,7 @@ export const ActivityRunScene = ({
   isContextRead = false,
   seedRuns = seedActivityRunScene,
   isLogShown = false,
+  goal,
 }: Props) => {
   const [isReady, setIsReady] = useState(false);
 
@@ -132,6 +134,16 @@ export const ActivityRunScene = ({
       reviewBranch: 'hl/reconcile-settlement-export',
     });
     useAppStore.setState({ selectedAgentId: {} });
+    if (goal !== undefined) {
+      useAppStore.setState((state) => ({
+        sessionSlots: {
+          ...state.sessionSlots,
+          [SESSION.id]: (state.sessionSlots[SESSION.id] ?? []).map((slot) =>
+            slot.key === 'goal' ? { ...slot, value: goal } : slot,
+          ),
+        },
+      }));
+    }
     if (isFinished) {
       finishActivityRuns();
     }
@@ -149,7 +161,7 @@ export const ActivityRunScene = ({
     }
     onSeeded?.();
     setIsReady(true);
-  }, [contextSection, isContextRead, isFinished, onSeeded, seedRuns]);
+  }, [contextSection, goal, isContextRead, isFinished, onSeeded, seedRuns]);
 
   if (!isReady) {
     return null;

@@ -23,52 +23,88 @@
 .mockStage .dfrBody {
   display: grid;
   min-width: 0;
-  grid-template-columns: 176px minmax(0, 1fr);
+  grid-template-columns: 212px minmax(0, 1fr);
 }
 
 .mockStage .dfrMain {
   min-width: 0;
 }
 
-.mockStage .dfrTree {
+.mockStage .dfrTreeHead {
   display: flex;
   min-width: 0;
   flex-direction: column;
-  gap: 10px;
-  padding: 10px 6px 6px 12px;
+  gap: 8px;
+  padding: 8px 10px 0;
   color: var(--g-muted-foreground);
   font: 400 11px / 16px var(--sans);
 }
 
-.mockStage .dfrTreeGroup {
-  display: flex;
-  min-width: 0;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.mockStage .dfrTree p {
+.mockStage .dfrTreeHead p,
+.mockStage .dfrTree p,
+.mockStage .dfrHead p,
+.mockStage .dfrScope {
   margin: 0;
 }
 
-.mockStage .dfrTreeCount {
-  font-variant-numeric: tabular-nums;
+.mockStage .dfrTreeTop,
+.mockStage .dfrTreeFilter {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
 }
 
-.mockStage .dfrTreeBar {
-  position: relative;
-  display: block;
-  height: 2px;
-  overflow: hidden;
-  border-radius: 2px;
-  background: var(--g-border-soft);
+.mockStage .dfrSegment {
+  display: inline-flex;
+  gap: 2px;
+  padding: 2px;
+  border-radius: 6px;
+  background: var(--g-fill);
 }
 
-.mockStage .dfrTreeBar i {
-  position: absolute;
-  inset: 0 50% 0 0;
-  border-radius: 2px;
-  background: var(--g-primary);
+.mockStage .dfrSegmentItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 1px 6px;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+
+.mockStage .dfrSegmentItem[data-active='true'] {
+  background: var(--mk-win-2);
+  color: var(--t1);
+}
+
+.mockStage .dfrFilterBox {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  align-items: center;
+  gap: 6px;
+  height: 24px;
+  padding: 0 8px;
+  border: 1px solid var(--g-border-soft);
+  border-radius: 6px;
+  color: var(--g-faint-foreground);
+}
+
+.mockStage .dfrTree {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 6px 6px 10px;
+  color: var(--g-muted-foreground);
+  font: 400 11px / 16px var(--sans);
+}
+
+.mockStage .dfrTreeLetter {
+  flex: none;
+  color: var(--g-warning);
+  font: 500 10px / 16px var(--mono);
 }
 
 .mockStage .dfrTreeFolder,
@@ -84,7 +120,15 @@
 }
 
 .mockStage .dfrTreeFile {
-  padding-left: 10px;
+  gap: 4px;
+  padding: 0 4px 0 18px;
+  font-variant-numeric: tabular-nums;
+}
+
+.mockStage .dfrTreeFile .dfrAdd,
+.mockStage .dfrTreeFile .dfrDel {
+  flex: none;
+  font-size: 11px;
 }
 
 .mockStage .dfrTreeFile[data-state='active'] {
@@ -110,16 +154,8 @@
 
 .mockStage .dfrRingFill {
   stroke: var(--g-primary);
-  stroke-dasharray: 50 100;
   transform: rotate(-90deg);
   transform-origin: center;
-}
-
-.mockStage .dfrTreeMark {
-  display: inline-flex;
-  flex: none;
-  width: 12px;
-  justify-content: center;
 }
 
 .mockStage .dfrTreeName {
@@ -128,13 +164,6 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.mockStage .dfrTreeNum {
-  flex: none;
-  color: var(--g-faint-foreground);
-  font-size: 11px;
-  font-variant-numeric: tabular-nums;
 }
 
 .mockStage .dfrFileAction {
@@ -178,6 +207,7 @@
 
 .mockStage .dfrStat {
   flex: none;
+  margin-left: auto;
   font: 400 11px / 16px var(--sans);
   font-variant-numeric: tabular-nums;
 }
@@ -188,27 +218,6 @@
 
 .mockStage .dfrDel {
   color: var(--g-danger);
-}
-
-.mockStage .dfrBlocks {
-  display: flex;
-  flex: none;
-  gap: 1px;
-}
-
-.mockStage .dfrBlocks i {
-  display: block;
-  width: 6px;
-  height: 6px;
-  border-radius: 2px;
-}
-
-.mockStage .dfrBlocks i[data-kind='add'] {
-  background: var(--g-success);
-}
-
-.mockStage .dfrBlocks i[data-kind='del'] {
-  background: var(--g-danger);
 }
 
 .mockStage .dfrRows {
@@ -355,59 +364,84 @@
   display: flex;
   min-width: 0;
   flex-direction: column;
+  border-right: 1px solid var(--g-border-soft);
 }
 
-.mockStage .dfrRail {
+.mockStage .dfrHead {
   display: flex;
+  min-width: 0;
   flex-direction: column;
   gap: 2px;
-  padding: 10px 6px 0;
-  color: var(--g-muted-foreground);
-  font: 500 12px / 16px var(--sans);
+  padding: 10px 12px 0;
 }
 
-.mockStage .dfrRail p {
-  margin: 0;
-}
-
-.mockStage .dfrRailCard {
-  padding: 2px 8px 4px;
-  color: var(--g-muted-foreground);
-}
-
-.mockStage .dfrRailRow {
+.mockStage .dfrTitle {
   display: flex;
-  align-items: center;
-  gap: 6px;
   min-width: 0;
-  padding: 4px 8px;
-  border-radius: 6px;
-  color: var(--t2);
+  align-items: center;
+  gap: 8px;
+  color: var(--t1);
+  font: 600 14px / 20px var(--sans);
 }
 
-.mockStage .dfrRailLabel {
+.mockStage .dfrTitleText {
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.mockStage .dfrRailPr {
-  display: inline-flex;
-  color: var(--mk-ok);
+.mockStage .dfrMeta {
+  display: flex;
+  min-width: 0;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  color: var(--g-muted-foreground);
+  font: 400 11px / 16px var(--sans);
 }
 
-.mockStage .dfrRailNum {
-  margin-left: auto;
+.mockStage .dfrMono {
+  color: var(--t1);
+  font-family: var(--mono);
+}
+
+.mockStage .dfrScope {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 10px;
+  margin: 8px 6px 0;
+  color: var(--g-muted-foreground);
+  font: 400 11px / 16px var(--sans);
   white-space: nowrap;
 }
 
-.mockStage .dfrRailNum {
-  color: var(--g-muted-foreground);
+.mockStage .dfrScopeChip {
+  min-width: 0;
+  overflow: hidden;
+  padding: 2px 8px;
+  border: 1px solid var(--g-border-soft);
+  border-radius: 6px;
+  color: var(--t1);
+  text-overflow: ellipsis;
 }
 
-.mockStage .dfrRailRow[data-active='true'] {
-  background: var(--g-fill);
+.mockStage .dfrScopeBase {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.mockStage .dfrScopeViewed {
+  margin-left: auto;
+  font-variant-numeric: tabular-nums;
+}
+
+.mockStage .dfrScopeNext {
+  padding: 2px 8px;
+  border: 1px solid var(--g-border-soft);
+  border-radius: 6px;
   color: var(--t1);
 }
 
@@ -423,7 +457,9 @@
   .mockStage .dfrStat,
   .mockStage .dfrAvatar,
   .mockStage .dfrStatus,
-  .mockStage .dfrRailRow,
+  .mockStage .dfrTreeFile,
+  .mockStage .dfrMeta,
+  .mockStage .dfrScope,
   .mockStage .dfrTab,
   .mockStage .dfrThreadHead {
     font-size: 13px;
@@ -456,11 +492,9 @@
     margin: 0 8px;
   }
 
-  .mockStage .dfrThreadActions {
-    display: none;
-  }
-
-  .mockStage .dfrBlocks {
+  .mockStage .dfrThreadActions,
+  .mockStage .dfrScopeBase,
+  .mockStage .dfrScopeNext {
     display: none;
   }
 }
@@ -469,29 +503,27 @@
   display: flex;
   flex-shrink: 0;
   align-items: center;
-  gap: 2px;
-  width: fit-content;
-  max-width: calc(100% - 12px);
+  gap: 14px;
+  min-width: 0;
   overflow: hidden;
-  margin: 6px 6px 0;
-  padding: 1px;
-  border: 1px solid var(--g-border-soft);
-  border-radius: 6px;
-  font-size: 11px;
+  margin: 8px 12px 0;
+  border-bottom: 1px solid var(--g-border-soft);
+  font-size: 12px;
   white-space: nowrap;
 }
 
 .mockStage .dfrTab {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 3px 8px;
-  border-radius: 4px;
+  gap: 4px;
+  padding: 4px 0 6px;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
   color: var(--g-muted-foreground);
 }
 
 .mockStage .dfrTab[data-active='true'] {
-  background: var(--g-fill);
+  border-bottom-color: var(--g-primary);
   color: var(--t1);
 }
 

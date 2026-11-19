@@ -8,10 +8,10 @@ Tell us what broke in one line. Press **Report** at the foot of the places rail,
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/support-report-bug-dark.webp">
-  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/support-report-bug-light.webp" width="680" alt="The Report a bug sheet with the type Bug, an empty line reading What went wrong, in one line, the chips with the version, the system, Board and the CLI, the What gets sent row, the note that it opens GitHub in your browser, Add detail and Open on GitHub">
+  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/support-report-bug-light.webp" width="654" alt="The Report a bug sheet with the type Bug, an empty line reading What went wrong, in one line, the chips with the version, the system, Board and the CLI, the What gets sent row, the note that it opens GitHub in your browser, Add detail and Open on GitHub">
 </picture>
 
-<sub>Screenshot from Goodboy 0.27.1</sub>
+<sub>Screenshot from Goodboy 0.40.1</sub>
 
 ## Under the hood
 

@@ -12,8 +12,7 @@ Most pictures follow one team and one task. Harborline keeps three repos, paymen
 
 Get from install to a first agent. Check the agents on this Mac, make a workspace from your folders, link your tools and tell agents who you are.
 
-- **Welcome to Goodboy**: Three short steps take you from install to a first agent reading your code.
-- **Your agents**: Goodboy runs the coding agents already on this Mac, and one ready agent is enough.
+- **Your agents**: Setup opens on your agents, step one of three from install to a first agent reading your code.
 - **Your first workspace**: A workspace is what you work on: one repository, or a folder that holds several.
 - **Home**: A window with no workspace open shows Home, which lists your workspaces with their folder count and where their folders live.
 - **Integrations**: Connect GitHub, GitLab, Bitbucket, Linear, Jira, Sentry and Slack from Connections, and see the account behind each.
@@ -151,7 +150,7 @@ Plans, reports and wireframes live next to the task, not inside a chat. You can 
 
 [More on plans, reports and wireframes](docs/features/artifacts.md)
 
-<a id="decisions"></a><a id="see-why-each-decision-was-made"></a><a id="running-summary"></a><a id="context-drawer"></a><a id="decisions-drawer"></a><a id="who-receives-what"></a><a id="learned"></a><a id="explanations"></a><a id="context-budgets"></a><a id="plans-handed-to-the-next-agent"></a>
+<a id="decisions"></a><a id="see-why-each-decision-was-made"></a><a id="running-summary"></a><a id="context-drawer"></a><a id="context-tab"></a><a id="decisions-drawer"></a><a id="who-receives-what"></a><a id="learned"></a><a id="explanations"></a><a id="context-budgets"></a><a id="plans-handed-to-the-next-agent"></a>
 
 ## Shared context
 
@@ -159,7 +158,7 @@ What one agent learns, the next one reads. The goal, decisions and a running sum
 
 - **Decisions**: Record a decision once and have the agents after it read it.
 - **Running summary**: Hand the next agent where things stand.
-- **Context drawer**: Open goal, decisions, summary and explanations in the Context tab, with Projects and Linked beside them, and copy them with Copy context.
+- **Context tab**: Open goal, decisions, summary and explanations in the Context tab, with Projects and Linked beside them, and copy them with Copy context.
 - **Who receives what**: See which agents read each part of the context.
 - **Explanations**: Read back what agents explained about the topics you follow.
 

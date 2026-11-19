@@ -12,10 +12,10 @@ The state is a word on the row, used ones fold into **N used**, and **Recently d
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/artifact-list-dark.webp">
-  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/artifact-list-light.webp" alt="The Artifacts list of the Harborline session grouped By branch, under the tabs All, Plans and Reports and the By branch and By state switch: payments-api fix/duplicate-credit, notify-relay feat/retry-budget and ledger-core rec/2-backfill, each with Open branch and its rows marked Ready or Ready to run, a report marked Also on another branch, then No branch and Recently deleted with Show">
+  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/artifact-list-light.webp" alt="The Artifacts tab of a Harborline session grouped By branch, with the All, Plans, Reports and Wireframes filters and the By branch and By state switch: payments-api fix/duplicate-credit, notify-relay feat/retry-budget and ledger-core rec/2-backfill, their rows marked Ready or Ready to run, a report marked Also on another branch, then No branch and Recently deleted with Show">
 </picture>
 
-<sub>Screenshot from Goodboy 0.31.12</sub>
+<sub>Screenshot from Goodboy 0.40.1</sub>
 
 ### Plan parts and Run plan
 
@@ -50,7 +50,7 @@ While an agent still writes an artifact, its page says so in one sentence, with 
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/artifact-report-light.webp" alt="The report Retried webhooks no longer double credit, rev 2, with an Outline (What was wrong, Where it came from, What changed, Evidence, Sources, Open questions, Next steps), the section What was wrong and the What changed table">
 </picture>
 
-<sub>Screenshot from Goodboy 0.27.1</sub>
+<sub>Screenshot from Goodboy 0.40.1</sub>
 
 ### Files on disk
 
@@ -62,10 +62,10 @@ Describe the screen, add attachments, and choose how faithful it is and which de
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/artifact-create-dark.webp">
-  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/artifact-create-light.webp" alt="The Draw a wireframe form with a Brief, Fidelity set to Repository styled wireframe, Target set to Phone and desktop, a Context line of 10 sections and the Model chooser above Generate wireframe">
+  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/artifact-create-light.webp" alt="The Draw a wireframe form with a Brief, Fidelity set to Repository styled wireframe, Target set to Phone and desktop, a Context line of 10 sections and the Model chooser beside Discard and Generate wireframe, ready to press">
 </picture>
 
-<sub>Screenshot from Goodboy 0.27.1</sub>
+<sub>Screenshot from Goodboy 0.40.1</sub>
 
 ### Wireframes scouted first
 
@@ -76,7 +76,7 @@ Get wireframes that start from your code. Before drawing, two scouts read the re
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/artifact-scouts-light.webp" alt="The wireframe Deliveries screen, high fidelity, with Agents on this run: screens and routes done in 14s with 8 of 11 claims verified, and data and contracts still running">
 </picture>
 
-<sub>Screenshot from Goodboy 0.27.1</sub>
+<sub>Screenshot from Goodboy 0.40.1</sub>
 
 ### Wireframe versions
 
@@ -91,7 +91,7 @@ See what changed between two wireframe versions side by side. Pick the versions 
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/artifact-compare-light.webp" alt="Compare v2 to v3 of the Deliveries wireframe: the screens Deliveries (Changed), Delivery detail (Same) and Endpoints (Same), the two frames side by side, and Changes on this screen with Added Stuck delivery: evt_4Q2x for 14 min and Changed Deliveries table">
 </picture>
 
-<sub>Screenshot from Goodboy 0.27.1</sub>
+<sub>Screenshot from Goodboy 0.40.1</sub>
 
 ### Ask for a change
 

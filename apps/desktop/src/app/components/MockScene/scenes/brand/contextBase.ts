@@ -20,7 +20,7 @@ export const minutesAgo = (minutes: number): IsoDateTime =>
 const CTX_WORKSPACE_ID = 'mock-brand-ctx-workspace-harborline' as WorkspaceId;
 export const CTX_SESSION_ID = 'mock-brand-ctx-session-duplicate-credit' as SessionId;
 export const CTX_PAYMENTS_ID = 'mock-brand-ctx-project-payments-api' as ProjectId;
-const CTX_LEDGER_ID = 'mock-brand-ctx-project-ledger-core' as ProjectId;
+export const CTX_LEDGER_ID = 'mock-brand-ctx-project-ledger-core' as ProjectId;
 const CTX_RELAY_ID = 'mock-brand-ctx-project-notify-relay' as ProjectId;
 export const CTX_PAYMENTS_MOUNT_ID = 'mock-brand-ctx-mount-payments-api' as MountId;
 const CTX_LEDGER_MOUNT_ID = 'mock-brand-ctx-mount-ledger-core' as MountId;

@@ -3,9 +3,12 @@ import type { ReactNode } from 'react';
 import { ChevronRight } from './generated/icons';
 import { Chip, StateBadge } from './kit';
 import { MockStage } from './MockStage';
-import { DiffReviewRail } from './DiffReviewRail';
+import { DIFF_REVIEW_FILES } from './diffReviewFiles';
+import { DiffReviewHead } from './DiffReviewHead';
+import { DiffReviewScope } from './DiffReviewScope';
 import { DiffReviewTabs } from './DiffReviewTabs';
 import { DiffReviewTree } from './DiffReviewTree';
+import { DiffReviewTreeHead } from './DiffReviewTreeHead';
 import { MockWindow } from './MockWindow';
 
 type Props = {
@@ -85,21 +88,23 @@ const LINES: readonly Line[] = [
 
 const SIGN: Record<LineKind, string> = { context: ' ', del: '-', add: '+' };
 
-const BLOCKS: readonly ('add' | 'del')[] = ['add', 'add', 'add', 'del', 'del'];
+const SHOWN_FILE = DIFF_REVIEW_FILES[0];
 
 export const DiffReviewMock = ({ className }: Props) => (
   <MockStage
-    label="The Changes page of the payments-api branch hl/fix-duplicate-credit, with its pull request 318 current in the Projects card of the rail and the tabs Pull request, Comments, Changes, Commits and Checks above the page. Changes shows its two files with the lines added and removed, a tree of the changed files with a reading progress, and a line changed to dedupe on the event id, with an open note under it."
+    label="The Branch page of pull request 318, hl/fix-duplicate-credit into main, on its Changes tab, with the tabs Conversation, Changes, Commits, Checks, Runs and Comments under the title. A tree of the two changed files sits on the left with the lines added and removed, the page says payments-api, compared with main and one of two files viewed, and a line changed to dedupe on the event id carries an open note under it."
     className={className}
   >
     <MockWindow className="dfrWin">
       <div className="dfrBody">
         <div className="dfrSide">
-          <DiffReviewRail />
+          <DiffReviewTreeHead />
           <DiffReviewTree />
         </div>
         <div className="dfrMain">
+          <DiffReviewHead />
           <DiffReviewTabs />
+          <DiffReviewScope />
           <div className="dfrFile">
             <ChevronRight size={14} className="dfrOpen" />
             <StateBadge tone="warning" className="dfrStatus">
@@ -107,17 +112,17 @@ export const DiffReviewMock = ({ className }: Props) => (
             </StateBadge>
             <span className="dfrPath">
               <span className="dfrDir">src/webhooks/</span>
-              <span className="dfrName">applyWebhook.ts</span>
+              <span className="dfrName">{SHOWN_FILE?.name}</span>
             </span>
             <span className="dfrStat">
-              <span className="dfrAdd">+20</span> <span className="dfrDel">{'−'}10</span>
+              <span className="dfrAdd">+{SHOWN_FILE?.added}</span>{' '}
+              <span className="dfrDel">
+                {'−'}
+                {SHOWN_FILE?.removed}
+              </span>
             </span>
-            <span className="dfrFileAction">Comment on file</span>
-            <span aria-hidden className="dfrBlocks">
-              {BLOCKS.map((kind, index) => (
-                <i key={index} data-kind={kind} />
-              ))}
-            </span>
+            <span className="dfrFileAction">Viewed</span>
+            <span className="dfrFileAction">Comment</span>
           </div>
           <div className="dfrRows">
             {LINES.map((line) => (

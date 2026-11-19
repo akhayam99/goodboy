@@ -15,6 +15,8 @@ export const seedFrameChromeStubs = (): void => {
     notificationsLoading: false,
     loadNotifications: async () => undefined,
     markNotificationsRead: async () => undefined,
+    loadBrowserWorkspaceTabs: async () => undefined,
+    loadBrowserSessionTabs: async () => undefined,
     scriptRuns: {},
     projectScripts: {},
     navigate: () => undefined,

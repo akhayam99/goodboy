@@ -2,10 +2,10 @@
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/readme-hero-dark.webp">
-  <img src="./docs/readme/readme-hero-light.webp" alt="The Overview of a Harborline session: Needs you 3, Running, Failed, Branches and Done, with the sessions rail and the Context drawer open on Decisions 5">
+  <img src="./docs/readme/readme-hero-light.webp" alt="A Harborline session on its Context tab, between the places rail and the tools rail: the state, Projects, Linked, the Goal and Decisions 5">
 </picture>
 
-<sub>Screenshot from Goodboy 0.33.0</sub>
+<sub>Screenshot from Goodboy 0.40.1</sub>
 
 [![ci](https://img.shields.io/github/actions/workflow/status/akhayam99/goodboy/ci.yml?branch=main&style=for-the-badge&logo=githubactions&logoColor=white&label=ci&labelColor=15181b)](https://github.com/akhayam99/goodboy/actions/workflows/ci.yml)
 [![release](https://img.shields.io/github/v/release/akhayam99/goodboy?style=for-the-badge&logo=github&logoColor=white&label=release&labelColor=15181b&color=0e9aa4)](https://github.com/akhayam99/goodboy/releases/latest)
@@ -32,10 +32,10 @@ Every task is a session, and the board shows where each one stands. Six lanes, *
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/board-stage-dark.webp">
-  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/board-stage-light.webp" alt="The Harborline board in six lanes: Needs you holds four sessions, each with a question waiting">
+  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/board-stage-light.webp" alt="The Harborline board in six lanes: Needs you holds two sessions, each with a question waiting">
 </picture>
 
-<sub>Screenshot from Goodboy 0.33.0</sub>
+<sub>Screenshot from Goodboy 0.40.1</sub>
 
 ## Workflows
 
@@ -46,7 +46,7 @@ A workflow splits a task into steps, such as scout, plan, implement and review. 
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workflow-run-light.webp" alt="A finished workflow run, Duplicate credit fix: Done with five steps, two queued hints, a summary of the result and Create report">
 </picture>
 
-<sub>Screenshot from Goodboy 0.31.12</sub>
+<sub>Screenshot from Goodboy 0.40.1</sub>
 
 ## Shared context
 
@@ -54,10 +54,10 @@ What one agent learns, the next one reads. The goal, decisions and a running sum
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/context-drawer-dark.webp">
-  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/context-drawer-light.webp" alt="The Context drawer on Decisions 5: four changes since you last looked, then decisions 7, 6, 4 and 2, beside the session Overview">
+  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/context-drawer-light.webp" alt="The Context tab of a session on Decisions 5: four changes since you last looked, then decisions 6, 4 and 2">
 </picture>
 
-<sub>Screenshot from Goodboy 0.31.12</sub>
+<sub>Screenshot from Goodboy 0.40.1</sub>
 
 ## Pull request review
 
@@ -65,10 +65,10 @@ The **Branch** page holds one branch: its pull request, review comments, changed
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/review-pr-page-dark.webp">
-  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/review-pr-page-light.webp" alt="The Pull request tab of #318: Checks 1 failing, Changes requested, Merge Blocked by checks, reviewers, description and activity">
+  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/review-pr-page-light.webp" alt="The Conversation tab of #318: Not ready to merge, 1 check failing, changes requested, then reviewers, checks, description and activity">
 </picture>
 
-<sub>Screenshot from Goodboy 0.31.12</sub>
+<sub>Screenshot from Goodboy 0.40.1</sub>
 
 ## Chat
 
@@ -76,10 +76,10 @@ Ask about your repos without starting a session. **Chat** reads every project an
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/agents-workspace-chat-dark.webp">
-  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/agents-workspace-chat-light.webp" alt="Chat in Harborline: the chat list and a table of three source files, Read 3 files, then a follow-up answer">
+  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/agents-workspace-chat-light.webp" alt="Chat in Harborline: the chat list and an answer with a table of three source files, Read 4 files and Start work from chat">
 </picture>
 
-<sub>Screenshot from Goodboy 0.31.12</sub>
+<sub>Screenshot from Goodboy 0.40.1</sub>
 
 ## Features
 

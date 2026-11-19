@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { DIFF_REVIEW_FILES } from './diffReviewFiles';
+import { DIFF_REVIEW_TOTALS } from './DIFF_REVIEW_TOTALS';
 
 type Tab = {
   readonly label: string;
@@ -8,17 +8,10 @@ type Tab = {
 };
 
 const TABS: readonly Tab[] = [
-  { label: 'Pull request' },
-  { label: 'Comments', end: <span className="dfrTabCount">2</span> },
+  { label: 'Conversation' },
   {
     label: 'Changes',
-    end: (
-      <>
-        <span className="dfrTabCount">{DIFF_REVIEW_FILES.length}</span>
-        <span className="dfrAdd">+20</span>
-        <span className="dfrDel">{'−'}10</span>
-      </>
-    ),
+    end: <span className="dfrTabCount">{DIFF_REVIEW_TOTALS.files}</span>,
     isActive: true,
   },
   {
@@ -32,6 +25,7 @@ const TABS: readonly Tab[] = [
   },
   { label: 'Checks' },
   { label: 'Runs' },
+  { label: 'Comments', end: <span className="dfrTabCount">2</span> },
 ];
 
 export const DiffReviewTabs = () => (

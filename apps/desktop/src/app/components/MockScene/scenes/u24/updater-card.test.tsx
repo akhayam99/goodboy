@@ -10,6 +10,8 @@ import {
   importStore,
   resetStoryStore,
 } from '../../../../../store/storyHarness';
+import { isNewerRelease } from '../../../../../features/changelog/isNewerRelease';
+import { APP_VERSION } from '../../../../../shared/lib/appVersion';
 import { MOCK_SCENES } from '../..';
 import { U24_UPDATER_CARD_SCENES } from './updater-card';
 
@@ -38,12 +40,34 @@ describe('the updater card scenes', () => {
     }
   });
 
+  it('offers a version newer than the app that shows it', async () => {
+    const Scene = U24_UPDATER_CARD_SCENES['update-card'];
+    if (Scene === undefined) {
+      throw new Error('missing scene update-card');
+    }
+    render(<Scene />);
+
+    const offered: Array<string> = [];
+    await screen.findByRole('dialog', {
+      name: (accessibleName) => {
+        const version = /^Goodboy (\S+) is ready$/.exec(accessibleName)?.[1];
+        if (version === undefined) {
+          return false;
+        }
+        offered.push(version);
+        return true;
+      },
+    });
+    expect(offered.at(-1)).not.toBe(APP_VERSION);
+    expect(isNewerRelease({ tag: offered.at(-1) ?? '', installed: APP_VERSION })).toBe(true);
+  });
+
   it.each([
-    ['update-card', 'Goodboy 0.24.1 is ready'],
-    ['update-card-narrow', 'Goodboy 0.24.1 is ready'],
+    ['update-card', /^Goodboy \d+\.\d+\.\d+ is ready$/],
+    ['update-card-narrow', /^Goodboy \d+\.\d+\.\d+ is ready$/],
     [
       'update-card-long-version',
-      'Goodboy 0.24.1-beta.20261010.preview.build.8f3c2a91e7d54b6fa0c1d2e3f4a5b6c7d8e9f0 is ready',
+      /^Goodboy \d+\.\d+\.\d+-beta\.20261010\.preview\.build\.8f3c2a91e7d54b6fa0c1d2e3f4a5b6c7d8e9f0 is ready$/,
     ],
   ])('%s shows the card beside the rail with its three actions', async (id, name) => {
     const Scene = U24_UPDATER_CARD_SCENES[id];
