@@ -117,7 +117,7 @@
   },
   "features/overview-session": {
     "version": "0.40.1",
-    "recipe": "--scene 'activity-run&brand=1' --selector main --pad 0 --window 1280x840--frozen-at 2026-11-05T16:00:00 --wait 8000"
+    "recipe": "--scene 'activity-run&brand=1' --selector main --pad 0 --window 1280x840 --frozen-at 2026-11-05T16:00:00 --wait 8000"
   },
   "features/providers-codex-reset": {
     "version": "0.40.1",
