@@ -1159,16 +1159,6 @@
       "count": 1
     }
   },
-  "packages/core/src/planner/parser.ts": {
-    "@typescript-eslint/strict-boolean-expressions": {
-      "count": 1
-    }
-  },
-  "packages/core/src/planner/prompt.ts": {
-    "@typescript-eslint/strict-boolean-expressions": {
-      "count": 1
-    }
-  },
   "packages/core/src/providers/codex/parser.ts": {
     "@typescript-eslint/strict-boolean-expressions": {
       "count": 4

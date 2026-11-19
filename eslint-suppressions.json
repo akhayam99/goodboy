@@ -11369,29 +11369,6 @@
       "count": 6
     }
   },
-  "packages/core/src/planner/client.test.ts": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 4
-    }
-  },
-  "packages/core/src/planner/parser.test.ts": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 1
-    }
-  },
-  "packages/core/src/planner/parser.ts": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 2
-    },
-    "@typescript-eslint/strict-boolean-expressions": {
-      "count": 1
-    }
-  },
-  "packages/core/src/planner/prompt.ts": {
-    "@typescript-eslint/strict-boolean-expressions": {
-      "count": 1
-    }
-  },
   "packages/core/src/providers/aux-output.ts": {
     "@typescript-eslint/naming-convention": {
       "count": 3
