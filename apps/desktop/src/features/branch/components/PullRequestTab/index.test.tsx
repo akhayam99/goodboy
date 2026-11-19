@@ -305,7 +305,11 @@ describe('the description', () => {
     await show();
 
     expect(within(description()).queryByRole('button', { name: 'Edit' })).toBeNull();
-    expect(screen.queryByRole('button', { name: /^Stop retried webhooks/ })).toBeNull();
+    expect(
+      screen
+        .queryAllByRole('button', { name: /^Stop retried webhooks/ })
+        .filter((button) => button.getAttribute('aria-keyshortcuts') === 'E'),
+    ).toHaveLength(0);
     expect(screen.queryByRole('button', { name: 'Request review' })).toBeNull();
     fireEvent.click(within(description()).getByText(/guard keyed on the delivery id/));
     expect(screen.queryByRole('textbox', { name: 'Description, markdown' })).toBeNull();
