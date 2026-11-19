@@ -30,10 +30,10 @@ The Overview reads top to bottom:
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/overview-session-dark.webp">
-  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/overview-session-light.webp" alt="The overview of Stop retried webhooks posting a second credit, with the goal, a Needs you block and the projects payments-api and notify-relay">
+  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/overview-session-light.webp" alt="The overview of Stop retried webhooks posting a second credit: the Branches, Spend and Time tiles, In progress 2 with hl/fix-duplicate-credit in review in payments-api and hl/surface-retry-state with checks running in notify-relay, Merged 1, and one open question under Not on a branch with Answer">
 </picture>
 
-<sub>Screenshot from Goodboy 0.33.0</sub>
+<sub>Screenshot from Goodboy 0.40.1</sub>
 
 ### Refresh a session
 
@@ -54,10 +54,10 @@ Follow what happened in a session in one list. The **Log** is the last section o
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/overview-activity-dark.webp">
-  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/overview-activity-light.webp" width="821" alt="The overview of Per-tenant limits on payouts with the Full log drawer open beside it: the Needs you, Running, Next and Done cards on the left, with Full log on the Done card, and the Log on the right, with a search box and below Now a question to answer, the Build workflow with steps 3, 2 and 1, each with its role icon and title, then Summarise the plan, a rebase and Plan the payout limits">
+  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/overview-activity-light.webp" alt="The overview of Per-tenant limits on payouts scrolled to its Log, under the Needs you and Not on a branch groups: a search box and, below Now, a question to answer, Harden retries in payments-api waiting with steps 3, 2 and 1, each with its role icon and model, then Build, Summarise the plan, a rebase and, under Nov 3, Plan the payout limits">
 </picture>
 
-<sub>Screenshot from Goodboy 0.33.0</sub>
+<sub>Screenshot from Goodboy 0.40.1</sub>
 
 ### Cards
 

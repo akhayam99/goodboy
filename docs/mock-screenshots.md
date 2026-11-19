@@ -819,10 +819,11 @@ and light `.webp` pairs. The website's hero picture is the one capture on the
 site; every other product view there is a React mock. `pnpm readme:hero` shoots
 two scenes from the desktop mock dev server (`http://localhost:5230`, or the URL
 passed as its first argument), in both themes. The `readme-hero` scene (the
-Harborline session on its Overview with the Projects card unfolded and the shared
-Context drawer open) is shot twice from the same scene. The README picture is the
-whole app window, 1680x1118 css px at scale 2, so the sidebar, the session head and
-the drawer all show and the columns keep their widths; both themes come from one frozen clock so their times
+Harborline session on its Context tab, with its decisions already read and the page
+held at the top so the state, Projects and Linked show above the goal) is shot twice
+from the same scene. The README picture is the
+whole app window, 1680x1118 css px at scale 2, so the places rail, the session head and
+the tools rail all show and the columns keep their widths; both themes come from one frozen clock so their times
 match, and it writes `docs/readme/readme-hero-{dark,light}.webp`. The site picture
 is shot at 1920x1200 and scale 4 and writes
 `website/public/hero/hero-{dark,light}-{1208,2416,3624}.webp`, 1, 2 and 3 times

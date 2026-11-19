@@ -1,314 +1,314 @@
 {
   "features/agents-composer-menu": {
-    "version": "0.27.1",
-    "recipe": "--scene 'features-composer-menu&brand=1' --window 1280x800 --wait 8000"
+    "version": "0.40.1",
+    "recipe": "--scene 'features-composer-menu&brand=1' --window 1280x800 --wait 8000 --frozen-at 2026-11-05T16:00:00"
   },
   "features/agents-transcript": {
-    "version": "0.31.12",
-    "recipe": "--scene 'c06-agent-transcript&brand=1' --window 1280x800 --wait 8000"
+    "version": "0.40.1",
+    "recipe": "--scene 'c06-agent-transcript&brand=1' --window 1280x800 --wait 8000 --frozen-at 2026-11-05T16:00:00"
   },
   "features/agents-what-received": {
-    "version": "0.27.1",
-    "recipe": "--scene 'brand-slack&brand=1' --click 'Also received' --clip 290,60,940,232 --window 1280x800 --wait 8000"
+    "version": "0.40.1",
+    "recipe": "--scene 'brand-slack&brand=1' --clip 182,160,912,308 --window 1280x800 --frozen-at 2026-11-05T16:00:00 --wait 8000"
   },
   "features/agents-workspace-chat": {
-    "version": "0.31.12",
+    "version": "0.40.1",
     "recipe": "--scene 'chat-room&brand=1' --window 1500x720 --scale 2 --frozen-at 2026-11-05T16:00:00 --wait 30000"
   },
   "features/artifact-compare": {
-    "version": "0.27.1",
-    "recipe": "--scene 'brand-compare&brand=1' --window 1280x800 --wait 8000"
+    "version": "0.40.1",
+    "recipe": "--scene 'brand-compare&brand=1' --window 1280x800 --wait 8000 --frozen-at 2026-11-05T16:00:00"
   },
   "features/artifact-create": {
-    "version": "0.27.1",
-    "recipe": "--scene 'artifact-create-wireframe&brand=1' --window 1280x700 --wait 8000"
+    "version": "0.40.1",
+    "recipe": "--scene 'artifact-create-wireframe&brand=1' --window 1280x700 --wait 8000 --frozen-at 2026-11-05T16:00:00"
   },
   "features/artifact-list": {
-    "version": "0.31.12",
-    "recipe": "--scene 'u36-c19-artifacts-by-branch&brand=1' --window 1280x800 --wait 8000"
+    "version": "0.40.1",
+    "recipe": "--scene 'u36-c19-artifacts-by-branch&brand=1' --window 1280x800 --wait 8000 --frozen-at 2026-11-05T16:00:00"
   },
   "features/artifact-report": {
-    "version": "0.27.1",
-    "recipe": "--scene 'artifact-report&brand=1' --window 1280x800 --wait 8000"
+    "version": "0.40.1",
+    "recipe": "--scene 'artifact-report&brand=1' --window 1280x800 --wait 8000 --frozen-at 2026-11-05T16:00:00"
   },
   "features/artifact-scouts": {
-    "version": "0.27.1",
-    "recipe": "--scene 'artifact-generating&brand=1' --window 1280x330 --wait 8000"
+    "version": "0.40.1",
+    "recipe": "--scene 'artifact-generating&brand=1' --window 1280x330 --wait 8000 --frozen-at 2026-11-05T16:00:00"
   },
   "features/board-card": {
-    "version": "0.33.0",
-    "recipe": "--scene 'board-shell&brand=1' --clip 790,131,542,234 --window 1920x700 --wait 8000"
+    "version": "0.40.1",
+    "recipe": "--scene 'board-shell&brand=1' --clip 660,110,596,226 --window 1920x700 --frozen-at 2026-11-05T16:00:00 --wait 8000"
   },
   "features/board-stage": {
-    "version": "0.33.0",
+    "version": "0.40.1",
     "recipe": "--scene 'board-shell&brand=1' --window 1920x620 --scale 2 --frozen-at 2026-11-05T16:00:00 --wait 12000"
   },
   "features/context-decisions": {
-    "version": "0.31.12",
-    "recipe": "--scene 'brand-context&brand=1' --window 1280x800 --wait 8000"
+    "version": "0.40.1",
+    "recipe": "--scene 'context-drawer&brand=1' --clip 346,140,984,736 --window 1680x890 --frozen-at 2026-11-05T16:00:00 --wait 12000"
   },
   "features/context-drawer": {
-    "version": "0.31.12",
+    "version": "0.40.1",
     "recipe": "--scene 'context-drawer&brand=1' --window 1680x890 --scale 2 --frozen-at 2026-11-05T16:00:00 --wait 12000"
   },
   "features/context-summary": {
-    "version": "0.31.12",
-    "recipe": "--scene 'r4-context-summary&brand=1' --window 1280x800 --wait 8000"
+    "version": "0.40.1",
+    "recipe": "--scene 'r4-context-summary&brand=1' --clip 146,205,984,298 --window 1280x800 --frozen-at 2026-11-05T16:00:00 --wait 8000"
   },
   "features/history-backups": {
-    "version": "0.27.1",
-    "recipe": "--scene 'rebase-row-versions&brand=1' --window 1600x700 --wait 8000"
+    "version": "0.40.1",
+    "recipe": "--scene 'rebase-row-versions&brand=1' --window 1600x700 --wait 8000 --frozen-at 2026-11-05T16:00:00"
   },
   "features/history-conflicts": {
-    "version": "0.27.1",
-    "recipe": "--scene 'live-edit-conflict&brand=1' --window 1280x700 --wait 8000"
+    "version": "0.40.1",
+    "recipe": "--scene 'live-edit-conflict&brand=1' --window 1280x700 --wait 8000 --frozen-at 2026-11-05T16:00:00"
   },
   "features/history-result": {
-    "version": "0.27.1",
-    "recipe": "--scene 'live-edit-after&brand=1' --window 1280x650 --wait 8000"
+    "version": "0.40.1",
+    "recipe": "--scene 'live-edit-after&brand=1' --window 1280x650 --wait 8000 --frozen-at 2026-11-05T16:00:00"
   },
   "features/history-rewrite": {
-    "version": "0.27.1",
-    "recipe": "--scene 'brand-history&brand=1' --window 1280x800 --wait 8000"
+    "version": "0.40.1",
+    "recipe": "--scene 'brand-history&brand=1' --window 1280x800 --wait 8000 --frozen-at 2026-11-05T16:00:00"
   },
   "features/history-stopped": {
-    "version": "0.27.1",
-    "recipe": "--scene 'brand-history-stopped&brand=1' --window 1280x800 --wait 8000"
+    "version": "0.40.1",
+    "recipe": "--scene 'brand-history-stopped&brand=1' --window 1280x880 --frozen-at 2026-11-05T16:00:00 --wait 8000"
   },
   "features/history-trial": {
-    "version": "0.27.1",
-    "recipe": "--scene 'brand-history-trial&brand=1' --window 1280x800 --wait 8000"
+    "version": "0.40.1",
+    "recipe": "--scene 'brand-history-trial&brand=1' --window 1280x800 --wait 8000 --frozen-at 2026-11-05T16:00:00"
   },
   "features/inbox-comment-threads": {
-    "version": "0.27.1",
-    "recipe": "--scene 'conversation&brand=1' --window 1280x900 --wait 8000"
+    "version": "0.40.1",
+    "recipe": "--scene 'conversation&brand=1' --window 1280x900 --wait 8000 --frozen-at 2026-11-05T16:00:00"
   },
   "features/inbox-list": {
-    "version": "0.27.1",
-    "recipe": "--scene 'inbox&brand=1' --window 1600x900 --wait 8000"
+    "version": "0.40.1",
+    "recipe": "--scene 'inbox&brand=1' --window 1600x900 --wait 8000 --frozen-at 2026-11-05T16:00:00"
   },
   "features/inbox-lookup": {
-    "version": "0.27.1",
-    "recipe": "--scene 'brand-lookup&brand=1' --window 1600x800 --wait 8000"
+    "version": "0.40.1",
+    "recipe": "--scene 'brand-lookup&brand=1' --window 1600x800 --wait 8000 --frozen-at 2026-11-05T16:00:00"
   },
   "features/inbox-sentry": {
-    "version": "0.27.1",
-    "recipe": "--scene 'inbox-source&brand=1' --window 1600x740 --wait 8000"
+    "version": "0.40.1",
+    "recipe": "--scene 'inbox-source&brand=1' --window 1600x740 --wait 8000 --frozen-at 2026-11-05T16:00:00"
   },
   "features/inbox-slack-permissions": {
-    "version": "0.27.1",
-    "recipe": "--scene 'slack-permissions&brand=1' --clip 280,234,990,655 --window 1280x900 --wait 8000"
+    "version": "0.40.1",
+    "recipe": "--scene 'slack-permissions&brand=1' --clip 180,548,986,532 --window 1280x1100 --frozen-at 2026-11-05T16:00:00 --wait 8000"
   },
   "features/inbox-slack-reply": {
-    "version": "0.27.1",
-    "recipe": "--scene 'brand-slack&brand=1' --window 1280x800 --wait 8000"
+    "version": "0.40.1",
+    "recipe": "--scene 'brand-slack&brand=1' --window 1280x800 --wait 8000 --frozen-at 2026-11-05T16:00:00"
   },
   "features/keyboard-script-drawer": {
-    "version": "0.27.1",
-    "recipe": "--scene 'features-script-drawer&brand=1' --window 1280x800 --wait 8000"
+    "version": "0.40.1",
+    "recipe": "--scene 'features-script-drawer&brand=1' --window 1280x800 --wait 8000 --frozen-at 2026-11-05T16:00:00"
   },
   "features/keyboard-shortcuts": {
-    "version": "0.27.1",
-    "recipe": "--scene 'settings-app&section=shortcuts&brand=1' --window 1280x800 --wait 8000"
+    "version": "0.40.1",
+    "recipe": "--scene 'settings-app&section=shortcuts&brand=1' --window 1280x800 --wait 8000 --frozen-at 2026-11-05T16:00:00"
   },
   "features/overview-activity": {
-    "version": "0.33.0",
-    "recipe": "--scene 'u26-central-log&brand=1' --window 1280x900 --wait 8000"
+    "version": "0.40.1",
+    "recipe": "--scene 'u26-central-log&brand=1' --scroll 'input[placeholder^=\"Search the log\"]' --window 1280x900 --frozen-at 2026-11-05T16:00:00 --wait 8000"
   },
   "features/overview-session": {
-    "version": "0.33.0",
-    "recipe": "--scene 'activity-run&brand=1' --selector main --pad 0 --window 1280x540 --wait 8000"
+    "version": "0.40.1",
+    "recipe": "--scene 'activity-run&brand=1' --selector main --pad 0 --window 1280x790 --frozen-at 2026-11-05T16:00:00 --wait 8000"
   },
   "features/providers-codex-reset": {
-    "version": "0.27.1",
-    "recipe": "--scene 'brand-codex&brand=1' --window 1280x800 --wait 8000"
+    "version": "0.40.1",
+    "recipe": "--scene 'brand-codex&brand=1' --window 1280x800 --wait 8000 --frozen-at 2026-11-05T16:00:00"
   },
   "features/providers-fallback-auto": {
-    "version": "0.27.1",
-    "recipe": "--scene 'settings-providers&brand=1' --window 1280x800 --wait 8000"
+    "version": "0.40.1",
+    "recipe": "--scene 'settings-providers&brand=1' --window 1280x1300 --frozen-at 2026-11-05T16:00:00 --wait 8000"
   },
   "features/providers-impact-overview": {
-    "version": "0.27.1",
-    "recipe": "--scene 'features-impact-overview&brand=1' --window 1280x700 --wait 8000"
+    "version": "0.40.1",
+    "recipe": "--scene 'features-impact-overview&brand=1' --window 1280x700 --wait 8000 --frozen-at 2026-11-05T16:00:00"
   },
   "features/providers-limits-chip": {
-    "version": "0.27.1",
-    "recipe": "--scene 'shell&brand=1' --hover '[aria-label^=\"Claude limits\"]' --window 1480x300 --clip 1100,0,380,206 --wait 8000"
+    "version": "0.40.1",
+    "recipe": "--scene 'shell&brand=1' --hover 'button[aria-label*=\"Claude\"]' --window 1680x300 --clip 1318,0,362,204 --frozen-at 2026-11-05T16:00:00 --wait 8000"
   },
   "features/providers-model-picker": {
-    "version": "0.27.1",
-    "recipe": "--scene 'settings-providers&brand=1' --click Auto --window 1280x700 --wait 8000"
+    "version": "0.40.1",
+    "recipe": "--scene 'settings-providers&brand=1' --click Auto --window 1280x700 --wait 8000 --frozen-at 2026-11-05T16:00:00"
   },
   "features/providers-monthly-cap": {
-    "version": "0.27.1",
-    "recipe": "--scene 'impact-scopes&v=full&scope=Spend&brand=1' --click Claude --window 1280x760 --wait 8000"
+    "version": "0.40.1",
+    "recipe": "--scene 'impact-scopes&v=full&scope=Spend&brand=1' --click Claude --window 1280x760 --wait 8000 --frozen-at 2026-11-05T16:00:00"
   },
   "features/review-comment-states": {
-    "version": "0.27.1",
-    "recipe": "--scene 'comments-groups&brand=1' --selector 'nav[class*=\"select-list\"]' --pad 20 --window 1100x900 --wait 8000"
+    "version": "0.40.1",
+    "recipe": "--scene 'comments-groups&brand=1' --selector 'nav[class*=\"select-list\"]' --pad 20 --window 1100x1100 --frozen-at 2026-11-05T16:00:00 --wait 8000"
   },
   "features/review-diff": {
-    "version": "0.31.12",
-    "recipe": "--scene 'branch-files-docked&brand=1' --window 1500x760 --wait 8000"
+    "version": "0.40.1",
+    "recipe": "--scene 'branch-files-docked&brand=1' --window 1500x760 --wait 8000 --frozen-at 2026-11-05T16:00:00"
   },
   "features/review-pr-page": {
-    "version": "0.31.12",
+    "version": "0.40.1",
     "recipe": "--scene 'branch-pr-github&brand=1' --window 1100x850 --scale 2 --frozen-at 2026-11-05T16:00:00 --wait 12000"
   },
   "features/review-push-confirm": {
-    "version": "0.27.1",
-    "recipe": "--scene 'header-branch-push-confirm&brand=1' --window 1280x420 --wait 8000"
+    "version": "0.40.1",
+    "recipe": "--scene 'header-branch-push-confirm&brand=1' --window 1280x420 --wait 8000 --frozen-at 2026-11-05T16:00:00"
   },
   "features/review-resolve": {
-    "version": "0.27.1",
-    "recipe": "--scene 'resolve&brand=1' --window 1100x800 --wait 8000"
+    "version": "0.40.1",
+    "recipe": "--scene 'resolve&brand=1' --window 1100x915 --frozen-at 2026-11-05T16:00:00 --wait 8000"
   },
   "features/review-write": {
-    "version": "0.27.1",
-    "recipe": "--scene 'features-write-review&brand=1' --window 1280x800 --wait 8000"
+    "version": "0.40.1",
+    "recipe": "--scene 'features-write-review&brand=1' --window 1280x800 --wait 8000 --frozen-at 2026-11-05T16:00:00"
   },
   "features/search-command-palette": {
-    "version": "0.27.1",
-    "recipe": "--scene 'command-palette&brand=1' --window 1280x800 --wait 8000"
+    "version": "0.40.1",
+    "recipe": "--scene 'command-palette&brand=1' --window 1280x800 --wait 8000 --frozen-at 2026-11-05T16:00:00"
   },
   "features/search-go-anywhere": {
-    "version": "0.27.1",
-    "recipe": "--scene 'palette-query&q=webhook&brand=1' --window 1280x800 --wait 8000"
+    "version": "0.40.1",
+    "recipe": "--scene 'palette-query&q=webhook&brand=1' --window 1280x800 --wait 8000 --frozen-at 2026-11-05T16:00:00"
   },
   "features/search-jump": {
-    "version": "0.27.1",
-    "recipe": "--scene 'search&view=jump&brand=1' --window 1280x800 --wait 8000"
+    "version": "0.40.1",
+    "recipe": "--scene 'search&view=jump&brand=1' --window 1280x800 --wait 8000 --frozen-at 2026-11-05T16:00:00"
   },
   "features/search-overlay": {
-    "version": "0.27.1",
-    "recipe": "--scene 'search&brand=1' --window 1280x800 --wait 8000"
+    "version": "0.40.1",
+    "recipe": "--scene 'search&brand=1' --window 1280x800 --wait 8000 --frozen-at 2026-11-05T16:00:00"
   },
   "features/security-backup-notice": {
-    "version": "0.33.0",
-    "recipe": "--scene 'changelog&brand=1' --click 0.27.0 --clip 545,70,720,260 --window 1280x800 --wait 8000"
+    "version": "0.40.1",
+    "recipe": "--scene 'changelog&brand=1' --click 0.40.0 --clip 362,74,906,184 --window 1280x800 --frozen-at 2026-11-05T16:00:00 --wait 10000"
   },
   "features/security-changelog-update": {
-    "version": "0.33.0",
-    "recipe": "--scene 'changelog&brand=1' --window 1280x800 --wait 8000"
+    "version": "0.40.1",
+    "recipe": "--scene 'changelog&brand=1' --window 1280x800 --wait 8000 --frozen-at 2026-11-05T16:00:00"
   },
   "features/security-export-import": {
-    "version": "0.33.0",
-    "recipe": "--scene 'settings-app&section=backup&brand=1' --window 1280x1050 --wait 8000"
+    "version": "0.40.1",
+    "recipe": "--scene 'settings-app&section=backup&brand=1' --window 1280x1050 --wait 8000 --frozen-at 2026-11-05T16:00:00"
   },
   "features/security-findings": {
-    "version": "0.33.0",
-    "recipe": "--scene 'brand-security-findings&brand=1' --window 1280x420 --wait 8000"
+    "version": "0.40.1",
+    "recipe": "--scene 'brand-security-findings&brand=1' --window 1280x420 --wait 8000 --frozen-at 2026-11-05T16:00:00"
   },
   "features/security-newer-data": {
-    "version": "0.33.0",
-    "recipe": "--scene 'features-newer-data&brand=1' --window 1280x700 --wait 8000"
+    "version": "0.40.1",
+    "recipe": "--scene 'features-newer-data&brand=1' --window 1280x700 --wait 8000 --frozen-at 2026-11-05T16:00:00"
   },
   "features/security-updates": {
-    "version": "0.33.0",
-    "recipe": "--scene 'update-card&brand=1' --window 1280x800 --clip 0,590,380,210 --wait 8000"
+    "version": "0.40.1",
+    "recipe": "--scene 'update-card&brand=1' --window 1280x800 --clip 0,590,380,210 --wait 8000 --frozen-at 2026-11-05T16:00:00"
   },
   "features/setup-about-you": {
-    "version": "0.33.0",
-    "recipe": "--scene 'settings-workspace&section=profile&brand=1' --window 1280x700 --wait 8000"
+    "version": "0.40.1",
+    "recipe": "--scene 'settings-workspace&section=profile&brand=1' --window 1280x700 --wait 8000 --frozen-at 2026-11-05T16:00:00"
   },
   "features/setup-agents": {
-    "version": "0.33.0",
-    "recipe": "--scene 'onboarding&step=agents&brand=1' --window 1280x780 --wait 8000"
+    "version": "0.40.1",
+    "recipe": "--scene 'onboarding&step=agents&brand=1' --window 1280x780 --wait 8000 --frozen-at 2026-11-05T16:00:00"
   },
   "features/setup-cli-update": {
-    "version": "0.33.0",
-    "recipe": "--scene 'settings-providers&provider=anthropic&cli=old&brand=1' --scroll '[aria-label=\"Account\"]' --window 1280x800 --wait 8000"
+    "version": "0.40.1",
+    "recipe": "--scene 'settings-providers&provider=anthropic&cli=old&brand=1' --scroll '[aria-label=\"Account\"]' --window 1280x800 --wait 8000 --frozen-at 2026-11-05T16:00:00"
   },
   "features/setup-home": {
-    "version": "0.33.0",
-    "recipe": "--scene 'onboarding-home&state=list&brand=1' --window 1280x600 --wait 8000"
+    "version": "0.40.1",
+    "recipe": "--scene 'onboarding-home&state=list&brand=1' --window 1280x600 --wait 8000 --frozen-at 2026-11-05T16:00:00"
   },
   "features/setup-integrations": {
-    "version": "0.33.0",
-    "recipe": "--scene 'settings-tools&tool=github&brand=1' --window 1280x800 --wait 8000"
+    "version": "0.40.1",
+    "recipe": "--scene 'settings-tools&tool=github&brand=1' --window 1280x800 --wait 8000 --frozen-at 2026-11-05T16:00:00"
   },
   "features/setup-permissions": {
-    "version": "0.33.0",
-    "recipe": "--scene 'settings-providers&provider=codex&brand=1' --window 1280x1100 --clip 517,583,749,268 --wait 8000"
+    "version": "0.40.1",
+    "recipe": "--scene 'settings-providers&provider=codex&brand=1' --click 'What works with' --hover nav --clip 180,749,986,276 --window 1280x1100 --frozen-at 2026-11-05T16:00:00 --wait 8000"
   },
   "features/setup-provider-page": {
-    "version": "0.33.0",
-    "recipe": "--scene 'settings-providers&provider=anthropic&brand=1' --window 1280x800 --wait 8000"
+    "version": "0.40.1",
+    "recipe": "--scene 'settings-providers&provider=anthropic&brand=1' --window 1280x800 --wait 8000 --frozen-at 2026-11-05T16:00:00"
   },
   "features/setup-welcome": {
-    "version": "0.33.0",
-    "recipe": "--scene 'onboarding&step=welcome&brand=1' --window 1280x600 --wait 8000"
+    "version": "0.40.1",
+    "recipe": "--scene 'onboarding&step=welcome&brand=1' --window 1280x600 --wait 8000 --frozen-at 2026-11-05T16:00:00"
   },
   "features/setup-workspace": {
-    "version": "0.33.0",
-    "recipe": "--scene 'onboarding&step=workspace&brand=1' --window 1280x860 --wait 8000"
+    "version": "0.40.1",
+    "recipe": "--scene 'onboarding&step=workspace&brand=1' --window 1280x860 --wait 8000 --frozen-at 2026-11-05T16:00:00"
   },
   "features/storage-worktrees": {
-    "version": "0.27.1",
-    "recipe": "--scene 'settings-app&section=storage&brand=1' --window 1280x800 --wait 8000"
+    "version": "0.40.1",
+    "recipe": "--scene 'settings-app&section=storage&brand=1' --window 1280x800 --wait 8000 --frozen-at 2026-11-05T16:00:00"
   },
   "features/support-report-bug": {
-    "version": "0.27.1",
-    "recipe": "--scene 'r4-report-bug&brand=1' --window 1280x800 --clip 225,560,600,235 --wait 8000"
+    "version": "0.40.1",
+    "recipe": "--scene 'r4-report-bug&brand=1' --window 1280x800 --clip 52,516,574,238 --frozen-at 2026-11-05T16:00:00 --wait 8000"
   },
   "features/switch-notifications": {
-    "version": "0.33.0",
-    "recipe": "--scene 'notifications&brand=1' --click 'Needs action' --window 1280x800 --wait 8000"
+    "version": "0.40.1",
+    "recipe": "--scene 'notifications&brand=1' --window 1280x800 --frozen-at 2026-11-05T16:00:00 --wait 30000"
   },
   "features/switch-now-chip": {
-    "version": "0.33.0",
-    "recipe": "--scene 'board-shell&brand=1' --click 2 --window 1500x600 --wait 8000"
+    "version": "0.40.1",
+    "recipe": "--scene 'board-shell&brand=1' --click 2 --window 1500x600 --wait 8000 --frozen-at 2026-11-05T16:00:00"
   },
   "features/workflow-hints": {
-    "version": "0.27.1",
-    "recipe": "--scene 'workflow-run-step-question&brand=1' --clip 300,600,930,190 --window 1280x800 --wait 8000"
+    "version": "0.40.1",
+    "recipe": "--scene 'workflow-run-step-question&brand=1' --clip 148,582,1000,198 --window 1280x800 --frozen-at 2026-11-05T16:00:00 --wait 8000"
   },
   "features/workflow-question-agent": {
-    "version": "0.31.12",
-    "recipe": "--scene 'r4-questions-drawer&brand=1' --click 'More,Let an agent decide' --window 1500x800 --wait 8000"
+    "version": "0.40.1",
+    "recipe": "--scene 'r4-questions-drawer&brand=1' --click 'More,Let an agent decide' --window 1500x800 --wait 8000 --frozen-at 2026-11-05T16:00:00"
   },
   "features/workflow-questions": {
-    "version": "0.31.12",
-    "recipe": "--scene 'r4-questions-drawer&brand=1' --window 1500x800 --wait 8000"
+    "version": "0.40.1",
+    "recipe": "--scene 'r4-questions-drawer&brand=1' --window 1500x800 --wait 8000 --frozen-at 2026-11-05T16:00:00"
   },
   "features/workflow-recap": {
-    "version": "0.31.12",
-    "recipe": "--scene 'c09-orch-done&brand=1' --window 1280x900 --wait 8000"
+    "version": "0.40.1",
+    "recipe": "--scene 'c09-orch-done&brand=1' --window 1280x900 --wait 8000 --frozen-at 2026-11-05T16:00:00"
   },
   "features/workflow-run": {
-    "version": "0.31.12",
+    "version": "0.40.1",
     "recipe": "--scene 'workflow-run&run=finished&brand=1' --window 1500x1000 --scale 2 --frozen-at 2026-11-05T16:00:00 --wait 30000"
   },
   "features/workflow-studio-steps": {
-    "version": "0.27.1",
-    "recipe": "--scene 'workflow-studio&brand=1' --click 'Saved steps' --scroll '[data-studio-overlay]' --window 1280x580 --wait 8000"
+    "version": "0.40.1",
+    "recipe": "--scene 'workflow-studio&brand=1' --click 'Saved steps' --scroll '[data-studio-overlay]' --window 1280x580 --wait 8000 --frozen-at 2026-11-05T16:00:00"
   },
   "features/workspace-branches": {
-    "version": "0.27.1",
-    "recipe": "--scene 'mount-mismatch&brand=1' --selector section --pad 24 --window 1100x900 --wait 8000"
+    "version": "0.40.1",
+    "recipe": "--scene 'mount-mismatch&brand=1' --selector section --pad 24 --window 1100x900 --wait 8000 --frozen-at 2026-11-05T16:00:00"
   },
   "features/workspace-locate": {
-    "version": "0.27.1",
-    "recipe": "--scene 'forms&form=locate&brand=1' --window 1280x800 --clip 289,49,942,298 --wait 8000"
+    "version": "0.40.1",
+    "recipe": "--scene 'forms&form=locate&brand=1' --window 1280x800 --clip 146,164,984,284 --frozen-at 2026-11-05T16:00:00 --wait 8000"
   },
   "features/workspace-repo-status": {
-    "version": "0.27.1",
-    "recipe": "--scene 'r4-repos-mix&brand=1' --window 1280x700 --clip 0,0,660,360 --wait 8000"
+    "version": "0.40.1",
+    "recipe": "--scene 'r4-repos-mix&brand=1' --window 1280x700 --clip 0,0,660,360 --wait 8000 --frozen-at 2026-11-05T16:00:00"
   },
   "features/workspace-several-projects": {
-    "version": "0.27.1",
-    "recipe": "--scene 'overview-projects-many&brand=1' --window 1280x700 --wait 8000"
+    "version": "0.40.1",
+    "recipe": "--scene 'overview-projects-many&brand=1' --window 1280x888 --frozen-at 2026-11-05T16:00:00 --wait 8000"
   },
   "features/workspace-starred": {
-    "version": "0.27.1",
-    "recipe": "--scene 'workspace-projects&brand=1' --window 1100x800 --wait 8000"
+    "version": "0.40.1",
+    "recipe": "--scene 'workspace-projects&brand=1' --window 1100x800 --wait 8000 --frozen-at 2026-11-05T16:00:00"
   },
   "features/workspace-worktrees": {
-    "version": "0.27.1",
-    "recipe": "--scene 'mounts&brand=1' --window 1280x700 --wait 8000"
+    "version": "0.40.1",
+    "recipe": "--scene 'mounts&brand=1' --window 1280x900 --frozen-at 2026-11-05T16:00:00 --wait 8000"
   },
   "readme/readme-hero": {
-    "version": "0.33.0",
+    "version": "0.40.1",
     "recipe": "pnpm readme:hero"
   }
 }

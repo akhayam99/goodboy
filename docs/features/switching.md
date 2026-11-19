@@ -33,10 +33,10 @@ Know what runs from any screen. The chip in the top bar counts the sessions and 
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/switch-now-chip-dark.webp">
-  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/switch-now-chip-light.webp" alt="The top bar chip 2 sessions need you, 2 running opened into the panel Now in Harborline over the Board: Needs you 2 with Warn merchants before a payout hold and Fix the rounding drift in the settlement export, Running 2 with Speed up the payout export for large merchants and Nightly reconciliation before the Monday close, and Open Monitoring">
+  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/switch-now-chip-light.webp" alt="The top bar chip 2 running opened into the panel Now in Harborline over the Board: Running 2 with Speed up the payout export for large merchants and Nightly reconciliation before the Monday close, each with agent running, and Open Monitoring, while Board in the places rail carries the amber 2 of the sessions that need you">
 </picture>
 
-<sub>Screenshot from Goodboy 0.33.0</sub>
+<sub>Screenshot from Goodboy 0.40.1</sub>
 
 ### Notifications
 
@@ -46,10 +46,10 @@ Leave agents working and look away. While no Goodboy window is in front, the app
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/switch-notifications-dark.webp">
-  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/switch-notifications-light.webp" alt="The Notifications page for Harborline filtered on Needs action: Session reached 80% of its limit, Handoff degraded and 1 session folder left on disk, with a More notification actions menu holding Mark all read and Delete all, and a left column of views, severity, source and workspace filters">
+  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/switch-notifications-light.webp" alt="The Notifications page for Harborline on All, 6 notifications and 4 unread: Pull request opened, Session reached 80% of its cap, Handoff degraded, 1 session folder left on disk, Branch moved outside Goodboy and Codex connected, with Mark all read and a More menu, and a left column of views, severity and source filters">
 </picture>
 
-<sub>Screenshot from Goodboy 0.33.0</sub>
+<sub>Screenshot from Goodboy 0.40.1</sub>
 
 ### Open in new window
 

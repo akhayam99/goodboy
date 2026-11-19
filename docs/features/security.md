@@ -11,7 +11,7 @@ Catch a token pasted into a saved script before it travels. Each time you save a
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/security-findings-light.webp" alt="Settings › Permissions › Secrets in saved scripts: 1 saved script looks like it contains a token, seed-sandbox in payments-api, Token ending 9f2c, with Details and the Not a secret button">
 </picture>
 
-<sub>Screenshot from Goodboy 0.33.0</sub>
+<sub>Screenshot from Goodboy 0.40.1</sub>
 
 ### Findings kept out of the export
 
@@ -26,7 +26,7 @@ Move your setup to another Mac, or keep a copy. **Backup** exports in groups suc
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/security-export-import-light.webp" alt="Settings › App › Backup › Export: checkboxes for Workspaces, Projects, Folder paths (off), Your profile, Workflows you made, Workflows the orchestrator wrote (off), Saved scripts, Permission rules, Limits, Linked integrations and App preferences, a Never included box listing API keys and tokens, sign-ins, sessions, artifacts, worktree folders, usage history and notifications, and the Export button">
 </picture>
 
-<sub>Screenshot from Goodboy 0.33.0</sub>
+<sub>Screenshot from Goodboy 0.40.1</sub>
 
 ### Backup before a data update
 
@@ -34,10 +34,10 @@ Update without worrying about your data. Before an update changes it, Goodboy ma
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/security-backup-notice-dark.webp">
-  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/security-backup-notice-light.webp" alt="The changelog entry for Goodboy 0.27.0, Installed, 22 features and 10 fixes, with the notice: This version updates your data in one direction. To go back to 0.26, restore the backup Goodboy made before updating">
+  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/security-backup-notice-light.webp" alt="The changelog entry for Goodboy 0.40.0, 3 new, 5 improved and 2 fixed, Changes your data, with the notice: This version updates your data in one direction. To go back to 0.39, restore the backup Goodboy made before updating">
 </picture>
 
-<sub>Screenshot from Goodboy 0.33.0</sub>
+<sub>Screenshot from Goodboy 0.40.1</sub>
 
 ### Newer data guard
 
@@ -50,7 +50,7 @@ When the database cannot be opened at all, the start screen offers **Retry** fir
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/security-newer-data-light.webp" alt="The screen an older Goodboy shows on newer data: This database was upgraded by a newer Goodboy, with the buttons Restore backup and Quit">
 </picture>
 
-<sub>Screenshot from Goodboy 0.33.0</sub>
+<sub>Screenshot from Goodboy 0.40.1</sub>
 
 ### Updates
 
@@ -58,10 +58,10 @@ Get updates in the background, then see what is new. When one is ready, the vers
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/security-updates-dark.webp">
-  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/security-updates-light.webp" width="460" alt="The 0.24.1 ready chip at the foot of the sidebar with its card open: 0.24.1 is ready, and the buttons Later, What's new and Restart now">
+  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/security-updates-light.webp" width="460" alt="The Update button at the foot of the places rail with its card open: Goodboy 0.24.1 is ready, Nothing is running, What's new, and the buttons Later and Restart now">
 </picture>
 
-<sub>Screenshot from Goodboy 0.33.0</sub>
+<sub>Screenshot from Goodboy 0.40.1</sub>
 
 ### Changelog in the app
 
@@ -69,10 +69,10 @@ Read release notes inside the app, in the **What's new** tab of Help, searchable
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/security-changelog-update-dark.webp">
-  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/security-changelog-update-light.webp" alt="The Changelog with a search box and the releases from 0.27.0 down to 0.22 in a list, 0.27.0 marked installed, and Goodboy 0.27.0 open on the right with its notice about the data update and the new features, each linked to the screen it touched">
+  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/security-changelog-update-light.webp" alt="The Changelog with a search box and the releases from 0.40.1 down to 0.36 in a list, 0.40.1 marked Installed, and Goodboy 0.40.1 open on the right with its improvement and its fixes, each tagged with the area it touched">
 </picture>
 
-<sub>Screenshot from Goodboy 0.33.0</sub>
+<sub>Screenshot from Goodboy 0.40.1</sub>
 
 ### Before and after pictures
 

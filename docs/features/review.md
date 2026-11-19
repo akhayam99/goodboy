@@ -8,10 +8,10 @@ Turn review comments into commits without writing the fixes yourself. Check the 
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/review-resolve-dark.webp">
-  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/review-resolve-light.webp" alt="The Comments tab of the Branch page for PR #318 with the buttons Fix 1 comment, Push 1 fix and Merge, the strip Fixing 4 comments with Stop and View transcript, and the comments grouped as Needs you 4, Working and Ready to push, each with its state at the right">
+  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/review-resolve-light.webp" alt="The Comments tab of the Branch page for PR #318 with Open 8 and Resolved 1, the Fixing 4 of 4 chip and the Answer button, and the comments grouped as Needs you 5, Working and Done, each with its state at the right">
 </picture>
 
-<sub>Screenshot from Goodboy 0.27.1</sub>
+<sub>Screenshot from Goodboy 0.40.1</sub>
 
 ### Bulk actions
 
@@ -45,10 +45,10 @@ When a run stops or fails, its comments are open again with **The run stopped. N
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/review-comment-states-dark.webp">
-  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/review-comment-states-light.webp" width="532" alt="The comment list of the Branch page grouped as Needs you 5, Working 1, Ready to push 1 and Open, each row with its author, age, file and line, and its state at the right: Question for you, Push failed or Fix ready">
+  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/review-comment-states-light.webp" width="532" alt="The comment list of the Branch page grouped as Needs you 6, Working, Done and Left open on GitHub, each row with its author, age, file and line, and its state at the right: Question, Push failed, Fix ready or Open">
 </picture>
 
-<sub>Screenshot from Goodboy 0.27.1</sub>
+<sub>Screenshot from Goodboy 0.40.1</sub>
 
 ### Run from a comment
 
@@ -108,10 +108,10 @@ The page says so before you push if the worktree has no dependencies installed o
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/review-push-confirm-dark.webp">
-  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/review-push-confirm-light.webp" alt="The header of the Branch page with its Fix 1 comment, Push 1 fix and Merge buttons, and under it a confirm: Push 2 commits to hl/fix-duplicate-credit, 1 fix in 1 new commit, 1 reply, 1 thread resolved on GitHub, 1 comment needs you first, with Cancel and Push buttons">
+  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/review-push-confirm-light.webp" alt="The Comments tab of the Branch page with the Push confirm open above its header: Push 2 commits to hl/fix-duplicate-credit?, 1 fix in 1 new commit, 1 reply, 1 thread resolved on GitHub, the two commits, 1 comment needs you first, with Cancel and Push buttons, next to the comment the fix answers">
 </picture>
 
-<sub>Screenshot from Goodboy 0.27.1</sub>
+<sub>Screenshot from Goodboy 0.40.1</sub>
 
 ### Review replies in your voice
 
@@ -145,10 +145,10 @@ A branch with no pull request gets its own page: the branch name, whether it is 
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/review-pr-page-dark.webp">
-  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/review-pr-page-light.webp" alt="The Pull request tab of the Branch page for hl/fix-duplicate-credit, between the tabs Pull request, Comments, Changes, Commits and Checks 1, with #318 into main by nadia-p and the Fix checks button, the cards Checks 1 failing, Review Changes requested, Merge Blocked by checks and Branch 3 behind main, the reviewers, the author, the linked issue, the description with its Edit button and the activity down to Checks 1 failing and 9 comments on files">
+  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/review-pr-page-light.webp" alt="The Conversation tab of the Branch page for hl/fix-duplicate-credit, between the tabs Conversation, Changes, Commits, Checks 1, Runs and Comments 9, with #318 into main by nadia-p and the Fix checks button, the Not ready to merge card listing 1 check failing, Changes requested by omar-t and 3 commits behind main, the reviewers, the checks, the author, the linked issue, the description with its Edit button and the start of the activity">
 </picture>
 
-<sub>Screenshot from Goodboy 0.31.12</sub>
+<sub>Screenshot from Goodboy 0.40.1</sub>
 
 ### Work behind a branch
 
@@ -172,10 +172,10 @@ Read the branch against its base in **Changes**, unified or split. The changed f
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/review-diff-dark.webp">
-  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/review-diff-light.webp" alt="The Changes tab of the Branch page for hl/fix-duplicate-credit with a diff of ledgerClient.ts and postCredit.ts, each file header with Viewed and Comment, and on the right the file list with Viewed 0 of 6 and Next, a filter box and the changed files in a tree with their added and removed lines">
+  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/review-diff-light.webp" alt="The Changes tab of the Branch page for hl/fix-duplicate-credit with a diff of ledgerClient.ts and postCredit.ts, each file header with Viewed and Comment, Viewed 0 of 6 and Next above the diff, and on the left a filter box and the changed files in a tree with their added and removed lines">
 </picture>
 
-<sub>Screenshot from Goodboy 0.31.12</sub>
+<sub>Screenshot from Goodboy 0.40.1</sub>
 
 Switch the list from **Changed** to **All files** to see the whole worktree in the same tree. Changed files are marked. An unchanged file opens in place, with **Back to the changes**, and is still open on that project after a window reload. The project and branch chip at the start of the toolbar picks another branch.
 
@@ -188,7 +188,7 @@ Review someone else's pull request from its diff. Click a line number to leave a
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/review-write-light.webp" alt="The Changes diff with the Review panel open: Line comments 1 for src/webhooks/applyWebhook.ts:26, a Verdict of Comment, Approve or Request changes, an optional Summary, GitHub shows it as one review, and a Submit comments button" width="800">
 </picture>
 
-<sub>Screenshot from Goodboy 0.27.1</sub>
+<sub>Screenshot from Goodboy 0.40.1</sub>
 
 **Also in this area**
 

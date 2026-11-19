@@ -47,7 +47,7 @@ Reuse steps across workflows. The built-in steps are read-only, and **Save a cop
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workflow-studio-steps-light.webp" alt="The Workflows studio on the Saved steps tab: the 7 built-in steps Scout, Investigate, Plan, Implement, Test, Review and Update docs, each with its role, a short description and the model setting Auto, and an empty This workspace list with a New step button">
 </picture>
 
-<sub>Screenshot from Goodboy 0.27.1</sub>
+<sub>Screenshot from Goodboy 0.40.1</sub>
 
 ### Model per step
 
@@ -97,10 +97,10 @@ While the session's workflows load, the run page draws its goal, its facts and t
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workflow-run-dark.webp">
-  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workflow-run-light.webp" alt="The Runs page of a finished run, Duplicate credit fix, writing to payments-api on hl/fix-duplicate-credit, Done with 5 steps done, three scouts under step 1, a planner, two implementers and a tester, the hints read at step 1 and step 2, two queued hints with Read 2 queued, the summary and the Create report and Create wireframe buttons">
+  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workflow-run-light.webp" alt="The Runs page of a finished run, Duplicate credit fix, writing to payments-api on hl/fix-duplicate-credit, Done with 5 steps done, three scouts under step 1, a planner, two implementers and a tester, the hints read at step 1 and step 2, two hints queued for the next decision, the summary and the Create report and Create wireframe buttons">
 </picture>
 
-<sub>Screenshot from Goodboy 0.31.12</sub>
+<sub>Screenshot from Goodboy 0.40.1</sub>
 
 Runs opens on your runs. **New** in the head starts the next one, and **Start a run** from ⌘K opens the field above the list, where **Esc** closes it. With no run yet the field is the page.
 
@@ -124,10 +124,10 @@ Steer a run while it goes with a markdown hint, images included. A run that only
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workflow-hints-dark.webp">
-  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workflow-hints-light.webp" alt="The orchestrator hint box of a run: two queued hints, each with Remove, above the Hint the orchestrator box with its model GPT-5.6 Sol, High and pinned">
+  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workflow-hints-light.webp" alt="The foot of a run: step 5 Tester, one hint queued for the next decision with Remove, above the Hint the orchestrator box with its model GPT-5.6 Sol, High and pinned">
 </picture>
 
-<sub>Screenshot from Goodboy 0.27.1</sub>
+<sub>Screenshot from Goodboy 0.40.1</sub>
 
 ### Why each step, and the run recap
 
@@ -138,7 +138,7 @@ See why each step was picked. A short **Recap** says what is done and what is le
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workflow-recap-light.webp" alt="The page of a finished orchestrated run: its goal with Done, 4 steps done and $1.21 spent, four steps with the hint read at step 3 and step 4, the closing summary and a Recap with Done and Left lists, then Create report and Create wireframe above a Continue with a hint box">
 </picture>
 
-<sub>Screenshot from Goodboy 0.31.12</sub>
+<sub>Screenshot from Goodboy 0.40.1</sub>
 
 ### Step handoff summary
 
@@ -153,7 +153,7 @@ Each question arrives as one card with whether it is **Blocking**, and numbered 
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workflow-questions-light.webp" alt="The Questions page of a session: Needs you 3 and Answered 4 as rows with the agent and the age, and the question Which queue should the delivery retries run on? open in the drawer with its file and the answers Dedicated retry queue (Recommended), Shared jobs queue, Retry in process and Something else, plus Skip and the filled Answer button">
 </picture>
 
-<sub>Screenshot from Goodboy 0.31.12</sub>
+<sub>Screenshot from Goodboy 0.40.1</sub>
 
 ### Let an agent decide
 
@@ -164,7 +164,7 @@ Hand a question to another agent with a hint and a model from **Let an agent dec
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workflow-question-agent-light.webp" alt="The Questions page of a session with Which queue should the delivery retries run on? open in the drawer on Let an agent decide: An agent decides with GPT-5.6 Sol, a hints box, Cancel, Skip and Send to agent">
 </picture>
 
-<sub>Screenshot from Goodboy 0.31.12</sub>
+<sub>Screenshot from Goodboy 0.40.1</sub>
 
 ### Import workflows
 

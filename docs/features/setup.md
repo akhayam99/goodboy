@@ -8,10 +8,10 @@ Three short steps take you from install to a first agent reading your code. The 
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/setup-welcome-dark.webp">
-  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/setup-welcome-light.webp" alt="The Welcome to Goodboy screen: the Goodboy tile above the line Goodboy runs coding agents side by side on your own repositories, one session for each goal, Found Claude and Codex on this Mac, and the steps Agents, Workspace and First session with Set up later along the top">
+  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/setup-welcome-light.webp" alt="The first setup screen, Welcome to Goodboy: the line Goodboy runs coding agents side by side on your own repositories, one session for each goal, the agents found on this Mac with Claude Ready and Codex found, and the steps Agents, Workspace and First session with Set up later along the top">
 </picture>
 
-<sub>Screenshot from Goodboy 0.33.0</sub>
+<sub>Screenshot from Goodboy 0.40.1</sub>
 
 ### Your agents
 
@@ -19,10 +19,10 @@ Goodboy runs the coding agents already on this Mac, and one ready agent is enoug
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/setup-agents-dark.webp">
-  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/setup-agents-light.webp" alt="The Your agents step of setup: Claude Ready and marked Default with Claude Code 2.1.280 and its account, Codex Not signed in with Sign in, Cursor and Gemini Not installed with Install and Set up, the Use an API key instead row, the line 1 ready, checks again when you come back, and Back and Continue">
+  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/setup-agents-light.webp" alt="The Agents step of setup: Claude Ready and marked Default with Claude Code 2.1.280 and its account, Codex Not signed in with Sign in, Cursor and Copilot Not installed with Install, Gemini Not installed with Set up, the Use an API key instead row, the line 1 ready, checks again when you come back, and Continue">
 </picture>
 
-<sub>Screenshot from Goodboy 0.33.0</sub>
+<sub>Screenshot from Goodboy 0.40.1</sub>
 
 ### Your first workspace
 
@@ -33,7 +33,7 @@ A workspace is what you work on: one repository, or a folder that holds several.
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/setup-workspace-light.webp" alt="The Workspace step of setup, Your first workspace: the line A workspace is what you work on, one repository or a folder that holds several, a drop area reading Drop a folder here, the link Start from scratch, and Back and Choose folder">
 </picture>
 
-<sub>Screenshot from Goodboy 0.33.0</sub>
+<sub>Screenshot from Goodboy 0.40.1</sub>
 
 ### Home
 
@@ -44,7 +44,7 @@ A window with no workspace open shows Home, which lists your workspaces with the
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/setup-home-light.webp" alt="Home with the Goodboy tile and its version, the Workspaces list with Harborline 3 projects, Northwind 2 projects, Acme web 1 project and Cascadia 4 projects, each with where it lives and when it was last opened, a New workspace button, and the switch Reopen the last workspace on launch">
 </picture>
 
-<sub>Screenshot from Goodboy 0.33.0</sub>
+<sub>Screenshot from Goodboy 0.40.1</sub>
 
 ### One page per provider
 
@@ -52,10 +52,10 @@ Each provider has its own page in **Connections** with its usage first, then the
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/setup-provider-page-dark.webp">
-  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/setup-provider-page-light.webp" alt="The Claude page in Settings › Providers: a warning that Claude is about to run out, Usage with a 5-hour window at 85% used and a Weekly bar at 48% used, Models in the picker showing Haiku, Sonnet, Opus and Fable, and Permissions with Claude">
+  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/setup-provider-page-light.webp" alt="The Claude page in Connect: a warning that Claude is about to run out, Usage with a 5-hour window at 85% used and a Weekly bar at 48% used, Models in the picker showing Haiku, Sonnet, Opus and Fable, and the Account group">
 </picture>
 
-<sub>Screenshot from Goodboy 0.33.0</sub>
+<sub>Screenshot from Goodboy 0.40.1</sub>
 
 ### Update the provider CLI
 
@@ -63,10 +63,10 @@ When a model needs a newer provider CLI, the provider page says so and one butto
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/setup-cli-update-dark.webp">
-  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/setup-cli-update-light.webp" alt="The Account group at the foot of the Claude page: the signed in account with Claude CLI 2.1.260, and a banner reading Opus 5.5 and Sonnet 5.5 need a newer Claude CLI, You have Claude CLI 2.1.260, Update to 2.1.284 or newer, with an Update Claude CLI button">
+  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/setup-cli-update-light.webp" alt="The Account group at the foot of the Claude page: the signed in account with Claude CLI 2.1.260, and a banner reading Opus 5.5, Sonnet 5.5 and Haiku 5.5 need a newer Claude CLI, You have Claude CLI 2.1.260, Update to 2.1.293 or newer, with an Update Claude CLI button">
 </picture>
 
-<sub>Screenshot from Goodboy 0.33.0</sub>
+<sub>Screenshot from Goodboy 0.40.1</sub>
 
 ### Permissions for each provider
 
@@ -74,10 +74,10 @@ See which permission modes a provider can honor before you pick one, from **Read
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/setup-permissions-dark.webp">
-  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/setup-permissions-light.webp" alt="The Permissions with Codex table on a provider page: Read only Works, Ask first Not available, Edits allowed Partly, Full access Partly, Rules Not followed and Role limits Asked, not locked, each with its reason in words">
+  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/setup-permissions-light.webp" alt="The What works with Codex table on a provider page, 1 of 6 work fully: Read only Works, Ask first Not available, Edits allowed Partly, Full access Partly, Rules Not followed and Role limits Asked, not locked, each with its reason in words">
 </picture>
 
-<sub>Screenshot from Goodboy 0.33.0</sub>
+<sub>Screenshot from Goodboy 0.40.1</sub>
 
 ### Integrations
 
@@ -85,10 +85,10 @@ Connect GitHub, GitLab, Bitbucket, Linear, Jira, Sentry and Slack from **Connect
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/setup-integrations-dark.webp">
-  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/setup-integrations-light.webp" alt="Settings › Integrations: GitHub, GitLab, Bitbucket, Linear, Jira, Sentry and Slack in the left list with a status dot each, and the GitHub page open showing the all-workspaces account connected as harborline-bot with a personal API key, This workspace and Open in Tasks">
+  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/setup-integrations-light.webp" alt="The GitHub page in Connect: what GitHub does in Harborline (Pull requests, Reviews waiting on you and Issues in Tasks), the all-workspaces account connected as harborline-bot with a personal API key, and Use a different key for Harborline">
 </picture>
 
-<sub>Screenshot from Goodboy 0.33.0</sub>
+<sub>Screenshot from Goodboy 0.40.1</sub>
 
 ### About you
 
@@ -99,7 +99,7 @@ Tell agents once who you are and how you like to work, in four short fields. **S
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/setup-about-you-light.webp" alt="The About you page of workspace settings with the Profile card: Your job (Tech Lead, Backend Engineer), About your work, How agents should work with you, Explain more when it touches (Rust, Database migrations, Idempotency), the Explanations count with Open and a See who reads what link">
 </picture>
 
-<sub>Screenshot from Goodboy 0.33.0</sub>
+<sub>Screenshot from Goodboy 0.40.1</sub>
 
 ### Settings
 
