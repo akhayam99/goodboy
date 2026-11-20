@@ -275,7 +275,7 @@ describe('ChatRoom', () => {
     store.projects = [];
     renderRoom({ chat: null });
 
-    expect(screen.getByText('Add a folder so answers can read its code.')).toBeDefined();
+    expect(screen.getByText('Add a project so answers can read its code.')).toBeDefined();
     expect(screen.getByRole('button', { name: 'Add project' })).toBeDefined();
     expect(screen.queryByRole('list', { name: 'Suggested questions' })).toBeNull();
   });
