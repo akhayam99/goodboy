@@ -197,7 +197,7 @@ const integrationDetailOf = ({ measured }: MountRiskParams): string => {
 };
 
 const unmergedVerb = ({ count }: { readonly count: number }): string =>
-  count === 1 ? 'is' : 'are';
+  count === 1 ? "isn't" : "aren't";
 
 const integrationLine = ({ measured }: MeasuredListParams): string | null => {
   const present = presentOf({ measured });
@@ -210,12 +210,12 @@ const integrationLine = ({ measured }: MeasuredListParams): string | null => {
     const base = baseName({ base: baseOf({ measured: only }) });
     return unmerged.length === 0
       ? `${only.branch} is merged into ${base}.`
-      : `${only.branch} is not merged into ${base} yet.`;
+      : `${only.branch} isn't merged into ${base} yet.`;
   }
   if (unmerged.length === 0) {
     return 'Every branch is merged into its base branch.';
   }
-  return `${countLabel({ count: unmerged.length, singular: 'branch' })} ${unmergedVerb({ count: unmerged.length })} not merged into the base branch yet.`;
+  return `${countLabel({ count: unmerged.length, singular: 'branch' })} ${unmergedVerb({ count: unmerged.length })} merged into the base branch yet.`;
 };
 
 const integrationDetails = ({ measured }: MeasuredListParams): DetachDetails => {
@@ -347,7 +347,7 @@ const safeLines = ({
           'The branch stays in the repository.',
         ]
       : [
-          `${head}, and ${only.branch} is not merged into ${base} yet.`,
+          `${head}, and ${only.branch} isn't merged into ${base} yet.`,
           'The branch and its commits stay in the repository.',
         ];
   }
@@ -358,7 +358,7 @@ const safeLines = ({
         'The branches stay in the repository.',
       ]
     : [
-        `${head}, and ${countLabel({ count: unmerged.length, singular: 'branch' })} ${unmergedVerb({ count: unmerged.length })} not merged into the base branch yet.`,
+        `${head}, and ${countLabel({ count: unmerged.length, singular: 'branch' })} ${unmergedVerb({ count: unmerged.length })} merged into the base branch yet.`,
         'The branches and their commits stay in the repository.',
       ];
 };
@@ -388,9 +388,9 @@ const unavailableLine = ({
 }): string => {
   const only = unread[0];
   if (total === 1 && only !== undefined) {
-    return `The safety of ${branchLabelFor({ assessed: null, fallback: only.branch })} at ${only.worktreePath} could not be verified; removing it will keep the directory.`;
+    return `Couldn't check that ${branchLabelFor({ assessed: null, fallback: only.branch })} at ${only.worktreePath} is safe to remove. Removing it keeps the directory.`;
   }
-  return `The safety of ${unread.length} of ${total} worktrees in ${projectName} could not be verified; removing it will keep every directory.`;
+  return `Couldn't check that ${unread.length} of ${total} worktrees in ${projectName} are safe to remove. Removing them keeps every directory.`;
 };
 
 export const buildDetachPlan = ({
@@ -536,7 +536,7 @@ export const detachOutcomeMessage = ({
     case 'kept':
       return `Removed ${projectName} from the session. Files remain at ${worktreePath}.`;
     case 'failed':
-      return 'Could not finish removing the worktree. It stays in the session; check again before retrying.';
+      return "Couldn't finish removing the worktree. It stays in the session. Check again before you retry.";
   }
 };
 
@@ -561,10 +561,10 @@ export const detachFailureMessage = ({ outcomes }: DetachFailureMessageParams): 
   const lead = settledCount > 0 ? `Removed ${settledCount} of ${outcomes.length} worktrees. ` : '';
   const target =
     failed.length === 1
-      ? `Could not remove ${first.worktreePath}${reason}.`
-      : `Could not remove ${failed.length} worktrees, starting with ${first.worktreePath}${reason}.`;
+      ? `Couldn't remove ${first.worktreePath}${reason}.`
+      : `Couldn't remove ${failed.length} worktrees, starting with ${first.worktreePath}${reason}.`;
   const retained = failed.length === 1 ? 'It stays in the session' : 'They stay in the session';
-  return `${lead}${target} ${retained}; check again before retrying.`;
+  return `${lead}${target} ${retained}. Check again before you retry.`;
 };
 
 const OUTCOME_RANK: Record<DetachOutcomeKind, number> = {

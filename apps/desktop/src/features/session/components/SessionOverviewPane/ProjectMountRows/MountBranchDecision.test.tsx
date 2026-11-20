@@ -181,7 +181,7 @@ describe('MountBranchDecision', () => {
   it('puts a detached mount back on its recorded branch', async () => {
     renderDecision({ next: { state: 'detached', observedBranch: null } });
 
-    expect(screen.getByText('ledger-core is not on a branch')).toBeDefined();
+    expect(screen.getByText("ledger-core isn't on a branch")).toBeDefined();
     expect(
       sentenceOf({ text: 'Expected ak/part-one, found a commit with no branch' }),
     ).toBeDefined();

@@ -16,7 +16,6 @@
     "features/providers/components/ProviderConnect/guides.ts": 20,
     "features/providers/components/ProviderStudio/ProviderCredentialsSection.tsx": 1,
     "features/providers/components/ProviderStudio/ProviderPage/UsageGroup/ResetCreditRow/ResetOutcomeNotice.tsx": 1,
-    "features/session/components/ContextDrawer/ContextLoadFailure.tsx": 1,
     "features/session/components/SessionOverviewPane/ProjectMountRows/RebaseStoppedNotice.tsx": 1,
     "features/session/components/SessionWorkspace/parts/AgentOverlay.tsx": 1,
     "features/settings/components/SettingsStudio/AppResetSection.tsx": 1,

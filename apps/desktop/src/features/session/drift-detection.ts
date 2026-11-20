@@ -1,4 +1,5 @@
-import { kindWritesFiles, type AgentKind } from './agent-kind';
+import { countNoun } from '../../shared/utils/countNoun';
+import { AGENT_KIND_META, kindWritesFiles, type AgentKind } from './agent-kind';
 
 type DriftSignal =
   | 'plan-marker-from-non-planner'
@@ -30,13 +31,14 @@ const DOC_EXTENSIONS = /\.(?:md|mdx|txt|rst)$/;
 
 export const detectDrift = (input: DriftDetectionInput): ReadonlyArray<DriftViolation> => {
   const { agentKind, assistantText, filesEdited } = input;
+  const noun = AGENT_KIND_META[agentKind].noun;
   const violations: DriftViolation[] = [];
 
   if (!PLAN_MARKER_EXEMPT.has(agentKind) && PLAN_MARKER_RE.test(assistantText)) {
     violations.push({
       kind: agentKind,
       signal: 'plan-marker-from-non-planner',
-      detail: `${agentKind} agent emitted a <<plan>> marker. only planner agents should produce plans.`,
+      detail: `The ${noun} wrote a plan. Only a Planner writes plans.`,
     });
   }
 
@@ -50,7 +52,7 @@ export const detectDrift = (input: DriftDetectionInput): ReadonlyArray<DriftViol
       violations.push({
         kind: agentKind,
         signal: 'file-edit-from-readonly-kind',
-        detail: `${agentKind} agent edited ${nonDocFiles.length} file(s). this role should not modify files.`,
+        detail: `The ${noun} edited ${countNoun({ count: nonDocFiles.length, one: 'file' })}. This role doesn't change files.`,
       });
     }
   }
@@ -59,7 +61,7 @@ export const detectDrift = (input: DriftDetectionInput): ReadonlyArray<DriftViol
     violations.push({
       kind: agentKind,
       signal: 'impl-output-from-readonly-kind',
-      detail: `${agentKind} agent produced implementation-like diff output. consider starting an implementer.`,
+      detail: `The ${noun} wrote code in its answer. An Implementer changes code.`,
     });
   }
 

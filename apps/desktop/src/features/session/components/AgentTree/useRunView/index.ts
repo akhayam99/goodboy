@@ -14,6 +14,7 @@ import {
 import { stepNumberOf } from '../../PresetRun/stepNumberOf';
 import { useSessionAgentTree } from '../useSessionAgentTree';
 import { useAgentMetrics } from '../../../hooks/useAgentMetrics';
+import { runCostUsdOf } from '../../../runCostUsdOf';
 import { workflowKindName } from '../../../../workflows/workflowKindName';
 import type { WorkflowBlockReason } from '../../../../workflows/advanceGate';
 import { isRunPaused } from '../../../../workflows/isRunPaused';
@@ -98,10 +99,8 @@ export const useRunView = ({ session, run, workflow }: Params): RunView => {
   const advance = useWorkflowRunAdvance({ sessionId: session.id, run, workflow });
   const agents = tree.agentsByRunId.get(run.id) ?? NO_AGENTS;
   const isDynamic = run.executionMode === 'dynamic';
-  const aggregateCostUsd = agents.reduce(
-    (total, agent) => total + (aggregatesByAgentId.get(agent.id)?.estimatedCostUsd ?? 0),
-    0,
-  );
+  const aggregateCostUsd =
+    runCostUsdOf({ agentIds: agents.map((agent) => agent.id), agents, aggregatesByAgentId }) ?? 0;
   const costUsd = isDynamic ? spendUsd : aggregateCostUsd;
   const orchestrator = useOrchestratorState({
     sessionId: session.id,

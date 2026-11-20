@@ -420,7 +420,7 @@ describe('MountActionsMenu', () => {
     await waitFor(() => expect(screen.getByRole('button', { name: 'Remove and keep files' })));
     expect(
       screen.getByText(
-        'The safety of ak/feat at /worktrees/api could not be verified; removing it will keep the directory.',
+        "Couldn't check that ak/feat at /worktrees/api is safe to remove. Removing it keeps the directory.",
       ),
     ).toBeDefined();
     expect(screen.getByRole('button', { name: 'Check again' })).toBeDefined();
@@ -502,7 +502,7 @@ describe('MountActionsMenu', () => {
     await waitFor(() => expect(screen.getByRole('button', { name: 'Remove and delete worktree' })));
     expect(
       screen.getByText(
-        'Remove the clean worktree at /worktrees/api: 0 uncommitted files, 0 unpushed commits, and ak/feat is not merged into origin/develop yet.',
+        "Remove the clean worktree at /worktrees/api: 0 uncommitted files, 0 unpushed commits, and ak/feat isn't merged into origin/develop yet.",
       ),
     ).toBeDefined();
     expect(screen.getByText('The branch and its commits stay in the repository.')).toBeDefined();
@@ -585,7 +585,7 @@ describe('MountActionsMenu', () => {
         expect.objectContaining({
           title: "Couldn't remove api from the session",
           error:
-            'Could not remove /worktrees/api. It stays in the session; check again before retrying.',
+            "Couldn't remove /worktrees/api. It stays in the session. Check again before you retry.",
         }),
       ),
     );

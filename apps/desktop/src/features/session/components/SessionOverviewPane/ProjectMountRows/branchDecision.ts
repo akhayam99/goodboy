@@ -73,7 +73,7 @@ export const buildBranchDecision = ({
         alt: null,
       };
     case 'detached': {
-      const title = `${projectName} is not on a branch`;
+      const title = `${projectName} isn't on a branch`;
       if (holder !== null && holder !== 'checking') {
         return {
           title,
