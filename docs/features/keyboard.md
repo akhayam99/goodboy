@@ -143,10 +143,10 @@ Move through Goodboy, change a shortcut and stop an agent without leaving the ke
 
 On a Mac the menu bar carries the same keys.
 
-- File holds New Session, New Chat, Close (**⌘W**) and Close the Drawer (**⌘⇧W**).
+- File holds New Session, New Chat, New Terminal, New Workspace, Close (**⌘W**) and Close the Drawer (**⌘⇧W**).
 - Edit holds Search.
-- View holds Sessions (**⌘B**), Search or Run, zoom, Reload (**⌘R**) and Reload Goodboy (**⌘⇧R**).
-- Go holds Back and Forward, then Board, Tasks, Workflows, Chat, Impact, Monitoring and Notifications. After a separator, Show or Hide Terminal and Show or Hide Browser open those tools on the right rail.
+- View holds Show or Hide Sessions (**⌘B**), Search or Run, zoom, Reload (**⌘R**) and Reload Goodboy (**⌘⇧R**).
+- Go holds Back and Forward, then Board, Tasks, Workflows, Chat, Connections, Impact, Monitoring and Notifications. After a separator, Show or Hide Terminal and Show or Hide Browser open those tools on the right rail.
 - Help holds Guide, What's New, Keyboard Shortcuts and Report a Bug.
 
 <picture>
