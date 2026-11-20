@@ -62,8 +62,10 @@ const settle = async (): Promise<void> => {
   });
 };
 
-const mount = async (): Promise<void> => {
-  seedResolveGitlabScene({ selected: 'github' });
+const mount = async ({
+  selected = 'github',
+}: { readonly selected?: 'github' | 'gitlab' } = {}): Promise<void> => {
+  seedResolveGitlabScene({ selected });
   render(
     <ToastProvider>
       <BranchPage session={SESSION} workingDir={null} />
@@ -111,6 +113,17 @@ describe('a note in Comments', () => {
       true,
     );
     await waitFor(() => expect(closeResolvedNote).toHaveBeenCalledTimes(1));
+  });
+
+  it('names the host the note goes to, not the source on screen', async () => {
+    const addReviewDraft = vi.fn<StoreState['addReviewDraft']>(async (input) => draftFor(input));
+    await mount({ selected: 'gitlab' });
+    useAppStore.setState({ addReviewDraft });
+    fireEvent.click(firstRow());
+
+    fireEvent.click(screen.getByRole('button', { name: 'Post to GitHub' }));
+
+    await waitFor(() => expect(addReviewDraft).toHaveBeenCalledTimes(1));
   });
 
   it('deletes the note it sits under', async () => {
