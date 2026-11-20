@@ -12,7 +12,7 @@ export const takeUpResolveQueueItem = async ({ set, sessionId, itemId }: Params)
   const target = entries.find((entry) => entry.item.id === itemId);
   const takenUp = await undeferResolveQueueItem({ db: tauriDatabase, sessionId, itemId });
   if (!takenUp) {
-    throw new Error('Resolve item could not be taken up');
+    throw new Error("Couldn't take this comment back up. Nothing was changed.");
   }
   if (target !== undefined) {
     await advanceResolveStage({
