@@ -52,7 +52,7 @@ type Props = {
 };
 
 const POST_BLOCKED =
-  'Goodboy is still resolving this pull request on Bitbucket, so it cannot post a comment yet';
+  "Goodboy is still resolving this pull request on Bitbucket, so it can't post a comment yet";
 
 export const PrDetailPanel = ({
   pullRequest,

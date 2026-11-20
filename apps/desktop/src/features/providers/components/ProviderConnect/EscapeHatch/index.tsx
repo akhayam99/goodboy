@@ -116,7 +116,7 @@ export const EscapeHatch = ({ command, providerId, action }: Props) => {
       </div>
       {launchError ? (
         <span className="text-meta text-danger">
-          Could not open your system terminal: {launchError}
+          Couldn't open your system terminal: {launchError}
         </span>
       ) : null}
     </div>

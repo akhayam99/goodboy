@@ -305,7 +305,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: NAMES.letAutoTakeIt,
-        desc: 'Hands the Lead an agent you started; Detach from the Lead takes it back. A Lead that cannot decide reads Blocked with Retry.',
+        desc: "Hands the Lead an agent you started; Detach from the Lead takes it back. A Lead that can't decide reads Blocked with Retry.",
       },
       {
         term: 'Overview',
@@ -603,7 +603,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Stop',
-        desc: 'Asks first and names who loses the port. A process that does not exit offers Force stop; a refused stop keeps the row with its reason.',
+        desc: "Asks first and names who loses the port. A process that doesn't exit offers Force stop; a refused stop keeps the row with its reason.",
       },
       {
         term: 'Leftover processes',
@@ -788,7 +788,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
     id: 'listens',
     group: 'reference',
     title: 'How Goodboy listens',
-    lead: 'The same few rules hold on every screen. This page reads the same constants the app does, so it cannot fall behind.',
+    lead: "The same few rules hold on every screen. This page reads the same constants the app does, so it can't fall behind.",
     points: [],
     links: [],
     extra: 'listens',

@@ -185,7 +185,7 @@ export const PublishPanel = ({
                 </div>
                 {visibility === null ? (
                   <span className="text-meta text-muted-foreground">
-                    Pick who can see the repository. Goodboy does not choose for you.
+                    Pick who can see the repository. Goodboy doesn't choose for you.
                   </span>
                 ) : null}
               </div>

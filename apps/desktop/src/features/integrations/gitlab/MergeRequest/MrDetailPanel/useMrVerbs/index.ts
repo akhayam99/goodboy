@@ -47,13 +47,13 @@ const approvalBlockReason = ({
   hasApproved,
 }: ApprovalReasonParams): string | null => {
   if (approval == null) {
-    return approvalError ?? 'Could not load approval status for this merge request.';
+    return approvalError ?? "Couldn't load approval status for this merge request.";
   }
   if (hasApproved) {
     return null;
   }
   if (approval.userCanApprove === false) {
-    return 'You do not have permission to approve this merge request.';
+    return "You don't have permission to approve this merge request.";
   }
   return null;
 };
@@ -84,7 +84,7 @@ const mergeBlockReason = ({ mr, canMerge, writeReason }: MergeReasonParams): str
     return 'This merge request has conflicts. Resolve them before merging.';
   }
   if (mr.mergeStatus === 'cannot_be_merged') {
-    return 'GitLab says this merge request cannot be merged yet.';
+    return "GitLab says this merge request can't be merged yet.";
   }
   if (!canMerge) {
     return "Goodboy can't merge this merge request from here.";

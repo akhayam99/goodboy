@@ -148,7 +148,7 @@ const lineOf = ({ id, info, status, state, check, authReason }: LineParams): str
     case 'manual':
       return status?.available === true
         ? `${product} found, sign in there`
-        : `${PRODUCT_NAME[id]} is not on this Mac`;
+        : `${PRODUCT_NAME[id]} isn't on this Mac`;
     case 'broken':
       return status?.version === null || status?.version === undefined
         ? `${PRODUCT_NAME[id]} stopped on start`

@@ -124,7 +124,7 @@ export const UsageGroup = ({ providerId, billing, planLabel }: Props) => {
           />
         ) : isShareless ? (
           <p className={cn(BAND_ROW_CLASS, 'text-meta text-muted-foreground')}>
-            {`${label} does not share usage.`}
+            {`${label} doesn't share usage.`}
           </p>
         ) : notice === null ? null : (
           <Notice

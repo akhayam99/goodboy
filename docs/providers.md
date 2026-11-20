@@ -244,7 +244,7 @@ two background rows that name an agent say which one: **History rewriter** (task
 `pr_draft`, "Writes the title and body of a pull or merge request."). Their ids did
 not change. When some agents pin only
 models that cannot run, a line under the page title counts them (`With Codex as the only
-provider, 7 of 11 agents use a pin that cannot run. Auto picks apply.`) and **Back to
+provider, 7 of 11 agents use a pin that can't run. Auto picks apply.`) and **Back to
 Auto for those 7** removes those pins after a confirm anchored to it; it is hidden when
 the count is 0. The chat row shows the same
 shape for Auto through `RoutingPicker`'s `autoTrigger="resolved"`. Open, it shows
@@ -1196,7 +1196,7 @@ When a provider ships or retires a model, update these together:
   routing of its own task (`roleDefaultsFor`, `selectTaskModel`), the workflow child
   and node picks (`rolePicks`, which hands `resolveWorkflowRouting` the resolved model
   as both the configured default and the kind default, so there is no second recovery
-  for a pin that cannot run), the fallback model of a turn that changed provider
+  for a pin that can't run), the fallback model of a turn that changed provider
   (`selectModelOnProvider`), the report and wireframe spawns, the History rewriter
   (`historyRewriterConfig`), Scribe (`scribeModelConfig`) and every helper task
   (`selectTaskModel`). A session's own layer reaches all of them. A model a step or
