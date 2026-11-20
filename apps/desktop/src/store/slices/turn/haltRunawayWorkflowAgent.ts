@@ -13,7 +13,7 @@ type Params = Readonly<{
   agentId: AgentId;
 }>;
 
-export const RUNAWAY_SENTENCE = `Ran ${MAX_UNATTENDED_TURNS_PER_AGENT} times in an hour with no limit set.`;
+const RUNAWAY_SENTENCE = `Ran ${MAX_UNATTENDED_TURNS_PER_AGENT} times in an hour with no limit set.`;
 
 export const haltRunawayWorkflowAgent = async ({ set, get, sessionId, agentId }: Params) => {
   const name =

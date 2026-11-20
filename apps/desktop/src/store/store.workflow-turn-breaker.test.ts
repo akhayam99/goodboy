@@ -3,7 +3,6 @@ import {
   MAX_UNATTENDED_TURNS_PER_AGENT,
   resetWorkflowTurnBreaker,
 } from './slices/turn/workflowTurnBreaker';
-import { RUNAWAY_SENTENCE } from './slices/turn/haltRunawayWorkflowAgent';
 import {
   brandId,
   type Agent,
@@ -20,6 +19,8 @@ import {
 } from '@goodboy/types';
 import type { ReportErrorParams } from './slices/notifications/reportError';
 import type { WorkflowRun } from '@goodboy/types';
+
+const RUNAWAY_SENTENCE = 'Ran 4 times in an hour with no limit set.';
 
 const RUN_LIMIT: Pick<WorkflowRun, 'spendLimitUsd' | 'spendLimitMode'> = {
   spendLimitUsd: 10,
