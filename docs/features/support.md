@@ -4,7 +4,7 @@ The best support is running Goodboy on the work you already have. When something
 
 ### Report a bug
 
-Tell us what broke in one line. Press **Report** at the foot of the places rail, or press **⌘I** from any screen. **What gets sent** shows exactly what leaves, with secrets, paths and emails stripped. A fact Goodboy cannot read, such as the version or the system, shows no chip and is left out. After a crash, the next launch offers to report it. If GitHub doesn't take the report, the same text opens as a new issue in your browser.
+Tell us what broke in one line. Press **Report** at the foot of the places rail, or press **⌘I** from any screen. **What gets sent** shows exactly what leaves, with secrets, paths and emails stripped. A fact Goodboy can't read, such as the version or the system, shows no chip and is left out. After a crash, the next launch offers to report it. If GitHub doesn't take the report, the same text opens as a new issue in your browser.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/support-report-bug-dark.webp">
