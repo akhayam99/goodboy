@@ -5,7 +5,6 @@ import {
   ICON_SIZE,
   POPOVER_WIDTH_CLASS,
   POPOVER_WIDTH_PX,
-  PopoverBody,
   Tooltip,
   cn,
   useDropdown,
@@ -118,33 +117,31 @@ export const RunModelChip = ({
       anchorClassName="inline-flex min-w-0"
       trigger={isFact ? fact : look}
     >
-      <PopoverBody>
-        <RoutingPickerBody
-          connectedProviders={connectedProviders}
-          provider={effective.provider}
-          model={effective.model}
-          effort={{ editable: true, value: effective.effort }}
-          onClose={dropdown.close}
-          recommendation={{ ...suggestion, reason: RUN_MODEL_COPY.reason }}
-          recommendationKind="auto"
-          overridden={isPinned}
-          onChange={(route) => pick(route.provider === '' ? null : route)}
-        />
-        <div className="flex px-3 py-2">
-          <Button
-            variant="ghost"
-            size="xs"
-            onClick={() => {
-              dropdown.close();
-              openModelsSettings({
-                ...(settingsSection !== undefined && { section: settingsSection }),
-              });
-            }}
-          >
-            {RUN_MODEL_COPY.changeDefault}
-          </Button>
-        </div>
-      </PopoverBody>
+      <RoutingPickerBody
+        connectedProviders={connectedProviders}
+        provider={effective.provider}
+        model={effective.model}
+        effort={{ editable: true, value: effective.effort }}
+        onClose={dropdown.close}
+        recommendation={{ ...suggestion, reason: RUN_MODEL_COPY.reason }}
+        recommendationKind="auto"
+        overridden={isPinned}
+        onChange={(route) => pick(route.provider === '' ? null : route)}
+      />
+      <div className="flex px-3 py-2">
+        <Button
+          variant="ghost"
+          size="xs"
+          onClick={() => {
+            dropdown.close();
+            openModelsSettings({
+              ...(settingsSection !== undefined && { section: settingsSection }),
+            });
+          }}
+        >
+          {RUN_MODEL_COPY.changeDefault}
+        </Button>
+      </div>
     </AnchoredPopover>
   );
   if (!isFact) {

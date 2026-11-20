@@ -1,4 +1,4 @@
-import { AnchoredPopover, Button, ScrollFade, useDropdown } from '@goodboy/ui';
+import { AnchoredPopover, Button, useDropdown } from '@goodboy/ui';
 
 type Props = {
   readonly detail: string;
@@ -14,17 +14,16 @@ export const JobBannerDetails = ({ detail }: Props) => {
       role="dialog"
       ariaLabel="Push output"
       hasBackdrop
+      bodyClassName="max-h-56"
       trigger={
         <Button size="sm" variant="ghost" aria-expanded={dropdown.open} onClick={dropdown.toggle}>
           Details
         </Button>
       }
     >
-      <ScrollFade className="max-h-56" fadeFrom="background">
-        <pre className="whitespace-pre-wrap break-words px-3 py-2 text-code text-muted-foreground">
-          {detail.slice(0, DETAIL_LIMIT)}
-        </pre>
-      </ScrollFade>
+      <pre className="whitespace-pre-wrap break-words px-3 py-2 text-code text-muted-foreground">
+        {detail.slice(0, DETAIL_LIMIT)}
+      </pre>
     </AnchoredPopover>
   );
 };

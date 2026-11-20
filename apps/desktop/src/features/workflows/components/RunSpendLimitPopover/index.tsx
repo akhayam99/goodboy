@@ -7,7 +7,6 @@ import {
   ICON_SIZE,
   POPOVER_WIDTH_CLASS,
   POPOVER_WIDTH_PX,
-  PopoverBody,
   useDropdown,
   FOCUS_RING,
 } from '@goodboy/ui';
@@ -84,7 +83,7 @@ export const RunSpendLimitPopover = ({
         )
       }
     >
-      <PopoverBody>
+      <>
         <header className="px-3 pb-1 pt-3 text-row text-foreground">Limit for this run</header>
         <div className="flex flex-col gap-2 px-3 pb-3 pt-2">
           <RunLimitFields run={run} limit={limit} />
@@ -93,7 +92,7 @@ export const RunSpendLimitPopover = ({
               `${formatUsd(spentUsd)} spent so far. Applies when you press Enter or close. Leave it empty for no limit.`}
           </p>
         </div>
-      </PopoverBody>
+      </>
     </AnchoredPopover>
   );
 };

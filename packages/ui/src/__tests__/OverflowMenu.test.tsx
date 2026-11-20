@@ -81,7 +81,7 @@ describe('OverflowMenu', () => {
     );
     fireEvent.click(screen.getByRole('button', { name: /more actions/i }));
     const menu = screen.getByRole('menu');
-    expect(menu.parentElement?.className).toContain('fixed');
+    expect(menu.closest('.fixed')).not.toBeNull();
     expect(menu.closest('[data-dropdown-portal]')).not.toBeNull();
     expect(screen.getByRole('menuitem', { name: 'X' })).toBeDefined();
   });

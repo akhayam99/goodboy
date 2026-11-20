@@ -81,6 +81,7 @@ export const LinkIssueAction = ({
       role="dialog"
       ariaLabel={LABEL}
       className="overflow-hidden p-0"
+      bodyClassName="max-h-80"
       trigger={
         look === 'level' ? (
           <LevelAddTrigger

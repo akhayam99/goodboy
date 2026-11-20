@@ -5,7 +5,7 @@ import {
   Chip,
   cn,
   ICON_SIZE,
-  ScrollFade,
+  PopoverPin,
   tintClasses,
   Tooltip,
   TruncatedText,
@@ -332,6 +332,7 @@ export const DiffViewSelector = ({
       role="dialog"
       ariaLabel="Diff view"
       className="flex flex-col bg-subtle"
+      bodyClassName="max-h-[400px]"
       trigger={
         <Tooltip content="Change diff view" isSuppressed={open} anchorClassName="min-w-0">
           <button
@@ -360,7 +361,7 @@ export const DiffViewSelector = ({
         </Tooltip>
       }
     >
-      <div className="flex items-center gap-2 px-3 py-2">
+      <PopoverPin edge="start" className="flex items-center gap-2 px-3 py-2">
         <Search size={ICON_SIZE.row} aria-hidden className="shrink-0 text-faint-foreground" />
         <input
           ref={searchRef}
@@ -374,90 +375,86 @@ export const DiffViewSelector = ({
           className="w-full bg-transparent text-meta outline-none placeholder:text-faint-foreground"
           aria-label="Filter commits"
         />
-      </div>
-      <ScrollFade fadeFrom="subtle" className="max-h-[400px]">
-        <div className="flex flex-col gap-0.5 py-1" onKeyDown={handleKeyDown}>
-          {sections.map((section) => (
-            <PickerSection key={section.label} label={section.label} hint={section.hint}>
-              <div className="flex flex-col gap-0.5 px-1">
-                {section.rows.map((row) => {
-                  if (row.kind === 'placeholder') {
-                    return (
-                      <span
-                        key={`${section.label}-${row.label}`}
-                        className="px-2 py-1 text-meta italic text-faint-foreground"
-                      >
-                        {row.label}
-                      </span>
-                    );
-                  }
-
-                  optionIndex += 1;
-                  const currentOptionIndex = optionIndex;
-                  const isActive = viewEquals({ left: view, right: row.view });
-                  const isFocused = currentOptionIndex === focusIndex;
+      </PopoverPin>
+      <div className="flex flex-col gap-0.5 py-1" onKeyDown={handleKeyDown}>
+        {sections.map((section) => (
+          <PickerSection key={section.label} label={section.label} hint={section.hint}>
+            <div className="flex flex-col gap-0.5 px-1">
+              {section.rows.map((row) => {
+                if (row.kind === 'placeholder') {
                   return (
-                    <button
-                      key={`${section.label}-${row.label}-${currentOptionIndex}`}
-                      type="button"
-                      aria-pressed={isActive}
-                      onMouseEnter={() => setFocusIndex(currentOptionIndex)}
-                      onClick={() => selectView({ next: row.view })}
-                      className={cn(
-                        'flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-meta transition-colors',
-                        isActive
-                          ? 'bg-background text-foreground shadow-sm ring-1 ring-inset ring-border-soft'
-                          : 'text-foreground hover:bg-background',
-                        isFocused && !isActive && 'bg-background text-foreground',
-                      )}
+                    <span
+                      key={`${section.label}-${row.label}`}
+                      className="px-2 py-1 text-meta italic text-faint-foreground"
                     >
-                      <span
-                        aria-hidden
-                        className={cn(
-                          'size-1.5 shrink-0 rounded-full ring-1 ring-inset',
-                          isActive
-                            ? cn('bg-primary-solid', tintClasses('primary').ringStrong)
-                            : 'bg-transparent ring-transparent',
-                        )}
-                      />
-                      {row.commit != null ? (
-                        <>
-                          <span className="shrink-0 font-mono text-meta text-muted-foreground">
-                            {row.commit.shortSha}
-                          </span>
-                          <TruncatedText className="min-w-0 flex-1 truncate">
-                            {row.commit.subject}
-                          </TruncatedText>
-                          {row.commit.pushed && (
-                            <Chip
-                              tone="neutral"
-                              kind="state"
-                              bordered={false}
-                              label="pushed"
-                              className="shrink-0"
-                            />
-                          )}
-                          <span className="shrink-0 text-meta text-faint-foreground">
-                            {formatAdaptiveAge({ at: row.commit.timestamp * 1000, now })}
-                          </span>
-                        </>
-                      ) : (
-                        <span className="min-w-0 flex-1 truncate">{row.label}</span>
-                      )}
-                    </button>
+                      {row.label}
+                    </span>
                   );
-                })}
-              </div>
-            </PickerSection>
-          ))}
-          <CommitListCap listed={commits.length} total={commitTotal} />
-          {hasQuery && !hasCommitMatch ? (
-            <span className="px-4 py-1 text-meta italic text-faint-foreground">
-              no commits match
-            </span>
-          ) : null}
-        </div>
-      </ScrollFade>
+                }
+
+                optionIndex += 1;
+                const currentOptionIndex = optionIndex;
+                const isActive = viewEquals({ left: view, right: row.view });
+                const isFocused = currentOptionIndex === focusIndex;
+                return (
+                  <button
+                    key={`${section.label}-${row.label}-${currentOptionIndex}`}
+                    type="button"
+                    aria-pressed={isActive}
+                    onMouseEnter={() => setFocusIndex(currentOptionIndex)}
+                    onClick={() => selectView({ next: row.view })}
+                    className={cn(
+                      'flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-meta transition-colors',
+                      isActive
+                        ? 'bg-background text-foreground shadow-sm ring-1 ring-inset ring-border-soft'
+                        : 'text-foreground hover:bg-background',
+                      isFocused && !isActive && 'bg-background text-foreground',
+                    )}
+                  >
+                    <span
+                      aria-hidden
+                      className={cn(
+                        'size-1.5 shrink-0 rounded-full ring-1 ring-inset',
+                        isActive
+                          ? cn('bg-primary-solid', tintClasses('primary').ringStrong)
+                          : 'bg-transparent ring-transparent',
+                      )}
+                    />
+                    {row.commit != null ? (
+                      <>
+                        <span className="shrink-0 font-mono text-meta text-muted-foreground">
+                          {row.commit.shortSha}
+                        </span>
+                        <TruncatedText className="min-w-0 flex-1 truncate">
+                          {row.commit.subject}
+                        </TruncatedText>
+                        {row.commit.pushed && (
+                          <Chip
+                            tone="neutral"
+                            kind="state"
+                            bordered={false}
+                            label="pushed"
+                            className="shrink-0"
+                          />
+                        )}
+                        <span className="shrink-0 text-meta text-faint-foreground">
+                          {formatAdaptiveAge({ at: row.commit.timestamp * 1000, now })}
+                        </span>
+                      </>
+                    ) : (
+                      <span className="min-w-0 flex-1 truncate">{row.label}</span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </PickerSection>
+        ))}
+        <CommitListCap listed={commits.length} total={commitTotal} />
+        {hasQuery && !hasCommitMatch ? (
+          <span className="px-4 py-1 text-meta italic text-faint-foreground">no commits match</span>
+        ) : null}
+      </div>
     </AnchoredPopover>
   );
 };

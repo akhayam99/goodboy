@@ -1,5 +1,5 @@
 import { useId, useMemo, useState, type KeyboardEvent } from 'react';
-import { EmptyLine, ICON_SIZE, Kbd, PopoverBody, SearchField, SelectableRow } from '@goodboy/ui';
+import { EmptyLine, ICON_SIZE, Kbd, PopoverPin, SearchField, SelectableRow } from '@goodboy/ui';
 import { brandId, type SessionId, type WorkspaceId } from '@goodboy/types';
 import {
   sessionPlace,
@@ -130,7 +130,7 @@ export const SessionsPanel = ({ workspaceId, onClose }: Props) => {
 
   return (
     <>
-      <div className="p-2">
+      <PopoverPin edge="start" className="p-2">
         <SearchField
           autoFocus
           size="md"
@@ -151,8 +151,8 @@ export const SessionsPanel = ({ workspaceId, onClose }: Props) => {
           }
           hint={<Kbd>{shortcutGlyphs('sessions.toggle')}</Kbd>}
         />
-      </div>
-      <PopoverBody className="pb-1">
+      </PopoverPin>
+      <div className="flex flex-col pb-1">
         {isLoaded && flat.length === 0 ? (
           <EmptyLine className="px-3 py-2">{emptyLine}</EmptyLine>
         ) : (
@@ -174,8 +174,8 @@ export const SessionsPanel = ({ workspaceId, onClose }: Props) => {
             ))}
           </div>
         )}
-      </PopoverBody>
-      <div className="p-1">
+      </div>
+      <PopoverPin edge="end" className="p-1">
         <SelectableRow
           selected={false}
           onClick={() => {
@@ -188,7 +188,7 @@ export const SessionsPanel = ({ workspaceId, onClose }: Props) => {
           <span className="flex-1">Open {NAMES.board}</span>
           <Kbd>{shortcutGlyphs('session.board')}</Kbd>
         </SelectableRow>
-      </div>
+      </PopoverPin>
     </>
   );
 };

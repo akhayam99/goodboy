@@ -48,6 +48,7 @@ export const MountProjectAction = ({ sessionId, workspaceId, presentation = 'ico
       role="dialog"
       ariaLabel={LABEL}
       anchorClassName="shrink-0"
+      bodyClassName="max-h-80"
       trigger={
         presentation === 'add' ? (
           <LevelAddTrigger ariaLabel={LABEL} isExpanded={dropdown.open} onClick={toggle} />

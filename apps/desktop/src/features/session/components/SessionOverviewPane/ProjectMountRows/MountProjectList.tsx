@@ -6,8 +6,8 @@ import {
   Eyebrow,
   formatError,
   ICON_SIZE,
+  PopoverPin,
   ROW_INTERACTIVE,
-  ScrollFade,
 } from '@goodboy/ui';
 import type { Project, ProjectId, SessionId, WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
@@ -152,79 +152,81 @@ export const MountProjectList = ({
   return (
     <div className="flex flex-col gap-1">
       {isSearchable ? (
-        <input
-          type="text"
-          value={query}
-          aria-label="Search folders"
-          placeholder="Search folders…"
-          autoComplete="off"
-          onChange={(event) => setQuery(event.target.value)}
-          className="border-b border-border-soft bg-transparent px-3 py-2 text-body text-foreground outline-none placeholder:text-faint-foreground"
-        />
+        <PopoverPin edge="start" className="flex flex-col">
+          <input
+            type="text"
+            value={query}
+            aria-label="Search folders"
+            placeholder="Search folders…"
+            autoComplete="off"
+            onChange={(event) => setQuery(event.target.value)}
+            className="border-b border-border-soft bg-transparent px-3 py-2 text-body text-foreground outline-none placeholder:text-faint-foreground"
+          />
+        </PopoverPin>
       ) : null}
       {projects.length === 0 ? (
         <p className="px-3 py-2 text-meta text-muted-foreground">{emptyHint}</p>
       ) : filtered.length === 0 ? (
         <EmptyLine className="px-3">No matching folders</EmptyLine>
       ) : (
-        <ScrollFade className="max-h-56" viewportClassName="py-0.5" fadeFrom="subtle">
-          <div className="flex flex-col">
-            {groups.map((group) => (
-              <Fragment key={group.key}>
-                {group.label === null ? null : (
-                  <div className="px-3 pb-1 pt-2">
-                    <Eyebrow label={group.label} muted />
-                  </div>
-                )}
-                <ul aria-label={group.label ?? undefined}>
-                  {group.projects.map((project) => {
-                    const GlyphIcon = projectGlyph({ kind: project.kind });
-                    const isStarred = project.starredAt !== undefined;
-                    return (
-                      <li key={project.id}>
-                        <button
-                          type="button"
-                          aria-label={`Add ${project.name}`}
-                          onClick={() => {
-                            setFailure(null);
-                            setSelectedProjectId(project.id);
-                          }}
-                          className={cn(
-                            'flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-body text-foreground',
-                            ROW_INTERACTIVE,
-                          )}
-                        >
-                          <GlyphIcon
-                            size={ICON_SIZE.row}
+        <div className="flex flex-col py-0.5">
+          {groups.map((group) => (
+            <Fragment key={group.key}>
+              {group.label === null ? null : (
+                <div className="px-3 pb-1 pt-2">
+                  <Eyebrow label={group.label} muted />
+                </div>
+              )}
+              <ul aria-label={group.label ?? undefined}>
+                {group.projects.map((project) => {
+                  const GlyphIcon = projectGlyph({ kind: project.kind });
+                  const isStarred = project.starredAt !== undefined;
+                  return (
+                    <li key={project.id}>
+                      <button
+                        type="button"
+                        aria-label={`Add ${project.name}`}
+                        onClick={() => {
+                          setFailure(null);
+                          setSelectedProjectId(project.id);
+                        }}
+                        className={cn(
+                          'flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-body text-foreground',
+                          ROW_INTERACTIVE,
+                        )}
+                      >
+                        <GlyphIcon
+                          size={ICON_SIZE.row}
+                          aria-hidden
+                          className="shrink-0 text-muted-foreground"
+                        />
+                        <span className="min-w-0 flex-1 truncate">{project.name}</span>
+                        {isStarred ? (
+                          <Star
+                            size={ICON_SIZE.mark}
+                            weight="fill"
                             aria-hidden
-                            className="shrink-0 text-muted-foreground"
+                            className="shrink-0 text-warning"
                           />
-                          <span className="min-w-0 flex-1 truncate">{project.name}</span>
-                          {isStarred ? (
-                            <Star
-                              size={ICON_SIZE.mark}
-                              weight="fill"
-                              aria-hidden
-                              className="shrink-0 text-warning"
-                            />
-                          ) : null}
-                        </button>
-                      </li>
-                    );
-                  })}
-                </ul>
-              </Fragment>
-            ))}
-          </div>
-        </ScrollFade>
+                        ) : null}
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            </Fragment>
+          ))}
+        </div>
       )}
-      <ConnectProjectRow
-        workspaceId={workspaceId}
-        onConnected={(project) => {
-          setFailure(null);
-          setSelectedProjectId(project.id);
-        }}
-      />
+      <PopoverPin edge="end" className="flex flex-col pt-1">
+        <ConnectProjectRow
+          workspaceId={workspaceId}
+          onConnected={(project) => {
+            setFailure(null);
+            setSelectedProjectId(project.id);
+          }}
+        />
+      </PopoverPin>
     </div>
   );
 };

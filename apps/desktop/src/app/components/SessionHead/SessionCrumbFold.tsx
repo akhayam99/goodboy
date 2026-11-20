@@ -3,7 +3,6 @@ import {
   AnchoredPopover,
   Button,
   ICON_SIZE,
-  PopoverBody,
   Tooltip,
   type MenuEntry,
   useDropdown,
@@ -63,11 +62,9 @@ export const SessionCrumbFold = ({ crumbs, onOpen }: Props) => {
         </Tooltip>
       }
     >
-      <PopoverBody className="max-h-full">
-        <div className="flex flex-col p-1">
-          <AppMenuList label="Hidden crumbs" entries={entries} onClose={dropdown.close} />
-        </div>
-      </PopoverBody>
+      <div className="flex flex-col p-1">
+        <AppMenuList label="Hidden crumbs" entries={entries} onClose={dropdown.close} />
+      </div>
     </AnchoredPopover>
   );
 };

@@ -1,0 +1,66 @@
+{
+  "session": {
+    "draft": 1,
+    "running": 1,
+    "needs you, with a pull request": 1,
+    "archived, archived menu": 1
+  },
+  "agent": {
+    "starting": 1,
+    "starting, auto root": 1,
+    "running": 1,
+    "running, auto root": 1,
+    "waiting on you": 2,
+    "waiting on you, auto root": 2,
+    "stopped": 1,
+    "stopped, auto root": 1,
+    "failed": 2,
+    "failed, auto root": 2,
+    "done": 1,
+    "done, auto root": 1,
+    "closed by you": 1,
+    "closed by you, auto root": 1,
+    "a running workflow step": 1,
+    "a running workflow step, auto root": 1,
+    "in a session with no project": 1,
+    "in a session with no project, auto root": 1
+  },
+  "workflowRun": {
+    "queued by hand": 1,
+    "running": 1,
+    "orchestrated and running": 1,
+    "orchestrated and paused by you": 1,
+    "orchestrated and stopped by you": 1,
+    "paused before the next step": 1,
+    "paused on a stopped step": 1,
+    "waiting on a question": 1,
+    "failed": 1,
+    "discarded": 2
+  },
+  "artifact": {
+    "plan ready to run": 1,
+    "plan running": 1,
+    "plan that ran": 1,
+    "plan replaced by a newer one": 1,
+    "plan deleted": 1,
+    "report": 1,
+    "report replaced": 1,
+    "report deleted": 1,
+    "wireframe": 1,
+    "wireframe deleted": 1,
+    "generating, can stop": 1,
+    "generation that produced nothing": 1
+  },
+  "mount": {
+    "Merged, a pinned run": 1,
+    "Worktree closed, files kept": 2
+  },
+  "commit": {
+    "a folded commit": 1
+  },
+  "port": {
+    "listening": 2,
+    "listening, did not stop": 2,
+    "pinned": 2
+  }
+}

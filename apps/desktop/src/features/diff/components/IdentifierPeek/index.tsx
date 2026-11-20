@@ -2,7 +2,6 @@ import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
 import {
   AnchoredPopover,
   EmptyLine,
-  PopoverBody,
   ROW_INTERACTIVE,
   Skeleton,
   cn,
@@ -125,73 +124,71 @@ export const IdentifierPeek = ({
         tabIndex={-1}
         className="max-h-[360px] outline-none"
       >
-        <PopoverBody>
-          <div
-            ref={contentRef}
-            tabIndex={-1}
-            onKeyDown={onKeyDown}
-            className="flex min-h-0 flex-col gap-3 p-1 outline-none"
-          >
-            <div className="flex flex-col gap-1 px-2 py-1 text-meta text-muted-foreground">
-              <div className="flex min-w-0 items-baseline gap-2">
-                <span className="truncate text-code text-foreground">{word}</span>
-                {groups.kind !== null ? <span className="text-meta">{groups.kind}</span> : null}
-              </div>
-              {uses.status === 'searching' ? (
-                <span role="status" className="flex items-center gap-2">
-                  <Skeleton className="h-3 w-8 rounded-sm" />
-                  Searching
-                </span>
-              ) : null}
-              {uses.status === 'ready' && groups.kind !== null ? (
-                <span className="text-meta">{groups.summary}</span>
-              ) : null}
-              {uses.status === 'error' ? <span role="alert">Search failed</span> : null}
+        <div
+          ref={contentRef}
+          tabIndex={-1}
+          onKeyDown={onKeyDown}
+          className="flex min-h-0 flex-col gap-3 p-1 outline-none"
+        >
+          <div className="flex flex-col gap-1 px-2 py-1 text-meta text-muted-foreground">
+            <div className="flex min-w-0 items-baseline gap-2">
+              <span className="truncate text-code text-foreground">{word}</span>
+              {groups.kind !== null ? <span className="text-meta">{groups.kind}</span> : null}
             </div>
-            {uses.status === 'error' ? (
-              <p className="px-2 text-meta text-muted-foreground">{uses.message}</p>
+            {uses.status === 'searching' ? (
+              <span role="status" className="flex items-center gap-2">
+                <Skeleton className="h-3 w-8 rounded-sm" />
+                Searching
+              </span>
             ) : null}
-            {uses.status === 'ready' && groups.kind === null ? (
-              <EmptyLine>Not defined in this project</EmptyLine>
+            {uses.status === 'ready' && groups.kind !== null ? (
+              <span className="text-meta">{groups.summary}</span>
             ) : null}
-            {groups.kind !== null ? (
-              <>
-                {[
-                  { label: PEEK_GROUP_LABELS.definitions, matches: groups.definitionFileMatches },
-                  { label: PEEK_GROUP_LABELS.changed, matches: groups.inChange },
-                  { label: PEEK_GROUP_LABELS.unchanged, matches: groups.elsewhere },
-                ].map(({ label, matches: groupMatches }) => (
-                  <PeekGroup
-                    key={label}
-                    label={label}
-                    matches={groupMatches}
-                    word={word}
-                    changedPaths={changedPaths}
-                    changedLines={changedLines}
-                    onPick={(match) => pick({ match })}
-                  />
-                ))}
-                {groups.hiddenCount > 0 ? (
-                  <button
-                    type="button"
-                    data-peek-row=""
-                    aria-expanded={isExpanded}
-                    onClick={() => setIsExpanded(true)}
-                    className={cn(
-                      ROW_INTERACTIVE,
-                      'min-h-8 rounded-sm px-2 text-left text-meta text-muted-foreground',
-                    )}
-                  >
-                    Show {groups.hiddenCount} more
-                  </button>
-                ) : null}
-              </>
-            ) : null}
-            {uses.status === 'ready' && groups.kind !== null && uses.isTruncated ? (
-              <p className="px-2 text-meta text-faint-foreground">Showing the first 300.</p>
-            ) : null}
+            {uses.status === 'error' ? <span role="alert">Search failed</span> : null}
           </div>
-        </PopoverBody>
+          {uses.status === 'error' ? (
+            <p className="px-2 text-meta text-muted-foreground">{uses.message}</p>
+          ) : null}
+          {uses.status === 'ready' && groups.kind === null ? (
+            <EmptyLine>Not defined in this project</EmptyLine>
+          ) : null}
+          {groups.kind !== null ? (
+            <>
+              {[
+                { label: PEEK_GROUP_LABELS.definitions, matches: groups.definitionFileMatches },
+                { label: PEEK_GROUP_LABELS.changed, matches: groups.inChange },
+                { label: PEEK_GROUP_LABELS.unchanged, matches: groups.elsewhere },
+              ].map(({ label, matches: groupMatches }) => (
+                <PeekGroup
+                  key={label}
+                  label={label}
+                  matches={groupMatches}
+                  word={word}
+                  changedPaths={changedPaths}
+                  changedLines={changedLines}
+                  onPick={(match) => pick({ match })}
+                />
+              ))}
+              {groups.hiddenCount > 0 ? (
+                <button
+                  type="button"
+                  data-peek-row=""
+                  aria-expanded={isExpanded}
+                  onClick={() => setIsExpanded(true)}
+                  className={cn(
+                    ROW_INTERACTIVE,
+                    'min-h-8 rounded-sm px-2 text-left text-meta text-muted-foreground',
+                  )}
+                >
+                  Show {groups.hiddenCount} more
+                </button>
+              ) : null}
+            </>
+          ) : null}
+          {uses.status === 'ready' && groups.kind !== null && uses.isTruncated ? (
+            <p className="px-2 text-meta text-faint-foreground">Showing the first 300.</p>
+          ) : null}
+        </div>
       </AnchoredPopover>
     </div>
   );

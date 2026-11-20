@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Check, RefreshCw } from '@goodboy/ui/icons';
-import { Button, cn, Disclosure, ICON_SIZE, IconButton, PopoverBody } from '@goodboy/ui';
+import { Button, cn, Disclosure, ICON_SIZE, IconButton, PopoverPin } from '@goodboy/ui';
 import type { BaseDivergence, Project, ProjectId, WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { useToast } from '../../../../shared/components/Toast';
@@ -138,33 +138,35 @@ export const RepoEntryPanel = ({ workspaceId, entries }: Props) => {
 
   return (
     <>
-      <div data-repo-header="" className="flex h-10 shrink-0 items-center gap-2 px-3">
-        <span className="shrink-0 text-meta text-foreground">Repositories</span>
-        <span className="min-w-0 flex-1 truncate text-meta text-muted-foreground">
-          {statusLineOf({ isChecking, checkedAt })}
-        </span>
-        {pullable.length >= 2 ? (
-          <Button
-            size="sm"
-            variant="primary"
-            disabled={isPulling}
-            onClick={() => void pull({ projectIds: pullable.map((row) => row.project.id) })}
-          >
-            Pull all
-          </Button>
-        ) : null}
-        <IconButton
-          variant="ghost"
-          icon={RefreshCw}
-          iconSize={ICON_SIZE.row}
-          label="Check now"
-          tooltip="Check now"
-          disabled={isChecking}
-          onClick={recheck}
-          className={cn('shrink-0', isChecking && 'spin-border spin-border-info')}
-        />
-      </div>
-      <PopoverBody className="gap-1 py-2">
+      <PopoverPin edge="start">
+        <div data-repo-header="" className="flex h-10 shrink-0 items-center gap-2 px-3">
+          <span className="shrink-0 text-meta text-foreground">Repositories</span>
+          <span className="min-w-0 flex-1 truncate text-meta text-muted-foreground">
+            {statusLineOf({ isChecking, checkedAt })}
+          </span>
+          {pullable.length >= 2 ? (
+            <Button
+              size="sm"
+              variant="primary"
+              disabled={isPulling}
+              onClick={() => void pull({ projectIds: pullable.map((row) => row.project.id) })}
+            >
+              Pull all
+            </Button>
+          ) : null}
+          <IconButton
+            variant="ghost"
+            icon={RefreshCw}
+            iconSize={ICON_SIZE.row}
+            label="Check now"
+            tooltip="Check now"
+            disabled={isChecking}
+            onClick={recheck}
+            className={cn('shrink-0', isChecking && 'spin-border spin-border-info')}
+          />
+        </div>
+      </PopoverPin>
+      <div className="flex flex-col gap-1 py-2">
         {groups.attention.map((row) => rowOf({ row }))}
         {groups.quietLine === null ? null : (
           <Disclosure
@@ -182,7 +184,7 @@ export const RepoEntryPanel = ({ workspaceId, entries }: Props) => {
             {groups.quiet.map((row) => rowOf({ row }))}
           </Disclosure>
         )}
-      </PopoverBody>
+      </div>
     </>
   );
 };

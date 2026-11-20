@@ -33,6 +33,7 @@ import { modelsGridFailures } from './validateScenesModelsGrid.mjs';
 import { questionCardFailures } from './validateScenesQuestionCard.mjs';
 import { rowAlignFailures, rowAlignProbe } from './validateScenesRowAlign.mjs';
 import { runTailFitFailures } from './validateScenesRunTailFit.mjs';
+import { popoverScrollFailures } from './validateScenesPopoverScroll.mjs';
 import {
   frameRowFailures,
   rowStartFailures,
@@ -2035,5 +2036,65 @@ describe('rowStartFailures', () => {
       assert.deepEqual(checksOf([]), []);
       assert.deepEqual(checksOf(undefined), []);
     });
+  });
+});
+
+describe('popoverScrollFailures', () => {
+  const scrolled = {
+    rows: 30,
+    scrollers: 1,
+    windowHeight: 400,
+    surface: { top: 40, bottom: 392 },
+    scrollHeight: 960,
+    clientHeight: 340,
+    fadeBottomAtTop: '12px',
+    scrollTop: 620,
+    last: { top: 340, bottom: 372 },
+    view: { top: 44, bottom: 384 },
+    fadeTopAtEnd: '12px',
+  };
+  const checksOf = (measured) =>
+    popoverScrollFailures({ scene: 'popover-long-menu', width: 1024, measured }).map(
+      (failure) => failure.check,
+    );
+
+  it('passes a menu that scrolls once and brings its last row into view', () => {
+    assert.deepEqual(checksOf(scrolled), []);
+  });
+
+  it('fails a popover that nests a second scroller', () => {
+    assert.deepEqual(checksOf({ ...scrolled, scrollers: 2 }), [
+      'the popover has exactly one scroller',
+    ]);
+  });
+
+  it('fails a popover taller than the window that never scrolls', () => {
+    assert.deepEqual(
+      checksOf({
+        ...scrolled,
+        surface: { top: 40, bottom: 1000 },
+        clientHeight: 960,
+        fadeBottomAtTop: '0px',
+        scrollTop: 0,
+        fadeTopAtEnd: '0px',
+      }),
+      [
+        'the popover fits inside the 400px window',
+        'the rows overflow the popover and scroll',
+        'the bottom edge fades before the menu scrolls',
+        'reaching the last row scrolls the popover',
+        'the top edge fades once the menu scrolled',
+      ],
+    );
+  });
+
+  it('fails a last row left under the bottom edge', () => {
+    assert.deepEqual(checksOf({ ...scrolled, last: { top: 380, bottom: 412 } }), [
+      'the last row scrolls fully into view',
+    ]);
+  });
+
+  it('fails a scene that opened no menu', () => {
+    assert.deepEqual(checksOf(null), ['the scene opens a menu in a popover']);
   });
 });

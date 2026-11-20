@@ -9,7 +9,7 @@ import {
   formatError,
   ICON_SIZE,
   Input,
-  ScrollFade,
+  PopoverPin,
   Tooltip,
   type MenuEntry,
   useDropdown,
@@ -107,6 +107,7 @@ export const AssigneePicker = ({ issueKey, workspaceId, assignee, onAssign }: Pr
     <AnchoredPopover
       dropdown={dropdown}
       className="flex flex-col"
+      bodyClassName="max-h-64"
       hasBackdrop
       trigger={
         <Tooltip content="Change who owns this issue in Jira" isSuppressed={isOpen}>
@@ -126,18 +127,20 @@ export const AssigneePicker = ({ issueKey, workspaceId, assignee, onAssign }: Pr
         </Tooltip>
       }
     >
-      <div className="p-1">
-        <Input
-          autoFocus
-          value={query}
-          aria-label="Filter assignable people"
-          placeholder="Filter by name"
-          onChange={(event) => setQuery(event.target.value)}
-          className="h-7 text-meta"
-        />
-      </div>
-      <Divider />
-      <ScrollFade className="max-h-64" viewportClassName="flex flex-col">
+      <PopoverPin edge="start">
+        <div className="p-1">
+          <Input
+            autoFocus
+            value={query}
+            aria-label="Filter assignable people"
+            placeholder="Filter by name"
+            onChange={(event) => setQuery(event.target.value)}
+            className="h-7 text-meta"
+          />
+        </div>
+        <Divider />
+      </PopoverPin>
+      <div className="flex flex-col">
         {entries.length === 0 ? null : (
           <AppMenuList
             label="Assign this issue"
@@ -156,28 +159,30 @@ export const AssigneePicker = ({ issueKey, workspaceId, assignee, onAssign }: Pr
             No one matches that name
           </EmptyLine>
         )}
-      </ScrollFade>
-      {error != null && (
-        <>
-          <Divider />
-          <div className="flex items-center justify-between gap-2 p-1">
-            <p role="alert" className="min-w-0 text-meta text-danger">
-              {error}
+      </div>
+      <PopoverPin edge="end">
+        {error != null && (
+          <>
+            <Divider />
+            <div className="flex items-center justify-between gap-2 p-1">
+              <p role="alert" className="min-w-0 text-meta text-danger">
+                {error}
+              </p>
+              <Button size="sm" variant="ghost" onClick={reload}>
+                Retry
+              </Button>
+            </div>
+          </>
+        )}
+        {assignError != null && (
+          <>
+            <Divider />
+            <p role="alert" className="px-2 py-1 text-meta text-danger">
+              {assignError}
             </p>
-            <Button size="sm" variant="ghost" onClick={reload}>
-              Retry
-            </Button>
-          </div>
-        </>
-      )}
-      {assignError != null && (
-        <>
-          <Divider />
-          <p role="alert" className="px-2 py-1 text-meta text-danger">
-            {assignError}
-          </p>
-        </>
-      )}
+          </>
+        )}
+      </PopoverPin>
     </AnchoredPopover>
   );
 };

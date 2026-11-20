@@ -229,6 +229,22 @@ describe('Listbox', () => {
     expect(search.className).not.toContain('border');
   });
 
+  it('pins the search above the one scroller, which holds every option', () => {
+    render(<SingleHarness options={BRANCHES} initial="main" />);
+    fireEvent.click(trigger());
+    const popup = screen.getByRole('listbox').closest('[data-dropdown-portal] > div');
+    const scrollers = popup?.querySelectorAll('.mask-fade-y') ?? [];
+    const search = screen.getByRole('combobox', { name: 'Search' });
+
+    expect(scrollers).toHaveLength(1);
+    expect(scrollers[0]?.contains(search)).toBe(false);
+    expect(popup?.firstElementChild?.contains(search)).toBe(true);
+    expect(document.activeElement).toBe(search);
+    screen.getAllByRole('option').forEach((option) => {
+      expect(scrollers[0]?.contains(option)).toBe(true);
+    });
+  });
+
   it('ties the popup width to the trigger when asked, and keeps the viewport gap', () => {
     render(
       <Listbox

@@ -1,4 +1,4 @@
-import { AnchoredPopover, Button, PopoverBody, useDropdown } from '@goodboy/ui';
+import { AnchoredPopover, Button, useDropdown } from '@goodboy/ui';
 import type { AgentTaskLabel } from '../../../auto/agentTaskLabelOf';
 import { MiddleText } from '../../../../shared/components/MiddleText';
 import { firstLineOf } from './firstLineOf';
@@ -54,9 +54,7 @@ export const AgentBriefCrumb = ({ brief, task, label, onRename }: Props) => {
         </Button>
       }
     >
-      <PopoverBody>
-        <p className="whitespace-pre-wrap break-words p-3 text-meta text-foreground">{brief}</p>
-      </PopoverBody>
+      <p className="whitespace-pre-wrap break-words p-3 text-meta text-foreground">{brief}</p>
     </AnchoredPopover>
   );
 };

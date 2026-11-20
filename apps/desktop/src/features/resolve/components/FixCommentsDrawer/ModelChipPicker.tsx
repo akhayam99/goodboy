@@ -1,5 +1,5 @@
 import { ChevronDown } from '@goodboy/ui/icons';
-import { AnchoredPopover, ICON_SIZE, PopoverBody, useDropdown } from '@goodboy/ui';
+import { AnchoredPopover, ICON_SIZE, useDropdown } from '@goodboy/ui';
 import type { ProviderId } from '@goodboy/types';
 import type { AgentKindRouting } from '../../../session/agent-kind';
 import { RoutingPickerBody } from '../../../../shared/components/RoutingPicker/RoutingPickerBody';
@@ -55,25 +55,23 @@ export const ModelChipPicker = ({
         </button>
       }
     >
-      <PopoverBody>
-        <RoutingPickerBody
-          connectedProviders={connectedProviders}
-          onClose={dropdown.close}
-          recommendation={{ ...suggested, label: SUGGESTED_LABEL }}
-          overridden={isOverridden}
-          onReset={() => onChange(null)}
-          provider={routing.provider}
-          model={routing.model}
-          effort={{ editable: true, value: routing.effort }}
-          onChange={(route) => {
-            if (route.provider === '') {
-              onChange(null);
-              return;
-            }
-            onChange({ provider: route.provider, model: route.model, effort: route.effort });
-          }}
-        />
-      </PopoverBody>
+      <RoutingPickerBody
+        connectedProviders={connectedProviders}
+        onClose={dropdown.close}
+        recommendation={{ ...suggested, label: SUGGESTED_LABEL }}
+        overridden={isOverridden}
+        onReset={() => onChange(null)}
+        provider={routing.provider}
+        model={routing.model}
+        effort={{ editable: true, value: routing.effort }}
+        onChange={(route) => {
+          if (route.provider === '') {
+            onChange(null);
+            return;
+          }
+          onChange({ provider: route.provider, model: route.model, effort: route.effort });
+        }}
+      />
     </AnchoredPopover>
   );
 };

@@ -2,7 +2,6 @@ import { Ellipsis } from '../../icons';
 import { cn } from '../../cn';
 import { useDropdown } from '../../useDropdown';
 import { AnchoredPopover } from '../AnchoredPopover';
-import { ScrollFade } from '../ScrollFade';
 import { Tooltip } from '../Tooltip';
 import type { TrailSegmentModel } from './types';
 import { TRAIL_CRUMB_CLASS, TRAIL_LINK_CLASS } from './trailClasses';
@@ -44,33 +43,31 @@ export const TrailFold = ({ segments }: Props) => {
           </Tooltip>
         }
       >
-        <ScrollFade className="min-h-0 flex-1" fadeFrom="floating">
-          <div className="flex min-w-0 flex-col gap-0.5 p-1">
-            {segments.map((segment) => {
-              const Icon = segment.icon;
-              return (
-                <button
-                  key={segment.id}
-                  type="button"
-                  role="menuitem"
-                  disabled={segment.onSelect == null}
-                  onClick={() => {
-                    close();
-                    segment.onSelect?.();
-                  }}
-                  className="flex min-h-7 w-full min-w-0 items-center gap-2 rounded-md px-2 text-left text-meta text-muted-foreground transition-colors hover:bg-hover hover:text-foreground disabled:hover:bg-transparent"
-                >
-                  <Icon
-                    size={ICON_SIZE.row}
-                    aria-hidden
-                    className={cn('shrink-0', segment.iconClassName ?? 'text-faint-foreground')}
-                  />
-                  <span className="min-w-0 flex-1 truncate">{segment.label}</span>
-                </button>
-              );
-            })}
-          </div>
-        </ScrollFade>
+        <div className="flex min-w-0 flex-col gap-0.5 p-1">
+          {segments.map((segment) => {
+            const Icon = segment.icon;
+            return (
+              <button
+                key={segment.id}
+                type="button"
+                role="menuitem"
+                disabled={segment.onSelect == null}
+                onClick={() => {
+                  close();
+                  segment.onSelect?.();
+                }}
+                className="flex min-h-7 w-full min-w-0 items-center gap-2 rounded-md px-2 text-left text-meta text-muted-foreground transition-colors hover:bg-hover hover:text-foreground disabled:hover:bg-transparent"
+              >
+                <Icon
+                  size={ICON_SIZE.row}
+                  aria-hidden
+                  className={cn('shrink-0', segment.iconClassName ?? 'text-faint-foreground')}
+                />
+                <span className="min-w-0 flex-1 truncate">{segment.label}</span>
+              </button>
+            );
+          })}
+        </div>
       </AnchoredPopover>
       <TrailSeparator />
     </span>

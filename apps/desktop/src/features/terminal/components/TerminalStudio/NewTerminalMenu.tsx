@@ -5,7 +5,6 @@ import {
   AnchoredPopover,
   Button,
   ICON_SIZE,
-  PopoverBody,
   SearchField,
   Tooltip,
   type MenuEntry,
@@ -124,28 +123,26 @@ export const NewTerminalMenu = ({ clusters, onNew, onOpenAt }: Props) => {
             </Tooltip>
           }
         >
-          <PopoverBody className="max-h-full">
-            <div className="flex flex-col gap-1 p-2">
-              <SearchField
-                ariaLabel="Filter terminal locations"
-                placeholder="Type to filter"
-                value={query}
-                onChange={setQuery}
-                inputRef={filterRef}
-                onKeyDown={handleFilterKeyDown}
-                onFocus={() => setIsFilterFocused(true)}
-                onBlur={() => setIsFilterFocused(false)}
+          <div className="flex flex-col gap-1 p-2">
+            <SearchField
+              ariaLabel="Filter terminal locations"
+              placeholder="Type to filter"
+              value={query}
+              onChange={setQuery}
+              inputRef={filterRef}
+              onKeyDown={handleFilterKeyDown}
+              onFocus={() => setIsFilterFocused(true)}
+              onBlur={() => setIsFilterFocused(false)}
+            />
+            {entries.length === 0 ? null : (
+              <AppMenuList
+                label="New terminal in"
+                entries={entries}
+                onClose={dropdown.close}
+                isAutoFocus={false}
               />
-              {entries.length === 0 ? null : (
-                <AppMenuList
-                  label="New terminal in"
-                  entries={entries}
-                  onClose={dropdown.close}
-                  isAutoFocus={false}
-                />
-              )}
-            </div>
-          </PopoverBody>
+            )}
+          </div>
         </AnchoredPopover>
       ) : null}
     </div>

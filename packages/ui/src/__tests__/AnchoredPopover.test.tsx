@@ -75,7 +75,8 @@ describe('AnchoredPopover', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Open' }));
     const menu = screen.getByRole('menu');
     expect(menu.style.maxHeight).not.toBe('');
-    expect(menu.className).toContain('overflow-y-auto');
+    expect(menu.className).toContain('overflow-hidden');
+    expect(menu.querySelector('.mask-fade-y')?.className).toContain('overflow-y-auto');
   });
 
   it('closes on an outside mousedown but not on a popup click', () => {

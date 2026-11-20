@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import type { ReactNode, RefObject } from 'react';
 import { createPortal } from 'react-dom';
 import { cn } from '../cn';
 import type { DropdownController } from '../useDropdown';
@@ -13,6 +13,8 @@ export type AnchoredPopoverProps = {
   readonly role?: 'menu' | 'dialog' | 'listbox';
   readonly ariaLabel?: string;
   readonly className?: string;
+  readonly bodyClassName?: string;
+  readonly viewportRef?: RefObject<HTMLDivElement | null>;
   readonly anchorClassName?: string;
   readonly hasBackdrop?: boolean;
   readonly tabIndex?: number;
@@ -25,6 +27,8 @@ export const AnchoredPopover = ({
   role,
   ariaLabel,
   className,
+  bodyClassName,
+  viewportRef,
   anchorClassName,
   hasBackdrop = false,
   tabIndex,
@@ -50,6 +54,8 @@ export const AnchoredPopover = ({
                 onMouseDown={dropdown.markPress}
                 style={dropdown.popupStyle}
                 className={cn(dropdown.popupClassName, className)}
+                bodyClassName={bodyClassName}
+                viewportRef={viewportRef}
               >
                 {children}
               </Popover>

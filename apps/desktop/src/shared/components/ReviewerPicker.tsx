@@ -5,7 +5,7 @@ import {
   EmptyState,
   ICON_SIZE,
   IconButton,
-  ScrollFade,
+  PopoverPin,
   SelectableRow,
   Skeleton,
   useDropdown,
@@ -68,6 +68,7 @@ export const ReviewerPicker = ({
     <AnchoredPopover
       dropdown={dropdown}
       className="flex flex-col gap-1 p-2"
+      bodyClassName="max-h-44"
       anchorClassName="shrink-0"
       trigger={
         <IconButton
@@ -81,7 +82,7 @@ export const ReviewerPicker = ({
         />
       }
     >
-      <div className="flex items-center gap-2 px-2 py-1">
+      <PopoverPin edge="start" className="flex items-center gap-2 px-2 py-1">
         <Search size={ICON_SIZE.row} aria-hidden className="shrink-0 text-muted-foreground" />
         <input
           autoFocus
@@ -90,7 +91,7 @@ export const ReviewerPicker = ({
           placeholder="filter collaborators"
           className="w-full bg-transparent text-meta text-foreground outline-none placeholder:text-faint-foreground"
         />
-      </div>
+      </PopoverPin>
       {isLoading ? (
         <div className="flex flex-col gap-1 px-2 py-1" role="status" aria-label="Loading">
           {[0, 1, 2].map((index) => (
@@ -103,26 +104,24 @@ export const ReviewerPicker = ({
       ) : candidates.length === 0 ? (
         <EmptyState size="section" icon={CONCEPT_ICONS.search} title="No matches" />
       ) : (
-        <ScrollFade className="max-h-44" fadeSize={16}>
-          <ul>
-            {candidates.map((person) => (
-              <li key={person.login}>
-                <SelectableRow
-                  selected={false}
-                  onClick={() => {
-                    onAdd([person.login]);
-                    close();
-                    setQuery('');
-                  }}
-                  className="items-center gap-2 px-2 py-1 text-meta text-foreground"
-                >
-                  <Avatar url={person.avatarUrl} alt={person.login} size="xs" />
-                  <span className="min-w-0 flex-1 truncate">{person.login}</span>
-                </SelectableRow>
-              </li>
-            ))}
-          </ul>
-        </ScrollFade>
+        <ul>
+          {candidates.map((person) => (
+            <li key={person.login}>
+              <SelectableRow
+                selected={false}
+                onClick={() => {
+                  onAdd([person.login]);
+                  close();
+                  setQuery('');
+                }}
+                className="items-center gap-2 px-2 py-1 text-meta text-foreground"
+              >
+                <Avatar url={person.avatarUrl} alt={person.login} size="xs" />
+                <span className="min-w-0 flex-1 truncate">{person.login}</span>
+              </SelectableRow>
+            </li>
+          ))}
+        </ul>
       )}
     </AnchoredPopover>
   );

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
 import { cn } from '../../cn';
 import { FOCUS_RING } from '../../focusRing';
-import { ScrollFade } from '../ScrollFade';
+import { PopoverPin } from '../PopoverPin';
 import type { CrumbMenuAction, CrumbMenuModel, CrumbMenuRow as RowModel } from './crumbMenuTypes';
 import { CrumbMenuActions } from './CrumbMenuActions';
 import { CrumbMenuRow } from './CrumbMenuRow';
@@ -43,13 +43,20 @@ export const CrumbMenu = ({ model, confirmingId, onConfirmingChange, onClose }: 
     }))
     .filter((group) => group.rows.length > 0);
 
+  const scopeOf = (): HTMLElement | null => {
+    const root = rootRef.current;
+    if (root == null) {
+      return null;
+    }
+    return root.closest<HTMLElement>('[role="menu"]') ?? root;
+  };
+
   useEffect(() => {
     const root = rootRef.current;
     if (root == null) {
       return;
     }
     const target =
-      root.querySelector<HTMLElement>('[data-crumb-filter]') ??
       root.querySelector<HTMLElement>('[data-crumb-row][aria-checked="true"]:not([disabled])') ??
       root.querySelector<HTMLElement>(FOCUSABLE);
     target?.focus();
@@ -70,7 +77,7 @@ export const CrumbMenu = ({ model, confirmingId, onConfirmingChange, onClose }: 
   };
 
   const onKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
-    const root = rootRef.current;
+    const root = scopeOf();
     if (root == null) {
       return;
     }
@@ -119,34 +126,41 @@ export const CrumbMenu = ({ model, confirmingId, onConfirmingChange, onClose }: 
   };
 
   return (
-    <div
-      ref={rootRef}
-      data-crumb-menu=""
-      onKeyDown={onKeyDown}
-      className="flex min-h-0 flex-1 flex-col gap-1 p-1 motion-safe:animate-crumb-menu-in"
-    >
-      <div className="flex h-6 shrink-0 items-center justify-between gap-2 px-2 text-meta text-faint-foreground">
-        <span className="min-w-0 truncate">
-          <span className="text-muted-foreground">{model.title}</span>
-          {model.context != null ? ` · ${model.context}` : null}
-        </span>
-        {model.count != null ? <span className="shrink-0 tabular-nums">{model.count}</span> : null}
-      </div>
-      {hasFilter ? (
-        <input
-          data-crumb-filter=""
-          type="text"
-          value={query}
-          placeholder={model.filterPlaceholder ?? undefined}
-          aria-label={model.filterPlaceholder ?? undefined}
-          onChange={(event) => setQuery(event.target.value)}
-          className={cn(
-            'h-7 shrink-0 rounded-md bg-fill px-2 text-meta text-foreground outline-none placeholder:text-faint-foreground',
-            FOCUS_RING,
-          )}
-        />
-      ) : null}
-      <ScrollFade className="min-h-0 flex-1" fadeFrom="floating">
+    <>
+      <PopoverPin edge="start">
+        <div onKeyDown={onKeyDown} className="flex flex-col gap-1 px-1 pt-1">
+          <div className="flex h-6 shrink-0 items-center justify-between gap-2 px-2 text-meta text-faint-foreground">
+            <span className="min-w-0 truncate">
+              <span className="text-muted-foreground">{model.title}</span>
+              {model.context != null ? ` · ${model.context}` : null}
+            </span>
+            {model.count != null ? (
+              <span className="shrink-0 tabular-nums">{model.count}</span>
+            ) : null}
+          </div>
+          {hasFilter ? (
+            <input
+              data-crumb-filter=""
+              autoFocus
+              type="text"
+              value={query}
+              placeholder={model.filterPlaceholder ?? undefined}
+              aria-label={model.filterPlaceholder ?? undefined}
+              onChange={(event) => setQuery(event.target.value)}
+              className={cn(
+                'h-7 shrink-0 rounded-md bg-fill px-2 text-meta text-foreground outline-none placeholder:text-faint-foreground',
+                FOCUS_RING,
+              )}
+            />
+          ) : null}
+        </div>
+      </PopoverPin>
+      <div
+        ref={rootRef}
+        data-crumb-menu=""
+        onKeyDown={onKeyDown}
+        className="flex flex-col gap-1 p-1 motion-safe:animate-crumb-menu-in"
+      >
         <div data-crumb-list="" className="flex min-w-0 flex-col gap-1">
           {groups.map((group) => (
             <div
@@ -174,17 +188,19 @@ export const CrumbMenu = ({ model, confirmingId, onConfirmingChange, onClose }: 
             </div>
           ))}
         </div>
-      </ScrollFade>
+      </div>
       {model.actions.length > 0 ? (
-        <div className={cn('shrink-0')}>
-          <CrumbMenuActions
-            actions={model.actions}
-            confirmingId={confirmingId}
-            onConfirmingChange={onConfirmingChange}
-            onRun={run}
-          />
-        </div>
+        <PopoverPin edge="end">
+          <div onKeyDown={onKeyDown} className="px-1 pb-1">
+            <CrumbMenuActions
+              actions={model.actions}
+              confirmingId={confirmingId}
+              onConfirmingChange={onConfirmingChange}
+              onRun={run}
+            />
+          </div>
+        </PopoverPin>
       ) : null}
-    </div>
+    </>
   );
 };

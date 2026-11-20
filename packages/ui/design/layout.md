@@ -109,13 +109,32 @@ title: `PaneShell` has no `icon`, `glyph` or `tone`, the concept lives in the cr
 crumb names the structure and the `h1` the object, and a report's document title is an
 `h2`.
 There is no description line and no divider under the header: the text that
-teaches goes in the empty state, and the `ScrollFade` edge marks the seam.
-The one exception is the four session pages that hold work (Runs, Orchestrated,
-Agents, Auto agents), which explain themselves on content and empty alike:
-each passes `SessionPageIntro` as its `subheader`, two muted `text-body` lines at
-the prose measure from the one copy map `SESSION_PAGE_INTRO`, and their empty
-states keep only a title and an action. Every other page, the secondary pages
-included, adds no description line.
+teaches goes in the empty state, and the `ScrollFade` edge marks the seam. A
+session tab has no intro line either. Runs still passes `SessionPageIntro` as
+its `subheader`; it is the last one and goes when the page heads move to the
+two rows below.
+
+**Two rows at the head of a list page.** The title row holds the title (a word
+from `NAMES`), the meta on one line, at most one primary action and the `⋯`.
+The tool row under it, the `toolbar` slot, holds search, scope, filter and
+group, in that order. Search and filters never sit in the title row, the way
+Tasks draws it (`InboxListHeader`). At 1024px with Terminal open the tool row
+wraps, it never clips. Every list filter is a `SearchField` whose placeholder
+names the things it searches ("Search ports", "Search reviewers", "Search
+commits"); a search inside content keeps "Find in page" and "Find in
+scrollback". A filter is `FilterButton` with its count. A group is a two-way
+switch while there are two choices and a "Group by" menu from three, and both
+say "Group by" in their accessible name. `pane-head-rows.test.ts` counts a
+search, filter or group control written in the `actions` of a `PaneShell` or
+`PageHeader`, and its baseline only falls.
+
+**Tabs and counts.** Moving between the pages of one object is `PageTabs`,
+underlined, in the tab row. A `SegmentedTabs` pill is only a filter or a mode
+inside a page, at one size in a panel. A count on a tab stays when the tab is
+picked. Counts have two looks: `CountBadge` for attention (the bar, a corner,
+a filter, "N similar") and a muted `tabular-nums` number for tabs, groups and
+facets. Groups and facets hide 0, never 1. The tone of a session count (Needs
+you in amber) stays.
 A detail that needs its own header row passes `PaneTitleRow` through the custom `header` slot.
 The agent detail passes
 `AgentHeader`, a `PaneTitleRow` too: one 32px title row with the role chip, the one-line title (full
@@ -547,10 +566,16 @@ it:
   draft stays. Leading holds the options (Model, Limit, Asks you, Starts);
   trailing is "Discard" (ghost) then the primary, and an empty estimate slot
   collapses so Discard always touches the primary.
+- **`FieldError`** is the error of one field, under it: the same 14px danger
+  glyph and the cause in default text, `role="alert"`, drawing nothing while
+  there is no error. `fieldErrorAriaOf({ id, error })` gives the field its
+  `aria-invalid` and its `aria-describedby` pointing at the error, so the two
+  never drift. `?scene=field-error` shows a branch template with an open brace.
 
 Buttons are `md` on a page and `sm` inside a popover, a drawer or a card. The
-row sits right after the last block: inside a popover it is the end of
-`PopoverBody`, inside a dialog the end of the body, in a card the last child.
+row sits right after the last block: inside a popover it is the end of the
+popover's content, inside a dialog the end of the body, in a card the last
+child.
 
 There is no footer bar. A form never pins its actions under the content with a
 `Divider`, a `border-t`, a `<footer>`, `PaneShell` `dock` or

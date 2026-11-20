@@ -7,7 +7,6 @@ import {
   IconButton,
   ListboxList,
   listboxOptionId,
-  ScrollFade,
   useDropdown,
 } from '@goodboy/ui';
 import { chipsInputOptions, type ChipSuggestion } from './chipsInputOptions';
@@ -115,6 +114,7 @@ export const ChipsInput = ({
     <AnchoredPopover
       dropdown={dropdown}
       className="motion-safe:animate-popover-in"
+      bodyClassName="max-h-60"
       anchorClassName="w-full"
       trigger={
         <div
@@ -170,12 +170,7 @@ export const ChipsInput = ({
         </div>
       }
     >
-      <ScrollFade
-        className="flex min-h-0 flex-col"
-        viewportClassName="max-h-60 p-1"
-        fadeFrom="floating"
-        fadeSize={12}
-      >
+      <div className="p-1">
         <ListboxList
           id={listId}
           ariaLabel={`${label} suggestions`}
@@ -198,7 +193,7 @@ export const ChipsInput = ({
           }}
           onActivate={setHighlight}
         />
-      </ScrollFade>
+      </div>
     </AnchoredPopover>
   );
 };

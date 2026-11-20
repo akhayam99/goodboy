@@ -7,6 +7,7 @@ import {
   ICON_SIZE,
   POPOVER_WIDTH_CLASS,
   POPOVER_WIDTH_PX,
+  PopoverPin,
   SelectableRow,
   useDropdown,
 } from '@goodboy/ui';
@@ -184,6 +185,8 @@ export const NotificationCenter = ({ isCurrent }: Props) => {
       <AnchoredPopover
         dropdown={dropdown}
         hasBackdrop
+        bodyClassName="max-h-[22rem]"
+        viewportRef={viewportRef}
         trigger={
           <BellButton
             isOpen={open}
@@ -194,50 +197,53 @@ export const NotificationCenter = ({ isCurrent }: Props) => {
           />
         }
       >
-        <BellHeader
-          hasNotifications={notifications.length > 0}
-          unread={unread}
-          view={view}
-          onViewChange={setView}
-          onMarkAllRead={markAllRead}
-          hasManyWorkspaces={hasManyWorkspaces}
-          scope={notificationScope}
-          elsewhere={elsewhere}
-          onScopeChange={(next) => changeScope({ next })}
-        />
-        <Divider />
+        <PopoverPin edge="start">
+          <BellHeader
+            hasNotifications={notifications.length > 0}
+            unread={unread}
+            view={view}
+            onViewChange={setView}
+            onMarkAllRead={markAllRead}
+            hasManyWorkspaces={hasManyWorkspaces}
+            scope={notificationScope}
+            elsewhere={elsewhere}
+            onScopeChange={(next) => changeScope({ next })}
+          />
+          <Divider />
+        </PopoverPin>
         <BellRows
           isLoading={notificationsLoading && notifications.length === 0}
           hasNotifications={notifications.length > 0}
           groups={shownGroups}
-          viewportRef={viewportRef}
           close={close}
           onOpenStudio={() => openNotificationsStudio({ isDoor: false })}
           onDismiss={(ids) => {
             void dismissNotificationGroup({ ids });
           }}
         />
-        {unreadBelow > 0 ? (
-          <p
-            role="status"
-            data-unread-below=""
-            className="px-3 py-1 text-meta text-muted-foreground"
+        <PopoverPin edge="end">
+          {unreadBelow > 0 ? (
+            <p
+              role="status"
+              data-unread-below=""
+              className="px-3 py-1 text-meta text-muted-foreground"
+            >
+              {unreadBelow} more unread
+            </p>
+          ) : null}
+          <Divider />
+          <SelectableRow
+            selected={false}
+            onClick={() => {
+              close();
+              openNotificationsStudio({ isDoor: true });
+            }}
+            className="items-center justify-between gap-2 rounded-none px-3 py-2 text-meta"
           >
-            {unreadBelow} more unread
-          </p>
-        ) : null}
-        <Divider />
-        <SelectableRow
-          selected={false}
-          onClick={() => {
-            close();
-            openNotificationsStudio({ isDoor: true });
-          }}
-          className="items-center justify-between gap-2 rounded-none px-3 py-2 text-meta"
-        >
-          Open all notifications
-          <ChevronRight size={ICON_SIZE.row} aria-hidden />
-        </SelectableRow>
+            Open all notifications
+            <ChevronRight size={ICON_SIZE.row} aria-hidden />
+          </SelectableRow>
+        </PopoverPin>
       </AnchoredPopover>
     </div>
   );

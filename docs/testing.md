@@ -402,3 +402,7 @@ The probe is advisory: in the full run a finding prints as `layers advisory: ...
 ### Reading probe
 
 A probe proves that nothing scrolls under a reader, in a real browser, because happy-dom has no layout. `reading-hold` (`scripts/validateScenesReadingHold.mjs`) opens `u27-breadcrumbs-after-agent-light` at 1100 by 640, scrolls the transcript, opens and closes the first setting word of the status line and fails when the text under the reader moves by more than a pixel either way. Run it with `pnpm validate:scenes --only reading-hold` against `pnpm dev` in mock mode on port 5230; the failure rules have fixtures in `scripts/validate-scenes.test.mjs`.
+
+### Popover scroll probe
+
+`popover-scroll` (`scripts/validateScenesPopoverScroll.mjs`) opens `popover-long-menu`, a 30 row menu, in a 1024 by 400 window. It fails when the popover leaves the window, holds more or fewer than one scroller, does not overflow, draws no bottom fade, or cannot scroll its last row fully into view with a top fade. Run it with `pnpm validate:scenes --only popover-scroll` against `pnpm dev` in mock mode on port 5230; `popoverScrollFailures` has fixtures in `scripts/validate-scenes.test.mjs`.

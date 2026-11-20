@@ -1,4 +1,4 @@
-import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent } from 'react';
+import { useEffect, useId, useMemo, useState, type KeyboardEvent } from 'react';
 import { TriangleAlert, Search } from '@goodboy/ui/icons';
 import {
   cn,
@@ -7,7 +7,7 @@ import {
   Eyebrow,
   ICON_SIZE,
   Kbd,
-  ScrollFade,
+  PopoverPin,
   SegmentedTabs,
   SkeletonRow,
 } from '@goodboy/ui';
@@ -54,6 +54,12 @@ const SECTION_TITLE: Readonly<Record<LinkWorkRow['section'], string>> = {
 
 const LIST_FORMAT = new Intl.ListFormat('en', { type: 'disjunction' });
 
+const KEY_HINTS = [
+  ['↑↓', 'move'],
+  ['Enter', 'link'],
+  ['Esc', 'close'],
+] as const;
+
 const ALL_TRACKERS = LIST_FORMAT.format(Object.values(LINK_WORK_PROVIDER_LABEL));
 
 const placeholderOf = ({
@@ -96,7 +102,6 @@ export const LinkWorkPicker = ({
 }: Props) => {
   const now = useNow(30_000);
   const listId = useId();
-  const inputRef = useRef<HTMLInputElement>(null);
   const [pickedSource, setSource] = useState<LinkWorkSource | null>(null);
   const source: LinkWorkSource =
     pickedSource ??
@@ -113,10 +118,6 @@ export const LinkWorkPicker = ({
   useEffect(() => {
     setActiveIndex(0);
   }, [query, source]);
-
-  useEffect(() => {
-    inputRef.current?.focus();
-  }, []);
 
   const isStarred = (row: LinkWorkRow): boolean => {
     const identity = starIdentityOfTask({ task: row.task });
@@ -176,45 +177,48 @@ export const LinkWorkPicker = ({
   const sourceName = source === 'all' ? ALL_TRACKERS : LINK_WORK_PROVIDER_LABEL[source];
 
   return (
-    <div className="flex flex-col">
-      <div className="flex items-center gap-2 px-3 py-3">
-        <Search size={ICON_SIZE.control} aria-hidden className="shrink-0 text-faint-foreground" />
-        <input
-          ref={inputRef}
-          type="text"
-          value={query}
-          role="combobox"
-          aria-label="Search work to link"
-          aria-expanded
-          aria-controls={listId}
-          aria-activedescendant={active === null ? undefined : optionId(active.key)}
-          aria-autocomplete="list"
-          autoComplete="off"
-          spellCheck={false}
-          disabled={isLinking}
-          placeholder={placeholderOf({ sources })}
-          onChange={(event) => onQueryChange(event.target.value)}
-          onKeyDown={onKeyDown}
-          className="min-w-0 flex-1 bg-transparent text-body text-foreground outline-none placeholder:text-faint-foreground"
-        />
-      </div>
-      {sources.length > 1 && view.kind === 'list' ? (
-        <div className="flex px-2 pb-2">
-          <SegmentedTabs
-            size="sm"
-            ariaLabel="Filter by source"
-            options={sourceOptions}
-            value={source}
-            onChange={(next) =>
-              setSource(
-                next === 'all' ? 'all' : (sources.find((candidate) => candidate === next) ?? 'all'),
-              )
-            }
+    <>
+      <PopoverPin edge="start">
+        <div className="flex items-center gap-2 px-3 py-3">
+          <Search size={ICON_SIZE.control} aria-hidden className="shrink-0 text-faint-foreground" />
+          <input
+            autoFocus
+            value={query}
+            role="combobox"
+            aria-label="Search work to link"
+            aria-expanded
+            aria-controls={listId}
+            aria-activedescendant={active === null ? undefined : optionId(active.key)}
+            aria-autocomplete="list"
+            autoComplete="off"
+            spellCheck={false}
+            disabled={isLinking}
+            placeholder={placeholderOf({ sources })}
+            onChange={(event) => onQueryChange(event.target.value)}
+            onKeyDown={onKeyDown}
+            className="min-w-0 flex-1 bg-transparent text-body text-foreground outline-none placeholder:text-faint-foreground"
           />
         </div>
-      ) : null}
-      <Divider />
-      <ScrollFade className="max-h-80" viewportClassName="p-1" fadeFrom="floating">
+        {sources.length > 1 && view.kind === 'list' ? (
+          <div className="flex px-2 pb-2">
+            <SegmentedTabs
+              size="sm"
+              ariaLabel="Filter by source"
+              options={sourceOptions}
+              value={source}
+              onChange={(next) =>
+                setSource(
+                  next === 'all'
+                    ? 'all'
+                    : (sources.find((candidate) => candidate === next) ?? 'all'),
+                )
+              }
+            />
+          </div>
+        ) : null}
+        <Divider />
+      </PopoverPin>
+      <div className="p-1">
         {view.kind === 'unknownLink' ? (
           <p className="px-3 py-3 text-meta text-muted-foreground">
             {`Goodboy links ${Object.values(LINK_WORK_PROVIDER_LABEL).join(', ')} URLs.`}
@@ -277,43 +281,39 @@ export const LinkWorkPicker = ({
             ])}
           </ul>
         )}
-      </ScrollFade>
-      {active === null ? null : (
-        <LinkScopePreview
-          provider={active.task.provider}
-          identifier={active.task.identifier}
-          isClosing={isClosing}
-          isLinking={isLinking}
-          isDuplicate={active.isLinked}
-          canStar={starIdentityOfTask({ task: active.task }) !== null}
-          isStarred={isStarred(active)}
-          onStar={() => star(active)}
-          onToggleClosing={() => setIsClosing((current) => !current)}
-          onLink={() => link(active)}
-          onCancel={onClose}
-        />
-      )}
-      {error !== null ? (
-        <p role="alert" className="flex items-center gap-1 px-3 py-2 text-meta text-danger">
-          <TriangleAlert size={ICON_SIZE.row} aria-hidden className="shrink-0" />
-          {error}
-        </p>
-      ) : null}
-      <Divider />
-      <div className="flex items-center gap-4 bg-muted px-3 py-2 text-meta text-faint-foreground">
-        <span className="flex items-center gap-2">
-          <Kbd look="cap">↑↓</Kbd>
-          move
-        </span>
-        <span className="flex items-center gap-2">
-          <Kbd look="cap">Enter</Kbd>
-          link
-        </span>
-        <span className="flex items-center gap-2">
-          <Kbd look="cap">Esc</Kbd>
-          close
-        </span>
       </div>
-    </div>
+      <PopoverPin edge="end">
+        {active === null ? null : (
+          <LinkScopePreview
+            provider={active.task.provider}
+            identifier={active.task.identifier}
+            isClosing={isClosing}
+            isLinking={isLinking}
+            isDuplicate={active.isLinked}
+            canStar={starIdentityOfTask({ task: active.task }) !== null}
+            isStarred={isStarred(active)}
+            onStar={() => star(active)}
+            onToggleClosing={() => setIsClosing((current) => !current)}
+            onLink={() => link(active)}
+            onCancel={onClose}
+          />
+        )}
+        {error !== null ? (
+          <p role="alert" className="flex items-center gap-1 px-3 py-2 text-meta text-danger">
+            <TriangleAlert size={ICON_SIZE.row} aria-hidden className="shrink-0" />
+            {error}
+          </p>
+        ) : null}
+        <Divider />
+        <div className="flex items-center gap-4 bg-muted px-3 py-2 text-meta text-faint-foreground">
+          {KEY_HINTS.map(([key, word]) => (
+            <span key={word} className="flex items-center gap-2">
+              <Kbd look="cap">{key}</Kbd>
+              {word}
+            </span>
+          ))}
+        </div>
+      </PopoverPin>
+    </>
   );
 };

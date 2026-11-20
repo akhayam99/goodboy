@@ -1,4 +1,4 @@
-import { Button, Eyebrow, ScrollFade, formatUsd, formatUsdPrecise, Tooltip } from '@goodboy/ui';
+import { Button, Eyebrow, PopoverPin, formatUsd, formatUsdPrecise, Tooltip } from '@goodboy/ui';
 import type { SessionBudget, SessionId } from '@goodboy/types';
 import type { SessionSpendBreakdown } from '../../sessionSpendByAgent';
 import { SpendLimitRow } from './SpendLimitRow';
@@ -22,7 +22,7 @@ export const SessionSpendPopover = ({
   onOpenImpact,
 }: Props) => (
   <>
-    <div className="flex items-end justify-between gap-2 px-4 pb-1 pt-4">
+    <PopoverPin edge="start" className="flex items-end justify-between gap-2 px-4 pb-1 pt-4">
       <div className="flex flex-col gap-1">
         <Eyebrow label="Spend" />
         <Tooltip content={formatUsdPrecise(spend.totalUsd)}>
@@ -32,8 +32,8 @@ export const SessionSpendPopover = ({
         </Tooltip>
       </div>
       <span className="text-meta text-muted-foreground">this session</span>
-    </div>
-    <ScrollFade className="min-h-0 flex-1" viewportClassName="flex flex-col gap-4 px-4 py-3">
+    </PopoverPin>
+    <div className="flex flex-col gap-4 px-4 py-3">
       <SpendLimitRow
         sessionId={sessionId}
         totalUsd={spend.totalUsd}
@@ -47,11 +47,11 @@ export const SessionSpendPopover = ({
           {`Keeping context up to date: ${formatUsd(spend.contextUsd)}`}
         </p>
       ) : null}
-    </ScrollFade>
-    <div className="flex items-center px-3 py-2">
+    </div>
+    <PopoverPin edge="end" className="flex items-center px-3 py-2">
       <Button variant="ghost" size="sm" onClick={onOpenImpact}>
         Open in Impact
       </Button>
-    </div>
+    </PopoverPin>
   </>
 );
