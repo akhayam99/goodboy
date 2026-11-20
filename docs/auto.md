@@ -2094,8 +2094,8 @@ names the field or phrase to drop or change ("facts" on a reviewer, "publish" on
 try. A refusal row keeps the action, the code and the roles of the
 refused children; while it is pending for the current generation, `readAutoTreeViews` reads it as
 `pendingRefusal` and the tail says it in the user voice (`refusalNoticeOf`, reasons from
-`AUTO_REFUSAL_USER_REASON`): "Auto tried to start an Implementer. Not started: more than one
-folder fits and it did not say which. Auto is choosing again." A refusal about the project
+`AUTO_REFUSAL_USER_REASON`): "The Lead tried to start an Implementer. Not started: more than one
+folder fits and it didn't say which. The Lead is choosing again." A refusal about the project
 (`mount_ambiguous`, `mount_missing`) is asked instead (`projectAskOf`, `AutoProjectAsk`). When
 the refusal comes from a `mount` block, or from a writer delegate whose `mount` names a project
 of the workspace that is not added yet (`refusalMountNote`), and the project is known, the ask is one inline step:

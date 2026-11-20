@@ -20,7 +20,7 @@ export const WireframeIssues = ({ issues, sourceText, isRepairing, onRepair }: P
   <div data-testid="wireframe-issues" className="flex min-w-0 flex-col gap-3">
     <div className="flex flex-wrap items-center gap-2">
       <span role="alert" className="text-meta text-danger">
-        this wireframe does not match the schema, so it cannot be rendered
+        This wireframe doesn't match the schema, so it can't be rendered
       </span>
       <Button
         variant="secondary"

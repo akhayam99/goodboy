@@ -69,7 +69,7 @@ describe('WireframeProvenanceRow', () => {
       />,
     );
     expect(screen.getByTestId('wireframe-provenance').textContent).toContain(
-      'no design evidence was pinned',
+      'No design evidence was pinned',
     );
   });
 });

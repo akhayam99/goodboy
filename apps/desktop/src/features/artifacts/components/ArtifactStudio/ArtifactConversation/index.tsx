@@ -38,8 +38,8 @@ export const ArtifactConversation = ({ sessionId, artifact, agent, isWorkflowOwn
   };
 
   const followUpNote = isWorkflowOwned
-    ? 'this is the step transcript. a follow up adds another output, it does not rewrite this artifact.'
-    : 'a follow up adds another output, it does not rewrite this artifact.';
+    ? "This is the step transcript. A follow up adds another output, it doesn't rewrite this artifact."
+    : "A follow up adds another output, it doesn't rewrite this artifact.";
 
   return (
     <div className="flex min-h-0 min-w-0 flex-1 flex-col">
@@ -51,8 +51,8 @@ export const ArtifactConversation = ({ sessionId, artifact, agent, isWorkflowOwn
               className="shrink-0 text-meta text-foreground"
             >
               {agent === null
-                ? 'the agent behind this artifact is gone'
-                : `writing to ${agent.name}`}
+                ? 'The agent behind this artifact is gone'
+                : `Writing to ${agent.name}`}
             </span>
             <TruncatedText className="min-w-0 truncate text-meta text-muted-foreground">
               {followUpNote}
@@ -65,7 +65,7 @@ export const ArtifactConversation = ({ sessionId, artifact, agent, isWorkflowOwn
               onClick={attach}
               disabled={!hasAgent}
               data-testid="artifact-attach"
-              title="the agent doesn't see your edits until you attach the artifact"
+              title="The agent doesn't see your edits until you attach the artifact"
             >
               Attach {artifact.kind}
             </Button>
@@ -80,9 +80,9 @@ export const ArtifactConversation = ({ sessionId, artifact, agent, isWorkflowOwn
       <Divider />
       <div className="flex min-h-0 min-w-0 flex-1 flex-col">
         {session === null || !hasAgent ? (
-          <div className={cn('text-meta text-muted-foreground', PANE_RHYTHM.body)}>
-            no conversation to show. this artifact has no agent to talk to in this session.
-          </div>
+          <p className={cn('text-meta text-muted-foreground', PANE_RHYTHM.body)}>
+            This artifact has no agent to talk to in this session.
+          </p>
         ) : (
           <ChatView session={session} isActive={isActive} />
         )}

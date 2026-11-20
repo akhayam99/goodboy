@@ -43,7 +43,7 @@ export type DelegationResultView = Readonly<{
 }>;
 
 const REMOTE_MOVED_CARD = 'The branch changed online while this agent worked.';
-const REMOTE_UNKNOWN_CARD = 'Could not check whether the branch changed online.';
+const REMOTE_UNKNOWN_CARD = "Couldn't check whether the branch changed online.";
 
 const remoteTextOf = ({ value }: StatusParams): string | null => {
   if (value === 'moved') {

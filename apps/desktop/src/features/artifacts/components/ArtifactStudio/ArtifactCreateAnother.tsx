@@ -13,7 +13,7 @@ export const ArtifactCreateAnother = ({ sessionId, artifact, isWorkflowOwned }: 
     return null;
   }
 
-  const title = isWorkflowOwned ? 'create another from this run' : 'create another from this';
+  const title = isWorkflowOwned ? 'Create another from this run' : 'Create another from this';
 
   return (
     <span data-testid="artifact-create-another" className="inline-flex min-w-0">

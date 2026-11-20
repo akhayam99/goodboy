@@ -61,11 +61,11 @@ export type AdoptionRefusalCode = (typeof ADOPTION_REFUSAL_CODES)[number];
 
 export const ADOPTION_REFUSAL_TEXT = {
   agent_gone: 'This agent is no longer in the session.',
-  not_adoptable: 'Auto can take over implementers, testers, analysis agents and Generalists.',
+  not_adoptable: 'The Lead can take over implementers, testers, analysis agents and Generalists.',
   in_run: 'Pause or finish the run first.',
   turn_running: 'Wait for the turn to end first.',
-  already_in_auto: 'This agent already belongs to an Auto conversation.',
-  cycle: 'This agent is linked to an Auto conversation, so Auto cannot take it over.',
+  already_in_auto: 'The Lead already runs this agent.',
+  cycle: "This agent is linked to a Lead conversation, so the Lead can't take it over.",
 } as const satisfies Readonly<Record<AdoptionRefusalCode, string>>;
 
 export type AdoptionSnapshot = Readonly<{

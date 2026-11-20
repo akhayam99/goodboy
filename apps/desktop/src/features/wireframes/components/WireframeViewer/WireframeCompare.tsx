@@ -79,7 +79,7 @@ export const WireframeCompare = ({
     return (
       <div data-testid="wireframe-compare" className="flex min-w-0 flex-col gap-2">
         <p className="text-meta text-muted-foreground">
-          One of these versions does not pass the checks, so there is nothing to lay side by side.
+          One of these versions doesn't pass the checks, so there is nothing to lay side by side.
         </p>
         <Button variant="ghost" size="sm" onClick={onExit} className="self-start">
           Exit

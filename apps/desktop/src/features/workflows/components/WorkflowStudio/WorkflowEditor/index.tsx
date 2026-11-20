@@ -152,7 +152,7 @@ export const WorkflowEditor = ({ workspaceId, workingDir, connectedProviders, ed
     >
       <GoalField
         value={form.goal}
-        placeholder="what should this workflow accomplish? Draft steps writes the plan from it…"
+        placeholder="What should this workflow accomplish? Draft steps writes the plan from it…"
         hasSessionGoal={false}
         isSessionGoal={false}
         canUndo={polish.canUndo({ id: 'goal', current: form.goal })}
