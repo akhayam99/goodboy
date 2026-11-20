@@ -168,23 +168,23 @@ export const ChatList = ({
     }
   };
 
-  const deleteMany = useCallback(
-    async (chatIds: ReadonlyArray<ChatId>): Promise<void> => {
-      const before = latest.current.order;
+  const removeChats = useCallback(
+    async ({ removedIds, order: before }: RemovedChats): Promise<void> => {
       try {
-        await deleteChats({ workspaceId, chatIds });
+        await deleteChats({ workspaceId, chatIds: removedIds });
       } catch (error) {
         reportFailure({ title: DELETE_FAILED, error });
         return;
       }
-      latest.current.onDeleted({ removedIds: chatIds, order: before });
+      latest.current.onDeleted({ removedIds, order: before });
     },
     [deleteChats, reportFailure, workspaceId],
   );
 
   const deleteOne = useCallback(
-    (chatId: ChatId): Promise<void> => deleteMany([chatId]),
-    [deleteMany],
+    (chatId: ChatId): Promise<void> =>
+      removeChats({ removedIds: [chatId], order: latest.current.order }),
+    [removeChats],
   );
 
   const onPin = useCallback(
@@ -222,10 +222,10 @@ export const ChatList = ({
                 (chatId) => chats.find((chat) => chat.id === chatId)?.title ?? 'Chat',
               ),
               onArchive: () => void archiveMany(selectedIds),
-              onDelete: () => deleteMany(selectedIds),
+              onDelete: () => removeChats({ removedIds: selectedIds, order }),
             },
           },
-    [archiveMany, chats, deleteMany, selectedIds],
+    [archiveMany, chats, order, removeChats, selectedIds],
   );
   const selectionControls = useActionControls({ target: selectionTarget });
   const triggerSelectionAction = selectionControls.trigger;
@@ -277,7 +277,7 @@ export const ChatList = ({
         onSelect={onSelect}
         onBack={() => setIsArchivedView(false)}
         onRestore={(chatId) => void restore({ chatIds: [chatId] })}
-        onDelete={deleteMany}
+        onDelete={removeChats}
       />
     );
   }

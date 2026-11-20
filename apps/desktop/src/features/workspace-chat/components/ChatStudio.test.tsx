@@ -11,7 +11,10 @@ vi.mock('../../../shared/lib/db', async () =>
   (await import('../../../store/storyHarness')).dbLibModuleMock(),
 );
 
-const { holder } = vi.hoisted(() => ({ holder: { backend: null as ChatBackend | null } }));
+const { holder } = vi.hoisted(() => {
+  const box: { backend: ChatBackend | null } = { backend: null };
+  return { holder: box };
+});
 
 vi.mock('../activeChatBackend', () => ({
   activeChatBackend: new Proxy(
@@ -380,6 +383,47 @@ describe('archived chats in the studio band', () => {
 
     expect(screen.getByRole('textbox', { name: 'Search chats' })).toBeDefined();
     expect(screen.queryByRole('navigation', { name: 'Breadcrumb' })).toBeNull();
+  });
+
+  const openArchivedTrio = async (): Promise<void> => {
+    holder.backend = newChatBackend();
+    await seedChats({
+      backend: holder.backend,
+      seeds: [
+        ...ARCHIVED_SEEDS,
+        { key: 'ledger', title: 'ledger-core retention', ageMs: 5 * MINUTE, isArchived: true },
+        { key: 'relay', title: 'notify-relay backoff', ageMs: 6 * MINUTE, isArchived: true },
+      ],
+    });
+    useAppStore.setState({ currentWorkspaceId: CHAT_WORKSPACE_ID });
+    await useAppStore.getState().loadChats({ workspaceId: CHAT_WORKSPACE_ID });
+    render(<Host />);
+    await pressChatDoor();
+    fireEvent.click(await screen.findByRole('button', { name: /Archived · 3/ }));
+    fireEvent.click(rowButton('ledger-core retention'));
+    await waitFor(() => expect(openedChat()).toBe(chatIdOf({ key: 'ledger' })));
+  };
+
+  it('lands on the archived chat below after the open archived one is deleted from its row', async () => {
+    await openArchivedTrio();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Delete ledger-core retention' }));
+    fireEvent.click(
+      within(await screen.findByRole('dialog')).getByRole('button', { name: 'Delete chat' }),
+    );
+
+    await waitFor(() => expect(openedChat()).toBe(chatIdOf({ key: 'relay' })));
+  });
+
+  it('lands on the archived chat below after the open archived one is deleted from the header', async () => {
+    await openArchivedTrio();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Delete chat' }));
+    fireEvent.click(
+      within(await screen.findByRole('dialog')).getByRole('button', { name: 'Delete chat' }),
+    );
+
+    await waitFor(() => expect(openedChat()).toBe(chatIdOf({ key: 'relay' })));
   });
 
   it('still closes the studio on Esc from the archived list', async () => {

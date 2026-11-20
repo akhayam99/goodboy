@@ -73,6 +73,10 @@ export const ChatStudio = ({ workspaceId, chatId, onClose }: Props) => {
     if (chatId === null) {
       return;
     }
+    if (archivedChats.some((chat) => chat.id === chatId)) {
+      leave({ removedIds: [chatId], order: archivedChats.map((chat) => chat.id) });
+      return;
+    }
     const groups = chatGroupRowsOf({ chats, needle: '', now: Date.now() });
     leave({ removedIds: [chatId], order: chatOrderOf({ groups }) });
   };

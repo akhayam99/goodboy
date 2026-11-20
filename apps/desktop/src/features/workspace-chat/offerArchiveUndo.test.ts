@@ -138,6 +138,62 @@ describe('offerArchiveUndo', () => {
     expect(openedChat()).toBe(chatIdOf({ key: 'consent' }));
   });
 
+  it('reopens the restored chat in Chat when the user moved to another studio', async () => {
+    await archiveRefund();
+    offerArchiveUndo({
+      workspaceId: CHAT_WORKSPACE_ID,
+      chatIds: [chatIdOf({ key: 'refund' })],
+      message: 'Refund idempotency options',
+      selectedId: chatIdOf({ key: 'refund' }),
+      showToast: vi.fn(),
+    });
+    useAppStore.getState().openStudio({ studio: { kind: 'monitoring' } });
+
+    expect(await useAppStore.getState().undoLastOperation()).toBe(true);
+
+    expect(openedChat()).toBe(chatIdOf({ key: 'refund' }));
+  });
+
+  it('drops the undo once the archived chat was deleted from Archived', async () => {
+    await archiveRefund();
+    await useAppStore.getState().loadArchivedChats({ workspaceId: CHAT_WORKSPACE_ID });
+    offerArchiveUndo({
+      workspaceId: CHAT_WORKSPACE_ID,
+      chatIds: [chatIdOf({ key: 'refund' })],
+      message: 'Refund idempotency options',
+      selectedId: chatIdOf({ key: 'refund' }),
+      showToast: vi.fn(),
+    });
+    await useAppStore
+      .getState()
+      .deleteChats({ workspaceId: CHAT_WORKSPACE_ID, chatIds: [chatIdOf({ key: 'refund' })] });
+
+    expect(await useAppStore.getState().undoLastOperation()).toBe(false);
+
+    expect(isListed({ key: 'refund' })).toBe(false);
+    expect(openedChat()).toBe(chatIdOf({ key: 'consent' }));
+  });
+
+  it('reports a conflict and selects nothing when no chat came back', async () => {
+    await archiveRefund();
+    offerArchiveUndo({
+      workspaceId: CHAT_WORKSPACE_ID,
+      chatIds: [chatIdOf({ key: 'refund' })],
+      message: 'Refund idempotency options',
+      selectedId: chatIdOf({ key: 'refund' }),
+      showToast: vi.fn(),
+    });
+    await holder.backend?.deleteChats({ chatIds: [chatIdOf({ key: 'refund' })] });
+
+    expect(await useAppStore.getState().undoLastOperation()).toBe(false);
+
+    expect(isListed({ key: 'refund' })).toBe(false);
+    expect(openedChat()).toBe(chatIdOf({ key: 'consent' }));
+    expect(useAppStore.getState().undoNotices.map((notice) => notice.toast.message)).toContain(
+      'Nothing changed. The chat is no longer archived.',
+    );
+  });
+
   it('announces the archive with Undo through the toast it is given', async () => {
     await archiveRefund();
     const showToast = vi.fn();
