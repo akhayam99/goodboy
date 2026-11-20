@@ -1,14 +1,15 @@
-import type { CSSProperties, ReactNode, Ref } from 'react';
+import type { CSSProperties, ReactNode, RefObject } from 'react';
 import { DockCellContext } from '../dockCellContext';
 import { cn } from '../cn';
 import type { DockGridColumnBox } from '../dockGridColumnBox';
 import { dockGridTracksOf } from '../dockGridTracksOf';
 import { DockPairTurnContext, type DockPairTurn } from '../dockPairTurnContext';
 import type { DockGridSpec } from '../dockGridSpec';
+import { DockRowHandle } from './DockRowHandle';
 import { SplitHandle, type SplitHandleProps } from './SplitHandle';
 
 type Props = {
-  readonly gridRef: Ref<HTMLDivElement>;
+  readonly gridRef: RefObject<HTMLDivElement | null>;
   readonly spec: DockGridSpec;
   readonly cell: ReactNode;
   readonly columns: ReadonlyArray<DockGridColumnBox>;
@@ -85,7 +86,24 @@ export const DockGrid = ({
             </div>
           );
         });
-        return gutter === null ? panes : [gutter, ...panes];
+        const [top, bottom] = column.panes;
+        const rowHandle =
+          isFramed && spec.onSplit !== undefined && top !== undefined && bottom !== undefined ? (
+            <DockRowHandle
+              key={`row-${index}`}
+              gridRef={gridRef}
+              gridColumn={index * 2 + 1}
+              keys={[top.key, bottom.key]}
+              topWeight={top.weight}
+              bottomWeight={bottom.weight}
+              onSplit={spec.onSplit}
+            />
+          ) : null;
+        return [
+          ...(gutter === null ? [] : [gutter]),
+          ...panes,
+          ...(rowHandle === null ? [] : [rowHandle]),
+        ];
       })}
     </div>
   );

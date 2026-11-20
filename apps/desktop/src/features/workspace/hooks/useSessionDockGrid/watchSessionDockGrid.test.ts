@@ -82,6 +82,7 @@ const SAVED: DrawerGrid = {
   used: ['browser', 'terminal'],
   focus: { at: 'tool', kind: 'browser' },
   widths: { browser: 760 },
+  splits: {},
 };
 
 let store: StoryStore;
@@ -189,7 +190,13 @@ describe('the dock grid saved on the session', () => {
     saveRow({ sessionId: S1, grid: SAVED });
     saveRow({
       sessionId: S2,
-      grid: { columns: [[TERMINAL]], used: ['terminal'], focus: { at: 'page' }, widths: {} },
+      grid: {
+        columns: [[TERMINAL]],
+        used: ['terminal'],
+        focus: { at: 'page' },
+        widths: {},
+        splits: {},
+      },
     });
     watch();
 
@@ -209,6 +216,7 @@ describe('the dock grid saved on the session', () => {
         used: ['browser', 'monitoring'],
         focus: { at: 'tool', kind: 'monitoring' },
         widths: {},
+        splits: {},
       },
     });
     watch();
@@ -221,7 +229,13 @@ describe('the dock grid saved on the session', () => {
   it('brings Monitor back when the session opens again in the same run', async () => {
     saveRow({
       sessionId: S2,
-      grid: { columns: [[TERMINAL]], used: ['terminal'], focus: { at: 'page' }, widths: {} },
+      grid: {
+        columns: [[TERMINAL]],
+        used: ['terminal'],
+        focus: { at: 'page' },
+        widths: {},
+        splits: {},
+      },
     });
     watch();
     await goTo({ sessionId: S1 });

@@ -334,7 +334,13 @@ go through `dockLayoutOf` inside `DrawerColumn`: every pane is its own card,
 in the dock box on the window edge whether the grid pushes or lies over the
 page. Each column has its handle on its left edge. It takes the width the
 session saved for its lead tool (`drawerGrid.widths`), else the width its lead
-tier had before the update; rows keep the solver's share, 50/50 or 58/42 with Browser on top.
+tier had before the update. Two stacked panels start at the solver's share,
+50/50 or 58/42 with Browser on top, and a handle between them
+(`DockRowHandle`) moves the line: each panel keeps at least 160px, the arrows
+step it, a double click goes back to the start. The drag previews on the grid
+itself and writes once at the release (`resizeDockRow`, the share under the
+pair's kinds in `drawerGrid.splits`); a write for a pair no longer stacked
+that way changes nothing.
 With two panels or more on screen the focused one draws a `focus-ring` border.
 A click or a focus inside a panel or the page names it (`focusShellPanel`,
 which writes only when the key changes). F6 and ⇧F6 (`panel.focusNext`,
@@ -701,7 +707,9 @@ without a branch sits in `Unassigned comments` on the Session overview.
 ### The grid saved on the session
 
 Each session remembers its dock grid: the panels, the columns, the width of
-each tool's column and the focus. It lives in `session_dock_grids` (m244), one
+each tool's column, the height of two stacked panels and the focus. The
+heights sit in an optional `splits` field of version 1: a row without it
+reads, and an older build reads a row with it and leaves it out. It lives in `session_dock_grids` (m244), one
 row per session, deleted with it. The Board and the pages keep the grid the
 window has; they save nothing.
 

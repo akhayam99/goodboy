@@ -27,6 +27,7 @@ vi.mock('../lib/db', async () => (await import('../../store/storyHarness')).dbLi
 import { closeSlot } from '../../app/hooks/useAppShortcuts/closeSlot';
 import { toggleTerminalDock } from '../../features/terminal/toggleTerminalDock';
 import { focusShellPanel } from './focusShellPanel';
+import { splitShellColumn } from './splitShellColumn';
 import { stepPanelFocus } from './stepPanelFocus';
 import { turnShellPair } from './turnShellPair';
 
@@ -195,6 +196,28 @@ describe('the frame focus', () => {
     const before = store.getState().drawerGrid;
 
     store.getState().turnDockPair({ entry: terminal });
+
+    expect(store.getState().drawerGrid).toBe(before);
+  });
+
+  it('keeps the height of two stacked panels and goes back to the start on a reset', () => {
+    store.getState().openDrawer(TERMINAL);
+    store.getState().openDrawer(BROWSER);
+    turnShellPair({ key: 'terminal' });
+
+    splitShellColumn({ keys: ['terminal', 'browser'], share: 0.7234 });
+    expect(store.getState().drawerGrid.splits).toEqual({ 'terminal/browser': 0.723 });
+
+    splitShellColumn({ keys: ['terminal', 'browser'], share: null });
+    expect(store.getState().drawerGrid.splits).toEqual({});
+  });
+
+  it('writes no height for panels that are no longer stacked that way', () => {
+    store.getState().openDrawer(TERMINAL);
+    store.getState().openDrawer(BROWSER);
+    const before = store.getState().drawerGrid;
+
+    splitShellColumn({ keys: ['terminal', 'browser'], share: 0.4 });
 
     expect(store.getState().drawerGrid).toBe(before);
   });

@@ -4,6 +4,7 @@ import type { DockGridColumnBox } from '../dockGridColumnBox';
 import { dockGridSpanOf } from '../dockGridSpanOf';
 import { dockGridTracksOf } from '../dockGridTracksOf';
 import { dockLeadSizingOf } from '../dockLeadSizingOf';
+import { dockSplitKeyOf } from '../dockSplitKeyOf';
 import type { DockPairTurn } from '../dockPairTurnContext';
 import { DOCK_FOCUS_DETAIL, type DockGridCell, type DockGridSpec } from '../dockGridSpec';
 import { DRAWER_TIERS, type DrawerPlacement, type DrawerSizing } from '../drawerGeometry';
@@ -28,7 +29,10 @@ export type DockSolveParams = {
   readonly railWidth: number;
   readonly canPush: boolean;
   readonly detail: SolvedPane | null;
-  readonly columns: ReadonlyArray<{ readonly panes: ReadonlyArray<SolvedPane> }>;
+  readonly columns: ReadonlyArray<{
+    readonly panes: ReadonlyArray<SolvedPane>;
+    readonly split?: number;
+  }>;
 };
 
 type DetailSpec = {
@@ -39,6 +43,7 @@ type DetailSpec = {
 
 type Params = {
   readonly columns: ReadonlyArray<ReadonlyArray<DockGridCell>>;
+  readonly splits: Readonly<Record<string, number>>;
   readonly cellCount: number;
   readonly onResize: DockGridSpec['onResize'];
   readonly columnWidth: number | null;
@@ -98,6 +103,7 @@ const SIDE_TURN: Omit<DockPairTurn, 'onTurn'> = {
 
 export const useDockGrid = ({
   columns,
+  splits,
   cellCount,
   onResize,
   columnWidth,
@@ -133,6 +139,7 @@ export const useDockGrid = ({
               sizing: cell.sizing,
               savedWidth: savedWidthOf({ cell }),
             })),
+            split: splits[dockSplitKeyOf({ keys: column.map((cell) => cell.key) })],
           })),
         });
   const solved = solveColumns({ columns });

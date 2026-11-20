@@ -6,6 +6,7 @@ import { shellPanelsOf } from '../../../store/slices/drawer/shellPanelsOf';
 import { focusShellPanel } from '../../../shared/shellFocus/focusShellPanel';
 import { turnShellPair } from '../../../shared/shellFocus/turnShellPair';
 import { resizeShellColumn } from '../../../shared/shellFocus/resizeShellColumn';
+import { splitShellColumn } from '../../../shared/shellFocus/splitShellColumn';
 import { selectDrawerPlacement } from '../../../store/slices/drawer/selectDrawerPlacement';
 import { useAppStore } from '../../../store';
 import { detailWidthIdOf } from '../../../store/slices/drawer/detailWidthIdOf';
@@ -70,9 +71,11 @@ export const useShellRight = ({}: Params): ShellRight => {
         })),
       ),
       focus: panelFocusKeyOf({ panels }),
+      splits: drawerGrid.splits,
       onFocus: focusShellPanel,
       onTurn: turnShellPair,
       onResize: resizeShellColumn,
+      onSplit: splitShellColumn,
     };
   }, [drawer, drawerBack, drawerGrid, currentSessionId, appStudio]);
   return {

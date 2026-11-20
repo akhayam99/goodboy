@@ -6,6 +6,7 @@ import { openDrawer } from './openDrawer';
 import { recallDockGrid } from './recallDockGrid';
 import { rememberDockGrid } from './rememberDockGrid';
 import { resizeDockColumn } from './resizeDockColumn';
+import { resizeDockRow } from './resizeDockRow';
 import { toggleDrawer } from './toggleDrawer';
 import { turnDockPair } from './turnDockPair';
 import type { SliceDeps } from '../../slice-types';
@@ -20,6 +21,7 @@ export const createDrawerSlice = ({ set, get }: SliceDeps) => {
     toggleDrawer: toggleDrawer(get),
     turnDockPair: turnDockPair({ set }),
     resizeDockColumn: resizeDockColumn({ set }),
+    resizeDockRow: resizeDockRow({ set }),
     recallDockGrid: recallDockGrid({ set, get }),
     rememberDockGrid: rememberDockGrid({ get }),
   };

@@ -81,6 +81,7 @@ export const gridAfterOpen = ({ grid, entry }: Params): DrawerGrid => {
       used: [...grid.used.filter((kind) => kind !== entry.kind), entry.kind],
       focus,
       widths: grid.widths,
+      splits: grid.splits,
     };
   }
   if (grid.columns.flat().length < GRID_CAP) {
@@ -89,6 +90,7 @@ export const gridAfterOpen = ({ grid, entry }: Params): DrawerGrid => {
       used: [...grid.used, entry.kind],
       focus,
       widths: grid.widths,
+      splits: grid.splits,
     };
   }
   const oldest = toolsByUseOf({ grid })[0]?.kind ?? entry.kind;
@@ -97,5 +99,6 @@ export const gridAfterOpen = ({ grid, entry }: Params): DrawerGrid => {
     used: [...grid.used.filter((kind) => kind !== oldest), entry.kind],
     focus,
     widths: grid.widths,
+    splits: grid.splits,
   };
 };
