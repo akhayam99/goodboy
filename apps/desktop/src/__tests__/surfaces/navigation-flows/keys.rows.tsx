@@ -14,6 +14,7 @@ import {
   type IntegrationBindingId,
   type IntegrationCredentialId,
   type ChatId,
+  type ChatMessageId,
   type ProviderRunId,
   type SessionId,
   type StarredIssue,
@@ -70,6 +71,8 @@ const undoRuns: Array<number> = [];
 const undoPrevented: Array<boolean> = [];
 
 const upIndexes: Array<number> = [];
+
+const askStops: Array<SessionId> = [];
 
 const ARTIFACT_IN_LIST = brandId<ArtifactId>({ value: 'artifact-settlement-plan' });
 
@@ -1207,6 +1210,61 @@ export const MORE_KEY_ROWS: ReadonlyArray<Row> = [
     },
     lands: async (ctx) => {
       await waitFor(() => expect(useAppStore.getState().askThreadId[ctx.sessionId]).toBeNull());
+    },
+  }),
+  keyRow({
+    id: 'agent.stop',
+    also: ['ask.open'],
+    note: 'in Ask a streaming reply arms the stop before the panel closes, then stops it',
+    open: async (ctx) => {
+      await press('ask.open')();
+      const composer = await screen.findByPlaceholderText('Ask about this session…', {});
+      const threadId = brandedId<ChatId>({ value: 'keys-ask-stream' });
+      askStops.length = 0;
+      useAppStore.setState((state) => ({
+        askThreadId: { ...state.askThreadId, [ctx.sessionId]: threadId },
+        askStreams: {
+          ...state.askStreams,
+          [threadId]: {
+            runId: brandId<ProviderRunId>({ value: 'run-keys-ask' }),
+            messageId: brandedId<ChatMessageId>({ value: 'keys-ask-reply' }),
+            isStopping: false,
+          },
+        },
+        stopAskReply: vi.fn(async ({ sessionId }: { readonly sessionId: SessionId }) => {
+          askStops.push(sessionId);
+        }),
+      }));
+      await screen.findByRole('button', { name: 'Stop' });
+      composer.focus();
+      const armed = pressShortcut({ id: 'agent.stop', target: composer });
+      await settle();
+      expect(armed.defaultPrevented).toBe(true);
+      await screen.findByText('Esc again to stop', undefined);
+      expect(useAppStore.getState().drawer?.kind).toBe('ask');
+      expect(askStops).toEqual([]);
+      pressShortcut({ id: 'agent.stop', target: composer });
+      await settle();
+    },
+    lands: async (ctx) => {
+      expect(askStops).toEqual([ctx.sessionId]);
+      expect(useAppStore.getState().drawer?.kind).toBe('ask');
+    },
+  }),
+  keyRow({
+    id: 'agent.stop',
+    also: ['ask.open'],
+    note: 'in Ask with no reply streaming, Esc closes the panel',
+    open: async () => {
+      await press('ask.open')();
+      const composer = await screen.findByPlaceholderText('Ask about this session…', {});
+      composer.focus();
+      pressShortcut({ id: 'agent.stop', target: composer });
+      await settle();
+    },
+    lands: async () => {
+      await waitFor(() => expect(useAppStore.getState().drawer).toBeNull());
+      expect(screen.queryByText('Esc again to stop')).toBeNull();
     },
   }),
   keyRow({

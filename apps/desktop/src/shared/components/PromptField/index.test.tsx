@@ -233,6 +233,55 @@ describe('PromptField keys', () => {
   });
 });
 
+describe('PromptField key row', () => {
+  const keysRow = (): HTMLElement => screen.getByTestId('prompt-keys');
+
+  it('shows the keys only on an empty field with the focus, and hides them at the first letter', () => {
+    useAppStore.setState({ settings: { [SETTING_COMPOSER_CLASSIC_KEYS]: 'false' } });
+    render(<Harness kind="message" withFiles={false} sent={[]} />);
+    expect(keysRow().dataset.shown).toBe('false');
+
+    fireEvent.focus(field());
+    expect(keysRow().dataset.shown).toBe('true');
+
+    fireEvent.change(field(), { target: { value: 'R' } });
+    expect(keysRow().dataset.shown).toBe('false');
+
+    fireEvent.change(field(), { target: { value: '' } });
+    fireEvent.blur(field());
+    expect(keysRow().dataset.shown).toBe('false');
+  });
+
+  it('describes the field with the keys whether they show or not', () => {
+    useAppStore.setState({ settings: { [SETTING_COMPOSER_CLASSIC_KEYS]: 'false' } });
+    render(<Harness kind="message" withFiles={false} sent={[]} />);
+    const send = shortcutGlyphs('composer.send');
+
+    expect(field().getAttribute('aria-describedby')).toBe(keysRow().id);
+    expect(keysRow().textContent).toContain(`${send}send`);
+    fireEvent.change(field(), { target: { value: 'Retry budget' } });
+    expect(field().getAttribute('aria-describedby')).toBe(keysRow().id);
+  });
+
+  it('keeps the keys shown when the keys changed, with text in the field', () => {
+    useAppStore.setState({ settings: { [SETTING_COMPOSER_CLASSIC_KEYS]: 'true' } });
+    render(<Harness kind="message" withFiles={false} hasChangedKeys sent={[]} />);
+
+    fireEvent.change(field(), { target: { value: 'Retry budget' } });
+
+    expect(keysRow().dataset.shown).toBe('true');
+  });
+
+  it('keeps the keys shown in a document, where Enter adds a line', () => {
+    useAppStore.setState({ settings: { [SETTING_COMPOSER_CLASSIC_KEYS]: 'false' } });
+    render(<Harness kind="document" withFiles={false} sent={[]} />);
+
+    fireEvent.change(field(), { target: { value: 'Retry budget' } });
+
+    expect(keysRow().dataset.shown).toBe('true');
+  });
+});
+
 describe('PromptField files', () => {
   it.each(
     FILE_ROWS.map((row) => [`${row.kind}, files ${row.withFiles ? 'on' : 'off'}`, row] as const),

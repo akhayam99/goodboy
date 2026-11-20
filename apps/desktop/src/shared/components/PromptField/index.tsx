@@ -1,6 +1,7 @@
 import {
   Suspense,
   lazy,
+  useId,
   useRef,
   useState,
   type ChangeEvent,
@@ -23,7 +24,8 @@ import { ComposerAttachmentCount } from '../ComposerSurface/ComposerAttachmentCo
 import { ComposerAttachments } from '../ComposerSurface/ComposerAttachments';
 import { ComposerFooter } from '../ComposerSurface/ComposerFooter';
 
-import { PromptKeysHint, type PromptKeyHint } from './PromptKeysHint';
+import { PromptKeysHint } from './PromptKeysHint';
+import { keyHintsOf, type PromptKeyLabels } from './keyHintsOf';
 import { effectiveKind, promptKeyAction, type PromptFieldKind } from './promptKeyAction';
 
 const PromptPreview = lazy(() =>
@@ -43,11 +45,6 @@ export type PromptFieldFiles = {
   readonly note?: string;
   readonly accept?: string;
   readonly noun?: string;
-};
-
-type PromptKeyLabels = {
-  readonly send: string;
-  readonly now?: string;
 };
 
 type Tab = 'write' | 'preview';
@@ -85,32 +82,6 @@ type Props = {
   readonly isKickoffField?: boolean;
   readonly className?: string;
   readonly textClassName?: string;
-};
-
-type HintsParams = {
-  readonly kind: PromptFieldKind;
-  readonly labels: PromptKeyLabels | undefined;
-  readonly canSendNow: boolean;
-};
-
-const keyHints = ({ kind, labels, canSendNow }: HintsParams): ReadonlyArray<PromptKeyHint> => {
-  if (labels === undefined) {
-    return [];
-  }
-  if (kind === 'document') {
-    return [
-      { id: 'composer.send', label: 'new line' },
-      { id: 'composer.submit', label: labels.send },
-    ];
-  }
-  const hints: PromptKeyHint[] = [
-    { id: 'composer.send', label: labels.send },
-    { id: 'composer.newLine', label: 'new line' },
-  ];
-  if (canSendNow && labels.now !== undefined) {
-    hints.push({ id: 'composer.submit', label: labels.now });
-  }
-  return hints;
 };
 
 const TAB_OPTIONS = [
@@ -154,6 +125,8 @@ export const PromptField = ({
 }: Props) => {
   const isClassic = useComposerClassicKeys({ isEnabled: hasChangedKeys });
   const keys = effectiveKind({ kind, isClassic });
+  const hintsId = useId();
+  const [isFocused, setIsFocused] = useState(false);
   const [chosenTab, setTab] = useState<Tab>('write');
   const tab: Tab = hasPreview ? chosenTab : 'write';
   const [previewText, setPreviewText] = useState('');
@@ -196,6 +169,12 @@ export const PromptField = ({
     onSubmit(action);
   };
 
+  const hints =
+    !isCard || onSubmit === undefined
+      ? []
+      : keyHintsOf({ kind: keys, labels: keyLabels, canSendNow });
+  const isKeyRowShown = isClassic || keys === 'document' || (value === '' && isFocused);
+
   const textarea = (
     <Textarea
       id={id}
@@ -207,9 +186,14 @@ export const PromptField = ({
         files?.onPaste(event);
       }}
       maxLength={maxLength}
-      onBlur={onBlur}
+      onFocus={() => setIsFocused(true)}
+      onBlur={(event) => {
+        setIsFocused(false);
+        onBlur?.(event);
+      }}
       placeholder={placeholder}
       aria-label={label}
+      {...(hints.length > 0 && { 'aria-describedby': hintsId })}
       disabled={disabled}
       autoFocus={autoFocus}
       data-testid={testId}
@@ -260,8 +244,6 @@ export const PromptField = ({
     );
   }
 
-  const hints =
-    onSubmit === undefined ? [] : keyHints({ kind: keys, labels: keyLabels, canSendNow });
   const hasFooter =
     files !== undefined ||
     footerStart != null ||
@@ -325,7 +307,7 @@ export const PromptField = ({
                 limit={ATTACHMENT_LIMIT}
                 noun={noun}
               />
-              <PromptKeysHint hints={hints} />
+              <PromptKeysHint id={hintsId} hints={hints} isShown={isKeyRowShown} />
             </>
           }
           end={
