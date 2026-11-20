@@ -9,6 +9,7 @@ vi.mock('@tauri-apps/api/event', async () =>
 
 import { existsSync, readFileSync, writeFileSync } from 'fs';
 import { join } from 'path';
+import { renderHook } from '@testing-library/react';
 import type { MenuEntry } from '@goodboy/ui';
 import { Pencil } from '@goodboy/ui/icons';
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -39,6 +40,8 @@ import { sessionMenuOf } from '../../app/components/SessionActions/sessionMenuOf
 import { agentHeaderOmitOf } from '../../features/session/components/AgentDetailPane/agentHeaderOmitOf';
 import { AGENT_HEADER_MENU_IDS } from '../../features/session/components/agentHeaderMenuIds';
 import { runPageOmitOf } from '../../features/session/components/PresetRun/runPageOmitOf';
+import { runHeaderPrimaryOf } from '../../features/session/components/PresetRun/runHeaderPrimaryOf';
+import { useRunView } from '../../features/session/components/AgentTree/useRunView';
 import { artifactHeaderOmitOf } from '../../features/artifacts/components/ArtifactShell/artifactHeaderOmitOf';
 import { MOUNT_ROW_CUTS } from '../../features/session/mountRowCuts';
 import { HISTORY_ROW_CUTS } from '../../features/history/components/CommitsHistory/historyRowCuts';
@@ -223,6 +226,22 @@ const RUN_TARGET: ObjectTarget = {
 const RUN_VIEWING: ActionViewing = { kind: 'workflowRun', id: RUN };
 const ENDED_RUN_STATES: ReadonlySet<string> = new Set(['done', 'discarded']);
 
+const isSeededRunLive = (): boolean => {
+  const state = useAppStore.getState();
+  const session = state.sessions.find((candidate) => candidate.id === SESSION);
+  const run = session?.workflowRuns.find((candidate) => candidate.id === RUN);
+  const workflow = state.sessionWorkflows[SESSION]?.find(
+    (candidate) => candidate.id === run?.workflowId,
+  );
+  if (session == null || run == null || workflow == null) {
+    throw new Error('The run page needs a seeded session, run and workflow.');
+  }
+  const { result, unmount } = renderHook(() => useRunView({ session, run, workflow }));
+  const header = runHeaderPrimaryOf({ view: result.current });
+  unmount();
+  return header.kind === 'live';
+};
+
 describe('the shape of a menu', () => {
   it('counts every way a menu breaks the rule', () => {
     const item = (label: string): MenuEntry => ({
@@ -299,7 +318,10 @@ describe('the shape of a menu', () => {
         entries: entriesOfTarget({
           target: RUN_TARGET,
           viewing: RUN_VIEWING,
-          omit: runPageOmitOf({ isEnded: ENDED_RUN_STATES.has(state), isLive: true }),
+          omit: runPageOmitOf({
+            isEnded: ENDED_RUN_STATES.has(state),
+            isLive: isSeededRunLive(),
+          }),
         }),
       });
     });
