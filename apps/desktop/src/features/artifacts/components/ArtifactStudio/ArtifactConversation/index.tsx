@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { Button, Divider, EmptyLine, cn, TruncatedText } from '@goodboy/ui';
+import { Button, Divider, cn, TruncatedText } from '@goodboy/ui';
 import { PANE_RHYTHM } from '@goodboy/ui';
 import type { Agent, SessionArtifact, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
@@ -80,9 +80,9 @@ export const ArtifactConversation = ({ sessionId, artifact, agent, isWorkflowOwn
       <Divider />
       <div className="flex min-h-0 min-w-0 flex-1 flex-col">
         {session === null || !hasAgent ? (
-          <EmptyLine className={PANE_RHYTHM.body}>
-            No conversation to show. This artifact has no agent to talk to in this session.
-          </EmptyLine>
+          <p className={cn('text-meta text-muted-foreground', PANE_RHYTHM.body)}>
+            This artifact has no agent to talk to in this session.
+          </p>
         ) : (
           <ChatView session={session} isActive={isActive} />
         )}

@@ -210,6 +210,6 @@ describe('ArtifactConversation', () => {
     );
     expect(state.openArtifactConversation).not.toHaveBeenCalled();
     expect(screen.queryByTestId('chat-view')).toBeNull();
-    expect(screen.getByText(/no conversation to show/i)).toBeDefined();
+    expect(screen.getByText(/no agent to talk to in this session/i)).toBeDefined();
   });
 });
