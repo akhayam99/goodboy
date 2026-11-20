@@ -675,7 +675,7 @@ describe('setCurrentWorkspace latest only and read first', () => {
     });
 
     releaseWorkflows();
-    await new Promise((resolve) => setTimeout(resolve, 0));
+    await new Promise(setImmediate);
 
     expect(store.state.currentWorkspaceId).toBe(NORTHWIND_ID);
     expect(store.state.providerSpendBreakdown).toEqual(northwindSpend);

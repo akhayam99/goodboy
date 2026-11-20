@@ -63,9 +63,7 @@ const isWarm = (): boolean => Date.now() - lastClosedAt < WARM_WINDOW_MS;
 const assignRef = <T,>(ref: React.Ref<T> | undefined, value: T | null): void => {
   if (typeof ref === 'function') {
     ref(value);
-    return;
-  }
-  if (ref != null) {
+  } else if (ref != null) {
     (ref as React.MutableRefObject<T | null>).current = value;
   }
 };
