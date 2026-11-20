@@ -253,6 +253,20 @@ describe('the pull request view slice', () => {
     expect(entryOf()?.view?.number).toBe(318);
   });
 
+  it('keeps an edit noted while the view is still being read', async () => {
+    const reading = load(true);
+    useAppStore.getState().notePullRequestEdit({
+      sessionId: SESSION_ID,
+      prNumber: 318,
+      what: 'title',
+    });
+
+    await reading;
+
+    expect(entryOf()?.edits.map((edit) => edit.what)).toEqual(['title']);
+    expect(entryOf()?.view?.number).toBe(318);
+  });
+
   it('keeps the activity filter of a pull request through a read and an edit', async () => {
     await load();
     useAppStore.getState().setPullRequestActivityFilter({

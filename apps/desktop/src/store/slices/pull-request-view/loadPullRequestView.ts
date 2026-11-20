@@ -63,17 +63,21 @@ export const loadPullRequestView = async ({
   }
   const patch = (entry: PullRequestViewEntry): void =>
     set((state) => {
-      const activityFilter = pullRequestViewAt({
+      const current = pullRequestViewAt({
         state,
         sessionId,
         mountId: entryMount,
         prNumber: entry.prNumber,
-      })?.activityFilter;
+      });
+      const kept = { ...entry, edits: current?.edits ?? entry.edits };
       return {
         pullRequestViews: withPullRequestViewEntry({
           views: state.pullRequestViews,
           sessionId,
-          entry: activityFilter === undefined ? entry : { ...entry, activityFilter },
+          entry:
+            current?.activityFilter === undefined
+              ? kept
+              : { ...kept, activityFilter: current.activityFilter },
         }),
       };
     });
