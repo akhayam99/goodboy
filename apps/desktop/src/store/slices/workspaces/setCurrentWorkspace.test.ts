@@ -450,7 +450,7 @@ describe('setCurrentWorkspace stops all live work', () => {
       expect(store.state.switchingToWorkspaceId).toBeNull();
       expect(store.state.workspaceSwitchError).toEqual({
         workspaceId: OTHER_ID,
-        message: expect.stringContaining('An agent did not stop'),
+        message: expect.stringContaining("An agent didn't stop"),
       });
       expect(store.state.reportError).toHaveBeenCalledOnce();
     });

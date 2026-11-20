@@ -138,7 +138,7 @@ describe('disconnectWorkspace stops all live work', () => {
     it('keeps the workspace and its agent state, and tells why', async () => {
       seedLive();
 
-      await expect(disconnect()).rejects.toThrow('An agent did not stop');
+      await expect(disconnect()).rejects.toThrow("An agent didn't stop");
 
       const state = useAppStore.getState();
       expect(state.workspaces).toEqual([workspace]);
@@ -150,7 +150,7 @@ describe('disconnectWorkspace stops all live work', () => {
 
     it('goes through on the next try once the agent stopped', async () => {
       seedLive();
-      await expect(disconnect()).rejects.toThrow('An agent did not stop');
+      await expect(disconnect()).rejects.toThrow("An agent didn't stop");
       useAppStore.setState({
         cancelTurnConfirmed: vi.fn(async () => ({
           outcome: 'exited' as const,
@@ -163,6 +163,22 @@ describe('disconnectWorkspace stops all live work', () => {
       expect(disconnectWorkspaceAndProjects).toHaveBeenCalledOnce();
       expect(useAppStore.getState().workspaces).toEqual([]);
     });
+  });
+
+  it('keeps the workspace and its sessions whole when the database write fails', async () => {
+    const session = aSession({ workspaceId: workspace.id });
+    useAppStore.setState({ sessions: [session], currentSessionId: session.id });
+    vi.mocked(disconnectWorkspaceAndProjects).mockRejectedValueOnce(
+      new Error('database is locked'),
+    );
+
+    await expect(disconnect()).rejects.toThrow('database is locked');
+
+    const state = useAppStore.getState();
+    expect(state.workspaces).toEqual([workspace]);
+    expect(state.currentWorkspaceId).toBe(workspace.id);
+    expect(state.currentSessionId).toBe(session.id);
+    expect(state.sessions).toEqual([session]);
   });
 
   it('leaves live work alone when the workspace is not the current one', async () => {
