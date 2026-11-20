@@ -19,7 +19,6 @@
   "apps/desktop/src/features/conversation/cancelChatTurn.ts": 1,
   "apps/desktop/src/features/history/components/CommitsHistory/useHistoryScribe/index.ts": 1,
   "apps/desktop/src/features/impact/hooks/useImpactMetrics/index.ts": 1,
-  "apps/desktop/src/features/inbox/components/InboxStudio/index.tsx": 1,
   "apps/desktop/src/features/inbox/useInboxStars/index.ts": 1,
   "apps/desktop/src/features/integrations/hooks/useWorkspaceIssueLookup/index.ts": 2,
   "apps/desktop/src/features/integrations/sentry/SentryProjectMap/useSentryProjectMap.ts": 1,
