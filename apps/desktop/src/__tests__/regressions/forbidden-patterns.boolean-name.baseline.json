@@ -202,7 +202,6 @@
     "apps/desktop/src/features/workflows/workflows.ts": 1,
     "apps/desktop/src/features/workspace-chat/chatBackend.ts": 1,
     "apps/desktop/src/features/workspace-chat/components/ChatList/ChatListRow.tsx": 5,
-    "apps/desktop/src/features/workspace-chat/components/ChatList/ChatRenameInput.tsx": 1,
     "apps/desktop/src/features/workspace/components/ProjectGitPill/InitGuide.tsx": 1,
     "apps/desktop/src/features/workspace/components/StageBoard/boardLanesOf.ts": 2,
     "apps/desktop/src/features/workspace/components/StageBoard/StageBoardCard/index.tsx": 6,

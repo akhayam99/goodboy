@@ -44,6 +44,7 @@ import {
 } from '../../../../store/storyHarness';
 import { bindTarget } from '../../../actions/registry';
 import type { ChatBackend } from '../../chatBackend';
+import type { RemovedChats } from '../../nextChatAfter';
 import { ChatList } from './index';
 
 vi.useFakeTimers({ toFake: ['Date'] });
@@ -73,8 +74,8 @@ const NONE: ReadonlyArray<ChatSummary> = [];
 
 type HarnessProps = {
   readonly onSelect: (chatId: ChatId) => void;
-  readonly onArchived: (chatIds: ReadonlyArray<ChatId>) => void;
-  readonly onDeleted: (chatIds: ReadonlyArray<ChatId>) => void;
+  readonly onArchived: (removed: RemovedChats) => void;
+  readonly onDeleted: (removed: RemovedChats) => void;
 };
 
 const Harness = ({ onSelect, onArchived, onDeleted }: HarnessProps) => {
@@ -276,10 +277,11 @@ describe('ChatList selection', () => {
 
     await waitFor(() => expect(screen.queryByRole('toolbar')).toBeNull());
     expect(await screen.findByText('2 chats archived')).toBeDefined();
-    expect(onArchived).toHaveBeenCalledWith([
-      chatIdOf({ key: 'consent' }),
-      chatIdOf({ key: 'refund' }),
-    ]);
+    expect(onArchived).toHaveBeenCalledWith(
+      expect.objectContaining({
+        removedIds: [chatIdOf({ key: 'consent' }), chatIdOf({ key: 'refund' })],
+      }),
+    );
     expect(rowOf('consent')).toBeNull();
     expect(rowOf('refund')).toBeNull();
 
@@ -320,11 +322,15 @@ describe('ChatList selection', () => {
     );
 
     await waitFor(() => expect(onDeleted).toHaveBeenCalledTimes(1));
-    expect(onDeleted).toHaveBeenCalledWith([
-      chatIdOf({ key: 'consent' }),
-      chatIdOf({ key: 'refund' }),
-      chatIdOf({ key: 'lunch' }),
-    ]);
+    expect(onDeleted).toHaveBeenCalledWith(
+      expect.objectContaining({
+        removedIds: [
+          chatIdOf({ key: 'consent' }),
+          chatIdOf({ key: 'refund' }),
+          chatIdOf({ key: 'lunch' }),
+        ],
+      }),
+    );
     expect(rowOf('consent')).toBeNull();
     expect(rowOf('lunch')).toBeNull();
     expect(rowOf('changes')).not.toBeNull();
@@ -389,7 +395,11 @@ describe('ChatList delete on the row', () => {
     expect(within(rowOf('lunch')).getByRole('button', { name: TITLES.lunch ?? '' })).toBeDefined();
 
     fireEvent.click(within(dialog).getByRole('button', { name: 'Delete' }));
-    await waitFor(() => expect(onDeleted).toHaveBeenCalledWith([chatIdOf({ key: 'lunch' })]));
+    await waitFor(() =>
+      expect(onDeleted).toHaveBeenCalledWith(
+        expect.objectContaining({ removedIds: [chatIdOf({ key: 'lunch' })] }),
+      ),
+    );
     expect(rowOf('lunch')).toBeNull();
   });
 
@@ -409,7 +419,11 @@ describe('ChatList delete on the row', () => {
 
     fireEvent.click(within(dialog).getByRole('button', { name: 'Archive instead' }));
 
-    await waitFor(() => expect(onArchived).toHaveBeenCalledWith([chatIdOf({ key: 'lunch' })]));
+    await waitFor(() =>
+      expect(onArchived).toHaveBeenCalledWith(
+        expect.objectContaining({ removedIds: [chatIdOf({ key: 'lunch' })] }),
+      ),
+    );
     expect(
       await holder.backend?.listChats({ workspaceId: CHAT_WORKSPACE_ID, includeArchived: true }),
     ).toHaveLength(5);

@@ -1,19 +1,20 @@
-import { memo, useMemo, useState, type KeyboardEvent, type MouseEvent } from 'react';
+import { memo, useMemo, type KeyboardEvent, type MouseEvent } from 'react';
 import { InteractiveRow, SelectionCheckbox, cn } from '@goodboy/ui';
 import type { ChatId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { sessionPlace } from '../../../../store/slices/navigation/place';
-import { NOTHING_CHANGED } from '../../../../store/slices/notifications/errorRecovery';
 import { chatSelectionTarget } from '../../../actions/chatSelectionTarget';
 import { chatObjectKey } from '../../../actions/kinds/chat';
 import type { ObjectTarget } from '../../../actions/types';
 import { useObjectMenuTrigger } from '../../../actions/useObjectMenuTrigger';
+import { useInlineRename } from '../../../../shared/hooks/useInlineRename';
 import { useRenameRequest } from '../../../../shared/hooks/useRenameRequest';
 import { StateNode } from '../../../../shared/components/StateNode';
+import { TitleField } from '../../../../shared/components/TitleField';
 import { chatNodeOf } from '../../chatNodeOf';
+import { CHAT_TITLE_MAX_LENGTH } from '../../chatTitleLimit';
 import { useChatSessionMarker } from '../../hooks/useChatSessionMarker';
 import { ageTokenOf } from './ageToken';
-import { ChatRenameInput } from './ChatRenameInput';
 import { ChatSessionMark } from './ChatSessionMark';
 
 export type ChatRowSelection = {
@@ -42,9 +43,14 @@ type Props = {
   readonly isChecked: boolean;
   readonly selection: ChatRowSelection;
   readonly onSelect: (chatId: ChatId) => void;
-  readonly onPin: (params: { readonly chatId: ChatId; readonly isPinned: boolean }) => void;
+  readonly onPin: (params: PinParams) => void;
   readonly onArchive: (chatId: ChatId) => void;
   readonly onDelete: (chatId: ChatId) => Promise<void>;
+};
+
+type PinParams = {
+  readonly chatId: ChatId;
+  readonly isPinned: boolean;
 };
 
 const hasModifier = (event: ModifierEvent): boolean =>
@@ -88,19 +94,22 @@ const ChatListRowView = ({
   const isStreaming = useAppStore((state) => state.chatStreams[chatId] !== undefined);
   const isUnread = useAppStore((state) => state.unreadChatIds.includes(chatId));
   const renameChat = useAppStore((state) => state.renameChat);
-  const reportError = useAppStore((state) => state.reportError);
   const markChatUnread = useAppStore((state) => state.markChatUnread);
   const markChatRead = useAppStore((state) => state.markChatRead);
   const navigate = useAppStore((state) => state.navigate);
   const marker = useChatSessionMarker({ chatId });
   const node = chatNodeOf({ isStreaming, isUnread });
-  const [isRenaming, setIsRenaming] = useState(false);
   const anchorKey = `chat-row:${chatId}`;
+  const rename = useInlineRename({
+    value: title,
+    maxLength: CHAT_TITLE_MAX_LENGTH,
+    onCommit: (next) => renameChat({ chatId, title: next }),
+  });
 
   useRenameRequest({
     objectKey: chatObjectKey({ chatId }),
     anchorKeys: [anchorKey],
-    onRename: () => setIsRenaming(true),
+    onRename: rename.start,
   });
 
   const target = useMemo<ObjectTarget>(
@@ -188,62 +197,57 @@ const ChatListRowView = ({
             />
           </span>
         </span>
-        <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-          <span className="flex min-h-6 min-w-0 items-center gap-1">
-            {isRenaming ? (
-              <ChatRenameInput
-                title={title}
-                onCommit={(next) => {
-                  setIsRenaming(false);
-                  renameChat({ chatId, title: next }).catch((error: unknown) => {
-                    void reportError({
-                      recovery: NOTHING_CHANGED,
-                      title: "Couldn't rename the chat",
-                      error,
-                    });
-                  });
-                }}
-                onCancel={() => setIsRenaming(false)}
-              />
-            ) : (
-              <>
-                <span
-                  className={cn(
-                    'min-w-0 flex-1 truncate text-meta',
-                    isIdle && !isSelected ? 'text-faint-foreground' : 'text-foreground',
-                  )}
-                >
-                  {title}
-                </span>
-                <span className="flex h-6 shrink-0 items-center gap-1">
-                  <span className="whitespace-nowrap text-meta tabular-nums text-faint-foreground">
-                    {ageTokenOf({ time })}
-                  </span>
-                </span>
-              </>
-            )}
+        {rename.editing ? (
+          <span className="pointer-events-auto flex min-w-0 flex-1">
+            <TitleField
+              density="row"
+              ariaLabel="Rename chat"
+              draft={rename.draft}
+              maxLength={CHAT_TITLE_MAX_LENGTH}
+              used={rename.draft.length}
+              limit={CHAT_TITLE_MAX_LENGTH}
+              error={rename.error}
+              canRetry={rename.canRetry}
+              isPending={rename.isPending}
+              onRetry={() => void rename.commit()}
+              onDraftChange={rename.setDraft}
+              onKeyDown={rename.onKeyDown}
+              onBlur={rename.onBlur}
+            />
           </span>
-          <span
-            className={cn(
-              'flex min-w-0 items-center gap-1 text-meta',
-              isIdle ? 'text-disabled-foreground' : 'text-faint-foreground',
-            )}
-          >
-            {isRenaming ? (
-              <span className="truncate">Enter saves · Esc cancels</span>
-            ) : (
-              <>
-                <span className="min-w-0 flex-1 truncate">{snippet}</span>
-                {marker === null ? null : (
-                  <ChatSessionMark
-                    marker={marker}
-                    onOpen={(sessionId) => navigate({ to: sessionPlace({ sessionId }) })}
-                  />
+        ) : (
+          <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+            <span className="flex min-h-6 min-w-0 items-center gap-1">
+              <span
+                className={cn(
+                  'min-w-0 flex-1 truncate text-meta',
+                  isIdle && !isSelected ? 'text-faint-foreground' : 'text-foreground',
                 )}
-              </>
-            )}
+              >
+                {title}
+              </span>
+              <span className="flex h-6 shrink-0 items-center gap-1">
+                <span className="whitespace-nowrap text-meta tabular-nums text-faint-foreground">
+                  {ageTokenOf({ time })}
+                </span>
+              </span>
+            </span>
+            <span
+              className={cn(
+                'flex min-w-0 items-center gap-1 text-meta',
+                isIdle ? 'text-disabled-foreground' : 'text-faint-foreground',
+              )}
+            >
+              <span className="min-w-0 flex-1 truncate">{snippet}</span>
+              {marker === null ? null : (
+                <ChatSessionMark
+                  marker={marker}
+                  onOpen={(sessionId) => navigate({ to: sessionPlace({ sessionId }) })}
+                />
+              )}
+            </span>
           </span>
-        </span>
+        )}
       </InteractiveRow>
     </li>
   );

@@ -193,7 +193,6 @@ const BOARD_SKELETON_PAGES: ReadonlySet<string> = new Set(['board']);
 
 const PAGE_EMPTY_FILES: ReadonlyArray<string> = [
   'features/terminal/components/TerminalStudio/TerminalDetail.tsx',
-  'features/workspace-chat/components/ChatStudio.tsx',
   'features/workspace/components/StageBoard/BoardEmpty/index.tsx',
   'features/workspace/components/StageBoard/BlockedBoard/index.tsx',
   'features/session/components/SessionWorkspace/parts/SessionOverviewLoading.tsx',

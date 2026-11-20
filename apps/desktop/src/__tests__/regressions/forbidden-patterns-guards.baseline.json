@@ -86,7 +86,6 @@
     "apps/desktop/src/features/storage/components/StoragePage/WorktreeRow.tsx": 1,
     "apps/desktop/src/features/wireframes/components/WireframeViewer/ChangeComposer.tsx": 1,
     "apps/desktop/src/features/wireframes/components/WireframeViewer/WireframeViewerBody.tsx": 1,
-    "apps/desktop/src/features/workspace-chat/components/ChatList/ChatRenameInput.tsx": 1,
     "apps/desktop/src/features/workspace-chat/components/ChatRoom/ChatAssistantMessage.tsx": 1,
     "apps/desktop/src/features/workspace-chat/components/ChatRoom/ChatReads.tsx": 1,
     "apps/desktop/src/features/workspace/components/LocateMovedProjects/LocateMovedProjectRow.tsx": 1,

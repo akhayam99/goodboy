@@ -28,7 +28,7 @@ vi.mock('../../../../../features/workspace-chat/activeChatBackend', () => ({
 }));
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { act, cleanup, render, screen } from '@testing-library/react';
 import { newChatBackend } from '../../../../../__tests__/helpers/chatListFixtures';
 import type { ChatBackend } from '../../../../../features/workspace-chat/chatBackend';
 import {
@@ -54,7 +54,7 @@ const settle = (): Promise<void> =>
   act(() => new Promise<void>((resolve) => window.setTimeout(resolve, 150)));
 
 describe('the chat first-run scene', () => {
-  it('shows one Start a chat and no rail, then the rail once a chat is started', async () => {
+  it('opens on the new chat room with no rail and no empty page in front of it', async () => {
     const Scene = U25_TERMINAL_PAGE_SCENES['chat-first-run'];
     render(
       <ToastProvider>
@@ -63,13 +63,9 @@ describe('the chat first-run scene', () => {
     );
     await settle();
 
-    expect(screen.getByRole('heading', { name: 'No chats yet' })).toBeDefined();
+    expect(screen.getByPlaceholderText('Message an agent')).toBeDefined();
+    expect(screen.queryByRole('heading', { name: 'No chats yet' })).toBeNull();
     expect(screen.queryByRole('complementary', { name: 'Chat list' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'New chat' })).toBeNull();
-
-    fireEvent.click(screen.getByRole('button', { name: 'Start a chat' }));
-    await settle();
-
-    expect(screen.getByRole('complementary', { name: 'Chat list' })).toBeDefined();
   });
 });

@@ -4,6 +4,7 @@ import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { useShowToast } from '../../../../shared/components/Toast/useShowToast';
 import { useAppStore } from '../../../../store';
 import { NOTHING_CHANGED } from '../../../../store/slices/notifications/errorRecovery';
+import { offerArchiveUndo } from '../../offerArchiveUndo';
 import { ChatDeleteConfirm } from '../ChatList/ChatDeleteConfirm';
 
 type FailureParams = {
@@ -19,7 +20,6 @@ type Props = {
 export const ChatHeaderDelete = ({ chat, onRemoved }: Props) => {
   const deleteChats = useAppStore((state) => state.deleteChats);
   const archiveChats = useAppStore((state) => state.archiveChats);
-  const restoreChats = useAppStore((state) => state.restoreChats);
   const showToast = useShowToast();
   const { id: chatId, workspaceId, title } = chat;
 
@@ -46,13 +46,13 @@ export const ChatHeaderDelete = ({ chat, onRemoved }: Props) => {
       reportFailure({ title: "Couldn't archive the chat", error });
       return;
     }
-    useAppStore.getState().undoable({
-      showToast,
+    offerArchiveUndo({
+      workspaceId,
+      chatIds: [chatId],
       title: 'Chat archived',
       message: title,
-      undo: async () => {
-        await restoreChats({ workspaceId, chatIds: [chatId] });
-      },
+      selectedId: chatId,
+      showToast,
     });
     onRemoved();
   };

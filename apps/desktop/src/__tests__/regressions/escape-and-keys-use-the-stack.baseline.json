@@ -17,7 +17,6 @@
     "apps/desktop/src/features/session/components/SessionOverviewPane/LinkWorkPicker.tsx": 1,
     "apps/desktop/src/features/workflows/components/StepTree/StepEditor.tsx": 1,
     "apps/desktop/src/features/workflows/components/WorkflowStudio/SavedStepsList/SavedStepEditor.tsx": 1,
-    "apps/desktop/src/features/workspace-chat/components/ChatList/ChatRenameInput.tsx": 1,
     "apps/desktop/src/features/workspace/components/WorkspaceSwitcher/index.tsx": 2,
     "apps/desktop/src/shared/components/GenericTerminalPanel/TerminalFindBar.tsx": 1,
     "apps/desktop/src/shared/components/ProfileForm/ChipsInput.tsx": 1,

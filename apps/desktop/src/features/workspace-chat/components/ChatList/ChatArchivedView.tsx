@@ -10,6 +10,7 @@ import { formatSpan } from '../../../../shared/utils/time/formatSpan';
 import { ChatArchivedRow } from './ChatArchivedRow';
 import { actionButtonLookOf } from '../../../actions/actionButtonLookOf';
 import { ChatPurgeConfirm } from './ChatPurgeConfirm';
+import type { RemovedChats } from '../../nextChatAfter';
 
 type Props = {
   readonly chats: ReadonlyArray<ChatSummary>;
@@ -17,7 +18,7 @@ type Props = {
   readonly onSelect: (chatId: ChatId) => void;
   readonly onBack: () => void;
   readonly onRestore: (chatId: ChatId) => void;
-  readonly onDelete: (chatIds: ReadonlyArray<ChatId>) => Promise<void>;
+  readonly onDelete: (removed: RemovedChats) => Promise<void>;
 };
 
 const matches = ({ chat, needle }: { readonly chat: ChatSummary; readonly needle: string }) =>
@@ -36,7 +37,8 @@ export const ChatArchivedView = ({
   const now = useNow(60_000);
   const needle = query.trim().toLowerCase();
   const shown = useMemo(() => chats.filter((chat) => matches({ chat, needle })), [chats, needle]);
-  const deleteOne = (chatId: ChatId): Promise<void> => onDelete([chatId]);
+  const order = useMemo(() => shown.map((chat) => chat.id), [shown]);
+  const deleteOne = (chatId: ChatId): Promise<void> => onDelete({ removedIds: [chatId], order });
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-2 px-2 pt-2">
@@ -93,7 +95,7 @@ export const ChatArchivedView = ({
         <div className="shrink-0 pb-2">
           <ChatPurgeConfirm
             count={chats.length}
-            onDelete={() => onDelete(chats.map((chat) => chat.id))}
+            onDelete={() => onDelete({ removedIds: chats.map((chat) => chat.id), order })}
             trigger={({ arm }) => (
               <Button
                 {...actionButtonLookOf({ verb: 'chat.delete', variant: 'ghost' })}

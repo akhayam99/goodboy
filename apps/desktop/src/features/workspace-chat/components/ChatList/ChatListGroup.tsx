@@ -1,4 +1,3 @@
-import type { ReactNode } from 'react';
 import { Eyebrow, FOCUS_RING, cn } from '@goodboy/ui';
 import type { ChatId } from '@goodboy/types';
 import { ChatListRow, type ChatRowSelection } from './ChatListRow';
@@ -28,7 +27,6 @@ type Props = {
   readonly onArchive: (chatId: ChatId) => void;
   readonly onDelete: (chatId: ChatId) => Promise<void>;
   readonly action?: GroupAction | null;
-  readonly footer?: ReactNode;
 };
 
 export const ChatListGroup = ({
@@ -42,9 +40,8 @@ export const ChatListGroup = ({
   onArchive,
   onDelete,
   action = null,
-  footer = null,
 }: Props) => {
-  if (rows.length === 0 && footer === null) {
+  if (rows.length === 0) {
     return null;
   }
   return (
@@ -64,29 +61,26 @@ export const ChatListGroup = ({
           </button>
         )}
       </div>
-      {rows.length === 0 ? null : (
-        <ul className="flex flex-col gap-0.5">
-          {rows.map((row) => (
-            <ChatListRow
-              key={row.chatId}
-              chatId={row.chatId}
-              title={row.title}
-              snippet={row.snippet}
-              time={row.time}
-              isIdle={row.isIdle}
-              isPinned={row.isPinned}
-              isSelected={row.chatId === selectedId}
-              isChecked={checkedIds.has(row.chatId)}
-              selection={selection}
-              onSelect={onSelect}
-              onPin={onPin}
-              onArchive={onArchive}
-              onDelete={onDelete}
-            />
-          ))}
-        </ul>
-      )}
-      {footer}
+      <ul className="flex flex-col gap-0.5">
+        {rows.map((row) => (
+          <ChatListRow
+            key={row.chatId}
+            chatId={row.chatId}
+            title={row.title}
+            snippet={row.snippet}
+            time={row.time}
+            isIdle={row.isIdle}
+            isPinned={row.isPinned}
+            isSelected={row.chatId === selectedId}
+            isChecked={checkedIds.has(row.chatId)}
+            selection={selection}
+            onSelect={onSelect}
+            onPin={onPin}
+            onArchive={onArchive}
+            onDelete={onDelete}
+          />
+        ))}
+      </ul>
     </section>
   );
 };

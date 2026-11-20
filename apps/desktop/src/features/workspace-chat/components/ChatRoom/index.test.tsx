@@ -248,7 +248,7 @@ describe('ChatRoom', () => {
     screen.getByText('Answers read the code and history of payments-api and ledger-core.');
     expect(screen.queryAllByText(/Ask anything about/)).toHaveLength(0);
     expect(screen.queryAllByPlaceholderText(/Ask anything about/)).toHaveLength(0);
-    screen.getByPlaceholderText('Ask a question');
+    screen.getByPlaceholderText('Message an agent');
   });
 
   it('docks the composer in the footer once a message exists', () => {

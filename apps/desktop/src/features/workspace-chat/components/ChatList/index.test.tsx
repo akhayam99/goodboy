@@ -57,6 +57,7 @@ import {
 import type { ChatBackend } from '../../chatBackend';
 import { chatModelLabel } from '../../chatModelLabel';
 import { ageTokenOf } from './ageToken';
+import type { RemovedChats } from '../../nextChatAfter';
 import { ChatList } from './index';
 
 vi.useFakeTimers({ toFake: ['Date'] });
@@ -82,8 +83,8 @@ const NONE: ReadonlyArray<ChatSummary> = [];
 
 type HarnessProps = {
   readonly onSelect: (chatId: ChatId) => void;
-  readonly onArchived: (chatIds: ReadonlyArray<ChatId>) => void;
-  readonly onDeleted: (chatIds: ReadonlyArray<ChatId>) => void;
+  readonly onArchived: (removed: RemovedChats) => void;
+  readonly onDeleted: (removed: RemovedChats) => void;
 };
 
 const Harness = ({ onSelect, onArchived, onDeleted }: HarnessProps) => {
@@ -202,19 +203,40 @@ describe('ChatList', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Archive idle' }));
     const undo = await screen.findByRole('button', { name: 'Undo' });
     screen.getByText('2 idle chats archived');
-    expect(onArchived).toHaveBeenCalledWith([
-      chatIdOf({ key: 'lunch' }),
-      chatIdOf({ key: 'flaky' }),
-    ]);
-    expect(screen.queryByRole('region', { name: 'Idle' })?.textContent).not.toContain(
-      'Lunch ideas',
+    expect(onArchived).toHaveBeenCalledWith(
+      expect.objectContaining({
+        removedIds: [chatIdOf({ key: 'lunch' }), chatIdOf({ key: 'flaky' })],
+      }),
     );
+    expect(rowOf('lunch')).toBeNull();
+    expect(screen.queryByRole('region', { name: 'Idle' })).toBeNull();
+    expect(
+      within(screen.getByRole('navigation', { name: 'Chats' })).queryByRole('button', {
+        name: 'Undo',
+      }),
+    ).toBeNull();
 
     fireEvent.click(undo);
     await waitFor(() => expect(titlesIn('Idle')).toContain('Lunch ideas near the office'));
   });
 
-  it('keeps the Undo row and reports when the undo fails', async () => {
+  it('offers the same Undo toast for one chat from the row menu, and Cmd+Z brings it back', async () => {
+    await renderList();
+
+    fireEvent.contextMenu(screen.getByRole('button', { name: 'Lunch ideas near the office' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Archive' }));
+
+    await screen.findByText('Chat archived');
+    expect(rowOf('lunch')).toBeNull();
+
+    await act(async () => {
+      await useAppStore.getState().undoLastOperation();
+    });
+
+    await waitFor(() => expect(rowOf('lunch')).not.toBeNull());
+  });
+
+  it('reports a failed undo, keeps the chat archived, and Cmd+Z retries', async () => {
     const reportError = vi.spyOn(useAppStore.getState(), 'reportError');
     await renderList();
     fireEvent.click(screen.getByRole('button', { name: 'Archive idle' }));
@@ -229,11 +251,16 @@ describe('ChatList', () => {
 
     await waitFor(() =>
       expect(reportError).toHaveBeenCalledWith(
-        expect.objectContaining({ title: "Couldn't restore the chat", error: failure }),
+        expect.objectContaining({ title: "Couldn't undo the operation", error: failure }),
       ),
     );
-    screen.getByText('2 idle chats archived');
-    screen.getByRole('button', { name: 'Undo' });
+    expect(rowOf('lunch')).toBeNull();
+
+    await act(async () => {
+      await useAppStore.getState().undoLastOperation();
+    });
+
+    await waitFor(() => expect(titlesIn('Idle')).toContain('Lunch ideas near the office'));
   });
 
   it('filters by title and answer text', async () => {
@@ -284,14 +311,12 @@ describe('ChatList', () => {
       screen.getByRole('button', { name: 'What changed in payments-api' });
     });
 
-    it('keeps the old title and reports when the rename fails', async () => {
-      const reportError = vi.spyOn(useAppStore.getState(), 'reportError');
+    it('keeps the field open with the error when the rename fails, and Retry saves', async () => {
       await renderList();
-      const failure = new Error('database is locked');
       if (holder.backend === null) {
         throw new Error('no chat backend');
       }
-      vi.spyOn(holder.backend, 'rename').mockRejectedValueOnce(failure);
+      vi.spyOn(holder.backend, 'rename').mockRejectedValueOnce(new Error('database is locked'));
 
       openMenu('Where is the consent step?');
       fireEvent.click(screen.getByRole('menuitem', { name: 'Rename' }));
@@ -299,12 +324,34 @@ describe('ChatList', () => {
       fireEvent.change(input, { target: { value: 'Consent step' } });
       fireEvent.keyDown(input, { key: 'Enter' });
 
-      await waitFor(() =>
-        expect(reportError).toHaveBeenCalledWith(
-          expect.objectContaining({ title: "Couldn't rename the chat", error: failure }),
-        ),
+      expect((await screen.findByRole('alert')).textContent).toContain('database is locked');
+      expect(screen.getByRole<HTMLInputElement>('textbox', { name: 'Rename chat' }).value).toBe(
+        'Consent step',
       );
-      screen.getByRole('button', { name: 'Where is the consent step?' });
+      expect(screen.queryByRole('button', { name: 'Consent step' })).toBeNull();
+
+      fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
+
+      await waitFor(() => screen.getByRole('button', { name: 'Consent step' }));
+      expect(screen.queryByRole('textbox', { name: 'Rename chat' })).toBeNull();
+    });
+
+    it('says so when the new name is empty and saves nothing', async () => {
+      await renderList();
+      if (holder.backend === null) {
+        throw new Error('no chat backend');
+      }
+      const rename = vi.spyOn(holder.backend, 'rename');
+
+      openMenu('Where is the consent step?');
+      fireEvent.click(screen.getByRole('menuitem', { name: 'Rename' }));
+      const input = await screen.findByRole('textbox', { name: 'Rename chat' });
+      fireEvent.change(input, { target: { value: '   ' } });
+      fireEvent.keyDown(input, { key: 'Enter' });
+
+      expect(screen.getByRole('alert').textContent).toBe('name cannot be empty');
+      expect(screen.queryByRole('button', { name: 'Retry' })).toBeNull();
+      expect(rename).not.toHaveBeenCalled();
     });
 
     it('marks a chat as unread', async () => {
@@ -326,7 +373,11 @@ describe('ChatList', () => {
       expect(rowOf('lunch')).not.toBeNull();
 
       fireEvent.click(screen.getByRole('button', { name: 'Delete' }));
-      await waitFor(() => expect(onDeleted).toHaveBeenCalledWith([chatIdOf({ key: 'lunch' })]));
+      await waitFor(() =>
+        expect(onDeleted).toHaveBeenCalledWith(
+          expect.objectContaining({ removedIds: [chatIdOf({ key: 'lunch' })] }),
+        ),
+      );
       expect(rowOf('lunch')).toBeNull();
     });
 
@@ -337,7 +388,11 @@ describe('ChatList', () => {
       fireEvent.click(screen.getByRole('menuitem', { name: 'Delete' }));
       fireEvent.click(screen.getByRole('button', { name: 'Archive instead' }));
 
-      await waitFor(() => expect(onArchived).toHaveBeenCalledWith([chatIdOf({ key: 'lunch' })]));
+      await waitFor(() =>
+        expect(onArchived).toHaveBeenCalledWith(
+          expect.objectContaining({ removedIds: [chatIdOf({ key: 'lunch' })] }),
+        ),
+      );
       expect(rowOf('lunch')).toBeNull();
       screen.getByRole('button', { name: /Archived · 1/ });
     });
@@ -444,7 +499,11 @@ describe('ChatList', () => {
       expect(within(dialog).queryByRole('button', { name: 'Archive instead' })).toBeNull();
       fireEvent.click(within(dialog).getByRole('button', { name: 'Delete chat' }));
 
-      await waitFor(() => expect(onDeleted).toHaveBeenCalledWith([chatIdOf({ key: 'sign' })]));
+      await waitFor(() =>
+        expect(onDeleted).toHaveBeenCalledWith(
+          expect.objectContaining({ removedIds: [chatIdOf({ key: 'sign' })] }),
+        ),
+      );
       expect(screen.queryByRole('button', { name: 'Acme webhook signing' })).toBeNull();
     });
 
@@ -459,7 +518,12 @@ describe('ChatList', () => {
 
       await waitFor(() => expect(onDeleted).toHaveBeenCalledTimes(1));
       expect(onDeleted).toHaveBeenCalledWith(
-        expect.arrayContaining([chatIdOf({ key: 'invoice' }), chatIdOf({ key: 'sign' })]),
+        expect.objectContaining({
+          removedIds: expect.arrayContaining([
+            chatIdOf({ key: 'invoice' }),
+            chatIdOf({ key: 'sign' }),
+          ]),
+        }),
       );
     });
 
@@ -591,7 +655,6 @@ describe('ChatList initial read states', () => {
     await renderList([]);
     expect(screen.queryByRole('button', { name: 'New chat' })).toBeNull();
     expect(screen.queryByRole('heading', { name: 'No chats yet' })).toBeNull();
-    expect(screen.queryByRole('button', { name: 'Start a chat' })).toBeNull();
     expect(screen.queryByRole('status', { name: 'Loading chats' })).toBeNull();
   });
 

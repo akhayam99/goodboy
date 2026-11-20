@@ -11,7 +11,10 @@ vi.mock('../../../shared/lib/db', async () =>
   (await import('../../../store/storyHarness')).dbLibModuleMock(),
 );
 
-const { holder } = vi.hoisted(() => ({ holder: { backend: null as ChatBackend | null } }));
+const { holder } = vi.hoisted(() => {
+  const box: { backend: ChatBackend | null } = { backend: null };
+  return { holder: box };
+});
 
 vi.mock('../activeChatBackend', () => ({
   activeChatBackend: new Proxy(
@@ -34,6 +37,7 @@ import {
   seedChats,
   type ChatSeed,
 } from '../../../__tests__/helpers/chatListFixtures';
+import { ObjectMenuProvider } from '../../actions/components/ObjectMenuProvider';
 import { ToastProvider } from '../../../shared/components/Toast';
 import {
   STORE_IMPORT_TIMEOUT_MS,
@@ -68,11 +72,13 @@ const Host = () => {
   }
   return (
     <ToastProvider>
-      <ChatStudio
-        workspaceId={CHAT_WORKSPACE_ID}
-        chatId={studio.chatId}
-        onClose={() => useAppStore.getState().closeStudio()}
-      />
+      <ObjectMenuProvider>
+        <ChatStudio
+          workspaceId={CHAT_WORKSPACE_ID}
+          chatId={studio.chatId}
+          onClose={() => useAppStore.getState().closeStudio()}
+        />
+      </ObjectMenuProvider>
     </ToastProvider>
   );
 };
@@ -142,22 +148,52 @@ describe('the chat list fold', () => {
   });
 });
 
-describe('the Chat first-run page', () => {
-  it('shows one Start a chat and no rail when there are no chats', async () => {
+type ActivationParams = {
+  readonly isActive: boolean;
+};
+
+const withUserActivation = ({ isActive }: ActivationParams): void => {
+  Object.defineProperty(navigator, 'userActivation', {
+    value: { isActive, hasBeenActive: isActive },
+    configurable: true,
+  });
+};
+
+afterEach(() => {
+  Reflect.deleteProperty(navigator, 'userActivation');
+});
+
+const composer = (): HTMLElement => screen.getByPlaceholderText('Message an agent');
+
+describe('the Chat first visit', () => {
+  it('opens the new chat room at once, with no rail and no button in front of it', async () => {
     await renderEmptyStudio();
 
-    await screen.findByRole('heading', { name: 'No chats yet' });
-    expect(screen.getAllByRole('button', { name: /^(Start a chat|New chat)$/ })).toHaveLength(1);
+    await waitFor(() => expect(composer()).toBeDefined());
+    expect(screen.queryByRole('heading', { name: 'No chats yet' })).toBeNull();
     expect(screen.queryByRole('complementary', { name: 'Chat list' })).toBeNull();
+    expect(openedChat()).toBeNull();
   });
 
-  it('brings the rail and the composer in once Start a chat is pressed', async () => {
+  it('offers Add project when the workspace has no project', async () => {
     await renderEmptyStudio();
 
-    fireEvent.click(await screen.findByRole('button', { name: 'Start a chat' }));
+    expect(await screen.findByRole('button', { name: 'Add project' })).toBeDefined();
+  });
 
-    expect(screen.getByRole('complementary', { name: 'Chat list' })).toBeDefined();
-    expect(screen.queryByRole('heading', { name: 'No chats yet' })).toBeNull();
+  it('puts the cursor in the message box when you open Chat yourself', async () => {
+    withUserActivation({ isActive: true });
+    await renderEmptyStudio();
+
+    await waitFor(() => expect(document.activeElement).toBe(composer()));
+  });
+
+  it('leaves the focus alone when the app brings Chat back at launch', async () => {
+    withUserActivation({ isActive: false });
+    await renderEmptyStudio();
+
+    await waitFor(() => expect(composer()).toBeDefined());
+    expect(document.activeElement).not.toBe(composer());
   });
 
   it('keeps the rail when a chat exists', async () => {
@@ -186,7 +222,7 @@ describe('the Chat door', () => {
     expect(openedChat()).toBe(chatIdOf({ key: 'refund' }));
   });
 
-  it('lands on the next most recent chat after the open one is archived', async () => {
+  it('lands on the chat below after the open one is archived, then on the one above', async () => {
     await renderStudio();
     fireEvent.click(rowButton('Refund idempotency options'));
     fireEvent.click(screen.getByRole('checkbox', { name: 'Select Refund idempotency options' }));
@@ -195,7 +231,40 @@ describe('the Chat door', () => {
       within(screen.getByRole('toolbar')).getByRole('button', { name: 'Archive 1 chat' }),
     );
 
+    await waitFor(() => expect(openedChat()).toBe(chatIdOf({ key: 'changes' })));
+
+    fireEvent.contextMenu(rowButton('What changed in payments-api'));
+    fireEvent.click(await screen.findByRole('menuitem', { name: 'Archive' }));
+
     await waitFor(() => expect(openedChat()).toBe(chatIdOf({ key: 'consent' })));
+  });
+
+  it('puts the chat and the selection back on Undo', async () => {
+    await renderStudio();
+    fireEvent.click(rowButton('Refund idempotency options'));
+    fireEvent.contextMenu(rowButton('Refund idempotency options'));
+    fireEvent.click(await screen.findByRole('menuitem', { name: 'Archive' }));
+    await waitFor(() => expect(openedChat()).toBe(chatIdOf({ key: 'changes' })));
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Undo' }));
+
+    await waitFor(() => expect(openedChat()).toBe(chatIdOf({ key: 'refund' })));
+    expect(rowButton('Refund idempotency options')).toBeDefined();
+  });
+
+  it('archives from the header with the same Undo toast and the same next chat', async () => {
+    await renderStudio();
+    fireEvent.click(rowButton('Refund idempotency options'));
+
+    fireEvent.click(screen.getByRole('button', { name: 'Delete chat' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Archive instead' }));
+
+    await waitFor(() => expect(openedChat()).toBe(chatIdOf({ key: 'changes' })));
+    await act(async () => {
+      await useAppStore.getState().undoLastOperation();
+    });
+
+    await waitFor(() => expect(openedChat()).toBe(chatIdOf({ key: 'refund' })));
   });
 
   it('opens a new chat from New chat in the Chat header, which the new chat page leaves out', async () => {
@@ -259,17 +328,18 @@ describe('the Chat page new chat chord', () => {
     expect(newSession).not.toHaveBeenCalled();
   });
 
-  it('leaves the empty first-run page for a new chat', async () => {
+  it('keeps the new chat room and no rail on the first visit', async () => {
     await renderEmptyStudio();
-    await screen.findByRole('heading', { name: 'No chats yet' });
+    await waitFor(() => expect(composer()).toBeDefined());
     const isMac = currentPlatform() === 'darwin';
 
     act(() => {
       fireEvent.keyDown(document.body, { code: 'KeyN', metaKey: isMac, ctrlKey: !isMac });
     });
 
-    expect(screen.queryByRole('heading', { name: 'No chats yet' })).toBeNull();
-    expect(screen.getByRole('complementary', { name: 'Chat list' })).toBeDefined();
+    expect(openedChat()).toBeNull();
+    expect(composer()).toBeDefined();
+    expect(screen.queryByRole('complementary', { name: 'Chat list' })).toBeNull();
   });
 
   it('gives the chord back to new session once the page is left', async () => {
@@ -313,6 +383,47 @@ describe('archived chats in the studio band', () => {
 
     expect(screen.getByRole('textbox', { name: 'Search chats' })).toBeDefined();
     expect(screen.queryByRole('navigation', { name: 'Breadcrumb' })).toBeNull();
+  });
+
+  const openArchivedTrio = async (): Promise<void> => {
+    holder.backend = newChatBackend();
+    await seedChats({
+      backend: holder.backend,
+      seeds: [
+        ...ARCHIVED_SEEDS,
+        { key: 'ledger', title: 'ledger-core retention', ageMs: 5 * MINUTE, isArchived: true },
+        { key: 'relay', title: 'notify-relay backoff', ageMs: 6 * MINUTE, isArchived: true },
+      ],
+    });
+    useAppStore.setState({ currentWorkspaceId: CHAT_WORKSPACE_ID });
+    await useAppStore.getState().loadChats({ workspaceId: CHAT_WORKSPACE_ID });
+    render(<Host />);
+    await pressChatDoor();
+    fireEvent.click(await screen.findByRole('button', { name: /Archived · 3/ }));
+    fireEvent.click(rowButton('ledger-core retention'));
+    await waitFor(() => expect(openedChat()).toBe(chatIdOf({ key: 'ledger' })));
+  };
+
+  it('lands on the archived chat below after the open archived one is deleted from its row', async () => {
+    await openArchivedTrio();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Delete ledger-core retention' }));
+    fireEvent.click(
+      within(await screen.findByRole('dialog')).getByRole('button', { name: 'Delete chat' }),
+    );
+
+    await waitFor(() => expect(openedChat()).toBe(chatIdOf({ key: 'relay' })));
+  });
+
+  it('lands on the archived chat below after the open archived one is deleted from the header', async () => {
+    await openArchivedTrio();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Delete chat' }));
+    fireEvent.click(
+      within(await screen.findByRole('dialog')).getByRole('button', { name: 'Delete chat' }),
+    );
+
+    await waitFor(() => expect(openedChat()).toBe(chatIdOf({ key: 'relay' })));
   });
 
   it('still closes the studio on Esc from the archived list', async () => {
