@@ -8,10 +8,12 @@ export type LoadChangelogUpcomingParams = {
 };
 
 const inFlight = new Set<string>();
+let latestTarget: string | null = null;
 
 export const loadChangelogUpcoming = (set: SetFn, get: GetFn) => {
   return async ({ target }: LoadChangelogUpcomingParams): Promise<void> => {
     const version = target.trim().replace(/^v/i, '');
+    latestTarget = version;
     if (get().changelogUpcoming?.target === version || inFlight.has(version)) {
       return;
     }
@@ -19,6 +21,9 @@ export const loadChangelogUpcoming = (set: SetFn, get: GetFn) => {
     try {
       const installed = await getVersion();
       const text = await fetchReleaseChangelog({ version });
+      if (latestTarget !== version) {
+        return;
+      }
       set({
         changelogUpcoming: {
           target: version,
