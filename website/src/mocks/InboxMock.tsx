@@ -14,7 +14,7 @@ type Props = {
 const INBOX_VIEWS = [
   { label: 'All', count: 26, icon: Inbox, isSelected: true },
   { label: 'In progress', count: 3, icon: Contrast, isSelected: false },
-  { label: 'With a session', count: 5, icon: CirclePlay, isSelected: false },
+  { label: 'Has a session', count: 5, icon: CirclePlay, isSelected: false },
 ] as const;
 
 const ITEM_COUNT = INBOX_GROUPS.reduce((total, group) => total + group.items.length, 0);
