@@ -853,6 +853,27 @@ describe('ChatRoom', () => {
     expect(store.stopChatReply).toHaveBeenCalledWith({ chatId: CHAT_ID });
   });
 
+  it('reports a Stop that failed', async () => {
+    store.chatMessages = {
+      [CHAT_ID]: [
+        messageOf({ role: 'user', content: 'Where is the consent step defined?', status: 'done' }),
+        messageOf({ role: 'assistant', content: 'It lives', status: 'streaming' }),
+      ],
+    };
+    store.chatStreams = { [CHAT_ID]: { runId: 'run-1', messageId: 'x', isStopping: false } };
+    const failure = new Error('the provider did not answer the cancel');
+    store.stopChatReply.mockRejectedValueOnce(failure);
+    renderRoom({ chat: CHAT });
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Stop' }));
+    });
+
+    expect(store.reportError).toHaveBeenCalledWith(
+      expect.objectContaining({ title: "Couldn't stop the reply", error: failure }),
+    );
+  });
+
   it('says it is reading before the first words arrive', () => {
     store.chatMessages = {
       [CHAT_ID]: [

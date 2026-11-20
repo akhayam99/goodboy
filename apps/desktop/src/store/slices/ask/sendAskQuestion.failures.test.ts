@@ -16,12 +16,20 @@ const { control } = vi.hoisted(
     control: {
       respond: null | ((params: AskResponderParams) => Promise<ChatTurnOutcome>);
       insertFailure: null | Error;
+      cancelFailure: null | Error;
       launches: number;
       cancels: Array<boolean>;
       isStarted: boolean;
     };
   } => ({
-    control: { respond: null, insertFailure: null, launches: 0, cancels: [], isStarted: false },
+    control: {
+      respond: null,
+      insertFailure: null,
+      cancelFailure: null,
+      launches: 0,
+      cancels: [],
+      isStarted: false,
+    },
   }),
 );
 
@@ -45,6 +53,9 @@ vi.mock('../../../features/session/ask/activeAskBackend', async () => {
       },
       cancelTurn: async (params: Parameters<typeof backend.cancelTurn>[0]) => {
         control.cancels.push(control.isStarted);
+        if (control.cancelFailure !== null) {
+          throw control.cancelFailure;
+        }
         return backend.cancelTurn(params);
       },
     },
@@ -78,6 +89,7 @@ beforeEach(async () => {
   await resetStoryStore();
   control.respond = null;
   control.insertFailure = null;
+  control.cancelFailure = null;
   control.launches = 0;
   control.cancels.length = 0;
   control.isStarted = false;
@@ -178,6 +190,24 @@ describe('failure modes of one Ask turn', () => {
     await sending;
 
     expect(control.cancels).toEqual([true]);
+  });
+
+  it('F6b a Stop that fails puts Stop back and lets the reply finish', async () => {
+    const pending = gate({ text: 'Retries double because ' });
+    const sending = ask('Why do retries double?');
+    await pending.started;
+    const failure = new Error('the provider did not answer the cancel');
+    control.cancelFailure = failure;
+
+    await expect(useAppStore.getState().stopAskReply({ sessionId: SESSION })).rejects.toBe(failure);
+    const threadId = useAppStore.getState().askThreadId[SESSION] ?? null;
+    expect(threadId === null ? null : useAppStore.getState().askStreams[threadId]?.isStopping).toBe(
+      false,
+    );
+    pending.release();
+    await sending;
+
+    expect(messagesOf().at(-1)).toMatchObject({ status: 'done' });
   });
 
   it('F7 a model change mid-turn leaves the running reply stamped with the model it used', async () => {

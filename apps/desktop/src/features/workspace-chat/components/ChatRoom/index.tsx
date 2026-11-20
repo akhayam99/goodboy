@@ -51,6 +51,7 @@ const RESIZE_LABEL = 'Resize the work panel';
 const SEND_FAILED = "Couldn't send the message";
 const MODEL_FAILED = "Couldn't change the chat model";
 const RESTORE_FAILED = "Couldn't restore the chat";
+const STOP_FAILED = "Couldn't stop the reply";
 
 export const ChatRoom = ({ workspaceId, chat, onCreated, onRemoved, onNewChat }: Props) => {
   const chatId = chat?.id ?? null;
@@ -215,9 +216,12 @@ export const ChatRoom = ({ workspaceId, chat, onCreated, onRemoved, onNewChat }:
         isAutoFocused={chatId === null || wasEmptyRef.current}
         onSend={send}
         onStop={() => {
-          if (chatId !== null) {
-            void stopChatReply({ chatId });
+          if (chatId === null) {
+            return;
           }
+          stopChatReply({ chatId }).catch((error: unknown) => {
+            void reportError({ recovery: NOTHING_CHANGED, title: STOP_FAILED, error, workspaceId });
+          });
         }}
         onRouting={pickRouting}
       />
