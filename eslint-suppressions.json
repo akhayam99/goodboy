@@ -11277,14 +11277,6 @@
       "count": 5
     }
   },
-  "packages/core/src/github/cache.ts": {
-    "@typescript-eslint/naming-convention": {
-      "count": 1
-    },
-    "@typescript-eslint/strict-boolean-expressions": {
-      "count": 1
-    }
-  },
   "packages/core/src/github/details.ts": {
     "@typescript-eslint/naming-convention": {
       "count": 1

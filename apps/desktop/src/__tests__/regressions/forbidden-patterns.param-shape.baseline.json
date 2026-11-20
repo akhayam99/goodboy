@@ -1921,7 +1921,6 @@
     "packages/core/src/estimates/durationEstimate.ts": 7,
     "packages/core/src/estimates/durationHistory.ts": 2,
     "packages/core/src/first-turn-classifier.ts": 1,
-    "packages/core/src/github/cache.ts": 2,
     "packages/core/src/github/classifyGhFailure.ts": 1,
     "packages/core/src/github/details.ts": 12,
     "packages/core/src/github/diff.ts": 10,

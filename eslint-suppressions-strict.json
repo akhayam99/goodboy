@@ -1119,16 +1119,6 @@
       "count": 1
     }
   },
-  "packages/core/src/github/__tests__/cache.test.ts": {
-    "@typescript-eslint/strict-boolean-expressions": {
-      "count": 2
-    }
-  },
-  "packages/core/src/github/cache.ts": {
-    "@typescript-eslint/strict-boolean-expressions": {
-      "count": 3
-    }
-  },
   "packages/core/src/github/details.ts": {
     "@typescript-eslint/strict-boolean-expressions": {
       "count": 4

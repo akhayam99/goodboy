@@ -339,7 +339,6 @@
     "packages/core/src/context/auto-populate.ts": 1,
     "packages/core/src/context/engine.ts": 1,
     "packages/core/src/context/marker-parsing.ts": 1,
-    "packages/core/src/github/cache.ts": 1,
     "packages/core/src/github/details.ts": 1,
     "packages/core/src/github/diff.ts": 1,
     "packages/core/src/github/resolver.ts": 2,
