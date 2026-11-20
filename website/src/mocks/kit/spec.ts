@@ -176,7 +176,7 @@ const ROW_NODE_LABEL: Record<RowNodeState, string> = {
   running: 'Running',
   question: 'Needs you',
   budget: 'Paused at the limit',
-  approval: 'Waiting for your approval',
+  approval: 'Needs permission',
   failed: 'Failed',
   done: 'Done',
   closed: 'Closed by you',

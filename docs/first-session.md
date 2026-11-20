@@ -15,7 +15,7 @@ Go from install to a merged pull request in one session. The steps use Harborlin
 
 ### 2. Write the ask
 
-Press ⌘K and choose **Start a run**. On the New session page, write the goal in your own words, such as "Stop retried webhooks posting a second credit". Press **Start**. Goodboy picks how to run it and keeps the reason with the run.
+Press ⌘K and choose **Start a run**. On the New session page, write the goal in your own words, such as "Stop retried webhooks posting a second credit". Press **Start**. A Lead runs it: it plans first, then starts the agents it needs.
 
 ### 3. Watch it on the board
 
@@ -41,7 +41,7 @@ When the work is ready, Next in the session offers **Open a pull request for hl/
 
 ### 5. Merge from the session
 
-Press **Push** in the Branch header. A short confirm counts the fixes, replies and threads it will send, and one **Push** sends them. The **Merge** cell on the Pull request page says what still blocks the merge, such as **Blocked by checks**. When nothing blocks it, press **Merge** in the same header. Next then offers to remove the payments-api worktree.
+Press **Push** in the Branch header. A short confirm counts the fixes, replies and threads it will send, and one **Push** sends them. The merge box on **Conversation** says what still holds the merge, such as **Blocked by a failing check**. When nothing blocks it, press **Merge** in the same header. Next then offers to remove the payments-api worktree.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/review-push-confirm-dark.webp">
@@ -54,7 +54,7 @@ Press **Push** in the Branch header. A short confirm counts the fixes, replies a
 
 - [Set up](features/setup.md): agents, workspaces and your tools
 - [Start a task](features/start.md): how Goodboy picks what runs
-- [The board](features/board.md): lanes, cards and the list view
+- [The board](features/board.md): lanes, cards and bulk select
 - [Review and resolve](features/review.md): the Branch page in full
 - [Workflows](features/workflows.md): steps with their own role, model and effort
 - [Fix a failing check from the board](walkthroughs/fix-a-failing-check.md)

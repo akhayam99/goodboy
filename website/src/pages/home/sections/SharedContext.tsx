@@ -8,7 +8,7 @@ const FACTS: readonly CardRowItem[] = [
   {
     key: 'changes',
     title: 'See what changed',
-    caption: 'The panel marks what was added or replaced since you last looked.',
+    caption: 'The Context tab marks what was added or replaced since you last looked.',
   },
   {
     key: 'repos',

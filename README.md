@@ -113,7 +113,7 @@ Or pick a package from the [latest release](https://github.com/akhayam99/goodboy
 - **macOS**: the `.dmg`, then drop Goodboy in Applications
 - **Linux**: `AppImage`, `.deb` or `.rpm`
 
-Goodboy runs the agents you already pay for: Claude, Codex, Cursor and four more. You sign in to each from the app, or paste its key, and keys stay in your system's password store.
+Goodboy runs the agents you already pay for: Claude, Codex, Cursor and five more. You sign in to each from the app, or paste its key, and keys stay in your system credential store.
 
 <br>
 
