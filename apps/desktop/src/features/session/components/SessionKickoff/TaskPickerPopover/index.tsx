@@ -5,7 +5,7 @@ import {
   ICON_SIZE,
   POPOVER_WIDTH_CLASS,
   POPOVER_WIDTH_PX,
-  ScrollFade,
+  PopoverPin,
   useDropdown,
 } from '@goodboy/ui';
 import type { WorkspaceId } from '@goodboy/types';
@@ -162,6 +162,7 @@ export const TaskPickerPopover = ({
       ariaLabel={START_KIND_COPY.pickTask}
       anchorClassName="inline-flex max-w-full"
       className="origin-top motion-safe:animate-popover-in"
+      bodyClassName="max-h-112"
       trigger={
         <TaskPickerTrigger
           isOpen={isOpen}
@@ -172,12 +173,13 @@ export const TaskPickerPopover = ({
         />
       }
     >
-      <div className="flex max-h-112 min-h-0 min-w-0 flex-col">
+      <PopoverPin edge="start">
         <div ref={sourcesRef} className="flex shrink-0 flex-col">
           <div className="flex h-10 items-center gap-2 px-3 text-muted-foreground">
             <Search size={ICON_SIZE.control} aria-hidden className="shrink-0" />
             <input
               ref={searchRef}
+              autoFocus
               type="text"
               role="combobox"
               aria-label={START_KIND_COPY.searchTasks}
@@ -207,29 +209,22 @@ export const TaskPickerPopover = ({
             />
           ) : null}
         </div>
-        <ScrollFade
-          className="flex min-h-0 flex-1 flex-col"
-          viewportClassName="h-auto min-h-0 flex-1 p-1"
-          fadeFrom="floating"
-          fadeSize={12}
-        >
-          <div className="flex flex-col">
-            <TaskPickerNotice
-              view={view}
-              query={query}
-              loading={loading}
-              errors={errors}
-              onRetry={onRetry}
-            />
-            <TaskPickerList
-              listId={listId}
-              view={view}
-              activeKey={cursor.activeKey}
-              onActivate={setActiveKey}
-              onPick={(item) => pick({ item })}
-            />
-          </div>
-        </ScrollFade>
+      </PopoverPin>
+      <div className="flex flex-col p-1">
+        <TaskPickerNotice
+          view={view}
+          query={query}
+          loading={loading}
+          errors={errors}
+          onRetry={onRetry}
+        />
+        <TaskPickerList
+          listId={listId}
+          view={view}
+          activeKey={cursor.activeKey}
+          onActivate={setActiveKey}
+          onPick={(item) => pick({ item })}
+        />
       </div>
     </AnchoredPopover>
   );

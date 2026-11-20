@@ -6,6 +6,7 @@ import {
   type MouseEventHandler,
   type ReactNode,
   type Ref,
+  type RefObject,
 } from 'react';
 import { cn } from '../cn';
 import { FLOATING_SURFACE } from '../floatingSurface';
@@ -16,10 +17,12 @@ import { ScrollFade } from './ScrollFade';
 export type PopoverProps = {
   readonly children: ReactNode;
   readonly className?: string;
+  readonly bodyClassName?: string;
   readonly style?: CSSProperties;
   readonly role?: 'menu' | 'dialog' | 'listbox';
   readonly ariaLabel?: string;
   readonly innerRef?: Ref<HTMLDivElement>;
+  readonly viewportRef?: RefObject<HTMLDivElement | null>;
   readonly tabIndex?: number;
   readonly onKeyDown?: KeyboardEventHandler<HTMLDivElement>;
   readonly onMouseDown?: MouseEventHandler<HTMLDivElement>;
@@ -30,10 +33,12 @@ const PIN_SLOT = 'flex shrink-0 flex-col empty:hidden';
 export const Popover = ({
   children,
   className,
+  bodyClassName,
   style,
   role,
   ariaLabel,
   innerRef,
+  viewportRef,
   tabIndex,
   onKeyDown,
   onMouseDown,
@@ -60,11 +65,12 @@ export const Popover = ({
       <PopoverPinContext.Provider value={pins}>
         <PinnedInsetContext.Provider value={null}>
           <ScrollFade
-            className="flex min-h-0 flex-1 flex-col gap-[inherit]"
+            className={cn('flex min-h-0 flex-1 flex-col gap-[inherit]', bodyClassName)}
             viewportClassName="flex h-auto min-h-0 flex-1 flex-col gap-[inherit]"
             fadeSize={12}
             fadeFrom="floating"
             isPageScroller={false}
+            viewportRef={viewportRef}
           >
             {children}
           </ScrollFade>

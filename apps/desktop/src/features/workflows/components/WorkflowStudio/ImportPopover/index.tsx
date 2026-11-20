@@ -6,7 +6,7 @@ import {
   FormActions,
   ICON_SIZE,
   Input,
-  ScrollFade,
+  PopoverPin,
   useDropdown,
 } from '@goodboy/ui';
 import type { WorkspaceId } from '@goodboy/types';
@@ -103,7 +103,7 @@ export const ImportPopover = ({ workspaceId, takenNames, renderTrigger = importB
       className="flex max-h-[min(32rem,70vh)] flex-col bg-elevated"
       trigger={renderTrigger({ isOpen: dropdown.open, onToggle: onToggleOpen })}
     >
-      <div className="flex shrink-0 items-center gap-3 p-2">
+      <PopoverPin edge="start" className="flex shrink-0 items-center gap-3 p-2">
         <label className="relative flex min-w-0 flex-1 items-center">
           <span className="sr-only">Search workflows</span>
           <Search
@@ -123,8 +123,8 @@ export const ImportPopover = ({ workspaceId, takenNames, renderTrigger = importB
             {catalogCount({ workflows: total, workspaces: readyWithWorkflows.length })}
           </span>
         ) : null}
-      </div>
-      <ScrollFade className="min-h-0 flex-1" viewportClassName="flex flex-col gap-3 px-2 pb-2">
+      </PopoverPin>
+      <div className="flex flex-col gap-3 px-2 pb-2">
         {emptyText === null ? (
           <div className="grid grid-cols-1 gap-x-3 gap-y-3 sm:grid-cols-2">
             {visible.map(({ group, workflows }) => (
@@ -179,7 +179,7 @@ export const ImportPopover = ({ workspaceId, takenNames, renderTrigger = importB
             {count > 0 ? `Import ${count}` : 'Import'}
           </Button>
         </FormActions>
-      </ScrollFade>
+      </div>
     </AnchoredPopover>
   );
 };

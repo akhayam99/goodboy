@@ -6,7 +6,7 @@ import {
   Divider,
   formatError,
   ICON_SIZE,
-  ScrollFade,
+  PopoverPin,
   tintClasses,
   Tooltip,
   type MenuEntry,
@@ -107,6 +107,7 @@ export const TransitionMenu = ({ issueKey, workspaceId, onTransition, state }: P
     <AnchoredPopover
       dropdown={dropdown}
       className="flex flex-col"
+      bodyClassName="max-h-64"
       hasBackdrop
       trigger={
         <Tooltip
@@ -133,16 +134,14 @@ export const TransitionMenu = ({ issueKey, workspaceId, onTransition, state }: P
         </Tooltip>
       }
     >
-      <ScrollFade className="max-h-64">
-        <AppMenuList label="Move this issue" entries={entries} onClose={close} />
-      </ScrollFade>
+      <AppMenuList label="Move this issue" entries={entries} onClose={close} />
       {moveError != null && (
-        <>
+        <PopoverPin edge="end">
           <Divider />
           <p role="alert" className="px-2 py-1 text-meta text-danger">
             {moveError}
           </p>
-        </>
+        </PopoverPin>
       )}
     </AnchoredPopover>
   );

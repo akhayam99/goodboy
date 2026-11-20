@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Plus, Search } from '@goodboy/ui/icons';
-import { Button, Divider, EmptyState, ICON_SIZE, Kbd, ScrollFade } from '@goodboy/ui';
+import { Button, Divider, EmptyState, ICON_SIZE, Kbd, PopoverPin } from '@goodboy/ui';
 import type { Workspace, WorkspaceId } from '@goodboy/types';
 import {
   useAppStore,
@@ -153,25 +153,24 @@ export const WorkspaceSwitcher = ({ onClose }: Props) => {
 
   return (
     <>
-      <div className="flex items-center gap-2 px-3 py-3">
-        <Search size={ICON_SIZE.control} aria-hidden className="text-faint-foreground" />
-        <input
-          ref={inputRef}
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          onKeyDown={handleKeyDown}
-          placeholder="Find a workspace or folder"
-          aria-label="Find a workspace or folder"
-          className="flex-1 bg-transparent text-meta focus-visible:outline-none"
-        />
-        <Kbd look="inline">{shortcutGlyphs('workspace.switcher')}</Kbd>
-      </div>
-      <Divider />
-      <ScrollFade
-        className="max-h-96"
-        viewportClassName="flex flex-col gap-1 p-1"
-        fadeFrom="elevated"
-      >
+      <PopoverPin edge="start">
+        <div className="flex items-center gap-2 px-3 py-3">
+          <Search size={ICON_SIZE.control} aria-hidden className="text-faint-foreground" />
+          <input
+            ref={inputRef}
+            autoFocus
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder="Find a workspace or folder"
+            aria-label="Find a workspace or folder"
+            className="flex-1 bg-transparent text-meta focus-visible:outline-none"
+          />
+          <Kbd look="inline">{shortcutGlyphs('workspace.switcher')}</Kbd>
+        </div>
+        <Divider />
+      </PopoverPin>
+      <div className="flex flex-col gap-1 p-1">
         {currentWorkspace !== null ? (
           <CurrentWorkspaceRow
             workspace={currentWorkspace}
@@ -221,14 +220,16 @@ export const WorkspaceSwitcher = ({ onClose }: Props) => {
               />
             ))
           : null}
-      </ScrollFade>
-      <Divider />
-      <div className="flex items-center gap-1 p-1">
-        <Button size="sm" variant="ghost" onClick={leaveFor({ action: openNewWorkspace })}>
-          <Plus size={ICON_SIZE.row} aria-hidden />
-          {NAMES.newWorkspace}
-        </Button>
       </div>
+      <PopoverPin edge="end">
+        <Divider />
+        <div className="flex items-center gap-1 p-1">
+          <Button size="sm" variant="ghost" onClick={leaveFor({ action: openNewWorkspace })}>
+            <Plus size={ICON_SIZE.row} aria-hidden />
+            {NAMES.newWorkspace}
+          </Button>
+        </div>
+      </PopoverPin>
     </>
   );
 };

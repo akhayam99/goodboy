@@ -5,7 +5,7 @@ import { cn } from '../../cn';
 import { useDropdown } from '../../useDropdown';
 import { AnchoredPopover } from '../AnchoredPopover';
 import { Button } from '../Button';
-import { ScrollFade } from '../ScrollFade';
+import { PopoverPin } from '../PopoverPin';
 import { Tooltip } from '../Tooltip';
 import { filterOptions, type ListboxMatch } from './filterOptions';
 import { HighlightedLabel } from './HighlightedLabel';
@@ -281,6 +281,7 @@ export const Listbox = <T extends ListboxValue>(props: ListboxProps<T>) => {
       dropdown={dropdown}
       anchorClassName={cn(isBlock ? 'flex w-full' : 'inline-flex max-w-full', anchorClassName)}
       className="origin-top motion-safe:animate-popover-in"
+      bodyClassName="max-h-80"
       trigger={
         disabled && disabledReason !== undefined ? (
           <Tooltip content={disabledReason}>{triggerButton}</Tooltip>
@@ -289,62 +290,61 @@ export const Listbox = <T extends ListboxValue>(props: ListboxProps<T>) => {
         )
       }
     >
-      <div className="flex max-h-80 min-h-0 min-w-0 flex-col">
-        {isSearchable ? (
-          <div className="flex h-9 shrink-0 items-center gap-2 border-b border-border px-3 text-muted-foreground">
-            <Search size={ICON_SIZE.control} aria-hidden className="shrink-0" />
-            <input
-              ref={searchRef}
-              type="text"
-              role="combobox"
-              aria-label={searchLabel}
-              aria-expanded
-              aria-controls={listboxId}
-              aria-autocomplete="list"
-              aria-activedescendant={activeId}
-              autoComplete="off"
-              spellCheck={false}
-              value={query}
-              placeholder={searchPlaceholder}
-              onChange={(event) => setQuery(event.target.value)}
-              onKeyDown={keyboard.onKeyDown}
-              className="min-w-0 flex-1 bg-transparent text-body text-foreground outline-none focus-visible:outline-none! placeholder:text-faint-foreground"
-            />
-          </div>
-        ) : null}
-        {status !== undefined ? (
-          <div className="px-3 py-2 text-meta text-muted-foreground">{status}</div>
-        ) : null}
-        {status === undefined && isEmpty ? (
-          <div className="px-3 py-2 text-meta text-faint-foreground">
-            {hasQuery
-              ? (noMatchLabel ?? `No ${noun} matches "${trimmedQuery}"`)
-              : (emptyLabel ?? `No ${noun}s yet`)}
-          </div>
-        ) : null}
-        {hasList ? (
-          <ScrollFade
-            className="flex min-h-0 flex-1 flex-col"
-            viewportClassName="h-auto min-h-0 flex-1 p-1"
-            fadeFrom="floating"
-            fadeSize={12}
-          >
-            <ListboxList
-              id={listboxId}
-              ariaLabel={ariaLabel}
-              entries={entries}
-              activeIndex={activeIndex}
-              selectedValues={selectedValues}
-              isMultiple={isMultiple}
-              isFlat={shouldFlattenOnSearch && trimmedQuery !== ''}
-              createLabel={createLabel}
-              onSelect={commit}
-              onActivate={setActiveIndex}
-            />
-          </ScrollFade>
-        ) : null}
+      {isSearchable ? (
+        <PopoverPin
+          edge="start"
+          className="flex h-9 shrink-0 items-center gap-2 border-b border-border px-3 text-muted-foreground"
+        >
+          <Search size={ICON_SIZE.control} aria-hidden className="shrink-0" />
+          <input
+            ref={searchRef}
+            autoFocus
+            type="text"
+            role="combobox"
+            aria-label={searchLabel}
+            aria-expanded
+            aria-controls={listboxId}
+            aria-autocomplete="list"
+            aria-activedescendant={activeId}
+            autoComplete="off"
+            spellCheck={false}
+            value={query}
+            placeholder={searchPlaceholder}
+            onChange={(event) => setQuery(event.target.value)}
+            onKeyDown={keyboard.onKeyDown}
+            className="min-w-0 flex-1 bg-transparent text-body text-foreground outline-none focus-visible:outline-none! placeholder:text-faint-foreground"
+          />
+        </PopoverPin>
+      ) : null}
+      {status !== undefined ? (
+        <div className="px-3 py-2 text-meta text-muted-foreground">{status}</div>
+      ) : null}
+      {status === undefined && isEmpty ? (
+        <div className="px-3 py-2 text-meta text-faint-foreground">
+          {hasQuery
+            ? (noMatchLabel ?? `No ${noun} matches "${trimmedQuery}"`)
+            : (emptyLabel ?? `No ${noun}s yet`)}
+        </div>
+      ) : null}
+      {hasList ? (
+        <div className="p-1">
+          <ListboxList
+            id={listboxId}
+            ariaLabel={ariaLabel}
+            entries={entries}
+            activeIndex={activeIndex}
+            selectedValues={selectedValues}
+            isMultiple={isMultiple}
+            isFlat={shouldFlattenOnSearch && trimmedQuery !== ''}
+            createLabel={createLabel}
+            onSelect={commit}
+            onActivate={setActiveIndex}
+          />
+        </div>
+      ) : null}
+      <PopoverPin edge="end" className="flex shrink-0 flex-col empty:hidden">
         {isMultiple ? (
-          <div className="flex shrink-0 items-center justify-between gap-2 px-3 py-1">
+          <div className="flex items-center justify-between gap-2 px-3 py-1">
             <span className="text-meta tabular-nums text-faint-foreground">
               {selectedValues.length > 0 ? `${selectedValues.length} selected` : null}
             </span>
@@ -363,9 +363,9 @@ export const Listbox = <T extends ListboxValue>(props: ListboxProps<T>) => {
           </div>
         ) : null}
         {footer === undefined ? null : (
-          <div className="flex shrink-0 flex-col p-1">{footer({ close: closeToTrigger })}</div>
+          <div className="flex flex-col p-1">{footer({ close: closeToTrigger })}</div>
         )}
-      </div>
+      </PopoverPin>
     </AnchoredPopover>
   );
 };

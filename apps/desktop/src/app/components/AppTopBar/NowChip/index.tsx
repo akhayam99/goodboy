@@ -8,7 +8,7 @@ import {
   Divider,
   FOCUS_RING,
   ICON_SIZE,
-  ScrollFade,
+  PopoverPin,
   StatusDot,
   tintClasses,
   Tooltip,
@@ -140,6 +140,7 @@ export const NowChip = ({ onOpenScript }: Props) => {
       role="dialog"
       ariaLabel="Now"
       hasBackdrop
+      bodyClassName="max-h-[27rem]"
       trigger={
         <Tooltip content={label} isSuppressed={isOpen}>
           <button
@@ -177,18 +178,15 @@ export const NowChip = ({ onOpenScript }: Props) => {
         </Tooltip>
       }
     >
-      <header className="flex items-center gap-2 px-3 py-2">
-        <span className="truncate text-meta font-semibold text-foreground">
-          {workspace == null ? 'Now' : `Now in ${workspace.name}`}
-        </span>
-      </header>
-      <Divider />
-      <ScrollFade
-        className="max-h-[27rem]"
-        viewportClassName="pb-1"
-        fadeSize={16}
-        fadeFrom="elevated"
-      >
+      <PopoverPin edge="start">
+        <header className="flex items-center gap-2 px-3 py-2">
+          <span className="truncate text-meta font-semibold text-foreground">
+            {workspace == null ? 'Now' : `Now in ${workspace.name}`}
+          </span>
+        </header>
+        <Divider />
+      </PopoverPin>
+      <div className="flex flex-col pb-1">
         {running.length > 0 ? (
           <NowGroup label="Running" count={running.length} tone="info">
             {running.map((session) => (
@@ -216,12 +214,12 @@ export const NowChip = ({ onOpenScript }: Props) => {
             ))}
           </NowGroup>
         ) : null}
-      </ScrollFade>
-      <div className="flex px-1 py-1">
+      </div>
+      <PopoverPin edge="end" className="flex px-1 py-1">
         <Button size="sm" variant="ghost" onClick={openMonitoring}>
           Open Monitoring
         </Button>
-      </div>
+      </PopoverPin>
       <SessionHoverCard
         session={hoveredSession}
         isArchived={false}

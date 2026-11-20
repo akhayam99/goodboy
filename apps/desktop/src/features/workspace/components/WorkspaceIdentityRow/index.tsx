@@ -55,6 +55,7 @@ export const WorkspaceIdentityRow = () => {
         ariaLabel="Switch or open a workspace"
         anchorClassName="w-full"
         hasBackdrop
+        bodyClassName="max-h-96"
         trigger={
           <ShellRailItem
             id="workspace"

@@ -156,8 +156,13 @@ a long menu scrolls and fades its edges and a short one draws no fade. A caller
 never wraps the content in a scroller of its own, so one axis has one
 scroller. A search above the list or a row under it stays put with
 `PopoverPin` (`edge="start"` or `edge="end"`), outside the scroller, the way
-Sessions pins its search and Open Board. `Popover.test.tsx` opens a 30 row menu
-in a 400px window and finds it scrolling with the fade.
+Sessions pins its search and Open Board. A picker that keeps its list shorter
+than the room passes the cap as `bodyClassName` (`max-h-64`), and one that
+watches its rows on screen reads the scroller through `viewportRef`, as the
+bell does. A focus a pinned field needs on open comes from `autoFocus`, because
+a pin mounts one render after the popover. `Popover.test.tsx` checks the fade
+math on a 30 row menu, and the `popover-scroll` scene probe opens the same menu
+in a real 400px window, counts one scroller and scrolls the last row into view.
 
 ## Menus
 

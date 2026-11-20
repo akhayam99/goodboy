@@ -1,6 +1,6 @@
 import { isApiProvider } from '@goodboy/core/providers';
 import { useEffect } from 'react';
-import { Button, ScrollFade } from '@goodboy/ui';
+import { Button } from '@goodboy/ui';
 import { type ProviderId } from '@goodboy/types';
 import { useAppStore } from '../../../store';
 import { PROVIDER_LABEL } from '../providerLabel';
@@ -31,32 +31,28 @@ export const ProviderInlineConnect = ({
 
   if (isApiProvider({ id: providerId })) {
     return (
-      <ScrollFade className="min-h-0 max-h-96" fadeFrom="subtle">
-        <section
-          aria-label={`Connect ${PROVIDER_LABEL[providerId]}`}
-          className="flex flex-col gap-3 p-3"
-        >
-          <ProviderCredentialsSection providerId={providerId} />
-          <div className="flex justify-end">
-            <Button size="sm" variant="ghost" onClick={onDone}>
-              Back
-            </Button>
-          </div>
-        </section>
-      </ScrollFade>
+      <section
+        aria-label={`Connect ${PROVIDER_LABEL[providerId]}`}
+        className="flex flex-col gap-3 p-3"
+      >
+        <ProviderCredentialsSection providerId={providerId} />
+        <div className="flex justify-end">
+          <Button size="sm" variant="ghost" onClick={onDone}>
+            Back
+          </Button>
+        </div>
+      </section>
     );
   }
 
   return (
-    <ScrollFade className="min-h-0 max-h-96" fadeFrom="subtle">
-      <div className="p-3">
-        <ProviderConnect
-          providerId={providerId}
-          chrome="inline"
-          autoStart={autoStart}
-          onDone={onDone}
-        />
-      </div>
-    </ScrollFade>
+    <div className="p-3">
+      <ProviderConnect
+        providerId={providerId}
+        chrome="inline"
+        autoStart={autoStart}
+        onDone={onDone}
+      />
+    </div>
   );
 };
