@@ -138,6 +138,8 @@ export type ActionMenuBehavior = {
 
 export type ActionOrigin = 'menu' | 'overflow' | 'palette' | 'button';
 
+type ActionPlacement = 'everywhere' | 'palette';
+
 export type ActionViewing = {
   readonly kind: 'artifact' | 'agent' | 'workflowRun' | 'selection';
   readonly id: string;
@@ -170,6 +172,9 @@ export type ActionRunOutcome = 'done' | 'unchanged';
 export type ActionDefinition<F> = {
   readonly id: string;
   readonly label: string | ((params: FactsParams<F>) => string);
+  readonly menuLabel?: string | ((params: FactsParams<F>) => string);
+  readonly isInputFirst?: boolean;
+  readonly placement?: ActionPlacement;
   readonly shortLabel?: (params: FactsParams<F>) => string;
   readonly ariaLabel?: (params: FactsParams<F>) => string;
   readonly icon: IconGlyph;

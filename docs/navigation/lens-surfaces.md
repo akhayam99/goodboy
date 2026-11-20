@@ -110,7 +110,7 @@
   address (`external-task` target, `focusedExternalTask`): a card opens it
   through `openExternalTaskLens`, so the crumbs read `Overview › {provider}`.
   The rail owns the linked work list and its history fold. The page draws no back
-  button of its own: the head's back button goes one crumb up. `Remove link from this session` sits in the record's `⋯`, asks first and
+  button of its own: the head's back button goes one crumb up. `Unlink` sits in the record's `⋯`, asks first and
   leaves an Undo toast; once the unlink lands, the address is replaced by the
   Overview, unless the user already moved on. A failure keeps the record and its error. A `Placed on` property in the Links group shows
   `This session` or the branches; its value (`TaskPlacementMenu`) opens the

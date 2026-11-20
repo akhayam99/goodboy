@@ -95,9 +95,9 @@ export const IntegrationPane = ({ sessionId, workspaceId, provider }: Props) => 
           isBusy: isUnlinking,
           blockedReason: null,
           confirm: {
-            title: `Remove the link to ${focusedTask.identifier} from this session?`,
+            title: `Unlink ${focusedTask.identifier}?`,
             description: `The issue stays in ${meta.label}. Link it again from Link work.`,
-            confirmLabel: 'Unlink',
+            confirmLabel: NAMES.removeLinkFromSession,
           },
           onRun: () => handleUnlink({ task: focusedTask }),
         },

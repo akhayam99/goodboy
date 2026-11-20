@@ -1,0 +1,12 @@
+{
+  "app/components/DrawerHost.tsx": 1,
+  "features/integrations/slack/SlackConnectGuide.tsx": 1,
+  "features/providers/components/ProviderConnect/guides.ts": 1,
+  "features/providers/components/ProviderStudio/DefaultsPanel/roleGrid.ts": 1,
+  "features/resolve/laneCopy.ts": 3,
+  "features/settings/components/GuideStudio/guideChapters.ts": 9,
+  "features/settings/components/GuideStudio/parts/LegendSection.tsx": 1,
+  "features/settings/components/GuideStudio/parts/StagesExtra.tsx": 1,
+  "features/wireframes/wireframeTarget.ts": 2,
+  "features/workspace/components/StageBoard/StageColumn/DoneLaneMenu/index.tsx": 1
+}

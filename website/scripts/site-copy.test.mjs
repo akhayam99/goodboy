@@ -1,5 +1,12 @@
 import assert from 'node:assert/strict';
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import {
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  readdirSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { describe, it } from 'node:test';
@@ -27,6 +34,7 @@ const RETIRED_PATH = join(
   'regressions',
   'retiredNames.ts',
 );
+const RETIRED_DIR = join(dirname(RETIRED_PATH), 'retired');
 
 const EM = String.fromCharCode(0x2014);
 const EN = String.fromCharCode(0x2013);
@@ -176,8 +184,26 @@ describe('growthLines and staleLines', () => {
   });
 });
 
+const retiredSource = () =>
+  [
+    RETIRED_PATH,
+    ...readdirSync(RETIRED_DIR)
+      .filter((file) => file.endsWith('.ts'))
+      .map((file) => join(RETIRED_DIR, file)),
+  ]
+    .map((path) => readFileSync(path, 'utf8'))
+    .join('\n');
+
+describe('the retired names of every unit', () => {
+  it('reads the shared list and each file under retired/', () => {
+    const shared = retiredPatternsFrom({ source: readFileSync(RETIRED_PATH, 'utf8') });
+    const all = retiredPatternsFrom({ source: retiredSource() });
+    assert.ok(all.length > shared.length);
+  });
+});
+
 describe('the site copy', () => {
-  const patterns = retiredPatternsFrom({ source: readFileSync(RETIRED_PATH, 'utf8') });
+  const patterns = retiredPatternsFrom({ source: retiredSource() });
   const measured = measureSiteCopy({ srcRoot: SRC_ROOT, patterns });
   const isUpdating = process.env.GOODBOY_UPDATE_BASELINE === '1';
   const baseline = JSON.parse(readFileSync(BASELINE_PATH, 'utf8'));

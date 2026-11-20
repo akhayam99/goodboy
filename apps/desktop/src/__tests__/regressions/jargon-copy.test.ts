@@ -1,4 +1,6 @@
 // @vitest-environment node
+import { readFileSync, writeFileSync } from 'fs';
+import { join } from 'path';
 import { describe, expect, it } from 'vitest';
 import { LENS_LABEL } from '../../features/session/lens-labels';
 import { AGENT_KIND_META, ROLE_LABEL } from '../../features/session/agent-kind';
@@ -86,4 +88,57 @@ describe('on-screen copy says no internal word', () => {
       expect(stale).toEqual([]);
     },
   );
+});
+
+const PANEL_JARGON = /(?<![\w-])(columns?|lanes?|grids?|tiers?|drawers?)(?![\w-])/i;
+const PANEL_BASELINE_PATH = join(__dirname, 'jargon-panel-copy.baseline.json');
+
+type PanelCopyParams = {
+  readonly prop: string | null;
+  readonly text: string;
+};
+
+const isPanelJargon = ({ prop, text }: PanelCopyParams): boolean =>
+  (prop !== null || /[A-Z]/.test(text)) && PANEL_JARGON.test(text);
+
+describe('on-screen copy says panel, never the layout word', () => {
+  const measured = scanCopy()
+    .filter(isPanelJargon)
+    .reduce<Record<string, number>>((byPath, copy) => {
+      byPath[copy.path] = (byPath[copy.path] ?? 0) + 1;
+      return byPath;
+    }, {});
+
+  if (process.env.GOODBOY_UPDATE_BASELINE === '1') {
+    writeFileSync(
+      PANEL_BASELINE_PATH,
+      `${JSON.stringify(Object.fromEntries(Object.entries(measured).sort(([a], [b]) => a.localeCompare(b))), null, 2)}\n`,
+    );
+  }
+
+  it.each(['Close the drawer', 'Board columns', 'Each session sits in a lane', 'Reader tier'])(
+    'flags %s',
+    (text) => {
+      expect(isPanelJargon({ prop: 'label', text })).toBe(true);
+    },
+  );
+
+  it.each([
+    ['label', 'Close the panel'],
+    [null, 'grid grid-cols-2 gap-3'],
+    ['label', 'Reset panel layout'],
+  ])('leaves %s %s alone', (prop, text) => {
+    expect(isPanelJargon({ prop, text })).toBe(false);
+  });
+
+  it('adds no column, lane, grid, tier or drawer to rendered copy outside the baseline', () => {
+    const baseline: Readonly<Record<string, number>> = JSON.parse(
+      readFileSync(PANEL_BASELINE_PATH, 'utf8'),
+    );
+    const grown = Object.entries(measured).flatMap(([path, count]) =>
+      count > (baseline[path] ?? 0) ? [`${path}: ${count} (baseline ${baseline[path] ?? 0})`] : [],
+    );
+
+    expect(grown).toEqual([]);
+  });
 });

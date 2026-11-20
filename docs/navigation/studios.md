@@ -589,7 +589,7 @@ workspaceId, nowMs })`, owns every row's attention sentence and tone (it replace
   Before a session is linked, Tasks adds Link to a session under the properties
   (`RecordFrame.link`): a searchable list of the workspace's sessions that links
   the record to the one you pick. Everything else lives in
-  `⋯` in a fixed order: rare tool verbs, Refresh, Copy link, Remove link to session,
+  `⋯` in a fixed order: rare tool verbs, Refresh, Copy link, Unlink,
   then destructive verbs after a separator. Editable properties change from the
   control that shows them (the Jira state opens its transitions). Start has
   one verb and the result follows the record (`startFromRecord`): an issue or

@@ -197,9 +197,7 @@ describe('task link controls', () => {
     renderRow();
     const menu = openRowMenu();
     await act(async () => {
-      fireEvent.click(
-        within(menu).getByRole('menuitem', { name: 'Remove link from this session' }),
-      );
+      fireEvent.click(within(menu).getByRole('menuitem', { name: 'Unlink' }));
     });
     expect(await storedLinks()).toEqual([]);
     expect(screen.queryByRole('dialog')).toBeNull();

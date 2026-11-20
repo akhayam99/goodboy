@@ -62,7 +62,7 @@ talking to a market. There are two voices:
   Voice & copy.
 - **Chips, statuses and toasts use sentence case too.** One set of status words
   across artifacts, inbox and resolve: "Generating", "Needs you", "No report",
-  "Couldn't read wireframe", "Active", "Used", "Passed", "Failed", "Stopped".
+  "Couldn't load wireframe", "Active", "Used", "Passed", "Failed", "Stopped".
   `sentence-case-copy.test.ts` checks the named copy maps.
   `jargon-copy.test.ts` keeps internal words off the screen, against the table
   in [concepts.md](concepts.md) → Vocabulary rules.
@@ -77,7 +77,17 @@ talking to a market. There are two voices:
 - **A button or menu label is a verb and an object.** Use the developer's
   word: "Rebase on their commits", "Abort rebase", "Restore stashed files",
   not "Bring them in" or "Keep". Offer a copy action only for content the user
-  cannot select where it is shown.
+  cannot select where it is shown. In the menu of its own object the verb may
+  stand alone ("Pin"); Search or run always shows it with its object ("Pin
+  session").
+- **An ellipsis means an input comes next.** "Start a run…" and "Set limit…"
+  open a field before anything runs; a label that acts at once has none. The
+  menu draws it, so the word in `NAMES` never ends in one. A progress word
+  keeps its ellipsis: "Starting…", "Closing…".
+- **In a tab or an app, on a host.** "Open in Terminal", "Open in external
+  terminal", "Open on GitHub".
+- **Say panel.** A side region of the window is a panel on screen ("Close the
+  panel"); column, lane, grid, tier and drawer stay in code.
 - **No trailing period on titles, eyebrows, button labels, or list items.**
   Body sentences keep theirs. The one exception is a hero line that stands
   alone, because it is read like a spoken beat ("Stop re-explaining yourself.").
@@ -149,8 +159,9 @@ talking to a market. There are two voices:
   holds no code identifier and no source path: those go in the
   `## Under the hood` section at the end of the page. It never says
   "Experimental" and never names a platform the app does not ship for
-  (macOS and Linux). It names no screen the app retired, such as an Agents
-  or Auto agents entry in the session rail. `scripts/check-doc-budget.mjs` counts the breaches per
+  (macOS and Linux). It names no screen the app retired, such as an Auto
+  agents entry in the session rail. Agents names only the tree of a run's
+  agents. `scripts/check-doc-budget.mjs` counts the breaches per
   page and a count only falls. The README, `docs/first-session.md` and the
   `docs/walkthroughs/` pages sit under the same count. A walkthrough has numbered steps,
   Harborline data, one line on why it works and 150 to 200 words.
@@ -282,7 +293,7 @@ Good:
 A failed action says what did not happen in the title, shows the cause in the
 body and ends one of two ways. If a fix exists, it is a button named with a
 verb and its object: "Retry push", "Reconnect GitLab", "Open settings", "Show
-in Finder". If none exists, the last sentence says what is safe: "Nothing was
+in Finder" ("Show in folder" on Linux). If none exists, the last sentence says what is safe: "Nothing was
 changed." or "Your work is still on the branch." Never "Try again", never a
 cause with no ending. [DESIGN.md](../DESIGN.md) → Status & signals holds the
 contract.
@@ -301,9 +312,3 @@ contract.
 
 Read it out loud. If it sounds like a press release, rewrite it. If it sounds
 like something you'd say to a friend after the third coffee of the day, ship it.
-
-Task links use **Unlink**, **Unlinked** in the toast, and **Re-link** on the
-unlink event. Moving a task between the session and its branches never says
-unlink: **Move to session**, **Take off project / branch**, and a toast that
-names the new place. The entry for adding a link is always **Link work**. These
-words replace the former retirement of Unlink for task-link controls.

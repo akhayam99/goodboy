@@ -1,14 +1,35 @@
 import { NAMES } from '../../shared/utils/names';
 import { ITEM_WORK_WORDS } from '../../features/live-state/itemWork/itemWorkWords';
+import type { RetiredName } from './RetiredName';
 
-type RetiredName = {
-  readonly id: string;
-  readonly pattern: RegExp;
-  readonly use: string;
-  readonly allowedPaths?: RegExp;
+type ModuleParams = {
+  readonly path: string;
+  readonly module: Readonly<Record<string, unknown>>;
 };
 
-export const RETIRED_NAMES: ReadonlyArray<RetiredName> = [
+const isRetiredName = (value: unknown): value is RetiredName =>
+  typeof value === 'object' &&
+  value !== null &&
+  'id' in value &&
+  typeof value.id === 'string' &&
+  'pattern' in value &&
+  value.pattern instanceof RegExp &&
+  'use' in value &&
+  typeof value.use === 'string';
+
+const retiredNamesIn = ({ path, module }: ModuleParams): ReadonlyArray<RetiredName> =>
+  Object.values(module).flatMap((exported) => {
+    if (!Array.isArray(exported) || !exported.every(isRetiredName)) {
+      throw new Error(`${path} exports something that is not a list of retired names`);
+    }
+    return exported;
+  });
+
+const FROM_UNITS: ReadonlyArray<RetiredName> = Object.entries(
+  import.meta.glob<Readonly<Record<string, unknown>>>('./retired/*.ts', { eager: true }),
+).flatMap(([path, module]) => retiredNamesIn({ path, module }));
+
+const SHARED: ReadonlyArray<RetiredName> = [
   { id: 'cancel-turn', pattern: /\bCancel turn\b/i, use: NAMES.stop },
   { id: 'verbose', pattern: /\bVerbose\b/, use: NAMES.long },
   { id: 'spend-limit', pattern: /\b[Ss]pend limit\b/i, use: NAMES.spendCap },
@@ -19,7 +40,7 @@ export const RETIRED_NAMES: ReadonlyArray<RetiredName> = [
   { id: 'budget-cap', pattern: /\b[Bb]udget cap\b/i, use: NAMES.spendCap },
   { id: 'link-plain-folder', pattern: /\bLink a plain folder\b/i, use: NAMES.addPlainFolder },
   { id: 'provider-limits', pattern: /\b(?:More )?[Pp]rovider limits\b/, use: NAMES.usage },
-  { id: 'add-folder', pattern: /^Add folder$/, use: NAMES.addProject },
+  { id: 'add-folder', pattern: /\bAdd folder\b/, use: NAMES.addProject },
   { id: 'folders-noun', pattern: /^Folders$/, use: NAMES.projects },
   {
     id: 'waiting-for-you-title',
@@ -37,7 +58,11 @@ export const RETIRED_NAMES: ReadonlyArray<RetiredName> = [
   },
   { id: 'command-palette', pattern: /\bCommand palette\b/i, use: NAMES.searchOrRun },
   { id: 'open-as-page', pattern: /\bOpen as page\b/, use: NAMES.openFullPage },
-  { id: 'beside-the-session', pattern: /^Beside the session$/, use: NAMES.dock },
+  {
+    id: 'beside-the-session',
+    pattern: /^(?:Dock (?:the \w+ )?)?[Bb]eside the session$/,
+    use: NAMES.dockBesideThePage,
+  },
   { id: 'autorun', pattern: /\bAutorun\b/i, use: NAMES.asksYou },
   { id: 'run-on-its-own', pattern: /\bRun on its own\b/i, use: NAMES.asksYou },
   { id: 'autopilot', pattern: /\bAutopilot\b/, use: NAMES.asksYou },
@@ -108,7 +133,7 @@ export const RETIRED_NAMES: ReadonlyArray<RetiredName> = [
     pattern: /\bWipe (?:local database|every workspace)\b|\bLocal data wiped\b/,
     use: NAMES.deleteAllData,
   },
-  { id: 'send-message', pattern: /^Send message$/, use: NAMES.send },
+  { id: 'send-message', pattern: /\bSend message\b/, use: NAMES.send },
   { id: 'try-again', pattern: /^Try again(?: on [\w .-]+| with the hint)?$/, use: NAMES.retry },
   { id: 'your-roles', pattern: /\bYour roles\b/i, use: NAMES.yourJob },
   { id: 'pair-device', pattern: /\bPair (?:a |another )?device\b/, use: NAMES.pairIphone },
@@ -122,17 +147,17 @@ export const RETIRED_NAMES: ReadonlyArray<RetiredName> = [
   { id: 'in-review-page', pattern: /\bin Review\b(?! replies)/, use: NAMES.comments },
   { id: 'review-replies', pattern: /\bReview replies\b/, use: NAMES.repliesAndCommits },
   { id: 'defaults-page', pattern: /\b(?:in|then|Open) Defaults\b/, use: NAMES.models },
-  { id: 'push-commits', pattern: /^Push commits$/, use: NAMES.push },
+  { id: 'push-commits', pattern: /\bPush commits\b/, use: NAMES.push },
   { id: 'push-these', pattern: /\bPush these\b/, use: NAMES.push },
   { id: 'apply-and-resolve', pattern: /\bApply and resolve\b/, use: NAMES.applyFix },
-  { id: 'fix-to-review', pattern: /^Fix to review$/, use: NAMES.fixReady },
+  { id: 'fix-to-review', pattern: /\bFix to review\b/, use: NAMES.fixReady },
   { id: 'online-copy', pattern: /\bonline copy\b/i, use: NAMES.onOrigin },
   {
     id: 'let-agent-fix-push',
     pattern: /\bLet an agent fix the push\b/,
     use: NAMES.fixPushWithAgent,
   },
-  { id: 'fix-with-agent', pattern: /^Fix with agent$/, use: NAMES.fixPushWithAgent },
+  { id: 'fix-with-agent', pattern: /\bFix with agent\b/, use: NAMES.fixPushWithAgent },
   {
     id: 'fix-proposed',
     pattern: /^Fix proposed$|\bfixes? proposed\b/i,
@@ -140,11 +165,11 @@ export const RETIRED_NAMES: ReadonlyArray<RetiredName> = [
   },
   {
     id: 'no-fix-proposed',
-    pattern: /^No fix proposed$/,
+    pattern: /\bNo fix proposed\b/,
     use: ITEM_WORK_WORDS.state.noFixFound.word,
   },
-  { id: 'fix-stopped', pattern: /^Fix stopped$/, use: ITEM_WORK_WORDS.state.stopped.word },
-  { id: 're-running', pattern: /^Re-running$/, use: ITEM_WORK_WORDS.state.pushedChecking.word },
+  { id: 'fix-stopped', pattern: /\bFix stopped\b/, use: ITEM_WORK_WORDS.state.stopped.word },
+  { id: 're-running', pattern: /\bRe-running\b/, use: ITEM_WORK_WORDS.state.pushedChecking.word },
   { id: 'open-the-agent', pattern: /^Open the agent(?::.*)?$/, use: NAMES.openAgent },
   {
     id: 'couldnt-fix',
@@ -176,7 +201,7 @@ export const RETIRED_NAMES: ReadonlyArray<RetiredName> = [
   },
   {
     id: 'waiting-for-permission',
-    pattern: /^Waiting for your permission$/,
+    pattern: /\bWaiting for your permission\b/,
     use: NAMES.waitingForPermission,
   },
   { id: 'lowercase-notifications', pattern: /^notifications$/, use: NAMES.notifications },
@@ -188,7 +213,7 @@ export const RETIRED_NAMES: ReadonlyArray<RetiredName> = [
     use: NAMES.pickAnIssue,
   },
   { id: 'ask-an-agent', pattern: /\bAsk an agent\b/, use: NAMES.startARun },
-  { id: 'start-agent', pattern: /^Start agent$/, use: NAMES.startARun },
+  { id: 'start-agent', pattern: /\bStart agent\b/, use: NAMES.startARun },
   { id: 'start-auto', pattern: /\bStart Auto\b(?! agent)/, use: NAMES.startARun },
   { id: 'start-an-auto', pattern: /\bStart an auto\b/i, use: NAMES.startARun },
   { id: 'orchestrate-verb', pattern: /^Orchestrate$/, use: NAMES.startRun },
@@ -202,15 +227,15 @@ export const RETIRED_NAMES: ReadonlyArray<RetiredName> = [
     pattern: /\bBring them into the plan\b/,
     use: NAMES.rebaseOnThem,
   },
-  { id: 'reset-chat', pattern: /^Reset chat$/, use: NAMES.newQuestion },
+  { id: 'reset-chat', pattern: /\bReset chat\b/, use: NAMES.newQuestion },
   {
     id: 'ask-the-agent-about-this',
-    pattern: /^Ask the agent about this$/,
+    pattern: /\bAsk the agent about this\b/,
     use: NAMES.sendToTheAgent,
   },
   {
     id: 'turn-into-work',
-    pattern: /^(?:Turn into work|Start work(?: from here)?)$/,
+    pattern: /\b(?:Turn into work|Start work from here)\b/,
     use: NAMES.startWorkFromChat,
     allowedPaths: /^(?:features\/work\/|app\/components\/MockScene\/scenes\/u42\/)/,
   },
@@ -259,23 +284,23 @@ export const RETIRED_NAMES: ReadonlyArray<RetiredName> = [
   { id: 'continue-the-run', pattern: /\bContinue the run\b/, use: NAMES.continue },
   { id: 'continue-step', pattern: /\bContinue step\b/, use: NAMES.continue },
   { id: 'resume-all', pattern: /\bResume all\b/, use: NAMES.continueAll },
-  { id: 'view-transcript', pattern: /^View transcript$/, use: NAMES.openTranscript },
-  { id: 'go-to-chat', pattern: /^Go to chat$/, use: NAMES.openAgent },
-  { id: 'see-what-it-did', pattern: /^See what it did$/, use: NAMES.openAgent },
-  { id: 'open-fix-run', pattern: /^Open fix run$/, use: NAMES.openAgent },
-  { id: 'retry-through-auto', pattern: /^Retry through Auto$/, use: NAMES.retry },
-  { id: 'restart-step', pattern: /^Restart step$/, use: NAMES.retryStep },
-  { id: 'ask-it-to-continue', pattern: /^Ask it to continue$/, use: NAMES.continue },
-  { id: 'skip-and-go-on', pattern: /^Skip and go on$/, use: NAMES.skipStep },
-  { id: 'discard-request', pattern: /^Discard request$/, use: NAMES.decline },
-  { id: 'mark-all-seen', pattern: /^Mark all seen$/, use: NAMES.markAsRead },
-  { id: 'restore-turn', pattern: /^Restore turn(?: \d+)?$/, use: NAMES.undoReply },
-  { id: 'undo-restore-of-turn', pattern: /^Undo restore of turn\b/, use: NAMES.undoRestore },
+  { id: 'view-transcript', pattern: /\bView transcript\b/, use: NAMES.openTranscript },
+  { id: 'go-to-chat', pattern: /\bGo to chat\b/, use: NAMES.openAgent },
+  { id: 'see-what-it-did', pattern: /\bSee what it did\b/, use: NAMES.openAgent },
+  { id: 'open-fix-run', pattern: /\bOpen fix run\b/, use: NAMES.openAgent },
+  { id: 'retry-through-auto', pattern: /\bRetry through Auto\b/, use: NAMES.retry },
+  { id: 'restart-step', pattern: /\bRestart step\b/, use: NAMES.retryStep },
+  { id: 'ask-it-to-continue', pattern: /\bAsk it to continue\b/, use: NAMES.continue },
+  { id: 'skip-and-go-on', pattern: /\bSkip and go on\b/, use: NAMES.skipStep },
+  { id: 'discard-request', pattern: /\bDiscard request\b/, use: NAMES.decline },
+  { id: 'mark-all-seen', pattern: /\bMark all seen\b/, use: NAMES.markAsRead },
+  { id: 'restore-turn', pattern: /\bRestore turn\b/, use: NAMES.undoReply },
+  { id: 'undo-restore-of-turn', pattern: /\bUndo restore of turn\b/, use: NAMES.undoRestore },
   { id: 'bring-it-back', pattern: /\bBring it back\b/, use: NAMES.undoRestore },
-  { id: 'waits-for-this-turn', pattern: /^Waits for this turn\b/, use: NAMES.waitsForThisReply },
+  { id: 'waits-for-this-turn', pattern: /\bWaits for this turn\b/, use: NAMES.waitsForThisReply },
   { id: 'new-turns-start-in', pattern: /\bNew turns start in\b/, use: NAMES.startsIn },
-  { id: 'the-turn-failed', pattern: /^The turn (?:failed|stopped)$/, use: NAMES.failed },
-  { id: 'turn-finished', pattern: /^Turn finished\b/, use: NAMES.replyFinished },
+  { id: 'the-turn-failed', pattern: /\bThe turn (?:failed|stopped)\b/, use: NAMES.failed },
+  { id: 'turn-finished', pattern: /\bTurn finished\b/, use: NAMES.replyFinished },
   {
     id: 'banner-when-you-are-away',
     pattern: /\bBanner when you are away\b/,
@@ -288,7 +313,7 @@ export const RETIRED_NAMES: ReadonlyArray<RetiredName> = [
     pattern: /\bShow if a command passed or failed\b/,
     use: NAMES.commandStatus,
   },
-  { id: 'exit-status', pattern: /^Exit status$/, use: NAMES.commandStatus },
+  { id: 'exit-status', pattern: /\bExit status\b/, use: NAMES.commandStatus },
   { id: 'leave-out', pattern: /^Leave out$/, use: NAMES.skipFolders },
   {
     id: 'auto-agent',
@@ -314,3 +339,5 @@ export const RETIRED_NAMES: ReadonlyArray<RetiredName> = [
     allowedPaths: /^(?:features\/work\/|shared\/components\/ProfileForm\/)/,
   },
 ];
+
+export const RETIRED_NAMES: ReadonlyArray<RetiredName> = [...SHARED, ...FROM_UNITS];

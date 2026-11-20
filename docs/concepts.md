@@ -16,9 +16,9 @@ The other docs link here instead of explaining them again.
 - **Session**: one goal, the unit of work, with its own limit and shared notes
 - **Agent**: one chat inside a session, with its own provider and model
 - **Workflow**: a list of steps you can reuse, and each step gets its own agent; a run follows it as written or adapts it as it goes
-- **Run**: one go at a goal inside a session, started as a workflow, an agent or Auto
+- **Run**: one go at a goal inside a session, started as a workflow, an agent or the Lead
 - **Plan**: the steps an agent writes before it builds, kept as an artifact you approve or revise
-- **Auto**: the agent that picks how a run goes and starts helpers, under your limit
+- **Lead**: the agent that picks how a run goes and starts helpers, under your limit (it was Auto, a word that now means only an automatic pick of a model or a folder)
 - **Scout**: a role that reads the code and answers, and changes nothing
 - **Artifact**: a plan, report or wireframe an agent saves as its own page
 - **Lens**: one view of a session, such as its plans, questions or diff
@@ -251,7 +251,8 @@ A list never words that agent as running, though. `agentStateOf` in
 `features/workTreeModel/agentStateOf.ts` is the one table from an agent's status,
 its turn and its open questions to the phase, the word, the node and the dot,
 and the Runs grid, the Runs page count, the Running card and the Agents tree all
-read it. A blocked turn is **Needs permission**: a waiting phase, an amber node
+read it. **Agents** (`NAMES.agents`) names that tree of a run's agents and
+nothing else: no page, tab or key is called Agents. A blocked turn is **Needs permission**: a waiting phase, an amber node
 without motion, counted in "N sessions need you" and sorted ahead of what runs. The
 session's **needs-approval** reason in the attention registry reads the same
 fact through `isTurnStatePermissionBlocked` in `features/session/agent-lifecycle.ts`,
@@ -264,7 +265,7 @@ and every row: **Needs you**, **Needs approval**, **Not finished**,
 **Stopped**, **Done**, **Idle**, **Not started**, **Skipped**, **Closed**.
 **Stuck**, **Blocked** (outside a pull request's merge state), **Working**,
 **Planning** and **Pending** are not words on screen. An error reads **Failed**,
-a limit reads **Paused**, a hint, a stopped Auto or an agent that stopped
+a limit reads **Paused**, a hint, a stopped Lead or an agent that stopped
 unfinished reads **Needs you** with one sentence.
 
 Each state word means what this table says. The regression guard checks its own
@@ -740,7 +741,7 @@ orchestrator hints use. **Queue** (Enter) waits for the turn to end. **Send
 now** (⌘Enter) stops the turn, keeps what it wrote, and continues with your
 message. Queued messages sit above the composer, reading **Waits for this
 turn** or **Sending now**, and each one can be edited, removed or sent now.
-An Auto agent shows the messages Auto has not read in the same list (see
+The Lead shows the messages it has not read in the same list (see
 [auto.md](./auto.md) **One queue**).
 They are saved in the database (`agent_queued_messages`), so they survive a
 restart, and they go out one per turn in order. An agent you stopped keeps its
@@ -759,15 +760,15 @@ step in its next action, because closing it would leave the run blocked with
 no instruction. `isAgentClosable` and `isAgentClosedByUser` in
 `apps/desktop/src/features/session/agent-lifecycle.ts` hold both rules.
 
-### Auto
+### Lead
 
-**Auto** is an agent that answers questions itself and hands the work it cannot
+The **Lead** is an agent that answers questions itself and hands the work it cannot
 do alone to agents of the right role, with a model it picks for each, then
 reads their results and goes on. Its children are agents of the roles Scout,
 Plan, Investigate, Review, Implement, Test and Docs, never more than four at a
-time. A child that waits on a question can ask Auto for a scout or an investigator, one more level and
+time. A child that waits on a question can ask the Lead for a scout or an investigator, one more level and
 two at most. It is always available; there is no switch in Settings. **Start a
-run** starts it when one agent fits the ask, and `@` names a role instead. A person sees an Auto tree as one row in the
+run** starts it when one agent fits the ask, and `@` names a role instead. A person sees a Lead tree as one row in the
 Overview, as a row of **Runs** in the session, and as one chat with one
 line for each delegation, its tree in the Agents column of the run page
 ([auto.md](auto.md)).
@@ -789,7 +790,7 @@ pick it when you start the agent.
 - **History rewriter** is hidden: nobody picks it. Goodboy starts it only
   when a Rewrite history plan hits a conflict git cannot settle alone and
   you press **Rewrite with an agent**. A rebase on main never starts it: a
-  conflict there stops and asks, and **Resolve with the Lead** hands it to Auto. It works in a throwaway
+  conflict there stops and asks, and **Resolve with the Lead** hands it over. It works in a throwaway
   copy of the branch, never in a mount. Its turn carries a git config that
   points `origin` at a push URL that always fails, it has no GitHub token and
   no bridge mount. It reports with `<<history-step>>`, `<<history-done>>` or
@@ -1551,8 +1552,8 @@ specific rule that fits wins.
   (`startTurnRun`, right before the user text, which reads the asks again so an
   ask you answered during the writer wait stays answered; `turnBeforeLease`
   keeps the ask readable while that wait shows `starting`), and the agent reads
-  `Denied Bash. <text>`. On Auto's own ask `routeAutoUserTurn` does the same,
-  since Auto's confined turns run in default mode and a read outside its folder
+  `Denied Bash. <text>`. On the Lead's own ask `routeAutoUserTurn` does the same,
+  since the Lead's confined turns run in default mode and a read outside its folder
   can ask. It works only for a message you typed (origin `operator`), and a send
   that never starts leaves the ask open. A message queued during the turn never
   denies: `drainAgentQueue` holds while an ask is open and goes on once it is
@@ -1571,12 +1572,12 @@ specific rule that fits wins.
   too. The answers read at the write are `resolvedAsks`: the fallback and limit
   retries of `recoverTurnFailure` and Retry on a failed turn (`retryAsksOf`)
   resend them with the once grants. The answer paths pass `NO_RESOLVED_ASKS`,
-  since their text already says it, and so does Auto's delivered turn
+  since their text already says it, and so does the Lead's delivered turn
 - A record line keeps **Continue** on an always allow whose turn never started
   (`useIsStoppedBeforeAnswer`, the same check as the decision card)
-- A once allow of a Read is scoped to its file: `Read(//absolute/path)`. On Auto
+- A once allow of a Read is scoped to its file: `Read(//absolute/path)`. On the Lead
   it goes through the `permissionOnceAllows` of the `user` outbox row, since
-  Auto's turn starts from the runtime and not from the message
+  the Lead's turn starts from the runtime and not from the message
 - **Deny** answers this call only: it records a once decision, writes no rule
   and tells the agent the call is denied so it carries on another way. The
   session-wide ban is a separate item in the card's overflow, **Never allow
@@ -1861,7 +1862,7 @@ Goodboy measures every turn on your machine and sends nothing anywhere.
 - **Budgets**: a monthly budget per provider, counted across all workspaces on your
   local calendar month, and a limit per session that pauses workflows or
   only warns, with an alert before you reach them. Only a limit that pauses
-  caps an Auto run of the session; one that only warns caps nothing
+  caps a Lead run of the session; one that only warns caps nothing
   (`pausingSessionCapOf` in `apps/desktop/src/features/budget/`). **Spend and
   limit** on any session's menu opens that session with its limit editor open
   (`openSessionSpendLimitEdit`)
@@ -1911,20 +1912,23 @@ session up again in Goodboy.
 - One verb per move and one verb per act. A label is the verb plus the
   target's own name, and a bare **Open** lives only inside a row that names its
   target (`NAMES.openTranscript`, `NAMES.openAgent`, **Open on GitHub**, **Open
-  pull request**). The retired labels fail the retired names guard.
+  pull request**). The retired labels fail the retired names guard. **Open
+  full** alone is retired; **Open full page** (`NAMES.openFullPage`) stays,
+  since it names its target.
 
-  | Verb              | Means                   | Retires                                              |
-  | ----------------- | ----------------------- | ---------------------------------------------------- |
-  | Open              | Go to a place           | Open full, View, See, Go to chat, See what it did    |
-  | Show, Hide        | Fold in place           | Expand, Collapse                                     |
-  | Follow            | Track what just started | Open the run                                         |
-  | Create            | Make a new thing        | Open PR, where it opens the create form              |
-  | Retry             | Repeat what failed      | Restart step, Retry through Auto, Try the push again |
-  | Continue          | Go on and keep the work | Ask it to continue, Resume                           |
-  | Skip step         | Pass over a step        | Skip and go on                                       |
-  | Decline           | Refuse Auto's next step | Discard request                                      |
-  | Mark as read      | Clear what is new       | Mark all seen                                        |
-  | Fix with an agent | Give work to an agent   | Hand it to an agent                                  |
+  | Verb              | Means                       | Retires                                              |
+  | ----------------- | --------------------------- | ---------------------------------------------------- |
+  | Open              | Go to a place               | Open full, View, See, Go to chat, See what it did    |
+  | Show, Hide        | Fold in place               | Expand, Collapse                                     |
+  | Follow            | Track what just started     | Open the run                                         |
+  | Create            | Make a new thing            | Open PR, where it opens the create form              |
+  | Retry             | Repeat what failed          | Restart step, Retry through Auto, Try the push again |
+  | Continue          | Go on and keep the work     | Ask it to continue, Resume                           |
+  | Skip step         | Pass over a step            | Skip and go on                                       |
+  | Decline           | Refuse the Lead's next step | Discard request                                      |
+  | Mark as read      | Clear what is new           | Mark all seen                                        |
+  | Mark as unread    | Show it as new again        |                                                      |
+  | Fix with an agent | Give work to an agent       | Hand it to an agent                                  |
 
   **Stop step** stays: it stops the step and **Continue** resumes it, so it is
   not a **Skip step**. **Keep working** stays on a step that was already
@@ -1942,30 +1946,50 @@ session up again in Goodboy.
 - Internal words stay in code and technical docs. The screen says the word the
   user already knows from git, the file system or the rest of the app:
 
-  | Internal word       | On screen                                         |
-  | ------------------- | ------------------------------------------------- |
-  | mount, branch mount | branch (repo), plain folder                       |
-  | mount a project     | Add project                                       |
-  | fork a mount        | New branch                                        |
-  | unmount             | Close branch, and Reopen for a closed row         |
-  | spawn               | Start (an agent, a reviewer, an implementer)      |
-  | handoff             | Suggested next: Implementer, the next brief       |
-  | cluster             | part (in a plan), subagent (once it runs)         |
-  | lens                | tab                                               |
-  | studio              | the page name alone: Workflows, Impact, Providers |
-  | materialize         | add to this session                               |
+  | Internal word                    | On screen                                         |
+  | -------------------------------- | ------------------------------------------------- |
+  | mount, branch mount              | branch (repo), plain folder                       |
+  | mount a project                  | Add project                                       |
+  | fork a mount                     | New branch                                        |
+  | unmount                          | Close branch, and Reopen for a closed row         |
+  | spawn                            | Start (an agent, a reviewer, an implementer)      |
+  | handoff                          | Suggested next: Implementer, the next brief       |
+  | cluster                          | part (in a plan), subagent (once it runs)         |
+  | lens                             | tab                                               |
+  | studio                           | the page name alone: Workflows, Impact, Providers |
+  | materialize                      | add to this session                               |
+  | column, lane, grid, tier, drawer | panel (Close the panel, Reset panel layout)       |
 
   `jargon-copy.test.ts` fails when rendered copy under `features/`,
   `app/components/` or `shared/components/` uses one of the internal words,
   in the copy props that include `help` and `meta`. Its baseline lists only
-  text that agents read (prompts, bridge errors) and can only shrink.
+  text that agents read (prompts, bridge errors) and can only shrink. The
+  layout words (column, lane, grid, tier, drawer) have their own count,
+  `jargon-panel-copy.baseline.json`, of the copy that still says them, and it
+  only falls.
 
 - One word per thing, written once. The names of lenses, roles, handoff
   sections, session stages, the autonomy header and the reply length live in
   `apps/desktop/src/shared/utils/names.ts` (`NAMES`), and the maps that show them read
-  from there. `names.test.ts` pins that. A word that goes away goes into
-  `RETIRED_NAMES` (`__tests__/regressions/retiredNames.ts`) with the word to use
-  instead, and `copy-budget.test.ts` fails on it.
+  from there. `names.test.ts` pins that, and fails when a former name is also a
+  current name or sits under two names: an alias leads to one place. A word
+  that goes away goes into `RETIRED_NAMES` with the word to use instead, and
+  `copy-budget.test.ts` fails on it. The shared list is
+  `__tests__/regressions/retiredNames.ts`; a unit of a round adds its own file
+  under `__tests__/regressions/retired/`, and the guard reads every file there.
+  A pattern carries no `^…$` anchor unless the short phrase is a fair part of
+  longer copy (Folders, Sign out, Resume), so a longer label with the old
+  phrase fails too.
+- An action's `label` keeps the verb and the object (**Pin session**), because
+  Search or run lists the same action out of its context. Its optional
+  `menuLabel` holds the bare verb for the menu of its own object (**Pin**). An
+  action meant only for Search or run sets `placement: 'palette'`. An ellipsis follows a label only
+  when an input comes before the action runs (`isInputFirst`: **Start a run…**,
+  **Set limit…**). Menus and buttons draw it; a `NAMES` value never carries it,
+  so aliases and retired names keep matching. A progress word ends in one
+  (**Starting…**, **Closing…**).
+- A tool runs **in** a tab or an app (**Open in Terminal**, **Open in external
+  terminal**) and a pull request lives **on** a host (**Open on GitHub**).
 - An action label is a verb and an object in the developer's words: **Rebase on
   their commits**, **Abort rebase**, **Restore stashed files**, never a metaphor
   (**Bring them in**, **Take off this branch**) and never a verb alone when the
@@ -1975,7 +1999,7 @@ session up again in Goodboy.
   where the content is not already selectable: no **Copy last reply**, since the
   reply is in the chat. `action-labels-say-what-they-do.test.ts` fails on the
   phrases that went away.
-- **Run**, **Plan**, **Preset**, **Auto** and **Scout** each have one sentence in
+- **Run**, **Plan**, **Preset**, **Lead** and **Scout** each have one sentence in
   At a glance and in the Guide's Words chapter. A **workflow** is the saved
   definition in the Workflows library; it is called a **preset** only where a
   run starts from it (`~` in **Start a run**, the Preset card on New session),
@@ -1989,9 +2013,12 @@ session up again in Goodboy.
 - **Runs** is the tab of a session that lists its runs. A run is one execution
   inside a session. A workflow is the definition you set up in Workflow Studio,
   and it spawns runs. **Workflows** is the studio and the library, and the word
-  stays for definitions you pick ("Start workflow", "from a workflow"). A verb
-  on one execution says run: **Start workflow**, **Stop run**, **Archive run**,
-  **Delete run**. The ⌘K section that lists them is **Runs**. The **Runs** page
+  stays for definitions you pick ("from a workflow"). **Start a run** opens the
+  picker; **Start workflow** starts one workflow. A verb on one execution says
+  run: **Stop run**, **Archive run**, **Delete run**. **Start work** is a
+  former name of **Start a run** only. The ⌘K section that lists them is
+  **Runs**, and **Runs › Running** names that page when it shows only what
+  runs. The **Runs** page
   of the workspace settings (it was Run defaults) sets what
   a new run starts with. A renamed label keeps its old name as a ⌘K alias:
   searching the old word finds the new one (`formerNamesOf` in `names.ts`).
@@ -2057,6 +2084,17 @@ session up again in Goodboy.
   for sending an agent away without deleting it. **Check again** only
   re-reads a state, and **Run again** starts a run that succeeded once more.
 
+  A task link says **Unlink** on its row, in the record menu and in the
+  confirmation (`NAMES.removeLinkFromSession`), **Unlinked** in the Undo
+  toast and **Re-link** on the Activity event. Remove link from this session
+  and Remove link to session are its former names. **Remove link** stays for
+  a link of a project in Settings, which is a row taken out of a list.
+  Moving a task between the session and its branches never says unlink:
+  **Move to session**, **Take off project / branch**, and a toast that names
+  the new place (**HL-204 is on the session again**, **HL-204 is on
+  payments-api / hl/ledger-rounding**). **Link work** is the single linking
+  entry.
+
 - A word that stays and still needs a sentence (workflow, orchestrated,
   artifact) gets a short tooltip, six words at most, written once. The mode
   switch in the workflow builder sets it as the `tooltip` of an option
@@ -2071,9 +2109,22 @@ session up again in Goodboy.
 ### Words we use
 
 One verb per job, one noun per object. The registered names live in
-`shared/utils/names.ts` (`NAMES`, with `FORMER_NAMES` for search) and
-`__tests__/regressions/retiredNames.ts` fails the old phrase, so check there
-before a change adds a word.
+`shared/utils/names.ts` (`NAMES`, with `FORMER_NAMES` for search), and
+`__tests__/regressions/retiredNames.ts` with the files under `retired/` fails
+the old phrase, so check there before a change adds a word.
+
+- **Show in Finder**: the one verb that opens a file or folder in the file
+  manager. It says **Show in folder** on Linux, where there is no Finder;
+  `revealLabelOf` in `shared/utils/revealLabelOf.ts` picks the word.
+- **In merge queue**: a pull request that waits in its host's merge queue.
+  **No pull request** (**No merge request** on GitLab) says a branch has none,
+  never No PR.
+- **External terminal**: the terminal app outside Goodboy; **Terminal** is the
+  one inside it.
+- **Delete local branch**: removes the branch from this Mac, never from the
+  remote; **Delete local branches** for several.
+- **Message an agent**: the invitation to write to an agent; **Add to
+  message** puts a selection into the message you are writing.
 
 - **Fix**: start fixing comments. The count is the comments a fix can start now
   (`Fix 3`), the same on the Board card, in Next steps, on the Branch bar and as
@@ -2113,7 +2164,9 @@ before a change adds a word.
   plan** when it does not). A tool that waits for you asks for **permission**
   (Allow, Deny); only a plan waits for **approval**.
 - **Pin**: **Pin session** and **Unpin session** keep a session at the top of
-  the list, the rail and the switcher.
+  the list, the rail and the switcher. They are the `label` that Search or run
+  shows; the bare **Pin** and **Unpin** belong to the session's own menu, as
+  its `menuLabel`.
 - **Notes**: the one noun for comments you write on your own diff before they
   become a review draft.
 - **Tasks**: the door that lists issues, pull requests, threads and errors from
@@ -2235,10 +2288,6 @@ An agent materializes a project through the query bridge like this:
   role reads
 - `apps/desktop/src-tauri/src/query_bridge/project.rs`: the `materialize` verb
 - `packages/db/src/queries/resolve-thread.ts`: review conversations
-
-Task-link removal uses **Unlink**, with **Unlinked** in its Undo toast and
-**Re-link** on the Activity event. A move says where the task is now (**HL-204
-is on the session again**, **HL-204 is on payments-api / hl/ledger-rounding**). **Link work** is the single linking entry.
 
 A check analysis agent has `sourceKind` `failed_check` and keeps the originating check URL in `sourceCommentUrl`. The latest non-deleted agent for that session and URL owns the check row status; its transcript owns the finding and **Proposed fix**. The source type is in `packages/types/src/workflow.ts`, and the selector is `apps/desktop/src/store/slices/agents/selectCheckAnalysis.ts`.
 
