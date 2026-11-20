@@ -137,8 +137,6 @@ export { resolveStoredModelSelection } from './resolveStoredModelSelection';
 
 export { resolvedStoredModelId } from './resolvedStoredModelId';
 
-export { selectionRequiresMaxMode } from './selectionRequiresMaxMode';
-
 export { resolveTaskModel } from './task-models';
 
 export {

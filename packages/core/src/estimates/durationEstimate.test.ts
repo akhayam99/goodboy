@@ -6,7 +6,6 @@ import {
   estimateDuration,
   estimateOrchestratedRun,
   estimateProgress,
-  sumEstimates,
   type DurationSample,
   type EstimateKey,
   type SampleHistory,
@@ -225,22 +224,6 @@ describe('estimateProgress', () => {
     expect(
       estimateProgress({ history: historyOf({}), unit: 'step', key: KEY, nowMs: NOW }),
     ).toEqual({ tier: 'exact', have: 0, need: 5 });
-  });
-});
-
-describe('sumEstimates', () => {
-  it('adds the bands only when every step has an estimate', () => {
-    const estimate = stepEstimate({
-      samples: [4, 6, 8, 10, 12].map((minutes) => sample({ minutes })),
-    });
-
-    expect(sumEstimates({ estimates: [estimate, estimate] })).toEqual({
-      lowMs: 12 * MINUTE,
-      highMs: 20 * MINUTE,
-      cost: { lowUsd: 1, highUsd: 1 },
-    });
-    expect(sumEstimates({ estimates: [estimate, null] })).toBeNull();
-    expect(sumEstimates({ estimates: [] })).toBeNull();
   });
 });
 

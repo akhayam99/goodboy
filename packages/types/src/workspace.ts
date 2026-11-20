@@ -207,19 +207,6 @@ export type WorkspaceIntegrationProvider =
 
 export type IntegrationBindingProvider = WorkspaceIntegrationProvider | 'github';
 
-export const INTEGRATION_BINDING_PROVIDERS = [
-  'linear',
-  'sentry',
-  'gitlab',
-  'jira',
-  'bitbucket',
-  'slack',
-  'github',
-] satisfies ReadonlyArray<IntegrationBindingProvider>;
-
-export const isIntegrationBindingProvider = (value: unknown): value is IntegrationBindingProvider =>
-  typeof value === 'string' && INTEGRATION_BINDING_PROVIDERS.some((provider) => provider === value);
-
 export type LinearIntegrationConfig = Readonly<{
   workspaceUrlKey: string;
   viewerUserId: string;

@@ -285,7 +285,6 @@ export const coreGithubModuleMock = async ({ importOriginal }: CoreDomainMockPar
   detectRepoSlug: storySpies.detectRepoSlug,
   listPrsForBranch: storySpies.listPrsForBranch,
   listPrsForBranches: storySpies.listPrsForBranches,
-  getPrForBranch: vi.fn(async () => null),
   fetchPrDetail: storySpies.fetchPrDetail,
   fetchLinkedIssues: storySpies.fetchLinkedIssues,
   resolveReviewThread: storySpies.resolveReviewThread,

@@ -1,8 +1,9 @@
+import type { DiffCommentSide } from './diff-comment';
 import type { IsoDateTime, SessionId } from './ids';
 
 export type ReviewablePrProvider = 'github' | 'gitlab';
 
-export type ReviewDraftSide = 'new' | 'old';
+export type ReviewDraftSide = DiffCommentSide;
 
 export type ReviewDraftStatus = 'draft' | 'published';
 

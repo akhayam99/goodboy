@@ -1119,16 +1119,6 @@
       "count": 1
     }
   },
-  "packages/core/src/github/__tests__/cache.test.ts": {
-    "@typescript-eslint/strict-boolean-expressions": {
-      "count": 2
-    }
-  },
-  "packages/core/src/github/cache.ts": {
-    "@typescript-eslint/strict-boolean-expressions": {
-      "count": 3
-    }
-  },
   "packages/core/src/github/details.ts": {
     "@typescript-eslint/strict-boolean-expressions": {
       "count": 4
@@ -1155,16 +1145,6 @@
     }
   },
   "packages/core/src/monitoring/attributePorts.ts": {
-    "@typescript-eslint/strict-boolean-expressions": {
-      "count": 1
-    }
-  },
-  "packages/core/src/planner/parser.ts": {
-    "@typescript-eslint/strict-boolean-expressions": {
-      "count": 1
-    }
-  },
-  "packages/core/src/planner/prompt.ts": {
     "@typescript-eslint/strict-boolean-expressions": {
       "count": 1
     }

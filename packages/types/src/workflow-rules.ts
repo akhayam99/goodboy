@@ -8,6 +8,7 @@ import {
 } from './run-preset';
 import { parseRunRoute, type RunRoute } from './run-route';
 import type { AgentRole } from './workflow';
+import type { WorkflowSpendLimitMode } from './workspace';
 import { isRecord } from './helpers';
 
 type RouteParams = {
@@ -47,7 +48,7 @@ export const WORKFLOW_AUTONOMY_VALUES = ['step', 'plan', 'run'] as const;
 
 export type WorkflowAutonomy = (typeof WORKFLOW_AUTONOMY_VALUES)[number];
 
-export type WorkflowRulesSpendMode = 'notify' | 'pause';
+export type WorkflowRulesSpendMode = WorkflowSpendLimitMode;
 
 export type WorkflowRules = Readonly<{
   autonomy: WorkflowAutonomy;

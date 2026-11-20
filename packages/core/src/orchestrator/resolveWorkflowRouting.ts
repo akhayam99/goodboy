@@ -96,7 +96,7 @@ type AvailabilityParams = {
   readonly availability: WorkflowRoutingAvailabilitySnapshot;
 };
 
-const NO_MODEL_REASON = 'No available catalog model can run this node.';
+const NO_MODEL_REASON = 'No available model can run this step.';
 
 const hiddenNote = ({ availability }: AvailabilityParams): string => {
   const hidden = availability.hiddenModels ?? {};
@@ -384,13 +384,13 @@ const resolveFallback = ({
     return {
       kind: 'blocked',
       cause: 'no_available_model',
-      reason: 'This node has no emitted pick and no configured routing default.',
+      reason: 'No model was picked for this step, and its role has no default model.',
     };
   }
   return {
     kind: 'blocked',
     cause: budgetCause({ availability }),
-    reason: `Every configured routing default for this node is unavailable.${hiddenNote({ availability })}`,
+    reason: `Every default model for this step is unavailable.${hiddenNote({ availability })}`,
   };
 };
 

@@ -28,7 +28,6 @@ const FENCE_LINE = /^ {0,3}(?:```|~~~)/;
 const HEADING_SPACE = ' \t';
 const CLOSING_HASH = '#';
 const TITLE_NOISE = ':. \t';
-const NEWLINE = '\n';
 
 const SECTION_BY_TITLE = new Map<string, SummarySectionKey>(
   SUMMARY_SECTION_KEYS.map((key) => [key, key]),
@@ -138,66 +137,4 @@ export const serializeSummaryDocument = ({ document }: DocumentParams): string =
     }
   }
   return lines.join('\n');
-};
-
-type ReplaceParams = {
-  readonly text: string;
-  readonly index: number;
-  readonly body: string;
-};
-
-export const replaceSummarySectionBody = ({ text, index, body }: ReplaceParams): string => {
-  const document = parseSummaryDocument({ text });
-  const blocks = document.blocks.map((block) =>
-    block.index === index ? { ...block, body } : block,
-  );
-  return serializeSummaryDocument({ document: { blocks } });
-};
-
-type InsertParams = {
-  readonly text: string;
-  readonly sectionKey: SummarySectionKey;
-  readonly body: string;
-};
-
-const blankSeparated = ({ text }: TextParams): string => {
-  const withoutTrailingNewlines = trimEndOf({ text, characters: NEWLINE });
-  if (withoutTrailingNewlines === '') {
-    return '';
-  }
-  return `${withoutTrailingNewlines}\n\n`;
-};
-
-type SliceParams = {
-  readonly document: SummaryDocument;
-  readonly from: number;
-  readonly to: number;
-};
-
-const serializeRange = ({ document, from, to }: SliceParams): string =>
-  serializeSummaryDocument({
-    document: {
-      blocks: document.blocks.filter((block) => block.index >= from && block.index < to),
-    },
-  });
-
-export const insertSummarySection = ({ text, sectionKey, body }: InsertParams): string => {
-  const document = parseSummaryDocument({ text });
-  if (document.blocks.some((block) => block.sectionKey === sectionKey)) {
-    return text;
-  }
-
-  const section = `#### ${SUMMARY_SECTION_TITLES[sectionKey]}\n${body}`;
-  const rank = SUMMARY_SECTION_KEYS.indexOf(sectionKey);
-  const successor = document.blocks.find(
-    (block) => block.sectionKey != null && SUMMARY_SECTION_KEYS.indexOf(block.sectionKey) > rank,
-  );
-
-  if (successor == null) {
-    return `${blankSeparated({ text })}${section}`;
-  }
-
-  const before = serializeRange({ document, from: 0, to: successor.index });
-  const after = serializeRange({ document, from: successor.index, to: document.blocks.length });
-  return `${blankSeparated({ text: before })}${blankSeparated({ text: section })}${after}`;
 };

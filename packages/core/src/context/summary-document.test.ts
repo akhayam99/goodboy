@@ -1,10 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
-  insertSummarySection,
   parseSummaryDocument,
-  replaceSummarySectionBody,
   serializeSummaryDocument,
-  SUMMARY_SECTION_KEYS,
   type SummarySectionKey,
 } from './summary-document';
 
@@ -236,121 +233,5 @@ describe('summary document round trip over generated documents', () => {
       checked += 1;
     }
     expect(checked).toBe(3000);
-  });
-});
-
-describe('replaceSummarySectionBody', () => {
-  it('rewrites one section and leaves every other byte untouched', () => {
-    const parsed = parseSummaryDocument({ text: CORPUS.canonical });
-    const state = parsed.blocks.find((block) => block.sectionKey === 'state');
-    const updated = replaceSummarySectionBody({
-      text: CORPUS.canonical,
-      index: state?.index ?? -1,
-      body: '- patch merged, regression test green.\n',
-    });
-
-    expect(updated).toBe(
-      CORPUS.canonical.replace('- patch drafted.', '- patch merged, regression test green.'),
-    );
-    for (const key of ['problem', 'learned', 'next'] satisfies ReadonlyArray<SummarySectionKey>) {
-      expect(bodyOf(updated, key)).toBe(bodyOf(CORPUS.canonical, key));
-    }
-  });
-
-  it('never rewrites the heading of the section being edited', () => {
-    const updated = replaceSummarySectionBody({
-      text: CORPUS.deepHeading,
-      index: 0,
-      body: '- rewritten',
-    });
-    expect(updated).toBe('### State\n- rewritten');
-  });
-
-  it('leaves an unknown block editable without touching the known sections', () => {
-    const parsed = parseSummaryDocument({ text: CORPUS.extraHeading });
-    const risks = parsed.blocks[2];
-    const updated = replaceSummarySectionBody({
-      text: CORPUS.extraHeading,
-      index: risks?.index ?? -1,
-      body: '- handled.\n',
-    });
-    expect(updated).toContain('#### Risks\n- handled.\n');
-    expect(bodyOf(updated, 'state')).toBe(bodyOf(CORPUS.extraHeading, 'state'));
-  });
-
-  it('rewrites a headingless preamble in place', () => {
-    const updated = replaceSummarySectionBody({
-      text: CORPUS.withPreamble,
-      index: 0,
-      body: 'rewritten preamble\n',
-    });
-    expect(updated.startsWith('rewritten preamble\n\n#### Problem')).toBe(true);
-  });
-
-  it('ignores an index that names no block', () => {
-    expect(replaceSummarySectionBody({ text: CORPUS.canonical, index: 99, body: 'x' })).toBe(
-      CORPUS.canonical,
-    );
-  });
-});
-
-describe('insertSummarySection', () => {
-  it('places a missing section in canonical order', () => {
-    const updated = insertSummarySection({
-      text: CORPUS.missingState,
-      sectionKey: 'state',
-      body: '- freshly written.',
-    });
-    expect(sectionKeys(updated)).toEqual(['problem', 'learned', 'state', 'next']);
-    expect(updated).toContain('#### State\n- freshly written.\n\n#### Next');
-  });
-
-  it('appends a section that has no successor', () => {
-    const updated = insertSummarySection({
-      text: '#### Problem\nsomething',
-      sectionKey: 'next',
-      body: '- later.',
-    });
-    expect(updated).toBe('#### Problem\nsomething\n\n#### Next\n- later.');
-  });
-
-  it('refuses to add a second copy of a section that already exists', () => {
-    expect(
-      insertSummarySection({ text: CORPUS.canonical, sectionKey: 'state', body: '- other' }),
-    ).toBe(CORPUS.canonical);
-  });
-
-  it('keeps a legacy preamble above the section it adds', () => {
-    const updated = insertSummarySection({
-      text: CORPUS.legacyBoldLabels,
-      sectionKey: 'problem',
-      body: 'stated at last.',
-    });
-    expect(updated.startsWith(CORPUS.legacyBoldLabels)).toBe(true);
-    expect(sectionKeys(updated)).toEqual([null, 'problem']);
-  });
-
-  it('leaves the document it inserts into byte identical, blank tail included', () => {
-    expect(
-      insertSummarySection({ text: CORPUS.trailingBlank, sectionKey: 'next', body: '- go' }),
-    ).toBe('#### Problem\nsomething\n\n#### Next\n- go');
-    for (const text of [CORPUS.canonical, CORPUS.missingState, CORPUS.withPreamble]) {
-      const updated = insertSummarySection({ text, sectionKey: 'learned', body: '- added' });
-      for (const block of parseSummaryDocument({ text }).blocks) {
-        if (block.headingLine != null) {
-          expect(updated).toContain(block.headingLine);
-        }
-        if (block.body != null && block.body.trim() !== '') {
-          expect(updated).toContain(block.body.trim());
-        }
-      }
-    }
-  });
-
-  it('covers every known section key', () => {
-    for (const sectionKey of SUMMARY_SECTION_KEYS) {
-      const updated = insertSummarySection({ text: '', sectionKey, body: 'body' });
-      expect(sectionKeys(updated)).toEqual([sectionKey]);
-    }
   });
 });

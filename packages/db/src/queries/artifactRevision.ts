@@ -1,4 +1,4 @@
-import type { ArtifactId, IsoDateTime } from '@goodboy/types';
+import type { ArtifactId, ArtifactKind, IsoDateTime } from '@goodboy/types';
 import { isRecord } from '@goodboy/types/helpers';
 import type { Database, GuardedStatement, PlainStatement, Statement } from '../client';
 import { isJsonValue, parseJsonColumn } from '../shared/parseJsonColumn';
@@ -200,12 +200,10 @@ export const annotateArtifactRevision = async ({
 
 export const ARTIFACT_REVISION_CONFLICT = 'ARTIFACT_REVISION_CONFLICT';
 
-export type ArtifactRevisionWriteKind = 'plan' | 'report' | 'wireframe';
-
 export type ArtifactRevisionWriteParams = {
   readonly artifactId: ArtifactId;
   readonly expectedRevision: number;
-  readonly kind?: ArtifactRevisionWriteKind;
+  readonly kind?: ArtifactKind;
   readonly isActiveOnly?: boolean;
   readonly author: ArtifactRevisionAuthor;
   readonly ask?: string | null;
