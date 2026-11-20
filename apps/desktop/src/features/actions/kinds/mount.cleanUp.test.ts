@@ -273,7 +273,7 @@ describe('mount.cleanUp', () => {
   it('refuses with a plain sentence when the store skipped the branch', async () => {
     const { result } = runCleanUp({ outcome: { kind: 'skipped' } });
 
-    await expect(result).rejects.toThrow("couldn't check it is safe to remove");
+    await expect(result).rejects.toThrow("couldn't check it's safe to remove");
   });
 
   it('refuses with the reason when the folder holds uncommitted work', async () => {
@@ -305,7 +305,7 @@ describe('cleanUpRefusalOf', () => {
       cleanUpRefusalOf({ outcome: { kind: 'kept', keptBecause: 'Kept a: x.' }, label: 'a' }),
     ).toBe('Kept a: x.');
     expect(cleanUpRefusalOf({ outcome: { kind: 'ask', keptBecause: null }, label: 'a' })).toBe(
-      "Kept a: Goodboy couldn't check it is safe to remove.",
+      "Kept a: Goodboy couldn't check it's safe to remove.",
     );
   });
 });

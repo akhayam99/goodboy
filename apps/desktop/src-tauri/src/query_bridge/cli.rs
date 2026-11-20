@@ -81,9 +81,6 @@ fn help_provider(argv: &[String]) -> Option<&str> {
         .filter(|token| protocol::providers().contains(token))
 }
 
-/// A `--project` value scopes the request to one project of the workspace,
-/// except on a verb that owns a `project` argument of its own, where the
-/// flag keeps its verb-specific meaning and no scope is set.
 fn project_scope(
     args: &std::collections::BTreeMap<String, serde_json::Value>,
     argv: &[String],

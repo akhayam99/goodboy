@@ -12,7 +12,7 @@ export type RunGroup = Readonly<{
 const GROUPS: ReadonlyArray<Pick<RunGroup, 'key' | 'label'>> = [
   { key: 'needsYou', label: NAMES.needsYou },
   { key: 'running', label: NAMES.running },
-  { key: 'idle', label: 'Idle' },
+  { key: 'idle', label: NAMES.idle },
   { key: 'finished', label: 'Finished' },
 ];
 

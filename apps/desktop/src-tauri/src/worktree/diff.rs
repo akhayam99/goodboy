@@ -141,11 +141,6 @@ fn untracked_entry_for(p: &Path, rel: &str) -> DiffFileEntry {
     }
 }
 
-/// Unified diff for a SINGLE file `rel_path` inside the worktree, against the
-/// same merge-base `worktree_diff` uses. The path is taken as worktree-relative
-/// and confined to the worktree: any `..` traversal or path that resolves
-/// outside the worktree root is refused. Untracked files fall back to the same
-/// synthetic new-file diff `worktree_diff` emits.
 #[tauri::command]
 pub async fn worktree_diff_file(
     worktree_path: String,
@@ -177,8 +172,6 @@ fn worktree_diff_file_blocking(
         .ok_or_else(|| WorktreeError::Git {
             message: "cannot resolve base branch merge-base".to_string(),
         })?;
-    // `-- <path>` scopes the diff to the one file. Pathspec is anchored at the
-    // worktree root (already confined above), so no traversal is possible.
     let old_rel = match old_path.as_deref() {
         Some(old) => Some(confine_rel_path(p, old)?),
         None => None,
@@ -191,14 +184,19 @@ fn worktree_diff_file_blocking(
     if !tracked.is_empty() {
         return Ok(tracked);
     }
-    // No tracked diff: the file may be untracked (new). Emit the synthetic
-    // new-file diff for just this path, mirroring `untracked_new_file_diffs`.
     Ok(untracked_new_file_diff_for(p, &rel))
 }
 
-/// Resolve `path` as a worktree-relative path and verify it stays inside the
-/// worktree root. Returns the normalized relative path (forward-slashed) for use
-/// as a git pathspec. Refuses absolute paths and any `..` escape.
+fn relative_to_worktree<'a>(candidate: &'a Path, root: &Path, worktree: &Path) -> Option<&'a Path> {
+    if !candidate.is_absolute() {
+        return Some(candidate);
+    }
+    candidate
+        .strip_prefix(root)
+        .or_else(|_| candidate.strip_prefix(worktree))
+        .ok()
+}
+
 fn confine_rel_path(worktree: &Path, path: &str) -> Result<String, WorktreeError> {
     let trimmed = path.trim();
     if trimmed.is_empty() {
@@ -213,14 +211,7 @@ fn confine_rel_path(worktree: &Path, path: &str) -> Result<String, WorktreeError
         .canonicalize()
         .unwrap_or_else(|_| worktree.to_path_buf());
     let candidate = Path::new(trimmed);
-    let relative = if candidate.is_absolute() {
-        candidate
-            .strip_prefix(&root)
-            .or_else(|_| candidate.strip_prefix(worktree))
-            .map_err(|_| escapes())?
-    } else {
-        candidate
-    };
+    let relative = relative_to_worktree(candidate, &root, worktree).ok_or_else(escapes)?;
     let resolved = match resolve_within(&root, relative) {
         Ok(resolved) => resolved
             .strip_prefix(&root)
@@ -345,12 +336,7 @@ fn untracked_new_file_diffs(p: &Path) -> String {
     out
 }
 
-/// Synthetic new-file unified diff for a single untracked `rel` path. Returns an
-/// empty string when the file isn't actually untracked (git lists nothing), so a
-/// caller can treat "" as "no diff for this path".
 fn untracked_new_file_diff_for(p: &Path, rel: &str) -> String {
-    // Only emit if git agrees this path is untracked — keeps the single-file
-    // diff honest (a tracked-but-unchanged file produces nothing).
     let listed = git_plain_paths(
         p,
         &["ls-files", "--others", "--exclude-standard", "--", rel],
@@ -387,11 +373,7 @@ fn untracked_new_file_diff_for(p: &Path, rel: &str) -> String {
         return out;
     }
     let ends_with_nl = content.ends_with('\n');
-    let lines: Vec<&str> = if ends_with_nl {
-        content.split_terminator('\n').collect()
-    } else {
-        content.split('\n').collect()
-    };
+    let lines: Vec<&str> = content.split_terminator('\n').collect();
     let n = lines.len();
     out.push_str(&format!("@@ -0,0 +1,{n} @@\n"));
     for (i, l) in lines.iter().enumerate() {

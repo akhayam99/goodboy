@@ -51,7 +51,7 @@ const STARTERS: ReadonlyArray<Starter> = [
   {
     label: () => 'Find one small bug',
     prompt: (folder) =>
-      `Find one small, real bug in ${folder}. Say where it is and why it is a bug. Do not change any file.`,
+      `Find one small, real bug in ${folder}. Say where it is and why it is a bug. Don't change any file.`,
   },
   {
     label: () => "What's missing in the README",

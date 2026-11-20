@@ -101,7 +101,7 @@ describe('ArtifactBuiltFrom', () => {
     loadArtifactProvenance.mockRejectedValueOnce(new Error('database is locked'));
     render(<ArtifactBuiltFrom artifact={report} />);
 
-    expect(await screen.findByTestId('built-from-failed')).toBeDefined();
+    expect(await screen.findByTestId('artifact-load-failed')).toBeDefined();
     expect(screen.queryByTestId('built-from-missing')).toBeNull();
 
     loadArtifactProvenance.mockResolvedValueOnce(provenance);
@@ -148,7 +148,7 @@ describe('ArtifactBuiltFrom', () => {
     screen.getByText('Run run-1. Agents were scoped to that run, session plans were not');
     screen.getByText('Run run-1');
     expect(screen.queryByTestId('built-from-design-profile')).toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: 'design profile' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Design profile' }));
     expect(screen.getByTestId('built-from-design-profile').textContent).toBe(
       'theme name: Harborline',
     );

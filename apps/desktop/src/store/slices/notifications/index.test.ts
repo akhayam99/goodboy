@@ -315,6 +315,21 @@ describe('store contract', () => {
       expect(store.getState().notifications).toHaveLength(2);
     });
 
+    it('emitNotification with isOnce and no key skips a second unread notice of the same title', async () => {
+      const store = useAppStore;
+      const notice = {
+        kind: 'error',
+        severity: 'warning',
+        title: 'Step summary unavailable',
+        sessionId: SESSION_ID,
+        isOnce: true,
+      } as const;
+      await store.getState().emitNotification(notice);
+      await store.getState().emitNotification(notice);
+      expect(store.getState().notifications).toHaveLength(1);
+      expect(storySpies.insertNotification).toHaveBeenCalledTimes(1);
+    });
+
     it('resolveNotifications drops every notice of the given keys, in memory and in SQL', async () => {
       const store = useAppStore;
       await store.getState().emitNotification({

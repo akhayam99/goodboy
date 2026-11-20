@@ -36,7 +36,7 @@ Connect your trackers, code hosts and Slack once. Their work lands in one list c
 
 ## Start a task
 
-Begin from an issue, a workflow or a question. Everything starts as one draft, and it becomes a session only when you press Start, so empty sessions do not pile up.
+Begin from an issue, a workflow or a question. Everything starts as one draft, and it becomes a session only when you press Start, so empty sessions don't pile up.
 
 - **The New session page**: Start a session from your goal: write it or pick an issue, then choose the kind of run.
 - **Start a run**: Write what you want done and press Start.

@@ -12,11 +12,11 @@ const EVENT_CONSTANT = 'NOTIFICATIONS_STUDIO_EVENT';
 const STUDIO_COMPONENT = 'NotificationsStudio';
 
 const BELL_FILE = 'features/notifications/components/NotificationCenter/index.tsx';
-const PALETTE_FILE = 'features/palette/hooks/useCommandEntries.ts';
+const PALETTE_FILE = 'features/palette/hooks/useCommandEntries/index.ts';
 const MENU_BAR_FILE = 'app/hooks/useMenuCommands/menuActions.ts';
 const DISPATCHER_FILES = [BELL_FILE];
 const NOTIFICATIONS_MENU_ID = 'menu.notifications';
-const EVENT_LISTENER_FILE = 'app/hooks/useAppOverlays/useStudioEvents.ts';
+const EVENT_LISTENER_FILE = 'app/hooks/useStudioEvents/index.ts';
 const MOUNT_FILE = 'app/components/AppOverlayRouter/renderStudio.tsx';
 
 function listSourceFiles(dir: string, acc: string[] = []): string[] {

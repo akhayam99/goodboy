@@ -13,7 +13,8 @@ const { state, ghStatusMock, ghClearTokenMock } = vi.hoisted(() => ({
     workspaceIntegrations: {} as Record<string, ReadonlyArray<unknown>>,
     integrationKeyChecks: {},
     connectGitlab: vi.fn(async () => undefined),
-    refreshViewerIdentity: vi.fn(async () => []),
+    refreshViewerIdentity: vi.fn(async (): Promise<ReadonlyArray<string>> => []),
+    reportError: vi.fn(async () => undefined),
     disconnectIntegration: vi.fn(async () => undefined),
     forgetIntegrationCredential: vi.fn(async () => undefined),
     integrationCredentials: [] as ReadonlyArray<unknown>,
@@ -48,7 +49,8 @@ const gitlabIntegration: GitlabIntegrationBinding = {
 beforeEach(() => {
   state.workspaceIntegrations = {};
   state.connectGitlab = vi.fn(async () => undefined);
-  state.refreshViewerIdentity = vi.fn(async () => []);
+  state.refreshViewerIdentity = vi.fn(async (): Promise<ReadonlyArray<string>> => []);
+  state.reportError = vi.fn(async () => undefined);
   state.disconnectIntegration = vi.fn(async () => undefined);
   state.forgetIntegrationCredential = vi.fn(async () => undefined);
   state.integrationCredentials = [];
@@ -254,6 +256,43 @@ describe('GitlabFormBody', () => {
       await waitFor(() =>
         expect(state.refreshViewerIdentity).toHaveBeenCalledWith({ workspaceId: WS_ID }),
       );
+    });
+
+    it('logs a failed Reconnect and frees the button', async () => {
+      state.workspaceIntegrations = { [WS_ID]: [gitlabIntegration] };
+      state.refreshViewerIdentity = vi.fn(async (): Promise<ReadonlyArray<string>> => ['failed']);
+      render(<GitlabFormBody workspaceId={WS_ID} />);
+
+      const button = screen.getByRole('button', { name: 'Reconnect' });
+      fireEvent.click(button);
+
+      await waitFor(() =>
+        expect(state.reportError).toHaveBeenCalledWith(
+          expect.objectContaining({
+            workspaceId: WS_ID,
+            title: "Couldn't read your GitLab username",
+            recovery: { clause: 'nothing-changed' },
+          }),
+        ),
+      );
+      await waitFor(() =>
+        expect(
+          screen.getByRole('button', { name: 'Reconnect' }).getAttribute('aria-busy'),
+        ).not.toBe('true'),
+      );
+    });
+
+    it('logs nothing when Reconnect reads the username', async () => {
+      state.workspaceIntegrations = { [WS_ID]: [gitlabIntegration] };
+      state.refreshViewerIdentity = vi.fn(async (): Promise<ReadonlyArray<string>> => [
+        'refreshed',
+      ]);
+      render(<GitlabFormBody workspaceId={WS_ID} />);
+
+      fireEvent.click(screen.getByRole('button', { name: 'Reconnect' }));
+
+      await waitFor(() => expect(state.refreshViewerIdentity).toHaveBeenCalledOnce());
+      expect(state.reportError).not.toHaveBeenCalled();
     });
 
     it('is gone once the username is stored', () => {

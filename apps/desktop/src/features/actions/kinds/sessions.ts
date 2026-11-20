@@ -157,7 +157,7 @@ export const SESSIONS_KIND: ObjectKindDefinition<SessionsActionTarget, SessionsF
         role: 'danger',
         goes: 'The sessions and their transcripts, from this device.',
         stays:
-          'Branches and their commits. A worktree with uncommitted work is kept, under Settings, Storage.',
+          'Branches and their commits. A worktree with uncommitted work is kept, under Settings › This Mac › Storage.',
         items: facts.sessions.map((session) => sessionTitle({ session })),
         ...(facts.active.length > 0 && { altActionId: 'sessions.archive' }),
       }),

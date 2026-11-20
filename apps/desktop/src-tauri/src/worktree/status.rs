@@ -88,7 +88,9 @@ fn parse_ab(value: &str) -> Option<(u32, u32)> {
     for part in value.split_whitespace() {
         if let Some(count) = part.strip_prefix('+') {
             ahead = count.parse::<u32>().ok();
-        } else if let Some(count) = part.strip_prefix('-') {
+            continue;
+        }
+        if let Some(count) = part.strip_prefix('-') {
             behind = count.parse::<u32>().ok();
         }
     }

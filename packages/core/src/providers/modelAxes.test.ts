@@ -8,7 +8,6 @@ import { CURSOR_CATALOG } from './cursor/catalog';
 import { modelAxes } from './modelAxes';
 import { OPENCODE_CATALOG } from './opencode/catalog';
 import { OPENROUTER_CATALOG } from './openrouter/catalog';
-import { selectionRequiresMaxMode } from './selectionRequiresMaxMode';
 
 describe('modelAxes', () => {
   it('offers Astra as the newest GPT version with the full Codex effort ladder', () => {
@@ -321,9 +320,5 @@ describe('modelAxes', () => {
     } satisfies ModelSelection;
     expect(modelAxes({ model: opus, selection: opusSelection }).requiresMaxMode).toBe(true);
     expect(modelAxes({ model: sonnet, selection: sonnetSelection }).requiresMaxMode).toBe(false);
-    expect(selectionRequiresMaxMode({ provider: 'cursor', selection: opusSelection })).toBe(true);
-    expect(selectionRequiresMaxMode({ provider: 'cursor', selection: sonnetSelection })).toBe(
-      false,
-    );
   });
 });

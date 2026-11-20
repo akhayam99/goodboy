@@ -49,12 +49,6 @@ export type DurationEstimate = {
   readonly cost: CostRange | null;
 };
 
-export type EstimateTotal = {
-  readonly lowMs: number;
-  readonly highMs: number;
-  readonly cost: CostRange | null;
-};
-
 export const ESTIMATE_WINDOW_MS = 90 * 24 * 60 * 60 * 1000;
 
 const ESTIMATE_MAX_SAMPLES = 50;
@@ -243,29 +237,3 @@ type RunEstimateParams = {
 
 export const estimateOrchestratedRun = ({ runs, nowMs }: RunEstimateParams) =>
   estimateFrom({ samples: inWindow({ samples: runs, nowMs }), tier: 'runs', size: null });
-
-type SumParams = {
-  readonly estimates: ReadonlyArray<DurationEstimate | null>;
-};
-
-export const sumEstimates = ({ estimates }: SumParams): EstimateTotal | null => {
-  if (estimates.length === 0) {
-    return null;
-  }
-  const known = estimates.flatMap((estimate) => (estimate === null ? [] : [estimate]));
-  if (known.length !== estimates.length) {
-    return null;
-  }
-  const costs = known.flatMap((estimate) => (estimate.cost === null ? [] : [estimate.cost]));
-  return {
-    lowMs: known.reduce((total, estimate) => total + estimate.lowMs, 0),
-    highMs: known.reduce((total, estimate) => total + estimate.highMs, 0),
-    cost:
-      costs.length === known.length
-        ? {
-            lowUsd: costs.reduce((total, cost) => total + cost.lowUsd, 0),
-            highUsd: costs.reduce((total, cost) => total + cost.highUsd, 0),
-          }
-        : null,
-  };
-};

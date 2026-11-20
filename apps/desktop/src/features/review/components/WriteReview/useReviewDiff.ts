@@ -66,7 +66,7 @@ export const useReviewDiff = ({ session }: Params): Result => {
     if (fetchDiff == null) {
       setFiles([]);
       setLoading(false);
-      setError('GitLab is not connected for this workspace.');
+      setError("GitLab isn't connected for this workspace.");
       return;
     }
     let cancelled = false;

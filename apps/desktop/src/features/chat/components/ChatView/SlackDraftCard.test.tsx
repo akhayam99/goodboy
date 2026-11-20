@@ -117,15 +117,16 @@ describe('SlackDraftCard inside the transcript', () => {
     renderTranscript([draft]);
 
     expect(await screen.findByText('Reply ready for #payments')).toBeDefined();
+    screen.getByText('Needs you');
     expect(
       await screen.findByText(
         'Robin Vale: Does anyone know why the refund job skipped last night?',
       ),
     ).toBeDefined();
-    expect(screen.getByText(draft.body)).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Send' })).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Edit' })).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Discard' })).toBeDefined();
+    screen.getByText(draft.body);
+    screen.getByRole('button', { name: 'Send' });
+    screen.getByRole('button', { name: 'Edit' });
+    screen.getByRole('button', { name: 'Discard' });
   });
 
   it('sends the draft as-is and removes it from the session store', async () => {

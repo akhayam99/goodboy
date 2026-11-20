@@ -21,7 +21,7 @@ const REASON_TEXT: ReadonlyMap<string, string> = new Map([
   ['needs_user', 'It needs something only you can give.'],
   ['needs_dependency', 'It needs a dependency you allow.'],
   ['needs_protected_file', 'It needs a protected file changed, if you allow it.'],
-  ['no_new_version', 'It did not write a new version.'],
+  ['no_new_version', "It didn't write a new version."],
   ['lost_structure', 'Its new version lost the structure of the plan.'],
   ['stale_base', 'The version it worked on is no longer the latest.'],
 ]);

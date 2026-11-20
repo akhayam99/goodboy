@@ -25,7 +25,7 @@ const LABELLED_DOORS: ReadonlyArray<string> = [
   'features/workspace/components/WorkspaceLauncher/LauncherEmpty.tsx',
   'features/workspace/components/WorkspaceSwitcher/index.tsx',
   'features/workspace/components/WorkspaceLinkStudio/index.tsx',
-  'features/palette/hooks/useCommandEntries.ts',
+  'features/palette/hooks/useCommandEntries/index.ts',
 ];
 
 const FORM_HOSTS: ReadonlyArray<string> = [

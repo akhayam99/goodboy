@@ -235,10 +235,9 @@ fn set_writable(path: &Path, is_writable: bool, keep: &[PathBuf]) {
         return;
     }
     let mode = meta.permissions().mode();
-    let next = if is_writable {
-        mode | 0o200
-    } else {
-        mode & !0o222
+    let next = match is_writable {
+        true => mode | 0o200,
+        false => mode & !0o222,
     };
     let _ = std::fs::set_permissions(path, std::fs::Permissions::from_mode(next));
 }

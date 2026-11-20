@@ -83,11 +83,11 @@ const MODE_SUPPORT: Record<ProviderId, ModeSupportTable> = {
     default: CANT_ASK,
     acceptEdits: partly({
       mode: 'acceptEdits',
-      reason: 'Commands run too, but only inside the folders',
+      reason: 'Commands run too, but only inside the project folders',
     }),
     bypassPermissions: partly({
       mode: 'bypassPermissions',
-      reason: 'Writes only inside the folders',
+      reason: 'Writes only inside the project folders',
     }),
   },
   gemini: {

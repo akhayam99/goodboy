@@ -69,11 +69,7 @@ fn script_body(value: &Value) -> Option<String> {
                 .filter_map(Value::as_str)
                 .collect::<Vec<_>>()
                 .join(" && ");
-            if joined.is_empty() {
-                None
-            } else {
-                Some(joined)
-            }
+            Some(joined).filter(|joined| !joined.is_empty())
         }
         _ => None,
     }

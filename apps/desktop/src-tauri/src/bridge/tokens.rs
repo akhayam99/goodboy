@@ -1,8 +1,6 @@
 use std::sync::Mutex;
 use std::time::{Duration, Instant};
 
-/// One-time pairing tokens. Minted at QR display, validated once at handshake
-/// msg1, then burned. TTL mirrors PROTOCOL.md (~60 s from QR generation).
 pub struct TokenStore {
     entries: Mutex<Vec<Entry>>,
     ttl: Duration,
@@ -29,7 +27,6 @@ impl TokenStore {
         }
     }
 
-    /// Mints a fresh 256-bit single-use token and stores it with a TTL.
     pub fn mint(&self) -> Vec<u8> {
         use rand::Rng;
         let mut token = vec![0u8; 32];
@@ -43,21 +40,18 @@ impl TokenStore {
         token
     }
 
-    /// Validates and burns a token: true iff present and unexpired. Single-use —
-    /// a matching entry is removed so it can never be replayed.
     pub fn consume(&self, token: &[u8]) -> bool {
         let mut guard = self.entries.lock().unwrap();
         let now = Instant::now();
         guard.retain(|e| e.expires_at > now);
-        if let Some(pos) = guard
+        let Some(pos) = guard
             .iter()
             .position(|e| e.token.len() == token.len() && e.token == token)
-        {
-            guard.remove(pos);
-            true
-        } else {
-            false
-        }
+        else {
+            return false;
+        };
+        guard.remove(pos);
+        true
     }
 }
 

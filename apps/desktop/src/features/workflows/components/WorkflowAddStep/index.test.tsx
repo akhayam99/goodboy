@@ -93,7 +93,7 @@ const renderAddStep = () =>
 const openDraft = () => fireEvent.click(screen.getByRole('button', { name: /add step/i }));
 
 const nameStep = (name: string) =>
-  fireEvent.change(screen.getByPlaceholderText('step name'), { target: { value: name } });
+  fireEvent.change(screen.getByPlaceholderText('Step name'), { target: { value: name } });
 
 beforeEach(async () => {
   await resetStoryStore();
@@ -196,7 +196,7 @@ describe('WorkflowAddStep', () => {
     const trigger = screen.getByRole('button', { name: /add step/i });
     expect(trigger.hasAttribute('disabled')).toBe(true);
     fireEvent.click(trigger);
-    expect(screen.queryByPlaceholderText('step name')).toBeNull();
+    expect(screen.queryByPlaceholderText('Step name')).toBeNull();
   });
 
   it('discards the draft with Esc and keeps it open with the reason when the run refuses', async () => {
@@ -213,9 +213,9 @@ describe('WorkflowAddStep', () => {
     await waitFor(() =>
       expect(screen.getByRole('alert').textContent).toBe('this run is already finished'),
     );
-    fireEvent.keyDown(screen.getByPlaceholderText('step name'), { key: 'Escape' });
+    fireEvent.keyDown(screen.getByPlaceholderText('Step name'), { key: 'Escape' });
 
-    expect(screen.queryByPlaceholderText('step name')).toBeNull();
+    expect(screen.queryByPlaceholderText('Step name')).toBeNull();
     expect(addStepToWorkflowRun).toHaveBeenCalledTimes(1);
   });
 });

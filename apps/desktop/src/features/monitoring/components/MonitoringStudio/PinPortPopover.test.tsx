@@ -57,7 +57,7 @@ describe('pin a port popover', () => {
 
     await waitFor(() =>
       expect(within(dialog).getByRole('alert').textContent).toBe(
-        "Couldn't pin the port. Try again.",
+        "Couldn't pin the port. Nothing was saved.",
       ),
     );
     expect(screen.getByRole('dialog', { name: 'Pin a port' })).toBe(dialog);

@@ -1,4 +1,5 @@
 import type { ModelPrice, ProviderUsage } from '@goodboy/types';
+import { computeLeveledCostUsd } from '../priceLevels';
 
 const COMPOSER_PRICE: ModelPrice = {
   inputPerMtok: 0.5,
@@ -258,12 +259,5 @@ type Params = {
   readonly model: string;
 };
 
-export const computeCursorCostUsd = ({ usage, model }: Params): number => {
-  const price = cursorPriceFor(model);
-  return (
-    (usage.inputTokens * price.inputPerMtok) / 1_000_000 +
-    (usage.cachedInputTokens * (price.cachedInputPerMtok ?? price.inputPerMtok)) / 1_000_000 +
-    ((usage.cacheCreationInputTokens ?? 0) * price.inputPerMtok * 1.25) / 1_000_000 +
-    (usage.outputTokens * price.outputPerMtok) / 1_000_000
-  );
-};
+export const computeCursorCostUsd = ({ usage, model }: Params): number =>
+  computeLeveledCostUsd({ usage, price: cursorPriceFor(model), isCacheInInput: false });

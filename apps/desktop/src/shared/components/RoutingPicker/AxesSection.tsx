@@ -103,7 +103,7 @@ export const AxesSection = ({
                 disabled={toggle.canToggle === false}
                 title={
                   toggle.canToggle === false
-                    ? `${toggle.label} cannot be changed for this model`
+                    ? `${toggle.label} can't be changed for this model`
                     : undefined
                 }
                 onSelect={() => onToggle(toggle.id)}

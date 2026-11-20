@@ -20,12 +20,10 @@ export {
 
 export {
   createGithubRepo,
-  listOwnedRepos,
   validateGithubRepoName,
   type CreateRepoResult,
   type GithubRepoRef,
   type GithubRepoVisibility,
-  type OwnedReposResult,
   type RepoNameCheck,
 } from './repos';
 
@@ -66,12 +64,4 @@ export {
   type ReviewThreadDraft,
 } from './reviews';
 
-export {
-  DEFAULT_PR_CACHE_TTL_MS,
-  getPrForBranch,
-  invalidatePrCache,
-  toCachedPullRequest,
-  type GetPrInput,
-  type PrCacheDeps,
-  type PrCacheStore,
-} from './cache';
+export { toCachedPullRequest } from './toCachedPullRequest';

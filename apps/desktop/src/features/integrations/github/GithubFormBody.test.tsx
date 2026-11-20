@@ -181,7 +181,7 @@ describe('GithubFormBody', () => {
     it('renders one connected row with the gh user and the scope badge', async () => {
       render(<GithubFormBody workspaceId={WS_ID} />);
       expect(await screen.findByText(/Connected as octocat/i)).toBeDefined();
-      expect(screen.getByText('workspace key')).toBeDefined();
+      expect(screen.getByText('Workspace key')).toBeDefined();
       expect(screen.queryByRole('button', { name: /^connect$/i })).toBeNull();
     });
 

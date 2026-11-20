@@ -14,16 +14,11 @@ fn make_link(target: &Path, link: &Path) -> io::Result<()> {
     }
     #[cfg(windows)]
     {
-        let source = if target.is_absolute() {
-            target.to_path_buf()
-        } else {
-            link.parent().unwrap_or(link).join(target)
-        };
+        let source = link.parent().unwrap_or(link).join(target);
         if source.is_dir() {
-            std::os::windows::fs::symlink_dir(target, link)
-        } else {
-            std::os::windows::fs::symlink_file(target, link)
+            return std::os::windows::fs::symlink_dir(target, link);
         }
+        std::os::windows::fs::symlink_file(target, link)
     }
 }
 

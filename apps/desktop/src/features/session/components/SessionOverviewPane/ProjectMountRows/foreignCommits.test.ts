@@ -136,10 +136,10 @@ describe('isWorktreeClean', () => {
 describe('foreignCommitsBody', () => {
   it('counts the commits and explains a dirty worktree', () => {
     expect(foreignCommitsBody({ branch: 'grw-1348-cta', remoteAhead: 1, isClean: true })).toBe(
-      'origin/grw-1348-cta has 1 commit this worktree does not have.',
+      "origin/grw-1348-cta has 1 commit this worktree doesn't have.",
     );
     expect(foreignCommitsBody({ branch: 'grw-1348-cta', remoteAhead: 2, isClean: false })).toBe(
-      'origin/grw-1348-cta has 2 commits this worktree does not have. Commit or discard the local changes first.',
+      "origin/grw-1348-cta has 2 commits this worktree doesn't have. Commit or discard the local changes first.",
     );
   });
 });

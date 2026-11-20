@@ -132,12 +132,14 @@ async fn handle_conn(
                     }
                     op => match MobileAction::from_opcode(op) {
                         Some(action) => {
-                            let data: Value = if n > 1 {
-                                serde_json::from_slice(&buf[1..n]).unwrap_or(Value::Null)
-                            } else {
-                                Value::Null
+                            let data: Value = match n > 1 {
+                                true => serde_json::from_slice(&buf[1..n]).unwrap_or(Value::Null),
+                                false => Value::Null,
                             };
-                            let reply_op = if action.is_query() { OP_QUERY_RESULT } else { OP_ACK };
+                            let reply_op = match action.is_query() {
+                                true => OP_QUERY_RESULT,
+                                false => OP_ACK,
+                            };
                             let result = run_command(&ctx, action, data).await;
                             send_app(&mut stream, &mut transport, reply_op, &result).await?;
                         }
@@ -211,7 +213,8 @@ async fn authorize_handshake(
         let mut id = identity.lock().await;
         if enrolling {
             id.enroll(&phone_static)?;
-        } else if !id.is_enrolled(&phone_static) {
+        }
+        if !enrolling && !id.is_enrolled(&phone_static) {
             return Err(BridgeError::Unauthorized("phone not enrolled".into()));
         }
     }

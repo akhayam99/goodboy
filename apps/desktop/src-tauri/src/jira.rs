@@ -952,10 +952,9 @@ fn next_project_offset(page: &JiraProjectPage) -> Option<i64> {
     if page.is_last != Some(false) || page.values.is_empty() {
         return None;
     }
-    let step = if page.max_results > 0 {
-        page.max_results
-    } else {
-        page.values.len() as i64
+    let step = match page.max_results > 0 {
+        true => page.max_results,
+        false => page.values.len() as i64,
     };
     Some(page.start_at + step)
 }

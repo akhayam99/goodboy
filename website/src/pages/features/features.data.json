@@ -39,21 +39,21 @@
         },
         {
           "title": "One page per provider",
-          "text": "Each provider has its own page for usage, which models appear in the picker, permissions and your account. Test connection checks the account with a real call.",
+          "text": "Each provider has its own page in Connections: its usage first, then the models in the picker, your account and what works with it.",
           "group": "Set up",
           "also": "provider pages",
           "shown": true
         },
         {
           "title": "Update the provider CLI",
-          "text": "A notice under the account rows tells you when a model needs a newer provider tool. One button updates it once running turns finish, and it ends as updated, unchanged or failed.",
+          "text": "When a model needs a newer provider CLI, the provider page says so and one button installs it. The update waits for running turns to finish.",
           "group": "Set up",
           "also": "CLI updates",
           "shown": true
         },
         {
           "title": "Permissions for each provider",
-          "text": "See which permission modes a provider can honor before you pick one. A mode it cannot honor never runs looser.",
+          "text": "See which permission modes a provider can honor before you pick one. A mode it can't honor never runs looser.",
           "group": "Set up",
           "also": "permissions",
           "shown": true
@@ -73,7 +73,7 @@
         },
         {
           "title": "Start a run",
-          "text": "Not sure what kind of run? Describe it and Goodboy picks a workflow or an agent, and says why.",
+          "text": "Write what you want done and press Start. A Lead runs it: it plans first, then starts the agents it needs.",
           "group": "Start a task",
           "also": "Start a run",
           "shown": true
@@ -92,7 +92,7 @@
         },
         {
           "title": "The Kind chip",
-          "text": "Each run says what it is, Lead or Agent, and why. Pick another kind to start a second run; this one keeps going.",
+          "text": "Each run leads its settings line with a Kind chip that names what runs: a Lead, a Lead with a preset as its plan, or one agent.",
           "group": "Start a task",
           "also": "Change"
         },
@@ -128,7 +128,7 @@
         },
         {
           "title": "Undo an unlink",
-          "text": "Link work adds a task. Unlink acts at once and shows an Undo toast for about 10 seconds, and the Log keeps a Re-link. Cmd+Z undoes the last app operation when focus is not in a text field.",
+          "text": "Link work adds a task. Unlink acts at once with a 10-second Undo toast, and ⌘Z works too. The log keeps a Re-link.",
           "group": "Start a task",
           "also": "undo unlink"
         },
@@ -140,7 +140,7 @@
         },
         {
           "title": "Move an issue between the session and a branch",
-          "text": "Move to puts a linked issue on the session or on an open branch of its project, at once, with Undo. Drag its chip to a branch row, and hold Alt to copy.",
+          "text": "Move to puts a linked issue on the session or on an open branch of its project, at once, with Undo. Drag its chip to a branch row, and hold ⌥ to copy.",
           "group": "Start a task",
           "also": "move an issue",
           "shown": true
@@ -166,7 +166,7 @@
         },
         {
           "title": "Settings",
-          "text": "Settings opens on the page you used last, beside the sidebar, with its own list of pages and a search. Every page is also in Search or run.",
+          "text": "Settings opens on the page you used last, beside the places rail, with its own list of pages and a search. Every page is also in Search or run.",
           "group": "Set up",
           "also": "settings pages",
           "shown": true
@@ -229,13 +229,13 @@
         },
         {
           "title": "Next",
-          "text": "Goodboy shows the one move that unblocks a task, like answering a question or opening a pull request. A move that starts an agent says which model it runs on. Put a suggestion away until things change.",
+          "text": "Goodboy shows the moves that unblock a task, like answering a question or opening a pull request. A move that starts an agent says which model it runs on. Put a suggestion away until things change.",
           "group": "Overview and activity",
           "also": "next step"
         },
         {
           "title": "Time left",
-          "text": "Queued steps show how long they should take, learned from your own past runs. Thin history shows a count instead of a guess.",
+          "text": "See how long a step has left, estimated from your own past runs. Queued steps show a range, and a run slower than usual turns its time warm.",
           "group": "Overview and activity",
           "also": "time left",
           "shown": true
@@ -261,7 +261,7 @@
         },
         {
           "title": "Now chip",
-          "text": "A chip in the top bar counts sessions that need you and those running. Click it to jump straight to one.",
+          "text": "A chip in the top bar counts the sessions and scripts running, or reads Needs you when a session waits on you. Click it to jump to one.",
           "group": "Switch between tasks",
           "also": "now chip"
         },
@@ -281,7 +281,7 @@
         },
         {
           "title": "Places rail",
-          "text": "Move between Board, Tasks, Workflows, Chat, Connect and Impact from the places rail on the left. New opens a session, Board counts sessions that need you, and Tasks marks new tasks with a dot. The rail never folds; in a narrow window its words move into tooltips.",
+          "text": "Move between Board, Tasks, Workflows, Chat, Connect and Impact from the places rail on the left. New opens a session, Board counts sessions that need you, and Tasks marks new tasks with a dot. The rail never folds, and in a narrow window its words move into tooltips.",
           "group": "Search and navigation",
           "also": "places rail"
         },
@@ -293,7 +293,7 @@
         },
         {
           "title": "Search or run",
-          "text": "Act on what you are looking at. The actions of the open agent and session come first, each with its shortcut.",
+          "text": "Act on what you're looking at. Inside a session it opens on Next, then the actions that fit, ranked by how often you use them.",
           "group": "Search and navigation",
           "also": "search or run",
           "shown": true
@@ -333,7 +333,7 @@
         },
         {
           "title": "Bulk select",
-          "text": "Tick a card, press X or lasso cards across columns, then archive, restore or delete them together from one bar.",
+          "text": "⇧ click a range, ⌥ click one card or lasso cards with ⌥ held, then archive, restore or delete them together from one bar.",
           "group": "The board",
           "also": "bulk select",
           "shown": true
@@ -441,7 +441,7 @@
         },
         {
           "title": "Several branches per repo",
-          "text": "Work on several branches of one repo in the same session. If a worktree drifts to another branch, a card offers clear choices.",
+          "text": "Work on several branches of one repo in the same session. If a worktree ends up on another branch, a card offers Use this branch here or Keep both branches.",
           "group": "Workspaces and folders",
           "also": "several branches",
           "shown": true
@@ -508,7 +508,7 @@
         },
         {
           "title": "Keep .goodboy out of git",
-          "text": "Keep Goodboy's own folder out of your commits with one click. The card shows only when git does not already ignore it.",
+          "text": "Keep Goodboy's own folder out of your commits with one click. The card shows only when git doesn't already ignore it.",
           "group": "Workspaces and folders",
           "also": "git ignore"
         }
@@ -593,14 +593,14 @@
         },
         {
           "title": "Pause, resume and skip",
-          "text": "Pause lets the step in flight finish and starts nothing new. Resume picks up where the run was, and Skip passes a step that is stuck.",
+          "text": "Pause lets the step in flight finish and starts nothing new, even after a restart. Continue picks up from there, and Skip passes a step that hasn't finished.",
           "group": "Workflows",
           "also": "pause and resume",
           "shown": true
         },
         {
           "title": "Runs in Settings",
-          "text": "Set once what every new run starts with, on the same chips a run shows: when it asks, a limit, the models, the limit and guidance.",
+          "text": "Set once what every new run starts with on the Runs page: when it stops for you, its limit, reply length and guidance.",
           "group": "Workflows",
           "also": "run defaults",
           "shown": true
@@ -620,7 +620,7 @@
         },
         {
           "title": "Steps that cannot finish",
-          "text": "A step that cannot finish ends as Not finished, and the level you picked decides if the run goes on.",
+          "text": "A step that can't finish ends as Not finished, and the level you picked decides if the run goes on.",
           "group": "Workflows",
           "also": "steps that cannot finish",
           "shown": true
@@ -662,7 +662,7 @@
     {
       "id": "review",
       "title": "Review and branches",
-      "lead": "One Branch page for Pull request, Comments, Files, Commits, Checks and Work: reshape history, turn comments into commits, push once.",
+      "lead": "One Branch page holds the pull request, its changes, commits, checks, runs and comments. Clean up the history, turn comments into commits and push once.",
       "groups": ["Commits and history", "Review and resolve on the Branch page"],
       "mocks": ["diff"],
       "guides": [
@@ -703,20 +703,20 @@
         },
         {
           "title": "Push with lease and restore",
-          "text": "Updating the online branch never overwrites a teammate's newer push. Restore takes the old history back, and the backup stays for 30 days.",
+          "text": "Force push checks origin with a lease, so it never overwrites a teammate's newer push. Every edit saves a backup first.",
           "group": "Commits and history",
           "also": "push with lease",
           "shown": true
         },
         {
           "title": "Backups",
-          "text": "Choose Backups in the menu of the Commits section to see older histories of the branch. Restore previous history puts one back.",
+          "text": "Previous versions, under the graph, lists the older histories of the branch with when and why each was saved. Reset branch to this version puts one back.",
           "group": "Commits and history",
           "also": "backups"
         },
         {
           "title": "Suggest a message",
-          "text": "Get a commit message drafted for a squash or a reword. Edit it before you apply.",
+          "text": "Get a commit message drafted for a reword. Scribe writes it in place, and saving it updates the local branch.",
           "group": "Commits and history",
           "also": "commit messages",
           "shown": true
@@ -729,14 +729,14 @@
         },
         {
           "title": "Rebase on main",
-          "text": "Rebase on main with the same engine, and bring in an agent only when there is a conflict.",
+          "text": "Rebase, on the worktree status line, moves the branch onto the latest main with git alone. It needs no agent and no tokens.",
           "group": "Commits and history",
           "also": "rebase on main",
           "shown": true
         },
         {
           "title": "After a pull request merges",
-          "text": "Choose what happens to a merged branch: ask me, delete on this Mac, or also on origin. You have 14 days to restore it.",
+          "text": "Choose what happens to a merged branch: Ask first, Delete on this Mac or Also on origin. You have 14 days to restore it.",
           "group": "Commits and history",
           "also": "merged branches",
           "shown": true
@@ -755,7 +755,7 @@
         },
         {
           "title": "Bulk actions",
-          "text": "Fix every open comment, answer the agent's questions with its recommended answers, retry what could not be fixed and accept every fix waiting for you at once, with Undo.",
+          "text": "Fix comments checks every open comment, and Use the recommended answers answers the agent's questions in one go. Apply fix takes every waiting fix, with Undo.",
           "group": "Review and resolve on the Branch page",
           "also": "bulk actions"
         },
@@ -768,7 +768,7 @@
         },
         {
           "title": "Comment states",
-          "text": "A comment reads Question, Push failed, Failed, Fixing, Queued, Fix ready, Done or Left open. One not in a fix run yet reads Open. The list groups them, and one tally counts what needs you.",
+          "text": "The list groups comments under Needs you, Working, Done and Left open, and each comment names its state, such as Question, Fix ready or Failed.",
           "group": "Review and resolve on the Branch page",
           "also": "comment states",
           "shown": true
@@ -781,13 +781,13 @@
         },
         {
           "title": "Failed drafts",
-          "text": "A comment that could not be fixed says why in plain words and links to the transcript. Retry it in the same run, start over on another model or add a hint.",
+          "text": "When a fix fails, the comment says why in one sentence and links to the transcript. Retry it in the same run, start over on another model or add a hint.",
           "group": "Review and resolve on the Branch page",
           "also": "failed drafts"
         },
         {
           "title": "See what a resolve did",
-          "text": "Click a fix run in Activity to open its Fix run, a read-only transcript with its commits and any question it waits on. Accept and reply stay in Comments.",
+          "text": "Open a fix run from Activity or from a comment. A drawer shows the comments it covers, what it did and its commits, and its transcript, where you can write to the agent.",
           "group": "Review and resolve on the Branch page",
           "also": "fix run"
         },
@@ -823,14 +823,14 @@
         },
         {
           "title": "Squash and fold the resolve commits",
-          "text": "Choose how fixes land before anyone sees them. Keep them, fold each into its original commit, or make one commit for the review.",
+          "text": "Tidy the fix commits before reviewers see them, in the Commits section. Fold a fix into the commit it belongs to, squash, reword or drop it, with a backup kept.",
           "group": "Review and resolve on the Branch page",
           "also": "squash and fold",
           "shown": true
         },
         {
           "title": "Notes before a pull request",
-          "text": "Read your own code first in the Changes section. Leave notes on lines, and Fix comments hands the open ones to an agent. Post to GitHub moves a note into your review draft for the pull request. Notes belong to a branch, and notes with no branch are listed as Unassigned notes, each with Move to and Discard.",
+          "text": "Read your own code first in the Changes section. Leave notes on lines, and Fix comments hands the open ones to an agent. Post to GitHub moves a note into your review draft for the pull request. Notes stay on their branch, and notes with no branch wait on the Session overview.",
           "group": "Review and resolve on the Branch page",
           "also": "notes before a PR"
         },
@@ -854,7 +854,7 @@
         },
         {
           "title": "Write it",
-          "text": "Get a pull request title, description and changelog entry in your repo's format. Goodboy pushes the branch and opens the pull request, or shows why it could not and lets you retry. Linked issues become closing references.",
+          "text": "Get a pull request title, description and changelog entry in your repo's format. Goodboy pushes the branch and opens the pull request, or shows why it couldn't and lets you retry. Linked issues become closing references.",
           "group": "Review and resolve on the Branch page",
           "also": "PR text",
           "shown": true
@@ -867,13 +867,13 @@
         },
         {
           "title": "Read the code",
-          "text": "Changes has a file tree in a rail on the right of the diff with a progress ring per folder, filters, and the changes with syntax colors, word-level highlights and a unified or split view. Comment on a line or on a whole file, and quote a line into a note or a question for an agent. Show more lines opens the context around a change, and a double click on a name shows where it is defined and used.",
+          "text": "Read the branch against its base in Changes, unified or split, and mark each file Viewed as you go. Comment on a line or a whole file, and quote lines into a note or a question for an agent.",
           "group": "Review and resolve on the Branch page",
           "also": "diff"
         },
         {
           "title": "Write review",
-          "text": "Review someone else's pull request from its diff with Write review in the header. Add line comments, pick comment, approve or request changes, and submit one review.",
+          "text": "Review someone else's pull request from its diff with Write review in the header. Add line comments, pick Comment, Approve or Request changes, and submit one review.",
           "group": "Review and resolve on the Branch page",
           "also": "write review"
         },
@@ -936,7 +936,7 @@
         },
         {
           "title": "Find any issue by code or link",
-          "text": "Paste an issue code, a pull request number or a link to open it. It does not need to be assigned to you.",
+          "text": "Paste an issue code, a pull request number or a link to open it. It doesn't need to be assigned to you.",
           "group": "Tasks and your tools",
           "also": "find by code",
           "shown": true
@@ -1037,7 +1037,7 @@
         },
         {
           "title": "Report as a document",
-          "text": "Read a report as one document with an outline on the left, and edit the text in place. The same file opens in a browser on another machine.",
+          "text": "Read a report as one document with an outline on the left, and edit the text in place.",
           "group": "Plans, reports and wireframes",
           "also": "reports",
           "shown": true
@@ -1185,7 +1185,7 @@
         },
         {
           "title": "Ask in a session",
-          "text": "Ask what is going on in a session with ⌘L. A panel beside the page reads it for you and writes its answer in live. Each thing you can do now gets a button.",
+          "text": "Ask what's happening in a session with ⌘L. Answers name the agents, runs and files they mention as chips, and the panel never acts for you.",
           "group": "Agents",
           "also": "ask in a session"
         },
@@ -1223,7 +1223,7 @@
         },
         {
           "title": "What the agent received",
-          "text": "Check exactly what an agent was told, with a chip for each part of its brief. View the exact text sent to the provider.",
+          "text": "Check exactly what an agent was told: the message, who sent it, and the goal, plan and files it carried, down to the exact text sent to the provider.",
           "group": "Agents",
           "also": "what it received"
         },
@@ -1235,7 +1235,7 @@
         },
         {
           "title": "Agents column",
-          "text": "See every agent of a run beside its page, with its state and time. Pick one to read its record next to the chat.",
+          "text": "See every agent of a run beside its page, with its role, state and cost. Pick one to read its record next to the chat.",
           "group": "Agents",
           "also": "agents column",
           "shown": true
@@ -1320,7 +1320,7 @@
         },
         {
           "title": "History rewriter and Scribe",
-          "text": "The helpers that rewrite history and write pull request text cannot push. Their push address goes nowhere and their GitHub tokens are removed.",
+          "text": "The helpers that rewrite history and write pull request text can't push. You read and edit what Scribe writes before you press Create.",
           "group": "Agents",
           "also": "helpers that cannot push"
         },
@@ -1358,7 +1358,7 @@
         },
         {
           "title": "Explore",
-          "text": "Browse the whole folder as a file tree on the Changes page of a branch, with a letter on changed files. A click on an unchanged file reads it in place.",
+          "text": "Browse the session folder as a file tree on the Changes page of a branch. All files, beside Changed, swaps the changed files for the whole folder.",
           "group": "Keyboard and terminal",
           "also": "explore"
         },
@@ -1424,7 +1424,7 @@
         },
         {
           "title": "Goodboy can free N GB",
-          "text": "Hear about reclaimable space once, when idle folders pass 10 GB or the disk runs low. It waits 14 days before speaking again.",
+          "text": "Hear about reclaimable space once, when idle safe folders pass 10 GB or the disk runs low. After a notice it waits 14 days and another 10 GB.",
           "group": "Storage",
           "also": "disk notice"
         },
@@ -1449,7 +1449,7 @@
         },
         {
           "title": "Backup before a data update",
-          "text": "Before an update changes your data, Goodboy makes a full copy and keeps the last two. If the copy fails, the update does not start.",
+          "text": "Before an update changes your data, Goodboy makes a full copy and keeps the last two. If the copy fails, the update doesn't start.",
           "group": "Security, backup and updates",
           "also": "data backups",
           "shown": true
@@ -1481,7 +1481,7 @@
         },
         {
           "title": "Guide",
-          "text": "Learn how Goodboy works in short chapters, one page each, that follow a task. Open Guide from the Help menu or Search or run.",
+          "text": "Learn how Goodboy works in short chapters, one page each, that follow a task. Open it from the Goodboy mark at the foot of the places rail, or from Search or run.",
           "group": "Security, backup and updates",
           "also": "guide"
         },

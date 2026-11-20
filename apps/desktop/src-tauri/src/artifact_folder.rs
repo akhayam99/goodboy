@@ -2,7 +2,7 @@ use std::path::{Path, PathBuf};
 
 use serde::Deserialize;
 
-use crate::artifacts::{write_atomic, ArtifactExportError, MAX_EXPORT_BYTES};
+use crate::artifacts::{ArtifactExportError, MAX_EXPORT_BYTES};
 
 const FOLDER_EXTENSIONS: [&str; 4] = ["html", "css", "md", "json"];
 
@@ -111,7 +111,7 @@ pub fn write_folder(
         if let Some(dir) = target.parent() {
             std::fs::create_dir_all(dir)?;
         }
-        write_atomic(&target, &file.contents)?;
+        crate::util::write_atomic(&target, file.contents.as_bytes())?;
     }
     Ok(root)
 }

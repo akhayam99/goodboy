@@ -23,7 +23,7 @@ export const reopenResolveQueueItem = async ({
     candidateRevision: revision,
   });
   if (reopened === null) {
-    throw new Error('Resolve item could not be reopened');
+    throw new Error("Couldn't reopen this comment. Nothing was changed.");
   }
   if (target !== undefined) {
     await advanceResolveStage({

@@ -186,9 +186,9 @@ const hereLineOf = ({ files }: FilesLineParams): string => {
 
 const autoLineOf = ({ files }: FilesLineParams): string => {
   if (files === null || files === undefined || !files.isKnown || files.total === 0) {
-    return 'It asks you in the session when a conflict is not clear.';
+    return "It asks you in the session when a conflict isn't clear.";
   }
-  return `${files.resolved} of ${countLabelOf({ count: files.total, one: 'file', many: 'files' })} resolved. It asks you here if a conflict is not clear.`;
+  return `${files.resolved} of ${countLabelOf({ count: files.total, one: 'file', many: 'files' })} resolved. It asks you in the session when a conflict isn't clear.`;
 };
 
 type OriginTitleParams = {

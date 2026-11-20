@@ -20,7 +20,7 @@ export type WireframeFolderExport = Readonly<{
 }>;
 
 export const FOLDER_BLOCKED_MESSAGE =
-  'This wireframe does not match the schema, so there is no page to export';
+  "This wireframe doesn't match the schema, so there's no page to export";
 
 type Params = {
   readonly artifact: WireframeArtifact;

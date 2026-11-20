@@ -10,7 +10,7 @@ type Params = {
 };
 
 const STILL_RUNNING_MESSAGE =
-  'An agent did not stop, so you stayed here, where you can still stop it. Then switch again.';
+  "An agent didn't stop, so you stayed here, where you can still stop it. Then switch again.";
 
 export const refuseWorkspaceSwitch = ({ set, get, id }: Params): void => {
   void get().reportError({

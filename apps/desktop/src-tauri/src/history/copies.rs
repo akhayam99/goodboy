@@ -87,13 +87,7 @@ impl Drop for CopyGuard {
 
 fn common_dir_of(cwd: &Path) -> Result<PathBuf, WorktreeError> {
     let raw = git(cwd, &["rev-parse", "--git-common-dir"])?;
-    let path = PathBuf::from(raw.trim());
-    let absolute = if path.is_absolute() {
-        path
-    } else {
-        cwd.join(path)
-    };
-    Ok(std::fs::canonicalize(absolute)?)
+    Ok(std::fs::canonicalize(cwd.join(raw.trim()))?)
 }
 
 pub(super) fn create_copy(
@@ -164,6 +158,16 @@ fn age_secs(path: &Path) -> u64 {
         .unwrap_or_default()
 }
 
+fn stale_after_secs(slug: &str, trial_after_secs: u64, other_after_secs: u64) -> u64 {
+    if slug.starts_with(RESOLVE_SLUG_PREFIX) {
+        return 0;
+    }
+    if slug.starts_with(TRIAL_SLUG_PREFIX) {
+        return trial_after_secs;
+    }
+    other_after_secs
+}
+
 pub(crate) fn clean_stale_copies_in(
     dir: &Path,
     trial_after_secs: u64,
@@ -185,13 +189,7 @@ pub(crate) fn clean_stale_copies_in(
         if owner_repo(&root).is_none() || is_held(&root) {
             continue;
         }
-        let limit = if slug.starts_with(RESOLVE_SLUG_PREFIX) {
-            0
-        } else if slug.starts_with(TRIAL_SLUG_PREFIX) {
-            trial_after_secs
-        } else {
-            other_after_secs
-        };
+        let limit = stale_after_secs(slug, trial_after_secs, other_after_secs);
         if review_of(&root).is_none() && age_secs(&root.join(RESERVATION_FILE)) < limit {
             continue;
         }

@@ -904,7 +904,7 @@ describe('DefaultsPanel', () => {
 
       expect(
         screen.getByText(
-          'With Cursor as the only provider, 2 of 11 agents use a pin that cannot run. Auto picks apply.',
+          "With Cursor as the only provider, 2 of 11 agents use a pin that can't run. Auto picks apply.",
         ),
       ).toBeDefined();
       fireEvent.click(screen.getByRole('button', { name: 'Back to Auto for those 2' }));
@@ -937,7 +937,7 @@ describe('DefaultsPanel', () => {
       };
       render(<DefaultsPanel workspaceId={WORKSPACE_ID} />);
 
-      expect(screen.queryByText(/use a pin that cannot run/)).toBeNull();
+      expect(screen.queryByText(/use a pin that can't run/)).toBeNull();
       expect(screen.queryByRole('button', { name: /^Back to Auto for/ })).toBeNull();
     });
 

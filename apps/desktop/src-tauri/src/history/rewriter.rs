@@ -158,7 +158,10 @@ pub(crate) fn collect_rewrite(args: &RewriterCollectArgs) -> Result<RewriterChec
         problems.push(format!(
             "The rewriter made {} {}, the plan has {}.",
             made.len(),
-            if made.len() == 1 { "commit" } else { "commits" },
+            match made.len() {
+                1 => "commit",
+                _ => "commits",
+            },
             groups.len()
         ));
     }

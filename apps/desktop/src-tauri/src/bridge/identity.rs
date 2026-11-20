@@ -8,16 +8,10 @@ use super::BridgeError;
 
 const IDENTITY_FILE: &str = "companion.json";
 
-/// Persisted pairing identity: the desktop's long-term Noise static key plus the
-/// allow-list of enrolled phone static public keys (TOFU). Lives next to the DB
-/// under `~/.goodboy/` and never leaves the machine.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Identity {
-    /// X25519 static private key, base64 (raw 32 bytes).
     pub static_priv_b64: String,
-    /// X25519 static public key, base64 (raw 32 bytes) — the QR `staticPub`.
     pub static_pub_b64: String,
-    /// Enrolled phone static public keys, base64. Re-dial authorizes by membership.
     #[serde(default)]
     pub allow_list: Vec<String>,
     #[serde(skip)]
@@ -34,8 +28,6 @@ fn identity_path() -> Result<PathBuf, BridgeError> {
 }
 
 impl Identity {
-    /// Loads the persisted identity, generating (and writing) a fresh static
-    /// keypair on first use.
     pub fn load_or_create() -> Result<Self, BridgeError> {
         Self::load_or_create_at(&identity_path()?)
     }
@@ -80,10 +72,6 @@ impl Identity {
         Ok(())
     }
 
-    /// Forgets every enrolled phone (desktop-initiated disconnect). Afterwards a
-    /// re-dial fails the `is_enrolled` check, so a phone must scan a fresh QR to
-    /// reconnect — restoring pairing is a deliberate human act on the desktop,
-    /// never something the phone can do on its own.
     pub fn revoke_all(&mut self) -> Result<(), BridgeError> {
         if self.allow_list.is_empty() {
             return Ok(());
@@ -98,16 +86,7 @@ impl Identity {
             std::fs::create_dir_all(parent).map_err(BridgeError::Io)?;
         }
         let json = serde_json::to_vec_pretty(self).map_err(BridgeError::Json)?;
-        std::fs::write(path, json).map_err(BridgeError::Io)?;
-        // The file holds the desktop's long-term Noise static private key; keep it
-        // owner-only so other local accounts can't read it and impersonate us.
-        #[cfg(unix)]
-        {
-            use std::os::unix::fs::PermissionsExt;
-            std::fs::set_permissions(path, std::fs::Permissions::from_mode(0o600))
-                .map_err(BridgeError::Io)?;
-        }
-        Ok(())
+        crate::util::write_atomic_private(path, &json).map_err(BridgeError::Io)
     }
 }
 

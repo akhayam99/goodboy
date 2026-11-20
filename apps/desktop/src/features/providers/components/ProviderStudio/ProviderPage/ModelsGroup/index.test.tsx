@@ -82,7 +82,7 @@ describe('ModelsGroup', () => {
 
     expect(
       screen.getByText(
-        'A version with an eye is hidden. Hidden models are not used by agents or the orchestrator, except where a task setting names one.',
+        "A version with an eye is hidden. Hidden models aren't used by agents or the orchestrator, except where a task setting names one.",
       ),
     ).toBeDefined();
   });

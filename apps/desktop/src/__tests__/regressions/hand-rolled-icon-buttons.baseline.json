@@ -6,7 +6,6 @@
   "apps/desktop/src/features/diff/components/DiffView/FileHeader.tsx": 1,
   "apps/desktop/src/features/inbox/components/InboxStudio/InboxRow.tsx": 1,
   "apps/desktop/src/features/providers/components/ProviderPolicyList/ProviderPolicyRow.tsx": 1,
-  "apps/desktop/src/features/providers/components/ProviderStudio/ProviderCredentialsSection.tsx": 1,
   "apps/desktop/src/features/session/components/SessionWorkspace/parts/FileVersionsPane/versionHistoryList.tsx": 1,
   "apps/desktop/src/features/workflows/components/StepTree/StepRow.tsx": 1
 }

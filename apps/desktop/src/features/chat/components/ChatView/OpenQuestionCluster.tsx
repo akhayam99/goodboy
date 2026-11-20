@@ -5,9 +5,12 @@ import { LiveQuestionCard } from '../../../context/components/QuestionsTab/LiveQ
 import { askerOf, askerQuestions } from '../../../context/components/QuestionsTab/askerQuestions';
 import { useOpenQuestions } from '../../../context/components/QuestionsTab/useOpenQuestions';
 import { partitionDelegatedQuestions } from '../../../context/questionDelegate';
+import { CHECK_STATE } from '../../../../store/slices/notifications/errorRecovery';
 import { OpenQuestionInlineCard } from './OpenQuestionInlineCard';
 
 const NO_AGENTS: ReadonlyArray<Agent> = [];
+
+const DISMISS_FAILED = "Couldn't dismiss the question";
 
 type Props = {
   readonly questions: ReadonlyArray<OpenQuestion>;
@@ -39,6 +42,7 @@ const nextAfter = ({ list, from, isEligible }: NextParams): OpenQuestion | null 
 export const OpenQuestionCluster = ({ questions, sessionId, isDocked = false }: Props) => {
   const agents = useAppStore((s) => s.sessionPhaseRuns?.[sessionId] ?? NO_AGENTS);
   const dismissOpenQuestion = useAppStore((s) => s.dismissOpenQuestion);
+  const reportError = useAppStore((s) => s.reportError);
   const staged = useOpenQuestions((s) => s.staged);
   const [currentId, setCurrentId] = useState<OpenQuestionId | null>(null);
   const [focusId, setFocusId] = useState<OpenQuestionId | null>(null);
@@ -135,7 +139,11 @@ export const OpenQuestionCluster = ({ questions, sessionId, isDocked = false }: 
           pager={pager}
           onAnswered={handleAnswered}
           onSkip={handleSkip}
-          onDismiss={() => void dismissOpenQuestion(sessionId, current)}
+          onDismiss={() => {
+            dismissOpenQuestion(sessionId, current).catch((error: unknown) => {
+              void reportError({ recovery: CHECK_STATE, title: DISMISS_FAILED, error, sessionId });
+            });
+          }}
         />
       )}
     </div>

@@ -476,6 +476,44 @@ describe('deleteBranches', () => {
     );
     expect(h.listProjectBranches).toHaveBeenCalled();
   });
+
+  it('keeps the branches it already deleted restorable when a later record fails', async () => {
+    h.insertDeletedBranch
+      .mockResolvedValueOnce(undefined)
+      .mockRejectedValueOnce(new Error('database is locked'));
+    h.listProjectBranches.mockResolvedValue({ userEmail: null, branches: [] });
+    const context = makeStore();
+    context.set({ loadProjectBranches: loadProjectBranches(context.set, context.get) });
+
+    await expect(
+      deleteBranches(
+        context.set,
+        context.get,
+      )({
+        targets: [
+          {
+            projectId: PROJECT_ID,
+            branch: 'goodboy/payout-report',
+            sha: 'sha-1',
+            sessionId: null,
+            alsoOrigin: false,
+          },
+          {
+            projectId: PROJECT_ID,
+            branch: 'goodboy/fx-rates',
+            sha: 'sha-2',
+            sessionId: null,
+            alsoOrigin: false,
+          },
+        ],
+      }),
+    ).rejects.toThrow('database is locked');
+
+    expect(context.store.state.deletedBranches[WORKSPACE_ID]?.map((entry) => entry.branch)).toEqual(
+      ['goodboy/payout-report'],
+    );
+    expect(h.listProjectBranches).toHaveBeenCalled();
+  });
 });
 
 describe('checkMergedThen', () => {

@@ -39,7 +39,6 @@
   "apps/desktop/src/store/slices/sessions/unarchiveTask.ts": 2,
   "apps/desktop/src/store/slices/terminal/addTerminalTab.ts": 1,
   "apps/desktop/src/store/slices/turn/prepareTurn.ts": 1,
-  "apps/desktop/src/store/slices/workflows/resolveWorkflowHeadroom.ts": 1,
   "apps/desktop/src/store/slices/workspaces/disconnectWorkspace.ts": 1,
   "apps/desktop/src/store/slices/workspaces/mergeWorkspaces.ts": 1,
   "apps/desktop/src/store/slices/workspaces/selectors.ts": 1,

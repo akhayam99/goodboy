@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Plus } from '@goodboy/ui/icons';
-import { Button, ICON_SIZE, Input, SegmentedTabs } from '@goodboy/ui';
+import { Button, FormActions, ICON_SIZE, Input, SegmentedTabs } from '@goodboy/ui';
 
 import type { NewRule } from '../../hooks/usePermissionRules';
 
@@ -52,10 +52,13 @@ export const AddRuleForm = ({ onAdd }: Props) => {
       return;
     }
     setIsSaving(true);
-    const isAdded = await onAdd({ decision, command: trimmed, where });
-    setIsSaving(false);
-    if (isAdded) {
-      reset();
+    try {
+      const isAdded = await onAdd({ decision, command: trimmed, where });
+      if (isAdded) {
+        reset();
+      }
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -102,30 +105,34 @@ export const AddRuleForm = ({ onAdd }: Props) => {
           onChange={setWhere}
         />
       </div>
-      <div className="flex flex-wrap items-center gap-2">
-        <span className="text-meta text-muted-foreground">Try</span>
-        {SUGGESTIONS.map((suggestion) => (
-          <button
-            key={suggestion.command}
-            type="button"
-            onClick={() => {
-              setCommand(suggestion.command);
-              setDecision(suggestion.decision);
-            }}
-            className="rounded-md px-2 py-0.5 font-mono text-chip text-muted-foreground hover:bg-hover hover:text-foreground"
-          >
-            {suggestion.command}
-          </button>
-        ))}
-        <div className="ml-auto flex items-center gap-2">
-          <Button size="sm" variant="ghost" onClick={reset}>
-            Cancel
-          </Button>
-          <Button size="sm" type="submit" disabled={trimmed === ''} isBusy={isSaving}>
-            Add rule
-          </Button>
-        </div>
-      </div>
+      <FormActions
+        leading={
+          <>
+            <span className="text-meta text-muted-foreground">Try</span>
+            {SUGGESTIONS.map((suggestion) => (
+              <Button
+                key={suggestion.command}
+                size="xs"
+                variant="quiet"
+                onClick={() => {
+                  setCommand(suggestion.command);
+                  setDecision(suggestion.decision);
+                }}
+                className="font-mono"
+              >
+                {suggestion.command}
+              </Button>
+            ))}
+          </>
+        }
+      >
+        <Button size="sm" variant="ghost" onClick={reset} className="text-muted-foreground">
+          Cancel
+        </Button>
+        <Button size="sm" type="submit" disabled={trimmed === ''} isBusy={isSaving}>
+          Add rule
+        </Button>
+      </FormActions>
     </form>
   );
 };

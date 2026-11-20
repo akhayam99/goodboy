@@ -16,7 +16,7 @@
   "apps/desktop/src/app/components/MockScene/scenes/u26/p11.test.tsx": 1,
   "apps/desktop/src/app/components/MockScene/scenes/u26/rebase.test.tsx": 1,
   "apps/desktop/src/app/hooks/useAppOverlays/index.test.tsx": 1,
-  "apps/desktop/src/app/hooks/useAppOverlays/useSessionSurfaceEvents.test.tsx": 1,
+  "apps/desktop/src/app/hooks/useSessionSurfaceEvents/index.test.tsx": 1,
   "apps/desktop/src/features/actions/kinds/agent.auto.test.ts": 1,
   "apps/desktop/src/features/actions/kinds/artifact.edit.test.ts": 1,
   "apps/desktop/src/features/actions/kinds/artifact.open.test.ts": 1,

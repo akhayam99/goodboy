@@ -45,7 +45,7 @@ type HostLineParams = {
 const HOST_LINE: Readonly<Record<CodeHost, string>> = {
   github: 'The GitHub CLI or a token',
   gitlab: 'gitlab.com or your own server, with a token',
-  bitbucket: 'Bitbucket Cloud, with an app password',
+  bitbucket: 'Bitbucket Cloud, with an API token',
 };
 
 const hostLine = ({ host, isConnected, identity, pushingFolder }: HostLineParams): string => {

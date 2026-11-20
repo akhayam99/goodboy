@@ -1,5 +1,5 @@
 import { CHECK_STATE } from '../../../../store/slices/notifications/errorRecovery';
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { ProjectId } from '@goodboy/types';
 import { Band, Button, Listbox } from '@goodboy/ui';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
@@ -11,11 +11,12 @@ import { SettingRow } from './SettingRow';
 
 type SizeParams = {
   readonly status: { readonly bytes: number; readonly docs: number } | null;
+  readonly hasLoadFailed: boolean;
 };
 
-const sizeLineOf = ({ status }: SizeParams): string => {
+const sizeLineOf = ({ status, hasLoadFailed }: SizeParams): string => {
   if (status === null) {
-    return 'Reading the index';
+    return hasLoadFailed ? 'Not loaded' : 'Reading the index';
   }
   if (status.docs === 0) {
     return 'Empty, fills as you work';
@@ -35,9 +36,13 @@ export const SearchIndexBand = () => {
   const setExcluded = useAppStore((state) => state.setProjectSearchExcluded);
   const reportError = useAppStore((state) => state.reportError);
   const projects = useAppStore((state) => state.projects ?? EMPTY_ARRAY);
+  const [hasLoadFailed, setHasLoadFailed] = useState(false);
 
   useEffect(() => {
-    void loadStatus?.().catch(() => undefined);
+    void loadStatus?.().then(
+      () => setHasLoadFailed(false),
+      () => setHasLoadFailed(true),
+    );
   }, [loadStatus]);
 
   const options = useMemo(
@@ -49,7 +54,7 @@ export const SearchIndexBand = () => {
   );
   const excluded = status?.excludedProjectIds ?? [];
   const progress = searchProgressLabel({ status });
-  const size = sizeLineOf({ status });
+  const size = sizeLineOf({ status, hasLoadFailed });
 
   const changeExcluded = async ({ next }: ExcludedParams) => {
     const added = next.filter((id) => !excluded.includes(id));

@@ -104,11 +104,9 @@ fn status_of(path: &str, slot: Option<&LeaseSlot>, is_granted: bool) -> WriterLe
     WriterLeaseStatus {
         path: path.to_string(),
         holder: holder.map(|entry| entry.id.clone()),
-        token: if is_granted {
-            holder.map(|entry| entry.token.clone())
-        } else {
-            None
-        },
+        token: holder
+            .filter(|_| is_granted)
+            .map(|entry| entry.token.clone()),
         run_id: holder.and_then(|entry| entry.run_id.clone()),
         is_granted,
         has_exited: holder.map(|entry| entry.has_exited).unwrap_or(false),

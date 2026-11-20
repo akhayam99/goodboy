@@ -389,6 +389,29 @@ describe('store on sqlite: plan comments', () => {
     expect(useAppStore.getState().artifactCommentSends[PLAN_ID]).toBeUndefined();
   });
 
+  it('keeps the drafts and frees the send when they cannot be marked sent, and a retry sends once', async () => {
+    await add({ anchor: part({ index: 1 }), body: 'Why after BEGIN?' });
+    const sendTurn = stubSendTurn();
+    await storySqlite().execute('ALTER TABLE artifact_comments RENAME TO artifact_comments_off');
+
+    const failed = await useAppStore
+      .getState()
+      .sendArtifactComments({ sessionId: SESSION_ID, plan: planOf() });
+
+    expect(failed).toMatchObject({ kind: 'failed' });
+    expect(sendTurn).not.toHaveBeenCalled();
+    expect(useAppStore.getState().artifactCommentSends[PLAN_ID]).toBeUndefined();
+
+    await storySqlite().execute('ALTER TABLE artifact_comments_off RENAME TO artifact_comments');
+    const retried = await useAppStore
+      .getState()
+      .sendArtifactComments({ sessionId: SESSION_ID, plan: planOf() });
+
+    expect(retried).toEqual({ kind: 'unchanged' });
+    expect(sendTurn).toHaveBeenCalledTimes(1);
+    expect(statuses()).toEqual(['Why after BEGIN?:open']);
+  });
+
   it('returns the comments to drafts when the session budget blocks the turn', async () => {
     await add({ anchor: part({ index: 1 }), body: 'Why after BEGIN?' });
     useAppStore.setState({

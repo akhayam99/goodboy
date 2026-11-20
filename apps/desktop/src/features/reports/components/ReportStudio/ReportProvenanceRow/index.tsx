@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { cn, EmptyLine, Eyebrow, ICON_SIZE, Tooltip } from '@goodboy/ui';
+import { Chip, EmptyLine, Eyebrow, ICON_SIZE } from '@goodboy/ui';
 import type { AgentId, ArtifactId } from '@goodboy/types';
 import { CONCEPT_ICONS } from '../../../../../shared/components/conceptIcons';
 import type { ReportSourceLink } from '../../../reportSourceLinks';
@@ -13,8 +13,7 @@ type Props = {
 
 const COLLAPSED_LIMIT = 4;
 
-const chipClass =
-  'inline-flex min-w-0 max-w-[13rem] items-center gap-1 rounded-full border border-border-soft px-2 py-0.5 text-chip text-muted-foreground motion-safe:transition-colors hover:border-border hover:bg-hover hover:text-foreground';
+const SOURCE_CHIP = 'min-w-0 max-w-[13rem] shrink';
 
 export const ReportProvenanceRow = ({ reportType, links, onOpenAgent, onOpenArtifact }: Props) => {
   const [isExpanded, setIsExpanded] = useState(false);
@@ -34,43 +33,43 @@ export const ReportProvenanceRow = ({ reportType, links, onOpenAgent, onOpenArti
       )}
       {visible.map((link) => {
         const Glyph = link.kind === 'agent' ? CONCEPT_ICONS.agents : CONCEPT_ICONS.plans;
-        const hint = link.kind === 'agent' ? 'open the agent' : 'open the plan';
+        const hint = `${link.kind === 'agent' ? 'Open agent' : 'Open plan'} ${link.label}`;
         return (
-          <Tooltip key={`${link.kind}-${link.id}`} content={`${hint} ${link.label}`}>
-            <button
-              type="button"
-              className={cn(chipClass)}
-              aria-label={`${hint} ${link.label}`}
-              data-testid="report-source-chip"
-              onClick={() =>
-                link.kind === 'agent' ? onOpenAgent(link.id) : onOpenArtifact(link.id)
-              }
-            >
-              <Glyph size={ICON_SIZE.row} className="shrink-0" aria-hidden />
-              <span className="truncate">{link.label}</span>
-            </button>
-          </Tooltip>
+          <Chip
+            key={`${link.kind}-${link.id}`}
+            as="button"
+            kind="reference"
+            tone="neutral"
+            title={hint}
+            ariaLabel={hint}
+            testId="report-source-chip"
+            className={SOURCE_CHIP}
+            icon={<Glyph size={ICON_SIZE.row} className="shrink-0" aria-hidden />}
+            label={<span className="truncate">{link.label}</span>}
+            onClick={() => (link.kind === 'agent' ? onOpenAgent(link.id) : onOpenArtifact(link.id))}
+          />
         );
       })}
       {overflow > 0 && !isExpanded && (
-        <button
-          type="button"
-          className={cn(chipClass, 'shrink-0 tabular-nums')}
-          data-testid="report-sources-more"
+        <Chip
+          as="button"
+          kind="reference"
+          tone="neutral"
+          testId="report-sources-more"
+          className="tabular-nums"
+          label={`+${overflow} more`}
           onClick={() => setIsExpanded(true)}
-        >
-          +{overflow} more
-        </button>
+        />
       )}
       {overflow > 0 && isExpanded && (
-        <button
-          type="button"
-          className={cn(chipClass, 'shrink-0')}
-          data-testid="report-sources-less"
+        <Chip
+          as="button"
+          kind="reference"
+          tone="neutral"
+          testId="report-sources-less"
+          label="Show fewer"
           onClick={() => setIsExpanded(false)}
-        >
-          show fewer
-        </button>
+        />
       )}
     </div>
   );

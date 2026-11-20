@@ -117,7 +117,7 @@ describe('LocateMovedProjects', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'Details' }));
 
     await screen.findByText(
-      /Git links or saved versions could not be carried over for 1 folder\. saved versions: saved versions already exist/,
+      /Git links or saved versions couldn't be carried over for 1 folder\. saved versions: saved versions already exist/,
     );
   });
 
@@ -145,6 +145,39 @@ describe('LocateMovedProjects', () => {
 
     await screen.findByText('Moved 1 folder. 0 session folders are back.');
     expect(useAppStore.getState().projects[0]?.rootPath).toBe('/code/ledger-core');
+  });
+
+  it('keeps the undo after a failed undo and finishes it on retry', async () => {
+    render(<LocateMovedProjects workspaceId={WORKSPACE_ID} onChoose={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Move 1 folder' }));
+    await screen.findByText('Moved 1 folder. 2 session folders are back.');
+    stubStoryInvoke({
+      project_relocation_undo: async () => {
+        throw new Error('the folder is locked');
+      },
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Undo move' }));
+
+    await screen.findByRole('alert');
+    expect(useAppStore.getState().projects[0]?.rootPath).toBe('/code/ledger-core');
+    expect(screen.queryByRole('button', { name: /^Move \d+ folders?$/ })).toBeNull();
+
+    stubStoryInvoke({
+      project_relocation_undo: async () => ({
+        relocationId: 'r-1',
+        repairedGitLinks: true,
+        repairError: null,
+        restoredSessionFolders: 2,
+      }),
+      repo_identity: async () => ({ rootCommits: ['abc123'], remoteUrl: null }),
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Undo move' }));
+
+    await vi.waitFor(() => {
+      expect(useAppStore.getState().projectRelocationPhase).toBe('idle');
+    });
+    expect(useAppStore.getState().projects[0]?.rootPath).toBe('/old/ledger-core');
   });
 
   it('hands over to the folder picker', () => {

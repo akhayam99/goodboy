@@ -2,21 +2,26 @@ import { loadDecisionLedger, seedDecisionLedger } from '@goodboy/core/context';
 import { listContextSlotsForSession } from '@goodboy/db';
 import type { IsoDateTime, SessionId } from '@goodboy/types';
 import { tauriDatabase } from '../../../shared/lib/db';
+import { decisionReads } from './decisionReads';
 import { withDecisionsSlot } from './withDecisionsSlot';
 import type { GetFn, SetFn } from './types';
 
 export const loadSessionDecisions = (set: SetFn, get: GetFn) => {
   return async (sessionId: SessionId): Promise<void> => {
+    const claimed = decisionReads.claim({ key: sessionId });
     try {
       const ledger = await loadDecisionLedger({ db: tauriDatabase, sessionId });
       const slots = await listContextSlotsForSession(tauriDatabase, sessionId);
+      if (!claimed.isCurrent()) {
+        return;
+      }
       set((state) => ({
         sessionDecisions: { ...state.sessionDecisions, [sessionId]: ledger },
         sessionSlots: withDecisionsSlot({ state, sessionId, slots }),
       }));
     } catch (error) {
       console.warn('[decisions] loading the ledger failed', error);
-      if (get().sessionDecisions[sessionId] !== undefined) {
+      if (!claimed.isCurrent() || get().sessionDecisions[sessionId] !== undefined) {
         return;
       }
       const slot = get().sessionSlots[sessionId]?.find(

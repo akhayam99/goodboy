@@ -21,7 +21,7 @@ type Props = {
   readonly onMove: (params: { readonly index: number; readonly offset: -1 | 1 }) => void;
 };
 
-const HINT_EMPTY = 'Not set. Auto picks the model, as shown above. Add up to 3 to choose from.';
+const HINT_EMPTY = 'Not set. Auto picks the model. Add up to 3 to choose from.';
 const HINT_SET =
   'Auto picks one per step by its size, trying them in your order. Alt and the arrow keys move a model.';
 

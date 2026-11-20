@@ -184,18 +184,18 @@ pub fn project_materialize_result(
     let Some(sender) = sender else {
         return;
     };
-    let outcome: Outcome = if ok {
-        Ok(json!({
-            "mountId": mount_id.unwrap_or_default(),
-            "mountPath": mount_path.unwrap_or_default(),
-            "branch": branch.unwrap_or_default(),
-        }))
-    } else {
-        Err(error
+    if !ok {
+        let failure: Outcome = Err(error
             .unwrap_or_else(|| "materialization failed".to_string())
-            .into())
-    };
-    let _ = sender.send(outcome);
+            .into());
+        let _ = sender.send(failure);
+        return;
+    }
+    let _ = sender.send(Ok(json!({
+        "mountId": mount_id.unwrap_or_default(),
+        "mountPath": mount_path.unwrap_or_default(),
+        "branch": branch.unwrap_or_default(),
+    })));
 }
 
 #[cfg(test)]

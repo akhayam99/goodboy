@@ -46,7 +46,7 @@ export const strongTitle = ({ advice, nowMs }: AdviceParams): string => {
 };
 
 export const strongBody = ({ advice, nowMs }: AdviceParams): string => {
-  const tail = `A reset now gives back just the ${advice.weekUsedPercent}% of the week you used, and it can't be undone. It's worth most in a week that runs out early.`;
+  const tail = `A reset now gives back only the ${advice.weekUsedPercent}% of the week you used, and it can't be undone. It's worth most in a week that runs out early.`;
   if (!advice.isOnlyFiveHourFull || advice.fiveHourFreesAt === null) {
     return tail;
   }

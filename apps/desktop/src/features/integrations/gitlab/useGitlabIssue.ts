@@ -54,7 +54,7 @@ export const useGitlabIssue = ({ workspaceId, identifier, projectId }: Params): 
     const parsed = parseIdentifier(identifier);
     if (host == null || parsed == null) {
       setIssue(null);
-      setError(host == null ? null : 'Could not resolve the GitLab project for this issue.');
+      setError(host == null ? null : "Couldn't find the GitLab project for this issue.");
       setIsLoading(false);
       return;
     }

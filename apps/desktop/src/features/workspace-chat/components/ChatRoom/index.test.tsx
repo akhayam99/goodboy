@@ -244,13 +244,11 @@ describe('ChatRoom', () => {
     expect(composers).toHaveLength(1);
     expect(stage?.contains(composers[0] ?? null)).toBe(true);
     expect(stage?.closest('[data-page-column]')).not.toBeNull();
-    expect(screen.getByRole('heading', { name: 'Ask about Harborline' })).toBeDefined();
-    expect(
-      screen.getByText('Answers read the code and history of payments-api and ledger-core.'),
-    ).toBeDefined();
+    screen.getByRole('heading', { name: 'Ask about Harborline' });
+    screen.getByText('Answers read the code and history of payments-api and ledger-core.');
     expect(screen.queryAllByText(/Ask anything about/)).toHaveLength(0);
     expect(screen.queryAllByPlaceholderText(/Ask anything about/)).toHaveLength(0);
-    expect(screen.getByPlaceholderText('Ask a question')).toBeDefined();
+    screen.getByPlaceholderText('Ask a question');
   });
 
   it('docks the composer in the footer once a message exists', () => {
@@ -275,8 +273,8 @@ describe('ChatRoom', () => {
     store.projects = [];
     renderRoom({ chat: null });
 
-    expect(screen.getByText('Add a folder so answers can read its code.')).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Add project' })).toBeDefined();
+    screen.getByText('Add a project so answers can read its code.');
+    screen.getByRole('button', { name: 'Add project' });
     expect(screen.queryByRole('list', { name: 'Suggested questions' })).toBeNull();
   });
 
@@ -325,7 +323,7 @@ describe('ChatRoom', () => {
       fireEvent.click(screen.getByRole('button', { name: 'Start session' }));
     });
 
-    expect(screen.getByText('disk full')).toBeDefined();
+    screen.getByText('disk full');
     expect(store.recordChatLink).not.toHaveBeenCalled();
     expect(store.navigate).not.toHaveBeenCalled();
   });
@@ -359,7 +357,7 @@ describe('ChatRoom', () => {
 
     fireEvent.click(startWork());
     await screen.findByDisplayValue('Ask for consent again when the policy version changes.');
-    expect(screen.getByRole('button', { name: 'Remove payments-api' })).toBeDefined();
+    screen.getByRole('button', { name: 'Remove payments-api' });
 
     fireEvent.click(screen.getByRole('combobox', { name: 'Folder' }));
     fireEvent.change(screen.getByRole('combobox', { name: 'Search folders' }), {
@@ -370,7 +368,7 @@ describe('ChatRoom', () => {
     fireEvent.keyDown(screen.getByRole('combobox', { name: 'Search folders' }), {
       key: 'Escape',
     });
-    expect(screen.getByRole('button', { name: 'Remove ledger-core' })).toBeDefined();
+    screen.getByRole('button', { name: 'Remove ledger-core' });
 
     await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: 'Start session' }));
@@ -446,14 +444,14 @@ describe('ChatRoom', () => {
     expect(primary.hasAttribute('disabled')).toBe(true);
 
     fireEvent.click(screen.getByRole('combobox', { name: 'Session' }));
-    expect(screen.getByText('Active')).toBeDefined();
-    expect(screen.getByText('Recent')).toBeDefined();
+    screen.getByText('Active');
+    screen.getByText('Recent');
     const active = screen.getByRole('option', { name: /Refund flow/ });
     expect(active.textContent).toContain('payments-api');
     fireEvent.change(screen.getByRole('combobox', { name: 'Search sessions' }), {
       target: { value: 'zzz' },
     });
-    expect(screen.getByText('No sessions match')).toBeDefined();
+    screen.getByText('No sessions match');
     fireEvent.change(screen.getByRole('combobox', { name: 'Search sessions' }), {
       target: { value: 'audit' },
     });
@@ -631,7 +629,7 @@ describe('ChatRoom', () => {
     renderRoom({ chat: CHAT });
 
     const header = screen.getByRole('banner');
-    expect(within(header).getByRole('heading', { name: CHAT.title })).toBeDefined();
+    within(header).getByRole('heading', { name: CHAT.title });
     expect(within(header).queryByRole('button', { name: NAMES.startWorkFromChat })).toBeNull();
     expect(startWork()).toBeDefined();
     expect(within(header).queryByText(/Read only/)).toBeNull();
@@ -654,7 +652,7 @@ describe('ChatRoom', () => {
     store.chatMessages = { [CHAT_ID]: ANSWERED };
     renderRoom({ chat: CHAT });
 
-    expect(screen.getByText('Read only. Nothing is changed.')).toBeDefined();
+    screen.getByText('Read only. Nothing is changed.');
     expect(screen.queryByText(/Shift\+Enter/)).toBeNull();
     fireEvent.change(screen.getByRole('textbox', { name: 'Message' }), { target: { value: 'Hi' } });
     expect(tooltipTextOf({ element: screen.getByRole('button', { name: NAMES.send }) })).toBe(
@@ -676,7 +674,7 @@ describe('ChatRoom', () => {
     };
     renderRoom({ chat: CHAT });
 
-    expect(screen.getByText('GPT-5.6 Sol · High')).toBeDefined();
+    screen.getByText('GPT-5.6 Sol · High');
   });
 
   it('shows no sessions chip while the chat has no link', () => {
@@ -698,8 +696,8 @@ describe('ChatRoom', () => {
     expect(chip.getAttribute('aria-expanded')).toBe('false');
     fireEvent.click(chip);
     const dialog = screen.getByRole('dialog', { name: 'Linked sessions' });
-    expect(within(dialog).getByText('Ask for consent again when the policy changes')).toBeDefined();
-    expect(within(dialog).getByText(/running · started from this chat/)).toBeDefined();
+    within(dialog).getByText('Ask for consent again when the policy changes');
+    within(dialog).getByText(/running · started from this chat/);
     fireEvent.click(within(dialog).getByRole('button', { name: /^Open Ask for consent/ }));
 
     expect(store.navigate).toHaveBeenCalledWith({
@@ -716,7 +714,7 @@ describe('ChatRoom', () => {
 
     fireEvent.click(screen.getByRole('button', { name: '2 sessions: Linked sessions' }));
     const dialog = screen.getByRole('dialog', { name: 'Linked sessions' });
-    expect(within(dialog).getByText(/added from this chat/)).toBeDefined();
+    within(dialog).getByText(/added from this chat/);
   });
 
   it('hides a deleted session and drops the chip when none is left', () => {
@@ -759,10 +757,75 @@ describe('ChatRoom', () => {
     });
   });
 
+  it('puts the draft back and reports when the chat cannot be created', async () => {
+    const onCreated = vi.fn();
+    const failure = new Error('database is locked');
+    store.createChat.mockRejectedValueOnce(failure);
+    renderRoom({ chat: null, onCreated });
+    const box = screen.getByRole('textbox', { name: 'Message' });
+
+    fireEvent.change(box, { target: { value: 'Where do we validate IBANs?' } });
+    await act(async () => {
+      fireEvent.keyDown(box, { key: 'Enter' });
+    });
+
+    await waitFor(() => expect(box).toHaveProperty('value', 'Where do we validate IBANs?'));
+    expect(onCreated).not.toHaveBeenCalled();
+    expect(store.sendChatMessage).not.toHaveBeenCalled();
+    expect(store.reportError).toHaveBeenCalledWith(
+      expect.objectContaining({
+        title: "Couldn't send the message",
+        error: failure,
+        workspaceId: WORKSPACE_ID,
+      }),
+    );
+  });
+
+  it('says the chat could not load instead of a skeleton, and loads again on Retry', async () => {
+    const failure = new Error('database is locked');
+    store.loadChatMessages.mockRejectedValueOnce(failure);
+    renderRoom({ chat: CHAT });
+
+    const alert = await screen.findByRole('alert');
+    within(alert).getByText("Couldn't load this chat");
+    expect(document.querySelector('[aria-busy="true"]')).toBeNull();
+
+    await act(async () => {
+      fireEvent.click(within(alert).getByRole('button', { name: NAMES.retry }));
+    });
+
+    expect(store.loadChatMessages).toHaveBeenCalledTimes(2);
+    expect(store.loadChatMessages).toHaveBeenLastCalledWith({ chatId: CHAT_ID });
+    expect(screen.queryByRole('alert')).toBeNull();
+  });
+
+  it('reports a model pick the chat could not save', async () => {
+    store.chatMessages = { [CHAT_ID]: [] };
+    const failure = new Error('database is locked');
+    store.setChatModel.mockRejectedValueOnce(failure);
+    renderRoom({ chat: CHAT });
+
+    fireEvent.click(screen.getByRole('button', { name: /^Model for this chat: / }));
+    const dialog = screen.getByRole('dialog', { name: 'Model for this chat' });
+    await act(async () => {
+      fireEvent.click(within(dialog).getByRole('button', { name: 'High' }));
+    });
+
+    await waitFor(() =>
+      expect(store.reportError).toHaveBeenCalledWith(
+        expect.objectContaining({
+          title: "Couldn't change the chat model",
+          error: failure,
+          workspaceId: WORKSPACE_ID,
+        }),
+      ),
+    );
+  });
+
   it('shows the empty state with suggestions from the projects', async () => {
     renderRoom({ chat: null });
 
-    expect(screen.getByRole('heading', { name: 'Ask about Harborline' })).toBeDefined();
+    screen.getByRole('heading', { name: 'Ask about Harborline' });
     fireEvent.click(screen.getByRole('button', { name: /What changed in payments-api/ }));
     await waitFor(() => expect(store.createChat).toHaveBeenCalled());
   });
@@ -782,10 +845,31 @@ describe('ChatRoom', () => {
     store.chatStreams = { [CHAT_ID]: { runId: 'run-1', messageId: 'x', isStopping: false } };
     renderRoom({ chat: CHAT });
 
-    expect(screen.getByText('It lives in payments-api')).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Read 1 file' })).toBeDefined();
+    screen.getByText('It lives in payments-api');
+    screen.getByRole('button', { name: 'Read 1 file' });
     fireEvent.click(screen.getByRole('button', { name: 'Stop' }));
     expect(store.stopChatReply).toHaveBeenCalledWith({ chatId: CHAT_ID });
+  });
+
+  it('reports a Stop that failed', async () => {
+    store.chatMessages = {
+      [CHAT_ID]: [
+        messageOf({ role: 'user', content: 'Where is the consent step defined?', status: 'done' }),
+        messageOf({ role: 'assistant', content: 'It lives', status: 'streaming' }),
+      ],
+    };
+    store.chatStreams = { [CHAT_ID]: { runId: 'run-1', messageId: 'x', isStopping: false } };
+    const failure = new Error('the provider did not answer the cancel');
+    store.stopChatReply.mockRejectedValueOnce(failure);
+    renderRoom({ chat: CHAT });
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Stop' }));
+    });
+
+    expect(store.reportError).toHaveBeenCalledWith(
+      expect.objectContaining({ title: "Couldn't stop the reply", error: failure }),
+    );
   });
 
   it('says it is reading before the first words arrive', () => {
@@ -808,9 +892,9 @@ describe('ChatRoom', () => {
 
     fireEvent.click(screen.getByRole('button', { name: /^Model for this chat: / }));
     const dialog = screen.getByRole('dialog', { name: 'Model for this chat' });
-    expect(within(dialog).getByText(/OpenCode can't chat/)).toBeDefined();
-    expect(within(dialog).getByText(/Chat needs a provider that can run read-only/)).toBeDefined();
-    expect(within(dialog).getByText('Effort')).toBeDefined();
+    within(dialog).getByText(/OpenCode can't chat/);
+    within(dialog).getByText(/Chat needs a provider that can run read-only/);
+    within(dialog).getByText('Effort');
     expect(within(dialog).queryByRole('button', { name: /OpenCode/ })).toBeNull();
   });
 
@@ -903,8 +987,8 @@ describe('ChatRoom', () => {
     const dialog = screen.getByRole('dialog', { name: 'Model for this chat' });
 
     expect(within(dialog).queryByText('New chats start on automatic.')).toBeNull();
-    expect(within(dialog).getByText('New chats use another default model.')).toBeDefined();
-    expect(within(dialog).getByRole('button', { name: 'Make default' })).toBeDefined();
+    within(dialog).getByText('New chats use another default model.');
+    within(dialog).getByRole('button', { name: 'Make default' });
   });
 
   it('waits for the saved default on a cold cache before creating the first chat', async () => {

@@ -35,7 +35,7 @@ export const PinnedOffLine = ({ count, total, onProviderIds, isDisabled, onConfi
   return (
     <div className="flex min-w-0 items-center justify-between gap-3">
       <p className="min-w-0 text-meta text-muted-foreground">
-        {`${leadOf({ onProviderIds })}, ${count} of ${pluralize(total, 'agent')} use${count === 1 ? 's' : ''} a pin that cannot run. Auto picks apply.`}
+        {`${leadOf({ onProviderIds })}, ${count} of ${pluralize(total, 'agent')} use${count === 1 ? 's' : ''} a pin that can't run. Auto picks apply.`}
       </p>
       <ConfirmPopover
         role="alert"

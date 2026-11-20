@@ -19,7 +19,7 @@ export const ContextVisibility = ({ visibility }: Props) => (
         </span>
       ) : null}
       {visibility.chips.map((chip) => (
-        <Tooltip key={chip.key} content={chip.isReading ? undefined : 'Does not receive this'}>
+        <Tooltip key={chip.key} content={chip.isReading ? undefined : "Doesn't receive this"}>
           <span
             className={cn(
               CHIP,

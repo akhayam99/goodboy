@@ -138,7 +138,7 @@ describe('the Move to Auto panel', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Let the Lead take it from here' }));
 
-    expect(await screen.findByText('The Lead is not available in this build.')).toBeDefined();
+    expect(await screen.findByText("The Lead isn't available in this build.")).toBeDefined();
     expect(await getAdoptionOfAgent({ db, agentId: SOURCE })).toBeNull();
   });
 

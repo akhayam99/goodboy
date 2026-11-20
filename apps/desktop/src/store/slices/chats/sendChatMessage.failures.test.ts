@@ -250,6 +250,25 @@ describe('failure modes of one Chat turn', () => {
     expect(control.cancels).toEqual([true]);
   });
 
+  it('F6b a Stop that fails puts Stop back and lets the reply finish', async () => {
+    const chatId = await startChat();
+    const pending = gate({ text: 'Retries double because ' });
+    const sending = useAppStore.getState().sendChatMessage({ chatId, content: 'Why retries?' });
+    await pending.started;
+    const failure = new Error('the provider did not answer the cancel');
+    if (holder.backend === null) {
+      throw new Error('no chat backend');
+    }
+    vi.spyOn(holder.backend, 'cancelTurn').mockRejectedValueOnce(failure);
+
+    await expect(useAppStore.getState().stopChatReply({ chatId })).rejects.toBe(failure);
+    expect(useAppStore.getState().chatStreams[chatId]?.isStopping).toBe(false);
+    pending.release();
+    await sending;
+
+    expect(messagesOf({ chatId }).at(-1)).toMatchObject({ status: 'done' });
+  });
+
   it('F7 a model change mid-turn leaves the running reply stamped with the model it used', async () => {
     const chatId = await startChat();
     const pending = gate({ text: 'Retries double because ' });
@@ -293,5 +312,33 @@ describe('failure modes of one Chat turn', () => {
     const replies = messagesOf({ chatId }).filter((message) => message.role === 'assistant');
     expect(replies.map((reply) => reply.content)).toEqual(['First answer.', 'Second answer.']);
     expect(replies[0]?.reads).toEqual([]);
+  });
+
+  it('F9 a question sent before the chat loaded keeps the earlier turns', async () => {
+    const chatId = await startChat();
+    const first = gate({ text: 'Retries live in the webhook handler.' });
+    const firstSend = useAppStore
+      .getState()
+      .sendChatMessage({ chatId, content: 'Where are retries?' });
+    await first.started;
+    first.release();
+    await firstSend;
+    const { [chatId]: _loaded, ...unloaded } = useAppStore.getState().chatMessages;
+    useAppStore.setState({ chatMessages: unloaded });
+
+    const second = gate({ text: 'Three times.' });
+    const secondSend = useAppStore.getState().sendChatMessage({ chatId, content: 'How often?' });
+    const { request } = await second.started;
+    const lateLoad = useAppStore.getState().loadChatMessages({ chatId });
+    second.release();
+    await Promise.all([secondSend, lateLoad]);
+
+    expect(request.prompt).toContain('Where are retries?');
+    expect(messagesOf({ chatId }).map((message) => message.content)).toEqual([
+      'Where are retries?',
+      'Retries live in the webhook handler.',
+      'How often?',
+      'Three times.',
+    ]);
   });
 });

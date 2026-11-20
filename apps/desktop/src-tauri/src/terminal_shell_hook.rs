@@ -1,5 +1,4 @@
 use std::path::{Path, PathBuf};
-use std::sync::atomic::{AtomicU64, Ordering};
 
 const USER_DIR_ENV: &str = "GOODBOY_USER_ZDOTDIR";
 const STARTUP_FILES: [&str; 4] = [".zshenv", ".zprofile", ".zshrc", ".zlogin"];
@@ -70,23 +69,11 @@ fn is_zsh(shell: &str) -> bool {
         .is_some_and(|name| name == "zsh")
 }
 
-static TEMP_SEQ: AtomicU64 = AtomicU64::new(0);
-
 fn write_if_changed(path: &Path, text: &str) -> std::io::Result<()> {
     if std::fs::read_to_string(path).is_ok_and(|current| current == text) {
         return Ok(());
     }
-    let temp = path.with_extension(format!(
-        "tmp-{}-{}",
-        std::process::id(),
-        TEMP_SEQ.fetch_add(1, Ordering::Relaxed)
-    ));
-    std::fs::write(&temp, text)?;
-    if let Err(error) = std::fs::rename(&temp, path) {
-        let _ = std::fs::remove_file(&temp);
-        return Err(error);
-    }
-    Ok(())
+    crate::util::write_atomic(path, text.as_bytes())
 }
 
 fn write_zsh_files(dir: &Path) -> std::io::Result<()> {

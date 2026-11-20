@@ -233,6 +233,26 @@ describe('changelog slice', () => {
     expect(fetchReleaseChangelogMock).toHaveBeenCalledOnce();
   });
 
+  it('drops a late answer for an older update target', async () => {
+    let answerOlder: (text: string) => void = () => undefined;
+    fetchReleaseChangelogMock.mockImplementationOnce(
+      () =>
+        new Promise<string>((resolve) => {
+          answerOlder = resolve;
+        }),
+    );
+    fetchReleaseChangelogMock.mockResolvedValueOnce(fetchedChangelog);
+    const { slice, getState } = harness();
+
+    const older = slice.loadChangelogUpcoming({ target: '0.12.3' });
+    await vi.waitFor(() => expect(fetchReleaseChangelogMock).toHaveBeenCalledOnce());
+    await slice.loadChangelogUpcoming({ target: '0.13.0' });
+    answerOlder(fetchedChangelog);
+    await older;
+
+    expect(getState().changelogUpcoming?.target).toBe('0.13.0');
+  });
+
   it('leaves nothing loaded when the fetch fails, so a later open tries again', async () => {
     fetchReleaseChangelogMock.mockRejectedValueOnce(new Error('offline'));
     fetchReleaseChangelogMock.mockResolvedValueOnce(fetchedChangelog);

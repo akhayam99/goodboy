@@ -25,11 +25,7 @@ pub struct Snapshot {
 
 impl Snapshot {
     pub fn total_chunks(&self) -> usize {
-        if self.body.is_empty() {
-            0
-        } else {
-            self.body.len().div_ceil(CHUNK_RAW_BYTES)
-        }
+        self.body.len().div_ceil(CHUNK_RAW_BYTES)
     }
 
     pub fn chunk_b64(&self, index: usize) -> String {
@@ -53,12 +49,11 @@ impl ChangeProbe {
 
     pub fn changed(&mut self) -> bool {
         let v = read_data_version(&self.conn);
-        if v != self.last {
-            self.last = v;
-            true
-        } else {
-            false
+        if v == self.last {
+            return false;
         }
+        self.last = v;
+        true
     }
 }
 

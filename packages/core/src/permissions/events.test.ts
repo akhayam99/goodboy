@@ -1,10 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import type { IsoDateTime, PermissionRuleId, ProviderRunId } from '@goodboy/types';
-import { createPermissionDecisionEvent, createPermissionRequestEvent } from './events';
+import { brandId, type IsoDateTime, type ProviderRunId } from '@goodboy/types';
+import { createPermissionRequestEvent } from './events';
 
-const RUN_ID = 'run-1' as ProviderRunId;
-const AT = '2026-01-01T00:00:00.000Z' as IsoDateTime;
-const RULE_ID = 'rule-abc' as PermissionRuleId;
+const RUN_ID = brandId<ProviderRunId>({ value: 'run-1' });
+const AT = brandId<IsoDateTime>({ value: '2026-01-01T00:00:00.000Z' });
 
 describe('createPermissionRequestEvent', () => {
   it('produces a permission_request event with correct shape', () => {
@@ -32,70 +31,5 @@ describe('createPermissionRequestEvent', () => {
       at: AT,
     });
     expect(event.input).toBeNull();
-  });
-});
-
-describe('createPermissionDecisionEvent', () => {
-  it('produces an allow decision with ruleId', () => {
-    const event = createPermissionDecisionEvent({
-      runId: RUN_ID,
-      toolUseId: 'tu-1',
-      decision: 'allow',
-      ruleId: RULE_ID,
-      decidedBy: 'engine',
-      at: AT,
-    });
-    expect(event.kind).toBe('permission_decision');
-    expect(event.decision).toBe('allow');
-    expect(event.ruleId).toBe(RULE_ID);
-    expect(event.decidedBy).toBe('engine');
-  });
-
-  it('produces a deny decision with null ruleId (default fallback)', () => {
-    const event = createPermissionDecisionEvent({
-      runId: RUN_ID,
-      toolUseId: 'tu-2',
-      decision: 'deny',
-      ruleId: null,
-      decidedBy: 'default',
-      at: AT,
-    });
-    expect(event.decision).toBe('deny');
-    expect(event.ruleId).toBeNull();
-    expect(event.decidedBy).toBe('default');
-  });
-
-  it('supports decidedBy user', () => {
-    const event = createPermissionDecisionEvent({
-      runId: RUN_ID,
-      toolUseId: 'tu-3',
-      decision: 'allow',
-      ruleId: null,
-      decidedBy: 'user',
-      at: AT,
-    });
-    expect(event.decidedBy).toBe('user');
-  });
-
-  it('carries the chosen scope, and omits it when none was chosen', () => {
-    const scoped = createPermissionDecisionEvent({
-      runId: RUN_ID,
-      toolUseId: 'tu-4',
-      decision: 'allow',
-      scope: 'workspace',
-      ruleId: null,
-      decidedBy: 'user',
-      at: AT,
-    });
-    const unscoped = createPermissionDecisionEvent({
-      runId: RUN_ID,
-      toolUseId: 'tu-5',
-      decision: 'allow',
-      ruleId: null,
-      decidedBy: 'engine',
-      at: AT,
-    });
-    expect(scoped.scope).toBe('workspace');
-    expect('scope' in unscoped).toBe(false);
   });
 });

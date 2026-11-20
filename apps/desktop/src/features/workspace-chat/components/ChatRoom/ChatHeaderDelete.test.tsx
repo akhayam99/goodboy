@@ -133,6 +133,51 @@ describe('ChatHeaderDelete', () => {
     await waitFor(async () => expect((await remaining())?.[0]?.archivedAt).toBeNull());
   });
 
+  it('stays in the room and reports when the delete fails', async () => {
+    const { onRemoved } = await open();
+    const failure = new Error('database is locked');
+    if (holder.backend === null) {
+      throw new Error('no chat backend');
+    }
+    vi.spyOn(holder.backend, 'deleteChats').mockRejectedValueOnce(failure);
+    const reportError = vi.spyOn(useAppStore.getState(), 'reportError');
+    fireEvent.click(screen.getByRole('button', { name: 'Delete chat' }));
+
+    fireEvent.click(
+      within(screen.getByRole('dialog')).getByRole('button', { name: 'Delete chat' }),
+    );
+
+    await waitFor(() =>
+      expect(reportError).toHaveBeenCalledWith(
+        expect.objectContaining({ title: "Couldn't delete the chat", error: failure }),
+      ),
+    );
+    expect(onRemoved).not.toHaveBeenCalled();
+    expect(await remaining()).toHaveLength(1);
+  });
+
+  it('stays in the room with no Undo and reports when the archive fails', async () => {
+    const { onRemoved } = await open();
+    const failure = new Error('database is locked');
+    if (holder.backend === null) {
+      throw new Error('no chat backend');
+    }
+    vi.spyOn(holder.backend, 'setArchived').mockRejectedValueOnce(failure);
+    const reportError = vi.spyOn(useAppStore.getState(), 'reportError');
+    fireEvent.click(screen.getByRole('button', { name: 'Delete chat' }));
+
+    fireEvent.click(screen.getByRole('button', { name: 'Archive instead' }));
+
+    await waitFor(() =>
+      expect(reportError).toHaveBeenCalledWith(
+        expect.objectContaining({ title: "Couldn't archive the chat", error: failure }),
+      ),
+    );
+    expect(onRemoved).not.toHaveBeenCalled();
+    expect(screen.queryByRole('button', { name: 'Undo' })).toBeNull();
+    expect((await remaining())?.[0]?.archivedAt).toBeNull();
+  });
+
   it('does not offer Archive instead on a chat that is already archived', async () => {
     await open({ isArchived: true });
 

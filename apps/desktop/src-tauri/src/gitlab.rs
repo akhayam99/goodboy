@@ -186,7 +186,10 @@ async fn get_json_paged_marked<T: serde::de::DeserializeOwned>(
     path: &str,
 ) -> Result<Paged<T>, GitlabError> {
     let base = api_base(host)?;
-    let separator = if path.contains('?') { '&' } else { '?' };
+    let separator = match path.contains('?') {
+        true => '&',
+        false => '?',
+    };
     let mut collected: Vec<T> = Vec::new();
     let mut page: u32 = 1;
     let mut is_truncated = false;
@@ -403,7 +406,10 @@ pub async fn gitlab_fetch_issue(
 fn issues_by_iids_path(project_path: &str, issue_iids: &[i64]) -> String {
     let mut path = format!("/projects/{}/issues", encode_project_path(project_path));
     for (index, iid) in issue_iids.iter().enumerate() {
-        path.push(if index == 0 { '?' } else { '&' });
+        path.push(match index {
+            0 => '?',
+            _ => '&',
+        });
         path.push_str(&format!("iids[]={}", iid));
     }
     path
@@ -704,6 +710,13 @@ pub struct GitlabMrChanges {
     pub changes: Vec<GitlabMrChange>,
 }
 
+fn diff_side(is_absent: bool, prefix: &str, path: &str) -> String {
+    if is_absent {
+        return "/dev/null".to_string();
+    }
+    format!("{prefix}/{path}")
+}
+
 fn is_rename(change: &GitlabMrChange) -> bool {
     !change.new_file
         && !change.deleted_file
@@ -727,16 +740,14 @@ fn assemble_mr_diff(changes: &[GitlabMrChange]) -> String {
                 continue;
             }
         }
-        if change.new_file {
-            out.push_str("--- /dev/null\n");
-        } else {
-            out.push_str(&format!("--- a/{}\n", change.old_path));
-        }
-        if change.deleted_file {
-            out.push_str("+++ /dev/null\n");
-        } else {
-            out.push_str(&format!("+++ b/{}\n", change.new_path));
-        }
+        out.push_str(&format!(
+            "--- {}\n",
+            diff_side(change.new_file, "a", &change.old_path)
+        ));
+        out.push_str(&format!(
+            "+++ {}\n",
+            diff_side(change.deleted_file, "b", &change.new_path)
+        ));
         out.push_str(&change.diff);
         if !change.diff.is_empty() && !change.diff.ends_with('\n') {
             out.push('\n');

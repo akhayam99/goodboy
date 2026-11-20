@@ -112,7 +112,7 @@ export const resolveQuestionDelegate = (set: SetFn, get: GetFn) => {
     void get().emitNotification({
       kind: 'agent-auto-spawn',
       severity: 'warning',
-      title: 'The delegated agent did not answer',
+      title: "The delegated agent didn't answer",
       body: `${question.text} stays open. Answer it yourself or hand it over again.`,
       sessionId,
       action: { kind: 'open-agent', sessionId, agentId },

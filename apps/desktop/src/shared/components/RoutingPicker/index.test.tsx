@@ -928,9 +928,9 @@ describe('RoutingPicker', () => {
     );
     fireEvent.click(screen.getByRole('button', { name: /routing/i }));
     expect(tooltipTextOf({ element: screen.getByRole('button', { name: 'Codex' }) })).toBe(
-      'Codex is not connected',
+      "Codex isn't connected",
     );
-    expect(screen.getByText('Codex is not connected')).toBeDefined();
+    expect(screen.getByText("Codex isn't connected")).toBeDefined();
     expect(screen.queryByRole('button', { name: 'Cursor' })).toBeNull();
   });
 

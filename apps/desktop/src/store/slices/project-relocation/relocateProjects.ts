@@ -5,18 +5,19 @@ import { projectRelocate } from '../../../features/workspace/projectRelocation';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { repoIdentity } from '../../../shared/lib/repo';
 import type { GetFn, SetFn } from '../../slice-types';
+import { isPendingRelocation } from './isPendingRelocation';
 import type { CompletedProjectRelocation } from './state';
 
 export const relocateProjects = (set: SetFn, get: GetFn) => {
   return async (): Promise<void> => {
-    const selected = get().projectRelocationCandidates.filter(
-      (candidate) => candidate.isSelected && candidate.toRoot !== null,
+    const selected = get().projectRelocationCandidates.filter((candidate) =>
+      isPendingRelocation({ candidate }),
     );
     if (selected.length === 0) {
       return;
     }
     set({ projectRelocationPhase: 'moving', projectRelocationError: null });
-    const completed: Array<CompletedProjectRelocation> = [];
+    const completed: Array<CompletedProjectRelocation> = [...get().projectRelocationCompleted];
     try {
       for (const candidate of selected) {
         set((state) => ({
@@ -82,15 +83,19 @@ export const relocateProjects = (set: SetFn, get: GetFn) => {
           restoredSessionFolders: result.restoredSessionFolders,
           repairedGitLinks: result.repairedGitLinks,
           repairError: result.repairError,
+          isUndone: false,
         });
       }
       set({ projectRelocationCompleted: completed, projectRelocationPhase: 'success' });
     } catch (error: unknown) {
-      set({
+      set((state) => ({
+        projectRelocationCandidates: state.projectRelocationCandidates.map((entry) =>
+          entry.status === 'updating' ? { ...entry, status: 'ready' } : entry,
+        ),
         projectRelocationCompleted: completed,
         projectRelocationPhase: 'error',
         projectRelocationError: formatError(error),
-      });
+      }));
     }
   };
 };

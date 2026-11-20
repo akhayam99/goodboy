@@ -17,19 +17,19 @@ type Props = {
 
 export const ResolvedThread = ({ thread, onOpenUrl }: Props) => {
   const now = useNow(30_000);
-  const [open, setOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
   const { head } = thread;
 
   return (
     <TranscriptDisclosure
       tone="success"
-      open={open}
+      open={isOpen}
       header={
         <TranscriptRowHeader
           tone="success"
           grouped
-          open={open}
-          onToggle={() => setOpen((v) => !v)}
+          open={isOpen}
+          onToggle={() => setIsOpen((v) => !v)}
           icon={<CheckCheck size={ICON_SIZE.row} aria-hidden />}
           eyebrow="resolved"
           badge={

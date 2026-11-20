@@ -378,7 +378,7 @@ describe('a rebase that stopped on a conflict', () => {
     ).toMatchObject({
       state: 'auto-resolving',
       title: 'The Lead is rebasing on main',
-      line: '1 of 2 files resolved. It asks you here if a conflict is not clear.',
+      line: "1 of 2 files resolved. It asks you in the session when a conflict isn't clear.",
     });
     expect(
       rebaseJobOf({

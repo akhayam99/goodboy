@@ -213,11 +213,17 @@ pub(crate) fn parse_porcelain(stdout: &str) -> Vec<WorktreeInfo> {
         for line in block.lines() {
             if let Some(rest) = line.strip_prefix("worktree ") {
                 path = rest.to_string();
-            } else if let Some(rest) = line.strip_prefix("HEAD ") {
+                continue;
+            }
+            if let Some(rest) = line.strip_prefix("HEAD ") {
                 head = rest.to_string();
-            } else if let Some(rest) = line.strip_prefix("branch ") {
+                continue;
+            }
+            if let Some(rest) = line.strip_prefix("branch ") {
                 branch = Some(rest.strip_prefix("refs/heads/").unwrap_or(rest).to_string());
-            } else if line == "detached" {
+                continue;
+            }
+            if line == "detached" {
                 branch = None;
             }
         }

@@ -25,11 +25,14 @@ pub fn write_max_mode_config(source: &Path, target: &Path) -> io::Result<()> {
 
     fs::create_dir_all(target)?;
     let output = serde_json::to_vec_pretty(&config).map_err(io::Error::other)?;
-    fs::write(target.join("cli-config.json"), output)?;
+    crate::util::write_atomic(&target.join("cli-config.json"), &output)?;
 
     let source_permissions = source.join("permissions.json");
     if source_permissions.exists() {
-        fs::copy(source_permissions, target.join("permissions.json"))?;
+        crate::util::write_atomic(
+            &target.join("permissions.json"),
+            &fs::read(source_permissions)?,
+        )?;
     }
 
     Ok(())

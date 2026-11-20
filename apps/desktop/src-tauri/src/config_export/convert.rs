@@ -12,24 +12,22 @@ pub(super) fn workspace_slug(name: &str, id: &str) -> String {
     let mut prefix = String::new();
     let mut pending_dash = false;
     for ch in name.to_lowercase().chars() {
-        if ch.is_ascii_alphanumeric() {
-            if pending_dash && !prefix.is_empty() {
-                prefix.push('-');
-            }
-            pending_dash = false;
-            prefix.push(ch);
-        } else {
+        if !ch.is_ascii_alphanumeric() {
             pending_dash = true;
+            continue;
         }
+        if pending_dash && !prefix.is_empty() {
+            prefix.push('-');
+        }
+        pending_dash = false;
+        prefix.push(ch);
         if prefix.len() >= 32 {
             break;
         }
     }
-    let stem = if prefix.is_empty() {
-        "workspace"
-    } else {
-        prefix.as_str()
-    };
+    let stem = Some(prefix.as_str())
+        .filter(|value| !value.is_empty())
+        .unwrap_or("workspace");
     let suffix: String = id.chars().take(8).collect();
     format!("{stem}-{suffix}")
 }

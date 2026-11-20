@@ -103,7 +103,6 @@ vi.mock('@goodboy/core/github', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@goodboy/core/github')>()),
   detectRepoSlug,
   fetchLinkedIssues: vi.fn(async () => []),
-  getPrForBranch: vi.fn(async () => null),
   listPrsForBranch: vi.fn(async () => []),
   toCachedPullRequest: vi.fn(() => null),
 }));

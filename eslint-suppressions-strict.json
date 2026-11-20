@@ -329,11 +329,6 @@
       "count": 1
     }
   },
-  "apps/desktop/src/features/integrations/linear/LinearFormBody.tsx": {
-    "@typescript-eslint/strict-boolean-expressions": {
-      "count": 1
-    }
-  },
   "apps/desktop/src/features/integrations/linear/LinearStudio/useLinearIssues.ts": {
     "@typescript-eslint/strict-boolean-expressions": {
       "count": 6
@@ -384,7 +379,7 @@
       "count": 1
     }
   },
-  "apps/desktop/src/features/palette/hooks/useCommandEntries.ts": {
+  "apps/desktop/src/features/palette/hooks/useCommandEntries/index.ts": {
     "@typescript-eslint/strict-boolean-expressions": {
       "count": 2
     }
@@ -419,19 +414,9 @@
       "count": 2
     }
   },
-  "apps/desktop/src/features/providers/components/ProviderStudio/ProviderCredentialsSection.tsx": {
-    "@typescript-eslint/strict-boolean-expressions": {
-      "count": 2
-    }
-  },
   "apps/desktop/src/features/providers/providers.ts": {
     "@typescript-eslint/strict-boolean-expressions": {
       "count": 3
-    }
-  },
-  "apps/desktop/src/features/quick-actions/QuickActionsPopover/index.tsx": {
-    "@typescript-eslint/strict-boolean-expressions": {
-      "count": 2
     }
   },
   "apps/desktop/src/features/quick-actions/grammar.ts": {
@@ -1119,16 +1104,6 @@
       "count": 1
     }
   },
-  "packages/core/src/github/__tests__/cache.test.ts": {
-    "@typescript-eslint/strict-boolean-expressions": {
-      "count": 2
-    }
-  },
-  "packages/core/src/github/cache.ts": {
-    "@typescript-eslint/strict-boolean-expressions": {
-      "count": 3
-    }
-  },
   "packages/core/src/github/details.ts": {
     "@typescript-eslint/strict-boolean-expressions": {
       "count": 4
@@ -1155,16 +1130,6 @@
     }
   },
   "packages/core/src/monitoring/attributePorts.ts": {
-    "@typescript-eslint/strict-boolean-expressions": {
-      "count": 1
-    }
-  },
-  "packages/core/src/planner/parser.ts": {
-    "@typescript-eslint/strict-boolean-expressions": {
-      "count": 1
-    }
-  },
-  "packages/core/src/planner/prompt.ts": {
     "@typescript-eslint/strict-boolean-expressions": {
       "count": 1
     }
@@ -1261,7 +1226,7 @@
   },
   "packages/ui/src/components/Dialog.tsx": {
     "@typescript-eslint/strict-boolean-expressions": {
-      "count": 10
+      "count": 9
     }
   },
   "packages/ui/src/components/Eyebrow.tsx": {

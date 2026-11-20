@@ -8,6 +8,7 @@ const { state } = vi.hoisted(() => ({
   state: {
     answerOpenQuestions: vi.fn(async () => undefined),
     dismissOpenQuestion: vi.fn(async () => undefined),
+    reportError: vi.fn(async () => undefined),
     sendQuestionAsMessage: vi.fn(async (): Promise<boolean> => true),
     navigate: vi.fn(),
     loadAgentTranscript: vi.fn(async () => undefined),
@@ -231,6 +232,24 @@ describe('OpenQuestionCluster', () => {
     renderCluster([dbQuestion]);
     fireEvent.click(screen.getByRole('button', { name: 'Dismiss question' }));
     expect(state.dismissOpenQuestion).toHaveBeenCalledWith('sess-1', dbQuestion);
+  });
+
+  it('reports a dismiss that failed', async () => {
+    const failure = new Error('database is locked');
+    state.dismissOpenQuestion.mockRejectedValueOnce(failure);
+    renderCluster([dbQuestion]);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Dismiss question' }));
+
+    await waitFor(() =>
+      expect(state.reportError).toHaveBeenCalledWith(
+        expect.objectContaining({
+          title: "Couldn't dismiss the question",
+          error: failure,
+          sessionId: 'sess-1',
+        }),
+      ),
+    );
   });
 });
 

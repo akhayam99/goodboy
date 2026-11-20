@@ -1,6 +1,12 @@
 // @vitest-environment node
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { IsoDateTime, Project, ProjectId, WorkspaceId } from '@goodboy/types';
+import {
+  brandId,
+  type IsoDateTime,
+  type Project,
+  type ProjectId,
+  type WorkspaceId,
+} from '@goodboy/types';
 import type { AppStore } from '../../store';
 import type { GetFn, SetFn } from '../../slice-types';
 import { projectRelocationInitialState } from './state';
@@ -206,6 +212,134 @@ describe('project relocation slice', () => {
 
     expect(store.state.projectRelocationPhase).toBe('error');
     expect(store.state.projectRelocationError).toBe('the folder is locked');
+  });
+
+  describe('with two moved folders', () => {
+    const SECOND_ID = brandId<ProjectId>({ value: 'project-notify' });
+    const twoFolders = () => {
+      vi.mocked(crypto.randomUUID)
+        .mockReturnValueOnce('00000000-0000-4000-8000-000000000001')
+        .mockReturnValueOnce('00000000-0000-4000-8000-000000000002');
+      const store = harness();
+      store.set({
+        projects: [project, { ...project, id: SECOND_ID, rootPath: '/old/notify-relay' }],
+        projectRelocationPhase: 'preview',
+        projectRelocationCandidates: [
+          {
+            projectId: PROJECT_ID,
+            name: 'ledger-core',
+            fromRoot: '/old/ledger-core',
+            toRoot: '/new/ledger-core',
+            verdict: 'same_repository',
+            identity: null,
+            isSelected: true,
+            status: 'ready',
+          },
+          {
+            projectId: SECOND_ID,
+            name: 'notify-relay',
+            fromRoot: '/old/notify-relay',
+            toRoot: '/new/notify-relay',
+            verdict: 'same_repository',
+            identity: null,
+            isSelected: true,
+            status: 'ready',
+          },
+        ],
+      });
+      return store;
+    };
+
+    it('retries only the folder that failed and keeps the undo record of the one that moved', async () => {
+      const store = twoFolders();
+      h.projectRelocate.mockResolvedValueOnce({
+        relocationId: 'first',
+        repairedGitLinks: true,
+        restoredSessionFolders: 1,
+      });
+      h.projectRelocate.mockRejectedValueOnce({ kind: 'io', message: 'the folder is locked' });
+
+      await relocateProjects(store.set, store.get)();
+
+      expect(store.state.projectRelocationPhase).toBe('error');
+      expect(store.state.projectRelocationCandidates.map((entry) => entry.status)).toEqual([
+        'done',
+        'ready',
+      ]);
+      h.projectRelocate.mockClear();
+
+      await relocateProjects(store.set, store.get)();
+
+      expect(h.projectRelocate).toHaveBeenCalledOnce();
+      expect(h.projectRelocate).toHaveBeenCalledWith(
+        expect.objectContaining({ projectId: SECOND_ID }),
+      );
+      expect(store.state.projectRelocationPhase).toBe('success');
+      expect(store.state.projectRelocationCompleted.map((entry) => entry.projectId)).toEqual([
+        PROJECT_ID,
+        SECOND_ID,
+      ]);
+    });
+
+    it('retries the undo only for the folders still moved', async () => {
+      const store = twoFolders();
+      await relocateProjects(store.set, store.get)();
+      h.projectRelocationUndo.mockResolvedValueOnce(undefined);
+      h.projectRelocationUndo.mockRejectedValueOnce({
+        kind: 'io',
+        message: 'the folder is locked',
+      });
+
+      await undoRelocation(store.set, store.get)();
+
+      expect(store.state.projectRelocationPhase).toBe('error');
+      expect(store.state.projects.map((entry) => entry.rootPath)).toEqual([
+        '/new/ledger-core',
+        '/old/notify-relay',
+      ]);
+      h.projectRelocationUndo.mockClear();
+
+      await undoRelocation(store.set, store.get)();
+
+      expect(h.projectRelocationUndo).toHaveBeenCalledOnce();
+      expect(store.state.projects.map((entry) => entry.rootPath)).toEqual([
+        '/old/ledger-core',
+        '/old/notify-relay',
+      ]);
+      expect(store.state.projectRelocationPhase).toBe('idle');
+    });
+  });
+
+  it('keeps the restored path after the undo and retries only the metadata refresh', async () => {
+    const store = harness();
+    await findMovedProjects(
+      store.set,
+      store.get,
+    )({
+      workspaceId: WORKSPACE_ID,
+      parent: '/new',
+    });
+    await relocateProjects(store.set, store.get)();
+    h.updateProjectIdentity.mockRejectedValueOnce(new Error('database is locked'));
+
+    await undoRelocation(store.set, store.get)();
+
+    expect(store.state.projectRelocationPhase).toBe('error');
+    expect(store.state.projectRelocationError).toBe('database is locked');
+    expect(store.state.projects[0]?.rootPath).toBe('/old/ledger-core');
+    expect(store.state.projectRelocationCompleted.map((entry) => entry.isUndone)).toEqual([true]);
+    h.projectRelocationUndo.mockClear();
+    h.updateProjectIdentity.mockClear();
+
+    await undoRelocation(store.set, store.get)();
+
+    expect(h.projectRelocationUndo).not.toHaveBeenCalled();
+    expect(h.updateProjectIdentity).toHaveBeenCalledWith(
+      expect.objectContaining({ projectId: PROJECT_ID }),
+    );
+    expect(store.state.projects[0]?.rootPath).toBe('/old/ledger-core');
+    expect(store.state.projectRelocationCompleted).toEqual([]);
+    expect(store.state.projectRelocationPhase).toBe('idle');
   });
 
   it('shows the message of a structured undo rejection', async () => {

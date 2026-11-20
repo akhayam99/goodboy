@@ -21,15 +21,26 @@ import type { GetFn, SendArtifactCommentsParams, SendArtifactCommentsResult, Set
 
 const ASK_LIMIT = 240;
 
-const putSending = ({
-  set,
-  artifactId,
-  isSending,
-}: {
+type SendingParams = {
   readonly set: SetFn;
   readonly artifactId: ArtifactId;
   readonly isSending: boolean;
-}) =>
+};
+
+type SentTurnParams = {
+  readonly events: ReadonlyArray<TurnEvent>;
+  readonly content: string;
+};
+
+type CommentsParams = {
+  readonly comments: ReadonlyArray<ArtifactComment>;
+};
+
+type RevertParams = {
+  readonly reason: string;
+};
+
+const putSending = ({ set, artifactId, isSending }: SendingParams) =>
   set((state) => {
     const next = { ...state.artifactCommentSends };
     if (isSending) {
@@ -39,25 +50,19 @@ const putSending = ({
     return { artifactCommentSends: next };
   });
 
-const sentTurnIdOf = ({
-  events,
-  content,
-}: {
-  readonly events: ReadonlyArray<TurnEvent>;
-  readonly content: string;
-}): string | null => {
+const sentTurnIdOf = ({ events, content }: SentTurnParams): string | null => {
   const event = [...events]
     .reverse()
     .find((candidate) => candidate.kind === 'user_text' && candidate.text === content);
   return event !== undefined && event.kind === 'user_text' ? event.runId : null;
 };
 
-const askOf = ({ comments }: { readonly comments: ReadonlyArray<ArtifactComment> }): string => {
+const askOf = ({ comments }: CommentsParams): string => {
   const joined = comments.map((comment) => comment.body.trim()).join(' / ');
   return joined.length <= ASK_LIMIT ? joined : `${joined.slice(0, ASK_LIMIT).trimEnd()}...`;
 };
 
-const pinnedOf = ({ comments }: { readonly comments: ReadonlyArray<ArtifactComment> }) => ({
+const pinnedOf = ({ comments }: CommentsParams) => ({
   scope: 'all' as const,
   screenId: null,
   nodes: comments.map((comment) => ({
@@ -101,9 +106,14 @@ export const sendArtifactComments = (set: SetFn, get: GetFn) => {
     const ids = drafts.map((comment) => comment.id);
     const content = buildPlanCommentRequest({ clusters: plan.clusters ?? [], comments: drafts });
     putSending({ set, artifactId: plan.id, isSending: true });
-    await setArtifactCommentsStatus({ db: tauriDatabase, ids, status: 'sent' });
+    try {
+      await setArtifactCommentsStatus({ db: tauriDatabase, ids, status: 'sent' });
+    } catch (cause) {
+      putSending({ set, artifactId: plan.id, isSending: false });
+      return { kind: 'failed', reason: formatError(cause) };
+    }
     await refreshArtifactComments({ set, sessionId });
-    const revert = async (reason: string): Promise<SendArtifactCommentsResult> => {
+    const revert = async ({ reason }: RevertParams): Promise<SendArtifactCommentsResult> => {
       await setArtifactCommentsStatus({ db: tauriDatabase, ids, status: 'draft' });
       putSending({ set, artifactId: plan.id, isSending: false });
       await refreshArtifactComments({ set, sessionId });
@@ -113,11 +123,11 @@ export const sendArtifactComments = (set: SetFn, get: GetFn) => {
     try {
       result = await get().sendTurn({ sessionId, agentId: plan.agentId, content });
     } catch (cause) {
-      return await revert(formatError(cause));
+      return await revert({ reason: formatError(cause) });
     }
     const refusal = turnRefusalOf({ result });
     if (refusal !== null) {
-      return await revert(turnRefusalMessage({ refusal }));
+      return await revert({ reason: turnRefusalMessage({ refusal }) });
     }
     const sentTurnId = sentTurnIdOf({ events: get().transcripts[plan.agentId] ?? [], content });
     await setArtifactCommentsStatus({ db: tauriDatabase, ids, status: 'sent', sentTurnId });

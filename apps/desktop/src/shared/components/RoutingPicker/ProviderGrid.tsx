@@ -43,7 +43,7 @@ export const ProviderGrid = ({
           return (
             <Tooltip
               key={id}
-              content={isConnected ? PROVIDER_LABEL[id] : `${PROVIDER_LABEL[id]} is not connected`}
+              content={isConnected ? PROVIDER_LABEL[id] : `${PROVIDER_LABEL[id]} isn't connected`}
             >
               <button
                 type="button"

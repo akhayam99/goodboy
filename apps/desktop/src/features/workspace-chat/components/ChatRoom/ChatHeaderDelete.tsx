@@ -3,7 +3,13 @@ import type { ChatSummary } from '@goodboy/types';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { useShowToast } from '../../../../shared/components/Toast/useShowToast';
 import { useAppStore } from '../../../../store';
+import { NOTHING_CHANGED } from '../../../../store/slices/notifications/errorRecovery';
 import { ChatDeleteConfirm } from '../ChatList/ChatDeleteConfirm';
+
+type FailureParams = {
+  readonly title: string;
+  readonly error: unknown;
+};
 
 type Props = {
   readonly chat: ChatSummary;
@@ -17,13 +23,29 @@ export const ChatHeaderDelete = ({ chat, onRemoved }: Props) => {
   const showToast = useShowToast();
   const { id: chatId, workspaceId, title } = chat;
 
+  const reportFailure = ({ title: failureTitle, error }: FailureParams): void => {
+    void useAppStore
+      .getState()
+      .reportError({ recovery: NOTHING_CHANGED, title: failureTitle, error, workspaceId });
+  };
+
   const remove = async (): Promise<void> => {
-    await deleteChats({ workspaceId, chatIds: [chatId] });
+    try {
+      await deleteChats({ workspaceId, chatIds: [chatId] });
+    } catch (error) {
+      reportFailure({ title: "Couldn't delete the chat", error });
+      return;
+    }
     onRemoved();
   };
 
   const archive = async (): Promise<void> => {
-    await archiveChats({ workspaceId, chatIds: [chatId] });
+    try {
+      await archiveChats({ workspaceId, chatIds: [chatId] });
+    } catch (error) {
+      reportFailure({ title: "Couldn't archive the chat", error });
+      return;
+    }
     useAppStore.getState().undoable({
       showToast,
       title: 'Chat archived',

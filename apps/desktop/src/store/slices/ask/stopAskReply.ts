@@ -12,5 +12,18 @@ export const stopAskReply =
     set((state) => ({
       askStreams: { ...state.askStreams, [threadId]: { ...stream, isStopping: true } },
     }));
-    await activeAskBackend.cancelTurn({ runId: stream.runId });
+    try {
+      await activeAskBackend.cancelTurn({ runId: stream.runId });
+    } catch (error) {
+      set((state) => {
+        const current = state.askStreams[threadId];
+        if (current === undefined || current.runId !== stream.runId) {
+          return {};
+        }
+        return {
+          askStreams: { ...state.askStreams, [threadId]: { ...current, isStopping: false } },
+        };
+      });
+      throw error;
+    }
   };

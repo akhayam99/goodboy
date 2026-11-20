@@ -25,7 +25,7 @@ const UNATTRIBUTABLE_TREE =
   'The tree under this run is neither the current code nor the proposal, so a run here would prove nothing';
 const TREE_MOVED = 'The tree moved while the check ran, so nothing was recorded';
 const DEPENDENCIES_ABSENT =
-  'The proposal cannot be checked outside the worktree until its dependencies are installed there';
+  "The proposal can't be checked outside the worktree until its dependencies are installed there";
 
 const DEPENDENCY_DIRS = ['node_modules', 'vendor', '.venv'] as const;
 

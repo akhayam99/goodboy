@@ -130,7 +130,10 @@ pub(crate) fn detail(error: &dyn Display) -> String {
     let redacted = crate::worktree::redact_credentials(first_line.trim());
     let mut clean: String = redacted
         .chars()
-        .map(|c| if c.is_control() { ' ' } else { c })
+        .map(|c| match c.is_control() {
+            true => ' ',
+            false => c,
+        })
         .take(MAX_DETAIL_CHARS + 1)
         .collect();
     if clean.chars().count() > MAX_DETAIL_CHARS {

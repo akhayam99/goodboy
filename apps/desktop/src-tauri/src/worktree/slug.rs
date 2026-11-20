@@ -15,13 +15,12 @@ pub fn slugify(input: &str, max_len: usize) -> String {
     let truncated: String = stage3.chars().take(max_len).collect();
     let trimmed = truncated.trim_end_matches('-').to_string();
 
-    if trimmed.is_empty() {
-        let mut hasher = Sha256::new();
-        hasher.update(input.as_bytes());
-        format!("{:x}", hasher.finalize()).chars().take(8).collect()
-    } else {
-        trimmed
+    if !trimmed.is_empty() {
+        return trimmed;
     }
+    let mut hasher = Sha256::new();
+    hasher.update(input.as_bytes());
+    format!("{:x}", hasher.finalize()).chars().take(8).collect()
 }
 
 pub fn sanitize_slug(input: &str) -> String {

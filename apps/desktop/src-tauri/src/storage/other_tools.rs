@@ -103,7 +103,10 @@ fn file_name(path: &Path) -> &str {
 pub(crate) fn encode_claude_project(path: &Path) -> String {
     path.to_string_lossy()
         .chars()
-        .map(|c| if c.is_ascii_alphanumeric() { c } else { '-' })
+        .map(|c| match c {
+            'a'..='z' | 'A'..='Z' | '0'..='9' => c,
+            _ => '-',
+        })
         .collect()
 }
 

@@ -42,13 +42,13 @@ export const updateCardCopy = ({
     case 'available':
       return {
         title: `${name} is available`,
-        body: 'It downloads in about a minute. Nothing restarts until you say so.',
+        body: 'Nothing restarts until you say so.',
         detail: null,
       };
     case 'ready':
       return {
         title: `${name} is ready`,
-        body: 'Nothing is running. A restart takes a few seconds.',
+        body: 'Nothing is running, so a restart stops no agent.',
         detail: null,
       };
     case 'running':
@@ -59,7 +59,7 @@ export const updateCardCopy = ({
       };
     case 'failed':
       return {
-        title: `${name} did not install`,
+        title: `${name} didn't install`,
         body: 'Nothing changed on this Mac.',
         detail: failure === null ? null : failure.message,
       };

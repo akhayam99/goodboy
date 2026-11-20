@@ -294,12 +294,7 @@ pub(super) fn write_json_atomic<T: Serialize>(
         .parent()
         .ok_or(FileVersionsError::InvalidRelativePath)?;
     fs::create_dir_all(parent)?;
-    let temp = parent.join(format!(".{}.tmp", crate::util::uuid_v4()));
-    fs::write(&temp, serde_json::to_vec(value)?)?;
-    if let Err(error) = fs::rename(&temp, path) {
-        let _ = fs::remove_file(&temp);
-        return Err(FileVersionsError::Io(error));
-    }
+    crate::util::write_atomic(path, &serde_json::to_vec(value)?)?;
     Ok(())
 }
 

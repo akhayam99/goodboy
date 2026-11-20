@@ -5,7 +5,7 @@ export const GhMissingNotice = () => (
   <p className="flex items-center gap-2 text-meta text-warning">
     <TriangleAlert size={ICON_SIZE.row} aria-hidden className="shrink-0" />
     <span>
-      The GitHub CLI is not installed.{' '}
+      The GitHub CLI isn't installed.{' '}
       <a
         href="https://cli.github.com"
         target="_blank"

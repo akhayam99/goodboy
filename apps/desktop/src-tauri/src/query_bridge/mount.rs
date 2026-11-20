@@ -463,10 +463,9 @@ fn operation_kind(verb: &str) -> &'static str {
 
 fn journalled_mount<'a>(kind: &str, mount_id: &'a str) -> Option<&'a str> {
     if kind == "fork" {
-        None
-    } else {
-        Some(mount_id)
+        return None;
     }
+    Some(mount_id)
 }
 
 fn intent_of(raw: &str) -> Result<&'static str, BridgeError> {
@@ -664,16 +663,16 @@ pub fn mount_command_result(
     let Some(sender) = sender else {
         return;
     };
-    let outcome: Outcome = if ok {
-        Ok(data.unwrap_or(Value::Null))
-    } else {
-        let message = error.unwrap_or_else(|| "the mount command failed".to_string());
-        Err(match code {
-            Some(code) => BridgeError::coded(&code, message),
-            None => message.into(),
-        })
-    };
-    let _ = sender.send(outcome);
+    if ok {
+        let _ = sender.send(Ok(data.unwrap_or(Value::Null)));
+        return;
+    }
+    let message = error.unwrap_or_else(|| "the mount command failed".to_string());
+    let failure: Outcome = Err(match code {
+        Some(code) => BridgeError::coded(&code, message),
+        None => message.into(),
+    });
+    let _ = sender.send(failure);
 }
 
 #[cfg(test)]

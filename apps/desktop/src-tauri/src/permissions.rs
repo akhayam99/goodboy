@@ -3,10 +3,6 @@ use tauri::State;
 
 use crate::db::{Db, DbError};
 
-// ---------------------------------------------------------------------------
-// Structs
-// ---------------------------------------------------------------------------
-
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct PermissionRuleRow {
@@ -67,10 +63,6 @@ pub struct PermissionAuditInsertInput {
     pub decided_at: String,
 }
 
-// ---------------------------------------------------------------------------
-// Error type
-// ---------------------------------------------------------------------------
-
 #[derive(Debug, thiserror::Error)]
 pub enum PermissionError {
     #[error("db error: {0}")]
@@ -115,10 +107,6 @@ impl From<DbError> for PermissionError {
         }
     }
 }
-
-// ---------------------------------------------------------------------------
-// Commands — permission rules
-// ---------------------------------------------------------------------------
 
 #[tauri::command]
 pub async fn permission_rule_list(
@@ -185,7 +173,6 @@ pub async fn permission_rule_upsert(
     state: State<'_, Db>,
     input: PermissionRuleUpsertInput,
 ) -> Result<PermissionRuleRow, PermissionError> {
-    // Validate scope/ids combinations.
     match input.scope.as_str() {
         "global" => {
             if input.workspace_id.is_some() || input.session_id.is_some() {
@@ -277,10 +264,6 @@ pub async fn permission_rule_upsert(
     })
 }
 
-// ---------------------------------------------------------------------------
-// Commands — permission audit log
-// ---------------------------------------------------------------------------
-
 #[tauri::command]
 pub async fn permission_audit_insert(
     state: State<'_, Db>,
@@ -323,10 +306,6 @@ pub async fn permission_audit_insert(
         decided_at: input.decided_at,
     })
 }
-
-// ---------------------------------------------------------------------------
-// Commands — permission audit retry queue (#196)
-// ---------------------------------------------------------------------------
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]

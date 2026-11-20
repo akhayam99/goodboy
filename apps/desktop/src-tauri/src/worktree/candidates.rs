@@ -270,7 +270,10 @@ fn worktree_quarantine_candidate_blocking(
         path,
         &["update-ref", &candidate_ref(&args.candidate_id), &tip],
     )?;
-    let rest_at = if args.stack { &tip } else { &base };
+    let rest_at = match args.stack {
+        true => &tip,
+        false => &base,
+    };
     move_head_back(path, rest_at, &raw_tip, keeping)?;
     Ok(QuarantinedCandidate {
         sha: Some(tip),

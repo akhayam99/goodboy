@@ -342,7 +342,7 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
     if (tab === 'checks') {
       return (
         <BranchScroll key={tab} sessionId={sessionId} tab={tab} view={pullRequestView.view}>
-          <BranchChecks sessionId={sessionId} mountId={historyMountId} />
+          <BranchChecks sessionId={sessionId} mountId={historyMountId} remoteHost={host} />
         </BranchScroll>
       );
     }

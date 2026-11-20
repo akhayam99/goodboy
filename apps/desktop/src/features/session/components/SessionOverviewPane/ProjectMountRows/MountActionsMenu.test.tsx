@@ -189,7 +189,7 @@ describe('MountActionsMenu', () => {
     renderMenu();
     openConfirm();
 
-    expect(screen.getByText('Checking files and commits')).toBeDefined();
+    screen.getByText('Checking files and commits');
     expect(screen.queryByRole('button', { name: 'Remove and delete worktree' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Remove and delete files' })).toBeNull();
   });
@@ -209,7 +209,7 @@ describe('MountActionsMenu', () => {
 
     resolveAssessment(assessed({ affectedFiles: 0, localOnlyCommits: 0, hasUpstream: true }));
     await waitFor(() => expect(isConfirmOpen()).toBe(false));
-    expect(screen.getByRole('button', { name: TRIGGER })).toBeDefined();
+    screen.getByRole('button', { name: TRIGGER });
   });
 
   it('offers a plain removal for a clean published worktree', async () => {
@@ -217,11 +217,9 @@ describe('MountActionsMenu', () => {
     openConfirm();
 
     await waitFor(() => expect(screen.getByRole('button', { name: 'Remove and delete worktree' })));
-    expect(
-      screen.getByText(
-        'Remove the clean worktree at /worktrees/api: 0 uncommitted files, 0 unpushed commits, and ak/feat is merged into origin/main.',
-      ),
-    ).toBeDefined();
+    screen.getByText(
+      'Remove the clean worktree at /worktrees/api: 0 uncommitted files, 0 unpushed commits, and ak/feat is merged into origin/main.',
+    );
     fireEvent.click(screen.getByRole('button', { name: 'Remove and delete worktree' }));
     await waitFor(() =>
       expect(state.detachProject).toHaveBeenCalledWith({
@@ -244,13 +242,11 @@ describe('MountActionsMenu', () => {
     openConfirm();
 
     await waitFor(() => expect(screen.getByRole('button', { name: 'Remove and delete files' })));
-    expect(
-      screen.getByText(
-        'Remove the worktree at /worktrees/api for ak/feat, which has 2 unpushed commits.',
-      ),
-    ).toBeDefined();
-    expect(screen.getByText('1 uncommitted file will be deleted.')).toBeDefined();
-    expect(screen.getByText('The branch and its commits stay in the repository.')).toBeDefined();
+    screen.getByText(
+      'Remove the worktree at /worktrees/api for ak/feat, which has 2 unpushed commits.',
+    );
+    screen.getByText('1 uncommitted file will be deleted.');
+    screen.getByText('The branch and its commits stay in the repository.');
   });
 
   it('assesses every mount of the project and speaks for all of them', async () => {
@@ -342,23 +338,17 @@ describe('MountActionsMenu', () => {
     await waitFor(() => expect(screen.getByRole('button', { name: 'Remove and delete files' })));
     expect(worktreeDetachAssessment).toHaveBeenCalledTimes(2);
     expect(worktreeDetachAssessment).not.toHaveBeenCalledWith({ worktreePath: '/worktrees/web' });
-    expect(
-      screen.getByText(
-        'Remove 2 worktrees for api, which have 3 local-only commits and 1 branch without an upstream.',
-      ),
-    ).toBeDefined();
-    expect(screen.getByText('3 uncommitted files will be deleted.')).toBeDefined();
+    screen.getByText(
+      'Remove 2 worktrees for api, which have 3 local-only commits and 1 branch without an upstream.',
+    );
+    screen.getByText('3 uncommitted files will be deleted.');
     fireEvent.click(screen.getByRole('button', { name: 'Removal details for api' }));
-    expect(
-      screen.getByText(
-        'ak/one at /worktrees/api-one: 2 uncommitted files, 0 unpushed commits, merged into origin/main',
-      ),
-    ).toBeDefined();
-    expect(
-      screen.getByText(
-        'ak/two at /worktrees/api-two: 1 uncommitted file, 3 local-only commits, merged into origin/main',
-      ),
-    ).toBeDefined();
+    screen.getByText(
+      'ak/one at /worktrees/api-one: 2 uncommitted files, 0 unpushed commits, merged into origin/main',
+    );
+    screen.getByText(
+      'ak/two at /worktrees/api-two: 1 uncommitted file, 3 local-only commits, merged into origin/main',
+    );
   });
 
   it('reports a branch without an upstream as local-only work', async () => {
@@ -369,10 +359,8 @@ describe('MountActionsMenu', () => {
     openConfirm();
 
     await waitFor(() => expect(screen.getByRole('button', { name: 'Remove and delete files' })));
-    expect(
-      screen.getByText('Remove the worktree at /worktrees/api for ak/feat, which has no upstream.'),
-    ).toBeDefined();
-    expect(screen.getByText('No uncommitted files will be deleted.')).toBeDefined();
+    screen.getByText('Remove the worktree at /worktrees/api for ak/feat, which has no upstream.');
+    screen.getByText('No uncommitted files will be deleted.');
   });
 
   it('hides the keep alternative behind the details disclosure', async () => {
@@ -386,8 +374,8 @@ describe('MountActionsMenu', () => {
     expect(screen.queryByRole('button', { name: 'Remove and keep files' })).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Removal details for api' }));
 
-    expect(screen.getByText('Files affected (3)')).toBeDefined();
-    expect(screen.getByText('Unpushed commits (0)')).toBeDefined();
+    screen.getByText('Files affected (3)');
+    screen.getByText('Unpushed commits (0)');
     fireEvent.click(screen.getByRole('button', { name: 'Remove and keep files' }));
     await waitFor(() =>
       expect(state.detachProject).toHaveBeenCalledWith({
@@ -409,7 +397,7 @@ describe('MountActionsMenu', () => {
         'Remove api from this session; its folder at /worktrees/api will stay on disk.',
       ),
     ).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Remove and keep files' })).toBeDefined();
+    screen.getByRole('button', { name: 'Remove and keep files' });
   });
 
   it('never offers removal when the safety of the worktree is unknown', async () => {
@@ -418,12 +406,10 @@ describe('MountActionsMenu', () => {
     openConfirm();
 
     await waitFor(() => expect(screen.getByRole('button', { name: 'Remove and keep files' })));
-    expect(
-      screen.getByText(
-        'The safety of ak/feat at /worktrees/api could not be verified; removing it will keep the directory.',
-      ),
-    ).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Check again' })).toBeDefined();
+    screen.getByText(
+      "Couldn't check that ak/feat at /worktrees/api is safe to remove. Removing it keeps the directory.",
+    );
+    screen.getByRole('button', { name: 'Check again' });
   });
 
   it('asks for integration against the base the mount carries', async () => {
@@ -482,7 +468,7 @@ describe('MountActionsMenu', () => {
         'Whether ak/feat is merged into its base branch is unknown; removing it will keep its files at /worktrees/api.',
       ),
     ).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Check again' })).toBeDefined();
+    screen.getByRole('button', { name: 'Check again' });
     expect(screen.queryByRole('button', { name: 'Remove and delete worktree' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Remove and delete files' })).toBeNull();
   });
@@ -500,14 +486,12 @@ describe('MountActionsMenu', () => {
     openConfirm();
 
     await waitFor(() => expect(screen.getByRole('button', { name: 'Remove and delete worktree' })));
-    expect(
-      screen.getByText(
-        'Remove the clean worktree at /worktrees/api: 0 uncommitted files, 0 unpushed commits, and ak/feat is not merged into origin/develop yet.',
-      ),
-    ).toBeDefined();
-    expect(screen.getByText('The branch and its commits stay in the repository.')).toBeDefined();
+    screen.getByText(
+      "Remove the clean worktree at /worktrees/api: 0 uncommitted files, 0 unpushed commits, and ak/feat isn't merged into origin/develop yet.",
+    );
+    screen.getByText('The branch and its commits stay in the repository.');
     fireEvent.click(screen.getByRole('button', { name: 'Removal details for api' }));
-    expect(screen.getByText('Branches not merged into the base (1)')).toBeDefined();
+    screen.getByText('Branches not merged into the base (1)');
   });
 
   it('reports an already absent directory', async () => {
@@ -542,7 +526,7 @@ describe('MountActionsMenu', () => {
       screen.getByText('Work is still running in api; stop it before removing this worktree.'),
     ).toBeDefined();
     expect(screen.queryByRole('button', { name: 'Remove and keep files' })).toBeNull();
-    expect(screen.getByRole('button', { name: 'Cancel' })).toBeDefined();
+    screen.getByRole('button', { name: 'Cancel' });
   });
 
   it('names an open terminal as the blocker it actually is', () => {
@@ -565,11 +549,11 @@ describe('MountActionsMenu', () => {
     renderMenu();
     openConfirm();
 
-    expect(screen.getByText('Remove api from the session?')).toBeDefined();
+    screen.getByText('Remove api from the session?');
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
 
     expect(isConfirmOpen()).toBe(false);
-    expect(screen.getByRole('button', { name: TRIGGER })).toBeDefined();
+    screen.getByRole('button', { name: TRIGGER });
   });
 
   it('keeps the confirmation open and reports a removal failure', async () => {
@@ -585,11 +569,11 @@ describe('MountActionsMenu', () => {
         expect.objectContaining({
           title: "Couldn't remove api from the session",
           error:
-            'Could not remove /worktrees/api. It stays in the session; check again before retrying.',
+            "Couldn't remove /worktrees/api. It stays in the session. Check again before you retry.",
         }),
       ),
     );
-    expect(screen.getByText('Remove api from the session?')).toBeDefined();
+    screen.getByText('Remove api from the session?');
   });
 
   it('closes the anchored confirm on cancel and leaves the project in the session', async () => {

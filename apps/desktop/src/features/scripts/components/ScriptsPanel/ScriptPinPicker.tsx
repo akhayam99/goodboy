@@ -17,7 +17,7 @@ export const ScriptPinPicker = ({ projectName, groups, pins, onTogglePin, onClos
     <section aria-label={`Scripts of ${projectName}`} className="flex flex-col gap-1 px-2 pb-1">
       <div className="flex items-center justify-between gap-2">
         <p className="text-meta text-faint-foreground">
-          Pin the scripts you use. They show here and in the palette under $.
+          Pin the scripts you use to run them from the palette under $.
         </p>
         <Button variant="secondary" size="xs" onClick={onClose}>
           Done

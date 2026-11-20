@@ -70,6 +70,25 @@ describe('ProviderCredentialsSection', () => {
     await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
   });
 
+  it('keeps the draft and shows the failure under the buttons when saving fails', async () => {
+    state.refreshProviders.mockClear();
+    state.createCredential.mockRejectedValueOnce(new Error('the key was rejected'));
+    render(<ProviderCredentialsSection providerId={ANTHROPIC} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Add key' }));
+    const value = screen.getByRole('textbox', { name: 'Key label' });
+    fireEvent.change(value, { target: { value: 'personal' } });
+    const key = screen.getByLabelText<HTMLInputElement>('ANTHROPIC_API_KEY value');
+    fireEvent.change(key, { target: { value: 'sk-ant-test' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save key' }));
+
+    const alert = await screen.findByRole('alert');
+    expect(alert.textContent).toContain("Couldn't save the API key.");
+    screen.getByRole('button', { name: 'Retry' });
+    expect(key.value).toBe('sk-ant-test');
+    expect(state.refreshProviders).not.toHaveBeenCalled();
+  });
+
   it('keeps the key when the popover is cancelled', async () => {
     state.deleteCredential.mockClear();
     render(<ProviderCredentialsSection providerId={ANTHROPIC} />);

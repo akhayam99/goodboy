@@ -36,13 +36,10 @@ pub(crate) fn rebase_plan(
         .or_else(|| crate::worktree::default_base_name(cwd, false))
         .ok_or_else(|| plan_error("no base branch could be found for this repository"))?;
     let base = base.as_str();
-    let fetch_error = if fetches {
-        git(cwd, &["fetch", "--quiet", "origin", base])
-            .err()
-            .map(|error| error.to_string())
-    } else {
-        None
-    };
+    let fetch_error = fetches
+        .then(|| git(cwd, &["fetch", "--quiet", "origin", base]).err())
+        .flatten()
+        .map(|error| error.to_string());
     let remote_ref = format!("origin/{base}");
     let (onto_ref, onto) = match resolve_commit(cwd, &remote_ref) {
         Ok(sha) => (remote_ref, sha),

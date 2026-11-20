@@ -28,7 +28,7 @@ export type ArtifactAttachmentsHandle = Readonly<{
   discardAll: () => void;
 }>;
 
-const UNSTORED_NOTE = 'could not store that file, nothing was attached';
+const UNSTORED_NOTE = "Couldn't store that file, nothing was attached";
 
 const DROP_NOTICES: AttachmentDropNotices = {
   ambiguous: 'Drop the file on the attachments box to attach it.',

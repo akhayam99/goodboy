@@ -70,7 +70,7 @@ describe('the Models page scenes', () => {
     expect(screen.getByText('Saved model settings from 1 folder no longer apply.')).toBeDefined();
     expect(
       screen.getByText(
-        'With Codex as the only provider, 7 of 11 agents use a pin that cannot run. Auto picks apply.',
+        "With Codex as the only provider, 7 of 11 agents use a pin that can't run. Auto picks apply.",
       ),
     ).toBeDefined();
     expect(screen.getByRole('button', { name: 'Back to Auto for those 7' })).toBeDefined();

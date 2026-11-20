@@ -36,7 +36,7 @@ type Props = {
   readonly agents: ReadonlyArray<Agent>;
 };
 
-const COPY_NOT_READY = 'The saved copy is not ready yet';
+const COPY_NOT_READY = "The saved copy isn't ready yet";
 
 export const ArtifactDocumentShell = ({ sessionId, subject, agents }: Props) => {
   const { artifact } = subject;

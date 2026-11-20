@@ -70,7 +70,7 @@ export const forcePushConfirm = ({ onlyOnline }: ForceConfirmParams): ActionConf
     title: 'Replace the branch on origin?',
     description:
       onlyOnline === null
-        ? 'This machine has not checked origin yet. Anything pushed there since is lost.'
+        ? "This machine hasn't checked origin yet. Anything pushed there since is lost."
         : 'Origin has no commits you lack. Nothing there is lost.',
     confirmLabel: 'Force push',
     role: 'danger',

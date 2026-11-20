@@ -84,7 +84,7 @@ describe('the provider health scene', () => {
     await mount('cannotcheck');
 
     expect(screen.getByText("Can't reach Cursor right now")).toBeDefined();
-    expect(screen.getByText('Showing what we last knew, from 2m ago.')).toBeDefined();
+    expect(screen.getByText('Showing what Goodboy last knew, from 2m ago.')).toBeDefined();
     expect(screen.getByRole('button', { name: 'Check again' })).toBeDefined();
   });
 

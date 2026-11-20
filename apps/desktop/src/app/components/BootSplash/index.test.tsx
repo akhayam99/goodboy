@@ -328,7 +328,7 @@ describe('BootSplash newer database', () => {
       fireEvent.click(screen.getByRole('button', { name: 'Restore backup' }));
     });
 
-    expect(screen.getByText(/The backup could not be restored/)).toBeDefined();
+    expect(screen.getByText(/The backup couldn't be restored/)).toBeDefined();
   });
 });
 

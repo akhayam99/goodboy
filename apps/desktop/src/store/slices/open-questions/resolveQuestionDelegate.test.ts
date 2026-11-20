@@ -225,7 +225,9 @@ describe('resolveQuestionDelegate', () => {
     expect(state.sendTurn).toHaveBeenCalledTimes(1);
     expect(statusOf(CHILD_ID)).toBe('failed');
     expect(h.rows[0]?.status).toBe('open');
-    expect(state.emitNotification).toHaveBeenCalled();
+    expect(state.emitNotification).toHaveBeenCalledWith(
+      expect.objectContaining({ title: "The delegated agent didn't answer" }),
+    );
   });
 
   it('records the answer and wakes nobody when no agent asked the question', async () => {

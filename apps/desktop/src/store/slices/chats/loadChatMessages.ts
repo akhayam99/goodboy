@@ -5,7 +5,7 @@ export const loadChatMessages =
   (set: SetFn, get: GetFn) =>
   async ({ chatId }: ChatParams): Promise<void> => {
     const messages = await activeChatBackend.listMessages({ chatId });
-    if (get().chatStreams[chatId] !== undefined) {
+    if (get().chatStreams[chatId] !== undefined || get().chatMessages[chatId] !== undefined) {
       return;
     }
     set((state) => ({ chatMessages: { ...state.chatMessages, [chatId]: messages } }));

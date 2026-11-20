@@ -6,10 +6,9 @@ use serde::{Deserialize, Serialize};
 use crate::artifact_folder::{is_safe_segment, write_folder, FolderFile, FolderLimits};
 use crate::artifacts::ArtifactExportError;
 
-const MIRROR_DIR: &str = if cfg!(debug_assertions) {
-    "artifacts-dev"
-} else {
-    "artifacts"
+const MIRROR_DIR: &str = match cfg!(debug_assertions) {
+    true => "artifacts-dev",
+    false => "artifacts",
 };
 
 const META_FILE: &str = "meta.json";
@@ -367,10 +366,9 @@ fn windows_default_browser_command() -> Option<String> {
     let end = buffer.iter().position(|&c| c == 0).unwrap_or(buffer.len());
     let command = String::from_utf16_lossy(&buffer[..end]);
     if command.is_empty() {
-        None
-    } else {
-        Some(command)
+        return None;
     }
+    Some(command)
 }
 
 fn open_with_browser(app: &tauri::AppHandle, path: &Path) -> Result<(), ArtifactExportError> {
@@ -396,10 +394,9 @@ fn open_with_browser(app: &tauri::AppHandle, path: &Path) -> Result<(), Artifact
     {
         if let Some(template) = windows_default_browser_command() {
             let path_str = path.to_string_lossy();
-            let invocation = if template.contains("%1") {
-                template.replace("%1", &format!("\"{path_str}\""))
-            } else {
-                format!("{template} \"{path_str}\"")
+            let invocation = match template.contains("%1") {
+                true => template.replace("%1", &format!("\"{path_str}\"")),
+                false => format!("{template} \"{path_str}\""),
             };
             let status = std::process::Command::new("cmd")
                 .args(["/C", &invocation])

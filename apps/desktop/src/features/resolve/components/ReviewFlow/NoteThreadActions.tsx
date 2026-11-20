@@ -6,7 +6,6 @@ import { useAppStore } from '../../../../store';
 import { isReportedError } from '../../../../store/slices/notifications/reportedError';
 import { resolveReviewTarget } from '../../../../store/slices/review-drafts/resolveReviewTarget';
 import { useActionEnv } from '../../../actions/useActionEnv';
-import { useActiveReviewSource } from '../../hooks/useActiveReviewSource';
 import { isOpenNote, noteIdOfThread, noteThreadId } from '../../notes/noteThread';
 import { postNotesResultMessage, postNotesToPr } from '../../notes/postNotesToPr';
 import type { ReviewEntry } from './useReviewEntries';
@@ -18,14 +17,15 @@ type Props = {
 
 export const NoteThreadActions = ({ sessionId, entry }: Props) => {
   const env = useActionEnv({ origin: 'button' });
-  const { source } = useActiveReviewSource({ sessionId });
   const noteId = entry.row.thread.diffCommentId ?? noteIdOfThread({ threadId: entry.threadId });
   const note = useAppStore((s) =>
     noteId === null
       ? null
       : ((s.diffComments[sessionId] ?? []).find((candidate) => candidate.id === noteId) ?? null),
   );
-  const hasTarget = useAppStore((s) => resolveReviewTarget({ state: s, sessionId }) !== null);
+  const targetHost = useAppStore(
+    (s) => resolveReviewTarget({ state: s, sessionId })?.provider ?? null,
+  );
   const addReviewDraft = useAppStore((s) => s.addReviewDraft);
   const closeResolvedNote = useAppStore((s) => s.closeResolvedNote);
   const discardDiffComments = useAppStore((s) => s.discardDiffComments);
@@ -47,10 +47,9 @@ export const NoteThreadActions = ({ sessionId, entry }: Props) => {
       setIsBusy(false);
     }
   };
-  const canPost = hasTarget && isOpenNote({ note });
   return (
     <div className="flex min-w-0 flex-wrap items-center gap-2">
-      {canPost ? (
+      {targetHost !== null && isOpenNote({ note }) ? (
         <Button
           size="sm"
           variant="ghost"
@@ -73,7 +72,7 @@ export const NoteThreadActions = ({ sessionId, entry }: Props) => {
             })
           }
         >
-          Post to {source === null ? 'GitHub' : REVIEW_SOURCE_LABEL[source.kind]}
+          Post to {REVIEW_SOURCE_LABEL[targetHost]}
         </Button>
       ) : null}
       <Button

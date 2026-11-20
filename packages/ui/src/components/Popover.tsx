@@ -1,7 +1,6 @@
 import type { CSSProperties, KeyboardEventHandler, MouseEventHandler, ReactNode, Ref } from 'react';
 import { cn } from '../cn';
 import { FLOATING_SURFACE } from '../floatingSurface';
-import { ScrollFade } from './ScrollFade';
 
 export type PopoverProps = {
   readonly children: ReactNode;
@@ -13,11 +12,6 @@ export type PopoverProps = {
   readonly tabIndex?: number;
   readonly onKeyDown?: KeyboardEventHandler<HTMLDivElement>;
   readonly onMouseDown?: MouseEventHandler<HTMLDivElement>;
-};
-
-export type PopoverBodyProps = {
-  readonly children: ReactNode;
-  readonly className?: string;
 };
 
 export const Popover = ({
@@ -50,14 +44,3 @@ export const Popover = ({
     </div>
   );
 };
-
-export const PopoverBody = ({ children, className }: PopoverBodyProps) => (
-  <ScrollFade
-    className={cn('flex min-h-0 flex-1 flex-col', className)}
-    viewportClassName="h-auto min-h-0 flex-1"
-    fadeSize={12}
-    fadeFrom="floating"
-  >
-    {children}
-  </ScrollFade>
-);

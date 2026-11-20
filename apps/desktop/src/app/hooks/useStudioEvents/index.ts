@@ -1,0 +1,68 @@
+import { useEffect } from 'react';
+import { CHANGELOG_STUDIO_EVENT } from '../../../features/changelog/changelogStudioEvent';
+import { IMPACT_STUDIO_EVENT } from '../../../features/impact/openImpactStudio';
+import { NOTIFICATIONS_STUDIO_EVENT } from '../../../features/notifications/studioEvent';
+import { OPEN_COMMAND_PALETTE_EVENT } from '../../../features/onboarding/openCommandPaletteEvent';
+import { IPHONE_SETTINGS_PLACE } from '../../../features/settings/iphoneSettingsPlace';
+import { useAppStore } from '../../../store';
+import {
+  eventValue,
+  impactOverlayFromEvent,
+  inboxOverlayFromEvent,
+  isWorkspaceId,
+  settingsOverlayFromEvent,
+} from '../useAppOverlays/eventDetail';
+import type { StudioPlace } from '../../../store';
+
+type Params = {
+  readonly open: (params: { readonly overlay: StudioPlace }) => void;
+  readonly goTo: (params: { readonly overlay: StudioPlace }) => void;
+  readonly close: () => void;
+  readonly openPalette: () => void;
+};
+
+type Listener = readonly [string, (event: Event) => void];
+
+export const useStudioEvents = ({ open, goTo, close, openPalette }: Params) => {
+  useEffect(() => {
+    const via = (event: Event) => (eventValue({ event, key: 'door' }) === true ? goTo : open);
+    const openInbox = (event: Event) => {
+      const overlay = inboxOverlayFromEvent(event);
+      const openStudio = () => via(event)({ overlay });
+      const workspaceId = eventValue({ event, key: 'workspaceId' });
+      if (isWorkspaceId(workspaceId) && workspaceId !== useAppStore.getState().currentWorkspaceId) {
+        close();
+        const store = useAppStore.getState();
+        const workspace = store.workspaces.find((candidate) => candidate.id === workspaceId);
+        void store
+          .openWorkspace({ id: workspaceId, title: workspace?.name ?? '', onRunning: 'new-window' })
+          .catch(() => undefined)
+          .then(() => {
+            if (useAppStore.getState().currentWorkspaceId === workspaceId) {
+              openStudio();
+            }
+          });
+        return;
+      }
+      openStudio();
+    };
+    const listeners: ReadonlyArray<Listener> = [
+      [
+        'goodboy:open-settings',
+        (event) => via(event)({ overlay: settingsOverlayFromEvent(event) }),
+      ],
+      ['goodboy:open-guide', (event) => via(event)({ overlay: { kind: 'guide' } })],
+      [NOTIFICATIONS_STUDIO_EVENT, (event) => via(event)({ overlay: { kind: 'notifications' } })],
+      [IMPACT_STUDIO_EVENT, (event) => via(event)({ overlay: impactOverlayFromEvent(event) })],
+      ['goodboy:open-inbox', openInbox],
+      ['goodboy:add-workspace', () => open({ overlay: { kind: 'addWorkspace' } })],
+      ['goodboy:open-pair-device', () => open({ overlay: IPHONE_SETTINGS_PLACE })],
+      ['goodboy:open-workflow-studio', (event) => via(event)({ overlay: { kind: 'workflow' } })],
+      [CHANGELOG_STUDIO_EVENT, (event) => via(event)({ overlay: { kind: 'changelog' } })],
+      [OPEN_COMMAND_PALETTE_EVENT, () => openPalette()],
+    ];
+    listeners.forEach(([name, listener]) => window.addEventListener(name, listener));
+    return () =>
+      listeners.forEach(([name, listener]) => window.removeEventListener(name, listener));
+  }, [close, goTo, open, openPalette]);
+};

@@ -109,7 +109,7 @@ A pull leaves some branches alone.
 
 ### Locate moved folders
 
-If you moved your repos to a new folder, the workspace settings name the folders Goodboy cannot find. **Locate folders** finds them in the parent folder you pick, by their first commit and remote, and repairs the worktrees, with **Undo move**.
+If you moved your repos to a new folder, the workspace settings name the folders Goodboy can't find. **Locate folders** finds them in the parent folder you pick, by their first commit and remote, and repairs the worktrees, with **Undo move**. After a failure, the move and the undo both pick up at the folder that stopped them.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workspace-locate-dark.webp">

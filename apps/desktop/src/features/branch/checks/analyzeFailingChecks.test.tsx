@@ -346,7 +346,7 @@ describe('Analyze with the real store and SQLite', () => {
         pullRequest: seed.pullRequest,
         checks: [seed.check],
       }),
-    ).rejects.toThrow('Could not read the pull request paths');
+    ).rejects.toThrow("Couldn't read the pull request paths");
     expect(store.getState().sessionPhaseRuns[seed.sessionId]).toEqual([]);
     await analyzeFailingChecks({
       sessionId: seed.sessionId,

@@ -11,5 +11,18 @@ export const stopChatReply =
     set((state) => ({
       chatStreams: { ...state.chatStreams, [chatId]: { ...stream, isStopping: true } },
     }));
-    await activeChatBackend.cancelTurn({ runId: stream.runId });
+    try {
+      await activeChatBackend.cancelTurn({ runId: stream.runId });
+    } catch (error) {
+      set((state) => {
+        const current = state.chatStreams[chatId];
+        if (current === undefined || current.runId !== stream.runId) {
+          return {};
+        }
+        return {
+          chatStreams: { ...state.chatStreams, [chatId]: { ...current, isStopping: false } },
+        };
+      });
+      throw error;
+    }
   };

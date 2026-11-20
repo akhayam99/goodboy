@@ -23,7 +23,7 @@ export const markPointersActed = ({ notifications }: Params): void => {
   store.markNotificationsActed({ ids }).catch((error: unknown) => {
     void store.reportError({
       recovery: CHECK_STATE,
-      title: "Couldn't mark the notification done",
+      title: "Couldn't mark the notification opened",
       error,
     });
   });

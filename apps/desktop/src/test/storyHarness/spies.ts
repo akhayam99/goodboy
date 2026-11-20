@@ -258,7 +258,6 @@ export const storySpies = {
   replaceProjectValueIfUnchanged: vi.fn(async (_params: unknown) => true),
   listProjectValues: vi.fn(async (_params: unknown) => []),
   markSessionOpened: vi.fn(async (_params: unknown) => undefined),
-  updateProjectResolveCommitStyle: vi.fn(async () => undefined),
   listWorkspaces: vi.fn(async () => [] as ReadonlyArray<Workspace>),
   listProviderCredentials: vi.fn(async () => []),
   updateSessionState: vi.fn(async () => undefined),

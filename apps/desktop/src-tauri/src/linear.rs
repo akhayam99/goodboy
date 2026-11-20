@@ -523,9 +523,6 @@ fn issue_assignee_update_variables(issue_id: &str, assignee_id: Option<&str>) ->
     })
 }
 
-/// Verifies the key a credential holds through the /viewer query and writes
-/// nothing. A key already stored is verified without the webview ever seeing
-/// it.
 #[tauri::command]
 pub async fn linear_validate_connection(
     credential_id: String,

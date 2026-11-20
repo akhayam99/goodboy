@@ -86,6 +86,7 @@ export const PullRequestTab = ({
   if (pr === null) {
     return (
       <BranchStartPage
+        host={host}
         hostForm={
           isBitbucketRemote ? (
             <BitbucketNoPullRequest url={newPullRequestUrl} isConnected={isBitbucketConnected} />

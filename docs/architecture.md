@@ -46,10 +46,10 @@ Which helper to use depends on what the process runs.
 - If it runs a script the user wrote, it gets the full login environment. Use `command_with_login_env`, or `resolved_env()` for terminal spawners that never build a `Command`.
 - Everything else gets the resolved `PATH` on top of the app's own environment. Use `command`. It sets `PATH` and does not clear anything else, so the child inherits every variable the app process holds. Nothing here is an allowlist.
 
-`run_git_push` gets the full environment. A repo's `pre-push` hook can read
-variables set in `~/.zshrc`, like registry tokens or tool settings. `PATH`
-and `TERM` are set after the login environment is copied, so they win over
-anything your profile sets.
+A push (`git_push`, through `run_git_authenticated`) gets the full login
+environment. A repo's `pre-push` hook can read variables set in `~/.zshrc`,
+like registry tokens or tool settings. `PATH` is set after the login
+environment is copied, so it wins over anything your profile sets.
 
 The login shell is asked at most three times if it fails or times out. A good
 answer is cached for the life of the app. After three failures the static list is
@@ -663,13 +663,14 @@ anywhere; a debug build also prints to stdout.
   themed) and on disk through the same component (`medium="file"`, always
   light). `Open in browser` follows the Links setting: beside the session it
   takes the path from `artifact_mirror_path` and opens a local tab, and
-  outside (`artifact_mirror_open`) it opens that file with the
+  outside (`artifact_mirror_open`) it opens that file with the browser chosen
+  in Settings (`chosen_browser_launch`) or, without one, the
   OS default web browser, never with a `.html` file's default app: macOS asks
   Launch Services directly (`LSCopyDefaultApplicationURLForURL`, via
   `core-foundation-sys`), Windows asks the shell's association API directly
   (`AssocQueryStringW`, via `windows-sys`), both native calls rather than
   shelling out to `defaults`/`reg`, and both fall back to the platform opener
-  (`spawn_open`) if resolution fails. Linux always uses that opener, which
+  (`proc::open::open_path`) if resolution fails. Linux always uses that opener, which
   already resolves the default browser through `xdg-open` on its own. `⌘P`
   from there prints, with the browser's own print dialog.
 - **The file is never stale.** `meta.json` carries `rendererVersion`

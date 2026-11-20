@@ -42,6 +42,21 @@ describe('search index settings', () => {
     expect(loadSearchIndexStatus).toHaveBeenCalled();
   });
 
+  it('says the index is not loaded when reading its status fails', async () => {
+    loadSearchIndexStatus.mockRejectedValueOnce(new Error('database is locked'));
+    useAppStore.setState({ searchIndexStatus: null });
+    render(<SearchIndexBand />);
+    await screen.findByText('Not loaded');
+    expect(screen.queryByText('Reading the index')).toBeNull();
+  });
+
+  it('reads the index while its status loads', () => {
+    loadSearchIndexStatus.mockReturnValueOnce(new Promise<undefined>(() => undefined));
+    useAppStore.setState({ searchIndexStatus: null });
+    render(<SearchIndexBand />);
+    screen.getByText('Reading the index');
+  });
+
   it('rebuilds on request', async () => {
     render(<SearchIndexBand />);
     await userEvent.click(screen.getByRole('button', { name: 'Rebuild' }));

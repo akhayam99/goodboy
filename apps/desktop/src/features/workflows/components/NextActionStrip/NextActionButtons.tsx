@@ -14,6 +14,11 @@ type Props = {
   readonly action: Exclude<NextAction, { readonly kind: 'none' }>;
 };
 
+type GuardParams = {
+  readonly run: () => Promise<void>;
+  readonly isCheck?: boolean;
+};
+
 export const NextActionButtons = ({ sessionId, workflowRunId, action }: Props) => {
   const [isBusy, setIsBusy] = useState(false);
   const [isChecking, setIsChecking] = useState(false);
@@ -21,13 +26,7 @@ export const NextActionButtons = ({ sessionId, workflowRunId, action }: Props) =
   const skipStuckStepAndAdvance = useAppStore((state) => state.skipStuckStepAndAdvance);
   const answer = useAnswerQuestion({ sessionId });
 
-  const guard = async ({
-    run,
-    isCheck = false,
-  }: {
-    readonly run: () => Promise<void>;
-    readonly isCheck?: boolean;
-  }) => {
+  const guard = async ({ run, isCheck = false }: GuardParams) => {
     if (isBusy) {
       return;
     }
@@ -63,7 +62,7 @@ export const NextActionButtons = ({ sessionId, workflowRunId, action }: Props) =
             busyLabel="Continuing"
             disabled={isBusy}
             data-testid="workflow-recover-step-cta"
-            title="Ask the agent to verify the work, finish anything missing, and emit the completion marker"
+            title="Ask the agent to check its work, finish what's missing and say it's done"
             onClick={() =>
               void guard({
                 run: () => recoverStuckStep({ sessionId, workflowRunId }),

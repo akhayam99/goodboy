@@ -345,7 +345,7 @@ describe('changeRunRoute', () => {
         choice: { shape: 'lead', presetId: null, closeness: 'adapt' },
         shouldEndRun: true,
       }),
-    ).rejects.toThrow('did not end');
+    ).rejects.toThrow("didn't end");
 
     expect(engines.spawnAgent).toHaveBeenCalledTimes(1);
     expect(engines.discardWorkflow).not.toHaveBeenCalled();

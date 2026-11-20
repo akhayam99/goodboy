@@ -3,6 +3,7 @@ import type { WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { LocateMovedProjectRow } from './LocateMovedProjectRow';
 import { countNoun } from '../../../../shared/utils/countNoun';
+import { isPendingRelocation } from '../../../../store/slices/project-relocation/isPendingRelocation';
 
 type Props = {
   readonly workspaceId: WorkspaceId;
@@ -24,9 +25,8 @@ export const LocateMovedProjects = ({ workspaceId, onChoose, isChoosing = false 
     return null;
   }
   const isBusy = phase === 'moving';
-  const selectedCount = candidates.filter(
-    (candidate) => candidate.isSelected && candidate.toRoot !== null,
-  ).length;
+  const selectedCount = candidates.filter((candidate) => isPendingRelocation({ candidate })).length;
+  const shouldShowMove = selectedCount > 0 || completed.length === 0;
   const sessionFolderCount = completed.reduce(
     (total, relocation) => total + relocation.restoredSessionFolders,
     0,
@@ -42,7 +42,7 @@ export const LocateMovedProjects = ({ workspaceId, onChoose, isChoosing = false 
         detail={
           repairFailures.length === 0
             ? null
-            : `Git links or saved versions could not be carried over for ${countNoun({ count: repairFailures.length, one: 'folder' })}.${repairReason?.repairError == null ? '' : ` ${repairReason.repairError}`}`
+            : `Git links or saved versions couldn't be carried over for ${countNoun({ count: repairFailures.length, one: 'folder' })}.${repairReason?.repairError == null ? '' : ` ${repairReason.repairError}`}`
         }
         actions={
           <Button variant="secondary" size="sm" onClick={() => void undo()}>
@@ -103,15 +103,22 @@ export const LocateMovedProjects = ({ workspaceId, onChoose, isChoosing = false 
         >
           Choose another folder
         </Button>
-        <Button
-          size="sm"
-          disabled={selectedCount === 0}
-          isBusy={isBusy}
-          busyLabel="Moving folders…"
-          onClick={() => void relocate()}
-        >
-          Move {selectedCount} {selectedCount === 1 ? 'folder' : 'folders'}
-        </Button>
+        {completed.length > 0 && (
+          <Button variant="secondary" size="sm" disabled={isBusy} onClick={() => void undo()}>
+            Undo move
+          </Button>
+        )}
+        {shouldShowMove && (
+          <Button
+            size="sm"
+            disabled={selectedCount === 0}
+            isBusy={isBusy}
+            busyLabel="Moving folders…"
+            onClick={() => void relocate()}
+          >
+            Move {selectedCount} {selectedCount === 1 ? 'folder' : 'folders'}
+          </Button>
+        )}
       </FormActions>
     </section>
   );

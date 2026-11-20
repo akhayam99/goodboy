@@ -29,7 +29,7 @@ export const deferResolveQueueItem = async ({
     ...(expectedState !== undefined && { expectedState }),
   });
   if (!deferred) {
-    throw new Error('Resolve item could not be deferred');
+    throw new Error("Couldn't set this comment aside. Nothing was changed.");
   }
   if (target !== undefined) {
     await advanceResolveStage({

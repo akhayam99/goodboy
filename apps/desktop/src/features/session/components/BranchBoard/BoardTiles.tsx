@@ -1,6 +1,6 @@
 import { formatUsd, StatCard } from '@goodboy/ui';
 import { elapsedWordOf } from '../../central/board/boardRowWordsOf';
-import { countWordOf } from '../../central/board/countWordOf';
+import { countNoun } from '../../../../shared/utils/countNoun';
 import type { SessionKpis } from '../../central/board/sessionKpisOf';
 
 type Props = {
@@ -23,8 +23,8 @@ export const BoardTiles = ({ kpis }: Props) => {
         label="Spend"
         value={formatUsd(kpis.spendUsd)}
         hint={[
-          kpis.leadCount === 0 ? '' : countWordOf({ count: kpis.leadCount, noun: 'Lead' }),
-          countWordOf({ count: kpis.agentCount, noun: 'agent' }),
+          kpis.leadCount === 0 ? '' : countNoun({ count: kpis.leadCount, one: 'Lead' }),
+          countNoun({ count: kpis.agentCount, one: 'agent' }),
         ]
           .filter((part) => part !== '')
           .join(', ')}

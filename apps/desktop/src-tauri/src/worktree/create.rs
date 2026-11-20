@@ -303,11 +303,10 @@ fn diverged_pull_request_head(
     git(repo_path, &["fetch", "--", "origin", fallback]).ok()?;
     let sha = tip_of(repo_path, "FETCH_HEAD")?;
     let local = tip_of(repo_path, &format!("refs/heads/{name}"));
-    let remote = if try_fetch_origin(repo_path, name).is_none() {
-        tip_of(repo_path, &format!("refs/remotes/origin/{name}"))
-    } else {
-        None
-    };
+    let remote = try_fetch_origin(repo_path, name)
+        .is_none()
+        .then(|| tip_of(repo_path, &format!("refs/remotes/origin/{name}")))
+        .flatten();
     if local.as_deref() == Some(sha.as_str()) || remote.as_deref() == Some(sha.as_str()) {
         return None;
     }
@@ -335,9 +334,6 @@ pub(super) fn try_fetch_origin(repo_path: &Path, base: &str) -> Option<String> {
         .map(|error| error.to_string())
 }
 
-/// Tell "origin has no such branch" apart from "origin could not be reached".
-/// Only the first one lets a caller cut the branch itself: an outage that
-/// silently became a fresh branch would diverge from the real one.
 pub(super) fn remote_ref_is_absent(repo_path: &Path, fetch_failure: &str) -> bool {
     fetch_failure.contains("couldn't find remote ref")
         || git(repo_path, &["remote", "get-url", "origin"]).is_err()
@@ -355,11 +351,6 @@ fn with_fetch_cause(error: WorktreeError, fetch_failure: Option<&str>) -> Worktr
     }
 }
 
-/// Resolve the ref to cut a new branch from. Prefers `origin/<base>` so the
-/// new branch never inherits commits that exist only on the local copy of the
-/// base branch. Falls back to `origin/master` if base is "main" and only
-/// `master` exists on the remote, then to the local branch as a last resort.
-/// Errors only when none of those refs exist.
 fn resolve_origin_base(
     repo_path: &Path,
     configured_base: Option<&str>,

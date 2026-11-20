@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Check, RotateCcw, X } from '@goodboy/ui/icons';
 import type { WorkspaceId } from '@goodboy/types';
-import { Button, formatError, ICON_SIZE, IconButton } from '@goodboy/ui';
+import { Button, FormActions, formatError, ICON_SIZE, IconButton } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
 
 import { pluralize } from '../../../../shared/utils/pluralize';
@@ -196,27 +196,35 @@ export const WorkspaceSettingsFlow = ({ workspaceId, scope, mode, onClose }: Pro
         />
       )}
 
-      {error === null ? null : (
-        <p role="alert" className="text-meta text-danger">
-          {error}
-        </p>
-      )}
-
-      <div className="flex flex-wrap items-center gap-2">
+      <FormActions
+        error={error}
+        leading={
+          <span className="text-meta text-faint-foreground">
+            {step === 'pick'
+              ? 'Nothing changes until you confirm.'
+              : 'One change, and you can undo it.'}
+          </span>
+        }
+      >
+        <Button variant="ghost" size="sm" onClick={onClose} className="text-muted-foreground">
+          Cancel
+        </Button>
         {step === 'pick' ? (
-          <>
-            <Button size="sm" disabled={source === null} onClick={showPreview}>
-              Preview changes
-            </Button>
-            <Button variant="ghost" size="sm" onClick={onClose}>
-              Cancel
-            </Button>
-            <span className="text-meta text-faint-foreground">
-              Nothing changes until you confirm.
-            </span>
-          </>
+          <Button size="sm" disabled={source === null} onClick={showPreview}>
+            Preview changes
+          </Button>
         ) : (
           <>
+            {mode === 'copy' ? (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setStep('pick')}
+                className="text-muted-foreground"
+              >
+                Back
+              </Button>
+            ) : null}
             <Button
               size="sm"
               disabled={count === 0 || isBusy}
@@ -225,20 +233,9 @@ export const WorkspaceSettingsFlow = ({ workspaceId, scope, mode, onClose }: Pro
             >
               {mode === 'copy' ? 'Copy' : 'Restore'} {pluralize(count, 'setting')}
             </Button>
-            {mode === 'copy' ? (
-              <Button variant="ghost" size="sm" onClick={() => setStep('pick')}>
-                Back
-              </Button>
-            ) : null}
-            <Button variant="ghost" size="sm" onClick={onClose}>
-              Cancel
-            </Button>
-            <span className="text-meta text-faint-foreground">
-              One change, and you can undo it.
-            </span>
           </>
         )}
-      </div>
+      </FormActions>
     </section>
   );
 };

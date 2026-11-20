@@ -137,7 +137,7 @@ describe('blocking question dismissal', () => {
       expect.objectContaining({
         kind: 'error',
         severity: 'warning',
-        title: 'This question cannot be discarded',
+        title: "Can't dismiss this question",
         body: BLOCKING_DISMISSAL_REFUSAL,
         sessionId,
         coalesceKey: `blocking-question:${blocking.id}`,

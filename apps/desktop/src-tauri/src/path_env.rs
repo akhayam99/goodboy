@@ -40,21 +40,10 @@ fn resolve<T: 'static>(slot: &Mutex<Slot<T>>, compute: impl FnOnce() -> (T, bool
     leaked
 }
 
-/// PATH inherited from the user's login shell, merged with the process's own
-/// PATH and common install locations, deduplicated, cached after first call.
-///
-/// macOS GUI apps launched from Finder/Dock receive only the minimal posix
-/// PATH (`/usr/bin:/bin:/usr/sbin:/sbin`), which excludes `/opt/homebrew/bin`
-/// and other typical install dirs. Without this resolution, `Command::new`
-/// fails with ENOENT for `claude`, `cursor-agent`, `codex`, `gh`,
-/// brew-installed `git`, user editors, etc.
 pub fn resolved_path() -> &'static str {
     resolve(&RESOLVED_PATH, compute_path).as_str()
 }
 
-/// `Command` pre-wired with the resolved PATH. Drop-in replacement for
-/// `Command::new` whenever the target binary may live outside the minimal
-/// posix path set.
 pub fn command(binary: &str) -> Command {
     let mut cmd = Command::new(binary);
     cmd.env("PATH", resolved_path());
@@ -161,17 +150,19 @@ fn shell_candidates() -> &'static [&'static str] {
 const SHELL_PROBE_SCRIPT: &str =
     "printf 'GBPATH:%s\\n' \"$PATH\"; printf 'GBNPM:%s\\n' \"$(npm prefix -g 2>/dev/null)\"";
 
+fn login_flag(sh: &str) -> &'static str {
+    if sh == "/bin/sh" {
+        return "-lc";
+    }
+    "-ilc"
+}
+
 fn probe_login_shell() -> (Option<String>, Option<String>) {
     for sh in shell_candidates() {
         if !std::path::Path::new(sh).exists() {
             continue;
         }
-        let args: &[&str] = if *sh == "/bin/sh" {
-            &["-lc", SHELL_PROBE_SCRIPT]
-        } else {
-            &["-ilc", SHELL_PROBE_SCRIPT]
-        };
-        if let Some(out) = run_with_timeout(sh, args) {
+        if let Some(out) = run_with_timeout(sh, &[login_flag(sh), SHELL_PROBE_SCRIPT]) {
             let (path, prefix) = parse_shell_probe(&out);
             if path.is_none() {
                 continue;
@@ -194,7 +185,9 @@ fn parse_shell_probe(out: &str) -> (Option<String>, Option<String>) {
             if !value.is_empty() {
                 path = Some(value.to_string());
             }
-        } else if let Some(rest) = line.strip_prefix("GBNPM:") {
+            continue;
+        }
+        if let Some(rest) = line.strip_prefix("GBNPM:") {
             let value = rest.trim();
             if !value.is_empty() {
                 prefix = Some(value.to_string());
@@ -229,18 +222,11 @@ fn parse_env(raw: &str) -> Vec<(String, String)> {
 }
 
 fn probe_login_shell_env() -> Option<String> {
-    const LOGIN_ARGS: &[&str] = &["-ilc", "env"];
-    const POSIX_ARGS: &[&str] = &["-lc", "env"];
     for sh in shell_candidates() {
         if !std::path::Path::new(sh).exists() {
             continue;
         }
-        let args = if *sh == "/bin/sh" {
-            POSIX_ARGS
-        } else {
-            LOGIN_ARGS
-        };
-        if let Some(out) = run_with_timeout(sh, args) {
+        if let Some(out) = run_with_timeout(sh, &[login_flag(sh), "env"]) {
             let trimmed = out.trim();
             if !trimmed.is_empty() {
                 return Some(trimmed.to_string());

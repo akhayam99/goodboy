@@ -135,11 +135,11 @@ export const parseInline = ({ text }: Params): ReadonlyArray<InlineNode> => {
           const label = text.slice(i + 1, closeBracket);
           const url = text.slice(closeBracket + 2, closeParen);
           flush();
-          if (SAFE_LINK_RE.test(url)) {
-            out.push({ kind: 'link', url, children: parseInline({ text: label }) });
-          } else {
-            out.push({ kind: 'text', value: label });
-          }
+          out.push(
+            SAFE_LINK_RE.test(url)
+              ? { kind: 'link', url, children: parseInline({ text: label }) }
+              : { kind: 'text', value: label },
+          );
           i = closeParen + 1;
           continue;
         }

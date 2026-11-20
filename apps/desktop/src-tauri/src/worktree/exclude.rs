@@ -9,13 +9,7 @@ pub(crate) fn exclude_file_path(repo_path: &Path) -> Option<PathBuf> {
     if trimmed.is_empty() {
         return None;
     }
-    let dir = PathBuf::from(trimmed);
-    let resolved = if dir.is_absolute() {
-        dir
-    } else {
-        repo_path.join(dir)
-    };
-    Some(resolved.join("info").join("exclude"))
+    Some(repo_path.join(trimmed).join("info").join("exclude"))
 }
 
 pub(crate) fn remove_goodboy_exclude_entry(repo_path: &Path) {

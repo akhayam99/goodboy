@@ -28,7 +28,7 @@ export const cannotCheckTitle = ({ providerId }: ProviderParams): string =>
 
 export const cannotCheckBody = ({ health, nowMs }: AgeParams): string => {
   const age = formatAge({ from: health.evidence.lastGoodAt, now: nowMs });
-  return age === '' ? 'Nothing confirmed yet.' : `Showing what we last knew, from ${age}.`;
+  return age === '' ? 'Nothing confirmed yet.' : `Showing what Goodboy last knew, from ${age}.`;
 };
 
 export const breakerTitle = ({
@@ -38,4 +38,4 @@ export const breakerTitle = ({
   `${PROVIDER_LABEL[providerId]} refused your last ${Math.max(REFUSALS_TO_OPEN_BREAKER, health.refusals.length)} runs`;
 
 export const breakerBody = ({ providerId }: ProviderParams): string =>
-  `${PROVIDER_LABEL[providerId]} says you are signed in on this Mac, but it did not accept the runs.`;
+  `${PROVIDER_LABEL[providerId]} says you're signed in on this Mac, but it didn't accept the runs.`;

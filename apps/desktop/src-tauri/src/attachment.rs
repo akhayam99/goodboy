@@ -12,14 +12,8 @@ use crate::db::Db;
 use crate::dropped_paths::DroppedPaths;
 use crate::util::scoped_path::{open_file_within, resolve_within, ScopedPathError};
 
-/// Attachments live inside the worktree so the spawned provider CLI can read
-/// them with a path relative to its cwd. `.goodboy/` is gitignored, so they
-/// never pollute the diff.
 const ATTACH_SUBDIR: &str = ".goodboy/attachments";
 
-/// Hard ceiling on a single decoded attachment. Mirrors the composer-side
-/// check — the second guard exists because `rel_path`/payloads also arrive
-/// from persisted turn events, not just the live UI.
 pub(crate) const MAX_BYTES: usize = 15 * 1024 * 1024;
 
 #[derive(Debug, Error)]
@@ -81,9 +75,6 @@ fn attachment_relative(rel_path: &str) -> Result<&Path, AttachmentError> {
     Ok(relative)
 }
 
-/// Reduces an arbitrary file name to a flat, separator-free token. Drops any
-/// directory component and replaces anything outside `[A-Za-z0-9._-]` — both a
-/// path-traversal guard and a defense against shell-hostile names.
 pub(crate) fn sanitize_segment(name: &str) -> String {
     let base = Path::new(name)
         .file_name()
@@ -91,12 +82,9 @@ pub(crate) fn sanitize_segment(name: &str) -> String {
         .unwrap_or("image");
     let cleaned: String = base
         .chars()
-        .map(|c| {
-            if c.is_ascii_alphanumeric() || matches!(c, '.' | '-' | '_') {
-                c
-            } else {
-                '_'
-            }
+        .map(|c| match c {
+            'a'..='z' | 'A'..='Z' | '0'..='9' | '.' | '-' | '_' => c,
+            _ => '_',
         })
         .collect();
     match cleaned.as_str() {
@@ -132,10 +120,6 @@ fn mime_for(path: &Path) -> &'static str {
     }
 }
 
-/// Whitelist guard shared by the drag-drop path. Images plus a curated set of
-/// document types the spawned agent can actually read (PDF/CSV/text) or parse
-/// with its own tooling (office formats). Unknown binaries are rejected so a
-/// stray drop never lands an unreadable blob in the worktree.
 fn is_allowed_mime(mime: &str) -> bool {
     mime.starts_with("image/")
         || matches!(
@@ -153,9 +137,6 @@ fn is_allowed_mime(mime: &str) -> bool {
         )
 }
 
-/// Writes a base64-encoded image into `<worktree>/.goodboy/attachments/` and
-/// returns the worktree-relative path. The stored name is `<id>-<file_name>`,
-/// both sanitized — `id` keeps names unique without a uuid crate.
 #[tauri::command]
 pub async fn attachment_write(
     worktree_dir: String,
@@ -195,9 +176,6 @@ fn attachment_write_blocking(
     Ok(format!("{ATTACH_SUBDIR}/{stored}"))
 }
 
-/// Payload returned to the webview when the user drops a file onto the
-/// composer. The frontend treats this as an `AttachmentInput` after camelCase
-/// conversion, so it can flow through the same pipeline as a paste/pick.
 #[derive(serde::Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct DroppedAttachment {
@@ -206,10 +184,6 @@ pub struct DroppedAttachment {
     data_base64: String,
 }
 
-/// Reads a file the user dragged from the OS into the composer and returns the
-/// bytes as base64 so the frontend can reuse the existing attachment pipeline.
-/// Accepts the same whitelist as the composer picker, mirroring its `accept`
-/// filter — the second guard exists because OS drag-drop bypasses the picker.
 #[tauri::command]
 pub async fn attachment_read_dropped(
     drops: State<'_, DroppedPaths>,
@@ -263,9 +237,6 @@ fn attachment_read_dropped_blocking(
     })
 }
 
-/// Reads a previously written attachment back as a `data:` URL for display in
-/// the webview. `rel_path` must be the worktree-relative path produced by
-/// `attachment_write`; anything pointing outside the attachment dir is rejected.
 #[tauri::command]
 pub async fn attachment_read(
     worktree_dir: String,
@@ -464,7 +435,6 @@ mod tests {
         let _ = fs::remove_dir_all(&dir);
         fs::create_dir_all(&dir).unwrap();
 
-        // 1x1 transparent PNG.
         let png_b64 = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=";
         let rel = attachment_write_blocking(
             dir.to_string_lossy().to_string(),
@@ -574,7 +544,6 @@ mod tests {
         let _ = fs::remove_dir_all(&dir);
         fs::create_dir_all(&dir).unwrap();
         let png = dir.join("shot.png");
-        // 1x1 transparent PNG.
         let png_b64 = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=";
         fs::write(&png, STANDARD.decode(png_b64).unwrap()).unwrap();
         let out = attachment_read_dropped_blocking(png.to_string_lossy().to_string()).unwrap();

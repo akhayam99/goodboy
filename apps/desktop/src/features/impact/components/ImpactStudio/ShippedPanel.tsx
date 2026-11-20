@@ -52,25 +52,25 @@ export const ShippedPanel = ({
       ) : null}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <TrendStatCard
-          label="open PRs"
+          label="Open PRs"
           value={String(prs?.open ?? 0)}
           current={prs?.open ?? 0}
           previous={prs?.previousOpen ?? null}
         />
         <TrendStatCard
-          label="merged PRs"
+          label="Merged PRs"
           value={String(prs?.merged ?? 0)}
           current={prs?.merged ?? 0}
           previous={prs?.previousMerged ?? null}
         />
         <TrendStatCard
-          label="reviews resolved"
+          label="Reviews resolved"
           value={String(reviewData?.commentsResolved ?? 0)}
           current={reviewData?.commentsResolved ?? 0}
           previous={reviewData?.previousCommentsResolved ?? null}
         />
         <TrendStatCard
-          label="median resolve"
+          label="Median resolve"
           value={formatHours({ hours: reviewData?.medianResolveHours ?? null })}
           current={reviewData?.medianResolveHours ?? 0}
           previous={null}
@@ -78,7 +78,7 @@ export const ShippedPanel = ({
         />
       </div>
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <StudioWidget label="PR funnel" hint="latest known state">
+        <StudioWidget label="PR funnel" hint="Latest known state">
           <div className="flex flex-col gap-2">
             {prs?.entries.slice(0, FUNNEL_ROWS).map((entry) => (
               <PullRequestRow
@@ -97,7 +97,7 @@ export const ShippedPanel = ({
             ) : null}
           </div>
         </StudioWidget>
-        <StudioWidget label="review throughput" hint="time from comment to resolution">
+        <StudioWidget label="Review throughput" hint="Time from comment to resolution">
           <StackedBar
             heading="Review throughput"
             segments={[
@@ -141,7 +141,7 @@ export const ShippedPanel = ({
             </span>
           </div>
         </StudioWidget>
-        <StudioWidget label="hot files" hint="most resolved review comments">
+        <StudioWidget label="Hot files" hint="Most resolved review comments">
           <div className="flex flex-col gap-1">
             {reviewData?.hotFiles.map((file) => (
               <div key={file.filePath} className="flex items-center gap-3 px-2 py-1 text-meta">
@@ -151,10 +151,10 @@ export const ShippedPanel = ({
             ))}
           </div>
         </StudioWidget>
-        <StudioWidget label="linked issues" hint="linked after launch vs launched from an issue">
+        <StudioWidget label="Linked issues" hint="Linked after launch vs launched from an issue">
           <div className="grid grid-cols-2 gap-3">
-            <StatCard label="linked" value={String(tasks?.linked ?? 0)} valueSize="lg" />
-            <StatCard label="launched" value={String(tasks?.launched ?? 0)} valueSize="lg" />
+            <StatCard label="Linked" value={String(tasks?.linked ?? 0)} valueSize="lg" />
+            <StatCard label="Launched" value={String(tasks?.launched ?? 0)} valueSize="lg" />
           </div>
           <SessionRows
             sessions={tasks?.sessions ?? []}

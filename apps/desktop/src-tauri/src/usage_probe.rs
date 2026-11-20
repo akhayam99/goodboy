@@ -64,10 +64,9 @@ fn run_probe_until(
             stderr: out.stderr,
         });
     }
-    let msg = if out.stderr.trim().is_empty() {
-        out.stdout
-    } else {
-        out.stderr
+    let msg = match out.stderr.trim().is_empty() {
+        true => out.stdout,
+        false => out.stderr,
     };
     Err(UsageProbeError::NonZeroExit(msg))
 }

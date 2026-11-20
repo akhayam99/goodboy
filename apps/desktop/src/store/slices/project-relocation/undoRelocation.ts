@@ -15,7 +15,19 @@ export const undoRelocation = (set: SetFn, get: GetFn) => {
     set({ projectRelocationPhase: 'moving', projectRelocationError: null });
     try {
       for (const relocation of completed) {
-        await projectRelocationUndo({ relocationId: relocation.relocationId });
+        if (!relocation.isUndone) {
+          await projectRelocationUndo({ relocationId: relocation.relocationId });
+          set((state) => ({
+            projects: state.projects.map((project) =>
+              project.id === relocation.projectId
+                ? { ...project, rootPath: relocation.fromRoot }
+                : project,
+            ),
+            projectRelocationCompleted: state.projectRelocationCompleted.map((entry) =>
+              entry.relocationId === relocation.relocationId ? { ...entry, isUndone: true } : entry,
+            ),
+          }));
+        }
         const identity = await repoIdentity({ path: relocation.fromRoot });
         const checkedAt = new Date().toISOString() as IsoDateTime;
         const rootCommit = identity.rootCommits[0] ?? null;
@@ -38,6 +50,9 @@ export const undoRelocation = (set: SetFn, get: GetFn) => {
                   updatedAt: checkedAt,
                 }
               : project,
+          ),
+          projectRelocationCompleted: state.projectRelocationCompleted.filter(
+            (entry) => entry.relocationId !== relocation.relocationId,
           ),
         }));
       }

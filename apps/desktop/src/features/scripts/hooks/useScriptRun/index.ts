@@ -5,6 +5,7 @@ import { useNow } from '../../../../shared/hooks/useNow';
 import type { RunnableScript } from '../../buildSessionScripts';
 import type { ScriptRunRecord, ScriptRunResult, ScriptRunStatus } from '../../scripts';
 import { startRunnableScript } from '../../startRunnableScript';
+import { stopScriptRun } from '../../stopScriptRun';
 
 type Target = {
   readonly script: RunnableScript;
@@ -57,7 +58,6 @@ export const useScriptRun = ({ sessionId, scriptKey, mountId, target }: Params):
     stored.mountId === mountId
       ? stored
       : null;
-  const cancelScript = useAppStore((state) => state.cancelScript);
   const isRunning = record?.status === 'pending';
   const now = useNow(1_000, isRunning);
 
@@ -72,8 +72,8 @@ export const useScriptRun = ({ sessionId, scriptKey, mountId, target }: Params):
     if (!isRunning) {
       return;
     }
-    void cancelScript(sessionId, scriptKey);
-  }, [cancelScript, isRunning, scriptKey, sessionId]);
+    void stopScriptRun({ sessionId, scriptKey });
+  }, [isRunning, scriptKey, sessionId]);
 
   return {
     record,

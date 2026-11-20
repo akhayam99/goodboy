@@ -331,7 +331,7 @@ describe('buildDetachPlan', () => {
       kind: 'keep',
       reason: 'unavailable',
       lines: [
-        'The safety of 1 of 2 worktrees in api could not be verified; removing it will keep every directory.',
+        "Couldn't check that 1 of 2 worktrees in api are safe to remove. Removing them keeps every directory.",
       ],
       details: { totals: [], worktrees: ['ak/b at /b: not verified'] },
     });
@@ -352,7 +352,7 @@ describe('buildDetachPlan', () => {
       kind: 'keep',
       reason: 'unavailable',
       lines: [
-        'The safety of ak/feat at /worktrees/api could not be verified; removing it will keep the directory.',
+        "Couldn't check that ak/feat at /worktrees/api is safe to remove. Removing it keeps the directory.",
       ],
       details: { totals: [], worktrees: [] },
     });
@@ -482,7 +482,7 @@ describe('buildDetachPlan', () => {
     ).toEqual({
       kind: 'safe',
       lines: [
-        'Remove the clean worktree at /worktrees/api: 0 uncommitted files, 0 unpushed commits, and ak/feat is not merged into origin/main yet.',
+        "Remove the clean worktree at /worktrees/api: 0 uncommitted files, 0 unpushed commits, and ak/feat isn't merged into origin/main yet.",
         'The branch and its commits stay in the repository.',
       ],
       details: {
@@ -540,7 +540,7 @@ describe('buildDetachPlan', () => {
       lines: [
         'Remove 2 worktrees for api.',
         '1 uncommitted file will be deleted.',
-        '1 branch is not merged into the base branch yet.',
+        "1 branch isn't merged into the base branch yet.",
         'The branches and their commits stay in the repository.',
       ],
       details: {
@@ -572,7 +572,7 @@ describe('detach outcomes', () => {
     expect(
       detachOutcomeMessage({ kind: 'failed', projectName: 'api', worktreePath: '/worktrees/api' }),
     ).toBe(
-      'Could not finish removing the worktree. It stays in the session; check again before retrying.',
+      "Couldn't finish removing the worktree. It stays in the session. Check again before you retry.",
     );
   });
 
@@ -585,7 +585,7 @@ describe('detach outcomes', () => {
         ],
       }),
     ).toBe(
-      'Removed 1 of 2 worktrees. Could not remove /worktrees/api-b: an agent is running. It stays in the session; check again before retrying.',
+      "Removed 1 of 2 worktrees. Couldn't remove /worktrees/api-b: an agent is running. It stays in the session. Check again before you retry.",
     );
   });
 
@@ -598,7 +598,7 @@ describe('detach outcomes', () => {
         ],
       }),
     ).toBe(
-      'Could not remove 2 worktrees, starting with /worktrees/api-a. They stay in the session; check again before retrying.',
+      "Couldn't remove 2 worktrees, starting with /worktrees/api-a. They stay in the session. Check again before you retry.",
     );
   });
 });

@@ -7,17 +7,16 @@ import { clearPendingTurnEvents } from '../transcripts/buffer';
 import type { GetFn, SetFn } from './types';
 
 const STILL_RUNNING_MESSAGE =
-  'An agent did not stop, so the workspace stays connected. Try Disconnect again.';
+  "An agent didn't stop, so the workspace stays connected. Try Disconnect again.";
 
 export const disconnectWorkspace = (set: SetFn, get: GetFn) => {
   return async (id: WorkspaceId) => {
-    const state = get();
-    const workspace = state.workspaces.find((w) => w.id === id);
+    const workspace = get().workspaces.find((w) => w.id === id);
     if (!workspace) {
       throw new Error(`workspace not found: ${id}`);
     }
 
-    const wasCurrentWorkspace = state.currentWorkspaceId === id;
+    const wasCurrentWorkspace = get().currentWorkspaceId === id;
     if (wasCurrentWorkspace) {
       const { stillRunning } = await stopWork({
         getState: get,
@@ -27,20 +26,23 @@ export const disconnectWorkspace = (set: SetFn, get: GetFn) => {
       if (stillRunning > 0) {
         throw new Error(STILL_RUNNING_MESSAGE);
       }
-      const termSessions = state.sessions.filter(
-        (s) => state.terminalSessions[s.id as SessionId] === 'open',
-      );
-      void Promise.all(
-        termSessions.map((s) => invokeTerminalClose(s.id as SessionId).catch(() => undefined)),
-      );
     }
 
     const now = new Date().toISOString() as IsoDateTime;
-    const prevWorkspaces = state.workspaces;
-    const prevProjects = state.projects;
-    const ownedProjects = state.projects.filter((project) => project.workspaceId === id);
+    const ownedProjects = get().projects.filter((project) => project.workspaceId === id);
+    await disconnectWorkspaceAndProjects({
+      db: tauriDatabase,
+      id,
+      projectIds: ownedProjects.map((project) => project.id),
+      at: now,
+    });
 
     if (wasCurrentWorkspace) {
+      const { sessions, terminalSessions } = get();
+      const termSessions = sessions.filter((s) => terminalSessions[s.id as SessionId] === 'open');
+      void Promise.all(
+        termSessions.map((s) => invokeTerminalClose(s.id as SessionId).catch(() => undefined)),
+      );
       clearPendingTurnEvents();
     }
     set((s) => {
@@ -94,21 +96,6 @@ export const disconnectWorkspace = (set: SetFn, get: GetFn) => {
       };
     });
 
-    try {
-      await disconnectWorkspaceAndProjects({
-        db: tauriDatabase,
-        id,
-        projectIds: ownedProjects.map((project) => project.id),
-        at: now,
-      });
-    } catch (err) {
-      set((s) => ({
-        workspaces: prevWorkspaces,
-        projects: prevProjects,
-        ...(wasCurrentWorkspace ? { currentWorkspaceId: id } : {}),
-      }));
-      throw err;
-    }
     void get().emitNotification({
       kind: 'workspace-deleted',
       severity: 'info',

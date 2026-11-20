@@ -39,6 +39,3 @@ export type FolderSignals = Readonly<{
   entriesRead: number;
   isTruncated: boolean;
 }>;
-
-export type FolderSignalsErrorKind =
-  'invalid_path' | 'not_found' | 'not_a_directory' | 'permission_denied' | 'io';

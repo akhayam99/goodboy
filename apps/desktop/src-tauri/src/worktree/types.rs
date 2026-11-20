@@ -170,10 +170,6 @@ pub struct CreateArgs {
     pub existing_branch: Option<String>,
     #[serde(default)]
     pub fallback_ref: Option<String>,
-    /// Base branch to cut a new branch from. Defaults to `main`. The branch is
-    /// always cut from `origin/<base>` (not the local copy) so a stale local
-    /// `main` cannot leak unrelated commits into the new branch. Ignored when
-    /// `existing_branch` is set.
     #[serde(default)]
     pub base_branch: Option<String>,
     #[serde(default)]
@@ -184,9 +180,7 @@ pub struct CreateArgs {
 #[serde(rename_all = "camelCase")]
 pub struct BranchInfo {
     pub name: String,
-    /// True when this branch is currently checked out in some worktree.
     pub in_use: bool,
-    /// True when the branch has uncommitted changes in its checkout.
     pub has_uncommitted: bool,
 }
 
@@ -221,8 +215,6 @@ pub struct ChangeBranchArgs {
     pub repo_path: String,
     pub worktree_path: String,
     pub branch: String,
-    /// When true, create the branch with `git switch -c`. When false, switch to
-    /// an existing branch with `git switch`.
     pub create_new: bool,
 }
 

@@ -292,7 +292,6 @@ fn emit_alerts_at(
     let now = crate::util::ms_to_iso(now_ms);
     let period = "monthly";
 
-    // --- provider budget check ---
     let provider_rule: Option<(String, f64, f64)> = {
         let mut stmt = conn.prepare(
             "SELECT id, cap_usd, alert_threshold_pct FROM budget_rules WHERE provider = ?1 AND period = ?2 LIMIT 1",
@@ -346,7 +345,6 @@ fn emit_alerts_at(
         }
     }
 
-    // --- session budget check ---
     let session_cap: Option<f64> = {
         let mut stmt =
             conn.prepare("SELECT soft_cap_usd FROM session_budgets WHERE session_id = ?1 LIMIT 1")?;

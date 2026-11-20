@@ -1,0 +1,493 @@
+import { pullPaletteRepos } from '../../pullPaletteRepos';
+import { destinationEntryOf } from '../../destinationEntryOf';
+import { destinationPaletteKeyOf } from '../../destinationPaletteKeyOf';
+import { footDestinationEntryOf } from '../../footDestinationEntryOf';
+import { useMemo } from 'react';
+import { CircleArrowUp, PanelLeft, Plus, RotateCcw, Smartphone } from '@goodboy/ui/icons';
+import { useCurrentInnerColumn } from '@goodboy/ui';
+import type { AgentId, ProjectScript, SessionId, Workflow } from '@goodboy/types';
+import {
+  EMPTY_ARRAY,
+  agentPlace,
+  sessionPlace,
+  useAppStore,
+  useCurrentSession,
+  useCurrentWorkspace,
+  useSessionPlans,
+  useSessions,
+  useWorkspaces,
+} from '../../../../store';
+import { DESTINATIONS } from '../../../../shared/navigation/destinations';
+import { runDestination } from '../../runDestination';
+import { useUnreadSessionIds } from '../../../../shared/hooks/useUnreadSessionIds';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
+import { NAMES, formerNamesOf } from '../../../../shared/utils/names';
+import { switchTheme, type ThemePreference } from '../../../../shared/lib/theme';
+import { classifyAgent } from '../../../session/agent-kind';
+import { useLensDestinations } from '../../../session/hooks/useLensDestinations';
+import { requestNewSession } from '../../../session/requestNewSession';
+import { openNewSessionAs } from '../../../session/startKind/openNewSessionAs';
+import { openReportSheet } from '../../../bug-report/openReportSheet';
+import { dispatchWindowEvent } from '../../../../shared/lib/dispatchWindowEvent';
+import { openSettings } from '../../../settings/openSettings';
+import { openSessionTerminalHere } from '../../../terminal/openSessionTerminalHere';
+import { openWorkspaceTerminal } from '../../../terminal/openWorkspaceTerminal';
+import { openImpactStudio } from '../../../impact/openImpactStudio';
+import { openNewWorkspace } from '../../../workspace/openNewWorkspace';
+import { useIsMainWindow } from '../../../workspace/useIsMainWindow';
+import { getWizardState, resumeSetup } from '../../../onboarding/onboardingSettings';
+import { useSettingsDirectory } from '../../../settings/hooks/useSettingsDirectory';
+import {
+  CONNECTIONS_SETTING_KEY,
+  SETTING_ROW_KEY_PREFIX,
+  settingsPaletteEntries,
+} from '../../../settings/settingsPaletteEntries';
+import { connectionPaletteEntries } from '../../../connections/connectionPaletteEntries';
+import { openConnection } from '../../../connections/openConnection';
+import { guidePaletteEntries } from '../../../settings/guidePaletteEntries';
+import { checkForUpdatesNow } from '../../../updater/checkForUpdatesNow';
+import type { SettingsFocus } from '../../../settings/settingsFocus';
+import { useToast } from '../../../../shared/components/Toast';
+import { agentEntries } from '../../sources/agentEntries';
+import { startRunFromPresetEntries } from '../../sources/startRunFromPresetEntries';
+import { openStartRun } from '../../../session/startRun/openStartRun';
+import { openPlanAnywhere } from '../../../plans/openPlanAnywhere';
+import { requestAskReset } from '../../../session/ask/requestAskReset';
+import { isAskStreaming } from '../../../../store/slices/ask/isAskStreaming';
+import { selectIsAskOpen } from '../../../../store/slices/ask/selectIsAskOpen';
+import { artifactEntries } from '../../sources/artifactEntries';
+import { sessionEntries } from '../../sources/sessionEntries';
+import { markAllReadEntries } from '../../sources/markAllReadEntries';
+import { workspaceEntries } from '../../sources/workspaceEntries';
+import { scriptPinEntries } from '../../sources/scriptPinEntries';
+import { useScriptPins } from '../../../scripts';
+import { scriptPinId } from '../../../scripts/scriptPinId';
+import { paletteScriptRunner } from '../../paletteScriptRunner';
+import { repoEntries } from '../../sources/repoEntries';
+import { leadEntries } from '../../sources/leadEntries';
+import { useOpenLeadRows } from '../useOpenLeadRows';
+import { openSessionAnywhere } from '../../openSessionAnywhere';
+import type { PaletteEntry } from '../../types';
+import { useSessionsEverywhere } from '../useSessionsEverywhere';
+import { projectById } from '../../../../store/slices/projects/projectIndex';
+
+const NEW_SESSION_WITH = {
+  workflow: 'New workflow session',
+  agent: 'New agent session',
+} as const;
+
+const THEME_CHOICES = ['dark', 'light', 'system'] as const satisfies ReadonlyArray<ThemePreference>;
+
+const PAIR_SEPARATOR = '\u0000';
+
+const LIST_SEPARATOR = '\u0001';
+
+const openSettingsDoor = (focus: SettingsFocus): void => openSettings({ ...focus, door: true });
+
+export const useCommandEntries = (): ReadonlyArray<PaletteEntry> => {
+  const workspaces = useWorkspaces();
+  const projects = useAppStore((s) => s.projects);
+  const sessions = useSessions();
+  const everywhere = useSessionsEverywhere();
+  const currentWorkspace = useCurrentWorkspace();
+  const currentSession = useCurrentSession();
+  const settingsGroups = useSettingsDirectory({
+    workspaceId: currentWorkspace?.id ?? null,
+    workspaceName: currentWorkspace?.name ?? null,
+  });
+  const providers = useAppStore((s) => s.providers);
+  const sessionId = currentSession === null ? null : (currentSession.id as SessionId);
+  const openWorkspace = useAppStore((s) => s.openWorkspace);
+  const navigate = useAppStore((s) => s.navigate);
+  const openStudio = useAppStore((s) => s.openStudio);
+  const projectPairs = useAppStore((s) =>
+    Object.entries(s.sessionProjectMounts)
+      .flatMap(([id, list]) => {
+        const name = list[0]?.mountName;
+        return name === undefined ? [] : [`${id}${PAIR_SEPARATOR}${name}`];
+      })
+      .join(LIST_SEPARATOR),
+  );
+  const scripts = useAppStore((s) =>
+    currentWorkspace ? (s.projectScripts[currentWorkspace.id] ?? EMPTY_ARRAY) : EMPTY_ARRAY,
+  ) as ReadonlyArray<ProjectScript>;
+  const workflows: ReadonlyArray<Workflow> = useAppStore((s) =>
+    currentWorkspace ? (s.phaseTemplates[currentWorkspace.id] ?? EMPTY_ARRAY) : EMPTY_ARRAY,
+  );
+  const agents = useAppStore((s) =>
+    sessionId === null ? EMPTY_ARRAY : (s.sessionPhaseRuns[sessionId] ?? EMPTY_ARRAY),
+  );
+  const artifacts = useAppStore((s) =>
+    sessionId === null ? EMPTY_ARRAY : (s.sessionArtifacts[sessionId] ?? EMPTY_ARRAY),
+  );
+  const plans = useSessionPlans(sessionId);
+  const agentKindOverride = useAppStore((s) => s.agentKindOverride);
+  const isAskOpen = useAppStore(
+    (s) => sessionId !== null && selectIsAskOpen({ state: s, sessionId }),
+  );
+  const isAskReplying = useAppStore((s) =>
+    sessionId === null ? false : isAskStreaming({ state: s, sessionId }),
+  );
+  const isInSession = useAppStore((s) => sessionId !== null && s.appStudio === null);
+  const destinations = useLensDestinations({ sessionId });
+  const workspaceProjects = useMemo(
+    () =>
+      currentWorkspace === null
+        ? []
+        : projects.filter((project) => project.workspaceId === currentWorkspace.id),
+    [projects, currentWorkspace],
+  );
+  const projectGitStatus = useAppStore((s) => s.projectGitStatus);
+  const scriptPins = useScriptPins({ projectIds: workspaceProjects.map((project) => project.id) });
+  const reportError = useAppStore((s) => s.reportError);
+  const markSessionsRead = useAppStore((s) => s.markSessionsRead);
+  const unreadSessionIds = useUnreadSessionIds({ sessions });
+  const { showToast } = useToast();
+  const innerColumn = useCurrentInnerColumn();
+  const isInMainWindow = useIsMainWindow();
+  const leadRows = useOpenLeadRows({ workspaceId: currentWorkspace?.id ?? null });
+  const canResumeSetup = isInMainWindow && getWizardState() !== 'done';
+
+  return useMemo<ReadonlyArray<PaletteEntry>>(() => {
+    const now = Date.now();
+    const hasWorkspace = currentWorkspace !== null;
+    const projectNames = new Map(
+      projectPairs
+        .split(LIST_SEPARATOR)
+        .filter((pair) => pair !== '')
+        .map((pair) => {
+          const [id = '', name = ''] = pair.split(PAIR_SEPARATOR);
+          return [id, name] as const;
+        }),
+    );
+    const out: Array<PaletteEntry> = [
+      ...sessionEntries({
+        sessions,
+        otherSessions: everywhere,
+        workspaces,
+        currentWorkspaceId: currentWorkspace?.id ?? null,
+        projectNames,
+        now,
+        open: openSessionAnywhere,
+      }),
+    ];
+
+    if (isAskOpen && !isAskReplying && sessionId !== null) {
+      out.push({
+        key: 'action:ask-reset',
+        label: NAMES.newQuestion,
+        secondary: [...formerNamesOf(NAMES.newQuestion), 'Reset Ask', 'New Ask chat'],
+        kind: 'action',
+        group: 'action',
+        icon: RotateCcw,
+        shortcut: 'ask.reset',
+        run: () => {
+          requestAskReset({ sessionId });
+        },
+      });
+    }
+
+    if (sessionId === null) {
+      out.push({
+        key: 'action:start-run-auto-picks',
+        label: NAMES.startARun,
+        kind: 'create',
+        group: 'action',
+        icon: CONCEPT_ICONS.autoRouting,
+        run: () => openNewSessionAs({ startKind: 'auto' }),
+      });
+    }
+
+    out.push(...markAllReadEntries({ sessionIds: unreadSessionIds, markRead: markSessionsRead }));
+
+    if (sessionId !== null) {
+      out.push(
+        ...agentEntries({
+          sessionId,
+          agents,
+          kindOf: ({ agent }) =>
+            classifyAgent({ agent, override: agentKindOverride[agent.id as AgentId] ?? null }),
+          open: ({ agentId }) => navigate({ to: agentPlace({ sessionId, agentId }) }),
+        }),
+        ...startRunFromPresetEntries({ sessionId, workflows, open: openStartRun }),
+        ...artifactEntries({
+          sessionId,
+          plans,
+          artifacts,
+          open: ({ artifactId }) =>
+            navigate({
+              to: sessionPlace({
+                sessionId,
+                lens: 'plans',
+                target: { kind: 'artifact', artifactId },
+              }),
+            }),
+          openPlan: ({ artifactId }) => openPlanAnywhere({ sessionId, planId: artifactId }),
+        }),
+      );
+      for (const destination of destinations) {
+        out.push(destinationEntryOf({ sessionId, destination }));
+      }
+    }
+
+    out.push(...workspaceEntries({ workspaces, projects, open: openWorkspace }));
+
+    if (hasWorkspace) {
+      const workspaceId = currentWorkspace.id;
+      out.push(
+        ...DESTINATIONS.filter((destination) => destination.home !== 'foot').map(
+          (destination): PaletteEntry => ({
+            key: destinationPaletteKeyOf({ id: destination.id }),
+            label: destination.label,
+            ...(destination.aliases.length > 0 && { secondary: destination.aliases }),
+            kind: 'goto',
+            group: null,
+            icon: destination.icon,
+            ...(destination.shortcutId !== undefined && { shortcut: destination.shortcutId }),
+            run: () => runDestination({ id: destination.id }),
+          }),
+        ),
+        ...leadEntries({
+          rows: leadRows,
+          open: ({ sessionId: leadSessionId, agentId }) =>
+            navigate({ to: agentPlace({ sessionId: leadSessionId, agentId }) }),
+        }),
+        {
+          key: 'goto:impact-spend',
+          label: 'Impact: Spend',
+          kind: 'page',
+          group: null,
+          icon: CONCEPT_ICONS.budget,
+          run: () => openImpactStudio({ scope: { kind: 'spend' }, door: true }),
+        },
+        {
+          key: 'action:new-session',
+          label: 'New session',
+          kind: 'create',
+          group: 'action',
+          icon: Plus,
+          shortcut: 'session.new',
+          run: requestNewSession,
+        },
+        {
+          key: 'action:new-session-workflow',
+          label: NEW_SESSION_WITH.workflow,
+          kind: 'create',
+          group: 'action',
+          icon: CONCEPT_ICONS.workflows,
+          secondary: ['New workflow', NAMES.runKind.orchestrated, NAMES.runKind.preset],
+          run: () => openNewSessionAs({ startKind: 'workflow', startShape: 'orchestrated' }),
+        },
+        {
+          key: 'action:new-session-agent',
+          label: NEW_SESSION_WITH.agent,
+          kind: 'create',
+          group: 'action',
+          icon: CONCEPT_ICONS.agents,
+          secondary: ['New agent', NAMES.lead],
+          run: () => openNewSessionAs({ startKind: 'agent', startShape: 'autoAgent' }),
+        },
+        {
+          key: 'action:new-chat',
+          label: 'New chat',
+          kind: 'create',
+          group: 'action',
+          icon: Plus,
+          shortcut: 'chat.new',
+          run: () => openStudio({ studio: { kind: 'chat', chatId: null } }),
+        },
+        {
+          key: 'action:new-terminal',
+          label: isInSession ? 'New terminal in this session' : 'New terminal',
+          kind: 'create',
+          group: 'action',
+          icon: Plus,
+          secondary: ['Open terminal', 'New terminal'],
+          run: () =>
+            isInSession && sessionId !== null
+              ? void openSessionTerminalHere({ sessionId, isFresh: true })
+              : void openWorkspaceTerminal({ workspaceId, isFresh: true }),
+        },
+      );
+    }
+    out.push({
+      key: 'action:new-workspace',
+      label: NAMES.newWorkspace,
+      secondary: formerNamesOf(NAMES.newWorkspace),
+      kind: 'create',
+      group: 'action',
+      icon: Plus,
+      run: openNewWorkspace,
+    });
+    if (canResumeSetup) {
+      out.push({
+        key: 'action:resume-setup',
+        label: NAMES.resumeSetup,
+        kind: 'action',
+        group: 'action',
+        icon: RotateCcw,
+        run: () => resumeSetup({ hasWorkspace: workspaces.length > 0 }),
+      });
+    }
+
+    const runner = paletteScriptRunner({
+      sessionId,
+      workspaceId: currentWorkspace?.id ?? null,
+      showToast,
+      reportError,
+    });
+    out.push(
+      ...scriptPinEntries({
+        projects: workspaceProjects,
+        pins: scriptPins,
+        saved: scripts,
+        runner,
+      }),
+    );
+
+    out.push(
+      ...repoEntries({
+        projects: workspaceProjects,
+        statuses: projectGitStatus,
+        pull: (projects) => pullPaletteRepos({ projects, showToast }),
+      }),
+    );
+
+    for (const script of scripts) {
+      const projectName = projectById(projects, script.projectId)?.name ?? 'Folder script';
+      const target = {
+        projectId: script.projectId,
+        projectName,
+        pinId: scriptPinId({ source: 'saved', relDir: '', name: script.name, savedId: script.id }),
+        name: script.name,
+      };
+      out.push({
+        key: `script:${script.id}`,
+        label: script.name,
+        kind: 'script',
+        group: 'script',
+        icon: CONCEPT_ICONS.scripts,
+        detail: projectName,
+        tag: 'Script',
+        step: () => runner.stepFor({ target }),
+        run: () => runner.runHere({ target }),
+      });
+    }
+
+    if (innerColumn !== null) {
+      out.push({
+        key: 'action:inner-column',
+        label: innerColumn.label,
+        secondary: ['fold unfold inner column rail list'],
+        kind: 'action',
+        group: 'action',
+        icon: PanelLeft,
+        shortcut: 'innerColumn.toggle',
+        run: innerColumn.toggle,
+      });
+    }
+
+    out.push(
+      footDestinationEntryOf({ id: 'settings' }),
+      ...settingsPaletteEntries({ groups: settingsGroups, open: openSettingsDoor }).filter(
+        (entry) =>
+          entry.key !== 'setting:app:shortcuts' &&
+          entry.key !== `${SETTING_ROW_KEY_PREFIX}pair-iphone` &&
+          (!hasWorkspace || entry.key !== CONNECTIONS_SETTING_KEY),
+      ),
+      ...connectionPaletteEntries({ providers, hasWorkspace }),
+      ...THEME_CHOICES.map((choice): PaletteEntry => ({
+        key: `action:theme-${choice}`,
+        label: `${NAMES.theme}: ${choice}`,
+        kind: 'action',
+        group: 'action',
+        icon: CONCEPT_ICONS.appearance,
+        secondary: ['appearance', 'color scheme', ...formerNamesOf(NAMES.theme)],
+        run: () => switchTheme({ to: choice }),
+      })),
+      {
+        key: 'action:check-updates',
+        label: 'Check for updates',
+        kind: 'action',
+        group: 'action',
+        icon: CircleArrowUp,
+        secondary: ['update upgrade version'],
+        run: checkForUpdatesNow,
+      },
+      {
+        key: 'action:connect-provider',
+        label: 'Connect a provider',
+        kind: 'action',
+        group: 'action',
+        icon: CONCEPT_ICONS.providers,
+        run: () => openConnection({ focus: null }),
+      },
+      {
+        key: 'action:pair-device',
+        label: NAMES.pairIphone,
+        secondary: formerNamesOf(NAMES.pairIphone),
+        kind: 'page',
+        group: 'action',
+        icon: Smartphone,
+        run: () => dispatchWindowEvent({ name: 'goodboy:open-pair-device' }),
+      },
+      footDestinationEntryOf({ id: 'guide' }),
+      ...(hasWorkspace ? [footDestinationEntryOf({ id: 'whatsNew' })] : []),
+      {
+        key: 'help:shortcuts',
+        label: 'Keyboard shortcuts',
+        kind: 'help',
+        group: 'help',
+        icon: CONCEPT_ICONS.shortcuts,
+        shortcut: 'settings.shortcuts',
+        secondary: formerNamesOf(NAMES.keyboardShortcuts),
+        run: () => openSettingsDoor({ scope: 'app', section: 'shortcuts' }),
+      },
+      {
+        key: 'action:report-issue',
+        label: 'Report a bug',
+        kind: 'help',
+        group: 'help',
+        icon: CONCEPT_ICONS.reportIssue,
+        shortcut: 'report.open',
+        secondary: ['bug report issue feedback crash broken'],
+        run: () => openReportSheet(),
+      },
+      ...guidePaletteEntries(),
+    );
+    return out;
+  }, [
+    workspaces,
+    projects,
+    sessions,
+    everywhere,
+    currentWorkspace,
+    sessionId,
+    projectPairs,
+    agents,
+    artifacts,
+    plans,
+    workflows,
+    scripts,
+    scriptPins,
+    workspaceProjects,
+    projectGitStatus,
+    agentKindOverride,
+    isAskOpen,
+    isAskReplying,
+    isInSession,
+    destinations,
+    openWorkspace,
+    navigate,
+    openStudio,
+    reportError,
+    markSessionsRead,
+    unreadSessionIds,
+    showToast,
+    settingsGroups,
+    providers,
+    innerColumn,
+    canResumeSetup,
+    leadRows,
+  ]);
+};
