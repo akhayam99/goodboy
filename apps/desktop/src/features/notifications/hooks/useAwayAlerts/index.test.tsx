@@ -376,7 +376,7 @@ describe('the one question about banners', () => {
 
     ask([retry]);
 
-    await screen.findByText('Banners while you are away');
+    await screen.findByText("Banners while you're away");
     expect(tauri.sendNotification).not.toHaveBeenCalled();
     expect(useAwayAlertsStore.getState().bannerChoice).toBe('unasked');
   });

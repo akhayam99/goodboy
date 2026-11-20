@@ -12,5 +12,5 @@ export const cleanUpRefusalOf = ({ outcome, label }: Params): string => {
   if (outcome.kind === 'ask' && outcome.keptBecause !== null) {
     return outcome.keptBecause;
   }
-  return `Kept ${label}: Goodboy couldn't check it is safe to remove.`;
+  return `Kept ${label}: Goodboy couldn't check it's safe to remove.`;
 };

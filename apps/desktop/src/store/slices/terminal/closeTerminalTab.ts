@@ -62,7 +62,7 @@ export const closeTerminalTab = (set: SetFn, get: GetFn) => {
       persistTerminalNames({ names: get().terminalNames }).catch((error) =>
         get().reportError({
           recovery: CHECK_STATE,
-          title: 'Could not forget the terminal name',
+          title: "Couldn't forget the terminal name",
           error,
           ...(owner.kind === 'session'
             ? { sessionId: owner.sessionId }

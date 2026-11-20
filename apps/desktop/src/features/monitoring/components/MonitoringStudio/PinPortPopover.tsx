@@ -93,7 +93,7 @@ export const PinPortPopover = ({ align = 'end' }: Props) => {
         </div>
         {hasFailed ? (
           <span role="alert" className="text-meta text-danger">
-            Couldn't pin the port. Try again.
+            Couldn't pin the port. Nothing was saved.
           </span>
         ) : null}
         <Button type="submit" size="sm" disabled={!isPortValid}>

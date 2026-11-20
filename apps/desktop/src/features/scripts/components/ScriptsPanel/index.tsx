@@ -35,6 +35,7 @@ import { scriptRunRecordFor } from '../../scriptRunRecordFor';
 import { scriptOutcomeLabel } from '../../scriptOutcomeLabel';
 import { scriptRecordOutput } from '../../scriptRecordOutput';
 import { startRunnableScript } from '../../startRunnableScript';
+import { stopScriptRun } from '../../stopScriptRun';
 import {
   NO_OUTPUT_REASON,
   useHandOutputToAgent,
@@ -100,7 +101,6 @@ export const ScriptsPanel = ({ workspaceId, sessionId, onClose }: Props) => {
   const loadScripts = useAppStore((state) => state.loadScripts);
   const saveScript = useAppStore((state) => state.saveScript);
   const deleteScript = useAppStore((state) => state.deleteScript);
-  const cancelScript = useAppStore((state) => state.cancelScript);
   const refreshDiscoveredScripts = useAppStore((state) => state.refreshDiscoveredScripts);
   const openDrawer = useAppStore((state) => state.openDrawer);
   const toggleDrawer = useAppStore((state) => state.toggleDrawer);
@@ -193,18 +193,18 @@ export const ScriptsPanel = ({ workspaceId, sessionId, onClose }: Props) => {
   const { onStartAll, ended } = useServiceStarts({ sessionId, groups, runs, onRun });
 
   const onStop = useCallback(
-    ({ script }: { readonly script: RunnableScript }) => {
-      void cancelScript(sessionId, script.key);
-    },
-    [cancelScript, sessionId],
+    ({ script }: { readonly script: RunnableScript }) =>
+      void stopScriptRun({ sessionId, scriptKey: script.key }),
+    [sessionId],
   );
 
   const onRestart = useCallback(
     async ({ group, script }: RowParams) => {
-      await cancelScript(sessionId, script.key);
-      onRun({ group, script });
+      if (await stopScriptRun({ sessionId, scriptKey: script.key })) {
+        onRun({ group, script });
+      }
     },
-    [cancelScript, onRun, sessionId],
+    [onRun, sessionId],
   );
 
   const onDuplicate = useCallback(

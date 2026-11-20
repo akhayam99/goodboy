@@ -482,7 +482,7 @@ const PULL_REQUEST_ACTIONS: ReadonlyArray<ActionDefinition<PullRequestFacts>> = 
       const target = { sessionId: facts.sessionId, ...(mountId === null ? {} : { mountId }) };
       const port = pullRequestPortFor({ get: env.getState, ...target, prNumber: facts.number });
       if (port?.cancelAutoMerge === undefined) {
-        throw new Error('Auto-merge cannot be cancelled for this pull request');
+        throw new Error("Auto-merge can't be cancelled for this pull request");
       }
       await port.cancelAutoMerge();
       await Promise.all([

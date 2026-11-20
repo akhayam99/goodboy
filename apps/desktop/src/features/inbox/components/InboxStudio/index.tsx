@@ -44,6 +44,7 @@ import { InboxStarredGroup } from './InboxStarredGroup';
 import { TaskFullPage } from './TaskFullPage';
 import { TaskGroupRows, type TaskLine } from './TaskGroupRows';
 import { useInboxStars } from '../../useInboxStars';
+import { restoreUnstarredClosed } from '../../restoreUnstarredClosed';
 import { useTaskVisit } from '../../hooks/useTaskVisit';
 import { InboxStudioLayout } from './InboxStudioLayout';
 
@@ -240,7 +241,6 @@ export const InboxStudio = ({
   );
   const unstarIssue = useAppStore((state) => state.unstarIssue);
   const unstarClosedIssues = useAppStore((state) => state.unstarClosedIssues);
-  const restoreStarredIssues = useAppStore((state) => state.restoreStarredIssues);
   const reportError = useAppStore((state) => state.reportError);
   const lookup = useWorkspaceIssueLookup({
     workspaceId,
@@ -300,9 +300,9 @@ export const InboxStudio = ({
   };
 
   const undoUnstarClosed = async (): Promise<void> => {
-    const issues = unstarredClosed;
-    setUnstarredClosed([]);
-    await restoreStarredIssues({ workspaceId, issues }).catch(() => undefined);
+    if (await restoreUnstarredClosed({ workspaceId, issues: unstarredClosed })) {
+      setUnstarredClosed([]);
+    }
   };
 
   const deselect = (): void => setOpenKey(null);

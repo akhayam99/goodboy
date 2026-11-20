@@ -226,7 +226,7 @@ export const IphonePage = ({ animationClassName, onStopFailed }: Props) => {
             tone="info"
             placement="inline"
             title="Goodboy for iPhone is in private testing"
-            body="It cannot be downloaded yet. Pairing works with a build you already have."
+            body="It can't be downloaded yet. Pairing works with a build you already have."
           />
         </>
       ) : (

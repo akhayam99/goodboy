@@ -15,6 +15,21 @@ export const cancelScript = (set: SetFn, get: GetFn) => {
         [sessionId]: { ...state.scriptRuns[sessionId], [scriptId]: cancelled },
       },
     }));
-    await invokeScriptCancel(curr.runId);
+    try {
+      await invokeScriptCancel(curr.runId);
+    } catch (error) {
+      set((state) => {
+        if (state.scriptRuns[sessionId]?.[scriptId] !== cancelled) {
+          return {};
+        }
+        return {
+          scriptRuns: {
+            ...state.scriptRuns,
+            [sessionId]: { ...state.scriptRuns[sessionId], [scriptId]: curr },
+          },
+        };
+      });
+      throw error;
+    }
   };
 };
