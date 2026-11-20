@@ -275,13 +275,13 @@ describe('ChatList selection', () => {
     fireEvent.click(within(toolbar()).getByRole('button', { name: 'Archive 2 chats' }));
 
     await waitFor(() => expect(screen.queryByRole('toolbar')).toBeNull());
+    expect(await screen.findByText('2 chats archived')).toBeDefined();
     expect(onArchived).toHaveBeenCalledWith([
       chatIdOf({ key: 'consent' }),
       chatIdOf({ key: 'refund' }),
     ]);
     expect(rowOf('consent')).toBeNull();
     expect(rowOf('refund')).toBeNull();
-    expect(screen.getByText('2 chats archived')).toBeDefined();
 
     fireEvent.click(screen.getByRole('button', { name: 'Undo' }));
     await waitFor(() => expect(rowOf('consent')).not.toBeNull());

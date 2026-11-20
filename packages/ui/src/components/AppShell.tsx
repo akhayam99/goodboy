@@ -1,23 +1,16 @@
-import { useState, type CSSProperties, type ReactNode } from 'react';
+import type { CSSProperties, ReactNode } from 'react';
 import { cn } from '../cn';
-import type { ResizeActivity } from '../sheet';
 import { DrawerColumn } from './DrawerColumn';
 import type { DrawerPlacement, DrawerSizing } from '../drawerGeometry';
 import type { DockGridSpec } from '../dockGridSpec';
-import { SplitHandle } from './SplitHandle';
 import { ShellDockContext } from '../shellDockContext';
 import { ShellRailContext } from '../shellRailContext';
 import { StudioSlotContext } from '../studioSlotContext';
-import { useResizableWidth } from '../useResizableWidth';
 
 export type AppShellProps = {
   readonly topBar?: ReactNode;
   readonly footer?: ReactNode;
-  readonly leftSidebar?: ReactNode;
   readonly leftRail?: ReactNode;
-  readonly leftHidden?: boolean;
-  readonly leftSidebarCollapsed?: boolean;
-  readonly leftOverlay?: ReactNode;
   readonly main: ReactNode;
   readonly drawer?: ReactNode;
   readonly drawerSizing?: DrawerSizing;
@@ -33,25 +26,13 @@ export type AppShellProps = {
   readonly className?: string;
 };
 
-export const LEFT_SIDEBAR_MIN = 200;
-export const LEFT_SIDEBAR_MAX = 400;
-export const LEFT_SIDEBAR_DEFAULT = 240;
-export const LEFT_SIDEBAR_STORAGE_KEY = 'goodboy:left-sidebar-width:v3';
-
 export const COLLAPSED_RAIL_WIDTH = 44;
-
-const HANDLE_WIDTH = 6;
 
 const STUDIO_SHEET_OWNED =
   '[&>[data-drawer-main]:has([data-studio-sheet-owner])]:rounded-none [&>[data-drawer-main]:has([data-studio-sheet-owner])]:border-0 [&>[data-drawer-main]:has([data-studio-sheet-owner])]:bg-transparent';
 
-const LEFT_WIDTH_VAR = '--goodboy-left-sidebar-width';
-
 type LayoutParams = {
-  readonly leftCollapsed: boolean;
-  readonly leftHidden: boolean;
-  readonly hasLeftSidebar: boolean;
-  readonly isLeftRail: boolean;
+  readonly hasLeftRail: boolean;
   readonly hasFooter: boolean;
 };
 
@@ -61,43 +42,18 @@ type Layout = {
   readonly templateRows: string;
 };
 
-const leftColumnWidth = ({
-  leftCollapsed,
-  leftHidden,
-  isLeftRail,
-}: Pick<LayoutParams, 'leftCollapsed' | 'leftHidden' | 'isLeftRail'>): string => {
-  if (leftHidden) {
-    return '0px';
-  }
-  if (isLeftRail) {
-    return 'auto';
-  }
-  if (leftCollapsed) {
-    return `${COLLAPSED_RAIL_WIDTH}px`;
-  }
-  return `var(${LEFT_WIDTH_VAR})`;
-};
-
-const buildLayout = ({
-  leftCollapsed,
-  leftHidden,
-  hasLeftSidebar,
-  isLeftRail,
-  hasFooter,
-}: LayoutParams): Layout => {
+const buildLayout = ({ hasLeftRail, hasFooter }: LayoutParams): Layout => {
   const rows = hasFooter ? 'minmax(0,1fr) auto' : 'minmax(0,1fr)';
-  if (!hasLeftSidebar) {
+  if (!hasLeftRail) {
     return {
       templateAreas: hasFooter ? '"main" "footer"' : '"main"',
       templateColumns: 'minmax(0,1fr)',
       templateRows: rows,
     };
   }
-  const leftCol = leftColumnWidth({ leftCollapsed, leftHidden, isLeftRail });
-  const handleCol = leftHidden || leftCollapsed || isLeftRail ? '0px' : `${HANDLE_WIDTH}px`;
   return {
-    templateAreas: hasFooter ? '"left lhandle main" "footer footer footer"' : '"left lhandle main"',
-    templateColumns: `${leftCol} ${handleCol} minmax(0,1fr)`,
+    templateAreas: hasFooter ? '"left main" "footer footer"' : '"left main"',
+    templateColumns: 'auto minmax(0,1fr)',
     templateRows: rows,
   };
 };
@@ -105,11 +61,7 @@ const buildLayout = ({
 export const AppShell = ({
   topBar,
   footer,
-  leftSidebar,
   leftRail,
-  leftHidden = false,
-  leftSidebarCollapsed = false,
-  leftOverlay,
   main,
   drawer,
   drawerSizing,
@@ -125,29 +77,11 @@ export const AppShell = ({
   className,
 }: AppShellProps) => {
   const hasFooter = footer != null;
-  const isLeftRail = leftRail != null;
-  const leftContent = isLeftRail ? leftRail : leftSidebar;
-  const hasLeftSidebar = leftContent != null;
-  const isLeftResizeDisabled = leftHidden || leftSidebarCollapsed || isLeftRail;
-  const left = useResizableWidth<HTMLDivElement>({
-    storageKey: LEFT_SIDEBAR_STORAGE_KEY,
-    defaultWidth: LEFT_SIDEBAR_DEFAULT,
-    min: LEFT_SIDEBAR_MIN,
-    max: LEFT_SIDEBAR_MAX,
-    cssVar: LEFT_WIDTH_VAR,
-  });
-  const [leftResize, setLeftResize] = useState<ResizeActivity>('idle');
-  const isSheetWrapped = hasLeftSidebar && !leftHidden;
+  const hasLeftRail = leftRail != null;
   const isStudioShown = studio != null;
   const isDockHosted = isStudioShown && isDockInStudio;
 
-  const layout = buildLayout({
-    leftCollapsed: leftSidebarCollapsed,
-    leftHidden,
-    hasLeftSidebar,
-    isLeftRail,
-    hasFooter,
-  });
+  const layout = buildLayout({ hasLeftRail, hasFooter });
   const gridStyle = {
     gridTemplateAreas: layout.templateAreas,
     gridTemplateColumns: layout.templateColumns,
@@ -155,45 +89,19 @@ export const AppShell = ({
   } satisfies CSSProperties;
 
   return (
-    <div
-      data-app-backdrop=""
-      ref={left.targetRef}
-      style={left.style}
-      className="flex h-screen w-screen flex-col bg-backdrop"
-    >
+    <div data-app-backdrop="" className="flex h-screen w-screen flex-col bg-backdrop">
       {topBar != null ? <div className="shrink-0">{topBar}</div> : null}
       <div
-        className={cn(
-          'grid min-h-0 w-full flex-1 overflow-hidden text-foreground motion-safe:transition-[grid-template-columns] duration-200 ease-enter',
-          className,
-        )}
+        className={cn('grid min-h-0 w-full flex-1 overflow-hidden text-foreground', className)}
         style={gridStyle}
       >
-        {hasLeftSidebar ? (
+        {hasLeftRail ? (
           <aside
-            className={cn(
-              'flex min-h-0 min-w-0 flex-col overflow-hidden motion-safe:transition-[opacity,transform] duration-200 ease-enter',
-              leftHidden
-                ? 'pointer-events-none -translate-x-2 opacity-0'
-                : 'translate-x-0 opacity-100',
-            )}
+            className="flex min-h-0 min-w-0 flex-col overflow-hidden"
             style={{ gridArea: 'left' }}
-            inert={leftHidden}
           >
-            {leftContent}
+            {leftRail}
           </aside>
-        ) : null}
-        {hasLeftSidebar ? (
-          <div className="min-h-0" style={{ gridArea: 'lhandle' }}>
-            {isLeftResizeDisabled ? null : (
-              <SplitHandle
-                {...left.handleProps}
-                ariaLabel="Resize left sidebar"
-                onActivityChange={setLeftResize}
-                shouldDrawEdge={false}
-              />
-            )}
-          </div>
         ) : null}
         <main className="flex min-h-0 min-w-0 flex-col" style={{ gridArea: 'main' }}>
           <DrawerColumn
@@ -235,21 +143,12 @@ export const AppShell = ({
             placement={drawerPlacement}
             isParked={isDrawerParked ?? isStudioShown}
             frame="sheet"
-            sheetEdge={isSheetWrapped ? 'wrapped' : 'flush'}
+            sheetEdge={hasLeftRail ? 'wrapped' : 'flush'}
             className={STUDIO_SHEET_OWNED}
-            leftResize={isLeftResizeDisabled ? 'idle' : leftResize}
             ariaLabel="Side panel"
             resizeLabel="Resize side panel"
           />
         </main>
-        {leftOverlay != null ? (
-          <div
-            className="pointer-events-none relative z-studio flex min-h-0 min-w-0"
-            style={{ gridColumn: '1 / -1', gridRow: '1 / 2' }}
-          >
-            {leftOverlay}
-          </div>
-        ) : null}
         {hasFooter ? (
           <div className="shrink-0" style={{ gridArea: 'footer' }}>
             {footer}

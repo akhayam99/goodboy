@@ -431,11 +431,7 @@ hide animation or overlay can move it.
   takes it as `leftRail`: its grid column is `auto`, so the rail's own width
   (64px, or 44px under a 1100px window) sizes it, with no resize handle and no
   saved width. It works at rail width because it holds places and two marks,
-  not the list. Hiding a column outright sets it and its handle to zero width
-  and marks the aside `inert`: a zero-width column that still takes focus is a
-  keyboard trap. The shell primitive can lay out more states than the product
-  uses. Which one a column gets is decided here, not by what the primitive
-  offers.
+  not the list. The shell grid holds the rail and the page, nothing else.
 - **No pane and no page folds the rail.** A session has no column of its own:
   its pages are the page tabs under the title.
 - **The overlay slots sit inside the grid, not above it.** A studio is

@@ -139,11 +139,9 @@ that points at an `--elevation-*`, declared in `:root` and in the light block.
 
 ## The window grid
 
-Columns and resize handles
-are areas of **one** CSS grid. Their
-widths are saved, and clamped when read back. They are never nested flex
-containers. So hiding or resizing a column is one template declaration, and
-nothing inside it needs to know. [navigation.md](navigation.md) owns which
+The places rail and the page are areas of **one** CSS grid, never nested flex
+containers: the rail's `auto` column and the page's `minmax(0,1fr)`, with the
+footer as a row below both. [navigation.md](navigation.md) owns which
 columns exist and what each one may do.
 
 Top bar and left column are one chrome field, and the page container is a
@@ -217,8 +215,7 @@ rule for a drawer that always lies over the page; the thresholds (928 for
 `packages/ui/src/drawerGeometry.ts` (`drawerLayoutOf`, with `drawerWidthOf`,
 `drawerModeOf` and `mainWidthOf` on top of it) and `drawerGeometry.test.ts`
 sweeps every main from 600 to 2400 and runs a width matrix: 1024, 1440 and
-1920 windows at zoom 0.8, 1 and 1.25, beside a left column as wide as the
-retired sidebar's default and widest (`LEFT_SIDEBAR_DEFAULT`, `LEFT_SIDEBAR_MAX`).
+1920 windows at zoom 0.8, 1 and 1.25, beside a left column of 240 and 400.
 `selectDrawerSizing.test.ts` takes every drawer kind at 1280 and 1440 and
 checks the panel ends on the column edge in both modes, with `DRAWER_GUTTER`
 inside the aside. A pushing card grows from the window's right edge: the aside
@@ -272,7 +269,8 @@ border and the turn key.
 
 **The places rail never folds.** `AppShell` takes it as `leftRail` and gives
 it an `auto` grid column, so the rail's own width (64px, 44px under a 1100px
-window) sizes the track: no resize handle, no saved width, no fold layers.
+window) sizes the track: no resize handle, no saved width, no fold layers. The
+shell takes no other left column.
 
 The top bar's left zone starts with Sessions, then the workspace identity and
 Repositories. It adds `--titlebar-inset`, which defaults to 0px in
@@ -280,12 +278,6 @@ Repositories. It adds `--titlebar-inset`, which defaults to 0px in
 lights, drawn inside the bar by the overlay title bar, never sit on a control,
 and drops it back to 0px in full screen. A window without a top bar (Home)
 keeps a 36px drag strip at its top edge instead.
-
-The overlay slots are children of the grid, not siblings above it. An overlay
-that must float without taking up layout space spans its row and is
-`pointer-events-none` at its root, then turns events back on for the panel
-itself. An overlay that must cover the work area spans main and everything to
-the right of it, never the places rail.
 
 ## The content column
 

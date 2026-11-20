@@ -3,7 +3,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { useContext } from 'react';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
-import { AppShell, LEFT_SIDEBAR_DEFAULT, LEFT_SIDEBAR_STORAGE_KEY } from '../components/AppShell';
+import { AppShell } from '../components/AppShell';
 import { ShellRailContext } from '../shellRailContext';
 
 afterEach(() => {
@@ -13,54 +13,19 @@ afterEach(() => {
 });
 
 describe('AppShell', () => {
-  it('takes the hidden left sidebar out of the tab order', () => {
-    const { rerender } = render(
-      <AppShell leftSidebar={<button type="button">sessions</button>} main={<div>main</div>} />,
-    );
-    const aside = screen.getByRole('button', { name: 'sessions' }).closest('aside');
-
-    expect(aside?.hasAttribute('inert')).toBe(false);
-
-    rerender(
-      <AppShell
-        leftSidebar={<button type="button">sessions</button>}
-        leftHidden
-        main={<div>main</div>}
-      />,
-    );
-
-    expect(aside?.hasAttribute('inert')).toBe(true);
-  });
-
-  it('paints the backdrop once on the window, so the sidebar column shows it and the main pane stays flat', () => {
+  it('paints the backdrop once on the window, so the places rail shows it and the main pane stays flat', () => {
     const { container } = render(
-      <AppShell leftSidebar={<div>sessions</div>} main={<div>main</div>} />,
+      <AppShell leftRail={<nav aria-label="Places">places</nav>} main={<div>main</div>} />,
     );
 
     const backdrop = container.firstElementChild as HTMLElement;
     expect(backdrop.className).toContain('bg-backdrop');
     expect(backdrop.hasAttribute('data-app-backdrop')).toBe(true);
     expect(container.querySelectorAll('.bg-backdrop')).toHaveLength(1);
-    expect(screen.getByText('sessions').closest('aside')?.className).not.toMatch(/\bbg-/);
+    expect(screen.getByText('places').closest('aside')?.className).not.toMatch(/\bbg-/);
     const page = screen.getByText('main').closest('[data-container="page"]');
     expect(page?.className).toContain('bg-background');
     expect(page?.className).not.toContain('bg-backdrop');
-  });
-
-  it('renders the left overlay over the first grid row', () => {
-    render(
-      <AppShell
-        leftSidebar={<div>sessions</div>}
-        leftHidden
-        leftOverlay={<div>peek</div>}
-        main={<div>main</div>}
-      />,
-    );
-    const slot = screen.getByText('peek').parentElement;
-
-    expect(slot?.style.gridRow).toBe('1 / 2');
-    expect(slot?.style.gridColumn).toBe('1 / -1');
-    expect(slot?.className).toContain('pointer-events-none');
   });
 
   it('lets the footer size its own track, so a divider never pushes it past the row', () => {
@@ -68,12 +33,6 @@ describe('AppShell', () => {
     const grid = screen.getByText('status').closest('[style*="grid-template-rows"]');
 
     expect(grid?.getAttribute('style')).toContain('grid-template-rows: minmax(0,1fr) auto');
-  });
-
-  it('omits the overlay slot when nothing is peeking', () => {
-    render(<AppShell leftSidebar={<div>sessions</div>} main={<div>main</div>} />);
-
-    expect(screen.queryByText('peek')).toBeNull();
   });
 
   it('hides the studio slot when the studio renders nothing', () => {
@@ -88,7 +47,7 @@ describe('AppShell', () => {
   it('keeps the footer in its own row while a studio is open', () => {
     render(
       <AppShell
-        leftSidebar={<div>sessions</div>}
+        leftRail={<nav aria-label="Places" />}
         footer={<div>status</div>}
         main={<div>main</div>}
         studio={<div>settings studio</div>}
@@ -100,10 +59,10 @@ describe('AppShell', () => {
 });
 
 describe('AppShell studio in the main slot', () => {
-  it('puts the studio inside the sheet over the page, leaving the column live', () => {
+  it('puts the studio inside the sheet over the page, leaving the rail live', () => {
     render(
       <AppShell
-        leftSidebar={<button type="button">doors</button>}
+        leftRail={<button type="button">doors</button>}
         main={<div>main</div>}
         studio={<div>inbox studio</div>}
       />,
@@ -124,7 +83,7 @@ describe('AppShell studio in the main slot', () => {
   it('keeps the page mounted and live once the studio closes', () => {
     const { rerender } = render(
       <AppShell
-        leftSidebar={<div>doors</div>}
+        leftRail={<nav aria-label="Places" />}
         main={<input aria-label="page field" />}
         studio={<div>tasks studio</div>}
       />,
@@ -133,7 +92,7 @@ describe('AppShell studio in the main slot', () => {
 
     rerender(
       <AppShell
-        leftSidebar={<div>doors</div>}
+        leftRail={<nav aria-label="Places" />}
         main={<input aria-label="page field" />}
         studio={null}
       />,
@@ -147,7 +106,7 @@ describe('AppShell studio in the main slot', () => {
   it('drops the sheet frame while a studio draws its own sheets', () => {
     render(
       <AppShell
-        leftSidebar={<div>doors</div>}
+        leftRail={<nav aria-label="Places" />}
         main={<div>main</div>}
         studio={<div data-studio-sheet-owner="">chat studio</div>}
       />,
@@ -165,7 +124,7 @@ describe('AppShell studio in the main slot', () => {
   it('keeps the right rail at the sheet edge beside the page, never under it', () => {
     render(
       <AppShell
-        leftSidebar={<div>doors</div>}
+        leftRail={<nav aria-label="Places" />}
         main={<div>main</div>}
         rightRail={<div role="toolbar" aria-label="Tools" />}
         studio={<div>impact studio</div>}
@@ -221,7 +180,7 @@ describe('AppShell studio in the main slot', () => {
   it('paints the slot opaque, so the page never shows through while a studio fades in', () => {
     render(
       <AppShell
-        leftSidebar={<div>doors</div>}
+        leftRail={<nav aria-label="Places" />}
         main={<div>main</div>}
         studio={<div>impact studio</div>}
       />,
@@ -235,7 +194,7 @@ describe('AppShell studio in the main slot', () => {
   it('parks the drawer under a studio: mounted, hidden, inert, out of the flow, with no exit', () => {
     const { rerender } = render(
       <AppShell
-        leftSidebar={<div>doors</div>}
+        leftRail={<nav aria-label="Places" />}
         main={<div>main</div>}
         drawer={<input aria-label="decision draft" />}
       />,
@@ -245,7 +204,7 @@ describe('AppShell studio in the main slot', () => {
 
     rerender(
       <AppShell
-        leftSidebar={<div>doors</div>}
+        leftRail={<nav aria-label="Places" />}
         main={<div>main</div>}
         drawer={<input aria-label="decision draft" />}
         studio={<div>tasks studio</div>}
@@ -268,7 +227,7 @@ describe('AppShell studio in the main slot', () => {
 
     rerender(
       <AppShell
-        leftSidebar={<div>doors</div>}
+        leftRail={<nav aria-label="Places" />}
         main={<div>main</div>}
         drawer={<input aria-label="decision draft" />}
       />,
@@ -282,50 +241,35 @@ describe('AppShell studio in the main slot', () => {
     expect(field.value).toBe('ship on Friday');
   });
 
-  it('draws the peek after the studio, so the peeked column floats over a studio too', () => {
+  it('sizes the places rail by its own width, with no resize handle and no saved width', () => {
+    const setItem = vi.spyOn(localStorage, 'setItem');
     render(
       <AppShell
-        leftSidebar={<div>rail</div>}
-        leftSidebarCollapsed
-        leftOverlay={<div>peek</div>}
+        leftRail={<nav aria-label="Places">places</nav>}
+        footer={<div>status</div>}
         main={<div>main</div>}
-        studio={<div>chat studio</div>}
       />,
     );
-    const studio = screen.getByText('chat studio').parentElement as HTMLElement;
-    const peek = screen.getByText('peek').parentElement as HTMLElement;
-
-    expect(studio.compareDocumentPosition(peek) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    expect(peek.style.gridColumn).toBe('1 / -1');
-  });
-
-  it('sizes a left rail by its own width, with no resize handle and no saved width', () => {
-    const setItem = vi.spyOn(localStorage, 'setItem');
-    render(<AppShell leftRail={<nav aria-label="Places">places</nav>} main={<div>main</div>} />);
 
     const grid = screen.getByText('main').closest<HTMLElement>('[style*="grid-template-columns"]');
-    expect(grid?.style.gridTemplateColumns).toBe('auto 0px minmax(0,1fr)');
+    expect(grid?.style.gridTemplateColumns).toBe('auto minmax(0,1fr)');
+    expect(grid?.style.gridTemplateAreas).toBe('"left main" "footer footer"');
     const places = screen.getByRole('navigation', { name: 'Places' });
     expect(places.parentElement?.tagName).toBe('ASIDE');
-    expect(screen.queryByRole('separator', { name: 'Resize left sidebar' })).toBeNull();
+    expect(screen.queryByRole('separator')).toBeNull();
     expect(setItem).not.toHaveBeenCalled();
-  });
-
-  it('opens the column at 240px by default within 200 to 400, on a fresh saved key', () => {
-    expect(LEFT_SIDEBAR_DEFAULT).toBe(240);
-    expect(LEFT_SIDEBAR_STORAGE_KEY).toBe('goodboy:left-sidebar-width:v3');
   });
 });
 
 describe('AppShell right drawer', () => {
   it('keeps a closed drawer without a rail as a zero-width column beside the main area', () => {
-    render(<AppShell leftSidebar={<div>sessions</div>} main={<div>main</div>} />);
+    render(<AppShell leftRail={<nav aria-label="Places" />} main={<div>main</div>} />);
 
     const grid = screen
       .getByText('main')
       .closest('[style*="grid-template-columns"]') as HTMLElement;
     const panel = screen.getByRole('complementary', { name: 'Side panel' });
-    expect(grid.style.gridTemplateAreas).toBe('"left lhandle main"');
+    expect(grid.style.gridTemplateAreas).toBe('"left main"');
     expect(panel.querySelector('[data-drawer-card]')).toBeNull();
     expect(panel.style.width).toBe('0px');
   });
@@ -337,30 +281,6 @@ describe('AppShell right drawer', () => {
     expect(panel.hasAttribute('inert')).toBe(false);
     expect(panel.closest('main')).not.toBeNull();
     expect(screen.getByText('drafts')).toBeDefined();
-  });
-
-  it('drags the sidebar through a CSS variable and saves its width once, on release', () => {
-    const { container } = render(
-      <AppShell leftSidebar={<div>sessions</div>} main={<div>main</div>} />,
-    );
-    const setItem = vi.spyOn(localStorage, 'setItem');
-    const shell = container.querySelector<HTMLElement>('[data-app-backdrop]');
-    const handle = screen.getByRole('separator', { name: 'Resize left sidebar' });
-
-    fireEvent.mouseDown(handle, { button: 0, clientX: 340 });
-    Array.from({ length: 50 }).forEach((_, index) =>
-      fireEvent.mouseMove(window, { clientX: 340 + index }),
-    );
-
-    expect(setItem).not.toHaveBeenCalled();
-    expect(shell?.style.getPropertyValue('--goodboy-left-sidebar-width')).toBe(
-      `${LEFT_SIDEBAR_DEFAULT + 49}px`,
-    );
-
-    fireEvent.mouseUp(window);
-
-    expect(setItem).toHaveBeenCalledOnce();
-    expect(localStorage.getItem(LEFT_SIDEBAR_STORAGE_KEY)).toBe(String(LEFT_SIDEBAR_DEFAULT + 49));
   });
 
   it('hands a fixed overlay placement to the drawer column', () => {

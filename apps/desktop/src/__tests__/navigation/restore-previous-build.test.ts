@@ -403,7 +403,7 @@ describe('the sidebar a 0.39 build saved', () => {
     expect(rail.style.width).toBe('64px');
     screen.getByRole('button', { name: 'Board' });
     const grid = rail.closest('aside')?.parentElement;
-    expect(grid?.style.gridTemplateColumns.split(' ').slice(0, 2)).toEqual(['auto', '0px']);
+    expect(grid?.style.gridTemplateColumns).toBe('auto minmax(0,1fr)');
     expect(screen.queryByRole('separator', { name: 'Resize left sidebar' })).toBeNull();
     expect(localStorage.getItem(FORMER_KEYS.sidebarCollapsed)).toBe('1');
     expect(localStorage.getItem(FORMER_KEYS.sidebarWidth)).toBe('320');

@@ -54,7 +54,7 @@ const DockCell = () => {
 
 const shell = ({ hasDock, onClosePanel, dockGrid = null }: ShellParams) => (
   <AppShell
-    leftSidebar={<div>sessions</div>}
+    leftRail={<nav aria-label="Places" />}
     main={<div>board</div>}
     drawer={hasDock ? <DockCell /> : null}
     dockGrid={dockGrid}
