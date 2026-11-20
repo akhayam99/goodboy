@@ -10,7 +10,7 @@ import type { SliceDeps } from '../../slice-types';
 export const createReviewDraftsSlice = ({ set, get }: SliceDeps) => {
   return {
     loadReviewDrafts: loadReviewDrafts(set),
-    addReviewDraft: addReviewDraft(set, get),
+    addReviewDraft: addReviewDraft(set),
     updateReviewDraft: updateReviewDraft(set),
     discardReviewDraft: discardReviewDraft(set),
     queueAgentReviewComments: queueAgentReviewComments(set, get),

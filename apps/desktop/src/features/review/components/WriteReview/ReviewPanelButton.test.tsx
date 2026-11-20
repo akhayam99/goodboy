@@ -7,7 +7,7 @@ vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn(async () => () => undefi
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
-import type { PrReviewDraft, SessionId } from '@goodboy/types';
+import { brandId, type IsoDateTime, type PrReviewDraft, type SessionId } from '@goodboy/types';
 import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
@@ -15,11 +15,13 @@ import {
   type StoryStore,
 } from '../../../../store/storyHarness';
 import { ToastProvider } from '../../../../shared/components/Toast';
+import type { MountReview } from '../../mountReviewOf';
 import { ReviewPanelButton } from './ReviewPanelButton';
 
 const REVIEW_PANEL_LABEL = 'Review changes';
 
-const SESSION_ID = 'session-review-panel' as SessionId;
+const SESSION_ID = brandId<SessionId>({ value: 'session-review-panel' });
+const CREATED_AT = brandId<IsoDateTime>({ value: '2026-09-04T14:00:00.000Z' });
 
 const draftOf = (id: string, line: number): PrReviewDraft => ({
   id,
@@ -35,8 +37,14 @@ const draftOf = (id: string, line: number): PrReviewDraft => ({
   status: 'draft',
   stale: false,
   origin: 'user',
-  createdAt: '2026-09-04T14:00:00.000Z' as PrReviewDraft['createdAt'],
+  createdAt: CREATED_AT,
 });
+
+const TARGET = { provider: 'github', repo: 'harborline/payments-api', prNumber: 318 } as const;
+
+const REVIEW: MountReview = { kind: 'review', target: TARGET, choices: [TARGET], hostUrl: null };
+
+const DRAFTS = [draftOf('d1', 12), draftOf('d2', 30)];
 
 let useAppStore: StoryStore;
 
@@ -47,7 +55,20 @@ beforeAll(async () => {
 beforeEach(async () => {
   await resetStoryStore();
   useAppStore.setState({
-    reviewDrafts: { [SESSION_ID]: [draftOf('d1', 12), draftOf('d2', 30)] },
+    reviewDrafts: { [SESSION_ID]: DRAFTS },
+    sessionExternalTasks: {
+      [SESSION_ID]: [
+        {
+          sessionId: SESSION_ID,
+          provider: 'github',
+          externalId: '318',
+          identifier: '#318',
+          url: 'https://github.com/harborline/payments-api/pull/318',
+          title: 'Stop retried webhooks posting a second credit',
+          createdAt: CREATED_AT,
+        },
+      ],
+    },
   });
 });
 
@@ -56,7 +77,7 @@ afterEach(cleanup);
 const mount = async (): Promise<void> => {
   render(
     <ToastProvider>
-      <ReviewPanelButton sessionId={SESSION_ID} />
+      <ReviewPanelButton sessionId={SESSION_ID} review={REVIEW} drafts={DRAFTS} />
     </ToastProvider>,
   );
   await act(async () => {

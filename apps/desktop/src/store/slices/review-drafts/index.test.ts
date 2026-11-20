@@ -109,6 +109,16 @@ const gitlabTask: SessionExternalTask = {
   createdAt: NOW,
 };
 
+const ON_GITHUB = {
+  target: { provider: 'github', repo: 'acme/web', prNumber: 42 },
+  mountId: null,
+} as const;
+
+const ON_GITLAB = {
+  target: { provider: 'gitlab', repo: 'acme/web', prNumber: 10 },
+  mountId: null,
+} as const;
+
 type MakeDraftParams = {
   readonly overrides?: Partial<PrReviewDraft>;
 };
@@ -242,6 +252,7 @@ describe('review-drafts slice', () => {
     const { slice, getState } = buildHarness({});
     const draft = await slice.addReviewDraft({
       sessionId: SESSION_ID,
+      target: ON_GITHUB.target,
       path: 'src/a.ts',
       line: 2,
       body: 'first version',
@@ -264,7 +275,11 @@ describe('review-drafts slice', () => {
     const drafts = [makeDraft({}), makeDraft({ overrides: { id: 'draft-2', line: 3 } })];
     const { slice, getState } = buildHarness({ reviewDrafts: { [SESSION_ID]: drafts } });
 
-    const result = await slice.publishPrReview(SESSION_ID, { verdict: 'approve', body: 'lgtm' });
+    const result = await slice.publishPrReview(SESSION_ID, {
+      verdict: 'approve',
+      body: 'lgtm',
+      ...ON_GITHUB,
+    });
 
     expect(addPullRequestReviewSpy).toHaveBeenCalledTimes(1);
     const [, input] = addPullRequestReviewSpy.mock.calls[0]!;
@@ -295,7 +310,11 @@ describe('review-drafts slice', () => {
       workspaceOverrides: { [WS_ID]: overridesWithAttribution({ attributionFooter: true }) },
     });
 
-    await slice.publishPrReview(SESSION_ID, { verdict: 'comment', body: 'a few notes' });
+    await slice.publishPrReview(SESSION_ID, {
+      verdict: 'comment',
+      body: 'a few notes',
+      ...ON_GITHUB,
+    });
 
     const [, input] = addPullRequestReviewSpy.mock.calls[0]!;
     expect(input.body).toBe(`a few notes\n\n*Written by Goodboy*`);
@@ -312,7 +331,7 @@ describe('review-drafts slice', () => {
       workspaceOverrides: { [WS_ID]: overridesWithAttribution({ attributionFooter: false }) },
     });
 
-    await slice.publishPrReview(SESSION_ID, { verdict: 'approve', body: 'lgtm' });
+    await slice.publishPrReview(SESSION_ID, { verdict: 'approve', body: 'lgtm', ...ON_GITHUB });
 
     expect(addPullRequestReviewSpy.mock.calls[0]?.[1].body).toBe('lgtm');
   });
@@ -332,6 +351,7 @@ describe('review-drafts slice', () => {
       verdict: 'approve',
       body: '',
       target: { provider: 'github', repo: 'acme/api', prNumber: 77 },
+      mountId: null,
     });
 
     expect(ghPrDiffSpy.mock.calls[0]?.slice(0, 2)).toEqual(['acme/api', 77]);
@@ -343,7 +363,11 @@ describe('review-drafts slice', () => {
     const drafts = [makeDraft({}), makeDraft({ overrides: { id: 'draft-stale', line: 99 } })];
     const { slice, getState } = buildHarness({ reviewDrafts: { [SESSION_ID]: drafts } });
 
-    const result = await slice.publishPrReview(SESSION_ID, { verdict: 'comment', body: '' });
+    const result = await slice.publishPrReview(SESSION_ID, {
+      verdict: 'comment',
+      body: '',
+      ...ON_GITHUB,
+    });
 
     const [, input] = addPullRequestReviewSpy.mock.calls[0]!;
     expect(input.threads).toHaveLength(1);
@@ -376,6 +400,7 @@ describe('review-drafts slice', () => {
 
     const draft = await slice.addReviewDraft({
       sessionId: SESSION_ID,
+      target: ON_GITHUB.target,
       path: 'src/a.ts',
       line: FILE_LEVEL_LINE,
       body: 'split this file',
@@ -394,7 +419,11 @@ describe('review-drafts slice', () => {
     ];
     const { slice, getState } = buildHarness({ reviewDrafts: { [SESSION_ID]: drafts } });
 
-    const result = await slice.publishPrReview(SESSION_ID, { verdict: 'comment', body: '' });
+    const result = await slice.publishPrReview(SESSION_ID, {
+      verdict: 'comment',
+      body: '',
+      ...ON_GITHUB,
+    });
 
     const [, input] = addPullRequestReviewSpy.mock.calls[0]!;
     expect(input.threads).toHaveLength(1);
@@ -412,7 +441,11 @@ describe('review-drafts slice', () => {
     ];
     const { slice } = buildHarness({ reviewDrafts: { [SESSION_ID]: drafts } });
 
-    const result = await slice.publishPrReview(SESSION_ID, { verdict: 'comment', body: '' });
+    const result = await slice.publishPrReview(SESSION_ID, {
+      verdict: 'comment',
+      body: '',
+      ...ON_GITHUB,
+    });
 
     expect(result.stale.map((draft) => draft.id)).toEqual(['draft-file']);
     expect(result.published).toBe(0);
@@ -442,7 +475,7 @@ describe('review-drafts slice', () => {
       },
     });
 
-    await slice.publishPrReview(SESSION_ID, { verdict: 'comment', body: '' });
+    await slice.publishPrReview(SESSION_ID, { verdict: 'comment', body: '', ...ON_GITLAB });
 
     const position = gitlabCreateMrDiscussionSpy.mock.calls[0]?.[5];
     expect(position).toEqual({
@@ -483,6 +516,7 @@ describe('review-drafts slice', () => {
     const result = await slice.publishPrReview(SESSION_ID, {
       verdict: 'request_changes',
       body: 'overall notes',
+      ...ON_GITLAB,
     });
 
     expect(gitlabCreateMrDiscussionSpy).toHaveBeenCalledTimes(2);
@@ -504,25 +538,56 @@ describe('review-drafts slice', () => {
     ]);
   });
 
-  it('leaves drafts untouched when the session relinks to a different pr (review board entry)', async () => {
+  it('publishes a draft on the request it was written on, even after the session moved on', async () => {
     const otherTask: SessionExternalTask = {
       ...githubTask,
       externalId: '77',
       identifier: '#77',
       url: 'https://github.com/acme/api/pull/77',
     };
-    const drafts = [makeDraft({}), makeDraft({ overrides: { id: 'draft-2', line: 3 } })];
-    const { slice, getState } = buildHarness({
-      reviewDrafts: { [SESSION_ID]: drafts },
+    const { slice, getState } = buildHarness({});
+    await slice.addReviewDraft({
+      sessionId: SESSION_ID,
+      target: ON_GITHUB.target,
+      path: 'src/a.ts',
+      line: 2,
+      body: 'written on acme/web',
+    });
+    const stamped = getState().reviewDrafts[SESSION_ID]?.[0];
+    if (stamped === undefined) {
+      throw new Error('draft missing');
+    }
+    const relinked = buildHarness({
+      reviewDrafts: { [SESSION_ID]: [stamped] },
       sessionExternalTasks: { [SESSION_ID]: [otherTask] },
     });
 
-    const result = await slice.publishPrReview(SESSION_ID, { verdict: 'approve', body: 'lgtm' });
+    const result = await relinked.slice.publishPrReview(SESSION_ID, {
+      verdict: 'comment',
+      body: '',
+      target: { provider: stamped.provider, repo: stamped.repo, prNumber: stamped.prNumber },
+      mountId: null,
+    });
 
-    expect(ghPrDiffSpy.mock.calls[0]?.slice(0, 2)).toEqual(['acme/api', 77]);
-    expect(addPullRequestReviewSpy.mock.calls[0]?.[1].threads).toEqual([]);
+    expect(ghPrDiffSpy.mock.calls[0]?.slice(0, 2)).toEqual(['acme/web', 42]);
+    expect(fetchPrNodeIdSpy.mock.calls[0]?.slice(1, 3)).toEqual(['acme/web', 42]);
+    expect(result.published).toBe(1);
+  });
+
+  it('keeps a submission failure from touching the drafts', async () => {
+    fetchPrNodeIdSpy.mockRejectedValueOnce(new Error('host refused'));
+    const drafts = [makeDraft({}), makeDraft({ overrides: { id: 'draft-2', line: 3 } })];
+    const { slice, getState } = buildHarness({ reviewDrafts: { [SESSION_ID]: drafts } });
+
+    const result = await slice.publishPrReview(SESSION_ID, {
+      verdict: 'approve',
+      body: 'lgtm',
+      ...ON_GITHUB,
+    });
+
     expect(result.published).toBe(0);
-    expect(result.mismatched.map((draft) => draft.id)).toEqual(['draft-1', 'draft-2']);
+    expect(result.failed.map((failure) => failure.draft.id)).toEqual(['draft-1', 'draft-2']);
+    expect(markPublishedSpy).toHaveBeenCalledWith(expect.objectContaining({ ids: [] }));
     expect(getState().reviewDrafts[SESSION_ID]?.map((draft) => draft.status)).toEqual([
       'draft',
       'draft',
@@ -539,6 +604,7 @@ describe('review-drafts slice', () => {
       verdict: 'approve',
       body: 'lgtm',
       target: { provider: 'github', repo: 'acme/other', prNumber: 99 },
+      mountId: null,
     });
 
     expect(ghPrDiffSpy.mock.calls[0]?.slice(0, 2)).toEqual(['acme/other', 99]);

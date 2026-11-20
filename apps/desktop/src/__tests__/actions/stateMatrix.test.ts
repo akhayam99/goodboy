@@ -69,6 +69,7 @@ import {
 import { AGENT_STATES, RUNNING, STARTING, standalone } from '../helpers/agentMenuStates';
 import { RUN_STATES, withRun } from '../helpers/runMenuStates';
 import { SESSION_STATES } from '../helpers/sessionMenuStates';
+import { writeReviewStateOf } from '../helpers/writeReviewMenuStates';
 
 type BridgeArgs = {
   readonly statements?: ReadonlyArray<unknown>;
@@ -1688,22 +1689,11 @@ describe('review and comment menus in every state', () => {
 
 describe('write review menu in every state', () => {
   const WRITE_REVIEW: ObjectTarget = { kind: 'writeReview', sessionId: SESSION, draftId: null };
-  const draft = {
-    id: 'draft-1',
-    sessionId: SESSION,
-    provider: 'github',
-    repo: 'harborline/ledger-core',
-    prNumber: 482,
-    path: 'src/payouts/export.ts',
-    line: 40,
-    startLine: null,
-    side: 'new',
-    body: 'Stream the rows instead of buffering them.',
-    status: 'draft',
-    stale: false,
-    origin: 'user',
-    createdAt: FIXTURE_NOW,
-  };
+  const { draft, link } = writeReviewStateOf({ sessionId: SESSION, createdAt: FIXTURE_NOW });
+
+  beforeEach(() => {
+    useAppStore.setState({ sessionExternalTasks: { [SESSION]: [link] } });
+  });
 
   it('blocks an empty comment review with its reason', () => {
     expect(matrixOf(WRITE_REVIEW)).toEqual([

@@ -1,4 +1,9 @@
-import type { ReviewablePrProvider, SessionExternalTask, SessionId } from '@goodboy/types';
+import type {
+  PrReviewDraft,
+  ReviewablePrProvider,
+  SessionExternalTask,
+  SessionId,
+} from '@goodboy/types';
 import { gitlabSessionOf } from '../mount-request/requestOf';
 import { PROVIDER_PRIORITY } from '../../../features/session/resolvePullRequestProvider';
 import { selectActiveProjectPrs } from '../github/activeProjectPrs';
@@ -53,6 +58,29 @@ const pathnameOf = ({ url }: { readonly url: string }): string | null => {
   }
 };
 
+const INTERNED = new Map<string, ReviewTarget>();
+
+export const internReviewTarget = ({ provider, repo, prNumber }: ReviewTarget): ReviewTarget => {
+  const key = `${provider}|${repo}|${prNumber}`;
+  const known = INTERNED.get(key);
+  if (known !== undefined) {
+    return known;
+  }
+  const target: ReviewTarget = { provider, repo, prNumber };
+  INTERNED.set(key, target);
+  return target;
+};
+
+type DraftOnTargetParams = {
+  readonly draft: Pick<PrReviewDraft, 'provider' | 'repo' | 'prNumber'>;
+  readonly target: ReviewTarget;
+};
+
+export const isDraftOnTarget = ({ draft, target }: DraftOnTargetParams): boolean =>
+  draft.provider === target.provider &&
+  draft.repo === target.repo &&
+  draft.prNumber === target.prNumber;
+
 export const targetFromUrl = ({ provider, url, prNumber }: UrlParams): ReviewTarget | null => {
   if (!Number.isInteger(prNumber) || prNumber <= 0) {
     return null;
@@ -63,7 +91,7 @@ export const targetFromUrl = ({ provider, url, prNumber }: UrlParams): ReviewTar
   }
   const repo =
     provider === 'gitlab' ? gitlabRepoFromPath({ pathname }) : githubRepoFromPath({ pathname });
-  return repo == null ? null : { provider, repo, prNumber };
+  return repo == null ? null : internReviewTarget({ provider, repo, prNumber });
 };
 
 type TargetFromTaskParams = {
@@ -121,7 +149,7 @@ const ownReviewTargets = ({ state, sessionId }: Params): ReadonlyArray<ReviewTar
     .sort(byProviderThenNumber);
 };
 
-const linkedReviewTargets = ({ state, sessionId }: Params): ReadonlyArray<ReviewTarget> =>
+export const linkedReviewTargetsOf = ({ state, sessionId }: Params): ReadonlyArray<ReviewTarget> =>
   (state.sessionExternalTasks[sessionId] ?? [])
     .filter(isReviewableTask)
     .flatMap((task) => {
@@ -130,5 +158,15 @@ const linkedReviewTargets = ({ state, sessionId }: Params): ReadonlyArray<Review
     })
     .sort(byProviderThenNumber);
 
+export const sessionReviewTargetsOf = ({
+  state,
+  sessionId,
+}: Params): ReadonlyArray<ReviewTarget> => [
+  ...new Set([
+    ...ownReviewTargets({ state, sessionId }),
+    ...linkedReviewTargetsOf({ state, sessionId }),
+  ]),
+];
+
 export const resolveReviewTarget = ({ state, sessionId }: Params): ReviewTarget | null =>
-  ownReviewTargets({ state, sessionId })[0] ?? linkedReviewTargets({ state, sessionId })[0] ?? null;
+  sessionReviewTargetsOf({ state, sessionId })[0] ?? null;

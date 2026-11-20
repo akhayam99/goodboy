@@ -4627,29 +4627,14 @@
       "count": 2
     }
   },
-  "apps/desktop/src/features/review/components/WriteReview/ReviewPanelButton.test.tsx": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 2
-    }
-  },
-  "apps/desktop/src/features/review/components/WriteReview/ReviewPanelButton.tsx": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 1
-    }
-  },
   "apps/desktop/src/features/review/components/WriteReview/WriteReviewForm.test.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
-      "count": 10
-    }
-  },
-  "apps/desktop/src/features/review/components/WriteReview/WriteReviewForm.tsx": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 1
+      "count": 8
     }
   },
   "apps/desktop/src/features/review/components/WriteReview/index.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
-      "count": 2
+      "count": 1
     },
     "@typescript-eslint/naming-convention": {
       "count": 1

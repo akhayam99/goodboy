@@ -4,7 +4,8 @@ import type { FileDiff, PrReviewDraft, SessionId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import { selectMountForPath } from '../../../../store/slices/project-mounts/selectors';
 import { isFileLevelDraft } from '../../../../store/slices/review-drafts/fileLevel';
-import { resolveReviewTarget } from '../../../../store/slices/review-drafts/resolveReviewTarget';
+import { isDraftOnTarget } from '../../../../store/slices/review-drafts/resolveReviewTarget';
+import { mountReviewOf } from '../../../review/mountReviewOf';
 import { draftThread } from '../../lib/draftThreads';
 import { NO_KINDS, type CommentKinds } from '../../lib/commentKinds';
 import type { DiffComments, DiffThread, DiffViewed } from '../../components/DiffView/types';
@@ -63,7 +64,8 @@ export const useReviewState = ({ sessionId, worktreePath, diff }: Params): Revie
   );
   const review = useDiffReviewThreads({ sessionId, mountId });
   const reviewThreads = review.threads;
-  const hasPullRequest = useAppStore((s) => resolveReviewTarget({ state: s, sessionId }) !== null);
+  const reviewTarget = useAppStore((state) => mountReviewOf({ state, sessionId, mountId }).target);
+  const hasPullRequest = reviewTarget !== null;
   const reviewDrafts = useAppStore(
     (s) => s.reviewDrafts[sessionId] ?? (EMPTY_ARRAY as ReadonlyArray<PrReviewDraft>),
   );
@@ -79,12 +81,17 @@ export const useReviewState = ({ sessionId, worktreePath, diff }: Params): Revie
 
   const fileDraftThreads = useMemo(
     () =>
-      hasPullRequest
-        ? reviewDrafts
-            .filter((draft) => draft.status === 'draft' && isFileLevelDraft({ draft }))
-            .map(draftThread)
-        : NO_THREADS,
-    [hasPullRequest, reviewDrafts],
+      reviewTarget === null
+        ? NO_THREADS
+        : reviewDrafts
+            .filter(
+              (draft) =>
+                draft.status === 'draft' &&
+                isFileLevelDraft({ draft }) &&
+                isDraftOnTarget({ draft, target: reviewTarget }),
+            )
+            .map(draftThread),
+    [reviewDrafts, reviewTarget],
   );
 
   const comments = useMemo<DiffComments>(() => {

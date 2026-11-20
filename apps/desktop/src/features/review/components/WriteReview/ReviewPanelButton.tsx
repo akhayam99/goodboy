@@ -1,22 +1,18 @@
-import { useMemo } from 'react';
 import { Eye } from '@goodboy/ui/icons';
 import { AnchoredPopover, Button, ICON_SIZE, useDropdown } from '@goodboy/ui';
 import type { PrReviewDraft, SessionId } from '@goodboy/types';
-import { EMPTY_ARRAY, useAppStore } from '../../../../store';
-
+import type { MountReview } from '../../mountReviewOf';
 import { WriteReviewForm } from './WriteReviewForm';
 
 type Props = {
   readonly sessionId: SessionId;
+  readonly review: MountReview;
+  readonly drafts: ReadonlyArray<PrReviewDraft>;
 };
 
 const REVIEW_PANEL_LABEL = 'Review changes';
 
-export const ReviewPanelButton = ({ sessionId }: Props) => {
-  const drafts = useAppStore(
-    (s) => s.reviewDrafts[sessionId] ?? (EMPTY_ARRAY as ReadonlyArray<PrReviewDraft>),
-  );
-  const count = useMemo(() => drafts.filter((draft) => draft.status === 'draft').length, [drafts]);
+export const ReviewPanelButton = ({ sessionId, review, drafts }: Props) => {
   const dropdown = useDropdown({
     align: 'end',
     width: 'w-[480px]',
@@ -39,11 +35,11 @@ export const ReviewPanelButton = ({ sessionId }: Props) => {
         >
           <Eye size={ICON_SIZE.row} aria-hidden />
           Review
-          <span className="tabular-nums text-muted-foreground">{count}</span>
+          <span className="tabular-nums text-muted-foreground">{drafts.length}</span>
         </Button>
       }
     >
-      <WriteReviewForm sessionId={sessionId} variant="panel" />
+      <WriteReviewForm sessionId={sessionId} review={review} drafts={drafts} variant="panel" />
     </AnchoredPopover>
   );
 };
