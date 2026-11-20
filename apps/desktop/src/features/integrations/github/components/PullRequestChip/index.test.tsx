@@ -23,7 +23,7 @@ describe('PullRequestChip', () => {
 
   it('renders the queued state as a badge with label', () => {
     render(<PullRequestChip state="queued" variant="badge" />);
-    expect(screen.getByText('Queued')).toBeDefined();
+    expect(screen.getByText('In merge queue')).toBeDefined();
   });
 
   it('renders compact variant with number, no label word', () => {

@@ -1648,7 +1648,7 @@ two states:
   output at all. A crash, a non-zero exit, a spawn error, an auth or quota
   error or a kill ends the turn in `sendTurn` and is marked `failed` there.
 - `blocked`: the agent is alive but did not finish, and asked nothing. The
-  runaway breaker (too many unattended workflow turns in an hour) and a
+  runaway breaker (4 unattended workflow turns in an hour, only when no limit is set) and a
   sub-agent whose plan instructions are no longer readable also end in
   `blocked`. A blocked agent resumes when you write to it, or through Ask it
   to continue and Skip.

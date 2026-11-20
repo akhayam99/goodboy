@@ -68,7 +68,7 @@ const STOP_CASES: ReadonlyArray<StopCase> = [
   {
     name: 'plan-approval',
     stop: { kind: 'plan-approval', message: 'The plan is ready' },
-    phrase: 'Plan needs approval',
+    phrase: 'Needs approval',
   },
   {
     name: 'paused',

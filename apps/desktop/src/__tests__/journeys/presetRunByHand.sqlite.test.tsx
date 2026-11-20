@@ -197,14 +197,14 @@ describe('journey: a preset run advanced by hand', () => {
     const view = render(<ToastProvider>{null}</ToastProvider>);
     expect(await stepStatuses()).toEqual(['Review:pending', 'Implement:pending', 'Test:pending']);
     const ready = showPage(view);
-    expect(ready).toContain('Ready to start');
+    expect(ready).toContain('Ready');
     expect(held.turns).toHaveLength(0);
 
     press({ view, name: /Start step 1/ });
 
     await vi.waitFor(() => expect(held.turns).toHaveLength(1));
     expect(await stepStatuses()).toEqual(['Review:running', 'Implement:pending', 'Test:pending']);
-    expect(showPage(view)).toContain('Step 1 · Reviewer is working');
+    expect(showPage(view)).toContain('Open step 1');
 
     held.turns[0]?.finish();
 
@@ -217,13 +217,13 @@ describe('journey: a preset run advanced by hand', () => {
     );
     await vi.waitFor(() => expect(summarizerQueues.size).toBe(0));
     expect(held.turns).toHaveLength(1);
-    expect(showPage(view)).toContain('Step 1 done · ready to continue');
+    expect(showPage(view)).toContain('Start step 2');
 
     press({ view, name: /Start step 2/ });
 
     await vi.waitFor(() => expect(held.turns).toHaveLength(2));
     expect(await stepStatuses()).toEqual(['Review:completed', 'Implement:running', 'Test:pending']);
-    expect(showPage(view)).toContain('Step 2 · Implementer is working');
+    expect(showPage(view)).toContain('Open step 2');
 
     held.turns[1]?.finish();
 
@@ -236,7 +236,7 @@ describe('journey: a preset run advanced by hand', () => {
     );
     await vi.waitFor(() => expect(summarizerQueues.size).toBe(0));
     expect(held.turns).toHaveLength(2);
-    expect(showPage(view)).toContain('Step 2 done · ready to continue');
+    expect(showPage(view)).toContain('Ready');
 
     press({ view, name: /Start step 3/ });
 

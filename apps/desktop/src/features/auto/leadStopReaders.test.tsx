@@ -1,6 +1,6 @@
 import { afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
-import { LEAD_STOP_WORDS } from '@goodboy/core/auto';
+import { NAMES } from '../../shared/utils/names';
 import type { AutoPhase } from '@goodboy/db';
 import type { Agent } from '@goodboy/types';
 import { anAgent } from '@goodboy/types/testing';
@@ -42,16 +42,25 @@ type PhaseParams = {
 
 const viewOf = ({ phase }: PhaseParams): AutoTreeView => aView({ phase });
 
+const LEAD_WORDS: ReadonlyArray<string> = [
+  NAMES.running,
+  NAMES.needsYou,
+  NAMES.needsApproval,
+  NAMES.idle,
+  NAMES.stopped,
+  NAMES.done,
+];
+
 const CASES: ReadonlyArray<Case> = [
-  { name: 'working', view: viewOf({ phase: 'waiting' }), word: 'Working' },
+  { name: 'working', view: viewOf({ phase: 'waiting' }), word: 'Running' },
   {
     name: 'plan ready',
     view: aView({ phase: 'waiting', artifacts: [aPlanRow()] }),
-    word: 'Waits for you',
+    word: 'Needs approval',
   },
-  { name: 'resting', view: viewOf({ phase: 'done' }), word: 'Resting' },
+  { name: 'resting', view: viewOf({ phase: 'done' }), word: 'Idle' },
   { name: 'stopped', view: viewOf({ phase: 'stopped' }), word: 'Stopped' },
-  { name: 'finished', view: viewOf({ phase: 'finished' }), word: 'Finished' },
+  { name: 'finished', view: viewOf({ phase: 'finished' }), word: 'Done' },
 ];
 
 const ROOT: Agent = anAgent({
@@ -110,7 +119,7 @@ describe('the five Lead words, one function, every reader', () => {
   it.each(CASES)('$name reads $word in the header, the row and the branch', ({ view, word }) => {
     renderHeader({ view });
 
-    expect(Object.values(LEAD_STOP_WORDS)).toContain(word);
+    expect(LEAD_WORDS).toContain(word);
     expect(screen.getByText(word).textContent).toBe(word);
     expect(workRowWordOf({ view })).toBe(word);
     expect(branchBlockWordOf({ view })).toBe(word);

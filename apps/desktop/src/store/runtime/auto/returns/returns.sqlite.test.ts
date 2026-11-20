@@ -109,9 +109,19 @@ const delegationById = async ({ world, id }: DelegationByIdParams): Promise<Auto
 
 const lastAutoText = ({ world }: WorldParams) => world.state.ports.autoTurns.at(-1)?.text ?? '';
 
-const fillReturnWindow = async ({ world }: WorldParams) => {
+type FillParams = WorldParams & {
+  readonly count?: number;
+};
+
+const dropLimit = ({ world }: WorldParams) =>
+  world.state.world.db.execute(`UPDATE auto_trees SET cap_usd = NULL`);
+
+const fillReturnWindow = async ({
+  world,
+  count = AUTO_TREE_LIMITS.returnsPerTreeWindow - 1,
+}: FillParams) => {
   const nowMs = world.state.world.clock.now();
-  for (let index = 0; index < AUTO_TREE_LIMITS.returnsPerTreeWindow; index += 1) {
+  for (let index = 0; index < count; index += 1) {
     await insertAutoOutbox({
       db: world.state.world.db,
       outbox: {
@@ -241,6 +251,7 @@ describe('Auto must decide about every return', () => {
 
   it('keeps a return saved while the tree is paused across stop and resume', async () => {
     const world = await startWith({ children: [LEDGER, NOTIFY] });
+    await dropLimit({ world });
     await fillReturnWindow({ world });
     const returned = await childReturns({ world, index: 0 });
     expect((await treeOf({ world })).phase).toBe('blocked');
@@ -822,8 +833,22 @@ describe('the caps on returns', () => {
     ).toEqual([]);
   });
 
-  it('pauses the tree on the seventh return in 30 minutes and Retry delivers it', async () => {
+  it('lets seven returns in 30 minutes reach the Lead when the run has a limit', async () => {
     const world = await startWith({ children: [LEDGER, NOTIFY] });
+    await fillReturnWindow({ world, count: AUTO_TREE_LIMITS.returnsPerTreeWindow });
+
+    await childReturns({ world, index: 0 });
+
+    const tree = await treeOf({ world });
+    expect(tree.phase).not.toBe('blocked');
+    expect(tree.blockedReason).toBeNull();
+    expect(world.state.ports.autoTurns).toHaveLength(2);
+    expect(lastAutoText({ world })).toContain('WAITING FOR YOUR DECISION');
+  });
+
+  it('pauses a run with no limit on the sixth return in 30 minutes and Retry delivers it', async () => {
+    const world = await startWith({ children: [LEDGER, NOTIFY] });
+    await dropLimit({ world });
     await fillReturnWindow({ world });
 
     await childReturns({ world, index: 0 });

@@ -977,7 +977,7 @@ describe('spawnAgent for an Auto agent', () => {
     await settle();
 
     expect(reportError).toHaveBeenCalledWith(
-      expect.objectContaining({ title: "Auto didn't start", sessionId: SESSION_ID }),
+      expect.objectContaining({ title: "The Lead didn't start", sessionId: SESSION_ID }),
     );
     expect(onKickoffAccepted).not.toHaveBeenCalled();
     expect(sendTurn).not.toHaveBeenCalled();
@@ -995,7 +995,7 @@ describe('spawnAgent for an Auto agent', () => {
     await settle();
 
     expect(reportError).toHaveBeenCalledWith(
-      expect.objectContaining({ title: "Auto didn't start" }),
+      expect.objectContaining({ title: "The Lead didn't start" }),
     );
   });
 

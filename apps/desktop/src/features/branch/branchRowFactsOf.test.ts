@@ -43,7 +43,7 @@ const BASE = {
 } satisfies Parameters<typeof branchRowFactsOf>[0];
 
 const STATES: ReadonlyArray<readonly [PullRequestStateKind, string]> = [
-  ['queued', 'Queued'],
+  ['queued', 'In merge queue'],
   ['approved', 'Approved'],
   ['open', 'Open'],
   ['draft', 'Draft'],

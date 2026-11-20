@@ -1,6 +1,7 @@
 import { formatUsd } from '@goodboy/ui';
 import type { Tone, WorkNodeState } from '@goodboy/ui';
 import { NAMES } from '../../shared/utils/names';
+import { formatSpan } from '../../shared/utils/time/formatSpan';
 import { ORCHESTRATOR_DECIDING_SENTENCE } from '../workflows/orchestratorCopy';
 import { REVIEW_COMMENT_NODE, REVIEW_COMMENT_TONE } from '../resolve/reviewCommentState';
 import { stoppedPhraseOf } from '../live-state/stoppedPhraseOf';
@@ -35,15 +36,9 @@ type QuietParams = {
 };
 
 const QUIET_MINUTE_MS = 60_000;
-const QUIET_HOUR_MINUTES = 120;
 
-export const quietSentence = ({ quietMs }: QuietParams): string => {
-  const minutes = Math.max(1, Math.floor(quietMs / QUIET_MINUTE_MS));
-  if (minutes < QUIET_HOUR_MINUTES) {
-    return `Quiet for ${minutes} min`;
-  }
-  return `Quiet for ${Math.floor(minutes / 60)} h`;
-};
+export const quietSentence = ({ quietMs }: QuietParams): string =>
+  `Quiet for ${formatSpan({ from: 0, to: Math.max(QUIET_MINUTE_MS, quietMs) })}`;
 
 const reasonSentence = ({ reason }: ReasonParams): string | null => {
   switch (reason.kind) {
@@ -106,7 +101,7 @@ const reasonSentence = ({ reason }: ReasonParams): string | null => {
     case 'paused':
       return 'Paused by you';
     case 'planReady':
-      return 'Plan needs approval';
+      return NAMES.needsApproval;
     case 'chained':
       return `Starts after ${reason.afterTitle}`;
     case 'awaitingFirstMessage':

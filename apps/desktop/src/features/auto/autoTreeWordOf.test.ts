@@ -16,18 +16,18 @@ describe('autoTreeWordOf', () => {
   it.each([
     ['stopping', 'stopping', 'Stopped'],
     ['stopped', 'stopped', 'Stopped'],
-    ['finished', 'done', 'Finished'],
-    ['blocked', 'failed', 'Waits for you'],
-    ['done', 'idle', 'Resting'],
-    ['answering', 'idle', 'Resting'],
-    ['deciding', 'running', 'Working'],
-    ['delegating', 'running', 'Working'],
-    ['waiting', 'running', 'Working'],
+    ['finished', 'done', 'Done'],
+    ['blocked', 'failed', 'Needs you'],
+    ['done', 'idle', 'Idle'],
+    ['answering', 'idle', 'Idle'],
+    ['deciding', 'running', 'Running'],
+    ['delegating', 'running', 'Running'],
+    ['waiting', 'running', 'Running'],
   ] as const)('reads the phase %s as the state %s and the Lead word %s', (phase, state, word) => {
     expect(wordOf({ phase })).toMatchObject({ state, word });
   });
 
-  it('reads Waits for you while any agent of the run waits on you, even with others running', () => {
+  it('reads Needs you while any agent of the run waits on you, even with others running', () => {
     const view = aView({
       phase: 'waiting',
       delegations: [
@@ -38,7 +38,7 @@ describe('autoTreeWordOf', () => {
 
     expect(autoTreeWordOf({ view, rootTurn: null })).toMatchObject({
       state: 'asking',
-      word: 'Waits for you',
+      word: 'Needs you',
     });
   });
 
@@ -55,12 +55,12 @@ describe('autoTreeWordOf', () => {
     expect(wordOf({ phase: 'stopping' }).isLive).toBe(false);
   });
 
-  it('reads a plan that waits as Waits for you with the reason plan ready', () => {
+  it('reads a plan that waits as Needs approval with the reason plan ready', () => {
     const view = aView({ phase: 'waiting', artifacts: [aPlanRow()] });
 
     expect(autoTreeWordOf({ view, rootTurn: null })).toMatchObject({
       state: 'asking',
-      word: 'Waits for you',
+      word: 'Needs approval',
       lead: { stop: 'waitsForYou', reason: 'planReady' },
     });
   });

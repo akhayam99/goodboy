@@ -9,6 +9,7 @@ import {
 } from '@goodboy/ui/icons';
 import type { PullRequestStateKind } from '@goodboy/types';
 import type { StatePresentation } from './statePresentation';
+import { NAMES } from './names';
 
 export type PullRequestPresentationState = PullRequestStateKind | 'none';
 
@@ -47,7 +48,7 @@ export const PULL_REQUEST_PRESENTATION = {
   },
   queued: {
     icon: ListChecks,
-    label: 'Queued',
+    label: NAMES.inMergeQueue,
     reason: 'waiting in the merge queue',
     textClass: 'text-muted-foreground',
     tone: 'neutral',

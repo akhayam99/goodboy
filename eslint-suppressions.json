@@ -10997,11 +10997,6 @@
       "count": 43
     }
   },
-  "apps/desktop/src/store/store.workflow-turn-breaker.test.ts": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 11
-    }
-  },
   "apps/desktop/src/store/store.workspace-switch.test.ts": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 15

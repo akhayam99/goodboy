@@ -5,7 +5,7 @@ import type { IsoDateTime, MountId, Session, SessionId, WorkspaceId } from '@goo
 import type { BranchFacts } from '../branches/branchFactsOf';
 import { branchEntriesOf } from '../branches/branchStoryOf';
 import { NAMES } from '../../../../shared/utils/names';
-import { boardTileChipOf, WAITS_FOR_YOU } from './boardTileChipOf';
+import { boardTileChipOf } from './boardTileChipOf';
 import type { BoardAsk } from './boardTypes';
 import { branchBoardOf } from './branchBoardOf';
 
@@ -95,25 +95,37 @@ const chipOf = ({ branch, asks = [], runningCount = 0 }: ChipParams) => {
 };
 
 describe('boardTileChipOf', () => {
-  it('says Merged in the merged tone on a merged branch', () => {
-    expect(chipOf({ branch: branchOf({ state: 'merged', checks: 'success' }) })).toEqual({
-      word: 'Merged',
-      tone: 'merged',
-    });
+  it('draws no chip on a merged or a closed branch, whose group already says it', () => {
+    expect(chipOf({ branch: branchOf({ state: 'merged', checks: 'success' }) })).toBeNull();
+    expect(chipOf({ branch: branchOf({ state: 'closed', checks: 'success' }) })).toBeNull();
   });
 
-  it('says Closed in the neutral tone on a closed request, never Merged', () => {
-    expect(chipOf({ branch: branchOf({ state: 'closed', checks: 'success' }) })).toEqual({
-      word: 'Closed',
-      tone: 'neutral',
-    });
-  });
-
-  it('says Waits for you when a question waits on the branch, before failing checks', () => {
+  it('says Asks you when a question waits on the branch, before failing checks', () => {
     expect(chipOf({ branch: branchOf({ checks: 'failure' }), asks: [ASK] })).toEqual({
-      word: WAITS_FOR_YOU,
+      word: NAMES.asksYou,
       tone: 'warning',
     });
+  });
+
+  it('never repeats Needs you inside the Needs you group, and names the plan approval', () => {
+    const branch = branchOf({ checks: 'pending' });
+    const board = branchBoardOf({ session, branches: [branch], asks: [], agents: [], leads: [] });
+    const [row] = board.rows;
+    if (row === undefined) {
+      throw new Error('no row');
+    }
+    const waiting = { ...row, group: 'needs-you' as const };
+    const entries = branchEntriesOf({ facts: [branch], detailByMountId: new Map() });
+    const entry = entries.live[0] ?? null;
+
+    expect(boardTileChipOf({ row: waiting, entry, runningCount: 0 })).toBeNull();
+    expect(
+      boardTileChipOf({
+        row: { ...waiting, stage: { ...waiting.stage, attention: 'plan-approval' } },
+        entry,
+        runningCount: 0,
+      }),
+    ).toEqual({ word: NAMES.needsApproval, tone: 'warning' });
   });
 
   it('says Checks failing in red over Running', () => {
@@ -131,11 +143,11 @@ describe('boardTileChipOf', () => {
   });
 
   it('says Not pushed on a branch with local commits and no request', () => {
-    expect(chipOf({ branch: branchOf({ hasRequest: false }) }).word).toBe('Not pushed');
+    expect(chipOf({ branch: branchOf({ hasRequest: false }) })?.word).toBe('Not pushed');
   });
 
   it('names the open pull request by its kind, the number living on the facts line', () => {
-    expect(chipOf({ branch: branchOf({}) }).word).toBe('PR open');
-    expect(chipOf({ branch: branchOf({ noun: '!' }) }).word).toBe('MR open');
+    expect(chipOf({ branch: branchOf({}) })?.word).toBe('PR open');
+    expect(chipOf({ branch: branchOf({ noun: '!' }) })?.word).toBe('MR open');
   });
 });

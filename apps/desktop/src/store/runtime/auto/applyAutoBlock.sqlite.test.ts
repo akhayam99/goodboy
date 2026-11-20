@@ -348,7 +348,7 @@ describe('a block that cannot be applied', () => {
     const tree = await treeOf(world);
     expect(tree).toMatchObject({ phase: 'blocked', noProgressStreak: 3 });
     expect(tree?.blockedReason).toBe(
-      'Auto kept trying to hand work over and was refused: the role it chose cannot run commands. Retry to let it choose again, or tell it what to change.',
+      'The Lead kept trying to start agents and was refused: the role it chose cannot run commands. Retry to let it choose again, or tell it what to change.',
     );
     expect(isAutoGateBlock({ reason: tree?.blockedReason ?? null })).toBe(true);
     const refusals = await refusalsOf(world);

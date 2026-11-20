@@ -203,7 +203,7 @@ describe('sessionRunsOf', () => {
       shape: 'lead',
       origin: 'Lead',
       isOlderRun: false,
-      stateWord: 'Finished',
+      stateWord: 'Done',
       open: { kind: 'auto', agentId: FIXTURE_ROOT },
     });
     expect(byKind.get('agent')).toMatchObject({

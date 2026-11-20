@@ -14,8 +14,8 @@ type Params = {
   readonly onKickoffAccepted: (() => void) | undefined;
 };
 
-const START_FAILED_TITLE = "Auto didn't start";
-const LOST_MESSAGE = 'Auto could not take the first message. Send it again from the chat.';
+const START_FAILED_TITLE = "The Lead didn't start";
+const LOST_MESSAGE = "The Lead couldn't take the first message. Send it again from the chat.";
 
 export const sendAutoKickoff = ({
   get,

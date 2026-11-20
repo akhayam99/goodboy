@@ -1,4 +1,4 @@
-import { AUTO_BLOCK_TEXT } from '@goodboy/core/auto';
+import { isAutoBudgetBlock } from '@goodboy/core/auto';
 import type { AutoTreeView } from '../../store/slices/auto-view/state';
 
 type Params = {
@@ -14,7 +14,7 @@ const isSpent = ({ view }: Params): boolean => {
 };
 
 const isBlockedByLimit = ({ view }: Params): boolean =>
-  view.tree.phase === 'blocked' && view.tree.blockedReason === AUTO_BLOCK_TEXT.budget;
+  view.tree.phase === 'blocked' && isAutoBudgetBlock({ reason: view.tree.blockedReason });
 
 export const isAutoPausedAtLimit = ({ view }: Params): boolean =>
   isBlockedByLimit({ view }) || (view.tree.phase !== 'blocked' && isSpent({ view }));

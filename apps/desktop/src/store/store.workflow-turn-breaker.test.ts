@@ -3,19 +3,28 @@ import {
   MAX_UNATTENDED_TURNS_PER_AGENT,
   resetWorkflowTurnBreaker,
 } from './slices/turn/workflowTurnBreaker';
-import type {
-  Agent,
-  AgentId,
-  IsoDateTime,
-  MountId,
-  ProjectId,
-  Session,
-  SessionId,
-  Workflow,
-  WorkflowId,
-  WorkflowRunId,
-  WorkspaceId,
+import { RUNAWAY_SENTENCE } from './slices/turn/haltRunawayWorkflowAgent';
+import {
+  brandId,
+  type Agent,
+  type AgentId,
+  type IsoDateTime,
+  type MountId,
+  type ProjectId,
+  type Session,
+  type SessionId,
+  type Workflow,
+  type WorkflowId,
+  type WorkflowRunId,
+  type WorkspaceId,
 } from '@goodboy/types';
+import type { ReportErrorParams } from './slices/notifications/reportError';
+import type { WorkflowRun } from '@goodboy/types';
+
+const RUN_LIMIT: Pick<WorkflowRun, 'spendLimitUsd' | 'spendLimitMode'> = {
+  spendLimitUsd: 10,
+  spendLimitMode: 'pause',
+};
 import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
@@ -56,13 +65,13 @@ vi.mock('../features/worktree/worktree', async () =>
 );
 vi.mock('../shared/lib/repo', async () => (await import('./storyHarness')).repoModuleMock());
 
-const NOW = '2026-05-07T00:00:00.000Z' as IsoDateTime;
-const SESSION_ID = 'session-1' as SessionId;
-const WORKSPACE_ID = 'workspace-1' as WorkspaceId;
-const STEP_AGENT_ID = 'agent-step' as AgentId;
-const CLUSTER_AGENT_ID = 'agent-cluster' as AgentId;
-const RUN_ID = 'run-1' as WorkflowRunId;
-const WORKFLOW_ID = 'wf-1' as WorkflowId;
+const NOW = brandId<IsoDateTime>({ value: '2026-05-07T00:00:00.000Z' });
+const SESSION_ID = brandId<SessionId>({ value: 'session-1' });
+const WORKSPACE_ID = brandId<WorkspaceId>({ value: 'workspace-1' });
+const STEP_AGENT_ID = brandId<AgentId>({ value: 'agent-step' });
+const CLUSTER_AGENT_ID = brandId<AgentId>({ value: 'agent-cluster' });
+const RUN_ID = brandId<WorkflowRunId>({ value: 'run-1' });
+const WORKFLOW_ID = brandId<WorkflowId>({ value: 'wf-1' });
 
 const buildSession = (): Session =>
   buildStorySession({
@@ -125,8 +134,8 @@ describe('sendTurn workflow turn breaker', () => {
     resetWorkflowTurnBreaker();
     emitNotification.mockClear();
     storySpies.runTurn.mockImplementation(() => emptyTurnStream());
-    storySpies.invokeAgentList.mockResolvedValue([stepAgent, clusterAgent] as never);
-    storySpies.invokeAgentUpdateStatus.mockResolvedValue(undefined as never);
+    storySpies.invokeAgentList.mockResolvedValue([stepAgent, clusterAgent]);
+    storySpies.invokeAgentUpdateStatus.mockResolvedValue({ ...clusterAgent, status: 'blocked' });
     useAppStore.setState({
       sessions: [buildSession()],
       projects: [],
@@ -134,12 +143,12 @@ describe('sendTurn workflow turn breaker', () => {
       sessionProjectMounts: {
         [SESSION_ID]: [
           {
-            projectId: 'project-turn' as ProjectId,
+            projectId: brandId<ProjectId>({ value: 'project-turn' }),
             mountName: 'repo',
             worktreePath: '/tmp/wt',
             repoRoot: '/tmp/repo',
             branch: 'goodboy/turn',
-            mountId: 'mount-fixture-1' as MountId,
+            mountId: brandId<MountId>({ value: 'mount-fixture-1' }),
             sessionId: SESSION_ID,
             lastWorktreePath: null,
             baseBranch: null,
@@ -171,7 +180,7 @@ describe('sendTurn workflow turn breaker', () => {
     }
   };
 
-  it('halts the agent on the first workflow turn past the cap without running it', async () => {
+  it('holds the agent in Needs you on the first workflow turn past the cap when no limit is set', async () => {
     await sendWorkflowTurns(MAX_UNATTENDED_TURNS_PER_AGENT);
     expect(storySpies.runTurn).toHaveBeenCalledTimes(MAX_UNATTENDED_TURNS_PER_AGENT);
 
@@ -182,8 +191,8 @@ describe('sendTurn workflow turn breaker', () => {
       expect.objectContaining({
         kind: 'error',
         severity: 'warning',
-        title: expect.stringContaining('Run halted'),
-        body: `The run sent this agent ${MAX_UNATTENDED_TURNS_PER_AGENT} turns in the last hour without you. Goodboy stopped it. Open the agent to continue.`,
+        title: 'Needs you: mechanical swaps onto existing primitives',
+        body: RUNAWAY_SENTENCE,
         sessionId: SESSION_ID,
       }),
     );
@@ -200,7 +209,59 @@ describe('sendTurn workflow turn breaker', () => {
 
     expect(storySpies.runTurn).toHaveBeenCalledTimes(1);
     expect(emitNotification).not.toHaveBeenCalledWith(
-      expect.objectContaining({ title: expect.stringContaining('Run halted') }),
+      expect.objectContaining({ body: RUNAWAY_SENTENCE }),
+    );
+  });
+
+  it('lets the fifth workflow turn run when the run has a limit', async () => {
+    const [session] = useAppStore.getState().sessions;
+    if (session === undefined) {
+      throw new Error('no session');
+    }
+    useAppStore.setState({
+      sessions: [
+        {
+          ...session,
+          workflowRuns: session.workflowRuns.map((run) => ({ ...run, ...RUN_LIMIT })),
+        },
+      ],
+    });
+
+    await sendWorkflowTurns(MAX_UNATTENDED_TURNS_PER_AGENT + 1);
+
+    expect(storySpies.runTurn).toHaveBeenCalledTimes(MAX_UNATTENDED_TURNS_PER_AGENT + 1);
+    expect(storySpies.invokeAgentUpdateStatus).not.toHaveBeenCalledWith(
+      CLUSTER_AGENT_ID,
+      expect.objectContaining({ status: 'blocked' }),
+    );
+  });
+
+  it('lets the fifth workflow turn run when the session has a limit that pauses', async () => {
+    useAppStore.setState({
+      sessionBudgets: {
+        [SESSION_ID]: { sessionId: SESSION_ID, softCapUsd: 20, onExceed: 'pause', warnRatio: 0.8 },
+      },
+    });
+
+    await sendWorkflowTurns(MAX_UNATTENDED_TURNS_PER_AGENT + 1);
+
+    expect(storySpies.runTurn).toHaveBeenCalledTimes(MAX_UNATTENDED_TURNS_PER_AGENT + 1);
+    useAppStore.setState({ sessionBudgets: {} });
+  });
+
+  it('says so when the agent cannot be held, and still sends nothing', async () => {
+    const reportError = vi.fn<(params: ReportErrorParams) => Promise<void>>(async () => undefined);
+    useAppStore.setState({ reportError });
+    await sendWorkflowTurns(MAX_UNATTENDED_TURNS_PER_AGENT);
+    storySpies.invokeAgentUpdateStatus.mockRejectedValueOnce(new Error('database is locked'));
+    await sendWorkflowTurns(1);
+
+    expect(storySpies.runTurn).toHaveBeenCalledTimes(MAX_UNATTENDED_TURNS_PER_AGENT);
+    expect(reportError).toHaveBeenCalledWith(
+      expect.objectContaining({ title: "Couldn't hold mechanical swaps onto existing primitives" }),
+    );
+    expect(emitNotification).not.toHaveBeenCalledWith(
+      expect.objectContaining({ body: RUNAWAY_SENTENCE }),
     );
   });
 

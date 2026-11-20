@@ -151,7 +151,7 @@ Every new run from **Start a run** has a Lead, unless you named one role. There 
 
 **The Lead page**
 
-- A Lead reads one of five words: **Working**, **Waits for you**, **Resting**, **Stopped** or **Finished**. The reason for a wait, a plan to review, a question, the limit or a failure, stands next to it.
+- A Lead reads the same words as every other row: **Running**, **Needs you**, **Idle**, **Stopped** or **Done**. A plan that waits for you reads **Needs approval**. The reason for a wait, a question, the limit or a failure, stands next to it.
 - The Lead page is the page of its run, inside Runs. It shows the chat and the tree of its agents. For the agent you select it also shows the record of what it was given at launch. Under 860 pixels of width the tree opens from the **Agents** count in the header.
 - A run started from review comments opens with **From N comments**. Each comment is quoted with its source and whether it is still open. **Open comment** opens it on its branch.
 - Write to a Lead while its agents work and the note goes in at once. Its tree row reads **Not read yet**, then **Read at turn 3**, and you can still edit or remove it until it is read.
@@ -194,7 +194,7 @@ Every new run from **Start a run** has a Lead, unless you named one role. There 
 - An agent's page, a run's page and a Lead page have the same one line under their title: the state, one sentence, what that agent spent and its settings. A Lead reads "Stops after the plan · Ask first · Limit $10.00", an agent "Ask first · No limit". A running agent shows the state word alone, and a Lead page drops the sentence while its dock says it. Each word is underlined with dots and opens one choice; its tooltip says what it changes. Nothing unfolds above the chat. The model is picked in the message box, beside **Send**.
 - A Lead page shows **Asks you** in that chip line, which opens its permission rows. It starts on the workspace default, a pick changes this Lead only, and it applies to what the Lead starts next. An agent already waiting for your go keeps waiting. The message field stays under the conversation at every level.
 - When the Lead needs a choice, it shows one **Next step** card, never a yes or no question. The proposed agent is the first option, such as **Spawn implementer**, tagged **Recommended**. One or two others follow, one row each, and the main button reads **Continue**. The picked option is filled and outlined. The card is small and plain, and only a small dot says it waits for you. A hint stays hidden until you press **Add a hint**. The keys 1 to 3 and the arrow keys pick an option once you are in the card. An option other than the first declines the proposal and tells the Lead your pick. **Not now** declines and tells nothing.
-- When the work rests, the Lead reads **Resting**. **Mark finished** in its header menu closes it, and writing to it again reopens it.
+- When the work rests, the Lead reads **Idle**. **Mark finished** in its header menu closes it, and writing to it again reopens it.
 - When the Lead cannot decide its next step, it reads **Failed** with the reason and a **Retry**. A message you send retries too. The reason shows on two lines at most, and the whole text opens when you point at it or tab to it. **Open transcript** opens the conversation.
 - **Stop** and **Retry** work from every Goodboy window. A failure says why under them.
 

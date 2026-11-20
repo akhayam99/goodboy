@@ -20,8 +20,8 @@ import { routeAutoUserTurn, type RouteAutoUserTurnParams } from './routeAutoUser
 
 type AutoTurnState = ReturnType<RouteAutoUserTurnParams['get']>;
 
-const AUTO_ATTACHMENTS_MESSAGE = 'Auto takes images in a message, not other files yet.';
-const AUTO_IMAGES_LOST_MESSAGE = 'Auto could not keep the images. Attach them again.';
+const AUTO_ATTACHMENTS_MESSAGE = 'The Lead takes images in a message, not other files yet.';
+const AUTO_IMAGES_LOST_MESSAGE = "The Lead couldn't keep the images. Attach them again.";
 
 const BANNER_INPUT = {
   id: 'attachment-banner',
@@ -38,7 +38,7 @@ const BANNER_STORED: MessageAttachment = {
   relPath: '.goodboy/attachments/attachment-banner/banner-wide.png',
   dir: '/scratch/session-harborline',
 };
-const AUTO_MESSAGE_LOST_MESSAGE = 'Auto could not take your message. Send it again in a moment.';
+const AUTO_MESSAGE_LOST_MESSAGE = "The Lead couldn't take your message. Send it again in a moment.";
 
 const SESSION = brandId<SessionId>({ value: 'session-harborline' });
 const WORKSPACE = brandId<WorkspaceId>({ value: 'workspace-harborline' });
@@ -337,7 +337,7 @@ describe('a message typed to an Auto agent', () => {
     expect(appendTurnEvent).not.toHaveBeenCalled();
 
     expect(reportError).toHaveBeenCalledWith(
-      expect.objectContaining({ title: "Auto didn't get your message", sessionId: SESSION }),
+      expect.objectContaining({ title: "The Lead didn't get your message", sessionId: SESSION }),
     );
   });
 

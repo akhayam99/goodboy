@@ -1,10 +1,10 @@
 import { isAgentStatusHalted } from '@goodboy/core/workflows';
 import type { Agent, AgentId, OpenQuestion, Workflow, WorkflowRun } from '@goodboy/types';
+import { NAMES } from '../../../../shared/utils/names';
 import type { TailState } from '../../../live-state/tailFacts';
 import type { NextAction } from '../../../workflows/resolveNextAction';
 import { openStepLabelOf, type RunPrimary } from '../../../workflows/runPrimaryOf';
 import { runStateOfPrimary } from '../../../workflows/runStateOf';
-import { NOT_FINISHED } from '../../../workTreeModel/rowStateCopy';
 import { isWorkflowRunClosedByUser } from '../../../workflows/isWorkflowRunClosedByUser';
 import { stepNumberOf } from './stepNumberOf';
 import { stoppedQuestionTailOf } from './stoppedQuestionTailOf';
@@ -38,28 +38,11 @@ type Params = {
   readonly agents: ReadonlyArray<Agent>;
   readonly isCompleted: boolean;
   readonly primary: RunPrimary | null;
-  readonly predecessorName: string;
   readonly nextAction: NextAction;
   readonly quiet: RunQuiet | null;
   readonly selectedRootId: AgentId | null;
-  readonly roleById: ReadonlyMap<AgentId, string>;
   readonly restartStoppedCount: number;
   readonly question: OpenQuestion | null;
-};
-
-type StepParams = {
-  readonly workflow: Workflow;
-  readonly agent: Agent;
-};
-
-type LabelParams = StepParams & {
-  readonly roleById: ReadonlyMap<AgentId, string>;
-};
-
-const stepLabelOf = ({ workflow, agent, roleById }: LabelParams): string => {
-  const number = stepNumberOf({ workflow, agent });
-  const role = roleById.get(agent.id) ?? agent.name;
-  return number === null ? role : `Step ${number} · ${role}`;
 };
 
 type DynamicWord = {
@@ -78,7 +61,7 @@ const dynamicStateOf = ({ kind }: DynamicParams): TailState => {
   return kind === 'retry' ? 'failed' : 'needsYou';
 };
 
-const DECIDE_NEXT_WORD: DynamicWord = { state: 'idle', phrase: 'Ready' };
+const DECIDE_NEXT_WORD: DynamicWord = { state: 'idle', phrase: NAMES.ready };
 
 const dynamicWordOf = ({ kind }: DynamicParams): DynamicWord => {
   if (kind === 'decide-next') {
@@ -92,79 +75,37 @@ const dynamicWordOf = ({ kind }: DynamicParams): DynamicWord => {
 
 type PrimaryParams = {
   readonly run: WorkflowRun;
-  readonly workflow: Workflow;
-  readonly agents: ReadonlyArray<Agent>;
   readonly primary: RunPrimary;
-  readonly predecessorName: string;
   readonly isStepPage: boolean;
 };
 
-const primaryTailOf = ({
-  run,
-  workflow,
-  agents,
-  primary,
-  predecessorName,
-  isStepPage,
-}: PrimaryParams): RunTail => {
+const primaryTailOf = ({ run, primary, isStepPage }: PrimaryParams): RunTail => {
   const verb: RunTailVerb = { kind: 'primary', primary };
   switch (primary.kind) {
-    case 'start-step': {
-      const done = agents
-        .filter((agent) => agent.parentAgentId == null && agent.status === 'completed')
-        .map((agent) => stepNumberOf({ workflow, agent }))
-        .filter((number): number is number => number !== null);
-      const last = done.length === 0 ? null : Math.max(...done);
-      const doneWords = `Step ${last} done`;
-      return {
-        state: 'idle',
-        phrase:
-          last === null
-            ? 'Ready to start'
-            : isStepPage
-              ? doneWords
-              : `${doneWords} · ready to continue`,
-        stepAgentId: null,
-        verb,
-      };
-    }
+    case 'start-step':
+      return { state: 'idle', phrase: NAMES.ready, stepAgentId: null, verb };
     case 'start-run':
       return run.triggerMode === 'after_run'
-        ? {
-            state: 'queued',
-            phrase: `Starts after ${predecessorName}`,
-            stepAgentId: null,
-            verb,
-          }
-        : { state: 'idle', phrase: 'Ready to start', stepAgentId: null, verb };
+        ? { state: 'queued', phrase: NAMES.queued, stepAgentId: null, verb }
+        : { state: 'idle', phrase: NAMES.ready, stepAgentId: null, verb };
     case 'resume':
       return {
         state: 'stopped',
-        phrase: 'Paused by you',
+        phrase: NAMES.paused,
         stepAgentId: null,
         verb: isStepPage ? verb : null,
       };
     case 'raise-cap':
-      return { state: 'paused', phrase: 'Paused at the limit', stepAgentId: null, verb };
+      return { state: 'paused', phrase: NAMES.needsYou, stepAgentId: null, verb };
     case 'review-plan':
     case 'approve-plan':
-      return {
-        state: 'waiting',
-        phrase: 'The plan needs approval',
-        stepAgentId: null,
-        verb,
-      };
+      return { state: 'waiting', phrase: NAMES.needsApproval, stepAgentId: null, verb };
     case 'answer':
-      return {
-        state: 'waiting',
-        phrase: runStateOfPrimary({ primary: 'answer' }).pageWord,
-        stepAgentId: null,
-        verb,
-      };
+      return { state: 'waiting', phrase: NAMES.needsYou, stepAgentId: null, verb };
     case 'open-step':
       return {
         state: 'needsYou',
-        phrase: runStateOfPrimary({ primary: 'open-step' }).pageWord,
+        phrase: NAMES.needsYou,
         stepAgentId: null,
         verb: isStepPage ? { kind: 'openRun' } : verb,
       };
@@ -178,7 +119,12 @@ const primaryTailOf = ({
         verb: isStepPage ? { kind: 'openRun' } : verb,
       };
     case 'restore':
-      return { state: 'idle', phrase: primary.label, stepAgentId: null, verb };
+      return {
+        state: 'idle',
+        phrase: runStateOfPrimary({ primary: 'restore' }).word,
+        stepAgentId: null,
+        verb,
+      };
     default: {
       const exhaustive: never = primary.kind;
       return exhaustive;
@@ -192,11 +138,9 @@ export const runTailOf = ({
   agents,
   isCompleted,
   primary,
-  predecessorName,
   nextAction,
   quiet,
   selectedRootId,
-  roleById,
   restartStoppedCount,
   question,
 }: Params): RunTail | null => {
@@ -204,7 +148,7 @@ export const runTailOf = ({
     return null;
   }
   if (isWorkflowRunClosedByUser({ run })) {
-    return { state: 'stopped', phrase: 'Stopped by you', stepAgentId: null, verb: null };
+    return { state: 'stopped', phrase: NAMES.stopped, stepAgentId: null, verb: null };
   }
   if (isCompleted) {
     return null;
@@ -212,8 +156,8 @@ export const runTailOf = ({
   const steps = agents.filter((agent) => agent.parentAgentId == null);
   if (quiet !== null) {
     return {
-      state: 'waiting',
-      phrase: `No output for ${quiet.minutes} min`,
+      state: 'needsYou',
+      phrase: NAMES.needsYou,
       stepAgentId: null,
       verb: { kind: 'quiet', agentId: quiet.agentId },
     };
@@ -223,25 +167,21 @@ export const runTailOf = ({
     if (running.id === selectedRootId) {
       return null;
     }
-    const number = stepNumberOf({ workflow, agent: running });
     return {
       state: 'working',
-      phrase: `${stepLabelOf({ workflow, agent: running, roleById })} is working`,
+      phrase: NAMES.running,
       stepAgentId: running.id,
       verb: {
         kind: 'openStep',
         agentId: running.id,
-        label: number === null ? 'Open step' : `Open step ${number}`,
+        label: openStepLabelOf({ number: stepNumberOf({ workflow, agent: running }) }),
       },
     };
   }
   if (restartStoppedCount > 0) {
     return {
       state: 'stopped',
-      phrase:
-        restartStoppedCount === 1
-          ? '1 agent stopped by restart'
-          : `${restartStoppedCount} agents stopped by restart`,
+      phrase: NAMES.stopped,
       stepAgentId: null,
       verb: { kind: 'resumeAll', count: restartStoppedCount },
     };
@@ -250,7 +190,7 @@ export const runTailOf = ({
   if (question !== null) {
     return {
       state: stoppedTail?.state ?? 'waiting',
-      phrase: stoppedTail?.phrase ?? runStateOfPrimary({ primary: 'answer' }).pageWord,
+      phrase: stoppedTail?.phrase ?? NAMES.needsYou,
       stepAgentId: null,
       verb: { kind: 'answer', question },
     };
@@ -258,7 +198,7 @@ export const runTailOf = ({
   if (nextAction.kind === 'answer') {
     return {
       state: stoppedTail?.state ?? 'waiting',
-      phrase: stoppedTail?.phrase ?? nextAction.sentence,
+      phrase: stoppedTail?.phrase ?? NAMES.needsYou,
       stepAgentId: null,
       verb: { kind: 'answer', question: nextAction.question },
     };
@@ -268,7 +208,7 @@ export const runTailOf = ({
     if (selectedRootId === null && halted !== null) {
       return {
         state: 'needsYou',
-        phrase: runStateOfPrimary({ primary: 'open-step' }).pageWord,
+        phrase: NAMES.needsYou,
         stepAgentId: null,
         verb: {
           kind: 'openStep',
@@ -279,37 +219,30 @@ export const runTailOf = ({
     }
     return {
       state: nextAction.isBlocked ? 'needsYou' : 'failed',
-      phrase: nextAction.isBlocked ? NOT_FINISHED : nextAction.sentence,
+      phrase: nextAction.isBlocked ? NAMES.notFinished : NAMES.failed,
       stepAgentId: null,
       verb: { kind: 'recover' },
     };
   }
   if (nextAction.kind === 'summarizing') {
-    return { state: 'working', phrase: 'Preparing the next step', stepAgentId: null, verb: null };
+    return { state: 'working', phrase: NAMES.running, stepAgentId: null, verb: null };
   }
   if (run.orchestrationStop?.kind === 'budget') {
     return {
       state: 'paused',
-      phrase: 'Paused at the limit',
+      phrase: NAMES.needsYou,
       stepAgentId: null,
       verb: { kind: 'raiseCap' },
     };
   }
   if (primary !== null) {
-    return primaryTailOf({
-      run,
-      workflow,
-      agents,
-      primary,
-      predecessorName,
-      isStepPage: selectedRootId !== null,
-    });
+    return primaryTailOf({ run, primary, isStepPage: selectedRootId !== null });
   }
   const stopped = steps.find((agent) => agent.status === 'stopped') ?? null;
   if (stopped !== null) {
     return {
       state: 'stopped',
-      phrase: `${stepLabelOf({ workflow, agent: stopped, roleById })} stopped`,
+      phrase: NAMES.stopped,
       stepAgentId: null,
       verb: { kind: 'continueStep', agentId: stopped.id },
     };

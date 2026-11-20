@@ -1,5 +1,5 @@
 import type { Agent, TurnState } from '@goodboy/types';
-import { AUTO_BLOCK_TEXT } from '@goodboy/core/auto';
+import { isAutoBudgetBlock } from '@goodboy/core/auto';
 import { formatUsd } from '@goodboy/ui';
 import type { AutoTreeView } from '../../../store/slices/auto-view/state';
 import { refusalNoticeOf } from '../../auto/chat/refusalNoticeOf';
@@ -80,11 +80,11 @@ const stopOf = ({ view }: ViewParams): TailFacts['actions'] =>
 
 const blocked = ({ view }: ViewParams): TailFacts => {
   const reason = view.tree.blockedReason;
-  if (reason === AUTO_BLOCK_TEXT.budget) {
+  if (isAutoBudgetBlock({ reason })) {
     const running = stillRunningOf({ view });
     return {
       state: 'failed',
-      phrase: running === null ? reason : `${reason} ${running}`,
+      phrase: running === null ? (reason ?? '') : `${reason ?? ''} ${running}`,
       startedAt: null,
       actions: AT_LIMIT,
     };

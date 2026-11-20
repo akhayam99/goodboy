@@ -125,7 +125,7 @@ describe('the c08 preset run scenes', () => {
       /^Step 1 · Scout/,
     );
     expect(tail().getAttribute('data-run-tail')).toBe('openStep');
-    expect(within(tail()).getByText('Step 2 · Implementer is working')).toBeDefined();
+    expect(within(tail()).getByText('Running')).toBeDefined();
     expect(within(tail()).getByRole('button', { name: 'Open step 2' })).toBeDefined();
   });
 
@@ -158,7 +158,7 @@ describe('the c08 preset run scenes', () => {
   it('c08-run-ready says the step is done and keeps Start step 3 on one quiet line', async () => {
     await mount('c08-run-ready');
 
-    expect(within(tail()).getByText('Step 2 done')).toBeDefined();
+    expect(within(tail()).getByText('Ready')).toBeDefined();
     within(tail()).getByRole('button', { name: 'Start step 3' });
     expect(screen.getAllByRole('button', { name: 'Start step 3' })).toHaveLength(1);
     expect(document.querySelector('[data-run-header-actions]')).toBeNull();
@@ -167,7 +167,7 @@ describe('the c08 preset run scenes', () => {
   it('c08-run-approval says the plan waits and asks for it on the quiet line of the step', async () => {
     await mount('c08-run-approval');
 
-    expect(within(tail()).getByText('The plan needs approval')).toBeDefined();
+    expect(within(tail()).getByText('Needs approval')).toBeDefined();
     expect(
       within(tail()).getByRole('button', { name: 'Approve and start Fix the batching' }),
     ).toBeDefined();
@@ -176,7 +176,7 @@ describe('the c08 preset run scenes', () => {
   it('c08-run-capped says it paused at the limit and offers to raise it on the quiet line', async () => {
     await mount('c08-run-capped');
 
-    expect(within(tail()).getByText('Paused at the limit')).toBeDefined();
+    expect(within(tail()).getByText('Needs you')).toBeDefined();
     within(tail()).getByRole('button', { name: 'Raise limit' });
   });
 

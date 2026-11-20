@@ -425,7 +425,7 @@ describe('one run page', () => {
     await mount('u36-p12-step-page');
 
     const tail = within(nodeOf('[data-run-tail]'));
-    tail.getByText('Step 2 done');
+    tail.getByText('Ready');
     tail.getByRole('button', { name: 'Start step 3' });
   });
 

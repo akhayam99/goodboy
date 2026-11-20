@@ -3,8 +3,7 @@ import { NAMES } from '../../../../shared/utils/names';
 import { sentenceCase } from '../../../../shared/utils/sentenceCase';
 import { STAGE_TONE } from '../../session-stage';
 import type { BranchEntry } from '../branches/branchStoryOf';
-import { BRANCH_STATE_TONE, type BranchState } from '../branches/branchStateTone';
-import { stageWordOf } from './boardRowWordsOf';
+import type { BranchState } from '../branches/branchStateTone';
 import type { BoardRow } from './boardTypes';
 import { requestShortOf } from './requestShortOf';
 
@@ -19,8 +18,6 @@ type BoardTileChip = Readonly<{
   tone: Tone;
 }>;
 
-export const WAITS_FOR_YOU = 'Waits for you';
-
 const BLOCKED_STATES: ReadonlySet<BranchState> = new Set<BranchState>([
   'checks-failing',
   'conflicts',
@@ -28,21 +25,32 @@ const BLOCKED_STATES: ReadonlySet<BranchState> = new Set<BranchState>([
   'gone',
 ]);
 
-export const boardTileChipOf = ({ row, entry, runningCount }: Params): BoardTileChip => {
+type ReasonParams = {
+  readonly row: BoardRow;
+};
+
+const needsYouReasonOf = ({ row }: ReasonParams): BoardTileChip | null => {
+  if (row.stage.attention === 'plan-approval') {
+    return { word: NAMES.needsApproval, tone: STAGE_TONE.attention };
+  }
+  if (row.stage.attention === 'needs-approval') {
+    return { word: NAMES.waitingForPermission, tone: STAGE_TONE.attention };
+  }
+  return null;
+};
+
+export const boardTileChipOf = ({ row, entry, runningCount }: Params): BoardTileChip | null => {
   if (row.isSettled) {
-    return {
-      word: stageWordOf({ row, entry, settledAt: null, now: 0 }),
-      tone: row.isMerged ? BRANCH_STATE_TONE.merged : BRANCH_STATE_TONE.closed,
-    };
+    return null;
   }
   if (row.askIds.length > 0) {
-    return { word: WAITS_FOR_YOU, tone: STAGE_TONE.attention };
+    return { word: NAMES.asksYou, tone: STAGE_TONE.attention };
   }
   if (entry !== null && BLOCKED_STATES.has(entry.story.state)) {
     return { word: entry.story.word, tone: entry.story.tone };
   }
   if (row.group === 'needs-you') {
-    return { word: WAITS_FOR_YOU, tone: STAGE_TONE.attention };
+    return needsYouReasonOf({ row });
   }
   if (runningCount > 0) {
     return { word: NAMES.running, tone: STAGE_TONE.running };

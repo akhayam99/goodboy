@@ -149,7 +149,7 @@ describe('runRowFactsOf wait', () => {
       statuses: ['completed', 'pending', 'pending'],
     });
 
-    expect(facts).toMatchObject({ word: 'Waits for you', wait: 'go' });
+    expect(facts).toMatchObject({ word: 'Needs you', wait: 'go' });
   });
 
   it.each([

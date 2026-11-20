@@ -49,13 +49,13 @@ export type RouteAutoUserTurnParams = Readonly<{
   storeImages?: typeof storeAutoImages;
 }>;
 
-const AUTO_ATTACHMENTS_MESSAGE = 'Auto takes images in a message, not other files yet.';
-const AUTO_IMAGES_LOST_MESSAGE = 'Auto could not keep the images. Attach them again.';
-const AUTO_MESSAGE_LOST_MESSAGE = 'Auto could not take your message. Send it again in a moment.';
+const AUTO_ATTACHMENTS_MESSAGE = 'The Lead takes images in a message, not other files yet.';
+const AUTO_IMAGES_LOST_MESSAGE = "The Lead couldn't keep the images. Attach them again.";
+const AUTO_MESSAGE_LOST_MESSAGE = "The Lead couldn't take your message. Send it again in a moment.";
 
 const AUTO_NO_RUNTIME_MESSAGE = AUTO_STARTING_SENTENCE;
 
-const REFUSED_TITLE = "Auto didn't get your message";
+const REFUSED_TITLE = "The Lead didn't get your message";
 
 type RefuseParams = {
   readonly get: () => AutoTurnState;

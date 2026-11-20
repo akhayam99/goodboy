@@ -9,6 +9,7 @@ import { closeTurnStartWindow } from './turnStartWindow';
 import { markTurnActive, markTurnSettled, waitTurnSettledFor } from './turnSettled';
 import { watchStepEnd } from '../workflows/stepEnd/watchStepEnd';
 import { claimWorkflowTurn } from './workflowTurnBreaker';
+import { isAgentRunLimited } from './runawayBreaker/isAgentRunLimited';
 import { resetMountContinuationChain } from './mountContinuations';
 import type { GetFn, SendTurnResult, SetFn, SendTurnInput, TurnLease } from './types';
 import { prepareTurn } from './prepareTurn';
@@ -179,7 +180,11 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
       await stopLingeringTurn({ agentId: input.agentId });
       await waitTurnSettledFor({ agentId: input.agentId, ms: OPERATOR_SETTLE_WAIT_MS });
     }
-    if (input.agentId !== undefined && input.origin === 'workflow') {
+    if (
+      input.agentId !== undefined &&
+      input.origin === 'workflow' &&
+      !isAgentRunLimited({ get, sessionId: input.sessionId, agentId: input.agentId })
+    ) {
       const claim = claimWorkflowTurn({ agentId: input.agentId, nowMs: Date.now() });
       if (claim === 'tripped') {
         return haltRunawayWorkflowAgent({

@@ -1,4 +1,5 @@
 import { countNoun } from '../../../../shared/utils/countNoun';
+import { NAMES } from '../../../../shared/utils/names';
 import type { StageTrackState, Tone } from '@goodboy/ui';
 import type { BranchFacts, BranchRequestFacts } from './branchFactsOf';
 import { BRANCH_STATE_TONE, type BranchState } from './branchStateTone';
@@ -137,7 +138,7 @@ const readyBlockerOf = ({ request, isChecksSkipped, isReviewSkipped }: ReadyPara
 const requestStandingOf = ({ fact, detail }: DetailParams): Standing => {
   const request = fact.request;
   if (request === null) {
-    return { at: 0, branchState: 'unread', word: 'No PR', blocker: '' };
+    return { at: 0, branchState: 'unread', word: NAMES.noPullRequest, blocker: '' };
   }
   if (request.state === 'merged') {
     return {
@@ -167,7 +168,7 @@ const requestStandingOf = ({ fact, detail }: DetailParams): Standing => {
     return {
       at: 5,
       branchState: 'queued',
-      word: 'In merge queue',
+      word: NAMES.inMergeQueue,
       blocker: `Merging into ${fact.baseBranch}`,
     };
   }
@@ -247,7 +248,7 @@ const requestStandingOf = ({ fact, detail }: DetailParams): Standing => {
 const localStandingOf = ({ fact }: FactParams): Standing => {
   const status = fact.status;
   if (status === null) {
-    return { at: 0, branchState: 'unread', word: 'No PR', blocker: '' };
+    return { at: 0, branchState: 'unread', word: NAMES.noPullRequest, blocker: '' };
   }
   const ahead = status.ahead ?? 0;
   const push = status.push;
@@ -298,7 +299,7 @@ const localStandingOf = ({ fact }: FactParams): Standing => {
   return {
     at: 2,
     branchState: 'no-request',
-    word: 'No PR',
+    word: NAMES.noPullRequest,
     blocker: `${countNoun({ count: ahead, one: 'commit', many: 'commits' })} pushed`,
   };
 };

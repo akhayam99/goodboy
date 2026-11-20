@@ -108,7 +108,7 @@ with `@` in the field, which starts that role at once with no Auto turn first.
 - The goal is the first message of the Auto agent. It is not a plain turn: the
   tree is created at the start and the goal is queued in its outbox, so Auto's
   first turn is a delivery like every later one. A start that loses the message
-  says "Auto didn't start" and the chat keeps no half-started turn.
+  says "The Lead didn't start" and the chat keeps no half-started turn.
 - Auto runs on any connected provider that can confine a read-only agent
   (`AUTO_OWN_PROVIDERS`: not the opencode family, see Providers), with the route
   the workspace picks for the role.
@@ -219,7 +219,7 @@ row, **What Auto was told**, never as a user bubble; opening it shows the text
 as sent. A transcript written before this change has no origin on its events, so
 its delivery text still renders as a bubble: there is no text sniffing. A
 message the runtime
-cannot take, or one with a file that is not an image, is refused with "Auto didn't get your
+cannot take, or one with a file that is not an image, is refused with "The Lead didn't get your
 message" and the composer keeps its text.
 
 **Answer while working.** A `user` row is delivered in every phase that takes a turn
@@ -293,7 +293,7 @@ of the tree's generation up to the delegation); the child page names them as chi
 reads those images once, into the launch snapshot of the attempt (see Why an agent exists), and
 starts the child with the stored list, so a relaunch after a crash hands over the same images
 even when the tree got more since. An image that
-cannot be written refuses the message with "Auto could not keep the images. Attach them again.":
+cannot be written refuses the message with "The Lead couldn't keep the images. Attach them again.":
 nothing is dropped silently. A turn that is not an operator message or
 a child is left to the plain turn. A message to the root of an Auto tree is never a
 plain turn: with no Auto door registered at all (the runtime has not started yet)
@@ -780,17 +780,19 @@ tree node whose Edit and Remove are the composer's own.
 
 ### Lead state words
 
-A Lead reads one of five words: **Working**, **Waits
-for you**, **Resting**, **Stopped**, **Finished**. `leadStopOf`
-(`packages/core/src/auto/leadStopOf.ts`) is the one function that picks it,
+A Lead reads a word of the shared table (`NAMES`), never one of its own:
+**Running**, **Needs you**, **Idle**, **Stopped**, **Done**, and **Needs
+approval** when its plan waits for you. `leadStopOf`
+(`packages/core/src/auto/leadStopOf.ts`) picks only the stop and its reason,
 from the stored phase, the Lead's own turn, a plan waiting for approval, a
-project ask and the spend limit. Plan ready, an ask, the limit and a failed
-turn are the reason next to **Waits for you**, never a sixth word; Stopping
-reads **Stopped** with the reason `stopping`. `autoTreeWordOf` calls it for
-every reader: the header word of the Lead page (`LeadHeaderWord`), the session row
-(`sessionRunsOf`), the Lead line of a branch Runs tab (`branchLeadsOf`, which
-copies the row word). `leadStopReaders.test.tsx` checks every word in every
-reader.
+project ask and the spend limit. Core never imports `NAMES`: the desktop turns
+the stop into the word in one function, `leadStopWordOf`
+(`features/session/leadStopWordOf.ts`). An ask, the limit and a failed turn
+are the reason next to **Needs you**; Stopping reads **Stopped** with the
+reason `stopping`. `autoTreeWordOf` calls both for every reader: the header
+word of the Lead page (`LeadHeaderWord`), the session row (`sessionRunsOf`),
+the Lead line of a branch Runs tab (`branchLeadsOf`, which copies the row
+word). `leadStopReaders.test.tsx` checks every word in every reader.
 
 ### The workspace read
 
@@ -879,11 +881,22 @@ carries it).
 ## Blocked and Retry
 
 A tree is blocked when a guard stops the next delivery (three answers in a
-row with no progress, the budget, more than six returns in 30 minutes), when the provider refuses to
-start Auto's turn, or when Auto stopped answering: a tree still deciding 10 minutes
+row with no progress, the budget, six returns in 30 minutes on a run with no limit), when the provider refuses to
+start the Lead's turn, or when the Lead stopped answering: a tree still deciding 10 minutes
 after its delivery (`AUTO_STALE_DECIDE_MS`) with no live root run settles from what
-the run left behind, or, with nothing stored, blocks with "Auto stopped answering
-before it replied. Retry to send the message again." and puts the message back.
+the run left behind, or, with nothing stored, blocks with "The Lead stopped answering
+before it replied. Retry sends your message again." and puts the message back.
+
+The block texts live in `turnGate.ts` and say Lead: "The Lead replied 3 times
+with no text and no next step.", "The run reached its limit." and "Agents came
+back to the Lead 6 times in 30 minutes with no limit set.". The text is the
+stored `blocked_reason`, so every text an older build wrote stays in
+`LEGACY_GATE_TEXTS` (`packages/core/src/auto/legacyGateTexts.ts`).
+`isAutoGateBlock` and `isAutoBudgetBlock` read old and new texts alike: a tree
+blocked by an old text survives a restart without a retry, and one blocked at
+the old spend limit text still resumes once the limit is raised
+(`legacyGateTexts.sqlite.test.ts`). A build older than this one does not know
+the new texts, and retries such a tree at its first start.
 
 A tree blocked by a guard other than a limit reads **Failed** on every surface
 (glance, row, card, tail), never **Blocked** or **Needs you**: it ended on an error
@@ -892,7 +905,7 @@ the same reason a failed plain agent raises, and it does not count as a wait for
 (`autoWaitRootsOf` counts a plan, a project ask and a stuck child, compared on the
 typed `AutoTreeState`, never on a display word).
 
-A tree at its limit reads **Waits for you** with the reason `limit` (`leadStopOf`),
+A tree at its limit reads **Needs you** with the reason `limit` (`leadStopOf`),
 whether the budget is spent or a guard blocked it for the budget
 (`isAutoPausedAtLimit`, the one function the word, the glance and the row facts read).
 Its row sits under Needs you, and it raises `run-paused-at-limit` (`autoLimitRootsOf`), not
@@ -970,9 +983,11 @@ stops it is a guard that protects the user:
   the delivery tells Auto to ask with a propose block. `messagesPerDelegation` (4 per child,
   `autoMessageCountOf`, Auto's messages only: the queued ones and the ones already run): the
   fifth is refused with `message_limit`, so Auto stops or continues it instead. The person is not
-  capped. `returnsPerTreeWindow` (6 in `AUTO_RETURNS_WINDOW_MS`, 30 minutes): the seventh return row
-  carries `isOverWindow`, `deliverNext` blocks the tree with that reason (`AUTO_BLOCK_TEXT.limit_returns`)
-  and **Retry** clears the mark and delivers it.
+  capped. `returnsPerTreeWindow` (6 in `AUTO_RETURNS_WINDOW_MS`, 30 minutes) is a health check for a
+  run with no limit only: the sixth return row carries `isOverWindow`, and `deliverNext` blocks the
+  tree with `AUTO_BLOCK_TEXT.limit_returns` only when the tree has no spend cap. With a cap, the cap
+  is what stops a loop that costs too much, and any number of returns reaches the Lead. **Retry**
+  clears the mark and delivers it.
 
 A batch has any number of children and is never refused for its size or for the agents
 already running. At most `AUTO_MAX_RUNNING_CHILDREN` (4) children run at once, because each
@@ -2086,7 +2101,7 @@ budget or limit refusal and a block that does not parse become a `refusal` row i
 delivered with the next turn under REFUSED, NOT DONE; such a turn counts as no progress, so
 `noProgressStreak` bounds retries. When the next delivery finds that streak at its limit and the
 row it would deliver is a refusal, the tree blocks with the reason of that refusal
-(`autoRefusedBlockText`: "Auto kept trying to hand work over and was refused: the role it chose
+(`autoRefusedBlockText`: "The Lead kept trying to start agents and was refused: the role it chose
 cannot run commands. Retry to let it choose again, or tell it what to change."), not with the
 generic no progress line, and the tail shows it with **Retry**. Every refusal text of a child
 names the field or phrase to drop or change ("facts" on a reviewer, "publish" on an investigator,

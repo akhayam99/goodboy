@@ -5,6 +5,7 @@ import {
   autoRefusalUserReason,
   autoRefusedBlockText,
   autoRemainingForGates,
+  isAutoBudgetBlock,
   isAutoMountedCode,
   isRefusalPayload,
   isResultsPayload,
@@ -316,10 +317,13 @@ export const deliverNext = async ({
   if (gate !== null) {
     return blockTree({ ctx, tree, reason: blockReasonOf({ gate, primary }) });
   }
-  if (rows.some((row) => isResultsPayload(row.payload) && row.payload.isOverWindow === true)) {
+  if (
+    spend?.capUsd === null &&
+    rows.some((row) => isResultsPayload(row.payload) && row.payload.isOverWindow === true)
+  ) {
     return blockTree({ ctx, tree, reason: AUTO_BLOCK_TEXT.limit_returns });
   }
-  if (tree.phase === 'blocked' && tree.blockedReason !== AUTO_BLOCK_TEXT.budget) {
+  if (tree.phase === 'blocked' && !isAutoBudgetBlock({ reason: tree.blockedReason })) {
     return { kind: 'idle', reason: 'blocked' };
   }
   const stored = storedDeliveryOf({ value: primary.payload });

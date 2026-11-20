@@ -626,7 +626,9 @@
 
   @keyframes drawer-dock-in {
     from {
-      clip-path: inset(0 0 0 var(--goodboy-drawer-panel) round var(--radius-frame) 0 0 var(--radius-frame));
+      clip-path: inset(
+        0 0 0 var(--goodboy-drawer-panel) round var(--radius-frame) 0 0 var(--radius-frame)
+      );
     }
     to {
       clip-path: inset(0 0 0 0 round var(--radius-frame) 0 0 var(--radius-frame));
@@ -638,7 +640,9 @@
       clip-path: inset(0 0 0 0 round var(--radius-frame) 0 0 var(--radius-frame));
     }
     to {
-      clip-path: inset(0 0 0 var(--goodboy-drawer-panel) round var(--radius-frame) 0 0 var(--radius-frame));
+      clip-path: inset(
+        0 0 0 var(--goodboy-drawer-panel) round var(--radius-frame) 0 0 var(--radius-frame)
+      );
     }
   }
 

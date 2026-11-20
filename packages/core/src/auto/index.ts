@@ -114,13 +114,11 @@ export {
 } from './permissions';
 
 export {
-  LEAD_STOP_WORDS,
   leadStopOf,
   type LeadStop,
   type LeadStopFacts,
   type LeadStopReason,
   type LeadStopState,
-  type LeadStopWord,
 } from './leadStopOf';
 
 export { outcomeLineOf, parseOutcomeLine, stripOutcomeLine } from './outcome';
@@ -167,6 +165,10 @@ export {
 } from './turnGate';
 
 export { autoRefusedBlockText, isAutoGateBlock } from './isAutoGateBlock';
+
+export { isAutoBudgetBlock } from './isAutoBudgetBlock';
+
+export { LEGACY_GATE_TEXTS } from './legacyGateTexts';
 
 export { AUTO_REFUSAL_TEXT, describeAutoRefusal, type RefusalChild } from './refusalText';
 

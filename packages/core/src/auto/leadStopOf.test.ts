@@ -11,44 +11,24 @@ const AT_REST: LeadStopFacts = {
 
 describe('leadStopOf', () => {
   it.each([
-    ['deciding', {}, 'Working', null],
-    ['waiting', {}, 'Working', null],
-    ['done', { isRootTurnLive: true }, 'Working', null],
-    ['waiting', { isPlanReady: true, isAsking: true }, 'Waits for you', 'planReady'],
-    ['waiting', { isAsking: true }, 'Waits for you', 'ask'],
-    ['waiting', { isPausedAtLimit: true }, 'Waits for you', 'limit'],
-    ['blocked', { isPausedAtLimit: true }, 'Waits for you', 'limit'],
-    ['blocked', {}, 'Waits for you', 'failed'],
-    ['done', {}, 'Resting', null],
-    ['answering', {}, 'Resting', null],
-    ['stopping', {}, 'Stopped', 'stopping'],
-    ['stopped', {}, 'Stopped', null],
-    ['finished', {}, 'Finished', null],
-  ] as const)('reads %s with %o as %s (%s)', (phase, facts, word, reason) => {
-    expect(leadStopOf({ ...AT_REST, ...facts, phase })).toMatchObject({ word, reason });
+    ['deciding', {}, 'working', null],
+    ['waiting', {}, 'working', null],
+    ['done', { isRootTurnLive: true }, 'working', null],
+    ['waiting', { isPlanReady: true, isAsking: true }, 'waitsForYou', 'planReady'],
+    ['waiting', { isAsking: true }, 'waitsForYou', 'ask'],
+    ['waiting', { isPausedAtLimit: true }, 'waitsForYou', 'limit'],
+    ['blocked', { isPausedAtLimit: true }, 'waitsForYou', 'limit'],
+    ['blocked', {}, 'waitsForYou', 'failed'],
+    ['done', {}, 'resting', null],
+    ['answering', {}, 'resting', null],
+    ['stopping', {}, 'stopped', 'stopping'],
+    ['stopped', {}, 'stopped', null],
+    ['finished', {}, 'finished', null],
+  ] as const)('reads %s with %o as %s (%s)', (phase, facts, stop, reason) => {
+    expect(leadStopOf({ ...AT_REST, ...facts, phase })).toEqual({ stop, reason });
   });
 
-  it('has five words and no sixth: plan ready is a reason, not a state', () => {
-    const phases = [
-      'answering',
-      'deciding',
-      'delegating',
-      'waiting',
-      'merging',
-      'done',
-      'finished',
-      'blocked',
-      'stopping',
-      'stopped',
-    ] as const;
-    const words = new Set(
-      phases.flatMap((phase) =>
-        [false, true].map((isPlanReady) => leadStopOf({ ...AT_REST, phase, isPlanReady }).word),
-      ),
-    );
-
-    expect([...words].sort()).toEqual(
-      ['Finished', 'Resting', 'Stopped', 'Waits for you', 'Working'].sort(),
-    );
+  it('gives a stop and a reason, never a word: the desktop picks the word', () => {
+    expect(Object.keys(leadStopOf(AT_REST)).sort()).toEqual(['reason', 'stop']);
   });
 });

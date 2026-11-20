@@ -109,7 +109,7 @@ describe('adaptGithubPrs', () => {
   it.each([
     ['draft', 'open', 'Draft'],
     ['approved', 'open', 'Approved'],
-    ['queued', 'open', 'Queued'],
+    ['queued', 'open', 'In merge queue'],
     ['merged', 'done', 'Merged'],
     ['closed', 'done', 'Closed'],
   ] as const)('maps the %s state like the other pr sources', (state, category, label) => {

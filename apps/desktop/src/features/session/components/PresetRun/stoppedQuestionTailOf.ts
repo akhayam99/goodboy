@@ -1,4 +1,5 @@
 import type { WorkflowOrchestrationStop, WorkflowOrchestrationStopKind } from '@goodboy/types';
+import { NAMES } from '../../../../shared/utils/names';
 import type { TailState } from '../../../live-state/tailFacts';
 
 type StoppedQuestionTail = {
@@ -13,14 +14,14 @@ type Params = {
 const TAIL_BY_STOP: Readonly<
   Record<Exclude<WorkflowOrchestrationStopKind, 'questions'>, StoppedQuestionTail>
 > = {
-  budget: { state: 'paused', phrase: 'Paused at the limit' },
-  failure: { state: 'failed', phrase: 'The run stopped on an error' },
-  operator: { state: 'stopped', phrase: 'Stopped by you' },
-  closed: { state: 'stopped', phrase: 'Stopped by you' },
-  paused: { state: 'stopped', phrase: 'Paused by you' },
-  'needs-approval': { state: 'waiting', phrase: 'Needs approval' },
-  'plan-approval': { state: 'waiting', phrase: 'The plan needs approval' },
-  'preset-change': { state: 'waiting', phrase: 'Needs you' },
+  budget: { state: 'paused', phrase: NAMES.needsYou },
+  failure: { state: 'failed', phrase: NAMES.failed },
+  operator: { state: 'stopped', phrase: NAMES.stopped },
+  closed: { state: 'stopped', phrase: NAMES.stopped },
+  paused: { state: 'stopped', phrase: NAMES.paused },
+  'needs-approval': { state: 'waiting', phrase: NAMES.needsApproval },
+  'plan-approval': { state: 'waiting', phrase: NAMES.needsApproval },
+  'preset-change': { state: 'waiting', phrase: NAMES.needsYou },
 };
 
 export const stoppedQuestionTailOf = ({ stop }: Params): StoppedQuestionTail | null =>

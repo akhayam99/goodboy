@@ -83,7 +83,7 @@ describe('the Board needs you run scenes', () => {
 
     expect(line.textContent).toBe('Run Hold payouts behind a merchant notice');
     const card = line.closest('article');
-    expect(card?.querySelector('[data-board-signal]')?.textContent).toBe('Plan is ready');
+    expect(card?.querySelector('[data-board-signal]')?.textContent).toBe('Needs approval');
   });
 
   it('counts a second waiting run with +1', async () => {

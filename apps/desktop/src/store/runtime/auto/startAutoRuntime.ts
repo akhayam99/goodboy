@@ -60,7 +60,7 @@ import {
 
 const AUTO_TICK_MS = 15_000;
 
-const NO_RUNTIME = 'Auto is not running in the main window.';
+const NO_RUNTIME = "The Lead isn't running in the main window.";
 
 type PortParams<Port> = {
   readonly port: Port | null;
@@ -254,7 +254,7 @@ export const startAutoRuntime = async ({
     onError: (error) => {
       void getState().reportError({
         recovery: CHECK_STATE,
-        title: 'Auto could not answer another window',
+        title: "The Lead couldn't answer another window",
         error,
       });
     },

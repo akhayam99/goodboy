@@ -471,17 +471,17 @@ describe('workTime quiet turns', () => {
 
     expect(time).toMatchObject({
       isQuiet: true,
-      note: 'Quiet for 12 min',
+      note: 'Quiet for 12m',
       progress: null,
-      headline: '20m · quiet for 12 min',
+      headline: '20m · quiet for 12m',
     });
     expect(time?.detail).toContain('no output and no CPU in the process tree');
     expect(time?.detail).toContain('keeps running until you stop it');
   });
 
   it('starts at the threshold itself and reads hours past two', () => {
-    expect(running(QUIET_TURN_AFTER_MS)?.note).toBe('Quiet for 5 min');
-    expect(running(3 * 60 * MINUTE)?.note).toBe('Quiet for 3 h');
+    expect(running(QUIET_TURN_AFTER_MS)?.note).toBe('Quiet for 5m');
+    expect(running(3 * 60 * MINUTE)?.note).toBe('Quiet for 3h');
   });
 
   it('never calls a turn quiet when the backend gave no reading', () => {
