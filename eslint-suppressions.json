@@ -11351,11 +11351,6 @@
       "count": 23
     }
   },
-  "packages/core/src/permissions/events.test.ts": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 3
-    }
-  },
   "packages/core/src/permissions/shared.test.ts": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 6

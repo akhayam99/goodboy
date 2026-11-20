@@ -4,7 +4,6 @@ export {
   estimateDuration,
   estimateOrchestratedRun,
   estimateProgress,
-  sumEstimates,
   type CostRange,
   type DurationEstimate,
   type DurationSample,
@@ -12,7 +11,6 @@ export {
   type EstimateKey,
   type EstimateProgress,
   type EstimateTier,
-  type EstimateTotal,
   type RunDurationSample,
 } from './durationEstimate';
 export {

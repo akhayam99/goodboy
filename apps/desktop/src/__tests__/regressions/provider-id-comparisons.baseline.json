@@ -23,7 +23,5 @@
   "packages/core/src/providers/cli-defaults.ts": 1,
   "packages/core/src/providers/context-tokens.ts": 2,
   "packages/core/src/providers/resolve/explainResolution.ts": 1,
-  "packages/core/src/providers/selectionRequiresMaxMode.ts": 1,
-  "packages/core/src/providers/spawnableAsItself.ts": 1,
   "packages/core/src/summarizer/step-output.ts": 1
 }

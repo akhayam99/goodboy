@@ -20,12 +20,10 @@ export {
 
 export {
   createGithubRepo,
-  listOwnedRepos,
   validateGithubRepoName,
   type CreateRepoResult,
   type GithubRepoRef,
   type GithubRepoVisibility,
-  type OwnedReposResult,
   type RepoNameCheck,
 } from './repos';
 
