@@ -31,10 +31,7 @@
     "packages/core/src/orchestrator/prompt.ts": 3,
     "packages/core/src/permissions/claude-flags.ts": 1,
     "packages/core/src/planner/parser.ts": 1,
-    "packages/core/src/providers/shared/anthropic-envelope-parser.ts": 3,
-    "packages/ui/src/components/Dialog.tsx": 2,
-    "packages/ui/src/components/Markdown/parseInline.ts": 1,
-    "packages/ui/src/components/Tooltip.tsx": 1
+    "packages/core/src/providers/shared/anthropic-envelope-parser.ts": 3
   },
   "extra-component-per-file": {
     "apps/desktop/src/app/components/MockScene/scenes/ArtifactCreationScenes.tsx": 2,

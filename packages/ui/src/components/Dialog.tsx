@@ -64,6 +64,9 @@ const MIN_HEIGHT: Record<DialogSize, string> = {
 
 const SMALL_VIEWPORT = 'max-md:w-screen max-md:h-screen max-md:max-h-screen max-md:max-w-none';
 
+const FIRST_FOCUSABLE =
+  'input:not([disabled]), textarea:not([disabled]), select:not([disabled]), button:not([disabled]), a[href], [tabindex]:not([tabindex="-1"])';
+
 export const Dialog = ({
   open,
   onClose,
@@ -136,22 +139,16 @@ export const Dialog = ({
     };
     dialog.addEventListener('close', handleClose);
 
-    if (open) {
-      if (!dialog.open) {
-        const opener = document.activeElement;
-        openerRef.current = opener instanceof HTMLElement ? opener : null;
-        dialog.showModal();
-        const target = initialFocusRef?.current;
-        if (target) {
-          target.focus();
-        } else {
-          const first = (bodyRef.current ?? dialog).querySelector<HTMLElement>(
-            'input:not([disabled]), textarea:not([disabled]), select:not([disabled]), button:not([disabled]), a[href], [tabindex]:not([tabindex="-1"])',
-          );
-          first?.focus();
-        }
-      }
-    } else if (dialog.open) {
+    if (open && !dialog.open) {
+      const opener = document.activeElement;
+      openerRef.current = opener instanceof HTMLElement ? opener : null;
+      dialog.showModal();
+      const target =
+        initialFocusRef?.current ??
+        (bodyRef.current ?? dialog).querySelector<HTMLElement>(FIRST_FOCUSABLE);
+      target?.focus();
+    }
+    if (!open && dialog.open) {
       programmaticCloseRef.current = true;
       dialog.close();
       returnFocus();
