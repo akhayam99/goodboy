@@ -136,8 +136,6 @@ pub struct LiveTerminal {
     last_exit_command: Option<String>,
 }
 
-/// Drains every live terminal, killing the whole pty session behind each
-/// leader. Killing the leader alone leaves grandchildren holding ports.
 pub fn shutdown(registry: &TerminalRegistry, scrollback_dir: Option<&Path>) {
     let slots: Vec<(SessionSlot, PtyInput)> = match registry.0.lock() {
         Ok(mut map) => map

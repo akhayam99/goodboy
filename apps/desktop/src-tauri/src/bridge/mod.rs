@@ -71,13 +71,10 @@ impl BridgeError {
 
 crate::util::impl_error_serialize!(BridgeError);
 
-/// Tauri-managed state. Holds the persisted identity, the live token store, and
-/// the running server task (if any).
 pub struct BridgeState {
     static_pub_b64: String,
     identity: Arc<Mutex<Identity>>,
     tokens: Arc<TokenStore>,
-    /// In-flight mobile commands awaiting a frontend result, keyed by command id.
     pending: PendingMap,
     inner: Mutex<Inner>,
 }
@@ -86,7 +83,6 @@ pub struct BridgeState {
 struct Inner {
     port: Option<u16>,
     task: Option<JoinHandle<()>>,
-    /// Signals live connections to tear down on stop/revoke.
     shutdown: Option<watch::Sender<bool>>,
 }
 
@@ -102,7 +98,6 @@ impl BridgeState {
         })
     }
 
-    /// Binds the listener and spawns the accept loop once; returns the bound port.
     async fn ensure_running(&self, app: AppHandle) -> Result<u16, BridgeError> {
         let mut inner = self.inner.lock().await;
         if let Some(port) = inner.port {
@@ -130,8 +125,6 @@ impl BridgeState {
 
     async fn stop(&self) {
         let mut inner = self.inner.lock().await;
-        // Trip live connections first so a connected phone is dropped at once,
-        // then abort the accept loop so no new ones get in.
         if let Some(shutdown) = inner.shutdown.take() {
             let _ = shutdown.send(true);
         }
@@ -148,7 +141,6 @@ pub struct Endpoint {
     port: u16,
 }
 
-/// The compact JSON encoded into the QR (PROTOCOL §4).
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 struct QrPayload {
@@ -160,13 +152,10 @@ struct QrPayload {
     service_name: String,
 }
 
-/// What the hidden modal renders: the QR (as inline SVG) plus diagnostics.
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct QrInfo {
-    /// Compact JSON payload that the SVG encodes (also handy for debugging).
     payload: String,
-    /// Inline SVG markup of the QR code.
     svg: String,
     device_name: String,
     port: u16,
@@ -181,8 +170,6 @@ pub struct BridgeStatus {
     enrolled_count: usize,
 }
 
-/// Starts the bridge (idempotent) and mints a fresh one-time pairing token,
-/// returning the QR the phone must scan. Invoked only by the hidden shortcut.
 #[tauri::command]
 pub async fn bridge_start(
     app: AppHandle,
@@ -212,11 +199,6 @@ pub async fn bridge_start(
     })
 }
 
-/// Desktop-initiated disconnect ("forget device"): clears the enrolled-phone
-/// allow-list and tears the bridge down, dropping any live connection. The phone
-/// must scan a fresh QR to reconnect — re-pairing is a deliberate act here on the
-/// desktop, never something a phone can trigger. This is the desktop-side twin of
-/// the phone's own "Forget device".
 #[tauri::command]
 pub async fn bridge_revoke(state: State<'_, BridgeState>) -> Result<(), BridgeError> {
     state.identity.lock().await.revoke_all()?;
@@ -241,9 +223,6 @@ pub async fn bridge_status(state: State<'_, BridgeState>) -> Result<BridgeStatus
     })
 }
 
-/// The trusted frontend executor reports a mobile command's outcome here; this
-/// wakes the connection task waiting in `run_command` so it can ACK the phone.
-/// Unknown ids are ignored (already timed out / never existed).
 #[tauri::command]
 pub async fn bridge_command_result(
     state: State<'_, BridgeState>,
@@ -277,7 +256,6 @@ fn endpoints(port: u16) -> Vec<Endpoint> {
     out
 }
 
-/// Primary LAN IPv4 via the connected-UDP trick (no packets sent).
 fn primary_ipv4() -> Option<String> {
     use std::net::UdpSocket;
     let sock = UdpSocket::bind("0.0.0.0:0").ok()?;

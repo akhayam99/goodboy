@@ -6,7 +6,6 @@ use thiserror::Error;
 
 const DEFAULT_EDITOR: &str = "code";
 
-/// Explicit allowlist of known editors. No auto-discovery of unknown binaries.
 const KNOWN_EDITORS: &[(&str, &str)] = &[
     ("code", "VS Code"),
     ("cursor", "Cursor"),
@@ -96,9 +95,6 @@ pub(crate) fn open_in_editor_blocking(
 ) -> Result<(), EditorError> {
     let binary = resolve_editor(editor)?.to_string();
 
-    // Resolve to absolute canonical path so editors load it as a workspace folder
-    // rather than treating it as a relative-to-cwd file. Falls back to the input
-    // string when canonicalize fails (e.g. path does not exist yet).
     let abs_path = std::fs::canonicalize(&path)
         .map(|p| p.to_string_lossy().to_string())
         .unwrap_or_else(|_| path.clone());

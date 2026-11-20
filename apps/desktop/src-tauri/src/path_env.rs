@@ -40,21 +40,10 @@ fn resolve<T: 'static>(slot: &Mutex<Slot<T>>, compute: impl FnOnce() -> (T, bool
     leaked
 }
 
-/// PATH inherited from the user's login shell, merged with the process's own
-/// PATH and common install locations, deduplicated, cached after first call.
-///
-/// macOS GUI apps launched from Finder/Dock receive only the minimal posix
-/// PATH (`/usr/bin:/bin:/usr/sbin:/sbin`), which excludes `/opt/homebrew/bin`
-/// and other typical install dirs. Without this resolution, `Command::new`
-/// fails with ENOENT for `claude`, `cursor-agent`, `codex`, `gh`,
-/// brew-installed `git`, user editors, etc.
 pub fn resolved_path() -> &'static str {
     resolve(&RESOLVED_PATH, compute_path).as_str()
 }
 
-/// `Command` pre-wired with the resolved PATH. Drop-in replacement for
-/// `Command::new` whenever the target binary may live outside the minimal
-/// posix path set.
 pub fn command(binary: &str) -> Command {
     let mut cmd = Command::new(binary);
     cmd.env("PATH", resolved_path());

@@ -119,12 +119,8 @@ pub struct SpawnArgs {
     pub disallowed_tools: Vec<String>,
     #[serde(default)]
     pub permission_mode: Option<String>,
-    // claude-only: when Some, spawn carries `--resume <id>` so the CLI restores
-    // the prior conversation instead of starting fresh. Ignored by codex/cursor.
     #[serde(default)]
     pub resume_session_id: Option<String>,
-    // claude-only: when Some, spawn carries `--append-system-prompt <prompt>`.
-    // Used to bias planner/implementer/debugger agents toward their role.
     #[serde(default)]
     pub system_prompt: Option<String>,
     #[serde(default)]
@@ -498,10 +494,6 @@ fn spawn_one<E: TurnEmitter>(
     let backlog_clone = backlog.clone();
     let run_id_owned = args.run_id.to_string();
 
-    // Drain stderr on its own thread so it runs concurrently with stdout
-    // forwarding. Reading stderr only after stdout EOF used to deadlock: a CLI
-    // that writes >~64KB to stderr mid-stream fills the pipe buffer, blocks on
-    // the write, and stops producing stdout — so forward_lines waits forever.
     let stderr_activity = live.activity.clone();
     let stderr_handle = thread::spawn(move || capture_stderr(stderr, &stderr_activity));
 
@@ -857,10 +849,6 @@ pub(crate) fn forward_lines<S: EventSink>(
 fn capture_stderr(stderr: ChildStderr, activity: &Activity) -> String {
     drain_tail_active(stderr, MAX_STDERR_BYTES, activity)
 }
-
-// ---------------------------------------------------------------------------
-// Tests
-// ---------------------------------------------------------------------------
 
 #[cfg(all(test, unix))]
 mod fake_cli_tests;

@@ -106,11 +106,6 @@ pub fn tag_pty_spawn(command: &mut portable_pty::CommandBuilder, kind: SpawnKind
     tag
 }
 
-/// Strip env vars that signal "running inside another Claude Code / Agent SDK
-/// session". When Goodboy is launched from such a context the vars propagate to
-/// children; the claude CLI then either refuses with a nested-session error or
-/// falls through to broken auth (401). We want every spawn to behave as a fresh
-/// shell invocation that hits claude's own ~/.claude credentials.
 pub fn scrub_nested_session_env(command: &mut Command) {
     command
         .env_remove("CLAUDECODE")

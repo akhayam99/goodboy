@@ -356,10 +356,6 @@ fn extract_email(text: &str) -> Option<String> {
     None
 }
 
-/// Decode a JWT payload (`header.payload.signature`) and return the `email`
-/// claim. Codex stores its ChatGPT-login id_token in `~/.codex/auth.json`,
-/// which is the only carrier of the user's email when `codex login status`
-/// outputs a generic "Logged in using ChatGPT" line.
 fn extract_email_from_id_token(token: &str) -> Option<String> {
     let payload_b64 = token.split('.').nth(1)?;
     let payload_bytes = URL_SAFE_NO_PAD.decode(payload_b64).ok()?;
@@ -751,9 +747,6 @@ async fn refresh_status(provider_id: &'static str) -> Result<ProviderStatus, Pro
         .map_err(|err| ProviderStatusError::JoinFailed(err.to_string()))
 }
 
-// Sync entry point for callers that already run on a blocking thread (e.g.
-// the lifecycle PTY exit handler in provider_lifecycle.rs). Kept private so
-// only the async Tauri command shape leaks into the JS surface.
 pub(crate) fn check_provider_auth_blocking(provider_id: &str) -> AuthState {
     match spec::spec_of(provider_id) {
         Some(spec) => (spec.check_auth)(),
@@ -761,10 +754,6 @@ pub(crate) fn check_provider_auth_blocking(provider_id: &str) -> AuthState {
     }
 }
 
-// Async wrapper so Tauri schedules this on the async runtime and the
-// process-spawning work runs on a blocking thread instead of stalling the
-// main IPC thread. Without this, four parallel refreshProviders() auth
-// checks serialize on the main thread and freeze every other IPC call.
 #[tauri::command]
 pub async fn check_provider_auth(provider_id: String) -> AuthState {
     tauri::async_runtime::spawn_blocking(move || check_provider_auth_blocking(&provider_id))
@@ -1010,7 +999,6 @@ mod tests {
 
     #[test]
     fn cursor_empty_output_is_unknown_not_connected() {
-        // Regression: empty/odd output used to fall through to Connected.
         let s = parse_cursor_auth_output(&out(Some(0), ""));
         assert_eq!(s.state, AuthStateKind::Unknown);
         let s2 = parse_cursor_auth_output(&out(Some(0), "   \n  \n"));
@@ -1035,11 +1023,6 @@ mod tests {
         let s = parse_cursor_auth_output(&out(Some(0), "Signed in\n"));
         assert_eq!(s.state, AuthStateKind::Connected);
     }
-
-    // Gemini auth is now creds-file-based (no subprocess), so the cli-output
-    // parser is gone and unit-test coverage moved to the filesystem layer.
-    // See extract_email_from_id_token tests below for the JWT decode path
-    // that backs both gemini and codex on-disk identity recovery.
 
     const OPENCODE_EMPTY_LIST: &str = "\u{250c}  Credentials \u{1b}[90m~/.local/share/opencode/auth.json\n\u{2502}\n\u{2514}  0 credentials\n\n\u{250c}  Environment\n\u{2502}\n\u{25cf}  GitHub Copilot \u{1b}[90mGITHUB_TOKEN\n\u{2502}\n\u{2514}  1 environment variable\n";
 

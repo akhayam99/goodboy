@@ -135,8 +135,6 @@ fn suppress_webkit_media_remote() {
     }
 }
 
-/// Kills every child process the app still owns. Idempotent: each registry is
-/// drained, so a second call after the window teardown finds nothing left.
 pub(crate) fn drain_child_processes(app: &tauri::AppHandle, is_app_exit: bool) {
     use tauri::Manager;
     if is_app_exit {

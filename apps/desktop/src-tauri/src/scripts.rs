@@ -17,10 +17,6 @@ use crate::pty_ring::{
 };
 use crate::util::lock_or_recover;
 
-// ---------------------------------------------------------------------------
-// PTY run slot
-// ---------------------------------------------------------------------------
-
 struct PtyRun {
     spawn_id: String,
     _writer: Box<dyn Write + Send>,
@@ -42,10 +38,6 @@ struct ScriptExitPayload {
     run_id: String,
     exit_code: i32,
 }
-
-// ---------------------------------------------------------------------------
-// Registry
-// ---------------------------------------------------------------------------
 
 type PtySlot = Arc<Mutex<Option<PtyRun>>>;
 
@@ -95,8 +87,6 @@ impl ScriptRegistry {
     }
 }
 
-/// Drains every live script run, killing the whole pty session behind each
-/// leader. Killing the leader alone leaves grandchildren holding ports.
 pub fn shutdown(registry: &ScriptRegistry) {
     let slots: Vec<PtySlot> = match registry.0.lock() {
         Ok(mut map) => map.drain().map(|(_, slot)| slot.run).collect(),
@@ -112,10 +102,6 @@ pub fn shutdown(registry: &ScriptRegistry) {
         crate::proc::pty::stop(&mut run.child, &run.spawn_id, "script kill");
     }
 }
-
-// ---------------------------------------------------------------------------
-// Error type
-// ---------------------------------------------------------------------------
 
 #[derive(Debug, thiserror::Error)]
 pub enum ScriptError {
@@ -159,10 +145,6 @@ impl From<DbError> for ScriptError {
         }
     }
 }
-
-// ---------------------------------------------------------------------------
-// Command — run a workspace script in a pty
-// ---------------------------------------------------------------------------
 
 #[cfg(unix)]
 fn exit_code_of(status: &portable_pty::ExitStatus) -> i32 {
@@ -409,9 +391,6 @@ fn load_enabled_script(
     Ok((name, body))
 }
 
-/// Spawns `bash -c <body>` inside a pty, registers the run under `run_id`, and
-/// returns immediately. Output is streamed as `script-output` events (base64
-/// chunks). A `script-exit` event fires when the process exits or is killed.
 #[tauri::command]
 #[allow(clippy::too_many_arguments)]
 pub async fn workspace_script_run(
@@ -507,10 +486,6 @@ pub async fn workspace_script_list_live(
 ) -> Result<Vec<LiveScriptRun>, ScriptError> {
     registry.list_live()
 }
-
-// ---------------------------------------------------------------------------
-// Command — interrupt an in-flight workspace script
-// ---------------------------------------------------------------------------
 
 fn stop_run(mut run: PtyRun) -> usize {
     let signalled = crate::proc::pty::stop(&mut run.child, &run.spawn_id, "script kill");

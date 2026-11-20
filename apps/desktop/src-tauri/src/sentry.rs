@@ -168,9 +168,6 @@ pub struct SentryIssueDetail {
     pub breadcrumbs: Vec<SentryBreadcrumb>,
 }
 
-/// A pre-m114 entry held the whole connection as one blob. The credential now
-/// holds the token alone, so an older blob is read for its token and nothing
-/// else.
 fn token_from_secret(raw: &str) -> String {
     serde_json::from_str::<SentryConfig>(raw)
         .map(|held| held.token)

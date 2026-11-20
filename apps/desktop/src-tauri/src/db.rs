@@ -433,12 +433,6 @@ pub fn db_restore_migration_snapshot(
     restore_migration_snapshot(&mut conn, &state.1, path, stamp)
 }
 
-/// Resolves the SQLite file. Precedence:
-///   1. `GOODBOY_DB_FILE` env (absolute path verbatim, relative under `~/.goodboy`).
-///   2. Debug builds (`pnpm tauri dev`) -> `data.dev.db`, a private playground.
-///   3. Release builds (the shipped app) -> `data.db`, the production file.
-///      Splitting on `debug_assertions` keeps local experiments off the prod DB
-///      automatically, with no env setup required.
 pub fn resolve_db_path() -> Result<PathBuf, DbError> {
     let dir = app_paths::data_dir().map_err(|_| DbError::NoHomeDir)?;
 

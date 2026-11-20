@@ -3,11 +3,8 @@ use tokio::net::TcpStream;
 
 use super::BridgeError;
 
-/// Noise transport cap: a single ciphertext must fit 65535 bytes.
 pub const NOISE_MAX: usize = 65535;
 
-/// Reads one on-wire frame: `u32 big-endian length || bytes[length]`.
-/// The length counts only the ciphertext bytes that follow.
 pub async fn read_frame(stream: &mut TcpStream) -> Result<Vec<u8>, BridgeError> {
     let mut len_buf = [0u8; 4];
     stream
@@ -26,7 +23,6 @@ pub async fn read_frame(stream: &mut TcpStream) -> Result<Vec<u8>, BridgeError> 
     Ok(body)
 }
 
-/// Writes one on-wire frame with the u32 big-endian length prefix.
 pub async fn write_frame(stream: &mut TcpStream, body: &[u8]) -> Result<(), BridgeError> {
     if body.len() > NOISE_MAX {
         return Err(BridgeError::Protocol(format!(
