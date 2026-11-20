@@ -463,6 +463,9 @@ diff-peek-library
 diff-peek-more
 diff-peek-open
 diff-tree-indent
+dock-pair
+dock-stack
+dock-three
 drawer-headers
 drawer-overlay-narrow
 drawer-split-chat
