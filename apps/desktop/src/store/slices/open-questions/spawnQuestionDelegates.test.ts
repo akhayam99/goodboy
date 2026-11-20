@@ -126,7 +126,9 @@ describe('spawnQuestionDelegates', () => {
 
     expect(outcomes).toEqual([{ questionId: 'oq-1', agentId: null, kind: 'refused' }]);
     expect(state.spawnAgent).not.toHaveBeenCalled();
-    expect(state.emitNotification).toHaveBeenCalled();
+    expect(state.emitNotification).toHaveBeenCalledWith(
+      expect.objectContaining({ title: "Can't delegate this question" }),
+    );
   });
 
   it('stays idempotent while a live delegate already answers that question', async () => {
@@ -219,7 +221,9 @@ describe('spawnQuestionDelegates', () => {
       { questionId: 'oq-1', agentId: null, kind: 'failed' },
       { questionId: 'oq-2', agentId: 'child-2', kind: 'spawned' },
     ]);
-    expect(state.emitNotification).toHaveBeenCalled();
+    expect(state.emitNotification).toHaveBeenCalledWith(
+      expect.objectContaining({ title: "The delegated agent didn't start" }),
+    );
   });
 
   it('spawns once when two sends race on the same question', async () => {

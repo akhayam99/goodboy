@@ -6,7 +6,7 @@ import { storedQuestionDrafts } from '../../../features/context/storedQuestionDr
 import type { GetFn, SetFn } from './types';
 
 export const BLOCKING_DISMISSAL_REFUSAL =
-  'The agent stopped on this one because it cannot decide it for you. Answer it to let the step carry on.';
+  "The agent stopped on this one because it can't decide it for you. Answer it to let the step carry on.";
 
 type SettleParams = {
   readonly set: SetFn;
@@ -49,7 +49,7 @@ export const dismissOpenQuestion = (set: SetFn, get: GetFn) => {
       void get().emitNotification({
         kind: 'error',
         severity: 'warning',
-        title: 'This question cannot be discarded',
+        title: "Can't dismiss this question",
         body: BLOCKING_DISMISSAL_REFUSAL,
         sessionId,
         coalesceKey: `blocking-question:${question.id}`,
