@@ -179,7 +179,7 @@ describe('queueTurnInLane', () => {
         threadIds: ['t-2'],
         hasAttachments: true,
       }),
-    ).rejects.toThrow('Attachments cannot wait in line');
+    ).rejects.toThrow("Attachments can't wait in line");
 
     expect(recorded).toEqual([]);
   });

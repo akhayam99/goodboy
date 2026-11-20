@@ -21,7 +21,7 @@ export type ExploreListingControls = {
   readonly reload: (params: ReloadParams) => void;
 };
 
-const MISSING_DIR = 'Session folder is not available yet.';
+const MISSING_DIR = "Session folder isn't available yet.";
 
 const hasDir = (sessionDir: string | null): sessionDir is string =>
   sessionDir !== null && sessionDir.trim() !== '';

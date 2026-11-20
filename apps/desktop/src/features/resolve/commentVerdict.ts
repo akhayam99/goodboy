@@ -46,4 +46,4 @@ export const foldedReply = ({
 }): string => `Fixed in \`${shortOf({ sha })}\`, squashed into \`${shortOf({ sha: landedAs })}\`.`;
 
 export const RECHECK_NO_ANSWER = 'The check ended without an answer. Check again.';
-export const RECHECK_NOT_STARTED = 'The check could not start. Check again.';
+export const RECHECK_NOT_STARTED = "The check couldn't start. Check again.";

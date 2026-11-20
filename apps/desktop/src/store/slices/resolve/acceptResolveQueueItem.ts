@@ -103,7 +103,7 @@ const markAcceptConflict = async ({
 };
 
 export const PARTIAL_REFUSAL =
-  'This change also answers comments you said you will not fix. Take those back up first';
+  "This change also answers comments you said you won't fix. Take those back up first";
 
 export const acceptResolveQueueItem = async ({
   set,

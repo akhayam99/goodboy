@@ -85,7 +85,7 @@ const facts = ({ entry }: { readonly entry: ReviewEntry }): ReactNode => {
         <Fact icon={warning} tone="text-warning">
           {git.missing.wasPushed ? (
             <>
-              Pushed in <Sha sha={git.missing.sha} /> is no longer true: the commit is not on origin
+              Pushed in <Sha sha={git.missing.sha} /> is no longer true: the commit isn't on origin
               anymore.
             </>
           ) : (

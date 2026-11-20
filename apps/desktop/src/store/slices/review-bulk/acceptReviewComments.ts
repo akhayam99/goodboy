@@ -89,7 +89,7 @@ export const acceptReviewComments = async ({
     id: operationId,
     message: `${itemIds.length} accepted`,
     showToast: () => undefined,
-    conflictMessage: 'These comments went out with a push. They cannot be undone.',
+    conflictMessage: "These comments went out with a push. They can't be undone.",
     isCurrent: () =>
       launchRowsOf({ state: get(), sessionId }).some(
         (row) => itemIds.includes(row.item.id) && isUndoableAccept({ row }),
