@@ -139,6 +139,7 @@ describe('switching which workspaces the bell lists', () => {
       expect.objectContaining({
         title: "Couldn't load notifications",
         action: { kind: 'retry-notification-scope', scope: 'all' },
+        coalesceKey: 'notification-scope:all',
       }),
     ]);
   });
@@ -174,6 +175,48 @@ describe('switching which workspaces the bell lists', () => {
 
     expect(useAppStore.getState().notificationScope).toBe('workspace');
     expect(useAppStore.getState().notifications).toEqual(WORKSPACE_ROWS);
+  });
+});
+
+describe('refreshing while a switch is pending', () => {
+  it('keeps the switch when an ordinary refresh starts before its read ends', async () => {
+    const pending = deferred<ReadonlyArray<Notification>>();
+    dbStubs.listNotifications.mockReturnValueOnce(pending.promise).mockResolvedValueOnce(ALL_ROWS);
+
+    const switching = useAppStore.getState().setNotificationScope('all');
+    await vi.waitFor(() => expect(dbStubs.listNotifications).toHaveBeenCalledTimes(1));
+    const refreshing = useAppStore.getState().loadNotifications();
+    pending.resolve(ALL_ROWS);
+    await Promise.all([switching, refreshing]);
+
+    expect(useAppStore.getState().notificationScope).toBe('all');
+    expect(useAppStore.getState().notifications).toEqual(ALL_ROWS);
+    expect(dbStubs.listNotifications).toHaveBeenCalledTimes(2);
+    expect(dbStubs.listNotifications).toHaveBeenLastCalledWith(
+      expect.objectContaining({ workspaceId: null }),
+    );
+  });
+
+  it('refreshes the old scope after a pending switch fails, and logs the switch', async () => {
+    const pending = deferred<ReadonlyArray<Notification>>();
+    dbStubs.listNotifications
+      .mockReturnValueOnce(pending.promise)
+      .mockResolvedValueOnce(WORKSPACE_ROWS);
+
+    const switching = useAppStore.getState().setNotificationScope('all');
+    await vi.waitFor(() => expect(dbStubs.listNotifications).toHaveBeenCalledTimes(1));
+    const refreshing = useAppStore.getState().loadNotifications();
+    pending.reject(new Error('database is locked'));
+    await Promise.all([switching, refreshing]);
+
+    expect(useAppStore.getState().notificationScope).toBe('workspace');
+    expect(dbStubs.listNotifications).toHaveBeenLastCalledWith(
+      expect.objectContaining({ workspaceId: 'ws-harborline' }),
+    );
+    expect(dbStubs.insertNotification).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ action: { kind: 'retry-notification-scope', scope: 'all' } }),
+    );
   });
 });
 

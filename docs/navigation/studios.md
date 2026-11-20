@@ -208,7 +208,11 @@ cut at the end, never in the middle; the group's`aria-label` keeps the full
   A scope switch keeps the shown list until the new one is read, then changes
   scope, list and counts in one write (`setNotificationScope`). A failed read keeps
   all three and logs "Couldn't load notifications" with Retry; of two quick
-  switches the last one wins.
+  switches the last one wins. A refresh asked during a switch waits for it and
+  then reads the scope it left, so opening the studio never cancels the pick.
+  Once a scope is shown, its failed-switch row is deleted, so a Retry never
+  stays behind in Needs action. The bell's Unread view keeps its snapshot until
+  the scope changes.
   The studio header draws them through `NotificationsHeaderActions`: the shared `FilterButton`
   only while the rail is folded, then the ghost `Mark all read` (only while something is unread), then the `⋯` menu of the
   `notifications` kind of the action registry (Mark all read, which names the scope, and Delete all). Delete all

@@ -9,16 +9,25 @@ import { scopedWorkspaceId } from './notificationScope';
 import type { NotificationScope } from './state';
 import type { GetFn, SetFn } from './types';
 
+type PendingSwitch = {
+  readonly request: number;
+  readonly settled: Promise<void>;
+};
+
 let latestLoad = 0;
+let pendingSwitch: PendingSwitch | null = null;
 
 export type LoadNotificationsParams = {
   readonly scope?: NotificationScope;
 };
 
+type ReadParams = {
+  readonly request: number;
+  readonly scope?: NotificationScope;
+};
+
 export const loadNotifications = (set: SetFn, get: GetFn) => {
-  return async ({ scope }: LoadNotificationsParams = {}) => {
-    latestLoad += 1;
-    const request = latestLoad;
+  const read = async ({ request, scope }: ReadParams) => {
     const workspaceId = get().currentWorkspaceId;
     const notificationScope = scope ?? get().notificationScope;
     const listScope = scopedWorkspaceId({
@@ -54,5 +63,28 @@ export const loadNotifications = (set: SetFn, get: GetFn) => {
       set({ notificationsLoading: false });
       throw error;
     }
+  };
+  const refresh = async (): Promise<void> => {
+    const waiting = pendingSwitch;
+    if (waiting !== null) {
+      await Promise.allSettled([waiting.settled]);
+      return refresh();
+    }
+    latestLoad += 1;
+    return read({ request: latestLoad });
+  };
+  return async ({ scope }: LoadNotificationsParams = {}) => {
+    if (scope === undefined) {
+      return refresh();
+    }
+    latestLoad += 1;
+    const request = latestLoad;
+    const settled = read({ request, scope }).finally(() => {
+      if (pendingSwitch?.request === request) {
+        pendingSwitch = null;
+      }
+    });
+    pendingSwitch = { request, settled };
+    return settled;
   };
 };

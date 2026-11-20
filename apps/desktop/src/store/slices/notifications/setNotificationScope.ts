@@ -1,23 +1,39 @@
+import { CHECK_STATE } from './errorRecovery';
 import type { NotificationScope } from './state';
 import type { GetFn } from './types';
 
 export const setNotificationScope = (get: GetFn) => {
   return async (scope: NotificationScope) => {
     const state = get();
-    if (state.notificationScope === scope && !state.notificationsLoading) {
+    const coalesceKey = `notification-scope:${scope}`;
+    const isCommitted = state.notificationScope === scope && !state.notificationsLoading;
+    if (!isCommitted) {
+      try {
+        await get().loadNotifications({ scope });
+      } catch (error) {
+        await get().reportError({
+          title: "Couldn't load notifications",
+          error,
+          coalesceKey,
+          recovery: {
+            action: { kind: 'retry-notification-scope', scope },
+            clause: 'nothing-changed',
+          },
+        });
+        return;
+      }
+    }
+    if (get().notificationScope !== scope) {
       return;
     }
-    try {
-      await get().loadNotifications({ scope });
-    } catch (error) {
-      await get().reportError({
-        title: "Couldn't load notifications",
-        error,
-        recovery: {
-          action: { kind: 'retry-notification-scope', scope },
-          clause: 'nothing-changed',
-        },
-      });
-    }
+    await get()
+      .resolveNotifications([coalesceKey])
+      .catch((error: unknown) =>
+        get().reportError({
+          title: "Couldn't clear the notification",
+          error,
+          recovery: CHECK_STATE,
+        }),
+      );
   };
 };
