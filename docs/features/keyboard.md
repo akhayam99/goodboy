@@ -94,7 +94,8 @@ Move through Goodboy, change a shortcut and stop an agent without leaving the ke
 - **⌘⌥C** opens the session's Context tab. The former Goal, Decisions and Summary chords are retired; section links still reach their card. On a page such as Tasks, a session key leaves the page first.
 - **⌘⌥F** opens the Changes tab of the session's branch on its Branch page, or the session's file versions when it has no branch. On a pull request page it picks that page's Changes tab.
 - **⌘⌥X** opens that Changes tab on All files.
-- **⌘⌥A** opens Runs on what is running.
+- **⌘⌥A**, listed as Runs › Running, opens Runs on what is running. A **Running** chip above the list shows the filter, and **Clear filter** removes it. With nothing running the page says **Nothing is running**.
+- **⌘⌥W** opens Runs with no filter, and clears one that is set.
 - **⌘1** to **⌘9** switch workspaces.
 - **⌘[** and **⌘]** walk your history: the last 50 places of this window, empty after a reload.
 - **⌘↑** and **Esc** go one crumb up: to the parent of the page, and the same after a reload. The page of a top agent goes back to its session's Overview, or to the Runs tab of the pull request you opened it from. A session tab has no parent, so ⌘↑ goes to the board.
@@ -131,8 +132,13 @@ Move through Goodboy, change a shortcut and stop an agent without leaving the ke
 
 - On the Commits page, **⌘Z** undoes a local commit edit and **⌘⇧Z** redoes it. Text fields keep their own undo.
 - Tooltips show keys beside their controls. Every hint in the app reads its keys from the shortcut registry, so a key is spelled once. That covers tooltips, the Guide, field hints and the key caps under a composer.
+- The key caps under a composer show while the box is empty and has the focus, and go at the first letter. They stay when your send keys changed, and in a document, where Enter adds a line. A screen reader reads each key by name with what it does, with the box every time.
 - **Esc** closes the dialog or preview in front, listed as Close the dialog or preview.
 - While an agent runs and nothing else is open, **Esc** twice stops it. The first press says "Esc again to stop" beside the Stop button for three seconds. The second stops the agent, listed as Stop the running agent, press twice.
+- In Chat and Ask, **Esc** twice in the box stops the reply the same way. Then **Send** is back.
+- The session and Chat differ on purpose. In a session a message you send while the agent works waits for the reply. In Chat and Ask, **Send** turns into **Stop** while the reply comes.
+- With the keyboard in a box, **Esc** walks one order. First an open menu or popover, then a card shown on rest. Then the armed stop while a reply comes, then the panel that floats over the page. So in Ask the first **Esc** arms the stop while a reply comes, and closes the panel when none does.
+- A changed stop key works in Chat and Ask too.
 - A menu, a drawer or a dialog that is open always takes the key first. The key leaves the page only when no turn runs.
 - In a session, **Esc** walks one ladder. In a box with text it leaves the box and keeps your text. Then it closes the panel on the right, and the panel it had replaced comes back. Then it closes that one. Then it does what the back row above the page does, so a step goes to its run and a list goes to the Overview. On the Overview it does nothing.
 - **⌘⇧W** closes the panel that has the focus, even with the keyboard in a terminal. With the page focused it closes the panel on the right. The panel it had replaced comes back first. Off macOS it is **Ctrl+F4**.
@@ -143,7 +149,7 @@ Move through Goodboy, change a shortcut and stop an agent without leaving the ke
 
 On a Mac the menu bar carries the same keys.
 
-- File holds New Session, New Chat, New Terminal, New Workspace, Close (**⌘W**) and Close the Drawer (**⌘⇧W**).
+- File holds New Session, New Chat, New Terminal, New Workspace, Close (**⌘W**) and Close the panel (**⌘⇧W**). Close the panel reads the same words as Settings, with no capital.
 - Edit holds Search.
 - View holds Show or Hide Sessions (**⌘B**), Search or Run, zoom, Reload (**⌘R**) and Reload Goodboy (**⌘⇧R**).
 - Go holds Back and Forward, then Board, Tasks, Workflows, Chat, Connections, Impact, Monitoring and Notifications. After a separator, Show or Hide Terminal and Show or Hide Browser open those tools on the right rail.
@@ -245,7 +251,8 @@ This part is for contributors and agents who change the feature.
 - Linux chords: a registry test fails any ⌘⌥ entry without its Ctrl+Shift+Alt chord.
 - Changed shortcuts: the local setting `shortcuts.overrides`, by registry id.
 - One spelling per key: hints read the shortcut registry through the `shortcut` prop or `shortcutGlyphs`.
-- Stop the running agent: the registry id is `agent.stop`.
+- Stop the running agent: the registry id is `agent.stop`. The session composer registers it (`useEscapeStop`); `MessageComposer` (Chat and Ask) reads it in its own field. Both arm through `useEscapeArm`. The field yields to a menu, a popover or a hover surface (`isEscapeTakenAbove`); `keys.rows.tsx` walks the order in Ask.
+- Runs › Running: ⌘⌥A writes `runs.filter` (`openToolPane`), `useRunsFilter` reads it on the Runs page, and ⌘⌥W and Clear filter drop it (`clearRunsFilter`).
 - Reload where you are: `view.reload` runs `reloadWhereYouAre`, which picks one surface registered with `useReloadSurface` (`pickReloadSurface`). `app.reload` reloads the window. `scopedReload.test.tsx` pins both.
 - Service usage: `serviceUsageCardOf` builds the card with CPU and memory.
 - Browser: the pane is the `browser` drawer kind in `features/browser/`, and [browser.md](../browser.md#the-pane) owns the address rule, the live tabs and the overlay rule. The page is the `browser` studio kind (`BrowserStudio`), and [browser.md](../browser.md#the-page) owns its groups, its route and the view owner rule. `promoteBrowserTab` and `demoteBrowserTab` move a tab between them ([browser.md](../browser.md#moves)).

@@ -258,7 +258,10 @@ about its effect is a worse defect than one that reads badly.
   day. Work it out once and pass it along, and make the field impossible to
   leave out.
 - **Teach the shortcut where the control is.** A key chord belongs in the
-  control's own tooltip or menu row, not only in a settings page. Advertise
+  control's own tooltip or menu row, not only in a settings page. The key row
+  under a composer shows only on an empty box with the focus, and stays when
+  the keys changed or Enter adds a line; a screen reader always reads it with
+  the box. Advertise
   only what the user can really reach. If a flag turns off a prefix, command or
   destination, remove it from the placeholder and the palette too, not only
   from the handler.

@@ -6,6 +6,7 @@ import { useAppStore } from '../../../store';
 import { SETTING_COMPOSER_CLASSIC_KEYS } from '../../../features/settings/settings';
 import { usePendingAttachments } from '../../hooks/usePendingAttachments';
 import { shortcutGlyphs } from '../../keyboard/registry';
+import { shortcutWords } from '../../keyboard/shortcutWords';
 import { PromptField, type PromptSubmitMode } from '.';
 import type { PromptFieldKind } from './promptKeyAction';
 
@@ -230,6 +231,65 @@ describe('PromptField keys', () => {
     unmount();
     render(<Harness kind="document" withFiles={false} sent={sent} />);
     expect(screen.getByTestId('prompt-keys').textContent).toBe(`${send}new line${submit}send`);
+  });
+});
+
+describe('PromptField key row', () => {
+  const keysRow = (): HTMLElement => screen.getByTestId('prompt-keys');
+
+  it('shows the keys only on an empty field with the focus, and hides them at the first letter', () => {
+    useAppStore.setState({ settings: { [SETTING_COMPOSER_CLASSIC_KEYS]: 'false' } });
+    render(<Harness kind="message" withFiles={false} sent={[]} />);
+    expect(keysRow().dataset.shown).toBe('false');
+
+    fireEvent.focus(field());
+    expect(keysRow().dataset.shown).toBe('true');
+
+    fireEvent.change(field(), { target: { value: 'R' } });
+    expect(keysRow().dataset.shown).toBe('false');
+
+    fireEvent.change(field(), { target: { value: '' } });
+    fireEvent.blur(field());
+    expect(keysRow().dataset.shown).toBe('false');
+  });
+
+  it('describes the field with the keys whether they show or not', () => {
+    useAppStore.setState({ settings: { [SETTING_COMPOSER_CLASSIC_KEYS]: 'false' } });
+    render(<Harness kind="message" withFiles={false} sent={[]} />);
+    const description = `${shortcutWords({ id: 'composer.send' })} send, ${shortcutWords({ id: 'composer.newLine' })} new line`;
+
+    screen.getByRole('textbox', { name: 'Prompt', description });
+    fireEvent.change(field(), { target: { value: 'Retry budget' } });
+    screen.getByRole('textbox', { name: 'Prompt', description });
+    expect(keysRow().getAttribute('aria-hidden')).toBe('true');
+  });
+
+  it('names each key of a document field in words for a screen reader', () => {
+    useAppStore.setState({ settings: { [SETTING_COMPOSER_CLASSIC_KEYS]: 'false' } });
+    render(<Harness kind="document" withFiles={false} sent={[]} />);
+
+    screen.getByRole('textbox', {
+      name: 'Prompt',
+      description: `${shortcutWords({ id: 'composer.send' })} new line, ${shortcutWords({ id: 'composer.submit' })} send`,
+    });
+  });
+
+  it('keeps the keys shown when the keys changed, with text in the field', () => {
+    useAppStore.setState({ settings: { [SETTING_COMPOSER_CLASSIC_KEYS]: 'true' } });
+    render(<Harness kind="message" withFiles={false} hasChangedKeys sent={[]} />);
+
+    fireEvent.change(field(), { target: { value: 'Retry budget' } });
+
+    expect(keysRow().dataset.shown).toBe('true');
+  });
+
+  it('keeps the keys shown in a document, where Enter adds a line', () => {
+    useAppStore.setState({ settings: { [SETTING_COMPOSER_CLASSIC_KEYS]: 'false' } });
+    render(<Harness kind="document" withFiles={false} sent={[]} />);
+
+    fireEvent.change(field(), { target: { value: 'Retry budget' } });
+
+    expect(keysRow().dataset.shown).toBe('true');
   });
 });
 

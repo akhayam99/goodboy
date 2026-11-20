@@ -190,7 +190,7 @@ export const SIDEBAR_NAV_ROWS: ReadonlyArray<Row> = [
     covers: ['navigate', 'sidebar:session-pages'],
     open: async () => {
       await openCrumb(/^Branch/);
-      await openPalette(/^Open Runs/, 'Open Runs');
+      await openPalette(/^Open Runs$/, 'Open Runs');
     },
     lands: async (ctx) => {
       await heading('Runs');

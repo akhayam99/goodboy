@@ -19,6 +19,7 @@ import { branchTabOf } from '../../../store/slices/session-view/branchTabOf';
 import { requestNewSession } from '../../../features/session/requestNewSession';
 import { toggleTerminalDock } from '../../../features/terminal/toggleTerminalDock';
 import { openLens } from '../../../features/session/openLens';
+import { clearRunsFilter } from '../../../features/session/clearRunsFilter';
 import { togglePane } from '../../../features/session/panes/togglePane';
 import type { ClusterPane } from '../../../features/session/panes/clusterPane';
 import { isLensReachable } from '../../../features/session/isLensReachable';
@@ -247,7 +248,13 @@ export const useAppShortcuts = ({
 
   useShortcut('lens.overview', () => goToLens({ kind: null }));
   useShortcut('lens.context', () => goToLens({ kind: 'context' }));
-  useShortcut('lens.workflows', () => goToLens({ kind: 'workflows' }));
+  useShortcut('lens.workflows', () => {
+    goToLens({ kind: 'workflows' });
+    const sessionId = useAppStore.getState().currentSessionId;
+    if (sessionId != null) {
+      clearRunsFilter({ sessionId });
+    }
+  });
   useShortcut('lens.review', () => goToLens({ kind: 'review' }));
   useShortcut('lens.questions', () => goToLens({ kind: 'questions' }));
   useShortcut('lens.files', () => goToLens({ kind: 'files' }));

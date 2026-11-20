@@ -350,3 +350,12 @@ describe('shortcut registry', () => {
     expect(shortcutGlyphs('session.nextNeedsYou')).toBe('Ctrl+Shift+Alt+Down');
   });
 });
+
+describe('the Runs keys and the window close keys', () => {
+  it('names each key after the place it opens or the thing it closes', () => {
+    expect(SHORTCUTS['lens.workflows'].label).toBe('Runs');
+    expect(SHORTCUTS['session.spawned'].label).toBe('Runs › Running');
+    expect(SHORTCUTS['slot.close'].label).toBe('Close the panel');
+    expect(SHORTCUTS['app.close'].label).toBe('Close or go back');
+  });
+});

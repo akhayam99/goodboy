@@ -84,7 +84,7 @@ const FILE_ROWS: &[Row] = &[
     command("menu.newWorkspace", "New Workspace…", None),
     SEPARATOR,
     command("app.close", "Close", Some("cmd+KeyW")),
-    command("slot.close", "Close the Drawer", Some("cmd+shift+KeyW")),
+    command("slot.close", "Close the panel", Some("cmd+shift+KeyW")),
 ];
 
 const EDIT_ROWS: &[Row] = &[

@@ -361,9 +361,12 @@ characters`, in the warning tone from 90%. A longer draft is blocked before
   on its page, under its run, for every kind of run (`presetRunFocusOf`).
 - **Auto keeps the rail on the session.** An Auto row of Runs opens that
   conversation and opens no tool, and Runs stays
-  selected on the rail while an Auto agent is in the center. ⌘⌥W opens Runs;
-  ⌘⌥A (`session.spawned`), a palette row as well, opens Runs on what is running
-  (`runs.filter` in `focus.returnRows`), and ⌘⌥L is free. Pressed below Runs (a run,
+  selected on the rail while an Auto agent is in the center. ⌘⌥W opens Runs and
+  clears its filter (`clearRunsFilter`); ⌘⌥A (`session.spawned`, Runs › Running),
+  a palette row as well, opens Runs on what is running (`runs.filter` in
+  `focus.returnRows`). `RunsGrid` reads that row through `useRunsFilter`, shows a
+  Running chip with Clear filter, and says Nothing is running when no run is in
+  the Running group. ⌘⌥L is free. Pressed below Runs (a run,
   a step, an agent or an Auto conversation) ⌘⌥W lands on the Runs list, and
   pressed on the list it stays: ⌘↑ is the key that leaves. ⌘⌥P does the same
   for Artifacts (`OBJECT_PAGE_LENSES` in `useAppShortcuts`). A studio or a

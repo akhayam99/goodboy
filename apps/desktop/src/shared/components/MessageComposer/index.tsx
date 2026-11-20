@@ -1,9 +1,13 @@
 import { useState, type ReactNode, type RefObject } from 'react';
 
-import { PromptField, type PromptFieldFiles } from './PromptField';
-import { SendStopControl } from './SendStopControl';
-import { usePromptFiles, type PromptFileFilter } from '../hooks/usePromptFiles';
-import { CHAT_IMAGE_ACCEPT, isChatImage } from '../utils/chatImageKinds';
+import { PromptField, type PromptFieldFiles } from '../PromptField';
+import { SendStopControl } from '../SendStopControl';
+import { useEscapeArm } from '../../hooks/useEscapeArm';
+import { usePromptFiles, type PromptFileFilter } from '../../hooks/usePromptFiles';
+import { eventMatches } from '../../keyboard/dispatcher';
+import { isEscapeTakenAbove } from '../../keyboard/isEscapeTakenAbove';
+import { SHORTCUTS } from '../../keyboard/registry';
+import { CHAT_IMAGE_ACCEPT, isChatImage } from '../../utils/chatImageKinds';
 
 export type MessageComposerMessage = {
   readonly text: string;
@@ -42,6 +46,8 @@ const CHAT_IMAGES: PromptFileFilter = {
 
 const SEND_FAILED = "Couldn't send the images. They're still attached.";
 
+const isStopKeyTaken = (): boolean => isEscapeTakenAbove({});
+
 export const MessageComposer = ({
   label,
   placeholder,
@@ -65,6 +71,11 @@ export const MessageComposer = ({
   const images = usePromptFiles({ note: '', isEnabled: isImagesOn, only: CHAT_IMAGES });
   const attached = isImagesOn ? images.attachments : [];
   const canSend = (text.trim() !== '' || attached.length > 0) && !isStreaming;
+  const escape = useEscapeArm({
+    press: isStreaming ? onStop : null,
+    isStopping,
+    isBlocked: isStopKeyTaken,
+  });
 
   const send = (): void => {
     if (!canSend) {
@@ -92,6 +103,15 @@ export const MessageComposer = ({
       value={text}
       onChange={onTextChange}
       onSubmit={send}
+      onKeyDown={(event) => {
+        if (
+          !event.nativeEvent.isComposing &&
+          eventMatches({ event: event.nativeEvent, entry: SHORTCUTS['agent.stop'] }) &&
+          escape.onEscape()
+        ) {
+          event.preventDefault();
+        }
+      }}
       {...(isImagesOn && { files: images.files })}
       notice={sendNotice ?? images.notice}
       placeholder={placeholder}
@@ -102,7 +122,19 @@ export const MessageComposer = ({
       maxRows={maxRows}
       className="w-full"
       textClassName="text-prose"
-      footerStart={footerStart}
+      footerStart={
+        <>
+          {footerStart}
+          {escape.isArmed ? (
+            <span
+              role="status"
+              className="shrink-0 whitespace-nowrap text-meta text-muted-foreground"
+            >
+              Esc again to stop
+            </span>
+          ) : null}
+        </>
+      }
       model={model}
       actions={
         <SendStopControl

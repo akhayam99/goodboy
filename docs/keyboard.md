@@ -9,7 +9,7 @@ precedence over the global handler for the same chord while its surface is
 mounted, and unregistering it restores global handling. Undo and Redo yield
 while a text field, editable surface or terminal owns input.
 
-⌘W closes the nearest thing and never quits the app (⌘Q quits). On macOS the
+⌘W (Close or go back) closes one level and never quits the app (⌘Q quits). On macOS the
 File menu item Close (`app.close`) owns the chord and emits `goodboy://menu`
 with that id (`app_menu.rs`); `useMenuCommands` replays it as the registry
 shortcut, so the same dispatcher runs the press; elsewhere the chord is
@@ -30,7 +30,7 @@ no drawer shown (none open, or one parked under a studio) it does nothing.
 F6 and ⇧F6 (`panel.focusNext`, `panel.focusPrevious`, kept with the two close
 keys in `windowShortcuts.ts`) move the focus through page, detail and the
 grid's panels and back to the page (`stepPanelFocus`). On macOS the
-File menu item Close the Drawer owns the chord, so the press reaches the app
+File menu item Close the panel owns the chord, so the press reaches the app
 even when a terminal or a web page has the keyboard.
 
 A key means the new thing of the place you are in. ⌘N is a new session

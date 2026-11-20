@@ -109,7 +109,7 @@ export const LENS_ENTRY_ROWS: ReadonlyArray<Row> = [
     name: `palette: Open ${row.label}${row.note === undefined ? '' : `, ${row.note}`}`,
     covers: ['navigate', `palette:Open ${row.label}`],
     ...(row.seed !== undefined && { seed: row.seed }),
-    open: () => openPalette(new RegExp(`^Open ${row.label}`, 'i'), `Open ${row.label}`),
+    open: () => openPalette(new RegExp(`^Open ${row.label}$`, 'i'), `Open ${row.label}`),
     lands: both(lens(row.lens), row.lands),
   })),
 ];

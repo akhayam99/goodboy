@@ -181,7 +181,7 @@ The other views of a session open from its head and from the keyboard:
 | -------------------- | --- |
 | **Ask**              | ⌘L  |
 | **Context** tab      | ⌘⌥C |
-| **Runs** on running  | ⌘⌥A |
+| **Runs › Running**   | ⌘⌥A |
 | Changes on All files | ⌘⌥X |
 | **Scripts**          | ⌘⌥S |
 

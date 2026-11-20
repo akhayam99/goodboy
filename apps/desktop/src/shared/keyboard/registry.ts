@@ -2,6 +2,7 @@ import { registerShortcutGlyphs } from '@goodboy/ui';
 import { currentPlatform } from '../platform';
 import { NAMES } from '../utils/names';
 import { BROWSER_SHORTCUTS } from './browserShortcuts';
+import { codeGlyph } from './codeGlyph';
 import { WINDOW_SHORTCUTS } from './windowShortcuts';
 import { overrideState } from './overrides/overrideState';
 
@@ -441,7 +442,7 @@ export const SHORTCUTS = {
   'session.spawned': {
     combo: 'cmd+alt+KeyA',
     offMacCombo: 'ctrl+shift+alt+KeyA',
-    label: NAMES.agents,
+    label: NAMES.runsRunning,
     plane: 'lens',
     group: 'session',
   },
@@ -907,7 +908,7 @@ const MAC_GLYPH: Record<string, string> = {
   ArrowRight: '→',
 };
 
-const KEY_LABEL: Record<string, string> = {
+export const KEY_LABEL: Record<string, string> = {
   ...PUNCTUATION,
   cmd: 'Ctrl',
   shift: 'Shift',
@@ -922,19 +923,6 @@ const KEY_LABEL: Record<string, string> = {
   ArrowUp: 'Up',
   ArrowLeft: 'Left',
   ArrowRight: 'Right',
-};
-
-const codeGlyph = ({ code, glyphs }: { code: string; glyphs: Record<string, string> }): string => {
-  if (glyphs[code] != null) {
-    return glyphs[code];
-  }
-  if (code.startsWith('Key')) {
-    return code.slice(3);
-  }
-  if (code.startsWith('Digit')) {
-    return code.slice(5);
-  }
-  return code;
 };
 
 export const formatCombo = (combo: string): string => {
