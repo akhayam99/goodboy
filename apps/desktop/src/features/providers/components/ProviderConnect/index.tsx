@@ -121,7 +121,7 @@ export const ProviderConnect = ({ providerId, chrome, autoStart = false, onDone 
           )}
           {view.showErrorTail && (
             <span className="max-w-prose break-words text-meta text-danger">
-              {connect.errorTail ?? 'It stopped without printing anything we could capture.'}
+              {connect.errorTail ?? 'It stopped without printing a reason.'}
             </span>
           )}
         </div>
