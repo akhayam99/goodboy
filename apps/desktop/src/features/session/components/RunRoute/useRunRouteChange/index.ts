@@ -5,11 +5,10 @@ import {
   CHECK_STATE,
   NOTHING_CHANGED,
 } from '../../../../../store/slices/notifications/errorRecovery';
-import {
-  changeRunRoute,
-  type RunRouteChange,
-  type RunRouteChoice,
-  type RunRouteTarget,
+import type {
+  RunRouteChange,
+  RunRouteChoice,
+  RunRouteTarget,
 } from '../../../startRun/changeRunRoute';
 import { OldRunLeftError } from '../../../startRun/OldRunLeftError';
 import { RUN_ROUTE_COPY } from '../../../startRun/runRouteCopy';
@@ -66,6 +65,7 @@ const changeOnce = async ({
   shouldEndRun = false,
 }: ChangeOnceParams): Promise<RunRouteChange | null> => {
   try {
+    const { changeRunRoute } = await import('../../../startRun/changeRunRoute');
     return await changeRunRoute({ target, choice, shouldEndRun });
   } catch (error) {
     if (error instanceof OldRunLeftError) {

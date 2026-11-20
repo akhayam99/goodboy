@@ -2,7 +2,6 @@ import { useCallback, useMemo, useRef, useState } from 'react';
 import type { MountCleanupProposal, SessionId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../../store';
 import { formatBytes } from '../../../../../shared/utils/formatBytes';
-import { deleteMergedBranches } from '../deleteMergedBranches';
 
 type Params = {
   readonly sessionId: SessionId;
@@ -44,6 +43,7 @@ export const useRemoveWorktrees = ({ sessionId, mergedMountIds }: Params): Remov
       inFlight.current = true;
       const wanted = mountIds === undefined ? null : new Set<string>(mountIds);
       try {
+        const { deleteMergedBranches } = await import('../deleteMergedBranches');
         await deleteMergedBranches({
           sessionId,
           proposals: targets.filter((proposal) => wanted === null || wanted.has(proposal.mountId)),
