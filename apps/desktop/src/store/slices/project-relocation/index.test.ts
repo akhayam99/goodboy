@@ -1,6 +1,12 @@
 // @vitest-environment node
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { IsoDateTime, Project, ProjectId, WorkspaceId } from '@goodboy/types';
+import {
+  brandId,
+  type IsoDateTime,
+  type Project,
+  type ProjectId,
+  type WorkspaceId,
+} from '@goodboy/types';
 import type { AppStore } from '../../store';
 import type { GetFn, SetFn } from '../../slice-types';
 import { projectRelocationInitialState } from './state';
@@ -209,7 +215,7 @@ describe('project relocation slice', () => {
   });
 
   describe('with two moved folders', () => {
-    const SECOND_ID = 'project-notify' as ProjectId;
+    const SECOND_ID = brandId<ProjectId>({ value: 'project-notify' });
     const twoFolders = () => {
       const store = harness();
       store.set({

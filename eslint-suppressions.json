@@ -4364,9 +4364,6 @@
   "apps/desktop/src/features/quick-actions/QuickActionsPopover/index.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 1
-    },
-    "@typescript-eslint/strict-boolean-expressions": {
-      "count": 1
     }
   },
   "apps/desktop/src/features/quick-actions/registry.test.ts": {

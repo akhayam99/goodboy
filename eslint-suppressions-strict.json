@@ -429,11 +429,6 @@
       "count": 3
     }
   },
-  "apps/desktop/src/features/quick-actions/QuickActionsPopover/index.tsx": {
-    "@typescript-eslint/strict-boolean-expressions": {
-      "count": 2
-    }
-  },
   "apps/desktop/src/features/quick-actions/grammar.ts": {
     "@typescript-eslint/strict-boolean-expressions": {
       "count": 1
@@ -1261,7 +1256,7 @@
   },
   "packages/ui/src/components/Dialog.tsx": {
     "@typescript-eslint/strict-boolean-expressions": {
-      "count": 10
+      "count": 9
     }
   },
   "packages/ui/src/components/Eyebrow.tsx": {
