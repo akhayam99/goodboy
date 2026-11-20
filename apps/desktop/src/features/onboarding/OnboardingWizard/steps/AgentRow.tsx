@@ -137,7 +137,7 @@ export const AgentRow = ({
         return (
           <>
             <Button size="sm" variant="quiet" aria-expanded={isOpen} onClick={onToggle}>
-              Output
+              Show output
             </Button>
             <Button
               size="sm"
