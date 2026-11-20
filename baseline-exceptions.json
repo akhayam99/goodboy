@@ -362,5 +362,26 @@
     "count": 1,
     "reason": "reason renamed, count unchanged: the bell list now ends on the bell like the rest of the top bar right cluster",
     "release": "0.39.2"
+  },
+  {
+    "rule": "new",
+    "file": "apps/desktop/src/__tests__/regressions/red-alert-text.baseline.json",
+    "count": 92,
+    "reason": "first measure of the red alert guard that ux49 P10 adds; the ledger only falls from here",
+    "release": "0.40.4"
+  },
+  {
+    "rule": "new",
+    "file": "apps/desktop/src/__tests__/actions/menu-shape.baseline.json",
+    "count": 59,
+    "reason": "first measure of the menu shape guard that ux49 P34 adds; the ledger only falls from here",
+    "release": "0.40.4"
+  },
+  {
+    "rule": "new",
+    "file": "apps/desktop/src/__tests__/regressions/pane-head-rows.baseline.json",
+    "count": 6,
+    "reason": "first measure of the page head guard that ux49 P43 adds; the ledger only falls from here",
+    "release": "0.40.4"
   }
 ]

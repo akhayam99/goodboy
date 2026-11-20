@@ -194,8 +194,11 @@ test file, unless its row above says otherwise.
 | `types-function-bodies.baseline.json`                    | a function body in `packages/types` that is not a guard                                              |
 | `drawer-host-imports.baseline.json`                      | feature imports in `app/components/DrawerHost.tsx`                                                   |
 | `artifact-family-cycles.baseline.json`                   | imports across a two-way pair of artifacts, plans, reports, wireframes                               |
+| `red-alert-text.baseline.json`                           | a `role="alert"` painted `text-danger`, where `FieldError`, `reportError` or `ErrorStrip` belongs    |
+| `pane-head-rows.baseline.json`                           | a search, filter or group control in the title row of a page head                                    |
+| `menu-shape.baseline.json`                               | a menu off the rule: over five rows, a repair verb, early dividers, mixed icons, rows out of order   |
 
-All sit in `apps/desktop/src/__tests__/regressions/`. `no-skipped-tests.test.ts` has no baseline: its count is zero and stays zero.
+All sit in `apps/desktop/src/__tests__/regressions/`, except `menu-shape.baseline.json` in `apps/desktop/src/__tests__/actions/`. `no-skipped-tests.test.ts` has no baseline: its count is zero and stays zero.
 
 ## Allowlists
 

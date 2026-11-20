@@ -1,0 +1,6 @@
+{
+  "apps/desktop/src/features/artifacts/components/ArtifactList/index.tsx": 2,
+  "apps/desktop/src/features/monitoring/components/MonitoringStudio/MonitoringPage.tsx": 1,
+  "apps/desktop/src/features/notifications/components/NotificationsStudio/index.tsx": 1,
+  "apps/desktop/src/features/workspace/components/StageBoard/SessionsHeader.tsx": 2
+}
