@@ -3,7 +3,7 @@ import { MenuList, type MenuEntry } from '@goodboy/ui';
 import { useActionEnv } from '../../useActionEnv';
 import { useObjectActions } from '../../useObjectActions';
 import { toMenuEntries } from '../../toMenuEntries';
-import type { ActionMenuBehavior, ActionViewing, ObjectTarget } from '../../types';
+import type { ActionListOf, ActionMenuBehavior, ActionViewing, ObjectTarget } from '../../types';
 import type { OnArm } from '../../../../shared/components/HeaderConfirm/armedAction';
 import { visibleActionsOf } from './visibleActionsOf';
 
@@ -19,7 +19,7 @@ type Props = ActionMenuBehavior & {
   readonly omit: ReadonlyArray<string>;
   readonly only?: ReadonlyArray<string> | null;
   readonly relabel?: ReadonlyMap<string, string> | null;
-  readonly cuts?: ReadonlyArray<string>;
+  readonly onlyOf?: ActionListOf;
   readonly onClose: () => void;
   readonly viewing?: ActionViewing | null;
   readonly onArm?: OnArm | undefined;
@@ -32,7 +32,7 @@ export const ObjectOverflowList = ({
   omit,
   only = null,
   relabel = null,
-  cuts,
+  onlyOf,
   onClose,
   viewing = null,
   onArm,
@@ -59,8 +59,8 @@ export const ObjectOverflowList = ({
     [onPreview],
   );
   const entries = useMemo((): ReadonlyArray<MenuEntry> => {
-    const visible = visibleActionsOf({ actions, omit, only, relabel, cuts });
-    const drawn = toMenuEntries({ actions: visible, env, run, onPreview });
+    const visible = visibleActionsOf({ actions, omit, only, relabel, onlyOf });
+    const drawn = toMenuEntries({ actions: visible, env, run, onPreview, pool: actions });
     const base =
       isHeld === undefined
         ? drawn
@@ -86,6 +86,6 @@ export const ObjectOverflowList = ({
         onSelect: () => onArm({ action, run: () => run({ actionId: action.id }) }),
       };
     });
-  }, [actions, cuts, env, isHeld, omit, onArm, onPreview, only, relabel, run]);
+  }, [actions, env, isHeld, omit, onArm, onPreview, only, onlyOf, relabel, run]);
   return <MenuList label={label} entries={entries} onClose={onClose} />;
 };

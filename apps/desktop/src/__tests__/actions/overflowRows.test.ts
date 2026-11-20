@@ -29,6 +29,7 @@ import type {
   FoldedVerb,
   ObjectKindDefinition,
   ObjectTarget,
+  ActionListOf,
   ResolvedAction,
 } from '../../features/actions/types';
 import { sessionMenuOf } from '../../app/components/SessionActions/sessionMenuOf';
@@ -37,15 +38,15 @@ import { AGENT_HEADER_MENU_IDS } from '../../features/session/components/agentHe
 import { runPageOmitOf } from '../../features/session/components/PresetRun/runPageOmitOf';
 import { artifactHeaderOmitOf } from '../../features/artifacts/components/ArtifactShell/artifactHeaderOmitOf';
 import type { RecordVerb } from '../../shared/components/StudioDetail/RecordActions/types';
-import { RECORD_HEADER_CUTS } from '../../shared/components/StudioDetail/RecordHeader/recordHeaderCuts';
+import { recordHeaderOnlyOf } from '../../shared/components/StudioDetail/RecordHeader/recordHeaderOnlyOf';
 import { COMMIT_KIND } from '../../features/actions/kinds/commit';
 import { MOUNT_KIND } from '../../features/actions/kinds/mount';
 import { PORT_KIND } from '../../features/actions/kinds/port';
 import { WORKTREE_KIND } from '../../features/actions/kinds/worktree';
 import { portRowMenuOf } from '../../features/actions/portRowMenuOf';
-import { MOUNT_ROW_CUTS } from '../../features/session/mountRowCuts';
-import { HISTORY_ROW_CUTS } from '../../features/history/components/CommitsHistory/historyRowCuts';
-import { WORKTREE_ROW_CUTS } from '../../features/storage/components/StoragePage/worktreeRowCuts';
+import { mountRowMenuOf } from '../../features/session/mountRowMenuOf';
+import { HISTORY_ROW_MENU_IDS } from '../../features/history/components/CommitsHistory/historyRowMenuIds';
+import { WORKTREE_ROW_MENU_IDS } from '../../features/storage/components/StoragePage/worktreeRowMenuIds';
 import { MAX_OVERFLOW_ROWS } from '../../features/actions/overflowCutOf';
 import { branchMenuRowsOf } from '../../features/branch/branchPrimary';
 import {
@@ -106,17 +107,17 @@ type RowsParams = {
   readonly actions: ReadonlyArray<ResolvedAction>;
   readonly omit?: ReadonlyArray<string>;
   readonly only?: ReadonlyArray<string> | null;
-  readonly cuts?: ReadonlyArray<string>;
+  readonly onlyOf?: ActionListOf;
 };
 
 const rowsDrawn = ({
   actions,
   omit = [],
   only = null,
-  cuts = [],
+  onlyOf,
 }: RowsParams): ReadonlyArray<string> =>
   toMenuEntries({
-    actions: visibleActionsOf({ actions, omit, only, relabel: null, cuts }),
+    actions: visibleActionsOf({ actions, omit, only, relabel: null, onlyOf }),
     env,
     run: async () => undefined,
   }).flatMap((entry) => (entry.kind === 'item' ? [entry.label] : []));
@@ -276,7 +277,7 @@ describe('a header or row ⋯ holds at most five rows in any one state', () => {
       const actions = bindTarget({ state: useAppStore.getState(), target })?.resolve() ?? [];
       expectWithinFive({
         kinds: ['record'],
-        rows: rowsDrawn({ actions, cuts: RECORD_HEADER_CUTS }),
+        rows: rowsDrawn({ actions, onlyOf: recordHeaderOnlyOf }),
       });
     });
   });
@@ -324,14 +325,17 @@ describe('a header or row ⋯ holds at most five rows in any one state', () => {
   describe('rail branch row', () => {
     it.each(MOUNT_ROW_STATES)('%s', (_state, facts) => {
       const actions = resolveActions({ definitions: MOUNT_KIND.actions, facts });
-      expectWithinFive({ kinds: ['mount'], rows: rowsDrawn({ actions, cuts: MOUNT_ROW_CUTS }) });
+      expectWithinFive({ kinds: ['mount'], rows: rowsDrawn({ actions, onlyOf: mountRowMenuOf }) });
     });
   });
 
   describe('commit row', () => {
     it.each(COMMIT_ROW_STATES)('%s', (_state, facts) => {
       const actions = resolveActions({ definitions: COMMIT_KIND.actions, facts });
-      expectWithinFive({ kinds: ['commit'], rows: rowsDrawn({ actions, cuts: HISTORY_ROW_CUTS }) });
+      expectWithinFive({
+        kinds: ['commit'],
+        rows: rowsDrawn({ actions, only: HISTORY_ROW_MENU_IDS }),
+      });
     });
   });
 
@@ -340,7 +344,7 @@ describe('a header or row ⋯ holds at most five rows in any one state', () => {
       const actions = resolveActions({ definitions: WORKTREE_KIND.actions, facts });
       expectWithinFive({
         kinds: ['worktree'],
-        rows: rowsDrawn({ actions, cuts: WORKTREE_ROW_CUTS }),
+        rows: rowsDrawn({ actions, only: WORKTREE_ROW_MENU_IDS }),
       });
     });
   });
@@ -348,8 +352,8 @@ describe('a header or row ⋯ holds at most five rows in any one state', () => {
   describe('port row', () => {
     it.each(PORT_ROW_STATES)('%s, with a stop control', (_state, facts) => {
       const actions = resolveActions({ definitions: PORT_KIND.actions, facts });
-      const { omit, cuts } = portRowMenuOf({ hasStop: true });
-      const rows = rowsDrawn({ actions, omit, cuts });
+      const { omit, onlyOf } = portRowMenuOf({ hasStop: true });
+      const rows = rowsDrawn({ actions, omit, onlyOf });
       expectWithinFive({ kinds: ['port'], rows });
       expect(rows).not.toContain('Stop');
       expect(rows).not.toContain('Force stop');
@@ -357,11 +361,13 @@ describe('a header or row ⋯ holds at most five rows in any one state', () => {
 
     it.each(PORT_ROW_STATES)('%s, nested without a stop control', (_state, facts) => {
       const actions = resolveActions({ definitions: PORT_KIND.actions, facts });
-      const { omit, cuts } = portRowMenuOf({ hasStop: false });
-      const rows = rowsDrawn({ actions, omit, cuts });
+      const { omit, onlyOf } = portRowMenuOf({ hasStop: false });
+      const rows = rowsDrawn({ actions, omit, onlyOf });
       expectWithinFive({ kinds: ['port'], rows });
       const offered = actions.map((action) => action.label);
-      expect(rows.includes('Force stop')).toBe(offered.includes('Force stop'));
+      const stopRow = offered.includes('Stop') ? 'Stop' : 'Force stop';
+      expect(rows.includes(stopRow)).toBe(offered.includes(stopRow));
+      expect(rows.includes('Stop') && rows.includes('Force stop')).toBe(false);
     });
   });
 });

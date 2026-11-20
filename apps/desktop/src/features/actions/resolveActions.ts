@@ -27,11 +27,15 @@ const resolveOne = <F>({
     typeof definition.menuLabel === 'function'
       ? definition.menuLabel({ facts })
       : definition.menuLabel;
+  const placement =
+    typeof definition.placement === 'function'
+      ? definition.placement({ facts })
+      : definition.placement;
   return {
     id: definition.id,
     label,
     ...(menuLabel !== undefined && { menuLabel }),
-    ...(definition.placement !== undefined && { placement: definition.placement }),
+    ...(placement !== undefined && { placement }),
     shortLabel: definition.shortLabel?.({ facts }) ?? label,
     ariaLabel: definition.ariaLabel?.({ facts }) ?? null,
     icon: definition.iconOf?.({ facts }) ?? definition.icon,

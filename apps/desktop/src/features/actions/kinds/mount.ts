@@ -21,8 +21,9 @@ import { NAMES } from '../../../shared/utils/names';
 import { openExplorePane } from '../../explore/openExplorePane';
 import { openScriptsPane } from '../../scripts/openScriptsPane';
 import { MOUNT_CLEAN_UP_ACTION } from './mountCleanUpAction';
+import { mountCloseConfirm } from './mountCloseConfirm';
+import { withSubmenus } from '../withSubmenus';
 import { MOUNT_STOP_PINNED_RUN_ACTION } from './mountStopPinnedRunAction';
-import { pinnedRunConfirm } from './pinnedRunConfirm';
 import { mountCleanupBlockers } from '../../../store/slices/mount-cleanup/cleanupPolicy';
 import {
   mountRequestOf,
@@ -39,12 +40,7 @@ import { mountReviewGithub } from '../../review/mountReviewGithub';
 import { eligibleReviewThreadCount } from '../../suggestions/eligibleThreads';
 import { BLOCKER_SENTENCE } from '../../session/components/SessionOverviewPane/ProjectMountRows/detachPlan';
 import { dispatchAfterNavigation } from '../dispatchAfterNavigation';
-import type {
-  ActionConfirm,
-  ActionDefinition,
-  ObjectKindDefinition,
-  MountActionTarget,
-} from '../types';
+import type { ActionDefinition, ObjectKindDefinition, MountActionTarget } from '../types';
 import { countNoun } from '../../../shared/utils/countNoun';
 import { abortRebase, rebaseMount, settleRequest } from './gitRuns';
 import { mountFacts, type MountFacts } from './mountFacts';
@@ -83,31 +79,11 @@ const statusParams = ({ facts }: FactsOnly) => ({
   baseBranch: facts.mountBaseBranch,
 });
 
-const closeConfirm = ({ facts }: FactsOnly): ActionConfirm => {
-  if (facts.pinnedRunIds.length > 0) {
-    return pinnedRunConfirm({ facts });
-  }
-  if (facts.pr === 'merged') {
-    return {
-      title: `Close the branch for ${facts.label}?`,
-      description:
-        'Its folder is deleted. The branch and its commits stay in the repository. Closing stops on its own when the folder holds uncommitted or unpushed work.',
-      confirmLabel: NAMES.closeBranch,
-      role: 'danger',
-    };
-  }
-  return {
-    title: `Close the branch for ${facts.label}?`,
-    description:
-      facts.dirty > 0
-        ? `The branch and any pull request stay, and the ${changes({ count: facts.dirty })} stay on disk.`
-        : 'Its folder is removed. The branch and any pull request stay.',
-    confirmLabel: facts.dirty > 0 ? 'Close, keep changes' : NAMES.closeBranch,
-    role: 'alert',
-  };
-};
-
 const REFERENCE_EDITORS = new Set(['code', 'cursor']);
+
+const MOUNT_OPEN_IDS = ['mount.openInEditor', 'mount.openTerminal', 'mount.openInTerminalApp'];
+
+const MOUNT_COPY_IDS = ['mount.copyBranch', 'mount.copyPath'];
 
 const MOUNT_ACTIONS: ReadonlyArray<ActionDefinition<MountFacts>> = [
   {
@@ -198,7 +174,7 @@ const MOUNT_ACTIONS: ReadonlyArray<ActionDefinition<MountFacts>> = [
   },
   {
     id: 'mount.openInTerminalApp',
-    label: 'Open in terminal app',
+    label: NAMES.openInExternalTerminal,
     icon: CONCEPT_ICONS.terminal,
     group: 'open',
     when: isOpen,
@@ -432,8 +408,9 @@ const MOUNT_ACTIONS: ReadonlyArray<ActionDefinition<MountFacts>> = [
     group: 'danger',
     when: ({ facts }) => isOpen({ facts }) && !facts.isRebasing,
     slot: () => 'menu',
-    pendingLabel: ({ facts }) => (facts.pr === 'merged' ? 'Removing…' : 'Closing…'),
-    confirm: closeConfirm,
+    placement: ({ facts }) => (facts.pr === 'merged' ? 'palette' : 'everywhere'),
+    pendingLabel: () => NAMES.closing,
+    confirm: mountCloseConfirm,
     run: async ({ facts, env }) => {
       if (facts.pr === 'merged') {
         const result = await env.getState().removeMountWorktree({
@@ -600,5 +577,5 @@ export const MOUNT_KIND: ObjectKindDefinition<MountActionTarget, MountFacts> = {
       status: target.status,
       remoteKind: target.remoteKind,
     }),
-  actions: MOUNT_ACTIONS,
+  actions: withSubmenus({ definitions: MOUNT_ACTIONS, open: MOUNT_OPEN_IDS, copy: MOUNT_COPY_IDS }),
 };

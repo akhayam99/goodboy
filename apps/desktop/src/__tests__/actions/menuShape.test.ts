@@ -30,6 +30,7 @@ import { PORT_KIND } from '../../features/actions/kinds/port';
 import { WORKTREE_KIND } from '../../features/actions/kinds/worktree';
 import type {
   ActionEnv,
+  ActionListOf,
   ActionViewing,
   ObjectTarget,
   ResolvedAction,
@@ -43,9 +44,9 @@ import { runPageOmitOf } from '../../features/session/components/PresetRun/runPa
 import { runHeaderPrimaryOf } from '../../features/session/components/PresetRun/runHeaderPrimaryOf';
 import { useRunView } from '../../features/session/components/AgentTree/useRunView';
 import { artifactHeaderOmitOf } from '../../features/artifacts/components/ArtifactShell/artifactHeaderOmitOf';
-import { MOUNT_ROW_CUTS } from '../../features/session/mountRowCuts';
-import { HISTORY_ROW_CUTS } from '../../features/history/components/CommitsHistory/historyRowCuts';
-import { WORKTREE_ROW_CUTS } from '../../features/storage/components/StoragePage/worktreeRowCuts';
+import { mountRowMenuOf } from '../../features/session/mountRowMenuOf';
+import { HISTORY_ROW_MENU_IDS } from '../../features/history/components/CommitsHistory/historyRowMenuIds';
+import { WORKTREE_ROW_MENU_IDS } from '../../features/storage/components/StoragePage/worktreeRowMenuIds';
 import { AGENT, RUN, SESSION, seedActionState, type ActionSeed } from '../helpers/actionFixtures';
 import { AGENT_STATES } from '../helpers/agentMenuStates';
 import { ARTIFACT_STATES } from '../helpers/artifactMenuStates';
@@ -83,7 +84,7 @@ type DrawnParams = {
   readonly actions: ReadonlyArray<ResolvedAction>;
   readonly omit?: ReadonlyArray<string>;
   readonly only?: ReadonlyArray<string> | null;
-  readonly cuts?: ReadonlyArray<string>;
+  readonly onlyOf?: ActionListOf;
 };
 
 type TargetParams = {
@@ -166,10 +167,10 @@ const entriesDrawn = ({
   actions,
   omit = [],
   only = null,
-  cuts = [],
+  onlyOf,
 }: DrawnParams): ReadonlyArray<MenuEntry> =>
   toMenuEntries({
-    actions: visibleActionsOf({ actions, omit, only, relabel: null, cuts }),
+    actions: visibleActionsOf({ actions, omit, only, relabel: null, onlyOf }),
     env,
     run: async () => undefined,
   });
@@ -336,7 +337,11 @@ describe('the shape of a menu', () => {
   describe('rows', () => {
     it.each(MOUNT_ROW_STATES)('branch row: %s', (state, facts) => {
       const actions = resolveActions({ definitions: MOUNT_KIND.actions, facts });
-      record({ surface: 'mount', state, entries: entriesDrawn({ actions, cuts: MOUNT_ROW_CUTS }) });
+      record({
+        surface: 'mount',
+        state,
+        entries: entriesDrawn({ actions, onlyOf: mountRowMenuOf }),
+      });
     });
 
     it.each(COMMIT_ROW_STATES)('commit row: %s', (state, facts) => {
@@ -344,7 +349,7 @@ describe('the shape of a menu', () => {
       record({
         surface: 'commit',
         state,
-        entries: entriesDrawn({ actions, cuts: HISTORY_ROW_CUTS }),
+        entries: entriesDrawn({ actions, only: HISTORY_ROW_MENU_IDS }),
       });
     });
 
@@ -353,14 +358,14 @@ describe('the shape of a menu', () => {
       record({
         surface: 'worktree',
         state,
-        entries: entriesDrawn({ actions, cuts: WORKTREE_ROW_CUTS }),
+        entries: entriesDrawn({ actions, only: WORKTREE_ROW_MENU_IDS }),
       });
     });
 
     it.each(PORT_ROW_STATES)('port row: %s', (state, facts) => {
       const actions = resolveActions({ definitions: PORT_KIND.actions, facts });
-      const { omit, cuts } = portRowMenuOf({ hasStop: true });
-      record({ surface: 'port', state, entries: entriesDrawn({ actions, omit, cuts }) });
+      const { omit, onlyOf } = portRowMenuOf({ hasStop: true });
+      record({ surface: 'port', state, entries: entriesDrawn({ actions, omit, onlyOf }) });
     });
   });
 

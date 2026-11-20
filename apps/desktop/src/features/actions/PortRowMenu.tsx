@@ -10,7 +10,7 @@ type Props = {
 };
 
 export const PortRowMenu = ({ target, hasStop }: Props) => {
-  const { omit, cuts } = portRowMenuOf({ hasStop });
+  const { omit, onlyOf } = portRowMenuOf({ hasStop });
   return (
     <ObjectOverflowMenu
       label={portMenuLabel({ target })}
@@ -18,7 +18,7 @@ export const PortRowMenu = ({ target, hasStop }: Props) => {
       target={target}
       anchorKey={portAnchorKey({ target })}
       omit={omit}
-      cuts={cuts}
+      onlyOf={onlyOf}
     />
   );
 };

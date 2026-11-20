@@ -1,7 +1,7 @@
 import { ObjectOverflowMenu } from '../../../actions/components/ObjectOverflowMenu';
 import { ROW_MENU_TOOLTIP } from '../../../actions/rowMenuTooltip';
 import type { CommitActionTarget } from '../../../actions/types';
-import { HISTORY_ROW_CUTS } from './historyRowCuts';
+import { HISTORY_ROW_MENU_IDS } from './historyRowMenuIds';
 
 type Props = {
   readonly target: CommitActionTarget;
@@ -15,7 +15,7 @@ export const HistoryRowActions = ({ target, anchorKey }: Props) => (
       anchorKey={anchorKey}
       label={`More for ${target.facts.shortSha}`}
       tooltip={ROW_MENU_TOOLTIP}
-      cuts={HISTORY_ROW_CUTS}
+      only={HISTORY_ROW_MENU_IDS}
     />
   </span>
 );

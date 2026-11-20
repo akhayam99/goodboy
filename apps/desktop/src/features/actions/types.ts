@@ -174,7 +174,7 @@ export type ActionDefinition<F> = {
   readonly label: string | ((params: FactsParams<F>) => string);
   readonly menuLabel?: string | ((params: FactsParams<F>) => string);
   readonly isInputFirst?: boolean;
-  readonly placement?: ActionPlacement;
+  readonly placement?: ActionPlacement | ((params: FactsParams<F>) => ActionPlacement);
   readonly shortLabel?: (params: FactsParams<F>) => string;
   readonly ariaLabel?: (params: FactsParams<F>) => string;
   readonly icon: IconGlyph;
@@ -239,6 +239,12 @@ export type ResolvedAction = {
   readonly choices: ReadonlyArray<ActionChoice> | null;
   readonly isBusy: boolean;
 };
+
+type ActionListParams = {
+  readonly actions: ReadonlyArray<ResolvedAction>;
+};
+
+export type ActionListOf = (params: ActionListParams) => ReadonlyArray<string>;
 
 export type SessionActionTarget = {
   readonly kind: 'session';

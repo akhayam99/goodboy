@@ -9,4 +9,10 @@ export const RETIRED: ReadonlyArray<RetiredName> = [
     allowedPaths: /features[/](?:palette|settings|wireframes)[/]/,
   },
   { id: 'open-the-full-log', pattern: /\bOpen the full log\b/, use: NAMES.open },
+  {
+    id: 'clean-up-menu-label',
+    pattern: /^Clean up$/,
+    use: NAMES.deleteLocalBranch,
+    allowedPaths: /sessionCleanupActions/,
+  },
 ];

@@ -240,8 +240,8 @@ describe('one tree for every branch', () => {
     fireEvent.keyDown(row, { key: 'F10', shiftKey: true });
     const fromKeys = await menuLabels();
 
-    expect(fromDots.length).toBeLessThanOrEqual(5);
-    expect(fromDots.some((label) => label.includes('Rebase on main'))).toBe(true);
+    expect(fromDots.slice(1)).toEqual(['Open', 'Switch branch…', 'Copy', 'Close branch']);
+    expect(fromClick.some((label) => label.includes('Rebase on main'))).toBe(true);
     expect(fromClick.length).toBeGreaterThan(fromDots.length);
     expect(fromClick.filter((label) => fromDots.includes(label))).toEqual(fromDots);
     expect(fromKeys).toEqual(fromClick);

@@ -16,7 +16,7 @@ import { IntegrationGlyph, type IntegrationGlyphProvider } from '../../Integrati
 import { integrationLabel } from '../../../utils/integrationLabel';
 
 import { RecordActions } from '../RecordActions';
-import { RECORD_HEADER_CUTS } from './recordHeaderCuts';
+import { recordHeaderOnlyOf } from './recordHeaderOnlyOf';
 import { NO_RECORD_VERBS, type RecordFrame, type RecordVerbs } from '../RecordActions/types';
 import { ObjectOverflowMenu } from '../../../../features/actions/components/ObjectOverflowMenu';
 import { useObjectMenuTrigger } from '../../../../features/actions/useObjectMenuTrigger';
@@ -115,7 +115,7 @@ export const RecordHeader = ({
           label={`More actions for ${identifier}`}
           anchorKey={`record-header:${identifier}`}
           size="control"
-          cuts={RECORD_HEADER_CUTS}
+          onlyOf={recordHeaderOnlyOf}
         />
         {frame?.onClose != null ? (
           <IconButton

@@ -8,7 +8,7 @@ import {
   useDropdown,
 } from '@goodboy/ui';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
-import type { ActionMenuBehavior, ActionViewing, ObjectTarget } from '../../types';
+import type { ActionListOf, ActionMenuBehavior, ActionViewing, ObjectTarget } from '../../types';
 import type { OnArm } from '../../../../shared/components/HeaderConfirm/armedAction';
 import { ObjectOverflowList } from './ObjectOverflowList';
 
@@ -32,7 +32,7 @@ export type ObjectOverflowTriggerProps = ActionMenuBehavior & {
   readonly omit?: ReadonlyArray<string>;
   readonly only?: ReadonlyArray<string> | null;
   readonly relabel?: ReadonlyMap<string, string> | null;
-  readonly cuts?: ReadonlyArray<string>;
+  readonly onlyOf?: ActionListOf;
   readonly viewing?: ActionViewing | null;
   readonly disabled?: boolean;
   readonly onArm?: OnArm;
@@ -51,7 +51,7 @@ export const ObjectOverflowTrigger = ({
   omit = NO_OMISSIONS,
   only = null,
   relabel = null,
-  cuts,
+  onlyOf,
   disabled = false,
   viewing = null,
   onArm,
@@ -101,7 +101,7 @@ export const ObjectOverflowTrigger = ({
         omit={omit}
         only={only}
         relabel={relabel}
-        cuts={cuts}
+        onlyOf={onlyOf}
         viewing={viewing}
         onClose={dropdown.close}
         onArm={onArm}

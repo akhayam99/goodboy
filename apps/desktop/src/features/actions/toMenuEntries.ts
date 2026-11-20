@@ -12,6 +12,7 @@ type Params = {
     readonly choice?: string | null;
   }) => Promise<void>;
   readonly onPreview?: (params: ActionPreviewParams) => void;
+  readonly pool?: ReadonlyArray<ResolvedAction>;
 };
 
 type ItemParams = Params & {
@@ -100,9 +101,10 @@ export const toMenuEntries = ({
   env,
   run,
   onPreview,
+  pool = resolved,
 }: Params): ReadonlyArray<MenuEntry> => {
   const actions = resolved.filter((action) => isInMenus({ action }));
-  const shared = { actions, env, run, onPreview };
+  const shared = { actions: pool, env, run, onPreview };
   return actions.flatMap((action, index): ReadonlyArray<MenuEntry> => {
     const previous = actions[index - 1];
     const submenu = action.submenu;

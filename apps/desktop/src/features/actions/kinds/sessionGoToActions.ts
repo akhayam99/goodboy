@@ -2,7 +2,8 @@ import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
 import { NAMES } from '../../../shared/utils/names';
 import { openFolderAction } from '../openFolderAction';
 import { openInConfiguredTerminal } from '../../../shared/lib/terminalApp';
-import type { ActionDefinition, ActionSubmenu } from '../types';
+import type { ActionDefinition } from '../types';
+import { withSubmenus } from '../withSubmenus';
 import type { SessionFacts } from './session';
 
 const NO_WORKTREE_REASON = 'This session has no worktree yet';
@@ -29,31 +30,10 @@ type DefinitionsParams = {
   readonly definitions: ReadonlyArray<ActionDefinition<SessionFacts>>;
 };
 
-type TaggedParams = DefinitionsParams & {
-  readonly ids: ReadonlyArray<string>;
-  readonly submenu: ActionSubmenu;
-};
-
-const tagged = ({
-  definitions,
-  ids,
-  submenu,
-}: TaggedParams): ReadonlyArray<ActionDefinition<SessionFacts>> =>
-  ids.flatMap((id) => {
-    const definition = definitions.find((candidate) => candidate.id === id);
-    return definition === undefined ? [] : [{ ...definition, submenu }];
-  });
-
 export const withSessionSubmenus = ({
   definitions,
-}: DefinitionsParams): ReadonlyArray<ActionDefinition<SessionFacts>> => {
-  const listed = new Set([...OPEN_IDS, ...COPY_IDS]);
-  return [
-    ...tagged({ definitions, ids: OPEN_IDS, submenu: 'open' }),
-    ...definitions.filter((definition) => !listed.has(definition.id)),
-    ...tagged({ definitions, ids: COPY_IDS, submenu: 'copy' }),
-  ];
-};
+}: DefinitionsParams): ReadonlyArray<ActionDefinition<SessionFacts>> =>
+  withSubmenus({ definitions, open: OPEN_IDS, copy: COPY_IDS });
 
 export const SESSION_EXTERNAL_OPEN_ACTIONS: ReadonlyArray<ActionDefinition<SessionFacts>> = [
   {

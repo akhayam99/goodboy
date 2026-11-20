@@ -1,23 +1,42 @@
 import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
+import { countNoun } from '../../../shared/utils/countNoun';
+import { NAMES } from '../../../shared/utils/names';
 import type { ActionDefinition } from '../types';
 import { cleanUpRefusalOf } from './cleanUpRefusalOf';
 import type { MountFacts } from './mountFacts';
 import { mountCleanUpWordsOf } from './mountCleanUpWordsOf';
 
+const CLOSE_INSTEAD_NOTE = `${NAMES.closeBranch} keeps the local branch and removes the folder.`;
+
+type Params = {
+  readonly facts: MountFacts;
+};
+
+const notesOf = ({ facts }: Params): ReadonlyArray<string> =>
+  facts.dirty > 0
+    ? [
+        `${countNoun({ count: facts.dirty, one: 'file is', many: 'files are' })} not committed in its folder. Delete stops and keeps them.`,
+        CLOSE_INSTEAD_NOTE,
+      ]
+    : [CLOSE_INSTEAD_NOTE];
+
 export const MOUNT_CLEAN_UP_ACTION: ActionDefinition<MountFacts> = {
   id: 'mount.cleanUp',
-  label: 'Clean up',
+  label: `${NAMES.deleteLocalBranch}…`,
   icon: CONCEPT_ICONS.delete,
   group: 'danger',
   isUndoable: true,
   when: ({ facts }) => !facts.isClosed && facts.worktreePath !== null && facts.pr === 'merged',
   slot: () => 'inline',
-  pendingLabel: () => 'Cleaning up…',
+  pendingLabel: () => 'Deleting…',
   confirm: ({ facts }) => ({
-    title: `Clean up ${facts.label}?`,
-    description: 'Stops and says why if work is uncommitted or unpushed.',
-    confirmLabel: 'Clean up',
+    title: `Delete the local branch ${facts.branch}?`,
+    description: 'Its folder goes too. The pull request and the branch on origin stay.',
+    confirmLabel: NAMES.deleteLocalBranch,
     role: 'danger',
+    altActionId: 'mount.close',
+    altLabel: NAMES.closeBranch,
+    notes: notesOf({ facts }),
     ...mountCleanUpWordsOf({ facts }),
   }),
   run: async ({ facts, env }) => {
@@ -33,7 +52,7 @@ export const MOUNT_CLEAN_UP_ACTION: ActionDefinition<MountFacts> = {
     }
     env.getState().undoable({
       showToast: env.showToast,
-      title: 'Worktree removed',
+      title: `Deleted ${facts.branch}`,
       message: 'Undo brings the branch back in a fresh folder.',
       undo: async () => {
         await env.getState().restoreDeletedBranch({ id: outcome.deleted.id });

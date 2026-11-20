@@ -1,7 +1,7 @@
 import type { MountActionTarget } from '../../actions/types';
 import { ObjectOverflowMenu } from '../../actions/ObjectOverflowMenu';
 import { ROW_MENU_TOOLTIP } from '../../actions/rowMenuTooltip';
-import { MOUNT_ROW_CUTS } from '../mountRowCuts';
+import { mountRowMenuOf } from '../mountRowMenuOf';
 
 type Props = {
   readonly target: MountActionTarget | null;
@@ -16,7 +16,7 @@ export const MountRowMenuButton = ({ target, projectName, branch }: Props) =>
       label={`${projectName} · ${branch} actions`}
       tooltip={ROW_MENU_TOOLTIP}
       size="compact"
-      cuts={MOUNT_ROW_CUTS}
+      onlyOf={mountRowMenuOf}
       hideWhenEmpty
     />
   );

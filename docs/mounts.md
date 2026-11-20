@@ -672,8 +672,14 @@ Projects tree in the Context tab (`WorktreeRow`: state glyph, the pull request
 title or the branch, at most one chip: failing, conflict or behind). A branch
 is one row with no rows under it; its pages (Pull request, Comments, Changes,
 Commits, Checks) are the tab strip of the Branch page. Its row menu (the `⋯`, a right click, Shift+F10) holds the
-`mount` kind of the action registry (`features/actions/kinds/mount.ts`). The
-navigation rules live in [navigation/session-rail.md](navigation/session-rail.md#session-rail).
+`mount` kind of the action registry (`features/actions/kinds/mount.ts`). The `⋯`
+is an explicit list per state (`features/session/mountRowMenuOf.ts`): an open
+branch has Open pull request, Open (Editor, Terminal, External terminal),
+Switch branch…, Copy (Branch name, Path) and Close branch; a merged one has
+Open pull request, Open, Copy and Delete local branch…, whose confirm offers
+Close branch instead (`altActionId`), and Close branch is hidden on a merged
+branch (`placement`); a closed one has Reopen, Copy and Remove from session.
+The navigation rules live in [navigation/session-rail.md](navigation/session-rail.md#session-rail).
 
 What a worktree asks the user to decide shows once, in the Overview notices
 slot (`OverviewNotices`, one `MountNotices` per open mount, the first lap

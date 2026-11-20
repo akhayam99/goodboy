@@ -4,7 +4,7 @@ import { ObjectOverflowMenu } from '../../../actions/components/ObjectOverflowMe
 import type { WorktreeActionTarget } from '../../../actions/types';
 import { RowPrimaryAction } from './RowPrimaryAction';
 import { STORAGE_COLUMN } from './storageColumns';
-import { WORKTREE_ROW_CUTS } from './worktreeRowCuts';
+import { WORKTREE_ROW_MENU_IDS } from './worktreeRowMenuIds';
 
 type Props = {
   readonly folder: StorageFolder;
@@ -21,7 +21,7 @@ export const WorktreeRowActions = ({ folder, status, terminals, target, onEditor
       <ObjectOverflowMenu
         target={target}
         label="More actions"
-        cuts={WORKTREE_ROW_CUTS}
+        only={WORKTREE_ROW_MENU_IDS}
         anchorKey={`worktree:${folder.path}`}
       />
     </span>
