@@ -3,6 +3,7 @@ import type { WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { LocateMovedProjectRow } from './LocateMovedProjectRow';
 import { countNoun } from '../../../../shared/utils/countNoun';
+import { isPendingRelocation } from '../../../../store/slices/project-relocation/isPendingRelocation';
 
 type Props = {
   readonly workspaceId: WorkspaceId;
@@ -24,9 +25,7 @@ export const LocateMovedProjects = ({ workspaceId, onChoose, isChoosing = false 
     return null;
   }
   const isBusy = phase === 'moving';
-  const selectedCount = candidates.filter(
-    (candidate) => candidate.isSelected && candidate.toRoot !== null,
-  ).length;
+  const selectedCount = candidates.filter((candidate) => isPendingRelocation({ candidate })).length;
   const sessionFolderCount = completed.reduce(
     (total, relocation) => total + relocation.restoredSessionFolders,
     0,
