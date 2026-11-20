@@ -210,7 +210,7 @@ export const NotificationsStudio = ({ onClose }: Props) => {
                       description={
                         hasOlder
                           ? 'Nothing loaded matches these filters. Older notifications may.'
-                          : 'Try another filter or include notifications you have already read.'
+                          : "Try another filter or include notifications you've already read."
                       }
                       action={
                         isFiltered ? (

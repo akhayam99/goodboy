@@ -297,7 +297,7 @@ export const REVIEW_COMMENT_KIND: ObjectKindDefinition<
       shortcut: 'review.accept',
       when: ({ facts }) => canRepostVerdict({ facts }) && facts.verdict?.kind === 'obsolete',
       blockedReason: ({ facts }) =>
-        facts.remoteReply === null ? 'There is no reply to close with.' : null,
+        facts.remoteReply === null ? "There's no reply to close with." : null,
       slot: () => 'primary',
       run: ({ facts, env }) =>
         facts.remoteReply === null

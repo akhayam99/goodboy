@@ -811,7 +811,7 @@ describe('NotificationCenter', () => {
       await act(async () => undefined);
 
       expect(state.reportError).toHaveBeenCalledWith(
-        expect.objectContaining({ title: "Couldn't mark the notification done" }),
+        expect.objectContaining({ title: "Couldn't mark the notification opened" }),
       );
       expect(document.querySelector('[data-notification-acted]')).toBeNull();
     });

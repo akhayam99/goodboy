@@ -108,7 +108,7 @@ const destinationText = ({ github, direct, overflows }: DestinationParams): stri
       : `Public issue on GitHub as @${github.user}`;
   }
   return overflows
-    ? 'Opens GitHub in your browser. What does not fit the link goes to your clipboard.'
+    ? "Opens GitHub in your browser. What doesn't fit the link goes to your clipboard."
     : 'Opens GitHub in your browser. You submit it there.';
 };
 

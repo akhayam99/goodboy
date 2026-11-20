@@ -126,7 +126,7 @@ export const useAwayAlerts = (): void => {
       showToast({
         kind: 'info',
         persist: true,
-        title: 'Banners while you are away',
+        title: "Banners while you're away",
         message: 'Goodboy can tell you when an agent needs you.',
         action: {
           label: 'Turn on',

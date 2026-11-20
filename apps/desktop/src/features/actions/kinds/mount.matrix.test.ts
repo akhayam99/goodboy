@@ -307,7 +307,7 @@ describe('mount, labels by state', () => {
     expect(forced?.blockedReason).toBeNull();
     expect(forced?.confirm).toEqual({
       title: 'Replace the branch on origin?',
-      description: 'This machine has not checked origin yet. Anything pushed there since is lost.',
+      description: "This machine hasn't checked origin yet. Anything pushed there since is lost.",
       confirmLabel: 'Force push',
       role: 'danger',
     });

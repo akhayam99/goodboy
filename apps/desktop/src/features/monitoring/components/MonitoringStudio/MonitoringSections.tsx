@@ -50,7 +50,7 @@ export const MonitoringSections = ({ model, memoryPrefix }: Props) => {
           icon={CONCEPT_ICONS.monitoring}
           tone={CONCEPT_TONE.monitoring}
           title="Nothing running on this branch"
-          description="Ports and processes started from this branch show here."
+          description="Ports and processes this branch starts, with what opened them."
           size="page"
           headingLevel={2}
         />
@@ -61,7 +61,7 @@ export const MonitoringSections = ({ model, memoryPrefix }: Props) => {
         <EmptyState
           icon={CONCEPT_ICONS.monitoring}
           tone={CONCEPT_TONE.monitoring}
-          title="Monitoring needs macOS or Linux."
+          title="Monitoring needs macOS or Linux"
         />
       ) : null}
       {isReady && model.error !== null ? (

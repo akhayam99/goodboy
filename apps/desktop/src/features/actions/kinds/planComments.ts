@@ -36,7 +36,7 @@ export const PLAN_COMMENTS_KIND: ObjectKindDefinition<PlanCommentsActionTarget, 
         when: () => true,
         confirm: ({ facts }) => ({
           title: `Discard ${facts.count}?`,
-          description: 'They are removed from the plan and nothing is sent to the Planner.',
+          description: "They're removed from the plan and nothing is sent to the Planner.",
           confirmLabel: 'Discard',
           role: 'danger',
         }),

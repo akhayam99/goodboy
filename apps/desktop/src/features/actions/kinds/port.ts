@@ -190,7 +190,7 @@ export const PORT_KIND: ObjectKindDefinition<PortActionTarget, PortKindFacts> = 
       pendingLabel: () => 'Stopping',
       doneLabel: () => 'Stopped',
       description: ({ facts }) =>
-        facts.stopProgress === 'still-running' ? 'It did not stop on its own' : null,
+        facts.stopProgress === 'still-running' ? "It didn't stop on its own" : null,
       when: canStop,
       blockedReason: stopBlockedReason,
       confirm: ({ facts }) =>
