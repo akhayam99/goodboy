@@ -18,7 +18,8 @@ import {
   type WorkspaceId,
 } from '@goodboy/types';
 import type { ReportErrorParams } from './slices/notifications/reportError';
-import type { WorkflowRun } from '@goodboy/types';
+import { drainUnexpectedCalls } from '../test/unexpectedCalls';
+import type { BudgetRule, ProviderName, SessionBudget, WorkflowRun } from '@goodboy/types';
 
 const RUNAWAY_SENTENCE = 'Ran 4 times in an hour with no limit set.';
 
@@ -26,6 +27,27 @@ const RUN_LIMIT: Pick<WorkflowRun, 'spendLimitUsd' | 'spendLimitMode'> = {
   spendLimitUsd: 10,
   spendLimitMode: 'pause',
 };
+
+const SESSION_LIMIT: SessionBudget = {
+  sessionId: brandId<SessionId>({ value: 'session-1' }),
+  softCapUsd: 20,
+  onExceed: 'pause',
+  warnRatio: 0.8,
+};
+
+type RuleParams = {
+  readonly provider: ProviderName;
+};
+
+const monthlyRule = ({ provider }: RuleParams): BudgetRule => ({
+  id: `rule-${provider}`,
+  provider,
+  period: 'monthly',
+  capUsd: 50,
+  alertThresholdPct: 80,
+  extraTokensBudget: null,
+  createdAt: brandId<IsoDateTime>({ value: '2026-05-01T00:00:00.000Z' }),
+});
 import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
@@ -188,6 +210,10 @@ describe('sendTurn workflow turn breaker', () => {
     await sendWorkflowTurns(1);
 
     expect(storySpies.runTurn).toHaveBeenCalledTimes(MAX_UNATTENDED_TURNS_PER_AGENT);
+    expect(storySpies.invokeAgentUpdateStatus).toHaveBeenCalledWith(
+      CLUSTER_AGENT_ID,
+      expect.objectContaining({ status: 'blocked', stoppedBy: 'breaker' }),
+    );
     expect(emitNotification).toHaveBeenCalledWith(
       expect.objectContaining({
         kind: 'error',
@@ -237,17 +263,76 @@ describe('sendTurn workflow turn breaker', () => {
     );
   });
 
-  it('lets the fifth workflow turn run when the session has a limit that pauses', async () => {
-    useAppStore.setState({
-      sessionBudgets: {
-        [SESSION_ID]: { sessionId: SESSION_ID, softCapUsd: 20, onExceed: 'pause', warnRatio: 0.8 },
-      },
-    });
+  it('lets the fifth workflow turn run when the session has a limit that pauses, read fresh after a restart', async () => {
+    storySpies.invokeSessionBudgetGet.mockResolvedValue(SESSION_LIMIT);
+    useAppStore.setState({ sessionBudgets: {}, budgetRules: [] });
 
     await sendWorkflowTurns(MAX_UNATTENDED_TURNS_PER_AGENT + 1);
 
     expect(storySpies.runTurn).toHaveBeenCalledTimes(MAX_UNATTENDED_TURNS_PER_AGENT + 1);
-    useAppStore.setState({ sessionBudgets: {} });
+  });
+
+  it('lets the fifth workflow turn run when every provider the turn can use has a monthly limit', async () => {
+    storySpies.invokeBudgetRuleList.mockResolvedValue([monthlyRule({ provider: 'anthropic' })]);
+
+    await sendWorkflowTurns(MAX_UNATTENDED_TURNS_PER_AGENT + 1);
+
+    expect(storySpies.runTurn).toHaveBeenCalledTimes(MAX_UNATTENDED_TURNS_PER_AGENT + 1);
+  });
+
+  it('keeps the breaker when the monthly limit covers another provider only', async () => {
+    storySpies.invokeBudgetRuleList.mockResolvedValue([monthlyRule({ provider: 'openai' })]);
+
+    await sendWorkflowTurns(MAX_UNATTENDED_TURNS_PER_AGENT + 1);
+
+    expect(storySpies.runTurn).toHaveBeenCalledTimes(MAX_UNATTENDED_TURNS_PER_AGENT);
+    expect(emitNotification).toHaveBeenCalledWith(
+      expect.objectContaining({ body: RUNAWAY_SENTENCE }),
+    );
+  });
+
+  it('keeps the breaker and says so when the limits cannot be read', async () => {
+    const reportError = vi.fn<(params: ReportErrorParams) => Promise<void>>(async () => undefined);
+    useAppStore.setState({ reportError });
+    storySpies.invokeSessionBudgetGet.mockRejectedValue(new Error('database is locked'));
+
+    await sendWorkflowTurns(MAX_UNATTENDED_TURNS_PER_AGENT + 1);
+
+    expect(storySpies.runTurn).toHaveBeenCalledTimes(MAX_UNATTENDED_TURNS_PER_AGENT);
+    expect(reportError).toHaveBeenCalledWith(
+      expect.objectContaining({ title: "Couldn't read the spend limits" }),
+    );
+  });
+
+  it('refuses a workflow turn past a session limit that pauses, with no breaker to catch it', async () => {
+    storySpies.invokeSessionBudgetGet.mockResolvedValue(SESSION_LIMIT);
+    useAppStore.setState({
+      sessionBudgets: { [SESSION_ID]: SESSION_LIMIT },
+      budgetAlerts: [
+        {
+          id: 'alert-1',
+          kind: 'session-exceeded',
+          sessionId: SESSION_ID,
+          currentUsd: 21,
+          capUsd: 20,
+          createdAt: NOW,
+        },
+      ],
+    });
+
+    const result = await useAppStore.getState().sendTurn({
+      sessionId: SESSION_ID,
+      agentId: CLUSTER_AGENT_ID,
+      content: 'continue the cluster',
+      origin: 'workflow',
+    });
+
+    expect(result).toEqual({ blockedOverBudget: true });
+    expect(storySpies.runTurn).not.toHaveBeenCalled();
+    expect(drainUnexpectedCalls()).toEqual([
+      'db: updateWorkflowRunOrchestrationStop({}, "run-1", {"kind":"budget","message":"Paused at the $20.00 limit for this session."})',
+    ]);
+    useAppStore.setState({ budgetAlerts: [] });
   });
 
   it('says so when the agent cannot be held, and still sends nothing', async () => {

@@ -167,6 +167,8 @@ export { autoRefusedBlockText, isAutoGateBlock } from './isAutoGateBlock';
 
 export { isAutoBudgetBlock } from './isAutoBudgetBlock';
 
+export { autoBlockShownText } from './autoBlockShownText';
+
 export { LEGACY_GATE_TEXTS } from './legacyGateTexts';
 
 export { AUTO_REFUSAL_TEXT, describeAutoRefusal, type RefusalChild } from './refusalText';

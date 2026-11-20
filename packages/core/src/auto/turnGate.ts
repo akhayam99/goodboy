@@ -5,7 +5,7 @@ export const AUTO_BLOCK_REASONS = ['limit_no_progress', 'budget', 'limit_returns
 export type AutoBlockReason = (typeof AUTO_BLOCK_REASONS)[number];
 
 export const AUTO_BLOCK_TEXT = {
-  limit_no_progress: `The Lead replied ${AUTO_TREE_LIMITS.noProgressStreak} times with no text and no next step.`,
+  limit_no_progress: `The Lead replied ${AUTO_TREE_LIMITS.noProgressStreak} times with no next step.`,
   budget: 'The run reached its limit.',
   limit_returns: `Agents came back to the Lead ${AUTO_TREE_LIMITS.returnsPerTreeWindow} times in ${AUTO_RETURNS_WINDOW_MS / 60_000} minutes with no limit set.`,
 } as const satisfies Readonly<Record<AutoBlockReason, string>>;

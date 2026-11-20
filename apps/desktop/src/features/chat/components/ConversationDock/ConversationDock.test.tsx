@@ -318,11 +318,15 @@ describe('Auto child recovery by outcome', () => {
 
   const renderChild = ({
     outcome,
+    status = 'failed',
+    reason = null,
     failure = null,
     settledAt = null,
     isReplaced = false,
   }: {
     readonly outcome: 'failed' | 'blocked' | 'timed_out' | 'completed';
+    readonly status?: 'failed' | 'stopped';
+    readonly reason?: string | null;
     readonly settledAt?: number | null;
     readonly isReplaced?: boolean;
     readonly failure?: ComponentProps<typeof ConversationDock>['failure'];
@@ -335,6 +339,7 @@ describe('Auto child recovery by outcome', () => {
         outcome,
         settledAt,
       }),
+      reason,
       target: { mountId: 'mount-ledger-drawers' },
     };
     const next = {
@@ -348,7 +353,7 @@ describe('Auto child recovery by outcome', () => {
       sessionPhaseRuns: {
         [session.id]: [
           anAgent({ id: ROOT_ID, kind: 'auto', status: 'running' }),
-          anAgent({ id: AGENT_ID, status: 'failed', parentAgentId: ROOT_ID }),
+          anAgent({ id: AGENT_ID, status, parentAgentId: ROOT_ID }),
         ],
       },
       autoTreeViews: {
@@ -398,6 +403,24 @@ describe('Auto child recovery by outcome', () => {
       });
     },
   );
+
+  it('keeps the silence reason and Retry for a child the silence stopped', async () => {
+    const continueStoppedAgent = renderChild({
+      outcome: 'timed_out',
+      status: 'stopped',
+      reason: 'no_activity',
+    });
+
+    screen.getByText('No output for 30 minutes. Its work is kept.');
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
+    });
+
+    expect(continueStoppedAgent).toHaveBeenCalledWith({
+      sessionId: session.id,
+      agentId: AGENT_ID,
+    });
+  });
 
   it('retries a failed message with its own run after the delegation completed', async () => {
     const retry = vi.fn();

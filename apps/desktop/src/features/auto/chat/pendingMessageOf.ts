@@ -1,4 +1,4 @@
-import { isAutoBudgetBlock } from '@goodboy/core/auto';
+import { autoBlockShownText, isAutoBudgetBlock } from '@goodboy/core/auto';
 import type { AutoTreeView } from '../../../store/slices/auto-view/state';
 import { noteWordOf } from '../tree/noteWordOf';
 
@@ -28,7 +28,9 @@ export const pendingMessageLineOf = ({ view }: Params): PendingMessageLine => {
     return { tone: 'waits', text: noteWordOf({ turn: null }), reason: null, action: null };
   }
   const reason =
-    blockedReason === null || blockedReason === '' ? "The Lead couldn't reply." : blockedReason;
+    blockedReason === null || blockedReason === ''
+      ? "The Lead couldn't reply."
+      : autoBlockShownText({ reason: blockedReason });
   if (isAutoBudgetBlock({ reason: blockedReason })) {
     return { tone: 'notDelivered', text: NOT_DELIVERED, reason, action: 'raiseLimit' };
   }

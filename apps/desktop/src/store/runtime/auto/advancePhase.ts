@@ -7,7 +7,9 @@ import {
   type AutoPhase,
   type AutoTree,
 } from '@goodboy/db';
+import { queuedStartableOf } from './slots/queuedStartableOf';
 import { readFreeSlots } from './slots/readFreeSlots';
+import { readLiveDelegationIds } from './slots/readLiveDelegationIds';
 import type { AgentVerbContext } from './verbContext';
 
 export type AdvancePhaseParams = Readonly<{
@@ -72,11 +74,12 @@ const targetPhaseOf = ({
 type LaunchableParams = {
   readonly open: ReadonlyArray<AutoDelegation>;
   readonly free: number;
+  readonly liveIds: ReadonlySet<string>;
 };
 
-const launchableCountOf = ({ open, free }: LaunchableParams): number => {
+const launchableCountOf = ({ open, free, liveIds }: LaunchableParams): number => {
   const starting = open.filter((delegation) => delegation.state === 'starting').length;
-  const queued = open.filter((delegation) => delegation.state === 'accepted').length;
+  const queued = queuedStartableOf({ open, liveIds, launching: new Set() }).length;
   return starting + Math.min(queued, free);
 };
 
@@ -122,6 +125,7 @@ export const advancePhase = async ({ ctx, treeId }: AdvancePhaseParams): Promise
     launchableCount: launchableCountOf({
       open,
       free: await readFreeSlots({ db: ctx.db, treeId }),
+      liveIds: await readLiveDelegationIds({ db: ctx.db, treeId }),
     }),
     pendingResultsCount: pending.filter((row) => row.kind === 'results').length,
     pendingCount: pending.length,

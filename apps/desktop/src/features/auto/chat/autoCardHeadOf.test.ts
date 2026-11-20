@@ -7,7 +7,7 @@ const OUTCOMES: ReadonlyArray<{ outcome: AutoOutcome; word: string }> = [
   { outcome: 'failed', word: 'Failed' },
   { outcome: 'blocked', word: 'Needs you' },
   { outcome: 'stopped', word: 'Stopped' },
-  { outcome: 'timed_out', word: 'Failed' },
+  { outcome: 'timed_out', word: 'Needs you' },
 ];
 const ASKS: ReadonlyArray<AutoDelegation['state']> = ['paused', 'awaiting_confirm'];
 

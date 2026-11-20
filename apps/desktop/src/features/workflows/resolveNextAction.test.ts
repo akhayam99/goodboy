@@ -141,6 +141,19 @@ describe('resolveNextAction', () => {
     });
   });
 
+  it('says the step ran too often with no limit when the breaker held it, after a reload too', () => {
+    const agents = stepAgents('completed', 'blocked', 'pending').map((agent): Agent =>
+      agent.status === 'blocked' ? { ...agent, stoppedBy: 'breaker' } : agent,
+    );
+
+    expect(resolve({ agents })).toMatchObject({
+      kind: 'recover',
+      isBlocked: true,
+      sentence:
+        'Implement: Ran 4 times in an hour with no limit set. Set a limit or tell it what to do next.',
+    });
+  });
+
   it('never raises a recovery for a step you stopped yourself', () => {
     expect(resolve({ agents: stepAgents('completed', 'stopped', 'pending') })).toEqual({
       kind: 'none',

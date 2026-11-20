@@ -8,8 +8,7 @@ import { releaseUnstartedTurn } from './unstartedTurn/releaseUnstartedTurn';
 import { closeTurnStartWindow } from './turnStartWindow';
 import { markTurnActive, markTurnSettled, waitTurnSettledFor } from './turnSettled';
 import { watchStepEnd } from '../workflows/stepEnd/watchStepEnd';
-import { claimWorkflowTurn } from './workflowTurnBreaker';
-import { isAgentRunLimited } from './runawayBreaker/isAgentRunLimited';
+import { admitWorkflowTurn } from './runawayBreaker/admitWorkflowTurn';
 import { resetMountContinuationChain } from './mountContinuations';
 import type { GetFn, SendTurnResult, SetFn, SendTurnInput, TurnLease } from './types';
 import { prepareTurn } from './prepareTurn';
@@ -51,6 +50,8 @@ const NO_KNOWN_RUN = null;
 const OPERATOR_SETTLE_WAIT_MS = 30_000;
 
 const ALREADY_SENT: SendTurnResult = { blockedOverBudget: false, isAlreadySent: true };
+
+const OVER_LIMIT: SendTurnResult = { blockedOverBudget: true };
 
 export const sendTurn = (set: SetFn, get: GetFn) => {
   const runOnce = async ({ input: given, lease }: RunOnceParams): Promise<SendTurnResult> => {
@@ -180,19 +181,23 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
       await stopLingeringTurn({ agentId: input.agentId });
       await waitTurnSettledFor({ agentId: input.agentId, ms: OPERATOR_SETTLE_WAIT_MS });
     }
-    if (
-      input.agentId !== undefined &&
-      input.origin === 'workflow' &&
-      !isAgentRunLimited({ get, sessionId: input.sessionId, agentId: input.agentId })
-    ) {
-      const claim = claimWorkflowTurn({ agentId: input.agentId, nowMs: Date.now() });
-      if (claim === 'tripped') {
+    if (input.agentId !== undefined && input.origin === 'workflow') {
+      const admission = await admitWorkflowTurn({
+        set,
+        get,
+        sessionId: input.sessionId,
+        agentId: input.agentId,
+      });
+      if (admission === 'tripped') {
         return haltRunawayWorkflowAgent({
           set,
           get,
           sessionId: input.sessionId,
           agentId: input.agentId,
         });
+      }
+      if (admission === 'overLimit') {
+        return OVER_LIMIT;
       }
     }
     const callerDeliveryId = handDelivery.isHandSent({ input }) ? input.deliveryId : undefined;

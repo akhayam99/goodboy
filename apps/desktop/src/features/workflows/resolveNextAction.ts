@@ -4,6 +4,7 @@ import type { WorkflowAdvanceState } from './advanceGate';
 import { isWorkflowRunClosedByUser } from './isWorkflowRunClosedByUser';
 import { attachedQuestionsFor } from '../session/timeline/attachedQuestions';
 import { isQuestionDelegate } from '../context/questionDelegate';
+import { RUNAWAY_SENTENCE } from './runawaySentence';
 
 export type NextAction =
   | { readonly kind: 'none' }
@@ -160,9 +161,12 @@ const recoverAction = ({
     subjectAgentId: failedAgent.id,
     step,
     isBlocked,
-    sentence: isBlocked
-      ? `${step.name} stopped without finishing and without asking you anything. Tell it what to do next.`
-      : `${step.name} stopped before finishing.`,
+    sentence:
+      failedAgent.stoppedBy === 'breaker'
+        ? `${step.name}: ${RUNAWAY_SENTENCE} Set a limit or tell it what to do next.`
+        : isBlocked
+          ? `${step.name} stopped without finishing and without asking you anything. Tell it what to do next.`
+          : `${step.name} stopped before finishing.`,
     cause: waitingCause({ workflow, step, isDynamic: run.executionMode === 'dynamic' }),
   };
 };

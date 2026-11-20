@@ -11,6 +11,7 @@ import {
   type AutoDelegation,
   type Statement,
 } from '@goodboy/db';
+import { parentWaitsStatement } from './parentWaitsStatement';
 
 type Params = {
   readonly delegation: AutoDelegation;
@@ -41,17 +42,25 @@ export const runSlotStatements = ({
     },
   ];
   if (parent !== null) {
-    statements.push({
-      sql: `SELECT 1 FROM auto_delegations parent
-        WHERE parent.id = ? AND parent.state = 'paused'
-          AND (SELECT COUNT(*) FROM auto_delegations helper
-                WHERE helper.tree_id = parent.tree_id
-                  AND helper.state IN ('starting', 'running', 'paused')
-                  AND json_extract(helper.request_json, '$.parent.delegationId') = parent.id) < ?`,
-      params: [parent.delegationId, AUTO_SUBSTEPS_PER_PARENT],
-      abortWhen: 'noRows',
-      abortCode: slotAbortCode,
-    });
+    statements.push(
+      parentWaitsStatement({
+        parentId: parent.delegationId,
+        questionId: parent.questionId,
+        abortWhen: 'noRows',
+        abortCode: slotAbortCode,
+      }),
+      {
+        sql: `SELECT 1 WHERE (SELECT COUNT(DISTINCT helper.id) FROM auto_delegations helper
+            JOIN auto_attempts live ON live.delegation_id = helper.id
+            WHERE helper.tree_id = ?
+              AND helper.state IN ('starting', 'running', 'paused')
+              AND live.state IN ('starting', 'running')
+              AND json_extract(helper.request_json, '$.parent.delegationId') = ?) < ?`,
+        params: [delegation.treeId, parent.delegationId, AUTO_SUBSTEPS_PER_PARENT],
+        abortWhen: 'noRows',
+        abortCode: slotAbortCode,
+      },
+    );
   }
   statements.push(
     autoTakeRunSlotStatement({

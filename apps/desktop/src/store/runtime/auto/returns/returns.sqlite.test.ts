@@ -864,4 +864,30 @@ describe('the caps on returns', () => {
     expect(world.state.ports.autoTurns).toHaveLength(2);
     expect(lastAutoText({ world })).toContain('WAITING FOR YOUR DECISION');
   });
+
+  it('moves a spend pause to the returns pause when the limit is removed, and Retry delivers it', async () => {
+    const world = await startWith({ children: [LEDGER, NOTIFY] });
+    await fillReturnWindow({ world });
+    await world.state.world.db.execute(`UPDATE auto_trees SET cap_usd = 0.0001`);
+
+    await childReturns({ world, index: 0 });
+    expect(await treeOf({ world })).toMatchObject({
+      phase: 'blocked',
+      blockedReason: AUTO_BLOCK_TEXT.budget,
+    });
+
+    await dropLimit({ world });
+    await world.runtime.drive(world.treeId);
+    await world.runtime.settled();
+
+    const tree = await treeOf({ world });
+    expect(tree.phase).toBe('blocked');
+    expect(tree.blockedReason).toBe(AUTO_BLOCK_TEXT.limit_returns);
+    expect(world.state.ports.autoTurns).toHaveLength(1);
+
+    expect(await world.runtime.retry(world.treeId)).toMatchObject({ kind: 'retried' });
+    await world.runtime.settled();
+
+    expect(world.state.ports.autoTurns).toHaveLength(2);
+  });
 });

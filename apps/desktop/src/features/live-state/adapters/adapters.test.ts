@@ -492,27 +492,49 @@ describe('autoChildLive', () => {
     {
       outcome: 'failed',
       reason: 'process_error',
+      state: 'failed',
       phrase: 'Failed: The agent ended with an error.',
     },
     {
       outcome: 'failed',
       reason: 'agent_not_created:x',
+      state: 'failed',
       phrase: 'Failed: The agent did not finish.',
     },
-    { outcome: 'failed', reason: null, phrase: 'Failed: The agent did not finish.' },
-    { outcome: 'timed_out', reason: null, phrase: 'Failed: The agent ran out of time.' },
-  ] as const)('reads $outcome with reason $reason as a sentence', ({ outcome, reason, phrase }) => {
-    const facts = autoChildLive({
-      delegation: { state: 'settled', outcome, reason, result: null },
-      isReplaced: false,
-      turn: null,
-      agent: IDLE_AGENT,
-      lastTool: null,
-      project: null,
-    });
-    expect(facts).toMatchObject({ state: 'failed', phrase });
-    expect(facts?.phrase).not.toContain('_');
-  });
+    {
+      outcome: 'failed',
+      reason: null,
+      state: 'failed',
+      phrase: 'Failed: The agent did not finish.',
+    },
+    {
+      outcome: 'timed_out',
+      reason: null,
+      state: 'needsYou',
+      phrase: 'Needs you: The agent ran out of time.',
+    },
+    {
+      outcome: 'timed_out',
+      reason: 'no_activity',
+      state: 'needsYou',
+      phrase: 'Needs you: No output for 30 minutes. Its work is kept.',
+    },
+  ] as const)(
+    'reads $outcome with reason $reason as a sentence',
+    ({ outcome, reason, state, phrase }) => {
+      const facts = autoChildLive({
+        delegation: { state: 'settled', outcome, reason, result: null },
+        isReplaced: false,
+        turn: null,
+        agent: IDLE_AGENT,
+        lastTool: null,
+        project: null,
+      });
+      expect(facts).toMatchObject({ state, phrase });
+      expect(facts?.actions.map((action) => action.id)).toEqual(['retryThroughAuto']);
+      expect(facts?.phrase).not.toContain('_');
+    },
+  );
 });
 
 describe('operation adapters', () => {

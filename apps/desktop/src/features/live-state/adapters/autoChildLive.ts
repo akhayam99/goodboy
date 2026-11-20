@@ -2,6 +2,7 @@ import { NAMES } from '../../../shared/utils/names';
 import type { AutoDelegation, AutoOutcome } from '@goodboy/db';
 import type { Agent, TurnState } from '@goodboy/types';
 import { autoSettledStateOf } from '../../auto/autoSettledStateOf';
+import { settledStatusOf } from '../../auto/chat/settledStatusOf';
 import { closedSentenceOf } from '../../auto/closedSentenceOf';
 import { delegationClosedOf } from '../../auto/delegationClosedOf';
 import { delegationSentenceOf } from '../../auto/delegationSentenceOf';
@@ -124,7 +125,13 @@ export const autoChildLive = ({
         : returnedFactsOf({ delegation });
     }
     const sentence = delegationSentenceOf({ delegation }) ?? FAILURE_SENTENCE[delegation.outcome];
-    return { state: 'failed', phrase: `Failed: ${sentence}`, startedAt: null, actions: RETRY };
+    const word = settledStatusOf({ outcome: delegation.outcome }).word;
+    return {
+      state: delegation.outcome === 'timed_out' ? 'needsYou' : 'failed',
+      phrase: `${word}: ${sentence}`,
+      startedAt: null,
+      actions: RETRY,
+    };
   }
   if (delegation.state === 'accepted') {
     return QUEUED;

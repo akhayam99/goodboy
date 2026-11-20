@@ -1,9 +1,10 @@
-import type { BudgetRule, SessionBudget, WorkflowRun } from '@goodboy/types';
+import type { BudgetRule, ProviderName, SessionBudget, WorkflowRun } from '@goodboy/types';
 
 type Params = {
   readonly run: WorkflowRun | null;
   readonly sessionBudget: SessionBudget | null;
   readonly budgetRules: ReadonlyArray<BudgetRule>;
+  readonly providers: ReadonlyArray<ProviderName>;
 };
 
 type AmountParams = {
@@ -13,7 +14,12 @@ type AmountParams = {
 const isLimitAmount = ({ usd }: AmountParams): boolean =>
   usd != null && Number.isFinite(usd) && usd > 0;
 
-export const isWorkflowRunLimited = ({ run, sessionBudget, budgetRules }: Params): boolean => {
+export const isWorkflowRunLimited = ({
+  run,
+  sessionBudget,
+  budgetRules,
+  providers,
+}: Params): boolean => {
   if (
     run !== null &&
     isLimitAmount({ usd: run.spendLimitUsd }) &&
@@ -28,5 +34,10 @@ export const isWorkflowRunLimited = ({ run, sessionBudget, budgetRules }: Params
   ) {
     return true;
   }
-  return budgetRules.some((rule) => isLimitAmount({ usd: rule.capUsd }));
+  return (
+    providers.length > 0 &&
+    providers.every((provider) =>
+      budgetRules.some((rule) => rule.provider === provider && isLimitAmount({ usd: rule.capUsd })),
+    )
+  );
 };

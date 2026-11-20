@@ -71,7 +71,9 @@ type BlockParams = {
 };
 
 const blockTree = async ({ ctx, tree, reason }: BlockParams): Promise<DeliverOutcome> => {
-  if (tree.phase === 'blocked') {
+  const isBlockKept =
+    tree.blockedReason === reason || !isAutoBudgetBlock({ reason: tree.blockedReason });
+  if (tree.phase === 'blocked' && isBlockKept) {
     return { kind: 'idle', reason: 'blocked' };
   }
   await ctx.scheduler.transition({

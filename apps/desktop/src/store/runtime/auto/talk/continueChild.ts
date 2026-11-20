@@ -2,12 +2,14 @@ import {
   AUTO_BLOCK_TEXT,
   admissionChildRefusals,
   autoRefusalUserReason,
+  autoRemainingForGates,
   type AdmissionChild,
   type AdmissionSnapshot,
   type AutoRefusalCode,
   type DelegateChildSpec,
 } from '@goodboy/core/auto';
 import {
+  AUTO_USD_EPSILON,
   autoAdmissionArtifactAbort,
   autoContinueTreeStatement,
   getAutoTree,
@@ -15,6 +17,7 @@ import {
   insertAutoDelegationStatement,
   insertAutoReservationStatement,
   listAutoDelegations,
+  readAutoTreeSpend,
   type AutoDelegation,
   type AutoTree,
 } from '@goodboy/db';
@@ -86,6 +89,8 @@ const FILES_MESSAGE =
   'An agent the Lead started takes text in a message, not files yet. Send the text alone.';
 
 const BUSY_MESSAGE = `${AUTO_BLOCK_TEXT.budget} Raise limit, then write to this agent again.`;
+
+const RETRY_MESSAGE = 'The Lead could not take your message just now. Send it again.';
 
 const REASON_OF = {
   auto: 'The Lead continues this agent with new instructions.',
@@ -414,7 +419,12 @@ export const continueChild = async ({
   });
   if (outcome.status === 'aborted') {
     if (outcome.abortCode === treeStatement.abortCode) {
-      return continueRefused({ code: 'tree_busy', message: BUSY_MESSAGE });
+      const spend = await readAutoTreeSpend({ db: ctx.db, treeId: tree.id });
+      const isSpent = spend?.capUsd != null && autoRemainingForGates({ spend }) <= AUTO_USD_EPSILON;
+      return continueRefused({
+        code: 'tree_busy',
+        message: isSpent ? BUSY_MESSAGE : RETRY_MESSAGE,
+      });
     }
     if (outcome.abortCode === ABORT_DELEGATION) {
       return { kind: 'working', delegationId: delegation.id };

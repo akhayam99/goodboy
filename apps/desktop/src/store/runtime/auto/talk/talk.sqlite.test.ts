@@ -10,6 +10,7 @@ import { AUTO_SEED_SESSION } from '@goodboy/db/test-helpers/auto-seeds';
 import { brandId, type AgentId, type ArtifactId, type IsoDateTime } from '@goodboy/types';
 import { delegationContinueOf } from '../../../../features/auto/delegationContinueOf';
 import { writeAutoLevel } from '../level/writeAutoLevel';
+import { continueChild } from './continueChild';
 import { registerPlan } from '../testing/autoWorld';
 import {
   autoCommand,
@@ -234,6 +235,40 @@ describe('a person writes to a child Auto started', () => {
     expect(
       continued === undefined ? null : delegationContinueOf({ delegation: continued }),
     ).toEqual({ from: 'user', text: 'Why did you skip the tests folder?' });
+  });
+
+  it('says Raise limit only when the run is out of money, and Send it again when the tree moved on', async () => {
+    const world = await settledScout();
+    const original = await onlyDelegation(world);
+    const { db } = world.state.ctx;
+    const racedDb = {
+      ...db,
+      transaction: async (params: Parameters<typeof db.transaction>[0]) => {
+        await db.execute('UPDATE auto_trees SET generation = generation + 1');
+        return db.transaction(params);
+      },
+    };
+    const write = (ctx: typeof world.state.ctx) =>
+      continueChild({
+        ctx,
+        childAgentId: original.childAgentId,
+        text: 'Why did you skip the tests folder?',
+        from: 'user',
+        sleep: async () => undefined,
+      });
+
+    expect(await write({ ...world.state.ctx, db: racedDb })).toEqual({
+      kind: 'refused',
+      code: 'tree_busy',
+      message: 'The Lead could not take your message just now. Send it again.',
+    });
+
+    await db.execute('UPDATE auto_trees SET generation = generation - 1, cap_usd = 0.0001');
+    expect(await write(world.state.ctx)).toEqual({
+      kind: 'refused',
+      code: 'tree_busy',
+      message: 'The run reached its limit. Raise limit, then write to this agent again.',
+    });
   });
 
   it('keeps the plain turn for an agent outside Auto and waits on a working child', async () => {

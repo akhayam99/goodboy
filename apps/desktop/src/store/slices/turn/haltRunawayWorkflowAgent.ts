@@ -1,8 +1,8 @@
 import type { AgentId, IsoDateTime, SessionId } from '@goodboy/types';
 import { invokeAgentList, invokeAgentUpdateStatus } from '../../../features/workflows/workflows';
+import { RUNAWAY_SENTENCE } from '../../../features/workflows/runawaySentence';
 import { NAMES } from '../../../shared/utils/names';
 import { CHECK_STATE } from '../notifications/errorRecovery';
-import { MAX_UNATTENDED_TURNS_PER_AGENT } from './workflowTurnBreaker';
 import type { GetFn, SetFn } from './types';
 import { NOT_BLOCKED } from './notBlocked';
 
@@ -13,8 +13,6 @@ type Params = Readonly<{
   agentId: AgentId;
 }>;
 
-const RUNAWAY_SENTENCE = `Ran ${MAX_UNATTENDED_TURNS_PER_AGENT} times in an hour with no limit set.`;
-
 export const haltRunawayWorkflowAgent = async ({ set, get, sessionId, agentId }: Params) => {
   const name =
     (get().sessionPhaseRuns[sessionId] ?? []).find((run) => run.id === agentId)?.name ?? 'agent';
@@ -22,6 +20,7 @@ export const haltRunawayWorkflowAgent = async ({ set, get, sessionId, agentId }:
     await invokeAgentUpdateStatus(agentId, {
       status: 'blocked',
       completedAt: new Date().toISOString() as IsoDateTime,
+      stoppedBy: 'breaker',
     });
   } catch (error) {
     void get().reportError({

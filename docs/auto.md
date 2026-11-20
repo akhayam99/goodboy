@@ -888,14 +888,16 @@ the run left behind, or, with nothing stored, blocks with "The Lead stopped answ
 before it replied. Retry sends your message again." and puts the message back.
 
 The block texts live in `turnGate.ts` and say Lead: "The Lead replied 3 times
-with no text and no next step.", "The run reached its limit." and "Agents came
+with no next step.", "The run reached its limit." and "Agents came
 back to the Lead 6 times in 30 minutes with no limit set.". The text is the
 stored `blocked_reason`, so every text an older build wrote stays in
 `LEGACY_GATE_TEXTS` (`packages/core/src/auto/legacyGateTexts.ts`).
 `isAutoGateBlock` and `isAutoBudgetBlock` read old and new texts alike: a tree
 blocked by an old text survives a restart without a retry, and one blocked at
 the old spend limit text still resumes once the limit is raised
-(`legacyGateTexts.sqlite.test.ts`). A build older than this one does not know
+(`legacyGateTexts.sqlite.test.ts`). The tail and the line under a waiting message
+show an old text in the current words (`autoBlockShownText`) and keep the stored one as
+it is, so its action does not move (`legacyBlockReaders.test.ts`). A build older than this one does not know
 the new texts, and retries such a tree at its first start.
 
 A tree blocked by a guard other than a limit reads **Failed** on every surface
@@ -986,7 +988,9 @@ stops it is a guard that protects the user:
   run with no limit only: the sixth return row carries `isOverWindow`, and `deliverNext` blocks the
   tree with `AUTO_BLOCK_TEXT.limit_returns` only when the tree has no spend cap. With a cap, the cap
   is what stops a loop that costs too much, and any number of returns reaches the Lead. **Retry**
-  clears the mark and delivers it.
+  clears the mark and delivers it. A tree blocked on its spend limit whose limit is removed
+  while such a return waits moves to the returns block (`blockTree` replaces a budget block, never
+  another one), so it reads Retry instead of Raise limit.
 
 A batch has any number of children and is never refused for its size or for the agents
 already running. At most `AUTO_MAX_RUNNING_CHILDREN` (4) children run at once, because each
@@ -1052,7 +1056,8 @@ closed is never expired on load. A tool call that started and has not ended
 (`hasAgentOpenToolCall`, a long build or test run) counts as activity, bounded by
 the CLI's own tool timeout. Such a child settles `timed_out` with the reason
 `no_activity` and reads **Needs you**, never **Stopped** (that word means you
-stopped it). Its page says "No output for 30 minutes. Its work is kept." with
+stopped it), even though the cancel marks the agent stopped (`isAgentStopDeliberate`; the card
+head and the tail read the word from `settledStatusOf`). Its page says "No output for 30 minutes. Its work is kept." with
 **Retry**, and the Lead can continue it with `retryOf` as above. A child paused on
 a question has no clock at all: it waits for you or the Lead, however long. The
 `deadline_at` column stays in `auto_delegations` (it is `NOT NULL`), written and
@@ -1884,11 +1889,15 @@ refusal still reads. A user message bumps the generation first, so the admit com
 `generation_changed`.
 
 A paused delegation holds no running slot, so four paused parents can each get a helper. At most
-`AUTO_SUBSTEPS_PER_PARENT` (2) helpers of one parent run at once, counted among the ones not
-finished: a third waits in `accepted` and reads **Queued**, and starts when one of the two
-finishes (`queuedToStartOf` in `launchChildren`, and the guard in `runSlotStatements`). A queued
-helper whose parent no longer waits on its question (it was answered, finished or stopped) leaves:
-`dropOrphanHelpers` settles it `stopped` with the reason `parent_ended` before it ever starts. The
+`AUTO_SUBSTEPS_PER_PARENT` (2) helpers of one parent run at once, counted by their live attempts,
+so a helper that finished or asked a question frees its place before its batch joins: a third
+waits in `accepted` and reads **Queued**, and starts when one of the two ends
+(`queuedStartableOf`, shared by `launchChildren` and `advancePhase`, so a held helper never keeps
+the tree in `delegating`, and the guard in `runSlotStatements`, which also checks that the parent's
+latest attempt still waits on the helper's question). A helper not started yet, queued or waiting
+for your OK, whose parent no longer waits on its question (it was answered, asked another one,
+finished or stopped) leaves: `dropOrphanHelpers` settles it `stopped` with the reason
+`parent_ended`, a result for the Lead and its reservation released, in one transaction. The
 answer to a parent is always admitted: the parent waits in `accepted` and takes the next free slot,
 so the helper's slot passes back to it. A paused parent never times out. Cost per
 ask: one delegation and two attempts from the tree's counters and budget; the digest and the question

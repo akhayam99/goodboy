@@ -1,11 +1,9 @@
 import {
-  AUTO_SUBSTEPS_PER_PARENT,
   composeAnswerKickoff,
   isAutoProviderResuming,
   isAutoWriterRole,
   launchGuardBriefOf,
   storedLaunchGuardOf,
-  substepLinkOf,
   type AutoDelegationRole,
 } from '@goodboy/core/auto';
 import {
@@ -32,7 +30,9 @@ import { readLaunchPermissions } from './level/readLaunchPermissions';
 import type { ChildMountTarget, ChildStartOutcome, ChildTurnEnded } from './ports';
 import { routedModelOf } from '../../slices/turn/childTurn/routedModelOf';
 import { dropOrphanHelpers } from './slots/dropOrphanHelpers';
+import { queuedStartableOf } from './slots/queuedStartableOf';
 import { readFreeSlots } from './slots/readFreeSlots';
+import { readLiveDelegationIds } from './slots/readLiveDelegationIds';
 import { startQueuedAttempt } from './slots/startQueuedAttempt';
 import { readSnapshot } from './readSnapshot';
 import type { AgentVerbContext } from './verbContext';
@@ -55,44 +55,14 @@ const LAUNCH_PHASES: ReadonlyArray<AutoTree['phase']> = ['delegating', 'waiting'
 type QueuedParams = {
   readonly open: ReadonlyArray<AutoDelegation>;
   readonly free: number;
+  readonly liveIds: ReadonlySet<string>;
 };
 
-const HELPER_BUSY_STATES: ReadonlyArray<AutoDelegation['state']> = [
-  'starting',
-  'running',
-  'paused',
-];
-
-const queuedToStartOf = ({ open, free }: QueuedParams): ReadonlyArray<AutoDelegation> => {
+const queuedToStartOf = ({ open, free, liveIds }: QueuedParams): ReadonlyArray<AutoDelegation> => {
   const claiming = open.filter(
     (delegation) => delegation.state === 'accepted' && launching.has(delegation.id),
   ).length;
-  const busyHelpers = new Map<string, number>();
-  for (const delegation of open) {
-    const parent = substepLinkOf({ request: delegation.request });
-    if (
-      parent !== null &&
-      (HELPER_BUSY_STATES.includes(delegation.state) || launching.has(delegation.id))
-    ) {
-      busyHelpers.set(parent.delegationId, (busyHelpers.get(parent.delegationId) ?? 0) + 1);
-    }
-  }
-  const startable = open.filter((delegation) => {
-    if (delegation.state !== 'accepted' || launching.has(delegation.id)) {
-      return false;
-    }
-    const parent = substepLinkOf({ request: delegation.request });
-    if (parent === null) {
-      return true;
-    }
-    const busy = busyHelpers.get(parent.delegationId) ?? 0;
-    if (busy >= AUTO_SUBSTEPS_PER_PARENT) {
-      return false;
-    }
-    busyHelpers.set(parent.delegationId, busy + 1);
-    return true;
-  });
-  return startable.slice(0, Math.max(0, free - claiming));
+  return queuedStartableOf({ open, liveIds, launching }).slice(0, Math.max(0, free - claiming));
 };
 
 type MountTargetParams = {
@@ -361,7 +331,11 @@ export const launchChildren = async ({
     ...open.filter(
       (delegation) => delegation.state === 'starting' && !launching.has(delegation.id),
     ),
-    ...queuedToStartOf({ open, free: await readFreeSlots({ db: ctx.db, treeId }) }),
+    ...queuedToStartOf({
+      open,
+      free: await readFreeSlots({ db: ctx.db, treeId }),
+      liveIds: await readLiveDelegationIds({ db: ctx.db, treeId }),
+    }),
   ];
   for (const delegation of launchable) {
     launching.add(delegation.id);
