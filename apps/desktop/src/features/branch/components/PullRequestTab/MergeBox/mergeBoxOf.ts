@@ -303,7 +303,7 @@ const unpushedPart = ({ unpushed }: Pick<Params, 'unpushed'>): Part =>
             one: 'commit not pushed',
             many: 'commits not pushed',
           }),
-          detail: "The pull request doesn't have them yet",
+          detail: "Origin doesn't have them yet",
           tone: 'warning',
           opens: 'commits',
         },

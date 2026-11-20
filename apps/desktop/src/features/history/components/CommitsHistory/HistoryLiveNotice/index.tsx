@@ -41,7 +41,7 @@ export const HistoryLiveNotice = ({ sessionId, mountId, live }: Props) => {
       role="alert"
       placement="inline"
       tone="warning"
-      title={live.shouldStashFiles ? 'Set your files aside first' : 'Could not edit the history'}
+      title={live.shouldStashFiles ? 'Set your files aside first' : "Couldn't edit the history"}
       body={live.error}
       actions={
         <>

@@ -1,9 +1,11 @@
 import { useState } from 'react';
+import { REVIEW_SOURCE_LABEL } from '@goodboy/core/review-source';
 import { Button } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { PromptField } from '../../../../shared/components/PromptField';
 import { useAppStore } from '../../../../store';
 import { launchKeyOf } from '../../../../store/slices/resolve/resolveLaunch';
+import { requestHostOf } from '../../../../store/slices/review-source/requestHostOf';
 import { OUTCOME_ACTION } from '../../commentOutcomeCopy';
 import type { ReviewEntry } from '../ReviewFlow/useReviewEntries';
 import { useOutcomeRun } from './useOutcomeRun';
@@ -19,6 +21,7 @@ export const OutcomeQuestion = ({ sessionId, entry, text, isNote }: Props) => {
   const answerQuestions = useAppStore((s) => s.answerQuestions);
   const refuseResolveQueueItem = useAppStore((s) => s.refuseResolveQueueItem);
   const publishThreadNow = useAppStore((s) => s.publishThreadNow);
+  const host = useAppStore((state) => requestHostOf({ state, sessionId }));
   const [answer, setAnswer] = useState('');
   const { isBusy, error, run } = useOutcomeRun();
   const { attempt, item, thread } = entry.row;
@@ -70,7 +73,7 @@ export const OutcomeQuestion = ({ sessionId, entry, text, isNote }: Props) => {
         </Button>
         {!isNote && (
           <Button size="sm" variant="ghost" disabled={isBusy} onClick={() => void run(askOnHost)}>
-            {OUTCOME_ACTION.askOnHost}
+            {`Ask on ${REVIEW_SOURCE_LABEL[host]}`}
           </Button>
         )}
       </div>

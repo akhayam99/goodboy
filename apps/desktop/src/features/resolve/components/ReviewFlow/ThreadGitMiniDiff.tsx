@@ -24,7 +24,7 @@ export const ThreadGitMiniDiff = ({ sessionId, entry }: Props) => {
   if (hasFailed) {
     return (
       <p role="status" className="text-meta text-muted-foreground">
-        Could not read this commit
+        Couldn't read this commit
       </p>
     );
   }

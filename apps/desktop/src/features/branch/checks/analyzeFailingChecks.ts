@@ -95,7 +95,7 @@ const start = async ({
       target,
     );
     if (files.exitCode !== 0) {
-      throw new Error('Could not read the pull request paths. Refresh and try Analyze again.');
+      throw new Error("Couldn't read the pull request paths. Refresh and try Analyze again.");
     }
     paths = files.stdout.split('\n').filter((path) => path.length > 0);
   }

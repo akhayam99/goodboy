@@ -46,7 +46,7 @@ describe('useExploreListing', () => {
     const { result } = renderHook(() => useExploreListing({ sessionDir: '' }));
 
     expect(result.current.listing.errorByPath[EXPLORE_ROOT_PATH]).toBe(
-      'Session folder is not available yet.',
+      "Session folder isn't available yet.",
     );
   });
 });

@@ -88,7 +88,7 @@ const ADVANCING = new Set([
 ]);
 
 const COULD_NOT_SEND =
-  'This comment is no longer on the pull request, so the agent cannot be asked about it';
+  "This comment is no longer on the pull request, so the agent can't be asked about it";
 
 const nextOpenAfter = ({
   entries,

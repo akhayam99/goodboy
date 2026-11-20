@@ -83,7 +83,7 @@ export const useHistoryChangeReview = ({ sessionId, mountId }: Params) => {
             (file) => run.stop?.files.includes(file.path) === true,
           );
           if (files.length !== run.stop?.files.length) {
-            throw new Error('The kept change could not be read completely.');
+            throw new Error("The kept change couldn't be read completely.");
           }
           setExpansion({ run, files });
         },

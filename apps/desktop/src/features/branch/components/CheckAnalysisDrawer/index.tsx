@@ -173,7 +173,9 @@ export const CheckAnalysisDrawer = ({ sessionId, mountId, checkUrl, onClose }: P
           </DrawerSection>
           <DrawerSection label="What it was given" isCollapsible>
             {given === null ? (
-              <p className="text-body text-muted-foreground">The kickoff is not available.</p>
+              <p className="text-body text-muted-foreground">
+                Goodboy didn&apos;t keep what this run was given.
+              </p>
             ) : (
               <GivenFacts text={given} />
             )}

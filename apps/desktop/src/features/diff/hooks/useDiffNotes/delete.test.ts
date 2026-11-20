@@ -97,4 +97,41 @@ describe('useDiffNotes delete', () => {
     expect(storySpies.insertDiffComment).not.toHaveBeenCalled();
     expect(storySpies.restoreDiffComment).toHaveBeenCalledWith(expect.anything(), NOTE);
   });
+
+  it('says the delete failed and records no Undo when the write is refused', async () => {
+    const reportError = vi.fn();
+    useAppStore.setState({ reportError });
+    storySpies.deleteDiffComment.mockRejectedValueOnce(new Error('database is locked'));
+    const { result } = renderHook(() => useDiffNotes({ sessionId: SESSION_ID }), {
+      wrapper: ToastProvider,
+    });
+
+    await act(async () => {
+      result.current.onDelete?.('n1');
+      await Promise.resolve();
+    });
+
+    expect(useAppStore.getState().undoStack).toHaveLength(0);
+    expect(reportError).toHaveBeenCalledWith(
+      expect.objectContaining({ title: "Couldn't delete the comment", sessionId: SESSION_ID }),
+    );
+  });
+
+  it('says the comment was not saved when the write is refused', async () => {
+    const reportError = vi.fn();
+    useAppStore.setState({ reportError });
+    storySpies.insertDiffComment.mockRejectedValueOnce(new Error('database is locked'));
+    const { result } = renderHook(() => useDiffNotes({ sessionId: SESSION_ID }), {
+      wrapper: ToastProvider,
+    });
+
+    await act(async () => {
+      result.current.onSubmit('src/ledger.ts', null, 'Round the fee before the split');
+      await Promise.resolve();
+    });
+
+    expect(reportError).toHaveBeenCalledWith(
+      expect.objectContaining({ title: "Couldn't save the comment", sessionId: SESSION_ID }),
+    );
+  });
 });

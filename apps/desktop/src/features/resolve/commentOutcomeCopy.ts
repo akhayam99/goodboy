@@ -31,7 +31,6 @@ export const OUTCOME_ACTION = {
   closeNote: 'Close comment',
   resolveWithoutReply: 'Resolve without reply',
   answer: 'Answer',
-  askOnHost: 'Ask on GitHub',
   retry: 'Retry',
   reply: 'Reply',
   answerField: 'Your answer',

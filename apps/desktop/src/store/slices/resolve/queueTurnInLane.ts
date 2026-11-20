@@ -21,7 +21,7 @@ type Params = {
 };
 
 const ATTACHMENTS_REFUSED =
-  'Attachments cannot wait in line. Send this again when the agent ahead has finished.';
+  "Attachments can't wait in line. Send this again when the agent ahead has finished.";
 
 export const queueTurnInLane = async ({
   get,

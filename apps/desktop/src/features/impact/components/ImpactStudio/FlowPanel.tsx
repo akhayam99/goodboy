@@ -12,10 +12,10 @@ import { NOT_LOADED_HINT, UNKNOWN_VALUE } from '../../../../shared/utils/unknown
 import type { PaneFrame } from '../../../../shared/types/paneFrame';
 
 const FLOW_TILE_LABELS = [
-  'median wall-clock',
-  'wait on human',
-  'question blocked',
-  'failed steps',
+  'Median wall-clock',
+  'Wait on you',
+  'Blocked on a question',
+  'Failed steps',
 ] as const;
 
 type Props = {
@@ -54,22 +54,22 @@ export const FlowPanel = ({
         ) : (
           <>
             <StatCard
-              label="median wall-clock"
+              label="Median wall-clock"
               value={formatHours({ hours: health.medianSessionHours })}
               hint={`p90 ${formatHours({ hours: health.p90SessionHours })}`}
             />
             <StatCard
-              label="wait on human"
+              label="Wait on you"
               value={formatHours({ hours: health.medianQuestionHours })}
               hint={`${health.answeredQuestions} answered`}
             />
             <StatCard
-              label="question blocked"
+              label="Blocked on a question"
               value={String(health.questionBlockedSessions)}
               hint={`${health.staleQuestions} over 24h`}
             />
             <StatCard
-              label="failed steps"
+              label="Failed steps"
               value={String(health.failedAgents)}
               hint={`${health.budgetAlerts} budget alerts`}
             />
@@ -78,7 +78,7 @@ export const FlowPanel = ({
       </div>
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <StudioWidget
-          label="agent duration by kind"
+          label="Agent duration by kind"
           hint={agents === null ? NOT_LOADED_HINT : `${agents.totalAgents} completed agents`}
         >
           <div className="flex flex-col gap-1">
@@ -106,7 +106,7 @@ export const FlowPanel = ({
             ) : null}
           </div>
         </StudioWidget>
-        <StudioWidget label="where flow blocks" hint="active blockers in this workspace">
+        <StudioWidget label="Where flow blocks" hint="Active blockers in this workspace">
           <div className="flex flex-col gap-3">
             <div className="flex items-center gap-3">
               <span className="min-w-0 flex-1 text-meta">Waiting on open questions</span>
@@ -125,7 +125,7 @@ export const FlowPanel = ({
           </div>
         </StudioWidget>
       </div>
-      <StudioWidget label="slowest sessions" hint="wall-clock from creation to latest activity">
+      <StudioWidget label="Slowest sessions" hint="Wall-clock from creation to latest activity">
         <SessionRows
           sessions={health?.sessions ?? []}
           valueLabel=""
