@@ -4,7 +4,8 @@ import { Button, formatError } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { isReportedError } from '../../../../store/slices/notifications/reportedError';
-import { resolveReviewTarget } from '../../../../store/slices/review-drafts/resolveReviewTarget';
+import { selectDisplayedMount } from '../../../../store/slices/project-mounts/selectors';
+import { mountReviewOf } from '../../../review/mountReviewOf';
 import { useActionEnv } from '../../../actions/useActionEnv';
 import { isOpenNote, noteIdOfThread, noteThreadId } from '../../notes/noteThread';
 import { postNotesResultMessage, postNotesToPr } from '../../notes/postNotesToPr';
@@ -23,9 +24,10 @@ export const NoteThreadActions = ({ sessionId, entry }: Props) => {
       ? null
       : ((s.diffComments[sessionId] ?? []).find((candidate) => candidate.id === noteId) ?? null),
   );
-  const targetHost = useAppStore(
-    (s) => resolveReviewTarget({ state: s, sessionId })?.provider ?? null,
+  const mountId = useAppStore(
+    (s) => selectDisplayedMount({ state: s, sessionId })?.mountId ?? null,
   );
+  const reviewTarget = useAppStore((state) => mountReviewOf({ state, sessionId, mountId }).target);
   const addReviewDraft = useAppStore((s) => s.addReviewDraft);
   const closeResolvedNote = useAppStore((s) => s.closeResolvedNote);
   const discardDiffComments = useAppStore((s) => s.discardDiffComments);
@@ -49,20 +51,16 @@ export const NoteThreadActions = ({ sessionId, entry }: Props) => {
   };
   return (
     <div className="flex min-w-0 flex-wrap items-center gap-2">
-      {targetHost !== null && isOpenNote({ note }) ? (
+      {reviewTarget !== null && isOpenNote({ note }) ? (
         <Button
           size="sm"
           variant="ghost"
           disabled={isBusy}
           onClick={() =>
             void run(async () => {
-              const target = resolveReviewTarget({ state: useAppStore.getState(), sessionId });
-              if (target === null) {
-                return;
-              }
               const result = await postNotesToPr({
                 sessionId,
-                target,
+                target: reviewTarget,
                 notes: [note],
                 addReviewDraft,
                 closeNote: (id) =>
@@ -72,7 +70,7 @@ export const NoteThreadActions = ({ sessionId, entry }: Props) => {
             })
           }
         >
-          Post to {REVIEW_SOURCE_LABEL[targetHost]}
+          Post to {REVIEW_SOURCE_LABEL[reviewTarget.provider]}
         </Button>
       ) : null}
       <Button

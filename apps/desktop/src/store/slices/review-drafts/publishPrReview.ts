@@ -18,7 +18,7 @@ import { tauriDatabase } from '../../../shared/lib/db';
 import { appendAttribution, isAttributionEnabled } from '../../../shared/utils/attribution';
 import { computeStaleDrafts } from './computeStaleDrafts';
 import { isFileLevelDraft } from './fileLevel';
-import { resolveReviewTarget, type ReviewTarget } from './resolveReviewTarget';
+import { isDraftOnTarget, type ReviewTarget } from './resolveReviewTarget';
 import { getSessionRepo } from '../worktrees/getSessionRepo';
 import type { SessionRepo } from '../worktrees/resolveSessionRepo';
 import type {
@@ -218,10 +218,7 @@ export const publishPrReview = (set: SetFn, get: GetFn) => {
     sessionId: SessionId,
     opts: PublishPrReviewOpts,
   ): Promise<PublishPrReviewResult> => {
-    const target = opts.target ?? resolveReviewTarget({ state: get(), sessionId });
-    if (target == null) {
-      throw new Error('no linked pull request or merge request for this session');
-    }
+    const { target, mountId } = opts;
     const session = sessionById(get().sessions, sessionId);
     const workspace = session
       ? get().workspaces.find((candidate) => candidate.id === session.workspaceId)
@@ -229,19 +226,15 @@ export const publishPrReview = (set: SetFn, get: GetFn) => {
     if (workspace == null) {
       throw new Error(`session not found: ${sessionId}`);
     }
-    const repo = getSessionRepo({ get, sessionId });
+    const repo = getSessionRepo({ get, sessionId, ...(mountId === null ? {} : { mountId }) });
     if (repo == null) {
       throw new Error(`session repository not found: ${sessionId}`);
     }
     const openDrafts = (get().reviewDrafts[sessionId] ?? []).filter(
       (draft) => draft.status === 'draft',
     );
-    const drafts = openDrafts.filter(
-      (draft) => draft.repo === target.repo && draft.prNumber === target.prNumber,
-    );
-    const mismatched = openDrafts.filter(
-      (draft) => draft.repo !== target.repo || draft.prNumber !== target.prNumber,
-    );
+    const drafts = openDrafts.filter((draft) => isDraftOnTarget({ draft, target }));
+    const mismatched = openDrafts.filter((draft) => !isDraftOnTarget({ draft, target }));
 
     const diff = await fetchCurrentDiff({ get, workspace, repo, target });
     const files = parseUnifiedDiff(diff);

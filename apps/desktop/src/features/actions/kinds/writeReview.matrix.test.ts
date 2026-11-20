@@ -6,6 +6,8 @@ import { WRITE_REVIEW_KIND, type WriteReviewFacts } from './writeReview';
 
 const BASE: WriteReviewFacts = {
   sessionId: 'session' as SessionId,
+  mountId: null,
+  reviewTarget: { provider: 'github', repo: 'harborline/payments-api', prNumber: 318 },
   draftId: null,
   drafts: 0,
   verdict: 'comment',
@@ -53,6 +55,14 @@ const MATRIX: ReadonlyArray<{
     facts: { verdict: 'approve' },
     expected: ['writeReview.submit primary Approve'],
   },
+  {
+    name: 'no review on this host',
+    facts: { reviewTarget: null, drafts: 2, hasSummary: true, draftId: 'draft-1' },
+    expected: [
+      'writeReview.editDraft hover Edit comment',
+      'writeReview.deleteDraft hover Delete comment',
+    ],
+  },
 ];
 
 const resolved = (facts: WriteReviewFacts) =>
@@ -70,8 +80,10 @@ describe.each(MATRIX)('write review, $name', ({ facts, expected }) => {
     ).toEqual(expected);
   });
 
-  it('keeps the form to its one primary', () => {
-    expect(resolved(all).filter((action) => action.slot === 'primary')).toHaveLength(1);
+  it('keeps the form to at most one primary', () => {
+    expect(resolved(all).filter((action) => action.slot === 'primary').length).toBeLessThanOrEqual(
+      1,
+    );
   });
 });
 

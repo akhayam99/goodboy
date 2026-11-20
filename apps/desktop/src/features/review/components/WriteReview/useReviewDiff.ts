@@ -2,12 +2,16 @@ import { useCallback, useEffect, useState } from 'react';
 import { formatError } from '@goodboy/ui';
 import { useShallow } from 'zustand/react/shallow';
 import { parseUnifiedDiff } from '@goodboy/core/github';
-import type { FileDiff, GitlabIntegrationBinding, Session, SessionId } from '@goodboy/types';
+import type {
+  FileDiff,
+  GitlabIntegrationBinding,
+  MountId,
+  Session,
+  SessionId,
+} from '@goodboy/types';
 import { useAppStore } from '../../../../store';
-import {
-  resolveReviewTarget,
-  type ReviewTarget,
-} from '../../../../store/slices/review-drafts/resolveReviewTarget';
+import type { ReviewTarget } from '../../../../store/slices/review-drafts/resolveReviewTarget';
+import { mountReviewOf } from '../../mountReviewOf';
 import { ghPrDiff } from '../../../integrations/github/github';
 import { gitlabMrDiff } from '../../../integrations/gitlab/client';
 import { orderLikeTree } from '../../../diff/lib/changeTree';
@@ -15,6 +19,7 @@ import { resolveSessionRepo } from '../../../../store/slices/worktrees/resolveSe
 
 type Params = {
   readonly session: Session;
+  readonly mountId: MountId | null;
 };
 
 type Result = {
@@ -25,14 +30,18 @@ type Result = {
   readonly refresh: () => void;
 };
 
-export const useReviewDiff = ({ session }: Params): Result => {
+export const useReviewDiff = ({ session, mountId }: Params): Result => {
   const sessionId = session.id as SessionId;
-  const target = useAppStore(useShallow((state) => resolveReviewTarget({ state, sessionId })));
+  const target = useAppStore((state) => mountReviewOf({ state, sessionId, mountId }).target);
   const isTargetLoaded = useAppStore((s) => s.sessionExternalTasks[sessionId] !== undefined);
   const workspace = useAppStore(
     (s) => s.workspaces.find((candidate) => candidate.id === session.workspaceId) ?? null,
   );
-  const repo = useAppStore(useShallow((state) => resolveSessionRepo({ state, sessionId })));
+  const repo = useAppStore(
+    useShallow((state) =>
+      resolveSessionRepo({ state, sessionId, ...(mountId === null ? {} : { mountId }) }),
+    ),
+  );
   const gitlabHost = useAppStore(
     (s) =>
       (s.workspaceIntegrations[session.workspaceId] ?? []).find(

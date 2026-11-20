@@ -1,12 +1,12 @@
 import { insertPrReviewDraft } from '@goodboy/db';
 import type { IsoDateTime, PrReviewDraft, ReviewDraftSide, SessionId } from '@goodboy/types';
 import { tauriDatabase } from '../../../shared/lib/db';
-import { resolveReviewTarget, type ReviewTarget } from './resolveReviewTarget';
-import type { GetFn, SetFn } from './types';
+import type { ReviewTarget } from './resolveReviewTarget';
+import type { SetFn } from './types';
 
 export type AddReviewDraftInput = {
   readonly sessionId: SessionId;
-  readonly target?: ReviewTarget;
+  readonly target: ReviewTarget;
   readonly path: string;
   readonly line: number;
   readonly startLine?: number | null;
@@ -14,13 +14,9 @@ export type AddReviewDraftInput = {
   readonly body: string;
 };
 
-export const addReviewDraft = (set: SetFn, get: GetFn) => {
+export const addReviewDraft = (set: SetFn) => {
   return async (input: AddReviewDraftInput): Promise<PrReviewDraft> => {
-    const target =
-      input.target ?? resolveReviewTarget({ state: get(), sessionId: input.sessionId });
-    if (target == null) {
-      throw new Error('no linked pull request or merge request for this session');
-    }
+    const { target } = input;
     const draft: PrReviewDraft = {
       id: crypto.randomUUID(),
       sessionId: input.sessionId,

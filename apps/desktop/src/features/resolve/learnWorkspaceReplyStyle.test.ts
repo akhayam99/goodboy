@@ -19,10 +19,12 @@ vi.mock('@goodboy/core/github', () => ({
 
 const WORKSPACE = 'workspace-1' as WorkspaceId;
 
-const learn = () =>
+const ROOTS = ['/repos/ledger-core', '/repos/ledger-core-copy', '/notes'];
+
+const learn = (githubRoots: ReadonlyArray<string> = ROOTS) =>
   learnWorkspaceReplyStyle({
     workspaceId: WORKSPACE,
-    projectRoots: ['/repos/ledger-core', '/repos/ledger-core-copy', '/notes'],
+    githubRoots,
     taskModel: { providerId: 'anthropic', model: 'claude-haiku-4-5' },
   });
 
@@ -51,20 +53,47 @@ describe('learnWorkspaceReplyStyle', () => {
     );
   });
 
-  it('says what is missing at each step', async () => {
-    h.detectRepoSlug.mockResolvedValue(null);
-    await expect(learn()).rejects.toThrow('No folder in this workspace is a GitHub repository.');
+  it('says what is missing at each step and that the note is unchanged', async () => {
+    await expect(learn([])).rejects.toThrow(
+      'No project in this workspace is on GitHub. Your note is unchanged.',
+    );
 
     h.detectRepoSlug.mockResolvedValue('acme/ledger-core');
     h.listMyReviewReplies.mockResolvedValue([]);
     await expect(learn()).rejects.toThrow(
-      "Couldn't find review replies you wrote in this workspace.",
+      "Couldn't find review replies you wrote on GitHub. Your note is unchanged.",
     );
 
     h.listMyReviewReplies.mockResolvedValue([{ body: 'ok', createdAt: '' }]);
     h.learnReplyStyle.mockResolvedValue(null);
     await expect(learn()).rejects.toThrow(
-      "Couldn't write a style note from your replies. Try again.",
+      "Couldn't write a style note from your replies. Your note is unchanged.",
     );
+  });
+
+  it('names Connect GitHub instead of the raw gh message when gh is signed out', async () => {
+    h.detectRepoSlug.mockResolvedValue(null);
+    await expect(learn()).rejects.toThrow(
+      'Connect GitHub to read your replies. Your note is unchanged.',
+    );
+
+    h.detectRepoSlug.mockResolvedValue('acme/ledger-core');
+    h.listMyReviewReplies.mockRejectedValue(
+      new Error('To get started with GitHub CLI, please run:  gh auth login'),
+    );
+    await expect(learn()).rejects.toThrow(
+      'Connect GitHub to read your replies. Your note is unchanged.',
+    );
+  });
+
+  it('says the replies could not be read instead of the raw gh message on any other failure', async () => {
+    h.detectRepoSlug.mockResolvedValue('acme/ledger-core');
+    for (const raw of ['gh: HTTP 403: Resource not accessible', 'context deadline exceeded']) {
+      h.listMyReviewReplies.mockRejectedValue(new Error(raw));
+      await expect(learn()).rejects.toThrow(
+        /^Couldn't read your replies on GitHub\. Your note is unchanged\.$/,
+      );
+    }
+    expect(h.learnReplyStyle).not.toHaveBeenCalled();
   });
 });

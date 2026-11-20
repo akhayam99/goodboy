@@ -40,6 +40,7 @@ vi.mock('../../../../store/slices/worktrees/resolveSessionRepo', () => ({
 }));
 
 type MockStore = ReviewTargetState & {
+  readonly reviewSubmission: Readonly<Record<string, never>>;
   readonly workspaces: ReadonlyArray<{ readonly id: WorkspaceId; readonly rootPath: string }>;
   readonly workspaceIntegrations: Readonly<
     Record<string, ReadonlyArray<{ readonly provider: string; readonly config: { host: string } }>>
@@ -132,6 +133,7 @@ const githubState = (pr: PullRequestState | null): MockStore['sessionGithub'] =>
 });
 
 const BASE_STATE: MockStore = {
+  reviewSubmission: {},
   sessionExternalTasks: { [SESSION_ID]: [githubTask, gitlabTask] },
   sessions: [],
   projects: [],
@@ -165,7 +167,7 @@ afterEach(() => {
 
 describe('useReviewDiff', () => {
   it('resolves the same target the review draft path stamps on every comment', async () => {
-    const { result } = renderHook(() => useReviewDiff({ session }));
+    const { result } = renderHook(() => useReviewDiff({ session, mountId: null }));
 
     await waitFor(() => expect(result.current.loading).toBe(false));
 
@@ -178,7 +180,7 @@ describe('useReviewDiff', () => {
   });
 
   it('fetches the diff of the merge request this session opened, not a linked candidate', async () => {
-    renderHook(() => useReviewDiff({ session }));
+    renderHook(() => useReviewDiff({ session, mountId: null }));
 
     await waitFor(() => expect(h.gitlabMrDiff).toHaveBeenCalledOnce());
 
@@ -196,7 +198,7 @@ describe('useReviewDiff', () => {
       },
     };
 
-    const { result } = renderHook(() => useReviewDiff({ session }));
+    const { result } = renderHook(() => useReviewDiff({ session, mountId: null }));
 
     await waitFor(() => expect(h.ghPrDiff).toHaveBeenCalledOnce());
 
@@ -218,7 +220,7 @@ describe('useReviewDiff', () => {
       },
     };
 
-    const { result } = renderHook(() => useReviewDiff({ session }));
+    const { result } = renderHook(() => useReviewDiff({ session, mountId: null }));
 
     await waitFor(() => expect(result.current.loading).toBe(false));
 
@@ -235,7 +237,7 @@ describe('useReviewDiff', () => {
       .join('\n');
     h.gitlabMrDiff.mockResolvedValueOnce(patch);
 
-    const { result } = renderHook(() => useReviewDiff({ session }));
+    const { result } = renderHook(() => useReviewDiff({ session, mountId: null }));
     await waitFor(() => expect(result.current.files.length).toBeGreaterThan(0));
 
     const filesTab = orderLikeTree({ files: parseUnifiedDiff(patch) });
@@ -260,7 +262,7 @@ describe('useReviewDiff', () => {
       },
     };
 
-    const { result } = renderHook(() => useReviewDiff({ session }));
+    const { result } = renderHook(() => useReviewDiff({ session, mountId: null }));
 
     expect(result.current.loading).toBe(true);
     expect(result.current.target).toBeNull();

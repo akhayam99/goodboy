@@ -1,18 +1,23 @@
 // @vitest-environment happy-dom
 
 import { afterEach, beforeEach, describe, expect, it, onTestFinished, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
-import type { OverrideSettings, WorkspaceId } from '@goodboy/types';
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { brandId, type OverrideSettings, type WorkspaceId } from '@goodboy/types';
 import { overridesWithAttribution } from '../../../../__tests__/helpers/attributionOverrides';
 import type { WorkspaceOverridesPatch } from '../../../../store/slices/overrides/patchWorkspaceOverrides';
 import { SettingRowFocusContext } from '../../settingRowFocusContext';
 import { settingRowKeyOfField } from '../../settingRowKeyOfField';
+import { storySpies, stubStoryInvoke } from '../../../../store/storyHarness';
 import { WorkspaceReviewRepliesSection } from './WorkspaceReviewRepliesSection';
 
 const WORKSPACE = 'workspace-1' as WorkspaceId;
 
-const { state, learn } = vi.hoisted(() => ({
+const { state, learn, remotes } = vi.hoisted(() => ({
+  remotes: {
+    current: new Map<string, string>(),
+  },
   state: {
+    workspaceIntegrations: Object.fromEntries<ReadonlyArray<unknown>>([]),
     workspaces: [] as ReadonlyArray<unknown>,
     workspaceOverrides: {} as Record<string, OverrideSettings>,
     patchWorkspaceOverrides: vi.fn(
@@ -24,6 +29,7 @@ const { state, learn } = vi.hoisted(() => ({
     saveSetting: vi.fn(async () => undefined),
     projects: [
       { id: 'p1', workspaceId: 'workspace-1', kind: 'repo', rootPath: '/repos/ledger-core' },
+      { id: 'p3', workspaceId: 'workspace-1', kind: 'repo', rootPath: '/repos/payments-api' },
       { id: 'p2', workspaceId: 'workspace-2', kind: 'repo', rootPath: '/repos/notify-relay' },
     ],
     providers: [
@@ -33,6 +39,27 @@ const { state, learn } = vi.hoisted(() => ({
   },
   learn: vi.fn(),
 }));
+
+vi.mock('@tauri-apps/api/core', async () =>
+  (await import('../../../../store/storyHarness')).tauriCoreModuleMock(),
+);
+
+type RemoteArgs = {
+  readonly repoPath?: string;
+};
+
+const remoteOf = ({ repoPath = '' }: RemoteArgs = {}): string | null =>
+  remotes.current.get(repoPath) ?? null;
+
+const MIXED_HOSTS = new Map([
+  ['/repos/ledger-core', 'git@gitlab.com:harborline/ledger-core.git'],
+  ['/repos/payments-api', 'git@github.com:harborline/payments-api.git'],
+]);
+
+const GITLAB_ONLY = new Map([
+  ['/repos/ledger-core', 'git@gitlab.com:harborline/ledger-core.git'],
+  ['/repos/payments-api', 'git@gitlab.com:harborline/payments-api.git'],
+]);
 
 vi.mock('../../../resolve/learnWorkspaceReplyStyle', () => ({
   learnWorkspaceReplyStyle: learn,
@@ -54,6 +81,9 @@ beforeEach(() => {
   state.saveSetting.mockClear();
   state.reportError.mockClear();
   state.settings = {};
+  remotes.current = MIXED_HOSTS;
+  storySpies.tauriInvoke.mockClear();
+  stubStoryInvoke({ worktree_remote_url: remoteOf });
   learn.mockReset();
 });
 
@@ -144,11 +174,11 @@ describe('WorkspaceReviewRepliesSection', () => {
     );
   });
 
-  it('learns a style note from my replies in this workspace and saves it', async () => {
+  it('learns a style note from my replies on GitHub and saves it', async () => {
     learn.mockResolvedValue('Short.\nSays "done in" before the sha.');
     renderWith({ replyVoice: 'mine' });
 
-    fireEvent.click(screen.getByRole('button', { name: /Learn from your replies/ }));
+    fireEvent.click(await screen.findByRole('button', { name: /Learn from your replies/ }));
 
     await waitFor(() =>
       expect(state.patchWorkspaceOverrides).toHaveBeenCalledWith({
@@ -158,7 +188,7 @@ describe('WorkspaceReviewRepliesSection', () => {
     );
     expect(learn).toHaveBeenCalledWith({
       workspaceId: WORKSPACE,
-      projectRoots: ['/repos/ledger-core'],
+      githubRoots: ['/repos/payments-api'],
       taskModel: expect.objectContaining({ providerId: 'anthropic' }),
     });
     expect(screen.getByLabelText('Style note')).toHaveProperty(
@@ -167,16 +197,77 @@ describe('WorkspaceReviewRepliesSection', () => {
     );
   });
 
-  it('says why no note could be learned and saves nothing', async () => {
-    learn.mockRejectedValue(new Error("Couldn't find review replies you wrote in this workspace."));
+  it('says why no note could be learned under the field and saves nothing', async () => {
+    const reason = "Couldn't find review replies you wrote on GitHub. Your note is unchanged.";
+    learn.mockRejectedValue(new Error(reason));
     renderWith({ replyVoice: 'mine' });
 
-    fireEvent.click(screen.getByRole('button', { name: /Learn from your replies/ }));
+    fireEvent.click(await screen.findByRole('button', { name: /Learn from your replies/ }));
 
-    expect(
-      await screen.findByText("Couldn't find review replies you wrote in this workspace."),
-    ).toBeDefined();
+    const error = await screen.findByText(reason);
+    const field = screen.getByLabelText('Style note');
+    expect(field.getAttribute('aria-invalid')).toBe('true');
+    const describedBy = field.getAttribute('aria-describedby');
+    expect(describedBy).not.toBeNull();
+    expect(error.closest('[data-slot="field-error"]')?.id).toBe(describedBy);
     expect(state.patchWorkspaceOverrides).not.toHaveBeenCalled();
+  });
+
+  it('offers learning with what it reads when one project is on GitHub', async () => {
+    renderWith({ replyVoice: 'mine' });
+
+    await screen.findByRole('button', { name: /Learn from your replies/ });
+    screen.getByText('Learns from your replies on GitHub.');
+  });
+
+  it('leaves only the note to write when no project is on GitHub', async () => {
+    remotes.current = GITLAB_ONLY;
+    renderWith({ replyVoice: 'mine' });
+
+    await waitFor(() => expect(storySpies.tauriInvoke).toHaveBeenCalledTimes(2));
+    await act(async () => {
+      await Promise.resolve();
+    });
+    screen.getByLabelText('Style note');
+    expect(screen.queryByRole('button', { name: /Learn from your replies/ })).toBeNull();
+    expect(screen.queryByText('Learns from your replies on GitHub.')).toBeNull();
+  });
+
+  it('hides learning until the projects of a new workspace are checked, then reads only those', async () => {
+    const other = brandId<WorkspaceId>({ value: 'workspace-2' });
+    const checks: Array<() => void> = [];
+    onTestFinished(() => checks.forEach((check) => check()));
+    stubStoryInvoke({
+      worktree_remote_url: (args: RemoteArgs = {}) =>
+        args.repoPath === '/repos/notify-relay'
+          ? new Promise<string>((resolve) => {
+              checks.push(() => resolve('git@github.com:harborline/notify-relay.git'));
+            })
+          : remoteOf(args),
+    });
+    learn.mockResolvedValue('Short.');
+    const overrides: OverrideSettings = {
+      ...overridesWithAttribution({ attributionFooter: null }),
+      replyVoice: 'mine',
+    };
+    state.workspaceOverrides = { [WORKSPACE]: overrides, [other]: overrides };
+    const view = render(<WorkspaceReviewRepliesSection workspaceId={WORKSPACE} />);
+    await screen.findByRole('button', { name: /Learn from your replies/ });
+
+    view.rerender(<WorkspaceReviewRepliesSection workspaceId={other} />);
+    expect(screen.queryByRole('button', { name: /Learn from your replies/ })).toBeNull();
+
+    await act(async () => {
+      checks.forEach((check) => check());
+    });
+    fireEvent.click(await screen.findByRole('button', { name: /Learn from your replies/ }));
+    await waitFor(() =>
+      expect(learn).toHaveBeenCalledWith({
+        workspaceId: other,
+        githubRoots: ['/repos/notify-relay'],
+        taskModel: expect.objectContaining({ providerId: 'anthropic' }),
+      }),
+    );
   });
 
   it('flags a template without {reason} or with an unknown variable, and does not save it', () => {

@@ -1,10 +1,15 @@
 import { useEffect, useId, useState } from 'react';
-import { useShallow } from 'zustand/react/shallow';
-import { REVIEW_REPLY_SAMPLE_SIZE } from '@goodboy/core/github';
 import type { WorkspaceId } from '@goodboy/types';
-import { Button, formatError, ICON_SIZE, Textarea } from '@goodboy/ui';
-import { useAppStore } from '../../../../store';
+import {
+  Button,
+  FieldError,
+  fieldErrorAriaOf,
+  formatError,
+  ICON_SIZE,
+  Textarea,
+} from '@goodboy/ui';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
+import { useGithubProjectRoots } from '../../hooks/useGithubProjectRoots';
 import { useResolution } from '../../../providers/hooks/useResolution';
 import { resolutionAsTask } from '../../../providers/resolutionAsTask';
 import { learnWorkspaceReplyStyle } from '../../../resolve/learnWorkspaceReplyStyle';
@@ -12,6 +17,7 @@ import type { SettingSave } from '../../hooks/useSettingSave';
 import { SaveErrorHelp } from './SaveErrorHelp';
 
 const LearnIcon = CONCEPT_ICONS.enhance;
+const LEARNS_ON_GITHUB = 'Learns from your replies on GitHub.';
 
 type Props = {
   readonly workspaceId: WorkspaceId;
@@ -23,16 +29,12 @@ type Props = {
 
 export const ReplyStyleNoteField = ({ workspaceId, value, isDisabled, save, onSave }: Props) => {
   const id = useId();
+  const errorId = `${id}-error`;
   const [draft, setDraft] = useState(value ?? '');
   const [isLearning, setIsLearning] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const projectRoots = useAppStore(
-    useShallow((s) =>
-      s.projects
-        .filter((project) => project.workspaceId === workspaceId && project.kind === 'repo')
-        .map((project) => project.rootPath),
-    ),
-  );
+  const githubRoots = useGithubProjectRoots({ workspaceId });
+  const canLearn = githubRoots !== null && githubRoots.length > 0;
   const resolution = useResolution({ task: 'prose_polish', workspaceId });
 
   useEffect(() => {
@@ -40,12 +42,15 @@ export const ReplyStyleNoteField = ({ workspaceId, value, isDisabled, save, onSa
   }, [value]);
 
   const learn = async () => {
+    if (githubRoots === null) {
+      return;
+    }
     setError(null);
     setIsLearning(true);
     try {
       const note = await learnWorkspaceReplyStyle({
         workspaceId,
-        projectRoots,
+        githubRoots,
         taskModel: resolutionAsTask({ resolution }),
       });
       setDraft(note);
@@ -62,22 +67,23 @@ export const ReplyStyleNoteField = ({ workspaceId, value, isDisabled, save, onSa
       <label htmlFor={id} className="text-meta font-medium text-foreground">
         Style note
       </label>
-      <div className="flex flex-wrap items-center gap-2">
-        <Button
-          size="sm"
-          variant="secondary"
-          disabled={isDisabled || isLearning}
-          onClick={() => void learn()}
-        >
-          <LearnIcon size={ICON_SIZE.row} aria-hidden />
-          {isLearning ? 'Reading your replies' : 'Learn from your replies'}
-        </Button>
-        <span className="text-meta text-faint-foreground">
-          {`Reads your last ${REVIEW_REPLY_SAMPLE_SIZE} review replies in this workspace.`}
-        </span>
-      </div>
+      {canLearn ? (
+        <div className="flex flex-wrap items-center gap-2">
+          <Button
+            size="sm"
+            variant="secondary"
+            disabled={isDisabled || isLearning}
+            onClick={() => void learn()}
+          >
+            <LearnIcon size={ICON_SIZE.row} aria-hidden />
+            {isLearning ? 'Reading your replies' : 'Learn from your replies'}
+          </Button>
+          <span className="text-meta text-faint-foreground">{LEARNS_ON_GITHUB}</span>
+        </div>
+      ) : null}
       <Textarea
         id={id}
+        {...fieldErrorAriaOf({ id: errorId, error })}
         value={draft}
         autoGrow
         minRows={2}
@@ -90,7 +96,7 @@ export const ReplyStyleNoteField = ({ workspaceId, value, isDisabled, save, onSa
           }
         }}
       />
-      {error !== null && <p className="text-meta text-danger">{error}</p>}
+      <FieldError id={errorId} error={error} />
       {save.error === null ? null : <SaveErrorHelp save={save} />}
       <p className="text-meta text-muted-foreground">
         You can edit this note. Agents follow it instead of a preset, and replies stay terse until

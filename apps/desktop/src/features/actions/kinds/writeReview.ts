@@ -1,12 +1,21 @@
 import { Pencil, Send, Trash2, X } from '@goodboy/ui/icons';
-import type { PrReviewDraft, SessionId } from '@goodboy/types';
+import type { MountId, PrReviewDraft, SessionId } from '@goodboy/types';
+import { selectDisplayedMount } from '../../../store/slices/project-mounts/selectors';
+import {
+  internReviewTarget,
+  isDraftOnTarget,
+  type ReviewTarget,
+} from '../../../store/slices/review-drafts/resolveReviewTarget';
 import { EMPTY_REVIEW_SUBMISSION } from '../../../store/slices/review-drafts/reviewSubmission';
+import { mountReviewOf } from '../../review/mountReviewOf';
 import type { PublishPrReviewVerdict } from '../../../store/slices/review-drafts/types';
 import { requestDraftEdit } from '../../review/writeReviewRequest';
 import type { ObjectKindDefinition, WriteReviewActionTarget } from '../types';
 
 export type WriteReviewFacts = {
   readonly sessionId: SessionId;
+  readonly mountId: MountId | null;
+  readonly reviewTarget: ReviewTarget | null;
   readonly draftId: string | null;
   readonly drafts: number;
   readonly verdict: PublishPrReviewVerdict;
@@ -39,12 +48,19 @@ const popToPullRequest = ({
 export const WRITE_REVIEW_KIND: ObjectKindDefinition<WriteReviewActionTarget, WriteReviewFacts> = {
   noun: 'review',
   facts: ({ state, target }) => {
+    const mountId = selectDisplayedMount({ state, sessionId: target.sessionId })?.mountId ?? null;
+    const reviewTarget = mountReviewOf({ state, sessionId: target.sessionId, mountId }).target;
     const drafts = (state.reviewDrafts[target.sessionId] ?? EMPTY_DRAFTS).filter(
-      (draft) => draft.status === 'draft',
+      (draft) =>
+        draft.status === 'draft' &&
+        reviewTarget !== null &&
+        isDraftOnTarget({ draft, target: reviewTarget }),
     );
     const submission = state.reviewSubmission[target.sessionId] ?? EMPTY_REVIEW_SUBMISSION;
     return {
       sessionId: target.sessionId,
+      mountId,
+      reviewTarget,
       draftId:
         target.draftId !== null && drafts.some((draft) => draft.id === target.draftId)
           ? target.draftId
@@ -62,7 +78,7 @@ export const WRITE_REVIEW_KIND: ObjectKindDefinition<WriteReviewActionTarget, Wr
       icon: Send,
       group: 'act',
       shortcut: 'composer.submit',
-      when: () => true,
+      when: ({ facts }) => facts.reviewTarget !== null,
       blockedReason: ({ facts }) => {
         if (facts.isSubmitting) {
           return SUBMITTING_REASON;
@@ -73,8 +89,16 @@ export const WRITE_REVIEW_KIND: ObjectKindDefinition<WriteReviewActionTarget, Wr
       },
       slot: () => 'primary',
       run: async ({ facts, env }) => {
+        const { reviewTarget } = facts;
+        if (reviewTarget === null) {
+          return;
+        }
         const state = env.getState();
-        const result = await state.submitReview({ sessionId: facts.sessionId });
+        const result = await state.submitReview({
+          sessionId: facts.sessionId,
+          target: reviewTarget,
+          mountId: facts.mountId,
+        });
         if (result.failed.length > 0) {
           throw new Error(result.failed.map((failure) => failure.error).join('\n'));
         }
@@ -117,6 +141,7 @@ export const WRITE_REVIEW_KIND: ObjectKindDefinition<WriteReviewActionTarget, Wr
           undo: async () => {
             await env.getState().addReviewDraft({
               sessionId: facts.sessionId,
+              target: internReviewTarget(draft),
               path: draft.path,
               line: draft.line,
               startLine: draft.startLine,
@@ -132,7 +157,7 @@ export const WRITE_REVIEW_KIND: ObjectKindDefinition<WriteReviewActionTarget, Wr
       label: 'Discard review',
       icon: X,
       group: 'danger',
-      when: ({ facts }) => facts.drafts > 0 || facts.hasSummary,
+      when: ({ facts }) => facts.reviewTarget !== null && (facts.drafts > 0 || facts.hasSummary),
       confirm: ({ facts }) => ({
         title: 'Discard this review?',
         description: `${
@@ -145,8 +170,12 @@ export const WRITE_REVIEW_KIND: ObjectKindDefinition<WriteReviewActionTarget, Wr
       }),
       slot: () => 'menu',
       run: async ({ facts, env }) => {
+        const { reviewTarget } = facts;
+        if (reviewTarget === null) {
+          return;
+        }
         const state = env.getState();
-        await state.discardReview({ sessionId: facts.sessionId });
+        await state.discardReview({ sessionId: facts.sessionId, target: reviewTarget });
         popToPullRequest({ facts, setPullRequestMode: state.setPullRequestMode });
       },
     },
