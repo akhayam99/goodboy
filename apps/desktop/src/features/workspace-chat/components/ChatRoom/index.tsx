@@ -17,6 +17,7 @@ import { ChatRoomComposer } from './ChatRoomComposer';
 import { ChatThread } from './ChatThread';
 import { useChatDrafts } from '../../hooks/useChatDrafts';
 import { useChatWork } from '../../hooks/useChatWork';
+import { isUserActivated } from '../../isUserActivated';
 import { useChatMessageLoad } from '../../hooks/useChatMessageLoad';
 import { useStudioDrawer } from '../../../../shared/hooks/useStudioDrawer';
 import { SETTING_HIDDEN_MODELS } from '../../../settings/settings';
@@ -72,6 +73,7 @@ export const ChatRoom = ({ workspaceId, chat, onCreated, onRemoved, onNewChat }:
   const openStudio = useAppStore((state) => state.openStudio);
   const reportError = useAppStore((state) => state.reportError);
   const wasEmptyRef = useRef(false);
+  const [isOpenedByYou] = useState(isUserActivated);
   const [draftRouting, setDraftRouting] = useState<ChatRouting | null>(null);
   const linked = useChatSessions({ chatId });
   const drafts = useChatDrafts({ chatId });
@@ -163,7 +165,7 @@ export const ChatRoom = ({ workspaceId, chat, onCreated, onRemoved, onNewChat }:
       workspaceId={workspaceId}
       chat={chat}
       routing={model}
-      isAutoFocused={chatId === null || wasEmptyRef.current}
+      isAutoFocused={isOpenedByYou && (chatId === null || wasEmptyRef.current)}
       onSend={send}
       onRouting={pickRouting}
     />

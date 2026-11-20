@@ -1,4 +1,5 @@
 import type { ChatSummary, WorkspaceId } from '@goodboy/types';
+import { NAMES } from '../../../../shared/utils/names';
 import { useAppStore } from '../../../../store';
 import { NOTHING_CHANGED } from '../../../../store/slices/notifications/errorRecovery';
 import type { ChatRouting } from '../../../conversation/chatRouting';
@@ -49,7 +50,7 @@ export const ChatRoomComposer = ({
       )}
       <ChatComposer
         workspaceId={workspaceId}
-        placeholder="Ask a question"
+        placeholder={NAMES.messageAnAgent}
         routing={routing}
         isStreaming={stream !== undefined}
         isStopping={stream?.isStopping === true}

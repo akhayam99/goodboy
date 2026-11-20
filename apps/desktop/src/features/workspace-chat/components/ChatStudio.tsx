@@ -1,12 +1,5 @@
-import { useEffect, useState } from 'react';
-import {
-  Button,
-  EmptyState,
-  PAGE_MEASURE,
-  PageColumn,
-  StudioRailLayout,
-  useStudioRailFold,
-} from '@goodboy/ui';
+import { useEffect } from 'react';
+import { StudioRailLayout, useStudioRailFold } from '@goodboy/ui';
 import type { ChatId, ChatSummary, WorkspaceId } from '@goodboy/types';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../shared/components/conceptIcons';
 import { StudioShell } from '../../../shared/components/StudioShell';
@@ -39,7 +32,6 @@ export const ChatStudio = ({ workspaceId, chatId, onClose }: Props) => {
   );
   const loadError = useAppStore((state) => state.chatLoadErrors?.[workspaceId] ?? null);
   const loadArchivedChats = useAppStore((state) => state.loadArchivedChats);
-  const [hasStarted, setHasStarted] = useState(false);
   const loadChats = useAppStore((state) => state.loadChats);
   const amendStudio = useAppStore((state) => state.amendStudio);
   const markChatRead = useAppStore((state) => state.markChatRead);
@@ -66,10 +58,7 @@ export const ChatStudio = ({ workspaceId, chatId, onClose }: Props) => {
   const select = (next: ChatId | null): void =>
     amendStudio({ studio: { kind: 'chat', chatId: next } });
 
-  const startNewChat = (): void => {
-    setHasStarted(true);
-    select(null);
-  };
+  const startNewChat = (): void => select(null);
 
   useShortcut('chat.newHere', startNewChat);
 
@@ -93,9 +82,7 @@ export const ChatStudio = ({ workspaceId, chatId, onClose }: Props) => {
     archivedChats.find((chat) => chat.id === chatId) ??
     null;
 
-  const isFirstRun =
-    !hasStarted &&
-    chatId === null &&
+  const hasNoChats =
     hasLoadedChats &&
     hasLoadedArchived &&
     loadError === null &&
@@ -113,7 +100,7 @@ export const ChatStudio = ({ workspaceId, chatId, onClose }: Props) => {
           isCollapsed={fold.isCollapsed}
           onCollapsedChange={fold.setFolded}
           rail={
-            isFirstRun ? null : (
+            hasNoChats ? null : (
               <ChatList
                 workspaceId={workspaceId}
                 chats={chats}
@@ -125,32 +112,16 @@ export const ChatStudio = ({ workspaceId, chatId, onClose }: Props) => {
             )
           }
           detail={
-            isFirstRun ? (
-              <PageColumn width={PAGE_MEASURE.chat}>
-                <EmptyState
-                  size="page"
-                  icon={CONCEPT_ICONS.chat}
-                  title="No chats yet"
-                  description="Start a chat to explore an idea with an agent."
-                  action={
-                    <Button size="sm" onClick={() => setHasStarted(true)}>
-                      Start a chat
-                    </Button>
-                  }
-                />
-              </PageColumn>
-            ) : (
-              <StudioDetail>
-                <ChatRoom
-                  key={activeChat?.id ?? 'new'}
-                  workspaceId={workspaceId}
-                  chat={activeChat}
-                  onCreated={select}
-                  onRemoved={leaveRoom}
-                  onNewChat={startNewChat}
-                />
-              </StudioDetail>
-            )
+            <StudioDetail>
+              <ChatRoom
+                key={activeChat?.id ?? 'new'}
+                workspaceId={workspaceId}
+                chat={activeChat}
+                onCreated={select}
+                onRemoved={leaveRoom}
+                onNewChat={startNewChat}
+              />
+            </StudioDetail>
           }
         />
       )}
