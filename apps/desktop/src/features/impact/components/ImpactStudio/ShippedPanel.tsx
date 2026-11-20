@@ -86,7 +86,7 @@ export const ShippedPanel = ({
               ? UNKNOWN_VALUE
               : formatHours({ hours: reviewData.medianResolveHours })
           }
-          current={reviewData?.medianResolveHours ?? null}
+          current={reviewData === null ? null : (reviewData.medianResolveHours ?? 0)}
           previous={null}
           lowerIsBetter
         />
