@@ -18,7 +18,7 @@ shared_target_dir() {
 }
 
 CARGO_TARGET_DIR="${CARGO_TARGET_DIR:-$(shared_target_dir)}"
-export CARGO_TARGET_DIR
+[ -n "$CARGO_TARGET_DIR" ] && export CARGO_TARGET_DIR
 
 mode=full
 case "${1:-}" in

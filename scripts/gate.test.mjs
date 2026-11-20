@@ -154,7 +154,7 @@ describe('scripts/gate.sh against the CI jobs', () => {
   it('honors GATE_WORKERS and the environment target dir', () => {
     assert.match(gateText, /GATE_WORKERS:-2/);
     assert.match(gateText, /CARGO_TARGET_DIR="\$\{CARGO_TARGET_DIR:-\$\(shared_target_dir\)\}"/);
-    assert.match(gateText, /^export CARGO_TARGET_DIR$/m);
+    assert.match(gateText, /^\[ -n "\$CARGO_TARGET_DIR" \] && export CARGO_TARGET_DIR$/m);
   });
 
   it('builds Rust in the target folder of the main checkout', () => {
