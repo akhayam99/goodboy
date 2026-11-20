@@ -8,12 +8,7 @@ export {
 } from './sequencer';
 export { isAgentSettled, isAgentStatusHalted, isAgentStatusSettled } from './settled';
 export { DID_NOT_START_PREFIX, notFinishedKindOf, type NotFinishedKind } from './notFinishedKindOf';
-export {
-  buildChainCarryForward,
-  buildParallelCarryForward,
-  type ChainCarryForwardStep,
-  type ParallelCarryForwardBranch,
-} from './propagator';
+export { buildChainCarryForward, type ChainCarryForwardStep } from './propagator';
 export { WORKFLOW_LIBRARY, type WorkflowLibraryEntry, type WorkflowLibraryStep } from './library';
 export { findBuiltinWorkflow } from './findBuiltinWorkflow';
 export {
