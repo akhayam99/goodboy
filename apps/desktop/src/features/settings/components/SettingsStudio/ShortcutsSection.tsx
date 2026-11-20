@@ -1,4 +1,3 @@
-import { useId } from 'react';
 import { Band, FieldError } from '@goodboy/ui';
 import { shortcutGlyphs } from '../../../../shared/keyboard/registry';
 import { ClassicComposerKeysField } from './ClassicComposerKeysField';
@@ -10,7 +9,6 @@ import { useShortcutRecorder } from './useShortcutRecorder';
 export const ShortcutsSection = () => {
   const overrides = useShortcutOverrides();
   const recorder = useShortcutRecorder({ overrides });
-  const messageId = useId();
   return (
     <div className="flex flex-col gap-4">
       <p className="text-meta text-muted-foreground">
@@ -26,7 +24,7 @@ export const ShortcutsSection = () => {
           <ClassicComposerKeysField />
         </div>
       </Band>
-      <FieldError id={messageId} error={recorder.message} />
+      <FieldError id={recorder.messageId} error={recorder.message} />
       <div id="keyboard-shortcuts-list" className="grid grid-cols-2 gap-4">
         {SHORTCUT_COLUMNS.map((column) => (
           <div

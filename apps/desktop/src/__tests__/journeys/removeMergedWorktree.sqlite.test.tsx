@@ -10,12 +10,20 @@ import {
   type RenderResult,
 } from '@testing-library/react';
 import { insertProject, insertWorkspace } from '@goodboy/db';
-import type { ProjectId, SessionId, WorkspaceId } from '@goodboy/types';
+import type {
+  IsoDateTime,
+  MountCleanupProposal,
+  ProjectId,
+  SessionId,
+  SessionMountView,
+  WorkspaceId,
+} from '@goodboy/types';
 import { ToastProvider } from '../../shared/components/Toast';
 import { brandedId } from '../../features/history/testing/brandedId';
 import { resetWorktreeStatusCache } from '../../store/runtime/worktreeStatuses/cache';
 import { actionRetryOf } from '../../store/slices/notifications/actionRetries';
 import { CentralColumn } from '../../features/session/components/SessionOverviewPane/CentralColumn';
+import { deleteMergedBranches } from '../../features/session/components/BranchBoard/deleteMergedBranches';
 import { WorkTimeProvider } from '../../features/workTreeModel/WorkTimeProvider';
 import {
   buildStoryProject,
@@ -86,10 +94,33 @@ const WORKTREE = {
   reused: false,
 };
 
+const RELAY_WORKTREE = {
+  worktreePath: '/tmp/ledger-core/.goodboy/worktrees/notify-relay',
+  branchName: 'goodboy/notify-relay',
+  slug: 'notify-relay',
+  reused: false,
+};
+
 let useAppStore: StoryStore;
 let sessionId: SessionId;
 let prState: 'OPEN' | 'MERGED';
 let branchDeletes = 0;
+const refusedRestores = new Set<string>();
+const restoredBranches: Array<string> = [];
+
+const proposalOf = ({ mount }: { readonly mount: SessionMountView }): MountCleanupProposal => ({
+  requestId: `request-${mount.id}`,
+  sessionId,
+  mountId: mount.id,
+  projectId: mount.projectId,
+  reason: 'merge_cleanup',
+  repoRoot: mount.repoRoot,
+  worktreePath: mount.worktreePath ?? '',
+  branch: mount.branch,
+  sizeBytes: null,
+  request: null,
+  createdAt: brandedId<IsoDateTime>({ value: '2026-10-16T09:30:00.000Z' }),
+});
 
 beforeAll(async () => {
   useAppStore = await importStore();
@@ -120,6 +151,8 @@ beforeEach(async () => {
   await resetStoryStore();
   prState = 'OPEN';
   branchDeletes = 0;
+  refusedRestores.clear();
+  restoredBranches.length = 0;
   const db = await openStorySqlite();
   await insertWorkspace({ db, workspace });
   await insertProject({ db, project });
@@ -135,6 +168,13 @@ beforeEach(async () => {
         deletedOnOrigin: false,
         originError: null,
       };
+    },
+    branch_restore: ({ args }: { readonly args: { readonly branch: string } }) => {
+      if (refusedRestores.has(args.branch)) {
+        throw new Error(`git refused to restore ${args.branch}`);
+      }
+      restoredBranches.push(args.branch);
+      return { restored: true };
     },
     gh_run: (payload: GhPayload) => {
       if (payload.args[0] === 'repo') {
@@ -348,8 +388,9 @@ describe('journey: delete the local branch of a merged pull request from the boa
     expect(within(nextCard(view)).queryByRole('alert')).toBeNull();
     expect(useAppStore.getState().mountCleanupProposals[sessionId]).toHaveLength(1);
     expect(await mountRows()).toEqual([
-      expect.objectContaining({ worktree_path: WORKTREE.worktreePath }),
+      { worktree_path: WORKTREE.worktreePath, is_attached: 1, disk_state: 'unchecked' },
     ]);
+    expect(mountOf()).toMatchObject({ isAttached: true, worktreePath: WORKTREE.worktreePath });
     expect(branchDeletes).toBe(0);
 
     const retry =
@@ -365,5 +406,56 @@ describe('journey: delete the local branch of a merged pull request from the boa
       { worktree_path: null, is_attached: 0, disk_state: 'removed' },
     ]);
     expect(showNext(view)).not.toContain(REMOVE_NOTE);
+  });
+
+  it('brings every branch of a grouped delete back with one Undo, and a second Undo finishes an interrupted one', async () => {
+    storySpies.createWorktree.mockImplementation(
+      async ({ branchName }: { readonly branchName: string }) =>
+        branchName === RELAY_WORKTREE.branchName ? RELAY_WORKTREE : WORKTREE,
+    );
+    await useAppStore.getState().loadSessionMounts({ sessionId });
+    await useAppStore.getState().forkMount({
+      sessionId,
+      projectId: PROJECT_ID,
+      branch: RELAY_WORKTREE.branchName,
+    });
+    const mounts = [...(useAppStore.getState().sessionMounts[sessionId] ?? [])].sort(
+      (left, right) => left.branch.localeCompare(right.branch),
+    );
+    expect(mounts.map((mount) => mount.branch)).toEqual([
+      WORKTREE.branchName,
+      RELAY_WORKTREE.branchName,
+    ]);
+
+    expect(
+      await deleteMergedBranches({
+        sessionId,
+        proposals: mounts.map((mount) => proposalOf({ mount })),
+      }),
+    ).toBe(true);
+
+    expect(branchDeletes).toBe(2);
+    expect(await mountRows()).toEqual([
+      { worktree_path: null, is_attached: 0, disk_state: 'removed' },
+      { worktree_path: null, is_attached: 0, disk_state: 'removed' },
+    ]);
+    expect(useAppStore.getState().undoStack).toHaveLength(1);
+
+    refusedRestores.add(RELAY_WORKTREE.branchName);
+    expect(await useAppStore.getState().undoLastOperation()).toBe(false);
+
+    expect(restoredBranches).toEqual([WORKTREE.branchName]);
+    expect(useAppStore.getState().undoStack).toHaveLength(1);
+    expect((await mountRows()).map((row) => row.is_attached).sort()).toEqual([0, 1]);
+
+    refusedRestores.clear();
+    expect(await useAppStore.getState().undoLastOperation()).toBe(true);
+
+    expect(restoredBranches).toEqual([WORKTREE.branchName, RELAY_WORKTREE.branchName]);
+    expect(useAppStore.getState().undoStack).toEqual([]);
+    expect((await mountRows()).map((row) => row.is_attached)).toEqual([1, 1]);
+    expect(
+      (useAppStore.getState().sessionMounts[sessionId] ?? []).every((mount) => mount.isAttached),
+    ).toBe(true);
   });
 });

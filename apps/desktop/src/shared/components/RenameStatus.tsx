@@ -1,8 +1,7 @@
-import { useId } from 'react';
 import { Button, cn, FieldError } from '@goodboy/ui';
 
 type Props = {
-  readonly id?: string;
+  readonly id: string;
   readonly isPending: boolean;
   readonly error: string | null;
   readonly canRetry: boolean;
@@ -11,7 +10,6 @@ type Props = {
 };
 
 export const RenameStatus = ({ id, isPending, error, canRetry, onRetry, className }: Props) => {
-  const fallbackId = useId();
   if (isPending) {
     return (
       <span role="status" className={cn('shrink-0 text-meta text-muted-foreground', className)}>
@@ -24,7 +22,7 @@ export const RenameStatus = ({ id, isPending, error, canRetry, onRetry, classNam
   }
   return (
     <span className={cn('flex min-w-0 items-center gap-2', className)}>
-      <FieldError id={id ?? fallbackId} error={error} className="min-w-0 truncate" />
+      <FieldError id={id} error={error} className="min-w-0 truncate" />
       {canRetry ? (
         <Button
           size="xs"

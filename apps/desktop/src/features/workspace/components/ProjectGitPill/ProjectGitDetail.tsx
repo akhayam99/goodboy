@@ -131,9 +131,7 @@ export const ProjectGitDetail = ({ project, status }: Props) => {
       : `Fast-forward ${branch}`
     : 'Fast-forward';
 
-  const onOpen = async () => {
-    await openFolder({ path: project.rootPath });
-  };
+  const onOpen = () => openFolder({ path: project.rootPath });
   const onStartRepository = async () => {
     await initRepo({ path: project.rootPath });
     await loadProjectGitStatus({ projectId: project.id });
@@ -219,6 +217,7 @@ export const ProjectGitDetail = ({ project, status }: Props) => {
               <BaseBranchSelect
                 repoPath={project.rootPath}
                 value={project.baseBranch ?? null}
+                {...(baseBranchError === null ? {} : { errorId: baseBranchErrorId })}
                 onCommit={(candidate) => commitBaseBranch({ candidate })}
               />
             </span>

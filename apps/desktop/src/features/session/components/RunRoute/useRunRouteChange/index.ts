@@ -1,12 +1,17 @@
 import { useCallback, useState } from 'react';
+import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
-import { NOTHING_CHANGED } from '../../../../../store/slices/notifications/errorRecovery';
+import {
+  CHECK_STATE,
+  NOTHING_CHANGED,
+} from '../../../../../store/slices/notifications/errorRecovery';
 import {
   changeRunRoute,
   type RunRouteChange,
   type RunRouteChoice,
   type RunRouteTarget,
 } from '../../../startRun/changeRunRoute';
+import { OldRunLeftError } from '../../../startRun/OldRunLeftError';
 import { RUN_ROUTE_COPY } from '../../../startRun/runRouteCopy';
 
 type Params = {
@@ -23,6 +28,36 @@ export type RunRouteChangeModel = Readonly<{
   choose: (params: ChooseParams) => Promise<RunRouteChange | null>;
 }>;
 
+type EndOnceParams = {
+  readonly sessionId: SessionId;
+  readonly endOldRun: OldRunLeftError['endOldRun'];
+};
+
+type ReportLeftParams = EndOnceParams & {
+  readonly error: unknown;
+};
+
+const reportOldRunLeft = ({ sessionId, endOldRun, error }: ReportLeftParams): void => {
+  void useAppStore.getState().reportError({
+    title: RUN_ROUTE_COPY.oldRunLeft,
+    error,
+    recovery: CHECK_STATE,
+    stays: RUN_ROUTE_COPY.newRunKept,
+    sessionId,
+    retry: () => endOnce({ sessionId, endOldRun }),
+  });
+};
+
+const endOnce = async ({ sessionId, endOldRun }: EndOnceParams): Promise<boolean> => {
+  try {
+    await endOldRun();
+    return true;
+  } catch (error) {
+    reportOldRunLeft({ sessionId, endOldRun, error });
+    return false;
+  }
+};
+
 type ChangeOnceParams = ChooseParams & Params;
 
 const changeOnce = async ({
@@ -33,6 +68,14 @@ const changeOnce = async ({
   try {
     return await changeRunRoute({ target, choice, shouldEndRun });
   } catch (error) {
+    if (error instanceof OldRunLeftError) {
+      reportOldRunLeft({
+        sessionId: target.sessionId,
+        endOldRun: error.endOldRun,
+        error: error.failure,
+      });
+      return 'second-run';
+    }
     void useAppStore.getState().reportError({
       title: RUN_ROUTE_COPY.changeFailed,
       error,

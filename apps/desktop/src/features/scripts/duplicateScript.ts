@@ -1,4 +1,10 @@
-import type { ProjectId, SessionId, WorkspaceId } from '@goodboy/types';
+import {
+  brandId,
+  type ProjectId,
+  type ProjectScriptId,
+  type SessionId,
+  type WorkspaceId,
+} from '@goodboy/types';
 import { useAppStore } from '../../store';
 import { NOTHING_CHANGED } from '../../store/slices/notifications/errorRecovery';
 
@@ -8,6 +14,7 @@ type Params = {
   readonly projectId: ProjectId;
   readonly name: string;
   readonly body: string;
+  readonly copyId?: ProjectScriptId;
 };
 
 export const duplicateScript = async ({
@@ -16,10 +23,11 @@ export const duplicateScript = async ({
   projectId,
   name,
   body,
+  copyId = brandId<ProjectScriptId>({ value: crypto.randomUUID() }),
 }: Params): Promise<boolean> => {
   const state = useAppStore.getState();
   try {
-    await state.saveScript({ workspaceId, projectId, name: `${name} copy`, body });
+    await state.saveScript({ workspaceId, projectId, id: copyId, name: `${name} copy`, body });
     return true;
   } catch (error) {
     void state.reportError({
@@ -27,7 +35,7 @@ export const duplicateScript = async ({
       error,
       recovery: NOTHING_CHANGED,
       sessionId,
-      retry: () => duplicateScript({ workspaceId, sessionId, projectId, name, body }),
+      retry: () => duplicateScript({ workspaceId, sessionId, projectId, name, body, copyId }),
     });
     return false;
   }

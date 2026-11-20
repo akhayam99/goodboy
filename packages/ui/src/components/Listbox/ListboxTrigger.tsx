@@ -14,6 +14,7 @@ export type ListboxTriggerProps = {
   readonly isBlock: boolean;
   readonly id?: string;
   readonly testId?: string;
+  readonly errorId?: string | undefined;
   readonly value: string;
   readonly ariaLabel?: string;
   readonly listboxId: string;
@@ -72,6 +73,7 @@ export const ListboxTrigger = ({
   isBlock,
   id,
   testId,
+  errorId,
   value,
   ariaLabel,
   listboxId,
@@ -94,6 +96,8 @@ export const ListboxTrigger = ({
     aria-expanded={isOpen}
     aria-controls={isOpen ? listboxId : undefined}
     aria-activedescendant={activeDescendant}
+    aria-invalid={errorId === undefined ? undefined : true}
+    aria-describedby={errorId}
     disabled={disabled}
     onClick={onClick}
     onKeyDown={onKeyDown}

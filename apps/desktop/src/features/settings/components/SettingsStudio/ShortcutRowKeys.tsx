@@ -1,4 +1,4 @@
-import { Button, KeyHint } from '@goodboy/ui';
+import { Button, fieldErrorAriaOf, KeyHint } from '@goodboy/ui';
 import { shortcutRangeGlyphs } from '../../../../shared/keyboard/registry';
 import { isRebindable } from '../../../../shared/keyboard/overrides/isRebindable';
 import type { ShortcutRow } from './shortcutRows';
@@ -22,6 +22,7 @@ export const ShortcutRowKeys = ({ row, isOverridden, recorder }: Props) => {
         autoFocus
         aria-label={`New keys for ${row.label}`}
         placeholder="Press the new keys"
+        {...fieldErrorAriaOf({ id: recorder.messageId, error: recorder.message })}
         onKeyDown={recorder.onKeyDown}
         onBlur={recorder.cancel}
         className="h-6 w-40 shrink-0 rounded-md bg-background px-2 text-meta text-foreground outline-none ring-1 ring-focus-ring placeholder:text-faint-foreground"

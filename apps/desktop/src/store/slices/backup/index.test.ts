@@ -16,6 +16,7 @@ const h = vi.hoisted(() => ({
   listWorkspaces: vi.fn(async () => []),
   listProjectsForWorkspace: vi.fn(async () => []),
   reportError: vi.fn(async (_params: ReportErrorParams) => undefined),
+  resolveNotifications: vi.fn(async (_keys: ReadonlyArray<string>) => undefined),
 }));
 
 const reportedOf = (): ReportErrorParams => {
@@ -65,6 +66,7 @@ const harness = () => {
     loadBudgetRules: vi.fn(async () => undefined),
     loadSetting: vi.fn(async () => undefined),
     reportError: h.reportError,
+    resolveNotifications: h.resolveNotifications,
   } as unknown as AppStore;
   const set: SetFn = (update) => {
     const patch = typeof update === 'function' ? update(state) : update;
@@ -306,6 +308,62 @@ describe('backup import', () => {
     expect(store.state.backupImportPhase).toBe('done');
   });
 
+  it('never imports another file from the Retry of a failed one, and drops that row on a new pick', async () => {
+    const store = harness();
+    await chooseBackupImportFile(store.set, store.get)();
+    setBackupImportWorkspaceTarget(store.set, store.get)({ bundleId: 'w-1', targetId: 'existing' });
+    h.configImportApply.mockRejectedValueOnce(new Error('database is locked'));
+    await applyBackupImport(store.set, store.get)();
+    const retryOfFirst = reportedOf().retry;
+    expect(reportedOf().coalesceKey).toBe('backup-import-failed');
+
+    h.chooseImportFile.mockResolvedValueOnce('/tmp/northwind.json');
+    await chooseBackupImportFile(store.set, store.get)();
+    setBackupImportWorkspaceTarget(store.set, store.get)({ bundleId: 'w-1', targetId: 'other' });
+    expect(h.resolveNotifications).toHaveBeenLastCalledWith(['backup-import-failed']);
+    h.configImportApply.mockClear();
+
+    expect(await retryOfFirst?.()).toBe(false);
+
+    expect(h.configImportApply).not.toHaveBeenCalled();
+    expect(store.state.backupImportPath).toBe('/tmp/northwind.json');
+  });
+
+  it('retries a failed import with its own choices, not the ones picked since', async () => {
+    const store = harness();
+    await chooseBackupImportFile(store.set, store.get)();
+    setBackupImportWorkspaceTarget(store.set, store.get)({ bundleId: 'w-1', targetId: 'existing' });
+    setBackupImportWildcardConsent({ set: store.set })({ isAccepted: true });
+    h.configImportApply.mockRejectedValueOnce(new Error('database is locked'));
+    await applyBackupImport(store.set, store.get)();
+
+    setBackupImportWorkspaceTarget(store.set, store.get)({ bundleId: 'w-1', targetId: 'other' });
+    setBackupImportWildcardConsent({ set: store.set })({ isAccepted: false });
+    expect(await reportedOf().retry?.()).toBe(true);
+
+    expect(h.configImportApply).toHaveBeenLastCalledWith({
+      path: '/tmp/import.json',
+      workspaceTargets: { 'w-1': 'existing' },
+      resolvedProjectPaths: {},
+      expectedSha256: 'sha-harborline',
+      hasWildcardConsent: true,
+    });
+  });
+
+  it('never opens another file from the Retry of a failed preview', async () => {
+    const store = harness();
+    h.configImportPreview.mockRejectedValueOnce({ kind: 'io', message: 'the disk is busy' });
+    await chooseBackupImportFile(store.set, store.get)();
+    const retryOfFirst = reportedOf().retry;
+
+    h.chooseImportFile.mockResolvedValueOnce('/tmp/northwind.json');
+    await chooseBackupImportFile(store.set, store.get)();
+    h.configImportPreview.mockClear();
+
+    expect(await retryOfFirst?.()).toBe(false);
+    expect(h.configImportPreview).not.toHaveBeenCalled();
+  });
+
   it('says the backup file is gone when it moved, with no Retry', async () => {
     const store = harness();
     h.configImportPreview.mockRejectedValueOnce({
@@ -400,6 +458,24 @@ describe('backup error text', () => {
       expect.objectContaining({ path: '/tmp/goodboy-setup.json' }),
     );
     expect(store.state.backupExportedPath).toBe('/tmp/goodboy-setup.json');
+  });
+
+  it('retries a failed export with the groups and findings of the failed request', async () => {
+    const store = harness();
+    await loadBackupExportPreview(store.set, store.get)();
+    const groups = store.state.backupExportGroups;
+    h.configExportWrite.mockRejectedValueOnce(rejection);
+    await writeBackupExport(store.set, store.get)();
+
+    setBackupFindingIncluded(store.set, store.get)({ fingerprint: 'fp-1', included: true });
+    setBackupExportGroup(store.set, store.get)({ group: 'scripts', value: !groups.scripts });
+    expect(await reportedOf().retry?.()).toBe(true);
+
+    expect(h.configExportWrite).toHaveBeenLastCalledWith({
+      path: '/tmp/goodboy-setup.json',
+      groups,
+      leaveOut: ['fp-1'],
+    });
   });
 
   it('logs a structured import preview rejection with a Retry', async () => {

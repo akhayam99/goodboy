@@ -93,11 +93,39 @@ describe('the write verbs of a script row', () => {
 
     expect(reportError.mock.calls[0]?.[0].title).toBe("Couldn't duplicate replay-settlements");
     expect(await reportedRetry()()).toBe(true);
+    const copyId = saveScript.mock.calls[0]?.[0].id;
+    expect(copyId).toEqual(expect.any(String));
     expect(saveScript).toHaveBeenLastCalledWith({
       workspaceId: WORKSPACE_ID,
       projectId: PROJECT_ID,
+      id: copyId,
       name: 'replay-settlements copy',
       body: 'pnpm replay',
     });
+  });
+
+  it('keeps one copy when the save landed but its refresh failed, and the Retry writes the same id', async () => {
+    const saved = new Set<string>();
+    const saveScript = vi.fn(async ({ id }: { readonly id?: ProjectScriptId }) => {
+      saved.add(id ?? 'no id');
+      if (saveScript.mock.calls.length === 1) {
+        throw new Error('the script list could not be read');
+      }
+    });
+    useAppStore.setState({ saveScript });
+
+    expect(
+      await duplicateScript({
+        workspaceId: WORKSPACE_ID,
+        sessionId: SESSION_ID,
+        projectId: PROJECT_ID,
+        name: 'replay-settlements',
+        body: 'pnpm replay',
+      }),
+    ).toBe(false);
+    expect(await reportedRetry()()).toBe(true);
+
+    expect(saveScript).toHaveBeenCalledTimes(2);
+    expect(saved.size).toBe(1);
   });
 });

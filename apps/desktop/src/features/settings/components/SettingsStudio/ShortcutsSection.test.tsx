@@ -124,7 +124,8 @@ describe('rebinding a shortcut on the Shortcuts page', () => {
     expect(alert.textContent).toContain(SHORTCUTS['lens.scripts'].label);
     expect(savedOverrides()).toBeUndefined();
     expect(shortcutGlyphs('lens.plans')).toBe('⌘⌥P');
-    recorderField();
+    expect(recorderField().getAttribute('aria-invalid')).toBe('true');
+    expect(recorderField().getAttribute('aria-describedby')).toBe(alert.id);
   });
 
   it('refuses a system chord and a key with no modifier', async () => {

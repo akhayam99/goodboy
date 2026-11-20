@@ -20,6 +20,13 @@ import { resolveAfterMergeRule } from './resolveAfterMergeRule';
 import type { AfterMergeOutcome, GetFn, RunAfterMergeCleanupParams, SetFn } from './types';
 import { projectById } from '../projects/projectIndex';
 
+type RemovalReasonParams = {
+  readonly error: unknown;
+};
+
+const removalReasonOf = ({ error }: RemovalReasonParams): string | null =>
+  error instanceof Error && error.message !== '' ? error.message : null;
+
 const ask = (keptBecause: string | null): AfterMergeOutcome => ({ kind: 'ask', keptBecause });
 
 export const runAfterMergeCleanup = (set: SetFn, get: GetFn) => {
@@ -29,6 +36,8 @@ export const runAfterMergeCleanup = (set: SetFn, get: GetFn) => {
     expectedBranch,
     mergedHeadSha = null,
     isRequested = false,
+    isLocalOnly = false,
+    isRemovalRequired = false,
   }: RunAfterMergeCleanupParams): Promise<AfterMergeOutcome> => {
     const views = await loadMountViews({ get, sessionId });
     const view = views.find((candidate) => candidate.id === mountId);
@@ -52,7 +61,8 @@ export const runAfterMergeCleanup = (set: SetFn, get: GetFn) => {
       projectRule: project.overrides.afterMerge,
       workspaceRule: workspaceOverrides.afterMerge,
     });
-    const rule = isRequested && configuredRule === 'ask' ? 'local' : configuredRule;
+    const requestedRule = isRequested && configuredRule === 'ask' ? 'local' : configuredRule;
+    const rule = isLocalOnly && requestedRule === 'local-and-origin' ? 'local' : requestedRule;
     if (rule === 'ask') {
       return ask(null);
     }
@@ -80,10 +90,15 @@ export const runAfterMergeCleanup = (set: SetFn, get: GetFn) => {
       return ask(mergeReason);
     }
     const unmounted = await get()
-      .unmountMount({ sessionId, mountId, requestId: `after-merge:${mountId}:${sha}` })
-      .catch(() => null);
-    if (unmounted === null || unmounted.kept) {
-      return ask(keptBecauseFolder({ branch, reason: unmounted?.reason ?? null }));
+      .unmountMount({
+        sessionId,
+        mountId,
+        requestId: `after-merge:${mountId}:${sha}`,
+        isRemovalRequired,
+      })
+      .catch((error: unknown) => ({ kept: true, reason: removalReasonOf({ error }) }));
+    if (unmounted.kept) {
+      return ask(keptBecauseFolder({ branch, reason: unmounted.reason }));
     }
     const githubDeletes =
       rule === 'local-and-origin'

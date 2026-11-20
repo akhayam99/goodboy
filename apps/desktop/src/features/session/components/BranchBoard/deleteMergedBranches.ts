@@ -5,21 +5,38 @@ import type { ActionFailure } from '../../../../store/slices/notifications/repor
 import { cleanUpRefusalOf } from '../../../actions/kinds/cleanUpRefusalOf';
 import { mergedMountsOf } from '../../../actions/kinds/mergedMountsOf';
 
-type Params = {
-  readonly sessionId: SessionId;
-  readonly proposals: ReadonlyArray<MountCleanupProposal>;
-  readonly onBusy?: (params: BusyParams) => void;
-};
-
 type BusyParams = {
   readonly mountId: MountId;
   readonly isBusy: boolean;
+};
+
+type OnBusy = (params: BusyParams) => void;
+
+type Params = {
+  readonly sessionId: SessionId;
+  readonly proposals: ReadonlyArray<MountCleanupProposal>;
+  readonly onBusy?: OnBusy;
 };
 
 type Deleted = {
   readonly id: string;
   readonly mountId: MountId;
   readonly branch: string;
+};
+
+type Pending = {
+  readonly proposal: MountCleanupProposal;
+  readonly step: 'delete' | 'settle';
+};
+
+type Failed = {
+  readonly pending: Pending;
+  readonly failure: ActionFailure;
+};
+
+type Attempt = {
+  readonly deleted: Deleted | null;
+  readonly failed: Failed | null;
 };
 
 type TitleParams = {
@@ -29,21 +46,46 @@ type TitleParams = {
 const branchDeleteTitleOf = ({ branch }: TitleParams): string =>
   `Couldn't delete the local branch ${branch}`;
 
-type DeleteOneParams = {
+const settleTitleOf = ({ branch }: TitleParams): string =>
+  `Couldn't finish deleting the local branch ${branch}`;
+
+type StepParams = {
   readonly sessionId: SessionId;
   readonly proposal: MountCleanupProposal;
 };
 
-type DeleteOneResult =
-  | { readonly isDeleted: true; readonly deleted: Deleted }
-  | { readonly isDeleted: false; readonly failure: ActionFailure };
+const settleOne = async ({ sessionId, proposal }: StepParams): Promise<Failed | null> => {
+  try {
+    await useAppStore
+      .getState()
+      .settleMountCleanup({ sessionId, mountId: proposal.mountId, outcome: 'removed' });
+    return null;
+  } catch (error) {
+    return {
+      pending: { proposal, step: 'settle' },
+      failure: { title: settleTitleOf({ branch: proposal.branch }), error },
+    };
+  }
+};
 
-const deleteOne = async ({ sessionId, proposal }: DeleteOneParams): Promise<DeleteOneResult> => {
+type DeleteFailureParams = {
+  readonly proposal: MountCleanupProposal;
+  readonly error: unknown;
+};
+
+const deleteFailureOf = ({ proposal, error }: DeleteFailureParams): Attempt => ({
+  deleted: null,
+  failed: {
+    pending: { proposal, step: 'delete' },
+    failure: { title: branchDeleteTitleOf({ branch: proposal.branch }), error },
+  },
+});
+
+const deleteOne = async ({ sessionId, proposal }: StepParams): Promise<Attempt> => {
   const state = useAppStore.getState();
   const merged = mergedMountsOf({ state, sessionId }).find(
     (mount) => mount.mountId === proposal.mountId,
   );
-  const title = branchDeleteTitleOf({ branch: proposal.branch });
   try {
     const outcome = await state.runAfterMergeCleanup({
       sessionId,
@@ -51,29 +93,50 @@ const deleteOne = async ({ sessionId, proposal }: DeleteOneParams): Promise<Dele
       expectedBranch: proposal.branch,
       mergedHeadSha: merged?.mergedHeadSha ?? null,
       isRequested: true,
+      isLocalOnly: true,
+      isRemovalRequired: true,
     });
     if (outcome.kind !== 'deleted') {
-      return {
-        isDeleted: false,
-        failure: { title, error: cleanUpRefusalOf({ outcome, label: proposal.branch }) },
-      };
+      return deleteFailureOf({
+        proposal,
+        error: cleanUpRefusalOf({ outcome, label: proposal.branch }),
+      });
     }
-    await useAppStore
-      .getState()
-      .settleMountCleanup({ sessionId, mountId: proposal.mountId, outcome: 'removed' });
     return {
-      isDeleted: true,
       deleted: { id: outcome.deleted.id, mountId: proposal.mountId, branch: proposal.branch },
+      failed: await settleOne({ sessionId, proposal }),
     };
   } catch (error) {
-    return { isDeleted: false, failure: { title, error } };
+    return deleteFailureOf({ proposal, error });
   }
+};
+
+type AttemptParams = {
+  readonly sessionId: SessionId;
+  readonly pending: Pending;
+};
+
+const attemptOne = async ({ sessionId, pending }: AttemptParams): Promise<Attempt> => {
+  if (pending.step === 'settle') {
+    return { deleted: null, failed: await settleOne({ sessionId, proposal: pending.proposal }) };
+  }
+  return deleteOne({ sessionId, proposal: pending.proposal });
 };
 
 type UndoParams = {
   readonly sessionId: SessionId;
   readonly deleted: ReadonlyArray<Deleted>;
 };
+
+type AttachedParams = {
+  readonly sessionId: SessionId;
+  readonly mountId: MountId;
+};
+
+const isAttached = ({ sessionId, mountId }: AttachedParams): boolean =>
+  (useAppStore.getState().sessionMounts[sessionId] ?? []).some(
+    (mount) => mount.id === mountId && mount.isAttached,
+  );
 
 const offerUndo = ({ sessionId, deleted }: UndoParams): void => {
   const [first] = deleted;
@@ -89,42 +152,72 @@ const offerUndo = ({ sessionId, deleted }: UndoParams): void => {
     undo: async () => {
       for (const entry of deleted) {
         await useAppStore.getState().restoreDeletedBranch({ id: entry.id });
+        if (isAttached({ sessionId, mountId: entry.mountId })) {
+          continue;
+        }
         await useAppStore.getState().attachMount({ sessionId, mountId: entry.mountId });
       }
     },
   });
 };
 
-export const deleteMergedBranches = async ({
+type RunParams = {
+  readonly sessionId: SessionId;
+  readonly operationKey: string;
+  readonly pending: ReadonlyArray<Pending>;
+  readonly onBusy?: OnBusy;
+};
+
+type ReportParams = {
+  readonly sessionId: SessionId;
+  readonly operationKey: string;
+  readonly failed: ReadonlyArray<Failed>;
+};
+
+const reportRemaining = async ({ sessionId, operationKey, failed }: ReportParams) => {
+  await useAppStore.getState().resolveNotifications([operationKey]);
+  if (failed.length === 0) {
+    return;
+  }
+  await useAppStore.getState().reportErrors({
+    failures: failed.map((entry) => entry.failure),
+    groupTitleOf: ({ count }) => `Couldn't delete ${count} local branches`,
+    recovery: CHECK_STATE,
+    sessionId,
+    coalesceKey: operationKey,
+    retry: () =>
+      runDeletes({ sessionId, operationKey, pending: failed.map((entry) => entry.pending) }),
+  });
+};
+
+const runDeletes = async ({
   sessionId,
-  proposals,
+  operationKey,
+  pending,
   onBusy,
-}: Params): Promise<boolean> => {
+}: RunParams): Promise<boolean> => {
   const deleted: Array<Deleted> = [];
-  const failed: Array<{
-    readonly proposal: MountCleanupProposal;
-    readonly failure: ActionFailure;
-  }> = [];
-  for (const proposal of proposals) {
-    onBusy?.({ mountId: proposal.mountId, isBusy: true });
-    const result = await deleteOne({ sessionId, proposal });
-    onBusy?.({ mountId: proposal.mountId, isBusy: false });
-    if (result.isDeleted) {
-      deleted.push(result.deleted);
-      continue;
+  const failed: Array<Failed> = [];
+  for (const entry of pending) {
+    onBusy?.({ mountId: entry.proposal.mountId, isBusy: true });
+    const attempt = await attemptOne({ sessionId, pending: entry });
+    onBusy?.({ mountId: entry.proposal.mountId, isBusy: false });
+    if (attempt.deleted !== null) {
+      deleted.push(attempt.deleted);
     }
-    failed.push({ proposal, failure: result.failure });
+    if (attempt.failed !== null) {
+      failed.push(attempt.failed);
+    }
   }
   offerUndo({ sessionId, deleted });
-  if (failed.length > 0) {
-    void useAppStore.getState().reportErrors({
-      failures: failed.map((entry) => entry.failure),
-      groupTitleOf: ({ count }) => `Couldn't delete ${count} local branches`,
-      recovery: CHECK_STATE,
-      sessionId,
-      retry: () =>
-        deleteMergedBranches({ sessionId, proposals: failed.map((entry) => entry.proposal) }),
-    });
-  }
+  void reportRemaining({ sessionId, operationKey, failed });
   return failed.length === 0;
 };
+
+export const deleteMergedBranches = ({ sessionId, proposals, onBusy }: Params): Promise<boolean> =>
+  runDeletes({
+    sessionId,
+    operationKey: `delete-local-branches:${crypto.randomUUID()}`,
+    pending: proposals.map((proposal) => ({ proposal, step: 'delete' })),
+    ...(onBusy === undefined ? {} : { onBusy }),
+  });

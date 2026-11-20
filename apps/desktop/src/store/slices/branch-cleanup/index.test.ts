@@ -269,6 +269,55 @@ describe('runAfterMergeCleanup', () => {
     expect(h.deleteBranchChecked).not.toHaveBeenCalled();
   });
 
+  it('asks for a strict folder removal on request and keeps the branch with the reason when it fails', async () => {
+    const context = makeStore();
+    const unmountMount = vi.fn(async (_input: { readonly isRemovalRequired?: boolean }) => {
+      throw new Error('git worktree remove failed');
+    });
+    Object.assign(context.store.state, { unmountMount });
+
+    const outcome = await runAfterMergeCleanup(
+      context.set,
+      context.get,
+    )({
+      sessionId: SESSION_ID,
+      mountId: MOUNT_ID,
+      expectedBranch: BRANCH,
+      isRequested: true,
+      isRemovalRequired: true,
+    });
+
+    expect(unmountMount).toHaveBeenCalledWith(
+      expect.objectContaining({ mountId: MOUNT_ID, isRemovalRequired: true }),
+    );
+    expect(outcome).toEqual({
+      kind: 'ask',
+      keptBecause: `Kept ${BRANCH}: git worktree remove failed`,
+    });
+    expect(h.deleteBranchChecked).not.toHaveBeenCalled();
+  });
+
+  it('deletes only the local branch on a local only request, whatever the origin rule says', async () => {
+    const context = makeStore({ workspaceRule: 'local-and-origin' });
+
+    const outcome = await runAfterMergeCleanup(
+      context.set,
+      context.get,
+    )({
+      sessionId: SESSION_ID,
+      mountId: MOUNT_ID,
+      expectedBranch: BRANCH,
+      isRequested: true,
+      isLocalOnly: true,
+    });
+
+    expect(outcome.kind).toBe('deleted');
+    expect(h.ghRepoDeletesMergedBranches).not.toHaveBeenCalled();
+    expect(h.deleteBranchChecked).toHaveBeenCalledWith(
+      expect.objectContaining({ branch: BRANCH, alsoOrigin: false }),
+    );
+  });
+
   it('tests the merge against the recorded merged head and leases origin on it', async () => {
     const context = makeStore({ workspaceRule: 'local-and-origin' });
 

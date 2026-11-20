@@ -1,7 +1,7 @@
 import { useEffect, useId, useRef, type KeyboardEvent, type ReactNode } from 'react';
 import { ICON_SIZE, cn } from '@goodboy/ui';
-import { LimitRing } from './LimitRing';
-import { RenameStatus } from './RenameStatus';
+import { LimitRing } from '../LimitRing';
+import { RenameStatus } from '../RenameStatus';
 
 type Props = {
   readonly density: 'title' | 'row';
@@ -39,6 +39,7 @@ export const TitleField = ({
   onBlur,
 }: Props) => {
   const ringId = useId();
+  const errorId = useId();
   const inputRef = useRef<HTMLInputElement>(null);
   const caretRef = useRef(initialCaret);
   const hasError = error !== null;
@@ -61,6 +62,7 @@ export const TitleField = ({
 
   const status = (
     <RenameStatus
+      id={errorId}
       isPending={isPending}
       error={error}
       canRetry={canRetry}
@@ -95,7 +97,7 @@ export const TitleField = ({
         aria-invalid={hasError}
         aria-busy={isPending}
         readOnly={isPending}
-        aria-describedby={ringId}
+        aria-describedby={hasError && !isPending ? `${ringId} ${errorId}` : ringId}
         spellCheck={false}
         onChange={(event) => onDraftChange(event.target.value)}
         onKeyDown={onKeyDown}

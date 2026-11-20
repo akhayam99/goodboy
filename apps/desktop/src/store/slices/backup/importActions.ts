@@ -19,40 +19,72 @@ type FileChangedParams = {
 const isFileChanged = ({ error }: FileChangedParams): boolean =>
   typeof error === 'object' && error !== null && 'kind' in error && error.kind === 'file_changed';
 
+const BACKUP_IMPORT_FAILURE_KEY = 'backup-import-failed';
+
+type PreviewRequest = {
+  readonly path: string;
+  readonly projectParent: string | null;
+};
+
+type PreviewParams = {
+  readonly set: SetFn;
+  readonly get: GetFn;
+  readonly request: PreviewRequest;
+};
+
+type SameParams = {
+  readonly get: GetFn;
+  readonly request: PreviewRequest;
+};
+
+const isSamePreview = ({ get, request }: SameParams): boolean =>
+  get().backupImportPath === request.path &&
+  get().backupImportProjectParent === request.projectParent;
+
+const previewBackupImport = async ({ set, get, request }: PreviewParams): Promise<boolean> => {
+  set({ backupImportPhase: 'previewing' });
+  try {
+    const preview = await configImportPreview(request);
+    if (get().backupImportPath !== request.path) {
+      return false;
+    }
+    set({
+      backupImportPreview: preview,
+      hasBackupImportWildcardConsent: false,
+      backupImportPhase: 'idle',
+    });
+    return true;
+  } catch (error: unknown) {
+    set({ backupImportPhase: 'idle' });
+    const title = importFailureTitleOf({ error, title: "Couldn't open the backup file" });
+    void get().reportError({
+      title,
+      error,
+      recovery: NOTHING_CHANGED,
+      coalesceKey: BACKUP_IMPORT_FAILURE_KEY,
+      ...(title === "Couldn't find the backup file"
+        ? {}
+        : { retry: () => retryPreview({ set, get, request }) }),
+    });
+    return false;
+  }
+};
+
+const retryPreview = async ({ set, get, request }: PreviewParams): Promise<boolean> =>
+  isSamePreview({ get, request }) && (await previewBackupImport({ set, get, request }));
+
 export const loadBackupImportPreview = (set: SetFn, get: GetFn) => {
-  const load = async (): Promise<boolean> => {
+  return async (): Promise<boolean> => {
     const path = get().backupImportPath;
     if (path === null) {
       return false;
     }
-    set({ backupImportPhase: 'previewing' });
-    try {
-      const preview = await configImportPreview({
-        path,
-        projectParent: get().backupImportProjectParent,
-      });
-      if (get().backupImportPath !== path) {
-        return false;
-      }
-      set({
-        backupImportPreview: preview,
-        hasBackupImportWildcardConsent: false,
-        backupImportPhase: 'idle',
-      });
-      return true;
-    } catch (error: unknown) {
-      set({ backupImportPhase: 'idle' });
-      const title = importFailureTitleOf({ error, title: "Couldn't open the backup file" });
-      void get().reportError({
-        title,
-        error,
-        recovery: NOTHING_CHANGED,
-        ...(title === "Couldn't find the backup file" ? {} : { retry: load }),
-      });
-      return false;
-    }
+    return previewBackupImport({
+      set,
+      get,
+      request: { path, projectParent: get().backupImportProjectParent },
+    });
   };
-  return load;
 };
 
 export const chooseBackupImportFile = (set: SetFn, get: GetFn) => {
@@ -71,6 +103,7 @@ export const chooseBackupImportFile = (set: SetFn, get: GetFn) => {
       backupExportPhase: 'idle',
       backupExportedPath: null,
     });
+    void get().resolveNotifications([BACKUP_IMPORT_FAILURE_KEY]);
     await loadBackupImportPreview(set, get)();
   };
 };
@@ -123,73 +156,108 @@ export const setBackupImportWildcardConsent = ({ set }: SetBackupImportWildcardC
   };
 };
 
+type ApplyRequest = PreviewRequest & {
+  readonly workspaceTargets: Readonly<Record<string, string>>;
+  readonly resolvedProjectPaths: Readonly<Record<string, string>>;
+  readonly expectedSha256: string;
+  readonly hasWildcardConsent: boolean;
+};
+
+type ApplyParams = {
+  readonly set: SetFn;
+  readonly get: GetFn;
+  readonly request: ApplyRequest;
+};
+
+const retryApply = async ({ set, get, request }: ApplyParams): Promise<boolean> =>
+  get().backupImportPath === request.path && (await applyImportRequest({ set, get, request }));
+
+const applyImportRequest = async ({ set, get, request }: ApplyParams): Promise<boolean> => {
+  set({ backupImportPhase: 'applying' });
+  try {
+    const result = await configImportApply({
+      path: request.path,
+      workspaceTargets: request.workspaceTargets,
+      resolvedProjectPaths: request.resolvedProjectPaths,
+      expectedSha256: request.expectedSha256,
+      hasWildcardConsent: request.hasWildcardConsent,
+    });
+    if (!result.ok) {
+      set({ backupImportPhase: 'idle' });
+      void get().reportError({
+        title: "Couldn't import the backup",
+        error: result.errors.map((failure) => failure.message).join('\n'),
+        recovery: NOTHING_CHANGED,
+      });
+      return false;
+    }
+    set({ backupImportResult: result, backupImportPhase: 'done' });
+    const workspaces = await listWorkspaces({ db: tauriDatabase });
+    const projects = (
+      await Promise.all(
+        workspaces.map((workspace) =>
+          listProjectsForWorkspace({ db: tauriDatabase, workspaceId: workspace.id }),
+        ),
+      )
+    ).flat();
+    set({ workspaces, projects });
+    await Promise.all([
+      ...workspaces.map((workspace) =>
+        get()
+          .loadPhaseTemplates(workspace.id)
+          .catch(() => undefined),
+      ),
+      get()
+        .loadBudgetRules()
+        .catch(() => undefined),
+      get()
+        .loadSetting(SETTING_EDITOR_BINARY)
+        .catch(() => undefined),
+    ]);
+    return true;
+  } catch (error: unknown) {
+    set({ backupImportPhase: 'idle' });
+    const title = importFailureTitleOf({ error, title: "Couldn't import the backup" });
+    const isMissing = title === "Couldn't find the backup file";
+    const preview = { path: request.path, projectParent: request.projectParent };
+    void get().reportError({
+      title,
+      error,
+      recovery: isMissing ? NOTHING_CHANGED : CHECK_STATE,
+      coalesceKey: BACKUP_IMPORT_FAILURE_KEY,
+      ...(isMissing
+        ? {}
+        : {
+            retry: isFileChanged({ error })
+              ? () => retryPreview({ set, get, request: preview })
+              : () => retryApply({ set, get, request }),
+          }),
+    });
+    return false;
+  }
+};
+
 export const applyBackupImport = (set: SetFn, get: GetFn) => {
-  const apply = async (): Promise<boolean> => {
-    const path = get().backupImportPath;
-    const preview = get().backupImportPreview;
+  return async (): Promise<boolean> => {
+    const state = get();
+    const path = state.backupImportPath;
+    const preview = state.backupImportPreview;
     if (path === null || preview === null) {
       return false;
     }
-    set({ backupImportPhase: 'applying' });
-    try {
-      const result = await configImportApply({
+    return applyImportRequest({
+      set,
+      get,
+      request: {
         path,
-        workspaceTargets: get().backupImportWorkspaceTargets,
-        resolvedProjectPaths: get().backupImportResolvedPaths,
+        projectParent: state.backupImportProjectParent,
+        workspaceTargets: state.backupImportWorkspaceTargets,
+        resolvedProjectPaths: state.backupImportResolvedPaths,
         expectedSha256: preview.sha256,
-        hasWildcardConsent: get().hasBackupImportWildcardConsent,
-      });
-      if (!result.ok) {
-        set({ backupImportPhase: 'idle' });
-        void get().reportError({
-          title: "Couldn't import the backup",
-          error: result.errors.map((failure) => failure.message).join('\n'),
-          recovery: NOTHING_CHANGED,
-        });
-        return false;
-      }
-      set({ backupImportResult: result, backupImportPhase: 'done' });
-      const workspaces = await listWorkspaces({ db: tauriDatabase });
-      const projects = (
-        await Promise.all(
-          workspaces.map((workspace) =>
-            listProjectsForWorkspace({ db: tauriDatabase, workspaceId: workspace.id }),
-          ),
-        )
-      ).flat();
-      set({ workspaces, projects });
-      await Promise.all([
-        ...workspaces.map((workspace) =>
-          get()
-            .loadPhaseTemplates(workspace.id)
-            .catch(() => undefined),
-        ),
-        get()
-          .loadBudgetRules()
-          .catch(() => undefined),
-        get()
-          .loadSetting(SETTING_EDITOR_BINARY)
-          .catch(() => undefined),
-      ]);
-      return true;
-    } catch (error: unknown) {
-      set({ backupImportPhase: 'idle' });
-      const title = importFailureTitleOf({ error, title: "Couldn't import the backup" });
-      const isMissing = title === "Couldn't find the backup file";
-      void get().reportError({
-        title,
-        error,
-        recovery: isMissing ? NOTHING_CHANGED : CHECK_STATE,
-        ...(isMissing
-          ? {}
-          : {
-              retry: isFileChanged({ error }) ? loadBackupImportPreview(set, get) : apply,
-            }),
-      });
-      return false;
-    }
+        hasWildcardConsent: state.hasBackupImportWildcardConsent,
+      },
+    });
   };
-  return apply;
 };
 
 export const resetBackupImport = (set: SetFn) => {

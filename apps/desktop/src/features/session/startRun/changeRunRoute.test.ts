@@ -33,7 +33,11 @@ import {
   type StoryStore,
 } from '../../../store/storyHarness';
 import { writeRunGuidance } from '../../../store/runtime/runGuidance/writeRunGuidance';
+import { act, renderHook } from '@testing-library/react';
+import { useRunRouteChange } from '../components/RunRoute/useRunRouteChange';
 import { changeRunRoute } from './changeRunRoute';
+import { OldRunLeftError } from './OldRunLeftError';
+import { RUN_ROUTE_COPY } from './runRouteCopy';
 import { runRoutesKey, writeRunRoute } from './runRoutesSetting';
 
 const WORKSPACE = aWorkspace({ name: 'Harborline' });
@@ -349,6 +353,53 @@ describe('changeRunRoute', () => {
 
     expect(engines.spawnAgent).toHaveBeenCalledTimes(1);
     expect(engines.discardWorkflow).not.toHaveBeenCalled();
+  });
+
+  it('keeps the new run when the empty plan fails to go, and ending it again only discards', async () => {
+    seedPlanRun({ hasWork: false });
+    const engines = mockEngines();
+    engines.discardWorkflow.mockRejectedValueOnce(new Error('database is locked'));
+
+    const error: unknown = await changeRunRoute({
+      target: planTarget,
+      choice: { shape: 'lead', presetId: null, closeness: 'adapt' },
+    }).catch((failure: unknown) => failure);
+
+    if (!(error instanceof OldRunLeftError)) {
+      throw new Error('the partial change must carry the step left');
+    }
+    expect(error.failure).toEqual(new Error('database is locked'));
+    await error.endOldRun();
+    expect(engines.spawnAgent).toHaveBeenCalledTimes(1);
+    expect(engines.discardWorkflow).toHaveBeenCalledTimes(2);
+  });
+
+  it('logs the old run left after a restart, and its Retry only ends the old run', async () => {
+    seedPlanRun({ hasWork: true });
+    const engines = mockEngines();
+    engines.closeWorkflowRun.mockResolvedValueOnce('failed');
+    const reportError = vi.fn<StoryState['reportError']>(async () => undefined);
+    useAppStore.setState({ reportError });
+    const { result } = renderHook(() => useRunRouteChange({ target: planTarget }));
+
+    const change = await act(() =>
+      result.current.choose({
+        choice: { shape: 'lead', presetId: null, closeness: 'adapt' },
+        shouldEndRun: true,
+      }),
+    );
+
+    expect(change).toBe('second-run');
+    expect(reportError).toHaveBeenCalledOnce();
+    const reported = reportError.mock.calls[0]?.[0];
+    expect(reported).toMatchObject({
+      title: RUN_ROUTE_COPY.oldRunLeft,
+      stays: RUN_ROUTE_COPY.newRunKept,
+      sessionId: SESSION.id,
+    });
+    expect(await reported?.retry?.()).toBe(true);
+    expect(engines.spawnAgent).toHaveBeenCalledTimes(1);
+    expect(engines.closeWorkflowRun).toHaveBeenCalledTimes(2);
   });
 
   it('refuses to start a second run on a run that is still going', async () => {

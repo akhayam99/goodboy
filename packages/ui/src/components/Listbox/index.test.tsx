@@ -67,6 +67,24 @@ const MultipleHarness = () => {
 const trigger = () => screen.getByRole('combobox', { name: 'Theme' });
 
 describe('Listbox', () => {
+  it('describes the trigger with its error and marks it invalid only while one is named', () => {
+    const { rerender } = render(
+      <Listbox
+        ariaLabel="Theme"
+        errorId="theme-error"
+        options={THEMES}
+        value="system"
+        onChange={vi.fn()}
+      />,
+    );
+    expect(trigger().getAttribute('aria-describedby')).toBe('theme-error');
+    expect(trigger().getAttribute('aria-invalid')).toBe('true');
+
+    rerender(<Listbox ariaLabel="Theme" options={THEMES} value="system" onChange={vi.fn()} />);
+    expect(trigger().getAttribute('aria-describedby')).toBeNull();
+    expect(trigger().getAttribute('aria-invalid')).toBeNull();
+  });
+
   it('follows the select-only combobox pattern', () => {
     render(<SingleHarness options={THEMES} initial="dark" />);
 

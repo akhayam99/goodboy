@@ -30,6 +30,7 @@ type Props = {
 export const ReplyStyleNoteField = ({ workspaceId, value, isDisabled, save, onSave }: Props) => {
   const id = useId();
   const errorId = `${id}-error`;
+  const saveErrorId = useId();
   const [draft, setDraft] = useState(value ?? '');
   const [isLearning, setIsLearning] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -83,7 +84,9 @@ export const ReplyStyleNoteField = ({ workspaceId, value, isDisabled, save, onSa
       ) : null}
       <Textarea
         id={id}
-        {...fieldErrorAriaOf({ id: errorId, error })}
+        {...fieldErrorAriaOf(
+          error === null ? { id: saveErrorId, error: save.error } : { id: errorId, error },
+        )}
         value={draft}
         autoGrow
         minRows={2}
@@ -97,7 +100,7 @@ export const ReplyStyleNoteField = ({ workspaceId, value, isDisabled, save, onSa
         }}
       />
       <FieldError id={errorId} error={error} />
-      {save.error === null ? null : <SaveErrorHelp save={save} />}
+      {save.error === null ? null : <SaveErrorHelp id={saveErrorId} save={save} />}
       <p className="text-meta text-muted-foreground">
         You can edit this note. Agents follow it instead of a preset, and replies stay terse until
         it has text.

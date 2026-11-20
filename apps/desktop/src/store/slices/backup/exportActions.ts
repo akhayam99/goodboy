@@ -59,21 +59,23 @@ export const setBackupFindingIncluded = (set: SetFn, get: GetFn) => {
   };
 };
 
+type ExportRequest = {
+  readonly path: string;
+  readonly groups: ExportGroups;
+  readonly leaveOut: ReadonlyArray<string>;
+};
+
 type WriteToParams = {
   readonly set: SetFn;
   readonly get: GetFn;
-  readonly path: string;
+  readonly request: ExportRequest;
 };
 
-const writeBackupExportTo = async ({ set, get, path }: WriteToParams): Promise<boolean> => {
+const writeBackupExportTo = async ({ set, get, request }: WriteToParams): Promise<boolean> => {
   set({ backupExportPhase: 'writing', backupExportedPath: null });
   try {
-    await configExportWrite({
-      path,
-      groups: get().backupExportGroups,
-      leaveOut: get().backupExportLeaveOut,
-    });
-    set({ backupExportPhase: 'done', backupExportedPath: path });
+    await configExportWrite(request);
+    set({ backupExportPhase: 'done', backupExportedPath: request.path });
     return true;
   } catch (error: unknown) {
     set({ backupExportPhase: 'idle' });
@@ -81,7 +83,7 @@ const writeBackupExportTo = async ({ set, get, path }: WriteToParams): Promise<b
       title: "Couldn't export the backup",
       error,
       recovery: NOTHING_CHANGED,
-      retry: () => writeBackupExportTo({ set, get, path }),
+      retry: () => writeBackupExportTo({ set, get, request }),
     });
     return false;
   }
@@ -89,11 +91,17 @@ const writeBackupExportTo = async ({ set, get, path }: WriteToParams): Promise<b
 
 export const writeBackupExport = (set: SetFn, get: GetFn) => {
   return async (): Promise<string | null> => {
+    const groups = get().backupExportGroups;
+    const leaveOut = get().backupExportLeaveOut;
     const path = await chooseExportFile();
     if (path === null) {
       return null;
     }
-    const isWritten = await writeBackupExportTo({ set, get, path });
+    const isWritten = await writeBackupExportTo({
+      set,
+      get,
+      request: { path, groups, leaveOut },
+    });
     return isWritten ? path : null;
   };
 };

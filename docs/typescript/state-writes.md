@@ -145,6 +145,8 @@ Every retry, undo and resume path gets three tests:
 - the outcome was uncertain (the write may or may not have landed);
 - part of it succeeded.
 
+A Retry on a log row runs once at a time: the toast and the bell share one run per retry, and a Retry that worked is gone (`runActionRetry`, test: `recoveryActions.test.ts`). A report with a `coalesceKey` keeps its Retry under that key, so an attempt that fails again replaces the row and what its Retry targets (`deleteMergedBranches.test.ts`). A step that already landed is not run again: a duplicate keeps the id of its copy (`duplicateScript`), a run route change that started the new run retries only the end of the old one (`useRunRouteChange`), and a backup Retry resends the file and choices of its own request (`store/slices/backup/index.test.ts`).
+
 A create is retry-safe by asking the host first: `createPrForSession` and `createMrForSession` adopt the request that already exists for the branch and return the opened number with a warning when only the bookkeeping failed (`createPrForSession.test.ts`, `createMrForSession.test.ts`: uncertain outcome, state changed since, part succeeded).
 
 Example of an undo that holds its own rows:

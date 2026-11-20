@@ -58,6 +58,31 @@ beforeEach(async () => {
 afterEach(cleanup);
 
 describe('the git detail of a project', () => {
+  it('links a failed base branch save to the base branch control and marks it invalid', async () => {
+    useAppStore.setState({
+      updateProjectBaseBranch: vi.fn(async () => {
+        throw new Error('the project row is locked');
+      }),
+    });
+    stubStoryInvoke({
+      worktree_repo_default_base_branch: 'main',
+      worktree_list_branch_names: ['main'],
+    });
+    render(<ProjectGitDetail project={project} status={BEHIND} />);
+
+    fireEvent.click(screen.getByRole('combobox', { name: 'Base branch' }));
+    fireEvent.change(screen.getByRole('combobox', { name: 'Search branches' }), {
+      target: { value: 'release' },
+    });
+    fireEvent.click(await screen.findByRole('option', { name: /Use release/ }));
+
+    const alert = await screen.findByRole('alert');
+    expect(alert.textContent).toContain('the project row is locked');
+    const control = screen.getByRole('combobox', { name: 'Base branch' });
+    expect(control.getAttribute('aria-describedby')).toBe(alert.id);
+    expect(control.getAttribute('aria-invalid')).toBe('true');
+  });
+
   it('logs a failed fast-forward once with a Retry that pulls the same project, and keeps no red line', async () => {
     const fastForwardProjectCheckout = vi.fn();
     fastForwardProjectCheckout.mockRejectedValueOnce(new Error('not possible to fast-forward'));

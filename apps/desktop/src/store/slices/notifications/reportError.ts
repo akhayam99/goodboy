@@ -51,19 +51,27 @@ export const reportError = ({ get }: FactoryParams) => {
     recovery,
     retry,
     stays,
+    coalesceKey,
     ...target
   }: ReportErrorParams) => {
     const text = formatError(error).trim();
     const action: NotificationAction | undefined =
       retry === undefined
         ? recovery.action
-        : { kind: 'retry-action', retryId: registerActionRetry({ retry }) };
+        : {
+            kind: 'retry-action',
+            retryId: registerActionRetry({
+              retry,
+              ...(coalesceKey === undefined ? {} : { retryId: coalesceKey }),
+            }),
+          };
     await get().emitNotification({
       kind: 'error',
       severity,
       title,
       body: errorBodyOf({ text, recovery, stays }),
       ...(action !== undefined && { action }),
+      ...(coalesceKey === undefined ? {} : { coalesceKey }),
       ...target,
     });
   };

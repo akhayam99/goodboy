@@ -1,7 +1,10 @@
 import type { Notification, NotificationAction } from '@goodboy/db';
 import type { useAppStore } from '../../../../store';
 import type { ToastAction } from '../../../../shared/components/Toast';
-import { actionRetryOf } from '../../../../store/slices/notifications/actionRetries';
+import {
+  actionRetryOf,
+  runActionRetry,
+} from '../../../../store/slices/notifications/actionRetries';
 import { NAMES } from '../../../../shared/utils/names';
 
 type Params = {
@@ -15,15 +18,15 @@ export const mapRetryAction = ({
   store,
   notification,
 }: Params): ToastAction | undefined => {
-  const retry = actionRetryOf({ retryId: action.retryId });
-  if (retry === undefined) {
+  const { retryId } = action;
+  if (actionRetryOf({ retryId }) === undefined) {
     return undefined;
   }
   const { coalesceKey } = notification;
   return {
     label: NAMES.retry,
     onClick: () => {
-      void retry().then((isDone) => {
+      void runActionRetry({ retryId }).then((isDone) => {
         if (!isDone || coalesceKey == null) {
           return;
         }
