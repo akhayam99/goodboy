@@ -1,4 +1,5 @@
-import { useCallback, useMemo, useRef, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { holdRestHovers } from '@goodboy/ui';
 import { useNativeMenuPolicy } from '../../../../app/hooks/useNativeMenuPolicy';
 import { ObjectContextMenu } from './ObjectContextMenu';
 import {
@@ -50,6 +51,14 @@ export const ObjectMenuProvider = ({ children }: Props) => {
     onLink: ({ href, point, opener }) =>
       open({ target: { kind: 'link', href }, point, anchorKey: null, opener }),
   });
+
+  const isMenuOpen = request !== null;
+  useEffect(() => {
+    if (!isMenuOpen) {
+      return undefined;
+    }
+    return holdRestHovers();
+  }, [isMenuOpen]);
 
   const value = useMemo<ObjectMenuContextValue>(() => ({ open }), [open]);
 

@@ -2,7 +2,12 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, renderHook } from '@testing-library/react';
-import { REST_HOVER_LEAVE_MS, REST_HOVER_REST_MS, useRestHover } from '../useRestHover';
+import {
+  REST_HOVER_LEAVE_MS,
+  REST_HOVER_REST_MS,
+  holdRestHovers,
+  useRestHover,
+} from '../useRestHover';
 
 beforeEach(() => {
   vi.useFakeTimers();
@@ -16,6 +21,38 @@ afterEach(() => {
 const mountHover = () => renderHook(() => useRestHover<string>({}));
 
 describe('useRestHover', () => {
+  it('closes at once and stays shut while a menu holds hovers, then opens again', () => {
+    const { result } = mountHover();
+    act(() => {
+      result.current.openNow('ledger-core');
+    });
+
+    let release: () => void = () => undefined;
+    act(() => {
+      release = holdRestHovers();
+    });
+    expect(result.current.target).toBeNull();
+
+    act(() => {
+      result.current.enter('payments-api');
+      vi.advanceTimersByTime(REST_HOVER_REST_MS);
+    });
+    act(() => {
+      result.current.openNow('payments-api');
+    });
+    expect(result.current.target).toBeNull();
+
+    act(() => {
+      release();
+      release();
+      result.current.enter('payments-api');
+    });
+    act(() => {
+      vi.advanceTimersByTime(REST_HOVER_REST_MS);
+    });
+    expect(result.current.target).toBe('payments-api');
+  });
+
   it('opens after the rest delay and closes after the leave delay', () => {
     const { result } = mountHover();
 

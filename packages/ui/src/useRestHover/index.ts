@@ -22,6 +22,21 @@ export type RestHover<T> = {
 };
 
 let lastClosedAt = Number.NEGATIVE_INFINITY;
+let holdCount = 0;
+const holdListeners = new Set<() => void>();
+
+export const holdRestHovers = (): (() => void) => {
+  holdCount += 1;
+  holdListeners.forEach((listener) => listener());
+  let isReleased = false;
+  return () => {
+    if (isReleased) {
+      return;
+    }
+    isReleased = true;
+    holdCount -= 1;
+  };
+};
 
 export const useRestHover = <T>({
   restMs = REST_HOVER_REST_MS,
@@ -61,6 +76,9 @@ export const useRestHover = <T>({
   const openNow = useCallback(
     (next: T) => {
       clearTimers();
+      if (holdCount > 0) {
+        return;
+      }
       isOpenRef.current = true;
       setTarget(next);
     },
@@ -70,7 +88,7 @@ export const useRestHover = <T>({
   const enter = useCallback(
     (next: T) => {
       clearTimers();
-      if (!isMountedRef.current) {
+      if (!isMountedRef.current || holdCount > 0) {
         return;
       }
       const isWarm = hasWarmWindow && Date.now() - lastClosedAt < REST_HOVER_WARM_MS;
@@ -111,6 +129,13 @@ export const useRestHover = <T>({
       clearTimers();
     };
   }, [clearTimers]);
+
+  useEffect(() => {
+    holdListeners.add(close);
+    return () => {
+      holdListeners.delete(close);
+    };
+  }, [close]);
 
   return { target, enter, openNow, leave, keep, close };
 };

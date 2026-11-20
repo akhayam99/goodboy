@@ -387,7 +387,7 @@ export type { ToneBarDensity } from './components/ToneBar';
 export { StarToggle } from './components/StarToggle';
 export { OptionalTooltip } from './components/OptionalTooltip';
 export { Tooltip } from './components/Tooltip';
-export { REST_HOVER_REST_MS, useRestHover } from './useRestHover';
+export { REST_HOVER_REST_MS, holdRestHovers, useRestHover } from './useRestHover';
 export type { RestHover } from './useRestHover';
 export { FactCard } from './components/FactCard';
 export { FactCardHeader } from './components/FactCard/FactCardHeader';
