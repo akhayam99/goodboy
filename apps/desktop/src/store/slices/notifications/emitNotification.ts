@@ -38,9 +38,11 @@ export const emitNotification = (set: SetFn, get: GetFn) => {
     isOnce,
     isRead = false,
   }: EmitNotificationParams) => {
+    const key =
+      coalesceKey ?? `${kind}:${sessionId ?? workspaceId ?? 'global'}:${severity}:${title}`;
     if (
       isOnce === true &&
-      get().notifications.some((existing) => !existing.read && existing.coalesceKey === coalesceKey)
+      get().notifications.some((existing) => !existing.read && existing.coalesceKey === key)
     ) {
       return;
     }
@@ -55,8 +57,7 @@ export const emitNotification = (set: SetFn, get: GetFn) => {
       workspaceId: workspaceId ?? null,
       read: isRead,
       action: action ?? null,
-      coalesceKey:
-        coalesceKey ?? `${kind}:${sessionId ?? workspaceId ?? 'global'}:${severity}:${title}`,
+      coalesceKey: key,
       actedAt: null,
     };
     const state = get();
