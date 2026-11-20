@@ -1,9 +1,10 @@
 import { useState } from 'react';
-import { Chip, ConfirmPopover, formatError, ICON_SIZE, IconButton } from '@goodboy/ui';
+import { Chip, ConfirmPopover, ICON_SIZE, IconButton } from '@goodboy/ui';
 import { TriangleAlert, Unplug } from '@goodboy/ui/icons';
 import type { IntegrationCredentialId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { selectIntegrationKeyCheck } from '../../../../store/slices/integrations/selectIntegrationKeyCheck';
+import { NOTHING_CHANGED } from '../../../../store/slices/notifications/errorRecovery';
 import {
   IntegrationGlyph,
   type IntegrationGlyphProvider,
@@ -37,19 +38,26 @@ export const IntegrationConnectedRow = ({
       provider !== 'github' &&
       selectIntegrationKeyCheck({ state, credentialId })?.isPresent === false,
   );
+  const reportError = useAppStore((state) => state.reportError);
   const [isArmed, setIsArmed] = useState(false);
   const [isBusy, setIsBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
-  const disconnect = async () => {
+  const disconnect = async (): Promise<boolean> => {
     setIsBusy(true);
-    setError(null);
     try {
       await onDisconnect();
-      setIsArmed(false);
-    } catch (disconnectError) {
-      setError(formatError(disconnectError));
+      return true;
+    } catch (error) {
+      void reportError({
+        title: `Couldn't disconnect ${label}`,
+        error,
+        recovery: NOTHING_CHANGED,
+        stays: `${label} is still connected.`,
+        retry: disconnect,
+      });
+      return false;
     } finally {
+      setIsArmed(false);
       setIsBusy(false);
     }
   };
@@ -75,7 +83,9 @@ export const IntegrationConnectedRow = ({
             confirmLabel={`Disconnect ${label}`}
             isBusy={isBusy}
             isOpen={isArmed}
-            onConfirm={disconnect}
+            onConfirm={async () => {
+              await disconnect();
+            }}
             onCancel={() => setIsArmed(false)}
             trigger={() => (
               <IconButton
@@ -101,7 +111,6 @@ export const IntegrationConnectedRow = ({
           </span>
         </p>
       ) : null}
-      {error != null ? <p className="text-meta text-danger">{error}</p> : null}
     </div>
   );
 };

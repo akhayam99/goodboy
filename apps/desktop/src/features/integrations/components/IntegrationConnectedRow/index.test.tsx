@@ -18,6 +18,7 @@ import {
   type StoryStore,
 } from '../../../../store/storyHarness';
 import { IntegrationConnectedRow } from '.';
+import type { ReportErrorParams } from '../../../../store/slices/notifications/reportError';
 
 const CREDENTIAL_ID = credentialIdOf({ value: 'cred-1' });
 
@@ -98,17 +99,28 @@ describe('IntegrationConnectedRow', () => {
     await waitFor(() => expect(onDisconnect).toHaveBeenCalledOnce());
   });
 
-  it('shows the failure when the disconnect is rejected', async () => {
-    renderRow({
-      onDisconnect: vi.fn(async () => {
-        throw new Error('keychain said no');
-      }),
-    });
+  it('logs a rejected disconnect, keeps the row, and its Retry disconnects', async () => {
+    const reportError = vi.fn(async (_params: ReportErrorParams) => undefined);
+    useAppStore.setState({ reportError });
+    const onDisconnect = vi.fn(async () => undefined);
+    onDisconnect.mockRejectedValueOnce(new Error('keychain said no'));
+    renderRow({ onDisconnect });
     fireEvent.click(screen.getByRole('button', { name: /disconnect linear/i }));
     fireEvent.click(
       within(screen.getByRole('dialog')).getByRole('button', { name: /^disconnect linear$/i }),
     );
-    expect(await screen.findByText(/keychain said no/i)).toBeDefined();
+
+    await waitFor(() => expect(reportError).toHaveBeenCalledOnce());
+    const reported = reportError.mock.calls[0]?.[0];
+    expect(reported).toMatchObject({
+      title: "Couldn't disconnect Linear",
+      stays: 'Linear is still connected.',
+    });
+    expect(screen.queryByText(/keychain said no/i)).toBeNull();
+    screen.getByText('Connected as Ada Lovelace');
+
+    expect(await reported?.retry?.()).toBe(true);
+    expect(onDisconnect).toHaveBeenCalledTimes(2);
   });
 });
 

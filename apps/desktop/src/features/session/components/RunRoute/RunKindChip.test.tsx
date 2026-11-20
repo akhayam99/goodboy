@@ -33,6 +33,7 @@ import {
 } from '../../../../store/storyHarness';
 import { RunKindChip } from './RunKindChip';
 import type { RunKindPhase } from './runKindPhaseOf';
+import type { ReportErrorParams } from '../../../../store/slices/notifications/reportError';
 
 const WORKSPACE = aWorkspace({ name: 'Northwind' });
 const SESSION = aSession({ workspaceId: WORKSPACE.id, goal: 'Member pages' });
@@ -207,20 +208,29 @@ describe('RunKindChip', () => {
     await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Kind' })).toBeNull());
   });
 
-  it('keeps the popover open with the reason when the second run cannot start', async () => {
+  it('logs the reason with a Retry when the second run cannot start, and keeps the run', async () => {
     const engines = seedWork();
     engines.spawnAgent.mockRejectedValueOnce(new Error('No provider is connected'));
+    const reportError = vi.fn(async (_params: ReportErrorParams) => undefined);
+    useAppStore.setState({ reportError });
     const popover = openChip({ phase: 'ended' });
 
     await act(async () => {
       fireEvent.click(within(popover).getByRole('button', { name: 'Lead' }));
     });
 
-    expect((await within(popover).findByRole('alert')).textContent).toBe(
-      "Couldn't change the run: No provider is connected",
-    );
-    screen.getByRole('dialog', { name: 'Kind' });
+    await waitFor(() => expect(reportError).toHaveBeenCalledOnce());
+    expect(reportError.mock.calls[0]?.[0]).toMatchObject({
+      title: "Couldn't change the run",
+      error: new Error('No provider is connected'),
+    });
+    expect(within(popover).queryByRole('alert')).toBeNull();
     expect(engines.closeWorkflowRun).not.toHaveBeenCalled();
+    const retry = reportError.mock.calls[0]?.[0].retry;
+    await act(async () => {
+      expect(await retry?.()).toBe(true);
+    });
+    expect(engines.spawnAgent).toHaveBeenCalledTimes(2);
   });
 
   it('is read-only while the run is going: what it is and why, no way to start another', () => {

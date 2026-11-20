@@ -5,17 +5,18 @@ import {
   Button,
   DrawerFrame,
   EmptyLine,
-  formatError,
   ICON_SIZE,
   IconButton,
   Notice,
   splitErrorMessage,
   useCopyLink,
 } from '@goodboy/ui';
-import type { MountId, ProjectScriptId, SessionId, WorkspaceId } from '@goodboy/types';
+import type { MountId, SessionId, WorkspaceId } from '@goodboy/types';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import { selectOpenDrawer } from '../../../../store/slices/drawer/selectOpenDrawer';
+import { deleteSavedScript } from '../../deleteSavedScript';
+import { duplicateScript } from '../../duplicateScript';
 import { scriptsScopeOf } from '../../scriptsScopeOf';
 import { MountProjectAction } from '../../../session/components/SessionOverviewPane/ProjectMountRows/MountProjectAction';
 import type { RunnableScript, SessionScriptGroup } from '../../buildSessionScripts';
@@ -99,8 +100,6 @@ export const ScriptsPanel = ({ workspaceId, sessionId, onClose }: Props) => {
   });
   const scopeProjectId = useAppStore((state) => scriptsScopeOf({ state, sessionId }));
   const loadScripts = useAppStore((state) => state.loadScripts);
-  const saveScript = useAppStore((state) => state.saveScript);
-  const deleteScript = useAppStore((state) => state.deleteScript);
   const refreshDiscoveredScripts = useAppStore((state) => state.refreshDiscoveredScripts);
   const openDrawer = useAppStore((state) => state.openDrawer);
   const toggleDrawer = useAppStore((state) => state.toggleDrawer);
@@ -109,7 +108,6 @@ export const ScriptsPanel = ({ workspaceId, sessionId, onClose }: Props) => {
   const { collapsed, packagesOverrides, setGroupCollapsed, setPackageCollapsed } =
     useScriptCollapse({ workspaceId });
   const [scopedProjectId] = useState(() => scopeProjectId);
-  const [pageError, setPageError] = useState<string | null>(null);
   const [focusedKey, setFocusedKey] = useState<string | null>(null);
   const [pickerMountId, setPickerMountId] = useState<MountId | null>(null);
   const draft = useScriptDraft({ workspaceId });
@@ -207,30 +205,11 @@ export const ScriptsPanel = ({ workspaceId, sessionId, onClose }: Props) => {
     [onRun, sessionId],
   );
 
-  const onDuplicate = useCallback(
-    ({ group, script }: RowParams) => {
-      const body = saved.find((candidate) => candidate.id === script.savedId)?.body ?? '';
-      saveScript({
-        workspaceId,
-        projectId: group.projectId,
-        name: `${script.name} copy`,
-        body,
-      }).catch((caughtError: unknown) => setPageError(formatError(caughtError)));
-    },
-    [saveScript, saved, workspaceId],
-  );
-
-  const onDelete = useCallback(
-    async ({ savedId }: { readonly savedId: ProjectScriptId }) => {
-      try {
-        await deleteScript(savedId, workspaceId);
-        setPageError(null);
-      } catch (caughtError) {
-        setPageError(formatError(caughtError));
-      }
-    },
-    [deleteScript, workspaceId],
-  );
+  const onDuplicate = ({ group, script }: RowParams) => {
+    const body = saved.find((candidate) => candidate.id === script.savedId)?.body ?? '';
+    const { projectId } = group;
+    void duplicateScript({ workspaceId, sessionId, projectId, name: script.name, body });
+  };
 
   const targetFor = ({ group, script }: RowParams): ScriptActionTarget => {
     const savedId = script.savedId;
@@ -276,7 +255,12 @@ export const ScriptsPanel = ({ workspaceId, sessionId, onClose }: Props) => {
                   body: invocation,
                 })
             : null,
-        onDelete: savedId === null ? null : () => onDelete({ savedId }),
+        onDelete:
+          savedId === null
+            ? null
+            : async () => {
+                await deleteSavedScript({ workspaceId, sessionId, savedId, name: script.name });
+              },
         onRestart: () => void onRestart({ group, script }),
         ...(group.isReady && {
           onOpenInTerminal: () =>
@@ -715,11 +699,6 @@ export const ScriptsPanel = ({ workspaceId, sessionId, onClose }: Props) => {
           </EmptyLine>
         ) : null}
         {ended.count === 0 ? null : <EndedServicesRow {...ended} />}
-        {pageError === null ? null : (
-          <p role="alert" className="text-meta text-danger">
-            {pageError}
-          </p>
-        )}
         {query.trim() !== '' && visibleGroups.length === 0 ? (
           <EmptyLine
             action={

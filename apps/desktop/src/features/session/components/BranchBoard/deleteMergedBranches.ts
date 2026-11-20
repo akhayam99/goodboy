@@ -26,7 +26,7 @@ type TitleParams = {
   readonly branch: string;
 };
 
-const failureTitleOf = ({ branch }: TitleParams): string =>
+const branchDeleteTitleOf = ({ branch }: TitleParams): string =>
   `Couldn't delete the local branch ${branch}`;
 
 type DeleteOneParams = {
@@ -43,7 +43,7 @@ const deleteOne = async ({ sessionId, proposal }: DeleteOneParams): Promise<Dele
   const merged = mergedMountsOf({ state, sessionId }).find(
     (mount) => mount.mountId === proposal.mountId,
   );
-  const title = failureTitleOf({ branch: proposal.branch });
+  const title = branchDeleteTitleOf({ branch: proposal.branch });
   try {
     const outcome = await state.runAfterMergeCleanup({
       sessionId,

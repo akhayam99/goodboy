@@ -4,6 +4,8 @@ import { Button, ConfirmPopover, ICON_SIZE } from '@goodboy/ui';
 import { NAMES } from '../../../../shared/utils/names';
 import { useBoardContext } from './useBoardContext';
 
+const PULL_REQUESTS_STAY = 'The pull requests stay.';
+
 type Props = {
   readonly mountIds: ReadonlyArray<string> | null;
   readonly variant: 'secondary' | 'quiet';
@@ -43,7 +45,7 @@ export const BoardRemoveButton = ({ mountIds, variant }: Props) => {
       title={isOne ? `${NAMES.deleteLocalBranch}?` : `Delete ${targets.length} local branches?`}
       description={`${targets.map((target) => target.branch).join(', ')}. ${
         isOne ? 'Its folder goes too.' : 'Each folder goes too.'
-      } The pull requests stay, and a branch holding work stays and says why.`}
+      } ${PULL_REQUESTS_STAY}`}
       confirmLabel={isOne ? NAMES.deleteLocalBranch : NAMES.deleteLocalBranches}
       isOpen={isConfirming}
       anchorClassName="flex min-w-0 items-center"

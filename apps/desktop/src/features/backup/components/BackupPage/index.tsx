@@ -92,7 +92,7 @@ export const BackupPage = () => {
         <SettingRow
           label="Export backup"
           rowKey="backup-export"
-          help="Saves a backup file with the groups you ticked. No keys, tokens or folder paths inside."
+          help="Saves a backup file. No keys, tokens or folder paths inside."
         >
           <Button isBusy={isExporting} busyLabel="Exporting…" onClick={() => void writeExport()}>
             Export

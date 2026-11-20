@@ -1,9 +1,10 @@
 // @vitest-environment happy-dom
 
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { WorkspaceId } from '@goodboy/types';
 import { jiraListTransitions } from './client';
+import type { ReportErrorParams } from '../../../store/slices/notifications/reportError';
 
 const h = vi.hoisted(() => ({
   config: {
@@ -11,8 +12,15 @@ const h = vi.hoisted(() => ({
     email: 'grace@acme.com',
     projectKey: 'ENG',
   } as unknown,
+  reportError: vi.fn(async (_params: ReportErrorParams) => undefined),
 }));
 
+vi.mock('@tauri-apps/api/core', async () =>
+  (await import('../../../store/storyHarness')).tauriCoreModuleMock(),
+);
+vi.mock('@tauri-apps/api/event', async () =>
+  (await import('../../../store/storyHarness')).tauriEventModuleMock(),
+);
 vi.mock('./useJiraConfig', () => ({ useJiraConfig: () => h.config }));
 vi.mock('./client', async (importOriginal) => ({
   ...(await importOriginal<typeof import('./client')>()),
@@ -20,6 +28,12 @@ vi.mock('./client', async (importOriginal) => ({
 }));
 
 import { tooltipTextOf } from '../../../__tests__/helpers/tooltip';
+import {
+  importStore,
+  resetStoryStore,
+  STORE_IMPORT_TIMEOUT_MS,
+  type StoryStore,
+} from '../../../store/storyHarness';
 import { TransitionMenu } from './TransitionMenu';
 
 const listTransitions = vi.mocked(jiraListTransitions);
@@ -36,8 +50,16 @@ const mount = ({ onTransition }: { onTransition: (id: string) => Promise<void> }
     />,
   );
 
-beforeEach(() => {
+let useAppStore: StoryStore;
+
+beforeAll(async () => {
+  useAppStore = await importStore();
+}, STORE_IMPORT_TIMEOUT_MS);
+
+beforeEach(async () => {
   vi.clearAllMocks();
+  await resetStoryStore();
+  useAppStore.setState({ reportError: h.reportError });
   listTransitions.mockResolvedValue([]);
 });
 afterEach(cleanup);
@@ -71,21 +93,24 @@ describe('TransitionMenu', () => {
     expect(screen.queryByRole('menu')).toBeNull();
   });
 
-  it('keeps the menu mounted and shows what Jira refused when a move fails', async () => {
+  it('logs what Jira refused with a Retry that sends the same move, and draws no red line', async () => {
     listTransitions.mockResolvedValue([
       { id: '31', name: 'Ready for review', to: null, hasScreen: false },
     ]);
-    mount({
-      onTransition: vi.fn(async () => {
-        throw new Error('Field "Reviewer" is required');
-      }),
-    });
+    const onTransition = vi.fn(async (_id: string) => undefined);
+    onTransition.mockRejectedValueOnce(new Error('Field "Reviewer" is required'));
+    mount({ onTransition });
 
     fireEvent.click(await screen.findByRole('button', { name: /move this issue/ }));
     fireEvent.click(screen.getByRole('menuitem', { name: 'Ready for review' }));
 
-    expect((await screen.findByRole('alert')).textContent).toContain('Reviewer');
-    expect(screen.getByRole('menuitem', { name: 'Ready for review' })).toBeDefined();
+    await waitFor(() => expect(h.reportError).toHaveBeenCalledOnce());
+    const reported = h.reportError.mock.calls[0]?.[0];
+    expect(reported?.title).toBe("Couldn't move ENG-142 to Ready for review");
+    expect(screen.queryByRole('alert')).toBeNull();
+    expect(await reported?.retry?.()).toBe(true);
+    expect(onTransition).toHaveBeenLastCalledWith('31');
+    expect(onTransition).toHaveBeenCalledTimes(2);
   });
 
   it('closes only after Jira accepts the move, and names where each move goes', async () => {

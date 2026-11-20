@@ -1,7 +1,8 @@
 import { useRef, useState } from 'react';
-import { Band, formatError } from '@goodboy/ui';
+import { Band } from '@goodboy/ui';
 import type { Agent, SessionId } from '@goodboy/types';
 import { agentPlace, useAppStore } from '../../../../store';
+import { NOTHING_CHANGED } from '../../../../store/slices/notifications/errorRecovery';
 import type { AgentKind } from '../../agent-kind';
 import { useAutoMembership } from '../../../auto/useAutoMembership';
 import { agentFollowUpMoves } from '../../followUpMoves';
@@ -20,12 +21,13 @@ type Props = {
 type ContinueParams = {
   readonly kind: AgentKind;
   readonly hint: string;
+  readonly label: string;
 };
 
 export const AgentFollowUps = ({ sourceAgent, sourceKind, sessionId, followUps }: Props) => {
   const navigate = useAppStore((state) => state.navigate);
   const membership = useAutoMembership({ sessionId, agentId: sourceAgent.id });
-  const [error, setError] = useState<string | null>(null);
+  const reportError = useAppStore((state) => state.reportError);
   const [busyKind, setBusyKind] = useState<AgentKind | null>(null);
   const busyRef = useRef(false);
 
@@ -43,13 +45,12 @@ export const AgentFollowUps = ({ sourceAgent, sourceKind, sessionId, followUps }
   const spawnedKinds = new Set(followUps.map((entry) => entry.kind));
   const pending = moves.filter((move) => !spawnedKinds.has(move.kind));
 
-  const onContinue = async ({ kind, hint }: ContinueParams): Promise<void> => {
+  const onContinue = async ({ kind, hint, label }: ContinueParams): Promise<boolean> => {
     if (busyRef.current) {
-      return;
+      return false;
     }
     busyRef.current = true;
     setBusyKind(kind);
-    setError(null);
     try {
       const outcome = await continueWithRole({
         sessionId,
@@ -58,8 +59,16 @@ export const AgentFollowUps = ({ sourceAgent, sourceKind, sessionId, followUps }
         sourceAgentId: sourceAgent.id,
       });
       navigate({ to: agentPlace({ sessionId, agentId: outcome.agentId }) });
-    } catch (cause) {
-      setError(formatError(cause));
+      return true;
+    } catch (error) {
+      void reportError({
+        title: `Couldn't start the ${label}`,
+        error,
+        recovery: NOTHING_CHANGED,
+        sessionId,
+        retry: () => onContinue({ kind, hint, label }),
+      });
+      return false;
     } finally {
       busyRef.current = false;
       setBusyKind(null);
@@ -88,14 +97,11 @@ export const AgentFollowUps = ({ sourceAgent, sourceKind, sessionId, followUps }
             hint={move.hint}
             isBusy={busyKind === move.kind}
             isDisabled={busyKind !== null}
-            onContinue={() => void onContinue({ kind: move.kind, hint: move.hint })}
+            onContinue={() =>
+              void onContinue({ kind: move.kind, hint: move.hint, label: move.label })
+            }
           />
         ))}
-        {error === null ? null : (
-          <p role="alert" className="text-meta text-danger">
-            {error}
-          </p>
-        )}
       </div>
     </Band>
   );
