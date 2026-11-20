@@ -2094,7 +2094,7 @@
     "packages/types/src/search.ts": 1,
     "packages/types/src/workflow-rules.ts": 6,
     "packages/types/src/workflow.ts": 3,
-    "packages/types/src/workspace.ts": 2,
+    "packages/types/src/workspace.ts": 1,
     "packages/ui/src/cn.ts": 1,
     "packages/ui/src/components/ConfirmPopover.tsx": 3,
     "packages/ui/src/components/ContextMenu/ContextMenu.tsx": 1,
