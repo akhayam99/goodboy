@@ -106,6 +106,6 @@ describe('ProfileForm', () => {
       within(implementerRow)
         .getAllByRole('cell')
         .map((cell) => cell.getAttribute('aria-label')),
-    ).toEqual(['reads', 'does not read', 'reads', 'does not read']);
+    ).toEqual(['reads', "doesn't read", 'reads', "doesn't read"]);
   });
 });

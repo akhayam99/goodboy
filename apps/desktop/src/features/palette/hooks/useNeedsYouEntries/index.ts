@@ -1,10 +1,10 @@
 import { useMemo } from 'react';
-import { EMPTY_ARRAY, useAppStore, useCurrentWorkspace } from '../../../store';
-import { useNowSessions } from '../../../shared/hooks/useNowSessions';
-import { stageInfoOf } from '../../../store/slices/session-view/stageInfoOf';
-import { attentionPlace } from '../../session/attentionPlace';
-import { needsYouEntries } from '../sources/needsYouEntries';
-import type { PaletteEntry } from '../types';
+import { EMPTY_ARRAY, useAppStore, useCurrentWorkspace } from '../../../../store';
+import { useNowSessions } from '../../../../shared/hooks/useNowSessions';
+import { stageInfoOf } from '../../../../store/slices/session-view/stageInfoOf';
+import { attentionPlace } from '../../../session/attentionPlace';
+import { needsYouEntries } from '../../sources/needsYouEntries';
+import type { PaletteEntry } from '../../types';
 
 export const useNeedsYouEntries = (): ReadonlyArray<PaletteEntry> => {
   const workspace = useCurrentWorkspace();

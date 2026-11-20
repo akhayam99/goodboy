@@ -2,7 +2,8 @@
 
 import { afterEach, describe, expect, it } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
-import { Popover, PopoverBody } from '../components/Popover';
+import { Popover } from '../components/Popover';
+import { PopoverBody } from '../components/PopoverBody';
 
 afterEach(cleanup);
 

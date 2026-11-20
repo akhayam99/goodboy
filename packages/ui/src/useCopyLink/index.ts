@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { copyToClipboard } from './copyToClipboard';
+import { copyToClipboard } from '../copyToClipboard';
 
 const RESET_MS = 1200;
 

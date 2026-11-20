@@ -136,7 +136,9 @@ describe('every popover opens under its trigger, start aligned', () => {
     const dropdown = readSource('packages/ui/src/useDropdown/index.ts');
     expect(dropdown).toContain("side = 'bottom',");
     expect(dropdown).toContain("align = 'start',");
-    expect(readSource('packages/ui/src/useDropdownDirection.ts')).toContain("side = 'bottom',");
+    expect(readSource('packages/ui/src/useDropdownDirection/index.ts')).toContain(
+      "side = 'bottom',",
+    );
     expect(readSource('packages/ui/src/components/Listbox/index.tsx')).toContain(
       "align = 'start',",
     );

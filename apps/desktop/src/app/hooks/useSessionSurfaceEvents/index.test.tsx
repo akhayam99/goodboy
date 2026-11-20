@@ -8,7 +8,7 @@ import { useAppStore } from '../../../store';
 import { PLAN_FIXTURE_ID, PLAN_FIXTURE_SESSION, aPlan } from '../../../test/planFixtures';
 import { startRunDetailOf } from '../../../features/session/startRun/startRunDetailOf';
 import { startRunEventName } from '../../../features/session/startRun/startRunEventName';
-import { useSessionSurfaceEvents } from './useSessionSurfaceEvents';
+import { useSessionSurfaceEvents } from '.';
 
 vi.mock('@tauri-apps/api/core', async () =>
   (await import('../../../store/storyHarness')).tauriCoreModuleMock(),

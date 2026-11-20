@@ -39,6 +39,9 @@ export const undoRelocation = (set: SetFn, get: GetFn) => {
                 }
               : project,
           ),
+          projectRelocationCompleted: state.projectRelocationCompleted.filter(
+            (entry) => entry !== relocation,
+          ),
         }));
       }
       set({

@@ -1,7 +1,7 @@
-import { pullPaletteRepos } from '../pullPaletteRepos';
-import { destinationEntryOf } from '../destinationEntryOf';
-import { destinationPaletteKeyOf } from '../destinationPaletteKeyOf';
-import { footDestinationEntryOf } from '../footDestinationEntryOf';
+import { pullPaletteRepos } from '../../pullPaletteRepos';
+import { destinationEntryOf } from '../../destinationEntryOf';
+import { destinationPaletteKeyOf } from '../../destinationPaletteKeyOf';
+import { footDestinationEntryOf } from '../../footDestinationEntryOf';
 import { useMemo } from 'react';
 import { CircleArrowUp, PanelLeft, Plus, RotateCcw, Smartphone } from '@goodboy/ui/icons';
 import { useCurrentInnerColumn } from '@goodboy/ui';
@@ -16,60 +16,60 @@ import {
   useSessionPlans,
   useSessions,
   useWorkspaces,
-} from '../../../store';
-import { DESTINATIONS } from '../../../shared/navigation/destinations';
-import { runDestination } from '../runDestination';
-import { useUnreadSessionIds } from '../../../shared/hooks/useUnreadSessionIds';
-import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
-import { NAMES, formerNamesOf } from '../../../shared/utils/names';
-import { switchTheme, type ThemePreference } from '../../../shared/lib/theme';
-import { classifyAgent } from '../../session/agent-kind';
-import { useLensDestinations } from '../../session/hooks/useLensDestinations';
-import { requestNewSession } from '../../session/requestNewSession';
-import { openNewSessionAs } from '../../session/startKind/openNewSessionAs';
-import { openReportSheet } from '../../bug-report/openReportSheet';
-import { dispatchWindowEvent } from '../../../shared/lib/dispatchWindowEvent';
-import { openSettings } from '../../settings/openSettings';
-import { openSessionTerminalHere } from '../../terminal/openSessionTerminalHere';
-import { openWorkspaceTerminal } from '../../terminal/openWorkspaceTerminal';
-import { openImpactStudio } from '../../impact/openImpactStudio';
-import { openNewWorkspace } from '../../workspace/openNewWorkspace';
-import { useIsMainWindow } from '../../workspace/useIsMainWindow';
-import { getWizardState, resumeSetup } from '../../onboarding/onboardingSettings';
-import { useSettingsDirectory } from '../../settings/hooks/useSettingsDirectory';
+} from '../../../../store';
+import { DESTINATIONS } from '../../../../shared/navigation/destinations';
+import { runDestination } from '../../runDestination';
+import { useUnreadSessionIds } from '../../../../shared/hooks/useUnreadSessionIds';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
+import { NAMES, formerNamesOf } from '../../../../shared/utils/names';
+import { switchTheme, type ThemePreference } from '../../../../shared/lib/theme';
+import { classifyAgent } from '../../../session/agent-kind';
+import { useLensDestinations } from '../../../session/hooks/useLensDestinations';
+import { requestNewSession } from '../../../session/requestNewSession';
+import { openNewSessionAs } from '../../../session/startKind/openNewSessionAs';
+import { openReportSheet } from '../../../bug-report/openReportSheet';
+import { dispatchWindowEvent } from '../../../../shared/lib/dispatchWindowEvent';
+import { openSettings } from '../../../settings/openSettings';
+import { openSessionTerminalHere } from '../../../terminal/openSessionTerminalHere';
+import { openWorkspaceTerminal } from '../../../terminal/openWorkspaceTerminal';
+import { openImpactStudio } from '../../../impact/openImpactStudio';
+import { openNewWorkspace } from '../../../workspace/openNewWorkspace';
+import { useIsMainWindow } from '../../../workspace/useIsMainWindow';
+import { getWizardState, resumeSetup } from '../../../onboarding/onboardingSettings';
+import { useSettingsDirectory } from '../../../settings/hooks/useSettingsDirectory';
 import {
   CONNECTIONS_SETTING_KEY,
   SETTING_ROW_KEY_PREFIX,
   settingsPaletteEntries,
-} from '../../settings/settingsPaletteEntries';
-import { connectionPaletteEntries } from '../../connections/connectionPaletteEntries';
-import { openConnection } from '../../connections/openConnection';
-import { guidePaletteEntries } from '../../settings/guidePaletteEntries';
-import { checkForUpdatesNow } from '../../updater/checkForUpdatesNow';
-import type { SettingsFocus } from '../../settings/settingsFocus';
-import { useToast } from '../../../shared/components/Toast';
-import { agentEntries } from '../sources/agentEntries';
-import { startRunFromPresetEntries } from '../sources/startRunFromPresetEntries';
-import { openStartRun } from '../../session/startRun/openStartRun';
-import { openPlanAnywhere } from '../../plans/openPlanAnywhere';
-import { requestAskReset } from '../../session/ask/requestAskReset';
-import { isAskStreaming } from '../../../store/slices/ask/isAskStreaming';
-import { selectIsAskOpen } from '../../../store/slices/ask/selectIsAskOpen';
-import { artifactEntries } from '../sources/artifactEntries';
-import { sessionEntries } from '../sources/sessionEntries';
-import { markAllReadEntries } from '../sources/markAllReadEntries';
-import { workspaceEntries } from '../sources/workspaceEntries';
-import { scriptPinEntries } from '../sources/scriptPinEntries';
-import { useScriptPins } from '../../scripts';
-import { scriptPinId } from '../../scripts/scriptPinId';
-import { paletteScriptRunner } from '../paletteScriptRunner';
-import { repoEntries } from '../sources/repoEntries';
-import { leadEntries } from '../sources/leadEntries';
-import { useOpenLeadRows } from './useOpenLeadRows';
-import { openSessionAnywhere } from '../openSessionAnywhere';
-import type { PaletteEntry } from '../types';
-import { useSessionsEverywhere } from './useSessionsEverywhere';
-import { projectById } from '../../../store/slices/projects/projectIndex';
+} from '../../../settings/settingsPaletteEntries';
+import { connectionPaletteEntries } from '../../../connections/connectionPaletteEntries';
+import { openConnection } from '../../../connections/openConnection';
+import { guidePaletteEntries } from '../../../settings/guidePaletteEntries';
+import { checkForUpdatesNow } from '../../../updater/checkForUpdatesNow';
+import type { SettingsFocus } from '../../../settings/settingsFocus';
+import { useToast } from '../../../../shared/components/Toast';
+import { agentEntries } from '../../sources/agentEntries';
+import { startRunFromPresetEntries } from '../../sources/startRunFromPresetEntries';
+import { openStartRun } from '../../../session/startRun/openStartRun';
+import { openPlanAnywhere } from '../../../plans/openPlanAnywhere';
+import { requestAskReset } from '../../../session/ask/requestAskReset';
+import { isAskStreaming } from '../../../../store/slices/ask/isAskStreaming';
+import { selectIsAskOpen } from '../../../../store/slices/ask/selectIsAskOpen';
+import { artifactEntries } from '../../sources/artifactEntries';
+import { sessionEntries } from '../../sources/sessionEntries';
+import { markAllReadEntries } from '../../sources/markAllReadEntries';
+import { workspaceEntries } from '../../sources/workspaceEntries';
+import { scriptPinEntries } from '../../sources/scriptPinEntries';
+import { useScriptPins } from '../../../scripts';
+import { scriptPinId } from '../../../scripts/scriptPinId';
+import { paletteScriptRunner } from '../../paletteScriptRunner';
+import { repoEntries } from '../../sources/repoEntries';
+import { leadEntries } from '../../sources/leadEntries';
+import { useOpenLeadRows } from '../useOpenLeadRows';
+import { openSessionAnywhere } from '../../openSessionAnywhere';
+import type { PaletteEntry } from '../../types';
+import { useSessionsEverywhere } from '../useSessionsEverywhere';
+import { projectById } from '../../../../store/slices/projects/projectIndex';
 
 const NEW_SESSION_WITH = {
   workflow: 'New workflow session',

@@ -1,4 +1,5 @@
-import { Skeleton, SkeletonText } from './Skeleton';
+import { Skeleton } from './Skeleton';
+import { SkeletonText } from './SkeletonText';
 
 type Props = {
   readonly label: string;

@@ -13,24 +13,13 @@ type Input = {
   readonly targetWorkspaceId: WorkspaceId;
 };
 
-export const mergeWorkspaces = (set: SetFn, get: GetFn) => {
-  return async ({ sourceWorkspaceIds, targetWorkspaceId }: Input): Promise<void> => {
-    const state = get();
-    const target = state.workspaces.find((workspace) => workspace.id === targetWorkspaceId);
-    if (target === undefined) {
-      throw new Error(`workspace not found: ${targetWorkspaceId}`);
-    }
-    const sources = sourceWorkspaceIds.filter((id) => id !== targetWorkspaceId);
-    if (sources.length === 0) {
-      return;
-    }
+type ShowParams = {
+  readonly sources: ReadonlyArray<WorkspaceId>;
+  readonly targetWorkspaceId: WorkspaceId;
+};
 
-    await mergeWorkspacesInDb({
-      db: tauriDatabase,
-      sourceWorkspaceIds: sources,
-      targetWorkspaceId,
-    });
-    await pruneChatImages();
+export const mergeWorkspaces = (set: SetFn, get: GetFn) => {
+  const showMerge = async ({ sources, targetWorkspaceId }: ShowParams): Promise<void> => {
     const [targetLearnings, targetStars] = await Promise.all([
       listWorkspaceLearnings({ db: tauriDatabase, workspaceId: targetWorkspaceId }),
       listStarredIssues({ db: tauriDatabase, workspaceId: targetWorkspaceId }),
@@ -79,8 +68,30 @@ export const mergeWorkspaces = (set: SetFn, get: GetFn) => {
       };
     });
 
-    if (state.currentWorkspaceId === targetWorkspaceId) {
+    if (get().currentWorkspaceId === targetWorkspaceId) {
       await get().reloadWorkspace({ workspaceId: targetWorkspaceId });
+    }
+  };
+
+  return async ({ sourceWorkspaceIds, targetWorkspaceId }: Input): Promise<void> => {
+    const target = get().workspaces.find((workspace) => workspace.id === targetWorkspaceId);
+    if (target === undefined) {
+      throw new Error(`workspace not found: ${targetWorkspaceId}`);
+    }
+    const sources = sourceWorkspaceIds.filter((id) => id !== targetWorkspaceId);
+    if (sources.length === 0) {
+      return;
+    }
+
+    await mergeWorkspacesInDb({
+      db: tauriDatabase,
+      sourceWorkspaceIds: sources,
+      targetWorkspaceId,
+    });
+    try {
+      await pruneChatImages();
+    } finally {
+      await showMerge({ sources, targetWorkspaceId });
     }
   };
 };

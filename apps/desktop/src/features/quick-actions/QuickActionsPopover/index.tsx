@@ -33,15 +33,20 @@ export const QuickActionsPopover = ({ items, emptyHint, onSelect, onDismiss }: P
       if (e.key === 'ArrowDown') {
         e.preventDefault();
         setActiveIndex((i) => Math.min(i + 1, items.length - 1));
-      } else if (e.key === 'ArrowUp') {
+        return;
+      }
+      if (e.key === 'ArrowUp') {
         e.preventDefault();
         setActiveIndex((i) => Math.max(i - 1, 0));
-      } else if (e.key === 'Enter' || e.key === 'Tab') {
-        e.preventDefault();
-        const item = items[activeIndex];
-        if (item) {
-          onSelect(item);
-        }
+        return;
+      }
+      if (e.key !== 'Enter' && e.key !== 'Tab') {
+        return;
+      }
+      e.preventDefault();
+      const item = items[activeIndex];
+      if (item !== undefined) {
+        onSelect(item);
       }
     };
     window.addEventListener('keydown', handler, { capture: true });
@@ -85,10 +90,8 @@ export const QuickActionsPopover = ({ items, emptyHint, onSelect, onDismiss }: P
                 }}
               >
                 <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-                  <span className="truncate text-meta font-medium text-foreground">
-                    {item.label}
-                  </span>
-                  {item.sublabel ? (
+                  <span className="truncate text-row text-foreground">{item.label}</span>
+                  {item.sublabel !== undefined && item.sublabel !== '' ? (
                     <span className="truncate text-meta text-muted-foreground">
                       {item.sublabel}
                     </span>

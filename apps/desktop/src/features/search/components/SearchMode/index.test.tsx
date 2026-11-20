@@ -224,6 +224,17 @@ describe('search mode', () => {
     expect(onClearScope).toHaveBeenCalledTimes(1);
   });
 
+  it('offers Search everywhere when nothing matches in the session, and widens on a click', async () => {
+    runSearch.mockResolvedValue([]);
+    await renderMode({ initialQuery: 'ledger' });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Search everywhere' }));
+    await flush();
+
+    expect(lastQuery()).toMatchObject({ sessionId: null, workspaceId: null });
+    runSearch.mockResolvedValue(HITS);
+  });
+
   it('turns qualifiers carried over from commands into chips', async () => {
     await renderMode({ initialQuery: 'drift type:plan' });
     expect(input().value).toBe('drift ');

@@ -4,7 +4,7 @@ import { CHECK_STATE } from '../../../../store/slices/notifications/errorRecover
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 import type { KeyboardEvent } from 'react';
 import type { WorkspaceId } from '@goodboy/types';
-import { ScrollFade, EmptyState } from '@goodboy/ui';
+import { Button, ScrollFade, EmptyState } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { openLink } from '../../../open/openLink';
@@ -296,22 +296,18 @@ export const SearchMode = ({
               }
               description={
                 results.hasFailed
-                  ? 'Search could not read its index. Try again, or rebuild it in Settings.'
+                  ? "Search couldn't read its index. Try again, or rebuild it in Settings."
                   : undefined
+              }
+              action={
+                scope.kind === 'all' ? undefined : (
+                  <Button variant="ghost" size="sm" onClick={() => setScope({ kind: 'all' })}>
+                    Search everywhere
+                  </Button>
+                )
               }
               className="justify-center"
             />
-          ) : null}
-          {showEmpty && scope.kind !== 'all' ? (
-            <div className="flex justify-center pb-4">
-              <button
-                type="button"
-                onClick={() => setScope({ kind: 'all' })}
-                className="rounded-md px-2 py-1 text-meta text-foreground hover:bg-hover"
-              >
-                Search everywhere
-              </button>
-            </div>
           ) : null}
         </ScrollFade>
         {selectedHit === null || selectedTarget === null ? null : (

@@ -543,12 +543,16 @@ export const setCurrentWorkspace = (set: SetFn, get: GetFn) => {
         await Promise.all(
           needBackfill.map(async (s) => {
             const attached = await invokeWorkflowsForSession(s.id).catch(() => []);
-            for (const wf of attached)
+            for (const wf of attached) {
               if (!workflowById.has(wf.id)) {
                 extraById.set(wf.id, wf);
               }
+            }
           }),
         );
+        if (!claimed.isCurrent()) {
+          return;
+        }
         const resolveById = new Map<string, Workflow>([...workflowById, ...extraById]);
         const sessionWorkflows: Record<string, ReadonlyArray<Workflow>> = {};
         for (const s of get().sessions) {
@@ -585,7 +589,8 @@ export const setCurrentWorkspace = (set: SetFn, get: GetFn) => {
         console.log(`[perf] workspace:deferred ${(performance.now() - tWsDefer).toFixed(0)}ms`);
       })();
       void get().loadWorkspaceOverrides(id);
-    } else {
+    }
+    if (id == null) {
       clearPendingTurnEvents();
       set({
         ...clearedWorkspaceState(),

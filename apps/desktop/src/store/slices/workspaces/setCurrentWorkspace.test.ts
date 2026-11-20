@@ -92,7 +92,9 @@ import {
   listAgentsForSessions,
   listOpenQuestionsForSessions,
   listSessionsForWorkspace,
+  summarizeWorkspaceProviderTelemetry,
 } from '@goodboy/db';
+import { invokeWorkflowsForSession } from '../../../features/workflows/workflows';
 import { reconcileLoadedAgent, reconcileLoadedSessions } from '../sessions/reconcileSessionRuns';
 import { cancelledRunIds } from '../sessions/sessionMutators';
 import { retryWorkspaceFacts } from './retryWorkspaceFacts';
@@ -448,7 +450,7 @@ describe('setCurrentWorkspace stops all live work', () => {
       expect(store.state.switchingToWorkspaceId).toBeNull();
       expect(store.state.workspaceSwitchError).toEqual({
         workspaceId: OTHER_ID,
-        message: expect.stringContaining('An agent did not stop'),
+        message: expect.stringContaining("An agent didn't stop"),
       });
       expect(store.state.reportError).toHaveBeenCalledOnce();
     });
@@ -541,6 +543,7 @@ describe('setCurrentWorkspace latest only and read first', () => {
 
   afterEach(() => {
     vi.mocked(listSessionsForWorkspace).mockImplementation(async () => h.sessions);
+    vi.mocked(summarizeWorkspaceProviderTelemetry).mockImplementation(async () => []);
   });
 
   it('keeps only the rows of the newest switch when an older answer arrives late', async () => {
@@ -637,6 +640,45 @@ describe('setCurrentWorkspace latest only and read first', () => {
     expect(store.state.currentWorkspaceId).toBe(NORTHWIND_ID);
     expect(store.state.sessions.map((row) => row.id)).toEqual([northwindRow.id]);
     expect(store.state.switchingToWorkspaceId).toBeNull();
+  });
+
+  it('drops the spend of an older switch whose workflow read lands after a newer switch', async () => {
+    const harborlineRow = aSession({
+      workspaceId: HARBORLINE_ID,
+      workflowRuns: [aWorkflowRun()],
+    });
+    const northwindRow = aSession({ workspaceId: NORTHWIND_ID });
+    vi.mocked(listSessionsForWorkspace).mockImplementation(async (_db, workspaceId) =>
+      workspaceId === HARBORLINE_ID ? [harborlineRow] : [northwindRow],
+    );
+    vi.mocked(summarizeWorkspaceProviderTelemetry).mockImplementation(async (_db, workspaceId) => [
+      { provider: 'anthropic', estimatedCostUsd: workspaceId === HARBORLINE_ID ? 40 : 3 },
+    ]);
+    let releaseWorkflows: () => void = () => undefined;
+    vi.mocked(invokeWorkflowsForSession).mockImplementationOnce(
+      async () =>
+        new Promise((resolve) => {
+          releaseWorkflows = () => resolve([]);
+        }),
+    );
+    const store = harness();
+    const switchTo = setCurrentWorkspace(store.set, store.get);
+
+    await switchTo({ id: HARBORLINE_ID });
+    await vi.waitFor(() => {
+      expect(invokeWorkflowsForSession).toHaveBeenCalled();
+    });
+    await switchTo({ id: NORTHWIND_ID });
+    const northwindSpend = [{ provider: 'anthropic', spentUsd: 3 }];
+    await vi.waitFor(() => {
+      expect(store.state.providerSpendBreakdown).toEqual(northwindSpend);
+    });
+
+    releaseWorkflows();
+    await new Promise(setImmediate);
+
+    expect(store.state.currentWorkspaceId).toBe(NORTHWIND_ID);
+    expect(store.state.providerSpendBreakdown).toEqual(northwindSpend);
   });
 
   it('shows the latest target when a second switch starts while the first loads', async () => {

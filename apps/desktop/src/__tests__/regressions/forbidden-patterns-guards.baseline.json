@@ -73,7 +73,6 @@
     "apps/desktop/src/features/permissions/components/PermissionsSettings/AddRuleForm.tsx": 1,
     "apps/desktop/src/features/providers/components/ProviderConnect/GuidePanel.tsx": 1,
     "apps/desktop/src/features/providers/components/ProviderStudio/ProviderPage/UsageGroup/SpendInGoodboy.tsx": 1,
-    "apps/desktop/src/features/quick-actions/QuickActionsPopover/index.tsx": 1,
     "apps/desktop/src/features/resolve/components/ReviewFlow/AnswersPanel/AnswerCard.tsx": 1,
     "apps/desktop/src/features/resolve/components/ReviewFlow/FailedRun.tsx": 1,
     "apps/desktop/src/features/resolve/components/ReviewFlow/ReviewComment.tsx": 1,
@@ -101,7 +100,6 @@
     "packages/ui/src/components/StatCard.tsx": 1
   },
   "optical-nudge": {
-    "apps/desktop/src/app/components/AppTopBar/NowChip/NeedsYouSessionRow.tsx": 1,
     "apps/desktop/src/features/changelog/components/ChangelogStudio/FixRow.tsx": 1,
     "apps/desktop/src/features/integrations/components/ConnectSteps/CheckStatus.tsx": 1,
     "apps/desktop/src/features/integrations/components/IntegrationConnectedRow/index.tsx": 1,
@@ -127,12 +125,6 @@
     "packages/ui/src/components/RemoteImage/index.tsx": 1
   },
   "hook-folder": {
-    "apps/desktop/src/app/components/BootSplash/useElapsedSincePhase.ts": 1,
-    "apps/desktop/src/app/components/MockScene/scenes/audit/useSceneClicks.ts": 1,
-    "apps/desktop/src/app/components/MockScene/scenes/flow-audit/useAutoExpand.ts": 1,
-    "apps/desktop/src/app/hooks/useAppOverlays/useCommitDiff.ts": 1,
-    "apps/desktop/src/app/hooks/useAppOverlays/useSessionSurfaceEvents.ts": 1,
-    "apps/desktop/src/app/hooks/useAppOverlays/useStudioEvents.ts": 1,
     "apps/desktop/src/features/chat/components/ChatInput/hooks/useAgentSwitchSync.ts": 1,
     "apps/desktop/src/features/chat/components/ChatInput/hooks/useAttachments.ts": 1,
     "apps/desktop/src/features/chat/components/ChatInput/hooks/useMessageQueue.ts": 1,
@@ -162,11 +154,6 @@
     "apps/desktop/src/features/integrations/sentry/useSentryIssueDetail.ts": 1,
     "apps/desktop/src/features/integrations/slack/SlackStudio/useSlackThreads.ts": 1,
     "apps/desktop/src/features/integrations/useToolConnections.ts": 1,
-    "apps/desktop/src/features/palette/components/CommandsMode/useScopeInfo.ts": 1,
-    "apps/desktop/src/features/palette/hooks/useCommandEntries.ts": 1,
-    "apps/desktop/src/features/palette/hooks/useNeedsYouEntries.ts": 1,
-    "apps/desktop/src/features/palette/hooks/useSessionPalette.ts": 1,
-    "apps/desktop/src/features/palette/hooks/useSessionsEverywhere.ts": 1,
     "apps/desktop/src/features/plans/components/PlanParts/usePlanPartRows.ts": 1,
     "apps/desktop/src/features/providers/components/ProviderConnect/useConnectDetails.ts": 1,
     "apps/desktop/src/features/providers/components/ProviderConnect/useDelayedReveal.ts": 1,
@@ -193,20 +180,11 @@
     "apps/desktop/src/features/worktree/useMountRemoteHostKind.ts": 1,
     "apps/desktop/src/features/worktree/useRootRemoteHostKind.ts": 1,
     "apps/desktop/src/features/workTreeModel/hooks/useAgentWorkTime.ts": 1,
-    "apps/desktop/src/shared/components/RoutingPicker/useCursorMaxModeModels.ts": 1,
-    "apps/desktop/src/shared/components/Toast/useShowToast.ts": 1,
-    "apps/desktop/src/shared/hooks/useStudioOverlay.ts": 1,
     "apps/desktop/src/shared/keyboard/useShortcut.ts": 1,
     "apps/desktop/src/store/slices/project-mounts/useMountDiffStats.ts": 1,
     "apps/desktop/src/store/slices/project-mounts/useProjectMountsForSessions.ts": 1,
     "apps/desktop/src/store/slices/worktrees/useSessionRepo.ts": 1,
-    "apps/desktop/src/test/usePinnedTimeZone.ts": 1,
-    "packages/ui/src/components/ContextMenu/useMenuKeys.ts": 1,
-    "packages/ui/src/components/Trail/useTrailCompaction.ts": 1,
-    "packages/ui/src/useCopyLink.ts": 1,
-    "packages/ui/src/useDropdownDirection.ts": 1,
-    "packages/ui/src/useEscapeLayer.ts": 1,
-    "packages/ui/src/useLastFocused.ts": 1
+    "apps/desktop/src/test/usePinnedTimeZone.ts": 1
   },
   "props-named-props": {
     "apps/desktop/src/app/components/BootSplash/index.tsx": 1,

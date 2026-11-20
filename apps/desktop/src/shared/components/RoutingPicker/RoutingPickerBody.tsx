@@ -378,7 +378,7 @@ export const RoutingPickerBody = ({
       {connectedProviders.length > 0 && !isViewProviderConnected && connectProvider == null && (
         <section aria-label="Models" className="flex items-center gap-2 p-3">
           <p className="flex-1 text-meta text-muted-foreground">
-            {PROVIDER_LABEL[viewProvider]} is not connected
+            {PROVIDER_LABEL[viewProvider]} isn't connected
           </p>
           <Button size="sm" onClick={() => setConnectProvider(viewProvider)}>
             Connect {PROVIDER_LABEL[viewProvider]}

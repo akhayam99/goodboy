@@ -3,7 +3,8 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
 import { Inbox } from '../icons';
-import { EmptyState, FilledEmptyState } from '../components/EmptyState';
+import { EmptyState } from '../components/EmptyState';
+import { FilledEmptyState } from '../components/FilledEmptyState';
 
 afterEach(cleanup);
 

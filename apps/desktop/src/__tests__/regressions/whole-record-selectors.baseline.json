@@ -16,7 +16,7 @@
   "apps/desktop/src/features/monitoring/components/MonitoringStudio/OwnerCell.tsx": 1,
   "apps/desktop/src/features/monitoring/hooks/useMonitoringModel/index.ts": 2,
   "apps/desktop/src/features/monitoring/hooks/usePortTarget/index.ts": 1,
-  "apps/desktop/src/features/palette/hooks/useCommandEntries.ts": 2,
+  "apps/desktop/src/features/palette/hooks/useCommandEntries/index.ts": 2,
   "apps/desktop/src/features/providers/components/ProviderStudio/DefaultsPanel/SavedModelsNotice.tsx": 1,
   "apps/desktop/src/features/providers/components/ProviderStudio/ProviderBindingsSection.tsx": 1,
   "apps/desktop/src/features/providers/hooks/useModelScope/index.ts": 4,

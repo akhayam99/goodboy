@@ -9,7 +9,6 @@
     "apps/desktop/src/features/diff/components/DiffViewSelector/index.tsx": 1,
     "apps/desktop/src/features/integrations/github/comment-threads.ts": 1,
     "apps/desktop/src/features/integrations/gitlab/MergeRequest/MrDetailPanel/index.tsx": 1,
-    "apps/desktop/src/features/quick-actions/QuickActionsPopover/index.tsx": 2,
     "apps/desktop/src/features/worktree/worktree.ts": 1,
     "apps/desktop/src/store/slices/agents/spawnAgent.ts": 2,
     "apps/desktop/src/store/slices/boot/auditRetryQueue.ts": 1,
@@ -27,14 +26,11 @@
     "apps/desktop/src/store/slices/sessions/unarchiveTask.ts": 2,
     "apps/desktop/src/store/slices/turn/turnHelpers.ts": 1,
     "apps/desktop/src/store/slices/workflows/attachWorkflowToSession.ts": 3,
-    "apps/desktop/src/store/slices/workspaces/setCurrentWorkspace.ts": 1,
     "packages/core/src/artifacts/wireframe/validateWireframeDocument.ts": 4,
     "packages/core/src/github/diff.ts": 7,
     "packages/core/src/orchestrator/prompt.ts": 3,
     "packages/core/src/permissions/claude-flags.ts": 1,
     "packages/core/src/providers/shared/anthropic-envelope-parser.ts": 3,
-    "packages/ui/src/components/Dialog.tsx": 2,
-    "packages/ui/src/components/Markdown/parseInline.ts": 1,
     "packages/ui/src/components/Tooltip.tsx": 1
   },
   "extra-component-per-file": {
@@ -48,10 +44,7 @@
     "apps/desktop/src/features/integrations/components/ConnectForm/index.tsx": 1,
     "apps/desktop/src/features/session/components/SessionOverviewPane/ProjectMountRows/MountPreflightCard.tsx": 1,
     "apps/desktop/src/features/session/components/SessionWorkspace/parts/SlotHistoryPanel.tsx": 1,
-    "apps/desktop/src/features/settings/components/SettingsStudio/AppScopePanel.tsx": 1,
-    "packages/ui/src/components/EmptyState.tsx": 1,
-    "packages/ui/src/components/Popover.tsx": 1,
-    "packages/ui/src/components/Skeleton.tsx": 1
+    "apps/desktop/src/features/settings/components/SettingsStudio/AppScopePanel.tsx": 1
   },
   "function-component": {},
   "comment": {
@@ -251,7 +244,6 @@
     "apps/desktop/src/features/providers/components/ProviderConnect/EscapeHatch/index.tsx": 1,
     "apps/desktop/src/features/providers/components/ProviderConnect/GuidePanel.tsx": 3,
     "apps/desktop/src/features/providers/components/ProviderStudio/ProviderCredentialsSection.tsx": 1,
-    "apps/desktop/src/features/quick-actions/QuickActionsPopover/index.tsx": 1,
     "apps/desktop/src/features/reports/components/ReportStudio/ReportOutlineNav.tsx": 1,
     "apps/desktop/src/features/scripts/components/RunningScriptRow.tsx": 1,
     "apps/desktop/src/features/session/components/DeleteSessionConfirm/index.tsx": 1,

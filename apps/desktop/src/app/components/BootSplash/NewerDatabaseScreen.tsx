@@ -20,7 +20,7 @@ export const NewerDatabaseScreen = ({ restorableSnapshot, onRestore, onQuit }: P
     try {
       await onRestore();
     } catch (error) {
-      setFailure(`The backup could not be restored: ${formatError(error)}`);
+      setFailure(`The backup couldn't be restored: ${formatError(error)}`);
     } finally {
       setIsRestoring(false);
     }
@@ -38,8 +38,8 @@ export const NewerDatabaseScreen = ({ restorableSnapshot, onRestore, onQuit }: P
           <span className="font-medium text-foreground">{NEWER_BUILD_MESSAGE}</span>
           <p className="leading-relaxed text-muted-foreground">
             {hasBackup
-              ? 'This version cannot read it. Restore the backup taken before the upgrade, or quit and open the newer version. Your current data stays in a copy next to the database.'
-              : 'This version cannot read it, and no backup from before the upgrade was found. Quit and open the newer version.'}
+              ? "This version can't read it. Restore the backup taken before the upgrade, or quit and open the newer version. Your current data stays in a copy next to the database."
+              : "This version can't read it, and no backup from before the upgrade was found. Quit and open the newer version."}
           </p>
           {failure !== null ? <p className="leading-relaxed text-danger">{failure}</p> : null}
         </div>

@@ -74,7 +74,7 @@ export const ProfileAccessPopover = () => {
                 return (
                   <td
                     key={column.field}
-                    aria-label={isRead ? 'reads' : 'does not read'}
+                    aria-label={isRead ? 'reads' : "doesn't read"}
                     className={cn(
                       'px-1 py-1 text-center',
                       isRead ? 'text-success' : 'text-faint-foreground',

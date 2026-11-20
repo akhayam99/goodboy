@@ -117,7 +117,7 @@ describe('LocateMovedProjects', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'Details' }));
 
     await screen.findByText(
-      /Git links or saved versions could not be carried over for 1 folder\. saved versions: saved versions already exist/,
+      /Git links or saved versions couldn't be carried over for 1 folder\. saved versions: saved versions already exist/,
     );
   });
 

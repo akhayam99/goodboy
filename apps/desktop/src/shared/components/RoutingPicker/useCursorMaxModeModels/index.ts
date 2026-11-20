@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
-import { cursorMaxModeAdvisory } from '../../lib/cursorMaxModeAdvisory';
-import { useAppStore } from '../../../store';
+import { cursorMaxModeAdvisory } from '../../../lib/cursorMaxModeAdvisory';
+import { useAppStore } from '../../../../store';
 
 type Params = {
   readonly models: ReadonlyArray<string>;

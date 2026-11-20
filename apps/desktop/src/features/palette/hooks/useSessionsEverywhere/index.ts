@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { listSessionTitlesAcrossWorkspaces, type SessionTitleRef } from '@goodboy/db';
-import { tauriDatabase } from '../../../shared/lib/db';
+import { tauriDatabase } from '../../../../shared/lib/db';
 
 const NONE: ReadonlyArray<SessionTitleRef> = [];
 
