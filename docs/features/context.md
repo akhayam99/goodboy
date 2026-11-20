@@ -19,7 +19,7 @@ Read the reason behind a decision without opening the run. When Goodboy records 
 
 ### Running summary
 
-Hand the next agent where things stand. After a reply the Context tab opens on the **State**: a glyph, a count of blockers or of steps left, and the State's first sentence. Each blocker gets its own row with a warning glyph, and the rest of the State follows. The Summary card lists **Next** as numbered steps, the first one leading, and **Learned** as facts. Each group shows three and opens the rest with one **Show all**. Code reads in quiet mono, and a long path is shortened in the middle with the full path on hover. Open questions stay on the Overview. Copied context and agent prompts keep the complete summary.
+Hand the next agent where things stand. After a reply the Context tab opens on the **State**: a glyph, a count of blockers or of steps left, and the State's first sentence. Each blocker gets its own row with a warning glyph, and the rest of the State follows. The Summary card lists **Next** as numbered steps, the first one leading, and **Learned** as facts. Each group shows three and opens the rest with one **Show all**. Code reads in quiet mono, and a long path is shortened in the middle with the full path on hover. Open questions have their own **Questions** tab. Copied context and agent prompts keep the complete summary.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/context-summary-dark.webp">
@@ -43,7 +43,7 @@ Every card has the same head: its title, a count from two, and its actions on th
 
 ### Who receives what
 
-See which agents read each part of the context. **Change visibility** in the card menu lists the roles that receive that part. Planners, implementers, reviewers, debuggers and resolvers get the decisions, scouts and docs agents do not, and you always see everything. Agents that Auto starts read only their brief, so the line says "Auto children read only their brief" on every part but the goal.
+See which agents read each part of the context. **Change visibility** in the card menu lists the roles that receive that part. Planners, implementers, reviewers, debuggers and resolvers get the decisions, scouts and docs agents do not, and you always see everything. Agents the Lead starts read only their brief, so the line says "Lead children read only their brief" on every part but the goal.
 
 ### Explanations
 
