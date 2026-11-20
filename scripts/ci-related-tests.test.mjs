@@ -63,6 +63,14 @@ const FIXTURES = [
     'apps/desktop/src/shared/readsDocs.test.ts',
     "import { readFileSync } from 'node:fs';\nconst DIR = join(ROOT, 'docs', 'changelog');",
   ],
+  [
+    'apps/desktop/src/__tests__/regressions/readsConceptsByPath.test.ts',
+    "import { readFileSync } from 'fs';\nconst DOCS = ['docs/navigation/shell.md', 'docs/concepts.md'];",
+  ],
+  [
+    'apps/desktop/src/__tests__/regressions/readsConceptsUp.test.ts',
+    "import { readFileSync } from 'fs';\nconst text = readFileSync(join(__dirname, '../../../../../docs/concepts.md'), 'utf8');",
+  ],
   ['apps/desktop/src/features/branch/kind.ts', "export type Kind = 'local';"],
   [
     'apps/desktop/src/features/branch/kind.test.ts',
@@ -185,6 +193,8 @@ describe('relatedSelection', () => {
   it('always keeps the regression guards and the tests that read files from disk', () => {
     const selection = selectionFor({ graph, path: 'apps/desktop/src-tauri/src/lib.rs' });
     assert.deepEqual(selection.desktop.sort(), [
+      'src/__tests__/regressions/readsConceptsByPath.test.ts',
+      'src/__tests__/regressions/readsConceptsUp.test.ts',
       'src/__tests__/regressions/rules.test.ts',
       'src/shared/readsDocs.test.ts',
       'vite/demoHtml.test.ts',
@@ -236,6 +246,13 @@ describe('testsReadingOf', () => {
     assert.deepEqual(testsReadingOf({ graph, path: 'docs/testing.md' }), []);
     assert.deepEqual(testsReadingOf({ graph, path: 'docs/changelog/README.md' }), [
       'apps/desktop/src/shared/readsDocs.test.ts',
+    ]);
+  });
+
+  it('finds the readers that name a doc by its repository path or a path that climbs to it', () => {
+    assert.deepEqual(testsReadingOf({ graph, path: 'docs/concepts.md' }), [
+      'apps/desktop/src/__tests__/regressions/readsConceptsByPath.test.ts',
+      'apps/desktop/src/__tests__/regressions/readsConceptsUp.test.ts',
     ]);
   });
 });

@@ -13,6 +13,7 @@ const PERF_TEST = /\.perf\.test\.tsx?$/;
 const SKIPPED_FOLDERS = new Set(['node_modules', 'dist', 'coverage']);
 const DISK_READER = /node:fs|from 'fs'|from "fs"|fs\/promises|import\.meta\.glob/;
 const ALWAYS_RUN = /^apps[/]desktop[/]src[/]__tests__[/]regressions[/]/;
+const QUOTED_LITERAL = /(['"`])([^'"`\n]*)\1/g;
 const FROM_PATTERN = /\bfrom\s*['"]([^'"\n]+)['"]/g;
 const DYNAMIC_PATTERN = /\bimport\(\s*['"]([^'"\n]+)['"]\s*\)/g;
 const SPECIFIER_PATTERNS = [
@@ -319,7 +320,8 @@ const readsPath = ({ graph, file, path }) => {
     return false;
   }
   const name = posix.basename(path);
-  if (source.includes(`'${name}'`) || source.includes(`"${name}"`)) {
+  const literals = [...source.matchAll(QUOTED_LITERAL)].map((match) => match[2]);
+  if (literals.some((literal) => literal === name || literal.endsWith(`/${name}`))) {
     return true;
   }
   return pathsReadOf({ source, file }).some((read) => path === read || path.startsWith(`${read}/`));

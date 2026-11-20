@@ -134,7 +134,7 @@ Branch protection is a repository setting the repo cannot read, so this table is
 
 - No tests when only inert paths or suppressions files changed.
 - A regression baseline that falls entry by entry against the base runs only the guard that reads it (the guard that names the file, else the guard whose name is the longest prefix); `doc-budget.baseline.json` runs `check:doc-refs`. One entry that grows, a new baseline or a baseline no guard reads runs everything.
-- A doc (`docs/**` that is not inert, or any `.md`) runs the unit tests that import it or read it from disk, plus `check:doc-refs`.
+- A doc (`docs/**` that is not inert, or any `.md`) runs the unit tests that import it or read it from disk, plus `check:doc-refs`. A changed doc or `doc-budget.baseline.json` runs `check:doc-refs` even when the plan runs everything, and a failure in either step fails the gate.
 - The rest follows the CI test scope (`testScopeOf`): the full package and desktop unit suites when a shared setup file, a config, a script or more than the related limit changed, and otherwise the CI selection of `scripts/ci-related-tests.mjs`: every desktop unit test the changed files reach plus the regression folder and the disk readers, and the package tests they reach, with `GATE_WORKERS` workers. The quick gate builds its graph without type-only imports (`import type`, `export type`, braces of only `type` members, `typeof import()`): the typecheck runs first and covers them. CI keeps those edges.
 
 Never use `vitest related` in the quick gate: it transforms the import graph of every test file in one process and runs out of memory on this repo.

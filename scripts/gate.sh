@@ -137,9 +137,12 @@ check_related_tests() {
   plan=$(touched_paths | node scripts/ci-changes.mjs --quick "$MERGE_BASE") || return 1
   echo "$plan"
   scope=$(echo "$plan" | sed -n 's/^scope //p')
-  [ "$scope" = none ] && return 0
-  [ "$scope" = full ] && { check_full_tests; return $?; }
   echo "$plan" | grep -qx 'check doc-refs' && { pnpm run check:doc-refs || status=1; }
+  [ "$scope" = none ] && return $status
+  if [ "$scope" = full ]; then
+    check_full_tests || status=1
+    return $status
+  fi
   selection=$(echo "$plan" | grep -vE '^(scope|check) ')
   [ -z "$selection" ] && return $status
   for name in $(echo "$selection" | cut -d' ' -f1 | sort -u); do

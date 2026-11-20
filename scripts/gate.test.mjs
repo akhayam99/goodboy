@@ -185,7 +185,7 @@ describe('scripts/gate.sh against the CI jobs', () => {
   });
 
   it('runs the full unit suites when the quick plan is full', () => {
-    assert.match(gateText, /\[ "\$scope" = full \] && \{ check_full_tests/);
+    assert.match(gateText, /\[ "\$scope" = full \]; then\n\s+check_full_tests \|\| status=1/);
   });
 
   it('runs check:doc-refs when the quick plan asks for it', () => {

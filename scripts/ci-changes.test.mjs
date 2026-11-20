@@ -284,6 +284,12 @@ describe('isBaselineFalling', () => {
     assert.equal(isBaselineFalling({ path, baseText: base, headText }), false);
     assert.equal(isBaselineFalling({ path, baseText: null, headText: base }), false);
   });
+
+  it('grows on a new baseline file that is empty or holds only zeros', () => {
+    assert.equal(isBaselineFalling({ path, baseText: null, headText: '{}' }), false);
+    const zeros = JSON.stringify({ 'src/a.ts': 0 });
+    assert.equal(isBaselineFalling({ path, baseText: null, headText: zeros }), false);
+  });
 });
 
 describe('quickPlanOf', () => {
@@ -334,6 +340,16 @@ describe('quickPlanOf', () => {
     });
     assert.equal(plan.scope, 'related');
     assert.ok(plan.lines.includes('desktop src/features/palette/rank.test.ts'));
+  });
+
+  it('keeps check:doc-refs when a doc or the doc budget joins a full run', () => {
+    const shared = quickPlanFor({ paths: ['README.md', 'scripts/gate.sh'] });
+    assert.deepEqual(shared, { scope: 'full', isDocRefsRun: true, lines: [] });
+    const grows = quickPlanFor({
+      paths: [`${GUARD}/doc-budget.baseline.json`],
+      falling: () => false,
+    });
+    assert.deepEqual(grows, { scope: 'full', isDocRefsRun: true, lines: [] });
   });
 
   it('keeps the full run for shared code next to a baseline or a doc', () => {

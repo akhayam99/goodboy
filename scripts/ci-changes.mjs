@@ -148,13 +148,14 @@ const countsOf = ({ path, text }) => {
 };
 
 export const isBaselineFalling = ({ path, baseText, headText }) => {
+  if (baseText === null) {
+    return false;
+  }
   const base = countsOf({ path, text: baseText });
   return [...countsOf({ path, text: headText })].every(
     ([key, count]) => count <= (base.get(key) ?? 0),
   );
 };
-
-const FULL_QUICK_PLAN = { scope: 'full', isDocRefsRun: false, lines: [] };
 
 export const quickPlanOf = ({ paths, graphOf, isFallingOf }) => {
   const live = paths.filter((path) => !isInertPath({ path }) && !SUPPRESSIONS.test(path));
@@ -164,11 +165,14 @@ export const quickPlanOf = ({ paths, graphOf, isFallingOf }) => {
   const baselines = live.filter((path) => REGRESSION_BASELINE.test(path));
   const docs = live.filter((path) => !REGRESSION_BASELINE.test(path) && DOC_PATH.test(path));
   const rest = live.filter((path) => !baselines.includes(path) && !docs.includes(path));
+  const isDocRefsRun =
+    docs.length > 0 || baselines.some((path) => BASELINES_READ_BY_DOC_REFS.includes(path));
+  const fullPlan = { scope: 'full', isDocRefsRun, lines: [] };
   if (baselines.some((path) => !isFallingOf({ path }))) {
-    return FULL_QUICK_PLAN;
+    return fullPlan;
   }
   if (rest.length > 0 && testScopeOf({ eventName: 'pull_request', paths: rest }) === 'full') {
-    return FULL_QUICK_PLAN;
+    return fullPlan;
   }
   const graph = graphOf();
   const readers = baselines.map((path) => ({ path, tests: baselineReadersOf({ graph, path }) }));
@@ -177,7 +181,7 @@ export const quickPlanOf = ({ paths, graphOf, isFallingOf }) => {
       ({ path, tests }) => tests.length === 0 && !BASELINES_READ_BY_DOC_REFS.includes(path),
     )
   ) {
-    return FULL_QUICK_PLAN;
+    return fullPlan;
   }
   const pinned = [
     ...readers.flatMap(({ tests }) => tests),
@@ -193,8 +197,7 @@ export const quickPlanOf = ({ paths, graphOf, isFallingOf }) => {
   ];
   return {
     scope: 'related',
-    isDocRefsRun:
-      docs.length > 0 || baselines.some((path) => BASELINES_READ_BY_DOC_REFS.includes(path)),
+    isDocRefsRun,
     lines: [...new Set(lines)],
   };
 };
