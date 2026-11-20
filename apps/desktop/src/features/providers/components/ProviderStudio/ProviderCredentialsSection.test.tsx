@@ -84,7 +84,7 @@ describe('ProviderCredentialsSection', () => {
 
     const alert = await screen.findByRole('alert');
     expect(alert.textContent).toContain("Couldn't save the API key.");
-    expect(screen.getByRole('button', { name: 'Retry' })).toBeDefined();
+    screen.getByRole('button', { name: 'Retry' });
     expect(key.value).toBe('sk-ant-test');
     expect(state.refreshProviders).not.toHaveBeenCalled();
   });

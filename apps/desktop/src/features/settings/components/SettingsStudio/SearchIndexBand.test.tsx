@@ -46,7 +46,7 @@ describe('search index settings', () => {
     loadSearchIndexStatus.mockRejectedValueOnce(new Error('database is locked'));
     useAppStore.setState({ searchIndexStatus: null });
     render(<SearchIndexBand />);
-    expect(await screen.findByText('Not loaded')).toBeTruthy();
+    await screen.findByText('Not loaded');
     expect(screen.queryByText('Reading the index')).toBeNull();
   });
 
@@ -54,7 +54,7 @@ describe('search index settings', () => {
     loadSearchIndexStatus.mockReturnValueOnce(new Promise<undefined>(() => undefined));
     useAppStore.setState({ searchIndexStatus: null });
     render(<SearchIndexBand />);
-    expect(screen.getByText('Reading the index')).toBeTruthy();
+    screen.getByText('Reading the index');
   });
 
   it('rebuilds on request', async () => {
