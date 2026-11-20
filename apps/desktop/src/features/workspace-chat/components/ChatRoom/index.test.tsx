@@ -783,6 +783,24 @@ describe('ChatRoom', () => {
     );
   });
 
+  it('says the chat could not load instead of a skeleton, and loads again on Retry', async () => {
+    const failure = new Error('database is locked');
+    store.loadChatMessages.mockRejectedValueOnce(failure);
+    renderRoom({ chat: CHAT });
+
+    const alert = await screen.findByRole('alert');
+    expect(within(alert).getByText("Couldn't load this chat")).toBeDefined();
+    expect(document.querySelector('[aria-busy="true"]')).toBeNull();
+
+    await act(async () => {
+      fireEvent.click(within(alert).getByRole('button', { name: NAMES.retry }));
+    });
+
+    expect(store.loadChatMessages).toHaveBeenCalledTimes(2);
+    expect(store.loadChatMessages).toHaveBeenLastCalledWith({ chatId: CHAT_ID });
+    expect(screen.queryByRole('alert')).toBeNull();
+  });
+
   it('reports a model pick the chat could not save', async () => {
     store.chatMessages = { [CHAT_ID]: [] };
     const failure = new Error('database is locked');

@@ -1,7 +1,7 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { parseHiddenModels } from '@goodboy/core/providers';
 import { useShallow } from 'zustand/react/shallow';
-import { DrawerColumn, PageColumn } from '@goodboy/ui';
+import { Button, DrawerColumn, formatError, Notice, PageColumn } from '@goodboy/ui';
 import type { ChatId, ChatMessage, ChatSummary, SessionId, WorkspaceId } from '@goodboy/types';
 import { sessionPlace, useAppStore } from '../../../../store';
 import { useChatSessions } from '../../hooks/useChatSessions';
@@ -19,6 +19,7 @@ import { useChatDrafts } from '../../hooks/useChatDrafts';
 import { useChatWork } from '../../hooks/useChatWork';
 import { useStudioDrawer } from '../../../../shared/hooks/useStudioDrawer';
 import { SETTING_HIDDEN_MODELS } from '../../../settings/settings';
+import { NAMES } from '../../../../shared/utils/names';
 import { selectWorkspaceResolvedSettings } from '../../../../store/slices/overrides/selectResolvedSettings';
 import { CHECK_STATE, NOTHING_CHANGED } from '../../../../store/slices/notifications/errorRecovery';
 
@@ -33,6 +34,15 @@ type Props = {
 const NO_MESSAGES: ReadonlyArray<ChatMessage> = [];
 
 const NO_IMAGES: ChatComposerMessage['images'] = [];
+
+type LoadParams = {
+  readonly chatId: ChatId;
+};
+
+type LoadFailure = {
+  readonly chatId: ChatId;
+  readonly detail: string;
+};
 
 type SendParams = Pick<ChatComposerMessage, 'text'> & Partial<Pick<ChatComposerMessage, 'images'>>;
 
@@ -78,16 +88,27 @@ export const ChatRoom = ({ workspaceId, chat, onCreated, onRemoved, onNewChat }:
   const reportError = useAppStore((state) => state.reportError);
   const wasEmptyRef = useRef(false);
   const [draftRouting, setDraftRouting] = useState<ChatRouting | null>(null);
+  const [loadFailure, setLoadFailure] = useState<LoadFailure | null>(null);
   const linked = useChatSessions({ chatId });
   const drafts = useChatDrafts({ chatId });
   const { saved: savedDefault, read: readSavedDefault } = useChatDefaultModel({ workspaceId });
+
+  const loadMessages = useCallback(
+    ({ chatId: target }: LoadParams): void => {
+      setLoadFailure(null);
+      loadChatMessages({ chatId: target }).catch((error: unknown) => {
+        setLoadFailure({ chatId: target, detail: formatError(error) });
+      });
+    },
+    [loadChatMessages],
+  );
 
   useEffect(() => {
     if (chatId === null || messages !== undefined) {
       return;
     }
-    void loadChatMessages({ chatId });
-  }, [chatId, messages, loadChatMessages]);
+    loadMessages({ chatId });
+  }, [chatId, messages, loadMessages]);
 
   const workspaceDefaultProvider = useAppStore(
     (state) => selectWorkspaceResolvedSettings({ state, workspaceId }).defaultProviderOverride,
@@ -165,6 +186,7 @@ export const ChatRoom = ({ workspaceId, chat, onCreated, onRemoved, onNewChat }:
   const openSession = (sessionId: SessionId): void => navigate({ to: sessionPlace({ sessionId }) });
 
   const isEmpty = shown.length === 0;
+  const failedLoad = loadFailure !== null && loadFailure.chatId === chatId ? loadFailure : null;
   useEffect(() => {
     wasEmptyRef.current = isEmpty;
   }, [isEmpty]);
@@ -216,12 +238,26 @@ export const ChatRoom = ({ workspaceId, chat, onCreated, onRemoved, onNewChat }:
         onNewChat={onNewChat}
       >
         {isEmpty ? (
-          <PageColumn width="measure" className="flex min-h-0 flex-1 flex-col">
+          <PageColumn width="measure" className="flex min-h-0 flex-1 flex-col gap-3">
+            {failedLoad === null || chatId === null ? null : (
+              <Notice
+                tone="danger"
+                placement="inline"
+                role="alert"
+                title="Couldn't load this chat"
+                detail={failedLoad.detail}
+                actions={
+                  <Button size="sm" onClick={() => loadMessages({ chatId })}>
+                    {NAMES.retry}
+                  </Button>
+                }
+              />
+            )}
             <ChatEmpty
               workspaceName={workspaceName}
               projectNames={projectNames}
               suggestions={chatSuggestions({ projectNames })}
-              isLoading={chatId !== null && messages === undefined}
+              isLoading={chatId !== null && messages === undefined && failedLoad === null}
               composer={composer}
               onAsk={(question) => void send({ text: question })}
               onAddProject={() =>
