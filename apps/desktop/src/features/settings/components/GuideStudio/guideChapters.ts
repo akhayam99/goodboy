@@ -264,7 +264,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Session pages',
-        desc: 'Tabs under the title: Overview, Runs, Artifacts, Questions while one is open, and Context, plus Changes with exactly one branch. Runs holds every run and the agents you started. Context holds the Projects and Linked cards. Below a tab, Esc goes one up.',
+        desc: 'Tabs under the title: Overview, Runs, Artifacts, Questions while one is open, and Context, plus Changes with exactly one branch. Runs holds every run and the agents you started. Context holds the Projects and Linked cards. Under a tab, Esc goes one up.',
       },
       {
         term: 'Session actions and +',

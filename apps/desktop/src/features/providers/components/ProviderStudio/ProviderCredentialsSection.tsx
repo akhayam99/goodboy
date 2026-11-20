@@ -89,7 +89,7 @@ export const ProviderCredentialsSection = ({ providerId }: Props) => {
     <section className="flex flex-col gap-2">
       <SectionHeader
         label="API keys"
-        hint={`Add one or more ${apiKeyEnv} keys, then assign one to a workspace below.`}
+        hint={`Add one or more ${apiKeyEnv} keys, then assign one to a workspace.`}
         action={
           !adding ? (
             <button

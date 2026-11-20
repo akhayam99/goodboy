@@ -63,7 +63,7 @@ export const SpendLimitEditor = ({ sessionId, limit, onDone }: Props) => {
       ) : (
         <p className="text-meta text-muted-foreground">
           {isInvalid
-            ? 'Enter an amount above zero, or clear it for no limit.'
+            ? 'Enter an amount over zero, or clear it for no limit.'
             : 'Counts everything this session spends, context updates included.'}
         </p>
       )}
