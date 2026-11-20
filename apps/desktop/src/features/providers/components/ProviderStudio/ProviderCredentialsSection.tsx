@@ -35,14 +35,14 @@ export const ProviderCredentialsSection = ({ providerId }: Props) => {
     [credentials, providerId],
   );
 
-  const [adding, setAdding] = useState(false);
+  const [isAdding, setIsAdding] = useState(false);
   const [label, setLabel] = useState('');
   const [apiKey, setApiKey] = useState('');
-  const [busy, setBusy] = useState(false);
+  const [isBusy, setIsBusy] = useState(false);
   const [armedId, setArmedId] = useState<CredentialId | null>(null);
 
   const reset = useCallback(() => {
-    setAdding(false);
+    setIsAdding(false);
     setLabel('');
     setApiKey('');
   }, []);
@@ -51,7 +51,7 @@ export const ProviderCredentialsSection = ({ providerId }: Props) => {
     if (!apiKey.trim()) {
       return;
     }
-    setBusy(true);
+    setIsBusy(true);
     try {
       await createCredential(providerId, label, apiKey);
       await refreshProviders();
@@ -59,7 +59,7 @@ export const ProviderCredentialsSection = ({ providerId }: Props) => {
     } catch (err) {
       void reportError({ recovery: CHECK_STATE, title: "Couldn't save the API key", error: err });
     } finally {
-      setBusy(false);
+      setIsBusy(false);
     }
   }, [apiKey, label, providerId, createCredential, refreshProviders, reset, reportError]);
 
@@ -91,10 +91,10 @@ export const ProviderCredentialsSection = ({ providerId }: Props) => {
         label="API keys"
         hint={`Add one or more ${apiKeyEnv} keys, then assign one to a workspace.`}
         action={
-          !adding ? (
+          !isAdding ? (
             <button
               type="button"
-              onClick={() => setAdding(true)}
+              onClick={() => setIsAdding(true)}
               className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-meta font-medium text-muted-foreground transition-colors hover:bg-hover hover:text-foreground"
             >
               <Plus size={ICON_SIZE.row} aria-hidden /> Add key
@@ -103,7 +103,7 @@ export const ProviderCredentialsSection = ({ providerId }: Props) => {
         }
       />
 
-      {mine.length === 0 && !adding ? (
+      {mine.length === 0 && !isAdding ? (
         <EmptyState
           size="section"
           icon={CONCEPT_ICONS.providers}
@@ -162,7 +162,7 @@ export const ProviderCredentialsSection = ({ providerId }: Props) => {
         </ul>
       )}
 
-      {adding ? (
+      {isAdding ? (
         <div className="flex flex-col gap-2">
           <Input
             autoFocus
@@ -177,12 +177,12 @@ export const ProviderCredentialsSection = ({ providerId }: Props) => {
             placeholder={`${apiKeyEnv} value`}
           />
           <div className="flex items-center justify-end gap-2">
-            <Button variant="ghost" size="sm" onClick={reset} disabled={busy}>
+            <Button variant="ghost" size="sm" onClick={reset} disabled={isBusy}>
               Cancel
             </Button>
-            <Button size="sm" onClick={() => void onSave()} disabled={busy || !apiKey.trim()}>
-              <span className={busy ? 'text-shimmer' : undefined}>
-                {busy ? 'Validating' : 'Save key'}
+            <Button size="sm" onClick={() => void onSave()} disabled={isBusy || !apiKey.trim()}>
+              <span className={isBusy ? 'text-shimmer' : undefined}>
+                {isBusy ? 'Validating' : 'Save key'}
               </span>
             </Button>
           </div>
