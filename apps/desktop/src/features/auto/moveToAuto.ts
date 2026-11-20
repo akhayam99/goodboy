@@ -23,7 +23,7 @@ import { invokeAgentList } from '../workflows/workflows';
 import { currentAutoDrivePort } from './autoDrivePort';
 import { runDefaultLimitOf } from '../../store/slices/workflows/runLimit/runDefaultLimitOf';
 
-const OFF_MESSAGE = 'The Lead is not available in this build.';
+const OFF_MESSAGE = "The Lead isn't available in this build.";
 const GONE_MESSAGE = 'This agent is no longer in the session.';
 const DEFAULT_EFFORT = 'medium';
 const DEFAULT_PROVIDER = 'anthropic';

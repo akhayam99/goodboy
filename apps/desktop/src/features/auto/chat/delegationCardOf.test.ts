@@ -234,7 +234,7 @@ describe('delegationCardOf', () => {
       }).result?.remoteText;
 
     expect(remoteTextOf('moved')).toBe('The branch changed online while this agent worked.');
-    expect(remoteTextOf('unknown')).toBe('Could not check whether the branch changed online.');
+    expect(remoteTextOf('unknown')).toBe("Couldn't check whether the branch changed online.");
     expect(remoteTextOf('unchanged')).toBeNull();
     expect(remoteTextOf(null)).toBeNull();
   });

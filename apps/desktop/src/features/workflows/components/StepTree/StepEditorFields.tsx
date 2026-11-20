@@ -90,7 +90,7 @@ export const StepEditorFields = ({
                 event.preventDefault();
                 document.getElementById(idOf('instruction'))?.focus();
               }}
-              placeholder="step name"
+              placeholder="Step name"
               disabled={disabled}
               className="h-7 bg-background text-meta"
             />
@@ -116,7 +116,7 @@ export const StepEditorFields = ({
             value={step.prompt}
             onChange={onPrompt}
             {...(submit !== undefined && { onSubmit: submit })}
-            placeholder="what this agent should do…"
+            placeholder="What this agent should do…"
             hasPreview
             minRows={3}
             maxRows={7}
@@ -139,7 +139,7 @@ export const StepEditorFields = ({
             value={step.expectedOutput}
             onChange={onExpectedOutput}
             {...(submit !== undefined && { onSubmit: submit })}
-            placeholder="what this step hands to the next one…"
+            placeholder="What this step hands to the next one…"
             hasPreview
             minRows={1}
             maxRows={4}

@@ -11,7 +11,7 @@ describe('the notice of a refused hand over', () => {
         refusal: { action: 'delegate', code: 'mount_ambiguous', roles: ['implementer'] },
       }),
     ).toBe(
-      'The Lead tried to start an Implementer. Not started: more than one folder fits and it did not say which. The Lead is choosing again.',
+      "The Lead tried to start an Implementer. Not started: more than one folder fits and it didn't say which. The Lead is choosing again.",
     );
   });
 
@@ -29,7 +29,7 @@ describe('the notice of a refused hand over', () => {
     );
     expect(
       refusalNoticeOf({ refusal: { action: 'block', code: 'spec_invalid', roles: [] } }),
-    ).toContain('The Lead tried to start an agent. Not started: the request was not valid.');
+    ).toContain("The Lead tried to start an agent. Not started: the request wasn't valid.");
   });
 
   it('words a refused answer and a refused finish as what they are', () => {

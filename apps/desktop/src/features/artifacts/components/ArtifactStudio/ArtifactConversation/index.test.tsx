@@ -149,7 +149,7 @@ describe('ArtifactConversation', () => {
         isWorkflowOwned={false}
       />,
     );
-    expect(screen.getByText(/does not rewrite this artifact/i)).toBeDefined();
+    expect(screen.getByText(/doesn't rewrite this artifact/i)).toBeDefined();
     expect(screen.queryByText(/revision/i)).toBeNull();
     expect(screen.queryByText(/replaces this/i)).toBeNull();
   });
@@ -176,9 +176,9 @@ describe('ArtifactConversation', () => {
         isWorkflowOwned={false}
       />,
     );
-    expect(screen.queryByText('create another from this')).toBeNull();
+    expect(screen.queryByText('Create another from this')).toBeNull();
     expect(screen.getByTestId('create-report-cta').getAttribute('title')).toBe(
-      'create another from this',
+      'Create another from this',
     );
     expect(screen.getByTestId('artifact-attach').textContent).toContain('Attach report');
   });
@@ -193,7 +193,7 @@ describe('ArtifactConversation', () => {
       />,
     );
     expect(screen.getByTestId('create-report-cta').getAttribute('title')).toBe(
-      'create another from this run',
+      'Create another from this run',
     );
     expect(screen.getByText(/this is the step transcript/i)).toBeDefined();
     expect(screen.queryByText(/reopen/i)).toBeNull();

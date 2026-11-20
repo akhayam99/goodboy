@@ -24,7 +24,7 @@ type Params = {
   readonly patchStep: (key: string, patch: Partial<StepDraft>) => void;
 };
 
-const KEPT_STEP = 'Kept your wording. The step could not be polished.';
+const KEPT_STEP = "Kept your wording. The step couldn't be polished.";
 
 export const stepPolishFields = ({
   polish,

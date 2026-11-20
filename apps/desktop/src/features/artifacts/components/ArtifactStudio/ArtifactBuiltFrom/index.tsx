@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
-import { RotateCcw } from '@goodboy/ui/icons';
-import { Band, Button, Collapsible, EmptyLine, Eyebrow, ICON_SIZE, Skeleton } from '@goodboy/ui';
+import { Band, Collapsible, EmptyLine, Eyebrow, Skeleton } from '@goodboy/ui';
 import type { ArtifactKind, ArtifactProvenance, SessionArtifact } from '@goodboy/types';
 import { loadArtifactProvenance } from '../../../artifactProvenance';
+import { ArtifactLoadFailed } from '../../ArtifactLoadFailed';
 import { BuiltFromRow } from './BuiltFromRow';
 
 type Props = {
@@ -72,15 +72,10 @@ export const ArtifactBuiltFrom = ({ artifact }: Props) => {
   if (state.kind === 'failed') {
     return (
       <Band inset="content" label="Built from" ariaLabel="Built from">
-        <div data-testid="built-from-failed" className="flex items-center justify-between gap-3">
-          <p className="text-meta text-muted-foreground">
-            The record of this generation did not load.
-          </p>
-          <Button size="sm" variant="ghost" onClick={() => setLoadAttempt((n) => n + 1)}>
-            <RotateCcw size={ICON_SIZE.row} aria-hidden />
-            Retry
-          </Button>
-        </div>
+        <ArtifactLoadFailed
+          sentence="The record of this generation did not load."
+          onRetry={() => setLoadAttempt((n) => n + 1)}
+        />
       </Band>
     );
   }
@@ -120,7 +115,7 @@ export const ArtifactBuiltFrom = ({ artifact }: Props) => {
           <Eyebrow label="Evidence sent" />
           {provenance.evidence.length === 0 ? (
             <span className="text-meta text-muted-foreground">
-              no session source was named in the pack
+              No session source was named in the pack
             </span>
           ) : (
             <ul className="flex min-w-0 flex-col gap-0.5">
@@ -156,7 +151,7 @@ export const ArtifactBuiltFrom = ({ artifact }: Props) => {
           <Collapsible
             open={isProfileOpen}
             onOpenChange={setIsProfileOpen}
-            trigger={<span className="text-meta">design profile</span>}
+            trigger={<span className="text-meta">Design profile</span>}
           >
             <pre
               data-testid="built-from-design-profile"
