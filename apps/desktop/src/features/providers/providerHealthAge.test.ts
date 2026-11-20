@@ -45,7 +45,7 @@ describe('provider health copy ages', () => {
   it.each(cases)('cannotCheckBody equals formatAge at $age before $now', ({ now, age }) => {
     const expected = formatAge({ from: now - age, now });
     expect(cannotCheckBody({ health: health({ lastGoodAt: now - age }), nowMs: now })).toBe(
-      `Showing what we last knew, from ${expected}.`,
+      `Showing what Goodboy last knew, from ${expected}.`,
     );
   });
 });

@@ -51,7 +51,7 @@ export const ProviderTestScene = () => {
           at: clock.ms({ at: '2026-10-10T09:57:00.000Z' }),
           from: 'connected' as const,
           to: 'cannot_check' as const,
-          reason: 'Probe timed out',
+          reason: 'Sign-in check timed out',
         },
         {
           at,

@@ -71,7 +71,7 @@ describe('provider test scenes', () => {
     await mount({ id: 'providerhistory' });
     expect(screen.getByRole('region', { name: 'Cursor connection history' })).toBeDefined();
     expect(screen.getByText('Test connection passed')).toBeDefined();
-    expect(screen.getByText('Probe timed out')).toBeDefined();
+    expect(screen.getByText('Sign-in check timed out')).toBeDefined();
   });
   it.each(Object.keys(U24_PROVIDER_TEST_SCENES))(
     '%s has no accessibility violations',
