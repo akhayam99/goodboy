@@ -26,6 +26,7 @@ export const LocateMovedProjects = ({ workspaceId, onChoose, isChoosing = false 
   }
   const isBusy = phase === 'moving';
   const selectedCount = candidates.filter((candidate) => isPendingRelocation({ candidate })).length;
+  const shouldShowMove = selectedCount > 0 || completed.length === 0;
   const sessionFolderCount = completed.reduce(
     (total, relocation) => total + relocation.restoredSessionFolders,
     0,
@@ -102,15 +103,22 @@ export const LocateMovedProjects = ({ workspaceId, onChoose, isChoosing = false 
         >
           Choose another folder
         </Button>
-        <Button
-          size="sm"
-          disabled={selectedCount === 0}
-          isBusy={isBusy}
-          busyLabel="Moving folders…"
-          onClick={() => void relocate()}
-        >
-          Move {selectedCount} {selectedCount === 1 ? 'folder' : 'folders'}
-        </Button>
+        {completed.length > 0 && (
+          <Button variant="secondary" size="sm" disabled={isBusy} onClick={() => void undo()}>
+            Undo move
+          </Button>
+        )}
+        {shouldShowMove && (
+          <Button
+            size="sm"
+            disabled={selectedCount === 0}
+            isBusy={isBusy}
+            busyLabel="Moving folders…"
+            onClick={() => void relocate()}
+          >
+            Move {selectedCount} {selectedCount === 1 ? 'folder' : 'folders'}
+          </Button>
+        )}
       </FormActions>
     </section>
   );

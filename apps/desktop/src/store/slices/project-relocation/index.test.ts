@@ -217,6 +217,9 @@ describe('project relocation slice', () => {
   describe('with two moved folders', () => {
     const SECOND_ID = brandId<ProjectId>({ value: 'project-notify' });
     const twoFolders = () => {
+      vi.mocked(crypto.randomUUID)
+        .mockReturnValueOnce('00000000-0000-4000-8000-000000000001')
+        .mockReturnValueOnce('00000000-0000-4000-8000-000000000002');
       const store = harness();
       store.set({
         projects: [project, { ...project, id: SECOND_ID, rootPath: '/old/notify-relay' }],
@@ -305,6 +308,38 @@ describe('project relocation slice', () => {
       ]);
       expect(store.state.projectRelocationPhase).toBe('idle');
     });
+  });
+
+  it('keeps the restored path after the undo and retries only the metadata refresh', async () => {
+    const store = harness();
+    await findMovedProjects(
+      store.set,
+      store.get,
+    )({
+      workspaceId: WORKSPACE_ID,
+      parent: '/new',
+    });
+    await relocateProjects(store.set, store.get)();
+    h.updateProjectIdentity.mockRejectedValueOnce(new Error('database is locked'));
+
+    await undoRelocation(store.set, store.get)();
+
+    expect(store.state.projectRelocationPhase).toBe('error');
+    expect(store.state.projectRelocationError).toBe('database is locked');
+    expect(store.state.projects[0]?.rootPath).toBe('/old/ledger-core');
+    expect(store.state.projectRelocationCompleted.map((entry) => entry.isUndone)).toEqual([true]);
+    h.projectRelocationUndo.mockClear();
+    h.updateProjectIdentity.mockClear();
+
+    await undoRelocation(store.set, store.get)();
+
+    expect(h.projectRelocationUndo).not.toHaveBeenCalled();
+    expect(h.updateProjectIdentity).toHaveBeenCalledWith(
+      expect.objectContaining({ projectId: PROJECT_ID }),
+    );
+    expect(store.state.projects[0]?.rootPath).toBe('/old/ledger-core');
+    expect(store.state.projectRelocationCompleted).toEqual([]);
+    expect(store.state.projectRelocationPhase).toBe('idle');
   });
 
   it('shows the message of a structured undo rejection', async () => {

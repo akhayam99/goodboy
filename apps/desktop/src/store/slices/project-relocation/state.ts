@@ -20,6 +20,7 @@ export type CompletedProjectRelocation = {
   readonly restoredSessionFolders: number;
   readonly repairedGitLinks: boolean;
   readonly repairError: string | null;
+  readonly isUndone: boolean;
 };
 
 export type ProjectRelocationState = {
