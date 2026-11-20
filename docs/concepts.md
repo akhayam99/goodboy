@@ -1964,9 +1964,8 @@ session up again in Goodboy.
   `app/components/` or `shared/components/` uses one of the internal words,
   in the copy props that include `help` and `meta`. Its baseline lists only
   text that agents read (prompts, bridge errors) and can only shrink. The
-  layout words (column, lane, grid, tier, drawer) have their own count,
-  `jargon-panel-copy.baseline.json`, of the copy that still says them, and it
-  only falls.
+  layout words (column, lane, grid, tier, drawer) have no guard yet: some
+  copy still says them.
 
 - One word per thing, written once. The names of lenses, roles, handoff
   sections, session stages, the autonomy header and the reply length live in
