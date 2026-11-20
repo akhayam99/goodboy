@@ -684,6 +684,8 @@ right now` and **Check again**. An open breaker adds `Cursor refused your last 3
 <email>. Confirmed 2m ago`
 - the transcript card titled `Cursor refused this run` shows only for `signed_out` or an open
   breaker
+- the page's History of changes names each change with the rail words from
+  `standingWord.ts` (`Signed out → Can't check`), never the stored standing
 
 Install commands:
 
