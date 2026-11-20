@@ -55,7 +55,7 @@ export const PublishPanel = ({
   const [repoName, setRepoName] = useState(project.name);
   const [visibility, setVisibility] = useState<GithubRepoVisibility | null>(null);
   const [address, setAddress] = useState('');
-  const [busy, setBusy] = useState(false);
+  const [isBusy, setIsBusy] = useState(false);
   const [failure, setFailure] = useState<Extract<PublishFirstLapResult, { kind: 'failed' }> | null>(
     null,
   );
@@ -84,7 +84,7 @@ export const PublishPanel = ({
         : { kind: 'address', url: address.trim() };
 
   const publish = async (target: PublishRemote) => {
-    setBusy(true);
+    setIsBusy(true);
     setFailure(null);
     setClash(null);
     try {
@@ -98,7 +98,7 @@ export const PublishPanel = ({
       }
       onPublished(result);
     } finally {
-      setBusy(false);
+      setIsBusy(false);
     }
   };
 
@@ -156,7 +156,7 @@ export const PublishPanel = ({
                 <Input
                   id={nameId}
                   value={repoName}
-                  disabled={busy}
+                  disabled={isBusy}
                   aria-invalid={nameCheck.kind === 'invalid'}
                   onChange={(event) => setRepoName(event.target.value)}
                 />
@@ -176,7 +176,7 @@ export const PublishPanel = ({
                       role="radio"
                       aria-checked={visibility === option.value}
                       variant={visibility === option.value ? 'primary' : 'secondary'}
-                      disabled={busy}
+                      disabled={isBusy}
                       onClick={() => setVisibility(option.value)}
                     >
                       {option.label}
@@ -185,7 +185,7 @@ export const PublishPanel = ({
                 </div>
                 {visibility === null ? (
                   <span className="text-meta text-muted-foreground">
-                    Pick who can see the repository. Goodboy does not choose for you.
+                    Pick who can see the repository. Goodboy doesn't choose for you.
                   </span>
                 ) : null}
               </div>
@@ -200,7 +200,7 @@ export const PublishPanel = ({
           <Input
             id={addressId}
             value={address}
-            disabled={busy}
+            disabled={isBusy}
             placeholder="https://github.com/you/cascadia.git"
             onChange={(event) => setAddress(event.target.value)}
           />
@@ -228,7 +228,7 @@ export const PublishPanel = ({
                 type="button"
                 variant="secondary"
                 size="sm"
-                disabled={busy}
+                disabled={isBusy}
                 onClick={() => void publish(retryTarget)}
               >
                 Retry
@@ -249,14 +249,14 @@ export const PublishPanel = ({
       ) : null}
 
       <FormActions>
-        <Button type="button" variant="ghost" disabled={busy} onClick={onCancel}>
+        <Button type="button" variant="ghost" disabled={isBusy} onClick={onCancel}>
           Cancel
         </Button>
         {remote === null ? null : (
           <Button
             type="button"
-            disabled={busy}
-            aria-busy={busy}
+            disabled={isBusy}
+            aria-busy={isBusy}
             onClick={() => void publish(remote)}
           >
             {primaryLabel}

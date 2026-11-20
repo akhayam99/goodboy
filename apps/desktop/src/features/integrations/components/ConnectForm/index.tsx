@@ -4,7 +4,7 @@ import type {
   IntegrationCredentialId,
   WorkspaceIntegrationProvider,
 } from '@goodboy/types';
-import { Button, Collapsible, formatError, ICON_SIZE, Input } from '@goodboy/ui';
+import { Button, Collapsible, formatError, FormActions, ICON_SIZE, Input } from '@goodboy/ui';
 import { SquareArrowOutUpRight } from '@goodboy/ui/icons';
 import { IntegrationCredentialPicker } from '../IntegrationCredentialPicker';
 
@@ -193,11 +193,6 @@ export const ConnectForm = ({
           {configFields}
         </Collapsible>
       ) : null}
-      {error != null ? (
-        <p role="alert" className="text-meta text-danger">
-          {error}
-        </p>
-      ) : null}
       {note != null ? (
         <Collapsible
           open={isNoteOpen}
@@ -209,13 +204,11 @@ export const ConnectForm = ({
           <div className="text-meta text-muted-foreground">{note.body}</div>
         </Collapsible>
       ) : null}
-      <div className="flex justify-end">
-        <Button type="submit" disabled={isBusy || !canConnect}>
-          <span className={isBusy ? 'text-shimmer' : undefined}>
-            {isBusy ? 'Verifying…' : 'Connect'}
-          </span>
+      <FormActions error={error}>
+        <Button type="submit" isBusy={isBusy} busyLabel="Verifying" disabled={!canConnect}>
+          Connect
         </Button>
-      </div>
+      </FormActions>
     </form>
   );
 };

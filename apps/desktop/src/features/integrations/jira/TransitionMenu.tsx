@@ -43,7 +43,7 @@ const blockReason = ({ isLoading, error, count }: ReasonParams): string | null =
     return 'Reading the Jira workflow for this issue';
   }
   if (error != null) {
-    return `Could not read the Jira workflow for this issue. ${error}`;
+    return `Couldn't read the Jira workflow for this issue. ${error}`;
   }
   if (count === 0) {
     return 'Jira offers no move from this status';

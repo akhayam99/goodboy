@@ -5,6 +5,7 @@ import { useAppStore } from '../../../../../../../store/store';
 import { useNow } from '../../../../../../../shared/hooks/useNow';
 import { formatAge } from '../../../../../../../shared/utils/time/formatAge';
 import { formatDateTime } from '../../../../../../../shared/utils/time/formatDateTime';
+import { STANDING_WORD } from '../../../../../standingWord';
 
 type Props = {
   readonly providerId: ProviderId;
@@ -19,7 +20,7 @@ type ReasonParams = {
 
 const reasonInWords = ({ reason, label }: ReasonParams): string => {
   if (reason.includes('timeout') || reason.includes('timed out')) {
-    return 'Probe timed out';
+    return 'Sign-in check timed out';
   }
   if (reason === 'a run was accepted') {
     return `${label} accepted a run`;
@@ -67,7 +68,7 @@ export const ConnectionHistory = ({ providerId, label, onClose }: Props) => {
                 <li key={`${event.at}-${index}`} className="flex flex-col gap-1 text-meta">
                   <div className="flex items-center justify-between gap-3 text-muted-foreground">
                     <span>
-                      {event.from.replaceAll('_', ' ')} → {event.to.replaceAll('_', ' ')}
+                      {STANDING_WORD[event.from]} → {STANDING_WORD[event.to]}
                     </span>
                     <Tooltip content={formatDateTime({ at: event.at, hasYear: true })}>
                       <time

@@ -34,9 +34,7 @@ it('u34-u27-update-card draws two buttons and What’s new as a link inside the 
 
   const dialog = await screen.findByRole('dialog', { name: 'Goodboy 0.31.0 is available' });
   const link = within(dialog).getByRole('button', { name: "What's new" });
-  expect(link.closest('p')?.textContent).toContain(
-    'It downloads in about a minute. Nothing restarts until you say so.',
-  );
+  expect(link.closest('p')?.textContent).toContain('Nothing restarts until you say so.');
   const verbRow = within(dialog).getByRole('button', { name: 'Later' }).parentElement;
   expect(verbRow?.querySelectorAll('button')).toHaveLength(2);
   within(dialog).getByRole('button', { name: 'Update now' });

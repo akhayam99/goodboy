@@ -43,12 +43,12 @@ type ChangedParams = {
 
 const changedPhrase = ({ count, sample }: ChangedParams): string => {
   if (sample === null) {
-    return count === 1 ? '1 file is not committed.' : `${count} files are not committed.`;
+    return count === 1 ? "1 file isn't committed." : `${count} files aren't committed.`;
   }
   if (count === 1) {
-    return `${sample} is not committed.`;
+    return `${sample} isn't committed.`;
   }
-  return `${sample} and ${count - 1} more are not committed.`;
+  return `${sample} and ${count - 1} more aren't committed.`;
 };
 
 const copyOf = ({ folder, intent }: CopyParams): Copy => {

@@ -25,7 +25,7 @@ const MAX_POLL_DELAY_MS = 24_000;
 const POLL_DURATION_MS = 120_000;
 
 export const EscapeHatch = ({ command, providerId, action }: Props) => {
-  const [launching, setLaunching] = useState(false);
+  const [isLaunching, setIsLaunching] = useState(false);
   const [launchError, setLaunchError] = useState<string | null>(null);
   const refreshProviders = useAppStore((state) => state.refreshProviders);
   const terminalLabel = useAppStore((state) =>
@@ -50,7 +50,7 @@ export const EscapeHatch = ({ command, providerId, action }: Props) => {
   }, [providerId]);
 
   const onLaunch = async () => {
-    setLaunching(true);
+    setIsLaunching(true);
     setLaunchError(null);
     try {
       await openCommandInExternalTerminal({ providerId, action });
@@ -87,7 +87,7 @@ export const EscapeHatch = ({ command, providerId, action }: Props) => {
     } catch (err) {
       setLaunchError(formatError(err));
     } finally {
-      setLaunching(false);
+      setIsLaunching(false);
     }
   };
 
@@ -106,7 +106,7 @@ export const EscapeHatch = ({ command, providerId, action }: Props) => {
           <Button
             variant="secondary"
             size="sm"
-            disabled={launching}
+            disabled={isLaunching}
             onClick={() => void onLaunch()}
           >
             <CONCEPT_ICONS.terminal size={ICON_SIZE.row} aria-hidden />
@@ -116,7 +116,7 @@ export const EscapeHatch = ({ command, providerId, action }: Props) => {
       </div>
       {launchError ? (
         <span className="text-meta text-danger">
-          Could not open your system terminal: {launchError}
+          Couldn't open your system terminal: {launchError}
         </span>
       ) : null}
     </div>

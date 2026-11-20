@@ -30,12 +30,12 @@ const MARK_ROWS: ReadonlyArray<MarkRow> = [
   },
   {
     label: 'changes',
-    desc: 'changes requested, or a comment it could not fix',
+    desc: 'changes requested, or a comment whose fix failed',
     info: { stage: 'attention', attention: 'changes-requested', prState: null },
   },
   {
     label: 'failed',
-    desc: 'an agent error, a failing check or a reply that did not go out',
+    desc: "an agent error, a failing check or a reply that didn't go out",
     info: { stage: 'attention', attention: 'ci-failed', prState: null },
   },
   {

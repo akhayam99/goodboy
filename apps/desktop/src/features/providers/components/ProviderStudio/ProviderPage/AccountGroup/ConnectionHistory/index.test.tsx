@@ -54,6 +54,23 @@ it('shows only twenty events with the newest first', () => {
   expect(rows[19]?.textContent).toContain('Harborline event 5');
 });
 
+it('names each change in state words, never the stored ids', () => {
+  const health = store.getState().providerHealth;
+  store.setState({
+    providerHealth: {
+      ...health,
+      cursor: {
+        ...health.cursor,
+        events: [{ at: Date.now() - 60_000, from: 'signed_out', to: 'cannot_check', reason: 'x' }],
+      },
+    },
+  });
+  render(<ConnectionHistory providerId="cursor" label="Cursor" onClose={vi.fn()} />);
+  const row = within(screen.getByRole('list')).getByRole('listitem');
+  expect(row.textContent).toContain("Signed out → Can't check");
+  expect(row.textContent).not.toContain('cannot');
+});
+
 it('closes from its button and on Escape', () => {
   const onClose = vi.fn();
   render(<ConnectionHistory providerId="cursor" label="Cursor" onClose={onClose} />);

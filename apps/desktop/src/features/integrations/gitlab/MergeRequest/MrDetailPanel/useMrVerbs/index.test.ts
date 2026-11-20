@@ -105,9 +105,7 @@ describe('useMrVerbs', () => {
   it('says why the vote is off when the user cannot approve their own merge request', () => {
     const approve = verbsFor({ approval: makeApproval({ userCanApprove: false }) }).secondary[0];
 
-    expect(approve?.blockedReason).toBe(
-      'You do not have permission to approve this merge request.',
-    );
+    expect(approve?.blockedReason).toBe("You don't have permission to approve this merge request.");
   });
 
   it('offers Revoke approval once the user approved', () => {
@@ -119,7 +117,7 @@ describe('useMrVerbs', () => {
 
   it.each([
     [{ hasConflicts: true }, /conflicts/],
-    [{ mergeStatus: 'cannot_be_merged' }, /cannot be merged/],
+    [{ mergeStatus: 'cannot_be_merged' }, /can't be merged/],
   ] as const)('keeps Merge visible but blocked with a reason for %o', (overrides, reason) => {
     const merge = verbsFor({ mr: makeMr(overrides) }).secondary.find(
       (verb) => verb.key === 'merge',

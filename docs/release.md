@@ -147,13 +147,13 @@ One card is the only prompt (`features/updater/components/UpdateArrivalCard.tsx`
 and one hook gives every surface the same verbs (`useUpdateCard`, state from
 `updateCardStateOf`, copy from `updateCardCopy`):
 
-| State          | Card says                                       | Verbs                                                                                               |
-| -------------- | ----------------------------------------------- | --------------------------------------------------------------------------------------------------- |
-| Available      | Goodboy 0.27.2 is available                     | Later, **Update now** (downloads, then the card turns Ready), and a What's new link in the sentence |
-| Ready          | Goodboy 0.27.2 is ready                         | Later, **Restart now**, and a What's new link in the sentence                                       |
-| Agents running | 2 agents are running                            | Later, Restart now, **Restart when they finish**                                                    |
-| Failed         | Goodboy 0.27.2 did not install, with the reason | Later, **Retry** (downloads or installs again, without a new check)                                 |
-| Queued         | Restarts when 2 agents finish                   | Later, Cancel restart, **Restart now**                                                              |
+| State          | Card says                                      | Verbs                                                                                               |
+| -------------- | ---------------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| Available      | Goodboy 0.27.2 is available                    | Later, **Update now** (downloads, then the card turns Ready), and a What's new link in the sentence |
+| Ready          | Goodboy 0.27.2 is ready                        | Later, **Restart now**, and a What's new link in the sentence                                       |
+| Agents running | 2 agents are running                           | Later, Restart now, **Restart when they finish**                                                    |
+| Failed         | Goodboy 0.27.2 didn't install, with the reason | Later, **Retry** (downloads or installs again, without a new check)                                 |
+| Queued         | Restarts when 2 agents finish                  | Later, Cancel restart, **Restart now**                                                              |
 
 The update mark at the foot of the places rail (the logo turns into it while an
 update waits; `UpdateRailMark`, state from `updateMarkOf`), and the version pill in

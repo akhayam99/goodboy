@@ -32,7 +32,7 @@ const INSTALL_STEP: GuideStep = {
 
 const TOKEN_STEP: GuideStep = {
   title:
-    'Copy the User OAuth Token, under OAuth and Permissions in the User column, then paste it below.',
+    'Copy the User OAuth Token, under OAuth and Permissions in the User column, then paste it.',
   action: null,
   showsScopes: false,
 };

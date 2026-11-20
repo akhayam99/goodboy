@@ -231,7 +231,7 @@ describe('ProviderConnect', () => {
     setConnect({ phase: 'failed', step: 'login', command: 'claude auth login', errorTail: null });
     renderConnect();
 
-    expect(screen.getByText(/without printing anything/i)).toBeDefined();
+    expect(screen.getByText('It stopped without printing a reason.')).toBeDefined();
   });
 
   it('names the other window instead of blaming the sign-in when the provider is busy', () => {

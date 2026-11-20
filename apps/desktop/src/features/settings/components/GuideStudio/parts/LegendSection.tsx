@@ -38,7 +38,7 @@ export const LegendSection = ({}: Props) => (
           {
             dot: tintClasses('primary').dot,
             label: 'new reply',
-            desc: 'a chat has a reply you have not read',
+            desc: "a chat has a reply you haven't read",
           },
           {
             dot: tintClasses('warning').dot,
@@ -48,7 +48,7 @@ export const LegendSection = ({}: Props) => (
           {
             dot: tintClasses('danger').dot,
             label: 'failed',
-            desc: 'a check failed on a branch, or the context could not update',
+            desc: "a check failed on a branch, or the context couldn't update",
           },
         ]}
       />

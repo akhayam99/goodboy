@@ -24,8 +24,8 @@ export const GithubFormBody = ({ workspaceId, onConnected, shouldAutoFocus = fal
     return (
       <IntegrationConnectedRow
         provider="github"
-        primary={`Connected as ${status.user ?? '(unknown user)'}`}
-        badge="workspace key"
+        primary={`Connected as ${status.user ?? 'an unknown user'}`}
+        badge="Workspace key"
         disconnectDescription="Deletes this workspace's GitHub personal API key from your keychain. This doesn't sign you out of the system gh CLI."
         onDisconnect={async () => {
           await clearGithubToken({ workspaceId });

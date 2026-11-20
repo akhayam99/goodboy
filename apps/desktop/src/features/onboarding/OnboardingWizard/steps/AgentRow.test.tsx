@@ -142,6 +142,17 @@ describe('AgentRow', () => {
     expect(codexRow().getAllByText(/not signed in/i)).toHaveLength(1);
   });
 
+  it('says Not installed once and names the product to install', async () => {
+    stubStoryInvoke(agentHandlers({ signedIn: ['anthropic'], claudeVersion: '2.1.280' }));
+    renderStep();
+
+    const cursor = () => rowOf({ id: 'cursor' });
+    await waitFor(() => expect(cursor().getByText('Not installed')).toBeDefined());
+    expect(cursor().getByText('Cursor Agent')).toBeDefined();
+    expect(cursor().queryAllByText(/not installed|not found|isn't on this Mac/i)).toHaveLength(1);
+    expect(rowOf({ id: 'gemini' }).getByText('Antigravity')).toBeDefined();
+  });
+
   it("shows why an agent can't start and checks it again", async () => {
     stubStoryInvoke({
       ...agentHandlers({ signedIn: ['anthropic'], claudeVersion: '2.1.280' }),
@@ -155,7 +166,7 @@ describe('AgentRow', () => {
     renderStep();
     await waitFor(() => expect(codexRow().getByText("Can't start")).toBeDefined());
 
-    fireEvent.click(codexRow().getByRole('button', { name: 'Output' }));
+    fireEvent.click(codexRow().getByRole('button', { name: 'Show output' }));
     expect(
       codexRow().getByText('error: config.toml line 12: expected a value after "model ="'),
     ).toBeDefined();

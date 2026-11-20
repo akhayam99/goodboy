@@ -113,7 +113,7 @@ describe('a provider that cannot be checked', () => {
     expect(screen.getByRole('region', { name: 'Usage for cursor' })).toBeDefined();
     expect(screen.getByRole('region', { name: 'Models in the picker' })).toBeDefined();
     expect(screen.getByText("Can't reach Cursor right now")).toBeDefined();
-    expect(screen.getByText('Showing what we last knew, from 2m ago.')).toBeDefined();
+    expect(screen.getByText('Showing what Goodboy last knew, from 2m ago.')).toBeDefined();
   });
 
   it('keeps Usage visible even when nothing was ever confirmed', () => {
@@ -172,9 +172,7 @@ describe('a provider that refuses runs while its probe says connected', () => {
     );
     expect(screen.getByText('Cursor refused your last 3 runs')).toBeDefined();
     expect(
-      screen.getByText(
-        'Cursor says you are signed in on this Mac, but it did not accept the runs.',
-      ),
+      screen.getByText("Cursor says you're signed in on this Mac, but it didn't accept the runs."),
     ).toBeDefined();
     expect(
       within(screen.getByRole('alert')).getByRole('button', { name: 'Sign in again' }),

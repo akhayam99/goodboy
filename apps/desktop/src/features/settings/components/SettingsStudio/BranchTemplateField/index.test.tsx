@@ -120,7 +120,7 @@ describe('BranchTemplateField', () => {
     fireEvent.keyDown(input, { key: 'Enter' });
 
     expect(screen.getByRole('alert').textContent).toBe(
-      '{ticket} is not a placeholder. Use {prefix}, {task-id}, {slug} or {user}.',
+      "{ticket} isn't a placeholder. Use {prefix}, {task-id}, {slug} or {user}.",
     );
     expect(preview().getAllByText('Not valid yet')).toHaveLength(2);
 

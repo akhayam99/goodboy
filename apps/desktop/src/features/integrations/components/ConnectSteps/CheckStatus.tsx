@@ -1,5 +1,5 @@
 import { ICON_SIZE, StatusDot } from '@goodboy/ui';
-import { Check, ShieldAlert } from '@goodboy/ui/icons';
+import { Check, CircleAlert } from '@goodboy/ui/icons';
 
 type Props = {
   readonly status: 'idle' | 'checking' | 'ok' | 'error';
@@ -27,9 +27,11 @@ export const CheckStatus = ({ status, checkingLabel, okLabel, error }: Props) =>
   }
   if (status === 'error' && error !== null) {
     return (
-      <span role="alert" className="flex items-start gap-1 text-meta text-danger">
-        <ShieldAlert size={ICON_SIZE.row} aria-hidden className="mt-0.5 shrink-0" />
-        {error}
+      <span role="alert" className="flex items-start gap-2 text-meta text-foreground">
+        <span className="flex h-4 shrink-0 items-center">
+          <CircleAlert size={ICON_SIZE.control} aria-hidden className="text-danger" />
+        </span>
+        <span className="min-w-0">{error}</span>
       </span>
     );
   }

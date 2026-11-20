@@ -73,11 +73,11 @@ describe('IntegrationConnectedRow', () => {
   });
 
   it('shows the scope badge only when one is handed in', () => {
-    renderRow({ badge: 'workspace key' });
-    expect(screen.getByText('workspace key')).toBeDefined();
+    renderRow({ badge: 'Workspace key' });
+    expect(screen.getByText('Workspace key')).toBeDefined();
     cleanup();
     renderRow();
-    expect(screen.queryByText('workspace key')).toBeNull();
+    expect(screen.queryByText('Workspace key')).toBeNull();
   });
 
   it('arms the confirm instead of disconnecting immediately', () => {

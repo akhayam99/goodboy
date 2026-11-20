@@ -87,7 +87,7 @@ describe('useGitlabIssue', () => {
     );
 
     await waitFor(() =>
-      expect(result.current.error).toBe('Could not resolve the GitLab project for this issue.'),
+      expect(result.current.error).toBe("Couldn't find the GitLab project for this issue."),
     );
     expect(fetchIssue).not.toHaveBeenCalled();
   });

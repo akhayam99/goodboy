@@ -35,7 +35,7 @@ export type ShortcutRecorder = {
   readonly onKeyDown: (event: KeyboardEvent<HTMLInputElement>) => void;
 };
 
-const UNSUPPORTED = 'That key cannot be used here. Press other keys, or Esc to cancel.';
+const UNSUPPORTED = "That key can't be used here. Press other keys, or Esc to cancel.";
 
 export const useShortcutRecorder = ({ overrides }: Params): ShortcutRecorder => {
   const [recordingId, setRecordingId] = useState<string | null>(null);

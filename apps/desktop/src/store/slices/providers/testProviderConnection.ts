@@ -82,7 +82,7 @@ export const testProviderConnection =
             : isRefusal
               ? 'Test connection refused'
               : result.outcome === 'timed_out'
-                ? 'Probe timed out'
+                ? 'Sign-in check timed out'
                 : 'Test connection failed',
         };
         const health = {

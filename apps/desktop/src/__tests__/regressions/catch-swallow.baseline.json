@@ -42,7 +42,6 @@
   "apps/desktop/src/features/session/components/SessionWorkspace/parts/TimelinePane/useTimelineRows/index.ts": 1,
   "apps/desktop/src/features/session/hooks/useSessionBranchSync/index.ts": 1,
   "apps/desktop/src/features/session/mountQueryBridge/index.ts": 1,
-  "apps/desktop/src/features/settings/components/SettingsStudio/SearchIndexBand.tsx": 1,
   "apps/desktop/src/features/settings/components/SettingsStudio/WorkspaceProjectsSection.tsx": 1,
   "apps/desktop/src/features/storage/components/StoragePage/OtherToolsSection.tsx": 1,
   "apps/desktop/src/features/suggestions/useNextStepOutcomes/index.ts": 1,

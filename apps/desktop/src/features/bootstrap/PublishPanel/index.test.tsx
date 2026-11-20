@@ -147,7 +147,7 @@ describe('PublishPanel on GitHub', () => {
     screen.getByText('Connected as dana-reyes');
     expect(screen.queryByRole('button', { name: 'Publish' })).toBeNull();
     screen.getByRole('button', { name: 'Cancel' });
-    screen.getByText('Pick who can see the repository. Goodboy does not choose for you.');
+    screen.getByText("Pick who can see the repository. Goodboy doesn't choose for you.");
 
     fireEvent.click(screen.getByRole('radio', { name: 'Private' }));
     const publish = screen.getByRole('button', { name: 'Publish' });

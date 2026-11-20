@@ -1,5 +1,5 @@
 import { useShallow } from 'zustand/react/shallow';
-import type { LinearIntegrationConfig, WorkspaceId } from '@goodboy/types';
+import type { LinearIntegrationBinding, WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../store';
 import { IntegrationConnectedRow } from '../components/IntegrationConnectedRow';
 import { disconnectDescriptionOf } from '../disconnectDescriptionOf';
@@ -19,17 +19,19 @@ export const LinearFormBody = ({
   hasHeaderDisconnect = false,
 }: Props) => {
   const integrations = useAppStore(useShallow((s) => s.workspaceIntegrations[workspaceId] ?? []));
-  const linear = integrations.find((i) => i.provider === 'linear') ?? null;
-  const linearConfig = linear ? (linear.config as LinearIntegrationConfig) : null;
+  const linear =
+    integrations.find(
+      (binding): binding is LinearIntegrationBinding => binding.provider === 'linear',
+    ) ?? null;
   const disconnectIntegration = useAppStore((s) => s.disconnectIntegration);
 
-  if (linear != null) {
+  if (linear !== null) {
     return (
       <IntegrationConnectedRow
         provider="linear"
-        credentialId={linear?.credentialId ?? null}
-        primary={`Connected as ${linearConfig?.viewerName}`}
-        secondary={`linear.app/${linearConfig?.workspaceUrlKey}`}
+        credentialId={linear.credentialId}
+        primary={`Connected as ${linear.config.viewerName}`}
+        secondary={`linear.app/${linear.config.workspaceUrlKey}`}
         disconnectDescription={disconnectDescriptionOf({ provider: 'linear' })}
         hasHeaderDisconnect={hasHeaderDisconnect}
         onDisconnect={() => disconnectIntegration({ workspaceId, provider: 'linear' })}

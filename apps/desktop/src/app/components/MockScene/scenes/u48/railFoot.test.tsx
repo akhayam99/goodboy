@@ -93,7 +93,7 @@ describe('the rail foot scenes', () => {
     ['rail-foot-ready', 'Update', 'Goodboy 0.40.1 is ready'],
     ['rail-foot-running', 'Update', 'Goodboy 0.40.1 is ready'],
     ['rail-foot-queued', 'Update', 'Restarts when 2 agents finish'],
-    ['rail-foot-failed', 'Update', 'Goodboy 0.40.1 did not install'],
+    ['rail-foot-failed', 'Update', "Goodboy 0.40.1 didn't install"],
   ])('%s shows the update mark with its word', async (id, word, name) => {
     const container = mount({ id });
 

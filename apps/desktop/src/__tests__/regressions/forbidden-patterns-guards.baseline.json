@@ -70,7 +70,6 @@
     "apps/desktop/src/features/notifications/components/NotificationRow/NotificationRowDetail.tsx": 1,
     "apps/desktop/src/features/permissions/components/PermissionDecisionCard/index.tsx": 1,
     "apps/desktop/src/features/permissions/components/PermissionRequestCard/index.tsx": 2,
-    "apps/desktop/src/features/permissions/components/PermissionsSettings/AddRuleForm.tsx": 1,
     "apps/desktop/src/features/providers/components/ProviderConnect/GuidePanel.tsx": 1,
     "apps/desktop/src/features/providers/components/ProviderStudio/ProviderPage/UsageGroup/SpendInGoodboy.tsx": 1,
     "apps/desktop/src/features/resolve/components/ReviewFlow/AnswersPanel/AnswerCard.tsx": 1,

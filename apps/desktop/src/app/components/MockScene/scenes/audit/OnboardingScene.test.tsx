@@ -176,7 +176,7 @@ describe('onboarding scene', () => {
       agent === null || agent === undefined ? [] : useAppStore.getState().transcripts[agent];
     expect(events?.[0]).toMatchObject({
       kind: 'user_text',
-      text: 'Find one small, real bug in payments-api. Say where it is and why it is a bug. Do not change any file.',
+      text: "Find one small, real bug in payments-api. Say where it is and why it is a bug. Don't change any file.",
     });
     await waitFor(
       () =>
