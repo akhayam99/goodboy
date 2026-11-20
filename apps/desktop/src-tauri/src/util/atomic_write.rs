@@ -10,15 +10,32 @@ fn temp_sibling(path: &Path) -> PathBuf {
     parent.join(format!(".{name}.{}.part", super::uuid_v4()))
 }
 
-fn write_synced(path: &Path, bytes: &[u8]) -> std::io::Result<()> {
-    let mut file = std::fs::File::create(path)?;
+fn write_synced(path: &Path, bytes: &[u8], is_private: bool) -> std::io::Result<()> {
+    let mut options = std::fs::OpenOptions::new();
+    options.write(true).create_new(true);
+    #[cfg(unix)]
+    if is_private {
+        use std::os::unix::fs::OpenOptionsExt;
+        options.mode(0o600);
+    }
+    #[cfg(not(unix))]
+    let _ = is_private;
+    let mut file = options.open(path)?;
     file.write_all(bytes)?;
     file.sync_all()
 }
 
 pub(crate) fn write_atomic(path: &Path, bytes: &[u8]) -> std::io::Result<()> {
+    replace_with(path, bytes, false)
+}
+
+pub(crate) fn write_atomic_private(path: &Path, bytes: &[u8]) -> std::io::Result<()> {
+    replace_with(path, bytes, true)
+}
+
+fn replace_with(path: &Path, bytes: &[u8], is_private: bool) -> std::io::Result<()> {
     let temp = temp_sibling(path);
-    if let Err(error) = write_synced(&temp, bytes) {
+    if let Err(error) = write_synced(&temp, bytes, is_private) {
         let _ = std::fs::remove_file(&temp);
         return Err(error);
     }
@@ -66,6 +83,19 @@ mod tests {
         std::fs::create_dir_all(path.join("inside")).expect("a folder in the way");
         assert!(write_atomic(&path, b"new").is_err());
         assert!(path.join("inside").is_dir());
+        assert_eq!(leftovers(&dir), 0);
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn a_private_write_is_owner_only_from_the_first_byte() {
+        use std::os::unix::fs::PermissionsExt;
+        let dir = scratch();
+        let path = dir.join("identity.json");
+        write_atomic_private(&path, b"{}").expect("write");
+        let mode = std::fs::metadata(&path).expect("stat").permissions().mode();
+        assert_eq!(mode & 0o777, 0o600);
         assert_eq!(leftovers(&dir), 0);
         let _ = std::fs::remove_dir_all(&dir);
     }

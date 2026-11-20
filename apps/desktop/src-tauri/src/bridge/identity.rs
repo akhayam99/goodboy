@@ -86,14 +86,7 @@ impl Identity {
             std::fs::create_dir_all(parent).map_err(BridgeError::Io)?;
         }
         let json = serde_json::to_vec_pretty(self).map_err(BridgeError::Json)?;
-        std::fs::write(path, json).map_err(BridgeError::Io)?;
-        #[cfg(unix)]
-        {
-            use std::os::unix::fs::PermissionsExt;
-            std::fs::set_permissions(path, std::fs::Permissions::from_mode(0o600))
-                .map_err(BridgeError::Io)?;
-        }
-        Ok(())
+        crate::util::write_atomic_private(path, &json).map_err(BridgeError::Io)
     }
 }
 

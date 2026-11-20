@@ -83,7 +83,7 @@ mod time;
 #[cfg(test)]
 pub(crate) mod wire_shape;
 
-pub(crate) use atomic_write::write_atomic;
+pub(crate) use atomic_write::{write_atomic, write_atomic_private};
 pub(crate) use encoding::percent_encode;
 pub(crate) use ids::uuid_v4;
 pub(crate) use lock::lock_or_recover;
