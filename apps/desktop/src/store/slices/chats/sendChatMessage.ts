@@ -1,5 +1,11 @@
 import { formatError } from '@goodboy/ui';
-import type { ChatId, ChatMessageAttachment, ChatMessageId, ProviderRunId } from '@goodboy/types';
+import type {
+  ChatId,
+  ChatMessage,
+  ChatMessageAttachment,
+  ChatMessageId,
+  ProviderRunId,
+} from '@goodboy/types';
 import { addReplyRead } from '../../../features/conversation/addReplyRead';
 import { appendReplyText } from '../../../features/conversation/appendReplyText';
 import { draftChatMessage } from '../../../features/conversation/draftChatMessage';
@@ -85,13 +91,14 @@ export const sendChatMessage =
     ) {
       return false;
     }
-    const history = get().chatMessages[chatId] ?? [];
     const at = isoNow();
     const runId = crypto.randomUUID() as ProviderRunId;
     const askedId = crypto.randomUUID() as ChatMessageId;
+    let history: ReadonlyArray<ChatMessage>;
     let images: ReadonlyArray<ChatMessageAttachment>;
     sendsInFlight.add(chatId);
     try {
+      history = get().chatMessages[chatId] ?? (await activeChatBackend.listMessages({ chatId }));
       images = await saveChatImages({ chatId, messageId: askedId, attachments: wanted, at });
     } catch {
       return false;
