@@ -6,12 +6,15 @@ import { fileURLToPath } from 'node:url';
 import {
   DESKTOP_SHARDS,
   MAX_RELATED_PATHS,
+  isBaselineFalling,
   isInertPath,
   lintScopeOf,
+  quickPlanOf,
   shouldRunTests,
   testPlanOf,
   testScopeOf,
 } from './ci-changes.mjs';
+import { pathsReadOf } from './ci-related-tests.mjs';
 
 const shouldRunTestsForPullRequest = ({ paths }) =>
   shouldRunTests({ eventName: 'pull_request', paths });
@@ -231,6 +234,131 @@ describe('testPlanOf', () => {
   });
 });
 
+const GUARD = 'apps/desktop/src/__tests__/regressions';
+
+const fakeGraph = ({ sources, edges = [] }) => {
+  const importers = new Map();
+  for (const [target, file] of edges) {
+    importers.set(target, new Set([...(importers.get(target) ?? []), file]));
+  }
+  return { files: Object.keys(sources), importers, sources: new Map(Object.entries(sources)) };
+};
+
+const GRAPH = fakeGraph({
+  sources: {
+    [`${GUARD}/catch-swallow.test.ts`]:
+      "import { readFileSync } from 'node:fs';\nconst BASELINE = 'catch-swallow.baseline.json';",
+    [`${GUARD}/forbidden-patterns.test.ts`]: "import { readFileSync } from 'node:fs';",
+    [`${GUARD}/one-sentence.test.ts`]:
+      "import { readFileSync } from 'node:fs';\nconst FILES = ['README.md'];",
+    'apps/desktop/src/features/palette/rank.ts': 'export const rank = 1;',
+    'apps/desktop/src/features/palette/rank.test.ts': "import { rank } from './rank';",
+    'packages/db/src/migrations/map.test.ts':
+      "import { readFileSync } from 'node:fs';\nconst DOC = join(ROOT, 'docs', 'architecture.md');",
+  },
+  edges: [
+    ['apps/desktop/src/features/palette/rank.ts', 'apps/desktop/src/features/palette/rank.test.ts'],
+  ],
+});
+
+const quickPlanFor = ({ paths, falling = () => true }) =>
+  quickPlanOf({ paths, graphOf: () => GRAPH, isFallingOf: falling });
+
+describe('isBaselineFalling', () => {
+  const path = `${GUARD}/catch-swallow.baseline.json`;
+  const base = JSON.stringify({ 'src/a.ts': 3, 'src/b.ts': 2 });
+
+  it('falls when every entry stays or goes down, a removed entry included', () => {
+    const headText = JSON.stringify({ 'src/a.ts': 2 });
+    assert.equal(isBaselineFalling({ path, baseText: base, headText }), true);
+    assert.equal(isBaselineFalling({ path, baseText: base, headText: null }), true);
+  });
+
+  it('grows when one entry goes up even if another goes down', () => {
+    const headText = JSON.stringify({ 'src/a.ts': 1, 'src/b.ts': 3 });
+    assert.equal(isBaselineFalling({ path, baseText: base, headText }), false);
+  });
+
+  it('grows on a new entry and on a new baseline file', () => {
+    const headText = JSON.stringify({ 'src/a.ts': 3, 'src/b.ts': 2, 'src/c.ts': 1 });
+    assert.equal(isBaselineFalling({ path, baseText: base, headText }), false);
+    assert.equal(isBaselineFalling({ path, baseText: null, headText: base }), false);
+  });
+
+  it('grows on a new baseline file that is empty or holds only zeros', () => {
+    assert.equal(isBaselineFalling({ path, baseText: null, headText: '{}' }), false);
+    const zeros = JSON.stringify({ 'src/a.ts': 0 });
+    assert.equal(isBaselineFalling({ path, baseText: null, headText: zeros }), false);
+  });
+});
+
+describe('quickPlanOf', () => {
+  it('runs only the guard of a baseline that falls', () => {
+    const plan = quickPlanFor({ paths: [`${GUARD}/catch-swallow.baseline.json`] });
+    assert.deepEqual(plan, {
+      scope: 'related',
+      isDocRefsRun: false,
+      lines: ['desktop src/__tests__/regressions/catch-swallow.test.ts'],
+    });
+  });
+
+  it('finds the guard of a ledger baseline by the longest name prefix', () => {
+    const plan = quickPlanFor({ paths: [`${GUARD}/forbidden-patterns.param-shape.baseline.json`] });
+    assert.deepEqual(plan.lines, ['desktop src/__tests__/regressions/forbidden-patterns.test.ts']);
+  });
+
+  it('runs everything when one baseline grows, or when no guard reads it', () => {
+    const grows = quickPlanFor({
+      paths: [`${GUARD}/catch-swallow.baseline.json`, `${GUARD}/forbidden-patterns.baseline.json`],
+      falling: ({ path }) => path.includes('catch-swallow'),
+    });
+    assert.equal(grows.scope, 'full');
+    assert.equal(quickPlanFor({ paths: [`${GUARD}/orphan.baseline.json`] }).scope, 'full');
+  });
+
+  it('runs check:doc-refs alone for the doc budget baseline', () => {
+    const plan = quickPlanFor({ paths: [`${GUARD}/doc-budget.baseline.json`] });
+    assert.deepEqual(plan, { scope: 'related', isDocRefsRun: true, lines: [] });
+  });
+
+  it('runs the tests that read a doc and check:doc-refs', () => {
+    const plan = quickPlanFor({ paths: ['README.md', 'docs/architecture.md', 'FEATURES.md'] });
+    assert.deepEqual(plan, {
+      scope: 'related',
+      isDocRefsRun: true,
+      lines: [
+        'desktop src/__tests__/regressions/one-sentence.test.ts',
+        'db src/migrations/map.test.ts',
+      ],
+    });
+  });
+
+  it('leaves a suppressions file to the lint step', () => {
+    assert.equal(quickPlanFor({ paths: ['eslint-suppressions-strict.json'] }).scope, 'none');
+    const plan = quickPlanFor({
+      paths: ['eslint-suppressions.json', 'apps/desktop/src/features/palette/rank.ts'],
+    });
+    assert.equal(plan.scope, 'related');
+    assert.ok(plan.lines.includes('desktop src/features/palette/rank.test.ts'));
+  });
+
+  it('keeps check:doc-refs when a doc or the doc budget joins a full run', () => {
+    const shared = quickPlanFor({ paths: ['README.md', 'scripts/gate.sh'] });
+    assert.deepEqual(shared, { scope: 'full', isDocRefsRun: true, lines: [] });
+    const grows = quickPlanFor({
+      paths: [`${GUARD}/doc-budget.baseline.json`],
+      falling: () => false,
+    });
+    assert.deepEqual(grows, { scope: 'full', isDocRefsRun: true, lines: [] });
+  });
+
+  it('keeps the full run for shared code next to a baseline or a doc', () => {
+    const plan = quickPlanFor({ paths: ['README.md', `${GUARD}/catch-swallow.test.ts`] });
+    assert.equal(plan.scope, 'full');
+    assert.equal(quickPlanFor({ paths: ['docs/testing.md'] }).scope, 'none');
+  });
+});
+
 const REPOSITORY_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const GUARDED_ROOTS = new Set(['website', 'docs']);
 
@@ -254,28 +382,8 @@ const collectTestFiles = ({ directory }) => {
   return files;
 };
 
-const collectReferencedPaths = ({ source, file }) => {
-  const referenced = [];
-  for (const call of source.matchAll(/\b(?:join|resolve)\(([^()]*)\)/g)) {
-    const literals = [...call[1].matchAll(/'([^'\n]*)'|"([^"\n]*)"/g)].map(
-      (match) => match[1] ?? match[2],
-    );
-    const start = literals.findIndex((literal) => GUARDED_ROOTS.has(literal.split('/')[0]));
-    if (start === -1) {
-      continue;
-    }
-    referenced.push(literals.slice(start).join('/'));
-  }
-  for (const call of source.matchAll(
-    /new URL\(\s*(?:'([^'\n]*)'|"([^"\n]*)")\s*,\s*import\.meta\.url/g,
-  )) {
-    const target = relative(REPOSITORY_ROOT, resolve(dirname(file), call[1] ?? call[2]));
-    if (GUARDED_ROOTS.has(target.split('/')[0])) {
-      referenced.push(target);
-    }
-  }
-  return referenced;
-};
+const collectReferencedPaths = ({ source, file }) =>
+  pathsReadOf({ source, file }).filter((path) => GUARDED_ROOTS.has(path.split('/')[0]));
 
 const collectPathsReadByTests = () => {
   const roots = [
@@ -286,7 +394,8 @@ const collectPathsReadByTests = () => {
   ];
   const found = new Map();
   for (const file of roots.flatMap((directory) => collectTestFiles({ directory }))) {
-    for (const path of collectReferencedPaths({ source: readFileSync(file, 'utf8'), file })) {
+    const source = readFileSync(file, 'utf8');
+    for (const path of collectReferencedPaths({ source, file: relative(REPOSITORY_ROOT, file) })) {
       found.set(path, [...(found.get(path) ?? []), relative(REPOSITORY_ROOT, file)]);
     }
   }
@@ -304,7 +413,7 @@ describe('paths that tests read from website and docs', () => {
   it('reads a path given to new URL next to import.meta.url', () => {
     const source =
       "const DOC = fileURLToPath(new URL('../../../../docs/architecture.md', import.meta.url));";
-    const file = join(REPOSITORY_ROOT, 'packages', 'db', 'src', 'migrations', 'a.test.ts');
+    const file = 'packages/db/src/migrations/a.test.ts';
     assert.deepEqual(collectReferencedPaths({ source, file }), ['docs/architecture.md']);
   });
 

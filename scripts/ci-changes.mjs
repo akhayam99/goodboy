@@ -1,7 +1,15 @@
 import { execFileSync } from 'node:child_process';
-import { appendFileSync, existsSync } from 'node:fs';
+import { appendFileSync, existsSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { buildGraph, relatedSelection } from './ci-related-tests.mjs';
+import { baselineEntries } from './check-baselines.mjs';
+import {
+  baselineReadersOf,
+  buildGraph,
+  relatedSelection,
+  selectionLines,
+  testsReadingOf,
+  testsSelection,
+} from './ci-related-tests.mjs';
 
 const WEBSITE_PATHS_READ_BY_TESTS = [
   'website/src/components/Logo.tsx',
@@ -39,6 +47,12 @@ const SHARED_PATTERNS = [
 ];
 
 const LINTED_SOURCE = /^(apps\/desktop\/src|packages\/[^/]+\/src|website\/src)\/.*\.tsx?$/;
+const REGRESSION_BASELINE = /^apps\/desktop\/src\/__tests__\/regressions\/[^/]+\.baseline\.json$/;
+const SUPPRESSIONS = /^eslint-suppressions(?:-strict)?\.json$/;
+const DOC_PATH = /^docs\/|\.md$/;
+const BASELINES_READ_BY_DOC_REFS = [
+  'apps/desktop/src/__tests__/regressions/doc-budget.baseline.json',
+];
 
 export const MAX_RELATED_PATHS = 40;
 export const DESKTOP_SHARDS = 6;
@@ -122,6 +136,97 @@ export const testPlanOf = ({ scope, selection }) => {
   };
 };
 
+const countsOf = ({ path, text }) => {
+  const counts = new Map();
+  if (text === null) {
+    return counts;
+  }
+  for (const entry of baselineEntries({ path, text })) {
+    counts.set(entry.key, (counts.get(entry.key) ?? 0) + entry.count);
+  }
+  return counts;
+};
+
+export const isBaselineFalling = ({ path, baseText, headText }) => {
+  if (baseText === null) {
+    return false;
+  }
+  const base = countsOf({ path, text: baseText });
+  return [...countsOf({ path, text: headText })].every(
+    ([key, count]) => count <= (base.get(key) ?? 0),
+  );
+};
+
+export const quickPlanOf = ({ paths, graphOf, isFallingOf }) => {
+  const live = paths.filter((path) => !isInertPath({ path }) && !SUPPRESSIONS.test(path));
+  if (live.length === 0) {
+    return { scope: 'none', isDocRefsRun: false, lines: [] };
+  }
+  const baselines = live.filter((path) => REGRESSION_BASELINE.test(path));
+  const docs = live.filter((path) => !REGRESSION_BASELINE.test(path) && DOC_PATH.test(path));
+  const rest = live.filter((path) => !baselines.includes(path) && !docs.includes(path));
+  const isDocRefsRun =
+    docs.length > 0 || baselines.some((path) => BASELINES_READ_BY_DOC_REFS.includes(path));
+  const fullPlan = { scope: 'full', isDocRefsRun, lines: [] };
+  if (baselines.some((path) => !isFallingOf({ path }))) {
+    return fullPlan;
+  }
+  if (rest.length > 0 && testScopeOf({ eventName: 'pull_request', paths: rest }) === 'full') {
+    return fullPlan;
+  }
+  const graph = graphOf();
+  const readers = baselines.map((path) => ({ path, tests: baselineReadersOf({ graph, path }) }));
+  if (
+    readers.some(
+      ({ path, tests }) => tests.length === 0 && !BASELINES_READ_BY_DOC_REFS.includes(path),
+    )
+  ) {
+    return fullPlan;
+  }
+  const pinned = [
+    ...readers.flatMap(({ tests }) => tests),
+    ...docs.flatMap((path) => testsReadingOf({ graph, path })),
+  ];
+  const related =
+    rest.length === 0
+      ? []
+      : selectionLines({ selection: relatedSelection({ graph, changed: rest }) });
+  const lines = [
+    ...related,
+    ...selectionLines({ selection: testsSelection({ files: [...new Set(pinned)] }) }),
+  ];
+  return {
+    scope: 'related',
+    isDocRefsRun,
+    lines: [...new Set(lines)],
+  };
+};
+
+const gitShow = ({ ref, path }) => {
+  try {
+    return execFileSync('git', ['show', `${ref}:${path}`], {
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'ignore'],
+    });
+  } catch {
+    return null;
+  }
+};
+
+const isFallingSince =
+  ({ base }) =>
+  ({ path }) => {
+    try {
+      return isBaselineFalling({
+        path,
+        baseText: gitShow({ ref: base, path }),
+        headText: existsSync(path) ? readFileSync(path, 'utf8') : null,
+      });
+    } catch {
+      return false;
+    }
+  };
+
 export const readChangedPaths = () => {
   try {
     const output = execFileSync('git', ['diff', '--name-only', '--no-renames', 'HEAD^1', 'HEAD'], {
@@ -151,7 +256,25 @@ const printList = ({ files }) => {
   process.stdout.write(files.join('\0'));
 };
 
+const runQuick = ({ base }) => {
+  const paths = readFileSync(0, 'utf8')
+    .split('\n')
+    .filter((line) => line.length > 0);
+  const plan = quickPlanOf({
+    paths,
+    graphOf: () => buildGraph({ isTypeOnlySkipped: true }),
+    isFallingOf: isFallingSince({ base }),
+  });
+  const checks = plan.isDocRefsRun ? ['check doc-refs'] : [];
+  process.stdout.write([`scope ${plan.scope}`, ...checks, ...plan.lines].join('\n'));
+};
+
 const runCli = () => {
+  const quickAt = process.argv.indexOf('--quick');
+  if (quickAt >= 0) {
+    runQuick({ base: process.argv[quickAt + 1] ?? 'origin/main' });
+    return;
+  }
   const eventName = process.env.GITHUB_EVENT_NAME ?? '';
   const paths = eventName === 'pull_request' ? readChangedPaths() : [];
   const changed = paths === null ? 'unknown' : paths.length;
