@@ -47,7 +47,8 @@ export const MESSAGE_KIND: ObjectKindDefinition<MessageActionTarget, MessageFact
       label: NAMES.openAgent,
       icon: CONCEPT_ICONS.agents,
       group: 'open',
-      when: ({ facts }) => facts.hasComposer,
+      when: ({ facts, viewing }) =>
+        facts.hasComposer && !(viewing?.kind === 'agent' && viewing.id === facts.agentId),
       run: ({ facts, env }) => {
         if (facts.sessionId !== null && facts.agentId !== null) {
           env.getState().navigate({

@@ -97,7 +97,8 @@ never exists on one surface only.
 - **No verb that does nothing.** A surface tells the registry what it shows
   through `env.viewing` (`useActionEnv`, `ObjectOverflowMenu` and
   `useObjectMenuTrigger` take `viewing`): the artifact viewer its artifact,
-  the agent header its agent, the run page its run. Open, Open agent and Open
+  the agent header and the messages of the agent page (`TranscriptViewingContext`)
+  its agent, the run page its run. Open, Open agent and Open
   run are not offered for the object already on screen, on any of its menus.
   `__tests__/actions/menuParity.test.tsx` checks registry parity on existing
   surfaces, `stateMatrix.test.ts` pins the Open rows, and
