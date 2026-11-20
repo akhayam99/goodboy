@@ -96,6 +96,14 @@ never exists on one surface only.
   The row is `select-none`, like every row that carries `ROW_HOVER` or
   `ROW_INTERACTIVE` (`SelectableRow`, `InteractiveRow`, `ListGridRow`, the
   Board card): see Where the webview menu stays.
+- **Focus after a removal.** A menu verb that removes its row (archive,
+  delete, close) leaves the focus on the row next to it, across a group, or the
+  one before it on the last row. The right click and the `⋯` capture the
+  neighbour before the write (`keepRowFocus`, on `captureReturnFocus` in
+  `packages/ui`), rows carry `data-row` (`ListGridRow`, `InteractiveRow`) or
+  `data-select-id` (the Board card), and Undo on the toast puts the focus back
+  on the restored row. A row that only changes (pin, read) keeps the focus.
+  The shared confirm (`ActionConfirmPanel`) passes the same `returnFocusTo`.
 - **One order.** The registry and right click list Open, Act, Copy, then
   stop, archive and destructive verbs, with one rule before that last group.
   `MenuList` draws rules only from five rows up and an icon on every row or on

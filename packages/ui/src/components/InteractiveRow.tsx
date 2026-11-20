@@ -54,6 +54,7 @@ export const InteractiveRow = ({
   radius = 'md',
 }: InteractiveRowProps) => (
   <div
+    data-row={label}
     data-selected={isSelected}
     onContextMenu={menu?.onContextMenu}
     onKeyDown={menu?.onKeyDown}

@@ -1,5 +1,6 @@
-import { useCallback, useEffect, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { MenuList, type MenuEntry } from '@goodboy/ui';
+import { keepRowFocus } from '../../keepRowFocus';
 import { useActionEnv } from '../../useActionEnv';
 import { useObjectActions } from '../../useObjectActions';
 import { toMenuEntries } from '../../toMenuEntries';
@@ -40,17 +41,27 @@ export const ObjectOverflowList = ({
   track,
   isHeld,
 }: Props) => {
-  const env = useActionEnv({ origin: 'overflow', anchorKey, viewing });
+  const base = useActionEnv({ origin: 'overflow', anchorKey, viewing });
+  const [opener] = useState(() =>
+    document.activeElement instanceof HTMLElement ? document.activeElement : null,
+  );
+  const rowFocus = useMemo(
+    () => keepRowFocus({ anchor: opener, showToast: base.showToast }),
+    [base.showToast, opener],
+  );
+  const env = useMemo(() => ({ ...base, showToast: rowFocus.showToast }), [base, rowFocus]);
   const { actions, run: runAction } = useObjectActions({ target, env });
   const run = useCallback(
     async (params: RunParams) => {
       if (track === undefined) {
         await runAction(params);
+        rowFocus.restore();
         return;
       }
       await track({ actionId: params.actionId, task: () => runAction(params) });
+      rowFocus.restore();
     },
-    [runAction, track],
+    [rowFocus, runAction, track],
   );
   useEffect(
     () => () => {

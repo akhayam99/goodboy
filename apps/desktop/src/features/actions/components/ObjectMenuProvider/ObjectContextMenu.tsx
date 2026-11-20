@@ -1,5 +1,6 @@
-import { useEffect, useMemo } from 'react';
+import { useCallback, useEffect, useMemo } from 'react';
 import { ContextMenu } from '@goodboy/ui';
+import { keepRowFocus } from '../../keepRowFocus';
 import { useActionEnv } from '../../useActionEnv';
 import { useObjectActions } from '../../useObjectActions';
 import { toMenuEntries } from '../../toMenuEntries';
@@ -10,13 +11,30 @@ type Props = {
   readonly onClose: () => void;
 };
 
+type RunParams = {
+  readonly actionId: string;
+  readonly choice?: string | null;
+};
+
 export const ObjectContextMenu = ({ request, onClose }: Props) => {
-  const env = useActionEnv({
+  const base = useActionEnv({
     origin: 'menu',
     anchorKey: request.anchorKey,
     viewing: request.viewing ?? null,
   });
-  const { noun, actions, run } = useObjectActions({ target: request.target, env });
+  const rowFocus = useMemo(
+    () => keepRowFocus({ anchor: request.opener, showToast: base.showToast }),
+    [base.showToast, request.opener],
+  );
+  const env = useMemo(() => ({ ...base, showToast: rowFocus.showToast }), [base, rowFocus]);
+  const { noun, actions, run: runAction } = useObjectActions({ target: request.target, env });
+  const run = useCallback(
+    async (params: RunParams) => {
+      await runAction(params);
+      rowFocus.restore();
+    },
+    [rowFocus, runAction],
+  );
   const entries = useMemo(() => toMenuEntries({ actions, env, run }), [actions, env, run]);
   const isGone = noun === null || entries.length === 0;
 

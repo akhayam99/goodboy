@@ -217,7 +217,7 @@ export const ListGridRow = ({
   });
   const hasOverlay = overlayNodes.length > 0;
   return (
-    <li role={itemRole} className="group/grid-row col-span-full grid grid-cols-subgrid">
+    <li role={itemRole} data-row="" className="group/grid-row col-span-full grid grid-cols-subgrid">
       <OptionalTooltip content={tooltip}>
         <button
           type="button"

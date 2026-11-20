@@ -6,13 +6,16 @@ type Params = {
   readonly rowSelector: string;
 };
 
-type MatchParams = {
-  readonly candidate: Element | null;
+type RowsParams = {
+  readonly row: Element;
   readonly rowSelector: string;
 };
 
-const matchingRow = ({ candidate, rowSelector }: MatchParams): HTMLElement | null =>
-  candidate instanceof HTMLElement && candidate.matches(rowSelector) ? candidate : null;
+type Neighbours = {
+  readonly next: HTMLElement | null;
+  readonly previous: HTMLElement | null;
+  readonly list: HTMLElement | null;
+};
 
 const focusInside = (target: HTMLElement): void => {
   const inner = target.querySelector(FOCUSABLE);
@@ -26,14 +29,49 @@ const focusInside = (target: HTMLElement): void => {
   target.focus();
 };
 
+const LIST = '[role="list"], [role="grid"], [role="listbox"], [role="tree"], ul, ol';
+
+const LANDMARK = 'main, nav, aside, [role="region"], [role="dialog"], body';
+
+const outerListOf = ({ row }: Omit<RowsParams, 'rowSelector'>): HTMLElement | null => {
+  const landmark = row.closest(LANDMARK);
+  let outer: HTMLElement | null = null;
+  let cursor = row.parentElement?.closest<HTMLElement>(LIST) ?? null;
+  while (cursor !== null && landmark?.contains(cursor) === true) {
+    outer = cursor;
+    cursor = cursor.parentElement?.closest<HTMLElement>(LIST) ?? null;
+  }
+  return outer;
+};
+
+const neighboursOf = ({ row, rowSelector }: RowsParams): Neighbours => {
+  let scope = outerListOf({ row }) ?? row.parentElement;
+  while (scope !== null && scope.querySelectorAll(rowSelector).length < 2) {
+    scope = scope.parentElement;
+  }
+  const rows =
+    scope === null
+      ? []
+      : Array.from(scope.querySelectorAll(rowSelector)).filter(
+          (candidate): candidate is HTMLElement =>
+            candidate instanceof HTMLElement &&
+            candidate.parentElement?.closest(rowSelector) ===
+              row.parentElement?.closest(rowSelector),
+        );
+  const index = rows.findIndex((candidate) => candidate === row);
+  return {
+    next: index === -1 ? null : (rows[index + 1] ?? null),
+    previous: index <= 0 ? null : (rows[index - 1] ?? null),
+    list: scope ?? row.parentElement,
+  };
+};
+
 export const captureReturnFocus = ({ anchor, rowSelector }: Params): (() => void) => {
   const row = anchor?.closest(rowSelector) ?? null;
   if (anchor === null || row === null) {
     return () => undefined;
   }
-  const next = matchingRow({ candidate: row.nextElementSibling, rowSelector });
-  const previous = matchingRow({ candidate: row.previousElementSibling, rowSelector });
-  const list = row.parentElement;
+  const { next, previous, list } = neighboursOf({ row, rowSelector });
   return () => {
     if (anchor.isConnected) {
       return;
