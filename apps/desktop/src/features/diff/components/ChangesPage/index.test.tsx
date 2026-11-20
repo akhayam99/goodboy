@@ -176,7 +176,7 @@ const renderPage = ({
     vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function (
       this: HTMLElement,
     ) {
-      return this.hasAttribute('data-changes-page')
+      return this.hasAttribute('data-studio-rail')
         ? new DOMRect(0, 0, pageWidth, 800)
         : rectOf.call(this);
     });

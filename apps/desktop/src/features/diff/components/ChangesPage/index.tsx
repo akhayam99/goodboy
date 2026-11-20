@@ -259,7 +259,5 @@ export const ChangesPage = ({
     />
   );
 
-  return (
-    <ChangesFrame railSlot={railSlot} paneRef={fold.paneRef} detail={detail} layoutOf={layoutOf} />
-  );
+  return <ChangesFrame railSlot={railSlot} detail={detail} layoutOf={layoutOf} />;
 };

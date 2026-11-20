@@ -41,7 +41,8 @@ the full-width secondary New chat / New terminal button. A folded rail keeps a
 44px strip with "Show <rail name>" at the fold control's x and height, and the
 page's `foldedActions` under it (Settings' Search). The page
 owns the folded state through `useStudioRailFold` (remembered per surface, and
-forced under a pane of 880px), and a folded rail leaves `FilterButton` in the
+forced under 880px of page, measured by `StudioRailLayout` itself; Show then
+opens the list over the page), and a folded rail leaves `FilterButton` in the
 title row: a 28px secondary button with the lines icon (`ListFilter`) and the count of active
 filters, opening the same facets in a popover. Every filter trigger renders
 through `FilterButton` (Tasks included); `filter-triggers.test.ts` allows only

@@ -100,23 +100,23 @@ export const DrawerColumn = ({
   });
   const isDockShown = isOpen && !isParked;
   const isDetailShown = isDetailOpen && !isDetailParked;
-  const isDockOverlayExit = dockPanel.isOverlayExit && !isDetailOver;
-  const isOverlayExit = isDockOverlayExit || (detailPanel.isOverlayExit && !isDetailOver);
+  const isDetailOverPage = isDetailOver || (detailPanel.isOverlayExit && !isOverlay);
+  const isOverlayExit = dockPanel.isOverlayExit || (detailPanel.isOverlayExit && isOverlay);
   const isAnyExiting = dockPanel.exit.isExiting || detailPanel.exit.isExiting;
   const isFloating = (isOverlay && (isDockShown || isDetailShown)) || isOverlayExit;
-  const isDetailFloating = isFloating || isDetailOver;
+  const isDetailFloating = isFloating || isDetailOverPage;
   useSnapAfterFloat({ ref: asideRef, isFloating });
   const hasRail = railWidth > 0;
   const dockPx = isDockShown || (dockPanel.isOverlayExit && !isParked) ? layout.dock.width : 0;
   const detailPx =
     isDetailShown || (detailPanel.isOverlayExit && !isDetailParked) ? layout.detail.width : 0;
-  const pushedDetailPx = isDetailOver ? 0 : detailPx;
+  const pushedDetailPx = isDetailOverPage ? 0 : detailPx;
   preview.live.current = {
     mode,
     rail: railWidth,
     dock: dockPx,
     detail: pushedDetailPx,
-    isDetailOver,
+    isDetailOver: isDetailOverPage,
   };
   const asideWidth = panelAsideWidthOf({
     dockWidth: dockPx,
@@ -180,7 +180,7 @@ export const DrawerColumn = ({
                 )
               : cn(
                   'relative motion-safe:transition-[width]',
-                  isDetailOver ? 'overflow-visible' : 'overflow-clip',
+                  isDetailOverPage ? 'overflow-visible' : 'overflow-clip',
                 ),
             'duration-200 ease-enter',
           )}
@@ -189,7 +189,7 @@ export const DrawerColumn = ({
             className={cn(
               'flex min-h-0 min-w-0 flex-1',
               !isFloating && !isSheet && 'py-3',
-              isDetailOver && 'relative',
+              isDetailOverPage && 'relative',
             )}
             ref={trackRef}
             style={{ minWidth: isFloating ? asideWidth : 0 }}
@@ -207,11 +207,11 @@ export const DrawerColumn = ({
                 resizeLabel={detailResizeLabel}
                 isOpen={isDetailOpen}
                 isParked={isDetailParked}
-                isOverlay={isOverlay || isDetailOver}
+                isOverlay={isOverlay || isDetailOverPage}
                 isFloating={isDetailFloating}
-                isOverPage={isDetailOver}
+                isOverPage={isDetailOverPage}
                 isInset={!isSheet}
-                mode={isDetailOver ? 'overlay' : mode}
+                mode={isDetailOverPage ? 'overlay' : mode}
                 columnWidth={column.width}
                 savedWidth={detailWidths.width}
                 {...dock.detailFocus}

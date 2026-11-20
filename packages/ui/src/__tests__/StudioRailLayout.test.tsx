@@ -2,7 +2,7 @@
 
 import type { ComponentProps } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import {
   STUDIO_RAIL_MAX,
   STUDIO_RAIL_MIN,
@@ -12,6 +12,7 @@ import {
   studioRailStorageKey,
 } from '../components/StudioRailLayout';
 import { innerColumnStore } from '../innerColumnStore';
+import { studioRailFoldKey, useStudioRailFold } from '../useStudioRailFold';
 
 const WIDTH_VAR = '--goodboy-studio-rail-width';
 
@@ -247,6 +248,83 @@ describe('StudioRailLayout', () => {
 
     renderLayout({});
     expect(innerColumnStore.current()).toBeNull();
+  });
+
+  describe('below 880px of page', () => {
+    const FoldedPage = () => {
+      const fold = useStudioRailFold({ surface: 'guide' });
+      return (
+        <StudioRailLayout
+          rail={<p>Rail content</p>}
+          detail={<button type="button">Detail action</button>}
+          railLabel="Project navigation"
+          railWidth="standard"
+          surface="guide"
+          isCollapsed={fold.isCollapsed}
+          onCollapsedChange={fold.setFolded}
+        />
+      );
+    };
+    type ObserverCallback = (entries: ReadonlyArray<{ contentRect: { width: number } }>) => void;
+    const stubPage = (width: number) => {
+      class StubObserver {
+        private readonly callback: ObserverCallback;
+        constructor(callback: ObserverCallback) {
+          this.callback = callback;
+        }
+        observe() {
+          this.callback([{ contentRect: { width } }]);
+        }
+        disconnect() {}
+      }
+      vi.stubGlobal('ResizeObserver', StubObserver);
+    };
+    const rail = () => screen.queryByRole('complementary', { name: 'Project navigation' });
+
+    afterEach(() => {
+      vi.unstubAllGlobals();
+    });
+
+    it('folds the list from its own width, with no ref from the page', () => {
+      stubPage(800);
+      render(<FoldedPage />);
+
+      expect(rail()).toBeNull();
+      screen.getByRole('button', { name: 'Show project navigation' });
+    });
+
+    it('opens the list over the page, leaves the page live, and Esc folds it again', () => {
+      stubPage(800);
+      render(<FoldedPage />);
+
+      fireEvent.click(screen.getByRole('button', { name: 'Show project navigation' }));
+
+      expect(rail()?.dataset['railOverPage']).toBe('');
+      expect(rail()?.className).toContain('absolute');
+      expect(screen.getByRole('button', { name: 'Detail action' }).closest('[inert]')).toBeNull();
+      fireEvent.keyDown(window, { key: 'Escape' });
+      expect(rail()).toBeNull();
+      expect(localStorage.getItem(studioRailFoldKey({ surface: 'guide' }))).toBeNull();
+    });
+
+    it('opens it from the inner column key too', () => {
+      stubPage(800);
+      render(<FoldedPage />);
+
+      expect(innerColumnStore.current()?.label).toBe('Show project navigation');
+      act(() => {
+        innerColumnStore.toggleCurrent();
+      });
+      expect(rail()?.dataset['railOverPage']).toBe('');
+    });
+
+    it('docks the list beside the page again from 880', () => {
+      stubPage(880);
+      render(<FoldedPage />);
+
+      expect(rail()?.dataset['railOverPage']).toBeUndefined();
+      expect(rail()?.className).not.toContain('absolute');
+    });
   });
 
   it('renders only the detail, with no rail and no handle, when the rail is null', () => {

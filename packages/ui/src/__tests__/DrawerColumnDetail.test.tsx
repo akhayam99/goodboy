@@ -173,6 +173,28 @@ describe('DrawerColumn with a detail panel and a tool dock', () => {
     expect(pageOf(container)?.hasAttribute('inert')).toBe(false);
   });
 
+  it('keeps the tool pushing in place while a floating detail closes beside it', () => {
+    stubColumn({ column: 1160 + EDGE_WIDTH });
+    const view = renderFrame({ dock: 'Terminal output', detail: 'Ask' });
+    const pushedWidth = panel().style.width;
+
+    view.rerender(
+      <DrawerColumn
+        main={<ToolColumn />}
+        drawer={<div>Terminal output</div>}
+        detail={null}
+        frame="sheet"
+        ariaLabel="Side panel"
+        resizeLabel="Resize side panel"
+      />,
+    );
+
+    expect(panel().dataset['drawerMode']).toBe('push');
+    expect(panel().className).not.toContain('absolute');
+    expect(panel().style.width).toBe(pushedWidth);
+    expect(pageOf(view.container)?.hasAttribute('inert')).toBe(false);
+  });
+
   it('floats a lone detail over the page without a veil when it cannot push', () => {
     stubColumn({ column: 860 + EDGE_WIDTH });
     const { container } = renderFrame({ dock: null, detail: 'Ask' });

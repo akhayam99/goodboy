@@ -1,6 +1,9 @@
-import { useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useState, useSyncExternalStore, type ReactNode } from 'react';
 import { PanelLeftClose, PanelLeftOpen } from '../icons';
+import { assignRef } from '../assignRef';
 import { cn } from '../cn';
+import { studioRailPaneStore } from '../studioRailPaneStore';
+import { useEscapeLayer } from '../useEscapeLayer';
 import { INNER_COLUMN_SHORTCUT } from '../innerColumnStore';
 import { useInnerColumn } from '../useInnerColumn';
 import { PANE_RHYTHM } from '../paneRhythm';
@@ -88,12 +91,43 @@ export const StudioRailLayout = ({
     cssVar: RAIL_WIDTH_VAR,
   });
   const [activity, setActivity] = useState<ResizeActivity>('idle');
+  const [root, setRoot] = useState<HTMLDivElement | null>(null);
+  const subscribe = useCallback(
+    (listener: () => void) => studioRailPaneStore.subscribe({ listener }),
+    [],
+  );
+  const isNarrow = useSyncExternalStore(subscribe, () => studioRailPaneStore.isNarrow({ surface }));
+  const rootRef = useCallback(
+    (node: HTMLDivElement | null) => {
+      assignRef({ ref: resizable.targetRef, value: node });
+      setRoot(node);
+    },
+    [resizable.targetRef],
+  );
+  useEffect(() => {
+    if (root === null || typeof ResizeObserver === 'undefined') {
+      return;
+    }
+    const observer = new ResizeObserver((entries) => {
+      const entry = entries[0];
+      if (entry !== undefined) {
+        studioRailPaneStore.setWidth({ surface, width: entry.contentRect.width });
+      }
+    });
+    observer.observe(root);
+    return () => {
+      observer.disconnect();
+      studioRailPaneStore.setWidth({ surface, width: null });
+    };
+  }, [root, surface]);
   const isPage = placement === 'page';
   const hasHeaderRow = railHeader !== undefined || onCollapsedChange !== undefined;
   const railName = railLabel.toLowerCase();
   const hideLabel = `Hide ${railName}`;
   const showLabel = `Show ${railName}`;
   const isRailShown = !isCollapsed && rail !== null;
+  const isOverPage = isNarrow && isRailShown && detail !== null && onCollapsedChange !== undefined;
+  useEscapeLayer(() => onCollapsedChange?.(true), isOverPage);
   useInnerColumn({
     id: surface,
     label: isCollapsed ? showLabel : hideLabel,
@@ -108,12 +142,15 @@ export const StudioRailLayout = ({
 
   return (
     <div
-      ref={resizable.targetRef}
+      ref={rootRef}
       data-studio-rail={placement}
       style={resizable.style}
-      className={cn('flex h-full min-h-0 flex-1', isPage ? 'bg-background' : 'bg-chrome')}
+      className={cn('relative flex h-full min-h-0 flex-1', isPage ? 'bg-background' : 'bg-chrome')}
     >
-      {isRailShown || onCollapsedChange === undefined || !canUnfold || rail === null ? null : (
+      {(isRailShown && !isOverPage) ||
+      onCollapsedChange === undefined ||
+      !canUnfold ||
+      rail === null ? null : (
         <div data-studio-rail-unfold="" className="flex w-11 shrink-0 flex-col items-center">
           <div data-grid-row="1" className={cn('flex shrink-0 items-center', PANE_RHYTHM.firstRow)}>
             <IconButton
@@ -131,8 +168,17 @@ export const StudioRailLayout = ({
       {!isRailShown ? null : (
         <aside
           aria-label={railLabel}
+          data-rail-over-page={isOverPage ? '' : undefined}
           style={{ width: `var(${RAIL_WIDTH_VAR})` }}
-          className="relative flex min-h-0 shrink-0 flex-col"
+          className={cn(
+            'flex min-h-0 shrink-0 flex-col',
+            isOverPage
+              ? cn(
+                  'absolute inset-y-0 left-0 z-20 border-r border-border-soft shadow-xl',
+                  isPage ? 'bg-background' : 'bg-chrome',
+                )
+              : 'relative',
+          )}
         >
           {hasHeaderRow ? (
             <div

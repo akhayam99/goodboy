@@ -160,7 +160,7 @@ export const NotificationsStudio = ({ onClose }: Props) => {
       onClose={onClose}
     >
       {() => (
-        <div ref={fold.paneRef} className="flex h-full min-h-0 min-w-0 flex-1">
+        <div className="flex h-full min-h-0 min-w-0 flex-1">
           <StudioRailLayout
             railLabel="Notification filters"
             railWidth="standard"
@@ -169,7 +169,6 @@ export const NotificationsStudio = ({ onClose }: Props) => {
             rail={facets}
             isCollapsed={fold.isCollapsed}
             onCollapsedChange={fold.setFolded}
-            canUnfold={fold.canDock}
             detail={
               <StudioDetail>
                 <PaneShell

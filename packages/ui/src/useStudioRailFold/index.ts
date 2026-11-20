@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useRef, useState, type RefObject } from 'react';
+import { useCallback, useEffect, useState, useSyncExternalStore } from 'react';
+import { studioRailPaneStore } from '../studioRailPaneStore';
 
 type SurfaceParams = {
   readonly surface: string;
@@ -47,7 +48,6 @@ type Params = SurfaceParams & {
 };
 
 export type StudioRailFold = {
-  readonly paneRef: RefObject<HTMLDivElement | null>;
   readonly isCollapsed: boolean;
   readonly canDock: boolean;
   readonly setFolded: (isFolded: boolean) => void;
@@ -59,23 +59,30 @@ export const useStudioRailFold = ({
   foldedByDefaultBelow,
   pane = null,
 }: Params): StudioRailFold => {
-  const paneRef = useRef<HTMLDivElement | null>(null);
   const [isFolded, setIsFolded] = useState(() =>
     readFolded({ surface, foldedByDefaultBelow: foldedByDefaultBelow ?? null }),
   );
   const [paneWidth, setPaneWidth] = useState<number | null>(null);
+  const subscribe = useCallback(
+    (listener: () => void) => studioRailPaneStore.subscribe({ listener }),
+    [],
+  );
+  const layoutWidth = useSyncExternalStore(subscribe, () => studioRailPaneStore.width({ surface }));
   const [isOpenedNarrow, setIsOpenedNarrow] = useState(false);
-  const isNarrow = paneWidth !== null && paneWidth < foldBelow;
+  const width = pane === null ? layoutWidth : paneWidth;
+  const isNarrow = width !== null && width < foldBelow;
 
   useEffect(() => {
     if (!isNarrow) {
       setIsOpenedNarrow(false);
     }
-  }, [isNarrow]);
+    studioRailPaneStore.setNarrow({ surface, isNarrow });
+  }, [surface, isNarrow]);
+
+  useEffect(() => () => studioRailPaneStore.setNarrow({ surface, isNarrow: false }), [surface]);
 
   useEffect(() => {
-    const node = pane ?? paneRef.current;
-    if (node === null || typeof ResizeObserver === 'undefined') {
+    if (pane === null || typeof ResizeObserver === 'undefined') {
       return;
     }
     const observer = new ResizeObserver((entries) => {
@@ -84,7 +91,7 @@ export const useStudioRailFold = ({
         setPaneWidth(entry.contentRect.width);
       }
     });
-    observer.observe(node);
+    observer.observe(pane);
     return () => observer.disconnect();
   }, [pane]);
 
@@ -102,5 +109,5 @@ export const useStudioRailFold = ({
 
   const isCollapsed = isNarrow ? !isOpenedNarrow : isFolded;
 
-  return { paneRef, isCollapsed, canDock: !isNarrow, setFolded };
+  return { isCollapsed, canDock: !isNarrow, setFolded };
 };

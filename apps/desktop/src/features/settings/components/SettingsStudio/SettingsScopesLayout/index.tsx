@@ -16,7 +16,6 @@ import { SettingsSearchResults } from '../SettingsSearchResults';
 import { useSettingsSearch } from '../../../hooks/useSettingsSearch';
 import { settingsSearchHitId } from '../../../settingsSearchHitId';
 
-const SETTINGS_RAIL_FOLD_BELOW = 720;
 const SETTINGS_RAIL_FOLDED_BY_DEFAULT_BELOW = 1200;
 
 type Props = {
@@ -38,7 +37,6 @@ export const SettingsScopesLayout = ({
 }: Props) => {
   const fold = useStudioRailFold({
     surface: 'settings',
-    foldBelow: SETTINGS_RAIL_FOLD_BELOW,
     foldedByDefaultBelow: SETTINGS_RAIL_FOLDED_BY_DEFAULT_BELOW,
   });
   const [query, setQuery] = useState('');
@@ -71,7 +69,7 @@ export const SettingsScopesLayout = ({
   }, [isSearchAsked, fold.isCollapsed]);
 
   return (
-    <div ref={fold.paneRef} className="flex h-full min-h-0 min-w-0 flex-1">
+    <div className="flex h-full min-h-0 min-w-0 flex-1">
       <StudioRailLayout
         railLabel="Settings scopes"
         railWidth="narrow"

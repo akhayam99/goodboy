@@ -143,12 +143,14 @@ describe('the Settings scopes rail on a narrow pane', () => {
     expect(localStorage.getItem(FOLD_KEY)).toBeNull();
   });
 
-  it('stays docked in the sheet of a 1100 wide window with the column open', () => {
+  it('folds under 880 like every inner list, and opens over the page from Show', () => {
     mount();
 
     resizeTo({ width: 852 });
 
-    expect(rail()).not.toBeNull();
+    expect(rail()).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: /^Show settings scopes/ }));
+    expect(rail()?.dataset['railOverPage']).toBe('');
     screen.getByRole('searchbox', { name: 'Search settings' });
   });
 
