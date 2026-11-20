@@ -81,7 +81,7 @@ describe('ChatRoom with an archived chat', () => {
   it('shows the Archived banner and restores from it', () => {
     renderRoom(chatOf(AT));
 
-    expect(screen.getByText('Archived')).toBeDefined();
+    screen.getByText('Archived');
     fireEvent.click(screen.getByRole('button', { name: 'Restore' }));
 
     expect(store.restoreChats).toHaveBeenCalledWith({
@@ -106,7 +106,7 @@ describe('ChatRoom with an archived chat', () => {
         workspaceId: WORKSPACE_ID,
       }),
     );
-    expect(screen.getByText('Archived')).toBeDefined();
+    screen.getByText('Archived');
   });
 
   it('keeps the message in the field when the restore before a send fails', async () => {

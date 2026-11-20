@@ -1,30 +1,20 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ChevronRight, Search } from '@goodboy/ui/icons';
-import {
-  Button,
-  cn,
-  EmptyLine,
-  ICON_SIZE,
-  Notice,
-  ROW_INTERACTIVE,
-  ScrollFade,
-  SkeletonRow,
-} from '@goodboy/ui';
+import { cn, ICON_SIZE, ROW_INTERACTIVE, ScrollFade } from '@goodboy/ui';
 import type { ChatId, ChatSummary, WorkspaceId } from '@goodboy/types';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
-import { markdownPreview } from '../../../../shared/utils/markdownPreview';
 import { pluralize } from '../../../../shared/utils/pluralize';
 import { useSelectionKeys } from '../../../../shared/hooks/useSelectionKeys';
 import { useMultiSelect } from '../../../../shared/hooks/useMultiSelect';
 import { ObjectSelectionBar } from '../../../../shared/components/ObjectSelectionBar';
 import { useAppStore } from '../../../../store';
-import { selectChatGroups } from '../../../../store/slices/chats/selectChatGroups';
 import type { ObjectTarget } from '../../../actions/types';
 import { useActionControls } from '../../../actions/useActionControls';
 import { loadStateOf } from '../../../../shared/lib/loadStateOf';
-import { chatRowTime } from '../../chatRowTime';
+import { chatGroupRowsOf } from './chatGroupRowsOf';
 import { ChatArchivedView } from './ChatArchivedView';
-import { ChatListGroup, type ChatListGroupRow } from './ChatListGroup';
+import { ChatListGroup } from './ChatListGroup';
+import { ChatListStatus } from './ChatListStatus';
 import type { ChatRowSelection } from './ChatListRow';
 import { ChatUndoRow } from './ChatUndoRow';
 import { NOTHING_CHANGED } from '../../../../store/slices/notifications/errorRecovery';
@@ -58,13 +48,6 @@ type PinParams = {
   readonly isPinned: boolean;
 };
 
-type RowsParams = {
-  readonly chats: ReadonlyArray<ChatSummary>;
-  readonly now: number;
-  readonly isIdle: boolean;
-};
-
-const NO_ANSWER = 'No answer yet';
 const ARCHIVE_FAILED = "Couldn't archive the chat";
 const RESTORE_FAILED = "Couldn't restore the chat";
 const DELETE_FAILED = "Couldn't delete the chat";
@@ -74,28 +57,6 @@ const UNPIN_FAILED = "Couldn't unpin the chat";
 const NO_CHATS: ReadonlyArray<ChatSummary> = [];
 
 const SELECTION_VERB_IDS = ['chats.archive', 'chats.delete'];
-
-const rowsOf = ({ chats, now, isIdle }: RowsParams): ReadonlyArray<ChatListGroupRow> =>
-  chats.map((chat) => {
-    const preview = markdownPreview({ text: chat.preview });
-    return {
-      chatId: chat.id,
-      title: chat.title,
-      snippet: preview === '' ? NO_ANSWER : preview,
-      time: chatRowTime({ chat, now }),
-      isIdle,
-      isPinned: chat.pinnedAt !== null,
-    };
-  });
-
-type MatchParams = {
-  readonly chat: ChatSummary;
-  readonly needle: string;
-};
-
-const matches = ({ chat, needle }: MatchParams): boolean =>
-  needle === '' ||
-  `${chat.title} ${markdownPreview({ text: chat.preview })}`.toLowerCase().includes(needle);
 
 export const ChatList = ({
   workspaceId,
@@ -128,19 +89,10 @@ export const ChatList = ({
     void loadArchivedChats({ workspaceId });
   }, [workspaceId, loadArchivedChats]);
 
-  const groups = useMemo(() => {
-    const now = Date.now();
-    const grouped = selectChatGroups({
-      chats: chats.filter((chat) => matches({ chat, needle })),
-      now,
-    });
-    return {
-      pinned: rowsOf({ chats: grouped.pinned, now, isIdle: false }),
-      today: rowsOf({ chats: grouped.today, now, isIdle: false }),
-      week: rowsOf({ chats: grouped.week, now, isIdle: false }),
-      idle: rowsOf({ chats: grouped.idle, now, isIdle: true }),
-    };
-  }, [chats, needle]);
+  const groups = useMemo(
+    () => chatGroupRowsOf({ chats, needle, now: Date.now() }),
+    [chats, needle],
+  );
 
   const latest = useRef({ chats, onSelect, onArchived, onDeleted });
   latest.current = { chats, onSelect, onArchived, onDeleted };
@@ -417,38 +369,14 @@ export const ChatList = ({
             }
             footer={archived !== null && archived.isIdle ? undoRow : null}
           />
-          {loadState === 'loading' ? (
-            <div aria-busy="true" className="flex flex-col gap-3">
-              {[0, 1, 2].map((index) => (
-                <SkeletonRow key={index} label="Loading chats" />
-              ))}
-            </div>
-          ) : loadState === 'error' ? (
-            <Notice
-              tone="danger"
-              placement="inline"
-              role="alert"
-              title="Couldn't load chats"
-              detail={error}
-              actions={
-                <Button size="sm" onClick={() => void loadChats({ workspaceId })}>
-                  Retry
-                </Button>
-              }
-            />
-          ) : isEmpty && archived === null ? (
-            needle === '' ? null : (
-              <EmptyLine
-                action={
-                  <Button size="sm" variant="ghost" onClick={() => setQuery('')}>
-                    Clear filter
-                  </Button>
-                }
-              >
-                No chats match this filter.
-              </EmptyLine>
-            )
-          ) : null}
+          <ChatListStatus
+            loadState={loadState}
+            error={error}
+            isEmpty={isEmpty && archived === null}
+            isFiltered={needle !== ''}
+            onRetry={() => void loadChats({ workspaceId })}
+            onClearFilter={() => setQuery('')}
+          />
         </nav>
       </ScrollFade>
       <ObjectSelectionBar

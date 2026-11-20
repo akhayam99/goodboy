@@ -9,6 +9,7 @@ import {
   Trash2,
   Undo2,
 } from '@goodboy/ui/icons';
+import { formatCombo } from '../../../shared/keyboard/registry';
 import type { CommitActionTarget, ObjectKindDefinition } from '../types';
 
 export type CommitFacts = {
@@ -86,7 +87,7 @@ export const COMMIT_KIND: ObjectKindDefinition<CommitActionTarget, CommitFacts> 
       label: 'Move up',
       icon: ArrowUp,
       group: 'act',
-      description: () => 'Move it one place newer · ⌥↑',
+      description: () => `Move it one place newer · ${formatCombo('alt+ArrowUp')}`,
       when: isStanding,
       run: ({ facts }) => facts.onMove('newer'),
     },
@@ -95,7 +96,7 @@ export const COMMIT_KIND: ObjectKindDefinition<CommitActionTarget, CommitFacts> 
       label: 'Move down',
       icon: ArrowDown,
       group: 'act',
-      description: () => 'Move it one place older · ⌥↓',
+      description: () => `Move it one place older · ${formatCombo('alt+ArrowDown')}`,
       when: isStanding,
       run: ({ facts }) => facts.onMove('older'),
     },

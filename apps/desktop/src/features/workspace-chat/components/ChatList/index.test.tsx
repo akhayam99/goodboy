@@ -159,11 +159,11 @@ describe('ChatList', () => {
       }),
     );
 
-    expect(within(rowOf('consent')).getByRole('img', { name: 'Answering' })).toBeDefined();
+    within(rowOf('consent')).getByRole('img', { name: 'Answering' });
     expect(within(rowOf('consent')).queryByRole('img', { name: 'New reply, unseen' })).toBeNull();
-    expect(within(rowOf('changes')).getByRole('img', { name: 'New reply, unseen' })).toBeDefined();
+    within(rowOf('changes')).getByRole('img', { name: 'New reply, unseen' });
     expect(within(rowOf('lunch')).queryByRole('img', { name: /Answering|New reply/ })).toBeNull();
-    expect(within(rowOf('lunch')).getByRole('img', { name: 'No new reply' })).toBeDefined();
+    within(rowOf('lunch')).getByRole('img', { name: 'No new reply' });
   });
 
   it('dims idle chats and leaves their age to the Idle group', async () => {
@@ -201,7 +201,7 @@ describe('ChatList', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Archive idle' }));
     const undo = await screen.findByRole('button', { name: 'Undo' });
-    expect(screen.getByText('2 idle chats archived')).toBeDefined();
+    screen.getByText('2 idle chats archived');
     expect(onArchived).toHaveBeenCalledWith([
       chatIdOf({ key: 'lunch' }),
       chatIdOf({ key: 'flaky' }),
@@ -232,8 +232,8 @@ describe('ChatList', () => {
         expect.objectContaining({ title: "Couldn't restore the chat", error: failure }),
       ),
     );
-    expect(screen.getByText('2 idle chats archived')).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Undo' })).toBeDefined();
+    screen.getByText('2 idle chats archived');
+    screen.getByRole('button', { name: 'Undo' });
   });
 
   it('filters by title and answer text', async () => {
@@ -274,16 +274,14 @@ describe('ChatList', () => {
       const input = await screen.findByRole('textbox', { name: 'Rename chat' });
       fireEvent.change(input, { target: { value: 'Consent step' } });
       fireEvent.keyDown(input, { key: 'Enter' });
-      await waitFor(() =>
-        expect(screen.getByRole('button', { name: 'Consent step' })).toBeDefined(),
-      );
+      await waitFor(() => screen.getByRole('button', { name: 'Consent step' }));
 
       openMenu('What changed in payments-api');
       fireEvent.click(screen.getByRole('menuitem', { name: 'Rename' }));
       const second = await screen.findByRole('textbox', { name: 'Rename chat' });
       fireEvent.keyDown(second, { key: 'Escape' });
       expect(screen.queryByRole('textbox', { name: 'Rename chat' })).toBeNull();
-      expect(screen.getByRole('button', { name: 'What changed in payments-api' })).toBeDefined();
+      screen.getByRole('button', { name: 'What changed in payments-api' });
     });
 
     it('keeps the old title and reports when the rename fails', async () => {
@@ -306,7 +304,7 @@ describe('ChatList', () => {
           expect.objectContaining({ title: "Couldn't rename the chat", error: failure }),
         ),
       );
-      expect(screen.getByRole('button', { name: 'Where is the consent step?' })).toBeDefined();
+      screen.getByRole('button', { name: 'Where is the consent step?' });
     });
 
     it('marks a chat as unread', async () => {
@@ -316,7 +314,7 @@ describe('ChatList', () => {
       fireEvent.click(screen.getByRole('menuitem', { name: 'Mark as unread' }));
 
       expect(useAppStore.getState().unreadChatIds).toEqual([chatIdOf({ key: 'lunch' })]);
-      expect(within(rowOf('lunch')).getByRole('img', { name: 'New reply, unseen' })).toBeDefined();
+      within(rowOf('lunch')).getByRole('img', { name: 'New reply, unseen' });
     });
 
     it('asks before deleting and leaves the sessions alone', async () => {
@@ -324,7 +322,7 @@ describe('ChatList', () => {
 
       openMenu('Lunch ideas near the office');
       fireEvent.click(screen.getByRole('menuitem', { name: 'Delete' }));
-      expect(screen.getByText('Delete chat?')).toBeDefined();
+      screen.getByText('Delete chat?');
       expect(rowOf('lunch')).not.toBeNull();
 
       fireEvent.click(screen.getByRole('button', { name: 'Delete' }));
@@ -341,7 +339,7 @@ describe('ChatList', () => {
 
       await waitFor(() => expect(onArchived).toHaveBeenCalledWith([chatIdOf({ key: 'lunch' })]));
       expect(rowOf('lunch')).toBeNull();
-      expect(screen.getByRole('button', { name: /Archived · 1/ })).toBeDefined();
+      screen.getByRole('button', { name: /Archived · 1/ });
     });
 
     it('keeps the row, shows no Undo and reports when the archive fails', async () => {
@@ -412,11 +410,11 @@ describe('ChatList', () => {
       await renderList(ARCHIVED);
 
       fireEvent.click(await screen.findByRole('button', { name: /Archived · 2/ }));
-      expect(screen.getByRole('button', { name: 'Northwind invoice export format' })).toBeDefined();
+      screen.getByRole('button', { name: 'Northwind invoice export format' });
       const trail = screen.getByRole('navigation', { name: 'Breadcrumb' });
-      expect(within(trail).getByText('Archived')).toBeDefined();
+      within(trail).getByText('Archived');
       fireEvent.click(within(trail).getByRole('button', { name: 'Chat' }));
-      expect(screen.getByRole('textbox', { name: 'Search chats' })).toBeDefined();
+      screen.getByRole('textbox', { name: 'Search chats' });
       expect(screen.queryByRole('navigation', { name: 'Breadcrumb' })).toBeNull();
     });
 
@@ -489,7 +487,7 @@ describe('ChatList', () => {
       });
 
       expect(screen.queryByRole('button', { name: 'Northwind invoice export format' })).toBeNull();
-      expect(screen.getByRole('button', { name: 'Acme webhook signing' })).toBeDefined();
+      screen.getByRole('button', { name: 'Acme webhook signing' });
     });
   });
 
@@ -528,11 +526,9 @@ describe('ChatList', () => {
         }),
       );
 
-      expect(
-        within(rowOf('consent')).getByRole('button', {
-          name: 'Open the session Ask for consent again',
-        }),
-      ).toBeDefined();
+      within(rowOf('consent')).getByRole('button', {
+        name: 'Open the session Ask for consent again',
+      });
       expect(within(rowOf('consent')).queryByText('session')).toBeNull();
       expect(
         within(rowOf('lunch')).queryByRole('button', { name: /^Open the session/ }),
@@ -550,7 +546,7 @@ describe('ChatList', () => {
         }),
       );
 
-      expect(within(rowOf('consent')).getByText('2')).toBeDefined();
+      within(rowOf('consent')).getByText('2');
       expect(within(rowOf('consent')).queryByText('2 sessions')).toBeNull();
     });
 

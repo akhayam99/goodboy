@@ -1,7 +1,7 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { parseHiddenModels } from '@goodboy/core/providers';
 import { useShallow } from 'zustand/react/shallow';
-import { Button, DrawerColumn, formatError, Notice, PageColumn } from '@goodboy/ui';
+import { Button, DrawerColumn, Notice, PageColumn } from '@goodboy/ui';
 import type { ChatId, ChatMessage, ChatSummary, SessionId, WorkspaceId } from '@goodboy/types';
 import { sessionPlace, useAppStore } from '../../../../store';
 import { useChatSessions } from '../../hooks/useChatSessions';
@@ -9,14 +9,15 @@ import { chatSuggestions } from '../../chatSuggestions';
 import type { ChatRouting } from '../../../conversation/chatRouting';
 import { defaultChatRouting } from '../../defaultChatRouting';
 import { useChatDefaultModel } from '../../../../shared/hooks/useChatDefaultModel';
-import { ChatComposer, type ChatComposerMessage } from '../ChatComposer';
+import type { ChatComposerMessage } from '../ChatComposer';
 import { TURN_INTO_WORK_LABEL } from '../TurnIntoWorkPanel';
-import { ChatArchivedBanner } from './ChatArchivedBanner';
 import { ChatEmpty } from './ChatEmpty';
 import { ChatHeader } from './ChatHeader';
+import { ChatRoomComposer } from './ChatRoomComposer';
 import { ChatThread } from './ChatThread';
 import { useChatDrafts } from '../../hooks/useChatDrafts';
 import { useChatWork } from '../../hooks/useChatWork';
+import { useChatMessageLoad } from '../../hooks/useChatMessageLoad';
 import { useStudioDrawer } from '../../../../shared/hooks/useStudioDrawer';
 import { SETTING_HIDDEN_MODELS } from '../../../settings/settings';
 import { NAMES } from '../../../../shared/utils/names';
@@ -35,23 +36,12 @@ const NO_MESSAGES: ReadonlyArray<ChatMessage> = [];
 
 const NO_IMAGES: ChatComposerMessage['images'] = [];
 
-type LoadParams = {
-  readonly chatId: ChatId;
-};
-
-type LoadFailure = {
-  readonly chatId: ChatId;
-  readonly detail: string;
-};
-
 type SendParams = Pick<ChatComposerMessage, 'text'> & Partial<Pick<ChatComposerMessage, 'images'>>;
 
 const NEW_CHAT_HEADING = 'New chat';
 const RESIZE_LABEL = 'Resize the work panel';
 const SEND_FAILED = "Couldn't send the message";
 const MODEL_FAILED = "Couldn't change the chat model";
-const RESTORE_FAILED = "Couldn't restore the chat";
-const STOP_FAILED = "Couldn't stop the reply";
 
 export const ChatRoom = ({ workspaceId, chat, onCreated, onRemoved, onNewChat }: Props) => {
   const chatId = chat?.id ?? null;
@@ -74,14 +64,8 @@ export const ChatRoom = ({ workspaceId, chat, onCreated, onRemoved, onNewChat }:
         .map((provider) => provider.id),
     ),
   );
-  const messages = useAppStore((state) =>
-    chatId === null ? NO_MESSAGES : state.chatMessages[chatId],
-  );
-  const stream = useAppStore((state) => (chatId === null ? undefined : state.chatStreams[chatId]));
-  const loadChatMessages = useAppStore((state) => state.loadChatMessages);
   const createChat = useAppStore((state) => state.createChat);
   const sendChatMessage = useAppStore((state) => state.sendChatMessage);
-  const stopChatReply = useAppStore((state) => state.stopChatReply);
   const restoreChats = useAppStore((state) => state.restoreChats);
   const setChatModel = useAppStore((state) => state.setChatModel);
   const navigate = useAppStore((state) => state.navigate);
@@ -89,27 +73,11 @@ export const ChatRoom = ({ workspaceId, chat, onCreated, onRemoved, onNewChat }:
   const reportError = useAppStore((state) => state.reportError);
   const wasEmptyRef = useRef(false);
   const [draftRouting, setDraftRouting] = useState<ChatRouting | null>(null);
-  const [loadFailure, setLoadFailure] = useState<LoadFailure | null>(null);
   const linked = useChatSessions({ chatId });
   const drafts = useChatDrafts({ chatId });
   const { saved: savedDefault, read: readSavedDefault } = useChatDefaultModel({ workspaceId });
 
-  const loadMessages = useCallback(
-    ({ chatId: target }: LoadParams): void => {
-      setLoadFailure(null);
-      loadChatMessages({ chatId: target }).catch((error: unknown) => {
-        setLoadFailure({ chatId: target, detail: formatError(error) });
-      });
-    },
-    [loadChatMessages],
-  );
-
-  useEffect(() => {
-    if (chatId === null || messages !== undefined) {
-      return;
-    }
-    loadMessages({ chatId });
-  }, [chatId, messages, loadMessages]);
+  const { messages, failedLoad, loadMessages } = useChatMessageLoad({ chatId });
 
   const workspaceDefaultProvider = useAppStore(
     (state) => selectWorkspaceResolvedSettings({ state, workspaceId }).defaultProviderOverride,
@@ -187,45 +155,18 @@ export const ChatRoom = ({ workspaceId, chat, onCreated, onRemoved, onNewChat }:
   const openSession = (sessionId: SessionId): void => navigate({ to: sessionPlace({ sessionId }) });
 
   const isEmpty = shown.length === 0;
-  const failedLoad = loadFailure !== null && loadFailure.chatId === chatId ? loadFailure : null;
   useEffect(() => {
     wasEmptyRef.current = isEmpty;
   }, [isEmpty]);
   const composer = (
-    <div className="flex w-full flex-col gap-2">
-      {chat === null || chat.archivedAt === null ? null : (
-        <ChatArchivedBanner
-          onRestore={() => {
-            restoreChats({ workspaceId, chatIds: [chat.id] }).catch((error: unknown) => {
-              void reportError({
-                recovery: NOTHING_CHANGED,
-                title: RESTORE_FAILED,
-                error,
-                workspaceId,
-              });
-            });
-          }}
-        />
-      )}
-      <ChatComposer
-        workspaceId={workspaceId}
-        placeholder="Ask a question"
-        routing={model}
-        isStreaming={stream !== undefined}
-        isStopping={stream?.isStopping === true}
-        isAutoFocused={chatId === null || wasEmptyRef.current}
-        onSend={send}
-        onStop={() => {
-          if (chatId === null) {
-            return;
-          }
-          stopChatReply({ chatId }).catch((error: unknown) => {
-            void reportError({ recovery: NOTHING_CHANGED, title: STOP_FAILED, error, workspaceId });
-          });
-        }}
-        onRouting={pickRouting}
-      />
-    </div>
+    <ChatRoomComposer
+      workspaceId={workspaceId}
+      chat={chat}
+      routing={model}
+      isAutoFocused={chatId === null || wasEmptyRef.current}
+      onSend={send}
+      onRouting={pickRouting}
+    />
   );
 
   const main = (
