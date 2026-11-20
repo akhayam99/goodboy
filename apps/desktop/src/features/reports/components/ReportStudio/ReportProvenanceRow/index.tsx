@@ -33,7 +33,7 @@ export const ReportProvenanceRow = ({ reportType, links, onOpenAgent, onOpenArti
       )}
       {visible.map((link) => {
         const Glyph = link.kind === 'agent' ? CONCEPT_ICONS.agents : CONCEPT_ICONS.plans;
-        const hint = `${link.kind === 'agent' ? 'Open the agent' : 'Open the plan'} ${link.label}`;
+        const hint = `${link.kind === 'agent' ? 'Open agent' : 'Open plan'} ${link.label}`;
         return (
           <Chip
             key={`${link.kind}-${link.id}`}

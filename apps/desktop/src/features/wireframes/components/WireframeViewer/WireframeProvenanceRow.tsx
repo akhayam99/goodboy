@@ -28,9 +28,7 @@ type ValueParams = {
 const asString = ({ value }: ValueParams): string | null =>
   typeof value === 'string' && value.trim().length > 0 ? value.trim() : null;
 
-type ProfileParams = Pick<Props, 'designProfile'>;
-
-const profileRefs = ({ designProfile }: ProfileParams): ReadonlyArray<string> => {
+const profileRefs = ({ designProfile }: Pick<Props, 'designProfile'>): ReadonlyArray<string> => {
   const raw = designProfile['sources'] ?? designProfile['refs'];
   if (!Array.isArray(raw)) {
     return [];
@@ -60,9 +58,7 @@ export const WireframeProvenanceRow = ({ fidelity, theme, designProfile }: Props
       <span className="shrink-0">theme {theme.name}</span>
       {commit === null ? null : <span className="shrink-0 tabular-nums">at {commit}</span>}
       {refs.length === 0 ? (
-        <EmptyLine className="min-h-0 shrink-0">
-          No design evidence was pinned to this wireframe
-        </EmptyLine>
+        <EmptyLine className="min-h-0 shrink-0">No design evidence was pinned</EmptyLine>
       ) : (
         <span className="shrink-0">from</span>
       )}

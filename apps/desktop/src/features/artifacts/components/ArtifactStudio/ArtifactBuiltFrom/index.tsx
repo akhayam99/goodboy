@@ -114,9 +114,7 @@ export const ArtifactBuiltFrom = ({ artifact }: Props) => {
         <div className="flex min-w-0 flex-col gap-1">
           <Eyebrow label="Evidence sent" />
           {provenance.evidence.length === 0 ? (
-            <span className="text-meta text-muted-foreground">
-              No session source was named in the pack
-            </span>
+            <EmptyLine className="min-h-0">No session source was named in the pack</EmptyLine>
           ) : (
             <ul className="flex min-w-0 flex-col gap-0.5">
               {evidence.map((entry) => (
