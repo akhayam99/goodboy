@@ -194,21 +194,6 @@ describe('NotificationCenter scope', () => {
 
     expect(state.setNotificationScope).toHaveBeenCalledWith('all');
   });
-
-  it('names the failure when the scope cannot change', async () => {
-    state.workspaces = TWO_WORKSPACES;
-    state.setNotificationScope.mockRejectedValueOnce(new Error('database is locked'));
-    render(<NotificationCenter isCurrent={false} />);
-    await openCenter();
-
-    await act(async () => {
-      fireEvent.click(screen.getByRole('tab', { name: /all workspaces/i }));
-    });
-
-    expect(state.reportError).toHaveBeenCalledWith(
-      expect.objectContaining({ title: "Couldn't change which workspaces the bell shows" }),
-    );
-  });
 });
 
 describe('NotificationCenter', () => {

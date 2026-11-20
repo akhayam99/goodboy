@@ -67,6 +67,7 @@ export type NotificationAction =
     }
   | { readonly kind: 'retry-publication'; readonly sessionId: SessionId }
   | { readonly kind: 'retry-update' }
+  | { readonly kind: 'retry-notification-scope'; readonly scope: 'workspace' | 'all' }
   | { readonly kind: 'update-provider-cli'; readonly providerId: ProviderId }
   | { readonly kind: 'open-lens'; readonly sessionId: SessionId; readonly lens: 'scripts' }
   | { readonly kind: 'open-activity'; readonly sessionId: SessionId }
@@ -131,6 +132,7 @@ const NOTIFICATION_ACTION_KINDS = {
   'open-storage': true,
   'retry-publication': true,
   'retry-update': true,
+  'retry-notification-scope': true,
   'update-provider-cli': true,
   'open-lens': true,
   'open-activity': true,

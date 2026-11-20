@@ -1,12 +1,23 @@
 import type { NotificationScope } from './state';
-import type { GetFn, SetFn } from './types';
+import type { GetFn } from './types';
 
-export const setNotificationScope = (set: SetFn, get: GetFn) => {
+export const setNotificationScope = (get: GetFn) => {
   return async (scope: NotificationScope) => {
-    if (get().notificationScope === scope) {
+    const state = get();
+    if (state.notificationScope === scope && !state.notificationsLoading) {
       return;
     }
-    set({ notificationScope: scope, notifications: [], hasOlderNotifications: false });
-    await get().loadNotifications();
+    try {
+      await get().loadNotifications({ scope });
+    } catch (error) {
+      await get().reportError({
+        title: "Couldn't load notifications",
+        error,
+        recovery: {
+          action: { kind: 'retry-notification-scope', scope },
+          clause: 'nothing-changed',
+        },
+      });
+    }
   };
 };

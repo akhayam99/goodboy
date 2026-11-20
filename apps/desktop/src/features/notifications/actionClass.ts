@@ -13,6 +13,7 @@ export const notificationActionClass = ({ kind }: KindParams): NotificationActio
     case 'retry-step-summary':
     case 'retry-publication':
     case 'retry-update':
+    case 'retry-notification-scope':
     case 'retry-push':
     case 'continue-agent':
     case 'update-provider-cli':

@@ -205,6 +205,10 @@ cut at the end, never in the middle; the group's`aria-label` keeps the full
   Notifications whichever view is picked. Both surfaces default to this workspace: a row belongs to
   its own workspace, or its session's, and a row with neither is app-wide and
   shows in every workspace. Mark all read and Delete all act on that same scope.
+  A scope switch keeps the shown list until the new one is read, then changes
+  scope, list and counts in one write (`setNotificationScope`). A failed read keeps
+  all three and logs "Couldn't load notifications" with Retry; of two quick
+  switches the last one wins.
   The studio header draws them through `NotificationsHeaderActions`: the shared `FilterButton`
   only while the rail is folded, then the ghost `Mark all read` (only while something is unread), then the `⋯` menu of the
   `notifications` kind of the action registry (Mark all read, which names the scope, and Delete all). Delete all

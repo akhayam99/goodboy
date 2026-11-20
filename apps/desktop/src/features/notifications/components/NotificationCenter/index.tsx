@@ -167,17 +167,9 @@ export const NotificationCenter = ({ isCurrent }: Props) => {
     });
   };
   const changeScope = ({ next }: ScopeParams) => {
-    setNotificationScope(next)
-      .then(() => {
-        setUnreadKeys(unreadGroupKeys({ notifications: useAppStore.getState().notifications }));
-      })
-      .catch((error: unknown) => {
-        void reportError({
-          recovery: CHECK_STATE,
-          title: "Couldn't change which workspaces the bell shows",
-          error,
-        });
-      });
+    void setNotificationScope(next).then(() => {
+      setUnreadKeys(unreadGroupKeys({ notifications: useAppStore.getState().notifications }));
+    });
   };
   return (
     <div role="region" aria-label="Notifications">
