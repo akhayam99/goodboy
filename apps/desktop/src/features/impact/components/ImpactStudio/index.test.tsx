@@ -235,7 +235,7 @@ describe('ImpactStudio on the real database', () => {
 
     await waitFor(async () => expect(await tile('Sessions')).toContain('2 deleted'));
     expect(await tile('Sessions')).toContain('4');
-    expect(await tile('Pull requests merged')).toContain('1');
+    expect(await tile('Merged pull requests')).toContain('1');
     expect(screen.queryByText(/Goodboy ran/)).toBeNull();
   });
 
@@ -246,7 +246,7 @@ describe('ImpactStudio on the real database', () => {
 
     await waitFor(async () => expect(await tile('Sessions')).toContain('1 deleted'));
     expect(await tile('Sessions')).toContain('3');
-    expect(await tile('Pull requests merged')).toContain('0');
+    expect(await tile('Merged pull requests')).toContain('0');
   });
 
   it('shows a deleted session as a row that does not open', async () => {
@@ -340,6 +340,16 @@ describe('ImpactStudio on the real database', () => {
 
     await waitFor(async () => expect(await tile('Sessions')).toContain('Sessions'));
   });
+
+  it('shows a dash and not loaded when the pull requests fail to load, never a 0', async () => {
+    injectDbFault({ match: /'link' AS source/, message: 'database is locked' });
+    renderStudio();
+
+    await waitFor(async () => expect(await tile('Merged pull requests')).toContain('not loaded'));
+    const merged = await tile('Merged pull requests');
+    expect(merged).toContain('-');
+    expect(merged).not.toContain('0');
+  });
 });
 
 describe('ImpactStudio refreshes pull requests of sessions no longer on the board', () => {
@@ -376,7 +386,7 @@ describe('ImpactStudio refreshes pull requests of sessions no longer on the boar
     renderStudio();
     fireEvent.click(screen.getByRole('tab', { name: '7 days' }));
 
-    await waitFor(async () => expect(await tile('Pull requests merged')).toContain('1'));
+    await waitFor(async () => expect(await tile('Merged pull requests')).toContain('1'));
     const events = await rowsOf<{ kind: string }>({
       sql: "SELECT kind FROM session_events WHERE session_id = ? AND kind = 'pr_merged'",
       params: [GONE],

@@ -234,7 +234,7 @@
   "never-or-any-cast": {
     "apps/desktop/src/__tests__/a11y/smoke.test.tsx": 1,
     "apps/desktop/src/__tests__/actions/menuParity.test.tsx": 3,
-    "apps/desktop/src/__tests__/actions/stateMatrix.test.ts": 22,
+    "apps/desktop/src/__tests__/actions/stateMatrix.test.ts": 21,
     "apps/desktop/src/__tests__/keyboard/navigation.test.tsx": 2,
     "apps/desktop/src/__tests__/mount-operations.persistence.test.ts": 3,
     "apps/desktop/src/__tests__/mount-recovery.operations.test.ts": 8,

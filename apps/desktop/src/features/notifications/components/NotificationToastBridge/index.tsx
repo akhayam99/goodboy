@@ -172,6 +172,15 @@ export const mapNotificationAction = (
       },
     };
   }
+  if (action.kind === 'retry-notification-scope') {
+    const { scope } = action;
+    return {
+      label: 'Retry',
+      onClick: () => {
+        void store.setNotificationScope(scope);
+      },
+    };
+  }
   if (action.kind === 'update-provider-cli') {
     const { providerId } = action;
     return {

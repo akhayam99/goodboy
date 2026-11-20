@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 
 const { extractAllCommentResolvedMock, extractScribeTextMock } = vi.hoisted(() => ({
   extractAllCommentResolvedMock: vi.fn(() => [] as ReadonlyArray<{ threadId: string }>),
@@ -33,8 +33,10 @@ vi.mock('../ResolverThreadsCard', () => ({ ResolverThreadsCard: () => null }));
 vi.mock('../ScribeTextCard', () => ({
   ScribeTextCard: () => <div data-testid="scribe-text-card" />,
 }));
-import type { AgentId, SessionId } from '@goodboy/types';
+import { brandId, type AgentId, type SessionId } from '@goodboy/types';
 import { AssistantText } from './AssistantText';
+import { ObjectMenuContext } from '../../../actions/components/ObjectMenuProvider/objectMenuContext';
+import { TranscriptViewingContext } from '../../transcriptViewingContext';
 
 afterEach(cleanup);
 
@@ -89,5 +91,30 @@ describe('AssistantText', () => {
     render(<AssistantText text="blocks" sessionId={sessionId} agentId={agentId} />);
 
     expect(screen.getByTestId('scribe-text-card')).toBeDefined();
+  });
+
+  it('tells the menu which agent the page shows, and nothing in a chat', () => {
+    const agentId = brandId<AgentId>({ value: 'agent-ledger-core' });
+    const sessionId = brandId<SessionId>({ value: 'session-ledger' });
+    const open = vi.fn();
+    const viewing = { kind: 'agent', id: agentId } as const;
+    const { container } = render(
+      <ObjectMenuContext.Provider value={{ open }}>
+        <TranscriptViewingContext.Provider value={viewing}>
+          <AssistantText text="Settled." sessionId={sessionId} agentId={agentId} />
+        </TranscriptViewingContext.Provider>
+      </ObjectMenuContext.Provider>,
+    );
+    fireEvent.contextMenu(container.firstElementChild!);
+    expect(open).toHaveBeenLastCalledWith(expect.objectContaining({ viewing }));
+    cleanup();
+
+    const inChat = render(
+      <ObjectMenuContext.Provider value={{ open }}>
+        <AssistantText text="Settled." sessionId={sessionId} agentId={agentId} />
+      </ObjectMenuContext.Provider>,
+    );
+    fireEvent.contextMenu(inChat.container.firstElementChild!);
+    expect(open).toHaveBeenLastCalledWith(expect.objectContaining({ viewing: null }));
   });
 });

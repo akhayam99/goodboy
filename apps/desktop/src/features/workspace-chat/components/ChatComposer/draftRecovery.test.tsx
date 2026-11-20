@@ -128,7 +128,9 @@ describe('the Chat composer when a send is refused', () => {
     await settle({ resolvers, isSent: false });
 
     await screen.findByRole('button', { name: 'Remove cascadia-trace.png' });
-    expect(screen.getByRole('alert').textContent).toBe("Couldn't attach the images. Try again.");
+    expect(screen.getByRole('alert').textContent).toBe(
+      "Couldn't send the images. They're still attached.",
+    );
   });
 });
 

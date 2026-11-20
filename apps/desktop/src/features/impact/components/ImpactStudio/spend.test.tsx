@@ -31,6 +31,7 @@ const { state, mocks } = vi.hoisted(() => {
       sessionBudgets,
       clearSessionBudget: vi.fn(),
       currentWorkspaceId: 'workspace-1',
+      projects: [],
       navigate: vi.fn(),
       loadBudgetRules: vi.fn(),
       loadBudgetAlerts: vi.fn(),

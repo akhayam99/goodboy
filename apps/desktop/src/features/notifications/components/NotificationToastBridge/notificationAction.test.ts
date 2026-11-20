@@ -150,6 +150,16 @@ describe('mapNotificationAction', () => {
     expect(orchestrateNextStepSpy).toHaveBeenCalledWith(SESSION_ID, RUN_ID, { bypassGate: true });
   });
 
+  it('retry-notification-scope: switches the bell again to the scope that failed', () => {
+    const setNotificationScope = vi.fn(async () => undefined);
+    const action: NotificationAction = { kind: 'retry-notification-scope', scope: 'all' };
+    const toastAction = mapAction(action, buildStore({ setNotificationScope }));
+
+    expect(toastAction?.label).toBe('Retry');
+    toastAction?.onClick();
+    expect(setNotificationScope).toHaveBeenCalledWith('all');
+  });
+
   it('retry-summarizer: returns undefined when lastAttempt is missing', () => {
     const action: NotificationAction = { kind: 'retry-summarizer', sessionId: SESSION_ID };
     const store = buildStore({ summarizerStatus: {} });

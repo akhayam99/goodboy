@@ -17,7 +17,7 @@ export const createNotificationsSlice = ({ set, get }: SliceDeps) => {
   return {
     loadNotifications: loadNotifications(set, get),
     loadOlderNotifications: loadOlderNotifications(set, get),
-    setNotificationScope: setNotificationScope(set, get),
+    setNotificationScope: setNotificationScope(get),
     emitNotification: emitNotification(set, get),
     resolveNotifications: resolveNotifications(set, get),
     reportError: reportError({ get }),

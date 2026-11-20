@@ -88,6 +88,7 @@ export const ImpactSceneBody = ({ mode }: Props) => {
           ) : (
             <OverviewPanel
               frame={frame}
+              requestNoun="pull requests"
               overview={{ data: overview, error: null }}
               pullRequests={{ data: PULL_REQUESTS, error: null }}
               reviews={{ data: REVIEWS, error: null }}

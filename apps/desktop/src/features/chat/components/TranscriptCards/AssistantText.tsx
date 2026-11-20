@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useContext, useMemo } from 'react';
 import { CopyButton } from '@goodboy/ui';
 import type { AgentId, SessionId } from '@goodboy/types';
 import { parseOutcomeLine, stripOutcomeLine } from '@goodboy/core/auto';
@@ -13,6 +13,7 @@ import { ResolverThreadsCard } from '../ResolverThreadsCard';
 import { ScribeTextCard } from '../ScribeTextCard';
 import { carriesPullRequestText } from '../../../../shared/utils/scribeProposal';
 import { useObjectMenuTrigger } from '../../../actions/useObjectMenuTrigger';
+import { TranscriptViewingContext } from '../../transcriptViewingContext';
 import { useRevealedMarkdown } from '../../reveal/useRevealedMarkdown';
 import { ReadingOrderMessage } from '../../readingOrder/ReadingOrderMessage';
 import { READING_BUDGETS } from '../../readingOrder/readingBudgets';
@@ -53,9 +54,11 @@ export const AssistantText = ({
     isReviewThreadId(threadId),
   );
   const codeTarget = useMemo(() => ({ sessionId, workingDir }), [sessionId, workingDir]);
+  const viewing = useContext(TranscriptViewingContext);
   const menu = useObjectMenuTrigger({
     target: { kind: 'message', text: displayText, sessionId, agentId },
     anchorKey: null,
+    viewing,
   });
   return (
     <div

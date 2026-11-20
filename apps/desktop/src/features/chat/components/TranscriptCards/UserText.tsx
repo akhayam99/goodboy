@@ -1,3 +1,4 @@
+import { useContext } from 'react';
 import { Markdown, MetaRow, PANE_RHYTHM } from '@goodboy/ui';
 
 import type { AgentId, MessageAttachment, SessionId, UserTurnSentVia } from '@goodboy/types';
@@ -6,6 +7,7 @@ import { TranscriptShell } from '../TranscriptShell';
 import { CopyButton } from '@goodboy/ui';
 import { formatClock } from '../../../../shared/utils/time/formatClock';
 import { useObjectMenuTrigger } from '../../../actions/useObjectMenuTrigger';
+import { TranscriptViewingContext } from '../../transcriptViewingContext';
 import { ClampedText } from '../../../../shared/components/ClampedText';
 
 type Props = {
@@ -33,9 +35,11 @@ export const UserText = ({
   agentId = null,
 }: Props) => {
   const atts = attachments ?? [];
+  const viewing = useContext(TranscriptViewingContext);
   const menu = useObjectMenuTrigger({
     target: { kind: 'message', text, sessionId, agentId },
     anchorKey: null,
+    viewing,
   });
   return (
     <TranscriptShell

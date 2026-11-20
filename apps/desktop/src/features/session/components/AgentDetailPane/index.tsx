@@ -23,6 +23,8 @@ import { useAutoMembership } from '../../../auto/useAutoMembership';
 import { SessionHeadSlotsContext } from '../../sessionHeadSlotsContext';
 import { AgentHeadSlots } from './AgentHeadSlots';
 import { DockStopButton } from '../../../../shared/components/DockStopButton';
+import { TranscriptViewingContext } from '../../../chat/transcriptViewingContext';
+import type { ActionViewing } from '../../../actions/types';
 
 type RunStepFrame = {
   readonly heading: ReactNode;
@@ -72,6 +74,7 @@ export const AgentDetailPane = ({
   const openDrawer = useAppStore((state) => state.openDrawer);
   const isInHead = useContext(SessionHeadSlotsContext) !== null;
   const events = useTranscript(agent.id);
+  const viewing = useMemo<ActionViewing>(() => ({ kind: 'agent', id: agent.id }), [agent.id]);
   const briefLine = useMemo(() => agentBriefOf({ events }), [events]);
   const brief = autoChat.childTask ?? briefLine;
   const insertions = useAgentInsertions({
@@ -147,47 +150,49 @@ export const AgentDetailPane = ({
     />
   );
   const chat = (
-    <ChatView
-      session={session}
-      agentId={agent.id}
-      isActive={isChatActive}
-      topInset="tight"
-      mode="conversation"
-      onOpenTranscript={openTranscript}
-      hasAdvanceRow={runStep === undefined}
-      {...(runStep === undefined && { controlSlots: { asks: asksSlot } })}
-      {...(runStep?.stopLabel !== undefined && { stopLabel: runStep.stopLabel })}
-      {...(runStep?.liveSentence !== undefined && { liveSentence: runStep.liveSentence })}
-      composerStop={headStop === null ? autoChat.stop : { ...headStop, isButtonInHead: true }}
-      isFailureOwned={autoChat.isFailureOwned}
-      {...(runStep !== undefined && agent.stepId != null && { clockStepAgentId: agent.id })}
-      hasComposer={hasComposer}
-      composerPlaceholder={
-        rewriter?.isLive === true ? REWRITER_PLACEHOLDER : autoChat.composerPlaceholder
-      }
-      composerLead={
-        <AgentDockLead
-          session={session}
-          agent={agent}
-          autoDock={autoChat.dock}
-          stopped={stoppedNotice}
-          isDocked={isDocked}
-          isRunStep={runStep !== undefined}
-          isTreeAtRest={isAutoRoot ? autoChat.isTreeAtRest : null}
-        />
-      }
-      composerNotice={
-        <AgentComposerNotice
-          session={session}
-          agent={agent}
-          rewriter={rewriter}
-          adoption={adoption}
-          isMoveOpen={isMoveOpen}
-          onCloseMove={() => setIsMoveOpen(false)}
-        />
-      }
-      insertions={insertions}
-    />
+    <TranscriptViewingContext.Provider value={viewing}>
+      <ChatView
+        session={session}
+        agentId={agent.id}
+        isActive={isChatActive}
+        topInset="tight"
+        mode="conversation"
+        onOpenTranscript={openTranscript}
+        hasAdvanceRow={runStep === undefined}
+        {...(runStep === undefined && { controlSlots: { asks: asksSlot } })}
+        {...(runStep?.stopLabel !== undefined && { stopLabel: runStep.stopLabel })}
+        {...(runStep?.liveSentence !== undefined && { liveSentence: runStep.liveSentence })}
+        composerStop={headStop === null ? autoChat.stop : { ...headStop, isButtonInHead: true }}
+        isFailureOwned={autoChat.isFailureOwned}
+        {...(runStep !== undefined && agent.stepId != null && { clockStepAgentId: agent.id })}
+        hasComposer={hasComposer}
+        composerPlaceholder={
+          rewriter?.isLive === true ? REWRITER_PLACEHOLDER : autoChat.composerPlaceholder
+        }
+        composerLead={
+          <AgentDockLead
+            session={session}
+            agent={agent}
+            autoDock={autoChat.dock}
+            stopped={stoppedNotice}
+            isDocked={isDocked}
+            isRunStep={runStep !== undefined}
+            isTreeAtRest={isAutoRoot ? autoChat.isTreeAtRest : null}
+          />
+        }
+        composerNotice={
+          <AgentComposerNotice
+            session={session}
+            agent={agent}
+            rewriter={rewriter}
+            adoption={adoption}
+            isMoveOpen={isMoveOpen}
+            onCloseMove={() => setIsMoveOpen(false)}
+          />
+        }
+        insertions={insertions}
+      />
+    </TranscriptViewingContext.Provider>
   );
 
   return (

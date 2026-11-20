@@ -40,7 +40,7 @@ const CHAT_IMAGES: PromptFileFilter = {
   isAccepted: isChatImage,
 };
 
-const SEND_FAILED = "Couldn't attach the images. Try again.";
+const SEND_FAILED = "Couldn't send the images. They're still attached.";
 
 export const MessageComposer = ({
   label,

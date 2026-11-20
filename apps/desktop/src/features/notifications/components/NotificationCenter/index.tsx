@@ -81,6 +81,12 @@ export const NotificationCenter = ({ isCurrent }: Props) => {
   const viewportRef = useRef<HTMLDivElement | null>(null);
   const [unreadKeys, setUnreadKeys] = useState<ReadonlySet<string>>(() => new Set());
   const [view, setView] = useState<PopoverView>('all');
+  const [unreadKeysScope, setUnreadKeysScope] = useState(notificationScope);
+
+  if (unreadKeysScope !== notificationScope) {
+    setUnreadKeysScope(notificationScope);
+    setUnreadKeys(unreadGroupKeys({ notifications }));
+  }
 
   useEffect(() => {
     openRef.current = open;
@@ -168,17 +174,7 @@ export const NotificationCenter = ({ isCurrent }: Props) => {
     });
   };
   const changeScope = ({ next }: ScopeParams) => {
-    setNotificationScope(next)
-      .then(() => {
-        setUnreadKeys(unreadGroupKeys({ notifications: useAppStore.getState().notifications }));
-      })
-      .catch((error: unknown) => {
-        void reportError({
-          recovery: CHECK_STATE,
-          title: "Couldn't change which workspaces the bell shows",
-          error,
-        });
-      });
+    void setNotificationScope(next);
   };
   return (
     <div role="region" aria-label="Notifications">

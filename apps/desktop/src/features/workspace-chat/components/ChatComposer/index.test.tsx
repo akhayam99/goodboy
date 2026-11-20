@@ -139,7 +139,9 @@ describe('ChatComposer', () => {
     fireEvent.keyDown(field(), { key: 'Enter' });
     await waitFor(() => expect(field()).toHaveProperty('value', 'Same 502 on Acme sandbox.'));
     screen.getByRole('button', { name: 'Remove acme-trace.png' });
-    expect(screen.getByRole('alert').textContent).toBe("Couldn't attach the images. Try again.");
+    expect(screen.getByRole('alert').textContent).toBe(
+      "Couldn't send the images. They're still attached.",
+    );
   });
 
   it('takes no images when the chat images switch is off', async () => {
