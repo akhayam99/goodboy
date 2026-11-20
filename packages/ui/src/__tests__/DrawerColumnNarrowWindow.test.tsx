@@ -7,7 +7,7 @@ import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { DrawerColumn } from '../components/DrawerColumn';
 import { DrawerFrame } from '../components/DrawerFrame';
 import { DrawerEdgeContext } from '../drawerEdgeContext';
-import type { DrawerSizing } from '../drawerGeometry';
+import { RIGHT_DRAWER_DEFAULT, RIGHT_DRAWER_MIN, type DrawerSizing } from '../drawerGeometry';
 import { SHELL_RAIL_WIDTH_PX, TOOL_RAIL_WIDTH_PX } from '../components/ShellRail/shellRailGeometry';
 
 type ObserverCallback = (entries: ReadonlyArray<{ contentRect: { width: number } }>) => void;
@@ -109,14 +109,17 @@ describe('a 1024 by 700 window', () => {
     expect(pageOf(container)?.hasAttribute('inert')).toBe(false);
   });
 
-  it('would lay the same panel over the page with the wide tool rail', () => {
+  it('shrinks the same panel toward its minimum beside the page with the wide tool rail', () => {
     stubWindow({ edge: TOOL_RAIL_WIDTH_PX.wide });
     openPanel({ sizing: 'side' });
+    const width = Number.parseFloat(panel().style.getPropertyValue('--goodboy-drawer-panel'));
 
-    expect(panel().getAttribute('data-drawer-mode')).toBe('overlay');
+    expect(panel().getAttribute('data-drawer-mode')).toBe('push');
+    expect(width).toBeLessThan(RIGHT_DRAWER_DEFAULT);
+    expect(width).toBeGreaterThanOrEqual(RIGHT_DRAWER_MIN);
   });
 
-  it('lays the Browser over the page, to the left of the rail that stays at the edge', () => {
+  it('lays the Browser over the page, to the left of the rail, with the page still live', () => {
     stubWindow({ edge: TOOL_RAIL_WIDTH_PX.narrow });
     const { container } = openPanel({ sizing: 'browser' });
     const rail = panel().querySelector('[data-drawer-edge]');
@@ -125,8 +128,8 @@ describe('a 1024 by 700 window', () => {
     expect(panel().className).toContain('right-0');
     expect(rail?.parentElement?.lastElementChild).toBe(rail);
     expect(rail?.querySelector('[role="toolbar"]')).not.toBeNull();
-    expect(pageOf(container)?.hasAttribute('inert')).toBe(true);
-    expect(scrim()).not.toBeNull();
+    expect(pageOf(container)?.hasAttribute('inert')).toBe(false);
+    expect(scrim()).toBeNull();
   });
 
   it('closes the Browser over the page with Esc when the keyboard is outside the web page', () => {
@@ -140,13 +143,14 @@ describe('a 1024 by 700 window', () => {
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 
-  it('closes the Browser over the page with a click on the veil', () => {
+  it('keeps the Browser open over the page when a click lands on the page', () => {
     stubWindow({ edge: TOOL_RAIL_WIDTH_PX.narrow });
     const onClose = vi.fn();
     openPanel({ sizing: 'browser', onClose });
 
-    fireEvent.click(scrim() ?? document.body);
+    fireEvent.click(screen.getByRole('button', { name: 'Board' }));
 
-    expect(onClose).toHaveBeenCalledTimes(1);
+    expect(onClose).not.toHaveBeenCalled();
+    expect(panel().getAttribute('data-drawer-mode')).toBe('overlay');
   });
 });

@@ -74,15 +74,15 @@ const mount = async ({
 };
 
 describe('a11y, the Ask drawer over the page', () => {
-  it('has no violation with the scrim up and the page inert', async () => {
+  it('has no violation over the page, with no veil and the page still live', async () => {
     const container = await mount({ width: 800 });
 
     expect(
       screen.getByRole('complementary', { name: 'Side panel' }).getAttribute('data-drawer-mode'),
     ).toBe('overlay');
-    expect(container.querySelector('[data-drawer-scrim]')).not.toBeNull();
-    expect(container.querySelector('[data-drawer-main]')?.hasAttribute('inert')).toBe(true);
-    await expectBaseline({ name: 'drawer overlay with scrim', container });
+    expect(container.querySelector('[data-drawer-scrim]')).toBeNull();
+    expect(container.querySelector('[data-drawer-main]')?.hasAttribute('inert')).toBe(false);
+    await expectBaseline({ name: 'drawer over the page', container });
   });
 
   it('has no violation beside the page, where nothing is inert', async () => {
@@ -97,13 +97,13 @@ describe('a11y, the Ask drawer over the page', () => {
 });
 
 describe('a11y, a detail panel and the Terminal dock open together', () => {
-  it('lays both over a narrow page with one scrim, the page inert, and has no violation', async () => {
+  it('lays both over a narrow page with no veil, the page live, and has no violation', async () => {
     const container = await mount({ width: 900, scene: 'panel-frame-detail-terminal' });
     const aside = screen.getByRole('complementary', { name: 'Side panel' });
 
     expect(aside.getAttribute('data-drawer-mode')).toBe('overlay');
-    expect(container.querySelectorAll('[data-drawer-scrim]')).toHaveLength(1);
-    expect(container.querySelector('[data-drawer-main]')?.hasAttribute('inert')).toBe(true);
+    expect(container.querySelectorAll('[data-drawer-scrim]')).toHaveLength(0);
+    expect(container.querySelector('[data-drawer-main]')?.hasAttribute('inert')).toBe(false);
     expect(aside.querySelector('[data-detail-card]')?.hasAttribute('inert')).toBe(false);
     expect(aside.querySelector('[data-drawer-card]')?.hasAttribute('inert')).toBe(false);
     await expectBaseline({ name: 'detail and dock over the page', container });

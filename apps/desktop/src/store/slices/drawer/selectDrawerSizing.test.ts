@@ -17,8 +17,9 @@ import {
   RIGHT_DRAWER_MAX,
   canDrawerPush,
   drawerAsideWidthOf,
+  drawerModeOf,
+  drawerWidthOf,
   mainWidthOf,
-  panelPairLayoutOf,
   type DrawerPlacement,
   type DrawerSizing,
 } from '@goodboy/ui';
@@ -229,14 +230,13 @@ describe('every drawer fits inside its aside at 1280 and 1440', () => {
   it.each(CASES)(
     '$kind ($sizing, $placement) at $windowPx with a $savedPx saved width over a $columnWidth column',
     ({ sizing, placement, columnWidth, savedPx }) => {
-      const pair = panelPairLayoutOf({
-        main: columnWidth,
-        placement,
-        dock: { sizing, savedWidth: savedPx, isOpen: true },
-        detail: { sizing: 'side', savedWidth: savedPx, isOpen: false },
-      });
-      const mode = pair.mode;
-      const drawerWidthPx = pair.dock.width;
+      const isOverOnly = placement === 'overlay';
+      const mode = isOverOnly
+        ? 'overlay'
+        : drawerModeOf({ isOpen: true, sizing, columnWidth, drawerWidthPx: savedPx });
+      const drawerWidthPx = isOverOnly
+        ? Math.min(savedPx, columnWidth - DRAWER_GUTTER * 2)
+        : drawerWidthOf({ sizing, columnWidth, resizableWidth: savedPx });
       const asidePx = drawerAsideWidthOf({ width: drawerWidthPx, mode });
       const cardRight = columnWidth - asidePx + DRAWER_GUTTER + drawerWidthPx;
 

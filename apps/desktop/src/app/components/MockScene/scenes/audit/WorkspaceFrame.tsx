@@ -29,7 +29,7 @@ export const WorkspaceFrame = ({ session, main, hasRail = true }: Props) => {
         drawerSizing={shellRight.dockSizing}
         dockGrid={shellRight.dockGrid}
         detail={shellRight.isDetailMounted ? <DrawerHost slot="detail" /> : null}
-        detailSizing={shellRight.detailSizing}
+        {...shellRight.detailFrame}
         isDrawerParked={shellRight.isDrawerParked}
         isDetailParked={shellRight.isDetailParked}
         rightRail={shellRight.rightRail}

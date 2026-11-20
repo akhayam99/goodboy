@@ -25,7 +25,10 @@ type ShellRight = {
   readonly isDetailMounted: boolean;
   readonly isDetailParked: boolean;
   readonly dockSizing: DrawerSizing;
-  readonly detailSizing: DrawerSizing;
+  readonly detailFrame: {
+    readonly detailSizing: DrawerSizing;
+    readonly detailKind: string | null;
+  };
   readonly placement: DrawerPlacement;
 };
 
@@ -44,6 +47,7 @@ export const useShellRight = ({}: Params): ShellRight => {
   const detailSizing = useAppStore((state) =>
     drawerSizingOf({ drawer: selectDetailDrawer({ state }) }),
   );
+  const detailKind = useAppStore((state) => selectDetailDrawer({ state })?.kind ?? null);
   const placement = useAppStore(selectDrawerPlacement);
   const drawer = useAppStore((state) => state.drawer);
   const drawerBack = useAppStore((state) => state.drawerBack);
@@ -78,6 +82,6 @@ export const useShellRight = ({}: Params): ShellRight => {
     isDetailMounted,
     isDetailParked: isDetailMounted && isStudioShown,
     dockSizing,
-    detailSizing,
+    detailFrame: { detailSizing, detailKind },
   };
 };

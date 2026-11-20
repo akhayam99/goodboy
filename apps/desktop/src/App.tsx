@@ -249,7 +249,7 @@ export const App = () => {
           drawerSizing={shellRight.dockSizing}
           dockGrid={shellRight.dockGrid}
           detail={shellRight.isDetailMounted ? <DrawerHost slot="detail" /> : null}
-          detailSizing={shellRight.detailSizing}
+          {...shellRight.detailFrame}
           drawerPlacement={shellRight.placement}
           isDrawerParked={shellRight.isDrawerParked}
           isDetailParked={shellRight.isDetailParked}

@@ -17,6 +17,7 @@ export type AppShellProps = {
   readonly dockGrid?: DockGridSpec | null;
   readonly detail?: ReactNode;
   readonly detailSizing?: DrawerSizing;
+  readonly detailKind?: string | null;
   readonly isDetailParked?: boolean;
   readonly drawerPlacement?: DrawerPlacement;
   readonly studio?: ReactNode;
@@ -68,6 +69,7 @@ export const AppShell = ({
   dockGrid = null,
   detail,
   detailSizing,
+  detailKind = null,
   isDetailParked,
   drawerPlacement,
   studio,
@@ -139,6 +141,7 @@ export const AppShell = ({
             sizing={drawerSizing}
             detail={detail ?? null}
             detailSizing={detailSizing}
+            detailKind={detailKind}
             isDetailParked={isDetailParked ?? isStudioShown}
             placement={drawerPlacement}
             isParked={isDrawerParked ?? isStudioShown}

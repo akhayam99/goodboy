@@ -102,7 +102,7 @@ export const SlotBackChipScene = ({ state, hasRail = false }: Props) => {
         drawer={shellRight.isDrawerMounted ? <DrawerHost slot="dock" /> : null}
         sizing={shellRight.dockSizing}
         detail={shellRight.isDetailMounted ? <DrawerHost slot="detail" /> : null}
-        detailSizing={shellRight.detailSizing}
+        {...shellRight.detailFrame}
         ariaLabel="Side panel"
         resizeLabel="Resize side panel"
       />

@@ -7,6 +7,7 @@ type LiveWidths = {
   readonly rail: number;
   readonly dock: number;
   readonly detail: number;
+  readonly isDetailOver: boolean;
 };
 
 type Params = {
@@ -22,7 +23,13 @@ type DrawerPreview = {
 };
 
 export const useDrawerPreview = ({ asideRef, trackRef, groupRef }: Params): DrawerPreview => {
-  const live = useRef<LiveWidths>({ mode: 'closed', rail: 0, dock: 0, detail: 0 });
+  const live = useRef<LiveWidths>({
+    mode: 'closed',
+    rail: 0,
+    dock: 0,
+    detail: 0,
+    isDetailOver: false,
+  });
   const previewAside = useCallback(() => {
     const { mode, rail, dock, detail } = live.current;
     const track = `${panelAsideWidthOf({ dockWidth: dock, detailWidth: detail, railWidth: rail })}px`;
@@ -41,9 +48,12 @@ export const useDrawerPreview = ({ asideRef, trackRef, groupRef }: Params): Draw
   );
   const previewDetail = useCallback(
     (next: number) => {
-      live.current = { ...live.current, detail: next };
       asideRef.current?.style.setProperty(DRAWER_PANEL_VARS.detail, `${next}px`);
       groupRef.current?.style.setProperty('width', `${next + DRAWER_GUTTER}px`);
+      if (live.current.isDetailOver) {
+        return;
+      }
+      live.current = { ...live.current, detail: next };
       previewAside();
     },
     [asideRef, groupRef, previewAside],

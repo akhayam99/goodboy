@@ -26,6 +26,8 @@ type Props = {
   readonly isParked: boolean;
   readonly isOverlay: boolean;
   readonly isFloating: boolean;
+  readonly isOverPage?: boolean;
+  readonly isInset?: boolean;
   readonly mode: DrawerMode;
   readonly columnWidth: number | null;
   readonly savedWidth: number;
@@ -47,6 +49,8 @@ export const DrawerDetailGroup = ({
   isParked,
   isOverlay,
   isFloating,
+  isOverPage = false,
+  isInset = false,
   mode,
   columnWidth,
   savedWidth,
@@ -57,7 +61,13 @@ export const DrawerDetailGroup = ({
     ref={groupRef}
     data-detail-group=""
     style={{ width: shownWidth > 0 ? shownWidth + DRAWER_GUTTER : 0 }}
-    className={cn('flex min-h-0 shrink-0 overflow-clip', !isFloating && SLIDE)}
+    className={cn(
+      'flex min-h-0 shrink-0',
+      isOverPage ? 'overflow-visible' : 'overflow-clip',
+      !isFloating && SLIDE,
+      isOverPage && 'pointer-events-none absolute left-0 z-20 -translate-x-full',
+      isOverPage && (isInset ? 'inset-y-3' : 'inset-y-0'),
+    )}
   >
     <div className={cn('flex w-3 shrink-0 justify-center', isOverlay && 'pointer-events-auto')}>
       {isOpen && !isParked ? (

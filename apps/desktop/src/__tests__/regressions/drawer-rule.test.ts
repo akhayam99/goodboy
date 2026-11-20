@@ -120,6 +120,20 @@ describe('the one frame rule', () => {
     expect(mounts[0]?.text).toMatch(/detail=\{[^}]*<DrawerHost slot="detail" \/>[^}]*\}/);
   });
 
+  it('never makes the page inert or veils it under a floating panel', () => {
+    const column = UI.find(({ rel }) => rel === join('components', 'DrawerColumn.tsx'));
+    const offenders = UI.filter(({ text }) => /data-drawer-scrim|\bDrawerScrim\b/.test(text)).map(
+      ({ rel }) => rel,
+    );
+
+    expect(column?.text).toContain('data-drawer-main');
+    expect(
+      column?.text.match(/\binert\b/),
+      'A floating panel is never modal: the page under it keeps its clicks, its Tab and its reader.',
+    ).toBeNull();
+    expect(offenders).toEqual([]);
+  });
+
   it('times the css exit of the overlay as long as the timer that keeps it mounted', () => {
     const css = readFileSync(join(DESKTOP_SRC, 'styles.css'), 'utf8');
 

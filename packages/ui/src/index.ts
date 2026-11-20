@@ -47,7 +47,7 @@ export { formatTokens, formatUsd, formatUsdPrecise } from './format-cost';
 export { AppShell, COLLAPSED_RAIL_WIDTH } from './components/AppShell';
 export { DrawerColumn } from './components/DrawerColumn';
 export { READER_DRAWER_STORAGE_KEY, RIGHT_DRAWER_STORAGE_KEY } from './drawerWidthKeys';
-export type { DrawerColumnFrame, DrawerColumnProps } from './components/DrawerColumn';
+export type { DrawerColumnFrame, DrawerColumnProps } from './components/drawerColumnProps';
 export {
   COLUMN_FRAME,
   DRAWER_EXIT_MS,
@@ -421,9 +421,9 @@ export { Kbd } from './components/Kbd';
 export type { KbdLook, KbdProps } from './components/Kbd';
 export { ROW_HOVER, ROW_INTERACTIVE } from './rowInteractive';
 export { SELECTED_ROW_CLASSES } from './selectedRow';
-export { drawerAsideWidthOf, panelPairLayoutOf } from './drawerGeometry';
+export { drawerAsideWidthOf } from './drawerGeometry';
 export { DOCK_GRID_CAP } from './dockGridCap';
-export type { DrawerLayout, DrawerPanelSpec, PanelPairLayout } from './drawerGeometry';
+export type { DrawerLayout, PanelPairLayout } from './drawerGeometry';
 export type { ChipKind } from './components/Chip';
 export type { IconButtonSize } from './components/IconButton';
 export { SearchField } from './components/SearchField';

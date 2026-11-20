@@ -84,12 +84,13 @@ describe('the New drawer scenes', () => {
     expect(inDrawer.queryByText('A wireframe drawn from this session.')).toBeNull();
   });
 
-  it('stays an overlay at 1100 px', async () => {
+  it('stays an overlay at 1100 px, with no veil and the page still live', async () => {
     show({ id: 'new-drawer-narrow' });
 
     await drawer({ id: 'new-drawer-narrow' });
     expect(document.querySelector('[data-drawer-mode="overlay"]')).not.toBeNull();
-    expect(document.querySelector('[data-drawer-scrim]')).not.toBeNull();
+    expect(document.querySelector('[data-drawer-scrim]')).toBeNull();
+    expect(document.querySelector('[data-drawer-main][inert]')).toBeNull();
   });
 
   it.each(SCENE_IDS)('%s has no accessibility violations', async (id) => {

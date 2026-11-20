@@ -352,6 +352,7 @@ type Params = {
   readonly toolRailWidth?: number;
   readonly detail: DockPane | null;
   readonly columns: ReadonlyArray<DockColumn>;
+  readonly canPush?: boolean;
 };
 
 export const dockLayoutOf = ({
@@ -362,6 +363,7 @@ export const dockLayoutOf = ({
   toolRailWidth,
   detail,
   columns,
+  canPush = true,
 }: Params): DockLayout => {
   const railForm = shellRailFormOf({ windowWidth });
   const leftWidth = leftRailWidth ?? SHELL_RAIL_WIDTH_PX[railForm];
@@ -399,10 +401,9 @@ export const dockLayoutOf = ({
       ? [{ frame, detail: detailLane, lanes: folded, isStacked: true, isDetailOver: true }]
       : []),
   ];
-  const pushed = tries.reduce<FrameLayout | null>(
-    (found, attempt) => found ?? pushLayoutOf(attempt),
-    null,
-  );
+  const pushed = canPush
+    ? tries.reduce<FrameLayout | null>((found, attempt) => found ?? pushLayoutOf(attempt), null)
+    : null;
   if (pushed !== null) {
     return { ...pushed, railForm, rail };
   }

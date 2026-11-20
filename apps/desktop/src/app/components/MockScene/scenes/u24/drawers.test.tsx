@@ -34,7 +34,7 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
-const SIDEBAR_PX = 240;
+const SHELL_RAILS_PX = 120;
 
 type ObserverCallback = (entries: ReadonlyArray<{ contentRect: { width: number } }>) => void;
 
@@ -55,7 +55,7 @@ const stubColumnWidth = (width: number) => {
 type SceneId = keyof typeof U24_DRAWERS_SCENES;
 
 const renderScene = ({ id, windowPx }: { readonly id: SceneId; readonly windowPx: number }) => {
-  stubColumnWidth(windowPx - SIDEBAR_PX);
+  stubColumnWidth(windowPx - SHELL_RAILS_PX);
   const Scene = U24_DRAWERS_SCENES[id];
   return render(
     <ToastProvider>
@@ -89,16 +89,16 @@ describe('the drawer split scenes', () => {
     expect(page?.getAttribute('data-sheet')).toBe('pushed');
   });
 
-  it('lifts the plan drawer over the page container at 1280, never squeezing it', async () => {
+  it('pushes the plan drawer at 536 beside the page container at 1280, shrunk to the room', async () => {
     const { container } = renderScene({ id: 'drawer-split-plan-1280', windowPx: 1280 });
 
     await screen.findByTestId('plan-drawer');
-    expect(panel().getAttribute('data-drawer-mode')).toBe('overlay');
-    expect(panel().style.width).toBe('732px');
-    expect(container.querySelector('[data-drawer-scrim]')).not.toBeNull();
-    expect(container.querySelector('[data-container="page"]')?.hasAttribute('inert')).toBe(true);
+    expect(panel().getAttribute('data-drawer-mode')).toBe('push');
+    expect(panel().style.width).toBe('548px');
+    expect(container.querySelector('[data-drawer-scrim]')).toBeNull();
+    expect(container.querySelector('[data-container="page"]')?.hasAttribute('inert')).toBe(false);
     expect(container.querySelector('[data-container="page"]')?.getAttribute('data-sheet')).toBe(
-      'wrapped',
+      'pushed',
     );
   });
 

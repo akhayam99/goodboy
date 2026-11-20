@@ -189,15 +189,17 @@ left to re-centre in what is left of it (see The content column). The drawer
 pushes only while the content, excluding the session rail and tools, keeps 464px
 for a side drawer or 560px for a reader, plus 48px of gutters. `drawerLayoutOf`
 owns this rule and takes the measured rail width as the content inset and as
-`edgeWidth`; `DrawerContentContext` supplies the whole column width. A side
-drawer at 400 pushes from 984px of column width (928 of content plus the 56px
-rail), 972px beside the 44px rail, so at the smallest window (1024 by 700, a
-980px column) a narrow panel still pushes; a reader at 720 pushes from 1400px. The 8px `DRAWER_INSET` remains part
-of the sizing reserve in `pushReserveOf`. Below its threshold the drawer lies
-over the page, full height, with a scrim and an `inert` page, never squeezed. Over the
-page the aside is absolute at the window edge and a spacer of the closed width
-stays in the flow, so the page does not grow; the rail sits above the scrim in
-the same container, so a tool can still switch or close the panel. The host is
+`edgeWidth`; `DrawerContentContext` supplies the whole column width. Every tier
+shrinks toward its minimum before it covers: it pushes at `min(saved, room)`
+while the room holds the minimum (384 side, 480 reader and browser). A side
+drawer pushes from 968px of column width (912 of content plus the 56px rail),
+956px beside the 44px rail, so at the smallest window (1024 by 700, a 980px
+column) a narrow panel still pushes; a reader pushes from 1160px. The 8px
+`DRAWER_INSET` remains part of the sizing reserve in `pushReserveOf`. Below the
+minimum the drawer lies over the page, full height, with no veil, and the page
+stays live. Over the page the aside is absolute at the window edge and a spacer
+of the closed width stays in the flow, so the page does not grow; the rail sits
+in the same container, so a tool can still switch or close the panel. The host is
 measured after every commit (and by a `ResizeObserver` after that), so the
 overlay panel plus the rail always fit in the sheet and the column never covers
 the panel's primary or its Close. Over the page the dock reveals to the left
@@ -256,14 +258,15 @@ also picks the rail form: under a 1100px window (`shellRailFormOf`) both rails
 turn 44 wide, icons only (`SHELL_RAIL_WIDTH_PX`, `TOOL_RAIL_WIDTH_PX`), and
 reports it as `railForm`; a caller may still pass its own rail widths. At 1024
 by 700 a narrow pane pushes beside a page of 524 and the Browser lies over the
-page, left of the rail that stays at the edge. `DrawerColumn` runs it for a
-`dockGrid` of two tools or more, passing the measured column and the rail it
-hosts (`useDockGrid`, `DockGrid`, a CSS grid whose tracks are the column widths
-and 12px gutters, so a pane keeps its node when the pair turns or stacks); one
-tool, the detail alone and `placement="overlay"` keep `panelPairLayoutOf`, and
-the narrow tool rail is what lets its narrow panel push at 1024
+page, left of the rail that stays at the edge. `DrawerColumn` runs it for every
+combination, one tool, the detail alone and `placement="overlay"` (`canPush`
+false) included, passing the measured column and the rail it hosts
+(`useDockGrid`, `DockGrid`, a CSS grid whose tracks are the column widths and
+12px gutters, so a pane keeps its node when the pair turns or stacks); the
+narrow tool rail is what lets its narrow panel push at 1024
 (`DrawerColumnNarrowWindow.test.tsx`). A detail that the solver lays over the
-page while the grid pushes floats the whole aside for now.
+page while the tools push floats alone, left of the dock, and the tools stay
+beside the page.
 `DrawerColumnGrid.test.tsx` pins the order, the widths, the stack, the focus
 border and the turn key.
 

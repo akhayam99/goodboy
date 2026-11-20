@@ -1,4 +1,3 @@
-import { DrawerContentContext } from '../drawerContentContext';
 import { DrawerBackChipContext } from '../drawerBackChipContext';
 import { useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 import type { IconGlyph } from '../icons';
@@ -103,7 +102,6 @@ export const DrawerFrame = ({
   const sectionRef = useRef<HTMLElement | null>(null);
   const dockRef = useRef<HTMLDivElement | null>(null);
   const hasToolbar = toolbar != null;
-  const drawerContent = useContext(DrawerContentContext);
   const backChip = useContext(DrawerBackChipContext);
   const hasBackChip = backChip !== null && !isHeaderless;
 
@@ -178,8 +176,7 @@ export const DrawerFrame = ({
     </>
   );
 
-  const isOverlay = drawerContent?.mode === 'overlay';
-  const hasStepAside = !isHeaderless && (isOverlay || meta != null || hasToolbar);
+  const hasStepAside = !isHeaderless && (meta != null || hasToolbar);
   const backLink =
     back === undefined || isHeaderless || hasBackChip ? null : <DrawerBackLink back={back} />;
   const content = (
@@ -226,7 +223,6 @@ export const DrawerFrame = ({
           stepAside={
             hasStepAside ? (
               <DrawerHeaderMore
-                isOverlay={isOverlay}
                 meta={meta}
                 metaInsetPx={Icon == null ? HEADER_INSET_PX : META_INSET_WITH_ICON_PX}
                 toolbar={toolbar}

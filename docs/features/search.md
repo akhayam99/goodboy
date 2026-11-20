@@ -24,7 +24,7 @@ The **⋯** holds **Ask about this session**, **Pin session**, **Refresh session
 
 A branch, an artifact or a run keeps the head and shows crumbs such as **Overview › Artifacts › Plan** in place of the tabs. Each crumb is a link, and **Esc** goes one crumb up.
 
-**Ask about this session**, from the **⋯** or ⌘L, opens a detail panel beside the page. From left to right a window holds the places rail, the page, the detail panel, the open tools and the tools rail. On a narrow window a panel lies over the page with a scrim.
+**Ask about this session**, from the **⋯** or ⌘L, opens a detail panel beside the page. From left to right a window holds the places rail, the page, the detail panel, the open tools and the tools rail. On a narrower window a panel first narrows, then lies over the page; the page stays live under it.
 
 The tools rail sits at the right edge of every page: **Terminal**, **Browser**, **Scripts**, **Ask** and **Monitor**, each named with its shortcut on hover. A click opens the tool to its left, and the rail never moves. Tools stay open as you move between pages. **Open full page** in a tool's header makes it a page, and **Dock**, last in the page's first row, puts it back.
 

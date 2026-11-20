@@ -210,6 +210,7 @@ export const StudioFrame = ({ kind, onClose, children, placement = 'cover' }: Pr
             {...(drawerSpec?.drawerKey !== undefined && { detailKey: drawerSpec.drawerKey })}
             {...(drawerSpec?.drawerRef !== undefined && { drawerRef: drawerSpec.drawerRef })}
             {...(drawerSpec?.sizing !== undefined && { detailSizing: drawerSpec.sizing })}
+            detailKind={`studio-${kind}`}
           />
         ) : (
           framed

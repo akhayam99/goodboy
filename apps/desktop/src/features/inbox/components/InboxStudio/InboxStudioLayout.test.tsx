@@ -61,7 +61,7 @@ describe('InboxStudioLayout', () => {
     expect(page?.contains(detail ?? null)).toBe(false);
   });
 
-  it('sizes the pane on the reader tier and saves its width there, not on the side tier', () => {
+  it('saves the task pane width under its own key, never under a shared tier key', () => {
     stubColumnWidth(1600);
     render(shell({ drawer: 'record' }));
 
@@ -69,8 +69,25 @@ describe('InboxStudioLayout', () => {
       key: 'ArrowLeft',
     });
 
-    expect(localStorage.getItem(READER_DRAWER_STORAGE_KEY)).not.toBeNull();
+    expect(localStorage.getItem('goodboy:detail-width:studio-inbox:v1')).not.toBeNull();
+    expect(localStorage.getItem(READER_DRAWER_STORAGE_KEY)).toBeNull();
     expect(localStorage.getItem(RIGHT_DRAWER_STORAGE_KEY)).toBeNull();
+  });
+
+  it('starts the task pane from the old reader width, and keeps its own once resized', () => {
+    localStorage.setItem(READER_DRAWER_STORAGE_KEY, '600');
+    stubColumnWidth(1600);
+    const view = render(shell({ drawer: 'record' }));
+    const separator = () => screen.getByRole('separator', { name: 'Resize the task pane' });
+
+    expect(separator().getAttribute('aria-valuenow')).toBe('600');
+    fireEvent.keyDown(separator(), { key: 'ArrowLeft' });
+    const saved = localStorage.getItem('goodboy:detail-width:studio-inbox:v1');
+    view.unmount();
+    localStorage.setItem(READER_DRAWER_STORAGE_KEY, '900');
+    render(shell({ drawer: 'record' }));
+
+    expect(separator().getAttribute('aria-valuenow')).toBe(saved);
   });
 
   it('closes the pane when the item is deselected', () => {

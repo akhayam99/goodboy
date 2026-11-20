@@ -1,4 +1,4 @@
-import { DRAWER_TIERS, type PanelPairLayout } from './drawerGeometry';
+import { DRAWER_TIERS, type DrawerPlacement, type PanelPairLayout } from './drawerGeometry';
 import type { DockGridFrame } from './dockGridFrameOf';
 import { dockGridSpanOf } from './dockGridSpanOf';
 import type { DockGridCell } from './dockGridSpec';
@@ -11,12 +11,14 @@ type UnmeasuredParams = {
   readonly columns: ReadonlyArray<ReadonlyArray<DockGridCell>>;
   readonly savedWidthOf: (params: CellParams) => number;
   readonly detail: PanelPairLayout['detail'];
+  readonly placement: DrawerPlacement;
 };
 
 export const unmeasuredDockGridOf = ({
   columns,
   savedWidthOf,
   detail,
+  placement,
 }: UnmeasuredParams): DockGridFrame => {
   const boxes = columns.map((column) => {
     const width = Math.max(0, ...column.map((cell) => savedWidthOf({ cell })));
@@ -29,7 +31,8 @@ export const unmeasuredDockGridOf = ({
   });
   return {
     pair: {
-      mode: 'push',
+      mode: placement === 'overlay' ? 'overlay' : 'push',
+      isDetailOver: false,
       dock: { width: dockGridSpanOf({ columns: boxes }), dragMax: boxes[0]?.dragMax ?? 0 },
       detail,
     },

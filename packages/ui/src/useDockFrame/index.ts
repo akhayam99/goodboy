@@ -1,19 +1,12 @@
 import { useCallback, useRef } from 'react';
-import { columnPairLayoutOf } from '../columnPairLayoutOf';
 import type { SolvedDockFrame } from '../dockGridFrameOf';
 import { DOCK_FOCUS_DETAIL, type DockGridCell, type DockGridSpec } from '../dockGridSpec';
-import {
-  DRAWER_TIERS,
-  type DrawerPlacement,
-  type DrawerSizing,
-  type PanelPairLayout,
-} from '../drawerGeometry';
+import type { DrawerPlacement, DrawerSizing, PanelPairLayout } from '../drawerGeometry';
 import type { SplitHandleProps } from '../components/SplitHandle';
-import { savedHandleOf } from '../savedHandleOf';
+import { useDetailWidth } from '../useDetailWidth';
 import { useDockGrid, type DockSolveParams } from '../useDockGrid';
-import { useDrawerTierWidths } from '../useDrawerTierWidths';
 import { useDrawerTierWidthSet } from '../useDrawerTierWidthSet';
-import type { ResizableWidth } from '../useResizableWidth';
+import type { ResizableHandleProps } from '../useResizableWidth';
 
 type Preview = (width: number) => void;
 
@@ -27,6 +20,7 @@ type Params = {
   readonly placement: DrawerPlacement;
   readonly sizing: DrawerSizing;
   readonly detailSizing: DrawerSizing;
+  readonly detailKind: string | null;
   readonly previewDock: Preview;
   readonly previewDetail: Preview;
   readonly solve: (params: DockSolveParams) => SolvedDockFrame;
@@ -36,12 +30,14 @@ type Params = {
 type DockFrame = {
   readonly cells: ReadonlyArray<DockGridCell>;
   readonly isOpen: boolean;
-  readonly resizable: ResizableWidth<HTMLElement>;
   readonly savedWidth: number;
-  readonly detailWidths: ResizableWidth<HTMLElement>;
+  readonly detailWidths: {
+    readonly width: number;
+    readonly handleProps: ResizableHandleProps;
+  };
   readonly layout: PanelPairLayout;
   readonly grid: ReturnType<typeof useDockGrid>;
-  readonly dockHandle: SplitHandleProps;
+  readonly dockHandle: SplitHandleProps | null;
   readonly isFocusShown: boolean;
   readonly isSingleFocused: boolean;
   readonly gridKey: string;
@@ -53,6 +49,8 @@ type DockFrame = {
 
 const DOCK_GRID_KEY = 'dock-grid';
 
+const LONE_DOCK_KEY = 'dock';
+
 export const useDockFrame = ({
   dockGrid,
   hasDrawer,
@@ -63,6 +61,7 @@ export const useDockFrame = ({
   placement,
   sizing,
   detailSizing,
+  detailKind,
   previewDock,
   previewDetail,
   solve,
@@ -74,59 +73,42 @@ export const useDockFrame = ({
   dockRoute.current = previewDock;
   const routeDock = useCallback((next: number) => dockRoute.current(next), []);
   const tiers = useDrawerTierWidthSet({ onPreview: routeDock });
-  const resizable = tiers[sizing];
-  const single = cells.length === 1 ? (cells[0] ?? null) : null;
-  const savedWidth = single?.savedWidth ?? resizable.width;
-  const detailWidths = useDrawerTierWidths({ sizing: detailSizing, onPreview: previewDetail });
-  const pairLayout = columnPairLayoutOf({
-    columnWidth,
-    railWidth,
-    placement,
-    dock: { sizing, savedWidth, isOpen },
-    detail: { sizing: detailSizing, savedWidth: detailWidths.width, isOpen: isDetailOpen },
+  const detailWidths = useDetailWidth({
+    kind: detailKind,
+    sizing: detailSizing,
+    onPreview: previewDetail,
   });
+  const isLone = cells.length === 0;
+  const loneCell: DockGridCell = { key: LONE_DOCK_KEY, sizing, savedWidth: tiers[sizing].width };
+  const columns = isLone ? (hasDrawer ? [[loneCell]] : []) : (dockGrid?.columns ?? []);
   const isDetailShown = isDetailOpen && !isDetailParked;
   const grid = useDockGrid({
-    spec: dockGrid,
+    columns,
+    cellCount: cells.length,
+    onResize: isLone ? undefined : dockGrid?.onResize,
     columnWidth,
     railWidth,
     placement,
-    detail: {
-      isShown: isDetailShown,
-      sizing: detailSizing,
-      savedWidth: detailWidths.width,
-      fallback: pairLayout.detail,
-    },
+    detail: { isShown: isDetailShown, sizing: detailSizing, savedWidth: detailWidths.width },
     tiers,
     route: dockRoute,
     previewDock,
     solve,
     resizeLabel,
   });
-  const layout = grid.frame?.pair ?? pairLayout;
+  const layout = grid.frame.pair;
   const isFocusShown = grid.cellCount + (isDetailShown ? 1 : 0) > 1;
   const focusKey = dockGrid?.focus ?? null;
-  const singleKey = grid.frame === null ? (cells[0]?.key ?? null) : null;
+  const singleKey = grid.isGrid ? null : (cells[0]?.key ?? null);
+  const single = cells.length === 1 ? (cells[0] ?? null) : null;
   return {
     cells,
     isOpen,
-    resizable,
-    savedWidth,
+    savedWidth: single?.savedWidth ?? tiers[single?.sizing ?? sizing].width,
     detailWidths,
     layout,
     grid,
-    dockHandle: grid.handles[0] ?? {
-      ...savedHandleOf({
-        handle: resizable.handleProps,
-        key: single?.key ?? null,
-        baseWidth: DRAWER_TIERS[sizing].fallback,
-        onResize: dockGrid?.onResize,
-      }),
-      max: layout.dock.dragMax,
-      value: layout.dock.width,
-      side: 'right',
-      ariaLabel: resizeLabel,
-    },
+    dockHandle: grid.handles[0] ?? null,
     isFocusShown,
     isSingleFocused: isFocusShown && singleKey !== null && focusKey === singleKey,
     gridKey: DOCK_GRID_KEY,

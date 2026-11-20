@@ -176,7 +176,7 @@ instead of replacing it, and `cn` keeps them beside a surface class. Hover is
 on a waiting or unread row (`warning-wash`, `primary-wash`), enough to notice
 while moving down a list; selected is 13% and 12.5%, so a selected row always
 reads above a hovered one.
-`row-hover-wash.test.ts` holds both floors. `scrim` is reserved for modal backdrops and the backdrop of a drawer over the page.
+`row-hover-wash.test.ts` holds both floors. `scrim` is reserved for modal backdrops; a drawer over the page draws none.
 
 A selected row has one treatment everywhere: `bg-selected`, foreground text and
 medium weight, driven by `data-selected` (`selectedRow.ts`, used by
@@ -948,9 +948,10 @@ slot for a left rail (Files, Agents) and the `aside` slot for the right.
 the tools rail. `DrawerColumn` draws the detail and the dock; `DrawerDockBox`
 keeps the rail as its last child, pinned to the window edge. A tool opens to
 its left. `DRAWER_GUTTER` is the 12px shell gutter between containers. A panel pushes the
-page only while it leaves the page its minimum width (`drawerLayoutOf`);
-under that every panel lies over the page with a scrim, and the rail stays
-visible. The page content eases to its new width in `DURATION_BASE_MS` with the
+page while it leaves the page its minimum width, narrowing toward its own
+minimum first (`dockLayoutOf`); under that the detail alone lies over the page
+while the tools keep pushing, then every panel does. A floating panel is never
+modal: no veil, the page stays live, and the rail stays visible. The page content eases to its new width in `DURATION_BASE_MS` with the
 motion token, and `prefers-reduced-motion` turns it off. The numbers and the
 thresholds are in [docs/styling.md](../../docs/styling.md#the-window-grid).
 

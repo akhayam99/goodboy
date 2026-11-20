@@ -140,13 +140,14 @@ and the dock: `data-container="detail"`, `rounded-frame`, `frame-edge` border,
 on the page's `bg-background`, 12px from the page and 12px from the drawer
 container, with its own resize handle in the left gutter. Both can be open at
 once. `DrawerColumn` takes the dock as `drawer` and the detail as `detail`
-(`detailSizing`, `isDetailParked`); `panelPairLayoutOf` in `drawerGeometry.ts`
-lays the pair out: alone, each panel follows the one push rule below; together
-they push while the page keeps its reserve beside both (the tier reserve of the
-wider kind, plus `DRAWER_GUTTER` between them), and lie over the page together
-otherwise, each clamped so the pair and the rail fit. `panelAsideWidthOf` is
-the aside: the detail plus its gutter, then the dock plus the rail plus their
-gutter. A `DrawerFrame` paints `bg-panel-surface`, the surface its container
+(`detailSizing`, `detailKind`, `isDetailParked`). One solver, `dockLayoutOf`
+in `dockLayout.ts`, lays out every combination, the detail included as a lane:
+it pushes at the saved widths, then shrinks toward the minimums (browser,
+reader, then side), and only then lets the detail alone lie over the page while
+the tools keep pushing (`isDetailOver`, `data-detail-over` on the aside). When
+even the tools cannot push, every panel lies over the page. `panelAsideWidthOf`
+is the aside: the detail plus its gutter while it pushes, then the dock plus
+the rail plus their gutter. A `DrawerFrame` paints `bg-panel-surface`, the surface its container
 names (`panel-on-page` for the detail, `panel-on-rail` for the dock), and its
 pinned header frosts the same surface (`sticky-surface-panel`).
 
@@ -164,26 +165,31 @@ hosting frame (a mock scene that draws the studio alone) keeps `frame="none"`,
 which draws the drawer container with a 12px top and bottom inset while it
 pushes, and keeps its right edge flush.
 
-**Three tiers, one width each.** A side drawer (Ask, Context, a fix run or agent
-transcript, script output, a plan part, an artifact) opens at 400px, resizes
-from 384 to 560px and keeps `goodboy:right-drawer-width:v1`. A reader drawer
-(the plan, report and wireframe document, an Explore file, a file diff) opens at
-720px, resizes from 480 to `min(1000, room)` while it pushes and to
-the room left after two shell gutters and the rail, capped at 1000px, over
-the page, and keeps its own `goodboy:reader-drawer-width:v1`. The browser pane has the third tier: it opens
-at 720px and resizes from 480 to `room` while it pushes, with no 1000 cap, so on
-a wide window it takes everything the session column does not need. It keeps its
-own `goodboy:browser-drawer-width:v1`. Each width is clamped on read and written
-once when a drag ends; a double click on the handle resets to the tier default
-(400 or 720); the three saved widths never bleed. A saved browser width that no
-longer fits after a window resize shrinks to `room` and keeps pushing while 720
-fits; the saved value stays and comes back when the window grows. No drawer
-expands over the whole column. `drawerSizingOf` reads the tier from the kind
-table. The pure rule lives in `drawerLayoutOf` (`drawerGeometry.ts`).
+**Three tiers, one width per panel.** A side drawer (Ask, Context, a fix run or
+agent transcript, script output, a plan part, an artifact) opens at 400px and
+resizes from 384 to 560px. A reader drawer (the plan, report and wireframe
+document, an Explore file, a file diff) opens at 720px and resizes from 480 to
+`min(1000, room)` while it pushes and to the room left after two shell gutters
+and the rail, capped at 1000px, over the page. The browser pane has the third
+tier: it opens at 720px and resizes from 480 to `room` while it pushes, with no
+1000 cap, so on a wide window it takes everything the session column does not
+need. A tool keeps its width on the session grid (below). A detail keeps its
+width per kind everywhere, `goodboy:detail-width:<kind>:v1` (`detailWidthKeyOf`,
+`useDetailWidth`; a studio's own panel uses `studio-<kind>`), so dragging Ask
+wider never moves Context, Scripts, an artifact or a Terminal. A kind with no
+width of its own starts from the tier key its size had before 0.41.0
+(`TIER_WIDTH_KEYS`), so nothing jumps after the update; no panel writes those
+keys any more. Each width is clamped on read and written once when a drag ends;
+a double click on the handle resets that kind to the tier default (400 or 720).
+No drawer expands over the whole column. `drawerSizingOf` reads the tier from
+the kind table. The pure rule lives in `drawerLayoutOf` (`drawerGeometry.ts`).
 
 **One push rule.** The drawer uses the content width after both rails and the
-reserve of its tier, as defined in [styling.md](../styling.md). It pushes at
-its saved width when that fits, and overlays otherwise. The mode reads the
+reserve of its tier, as defined in [styling.md](../styling.md). Every tier
+shrinks before it covers: it pushes at `min(saved, room)` while the room holds
+the tier minimum, keeps the saved width for when the window grows, and overlays
+only below that minimum. At 1280 a plan pushes at 536, at 1440 at 696. The page
+keeps its 464 (560 beside a reader); it never goes lower. The mode reads the
 committed width; a drag stops at the available room and never flips the mode.
 The centred column slides left into the space beside the drawer; a full-tier
 work surface keeps its left edge. `drawerGeometry.test.ts` pins the thresholds;
@@ -200,8 +206,10 @@ with a drawer open swaps the mode in place and keeps focus in the drawer; if
 focus was on the page it moves into the drawer, never to the body.
 
 **Over the page, the drawer container runs the full height of the sheet.**
-Below the push width every open panel lies over the page from the right edge
-together, detail and dock, under one scrim, and the rail stays live. The dock
+When even the tools cannot push, every open panel lies over the page from the
+right edge together, detail and dock, and the rail stays live. A detail that
+floats alone beside pushing tools lies over the page's right edge, left of the
+dock, with the same `shadow-xl` (`DrawerDetailGroup` with `isOverPage`). The dock
 reveals to the left of the stationary rail through a clip
 (`animate-drawer-dock-in`, `duration-base`) and clips back toward it on close
 (`animate-drawer-dock-out`, `duration-quick`). These keyframes live in
@@ -210,21 +218,19 @@ aside in the flow at its closed width with no width transition. The
 container has no inset: flush with the sheet's top, bottom and right edges, left corners
 rounded (`rounded-l-frame`), `shadow-xl` under the whole container (panel and
 rail), the same `bg-drawer`; a spacer of the closed width keeps the page where
-it was under it. A scrim
-(`bg-scrim`, 120ms fade, none under reduced motion) covers the page below the
-card, and the page is `inert`, so nothing under it takes a click, a Tab or a
-screen reader. A click on the scrim asks the top layer of the escape stack
-(`dismissTopEscapeLayer` in `packages/ui/src/escape.ts`), so an editor or an
-unsent draft inside the drawer answers first, exactly as it does to Esc.
-The scrim and the floating aside are no overlay for the keys (`OVERLAY_SELECTOR`
-leaves them out), so Esc, ⌘W in a terminal and ⌘⇧W still reach the panels.
-In the smallest window (1024 by 700) a narrow panel pushes beside the icon rail
-and the Browser lies over the page, left of the rail at the edge. A focused web
-page keeps a bare Esc (only ⌘ chords leave it, see [browser.md](../browser.md)), so that
-Browser closes with ⌘⇧W (File, Close the Drawer, in the menu bar), a click on
-the scrim, or Esc once the keyboard is outside the page
+it was under it (`data-drawer-spacer`). **A floating panel is never modal.**
+There is no veil and the page is never `inert`: a click on the page goes to the
+page and leaves the panel open, F6 still walks page, detail and tools, and Esc
+or the X closes the panel. `regressions/drawer-rule.test.ts` fails a scrim or an
+`inert` page in `DrawerColumn`. The floating aside is no overlay for the keys
+(`OVERLAY_SELECTOR` leaves it out), so Esc, ⌘W in a terminal and ⌘⇧W still
+reach the panels. In the smallest window (1024 by 700) a narrow panel pushes
+beside the icon rail and the Browser lies over the page, left of the rail at the
+edge. A focused web page keeps a bare Esc (only ⌘ chords leave it, see
+[browser.md](../browser.md)), so that Browser closes with ⌘⇧W (File, Close the
+Drawer, in the menu bar) or Esc once the keyboard is outside the page
 (`DrawerColumnNarrowWindow.test.tsx`).
-Pushing has no scrim and nothing is inert. Closed, the
+Closed, the
 aside is `DRAWER_GUTTER` plus the rail (0px with no rail) and the rail stays
 live; only the panel is `inert`. Opening and closing ease the track's width in
 220ms (`DURATION_BASE_MS`, none under reduced motion) with its right edge fixed, and the
@@ -244,12 +250,12 @@ panel keeps a frozen copy of its content that fades in 120ms (`drawer-content-ou
 with nothing laid out or under reduced motion it closes at once. Closed from
 over the page, the aside stays out of the flow with no width transition and its
 spacer holds the closed width, so the page keeps its width at every frame, and
-the panel and scrim stay mounted for
-`DRAWER_EXIT_MS` (160ms) while they fade and slide 8px right (`drawer-overlay-out`;
+the panel stays mounted for
+`DRAWER_EXIT_MS` (160ms) while it fades and slides 8px right (`drawer-overlay-out`;
 only the fade, `drawer-fade-out`, under reduced motion). The exit card is a
 frozen copy of the DOM the drawer had, so its escape layers, focus and handlers
-are gone the moment it closes (the rail is not part of the copy and never animates; a drawer that holds a `canvas`, `iframe`, `video`, `audio` or `webview`, or more than `DRAWER_EXIT_MAX_ELEMENTS` (2000) elements, is not copied and closes at once with no exit; the copy is taken during the render that closes the drawer, before React commits it, because a host that reads the same store, such as `DrawerHost`, empties itself in that same commit): the aside, the card and the scrim are `inert` or
-`pointer-events-none`, the page is not `inert`, and a click on the page behind
+are gone the moment it closes (the rail is not part of the copy and never animates; a drawer that holds a `canvas`, `iframe`, `video`, `audio` or `webview`, or more than `DRAWER_EXIT_MAX_ELEMENTS` (2000) elements, is not copied and closes at once with no exit; the copy is taken during the render that closes the drawer, before React commits it, because a host that reads the same store, such as `DrawerHost`, empties itself in that same commit): the aside and the card are `inert` or
+`pointer-events-none`, and a click on the page behind
 works at once. Reopening during the exit cancels it and shows the drawer as it
 stands, without playing the entry again.
 
@@ -323,8 +329,8 @@ go through `dockLayoutOf` inside `DrawerColumn`: every pane is its own card,
 12px apart, in the order page, detail, grid, rail, and the rail stays last
 in the dock box on the window edge whether the grid pushes or lies over the
 page. Each column has its handle on its left edge. It takes the width the
-session saved for its lead tool (`drawerGrid.widths`), else its lead tier's
-shared key; rows keep the solver's share, 50/50 or 58/42 with Browser on top.
+session saved for its lead tool (`drawerGrid.widths`), else the width its lead
+tier had before the update; rows keep the solver's share, 50/50 or 58/42 with Browser on top.
 With two panels or more on screen the focused one draws a `focus-ring` border.
 A click or a focus inside a panel or the page names it (`focusShellPanel`,
 which writes only when the key changes). F6 and ⇧F6 (`panel.focusNext`,
@@ -409,14 +415,12 @@ control that had focus (`lastFocusedElement` in `packages/ui`, updated on
 `focusin`, never the body). Esc answers in two steps: while a text field in the
 drawer is focused and not empty, the first Esc only blurs it, the draft stays;
 the second Esc (or the first, with an empty field or no field focused) closes.
-A click on the scrim asks the same top layer of the escape stack
-(`dismissTopEscapeLayer`) and keeps focus where it was while pressed, so it
-follows the same two steps. There is one Esc listener, the stack; a drawer
-never adds a second one.
+A click on the page never closes a drawer. There is one Esc listener, the
+stack; a drawer never adds a second one.
 
 **The Ask draft survives.** `askDrafts` in the `ask` slice holds the text of the
 composer per thread (`threadId`, or `${sessionId}:new` for a thread that does
-not exist yet), in memory only: closing the drawer with Esc, the scrim or `⌘L`
+not exist yet), in memory only: closing the drawer with Esc, the X or `⌘L`
 and opening it again finds the draft, a send that lands clears it, and a send
 that fails puts it back.
 
@@ -426,7 +430,7 @@ with the width of the action) and the action on its own row. Beside a pushing
 drawer the stack's right edge is the drawer card's left edge minus the 12px
 gutter (`toastRightOf({ mode, drawerWidth, hasNativeView })`, measured from
 `[data-drawer-card]` while a toast is on screen); over an overlay drawer it
-stays at the right edge and above the scrim, except over the browser pane,
+stays at the right edge above it, except over the browser pane,
 whose page draws above every toast, so the stack keeps left of it there too
 ([browser.md](../browser.md#the-pane)). It still lifts above the Ask
 composer and the transcript reply field (`useToastLift`).
@@ -715,8 +719,9 @@ window has; they save nothing.
   the shared `goodboy:*-drawer-width:v1` keys. A double click writes the tier
   default. A column with no saved width starts from its tier's key: the keys
   are read that way until 0.42.0, then retired
-  ([versioning.md](../versioning.md#retired-state)). The detail column keeps
-  its key.
+  ([versioning.md](../versioning.md#retired-state)). No panel writes those
+  keys any more: a detail keeps its width per kind, so a drag on Ask never
+  changes where a Terminal starts.
 
 | Write or read   | What happens                                                                                                                                         |
 | --------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |

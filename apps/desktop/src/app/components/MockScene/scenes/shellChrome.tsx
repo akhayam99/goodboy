@@ -117,7 +117,7 @@ export const ShellFrame = ({ session, main, hasOwnTrail = false }: ShellFramePro
         drawerSizing={shellRight.dockSizing}
         dockGrid={shellRight.dockGrid}
         detail={shellRight.isDetailMounted ? <DrawerHost slot="detail" /> : null}
-        detailSizing={shellRight.detailSizing}
+        {...shellRight.detailFrame}
         isDrawerParked={shellRight.isDrawerParked}
         isDetailParked={shellRight.isDetailParked}
         isDockInStudio={shellRight.isDockInStudio}

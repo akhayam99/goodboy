@@ -151,16 +151,16 @@ const renderWithTools = (drawer: string | null) =>
   );
 
 describe('DrawerColumn rail', () => {
-  it('keeps the tools clickable above the scrim while a drawer lies over the page at 1100', () => {
+  it('keeps the tools and the page clickable while a drawer lies over the page at 1100', () => {
     stubEdgeWidths({ column: 852 });
     const { container } = renderWithTools('Scripts');
     const live = railHost()?.querySelector('[role="toolbar"]') ?? null;
 
-    expect(pageOf(container)?.hasAttribute('inert')).toBe(true);
+    expect(pageOf(container)?.hasAttribute('inert')).toBe(false);
     expect(live).not.toBeNull();
     expect(live?.closest('[inert]')).toBeNull();
     expect(panel().className).toContain('z-20');
-    expect(scrim()?.className).toContain('z-10');
+    expect(scrim()).toBeNull();
   });
 
   it('draws the tools once, inside the drawer container, in every mode', () => {
@@ -291,12 +291,12 @@ describe('DrawerColumn rail', () => {
   });
 
   it.each([
-    ['side', 971, 'overlay'],
-    ['side', 972, 'push'],
-    ['reader', 1387, 'overlay'],
-    ['reader', 1388, 'push'],
+    ['side', 955, 'overlay'],
+    ['side', 956, 'push'],
+    ['reader', 1147, 'overlay'],
+    ['reader', 1148, 'push'],
   ] as const)(
-    'gives a %s drawer at a %i column the same mode as before the rail moved: %s',
+    'counts the rail in the room: a %s drawer at a %i column lays out as %s',
     (sizing, column, mode) => {
       stubEdgeWidths({ column });
       render(
