@@ -148,6 +148,7 @@ export const FeaturesImpactOverviewScene = () => {
             <div className="flex min-h-0 min-w-0 flex-1">
               <OverviewPanel
                 frame={frame}
+                requestNoun="pull requests"
                 overview={{ data: OVERVIEW, error: null }}
                 pullRequests={{ data: PULL_REQUESTS, error: null }}
                 reviews={{ data: REVIEWS, error: null }}

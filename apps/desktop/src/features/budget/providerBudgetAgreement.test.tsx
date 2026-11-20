@@ -24,6 +24,7 @@ const { state, rust } = vi.hoisted(() => ({
     sessionBudgets: {} as Record<string, unknown>,
     clearSessionBudget: vi.fn(),
     currentWorkspaceId: 'workspace-1',
+    projects: [],
     navigate: vi.fn(),
     loadBudgetRules: vi.fn(async () => undefined),
     loadBudgetAlerts: vi.fn(async () => undefined),

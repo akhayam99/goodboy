@@ -19,9 +19,12 @@ import { KpiTile } from './KpiTile';
 import { OverviewEmpty } from './OverviewEmpty';
 import { ShippedSessionRows } from './ShippedSessionRows';
 import type { PaneFrame } from '../../../../shared/types/paneFrame';
+import { NOT_LOADED_HINT, UNKNOWN_VALUE } from '../../../../shared/utils/unknownValue';
+import { valueOrUnknown } from '../../../../shared/utils/valueOrUnknown';
 
 type Props = {
   readonly frame: PaneFrame;
+  readonly requestNoun: string;
   readonly overview: QueryResult<ImpactOverview>;
   readonly pullRequests: QueryResult<PullRequestOutcomes>;
   readonly reviews: QueryResult<ReviewOutcomes>;
@@ -48,6 +51,7 @@ const shareOf = ({ sessions, orchestrated }: ShareParams): number | null =>
 
 export const OverviewPanel = ({
   frame,
+  requestNoun,
   overview,
   pullRequests,
   reviews,
@@ -127,34 +131,48 @@ export const OverviewPanel = ({
               onSelect={() => onSelectTab('flow')}
             />
             <KpiTile
-              label="Pull requests merged"
-              value={String(prs?.merged ?? 0)}
-              delta={impactDelta({
-                current: prs?.merged ?? 0,
-                previous: prs?.previousMerged ?? null,
-                unit: 'count',
-              })}
+              label={`Merged ${requestNoun}`}
+              value={valueOrUnknown({ value: prs?.merged })}
+              {...(prs === null && { hint: NOT_LOADED_HINT })}
+              delta={
+                prs === null
+                  ? null
+                  : impactDelta({
+                      current: prs.merged,
+                      previous: prs.previousMerged,
+                      unit: 'count',
+                    })
+              }
               onSelect={() => onSelectTab('shipped')}
             />
             <KpiTile
               label="Reviews resolved"
-              value={String(reviewData?.commentsResolved ?? 0)}
-              delta={impactDelta({
-                current: reviewData?.commentsResolved ?? 0,
-                previous: reviewData?.previousCommentsResolved ?? null,
-                unit: 'count',
-              })}
+              value={valueOrUnknown({ value: reviewData?.commentsResolved })}
+              {...(reviewData === null && { hint: NOT_LOADED_HINT })}
+              delta={
+                reviewData === null
+                  ? null
+                  : impactDelta({
+                      current: reviewData.commentsResolved,
+                      previous: reviewData.previousCommentsResolved,
+                      unit: 'count',
+                    })
+              }
               onSelect={() => onSelectTab('shipped')}
             />
             <KpiTile
               label="Run by workflows"
-              value={`${Math.round((share ?? 0) * 100)}%`}
+              value={share === null ? UNKNOWN_VALUE : `${Math.round(share * 100)}%`}
               title={WORKFLOW_DEFINITION}
-              delta={impactDelta({
-                current: (share ?? 0) * 100,
-                previous: previousShare === null ? null : previousShare * 100,
-                unit: 'points',
-              })}
+              delta={
+                share === null
+                  ? null
+                  : impactDelta({
+                      current: share * 100,
+                      previous: previousShare === null ? null : previousShare * 100,
+                      unit: 'points',
+                    })
+              }
               onSelect={() => onSelectTab('flow')}
             />
             <KpiTile

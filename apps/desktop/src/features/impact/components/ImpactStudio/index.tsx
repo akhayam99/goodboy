@@ -11,6 +11,7 @@ import { SessionPanel } from '../../../budget/components/spend/SessionPanel';
 import { useWorkspaceSpend } from '../../../budget/hooks/useWorkspaceSpend';
 import { spendFigures } from '../../../budget/spendFigures';
 import { useImpactMetrics } from '../../hooks/useImpactMetrics';
+import { useWorkspaceRequestNoun } from '../../hooks/useWorkspaceRequestNoun';
 import { impactMeta } from '../../impactMeta';
 import {
   IMPACT_WINDOW_OPTIONS,
@@ -50,6 +51,7 @@ export const ImpactStudio = ({ workspaceId, initialScope, onScopeChange, onClose
   );
   const navigate = useAppStore((state) => state.navigate);
   const metrics = useImpactMetrics({ workspaceId, windowId });
+  const requestNoun = useWorkspaceRequestNoun({ workspaceId });
   const sinceMs = useMemo(() => impactWindowStart({ windowId, nowMs: Date.now() }), [windowId]);
   const spend = useWorkspaceSpend({ sinceMs });
   const openSession = useCallback(
@@ -111,6 +113,7 @@ export const ImpactStudio = ({ workspaceId, initialScope, onScopeChange, onClose
         return (
           <OverviewPanel
             frame={frame}
+            requestNoun={requestNoun}
             overview={metrics.overview}
             pullRequests={metrics.pullRequests}
             reviews={metrics.reviews}
@@ -129,6 +132,7 @@ export const ImpactStudio = ({ workspaceId, initialScope, onScopeChange, onClose
         return (
           <ShippedPanel
             frame={frame}
+            requestNoun={requestNoun}
             pullRequests={metrics.pullRequests}
             reviews={metrics.reviews}
             externalTasks={metrics.externalTasks}
