@@ -160,18 +160,14 @@ export const admissionChildRefusals = ({
   const seenChildAgentIds: string[] = [];
   const seenRevisedIds: string[] = [];
   const seenWriterPlanKeys: string[] = [];
-  const substepsSeen = new Map<string, number>();
   for (const [slot, child] of children.entries()) {
     const substep = child.substep ?? null;
     if (substep !== null) {
-      const seenInBatch = substepsSeen.get(substep.parentDelegationId) ?? 0;
-      substepsSeen.set(substep.parentDelegationId, seenInBatch + 1);
       const code = substepRefusal({
         tree,
         role: child.role,
         substep,
         parents: snapshot.parents ?? [],
-        seenInBatch,
       });
       if (code !== null) {
         refusals.push({ slot, code, latestRevision: null });

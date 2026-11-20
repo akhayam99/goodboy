@@ -35,7 +35,6 @@ import { formatError } from '@goodboy/ui';
 import { buildDeliveryMessage } from './buildDeliveryMessage';
 import type { OwnTurns } from './createOwnTurns';
 import { chooseDeliveryRows } from './deliveryRows';
-import { pausedDeadlineStatement } from './pausedDeadlineStatement';
 import type { AutoTurnEnded, TurnStartOutcome } from './ports';
 import { userOnceAllowsOf } from '../../slices/permissions/userOnceAllowsOf';
 import { userImagesOf } from './userImagesOf';
@@ -339,12 +338,7 @@ export const deliverNext = async ({
         });
   const runId = ctx.ports.newId();
   const claims = claimStatements({ ctx, tree, rows, runId, text });
-  const claimed = await ctx.db.transaction({
-    statements:
-      tree.phase === 'blocked'
-        ? [...claims, pausedDeadlineStatement({ treeId: tree.id, nowMs: ctx.now() })]
-        : claims,
-  });
+  const claimed = await ctx.db.transaction({ statements: claims });
   if (claimed.status === 'aborted') {
     if (claimed.abortCode === ABORT_BUDGET) {
       return blockTree({ ctx, tree, reason: AUTO_BLOCK_TEXT.budget });

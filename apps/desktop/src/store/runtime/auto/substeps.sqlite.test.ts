@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'vitest';
-import { AUTO_SUBSTEP_PARENT_SLACK_MS, AUTO_SUBSTEPS_PER_PARENT } from '@goodboy/core/auto';
 import {
   autoSubstepStatements,
   getAutoDelegation,
@@ -140,13 +139,6 @@ describe('substeps', () => {
     );
     const tree = await getAutoTree({ db: world.state.world.db, treeId: world.treeId });
     expect(tree).toMatchObject({ delegationsUsed: 8, attemptsUsed: 8 });
-    for (const [index, parent] of parents.entries()) {
-      const moved = await delegationOf(world, parent.delegationId);
-      const helper = helpers[index];
-      expect(moved.deadlineAt).toBeGreaterThanOrEqual(
-        (helper?.deadlineAt ?? 0) + AUTO_SUBSTEP_PARENT_SLACK_MS,
-      );
-    }
     expect(world.errors).toEqual([]);
   });
 
@@ -202,41 +194,63 @@ describe('substeps', () => {
     expect(await allOf(world)).toHaveLength(2);
   });
 
-  it('refuses the third substep of one parent, counted across turns and inside one batch', async () => {
+  it('queues the third helper of one parent and starts it when one finishes', async () => {
     const { world, parents } = await pausedParents({ count: 1 });
-    const parent = parents[0];
-    if (parent === undefined) {
-      throw new Error('a parent was expected');
-    }
+    const parent = firstParent(parents);
     const trio = await autoDelegates({
       world,
       requestId: 'request-2',
       spec: { children: [helperFor(parent, 'a'), helperFor(parent, 'b'), helperFor(parent, 'c')] },
     });
-    expect(trio).toMatchObject({ isOk: false, code: 'substep_cap' });
-    expect(await allOf(world)).toHaveLength(1);
-
-    const pair = await autoDelegates({
-      world,
-      requestId: 'request-3',
-      spec: { children: [helperFor(parent, 'a'), helperFor(parent, 'b')] },
-    });
-    expect(pair).toMatchObject({ isOk: true });
+    expect(trio).toMatchObject({ isOk: true });
     await autoTurnEnds({ world });
-    for (const index of [1, 2]) {
-      const turn = world.state.ports.childTurns[index];
-      await childTurnEnds({ world, index, text: done(turn?.childAgentId ?? '') });
-    }
 
-    const third = await autoDelegates({
+    const statesOf = async () => (await helpersOf(world)).map((helper) => helper.state);
+    expect(await statesOf()).toEqual(['running', 'running', 'accepted']);
+    expect(world.state.ports.childTurns).toHaveLength(3);
+
+    const [firstHelper] = await helpersOf(world);
+    await world.state.world.db.execute(
+      `UPDATE auto_delegations SET state = 'settled', outcome = 'completed', settled_at = 1 WHERE id = ?`,
+      [firstHelper?.id ?? ''],
+    );
+    await world.runtime.drive(world.treeId);
+    await world.runtime.settled();
+
+    expect(await statesOf()).toEqual(['settled', 'running', 'running']);
+    expect(world.state.ports.childTurns).toHaveLength(4);
+    expect(world.errors).toEqual([]);
+  });
+
+  it('lets a queued helper leave when its parent stops waiting', async () => {
+    const { world, parents } = await pausedParents({ count: 1 });
+    const parent = firstParent(parents);
+    await autoDelegates({
       world,
-      requestId: 'request-4',
-      spec: { children: [helperFor(parent, 'c')] },
+      requestId: 'request-2',
+      spec: { children: [helperFor(parent, 'a'), helperFor(parent, 'b'), helperFor(parent, 'c')] },
     });
+    await autoTurnEnds({ world });
+    await world.state.world.db.execute(
+      `UPDATE auto_delegations SET state = 'settled', outcome = 'stopped', settled_at = 1 WHERE id = ?`,
+      [parent.delegationId],
+    );
 
-    expect(third).toMatchObject({ isOk: false, code: 'substep_cap' });
-    expect(await allOf(world)).toHaveLength(3);
+    await world.runtime.drive(world.treeId);
+    await world.runtime.settled();
 
+    const queued = (await helpersOf(world))[2];
+    expect(queued).toMatchObject({ state: 'settled', outcome: 'stopped', reason: 'parent_ended' });
+    expect(world.state.ports.childTurns).toHaveLength(3);
+  });
+
+  it('admits a helper only while the parent waits on that question', async () => {
+    const { world, parents } = await pausedParents({ count: 1 });
+    const parent = firstParent(parents);
+    await world.state.world.db.execute(
+      `UPDATE auto_delegations SET state = 'running' WHERE id = ?`,
+      [parent.delegationId],
+    );
     const raced = await world.state.world.db.transaction({
       statements: autoSubstepStatements({
         treeId: world.treeId,
@@ -244,8 +258,6 @@ describe('substeps', () => {
         parentDelegationId: brandId<AutoDelegationId>({ value: parent.delegationId }),
         questionId: parent.questionId,
         generation: 1,
-        maxSubsteps: AUTO_SUBSTEPS_PER_PARENT,
-        parentDeadlineAt: 1,
       }),
     });
     expect(raced).toMatchObject({ status: 'aborted', abortCode: 'admission_substep:0' });
@@ -289,8 +301,6 @@ describe('substeps', () => {
         parentDelegationId: brandId<AutoDelegationId>({ value: first.delegationId }),
         questionId: first.questionId,
         generation: 1,
-        maxSubsteps: AUTO_SUBSTEPS_PER_PARENT,
-        parentDeadlineAt: 1,
       }),
     });
     const current = await autoDelegates({
@@ -478,9 +488,6 @@ describe('substeps', () => {
     expect(helper?.state).toBe('running');
     const kept = await delegationOf(world, parent.delegationId);
     expect(kept.state).toBe('paused');
-    expect(kept.deadlineAt).toBeGreaterThanOrEqual(
-      (helper?.deadlineAt ?? 0) + AUTO_SUBSTEP_PARENT_SLACK_MS,
-    );
     const attempts = await listAutoAttemptsOfDelegation({
       db: world.state.world.db,
       delegationId: brandId<AutoDelegationId>({ value: parent.delegationId }),

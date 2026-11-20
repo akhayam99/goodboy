@@ -454,7 +454,7 @@ describe('Auto messages a working child', () => {
     expect(world.state.ports.autoTurns.at(-1)?.text).toContain('Skipped it, nothing else changes.');
   });
 
-  it('refuses the fifth message to one child with message_limit', async () => {
+  it('delivers the fifth message to one child: the Lead talks to an agent as much as it needs', async () => {
     const world = await runningScout();
     const original = await onlyDelegation(world);
     const db = world.state.world.db;
@@ -480,13 +480,18 @@ describe('Auto messages a working child', () => {
         runId: `run-note-${index}`,
       });
 
-    for (const index of [1, 2, 3, 4]) {
+    for (const index of [1, 2, 3, 4, 5]) {
       expect(await send(index)).toMatchObject({ isOk: true });
     }
-    expect(await send(5)).toMatchObject({ isOk: false, code: 'message_limit' });
 
     const otherWindow = await listAgentQueuedMessages(db, [original.childAgentId]);
-    expect(otherWindow.map((row) => row.content)).toEqual(['note 1', 'note 2', 'note 3', 'note 4']);
+    expect(otherWindow.map((row) => row.content)).toEqual([
+      'note 1',
+      'note 2',
+      'note 3',
+      'note 4',
+      'note 5',
+    ]);
   });
 
   it('shows a second window the queued message once', async () => {

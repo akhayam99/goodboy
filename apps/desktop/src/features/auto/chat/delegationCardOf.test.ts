@@ -129,7 +129,7 @@ describe('delegationCardOf', () => {
     expect(wordOf('settled', 'failed')).toBe('Failed');
     expect(wordOf('settled', 'blocked')).toBe('Idle');
     expect(wordOf('settled', 'stopped')).toBe('Stopped');
-    expect(wordOf('settled', 'timed_out')).toBe('Failed');
+    expect(wordOf('settled', 'timed_out')).toBe('Needs you');
   });
 
   it('reads a returned child as Done once Auto replaced it, on the same word the group reads', () => {
@@ -341,9 +341,7 @@ describe('delegationCardOf', () => {
       childAgent: null,
     });
 
-    expect(card.result?.reasonText).toBe(
-      'It showed no activity for 30 minutes and was stopped. Its work is kept.',
-    );
+    expect(card.result?.reasonText).toBe('No output for 30 minutes. Its work is kept.');
   });
 
   it('reads a reason or an artifact kind that names an object key as an unknown word', () => {

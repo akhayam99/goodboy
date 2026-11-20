@@ -10,7 +10,6 @@ import {
   type AutoTree,
   type Statement,
 } from '@goodboy/db';
-import { pausedDeadlineStatement } from './pausedDeadlineStatement';
 import type { AgentVerbContext } from './verbContext';
 
 export type RetryBlockedTreeParams = Readonly<{
@@ -83,7 +82,6 @@ export const retryBlockedTree = async ({
       patch: { blockedReason: null, noProgressStreak: 0 },
       abortCode: ABORT_PHASE,
     }),
-    pausedDeadlineStatement({ treeId, nowMs }),
     {
       sql: `UPDATE auto_outbox SET payload_json = json_remove(payload_json, '$.isOverWindow')
         WHERE tree_id = ? AND state = 'pending'

@@ -980,10 +980,9 @@ stops it is a guard that protects the user:
   `rebriefsPerTask` (3, the agents replaced and Auto's continues with a `task` in the `retryOf`
   and `replaces` lineage, `rebriefCountOf`, counted with the other children of the same block):
   the fourth is refused with `task_rebrief_limit` and
-  the delivery tells Auto to ask with a propose block. `messagesPerDelegation` (4 per child,
-  `autoMessageCountOf`, Auto's messages only: the queued ones and the ones already run): the
-  fifth is refused with `message_limit`, so Auto stops or continues it instead. The person is not
-  capped. `returnsPerTreeWindow` (6 in `AUTO_RETURNS_WINDOW_MS`, 30 minutes) is a health check for a
+  the delivery tells Auto to ask with a propose block. The Lead's messages to a working child
+  have no cap: talking to an agent is the work. `message_limit` stays a known refusal code only
+  so a refusal stored by an older build still reads. `returnsPerTreeWindow` (6 in `AUTO_RETURNS_WINDOW_MS`, 30 minutes) is a health check for a
   run with no limit only: the sixth return row carries `isOverWindow`, and `deliverNext` blocks the
   tree with `AUTO_BLOCK_TEXT.limit_returns` only when the tree has no spend cap. With a cap, the cap
   is what stops a loop that costs too much, and any number of returns reaches the Lead. **Retry**
@@ -1004,9 +1003,8 @@ only while fewer than four run, the tree is owned by this window and money is le
 limit. So two windows or a restart never start one child twice, and a restarted window starts
 the waiting children itself (`launchChildren` after `recover`). `launchChildren` offers only as
 many waiting children as `readFreeSlots` allows, oldest first, in `delegating`, `waiting` and
-`merging`, never while Auto answers or while the tree is blocked. A child's delegation deadline
-and its idle clock start when it takes its slot, not when it was queued, and a substep that
-starts moves its paused parent's deadline the same way. An answer to a paused child is
+`merging`, never while Auto answers or while the tree is blocked. A child's idle clock starts
+when it takes its slot, not when it was queued. An answer to a paused child is
 admitted at once and the child waits in `accepted` with its new attempt until a slot frees.
 Stop settles the waiting children with the others, so none starts later. At the spend limit
 the waiting children keep waiting; raising the limit starts them.
@@ -1030,9 +1028,7 @@ running is stopped: a child that runs keeps running, finishes its turn and settl
 as usual, with its commits, files and result kept (pending in the outbox). Its
 spend can go past the limit; the tail says so ("No new agent starts. The 2 agents
 still running finish their work and can spend past the limit."). A child paused on
-a question is never timed out while the tree is blocked (`enforceDeadlines`), and
-leaving the block gives every paused child a fresh delegation deadline
-(`pausedDeadlineStatement`), so Auto can still answer it. Raising the limit drives
+a question is never timed out, blocked tree or not, so the Lead can still answer it. Raising the limit drives
 the tree: the waiting results reach Auto in one turn and the tree goes on where it
 paused; a raise that still does not cover Auto's turn keeps it paused with the
 results kept. With no limit the tree never pauses on money.
@@ -1055,9 +1051,12 @@ whichever is latest, so an old row whose `deadline_at` passed while the app was
 closed is never expired on load. A tool call that started and has not ended
 (`hasAgentOpenToolCall`, a long build or test run) counts as activity, bounded by
 the CLI's own tool timeout. Such a child settles `timed_out` with the reason
-`no_activity` ("It showed no activity for 30 minutes and was stopped. Its work is
-kept.") and Auto continues it with `retryOf` as above. A child paused on a question
-keeps its delegation deadline.
+`no_activity` and reads **Needs you**, never **Stopped** (that word means you
+stopped it). Its page says "No output for 30 minutes. Its work is kept." with
+**Retry**, and the Lead can continue it with `retryOf` as above. A child paused on
+a question has no clock at all: it waits for you or the Lead, however long. The
+`deadline_at` column stays in `auto_delegations` (it is `NOT NULL`), written and
+never read; a row an older build settled with `deadline_passed` keeps its sentence.
 
 At the spend cap the tail reads **Paused at the limit** with **Raise to ...**,
 **Change limit** and **Stop**; raising it drives the tree again, nothing else to do. The counters
@@ -1880,18 +1879,18 @@ stays a `paused` attempt row behind the resumed one, so a question already answe
 helper and the lookup, the snapshot and the guard all read the attempt of the highest ordinal),
 `generation_changed` (the parent's generation is not the tree's), `role_mismatch` (a role other than scout or
 investigator), `depth_cap` (the parent is itself a substep: `AUTO_TREE_DEPTH` is 2, root child 1,
-substep 2), `substep_cap` (a parent has `AUTO_SUBSTEPS_PER_PARENT` = 2 helpers, settled ones counted,
-and the same batch counts). A user message bumps the generation first, so the admit comes back
+substep 2). No count of helpers refuses one: `substep_cap` stays a code only so an older stored
+refusal still reads. A user message bumps the generation first, so the admit comes back
 `generation_changed`.
 
-A paused delegation holds no running slot, so four paused parents can each get a helper. The
+A paused delegation holds no running slot, so four paused parents can each get a helper. At most
+`AUTO_SUBSTEPS_PER_PARENT` (2) helpers of one parent run at once, counted among the ones not
+finished: a third waits in `accepted` and reads **Queued**, and starts when one of the two
+finishes (`queuedToStartOf` in `launchChildren`, and the guard in `runSlotStatements`). A queued
+helper whose parent no longer waits on its question (it was answered, finished or stopped) leaves:
+`dropOrphanHelpers` settles it `stopped` with the reason `parent_ended` before it ever starts. The
 answer to a parent is always admitted: the parent waits in `accepted` and takes the next free slot,
-so the helper's slot passes back to it. Admitting a helper moves the parent's deadline to the
-helper's deadline plus `AUTO_SUBSTEP_PARENT_SLACK_MS`, in the same transaction, and the helper's
-start moves it again from its real start. While a helper waits in `accepted` for a slot, the
-parent never times out, however long the wait: `enforceDeadlines` expires a paused parent only in
-a statement that rechecks its deadline and finds no queued helper, so a helper that starts in the
-same tick still finds its parent paused. Cost per
+so the helper's slot passes back to it. A paused parent never times out. Cost per
 ask: one delegation and two attempts from the tree's counters and budget; the digest and the question
 block say so (`substepNeedsLine`).
 

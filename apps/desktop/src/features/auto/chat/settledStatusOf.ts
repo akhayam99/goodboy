@@ -29,7 +29,7 @@ const SETTLED_STATUS: Readonly<Record<AutoOutcome, DelegationStatus>> = {
   failed: { state: 'failed', word: NAMES.failed, tone: 'danger', isLive: false },
   blocked: { state: 'blocked', word: NAMES.needsYou, tone: 'warning', isLive: false },
   stopped: { state: 'stopped', word: NAMES.stopped, tone: 'neutral', isLive: false },
-  timed_out: { state: 'timedOut', word: NAMES.failed, tone: 'danger', isLive: false },
+  timed_out: { state: 'timedOut', word: NAMES.needsYou, tone: 'warning', isLive: false },
 };
 
 type Params = {

@@ -1,7 +1,7 @@
 import {
   AUTO_DELEGATION_DEADLINE_MINUTES,
   AUTO_MAX_RUNNING_CHILDREN,
-  AUTO_SUBSTEP_PARENT_SLACK_MS,
+  AUTO_SUBSTEPS_PER_PARENT,
   substepLinkOf,
 } from '@goodboy/core/auto';
 import {
@@ -39,6 +39,21 @@ export const runSlotStatements = ({
       abortWhen: 'noRows',
       abortCode: treeAbortCode,
     },
+  ];
+  if (parent !== null) {
+    statements.push({
+      sql: `SELECT 1 FROM auto_delegations parent
+        WHERE parent.id = ? AND parent.state = 'paused'
+          AND (SELECT COUNT(*) FROM auto_delegations helper
+                WHERE helper.tree_id = parent.tree_id
+                  AND helper.state IN ('starting', 'running', 'paused')
+                  AND json_extract(helper.request_json, '$.parent.delegationId') = parent.id) < ?`,
+      params: [parent.delegationId, AUTO_SUBSTEPS_PER_PARENT],
+      abortWhen: 'noRows',
+      abortCode: slotAbortCode,
+    });
+  }
+  statements.push(
     autoTakeRunSlotStatement({
       delegationId: delegation.id,
       generation,
@@ -46,15 +61,6 @@ export const runSlotStatements = ({
       deadlineAt,
       abortCode: slotAbortCode,
     }),
-  ];
-  if (parent === null) {
-    return statements;
-  }
-  return [
-    ...statements,
-    {
-      sql: 'UPDATE auto_delegations SET deadline_at = MAX(deadline_at, ?) WHERE id = ?',
-      params: [deadlineAt + AUTO_SUBSTEP_PARENT_SLACK_MS, parent.delegationId],
-    },
-  ];
+  );
+  return statements;
 };

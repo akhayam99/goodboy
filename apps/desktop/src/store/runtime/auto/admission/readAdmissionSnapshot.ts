@@ -5,7 +5,6 @@ import {
   isAutoWriterRole,
   LEAD_PERMISSION_PRESETS,
   parseAutoDelegationRole,
-  substepLinkOf,
   type AdmissionChild,
   type AdmissionParentFacts,
   type AdmissionSnapshot,
@@ -108,9 +107,6 @@ const parentFactsOf = async ({
       generation: parent.generation,
       pausedQuestionId: latest?.state === 'paused' ? latest.questionId : null,
       depth: delegationDepthOf({ request: parent.request }),
-      substeps: all.filter(
-        (delegation) => substepLinkOf({ request: delegation.request })?.delegationId === parent.id,
-      ).length,
     });
   }
   return facts;
