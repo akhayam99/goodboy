@@ -89,7 +89,6 @@
   "apps/desktop/src/features/onboarding/OnboardingWizard/steps/StepListRow.tsx": 1,
   "apps/desktop/src/features/onboarding/SetupChecklist/StepRow.tsx": 1,
   "apps/desktop/src/features/permissions/components/PermissionModePicker/index.tsx": 1,
-  "apps/desktop/src/features/permissions/components/PermissionsSettings/AddRuleForm.tsx": 1,
   "apps/desktop/src/features/permissions/components/PermissionsSettings/DefaultModeCards.tsx": 1,
   "apps/desktop/src/features/plans/components/PlanParts/PlanPartDrawer.tsx": 1,
   "apps/desktop/src/features/plans/components/PlanRow/PlanRowBody.tsx": 1,
