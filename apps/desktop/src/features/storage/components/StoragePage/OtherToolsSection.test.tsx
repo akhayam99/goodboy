@@ -25,6 +25,7 @@ import {
   type StoryStore,
 } from '../../../../store/storyHarness';
 import type { OtherToolUsage } from '../../otherTools';
+import { revealLabelOf } from '../../../../shared/utils/revealLabelOf';
 import { OtherToolsSection } from './OtherToolsSection';
 
 const MB = 1024 * 1024;
@@ -124,10 +125,12 @@ describe('OtherToolsSection', () => {
     await waitFor(() => expect(useAppStore.getState().storageOtherTools.status).toBe('idle'));
   });
 
-  it('shows a tool folder in Finder by its full path', async () => {
+  it('shows a tool folder in the file manager by its full path', async () => {
     render(<OtherToolsSection />);
 
-    fireEvent.click(await screen.findByRole('button', { name: 'Show Claude Code in Finder' }));
+    fireEvent.click(
+      await screen.findByRole('button', { name: revealLabelOf({ target: 'Claude Code' }) }),
+    );
 
     await waitFor(() =>
       expect(invokes('reveal_in_file_manager')).toEqual([{ path: '/home/mara/.claude' }]),

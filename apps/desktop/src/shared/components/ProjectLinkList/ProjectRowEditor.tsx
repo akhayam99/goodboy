@@ -7,6 +7,7 @@ import { dispatchWindowEvent } from '../../lib/dispatchWindowEvent';
 import { revealInFileManager } from '../../lib/reveal';
 
 import { NAMES } from '../../utils/names';
+import { revealLabelOf } from '../../utils/revealLabelOf';
 import { BaseBranchSelect } from '../../../features/worktree/BaseBranchSelect';
 import { commitBaseBranch } from '../../../features/worktree/commitBaseBranch';
 import { ProjectAfterMergeField } from './ProjectAfterMergeField';
@@ -82,7 +83,7 @@ export const ProjectRowEditor = ({ project, busy, onUnlink, ignoreField, scripts
         <div className="flex items-center gap-2">
           <Button variant="ghost" size="sm" onClick={() => void reveal()} disabled={busy}>
             <FolderOpen size={ICON_SIZE.row} aria-hidden />
-            Show in Finder
+            {revealLabelOf()}
           </Button>
           <CopyButton value={project.rootPath} label="path" />
         </div>

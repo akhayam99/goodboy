@@ -14,6 +14,7 @@ vi.mock('../../../../store', () => ({
 
 import { ArtifactNewMenu } from './ArtifactNewMenu';
 import { newArtifactEventName } from '../../newArtifactEventName';
+import { revealLabelOf } from '../../../../shared/utils/revealLabelOf';
 
 const SESSION_ID: SessionId = JSON.parse('"session-1"');
 
@@ -46,6 +47,6 @@ describe('ArtifactNewMenu', () => {
     expect(screen.queryByText('Report')).toBeNull();
     expect(screen.queryByText('Wireframe')).toBeNull();
     screen.getByRole('menuitem', { name: /Import wireframe JSON/ });
-    screen.getByRole('menuitem', { name: /Show in Finder/ });
+    screen.getByRole('menuitem', { name: revealLabelOf() });
   });
 });

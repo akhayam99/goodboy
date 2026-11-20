@@ -25,6 +25,7 @@ import {
   type StoryStore,
 } from '../../../../store/storyHarness';
 import { ToastProvider } from '../../../../shared/components/Toast';
+import { revealLabelOf } from '../../../../shared/utils/revealLabelOf';
 import { RepoEntry } from './index';
 
 let useAppStore: StoryStore;
@@ -404,7 +405,9 @@ describe('the repositories entry in the top bar', () => {
 
     open();
     const row = rowOf({ name: 'payments-api' });
-    fireEvent.click(within(row).getByRole('button', { name: 'Show payments-api in Finder' }));
+    fireEvent.click(
+      within(row).getByRole('button', { name: revealLabelOf({ target: 'payments-api' }) }),
+    );
     fireEvent.click(within(row).getByRole('button', { name: 'Open payments-api in the editor' }));
 
     await waitFor(() => expect(callsOf({ command: 'open_in_editor' })).toHaveLength(1));

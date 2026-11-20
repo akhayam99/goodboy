@@ -2,6 +2,7 @@ import { SquareArrowOutUpRight, FolderOpen } from '@goodboy/ui/icons';
 import { Button, ICON_SIZE, SectionHeader, TruncatedText } from '@goodboy/ui';
 
 import type { ArtifactSavedCopy as SavedCopy } from '../../hooks/useArtifactSavedCopy';
+import { revealLabelOf } from '../../../../shared/utils/revealLabelOf';
 
 type Props = {
   readonly savedCopy: SavedCopy;
@@ -40,7 +41,7 @@ export const ArtifactSavedCopy = ({ savedCopy }: Props) => {
             data-testid="artifact-saved-copy-reveal"
           >
             <FolderOpen size={ICON_SIZE.row} aria-hidden />
-            Show in Finder
+            {revealLabelOf()}
           </Button>
         ) : null}
       </div>

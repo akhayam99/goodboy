@@ -1,5 +1,6 @@
 import { Bot, FolderOpen } from '@goodboy/ui/icons';
 import { ICON_SIZE, IconButton, Tooltip } from '@goodboy/ui';
+import { revealLabelOf } from '../../../../../shared/utils/revealLabelOf';
 
 export const TooltipShortcutStage = () => (
   <div
@@ -17,7 +18,7 @@ export const TooltipShortcutStage = () => (
           <Bot size={ICON_SIZE.control} aria-hidden />
         </button>
       </Tooltip>
-      <IconButton icon={FolderOpen} label="Show in Finder" />
+      <IconButton icon={FolderOpen} label={revealLabelOf()} />
     </div>
   </div>
 );
