@@ -42,8 +42,9 @@ never colors the text, fills the surface or draws a line.
 - **Children** render under the body at full width, for live work the notice
   owns, such as the terminal of a CLI update running inside the card.
 
-Every message shape in the desktop app renders through it. `ErrorStrip` is a
-thin `Notice placement="banner"` for a failed load with Retry. Budget alerts
+Every message shape in the desktop app renders through it. `ErrorStrip` is the
+one shape for a failed load, a thin danger `Notice` with Retry and Details
+(Empty states, state 4). Budget alerts
 and the unpriced-turns warning are banners. Guide tips, the partial brief after a step,
 the branch switch confirmation and merge conflicts are `inline`. So are three
 failures that used to print one red line: the wireframe viewer ("Couldn't show
@@ -87,9 +88,17 @@ and answers again when the work ends. The product rules live in
   a partial or uncertain write asks you to check the current state first.
   `hostErrorRecoveryOf` offers tool settings for rejected credentials and the
   neutral sentence for other failures. The toast is its preview. The control comes back enabled, so the
-  click is the retry. A form the user is still looking at keeps its error next
-  to its footer instead, as DESIGN.md says. Never a toast, an inline banner and
-  a suggestion for the same outcome.
+  click is the retry, and the row stays as it was. A field the user is typing
+  in shows `FieldError` instead, and a form the user is still looking at keeps
+  its error next to its actions, as DESIGN.md says. Never a toast, an inline
+  banner and a suggestion for the same outcome.
+- **One action, one row.** When one action fails on several objects with the
+  same title, the failures fold into one row with the count and one Retry
+  ("Couldn't delete 2 local branches"), never a row and a toast per object. An
+  action that runs offline lights one toast, not dozens. The title names the
+  real object ("Couldn't merge pull request #412", "Couldn't delete the local
+  branch hl/fix-duplicate-credit"), and the raw detail goes through the same
+  redaction as the log.
 - **A result line is the one channel.** A control that keeps its result in
   place shows it with `ActionRunLine`
   (`apps/desktop/src/shared/components/ActionRunLine.tsx`): a
@@ -204,15 +213,21 @@ A page is always in one of five states, and each state has one shape. So "nothin
 here" never reads five ways, loading never looks empty, and a failure is never
 drawn as an empty list.
 
-1. **Loading.** Never empty and never "Nothing yet" while loading. Keep the
-   last known content, or show the section's heading with a muted "Loading"
-   line. Unread lists show three SkeletonRow rows with accessible loading names
-   and aria-busy. A part that reloads keeps its last known content.
+1. **Loading.** Never empty, never "Nothing yet" and never the word on screen.
+   Keep the last known content, or draw a skeleton that copies the real
+   layout: cards for a page of numbers (Impact, Budget), three `SkeletonRow`
+   rows for a list. The words that say what loads live in the skeleton's
+   accessible name, with `aria-busy`. No page draws a generic block of cards
+   that does not match its own layout. A long wait (Storage measuring a folder)
+   keeps the name of the row it measures visible. A part that reloads keeps its
+   last known content.
 2. **First time.** Something will be here, and nothing has made it yet.
    `EmptyState size="page"`: a bare 18px icon in `text-muted-foreground` (no
    circle, no fill, no border), a title that says what will be here, one
-   sentence that says how it gets here, and one primary that starts it. A page
-   with nothing the person can start (Questions) has no primary. Inside a
+   sentence that says how it gets here, and one primary that starts it. The
+   title reads "No" and the things, then "yet" ("No workflows yet"). A state
+   that names a step carries that step as its button, or does not name it. A
+   page with nothing the person can start (Questions) has no primary. Inside a
    section of a page, `EmptyState size="section"`: one line, no card and no
    padding block.
    A stage may hold its input. The empty chat is one stage centred both ways and
@@ -222,11 +237,14 @@ drawn as an empty list.
 3. **Nothing matches.** A filter or a search hides everything. `EmptyLine`
    with `Clear filter` (or `Clear search`), or the next place to look. It never
    uses the first-time shape: the list exists, the filter is the cause.
-4. **Can't load.** `Notice tone="danger" placement="inline" role="alert"`: a
-   title that names what failed, the reason in words, the fix, `Retry`, and
-   `Details` with the raw text. A permission problem uses `tone="warning"` and
-   names the fix. A failure is never an empty state, and an empty state is
-   never shown while a load failed.
+4. **Can't load.** `ErrorStrip`, an inline danger `Notice` with
+   `role="alert"`: the title is always "Couldn't load" and what failed, the
+   body gives the reason in words, then `Retry`, and `Details` with the raw
+   text. One strip per view, never one per request: two failed reads of one
+   page share a strip and a Retry ("Couldn't load pull requests and review
+   throughput"). A permission problem uses `tone="warning"` and names the fix.
+   A failure is never an empty state, and an empty state is never shown while
+   a load failed.
 5. **Not connected.** The tool behind the page is not connected. The
    `IntegrationConnectPanel` pattern for one tool, a `page` state with
    `Connect a tool` where several tools feed the page (Tasks).
@@ -254,26 +272,32 @@ is the only shape for a one-line empty, never bare text in its own style.
 ### Page by state
 
 A cell names the shape that page uses. N/A means the state cannot happen
-there. `0.22.1` marks a page the sweep has not reached yet: it still shows its
-old shape, and the next round moves it.
+there. The table is the contract: a page that does not draw its cell yet is a
+defect to fix when the page is touched, and its test moves with it.
 
-| Page           | Loading                                  | First time                                                                                       | Nothing matches                                          | Can't load                                                          | Not connected                             |
-| -------------- | ---------------------------------------- | ------------------------------------------------------------------------------------------------ | -------------------------------------------------------- | ------------------------------------------------------------------- | ----------------------------------------- |
-| Runs           | The run page draws goal, facts, steps    | `page`: No runs yet, Run a workflow. `section`: No runs in progress                              | N/A                                                      | N/A                                                                 | N/A                                       |
-| Agents         | Skeleton rows                            | `page`: No agents yet, Start an agent. `section`: No active agents                               | N/A                                                      | N/A                                                                 | N/A                                       |
-| Artifacts      | Three skeleton rows                      | `page`: No artifacts yet, New artifact                                                           | `EmptyLine`: No plans in this session, Clear filter      | `Notice` danger: Could not load artifacts, Retry and Details        | N/A                                       |
-| Scripts        | Muted line: Reading scripts in a project | `page`: No scripts yet, Add folder. `section`: No scripts in a project, Pin a script, New script | `EmptyLine`: No scripts match, Clear filter              | `Notice` danger: Couldn't read the scripts of a project, Retry      | N/A                                       |
-| Questions      | Skeleton rows                            | `page`: No questions yet, no primary                                                             | N/A                                                      | 0.22.1                                                              | N/A                                       |
-| Activity       | Skeleton rows                            | `section`: No runs or agents yet, See Log only while the log has entries                         | `EmptyLine`: No log entries match, Clear search          | N/A                                                                 | N/A                                       |
-| Notifications  | Skeleton rows                            | `section`: No notifications yet, one line and no Unread or All tabs                              | `section`: You're caught up (Unread view)                | N/A                                                                 | N/A                                       |
-| Tasks          | Skeleton rows                            | `page`: No items yet                                                                             | `EmptyLine`: No items match these filters, Clear filters | `Notice`, warning for a permission problem, Retry and Open settings | `page`: No tool connected, Connect a tool |
-| Board lanes    | Archived shows a muted Loading line      | `section` inside each lane, the lane keeps its full height                                       | N/A                                                      | N/A                                                                 | N/A                                       |
-| Checks         | A muted Loading line                     | `section`: No checks have reported yet                                                           | N/A                                                      | `Notice`, warning when the credential lacks access, Retry           | N/A                                       |
-| Comments       | 0.22.1                                   | 0.22.1                                                                                           | 0.22.1                                                   | 0.22.1                                                              | 0.22.1                                    |
-| Commits        | Three skeleton rows                      | `section`: No commits yet on this branch                                                         | N/A                                                      | `Notice` danger: Could not load commits, Retry and Details          | N/A                                       |
-| Impact         | Skeleton cards                           | `page`: Impact fills in as sessions finish, spend line                                           | N/A                                                      | `Notice` danger: Retry and Details                                  | N/A                                       |
-| Chat           | Header, three messages and composer      | `page`, no rail: No chats yet, Start a chat                                                      | `EmptyLine`: No chats match this filter, Clear filter    | `Notice` danger: Could not load chats, Retry and Details            | N/A                                       |
-| Settings lists | 0.22.1                                   | 0.22.1                                                                                           | 0.22.1                                                   | 0.22.1                                                              | 0.22.1                                    |
+| Page           | Loading                               | First time                                                                                          | Nothing matches                                          | Can't load                                                          | Not connected                                      |
+| -------------- | ------------------------------------- | --------------------------------------------------------------------------------------------------- | -------------------------------------------------------- | ------------------------------------------------------------------- | -------------------------------------------------- |
+| Runs           | The run page draws goal, facts, steps | `page`: No runs yet, Run a workflow. `section`: No runs in progress                                 | N/A                                                      | N/A                                                                 | N/A                                                |
+| Agents         | Skeleton rows                         | `page`: No agents yet, Start an agent. `section`: No active agents                                  | N/A                                                      | N/A                                                                 | N/A                                                |
+| Artifacts      | Three skeleton rows                   | `page`: No artifacts yet, New artifact                                                              | `EmptyLine`: No plans in this session, Clear filter      | `ErrorStrip`: Couldn't load artifacts, Retry and Details            | N/A                                                |
+| Scripts        | Three skeleton rows                   | `page`: No scripts yet, Add folder. `section`: No scripts in a project, Pin a script, New script    | `EmptyLine`: No scripts match, Clear filter              | `ErrorStrip`: Couldn't load the scripts of a project, Retry         | N/A                                                |
+| Questions      | Skeleton rows                         | `page`: No questions yet, no primary                                                                | N/A                                                      | `ErrorStrip`: Couldn't load questions, Retry and Details            | N/A                                                |
+| Activity       | Skeleton rows                         | `section`: No runs or agents yet, See Log only while the log has entries                            | `EmptyLine`: No log entries match, Clear search          | N/A                                                                 | N/A                                                |
+| Notifications  | Skeleton rows                         | `section`: No notifications yet, one line and no Unread or All tabs                                 | `section`: You're caught up (Unread view)                | N/A                                                                 | N/A                                                |
+| Tasks          | Skeleton rows                         | `page`: No items yet                                                                                | `EmptyLine`: No items match these filters, Clear filters | `Notice`, warning for a permission problem, Retry and Open settings | `page`: No tool connected, Connect a tool          |
+| Board lanes    | Archived shows skeleton rows          | `section` inside each lane, the lane keeps its full height                                          | N/A                                                      | N/A                                                                 | N/A                                                |
+| Checks         | Skeleton rows                         | `section`: No checks have reported yet                                                              | N/A                                                      | `Notice`, warning when the credential lacks access, Retry           | N/A                                                |
+| Comments       | Skeleton rows                         | `section`: No comments yet                                                                          | `EmptyLine`: No comments match, Clear filter             | `ErrorStrip`: Couldn't load comments, Retry and Details             | N/A                                                |
+| Commits        | Three skeleton rows                   | `section`: No commits yet on this branch. No project: Add a project to see its commits, Add project | N/A                                                      | `ErrorStrip`: Couldn't load commits, Retry and Details              | N/A                                                |
+| Impact         | Skeleton cards                        | `page`: Impact fills in as sessions finish, spend line                                              | N/A                                                      | `ErrorStrip`: one strip for the page, Retry and Details             | N/A                                                |
+| Chat           | Header, three messages and composer   | `page`, no rail: No chats yet, Start a chat                                                         | `EmptyLine`: No chats match this filter, Clear filter    | `ErrorStrip`: Couldn't load chats, Retry and Details                | N/A                                                |
+| Workflows      | Three skeleton rows                   | `page`: No workflows yet, Restore built-in workflows                                                | `EmptyLine`: No workflows match, Clear search            | `ErrorStrip`: Couldn't load workflows, Retry and Details            | N/A                                                |
+| Monitoring     | Skeleton rows                         | `page`: No ports in use                                                                             | `EmptyLine`: No ports match, Clear search                | `ErrorStrip`: Couldn't load ports, Retry and Details                | N/A                                                |
+| Terminal       | N/A, a tab opens on its click         | `page`: No terminals yet, New terminal                                                              | `EmptyLine` in the New terminal picker                   | `ErrorStrip`: Couldn't open the terminal, Retry and Details         | N/A                                                |
+| Connections    | Skeleton rows                         | `page`: No providers connected, Connect a provider                                                  | `EmptyLine`: No tools match, Clear search                | `ErrorStrip`: Couldn't load connections, Retry and Details          | `IntegrationConnectPanel` on the page of each tool |
+| Search         | Skeleton rows, the query stays        | N/A                                                                                                 | `EmptyLine`: No results, Clear search                    | `ErrorStrip`: Couldn't search, Retry and Details                    | N/A                                                |
+| Palette        | `PaletteSkeleton`                     | N/A                                                                                                 | `EmptyLine`: No commands match                           | N/A                                                                 | N/A                                                |
+| Settings lists | Skeleton rows                         | `section` in the first-time words above, with the action that adds one                              | `EmptyLine`: No settings match, Clear search             | `ErrorStrip` that names the list, Retry and Details                 | N/A                                                |
 
 The new session draft is the kickoff. It asks "How do you want to
 start?" and answers with a single-select list of three rows, each a concept

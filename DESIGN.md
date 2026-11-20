@@ -161,7 +161,7 @@ list.
 
 ## One frame for every page
 
-Eleven rules for how a page is built and how the user moves between pages. They
+Fourteen rules for how a page is built and how the user moves between pages. They
 came from reviewing the running app page by page; a screen that breaks one reads
 as a different product. Tokens are in
 [packages/ui/DESIGN-SYSTEM.md](./packages/ui/DESIGN-SYSTEM.md), the navigation
@@ -204,12 +204,22 @@ model in [docs/navigation/model.md](./docs/navigation/model.md).
 - **One state word per thing, from one source.** A run, an agent and a pull
   request read their word from one function; the crumb, the list, the rail and
   the composer cannot disagree.
+- **A run page says a step in one word.** The tail of a run reads only the
+  word from `runStateOf` (Needs you, Needs approval, Stopped, Running) and its
+  verb. The sentence that explains why (no output for a while, the plan waits
+  for approval, what comes next) sits at the top of the agent's page, with its
+  Retry or Continue. A run is a list you scan; the reason is read where you
+  act on it.
 - **Air between blocks, density inside rows.** The head, the blocks of a page
   header and the transcript turns breathe through tokens. A row, a rail and a
   list stay dense.
 - **One overflow menu per scope.** A page, a row or a panel has at most one `⋯`,
   of five rows or fewer. A detail page shows the menu of what it shows, the
-  session menu is one crumb up.
+  session menu is one crumb up. A row enters a menu only when no visible
+  control on the same screen already offers its verb, and a repair verb
+  (refresh, resync) stays out when a key already runs it. The screen's primary
+  action is never in its own `⋯`. Order, names and shape are in
+  [controls.md](packages/ui/design/controls.md#menus).
 - **One filled button per row and per header, and every verb has an intent.**
   Primary is the one next step. Rebase, force push and reset are caution;
   delete, discard and Stop are destructive and quiet; filled only inside a
@@ -266,12 +276,16 @@ about its effect is a worse defect than one that reads badly.
   implementer steps on Sonnet 5 medium, last 90 days"). Progress toward an
   estimate moves only while the machine works, so a step that waits on you
   stops where it was. Unknown shows a dash or nothing, never a guess.
-- **Reversible acts immediately, definitive asks first.** Archiving and
-  similar actions happen at once, with an undo. Anything that destroys data for
-  good, or that acts on a remote provider, asks for confirmation in a popover
-  anchored to its trigger. It
-  states exactly what is lost or sent, including what stays on disk. The same
-  action behaves the same way from every entry point.
+- **Reversible acts immediately, definitive asks first.** Archive, close and
+  removing a local setting (a spend limit) act at once, with Undo in the toast
+  through `undoable`, so ⌘Z takes them back too. Stop, of one agent or of many,
+  never asks: it acts and its toast offers Resume, which restarts the stopped
+  turns through `resumeStoppedAgents`. Esc twice stays the keyboard guard. Only
+  three things ask first, in a popover anchored to the trigger: deleting for
+  good, anything sent to a host (push, force push, disconnect), and throwing
+  away text the user typed. The confirm states exactly what is lost or sent,
+  including what stays on disk. The same action behaves the same way from
+  every entry point, and every Undo and every Resume has a test.
 - **Durable changes land in the timeline.** A change of destination, an archive
   or restore, a discard, a closed workflow, an answer, a publication outcome:
   each one is recorded and linked to the object it concerns. Transcript traffic
@@ -365,10 +379,16 @@ about its effect is a worse defect than one that reads badly.
   where the code makes it true, and promise an action only when a test runs
   it. An error with neither stays a plain log line, which is a defect to fix
   when the site is touched.
-- **Form errors stay inline, action errors go to the log.** A form the user is
-  still looking at (link project, create merge request, confirm notes) keeps
-  its error next to its footer. A one-click action reports to the log. No
-  inline banner stays on screen after its cause is gone. There is one
+- **Three shapes for an error, chosen by what failed.** A field you are typing
+  in shows `FieldError` under it: a danger glyph and the cause in plain text,
+  with `aria-invalid` on the field and `aria-describedby` pointing at the
+  error. A one-click action (a row verb, a chip, a menu row, a switch) calls
+  `reportError`, and the row stays as it was. A load that failed is
+  `ErrorStrip`. A form the user is still looking at (link project, create
+  merge request, confirm notes) keeps its error next to its actions, through
+  `FormActions`. A red sentence is none of these: `red-alert-text.test.ts`
+  counts a `role="alert"` painted `text-danger`, and its baseline only falls.
+  No inline banner stays on screen after its cause is gone. There is one
   exception, and it is also the exception to the budget-alert rule: the
   composer's pre-send routing line. It is live state on an unsent turn, not an
   alert, and it clears the moment routing changes.

@@ -147,12 +147,46 @@ its own actions), so every value list draws the same row. Menus of actions stay
 on `MenuList` (object menus, page menus and the `OverflowMenu` body), and inline
 choice rows stay inline.
 
+## Popovers
+
+`Popover` is the one floating surface for a menu, a picker or a small form,
+and `AnchoredPopover` places it under its trigger. It scrolls by itself: its
+content sits in one `ScrollFade` bounded by the room the placement leaves, so
+a long menu scrolls and fades its edges and a short one draws no fade. A caller
+never wraps the content in a scroller of its own, so one axis has one
+scroller. A search above the list or a row under it stays put with
+`PopoverPin` (`edge="start"` or `edge="end"`), outside the scroller, the way
+Sessions pins its search and Open Board. `Popover.test.tsx` opens a 30 row menu
+in a 400px window and finds it scrolling with the fade.
+
 ## Menus
 
 `MenuList` is the one body for a menu of actions on an object; `ContextMenu`
 places it at the pointer, and an overflow trigger places it in an
 `AnchoredPopover`. The desktop feeds both from the action registry, so the two
 never differ ([docs/navigation/shell.md](../../../docs/navigation/shell.md#context-menus)).
+
+What goes in a menu:
+
+- **A row earns its place.** A verb enters a menu only when it is not already a
+  visible control on the same screen (the toolbar, the head, a banner, the row
+  itself), and a repair verb (refresh, resync) stays out when a key already
+  runs it on the same object. The screen's primary action is never in its own
+  `⋯`.
+- **Order.** Open first, then the verbs of the object, then Copy, then stop,
+  archive and delete.
+- **Names.** A verb and an object from `NAMES`. The menu of the object itself
+  says the bare verb; the palette always names the object. A label ends in
+  `…` only when an input follows the click.
+- **Shape.** At most five rows under a `⋯`, from an explicit list per state,
+  never what a cut left over. The context menu folds Open and Copy into a
+  submenu once each has two rows or more. Dividers appear from five rows up. An
+  icon sits on every row or on none.
+- **Guard.** `menuShape.test.ts` draws every kind in every state the menu
+  state helpers know (session, agent, run, artifact, branch, commit, worktree
+  and port rows) and counts the rows off the rule: over five, a repair verb,
+  a divider under five rows, mixed icons, rows out of order. Its baseline only
+  falls.
 
 - **Surface**: level 4 (`FLOATING_SURFACE`: `floating`, `shadow-lg`, `floating-edge`,
   `rounded-lg`), 240px wide with a 200px floor and a 384px ceiling

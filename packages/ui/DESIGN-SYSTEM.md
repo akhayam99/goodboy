@@ -371,7 +371,10 @@ end corner of the box it sits in (`COUNT_BADGE_CORNER`), a box the size of the
 glyph and never of the button, so the pill overlaps the glyph's corner by a
 few pixels and stays clear of the label under it, the way macOS dock badges
 sit. A count beside a word stays the inline number above, never a pill, the
-way Linear sidebar counts read. A count of things that are fine (terminals
+way Linear sidebar counts read. So does a count on a tab, a group or a facet:
+the muted `tabular-nums` number, which stays when its tab is picked; groups and
+facets hide 0, never 1 ([layout.md](design/layout.md) → Tabs and counts). The
+pill is for attention only: the bar, a corner, a filter, "N similar". A count of things that are fine (terminals
 running, tabs open) is no badge at all: Terminal and Browser keep it in the tooltip
 (`session-tools-quiet`), and its signal dot takes the same corner
 (`session-tools-signal`, which `validateScenesToolSignal.mjs` fails when the

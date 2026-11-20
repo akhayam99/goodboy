@@ -15,6 +15,12 @@ removed screen, because the previous version brings it back.
 
 Patch is the default.
 
+A patch never writes data the patch before it cannot read. A new word stored in
+a row, a new state value or a new setting key waits for a minor release, or
+ships in a patch only when the previous patch already reads it. A test that
+pins a stored sentence moves in the same change, and the changelog says what
+an older build shows for the new data.
+
 ## Minor: a one-way door
 
 A minor release (`0.5.x` to `0.6.0`) holds at least one change the previous
