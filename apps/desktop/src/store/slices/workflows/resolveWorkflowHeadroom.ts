@@ -1,5 +1,5 @@
 import { readHeadroom, type HeadroomMap } from '@goodboy/core/providers';
-import type { SessionId, WorkflowRules } from '@goodboy/types';
+import type { SessionId, WorkflowRules, WorkspaceId } from '@goodboy/types';
 import { sessionById } from '../sessions/sessionIndex';
 import { autoRoutableProviders } from '../../../features/providers/autoRoutableProviders';
 import type { GetFn } from './types';
@@ -10,10 +10,13 @@ type Params = {
   readonly rules: WorkflowRules | null | undefined;
 };
 
-const readNow = ({ get, sessionId }: Pick<Params, 'get' | 'sessionId'>) => {
+type ReadParams = {
+  readonly get: GetFn;
+  readonly workspaceId: WorkspaceId | null;
+};
+
+const readNow = ({ get, workspaceId }: ReadParams) => {
   const state = get();
-  const workspaceId =
-    sessionById(state.sessions, sessionId)?.workspaceId ?? state.currentWorkspaceId;
   const policy =
     workspaceId === null ? null : (state.workspaceOverrides?.[workspaceId]?.providerPool ?? null);
   const connected = autoRoutableProviders({ providers: state.providers ?? [] });
@@ -32,12 +35,13 @@ export const resolveWorkflowHeadroom = async ({
   if (rules?.spreadByHeadroom !== true) {
     return null;
   }
-  const first = readNow({ get, sessionId });
+  const workspaceId = sessionById(get().sessions, sessionId)?.workspaceId ?? null;
+  const first = readNow({ get, workspaceId });
   if (!first.needsReread) {
     return first.headroom;
   }
   await get()
     .probeProviderLimits()
     .catch(() => undefined);
-  return readNow({ get, sessionId }).headroom;
+  return readNow({ get, workspaceId }).headroom;
 };
