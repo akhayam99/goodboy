@@ -132,7 +132,7 @@ describe('the update card scenes', () => {
   it('u26s-update-failed says nothing changed and offers Retry', async () => {
     await mount({ id: 'u26s-update-failed' });
 
-    expect(verbsOfCard({ name: 'Goodboy 0.27.2 did not install' })).toEqual(['Later', 'Retry']);
+    expect(verbsOfCard({ name: "Goodboy 0.27.2 didn't install" })).toEqual(['Later', 'Retry']);
     screen.getByText('The download was cut off at 61%.');
   });
 

@@ -188,11 +188,11 @@ describe('GoodboyChip on the rail', () => {
     });
     renderChip();
 
-    const mark = screen.getByRole('button', { name: 'Goodboy 0.5.2 did not install' });
+    const mark = screen.getByRole('button', { name: "Goodboy 0.5.2 didn't install" });
     expect(mark.getAttribute('data-tint')).toBe('danger');
     fireEvent.click(mark);
 
-    const card = screen.getByRole('dialog', { name: 'Goodboy 0.5.2 did not install' });
+    const card = screen.getByRole('dialog', { name: "Goodboy 0.5.2 didn't install" });
     within(card).getByText('disk is full');
     fireEvent.click(within(card).getByRole('button', { name: 'Retry' }));
     expect(applyUpdate).toHaveBeenCalledOnce();

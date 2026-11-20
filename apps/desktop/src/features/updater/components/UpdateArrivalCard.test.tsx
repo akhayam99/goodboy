@@ -174,7 +174,7 @@ describe('UpdateArrivalCard', () => {
     const link = within(dialog).getByRole('button', { name: "What's new" });
     const sentence = link.closest('p');
     const verbRow = within(dialog).getByRole('button', { name: 'Later' }).parentElement;
-    expect(sentence?.textContent).toContain('Nothing is running. A restart takes a few seconds.');
+    expect(sentence?.textContent).toContain('Nothing is running, so a restart stops no agent.');
     expect(sentence?.contains(link)).toBe(true);
     expect(sentence?.textContent?.endsWith("What's new")).toBe(true);
     expect(verbRow?.contains(link)).toBe(false);
@@ -184,7 +184,7 @@ describe('UpdateArrivalCard', () => {
   it('ready: says nothing is running and offers Later, What’s new and Restart now', async () => {
     const dialog = await openCard();
 
-    within(dialog).getByText('Nothing is running. A restart takes a few seconds.');
+    within(dialog).getByText('Nothing is running, so a restart stops no agent.');
     expect(verbsOf({ dialog })).toEqual(["What's new", 'Later', 'Restart now']);
 
     fireEvent.click(within(dialog).getByRole('button', { name: 'Restart now' }));
@@ -241,7 +241,7 @@ describe('UpdateArrivalCard', () => {
       updaterStatus: 'available',
       updateFailure: { phase: 'download', message: 'The download was cut off.' },
     });
-    const dialog = await openCard({ name: 'Goodboy 0.24.1 did not install' });
+    const dialog = await openCard({ name: "Goodboy 0.24.1 didn't install" });
 
     within(dialog).getByText('Nothing changed on this Mac.');
     within(dialog).getByText('The download was cut off.');
@@ -256,7 +256,7 @@ describe('UpdateArrivalCard', () => {
     useAppStore.setState({
       updateFailure: { phase: 'install', message: 'The disk is full.' },
     });
-    const dialog = await openCard({ name: 'Goodboy 0.24.1 did not install' });
+    const dialog = await openCard({ name: "Goodboy 0.24.1 didn't install" });
 
     fireEvent.click(within(dialog).getByRole('button', { name: 'Retry' }));
 
