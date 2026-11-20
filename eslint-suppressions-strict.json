@@ -329,11 +329,6 @@
       "count": 1
     }
   },
-  "apps/desktop/src/features/integrations/linear/LinearFormBody.tsx": {
-    "@typescript-eslint/strict-boolean-expressions": {
-      "count": 1
-    }
-  },
   "apps/desktop/src/features/integrations/linear/LinearStudio/useLinearIssues.ts": {
     "@typescript-eslint/strict-boolean-expressions": {
       "count": 6
@@ -415,11 +410,6 @@
     }
   },
   "apps/desktop/src/features/providers/components/ProviderStudio/ProviderBindingsSection.tsx": {
-    "@typescript-eslint/strict-boolean-expressions": {
-      "count": 2
-    }
-  },
-  "apps/desktop/src/features/providers/components/ProviderStudio/ProviderCredentialsSection.tsx": {
     "@typescript-eslint/strict-boolean-expressions": {
       "count": 2
     }

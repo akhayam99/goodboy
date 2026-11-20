@@ -96,7 +96,6 @@
   "apps/desktop/src/features/providers/components/ProviderPolicyList/ProviderPolicyRow.tsx": 2,
   "apps/desktop/src/features/providers/components/ProviderStudio/DefaultsPanel/FallbackRow.tsx": 1,
   "apps/desktop/src/features/providers/components/ProviderStudio/DefaultsPanel/ProvidersInOrder.tsx": 1,
-  "apps/desktop/src/features/providers/components/ProviderStudio/ProviderCredentialsSection.tsx": 2,
   "apps/desktop/src/features/providers/components/ProviderStudio/ProviderPage/AccountGroup/index.tsx": 1,
   "apps/desktop/src/features/reports/components/ReportStudio/ReportOutlineNav.tsx": 1,
   "apps/desktop/src/features/reports/components/ReportStudio/ReportProvenanceRow/index.tsx": 3,

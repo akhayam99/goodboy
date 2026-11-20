@@ -3,15 +3,14 @@ import { PROVIDER_API_KEY_ENV } from '@goodboy/core/providers';
 import { useCallback, useMemo, useState } from 'react';
 import {
   Button,
-  cn,
   ConfirmPopover,
   EmptyState,
+  formatError,
+  FormActions,
   ICON_SIZE,
+  IconButton,
   Input,
   SectionHeader,
-  tintClasses,
-  Tooltip,
-  FOCUS_RING,
 } from '@goodboy/ui';
 import { KeyRound, Plus, Trash2 } from '@goodboy/ui/icons';
 import { type CredentialId, type ProviderId } from '@goodboy/types';
@@ -39,29 +38,32 @@ export const ProviderCredentialsSection = ({ providerId }: Props) => {
   const [label, setLabel] = useState('');
   const [apiKey, setApiKey] = useState('');
   const [isBusy, setIsBusy] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const [armedId, setArmedId] = useState<CredentialId | null>(null);
 
   const reset = useCallback(() => {
     setIsAdding(false);
     setLabel('');
     setApiKey('');
+    setSaveError(null);
   }, []);
 
   const onSave = useCallback(async () => {
-    if (!apiKey.trim()) {
+    if (apiKey.trim() === '') {
       return;
     }
     setIsBusy(true);
+    setSaveError(null);
     try {
       await createCredential(providerId, label, apiKey);
       await refreshProviders();
       reset();
     } catch (err) {
-      void reportError({ recovery: CHECK_STATE, title: "Couldn't save the API key", error: err });
+      setSaveError(`Couldn't save the API key. ${formatError(err)}`);
     } finally {
       setIsBusy(false);
     }
-  }, [apiKey, label, providerId, createCredential, refreshProviders, reset, reportError]);
+  }, [apiKey, label, providerId, createCredential, refreshProviders, reset]);
 
   const onDelete = useCallback(
     async (credentialId: CredentialId) => {
@@ -91,15 +93,12 @@ export const ProviderCredentialsSection = ({ providerId }: Props) => {
         label="API keys"
         hint={`Add one or more ${apiKeyEnv} keys, then assign one to a workspace.`}
         action={
-          !isAdding ? (
-            <button
-              type="button"
-              onClick={() => setIsAdding(true)}
-              className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-meta font-medium text-muted-foreground transition-colors hover:bg-hover hover:text-foreground"
-            >
-              <Plus size={ICON_SIZE.row} aria-hidden /> Add key
-            </button>
-          ) : null
+          isAdding ? null : (
+            <Button size="sm" variant="quiet" onClick={() => setIsAdding(true)}>
+              <Plus size={ICON_SIZE.row} aria-hidden />
+              Add key
+            </Button>
+          )
         }
       />
 
@@ -140,21 +139,11 @@ export const ProviderCredentialsSection = ({ providerId }: Props) => {
                 onConfirm={() => onDelete(c.id)}
                 onCancel={() => setArmedId(null)}
                 trigger={() => (
-                  <Tooltip content={`Remove ${c.label}`}>
-                    <button
-                      type="button"
-                      aria-label={`Remove ${c.label}`}
-                      onClick={() => setArmedId(c.id)}
-                      className={cn(
-                        'inline-flex size-7 items-center justify-center rounded-md text-muted-foreground',
-                        tintClasses('danger').hoverBg,
-                        'hover:text-danger',
-                        FOCUS_RING,
-                      )}
-                    >
-                      <Trash2 size={ICON_SIZE.row} aria-hidden />
-                    </button>
-                  </Tooltip>
+                  <IconButton
+                    icon={Trash2}
+                    label={`Remove ${c.label}`}
+                    onClick={() => setArmedId(c.id)}
+                  />
                 )}
               />
             </li>
@@ -166,26 +155,38 @@ export const ProviderCredentialsSection = ({ providerId }: Props) => {
         <div className="flex flex-col gap-2">
           <Input
             autoFocus
+            aria-label="Key label"
             value={label}
             onChange={(e) => setLabel(e.target.value)}
             placeholder="Label (e.g. work, personal)"
           />
           <Input
             type="password"
+            aria-label={`${apiKeyEnv} value`}
             value={apiKey}
             onChange={(e) => setApiKey(e.target.value)}
             placeholder={`${apiKeyEnv} value`}
           />
-          <div className="flex items-center justify-end gap-2">
-            <Button variant="ghost" size="sm" onClick={reset} disabled={isBusy}>
+          <FormActions error={saveError}>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={reset}
+              disabled={isBusy}
+              className="text-muted-foreground"
+            >
               Cancel
             </Button>
-            <Button size="sm" onClick={() => void onSave()} disabled={isBusy || !apiKey.trim()}>
-              <span className={isBusy ? 'text-shimmer' : undefined}>
-                {isBusy ? 'Validating' : 'Save key'}
-              </span>
+            <Button
+              size="sm"
+              onClick={() => void onSave()}
+              isBusy={isBusy}
+              busyLabel="Validating"
+              disabled={apiKey.trim() === ''}
+            >
+              {saveError === null ? 'Save key' : 'Retry'}
             </Button>
-          </div>
+          </FormActions>
         </div>
       ) : null}
     </section>
