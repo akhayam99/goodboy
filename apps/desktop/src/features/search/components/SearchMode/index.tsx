@@ -296,7 +296,7 @@ export const SearchMode = ({
               }
               description={
                 results.hasFailed
-                  ? 'Search could not read its index. Try again, or rebuild it in Settings.'
+                  ? "Search couldn't read its index. Try again, or rebuild it in Settings."
                   : undefined
               }
               className="justify-center"

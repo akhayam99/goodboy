@@ -42,7 +42,7 @@ export const LocateMovedProjects = ({ workspaceId, onChoose, isChoosing = false 
         detail={
           repairFailures.length === 0
             ? null
-            : `Git links or saved versions could not be carried over for ${countNoun({ count: repairFailures.length, one: 'folder' })}.${repairReason?.repairError == null ? '' : ` ${repairReason.repairError}`}`
+            : `Git links or saved versions couldn't be carried over for ${countNoun({ count: repairFailures.length, one: 'folder' })}.${repairReason?.repairError == null ? '' : ` ${repairReason.repairError}`}`
         }
         actions={
           <Button variant="secondary" size="sm" onClick={() => void undo()}>

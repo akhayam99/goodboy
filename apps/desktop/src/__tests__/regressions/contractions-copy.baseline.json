@@ -1,6 +1,4 @@
 {
-  "app/components/BootSplash/NewerDatabaseScreen.tsx": 3,
-  "app/components/SessionRail/SessionLevel/worktreeCardEntriesOf.ts": 1,
   "features/actions/kinds/artifact.ts": 2,
   "features/actions/kinds/pullRequest.ts": 1,
   "features/artifacts/artifactQuestionContract.ts": 1,
@@ -50,7 +48,6 @@
   "features/resolve/hooks/useReviewCommentController/index.ts": 1,
   "features/review/components/WriteReview/useReviewDiff.ts": 1,
   "features/scripts/components/ScriptsPanel/index.tsx": 1,
-  "features/search/components/SearchMode/index.tsx": 1,
   "features/session/agent-kind.ts": 13,
   "features/session/ask/buildAskSystemPrompt.ts": 2,
   "features/session/components/ContextDrawer/ContextVisibility.tsx": 1,
@@ -85,13 +82,5 @@
   "features/workflows/composeChildRoutingPrompt.ts": 2,
   "features/workflows/stepPolishFields.ts": 1,
   "features/workspace-chat/buildChatSystemPrompt.ts": 2,
-  "features/workspace/components/LocateMovedProjects/index.tsx": 1,
-  "features/workspace/components/ProjectGitPill/ProjectGitDetail.tsx": 2,
-  "features/workspace/components/StageBoard/index.tsx": 2,
-  "features/workTreeModel/workTime.ts": 1,
-  "shared/components/NewWorkspaceForm/FolderFaceChoice.tsx": 1,
-  "shared/components/ProfileForm/ProfileAccessPopover.tsx": 1,
-  "shared/components/RoutingPicker/AxesSection.tsx": 1,
-  "shared/components/RoutingPicker/ProviderGrid.tsx": 1,
-  "shared/components/RoutingPicker/RoutingPickerBody.tsx": 1
+  "features/workTreeModel/workTime.ts": 1
 }
