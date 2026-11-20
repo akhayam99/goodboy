@@ -282,10 +282,9 @@ impl Git {
 
     fn build(&self) -> Command {
         let binary = self.binary.to_string_lossy();
-        let mut command = if self.login_env {
-            crate::path_env::command_with_login_env(&binary)
-        } else {
-            crate::path_env::command(&binary)
+        let mut command = match self.login_env {
+            true => crate::path_env::command_with_login_env(&binary),
+            false => crate::path_env::command(&binary),
         };
         command
             .env("GIT_TERMINAL_PROMPT", "0")
@@ -386,10 +385,9 @@ impl Executed {
 fn execute(mut command: Command, input: Option<Vec<u8>>, timeout: Duration) -> Executed {
     crate::process_group::isolate(&mut command);
     command
-        .stdin(if input.is_some() {
-            Stdio::piped()
-        } else {
-            Stdio::null()
+        .stdin(match input {
+            Some(_) => Stdio::piped(),
+            None => Stdio::null(),
         })
         .stdout(Stdio::piped())
         .stderr(Stdio::piped());

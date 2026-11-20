@@ -651,11 +651,8 @@ where
         let Some(secret) = read(&legacy)? else {
             continue;
         };
-        let scope = if github_binding_exists(conn, &container_id, None)? {
-            Some(project_id.as_str())
-        } else {
-            None
-        };
+        let scope =
+            github_binding_exists(conn, &container_id, None)?.then_some(project_id.as_str());
         if github_binding_exists(conn, &container_id, scope)? {
             clear(&legacy)?;
             continue;

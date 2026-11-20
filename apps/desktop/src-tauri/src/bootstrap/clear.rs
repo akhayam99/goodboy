@@ -149,9 +149,9 @@ pub(crate) fn clear_root(
         let content = current.get(&change.path).cloned().unwrap_or(None);
         if matches_snapshot(change, &content) {
             clear.push(change);
-        } else {
-            kept.push(change.path.clone());
+            continue;
         }
+        kept.push(change.path.clone());
     }
     let added: Vec<&Change> = clear
         .iter()

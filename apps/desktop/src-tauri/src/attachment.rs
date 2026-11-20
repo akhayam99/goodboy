@@ -82,12 +82,9 @@ pub(crate) fn sanitize_segment(name: &str) -> String {
         .unwrap_or("image");
     let cleaned: String = base
         .chars()
-        .map(|c| {
-            if c.is_ascii_alphanumeric() || matches!(c, '.' | '-' | '_') {
-                c
-            } else {
-                '_'
-            }
+        .map(|c| match c {
+            'a'..='z' | 'A'..='Z' | '0'..='9' | '.' | '-' | '_' => c,
+            _ => '_',
         })
         .collect();
     match cleaned.as_str() {

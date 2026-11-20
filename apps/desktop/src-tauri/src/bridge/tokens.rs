@@ -44,15 +44,14 @@ impl TokenStore {
         let mut guard = self.entries.lock().unwrap();
         let now = Instant::now();
         guard.retain(|e| e.expires_at > now);
-        if let Some(pos) = guard
+        let Some(pos) = guard
             .iter()
             .position(|e| e.token.len() == token.len() && e.token == token)
-        {
-            guard.remove(pos);
-            true
-        } else {
-            false
-        }
+        else {
+            return false;
+        };
+        guard.remove(pos);
+        true
     }
 }
 

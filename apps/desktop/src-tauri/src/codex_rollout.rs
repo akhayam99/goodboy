@@ -186,10 +186,9 @@ fn last_match<R: Read + Seek, T>(mut reader: R, read_line: fn(&[u8]) -> Option<T
         reader.read_exact(&mut chunk).ok()?;
         chunk.extend_from_slice(&carry);
         let mut lines = chunk.split(|byte| *byte == b'\n').collect::<Vec<_>>();
-        let head = if start > 0 {
-            lines.remove(0).to_vec()
-        } else {
-            Vec::new()
+        let head = match start > 0 {
+            true => lines.remove(0).to_vec(),
+            false => Vec::new(),
         };
         if let Some(found) = lines.iter().rev().find_map(|line| read_line(line)) {
             return Some(found);

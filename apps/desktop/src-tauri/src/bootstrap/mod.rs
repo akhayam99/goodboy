@@ -310,10 +310,9 @@ pub(crate) fn prepare(args: PrepareArgs) -> Result<BootstrapPrepared, BootstrapE
     let mut size_iter = sizes.into_iter();
     let mut files: Vec<MovedFile> = Vec::new();
     for change in &changes {
-        let size = if change.change == FileChange::Deleted {
-            0
-        } else {
-            size_iter.next().unwrap_or(0)
+        let size = match change.change {
+            FileChange::Deleted => 0,
+            _ => size_iter.next().unwrap_or(0),
         };
         files.push(MovedFile {
             path: change.path.clone(),

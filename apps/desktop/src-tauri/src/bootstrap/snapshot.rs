@@ -191,10 +191,9 @@ pub(crate) struct Content {
 fn mode_of_file(metadata: &std::fs::Metadata) -> &'static str {
     use std::os::unix::fs::PermissionsExt;
     if metadata.permissions().mode() & 0o111 != 0 {
-        "100755"
-    } else {
-        "100644"
+        return "100755";
     }
+    "100644"
 }
 
 #[cfg(not(unix))]

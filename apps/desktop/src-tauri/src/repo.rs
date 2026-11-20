@@ -299,10 +299,9 @@ fn normalize_remote_url(remote: &str) -> Option<String> {
         .rsplit_once('@')
         .map(|(_, value)| value)
         .unwrap_or(without_scheme);
-    let normalized = if scheme.is_some() {
-        without_credentials.to_string()
-    } else {
-        without_credentials.replacen(':', "/", 1)
+    let normalized = match scheme {
+        Some(_) => without_credentials.to_string(),
+        None => without_credentials.replacen(':', "/", 1),
     };
     Some(normalized.trim_end_matches('/').to_lowercase())
 }
@@ -412,10 +411,9 @@ pub(crate) fn find_moved_projects_blocking(args: FindMovedProjectsArgs) -> Vec<M
             MovedProjectMatch {
                 project_id: project.id,
                 path: Some(path.to_string_lossy().into_owned()),
-                verdict: if has_saved_identity {
-                    MovedProjectVerdict::DifferentRepository
-                } else {
-                    MovedProjectVerdict::SameNameUnconfirmed
+                verdict: match has_saved_identity {
+                    true => MovedProjectVerdict::DifferentRepository,
+                    false => MovedProjectVerdict::SameNameUnconfirmed,
                 },
                 identity: Some(identity.clone()),
             }

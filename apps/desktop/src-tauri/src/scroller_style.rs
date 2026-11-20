@@ -3,10 +3,9 @@ fn macos_preferred_scroller_style() -> String {
     use objc2::{class, msg_send};
     let style: isize = unsafe { msg_send![class!(NSScroller), preferredScrollerStyle] };
     if style == 0 {
-        "always".to_string()
-    } else {
-        "hover".to_string()
+        return "always".to_string();
     }
+    "hover".to_string()
 }
 
 #[tauri::command]

@@ -255,12 +255,12 @@ enum Platform {
 impl Platform {
     const fn current() -> Self {
         if cfg!(target_os = "macos") {
-            Platform::Mac
-        } else if cfg!(target_os = "windows") {
-            Platform::Windows
-        } else {
-            Platform::Linux
+            return Platform::Mac;
         }
+        if cfg!(target_os = "windows") {
+            return Platform::Windows;
+        }
+        Platform::Linux
     }
 }
 

@@ -18,10 +18,9 @@ pub(crate) struct ProbeOutput {
 impl ProbeOutput {
     pub(crate) fn primary_text(&self) -> &str {
         if self.stdout.trim().is_empty() {
-            &self.stderr
-        } else {
-            &self.stdout
+            return &self.stderr;
         }
+        &self.stdout
     }
 }
 

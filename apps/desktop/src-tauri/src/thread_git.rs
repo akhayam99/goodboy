@@ -116,18 +116,18 @@ pub(crate) fn fix_on_origin(
 
 pub(crate) fn locate_fix(cwd: &Path, sha: &str, path: Option<&str>) -> FixLocation {
     let is_known = git(cwd, &["cat-file", "-e", &format!("{sha}^{{commit}}")]).is_ok();
-    let landed_as = if is_known {
-        git(
-            cwd,
-            &["rev-parse", "--verify", "--quiet", &format!("{sha}^")],
-        )
-        .ok()
+    let landed_as = is_known
+        .then(|| {
+            git(
+                cwd,
+                &["rev-parse", "--verify", "--quiet", &format!("{sha}^")],
+            )
+            .ok()
+        })
+        .flatten()
         .map(|raw| raw.trim().to_string())
         .filter(|parent| !parent.is_empty())
-        .and_then(|parent| landed_equivalent(cwd, &parent, sha, "HEAD").unwrap_or(None))
-    } else {
-        None
-    };
+        .and_then(|parent| landed_equivalent(cwd, &parent, sha, "HEAD").unwrap_or(None));
     let path_exists = path
         .filter(|value| !value.is_empty())
         .map(|value| git(cwd, &["cat-file", "-e", &format!("HEAD:{value}")]).is_ok());

@@ -146,12 +146,7 @@ fn parse_hit(stdout: &str, repo_root: &Path, home: &Path) -> GoodboyIgnoreStatus
             line: None,
         };
     }
-    let raw_path = PathBuf::from(file);
-    let file_path = if raw_path.is_absolute() {
-        raw_path
-    } else {
-        repo_root.join(&raw_path)
-    };
+    let file_path = repo_root.join(file);
     let project_gitignore = repo_root.join(".gitignore");
     if same_path(&file_path, &project_gitignore) {
         return GoodboyIgnoreStatus {

@@ -437,14 +437,15 @@ fn spawn_terminal<R: Runtime>(request: TerminalSpawnRequest<R>) -> Result<(), Te
                     .and_then(|m| m.get(&sid))
                     .map(|entry| Arc::clone(&entry.slot))
             };
-            if let Some(slot) = slot {
-                let code = crate::proc::pty::exit_code_of(crate::proc::pty::wait_for_exit(
-                    &slot,
-                    |session| &mut session.child,
-                ));
-                (code, false)
-            } else {
-                (-1, true)
+            match slot {
+                Some(slot) => {
+                    let code = crate::proc::pty::exit_code_of(crate::proc::pty::wait_for_exit(
+                        &slot,
+                        |session| &mut session.child,
+                    ));
+                    (code, false)
+                }
+                None => (-1, true),
             }
         };
 

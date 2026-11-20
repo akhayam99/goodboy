@@ -224,10 +224,9 @@ pub(crate) fn read_only_violations(cli: Cli, job: Job, argv: &[String]) -> Vec<S
         after_prompt_flag = arg == "-p" && !policy.prompt_on_stdin;
         flags.push(arg.as_str());
     }
-    let side_job_forbidden: &[&str] = if job == Job::Turn {
-        &[]
-    } else {
-        SIDE_JOB_FORBIDDEN
+    let side_job_forbidden: &[&str] = match job == Job::Turn {
+        true => &[],
+        false => SIDE_JOB_FORBIDDEN,
     };
     for flag in policy.forbidden.iter().chain(side_job_forbidden) {
         let message = format!("{flag} must not be set");
@@ -573,12 +572,11 @@ fn build_turn_args(binary: &str, args: &SpawnOneArgs<'_>, is_stdin_allowed: bool
                 "--model".to_string(),
                 args.model.to_string(),
             ];
-            if permission_mode == "bypassPermissions" {
-                v.push("--force".to_string());
-            } else {
-                v.push("--mode".to_string());
-                v.push("plan".to_string());
-            }
+            let mode_args: &[&str] = match permission_mode {
+                "bypassPermissions" => &["--force"],
+                _ => &["--mode", "plan"],
+            };
+            v.extend(mode_args.iter().map(|arg| arg.to_string()));
             let _ = (
                 args.allowed_tools,
                 args.disallowed_tools,

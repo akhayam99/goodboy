@@ -352,10 +352,9 @@ const IMAGE_BLOCK_HEADER: &str =
 fn image_block(images: &TurnImages) -> String {
     let mut lines = vec![IMAGE_BLOCK_HEADER.to_string()];
     for image in &images.images {
-        let label = if image.is_current {
-            " (this message)"
-        } else {
-            ""
+        let label = match image.is_current {
+            true => " (this message)",
+            false => "",
         };
         lines.push(format!(
             "- {}{label}: {}",
@@ -616,10 +615,9 @@ fn assert_read_only(shape: &str, cli: &[String], codex: CodexSandbox) -> Result<
     if is_profile {
         assert_codex_profile(&cli[..prompt_at])?;
     }
-    let policy_cli = if shape == "claude" {
-        Cli::Claude
-    } else {
-        Cli::Codex
+    let policy_cli = match shape {
+        "claude" => Cli::Claude,
+        _ => Cli::Codex,
     };
     let sandbox_pair = "-s must be \"read-only\"";
     match read_only_violations(policy_cli, Job::Turn, cli)
@@ -773,10 +771,9 @@ fn run_chat_turn(app: &AppHandle, args: ChatTurnArgs) -> Result<String, ChatErro
     let (scope, images) = {
         let conn = db.0.lock().map_err(|_| ChatError::Poisoned)?;
         let scope = load_chat_scope(&conn, &args.chat_id)?;
-        let images = if args.images {
-            crate::chat_images::load_chat_images(&conn, &args.chat_id)?
-        } else {
-            Vec::new()
+        let images = match args.images {
+            true => crate::chat_images::load_chat_images(&conn, &args.chat_id)?,
+            false => Vec::new(),
         };
         (scope, images)
     };

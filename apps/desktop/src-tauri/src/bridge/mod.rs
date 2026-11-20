@@ -262,10 +262,9 @@ fn primary_ipv4() -> Option<String> {
     sock.connect("8.8.8.8:80").ok()?;
     let ip = sock.local_addr().ok()?.ip();
     if ip.is_loopback() || ip.is_unspecified() {
-        None
-    } else {
-        Some(ip.to_string())
+        return None;
     }
+    Some(ip.to_string())
 }
 
 fn device_name() -> String {

@@ -39,7 +39,9 @@ fn rust_files(dir: &Path, out: &mut Vec<std::path::PathBuf>) {
     for path in entries {
         if path.is_dir() {
             rust_files(&path, out);
-        } else if path.extension().is_some_and(|ext| ext == "rs") {
+            continue;
+        }
+        if path.extension().is_some_and(|ext| ext == "rs") {
             out.push(path);
         }
     }
