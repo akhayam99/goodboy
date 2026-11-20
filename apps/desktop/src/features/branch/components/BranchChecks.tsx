@@ -1,8 +1,12 @@
 import { useCallback, useEffect } from 'react';
 import { useShallow } from 'zustand/react/shallow';
-import { REVIEW_SOURCE_CAPABILITIES, REVIEW_SOURCE_LABEL } from '@goodboy/core/review-source';
+import {
+  PULL_REQUEST_NOUNS,
+  REVIEW_SOURCE_CAPABILITIES,
+  REVIEW_SOURCE_LABEL,
+} from '@goodboy/core/review-source';
 import { Button, EmptyState, ICON_SIZE, PageColumn } from '@goodboy/ui';
-import type { MountId, PrCheckRun, SessionId } from '@goodboy/types';
+import type { MountId, PrCheckRun, PullRequestHost, SessionId } from '@goodboy/types';
 import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
 import { hostIconOf } from '../../../shared/components/hostIconOf';
 import { openLink } from '../../open/openLink';
@@ -28,6 +32,7 @@ import { ChecksFailedNotice } from './ChecksFailedNotice';
 type Props = {
   readonly sessionId: SessionId;
   readonly mountId?: MountId | null;
+  readonly remoteHost?: PullRequestHost;
 };
 
 const HOST_NOUN: Readonly<Record<ChecksHost, string>> = {
@@ -43,7 +48,7 @@ const FAILED_CONCLUSIONS: ReadonlySet<PrCheckRun['conclusion']> = new Set<PrChec
   ['failure', 'timed_out', 'cancelled'],
 );
 
-export const BranchChecks = ({ sessionId, mountId = null }: Props) => {
+export const BranchChecks = ({ sessionId, mountId = null, remoteHost = 'github' }: Props) => {
   const github = useAppStore((s) => branchGithubOf({ state: s, sessionId, mountId }));
   const workspaceId = useAppStore((s) => sessionById(s.sessions, sessionId)?.workspaceId ?? null);
   const refreshSessionPrDetail = useAppStore((s) => s.refreshSessionPrDetail);
@@ -167,21 +172,24 @@ export const BranchChecks = ({ sessionId, mountId = null }: Props) => {
       );
     }
     if (view.kind === 'no-pr' || (pr === null && !isPortHost)) {
+      const noun = PULL_REQUEST_NOUNS[remoteHost].long;
       return (
         <EmptyState
           size="page"
           icon={CONCEPT_ICONS.checks}
-          title="No pull request yet"
-          description="Checks run once the pull request exists."
+          title={`No ${noun} yet`}
+          description={`Checks run once the ${noun} exists.`}
           action={
-            <Button
-              {...actionButtonLookOf({ verb: CREATE_ACTION_ID, variant: 'secondary' })}
-              size="sm"
-              disabled={createAction === undefined || createAction.blockedReason !== null}
-              onClick={() => create.trigger({ actionId: CREATE_ACTION_ID })}
-            >
-              Create pull request
-            </Button>
+            createAction === undefined ? undefined : (
+              <Button
+                {...actionButtonLookOf({ verb: CREATE_ACTION_ID, variant: 'secondary' })}
+                size="sm"
+                disabled={createAction.blockedReason !== null}
+                onClick={() => create.trigger({ actionId: CREATE_ACTION_ID })}
+              >
+                {`Create ${noun}`}
+              </Button>
+            )
           }
         />
       );

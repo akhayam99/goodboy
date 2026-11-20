@@ -133,6 +133,19 @@ describe('Checks tab without a pull request', () => {
     expect(screen.getByRole('button', { name: 'Create pull request' })).toBeDefined();
   });
 
+  it('names a merge request on a GitLab remote', async () => {
+    render(
+      <ToastProvider>
+        <BranchChecks sessionId={SESSION.id} remoteHost="gitlab" />
+      </ToastProvider>,
+    );
+    await settle();
+
+    screen.getByText('No merge request yet');
+    screen.getByText('Checks run once the merge request exists.');
+    screen.getByRole('button', { name: 'Create merge request' });
+  });
+
   it('opens the create form through the pull request action', async () => {
     await show();
 

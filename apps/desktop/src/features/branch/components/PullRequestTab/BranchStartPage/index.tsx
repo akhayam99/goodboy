@@ -1,15 +1,17 @@
 import { useMemo, type ReactNode } from 'react';
+import { PULL_REQUEST_NOUNS } from '@goodboy/core/review-source';
 import { EmptyState } from '@goodboy/ui';
-import type { BranchCommit, Session, SessionExternalTask } from '@goodboy/types';
-import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
-import { useAppStore } from '../../../../store';
-import type { BranchNextStep } from '../../branchNextStepOf';
-import { pullRequestPrefillOf } from '../../pullRequestPrefillOf';
-import { BranchConflicts } from './BranchConflicts';
-import { NoPullRequest } from './NoPullRequest';
+import type { BranchCommit, PullRequestHost, Session, SessionExternalTask } from '@goodboy/types';
+import { CONCEPT_ICONS } from '../../../../../shared/components/conceptIcons';
+import { useAppStore } from '../../../../../store';
+import type { BranchNextStep } from '../../../branchNextStepOf';
+import { pullRequestPrefillOf } from '../../../pullRequestPrefillOf';
+import { BranchConflicts } from '../BranchConflicts';
+import { NoPullRequest } from '../NoPullRequest';
 
 type Props = {
   readonly hostForm: ReactNode;
+  readonly host: PullRequestHost;
   readonly session: Session;
   readonly mountPath: string | null;
   readonly branch: string | null;
@@ -26,6 +28,7 @@ const NO_TASKS: ReadonlyArray<SessionExternalTask> = [];
 
 export const BranchStartPage = ({
   hostForm,
+  host,
   session,
   mountPath,
   branch,
@@ -43,9 +46,10 @@ export const BranchStartPage = ({
     [branch, commits, tasks],
   );
   const isStatusLoaded = step.ahead !== null;
+  const noun = PULL_REQUEST_NOUNS[host].long;
   const main = () => {
     if (step.state === 'conflict') {
-      return <BranchConflicts files={conflictFiles} requestNoun="pull request" />;
+      return <BranchConflicts files={conflictFiles} requestNoun={noun} />;
     }
     if (isStatusLoaded && step.state === 'empty') {
       return (
@@ -53,7 +57,7 @@ export const BranchStartPage = ({
           size="page"
           icon={CONCEPT_ICONS.commits}
           title="No commits on this branch yet"
-          description="Commit on this branch to start a pull request"
+          description={`Commit on this branch to start a ${noun}`}
         />
       );
     }
