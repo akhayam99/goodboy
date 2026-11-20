@@ -153,7 +153,20 @@ describe('detectDrift', () => {
       });
       const violation = result.find((v) => v.signal === 'file-edit-from-readonly-kind');
       expect(violation).toBeDefined();
-      expect(violation!.detail).toContain('1 file(s)');
+      expect(violation!.detail).toContain('edited 1 file.');
+    });
+
+    it('words each warning as a plain sentence that names the role', () => {
+      const words = detectDrift({
+        agentKind: 'scout',
+        assistantText: '<<plan>>\n+ const result = compute();',
+        filesEdited: ['src/main.ts', 'src/ledger.ts'],
+      }).map((violation) => violation.detail);
+      expect(words).toEqual([
+        'The Scout wrote a plan. Only a Planner writes plans.',
+        "The Scout edited 2 files. This role doesn't change files.",
+        'The Scout wrote code in its answer. An Implementer changes code.',
+      ]);
     });
   });
 

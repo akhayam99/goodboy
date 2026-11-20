@@ -232,7 +232,7 @@ export const settleTurn = async ({ set, get, ctx }: Params) => {
       void get().emitNotification({
         kind: 'boundary-drift',
         severity: 'warning',
-        title: `${agentRowEarly?.name ?? 'Agent'} drifted from ${earlyAgentKind} role`,
+        title: `${agentRowEarly?.name ?? 'Agent'} stepped outside its role`,
         body: driftViolations[0]!.detail,
         sessionId,
         ...(activeAgentId != null && {

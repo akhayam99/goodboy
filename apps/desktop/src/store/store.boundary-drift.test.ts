@@ -136,6 +136,7 @@ describe('sendTurn boundary drift', () => {
       sessionId: SESSION_ID,
       agentId: AGENT_ID,
     });
-    expect(drift?.title).toContain('drifted from reviewer role');
+    expect(drift?.title).toContain('stepped outside its role');
+    expect(drift?.body).toContain('The Reviewer');
   });
 });
