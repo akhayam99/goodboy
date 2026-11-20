@@ -77,13 +77,13 @@ talking to a market. There are two voices:
 - **A button or menu label is a verb and an object.** Use the developer's
   word: "Rebase on their commits", "Abort rebase", "Restore stashed files",
   not "Bring them in" or "Keep". Offer a copy action only for content the user
-  cannot select where it is shown. In the menu of its own object the verb may
-  stand alone ("Pin"); Search or run always shows it with its object ("Pin
-  session").
+  cannot select where it is shown. Search or run always shows it with its
+  object ("Pin session"). A bare verb in the menu of its own object ("Pin") is
+  planned and not shown yet.
 - **An ellipsis means an input comes next.** "Start a run…" and "Set limit…"
   open a field before anything runs; a label that acts at once has none. The
-  menu draws it, so the word in `NAMES` never ends in one. A progress word
-  keeps its ellipsis: "Starting…", "Closing…".
+  word in `NAMES` never ends in one; a menu that draws it is planned. A
+  progress word keeps its ellipsis: "Starting…", "Closing…".
 - **In a tab or an app, on a host.** "Open in Terminal", "Open in external
   terminal", "Open on GitHub".
 - **Say panel.** A side region of the window is a panel on screen ("Close the

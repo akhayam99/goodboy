@@ -1980,13 +1980,15 @@ session up again in Goodboy.
   longer copy (Folders, Sign out, Resume), so a longer label with the old
   phrase fails too.
 - An action's `label` keeps the verb and the object (**Pin session**), because
-  Search or run lists the same action out of its context. Its optional
-  `menuLabel` holds the bare verb for the menu of its own object (**Pin**). An
-  action meant only for Search or run sets `placement: 'palette'`. An ellipsis follows a label only
-  when an input comes before the action runs (`isInputFirst`: **Start a run…**,
-  **Set limit…**). Menus and buttons draw it; a `NAMES` value never carries it,
-  so aliases and retired names keep matching. A progress word ends in one
-  (**Starting…**, **Closing…**).
+  Search or run lists the same action out of its context. An ellipsis follows
+  a label only when an input comes before the action runs (**Start a run…**,
+  **Set limit…**), and a `NAMES` value never carries it, so aliases and
+  retired names keep matching. A progress word ends in one (**Starting…**,
+  **Closing…**). Planned, not wired yet: the optional `menuLabel` (the bare
+  verb for the menu of its own object, **Pin**), `isInputFirst` (the menu
+  draws the ellipsis) and `placement: 'palette'` (Search or run only) are
+  typed on the action, but resolution drops them and every menu shows
+  `label` today.
 - A tool runs **in** a tab or an app (**Open in Terminal**, **Open in external
   terminal**) and a pull request lives **on** a host (**Open on GitHub**).
 - An action label is a verb and an object in the developer's words: **Rebase on
@@ -2163,9 +2165,9 @@ the old phrase, so check there before a change adds a word.
   plan** when it does not). A tool that waits for you asks for **permission**
   (Allow, Deny); only a plan waits for **approval**.
 - **Pin**: **Pin session** and **Unpin session** keep a session at the top of
-  the list, the rail and the switcher. They are the `label` that Search or run
-  shows; the bare **Pin** and **Unpin** belong to the session's own menu, as
-  its `menuLabel`.
+  the list, the rail and the switcher. They are the `label`, and every menu
+  shows them today; the bare **Pin** and **Unpin** in the session's own menu
+  wait for `menuLabel` to be wired.
 - **Notes**: the one noun for comments you write on your own diff before they
   become a review draft.
 - **Tasks**: the door that lists issues, pull requests, threads and errors from
