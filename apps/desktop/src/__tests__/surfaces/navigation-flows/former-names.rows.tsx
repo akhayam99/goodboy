@@ -11,13 +11,13 @@ export const FORMER_NAME_ROWS: ReadonlyArray<Row> = [
   {
     name: 'searching Open Workflows finds Open Runs in a session',
     covers: ['palette:Open Runs'],
-    open: () => openPalette(/^Open Runs/, 'Open Workflows'),
+    open: () => openPalette(/^Open Runs$/, 'Open Workflows'),
     lands: both(lens('workflows'), () => heading('Runs')),
   },
   {
     name: 'searching Workflow runs finds Open Runs in a session',
     covers: ['palette:Open Runs'],
-    open: () => openPalette(/^Open Runs/, 'Workflow runs'),
+    open: () => openPalette(/^Open Runs$/, 'Workflow runs'),
     lands: both(lens('workflows'), () => heading('Runs')),
   },
   {

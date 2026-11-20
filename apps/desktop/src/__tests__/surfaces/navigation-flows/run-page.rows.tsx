@@ -285,7 +285,7 @@ export const RUN_PAGE_ROWS: ReadonlyArray<Row> = [
     covers: ['navigate', 'palette:Open Runs'],
     open: async (ctx) => {
       await openRunPage(ctx);
-      await openPalette(/^Open Runs/, 'Open Runs');
+      await openPalette(/^Open Runs$/, 'Open Runs');
     },
     lands: backToTheList,
   },
