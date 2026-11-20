@@ -2,6 +2,7 @@ import {
   brandId,
   type AgentId,
   type ArtifactId,
+  type ArtifactKind,
   type AutoAttemptId,
   type AutoDelegationId,
   type AutoTreeId,
@@ -12,7 +13,7 @@ export const AUTO_APPROVAL_STATES = ['needs_approval', 'approved', 'revising'] a
 
 export type AutoApprovalState = (typeof AUTO_APPROVAL_STATES)[number];
 
-export type AutoArtifactKind = 'plan' | 'report' | 'wireframe';
+export type AutoArtifactKind = ArtifactKind;
 
 export type AutoArtifact = Readonly<{
   artifactId: ArtifactId;

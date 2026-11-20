@@ -1,4 +1,6 @@
+import type { PullRequestStateKind } from './github';
 import type { IsoDateTime, MountId, ProjectId, SessionId, WorkspaceId } from './ids';
+import type { PullRequestHost } from './pull-request';
 
 export type MountDiskState = 'unchecked' | 'present' | 'missing' | 'removed';
 
@@ -45,7 +47,7 @@ export type MountTargetSnapshot = Readonly<{
   worktreePath: string;
 }>;
 
-export type MountPullRequestProvider = 'github' | 'gitlab' | 'bitbucket';
+export type MountPullRequestProvider = PullRequestHost;
 
 export type MountPullRequestIdentity = Readonly<{
   provider: MountPullRequestProvider;
@@ -54,7 +56,7 @@ export type MountPullRequestIdentity = Readonly<{
   prNumber: number;
 }>;
 
-export type MountPullRequestState = 'draft' | 'open' | 'approved' | 'queued' | 'merged' | 'closed';
+export type MountPullRequestState = PullRequestStateKind;
 
 export type MountPullRequestLink = MountPullRequestIdentity &
   Readonly<{

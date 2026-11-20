@@ -513,7 +513,6 @@ export {
   restoreArtifactToRevision,
   writeArtifactRevision,
   type RestoreArtifactToRevisionOutcome,
-  type ArtifactRevisionWriteKind,
   type ArtifactRevisionWriteOutcome,
   type ArtifactRevisionWriteParams,
   type ArtifactRevision,

@@ -1,4 +1,4 @@
-import type { PrCheckRun, PrMergeMethod, PullRequestStateKind } from './github';
+import type { PrCheckRun, PrMergeMethod, PrReviewState, PullRequestStateKind } from './github';
 
 export type PullRequestHost = 'github' | 'gitlab' | 'bitbucket';
 
@@ -9,8 +9,7 @@ export type PullRequestPerson = {
   readonly isBot?: boolean;
 };
 
-export type PullRequestReviewerState =
-  'approved' | 'changes_requested' | 'commented' | 'pending' | 'dismissed';
+export type PullRequestReviewerState = PrReviewState;
 
 export type PullRequestReviewer = {
   readonly person: PullRequestPerson;
