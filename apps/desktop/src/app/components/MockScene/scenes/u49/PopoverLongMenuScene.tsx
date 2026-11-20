@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { Ellipsis, FileText } from '@goodboy/ui/icons';
 import {
   AnchoredPopover,
@@ -28,8 +28,13 @@ export const PopoverLongMenuScene = () => {
     expectedHeight: 220,
   });
   const { toggle } = dropdown;
+  const hasOpenedRef = useRef(false);
 
   useEffect(() => {
+    if (hasOpenedRef.current) {
+      return;
+    }
+    hasOpenedRef.current = true;
     toggle();
   }, [toggle]);
 
