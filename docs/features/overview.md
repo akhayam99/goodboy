@@ -37,11 +37,11 @@ The Overview reads top to bottom:
 
 ### Refresh a session
 
-Pull requests opened outside Goodboy, by an agent or from a terminal, show up when a turn ends or when you come back to the window. **Refresh** in the session's `...` menu, or **⌘R**, re-reads projects, branches and pull requests right away.
+Pull requests opened outside Goodboy, by an agent or from a terminal, show up when a turn ends or when you come back to the window. **Refresh session** in ⌘K, or **⌘R**, re-reads projects, branches and pull requests right away.
 
 ### Full log
 
-Follow what happened in a session in one list. The **Log** is the last section of the Overview, always open, and scrolls with the page. **Open the full log** in the session's **⋯** menu, in the Board card's menu and in ⌘K opens the Overview on that section.
+Follow what happened in a session in one list. The **Log** is the last section of the Overview, always open, and scrolls with the page. **Open › Log** in the Board card's menu, or **Open log** in ⌘K, opens the Overview on that section.
 
 - One row per agent, workflow run or fix run shows its state, model, time and cost.
 - Plain facts get a row too, such as context changes, branch events and links.

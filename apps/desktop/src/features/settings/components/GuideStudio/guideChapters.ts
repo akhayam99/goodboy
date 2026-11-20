@@ -268,7 +268,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Session actions and +',
-        desc: 'The + on the Projects card adds or connects a folder. The + on a folder row starts a new branch. More session actions, next to New, holds Ask about this session, Pin, Refresh, Archive and Delete.',
+        desc: 'The + on the Projects card adds or connects a folder. The + on a folder row starts a new branch. More session actions, next to New, holds Pin, Link work, Copy, Archive and Delete.',
       },
       {
         term: 'Agents rail',
@@ -309,7 +309,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Overview',
-        desc: 'Tiles, a board of each branch by state, grouped by project, with its next step, and the Log at the end, always open. Open the full log scrolls to it.',
+        desc: 'Tiles, a board of each branch by state, grouped by project, with its next step, and the Log at the end, always open. Open › Log on a card scrolls to it.',
       },
     ],
     links: [],

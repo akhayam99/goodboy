@@ -67,7 +67,6 @@ type Shape = {
   readonly rows: number;
   readonly overBudget: number;
   readonly repairRows: number;
-  readonly earlySeparators: number;
   readonly hasMixedIcons: boolean;
   readonly isOutOfOrder: boolean;
 };
@@ -120,14 +119,12 @@ const rankOf = ({ label }: LabelParams): number => {
 
 const shapeOf = ({ entries }: ShapeParams): Shape => {
   const items = entries.flatMap((entry) => (entry.kind === 'item' ? [entry] : []));
-  const separators = entries.filter((entry) => entry.kind === 'separator').length;
   const iconRows = items.filter((item) => item.icon !== undefined).length;
   const ranks = items.map((item) => rankOf({ label: item.label }));
   return {
     rows: items.length,
     overBudget: Math.max(0, items.length - MAX_OVERFLOW_ROWS),
     repairRows: items.filter((item) => REPAIR_VERB.test(item.label)).length,
-    earlySeparators: items.length < MAX_OVERFLOW_ROWS ? separators : 0,
     hasMixedIcons: iconRows > 0 && iconRows < items.length,
     isOutOfOrder: ranks.some((rank, index) => index > 0 && rank < (ranks[index - 1] ?? 0)),
   };
@@ -138,7 +135,6 @@ const offRuleCountOf = ({ entries }: ShapeParams): number => {
   return (
     shape.overBudget +
     shape.repairRows +
-    shape.earlySeparators +
     (shape.hasMixedIcons ? 1 : 0) +
     (shape.isOutOfOrder ? 1 : 0)
   );
@@ -264,11 +260,6 @@ describe('the shape of a menu', () => {
     expect(
       shapeOf({ entries: [item('Archive'), item('Open transcript'), item('Refresh session')] }),
     ).toMatchObject({ repairRows: 1, isOutOfOrder: true });
-    expect(
-      shapeOf({
-        entries: [item('Rename'), { kind: 'separator', key: 'separator' }, item('Delete')],
-      }).earlySeparators,
-    ).toBe(1);
     expect(
       shapeOf({ entries: Array.from({ length: 7 }, (_, index) => item(`Rename ${index}`)) })
         .overBudget,

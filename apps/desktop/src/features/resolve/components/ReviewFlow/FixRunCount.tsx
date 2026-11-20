@@ -1,9 +1,11 @@
 import type { SessionId } from '@goodboy/types';
+import { Button, Tooltip } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
 import { useAgentOutcome } from '../../../../shared/hooks/useAgentOutcome';
+import { ObjectActionVerb } from '../../../actions/ObjectActionVerb';
 import type { FixRunActionTarget } from '../../../actions/types';
+import { ITEM_WORK_WORDS } from '../../../live-state/itemWork/itemWorkWords';
 import { ItemWorkLine } from '../../../live-state/itemWork/ItemWorkLine';
-import { ThreadOverflowMenu } from './ThreadOverflowMenu';
 import { checksSkippedLine, checksSkippedOf } from '../../checksSkipped';
 import { fixRunCountOf, type FixRun } from '../../fixRun';
 import type { LaneStatus } from '../../laneStatus';
@@ -17,7 +19,6 @@ type Props = {
 
 const FIX_RUN_COUNT_COPY = {
   stopDescription: 'Comments it has not finished stay open and can be fixed again.',
-  menu: 'Fix actions',
 } as const;
 
 export const FixRunCount = ({ sessionId, run, lane }: Props) => {
@@ -35,33 +36,46 @@ export const FixRunCount = ({ sessionId, run, lane }: Props) => {
   if (count === null) {
     return null;
   }
+  const comments = threadCountText({ count: run.total });
+  const openTranscript = () =>
+    openDrawer({ kind: 'transcript', sessionId, payload: { agentId: run.agentId } });
   const target: FixRunActionTarget = {
     kind: 'fixRun',
     facts: {
       stop: {
-        title: `Stop the fix for ${threadCountText({ count: run.total })}?`,
+        label: `Stop fixing ${comments}`,
+        title: `Stop the fix for ${comments}?`,
         description: FIX_RUN_COUNT_COPY.stopDescription,
         onStop: () =>
           lane === null
             ? forceCloseResolver(sessionId, run.agentId)
             : stopResolveLane({ sessionId, worktreePath: lane.worktreePath }),
       },
-      transcriptNote: skipped === null ? null : checksSkippedLine({ skipped }),
-      onOpenTranscript: () =>
-        openDrawer({ kind: 'transcript', sessionId, payload: { agentId: run.agentId } }),
+      transcriptNote: null,
+      onOpenTranscript: null,
       onRetryWithHint: null,
       startOverNote: null,
       onStartOver: null,
     },
   };
   return (
-    <span data-fix-run-count="" className="flex min-w-0 justify-end">
-      <ItemWorkLine
-        state="fixing"
-        detail={fixingPlaceText(count)}
-        agentId={run.agentId}
-        action={<ThreadOverflowMenu label={FIX_RUN_COUNT_COPY.menu} target={target} />}
-      />
+    <span data-fix-run-count="" className="flex min-w-0 items-center justify-end gap-2">
+      <Tooltip
+        content={skipped === null ? null : checksSkippedLine({ skipped })}
+        isSuppressed={skipped === null}
+        anchorClassName="min-w-0"
+      >
+        <Button
+          variant="quiet"
+          size="sm"
+          aria-label={`${ITEM_WORK_WORDS.verb.openTranscript}, ${fixingPlaceText(count)}`}
+          onClick={openTranscript}
+          className="min-w-0 justify-start font-normal"
+        >
+          <ItemWorkLine state="fixing" detail={fixingPlaceText(count)} agentId={run.agentId} />
+        </Button>
+      </Tooltip>
+      <ObjectActionVerb target={target} actionId="fixRun.stopAll" />
     </span>
   );
 };

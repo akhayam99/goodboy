@@ -41,6 +41,14 @@ const renderHeader = ({ onOpenInEditor, onShowWhole }: HeaderParams) =>
     </ObjectMenuProvider>,
   );
 
+const headerOf = (): HTMLElement => {
+  const header = document.querySelector<HTMLElement>('[data-slot="diff-file-header"]');
+  if (header === null) {
+    throw new Error('no file header');
+  }
+  return header;
+};
+
 beforeAll(async () => {
   await importStore();
 }, STORE_IMPORT_TIMEOUT_MS);
@@ -52,19 +60,18 @@ afterEach(() => {
 });
 
 describe('the file header actions', () => {
-  it('draws a lone file action as a quiet button instead of a menu of one', () => {
-    renderHeader({ onOpenInEditor: null, onShowWhole: null });
+  it('draws no overflow button: the header itself carries the menu', () => {
+    renderHeader({ onOpenInEditor: vi.fn(), onShowWhole: vi.fn() });
 
     expect(screen.queryByRole('button', { name: 'More for ledger-core.ts' })).toBeNull();
-    screen.getByRole('button', { name: 'Copy path' });
   });
 
-  it('keeps the menu once two actions exist', () => {
+  it('opens Copy path and the file verbs from a right click on the header', () => {
     const onOpenInEditor = vi.fn();
     renderHeader({ onOpenInEditor, onShowWhole: null });
 
-    expect(screen.queryByRole('button', { name: 'Copy path' })).toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: 'More for ledger-core.ts' }));
+    fireEvent.contextMenu(headerOf());
+    screen.getByRole('menuitem', { name: 'Copy path' });
     fireEvent.click(screen.getByRole('menuitem', { name: 'Open in editor' }));
     expect(onOpenInEditor).toHaveBeenCalledTimes(1);
   });

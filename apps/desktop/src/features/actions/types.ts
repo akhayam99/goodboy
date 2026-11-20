@@ -53,7 +53,7 @@ export const ACTION_GROUPS = ['open', 'act', 'copy', 'danger'] as const;
 
 export type ActionGroup = (typeof ACTION_GROUPS)[number];
 
-export type ActionSubmenu = 'goto';
+export type ActionSubmenu = 'open' | 'copy';
 
 const ACTION_SLOTS = [
   'primary',
@@ -138,7 +138,7 @@ export type ActionMenuBehavior = {
 
 export type ActionOrigin = 'menu' | 'overflow' | 'palette' | 'button';
 
-type ActionPlacement = 'everywhere' | 'palette';
+export type ActionPlacement = 'everywhere' | 'palette';
 
 export type ActionViewing = {
   readonly kind: 'artifact' | 'agent' | 'workflowRun' | 'selection';
@@ -217,6 +217,8 @@ export type ObjectKindDefinition<T, F> = {
 export type ResolvedAction = {
   readonly id: string;
   readonly label: string;
+  readonly menuLabel?: string;
+  readonly placement?: ActionPlacement;
   readonly shortLabel: string;
   readonly ariaLabel: string | null;
   readonly icon: IconGlyph;

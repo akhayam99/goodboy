@@ -8,6 +8,7 @@ import type { SessionBudget, SessionId } from '@goodboy/types';
 const h = vi.hoisted(() => ({
   setSessionBudget: vi.fn(async () => undefined),
   clearSessionBudget: vi.fn(async () => undefined),
+  setSessionAutoRun: vi.fn(async () => undefined),
 }));
 
 vi.mock('../../../../store', () => ({
@@ -15,6 +16,8 @@ vi.mock('../../../../store', () => ({
     selector({
       setSessionBudget: h.setSessionBudget,
       clearSessionBudget: h.clearSessionBudget,
+      setSessionAutoRun: h.setSessionAutoRun,
+      sessions: [{ id: 'session-1', autoRun: false }],
     }),
 }));
 
@@ -27,6 +30,7 @@ afterEach(() => {
   cleanup();
   h.setSessionBudget.mockClear();
   h.clearSessionBudget.mockClear();
+  h.setSessionAutoRun.mockClear();
 });
 
 describe('SpendLimitEditor', () => {
@@ -53,6 +57,27 @@ describe('SpendLimitEditor', () => {
     await user.click(screen.getByRole('button', { name: 'Save' }));
 
     await waitFor(() => expect(h.setSessionBudget).toHaveBeenCalledWith(SESSION_ID, 2.5, 'pause'));
+  });
+
+  it('holds the run setting: saving with the box ticked starts next steps without asking', async () => {
+    const onDone = vi.fn();
+    render(<SpendLimitEditor sessionId={SESSION_ID} limit={LIMIT} onDone={onDone} />);
+
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Start next steps without asking' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+
+    await waitFor(() => expect(h.setSessionAutoRun).toHaveBeenCalledWith(SESSION_ID, true));
+    expect(h.setSessionBudget).toHaveBeenCalledWith(SESSION_ID, 20, 'pause');
+    await waitFor(() => expect(onDone).toHaveBeenCalledOnce());
+  });
+
+  it('leaves the run setting alone when the box did not change', async () => {
+    render(<SpendLimitEditor sessionId={SESSION_ID} limit={LIMIT} onDone={vi.fn()} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+
+    await waitFor(() => expect(h.setSessionBudget).toHaveBeenCalled());
+    expect(h.setSessionAutoRun).not.toHaveBeenCalled();
   });
 
   it('cancels without touching the limit', () => {

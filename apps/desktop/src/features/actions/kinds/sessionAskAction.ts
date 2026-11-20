@@ -8,6 +8,7 @@ export const SESSION_ASK_ACTION: ActionDefinition<SessionFacts> = {
   label: 'Ask about this session',
   icon: CONCEPT_ICONS.ask,
   group: 'act',
+  placement: 'palette',
   shortcut: 'ask.open',
   when: ({ facts }) => !facts.isArchived,
   run: ({ facts, env }) => {

@@ -84,7 +84,7 @@ describe('the resolve fix scenes', () => {
     const count = counter();
     expect(count?.textContent).toMatch(/^Fixing·1 of 8/);
     expect(
-      within(count ?? document.body).getByRole('button', { name: 'Fix actions' }),
+      within(count ?? document.body).getByRole('button', { name: 'Stop fixing 8 comments' }),
     ).toBeDefined();
     expect(within(commentList()).getAllByRole('button', { name: /^Stop/ }).length).toBe(8);
   });

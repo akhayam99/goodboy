@@ -1,7 +1,9 @@
 import { useState } from 'react';
-import { Button, FormActions, formatError } from '@goodboy/ui';
+import { Button, Checkbox, FormActions, formatError } from '@goodboy/ui';
 import type { SessionBudget, SessionBudgetOnExceed, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
+import { NAMES } from '../../../../shared/utils/names';
+import { sessionById } from '../../../../store/slices/sessions/sessionIndex';
 import { SpendLimitFields } from '../SpendLimitFields';
 import { parseSpendLimit } from '../../parseSpendLimit';
 
@@ -14,6 +16,11 @@ type Props = {
 export const SpendLimitEditor = ({ sessionId, limit, onDone }: Props) => {
   const setSessionBudget = useAppStore((state) => state.setSessionBudget);
   const clearSessionBudget = useAppStore((state) => state.clearSessionBudget);
+  const setSessionAutoRun = useAppStore((state) => state.setSessionAutoRun);
+  const wasAutoRun = useAppStore(
+    (state) => sessionById(state.sessions, sessionId)?.autoRun === true,
+  );
+  const [isAutoRun, setIsAutoRun] = useState(wasAutoRun);
   const [amount, setAmount] = useState(limit === null ? '' : String(limit.softCapUsd));
   const [behavior, setBehavior] = useState<SessionBudgetOnExceed>(limit?.onExceed ?? 'pause');
   const [isSaving, setIsSaving] = useState(false);
@@ -39,11 +46,14 @@ export const SpendLimitEditor = ({ sessionId, limit, onDone }: Props) => {
     if (isInvalid) {
       return;
     }
-    if (parsed === null) {
-      void run(() => clearSessionBudget(sessionId));
-      return;
-    }
-    void run(() => setSessionBudget(sessionId, parsed, behavior));
+    void run(async () => {
+      await (parsed === null
+        ? clearSessionBudget(sessionId)
+        : setSessionBudget(sessionId, parsed, behavior));
+      if (isAutoRun !== wasAutoRun) {
+        await setSessionAutoRun(sessionId, isAutoRun);
+      }
+    });
   };
 
   return (
@@ -61,6 +71,12 @@ export const SpendLimitEditor = ({ sessionId, limit, onDone }: Props) => {
           ? 'Enter an amount over zero, or clear it for no limit.'
           : 'Counts everything this session spends, context updates included.'}
       </p>
+      <Checkbox
+        checked={isAutoRun}
+        disabled={isSaving}
+        onChange={setIsAutoRun}
+        label={NAMES.startStepsWithoutAsking}
+      />
       <FormActions
         error={error}
         leading={

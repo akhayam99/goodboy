@@ -80,20 +80,27 @@ never exists on one surface only.
   `Move to`: in the linked row's menu (Shift+F10), in the focused issue's
   `Linked to` row and in the palette.
 - **The Board session card.** Its right click (and Shift+F10) opens the
-  session kind's menu, the full set of session verbs: **Go to** (a submenu
-  with Open, Comments, Changes, Open in editor and Open in terminal app; a verb
-  that cannot run stays in it with its reason as a tooltip), Open the full log,
-  Limit, Rename, **Ask about this session** (`session.ask`, which opens the
-  session first when another one is open), Pin session or Unpin session, **Refresh session** (`session.refresh`, the
-  same `refreshSession` `⌘R` runs in a session, blocked while a refresh is in
-  flight), Start next steps without asking, Start a run, Link work, the copies, Archive and Delete,
-  whose confirm still asks first. The palette lists the same verbs. The row is
-  `select-none`, like every row that carries `ROW_HOVER` or `ROW_INTERACTIVE`
-  (`SelectableRow`, `InteractiveRow`, `ListGridRow`, the Board card): see
-  Where the webview menu stays.
+  session kind's menu: **Open** (a submenu with Overview, Comments, Changes,
+  Log, Editor, Terminal and External terminal; a verb that cannot run stays in
+  it with its reason as a tooltip), Rename, Pin session or Unpin session, Mark
+  as read, Start a run, Link work, **Set limit…**, **Copy** (Title, Branch
+  name, Worktree path and the pull request link, named by `requestNounLabel`),
+  then Stop all running agents, Archive and Delete, whose confirm still asks
+  first. `withSessionSubmenus` (`kinds/sessionGoToActions.ts`) tags the Open
+  and Copy rows, and `toMenuEntries` folds a group of two rows or more into its
+  submenu (one row stays flat with its full label). Ask about this session,
+  Refresh session, Write title and goal, Select, the run setting (Start next
+  steps without asking, which also sits in the Set limit form) and Move up or
+  down carry `placement: 'palette'`: ⌘K lists them, no menu draws them. The
+  header `⋯` (`sessionMenuOf`) holds Pin, Link work, Copy, Archive and Delete.
+  The row is `select-none`, like every row that carries `ROW_HOVER` or
+  `ROW_INTERACTIVE` (`SelectableRow`, `InteractiveRow`, `ListGridRow`, the
+  Board card): see Where the webview menu stays.
 - **One order.** The registry and right click list Open, Act, Copy, then
-  lifecycle and destructive verbs, with a rule between groups. Menus and
-  visible controls use the same definitions and availability rules.
+  stop, archive and destructive verbs, with one rule before that last group.
+  `MenuList` draws rules only from five rows up and an icon on every row or on
+  none (`menuShapeOf` in `packages/ui`). Menus and visible controls use the
+  same definitions and availability rules.
 - **No verb that does nothing.** A surface tells the registry what it shows
   through `env.viewing` (`useActionEnv`, `ObjectOverflowMenu` and
   `useObjectMenuTrigger` take `viewing`): the artifact viewer its artifact,
@@ -110,8 +117,8 @@ never exists on one surface only.
   included, renders its rows through `AppMenuList` (radio entries for
   pickers, items for verbs), and only the menu primitives in `packages/ui`
   write those roles.
-- **What each object offers.** A session: Open, Comments, Changes, Open in terminal
-  (one choice per worktree), Open in
+- **What each object offers.** A session: Open, Comments, Changes, Open in Terminal
+  (one choice per worktree in ⌘K; the menu opens the first), Open in
   editor; Rename (inline, in the row that opened the menu), Start next steps
   without asking or Ask before starting each step (the session's Asks you: the
   default of a run started without its own setting and of agents outside a

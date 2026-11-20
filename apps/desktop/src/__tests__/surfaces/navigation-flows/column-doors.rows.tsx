@@ -98,7 +98,7 @@ export const COLUMN_DOOR_ROWS: ReadonlyArray<Row> = [
       expect(clipboardWrites[0]?.trim()).not.toBe('');
     },
   },
-  ...(['Copy title', 'Copy branch name', 'Copy PR link'] as const).map((label): Row => ({
+  ...(['Copy title', 'Copy branch name', 'Copy pull request link'] as const).map((label): Row => ({
     name: `palette verb: ${label}`,
     covers: [`palette:${label}`],
     open: async () => {

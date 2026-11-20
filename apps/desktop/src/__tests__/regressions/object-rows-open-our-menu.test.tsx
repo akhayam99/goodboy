@@ -49,11 +49,6 @@ const ROW_CASES: ReadonlyArray<RowCase> = [
     isFirstOnly: true,
   },
   {
-    row: 'Activity decision and history batch',
-    scene: 'activity-log',
-    selector: '[data-row-id] button[aria-description^="Show "]',
-  },
-  {
     row: 'branch or pull request',
     scene: 'c04-session-worktrees',
     selector:

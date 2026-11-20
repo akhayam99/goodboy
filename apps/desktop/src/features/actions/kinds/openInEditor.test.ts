@@ -76,6 +76,7 @@ const sessionFacts: SessionFacts = {
   mounts: [],
   worktreePaths: ['/work/payments-api'],
   prUrl: null,
+  requestHost: 'github',
   runningAgentCount: 0,
   hasUnread: false,
   canMarkUnread: false,

@@ -438,7 +438,7 @@ describe('the session rail top row and its menu', () => {
     expect(labels.some((label) => label.startsWith('Delete'))).toBe(true);
   });
 
-  it('holds five rows at most: Ask, Pin, Refresh, Archive and Delete', () => {
+  it('holds five rows at most: Pin, Link work, Copy, Archive and Delete', () => {
     seed();
     mountColumn();
 
@@ -448,11 +448,13 @@ describe('the session rail top row and its menu', () => {
     expect(labels.length).toBeLessThanOrEqual(5);
     expect(labels.length).toBeGreaterThan(0);
     for (const label of labels) {
-      expect(label).toMatch(
-        /^(Ask about this session|Pin session|Unpin session|Refresh session|Archive|Delete)/,
-      );
+      expect(label).toMatch(/^(Pin session|Unpin session|Link work|Copy|Archive|Delete)/);
     }
-    expect(labels.some((label) => /^(Limit|Asks you|Stop running|Rename)/.test(label))).toBe(false);
+    expect(
+      labels.some((label) =>
+        /^(Set limit|Asks you|Stop running|Rename|Ask about|Refresh)/.test(label),
+      ),
+    ).toBe(false);
   });
 
   it('keeps Delete behind its confirm', async () => {

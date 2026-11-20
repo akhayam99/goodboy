@@ -112,7 +112,7 @@ describe('the u24 prpage files scenes', () => {
     expect(columns.has(null)).toBe(false);
   });
 
-  it('shows Viewed, Comment and one menu on every file header, the rest inside the menu', async () => {
+  it('shows Viewed and Comment on every file header, the rest in its right click menu', async () => {
     renderScene({ name: 'branch-files-both' });
     await screen.findAllByRole('article', { name: /^Draft from You/ }, WAIT);
 
@@ -122,7 +122,8 @@ describe('the u24 prpage files scenes', () => {
     const scope = within(header ?? document.body);
     expect(scope.getByRole('button', { name: 'Comment' })).toBeDefined();
     expect(scope.queryByRole('button', { name: 'Open in editor' })).toBeNull();
-    fireEvent.click(scope.getByRole('button', { name: /^More for / }));
+    expect(scope.queryByRole('button', { name: /^More for / })).toBeNull();
+    fireEvent.contextMenu(header ?? document.body);
     for (const name of ['Open in editor', 'Copy path', 'Show whole file']) {
       expect(screen.getByRole('menuitem', { name })).toBeDefined();
     }

@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { cn } from '../../cn';
 import { FLOATING_SURFACE } from '../../floatingSurface';
 import { MenuRow } from './MenuRow';
+import { menuShapeOf } from './menuShapeOf';
 import { focusFirstMenuItem, isMenuNavigationKey, moveMenuFocus } from './menuKeys';
 import type { MenuItemEntry } from './menuTypes';
 
@@ -30,6 +31,7 @@ type Position = {
 export const MenuSubmenuPanel = ({ label, items, anchor, onChoose, onBack }: Props) => {
   const panelRef = useRef<HTMLDivElement>(null);
   const [position, setPosition] = useState<Position | null>(null);
+  const { hasIcons } = menuShapeOf({ entries: items });
 
   useLayoutEffect(() => {
     const rect = anchor.getBoundingClientRect();
@@ -88,6 +90,7 @@ export const MenuSubmenuPanel = ({ label, items, anchor, onChoose, onBack }: Pro
         <MenuRow
           key={item.key}
           entry={item}
+          hasIcon={hasIcons}
           isExpanded={false}
           onActivate={() => {
             if (item.blockedReason != null || item.isDisabled === true) {

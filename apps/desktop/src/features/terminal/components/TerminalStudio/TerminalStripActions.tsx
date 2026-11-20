@@ -45,7 +45,7 @@ export const TerminalStripActions = ({
     },
     ...(handoff.canHandOff && {
       sendOutput: {
-        label: 'Send last output',
+        label: 'Send last output to the agent',
         blockedReason: null,
         onSend: handoff.sendLastOutput,
       },

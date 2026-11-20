@@ -19,13 +19,19 @@ import {
   PinOff,
   Rocket,
 } from '@goodboy/ui/icons';
-import type { MountId, Session, SessionId, SessionProjectMount, WorkspaceId } from '@goodboy/types';
+import type {
+  MountId,
+  PullRequestHost,
+  Session,
+  SessionId,
+  SessionProjectMount,
+  WorkspaceId,
+} from '@goodboy/types';
 import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
 import { isBranchlessSession } from '../../../shared/utils/isBranchlessSession';
 import { lensPlace } from '../../../store/slices/navigation/canonicalLocation';
 import { LOG_LANDING } from '../../session/central/log/logLanding';
 import { branchPlace } from '../../../store/slices/navigation/place';
-import { openSessionTerminal } from '../../terminal/openSessionTerminal';
 import { sessionTitle } from '../../../shared/utils/sessionTitle';
 import { archiveSessions, restoreSessions } from '../../session/sessionArchive';
 import { archiveConfirmOf } from '../../session/archiveConfirmOf';
@@ -39,9 +45,7 @@ import { refreshSession } from '../../session/refreshSession';
 import { openSessionSpendLimitEdit } from '../../budget/openSessionSpendLimitEdit';
 import { RENAME_REQUEST_EVENT, requestRename } from '../../../shared/utils/renameRequest';
 import { requestSelect } from '../selectRequest';
-import { ALL_CHOICES_ID } from '../types';
 import type {
-  ActionChoice,
   ActionConfirm,
   ActionDefinition,
   ActionEnv,
@@ -54,10 +58,13 @@ import { writeGoalFromWorkEvent } from '../../../store/slices/issue-briefs/write
 import { NAMES } from '../../../shared/utils/names';
 import { dispatchAfterNavigation } from '../dispatchAfterNavigation';
 import { behindBranchesOf } from '../../history/behindBranchesOf';
-import { SESSION_EXTERNAL_OPEN_ACTIONS, withGoToSubmenu } from './sessionGoToActions';
+import { SESSION_EXTERNAL_OPEN_ACTIONS, withSessionSubmenus } from './sessionGoToActions';
+import { requestNounLabel } from '../../branch/requestNounLabel';
+import { sessionPullRequestHostOf } from '../../../store/slices/review-source/sessionPullRequestOf';
 import { lifecyclePortsOf } from './lifecyclePortsOf';
 import { SESSION_BRANCH_ACTIONS } from './sessionBranchActions';
 import { SESSION_ASK_ACTION } from './sessionAskAction';
+import { SESSION_WORKTREE_ACTIONS } from './sessionWorktreeActions';
 import { mergedFactsOf, type MergedFacts } from './mergedMountsOf';
 
 export type SessionFacts = MergedFacts & {
@@ -79,17 +86,11 @@ export type SessionFacts = MergedFacts & {
   readonly mounts: ReadonlyArray<SessionProjectMount>;
   readonly worktreePaths: ReadonlyArray<string>;
   readonly prUrl: string | null;
+  readonly requestHost: PullRequestHost;
   readonly hasLinkedIssues: boolean;
   readonly runningAgentCount: number;
   readonly hasUnread: boolean;
   readonly canMarkUnread: boolean;
-};
-
-type SessionWorktree = {
-  readonly id: string;
-  readonly name: string;
-  readonly branch: string | null;
-  readonly path: string;
 };
 
 const LINK_ISSUE_EVENT = 'goodboy:link-issue';
@@ -143,116 +144,11 @@ const deleteConfirm = ({ facts }: { readonly facts: SessionFacts }): ActionConfi
 
 const isUnarchived = ({ facts }: { readonly facts: SessionFacts }): boolean => !facts.isArchived;
 
-const worktreesOf = ({
-  facts,
-}: {
-  readonly facts: SessionFacts;
-}): ReadonlyArray<SessionWorktree> => {
-  const mounted = facts.mounts
-    .filter((mount) => mount.worktreePath !== '')
-    .map((mount) => ({
-      id: mount.mountId,
-      name: mount.mountName,
-      branch: mount.branch === '' ? null : mount.branch,
-      path: mount.worktreePath,
-    }));
-  if (mounted.length > 0) {
-    return mounted;
-  }
-  return facts.worktreePaths.map((path) => ({
-    id: path,
-    name:
-      path
-        .split('/')
-        .filter((part) => part !== '')
-        .at(-1) ?? path,
-    branch: null,
-    path,
-  }));
-};
-
-const worktreeChoices = ({
-  facts,
-}: {
-  readonly facts: SessionFacts;
-}): ReadonlyArray<ActionChoice> => {
-  const worktrees = worktreesOf({ facts });
-  return worktrees.length < 2
-    ? []
-    : [
-        ...worktrees.map((worktree) => ({
-          id: worktree.id,
-          label: worktree.name,
-          isCurrent: false,
-          detail:
-            worktree.branch === null ? worktree.path : `${worktree.branch} · ${worktree.path}`,
-          keywords: worktree.branch === null ? [worktree.path] : [worktree.branch, worktree.path],
-        })),
-        {
-          id: ALL_CHOICES_ID,
-          label: 'Copy all paths',
-          isCurrent: false,
-          detail: 'One per line',
-        },
-      ];
-};
-
-type WorktreeLabelParams = {
-  readonly worktree: SessionWorktree;
-};
-
-type TerminalFactsParams = {
-  readonly facts: SessionFacts;
-};
-
-const worktreeLabel = ({ worktree }: WorktreeLabelParams): string =>
-  worktree.branch === null ? worktree.name : `${worktree.name} · ${worktree.branch}`;
-
-const worktreeTerminalChoices = ({ facts }: TerminalFactsParams): ReadonlyArray<ActionChoice> => {
-  const worktrees = worktreesOf({ facts });
-  return worktrees.length < 2
-    ? []
-    : worktrees.map((worktree) => ({
-        id: worktree.id,
-        label: `Open ${worktreeLabel({ worktree })} in terminal`,
-        isCurrent: false,
-        detail: worktree.path,
-        keywords: [
-          worktree.name,
-          worktree.path,
-          ...(worktree.branch === null ? [] : [worktree.branch]),
-        ],
-      }));
-};
-
-const worktreeTerminalLabel = ({ facts }: TerminalFactsParams): string => {
-  const [only] = worktreesOf({ facts });
-  return worktreesOf({ facts }).length === 1 && only !== undefined
-    ? `Open ${worktreeLabel({ worktree: only })} in terminal`
-    : 'Open a worktree in terminal';
-};
-
-const worktreeTextFor = ({
-  facts,
-  choice,
-}: {
-  readonly facts: SessionFacts;
-  readonly choice: string | null;
-}): string | null => {
-  const worktrees = worktreesOf({ facts });
-  if (choice === ALL_CHOICES_ID) {
-    return worktrees.map((worktree) => worktree.path).join('\n');
-  }
-  if (choice === null) {
-    return worktrees[0]?.path ?? null;
-  }
-  return worktrees.find((worktree) => worktree.id === choice)?.path ?? null;
-};
-
 const SESSION_ACTIONS: ReadonlyArray<ActionDefinition<SessionFacts>> = [
   {
     id: 'session.open',
     label: 'Open',
+    menuLabel: NAMES.overview,
     icon: CONCEPT_ICONS.sessions,
     group: 'open',
     when: () => true,
@@ -290,7 +186,7 @@ const SESSION_ACTIONS: ReadonlyArray<ActionDefinition<SessionFacts>> = [
   ...SESSION_EXTERNAL_OPEN_ACTIONS,
   {
     id: 'session.openLog',
-    label: 'Open the full log',
+    label: 'Open log',
     icon: CONCEPT_ICONS.timeline,
     group: 'open',
     when: () => true,
@@ -299,15 +195,6 @@ const SESSION_ACTIONS: ReadonlyArray<ActionDefinition<SessionFacts>> = [
       LOG_LANDING.request({ sessionId: facts.sessionId });
       state.navigate({ to: lensPlace({ state, sessionId: facts.sessionId, lens: null }) });
     },
-  },
-  {
-    id: 'session.spend',
-    label: 'Limit',
-    icon: CONCEPT_ICONS.budget,
-    group: 'open',
-    when: ({ facts }) => !facts.isArchived,
-    run: ({ facts, env }) =>
-      openSessionSpendLimitEdit({ state: env.getState(), sessionId: facts.sessionId }),
   },
   {
     id: 'session.rename',
@@ -348,6 +235,7 @@ const SESSION_ACTIONS: ReadonlyArray<ActionDefinition<SessionFacts>> = [
     label: 'Select',
     icon: ListChecks,
     group: 'act',
+    placement: 'palette',
     when: ({ viewing }) => viewing?.kind === 'selection',
     run: ({ facts, env }) => {
       requestSelect({
@@ -378,6 +266,7 @@ const SESSION_ACTIONS: ReadonlyArray<ActionDefinition<SessionFacts>> = [
     label: 'Refresh session',
     icon: CONCEPT_ICONS.refresh,
     group: 'act',
+    placement: 'palette',
     shortcut: 'view.reload',
     when: isUnarchived,
     blockedReason: ({ facts }) => (facts.isRefreshing ? REFRESHING_REASON : null),
@@ -395,6 +284,7 @@ const SESSION_ACTIONS: ReadonlyArray<ActionDefinition<SessionFacts>> = [
     label: NAMES.startStepsWithoutAsking,
     icon: Rocket,
     group: 'act',
+    placement: 'palette',
     when: ({ facts }) => isUnarchived({ facts }) && !facts.session.autoRun,
     run: ({ facts, env }) => env.getState().setSessionAutoRun(facts.sessionId, true),
   },
@@ -403,6 +293,7 @@ const SESSION_ACTIONS: ReadonlyArray<ActionDefinition<SessionFacts>> = [
     label: NAMES.askBeforeEachStep,
     icon: Rocket,
     group: 'act',
+    placement: 'palette',
     when: ({ facts }) => isUnarchived({ facts }) && facts.session.autoRun,
     run: ({ facts, env }) => env.getState().setSessionAutoRun(facts.sessionId, false),
   },
@@ -411,6 +302,7 @@ const SESSION_ACTIONS: ReadonlyArray<ActionDefinition<SessionFacts>> = [
     label: 'Move up',
     icon: ArrowUp,
     group: 'act',
+    placement: 'palette',
     when: ({ facts }) => isUnarchived({ facts }) && facts.isPinned && facts.canMovePinUp,
     run: ({ facts, env }) =>
       env.getState().moveSessionPin({ sessionId: facts.sessionId, direction: 'up' }),
@@ -420,6 +312,7 @@ const SESSION_ACTIONS: ReadonlyArray<ActionDefinition<SessionFacts>> = [
     label: 'Move down',
     icon: ArrowDown,
     group: 'act',
+    placement: 'palette',
     when: ({ facts }) => isUnarchived({ facts }) && facts.isPinned && facts.canMovePinDown,
     run: ({ facts, env }) =>
       env.getState().moveSessionPin({ sessionId: facts.sessionId, direction: 'down' }),
@@ -445,24 +338,13 @@ const SESSION_ACTIONS: ReadonlyArray<ActionDefinition<SessionFacts>> = [
     },
   },
   {
-    id: 'session.openWorktreeTerminal',
-    label: worktreeTerminalLabel,
-    icon: CONCEPT_ICONS.terminal,
-    group: 'open',
-    when: ({ facts }) => isUnarchived({ facts }) && worktreesOf({ facts }).length > 0,
-    choices: worktreeTerminalChoices,
-    run: ({ facts, env, choice }) => {
-      const worktrees = worktreesOf({ facts });
-      const picked = worktrees.find((worktree) => worktree.id === choice) ?? worktrees[0];
-      if (picked === undefined) {
-        return;
-      }
-      const state = env.getState();
-      if (state.currentSessionId !== facts.sessionId) {
-        state.navigate({ to: lensPlace({ state, sessionId: facts.sessionId, lens: null }) });
-      }
-      openSessionTerminal({ state, sessionId: facts.sessionId, cwd: picked.path });
-    },
+    id: 'session.spend',
+    label: `${NAMES.setLimit}…`,
+    icon: CONCEPT_ICONS.budget,
+    group: 'act',
+    when: ({ facts }) => !facts.isArchived,
+    run: ({ facts, env }) =>
+      openSessionSpendLimitEdit({ state: env.getState(), sessionId: facts.sessionId }),
   },
   {
     id: 'session.copyTitle',
@@ -471,21 +353,6 @@ const SESSION_ACTIONS: ReadonlyArray<ActionDefinition<SessionFacts>> = [
     group: 'copy',
     when: () => true,
     run: ({ facts, env }) => env.copyText({ text: facts.title }),
-  },
-  {
-    id: 'session.copyWorktreePath',
-    label: 'Copy worktree path',
-    icon: CONCEPT_ICONS.worktree,
-    group: 'copy',
-    when: ({ facts }) => worktreesOf({ facts }).length > 0,
-    choices: worktreeChoices,
-    run: ({ facts, env, choice }) => {
-      const text = worktreeTextFor({ facts, choice });
-      if (text === null) {
-        return;
-      }
-      return env.copyText({ text });
-    },
   },
   {
     id: 'session.copyBranch',
@@ -497,7 +364,8 @@ const SESSION_ACTIONS: ReadonlyArray<ActionDefinition<SessionFacts>> = [
   },
   {
     id: 'session.copyPr',
-    label: 'Copy PR link',
+    label: ({ facts }) =>
+      `${NAMES.copy} ${requestNounLabel({ host: facts.requestHost }).toLowerCase()} link`,
     icon: Link,
     group: 'copy',
     when: ({ facts }) => facts.prUrl !== null,
@@ -507,8 +375,17 @@ const SESSION_ACTIONS: ReadonlyArray<ActionDefinition<SessionFacts>> = [
     id: 'session.stopAll',
     label: ({ facts }) => `${NAMES.stopRunning} (${facts.runningAgentCount})`,
     icon: OctagonX,
-    group: 'act',
+    group: 'danger',
     when: ({ facts }) => isUnarchived({ facts }) && facts.runningAgentCount > 0,
+    confirm: ({ facts }) => ({
+      title:
+        facts.runningAgentCount === 1
+          ? 'Stop the running agent?'
+          : `Stop ${facts.runningAgentCount} running agents?`,
+      description: 'Each one stops where it is. Its changes stay on the branch.',
+      confirmLabel: NAMES.stop,
+      role: 'alert',
+    }),
     run: async ({ facts, env }) => {
       const result = await stopAllRunningAgents({
         getState: env.getState,
@@ -553,6 +430,7 @@ const SESSION_ACTIONS: ReadonlyArray<ActionDefinition<SessionFacts>> = [
     label: 'Write title and goal from linked work',
     icon: Pencil,
     group: 'act',
+    placement: 'palette',
     slot: () => 'menu',
     when: ({ facts }) => facts.hasLinkedIssues,
     run: ({ facts, env }) => {
@@ -560,6 +438,7 @@ const SESSION_ACTIONS: ReadonlyArray<ActionDefinition<SessionFacts>> = [
       dispatchAfterNavigation({ name: writeGoalFromWorkEvent({ sessionId: facts.sessionId }) });
     },
   },
+  ...SESSION_WORKTREE_ACTIONS,
   ...SESSION_BRANCH_ACTIONS,
 ];
 
@@ -618,10 +497,11 @@ export const SESSION_KIND: ObjectKindDefinition<SessionActionTarget, SessionFact
       mounts,
       worktreePaths,
       prUrl: state.sessionGithub[target.sessionId]?.pr?.url ?? null,
+      requestHost: sessionPullRequestHostOf({ state, sessionId: target.sessionId }),
       runningAgentCount: liveAgentsOf({ state, sessionId: target.sessionId }).length,
       hasUnread: sessionHasUnread({ state, sessionId: target.sessionId }),
       canMarkUnread: unreadTargetOf({ state, sessionId: target.sessionId }) !== null,
     };
   },
-  actions: withGoToSubmenu({ definitions: SESSION_ACTIONS }),
+  actions: withSessionSubmenus({ definitions: SESSION_ACTIONS }),
 };

@@ -4,6 +4,7 @@ import { MenuConfirmView } from './MenuConfirmView';
 import { MenuRadioGroup } from './MenuRadioGroup';
 import { MenuRow } from './MenuRow';
 import { hasSubmenu } from './hasSubmenu';
+import { menuShapeOf } from './menuShapeOf';
 import { MenuSubmenuPanel } from './MenuSubmenuPanel';
 import {
   focusFirstMenuItem,
@@ -39,12 +40,7 @@ export const MenuList = ({ label, entries, onClose, isAutoFocus = true }: Props)
   const typeahead = useRef({ query: '', at: 0 });
   const rowRefs = useRef(new Map<string, HTMLButtonElement>());
 
-  const items = entries.flatMap((entry): ReadonlyArray<MenuItemEntry> => {
-    if (entry.kind === 'item') {
-      return [entry];
-    }
-    return entry.kind === 'group' ? entry.items : [];
-  });
+  const { items, hasRules, hasIcons } = menuShapeOf({ entries });
   const confirming = items.find((entry) => entry.key === confirmKey) ?? null;
   const confirm = confirming?.confirm ?? null;
   const expandedEntry = items.find((entry) => entry.key === expanded?.key) ?? null;
@@ -161,6 +157,7 @@ export const MenuList = ({ label, entries, onClose, isAutoFocus = true }: Props)
     <MenuRow
       key={entry.key}
       entry={entry}
+      hasIcon={hasIcons}
       isExpanded={expanded?.key === entry.key}
       rowRef={(node) => {
         if (node === null) {
@@ -203,6 +200,9 @@ export const MenuList = ({ label, entries, onClose, isAutoFocus = true }: Props)
     >
       {entries.map((entry) => {
         if (entry.kind === 'separator') {
+          if (!hasRules) {
+            return null;
+          }
           return <div key={entry.key} role="separator" className="my-1 h-px bg-border-soft" />;
         }
         if (entry.kind === 'header') {

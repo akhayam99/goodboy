@@ -317,7 +317,11 @@ describe('a note in Files', () => {
 const renderWithMenu = (ui: ReactElement) => render(<ObjectMenuProvider>{ui}</ObjectMenuProvider>);
 
 const openFileMenu = (): void => {
-  fireEvent.click(screen.getByRole('button', { name: /^More for / }));
+  const header = document.querySelector<HTMLElement>('[data-slot="diff-file-header"]');
+  if (header === null) {
+    throw new Error('no file header');
+  }
+  fireEvent.contextMenu(header);
 };
 
 describe('the file header', () => {

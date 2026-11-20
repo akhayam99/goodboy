@@ -103,6 +103,7 @@ export { MenuTriggerButton } from './components/MenuTriggerButton';
 export type { MenuTriggerSize } from './components/MenuTriggerButton';
 export { ContextMenu } from './components/ContextMenu/ContextMenu';
 export { MenuList } from './components/ContextMenu/MenuList';
+export { menuShapeOf } from './components/ContextMenu/menuShapeOf';
 export type {
   MenuChoice,
   MenuConfirm,

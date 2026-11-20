@@ -3,26 +3,30 @@ import { describe, expect, it } from 'vitest';
 import { sessionMenuOf } from './sessionMenuOf';
 
 describe('sessionMenuOf', () => {
-  it('holds Ask, Pin, Refresh, Archive and Delete, five rows at most while one pin state shows', () => {
+  it('holds Pin, Link work, the copies, Archive and Delete while one pin state shows', () => {
     const only = sessionMenuOf({ isArchived: false });
-    const showing = only.filter((id) => id !== 'session.unpin');
-    expect(showing).toEqual([
-      'session.ask',
+    expect(only.filter((id) => id !== 'session.unpin')).toEqual([
       'session.pin',
-      'session.refresh',
+      'session.linkIssue',
+      'session.copyTitle',
+      'session.copyBranch',
+      'session.copyWorktreePath',
+      'session.copyPr',
       'session.archive',
       'session.delete',
     ]);
-    expect(showing).toHaveLength(5);
   });
 
   it('keeps only Restore and Delete on an archived session', () => {
     expect(sessionMenuOf({ isArchived: true })).toEqual(['session.restore', 'session.delete']);
   });
 
-  it('leaves the limit, the asks state, Stop running, Rename and the lens rows to the palette and the sidebar row', () => {
+  it('leaves Ask, Refresh, the limit, the run setting, Stop running and the open rows to the palette and the right click', () => {
     const only = sessionMenuOf({ isArchived: false });
     for (const id of [
+      'session.ask',
+      'session.refresh',
+      'session.writeFromWork',
       'session.spend',
       'session.asksNever',
       'session.asksEveryStep',
@@ -33,8 +37,6 @@ describe('sessionMenuOf', () => {
       'session.diff',
       'session.openLog',
       'session.startRun',
-      'session.linkIssue',
-      'session.copyTitle',
     ]) {
       expect(only).not.toContain(id);
     }

@@ -335,6 +335,7 @@ const sessionFacts = ({ ids }: SessionParams): SessionFacts => ({
   mounts: [],
   worktreePaths: [],
   prUrl: null,
+  requestHost: 'github',
   hasLinkedIssues: false,
   runningAgentCount: 0,
   hasUnread: false,

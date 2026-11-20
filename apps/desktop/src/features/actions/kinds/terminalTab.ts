@@ -31,7 +31,7 @@ export const TERMINAL_TAB_KIND: ObjectKindDefinition<TerminalTabActionTarget, Te
     },
     {
       id: 'terminalTab.sendLastOutput',
-      label: ({ facts }) => facts.sendOutput?.label ?? 'Send last output',
+      label: ({ facts }) => facts.sendOutput?.label ?? 'Send last output to the agent',
       icon: CONCEPT_ICONS.agents,
       group: 'act',
       when: ({ facts }) => facts.sendOutput !== undefined,

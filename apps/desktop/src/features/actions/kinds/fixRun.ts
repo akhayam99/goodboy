@@ -4,6 +4,7 @@ import { ITEM_WORK_WORDS } from '../../live-state/itemWork/itemWorkWords';
 import type { FixRunActionTarget, ObjectKindDefinition } from '../types';
 
 export type FixRunStop = {
+  readonly label: string;
   readonly title: string;
   readonly description: string;
   readonly onStop: () => void;
@@ -50,7 +51,7 @@ export const FIX_RUN_KIND: ObjectKindDefinition<FixRunActionTarget, FixRunFacts>
     },
     {
       id: 'fixRun.stopAll',
-      label: ITEM_WORK_WORDS.verb.stopAll,
+      label: ({ facts }) => facts.stop?.label ?? ITEM_WORK_WORDS.verb.stopAll,
       icon: OctagonX,
       group: 'danger',
       when: ({ facts }) => facts.stop !== null,
@@ -60,7 +61,7 @@ export const FIX_RUN_KIND: ObjectKindDefinition<FixRunActionTarget, FixRunFacts>
           : {
               title: facts.stop.title,
               description: facts.stop.description,
-              confirmLabel: ITEM_WORK_WORDS.verb.stopAll,
+              confirmLabel: facts.stop.label,
               role: 'danger',
             },
       run: ({ facts }) => facts.stop?.onStop(),

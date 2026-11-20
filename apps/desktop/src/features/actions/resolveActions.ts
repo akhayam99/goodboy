@@ -23,9 +23,15 @@ const resolveOne = <F>({
 }): ResolvedAction => {
   const label =
     typeof definition.label === 'string' ? definition.label : definition.label({ facts });
+  const menuLabel =
+    typeof definition.menuLabel === 'function'
+      ? definition.menuLabel({ facts })
+      : definition.menuLabel;
   return {
     id: definition.id,
     label,
+    ...(menuLabel !== undefined && { menuLabel }),
+    ...(definition.placement !== undefined && { placement: definition.placement }),
     shortLabel: definition.shortLabel?.({ facts }) ?? label,
     ariaLabel: definition.ariaLabel?.({ facts }) ?? null,
     icon: definition.iconOf?.({ facts }) ?? definition.icon,

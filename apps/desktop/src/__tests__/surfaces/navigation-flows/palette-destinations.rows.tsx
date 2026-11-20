@@ -95,7 +95,7 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
     open: () => openPalette(/^Refresh session/, 'refresh session'),
     lands: async () => {
       await clickButton('More session actions');
-      await visible('menuitem', /^Refresh session/);
+      expect(screen.queryByRole('menuitem', { name: /^Refresh session/ })).toBeNull();
     },
   },
   {
