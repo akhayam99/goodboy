@@ -45,7 +45,7 @@
   "apps/desktop/src/features/workflows/components/WorkflowStudio/WorkflowEditor/index.tsx": 258,
   "apps/desktop/src/features/workspace-chat/components/ChatList/index.tsx": 367,
   "apps/desktop/src/features/workspace-chat/components/TurnIntoWorkPanel/index.tsx": 373,
-  "apps/desktop/src/features/workspace/components/ProjectGitPill/ProjectGitDetail.tsx": 264,
+  "apps/desktop/src/features/workspace/components/ProjectGitPill/ProjectGitDetail.tsx": 257,
   "apps/desktop/src/features/worktree/worktree.ts": 968,
   "apps/desktop/src/shared/components/GenericTerminalPanel/index.tsx": 346,
   "apps/desktop/src/shared/components/PromptField/index.tsx": 306,
