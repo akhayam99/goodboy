@@ -85,4 +85,15 @@ describe('learnWorkspaceReplyStyle', () => {
       'Connect GitHub to read your replies. Your note is unchanged.',
     );
   });
+
+  it('says the replies could not be read instead of the raw gh message on any other failure', async () => {
+    h.detectRepoSlug.mockResolvedValue('acme/ledger-core');
+    for (const raw of ['gh: HTTP 403: Resource not accessible', 'context deadline exceeded']) {
+      h.listMyReviewReplies.mockRejectedValue(new Error(raw));
+      await expect(learn()).rejects.toThrow(
+        /^Couldn't read your replies on GitHub\. Your note is unchanged\.$/,
+      );
+    }
+    expect(h.learnReplyStyle).not.toHaveBeenCalled();
+  });
 });

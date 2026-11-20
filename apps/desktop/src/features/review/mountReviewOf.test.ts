@@ -8,8 +8,10 @@ import {
   type PullRequestState,
   type SessionExternalTask,
   type SessionId,
+  type SessionProjectMount,
   type WorkspaceId,
 } from '@goodboy/types';
+import { aProject, aSession } from '@goodboy/types/testing';
 import type { BitbucketPullRequest } from '../integrations/bitbucket/client';
 import type { GitlabMergeRequest } from '../integrations/gitlab/client';
 import {
@@ -67,6 +69,38 @@ const github: MountGithubState = {
   detailFetchedAt: null,
   detailLoading: false,
   detailError: null,
+};
+
+const secondRequest: PullRequestState = {
+  ...pullRequest,
+  number: 322,
+  title: 'Retry the credit post once',
+  url: 'https://github.com/harborline/payments-api/pull/322',
+  headBranch: 'hl/retry-credit',
+};
+
+const bareMount: SessionProjectMount = {
+  mountId: BARE,
+  sessionId: SESSION_ID,
+  projectId: PROJECT_ID,
+  mountName: 'payments-api',
+  worktreePath: '/tmp/harborline/payments-api-bare',
+  lastWorktreePath: null,
+  repoRoot: '/tmp/harborline/payments-api',
+  branch: 'hl/bare',
+  baseBranch: 'main',
+  parallelIndex: 0,
+  isAttached: true,
+  diskState: 'present',
+  revision: 1,
+};
+
+const bareGithub: MountGithubState = {
+  ...github,
+  mountId: BARE,
+  branch: 'hl/bare',
+  pr: null,
+  prs: [],
 };
 
 const mergeRequest: GitlabMergeRequest = {
@@ -226,5 +260,56 @@ describe('the review a page writes', () => {
 
   it('offers nothing to write when the branch has no request', () => {
     expect(reviewOf(BARE).kind).toBe('none');
+  });
+
+  it('keeps a branch without a request off the requests of other branches in its project', () => {
+    useAppStore.setState({
+      sessions: [aSession({ id: SESSION_ID })],
+      projects: [aProject({ id: PROJECT_ID })],
+      sessionProjectMounts: { [SESSION_ID]: [bareMount] },
+      mountGithub: { [PAYMENTS]: github, [BARE]: bareGithub },
+      sessionProjectPrs: { [SESSION_ID]: { [PROJECT_ID]: [pullRequest] } },
+    });
+
+    expect(reviewOf(BARE)).toEqual({ kind: 'none', target: null, choices: [], hostUrl: null });
+  });
+
+  it('writes on the request picked on the page, not the canonical one', () => {
+    useAppStore.setState({
+      mountGithub: { [PAYMENTS]: { ...github, prs: [pullRequest, secondRequest] } },
+      mountSelectedPr: {
+        [PAYMENTS]: {
+          provider: 'github',
+          host: 'github.com',
+          repoSlug: 'harborline/payments-api',
+          prNumber: 322,
+        },
+      },
+    });
+
+    const review = reviewOf(PAYMENTS);
+    expect(review.target?.prNumber).toBe(322);
+    expect(review.choices.map((choice) => choice.prNumber)).toEqual([322]);
+  });
+
+  it('offers a branch without a request only the linked requests of its own repository', () => {
+    useAppStore.setState({
+      mountGithub: {
+        [PAYMENTS]: github,
+        [BARE]: { ...bareGithub, repository: 'harborline/ledger-core' },
+      },
+      sessionExternalTasks: {
+        [SESSION_ID]: [
+          linkOf({ repo: 'harborline/payments-api', number: 318 }),
+          linkOf({ repo: 'harborline/ledger-core', number: 44 }),
+        ],
+      },
+    });
+
+    const review = reviewOf(BARE);
+    expect(review.choices.map((choice) => `${choice.repo}#${choice.prNumber}`)).toEqual([
+      'harborline/ledger-core#44',
+    ]);
+    expect(review.target?.repo).toBe('harborline/ledger-core');
   });
 });

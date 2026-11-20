@@ -16,6 +16,7 @@ import { HostReviewNotice } from './HostReviewNotice';
 import { ObjectOverflowMenu } from '../../../actions/components/ObjectOverflowMenu';
 import { WriteReviewForm } from './WriteReviewForm';
 import { ReviewPanelButton } from './ReviewPanelButton';
+import { ReviewTargetChooser } from './ReviewTargetChooser';
 
 type Props = {
   readonly session: Session;
@@ -112,6 +113,7 @@ export const WriteReview = ({ session }: Props) => {
   if (loading) {
     return (
       <PageColumn className="flex flex-col gap-3">
+        <ReviewTargetChooser sessionId={sessionId} review={review} />
         {[0, 1].map((index) => (
           <div key={index} role="status" aria-label="Loading diff" className="flex flex-col gap-2">
             <Skeleton className="h-9 w-full rounded-md" />
@@ -124,7 +126,8 @@ export const WriteReview = ({ session }: Props) => {
   }
   if (error != null) {
     return (
-      <PageColumn>
+      <PageColumn className="flex flex-col gap-3">
+        <ReviewTargetChooser sessionId={sessionId} review={review} />
         <ErrorStrip label="the diff" error={new Error(error)} onRetry={refresh} />
       </PageColumn>
     );

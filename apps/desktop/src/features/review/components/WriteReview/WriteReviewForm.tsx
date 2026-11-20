@@ -22,6 +22,7 @@ import type { PublishPrReviewVerdict } from '../../../../store/slices/review-dra
 import { useActionEnv } from '../../../actions/useActionEnv';
 import { useObjectActions } from '../../../actions/useObjectActions';
 import { LineComment } from './LineComment';
+import { ReviewTargetChooser } from './ReviewTargetChooser';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -38,22 +39,10 @@ const VERDICTS = [
 
 const WRITE_REVIEW_FORM_LABEL = 'Your review';
 const NO_LINE_COMMENTS = 'No line comments yet. Click a line number in the diff.';
-const TARGET_CHOICE_LABEL = 'Review goes to';
-
-type TargetParams = {
-  readonly target: ReviewTarget;
-};
-
-type ChooseParams = {
-  readonly key: string;
-};
 
 type HintParams = {
   readonly target: ReviewTarget | null;
 };
-
-const targetKeyOf = ({ target }: TargetParams): string =>
-  `${target.provider}|${target.repo}|${target.prNumber}`;
 
 const oneReviewHintOf = ({ target }: HintParams): string | null =>
   target === null
@@ -70,20 +59,6 @@ export const WriteReviewForm = ({ sessionId, review, drafts, variant = 'page' }:
   const env = useActionEnv({ origin: 'button' });
   const { actions, run } = useObjectActions({ target, env });
   const [error, setError] = useState<string | null>(null);
-  const choiceOptions = useMemo(
-    () =>
-      review.choices.map((choice) => ({
-        value: targetKeyOf({ target: choice }),
-        label: reviewTargetLabelOf({ target: choice }),
-      })),
-    [review.choices],
-  );
-  const onChoose = ({ key }: ChooseParams): void => {
-    const chosenTarget = review.choices.find((choice) => targetKeyOf({ target: choice }) === key);
-    if (chosenTarget !== undefined) {
-      setReviewSubmission({ sessionId, patch: { chosenTarget } });
-    }
-  };
   const submit = actions.find((action) => action.id === 'writeReview.submit') ?? null;
 
   const onSubmit = (): void => {
@@ -173,17 +148,7 @@ export const WriteReviewForm = ({ sessionId, review, drafts, variant = 'page' }:
           onKeyDown={onKeyDown}
         />
       </div>
-      {review.choices.length > 1 && review.target !== null ? (
-        <div className="w-fit">
-          <SegmentedTabs<string>
-            size="sm"
-            options={choiceOptions}
-            value={targetKeyOf({ target: review.target })}
-            onChange={(key) => onChoose({ key })}
-            ariaLabel={TARGET_CHOICE_LABEL}
-          />
-        </div>
-      ) : null}
+      <ReviewTargetChooser sessionId={sessionId} review={review} />
       <div className="flex min-w-0 flex-wrap items-center justify-end gap-2">
         <span className="mr-auto text-meta text-muted-foreground">
           {oneReviewHintOf({ target: review.target })}

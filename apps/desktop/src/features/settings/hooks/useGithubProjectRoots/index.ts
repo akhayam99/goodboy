@@ -9,6 +9,13 @@ type Params = {
   readonly workspaceId: WorkspaceId;
 };
 
+type CheckedRoots = {
+  readonly workspaceId: WorkspaceId;
+  readonly roots: ReadonlyArray<string>;
+  readonly gitlabHosts: ReadonlyArray<string>;
+  readonly githubRoots: ReadonlyArray<string>;
+};
+
 type RootParams = {
   readonly root: string;
   readonly gitlabHosts: ReadonlyArray<string>;
@@ -37,19 +44,29 @@ export const useGithubProjectRoots = ({ workspaceId }: Params): ReadonlyArray<st
         .map((binding) => binding.config.host),
     ),
   );
-  const [githubRoots, setGithubRoots] = useState<ReadonlyArray<string> | null>(null);
+  const [checked, setChecked] = useState<CheckedRoots | null>(null);
 
   useEffect(() => {
     let isDisposed = false;
     void Promise.all(roots.map((root) => isOnGithub({ root, gitlabHosts }))).then((flags) => {
       if (!isDisposed) {
-        setGithubRoots(roots.filter((_, index) => flags[index] === true));
+        setChecked({
+          workspaceId,
+          roots,
+          gitlabHosts,
+          githubRoots: roots.filter((_, index) => flags[index] === true),
+        });
       }
     });
     return () => {
       isDisposed = true;
     };
-  }, [gitlabHosts, roots]);
+  }, [gitlabHosts, roots, workspaceId]);
 
-  return githubRoots;
+  const isCurrent =
+    checked !== null &&
+    checked.workspaceId === workspaceId &&
+    checked.roots === roots &&
+    checked.gitlabHosts === gitlabHosts;
+  return isCurrent ? checked.githubRoots : null;
 };

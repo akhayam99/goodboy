@@ -2,7 +2,7 @@
 
 import { afterEach, beforeEach, describe, expect, it, onTestFinished, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
-import type { OverrideSettings, WorkspaceId } from '@goodboy/types';
+import { brandId, type OverrideSettings, type WorkspaceId } from '@goodboy/types';
 import { overridesWithAttribution } from '../../../../__tests__/helpers/attributionOverrides';
 import type { WorkspaceOverridesPatch } from '../../../../store/slices/overrides/patchWorkspaceOverrides';
 import { SettingRowFocusContext } from '../../settingRowFocusContext';
@@ -231,6 +231,43 @@ describe('WorkspaceReviewRepliesSection', () => {
     screen.getByLabelText('Style note');
     expect(screen.queryByRole('button', { name: /Learn from your replies/ })).toBeNull();
     expect(screen.queryByText('Learns from your replies on GitHub.')).toBeNull();
+  });
+
+  it('hides learning until the projects of a new workspace are checked, then reads only those', async () => {
+    const other = brandId<WorkspaceId>({ value: 'workspace-2' });
+    const checks: Array<() => void> = [];
+    onTestFinished(() => checks.forEach((check) => check()));
+    stubStoryInvoke({
+      worktree_remote_url: (args: RemoteArgs = {}) =>
+        args.repoPath === '/repos/notify-relay'
+          ? new Promise<string>((resolve) => {
+              checks.push(() => resolve('git@github.com:harborline/notify-relay.git'));
+            })
+          : remoteOf(args),
+    });
+    learn.mockResolvedValue('Short.');
+    const overrides: OverrideSettings = {
+      ...overridesWithAttribution({ attributionFooter: null }),
+      replyVoice: 'mine',
+    };
+    state.workspaceOverrides = { [WORKSPACE]: overrides, [other]: overrides };
+    const view = render(<WorkspaceReviewRepliesSection workspaceId={WORKSPACE} />);
+    await screen.findByRole('button', { name: /Learn from your replies/ });
+
+    view.rerender(<WorkspaceReviewRepliesSection workspaceId={other} />);
+    expect(screen.queryByRole('button', { name: /Learn from your replies/ })).toBeNull();
+
+    await act(async () => {
+      checks.forEach((check) => check());
+    });
+    fireEvent.click(await screen.findByRole('button', { name: /Learn from your replies/ }));
+    await waitFor(() =>
+      expect(learn).toHaveBeenCalledWith({
+        workspaceId: other,
+        githubRoots: ['/repos/notify-relay'],
+        taskModel: expect.objectContaining({ providerId: 'anthropic' }),
+      }),
+    );
   });
 
   it('flags a template without {reason} or with an unknown variable, and does not save it', () => {

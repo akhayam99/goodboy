@@ -7,6 +7,7 @@ import { tauriGhRunner } from '../integrations/github/github';
 const NOTE_IS_SAFE = 'Your note is unchanged.';
 const NO_GITHUB_PROJECT = `No project in this workspace is on GitHub. ${NOTE_IS_SAFE}`;
 const CONNECT_GITHUB = `Connect GitHub to read your replies. ${NOTE_IS_SAFE}`;
+const NO_REPLIES_READ = `Couldn't read your replies on GitHub. ${NOTE_IS_SAFE}`;
 const NO_REVIEW_REPLIES = `Couldn't find review replies you wrote on GitHub. ${NOTE_IS_SAFE}`;
 const NO_STYLE_NOTE = `Couldn't write a style note from your replies. ${NOTE_IS_SAFE}`;
 const SIGNED_OUT = /auth login|not logged in|authentication|credentials|HTTP 401/i;
@@ -32,9 +33,9 @@ const readReplies = async ({ workspaceId, repoSlugs, cwd }: RepliesParams) => {
     });
   } catch (error) {
     if (SIGNED_OUT.test(formatError(error))) {
-      throw new Error(CONNECT_GITHUB);
+      throw new Error(CONNECT_GITHUB, { cause: error });
     }
-    throw error;
+    throw new Error(NO_REPLIES_READ, { cause: error });
   }
 };
 
