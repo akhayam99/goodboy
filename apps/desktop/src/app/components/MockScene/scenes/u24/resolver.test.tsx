@@ -118,7 +118,7 @@ describe('the resolver scenes', () => {
 
     expect(screen.queryByText('Choosing models')).not.toBeNull();
     expect(screen.queryByText('Models in workflows')).not.toBeNull();
-    expect(screen.queryByText('Typed requests')).not.toBeNull();
+    expect(screen.queryByText('Typed requests')).toBeNull();
   });
 
   it.each(Object.keys(U24_RESOLVER_SCENES))(

@@ -368,13 +368,6 @@ export const SETTING_ROWS: ReadonlyArray<SettingRow> = [
     formerNames: ['Fallback', 'Provider order'],
   }),
   row({
-    key: 'typed-requests',
-    label: 'Typed requests',
-    help: 'Let a small model read typed requests before the Lead starts.',
-    page: MODELS,
-    band: 'Choosing models',
-  }),
-  row({
     key: 'models-in-workflows',
     label: 'Models in workflows',
     help: 'Let the workflow orchestrator choose models.',
