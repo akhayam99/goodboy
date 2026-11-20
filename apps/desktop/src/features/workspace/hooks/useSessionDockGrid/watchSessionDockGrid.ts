@@ -111,7 +111,17 @@ export const watchSessionDockGrid = ({
     timer = setTimeout(flush, delayMs);
   });
 
+  const rereadOnFocus = (): void => {
+    if (owner === null) {
+      return;
+    }
+    flush();
+    recall({ sessionId: owner });
+  };
+  window.addEventListener('focus', rereadOnFocus);
+
   return () => {
+    window.removeEventListener('focus', rereadOnFocus);
     unsubscribe();
     flush();
   };

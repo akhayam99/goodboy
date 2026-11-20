@@ -8,6 +8,8 @@ export { DOCK_FOCUS_DETAIL, DOCK_FOCUS_PAGE } from './dockGridSpec';
 export { DockCellContext } from './dockCellContext';
 export type { DockGridCell, DockGridSpec, DockGridSplit } from './dockGridSpec';
 export { dockSplitKeyOf } from './dockSplitKeyOf';
+export { dockColumnsAfterMove } from './dockColumnsAfterMove';
+export type { DockMoveTarget } from './dockMoveTarget';
 export { turnedDockColumnsOf } from './turnedDockColumnsOf';
 export { ShellRailContext } from './shellRailContext';
 export { UnderHeadContext } from './underHeadContext';
