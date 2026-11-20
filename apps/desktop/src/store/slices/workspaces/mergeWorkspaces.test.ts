@@ -235,6 +235,35 @@ describe('mergeWorkspaces slice action', () => {
     expect(store.state.reloadWorkspace).toHaveBeenCalledWith({ workspaceId: TARGET });
   });
 
+  it('shows the merged list even when clearing old chat images fails', async () => {
+    const store = harness({});
+    h.pruneChatImages.mockRejectedValueOnce(new Error('images folder is locked'));
+
+    await expect(
+      mergeWorkspaces(
+        store.set,
+        store.get,
+      )({ sourceWorkspaceIds: [SOURCE], targetWorkspaceId: TARGET }),
+    ).rejects.toThrow('images folder is locked');
+
+    expect(await rowsOf({ sql: 'SELECT id FROM workspaces' })).toEqual([{ id: TARGET }]);
+    expect(store.state.workspaces.map((entry) => entry.id)).toEqual([TARGET]);
+  });
+
+  it('reloads the workspace open when the merge lands, not the one open at the click', async () => {
+    const store = harness({ currentWorkspaceId: SOURCE });
+    h.pruneChatImages.mockImplementationOnce(async () => {
+      store.set({ currentWorkspaceId: TARGET });
+    });
+
+    await mergeWorkspaces(
+      store.set,
+      store.get,
+    )({ sourceWorkspaceIds: [SOURCE], targetWorkspaceId: TARGET });
+
+    expect(store.state.reloadWorkspace).toHaveBeenCalledWith({ workspaceId: TARGET });
+  });
+
   it('refuses an unknown target and touches nothing', async () => {
     const store = harness({});
 
