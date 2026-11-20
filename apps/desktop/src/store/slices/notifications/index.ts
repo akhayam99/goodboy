@@ -9,6 +9,7 @@ import { markNotificationUnread } from './markNotificationUnread';
 import { markNotificationsActed } from './markNotificationsActed';
 import { markNotificationsRead } from './markNotificationsRead';
 import { reportError } from './reportError';
+import { reportErrors } from './reportErrors';
 import { resolveNotifications } from './resolveNotifications';
 import { setNotificationScope } from './setNotificationScope';
 import type { SliceDeps } from '../../slice-types';
@@ -21,6 +22,7 @@ export const createNotificationsSlice = ({ set, get }: SliceDeps) => {
     emitNotification: emitNotification(set, get),
     resolveNotifications: resolveNotifications(set, get),
     reportError: reportError({ get }),
+    reportErrors: reportErrors({ get }),
     markNotificationRead: markNotificationRead(set, get),
     markNotificationUnread: markNotificationUnread(set, get),
     markNotificationsActed: markNotificationsActed({ set, get }),

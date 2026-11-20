@@ -14,6 +14,7 @@ export const notificationActionIcon = ({ kind }: ActionIconParams): IconGlyph =>
     case 'retry-update':
     case 'retry-notification-scope':
     case 'retry-push':
+    case 'retry-action':
     case 'continue-agent':
       return RotateCcw;
     case 'open-agent':

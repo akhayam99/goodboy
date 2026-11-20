@@ -86,7 +86,8 @@ export type NotificationAction =
       readonly tool?: NotificationSettingsTool;
     }
   | { readonly kind: 'reveal-path'; readonly path: string }
-  | { readonly kind: 'retry-push'; readonly sessionId: SessionId; readonly mountId: MountId };
+  | { readonly kind: 'retry-push'; readonly sessionId: SessionId; readonly mountId: MountId }
+  | { readonly kind: 'retry-action'; readonly retryId: string };
 
 type NotificationSettingsTool =
   'bitbucket' | 'github' | 'gitlab' | 'jira' | 'linear' | 'sentry' | 'slack';
@@ -140,6 +141,7 @@ const NOTIFICATION_ACTION_KINDS = {
   'open-settings': true,
   'reveal-path': true,
   'retry-push': true,
+  'retry-action': true,
 } satisfies Record<NotificationAction['kind'], true>;
 
 const isNotificationAction = (value: unknown): value is NotificationAction =>

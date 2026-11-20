@@ -28,6 +28,7 @@ import {
   type StoryStore,
 } from '../../../../store/storyHarness';
 import { mapNotificationAction } from './';
+import { registerActionRetry } from '../../../../store/slices/notifications/actionRetries';
 
 const SESSION_ID = brandId<SessionId>({ value: 'session-1' });
 const MOUNT_ID = brandId<MountId>({ value: 'mount-1' });
@@ -167,5 +168,41 @@ describe('recovery actions of a reported error', () => {
         clause: 'work-kept',
       },
     });
+  });
+
+  it('retry-action: runs the action again and clears the failure when it works', async () => {
+    const retry = vi.fn(async () => true);
+    const retryId = registerActionRetry({ retry });
+    const action: NotificationAction = { kind: 'retry-action', retryId };
+    const toastAction = mapNotificationAction(action, useAppStore.getState(), {
+      ...notificationOf(action),
+      coalesceKey: "error:ws-1:error:Couldn't delete 2 local branches",
+    });
+    expect(toastAction?.label).toBe('Retry');
+    toastAction?.onClick();
+    await vi.waitFor(() =>
+      expect(resolveNotificationsSpy).toHaveBeenCalledWith([
+        "error:ws-1:error:Couldn't delete 2 local branches",
+      ]),
+    );
+    expect(retry).toHaveBeenCalledTimes(1);
+  });
+
+  it('retry-action: a retry that fails again keeps the failure row', async () => {
+    const retry = vi.fn(async () => false);
+    const action: NotificationAction = {
+      kind: 'retry-action',
+      retryId: registerActionRetry({ retry }),
+    };
+    mapNotificationAction(action, useAppStore.getState(), {
+      ...notificationOf(action),
+      coalesceKey: 'error:ws-1:error:x',
+    })?.onClick();
+    await vi.waitFor(() => expect(retry).toHaveBeenCalledTimes(1));
+    expect(resolveNotificationsSpy).not.toHaveBeenCalled();
+  });
+
+  it('retry-action: offers no Retry once the action is gone, after a restart', () => {
+    expect(mapAction({ kind: 'retry-action', retryId: 'gone' })).toBeUndefined();
   });
 });

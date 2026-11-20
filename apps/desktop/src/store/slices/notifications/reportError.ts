@@ -1,5 +1,7 @@
+import type { NotificationAction } from '@goodboy/db';
 import type { SessionId, WorkspaceId } from '@goodboy/types';
 import { formatError } from '@goodboy/ui';
+import { registerActionRetry, type ActionRetry } from './actionRetries';
 import { ERROR_CLAUSE_TEXT, type ErrorRecovery } from './errorRecovery';
 import type { GetFn } from './types';
 
@@ -13,6 +15,8 @@ export type ReportErrorParams = {
   workspaceId?: WorkspaceId;
   recovery: ErrorRecovery;
   coalesceKey?: string;
+  retry?: ActionRetry;
+  stays?: string;
 };
 
 type TruncateParams = {
@@ -25,11 +29,12 @@ const truncateBody = ({ text }: TruncateParams): string =>
 type BodyParams = {
   readonly text: string;
   readonly recovery: ErrorRecovery;
+  readonly stays: string | undefined;
 };
 
-const errorBodyOf = ({ text, recovery }: BodyParams): string | null => {
+const errorBodyOf = ({ text, recovery, stays }: BodyParams): string | null => {
   const cause = text === '' ? '' : truncateBody({ text });
-  const clause = recovery.clause === undefined ? '' : ERROR_CLAUSE_TEXT[recovery.clause];
+  const clause = stays ?? (recovery.clause === undefined ? '' : ERROR_CLAUSE_TEXT[recovery.clause]);
   const body = [cause, clause].filter((part) => part !== '').join('\n');
   return body === '' ? null : body;
 };
@@ -39,14 +44,26 @@ type FactoryParams = {
 };
 
 export const reportError = ({ get }: FactoryParams) => {
-  return async ({ title, error, severity = 'error', recovery, ...target }: ReportErrorParams) => {
+  return async ({
+    title,
+    error,
+    severity = 'error',
+    recovery,
+    retry,
+    stays,
+    ...target
+  }: ReportErrorParams) => {
     const text = formatError(error).trim();
+    const action: NotificationAction | undefined =
+      retry === undefined
+        ? recovery.action
+        : { kind: 'retry-action', retryId: registerActionRetry({ retry }) };
     await get().emitNotification({
       kind: 'error',
       severity,
       title,
-      body: errorBodyOf({ text, recovery }),
-      ...(recovery.action !== undefined && { action: recovery.action }),
+      body: errorBodyOf({ text, recovery, stays }),
+      ...(action !== undefined && { action }),
       ...target,
     });
   };

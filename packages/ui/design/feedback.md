@@ -95,7 +95,13 @@ and answers again when the work ends. The product rules live in
 - **One action, one row.** When one action fails on several objects with the
   same title, the failures fold into one row with the count and one Retry
   ("Couldn't delete 2 local branches"), never a row and a toast per object. An
-  action that runs offline lights one toast, not dozens. The title names the
+  action that runs offline lights one toast, not dozens. `reportErrors` takes
+  the failures of one action and a group title, and writes one row; one failure
+  keeps its own title. A `retry` passed to `reportError` or `reportErrors` is
+  the row's Retry, in the toast and in the bell, and a retry that works clears
+  the row. It lives in memory only: after a restart the row keeps its sentence
+  and has no Retry. A `stays` sentence takes the place of the clause when the
+  action can name what stayed ("GitHub is still connected."). The title names the
   real object ("Couldn't merge pull request #412", "Couldn't delete the local
   branch hl/fix-duplicate-credit"), and the raw detail goes through the same
   redaction as the log.
