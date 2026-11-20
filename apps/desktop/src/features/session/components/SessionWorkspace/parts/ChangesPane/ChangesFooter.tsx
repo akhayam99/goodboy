@@ -29,7 +29,7 @@ export const ChangesFooter = ({ folders, turns, sizeError }: Props) => {
         <p key={line.relativePath} className="flex min-w-0 items-center gap-2">
           <Lock size={ICON_SIZE.row} aria-hidden className="shrink-0" />
           <span className="min-w-0 truncate">
-            {line.relativePath} is not saved: {line.reason}
+            {line.relativePath} isn't saved: {line.reason}
           </span>
         </p>
       ))}

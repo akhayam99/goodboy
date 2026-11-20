@@ -12,8 +12,8 @@ export const ContextLoadFailure = ({ title, onRetry }: Props) => {
       size="section"
       icon={TriangleAlert}
       tone="warning"
-      title={`${title} did not load`}
-      description="The database did not answer, so this isn't what the session holds. Nothing here is missing on purpose."
+      title={`${title} didn't load`}
+      description="Goodboy couldn't read it. Nothing in the session was changed."
       action={
         <Button size="sm" variant="ghost" onClick={onRetry}>
           <RotateCcw size={ICON_SIZE.control} aria-hidden />

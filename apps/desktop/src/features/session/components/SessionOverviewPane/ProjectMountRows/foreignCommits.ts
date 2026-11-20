@@ -45,6 +45,6 @@ type BodyParams = {
 
 export const foreignCommitsBody = ({ branch, remoteAhead, isClean }: BodyParams): string => {
   const noun = remoteAhead === 1 ? '1 commit' : `${remoteAhead} commits`;
-  const lead = `origin/${branch} has ${noun} this worktree does not have.`;
+  const lead = `origin/${branch} has ${noun} this worktree doesn't have.`;
   return isClean ? lead : `${lead} Commit or discard the local changes first.`;
 };
