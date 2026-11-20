@@ -16,12 +16,12 @@ const ONE_WAY_MARK = {
   minor: {
     icon: DoorClosedLocked,
     label:
-      "This release changes your data. You can't go back to an older version after installing it.",
+      'This version updates your data in one direction. Going back means restoring the backup made before updating.',
   },
   major: {
     icon: Milestone,
     label:
-      "This is a major release. It can remove or replace older ways of working, and you can't go back after installing it.",
+      'This is a major release. It can remove or replace older ways of working, and going back means restoring the backup made before updating.',
   },
 } as const satisfies Record<'minor' | 'major', OneWayMark>;
 

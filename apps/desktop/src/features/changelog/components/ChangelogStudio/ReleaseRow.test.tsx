@@ -66,7 +66,8 @@ describe('ReleaseRow', () => {
     renderRow({ release: buildRelease({ version: '0.12.0', oneWayFrom: '0.11' }) });
 
     const mark = screen.getByRole('img');
-    expect(mark.getAttribute('aria-label')).toMatch(/changes your data/i);
+    expect(mark.getAttribute('aria-label')).toMatch(/updates your data in one direction/i);
+    expect(mark.getAttribute('aria-label')).toMatch(/restoring the backup/i);
   });
 
   it('marks a major one-way release with a distinct glyph', () => {
