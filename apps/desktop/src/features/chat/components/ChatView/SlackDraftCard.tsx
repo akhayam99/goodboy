@@ -67,7 +67,7 @@ export const SlackDraftCard = ({ draft, sessionId }: Props) => {
           <CONCEPT_ICONS.slack size={ICON_SIZE.row} />
         </span>
         <span className="text-row text-foreground">Reply ready for #{thread.channelName}</span>
-        <span className="text-meta text-muted-foreground">waiting for you</span>
+        <span className="text-meta text-muted-foreground">Needs you</span>
       </div>
       {quote == null ? null : (
         <p className="border-l-2 border-border-soft pl-3 text-meta text-muted-foreground">

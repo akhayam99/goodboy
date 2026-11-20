@@ -117,6 +117,7 @@ describe('SlackDraftCard inside the transcript', () => {
     renderTranscript([draft]);
 
     expect(await screen.findByText('Reply ready for #payments')).toBeDefined();
+    expect(screen.getByText('Needs you')).toBeDefined();
     expect(
       await screen.findByText(
         'Robin Vale: Does anyone know why the refund job skipped last night?',
