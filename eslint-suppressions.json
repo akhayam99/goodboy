@@ -6500,11 +6500,6 @@
       "count": 16
     }
   },
-  "apps/desktop/src/features/workspace-chat/components/ChatStudio.test.tsx": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 1
-    }
-  },
   "apps/desktop/src/features/workspace-chat/components/TurnIntoWorkPanel/index.tsx": {
     "react-hooks/exhaustive-deps": {
       "count": 2
