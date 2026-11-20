@@ -1790,7 +1790,7 @@
   },
   "apps/desktop/src/features/backup/components/BackupPage/index.test.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
-      "count": 10
+      "count": 9
     }
   },
   "apps/desktop/src/features/backup/components/BackupPage/index.tsx": {

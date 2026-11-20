@@ -1,5 +1,5 @@
 import { useId, type ReactNode } from 'react';
-import { Textarea, cn } from '@goodboy/ui';
+import { FieldError, Textarea, cn, fieldErrorAriaOf } from '@goodboy/ui';
 import { replyTemplateProblems } from '../../../resolve/renderReplyTemplate';
 import type { SettingSave } from '../../hooks/useSettingSave';
 import { useSettingRowAnchor } from '../../hooks/useSettingRowAnchor';
@@ -34,7 +34,16 @@ export const ReplyTemplateField = ({
 }: Props) => {
   const id = useId();
   const anchor = useSettingRowAnchor({ rowKey });
+  const problemId = useId();
   const problems = replyTemplateProblems({ template: draft });
+  const problemText =
+    problems.length === 0
+      ? null
+      : problems.map((problem) => (
+          <span key={problem} className="block">
+            {problem}
+          </span>
+        ));
 
   return (
     <div
@@ -61,12 +70,9 @@ export const ReplyTemplateField = ({
         onChange={(event) => onDraftChange(event.target.value)}
         onBlur={(event) => onCommit({ caret: event.currentTarget.selectionStart })}
         className="text-code"
+        {...fieldErrorAriaOf({ id: problemId, error: problemText })}
       />
-      {problems.map((problem) => (
-        <p key={problem} className="text-meta text-danger">
-          {problem}
-        </p>
-      ))}
+      <FieldError id={problemId} error={problemText} />
       {save.error === null ? null : <SaveErrorHelp save={save} />}
       {children}
     </div>

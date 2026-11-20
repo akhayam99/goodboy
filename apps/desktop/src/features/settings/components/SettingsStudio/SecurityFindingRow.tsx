@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { ShieldCheck } from '@goodboy/ui/icons';
 import type { SecretKind, SecurityFinding, SecurityFindingSubjectKind } from '@goodboy/types';
-import { Button, ConfirmPopover, formatError, ICON_SIZE, Notice } from '@goodboy/ui';
+import { Button, ConfirmPopover, ICON_SIZE, Notice } from '@goodboy/ui';
+import { useAppStore } from '../../../../store';
+import { NOTHING_CHANGED } from '../../../../store/slices/notifications/errorRecovery';
 
 import { formatAge } from '../../../../shared/utils/time/formatAge';
 import { useNow } from '../../../../shared/hooks/useNow';
@@ -71,7 +73,7 @@ export const SecurityFindingRow = ({
   const now = useNow(30_000);
   const [isConfirming, setIsConfirming] = useState(false);
   const [isBusy, setIsBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const reportError = useAppStore((state) => state.reportError);
   const resolved = resolveSubject({ finding, projectScripts, projectNameById });
   const label = SUBJECT_KIND_LABEL[finding.subjectKind];
   const title =
@@ -81,13 +83,19 @@ export const SecurityFindingRow = ({
           resolved.projectName === null ? '' : ` in ${resolved.projectName}`
         }.`;
 
-  const confirm = async () => {
+  const confirm = async (): Promise<boolean> => {
     setIsBusy(true);
-    setError(null);
     try {
       await onNotASecret({ finding });
-    } catch (failure) {
-      setError(formatError(failure));
+      return true;
+    } catch (error) {
+      void reportError({
+        title: "Couldn't stop flagging this value",
+        error,
+        recovery: NOTHING_CHANGED,
+        retry: confirm,
+      });
+      return false;
     } finally {
       setIsBusy(false);
       setIsConfirming(false);
@@ -114,7 +122,9 @@ export const SecurityFindingRow = ({
           confirmLabel="Not a secret"
           isBusy={isBusy}
           isOpen={isConfirming}
-          onConfirm={confirm}
+          onConfirm={async () => {
+            await confirm();
+          }}
           onCancel={() => setIsConfirming(false)}
           trigger={() => (
             <Button variant="ghost" size="sm" onClick={() => setIsConfirming(true)}>
@@ -123,12 +133,6 @@ export const SecurityFindingRow = ({
           )}
         />
       }
-    >
-      {error !== null && (
-        <p role="alert" className="text-meta text-danger">
-          {error}
-        </p>
-      )}
-    </Notice>
+    />
   );
 };

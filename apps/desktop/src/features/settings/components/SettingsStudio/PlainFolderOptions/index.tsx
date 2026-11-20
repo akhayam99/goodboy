@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useId, useState } from 'react';
 import type { FolderPurpose, Project } from '@goodboy/types';
-import { formatError, SegmentedTabs } from '@goodboy/ui';
+import { FieldError, fieldErrorAriaOf, formatError, SegmentedTabs } from '@goodboy/ui';
 import { useAppStore } from '../../../../../store';
 import { FOLDER_FACE_COPY } from '../../../../workspace/folderFaceCopy';
 import { FolderGitCard } from '../../../../workspace/folderGitCard';
@@ -20,6 +20,7 @@ export const PlainFolderOptions = ({ folder, isGitInitiallyOpen }: Props) => {
   const setFolderPurpose = useAppStore((state) => state.setFolderPurpose);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const errorId = useId();
 
   const choose = async ({ next }: ChooseParams) => {
     if (isSaving || next === purpose) {
@@ -47,6 +48,7 @@ export const PlainFolderOptions = ({ folder, isGitInitiallyOpen }: Props) => {
       aria-label={`${folder.name}, what it is for`}
       aria-busy={isSaving}
       className="flex flex-col gap-3"
+      {...fieldErrorAriaOf({ id: errorId, error })}
     >
       <div className="flex flex-col gap-1">
         <span className="text-meta text-muted-foreground">Kind</span>
@@ -60,11 +62,7 @@ export const PlainFolderOptions = ({ folder, isGitInitiallyOpen }: Props) => {
         <p className="text-meta text-muted-foreground">
           {purpose === null ? FOLDER_FACE_COPY.pickBlock : FOLDER_FACE_COPY[purpose].meaning}
         </p>
-        {error === null ? null : (
-          <p role="alert" className="text-meta text-danger">
-            {error}
-          </p>
-        )}
+        <FieldError id={errorId} error={error} />
       </div>
       <FolderGitCard projectId={folder.id} isInitiallyOpen={isGitInitiallyOpen} isEmbedded />
       <SavedVersionsLine folder={folder} />

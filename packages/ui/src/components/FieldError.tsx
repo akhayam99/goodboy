@@ -15,7 +15,7 @@ export const FieldError = ({ id, error, className }: FieldErrorProps) => {
     return null;
   }
   return (
-    <p
+    <span
       id={id}
       role="alert"
       data-slot="field-error"
@@ -25,6 +25,6 @@ export const FieldError = ({ id, error, className }: FieldErrorProps) => {
         <CircleAlert size={ICON_SIZE.control} aria-hidden className="text-danger" />
       </span>
       <span className="min-w-0">{error}</span>
-    </p>
+    </span>
   );
 };

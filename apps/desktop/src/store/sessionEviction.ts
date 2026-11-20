@@ -232,7 +232,6 @@ export const NON_SESSION_STATE_KEYS = [
   'backupImportResolvedPaths',
   'hasBackupImportWildcardConsent',
   'backupImportPhase',
-  'backupImportError',
   'backupImportResult',
   'currentWorkspaceId',
   'switchingToWorkspaceId',
