@@ -86,26 +86,30 @@ fn marker_path(path: &Path) -> PathBuf {
     path.join(MARKER_DIR).join(MARKER_FILE)
 }
 
+const STAGED_MARKER: &str = ".goodboy-session.json";
+
 pub fn migrate_legacy_marker(path: &Path) -> std::io::Result<()> {
     let legacy = path.join(MARKER_DIR);
-    if !legacy.is_file() {
+    let staged = path.join(STAGED_MARKER);
+    if legacy.is_file() {
+        crate::util::write_atomic(&staged, &std::fs::read(&legacy)?)?;
+        std::fs::remove_file(&legacy)?;
+    }
+    if !staged.is_file() {
         return Ok(());
     }
-    let bytes = std::fs::read(&legacy)?;
-    std::fs::remove_file(&legacy)?;
     std::fs::create_dir_all(path.join(MARKER_DIR))?;
-    std::fs::write(marker_path(path), bytes)?;
-    Ok(())
+    std::fs::rename(&staged, marker_path(path))
 }
 
 pub(crate) fn marker_read(path: &Path) -> Result<SessionMarker, SessionDirError> {
-    let modern = marker_path(path);
-    let marker = if modern.is_file() {
-        std::fs::read(modern)?
-    } else {
-        std::fs::read(path.join(MARKER_DIR))?
-    };
-    Ok(serde_json::from_slice::<SessionMarker>(&marker)?)
+    let found = [marker_path(path), path.join(STAGED_MARKER)]
+        .into_iter()
+        .find(|candidate| candidate.is_file())
+        .unwrap_or_else(|| path.join(MARKER_DIR));
+    Ok(serde_json::from_slice::<SessionMarker>(&std::fs::read(
+        found,
+    )?)?)
 }
 
 #[tauri::command]
@@ -252,6 +256,42 @@ mod tests {
         .unwrap();
         assert!(created.reused);
         std::fs::remove_dir_all(root).unwrap();
+    }
+
+    const LEGACY_MARKER: &[u8] =
+        br#"{"sessionId":"session-1","workspaceId":"workspace-1","createdAt":"2026-01-01T00:00:00Z"}"#;
+
+    #[test]
+    fn migrating_the_legacy_marker_leaves_only_the_new_one() {
+        let target = test_root("legacy-migrate");
+        std::fs::create_dir_all(&target).unwrap();
+        std::fs::write(target.join(".goodboy"), LEGACY_MARKER).unwrap();
+
+        super::migrate_legacy_marker(&target).unwrap();
+
+        assert_eq!(
+            std::fs::read(target.join(".goodboy").join("session.json")).unwrap(),
+            LEGACY_MARKER
+        );
+        assert!(!target.join(super::STAGED_MARKER).exists());
+        assert_eq!(super::marker_read(&target).unwrap().session_id, "session-1");
+        std::fs::remove_dir_all(target).unwrap();
+    }
+
+    #[test]
+    fn a_migration_cut_short_after_the_legacy_file_went_keeps_the_marker() {
+        let target = test_root("legacy-migrate-cut");
+        std::fs::create_dir_all(&target).unwrap();
+        std::fs::write(target.join(super::STAGED_MARKER), LEGACY_MARKER).unwrap();
+
+        assert_eq!(super::marker_read(&target).unwrap().session_id, "session-1");
+        super::migrate_legacy_marker(&target).unwrap();
+        assert_eq!(
+            std::fs::read(target.join(".goodboy").join("session.json")).unwrap(),
+            LEGACY_MARKER
+        );
+        assert!(!target.join(super::STAGED_MARKER).exists());
+        std::fs::remove_dir_all(target).unwrap();
     }
 
     #[test]
