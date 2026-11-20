@@ -29,9 +29,9 @@ pub(super) fn blocking_reason(cwd: &Path, can_carry_dirty: bool) -> Option<Strin
             }
             Some(format!(
                 "{pending} {} here {} changes that are not committed. Commit or stash {} first: rewriting needs a clean worktree.",
-                if pending == 1 { "file" } else { "files" },
-                if pending == 1 { "has" } else { "have" },
-                if pending == 1 { "it" } else { "them" }
+                match pending { 1 => "file", _ => "files" },
+                match pending { 1 => "has", _ => "have" },
+                match pending { 1 => "it", _ => "them" }
             ))
         }
         GitWorkingTree::Unknown { .. } => Some(STATUS_UNREADABLE.to_string()),
@@ -78,9 +78,9 @@ pub(crate) fn untracked_in_the_way(cwd: &Path, target: &str) -> Option<String> {
     Some(format!(
         "{} untracked or ignored {} would be overwritten: {}. Move or commit {} first. Nothing was changed.",
         blocking.len(),
-        if blocking.len() == 1 { "path" } else { "paths" },
+        match blocking.len() { 1 => "path", _ => "paths" },
         blocking.join(", "),
-        if blocking.len() == 1 { "it" } else { "them" }
+        match blocking.len() { 1 => "it", _ => "them" }
     ))
 }
 

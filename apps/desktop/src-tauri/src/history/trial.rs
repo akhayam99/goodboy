@@ -89,10 +89,9 @@ fn replay_in_copy(
         let pick = git_run(copy, &["cherry-pick", "--no-commit", &step.sha], None, None)?;
         if pick.status != 0 {
             let files = unmerged_files(copy);
-            let kind = if files.is_empty() {
-                StopKind::Hook
-            } else {
-                StopKind::Merge
+            let kind = match files.is_empty() {
+                true => StopKind::Hook,
+                false => StopKind::Merge,
             };
             finish_group(group.take(), &tip, &mut map);
             return Ok(Replay {

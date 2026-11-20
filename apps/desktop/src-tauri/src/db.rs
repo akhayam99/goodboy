@@ -439,17 +439,14 @@ pub fn resolve_db_path() -> Result<PathBuf, DbError> {
     if let Ok(custom) = std::env::var("GOODBOY_DB_FILE") {
         let custom = custom.trim();
         if !custom.is_empty() {
-            let p = PathBuf::from(custom);
-            return Ok(if p.is_absolute() { p } else { dir.join(p) });
+            return Ok(dir.join(custom));
         }
     }
 
-    let file = if cfg!(debug_assertions) {
-        DB_FILE_DEV
-    } else {
-        DB_FILE
-    };
-    Ok(dir.join(file))
+    if cfg!(debug_assertions) {
+        return Ok(dir.join(DB_FILE_DEV));
+    }
+    Ok(dir.join(DB_FILE))
 }
 
 #[derive(Debug, Deserialize)]
@@ -466,7 +463,7 @@ impl SqlParam {
     fn to_value(&self) -> Value {
         match self {
             SqlParam::Null => Value::Null,
-            SqlParam::Bool(b) => Value::Integer(if *b { 1 } else { 0 }),
+            SqlParam::Bool(b) => Value::Integer(i64::from(*b)),
             SqlParam::Int(n) => Value::Integer(*n),
             SqlParam::Float(f) => Value::Real(*f),
             SqlParam::Text(s) => Value::Text(s.clone()),
@@ -681,10 +678,9 @@ fn run_statement(
     let mut stmt = conn.prepare_cached(&statement.sql)?;
     let is_readonly = stmt.readonly();
     let rows = collect_rows(&mut stmt, &statement.params)?;
-    let rows_affected = if is_readonly {
-        0
-    } else {
-        conn.changes() as i64
+    let rows_affected = match is_readonly {
+        true => 0,
+        false => conn.changes() as i64,
     };
     Ok(TxStatementResult {
         rows_affected,

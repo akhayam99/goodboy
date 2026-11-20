@@ -46,13 +46,12 @@ pub(super) fn worktree_commits_blocking(
         GitDistance::Known { .. } => remote.tracking,
         GitDistance::Unknown { .. } => None,
     };
-    let unpushed = if let Some(ref upstream) = tracking {
-        rev_list_set(p, &format!("refs/remotes/{upstream}..HEAD"))
-    } else {
-        rev_list_set(p, "HEAD")
+    let unpushed = match &tracking {
+        Some(upstream) => rev_list_set(p, &format!("refs/remotes/{upstream}..HEAD")),
+        None => rev_list_set(p, "HEAD")
             .into_iter()
             .take(COMMIT_LIMIT)
-            .collect()
+            .collect(),
     };
 
     let branch_range = resolve_branch_range(p, base_branch.as_deref());

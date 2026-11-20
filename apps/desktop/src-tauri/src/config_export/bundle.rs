@@ -64,10 +64,9 @@ fn normalize_json_ish(raw: serde_json::Value) -> Option<serde_json::Value> {
         serde_json::Value::String(s) => {
             let trimmed = s.trim();
             if trimmed.is_empty() {
-                None
-            } else {
-                serde_json::from_str(trimmed).ok()
+                return None;
             }
+            serde_json::from_str(trimmed).ok()
         }
         other => Some(other),
     }

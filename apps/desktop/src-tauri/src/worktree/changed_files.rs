@@ -183,10 +183,9 @@ pub(super) fn worktree_changed_files_blocking(
         resolve_base(p, configured_base).ok_or_else(|| WorktreeError::Git {
             message: "cannot resolve base branch merge-base".to_string(),
         })?;
-    let resolved = if branch_work_landed(p, &base_ref, &merge_base) {
-        "HEAD".to_string()
-    } else {
-        merge_base
+    let resolved = match branch_work_landed(p, &base_ref, &merge_base) {
+        true => "HEAD".to_string(),
+        false => merge_base,
     };
     let tracked_numstat = git(p, &["diff", "--numstat", "-z", &resolved])?;
     let mut additions: u32 = 0;

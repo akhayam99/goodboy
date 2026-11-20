@@ -187,6 +187,16 @@ fn worktree_diff_file_blocking(
     Ok(untracked_new_file_diff_for(p, &rel))
 }
 
+fn relative_to_worktree<'a>(candidate: &'a Path, root: &Path, worktree: &Path) -> Option<&'a Path> {
+    if !candidate.is_absolute() {
+        return Some(candidate);
+    }
+    candidate
+        .strip_prefix(root)
+        .or_else(|_| candidate.strip_prefix(worktree))
+        .ok()
+}
+
 fn confine_rel_path(worktree: &Path, path: &str) -> Result<String, WorktreeError> {
     let trimmed = path.trim();
     if trimmed.is_empty() {
@@ -201,14 +211,7 @@ fn confine_rel_path(worktree: &Path, path: &str) -> Result<String, WorktreeError
         .canonicalize()
         .unwrap_or_else(|_| worktree.to_path_buf());
     let candidate = Path::new(trimmed);
-    let relative = if candidate.is_absolute() {
-        candidate
-            .strip_prefix(&root)
-            .or_else(|_| candidate.strip_prefix(worktree))
-            .map_err(|_| escapes())?
-    } else {
-        candidate
-    };
+    let relative = relative_to_worktree(candidate, &root, worktree).ok_or_else(escapes)?;
     let resolved = match resolve_within(&root, relative) {
         Ok(resolved) => resolved
             .strip_prefix(&root)
@@ -370,11 +373,7 @@ fn untracked_new_file_diff_for(p: &Path, rel: &str) -> String {
         return out;
     }
     let ends_with_nl = content.ends_with('\n');
-    let lines: Vec<&str> = if ends_with_nl {
-        content.split_terminator('\n').collect()
-    } else {
-        content.split('\n').collect()
-    };
+    let lines: Vec<&str> = content.split_terminator('\n').collect();
     let n = lines.len();
     out.push_str(&format!("@@ -0,0 +1,{n} @@\n"));
     for (i, l) in lines.iter().enumerate() {

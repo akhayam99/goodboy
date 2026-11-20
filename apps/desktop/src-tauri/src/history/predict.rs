@@ -102,6 +102,11 @@ fn predict_with(
             MergeResult::Tree(tree) => {
                 let is_folding = matches!(step.verb, HistoryVerb::Squash | HistoryVerb::Fixup);
                 let is_empty = !is_folding && tree == tip_tree;
+                let outcome = match is_empty {
+                    true => StepOutcome::Empty,
+                    false => StepOutcome::Clean,
+                };
+                outcomes.insert(step.sha.clone(), prediction(&step.sha, outcome));
                 if is_folding {
                     let Some(current) = group.as_mut() else {
                         return Err(plan_error("a squash has no commit to merge into"));
@@ -112,26 +117,20 @@ fn predict_with(
                     current.message = message;
                     current.members.push(step.sha.clone());
                     tip_tree = tree;
-                } else {
-                    finish_group(group.take(), &tip, &mut map);
-                    let message = message_of(step, &info);
-                    let author = info.author();
-                    let parent = tip.clone();
-                    tip = replayer.commit(cwd, &tree, &parent, &message, &author)?;
-                    tip_tree = tree;
-                    group = Some(Group {
-                        message,
-                        author,
-                        parent,
-                        members: vec![step.sha.clone()],
-                    });
+                    continue;
                 }
-                let outcome = if is_empty {
-                    StepOutcome::Empty
-                } else {
-                    StepOutcome::Clean
-                };
-                outcomes.insert(step.sha.clone(), prediction(&step.sha, outcome));
+                finish_group(group.take(), &tip, &mut map);
+                let message = message_of(step, &info);
+                let author = info.author();
+                let parent = tip.clone();
+                tip = replayer.commit(cwd, &tree, &parent, &message, &author)?;
+                tip_tree = tree;
+                group = Some(Group {
+                    message,
+                    author,
+                    parent,
+                    members: vec![step.sha.clone()],
+                });
             }
         }
     }

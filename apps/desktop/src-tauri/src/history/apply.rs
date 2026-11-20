@@ -119,7 +119,10 @@ pub(super) fn move_branch_with(
     let backup_ref = format!(
         "{}/{}{}",
         backup_namespace(branch),
-        if keeps_backup { KEPT_STAMP } else { "" },
+        match keeps_backup {
+            true => KEPT_STAMP,
+            false => "",
+        },
         now_nanos()
     );
     git(cwd, &["update-ref", &backup_ref, &expected])?;

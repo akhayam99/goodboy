@@ -144,11 +144,9 @@ fn count_id_group<'a>(
     let mut adds = 0usize;
     let mut updates = 0usize;
     for id in ids {
-        if stmt.exists(rusqlite::params![id])? {
-            updates += 1;
-        } else {
-            adds += 1;
-        }
+        let exists = stmt.exists(rusqlite::params![id])?;
+        updates += usize::from(exists);
+        adds += usize::from(!exists);
     }
     Ok(ImportGroupStat {
         group: group.to_string(),
@@ -185,11 +183,8 @@ fn project_group_stat(
         let matched = existing
             .iter()
             .any(|(id, path)| *id == project.id || normalized_root_path(path) == target);
-        if matched {
-            updates += 1;
-        } else {
-            adds += 1;
-        }
+        updates += usize::from(matched);
+        adds += usize::from(!matched);
     }
     Ok(ImportGroupStat {
         group: "projects".to_string(),
@@ -215,11 +210,8 @@ fn tool_binding_group_stat(
             binding.project_id,
             binding.provider,
         ])?;
-        if exists {
-            updates += 1;
-        } else {
-            adds += 1;
-        }
+        updates += usize::from(exists);
+        adds += usize::from(!exists);
     }
     Ok(ImportGroupStat {
         group: "toolBindings".to_string(),
@@ -265,26 +257,23 @@ pub(super) fn build_import_preview(
                 |row| row.get(0),
             )
             .ok();
-        let existing_by_name: Option<String> = if existing_by_id.is_some() {
-            None
-        } else {
+        let existing_id = existing_by_id.or_else(|| {
             conn.query_row(
                 "SELECT id FROM workspaces WHERE name = ?1 AND deleted_at IS NULL",
                 rusqlite::params![w.name],
                 |row| row.get(0),
             )
             .ok()
+        });
+        let action = match existing_id {
+            Some(_) => "merge",
+            None => "add",
         };
-        let existing_id = existing_by_id.or(existing_by_name);
         workspace_matches.push(WorkspaceMatch {
             bundle_id: w.id.clone(),
             name: w.name.clone(),
-            existing_id: existing_id.clone(),
-            action: if existing_id.is_some() {
-                "merge".to_string()
-            } else {
-                "add".to_string()
-            },
+            existing_id,
+            action: action.to_string(),
         });
     }
 
@@ -336,16 +325,11 @@ pub(super) fn build_import_preview(
         }
     }
 
-    let (workspace_adds, workspace_updates) =
-        workspace_matches
-            .iter()
-            .fold((0usize, 0usize), |(adds, updates), m| {
-                if m.action == "add" {
-                    (adds + 1, updates)
-                } else {
-                    (adds, updates + 1)
-                }
-            });
+    let workspace_adds = workspace_matches
+        .iter()
+        .filter(|m| m.action == "add")
+        .count();
+    let workspace_updates = workspace_matches.len() - workspace_adds;
     let mut group_stats = vec![
         ImportGroupStat {
             group: "workspaces".to_string(),

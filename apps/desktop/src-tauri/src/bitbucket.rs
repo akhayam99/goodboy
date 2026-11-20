@@ -818,11 +818,7 @@ pub struct BitbucketCommit {
 
 fn raw_author_name(raw: &str) -> Option<String> {
     let name = raw.split('<').next().unwrap_or("").trim();
-    if name.is_empty() {
-        None
-    } else {
-        Some(name.to_string())
-    }
+    Some(name.to_string()).filter(|name| !name.is_empty())
 }
 
 fn map_commit(raw: BitbucketCommitRaw) -> BitbucketCommit {

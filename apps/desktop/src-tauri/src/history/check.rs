@@ -45,10 +45,9 @@ fn count_of(cwd: &Path, args: &[&str]) -> Option<usize> {
 }
 
 fn plural_files(count: usize) -> &'static str {
-    if count == 1 {
-        "file"
-    } else {
-        "files"
+    match count {
+        1 => "file",
+        _ => "files",
     }
 }
 

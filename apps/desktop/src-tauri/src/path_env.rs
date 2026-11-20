@@ -150,17 +150,19 @@ fn shell_candidates() -> &'static [&'static str] {
 const SHELL_PROBE_SCRIPT: &str =
     "printf 'GBPATH:%s\\n' \"$PATH\"; printf 'GBNPM:%s\\n' \"$(npm prefix -g 2>/dev/null)\"";
 
+fn login_flag(sh: &str) -> &'static str {
+    if sh == "/bin/sh" {
+        return "-lc";
+    }
+    "-ilc"
+}
+
 fn probe_login_shell() -> (Option<String>, Option<String>) {
     for sh in shell_candidates() {
         if !std::path::Path::new(sh).exists() {
             continue;
         }
-        let args: &[&str] = if *sh == "/bin/sh" {
-            &["-lc", SHELL_PROBE_SCRIPT]
-        } else {
-            &["-ilc", SHELL_PROBE_SCRIPT]
-        };
-        if let Some(out) = run_with_timeout(sh, args) {
+        if let Some(out) = run_with_timeout(sh, &[login_flag(sh), SHELL_PROBE_SCRIPT]) {
             let (path, prefix) = parse_shell_probe(&out);
             if path.is_none() {
                 continue;
@@ -183,7 +185,9 @@ fn parse_shell_probe(out: &str) -> (Option<String>, Option<String>) {
             if !value.is_empty() {
                 path = Some(value.to_string());
             }
-        } else if let Some(rest) = line.strip_prefix("GBNPM:") {
+            continue;
+        }
+        if let Some(rest) = line.strip_prefix("GBNPM:") {
             let value = rest.trim();
             if !value.is_empty() {
                 prefix = Some(value.to_string());
@@ -218,18 +222,11 @@ fn parse_env(raw: &str) -> Vec<(String, String)> {
 }
 
 fn probe_login_shell_env() -> Option<String> {
-    const LOGIN_ARGS: &[&str] = &["-ilc", "env"];
-    const POSIX_ARGS: &[&str] = &["-lc", "env"];
     for sh in shell_candidates() {
         if !std::path::Path::new(sh).exists() {
             continue;
         }
-        let args = if *sh == "/bin/sh" {
-            POSIX_ARGS
-        } else {
-            LOGIN_ARGS
-        };
-        if let Some(out) = run_with_timeout(sh, args) {
+        if let Some(out) = run_with_timeout(sh, &[login_flag(sh), "env"]) {
             let trimmed = out.trim();
             if !trimmed.is_empty() {
                 return Some(trimmed.to_string());

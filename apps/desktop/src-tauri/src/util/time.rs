@@ -88,17 +88,15 @@ fn is_leap_year(y: i64) -> bool {
     (y % 4 == 0 && y % 100 != 0) || y % 400 == 0
 }
 
+fn days_in_year(y: i64) -> i64 {
+    365 + i64::from(is_leap_year(y))
+}
+
 fn days_in_month(y: i64, m: u32) -> i64 {
     match m {
         1 | 3 | 5 | 7 | 8 | 10 | 12 => 31,
         4 | 6 | 9 | 11 => 30,
-        2 => {
-            if is_leap_year(y) {
-                29
-            } else {
-                28
-            }
-        }
+        2 => 28 + i64::from(is_leap_year(y)),
         _ => unreachable!(),
     }
 }
@@ -112,7 +110,7 @@ pub(crate) fn epoch_secs_to_datetime(mut s: i64) -> (i64, u32, u32, u32, u32, u3
     s /= 24;
     let mut year: i64 = 1970;
     loop {
-        let days = if is_leap_year(year) { 366 } else { 365 };
+        let days = days_in_year(year);
         if s < days {
             break;
         }
@@ -135,7 +133,7 @@ pub(crate) fn epoch_secs_to_datetime(mut s: i64) -> (i64, u32, u32, u32, u32, u3
 pub(crate) fn epoch_seconds_to_year_month(mut s: i64) -> (i64, u32) {
     let mut year: i64 = 1970;
     loop {
-        let days = if is_leap_year(year) { 366 } else { 365 };
+        let days = days_in_year(year);
         let secs = days * 86400;
         if s < secs {
             break;
@@ -158,7 +156,7 @@ pub(crate) fn epoch_seconds_to_year_month(mut s: i64) -> (i64, u32) {
 pub(crate) fn ymd_to_epoch_ms(year: i64, month: u32, day: u32) -> i64 {
     let mut days: i64 = 0;
     for y in 1970..year {
-        days += if is_leap_year(y) { 366 } else { 365 };
+        days += days_in_year(y);
     }
     for m in 1..month {
         days += days_in_month(year, m);

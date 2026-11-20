@@ -303,11 +303,10 @@ fn diverged_pull_request_head(
     git(repo_path, &["fetch", "--", "origin", fallback]).ok()?;
     let sha = tip_of(repo_path, "FETCH_HEAD")?;
     let local = tip_of(repo_path, &format!("refs/heads/{name}"));
-    let remote = if try_fetch_origin(repo_path, name).is_none() {
-        tip_of(repo_path, &format!("refs/remotes/origin/{name}"))
-    } else {
-        None
-    };
+    let remote = try_fetch_origin(repo_path, name)
+        .is_none()
+        .then(|| tip_of(repo_path, &format!("refs/remotes/origin/{name}")))
+        .flatten();
     if local.as_deref() == Some(sha.as_str()) || remote.as_deref() == Some(sha.as_str()) {
         return None;
     }
