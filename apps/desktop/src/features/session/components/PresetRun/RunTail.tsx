@@ -1,4 +1,3 @@
-import { useMemo } from 'react';
 import type { AgentId, Session } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import type { AutoTreeView } from '../../../../store/slices/auto-view/state';
@@ -8,7 +7,7 @@ import { askingAgentBatch } from '../../../context/askingAgentBatch';
 import { useQuietStep } from '../../../workflows/hooks/useQuietStep';
 import { useMountBlockedStep } from '../../hooks/useMountBlockedStep';
 import { resolveNextAction } from '../../../workflows/resolveNextAction';
-import { agentKindPalette, classifyAgent, resolveRootAgent } from '../../agent-kind';
+import { resolveRootAgent } from '../../agent-kind';
 import type { RunView } from '../AgentTree/useRunView';
 import { OrchestratedMountBlock } from '../OrchestratedRun/OrchestratedMountBlock';
 import { runQuestionsPlacementOf } from '../../../workflows/runQuestionsPlacement';
@@ -34,19 +33,6 @@ export const RunTail = ({ session, view, selectedAgentId }: Props) => {
   const autoTreeViews = useAppStore((state) => state.autoTreeViews[session.id] ?? NO_VIEWS);
   const quiet = useQuietStep({ agents: advance.runAgents });
   const mountBlock = useMountBlockedStep({ sessionId: session.id, workflowRunId: run.id });
-  const kindOverride = useAppStore((state) => state.agentKindOverride);
-  const roleById = useMemo(
-    () =>
-      new Map(
-        advance.runAgents.map((agent) => [
-          agent.id,
-          agentKindPalette({
-            kind: classifyAgent({ agent, override: kindOverride[agent.id] ?? null }),
-          }).label,
-        ]),
-      ),
-    [advance.runAgents, kindOverride],
-  );
   const selectedRootId =
     selectedAgentId === null
       ? null
@@ -57,7 +43,6 @@ export const RunTail = ({ session, view, selectedAgentId }: Props) => {
     agents: advance.runAgents,
     isCompleted: view.isCompleted,
     primary: view.primary,
-    predecessorName: view.predecessorName,
     nextAction: resolveNextAction({
       advance: advance.state,
       run,
@@ -71,7 +56,6 @@ export const RunTail = ({ session, view, selectedAgentId }: Props) => {
         ? null
         : { agentId: quiet.agent.id, minutes: Math.floor(quiet.quietMs / MINUTE_MS) },
     selectedRootId,
-    roleById,
     question: advance.questions[0] ?? null,
     restartStoppedCount: advance.runAgents.filter((agent) =>
       isStoppedByRestart({ agent, runs: advance.runAgents, views: autoTreeViews }),

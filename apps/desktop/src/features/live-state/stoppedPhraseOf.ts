@@ -10,6 +10,7 @@ const SHORT = {
   you: 'Stopped by you',
   app: 'Stopped by restart',
   auto: 'Stopped by the Lead',
+  breaker: 'Stopped with no limit set',
 } as const satisfies Record<AgentStoppedBy, string>;
 
 const LONG = {

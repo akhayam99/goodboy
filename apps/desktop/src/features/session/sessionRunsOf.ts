@@ -1,4 +1,3 @@
-import { LEAD_STOP_WORDS } from '@goodboy/core/auto';
 import type {
   Agent,
   AgentId,
@@ -288,9 +287,9 @@ type RestingParams = {
 
 const restingWordOf = ({ root }: RestingParams): Pick<AutoTreeWord, 'state' | 'word'> => {
   if (root.status === 'running') {
-    return { state: 'running', word: LEAD_STOP_WORDS.working };
+    return { state: 'running', word: NAMES.running };
   }
-  return { state: 'idle', word: LEAD_STOP_WORDS.resting };
+  return { state: 'idle', word: NAMES.idle };
 };
 
 const autoRowOf = ({

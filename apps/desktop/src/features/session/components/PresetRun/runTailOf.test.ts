@@ -3,7 +3,8 @@ import { describe, expect, it } from 'vitest';
 import type { Agent, AgentId, StepId, Workflow, WorkflowId } from '@goodboy/types';
 import { aWorkflowRun, anAgent } from '@goodboy/types/testing';
 import type { NextAction } from '../../../workflows/resolveNextAction';
-import { runTailOf } from './runTailOf';
+import { NAMES } from '../../../../shared/utils/names';
+import { runTailOf, type RunTail } from './runTailOf';
 
 const WORKFLOW_ID: WorkflowId = JSON.parse('"workflow-ledger"');
 const STEP_ONE: StepId = JSON.parse('"step-scout"');
@@ -36,9 +37,16 @@ const agentsOf = ({ scout, implementer }: AgentsParams): ReadonlyArray<Agent> =>
   anAgent({ id: IMPLEMENTER, stepId: STEP_TWO, status: implementer, ordinal: 1 }),
 ];
 
-const ROLES: ReadonlyMap<AgentId, string> = new Map([
-  [SCOUT, 'Scout'],
-  [IMPLEMENTER, 'Implementer'],
+const TAIL_WORDS: ReadonlySet<string> = new Set([
+  NAMES.running,
+  NAMES.needsYou,
+  NAMES.needsApproval,
+  NAMES.stopped,
+  NAMES.paused,
+  NAMES.failed,
+  NAMES.notFinished,
+  NAMES.ready,
+  NAMES.queued,
 ]);
 
 type BaseParams = Partial<Parameters<typeof runTailOf>[0]>;
@@ -50,11 +58,9 @@ const tailOf = ({ ...overrides }: BaseParams) =>
     agents: agentsOf({ scout: 'completed', implementer: 'running' }),
     isCompleted: false,
     primary: null,
-    predecessorName: 'previous',
     nextAction: NONE,
     quiet: null,
     selectedRootId: null,
-    roleById: ROLES,
     restartStoppedCount: 0,
     question: null,
     ...overrides,
@@ -67,7 +73,7 @@ describe('runTailOf', () => {
         agents: agentsOf({ scout: 'completed', implementer: 'pending' }),
         primary: { kind: 'resume', label: 'Continue' },
       }),
-    ).toEqual({ state: 'stopped', phrase: 'Paused by you', stepAgentId: null, verb: null });
+    ).toEqual({ state: 'stopped', phrase: 'Paused', stepAgentId: null, verb: null });
   });
 
   it('stays silent while the step on screen runs, since its own line speaks', () => {
@@ -77,14 +83,14 @@ describe('runTailOf', () => {
   it('points at the running step from any other entry', () => {
     expect(tailOf({ selectedRootId: SCOUT })).toMatchObject({
       state: 'working',
-      phrase: 'Step 2 · Implementer is working',
+      phrase: 'Running',
       verb: { kind: 'openStep', agentId: IMPLEMENTER, label: 'Open step 2' },
     });
   });
 
   it('offers Continue after a quiet stretch', () => {
     expect(tailOf({ quiet: { agentId: IMPLEMENTER, minutes: 15 } })).toMatchObject({
-      phrase: 'No output for 15 min',
+      phrase: 'Needs you',
       verb: { kind: 'quiet', agentId: IMPLEMENTER },
     });
   });
@@ -96,7 +102,7 @@ describe('runTailOf', () => {
         restartStoppedCount: 2,
       }),
     ).toMatchObject({
-      phrase: '2 agents stopped by restart',
+      phrase: 'Stopped',
       verb: { kind: 'resumeAll', count: 2 },
     });
   });
@@ -108,7 +114,7 @@ describe('runTailOf', () => {
         primary: { kind: 'start-step', label: 'Start step 2' },
       }),
     ).toMatchObject({
-      phrase: 'Step 1 done · ready to continue',
+      phrase: 'Ready',
       verb: { kind: 'primary', primary: { kind: 'start-step' } },
     });
   });
@@ -116,15 +122,14 @@ describe('runTailOf', () => {
   it('says a manual run is ready on your press, or names the run it follows', () => {
     const primary = { kind: 'start-run', label: 'Start run' } as const;
     const agents = agentsOf({ scout: 'pending', implementer: 'pending' });
-    expect(tailOf({ agents, primary })?.phrase).toBe('Ready to start');
+    expect(tailOf({ agents, primary })?.phrase).toBe('Ready');
     expect(
       tailOf({
         agents,
         primary,
         run: aWorkflowRun({ triggerMode: 'after_run' }),
-        predecessorName: 'Write the docs',
       })?.phrase,
-    ).toBe('Starts after Write the docs');
+    ).toBe('Queued');
   });
 
   it('asks to raise the cap when the run stopped at it', () => {
@@ -146,15 +151,15 @@ describe('runTailOf', () => {
         run: aWorkflowRun({ orchestrationStop: { kind: 'budget', message: 'Paused' } }),
         question: open,
       }),
-    ).toMatchObject({ state: 'paused', phrase: 'Paused at the limit', verb: { kind: 'answer' } });
+    ).toMatchObject({ state: 'paused', phrase: 'Needs you', verb: { kind: 'answer' } });
   });
 
   it.each([
-    ['failure', 'failed', 'The run stopped on an error'],
-    ['operator', 'stopped', 'Stopped by you'],
-    ['paused', 'stopped', 'Paused by you'],
+    ['failure', 'failed', 'Failed'],
+    ['operator', 'stopped', 'Stopped'],
+    ['paused', 'stopped', 'Paused'],
     ['needs-approval', 'waiting', 'Needs approval'],
-    ['plan-approval', 'waiting', 'The plan needs approval'],
+    ['plan-approval', 'waiting', 'Needs approval'],
     ['preset-change', 'waiting', 'Needs you'],
   ] as const)(
     'names the %s stop instead of waiting for an answer when questions wait on it',
@@ -189,7 +194,7 @@ describe('runTailOf', () => {
     expect(
       tailOf({ agents: agentsOf({ scout: 'completed', implementer: 'stopped' }) }),
     ).toMatchObject({
-      phrase: 'Step 2 · Implementer stopped',
+      phrase: 'Stopped',
       verb: { kind: 'continueStep', agentId: IMPLEMENTER },
     });
   });
@@ -198,7 +203,7 @@ describe('runTailOf', () => {
     expect(tailOf({ isCompleted: true })).toBeNull();
     expect(
       tailOf({ run: aWorkflowRun({ orchestrationStop: { kind: 'closed', message: 'Closed' } }) }),
-    ).toMatchObject({ phrase: 'Stopped by you', verb: null });
+    ).toMatchObject({ phrase: 'Stopped', verb: null });
   });
 
   it('draws no tail on an archived run, whose Restore is in the header', () => {
@@ -272,6 +277,74 @@ describe('runTailOf', () => {
     },
   );
 
+  it('says one word of the state table and at most one verb in every state it draws', () => {
+    const open = JSON.parse(
+      '{"id":"q-window","sessionId":"s","text":"Batch refunds?","isBlocking":true,"userAnswer":null,"status":"open","createdAt":"2026-10-16T09:00:00.000Z"}',
+    );
+    const pending = agentsOf({ scout: 'completed', implementer: 'pending' });
+    const primaries = [
+      'start-step',
+      'start-run',
+      'resume',
+      'raise-cap',
+      'review-plan',
+      'approve-plan',
+      'answer',
+      'open-step',
+      'continue',
+      'retry',
+      'hint',
+      'decide-next',
+    ] as const;
+    const stops = [
+      'budget',
+      'failure',
+      'operator',
+      'paused',
+      'needs-approval',
+      'plan-approval',
+      'preset-change',
+    ] as const;
+    const tails: ReadonlyArray<RunTail | null> = [
+      tailOf({}),
+      tailOf({ selectedRootId: SCOUT }),
+      tailOf({ quiet: { agentId: IMPLEMENTER, minutes: 30 } }),
+      tailOf({ agents: pending, restartStoppedCount: 2 }),
+      tailOf({ agents: agentsOf({ scout: 'completed', implementer: 'stopped' }) }),
+      tailOf({ run: aWorkflowRun({ orchestrationStop: { kind: 'closed', message: 'x' } }) }),
+      tailOf({
+        agents: pending,
+        nextAction: { kind: 'summarizing', subjectAgentId: null, sentence: 'x', cause: 'x' },
+      }),
+      tailOf({ agents: pending, nextAction: recoverOf({ isBlocked: true }) }),
+      tailOf({
+        agents: agentsOf({ scout: 'completed', implementer: 'failed' }),
+        selectedRootId: IMPLEMENTER,
+        nextAction: recoverOf({ isBlocked: false }),
+      }),
+      ...primaries.flatMap((kind) =>
+        [null, SCOUT].map((selectedRootId) =>
+          tailOf({ agents: pending, primary: { kind, label: 'Go' }, selectedRootId }),
+        ),
+      ),
+      ...stops.map((kind) =>
+        tailOf({
+          agents: pending,
+          run: aWorkflowRun({ orchestrationStop: { kind, message: 'Stopped for Northwind' } }),
+          question: open,
+        }),
+      ),
+    ];
+
+    for (const tail of tails) {
+      if (tail === null) {
+        continue;
+      }
+      expect(TAIL_WORDS.has(tail.phrase), tail.phrase).toBe(true);
+    }
+    expect(tails.filter((tail) => tail !== null).length).toBeGreaterThan(20);
+  });
+
   it('reads a blocked step on its own page as Not finished and keeps Retry', () => {
     expect(
       tailOf({
@@ -287,13 +360,13 @@ describe('runTailOf', () => {
     });
   });
 
-  it('keeps the sentence of a failed step on its own page', () => {
+  it('reads a failed step on its own page as Failed, the sentence staying at the head of the page', () => {
     expect(
       tailOf({
         agents: agentsOf({ scout: 'completed', implementer: 'failed' }),
         selectedRootId: IMPLEMENTER,
         nextAction: recoverOf({ isBlocked: false }),
       }),
-    ).toMatchObject({ phrase: 'Fix stopped before finishing.', verb: { kind: 'recover' } });
+    ).toMatchObject({ phrase: 'Failed', verb: { kind: 'recover' } });
   });
 });

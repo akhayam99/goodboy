@@ -55,7 +55,7 @@ Put a light model on a scout and a strong one on the planner. A step follows its
 
 ### Asks you
 
-Choose how often a run stops for you: **Every step**, **After the plan** to approve once and then run on, or **Never**. The old names (Autonomy, Ask me, Balanced, Autopilot) still find it in search. A guard stops an unattended agent after 4 turns in an hour, and anything you write to it resets the count.
+Choose how often a run stops for you: **Every step**, **After the plan** to approve once and then run on, or **Never**. The old names (Autonomy, Ask me, Balanced, Autopilot) still find it in search. A run on **Never** goes on until it is done or reaches its limit. That limit is on the run, the session, or a monthly limit on every provider the run can use. With no limit, an agent that ran 4 times in an hour without you reads **Needs you**, and a notice says "Ran 4 times in an hour with no limit set." Its page says the same, after a restart too. Anything you write to it resets the count. The count lives in each window on its own.
 
 ### Pause, resume and skip
 
@@ -182,7 +182,9 @@ This part is for contributors and agents who change the feature.
 
 - Stopped run questions: `runQuestionsPlacementOf` decides if `OrchestratedTail` and `RunTail` draw the run's open questions, and where. It reads the phase and the run stop. The questions show in the paused, limit, failed, stopped, needs-approval and plan-approval phases. They also show on any stop other than `questions`, whatever the phase. In `plan-question` and `plan-revising` the planner's tail and the header Answer own the questions, so the cluster stays hidden. They sit before the state line when one question `isBlocking`, else after it. A finished run and the in-flight phases with no stop hide them.
 - Stopped run questions are the same cards as in Needs you. `answerOpenQuestions`, `sendQuestionAsMessage` and `spawnQuestionDelegates` take no stop into account, so an answer reaches the asking agent as it does from the drawer.
-- Stopped run tail of a preset run: `RunTail` draws the cluster from the run stop, whatever the tail verb. A step still running or an agent stopped by a restart does not hide it. `stoppedQuestionTailOf` gives each non-question stop kind its own phrase, so no stop reads "Waiting for your answer".
+- Stopped run tail of a preset run: `RunTail` draws the cluster from the run stop, whatever the tail verb. A step still running or an agent stopped by a restart does not hide it. `stoppedQuestionTailOf` gives each non-question stop kind its own word, so no stop reads "Waiting for your answer".
+- Run tail words: `runTailOf` says one word of `NAMES` (Running, Needs you, Needs approval, Stopped, Paused, Failed, Not finished, Ready, Queued) and at most one verb. The sentence of a stop sits at the head of the agent page (`NextActionStrip`, `QuietStepStrip`), never on the tail (`runTailOf.test.ts`).
+- Turn breaker: every workflow turn passes `admitWorkflowTurn`. `readAgentRunLimit` reads the session budget and the monthly rules fresh, and a failed read is reported and leaves the breaker on. A limit is a run or session limit in pause mode, or a monthly rule on every provider the agent can route to. With one, `admitRunBudget` refuses a turn past it and saves the run stop. With none, the turn claims `claimWorkflowTurn`. `haltRunawayWorkflowAgent` writes `blocked` with `stoppedBy: 'breaker'` and posts "Ran 4 times in an hour with no limit set." `resolveNextAction` reads `breaker` back as that sentence on the agent page (`resolveNextAction.test.ts`). A failed write is reported and the turn is still not sent (`store.workflow-turn-breaker.test.ts`).
 - Run page checklist: `RunTreeChecklistCells` sets a step that runs, waits or failed in `text-row-strong`.
 - Every other step is `text-ui`, gray until hover.
 - `OrchestratedChecklist` draws the **Steps** label with `SectionLabel` and counts the top-level agents once.

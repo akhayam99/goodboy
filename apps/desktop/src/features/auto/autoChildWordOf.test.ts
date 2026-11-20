@@ -22,7 +22,7 @@ const OUTCOMES: ReadonlyArray<AutoOutcome> = [
 const EXPECTED: Readonly<Record<AutoOutcome, ReadonlyArray<string>>> = {
   completed: ['Done', 'Done'],
   failed: ['Failed', 'Failed'],
-  timed_out: ['Failed', 'Failed'],
+  timed_out: ['Needs you', 'Needs you'],
   blocked: ['Idle', 'Done'],
   stopped: ['Stopped', 'Stopped'],
 };

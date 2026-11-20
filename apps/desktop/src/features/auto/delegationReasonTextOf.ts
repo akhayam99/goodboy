@@ -2,10 +2,7 @@ import { AUTO_CHILD_IDLE_MINUTES } from '@goodboy/core/auto';
 
 const REASON_TEXT: ReadonlyMap<string, string> = new Map([
   ['deadline_passed', 'It ran out of time.'],
-  [
-    'no_activity',
-    `It showed no activity for ${AUTO_CHILD_IDLE_MINUTES} minutes and was stopped. Its work is kept.`,
-  ],
+  ['no_activity', `No output for ${AUTO_CHILD_IDLE_MINUTES} minutes. Its work is kept.`],
   ['stopped', 'It was stopped.'],
   ['declined', 'You declined this step.'],
   ['process_error', 'The agent ended with an error.'],

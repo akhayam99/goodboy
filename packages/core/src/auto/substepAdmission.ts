@@ -1,5 +1,5 @@
 import type { AutoTree } from '@goodboy/db';
-import { AUTO_SUBSTEPS_PER_PARENT, AUTO_TREE_DEPTH } from './limits';
+import { AUTO_TREE_DEPTH } from './limits';
 import type { AutoRefusalCode } from './refusals';
 import type { AutoDelegationRole } from './roles';
 import { isAutoSubstepRole } from './substep';
@@ -15,7 +15,6 @@ export type AdmissionParentFacts = Readonly<{
   generation: number;
   pausedQuestionId: string | null;
   depth: number;
-  substeps: number;
 }>;
 
 type SubstepRefusalParams = {
@@ -23,7 +22,6 @@ type SubstepRefusalParams = {
   readonly role: AutoDelegationRole;
   readonly substep: AdmissionSubstep;
   readonly parents: ReadonlyArray<AdmissionParentFacts>;
-  readonly seenInBatch: number;
 };
 
 export const substepRefusal = ({
@@ -31,7 +29,6 @@ export const substepRefusal = ({
   role,
   substep,
   parents,
-  seenInBatch,
 }: SubstepRefusalParams): AutoRefusalCode | null => {
   const parent = parents.find((facts) => facts.delegationId === substep.parentDelegationId);
   if (parent === undefined) {
@@ -49,9 +46,6 @@ export const substepRefusal = ({
   const isPausedOnIt = parent.state === 'paused' && parent.pausedQuestionId === substep.questionId;
   if (!isPausedOnIt) {
     return 'not_paused';
-  }
-  if (parent.substeps + seenInBatch >= AUTO_SUBSTEPS_PER_PARENT) {
-    return 'substep_cap';
   }
   return null;
 };

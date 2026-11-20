@@ -1,4 +1,4 @@
-import { AUTO_CHILD_MESSAGE_CHARS, AUTO_TREE_LIMITS } from '@goodboy/core/auto';
+import { AUTO_CHILD_MESSAGE_CHARS } from '@goodboy/core/auto';
 import {
   getAutoDelegation,
   listAgentQueuedMessages,
@@ -116,9 +116,6 @@ export const messageChild = async ({
   const messageId = `${runPrefix}${nextIndexOf({ saved, runPrefix })}`;
   if (!WORKING_STATES.includes(delegation.state)) {
     return refuseOutcome({ code: 'not_running' });
-  }
-  if (sent >= AUTO_TREE_LIMITS.messagesPerDelegation) {
-    return refuseOutcome({ code: 'message_limit' });
   }
   const isQueued = await ctx.ports.queueChildMessage({
     sessionId: grant.sessionId,

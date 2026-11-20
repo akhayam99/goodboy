@@ -103,7 +103,7 @@ describe('TailLine', () => {
   });
   describe('a long reason', () => {
     const REASON =
-      'Blocked: Auto stopped answering before it replied while it checked the retry ledger in payments-api against the Northwind export.';
+      'Blocked: The Lead stopped answering before it replied while it checked the retry ledger in payments-api against the Northwind export.';
 
     const cutBy = ({ scrollHeight, clientHeight }: Record<string, number>) => {
       vi.spyOn(HTMLElement.prototype, 'scrollHeight', 'get').mockReturnValue(scrollHeight ?? 0);

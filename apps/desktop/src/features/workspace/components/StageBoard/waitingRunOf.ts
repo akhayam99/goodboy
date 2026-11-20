@@ -16,6 +16,7 @@ import { runAwaitsPlanReview } from '../../../plans/runAwaitsPlanReview';
 import { autoRunTitleOf } from '../../../session/autoRunTitleOf';
 import type { RunWait } from '../../../workflows/runStateOf';
 import { workflowKindName } from '../../../workflows/workflowKindName';
+import { NAMES } from '../../../../shared/utils/names';
 import { leadWaitWordsOf } from './leadWaitWordsOf';
 
 export type WaitingRunState = AutoWaitState &
@@ -39,7 +40,7 @@ type Named = Omit<WaitingRun, 'more'>;
 
 const OPEN_RUN = 'Open run';
 
-const PLAN_READY: Omit<Named, 'title'> = { words: 'Plan is ready', verb: 'Review plan' };
+const PLAN_READY: Omit<Named, 'title'> = { words: NAMES.needsApproval, verb: 'Review plan' };
 
 const RUN_WAIT_OF: Partial<Record<SessionAttentionReason, RunWait>> = {
   'run-stopped': 'stopped',

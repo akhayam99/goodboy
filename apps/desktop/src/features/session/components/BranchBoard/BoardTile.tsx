@@ -84,15 +84,17 @@ const BoardTileView = ({ rowId }: Props) => {
         {entry === null ? null : <BoardTileFacts rowId={rowId} />}
       </span>
       <span className="pointer-events-none relative flex min-w-0 shrink-0 items-center gap-3 text-meta">
-        <span data-board-chip="" className="flex shrink-0">
-          <Chip
-            kind="state"
-            tone={chip.tone}
-            emphasis="subtle"
-            bordered={false}
-            label={chip.word}
-          />
-        </span>
+        {chip === null ? null : (
+          <span data-board-chip="" className="flex shrink-0">
+            <Chip
+              kind="state"
+              tone={chip.tone}
+              emphasis="subtle"
+              bordered={false}
+              label={chip.word}
+            />
+          </span>
+        )}
         <BoardTileAction rowId={rowId} />
         {entry === null ? null : (
           <span data-board-actions="" className={cn(TRAIL_SLOT, 'pointer-events-auto row-actions')}>

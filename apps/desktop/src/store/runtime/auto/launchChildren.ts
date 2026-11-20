@@ -29,7 +29,10 @@ import { launchSnapshotFor } from './launchSnapshot/launchSnapshotFor';
 import { readLaunchPermissions } from './level/readLaunchPermissions';
 import type { ChildMountTarget, ChildStartOutcome, ChildTurnEnded } from './ports';
 import { routedModelOf } from '../../slices/turn/childTurn/routedModelOf';
+import { dropOrphanHelpers } from './slots/dropOrphanHelpers';
+import { queuedStartableOf } from './slots/queuedStartableOf';
 import { readFreeSlots } from './slots/readFreeSlots';
+import { readLiveDelegationIds } from './slots/readLiveDelegationIds';
 import { startQueuedAttempt } from './slots/startQueuedAttempt';
 import { readSnapshot } from './readSnapshot';
 import type { AgentVerbContext } from './verbContext';
@@ -52,15 +55,14 @@ const LAUNCH_PHASES: ReadonlyArray<AutoTree['phase']> = ['delegating', 'waiting'
 type QueuedParams = {
   readonly open: ReadonlyArray<AutoDelegation>;
   readonly free: number;
+  readonly liveIds: ReadonlySet<string>;
 };
 
-const queuedToStartOf = ({ open, free }: QueuedParams): ReadonlyArray<AutoDelegation> => {
+const queuedToStartOf = ({ open, free, liveIds }: QueuedParams): ReadonlyArray<AutoDelegation> => {
   const claiming = open.filter(
     (delegation) => delegation.state === 'accepted' && launching.has(delegation.id),
   ).length;
-  return open
-    .filter((delegation) => delegation.state === 'accepted' && !launching.has(delegation.id))
-    .slice(0, Math.max(0, free - claiming));
+  return queuedStartableOf({ open, liveIds, launching }).slice(0, Math.max(0, free - claiming));
 };
 
 type MountTargetParams = {
@@ -320,12 +322,20 @@ export const launchChildren = async ({
   ) {
     return none;
   }
-  const open = await listOpenAutoDelegations({ db: ctx.db, treeId });
+  const open = await dropOrphanHelpers({
+    db: ctx.db,
+    open: await listOpenAutoDelegations({ db: ctx.db, treeId }),
+    nowMs: ctx.now(),
+  });
   const launchable = [
     ...open.filter(
       (delegation) => delegation.state === 'starting' && !launching.has(delegation.id),
     ),
-    ...queuedToStartOf({ open, free: await readFreeSlots({ db: ctx.db, treeId }) }),
+    ...queuedToStartOf({
+      open,
+      free: await readFreeSlots({ db: ctx.db, treeId }),
+      liveIds: await readLiveDelegationIds({ db: ctx.db, treeId }),
+    }),
   ];
   for (const delegation of launchable) {
     launching.add(delegation.id);

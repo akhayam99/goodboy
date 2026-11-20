@@ -1,12 +1,15 @@
 import {
+  AUTO_BLOCK_TEXT,
   admissionChildRefusals,
   autoRefusalUserReason,
+  autoRemainingForGates,
   type AdmissionChild,
   type AdmissionSnapshot,
   type AutoRefusalCode,
   type DelegateChildSpec,
 } from '@goodboy/core/auto';
 import {
+  AUTO_USD_EPSILON,
   autoAdmissionArtifactAbort,
   autoContinueTreeStatement,
   getAutoTree,
@@ -14,6 +17,7 @@ import {
   insertAutoDelegationStatement,
   insertAutoReservationStatement,
   listAutoDelegations,
+  readAutoTreeSpend,
   type AutoDelegation,
   type AutoTree,
 } from '@goodboy/db';
@@ -74,22 +78,23 @@ const isEndedByStop = ({ delegation }: DelegationParams): boolean =>
   delegation.isStopping || STOP_OUTCOMES.includes(delegation.outcome);
 
 const PAUSED_MESSAGE =
-  'This agent asked Auto a question and waits for the answer. Your message goes on once Auto answers it.';
+  'This agent asked the Lead a question and waits for the answer. Your message goes on once the Lead answers it.';
 
-const BLOCKED_MESSAGE = 'Auto is blocked. Retry Auto, then write to this agent again.';
+const BLOCKED_MESSAGE = 'The Lead is blocked. Retry the Lead, then write to this agent again.';
 
 const REVISE_MESSAGE =
-  'This agent rewrites an artifact for Auto. Ask Auto for the change, and it hands it over.';
+  "This agent rewrites an artifact for the Lead. Ask the Lead for the change, and it'll pass it on.";
 
 const FILES_MESSAGE =
-  'An agent Auto started takes text in a message, not files yet. Send the text alone.';
+  'An agent the Lead started takes text in a message, not files yet. Send the text alone.';
 
-const BUSY_MESSAGE =
-  'Auto could not continue this agent right now: the conversation is at its limit of agents, time or money. Try again when an agent is done.';
+const BUSY_MESSAGE = `${AUTO_BLOCK_TEXT.budget} Raise limit, then write to this agent again.`;
+
+const RETRY_MESSAGE = 'The Lead could not take your message just now. Send it again.';
 
 const REASON_OF = {
-  auto: 'Auto continues this agent with new instructions.',
-  'auto-message': 'Auto sent this agent a message while it worked.',
+  auto: 'The Lead continues this agent with new instructions.',
+  'auto-message': 'The Lead sent this agent a message while it worked.',
   user: 'The user wrote to this agent.',
 } as const satisfies Readonly<Record<AutoContinueSource, string>>;
 
@@ -414,7 +419,12 @@ export const continueChild = async ({
   });
   if (outcome.status === 'aborted') {
     if (outcome.abortCode === treeStatement.abortCode) {
-      return continueRefused({ code: 'tree_busy', message: BUSY_MESSAGE });
+      const spend = await readAutoTreeSpend({ db: ctx.db, treeId: tree.id });
+      const isSpent = spend?.capUsd != null && autoRemainingForGates({ spend }) <= AUTO_USD_EPSILON;
+      return continueRefused({
+        code: 'tree_busy',
+        message: isSpent ? BUSY_MESSAGE : RETRY_MESSAGE,
+      });
     }
     if (outcome.abortCode === ABORT_DELEGATION) {
       return { kind: 'working', delegationId: delegation.id };

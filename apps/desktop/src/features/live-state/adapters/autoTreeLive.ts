@@ -1,5 +1,5 @@
 import type { Agent, TurnState } from '@goodboy/types';
-import { AUTO_BLOCK_TEXT } from '@goodboy/core/auto';
+import { autoBlockShownText, isAutoBudgetBlock } from '@goodboy/core/auto';
 import { formatUsd } from '@goodboy/ui';
 import type { AutoTreeView } from '../../../store/slices/auto-view/state';
 import { refusalNoticeOf } from '../../auto/chat/refusalNoticeOf';
@@ -79,8 +79,9 @@ const stopOf = ({ view }: ViewParams): TailFacts['actions'] =>
   openDelegationCountOf({ view }) > 0 ? STOP : [];
 
 const blocked = ({ view }: ViewParams): TailFacts => {
-  const reason = view.tree.blockedReason;
-  if (reason === AUTO_BLOCK_TEXT.budget) {
+  const stored = view.tree.blockedReason;
+  const reason = stored === null ? '' : autoBlockShownText({ reason: stored });
+  if (isAutoBudgetBlock({ reason: stored })) {
     const running = stillRunningOf({ view });
     return {
       state: 'failed',
@@ -91,7 +92,7 @@ const blocked = ({ view }: ViewParams): TailFacts => {
   }
   return {
     state: 'failed',
-    phrase: reason === null || reason === '' ? "The Lead couldn't reply" : reason,
+    phrase: reason === '' ? "The Lead couldn't reply" : reason,
     startedAt: null,
     actions: [TAIL_ACTION.retry, TAIL_ACTION.viewTranscript, ...stopOf({ view })],
   };

@@ -309,7 +309,10 @@ export const adoptAgent = async ({
         return refused({ code: refusal });
       }
     }
-    return { kind: 'failed', message: 'Auto could not take this agent over. Try again.' };
+    return {
+      kind: 'failed',
+      message: "The Lead couldn't take this agent over. Nothing was changed.",
+    };
   } catch (error) {
     return { kind: 'failed', message: formatError(error) };
   }

@@ -108,7 +108,7 @@ with `@` in the field, which starts that role at once with no Auto turn first.
 - The goal is the first message of the Auto agent. It is not a plain turn: the
   tree is created at the start and the goal is queued in its outbox, so Auto's
   first turn is a delivery like every later one. A start that loses the message
-  says "Auto didn't start" and the chat keeps no half-started turn.
+  says "The Lead didn't start" and the chat keeps no half-started turn.
 - Auto runs on any connected provider that can confine a read-only agent
   (`AUTO_OWN_PROVIDERS`: not the opencode family, see Providers), with the route
   the workspace picks for the role.
@@ -219,7 +219,7 @@ row, **What Auto was told**, never as a user bubble; opening it shows the text
 as sent. A transcript written before this change has no origin on its events, so
 its delivery text still renders as a bubble: there is no text sniffing. A
 message the runtime
-cannot take, or one with a file that is not an image, is refused with "Auto didn't get your
+cannot take, or one with a file that is not an image, is refused with "The Lead didn't get your
 message" and the composer keeps its text.
 
 **Answer while working.** A `user` row is delivered in every phase that takes a turn
@@ -293,7 +293,7 @@ of the tree's generation up to the delegation); the child page names them as chi
 reads those images once, into the launch snapshot of the attempt (see Why an agent exists), and
 starts the child with the stored list, so a relaunch after a crash hands over the same images
 even when the tree got more since. An image that
-cannot be written refuses the message with "Auto could not keep the images. Attach them again.":
+cannot be written refuses the message with "The Lead couldn't keep the images. Attach them again.":
 nothing is dropped silently. A turn that is not an operator message or
 a child is left to the plain turn. A message to the root of an Auto tree is never a
 plain turn: with no Auto door registered at all (the runtime has not started yet)
@@ -780,17 +780,19 @@ tree node whose Edit and Remove are the composer's own.
 
 ### Lead state words
 
-A Lead reads one of five words: **Working**, **Waits
-for you**, **Resting**, **Stopped**, **Finished**. `leadStopOf`
-(`packages/core/src/auto/leadStopOf.ts`) is the one function that picks it,
+A Lead reads a word of the shared table (`NAMES`), never one of its own:
+**Running**, **Needs you**, **Idle**, **Stopped**, **Done**, and **Needs
+approval** when its plan waits for you. `leadStopOf`
+(`packages/core/src/auto/leadStopOf.ts`) picks only the stop and its reason,
 from the stored phase, the Lead's own turn, a plan waiting for approval, a
-project ask and the spend limit. Plan ready, an ask, the limit and a failed
-turn are the reason next to **Waits for you**, never a sixth word; Stopping
-reads **Stopped** with the reason `stopping`. `autoTreeWordOf` calls it for
-every reader: the header word of the Lead page (`LeadHeaderWord`), the session row
-(`sessionRunsOf`), the Lead line of a branch Runs tab (`branchLeadsOf`, which
-copies the row word). `leadStopReaders.test.tsx` checks every word in every
-reader.
+project ask and the spend limit. Core never imports `NAMES`: the desktop turns
+the stop into the word in one function, `leadStopWordOf`
+(`features/session/leadStopWordOf.ts`). An ask, the limit and a failed turn
+are the reason next to **Needs you**; Stopping reads **Stopped** with the
+reason `stopping`. `autoTreeWordOf` calls both for every reader: the header
+word of the Lead page (`LeadHeaderWord`), the session row (`sessionRunsOf`),
+the Lead line of a branch Runs tab (`branchLeadsOf`, which copies the row
+word). `leadStopReaders.test.tsx` checks every word in every reader.
 
 ### The workspace read
 
@@ -879,11 +881,24 @@ carries it).
 ## Blocked and Retry
 
 A tree is blocked when a guard stops the next delivery (three answers in a
-row with no progress, the budget, more than six returns in 30 minutes), when the provider refuses to
-start Auto's turn, or when Auto stopped answering: a tree still deciding 10 minutes
+row with no progress, the budget, six returns in 30 minutes on a run with no limit), when the provider refuses to
+start the Lead's turn, or when the Lead stopped answering: a tree still deciding 10 minutes
 after its delivery (`AUTO_STALE_DECIDE_MS`) with no live root run settles from what
-the run left behind, or, with nothing stored, blocks with "Auto stopped answering
-before it replied. Retry to send the message again." and puts the message back.
+the run left behind, or, with nothing stored, blocks with "The Lead stopped answering
+before it replied. Retry sends your message again." and puts the message back.
+
+The block texts live in `turnGate.ts` and say Lead: "The Lead replied 3 times
+with no next step.", "The run reached its limit." and "Agents came
+back to the Lead 6 times in 30 minutes with no limit set.". The text is the
+stored `blocked_reason`, so every text an older build wrote stays in
+`LEGACY_GATE_TEXTS` (`packages/core/src/auto/legacyGateTexts.ts`).
+`isAutoGateBlock` and `isAutoBudgetBlock` read old and new texts alike: a tree
+blocked by an old text survives a restart without a retry, and one blocked at
+the old spend limit text still resumes once the limit is raised
+(`legacyGateTexts.sqlite.test.ts`). The tail and the line under a waiting message
+show an old text in the current words (`autoBlockShownText`) and keep the stored one as
+it is, so its action does not move (`legacyBlockReaders.test.ts`). A build older than this one does not know
+the new texts, and retries such a tree at its first start.
 
 A tree blocked by a guard other than a limit reads **Failed** on every surface
 (glance, row, card, tail), never **Blocked** or **Needs you**: it ended on an error
@@ -892,7 +907,7 @@ the same reason a failed plain agent raises, and it does not count as a wait for
 (`autoWaitRootsOf` counts a plan, a project ask and a stuck child, compared on the
 typed `AutoTreeState`, never on a display word).
 
-A tree at its limit reads **Waits for you** with the reason `limit` (`leadStopOf`),
+A tree at its limit reads **Needs you** with the reason `limit` (`leadStopOf`),
 whether the budget is spent or a guard blocked it for the budget
 (`isAutoPausedAtLimit`, the one function the word, the glance and the row facts read).
 Its row sits under Needs you, and it raises `run-paused-at-limit` (`autoLimitRootsOf`), not
@@ -967,12 +982,15 @@ stops it is a guard that protects the user:
   `rebriefsPerTask` (3, the agents replaced and Auto's continues with a `task` in the `retryOf`
   and `replaces` lineage, `rebriefCountOf`, counted with the other children of the same block):
   the fourth is refused with `task_rebrief_limit` and
-  the delivery tells Auto to ask with a propose block. `messagesPerDelegation` (4 per child,
-  `autoMessageCountOf`, Auto's messages only: the queued ones and the ones already run): the
-  fifth is refused with `message_limit`, so Auto stops or continues it instead. The person is not
-  capped. `returnsPerTreeWindow` (6 in `AUTO_RETURNS_WINDOW_MS`, 30 minutes): the seventh return row
-  carries `isOverWindow`, `deliverNext` blocks the tree with that reason (`AUTO_BLOCK_TEXT.limit_returns`)
-  and **Retry** clears the mark and delivers it.
+  the delivery tells Auto to ask with a propose block. The Lead's messages to a working child
+  have no cap: talking to an agent is the work. `message_limit` stays a known refusal code only
+  so a refusal stored by an older build still reads. `returnsPerTreeWindow` (6 in `AUTO_RETURNS_WINDOW_MS`, 30 minutes) is a health check for a
+  run with no limit only: the sixth return row carries `isOverWindow`, and `deliverNext` blocks the
+  tree with `AUTO_BLOCK_TEXT.limit_returns` only when the tree has no spend cap. With a cap, the cap
+  is what stops a loop that costs too much, and any number of returns reaches the Lead. **Retry**
+  clears the mark and delivers it. A tree blocked on its spend limit whose limit is removed
+  while such a return waits moves to the returns block (`blockTree` replaces a budget block, never
+  another one), so it reads Retry instead of Raise limit.
 
 A batch has any number of children and is never refused for its size or for the agents
 already running. At most `AUTO_MAX_RUNNING_CHILDREN` (4) children run at once, because each
@@ -989,9 +1007,8 @@ only while fewer than four run, the tree is owned by this window and money is le
 limit. So two windows or a restart never start one child twice, and a restarted window starts
 the waiting children itself (`launchChildren` after `recover`). `launchChildren` offers only as
 many waiting children as `readFreeSlots` allows, oldest first, in `delegating`, `waiting` and
-`merging`, never while Auto answers or while the tree is blocked. A child's delegation deadline
-and its idle clock start when it takes its slot, not when it was queued, and a substep that
-starts moves its paused parent's deadline the same way. An answer to a paused child is
+`merging`, never while Auto answers or while the tree is blocked. A child's idle clock starts
+when it takes its slot, not when it was queued. An answer to a paused child is
 admitted at once and the child waits in `accepted` with its new attempt until a slot frees.
 Stop settles the waiting children with the others, so none starts later. At the spend limit
 the waiting children keep waiting; raising the limit starts them.
@@ -1015,9 +1032,7 @@ running is stopped: a child that runs keeps running, finishes its turn and settl
 as usual, with its commits, files and result kept (pending in the outbox). Its
 spend can go past the limit; the tail says so ("No new agent starts. The 2 agents
 still running finish their work and can spend past the limit."). A child paused on
-a question is never timed out while the tree is blocked (`enforceDeadlines`), and
-leaving the block gives every paused child a fresh delegation deadline
-(`pausedDeadlineStatement`), so Auto can still answer it. Raising the limit drives
+a question is never timed out, blocked tree or not, so the Lead can still answer it. Raising the limit drives
 the tree: the waiting results reach Auto in one turn and the tree goes on where it
 paused; a raise that still does not cover Auto's turn keeps it paused with the
 results kept. With no limit the tree never pauses on money.
@@ -1040,9 +1055,13 @@ whichever is latest, so an old row whose `deadline_at` passed while the app was
 closed is never expired on load. A tool call that started and has not ended
 (`hasAgentOpenToolCall`, a long build or test run) counts as activity, bounded by
 the CLI's own tool timeout. Such a child settles `timed_out` with the reason
-`no_activity` ("It showed no activity for 30 minutes and was stopped. Its work is
-kept.") and Auto continues it with `retryOf` as above. A child paused on a question
-keeps its delegation deadline.
+`no_activity` and reads **Needs you**, never **Stopped** (that word means you
+stopped it), even though the cancel marks the agent stopped (`isAgentStopDeliberate`; the card
+head and the tail read the word from `settledStatusOf`). Its page says "No output for 30 minutes. Its work is kept." with
+**Retry**, and the Lead can continue it with `retryOf` as above. A child paused on
+a question has no clock at all: it waits for you or the Lead, however long. The
+`deadline_at` column stays in `auto_delegations` (it is `NOT NULL`), written and
+never read; a row an older build settled with `deadline_passed` keeps its sentence.
 
 At the spend cap the tail reads **Paused at the limit** with **Raise to ...**,
 **Change limit** and **Stop**; raising it drives the tree again, nothing else to do. The counters
@@ -1865,18 +1884,22 @@ stays a `paused` attempt row behind the resumed one, so a question already answe
 helper and the lookup, the snapshot and the guard all read the attempt of the highest ordinal),
 `generation_changed` (the parent's generation is not the tree's), `role_mismatch` (a role other than scout or
 investigator), `depth_cap` (the parent is itself a substep: `AUTO_TREE_DEPTH` is 2, root child 1,
-substep 2), `substep_cap` (a parent has `AUTO_SUBSTEPS_PER_PARENT` = 2 helpers, settled ones counted,
-and the same batch counts). A user message bumps the generation first, so the admit comes back
+substep 2). No count of helpers refuses one: `substep_cap` stays a code only so an older stored
+refusal still reads. A user message bumps the generation first, so the admit comes back
 `generation_changed`.
 
-A paused delegation holds no running slot, so four paused parents can each get a helper. The
+A paused delegation holds no running slot, so four paused parents can each get a helper. At most
+`AUTO_SUBSTEPS_PER_PARENT` (2) helpers of one parent run at once, counted by their live attempts,
+so a helper that finished or asked a question frees its place before its batch joins: a third
+waits in `accepted` and reads **Queued**, and starts when one of the two ends
+(`queuedStartableOf`, shared by `launchChildren` and `advancePhase`, so a held helper never keeps
+the tree in `delegating`, and the guard in `runSlotStatements`, which also checks that the parent's
+latest attempt still waits on the helper's question). A helper not started yet, queued or waiting
+for your OK, whose parent no longer waits on its question (it was answered, asked another one,
+finished or stopped) leaves: `dropOrphanHelpers` settles it `stopped` with the reason
+`parent_ended`, a result for the Lead and its reservation released, in one transaction. The
 answer to a parent is always admitted: the parent waits in `accepted` and takes the next free slot,
-so the helper's slot passes back to it. Admitting a helper moves the parent's deadline to the
-helper's deadline plus `AUTO_SUBSTEP_PARENT_SLACK_MS`, in the same transaction, and the helper's
-start moves it again from its real start. While a helper waits in `accepted` for a slot, the
-parent never times out, however long the wait: `enforceDeadlines` expires a paused parent only in
-a statement that rechecks its deadline and finds no queued helper, so a helper that starts in the
-same tick still finds its parent paused. Cost per
+so the helper's slot passes back to it. A paused parent never times out. Cost per
 ask: one delegation and two attempts from the tree's counters and budget; the digest and the question
 block say so (`substepNeedsLine`).
 
@@ -2086,7 +2109,7 @@ budget or limit refusal and a block that does not parse become a `refusal` row i
 delivered with the next turn under REFUSED, NOT DONE; such a turn counts as no progress, so
 `noProgressStreak` bounds retries. When the next delivery finds that streak at its limit and the
 row it would deliver is a refusal, the tree blocks with the reason of that refusal
-(`autoRefusedBlockText`: "Auto kept trying to hand work over and was refused: the role it chose
+(`autoRefusedBlockText`: "The Lead kept trying to start agents and was refused: the role it chose
 cannot run commands. Retry to let it choose again, or tell it what to change."), not with the
 generic no progress line, and the tail shows it with **Retry**. Every refusal text of a child
 names the field or phrase to drop or change ("facts" on a reviewer, "publish" on an investigator,

@@ -4,19 +4,8 @@ export type LeadStop = 'working' | 'waitsForYou' | 'resting' | 'stopped' | 'fini
 
 export type LeadStopReason = 'planReady' | 'ask' | 'limit' | 'failed' | 'stopping';
 
-export const LEAD_STOP_WORDS = {
-  working: 'Working',
-  waitsForYou: 'Waits for you',
-  resting: 'Resting',
-  stopped: 'Stopped',
-  finished: 'Finished',
-} as const satisfies Readonly<Record<LeadStop, string>>;
-
-export type LeadStopWord = (typeof LEAD_STOP_WORDS)[LeadStop];
-
 export type LeadStopState = Readonly<{
   stop: LeadStop;
-  word: LeadStopWord;
   reason: LeadStopReason | null;
 }>;
 
@@ -35,7 +24,6 @@ type StateParams = {
 
 const stopStateOf = ({ stop, reason }: StateParams): LeadStopState => ({
   stop,
-  word: LEAD_STOP_WORDS[stop],
   reason: reason ?? null,
 });
 

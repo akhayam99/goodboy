@@ -265,7 +265,7 @@ export const recordAgentStatus = async (
       isStopped ? 1 : 0,
       isoToMs(fields.stoppedAt),
       now,
-      isStopped ? (fields.stoppedBy ?? DEFAULT_STOPPED_BY) : null,
+      isStopped ? (fields.stoppedBy ?? DEFAULT_STOPPED_BY) : (fields.stoppedBy ?? null),
       fields.mountId ?? null,
       id,
     ],

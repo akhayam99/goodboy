@@ -1,6 +1,7 @@
+import { LEGACY_GATE_TEXTS } from './legacyGateTexts';
 import { AUTO_BLOCK_TEXT } from './turnGate';
 
-export const AUTO_REFUSED_BLOCK_LEAD = 'Auto kept trying to hand work over';
+export const AUTO_REFUSED_BLOCK_LEAD = 'The Lead kept trying to start agents';
 
 type RefusedBlockParams = Readonly<{
   reason: string;
@@ -13,12 +14,19 @@ type Params = {
   readonly reason: string | null;
 };
 
-const LEGACY_TIME_LIMIT_BLOCK_TEXT = 'This conversation reached its time limit.';
-
 const GATE_TEXTS: ReadonlyArray<string> = [
   ...Object.values(AUTO_BLOCK_TEXT),
-  LEGACY_TIME_LIMIT_BLOCK_TEXT,
+  LEGACY_GATE_TEXTS.noProgress,
+  LEGACY_GATE_TEXTS.budget,
+  LEGACY_GATE_TEXTS.returns,
+  LEGACY_GATE_TEXTS.timeLimit,
+];
+
+const REFUSED_PREFIXES: ReadonlyArray<string> = [
+  AUTO_REFUSED_BLOCK_LEAD,
+  LEGACY_GATE_TEXTS.refusedPrefix,
 ];
 
 export const isAutoGateBlock = ({ reason }: Params): boolean =>
-  reason !== null && (GATE_TEXTS.includes(reason) || reason.startsWith(AUTO_REFUSED_BLOCK_LEAD));
+  reason !== null &&
+  (GATE_TEXTS.includes(reason) || REFUSED_PREFIXES.some((prefix) => reason.startsWith(prefix)));

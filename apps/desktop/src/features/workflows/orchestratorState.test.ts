@@ -405,7 +405,7 @@ describe('resolveOrchestratorState while the run waits on its plan', () => {
     const state = resolve({ run: held(), agents: [makeAgent(0, 'completed')] });
 
     expect(state.phase).toBe('plan-approval');
-    expect(state.sentence).toBe('Plan needs approval');
+    expect(state.sentence).toBe('Needs approval');
   });
 
   it('says the planner is revising, ahead of the plan stop', () => {

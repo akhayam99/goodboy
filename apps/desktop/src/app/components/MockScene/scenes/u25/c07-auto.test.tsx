@@ -370,14 +370,14 @@ describe('c07 Auto scenes', () => {
     expect(screen.queryByRole('button', { name: 'Stop' })).toBeNull();
   });
 
-  it('c07-auto-blocked says why Auto stopped and redelivers on Retry', async () => {
+  it('c07-auto-blocked says why the Lead stopped and redelivers on Retry', async () => {
     const retry = vi.fn<TreeRetryPort>(async () => ({ kind: 'retried' }));
     registerTreeRetryPort({ port: retry });
     mount({ id: 'c07-auto-blocked' });
 
     const tail = await waitFor(() => {
       const found = document.querySelector<HTMLElement>('[data-dock-line="failed"]');
-      expect(found?.textContent).toContain('Auto stopped answering before it replied.');
+      expect(found?.textContent).toContain('The Lead stopped answering before it replied.');
       return found;
     }, WAIT);
     if (tail === null || tail === undefined) {
@@ -432,8 +432,8 @@ describe('c07 Auto scenes', () => {
     expect(screen.queryByRole('button', { name: 'Start an auto' })).toBeNull();
     const rows = within(list).getAllByRole('button', { name: /, Lead, / });
     expect(rows).toHaveLength(2);
-    expect(within(list).getByRole('button', { name: /, Lead, Resting$/ })).toBeDefined();
-    expect(within(list).getByRole('button', { name: /, Lead, Finished$/ })).toBeDefined();
+    expect(within(list).getByRole('button', { name: /, Lead, Idle$/ })).toBeDefined();
+    expect(within(list).getByRole('button', { name: /, Lead, Done$/ })).toBeDefined();
     expect(sessionHead()).toBeDefined();
 
     fireEvent.click(rows[0] ?? list);

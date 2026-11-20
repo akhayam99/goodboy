@@ -308,7 +308,7 @@ export const joinReady = async ({ ctx, treeId }: JoinParams): Promise<JoinOutcom
             delegation: { ...member.delegation, state: 'settled', outcome: 'blocked' },
             delegations: all,
           }),
-          isOverWindow: recentReturns + 1 > AUTO_TREE_LIMITS.returnsPerTreeWindow,
+          isOverWindow: recentReturns + 1 >= AUTO_TREE_LIMITS.returnsPerTreeWindow,
         }),
       });
       if (outcome.status !== 'committed') {

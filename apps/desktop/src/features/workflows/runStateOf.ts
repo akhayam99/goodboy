@@ -82,7 +82,7 @@ const FACTS = {
   },
   'after-run': { word: 'After previous', tone: 'idle', primary: null },
   ready: { word: READY_WORD, tone: 'idle', primary: null },
-  'waits-go': { word: 'Waits for you', tone: 'needsYou', primary: 'decide-next', wait: 'go' },
+  'waits-go': { word: NAMES.needsYou, tone: 'needsYou', primary: 'decide-next', wait: 'go' },
 } as const satisfies Readonly<Record<RunStateKind, Facts>>;
 
 type KindParams = {

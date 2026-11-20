@@ -14,15 +14,12 @@ export const AUTO_TREE_DEPTH = 2;
 
 export const AUTO_SUBSTEPS_PER_PARENT = 2;
 
-export const AUTO_SUBSTEP_PARENT_SLACK_MS = 5 * 60_000;
-
 export const AUTO_TREE_LIMITS = {
   questionCyclesPerDelegation: 3,
   noProgressStreak: 3,
   returnsPerDelegation: 2,
   rebriefsPerTask: 3,
   returnsPerTreeWindow: 6,
-  messagesPerDelegation: 4,
 } as const;
 
 export const AUTO_CHILD_MESSAGE_CHARS = 2_000;

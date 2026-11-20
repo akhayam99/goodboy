@@ -30,7 +30,7 @@ const headWordOf = ({ delegations, isOpen }: WordParams): string => {
     delegations.some((delegation) => delegation.outcome === outcome),
   );
   if (worst === 'failed' || worst === 'timed_out') {
-    return 'Failed';
+    return settledStatusOf({ outcome: worst }).word;
   }
   if (isOpen) {
     return 'Running';

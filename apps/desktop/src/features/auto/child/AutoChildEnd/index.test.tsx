@@ -124,6 +124,18 @@ describe('the end of an Auto child page', () => {
     expect(screen.queryByRole('button', { name: 'Retry through Auto' })).toBeNull();
   });
 
+  it('reads a child the silence stopped as Needs you with its reason, and leaves Retry to the dock', () => {
+    const delegation = {
+      ...aDelegation({ key: 'impl', role: 'implementer', state: 'settled', outcome: 'timed_out' }),
+      reason: 'no_activity',
+    };
+    show({ delegation, status: 'stopped' });
+
+    screen.getByText('Needs you: No output for 30 minutes. Its work is kept.');
+    expect(screen.queryByText(/^Failed/)).toBeNull();
+    expect(screen.queryByRole('button', { name: /^Retry/ })).toBeNull();
+  });
+
   it('keeps the failure and leaves Retry to the dock when the child failed', () => {
     const delegation = aDelegation({
       key: 'impl',

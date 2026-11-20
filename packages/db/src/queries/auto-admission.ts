@@ -160,8 +160,6 @@ type SubstepStatementsParams = {
   readonly parentDelegationId: AutoDelegationId;
   readonly questionId: string;
   readonly generation: number;
-  readonly maxSubsteps: number;
-  readonly parentDeadlineAt: number;
 };
 
 export const autoAdmissionSubstepAbort = ({ slot }: ArtifactAbortParams): string =>
@@ -173,8 +171,6 @@ export const autoSubstepStatements = ({
   parentDelegationId,
   questionId,
   generation,
-  maxSubsteps,
-  parentDeadlineAt,
 }: SubstepStatementsParams): ReadonlyArray<GuardedStatement | PlainStatement> => [
   {
     sql: `SELECT 1 FROM auto_delegations parent
@@ -187,17 +183,10 @@ export const autoSubstepStatements = ({
             AND latest.ordinal = (
               SELECT MAX(ordinal) FROM auto_attempts WHERE delegation_id = parent.id
             )
-        )
-        AND (SELECT COUNT(*) FROM auto_delegations
-              WHERE tree_id = parent.tree_id
-                AND json_extract(request_json, '$.parent.delegationId') = parent.id) < ?`,
-    params: [parentDelegationId, treeId, generation, questionId, maxSubsteps],
+        )`,
+    params: [parentDelegationId, treeId, generation, questionId],
     abortWhen: 'noRows',
     abortCode: autoAdmissionSubstepAbort({ slot }),
-  },
-  {
-    sql: `UPDATE auto_delegations SET deadline_at = MAX(deadline_at, ?) WHERE id = ?`,
-    params: [parentDeadlineAt, parentDelegationId],
   },
 ];
 

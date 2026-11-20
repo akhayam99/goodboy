@@ -259,7 +259,7 @@ describe('a running delegation', () => {
 });
 
 describe('a delegation paused on a question', () => {
-  it('times out after its deadline without touching any process', async () => {
+  it('stays paused past 30 minutes, waiting for you with no clock', async () => {
     const world = await started();
     const turn = world.state.ports.childTurns[0];
     if (turn === undefined) {
@@ -277,17 +277,15 @@ describe('a delegation paused on a question', () => {
       `UPDATE auto_outbox SET state = 'pending' WHERE kind = 'question'`,
     );
 
+    await world.state.world.db.execute(`UPDATE auto_delegations SET deadline_at = 0`);
+    await silentFor31Minutes({ world });
     await silentFor31Minutes({ world });
 
     expect(world.state.ports.cancels).toHaveLength(0);
-    expect(await onlyDelegation({ world })).toMatchObject({
-      state: 'settled',
-      outcome: 'timed_out',
-      reason: 'deadline_passed',
-    });
+    expect(await onlyDelegation({ world })).toMatchObject({ state: 'paused', outcome: null });
     const questions = (
       await listAutoOutbox({ db: world.state.world.db, treeId: world.treeId })
     ).filter((row) => row.kind === 'question');
-    expect(questions.map((row) => row.state)).toEqual(['dropped']);
+    expect(questions.map((row) => row.state)).toEqual(['pending']);
   });
 });

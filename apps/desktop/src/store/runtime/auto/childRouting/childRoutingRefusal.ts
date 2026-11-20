@@ -60,7 +60,7 @@ export const childRoutingRefusal = ({ connected, ...rest }: Params): string => {
   }
   const candidates = connected.filter((provider) => isAutoOwnProvider({ provider }));
   if (candidates.length === 0) {
-    return `No provider Auto can use is connected. ${FIX}`;
+    return `No provider the Lead can use is connected. ${FIX}`;
   }
   const lines = candidates.map(
     (provider) => `${PROVIDER_LABEL[provider]}: ${providerBlockOf({ ...rest, provider })}.`,

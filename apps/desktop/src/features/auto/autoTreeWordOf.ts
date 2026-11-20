@@ -6,6 +6,7 @@ import { isAutoPausedAtLimit } from './isAutoPausedAtLimit';
 import { isAutoPlanAwaitingApproval } from './isAutoPlanAwaitingApproval';
 import { projectAskOf } from './chat/projectAskOf';
 import { needsYouRoleNouns } from './needsYouRoleNouns';
+import { leadStopWordOf } from '../session/leadStopWordOf';
 
 export type AutoTreeState =
   'stopping' | 'stopped' | 'done' | 'failed' | 'idle' | 'asking' | 'paused' | 'running';
@@ -78,7 +79,7 @@ export const autoTreeWordOf = ({ view, rootTurn }: Params): AutoTreeWord => {
   const face = AUTO_FACES[autoStateOf({ lead })];
   return {
     state: face.state,
-    word: lead.word,
+    word: leadStopWordOf({ lead }),
     node: face.node,
     isLive: face.state === 'running',
     lead,

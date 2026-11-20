@@ -143,7 +143,7 @@ describe('u47 comment run scenes', () => {
       (threadId) =>
         document.querySelector(`[data-thread-id="${threadId}"] [data-row-state]`)?.textContent,
     );
-    expect(rowWords).toEqual(['In a run · Working', 'In a run · Working']);
+    expect(rowWords).toEqual(['In a run · Running', 'In a run · Running']);
     const drawer = drawerOf({ threadId: THREAD_IDS.retryConstant });
     expect(within(drawer).queryByRole('button', { name: /^Fix/ })).toBeNull();
   });

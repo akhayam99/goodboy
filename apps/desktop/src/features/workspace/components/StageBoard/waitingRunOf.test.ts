@@ -38,7 +38,7 @@ describe('waitingRunOf', () => {
         session: aSession({ id: FIXTURE_SESSION }),
         reason: 'auto-needs-you',
       }),
-    ).toEqual({ title: ASK, words: 'Plan is ready', verb: 'Review plan', more: 0 });
+    ).toEqual({ title: ASK, words: 'Needs approval', verb: 'Review plan', more: 0 });
   });
 
   it('names no run for a reason that is not about a run', () => {
@@ -85,7 +85,7 @@ describe('waitingRunOf', () => {
       waitingRunOf({ state: stateOf({ views: [] }), session, reason: 'plan-approval' }),
     ).toEqual({
       title: 'Rotate the relay key',
-      words: 'Plan is ready',
+      words: 'Needs approval',
       verb: 'Review plan',
       more: 1,
     });

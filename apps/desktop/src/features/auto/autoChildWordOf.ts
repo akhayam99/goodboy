@@ -10,7 +10,7 @@ const WORD: Readonly<Record<AutoChildState, string>> = {
   done: NAMES.done,
   failed: NAMES.failed,
   stopped: NAMES.stopped,
-  timedOut: NAMES.failed,
+  timedOut: NAMES.needsYou,
   returned: NAMES.idle,
   neverStarted: NAMES.notStarted,
   retried: 'Retried',

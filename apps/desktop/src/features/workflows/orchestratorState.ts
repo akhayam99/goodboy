@@ -115,7 +115,7 @@ const STOP_PRESENTATION: Record<WorkflowOrchestrationStopKind, StopPresentation>
   'plan-approval': {
     phase: 'plan-approval',
     tone: 'warning',
-    sentence: 'Plan needs approval',
+    sentence: NAMES.needsApproval,
     showsMessage: false,
   },
   paused: {

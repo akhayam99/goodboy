@@ -215,10 +215,10 @@ describe('run rows stay reachable from the preset run level', () => {
     expect(document.querySelector('[data-slot="pane-meta"]')).toBeNull();
   });
 
-  it('Manual run: the tail says Ready to start, its one header primary starts it', async () => {
+  it('Manual run: the tail says Ready, its one header primary starts it', async () => {
     await mount('c08-runs');
     await press(screen.getByRole('button', { name: /^Open Document the export batching/ }));
-    expect(tail().getByText('Ready to start')).toBeDefined();
+    expect(tail().getByText('Ready')).toBeDefined();
     expect(header().getByRole('button', { name: 'Start run' })).toBeDefined();
     expect(tail().queryByRole('button', { name: 'Start run' })).toBeNull();
   });
@@ -302,7 +302,7 @@ describe('run rows stay reachable from the preset run level', () => {
     await mount('c08-run-working');
     patchAgent({ id: C08_IMPLEMENTER_ID, patch: { status: 'stopped', stoppedBy: 'app' } });
     await settle();
-    expect(tail().getByText('1 agent stopped by restart')).toBeDefined();
+    expect(tail().getByText('Stopped')).toBeDefined();
     expect(tail().getByRole('button', { name: 'Continue' })).toBeDefined();
   });
 
@@ -310,7 +310,7 @@ describe('run rows stay reachable from the preset run level', () => {
     await mount('c08-run-ready');
     patchRun({ patch: { orchestrationStop: { kind: 'paused', message: 'Paused by you.' } } });
     await settle();
-    expect(tail().getByText('Paused by you')).toBeDefined();
+    expect(tail().getByText('Paused')).toBeDefined();
     tail().getByRole('button', { name: 'Continue' });
   });
 

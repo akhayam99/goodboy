@@ -11,6 +11,7 @@ import { useDelegationDecision } from '../../chat/useDelegationDecision';
 import { usePublishAct } from '../../chat/usePublishAct';
 import type { DelegationDecision } from '../../delegationDecisionPort';
 import type { DelegationCardModel } from '../../chat/delegationCardOf';
+import { isAgentStopDeliberate } from '../../isAgentStopDeliberate';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -52,9 +53,9 @@ export const AutoChildEnd = ({ sessionId, delegation, card, agent, isReplaced }:
   const settled = live ?? (delegation.state === 'settled' && !isHandedOn ? RETURNED : null);
   const isStopInDock = isAgentStopInDockOf({ turn, status: agent.status });
   const facts =
-    agent.status === 'stopped' || settled === null
+    isAgentStopDeliberate({ status: agent.status, outcome: delegation.outcome }) || settled === null
       ? null
-      : settled.state === 'failed'
+      : settled.state === 'failed' || delegation.outcome === 'timed_out'
         ? { ...settled, actions: [] }
         : isStopInDock
           ? { ...settled, actions: settled.actions.filter((action) => action.id !== 'stopAgent') }

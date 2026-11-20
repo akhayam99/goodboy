@@ -10,6 +10,7 @@ import { AUTO_SEED_SESSION } from '@goodboy/db/test-helpers/auto-seeds';
 import { brandId, type AgentId, type ArtifactId, type IsoDateTime } from '@goodboy/types';
 import { delegationContinueOf } from '../../../../features/auto/delegationContinueOf';
 import { writeAutoLevel } from '../level/writeAutoLevel';
+import { continueChild } from './continueChild';
 import { registerPlan } from '../testing/autoWorld';
 import {
   autoCommand,
@@ -236,6 +237,40 @@ describe('a person writes to a child Auto started', () => {
     ).toEqual({ from: 'user', text: 'Why did you skip the tests folder?' });
   });
 
+  it('says Raise limit only when the run is out of money, and Send it again when the tree moved on', async () => {
+    const world = await settledScout();
+    const original = await onlyDelegation(world);
+    const { db } = world.state.ctx;
+    const racedDb = {
+      ...db,
+      transaction: async (params: Parameters<typeof db.transaction>[0]) => {
+        await db.execute('UPDATE auto_trees SET generation = generation + 1');
+        return db.transaction(params);
+      },
+    };
+    const write = (ctx: typeof world.state.ctx) =>
+      continueChild({
+        ctx,
+        childAgentId: original.childAgentId,
+        text: 'Why did you skip the tests folder?',
+        from: 'user',
+        sleep: async () => undefined,
+      });
+
+    expect(await write({ ...world.state.ctx, db: racedDb })).toEqual({
+      kind: 'refused',
+      code: 'tree_busy',
+      message: 'The Lead could not take your message just now. Send it again.',
+    });
+
+    await db.execute('UPDATE auto_trees SET generation = generation - 1, cap_usd = 0.0001');
+    expect(await write(world.state.ctx)).toEqual({
+      kind: 'refused',
+      code: 'tree_busy',
+      message: 'The run reached its limit. Raise limit, then write to this agent again.',
+    });
+  });
+
   it('keeps the plain turn for an agent outside Auto and waits on a working child', async () => {
     const world = await runningScout();
     const original = await onlyDelegation(world);
@@ -454,7 +489,7 @@ describe('Auto messages a working child', () => {
     expect(world.state.ports.autoTurns.at(-1)?.text).toContain('Skipped it, nothing else changes.');
   });
 
-  it('refuses the fifth message to one child with message_limit', async () => {
+  it('delivers the fifth message to one child: the Lead talks to an agent as much as it needs', async () => {
     const world = await runningScout();
     const original = await onlyDelegation(world);
     const db = world.state.world.db;
@@ -480,13 +515,18 @@ describe('Auto messages a working child', () => {
         runId: `run-note-${index}`,
       });
 
-    for (const index of [1, 2, 3, 4]) {
+    for (const index of [1, 2, 3, 4, 5]) {
       expect(await send(index)).toMatchObject({ isOk: true });
     }
-    expect(await send(5)).toMatchObject({ isOk: false, code: 'message_limit' });
 
     const otherWindow = await listAgentQueuedMessages(db, [original.childAgentId]);
-    expect(otherWindow.map((row) => row.content)).toEqual(['note 1', 'note 2', 'note 3', 'note 4']);
+    expect(otherWindow.map((row) => row.content)).toEqual([
+      'note 1',
+      'note 2',
+      'note 3',
+      'note 4',
+      'note 5',
+    ]);
   });
 
   it('shows a second window the queued message once', async () => {

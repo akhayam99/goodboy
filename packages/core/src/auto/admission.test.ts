@@ -239,7 +239,6 @@ describe('diagnoseAdmission', () => {
       generation: 1,
       pausedQuestionId: 'question-1',
       depth: 1,
-      substeps: 0,
       ...patch,
     });
 
@@ -285,15 +284,9 @@ describe('diagnoseAdmission', () => {
       expect(codeOf(verdictOf([parent({ depth: 2 })], [helper()]))).toBe('depth_cap');
     });
 
-    it('refuses the third substep of one parent, across batches and inside one batch', () => {
-      expect(codeOf(verdictOf([parent({ substeps: 2 })], [helper()]))).toBe('substep_cap');
+    it('admits a third helper of one parent in one batch: the queue holds it, no count refuses it', () => {
       const trio = [helper('agent-scout-2'), helper('agent-scout-3'), helper('agent-scout-4')];
-      const verdict = verdictOf([parent()], trio);
-      expect(verdict).toMatchObject({
-        kind: 'refused',
-        code: 'substep_cap',
-        perChild: [{ slot: 2 }],
-      });
+      expect(verdictOf([parent()], trio)).not.toMatchObject({ kind: 'refused' });
     });
 
     it('refuses a role that cannot be a substep', () => {

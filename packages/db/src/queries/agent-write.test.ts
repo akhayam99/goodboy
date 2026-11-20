@@ -364,6 +364,22 @@ describe('agent writes', () => {
       expect(resumed.stoppedBy).toBeUndefined();
     });
 
+    it('keeps the breaker as the reason a blocked agent holds, and clears it on the next run', async () => {
+      const id = await seedAgent('a3', 'running');
+
+      const held = await recordAgentStatus(db, id, { status: 'blocked', stoppedBy: 'breaker' });
+      expect(held.status).toBe('blocked');
+      expect(held.stoppedBy).toBe('breaker');
+      expect(held.stoppedAt).toBeUndefined();
+
+      const plain = await recordAgentStatus(db, id, { status: 'blocked' });
+      expect(plain.stoppedBy).toBeUndefined();
+
+      await recordAgentStatus(db, id, { status: 'blocked', stoppedBy: 'breaker' });
+      const resumed = await recordAgentStatus(db, id, { status: 'running' });
+      expect(resumed.stoppedBy).toBeUndefined();
+    });
+
     it('records who stopped the agent as you when the caller says nothing', async () => {
       const id = await seedAgent('a3', 'running');
 

@@ -699,10 +699,10 @@ fails silently at runtime.
 - An operator message to a child of a live Auto tree never runs as a plain turn either:
   `routeAutoChildTurn` hands it to the main window, which admits a continue of the child's
   delegation (`continueChild`). That continue is admitted outside Auto's turn, so its tree guard
-  (`autoContinueTreeStatement`) repeats the open, time and money caps of the admission; a new cap
+  (`autoContinueTreeStatement`) repeats the open and money checks of the admission; a new check
   goes into both. A queued Auto message is told apart only by its queue id prefix
   (`AUTO_MESSAGE_QUEUE_PREFIX`, read from the `queue:` delivery id): renaming either breaks the
-  `messagesPerDelegation` count.
+  count of the Lead's messages (`autoMessageCountOf`).
 - `auto_*` money columns are REAL dollars. Compare them through
   `autoRemainingUsdSql` and `AUTO_USD_EPSILON`, not with `===`.
 - m232 rebuilds `auto_delegations` with `PRAGMA foreign_keys = OFF` around the

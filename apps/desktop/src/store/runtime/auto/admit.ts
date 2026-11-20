@@ -1,6 +1,4 @@
 import {
-  AUTO_SUBSTEP_PARENT_SLACK_MS,
-  AUTO_SUBSTEPS_PER_PARENT,
   diagnoseAdmission,
   type AdmissionChild,
   type AdmissionChildRefusal,
@@ -180,8 +178,6 @@ const buildStatements = ({ params, snapshot }: BuildStatementsParams): ReadonlyA
           }),
           questionId: child.substep.questionId,
           generation: params.generation,
-          maxSubsteps: AUTO_SUBSTEPS_PER_PARENT,
-          parentDeadlineAt: child.deadlineAt + AUTO_SUBSTEP_PARENT_SLACK_MS,
         }),
       );
     }

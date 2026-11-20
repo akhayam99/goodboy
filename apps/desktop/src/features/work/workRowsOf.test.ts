@@ -4,6 +4,7 @@ import { brandId, type AgentId, type AutoTreeId, type SessionId } from '@goodboy
 import type { AutoPhase } from '@goodboy/db';
 import type { WorkLead } from '../../store/slices/work/state';
 import { aView } from '../auto/testing/autoViewFixtures';
+import { leadStopWordOf } from '../session/leadStopWordOf';
 import { workRowsOf } from './workRowsOf';
 
 type LeadParams = {
@@ -82,12 +83,14 @@ describe('workRowsOf', () => {
   });
 
   it('reads the state word of each Lead from the one owner', () => {
-    const words = Object.fromEntries(read('open').rows.map((row) => [row.treeId, row.lead.word]));
+    const words = Object.fromEntries(
+      read('open').rows.map((row) => [row.treeId, leadStopWordOf({ lead: row.lead })]),
+    );
 
     expect(words).toEqual({
-      'tree-a': 'Working',
-      'tree-b': 'Resting',
-      'tree-c': 'Waits for you',
+      'tree-a': 'Running',
+      'tree-b': 'Idle',
+      'tree-c': 'Needs you',
     });
   });
 

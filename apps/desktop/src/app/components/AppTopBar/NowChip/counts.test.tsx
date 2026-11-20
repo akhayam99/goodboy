@@ -127,7 +127,7 @@ describe('the Board on the rail and the Now chip count sessions by their stage',
     renderShell();
 
     expect(sessionsDoor().getAttribute('aria-label')).toBe(
-      'Board, 2 sessions need you: 1 question for you, The plan needs approval',
+      'Board, 2 sessions need you: 1 question for you, Needs approval',
     );
   });
 

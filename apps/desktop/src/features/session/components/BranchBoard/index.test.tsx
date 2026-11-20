@@ -200,7 +200,7 @@ describe('the branch board on the Overview', () => {
     );
     expect(tenant.textContent).not.toContain('payments-api');
     expect(tenant.querySelectorAll('[data-board-chip]')).toHaveLength(1);
-    expect(tenant.querySelector('[data-board-chip]')?.textContent).toBe('Waits for you');
+    expect(tenant.querySelector('[data-board-chip]')?.textContent).toBe('Asks you');
     await vi.waitFor(() =>
       expect(tileOf({ branch: TENANT }).querySelector('[data-board-facts]')?.textContent).toBe(
         'PR #309 · 1 question waits',
@@ -361,7 +361,7 @@ describe('the branch board on the Overview', () => {
     }
   });
 
-  it('moves a tile to Merged with the Merged chip and no button until a cleanup is proposed', async () => {
+  it('moves a tile to Merged with no chip and no button until a cleanup is proposed', async () => {
     seedCentralColumn({ kind: 'branches' });
     await show();
 
@@ -370,11 +370,11 @@ describe('the branch board on the Overview', () => {
 
     const tenant = tileOf({ branch: TENANT });
     expect(tenant.closest('[data-board-group]')?.getAttribute('data-board-group')).toBe('merged');
-    expect(tenant.querySelector('[data-board-chip]')?.textContent).toBe('Merged');
+    expect(tenant.querySelector('[data-board-chip]')).toBeNull();
     expect(verbsOf({ tile: tenant })).toHaveLength(0);
   });
 
-  it('moves a tile to Closed with the Closed chip, then back out when the request is reopened', async () => {
+  it('moves a tile to Closed with no chip, then back out when the request is reopened', async () => {
     seedCentralColumn({ kind: 'branches' });
     await show();
 
@@ -383,7 +383,7 @@ describe('the branch board on the Overview', () => {
 
     const closed = tileOf({ branch: TENANT });
     expect(closed.closest('[data-board-group]')?.getAttribute('data-board-group')).toBe('closed');
-    expect(closed.querySelector('[data-board-chip]')?.textContent).toBe('Closed');
+    expect(closed.querySelector('[data-board-chip]')).toBeNull();
     expect(verbsOf({ tile: closed })).toHaveLength(0);
     expect(document.querySelector('[data-board-group="merged"]')).toBeNull();
     expect(screen.queryAllByRole('button', { name: /^Remove \d worktrees?/ })).toHaveLength(0);

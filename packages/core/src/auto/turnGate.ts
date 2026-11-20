@@ -5,14 +5,13 @@ export const AUTO_BLOCK_REASONS = ['limit_no_progress', 'budget', 'limit_returns
 export type AutoBlockReason = (typeof AUTO_BLOCK_REASONS)[number];
 
 export const AUTO_BLOCK_TEXT = {
-  limit_no_progress:
-    'Auto answered three times in a row without handing work over or saying anything. Retry to try again.',
-  budget: 'The budget left does not cover another Auto turn. Raise the limit to go on.',
-  limit_returns: `Agents came back to Auto more than ${AUTO_TREE_LIMITS.returnsPerTreeWindow} times in ${AUTO_RETURNS_WINDOW_MS / 60_000} minutes. Retry to let Auto decide again, or tell it what to change.`,
+  limit_no_progress: `The Lead replied ${AUTO_TREE_LIMITS.noProgressStreak} times with no next step.`,
+  budget: 'The run reached its limit.',
+  limit_returns: `Agents came back to the Lead ${AUTO_TREE_LIMITS.returnsPerTreeWindow} times in ${AUTO_RETURNS_WINDOW_MS / 60_000} minutes with no limit set.`,
 } as const satisfies Readonly<Record<AutoBlockReason, string>>;
 
 export const AUTO_STALE_DECIDE_TEXT =
-  'Auto stopped answering before it replied. Retry to send the message again.';
+  'The Lead stopped answering before it replied. Retry sends your message again.';
 
 export type TurnGateParams = Readonly<{
   noProgressStreak: number;

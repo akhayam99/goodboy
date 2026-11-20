@@ -1,11 +1,11 @@
-import { AUTO_SUBSTEPS_PER_PARENT, AUTO_TREE_LIMITS } from './limits';
+import { AUTO_TREE_LIMITS } from './limits';
 import type { AutoRefusalCode } from './refusals';
 
 export const AUTO_REFUSAL_TEXT = {
   request_conflict:
     'That request id was already used with a different spec. Send the same spec again to repeat the call, or use a new id.',
   depth_cap: 'Only the Auto agent of a conversation hands work over. An agent never delegates.',
-  substep_cap: `A paused agent can have ${AUTO_SUBSTEPS_PER_PARENT} substeps at most, and a substep never has its own. Answer it yourself.`,
+  substep_cap: 'A substep never has its own. Answer it yourself.',
   empty_batch: 'The batch has no children.',
   budget: 'This conversation reached its limit. Ask the user to raise the limit.',
   already_yielded:
@@ -42,7 +42,8 @@ export const AUTO_REFUSAL_TEXT = {
   return_limit: `That agent came back ${AUTO_TREE_LIMITS.returnsPerDelegation + 1} times, so it cannot be continued. Hand the task to another role with "replaces", or ask the user with a propose block whose child names it with "retryOf" or "replaces".`,
   task_rebrief_limit: `That task was handed to a new agent ${AUTO_TREE_LIMITS.rebriefsPerTask} times already. Ask the user with a propose block whose child names it with "retryOf" or "replaces".`,
   not_returned: 'That agent did not come back to you, or you already decided about it.',
-  message_limit: `You already sent that agent ${AUTO_TREE_LIMITS.messagesPerDelegation} messages. Stop it with a stop block, or continue it with "retryOf" and a "task" once it is done.`,
+  message_limit:
+    'That agent got too many messages. Stop it with a stop block, or continue it with "retryOf" and a "task" once it is done.',
   not_running:
     'That agent is not working right now. Continue a finished agent with "retryOf" and a "task", and answer a waiting one with an answer block.',
 } as const satisfies Readonly<Record<AutoRefusalCode, string>>;

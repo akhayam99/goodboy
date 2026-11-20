@@ -5,6 +5,7 @@ import {
   autoRefusalUserReason,
   autoRefusedBlockText,
   autoRemainingForGates,
+  isAutoBudgetBlock,
   isAutoMountedCode,
   isRefusalPayload,
   isResultsPayload,
@@ -34,7 +35,6 @@ import { formatError } from '@goodboy/ui';
 import { buildDeliveryMessage } from './buildDeliveryMessage';
 import type { OwnTurns } from './createOwnTurns';
 import { chooseDeliveryRows } from './deliveryRows';
-import { pausedDeadlineStatement } from './pausedDeadlineStatement';
 import type { AutoTurnEnded, TurnStartOutcome } from './ports';
 import { userOnceAllowsOf } from '../../slices/permissions/userOnceAllowsOf';
 import { userImagesOf } from './userImagesOf';
@@ -71,7 +71,9 @@ type BlockParams = {
 };
 
 const blockTree = async ({ ctx, tree, reason }: BlockParams): Promise<DeliverOutcome> => {
-  if (tree.phase === 'blocked') {
+  const isBlockKept =
+    tree.blockedReason === reason || !isAutoBudgetBlock({ reason: tree.blockedReason });
+  if (tree.phase === 'blocked' && isBlockKept) {
     return { kind: 'idle', reason: 'blocked' };
   }
   await ctx.scheduler.transition({
@@ -316,10 +318,13 @@ export const deliverNext = async ({
   if (gate !== null) {
     return blockTree({ ctx, tree, reason: blockReasonOf({ gate, primary }) });
   }
-  if (rows.some((row) => isResultsPayload(row.payload) && row.payload.isOverWindow === true)) {
+  if (
+    spend?.capUsd === null &&
+    rows.some((row) => isResultsPayload(row.payload) && row.payload.isOverWindow === true)
+  ) {
     return blockTree({ ctx, tree, reason: AUTO_BLOCK_TEXT.limit_returns });
   }
-  if (tree.phase === 'blocked' && tree.blockedReason !== AUTO_BLOCK_TEXT.budget) {
+  if (tree.phase === 'blocked' && !isAutoBudgetBlock({ reason: tree.blockedReason })) {
     return { kind: 'idle', reason: 'blocked' };
   }
   const stored = storedDeliveryOf({ value: primary.payload });
@@ -335,12 +340,7 @@ export const deliverNext = async ({
         });
   const runId = ctx.ports.newId();
   const claims = claimStatements({ ctx, tree, rows, runId, text });
-  const claimed = await ctx.db.transaction({
-    statements:
-      tree.phase === 'blocked'
-        ? [...claims, pausedDeadlineStatement({ treeId: tree.id, nowMs: ctx.now() })]
-        : claims,
-  });
+  const claimed = await ctx.db.transaction({ statements: claims });
   if (claimed.status === 'aborted') {
     if (claimed.abortCode === ABORT_BUDGET) {
       return blockTree({ ctx, tree, reason: AUTO_BLOCK_TEXT.budget });

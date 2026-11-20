@@ -149,8 +149,8 @@ const ROWS: Readonly<Record<RunStateKind, Expected>> = {
     wait: null,
   },
   'waits-go': {
-    word: 'Waits for you',
-    pageWord: 'Waits for you',
+    word: 'Needs you',
+    pageWord: 'Needs you',
     tone: 'needsYou',
     primary: 'decide-next',
     isNeedsYou: true,

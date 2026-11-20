@@ -65,7 +65,7 @@ export const ATTENTION_REASON_META: Record<SessionAttentionReason, AttentionEntr
     icon: 'plan',
     tone: 'warning',
     mark: 'approval',
-    words: 'The plan needs approval',
+    words: NAMES.needsApproval,
   }),
   'changes-requested': entryOf({
     icon: 'review',
@@ -83,7 +83,7 @@ export const ATTENTION_REASON_META: Record<SessionAttentionReason, AttentionEntr
     icon: 'merge',
     tone: 'primary',
     mark: 'queue',
-    words: 'In merge queue',
+    words: NAMES.inMergeQueue,
   }),
   'pr-approved': entryOf({
     icon: 'pr',

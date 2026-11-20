@@ -117,7 +117,7 @@ describe('the c05 overview scenes', () => {
       value: document.querySelector<HTMLElement>('[data-board-group="merged"]'),
       what: 'Merged group',
     });
-    expect(merged.querySelector('[data-board-row] [data-board-chip]')?.textContent).toBe('Merged');
+    expect(merged.querySelector('[data-board-row] [data-board-chip]')).toBeNull();
     const remove = within(merged).getByRole('button', { name: /^Remove 1 worktree/ });
     expect(remove.textContent).toContain('412 MB');
     expect(screen.queryByRole('button', { name: 'Keep' })).toBeNull();

@@ -1,4 +1,5 @@
 import type { LeadStopState } from '@goodboy/core/auto';
+import { NAMES } from '../../../../shared/utils/names';
 
 export type WaitWords = Readonly<{
   words: string;
@@ -13,7 +14,7 @@ type Params = {
 const OPEN_RUN = 'Open run';
 
 const WAITING = {
-  planReady: { words: 'Plan is ready', verb: 'Review plan' },
+  planReady: { words: NAMES.needsApproval, verb: 'Review plan' },
   ask: { words: 'Asks you', verb: 'Answer the Lead' },
   limit: { words: 'Paused at its limit', verb: OPEN_RUN },
   failed: { words: 'Stopped on a failure', verb: OPEN_RUN },

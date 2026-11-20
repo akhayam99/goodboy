@@ -321,7 +321,7 @@ const ROWS: ReadonlyArray<Row> = [
     after: {
       stage: 'attention',
       attention: 'plan-approval',
-      reason: 'The plan needs approval',
+      reason: 'Needs approval',
       isRunning: false,
     },
   },
@@ -332,7 +332,7 @@ const ROWS: ReadonlyArray<Row> = [
     after: {
       stage: 'attention',
       attention: 'plan-approval',
-      reason: 'The plan needs approval',
+      reason: 'Needs approval',
       isRunning: true,
     },
   },

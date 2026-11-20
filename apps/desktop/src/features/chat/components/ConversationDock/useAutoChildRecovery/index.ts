@@ -3,6 +3,7 @@ import { EMPTY_ARRAY, useAppStore } from '../../../../../store';
 import { usePendingAction } from '../../../../../shared/hooks/usePendingAction';
 import { autoSettledStateOf } from '../../../../auto/autoSettledStateOf';
 import { autoTreeOfAgent } from '../../../../auto/autoTreeOfAgent';
+import { isAgentStopDeliberate } from '../../../../auto/isAgentStopDeliberate';
 import { isAutoDelegationReplaced } from '../../../../auto/isAutoDelegationReplaced';
 import { delegationReasonTextOf } from '../../../../auto/delegationReasonTextOf';
 import type { DockFailure } from '../dockFailureOf';
@@ -41,7 +42,7 @@ export const useAutoChildRecovery = ({
   if (
     tree?.kind !== 'child' ||
     agentId === null ||
-    agent?.status === 'stopped' ||
+    isAgentStopDeliberate({ status: agent?.status, outcome: tree.delegation.outcome }) ||
     turn?.kind === 'running' ||
     turn?.kind === 'starting' ||
     hasNewerReply
