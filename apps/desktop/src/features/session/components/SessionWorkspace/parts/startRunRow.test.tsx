@@ -13,7 +13,15 @@ vi.mock('../../../../../shared/lib/db', async () =>
 );
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, cleanup, fireEvent, render, renderHook, screen } from '@testing-library/react';
+import {
+  act,
+  cleanup,
+  fireEvent,
+  render,
+  renderHook,
+  screen,
+  waitFor,
+} from '@testing-library/react';
 import { useEscapeLayer } from '@goodboy/ui';
 import { aSession } from '@goodboy/types/testing';
 import { ToastProvider } from '../../../../../shared/components/Toast';
@@ -25,6 +33,8 @@ import {
 } from '../../../../../store/storyHarness';
 import { aNowAgent, NOW_SESSION } from '../../../central/now/testing/nowModelOf';
 import { startRunEventName } from '../../../startRun/startRunEventName';
+import { sessionPlace } from '../../../../../store/slices/navigation/place';
+import { PLACE_ROWS } from '../../../../../store/slices/navigation/placeRows';
 import { WorkflowsPane } from './WorkflowsPane';
 
 const session = aSession({ id: NOW_SESSION });
@@ -113,6 +123,24 @@ describe('WorkflowsPane', () => {
     fireEvent.keyDown(window, { key: 'Escape' });
 
     expect(onEscape).toHaveBeenCalledOnce();
+  });
+
+  it('says Nothing is running with Clear filter on a place saved with Running and no runs', async () => {
+    useAppStore.setState({ currentSessionId: NOW_SESSION });
+    useAppStore
+      .getState()
+      .navigate({ to: sessionPlace({ sessionId: NOW_SESSION, lens: 'workflows' }) });
+    useAppStore.getState().amendFocus({
+      patch: { returnRows: { [PLACE_ROWS.runsFilter]: 'running' } },
+    });
+    renderPane();
+
+    screen.getByText('Nothing is running');
+    expect(box()).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Clear filter' }));
+
+    await waitFor(() => expect(box()).not.toBeNull());
+    expect(screen.queryByText('Nothing is running')).toBeNull();
   });
 
   it('comes back to the list with the form shut after a run page', () => {

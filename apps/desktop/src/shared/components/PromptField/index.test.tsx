@@ -6,6 +6,7 @@ import { useAppStore } from '../../../store';
 import { SETTING_COMPOSER_CLASSIC_KEYS } from '../../../features/settings/settings';
 import { usePendingAttachments } from '../../hooks/usePendingAttachments';
 import { shortcutGlyphs } from '../../keyboard/registry';
+import { shortcutWords } from '../../keyboard/shortcutWords';
 import { PromptField, type PromptSubmitMode } from '.';
 import type { PromptFieldKind } from './promptKeyAction';
 
@@ -255,12 +256,22 @@ describe('PromptField key row', () => {
   it('describes the field with the keys whether they show or not', () => {
     useAppStore.setState({ settings: { [SETTING_COMPOSER_CLASSIC_KEYS]: 'false' } });
     render(<Harness kind="message" withFiles={false} sent={[]} />);
-    const send = shortcutGlyphs('composer.send');
+    const description = `${shortcutWords({ id: 'composer.send' })} send, ${shortcutWords({ id: 'composer.newLine' })} new line`;
 
-    expect(field().getAttribute('aria-describedby')).toBe(keysRow().id);
-    expect(keysRow().textContent).toContain(`${send}send`);
+    screen.getByRole('textbox', { name: 'Prompt', description });
     fireEvent.change(field(), { target: { value: 'Retry budget' } });
-    expect(field().getAttribute('aria-describedby')).toBe(keysRow().id);
+    screen.getByRole('textbox', { name: 'Prompt', description });
+    expect(keysRow().getAttribute('aria-hidden')).toBe('true');
+  });
+
+  it('names each key of a document field in words for a screen reader', () => {
+    useAppStore.setState({ settings: { [SETTING_COMPOSER_CLASSIC_KEYS]: 'false' } });
+    render(<Harness kind="document" withFiles={false} sent={[]} />);
+
+    screen.getByRole('textbox', {
+      name: 'Prompt',
+      description: `${shortcutWords({ id: 'composer.send' })} new line, ${shortcutWords({ id: 'composer.submit' })} send`,
+    });
   });
 
   it('keeps the keys shown when the keys changed, with text in the field', () => {
