@@ -176,7 +176,11 @@ tier: it opens at 720px and resizes from 480 to `room` while it pushes, with no
 need. A tool keeps its width on the session grid (below). A detail keeps its
 width per kind everywhere, `goodboy:detail-width:<kind>:v1` (`detailWidthKeyOf`,
 `useDetailWidth`; a studio's own panel uses `studio-<kind>`), so dragging Ask
-wider never moves Context, Scripts, an artifact or a Terminal. A kind with no
+wider never moves Context, Scripts, an artifact or a Terminal. An artifact and
+an artifact document keep one width per artifact, `<kind>:<artifactId>`
+(`detailWidthIdOf`), so widening one report never widens another. While a
+detail closes it keeps the width it showed, so it never jumps on its way out.
+A kind with no
 width of its own starts from the tier key its size had before 0.41.0
 (`TIER_WIDTH_KEYS`), so nothing jumps after the update; no panel writes those
 keys any more. Each width is clamped on read and written once when a drag ends;

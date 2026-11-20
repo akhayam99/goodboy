@@ -318,6 +318,37 @@ describe('StudioRailLayout', () => {
       expect(rail()?.dataset['railOverPage']).toBe('');
     });
 
+    it('opens a rail drawn apart from its page over that page, and Esc folds it again', () => {
+      const RailOnly = () => {
+        const fold = useStudioRailFold({ surface: 'framed' });
+        return (
+          <StudioRailLayout
+            rail={<p>Rail content</p>}
+            detail={null}
+            railLabel="Files"
+            railWidth="wide"
+            surface="framed"
+            placement="page"
+            hasPageOutside
+            isCollapsed={fold.isCollapsed}
+            onCollapsedChange={fold.setFolded}
+          />
+        );
+      };
+      stubPage(800);
+      render(<RailOnly />);
+      const files = () => screen.queryByRole('complementary', { name: 'Files' });
+
+      expect(files()).toBeNull();
+      fireEvent.click(screen.getByRole('button', { name: 'Show files' }));
+
+      expect(files()?.dataset['railOverPage']).toBe('');
+      expect(files()?.className).toContain('absolute');
+      fireEvent.keyDown(window, { key: 'Escape' });
+      expect(files()).toBeNull();
+      screen.getByRole('button', { name: 'Show files' });
+    });
+
     it('docks the list beside the page again from 880', () => {
       stubPage(880);
       render(<FoldedPage />);

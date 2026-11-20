@@ -41,6 +41,7 @@ export const DrawerDockBox = ({
     <div
       data-container="drawer"
       data-panel-focused={isFocused ? '' : undefined}
+      data-panel-over-page={isFloating ? '' : undefined}
       className={cn(
         'panel-on-rail relative flex min-h-0 min-w-0 flex-1 overflow-clip rounded-l-frame border-y border-l',
         isFocused ? 'border-focus-ring' : 'border-frame-edge',

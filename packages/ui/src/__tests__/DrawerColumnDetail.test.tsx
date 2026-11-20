@@ -12,6 +12,7 @@ import {
   panelAsideWidthOf,
 } from '../drawerGeometry';
 import { DrawerEdgeContext } from '../drawerEdgeContext';
+import { DRAWER_PANEL_VARS } from '../drawerPanelVars';
 import { RIGHT_DRAWER_STORAGE_KEY } from '../drawerWidthKeys';
 
 type ObserverCallback = (entries: ReadonlyArray<{ contentRect: { width: number } }>) => void;
@@ -133,6 +134,7 @@ describe('DrawerColumn with a detail panel and a tool dock', () => {
     );
     expect(group()?.style.width).toBe(`${RIGHT_DRAWER_DEFAULT + DRAWER_GUTTER}px`);
     expect(scrim()).toBeNull();
+    expect(panel().querySelector('[data-panel-over-page]')).toBeNull();
   });
 
   it('lays both over the page with no veil once even the tool cannot push, rail kept', () => {
@@ -143,6 +145,8 @@ describe('DrawerColumn with a detail panel and a tool dock', () => {
     expect(scrim()).toBeNull();
     expect(pageOf(container)?.hasAttribute('inert')).toBe(false);
     expect(dockBox()?.querySelector('[role="toolbar"]')).not.toBeNull();
+    expect(dockBox()?.dataset['panelOverPage']).toBe('');
+    expect(detailBox()?.dataset['panelOverPage']).toBe('');
   });
 
   it('shrinks both toward their minimum beside the page before either floats', () => {
@@ -169,6 +173,8 @@ describe('DrawerColumn with a detail panel and a tool dock', () => {
     expect(group()?.className).toContain('absolute');
     expect(group()?.className).toContain('-translate-x-full');
     expect(detailBox()?.className).toContain('shadow-xl');
+    expect(detailBox()?.dataset['panelOverPage']).toBe('');
+    expect(dockBox()?.dataset['panelOverPage']).toBeUndefined();
     expect(scrim()).toBeNull();
     expect(pageOf(container)?.hasAttribute('inert')).toBe(false);
   });
@@ -276,6 +282,32 @@ describe('DrawerColumn with a detail panel and a tool dock', () => {
     expect(handle().getAttribute('aria-valuenow')).toBe(String(RIGHT_DRAWER_DEFAULT));
     expect(localStorage.getItem('goodboy:detail-width:artifact:v1')).toBeNull();
     expect(localStorage.getItem(RIGHT_DRAWER_STORAGE_KEY)).toBeNull();
+  });
+
+  it('keeps a resized detail at its own width while it closes beside a pushing tool', () => {
+    stubColumn({ column: 2400 });
+    const frameOf = (kind: string | null) => (
+      <DrawerColumn
+        main={<ToolColumn />}
+        drawer={<div>Terminal output</div>}
+        detail={kind === null ? null : <div>{kind}</div>}
+        detailKind={kind}
+        frame="sheet"
+        ariaLabel="Side panel"
+        resizeLabel="Resize side panel"
+      />
+    );
+    const view = render(frameOf('ask'));
+    const handle = screen.getByRole('separator', { name: 'Resize detail panel' });
+    fireEvent.keyDown(handle, { key: 'ArrowLeft' });
+    fireEvent.keyDown(handle, { key: 'ArrowLeft' });
+    const askWidth = Number(handle.getAttribute('aria-valuenow'));
+
+    view.rerender(frameOf(null));
+
+    expect(askWidth).not.toBe(RIGHT_DRAWER_DEFAULT);
+    expect(panel().dataset['drawerMode']).toBe('push');
+    expect(panel().style.getPropertyValue(DRAWER_PANEL_VARS.detail)).toBe(`${askWidth}px`);
   });
 
   it('starts a kind with no width of its own from the width its size had before the upgrade', () => {

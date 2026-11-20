@@ -65,6 +65,7 @@ type Props = {
   readonly onCollapsedChange?: (isCollapsed: boolean) => void;
   readonly canUnfold?: boolean;
   readonly foldedActions?: ReactNode;
+  readonly hasPageOutside?: boolean;
 };
 
 export const StudioRailLayout = ({
@@ -82,6 +83,7 @@ export const StudioRailLayout = ({
   onCollapsedChange,
   canUnfold = true,
   foldedActions,
+  hasPageOutside = false,
 }: Props) => {
   const resizable = useResizableWidth<HTMLDivElement>({
     storageKey: studioRailStorageKey({ surface }),
@@ -126,7 +128,8 @@ export const StudioRailLayout = ({
   const hideLabel = `Hide ${railName}`;
   const showLabel = `Show ${railName}`;
   const isRailShown = !isCollapsed && rail !== null;
-  const isOverPage = isNarrow && isRailShown && detail !== null && onCollapsedChange !== undefined;
+  const hasPage = detail !== null || hasPageOutside;
+  const isOverPage = isNarrow && isRailShown && hasPage && onCollapsedChange !== undefined;
   useEscapeLayer(() => onCollapsedChange?.(true), isOverPage);
   useInnerColumn({
     id: surface,

@@ -42,6 +42,7 @@ export const ChangesRailLayout = ({
     placement="page"
     isCollapsed={isCollapsed}
     onCollapsedChange={onCollapsedChange}
+    hasPageOutside={isFramed}
     railHeader={
       hasHeader ? <ModeControl mode={mode} onMode={onMode} count={count} fact={fact} /> : null
     }

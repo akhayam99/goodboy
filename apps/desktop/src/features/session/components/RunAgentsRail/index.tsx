@@ -79,6 +79,7 @@ export const RunAgentsRail = ({
         placement="page"
         isCollapsed={fold.isCollapsed}
         onCollapsedChange={setFolded}
+        hasPageOutside
         railHeader={<RunAgentsRailHead count={leadAgentCountOf({ items })} />}
         rail={
           <ScrollFade className="min-h-0 flex-1" viewportClassName="flex flex-col px-2 pb-3">

@@ -99,49 +99,61 @@ describe('createOverlayWatch', () => {
     watch.stop();
   });
 
-  it('hides a page view under an overlay dock, and keeps the view inside the dock', () => {
+  it('hides a page Browser under a floating dock, and keeps the Browser docked inside it', () => {
     const column = document.createElement('div');
     const main = document.createElement('div');
     main.setAttribute('data-drawer-main', '');
-    main.setAttribute('inert', '');
     const page = document.createElement('div');
     giveRect({ element: page, rect: VIEW_RECT });
     main.append(page);
-    const aside = document.createElement('aside');
+    const dock = document.createElement('div');
+    dock.setAttribute('data-panel-over-page', '');
+    giveRect({ element: dock, rect: { x: 900, y: 40, width: 496, height: 820 } });
     const docked = document.createElement('div');
-    giveRect({ element: docked, rect: { x: 900, y: 96, width: 480, height: 720 } });
-    aside.append(docked);
-    column.append(main, aside);
+    giveRect({ element: docked, rect: { x: 904, y: 96, width: 480, height: 720 } });
+    dock.append(docked);
+    column.append(main, dock);
     document.body.append(column);
     const watch = createOverlayWatch();
 
-    expect(watch.covers({ view: page, rect: page.getBoundingClientRect() })).toBe(true);
-    expect(watch.covers({ view: docked, rect: docked.getBoundingClientRect() })).toBe(false);
-    main.removeAttribute('inert');
-    expect(watch.covers({ view: page, rect: page.getBoundingClientRect() })).toBe(false);
+    expect(watch.coverOf({ view: page, rect: page.getBoundingClientRect() })).toBe('page');
+    expect(watch.coverOf({ view: docked, rect: docked.getBoundingClientRect() })).toBeNull();
     watch.stop();
   });
 
-  it('keeps a Browser laid over the page in a narrow window shown above its veil', () => {
-    const column = document.createElement('div');
+  it('hides a page Browser under a detail floating beside a pushing dock, and uncovers it once docked', () => {
     const main = document.createElement('div');
     main.setAttribute('data-drawer-main', '');
-    main.setAttribute('inert', '');
-    const veil = document.createElement('div');
-    veil.setAttribute('aria-hidden', 'true');
-    veil.setAttribute('data-drawer-scrim', '');
-    giveRect({ element: veil, rect: { x: 44, y: 40, width: 936, height: 648 } });
-    const aside = document.createElement('aside');
-    aside.setAttribute('data-drawer-mode', 'overlay');
-    giveRect({ element: aside, rect: { x: 248, y: 40, width: 776, height: 648 } });
-    const browser = document.createElement('div');
-    giveRect({ element: browser, rect: { x: 260, y: 96, width: 720, height: 580 } });
-    aside.append(browser);
-    column.append(main, veil, aside);
-    document.body.append(column);
+    const page = document.createElement('div');
+    giveRect({ element: page, rect: VIEW_RECT });
+    main.append(page);
+    const detail = document.createElement('div');
+    detail.setAttribute('data-panel-over-page', '');
+    giveRect({ element: detail, rect: { x: 700, y: 52, width: 400, height: 796 } });
+    const dock = document.createElement('div');
+    giveRect({ element: dock, rect: { x: 1124, y: 40, width: 400, height: 820 } });
+    const docked = document.createElement('div');
+    giveRect({ element: docked, rect: { x: 1128, y: 96, width: 380, height: 720 } });
+    dock.append(docked);
+    document.body.append(main, detail, dock);
     const watch = createOverlayWatch();
 
-    expect(watch.coverOf({ view: browser, rect: browser.getBoundingClientRect() })).toBeNull();
+    expect(watch.coverOf({ view: page, rect: page.getBoundingClientRect() })).toBe('page');
+    expect(watch.coverOf({ view: docked, rect: docked.getBoundingClientRect() })).toBeNull();
+    detail.removeAttribute('data-panel-over-page');
+    expect(watch.coverOf({ view: page, rect: page.getBoundingClientRect() })).toBeNull();
+    watch.stop();
+  });
+
+  it('hides a page Browser under a list rail open over the page', () => {
+    const rail = document.createElement('aside');
+    rail.setAttribute('data-rail-over-page', '');
+    giveRect({ element: rail, rect: { x: 44, y: 40, width: 540, height: 820 } });
+    document.body.append(rail);
+    const view = placedView();
+    const watch = createOverlayWatch();
+
+    expect(watch.coverOf({ view, rect: view.getBoundingClientRect() })).toBe('page');
     watch.stop();
   });
 

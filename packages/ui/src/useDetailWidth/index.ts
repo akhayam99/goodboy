@@ -57,36 +57,44 @@ const startWidthOf = ({ storageKey, sizing }: KeyParams): number => {
 export const useDetailWidth = ({ kind, sizing, onPreview }: Params): DetailWidth => {
   const storageKey = detailWidthKeyOf({ kind, sizing });
   const [stored, setStored] = useState(() => ({
+    kind,
     storageKey,
     sizing,
     width: startWidthOf({ storageKey, sizing }),
   }));
+  const isClosing = kind === null && stored.kind !== null;
   const current =
-    stored.storageKey === storageKey && stored.sizing === sizing
+    isClosing || (stored.storageKey === storageKey && stored.sizing === sizing)
       ? stored
-      : { storageKey, sizing, width: startWidthOf({ storageKey, sizing }) };
+      : { kind, storageKey, sizing, width: startWidthOf({ storageKey, sizing }) };
   if (current !== stored) {
     setStored(current);
   }
+  const shown = current.sizing;
   const previewRef = useRef(onPreview);
   previewRef.current = onPreview;
   const preview = useCallback(
-    (next: number) => previewRef.current(clampOf({ value: next, sizing })),
-    [sizing],
+    (next: number) => previewRef.current(clampOf({ value: next, sizing: shown })),
+    [shown],
   );
   const commit = useCallback(
     (next: number) => {
-      const width = clampOf({ value: next, sizing });
+      const width = clampOf({ value: next, sizing: current.sizing });
       previewRef.current(width);
-      setStored({ storageKey, sizing, width });
-      writeWidth({ storageKey, width });
+      setStored({
+        kind: current.kind,
+        storageKey: current.storageKey,
+        sizing: current.sizing,
+        width,
+      });
+      writeWidth({ storageKey: current.storageKey, width });
     },
-    [sizing, storageKey],
+    [current.kind, current.storageKey, current.sizing],
   );
-  const reset = useCallback(() => commit(DRAWER_TIERS[sizing].fallback), [commit, sizing]);
-  const tier = DRAWER_TIERS[sizing];
+  const reset = useCallback(() => commit(DRAWER_TIERS[shown].fallback), [commit, shown]);
+  const tier = DRAWER_TIERS[shown];
   return {
-    width: clampOf({ value: current.width, sizing }),
+    width: clampOf({ value: current.width, sizing: shown }),
     handleProps: {
       value: current.width,
       min: tier.min,

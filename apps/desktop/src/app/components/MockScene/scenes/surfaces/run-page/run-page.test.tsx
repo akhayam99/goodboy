@@ -15,6 +15,7 @@ import {
   resetStoryStore,
   storySpies,
 } from '../../../../../../store/storyHarness';
+import { installFakeResizeObserver } from '../../../../../../test/fakeResizeObserver';
 import { clearSceneInvoke, sceneInvoke } from '../../../../../../test/sceneInvoke';
 import { RUN_PAGE_SCENES } from './run-page';
 
@@ -39,6 +40,8 @@ beforeEach(async () => {
 afterEach(() => {
   vi.useRealTimers();
   cleanup();
+  vi.restoreAllMocks();
+  vi.unstubAllGlobals();
   clearSceneInvoke();
 });
 
@@ -124,6 +127,25 @@ describe('the run page scenes', () => {
     expect(rows).toHaveLength(4);
     expect(rows[0]?.getAttribute('aria-label')).toMatch(/^Run, /);
     expect(rows[0]?.getAttribute('aria-selected')).toBe('true');
+  });
+
+  it('run-page-many opens the Agents rail over the page below 1060px, and Esc folds it again', async () => {
+    const observers = installFakeResizeObserver();
+    const container = await mount({ name: 'run-page-many' });
+    vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue(
+      new DOMRect(0, 0, 800, 600),
+    );
+    act(() => observers.resizeAll());
+    const lead = partOf({ root: container, selector: '[data-session-lead]' });
+    const rail = () => within(lead).queryByRole('complementary', { name: 'Agents' });
+
+    expect(rail()).toBeNull();
+    fireEvent.click(within(lead).getByRole('button', { name: 'Show agents' }));
+
+    expect(rail()?.dataset['railOverPage']).toBe('');
+    fireEvent.keyDown(window, { key: 'Escape' });
+    expect(rail()).toBeNull();
+    within(lead).getByRole('button', { name: 'Show agents' });
   });
 
   it('run-page-plan says the state of a one agent plan card once, on its row', async () => {

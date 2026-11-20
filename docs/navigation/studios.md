@@ -254,7 +254,8 @@ cut at the end, never in the middle; the group's`aria-label` keeps the full
   list folds, Show opens it over the page (`data-rail-over-page`, Esc or Hide
   folds it again, nothing saved), and it docks again once there is room. A rail
   portaled out of its page (the Agents rail of a run, the framed file list of
-  Changes) passes the page element as `pane` instead. Chat, Terminal, the
+  Changes) passes the page element as `pane` instead, and `hasPageOutside`, so
+  Show opens it over that page and Esc folds it there too. Chat, Terminal, the
   Guide, the changelog, Settings, Notifications and the file list of Changes
   fold this way; `regressions/studio-rail-folds.test.tsx` renders each at 800px
   and expects its Show button.

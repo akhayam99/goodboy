@@ -89,6 +89,7 @@ export const DrawerDetailGroup = ({
         onPointerDownCapture: onFocus,
       })}
       data-panel-focused={isFocused ? '' : undefined}
+      data-panel-over-page={isFloating ? '' : undefined}
       className={cn(
         'panel-on-page relative flex min-h-0 min-w-0 flex-1 overflow-clip rounded-frame border bg-background focus-visible:outline-none',
         isFocused ? 'border-focus-ring' : 'border-frame-edge',

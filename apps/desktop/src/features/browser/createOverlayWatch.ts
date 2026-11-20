@@ -1,16 +1,17 @@
 import { SPLIT_DRAG_ATTRIBUTE } from '@goodboy/ui';
 import { OVERLAY_SELECTOR } from '../../shared/keyboard/overlaySelector';
 
+const PANEL_OVER_PAGE = '[data-panel-over-page], [data-rail-over-page]';
+
 const COVER_SELECTOR = [
   OVERLAY_SELECTOR,
   '[data-dropdown-portal] > *',
   '[role="tooltip"]',
   '[data-studio-slot]',
+  PANEL_OVER_PAGE,
 ].join(', ');
 
 const DIALOG_SELECTOR = '[role="dialog"], [role="alertdialog"]';
-
-const UNDER_OVERLAY_DRAWER = '[data-drawer-main][inert]';
 
 export type CoverReason = 'menu' | 'dialog' | 'tooltip' | 'page' | 'drag';
 
@@ -45,7 +46,7 @@ const intersects = ({ a, b }: IntersectParams): boolean =>
   b.top < a.bottom;
 
 const reasonOf = ({ overlay }: ReasonOfParams): CoverReason => {
-  if (overlay.matches('[data-studio-slot]')) {
+  if (overlay.matches(`[data-studio-slot], ${PANEL_OVER_PAGE}`)) {
     return 'page';
   }
   if (overlay.matches('[role="tooltip"]')) {
@@ -67,15 +68,19 @@ export const createOverlayWatch = () => {
     childList: true,
     subtree: true,
     attributes: true,
-    attributeFilter: ['role', 'data-dropdown-portal', 'aria-multiselectable', 'data-studio-slot'],
+    attributeFilter: [
+      'role',
+      'data-dropdown-portal',
+      'aria-multiselectable',
+      'data-studio-slot',
+      'data-panel-over-page',
+      'data-rail-over-page',
+    ],
   });
 
   const coverOf = ({ view, rect }: CoversParams): CoverReason | null => {
     if (document.body.hasAttribute(SPLIT_DRAG_ATTRIBUTE)) {
       return 'drag';
-    }
-    if (view.closest(UNDER_OVERLAY_DRAWER) !== null) {
-      return 'page';
     }
     if (isDirty || observer === null) {
       overlays = Array.from(document.querySelectorAll(COVER_SELECTOR));
@@ -84,6 +89,7 @@ export const createOverlayWatch = () => {
     const found = overlays.find(
       (overlay) =>
         overlay.isConnected &&
+        overlay.matches(COVER_SELECTOR) &&
         !overlay.contains(view) &&
         isUnderSlot({ overlay, view }) &&
         intersects({ a: overlay.getBoundingClientRect(), b: rect }),
