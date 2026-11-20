@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useId, useState } from 'react';
 import {
   TriangleAlert,
   ArrowDown,
@@ -9,9 +9,11 @@ import {
   Pencil,
   Upload,
 } from '@goodboy/ui/icons';
-import { Button, formatError, ICON_SIZE, SkeletonRow } from '@goodboy/ui';
+import { Button, FieldError, formatError, ICON_SIZE, SkeletonRow } from '@goodboy/ui';
 import type { Project, WorkspaceGitStatus } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
+import { NOTHING_CHANGED } from '../../../../store/slices/notifications/errorRecovery';
+import { isReportedError } from '../../../../store/slices/notifications/reportedError';
 import { openFolder } from '../../../open/openFolder';
 import { initRepo } from '../../../../shared/lib/repo';
 import { BaseBranchSelect } from '../../../worktree/BaseBranchSelect';
@@ -101,9 +103,9 @@ const sentenceOf = ({ value }: CapitalizeParams): string => {
 };
 
 export const ProjectGitDetail = ({ project, status }: Props) => {
-  const [openError, setOpenError] = useState<string | null>(null);
-  const [pullError, setPullError] = useState<string | null>(null);
   const [baseBranchError, setBaseBranchError] = useState<string | null>(null);
+  const baseBranchErrorId = useId();
+  const reportError = useAppStore((state) => state.reportError);
   const [isPublishing, setIsPublishing] = useState(false);
   const pulling = useAppStore((state) => state.projectCheckoutPulling[project.id] === true);
   const fastForwardProjectCheckout = useAppStore((state) => state.fastForwardProjectCheckout);
@@ -130,22 +132,27 @@ export const ProjectGitDetail = ({ project, status }: Props) => {
     : 'Fast-forward';
 
   const onOpen = async () => {
-    setOpenError(null);
-    const result = await openFolder({ path: project.rootPath, shouldReport: false });
-    if (result.status === 'failed') {
-      setOpenError(result.reason);
-    }
+    await openFolder({ path: project.rootPath });
   };
   const onStartRepository = async () => {
     await initRepo({ path: project.rootPath });
     await loadProjectGitStatus({ projectId: project.id });
   };
-  const onPull = async () => {
-    setPullError(null);
+  const onPull = async (): Promise<boolean> => {
     try {
       await fastForwardProjectCheckout({ projectId: project.id });
+      return true;
     } catch (error) {
-      setPullError(formatError(error));
+      if (!isReportedError(error)) {
+        void reportError({
+          title: `Couldn't fast-forward ${project.name}`,
+          error,
+          recovery: NOTHING_CHANGED,
+          workspaceId: project.workspaceId,
+          retry: onPull,
+        });
+      }
+      return false;
     }
   };
   const commitBaseBranch = async ({ candidate }: CommitBaseBranchParams) => {
@@ -215,11 +222,7 @@ export const ProjectGitDetail = ({ project, status }: Props) => {
                 onCommit={(candidate) => commitBaseBranch({ candidate })}
               />
             </span>
-            {baseBranchError != null ? (
-              <span role="alert" className="text-meta text-danger">
-                {baseBranchError}
-              </span>
-            ) : null}
+            <FieldError id={baseBranchErrorId} error={baseBranchError} />
             <Button size="sm" variant="ghost" disabled={!canPull} onClick={() => void onPull()}>
               <ArrowDown size={ICON_SIZE.row} aria-hidden />
               {pulling ? 'Pulling' : pullLabel}
@@ -253,16 +256,6 @@ export const ProjectGitDetail = ({ project, status }: Props) => {
               onPublished={() => setIsPublishing(false)}
               onCancel={() => setIsPublishing(false)}
             />
-          ) : null}
-          {pullError != null ? (
-            <span role="alert" className="text-meta text-danger">
-              {pullError}
-            </span>
-          ) : null}
-          {openError != null ? (
-            <span role="alert" className="text-meta text-danger">
-              {openError}
-            </span>
           ) : null}
         </div>
       )}

@@ -14,6 +14,7 @@ import type { ProjectId, SessionId, WorkspaceId } from '@goodboy/types';
 import { ToastProvider } from '../../shared/components/Toast';
 import { brandedId } from '../../features/history/testing/brandedId';
 import { resetWorktreeStatusCache } from '../../store/runtime/worktreeStatuses/cache';
+import { actionRetryOf } from '../../store/slices/notifications/actionRetries';
 import { CentralColumn } from '../../features/session/components/SessionOverviewPane/CentralColumn';
 import { WorkTimeProvider } from '../../features/workTreeModel/WorkTimeProvider';
 import {
@@ -55,12 +56,14 @@ vi.mock('../../features/providers/routing', async () =>
 vi.mock('../../features/budget/budget', async () =>
   (await import('../../store/storyHarness')).budgetModuleMock(),
 );
-vi.mock('../../features/worktree/worktree', async () =>
-  (await import('../../store/storyHarness')).worktreeModuleMock(),
-);
-vi.mock('../../shared/lib/repo', async () =>
-  (await import('../../store/storyHarness')).repoModuleMock(),
-);
+vi.mock('../../features/worktree/worktree', async () => ({
+  ...(await import('../../store/storyHarness')).worktreeModuleMock(),
+  branchMergeState: async () => ({ kind: 'merged-via-pr' }),
+}));
+vi.mock('../../shared/lib/repo', async () => ({
+  ...(await import('../../store/storyHarness')).repoModuleMock(),
+  projectFetch: async () => undefined,
+}));
 vi.mock('../../features/plans/plans', async () =>
   (await import('../../store/storyHarness')).plansModuleMock(),
 );
@@ -86,6 +89,7 @@ const WORKTREE = {
 let useAppStore: StoryStore;
 let sessionId: SessionId;
 let prState: 'OPEN' | 'MERGED';
+let branchDeletes = 0;
 
 beforeAll(async () => {
   useAppStore = await importStore();
@@ -115,12 +119,23 @@ type GhPayload = { readonly args: ReadonlyArray<string> };
 beforeEach(async () => {
   await resetStoryStore();
   prState = 'OPEN';
+  branchDeletes = 0;
   const db = await openStorySqlite();
   await insertWorkspace({ db, workspace });
   await insertProject({ db, project });
   stubStoryInvoke({
     workspaces_with_unread: [],
     workflow_list: [],
+    branch_head_sha: 'abc1234',
+    get_workspace_overrides: { afterMerge: 'ask' },
+    branch_delete_checked: () => {
+      branchDeletes += 1;
+      return {
+        keepRef: 'refs/goodboy/kept/ledger-export',
+        deletedOnOrigin: false,
+        originError: null,
+      };
+    },
     gh_run: (payload: GhPayload) => {
       if (payload.args[0] === 'repo') {
         return { stdout: 'harborline/ledger-core', stderr: '', exitCode: 0 };
@@ -208,7 +223,7 @@ const mountOf = () => {
   return mount;
 };
 
-const REMOVE_NOTE = '1 worktree · 1.0 KB';
+const REMOVE_NOTE = 'Delete local branch · 1.0 KB';
 
 const mergeThePr = async (view: RenderResult) => {
   await useAppStore.getState().loadSessionMounts({ sessionId });
@@ -228,12 +243,14 @@ const clickLastButton = ({ name }: { readonly name: string }) => {
 };
 
 const confirmRemoval = (view: RenderResult) => {
-  fireEvent.click(within(nextCard(view)).getByRole('button', { name: /^Remove 1 worktree/ }));
-  clickLastButton({ name: 'Remove worktree' });
+  fireEvent.click(
+    within(nextCard(view)).getByRole('button', { name: /^Delete local branch · 1\.0 KB/ }),
+  );
+  clickLastButton({ name: 'Delete local branch' });
 };
 
-describe('journey: remove a merged worktree from the Next card', () => {
-  it('offers the removal once the pull request merges, and removes the worktree on confirm', async () => {
+describe('journey: delete the local branch of a merged pull request from the board', () => {
+  it('offers the delete once the pull request merges, and deletes folder and branch on confirm', async () => {
     const view = render(<ToastProvider>{null}</ToastProvider>);
     await useAppStore.getState().loadSessionMounts({ sessionId });
     expect(await mountRows()).toEqual([
@@ -250,30 +267,28 @@ describe('journey: remove a merged worktree from the Next card', () => {
     expect(await operationRows()).toEqual([{ kind: 'remove', status: 'pending' }]);
     expect(storySpies.removeWorktreeChecked).not.toHaveBeenCalled();
 
-    fireEvent.click(within(nextCard(view)).getByRole('button', { name: /^Remove 1 worktree/ }));
-    expect(screen.getByText('Remove this worktree?')).toBeDefined();
+    fireEvent.click(
+      within(nextCard(view)).getByRole('button', { name: /^Delete local branch · 1\.0 KB/ }),
+    );
+    expect(screen.getByText('Delete local branch?')).toBeDefined();
     expect(storySpies.removeWorktreeChecked).not.toHaveBeenCalled();
-    clickLastButton({ name: 'Remove worktree' });
+    clickLastButton({ name: 'Delete local branch' });
 
     await vi.waitFor(() =>
       expect(useAppStore.getState().mountCleanupProposals[sessionId]).toEqual([]),
     );
-    expect(storySpies.removeWorktreeChecked).toHaveBeenCalledExactlyOnceWith({
-      repoPath: '/tmp/ledger-core',
-      worktreePath: WORKTREE.worktreePath,
-      mode: 'safe',
-    });
+    expect(storySpies.removeWorktreeChecked).toHaveBeenCalledExactlyOnceWith(
+      expect.objectContaining({ worktreePath: WORKTREE.worktreePath }),
+    );
+    expect(branchDeletes).toBe(1);
     expect(await mountRows()).toEqual([
       { worktree_path: null, is_attached: 0, disk_state: 'removed' },
     ]);
     expect(mountOf()).toMatchObject({ isAttached: false, worktreePath: null });
-    expect(await operationRows()).toEqual([
-      { kind: 'remove', status: 'succeeded' },
-      { kind: 'unmount', status: 'succeeded' },
-    ]);
     expect(await detachEvents()).toEqual([
       expect.objectContaining({ branch: WORKTREE.branchName, kept: false }),
     ]);
+    expect(useAppStore.getState().undoStack).toHaveLength(1);
     expect(showNext(view)).not.toContain(REMOVE_NOTE);
   });
 
@@ -311,49 +326,43 @@ describe('journey: remove a merged worktree from the Next card', () => {
     expect(showNext(view)).not.toContain(REMOVE_NOTE);
   });
 
-  it('keeps the card and the mount when git refuses the removal from the card, shows the error, and a retry removes it', async () => {
+  it('keeps the board as it was when git refuses, logs one row, and its Retry deletes', async () => {
     const view = render(<ToastProvider>{null}</ToastProvider>);
     await mergeThePr(view);
     storySpies.removeWorktreeChecked.mockRejectedValueOnce(new Error('git worktree remove failed'));
 
     confirmRemoval(view);
 
-    await vi.waitFor(() => {
-      showNext(view);
-      expect(within(nextCard(view)).getByRole('alert').textContent).toContain(
-        'git worktree remove failed',
-      );
-    });
+    await vi.waitFor(() =>
+      expect(
+        useAppStore
+          .getState()
+          .notifications.find((row) => row.title.startsWith("Couldn't delete the local branch")),
+      ).toBeDefined(),
+    );
+    const failure = useAppStore
+      .getState()
+      .notifications.find((row) => row.title.startsWith("Couldn't delete the local branch"));
+    expect(failure?.title).toBe(`Couldn't delete the local branch ${WORKTREE.branchName}`);
+    expect(failure?.action?.kind).toBe('retry-action');
+    expect(within(nextCard(view)).queryByRole('alert')).toBeNull();
     expect(useAppStore.getState().mountCleanupProposals[sessionId]).toHaveLength(1);
     expect(await mountRows()).toEqual([
-      { worktree_path: WORKTREE.worktreePath, is_attached: 1, disk_state: 'unchecked' },
+      expect.objectContaining({ worktree_path: WORKTREE.worktreePath }),
     ]);
-    expect(mountOf()).toMatchObject({ isAttached: true, worktreePath: WORKTREE.worktreePath });
-    expect(await operationRows()).toEqual([
-      { kind: 'remove', status: 'pending' },
-      { kind: 'unmount', status: 'failed' },
-    ]);
-    expect(await detachEvents()).toEqual([]);
-    expect(showNext(view)).toContain(REMOVE_NOTE);
+    expect(branchDeletes).toBe(0);
 
-    fireEvent.click(
-      within(nextCard(view)).getByRole('button', { name: /^Retry removing 1 worktree/ }),
-    );
-    clickLastButton({ name: 'Remove worktree' });
+    const retry =
+      failure?.action?.kind === 'retry-action'
+        ? actionRetryOf({ retryId: failure.action.retryId })
+        : undefined;
+    expect(await retry?.()).toBe(true);
 
-    await vi.waitFor(() =>
-      expect(useAppStore.getState().mountCleanupProposals[sessionId]).toEqual([]),
-    );
+    expect(useAppStore.getState().mountCleanupProposals[sessionId]).toEqual([]);
     expect(storySpies.removeWorktreeChecked).toHaveBeenCalledTimes(2);
+    expect(branchDeletes).toBe(1);
     expect(await mountRows()).toEqual([
       { worktree_path: null, is_attached: 0, disk_state: 'removed' },
-    ]);
-    expect(await operationRows()).toEqual([
-      { kind: 'remove', status: 'succeeded' },
-      { kind: 'unmount', status: 'succeeded' },
-    ]);
-    expect(await detachEvents()).toEqual([
-      expect.objectContaining({ branch: WORKTREE.branchName, kept: false }),
     ]);
     expect(showNext(view)).not.toContain(REMOVE_NOTE);
   });

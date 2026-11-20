@@ -100,8 +100,8 @@ export const BoardRowAction = ({ rowId, index = 0, isLead = true, text }: Props)
       )}
       {buttonNode}
       {failure === null ? null : (
-        <span role="alert" className="flex min-w-0 shrink items-center gap-1 text-danger">
-          <CircleAlert size={ICON_SIZE.control} aria-hidden className="shrink-0" />
+        <span role="alert" className="flex min-w-0 shrink items-center gap-1 text-foreground">
+          <CircleAlert size={ICON_SIZE.control} aria-hidden className="shrink-0 text-danger" />
           <TruncatedText className="min-w-0">{failure}</TruncatedText>
         </span>
       )}

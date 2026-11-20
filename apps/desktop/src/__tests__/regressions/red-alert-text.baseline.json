@@ -44,8 +44,6 @@
   "apps/desktop/src/features/scripts/components/ScriptEditor/index.tsx": 1,
   "apps/desktop/src/features/scripts/components/ScriptsPanel/index.tsx": 1,
   "apps/desktop/src/features/session/components/AgentDetailPane/AgentFollowUps.tsx": 1,
-  "apps/desktop/src/features/session/components/BranchBoard/BoardGroup.tsx": 1,
-  "apps/desktop/src/features/session/components/BranchBoard/BoardRowAction.tsx": 1,
   "apps/desktop/src/features/session/components/RunRoute/RunKindChip.tsx": 1,
   "apps/desktop/src/features/session/components/SessionKickoff/WhereChip/index.tsx": 1,
   "apps/desktop/src/features/session/components/SessionOverviewPane/LinkWorkPicker.tsx": 1,
@@ -62,7 +60,6 @@
   "apps/desktop/src/features/workspace/components/GoodboyIgnoreCard/index.tsx": 1,
   "apps/desktop/src/features/workspace/components/LocateMovedProjects/index.tsx": 1,
   "apps/desktop/src/features/workspace/components/ProjectGitPill/InitGuide.tsx": 1,
-  "apps/desktop/src/features/workspace/components/ProjectGitPill/ProjectGitDetail.tsx": 3,
   "apps/desktop/src/features/workspace/components/TrackWithGitFlow/FolderGitCard.tsx": 1,
   "apps/desktop/src/features/workspace/components/TrackWithGitFlow/index.tsx": 1,
   "apps/desktop/src/features/workspace/components/WorkspaceIdentityRow/index.tsx": 1,
@@ -73,7 +70,6 @@
   "apps/desktop/src/shared/components/ObjectSelectionBar.tsx": 1,
   "apps/desktop/src/shared/components/ProjectLinkList/index.tsx": 1,
   "apps/desktop/src/shared/components/ProjectPicker/index.tsx": 1,
-  "apps/desktop/src/shared/components/RenameStatus.tsx": 1,
   "apps/desktop/src/shared/components/SettingChip/index.tsx": 1,
   "packages/ui/src/components/InlineConfirm.tsx": 1
 }

@@ -15,6 +15,7 @@ import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } 
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { brandId } from '@goodboy/types';
 import type { IsoDateTime, MountCleanupProposal } from '@goodboy/types';
+import type { ReportErrorsParams } from '../../../../store/slices/notifications/reportErrors';
 import { ToastProvider } from '../../../../shared/components/Toast';
 import {
   importStore,
@@ -178,6 +179,18 @@ const proposalsOf = ({ sizeBytes }: ProposalsParams): ReadonlyArray<MountCleanup
     request: null,
     createdAt: brandId<IsoDateTime>({ value: '2026-10-18T10:00:00.000Z' }),
   }));
+
+const groupDeleteButton = (): HTMLElement => {
+  const group = document.querySelector<HTMLElement>('[data-board-group="merged"]');
+  if (group === null) {
+    throw new Error('The merged group must show.');
+  }
+  const [first] = within(group).getAllByRole('button', { name: /^Delete local branch(?:es)?/ });
+  if (first === undefined) {
+    throw new Error('The merged group must offer Delete local branches.');
+  }
+  return first;
+};
 
 describe('the branch board on the Overview', () => {
   it('draws three tiles above a board with one row per branch', async () => {
@@ -386,7 +399,9 @@ describe('the branch board on the Overview', () => {
     expect(closed.querySelector('[data-board-chip]')).toBeNull();
     expect(verbsOf({ tile: closed })).toHaveLength(0);
     expect(document.querySelector('[data-board-group="merged"]')).toBeNull();
-    expect(screen.queryAllByRole('button', { name: /^Remove \d worktrees?/ })).toHaveLength(0);
+    expect(screen.queryAllByRole('button', { name: /^Delete local branch(?:es)?/ })).toHaveLength(
+      0,
+    );
 
     setRequestState({ state: 'open' });
     await settle();
@@ -416,20 +431,28 @@ describe('the branch board on the Overview', () => {
     expect(within(tiles).queryAllByRole('button')).toHaveLength(0);
   });
 
-  it('names each worktree before Remove worktrees acts, and removes one by one', async () => {
+  it('names each branch before Delete local branches acts, deletes each, and offers one Undo', async () => {
     seedCentralColumn({ kind: 'branches' });
     setRequestState({ state: 'merged' });
-    const resolveMountCleanup = vi.fn(async () => undefined);
+    const runAfterMergeCleanup = vi.fn();
+    runAfterMergeCleanup.mockImplementation(async ({ mountId }) => ({
+      kind: 'deleted',
+      deleted: { id: `deleted-${String(mountId)}` },
+    }));
+    const settleMountCleanup = vi.fn(async () => undefined);
+    const undoable = vi.fn(() => 'undo-1');
     const proposals = proposalsOf({ sizeBytes: 1024 });
     act(() => {
       useAppStore.setState({
         mountCleanupProposals: { [COLUMN_SESSION_ID]: proposals },
-        resolveMountCleanup,
+        runAfterMergeCleanup,
+        settleMountCleanup,
+        undoable,
       });
     });
     await show();
 
-    fireEvent.click(screen.getByRole('button', { name: /^Remove \d worktrees?/ }));
+    fireEvent.click(groupDeleteButton());
 
     const mergedIds = Object.keys(useAppStore.getState().mountGithub);
     const merged = proposals.filter((proposal) => mergedIds.includes(proposal.mountId));
@@ -439,38 +462,63 @@ describe('the branch board on the Overview', () => {
     }
     await act(async () => {
       fireEvent.click(
-        within(screen.getByRole('dialog')).getByRole('button', { name: /^Remove worktrees?$/ }),
+        within(screen.getByRole('dialog')).getByRole('button', {
+          name: /^Delete local branch(?:es)?$/,
+        }),
       );
       await Promise.resolve();
     });
-    await vi.waitFor(() => expect(resolveMountCleanup).toHaveBeenCalledTimes(merged.length));
+    await vi.waitFor(() => expect(runAfterMergeCleanup).toHaveBeenCalledTimes(merged.length));
+    expect(runAfterMergeCleanup).toHaveBeenCalledWith(
+      expect.objectContaining({ isRequested: true, expectedBranch: merged[0]?.branch }),
+    );
+    await vi.waitFor(() => expect(undoable).toHaveBeenCalledTimes(1));
+    expect(settleMountCleanup).toHaveBeenCalledTimes(merged.length);
   });
 
-  it('keeps a worktree that failed with its reason and offers Retry for what is left', async () => {
+  it('logs failed deletes as one row with one Retry, and leaves the board as it was', async () => {
     seedCentralColumn({ kind: 'branches' });
     setRequestState({ state: 'merged' });
-    const resolveMountCleanup = vi.fn(async () => {
+    const runAfterMergeCleanup = vi.fn(async () => {
       throw new Error('The folder is in use.');
     });
+    const reportErrors = vi.fn(async (_params: ReportErrorsParams) => undefined);
+    const undoable = vi.fn(() => 'undo-1');
     const proposals = proposalsOf({ sizeBytes: null });
     act(() => {
       useAppStore.setState({
         mountCleanupProposals: { [COLUMN_SESSION_ID]: proposals },
-        resolveMountCleanup,
+        runAfterMergeCleanup,
+        reportErrors,
+        undoable,
       });
     });
     await show();
 
-    fireEvent.click(screen.getByRole('button', { name: /^Remove \d worktrees?/ }));
+    fireEvent.click(groupDeleteButton());
     await act(async () => {
       fireEvent.click(
-        within(screen.getByRole('dialog')).getByRole('button', { name: /^Remove worktrees?$/ }),
+        within(screen.getByRole('dialog')).getByRole('button', {
+          name: /^Delete local branch(?:es)?$/,
+        }),
       );
       await Promise.resolve();
     });
 
-    await vi.waitFor(() => expect(screen.getAllByRole('alert').length).toBeGreaterThan(0));
-    expect(document.body.textContent).toContain('The folder is in use.');
-    screen.getByRole('button', { name: /^Retry removing \d worktrees?/ });
+    await vi.waitFor(() => expect(reportErrors).toHaveBeenCalledTimes(1));
+    const reported = reportErrors.mock.calls[0]?.[0];
+    const count = reported?.failures.length ?? 0;
+    expect(count).toBeGreaterThan(0);
+    expect(reported?.groupTitleOf({ count: 2 })).toBe("Couldn't delete 2 local branches");
+    expect(reported?.failures[0]?.title).toMatch(/^Couldn't delete the local branch /);
+    expect(undoable).not.toHaveBeenCalled();
+    expect(screen.queryByText('The folder is in use.')).toBeNull();
+    groupDeleteButton();
+
+    runAfterMergeCleanup.mockClear();
+    await act(async () => {
+      expect(await reported?.retry?.()).toBe(false);
+    });
+    expect(runAfterMergeCleanup).toHaveBeenCalledTimes(count);
   });
 });

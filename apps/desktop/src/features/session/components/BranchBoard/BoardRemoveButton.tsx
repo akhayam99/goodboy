@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Trash2 } from '@goodboy/ui/icons';
 import { Button, ConfirmPopover, ICON_SIZE } from '@goodboy/ui';
+import { NAMES } from '../../../../shared/utils/names';
 import { useBoardContext } from './useBoardContext';
 
 type Props = {
@@ -13,19 +14,15 @@ export const BoardRemoveButton = ({ mountIds, variant }: Props) => {
   const [isConfirming, setIsConfirming] = useState(false);
   const wanted = mountIds === null ? null : new Set<string>(mountIds);
   const targets = removal.targets.filter((target) => wanted === null || wanted.has(target.mountId));
-  const failed = removal.failures.filter(
-    (failure) => wanted === null || wanted.has(failure.mountId),
-  );
   if (targets.length === 0) {
     return null;
   }
-  const isRetry = failed.length > 0;
-  const verb = isRetry ? 'Retry removing' : 'Remove';
+  const isOne = targets.length === 1;
   const size = removal.sizeLabel === null ? '' : ` · ${removal.sizeLabel}`;
   const label =
     wanted !== null
-      ? `${verb} worktree`
-      : `${verb} ${targets.length} ${targets.length === 1 ? 'worktree' : 'worktrees'}${size}`;
+      ? NAMES.deleteLocalBranch
+      : `${isOne ? NAMES.deleteLocalBranch : NAMES.deleteLocalBranches}${size}`;
   const button = (
     <Button
       size="sm"
@@ -43,9 +40,11 @@ export const BoardRemoveButton = ({ mountIds, variant }: Props) => {
     <ConfirmPopover
       role="danger"
       icon={<Trash2 size={ICON_SIZE.row} aria-hidden />}
-      title={targets.length === 1 ? 'Remove this worktree?' : `Remove ${targets.length} worktrees?`}
-      description={targets.map((target) => target.branch).join(', ')}
-      confirmLabel={targets.length === 1 ? 'Remove worktree' : 'Remove worktrees'}
+      title={isOne ? `${NAMES.deleteLocalBranch}?` : `Delete ${targets.length} local branches?`}
+      description={`${targets.map((target) => target.branch).join(', ')}. ${
+        isOne ? 'Its folder goes too.' : 'Each folder goes too.'
+      } The pull requests stay, and a branch holding work stays and says why.`}
+      confirmLabel={isOne ? NAMES.deleteLocalBranch : NAMES.deleteLocalBranches}
       isOpen={isConfirming}
       anchorClassName="flex min-w-0 items-center"
       onConfirm={() => {
