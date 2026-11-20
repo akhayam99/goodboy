@@ -23,6 +23,7 @@ const { store } = vi.hoisted(() => ({
     stopChatReply: vi.fn(async () => undefined),
     restoreChats: vi.fn(async () => undefined),
     setChatModel: vi.fn(async () => undefined),
+    reportError: vi.fn(async () => undefined),
     navigate: vi.fn(),
   },
 }));
@@ -87,6 +88,43 @@ describe('ChatRoom with an archived chat', () => {
       workspaceId: WORKSPACE_ID,
       chatIds: ['chat-archived'],
     });
+  });
+
+  it('reports a restore from the banner that failed, and keeps the banner', async () => {
+    const failure = new Error('database is locked');
+    store.restoreChats.mockRejectedValueOnce(failure);
+    renderRoom(chatOf(AT));
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Restore' }));
+    });
+
+    expect(store.reportError).toHaveBeenCalledWith(
+      expect.objectContaining({
+        title: "Couldn't restore the chat",
+        error: failure,
+        workspaceId: WORKSPACE_ID,
+      }),
+    );
+    expect(screen.getByText('Archived')).toBeDefined();
+  });
+
+  it('keeps the message in the field when the restore before a send fails', async () => {
+    const failure = new Error('database is locked');
+    store.restoreChats.mockRejectedValueOnce(failure);
+    renderRoom(chatOf(AT));
+    const box = screen.getByRole('textbox', { name: 'Message' });
+
+    fireEvent.change(box, { target: { value: 'One more question' } });
+    await act(async () => {
+      fireEvent.keyDown(box, { key: 'Enter' });
+    });
+
+    expect(store.sendChatMessage).not.toHaveBeenCalled();
+    expect(box).toHaveProperty('value', 'One more question');
+    expect(store.reportError).toHaveBeenCalledWith(
+      expect.objectContaining({ title: "Couldn't send the message", error: failure }),
+    );
   });
 
   it('restores the chat before sending a message into it', async () => {

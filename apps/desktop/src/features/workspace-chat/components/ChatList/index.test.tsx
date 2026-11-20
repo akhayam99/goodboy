@@ -264,6 +264,29 @@ describe('ChatList', () => {
       expect(screen.getByRole('button', { name: 'What changed in payments-api' })).toBeDefined();
     });
 
+    it('keeps the old title and reports when the rename fails', async () => {
+      const reportError = vi.spyOn(useAppStore.getState(), 'reportError');
+      await renderList();
+      const failure = new Error('database is locked');
+      if (holder.backend === null) {
+        throw new Error('no chat backend');
+      }
+      vi.spyOn(holder.backend, 'rename').mockRejectedValueOnce(failure);
+
+      openMenu('Where is the consent step?');
+      fireEvent.click(screen.getByRole('menuitem', { name: 'Rename' }));
+      const input = await screen.findByRole('textbox', { name: 'Rename chat' });
+      fireEvent.change(input, { target: { value: 'Consent step' } });
+      fireEvent.keyDown(input, { key: 'Enter' });
+
+      await waitFor(() =>
+        expect(reportError).toHaveBeenCalledWith(
+          expect.objectContaining({ title: "Couldn't rename the chat", error: failure }),
+        ),
+      );
+      expect(screen.getByRole('button', { name: 'Where is the consent step?' })).toBeDefined();
+    });
+
     it('marks a chat as unread', async () => {
       await renderList();
 
@@ -297,6 +320,51 @@ describe('ChatList', () => {
       await waitFor(() => expect(onArchived).toHaveBeenCalledWith([chatIdOf({ key: 'lunch' })]));
       expect(rowOf('lunch')).toBeNull();
       expect(screen.getByRole('button', { name: /Archived · 1/ })).toBeDefined();
+    });
+
+    it('keeps the row, shows no Undo and reports when the archive fails', async () => {
+      const reportError = vi.spyOn(useAppStore.getState(), 'reportError');
+      const { onArchived } = await renderList();
+      const failure = new Error('database is locked');
+      if (holder.backend === null) {
+        throw new Error('no chat backend');
+      }
+      vi.spyOn(holder.backend, 'setArchived').mockRejectedValueOnce(failure);
+
+      openMenu('Lunch ideas near the office');
+      fireEvent.click(screen.getByRole('menuitem', { name: 'Delete' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Archive instead' }));
+
+      await waitFor(() =>
+        expect(reportError).toHaveBeenCalledWith(
+          expect.objectContaining({ title: "Couldn't archive the chat", error: failure }),
+        ),
+      );
+      expect(onArchived).not.toHaveBeenCalled();
+      expect(rowOf('lunch')).not.toBeNull();
+      expect(screen.queryByRole('button', { name: 'Undo' })).toBeNull();
+    });
+
+    it('keeps the row and reports when the delete fails', async () => {
+      const reportError = vi.spyOn(useAppStore.getState(), 'reportError');
+      const { onDeleted } = await renderList();
+      const failure = new Error('database is locked');
+      if (holder.backend === null) {
+        throw new Error('no chat backend');
+      }
+      vi.spyOn(holder.backend, 'deleteChats').mockRejectedValueOnce(failure);
+
+      openMenu('Lunch ideas near the office');
+      fireEvent.click(screen.getByRole('menuitem', { name: 'Delete' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Delete' }));
+
+      await waitFor(() =>
+        expect(reportError).toHaveBeenCalledWith(
+          expect.objectContaining({ title: "Couldn't delete the chat", error: failure }),
+        ),
+      );
+      expect(onDeleted).not.toHaveBeenCalled();
+      expect(rowOf('lunch')).not.toBeNull();
     });
   });
 

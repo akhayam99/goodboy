@@ -20,6 +20,7 @@ import { useChatWork } from '../../hooks/useChatWork';
 import { useStudioDrawer } from '../../../../shared/hooks/useStudioDrawer';
 import { SETTING_HIDDEN_MODELS } from '../../../settings/settings';
 import { selectWorkspaceResolvedSettings } from '../../../../store/slices/overrides/selectResolvedSettings';
+import { CHECK_STATE, NOTHING_CHANGED } from '../../../../store/slices/notifications/errorRecovery';
 
 type Props = {
   readonly workspaceId: WorkspaceId;
@@ -37,6 +38,9 @@ type SendParams = Pick<ChatComposerMessage, 'text'> & Partial<Pick<ChatComposerM
 
 const NEW_CHAT_HEADING = 'New chat';
 const RESIZE_LABEL = 'Resize the work panel';
+const SEND_FAILED = "Couldn't send the message";
+const MODEL_FAILED = "Couldn't change the chat model";
+const RESTORE_FAILED = "Couldn't restore the chat";
 
 export const ChatRoom = ({ workspaceId, chat, onCreated, onRemoved, onNewChat }: Props) => {
   const chatId = chat?.id ?? null;
@@ -71,6 +75,7 @@ export const ChatRoom = ({ workspaceId, chat, onCreated, onRemoved, onNewChat }:
   const setChatModel = useAppStore((state) => state.setChatModel);
   const navigate = useAppStore((state) => state.navigate);
   const openStudio = useAppStore((state) => state.openStudio);
+  const reportError = useAppStore((state) => state.reportError);
   const wasEmptyRef = useRef(false);
   const [draftRouting, setDraftRouting] = useState<ChatRouting | null>(null);
   const linked = useChatSessions({ chatId });
@@ -99,7 +104,7 @@ export const ChatRoom = ({ workspaceId, chat, onCreated, onRemoved, onNewChat }:
     );
   }, [chat, draftRouting, connected, savedDefault, workspaceDefaultProvider, hidden]);
 
-  const send = async ({ text, images = NO_IMAGES }: SendParams): Promise<boolean> => {
+  const sendOrCreate = async ({ text, images = NO_IMAGES }: SendParams): Promise<boolean> => {
     if (chatId !== null) {
       if (chat !== null && chat.archivedAt !== null) {
         await restoreChats({ workspaceId, chatIds: [chatId] });
@@ -131,16 +136,27 @@ export const ChatRoom = ({ workspaceId, chat, onCreated, onRemoved, onNewChat }:
     return sendChatMessage({ chatId: created, content: text, attachments: images });
   };
 
+  const send = async ({ text, images = NO_IMAGES }: SendParams): Promise<boolean> => {
+    try {
+      return await sendOrCreate({ text, images });
+    } catch (error) {
+      void reportError({ recovery: CHECK_STATE, title: SEND_FAILED, error, workspaceId });
+      return false;
+    }
+  };
+
   const pickRouting = (choice: ChatRouting): void => {
     if (chatId === null) {
       setDraftRouting(choice);
       return;
     }
-    void setChatModel({
+    setChatModel({
       chatId,
       provider: choice.provider,
       model: choice.model,
       effort: choice.effort,
+    }).catch((error: unknown) => {
+      void reportError({ recovery: NOTHING_CHANGED, title: MODEL_FAILED, error, workspaceId });
     });
   };
 
@@ -156,7 +172,16 @@ export const ChatRoom = ({ workspaceId, chat, onCreated, onRemoved, onNewChat }:
     <div className="flex w-full flex-col gap-2">
       {chat === null || chat.archivedAt === null ? null : (
         <ChatArchivedBanner
-          onRestore={() => void restoreChats({ workspaceId, chatIds: [chat.id] })}
+          onRestore={() => {
+            restoreChats({ workspaceId, chatIds: [chat.id] }).catch((error: unknown) => {
+              void reportError({
+                recovery: NOTHING_CHANGED,
+                title: RESTORE_FAILED,
+                error,
+                workspaceId,
+              });
+            });
+          }}
         />
       )}
       <ChatComposer

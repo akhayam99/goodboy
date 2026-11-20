@@ -27,6 +27,7 @@ import { ChatArchivedView } from './ChatArchivedView';
 import { ChatListGroup, type ChatListGroupRow } from './ChatListGroup';
 import type { ChatRowSelection } from './ChatListRow';
 import { ChatUndoRow } from './ChatUndoRow';
+import { NOTHING_CHANGED } from '../../../../store/slices/notifications/errorRecovery';
 
 type Props = {
   readonly workspaceId: WorkspaceId;
@@ -43,6 +44,15 @@ type Archived = {
   readonly isIdle: boolean;
 };
 
+type FailureParams = {
+  readonly title: string;
+  readonly error: unknown;
+};
+
+type RestoreParams = {
+  readonly chatIds: ReadonlyArray<ChatId>;
+};
+
 type PinParams = {
   readonly chatId: ChatId;
   readonly isPinned: boolean;
@@ -55,6 +65,11 @@ type RowsParams = {
 };
 
 const NO_ANSWER = 'No answer yet';
+const ARCHIVE_FAILED = "Couldn't archive the chat";
+const RESTORE_FAILED = "Couldn't restore the chat";
+const DELETE_FAILED = "Couldn't delete the chat";
+const PIN_FAILED = "Couldn't pin the chat";
+const UNPIN_FAILED = "Couldn't unpin the chat";
 
 const NO_CHATS: ReadonlyArray<ChatSummary> = [];
 
@@ -103,6 +118,7 @@ export const ChatList = ({
     (state) => state.archivedChatsByWorkspace[workspaceId] ?? NO_CHATS,
   );
   const pinChat = useAppStore((state) => state.pinChat);
+  const reportError = useAppStore((state) => state.reportError);
   const [query, setQuery] = useState('');
   const [archived, setArchived] = useState<Archived | null>(null);
   const [isArchivedView, setIsArchivedView] = useState(false);
@@ -131,14 +147,26 @@ export const ChatList = ({
 
   const select = useCallback((chatId: ChatId) => latest.current.onSelect(chatId), []);
 
+  const reportFailure = useCallback(
+    ({ title, error }: FailureParams): void => {
+      void reportError({ recovery: NOTHING_CHANGED, title, error, workspaceId });
+    },
+    [reportError, workspaceId],
+  );
+
   const archiveMany = useCallback(
-    (chatIds: ReadonlyArray<ChatId>): void => {
+    async (chatIds: ReadonlyArray<ChatId>): Promise<void> => {
       const [first] = chatIds;
       if (first === undefined) {
         return;
       }
       const title = latest.current.chats.find((chat) => chat.id === first)?.title ?? 'Chat';
-      void archiveChats({ workspaceId, chatIds });
+      try {
+        await archiveChats({ workspaceId, chatIds });
+      } catch (error) {
+        reportFailure({ title: ARCHIVE_FAILED, error });
+        return;
+      }
       setArchived({
         chatIds,
         label:
@@ -149,13 +177,22 @@ export const ChatList = ({
       });
       latest.current.onArchived(chatIds);
     },
-    [archiveChats, workspaceId],
+    [archiveChats, reportFailure, workspaceId],
   );
 
-  const archiveOne = useCallback((chatId: ChatId): void => archiveMany([chatId]), [archiveMany]);
+  const archiveOne = useCallback(
+    (chatId: ChatId): void => void archiveMany([chatId]),
+    [archiveMany],
+  );
 
   const archiveIdle = async (): Promise<void> => {
-    const chatIds = await archiveIdleChats({ workspaceId });
+    let chatIds: ReadonlyArray<ChatId>;
+    try {
+      chatIds = await archiveIdleChats({ workspaceId });
+    } catch (error) {
+      reportFailure({ title: ARCHIVE_FAILED, error });
+      return;
+    }
     if (chatIds.length === 0) {
       return;
     }
@@ -167,20 +204,36 @@ export const ChatList = ({
     onArchived(chatIds);
   };
 
-  const undo = (): void => {
+  const restore = async ({ chatIds }: RestoreParams): Promise<boolean> => {
+    try {
+      await restoreChats({ workspaceId, chatIds });
+      return true;
+    } catch (error) {
+      reportFailure({ title: RESTORE_FAILED, error });
+      return false;
+    }
+  };
+
+  const undo = async (): Promise<void> => {
     if (archived === null) {
       return;
     }
-    void restoreChats({ workspaceId, chatIds: archived.chatIds });
-    setArchived(null);
+    if (await restore({ chatIds: archived.chatIds })) {
+      setArchived(null);
+    }
   };
 
   const deleteMany = useCallback(
     async (chatIds: ReadonlyArray<ChatId>): Promise<void> => {
-      await deleteChats({ workspaceId, chatIds });
+      try {
+        await deleteChats({ workspaceId, chatIds });
+      } catch (error) {
+        reportFailure({ title: DELETE_FAILED, error });
+        return;
+      }
       latest.current.onDeleted(chatIds);
     },
-    [deleteChats, workspaceId],
+    [deleteChats, reportFailure, workspaceId],
   );
 
   const deleteOne = useCallback(
@@ -190,9 +243,11 @@ export const ChatList = ({
 
   const onPin = useCallback(
     ({ chatId, isPinned }: PinParams): void => {
-      void pinChat({ chatId, isPinned });
+      pinChat({ chatId, isPinned }).catch((error: unknown) => {
+        reportFailure({ title: isPinned ? PIN_FAILED : UNPIN_FAILED, error });
+      });
     },
-    [pinChat],
+    [pinChat, reportFailure],
   );
 
   const order = useMemo(
@@ -225,7 +280,7 @@ export const ChatList = ({
               titles: selectedIds.map(
                 (chatId) => chats.find((chat) => chat.id === chatId)?.title ?? 'Chat',
               ),
-              onArchive: () => archiveMany(selectedIds),
+              onArchive: () => void archiveMany(selectedIds),
               onDelete: () => deleteMany(selectedIds),
             },
           },
@@ -270,7 +325,8 @@ export const ChatList = ({
     listRef.current?.querySelector<HTMLElement>('[data-select-id]')?.focus();
   }, []);
 
-  const undoRow = archived === null ? null : <ChatUndoRow label={archived.label} onUndo={undo} />;
+  const undoRow =
+    archived === null ? null : <ChatUndoRow label={archived.label} onUndo={() => void undo()} />;
   const isEmpty =
     groups.pinned.length + groups.today.length + groups.week.length + groups.idle.length === 0;
 
@@ -281,7 +337,7 @@ export const ChatList = ({
         selectedId={selectedId}
         onSelect={onSelect}
         onBack={() => setIsArchivedView(false)}
-        onRestore={(chatId) => void restoreChats({ workspaceId, chatIds: [chatId] })}
+        onRestore={(chatId) => void restore({ chatIds: [chatId] })}
         onDelete={deleteMany}
       />
     );

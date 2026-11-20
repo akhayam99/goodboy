@@ -759,6 +759,53 @@ describe('ChatRoom', () => {
     });
   });
 
+  it('puts the draft back and reports when the chat cannot be created', async () => {
+    const onCreated = vi.fn();
+    const failure = new Error('database is locked');
+    store.createChat.mockRejectedValueOnce(failure);
+    renderRoom({ chat: null, onCreated });
+    const box = screen.getByRole('textbox', { name: 'Message' });
+
+    fireEvent.change(box, { target: { value: 'Where do we validate IBANs?' } });
+    await act(async () => {
+      fireEvent.keyDown(box, { key: 'Enter' });
+    });
+
+    await waitFor(() => expect(box).toHaveProperty('value', 'Where do we validate IBANs?'));
+    expect(onCreated).not.toHaveBeenCalled();
+    expect(store.sendChatMessage).not.toHaveBeenCalled();
+    expect(store.reportError).toHaveBeenCalledWith(
+      expect.objectContaining({
+        title: "Couldn't send the message",
+        error: failure,
+        workspaceId: WORKSPACE_ID,
+      }),
+    );
+  });
+
+  it('reports a model pick the chat could not save', async () => {
+    store.chatMessages = { [CHAT_ID]: [] };
+    const failure = new Error('database is locked');
+    store.setChatModel.mockRejectedValueOnce(failure);
+    renderRoom({ chat: CHAT });
+
+    fireEvent.click(screen.getByRole('button', { name: /^Model for this chat: / }));
+    const dialog = screen.getByRole('dialog', { name: 'Model for this chat' });
+    await act(async () => {
+      fireEvent.click(within(dialog).getByRole('button', { name: 'High' }));
+    });
+
+    await waitFor(() =>
+      expect(store.reportError).toHaveBeenCalledWith(
+        expect.objectContaining({
+          title: "Couldn't change the chat model",
+          error: failure,
+          workspaceId: WORKSPACE_ID,
+        }),
+      ),
+    );
+  });
+
   it('shows the empty state with suggestions from the projects', async () => {
     renderRoom({ chat: null });
 
