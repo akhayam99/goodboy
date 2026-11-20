@@ -80,6 +80,12 @@ export const NotificationCenter = ({ isCurrent }: Props) => {
   const viewportRef = useRef<HTMLDivElement | null>(null);
   const [unreadKeys, setUnreadKeys] = useState<ReadonlySet<string>>(() => new Set());
   const [view, setView] = useState<PopoverView>('all');
+  const [unreadKeysScope, setUnreadKeysScope] = useState(notificationScope);
+
+  if (unreadKeysScope !== notificationScope) {
+    setUnreadKeysScope(notificationScope);
+    setUnreadKeys(unreadGroupKeys({ notifications }));
+  }
 
   useEffect(() => {
     openRef.current = open;
@@ -167,9 +173,7 @@ export const NotificationCenter = ({ isCurrent }: Props) => {
     });
   };
   const changeScope = ({ next }: ScopeParams) => {
-    void setNotificationScope(next).then(() => {
-      setUnreadKeys(unreadGroupKeys({ notifications: useAppStore.getState().notifications }));
-    });
+    void setNotificationScope(next);
   };
   return (
     <div role="region" aria-label="Notifications">

@@ -13,14 +13,18 @@ import {
   type FakeIntersectionObserver,
 } from '../../../../__tests__/helpers/fakeIntersectionObserver';
 
-const defaults = vi.hoisted(() => {
-  const scope: 'workspace' | 'all' = 'workspace';
-  const elsewhere: {
+type Defaults = {
+  readonly scope: 'workspace' | 'all';
+  readonly elsewhere: {
     readonly count: number;
     readonly tone: 'danger' | 'warning' | null;
-  } = { count: 0, tone: null };
-  return { scope, elsewhere };
-});
+  };
+};
+
+const defaults = vi.hoisted((): Defaults => ({
+  scope: 'workspace',
+  elsewhere: { count: 0, tone: null },
+}));
 
 const { state } = vi.hoisted(() => ({
   state: {
@@ -193,6 +197,48 @@ describe('NotificationCenter scope', () => {
     });
 
     expect(state.setNotificationScope).toHaveBeenCalledWith('all');
+  });
+
+  const UNREAD_ROWS = [
+    buildNotification({ id: 'n1', title: 'webhook failed', coalesceKey: 'webhook' }),
+    buildNotification({ id: 'n2', title: 'sync stalled', coalesceKey: 'sync' }),
+  ];
+
+  it('keeps a row read since opening in the Unread view when the switch fails', async () => {
+    state.workspaces = TWO_WORKSPACES;
+    state.notifications = UNREAD_ROWS;
+    const { rerender } = render(<NotificationCenter isCurrent={false} />);
+    await openCenter();
+    state.notifications = UNREAD_ROWS.map((row) =>
+      row.id === 'n1' ? { ...row, read: true } : row,
+    );
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('tab', { name: /all workspaces/i }));
+    });
+    rerender(<NotificationCenter isCurrent={false} />);
+
+    expect(screen.getByText('webhook failed').textContent).toBe('webhook failed');
+    expect(screen.getByText('sync stalled').textContent).toBe('sync stalled');
+  });
+
+  it('takes a new unread snapshot once the new scope lands', async () => {
+    state.workspaces = TWO_WORKSPACES;
+    state.notifications = UNREAD_ROWS;
+    const { rerender } = render(<NotificationCenter isCurrent={false} />);
+    await openCenter();
+
+    state.notificationScope = 'all';
+    state.notifications = [
+      { ...UNREAD_ROWS[0]!, read: true },
+      UNREAD_ROWS[1]!,
+      buildNotification({ id: 'n3', title: 'deploy blocked', coalesceKey: 'deploy' }),
+    ];
+    rerender(<NotificationCenter isCurrent={false} />);
+
+    expect(screen.queryByText('webhook failed')).toBeNull();
+    expect(screen.getByText('sync stalled').textContent).toBe('sync stalled');
+    expect(screen.getByText('deploy blocked').textContent).toBe('deploy blocked');
   });
 });
 
