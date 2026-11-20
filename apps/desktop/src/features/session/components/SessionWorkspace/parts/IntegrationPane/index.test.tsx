@@ -77,7 +77,7 @@ const mount = () =>
 const requestUnlink = async () => {
   fireEvent.click(screen.getByRole('button', { name: `More actions for ${TASK.identifier}` }));
   expect(screen.getAllByRole('menuitem').length).toBeLessThanOrEqual(5);
-  fireEvent.click(await screen.findByRole('menuitem', { name: /Remove link from this session/ }));
+  fireEvent.click(await screen.findByRole('menuitem', { name: /^Unlink/ }));
   fireEvent.click(await screen.findByRole('button', { name: 'Unlink' }));
 };
 

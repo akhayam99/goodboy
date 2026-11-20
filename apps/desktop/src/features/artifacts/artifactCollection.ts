@@ -16,6 +16,7 @@ import {
 } from '../wireframes/wireframeScoutProgress';
 import { CONCEPT_ICONS } from '../../shared/components/conceptIcons';
 import type { StatePresentation } from '../../shared/utils/statePresentation';
+import { NAMES } from '../../shared/utils/names';
 
 export const ARTIFACT_FILTERS = ['all', 'plan', 'report', 'wireframe'] as const;
 
@@ -80,7 +81,7 @@ export const ARTIFACT_GENERATION_PRESENTATION: Record<
     generating: GENERATING,
     waiting: WAITING,
     unproduced: {
-      label: "Couldn't read wireframe",
+      label: NAMES.couldntLoadWireframe,
       reason: 'The agent ended without a wireframe',
       tone: 'warning',
       icon: CONCEPT_ICONS.runFailed,

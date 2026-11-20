@@ -8,6 +8,7 @@ import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { formatBytes } from '../../../../shared/utils/formatBytes';
 import { formatInteger } from '../../../../shared/utils/formatInteger';
 import { pluralize } from '../../../../shared/utils/pluralize';
+import { revealLabelOf } from '../../../../shared/utils/revealLabelOf';
 import { revealInFileManager } from '../../../../shared/lib/reveal';
 import { appDataBytesOf } from '../../appDataBytesOf';
 
@@ -137,7 +138,7 @@ export const StorageHistory = () => {
           {folder === null ? null : (
             <Button variant="ghost" size="sm" onClick={onReveal}>
               <FolderOpen size={ICON_SIZE.row} aria-hidden />
-              Show in Finder
+              {revealLabelOf()}
             </Button>
           )}
         </BandRow>

@@ -139,7 +139,7 @@ export const BrowserAddressRow = ({
           />
         )}
         {onDock === undefined ? null : (
-          <DockButton tooltip="Dock the browser beside the session" onDock={onDock} />
+          <DockButton tooltip={NAMES.dockBesideThePage} onDock={onDock} />
         )}
         {onClose === undefined ? null : (
           <IconButton icon={X} label="Close" tooltipSide="top" onClick={onClose} />

@@ -11,6 +11,7 @@ import {
 import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
+import { revealLabelOf } from '../../../../shared/utils/revealLabelOf';
 import { ARTIFACT_KIND_CONCEPT } from '../../artifactPresentation';
 import { newArtifactEventName } from '../../newArtifactEventName';
 import { openArtifactsFolder } from '../../artifactMirror/artifactMirrorInvoke';
@@ -64,7 +65,7 @@ export const ArtifactNewMenu = ({ sessionId, isEmpty, onImportWireframe }: Props
     {
       kind: 'item',
       key: 'show-folder',
-      label: 'Show in Finder',
+      label: revealLabelOf(),
       icon: FolderOpen,
       isDisabled: workspaceSlug === null,
       onSelect: () => {

@@ -5,7 +5,6 @@ import {
   Copy,
   SquareArrowOutUpRight,
   FileDown,
-  FolderOpen,
   Pencil,
   Play,
   RotateCcw,
@@ -37,6 +36,7 @@ import { artifactPlanFactsOf } from './artifactPlanFactsOf';
 import { planConsumerLabel, resolvePlanConsumer } from '../../../shared/utils/planConsumer';
 import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
 import { NAMES } from '../../../shared/utils/names';
+import { revealLabelOf } from '../../../shared/utils/revealLabelOf';
 import { agentPlace, sessionPlace } from '../../../store/slices/navigation/place';
 import type { ArtifactGeneration } from '../../artifacts/artifactCollection';
 import {
@@ -571,8 +571,8 @@ const ARTIFACT_ACTIONS: ReadonlyArray<ActionDefinition<ArtifactFacts>> = [
   },
   {
     id: 'artifact.showInFinder',
-    label: 'Show in Finder',
-    icon: FolderOpen,
+    label: () => revealLabelOf(),
+    icon: CONCEPT_ICONS.folderOpen,
     group: 'copy',
     when: isStored,
     description: () => 'The copy Goodboy keeps on disk for this artifact',

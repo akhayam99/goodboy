@@ -134,7 +134,7 @@ export const useRecordFrame = ({
     sentryIssueId != null && linkedSessionId != null
       ? {
           key: 'unlink-session',
-          label: `${NAMES.removeLink} to session`,
+          label: NAMES.removeLinkFromSession,
           icon: Unlink,
           isBusy: isUnlinking,
           blockedReason: null,

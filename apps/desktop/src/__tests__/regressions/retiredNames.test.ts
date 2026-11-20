@@ -1,4 +1,6 @@
 // @vitest-environment node
+import { readdirSync } from 'fs';
+import { join } from 'path';
 import { describe, expect, it } from 'vitest';
 import { NAMES, formerNamesOf } from '../../shared/utils/names';
 import { RETIRED_NAMES } from './retiredNames';
@@ -142,11 +144,29 @@ describe('retired names match whatever the casing', () => {
     expect(retiredIdsIn({ text })).toEqual([]);
   });
 
-  it('keeps the chat meaning of Start work retired outside the Work feature', () => {
+  it('keeps the chat meaning of Start work from here retired outside the Work feature', () => {
     const retired = RETIRED_NAMES.find((entry) => entry.id === 'turn-into-work');
-    expect(retired?.pattern.test('Start work')).toBe(true);
+    expect(retired?.pattern.test('Start work from here')).toBe(true);
+    expect(retired?.pattern.test('Start work')).toBe(false);
     expect(retired?.allowedPaths?.test('features/work/components/StartWork/index.tsx')).toBe(true);
     expect(retired?.allowedPaths?.test('features/workspace-chat/components/Panel.tsx')).toBe(false);
+  });
+
+  it('sends a bare Start work to Start a run, one owner for the old phrase', () => {
+    expect(retiredIdsIn({ text: 'Start work' })).toEqual(['start-work-verb']);
+  });
+
+  it.each([
+    ['Send message now', 'send-message'],
+    ['Push commits to origin', 'push-commits'],
+    ['View transcript of step 2', 'view-transcript'],
+    ['Restore turn 4', 'restore-turn'],
+    ['Mark all seen in Harborline', 'mark-all-seen'],
+    ['Skip and go on to the next step', 'skip-and-go-on'],
+    ['Remove link from this session', 'remove-link-from-session'],
+    ['Add folder to Harborline', 'add-folder'],
+  ])('flags the retired phrase inside a longer label: %s', (text, id) => {
+    expect(retiredIdsIn({ text })).toContain(id);
   });
 
   it('leaves a data attribute alone', () => {
@@ -197,7 +217,7 @@ describe('FORMER_NAMES is read by the guard', () => {
   it('reads a former name for the labels that were renamed', () => {
     expect(entries.length).toBeGreaterThan(50);
     expect(formerNamesOf(NAMES.tasks)).toContain('Inbox');
-    expect(formerNamesOf(NAMES.runs)).toContain('Workflows');
+    expect(formerNamesOf(NAMES.runs)).toContain('Workflow runs');
   });
 
   it('never lists a label as its own former name', () => {
@@ -206,5 +226,40 @@ describe('FORMER_NAMES is read by the guard', () => {
 
   it('flags the old Inbox name that the Tasks door replaced', () => {
     expect(retiredIdsIn({ text: 'Inbox' })).toContain('inbox-door');
+  });
+});
+
+describe('every file under retired/ feeds the guard', () => {
+  const RETIRED_DIR = join(__dirname, 'retired');
+  const unitModules = import.meta.glob<Readonly<Record<string, unknown>>>('./retired/*.ts', {
+    eager: true,
+  });
+
+  it('loads one module per file in the folder', () => {
+    const files = readdirSync(RETIRED_DIR)
+      .filter((file) => file.endsWith('.ts'))
+      .map((file) => `./retired/${file}`)
+      .sort();
+
+    expect(Object.keys(unitModules).sort()).toEqual(files);
+    expect(files.length).toBeGreaterThan(0);
+  });
+
+  it('puts every name a unit retires in the list the guard reads', () => {
+    const ids = new Set(RETIRED_NAMES.map((retired) => retired.id));
+    const unitIds = Object.values(unitModules)
+      .flatMap((module) => Object.values(module).flat())
+      .flatMap((entry) =>
+        typeof entry === 'object' && entry !== null && 'id' in entry ? [String(entry.id)] : [],
+      );
+
+    expect(unitIds.length).toBeGreaterThan(0);
+    expect(unitIds.filter((id) => !ids.has(id))).toEqual([]);
+  });
+
+  it('gives each retired name one id across the shared list and the unit files', () => {
+    const ids = RETIRED_NAMES.map((retired) => retired.id);
+
+    expect(ids.filter((id, index) => ids.indexOf(id) !== index)).toEqual([]);
   });
 });

@@ -1,6 +1,7 @@
 import { Bookmark, CircleHelp, Clock, Code, Copy, FolderOpen, Trash2 } from '@goodboy/ui/icons';
 import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
 import { openInConfiguredTerminal } from '../../../shared/lib/terminalApp';
+import { revealLabelOf } from '../../../shared/utils/revealLabelOf';
 import type { ObjectKindDefinition, WorktreeActionTarget } from '../types';
 
 export const KEEP_DAYS = 30;
@@ -30,7 +31,7 @@ export const WORKTREE_KIND: ObjectKindDefinition<WorktreeActionTarget, WorktreeF
   actions: [
     {
       id: 'worktree.reveal',
-      label: 'Show in Finder',
+      label: () => revealLabelOf(),
       icon: FolderOpen,
       group: 'open',
       when: () => true,

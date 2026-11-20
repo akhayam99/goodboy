@@ -14,6 +14,17 @@ import { fixLabel } from '../../features/resolve/reviewLaunchCopy';
 import { RETIRED_NAMES } from '../../__tests__/regressions/retiredNames';
 import { NAMES, formerNamesOf } from './names';
 
+type NamesNode = string | { readonly [key: string]: NamesNode };
+
+type ValuesParams = {
+  readonly node: NamesNode;
+};
+
+const valuesIn = ({ node }: ValuesParams): ReadonlyArray<string> =>
+  typeof node === 'string'
+    ? [node]
+    : Object.values(node).flatMap((child) => valuesIn({ node: child }));
+
 describe('names', () => {
   it('feeds the lens, role, handoff, stage, Asks you and reply length labels', () => {
     expect(RUN_AUTONOMY_HEADER).toBe(NAMES.asksYou);
@@ -93,10 +104,42 @@ describe('names', () => {
     });
     expect(formerNamesOf(NAMES.start)).toContain('Launch session');
     expect(formerNamesOf(NAMES.startWorkFromChat)).toEqual([
-      'Start work',
       'Start work from here',
       'Turn into work',
     ]);
+  });
+
+  it('keeps Start work as a former name of Start a run only, with no live key', () => {
+    expect(Object.keys(NAMES)).not.toContain('startWork');
+    expect(formerNamesOf(NAMES.startARun)).toContain('Start work');
+    expect(formerNamesOf(NAMES.startWorkFromChat)).not.toContain('Start work');
+  });
+
+  it('names a task link removal Unlink and finds it by the old labels', () => {
+    expect(NAMES.removeLinkFromSession).toBe('Unlink');
+    expect(formerNamesOf(NAMES.removeLinkFromSession)).toEqual([
+      'Remove link from this session',
+      'Remove link to session',
+      'Unlink from this session',
+    ]);
+    expect(formerNamesOf(NAMES.removeLink)).toEqual([]);
+  });
+
+  it('never lists a former name that is a current name or that sits under two names', () => {
+    const current = [...new Set(valuesIn({ node: NAMES }))];
+    const formers = current.flatMap((name) =>
+      formerNamesOf(name).map((former) => ({ name, former })),
+    );
+    const owners = formers.reduce<Record<string, ReadonlyArray<string>>>(
+      (byFormer, { name, former }) => ({
+        ...byFormer,
+        [former]: [...(byFormer[former] ?? []), name],
+      }),
+      {},
+    );
+
+    expect(formers.filter(({ former }) => current.includes(former))).toEqual([]);
+    expect(Object.entries(owners).filter(([, names]) => names.length > 1)).toEqual([]);
   });
 
   it('keeps the old settings row labels as former names', () => {
@@ -236,8 +279,14 @@ describe('names', () => {
     ['Pick up HBL-412', 'pick-up-issue'],
     ['Pick up #7', 'pick-up-issue'],
     ['Turn into work', 'turn-into-work'],
-    ['Start work', 'turn-into-work'],
+    ['Start work', 'start-work-verb'],
     ['Start work from here', 'turn-into-work'],
+    ['Remove link from this session', 'remove-link-from-session'],
+    ['Remove link to session', 'remove-link-from-session'],
+    ['Open full', 'open-full-bare'],
+    ["Couldn't read wireframe", 'couldnt-read-wireframe'],
+    ['Dock the browser beside the session', 'beside-the-session'],
+    ['Dock beside the session', 'beside-the-session'],
     ['Run on its own', 'run-on-its-own'],
     ['Turn on Autopilot', 'autopilot'],
     ['Autopilot: on', 'autopilot'],
@@ -272,6 +321,12 @@ describe('names', () => {
     'Pick up a task',
     'Add project',
     'Git repository',
+    'Unlink',
+    'Remove link',
+    'Open full page',
+    "Couldn't load wireframe",
+    'Dock beside the page',
+    'Opens beside the session.',
   ])('lets the new word %s through', (phrase) => {
     expect(RETIRED_NAMES.filter((entry) => entry.pattern.test(phrase))).toEqual([]);
   });

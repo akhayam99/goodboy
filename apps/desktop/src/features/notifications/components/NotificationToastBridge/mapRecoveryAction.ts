@@ -5,6 +5,7 @@ import type { ToastAction } from '../../../../shared/components/Toast';
 import { revealInFileManager } from '../../../../shared/lib/reveal';
 import { integrationLabel } from '../../../../shared/utils/integrationLabel';
 import { NAMES } from '../../../../shared/utils/names';
+import { revealLabelOf } from '../../../../shared/utils/revealLabelOf';
 import { connectionFocusOf } from '../../../connections/connectionFocusOf';
 import { openConnection } from '../../../connections/openConnection';
 import { openSettings } from '../../../settings/openSettings';
@@ -43,7 +44,7 @@ export const mapRecoveryAction = ({ action, store }: Params): ToastAction => {
   if (action.kind === 'reveal-path') {
     const { path } = action;
     return {
-      label: NAMES.showInFinder,
+      label: revealLabelOf(),
       onClick: () => {
         revealInFileManager({ path }).catch((error: unknown) => {
           void store.reportError({

@@ -12,6 +12,7 @@ import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vite
 import { act, cleanup, render, screen, within } from '@testing-library/react';
 import { ToastProvider } from '../../../../../../shared/components/Toast';
 import { applyDocumentTheme } from '../../../../../../shared/lib/theme';
+import { revealLabelOf } from '../../../../../../shared/utils/revealLabelOf';
 import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
@@ -75,7 +76,7 @@ describe('the error recovery scene', () => {
     rowAt({ index: 1 }).getByRole('button', { name: 'Reconnect GitLab' });
     rowAt({ index: 2 }).getByRole('button', { name: 'Open settings' });
     expect(rowAt({ index: 3 }).queryByRole('button', { name: /Retry|Open|Show/ })).toBeNull();
-    rowAt({ index: 4 }).getByRole('button', { name: 'Show in Finder' });
+    rowAt({ index: 4 }).getByRole('button', { name: revealLabelOf() });
   });
 
   it('has no accessibility violation', async () => {

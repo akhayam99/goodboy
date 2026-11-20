@@ -15,6 +15,7 @@ vi.mock('../../artifactMirror/artifactMirrorInvoke', () => ({
 }));
 
 import { useAppStore } from '../../../../store';
+import { revealLabelOf } from '../../../../shared/utils/revealLabelOf';
 import { ArtifactNewMenu } from './ArtifactNewMenu';
 
 const sessionId: SessionId = SESSION;
@@ -48,8 +49,8 @@ describe('ArtifactNewMenu folder item', () => {
   it('shows the artifacts folder from the New menu, with no icon button in the header', () => {
     openMenu();
 
-    expect(screen.queryByRole('button', { name: 'Show in Finder' })).toBeNull();
-    fireEvent.click(screen.getByRole('menuitem', { name: /Show in Finder/ }));
+    expect(screen.queryByRole('button', { name: revealLabelOf() })).toBeNull();
+    fireEvent.click(screen.getByRole('menuitem', { name: revealLabelOf() }));
 
     expect(openSpy).toHaveBeenCalledWith({ workspaceSlug: 'harborline' });
   });
@@ -59,7 +60,7 @@ describe('ArtifactNewMenu folder item', () => {
     openMenu();
 
     expect(
-      screen.getByRole('menuitem', { name: /Show in Finder/ }).getAttribute('aria-disabled'),
+      screen.getByRole('menuitem', { name: revealLabelOf() }).getAttribute('aria-disabled'),
     ).toBe('true');
   });
 });

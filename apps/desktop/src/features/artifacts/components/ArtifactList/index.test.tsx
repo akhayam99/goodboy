@@ -28,6 +28,7 @@ vi.mock('../../../wireframes/readWireframeFile', () => ({
 }));
 
 import { ArtifactList } from './index';
+import { revealLabelOf } from '../../../../shared/utils/revealLabelOf';
 
 const SESSION_ID = JSON.parse(JSON.stringify('session-1'));
 
@@ -124,11 +125,11 @@ describe('ArtifactList header row', () => {
     const tabs = screen.getByRole('tablist', { name: 'Artifact kind' });
     expect(tabs.getAttribute('data-size')).toBe('xs');
     expect(screen.queryByTestId('artifact-new')).toBeNull();
-    expect(screen.queryByRole('button', { name: 'Show in Finder' })).toBeNull();
+    expect(screen.queryByRole('button', { name: revealLabelOf() })).toBeNull();
     const files = screen.getByRole('button', { name: 'Artifact files' });
     expect(files.getAttribute('data-size')).toBe('control');
     fireEvent.click(files);
-    expect(screen.getByRole('menuitem', { name: /Show in Finder/ })).toBeDefined();
+    expect(screen.getByRole('menuitem', { name: revealLabelOf() })).toBeDefined();
     expect(screen.queryByRole('menuitem', { name: /Report/ })).toBeNull();
   });
 });

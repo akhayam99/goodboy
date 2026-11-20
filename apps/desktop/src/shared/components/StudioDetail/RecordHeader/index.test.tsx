@@ -45,7 +45,7 @@ const VERBS: RecordVerbs = {
 
 const frame = (overrides: Partial<RecordFrame> = {}): RecordFrame => ({
   primary: <button type="button">Start from HBL-412</button>,
-  sessionVerbs: [verb({ key: 'unlink', label: 'Remove link to session', icon: Unlink })],
+  sessionVerbs: [verb({ key: 'unlink', label: 'Unlink', icon: Unlink })],
   onRefresh: vi.fn(),
   onClose: vi.fn(),
   ...overrides,
@@ -122,13 +122,7 @@ describe('RecordHeader', () => {
 
     expect(
       screen.getAllByRole('menuitem').map((item) => item.getAttribute('data-menu-label')),
-    ).toEqual([
-      'Open in GitLab',
-      'Convert to draft',
-      'Remove link to session',
-      'Copy link',
-      'Close merge request',
-    ]);
+    ).toEqual(['Open in GitLab', 'Convert to draft', 'Unlink', 'Copy link', 'Close merge request']);
   });
 
   it('asks before a destructive verb from the menu and runs it only on confirm', async () => {

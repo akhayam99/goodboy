@@ -19,6 +19,7 @@ import {
 } from '@goodboy/ui';
 import type { Project } from '@goodboy/types';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
+import { revealLabelOf } from '../../../../shared/utils/revealLabelOf';
 import type { RepoRowFacts, RepoRowGlyph, RepoRowTone } from './repoRowFactsOf';
 
 type Props = {
@@ -161,8 +162,8 @@ export const RepoEntryRow = ({
           {primaryOf({ project, base, facts, isChecking, onPull, onRetry })}
           <IconButton
             icon={CONCEPT_ICONS.folderOpen}
-            label={`Show ${project.name} in Finder`}
-            tooltip="Show in Finder"
+            label={revealLabelOf({ target: project.name })}
+            tooltip={revealLabelOf()}
             size="xs"
             iconSize={ICON_SIZE.row}
             onClick={onReveal}

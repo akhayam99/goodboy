@@ -18,6 +18,7 @@ vi.mock('../../../../shared/lib/reveal', () => ({
 }));
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { revealLabelOf } from '../../../../shared/utils/revealLabelOf';
 import type { Notification, NotificationAction } from '@goodboy/db';
 import { brandId, type IsoDateTime, type MountId, type SessionId } from '@goodboy/types';
 import {
@@ -115,9 +116,9 @@ describe('recovery actions of a reported error', () => {
     });
   });
 
-  it('reveal-path: shows that folder in Finder', async () => {
+  it('reveal-path: shows that folder in the file manager', async () => {
     const toastAction = mapAction({ kind: 'reveal-path', path: '/Users/dev/payments-api' });
-    expect(toastAction?.label).toBe('Show in Finder');
+    expect(toastAction?.label).toBe(revealLabelOf());
     toastAction?.onClick();
     await vi.waitFor(() =>
       expect(revealSpy).toHaveBeenCalledWith({ path: '/Users/dev/payments-api' }),

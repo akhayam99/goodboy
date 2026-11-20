@@ -1,6 +1,7 @@
 import { Copy, SquareArrowOutUpRight, FolderOpen } from '@goodboy/ui/icons';
 import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
 import { openInConfiguredTerminal } from '../../../shared/lib/terminalApp';
+import { revealLabelOf } from '../../../shared/utils/revealLabelOf';
 import type { ExploreFileActionTarget, ObjectKindDefinition } from '../types';
 import { RUN_ROUTE_COPY } from '../../session/startRun/runRouteCopy';
 
@@ -42,7 +43,7 @@ export const EXPLORE_FILE_KIND: ObjectKindDefinition<ExploreFileActionTarget, Ex
     },
     {
       id: 'exploreFile.reveal',
-      label: 'Show in Finder',
+      label: () => revealLabelOf(),
       icon: FolderOpen,
       group: 'open',
       slot: () => 'hover',

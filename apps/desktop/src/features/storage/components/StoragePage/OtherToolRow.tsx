@@ -5,6 +5,7 @@ import { ProviderGlyph } from '../../../../shared/components/RoutingPicker/Provi
 
 import { formatBytes } from '../../../../shared/utils/formatBytes';
 import { formatInteger } from '../../../../shared/utils/formatInteger';
+import { revealLabelOf } from '../../../../shared/utils/revealLabelOf';
 import type { OtherToolId, OtherToolUsage } from '../../otherTools';
 import { OTHER_TOOL_COLUMN } from './otherToolColumns';
 
@@ -59,11 +60,11 @@ export const OtherToolRow = ({ tool, onReveal }: Props) => {
       <Button
         variant="ghost"
         size="sm"
-        aria-label={`Show ${meta.name} in Finder`}
+        aria-label={revealLabelOf({ target: meta.name })}
         onClick={() => onReveal(tool)}
       >
         <FolderOpen size={ICON_SIZE.row} aria-hidden />
-        Show in Finder
+        {revealLabelOf()}
       </Button>
     </BandRow>
   );
