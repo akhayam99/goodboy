@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { cn, Eyebrow, Tooltip } from '@goodboy/ui';
+import { Chip, EmptyLine, Eyebrow } from '@goodboy/ui';
 import type { WireframeTheme } from '@goodboy/core/artifacts';
 import type { WireframeFidelity } from '../../wireframeFidelity';
 
@@ -11,36 +11,39 @@ type Props = {
 
 const COLLAPSED_LIMIT = 4;
 
-const chipClass =
-  'inline-flex min-w-0 max-w-[13rem] items-center rounded-full border border-border-soft px-2 py-0.5 text-chip text-muted-foreground';
+type RefParams = {
+  readonly ref: string;
+};
 
-const refLeaf = ({ ref }: { readonly ref: string }): string =>
+const refLeaf = ({ ref }: RefParams): string =>
   ref
     .split('/')
     .filter((segment) => segment.length > 0)
     .pop() ?? ref;
 
-const asString = (value: unknown): string | null =>
+type ValueParams = {
+  readonly value: unknown;
+};
+
+const asString = ({ value }: ValueParams): string | null =>
   typeof value === 'string' && value.trim().length > 0 ? value.trim() : null;
 
-const profileRefs = ({
-  designProfile,
-}: {
-  readonly designProfile: Readonly<Record<string, unknown>>;
-}): ReadonlyArray<string> => {
+type ProfileParams = Pick<Props, 'designProfile'>;
+
+const profileRefs = ({ designProfile }: ProfileParams): ReadonlyArray<string> => {
   const raw = designProfile['sources'] ?? designProfile['refs'];
   if (!Array.isArray(raw)) {
     return [];
   }
   return raw
-    .map((entry) => asString(entry))
+    .map((entry) => asString({ value: entry }))
     .filter((entry): entry is string => entry !== null)
     .slice(0, 12);
 };
 
 export const WireframeProvenanceRow = ({ fidelity, theme, designProfile }: Props) => {
   const [isExpanded, setIsExpanded] = useState(false);
-  const commit = asString(designProfile['commitSha']);
+  const commit = asString({ value: designProfile['commitSha'] });
   const refs = [...new Set([...(theme.sources ?? []), ...profileRefs({ designProfile })])];
   const overflow = refs.length - COLLAPSED_LIMIT;
   const visible = isExpanded || overflow <= 0 ? refs : refs.slice(0, COLLAPSED_LIMIT);
@@ -57,43 +60,43 @@ export const WireframeProvenanceRow = ({ fidelity, theme, designProfile }: Props
       <span className="shrink-0">theme {theme.name}</span>
       {commit === null ? null : <span className="shrink-0 tabular-nums">at {commit}</span>}
       {refs.length === 0 ? (
-        <span className="shrink-0">no design evidence was pinned to this wireframe</span>
+        <EmptyLine className="min-h-0 shrink-0">
+          No design evidence was pinned to this wireframe
+        </EmptyLine>
       ) : (
         <span className="shrink-0">from</span>
       )}
       {visible.map((ref) => (
-        <Tooltip key={ref} content={ref}>
-          <span
-            data-testid="wireframe-source-chip"
-            aria-label={ref}
-            className={cn(chipClass, 'font-mono')}
-          >
-            <span className="truncate">{refLeaf({ ref })}</span>
-          </span>
-        </Tooltip>
+        <Chip
+          key={ref}
+          kind="reference"
+          tone="neutral"
+          title={ref}
+          testId="wireframe-source-chip"
+          className="min-w-0 max-w-[13rem] shrink font-mono"
+          label={<span className="truncate">{refLeaf({ ref })}</span>}
+        />
       ))}
       {overflow > 0 && !isExpanded && (
-        <button
-          type="button"
-          className={cn(
-            chipClass,
-            'shrink-0 tabular-nums hover:border-border hover:text-foreground',
-          )}
-          data-testid="wireframe-sources-more"
+        <Chip
+          as="button"
+          kind="reference"
+          tone="neutral"
+          testId="wireframe-sources-more"
+          className="tabular-nums"
+          label={`+${overflow} more`}
           onClick={() => setIsExpanded(true)}
-        >
-          +{overflow} more
-        </button>
+        />
       )}
       {overflow > 0 && isExpanded && (
-        <button
-          type="button"
-          className={cn(chipClass, 'shrink-0 hover:border-border hover:text-foreground')}
-          data-testid="wireframe-sources-less"
+        <Chip
+          as="button"
+          kind="reference"
+          tone="neutral"
+          testId="wireframe-sources-less"
+          label="Show fewer"
           onClick={() => setIsExpanded(false)}
-        >
-          show fewer
-        </button>
+        />
       )}
     </div>
   );
