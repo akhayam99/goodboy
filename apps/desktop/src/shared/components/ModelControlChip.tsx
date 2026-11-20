@@ -1,10 +1,4 @@
-import {
-  AnchoredPopover,
-  POPOVER_WIDTH_CLASS,
-  POPOVER_WIDTH_PX,
-  PopoverBody,
-  useDropdown,
-} from '@goodboy/ui';
+import { AnchoredPopover, POPOVER_WIDTH_CLASS, POPOVER_WIDTH_PX, useDropdown } from '@goodboy/ui';
 import type { AgentEffort, ProviderId } from '@goodboy/types';
 import { RoutingLabel } from './RoutingLabel';
 import { RoutingPickerBody } from './RoutingPicker/RoutingPickerBody';
@@ -90,30 +84,28 @@ export const ModelControlChip = ({
         />
       }
     >
-      <PopoverBody>
-        <RoutingPickerBody
-          connectedProviders={connectedProviders}
-          provider={effective.provider}
-          model={effective.model}
-          effort={{ editable: true, value: effective.effort }}
-          onClose={dropdown.close}
-          recommendation={{
-            ...suggestion,
-            ...(suggestionLabel !== null && { label: suggestionLabel }),
-            ...(suggestionReason !== undefined && { reason: suggestionReason }),
-          }}
-          {...(recommendationKind !== undefined && { recommendationKind })}
-          overridden={isOverridden}
-          {...(lastUsed !== null && {
-            lastUsed: {
-              routing: lastUsed.routing,
-              active: lastUsed.isActive,
-              onSelect: lastUsed.onSelect,
-            },
-          })}
-          onChange={(route) => onChange(route.provider === '' ? null : route)}
-        />
-      </PopoverBody>
+      <RoutingPickerBody
+        connectedProviders={connectedProviders}
+        provider={effective.provider}
+        model={effective.model}
+        effort={{ editable: true, value: effective.effort }}
+        onClose={dropdown.close}
+        recommendation={{
+          ...suggestion,
+          ...(suggestionLabel !== null && { label: suggestionLabel }),
+          ...(suggestionReason !== undefined && { reason: suggestionReason }),
+        }}
+        {...(recommendationKind !== undefined && { recommendationKind })}
+        overridden={isOverridden}
+        {...(lastUsed !== null && {
+          lastUsed: {
+            routing: lastUsed.routing,
+            active: lastUsed.isActive,
+            onSelect: lastUsed.onSelect,
+          },
+        })}
+        onChange={(route) => onChange(route.provider === '' ? null : route)}
+      />
     </AnchoredPopover>
   );
 };

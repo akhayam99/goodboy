@@ -484,6 +484,7 @@ features-review-push-confirm
 features-script-drawer
 features-start-tabs
 features-write-review
+field-error
 file-actions-header
 file-whole-drawer-split
 file-whole-drawer-unified
@@ -691,6 +692,7 @@ planner-transcript
 planner-transcript-drawer
 planner-transcript-replaced
 planner-transcript-revising
+popover-long-menu
 ports-hidden
 ports-layers
 ports-listening

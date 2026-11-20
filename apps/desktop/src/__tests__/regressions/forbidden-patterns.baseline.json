@@ -321,8 +321,7 @@
   "raw-scroller": {
     "apps/desktop/src/features/chat/components/ChatView/index.tsx": 1,
     "apps/desktop/src/features/wireframes/components/WireframeViewer/WireframeFlowOverview.tsx": 1,
-    "apps/desktop/src/features/wireframes/components/WireframeViewer/WireframeIssues.tsx": 1,
-    "packages/ui/src/components/Popover.tsx": 1
+    "apps/desktop/src/features/wireframes/components/WireframeViewer/WireframeIssues.tsx": 1
   },
   "tone-border-rail": {},
   "absolute-popover": {},
