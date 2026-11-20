@@ -1,5 +1,6 @@
 import type { Tone } from '@goodboy/ui';
 import { formatAge } from '../../../../shared/utils/time/formatAge';
+import { formatDuration } from '../../../../shared/utils/time/formatDuration';
 import type { BranchEntry } from '../branches/branchStoryOf';
 import type { BoardRow } from './boardTypes';
 
@@ -69,13 +70,5 @@ type HoursParams = {
   readonly elapsedMs: number;
 };
 
-const HOUR_MS = 3_600_000;
-
-const MINUTE_MS = 60_000;
-
-export const elapsedWordOf = ({ elapsedMs }: HoursParams): string => {
-  if (elapsedMs >= HOUR_MS) {
-    return `${(elapsedMs / HOUR_MS).toFixed(1)}h`;
-  }
-  return `${Math.round(elapsedMs / MINUTE_MS)}m`;
-};
+export const elapsedWordOf = ({ elapsedMs }: HoursParams): string =>
+  formatDuration({ durationMs: elapsedMs }) ?? '0s';

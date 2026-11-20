@@ -1,4 +1,5 @@
 import type { Session } from '@goodboy/types';
+import { NAMES } from '../../../../shared/utils/names';
 import { deriveSessionStage } from '../../../../store/slices/session-view/deriveSessionStage';
 import { leadSpendByBranchOf } from '../../../auto/tree/leadSpendByBranchOf';
 import type { BranchFacts } from '../branches/branchFactsOf';
@@ -29,7 +30,7 @@ const GROUP_ORDER: ReadonlyArray<BoardGroupId> = [
 const FOLDED_GROUPS: ReadonlySet<BoardGroupId> = new Set<BoardGroupId>(['merged', 'closed']);
 
 const GROUP_LABEL: Record<BoardGroupId, string> = {
-  'needs-you': 'Needs you',
+  'needs-you': NAMES.needsYou,
   'in-progress': 'In progress',
   merged: 'Merged',
   closed: 'Closed',
