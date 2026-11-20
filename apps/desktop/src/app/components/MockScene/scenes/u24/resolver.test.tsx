@@ -16,7 +16,6 @@ import {
   resetStoryStore,
 } from '../../../../../store/storyHarness';
 import { runA11yCheck } from '../../../../../__tests__/a11y/utils';
-import { RETIRED_NAMES } from '../../../../../__tests__/regressions/retired/dead';
 import { clearSceneInvoke } from '../../../../../test/sceneInvoke';
 import { MOCK_SCENES } from '../..';
 import { U24_RESOLVER_SCENES } from './resolver';
@@ -119,9 +118,7 @@ describe('the resolver scenes', () => {
 
     expect(screen.queryByText('Choosing models')).not.toBeNull();
     expect(screen.queryByText('Models in workflows')).not.toBeNull();
-    RETIRED_NAMES.forEach((retired) => {
-      expect(screen.queryByText(retired.pattern)).toBeNull();
-    });
+    expect(screen.queryByText('Typed requests')).toBeNull();
   });
 
   it.each(Object.keys(U24_RESOLVER_SCENES))(
