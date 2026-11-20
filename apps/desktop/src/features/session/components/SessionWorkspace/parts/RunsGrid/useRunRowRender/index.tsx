@@ -3,6 +3,7 @@ import type { Agent, AgentId, Session } from '@goodboy/types';
 import { useAppStore } from '../../../../../../../store';
 import { useNow } from '../../../../../../../shared/hooks/useNow';
 import { useAgentMetrics } from '../../../../../hooks/useAgentMetrics';
+import { runCostUsdOf } from '../../../../../runCostUsdOf';
 import type { SessionRun } from '../../../../../sessionRunsOf';
 import { RunsGridAgentRow } from '../RunsGridAgentRow';
 import { RunsGridRow } from '../RunsGridRow';
@@ -40,15 +41,11 @@ export const useRunRowRender = ({ session, onOpen }: Params) => {
   const agents = useAppStore((state) => state.sessionPhaseRuns[sessionId] ?? NO_AGENTS);
 
   return ({ run, rowKey, titleSuffix }: RunRowRenderParams): ReactNode => {
-    const aggregates = run.agentIds.map((agentId) => aggregatesByAgentId.get(agentId));
-    const isCostTracked = aggregates.some((aggregate) => (aggregate?.turns ?? 0) > 0);
     const agent =
       run.shape === 'lead' && run.open.kind !== 'run'
         ? agentOf({ agents, agentId: run.open.agentId })
         : null;
-    const costUsd = isCostTracked
-      ? aggregates.reduce((total, aggregate) => total + (aggregate?.estimatedCostUsd ?? 0), 0)
-      : null;
+    const costUsd = runCostUsdOf({ agentIds: run.agentIds, agents, aggregatesByAgentId });
     if (agent === null) {
       return (
         <RunsGridRow
