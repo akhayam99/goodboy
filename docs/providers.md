@@ -259,12 +259,10 @@ large step through `resolveSlot` with `size`, the same call the run makes, so it
 (or one model when the size moves nothing). A workflow step that follows its role names
 the pick with `sized for a small step` or `sized for a large step` when its size moved the
 rung (`isSizeMovingRung`). The background task rows (`TaskModelRow`) name the model Auto runs
-on their closed trigger. A **Choosing models** section holds two switches, off by default:
+on their closed trigger. A **Choosing models** section holds one switch, off by default:
 **Models in workflows** (`canOrchestratorPickModel` in the workspace `workflowRules`, read
-from the run's `rulesSnapshot`) and **Typed requests** (the `models.classifyRequests`
-setting). Typed requests is stored but no start reads it since the Start an auto form left;
-it used to classify a request with the Agent naming task model and start a Scout, Planner,
-Debugger or Reviewer when sure, otherwise Auto. When
+from the run's `rulesSnapshot`). The Lead starts on the request as typed; a
+`models.classifyRequests` row an older build left in the settings table is never read. When
 Parallel agents is off for the workspace, the split line says the role runs as one
 agent. Below it, **Models for planning** is the role's set: up to three models added
 with the same picker and its **Add** button, which adds the model in view once however

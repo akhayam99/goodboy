@@ -337,6 +337,16 @@ fn registers_every_app_command_behind_the_browser_wall() {
     assert!(!APP_SOURCE.contains("add_capability"));
 }
 
+#[test]
+fn keeps_the_profile_commands_away_from_the_webview_until_a_page_calls_them() {
+    let walled = walled_commands();
+    let ledger = ledger_commands();
+    for name in ["browser_profile_clear", "browser_profile_isolation"] {
+        assert!(!walled.contains(name), "{name} is registered");
+        assert!(!ledger.contains(name), "{name} is in window-commands.json");
+    }
+}
+
 fn webview(app: &App<MockRuntime>, label: &str) -> Webview<MockRuntime> {
     app.get_webview(label).expect("webview exists")
 }

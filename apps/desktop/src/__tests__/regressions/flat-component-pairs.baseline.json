@@ -101,7 +101,6 @@
   "apps/desktop/src/features/palette/components/CommandsMode/PreviewHints.tsx": 1,
   "apps/desktop/src/features/plans/components/PlanParts/PlanPartDrawer.tsx": 1,
   "apps/desktop/src/features/providers/components/ProviderIcon.tsx": 1,
-  "apps/desktop/src/features/providers/components/ProviderStudio/DefaultsPanel/ClassifyRequestsRow.tsx": 1,
   "apps/desktop/src/features/providers/components/ProviderStudio/DefaultsPanel/OrchestratorModelPickRow.tsx": 1,
   "apps/desktop/src/features/providers/components/ProviderStudio/DefaultsPanel/RoleRow/RoleModelSet.tsx": 1,
   "apps/desktop/src/features/providers/components/ProviderStudio/DefaultsPanel/SavedModelsNotice.tsx": 1,

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { fallbackStepOutputSummary, isFallbackStepOutputSummary } from '../summarizer/step-output';
-import { buildChainCarryForward, buildParallelCarryForward } from './propagator';
+import { buildChainCarryForward } from './propagator';
 
 describe('buildChainCarryForward', () => {
   it('returns an empty string without predecessors', () => {
@@ -93,53 +93,5 @@ describe('buildChainCarryForward', () => {
     expect(
       isFallbackStepOutputSummary({ summary: previewLine?.slice('- step 1 Scout: '.length) ?? '' }),
     ).toBe(true);
-  });
-});
-
-describe('buildParallelCarryForward', () => {
-  it('returns an empty string without branch statuses', () => {
-    expect(buildParallelCarryForward({ groupName: 'Implementation', branches: [] })).toBe('');
-  });
-
-  it('renders completed summaries and failed branch errors', () => {
-    const result = buildParallelCarryForward({
-      groupName: 'Implementation',
-      branches: [
-        { name: 'API', status: 'completed', outputSummary: 'Added the API route.' },
-        {
-          name: 'UI',
-          status: 'failed',
-          outputSummary: 'This summary is not rendered.',
-          error: 'Typecheck failed\nadditional diagnostics',
-        },
-      ],
-    });
-
-    expect(result).toBe(
-      [
-        '## workflow handoff',
-        '### parallel group output: Implementation',
-        '#### branch 1: API',
-        'Added the API route.',
-        '#### branch 2: UI (failed)',
-        'Typecheck failed',
-      ].join('\n'),
-    );
-  });
-
-  it('degrades every branch body when the merged block exceeds 3000 characters', () => {
-    const result = buildParallelCarryForward({
-      groupName: 'Wide implementation',
-      branches: Array.from({ length: 5 }, (_, index) => ({
-        name: `Worker ${index + 1}`,
-        status: 'completed',
-        outputSummary: String(index + 1).repeat(700),
-      })),
-    });
-
-    expect(result).toContain(`#### branch 1: Worker 1\n${'1'.repeat(280)}`);
-    expect(result).not.toContain('1'.repeat(281));
-    expect(result).toContain(`#### branch 5: Worker 5\n${'5'.repeat(280)}`);
-    expect(result).not.toContain('5'.repeat(281));
   });
 });

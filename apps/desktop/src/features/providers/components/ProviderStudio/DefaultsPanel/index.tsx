@@ -24,7 +24,6 @@ import { DefaultsGroup } from './DefaultsGroup';
 import { RoleRow } from './RoleRow';
 import { RunsSection } from './RunsSection';
 import { TaskModelRow } from './TaskModelRow';
-import { ClassifyRequestsRow } from './ClassifyRequestsRow';
 import { OrchestratorModelPickRow } from './OrchestratorModelPickRow';
 import { ProvidersInOrder } from './ProvidersInOrder';
 import { PinnedOffLine } from './PinnedOffLine';
@@ -181,10 +180,7 @@ export const DefaultsPanel = ({ workspaceId, scopeLabel = null, focusSection }: 
         </Band>
 
         <Band label="Choosing models" ariaLabel="Choosing models" headingLevel={2} inset="content">
-          <div className="flex flex-col">
-            <OrchestratorModelPickRow workspaceId={workspaceId} />
-            <ClassifyRequestsRow />
-          </div>
+          <OrchestratorModelPickRow workspaceId={workspaceId} />
         </Band>
 
         <Band label="Chat" ariaLabel="Chat" headingLevel={2}>

@@ -613,3 +613,42 @@ fn a_bundle_from_before_the_after_merge_rule_imports_without_one() {
             .expect("an older bundle still parses");
     assert_eq!(overrides.after_merge, None);
 }
+
+#[test]
+fn a_bundle_carrying_the_retired_classify_requests_key_imports_and_skips_it() {
+    let conn = export_conn();
+    let bundle: ConfigBundle = serde_json::from_value(serde_json::json!({
+        "schemaVersion": SCHEMA_VERSION,
+        "exportedAt": "2026-01-01T00:00:00Z",
+        "workspaces": [],
+        "skills": [],
+        "phaseTemplates": [],
+        "permissionRules": [],
+        "budgetRules": [],
+        "appPreferences": {
+            "editorBinary": "zed",
+            "classifyRequests": "true",
+            "models.classifyRequests": "true",
+        },
+    }))
+    .expect("a bundle with the retired key still parses");
+
+    apply_bundle(&conn, bundle, &HashMap::new(), &HashMap::new(), false).expect("import failed");
+
+    let editor: Option<String> = conn
+        .query_row(
+            "SELECT value FROM settings WHERE key = 'editor.binary'",
+            [],
+            |row| row.get(0),
+        )
+        .ok();
+    assert_eq!(editor.as_deref(), Some("zed"));
+    let retired: i64 = conn
+        .query_row(
+            "SELECT COUNT(*) FROM settings WHERE key = 'models.classifyRequests'",
+            [],
+            |row| row.get(0),
+        )
+        .unwrap();
+    assert_eq!(retired, 0);
+}
