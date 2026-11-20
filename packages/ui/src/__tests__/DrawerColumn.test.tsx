@@ -3,7 +3,8 @@
 import { createElement, useSyncExternalStore, type ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
-import { DrawerColumn, type DrawerColumnFrame } from '../components/DrawerColumn';
+import { DrawerColumn } from '../components/DrawerColumn';
+import type { DrawerColumnFrame } from '../components/drawerColumnProps';
 import { READER_DRAWER_STORAGE_KEY, RIGHT_DRAWER_STORAGE_KEY } from '../drawerWidthKeys';
 import {
   DRAWER_GUTTER,
@@ -265,105 +266,51 @@ describe('DrawerColumn over the page', () => {
     expect(panel().style.width).toBe(`${600 - DRAWER_GUTTER * 2 + DRAWER_GUTTER}px`);
   });
 
-  it('covers the page with a scrim only while it lies over it', () => {
+  it('draws no veil and never makes the page inert while it lies over it', () => {
     stubColumnWidth(678);
-    const { unmount } = renderColumn('drafts');
+    const { container } = renderColumn('drafts');
 
-    expect(scrim()?.getAttribute('aria-hidden')).toBe('true');
-    expect(scrim()?.className).toContain('bg-scrim');
-    expect(scrim()?.className).toContain('inset-0');
-    unmount();
-
-    stubColumnWidth(1094);
-    renderColumn('drafts');
-
+    expect(panel().getAttribute('data-drawer-mode')).toBe('overlay');
     expect(scrim()).toBeNull();
+    expect(pageOf(container).hasAttribute('inert')).toBe(false);
+    expect(
+      container.querySelector('[data-drawer-main] [inert], [data-drawer-main][inert]'),
+    ).toBeNull();
   });
 
-  it('draws no scrim for a closed drawer, however narrow the column', () => {
-    stubColumnWidth(678);
-    renderColumn(null);
-
-    expect(scrim()).toBeNull();
-  });
-
-  it('puts the scrim under the card and over the page', () => {
+  it('holds the closed width beside the page with a spacer while it lies over it', () => {
     stubColumnWidth(678);
     const { container } = renderColumn('drafts');
     const order = Array.from(container.firstElementChild?.children ?? []);
+    const spacer = container.querySelector<HTMLElement>('[data-drawer-spacer]');
 
-    expect(order.indexOf(pageOf(container))).toBeLessThan(order.indexOf(scrim() as HTMLElement));
-    expect(order.indexOf(scrim() as HTMLElement)).toBeLessThan(order.indexOf(panel()));
+    expect(spacer?.style.width).toBe(`${drawerAsideWidthOf({ width: 0, mode: 'closed' })}px`);
+    expect(order.indexOf(pageOf(container))).toBeLessThan(order.indexOf(spacer as HTMLElement));
   });
 
-  it('rounds the scrim with the corners of the sheet it dims', () => {
+  it('sends a click on the page to the page and leaves the drawer open', () => {
     stubColumnWidth(678);
-    const { container, unmount } = render(
-      <DrawerColumn
-        main={<div>main</div>}
-        drawer={<div>drafts</div>}
-        frame="sheet"
-        sheetEdge="wrapped"
-        ariaLabel="Side panel"
-        resizeLabel="Resize side panel"
-      />,
-    );
-
-    expect(pageOf(container).className).toContain('rounded-l-frame');
-    expect(scrim()?.className).toContain('rounded-l-frame');
-    unmount();
-
+    const onPage = vi.fn();
+    const onEscape = vi.fn();
+    cleanups.push(registerEscapeLayer(onEscape));
     render(
       <DrawerColumn
-        main={<div>main</div>}
+        main={
+          <button type="button" onClick={onPage}>
+            page action
+          </button>
+        }
         drawer={<div>drafts</div>}
-        frame="sheet"
-        sheetEdge="flush"
         ariaLabel="Side panel"
         resizeLabel="Resize side panel"
       />,
     );
 
-    expect(scrim()?.className).not.toMatch(/rounded/);
-  });
+    fireEvent.click(screen.getByRole('button', { name: 'page action' }));
 
-  it('answers a scrim click with the layer on top of the escape stack, once', () => {
-    stubColumnWidth(678);
-    const under = vi.fn();
-    const over = vi.fn();
-    cleanups.push(registerEscapeLayer(under), registerEscapeLayer(over));
-    renderColumn('drafts');
-
-    fireEvent.click(scrim() as HTMLElement);
-
-    expect(over).toHaveBeenCalledOnce();
-    expect(under).not.toHaveBeenCalled();
-  });
-
-  it('keeps focus in a field while the scrim is pressed, so a draft answers first', () => {
-    stubColumnWidth(678);
-    renderColumn('drafts');
-
-    const isDefaultAllowed = fireEvent.mouseDown(scrim() as HTMLElement);
-
-    expect(isDefaultAllowed).toBe(false);
-  });
-
-  it('leaves the page inert only while the drawer lies over it', () => {
-    stubColumnWidth(678);
-    const over = renderColumn('drafts');
-
-    expect(pageOf(over.container).hasAttribute('inert')).toBe(true);
-    over.rerender(
-      <DrawerColumn
-        main={<div>main</div>}
-        drawer={null}
-        ariaLabel="Side panel"
-        resizeLabel="Resize side panel"
-      />,
-    );
-
-    expect(pageOf(over.container).hasAttribute('inert')).toBe(false);
+    expect(onPage).toHaveBeenCalledOnce();
+    expect(onEscape).not.toHaveBeenCalled();
+    expect(panel().getAttribute('data-drawer-mode')).toBe('overlay');
   });
 
   it('moves focus into the card when it opens over the page', () => {
@@ -722,10 +669,10 @@ describe('DrawerColumn as two containers', () => {
 
 describe('DrawerColumn one rule for every width', () => {
   it.each([
-    ['side', 927, 'overlay'],
-    ['side', 1024, 'push'],
-    ['reader', 1343, 'overlay'],
-    ['reader', 1344, 'push'],
+    ['side', 911, 'overlay'],
+    ['side', 912, 'push'],
+    ['reader', 1103, 'overlay'],
+    ['reader', 1104, 'push'],
   ] as const)('lays the %s drawer at a %i column as %s', (sizing, width, mode) => {
     stubColumnWidth(width);
     renderSized(sizing);
@@ -748,7 +695,7 @@ describe('DrawerColumn one rule for every width', () => {
 
     expect(panel().getAttribute('data-drawer-mode')).toBe('overlay');
     expect(panel().style.width).toBe(`${READER_DRAWER_DEFAULT + DRAWER_GUTTER}px`);
-    expect(scrim()).not.toBeNull();
+    expect(scrim()).toBeNull();
   });
 
   it('keeps a fixed overlay drawer over even a column wide enough to push', () => {
@@ -867,11 +814,10 @@ describe('DrawerColumn closing', () => {
     },
   );
 
-  it('keeps the card and the scrim mounted for the exit, then unmounts both', () => {
+  it('keeps the card mounted for the exit, then unmounts it', () => {
     openThenClose(678);
 
     expect(card()).not.toBeNull();
-    expect(scrim()).not.toBeNull();
     expect(card()?.textContent).toBe('drafts');
     expect(panel().getAttribute('data-drawer-exit')).toBe('');
 
@@ -881,17 +827,15 @@ describe('DrawerColumn closing', () => {
     advance(1);
 
     expect(card()).toBeNull();
-    expect(scrim()).toBeNull();
     expect(panel().getAttribute('data-drawer-exit')).toBeNull();
     expect(panel().style.width).toBe('0px');
   });
 
-  it('fades the card and the scrim out instead of cutting them', () => {
+  it('fades the card out instead of cutting it', () => {
     openThenClose(678);
 
     expect(card()?.className).toContain('animate-drawer-overlay-out');
     expect(card()?.className).toContain('motion-reduce:animate-drawer-fade-out');
-    expect(scrim()?.className).toContain('animate-drawer-fade-out');
   });
 
   it('treats the drawer as closed the moment the exit starts', () => {
@@ -906,15 +850,17 @@ describe('DrawerColumn closing', () => {
     expect(under).toHaveBeenCalledOnce();
   });
 
-  it('lets a click on the page behind go through at once: the scrim catches nothing', () => {
+  it('lets a click on the page behind go through at once', () => {
     const over = vi.fn();
     cleanups.push(registerEscapeLayer(over));
     openThenClose(678);
 
-    expect(scrim()?.className).toContain('pointer-events-none');
-    fireEvent.click(required(scrim()));
-    const isDefaultAllowed = fireEvent.mouseDown(required(scrim()));
+    fireEvent.click(screen.getByRole('button', { name: 'page action' }));
+    const isDefaultAllowed = fireEvent.mouseDown(
+      screen.getByRole('button', { name: 'page action' }),
+    );
 
+    expect(scrim()).toBeNull();
     expect(over).not.toHaveBeenCalled();
     expect(isDefaultAllowed).toBe(true);
   });
@@ -932,8 +878,6 @@ describe('DrawerColumn closing', () => {
     expect(card()?.className).not.toContain('animate-drawer-overlay-out');
     expect(card()?.className).not.toContain('animate-drawer-overlay-in');
     expect(card()?.hasAttribute('inert')).toBe(false);
-    expect(scrim()?.className).not.toContain('pointer-events-none');
-    expect(scrim()?.className).not.toContain('animate-fade-in');
   });
 
   it('plays the entry again when it reopens after the exit is over', () => {
@@ -943,7 +887,6 @@ describe('DrawerColumn closing', () => {
     view.rerender(column('drafts'));
 
     expect(card()?.className).toContain('animate-drawer-overlay-in');
-    expect(scrim()?.className).toContain('animate-fade-in');
   });
 
   it('after closing from over the page: the aside is back in the flow at its closed width', () => {
@@ -1141,7 +1084,6 @@ describe('DrawerColumn closing', () => {
     closeDrawerHolding(<div>{rows}</div>);
 
     expect(card()).not.toBeNull();
-    expect(scrim()).not.toBeNull();
     expect(panel().getAttribute('data-drawer-exit')).toBe('');
     expect(card()?.querySelectorAll('span').length).toBe(DRAWER_EXIT_MAX_ELEMENTS - 10);
   });

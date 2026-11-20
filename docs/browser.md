@@ -556,10 +556,11 @@ it; Esc inside the page goes to the page.
   of `OVERLAY_SELECTOR`, which also gates shortcuts. A studio page counts as
   well (`[data-studio-slot]`), but only for a view under it in the sheet: a
   Browser dock floating over a page at a narrow width sits above the page and
-  keeps its view. The other way round, a Terminal dock floating over the
-  Browser page makes the page's region inert (`[data-drawer-main][inert]`), and
-  a view inside that region is hidden, so the native view never paints over
-  the dock. While
+  keeps its view. The other way round, a panel floating over a live page counts
+  too: a dock or a detail that floats (`[data-panel-over-page]`) and a list
+  rail open over the page (`[data-rail-over-page]`) hide a view they cross,
+  so the native view never paints over the panel. A view inside the floating
+  panel itself stays shown. While
   one intersects the placeholder, the view is
   hidden; an overlay elsewhere in the window leaves it shown. While the view is
   hidden under an overlay the placeholder shows a cover (`BrowserCover`) on the

@@ -41,7 +41,8 @@ the full-width secondary New chat / New terminal button. A folded rail keeps a
 44px strip with "Show <rail name>" at the fold control's x and height, and the
 page's `foldedActions` under it (Settings' Search). The page
 owns the folded state through `useStudioRailFold` (remembered per surface, and
-forced under a pane of 880px), and a folded rail leaves `FilterButton` in the
+forced under 880px of page, measured by `StudioRailLayout` itself; Show then
+opens the list over the page), and a folded rail leaves `FilterButton` in the
 title row: a 28px secondary button with the lines icon (`ListFilter`) and the count of active
 filters, opening the same facets in a popover. Every filter trigger renders
 through `FilterButton` (Tasks included); `filter-triggers.test.ts` allows only
@@ -178,21 +179,20 @@ its track from the main area and the centred column re-centres in the space
 left of it, at its full width while that space is wide enough, in one 220ms
 ease-out move (`DURATION_BASE_MS`, none under reduced motion). A full tier work surface keeps its
 left edge and only gives up its right. One rule decides the mode: with
-`room = main - 16 - 48 - 560`, the drawer pushes while `room` covers its saved
-width (side tier 400 by default, reader and browser tiers 720) and otherwise lies over the
-page at `min(saved, main - 16)`; it is never squeezed. The browser tier is the one
-exception: while `room` is at least 720 it pushes at `min(saved, room)`, so a saved
-1400 in a 1700px main shrinks to 1076 and stays pushed, and it lies over the page only
-below 720 (`drawerLayoutOf`, `isShrinkable`). Pushing, the drawer is
+`room = main - 16 - 48 - 464` (560 beside a reader or the browser), every tier
+pushes at `min(saved, room)` while `room` holds its minimum (384 side, 480
+reader and browser), so a plan narrows to 536 at a 1280 window before it ever
+covers, and it lies over the page at `min(saved, main - 16)` only below that
+minimum (`drawerLayoutOf`). The saved width stays and comes back when the
+window grows. Pushing, the drawer is
 its own container beside the page container: both rounded on all four corners
 with `frame-edge`, 8px apart, the drawer 8px from the window's right edge, the
 drawer on `bg-drawer`. Over the page it spends no pixels on an inset: the
 container runs the full height of the sheet, flush with its top, bottom and
-right edges, with `rounded-l-frame`, a left border only and `shadow-xl`, over a
-`scrim` that fades in in 120ms. The
-page under it is `inert`, a click on the scrim dismisses the top escape layer
-like Esc, and focus moves into the card on open and back to the trigger on
-close.
+right edges, with `rounded-l-frame`, a left border only and `shadow-xl`. It is
+never modal: no veil, the page under it stays live, a click on the page goes to
+the page and leaves the panel open, and focus moves into the card on open and
+back to the trigger on close.
 
 **The drawer container.** `DrawerFrame` is its one frame: a header whose 32px row sits on the
 page title line (`PANE_RHYTHM.headerInset`, `PANE_RHYTHM.headerRow`), a
@@ -208,8 +208,7 @@ icon button in one tone. The `dock` is `px-4 py-3`, the same padding for the Ask
 composer, a transcript reply field and a script run's status line. The first
 control takes focus when the drawer opens (the composer of the dock when it has
 one, `Close` otherwise); Esc blurs a non-empty text field first and closes on
-the next press, and a click on the scrim does the same through the escape
-stack. A toast beside a pushing drawer stops at the container's left edge less the
+the next press. A toast beside a pushing drawer stops at the container's left edge less the
 12px gutter.
 
 **A form opens where you clicked.** One placement rule for every inline form:

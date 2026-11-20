@@ -28,24 +28,19 @@ export type DockGridFrame = {
 
 type SolvedParams = {
   readonly solved: SolvedDockFrame;
-  readonly isOverlay: boolean;
   readonly detailFallback: PanelPairLayout['detail'];
 };
 
-export const dockGridFrameOf = ({
-  solved,
-  isOverlay,
-  detailFallback,
-}: SolvedParams): DockGridFrame => {
+export const dockGridFrameOf = ({ solved, detailFallback }: SolvedParams): DockGridFrame => {
   const columns = solved.columns.map((column) => ({
     width: column.box.width,
     dragMax: column.dragMax,
     panes: column.panes.map((pane) => ({ key: pane.id, weight: Math.max(1, pane.box.height) })),
   }));
-  const isPush = solved.mode === 'push' && !solved.isDetailOver && !isOverlay;
   return {
     pair: {
-      mode: isPush ? 'push' : 'overlay',
+      mode: solved.mode === 'push' ? 'push' : 'overlay',
+      isDetailOver: solved.mode === 'push' && solved.isDetailOver,
       dock: {
         width: dockGridSpanOf({ columns }),
         dragMax: columns[0]?.dragMax ?? 0,

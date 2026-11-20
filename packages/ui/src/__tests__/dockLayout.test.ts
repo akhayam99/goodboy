@@ -331,3 +331,138 @@ describe('a narrow window of 1024 by 700', () => {
     expect(narrow.rail.width).toBe(TOOL_RAIL_WIDTH_PX.narrow);
   });
 });
+
+type TableCell = {
+  readonly mode: 'push' | 'over';
+  readonly isDetailOver: boolean;
+  readonly isStacked?: boolean;
+  readonly widths?: ReadonlyArray<number>;
+};
+
+type TableRow = {
+  readonly name: string;
+  readonly columns: ReadonlyArray<DockColumn>;
+  readonly detail: DockPane | null;
+  readonly at: Readonly<Record<1024 | 1280 | 1440 | 1920, TableCell>>;
+};
+
+const PUSHED = { mode: 'push', isDetailOver: false } as const;
+const DETAIL_OVER = { mode: 'push', isDetailOver: true } as const;
+
+const SIZING_TABLE: ReadonlyArray<TableRow> = [
+  {
+    name: 'nothing open',
+    columns: [],
+    detail: null,
+    at: { 1024: PUSHED, 1280: PUSHED, 1440: PUSHED, 1920: PUSHED },
+  },
+  {
+    name: 'Ask alone',
+    columns: [],
+    detail: ASK,
+    at: {
+      1024: { ...PUSHED, widths: [400] },
+      1280: { ...PUSHED, widths: [400] },
+      1440: { ...PUSHED, widths: [400] },
+      1920: { ...PUSHED, widths: [400] },
+    },
+  },
+  {
+    name: 'a plan alone',
+    columns: [],
+    detail: READER,
+    at: {
+      1024: DETAIL_OVER,
+      1280: { ...PUSHED, widths: [536] },
+      1440: { ...PUSHED, widths: [696] },
+      1920: { ...PUSHED, widths: [720] },
+    },
+  },
+  {
+    name: 'Ask and Terminal',
+    columns: NARROW,
+    detail: ASK,
+    at: {
+      1024: { ...DETAIL_OVER, widths: [400] },
+      1280: { ...DETAIL_OVER, widths: [400] },
+      1440: { ...PUSHED, widths: [396, 384] },
+      1920: { ...PUSHED, widths: [400, 400] },
+    },
+  },
+  {
+    name: 'a plan and Terminal',
+    columns: NARROW,
+    detail: READER,
+    at: {
+      1024: { ...DETAIL_OVER, widths: [400] },
+      1280: { ...DETAIL_OVER, widths: [400] },
+      1440: { ...DETAIL_OVER, widths: [400] },
+      1920: { ...PUSHED, widths: [720, 400] },
+    },
+  },
+  {
+    name: 'Terminal and Browser',
+    columns: PAIR,
+    detail: null,
+    at: {
+      1024: { mode: 'over', isDetailOver: false, isStacked: true },
+      1280: { ...PUSHED, isStacked: true },
+      1440: { ...PUSHED, isStacked: true },
+      1920: { ...PUSHED, isStacked: false },
+    },
+  },
+];
+
+const PLAN_WIDTHS = [1024, 1280, 1440, 1920] as const;
+
+describe('the sizing table of the plan: push, then shrink, then float the detail alone', () => {
+  it.each(SIZING_TABLE.flatMap((row) => PLAN_WIDTHS.map((width) => ({ ...row, width }))))(
+    'lays out $name at $width',
+    ({ columns, detail, at, width }) => {
+      const layout = layoutAt({ width, columns, detail });
+      const expected = at[width];
+      const pushedWidths = [
+        ...(layout.detail !== null && !layout.isDetailOver ? [layout.detail.box.width] : []),
+        ...layout.columns.map((column) => column.box.width),
+      ];
+
+      expect(layout.mode).toBe(expected.mode);
+      expect(layout.isDetailOver).toBe(expected.isDetailOver);
+      if (expected.isStacked !== undefined) {
+        expect(layout.isStacked).toBe(expected.isStacked);
+      }
+      if (expected.widths !== undefined) {
+        expect(pushedWidths).toEqual(expected.widths);
+      }
+    },
+  );
+
+  it.each(PLAN_WIDTHS)(
+    'keeps the tools beside the page and floats only the detail at %i, three panels open',
+    (width) => {
+      const layout = layoutAt({ width, columns: PAIR, detail: READER });
+
+      if (layout.mode === 'over') {
+        expect(layout.isDetailOver).toBe(false);
+        return;
+      }
+      expect(layout.page.width).toBeGreaterThanOrEqual(
+        pushReserveOf({ sizing: 'reader' }) - SHELL_GUTTER_PX * 2,
+      );
+    },
+  );
+
+  it('lays everything over the page when pushing is barred, whatever the room', () => {
+    const layout = dockLayoutOf({
+      windowWidth: 2600,
+      windowHeight: HEIGHT,
+      top: TOP,
+      detail: READER,
+      columns: [],
+      canPush: false,
+    });
+
+    expect(layout.mode).toBe('over');
+    expect(layout.detail?.box.width).toBe(READER_DRAWER_DEFAULT);
+  });
+});

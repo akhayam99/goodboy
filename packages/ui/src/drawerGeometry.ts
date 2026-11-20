@@ -26,18 +26,12 @@ type TierBounds = {
   readonly min: number;
   readonly max: number;
   readonly fallback: number;
-  readonly isShrinkable?: boolean;
 };
 
 export const DRAWER_TIERS: Readonly<Record<DrawerSizing, TierBounds>> = {
   side: { min: RIGHT_DRAWER_MIN, max: RIGHT_DRAWER_MAX, fallback: RIGHT_DRAWER_DEFAULT },
   reader: { min: READER_DRAWER_MIN, max: READER_DRAWER_MAX, fallback: READER_DRAWER_DEFAULT },
-  browser: {
-    min: READER_DRAWER_MIN,
-    max: BROWSER_DRAWER_MAX,
-    fallback: READER_DRAWER_DEFAULT,
-    isShrinkable: true,
-  },
+  browser: { min: READER_DRAWER_MIN, max: BROWSER_DRAWER_MAX, fallback: READER_DRAWER_DEFAULT },
 };
 
 type PushParams = {
@@ -96,8 +90,7 @@ export const drawerLayoutOf = ({
 }: LayoutParams): DrawerLayout => {
   const tier = DRAWER_TIERS[sizing];
   const room = pushRoomOf({ mainWidthPx: main - contentInset, sizing });
-  const pushWidth =
-    tier.isShrinkable === true && room >= tier.min ? Math.min(savedWidth, room) : savedWidth;
+  const pushWidth = room >= tier.min ? Math.min(savedWidth, room) : savedWidth;
   if (placement === 'auto' && room >= pushWidth) {
     return {
       mode: 'push',
@@ -113,71 +106,13 @@ export const drawerLayoutOf = ({
   };
 };
 
-export type DrawerPanelSpec = {
-  readonly sizing: DrawerSizing;
-  readonly savedWidth: number;
-  readonly isOpen: boolean;
-};
-
 type PanelWidth = Pick<DrawerLayout, 'width' | 'dragMax'>;
 
 export type PanelPairLayout = {
   readonly mode: DrawerLayout['mode'];
+  readonly isDetailOver: boolean;
   readonly dock: PanelWidth;
   readonly detail: PanelWidth;
-};
-
-type PairParams = Omit<LayoutParams, 'sizing' | 'savedWidth'> & {
-  readonly dock: DrawerPanelSpec;
-  readonly detail: DrawerPanelSpec;
-};
-
-export const panelPairLayoutOf = ({
-  main,
-  dock,
-  detail,
-  placement = 'auto',
-  edgeWidth = 0,
-  contentInset = 0,
-}: PairParams): PanelPairLayout => {
-  const shared = { main, placement, edgeWidth, contentInset };
-  const dockAlone = drawerLayoutOf({ ...shared, sizing: dock.sizing, savedWidth: dock.savedWidth });
-  const detailAlone = drawerLayoutOf({
-    ...shared,
-    sizing: detail.sizing,
-    savedWidth: detail.savedWidth,
-  });
-  if (!dock.isOpen || !detail.isOpen) {
-    return {
-      mode: detail.isOpen ? detailAlone.mode : dockAlone.mode,
-      dock: dockAlone,
-      detail: detailAlone,
-    };
-  }
-  const dockTier = DRAWER_TIERS[dock.sizing];
-  const detailTier = DRAWER_TIERS[detail.sizing];
-  const sizing = dock.sizing === 'side' && detail.sizing === 'side' ? 'side' : 'reader';
-  const room = pushRoomOf({ mainWidthPx: main - contentInset, sizing }) - DRAWER_GUTTER;
-  const dockRoom = room - detail.savedWidth;
-  const dockWidth =
-    dockTier.isShrinkable === true && dockRoom >= dockTier.min
-      ? Math.min(dock.savedWidth, dockRoom)
-      : dock.savedWidth;
-  if (placement === 'auto' && dockRoom >= dockWidth) {
-    return {
-      mode: 'push',
-      dock: { width: dockWidth, dragMax: Math.min(dockTier.max, dockRoom) },
-      detail: { width: detail.savedWidth, dragMax: Math.min(detailTier.max, room - dockWidth) },
-    };
-  }
-  const overlayRoom = main - DRAWER_GUTTER * 3 - edgeWidth;
-  const detailWidth = Math.max(0, Math.min(detail.savedWidth, overlayRoom - dockTier.min));
-  const overlayDock = Math.min(dock.savedWidth, overlayRoom - detailWidth);
-  return {
-    mode: 'overlay',
-    dock: { width: overlayDock, dragMax: Math.min(dockTier.max, overlayRoom - detailWidth) },
-    detail: { width: detailWidth, dragMax: Math.min(detailTier.max, overlayRoom - overlayDock) },
-  };
 };
 
 type PairAsideParams = {

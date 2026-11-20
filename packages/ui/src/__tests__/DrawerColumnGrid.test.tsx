@@ -229,13 +229,30 @@ describe('DrawerColumn dock grid widths saved on the session', () => {
     expect(grid()?.style.gridTemplateColumns).toBe('460px 12px 800px');
   });
 
-  it('starts a column with no saved width from the shared width key of its size', () => {
+  it('starts a column with no saved width from the width key its size had before the upgrade', () => {
     localStorage.setItem(BROWSER_DRAWER_STORAGE_KEY, '840');
     stubColumn({ column: 2600 });
     const { spec } = specOf({ columns: [[TERMINAL], [BROWSER]], focus: 'browser' });
     renderGrid({ spec });
 
     expect(grid()?.style.gridTemplateColumns).toBe('400px 12px 840px');
+  });
+
+  it('never starts a tool column at the width a detail panel was dragged to', () => {
+    stubColumn({ column: 2600 });
+    const { spec } = specOf({ columns: [[TERMINAL]], focus: 'terminal' });
+    const view = renderGrid({ spec, detail: 'Ask' });
+
+    const detailHandle = screen.getByRole('separator', { name: 'Resize detail panel' });
+    fireEvent.keyDown(detailHandle, { key: 'ArrowLeft' });
+    fireEvent.keyDown(detailHandle, { key: 'ArrowLeft' });
+    view.unmount();
+    renderGrid({ spec });
+
+    expect(localStorage.getItem(RIGHT_DRAWER_STORAGE_KEY)).toBeNull();
+    expect(
+      screen.getByRole('separator', { name: 'Resize side panel' }).getAttribute('aria-valuenow'),
+    ).toBe('400');
   });
 
   it('hands a resized column to the session by the panel that sets its width', () => {

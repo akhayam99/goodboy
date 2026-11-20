@@ -1338,7 +1338,7 @@ state reads "v2 · v3". A failed write says "Couldn't save the plan.
 Your text is still here." inline and files the exception detail through
 `reportError`. **Esc** in edit mode leaves edit mode
 and never closes the drawer: the editor registers its own escape layer above
-the drawer's, so a scrim click does the same. A changed edit asks "Discard your
+the drawer's. A changed edit asks "Discard your
 edit?" first, and **Esc** again keeps editing.
 
 ### Pause is one admission check

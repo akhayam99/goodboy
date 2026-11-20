@@ -2,7 +2,8 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
-import { studioRailFoldKey, useStudioRailFold } from '../useStudioRailFold';
+import { StudioRailLayout } from '../components/StudioRailLayout';
+import { studioRailFoldKey, useStudioRailFold, type StudioRailFold } from '../useStudioRailFold';
 
 type ObserverCallback = (entries: ReadonlyArray<{ contentRect: { width: number } }>) => void;
 
@@ -36,10 +37,26 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
+type LayoutParams = {
+  readonly fold: StudioRailFold;
+};
+
+const Layout = ({ fold }: LayoutParams) => (
+  <StudioRailLayout
+    surface="inbox"
+    railLabel="Filters"
+    railWidth="standard"
+    rail={<p>rail</p>}
+    detail={<p>rows</p>}
+    isCollapsed={fold.isCollapsed}
+    onCollapsedChange={fold.setFolded}
+  />
+);
+
 const Probe = () => {
   const fold = useStudioRailFold({ surface: 'inbox', foldBelow: 880 });
   return (
-    <div ref={fold.paneRef}>
+    <>
       <p data-testid="state">{`${fold.isCollapsed ? 'collapsed' : 'docked'} ${fold.canDock ? 'can-dock' : 'cannot-dock'}`}</p>
       <button type="button" onClick={() => fold.setFolded(true)}>
         fold
@@ -47,16 +64,18 @@ const Probe = () => {
       <button type="button" onClick={() => fold.setFolded(false)}>
         dock
       </button>
-    </div>
+      <Layout fold={fold} />
+    </>
   );
 };
 
 const DefaultProbe = () => {
   const fold = useStudioRailFold({ surface: 'inbox', foldedByDefaultBelow: 1200 });
   return (
-    <div ref={fold.paneRef}>
+    <>
       <p data-testid="state">{`${fold.isCollapsed ? 'collapsed' : 'docked'} ${fold.canDock ? 'can-dock' : 'cannot-dock'}`}</p>
-    </div>
+      <Layout fold={fold} />
+    </>
   );
 };
 

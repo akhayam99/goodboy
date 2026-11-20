@@ -8,6 +8,7 @@ import { turnShellPair } from '../../../shared/shellFocus/turnShellPair';
 import { resizeShellColumn } from '../../../shared/shellFocus/resizeShellColumn';
 import { selectDrawerPlacement } from '../../../store/slices/drawer/selectDrawerPlacement';
 import { useAppStore } from '../../../store';
+import { detailWidthIdOf } from '../../../store/slices/drawer/detailWidthIdOf';
 import { drawerSizingOf } from '../../../store/slices/drawer/drawerSizingOf';
 import { selectDetailDrawer } from '../../../store/slices/drawer/selectDetailDrawer';
 import { selectDockDrawer } from '../../../store/slices/drawer/selectDockDrawer';
@@ -25,7 +26,10 @@ type ShellRight = {
   readonly isDetailMounted: boolean;
   readonly isDetailParked: boolean;
   readonly dockSizing: DrawerSizing;
-  readonly detailSizing: DrawerSizing;
+  readonly detailFrame: {
+    readonly detailSizing: DrawerSizing;
+    readonly detailKind: string | null;
+  };
   readonly placement: DrawerPlacement;
 };
 
@@ -43,6 +47,9 @@ export const useShellRight = ({}: Params): ShellRight => {
   );
   const detailSizing = useAppStore((state) =>
     drawerSizingOf({ drawer: selectDetailDrawer({ state }) }),
+  );
+  const detailKind = useAppStore((state) =>
+    detailWidthIdOf({ drawer: selectDetailDrawer({ state }) }),
   );
   const placement = useAppStore(selectDrawerPlacement);
   const drawer = useAppStore((state) => state.drawer);
@@ -78,6 +85,6 @@ export const useShellRight = ({}: Params): ShellRight => {
     isDetailMounted,
     isDetailParked: isDetailMounted && isStudioShown,
     dockSizing,
-    detailSizing,
+    detailFrame: { detailSizing, detailKind },
   };
 };

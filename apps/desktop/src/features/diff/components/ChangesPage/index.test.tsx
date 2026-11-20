@@ -176,7 +176,7 @@ const renderPage = ({
     vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function (
       this: HTMLElement,
     ) {
-      return this.hasAttribute('data-changes-page')
+      return this.hasAttribute('data-studio-rail')
         ? new DOMRect(0, 0, pageWidth, 800)
         : rectOf.call(this);
     });
@@ -504,6 +504,41 @@ describe('ChangesPage on a page too narrow for the rail', () => {
     expect(queryRail()).toBeNull();
     screen.getByRole('button', { name: 'Show files' });
     expect(localStorage.getItem(FOLD_KEY)).toBeNull();
+  });
+
+  it('opens the framed rail over the page below 1060px, and Esc folds it again', () => {
+    const host = document.createElement('div');
+    const pane = document.createElement('div');
+    document.body.append(host, pane);
+    const rectOf = HTMLElement.prototype.getBoundingClientRect;
+    vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function (
+      this: HTMLElement,
+    ) {
+      return this === pane ? new DOMRect(0, 0, 800, 800) : rectOf.call(this);
+    });
+    render(
+      <ChangesPage
+        sessionId={SESSION_ID}
+        workingDir={WORKTREE}
+        worktreePath={WORKTREE}
+        diff={diffOf(FILES)}
+        isReadOnly={false}
+        railSlot={{ host, pane }}
+      />,
+    );
+    act(() => observers.resizeAll());
+
+    expect(queryRail()).toBeNull();
+    fireEvent.click(within(host).getByRole('button', { name: 'Show files' }));
+
+    expect(host.contains(railOf())).toBe(true);
+    expect(railOf().dataset['railOverPage']).toBe('');
+    fireEvent.keyDown(window, { key: 'Escape' });
+    expect(queryRail()).toBeNull();
+    within(host).getByRole('button', { name: 'Show files' });
+    expect(localStorage.getItem(FOLD_KEY)).toBeNull();
+    host.remove();
+    pane.remove();
   });
 
   it('keeps the rail docked from 880px', () => {

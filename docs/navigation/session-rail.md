@@ -646,8 +646,8 @@ stays still (`StudioFrame` animates its `data-studio-motion` nodes, never the
 rail); a record panel open with the page fades in with it, and one
 opened later keeps the drawer's own motion. Moving between the shell rail and
 a page's rail keeps keyboard focus on the same tool (`railFocusMemo`). With a
-record panel shown as an overlay the rail stays where it is, above that panel's
-scrim, as it does above the shell's. It holds Terminal, Browser, Scripts, Ask
+record panel shown as an overlay the rail stays where it is, as it does on the
+shell. It holds Terminal, Browser, Scripts, Ask
 and Monitor (`RAIL_TOOLS`), with no heading above them. Each names itself under
 its icon, and the toolbar is named Tools for the reader. All five stay visible
 on every workspace page; Scripts and Ask are disabled without a session.
@@ -703,7 +703,7 @@ The column is a vertical toolbar with one tab stop. Up, Down, Home and End
 move it (`toolbarIndexAfter`). Its signal dots keep their reason in the
 button's accessible name: updating, failed, changed, or a finished script or
 terminal command. An overlay drawer leaves live tools at its right edge
-through `DrawerEdgeContext`. The page has a scrim and is inert until close.
+through `DrawerEdgeContext`. The page under it stays live: no veil, never inert.
 `drawerLayoutOf` decides push or overlay from the content width excluding
 both rails ([styling.md](../styling.md)).
 Folding the rail leaves the column in place.

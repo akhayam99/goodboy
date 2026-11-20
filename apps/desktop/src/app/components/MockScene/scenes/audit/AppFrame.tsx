@@ -109,7 +109,7 @@ export const AppFrame = ({ view, hasPane = false, hasDraft = false, center }: Pr
           isDockInStudio: shellRight.isDockInStudio,
           drawerSizing: shellRight.dockSizing,
           dockGrid: shellRight.dockGrid,
-          detailSizing: shellRight.detailSizing,
+          ...shellRight.detailFrame,
           drawerPlacement,
         })}
       />

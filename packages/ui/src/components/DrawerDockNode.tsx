@@ -11,7 +11,7 @@ type Props = {
 };
 
 export const DrawerDockNode = ({ dockGrid, frame, drawer, isFloating }: Props) => {
-  const { grid, layout, cells } = frame;
+  const { grid, cells } = frame;
   if (dockGrid === null || cells.length === 0) {
     return drawer;
   }
@@ -20,18 +20,10 @@ export const DrawerDockNode = ({ dockGrid, frame, drawer, isFloating }: Props) =
       gridRef={grid.gridRef}
       spec={dockGrid}
       cell={drawer}
-      columns={
-        grid.frame?.columns ?? [
-          {
-            width: layout.dock.width,
-            dragMax: layout.dock.dragMax,
-            panes: cells.map((cell) => ({ key: cell.key, weight: 1 })),
-          },
-        ]
-      }
+      columns={grid.frame.columns}
       handles={grid.handles}
       turn={grid.turn}
-      isFramed={grid.frame !== null}
+      isFramed={grid.isGrid}
       isFocusShown={frame.isFocusShown}
       isFloating={isFloating}
     />

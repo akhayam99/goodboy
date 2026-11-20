@@ -18,8 +18,8 @@ and no crumb, since the scopes rail already shows where you are, and below it `S
 `chrome` on Home) with the fold control and `Search settings` in its first row,
 the groups or the matching settings under it, and the page as the detail
 (`data-settings-detail`). The scopes rail folds like every page rail
-(`goodboy:studio-rail-folded:settings:v1`), but folds by itself only on a pane
-under 720px (`SETTINGS_RAIL_FOLD_BELOW`); its folded strip keeps Show and a
+(`goodboy:studio-rail-folded:settings:v1`) and folds by itself under 880px of
+page like every inner list; its folded strip keeps Show and a
 Search icon that opens the rail on the field. With no saved choice, the rail
 starts folded in a window under 1200px (`foldedByDefaultBelow`), so the page keeps
 room for its dense rows, and a saved choice wins either way: a docked rail stays
@@ -255,11 +255,18 @@ cut at the end, never in the middle; the group's`aria-label` keeps the full
   `onCollapsedChange`: the rail's first row then starts with a fold control
   ("Hide <rail name>", ⌥⌘B, pressed while the rail shows), a folded rail leaves
   a 44px strip with "Show <rail name>" at the same x and height, plus any
-  `foldedActions` the page passes under it (a page whose title row stands in
-  for the rail, like Notifications with its filter button, drops the strip
-  while the pane is too narrow to dock, `canUnfold`), and `useStudioRailFold` remembers the choice per surface
-  (`goodboy:studio-rail-folded:<studio>:v1`). Chat, Terminal, the Guide, the
-  changelog, Settings, Notifications and the file list of Changes fold this way.
+  `foldedActions` the page passes under it, and `useStudioRailFold` remembers
+  the choice per surface (`goodboy:studio-rail-folded:<studio>:v1`).
+  `StudioRailLayout` measures its own root and publishes the width per surface
+  (`studioRailPaneStore`), so no page hands it a ref: under 880px of page every
+  list folds, Show opens it over the page (`data-rail-over-page`, Esc or Hide
+  folds it again, nothing saved), and it docks again once there is room. A rail
+  portaled out of its page (the Agents rail of a run, the framed file list of
+  Changes) passes the page element as `pane` instead, and `hasPageOutside`, so
+  Show opens it over that page and Esc folds it there too. Chat, Terminal, the
+  Guide, the changelog, Settings, Notifications and the file list of Changes
+  fold this way; `regressions/studio-rail-folds.test.tsx` renders each at 800px
+  and expects its Show button.
   **⌥⌘B** (`innerColumn.toggle`) folds the inner column of the page you are
   on: each foldable column registers with `useInnerColumn` while its page
   shows (the session pages while no studio covers it, a page rail through

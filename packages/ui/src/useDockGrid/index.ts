@@ -6,12 +6,7 @@ import { dockGridTracksOf } from '../dockGridTracksOf';
 import { dockLeadSizingOf } from '../dockLeadSizingOf';
 import type { DockPairTurn } from '../dockPairTurnContext';
 import { DOCK_FOCUS_DETAIL, type DockGridCell, type DockGridSpec } from '../dockGridSpec';
-import {
-  DRAWER_TIERS,
-  type DrawerPlacement,
-  type DrawerSizing,
-  type PanelPairLayout,
-} from '../drawerGeometry';
+import { DRAWER_TIERS, type DrawerPlacement, type DrawerSizing } from '../drawerGeometry';
 import { ArrowLeftRight, ArrowUpDown } from '../icons';
 import { routedHandleOf } from '../routedHandleOf';
 import { savedHandleOf } from '../savedHandleOf';
@@ -31,6 +26,7 @@ type SolvedPane = {
 export type DockSolveParams = {
   readonly columnWidth: number;
   readonly railWidth: number;
+  readonly canPush: boolean;
   readonly detail: SolvedPane | null;
   readonly columns: ReadonlyArray<{ readonly panes: ReadonlyArray<SolvedPane> }>;
 };
@@ -39,11 +35,12 @@ type DetailSpec = {
   readonly isShown: boolean;
   readonly sizing: DrawerSizing;
   readonly savedWidth: number;
-  readonly fallback: PanelPairLayout['detail'];
 };
 
 type Params = {
-  readonly spec: DockGridSpec | null;
+  readonly columns: ReadonlyArray<ReadonlyArray<DockGridCell>>;
+  readonly cellCount: number;
+  readonly onResize: DockGridSpec['onResize'];
   readonly columnWidth: number | null;
   readonly railWidth: number;
   readonly placement: DrawerPlacement;
@@ -57,7 +54,8 @@ type Params = {
 
 type DockGridLayout = {
   readonly cellCount: number;
-  readonly frame: DockGridFrame | null;
+  readonly frame: DockGridFrame;
+  readonly isGrid: boolean;
   readonly gridRef: RefObject<HTMLDivElement | null>;
   readonly handles: ReadonlyArray<SplitHandleProps | null>;
   readonly turn: Omit<DockPairTurn, 'onTurn'> | null;
@@ -99,7 +97,9 @@ const SIDE_TURN: Omit<DockPairTurn, 'onTurn'> = {
 };
 
 export const useDockGrid = ({
-  spec,
+  columns,
+  cellCount,
+  onResize,
   columnWidth,
   railWidth,
   placement,
@@ -111,19 +111,19 @@ export const useDockGrid = ({
   resizeLabel,
 }: Params): DockGridLayout => {
   const gridRef = useRef<HTMLDivElement | null>(null);
-  const columns = spec?.columns ?? [];
-  const cellCount = columns.reduce((total, column) => total + column.length, 0);
+  const savedWidthOf = ({ cell }: CellParams): number =>
+    cell.savedWidth ?? tiers[cell.sizing].width;
   const sizingOf = new Map(columns.flat().map((cell) => [cell.key, cell.sizing] as const));
   const leadOf = ({ keys }: KeysParams): DrawerSizing =>
     dockLeadSizingOf({ sizings: keys.map((key) => sizingOf.get(key) ?? 'side') });
-  const savedWidthOf = ({ cell }: CellParams): number =>
-    cell.savedWidth ?? tiers[cell.sizing].width;
+  const isAnyShown = columns.length > 0 || detail.isShown;
   const solveColumns = ({ columns: shape }: ColumnsParams): SolvedDockFrame | null =>
-    columnWidth === null
+    columnWidth === null || !isAnyShown
       ? null
       : solve({
           columnWidth,
           railWidth,
+          canPush: placement !== 'overlay',
           detail: detail.isShown
             ? { id: DOCK_FOCUS_DETAIL, sizing: detail.sizing, savedWidth: detail.savedWidth }
             : null,
@@ -135,32 +135,22 @@ export const useDockGrid = ({
             })),
           })),
         });
-  const isGrid = cellCount > 1;
-  const solved = isGrid ? solveColumns({ columns }) : null;
-  const frameOf = (): DockGridFrame | null => {
-    if (!isGrid) {
-      return null;
-    }
-    if (solved === null) {
-      return unmeasuredDockGridOf({
-        columns,
-        savedWidthOf,
-        detail: detail.fallback,
-      });
-    }
-    return dockGridFrameOf({
-      solved,
-      isOverlay: placement === 'overlay',
-      detailFallback: detail.fallback,
-    });
+  const solved = solveColumns({ columns });
+  const detailFallback = {
+    width: detail.savedWidth,
+    dragMax: DRAWER_TIERS[detail.sizing].max,
   };
-  const frame = frameOf();
+  const frame =
+    solved === null
+      ? unmeasuredDockGridOf({ columns, savedWidthOf, detail: detailFallback, placement })
+      : dockGridFrameOf({ solved, detailFallback });
+  const isGrid = cellCount > 1;
   const turned = isGrid ? turnedDockColumnsOf({ columns }) : null;
   const canTurn =
     turned !== null &&
     fitsAsDrawn({ solved }) &&
     fitsAsDrawn({ solved: solveColumns({ columns: turned }) });
-  const boxes = frame?.columns ?? [];
+  const boxes = frame.columns;
   const previewColumn = useCallback(
     ({ index, width, from }: ColumnPreviewParams) => {
       const next = from.map((box, at) => (at === index ? { ...box, width } : box));
@@ -184,7 +174,7 @@ export const useDockGrid = ({
         handle: tiers[sizing].handleProps,
         key: keys.find((key) => sizingOf.get(key) === sizing) ?? null,
         baseWidth: DRAWER_TIERS[sizing].fallback,
-        onResize: spec?.onResize,
+        onResize,
       }),
       route,
       preview: previewOf({ index }),
@@ -200,6 +190,7 @@ export const useDockGrid = ({
   return {
     cellCount,
     frame,
+    isGrid,
     gridRef,
     handles,
     turn: canTurn ? (columns.length === 2 ? STACK_TURN : SIDE_TURN) : null,
