@@ -618,7 +618,29 @@ export const KEY_ROWS: ReadonlyArray<Row> = [
       lens('workflows'),
       placeRowIs({ key: PLACE_ROWS.runsFilter, value: 'running' }),
       () => heading('Runs'),
+      async () => {
+        await screen.findByRole('button', { name: 'Clear filter' });
+      },
     ),
+  }),
+  keyRow({
+    id: 'lens.workflows',
+    also: ['session.spawned'],
+    note: 'after Runs › Running, opens every run and drops the Running filter',
+    open: async () => {
+      await press('session.spawned')();
+      await screen.findByRole('button', { name: 'Clear filter' });
+      await press('lens.workflows')();
+    },
+    lands: both(lens('workflows'), async () => {
+      await waitFor(() => {
+        const stack = currentStack(useAppStore.getState());
+        expect(stack.entries[stack.index]?.focus.returnRows?.[PLACE_ROWS.runsFilter]).toBe(
+          undefined,
+        );
+      });
+      expect(screen.queryByRole('button', { name: 'Clear filter' })).toBeNull();
+    }),
   }),
   pressRow({
     id: 'session.terminal',
@@ -990,7 +1012,7 @@ export const MORE_KEY_ROWS: ReadonlyArray<Row> = [
   }),
   keyRow({
     id: 'slot.close',
-    note: 'File > Close the Drawer in the macOS menu bar closes the top of the slot',
+    note: 'File > Close the panel in the macOS menu bar closes the top of the slot',
     open: async (ctx) => {
       useAppStore.getState().navigate({ to: sessionPlace({ sessionId: ctx.sessionId }) });
       await settle();

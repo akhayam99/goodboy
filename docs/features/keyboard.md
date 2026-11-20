@@ -94,7 +94,8 @@ Move through Goodboy, change a shortcut and stop an agent without leaving the ke
 - **⌘⌥C** opens the session's Context tab. The former Goal, Decisions and Summary chords are retired; section links still reach their card. On a page such as Tasks, a session key leaves the page first.
 - **⌘⌥F** opens the Changes tab of the session's branch on its Branch page, or the session's file versions when it has no branch. On a pull request page it picks that page's Changes tab.
 - **⌘⌥X** opens that Changes tab on All files.
-- **⌘⌥A** opens Runs on what is running.
+- **⌘⌥A**, listed as Runs › Running, opens Runs on what is running. A **Running** chip above the list shows the filter, and **Clear filter** removes it. With nothing running the page says **Nothing is running**.
+- **⌘⌥W** opens Runs with no filter, and clears one that is set.
 - **⌘1** to **⌘9** switch workspaces.
 - **⌘[** and **⌘]** walk your history: the last 50 places of this window, empty after a reload.
 - **⌘↑** and **Esc** go one crumb up: to the parent of the page, and the same after a reload. The page of a top agent goes back to its session's Overview, or to the Runs tab of the pull request you opened it from. A session tab has no parent, so ⌘↑ goes to the board.
@@ -143,7 +144,7 @@ Move through Goodboy, change a shortcut and stop an agent without leaving the ke
 
 On a Mac the menu bar carries the same keys.
 
-- File holds New Session, New Chat, New Terminal, New Workspace, Close (**⌘W**) and Close the Drawer (**⌘⇧W**).
+- File holds New Session, New Chat, New Terminal, New Workspace, Close (**⌘W**) and Close the panel (**⌘⇧W**). Close the panel reads the same words as Settings, with no capital.
 - Edit holds Search.
 - View holds Show or Hide Sessions (**⌘B**), Search or Run, zoom, Reload (**⌘R**) and Reload Goodboy (**⌘⇧R**).
 - Go holds Back and Forward, then Board, Tasks, Workflows, Chat, Connections, Impact, Monitoring and Notifications. After a separator, Show or Hide Terminal and Show or Hide Browser open those tools on the right rail.
@@ -246,6 +247,7 @@ This part is for contributors and agents who change the feature.
 - Changed shortcuts: the local setting `shortcuts.overrides`, by registry id.
 - One spelling per key: hints read the shortcut registry through the `shortcut` prop or `shortcutGlyphs`.
 - Stop the running agent: the registry id is `agent.stop`.
+- Runs › Running: ⌘⌥A writes `runs.filter` (`openToolPane`), `useRunsFilter` reads it on the Runs page, and ⌘⌥W and Clear filter drop it (`clearRunsFilter`).
 - Reload where you are: `view.reload` runs `reloadWhereYouAre`, which picks one surface registered with `useReloadSurface` (`pickReloadSurface`). `app.reload` reloads the window. `scopedReload.test.tsx` pins both.
 - Service usage: `serviceUsageCardOf` builds the card with CPU and memory.
 - Browser: the pane is the `browser` drawer kind in `features/browser/`, and [browser.md](../browser.md#the-pane) owns the address rule, the live tabs and the overlay rule. The page is the `browser` studio kind (`BrowserStudio`), and [browser.md](../browser.md#the-page) owns its groups, its route and the view owner rule. `promoteBrowserTab` and `demoteBrowserTab` move a tab between them ([browser.md](../browser.md#moves)).

@@ -1,17 +1,18 @@
+import { NAMES } from '../utils/names';
 import type { ShortcutEntry } from './registry';
 
 export const WINDOW_SHORTCUTS = {
   'app.close': {
     combo: 'cmd+KeyW',
     offMacCombo: 'ctrl+shift+KeyW',
-    label: 'Close the nearest thing',
+    label: NAMES.closeOrGoBack,
     plane: 'app',
     group: 'window',
   },
   'slot.close': {
     combo: 'cmd+shift+KeyW',
     offMacCombo: 'ctrl+F4',
-    label: 'Close the drawer',
+    label: NAMES.closeThePanel,
     plane: 'session',
     group: 'window',
   },

@@ -441,7 +441,7 @@ export const SHORTCUTS = {
   'session.spawned': {
     combo: 'cmd+alt+KeyA',
     offMacCombo: 'ctrl+shift+alt+KeyA',
-    label: NAMES.agents,
+    label: NAMES.runsRunning,
     plane: 'lens',
     group: 'session',
   },

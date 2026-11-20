@@ -34,6 +34,7 @@ const MINOR_WORDS: ReadonlySet<string> = new Set([
 
 const MAC_NAMES: Readonly<Record<string, string>> = {
   'app.close': 'Close',
+  'slot.close': SHORTCUTS['slot.close'].label,
   'zoom.reset': 'Actual Size',
 };
 
@@ -158,6 +159,12 @@ describe('the macOS menu bar is a view of the shortcut registry', () => {
       .map(({ id, label }) => ({ id, label, expected: expectedLabel({ id }) }))
       .filter(({ label, expected }) => label !== expected);
     expect(drift).toEqual([]);
+  });
+
+  it('names the panel key with the registry words, so the capital never splits', () => {
+    const row = menuCommands.find(({ id }) => id === 'slot.close');
+    expect(row?.label).toBe(SHORTCUTS['slot.close'].label);
+    expect(row?.label).toBe('Close the panel');
   });
 
   it('lists the Go menu destinations in the destination list order', () => {

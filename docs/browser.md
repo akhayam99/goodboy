@@ -763,7 +763,7 @@ sits in and the address, and one function opens it (`openInBrowser`).
   `window` through `replayCombo`, so the dispatcher and the scopes decide what it
   does; a chord from a tab that is already closed is dropped. ⌘R and ⌘⇧R are
   never page keys: the menu bar brings them to the window (see ⌘R above), and
-  so does ⌘⇧W (File, Close the Drawer), the way out of a Browser laid over the
+  so does ⌘⇧W (File, Close the panel), the way out of a Browser laid over the
   page in a narrow window. A bare Escape never leaves the page.
   On Linux and Windows there is no monitor: after a click inside a tab none of
   these chords fire until focus returns to Goodboy's chrome (a click on the
