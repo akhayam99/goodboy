@@ -13,13 +13,11 @@ import { StudioShell } from '../../../shared/components/StudioShell';
 import { StudioDetail } from '../../../shared/components/StudioShell/StudioDetail';
 import { useShortcut } from '../../../shared/keyboard/useShortcut';
 import { useAppStore } from '../../../store';
-import { mostRecentChat } from '../../../store/slices/chat-last-open/selectChatDoor';
+import { nextChatAfter, type RemovedChats } from '../nextChatAfter';
 import { ChatList } from './ChatList';
+import { chatGroupRowsOf } from './ChatList/chatGroupRowsOf';
+import { chatOrderOf } from './ChatList/chatOrderOf';
 import { ChatRoom } from './ChatRoom';
-
-type LeaveParams = {
-  readonly removedIds: ReadonlyArray<ChatId>;
-};
 
 type Props = {
   readonly workspaceId: WorkspaceId;
@@ -75,11 +73,19 @@ export const ChatStudio = ({ workspaceId, chatId, onClose }: Props) => {
 
   useShortcut('chat.newHere', startNewChat);
 
-  const leave = ({ removedIds }: LeaveParams): void => {
+  const leave = ({ removedIds, order }: RemovedChats): void => {
     if (chatId === null || !removedIds.includes(chatId)) {
       return;
     }
-    select(mostRecentChat({ chats, excluding: removedIds }));
+    select(nextChatAfter({ order, selectedId: chatId, removedIds }));
+  };
+
+  const leaveRoom = (): void => {
+    if (chatId === null) {
+      return;
+    }
+    const groups = chatGroupRowsOf({ chats, needle: '', now: Date.now() });
+    leave({ removedIds: [chatId], order: chatOrderOf({ groups }) });
   };
 
   const activeChat =
@@ -113,8 +119,8 @@ export const ChatStudio = ({ workspaceId, chatId, onClose }: Props) => {
                 chats={chats}
                 selectedId={activeChat?.id ?? null}
                 onSelect={select}
-                onArchived={(archivedIds) => leave({ removedIds: archivedIds })}
-                onDeleted={(deletedIds) => leave({ removedIds: deletedIds })}
+                onArchived={leave}
+                onDeleted={leave}
               />
             )
           }
@@ -140,7 +146,7 @@ export const ChatStudio = ({ workspaceId, chatId, onClose }: Props) => {
                   workspaceId={workspaceId}
                   chat={activeChat}
                   onCreated={select}
-                  onRemoved={() => leave({ removedIds: chatId === null ? [] : [chatId] })}
+                  onRemoved={leaveRoom}
                   onNewChat={startNewChat}
                 />
               </StudioDetail>

@@ -6450,11 +6450,6 @@
       "count": 5
     }
   },
-  "apps/desktop/src/features/workspace-chat/components/ChatList/ChatRenameInput.tsx": {
-    "@typescript-eslint/naming-convention": {
-      "count": 1
-    }
-  },
   "apps/desktop/src/features/workspace-chat/components/ChatList/index.test.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 9

@@ -34,6 +34,7 @@ import {
   seedChats,
   type ChatSeed,
 } from '../../../__tests__/helpers/chatListFixtures';
+import { ObjectMenuProvider } from '../../actions/components/ObjectMenuProvider';
 import { ToastProvider } from '../../../shared/components/Toast';
 import {
   STORE_IMPORT_TIMEOUT_MS,
@@ -68,11 +69,13 @@ const Host = () => {
   }
   return (
     <ToastProvider>
-      <ChatStudio
-        workspaceId={CHAT_WORKSPACE_ID}
-        chatId={studio.chatId}
-        onClose={() => useAppStore.getState().closeStudio()}
-      />
+      <ObjectMenuProvider>
+        <ChatStudio
+          workspaceId={CHAT_WORKSPACE_ID}
+          chatId={studio.chatId}
+          onClose={() => useAppStore.getState().closeStudio()}
+        />
+      </ObjectMenuProvider>
     </ToastProvider>
   );
 };
@@ -186,7 +189,7 @@ describe('the Chat door', () => {
     expect(openedChat()).toBe(chatIdOf({ key: 'refund' }));
   });
 
-  it('lands on the next most recent chat after the open one is archived', async () => {
+  it('lands on the chat below after the open one is archived, then on the one above', async () => {
     await renderStudio();
     fireEvent.click(rowButton('Refund idempotency options'));
     fireEvent.click(screen.getByRole('checkbox', { name: 'Select Refund idempotency options' }));
@@ -195,7 +198,40 @@ describe('the Chat door', () => {
       within(screen.getByRole('toolbar')).getByRole('button', { name: 'Archive 1 chat' }),
     );
 
+    await waitFor(() => expect(openedChat()).toBe(chatIdOf({ key: 'changes' })));
+
+    fireEvent.contextMenu(rowButton('What changed in payments-api'));
+    fireEvent.click(await screen.findByRole('menuitem', { name: 'Archive' }));
+
     await waitFor(() => expect(openedChat()).toBe(chatIdOf({ key: 'consent' })));
+  });
+
+  it('puts the chat and the selection back on Undo', async () => {
+    await renderStudio();
+    fireEvent.click(rowButton('Refund idempotency options'));
+    fireEvent.contextMenu(rowButton('Refund idempotency options'));
+    fireEvent.click(await screen.findByRole('menuitem', { name: 'Archive' }));
+    await waitFor(() => expect(openedChat()).toBe(chatIdOf({ key: 'changes' })));
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Undo' }));
+
+    await waitFor(() => expect(openedChat()).toBe(chatIdOf({ key: 'refund' })));
+    expect(rowButton('Refund idempotency options')).toBeDefined();
+  });
+
+  it('archives from the header with the same Undo toast and the same next chat', async () => {
+    await renderStudio();
+    fireEvent.click(rowButton('Refund idempotency options'));
+
+    fireEvent.click(screen.getByRole('button', { name: 'Delete chat' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Archive instead' }));
+
+    await waitFor(() => expect(openedChat()).toBe(chatIdOf({ key: 'changes' })));
+    await act(async () => {
+      await useAppStore.getState().undoLastOperation();
+    });
+
+    await waitFor(() => expect(openedChat()).toBe(chatIdOf({ key: 'refund' })));
   });
 
   it('opens a new chat from New chat in the Chat header, which the new chat page leaves out', async () => {

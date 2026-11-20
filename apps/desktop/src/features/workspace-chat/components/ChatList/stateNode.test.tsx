@@ -49,6 +49,7 @@ import { spacingOf } from '../../../../test/boxGeometry';
 import { inFlowBefore } from '../../../../test/flowLayout';
 import { ObjectMenuProvider } from '../../../actions/components/ObjectMenuProvider';
 import type { ChatBackend } from '../../chatBackend';
+import type { RemovedChats } from '../../nextChatAfter';
 import { ChatList } from './index';
 
 vi.useFakeTimers({ toFake: ['Date'] });
@@ -83,7 +84,7 @@ const NONE: ReadonlyArray<ChatSummary> = [];
 
 type HarnessProps = {
   readonly onSelect: (chatId: ChatId) => void;
-  readonly onArchived: (chatIds: ReadonlyArray<ChatId>) => void;
+  readonly onArchived: (removed: RemovedChats) => void;
 };
 
 const Harness = ({ onSelect, onArchived }: HarnessProps) => {
@@ -286,9 +287,10 @@ describe('the chat row from the keyboard', () => {
     fireEvent.click(within(toolbar()).getByRole('button', { name: 'Archive 2 chats' }));
 
     await waitFor(() => expect(screen.queryByRole('toolbar')).toBeNull());
-    expect(onArchived).toHaveBeenCalledWith([
-      chatIdOf({ key: 'consent' }),
-      chatIdOf({ key: 'rounding' }),
-    ]);
+    expect(onArchived).toHaveBeenCalledWith(
+      expect.objectContaining({
+        removedIds: [chatIdOf({ key: 'consent' }), chatIdOf({ key: 'rounding' })],
+      }),
+    );
   });
 });

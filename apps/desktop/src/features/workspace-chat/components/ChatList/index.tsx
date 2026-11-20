@@ -11,12 +11,15 @@ import { useAppStore } from '../../../../store';
 import type { ObjectTarget } from '../../../actions/types';
 import { useActionControls } from '../../../actions/useActionControls';
 import { loadStateOf } from '../../../../shared/lib/loadStateOf';
+import { useShowToast } from '../../../../shared/components/Toast/useShowToast';
+import type { RemovedChats } from '../../nextChatAfter';
+import { offerArchiveUndo } from '../../offerArchiveUndo';
 import { chatGroupRowsOf } from './chatGroupRowsOf';
+import { chatOrderOf } from './chatOrderOf';
 import { ChatArchivedView } from './ChatArchivedView';
 import { ChatListGroup } from './ChatListGroup';
 import { ChatListStatus } from './ChatListStatus';
 import type { ChatRowSelection } from './ChatListRow';
-import { ChatUndoRow } from './ChatUndoRow';
 import { NOTHING_CHANGED } from '../../../../store/slices/notifications/errorRecovery';
 
 type Props = {
@@ -24,14 +27,8 @@ type Props = {
   readonly chats: ReadonlyArray<ChatSummary>;
   readonly selectedId: ChatId | null;
   readonly onSelect: (chatId: ChatId) => void;
-  readonly onArchived: (chatIds: ReadonlyArray<ChatId>) => void;
-  readonly onDeleted: (chatIds: ReadonlyArray<ChatId>) => void;
-};
-
-type Archived = {
-  readonly chatIds: ReadonlyArray<ChatId>;
-  readonly label: string;
-  readonly isIdle: boolean;
+  readonly onArchived: (removed: RemovedChats) => void;
+  readonly onDeleted: (removed: RemovedChats) => void;
 };
 
 type FailureParams = {
@@ -48,6 +45,7 @@ type PinParams = {
   readonly isPinned: boolean;
 };
 
+const CHAT_ARCHIVED = 'Chat archived';
 const ARCHIVE_FAILED = "Couldn't archive the chat";
 const RESTORE_FAILED = "Couldn't restore the chat";
 const DELETE_FAILED = "Couldn't delete the chat";
@@ -80,8 +78,8 @@ export const ChatList = ({
   );
   const pinChat = useAppStore((state) => state.pinChat);
   const reportError = useAppStore((state) => state.reportError);
+  const showToast = useShowToast();
   const [query, setQuery] = useState('');
-  const [archived, setArchived] = useState<Archived | null>(null);
   const [isArchivedView, setIsArchivedView] = useState(false);
   const needle = query.trim().toLowerCase();
 
@@ -93,9 +91,10 @@ export const ChatList = ({
     () => chatGroupRowsOf({ chats, needle, now: Date.now() }),
     [chats, needle],
   );
+  const order = useMemo(() => chatOrderOf({ groups }), [groups]);
 
-  const latest = useRef({ chats, onSelect, onArchived, onDeleted });
-  latest.current = { chats, onSelect, onArchived, onDeleted };
+  const latest = useRef({ chats, order, selectedId, onSelect, onArchived, onDeleted, showToast });
+  latest.current = { chats, order, selectedId, onSelect, onArchived, onDeleted, showToast };
 
   const select = useCallback((chatId: ChatId) => latest.current.onSelect(chatId), []);
 
@@ -112,22 +111,24 @@ export const ChatList = ({
       if (first === undefined) {
         return;
       }
-      const title = latest.current.chats.find((chat) => chat.id === first)?.title ?? 'Chat';
+      const { chats: known, order: before, selectedId: wasSelected, showToast } = latest.current;
+      const title = known.find((chat) => chat.id === first)?.title ?? 'Chat';
       try {
         await archiveChats({ workspaceId, chatIds });
       } catch (error) {
         reportFailure({ title: ARCHIVE_FAILED, error });
         return;
       }
-      setArchived({
+      offerArchiveUndo({
+        workspaceId,
         chatIds,
-        label:
-          chatIds.length === 1
-            ? `Archived ${title}`
-            : `${pluralize(chatIds.length, 'chat')} archived`,
-        isIdle: false,
+        selectedId: wasSelected,
+        showToast,
+        ...(chatIds.length === 1
+          ? { title: CHAT_ARCHIVED, message: title }
+          : { message: `${pluralize(chatIds.length, 'chat')} archived` }),
       });
-      latest.current.onArchived(chatIds);
+      latest.current.onArchived({ removedIds: chatIds, order: before });
     },
     [archiveChats, reportFailure, workspaceId],
   );
@@ -138,6 +139,7 @@ export const ChatList = ({
   );
 
   const archiveIdle = async (): Promise<void> => {
+    const { order: before, selectedId: wasSelected } = latest.current;
     let chatIds: ReadonlyArray<ChatId>;
     try {
       chatIds = await archiveIdleChats({ workspaceId });
@@ -148,42 +150,34 @@ export const ChatList = ({
     if (chatIds.length === 0) {
       return;
     }
-    setArchived({
+    offerArchiveUndo({
+      workspaceId,
       chatIds,
-      label: `${pluralize(chatIds.length, 'idle chat')} archived`,
-      isIdle: true,
+      selectedId: wasSelected,
+      showToast,
+      message: `${pluralize(chatIds.length, 'idle chat')} archived`,
     });
-    onArchived(chatIds);
+    onArchived({ removedIds: chatIds, order: before });
   };
 
-  const restore = async ({ chatIds }: RestoreParams): Promise<boolean> => {
+  const restore = async ({ chatIds }: RestoreParams): Promise<void> => {
     try {
       await restoreChats({ workspaceId, chatIds });
-      return true;
     } catch (error) {
       reportFailure({ title: RESTORE_FAILED, error });
-      return false;
-    }
-  };
-
-  const undo = async (): Promise<void> => {
-    if (archived === null) {
-      return;
-    }
-    if (await restore({ chatIds: archived.chatIds })) {
-      setArchived(null);
     }
   };
 
   const deleteMany = useCallback(
     async (chatIds: ReadonlyArray<ChatId>): Promise<void> => {
+      const before = latest.current.order;
       try {
         await deleteChats({ workspaceId, chatIds });
       } catch (error) {
         reportFailure({ title: DELETE_FAILED, error });
         return;
       }
-      latest.current.onDeleted(chatIds);
+      latest.current.onDeleted({ removedIds: chatIds, order: before });
     },
     [deleteChats, reportFailure, workspaceId],
   );
@@ -202,11 +196,6 @@ export const ChatList = ({
     [pinChat, reportFailure],
   );
 
-  const order = useMemo(
-    () =>
-      [...groups.pinned, ...groups.today, ...groups.week, ...groups.idle].map((row) => row.chatId),
-    [groups],
-  );
   const multi = useMultiSelect(order);
   const { selected, clear, toggle, selectRange, selectAll, selectIds, handleItemClick } = multi;
   const selectedIds = useMemo(() => {
@@ -277,8 +266,6 @@ export const ChatList = ({
     listRef.current?.querySelector<HTMLElement>('[data-select-id]')?.focus();
   }, []);
 
-  const undoRow =
-    archived === null ? null : <ChatUndoRow label={archived.label} onUndo={() => void undo()} />;
   const isEmpty =
     groups.pinned.length + groups.today.length + groups.week.length + groups.idle.length === 0;
 
@@ -318,7 +305,6 @@ export const ChatList = ({
           data-selecting={selectedIds.length > 0}
           className="group/select-list flex flex-col gap-3 pb-3 pr-4"
         >
-          {archived !== null && !archived.isIdle ? undoRow : null}
           <ChatListGroup
             title="Pinned"
             rows={groups.pinned}
@@ -367,12 +353,11 @@ export const ChatList = ({
                 ? { label: 'Archive idle', onClick: () => void archiveIdle() }
                 : null
             }
-            footer={archived !== null && archived.isIdle ? undoRow : null}
           />
           <ChatListStatus
             loadState={loadState}
             error={error}
-            isEmpty={isEmpty && archived === null}
+            isEmpty={isEmpty}
             isFiltered={needle !== ''}
             onRetry={() => void loadChats({ workspaceId })}
             onClearFilter={() => setQuery('')}

@@ -8,7 +8,7 @@ export const renameChat =
   async ({ chatId, title }: RenameChatParams): Promise<void> => {
     const trimmed = title.trim();
     if (trimmed === '') {
-      return;
+      throw new Error('name cannot be empty');
     }
     const now = new Date().toISOString() as IsoDateTime;
     await activeChatBackend.rename({ chatId, title: trimmed, now });

@@ -17,7 +17,6 @@ const HAND_PAINTED_FILL_BASELINE: ReadonlyArray<string> = [
   'apps/desktop/src/app/components/MockScene/scenes/audit/FormsAuditScene.tsx',
   'apps/desktop/src/app/components/MockScene/scenes/u23/topbar/WorkspaceSwitcherSingleScene.tsx',
   'apps/desktop/src/app/components/MockScene/scenes/u24/settings-projects/PickerStarredScene.tsx',
-  'apps/desktop/src/features/workspace-chat/components/ChatList/ChatRenameInput.tsx',
   'packages/ui/src/components/Dialog.tsx',
 ];
 
