@@ -360,7 +360,7 @@
     "packages/db/src/queries/notification.ts": 3,
     "packages/db/src/queries/open-question.ts": 1,
     "packages/db/src/queries/session-workflow.ts": 2,
-    "packages/db/src/queries/session.ts": 2,
+    "packages/db/src/queries/session.ts": 1,
     "packages/db/src/queries/workflow.ts": 1,
     "packages/types/src/adapter.ts": 1,
     "packages/types/src/budget.ts": 3,

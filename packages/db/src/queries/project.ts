@@ -5,7 +5,6 @@ import type {
   OverrideSettings,
   Project,
   ProjectId,
-  ResolveCommitStyle,
   WorkspaceId,
 } from '@goodboy/types';
 import type { Database, PlainStatement } from '../client';
@@ -351,24 +350,6 @@ export const updateProjectAfterMerge = async ({
 }: UpdateProjectAfterMergeParams): Promise<void> => {
   await db.execute('UPDATE projects SET after_merge = ?, updated_at = ? WHERE id = ?', [
     afterMerge,
-    Date.now(),
-    projectId,
-  ]);
-};
-
-type UpdateProjectResolveCommitStyleParams = {
-  readonly db: Database;
-  readonly projectId: ProjectId;
-  readonly commitStyle: ResolveCommitStyle | null;
-};
-
-export const updateProjectResolveCommitStyle = async ({
-  db,
-  projectId,
-  commitStyle,
-}: UpdateProjectResolveCommitStyleParams): Promise<void> => {
-  await db.execute('UPDATE projects SET resolve_commit_style = ?, updated_at = ? WHERE id = ?', [
-    commitStyle,
     Date.now(),
     projectId,
   ]);

@@ -259,19 +259,6 @@ export const updateSessionAutoRun = async (
   ]);
 };
 
-export const updateSessionTitleUserEdited = async (
-  db: Database,
-  id: SessionId,
-  titleUserEdited: boolean,
-  updatedAt: IsoDateTime,
-): Promise<void> => {
-  await db.execute('UPDATE sessions SET title_user_edited = ?, updated_at = ? WHERE id = ?', [
-    titleUserEdited ? 1 : 0,
-    Date.parse(updatedAt),
-    id,
-  ]);
-};
-
 type UpdateSessionActiveProjectParams = {
   readonly db: Database;
   readonly id: SessionId;
