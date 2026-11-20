@@ -7,6 +7,7 @@ import {
 import { listContextSlotsForSession } from '@goodboy/db';
 import type { AgentId, SessionId } from '@goodboy/types';
 import { tauriDatabase } from '../../../shared/lib/db';
+import { decisionReads } from './decisionReads';
 import { decisionsChangedPayload } from './decisionsChangedPayload';
 import { withDecisionsSlot } from './withDecisionsSlot';
 import type { GetFn, SetFn } from './types';
@@ -28,6 +29,7 @@ export const applySessionDecisionOps = (set: SetFn, get: GetFn) => {
     agentId,
   }: ApplySessionDecisionOpsParams): Promise<AppliedDecisionOps> => {
     const applied = await applyDecisionOpsToSession({ db: tauriDatabase, sessionId, ops, actor });
+    decisionReads.cancel({ key: sessionId });
     const slots = await listContextSlotsForSession(tauriDatabase, sessionId);
     set((state) => ({
       sessionDecisions: { ...state.sessionDecisions, [sessionId]: applied.ledger },

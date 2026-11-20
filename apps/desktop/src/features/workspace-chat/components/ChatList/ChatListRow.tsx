@@ -3,6 +3,7 @@ import { InteractiveRow, SelectionCheckbox, cn } from '@goodboy/ui';
 import type { ChatId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { sessionPlace } from '../../../../store/slices/navigation/place';
+import { NOTHING_CHANGED } from '../../../../store/slices/notifications/errorRecovery';
 import { chatSelectionTarget } from '../../../actions/chatSelectionTarget';
 import { chatObjectKey } from '../../../actions/kinds/chat';
 import type { ObjectTarget } from '../../../actions/types';
@@ -87,6 +88,7 @@ const ChatListRowView = ({
   const isStreaming = useAppStore((state) => state.chatStreams[chatId] !== undefined);
   const isUnread = useAppStore((state) => state.unreadChatIds.includes(chatId));
   const renameChat = useAppStore((state) => state.renameChat);
+  const reportError = useAppStore((state) => state.reportError);
   const markChatUnread = useAppStore((state) => state.markChatUnread);
   const markChatRead = useAppStore((state) => state.markChatRead);
   const navigate = useAppStore((state) => state.navigate);
@@ -193,7 +195,13 @@ const ChatListRowView = ({
                 title={title}
                 onCommit={(next) => {
                   setIsRenaming(false);
-                  void renameChat({ chatId, title: next });
+                  renameChat({ chatId, title: next }).catch((error: unknown) => {
+                    void reportError({
+                      recovery: NOTHING_CHANGED,
+                      title: "Couldn't rename the chat",
+                      error,
+                    });
+                  });
                 }}
                 onCancel={() => setIsRenaming(false)}
               />

@@ -64,7 +64,7 @@ describe('the u24 chat-empty scenes', () => {
   it('asks to add a project when the workspace has none', async () => {
     renderScene({ name: 'chat-empty-noprojects' });
 
-    await screen.findByText('Add a folder so answers can read its code.', undefined, {
+    await screen.findByText('Add a project so answers can read its code.', undefined, {
       timeout: 4_000,
     });
     await settle();

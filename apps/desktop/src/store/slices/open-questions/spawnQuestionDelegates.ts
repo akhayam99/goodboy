@@ -100,7 +100,7 @@ export const spawnQuestionDelegates = (get: GetFn) => {
         void get().emitNotification({
           kind: 'agent-auto-spawn',
           severity: 'warning',
-          title: 'This question cannot be delegated',
+          title: "Can't delegate this question",
           body: "A delegated agent can't delegate again. This one is yours to answer.",
           sessionId,
           coalesceKey: `question-delegate:${question.id}`,
@@ -144,7 +144,7 @@ export const spawnQuestionDelegates = (get: GetFn) => {
         void get().emitNotification({
           kind: 'agent-auto-spawn',
           severity: 'warning',
-          title: 'The delegated agent did not start',
+          title: "The delegated agent didn't start",
           body: `${question.text} stays open. Answer it yourself or hand it over again. ${formatError(error)}`,
           sessionId,
           coalesceKey: `question-delegate:${question.id}`,

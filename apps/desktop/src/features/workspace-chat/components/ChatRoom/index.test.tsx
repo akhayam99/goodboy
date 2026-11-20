@@ -275,7 +275,7 @@ describe('ChatRoom', () => {
     store.projects = [];
     renderRoom({ chat: null });
 
-    expect(screen.getByText('Add a folder so answers can read its code.')).toBeDefined();
+    expect(screen.getByText('Add a project so answers can read its code.')).toBeDefined();
     expect(screen.getByRole('button', { name: 'Add project' })).toBeDefined();
     expect(screen.queryByRole('list', { name: 'Suggested questions' })).toBeNull();
   });
@@ -759,6 +759,71 @@ describe('ChatRoom', () => {
     });
   });
 
+  it('puts the draft back and reports when the chat cannot be created', async () => {
+    const onCreated = vi.fn();
+    const failure = new Error('database is locked');
+    store.createChat.mockRejectedValueOnce(failure);
+    renderRoom({ chat: null, onCreated });
+    const box = screen.getByRole('textbox', { name: 'Message' });
+
+    fireEvent.change(box, { target: { value: 'Where do we validate IBANs?' } });
+    await act(async () => {
+      fireEvent.keyDown(box, { key: 'Enter' });
+    });
+
+    await waitFor(() => expect(box).toHaveProperty('value', 'Where do we validate IBANs?'));
+    expect(onCreated).not.toHaveBeenCalled();
+    expect(store.sendChatMessage).not.toHaveBeenCalled();
+    expect(store.reportError).toHaveBeenCalledWith(
+      expect.objectContaining({
+        title: "Couldn't send the message",
+        error: failure,
+        workspaceId: WORKSPACE_ID,
+      }),
+    );
+  });
+
+  it('says the chat could not load instead of a skeleton, and loads again on Retry', async () => {
+    const failure = new Error('database is locked');
+    store.loadChatMessages.mockRejectedValueOnce(failure);
+    renderRoom({ chat: CHAT });
+
+    const alert = await screen.findByRole('alert');
+    expect(within(alert).getByText("Couldn't load this chat")).toBeDefined();
+    expect(document.querySelector('[aria-busy="true"]')).toBeNull();
+
+    await act(async () => {
+      fireEvent.click(within(alert).getByRole('button', { name: NAMES.retry }));
+    });
+
+    expect(store.loadChatMessages).toHaveBeenCalledTimes(2);
+    expect(store.loadChatMessages).toHaveBeenLastCalledWith({ chatId: CHAT_ID });
+    expect(screen.queryByRole('alert')).toBeNull();
+  });
+
+  it('reports a model pick the chat could not save', async () => {
+    store.chatMessages = { [CHAT_ID]: [] };
+    const failure = new Error('database is locked');
+    store.setChatModel.mockRejectedValueOnce(failure);
+    renderRoom({ chat: CHAT });
+
+    fireEvent.click(screen.getByRole('button', { name: /^Model for this chat: / }));
+    const dialog = screen.getByRole('dialog', { name: 'Model for this chat' });
+    await act(async () => {
+      fireEvent.click(within(dialog).getByRole('button', { name: 'High' }));
+    });
+
+    await waitFor(() =>
+      expect(store.reportError).toHaveBeenCalledWith(
+        expect.objectContaining({
+          title: "Couldn't change the chat model",
+          error: failure,
+          workspaceId: WORKSPACE_ID,
+        }),
+      ),
+    );
+  });
+
   it('shows the empty state with suggestions from the projects', async () => {
     renderRoom({ chat: null });
 
@@ -786,6 +851,27 @@ describe('ChatRoom', () => {
     expect(screen.getByRole('button', { name: 'Read 1 file' })).toBeDefined();
     fireEvent.click(screen.getByRole('button', { name: 'Stop' }));
     expect(store.stopChatReply).toHaveBeenCalledWith({ chatId: CHAT_ID });
+  });
+
+  it('reports a Stop that failed', async () => {
+    store.chatMessages = {
+      [CHAT_ID]: [
+        messageOf({ role: 'user', content: 'Where is the consent step defined?', status: 'done' }),
+        messageOf({ role: 'assistant', content: 'It lives', status: 'streaming' }),
+      ],
+    };
+    store.chatStreams = { [CHAT_ID]: { runId: 'run-1', messageId: 'x', isStopping: false } };
+    const failure = new Error('the provider did not answer the cancel');
+    store.stopChatReply.mockRejectedValueOnce(failure);
+    renderRoom({ chat: CHAT });
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Stop' }));
+    });
+
+    expect(store.reportError).toHaveBeenCalledWith(
+      expect.objectContaining({ title: "Couldn't stop the reply", error: failure }),
+    );
   });
 
   it('says it is reading before the first words arrive', () => {
