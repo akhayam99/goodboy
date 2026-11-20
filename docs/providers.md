@@ -149,7 +149,8 @@ Moonshot. Both run on top of OpenCode, so install OpenCode first.
 1. Install OpenCode (see [OpenCode](#opencode)), then click **Detect** on the card
 2. Under **API keys**, click **Add key**
 3. Give the key a name (for example "work") and paste it
-4. Click **Save key**. Goodboy tests the key with the provider before it saves it
+4. Click **Save key**. Goodboy tests the key with the provider before it saves it. A
+   failed save keeps what you typed and says why under the buttons, with **Retry**
 
 **Disconnect:** remove the key from **API keys**. Goodboy keeps a key while a
 workspace still uses it.
