@@ -1,7 +1,7 @@
 import { useLayoutEffect, useState } from 'react';
 import type { CSSProperties, RefObject } from 'react';
-import { SHELL_GUTTER_PX } from './frameGeometry';
-import { placeFloating } from './placeFloating';
+import { SHELL_GUTTER_PX } from '../frameGeometry';
+import { placeFloating } from '../placeFloating';
 
 export type DropdownSide = 'bottom' | 'right' | 'left';
 

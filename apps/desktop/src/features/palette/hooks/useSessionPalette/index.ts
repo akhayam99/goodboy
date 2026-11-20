@@ -1,4 +1,4 @@
-import { AGENT_KIND_META, classifyAgent } from '../../session/agent-kind';
+import { AGENT_KIND_META, classifyAgent } from '../../../session/agent-kind';
 import { useMemo } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import type { Agent, Session, SessionId } from '@goodboy/types';
@@ -7,24 +7,24 @@ import {
   useAppStore,
   useSessionOpenQuestions,
   useSessionStageInfo,
-} from '../../../store';
-import { usePendingAction } from '../../../shared/hooks/usePendingAction';
-import { WORKFLOW_RUN_KIND, type WorkflowRunFacts } from '../../actions/kinds/workflowRun';
+} from '../../../../store';
+import { usePendingAction } from '../../../../shared/hooks/usePendingAction';
+import { WORKFLOW_RUN_KIND, type WorkflowRunFacts } from '../../../actions/kinds/workflowRun';
 import type {
   AgentActionTarget,
   PullRequestActionTarget,
   TaskActionTarget,
-} from '../../actions/types';
-import { openLens } from '../../session/openLens';
-import { recordNextStepOutcome } from '../../suggestions/useNextStepOutcomes';
-import { useSessionSuggestions } from '../../suggestions/useSessionSuggestions';
-import { useSuggestionActions } from '../../suggestions/useSuggestionActions';
-import { paletteTierOf, type PaletteTier } from '../paletteTiers';
-import { pickLiveAgent } from '../sources/liveAgentEntries';
-import { nextEntries, type NextItem } from '../sources/nextEntries';
-import { pickRun, type PaletteRun } from '../sources/runEntries';
-import { runOnScreenOf } from '../sources/runOnScreenOf';
-import type { PaletteEntry } from '../types';
+} from '../../../actions/types';
+import { openLens } from '../../../session/openLens';
+import { recordNextStepOutcome } from '../../../suggestions/useNextStepOutcomes';
+import { useSessionSuggestions } from '../../../suggestions/useSessionSuggestions';
+import { useSuggestionActions } from '../../../suggestions/useSuggestionActions';
+import { paletteTierOf, type PaletteTier } from '../../paletteTiers';
+import { pickLiveAgent } from '../../sources/liveAgentEntries';
+import { nextEntries, type NextItem } from '../../sources/nextEntries';
+import { pickRun, type PaletteRun } from '../../sources/runEntries';
+import { runOnScreenOf } from '../../sources/runOnScreenOf';
+import type { PaletteEntry } from '../../types';
 
 type Params = {
   readonly session: Session;

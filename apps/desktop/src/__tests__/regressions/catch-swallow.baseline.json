@@ -1,5 +1,5 @@
 {
-  "apps/desktop/src/app/hooks/useAppOverlays/useStudioEvents.ts": 1,
+  "apps/desktop/src/app/hooks/useStudioEvents/index.ts": 1,
   "apps/desktop/src/features/artifacts/artifactActionRuns.ts": 1,
   "apps/desktop/src/features/artifacts/artifactMirror/artifactMirrorQueue.ts": 1,
   "apps/desktop/src/features/artifacts/components/ArtifactCreationPane/useArtifactAttachments/index.ts": 1,
@@ -26,7 +26,7 @@
   "apps/desktop/src/features/integrations/slack/SlackThreadDetail/index.tsx": 1,
   "apps/desktop/src/features/integrations/slack/useSlackDraft/index.ts": 1,
   "apps/desktop/src/features/integrations/starred/refreshStarredIssues.ts": 3,
-  "apps/desktop/src/features/palette/hooks/useSessionsEverywhere.ts": 1,
+  "apps/desktop/src/features/palette/hooks/useSessionsEverywhere/index.ts": 1,
   "apps/desktop/src/features/providers/components/ProviderConnect/EscapeHatch/index.tsx": 1,
   "apps/desktop/src/features/providers/components/ProviderStudio/ProviderPage/UsageGroup/SpendInGoodboy.tsx": 1,
   "apps/desktop/src/features/providers/hooks/useProviderBudgetOverview.ts": 1,

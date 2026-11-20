@@ -1,5 +1,5 @@
 import { useContext } from 'react';
-import { ToastContext, type ShowToast } from './toastContext';
+import { ToastContext, type ShowToast } from '../toastContext';
 
 const NO_TOAST: ShowToast = () => undefined;
 

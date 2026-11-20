@@ -3,7 +3,7 @@ import type { Workspace } from '@goodboy/types';
 import { openPlanAnywhere } from '../../../features/plans/openPlanAnywhere';
 import { openStartRun } from '../../../features/session/startRun/openStartRun';
 import { sessionPlace, useAppStore } from '../../../store';
-import { eventSessionId, eventValue, isPlanId } from './eventDetail';
+import { eventSessionId, eventValue, isPlanId } from '../useAppOverlays/eventDetail';
 
 type Params = {
   readonly close: () => void;

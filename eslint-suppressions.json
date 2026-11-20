@@ -3908,12 +3908,12 @@
       "count": 2
     }
   },
-  "apps/desktop/src/features/palette/hooks/useCommandEntries.ts": {
+  "apps/desktop/src/features/palette/hooks/useCommandEntries/index.ts": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 3
     }
   },
-  "apps/desktop/src/features/palette/hooks/useSessionPalette.ts": {
+  "apps/desktop/src/features/palette/hooks/useSessionPalette/index.ts": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 2
     },
@@ -7076,7 +7076,7 @@
       "count": 4
     }
   },
-  "apps/desktop/src/shared/components/RoutingPicker/useCursorMaxModeModels.ts": {
+  "apps/desktop/src/shared/components/RoutingPicker/useCursorMaxModeModels/index.ts": {
     "react-hooks/exhaustive-deps": {
       "count": 1
     }
@@ -7257,7 +7257,7 @@
       "count": 2
     }
   },
-  "apps/desktop/src/shared/hooks/useStudioOverlay.ts": {
+  "apps/desktop/src/shared/hooks/useStudioOverlay/index.ts": {
     "@typescript-eslint/naming-convention": {
       "count": 2
     }
@@ -13105,7 +13105,7 @@
       "count": 1
     }
   },
-  "packages/ui/src/components/Trail/useTrailCompaction.ts": {
+  "packages/ui/src/components/Trail/useTrailCompaction/index.ts": {
     "react-hooks/exhaustive-deps": {
       "count": 1
     }
@@ -13135,12 +13135,12 @@
       "count": 5
     }
   },
-  "packages/ui/src/useDropdownDirection.ts": {
+  "packages/ui/src/useDropdownDirection/index.ts": {
     "@typescript-eslint/naming-convention": {
       "count": 2
     }
   },
-  "packages/ui/src/useEscapeLayer.ts": {
+  "packages/ui/src/useEscapeLayer/index.ts": {
     "@typescript-eslint/naming-convention": {
       "count": 1
     }

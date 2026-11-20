@@ -11,7 +11,7 @@ import {
   inboxOverlayFromEvent,
   isWorkspaceId,
   settingsOverlayFromEvent,
-} from './eventDetail';
+} from '../useAppOverlays/eventDetail';
 import type { StudioPlace } from '../../../store';
 
 type Params = {

@@ -5,7 +5,7 @@ import {
   isTypeaheadKey,
   moveMenuFocus,
   typeaheadMenuFocus,
-} from './menuKeys';
+} from '../menuKeys';
 
 const TYPEAHEAD_RESET_MS = 500;
 

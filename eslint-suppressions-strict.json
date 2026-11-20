@@ -384,7 +384,7 @@
       "count": 1
     }
   },
-  "apps/desktop/src/features/palette/hooks/useCommandEntries.ts": {
+  "apps/desktop/src/features/palette/hooks/useCommandEntries/index.ts": {
     "@typescript-eslint/strict-boolean-expressions": {
       "count": 2
     }

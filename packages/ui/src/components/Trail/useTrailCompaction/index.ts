@@ -1,6 +1,6 @@
 import { useLayoutEffect, useRef, useState, type RefObject } from 'react';
-import { compactTrail, type TrailSegmentState } from './compactTrail';
-import type { TrailSegmentModel } from './types';
+import { compactTrail, type TrailSegmentState } from '../compactTrail';
+import type { TrailSegmentModel } from '../types';
 
 const ICON_WIDTH = 20;
 const SEPARATOR_WIDTH = 28;

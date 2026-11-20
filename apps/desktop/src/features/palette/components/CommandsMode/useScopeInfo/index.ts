@@ -1,9 +1,9 @@
 import type { IconGlyph } from '@goodboy/ui/icons';
-import { EMPTY_ARRAY, useAppStore } from '../../../../store';
-import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
-import { sessionTitle } from '../../../../shared/utils/sessionTitle';
-import type { PaletteScope } from '../../types';
-import { sessionById } from '../../../../store/slices/sessions/sessionIndex';
+import { EMPTY_ARRAY, useAppStore } from '../../../../../store';
+import { CONCEPT_ICONS } from '../../../../../shared/components/conceptIcons';
+import { sessionTitle } from '../../../../../shared/utils/sessionTitle';
+import type { PaletteScope } from '../../../types';
+import { sessionById } from '../../../../../store/slices/sessions/sessionIndex';
 
 export type ScopeInfo = {
   readonly title: string;

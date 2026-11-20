@@ -16,9 +16,9 @@ import { AppOverlayRouter } from '../../components/AppOverlayRouter';
 import { AppStudio } from '../../components/AppOverlayRouter/AppStudio';
 import type { OpenPaletteParams, PaletteRequest } from '../../../features/palette/paletteModeTypes';
 import { useOpenLinkEvent } from '../../../features/open/hooks/useOpenLinkEvent';
-import { useCommitDiff } from './useCommitDiff';
-import { useSessionSurfaceEvents } from './useSessionSurfaceEvents';
-import { useStudioEvents } from './useStudioEvents';
+import { useCommitDiff } from '../useCommitDiff';
+import { useSessionSurfaceEvents } from '../useSessionSurfaceEvents';
+import { useStudioEvents } from '../useStudioEvents';
 
 type Params = {
   readonly currentSession: Session | null;

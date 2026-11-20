@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { startPoll } from '../../../shared/lib/usePoll/startPoll';
-import type { BootPhase } from '../../../store/slices/boot/state';
+import { startPoll } from '../../../../shared/lib/usePoll/startPoll';
+import type { BootPhase } from '../../../../store/slices/boot/state';
 
 type Params = {
   phase: BootPhase;
