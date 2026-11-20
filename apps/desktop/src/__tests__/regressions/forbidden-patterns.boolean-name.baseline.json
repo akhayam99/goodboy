@@ -91,7 +91,7 @@
     "apps/desktop/src/features/diff/lib/fileOrder.ts": 1,
     "apps/desktop/src/features/explore/explore.ts": 2,
     "apps/desktop/src/features/history/historyEngine.ts": 2,
-    "apps/desktop/src/features/impact/components/ImpactStudio/TrendStatCard.tsx": 1,
+    "apps/desktop/src/features/impact/components/ImpactStudio/TrendStatCard/index.tsx": 1,
     "apps/desktop/src/features/impact/openImpactStudio.ts": 1,
     "apps/desktop/src/features/inbox/components/InboxStudio/InboxRow.tsx": 1,
     "apps/desktop/src/features/inbox/useInboxStars/index.ts": 1,

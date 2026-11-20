@@ -1,5 +1,5 @@
 import { StatCard, cn, tintClasses } from '@goodboy/ui';
-import { NOT_LOADED_HINT } from '../../../../shared/utils/unknownValue';
+import { NOT_LOADED_HINT } from '../../../../../shared/utils/unknownValue';
 
 type Props = {
   readonly label: string;

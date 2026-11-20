@@ -61,7 +61,7 @@
   "apps/desktop/src/features/impact/components/ImpactStudio/SessionRows.tsx": 1,
   "apps/desktop/src/features/impact/components/ImpactStudio/SessionSpendRows.tsx": 1,
   "apps/desktop/src/features/impact/components/ImpactStudio/ShippedSessionRows.tsx": 1,
-  "apps/desktop/src/features/impact/components/ImpactStudio/TrendStatCard.tsx": 1,
+  "apps/desktop/src/features/impact/components/ImpactStudio/TrendStatCard/index.tsx": 1,
   "apps/desktop/src/features/inbox/components/InboxStudio/InboxProjectFacets.tsx": 1,
   "apps/desktop/src/features/integrations/components/ExternalTaskChip/index.tsx": 1,
   "apps/desktop/src/features/integrations/components/IntegrationCredentialPicker/CredentialRow.tsx": 1,

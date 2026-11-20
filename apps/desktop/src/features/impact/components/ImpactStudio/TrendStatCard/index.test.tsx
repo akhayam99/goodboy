@@ -2,7 +2,7 @@
 
 import { afterEach, describe, expect, it } from 'vitest';
 import { cleanup, render } from '@testing-library/react';
-import { TrendStatCard } from './TrendStatCard';
+import { TrendStatCard } from './index';
 
 afterEach(cleanup);
 
