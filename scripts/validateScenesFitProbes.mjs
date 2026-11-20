@@ -1,6 +1,7 @@
 import { runFrost } from './validateScenesFrost.mjs';
 import { runListGridFit } from './validateScenesListGridFit.mjs';
 import { runModelsGrid } from './validateScenesModelsGrid.mjs';
+import { runPopoverScroll } from './validateScenesPopoverScroll.mjs';
 import { runReadingHold } from './validateScenesReadingHold.mjs';
 import { runReleaseImageShape } from './validateScenesReleaseImageShape.mjs';
 import { runQuestionCard } from './validateScenesQuestionCard.mjs';
@@ -15,6 +16,7 @@ export const runFitProbes = async (context) => {
   await runFrost(context);
   await runListGridFit(context);
   await runModelsGrid(context);
+  await runPopoverScroll(context);
   await runQuestionCard(context);
   await runReadingHold(context);
   await runReleaseImageShape(context);
