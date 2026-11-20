@@ -214,6 +214,28 @@ describe('ChatList', () => {
     await waitFor(() => expect(titlesIn('Idle')).toContain('Lunch ideas near the office'));
   });
 
+  it('keeps the Undo row and reports when the undo fails', async () => {
+    const reportError = vi.spyOn(useAppStore.getState(), 'reportError');
+    await renderList();
+    fireEvent.click(screen.getByRole('button', { name: 'Archive idle' }));
+    const undo = await screen.findByRole('button', { name: 'Undo' });
+    const failure = new Error('database is locked');
+    if (holder.backend === null) {
+      throw new Error('no chat backend');
+    }
+    vi.spyOn(holder.backend, 'setArchived').mockRejectedValueOnce(failure);
+
+    fireEvent.click(undo);
+
+    await waitFor(() =>
+      expect(reportError).toHaveBeenCalledWith(
+        expect.objectContaining({ title: "Couldn't restore the chat", error: failure }),
+      ),
+    );
+    expect(screen.getByText('2 idle chats archived')).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Undo' })).toBeDefined();
+  });
+
   it('filters by title and answer text', async () => {
     await renderList();
 
