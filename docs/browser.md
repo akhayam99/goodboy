@@ -250,6 +250,13 @@ they sit in the profile's store. If a view will not close, it is put back as it
 was, the open fails with `profile-busy`, and the views that did close stay
 closed.
 
+**Ready, not exposed (2026-11-20).** `browser_profile_isolation` and
+`browser_profile_clear` live in `browser/commands.rs` but stay out of
+`generate_handler!` in `lib.rs` and out of `window-commands.json`: no page calls
+them yet, and a destructive command with no caller stays out of the webview's
+reach. They come back registered with the pane's shared profile warning and its
+Clear button.
+
 **Clearing a profile.** `browser_profile_clear` takes a `workspaceId`, refuses
 with `profile-live` while any of the workspace's tabs is live or asleep (switch
 to another workspace or close them first), and refuses with `profile-busy` when

@@ -762,8 +762,6 @@ pub fn run() {
             slack::slack_post_reply,
             slack::slack_add_reaction,
             qa_preview::qa_deciding_workflow_runs,
-            browser::commands::browser_profile_clear,
-            browser::commands::browser_profile_isolation,
             browser::commands::browser_tab_open,
             browser::commands::browser_tab_open_local,
             browser::commands::browser_tab_place,

@@ -210,6 +210,7 @@ pub async fn browser_tab_navigate_local(
     host::load_local(webview.app_handle(), &args.tab_id, &file).map(|_| ())
 }
 
+#[allow(dead_code)]
 #[tauri::command]
 pub async fn browser_profile_clear(
     webview: Webview,
@@ -219,6 +220,7 @@ pub async fn browser_profile_clear(
     profile::clear(webview.app_handle(), &args.workspace_id).await
 }
 
+#[allow(dead_code)]
 #[tauri::command]
 pub async fn browser_profile_isolation(webview: Webview) -> Result<Isolation, MessageError> {
     refuse_browser_caller(&webview)?;
