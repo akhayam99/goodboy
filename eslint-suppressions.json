@@ -3563,11 +3563,6 @@
       "count": 5
     }
   },
-  "apps/desktop/src/features/integrations/linear/LinearFormBody.tsx": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 1
-    }
-  },
   "apps/desktop/src/features/integrations/linear/LinearIssueDetail/index.test.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 13
