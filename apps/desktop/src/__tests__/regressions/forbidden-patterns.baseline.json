@@ -44,10 +44,7 @@
     "apps/desktop/src/features/integrations/components/ConnectForm/index.tsx": 1,
     "apps/desktop/src/features/session/components/SessionOverviewPane/ProjectMountRows/MountPreflightCard.tsx": 1,
     "apps/desktop/src/features/session/components/SessionWorkspace/parts/SlotHistoryPanel.tsx": 1,
-    "apps/desktop/src/features/settings/components/SettingsStudio/AppScopePanel.tsx": 1,
-    "packages/ui/src/components/EmptyState.tsx": 1,
-    "packages/ui/src/components/Popover.tsx": 1,
-    "packages/ui/src/components/Skeleton.tsx": 1
+    "apps/desktop/src/features/settings/components/SettingsStudio/AppScopePanel.tsx": 1
   },
   "function-component": {},
   "comment": {

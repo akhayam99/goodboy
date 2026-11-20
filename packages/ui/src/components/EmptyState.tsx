@@ -4,7 +4,7 @@ import { cn } from '../cn';
 import { ICON_SIZE } from '../iconSize';
 import type { Tone } from '../tint';
 
-type IllustrationProps =
+export type IllustrationProps =
   | {
       readonly icon: IconGlyph;
       readonly illustration?: never;
@@ -115,12 +115,3 @@ export const EmptyState = ({
     </div>
   );
 };
-
-type FilledEmptyStateProps = IllustrationProps &
-  Omit<EmptyStateProps, keyof IllustrationProps | 'bordered' | 'size'> & {
-    readonly description?: string;
-  };
-
-export const FilledEmptyState = (props: FilledEmptyStateProps) => (
-  <EmptyState {...props} size="section" />
-);
