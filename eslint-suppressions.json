@@ -118,7 +118,7 @@
   },
   "apps/desktop/src/__tests__/regressions/content-sheet-frame.test.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
-      "count": 3
+      "count": 2
     }
   },
   "apps/desktop/src/__tests__/regressions/copy-budget.test.ts": {
@@ -12674,7 +12674,7 @@
   },
   "packages/ui/src/__tests__/AppShell.test.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
-      "count": 4
+      "count": 2
     }
   },
   "packages/ui/src/__tests__/CrumbMenu.test.tsx": {
@@ -12725,11 +12725,6 @@
   "packages/ui/src/__tests__/useDropdown.test.ts": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 7
-    }
-  },
-  "packages/ui/src/components/AppShell.tsx": {
-    "@typescript-eslint/naming-convention": {
-      "count": 10
     }
   },
   "packages/ui/src/components/Band/bandDepth.ts": {

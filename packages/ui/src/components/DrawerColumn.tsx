@@ -13,7 +13,7 @@ import { useAsideRef } from '../useAsideRef';
 import { cn } from '../cn';
 import { DrawerEdgeContext } from '../drawerEdgeContext';
 import { DRAWER_PANEL_VARS } from '../drawerPanelVars';
-import { SHEET_CLASSES, type ResizeActivity, type SheetEdge } from '../sheet';
+import { SHEET_CLASSES, type SheetEdge } from '../sheet';
 import { SplitHandle } from './SplitHandle';
 import { DrawerDetailGroup } from './DrawerDetailGroup';
 import { DrawerDockBox } from './DrawerDockBox';
@@ -64,7 +64,6 @@ export type DrawerColumnProps = {
   readonly placement?: DrawerPlacement;
   readonly frame?: DrawerColumnFrame;
   readonly sheetEdge?: Exclude<SheetEdge, 'pushed'>;
-  readonly leftResize?: ResizeActivity;
   readonly isParked?: boolean;
   readonly className?: string;
 };
@@ -86,7 +85,6 @@ export const DrawerColumn = ({
   placement = 'auto',
   frame = 'none',
   sheetEdge = 'wrapped',
-  leftResize = 'idle',
   isParked = false,
   className,
 }: DrawerColumnProps) => {
@@ -164,7 +162,7 @@ export const DrawerColumn = ({
           data-drawer-main=""
           inert={isOverlay && (isDockShown || isDetailShown)}
           {...pageFocusPropsOf({ dockGrid })}
-          {...(isSheet && { 'data-sheet': sheetState, 'data-left-resize': leftResize })}
+          {...(isSheet && { 'data-sheet': sheetState })}
           className={cn(
             'flex min-h-0 min-w-0 flex-1 flex-col focus-visible:outline-none',
             isSheet && 'overflow-hidden bg-background',

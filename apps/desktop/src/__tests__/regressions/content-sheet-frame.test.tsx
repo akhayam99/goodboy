@@ -3,7 +3,7 @@
 import { readFileSync } from 'fs';
 import { join } from 'path';
 import { afterEach, describe, expect, it } from 'vitest';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, render, screen } from '@testing-library/react';
 import { AppShell, StudioRailLayout } from '@goodboy/ui';
 import { StudioFrame } from '../../app/components/StudioFrame';
 
@@ -22,8 +22,8 @@ const sheetOf = (): HTMLElement => {
 };
 
 describe('the content is a sheet on the chrome', () => {
-  it('wraps the sheet around the sidebar edge when the sidebar is shown', () => {
-    render(<AppShell leftSidebar={<div>sessions</div>} main={<div>content</div>} />);
+  it('wraps the sheet around the places rail when the rail is shown', () => {
+    render(<AppShell leftRail={<nav aria-label="Places" />} main={<div>content</div>} />);
     const sheet = sheetOf();
 
     expect(sheet.dataset.sheet).toBe('wrapped');
@@ -36,32 +36,11 @@ describe('the content is a sheet on the chrome', () => {
     expect(sheet.dataset.sheet).toBe('flush');
   });
 
-  it('squares the sheet again while the sidebar is hidden', () => {
-    render(<AppShell leftSidebar={<div>sessions</div>} leftHidden main={<div>content</div>} />);
+  it('draws no resize handle between the places rail and the sheet', () => {
+    render(<AppShell leftRail={<nav aria-label="Places" />} main={<div>content</div>} />);
 
-    expect(sheetOf().dataset.sheet).toBe('flush');
-  });
-
-  it('turns the sheet edge into the resize handle on hover and drag', () => {
-    render(<AppShell leftSidebar={<div>sessions</div>} main={<div>content</div>} />);
-    const handle = screen.getByRole('separator', { name: 'Resize left sidebar' });
-
-    expect(sheetOf().dataset.leftResize).toBe('idle');
-    fireEvent.mouseEnter(handle);
-    expect(sheetOf().dataset.leftResize).toBe('hover');
-    fireEvent.mouseDown(handle, { button: 0, clientX: 100 });
-    fireEvent.mouseLeave(handle);
-    expect(sheetOf().dataset.leftResize).toBe('drag');
-    fireEvent.mouseUp(window);
-    expect(sheetOf().dataset.leftResize).toBe('idle');
-  });
-
-  it('gives the sheet edge to the sidebar handle as the owner of the line', () => {
-    render(<AppShell leftSidebar={<div>sessions</div>} main={<div>content</div>} />);
-    const handle = screen.getByRole('separator', { name: 'Resize left sidebar' });
-    const edge = handle.firstElementChild as HTMLElement;
-
-    expect(edge.dataset.edge).toBe('owner');
+    expect(screen.queryByRole('separator')).toBeNull();
+    expect(sheetOf().dataset.leftResize).toBeUndefined();
   });
 
   it('puts the studio detail on a wrapped sheet beside its rail', () => {
@@ -83,7 +62,7 @@ describe('the content is a sheet on the chrome', () => {
   it('draws a page with no band as the one content sheet, with no second sheet inside it', () => {
     render(
       <AppShell
-        leftSidebar={<div>column</div>}
+        leftRail={<nav aria-label="Places" />}
         studio={
           <StudioFrame kind="impact" placement="content" onClose={() => undefined}>
             <p>page</p>

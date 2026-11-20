@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'vitest';
-import { LEFT_SIDEBAR_DEFAULT, LEFT_SIDEBAR_MAX } from '../components/AppShell';
 import {
   COLUMN_FRAME,
   COLUMN_GUTTERS,
@@ -28,7 +27,9 @@ import {
 
 const WINDOWS = [1024, 1440, 1920] as const;
 const ZOOMS = [0.8, 1, 1.25] as const;
-const SIDEBARS = [LEFT_SIDEBAR_DEFAULT, LEFT_SIDEBAR_MAX] as const;
+const LEFT_COLUMN_DEFAULT = 240;
+const LEFT_COLUMN_MAX = 400;
+const SIDEBARS = [LEFT_COLUMN_DEFAULT, LEFT_COLUMN_MAX] as const;
 const SIZINGS: ReadonlyArray<DrawerSizing> = ['side', 'reader'];
 const TIERS = ['side', 'reader'] as const;
 
@@ -395,11 +396,11 @@ describe('drawer geometry across the width matrix', () => {
 
   it('opens the reader drawer beside the work at 1920 and over it at 1440', () => {
     const at1920 = layoutOf({
-      columnWidth: paneOf({ windowPx: 1920, zoom: 1, sidebarPx: LEFT_SIDEBAR_DEFAULT }),
+      columnWidth: paneOf({ windowPx: 1920, zoom: 1, sidebarPx: LEFT_COLUMN_DEFAULT }),
       sizing: 'reader',
     });
     const at1440 = layoutOf({
-      columnWidth: paneOf({ windowPx: 1440, zoom: 1, sidebarPx: LEFT_SIDEBAR_DEFAULT }),
+      columnWidth: paneOf({ windowPx: 1440, zoom: 1, sidebarPx: LEFT_COLUMN_DEFAULT }),
       sizing: 'reader',
     });
 

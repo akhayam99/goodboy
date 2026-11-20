@@ -3,7 +3,6 @@
 import { createElement, useSyncExternalStore, type ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
-import { LEFT_SIDEBAR_DEFAULT, LEFT_SIDEBAR_MAX } from '../components/AppShell';
 import { DrawerColumn, type DrawerColumnFrame } from '../components/DrawerColumn';
 import { READER_DRAWER_STORAGE_KEY, RIGHT_DRAWER_STORAGE_KEY } from '../drawerWidthKeys';
 import {
@@ -596,7 +595,7 @@ describe('DrawerColumn sizes', () => {
   });
 
   const FIT_CASES = [1280, 1440].flatMap((windowPx) =>
-    [LEFT_SIDEBAR_DEFAULT, LEFT_SIDEBAR_MAX].flatMap((sidebarPx) =>
+    [240, 400].flatMap((sidebarPx) =>
       (['side', 'reader'] as const).map((sizing) => ({
         sizing,
         columnWidth: windowPx - sidebarPx,

@@ -22,7 +22,7 @@ const stubColumnWidth = (width: number) => {
 
 const shell = ({ drawer }: { readonly drawer: string | null }) => (
   <AppShell
-    leftSidebar={<div>sessions</div>}
+    leftRail={<nav aria-label="Places" />}
     main={<div>board</div>}
     studio={
       <StudioFrame kind="inbox" placement="content" onClose={() => undefined}>

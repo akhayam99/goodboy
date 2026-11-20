@@ -193,8 +193,8 @@ be used inside ToastProvider`.** `main.tsx` renders `MockScene` in place of
   `App` under the `MOCK_ENABLED` gate, so a scene never inherits `App`'s
   `ToastProvider`. A scene that renders such a component wraps itself in
   `ToastProvider`.
-- **`AppShell` already has a `leftSidebar` slot.** You need no layout code to
-  add the real side column to a scene. Pass the component into that prop.
+- **`AppShell` already has a `leftRail` slot.** You need no layout code to
+  add the places rail to a scene. Pass the component into that prop.
 - **A fixed timestamp drifts every day.** The UI measures elapsed and relative
   times against the real clock, so a literal `'2026-08-25T17:57:00.000Z'`
   reads as a step running for days. Wrap every seeded instant in
