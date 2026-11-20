@@ -69,7 +69,9 @@ export const CrashReport = ({ heading, initialLine, errorPart }: Props) => {
         placement="inline"
         role="status"
         title={outcome.filed.kind === 'comment' ? `Added to ${where}` : `Issue ${where} filed`}
-        body="Thanks. Try again above when you are ready."
+        body={
+          github?.user == null ? 'On GitHub, under your account.' : `On GitHub as @${github.user}.`
+        }
         actions={
           url == null ? undefined : (
             <Button
@@ -77,7 +79,7 @@ export const CrashReport = ({ heading, initialLine, errorPart }: Props) => {
               size="sm"
               onClick={() => openLink({ url, sessionId: null, place: 'outside' })}
             >
-              View issue
+              {outcome.filed.kind === 'comment' ? 'Open comment' : 'Open issue'}
               <SquareArrowOutUpRight size={ICON_SIZE.row} aria-hidden />
             </Button>
           )
