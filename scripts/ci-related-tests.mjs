@@ -13,13 +13,23 @@ const PERF_TEST = /\.perf\.test\.tsx?$/;
 const SKIPPED_FOLDERS = new Set(['node_modules', 'dist', 'coverage']);
 const DISK_READER = /node:fs|from 'fs'|from "fs"|fs\/promises|import\.meta\.glob/;
 const ALWAYS_RUN = /^apps[/]desktop[/]src[/]__tests__[/]regressions[/]/;
+const FROM_PATTERN = /\bfrom\s*['"]([^'"\n]+)['"]/g;
+const DYNAMIC_PATTERN = /\bimport\(\s*['"]([^'"\n]+)['"]\s*\)/g;
 const SPECIFIER_PATTERNS = [
-  /\bfrom\s*['"]([^'"\n]+)['"]/g,
+  FROM_PATTERN,
   /\bimport\s*['"]([^'"\n]+)['"]/g,
-  /\bimport\(\s*['"]([^'"\n]+)['"]\s*\)/g,
+  DYNAMIC_PATTERN,
   /\bvi\.(?:mock|doMock|importActual|importMock)(?:<[^>\n]*>)?\(\s*['"]([^'"\n]+)['"]/g,
   /\bnew URL\(\s*['"](\.[^'"\n]+)['"]\s*,\s*import\.meta\.url/g,
 ];
+const TYPE_ONLY_HEAD = /^(?:import|export)\s+type[\s{*]/;
+const BRACED_HEAD = /^(?:import|export)\s*\{([^}]*)\}$/;
+const TYPEOF_BEFORE = /\btypeof\s*$/;
+const READ_ROOTS = new Set(['docs', 'packages', 'website']);
+const ROOT_DOC = /^[A-Z][A-Z0-9_-]*\.md$/;
+const READ_CALL = /\b(?:join|resolve)\(([^()]*)\)/g;
+const READ_URL = /new URL\(\s*(?:'([^'\n]*)'|"([^"\n]*)")\s*,\s*import\.meta\.url/g;
+const QUOTED = /'([^'\n]*)'|"([^"\n]*)"/g;
 const RESOLVE_SUFFIXES = ['', '.ts', '.tsx', '/index.ts', '/index.tsx'];
 const GLOB_CALL = /\bimport\.meta\.glob(?:<[^(]*>)?\(\s*(\[[^\]]*\]|['"][^'"\n]+['"])/g;
 const STRING_LITERAL = /['"]([^'"\n]+)['"]/g;
@@ -42,14 +52,73 @@ const walk = ({ directory }) => {
   });
 };
 
-export const specifiersOf = ({ source }) => {
+const statementHeadOf = ({ source, index }) => {
+  const start = Math.max(source.lastIndexOf('import', index), source.lastIndexOf('export', index));
+  return start < 0 ? '' : source.slice(start, index).trim();
+};
+
+const isTypeOnlyHead = ({ head }) => {
+  if (TYPE_ONLY_HEAD.test(head)) {
+    return true;
+  }
+  const braced = BRACED_HEAD.exec(head);
+  if (braced === null) {
+    return false;
+  }
+  const members = braced[1]
+    .split(',')
+    .map((member) => member.trim())
+    .filter((member) => member.length > 0);
+  return members.length > 0 && members.every((member) => member.startsWith('type '));
+};
+
+const isTypeOnlyMatch = ({ source, pattern, match }) => {
+  if (pattern === FROM_PATTERN) {
+    return isTypeOnlyHead({ head: statementHeadOf({ source, index: match.index }) });
+  }
+  if (pattern === DYNAMIC_PATTERN) {
+    return TYPEOF_BEFORE.test(source.slice(Math.max(0, match.index - 12), match.index));
+  }
+  return false;
+};
+
+export const specifiersOf = ({ source, isTypeOnlySkipped = false }) => {
   const found = new Set();
   for (const pattern of SPECIFIER_PATTERNS) {
     for (const match of source.matchAll(pattern)) {
+      if (isTypeOnlySkipped && isTypeOnlyMatch({ source, pattern, match })) {
+        continue;
+      }
       found.add(match[1].replace(/\?.*$/, ''));
     }
   }
   return [...found];
+};
+
+const readPathOf = ({ literals }) => {
+  const start = literals.findIndex(
+    (literal) => READ_ROOTS.has(literal.split('/')[0]) || ROOT_DOC.test(literal),
+  );
+  return start < 0 ? null : literals.slice(start).join('/');
+};
+
+export const pathsReadOf = ({ source, file }) => {
+  const read = [];
+  for (const call of source.matchAll(READ_CALL)) {
+    const path = readPathOf({
+      literals: [...call[1].matchAll(QUOTED)].map((match) => match[1] ?? match[2]),
+    });
+    if (path !== null) {
+      read.push(path);
+    }
+  }
+  for (const call of source.matchAll(READ_URL)) {
+    const target = posix.normalize(posix.join(posix.dirname(file), call[1] ?? call[2]));
+    if (READ_ROOTS.has(target.split('/')[0]) || ROOT_DOC.test(target)) {
+      read.push(target);
+    }
+  }
+  return read;
 };
 
 const globToRegExp = ({ pattern }) =>
@@ -149,7 +218,7 @@ export const resolveSpecifier = ({ root, from, specifier, packages }) => {
   return fileExists({ root, path }) ? path : null;
 };
 
-export const buildGraph = ({ root = ROOT } = {}) => {
+export const buildGraph = ({ root = ROOT, isTypeOnlySkipped = false } = {}) => {
   const packages = workspacePackages({ root });
   const files = SOURCE_ROOTS.flatMap((folder) => walk({ directory: join(root, folder) })).map(
     (path) => toPosix({ path: relative(root, path) }),
@@ -166,7 +235,7 @@ export const buildGraph = ({ root = ROOT } = {}) => {
   for (const file of files) {
     const source = readFileSync(join(root, file), 'utf8');
     sources.set(file, source);
-    for (const specifier of specifiersOf({ source })) {
+    for (const specifier of specifiersOf({ source, isTypeOnlySkipped })) {
       const target = resolveSpecifier({ root, from: file, specifier, packages });
       if (target === undefined) {
         continue;
@@ -211,17 +280,21 @@ const isPackageUnitTest = ({ file }) =>
 const isAlwaysRun = ({ graph, file }) =>
   ALWAYS_RUN.test(file) || DISK_READER.test(graph.sources.get(file) ?? '');
 
-const packageTestsOf = ({ graph, reached }) => {
+const packagesOf = ({ files }) => {
   const packages = {};
-  for (const file of graph.files) {
-    if (!isPackageUnitTest({ file }) || !(reached.has(file) || isAlwaysRun({ graph, file }))) {
-      continue;
-    }
+  for (const file of files) {
     const [, name, ...rest] = file.split('/');
     packages[name] = [...(packages[name] ?? []), rest.join('/')];
   }
   return packages;
 };
+
+const packageTestsOf = ({ graph, reached }) =>
+  packagesOf({
+    files: graph.files.filter(
+      (file) => isPackageUnitTest({ file }) && (reached.has(file) || isAlwaysRun({ graph, file })),
+    ),
+  });
 
 export const relatedSelection = ({ graph, changed }) => {
   const reached = reachedFrom({ graph, changed });
@@ -238,21 +311,55 @@ export const relatedSelection = ({ graph, changed }) => {
   };
 };
 
+const isUnitTest = ({ file }) => isDesktopUnitTest({ file }) || isPackageUnitTest({ file });
+
+const readsPath = ({ graph, file, path }) => {
+  const source = graph.sources.get(file) ?? '';
+  if (!DISK_READER.test(source)) {
+    return false;
+  }
+  const name = posix.basename(path);
+  if (source.includes(`'${name}'`) || source.includes(`"${name}"`)) {
+    return true;
+  }
+  return pathsReadOf({ source, file }).some((read) => path === read || path.startsWith(`${read}/`));
+};
+
+export const testsReadingOf = ({ graph, path }) => {
+  const reached = reachedFrom({ graph, changed: [path] });
+  return graph.files.filter(
+    (file) => isUnitTest({ file }) && (reached.has(file) || readsPath({ graph, file, path })),
+  );
+};
+
+const testStemOf = ({ file }) => posix.basename(file).replace(TEST_FILE, '');
+
+export const baselineReadersOf = ({ graph, path }) => {
+  const name = posix.basename(path);
+  const guards = graph.files.filter((file) => ALWAYS_RUN.test(file) && isDesktopUnitTest({ file }));
+  const naming = guards.filter((file) => (graph.sources.get(file) ?? '').includes(name));
+  if (naming.length > 0) {
+    return naming;
+  }
+  const stem = name.replace(/\.baseline\.json$/, '');
+  const prefixes = guards.filter((file) => {
+    const guard = testStemOf({ file });
+    return stem === guard || stem.startsWith(`${guard}.`) || stem.startsWith(`${guard}-`);
+  });
+  const longest = Math.max(0, ...prefixes.map((file) => testStemOf({ file }).length));
+  return prefixes.filter((file) => testStemOf({ file }).length === longest);
+};
+
+export const testsSelection = ({ files }) => ({
+  desktop: files
+    .filter((file) => isDesktopUnitTest({ file }))
+    .map((file) => file.slice(`${DESKTOP}/`.length)),
+  packages: packagesOf({ files: files.filter((file) => isPackageUnitTest({ file })) }),
+});
+
 export const selectionLines = ({ selection }) => [
   ...selection.desktop.map((file) => `desktop ${file}`),
   ...Object.entries(selection.packages).flatMap(([name, files]) =>
     files.map((file) => `${name} ${file}`),
   ),
 ];
-
-const runCli = () => {
-  const changed = readFileSync(0, 'utf8')
-    .split('\n')
-    .filter((line) => line.length > 0);
-  const selection = relatedSelection({ graph: buildGraph(), changed });
-  process.stdout.write(selectionLines({ selection }).join('\n'));
-};
-
-if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  runCli();
-}

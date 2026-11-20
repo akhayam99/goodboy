@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { describe, it } from 'node:test';
@@ -152,17 +153,56 @@ describe('scripts/gate.sh against the CI jobs', () => {
 
   it('honors GATE_WORKERS and the environment target dir', () => {
     assert.match(gateText, /GATE_WORKERS:-2/);
-    assert.doesNotMatch(gateText, /CARGO_TARGET_DIR=/);
+    assert.match(gateText, /CARGO_TARGET_DIR="\$\{CARGO_TARGET_DIR:-\$\(shared_target_dir\)\}"/);
+    assert.match(gateText, /^export CARGO_TARGET_DIR$/m);
   });
 
-  it('picks the quick gate tests with the import graph CI uses', () => {
-    assert.match(gateText, /node scripts\/ci-related-tests\.mjs/);
+  it('builds Rust in the target folder of the main checkout', () => {
+    const fn = gateText.match(/^shared_target_dir\(\) \{\n[\s\S]*?\n\}$/m)?.[0];
+    assert.ok(fn !== undefined, 'gate.sh defines shared_target_dir');
+    const dir = execFileSync(
+      'bash',
+      ['-c', `TAURI_DIR=apps/desktop/src-tauri\n${fn}\nshared_target_dir`],
+      {
+        cwd: ROOT,
+        encoding: 'utf8',
+      },
+    ).trim();
+    const common = execFileSync(
+      'git',
+      ['rev-parse', '--path-format=absolute', '--git-common-dir'],
+      {
+        cwd: ROOT,
+        encoding: 'utf8',
+      },
+    ).trim();
+    assert.equal(dir, `${dirname(common)}/apps/desktop/src-tauri/target`);
+  });
+
+  it('picks the quick gate tests with the quick plan and the import graph CI uses', () => {
+    assert.match(gateText, /node scripts\/ci-changes\.mjs --quick "\$MERGE_BASE"/);
     assert.doesNotMatch(gateText, /vitest related/);
   });
 
-  it('runs the full unit suites when the change scope CI computes is full', () => {
-    assert.match(gateText, /testScopeOf/);
+  it('runs the full unit suites when the quick plan is full', () => {
     assert.match(gateText, /\[ "\$scope" = full \] && \{ check_full_tests/);
+  });
+
+  it('runs check:doc-refs when the quick plan asks for it', () => {
+    assert.match(gateText, /grep -qx 'check doc-refs' && \{ pnpm run check:doc-refs/);
+  });
+
+  it('lints only the changed files when a suppressions file changed', () => {
+    const lint = gateText.slice(gateText.indexOf('check_lint_ts() {'));
+    assert.doesNotMatch(gateText.match(/^LINT_CONFIG=.*$/m)[0], /suppressions/);
+    assert.match(
+      lint,
+      /grep -qE "\$LINT_SUPPRESSIONS" && unpruned=--pass-on-unpruned-suppressions/,
+    );
+    assert.equal(
+      lint.slice(0, lint.indexOf('\n}\n')).match(/--no-warn-ignored \$unpruned/g).length,
+      2,
+    );
   });
 
   it('prints the output contract', () => {

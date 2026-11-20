@@ -8,6 +8,17 @@ WORKERS="${GATE_WORKERS:-2}"
 LOG_DIR=.gate-logs
 TAURI_DIR=apps/desktop/src-tauri
 FORMAT_GLOB='\.(ts|tsx|js|jsx|json|md|yml|yaml)$'
+LINT_CONFIG='^(eslint\.config\.mjs|eslint\.strict\.config\.mjs|pnpm-lock\.yaml)$'
+LINT_SUPPRESSIONS='^eslint-suppressions(-strict)?\.json$'
+
+shared_target_dir() {
+  local common
+  common=$(git rev-parse --path-format=absolute --git-common-dir) || return 1
+  echo "$(dirname "$common")/$TAURI_DIR/target"
+}
+
+CARGO_TARGET_DIR="${CARGO_TARGET_DIR:-$(shared_target_dir)}"
+export CARGO_TARGET_DIR
 
 mode=full
 case "${1:-}" in
@@ -89,15 +100,16 @@ check_rust_quick() {
 }
 
 check_lint_ts() {
-  local files
-  if changed_files | grep -qE '^(eslint\.config\.mjs|eslint\.strict\.config\.mjs|eslint-suppressions(-strict)?\.json|pnpm-lock\.yaml)$'; then
+  local files unpruned=''
+  if changed_files | grep -qE "$LINT_CONFIG"; then
     pnpm run lint:ts && pnpm run lint:ts:strict
     return $?
   fi
+  changed_files | grep -qE "$LINT_SUPPRESSIONS" && unpruned=--pass-on-unpruned-suppressions
   files=$(changed_files | grep -E '^(apps/desktop/src|packages/[^/]+/src|website/src)/.*\.tsx?$')
   [ -z "$files" ] && return 0
-  echo "$files" | tr '\n' '\0' | xargs -0 node --max-old-space-size=6144 node_modules/eslint/bin/eslint.js --no-warn-ignored || return 1
-  echo "$files" | tr '\n' '\0' | xargs -0 node --max-old-space-size=6144 node_modules/eslint/bin/eslint.js -c eslint.strict.config.mjs --suppressions-location eslint-suppressions-strict.json --no-warn-ignored
+  echo "$files" | tr '\n' '\0' | xargs -0 node --max-old-space-size=6144 node_modules/eslint/bin/eslint.js --no-warn-ignored $unpruned || return 1
+  echo "$files" | tr '\n' '\0' | xargs -0 node --max-old-space-size=6144 node_modules/eslint/bin/eslint.js -c eslint.strict.config.mjs --suppressions-location eslint-suppressions-strict.json --no-warn-ignored $unpruned
 }
 
 run_selected() {
@@ -113,10 +125,6 @@ touched_paths() {
   } | sort -u
 }
 
-test_scope() {
-  touched_paths | node --input-type=module -e "import { readFileSync } from 'node:fs'; import { testScopeOf } from './scripts/ci-changes.mjs'; const paths = readFileSync(0, 'utf8').split('\\n').filter((path) => path.length > 0); console.log(testScopeOf({ eventName: 'pull_request', paths }));"
-}
-
 check_full_tests() {
   local status=0
   pnpm turbo run test --filter='./packages/*' --continue || status=1
@@ -125,15 +133,20 @@ check_full_tests() {
 }
 
 check_related_tests() {
-  local selection name scope status=0
-  scope=$(test_scope) || return 1
-  echo "test scope: $scope"
+  local plan selection name scope status=0
+  plan=$(touched_paths | node scripts/ci-changes.mjs --quick "$MERGE_BASE") || return 1
+  echo "$plan"
+  scope=$(echo "$plan" | sed -n 's/^scope //p')
   [ "$scope" = none ] && return 0
   [ "$scope" = full ] && { check_full_tests; return $?; }
-  selection=$(changed_files | node scripts/ci-related-tests.mjs) || return 1
-  echo "$selection"
-  echo "$selection" | run_selected desktop --project unit || status=1
-  for name in $(echo "$selection" | cut -d' ' -f1 | grep -v '^desktop$' | sort -u); do
+  echo "$plan" | grep -qx 'check doc-refs' && { pnpm run check:doc-refs || status=1; }
+  selection=$(echo "$plan" | grep -vE '^(scope|check) ')
+  [ -z "$selection" ] && return $status
+  for name in $(echo "$selection" | cut -d' ' -f1 | sort -u); do
+    if [ "$name" = desktop ]; then
+      echo "$selection" | run_selected desktop --project unit || status=1
+      continue
+    fi
     echo "$selection" | run_selected "$name" || status=1
   done
   return $status
