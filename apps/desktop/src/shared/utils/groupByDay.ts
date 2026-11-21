@@ -1,11 +1,20 @@
+import { dayLabelOf } from './time/dayLabelOf';
+
 type DayBucket = 'today' | 'yesterday' | 'this-week' | 'older';
 
-const DAY_BUCKET_LABEL = {
-  today: 'Today',
-  yesterday: 'Yesterday',
-  'this-week': 'This week',
-  older: 'Older',
-} satisfies Record<DayBucket, string>;
+type BucketLabelParams = {
+  readonly now: Date;
+};
+
+const bucketLabelsOf = ({ now }: BucketLabelParams): Record<DayBucket, string> => {
+  const yesterday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1);
+  return {
+    today: dayLabelOf({ at: now.getTime(), now: now.getTime() }),
+    yesterday: dayLabelOf({ at: yesterday.getTime(), now: now.getTime() }),
+    'this-week': 'This week',
+    older: 'Older',
+  };
+};
 
 const DAY_BUCKETS = ['today', 'yesterday', 'this-week', 'older'] as const;
 
@@ -70,6 +79,7 @@ export const groupByDay = <T>({
   now,
 }: GroupByDayParams<T>): ReadonlyArray<DayGroup<T>> => {
   const boundaries = dayBoundaries({ now });
+  const labels = bucketLabelsOf({ now });
   const buckets: Record<DayBucket, Array<T>> = {
     today: [],
     yesterday: [],
@@ -81,7 +91,7 @@ export const groupByDay = <T>({
   }
   return DAY_BUCKETS.map((day) => ({
     day,
-    label: DAY_BUCKET_LABEL[day],
+    label: labels[day],
     items: buckets[day],
   })).filter((group) => group.items.length > 0);
 };

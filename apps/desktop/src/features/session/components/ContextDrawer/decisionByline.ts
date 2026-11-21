@@ -30,11 +30,8 @@ type AgeParams = {
 };
 
 export const decisionAge = ({ iso, nowMs }: AgeParams): string => {
-  const fromMs = Date.parse(iso);
-  if (Number.isNaN(fromMs) || nowMs - fromMs < 60_000) {
-    return 'just now';
-  }
-  return formatAge({ from: iso, now: nowMs });
+  const age = formatAge({ from: iso, now: nowMs });
+  return age === '' ? 'just now' : age;
 };
 
 type BylineParams = {

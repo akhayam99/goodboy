@@ -531,7 +531,7 @@ describe('buildTimelineStream', () => {
 
     expect(labelsOf(items)).toEqual([
       'now',
-      'day:Aug 12',
+      'day:Wednesday',
       'step:agent:two',
       'entry:run:run-2',
       'step:agent:one',
@@ -557,7 +557,7 @@ describe('buildTimelineStream', () => {
     expect(items.filter((item) => item.kind === 'day')).toHaveLength(1);
     expect(labelsOf(items)).toEqual([
       'now',
-      'day:Aug 12',
+      'day:Wednesday',
       'entry:agent:loose',
       'step:agent:old',
       'entry:run:run-1',
@@ -868,13 +868,13 @@ describe('buildTimelineStream', () => {
       ],
     });
     const layout = layoutTimelineRail({ rows: items, groups });
-    const innerRule = items.findIndex((item) => item.kind === 'day' && item.label === 'Aug 16');
+    const innerRule = items.findIndex((item) => item.kind === 'day' && item.label === 'Sunday');
 
     expect(labelsOf(items)).toEqual([
       'now',
       'day:Yesterday',
       'step:agent:after',
-      'day:Aug 16',
+      'day:Sunday',
       'step:agent:before',
       'entry:run:run-1',
     ]);
@@ -1221,7 +1221,7 @@ describe('buildTimelineStream', () => {
       expect(labelsOf(items)).toEqual([
         'now',
         'entry:agent:today',
-        'day:Aug 16',
+        'day:Sunday',
         'count:run:run-1',
         'entry:run:run-1',
       ]);

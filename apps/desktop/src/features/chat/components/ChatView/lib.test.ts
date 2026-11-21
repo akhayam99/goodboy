@@ -30,6 +30,8 @@ describe('dayKey', () => {
   });
 });
 
+const NOW = new Date(2026, 4, 15, 12, 0, 0).getTime();
+
 describe('formatDayLabel', () => {
   beforeEach(() => {
     vi.useFakeTimers();
@@ -41,16 +43,34 @@ describe('formatDayLabel', () => {
   });
 
   it('returns "" for an invalid date', () => {
-    expect(formatDayLabel('nope')).toBe('');
+    expect(formatDayLabel({ iso: 'nope', now: NOW })).toBe('');
   });
 
   it('labels a day of this year with its month and day only', () => {
-    expect(formatDayLabel(new Date(2026, 4, 15, 9, 0, 0).toISOString())).toBe('May 15');
-    expect(formatDayLabel(new Date(2026, 2, 1, 9, 0, 0).toISOString())).toBe('Mar 1');
+    expect(formatDayLabel({ iso: new Date(2026, 4, 1, 9, 0, 0).toISOString(), now: NOW })).toBe(
+      'May 1',
+    );
+    expect(formatDayLabel({ iso: new Date(2026, 2, 1, 9, 0, 0).toISOString(), now: NOW })).toBe(
+      'Mar 1',
+    );
+  });
+
+  it('says Today and Yesterday, then the weekday for the rest of the week', () => {
+    expect(formatDayLabel({ iso: new Date(2026, 4, 15, 9, 0, 0).toISOString(), now: NOW })).toBe(
+      'Today',
+    );
+    expect(formatDayLabel({ iso: new Date(2026, 4, 14, 23, 0, 0).toISOString(), now: NOW })).toBe(
+      'Yesterday',
+    );
+    expect(formatDayLabel({ iso: new Date(2026, 4, 12, 9, 0, 0).toISOString(), now: NOW })).toBe(
+      'Tuesday',
+    );
   });
 
   it('adds the year to a day of another year', () => {
-    expect(formatDayLabel(new Date(2025, 8, 27, 9, 0, 0).toISOString())).toBe('Sep 27, 2025');
+    expect(formatDayLabel({ iso: new Date(2025, 8, 27, 9, 0, 0).toISOString(), now: NOW })).toBe(
+      'Sep 27, 2025',
+    );
   });
 
   it('pins the Intl locale to en-US for both branches', () => {
@@ -60,8 +80,8 @@ describe('formatDayLabel', () => {
     ) {
       return new original(...args);
     } as never);
-    formatDayLabel(new Date(2026, 4, 12, 9, 0, 0).toISOString());
-    formatDayLabel(new Date(2026, 2, 1, 9, 0, 0).toISOString());
+    formatDayLabel({ iso: new Date(2026, 4, 12, 9, 0, 0).toISOString(), now: NOW });
+    formatDayLabel({ iso: new Date(2026, 2, 1, 9, 0, 0).toISOString(), now: NOW });
     expect(spy.mock.calls.map((call) => call[0])).toEqual(['en-US', 'en-US']);
     spy.mockRestore();
   });

@@ -41,7 +41,6 @@ vi.mock('./OpenQuestionCluster', () => ({
   ),
 }));
 
-import { formatDayMonth } from '../../../../shared/utils/time/formatDayMonth';
 import { TranscriptRows } from './TranscriptRows';
 
 const retryErrorSpy = vi.fn();
@@ -201,7 +200,7 @@ describe('TranscriptRows', () => {
     expect(screen.getByTestId('transcript-day').getAttribute('data-align')).toBe('start');
   });
 
-  it('marks the move into today after an earlier day with a plain month and day', () => {
+  it('marks the move into today after an earlier day with the word Today', () => {
     const now = new Date();
     renderRows([
       itemRow(userText('u1', new Date(Date.now() - 86_400_000))),
@@ -209,7 +208,7 @@ describe('TranscriptRows', () => {
     ]);
     const days = screen.getAllByTestId('transcript-day');
     expect(days).toHaveLength(2);
-    expect(days[1]?.textContent).toBe(formatDayMonth({ at: now.toISOString() }));
+    expect(days[1]?.textContent).toBe('Today');
     expect(days[1]?.querySelector('.rounded-full')).toBeNull();
   });
 
