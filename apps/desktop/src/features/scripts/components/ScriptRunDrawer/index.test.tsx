@@ -82,6 +82,8 @@ vi.mock('../../../../store', () => {
     loadScriptPins: vi.fn(async () => undefined),
     loadDiscoveredScripts: vi.fn(async () => undefined),
     scriptRuns: state.scriptRuns,
+    scriptLedger: {},
+    loadScriptLedger: vi.fn(async () => undefined),
     cancelScript: state.cancelScript,
     runScript: state.runScript,
     runDiscoveredScript: state.runDiscoveredScript,

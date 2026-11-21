@@ -38,6 +38,8 @@ const group = (scripts: ReadonlyArray<RunnableScript>): SessionScriptGroup => ({
   packageCount: 2,
   scripts,
   suggested: [],
+  available: [],
+  mostUsedKey: null,
 });
 
 describe('buildScriptActions', () => {

@@ -36,6 +36,7 @@ import { createBudgetSlice } from './slices/budget';
 import { createBrowserSlice } from './slices/browser';
 import { createBrowserHostSlice } from './slices/browser-host';
 import { createBrowserVisitsSlice } from './slices/browser-visits';
+import { createWorkLedgerSlice } from './slices/work-ledger';
 import { createMonitoringSlice } from './slices/monitoring';
 import { monitoringInitialState } from './slices/monitoring/state';
 import { createStorageSlice } from './slices/storage';
@@ -106,6 +107,7 @@ import { budgetInitialState } from './slices/budget/state';
 import { browserInitialState } from './slices/browser/state';
 import { browserHostInitialState } from './slices/browser-host/state';
 import { browserVisitsInitialState } from './slices/browser-visits/state';
+import { workLedgerInitialState } from './slices/work-ledger/state';
 import { createTranscriptsSlice } from './slices/transcripts';
 import { createSummariesSlice } from './slices/summaries';
 import { createSessionsSlice } from './slices/sessions';
@@ -328,6 +330,7 @@ export type AppStore = AppState &
   ReturnType<typeof createBrowserSlice> &
   ReturnType<typeof createBrowserHostSlice> &
   ReturnType<typeof createBrowserVisitsSlice> &
+  ReturnType<typeof createWorkLedgerSlice> &
   ReturnType<typeof createMonitoringSlice> &
   ReturnType<typeof createGithubSlice> &
   ReturnType<typeof createMountRequestSlice> &
@@ -360,6 +363,7 @@ const initialState: AppState = {
   ...browserInitialState,
   ...browserHostInitialState,
   ...browserVisitsInitialState,
+  ...workLedgerInitialState,
   ...monitoringInitialState,
   ...createInitialSessionViewState({}),
   ...savedProjectModelsInitialState,
@@ -467,6 +471,7 @@ const appStoreApi = createStore<AppStore>((set, get) => ({
   ...createBrowserSlice({ set, get }),
   ...createBrowserHostSlice({ set, get }),
   ...createBrowserVisitsSlice({ set, get }),
+  ...createWorkLedgerSlice({ set, get }),
   ...createMonitoringSlice({ set, get }),
   ...createStorageSlice({ set, get }),
   ...createDiffCommentsSlice({ set, get }),

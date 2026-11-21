@@ -106,6 +106,7 @@ export const SESSION_EVICTION = [
   { key: 'scriptRuns', keyedBy: 'session', evictOn: 'archive' },
   { key: 'scriptRunsSeen', keyedBy: 'session', evictOn: 'archive' },
   { key: 'discoveredScripts', keyedBy: 'session', evictOn: 'archive' },
+  { key: 'scriptLedger', keyedBy: 'session', evictOn: 'archive' },
   { key: 'discoveredScriptScans', keyedBy: 'session', evictOn: 'archive' },
   { key: 'sessionPanelExpanded', keyedBy: 'session', evictOn: 'archive' },
   { key: 'activeLens', keyedBy: 'session', evictOn: 'archive' },

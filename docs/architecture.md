@@ -324,6 +324,17 @@ the snapshot call fails the bus tail stands in. The scripts slice does the
 same for every live run on boot (`registerScriptRunListeners` with
 `shouldReplay`); what a script's transcript shows stays capped at 64KB.
 
+A script run also leaves a row in `work_events` (see Who writes each table):
+`scripts.rs` writes it when the run starts and stamps the end and the exit
+code before `script-exit` fires, so a read after the event sees the end. The
+`work-ledger` slice reads the last run of each script per mount
+(`listScriptLedger`) when the scripts of a session are on screen and again
+whenever a run starts or ends; a late answer for an older read is dropped.
+`buildSessionScripts` gives every group `available`, each saved and
+discovered script with its last run (`ok`, `error`, `cancelled` for an exit
+of 130, 137 or 143, `unfinished` for a run whose end never landed, as after a
+quit), pinned or not, and `mostUsedKey`.
+
 Provider login and CLI update runs have no Rust ring. `invokeProviderLifecycleRun`
 starts `features/providers/lifecycleOutputBuffer.ts` before the run, which keeps
 the last 256KB per `runId` with the same running `offset`, and `InlineTerminal`

@@ -1,4 +1,4 @@
-import { renderHook } from '@testing-library/react';
+import { cleanup, renderHook } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type {
   MountId,
@@ -12,6 +12,10 @@ import { useAppStore } from '../../../../store';
 import { scriptPinId } from '../../scriptPinId';
 import { scriptPinsKey } from '../../scriptPinsKey';
 import { useSessionScripts } from './index';
+
+type ScanProps = {
+  readonly shouldScan: boolean;
+};
 
 const SESSION_ID = 'session-1' as SessionId;
 const WORKSPACE_ID = 'ws-1' as WorkspaceId;
@@ -52,10 +56,13 @@ const MOUNTS: ReadonlyArray<SessionProjectMount> = [
 
 const initialState = useAppStore.getState();
 const loadDiscoveredScripts = vi.fn(async () => undefined);
+const loadScriptLedger = vi.fn(async () => undefined);
 
 beforeEach(() => {
   loadDiscoveredScripts.mockClear();
+  loadScriptLedger.mockClear();
   useAppStore.setState({
+    loadScriptLedger,
     projects: [{ id: LEDGER, name: 'ledger-core' }] as unknown as ReadonlyArray<Project>,
     projectScripts: {},
     sessionProjectMounts: { [SESSION_ID]: MOUNTS },
@@ -72,6 +79,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  cleanup();
   useAppStore.setState(initialState, true);
 });
 
@@ -91,6 +99,26 @@ describe('useSessionScripts', () => {
       sessionId: SESSION_ID,
       worktreePath: '/wt/ledger',
     });
+  });
+
+  it('reads the script ledger once asked to and again when a run moves', () => {
+    const { rerender } = renderHook(
+      ({ shouldScan }: ScanProps) =>
+        useSessionScripts({ sessionId: SESSION_ID, workspaceId: WORKSPACE_ID, shouldScan }),
+      { initialProps: { shouldScan: false } },
+    );
+    expect(loadScriptLedger).not.toHaveBeenCalled();
+
+    rerender({ shouldScan: true });
+    useAppStore.setState({
+      scriptRuns: {
+        [SESSION_ID]: { lint: { status: 'ok', result: null, runId: 'run-1', startedAt: 1 } },
+      },
+    });
+    rerender({ shouldScan: true });
+
+    expect(loadScriptLedger).toHaveBeenCalledTimes(2);
+    expect(loadScriptLedger).toHaveBeenCalledWith({ sessionId: SESSION_ID });
   });
 
   it('groups by mount and says it is still reading until the scan lands', () => {

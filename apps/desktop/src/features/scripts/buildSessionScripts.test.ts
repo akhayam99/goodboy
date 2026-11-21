@@ -1,14 +1,16 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
-import type {
-  IsoDateTime,
-  MountId,
-  Project,
-  ProjectId,
-  ProjectScript,
-  ProjectScriptId,
-  SessionId,
-  SessionProjectMount,
+import type { ScriptLedgerEntry } from '@goodboy/db';
+import {
+  brandId,
+  type IsoDateTime,
+  type MountId,
+  type Project,
+  type ProjectId,
+  type ProjectScript,
+  type ProjectScriptId,
+  type SessionId,
+  type SessionProjectMount,
 } from '@goodboy/types';
 import { buildSessionScripts } from './buildSessionScripts';
 import { scriptPinId } from './scriptPinId';
@@ -18,6 +20,20 @@ import {
   type ScriptGroup,
   type ScriptRunRecord,
 } from './scripts';
+
+type KeyParams = {
+  readonly source: ScriptGroup['source'];
+  readonly name: string;
+};
+
+type EntryParams = {
+  readonly key: string;
+  readonly overrides: Partial<ScriptLedgerEntry>;
+};
+
+type LedgerParams = {
+  readonly ledger: ReadonlyArray<ScriptLedgerEntry>;
+};
 
 const LEDGER = 'project-ledger' as ProjectId;
 const CREATED_AT = '2026-09-01T00:00:00.000Z' as IsoDateTime;
@@ -332,6 +348,128 @@ describe('buildSessionScripts', () => {
 
     expect(pinned?.suggested).toEqual([]);
     expect(preparing?.suggested).toEqual([]);
+  });
+
+  it('makes every discovered script available with its last run, pinned or not', () => {
+    const here = mount('m1', LEDGER, '/work/ledger');
+    const keyOf = ({ source, name }: KeyParams) =>
+      discoveredScriptId({ worktreePath: '/work/ledger', source, relDir: '', name });
+    const tools: ReadonlyArray<ScriptGroup> = [
+      ...MANIFEST,
+      {
+        source: 'make',
+        packageName: 'ledger',
+        relDir: '',
+        manager: 'make',
+        scripts: [{ name: 'check', command: 'make check', body: 'cargo check' }],
+      },
+      {
+        source: 'cargo',
+        packageName: 'ledger-core',
+        relDir: '',
+        manager: 'cargo',
+        scripts: [{ name: 'test', command: 'cargo test', body: 'cargo test' }],
+      },
+    ];
+    const entry = ({ key, overrides }: EntryParams): ScriptLedgerEntry => ({
+      scriptId: key,
+      runId: `run-${key}`,
+      mountId: here.mountId,
+      startedAt: 10,
+      endedAt: 20,
+      exitCode: 0,
+      runCount: 1,
+      ...overrides,
+    });
+
+    const [group] = buildSessionScripts({
+      mounts: [here],
+      projects: PROJECTS,
+      saved: [saved('a', LEDGER, 0)],
+      discovered: { '/work/ledger': tools },
+      pins: {},
+      ledger: [
+        entry({
+          key: keyOf({ source: 'package-json', name: 'test' }),
+          overrides: { exitCode: 1, runCount: 4, startedAt: 30 },
+        }),
+        entry({
+          key: keyOf({ source: 'cargo', name: 'test' }),
+          overrides: { endedAt: null, exitCode: null, startedAt: 40 },
+        }),
+        entry({
+          key: keyOf({ source: 'make', name: 'check' }),
+          overrides: { exitCode: 143, runCount: 4, startedAt: 50 },
+        }),
+        entry({
+          key: 'a',
+          overrides: { mountId: brandId<MountId>({ value: 'another-mount' }), runCount: 9 },
+        }),
+      ],
+    });
+
+    expect(group?.scripts.map((script) => script.name)).toEqual(['Replay a']);
+    expect(
+      group?.available.map((script) => [
+        script.source,
+        script.name,
+        script.lastRun?.outcome ?? null,
+        script.lastRun?.runCount ?? 0,
+      ]),
+    ).toEqual([
+      ['saved', 'Replay a', null, 0],
+      ['package-json', 'dev', null, 0],
+      ['package-json', 'test', 'error', 4],
+      ['package-json', 'lint', null, 0],
+      ['make', 'check', 'cancelled', 4],
+      ['cargo', 'test', 'unfinished', 1],
+      ['composer', 'test', null, 0],
+    ]);
+    expect(group?.mostUsedKey).toBe(keyOf({ source: 'make', name: 'check' }));
+  });
+
+  it('reads a passed run and has no most used script before any run', () => {
+    const here = mount('m1', LEDGER, '/work/ledger');
+    const key = discoveredScriptId({
+      worktreePath: '/work/ledger',
+      source: 'package-json',
+      relDir: '',
+      name: 'lint',
+    });
+    const build = ({ ledger }: LedgerParams) =>
+      buildSessionScripts({
+        mounts: [here],
+        projects: PROJECTS,
+        saved: [],
+        discovered: { '/work/ledger': MANIFEST },
+        pins: {},
+        ledger,
+      })[0];
+
+    const ran = build({
+      ledger: [
+        {
+          scriptId: key,
+          runId: 'run-1',
+          mountId: here.mountId,
+          startedAt: 5,
+          endedAt: 9,
+          exitCode: 0,
+          runCount: 2,
+        },
+      ],
+    });
+
+    expect(ran?.available.find((script) => script.key === key)?.lastRun).toEqual({
+      runId: 'run-1',
+      startedAt: 5,
+      endedAt: 9,
+      exitCode: 0,
+      outcome: 'ok',
+      runCount: 2,
+    });
+    expect(ran?.mostUsedKey).toBe(key);
+    expect(build({ ledger: [] })?.mostUsedKey).toBeNull();
   });
 
   it('keeps a suggested script that has a run record once another script is pinned', () => {

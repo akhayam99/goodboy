@@ -1,3 +1,4 @@
+import type { ScriptLedgerEntry } from '@goodboy/db';
 import type {
   MountId,
   Project,
@@ -33,6 +34,21 @@ export type RunnableScript = {
   readonly savedId: ProjectScriptId | null;
 };
 
+export type ScriptLastOutcome = 'ok' | 'error' | 'cancelled' | 'unfinished';
+
+export type ScriptLastRun = {
+  readonly runId: string;
+  readonly startedAt: number;
+  readonly endedAt: number | null;
+  readonly exitCode: number | null;
+  readonly outcome: ScriptLastOutcome;
+  readonly runCount: number;
+};
+
+export type LedgerScript = RunnableScript & {
+  readonly lastRun: ScriptLastRun | null;
+};
+
 export type SessionScriptGroup = {
   readonly mountId: MountId;
   readonly projectId: ProjectId;
@@ -43,7 +59,11 @@ export type SessionScriptGroup = {
   readonly packageCount: number;
   readonly scripts: ReadonlyArray<RunnableScript>;
   readonly suggested: ReadonlyArray<RunnableScript>;
+  readonly available: ReadonlyArray<LedgerScript>;
+  readonly mostUsedKey: string | null;
 };
+
+const STOP_EXIT_CODES: ReadonlyArray<number> = [130, 137, 143];
 
 const SUGGESTED_CATEGORIES: ReadonlyArray<ScriptCategory> = [
   'dev',
@@ -189,6 +209,78 @@ type Params = {
   readonly discovered: Readonly<Record<string, ReadonlyArray<ScriptGroup>>> | undefined;
   readonly pins: Readonly<Record<ProjectId, ReadonlyArray<string>>>;
   readonly runs?: Readonly<Record<string, ScriptRunRecord>> | undefined;
+  readonly ledger?: ReadonlyArray<ScriptLedgerEntry> | undefined;
+};
+
+type OutcomeParams = {
+  readonly entry: ScriptLedgerEntry;
+};
+
+const outcomeOf = ({ entry }: OutcomeParams): ScriptLastOutcome => {
+  if (entry.endedAt === null || entry.exitCode === null) {
+    return 'unfinished';
+  }
+  if (entry.exitCode === 0) {
+    return 'ok';
+  }
+  return STOP_EXIT_CODES.includes(entry.exitCode) ? 'cancelled' : 'error';
+};
+
+type LastRunParams = {
+  readonly ledger: ReadonlyArray<ScriptLedgerEntry> | undefined;
+  readonly mountId: MountId;
+  readonly key: string;
+};
+
+const lastRunOf = ({ ledger, mountId, key }: LastRunParams): ScriptLastRun | null => {
+  const matches = (ledger ?? []).filter(
+    (entry) => entry.scriptId === key && (entry.mountId === null || entry.mountId === mountId),
+  );
+  const latest = matches.reduce<ScriptLedgerEntry | null>(
+    (best, entry) => (best === null || entry.startedAt > best.startedAt ? entry : best),
+    null,
+  );
+  if (latest === null) {
+    return null;
+  }
+  return {
+    runId: latest.runId,
+    startedAt: latest.startedAt,
+    endedAt: latest.endedAt,
+    exitCode: latest.exitCode,
+    outcome: outcomeOf({ entry: latest }),
+    runCount: matches.reduce((total, entry) => total + entry.runCount, 0),
+  };
+};
+
+type MostUsedParams = {
+  readonly available: ReadonlyArray<LedgerScript>;
+};
+
+type UsedScript = {
+  readonly key: string;
+  readonly lastRun: ScriptLastRun;
+};
+
+type UsedParams = {
+  readonly script: UsedScript;
+  readonly best: UsedScript;
+};
+
+const isUsedMore = ({ script, best }: UsedParams): boolean =>
+  script.lastRun.runCount === best.lastRun.runCount
+    ? script.lastRun.startedAt > best.lastRun.startedAt
+    : script.lastRun.runCount > best.lastRun.runCount;
+
+const mostUsedKeyOf = ({ available }: MostUsedParams): string | null => {
+  const used = available.flatMap((script): ReadonlyArray<UsedScript> =>
+    script.lastRun === null ? [] : [{ key: script.key, lastRun: script.lastRun }],
+  );
+  const top = used.reduce<UsedScript | null>(
+    (best, script) => (best === null || isUsedMore({ script, best }) ? script : best),
+    null,
+  );
+  return top?.key ?? null;
 };
 
 type KeptParams = {
@@ -220,6 +312,7 @@ export const buildSessionScripts = ({
   discovered,
   pins,
   runs,
+  ledger,
 }: Params): ReadonlyArray<SessionScriptGroup> =>
   mounts.map((mount) => {
     const isReady = mount.worktreePath !== '';
@@ -229,9 +322,18 @@ export const buildSessionScripts = ({
       worktreePath: mount.worktreePath,
       pins: pins[mount.projectId] ?? [],
     });
-    const suggested = suggestedScriptsOf({
-      scripts: allManifestScriptsOf({ groups: manifest, worktreePath: mount.worktreePath }),
+    const everyManifest = allManifestScriptsOf({
+      groups: manifest,
+      worktreePath: mount.worktreePath,
     });
+    const suggested = suggestedScriptsOf({ scripts: everyManifest });
+    const available = [
+      ...savedScriptsOf({ saved, projectId: mount.projectId }),
+      ...everyManifest,
+    ].map((script): LedgerScript => ({
+      ...script,
+      lastRun: lastRunOf({ ledger, mountId: mount.mountId, key: script.key }),
+    }));
     return {
       mountId: mount.mountId,
       projectId: mount.projectId,
@@ -245,5 +347,7 @@ export const buildSessionScripts = ({
         pinned.length === 0
           ? suggested
           : keptSuggestedOf({ suggested, pinned, runs, mountId: mount.mountId }),
+      available,
+      mostUsedKey: mostUsedKeyOf({ available }),
     };
   });
