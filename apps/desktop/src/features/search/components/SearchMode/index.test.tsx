@@ -256,6 +256,7 @@ describe('search mode', () => {
     expect(startViewFind).toHaveBeenCalledWith({
       query: 'settlement',
       target: 'The settlement export times out',
+      scope: 'view',
     });
   });
 

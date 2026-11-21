@@ -231,7 +231,7 @@ describe('TranscriptRows text reveal', () => {
 
     act(() => {
       useAppStore.setState({
-        viewFind: { query: 'payments-api', target: null, startedAt: 0, steps: 0 },
+        viewFind: { query: 'payments-api', target: null, scope: 'view', startedAt: 0, steps: 0 },
       });
     });
 

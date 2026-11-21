@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import type { Workspace } from '@goodboy/types';
-import { openPlanAnywhere } from '../../../features/plans/openPlanAnywhere';
+import { openArtifactAnywhere } from '../../../features/plans/openArtifactAnywhere';
 import { openStartRun } from '../../../features/session/startRun/openStartRun';
 import { sessionPlace, useAppStore } from '../../../store';
 import { eventSessionId, eventValue, isPlanId } from '../useAppOverlays/eventDetail';
@@ -30,7 +30,7 @@ export const useSessionSurfaceEvents = ({ close, currentWorkspace }: Params) => 
       const planId = eventValue({ event, key: 'planId' });
       close();
       if (isPlanId(planId)) {
-        openPlanAnywhere({ sessionId, planId });
+        openArtifactAnywhere({ sessionId, artifactId: planId });
         return;
       }
       useAppStore.getState().navigate({

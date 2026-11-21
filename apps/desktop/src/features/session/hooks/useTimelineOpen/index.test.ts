@@ -12,6 +12,8 @@ import type {
 } from '../../timeline/buildTimelineGroups';
 
 const state = vi.hoisted(() => ({
+  currentSessionId: 'session-1',
+  activeLens: { 'session-0': null } satisfies Record<string, string | null>,
   setActiveLens: vi.fn(),
   navigate: vi.fn(),
   openDrawer: vi.fn(),
@@ -70,7 +72,7 @@ describe('useTimelineOpen', () => {
     };
     const { result } = renderHook(() => useTimelineOpen({ sessionId }));
 
-    expect(result.current({ entry })?.label).toBe('Open runs');
+    expect(result.current({ entry })?.label).toBe('Open in Runs');
   });
 
   const agentEntry = ({ agentKind }: { readonly agentKind: AgentKind }): TimelineAgentEntry => ({

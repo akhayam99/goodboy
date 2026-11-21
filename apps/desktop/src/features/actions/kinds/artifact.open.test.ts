@@ -118,8 +118,41 @@ describe('Open on a plan', () => {
 });
 
 describe('Open on a report', () => {
-  it('still goes to the Artifacts page', async () => {
+  it('opens the panel from a page of its own session', async () => {
     seed({ lens: null });
+
+    await open({ artifactId: REPORT_ID });
+
+    expect(useAppStore.getState().drawer).toMatchObject({
+      kind: 'artifact-document',
+      sessionId: PLAN_FIXTURE_SESSION,
+      payload: { artifactId: REPORT_ID, revision: null },
+    });
+    expect(useAppStore.getState().navigate).not.toHaveBeenCalled();
+  });
+
+  it('selects the report when the user is already on the Artifacts page', async () => {
+    seed({ lens: 'plans' });
+
+    await open({ artifactId: REPORT_ID });
+
+    expect(useAppStore.getState().drawer).toBeNull();
+    expect(useAppStore.getState().navigate).toHaveBeenCalledWith({
+      to: {
+        at: 'session',
+        sessionId: PLAN_FIXTURE_SESSION,
+        view: {
+          lens: 'plans',
+          agentId: null,
+          target: { kind: 'artifact', artifactId: REPORT_ID },
+        },
+      },
+    });
+  });
+
+  it('goes to its Artifacts page from a page of another session', async () => {
+    seed({ lens: null });
+    useAppStore.setState({ currentSessionId: null });
 
     await open({ artifactId: REPORT_ID });
 

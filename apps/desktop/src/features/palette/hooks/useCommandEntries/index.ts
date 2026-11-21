@@ -51,7 +51,7 @@ import { useToast } from '../../../../shared/components/Toast';
 import { agentEntries } from '../../sources/agentEntries';
 import { startRunFromPresetEntries } from '../../sources/startRunFromPresetEntries';
 import { openStartRun } from '../../../session/startRun/openStartRun';
-import { openPlanAnywhere } from '../../../plans/openPlanAnywhere';
+import { openArtifactAnywhere } from '../../../plans/openArtifactAnywhere';
 import { requestAskReset } from '../../../session/ask/requestAskReset';
 import { isAskStreaming } from '../../../../store/slices/ask/isAskStreaming';
 import { selectIsAskOpen } from '../../../../store/slices/ask/selectIsAskOpen';
@@ -226,7 +226,7 @@ export const useCommandEntries = (): ReadonlyArray<PaletteEntry> => {
                 target: { kind: 'artifact', artifactId },
               }),
             }),
-          openPlan: ({ artifactId }) => openPlanAnywhere({ sessionId, planId: artifactId }),
+          openPlan: ({ artifactId }) => openArtifactAnywhere({ sessionId, artifactId }),
         }),
       );
       for (const destination of destinations) {

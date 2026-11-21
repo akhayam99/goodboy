@@ -1,7 +1,7 @@
 import type { SearchHit, WorkspaceId } from '@goodboy/types';
 import { agentPlace, branchPlace, sessionPlace, useAppStore } from '../../store';
 import { openLinkOrThrow } from '../open/openLinkOrThrow';
-import { openPlanAnywhere } from '../plans/openPlanAnywhere';
+import { openArtifactAnywhere } from '../plans/openArtifactAnywhere';
 import { selectWritableMounts } from '../../store/slices/project-mounts/selectors';
 import { isNoteOnBranch, isUnassignedNote } from '../resolve/notes/noteThread';
 import { openQuestion } from '../session/openQuestion';
@@ -70,17 +70,7 @@ const runTarget = async ({ target }: RunParams): Promise<boolean> => {
       store.navigate({ to: agentPlace({ sessionId, agentId: target.agentId }) });
       return true;
     case 'artifact':
-      if (target.isPlan) {
-        openPlanAnywhere({ sessionId, planId: target.artifactId });
-        return true;
-      }
-      store.navigate({
-        to: sessionPlace({
-          sessionId,
-          lens: 'plans',
-          target: { kind: 'artifact', artifactId: target.artifactId },
-        }),
-      });
+      openArtifactAnywhere({ sessionId, artifactId: target.artifactId });
       return true;
     case 'decision':
       store.openContextDrawer({ sessionId, section: 'decisions', highlight: [target.number] });
@@ -92,7 +82,7 @@ const runTarget = async ({ target }: RunParams): Promise<boolean> => {
       store.openExternalTaskLens(sessionId, target.task);
       return true;
     case 'review':
-      store.navigate({ to: branchPlace({ sessionId, tab: 'comments' }) });
+      store.navigate({ to: branchPlace({ sessionId, tab: 'pr' }) });
       return true;
     case 'comment': {
       await store.loadDiffComments(sessionId);
@@ -153,6 +143,15 @@ export const openSearchHit = async ({ hit, query }: Params): Promise<boolean> =>
     return isOpened;
   }
   const snippet = hit.snippet.map((segment) => segment.text).join('');
-  store.startViewFind({ query, target: snippet.length > 0 ? snippet : null });
+  const { drawer } = useAppStore.getState();
+  const isInPanel =
+    target.kind === 'artifact' &&
+    drawer?.kind === 'artifact-document' &&
+    drawer.payload.artifactId === target.artifactId;
+  store.startViewFind({
+    query,
+    target: snippet.length > 0 ? snippet : null,
+    scope: isInPanel ? 'panel' : 'view',
+  });
   return isOpened;
 };

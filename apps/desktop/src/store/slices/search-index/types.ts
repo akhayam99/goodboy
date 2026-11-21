@@ -1,5 +1,5 @@
 import type { ProjectId, SearchHit, SearchQuery } from '@goodboy/types';
-import type { SearchIndexState } from './state';
+import type { SearchIndexState, ViewFindScope } from './state';
 export type { GetFn } from '../../slice-types';
 
 type RunSearchParams = {
@@ -14,6 +14,7 @@ type ProjectSearchParams = {
 type StartViewFindParams = {
   readonly query: string;
   readonly target: string | null;
+  readonly scope?: ViewFindScope;
 };
 
 type StepViewFindParams = {
