@@ -1,5 +1,6 @@
 import type { ProjectId, WorkspaceId } from '@goodboy/types';
 import { NAMES } from '../../../shared/utils/names';
+import { rerunNotes } from '../../integrations/github/rerunNotes';
 import { rerunFailedJobs } from '../../integrations/github/rerunFailedJobs';
 import type { SessionSuggestion } from '../types';
 import type { SuggestionActions } from '.';
@@ -25,5 +26,6 @@ export const rerunCheckAction = ({
       return;
     }
     await rerunFailedJobs({ runId: payload.runId, cwd: payload.cwd, workspaceId, projectId });
+    rerunNotes.note({ mountId: payload.mountId, at: Date.now() });
   },
 });

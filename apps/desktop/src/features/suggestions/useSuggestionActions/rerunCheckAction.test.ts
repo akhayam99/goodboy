@@ -8,6 +8,7 @@ const { rerunFailedJobs } = vi.hoisted(() => ({
 
 vi.mock('../../integrations/github/rerunFailedJobs', () => ({ rerunFailedJobs }));
 
+import { rerunNotes } from '../../integrations/github/rerunNotes';
 import { rerunCheckAction } from './rerunCheckAction';
 
 const payload = {
@@ -23,6 +24,7 @@ const projectId = brandId<ProjectId>({ value: 'project-ledger-core' });
 
 describe('rerunCheckAction', () => {
   beforeEach(() => {
+    rerunNotes.reset();
     rerunFailedJobs.mockClear();
     rerunFailedJobs.mockResolvedValue(undefined);
   });
@@ -53,5 +55,14 @@ describe('rerunCheckAction', () => {
     expect(action?.isDisabled).toBe(true);
     await action?.run();
     expect(rerunFailedJobs).not.toHaveBeenCalled();
+  });
+
+  it('notes the rerun for the watch only after the rerun was accepted', async () => {
+    rerunFailedJobs.mockRejectedValueOnce(new Error('run 9001 cannot be rerun'));
+    const action = rerunCheckAction({ payload, workspaceId, projectId });
+    await expect(action?.run()).rejects.toThrow('run 9001 cannot be rerun');
+    expect(rerunNotes.snapshot()).toBe('');
+    await action?.run();
+    expect(rerunNotes.snapshot()).toBe('mount-ledger-core');
   });
 });

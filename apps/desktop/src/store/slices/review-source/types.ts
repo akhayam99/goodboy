@@ -61,6 +61,7 @@ export type RefreshReviewSourceParams = Readonly<{
 export type SweepRequestsParams = Readonly<{
   shouldSkipUnknownRequest?: boolean;
   sessionId?: SessionId;
+  mountIds?: ReadonlyArray<MountId>;
   isForced?: boolean;
   isCurrentFirst?: boolean;
 }>;
