@@ -757,6 +757,23 @@ toast `Panel layout reset` has Undo, which writes the layout before it back
 and changes nothing once the panels moved again. On the Board, with no
 session, the grid changes and nothing is saved.
 
+With two panels or more, a panel's head title is a drag source
+(`DockDragContext` from `DockGrid` into `DrawerFrame`, `useDockDrag`). A press
+becomes a drag after 4px, so a click stays a click; Esc cancels and the
+pointer up drops. While it drags, `DockDropZones` draws the zones over every
+other panel (left, right, above, swap, below) and a strip on the page's edge
+(beside the page); a zone that would leave the page worse than now, by the
+solver with the real widths (`canDrop` from `useDockGrid`, `dockMoveFits`),
+reads `No room` and drops nothing. The drag sets `SPLIT_DRAG_ATTRIBUTE` to
+`move`, so the Browser page hides under its cover like under a handle drag,
+and a drop goes through `moveDockPanel`. From the keyboard, ⌘K lists
+`Move Terminal panel…` for each tool when two or more are open
+(`dockPanelEntries`); its step holds only the moves that never leave the page
+worse than now (`dockMovesOf` with `dockShapeFits`: no new float, no new
+fold, no detail newly over the page). `Reset panel layout` sits in ⌘K while
+the layout differs from where the tools open (`gridAtRest`), and in View
+(`menu.resetPanels`).
+
 `watchSessionDockGrid.test.ts`, `storedDockGrid.test.ts`,
 `session-dock-grid.test.ts` and `restore-previous-build.test.ts` cover each
 row.

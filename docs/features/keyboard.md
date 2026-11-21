@@ -143,6 +143,7 @@ Move through Goodboy, change a shortcut and stop an agent without leaving the ke
 - In a session, **Esc** walks one ladder. In a box with text it leaves the box and keeps your text. Then it closes the panel on the right, and the panel it had replaced comes back. Then it closes that one. Then it does what the back row above the page does, so a step goes to its run and a list goes to the Overview. On the Overview it does nothing.
 - **⌘⇧W** closes the panel that has the focus, even with the keyboard in a terminal. With the page focused it closes the panel on the right. The panel it had replaced comes back first. Off macOS it is **Ctrl+F4**.
 - **F6** moves the focus to the next panel: the page, the detail, then each open tool. **⇧F6** goes back. The panel with the focus has a tinted border.
+- With two tools open, **⌘K** has **Move Terminal panel…** for each one. It lists only the places that keep the page its room: above or below another panel, left or right of it, a swap, or beside the page. **Reset panel layout** puts every panel back where it opens, with **Undo** in the toast.
 - **⌘⌥W** and **⌘⌥P** on a run, a step, an agent or an artifact go to Runs or Artifacts. So do they from Settings or a panel over the list. Pressed on the list itself they stay.
 
 **The Mac menu bar**
@@ -151,7 +152,7 @@ On a Mac the menu bar carries the same keys.
 
 - File holds New Session, New Chat, New Terminal, New Workspace, Close (**⌘W**) and Close the panel (**⌘⇧W**). Close the panel reads the same words as Settings, with no capital.
 - Edit holds Search.
-- View holds Show or Hide Sessions (**⌘B**), Search or Run, zoom, Reload (**⌘R**) and Reload Goodboy (**⌘⇧R**).
+- View holds Show or Hide Sessions (**⌘B**), Search or Run, Reset Panel Layout, zoom, Reload (**⌘R**) and Reload Goodboy (**⌘⇧R**).
 - Go holds Back and Forward, then Board, Tasks, Workflows, Chat, Connections, Impact, Monitoring and Notifications. After a separator, Show or Hide Terminal and Show or Hide Browser open those tools on the right rail.
 - Help holds Guide, What's New, Keyboard Shortcuts and Report a Bug.
 

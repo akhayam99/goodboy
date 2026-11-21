@@ -1,4 +1,5 @@
 import { DrawerBackChipContext } from '../drawerBackChipContext';
+import { DockDragContext } from '../dockDragContext';
 import { useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 import type { IconGlyph } from '../icons';
 import { X } from '../icons';
@@ -103,6 +104,7 @@ export const DrawerFrame = ({
   const dockRef = useRef<HTMLDivElement | null>(null);
   const hasToolbar = toolbar != null;
   const backChip = useContext(DrawerBackChipContext);
+  const dragSource = useContext(DockDragContext);
   const hasBackChip = backChip !== null && !isHeaderless;
 
   useEscapeLayer(() => {
@@ -137,7 +139,15 @@ export const DrawerFrame = ({
   const titleRow = (
     <>
       {hasBackChip ? <DrawerBackChip chip={backChip} /> : null}
-      <div className={cn('flex min-w-0 flex-1 gap-2', hasToolbar ? 'items-start' : 'items-center')}>
+      <div
+        data-dock-drag-source={dragSource === null ? undefined : ''}
+        onPointerDown={dragSource === null ? undefined : (event) => dragSource.onStart({ event })}
+        className={cn(
+          'flex min-w-0 flex-1 gap-2',
+          hasToolbar ? 'items-start' : 'items-center',
+          dragSource !== null && 'cursor-grab',
+        )}
+      >
         {Icon == null ? null : (
           <span className="flex h-5 shrink-0 items-center">
             <Icon

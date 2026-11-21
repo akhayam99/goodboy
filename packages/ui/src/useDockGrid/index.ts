@@ -5,6 +5,8 @@ import { dockGridSpanOf } from '../dockGridSpanOf';
 import { dockGridTracksOf } from '../dockGridTracksOf';
 import { dockLeadSizingOf } from '../dockLeadSizingOf';
 import { dockSplitKeyOf } from '../dockSplitKeyOf';
+import type { CanDropParams } from '../dockDropZonesOf';
+import { dockMoveFits } from '../dockMoveFits';
 import type { DockPairTurn } from '../dockPairTurnContext';
 import { DOCK_FOCUS_DETAIL, type DockGridCell, type DockGridSpec } from '../dockGridSpec';
 import { DRAWER_TIERS, type DrawerPlacement, type DrawerSizing } from '../drawerGeometry';
@@ -63,6 +65,7 @@ type DockGridLayout = {
   readonly isGrid: boolean;
   readonly gridRef: RefObject<HTMLDivElement | null>;
   readonly handles: ReadonlyArray<SplitHandleProps | null>;
+  readonly canDrop: (params: CanDropParams) => boolean;
   readonly turn: Omit<DockPairTurn, 'onTurn'> | null;
 };
 
@@ -157,6 +160,13 @@ export const useDockGrid = ({
     turned !== null &&
     fitsAsDrawn({ solved }) &&
     fitsAsDrawn({ solved: solveColumns({ columns: turned }) });
+  const cellOf = new Map(columns.flat().map((cell) => [cell.key, cell] as const));
+  const canDrop = ({ columns: keys }: CanDropParams): boolean => {
+    const next = solveColumns({
+      columns: keys.map((column) => column.flatMap((key) => cellOf.get(key) ?? [])),
+    });
+    return solved === null || next === null || dockMoveFits({ now: solved, next });
+  };
   const boxes = frame.columns;
   const previewColumn = useCallback(
     ({ index, width, from }: ColumnPreviewParams) => {
@@ -200,6 +210,7 @@ export const useDockGrid = ({
     isGrid,
     gridRef,
     handles,
+    canDrop,
     turn: canTurn ? (columns.length === 2 ? STACK_TURN : SIDE_TURN) : null,
   };
 };

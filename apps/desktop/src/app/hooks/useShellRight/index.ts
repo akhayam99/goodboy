@@ -7,6 +7,7 @@ import { focusShellPanel } from '../../../shared/shellFocus/focusShellPanel';
 import { turnShellPair } from '../../../shared/shellFocus/turnShellPair';
 import { resizeShellColumn } from '../../../shared/shellFocus/resizeShellColumn';
 import { splitShellColumn } from '../../../shared/shellFocus/splitShellColumn';
+import { moveShellPanel } from '../../../shared/shellFocus/moveShellPanel';
 import { selectDrawerPlacement } from '../../../store/slices/drawer/selectDrawerPlacement';
 import { useAppStore } from '../../../store';
 import { detailWidthIdOf } from '../../../store/slices/drawer/detailWidthIdOf';
@@ -76,6 +77,7 @@ export const useShellRight = ({}: Params): ShellRight => {
       onTurn: turnShellPair,
       onResize: resizeShellColumn,
       onSplit: splitShellColumn,
+      onMove: moveShellPanel,
     };
   }, [drawer, drawerBack, drawerGrid, currentSessionId, appStudio]);
   return {

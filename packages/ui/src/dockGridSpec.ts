@@ -1,3 +1,4 @@
+import type { DockMoveTarget } from './dockMoveTarget';
 import type { DrawerSizing } from './drawerGeometry';
 
 export const DOCK_FOCUS_PAGE = 'page';
@@ -23,6 +24,11 @@ export type DockGridSplit = {
   readonly share: number | null;
 };
 
+export type DockGridMove = {
+  readonly key: string;
+  readonly target: DockMoveTarget;
+};
+
 export type DockGridSpec = {
   readonly columns: ReadonlyArray<ReadonlyArray<DockGridCell>>;
   readonly focus: string;
@@ -31,4 +37,5 @@ export type DockGridSpec = {
   readonly onTurn: (params: KeyParams) => void;
   readonly onResize?: (params: DockGridResize) => void;
   readonly onSplit?: (params: DockGridSplit) => void;
+  readonly onMove?: (params: DockGridMove) => void;
 };

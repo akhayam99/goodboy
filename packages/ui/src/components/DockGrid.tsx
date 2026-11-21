@@ -5,6 +5,10 @@ import type { DockGridColumnBox } from '../dockGridColumnBox';
 import { dockGridTracksOf } from '../dockGridTracksOf';
 import { DockPairTurnContext, type DockPairTurn } from '../dockPairTurnContext';
 import type { DockGridSpec } from '../dockGridSpec';
+import { DockDragContext } from '../dockDragContext';
+import type { CanDropParams } from '../dockDropZonesOf';
+import { useDockDrag } from '../useDockDrag';
+import { DockDropZones } from './DockDropZones';
 import { DockRowHandle } from './DockRowHandle';
 import { SplitHandle, type SplitHandleProps } from './SplitHandle';
 
@@ -18,6 +22,7 @@ type Props = {
   readonly isFramed: boolean;
   readonly isFocusShown: boolean;
   readonly isFloating: boolean;
+  readonly canDrop: (params: CanDropParams) => boolean;
 };
 
 const SINGLE_TRACK = 'minmax(0,1fr)';
@@ -32,8 +37,15 @@ export const DockGrid = ({
   isFramed,
   isFocusShown,
   isFloating,
+  canDrop,
 }: Props) => {
   const tracks = dockGridTracksOf({ columns });
+  const drag = useDockDrag({
+    gridRef,
+    columns: columns.map((column) => column.panes.map((pane) => pane.key)),
+    canDrop,
+    onMove: isFramed ? (spec.onMove ?? null) : null,
+  });
   const style: CSSProperties = isFramed
     ? { gridTemplateColumns: tracks.columns, gridTemplateRows: tracks.rows }
     : { gridTemplateColumns: SINGLE_TRACK, gridTemplateRows: SINGLE_TRACK };
@@ -61,6 +73,7 @@ export const DockGrid = ({
               data-dock-pane={pane.key}
               data-dock-focus={pane.key}
               data-panel-focused={isFocused ? '' : undefined}
+              data-dock-lifted={drag.view?.key === pane.key ? '' : undefined}
               tabIndex={-1}
               onFocusCapture={() => spec.onFocus({ key: pane.key })}
               onPointerDownCapture={() => spec.onFocus({ key: pane.key })}
@@ -74,6 +87,7 @@ export const DockGrid = ({
                 isFramed && 'rounded-frame border bg-drawer',
                 isFramed && (isFocused ? 'border-focus-ring' : 'border-frame-edge'),
                 isFramed && isFloating && 'shadow-xl',
+                drag.view?.key === pane.key && 'opacity-50',
               )}
             >
               <DockPairTurnContext.Provider
@@ -81,7 +95,15 @@ export const DockGrid = ({
                   turn === null ? null : { ...turn, onTurn: () => spec.onTurn({ key: pane.key }) }
                 }
               >
-                <DockCellContext.Provider value={pane.key}>{cell}</DockCellContext.Provider>
+                <DockDragContext.Provider
+                  value={
+                    isFramed && spec.onMove !== undefined
+                      ? { onStart: ({ event }) => drag.start({ key: pane.key, event }) }
+                      : null
+                  }
+                >
+                  <DockCellContext.Provider value={pane.key}>{cell}</DockCellContext.Provider>
+                </DockDragContext.Provider>
               </DockPairTurnContext.Provider>
             </div>
           );
@@ -105,6 +127,7 @@ export const DockGrid = ({
           ...(rowHandle === null ? [] : [rowHandle]),
         ];
       })}
+      {drag.view === null ? null : <DockDropZones view={drag.view} />}
     </div>
   );
 };

@@ -102,6 +102,7 @@ const EDIT_ROWS: &[Row] = &[
 const VIEW_ROWS: &[Row] = &[
     command("sessions.toggle", "Show or Hide Sessions", Some("cmd+KeyB")),
     command("palette.open", "Search or Run", Some("cmd+KeyK")),
+    command("menu.resetPanels", "Reset Panel Layout", None),
     SEPARATOR,
     command("zoom.in", "Zoom In", Some("cmd+Equal")),
     command("zoom.out", "Zoom Out", Some("cmd+Minus")),

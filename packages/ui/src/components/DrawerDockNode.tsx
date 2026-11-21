@@ -26,6 +26,7 @@ export const DrawerDockNode = ({ dockGrid, frame, drawer, isFloating }: Props) =
       isFramed={grid.isGrid}
       isFocusShown={frame.isFocusShown}
       isFloating={isFloating}
+      canDrop={grid.canDrop}
     />
   );
 };

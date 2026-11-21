@@ -6,10 +6,12 @@ export { ShellDockContext } from './shellDockContext';
 export type { ShellDock } from './shellDockContext';
 export { DOCK_FOCUS_DETAIL, DOCK_FOCUS_PAGE } from './dockGridSpec';
 export { DockCellContext } from './dockCellContext';
-export type { DockGridCell, DockGridSpec, DockGridSplit } from './dockGridSpec';
+export type { DockGridCell, DockGridMove, DockGridSpec, DockGridSplit } from './dockGridSpec';
 export { dockSplitKeyOf } from './dockSplitKeyOf';
 export { dockColumnsAfterMove } from './dockColumnsAfterMove';
 export type { DockMoveTarget } from './dockMoveTarget';
+export { dockShapeFits } from './dockShapeFits';
+export type { DockPane } from './dockLayout';
 export { turnedDockColumnsOf } from './turnedDockColumnsOf';
 export { ShellRailContext } from './shellRailContext';
 export { UnderHeadContext } from './underHeadContext';
@@ -56,6 +58,7 @@ export {
   DRAWER_EXIT_MS,
   DRAWER_EXIT_MAX_ELEMENTS,
   DRAWER_GUTTER,
+  DRAWER_TIERS,
   READER_DRAWER_DEFAULT,
   READER_DRAWER_MAX,
   READER_DRAWER_MIN,
