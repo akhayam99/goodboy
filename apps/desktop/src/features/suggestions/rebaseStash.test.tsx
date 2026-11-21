@@ -91,28 +91,30 @@ describe('the rebase suggestion with dirty files', () => {
   });
   it('offers Open rebase and leaves overlap consent to the move', () => {
     const suggestions = deriveNextSteps({
-      sessionId: session.id,
-      workflowRuns: [],
-      plans: [],
-      consumedPlanIds: new Set(),
-      openQuestionCount: 0,
-      hasPullRequest: false,
-      eligibleThreadCount: 0,
-      mountEvents: [],
-      projects: [
-        {
-          id: 'payments-api',
-          mountId: A_REBASE_MOUNT_ID,
-          projectId: aProject({ name: 'payments-api' }).id,
-          projectName: 'payments-api',
-          branch: 'hl/ledger-export',
-          worktreePath: '/w/payments-api',
-          baseBranch: 'main',
-          mainDistance: 4,
-          isClean: false,
-          changedCount: 11,
-        },
-      ],
+      signals: {
+        sessionId: session.id,
+        workflowRuns: [],
+        plans: [],
+        consumedPlanIds: new Set(),
+        openQuestionCount: 0,
+        hasPullRequest: false,
+        eligibleThreadCount: 0,
+        mountEvents: [],
+        projects: [
+          {
+            id: 'payments-api',
+            mountId: A_REBASE_MOUNT_ID,
+            projectId: aProject({ name: 'payments-api' }).id,
+            projectName: 'payments-api',
+            branch: 'hl/ledger-export',
+            worktreePath: '/w/payments-api',
+            baseBranch: 'main',
+            mainDistance: 4,
+            isClean: false,
+            changedCount: 11,
+          },
+        ],
+      },
     });
     const suggestion = suggestions.find((candidate) => candidate.kind === 'rebase-project');
     if (suggestion === undefined) {

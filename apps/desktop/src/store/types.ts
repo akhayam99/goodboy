@@ -59,6 +59,8 @@ import type { SessionEventsState } from './slices/session-events/state';
 import type { ContextItemsState } from './slices/contextItems/state';
 import type { DormantSpendState } from './slices/dormant-spend/state';
 import type { HostReachabilityState } from './slices/host-reachability/state';
+import type { ChecksLogState } from './slices/checks-log/state';
+import type { TurnFilesState } from './slices/turn-files/state';
 import type { PresenceState } from './slices/presence/state';
 import type { SettingsState } from './slices/settings/state';
 import type { ProvidersState } from './slices/providers/state';
@@ -184,6 +186,8 @@ type AppSliceState = ArtifactsState &
   DormantSpendState &
   PresenceState &
   HostReachabilityState &
+  ChecksLogState &
+  TurnFilesState &
   SettingsState &
   ProvidersState &
   CredentialsState &

@@ -494,16 +494,6 @@
       "count": 1
     }
   },
-  "apps/desktop/src/features/suggestions/deriveNextSteps.ts": {
-    "@typescript-eslint/strict-boolean-expressions": {
-      "count": 1
-    }
-  },
-  "apps/desktop/src/features/suggestions/nextStepGates.ts": {
-    "@typescript-eslint/strict-boolean-expressions": {
-      "count": 1
-    }
-  },
   "apps/desktop/src/features/suggestions/openPrSuggestionOf.ts": {
     "@typescript-eslint/strict-boolean-expressions": {
       "count": 3

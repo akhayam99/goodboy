@@ -1,6 +1,7 @@
-import type { SessionSuggestion, SuggestionKind } from './types';
+import { moveGroupOf } from './moveGroupOf';
+import type { MoveGroup, SessionSuggestion, SuggestionKind } from './types';
 
-const FIVE_MINUTES_MS = 5 * 60 * 1_000;
+const FRESH_READ_MS = 8 * 60 * 1_000;
 
 type IsFreshParams = {
   readonly fetchedAt: string | null;
@@ -8,9 +9,9 @@ type IsFreshParams = {
   readonly maxAgeMs?: number;
 };
 
-export const isFresh = ({ fetchedAt, now, maxAgeMs = FIVE_MINUTES_MS }: IsFreshParams): boolean => {
+export const isFresh = ({ fetchedAt, now, maxAgeMs = FRESH_READ_MS }: IsFreshParams): boolean => {
   if (fetchedAt === null) {
-    return true;
+    return false;
   }
   const age = now() - Date.parse(fetchedAt);
   return age <= maxAgeMs;
@@ -53,33 +54,56 @@ export const applyDismissals = ({
   return suggestions.filter((suggestion) => !dismissedFingerprints.has(suggestion.fingerprint));
 };
 
-const DEMOTION_OFFSET = 1_000;
-
 type ApplyLearnedDemotionParams = {
   readonly suggestions: ReadonlyArray<SessionSuggestion>;
   readonly demotedKinds?: ReadonlySet<SuggestionKind>;
 };
 
-const sortPriority = ({
-  suggestion,
-  demotedKinds,
-}: {
+const GROUP_ORDER: Readonly<Record<MoveGroup, number>> = {
+  unblock: 0,
+  advance: 1,
+  upkeep: 2,
+};
+
+const DEMOTED_TIER = 3;
+
+type TierParams = {
   readonly suggestion: SessionSuggestion;
   readonly demotedKinds?: ReadonlySet<SuggestionKind>;
-}): number =>
-  demotedKinds !== undefined && demotedKinds.has(suggestion.kind)
-    ? suggestion.priority + DEMOTION_OFFSET
-    : suggestion.priority;
+};
+
+const moveTierOf = ({ suggestion, demotedKinds }: TierParams): number => {
+  const group = GROUP_ORDER[moveGroupOf({ suggestion })];
+  return demotedKinds !== undefined && demotedKinds.has(suggestion.kind)
+    ? DEMOTED_TIER + group
+    : group;
+};
+
+type CompareParams = {
+  readonly first: SessionSuggestion;
+  readonly second: SessionSuggestion;
+  readonly demotedKinds?: ReadonlySet<SuggestionKind>;
+};
+
+const compareNextSteps = ({ first, second, demotedKinds }: CompareParams): number => {
+  const tierGap =
+    moveTierOf({ suggestion: first, demotedKinds }) -
+    moveTierOf({ suggestion: second, demotedKinds });
+  if (tierGap !== 0) {
+    return tierGap;
+  }
+  const priorityGap = first.priority - second.priority;
+  if (priorityGap !== 0) {
+    return priorityGap;
+  }
+  return first.id.localeCompare(second.id);
+};
 
 export const sortNextSteps = ({
   suggestions,
   demotedKinds,
 }: ApplyLearnedDemotionParams): ReadonlyArray<SessionSuggestion> =>
-  [...suggestions].sort(
-    (first, second) =>
-      sortPriority({ suggestion: first, demotedKinds }) -
-        sortPriority({ suggestion: second, demotedKinds }) || first.id.localeCompare(second.id),
-  );
+  [...suggestions].sort((first, second) => compareNextSteps({ first, second, demotedKinds }));
 
 export type NextStepOutcome = {
   readonly kind: SuggestionKind;

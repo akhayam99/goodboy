@@ -25,6 +25,10 @@ import type {
 } from '../../store/slices/project-mounts/materializationProposals';
 import type { SessionSuggestion } from './types';
 
+type Signals = Parameters<typeof deriveNextSteps>[0]['signals'];
+
+const deriveFrom = (signals: Signals) => deriveNextSteps({ signals });
+
 const sessionId = 'session-1' as SessionId;
 const planId = 'plan-1' as PlanId;
 const webId = 'project-web' as ProjectId;
@@ -71,7 +75,7 @@ const derive = ({
   mainDistance?: number | null;
   mountEvents?: ReadonlyArray<SuggestionMountEvent>;
 }) =>
-  deriveNextSteps({
+  deriveFrom({
     sessionId,
     workflowRuns: [
       {
@@ -113,8 +117,8 @@ describe('deriveNextSteps', () => {
     expect(suggestions.map((suggestion) => suggestion.kind)).toEqual([
       'answer-questions',
       'mount-project',
-      'plan-ready',
       'resolve-threads',
+      'plan-ready',
       'rebase-project',
     ]);
     expect(suggestions[0]?.payload).toEqual({ count: 2, firstQuestion: null, rootAgentId: null });
@@ -239,7 +243,7 @@ describe('deriveNextSteps', () => {
       };
       readonly mainDistance?: number;
     }) =>
-      deriveNextSteps({
+      deriveFrom({
         sessionId,
         workflowRuns: [],
         plans: [],
@@ -275,7 +279,7 @@ describe('deriveNextSteps', () => {
   });
 
   it('collapses two mounts of one project into one ordered rebase suggestion', () => {
-    const suggestions = deriveNextSteps({
+    const suggestions = deriveFrom({
       sessionId,
       workflowRuns: [],
       plans: [],
@@ -321,7 +325,7 @@ describe('deriveNextSteps', () => {
   });
 
   it('sorts several projects by distance and then project name without reordering ties', () => {
-    const suggestions = deriveNextSteps({
+    const suggestions = deriveFrom({
       sessionId,
       workflowRuns: [],
       plans: [],
@@ -410,7 +414,7 @@ describe('deriveNextSteps', () => {
     });
 
     const rebaseOf = (projects: ReadonlyArray<ReturnType<typeof behindProject>>) =>
-      deriveNextSteps({
+      deriveFrom({
         sessionId,
         workflowRuns: [],
         plans: [],
@@ -562,7 +566,7 @@ const cleanupProposal = (
 
 describe('deriveNextSteps eleven new kinds', () => {
   it('suggests approving a pending permission request', () => {
-    const suggestions = deriveNextSteps({
+    const suggestions = deriveFrom({
       ...BASE_PARAMS,
       agents: [
         agent({
@@ -577,7 +581,7 @@ describe('deriveNextSteps eleven new kinds', () => {
   });
 
   it('suggests signing back in when the last run hit auth_required', () => {
-    const suggestions = deriveNextSteps({
+    const suggestions = deriveFrom({
       ...BASE_PARAMS,
       agents: [agent({ pendingSignal: { kind: 'auth', providerId: 'anthropic' } })],
     });
@@ -587,7 +591,7 @@ describe('deriveNextSteps eleven new kinds', () => {
   });
 
   it('offers one resume for every agent the restart stopped, workflow steps included', () => {
-    const suggestions = deriveNextSteps({
+    const suggestions = deriveFrom({
       ...BASE_PARAMS,
       agents: [
         agent({ id: 'agent-1' as AgentId, status: 'stopped', isStoppedByRestart: true }),
@@ -607,7 +611,7 @@ describe('deriveNextSteps eleven new kinds', () => {
   });
 
   it('names the agent when the restart stopped only one', () => {
-    const suggestions = deriveNextSteps({
+    const suggestions = deriveFrom({
       ...BASE_PARAMS,
       agents: [agent({ status: 'stopped', isStoppedByRestart: true, label: 'Debugger' })],
     });
@@ -617,7 +621,7 @@ describe('deriveNextSteps eleven new kinds', () => {
   });
 
   it('suggests retrying the last standalone agent when it failed', () => {
-    const suggestions = deriveNextSteps({
+    const suggestions = deriveFrom({
       ...BASE_PARAMS,
       agents: [
         agent({ id: 'agent-1' as AgentId, ordinal: 1, status: 'completed' }),
@@ -630,7 +634,7 @@ describe('deriveNextSteps eleven new kinds', () => {
   });
 
   it('suggests reviewing the changes when the last standalone implementer finished clean', () => {
-    const suggestions = deriveNextSteps({
+    const suggestions = deriveFrom({
       ...BASE_PARAMS,
       agents: [agent({ status: 'completed', roleKind: 'implementer' })],
     });
@@ -638,13 +642,13 @@ describe('deriveNextSteps eleven new kinds', () => {
   });
 
   it('never suggests both retry and review for the same last agent', () => {
-    const retrySuggestions = deriveNextSteps({
+    const retrySuggestions = deriveFrom({
       ...BASE_PARAMS,
       agents: [agent({ status: 'failed' })],
     });
     expect(retrySuggestions.some((candidate) => candidate.kind === 'check-changes')).toBe(false);
 
-    const reviewerAlreadyRan = deriveNextSteps({
+    const reviewerAlreadyRan = deriveFrom({
       ...BASE_PARAMS,
       agents: [
         agent({ id: 'agent-1' as AgentId, ordinal: 1, roleKind: 'implementer' }),
@@ -655,7 +659,7 @@ describe('deriveNextSteps eleven new kinds', () => {
   });
 
   it('leaves a workflow agent out of the standalone retry/review pick', () => {
-    const suggestions = deriveNextSteps({
+    const suggestions = deriveFrom({
       ...BASE_PARAMS,
       agents: [agent({ status: 'failed', workflowRunId: 'run-1' as WorkflowRunId })],
     });
@@ -663,7 +667,7 @@ describe('deriveNextSteps eleven new kinds', () => {
   });
 
   it('suggests continuing with the recommended workflow once a standalone scout finishes', () => {
-    const suggestions = deriveNextSteps({
+    const suggestions = deriveFrom({
       ...BASE_PARAMS,
       agents: [agent({ status: 'completed', roleKind: 'scout', label: 'Scout' })],
       hasGoal: true,
@@ -679,7 +683,7 @@ describe('deriveNextSteps eleven new kinds', () => {
   });
 
   it('suggests continuing with a workflow once a standalone generic agent finishes too', () => {
-    const suggestions = deriveNextSteps({
+    const suggestions = deriveFrom({
       ...BASE_PARAMS,
       agents: [agent({ status: 'completed', roleKind: 'generic' })],
       hasGoal: true,
@@ -689,7 +693,7 @@ describe('deriveNextSteps eleven new kinds', () => {
   });
 
   it('never suggests continuing with a workflow for an implementer, a running workflow, no goal, or no preset', () => {
-    const implementerFinished = deriveNextSteps({
+    const implementerFinished = deriveFrom({
       ...BASE_PARAMS,
       agents: [agent({ status: 'completed', roleKind: 'implementer' })],
       hasGoal: true,
@@ -699,7 +703,7 @@ describe('deriveNextSteps eleven new kinds', () => {
       implementerFinished.some((candidate) => candidate.kind === 'continue-with-workflow'),
     ).toBe(false);
 
-    const workflowAlreadyAttached = deriveNextSteps({
+    const workflowAlreadyAttached = deriveFrom({
       ...BASE_PARAMS,
       agents: [agent({ status: 'completed', roleKind: 'scout' })],
       workflowRuns: [
@@ -717,7 +721,7 @@ describe('deriveNextSteps eleven new kinds', () => {
       workflowAlreadyAttached.some((candidate) => candidate.kind === 'continue-with-workflow'),
     ).toBe(false);
 
-    const noGoal = deriveNextSteps({
+    const noGoal = deriveFrom({
       ...BASE_PARAMS,
       agents: [agent({ status: 'completed', roleKind: 'scout' })],
       hasGoal: false,
@@ -725,7 +729,7 @@ describe('deriveNextSteps eleven new kinds', () => {
     });
     expect(noGoal.some((candidate) => candidate.kind === 'continue-with-workflow')).toBe(false);
 
-    const noPreset = deriveNextSteps({
+    const noPreset = deriveFrom({
       ...BASE_PARAMS,
       agents: [agent({ status: 'completed', roleKind: 'scout' })],
       hasGoal: true,
@@ -735,7 +739,7 @@ describe('deriveNextSteps eleven new kinds', () => {
   });
 
   it('offers continuing with a workflow again once the session only has a discarded run', () => {
-    const suggestions = deriveNextSteps({
+    const suggestions = deriveFrom({
       ...BASE_PARAMS,
       agents: [agent({ status: 'completed', roleKind: 'scout' })],
       hasGoal: true,
@@ -746,7 +750,7 @@ describe('deriveNextSteps eleven new kinds', () => {
   });
 
   it('suggests fixing failing checks on an open PR', () => {
-    const suggestions = deriveNextSteps({
+    const suggestions = deriveFrom({
       ...BASE_PARAMS,
       mounts: [mount({ pr: pr({ checks: 'failure' }) })],
     });
@@ -755,7 +759,7 @@ describe('deriveNextSteps eleven new kinds', () => {
   });
 
   it('suggests marking a green draft PR ready for review', () => {
-    const suggestions = deriveNextSteps({
+    const suggestions = deriveFrom({
       ...BASE_PARAMS,
       mounts: [mount({ pr: pr({ isDraft: true, checks: 'success' }) })],
     });
@@ -764,7 +768,7 @@ describe('deriveNextSteps eleven new kinds', () => {
   });
 
   it('suggests merging an approved, green, mergeable PR', () => {
-    const suggestions = deriveNextSteps({
+    const suggestions = deriveFrom({
       ...BASE_PARAMS,
       mounts: [
         mount({ pr: pr({ reviewDecision: 'approved', checks: 'success', mergeable: true }) }),
@@ -776,7 +780,7 @@ describe('deriveNextSteps eleven new kinds', () => {
   });
 
   it('never suggests merging a PR that is not actually mergeable', () => {
-    const suggestions = deriveNextSteps({
+    const suggestions = deriveFrom({
       ...BASE_PARAMS,
       mounts: [
         mount({ pr: pr({ reviewDecision: 'approved', checks: 'success', mergeable: false }) }),
@@ -786,7 +790,7 @@ describe('deriveNextSteps eleven new kinds', () => {
   });
 
   it('suggests opening a pull request once a mount is ahead of base with no PR yet', () => {
-    const suggestions = deriveNextSteps({
+    const suggestions = deriveFrom({
       ...BASE_PARAMS,
       mounts: [mount({ pr: null, aheadOfBase: 7 })],
     });
@@ -830,7 +834,7 @@ describe('deriveNextSteps eleven new kinds', () => {
       suggestions.filter((candidate) => candidate.kind === 'open-pr');
 
     it('shows one row that names the branch furthest ahead and opens that same worktree', () => {
-      const rows = openPrRows(deriveNextSteps({ ...BASE_PARAMS, mounts: SEVERAL_MOUNTS }));
+      const rows = openPrRows(deriveFrom({ ...BASE_PARAMS, mounts: SEVERAL_MOUNTS }));
 
       expect(rows).toHaveLength(1);
       expect(rows[0]?.title).toBe('Open a pull request for hl/refund-retry');
@@ -843,7 +847,7 @@ describe('deriveNextSteps eleven new kinds', () => {
     });
 
     it('lists every branch without a pull request, ranked, and never one that has a PR', () => {
-      const [row] = openPrRows(deriveNextSteps({ ...BASE_PARAMS, mounts: SEVERAL_MOUNTS }));
+      const [row] = openPrRows(deriveFrom({ ...BASE_PARAMS, mounts: SEVERAL_MOUNTS }));
       if (row?.kind !== 'open-pr') {
         throw new Error('Missing open-pr row');
       }
@@ -856,9 +860,9 @@ describe('deriveNextSteps eleven new kinds', () => {
     });
 
     it('picks the same branch whatever order the mounts arrive in', () => {
-      const forward = openPrRows(deriveNextSteps({ ...BASE_PARAMS, mounts: SEVERAL_MOUNTS }));
+      const forward = openPrRows(deriveFrom({ ...BASE_PARAMS, mounts: SEVERAL_MOUNTS }));
       const reversed = openPrRows(
-        deriveNextSteps({ ...BASE_PARAMS, mounts: [...SEVERAL_MOUNTS].reverse() }),
+        deriveFrom({ ...BASE_PARAMS, mounts: [...SEVERAL_MOUNTS].reverse() }),
       );
 
       expect(reversed).toEqual(forward);
@@ -866,7 +870,7 @@ describe('deriveNextSteps eleven new kinds', () => {
 
     it('leads with the branch whose Scribe text is under way', () => {
       const [row] = openPrRows(
-        deriveNextSteps({
+        deriveFrom({
           ...BASE_PARAMS,
           mounts: [
             ...SEVERAL_MOUNTS,
@@ -884,7 +888,7 @@ describe('deriveNextSteps eleven new kinds', () => {
 
     it('moves to the next branch once the lead one is put away with Not now', () => {
       const [row] = openPrRows(
-        deriveNextSteps({
+        deriveFrom({
           ...BASE_PARAMS,
           mounts: SEVERAL_MOUNTS,
           dismissedFingerprints: new Set(['open-pr:mount-hl/refund-retry:5']),
@@ -910,7 +914,7 @@ describe('deriveNextSteps eleven new kinds', () => {
   ] as const)(
     'says what the %s text job is doing on the open pull request row',
     (scribe, detail) => {
-      const suggestions = deriveNextSteps({
+      const suggestions = deriveFrom({
         ...BASE_PARAMS,
         mounts: [mount({ pr: null, aheadOfBase: 7, scribe })],
       });
@@ -921,7 +925,7 @@ describe('deriveNextSteps eleven new kinds', () => {
   );
 
   it('suggests pushing unpushed commits on a clean worktree', () => {
-    const suggestions = deriveNextSteps({
+    const suggestions = deriveFrom({
       ...BASE_PARAMS,
       mounts: [mount({ push: { kind: 'ahead', ahead: 4 }, isClean: true })],
     });
@@ -930,7 +934,7 @@ describe('deriveNextSteps eleven new kinds', () => {
   });
 
   it('suggests nothing to push once every commit is on origin', () => {
-    const suggestions = deriveNextSteps({
+    const suggestions = deriveFrom({
       ...BASE_PARAMS,
       mounts: [mount({ push: { kind: 'in-sync' }, aheadOfBase: 8, pr: pr() })],
     });
@@ -938,7 +942,7 @@ describe('deriveNextSteps eleven new kinds', () => {
   });
 
   it('says a branch with no remote copy is not pushed yet', () => {
-    const suggestions = deriveNextSteps({
+    const suggestions = deriveFrom({
       ...BASE_PARAMS,
       mounts: [mount({ push: { kind: 'not-pushed', commits: 3 } })],
     });
@@ -948,7 +952,7 @@ describe('deriveNextSteps eleven new kinds', () => {
   });
 
   it('says a force-pushed remote diverged instead of offering a push', () => {
-    const suggestions = deriveNextSteps({
+    const suggestions = deriveFrom({
       ...BASE_PARAMS,
       mounts: [mount({ push: { kind: 'diverged', ahead: 2, behind: 3 } })],
     });
@@ -959,7 +963,7 @@ describe('deriveNextSteps eleven new kinds', () => {
   });
 
   it('never suggests pushing a dirty worktree', () => {
-    const suggestions = deriveNextSteps({
+    const suggestions = deriveFrom({
       ...BASE_PARAMS,
       mounts: [mount({ push: { kind: 'ahead', ahead: 4 }, isClean: false })],
     });
@@ -967,7 +971,7 @@ describe('deriveNextSteps eleven new kinds', () => {
   });
 
   it('skips every mount-derived push/PR/merge suggestion of the mount an agent runs on', () => {
-    const suggestions = deriveNextSteps({
+    const suggestions = deriveFrom({
       ...BASE_PARAMS,
       agents: [agent({ status: 'running', mountId: webMountId })],
       mounts: [
@@ -985,7 +989,7 @@ describe('deriveNextSteps eleven new kinds', () => {
   describe('per branch gate', () => {
     const otherMountId: MountId = JSON.parse(JSON.stringify('mount-payments-b'));
     const kindsFor = ({ agents }: { readonly agents: ReadonlyArray<SuggestionAgent> }) =>
-      deriveNextSteps({
+      deriveFrom({
         ...BASE_PARAMS,
         agents,
         mounts: [
@@ -1011,7 +1015,7 @@ describe('deriveNextSteps eleven new kinds', () => {
     });
 
     it('gates the only mount for a running agent without a mount', () => {
-      const ids = deriveNextSteps({
+      const ids = deriveFrom({
         ...BASE_PARAMS,
         agents: [agent({ status: 'running' })],
         mounts: [mount({ pr: pr({ isDraft: true, checks: 'success' }) })],
@@ -1020,7 +1024,7 @@ describe('deriveNextSteps eleven new kinds', () => {
     });
 
     it('hides fix checks of the only mount for a running agent without a mount', () => {
-      const ids = deriveNextSteps({
+      const ids = deriveFrom({
         ...BASE_PARAMS,
         agents: [agent({ status: 'running' })],
         mounts: [mount({ pr: pr({ checks: 'failure' }) })],
@@ -1036,7 +1040,7 @@ describe('deriveNextSteps eleven new kinds', () => {
 
   describe('open pull request title', () => {
     const titleFor = ({ mounts }: { readonly mounts: ReadonlyArray<SuggestionMount> }) =>
-      deriveNextSteps({ ...BASE_PARAMS, mounts })
+      deriveFrom({ ...BASE_PARAMS, mounts })
         .filter((candidate) => candidate.kind === 'open-pr')
         .map((candidate) => candidate.title)
         .sort();
@@ -1082,28 +1086,8 @@ describe('deriveNextSteps eleven new kinds', () => {
     });
   });
 
-  it('ignores mount data older than five minutes', () => {
-    const now = () => Date.parse('2026-01-01T00:10:00.000Z');
-    const suggestions = deriveNextSteps({
-      ...BASE_PARAMS,
-      now,
-      mounts: [mount({ push: { kind: 'ahead', ahead: 4 }, fetchedAt: '2026-01-01T00:00:00.000Z' })],
-    });
-    expect(suggestions.some((candidate) => candidate.kind === 'push-branch')).toBe(false);
-  });
-
-  it('keeps mount data fetched within the last five minutes', () => {
-    const now = () => Date.parse('2026-01-01T00:03:00.000Z');
-    const suggestions = deriveNextSteps({
-      ...BASE_PARAMS,
-      now,
-      mounts: [mount({ push: { kind: 'ahead', ahead: 4 }, fetchedAt: '2026-01-01T00:00:00.000Z' })],
-    });
-    expect(suggestions.some((candidate) => candidate.kind === 'push-branch')).toBe(true);
-  });
-
   it('suggests closing a worktree once its cleanup proposal is pending', () => {
-    const suggestions = deriveNextSteps({
+    const suggestions = deriveFrom({
       ...BASE_PARAMS,
       cleanupProposals: [cleanupProposal()],
     });
@@ -1113,7 +1097,7 @@ describe('deriveNextSteps eleven new kinds', () => {
   });
 
   it('says why an archived session keeps a worktree when no pull request merged', () => {
-    const suggestions = deriveNextSteps({
+    const suggestions = deriveFrom({
       ...BASE_PARAMS,
       cleanupProposals: [cleanupProposal({ prNumber: null, isArchived: true, sizeBytes: null })],
     });
@@ -1122,7 +1106,7 @@ describe('deriveNextSteps eleven new kinds', () => {
   });
 
   it('groups two merged worktrees into one row that removes both', () => {
-    const suggestions = deriveNextSteps({
+    const suggestions = deriveFrom({
       ...BASE_PARAMS,
       cleanupProposals: [
         cleanupProposal(),
@@ -1145,18 +1129,17 @@ describe('deriveNextSteps eleven new kinds', () => {
   describe('archiving a finished session', () => {
     const MERGED = { merged: 1, closed: 0 };
 
-    it('offers Archive this session as the last Ship row when every branch is merged', () => {
-      const suggestions = deriveNextSteps({
+    it('offers Archive this session once every branch is merged and no worktree waits', () => {
+      const suggestions = deriveFrom({
         ...BASE_PARAMS,
         settledBranches: MERGED,
         cleanupProposals: [cleanupProposal()],
       });
 
-      expect(suggestions.map((candidate) => candidate.kind)).toEqual([
-        'close-worktree',
-        'archive-session',
-      ]);
-      const archive = suggestions.find((candidate) => candidate.kind === 'archive-session');
+      expect(suggestions.map((candidate) => candidate.kind)).toEqual(['close-worktree']);
+      const archive = deriveFrom({ ...BASE_PARAMS, settledBranches: MERGED }).find(
+        (candidate) => candidate.kind === 'archive-session',
+      );
       expect(archive?.title).toBe('Archive this session');
       expect(archive?.detail).toBe('All branches merged');
       expect(archive?.kind === 'archive-session' ? archive.payload.branchCount : 0).toBe(1);
@@ -1164,7 +1147,7 @@ describe('deriveNextSteps eleven new kinds', () => {
 
     it('says closed, or merged or closed, when the branches ended differently', () => {
       const reasonOf = (settledBranches: { merged: number; closed: number }) =>
-        deriveNextSteps({ ...BASE_PARAMS, settledBranches }).find(
+        deriveFrom({ ...BASE_PARAMS, settledBranches }).find(
           (candidate) => candidate.kind === 'archive-session',
         )?.detail;
 
@@ -1174,7 +1157,7 @@ describe('deriveNextSteps eleven new kinds', () => {
 
     it('offers nothing while a branch is still live, which the caller reports as none settled', () => {
       expect(
-        deriveNextSteps({ ...BASE_PARAMS, settledBranches: { merged: 0, closed: 0 } }).some(
+        deriveFrom({ ...BASE_PARAMS, settledBranches: { merged: 0, closed: 0 } }).some(
           (candidate) => candidate.kind === 'archive-session',
         ),
       ).toBe(false);
@@ -1199,26 +1182,26 @@ describe('deriveNextSteps eleven new kinds', () => {
         },
       ],
     ])('offers nothing while %s', (_name, over) => {
-      const suggestions = deriveNextSteps({ ...BASE_PARAMS, settledBranches: MERGED, ...over });
+      const suggestions = deriveFrom({ ...BASE_PARAMS, settledBranches: MERGED, ...over });
 
       expect(suggestions.some((candidate) => candidate.kind === 'archive-session')).toBe(false);
     });
 
     it('goes away with Not now, by fingerprint, and returns for a different branch count', () => {
-      const first = deriveNextSteps({ ...BASE_PARAMS, settledBranches: MERGED }).find(
+      const first = deriveFrom({ ...BASE_PARAMS, settledBranches: MERGED }).find(
         (candidate) => candidate.kind === 'archive-session',
       );
       const dismissed = new Set([first?.fingerprint ?? '']);
 
       expect(
-        deriveNextSteps({
+        deriveFrom({
           ...BASE_PARAMS,
           settledBranches: MERGED,
           dismissedFingerprints: dismissed,
         }).some((candidate) => candidate.kind === 'archive-session'),
       ).toBe(false);
       expect(
-        deriveNextSteps({
+        deriveFrom({
           ...BASE_PARAMS,
           settledBranches: { merged: 2, closed: 0 },
           dismissedFingerprints: dismissed,

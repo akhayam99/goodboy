@@ -1,5 +1,6 @@
 import type { ActionCardModel } from './actionCardsOf';
 import { NEXT_GROUP_IDS, type NextGroupId } from './nextGroupIds';
+import { isStoppedRebaseOf } from './isStoppedRebaseOf';
 import { nextKindFactsOf } from './nextKindFactsOf';
 import { nextRowsOf } from './nextRowsOf';
 import { nextSeenKeyOf } from './nextSeenKeyOf';
@@ -35,12 +36,16 @@ export const nextGroupsOf = ({ cards, seen }: Params): ReadonlyArray<NextGroupMo
       group,
       at: seenAt.get(nextSeenKeyOf({ group, card: row })) ?? UNSEEN,
       unblocks: nextUnblockCountOf({ card: row }),
+      isStopped: isStoppedRebaseOf({ card: row }),
     };
   });
   return NEXT_GROUP_IDS.flatMap((id) => {
     const rows = placed
       .filter((entry) => entry.group === id)
       .sort((first, second) => {
+        if (first.isStopped !== second.isStopped) {
+          return first.isStopped ? -1 : 1;
+        }
         if (first.unblocks !== second.unblocks) {
           return second.unblocks - first.unblocks;
         }

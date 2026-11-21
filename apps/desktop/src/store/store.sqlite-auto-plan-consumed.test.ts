@@ -279,21 +279,23 @@ const delegateWithPlan = ({ world, role }: DelegateParams): Promise<BridgeOutcom
 const isPlanReadyOffered = ({ sessionId }: Pick<World, 'sessionId'>): boolean => {
   const plans = useAppStore.getState().sessionPlans[sessionId] ?? [];
   return deriveNextSteps({
-    sessionId,
-    workflowRuns: [],
-    plans: plans.map((plan) => ({
-      id: plan.id,
-      title: plan.title,
-      status: plan.status,
-      creatorHasOpenQuestions: false,
-      isOwnedByRun: false,
-    })),
-    consumedPlanIds: new Set(),
-    openQuestionCount: 0,
-    hasPullRequest: false,
-    eligibleThreadCount: 0,
-    projects: [],
-    mountEvents: [],
+    signals: {
+      sessionId,
+      workflowRuns: [],
+      plans: plans.map((plan) => ({
+        id: plan.id,
+        title: plan.title,
+        status: plan.status,
+        creatorHasOpenQuestions: false,
+        isOwnedByRun: false,
+      })),
+      consumedPlanIds: new Set(),
+      openQuestionCount: 0,
+      hasPullRequest: false,
+      eligibleThreadCount: 0,
+      projects: [],
+      mountEvents: [],
+    },
   }).some((suggestion) => suggestion.kind === 'plan-ready');
 };
 

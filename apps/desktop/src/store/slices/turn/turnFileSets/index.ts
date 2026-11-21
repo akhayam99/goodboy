@@ -45,6 +45,7 @@ type RecordParams = {
   readonly projects: ReadonlyArray<Project>;
   readonly begun: Promise<ReadonlyArray<BegunMount>>;
   readonly isShared: () => Promise<boolean>;
+  readonly onRecorded?: () => void;
 };
 
 export const recordTurnFileSets = async ({
@@ -54,8 +55,10 @@ export const recordTurnFileSets = async ({
   projects,
   begun,
   isShared,
+  onRecorded,
 }: RecordParams): Promise<void> => {
   const failures: Array<unknown> = [];
+  let hasRecorded = false;
   try {
     const [mounts, isSharedTurn] = await Promise.all([begun, isShared()]);
     if (isSharedTurn) {
@@ -84,12 +87,16 @@ export const recordTurnFileSets = async ({
             recordedAtMs: Date.now(),
           },
         });
+        hasRecorded = true;
       } catch (error) {
         failures.push(error);
       }
     }
   } catch (error) {
     failures.push(error);
+  }
+  if (hasRecorded) {
+    onRecorded?.();
   }
   const first = failures[0];
   if (first !== undefined) {

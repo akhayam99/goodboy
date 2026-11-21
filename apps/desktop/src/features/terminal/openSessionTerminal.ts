@@ -27,7 +27,7 @@ export const openSessionTerminal = ({
   owner = sessionTerminalOwner({ sessionId }),
   prefill,
   isFresh = false,
-}: OpenParams): void => {
+}: OpenParams): string => {
   const reusable =
     prefill === undefined && !isFresh
       ? liveTabAt({ tabs: state.terminalTabs[terminalOwnerKey({ owner })] ?? [], cwd })
@@ -40,4 +40,5 @@ export const openSessionTerminal = ({
     state.rememberTerminalScope({ sessionId, cwd });
   }
   state.openDrawer({ kind: 'terminal', sessionId, payload: { terminalId } });
+  return terminalId;
 };

@@ -89,7 +89,7 @@ const cardOf = ({
   agents = [],
   mounts = [mount()],
 }: DeriveParams): SessionSuggestion | undefined =>
-  deriveNextSteps({ ...BASE_PARAMS, mounts, checkChains: chains, agents }).find(
+  deriveNextSteps({ signals: { ...BASE_PARAMS, mounts, checkChains: chains, agents } }).find(
     (suggestion) => suggestion.kind === 'fix-checks',
   );
 
@@ -149,12 +149,14 @@ describe('the failing-checks card by chain state', () => {
   it('keeps the plain push card out while the fix waits for the Push on its Activity row', () => {
     const push = { kind: 'ahead', ahead: 1 } as const;
     const waiting = deriveNextSteps({
-      ...BASE_PARAMS,
-      mounts: [mount({ push })],
-      checkChains: [chain({ chain: 'fixed-local', commit: '9e4c1a7', commitCount: 1 })],
+      signals: {
+        ...BASE_PARAMS,
+        mounts: [mount({ push })],
+        checkChains: [chain({ chain: 'fixed-local', commit: '9e4c1a7', commitCount: 1 })],
+      },
     });
     expect(waiting).toEqual([]);
-    const without = deriveNextSteps({ ...BASE_PARAMS, mounts: [mount({ push })] });
+    const without = deriveNextSteps({ signals: { ...BASE_PARAMS, mounts: [mount({ push })] } });
     expect(without.map((suggestion) => suggestion.kind)).toContain('push-branch');
   });
 });
@@ -162,13 +164,15 @@ describe('the failing-checks card by chain state', () => {
 describe('the generic review card', () => {
   it('does not fire for the Implementer a failed check started', () => {
     const suggestions = deriveNextSteps({
-      ...BASE_PARAMS,
-      agents: [agent({ sourceKind: 'failed_check' })],
+      signals: {
+        ...BASE_PARAMS,
+        agents: [agent({ sourceKind: 'failed_check' })],
+      },
     });
     expect(suggestions.some((suggestion) => suggestion.kind === 'check-changes')).toBe(false);
   });
   it('still fires for a normal Implementer', () => {
-    const suggestions = deriveNextSteps({ ...BASE_PARAMS, agents: [agent()] });
+    const suggestions = deriveNextSteps({ signals: { ...BASE_PARAMS, agents: [agent()] } });
     expect(suggestions.map((suggestion) => suggestion.kind)).toEqual(['check-changes']);
   });
 });

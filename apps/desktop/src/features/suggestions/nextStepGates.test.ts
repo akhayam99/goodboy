@@ -27,17 +27,17 @@ const suggestion = (overrides: Partial<SessionSuggestion> = {}): SessionSuggesti
   }) as SessionSuggestion;
 
 describe('isFresh', () => {
-  it('treats unknown freshness (no fetchedAt) as fresh', () => {
-    expect(isFresh({ fetchedAt: null, now: () => Date.now() })).toBe(true);
+  it('treats a read that never happened as not fresh', () => {
+    expect(isFresh({ fetchedAt: null, now: () => Date.now() })).toBe(false);
   });
 
-  it('is fresh within the 5 minute default window', () => {
-    const now = Date.parse('2026-06-08T10:04:00.000Z');
+  it('is fresh within the default window, longer than one poll round', () => {
+    const now = Date.parse('2026-06-08T10:07:00.000Z');
     expect(isFresh({ fetchedAt: '2026-06-08T10:00:00.000Z', now: () => now })).toBe(true);
   });
 
   it('is stale past the default window', () => {
-    const now = Date.parse('2026-06-08T10:06:00.000Z');
+    const now = Date.parse('2026-06-08T10:09:00.000Z');
     expect(isFresh({ fetchedAt: '2026-06-08T10:00:00.000Z', now: () => now })).toBe(false);
   });
 });
@@ -110,6 +110,30 @@ describe('sortNextSteps', () => {
       demotedKinds: new Set(['plan-ready']),
     });
     expect(sorted.map((s) => s.id)).toEqual(['rebase', 'plan']);
+  });
+
+  it('puts every unblock before an advance, whatever the numeric priority', () => {
+    const suggestions = [
+      suggestion({ id: 'push', kind: 'push-branch', priority: 41 }),
+      suggestion({ id: 'merge', kind: 'merge-pr', priority: 44 }),
+      suggestion({ id: 'archive', kind: 'archive-session', priority: 10 }),
+    ];
+    expect(sortNextSteps({ suggestions }).map((s) => s.id)).toEqual(['merge', 'push', 'archive']);
+  });
+
+  it('keeps the priority order inside a group', () => {
+    const suggestions = [
+      suggestion({ id: 'merge', kind: 'merge-pr', priority: 44 }),
+      suggestion({ id: 'fix', kind: 'fix-checks', priority: 20 }),
+      suggestion({ id: 'open', kind: 'open-pr', priority: 42 }),
+      suggestion({ id: 'push', kind: 'push-branch', priority: 41 }),
+    ];
+    expect(sortNextSteps({ suggestions }).map((s) => s.id)).toEqual([
+      'fix',
+      'merge',
+      'push',
+      'open',
+    ]);
   });
 });
 

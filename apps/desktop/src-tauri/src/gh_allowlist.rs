@@ -517,6 +517,7 @@ mod tests {
                 "crash on boot",
             ]),
             argv(&["run", "view", "123456", "--job", "789", "--log-failed"]),
+            argv(&["run", "rerun", "123456", "--failed"]),
             argv(&[
                 "repo",
                 "view",
@@ -742,6 +743,23 @@ mod tests {
             argv(&["issue", "view", "--web"]),
             argv(&["pr", "view", "12", "--json", "id;rm"]),
             argv(&["search", "issues", "--", "a", "b"]),
+            argv(&["run", "rerun", "123456"]),
+            argv(&["run", "rerun"]),
+            argv(&["run", "rerun", "--failed"]),
+            argv(&["run", "rerun", "abc", "--failed"]),
+            argv(&["run", "rerun", "123456", "--failed", "--debug"]),
+            argv(&["run", "rerun", "123456", "--failed", "--job", "789"]),
+            argv(&[
+                "run",
+                "rerun",
+                "123456",
+                "--failed",
+                "--repo",
+                "acme/ledger-core",
+            ]),
+            argv(&["run", "cancel", "123456"]),
+            argv(&["run", "delete", "123456"]),
+            argv(&["workflow", "run", "ci.yml"]),
         ] {
             assert!(check_args(&args).is_err(), "{args:?}");
         }

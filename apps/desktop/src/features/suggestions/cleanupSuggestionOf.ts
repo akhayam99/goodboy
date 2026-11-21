@@ -1,31 +1,39 @@
 import type { SessionId } from '@goodboy/types';
 import { formatBytes } from '../../shared/utils/formatBytes';
+import { formatAge } from '../../shared/utils/time/formatAge';
 import type { SuggestionCleanupProposal } from './deriveNextSteps';
 import type { SessionSuggestion } from './types';
 
 type Params = {
   readonly sessionId: SessionId;
   readonly proposals: ReadonlyArray<SuggestionCleanupProposal>;
+  readonly now?: () => number;
 };
 
 type ProposalParams = {
   readonly proposal: SuggestionCleanupProposal;
+  readonly now: () => number;
 };
 
 type ProposalsParams = {
   readonly proposals: ReadonlyArray<SuggestionCleanupProposal>;
+  readonly now: () => number;
 };
 
 const SEPARATOR = ' · ';
 
-const reasonOf = ({ proposal }: ProposalParams): string => {
+const reasonOf = ({ proposal, now }: ProposalParams): string => {
   if (proposal.prNumber !== null) {
-    return `#${proposal.prNumber} merged`;
+    const age = proposal.mergedAt == null ? '' : formatAge({ from: proposal.mergedAt, now: now() });
+    return age === '' ? `#${proposal.prNumber} merged` : `#${proposal.prNumber} merged ${age}`;
+  }
+  if (proposal.idleDays != null) {
+    return `No change for ${proposal.idleDays} days`;
   }
   return proposal.isArchived ? 'Session archived' : 'Ready to remove';
 };
 
-const sizeOf = ({ proposals }: ProposalsParams): string | null => {
+const sizeOf = ({ proposals }: Pick<ProposalsParams, 'proposals'>): string | null => {
   const sizes = proposals.flatMap((proposal) =>
     proposal.sizeBytes === null ? [] : [proposal.sizeBytes],
   );
@@ -35,7 +43,7 @@ const sizeOf = ({ proposals }: ProposalsParams): string | null => {
   return formatBytes({ bytes: sizes.reduce((total, size) => total + size, 0) });
 };
 
-const titleOf = ({ proposals }: ProposalsParams): string => {
+const titleOf = ({ proposals }: Pick<ProposalsParams, 'proposals'>): string => {
   const [only] = proposals;
   if (proposals.length === 1 && only !== undefined) {
     return `Remove the ${only.projectName} worktree`;
@@ -44,11 +52,11 @@ const titleOf = ({ proposals }: ProposalsParams): string => {
   return `Remove ${proposals.length} ${isAllMerged ? 'merged worktrees' : 'worktrees'}`;
 };
 
-const detailOf = ({ proposals }: ProposalsParams): string => {
+const detailOf = ({ proposals, now }: ProposalsParams): string => {
   const [only] = proposals;
   const reason =
     proposals.length === 1 && only !== undefined
-      ? reasonOf({ proposal: only })
+      ? reasonOf({ proposal: only, now })
       : proposals
           .map((proposal) =>
             proposal.prNumber === null
@@ -60,7 +68,11 @@ const detailOf = ({ proposals }: ProposalsParams): string => {
   return size === null ? reason : `${reason}${SEPARATOR}${size}`;
 };
 
-export const cleanupSuggestionOf = ({ sessionId, proposals }: Params): SessionSuggestion | null => {
+export const cleanupSuggestionOf = ({
+  sessionId,
+  proposals,
+  now = () => Date.now(),
+}: Params): SessionSuggestion | null => {
   const [first] = proposals;
   if (first === undefined) {
     return null;
@@ -72,7 +84,7 @@ export const cleanupSuggestionOf = ({ sessionId, proposals }: Params): SessionSu
     priority: 51,
     band: 3,
     title: titleOf({ proposals }),
-    detail: detailOf({ proposals }),
+    detail: detailOf({ proposals, now }),
     sessionId,
     targetKey: proposals.length === 1 ? `worktree:${first.mountId}` : 'worktree:group',
     fingerprint: `close-worktree:${requestIds.join(',')}`,
@@ -82,6 +94,7 @@ export const cleanupSuggestionOf = ({ sessionId, proposals }: Params): SessionSu
         requestId: proposal.requestId,
         branch: proposal.branch,
         prNumber: proposal.prNumber,
+        ...(proposal.reason !== undefined && { reason: proposal.reason }),
       })),
     },
   };

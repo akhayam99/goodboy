@@ -56,6 +56,11 @@ export const isOfferedByActivity = ({ suggestion }: Params): boolean => {
     case 'close-worktree':
     case 'archive-session':
     case 'continue-with-workflow':
+    case 'run-failing-test':
+    case 'next-script':
+    case 'rerun-check':
+    case 'unmount-folder':
+    case 'ask-agent':
       return false;
     default: {
       const exhaustive: never = suggestion;

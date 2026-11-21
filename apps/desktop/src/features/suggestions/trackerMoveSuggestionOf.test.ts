@@ -85,7 +85,7 @@ describe('the Next list with a tracker move', () => {
       cards: actionCardsOf({
         owners: [],
         autoTargets: [],
-        suggestions: deriveNextSteps({ ...baseParams, trackerMoves: moves }),
+        suggestions: deriveNextSteps({ signals: { ...baseParams, trackerMoves: moves } }),
       }),
     });
 

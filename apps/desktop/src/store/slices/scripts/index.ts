@@ -5,6 +5,7 @@ import { loadProjectRootScripts } from './loadProjectRootScripts';
 import { loadScriptPins } from './loadScriptPins';
 import { loadScripts } from './loadScripts';
 import { markScriptRunSeen } from './markScriptRunSeen';
+import { recordTerminalScriptRun } from './recordTerminalScriptRun';
 import { reattachScriptRuns } from './reattachScriptRuns';
 import { refreshDiscoveredScripts } from './refreshDiscoveredScripts';
 import { reinstallWorktreeDeps } from './reinstallWorktreeDeps';
@@ -24,6 +25,7 @@ export const createScriptsSlice = ({ set, get }: SliceDeps) => {
     refreshDiscoveredScripts: refreshDiscoveredScripts(set, get),
     runScript: runScript(set, get),
     runDiscoveredScript: runDiscoveredScript(set, get),
+    recordTerminalScriptRun: recordTerminalScriptRun({ set }),
     reinstallWorktreeDeps: reinstallWorktreeDeps({ get }),
     reattachScriptRuns: reattachScriptRuns(set, get),
     cancelScript: cancelScript(set, get),

@@ -293,23 +293,25 @@ const surfacesOf = (plan: PlanWithCount) => {
     handoff: planHandoffOf({ plan, run: owner }),
   });
   const next = deriveNextSteps({
-    sessionId,
-    workflowRuns: [],
-    plans: [
-      {
-        id: plan.id,
-        title: plan.title,
-        status: plan.status,
-        creatorHasOpenQuestions: false,
-        isOwnedByRun: owner !== null,
-      },
-    ],
-    consumedPlanIds: new Set(),
-    openQuestionCount: 0,
-    hasPullRequest: false,
-    eligibleThreadCount: 0,
-    projects: [],
-    mountEvents: [],
+    signals: {
+      sessionId,
+      workflowRuns: [],
+      plans: [
+        {
+          id: plan.id,
+          title: plan.title,
+          status: plan.status,
+          creatorHasOpenQuestions: false,
+          isOwnedByRun: owner !== null,
+        },
+      ],
+      consumedPlanIds: new Set(),
+      openQuestionCount: 0,
+      hasPullRequest: false,
+      eligibleThreadCount: 0,
+      projects: [],
+      mountEvents: [],
+    },
   });
   return {
     primary: planPrimaryOf({ plan, run: owner, drafts: [] }),
