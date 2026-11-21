@@ -1,7 +1,6 @@
 import { useMemo } from 'react';
 import type { SessionId } from '@goodboy/types';
 import type { ArtifactListRow as Row } from '../../../artifactListRows';
-import type { ArtifactState } from '../../../artifactStateOf';
 import { ARTIFACT_KIND_MARKER_LABEL } from '../../../artifactPresentation';
 import { formatDateTime } from '../../../../../shared/utils/time/formatDateTime';
 import type { ActionControls } from '../../../../actions/useActionControls';
@@ -13,7 +12,6 @@ type Params = {
   readonly row: Row;
   readonly rowKey: string;
   readonly sessionId: SessionId;
-  readonly isStateShown: boolean;
 };
 
 const PRIMARY_FALLBACK_IDS = ['artifact.stop', 'artifact.retry'] as const;
@@ -59,27 +57,7 @@ const targetOf = ({ row, sessionId }: TargetParams): ArtifactActionTarget => ({
       : { kind: 'stored', artifactId: row.target.artifactId, isPlanRunning: row.isPlanRunning },
 });
 
-const GROUP_SAYS_IT: ReadonlySet<ArtifactState['key']> = new Set([
-  'needs',
-  'running',
-  'available',
-  'ran',
-  'deleted',
-]);
-
-type ShownStateParams = {
-  readonly row: Row;
-  readonly isStateShown: boolean;
-};
-
-const shownStateOf = ({ row, isStateShown }: ShownStateParams): ArtifactState | null => {
-  if (row.state === null || (!isStateShown && GROUP_SAYS_IT.has(row.state.key))) {
-    return null;
-  }
-  return row.state;
-};
-
-export const useArtifactRowModel = ({ row, rowKey, sessionId, isStateShown }: Params) => {
+export const useArtifactRowModel = ({ row, rowKey, sessionId }: Params) => {
   const target = useMemo(() => targetOf({ row, sessionId }), [row, sessionId]);
   const anchorKey = `artifact-row:${rowKey}`;
   const menu = useObjectMenuTrigger({ target, anchorKey });
@@ -99,7 +77,7 @@ export const useArtifactRowModel = ({ row, rowKey, sessionId, isStateShown }: Pa
       : null,
     primary,
     isFilled: primary !== null && primary.slot === 'primary' && primary.isSecondary !== true,
-    state: shownStateOf({ row, isStateShown }),
+    state: row.state,
     at,
     atTitle:
       at === null

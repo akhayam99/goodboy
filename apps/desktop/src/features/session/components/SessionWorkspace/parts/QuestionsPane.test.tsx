@@ -381,20 +381,29 @@ describe('QuestionsPane', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Show' }));
     const answered = row('Which branch should the fix land on?');
     const cells = Array.from(answered.querySelectorAll<HTMLElement>('[data-list-grid-cell]'));
-    expect(cells.map((cell) => cell.getAttribute('data-list-grid-cell'))).toEqual(['title', 'age']);
-    const lines = Array.from(cells[0]?.querySelectorAll<HTMLElement>('.truncate') ?? []).map(
+    expect(cells.map((cell) => cell.getAttribute('data-list-grid-cell'))).toEqual([
+      'state',
+      'title',
+      'age',
+    ]);
+    const lines = Array.from(cells[1]?.querySelectorAll<HTMLElement>('.truncate') ?? []).map(
       (line) => line.textContent,
     );
     expect(lines).toEqual(['Which branch should the fix land on?', 'You: main · Reviewer']);
-    expect(cells[1]?.textContent).toBe(formatAge({ from: NOW, now: Date.now() }));
+    expect(cells[2]?.textContent).toBe(formatAge({ from: NOW, now: Date.now() }));
+    within(answered).getByRole('img', { name: 'Answered' });
   });
 
-  it('marks a blocking ask with one dot in its own cell', () => {
+  it('gives every row a dot in its own first cell, Blocking for an ask that holds the run', () => {
     setup();
     const blocking = row('Which queue should retries run on?');
     const quiet = row('Which events should be retried?');
     expect(within(blocking).getByRole('img', { name: 'Blocking' })).toBeDefined();
     expect(within(quiet).queryByRole('img', { name: 'Blocking' })).toBeNull();
+    within(quiet).getByRole('img', { name: 'Waiting' });
+    for (const asked of [blocking, quiet]) {
+      expect(asked.querySelector('[data-list-grid-cell="state"] [role="img"]')).not.toBeNull();
+    }
   });
 
   it('opens an answered question from its row on its address, one step after the list', () => {

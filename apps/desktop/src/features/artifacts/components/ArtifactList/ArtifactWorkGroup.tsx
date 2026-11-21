@@ -35,12 +35,14 @@ type Props = {
   readonly heading: BranchWorkHeading;
   readonly onToggle: () => void;
   readonly onReveal: (params: RevealParams) => void;
-  readonly canOpenBranch: (params: OpenBranchParams) => boolean;
+  readonly canOpenBranch?: (params: OpenBranchParams) => boolean;
+  readonly fact?: string | null;
   readonly onTogglePartsOf: (rowId: string) => void;
   readonly onOpenRow: (params: ArtifactOpenParams) => void;
 };
 
-type ChipParams = Pick<Props, 'mounts' | 'onReveal' | 'canOpenBranch'> & {
+type ChipParams = Pick<Props, 'mounts' | 'onReveal'> & {
+  readonly canOpenBranch: Props['canOpenBranch'];
   readonly item: ArtifactBranchItem;
   readonly groupKey: string;
 };
@@ -48,7 +50,7 @@ type ChipParams = Pick<Props, 'mounts' | 'onReveal' | 'canOpenBranch'> & {
 const alsoOnChipOf = ({ item, groupKey, mounts, onReveal, canOpenBranch }: ChipParams) => {
   const branches = alsoOnBranchesOf({ branches: item.branches, groupKey, mounts });
   const [first] = branches;
-  if (first === undefined || !canOpenBranch({ mountId: first.mountId })) {
+  if (first === undefined || canOpenBranch?.({ mountId: first.mountId }) === false) {
     return undefined;
   }
   return (
@@ -69,6 +71,7 @@ export const ArtifactWorkGroup = ({
   onToggle,
   onReveal,
   canOpenBranch,
+  fact = null,
   onTogglePartsOf,
   onOpenRow,
 }: Props) => {
@@ -79,7 +82,7 @@ export const ArtifactWorkGroup = ({
   const shown = isFolded ? active : group.items;
   const usedWord = ARTIFACT_GROUP_LABEL.consumed.toLowerCase();
   const rows = group.items.map((item) => item.row);
-  const summary = artifactBranchSummaryOf({ rows, fact: null });
+  const summary = artifactBranchSummaryOf({ rows, fact });
   return (
     <ListGridGroup
       headingLevel={2}

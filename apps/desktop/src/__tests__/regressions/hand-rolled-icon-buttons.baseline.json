@@ -1,6 +1,5 @@
 {
   "apps/desktop/src/app/components/AppTopBar/NavCluster/HistoryArrow.tsx": 1,
-  "apps/desktop/src/features/artifacts/components/ArtifactList/ArtifactListRow.tsx": 1,
   "apps/desktop/src/features/chat/components/ChatView/index.tsx": 1,
   "apps/desktop/src/features/diff/components/ChangeTree/index.tsx": 1,
   "apps/desktop/src/features/diff/components/DiffView/FileHeader.tsx": 1,

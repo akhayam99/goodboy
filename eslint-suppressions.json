@@ -1623,7 +1623,7 @@
       "count": 4
     }
   },
-  "apps/desktop/src/features/artifacts/components/ArtifactList/ArtifactListRow.test.tsx": {
+  "apps/desktop/src/features/artifacts/components/ArtifactList/ArtifactWorkRow/index.test.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 1
     }

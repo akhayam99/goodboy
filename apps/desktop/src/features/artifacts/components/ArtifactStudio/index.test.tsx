@@ -313,7 +313,7 @@ describe('ArtifactStudio list', () => {
     state.sessionArtifacts = { 'sess-1': [report, wireframe] };
     renderStudio();
     const list = screen.getByTestId('artifact-list');
-    const titles = Array.from(list.querySelectorAll('[data-artifact-row]')).map((button) =>
+    const titles = Array.from(list.querySelectorAll('[data-row-key]')).map((button) =>
       button.getAttribute('aria-label'),
     );
     expect(titles).toEqual([
@@ -322,7 +322,12 @@ describe('ArtifactStudio list', () => {
       'Report Rounding drift in ledger-core postings, Ready',
     ]);
     expect(within(list).getByRole('heading', { name: /^Ready$/ })).toBeDefined();
-    within(list).getByRole('heading', { name: /^To read 2$/ });
+    expect(
+      within(list)
+        .getByRole('heading', { name: /^To read$/ })
+        .closest('li')
+        ?.querySelector('[data-list-grid-count]')?.textContent,
+    ).toBe('2');
     expect(screen.queryByText(/Show finished/)).toBeNull();
   });
 
@@ -357,7 +362,7 @@ describe('ArtifactStudio list', () => {
     state.agentTurnState = { 'agent-report-2': { kind: 'running' } };
     renderStudio();
     expect(screen.getByRole('heading', { level: 2, name: /^Running/ })).toBeDefined();
-    expect(screen.queryByTestId('artifact-row-state')).toBeNull();
+    expect(screen.getByTestId('artifact-row-state').textContent).toBe('Running');
     fireEvent.click(screen.getByRole('button', { name: 'Stop' }));
     expect(state.stopArtifactGeneration).toHaveBeenCalledWith({
       sessionId: 'sess-1',

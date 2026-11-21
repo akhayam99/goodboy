@@ -73,7 +73,7 @@ export const ArtifactBuiltFrom = ({ artifact }: Props) => {
     return (
       <Band inset="content" label="Built from" ariaLabel="Built from">
         <ArtifactLoadFailed
-          sentence="The record of this generation did not load."
+          label="the record of this generation"
           onRetry={() => setLoadAttempt((n) => n + 1)}
         />
       </Band>

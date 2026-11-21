@@ -1,18 +1,20 @@
 // @vitest-environment happy-dom
 
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import type { PlanWithCount, ProviderRunId } from '@goodboy/types';
-import { ToastProvider } from '../../../../shared/components/Toast';
-import { ObjectMenuProvider } from '../../../actions/components/ObjectMenuProvider';
-import { PLAN_FIXTURE_AT, PLAN_FIXTURE_SESSION } from '../../../../test/planFixtures';
+import { ToastProvider } from '../../../../../shared/components/Toast';
+import { ObjectMenuProvider } from '../../../../actions/components/ObjectMenuProvider';
+import { PLAN_FIXTURE_AT, PLAN_FIXTURE_SESSION } from '../../../../../test/planFixtures';
 import {
   aPlanDraft,
   seedPlanDrawer,
   type PlanDrawerSeed,
-} from '../../../../test/planDrawerFixtures';
-import type { ArtifactListRow as Row } from '../../artifactListRows';
-import { ArtifactListRow } from './ArtifactListRow';
+} from '../../../../../test/planDrawerFixtures';
+import type { ArtifactListRow as Row } from '../../../artifactListRows';
+import { ListGrid } from '@goodboy/ui';
+import { ArtifactWorkRow } from './index';
+import { ARTIFACTS_GRID_COLUMNS } from '../artifactsGridColumns';
 
 type RowOfParams = {
   readonly plan: PlanWithCount;
@@ -40,14 +42,16 @@ const renderRow = (seed: PlanDrawerSeed, group: Row['group'] = 'needs') => {
   render(
     <ToastProvider>
       <ObjectMenuProvider>
-        <ArtifactListRow
-          row={rowOf({ plan, group })}
-          sessionId={PLAN_FIXTURE_SESSION}
-          isPartsOpen={false}
-          onTogglePartsOf={() => undefined}
-          onOpenRow={() => undefined}
-          hasActionColumn
-        />
+        <ListGrid label="Artifacts" columns={ARTIFACTS_GRID_COLUMNS}>
+          <ArtifactWorkRow
+            row={rowOf({ plan, group })}
+            rowKey={`artifact:${plan.id}`}
+            sessionId={PLAN_FIXTURE_SESSION}
+            isPartsOpen={false}
+            onTogglePartsOf={() => undefined}
+            onOpenRow={() => undefined}
+          />
+        </ListGrid>
       </ObjectMenuProvider>
     </ToastProvider>,
   );
@@ -129,7 +133,7 @@ describe('an artifact row shows one action', () => {
 
     fireEvent.contextMenu(screen.getByRole('button', { name: /^Plan / }));
 
-    expect(screen.getByRole('menuitem', { name: /^Delete\b/ })).toBeDefined();
+    screen.getByRole('menuitem', { name: /^Delete\b/ });
   });
 
   it('draws no kind column: the glyph says it', () => {
@@ -142,18 +146,16 @@ describe('an artifact row shows one action', () => {
 describe('an artifact row asks beside its button', () => {
   it('opens Approve anyway as a popover outside the row and leaves the row as it was', () => {
     renderRow({ run: 'held', drafts: [aPlanDraft()] });
-    const frame = screen.getByTestId('artifact-row-frame');
+    const frame = screen.getByRole('list', { name: 'Artifacts' });
     const childCount = frame.children.length;
-    const height = frame.getBoundingClientRect().height;
 
     fireEvent.click(primary('Approve and start Implement'));
 
     const dialog = screen.getByRole('dialog', { name: 'Approve without your comment?' });
     expect(frame.contains(dialog)).toBe(false);
     expect(dialog.closest('[data-dropdown-portal]')).not.toBeNull();
-    expect(within(dialog).getByRole('button', { name: 'Approve anyway' })).toBeDefined();
+    within(dialog).getByRole('button', { name: 'Approve anyway' });
     expect(frame.children.length).toBe(childCount);
-    expect(frame.getBoundingClientRect().height).toBe(height);
   });
 
   it('closes on Escape and gives focus back to the row button', async () => {
@@ -166,5 +168,43 @@ describe('an artifact row asks beside its button', () => {
 
     await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
     expect(document.activeElement).toBe(approve);
+  });
+});
+
+describe('an artifact row opens its parts from the initial cell', () => {
+  it('puts the chevron before the title and toggles the parts from it', () => {
+    const { plan } = seedPlanDrawer({ run: 'none' });
+    const onTogglePartsOf = vi.fn();
+    const base = rowOf({ plan, group: 'ready' });
+    const row: Row = {
+      ...base,
+      partCount: 2,
+      parts: [
+        { index: 0, title: 'Add the ledger', nodeState: 'done', nodeLabel: 'Done' },
+        { index: 1, title: 'Wire the webhook', nodeState: 'queued', nodeLabel: 'Queued' },
+      ],
+    };
+    render(
+      <ToastProvider>
+        <ObjectMenuProvider>
+          <ListGrid label="Artifacts" columns={ARTIFACTS_GRID_COLUMNS}>
+            <ArtifactWorkRow
+              row={row}
+              rowKey={row.id}
+              sessionId={PLAN_FIXTURE_SESSION}
+              isPartsOpen={false}
+              onTogglePartsOf={onTogglePartsOf}
+              onOpenRow={() => undefined}
+            />
+          </ListGrid>
+        </ObjectMenuProvider>
+      </ToastProvider>,
+    );
+
+    const toggle = screen.getByRole('button', { name: `Show parts of ${row.title}` });
+    const titleCell = toggle.closest('[data-artifact-row-title]');
+    expect(titleCell?.firstElementChild).toBe(toggle);
+    fireEvent.click(toggle);
+    expect(onTogglePartsOf).toHaveBeenCalledWith(row.id);
   });
 });

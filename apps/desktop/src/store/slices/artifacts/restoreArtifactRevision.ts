@@ -1,6 +1,7 @@
 import type { SessionArtifact, SessionId } from '@goodboy/types';
 import { restoreArtifactToRevision } from '../../../features/artifacts/artifacts';
 import { refreshSessionArtifacts } from './refresh';
+import { RestoreConflictError } from './RestoreConflictError';
 import type { SetFn } from './types';
 
 export type RestoreArtifactRevisionParams = {
@@ -8,8 +9,6 @@ export type RestoreArtifactRevisionParams = {
   readonly artifact: SessionArtifact;
   readonly revision: number;
 };
-
-const RESTORE_CONFLICT_MESSAGE = 'A newer version arrived. Review it before restoring.';
 
 export const restoreArtifactRevision = (set: SetFn) => {
   return async ({ sessionId, artifact, revision }: RestoreArtifactRevisionParams) => {
@@ -24,7 +23,7 @@ export const restoreArtifactRevision = (set: SetFn) => {
     }
     if (outcome.kind === 'conflict') {
       await refreshSessionArtifacts(set, sessionId);
-      throw new Error(RESTORE_CONFLICT_MESSAGE);
+      throw new RestoreConflictError();
     }
     if (outcome.kind === 'missing_revision') {
       throw new Error(`v${revision} is not in the history of this artifact`);

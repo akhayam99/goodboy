@@ -1,5 +1,5 @@
 import { useMemo, useRef, useState } from 'react';
-import { Button, EmptyLine, EmptyState, PaneShell, Notice } from '@goodboy/ui';
+import { Button, EmptyLine, EmptyState, ListGrid, PaneShell, Notice } from '@goodboy/ui';
 import type { ArtifactId, SessionId } from '@goodboy/types';
 import { WireframeImportNotice } from '../../../wireframes/components/WireframeImportNotice';
 import { useWireframeImport } from '../../../wireframes/useWireframeImport';
@@ -19,9 +19,11 @@ import { ArtifactFilterTabs } from '../ArtifactStudio/ArtifactFilterTabs';
 import { ArtifactBranchList } from './ArtifactBranchList';
 import type { ArtifactBranchProps, ArtifactOpenParams } from './artifactBranchProps';
 import { ArtifactListSkeleton } from './ArtifactListSkeleton';
-import { ArtifactListGroup } from './ArtifactListGroup';
+import { ArtifactStateGroup } from './ArtifactStateGroup';
+import { ARTIFACTS_GRID_COLUMNS } from './artifactsGridColumns';
 import { ArtifactNewMenu } from './ArtifactNewMenu';
 import { useArtifactParts } from './useArtifactParts';
+import { useImportReadFailure } from './useImportReadFailure';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -72,12 +74,13 @@ export const ArtifactList = ({
       onImported(artifact.id);
     },
   });
+  const importRead = useImportReadFailure({ importer, sessionId });
   const { isDragging } = useFileDropTarget({
     targetRef: dropRef,
     onDropPaths: ({ paths }) => {
       const json = paths.find((path) => path.toLowerCase().endsWith('.json')) ?? null;
       if (json !== null) {
-        importer.readPath(json);
+        importRead.readPath({ path: json });
       }
     },
   });
@@ -100,23 +103,23 @@ export const ArtifactList = ({
       loadState !== 'loading' &&
       loadState !== 'error' &&
       rows.length > 0,
-    rowAttribute: 'data-artifact-row',
+    rowAttribute: 'data-row-key',
     groups: arrivalGroups,
     onArrive: keepGrouping,
   });
-  const hasActionColumn = rows.some(
-    (row) => row.group === 'needs' || row.group === 'deleted' || row.target.kind === 'generation',
-  );
+  const isEmptyShown = loadState === 'empty';
 
   return (
     <PaneShell
       page="artifacts"
       actions={
-        <ArtifactNewMenu
-          sessionId={sessionId}
-          isEmpty={counts.all === 0}
-          onImportWireframe={importer.pick}
-        />
+        isEmptyShown ? undefined : (
+          <ArtifactNewMenu
+            sessionId={sessionId}
+            isEmpty={counts.all === 0}
+            onImportWireframe={importRead.pick}
+          />
+        )
       }
       toolbar={
         counts.all === 0 ? null : (
@@ -148,11 +151,6 @@ export const ArtifactList = ({
             onCancel={importer.cancel}
           />
         )}
-        {importer.pending === null && importer.error !== null ? (
-          <span role="alert" className="text-meta text-danger">
-            {importer.error}
-          </span>
-        ) : null}
         {loadState === 'loading' ? (
           <ArtifactListSkeleton />
         ) : loadState === 'error' ? (
@@ -174,6 +172,9 @@ export const ArtifactList = ({
             icon={CONCEPT_ICONS.artifacts}
             title="No artifacts yet"
             description="Plans, reports and wireframes this session wrote."
+            action={
+              <ArtifactNewMenu sessionId={sessionId} isEmpty onImportWireframe={importRead.pick} />
+            }
           />
         ) : rows.length === 0 ? (
           <EmptyLine
@@ -189,34 +190,34 @@ export const ArtifactList = ({
             {NO_MATCH_LINE[filter]}
           </EmptyLine>
         ) : (
-          <div data-testid="artifact-list" className="flex min-w-0 flex-col gap-8">
-            {branch !== undefined && branch.groupBy === 'branch' ? (
-              <ArtifactBranchList
-                view={branch.view}
-                returnRowId={returnRowId}
-                mounts={branch.mounts}
-                sessionId={sessionId}
-                openPartsIds={openPartsIds}
-                hasActionColumn={hasActionColumn}
-                onTogglePartsOf={toggleParts}
-                onOpenRow={onOpen}
-                onOpenBranch={branch.onOpenBranch}
-                canOpenBranch={branch.canOpenBranch}
-              />
-            ) : (
-              groups.map((entry) => (
-                <ArtifactListGroup
-                  key={entry.group}
-                  group={entry.group}
-                  rows={entry.rows}
+          <div data-testid="artifact-list" className="min-w-0">
+            <ListGrid label="Artifacts" columns={ARTIFACTS_GRID_COLUMNS} isGrouped>
+              {branch !== undefined && branch.groupBy === 'branch' ? (
+                <ArtifactBranchList
+                  view={branch.view}
+                  returnRowId={returnRowId}
+                  mounts={branch.mounts}
                   sessionId={sessionId}
                   openPartsIds={openPartsIds}
                   onTogglePartsOf={toggleParts}
                   onOpenRow={onOpen}
-                  hasActionColumn={hasActionColumn}
+                  onOpenBranch={branch.onOpenBranch}
+                  canOpenBranch={branch.canOpenBranch}
                 />
-              ))
-            )}
+              ) : (
+                groups.map((entry) => (
+                  <ArtifactStateGroup
+                    key={entry.group}
+                    group={entry.group}
+                    rows={entry.rows}
+                    sessionId={sessionId}
+                    openPartsIds={openPartsIds}
+                    onTogglePartsOf={toggleParts}
+                    onOpenRow={onOpen}
+                  />
+                ))
+              )}
+            </ListGrid>
           </div>
         )}
       </div>

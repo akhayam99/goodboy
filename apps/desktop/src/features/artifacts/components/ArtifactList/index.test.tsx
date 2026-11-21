@@ -9,21 +9,29 @@ const { state, picker } = vi.hoisted(() => ({
     artifactLoadErrors: {} as Record<string, string | null>,
     loadSessionArtifacts: vi.fn(async () => undefined),
     openArtifactCreation: vi.fn(),
+    reportError: vi.fn(async (_params: Record<string, unknown>) => undefined),
     importWireframe: vi.fn(async (_params: Record<string, unknown>) => ({ id: 'wireframe-9' })),
     sessions: [] as ReadonlyArray<Record<string, unknown>>,
     workspaces: [] as ReadonlyArray<Record<string, unknown>>,
     navigation: {},
     currentWorkspaceId: null,
   },
-  picker: { next: null as unknown },
+  picker: { next: null as unknown, isFailing: false },
 }));
 
 vi.mock('../../../../store', () => ({
-  useAppStore: <T,>(selector: (s: typeof state) => T) => selector(state),
+  useAppStore: Object.assign(<T,>(selector: (s: typeof state) => T) => selector(state), {
+    getState: () => state,
+  }),
 }));
 
 vi.mock('../../../wireframes/readWireframeFile', () => ({
-  pickWireframeFile: vi.fn(async () => picker.next),
+  pickWireframeFile: vi.fn(async () => {
+    if (picker.isFailing) {
+      throw new Error('the file is unreadable');
+    }
+    return picker.next;
+  }),
   readWireframeFile: vi.fn(async () => picker.next),
 }));
 
@@ -58,7 +66,8 @@ describe('ArtifactList states', () => {
     renderList();
     expect(screen.queryByRole('heading', { name: 'Artifacts' })).toBeNull();
     const loading = screen.getByRole('status', { name: 'Loading artifacts' });
-    expect(loading.querySelectorAll('[data-testid="artifact-skeleton-row"]')).toHaveLength(3);
+    expect(loading.querySelectorAll('li')).toHaveLength(3);
+    expect(loading.textContent).toBe('');
     expect(screen.queryByText('No artifacts yet')).toBeNull();
   });
 
@@ -72,13 +81,17 @@ describe('ArtifactList states', () => {
     screen.getByRole('button', { name: 'Details' });
     expect(screen.queryByText('No artifacts yet')).toBeNull();
   });
-  it('says what will be here, with New in the header as the one way to start and no filters', async () => {
+  it('says what will be here, with New artifact in the empty page as the one way to start and no filters', async () => {
     renderList();
+    const empty = screen
+      .getByRole('heading', { level: 2, name: 'No artifacts yet' })
+      .closest('div');
 
     expect(screen.getByRole('heading', { level: 2, name: 'No artifacts yet' })).toBeDefined();
     expect(screen.getAllByRole('button', { name: 'New artifact' })).toEqual([
       screen.getByTestId('artifact-new'),
     ]);
+    expect(empty?.parentElement?.contains(screen.getByTestId('artifact-new'))).toBe(true);
     expect(screen.queryByRole('tablist', { name: 'Artifact kind' })).toBeNull();
     fireEvent.click(screen.getByTestId('artifact-new'));
 
@@ -142,6 +155,8 @@ const openImport = () => {
 beforeEach(() => {
   state.importWireframe.mockClear();
   picker.next = null;
+  picker.isFailing = false;
+  state.reportError.mockClear();
 });
 afterEach(cleanup);
 
@@ -174,6 +189,51 @@ describe('ArtifactList wireframe import', () => {
       expect.objectContaining({ title: 'Cascadia onboarding', sourceText: '{"version":2}' }),
     );
     expect(screen.queryByTestId('wireframe-import-preview')).toBeNull();
+  });
+
+  it('logs a file that cannot be read and draws no red line', async () => {
+    picker.isFailing = true;
+    renderList();
+    openImport();
+    await waitFor(() => expect(state.reportError).toHaveBeenCalledOnce());
+    expect(state.reportError.mock.calls[0]?.[0]).toMatchObject({
+      title: "Couldn't read the wireframe file",
+    });
+    expect(screen.queryByRole('alert')).toBeNull();
+    expect(state.importWireframe).not.toHaveBeenCalled();
+  });
+
+  it('hands Retry the same read and confirms only once it worked', async () => {
+    picker.isFailing = true;
+    renderList();
+    openImport();
+    await waitFor(() => expect(state.reportError).toHaveBeenCalledOnce());
+    const retry = async (): Promise<boolean> => {
+      const run: unknown = state.reportError.mock.calls.at(-1)?.[0]?.retry;
+      return typeof run === 'function' ? Boolean(await run()) : false;
+    };
+
+    expect(await retry()).toBe(false);
+    await waitFor(() => expect(state.reportError).toHaveBeenCalledTimes(2));
+    expect(state.reportError.mock.calls[1]?.[0]).toMatchObject({
+      title: "Couldn't read the wireframe file",
+    });
+
+    picker.isFailing = false;
+    picker.next = {
+      status: 'ready',
+      fileName: 'cascadia-onboarding.json',
+      title: 'Cascadia onboarding',
+      sourceText: '{"version":2}',
+      fidelity: 'low',
+      screenCount: 4,
+      device: 'phone',
+      version: 2,
+      adjustments: [],
+    };
+    expect(await retry()).toBe(true);
+    expect(state.reportError).toHaveBeenCalledTimes(2);
+    await screen.findByTestId('wireframe-import-preview');
   });
 
   it('refuses a file it cannot read and imports nothing', async () => {

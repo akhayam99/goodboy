@@ -78,6 +78,7 @@ const controlsOf = ({
   confirm,
   cancel: () => undefined,
   retry: () => undefined,
+  retrySettled: () => Promise.resolve({ kind: 'skipped' as const }),
   dismissFailure: () => undefined,
   dismissOutcome: () => undefined,
 });

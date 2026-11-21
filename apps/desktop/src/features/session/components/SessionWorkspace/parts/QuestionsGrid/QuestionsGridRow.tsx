@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { cn, ListGridRow, StateDot, TruncatedText } from '@goodboy/ui';
+import { cn, ListGridRow, StateDot, TruncatedText, type DotState } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { useObjectMenuTrigger } from '../../../../../actions/useObjectMenuTrigger';
 import { questionRowTitle, type QuestionRow } from '../questionsLensModel';
@@ -17,7 +17,20 @@ type Props = {
   readonly onOpen: () => void;
 };
 
-const BLOCKING = 'Blocking';
+type QuestionDot = {
+  readonly state: DotState;
+  readonly label: string;
+};
+
+const QUESTION_DOT = {
+  waiting: { state: 'needsYou', label: 'Waiting' },
+  delegated: { state: 'running', label: 'Delegated' },
+  staged: { state: 'idle', label: 'Staged' },
+  dismissed: { state: 'stopped', label: 'Dismissed' },
+  answered: { state: 'done', label: 'Answered' },
+} as const satisfies Record<QuestionRow['kind'], QuestionDot>;
+
+const BLOCKING_DOT: QuestionDot = { state: 'needsYou', label: 'Blocking' };
 
 export const QuestionsGridRow = ({
   sessionId,
@@ -42,6 +55,7 @@ export const QuestionsGridRow = ({
   const title = questionRowTitle({ row });
   const isSettled = row.kind !== 'waiting' && row.kind !== 'delegated';
   const isBlocking = row.kind === 'waiting' && row.question.isBlocking;
+  const dot = isBlocking ? BLOCKING_DOT : QUESTION_DOT[row.kind];
   const detail = [questionAnswerLine({ row }), runLine].filter((part) => part !== '').join(' · ');
   const titleText = (
     <TruncatedText className={cn('min-w-0', isSettled && 'text-muted-foreground')}>
@@ -93,7 +107,7 @@ export const QuestionsGridRow = ({
       overlays={suffixedCell === null ? undefined : [{ column: 'title', node: suffixedCell }]}
       cells={{
         byKey: {
-          state: isBlocking ? <StateDot state="needsYou" label={BLOCKING} /> : null,
+          state: <StateDot state={dot.state} label={dot.label} />,
           title: suffixedCell === null ? plainCell : '',
           action: actionLabel ?? null,
           age,

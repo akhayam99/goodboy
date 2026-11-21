@@ -4,11 +4,15 @@ Plans, reports and wireframes live next to the task, not inside a chat. You can 
 
 ### Artifacts
 
-Keep everything a session made in one list. The tabs **All**, **Plans**, **Reports** and **Wireframes** filter it, and the rows group under plain labels by what needs you first: **Needs you** (for a plan, only while its own planner waits for your answer), **Running**, **Ready** (plans), **To read** (reports and wireframes), **Used** (a plan that ran, or a version a newer one replaced) and **Recently deleted**, every row in view except the deleted ones, behind **Show**. Each row shows one action, such as **Run plan**, **Approve** or **Answer**, and **Delete** moves an artifact to **Recently deleted**, where **Restore** brings it back. Resting on the state of a row opens a fact card.
+Keep everything a session made in one list. The tabs **All**, **Plans**, **Reports** and **Wireframes** filter it, and the rows group under plain labels by what needs you first: **Needs you** (for a plan, only while its own planner waits for your answer), **Running**, **Ready** (plans), **To read** (reports and wireframes), **Used** (a plan that ran, or a version a newer one replaced) and **Recently deleted**, every row in view except the deleted ones, behind **Show**. Each row has one action, such as **Run plan**, **Approve** or **Answer**, and **Delete** moves an artifact to **Recently deleted**, where **Restore** brings it back.
+
+A row has the same shape as a Runs or Questions row: a state dot, the kind, the title, the state word, the age and the action. A plan with parts opens them from the arrow before its title. Resting on the state word opens a fact card.
+
+A row action that fails leaves the row as it was and writes one line to the log with **Retry**. An empty page says **No artifacts yet** and carries **New artifact**. A read that fails says **Couldn't load artifacts** with **Retry**.
 
 With two or more branches among the artifacts a switch groups the list **By branch** or **By state**, the same choice as on Runs and Questions. A branch comes from the mounts the artifact was made for, else its agent, else its run. Each branch or series is a group, with the ones that need you first and **No branch** for what is not tied to one.
 
-The state is a word on the row, used ones fold into **N used**, and **Recently deleted** stays its own group at the end. The tabs stay on top and filter over the groups. An artifact on two branches is drawn in both with **Also on**, and a plan on a series sits once in the series group. Each copy has its own row key, so Stop, Delete and the row menu act on the one artifact you press.
+The state is a dot and a word on the row, used ones fold into **N used**, and **Recently deleted** stays its own group at the end. The tabs stay on top and filter over the groups. An artifact on two branches is drawn in both with **Also on**, and a plan on a series sits once in the series group. Each copy has its own row key, so Stop, Delete and the row menu act on the one artifact you press.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/artifact-list-dark.webp">

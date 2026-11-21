@@ -1,12 +1,14 @@
 import { useCallback, useMemo, useState } from 'react';
+import { Button } from '@goodboy/ui';
 import type { MountId, SessionId } from '@goodboy/types';
 import { useGroupArrival } from '../../../../shared/hooks/useGroupArrival';
 import type { MountRowView } from '../../../../store/slices/project-mounts/mountRowModel';
 import { artifactBranchRowKeyOf } from '../../artifactBranchRowKeys';
-import type { ArtifactBranchView } from '../../artifactListRows';
+import type { ArtifactBranchGroup, ArtifactBranchView } from '../../artifactListRows';
+import { branchHeadLabelOf, branchHeadMarkOf } from '../../../session/branchHeadOf';
 import type { ArtifactOpenParams } from './artifactBranchProps';
-import { ArtifactBranchSection } from './ArtifactBranchSection';
-import { ArtifactListGroup } from './ArtifactListGroup';
+import { ArtifactStateGroup } from './ArtifactStateGroup';
+import { ArtifactWorkGroup } from './ArtifactWorkGroup';
 
 type OpenBranchParams = {
   readonly mountId: MountId;
@@ -31,11 +33,41 @@ type Props = {
   readonly mounts: ReadonlyArray<MountRowView>;
   readonly sessionId: SessionId;
   readonly openPartsIds: ReadonlySet<string>;
-  readonly hasActionColumn: boolean;
   readonly onTogglePartsOf: (rowId: string) => void;
   readonly onOpenRow: (params: ArtifactOpenParams) => void;
   readonly onOpenBranch: (params: OpenBranchParams) => void;
   readonly canOpenBranch: (params: OpenBranchParams) => boolean;
+};
+
+const NO_BRANCH_NOTE = 'not tied to a branch';
+
+type HeadingParams = {
+  readonly group: ArtifactBranchGroup;
+  readonly onOpenBranch: (params: OpenBranchParams) => void;
+  readonly canOpenBranch: (params: OpenBranchParams) => boolean;
+};
+
+const headingOf = ({ group, onOpenBranch, canOpenBranch }: HeadingParams) => {
+  const { head } = group;
+  const mark = branchHeadMarkOf({ head });
+  return {
+    label: branchHeadLabelOf({ head }),
+    mark: mark === null ? null : <span>{mark}</span>,
+    action: (
+      <>
+        {head.kind === 'none' ? <span>{NO_BRANCH_NOTE}</span> : null}
+        {head.kind === 'branch' && canOpenBranch({ mountId: head.branch.mountId }) ? (
+          <Button
+            variant="quiet"
+            size="xs"
+            onClick={() => onOpenBranch({ mountId: head.branch.mountId })}
+          >
+            Open branch
+          </Button>
+        ) : null}
+      </>
+    ),
+  };
 };
 
 export const ArtifactBranchList = ({
@@ -44,7 +76,6 @@ export const ArtifactBranchList = ({
   mounts,
   sessionId,
   openPartsIds,
-  hasActionColumn,
   onTogglePartsOf,
   onOpenRow,
   onOpenBranch,
@@ -82,7 +113,7 @@ export const ArtifactBranchList = ({
   }, []);
   const { revealRow } = useGroupArrival({
     isActive: true,
-    rowAttribute: 'data-artifact-row',
+    rowAttribute: 'data-row-key',
     groups: arrivalGroups,
     onArrive,
   });
@@ -113,31 +144,29 @@ export const ArtifactBranchList = ({
   return (
     <>
       {view.groups.map((group) => (
-        <ArtifactBranchSection
+        <ArtifactWorkGroup
           key={group.key}
           group={group}
           mounts={mounts}
           sessionId={sessionId}
           isOpen={openGroups.has(group.key)}
           openPartsIds={openPartsIds}
-          hasActionColumn={hasActionColumn}
+          heading={headingOf({ group, onOpenBranch, canOpenBranch })}
+          fact={group.head.kind === 'branch' ? group.head.fact : null}
           onToggle={() => toggle({ key: group.key })}
           onReveal={reveal}
           onTogglePartsOf={onTogglePartsOf}
           onOpenRow={onOpenRow}
-          onOpenBranch={onOpenBranch}
-          canOpenBranch={canOpenBranch}
         />
       ))}
       {view.deleted.length === 0 ? null : (
-        <ArtifactListGroup
+        <ArtifactStateGroup
           group="deleted"
           rows={view.deleted}
           sessionId={sessionId}
           openPartsIds={openPartsIds}
           onTogglePartsOf={onTogglePartsOf}
           onOpenRow={onOpenRow}
-          hasActionColumn={hasActionColumn}
         />
       )}
     </>

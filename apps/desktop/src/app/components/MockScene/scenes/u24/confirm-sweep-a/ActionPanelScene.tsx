@@ -69,6 +69,7 @@ export const ActionPanelScene = () => {
     },
     cancel: () => setIsConfirming(false),
     retry: () => undefined,
+    retrySettled: () => Promise.resolve({ kind: 'skipped' as const }),
     dismissFailure: () => undefined,
     dismissOutcome: () => undefined,
   };

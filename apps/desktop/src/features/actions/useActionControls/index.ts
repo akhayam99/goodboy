@@ -8,6 +8,7 @@ import { actionRunKeyOf } from '../actionRunKeyOf';
 import { pendingSecondsOf } from '../pendingSecondsOf';
 import { useActionEnv } from '../useActionEnv';
 import { useObjectActions } from '../useObjectActions';
+import type { ActionSettled } from '../ActionSettled';
 import type { ActionSlot, ObjectTarget, ResolvedAction } from '../types';
 
 type Params = {
@@ -52,6 +53,7 @@ export type ActionControls = {
   readonly confirm: (params?: ConfirmParams) => Promise<void>;
   readonly cancel: () => void;
   readonly retry: () => void;
+  readonly retrySettled: () => Promise<ActionSettled>;
   readonly dismissFailure: () => void;
   readonly dismissOutcome: () => void;
 };
@@ -110,21 +112,28 @@ export const useActionControls = ({
   );
 
   const execute = useCallback(
-    async ({ actionId, choice = null }: ExecuteParams) => {
+    async ({ actionId, choice = null }: ExecuteParams): Promise<ActionSettled> => {
       if (runKey === null) {
-        return;
+        return { kind: 'skipped' };
       }
       const doneLabel = actions.find((candidate) => candidate.id === actionId)?.doneLabel ?? null;
-      await useAppStore.getState().runAction({
+      let settled: ActionSettled = { kind: 'ok' };
+      const status = await useAppStore.getState().runAction({
         key: runKey,
         sessionId,
         actionId,
         choice,
         task: async () => {
-          const result = await runWithOutcome({ actionId, choice });
-          return doneLabel !== null && result === 'done' ? doneLabel : null;
+          try {
+            const result = await runWithOutcome({ actionId, choice });
+            return doneLabel !== null && result === 'done' ? doneLabel : null;
+          } catch (error) {
+            settled = { kind: 'failed', error };
+            throw error;
+          }
         },
       });
+      return status === 'busy' ? { kind: 'skipped' } : settled;
     },
     [actions, runKey, runWithOutcome, sessionId],
   );
@@ -219,6 +228,13 @@ export const useActionControls = ({
     }
   }, [execute, failure]);
 
+  const retrySettled = useCallback(async (): Promise<ActionSettled> => {
+    if (failure === null) {
+      return { kind: 'skipped' };
+    }
+    return execute({ actionId: failure.actionId, choice: failure.choice });
+  }, [execute, failure]);
+
   const inSlot = useCallback(
     ({ slot }: { readonly slot: ActionSlot }) => actions.filter((action) => action.slot === slot),
     [actions],
@@ -237,6 +253,7 @@ export const useActionControls = ({
     confirm,
     cancel,
     retry,
+    retrySettled,
     dismissFailure: dismiss,
     dismissOutcome: dismiss,
   };

@@ -20,11 +20,14 @@ vi.mock('../../artifactActionRuns', () => ({
 }));
 
 import { useAppStore } from '../../../../store';
+import type { ReportErrorParams } from '../../../../store/slices/notifications/reportError';
 import { useArtifactSavedCopy } from './index';
 
 const COMMAND = { metaKey: true, ctrlKey: false };
 const sessionId = 'session-1' as SessionId;
 const workspaceId = 'workspace-1' as WorkspaceId;
+
+const reportSpy = vi.fn(async (_params: ReportErrorParams) => undefined);
 
 const artifact = {
   id: 'report-1',
@@ -52,6 +55,7 @@ describe('useArtifactSavedCopy', () => {
     useAppStore.setState({
       sessions: [{ id: sessionId, workspaceId } as never],
       workspaces: [{ id: workspaceId, slug: 'harborline' } as never],
+      reportError: reportSpy,
     });
   });
 
@@ -70,12 +74,25 @@ describe('useArtifactSavedCopy', () => {
     });
   });
 
-  it('surfaces a failure to open instead of throwing', async () => {
+  it('logs a failure to open with Retry that opens it again', async () => {
     openSpy.mockRejectedValueOnce(new Error('the file is not on disk yet'));
     const { result } = renderHook(() => useArtifactSavedCopy({ sessionId, artifact }));
     result.current.openInBrowser({ event: COMMAND });
-    await waitFor(() => {
-      expect(result.current.error).toBe('the file is not on disk yet');
-    });
+    await waitFor(() => expect(reportSpy).toHaveBeenCalledOnce());
+    const reported = reportSpy.mock.calls[0]?.[0];
+    expect(reported?.title).toBe("Couldn't open Rounding drift in the browser");
+    expect(await reported?.retry?.()).toBe(true);
+    expect(openSpy).toHaveBeenCalledTimes(2);
+  });
+
+  it('logs a failure to show the folder with Retry that shows it again', async () => {
+    revealSpy.mockRejectedValueOnce(new Error('the folder moved'));
+    const { result } = renderHook(() => useArtifactSavedCopy({ sessionId, artifact }));
+    result.current.reveal();
+    await waitFor(() => expect(reportSpy).toHaveBeenCalledOnce());
+    const reported = reportSpy.mock.calls[0]?.[0];
+    expect(reported?.title).toBe("Couldn't show Rounding drift in its folder");
+    expect(await reported?.retry?.()).toBe(true);
+    expect(revealSpy).toHaveBeenCalledTimes(2);
   });
 });

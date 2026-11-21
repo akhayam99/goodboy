@@ -222,6 +222,28 @@ describe('useActionControls feedback', () => {
     expect(reopenPr).toHaveBeenCalledTimes(2);
   });
 
+  it('settles a retry with the real outcome, even when it fails again', async () => {
+    const reopenPr = mockReopen(async () => {
+      throw new Error('GitHub said no');
+    });
+    const { result, unmount } = renderHook(
+      () => useControls({ sessionId: SESSION_A.id, scopeKey: SESSION_A.id }),
+      { wrapper: Wrapper },
+    );
+    act(() => result.current.trigger({ actionId: REOPEN }));
+    await waitFor(() => expect(result.current.failure).not.toBeNull());
+    const retrySettled = result.current.retrySettled;
+    unmount();
+
+    const again = await retrySettled();
+    expect(again.kind).toBe('failed');
+
+    reopenPr.mockImplementationOnce(async () => undefined);
+    const last = await retrySettled();
+    expect(last.kind).toBe('ok');
+    expect(reopenPr).toHaveBeenCalledTimes(3);
+  });
+
   it('drops the late finish of an old scope and keeps the newer outcome', async () => {
     const oldGate = deferred();
     const reopenPr = mockReopen(() => oldGate.promise);
