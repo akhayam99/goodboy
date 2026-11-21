@@ -15,7 +15,7 @@ import { WritePanel } from '../../features/artifacts/components/WritePanel';
 import { NewDrawer } from '../../features/session/components/NewDrawer';
 import { LazyFixCommentsDrawer } from '../../features/resolve/components/LazyFixCommentsDrawer';
 import { ReviewCommentDrawerHost } from '../../features/resolve/components/ReviewCommentDrawer/ReviewCommentDrawerHost';
-import { FixRunTranscriptDrawer } from './FixRunTranscriptDrawer';
+import { LazyFixRunTranscriptDrawer } from './FixRunTranscriptDrawer/LazyFixRunTranscriptDrawer';
 import { ExploreFileChanges } from './ExploreFileChanges';
 import { ArtifactReadingDrawer } from './ArtifactReadingDrawer';
 import { readingArtifactOf } from './ArtifactReadingDrawer/readingArtifact';
@@ -127,7 +127,7 @@ const renderDrawer = ({
       );
     case 'transcript':
       return (
-        <FixRunTranscriptDrawer
+        <LazyFixRunTranscriptDrawer
           key={drawerKey(drawer)}
           sessionId={drawer.sessionId}
           agentId={drawer.payload.agentId}
