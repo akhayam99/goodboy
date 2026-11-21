@@ -79,7 +79,7 @@ export const ArtifactBlockCard = ({ item, sessionId, agentId, planVersion = null
         data-testid="artifact-block-chip"
         tone={CONCEPT_TONE.plans}
         variant="pill"
-        className={`inline-flex w-fit items-center gap-2 text-meta font-medium transition-opacity hover:opacity-80 ${accent.text}`}
+        className={`inline-flex w-fit items-center gap-2 text-control transition-opacity hover:opacity-80 ${accent.text}`}
       >
         <CONCEPT_ICONS.artifacts size={ICON_SIZE.row} aria-hidden />
         <span className="min-w-0 truncate">
@@ -106,9 +106,7 @@ export const ArtifactBlockCard = ({ item, sessionId, agentId, planVersion = null
                 {previewSentence({ artifactKind: item.artifactKind, complete: item.complete })}
               </span>
               {item.title !== null ? (
-                <span className="min-w-0 truncate text-meta font-medium text-foreground">
-                  {item.title}
-                </span>
+                <span className="min-w-0 truncate text-control text-foreground">{item.title}</span>
               ) : null}
             </span>
           }

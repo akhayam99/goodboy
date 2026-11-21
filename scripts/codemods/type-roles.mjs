@@ -76,6 +76,12 @@ const RULES = [
     when: (tokens) => leadingOf(tokens).length === 0 && weightsOf(tokens).length === 0,
   },
   {
+    role: 'text-control',
+    needs: ['text-xs', 'font-medium'],
+    drops: [],
+    when: (tokens) => leadingIsAbsentOr(tokens, ['leading-4']),
+  },
+  {
     role: 'text-meta',
     needs: ['text-xs'],
     drops: [],
@@ -103,6 +109,7 @@ const LEADING_BY_ROLE = {
   'text-prose': ['leading-relaxed'],
   'text-body': ['leading-5'],
   'text-meta': ['leading-4'],
+  'text-control': ['leading-4'],
 };
 
 const rewriteTokens = (tokens) => {

@@ -70,7 +70,7 @@ export const NeedsYouSessionRow = ({
         <span className="flex min-w-0 flex-1 flex-col gap-0.5">
           <InlineMarkdown
             text={sessionTitle({ session })}
-            className="truncate text-meta font-medium text-foreground"
+            className="truncate text-control text-foreground"
           />
           <span className="truncate text-meta text-muted-foreground">{words}</span>
         </span>

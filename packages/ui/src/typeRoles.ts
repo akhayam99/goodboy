@@ -11,6 +11,7 @@ export const TYPE_ROLES = [
   'rail',
   'eyebrow',
   'meta',
+  'control',
   'code',
   'code-row',
   'ui',

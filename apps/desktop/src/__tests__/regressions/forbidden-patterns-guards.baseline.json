@@ -17,7 +17,7 @@
     "apps/desktop/src/features/companion/commandExecutor.test.ts": 4,
     "apps/desktop/src/features/companion/mobileConfinement.test.ts": 35,
     "apps/desktop/src/store/store.story-autorun-turn.test.ts": 1,
-    "apps/desktop/src/styles.css": 15,
+    "apps/desktop/src/styles.css": 12,
     "packages/core/src/review-source/__tests__/reviewSourceContract.test.ts": 1,
     "scripts/check-doc-refs.mjs": 1,
     "scripts/ci-changes.mjs": 1
@@ -99,7 +99,6 @@
   },
   "optical-nudge": {
     "apps/desktop/src/features/changelog/components/ChangelogStudio/FixRow.tsx": 1,
-    "apps/desktop/src/features/integrations/components/ConnectSteps/CheckStatus.tsx": 1,
     "apps/desktop/src/features/integrations/components/IntegrationConnectedRow/index.tsx": 1,
     "apps/desktop/src/features/integrations/components/LaunchSessionPanel/index.tsx": 1,
     "apps/desktop/src/features/integrations/components/WhatGoodboyCanDo.tsx": 1,

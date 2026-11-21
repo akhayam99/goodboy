@@ -98,7 +98,7 @@ export const FileVersionsPane = ({ sessionId, sessionDir, onClose }: Props) => {
                 className={cn(
                   'inline-flex items-center gap-1 rounded-md border',
                   tintClasses('danger').border,
-                  'px-2 py-1 text-meta font-medium text-danger transition-colors',
+                  'px-2 py-1 text-control text-danger transition-colors',
                   tintClasses('danger').hoverBg,
                   'disabled:cursor-not-allowed disabled:opacity-60',
                 )}
@@ -110,7 +110,7 @@ export const FileVersionsPane = ({ sessionId, sessionDir, onClose }: Props) => {
                 type="button"
                 onClick={() => setDeleteAllArmed(false)}
                 disabled={deletingAll}
-                className="inline-flex items-center rounded-md border border-border px-2 py-1 text-meta font-medium text-foreground transition-colors hover:bg-hover disabled:cursor-not-allowed disabled:opacity-60"
+                className="inline-flex items-center rounded-md border border-border px-2 py-1 text-control text-foreground transition-colors hover:bg-hover disabled:cursor-not-allowed disabled:opacity-60"
               >
                 Cancel
               </button>
@@ -120,7 +120,7 @@ export const FileVersionsPane = ({ sessionId, sessionDir, onClose }: Props) => {
               type="button"
               onClick={() => setDeleteAllArmed(true)}
               disabled={versions.length === 0 || loading}
-              className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 text-meta font-medium text-foreground transition-colors hover:bg-hover disabled:cursor-not-allowed disabled:opacity-60"
+              className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 text-control text-foreground transition-colors hover:bg-hover disabled:cursor-not-allowed disabled:opacity-60"
             >
               <Trash2 size={ICON_SIZE.row} aria-hidden />
               Delete all

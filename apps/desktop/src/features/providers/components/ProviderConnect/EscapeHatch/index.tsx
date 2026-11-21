@@ -98,7 +98,7 @@ export const EscapeHatch = ({ command, providerId, action }: Props) => {
           presentation="icon"
           value={command}
           label="copy command"
-          className="h-7 gap-2 border border-border bg-muted px-3 text-meta font-medium text-foreground hover:bg-hover hover:text-foreground"
+          className="h-7 gap-2 border border-border bg-muted px-3 text-control text-foreground hover:bg-hover hover:text-foreground"
         >
           <span>Copy command</span>
         </CopyButton>

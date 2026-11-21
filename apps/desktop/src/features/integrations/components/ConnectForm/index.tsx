@@ -63,7 +63,7 @@ const ConfigFieldInput = ({
   readonly isDisabled: boolean;
 }) => (
   <div className="flex min-w-0 flex-col gap-2">
-    <label htmlFor={field.id} className="text-meta font-medium text-foreground">
+    <label htmlFor={field.id} className="text-control text-foreground">
       {field.label}
     </label>
     <Input
@@ -152,7 +152,7 @@ export const ConnectForm = ({
       {credentialId === null ? guide : null}
       {credentialId === null ? (
         <div className="flex min-w-0 flex-col gap-2">
-          <label htmlFor={tokenId} className="text-meta font-medium text-foreground">
+          <label htmlFor={tokenId} className="text-control text-foreground">
             {tokenLabel}
           </label>
           <Input

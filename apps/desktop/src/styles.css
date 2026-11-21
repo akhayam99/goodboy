@@ -229,6 +229,9 @@
   --text-comment--line-height: 22px;
   --text-meta: 12px;
   --text-meta--line-height: 16px;
+  --text-control: 12px;
+  --text-control--line-height: 16px;
+  --text-control--font-weight: 500;
   --text-chip: 11px;
   --text-chip--line-height: 16px;
   --text-chip--font-weight: 500;
