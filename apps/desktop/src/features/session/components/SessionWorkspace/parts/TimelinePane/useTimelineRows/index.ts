@@ -3,6 +3,7 @@ import type { SessionWorktree } from '@goodboy/db';
 import type { Session, SessionId, Step, TelemetryRecord } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../../../../store';
 import { runSpendUsd } from '../../../../../../../store/slices/workflows/runSpendUsd';
+import { useDayClock } from '../../../../../../../shared/hooks/useDayClock';
 import { useSessionRunHistory } from '../../../../../../../shared/hooks/useSessionRunHistory';
 import { useSessionWorkModel } from '../../../../../central/useSessionWorkModel';
 import { entriesOfView, type EntriesView } from '../../../../../timeline/activityView';
@@ -35,6 +36,10 @@ import { keepEqualById } from '../../../../../../../shared/utils/keepEqualById';
 import { timelineFullGutterOf } from '../timelineFullGutter';
 import { timelineLaneGutterOf } from '../timelineLaneGutter';
 import type { ExplodeGroups } from '../../../../../hooks/useExplodeGroups';
+
+type DayLabelParams = {
+  readonly at: string;
+};
 
 const NO_EXPANDED_ROWS: ReadonlySet<string> = new Set();
 
@@ -93,6 +98,11 @@ export const useTimelineRows = ({ session, view, query, explode }: Params): Time
     (s) => s.sessionTelemetry[sessionId] ?? (EMPTY_ARRAY as ReadonlyArray<TelemetryRecord>),
   );
   const agentRunHistory = useSessionRunHistory({ sessionId });
+  const dayNow = useDayClock();
+  const dayLabelFor = useCallback(
+    ({ at }: DayLabelParams) => dayLabel({ at, now: new Date(dayNow) }),
+    [dayNow],
+  );
   const [expandedRows, setExpandedRows] = useState<ReadonlySet<string>>(NO_EXPANDED_ROWS);
   const [measuredHeights, setMeasuredHeights] = useState<ReadonlyMap<string, number>>(new Map());
 
@@ -145,7 +155,7 @@ export const useTimelineRows = ({ session, view, query, explode }: Params): Time
         unreadAgentIds,
         advanceByRunId,
         decidingRunIds,
-        dayLabelFor: dayLabel,
+        dayLabelFor: dayLabelFor,
         showQuestions: view !== 'activity',
         resolveFactsByAgentId,
         jobFactsByAgentId,
@@ -159,6 +169,7 @@ export const useTimelineRows = ({ session, view, query, explode }: Params): Time
     [
       advanceByRunId,
       autoFactsByAgentId,
+      dayLabelFor,
       decidingRunIds,
       explode.expandedIds,
       explode.fullIds,
@@ -179,7 +190,7 @@ export const useTimelineRows = ({ session, view, query, explode }: Params): Time
           unreadAgentIds,
           advanceByRunId,
           decidingRunIds,
-          dayLabelFor: dayLabel,
+          dayLabelFor: dayLabelFor,
           showQuestions: view !== 'activity',
           resolveFactsByAgentId,
           jobFactsByAgentId,
@@ -193,6 +204,7 @@ export const useTimelineRows = ({ session, view, query, explode }: Params): Time
     [
       advanceByRunId,
       autoFactsByAgentId,
+      dayLabelFor,
       decidingRunIds,
       jobFactsByAgentId,
       resolveFactsByAgentId,

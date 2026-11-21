@@ -27,13 +27,13 @@ export const dayLabelOf = ({ at, now, casing = 'label' }: Params): string => {
   const dayGap = Math.round(
     (startOfCalendarDay({ date: today }) - startOfCalendarDay({ date })) / MS_PER_DAY,
   );
-  if (dayGap <= 0) {
+  if (dayGap === 0) {
     return casing === 'label' ? 'Today' : 'today';
   }
   if (dayGap === 1) {
     return casing === 'label' ? 'Yesterday' : 'yesterday';
   }
-  if (dayGap <= WEEKDAY_SPAN_DAYS) {
+  if (dayGap > 1 && dayGap <= WEEKDAY_SPAN_DAYS) {
     return formatWeekday({ at });
   }
   return date.getFullYear() === today.getFullYear() ? formatDayMonth({ at }) : formatDate({ at });

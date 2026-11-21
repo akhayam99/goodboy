@@ -44,6 +44,13 @@ describe('dayLabelOf', () => {
     expect(dayLabelOf({ at: commit, now: at(2026, 11, 22, 0, 1) })).toBe('Yesterday');
   });
 
+  it('keeps Today for the current calendar day and writes the date for future days', () => {
+    expect(dayLabelOf({ at: at(2026, 11, 21, 18), now })).toBe('Today');
+    expect(dayLabelOf({ at: at(2026, 11, 22, 9), now })).toBe('Nov 22');
+    expect(dayLabelOf({ at: at(2026, 11, 25, 9), now })).toBe('Nov 25');
+    expect(dayLabelOf({ at: at(2027, 1, 5, 9), now })).toBe('Jan 5, 2027');
+  });
+
   it('returns an empty string for an invalid date', () => {
     expect(dayLabelOf({ at: 'nope', now })).toBe('');
   });

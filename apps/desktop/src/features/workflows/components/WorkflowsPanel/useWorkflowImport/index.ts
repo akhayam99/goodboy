@@ -21,6 +21,10 @@ type Params = {
   readonly workspaceId: WorkspaceId;
 };
 
+type FetchParams = {
+  readonly workspaceId: WorkspaceId;
+};
+
 const LOADING: LoadState = { status: 'loading', workflows: [], error: null };
 
 export const useWorkflowImport = ({ workspaceId }: Params) => {
@@ -32,6 +36,7 @@ export const useWorkflowImport = ({ workspaceId }: Params) => {
   const [isImporting, setIsImporting] = useState(false);
   const [importError, setImportError] = useState<string | null>(null);
   const request = useRef(0);
+  const workspaceTokens = useRef<Record<string, number>>({});
 
   const sources = useMemo(
     () => workspaces.filter((workspace) => workspace.id !== workspaceId),
@@ -51,31 +56,42 @@ export const useWorkflowImport = ({ workspaceId }: Params) => {
     [loads, projects, sources],
   );
 
+  const fetchWorkspace = ({ workspaceId: sourceId }: FetchParams) => {
+    const generation = request.current;
+    const token = (workspaceTokens.current[sourceId] ?? 0) + 1;
+    workspaceTokens.current[sourceId] = token;
+    setLoads((current) => ({ ...current, [sourceId]: LOADING }));
+    void invokeWorkflowList(sourceId)
+      .then((loaded): LoadState => ({
+        status: 'ready',
+        workflows: loaded.filter(isImportableWorkflow),
+        error: null,
+      }))
+      .catch((error: unknown): LoadState => ({
+        status: 'failed',
+        workflows: [],
+        error: formatError(error),
+      }))
+      .then((next) => {
+        if (request.current !== generation || workspaceTokens.current[sourceId] !== token) {
+          return;
+        }
+        setLoads((current) => ({ ...current, [sourceId]: next }));
+      });
+  };
+
   const load = () => {
-    const requestId = request.current + 1;
-    request.current = requestId;
+    request.current += 1;
     setSelected(new Set());
     setImportError(null);
-    setLoads(Object.fromEntries(sources.map((workspace) => [workspace.id, LOADING])));
     for (const workspace of sources) {
-      void invokeWorkflowList(workspace.id)
-        .then((loaded): LoadState => ({
-          status: 'ready',
-          workflows: loaded.filter(isImportableWorkflow),
-          error: null,
-        }))
-        .catch((error: unknown): LoadState => ({
-          status: 'failed',
-          workflows: [],
-          error: formatError(error),
-        }))
-        .then((next) => {
-          if (request.current !== requestId) {
-            return;
-          }
-          setLoads((current) => ({ ...current, [workspace.id]: next }));
-        });
+      fetchWorkspace({ workspaceId: workspace.id });
     }
+  };
+
+  const retry = ({ workspaceId: sourceId }: FetchParams) => {
+    setImportError(null);
+    fetchWorkspace({ workspaceId: sourceId });
   };
 
   const toggle = (id: WorkflowId) =>
@@ -125,6 +141,7 @@ export const useWorkflowImport = ({ workspaceId }: Params) => {
     isImporting,
     importError,
     load,
+    retry,
     toggle,
     clear,
     importSelected,

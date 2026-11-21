@@ -13,9 +13,15 @@ type FailedReads = {
 };
 
 export const failedReadsOf = ({ reads }: Params): FailedReads => {
-  const failed = reads.filter((read) => read.error !== null);
+  const failed = reads.flatMap((read) =>
+    read.error === null ? [] : [{ label: read.label, error: read.error }],
+  );
+  const [only] = failed;
   return {
     labels: failed.map((read) => read.label),
-    error: failed[0]?.error ?? null,
+    error:
+      failed.length > 1
+        ? new Error(failed.map((read) => `${read.label}: ${read.error.message}`).join('; '))
+        : (only?.error ?? null),
   };
 };
