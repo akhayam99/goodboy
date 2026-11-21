@@ -6,7 +6,7 @@ import {
   type WireframeNode,
   type WireframeScreen,
 } from '@goodboy/core/artifacts';
-import { Button, cn, Notice, SegmentedTabs, StudioDetailTabs } from '@goodboy/ui';
+import { Button, cn, Notice, SegmentedTabs } from '@goodboy/ui';
 import type { WireframeArtifact } from '@goodboy/types';
 import { postToFrame, type FrameMessage } from '../../frame/frameMessage';
 import { useFrameMessages } from '../../hooks/useFrameMessages';
@@ -213,7 +213,7 @@ export const WireframeViewerBody = ({
     >
       <div data-testid="wireframe-toolbar" className="flex min-w-0 flex-wrap items-center gap-2">
         {leading ?? null}
-        <StudioDetailTabs
+        <SegmentedTabs
           ariaLabel="Wireframe view"
           options={VIEW_OPTIONS}
           value={view}

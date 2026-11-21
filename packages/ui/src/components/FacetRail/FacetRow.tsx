@@ -4,6 +4,7 @@ import { cn } from '../../cn';
 import { ICON_SIZE } from '../../iconSize';
 import { PANE_RHYTHM } from '../../paneRhythm';
 import { tintClasses, type Tone } from '../../tint';
+import { MutedCount } from '../MutedCount';
 import { SelectableRow } from '../SelectableRow';
 
 type LeadingProps =
@@ -13,6 +14,7 @@ type LeadingProps =
 type Props = LeadingProps & {
   readonly tone?: Tone;
   readonly label: string;
+  readonly ariaLabel?: string;
   readonly count: number;
   readonly trailing?: ReactNode;
   readonly isSelected: boolean;
@@ -24,6 +26,7 @@ export const FacetRow = ({
   glyph,
   tone,
   label,
+  ariaLabel,
   count,
   trailing,
   isSelected,
@@ -33,6 +36,7 @@ export const FacetRow = ({
   return (
     <SelectableRow
       selected={isSelected}
+      ariaLabel={ariaLabel}
       ariaCurrent={isSelected ? 'true' : undefined}
       onClick={onClick}
       className={cn('items-center gap-2 text-meta', PANE_RHYTHM.navRail.row)}
@@ -54,7 +58,7 @@ export const FacetRow = ({
       <span className={cn('min-w-0 flex-1 truncate', isEmpty && 'text-faint-foreground')}>
         {label}
       </span>
-      {trailing ?? <span className="shrink-0 text-chip text-faint-foreground">{count}</span>}
+      {trailing ?? <MutedCount count={count} />}
     </SelectableRow>
   );
 };

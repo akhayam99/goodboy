@@ -27,8 +27,6 @@ const HEADING_TAG = { 2: 'h2', 3: 'h3' } as const;
 
 const SUBGRID = 'col-span-full grid grid-cols-subgrid';
 
-const COUNT_FLOOR = 2;
-
 export const ListGridGroup = ({
   label,
   mark,
@@ -69,7 +67,7 @@ export const ListGridGroup = ({
               >
                 {label}
               </Heading>
-              {count === undefined || count < COUNT_FLOOR ? null : (
+              {count === undefined || count < 1 ? null : (
                 <span
                   data-list-grid-count=""
                   className={cn('shrink-0 text-ui tabular-nums', TEXT_ROLE.hint)}

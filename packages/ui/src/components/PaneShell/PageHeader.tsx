@@ -118,7 +118,10 @@ export const PageHeader = (props: PageHeaderProps) => {
               />
             ) : null}
             {props.toolbar != null ? (
-              <div data-slot="pane-toolbar" className="flex h-9 min-w-0 items-center">
+              <div
+                data-slot="pane-toolbar"
+                className="flex min-h-9 min-w-0 flex-wrap items-center gap-2"
+              >
                 {props.toolbar}
               </div>
             ) : null}

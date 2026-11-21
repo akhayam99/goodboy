@@ -1,6 +1,14 @@
 import type { ReactNode } from 'react';
 import { ListFilter } from '@goodboy/ui/icons';
-import { AnchoredPopover, Button, Chip, cn, ICON_SIZE, Tooltip, useDropdown } from '@goodboy/ui';
+import {
+  AnchoredPopover,
+  Button,
+  cn,
+  CountBadge,
+  ICON_SIZE,
+  Tooltip,
+  useDropdown,
+} from '@goodboy/ui';
 
 type Props = {
   readonly popoverLabel: string;
@@ -33,7 +41,7 @@ export const FilterButton = ({ popoverLabel, activeCount, facets, popoverHeight 
             className={cn(dropdown.open && 'bg-selected')}
           >
             <ListFilter size={ICON_SIZE.row} aria-hidden />
-            {hasActive ? <Chip kind="count" tone="neutral" label={activeCount} /> : null}
+            <CountBadge count={activeCount} isAnnounced={false} />
           </Button>
         </Tooltip>
       }

@@ -134,7 +134,8 @@ underlined, in the tab row. A `SegmentedTabs` pill is only a filter or a mode
 inside a page, at one size in a panel. A count on a tab stays when the tab is
 picked. Counts have two looks: `CountBadge` for attention (the bar, a corner,
 a filter, "N similar") and a muted `tabular-nums` number for tabs, groups and
-facets. Groups and facets hide 0, never 1. The tone of a session count (Needs
+facets (`MutedCount`, which `SegmentedTabs` draws for a number badge and
+`FacetRow` for its count). Groups and facets hide 0, never 1. The tone of a session count (Needs
 you in amber) stays.
 A detail that needs its own header row passes `PaneTitleRow` through the custom `header` slot.
 The agent detail passes

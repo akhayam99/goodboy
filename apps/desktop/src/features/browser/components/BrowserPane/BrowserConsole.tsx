@@ -32,8 +32,10 @@ type SendParams = {
 
 const FOLLOW_SLACK_PX = 24;
 
-const COUNT_CLASS =
-  'rounded-md bg-fill px-2 py-0.5 text-eyebrow tabular-nums text-muted-foreground';
+const SEARCH_LABEL = {
+  console: 'Search messages',
+  network: 'Search requests',
+} as const satisfies Record<BrowserConsoleKind, string>;
 
 const FAILURE_TEXT = {
   read: "Couldn't read the console",
@@ -114,22 +116,14 @@ export const BrowserConsole = ({ model, title, log }: Props) => {
           value={kind}
           onChange={(next) => changeKind({ next })}
           options={[
-            {
-              value: 'console',
-              label: 'Console',
-              badge: <span className={COUNT_CLASS}>{counts.console}</span>,
-            },
-            {
-              value: 'network',
-              label: 'Network',
-              badge: <span className={COUNT_CLASS}>{counts.network}</span>,
-            },
+            { value: 'console', label: 'Console', badge: counts.console },
+            { value: 'network', label: 'Network', badge: counts.network },
           ]}
         />
         <BrowserConsoleLevelMenu kind={kind} level={level} onChange={changeLevel} />
         <SearchField
-          ariaLabel="Search the log"
-          placeholder="Search"
+          ariaLabel={SEARCH_LABEL[kind]}
+          placeholder={SEARCH_LABEL[kind]}
           value={query}
           onChange={setQuery}
           className="min-w-0 flex-1"

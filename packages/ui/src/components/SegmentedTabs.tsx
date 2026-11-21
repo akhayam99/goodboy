@@ -8,6 +8,7 @@ import { FOCUS_RING } from '../focusRing';
 import { ICON_SIZE } from '../iconSize';
 import { tintClasses, type Tone } from '../tint';
 import { ChoiceCards } from './ChoiceCards';
+import { MutedCount } from './MutedCount';
 import { moveTabFocus } from './tabListKeys';
 
 export type SegmentedTabOption<T extends string = string> = {
@@ -48,18 +49,23 @@ const TAB_CLASSES = {
 
 type BadgeParams = {
   readonly badge: ReactNode;
-  readonly isActive: boolean;
 };
 
-const isShownBadge = ({ badge, isActive }: BadgeParams): boolean => {
-  if (badge === null || badge === undefined || badge === false || badge === '') {
-    return false;
+const tabBadgeOf = ({ badge }: BadgeParams): ReactNode => {
+  if (badge === null || badge === undefined || badge === false || badge === '' || badge === '0') {
+    return null;
   }
-  const isCount = typeof badge === 'string' || typeof badge === 'number';
-  if (!isCount) {
-    return true;
+  if (typeof badge === 'number') {
+    return <MutedCount count={badge} />;
   }
-  return !isActive && badge !== 0 && badge !== '0';
+  if (typeof badge === 'string') {
+    return (
+      <span data-muted-count="" className="shrink-0 tabular-nums text-faint-foreground">
+        {badge}
+      </span>
+    );
+  }
+  return badge;
 };
 
 const UNDERLINE_FRAME =
@@ -197,15 +203,7 @@ export const SegmentedTabs = <T extends string>({
                   {option.label}
                 </span>
               </span>
-              {isShownBadge({ badge: option.badge, isActive }) ? (
-                typeof option.badge === 'string' ? (
-                  <span className="rounded-md bg-fill px-2 py-0.5 text-eyebrow text-muted-foreground">
-                    {option.badge}
-                  </span>
-                ) : (
-                  option.badge
-                )
-              ) : null}
+              {tabBadgeOf({ badge: option.badge })}
             </button>
           </OptionalTooltip>
         );

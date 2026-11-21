@@ -1,7 +1,16 @@
 import type { ReactNode } from 'react';
 import { Trash2 } from '@goodboy/ui/icons';
 import type { Notification } from '@goodboy/db';
-import { Button, cn, FOCUS_RING, ICON_SIZE, IconButton, tintClasses, Tooltip } from '@goodboy/ui';
+import {
+  Button,
+  cn,
+  CountBadge,
+  FOCUS_RING,
+  ICON_SIZE,
+  IconButton,
+  tintClasses,
+  Tooltip,
+} from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { formatAge } from '../../../../shared/utils/time/formatAge';
@@ -87,12 +96,10 @@ export const NotificationRow = ({
   );
   const count =
     notifications.length > 1 ? (
-      <span
-        aria-label={`${notifications.length} similar notifications`}
-        className="shrink-0 rounded-full bg-muted px-2 text-chip text-muted-foreground"
-      >
-        {notifications.length}
-      </span>
+      <CountBadge
+        count={notifications.length}
+        label={`${notifications.length} similar notifications`}
+      />
     ) : null;
   const deleteControl = (icon: ReactNode) => (
     <Tooltip content="Delete">

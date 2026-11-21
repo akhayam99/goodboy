@@ -268,7 +268,7 @@ describe('NotificationsStudio', () => {
     renderStudio();
 
     const rail = openFilterRail();
-    expect(within(rail).getByRole('button', { name: 'Errors' })).toBeDefined();
+    expect(within(rail).getByRole('button', { name: 'Errors 1' })).toBeDefined();
     fireEvent.click(within(rail).getByRole('button', { name: /warnings/i }));
 
     expect(screen.getByText('Warning row')).toBeDefined();

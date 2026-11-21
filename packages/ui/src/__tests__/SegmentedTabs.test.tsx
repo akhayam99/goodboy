@@ -23,23 +23,43 @@ describe('SegmentedTabs', () => {
     expect(screen.getByRole('tablist', { name: 'view' })).toBeDefined();
   });
 
-  it('hugs its tabs and puts a badge only on an unselected tab that has something', () => {
+  it('hugs its tabs and keeps a count on the picked tab, hiding only 0', () => {
     render(
       <SegmentedTabs
         ariaLabel="Sources"
         options={[
           { value: 'all', label: 'All', badge: '12' },
-          { value: 'github', label: 'GitHub', badge: '7' },
+          { value: 'github', label: 'GitHub', badge: 7 },
           { value: 'linear', label: 'Linear', badge: 0 },
+          { value: 'jira', label: 'Jira', badge: 1 },
         ]}
         value="all"
         onChange={vi.fn()}
       />,
     );
     expect(screen.getByRole('tablist').className.split(' ')).toContain('w-fit');
-    expect(screen.getByRole('tab', { name: 'All' }).textContent).toBe('All');
+    expect(screen.getByRole('tab', { name: /All/ }).textContent).toBe('All12');
     expect(screen.getByRole('tab', { name: /GitHub/ }).textContent).toBe('GitHub7');
     expect(screen.getByRole('tab', { name: 'Linear' }).textContent).toBe('Linear');
+    expect(screen.getByRole('tab', { name: /Jira/ }).textContent).toBe('Jira1');
+  });
+
+  it('draws a count as a muted number, the same on the picked tab and the others', () => {
+    render(
+      <SegmentedTabs
+        variant="underline"
+        ariaLabel="Pages"
+        options={[
+          { value: 'runs', label: 'Runs', badge: 4 },
+          { value: 'agents', label: 'Agents', badge: 2 },
+        ]}
+        value="runs"
+        onChange={vi.fn()}
+      />,
+    );
+    const counts = Array.from(document.querySelectorAll('[data-muted-count]'));
+    expect(counts.map((count) => count.textContent)).toEqual(['4', '2']);
+    expect(counts.every((count) => count.className.includes('tabular-nums'))).toBe(true);
   });
 
   it('changes the selected value on click', () => {

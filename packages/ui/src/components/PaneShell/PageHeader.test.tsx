@@ -78,7 +78,7 @@ describe('PageHeader', () => {
     expect(body.closest('[data-page-column]')).not.toBeNull();
   });
 
-  it('puts a badge beside the title and a toolbar row of 36 under it with no meta line', () => {
+  it('puts a badge beside the title and a tool row of at least 36 that wraps under it', () => {
     render(
       <PageHeader
         page="inbox"
@@ -92,7 +92,8 @@ describe('PageHeader', () => {
     const row = header.querySelector('[data-slot="pane-title-row"]');
     const toolbar = header.querySelector('[data-slot="pane-toolbar"]');
     expect(row?.contains(screen.getByText('12 open'))).toBe(true);
-    expect(toolbar?.className.split(' ')).toContain('h-9');
+    expect(toolbar?.className.split(' ')).toEqual(expect.arrayContaining(['min-h-9', 'flex-wrap']));
+    expect(toolbar?.className.split(' ')).not.toContain('h-9');
     expect(toolbar?.contains(screen.getByRole('button', { name: 'Filter' }))).toBe(true);
     expect(header.querySelector('[data-slot="pane-meta"]')).toBeNull();
     expect(header.firstElementChild?.className.split(' ')).toContain('gap-0');

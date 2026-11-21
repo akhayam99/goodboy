@@ -325,10 +325,13 @@ describe('ListGrid', () => {
     expect(count.previousElementSibling?.textContent).toBe('In progress');
   });
 
-  it('shows the count from two rows and puts the fold word right after it', () => {
+  it('hides a count of 0, never 1, and puts the fold word right after it', () => {
     const onToggle = vi.fn();
     const { container } = render(
       <ListGrid label="Tasks" columns={COLUMNS} isGrouped>
+        <ListGridGroup label="Archived" count={0}>
+          <ListGridRow cells={['', 'HBL-400', 'Old export', '9d']} />
+        </ListGridGroup>
         <ListGridGroup label="Starred" count={1}>
           <ListGridRow cells={['', 'HBL-412', 'Ledger export times out', '2h']} />
         </ListGridGroup>
@@ -338,9 +341,9 @@ describe('ListGrid', () => {
       </ListGrid>,
     );
     const counts = Array.from(container.querySelectorAll('[data-list-grid-count]'));
-    expect(counts.map((count) => count.textContent)).toEqual(['411']);
+    expect(counts.map((count) => count.textContent)).toEqual(['1', '411']);
     const fold = screen.getByRole('button', { name: 'Show all' });
-    expect(counts[0]?.nextElementSibling).toBe(fold);
+    expect(counts[1]?.nextElementSibling).toBe(fold);
     fireEvent.click(fold);
     expect(onToggle).toHaveBeenCalledOnce();
   });
