@@ -163,12 +163,15 @@ describe('the u23 frame scenes', () => {
     expect(screen.getAllByRole('button', { name: 'New workflow' })).toHaveLength(1);
   });
 
-  it('keeps the Impact period selector in the title row of its bandless page', async () => {
+  it('puts the Impact period selector in the tool row under the title of its bandless page', async () => {
     const { container } = await renderScene('frame-studio-impact');
 
     const title = await screen.findByRole('heading', { level: 1, name: 'Impact' });
     const row = title.closest('[data-slot="pane-title-row"]') as HTMLElement;
-    expect(within(row).getByRole('tablist', { name: 'Impact window' })).toBeDefined();
+    expect(within(row).queryByRole('tablist', { name: 'Impact window' })).toBeNull();
+    const header = title.closest('[data-slot="pane-header"]') as HTMLElement;
+    const tools = header.querySelector('[data-slot="pane-toolbar"]') as HTMLElement;
+    within(tools).getByRole('tablist', { name: 'Impact window' });
     expect(container.querySelector('[data-studio-band]')).toBeNull();
   });
 

@@ -121,7 +121,8 @@ export const FeaturesImpactOverviewScene = () => {
       sessionCount: OVERVIEW.sessionCount,
       spentUsd: OVERVIEW.spendUsd ?? 0,
     }),
-    actions: (
+    actions: null,
+    toolbar: (
       <SegmentedTabs
         ariaLabel="Impact window"
         options={IMPACT_WINDOW_OPTIONS}
