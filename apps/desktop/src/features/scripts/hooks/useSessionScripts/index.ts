@@ -28,22 +28,8 @@ export const useSessionScripts = ({
   const discovered = useAppStore((state) => state.discoveredScripts[sessionId]);
   const scans = useAppStore((state) => state.discoveredScriptScans[sessionId]);
   const runs = useAppStore((state) => state.scriptRuns[sessionId]);
-  const ledger = useAppStore((state) => state.scriptLedger[sessionId]);
   const loadDiscoveredScripts = useAppStore((state) => state.loadDiscoveredScripts);
-  const loadScriptLedger = useAppStore((state) => state.loadScriptLedger);
   const pins = useScriptPins({ projectIds: mounts.map((mount) => mount.projectId) });
-
-  const runMoves = Object.values(runs ?? {})
-    .map((record) => `${record.runId}:${record.status}`)
-    .sort()
-    .join('|');
-
-  useEffect(() => {
-    if (!shouldScan) {
-      return;
-    }
-    void loadScriptLedger({ sessionId });
-  }, [loadScriptLedger, runMoves, sessionId, shouldScan]);
 
   useEffect(() => {
     if (!shouldScan) {
@@ -57,8 +43,8 @@ export const useSessionScripts = ({
   }, [loadDiscoveredScripts, mounts, sessionId, shouldScan]);
 
   const groups = useMemo(
-    () => buildSessionScripts({ mounts, projects, saved, discovered, pins, runs, ledger }),
-    [discovered, ledger, mounts, pins, projects, runs, saved],
+    () => buildSessionScripts({ mounts, projects, saved, discovered, pins, runs }),
+    [discovered, mounts, pins, projects, runs, saved],
   );
   const isReading = mounts.some(
     (mount) =>

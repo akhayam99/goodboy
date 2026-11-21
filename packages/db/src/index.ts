@@ -140,15 +140,7 @@ export {
 } from './queries/session';
 export { getSessionContextSeenAt, setSessionContextSeenAt } from './queries/session-context-seen';
 export { getSessionDockGrid, saveSessionDockGrid } from './queries/session-dock-grid';
-export {
-  WORK_EVENT_KINDS,
-  isWorkEventKind,
-  listScriptLedger,
-  listWorkEvents,
-  type ScriptLedgerEntry,
-  type WorkEvent,
-  type WorkEventKind,
-} from './queries/work-events';
+export * from './queries/work-events';
 export * from './queries/session-context-item';
 export { listSessionDecisions, saveSessionDecisions } from './queries/session-decision';
 export {
@@ -179,10 +171,7 @@ export { updateGeneratedWorkflowRunTitle } from './queries/generated-workflow-ru
 export { cleanWorkflowRunTitle } from './queries/workflow-run-title';
 export { heuristicAgentTitle } from './queries/heuristic-agent-title';
 export { titleInTag } from './queries/title-in-tag';
-export {
-  listWorkspaceWorkflowRuns,
-  type WorkflowRunHistoryRow,
-} from './queries/workflow-run-history';
+export * from './queries/workflow-run-history';
 export { insertMessage, listMessagesForAgent, listMessagesForSession } from './queries/message';
 export {
   insertGoalAttachment,

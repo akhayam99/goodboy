@@ -326,14 +326,13 @@ same for every live run on boot (`registerScriptRunListeners` with
 
 A script run also leaves a row in `work_events` (see Who writes each table):
 `scripts.rs` writes it when the run starts and stamps the end and the exit
-code before `script-exit` fires, so a read after the event sees the end. The
-`work-ledger` slice reads the last run of each script per mount
-(`listScriptLedger`) when the scripts of a session are on screen and again
-whenever a run starts or ends; a late answer for an older read is dropped.
+code before `script-exit` fires, so a read after the event sees the end.
+`listScriptLedger` reads the last run of each script per mount; no screen
+reads it yet, so the app does not load it. Given those rows,
 `buildSessionScripts` gives every group `available`, each saved and
 discovered script with its last run (`ok`, `error`, `cancelled` for an exit
 of 130, 137 or 143, `unfinished` for a run whose end never landed, as after a
-quit), pinned or not, and `mostUsedKey`.
+quit), pinned or not.
 
 Provider login and CLI update runs have no Rust ring. `invokeProviderLifecycleRun`
 starts `features/providers/lifecycleOutputBuffer.ts` before the run, which keeps

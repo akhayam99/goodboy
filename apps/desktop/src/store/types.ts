@@ -40,7 +40,6 @@ import type { BudgetSliceState } from './slices/budget/state';
 import type { BrowserState } from './slices/browser/state';
 import type { BrowserHostState } from './slices/browser-host/state';
 import type { BrowserVisitsState } from './slices/browser-visits/state';
-import type { WorkLedgerState } from './slices/work-ledger/state';
 import type { MonitoringSliceState } from './slices/monitoring/state';
 import type { BugReportDraftState } from './slices/bugReportDraft/state';
 import type { OrchestratorHintDraftsState } from './slices/orchestratorHintDrafts/state';
@@ -146,7 +145,6 @@ type AppSliceState = ArtifactsState &
   BrowserState &
   BrowserHostState &
   BrowserVisitsState &
-  WorkLedgerState &
   MonitoringSliceState &
   ResolveState &
   ReviewNavigationState &

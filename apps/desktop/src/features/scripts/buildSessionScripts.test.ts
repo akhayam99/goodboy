@@ -425,10 +425,9 @@ describe('buildSessionScripts', () => {
       ['cargo', 'test', 'unfinished', 1],
       ['composer', 'test', null, 0],
     ]);
-    expect(group?.mostUsedKey).toBe(keyOf({ source: 'make', name: 'check' }));
   });
 
-  it('reads a passed run and has no most used script before any run', () => {
+  it('reads a passed run and has no last run before any run', () => {
     const here = mount('m1', LEDGER, '/work/ledger');
     const key = discoveredScriptId({
       worktreePath: '/work/ledger',
@@ -468,8 +467,9 @@ describe('buildSessionScripts', () => {
       outcome: 'ok',
       runCount: 2,
     });
-    expect(ran?.mostUsedKey).toBe(key);
-    expect(build({ ledger: [] })?.mostUsedKey).toBeNull();
+    expect(
+      build({ ledger: [] })?.available.find((script) => script.key === key)?.lastRun,
+    ).toBeNull();
   });
 
   it('keeps a suggested script that has a run record once another script is pinned', () => {

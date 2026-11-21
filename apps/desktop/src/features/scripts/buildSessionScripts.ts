@@ -60,7 +60,6 @@ export type SessionScriptGroup = {
   readonly scripts: ReadonlyArray<RunnableScript>;
   readonly suggested: ReadonlyArray<RunnableScript>;
   readonly available: ReadonlyArray<LedgerScript>;
-  readonly mostUsedKey: string | null;
 };
 
 const STOP_EXIT_CODES: ReadonlyArray<number> = [130, 137, 143];
@@ -151,13 +150,12 @@ const savedScriptsOf = ({ saved, projectId }: SavedParams): ReadonlyArray<Runnab
 type ManifestParams = {
   readonly groups: ReadonlyArray<ScriptGroup>;
   readonly worktreePath: string;
-  readonly pins: ReadonlyArray<string>;
 };
 
 const allManifestScriptsOf = ({
   groups,
   worktreePath,
-}: Omit<ManifestParams, 'pins'>): ReadonlyArray<RunnableScript> =>
+}: ManifestParams): ReadonlyArray<RunnableScript> =>
   groups
     .flatMap((group) =>
       group.scripts.map((script): RunnableScript => ({
@@ -180,15 +178,6 @@ const allManifestScriptsOf = ({
       })),
     )
     .sort(compareManifest);
-
-const manifestScriptsOf = ({
-  groups,
-  worktreePath,
-  pins,
-}: ManifestParams): ReadonlyArray<RunnableScript> =>
-  allManifestScriptsOf({ groups, worktreePath }).filter((script) =>
-    pins.includes(scriptPinId(script)),
-  );
 
 type SuggestedParams = {
   readonly scripts: ReadonlyArray<RunnableScript>;
@@ -253,36 +242,6 @@ const lastRunOf = ({ ledger, mountId, key }: LastRunParams): ScriptLastRun | nul
   };
 };
 
-type MostUsedParams = {
-  readonly available: ReadonlyArray<LedgerScript>;
-};
-
-type UsedScript = {
-  readonly key: string;
-  readonly lastRun: ScriptLastRun;
-};
-
-type UsedParams = {
-  readonly script: UsedScript;
-  readonly best: UsedScript;
-};
-
-const isUsedMore = ({ script, best }: UsedParams): boolean =>
-  script.lastRun.runCount === best.lastRun.runCount
-    ? script.lastRun.startedAt > best.lastRun.startedAt
-    : script.lastRun.runCount > best.lastRun.runCount;
-
-const mostUsedKeyOf = ({ available }: MostUsedParams): string | null => {
-  const used = available.flatMap((script): ReadonlyArray<UsedScript> =>
-    script.lastRun === null ? [] : [{ key: script.key, lastRun: script.lastRun }],
-  );
-  const top = used.reduce<UsedScript | null>(
-    (best, script) => (best === null || isUsedMore({ script, best }) ? script : best),
-    null,
-  );
-  return top?.key ?? null;
-};
-
 type KeptParams = {
   readonly suggested: ReadonlyArray<RunnableScript>;
   readonly pinned: ReadonlyArray<RunnableScript>;
@@ -317,20 +276,15 @@ export const buildSessionScripts = ({
   mounts.map((mount) => {
     const isReady = mount.worktreePath !== '';
     const manifest = isReady ? (discovered?.[mount.worktreePath] ?? []) : [];
-    const pinned = manifestScriptsOf({
-      groups: manifest,
-      worktreePath: mount.worktreePath,
-      pins: pins[mount.projectId] ?? [],
-    });
     const everyManifest = allManifestScriptsOf({
       groups: manifest,
       worktreePath: mount.worktreePath,
     });
+    const projectPins = pins[mount.projectId] ?? [];
+    const pinned = everyManifest.filter((script) => projectPins.includes(scriptPinId(script)));
+    const savedScripts = savedScriptsOf({ saved, projectId: mount.projectId });
     const suggested = suggestedScriptsOf({ scripts: everyManifest });
-    const available = [
-      ...savedScriptsOf({ saved, projectId: mount.projectId }),
-      ...everyManifest,
-    ].map((script): LedgerScript => ({
+    const available = [...savedScripts, ...everyManifest].map((script): LedgerScript => ({
       ...script,
       lastRun: lastRunOf({ ledger, mountId: mount.mountId, key: script.key }),
     }));
@@ -342,12 +296,11 @@ export const buildSessionScripts = ({
       worktreePath: mount.worktreePath,
       isReady,
       packageCount: new Set(pinned.map((script) => `${script.source}:${script.relDir}`)).size,
-      scripts: [...savedScriptsOf({ saved, projectId: mount.projectId }), ...pinned],
+      scripts: [...savedScripts, ...pinned],
       suggested:
         pinned.length === 0
           ? suggested
           : keptSuggestedOf({ suggested, pinned, runs, mountId: mount.mountId }),
       available,
-      mostUsedKey: mostUsedKeyOf({ available }),
     };
   });

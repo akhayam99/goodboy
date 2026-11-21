@@ -49,7 +49,6 @@ const group = ({
     scripts,
     suggested: [],
     available: [],
-    mostUsedKey: null,
   }) satisfies SessionScriptGroup;
 
 const LEDGER = group({
