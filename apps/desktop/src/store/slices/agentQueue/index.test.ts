@@ -128,6 +128,25 @@ describe('agent queue', () => {
     expect(queue().map((item) => item.content)).toEqual(['message a']);
   });
 
+  it('drops an unsaved message when asked to, and the retry queues it once', async () => {
+    const { slice, queue, reportError } = harness();
+    replaceAgentQueuedMessages.mockRejectedValueOnce(new Error('disk full'));
+
+    const isSaved = await slice.enqueueAgentMessage({ turn: input('a'), shouldDropUnsaved: true });
+
+    expect(isSaved).toBe(false);
+    expect(queue()).toEqual([]);
+    expect(reportError).toHaveBeenCalledTimes(1);
+
+    const isRetried = await slice.enqueueAgentMessage({
+      turn: input('a'),
+      shouldDropUnsaved: true,
+    });
+
+    expect(isRetried).toBe(true);
+    expect(queue().map((item) => item.id)).toEqual(['a']);
+  });
+
   it('does not drain while the turn runs', async () => {
     const { slice, sent } = harness();
     await slice.enqueueAgentMessage({ turn: input('a') });
