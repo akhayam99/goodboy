@@ -1,5 +1,7 @@
+import { useCallback, useRef } from 'react';
 import { PaneShell, SearchField } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
+import { useRowFocusKeys } from '../../../../shared/hooks/useRowFocusKeys';
 import { useNow } from '../../../../shared/hooks/useNow';
 import { NAMES } from '../../../../shared/utils/names';
 import { useMonitoringModel } from '../../hooks/useMonitoringModel';
@@ -9,6 +11,8 @@ import { monitoringMetaOf } from './monitoringMetaOf';
 import { MonitoringSections } from './MonitoringSections';
 import { PinPortPopover } from './PinPortPopover';
 
+const MONITORING_ROW = '[data-port-row], [data-started-row]';
+
 export const MonitoringPage = () => {
   useMonitorPolling();
   const model = useMonitoringModel();
@@ -17,6 +21,14 @@ export const MonitoringPage = () => {
   const isReady = model.status === 'ready';
   const isEmpty = isMonitoringEmpty({ model });
   const hasRows = isReady && !isEmpty;
+  const pageRef = useRef<HTMLDivElement | null>(null);
+  const searchRef = useRef<HTMLInputElement | null>(null);
+  const focusSearch = useCallback(() => searchRef.current?.focus(), []);
+  useRowFocusKeys({
+    containerRef: pageRef,
+    rowSelector: MONITORING_ROW,
+    ...(hasRows && { onSearch: focusSearch }),
+  });
 
   return (
     <PaneShell
@@ -34,6 +46,7 @@ export const MonitoringPage = () => {
       toolbar={
         hasRows ? (
           <SearchField
+            inputRef={searchRef}
             ariaLabel={NAMES.searchPorts}
             placeholder={NAMES.searchPorts}
             value={model.query}
@@ -43,7 +56,9 @@ export const MonitoringPage = () => {
         ) : null
       }
     >
-      <MonitoringSections model={model} memoryPrefix="monitoring" />
+      <div ref={pageRef} className="contents">
+        <MonitoringSections model={model} memoryPrefix="monitoring" />
+      </div>
     </PaneShell>
   );
 };

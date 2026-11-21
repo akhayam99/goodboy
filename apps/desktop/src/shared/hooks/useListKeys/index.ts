@@ -1,27 +1,8 @@
 import { useIsDrawerParked } from '@goodboy/ui';
 import { useEffect, useRef } from 'react';
-import { eventMatches, plainKeyYields } from '../../keyboard/dispatcher';
-import { SHORTCUTS, type ShortcutId } from '../../keyboard/registry';
-
-const LIST_KEY_IDS = [
-  'list.next',
-  'list.previous',
-  'list.open',
-  'list.openInTool',
-  'list.reply',
-  'list.star',
-  'list.dismiss',
-  'list.search',
-] as const satisfies ReadonlyArray<ShortcutId>;
-
-type ListKeyId = (typeof LIST_KEY_IDS)[number];
-
-const CHARACTER_ALIASES: Readonly<Partial<Record<ListKeyId, ReadonlySet<string>>>> = {
-  'list.next': new Set(['ArrowDown']),
-  'list.previous': new Set(['ArrowUp']),
-  'list.open': new Set(['Enter']),
-  'list.search': new Set(['/']),
-};
+import { plainKeyYields } from '../../keyboard/dispatcher';
+import { matchedListKey, type ListKeyId } from './matchedListKey';
+import { handleRowFocusKey, type RowsParams } from './rowFocusKey';
 
 type KeyHandler = (selectedKey: string | null) => void;
 
@@ -35,21 +16,11 @@ type Params = {
   readonly onReply?: KeyHandler;
   readonly onStar?: KeyHandler;
   readonly onSearch?: KeyHandler;
-};
-
-type MatchParams = {
-  readonly event: KeyboardEvent;
+  readonly rows?: RowsParams;
 };
 
 const isOtherButton = (target: EventTarget | null): boolean =>
   target instanceof HTMLButtonElement && target.getAttribute('role') !== 'option';
-
-const matchedListKey = ({ event }: MatchParams): ListKeyId | null =>
-  LIST_KEY_IDS.find(
-    (id) =>
-      eventMatches({ event, entry: SHORTCUTS[id] }) ||
-      CHARACTER_ALIASES[id]?.has(event.key) === true,
-  ) ?? null;
 
 export const useListKeys = (params: Params): void => {
   const latest = useRef(params);
@@ -71,6 +42,16 @@ export const useListKeys = (params: Params): void => {
         return;
       }
       const current = latest.current;
+      if (current.rows !== undefined) {
+        const { onSearch } = current;
+        handleRowFocusKey({
+          event,
+          id,
+          rows: current.rows,
+          onSearch: onSearch === undefined ? undefined : () => onSearch(null),
+        });
+        return;
+      }
       const index = current.selectedKey == null ? -1 : current.keys.indexOf(current.selectedKey);
       const selected = index < 0 ? null : current.selectedKey;
 

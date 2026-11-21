@@ -1,4 +1,4 @@
-import { useMemo, type ComponentProps } from 'react';
+import { useMemo, useRef, type ComponentProps } from 'react';
 import type { MountId, Session } from '@goodboy/types';
 import { Button, Chip, ListGrid } from '@goodboy/ui';
 import { useAppStore } from '../../../../../../store';
@@ -11,6 +11,7 @@ import { openBranchWorkTab } from '../../../../openBranchWorkTab';
 import { runBranchMembershipOf } from '../../../../runBranchMembershipOf';
 import { runGroupKeyOf, runGroupsOf } from '../../../../runGroupsOf';
 import type { SessionRun } from '../../../../sessionRunsOf';
+import { useRowFocusKeys } from '../../../../../../shared/hooks/useRowFocusKeys';
 import { useMountRows } from '../../../../../../shared/hooks/useMountRows';
 import { useCanOpenBranchWork } from '../../../../hooks/useCanOpenBranchWork';
 import { useRunsFilter } from '../../../../hooks/useRunsFilter';
@@ -25,6 +26,8 @@ import { RUNS_GRID_COLUMNS } from './runsGridColumns';
 import { useRunRowRender } from './useRunRowRender';
 import { FINISHED_FOLD_KEY } from './finishedFoldKey';
 import { useRunsFolds } from './useRunsFolds';
+
+const RUN_ROW = '[data-list-grid-row]';
 
 type Props = {
   readonly session: Session;
@@ -42,6 +45,8 @@ type MountParams = {
 
 export const RunsGrid = ({ session, runs: sessionRuns }: Props) => {
   const sessionId = session.id;
+  const rootRef = useRef<HTMLDivElement | null>(null);
+  useRowFocusKeys({ containerRef: rootRef, rowSelector: RUN_ROW });
   const setGroupBy = useAppStore((state) => state.setGroupBy);
   const mountGroups = useMountRows({ sessionId });
   const canOpenBranch = useCanOpenBranchWork({ sessionId });
@@ -107,7 +112,7 @@ export const RunsGrid = ({ session, runs: sessionRuns }: Props) => {
   }
 
   return (
-    <div className="flex min-w-0 flex-col gap-3">
+    <div ref={rootRef} className="flex min-w-0 flex-col gap-3">
       {filter.isRunningOnly ? (
         <div data-runs-filter="" className="flex items-center gap-2">
           <Chip tone="neutral" kind="reference" label={NAMES.running} />

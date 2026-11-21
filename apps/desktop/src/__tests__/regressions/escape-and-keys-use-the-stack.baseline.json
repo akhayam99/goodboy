@@ -32,7 +32,6 @@
   },
   "window-key-listener": {
     "apps/desktop/src/features/quick-actions/QuickActionsPopover/index.tsx": 1,
-    "apps/desktop/src/features/scripts/components/ScriptsPanel/ScriptsFilterInput.tsx": 1,
     "apps/desktop/src/shared/hooks/useKeepFullScreenOnEscape/index.ts": 2,
     "apps/desktop/src/shared/hooks/useListKeys/index.ts": 1
   }

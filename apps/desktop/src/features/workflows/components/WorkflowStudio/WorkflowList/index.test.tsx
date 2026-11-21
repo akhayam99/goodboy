@@ -2,6 +2,7 @@
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { WORKFLOW_LIBRARY } from '@goodboy/core/workflows';
 import type { WorkflowRunHistoryRow } from '@goodboy/db';
 import {
@@ -111,6 +112,26 @@ describe('WorkflowList', () => {
     fireEvent.click(row);
     expect(onOpen).toHaveBeenCalledOnce();
     expect(onShowRuns).not.toHaveBeenCalled();
+  });
+
+  it('walks the rows with J and K and opens the one in focus with Enter', async () => {
+    const { onOpen } = renderList([
+      workflow(),
+      workflow({ id: brandId<WorkflowId>({ value: 'wf-2' }), name: 'Ship a fix' }),
+    ]);
+    const user = userEvent.setup();
+
+    await user.keyboard('j');
+    expect(document.activeElement).toBe(
+      screen.getByRole('button', { name: 'Open Settlement replay' }),
+    );
+    await user.keyboard('j');
+    expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Open Ship a fix' }));
+    await user.keyboard('k');
+    await user.keyboard('{Enter}');
+
+    expect(onOpen).toHaveBeenCalledOnce();
+    expect(onOpen.mock.calls[0]?.[0]).toMatchObject({ name: 'Settlement replay' });
   });
 
   it('puts every row on one grid of named columns', () => {

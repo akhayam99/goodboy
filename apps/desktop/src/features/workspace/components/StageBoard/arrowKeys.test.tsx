@@ -22,6 +22,7 @@ import {
   type StoryStore,
 } from '../../../../store/storyHarness';
 import { ToastProvider } from '../../../../shared/components/Toast';
+import { pressKey } from '../../../../__tests__/helpers/pressKey';
 import { StageBoard } from './index';
 
 const workspace = aWorkspace({ name: 'Harborline', slug: 'harborline' });
@@ -79,6 +80,17 @@ describe('StageBoard arrow keys', () => {
     fireEvent.keyDown(start, { key: 'ArrowDown' });
     expect(document.activeElement).toBe(titleOf(second ?? ''));
     fireEvent.keyDown(titleOf(second ?? ''), { key: 'ArrowUp' });
+    expect(document.activeElement).toBe(start);
+    expect(screen.queryByRole('toolbar')).toBeNull();
+  });
+
+  it('moves focus with J and K like the arrows', () => {
+    const [first, second] = orderedGoals();
+    const start = titleOf(first ?? '');
+    start.focus();
+    pressKey({ code: 'KeyJ' });
+    expect(document.activeElement).toBe(titleOf(second ?? ''));
+    pressKey({ code: 'KeyK' });
     expect(document.activeElement).toBe(start);
     expect(screen.queryByRole('toolbar')).toBeNull();
   });

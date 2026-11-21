@@ -47,6 +47,7 @@ import {
   type ChatSeed,
 } from '../../../../__tests__/helpers/chatListFixtures';
 import userEvent from '@testing-library/user-event';
+import { pressKey } from '../../../../__tests__/helpers/pressKey';
 import { ToastProvider } from '../../../../shared/components/Toast';
 import {
   STORE_IMPORT_TIMEOUT_MS,
@@ -682,5 +683,72 @@ describe('ChatList initial read states', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Details' }));
     screen.getByText('Could not read the chat list');
     expect(screen.queryByText('No chats yet')).toBeNull();
+  });
+
+  describe('row keys', () => {
+    const rowButton = (key: string): HTMLElement => {
+      const button = rowOf(key).querySelector<HTMLElement>('[data-select-id]');
+      if (button === null) {
+        throw new Error(`No row button for ${key}`);
+      }
+      return button;
+    };
+
+    it('J and K walk the rows in the order on screen, then Enter opens the one in focus', async () => {
+      const { onSelect } = await renderList();
+      const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+
+      await user.keyboard('j');
+      expect(document.activeElement).toBe(rowButton('release'));
+      await user.keyboard('j');
+      expect(document.activeElement).toBe(rowButton('consent'));
+      await user.keyboard('j');
+      expect(document.activeElement).toBe(rowButton('changes'));
+      await user.keyboard('k');
+      expect(document.activeElement).toBe(rowButton('consent'));
+      await user.keyboard('{Enter}');
+
+      expect(onSelect).toHaveBeenCalledWith(chatIdOf({ key: 'consent' }));
+    });
+
+    it('stops at the last row and takes the arrows from a row in focus', async () => {
+      await renderList();
+      const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+      rowButton('flaky').focus();
+
+      await user.keyboard('j');
+      expect(document.activeElement).toBe(rowButton('flaky'));
+      await user.keyboard('{ArrowUp}');
+      expect(document.activeElement).toBe(rowButton('lunch'));
+    });
+
+    it('leaves the arrows to the page while no row has the focus', async () => {
+      await renderList();
+
+      const event = pressKey({ code: 'ArrowDown', target: document.body });
+
+      expect(event.defaultPrevented).toBe(false);
+      expect(document.activeElement).toBe(document.body);
+    });
+
+    it('sends the slash to the search field, from a layout that types it with shift', async () => {
+      await renderList();
+
+      const event = pressKey({ code: 'Digit7', key: '/', shift: true, target: document.body });
+
+      expect(event.defaultPrevented).toBe(true);
+      expect(document.activeElement).toBe(screen.getByRole('searchbox', { name: 'Search chats' }));
+    });
+
+    it('lets the letters type while the search field has the focus', async () => {
+      await renderList();
+      const field = screen.getByRole('searchbox', { name: 'Search chats' });
+      field.focus();
+
+      const event = pressKey({ code: 'KeyJ', target: field });
+
+      expect(event.defaultPrevented).toBe(false);
+      expect(document.activeElement).toBe(field);
+    });
   });
 });
