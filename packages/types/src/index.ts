@@ -87,19 +87,17 @@ export {
   CHAT_PROVIDER_IDS,
   CHAT_SESSION_LINK_KINDS,
   isChatProvider,
-} from './chat';
-export type {
-  AskThread,
-  Chat,
-  ChatMessage,
-  ChatMessageAttachment,
-  ChatMessageRole,
-  ChatMessageStatus,
-  ChatModelUsed,
-  ChatProviderId,
-  ChatSessionLink,
-  ChatSessionLinkKind,
-  ChatSummary,
+  type AskThread,
+  type Chat,
+  type ChatMessage,
+  type ChatMessageAttachment,
+  type ChatMessageRole,
+  type ChatMessageStatus,
+  type ChatModelUsed,
+  type ChatProviderId,
+  type ChatSessionLink,
+  type ChatSessionLinkKind,
+  type ChatSummary,
 } from './chat';
 export { SESSION_DECISION_AUTHORS, SESSION_DECISION_STATUSES } from './session-decision';
 export type {
@@ -322,6 +320,7 @@ export type {
   AgentSourceKind,
   AgentStatus,
   AgentStoppedBy,
+  MountAgent,
   Step,
   StepDef,
   StepSize,

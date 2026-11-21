@@ -160,3 +160,5 @@ export type Agent = Readonly<{
   routingDecision?: WorkflowRoutingDecision | null;
   taskProfile?: WorkflowTaskProfile | null;
 }>;
+
+export type MountAgent = Agent & Readonly<{ mountId: MountId }>;

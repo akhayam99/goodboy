@@ -24,6 +24,7 @@
       "ignoreIssues": {
         "src/features/artifacts/artifactMirror/artifactMirrorQueue.ts": ["exports"],
         "src/features/browser/browserBudgets.ts": ["files"],
+        "src/features/track/trackOf.ts": ["files"],
         "src/app/shellBudgets.ts": ["files"],
         "src/store/slices/boot/bootBudgets.ts": ["files"],
         "src/features/chat/spawn-from-comment.ts": ["exports"],

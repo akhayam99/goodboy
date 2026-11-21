@@ -121,6 +121,7 @@ export const SESSION_EVICTION = [
   { key: 'focusedWorkflowRunId', keyedBy: 'session', evictOn: 'archive' },
   { key: 'diffFocus', keyedBy: 'session', evictOn: 'archive' },
   { key: 'diffMountPath', keyedBy: 'session', evictOn: 'archive' },
+  { key: 'diffMountId', keyedBy: 'session', evictOn: 'archive' },
   { key: 'branchTab', keyedBy: 'session', evictOn: 'archive' },
   { key: 'dismissedCheckProposals', keyedBy: 'session', evictOn: 'archive' },
   { key: 'sessionDismissedNextSteps', keyedBy: 'session', evictOn: 'archive' },

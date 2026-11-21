@@ -26,6 +26,7 @@ export const setActiveLens = (set: SetFn) => {
           : { ...s.focusedWorkflowRunId, [sessionId]: null },
       diffFocus: isDiffLens ? s.diffFocus : { ...s.diffFocus, [sessionId]: null },
       diffMountPath: isDiffLens ? s.diffMountPath : { ...s.diffMountPath, [sessionId]: null },
+      diffMountId: isDiffLens ? s.diffMountId : { ...s.diffMountId, [sessionId]: null },
       focusedArtifactId:
         lens === 'plans' ? s.focusedArtifactId : { ...s.focusedArtifactId, [sessionId]: null },
       focusedGithubIssueNumber:

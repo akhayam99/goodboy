@@ -1,4 +1,11 @@
-import type { SessionId, AgentId, WorkspaceId, SessionViewPrefs, ArtifactId } from '@goodboy/types';
+import type {
+  SessionId,
+  AgentId,
+  WorkspaceId,
+  SessionViewPrefs,
+  ArtifactId,
+  MountId,
+} from '@goodboy/types';
 import type {
   ExploreChangedView,
   LensKind,
@@ -18,6 +25,7 @@ export type SessionViewState = {
   readonly focusedWorkflowRunId: Readonly<Record<SessionId, string | null>>;
   readonly diffFocus: Readonly<Record<SessionId, DiffFocus | null>>;
   readonly diffMountPath: Readonly<Record<SessionId, string | null>>;
+  readonly diffMountId: Readonly<Record<SessionId, MountId | null>>;
   readonly branchTab: Readonly<Record<SessionId, BranchTab>>;
   readonly dismissedCheckProposals: Readonly<Record<SessionId, ReadonlyArray<AgentId>>>;
   readonly sessionDismissedNextSteps: Readonly<Record<SessionId, ReadonlySet<string>>>;

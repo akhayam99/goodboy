@@ -50,7 +50,7 @@ export const branchPlace = ({
   sessionPlace({
     sessionId,
     lens: 'branch',
-    target: { kind: 'branch', mountPath, tab, threadId, focus },
+    target: { kind: 'branch', mountId: null, mountPath, tab, threadId, focus },
   });
 
 type QuestionPlaceParams = {

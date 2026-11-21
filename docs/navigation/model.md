@@ -508,6 +508,16 @@ them. The navigation slice (`store/slices/navigation/`) owns both.
   click. Back and a reload never move the write destination, with or without a
   mount in the address: the page shows the mount the address names and a write
   confirm names its repository.
+  A Branch address also carries `mountId`, null when no mount is known.
+  `branchPlace` leaves it null; `navigate`, Back, Forward and a restore pass
+  every address through `withKnownMount`, which fills the id from the path,
+  moves a stale path to the folder of its id, and makes an id no mount has
+  unavailable (no mount, no focus) instead of taking the mount now at its old
+  path. Only an address without an id falls back to `mountPath`. The open page
+  keeps its id in `diffMountId`, so `captureLocation` saves the page by id and
+  with the current folder of that id even after its worktree moved. `trackOf` in `features/track/`
+  reads one mount's github state, selected pull request, terminals and agents by
+  `mountId`.
   `docs/typescript/state-writes.md` has the rule; the rows of
   `__tests__/surfaces/navigation-flows/target-identity.rows.tsx` hold the
   journeys.

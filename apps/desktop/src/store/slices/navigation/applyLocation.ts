@@ -47,6 +47,10 @@ const surfaceChanges = ({ state, sessionId, view }: SurfaceParams): Partial<AppS
       ...state.diffMountPath,
       [sessionId]: target?.kind === 'diff' || target?.kind === 'branch' ? target.mountPath : null,
     },
+    diffMountId: {
+      ...state.diffMountId,
+      [sessionId]: target?.kind === 'branch' ? target.mountId : null,
+    },
     branchTab: branchTabsAfter({ state, sessionId, target }),
     branchThreadId: {
       ...state.branchThreadId,

@@ -2,6 +2,7 @@ import { keepToolDrawer } from '../drawer/keepToolDrawer';
 import { applyLocation } from './applyLocation';
 import { currentStack, stackKey } from './currentStack';
 import type { GetFn, SetFn } from './types';
+import { withKnownMount } from './withKnownMount';
 
 type Params = {
   readonly set: SetFn;
@@ -21,11 +22,12 @@ export const goHistory = ({ set, get, delta }: Params): boolean => {
     navigation: { ...current.navigation, [stackKey(current)]: { ...stack, index } },
   }));
   const drawer = entry.focus.drawer ?? keepToolDrawer({ state, place: entry.place });
+  const known = { ...entry, place: withKnownMount({ state, place: entry.place }) };
   applyLocation({
     set,
     get,
     location:
-      drawer === entry.focus.drawer ? entry : { ...entry, focus: { ...entry.focus, drawer } },
+      drawer === known.focus.drawer ? known : { ...known, focus: { ...known.focus, drawer } },
     isRestore: true,
   });
   return true;
