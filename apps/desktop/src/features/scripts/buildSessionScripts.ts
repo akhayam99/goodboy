@@ -69,12 +69,22 @@ const MANIFEST_CATEGORY_ORDER: ReadonlyArray<ScriptCategory> = [
   'other',
 ];
 
+const SOURCE_ORDER: ReadonlyArray<RunnableScriptSource> = [
+  'saved',
+  'package-json',
+  'make',
+  'just',
+  'cargo',
+  'pyproject',
+  'composer',
+];
+
 const categoryRank = ({ category }: { readonly category: ScriptCategory }): number =>
   MANIFEST_CATEGORY_ORDER.indexOf(category);
 
 const compareManifest = (left: RunnableScript, right: RunnableScript): number => {
   if (left.source !== right.source) {
-    return left.source === 'composer' ? 1 : -1;
+    return SOURCE_ORDER.indexOf(left.source) - SOURCE_ORDER.indexOf(right.source);
   }
   if (left.relDir !== right.relDir) {
     return left.relDir === '' ? -1 : left.relDir.localeCompare(right.relDir);

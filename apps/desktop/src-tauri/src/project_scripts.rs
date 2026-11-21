@@ -16,7 +16,13 @@ fn is_excluded_dir(name: &str) -> bool {
 pub enum ScriptSource {
     PackageJson,
     Composer,
+    Make,
+    Just,
+    Cargo,
+    Pyproject,
 }
+
+mod tools;
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -369,6 +375,7 @@ fn scan(root: &Path) -> Result<Vec<ScriptGroup>, ScriptScanError> {
             });
         }
     }
+    groups.extend(tools::tool_groups(&root));
     Ok(groups)
 }
 

@@ -245,7 +245,13 @@ cwd, startedAt }`. A turn, a chat, a planner or a summary joins it in
 - **Discovered scripts are quoted.** `project_scripts.rs` writes
   `npm run 'build all'` for a script name with a space, `&`, a quote or `$`
   (POSIX single quotes, a quote inside becomes `'\''`) and drops a name that
-  starts with `-`.
+  starts with `-`. Besides `package.json` and `composer.json`, it reads the
+  root of a worktree for Makefile targets (`make test`), justfile recipes
+  (`just lint`), Cargo commands and `[alias]` entries (`cargo build`), and
+  `pyproject.toml` entry points and tasks (`uv run serve`, `pdm run lint`,
+  `poe fmt`), in `project_scripts/tools.rs`. Pattern rules, special targets,
+  private recipes and settings are left out; it parses the files by line and
+  never runs them.
 - **Side jobs** (planner, summary) are stopped when they go quiet. A job is
   quiet when it has written nothing to stdout or stderr and no process in its
   tree has used any CPU for 10 minutes (`SIDE_JOB_IDLE`, checked every 15
