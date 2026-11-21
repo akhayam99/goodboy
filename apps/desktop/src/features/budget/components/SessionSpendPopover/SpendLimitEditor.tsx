@@ -13,6 +13,11 @@ type Props = {
   readonly onDone: () => void;
 };
 
+type SavedLimit = {
+  readonly amount: number | null;
+  readonly behavior: SessionBudgetOnExceed;
+};
+
 export const SpendLimitEditor = ({ sessionId, limit, onDone }: Props) => {
   const setSessionBudget = useAppStore((state) => state.setSessionBudget);
   const clearSessionBudget = useAppStore((state) => state.clearSessionBudget);
@@ -20,9 +25,11 @@ export const SpendLimitEditor = ({ sessionId, limit, onDone }: Props) => {
   const wasAutoRun = useAppStore(
     (state) => sessionById(state.sessions, sessionId)?.autoRun === true,
   );
-  const [isAutoRun, setIsAutoRun] = useState(wasAutoRun);
+  const [isAutoRunChosen, setIsAutoRunChosen] = useState<boolean | null>(null);
+  const isAutoRun = isAutoRunChosen ?? wasAutoRun;
   const [amount, setAmount] = useState(limit === null ? '' : String(limit.softCapUsd));
   const [behavior, setBehavior] = useState<SessionBudgetOnExceed>(limit?.onExceed ?? 'pause');
+  const [savedLimit, setSavedLimit] = useState<SavedLimit | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const isBlank = amount.trim() === '';
@@ -47,11 +54,23 @@ export const SpendLimitEditor = ({ sessionId, limit, onDone }: Props) => {
       return;
     }
     void run(async () => {
-      await (parsed === null
-        ? clearSessionBudget(sessionId)
-        : setSessionBudget(sessionId, parsed, behavior));
-      if (isAutoRun !== wasAutoRun) {
-        await setSessionAutoRun(sessionId, isAutoRun);
+      const isLimitSaved = savedLimit?.amount === parsed && savedLimit.behavior === behavior;
+      if (!isLimitSaved) {
+        await (parsed === null
+          ? clearSessionBudget(sessionId)
+          : setSessionBudget(sessionId, parsed, behavior));
+        setSavedLimit({ amount: parsed, behavior });
+      }
+      if (isAutoRunChosen === null || isAutoRunChosen === wasAutoRun) {
+        return;
+      }
+      try {
+        await setSessionAutoRun(sessionId, isAutoRunChosen);
+      } catch (cause) {
+        throw new Error(
+          `Saved the limit, but couldn't change "${NAMES.startStepsWithoutAsking}". Save again to retry it. ${formatError(cause)}`,
+          { cause },
+        );
       }
     });
   };
@@ -74,7 +93,7 @@ export const SpendLimitEditor = ({ sessionId, limit, onDone }: Props) => {
       <Checkbox
         checked={isAutoRun}
         disabled={isSaving}
-        onChange={setIsAutoRun}
+        onChange={setIsAutoRunChosen}
         label={NAMES.startStepsWithoutAsking}
       />
       <FormActions

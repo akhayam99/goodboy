@@ -8,7 +8,8 @@ import type { SessionBudget, SessionId } from '@goodboy/types';
 const h = vi.hoisted(() => ({
   setSessionBudget: vi.fn(async () => undefined),
   clearSessionBudget: vi.fn(async () => undefined),
-  setSessionAutoRun: vi.fn(async () => undefined),
+  setSessionAutoRun: vi.fn<() => Promise<undefined>>(async () => undefined),
+  live: { isAutoRun: false },
 }));
 
 vi.mock('../../../../store', () => ({
@@ -17,7 +18,7 @@ vi.mock('../../../../store', () => ({
       setSessionBudget: h.setSessionBudget,
       clearSessionBudget: h.clearSessionBudget,
       setSessionAutoRun: h.setSessionAutoRun,
-      sessions: [{ id: 'session-1', autoRun: false }],
+      sessions: [{ id: 'session-1', autoRun: h.live.isAutoRun }],
     }),
 }));
 
@@ -30,7 +31,9 @@ afterEach(() => {
   cleanup();
   h.setSessionBudget.mockClear();
   h.clearSessionBudget.mockClear();
-  h.setSessionAutoRun.mockClear();
+  h.setSessionAutoRun.mockReset();
+  h.setSessionAutoRun.mockImplementation(async () => undefined);
+  h.live.isAutoRun = false;
 });
 
 describe('SpendLimitEditor', () => {
@@ -78,6 +81,44 @@ describe('SpendLimitEditor', () => {
 
     await waitFor(() => expect(h.setSessionBudget).toHaveBeenCalled());
     expect(h.setSessionAutoRun).not.toHaveBeenCalled();
+  });
+
+  it('keeps a run setting another window changed while the form was open', async () => {
+    const onDone = vi.fn();
+    const { rerender } = render(
+      <SpendLimitEditor sessionId={SESSION_ID} limit={LIMIT} onDone={onDone} />,
+    );
+
+    h.live.isAutoRun = true;
+    rerender(<SpendLimitEditor sessionId={SESSION_ID} limit={LIMIT} onDone={onDone} />);
+    const box = screen.getByRole('checkbox', { name: 'Start next steps without asking' });
+    expect(box).toHaveProperty('checked', true);
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+
+    await waitFor(() => expect(onDone).toHaveBeenCalledOnce());
+    expect(h.setSessionBudget).toHaveBeenCalledWith(SESSION_ID, 20, 'pause');
+    expect(h.setSessionAutoRun).not.toHaveBeenCalled();
+  });
+
+  it('says the limit saved when only the run setting failed, and the retry sends only that', async () => {
+    const onDone = vi.fn();
+    h.setSessionAutoRun.mockRejectedValueOnce(new Error('database is locked'));
+    render(<SpendLimitEditor sessionId={SESSION_ID} limit={LIMIT} onDone={onDone} />);
+
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Start next steps without asking' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+
+    await screen.findByText(/Saved the limit, but couldn't change/);
+    screen.getByText(/database is locked/);
+    expect(onDone).not.toHaveBeenCalled();
+    expect(h.setSessionBudget).toHaveBeenCalledOnce();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+
+    await waitFor(() => expect(onDone).toHaveBeenCalledOnce());
+    expect(h.setSessionBudget).toHaveBeenCalledOnce();
+    expect(h.setSessionAutoRun).toHaveBeenCalledTimes(2);
+    expect(h.setSessionAutoRun).toHaveBeenLastCalledWith(SESSION_ID, true);
   });
 
   it('cancels without touching the limit', () => {

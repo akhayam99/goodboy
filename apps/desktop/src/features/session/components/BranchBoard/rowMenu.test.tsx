@@ -14,6 +14,7 @@ vi.mock('@tauri-apps/api/event', async () =>
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import type { WorktreeStatus } from '@goodboy/types';
+import { TEST_NOW } from '@goodboy/types/testing';
 import type { AppStore } from '../../../../store/store';
 import { ToastProvider } from '../../../../shared/components/Toast';
 import {
@@ -238,6 +239,75 @@ describe('the branch menu on an Overview tile', () => {
     );
     expect(removeMountWorktree).not.toHaveBeenCalled();
   });
+
+  it.each([
+    { surface: 'Overview tile', hasRail: false, rowPrefix: 'board-mount-' },
+    { surface: 'rail row', hasRail: true, rowPrefix: 'mount-' },
+  ])(
+    'moves the focus to the next branch after its $surface menu closes a branch',
+    async ({ hasRail, rowPrefix }) => {
+      seedCentralColumn({ kind: 'branches' });
+      const mount = tenantMount();
+      const survivor = (useAppStore.getState().sessionProjectMounts[COLUMN_SESSION_ID] ?? []).find(
+        (candidate) => candidate.mountId !== mount.mountId,
+      );
+      const unmountMount = vi.fn<AppStore['unmountMount']>(async () => {
+        useAppStore.setState((store) => ({
+          sessionProjectMounts: {
+            ...store.sessionProjectMounts,
+            [COLUMN_SESSION_ID]: (store.sessionProjectMounts[COLUMN_SESSION_ID] ?? []).filter(
+              (candidate) => candidate.mountId !== mount.mountId,
+            ),
+          },
+        }));
+        return {
+          mount: {
+            ...mount,
+            id: mount.mountId,
+            repoSlug: null,
+            repoRoot: '/repos/payments-api',
+            createdAt: TEST_NOW,
+            updatedAt: TEST_NOW,
+          },
+          kept: false,
+          reason: null,
+        };
+      });
+      act(() => {
+        useAppStore.setState({ unmountMount });
+      });
+      await show({ hasRail });
+
+      const dots = screen.getAllByRole('button', { name: ACTIONS })[0];
+      if (dots === undefined) {
+        throw new Error('The row must show its dots.');
+      }
+      expect(dots.closest('[data-row]')?.getAttribute('data-row')).toBe(
+        `${rowPrefix}${mount.mountId}`,
+      );
+      act(() => {
+        dots.focus();
+      });
+      fireEvent.click(dots);
+      fireEvent.click(await screen.findByRole('menuitem', { name: /Close branch/ }));
+      const confirm = await screen.findByRole('button', { name: 'Detach anyway' });
+      await act(async () => {
+        fireEvent.click(confirm);
+        await Promise.resolve();
+      });
+      await settle();
+
+      expect(unmountMount).toHaveBeenCalledWith({
+        sessionId: COLUMN_SESSION_ID,
+        mountId: mount.mountId,
+      });
+      await vi.waitFor(() =>
+        expect(document.activeElement?.closest('[data-row]')?.getAttribute('data-row')).toBe(
+          `${rowPrefix}${survivor?.mountId ?? ''}`,
+        ),
+      );
+    },
+  );
 
   it('drops a menu opened before the branch left the session, and acts on nothing', async () => {
     seedCentralColumn({ kind: 'branches' });

@@ -1,14 +1,28 @@
 const FOCUSABLE =
   'button:not([disabled]), [href], input:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
+type KeyOfParams = {
+  readonly row: Element;
+};
+
+type KeyOf = (params: KeyOfParams) => string | null;
+
 type Params = {
   readonly anchor: HTMLElement | null;
   readonly rowSelector: string;
+  readonly keyOf?: KeyOf;
 };
 
 type RowsParams = {
   readonly row: Element;
   readonly rowSelector: string;
+};
+
+type LiveParams = {
+  readonly candidate: HTMLElement | null;
+  readonly key: string | null;
+  readonly rowSelector: string;
+  readonly keyOf: KeyOf | undefined;
 };
 
 type Neighbours = {
@@ -45,8 +59,10 @@ const outerListOf = ({ row }: Omit<RowsParams, 'rowSelector'>): HTMLElement | nu
 };
 
 const neighboursOf = ({ row, rowSelector }: RowsParams): Neighbours => {
-  let scope = outerListOf({ row }) ?? row.parentElement;
-  while (scope !== null && scope.querySelectorAll(rowSelector).length < 2) {
+  const landmark = row.closest(LANDMARK);
+  const start = outerListOf({ row }) ?? row.parentElement;
+  let scope = start;
+  while (scope !== null && scope !== landmark && scope.querySelectorAll(rowSelector).length < 2) {
     scope = scope.parentElement;
   }
   const rows =
@@ -62,33 +78,49 @@ const neighboursOf = ({ row, rowSelector }: RowsParams): Neighbours => {
   return {
     next: index === -1 ? null : (rows[index + 1] ?? null),
     previous: index <= 0 ? null : (rows[index - 1] ?? null),
-    list: scope ?? row.parentElement,
+    list: rows.length > 1 ? scope : start,
   };
 };
 
-export const captureReturnFocus = ({ anchor, rowSelector }: Params): (() => void) => {
+const liveRowOf = ({ candidate, key, rowSelector, keyOf }: LiveParams): HTMLElement | null => {
+  if (candidate === null || candidate.isConnected) {
+    return candidate;
+  }
+  if (key === null || keyOf === undefined) {
+    return null;
+  }
+  const found = Array.from(document.querySelectorAll(rowSelector)).find(
+    (row) => keyOf({ row }) === key,
+  );
+  return found instanceof HTMLElement ? found : null;
+};
+
+export const captureReturnFocus = ({ anchor, rowSelector, keyOf }: Params): (() => void) => {
   const row = anchor?.closest(rowSelector) ?? null;
   if (anchor === null || row === null) {
     return () => undefined;
   }
   const { next, previous, list } = neighboursOf({ row, rowSelector });
+  const nextKey = next === null || keyOf === undefined ? null : keyOf({ row: next });
+  const previousKey = previous === null || keyOf === undefined ? null : keyOf({ row: previous });
   return () => {
     if (anchor.isConnected) {
       return;
     }
-    const survivor = [next, previous, list].find(
-      (candidate) => candidate !== null && candidate.isConnected,
-    );
-    if (survivor === undefined || survivor === null) {
+    const survivor = [
+      liveRowOf({ candidate: next, key: nextKey, rowSelector, keyOf }),
+      liveRowOf({ candidate: previous, key: previousKey, rowSelector, keyOf }),
+    ].find((candidate) => candidate !== null);
+    if (survivor !== undefined && survivor !== null) {
+      focusInside(survivor);
       return;
     }
-    if (survivor === list) {
-      if (!survivor.hasAttribute('tabindex')) {
-        survivor.setAttribute('tabindex', '-1');
-      }
-      survivor.focus();
+    if (list === null || !list.isConnected) {
       return;
     }
-    focusInside(survivor);
+    if (!list.hasAttribute('tabindex')) {
+      list.setAttribute('tabindex', '-1');
+    }
+    list.focus();
   };
 };

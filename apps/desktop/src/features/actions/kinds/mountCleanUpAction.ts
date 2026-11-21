@@ -31,7 +31,8 @@ export const MOUNT_CLEAN_UP_ACTION: ActionDefinition<MountFacts> = {
   pendingLabel: () => 'Deleting…',
   confirm: ({ facts }) => ({
     title: `Delete the local branch ${facts.branch}?`,
-    description: 'Its folder goes too. The pull request and the branch on origin stay.',
+    description:
+      'Its folder goes too. Your after-merge setting decides about the branch on origin.',
     confirmLabel: NAMES.deleteLocalBranch,
     role: 'danger',
     altActionId: 'mount.close',

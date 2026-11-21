@@ -53,6 +53,51 @@ describe('captureReturnFocus', () => {
     expect(document.activeElement).toBe(buttonOf({ name: 'payments-api' }));
   });
 
+  it('keeps the focus inside its own landmark when the sole row of a list goes', () => {
+    document.body.innerHTML = `
+      <nav>
+        <div role="list">
+          <div data-row><button aria-label="ledger-core"></button></div>
+          <div data-row><button aria-label="payments-api"></button></div>
+        </div>
+      </nav>
+      <main>
+        <ul id="branches">
+          <li data-row><button aria-label="notify-relay"></button></li>
+        </ul>
+      </main>`;
+    const anchor = buttonOf({ name: 'notify-relay' });
+    const restore = captureReturnFocus({ anchor, rowSelector: '[data-row]' });
+
+    anchor.closest('[data-row]')?.remove();
+    restore();
+
+    expect(document.activeElement).toBe(document.getElementById('branches'));
+    expect(document.querySelector('nav')?.contains(document.activeElement)).toBe(false);
+  });
+
+  it('finds the next row again by its key when the list drew it anew', () => {
+    document.body.innerHTML = `
+      <div role="list">
+        <div data-row="ledger-core"><button aria-label="ledger-core"></button></div>
+        <div data-row="payments-api"><button aria-label="payments-api"></button></div>
+      </div>`;
+    const anchor = buttonOf({ name: 'ledger-core' });
+    const restore = captureReturnFocus({
+      anchor,
+      rowSelector: '[data-row]',
+      keyOf: ({ row }) => row.getAttribute('data-row'),
+    });
+
+    document.body.innerHTML = `
+      <div role="list">
+        <div data-row="payments-api"><button aria-label="payments-api"></button></div>
+      </div>`;
+    restore();
+
+    expect(document.activeElement).toBe(buttonOf({ name: 'payments-api' }));
+  });
+
   it('leaves the focus alone when the row is still there', () => {
     document.body.innerHTML = LIST;
     const anchor = buttonOf({ name: 'ledger-core' });

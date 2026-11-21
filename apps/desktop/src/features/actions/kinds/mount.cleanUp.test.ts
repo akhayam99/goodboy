@@ -134,6 +134,16 @@ describe('mount.cleanUp', () => {
     expect(action?.confirm?.stays).toContain('pull request');
   });
 
+  it('says the branch on origin follows the after-merge setting, never that it always stays', () => {
+    const confirm = cleanUpOf({ overrides: {} })?.confirm;
+
+    expect(confirm?.description).toContain(
+      'after-merge setting decides about the branch on origin',
+    );
+    expect(confirm?.description).not.toContain('branch on origin stay.');
+    expect(confirm?.stays).toContain('unless your after-merge setting removes it');
+  });
+
   it.each([
     { name: 'an open pull request', overrides: { pr: 'open' as const } },
     { name: 'a closed pull request', overrides: { pr: 'closed' as const } },

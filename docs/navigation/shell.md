@@ -88,9 +88,13 @@ never exists on one surface only.
   then Stop all running agents, Archive and Delete, whose confirm still asks
   first. `withSessionSubmenus` (`kinds/sessionGoToActions.ts`) tags the Open
   and Copy rows, and `toMenuEntries` folds a group of two rows or more into its
-  submenu (one row stays flat with its full label). Ask about this session,
+  submenu (one row stays flat with its full label). A child with choices, such
+  as Worktree path with several worktrees, opens its chooser beside the
+  submenu (`MenuList`). Ask about this session,
   Refresh session, Write title and goal, Select, the run setting (Start next
-  steps without asking, which also sits in the Set limit form) and Move up or
+  steps without asking, which also sits in the Set limit form: the box follows
+  the live setting until you tick it, and a save whose limit landed but whose
+  run setting failed says so, and Save again sends only the run setting) and Move up or
   down carry `placement: 'palette'`: ⌘K lists them, no menu draws them. The
   header `⋯` (`sessionMenuOf`) holds Pin, Link work, Copy, Archive and Delete.
   The row is `select-none`, like every row that carries `ROW_HOVER` or
@@ -100,9 +104,13 @@ never exists on one surface only.
   delete, close) leaves the focus on the row next to it, across a group, or the
   one before it on the last row. The right click and the `⋯` capture the
   neighbour before the write (`keepRowFocus`, on `captureReturnFocus` in
-  `packages/ui`), rows carry `data-row` (`ListGridRow`, `InteractiveRow`) or
-  `data-select-id` (the Board card), and Undo on the toast puts the focus back
-  on the restored row. A row that only changes (pin, read) keeps the focus.
+  `packages/ui`), rows carry `data-row` (`ListGridRow`, `InteractiveRow`, the
+  rail branch row, the Overview branch tile) or `data-select-id` (the Board
+  card), and a neighbour drawn anew is found again by that identity. The
+  search stays inside the row's landmark: the sole row of a list hands the
+  focus to its list, never to a row in another pane. Undo on the toast puts the
+  focus back on the restored row once the undo finished. A row that only
+  changes (pin, read) keeps the focus.
   The shared confirm (`ActionConfirmPanel`) passes the same `returnFocusTo`.
 - **One order.** The registry and right click list Open, Act, Copy, then
   stop, archive and destructive verbs, with one rule before that last group.

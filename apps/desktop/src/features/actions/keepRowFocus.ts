@@ -4,8 +4,6 @@ import { OBJECT_ROW_SELECTOR as ROW_SELECTOR } from './objectRowSelector';
 
 const FOCUSABLE = 'button:not([disabled]), [href], [tabindex]:not([tabindex="-1"])';
 
-const UNDO_LABEL = 'Undo';
-
 const UNDO_FRAMES = 30;
 
 type Params = {
@@ -55,7 +53,8 @@ const refocusRow = ({ key, frames }: RefocusParams): void => {
 export const keepRowFocus = ({ anchor, showToast }: Params): RowFocus => {
   const key = rowIdentityOf({ row: anchor?.closest(ROW_SELECTOR) ?? null });
   const withUndoFocus = ({ action, ...toast }: ShowToastParams): void => {
-    if (key === null || action === undefined || action.label !== UNDO_LABEL) {
+    const undo = action?.undo;
+    if (key === null || action === undefined || undo === undefined) {
       showToast({ ...toast, ...(action !== undefined && { action }) });
       return;
     }
@@ -64,14 +63,17 @@ export const keepRowFocus = ({ anchor, showToast }: Params): RowFocus => {
       action: {
         ...action,
         onClick: () => {
-          action.onClick();
-          refocusRow({ key, frames: UNDO_FRAMES });
+          void undo().then((isDone) => {
+            if (isDone) {
+              refocusRow({ key, frames: UNDO_FRAMES });
+            }
+          });
         },
       },
     });
   };
   return {
-    restore: captureReturnFocus({ anchor, rowSelector: ROW_SELECTOR }),
+    restore: captureReturnFocus({ anchor, rowSelector: ROW_SELECTOR, keyOf: rowIdentityOf }),
     showToast: withUndoFocus,
   };
 };

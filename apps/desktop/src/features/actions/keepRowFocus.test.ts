@@ -55,7 +55,7 @@ describe('keepRowFocus', () => {
     expect(document.activeElement).toBe(card);
   });
 
-  it('puts the focus back on the card that Undo brings back', () => {
+  it('puts the focus back on the card that Undo brings back, after a slow Undo finishes', async () => {
     document.body.innerHTML = BOARD;
     const showToast = vi.fn<(params: ShowToastParams) => void>();
     const removed = cardOf({ id: 'payments' });
@@ -66,19 +66,55 @@ describe('keepRowFocus', () => {
     rowFocus.restore();
     expect(document.activeElement).toBe(cardOf({ id: 'notify' }));
 
-    const undo = vi.fn(() => {
-      lane?.prepend(removed);
-    });
+    const finishUndo: Array<(isDone: boolean) => void> = [];
+    const undo = vi.fn(
+      () =>
+        new Promise<boolean>((resolve) => {
+          finishUndo.push(resolve);
+        }),
+    );
     rowFocus.showToast({
       kind: 'info',
       message: 'Archived',
-      action: { label: 'Undo', onClick: undo },
+      action: { label: 'Undo', onClick: vi.fn(), undo },
     });
     const shown = showToast.mock.calls[0]?.[0];
     shown?.action?.onClick();
 
     expect(undo).toHaveBeenCalledOnce();
-    expect(document.activeElement).toBe(cardOf({ id: 'payments' }));
+    expect(document.activeElement).toBe(cardOf({ id: 'notify' }));
+    finishUndo[0]?.(true);
+    await Promise.resolve();
+    lane?.prepend(removed);
+
+    await vi.waitFor(() => {
+      expect(document.activeElement).toBe(cardOf({ id: 'payments' }));
+    });
+  });
+
+  it('leaves the focus where it is when Undo did not bring the card back', async () => {
+    document.body.innerHTML = BOARD;
+    const showToast = vi.fn<(params: ShowToastParams) => void>();
+    const removed = cardOf({ id: 'payments' });
+    const lane = removed.parentElement;
+    const rowFocus = keepRowFocus({ anchor: removed, showToast });
+    removed.remove();
+    rowFocus.restore();
+
+    const undo = vi.fn(() => {
+      lane?.prepend(removed);
+      return Promise.resolve(false);
+    });
+    rowFocus.showToast({
+      kind: 'info',
+      message: 'Archived',
+      action: { label: 'Undo', onClick: vi.fn(), undo },
+    });
+    showToast.mock.calls[0]?.[0]?.action?.onClick();
+    await undo.mock.results[0]?.value;
+    await Promise.resolve();
+
+    expect(document.activeElement).toBe(cardOf({ id: 'notify' }));
   });
 
   it('passes a toast without Undo through unchanged', () => {

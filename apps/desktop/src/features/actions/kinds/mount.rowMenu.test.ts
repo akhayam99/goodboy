@@ -118,7 +118,7 @@ describe('Delete local branch', () => {
     const confirm = itemOf({ entries, label: 'Delete local branch…' }).confirm;
 
     expect(confirm?.description).toBe(
-      'Its folder goes too. The pull request and the branch on origin stay.',
+      'Its folder goes too. Your after-merge setting decides about the branch on origin.',
     );
     expect(confirm?.confirmLabel).toBe('Delete local branch');
     expect(confirm?.alt?.label).toBe('Close branch');

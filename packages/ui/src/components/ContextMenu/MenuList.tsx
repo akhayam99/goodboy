@@ -1,11 +1,10 @@
 import { useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent } from 'react';
-import { MenuChoicePanel } from './MenuChoicePanel';
 import { MenuConfirmView } from './MenuConfirmView';
+import { MenuExpandedPanels, type Expanded } from './MenuExpandedPanels';
 import { MenuRadioGroup } from './MenuRadioGroup';
 import { MenuRow } from './MenuRow';
 import { hasSubmenu } from './hasSubmenu';
 import { menuShapeOf } from './menuShapeOf';
-import { MenuSubmenuPanel } from './MenuSubmenuPanel';
 import {
   focusFirstMenuItem,
   isMenuNavigationKey,
@@ -26,11 +25,6 @@ type Props = {
 
 type RowParams = {
   readonly entry: MenuItemEntry;
-};
-
-type Expanded = {
-  readonly key: string;
-  readonly anchor: HTMLElement;
 };
 
 export const MenuList = ({ label, entries, onClose, isAutoFocus = true }: Props) => {
@@ -78,7 +72,7 @@ export const MenuList = ({ label, entries, onClose, isAutoFocus = true }: Props)
     if (hasSubmenu({ entry })) {
       const anchor = rowRefs.current.get(entry.key);
       if (anchor !== undefined) {
-        setExpanded({ key: entry.key, anchor });
+        setExpanded({ key: entry.key, anchor, child: null });
       }
       return;
     }
@@ -96,6 +90,14 @@ export const MenuList = ({ label, entries, onClose, isAutoFocus = true }: Props)
     if (key !== null) {
       rowRefs.current.get(key)?.focus();
     }
+  };
+
+  const closeChildChoices = () => {
+    if (expanded === null) {
+      return;
+    }
+    setExpanded({ ...expanded, child: null });
+    expanded.child?.anchor.focus();
   };
 
   const onListKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
@@ -245,21 +247,13 @@ export const MenuList = ({ label, entries, onClose, isAutoFocus = true }: Props)
         }
         return renderRow({ entry });
       })}
-      {expanded !== null && expandedEntry !== null && expandedEntry.children != null ? (
-        <MenuSubmenuPanel
-          label={expandedEntry.label}
-          items={expandedEntry.children}
-          anchor={expanded.anchor}
-          onChoose={(child) => void select({ entry: child, choice: null })}
-          onBack={closeSubmenu}
-        />
-      ) : null}
-      {expanded !== null && expandedEntry !== null && expandedEntry.choices != null ? (
-        <MenuChoicePanel
-          label={expandedEntry.label}
-          choices={expandedEntry.choices}
-          anchor={expanded.anchor}
-          onChoose={(choice) => void select({ entry: expandedEntry, choice })}
+      {expanded !== null && expandedEntry !== null ? (
+        <MenuExpandedPanels
+          expanded={expanded}
+          entry={expandedEntry}
+          onSelect={(params) => void select(params)}
+          onOpenChild={(child) => setExpanded({ ...expanded, child })}
+          onCloseChild={closeChildChoices}
           onBack={closeSubmenu}
           onClose={onClose}
         />

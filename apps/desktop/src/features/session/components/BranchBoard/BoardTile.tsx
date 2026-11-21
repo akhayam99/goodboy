@@ -52,6 +52,7 @@ const BoardTileView = ({ rowId }: Props) => {
   return (
     <div
       data-board-row={rowId}
+      data-row={`board-mount-${rowId}`}
       onContextMenu={menu.onContextMenu}
       onKeyDown={menu.onKeyDown}
       className={cn(

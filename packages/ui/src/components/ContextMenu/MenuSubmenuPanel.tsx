@@ -2,6 +2,7 @@ import { useLayoutEffect, useRef, useState, type KeyboardEvent } from 'react';
 import { createPortal } from 'react-dom';
 import { cn } from '../../cn';
 import { FLOATING_SURFACE } from '../../floatingSurface';
+import { hasSubmenu } from './hasSubmenu';
 import { MenuRow } from './MenuRow';
 import { menuShapeOf } from './menuShapeOf';
 import { focusFirstMenuItem, isMenuNavigationKey, moveMenuFocus } from './menuKeys';
@@ -11,11 +12,20 @@ const PANEL_WIDTH = 200;
 const EDGE = 8;
 const GAP = 4;
 
+type RowParams = {
+  readonly entry: MenuItemEntry;
+};
+
+type ChooseParams = RowParams & {
+  readonly anchor: HTMLElement;
+};
+
 type Props = {
   readonly label: string;
   readonly items: ReadonlyArray<MenuItemEntry>;
   readonly anchor: HTMLElement;
-  readonly onChoose: (entry: MenuItemEntry) => void;
+  readonly expandedKey: string | null;
+  readonly onChoose: (params: ChooseParams) => void;
   readonly onBack: () => void;
 };
 
@@ -28,10 +38,29 @@ type Position = {
   readonly top: number;
 };
 
-export const MenuSubmenuPanel = ({ label, items, anchor, onChoose, onBack }: Props) => {
+export const MenuSubmenuPanel = ({
+  label,
+  items,
+  anchor,
+  expandedKey,
+  onChoose,
+  onBack,
+}: Props) => {
   const panelRef = useRef<HTMLDivElement>(null);
+  const rowRefs = useRef(new Map<string, HTMLButtonElement>());
   const [position, setPosition] = useState<Position | null>(null);
   const { hasIcons } = menuShapeOf({ entries: items });
+
+  const choose = ({ entry }: RowParams) => {
+    if (entry.blockedReason != null || entry.isDisabled === true) {
+      return;
+    }
+    const row = rowRefs.current.get(entry.key);
+    if (row === undefined) {
+      return;
+    }
+    onChoose({ entry, anchor: row });
+  };
 
   useLayoutEffect(() => {
     const rect = anchor.getBoundingClientRect();
@@ -91,15 +120,23 @@ export const MenuSubmenuPanel = ({ label, items, anchor, onChoose, onBack }: Pro
           key={item.key}
           entry={item}
           hasIcon={hasIcons}
-          isExpanded={false}
-          onActivate={() => {
-            if (item.blockedReason != null || item.isDisabled === true) {
+          isExpanded={expandedKey === item.key}
+          rowRef={(node) => {
+            if (node === null) {
+              rowRefs.current.delete(item.key);
               return;
             }
-            onChoose(item);
+            rowRefs.current.set(item.key, node);
           }}
+          onActivate={() => choose({ entry: item })}
           onHover={() => undefined}
-          onKeyDown={() => undefined}
+          onKeyDown={(event) => {
+            if (event.key === 'ArrowRight' && hasSubmenu({ entry: item })) {
+              event.preventDefault();
+              event.stopPropagation();
+              choose({ entry: item });
+            }
+          }}
         />
       ))}
     </div>,
