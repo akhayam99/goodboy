@@ -24,6 +24,12 @@ describe('task list view storage', () => {
     expect(readTaskListView({ workspaceId: otherWorkspaceId })).toEqual(DEFAULT_TASK_LIST_VIEW);
   });
 
+  it('still reads a grouping saved before the group was named Project', () => {
+    localStorage.setItem(KEY, JSON.stringify({ scope: 'all', groupBy: 'project' }));
+
+    expect(readTaskListView({ workspaceId })).toEqual({ scope: 'all', groupBy: 'project' });
+  });
+
   it('falls back on a corrupted value instead of throwing', () => {
     localStorage.setItem(KEY, JSON.stringify({ scope: 'mine', groupBy: 'color' }));
 

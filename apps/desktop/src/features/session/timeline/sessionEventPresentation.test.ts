@@ -199,7 +199,7 @@ describe('sessionEventLabel as text', () => {
           }),
         }),
       }),
-    ).toBe('Folder added on goodboy/untitled');
+    ).toBe('Project added on goodboy/untitled');
   });
 
   it('names the detached project and whether the worktree survived', () => {

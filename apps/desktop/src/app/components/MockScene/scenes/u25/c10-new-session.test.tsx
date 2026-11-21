@@ -134,7 +134,7 @@ describe('the c10 New session scenes', () => {
       .getState()
       .projects.filter((project) => project.workspaceId === WORKSPACE_ID);
     expect(workspaceProjects).toHaveLength(50);
-    const search = screen.getByRole('combobox', { name: 'Search folders' });
+    const search = screen.getByRole('combobox', { name: 'Search projects' });
     expect(search).toHaveProperty('value', 'pay');
     const listbox = screen.getByRole('listbox', { name: 'Projects' });
     expect(within(listbox).getAllByRole('option')).toHaveLength(1);

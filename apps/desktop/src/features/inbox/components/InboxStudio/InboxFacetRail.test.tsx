@@ -158,7 +158,7 @@ describe('InboxFacetRail', () => {
       />,
     );
 
-    fireEvent.click(within(section('Folder')).getByRole('button', { name: /ledger-core/ }));
+    fireEvent.click(within(section('Projects')).getByRole('button', { name: /ledger-core/ }));
 
     expect(onFiltersChange).toHaveBeenCalledWith({ ...NO_INBOX_FILTERS, project: 'ledger' });
   });
@@ -183,7 +183,7 @@ describe('InboxFacetRail', () => {
       />,
     );
 
-    const project = section('Folder');
+    const project = section('Projects');
     expect(within(project).getByRole('button', { name: /ledger-core/ })).toBeDefined();
     expect(within(project).getByRole('button', { name: /payments-api/ })).toBeDefined();
     expect(within(project).queryByRole('button', { name: /notify-relay/ })).toBeNull();
@@ -215,7 +215,7 @@ describe('InboxFacetRail', () => {
       />,
     );
 
-    expect(within(section('Folder')).queryByRole('button', { name: /empty/ })).toBeNull();
+    expect(within(section('Projects')).queryByRole('button', { name: /empty/ })).toBeNull();
   });
 
   it('leaves the project section out when no item in view maps to a project', () => {
@@ -237,7 +237,7 @@ describe('InboxFacetRail', () => {
     );
 
     const rail = screen.getByRole('navigation', { name: 'Filter tasks' });
-    expect(within(rail).queryByRole('group', { name: 'Folder' })).toBeNull();
+    expect(within(rail).queryByRole('group', { name: 'Projects' })).toBeNull();
     expect(within(rail).queryByRole('button', { name: /empty/ })).toBeNull();
   });
 
@@ -245,7 +245,7 @@ describe('InboxFacetRail', () => {
     renderRail();
     expect(
       within(screen.getByRole('navigation', { name: 'Filter tasks' })).queryByRole('group', {
-        name: 'Folder',
+        name: 'Projects',
       }),
     ).toBeNull();
   });
@@ -282,7 +282,7 @@ describe('InboxFacetRail', () => {
 
     const projectRegion = () =>
       within(screen.getByRole('navigation', { name: 'Filter tasks' })).queryByRole('group', {
-        name: 'Folder',
+        name: 'Projects',
       });
 
     const withLedger = { ...NO_INBOX_FILTERS, project: 'ledger' as ProjectId };
@@ -297,7 +297,7 @@ describe('InboxFacetRail', () => {
       renderScoped({ connected: ['linear', 'sentry'], filters: withLedger });
       expect(
         within(projectRegion() as HTMLElement).getByText(
-          "Folder filter applies to Sentry. Linear issues aren't tied to a folder, so they stay listed.",
+          "Project filter applies to Sentry. Linear issues aren't tied to a project, so they stay listed.",
         ),
       ).toBeDefined();
     });
@@ -312,7 +312,7 @@ describe('InboxFacetRail', () => {
       renderScoped({ connected: ['github', 'jira'], filters: withLedger });
       expect(
         screen.getByText(
-          "Folder filter applies to GitHub. Jira issues aren't tied to a folder, so they stay listed.",
+          "Project filter applies to GitHub. Jira issues aren't tied to a project, so they stay listed.",
         ),
       ).toBeDefined();
     });

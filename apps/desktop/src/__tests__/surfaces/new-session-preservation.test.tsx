@@ -105,7 +105,10 @@ describe('New session draft and the New forms', () => {
   it('keeps folders an optional override behind Where, searchable', async () => {
     await mountScene({ name: 'c10-start-projects' });
 
-    expect(screen.getByRole('combobox', { name: 'Search folders' })).toHaveProperty('value', 'pay');
+    expect(screen.getByRole('combobox', { name: 'Search projects' })).toHaveProperty(
+      'value',
+      'pay',
+    );
     expect(screen.getByRole('combobox', { name: 'Projects' }).textContent).toContain('2');
   });
 
