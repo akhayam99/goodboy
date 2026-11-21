@@ -1,4 +1,4 @@
-import type { SessionId } from '@goodboy/types';
+import type { MountId, SessionId } from '@goodboy/types';
 import type { AppState } from '../../types';
 import { doorMountPath } from './doorMountPath';
 import { resolverThread } from './resolverThread';
@@ -41,6 +41,25 @@ const changesBranchOf = ({ state, sessionId }: ThreadParams): string | null =>
     ? doorMountPath({ state, sessionId })
     : null;
 
+type BranchMount = {
+  readonly mountId: MountId | null;
+  readonly mountPath: string | null;
+};
+
+const branchMountOf = ({ state, sessionId }: ThreadParams): BranchMount => {
+  const mounts = state.sessionProjectMounts?.[sessionId] ?? [];
+  const path = state.diffMountPath[sessionId] ?? null;
+  const pageMountId = state.diffMountId[sessionId] ?? null;
+  const mount =
+    pageMountId === null
+      ? mounts.find((candidate) => path !== null && candidate.worktreePath === path)
+      : mounts.find((candidate) => candidate.mountId === pageMountId);
+  return {
+    mountId: pageMountId ?? mount?.mountId ?? null,
+    mountPath: mount?.worktreePath ?? path,
+  };
+};
+
 const captureTarget = ({ state, sessionId, lens }: TargetParams): SessionTarget | null => {
   const agentId = state.selectedAgentId[sessionId] ?? null;
   if (lens === 'review' && agentId !== null) {
@@ -66,13 +85,7 @@ const captureTarget = ({ state, sessionId, lens }: TargetParams): SessionTarget 
     return issueNumber === null ? null : { kind: 'github-issue', issueNumber };
   }
   if (lens === 'branch') {
-    const mountPath = state.diffMountPath[sessionId] ?? null;
-    const mountId =
-      mountPath === null
-        ? null
-        : ((state.sessionProjectMounts?.[sessionId] ?? []).find(
-            (mount) => mount.worktreePath === mountPath,
-          )?.mountId ?? null);
+    const { mountId, mountPath } = branchMountOf({ state, sessionId });
     return {
       kind: 'branch',
       mountId,

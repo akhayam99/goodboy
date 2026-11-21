@@ -12,6 +12,7 @@ import {
   type Place,
   type SetFn,
 } from './types';
+import { withKnownMount } from './withKnownMount';
 
 type SwitchParams = {
   readonly state: ReturnType<GetFn>;
@@ -31,7 +32,8 @@ const isQuestionSwitch = ({ state, place }: SwitchParams): boolean => {
 export const navigate = (set: SetFn, get: GetFn) => {
   return ({ to, mode, drawer = null }: NavigateParams): void => {
     const state = get();
-    const canonical = canonicalLocation({ state, request: to });
+    const request = to.at === 'agent' ? to : withKnownMount({ state, place: to });
+    const canonical = canonicalLocation({ state, request });
     const resolvedMode =
       mode ?? (isQuestionSwitch({ state, place: canonical.place }) ? 'replace' : 'push');
     const landing = placeWithThread({

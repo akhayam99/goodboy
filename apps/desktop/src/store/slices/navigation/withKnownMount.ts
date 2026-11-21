@@ -1,61 +1,53 @@
-import type { SessionProjectMount } from '@goodboy/types';
 import type { AppState } from '../../types';
-import type { Location, SessionTarget } from './types';
+import type { Place, SessionTarget } from './types';
 
 type Params = {
   readonly state: AppState;
-  readonly location: Location;
+  readonly place: Place;
 };
 
 type MountTarget = Extract<SessionTarget, { readonly kind: 'diff' | 'branch' }>;
 
-type ByIdParams = {
-  readonly mounts: ReadonlyArray<SessionProjectMount>;
+type KnownParams = {
+  readonly state: AppState;
+  readonly place: Extract<Place, { readonly at: 'session' }>;
   readonly target: MountTarget;
 };
 
-const mountById = ({ mounts, target }: ByIdParams): SessionProjectMount | null => {
-  const mountId = target.kind === 'branch' ? target.mountId : null;
-  if (mountId == null) {
-    return null;
+const knownTarget = ({ state, place, target }: KnownParams): MountTarget => {
+  const mounts = state.sessionProjectMounts?.[place.sessionId] ?? [];
+  if (mounts.length === 0) {
+    return target;
   }
-  return mounts.find((mount) => mount.mountId === mountId) ?? null;
+  if (target.kind === 'branch' && target.mountId !== null) {
+    const { mountId } = target;
+    const known = mounts.find((mount) => mount.mountId === mountId) ?? null;
+    if (known === null) {
+      return { ...target, mountId: null, mountPath: null, focus: null };
+    }
+    return known.worktreePath === target.mountPath
+      ? target
+      : { ...target, mountPath: known.worktreePath };
+  }
+  const { mountPath } = target;
+  if (mountPath === null) {
+    return target;
+  }
+  const atPath = mounts.find((mount) => mount.worktreePath === mountPath) ?? null;
+  if (atPath === null) {
+    return { ...target, mountPath: null, focus: null };
+  }
+  return target.kind === 'branch' ? { ...target, mountId: atPath.mountId } : target;
 };
 
-export const withKnownMount = ({ state, location }: Params): Location => {
-  const { place } = location;
+export const withKnownMount = ({ state, place }: Params): Place => {
   if (place.at !== 'session') {
-    return location;
+    return place;
   }
   const { target } = place.view;
   if (target?.kind !== 'diff' && target?.kind !== 'branch') {
-    return location;
+    return place;
   }
-  const mounts = state.sessionProjectMounts?.[place.sessionId] ?? [];
-  const known = mountById({ mounts, target });
-  if (known !== null && known.worktreePath !== target.mountPath) {
-    return {
-      ...location,
-      place: {
-        ...place,
-        view: { ...place.view, target: { ...target, mountPath: known.worktreePath } },
-      },
-    };
-  }
-  const { mountPath } = target;
-  if (
-    known !== null ||
-    mountPath === null ||
-    mounts.length === 0 ||
-    mounts.some((mount) => mount.worktreePath === mountPath)
-  ) {
-    return location;
-  }
-  return {
-    ...location,
-    place: {
-      ...place,
-      view: { ...place.view, target: { ...target, mountPath: null, focus: null } },
-    },
-  };
+  const known = knownTarget({ state, place, target });
+  return known === target ? place : { ...place, view: { ...place.view, target: known } };
 };

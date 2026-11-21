@@ -45,7 +45,8 @@ export const restoreLocation = (set: SetFn, get: GetFn) => {
       }
     }
     const state = get();
-    const kept = withKnownMount({ state, location: placeStillThere({ get, location: cleaned }) });
+    const there = placeStillThere({ get, location: cleaned });
+    const kept: Location = { ...there, place: withKnownMount({ state, place: there.place }) };
     const canonical = canonicalLocation({ state, request: kept.place });
     const next: Location = {
       ...kept,

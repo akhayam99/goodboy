@@ -22,7 +22,7 @@ export const goHistory = ({ set, get, delta }: Params): boolean => {
     navigation: { ...current.navigation, [stackKey(current)]: { ...stack, index } },
   }));
   const drawer = entry.focus.drawer ?? keepToolDrawer({ state, place: entry.place });
-  const known = withKnownMount({ state, location: entry });
+  const known = { ...entry, place: withKnownMount({ state, place: entry.place }) };
   applyLocation({
     set,
     get,
