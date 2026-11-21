@@ -127,7 +127,7 @@ describe('plan document drawer header', () => {
     const names = Array.from(titleRow?.querySelectorAll('button') ?? []).map((button) =>
       button.getAttribute('aria-label'),
     );
-    expect(names).toEqual(['Copy markdown', 'Open page', 'Close']);
+    expect(names).toEqual(['Copy markdown', 'Open full page', 'Close']);
     expect(screen.queryByRole('button', { name: 'Expand' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Collapse' })).toBeNull();
     expect(screen.queryByRole('menuitem', { name: 'Expand' })).toBeNull();
@@ -190,7 +190,7 @@ describe('plan document drawer header', () => {
     renderDrawer();
     expect(navigations).toEqual([]);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Open page' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Open full page' }));
 
     expect(navigations).toEqual([
       {
@@ -904,5 +904,19 @@ describe('editing the plan by hand in the drawer', () => {
       'The first line is the plan title. Add one before saving.',
     );
     expect(updatePlanBody).not.toHaveBeenCalled();
+  });
+});
+
+describe('an artifact that is gone', () => {
+  it('shows the gone state in the panel, with a way out', () => {
+    seedPlanDrawer();
+    useAppStore.setState({ sessionPlans: {}, sessionArtifacts: {} });
+    const onClose = vi.fn();
+    renderDrawer({ onClose });
+
+    const frame = screen.getByRole('region', { name: 'Artifact' });
+    within(frame).getByText('This artifact is no longer in this session');
+    fireEvent.click(within(frame).getByRole('button', { name: 'Close' }));
+    expect(onClose).toHaveBeenCalledOnce();
   });
 });

@@ -3,6 +3,7 @@ import type { ResolvedFact } from '../../../detail-fields/factTypes';
 import { RecordFrameContext } from '../RecordFrameContext';
 import { RecordProperties } from '../RecordProperties';
 import { X } from '@goodboy/ui/icons';
+import { NAMES } from '../../../utils/names';
 import {
   Button,
   ICON_SIZE,
@@ -107,7 +108,7 @@ export const RecordHeader = ({
         {frame?.primary ?? null}
         {onOpenFull === null ? null : (
           <Button variant="ghost" size="sm" onClick={onOpenFull}>
-            Open
+            {NAMES.openFullPage}
           </Button>
         )}
         <ObjectOverflowMenu
@@ -122,7 +123,7 @@ export const RecordHeader = ({
             icon={X}
             variant="ghost"
             iconSize={ICON_SIZE.control}
-            label="Close the item"
+            label={NAMES.close}
             onClick={frame.onClose}
           />
         ) : null}

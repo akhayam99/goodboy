@@ -1,6 +1,6 @@
 {
   "apps/desktop/src/App.tsx": 261,
-  "apps/desktop/src/features/actions/kinds/artifact.ts": 688,
+  "apps/desktop/src/features/actions/kinds/artifact.ts": 680,
   "apps/desktop/src/features/actions/kinds/reviewComment.ts": 617,
   "apps/desktop/src/features/artifacts/components/ArtifactCreationPane/index.tsx": 330,
   "apps/desktop/src/features/artifacts/components/ArtifactShell/ArtifactDocumentShell.tsx": 291,
@@ -33,7 +33,7 @@
   "apps/desktop/src/features/search/components/SearchMode/index.tsx": 307,
   "apps/desktop/src/features/session/agent-kind.ts": 724,
   "apps/desktop/src/features/session/components/ContextDrawer/DecisionsSection.tsx": 377,
-  "apps/desktop/src/features/session/components/ContextDrawer/index.tsx": 266,
+  "apps/desktop/src/features/session/components/ContextDrawer/index.tsx": 265,
   "apps/desktop/src/features/session/components/SessionOverviewPane/LinkWorkPicker.tsx": 302,
   "apps/desktop/src/features/session/timeline/buildTimelineGroups.ts": 648,
   "apps/desktop/src/features/settings/components/GuideStudio/guideChapters.ts": 844,

@@ -17,6 +17,7 @@ import { loadFlowSources, type FlowSource } from '../../workspaceSettings/source
 import { FlowPlanPreview } from './FlowPlanPreview';
 import { FlowSourcePicker } from './FlowSourcePicker';
 import { workspacePageEntry } from './workspacePages';
+import { NAMES } from '../../../../shared/utils/names';
 
 export type FlowMode = 'copy' | 'restore';
 
@@ -161,7 +162,7 @@ export const WorkspaceSettingsFlow = ({ workspaceId, scope, mode, onClose }: Pro
           <RotateCcw size={ICON_SIZE.row} aria-hidden />
           Undo
         </Button>
-        <IconButton icon={X} label="Dismiss" variant="ghost" onClick={onClose} />
+        <IconButton icon={X} label={NAMES.dismissNotice} variant="ghost" onClick={onClose} />
       </div>
     );
   }

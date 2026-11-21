@@ -2,6 +2,7 @@ import { DockButton } from '../../../../shared/components/DockButton';
 import type { TerminalTab } from '../../../../shared/types/terminal';
 import { dockEmptyTerminalPage } from '../../dockEmptyTerminalPage';
 import { dockTerminalPage } from '../../dockTerminalPage';
+import { NAMES } from '../../../../shared/utils/names';
 
 type Props = {
   readonly selected: TerminalTab | null;
@@ -9,7 +10,7 @@ type Props = {
 
 export const DockTerminalButton = ({ selected }: Props) => (
   <DockButton
-    tooltip="Dock the terminal beside the page"
+    tooltip={NAMES.dockBesideThePage}
     onDock={() => {
       if (selected === null) {
         dockEmptyTerminalPage({});

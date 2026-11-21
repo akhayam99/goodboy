@@ -38,13 +38,7 @@ afterEach(cleanup);
 
 describe('the plan inside Ask', () => {
   it('opens the plan in its drawer and never goes to the Artifacts page', () => {
-    render(
-      <AskPlanView
-        sessionId={PLAN_FIXTURE_SESSION}
-        artifactId={PLAN_FIXTURE_ID}
-        onBack={() => undefined}
-      />,
-    );
+    render(<AskPlanView sessionId={PLAN_FIXTURE_SESSION} artifactId={PLAN_FIXTURE_ID} />);
 
     expect(screen.queryByRole('button', { name: 'Open in Artifacts' })).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Open plan' }));
@@ -69,13 +63,13 @@ const askColumn = ({ isParked, isPlanShown, onClose, onBack }: ColumnParams) => 
   <DrawerColumn
     main={<div>Tasks</div>}
     drawer={
-      <DrawerFrame title="Ask" onClose={onClose}>
+      <DrawerFrame
+        title="Ask"
+        {...(isPlanShown && { back: { label: 'Back to answer', onBack } })}
+        onClose={onClose}
+      >
         {isPlanShown ? (
-          <AskPlanView
-            sessionId={PLAN_FIXTURE_SESSION}
-            artifactId={PLAN_FIXTURE_ID}
-            onBack={onBack}
-          />
+          <AskPlanView sessionId={PLAN_FIXTURE_SESSION} artifactId={PLAN_FIXTURE_ID} />
         ) : (
           <p>ledger-core thread</p>
         )}

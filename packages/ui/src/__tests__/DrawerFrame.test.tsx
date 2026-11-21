@@ -108,20 +108,36 @@ describe('DrawerFrame', () => {
     expect(document.activeElement).toBe(trigger);
   });
 
-  it('names its close button Close unless a drawer asks for another label', () => {
-    const view = render(
-      <DrawerFrame title="Drafts" onClose={vi.fn()}>
+  it('names its close button Close whatever the drawer holds', () => {
+    render(
+      <DrawerFrame
+        title="Drafts"
+        back={{ label: 'Back to Ask', onBack: vi.fn() }}
+        onClose={vi.fn()}
+      >
         <p>body</p>
       </DrawerFrame>,
     );
-    expect(screen.getByRole('button', { name: 'Close' })).toBeDefined();
 
-    view.rerender(
-      <DrawerFrame title="Drafts" closeLabel="Back to current" onClose={vi.fn()}>
+    expect(screen.getByRole('button', { name: 'Close' })).toBeDefined();
+  });
+
+  it('closes with the X and steps back with the arrow and with Escape', () => {
+    const onBack = vi.fn();
+    const onClose = vi.fn();
+    render(
+      <DrawerFrame title="Drafts" back={{ label: 'Back to Ask', onBack }} onClose={onClose}>
         <p>body</p>
       </DrawerFrame>,
     );
-    expect(screen.getByRole('button', { name: 'Back to current' })).toBeDefined();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Back to Ask' }));
+    fireEvent.keyDown(window, { key: 'Escape', code: 'Escape' });
+    expect(onBack).toHaveBeenCalledTimes(2);
+    expect(onClose).not.toHaveBeenCalled();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Close' }));
+    expect(onClose).toHaveBeenCalledTimes(1);
   });
 
   it('makes the close button a 28px target', () => {

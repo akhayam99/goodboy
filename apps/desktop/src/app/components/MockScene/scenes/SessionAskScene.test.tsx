@@ -168,7 +168,8 @@ describe('the session Ask scene', () => {
   it('opens a plan inside Ask under Back to answer, and Esc goes back', async () => {
     await renderState('plan');
     const plan = await screen.findByTestId('ask-plan');
-    expect(within(plan).getByText('Back to answer')).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Back to answer' })).toBeDefined();
+    expect(within(plan).queryByText('Back to answer')).toBeNull();
     expect(screen.queryByPlaceholderText('Ask about this session…')).toBeNull();
     fireEvent.keyDown(document, { key: 'Escape' });
     expect(await screen.findByTestId('ask-answer')).toBeDefined();

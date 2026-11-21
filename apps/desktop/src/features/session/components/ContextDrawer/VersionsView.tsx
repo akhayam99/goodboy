@@ -1,6 +1,5 @@
 import { useEffect } from 'react';
-import { ChevronLeft } from '@goodboy/ui/icons';
-import { Button, ICON_SIZE } from '@goodboy/ui';
+import { DrawerBackLink, type DrawerBack } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { useAppStore, useSlotHistory } from '../../../../store';
 
@@ -10,11 +9,11 @@ import type { SlotKey as ContextSlotKey } from '@goodboy/core/context';
 type Props = {
   readonly sessionId: SessionId;
   readonly slotKey: ContextSlotKey;
-  readonly backLabel: string;
+  readonly back: DrawerBack | undefined;
   readonly onBack: () => void;
 };
 
-export const VersionsView = ({ sessionId, slotKey, backLabel, onBack }: Props) => {
+export const VersionsView = ({ sessionId, slotKey, back, onBack }: Props) => {
   const entries = useSlotHistory(sessionId, slotKey);
   const loadSlotHistory = useAppStore((state) => state.loadSlotHistory);
   const upsertSessionSlot = useAppStore((state) => state.upsertSessionSlot);
@@ -25,10 +24,7 @@ export const VersionsView = ({ sessionId, slotKey, backLabel, onBack }: Props) =
 
   return (
     <div className="flex flex-col gap-3">
-      <Button variant="ghost" size="sm" className="self-start" onClick={onBack}>
-        <ChevronLeft size={ICON_SIZE.row} aria-hidden />
-        {backLabel}
-      </Button>
+      {back === undefined ? null : <DrawerBackLink back={back} />}
       <SlotHistoryPanel
         renderAsMarkdown={slotKey !== 'goal'}
         entries={entries}

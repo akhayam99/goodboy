@@ -43,7 +43,7 @@ describe('Context links from the log', () => {
     };
     const { result } = renderHook(() => useTimelineOpen({ sessionId: SESSION_ID }));
     const target = result.current({ entry });
-    expect(target?.label).toBe('Open decisions');
+    expect(target?.label).toBe('Open in Context');
     target?.open();
     expect(store.getState().activeLens[SESSION_ID] ?? null).toBe('context');
     expect(store.getState().drawer).toBeNull();

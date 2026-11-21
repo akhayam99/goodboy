@@ -20,6 +20,7 @@ import { ICON_SIZE } from '../iconSize';
 export type DrawerBack = {
   readonly label: string;
   readonly onBack: () => void;
+  readonly isSubview?: boolean;
 };
 
 export type DrawerPage = {
@@ -39,8 +40,7 @@ export type DrawerFrameProps = {
   readonly menu?: ReactNode;
   readonly page?: DrawerPage;
   readonly toolbar?: ReactNode;
-  readonly back?: DrawerBack;
-  readonly closeLabel?: string;
+  readonly back?: DrawerBack | undefined;
   readonly onClose: () => void;
   readonly dock?: ReactNode;
   readonly scroll?: 'frame' | 'self';
@@ -92,7 +92,6 @@ export const DrawerFrame = ({
   page,
   toolbar,
   back,
-  closeLabel = 'Close',
   onClose,
   dock,
   scroll = 'frame',
@@ -105,6 +104,8 @@ export const DrawerFrame = ({
   const hasToolbar = toolbar != null;
   const backChip = useContext(DrawerBackChipContext);
   const hasBackChip = backChip !== null && !isHeaderless;
+  const isChipYielding = hasBackChip && back?.isSubview !== true;
+  const stepBack = back === undefined || isHeaderless || isChipYielding ? undefined : back.onBack;
 
   useEscapeLayer(() => {
     const active = document.activeElement;
@@ -118,7 +119,7 @@ export const DrawerFrame = ({
       active.blur();
       return;
     }
-    onClose();
+    (stepBack ?? onClose)();
   });
 
   useEffect(() => {
@@ -172,14 +173,14 @@ export const DrawerFrame = ({
         {action}
         {menu}
         <DrawerHeadKeys page={page} />
-        <IconButton icon={X} label={closeLabel} variant="ghost" onClick={onClose} />
+        <IconButton icon={X} label="Close" variant="ghost" onClick={onClose} />
       </div>
     </>
   );
 
   const hasStepAside = !isHeaderless && (meta != null || hasToolbar);
   const backLink =
-    back === undefined || isHeaderless || hasBackChip ? null : <DrawerBackLink back={back} />;
+    back === undefined || stepBack === undefined ? null : <DrawerBackLink back={back} />;
   const content = (
     <DrawerBackChipContext.Provider value={null}>{children}</DrawerBackChipContext.Provider>
   );

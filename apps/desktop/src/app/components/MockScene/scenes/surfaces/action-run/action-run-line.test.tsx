@@ -29,12 +29,12 @@ describe('the action run line scenes', () => {
     expect(screen.queryByRole('alert')).toBeNull();
   });
 
-  it('keeps the done line in place with Dismiss', () => {
+  it('keeps the done line in place with Dismiss notice', () => {
     const Scene = ACTION_RUN_LINE_SCENES['action-run-done-light'];
     render(<Scene />);
 
     expect(screen.getByRole('status').textContent).toContain('Merged #318 into main.');
-    expect(screen.getAllByRole('button', { name: 'Dismiss' })).toHaveLength(1);
+    expect(screen.getAllByRole('button', { name: 'Dismiss notice' })).toHaveLength(1);
   });
 
   it('shows the failure once, in place, with Retry', () => {

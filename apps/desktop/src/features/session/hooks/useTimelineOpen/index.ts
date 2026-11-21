@@ -11,6 +11,8 @@ import { selectWritableMounts } from '../../../../store/slices/project-mounts/se
 import type { LensKind } from '../../../../store/slices/session-view/types';
 import type { TimelineStreamEntry } from '../../timeline/buildTimelineStream';
 import { jobMountPathOf } from '../../timeline/jobMountPathOf';
+import { NAMES } from '../../../../shared/utils/names';
+import { openArtifactAnywhere } from '../../../plans/openArtifactAnywhere';
 import { ciFixRoleOf } from '../../../branch/checks/ciFixRole';
 import { ciFixMountOf } from './ciFixMountOf';
 
@@ -27,30 +29,30 @@ const EVENT_TARGET: Record<SessionEventKind, EventTarget | null> = {
   branch_restored: { lens: 'files', label: 'Open in Changes' },
   issue_linked: { lens: null, label: 'Open overview' },
   issue_unlinked: { lens: null, label: 'Re-link' },
-  pr_created: { lens: 'pr', label: 'Open pull request' },
-  pr_discovered: { lens: 'pr', label: 'Open pull request' },
-  pr_ready: { lens: 'pr', label: 'Open pull request' },
-  pr_approved: { lens: 'pr', label: 'Open pull request' },
-  pr_merged: { lens: 'pr', label: 'Open pull request' },
-  pr_closed: { lens: 'pr', label: 'Open pull request' },
-  workflow_started: { lens: 'workflows', label: 'Open runs' },
-  workflow_discarded: { lens: 'workflows', label: 'Open runs' },
-  workflow_restored: { lens: 'workflows', label: 'Open runs' },
-  workflow_closed: { lens: 'workflows', label: 'Open runs' },
-  workflow_deleted: { lens: 'workflows', label: 'Open runs' },
-  decisions_changed: { lens: null, label: 'Open decisions' },
+  pr_created: { lens: 'pr', label: NAMES.openPullRequest },
+  pr_discovered: { lens: 'pr', label: NAMES.openPullRequest },
+  pr_ready: { lens: 'pr', label: NAMES.openPullRequest },
+  pr_approved: { lens: 'pr', label: NAMES.openPullRequest },
+  pr_merged: { lens: 'pr', label: NAMES.openPullRequest },
+  pr_closed: { lens: 'pr', label: NAMES.openPullRequest },
+  workflow_started: { lens: 'workflows', label: NAMES.openInRuns },
+  workflow_discarded: { lens: 'workflows', label: NAMES.openInRuns },
+  workflow_restored: { lens: 'workflows', label: NAMES.openInRuns },
+  workflow_closed: { lens: 'workflows', label: NAMES.openInRuns },
+  workflow_deleted: { lens: 'workflows', label: NAMES.openInRuns },
+  decisions_changed: { lens: null, label: NAMES.openInContext },
   project_materialized: { lens: 'files', label: 'Open in Changes' },
   project_materialization_refused: { lens: null, label: 'Open overview' },
   project_materialization_proposed: { lens: null, label: 'Open overview' },
   project_materialization_dismissed: null,
   project_detached: null,
   external_task_created: { lens: null, label: 'Open overview' },
-  rebase_requested: { lens: 'workflows', label: 'Open runs' },
+  rebase_requested: { lens: 'workflows', label: NAMES.openInRuns },
   session_archived: null,
   session_restored: null,
   write_destination_changed: { lens: 'files', label: 'Open in Changes' },
-  question_dismissed: { lens: 'questions', label: 'Open questions' },
-  question_restored: { lens: 'questions', label: 'Open questions' },
+  question_dismissed: { lens: 'questions', label: NAMES.openInQuestions },
+  question_restored: { lens: 'questions', label: NAMES.openInQuestions },
   history_rewritten: { lens: 'branch', label: 'Open commits' },
   history_pushed: { lens: 'branch', label: 'Open commits' },
   history_stopped: { lens: 'branch', label: 'Open commits' },
@@ -158,11 +160,7 @@ export const useTimelineOpen = ({
         return {
           label: 'Open plan',
           open: () => {
-            store.openDrawer({
-              kind: 'artifact-document',
-              sessionId,
-              payload: { artifactId: entry.plan.id, revision: null },
-            });
+            openArtifactAnywhere({ sessionId, artifactId: entry.plan.id });
           },
         };
       }
@@ -171,11 +169,7 @@ export const useTimelineOpen = ({
         return {
           label: artifact.kind === 'report' ? 'Open report' : 'Open wireframe',
           open: () => {
-            store.openDrawer({
-              kind: 'artifact-document',
-              sessionId,
-              payload: { artifactId: artifact.id, revision: null },
-            });
+            openArtifactAnywhere({ sessionId, artifactId: artifact.id });
           },
         };
       }
@@ -281,12 +275,12 @@ export const useTimelineOpen = ({
       }
       if (entry.kind === 'learning') {
         return {
-          label: 'Open explanations',
+          label: NAMES.openInContext,
           open: () => store.openContextDrawer({ sessionId, section: 'explanations' }),
         };
       }
       return {
-        label: 'Open questions',
+        label: NAMES.openInQuestions,
         open: () => store.navigate({ to: sessionPlace({ sessionId, lens: 'questions' }) }),
       };
     },

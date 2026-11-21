@@ -1,8 +1,11 @@
 import type { SearchIndexStatus } from '@goodboy/types';
 
+export type ViewFindScope = 'view' | 'panel';
+
 export type ViewFind = {
   readonly query: string;
   readonly target: string | null;
+  readonly scope: ViewFindScope;
   readonly startedAt: number;
   readonly steps: number;
 };

@@ -47,7 +47,7 @@ describe('NudgeCard', () => {
   it('fires onDismiss when dismiss button clicked', () => {
     const onDismiss = vi.fn();
     render(<NudgeCard severity="success" title="ok" ariaLabel="o" onDismiss={onDismiss} />);
-    fireEvent.click(screen.getByRole('button', { name: /dismiss/i }));
+    fireEvent.click(screen.getByRole('button', { name: 'Dismiss suggestion' }));
     expect(onDismiss).toHaveBeenCalledOnce();
   });
 });

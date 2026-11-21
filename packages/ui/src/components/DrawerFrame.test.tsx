@@ -15,7 +15,7 @@ const headButtons = (): ReadonlyArray<string | null> =>
 describe('DrawerFrame head', () => {
   afterEach(cleanup);
 
-  it('draws Open page between the action and Close, and presses it', () => {
+  it('draws Open full page between the action and Close, and presses it', () => {
     const onOpen = vi.fn();
     render(
       <DrawerFrame
@@ -28,8 +28,8 @@ describe('DrawerFrame head', () => {
       </DrawerFrame>,
     );
 
-    expect(headButtons()).toEqual(['New script', 'Open page', 'Close']);
-    fireEvent.click(screen.getByRole('button', { name: 'Open page' }));
+    expect(headButtons()).toEqual(['New script', 'Open full page', 'Close']);
+    fireEvent.click(screen.getByRole('button', { name: 'Open full page' }));
     expect(onOpen).toHaveBeenCalledTimes(1);
   });
 
@@ -59,10 +59,10 @@ describe('DrawerFrame head', () => {
     expect(container.querySelector('[data-drawer-header-row]')?.className).toBe(plain);
   });
 
-  it('names the page button with its own words when the drawer gives them', () => {
+  it('names the page button Open full page and keeps the tooltip for the place it opens', () => {
     const onOpen = vi.fn();
     render(
-      <DrawerFrame title="Terminal" page={{ label: 'Open full page', onOpen }} onClose={vi.fn()}>
+      <DrawerFrame title="Terminal" page={{ tooltip: 'Open in Changes', onOpen }} onClose={vi.fn()}>
         body
       </DrawerFrame>,
     );
@@ -93,5 +93,29 @@ describe('DrawerFrame head', () => {
     expect(screen.queryByRole('button', { name: 'Back to Explore' })).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: /^Back to Plan/ }));
     expect(onBack).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps a subview back row and lets Escape step back before the chip', () => {
+    const onBack = vi.fn();
+    const onClose = vi.fn();
+    render(
+      <DrawerBackChipContext.Provider
+        value={{ kind: 'Plan', title: 'Add tax to the checkout total', onBack: vi.fn() }}
+      >
+        <DrawerFrame
+          title="Ask"
+          back={{ label: 'Back to answer', onBack, isSubview: true }}
+          onClose={onClose}
+        >
+          body
+        </DrawerFrame>
+      </DrawerBackChipContext.Provider>,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Back to answer' }));
+    expect(onBack).toHaveBeenCalledTimes(1);
+    fireEvent.keyDown(window, { key: 'Escape', code: 'Escape' });
+    expect(onBack).toHaveBeenCalledTimes(2);
+    expect(onClose).not.toHaveBeenCalled();
   });
 });

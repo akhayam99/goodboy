@@ -4031,7 +4031,7 @@
       "count": 1
     }
   },
-  "apps/desktop/src/features/plans/openPlanAnywhere.test.ts": {
+  "apps/desktop/src/features/plans/openArtifactAnywhere.test.ts": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 1
     }
@@ -4817,9 +4817,6 @@
   "apps/desktop/src/features/search/openSearchHit.test.ts": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 6
-    },
-    "@typescript-eslint/naming-convention": {
-      "count": 4
     }
   },
   "apps/desktop/src/features/search/searchHitTarget.test.ts": {

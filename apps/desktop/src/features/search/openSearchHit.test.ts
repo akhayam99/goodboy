@@ -11,6 +11,7 @@ import type {
 } from '@goodboy/types';
 import { aSession } from '@goodboy/types/testing';
 import { useAppStore } from '../../store/store';
+import { captureLocation } from '../../store/slices/navigation/captureLocation';
 import { openSearchHit } from './openSearchHit';
 
 vi.mock('@tauri-apps/api/core', async () =>
@@ -111,16 +112,16 @@ beforeEach(() => {
 
 describe('opening a comment search hit', () => {
   it('lands on the branch the comment belongs to, not the one on screen', async () => {
-    const opened = await openSearchHit({ hit: hitOf('on-b'), query: 'batch' });
+    const isOpened = await openSearchHit({ hit: hitOf('on-b'), query: 'batch' });
 
-    expect(opened).toBe(true);
+    expect(isOpened).toBe(true);
     expect(displayedPath()).toBe(PATH_B);
   });
 
   it('lands on the session overview for a comment written before notes had a branch', async () => {
-    const opened = await openSearchHit({ hit: hitOf('legacy'), query: 'batch' });
+    const isOpened = await openSearchHit({ hit: hitOf('legacy'), query: 'batch' });
 
-    expect(opened).toBe(true);
+    expect(isOpened).toBe(true);
     expect(displayedPath()).toBeNull();
   });
 
@@ -134,31 +135,66 @@ describe('opening a comment search hit', () => {
 });
 
 describe('opening a plan or a report search hit', () => {
-  it('reads a plan in the drawer on its session, not on the Artifacts page', async () => {
-    const opened = await openSearchHit({
-      hit: artifactHitOf({ kind: 'plan', refId: 'plan-retries' }),
-      query: 'retries',
-    });
+  it.each([
+    ['plan', 'plan-retries'],
+    ['report', 'report-drift'],
+  ] as const)('lands a %s on its Artifacts page from another page', async (kind, refId) => {
+    const isOpened = await openSearchHit({ hit: artifactHitOf({ kind, refId }), query: 'drift' });
 
-    expect(opened).toBe(true);
+    expect(isOpened).toBe(true);
     expect(useAppStore.getState().currentSessionId).toBe(SESSION_ID);
-    expect(useAppStore.getState().activeLens[SESSION_ID] ?? null).toBeNull();
-    expect(useAppStore.getState().drawer).toMatchObject({
-      kind: 'artifact-document',
-      sessionId: SESSION_ID,
-      payload: { artifactId: 'plan-retries', revision: null },
-    });
+    expect(useAppStore.getState().activeLens[SESSION_ID]).toBe('plans');
+    expect(useAppStore.getState().drawer).toBeNull();
+    expect(useAppStore.getState().viewFind).toMatchObject({ query: 'drift', scope: 'view' });
   });
 
-  it('still lands a report on the Artifacts page', async () => {
-    const opened = await openSearchHit({
+  it.each([
+    ['plan', 'plan-retries'],
+    ['report', 'report-drift'],
+  ] as const)(
+    'reads a %s in the panel when the session is the page, and finds there',
+    async (kind, refId) => {
+      useAppStore.setState({ currentSessionId: SESSION_ID });
+
+      const isOpened = await openSearchHit({ hit: artifactHitOf({ kind, refId }), query: 'drift' });
+
+      expect(isOpened).toBe(true);
+      expect(useAppStore.getState().activeLens[SESSION_ID] ?? null).toBeNull();
+      expect(useAppStore.getState().drawer).toMatchObject({
+        kind: 'artifact-document',
+        sessionId: SESSION_ID,
+        payload: { artifactId: refId, revision: null },
+      });
+      expect(useAppStore.getState().viewFind).toMatchObject({ query: 'drift', scope: 'panel' });
+    },
+  );
+
+  it('selects the artifact on the Artifacts page when the user is already there', async () => {
+    useAppStore.setState({ currentSessionId: SESSION_ID, activeLens: { [SESSION_ID]: 'plans' } });
+
+    await openSearchHit({
       hit: artifactHitOf({ kind: 'report', refId: 'report-drift' }),
       query: 'drift',
     });
 
-    expect(opened).toBe(true);
-    expect(useAppStore.getState().currentSessionId).toBe(SESSION_ID);
-    expect(useAppStore.getState().activeLens[SESSION_ID]).toBe('plans');
     expect(useAppStore.getState().drawer).toBeNull();
+    expect(useAppStore.getState().viewFind).toMatchObject({ scope: 'view' });
+  });
+});
+
+describe('opening a pull request search hit', () => {
+  it('lands on the Conversation tab of the session', async () => {
+    const isOpened = await openSearchHit({
+      hit: { ...hitOf('unused'), docId: 'pr:7', kind: 'pr', refId: '7' },
+      query: 'batch',
+    });
+
+    expect(isOpened).toBe(true);
+    const state = useAppStore.getState();
+    expect(captureLocation({ state }).place).toMatchObject({
+      at: 'session',
+      sessionId: SESSION_ID,
+      view: { lens: 'branch', target: { kind: 'branch', tab: 'pr' } },
+    });
   });
 });

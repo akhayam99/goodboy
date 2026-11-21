@@ -65,7 +65,7 @@
   "apps/desktop/src/features/integrations/linear/useLinearIssueComments/index.test.ts": 1,
   "apps/desktop/src/features/monitoring/hooks/useMonitoringSignalRefresh/index.test.ts": 1,
   "apps/desktop/src/features/plans/components/PlanRow/index.test.tsx": 1,
-  "apps/desktop/src/features/plans/openPlanAnywhere.test.ts": 1,
+  "apps/desktop/src/features/plans/openArtifactAnywhere.test.ts": 1,
   "apps/desktop/src/features/plans/usePlanRun/index.test.tsx": 1,
   "apps/desktop/src/features/providers/components/ProviderStudio/CliUpdateNotice/index.test.tsx": 1,
   "apps/desktop/src/features/providers/components/ProviderStudio/ProviderPage/AccountGroup/index.test.tsx": 1,

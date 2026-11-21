@@ -30,7 +30,7 @@ import { planEditBlockOf } from '../../plans/planEditBlock';
 import { planPrimaryOf, type PlanPrimary } from '../../plans/planPrimaryOf';
 import { unsentCommentsConfirmOf } from '../../plans/unsentCommentsConfirmOf';
 import { planRunToast } from '../../plans/planRunToast';
-import { openPlanDrawer } from '../../plans/openPlanDrawer';
+import { openArtifactAnywhere } from '../../plans/openArtifactAnywhere';
 import { NOT_REVISING } from '../../plans/planRevising';
 import { artifactPlanFactsOf } from './artifactPlanFactsOf';
 import { planConsumerLabel, resolvePlanConsumer } from '../../../shared/utils/planConsumer';
@@ -159,13 +159,6 @@ const editBlockOf = ({ facts }: FactsOnly): string | null =>
         isRevising: facts.planRevising.kind === 'revising',
       })
     : null;
-
-const isOnArtifactsLens = ({ facts, env }: FactsOnly & { readonly env: ActionEnv }): boolean => {
-  const state = env.getState();
-  return (
-    state.currentSessionId === facts.sessionId && state.activeLens[facts.sessionId] === 'plans'
-  );
-};
 
 const openArtifact = ({ facts, env }: FactsOnly & { readonly env: ActionEnv }): void => {
   const artifactId = idOf({ facts });
@@ -307,13 +300,11 @@ const ARTIFACT_ACTIONS: ReadonlyArray<ActionDefinition<ArtifactFacts>> = [
     group: 'open',
     when: ({ facts, viewing }) =>
       isStored({ facts }) && !(viewing?.kind === 'artifact' && viewing.id === idOf({ facts })),
-    run: ({ facts, env }) => {
-      const planId = idOf({ facts });
-      if (facts.kind === 'plan' && planId !== null && !isOnArtifactsLens({ facts, env })) {
-        openPlanDrawer({ sessionId: facts.sessionId, planId });
-        return;
+    run: ({ facts }) => {
+      const artifactId = idOf({ facts });
+      if (artifactId !== null) {
+        openArtifactAnywhere({ sessionId: facts.sessionId, artifactId });
       }
-      openArtifact({ facts, env });
     },
   },
   {

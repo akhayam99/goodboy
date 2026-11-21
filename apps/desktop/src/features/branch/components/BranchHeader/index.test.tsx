@@ -1052,7 +1052,7 @@ describe('BranchHeader push feedback', () => {
     screen.getByRole('button', { name: 'Push 1 commit' });
     expect(screen.queryByRole('alert')).toBeNull();
 
-    fireEvent.click(within(line).getByRole('button', { name: 'Dismiss' }));
+    fireEvent.click(within(line).getByRole('button', { name: 'Dismiss notice' }));
     expect(screen.queryByRole('status')).toBeNull();
   });
 

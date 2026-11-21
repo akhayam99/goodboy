@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { ChevronDown, ChevronUp, X } from '@goodboy/ui/icons';
 import { FLOATING_SURFACE, IconButton, cn, useEscapeLayer, appScrollIntoView } from '@goodboy/ui';
 import { useAppStore } from '../../../store';
-import type { ViewFind } from '../../../store/slices/search-index/state';
+import type { ViewFind, ViewFindScope } from '../../../store/slices/search-index/state';
 import { captureLocation } from '../../../store/slices/navigation/captureLocation';
 import { locationKey } from '../../../store/slices/navigation/locationKey';
 import { findMatchRanges } from './findMatchRanges';
@@ -18,11 +18,19 @@ type Resolved = {
   readonly base: number;
 };
 
+const PANEL_ROOTS = '[data-drawer-card] [data-find-root]';
+
 type QueryParams = {
   readonly query: string;
+  readonly scope: ViewFindScope;
 };
 
-const collectRanges = ({ query }: QueryParams): ReadonlyArray<Range> => {
+const collectRanges = ({ query, scope }: QueryParams): ReadonlyArray<Range> => {
+  if (scope === 'panel') {
+    return [...document.querySelectorAll(PANEL_ROOTS)].flatMap((root) =>
+      findMatchRanges({ root, query }),
+    );
+  }
   const roots = [...document.querySelectorAll(ROOTS)];
   const scopes = roots.length > 0 ? roots : [document.body];
   return scopes.flatMap((root) => findMatchRanges({ root, query }));
@@ -64,7 +72,7 @@ export const FindSession = ({ viewFind }: Props) => {
   const placeKey = useAppStore((state) => locationKey(captureLocation({ state })));
   const [resolved, setResolved] = useState<Resolved | null>(null);
   const anchorKey = useRef<string | null>(null);
-  const { query, target, startedAt, steps } = viewFind;
+  const { query, target, scope, startedAt, steps } = viewFind;
 
   useEscapeLayer(stopViewFind);
 
@@ -75,7 +83,7 @@ export const FindSession = ({ viewFind }: Props) => {
       if (isCancelled) {
         return;
       }
-      const ranges = collectRanges({ query });
+      const ranges = collectRanges({ query, scope });
       const isSettled = ranges.length > 0 && ranges.length === lastCount;
       const isLate = Date.now() - startedAt > SETTLE_MS;
       lastCount = ranges.length;
@@ -91,7 +99,7 @@ export const FindSession = ({ viewFind }: Props) => {
       isCancelled = true;
       clearFindHighlights();
     };
-  }, [query, target, startedAt]);
+  }, [query, scope, target, startedAt]);
 
   useEffect(() => {
     if (anchorKey.current !== null && anchorKey.current !== placeKey) {

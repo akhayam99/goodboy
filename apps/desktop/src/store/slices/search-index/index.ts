@@ -34,8 +34,11 @@ const backfillUntilDone = async (get: GetFn): Promise<void> => {
 
 export const createSearchIndexSlice = ({ set, get }: SliceDeps): SearchIndexSlice => ({
   ...searchIndexInitialState,
-  startViewFind: ({ query, target }) => {
-    set({ viewFind: { query, target, startedAt: Date.now(), steps: 0 }, lastSearchText: query });
+  startViewFind: ({ query, target, scope = 'view' }) => {
+    set({
+      viewFind: { query, target, scope, startedAt: Date.now(), steps: 0 },
+      lastSearchText: query,
+    });
   },
   stepViewFind: ({ delta }) => {
     const current = get().viewFind;
@@ -47,7 +50,9 @@ export const createSearchIndexSlice = ({ set, get }: SliceDeps): SearchIndexSlic
     if (text.trim().length === 0) {
       return;
     }
-    set({ viewFind: { query: text, target: null, startedAt: Date.now(), steps: 0 } });
+    set({
+      viewFind: { query: text, target: null, scope: 'view', startedAt: Date.now(), steps: 0 },
+    });
   },
   stopViewFind: () => {
     set({ viewFind: null });

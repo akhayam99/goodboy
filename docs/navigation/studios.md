@@ -146,7 +146,7 @@ and the same tab strip as the page: drawer and page show the same tabs of the sa
 worktree. The head repeats no name: the folder picker stands where the title would be. Closing
 the drawer never kills the shell: the tabs stay in the Terminal list under the
 session's group, and the drawer closes by itself when its worktree has no terminal left.
-`Open page`closes the drawer and selects the same tab on the page; the pane
+`Open full page` closes the drawer and selects the same tab on the page; the pane
 remounts on the same pty and replays its scrollback. The page group title is the session title,
 cut at the end, never in the middle; the group's`aria-label` keeps the full
   title.

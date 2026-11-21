@@ -6,6 +6,7 @@ import { demoteBrowserTab } from '../../demoteBrowserTab';
 import { useBrowserPage } from '../../hooks/useBrowserPage';
 import { BrowserPageHeader } from './BrowserPageHeader';
 import { BrowserPageView } from './BrowserPageView';
+import { NAMES } from '../../../../shared/utils/names';
 
 type Props = {
   readonly sessionId: SessionId | null;
@@ -20,7 +21,7 @@ export const BrowserStudioBody = ({ sessionId, tabId }: Props) => {
         <BrowserPageHeader
           actions={
             <DockButton
-              tooltip="Dock the browser beside the page"
+              tooltip={NAMES.dockBesideThePage}
               onDock={() => demoteBrowserTab({ sessionId: null })}
             />
           }

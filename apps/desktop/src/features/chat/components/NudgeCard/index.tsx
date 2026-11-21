@@ -2,6 +2,7 @@ import { useEffect, useRef, type ReactNode } from 'react';
 import { X } from '@goodboy/ui/icons';
 import { Button, cn, tintClasses, IconButton } from '@goodboy/ui';
 import { TranscriptShell } from '../TranscriptShell';
+import { NAMES } from '../../../../shared/utils/names';
 
 type NudgeSeverity = 'info' | 'warning' | 'success';
 
@@ -63,7 +64,7 @@ export const NudgeCard = ({
         {onDismiss ? (
           <IconButton
             icon={X}
-            label="Dismiss"
+            label={NAMES.dismissSuggestion}
             size="xs"
             onClick={onDismiss}
             data-testid={testId ? `${testId}-dismiss` : undefined}

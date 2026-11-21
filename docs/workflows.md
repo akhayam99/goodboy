@@ -1225,12 +1225,13 @@ approve the plan".
 #### The plan drawer
 
 The drawer (`features/artifacts/components/ArtifactDocumentDrawer`) is where a
-plan is read, commented, edited and approved. Every plan entry opens it over
-the current page (`openPlanAnywhere`); the only way to the Artifacts page is its
-own **Open in Artifacts**.
+plan is read, commented, edited and approved. A plan of the
+session you are on opens it over the current page (`openArtifactAnywhere`); from
+another page a plan opens on its Artifacts page. From the drawer the way to
+the Artifacts page is its own **Open full page**.
 
 - **Header.** Two rows at any width: the plan icon, the title (two lines at
-  most), two 28px icon buttons, **Copy markdown** and **Open page**,
+  most), two 28px icon buttons, **Copy markdown** and **Open full page**,
   and Close; then the state chip, the version (`v2`), the one primary and
   **Edit**. The drawer is a reader drawer (720px, drag 480 to 1000), with no
   Expand; the body stays on a 720px measure. A line under the header says one thing

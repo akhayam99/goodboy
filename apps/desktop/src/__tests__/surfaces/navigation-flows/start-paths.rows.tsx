@@ -173,7 +173,7 @@ const openFullRecord = async (): Promise<void> => {
   await clickButton('Tasks');
   await waitFor(() => inboxRowButton('#318'), WAIT);
   fireEvent.click(inboxRowButton('#318'));
-  fireEvent.click(await screen.findByRole('button', { name: 'Open' }, WAIT));
+  fireEvent.click(await screen.findByRole('button', { name: 'Open full page' }, WAIT));
 };
 
 type StartOnParams = {

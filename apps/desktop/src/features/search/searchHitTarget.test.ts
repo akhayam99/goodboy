@@ -59,7 +59,6 @@ describe('search hit target', () => {
       expect(searchHitTarget({ hit: hit({ kind, refId: 'art-1' }) })).toMatchObject({
         kind: 'artifact',
         artifactId: 'art-1',
-        isPlan: kind === 'plan',
         label: `Open ${kind}`,
       });
     }
@@ -115,8 +114,11 @@ describe('search hit target', () => {
     });
   });
 
-  it('opens a pull request in Review, or on its provider when no session has it', () => {
-    expect(searchHitTarget({ hit: hit({ kind: 'pr' }) })).toMatchObject({ kind: 'review' });
+  it('opens a pull request as Open pull request, or on its provider when no session has it', () => {
+    expect(searchHitTarget({ hit: hit({ kind: 'pr' }) })).toMatchObject({
+      kind: 'review',
+      label: 'Open pull request',
+    });
     expect(
       searchHitTarget({
         hit: hit({ kind: 'pr', sessionId: null, provider: 'github', url: 'https://x.test/1' }),

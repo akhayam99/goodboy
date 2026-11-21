@@ -260,7 +260,7 @@ const openAndWorkThePlan = async (ctx: Ctx): Promise<void> => {
   await settle();
   act(() => openPlanDrawer({ sessionId: ctx.sessionId, planId: PLAN_ID }));
   await settle();
-  await visible('button', 'Open page');
+  await visible('button', 'Open full page');
   expect(screen.getByTestId('plan-primary').textContent).toBe('Approve and start Implement');
 
   await comment();
@@ -332,7 +332,7 @@ const openPlanThePlannerAsksAbout = async (ctx: Ctx): Promise<void> => {
   await settle();
   act(() => openPlanDrawer({ sessionId: ctx.sessionId, planId: PLAN_ID }));
   await settle();
-  await visible('button', 'Open page');
+  await visible('button', 'Open full page');
 };
 
 const askedPlanWaitsThenApproves = async (ctx: Ctx): Promise<void> => {
@@ -360,7 +360,7 @@ const openPlanOverTheOverview = async (ctx: Ctx): Promise<void> => {
   await settle();
   act(() => openPlanDrawer({ sessionId: ctx.sessionId, planId: PLAN_ID }));
   await settle();
-  await visible('button', 'Open page');
+  await visible('button', 'Open full page');
   expect(screen.getByTestId('plan-primary').textContent).toBe('Approve and start Implement');
   expect(screen.queryByRole('button', { name: 'Run plan' })).toBeNull();
   await click(screen.getByTestId('plan-primary'));

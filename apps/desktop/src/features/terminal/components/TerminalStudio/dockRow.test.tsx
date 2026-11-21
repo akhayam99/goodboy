@@ -4,6 +4,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import type { SessionId } from '@goodboy/types';
 import type { TerminalTab, TerminalTabId } from '../../../../shared/types/terminal';
+import { tooltipTextOf } from '../../../../__tests__/helpers/tooltip';
 import { brandedId } from '../../../history/testing/brandedId';
 
 vi.mock('@tauri-apps/api/core', async () =>
@@ -46,6 +47,14 @@ afterEach(() => {
 });
 
 describe('the terminal row', () => {
+  it('says Dock beside the page on the dock button', () => {
+    render(<DockTerminalButton selected={TAB} />);
+
+    expect(tooltipTextOf({ element: screen.getByRole('button', { name: 'Dock' }) })).toBe(
+      'Dock beside the page',
+    );
+  });
+
   it('docks the selected terminal', () => {
     render(<DockTerminalButton selected={TAB} />);
 

@@ -10,6 +10,7 @@ import type {
 import { formatBytes } from '../../../../shared/utils/formatBytes';
 import { pluralize } from '../../../../shared/utils/pluralize';
 import { keptReasonPhrase } from '../../storageCopy';
+import { NAMES } from '../../../../shared/utils/names';
 
 type KeptLineParams = {
   readonly kept: StorageRemoval;
@@ -103,7 +104,7 @@ export const StorageOutcomeNotice = () => {
           <IconButton
             icon={X}
             iconSize={ICON_SIZE.row}
-            label="Dismiss"
+            label={NAMES.dismissNotice}
             variant="ghost"
             onClick={dismiss}
           />

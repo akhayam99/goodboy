@@ -181,21 +181,21 @@ results and its preview.
 
 `searchHitTarget` (`features/search/searchHitTarget.ts`) turns a hit into
 one target from its kind and its state, and `openSearchHit` runs it through
-the one door (`navigate`, or the opener the rest of the app uses).
+the one door (`navigate`, or the opener the rest of the app uses). When an artifact opens in the panel, the find bar in view reads the panel body only (`startViewFind` `scope: 'panel'`).
 
-| Kind                    | Lands on                                                                    | Refuses when                               |
-| ----------------------- | --------------------------------------------------------------------------- | ------------------------------------------ |
-| Session                 | The session                                                                 | It is archived                             |
-| Message                 | Its agent's transcript, scrolled to the message                             | The session is archived, the agent is gone |
-| Agent                   | The agent                                                                   | Same                                       |
-| Plan, report, wireframe | The artifact viewer                                                         | The session is archived                    |
-| Decision                | The Context drawer on its number, highlighted                               | The decision is gone                       |
-| Question                | The Questions lens with the question focused                                | The session is archived                    |
-| Issue                   | The issue lens of its session, or the Tasks record when it is starred       | Nothing to open                            |
-| Pull request            | Its Branch page, or its page on the code host when no session has it        | No session and no link                     |
-| Branch                  | The Branch page of its mount                                                | The branch left the session                |
-| Workflow                | The workflow studio with that workflow open (a step hit opens its workflow) | Its workspace is gone                      |
-| Comment                 | The Comments tab of the Branch page                                         | The session is archived                    |
+| Kind                    | Lands on                                                                                                     | Refuses when                               |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------ | ------------------------------------------ |
+| Session                 | The session                                                                                                  | It is archived                             |
+| Message                 | Its agent's transcript, scrolled to the message                                                              | The session is archived, the agent is gone |
+| Agent                   | The agent                                                                                                    | Same                                       |
+| Plan, report, wireframe | The panel beside the session you are on; otherwise its Artifacts page (`openArtifactAnywhere`)               | The session is archived                    |
+| Decision                | The Context drawer on its number, highlighted                                                                | The decision is gone                       |
+| Question                | The Questions lens with the question focused                                                                 | The session is archived                    |
+| Issue                   | The issue lens of its session, or the Tasks record when it is starred                                        | Nothing to open                            |
+| Pull request            | Its Branch page on Conversation (**Open pull request**), or its page on the code host when no session has it | No session and no link                     |
+| Branch                  | The Branch page of its mount                                                                                 | The branch left the session                |
+| Workflow                | The workflow studio with that workflow open (a step hit opens its workflow)                                  | Its workspace is gone                      |
+| Comment                 | The Comments tab of the Branch page                                                                          | The session is archived                    |
 
 A refused hit stays in the list, dimmed, and the preview says why; Enter
 does nothing on it. A hit in another workspace switches to it first, the

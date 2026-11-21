@@ -97,4 +97,17 @@ describe('find in view', () => {
     expect(screen.queryByTestId('find-in-view')).toBeNull();
     expect(useAppStore.getState().viewFind).toBeNull();
   });
+
+  it('keeps a panel search off the page while the panel has no find root', async () => {
+    renderView();
+    act(() => {
+      useAppStore.getState().startViewFind({ query: 'settlement', target: null, scope: 'panel' });
+    });
+    await flush();
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(3_500);
+    });
+    expect(pill()).toContain('No match in this view');
+    expect(scrolled).toHaveLength(0);
+  });
 });
