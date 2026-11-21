@@ -205,7 +205,7 @@ type OutcomeParams = {
   readonly entry: ScriptLedgerEntry;
 };
 
-const outcomeOf = ({ entry }: OutcomeParams): ScriptLastOutcome => {
+const lastOutcomeOf = ({ entry }: OutcomeParams): ScriptLastOutcome => {
   if (entry.endedAt === null || entry.exitCode === null) {
     return 'unfinished';
   }
@@ -237,7 +237,7 @@ const lastRunOf = ({ ledger, mountId, key }: LastRunParams): ScriptLastRun | nul
     startedAt: latest.startedAt,
     endedAt: latest.endedAt,
     exitCode: latest.exitCode,
-    outcome: outcomeOf({ entry: latest }),
+    outcome: lastOutcomeOf({ entry: latest }),
     runCount: matches.reduce((total, entry) => total + entry.runCount, 0),
   };
 };

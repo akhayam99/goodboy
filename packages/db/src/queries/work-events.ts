@@ -13,7 +13,7 @@ type KindParams = {
 export const isWorkEventKind = ({ value }: KindParams): boolean =>
   WORK_EVENT_KINDS.some((kind) => kind === value);
 
-const kindOf = ({ value }: KindParams): WorkEventKind | null =>
+const workEventKindOf = ({ value }: KindParams): WorkEventKind | null =>
   WORK_EVENT_KINDS.find((kind) => kind === value) ?? null;
 
 export type WorkEvent = {
@@ -82,11 +82,11 @@ type EventParams = {
   readonly row: EventRow;
 };
 
-const mountOf = ({ value }: NullableIdParams): MountId | null =>
+const workEventMountOf = ({ value }: NullableIdParams): MountId | null =>
   value === null ? null : brandId<MountId>({ value });
 
 const eventOf = ({ row }: EventParams): ReadonlyArray<WorkEvent> => {
-  const kind = kindOf({ value: row.kind });
+  const kind = workEventKindOf({ value: row.kind });
   if (kind === null) {
     return [];
   }
@@ -95,7 +95,7 @@ const eventOf = ({ row }: EventParams): ReadonlyArray<WorkEvent> => {
       id: row.id,
       runId: row.run_id,
       sessionId: brandId<SessionId>({ value: row.session_id }),
-      mountId: mountOf({ value: row.mount_id }),
+      mountId: workEventMountOf({ value: row.mount_id }),
       agentId: row.agent_id === null ? null : brandId<AgentId>({ value: row.agent_id }),
       kind,
       startedAt: row.started_at,
@@ -150,7 +150,7 @@ export const listScriptLedger = async ({
   return rows.map((row) => ({
     scriptId: row.script_id,
     runId: row.run_id,
-    mountId: mountOf({ value: row.mount_id }),
+    mountId: workEventMountOf({ value: row.mount_id }),
     startedAt: row.started_at,
     endedAt: row.ended_at,
     exitCode: row.exit_code,
