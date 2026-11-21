@@ -31,7 +31,7 @@ import { ReleaseNoticeBridge } from './features/changelog/components/ReleaseNoti
 import { openRunningScript } from './features/scripts/openRunningScript';
 import { listenOrphansSwept } from './features/monitoring/listenOrphansSwept';
 import { listenWindowFacts } from './app/listenWindowFacts';
-import { listenBridgeCommands } from './features/companion/commandExecutor';
+import { startBridgeCommands } from './features/companion/startBridgeCommands';
 import { listenProjectMaterializeRequests } from './features/session/projectMaterializeBridge';
 import { listenMountCommands } from './features/session/mountQueryBridge';
 import { startAutoRuntime } from './store/runtime/auto/startAutoRuntime';
@@ -143,7 +143,7 @@ export const App = () => {
   useTitlebarInset();
   useKeepFullScreenOnEscape();
   useUnhandledRejectionNotice();
-  useAsyncSubscription({ start: listenBridgeCommands });
+  useAsyncSubscription({ start: startBridgeCommands });
   useAsyncSubscription({ start: listenOrphansSwept });
   useAsyncSubscription({ start: listenWindowFacts });
   useAsyncSubscription({ start: listenProjectMaterializeRequests });
