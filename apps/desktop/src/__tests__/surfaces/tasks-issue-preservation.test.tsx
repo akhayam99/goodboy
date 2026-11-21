@@ -95,7 +95,7 @@ describe('issues and Tasks rows reachable from the issue pane', () => {
     await mount({ name: 'c12-issue-pane' });
 
     expect(within(pane()).getByRole('button', { name: 'Star HBL-412' })).toBeDefined();
-    expect(within(pane()).getByRole('button', { name: 'Close the item' })).toBeDefined();
+    expect(within(pane()).getByRole('button', { name: 'Close' })).toBeDefined();
     expect(within(pane()).queryByText('Linked to')).toBeNull();
   });
 

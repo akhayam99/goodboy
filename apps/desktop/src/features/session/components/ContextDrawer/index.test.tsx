@@ -494,13 +494,29 @@ describe('Context drawer sections', () => {
   it('opens Versions inside the drawer, and Escape leaves the view before the drawer', () => {
     const onClose = vi.fn();
     mount({ section: 'summary', view: 'versions', onClose });
-    screen.getByRole('button', { name: 'Summary' });
+    screen.getByRole('button', { name: 'Close' });
     fireEvent.keyDown(window, { key: 'Escape', code: 'Escape' });
     expect(onClose).not.toHaveBeenCalled();
     expect(contextRows()).toMatchObject({
       'context.section': 'summary',
       'context.view': 'current',
     });
+  });
+
+  it('steps back from Versions with the arrow under the title, and Close still closes', () => {
+    const onClose = vi.fn();
+    mount({ section: 'summary', view: 'versions', onClose });
+    fireEvent.click(screen.getByRole('button', { name: 'Back to Summary' }));
+    expect(onClose).not.toHaveBeenCalled();
+    expect(contextRows()).toMatchObject({ 'context.view': 'current' });
+  });
+
+  it('closes from Versions with the X without stepping back first', () => {
+    const onClose = vi.fn();
+    mount({ section: 'summary', view: 'versions', onClose });
+    fireEvent.click(screen.getByRole('button', { name: 'Close' }));
+    expect(onClose).toHaveBeenCalledOnce();
+    expect(contextRows()?.['context.view']).not.toBe('current');
   });
 
   it('keeps the decisions readable but not editable while the context updates', () => {

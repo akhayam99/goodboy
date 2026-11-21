@@ -400,8 +400,10 @@ keeps room for the push rule and overlays it when it cannot.
 **Header grammar.** The close control always reads `Close`, in every drawer: the
 region is already named by its title (`<section aria-label={title}>`), so no
 drawer repeats its own name in the label. The one exception is the Context
-drawer in its versions view, whose control reads `Back to current` and goes
-back to the current view instead of closing. The Close button is a 28px target
+drawer in its versions view keeps a Close too: the way back to the current view is
+the `DrawerFrame` back link under the title (`Back to Summary`), and Escape takes
+the same step. A back link is always the arrow (`ArrowLeft`) and steps back; an X
+never does. A `DrawerFrame` has no label of its own for the X. The Close button is a 28px target
 (`size-7`) with the 14px glyph, and so is every utility in the header (copy,
 open on its page); a header holds at most one labelled button (Stop,
 Run again, New) and utilities share one icon tone. The count slot
@@ -458,30 +460,37 @@ surface declares per file and never lets one grow.
 
 **The update card is never clipped.** It is a `Popover` in the popover layer, 300px wide and never wider than `min(384px, window - 24px)`: a title, one line and the verbs of its state ([release.md](../release.md#auto-update)), no bullets. On the places rail it opens to the right of the Update mark, 8px from it, bottom aligned and 12px from the window edge (`isBesideAnchor`, `useFloatingPlace`); elsewhere it opens from its anchor with the same 12px. It stays away while its anchor is inert (`useIsAnchorInert`) and comes back with it.
 
-**An object that belongs to where you are opens in a drawer; the page changes
-only by an explicit command.** A plan read from the planner that wrote it (the
-row in its chat, in its Brief, or a plan row in Activity) stays on the agent
-page: the address does not change, the page keeps its scroll, and the drawer
-sits beside it. The same goes for every artifact kind read from its work: a
-report or a wireframe row in Activity, and a report or wireframe chip in a
-transcript, open the same `artifact-document` drawer (`DrawerHost` hands a
-report or a wireframe to `ArtifactReadingDrawer`, which shows the report or
-the wireframe stage, with Open page as its one header action). **A plan always opens
-in the drawer** (`openPlanDrawer`): the object menu's **Open**, the plan view
-inside Ask, a plan row in Search or run, a plan hit in search and the plan chip in
-a chat open it over the page you are on, unless you are already on the
-Artifacts page, where they select the plan. From another session they land on
-that session with the drawer open (`openPlanAnywhere`). Reports and wireframes
-are transit from Search or run and from search and keep navigating; the Artifacts
-page stays the library. Going to
-the Artifacts page from a drawer is a command of its own, **Open page**
-(`DrawerFrame` `page`, tooltip Open in Artifacts) in the drawer header, and it is the only page change. The `artifact-document` kind
+**An artifact opens by one rule, from every entrance** (`openArtifactAnywhere`,
+`features/plans/`). An artifact of the session you are on opens in the
+`artifact-document` drawer beside the page: a plan read from the planner that
+wrote it, a plan, report or wireframe row in Activity, a chip in a transcript,
+the object menu's **Open** and the palette on a session page. The address does
+not change and the page keeps its scroll. From any other page (a Search hit
+opened from the Board, from Tasks or from another session) it goes to that
+artifact's page on the Artifacts tab, with the artifact selected. On the
+Artifacts tab itself a click selects it. `DrawerHost` hands a report or a
+wireframe to `ArtifactReadingDrawer`, which shows the report or the wireframe
+stage, with **Open full page** as its one header action. Opening another
+artifact while one is in the panel replaces it and leaves the back chip to
+return to the first; an artifact that was deleted opens the gone state
+(`GoneObject`) in the panel, with Close. A pull request opens its
+**Conversation** tab from every entrance (Activity, Search, the object menu);
+only a search hit that found a comment opens **Comments**. The labels name the
+place: **Open in Context**, **Open in Questions**, **Open in Runs**, **Open
+pull request**. When Search opens an artifact in the panel, find in view
+(`startViewFind`, `scope: 'panel'`) reads the panel body only (`FindSession`
+looks inside `[data-drawer-card] [data-find-root]`); anywhere else it reads the
+page. Going to
+the Artifacts page from a drawer is a command of its own, **Open full page**
+(`DrawerFrame` `page`, tooltip Open in Artifacts) in the drawer header. **Open
+full page** is the one name for panel to page; **Open page** and **Open full**
+are retired (`retired/open.ts`). The `artifact-document` kind
 carries `{ artifactId, revision }`; `revision` is `null` for the current
 version and a number for an earlier one read from the revisions. It is the one
 drawer in the reader tier: it opens at 720px and you drag its edge from 480
 to 1000 (a double click resets it to 720), so there is no Expand. The body
 stays on the 720 reading measure whatever the width. The header holds the
-title, **Copy markdown** and **Open page** as two 28px icon buttons,
+title, **Copy markdown** and **Open full page** as two 28px icon buttons,
 and Close; the second row holds the state chip, `vN`, the parts, **Edit** and
 **Run plan**. **Copy markdown** is absent when the plan has no copy action.
 Escape closes it. While the planner
@@ -537,8 +546,8 @@ resolver's transcript always opens here, on the Comments tab of its Branch
 The `context` kind carries `{ section, view }`: `section` is `goal`, `decisions`,
 `summary` or `explanations` and says which card the pane scrolls to, and `view` is
 `current` or `versions` (the old versions of that slot, inside the same drawer,
-with Restore; Escape and the header's **Back to current** leave the view before the
-drawer). The **Context** tool in the session tools toggles it on any page of the
+with Restore; Escape and the **Back to** link under the title leave the view before the
+drawer, and Close closes it). The **Context** tool in the session tools toggles it on any page of the
 session; ⌘⌥C opens the Context tab instead, and a restored Context panel opens
 as that tab (`withoutRemovedPages`). The drawer opens on Goal,
 every time, unless the caller names a section (the Activity row of a decision
@@ -694,7 +703,7 @@ right branch.
 page. The source is a worktree (a file opened from the chat) or a commit (a
 GitHub commit link clicked anywhere in a session; outside a session the link
 opens in the browser). It shows unified and wrapped, and a worktree peek offers
-the Open page arrow, which opens the Changes tab of the Branch page on that mount with the file in
+the Open full page arrow, which opens the Changes tab of the Branch page on that mount with the file in
 focus. A changed file in the Explore drawer offers the same arrow, and its `⋯` menu no longer
 holds `Open in Files`.
 `identifier-peek` (payload `{ worktreePath, word, selected }`, reader width) is

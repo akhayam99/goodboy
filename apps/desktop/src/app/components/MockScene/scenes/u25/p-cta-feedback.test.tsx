@@ -23,7 +23,7 @@ describe('the cta feedback scenes', () => {
     render(<Scene />);
 
     expect(screen.getByRole('status').textContent).toContain('Pushed 1 commit to origin.');
-    expect(screen.getByRole('button', { name: 'Dismiss' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Dismiss notice' })).toBeDefined();
   });
 
   it('keeps the failure line with Retry', () => {

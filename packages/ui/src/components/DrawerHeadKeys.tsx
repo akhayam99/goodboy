@@ -26,8 +26,8 @@ export const DrawerHeadKeys = ({ page }: Props) => {
       {page === undefined ? null : (
         <IconButton
           icon={ArrowUpRight}
-          label={page.label ?? 'Open page'}
-          tooltip={page.tooltip ?? page.label ?? 'Open page'}
+          label={page.label ?? 'Open full page'}
+          tooltip={page.tooltip ?? page.label ?? 'Open full page'}
           variant="ghost"
           iconSize={ICON_SIZE.control}
           onClick={page.onOpen}

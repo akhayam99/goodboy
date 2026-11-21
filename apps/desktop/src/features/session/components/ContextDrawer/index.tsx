@@ -21,7 +21,6 @@ import { decisionChangesSince } from '../../../../store/slices/contextDrawer/dec
 import { selectContextBaseline } from '../../../../store/slices/contextDrawer/selectContextBaseline';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { NAMES } from '../../../../shared/utils/names';
-import { CONTEXT_SECTION_LABEL } from './contextSections';
 import { CONTEXT_SECTION_SLOT } from './contextSectionSlots';
 import { GoalTab } from './GoalTab';
 import { DecisionsSection } from './DecisionsSection';
@@ -30,6 +29,7 @@ import { SummaryStatus } from './SummaryStatus';
 import { usePendingRemovals } from './usePendingRemovals';
 import { useContextBrief } from './useContextBrief';
 import { VersionsView } from './VersionsView';
+import { versionsBackOf } from './versionsBackOf';
 import { ContextUpdates } from './ContextUpdates';
 import { ContextCopyButton } from './ContextCopyButton';
 import { ContextPageFrame } from './ContextPageFrame';
@@ -143,6 +143,11 @@ export const ContextDrawer = ({
   const openVersions = ({ section }: SectionParams) =>
     openContextDrawer({ sessionId, section: section, view: 'versions' });
 
+  const backToCurrent = () =>
+    openContextDrawer({ sessionId, section: versionsSection, view: 'current' });
+
+  const back = versionsBackOf({ view, section: versionsSection, onBack: backToCurrent });
+
   const toggleRaw = ({ section }: SectionParams) =>
     setRawSection((current) => (current === section ? null : section));
 
@@ -155,8 +160,8 @@ export const ContextDrawer = ({
         <VersionsView
           sessionId={sessionId}
           slotKey={CONTEXT_SECTION_SLOT[versionsSection]}
-          backLabel={CONTEXT_SECTION_LABEL[versionsSection]}
-          onBack={() => openContextDrawer({ sessionId, section: versionsSection, view: 'current' })}
+          back={isPage ? back : undefined}
+          onBack={backToCurrent}
         />
       );
     }
@@ -255,12 +260,8 @@ export const ContextDrawer = ({
       title={NAMES.context}
       icon={CONCEPT_ICONS.context}
       iconClassName="text-muted-foreground"
-      closeLabel={view === 'versions' ? 'Back to current' : 'Close'}
-      onClose={
-        view === 'versions'
-          ? () => openContextDrawer({ sessionId, section: versionsSection, view: 'current' })
-          : onClose
-      }
+      back={back}
+      onClose={onClose}
       scroll="self"
       action={copy}
     >

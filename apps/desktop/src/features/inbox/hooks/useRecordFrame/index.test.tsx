@@ -419,7 +419,7 @@ describe('useRecordFrame', () => {
     const onClose = vi.fn();
     render(<Harness record={GITHUB_RECORD} onClose={onClose} />);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Close the item' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Close' }));
 
     expect(onClose).toHaveBeenCalledOnce();
   });

@@ -279,7 +279,7 @@ on you] }`. Any other agent keeps its page, one conversation with no tabs
   editor when one is set, the file drawer for a file with none, the file
   manager for a folder with none. A changed file's drawer offers
   `Preview | Changes` in its toolbar: Changes is the file's diff in the peek
-  presentation with the head's Open page (tooltip Open in Changes) that opens the Changes tab on the file. The file drawer
+  presentation with the head's Open full page (tooltip Open in Changes) that opens the Changes tab on the file. The file drawer
   key holds the project (`explore-file:{mount}:{path}`), so the same relative
   path in a second project replaces the drawer instead of closing it. A
   folder offers Open only when an editor can take it (a repository with an editor),

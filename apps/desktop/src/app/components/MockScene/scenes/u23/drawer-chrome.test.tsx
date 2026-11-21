@@ -74,15 +74,16 @@ describe('the drawer chrome scenes', () => {
     ]);
   });
 
-  it('headers: Context in versions says Back to current, the others say Close', async () => {
+  it('headers: every X says Close, and Context in versions keeps its way back under the title', async () => {
     renderScene('drawer-headers');
 
     const context = await screen.findByRole('region', { name: 'Context' }, WAIT);
-    expect(within(context).getByRole('button', { name: 'Back to current' })).toBeDefined();
+    expect(within(context).getByRole('button', { name: 'Close' })).toBeDefined();
+    within(context).getByRole('button', { name: /^Back to / });
 
     const diff = screen.getByRole('region', { name: 'Changes' });
     expect(within(diff).getByRole('button', { name: 'Close' })).toBeDefined();
-    expect(within(diff).getByRole('button', { name: 'Open page' })).toBeDefined();
+    expect(within(diff).getByRole('button', { name: 'Open full page' })).toBeDefined();
 
     const script = screen.getByRole('region', { name: 'test' });
     expect(within(script).getByRole('button', { name: 'Close' })).toBeDefined();

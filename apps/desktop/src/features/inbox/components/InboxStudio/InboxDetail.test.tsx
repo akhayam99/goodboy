@@ -11,7 +11,7 @@ vi.mock('../../../integrations/github/GithubIssueDetail', () => ({
     <div data-testid="panel">
       github-issue:{issue.title}
       <button type="button" onClick={frame.onClose ?? undefined}>
-        Close the item
+        Close
       </button>
       {frame.primary}
     </div>
@@ -183,7 +183,7 @@ describe('InboxDetail', () => {
   it('closes the selected record from the detail header', () => {
     renderDetail(githubRecord);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Close the item' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Close' }));
 
     expect(onDeselect).toHaveBeenCalledTimes(1);
   });

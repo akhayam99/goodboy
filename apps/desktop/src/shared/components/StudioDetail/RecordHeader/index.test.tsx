@@ -97,7 +97,7 @@ describe('RecordHeader', () => {
       />,
     );
 
-    fireEvent.click(screen.getByRole('button', { name: 'Open' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Open full page' }));
     expect(onOpenFull).toHaveBeenCalledOnce();
     fireEvent.click(screen.getByRole('button', { name: 'Star HBL-412' }));
     expect(onToggle).toHaveBeenCalledOnce();
@@ -180,11 +180,11 @@ describe('RecordHeader', () => {
         frame={frame({ onClose })}
       />,
     );
-    fireEvent.click(screen.getByRole('button', { name: 'Close the item' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Close' }));
     expect(onClose).toHaveBeenCalledOnce();
     unmount();
 
     render(<RecordHeader provider="linear" identifier="CAS-231" title="Refunds" />);
-    expect(screen.queryByRole('button', { name: 'Close the item' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Close' })).toBeNull();
   });
 });

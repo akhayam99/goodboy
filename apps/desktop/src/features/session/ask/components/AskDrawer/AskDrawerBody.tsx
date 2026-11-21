@@ -137,7 +137,7 @@ export const AskDrawerBody = ({ session, onClose }: Props) => {
 
   const body =
     insideId !== null ? (
-      <AskPlanView sessionId={sessionId} artifactId={insideId} onBack={() => setInsideId(null)} />
+      <AskPlanView sessionId={sessionId} artifactId={insideId} />
     ) : (
       <div data-testid="ask-thread" className="flex min-w-0 flex-col gap-4">
         {isLoaded && turns.length === 0 ? (
@@ -181,6 +181,9 @@ export const AskDrawerBody = ({ session, onClose }: Props) => {
       title="Ask"
       icon={CONCEPT_ICONS.ask}
       iconClassName="text-muted-foreground"
+      {...(insideId !== null && {
+        back: { label: 'Back to answer', onBack: () => setInsideId(null) },
+      })}
       onClose={onClose}
       action={resetButton}
       dock={composer}

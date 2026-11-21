@@ -61,6 +61,7 @@ const WAYS_UP = new Set([
   ...drawerFrameParts(),
   'app/components/AppTopBar/NavCluster/HistoryArrow.tsx',
   'app/components/SessionHead/SessionBackButton.tsx',
+  'shared/components/StudioShell/StudioBackButton.tsx',
 ]);
 
 const NOT_A_WAY_UP: Readonly<Record<string, string>> = {
@@ -70,14 +71,8 @@ const NOT_A_WAY_UP: Readonly<Record<string, string>> = {
   'features/context/components/QuestionsTab/QuestionCard/QuestionPager.tsx':
     'a pager between questions',
   'features/integrations/slack/SlackConnectGuide.tsx': 'the previous step of a setup guide',
-  'shared/components/StudioShell/StudioBackButton.tsx':
-    'Back to app is the studio Close, not an up',
   'shared/components/GoneObject.tsx':
     'the empty state of a gone object; the crumbs above it are the way up',
-  'features/session/ask/components/AskDrawer/AskPlanView.tsx':
-    'a view inside the Ask drawer; moves to the DrawerFrame back when touched (plan P5)',
-  'features/session/components/ContextDrawer/VersionsView.tsx':
-    'a view inside the context drawer; moves to the DrawerFrame back when touched (plan P5)',
 };
 
 const LINKED_WORK =
