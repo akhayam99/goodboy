@@ -39,7 +39,7 @@ export const ExploreFileChanges = ({ sessionDir, relPath, baseBranch }: Props) =
   if (diff.error !== null) {
     return (
       <div className="p-3">
-        <ErrorStrip label="the changes" error={new Error(diff.error)} onRetry={diff.refresh} />
+        <ErrorStrip labels={['the changes']} error={new Error(diff.error)} onRetry={diff.refresh} />
       </div>
     );
   }

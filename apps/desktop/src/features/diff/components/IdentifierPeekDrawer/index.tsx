@@ -66,7 +66,11 @@ export const IdentifierPeekDrawer = ({
     if (diff.error !== null) {
       return (
         <div className="p-3">
-          <ErrorStrip label="the changes" error={new Error(diff.error)} onRetry={diff.refresh} />
+          <ErrorStrip
+            labels={['the changes']}
+            error={new Error(diff.error)}
+            onRetry={diff.refresh}
+          />
         </div>
       );
     }
@@ -109,7 +113,11 @@ export const IdentifierPeekDrawer = ({
           ) : null}
           {uses.status === 'error' ? (
             <div className="p-3">
-              <ErrorStrip label="the search" error={new Error(uses.message)} onRetry={uses.retry} />
+              <ErrorStrip
+                labels={['the search']}
+                error={new Error(uses.message)}
+                onRetry={uses.retry}
+              />
             </div>
           ) : null}
           {uses.status === 'ready' && groups.length === 0 ? (

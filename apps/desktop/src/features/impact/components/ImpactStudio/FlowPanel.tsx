@@ -1,8 +1,6 @@
 import type { AgentDurations, FlowHealth } from '@goodboy/db';
 import type { SessionId } from '@goodboy/types';
-import { StatCard, PaneShell, EmptyState } from '@goodboy/ui';
-import { ErrorStrip } from '@goodboy/ui';
-import { PanelLoading } from '@goodboy/ui';
+import { StatCard, PaneShell, EmptyState, ErrorStrip, StatCardsSkeleton } from '@goodboy/ui';
 import type { QueryResult } from '../../../../shared/types/queryResult';
 import { formatHours } from '../../utils/formatHours';
 import { SessionRows } from './SessionRows';
@@ -10,6 +8,7 @@ import { StudioWidget } from '@goodboy/ui';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { NOT_LOADED_HINT, UNKNOWN_VALUE } from '../../../../shared/utils/unknownValue';
 import type { PaneFrame } from '../../../../shared/types/paneFrame';
+import { failedReadsOf } from '../../../../shared/utils/failedReadsOf';
 
 const FLOW_TILE_LABELS = [
   'Median wall-clock',
@@ -39,12 +38,17 @@ export const FlowPanel = ({
   const health = flowHealth.data;
   const countOrUnknown = (value: number | undefined): string =>
     value === undefined ? UNKNOWN_VALUE : String(value);
+  const failed = failedReadsOf({
+    reads: [
+      { label: 'agent duration', error: agentDurations.error },
+      { label: 'flow health', error: flowHealth.error },
+    ],
+  });
   return (
     <PaneShell scroll="body" page="impact" {...frame}>
-      <ErrorStrip label="agent duration" error={agentDurations.error} onRetry={onRetry} />
-      <ErrorStrip label="flow health" error={flowHealth.error} onRetry={onRetry} />
+      <ErrorStrip labels={failed.labels} error={failed.error} onRetry={onRetry} />
       {isLoading && agents === null && health === null ? (
-        <PanelLoading label="Loading impact metrics" />
+        <StatCardsSkeleton label="Loading impact metrics" />
       ) : null}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         {health === null ? (

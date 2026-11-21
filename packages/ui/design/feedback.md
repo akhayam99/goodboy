@@ -43,8 +43,8 @@ never colors the text, fills the surface or draws a line.
   owns, such as the terminal of a CLI update running inside the card.
 
 Every message shape in the desktop app renders through it. `ErrorStrip` is the
-one shape for a failed load, a thin danger `Notice` with Retry and Details
-(Empty states, state 4). Budget alerts
+one shape for a failed load, an inline danger `Notice` with Retry and Details
+(Empty states, state 4). It takes `labels`, so two failed reads of one view share one strip. Budget alerts
 and the unpriced-turns warning are banners. Guide tips, the partial brief after a step,
 the branch switch confirmation and merge conflicts are `inline`. So are three
 failures that used to print one red line: the wireframe viewer ("Couldn't show

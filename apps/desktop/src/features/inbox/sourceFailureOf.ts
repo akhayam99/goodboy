@@ -35,5 +35,5 @@ export const sourceFailureOf = ({ name, message }: Params): SourceFailure => {
       isRefused: true,
     };
   }
-  return { title: `${name} didn't load`, body: `${reason}.`, detail: null, isRefused: false };
+  return { title: `Couldn't load ${name}`, body: `${reason}.`, detail: null, isRefused: false };
 };

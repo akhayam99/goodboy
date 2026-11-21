@@ -128,7 +128,7 @@ export const WriteReview = ({ session }: Props) => {
     return (
       <PageColumn className="flex flex-col gap-3">
         <ReviewTargetChooser sessionId={sessionId} review={review} />
-        <ErrorStrip label="the diff" error={new Error(error)} onRetry={refresh} />
+        <ErrorStrip labels={['the diff']} error={new Error(error)} onRetry={refresh} />
       </PageColumn>
     );
   }

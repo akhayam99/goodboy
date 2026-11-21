@@ -5,10 +5,10 @@ import {
   Button,
   DrawerFrame,
   EmptyLine,
+  ErrorStrip,
   ICON_SIZE,
   IconButton,
-  Notice,
-  splitErrorMessage,
+  SkeletonRow,
   useCopyLink,
 } from '@goodboy/ui';
 import type { MountId, SessionId, WorkspaceId } from '@goodboy/types';
@@ -338,35 +338,18 @@ export const ScriptsPanel = ({ workspaceId, sessionId, onClose }: Props) => {
     }
     const scan = scans?.[group.worktreePath];
     if (scan?.status === 'error') {
-      const { summary, detail } = splitErrorMessage({ message: scan.error ?? '' });
       return (
-        <Notice
-          tone="danger"
-          placement="inline"
-          role="alert"
-          title={`Couldn't read the scripts of ${group.projectName}`}
-          body={summary ?? "Couldn't read this folder."}
-          detail={detail}
-          actions={
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={() =>
-                void refreshDiscoveredScripts({ sessionId, worktreePath: group.worktreePath })
-              }
-            >
-              Retry
-            </Button>
+        <ErrorStrip
+          labels={[`the scripts of ${group.projectName}`]}
+          error={new Error(scan.error ?? '')}
+          onRetry={() =>
+            void refreshDiscoveredScripts({ sessionId, worktreePath: group.worktreePath })
           }
         />
       );
     }
     if (discovered?.[group.worktreePath] === undefined) {
-      return (
-        <p className="px-2 py-2 text-meta text-faint-foreground">
-          Reading scripts in {group.projectName}…
-        </p>
-      );
+      return <SkeletonRow label={`Loading scripts in ${group.projectName}`} />;
     }
     if (draft.draft?.mountId === group.mountId) {
       return null;

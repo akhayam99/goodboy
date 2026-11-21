@@ -8,7 +8,7 @@ export const HistoryNoMount = () => (
       tone={CONCEPT_TONE.history}
       icon={CONCEPT_ICONS.history}
       title="This branch isn't in the session"
-      description="Pick a branch from the trail to see its commits."
+      description="Its commits show here once it is."
     />
   </PageColumn>
 );

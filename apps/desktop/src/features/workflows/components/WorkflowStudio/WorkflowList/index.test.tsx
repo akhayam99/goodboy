@@ -240,5 +240,30 @@ describe('WorkflowList', () => {
   it('shows the empty state when there is nothing to list', () => {
     renderList([]);
     expect(screen.getByText('No workflows yet')).toBeDefined();
+    expect(screen.queryByRole('button', { name: 'Restore built-in workflows' })).toBeNull();
+    expect(
+      screen.getByText(/^Create one to chain several agents in a single session\./).textContent,
+    ).not.toContain('restore');
+  });
+
+  it('restores the removed built-ins at once from an empty list', async () => {
+    const onRestore = vi.fn(async () => undefined);
+    render(
+      <WorkflowList
+        workflows={[]}
+        removedBuiltinIds={new Set([`wf_seed_${WORKFLOW_LIBRARY[0]?.slug}_ws-1`])}
+        workspaceName="Harborline"
+        isRestoring={false}
+        runs={null}
+        renderImport={() => null}
+        onOpen={vi.fn()}
+        onShowRuns={vi.fn()}
+        onNew={vi.fn()}
+        onRestore={onRestore}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Restore built-in workflows' }));
+    await vi.waitFor(() => expect(onRestore).toHaveBeenCalledWith([WORKFLOW_LIBRARY[0]?.slug]));
+    expect(screen.queryByRole('alert')).toBeNull();
   });
 });

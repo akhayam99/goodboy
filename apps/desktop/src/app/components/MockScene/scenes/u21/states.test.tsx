@@ -99,7 +99,7 @@ describe('the u21 page-state scenes', () => {
   it('shows the Questions first-time state', async () => {
     renderScene('questions-empty');
 
-    expect(await screen.findByText('Nothing waits for you')).toBeDefined();
+    expect(await screen.findByText('No questions yet')).toBeDefined();
   });
 
   it('draws no work card and no placeholder on a session where nothing ran yet', async () => {

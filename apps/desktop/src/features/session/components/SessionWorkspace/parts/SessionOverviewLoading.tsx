@@ -1,9 +1,10 @@
-import { RotateCcw, TriangleAlert } from '@goodboy/ui/icons';
-import { Button, EmptyState, ICON_SIZE, PAGE_MEASURE, PageColumn, PANE_RHYTHM } from '@goodboy/ui';
+import { ErrorStrip, PAGE_MEASURE, PageColumn, PANE_RHYTHM } from '@goodboy/ui';
 import { useSettleElapsed } from '../../../hooks/useSettleElapsed';
 import { SessionOverviewSkeleton } from './SessionOverviewSkeleton';
 
 const OVERVIEW_SETTLE_MS = 10_000;
+
+const RETRY_SENTENCE = 'Retry, or reopen it from the board.';
 
 type Props = {
   readonly isFreshLayout: boolean;
@@ -26,19 +27,7 @@ export const SessionOverviewLoading = ({ isFreshLayout, onRetry }: Props) => {
   return (
     <div className="flex h-full flex-col">
       <PageColumn width={PAGE_MEASURE.overview} className={PANE_RHYTHM.headerInset}>
-        <EmptyState
-          icon={TriangleAlert}
-          tone="warning"
-          title="This session did not load"
-          description="Retry, or reopen it from the board."
-          action={
-            <Button size="md" onClick={onRetry}>
-              <RotateCcw size={ICON_SIZE.control} aria-hidden />
-              Retry
-            </Button>
-          }
-          size="page"
-        />
+        <ErrorStrip labels={['this session']} error={new Error(RETRY_SENTENCE)} onRetry={onRetry} />
       </PageColumn>
     </div>
   );

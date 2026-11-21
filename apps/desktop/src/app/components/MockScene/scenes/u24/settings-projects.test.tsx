@@ -83,7 +83,7 @@ describe('the settings projects scenes', () => {
     mount({ id: 'settings-projects-failed' });
 
     const notice = await screen.findByRole('alert', undefined, WAIT);
-    within(notice).getByText("Couldn't read the scripts");
+    within(notice).getByText("Couldn't load the scripts");
     expect(within(notice).getByRole('button', { name: 'Retry' })).toBeDefined();
   });
 

@@ -26,7 +26,7 @@ describe('sourceFailureOf', () => {
 
   it('keeps Retry for a network error and shows its reason', () => {
     expect(sourceFailureOf({ name: 'Jira', message: 'connection reset' })).toMatchObject({
-      title: "Jira didn't load",
+      title: "Couldn't load Jira",
       isRefused: false,
     });
   });

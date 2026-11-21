@@ -4,6 +4,7 @@ import type { WorkflowRunHistoryRow } from '@goodboy/db';
 import { Button, ConfirmPopover, EmptyState, ICON_SIZE, ListGrid } from '@goodboy/ui';
 import type { Workflow } from '@goodboy/types';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../../shared/components/conceptIcons';
+import { NAMES } from '../../../../../shared/utils/names';
 import { WorkflowListMenu } from '../../../../actions/WorkflowListMenu';
 import {
   builtinWorkflowState,
@@ -106,7 +107,24 @@ export const WorkflowList = ({
           icon={CONCEPT_ICONS.workflows}
           tone={CONCEPT_TONE.workflows}
           title="No workflows yet"
-          description="Create one to chain several agents in a single session, or restore the built-in workflows. A run can start from any of them as a preset."
+          description={
+            hasRestorable
+              ? 'Create one to chain several agents in a single session, or restore the built-in workflows. A run can start from any of them as a preset.'
+              : 'Create one to chain several agents in a single session. A run can start from any of them as a preset.'
+          }
+          action={
+            hasRestorable ? (
+              <Button
+                size="sm"
+                variant="secondary"
+                isBusy={isRestoring}
+                onClick={() => void onRestore(restorable.map(({ entry }) => entry.slug))}
+              >
+                <RotateCcw size={ICON_SIZE.row} aria-hidden />
+                {NAMES.restoreBuiltInWorkflows}
+              </Button>
+            ) : undefined
+          }
         />
       ) : (
         <ListGrid label="Workflows" columns={WORKFLOW_LIST_COLUMNS}>

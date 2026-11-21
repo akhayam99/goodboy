@@ -80,10 +80,10 @@ describe('the secondary Impact scenes', () => {
     mount({ id: 'u26s-impact-empty' });
 
     expect(
-      await screen.findByRole('heading', { name: 'Nothing finished yet' }, WAIT),
+      await screen.findByRole('heading', { name: 'No finished sessions yet' }, WAIT),
     ).toBeDefined();
     expect(screen.getByText('0 sessions done')).toBeDefined();
-    const empty = screen.getByRole('heading', { name: 'Nothing finished yet' }).closest('div');
+    const empty = screen.getByRole('heading', { name: 'No finished sessions yet' }).closest('div');
     expect(
       within(empty?.parentElement ?? document.body).getByRole('button', { name: 'New session' }),
     ).toBeDefined();

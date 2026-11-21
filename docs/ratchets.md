@@ -145,6 +145,7 @@ test file, unless its row above says otherwise.
 | `scale-rules.baseline.json`                              | type, icon and spacing scale violations                                                              |
 | `disabled-opacity.baseline.json`                         | a disabled control dimmed by hand, not by the role                                                   |
 | `tone-opacity.baseline.json`                             | a tone with an opacity modifier (`bg-danger/10`) instead of its step token                           |
+| `no-warning-icon-empty-state.test.ts`                    | an `EmptyState` with a warning glyph, where a failed load is an `ErrorStrip`                         |
 | `loading-is-a-skeleton.baseline.json`                    | a visible Loading, or a bare Checking, Reading, Fetching or Searching word, where a skeleton belongs |
 | `empty-before-loaded.baseline.json`                      | a file with an empty state, a data read and no loaded flag                                           |
 | `rust-reason-copy.baseline.json`                         | a failure sentence written in Rust instead of a reason code                                          |

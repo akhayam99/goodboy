@@ -1,6 +1,8 @@
-import { EmptyState, PageColumn } from '@goodboy/ui';
+import { PageColumn } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
-import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../shared/components/conceptIcons';
+import { useAppStore } from '../../../store';
+import { selectSessionById } from '../../../store/slices/sessions/selectSessionById';
+import { BranchNoProject } from './BranchNoProject';
 import { CommitsHistory } from '../../history/components/CommitsHistory';
 
 type Props = {
@@ -10,17 +12,18 @@ type Props = {
 };
 
 export const BranchCommits = ({ sessionId, worktreePath, isReadOnly }: Props) => {
+  const workspaceId = useAppStore((state) => selectSessionById(state, sessionId)?.workspaceId);
   if (worktreePath === null) {
+    if (workspaceId === undefined) {
+      return null;
+    }
     return (
-      <PageColumn width="column">
-        <EmptyState
-          size="section"
-          tone={CONCEPT_TONE.diff}
-          icon={CONCEPT_ICONS.diff}
-          title="No branch in this session"
-          description="Add a branch to see its commits."
-        />
-      </PageColumn>
+      <BranchNoProject
+        sessionId={sessionId}
+        workspaceId={workspaceId}
+        size="section"
+        thing="commits"
+      />
     );
   }
   return (

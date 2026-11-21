@@ -1,9 +1,8 @@
-import { ErrorStrip } from '@goodboy/ui';
+import { Button, EmptyLine, ErrorStrip } from '@goodboy/ui';
 import type { SessionDiff } from '../../hooks/useSessionDiff';
 import { AllFilesEmpty } from './AllFilesEmpty';
 import { DiffEmptyState } from './DiffEmptyState';
 import { DiffLoadingBody } from './DiffLoadingBody';
-import { NoFilesMatch } from './NoFilesMatch';
 
 type Props = {
   readonly diff: SessionDiff;
@@ -26,12 +25,24 @@ export const ChangesPlainBody = ({
   if (diff.error !== null) {
     return (
       <div className="pl-4 pr-6">
-        <ErrorStrip label="the diff" error={new Error(diff.error)} onRetry={diff.refresh} />
+        <ErrorStrip labels={['the diff']} error={new Error(diff.error)} onRetry={diff.refresh} />
       </div>
     );
   }
   if (diff.files.length > 0) {
-    return <NoFilesMatch onClear={onClearFilters} />;
+    return (
+      <div className="pl-4 pr-6">
+        <EmptyLine
+          action={
+            <Button size="xs" variant="ghost" onClick={onClearFilters}>
+              Clear filter
+            </Button>
+          }
+        >
+          No files match.
+        </EmptyLine>
+      </div>
+    );
   }
   if (isAll) {
     return <AllFilesEmpty baseBranch={baseBranch} />;

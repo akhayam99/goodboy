@@ -237,7 +237,7 @@ describe('script pins in the project editor card', () => {
     render(<ProjectScriptsField project={LEDGER} />);
 
     const notice = await screen.findByRole('alert');
-    within(notice).getByText("Couldn't read the scripts");
+    within(notice).getByText("Couldn't load the scripts");
     fireEvent.click(within(notice).getByRole('button', { name: 'Retry' }));
 
     await screen.findByRole('button', { name: 'Pin dev' });

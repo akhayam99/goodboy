@@ -9,7 +9,7 @@ import {
   EmptyState,
   ErrorStrip,
   ICON_SIZE,
-  PanelLoading,
+  SkeletonRows,
   STRIPED_LIST,
 } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
@@ -141,9 +141,9 @@ export const PermissionsSettings = ({
         headingLevel={2}
       >
         <AddRuleForm onAdd={addRule} />
-        <ErrorStrip label="permission rules" error={rules.error} onRetry={rules.retry} />
+        <ErrorStrip labels={['permission rules']} error={rules.error} onRetry={rules.retry} />
         {rules.isLoading && rules.rules.length === 0 ? (
-          <PanelLoading label="Loading rules" />
+          <SkeletonRows label="Loading rules" />
         ) : null}
         {!rules.isLoading && rules.error === null && rules.rules.length === 0 ? (
           <EmptyState

@@ -22,7 +22,7 @@ export const PrChanges = ({ files, isLoading, error, onRetry }: Props) => {
   }
 
   if (error != null) {
-    return <ErrorStrip label="the diff" error={new Error(error)} onRetry={onRetry} />;
+    return <ErrorStrip labels={['the diff']} error={new Error(error)} onRetry={onRetry} />;
   }
 
   if (files.length === 0) {

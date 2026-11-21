@@ -1,5 +1,5 @@
 import { memo, useMemo } from 'react';
-import { Notice, splitErrorMessage, WorkNode } from '@goodboy/ui';
+import { Notice, SkeletonText, splitErrorMessage } from '@goodboy/ui';
 import type { ChatMessage, ChatMessageId, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
 import { useRevealedMarkdown } from '../../../../chat/reveal/useRevealedMarkdown';
@@ -64,12 +64,7 @@ const AskTurnView = ({ sessionId, question, reply, facts, onOpen, onStartWork }:
           aria-busy={isWriting ? true : undefined}
           className="flex min-w-0 flex-col gap-3"
         >
-          {isWriting && !hasText ? (
-            <div className="flex items-center gap-2 text-meta text-muted-foreground">
-              <WorkNode size="sm" state="running" mark={{ kind: 'dot' }} label="Reading" />
-              <span>Reading the session…</span>
-            </div>
-          ) : null}
+          {isWriting && !hasText ? <SkeletonText lines={2} label="Reading the session" /> : null}
           {hasText ? (
             <AskAnswer
               blocks={shown.blocks}

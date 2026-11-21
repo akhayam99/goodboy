@@ -546,7 +546,7 @@ describe('the Leads of a branch', () => {
         <WorkTab session={SESSION} mountId={THIRD.id} mountPath={THIRD.worktreePath} />
       </ToastProvider>,
     );
-    await screen.findByText('Nothing ran on this branch yet');
+    await screen.findByText('No work on this branch yet');
     expect(screen.queryByTestId('branch-work-lead')).toBeNull();
   });
 

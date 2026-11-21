@@ -1,6 +1,6 @@
 import { Check } from '@goodboy/ui/icons';
 import type { WorkspaceId } from '@goodboy/types';
-import { cn, EmptyLine, ICON_SIZE, FOCUS_RING } from '@goodboy/ui';
+import { cn, EmptyLine, ICON_SIZE, FOCUS_RING, SkeletonRow } from '@goodboy/ui';
 
 import { pluralize } from '../../../../shared/utils/pluralize';
 import { planSize } from '../../workspaceSettings/plan';
@@ -14,7 +14,7 @@ type Props = {
 
 export const FlowSourcePicker = ({ sources, sourceId, onPick }: Props) => {
   if (sources === null) {
-    return <EmptyLine>Reading the other workspaces…</EmptyLine>;
+    return <SkeletonRow label="Loading the other workspaces" />;
   }
   if (sources.length === 0) {
     return <EmptyLine>There is no other workspace to copy from.</EmptyLine>;

@@ -1,7 +1,7 @@
 import { CHECK_STATE } from '../../../../store/slices/notifications/errorRecovery';
 import { useEffect, useState } from 'react';
 import type { Project } from '@goodboy/types';
-import { Button, EmptyLine, Notice } from '@goodboy/ui';
+import { EmptyLine, ErrorStrip, SkeletonRow } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
 import { autoChecksKey } from '../../autoChecksKey';
 import { useScriptPins } from '../../hooks/useScriptPins';
@@ -64,25 +64,14 @@ export const ProjectScriptsField = ({ project }: Props) => {
     <div role="group" aria-label={`Scripts of ${project.name}`} className="flex flex-col gap-1">
       <span className="text-meta text-muted-foreground">{labelOf({ pinned: pins.length })}</span>
       {scan === undefined || scan.status === 'loading' ? (
-        <p className="text-meta text-faint-foreground">Reading scripts on {base}…</p>
+        <SkeletonRow label={`Loading scripts on ${base}`} />
       ) : null}
       {scan?.status === 'error' ? (
-        <Notice
-          tone="danger"
-          placement="inline"
-          role="alert"
-          title="Couldn't read the scripts"
-          body={scan.error}
-          actions={
-            <Button
-              variant="secondary"
-              size="sm"
-              disabled={isRetrying}
-              onClick={() => void retry()}
-            >
-              Retry
-            </Button>
-          }
+        <ErrorStrip
+          labels={['the scripts']}
+          error={new Error(scan.error ?? '')}
+          isBusy={isRetrying}
+          onRetry={() => void retry()}
         />
       ) : null}
       {scan?.status === 'ready' && count === 0 ? (

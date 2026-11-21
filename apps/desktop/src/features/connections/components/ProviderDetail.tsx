@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import type { WorkspaceId } from '@goodboy/types';
-import { PANE_RHYTHM, PageColumn, PanelLoading, cn, tintClasses } from '@goodboy/ui';
+import { PANE_RHYTHM, PageColumn, SkeletonRows, cn, tintClasses } from '@goodboy/ui';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../shared/components/conceptIcons';
 import { StudioTrail } from '../../../shared/components/StudioShell/StudioTrail';
 import { NAMES } from '../../../shared/utils/names';
@@ -50,7 +50,7 @@ export const ProviderDetail = ({ focus, workspaceId }: Props) => {
       </PageColumn>
       <div className="flex min-h-0 min-w-0 flex-1 flex-col">
         {info === undefined ? (
-          <PanelLoading label={`Looking for ${PROVIDER_LABEL[provider]}`} />
+          <SkeletonRows label={`Loading ${PROVIDER_LABEL[provider]}`} className="px-6 py-4" />
         ) : (
           <ProviderDetailBody
             info={info}

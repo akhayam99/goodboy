@@ -107,7 +107,7 @@ describe('provider page CLI row', () => {
       />,
     );
 
-    expect(screen.getByText('Detection failed')).toBeDefined();
+    expect(screen.getByText("Couldn't load the Claude CLI")).toBeDefined();
     expect(
       within(screen.getByRole('region', { name: 'Account' })).getByText('2.1.240'),
     ).toBeDefined();

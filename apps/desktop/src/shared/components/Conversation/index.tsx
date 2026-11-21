@@ -36,7 +36,7 @@ export const Conversation = ({ source, model }: Props) => {
   if (source.error != null) {
     return (
       <ErrorStrip
-        label="the conversation"
+        labels={['the conversation']}
         error={new Error(sentenceOf({ text: source.error }))}
         onRetry={source.onRetry}
       />

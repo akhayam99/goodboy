@@ -1,4 +1,4 @@
-import { Button, Notice } from '@goodboy/ui';
+import { ErrorStrip } from '@goodboy/ui';
 
 type Props = {
   readonly isChecking: boolean;
@@ -7,16 +7,10 @@ type Props = {
 };
 
 export const ChecksFailedNotice = ({ isChecking, error, onRetry }: Props) => (
-  <Notice
-    tone="danger"
-    placement="inline"
-    role="alert"
-    title="Couldn't read checks"
-    detail={error}
-    actions={
-      <Button variant="secondary" size="sm" isBusy={isChecking} onClick={onRetry}>
-        Retry
-      </Button>
-    }
+  <ErrorStrip
+    labels={['checks']}
+    error={new Error(error ?? '')}
+    isBusy={isChecking}
+    onRetry={onRetry}
   />
 );

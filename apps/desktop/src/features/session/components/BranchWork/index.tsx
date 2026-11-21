@@ -1,5 +1,5 @@
 import type { Session } from '@goodboy/types';
-import { Button, EmptyState, ICON_SIZE, ListGrid, Notice, PageColumn } from '@goodboy/ui';
+import { Button, EmptyState, ErrorStrip, ICON_SIZE, ListGrid, PageColumn } from '@goodboy/ui';
 import { branchWorkArtifactsRegistration } from '../../../artifacts/branchWorkArtifactsRegistration';
 import type { BranchWork as Work } from '../../../branch/branchWorkTab';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
@@ -46,7 +46,7 @@ export const BranchWork = ({ session, work }: Props) => {
         <EmptyState
           size="page"
           icon={CONCEPT_ICONS.workflows}
-          title="Nothing ran on this branch yet"
+          title="No work on this branch yet"
           description="Runs, questions and artifacts that touch this branch gather on this tab."
         />
       </PageColumn>
@@ -83,16 +83,10 @@ export const BranchWork = ({ session, work }: Props) => {
         )}
         {hasQuestionsError ? (
           <BranchWorkNotice>
-            <Notice
-              tone="danger"
-              placement="inline"
-              role="alert"
-              title="Couldn't load questions"
-              actions={
-                <Button size="sm" onClick={view.reloadQuestions}>
-                  Retry
-                </Button>
-              }
+            <ErrorStrip
+              labels={['questions']}
+              error={new Error('')}
+              onRetry={view.reloadQuestions}
             />
           </BranchWorkNotice>
         ) : questions === null ? null : (
@@ -106,17 +100,10 @@ export const BranchWork = ({ session, work }: Props) => {
         )}
         {hasArtifactsError ? (
           <BranchWorkNotice>
-            <Notice
-              tone="danger"
-              placement="inline"
-              role="alert"
-              title="Couldn't load artifacts"
-              detail={artifacts.error}
-              actions={
-                <Button size="sm" onClick={artifacts.reload}>
-                  Retry
-                </Button>
-              }
+            <ErrorStrip
+              labels={['artifacts']}
+              error={new Error(artifacts.error ?? '')}
+              onRetry={artifacts.reload}
             />
           </BranchWorkNotice>
         ) : (

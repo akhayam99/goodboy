@@ -37,7 +37,7 @@ export const ReviewTargetNotices = ({ sessionId }: Props) => {
   }
   return (
     <ErrorStrip
-      label={reviewTargetErrorLabel({ hasThread })}
+      labels={[reviewTargetErrorLabel({ hasThread })]}
       error={new Error(error)}
       onRetry={() => void openReview({ sessionId, destination: reviewTarget.destination })}
     />

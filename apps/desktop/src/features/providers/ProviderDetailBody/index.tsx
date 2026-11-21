@@ -2,8 +2,7 @@ import { useEffect } from 'react';
 import { isApiProvider } from '@goodboy/core/providers';
 import type { WorkspaceId } from '@goodboy/types';
 import {
-  Button,
-  EmptyState,
+  ErrorStrip,
   PaneShell,
   RefreshIconButton,
   StateBadge,
@@ -15,7 +14,6 @@ import { useAppStore } from '../../../store';
 import { ProviderMenu } from '../../actions/ProviderMenu';
 import { useProviderTarget } from '../hooks/useProviderTarget';
 import { ProviderConnect } from '../components/ProviderConnect';
-import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../shared/components/conceptIcons';
 import { AccountGroup } from '../components/ProviderStudio/ProviderPage/AccountGroup';
 import { CliGroup } from '../components/ProviderStudio/ProviderPage/AccountGroup/CliGroup';
 import { ModelsGroup } from '../components/ProviderStudio/ProviderPage/ModelsGroup';
@@ -109,17 +107,11 @@ export const ProviderDetailBody = ({
       />
       {isReady && !isApi ? <ProviderAttentionNotice providerId={id} /> : null}
       {hasDetectionError ? (
-        <EmptyState
-          bordered
-          tone={CONCEPT_TONE.providers}
-          icon={CONCEPT_ICONS.providers}
-          title="Detection failed"
-          description={info.error ?? `Goodboy couldn't detect the ${info.label} CLI.`}
-          action={
-            <Button size="sm" onClick={onRefresh} disabled={isChecking}>
-              Retry
-            </Button>
-          }
+        <ErrorStrip
+          labels={[`the ${info.label} CLI`]}
+          error={new Error(info.error ?? `Goodboy couldn't detect the ${info.label} CLI.`)}
+          isBusy={isChecking}
+          onRetry={onRefresh}
         />
       ) : null}
       {!isApi && !isReady && !hasDetectionError ? (

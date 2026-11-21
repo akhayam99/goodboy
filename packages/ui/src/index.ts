@@ -116,7 +116,7 @@ export type {
   MenuItemEntry,
   MenuPoint,
 } from './components/ContextMenu/menuTypes';
-export { PanelLoading } from './components/PanelLoading';
+export { StatCardsSkeleton } from './components/StatCardsSkeleton';
 export { RefreshIconButton } from './components/RefreshIconButton';
 export { Sparkline } from './components/Sparkline';
 export { StateBadge } from './components/StateBadge';
@@ -353,6 +353,7 @@ export type { SelectableRowProps } from './components/SelectableRow';
 export { Skeleton } from './components/Skeleton';
 export { SkeletonText } from './components/SkeletonText';
 export { SkeletonRow } from './components/SkeletonRow';
+export { SkeletonRows } from './components/SkeletonRows';
 export { SkeletonSwap } from './components/SkeletonSwap';
 export { useListMotion } from './useListMotion';
 export type { ListMotionEntry, ListMotionItem, ListMotionPhase } from './useListMotion';

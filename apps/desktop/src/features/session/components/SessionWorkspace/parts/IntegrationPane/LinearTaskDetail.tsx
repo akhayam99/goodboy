@@ -30,7 +30,7 @@ export const LinearTaskDetail = ({ workspaceId, projectId, task }: Props) => {
         meta={<span className="font-mono">{task.identifier}</span>}
       >
         <RecordProperties facts={[]} />
-        <ErrorStrip label="the Linear issue" error={new Error(error)} onRetry={refetch} />
+        <ErrorStrip labels={['the Linear issue']} error={new Error(error)} onRetry={refetch} />
       </PaneShell>
     );
   }

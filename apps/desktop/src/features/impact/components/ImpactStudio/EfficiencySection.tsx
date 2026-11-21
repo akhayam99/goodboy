@@ -4,9 +4,14 @@ import type {
   NudgeOutcomeCount,
   TurnBucket,
 } from '@goodboy/db';
-import { SectionHeader, StatCard, formatTokens, EmptyState } from '@goodboy/ui';
-import { ErrorStrip } from '@goodboy/ui';
-import { PanelLoading } from '@goodboy/ui';
+import {
+  SectionHeader,
+  StatCard,
+  formatTokens,
+  EmptyState,
+  ErrorStrip,
+  StatCardsSkeleton,
+} from '@goodboy/ui';
 import type { QueryResult } from '../../../../shared/types/queryResult';
 import { turnStats } from '../../utils/turnStats';
 import { TurnHistogram } from './TurnHistogram';
@@ -14,6 +19,7 @@ import { StudioWidget } from '@goodboy/ui';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { Meter, Sparkline } from '@goodboy/ui';
 import { formatInteger } from '../../../../shared/utils/formatInteger';
+import { failedReadsOf } from '../../../../shared/utils/failedReadsOf';
 
 type Props = {
   readonly cacheEfficiency: QueryResult<ReadonlyArray<CacheEfficiencyEntry>>;
@@ -42,6 +48,14 @@ export const EfficiencySection = ({
   const overallHitRatio = totalInput > 0 ? totalCached / totalInput : 0;
   const accepted = nudgeData?.find((entry) => entry.outcome === 'accepted')?.count ?? 0;
   const nudgeTotal = nudgeData?.reduce((sum, entry) => sum + entry.count, 0) ?? 0;
+  const failed = failedReadsOf({
+    reads: [
+      { label: 'cache efficiency', error: cacheEfficiency.error },
+      { label: 'context growth', error: contextGrowth.error },
+      { label: 'turn distribution', error: turns.error },
+      { label: 'right-size suggestions', error: nudges.error },
+    ],
+  });
   return (
     <section className="flex flex-col gap-4">
       <SectionHeader
@@ -49,16 +63,13 @@ export const EfficiencySection = ({
         hint="How well the spend is used: cache reuse, context, turns and model suggestions."
         headingLevel={2}
       />
-      <ErrorStrip label="cache efficiency" error={cacheEfficiency.error} onRetry={onRetry} />
-      <ErrorStrip label="context growth" error={contextGrowth.error} onRetry={onRetry} />
-      <ErrorStrip label="turn distribution" error={turns.error} onRetry={onRetry} />
-      <ErrorStrip label="right-size suggestions" error={nudges.error} onRetry={onRetry} />
+      <ErrorStrip labels={failed.labels} error={failed.error} onRetry={onRetry} />
       {isLoading &&
       cache === null &&
       context === null &&
       turnData === null &&
       nudgeData === null ? (
-        <PanelLoading label="Loading impact metrics" />
+        <StatCardsSkeleton label="Loading impact metrics" />
       ) : null}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <StatCard label="Cache hit ratio" value={`${Math.round(overallHitRatio * 100)}%`} />

@@ -1,7 +1,6 @@
 import type { ExternalTaskOutcomes, PullRequestOutcomes, ReviewOutcomes } from '@goodboy/db';
 import type { SessionId } from '@goodboy/types';
-import { ErrorStrip, PaneShell, EmptyState } from '@goodboy/ui';
-import { PanelLoading } from '@goodboy/ui';
+import { ErrorStrip, PaneShell, EmptyState, StatCardsSkeleton } from '@goodboy/ui';
 import type { QueryResult } from '../../../../shared/types/queryResult';
 import { formatHours } from '../../utils/formatHours';
 import { PullRequestRow } from './PullRequestRow';
@@ -14,6 +13,7 @@ import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conce
 import type { PaneFrame } from '../../../../shared/types/paneFrame';
 import { NOT_LOADED_HINT, UNKNOWN_VALUE } from '../../../../shared/utils/unknownValue';
 import { valueOrUnknown } from '../../../../shared/utils/valueOrUnknown';
+import { failedReadsOf } from '../../../../shared/utils/failedReadsOf';
 
 const FUNNEL_ROWS = 5;
 
@@ -52,13 +52,18 @@ export const ShippedPanel = ({
   const slowReviews = Math.max(totalReviews - fastReviews - sameDayReviews, 0);
   const reviewCount = ({ count }: CountParams): string =>
     valueOrUnknown({ value: reviewData === null ? null : count });
+  const failed = failedReadsOf({
+    reads: [
+      { label: 'pull requests', error: pullRequests.error },
+      { label: 'review throughput', error: reviews.error },
+      { label: 'linked issues', error: externalTasks.error },
+    ],
+  });
   return (
     <PaneShell scroll="body" page="impact" {...frame}>
-      <ErrorStrip label="pull requests" error={pullRequests.error} onRetry={onRetry} />
-      <ErrorStrip label="review throughput" error={reviews.error} onRetry={onRetry} />
-      <ErrorStrip label="linked issues" error={externalTasks.error} onRetry={onRetry} />
+      <ErrorStrip labels={failed.labels} error={failed.error} onRetry={onRetry} />
       {isLoading && prs === null && reviewData === null && tasks === null ? (
-        <PanelLoading label="Loading impact metrics" />
+        <StatCardsSkeleton label="Loading impact metrics" />
       ) : null}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <TrendStatCard

@@ -11,6 +11,7 @@ export type RecentDecisions = {
   readonly decisions: ReadonlyArray<RecentDecision>;
   readonly isLoading: boolean;
   readonly error: string | null;
+  readonly retry: () => void;
 };
 
 const EMPTY: ReadonlyArray<RecentDecision> = [];
@@ -19,6 +20,7 @@ export const useRecentDecisions = ({ sessionIds }: Params): RecentDecisions => {
   const [decisions, setDecisions] = useState<ReadonlyArray<RecentDecision>>(EMPTY);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [attempt, setAttempt] = useState(0);
   const key = sessionIds.join('|');
 
   useEffect(() => {
@@ -49,7 +51,7 @@ export const useRecentDecisions = ({ sessionIds }: Params): RecentDecisions => {
     return () => {
       isCancelled = true;
     };
-  }, [key]);
+  }, [key, attempt]);
 
-  return { decisions, isLoading, error };
+  return { decisions, isLoading, error, retry: () => setAttempt((count) => count + 1) };
 };

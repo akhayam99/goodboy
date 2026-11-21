@@ -377,8 +377,9 @@ characters`, in the warning tone from 90%. A longer draft is blocked before
   was deleted or moved shows one empty state, "This run is no longer in this
   session" (`GoneObject`), on its page or in its drawer, with Back on a page;
   a drawer waits for its collection to load before it says so. A run that is
-  still in the session but whose steps did not load says "This run couldn't be
-  read" with Retry (`RunMetadataMissing`), never that it is gone.
+  still in the session but whose steps did not load says "Couldn't load this
+  run" with Retry and Back (`RunMetadataMissing`, an `ErrorStrip`), never that
+  it is gone.
 
 The tools (Terminal and Browser) are panes, not pages:
 they open from the right rail at the right of the content (see The

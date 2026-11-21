@@ -130,7 +130,7 @@ export const FileDiffDrawer = ({ sessionId, source, path, onClose }: Props) => {
         </div>
       ) : diff.error !== null ? (
         <div className="p-3">
-          <ErrorStrip label="the diff" error={new Error(diff.error)} onRetry={diff.refresh} />
+          <ErrorStrip labels={['the diff']} error={new Error(diff.error)} onRetry={diff.refresh} />
         </div>
       ) : files.length === 0 ? (
         <p className="p-4 text-body text-muted-foreground">

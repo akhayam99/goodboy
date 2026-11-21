@@ -840,7 +840,7 @@ describe('DiffView with bodies on demand', () => {
     const { bodies, retry } = bodiesOf({ [LEDGER.path]: 'failed' });
     render(<DiffView files={[LEDGER_LIST]} bodies={bodies} />);
 
-    screen.getByText("Couldn't load this diff.");
+    screen.getByText("Couldn't load this diff");
     fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
 
     expect(retry).toHaveBeenCalledWith({ path: LEDGER.path });

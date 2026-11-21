@@ -451,7 +451,8 @@ describe('ChangesPage filter', () => {
 
     fireEvent.change(filterField(), { target: { value: 'zzz' } });
 
-    screen.getByText('No files match');
+    expect(screen.getAllByText('No files match.').length).toBeGreaterThan(0);
+    expect(screen.getAllByRole('button', { name: 'Clear filter' }).length).toBeGreaterThan(0);
     expect(screen.queryByTestId('diff-view')).toBeNull();
     expect(screen.getAllByRole('button', { name: /Compared with/ })).toHaveLength(1);
   });
