@@ -1228,7 +1228,7 @@
           "also": "what it received"
         },
         {
-          "title": "Agent transcript",
+          "title": "Transcript",
           "text": "Follow one agent's work as one conversation you can write in.",
           "group": "Agents",
           "main": true

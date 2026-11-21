@@ -120,7 +120,7 @@ export const PushFailureActions = ({
             {isRetry ? NAMES.retry : NAMES.fixPushWithAgent}
           </Button>
           <Button size="sm" variant="ghost" isBusy={isOpening} onClick={() => void openTerminal()}>
-            Open terminal here
+            Open in Terminal
           </Button>
         </>
       )}

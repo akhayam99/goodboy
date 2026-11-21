@@ -306,7 +306,7 @@ export const useCommandEntries = (): ReadonlyArray<PaletteEntry> => {
           kind: 'create',
           group: 'action',
           icon: Plus,
-          secondary: ['Open terminal', 'New terminal'],
+          secondary: ['Open in Terminal', 'New terminal'],
           run: () =>
             isInSession && sessionId !== null
               ? void openSessionTerminalHere({ sessionId, isFresh: true })

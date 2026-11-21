@@ -486,7 +486,7 @@ describe('the job banner', () => {
 
     expect(verbsIn({ node: screen.getByRole('region', { name: 'Rebase' }) })).toEqual([
       'Fix with an agent',
-      'Open terminal here',
+      'Open in Terminal',
       'Retry push',
     ]);
     screen.getByRole('button', { name: 'Details' });
@@ -542,7 +542,7 @@ describe('the job banner', () => {
       stop: { reason: 'push-failed', message: 'declined\nlint error', files: [], sha: null },
     });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Open terminal here' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Open in Terminal' }));
 
     const tabs = useAppStore.getState().terminalTabs[A_REBASE_SESSION_ID] ?? [];
     expect(tabs[0]?.prefill).toBe(
@@ -587,7 +587,7 @@ describe('the job banner', () => {
     expect(screen.getByRole('dialog', { name: 'Push output' }).textContent).toContain(
       'postCredit.ts 14:7 error',
     );
-    screen.getByRole('button', { name: 'Open terminal here' });
+    screen.getByRole('button', { name: 'Open in Terminal' });
   });
 
   it('sends a missing provider to Connections', async () => {
@@ -611,7 +611,7 @@ describe('the job banner', () => {
 
       expect(verbsIn({ node: screen.getByRole('region', { name: 'Rebase' }) })).toEqual([
         'Retry rebase',
-        'Open terminal',
+        'Open in Terminal',
       ]);
     },
   );
@@ -645,7 +645,7 @@ describe('a dirty tree stop', () => {
     );
     expect(verbsIn({ node: screen.getByRole('region', { name: 'Rebase' }) })).toEqual([
       'Retry rebase',
-      'Open terminal',
+      'Open in Terminal',
     ]);
 
     dirty.changed = 0;
@@ -814,7 +814,7 @@ describe('the rebase stop panel', () => {
     expect(panel().textContent).toContain('2 of 2 files left.');
     expect(verbsIn({ node: panel() })).toEqual([
       'Continue rebase',
-      'Open terminal',
+      'Open in Terminal',
       'Abort rebase',
     ]);
     const blocked = within(panel()).getByRole('button', { name: 'Continue rebase' });
@@ -1013,14 +1013,14 @@ describe('a rebase git is in the middle of with no Goodboy stop', () => {
   const rowVerbs = (): ReadonlyArray<string> =>
     verbsIn({ node: screen.getByRole('region', { name: 'Rebase' }) });
 
-  it('draws one minimal row with Continue, Open terminal and Abort', async () => {
+  it('draws one minimal row with Continue, Open in Terminal and Abort', async () => {
     gitNow.isRebasing = true;
     gitNow.unmerged = 1;
     render(<JobBanner sessionId={A_REBASE_SESSION_ID} worktreePath={WORKTREE} />);
     await settle();
 
     screen.getByText('Rebase in progress in the worktree');
-    expect(rowVerbs()).toEqual(['Continue rebase', 'Open terminal', 'Abort rebase']);
+    expect(rowVerbs()).toEqual(['Continue rebase', 'Open in Terminal', 'Abort rebase']);
   });
 
   it('continues the rebase and draws nothing once git is done', async () => {

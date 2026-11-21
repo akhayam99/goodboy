@@ -19,7 +19,7 @@ describe('commentRowResultOf', () => {
     ).toEqual({ state: 'fixReady', detail: 'Fixed in 90b1d57', action: 'reviewApply' });
   });
 
-  it('says Applied, not pushed with Open changes once you applied it', () => {
+  it('says Applied, not pushed with Open in Changes once you applied it', () => {
     expect(
       commentRowResultOf({
         state: 'accepted',

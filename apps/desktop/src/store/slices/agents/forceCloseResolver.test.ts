@@ -12,6 +12,7 @@ import type { GetFn, SetFn } from './types';
 
 const hoisted = vi.hoisted(() => ({
   cancelTurn: vi.fn(async () => undefined),
+  listLiveRunIds: vi.fn(async () => new Set<string>()),
   invokeAgentUpdateStatus: vi.fn(async () => undefined),
   invokeAgentList: vi.fn(async () => [] as ReadonlyArray<Agent>),
   updateSessionState: vi.fn(async () => undefined),
@@ -27,7 +28,10 @@ const hoisted = vi.hoisted(() => ({
   })),
 }));
 
-vi.mock('../../../features/chat/turn', () => ({ cancelTurn: hoisted.cancelTurn }));
+vi.mock('../../../features/chat/turn', () => ({
+  cancelTurn: hoisted.cancelTurn,
+  listLiveRunIds: hoisted.listLiveRunIds,
+}));
 vi.mock('../../../features/workflows/workflows', () => ({
   invokeAgentUpdateStatus: hoisted.invokeAgentUpdateStatus,
   invokeAgentList: hoisted.invokeAgentList,
@@ -105,6 +109,7 @@ const makeStore = () => {
   const selectAgent = vi.fn(async () => undefined);
   const state: Record<string, unknown> = {
     recordResolvePhase: vi.fn(async () => undefined),
+    reportError: vi.fn(async () => undefined),
     sessionPhaseRuns: {
       [SID]: [
         resolver({ id: STUCK, status: 'running', ordinal: 0 }),
@@ -226,5 +231,31 @@ describe('forceCloseResolver', () => {
     await forceCloseResolver(set, get)(SID, STUCK);
 
     expect(hoisted.abandonWorktreeWriter).not.toHaveBeenCalled();
+  });
+
+  it('keeps the live state and reports when the process is still alive after a failed cancel', async () => {
+    const { state, get, set } = makeStore();
+    hoisted.cancelTurn.mockRejectedValueOnce(new Error('kill refused'));
+    hoisted.listLiveRunIds.mockResolvedValueOnce(new Set([RUN]));
+
+    const outcome = await forceCloseResolver(set, get)(SID, STUCK);
+
+    expect(outcome).toBe('still_running');
+    expect(state.reportError).toHaveBeenCalledTimes(1);
+    expect(state.recordResolvePhase).not.toHaveBeenCalled();
+    expect(hoisted.invokeAgentUpdateStatus).not.toHaveBeenCalled();
+    expect(hoisted.abandonWorktreeWriter).not.toHaveBeenCalled();
+    expect(state.agentTurnState).toMatchObject({ [STUCK]: { kind: 'running' } });
+  });
+
+  it('closes the resolver when the cancel failed because the process was already gone', async () => {
+    const { get, set } = makeStore();
+    hoisted.cancelTurn.mockRejectedValueOnce(new Error('no such run'));
+    hoisted.listLiveRunIds.mockResolvedValueOnce(new Set());
+    hoisted.invokeAgentList.mockResolvedValue([
+      resolver({ id: STUCK, status: 'skipped', ordinal: 0 }),
+    ]);
+
+    expect(await forceCloseResolver(set, get)(SID, STUCK)).toBe('closed');
   });
 });

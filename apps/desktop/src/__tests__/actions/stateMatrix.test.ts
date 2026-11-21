@@ -263,8 +263,8 @@ describe('session menu in every state', () => {
       ?.resolve()
       .find((candidate) => candidate.id === 'session.openWorktreeTerminal');
     expect(action?.choices?.map((choice) => choice.label)).toEqual([
-      `Open ${mountFixture().mountName} · ${mountFixture().branch} in terminal`,
-      'Open notify-relay · hl/payout-webhook in terminal',
+      `${mountFixture().mountName} · ${mountFixture().branch}`,
+      'notify-relay · hl/payout-webhook',
     ]);
     await run(SESSION_TARGET, 'session.openWorktreeTerminal', 'mount-notify-relay');
     const tabs = useAppStore.getState().terminalTabs[SESSION] ?? [];

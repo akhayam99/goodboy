@@ -36,6 +36,7 @@ import { RENAME_REQUEST_EVENT, requestRename } from '../../../shared/utils/renam
 import { OPEN_AGENT_INTENT } from '../../../shared/utils/openAgentReveal';
 import type { ActionEnv, AgentActionTarget, ObjectKindDefinition } from '../types';
 import { sessionById } from '../../../store/slices/sessions/sessionIndex';
+import { VERBS } from '../../../shared/utils/verbs';
 
 export type AgentFacts = {
   readonly agent: Agent;
@@ -140,8 +141,7 @@ export const AGENT_KIND: ObjectKindDefinition<AgentActionTarget, AgentFacts> = {
     },
     {
       id: 'agent.changes',
-      label: 'Show its changes',
-      icon: CONCEPT_ICONS.diff,
+      ...VERBS.openInChanges,
       group: 'open',
       when: () => true,
       blockedReason: ({ facts }) => (facts.hasMount ? null : NO_MOUNT_REASON),

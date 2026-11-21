@@ -44,7 +44,7 @@ export const ITEM_WORK_WORDS = {
     discard: 'Discard',
     analyzeAgain: 'Analyze again',
     answer: 'Answer',
-    openChanges: 'Open changes',
+    openChanges: 'Open in Changes',
   },
 } as const satisfies Readonly<{
   state: Readonly<Record<string, ItemWorkWord>>;

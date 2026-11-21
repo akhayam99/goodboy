@@ -1,5 +1,6 @@
-import { Copy, Link, SquareArrowOutUpRight } from '@goodboy/ui/icons';
+import { Copy, SquareArrowOutUpRight } from '@goodboy/ui/icons';
 import type { CheckRunActionTarget, ObjectKindDefinition } from '../types';
+import { VERBS } from '../../../shared/utils/verbs';
 
 export type CheckRunFacts = {
   readonly name: string;
@@ -21,8 +22,7 @@ export const CHECK_RUN_KIND: ObjectKindDefinition<CheckRunActionTarget, CheckRun
     },
     {
       id: 'checkRun.copyLink',
-      label: 'Copy link',
-      icon: Link,
+      ...VERBS.copyLink,
       group: 'copy',
       when: ({ facts }) => facts.url !== null,
       run: ({ facts, env }) => env.copyText({ text: facts.url ?? '' }),

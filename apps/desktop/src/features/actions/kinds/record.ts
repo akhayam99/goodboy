@@ -1,4 +1,4 @@
-import { ArrowUpRight, Hash, Link, PlayCircle, RefreshCw, Star } from '@goodboy/ui/icons';
+import { ArrowUpRight, Hash, PlayCircle, RefreshCw, Star } from '@goodboy/ui/icons';
 import type { SessionId } from '@goodboy/types';
 import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
 import { openWebAction } from '../openWebAction';
@@ -6,6 +6,7 @@ import { startFromLabel } from '../../../shared/lib/startCopy';
 import { sessionPlace } from '../../../store/slices/navigation/place';
 import type { RecordVerb } from '../../../shared/components/StudioDetail/RecordActions/types';
 import type { ActionDefinition, ObjectKindDefinition, RecordActionTarget } from '../types';
+import { VERBS } from '../../../shared/utils/verbs';
 
 export type RecordFacts = {
   readonly identifier: string;
@@ -82,7 +83,7 @@ export const RECORD_KIND: ObjectKindDefinition<RecordActionTarget, RecordFacts> 
     },
     {
       id: 'record.openInProvider',
-      label: ({ facts }) => `Open in ${facts.providerLabel}`,
+      label: ({ facts }) => `Open on ${facts.providerLabel}`,
       icon: ArrowUpRight,
       group: 'open',
       when: ({ facts }) => facts.url !== '',
@@ -114,8 +115,7 @@ export const RECORD_KIND: ObjectKindDefinition<RecordActionTarget, RecordFacts> 
     },
     {
       id: 'record.copyLink',
-      label: 'Copy link',
-      icon: Link,
+      ...VERBS.copyLink,
       group: 'copy',
       when: ({ facts }) => facts.url !== '',
       run: ({ facts, env }) => env.copyText({ text: facts.url }),

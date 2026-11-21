@@ -9,12 +9,12 @@ afterEach(cleanup);
 describe('ComposerPlusMenu', () => {
   it('shows the prefix next to each menu entry, so the syntax is learned here', () => {
     render(<ComposerPlusMenu onAttachFiles={vi.fn()} onInsertPrefix={vi.fn()} />);
-    fireEvent.click(screen.getByRole('button', { name: 'More actions' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Add to message' }));
     screen.getByText('Run a script');
     screen.getByText('$');
     screen.getByText('Start workflow');
     screen.getByText('~');
-    screen.getByText('Ask another agent');
+    screen.getByText('Message an agent');
     screen.getByText('@');
     screen.getByText('Attach files');
   });
@@ -22,7 +22,7 @@ describe('ComposerPlusMenu', () => {
   it('calls onAttachFiles and closes when that entry is picked', () => {
     const onAttachFiles = vi.fn();
     render(<ComposerPlusMenu onAttachFiles={onAttachFiles} onInsertPrefix={vi.fn()} />);
-    fireEvent.click(screen.getByRole('button', { name: 'More actions' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Add to message' }));
     fireEvent.click(screen.getByText('Attach files'));
     expect(onAttachFiles).toHaveBeenCalledOnce();
     expect(screen.queryByText('Attach files')).toBeNull();
@@ -31,14 +31,14 @@ describe('ComposerPlusMenu', () => {
   it('inserts the prefix symbol when a prefix entry is picked', () => {
     const onInsertPrefix = vi.fn();
     render(<ComposerPlusMenu onAttachFiles={vi.fn()} onInsertPrefix={onInsertPrefix} />);
-    fireEvent.click(screen.getByRole('button', { name: 'More actions' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Add to message' }));
     fireEvent.click(screen.getByText('Start workflow'));
     expect(onInsertPrefix).toHaveBeenCalledWith('~');
   });
 
   it('opens on the first entry and moves with the arrow keys', () => {
     render(<ComposerPlusMenu onAttachFiles={vi.fn()} onInsertPrefix={vi.fn()} />);
-    fireEvent.click(screen.getByRole('button', { name: 'More actions' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Add to message' }));
     const menu = screen.getByRole('menu', { name: 'Composer actions' });
 
     expect(document.activeElement).toBe(screen.getByRole('menuitem', { name: 'Attach files' }));
@@ -50,7 +50,7 @@ describe('ComposerPlusMenu', () => {
 
   it('disables the trigger when the composer is blocked', () => {
     render(<ComposerPlusMenu onAttachFiles={vi.fn()} onInsertPrefix={vi.fn()} disabled />);
-    expect(screen.getByRole('button', { name: 'More actions' }).hasAttribute('disabled')).toBe(
+    expect(screen.getByRole('button', { name: 'Add to message' }).hasAttribute('disabled')).toBe(
       true,
     );
   });

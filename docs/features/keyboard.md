@@ -195,7 +195,7 @@ Pin the scripts you use and run them from the session.
 
 ### Open in editor
 
-Jump into VS Code, Cursor, Zed, the JetBrains IDEs, Sublime Text, Vim or Neovim, at the worktree or the file. **Open with**, in **Settings › General**, picks the editor, the terminal app and the browser that links and artifacts open in. **Open in terminal app** sits in the menus of a session, a branch folder, a worktree and a folder in Files. It opens the folder in Terminal.app, iTerm, Warp or Ghostty, whichever are installed. A file path with a line number in a terminal opens at that line in your editor. `code -g`, `zed` and `subl` take `file:line:col`. The JetBrains IDEs take `--line` and `--column`. Linux uses the system terminal.
+Jump into VS Code, Cursor, Zed, the JetBrains IDEs, Sublime Text, Vim or Neovim, at the worktree or the file. **Open with**, in **Settings › General**, picks the editor, the terminal app and the browser that links and artifacts open in. **Open in external terminal** sits in the menus of a session, a branch folder, a worktree and a folder in Files. It opens the folder in Terminal.app, iTerm, Warp or Ghostty, whichever are installed. A file path with a line number in a terminal opens at that line in your editor. `code -g`, `zed` and `subl` take `file:line:col`. The JetBrains IDEs take `--line` and `--column`. Linux uses the system terminal.
 
 ### Explore
 

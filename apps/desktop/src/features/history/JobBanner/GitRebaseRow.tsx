@@ -57,7 +57,7 @@ export const GitRebaseRow = ({ sessionId, worktreePath, actions }: Props) => {
               disabled={isBusy}
               onClick={() => openMountTerminal(sessionId, worktreePath)}
             >
-              Open terminal
+              Open in Terminal
             </Button>
             <ConfirmPopover
               role={REBASE_ABORT_CONFIRM.role}

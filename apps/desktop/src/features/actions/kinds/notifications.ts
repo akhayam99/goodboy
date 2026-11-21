@@ -1,4 +1,5 @@
-import { CheckCheck, Trash2 } from '@goodboy/ui/icons';
+import { VERBS } from '../../../shared/utils/verbs';
+import { Trash2 } from '@goodboy/ui/icons';
 import type { NotificationsActionTarget, ObjectKindDefinition } from '../types';
 import { countNoun } from '../../../shared/utils/countNoun';
 
@@ -26,8 +27,7 @@ export const NOTIFICATIONS_KIND: ObjectKindDefinition<
   actions: [
     {
       id: 'notifications.markAllRead',
-      label: 'Mark all read',
-      icon: CheckCheck,
+      ...VERBS.markAllAsRead,
       group: 'act',
       description: ({ facts }) =>
         facts.workspaceName === null ? 'In every workspace' : `In ${facts.workspaceName}`,

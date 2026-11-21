@@ -7,7 +7,7 @@ vi.mock('@tauri-apps/api/core', async () => {
 vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn(async () => () => undefined) }));
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { ToastProvider } from '../../../../../shared/components/Toast';
 import {
   STORE_IMPORT_TIMEOUT_MS,
@@ -153,6 +153,7 @@ describe('the run header scenes on the orchestrated document', () => {
     fireEvent.click(within(bar).getByRole('button', { name: /run actions$/ }));
     expect(within(screen.getByRole('menu')).queryByText('Continue')).toBeNull();
     fireEvent.click(within(screen.getByRole('menu')).getByRole('menuitem', { name: /^Stop run/ }));
-    expect(await screen.findByText('Stop this run?')).toBeDefined();
+    await waitFor(() => expect(screen.queryByRole('menu')).toBeNull());
+    expect(screen.queryByText('Stop this run?')).toBeNull();
   });
 });

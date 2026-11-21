@@ -91,7 +91,7 @@ export const FolderCard = ({ sessionId }: Props) => {
                   size="xs"
                   onClick={() => openLens({ sessionId, lens: 'files' })}
                 >
-                  Open changes
+                  Open in Changes
                 </Button>
               </dd>
               {copy.readOnly === null ? null : (

@@ -70,12 +70,12 @@ describe('the secondary Notifications scenes', () => {
     expect(state.notifications.filter((row) => /how often to check/.test(row.title))).toEqual([]);
   });
 
-  it('u26s-notifications-header-menu offers Mark all read and Delete all', async () => {
+  it('u26s-notifications-header-menu offers Mark all as read and Delete all', async () => {
     mount({ id: 'u26s-notifications-header-menu' });
 
     const menu = await screen.findByRole('menu', { name: 'More notification actions' }, WAIT);
 
-    expect(within(menu).getByRole('menuitem', { name: /Mark all read/ })).toBeDefined();
+    expect(within(menu).getByRole('menuitem', { name: /Mark all as read/ })).toBeDefined();
     expect(within(menu).getByRole('menuitem', { name: /Delete all/ })).toBeDefined();
   });
 

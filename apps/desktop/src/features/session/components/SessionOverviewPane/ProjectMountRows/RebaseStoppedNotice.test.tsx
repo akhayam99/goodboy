@@ -103,7 +103,7 @@ describe('RebaseStoppedNotice', () => {
   it('opens a terminal in the worktree', () => {
     renderNotice(statusOf());
 
-    fireEvent.click(screen.getByRole('button', { name: 'Open terminal' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Open in Terminal' }));
 
     expect(onOpenTerminal).toHaveBeenCalled();
   });

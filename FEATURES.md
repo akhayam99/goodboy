@@ -123,7 +123,7 @@ A workflow runs several agents in one session, each step with its own role, mode
 
 [More on workflows](docs/features/workflows.md)
 
-<a id="workspace-chat"></a><a id="ask-in-a-session"></a><a id="images-in-chat"></a><a id="roles"></a><a id="agent-header"></a><a id="one-page-per-agent"></a><a id="what-the-agent-received"></a><a id="agent-transcript"></a><a id="one-dock"></a><a id="agent-suggests"></a><a id="queue-or-send-now"></a><a id="message-and-document-fields"></a><a id="stop-and-continue"></a><a id="quiet-agents"></a><a id="turn-footer"></a><a id="tool-call-states"></a><a id="composer-plus-menu"></a><a id="attach-files"></a><a id="drift-warning"></a><a id="subagents-from-plan-parts"></a><a id="auto-agent"></a><a id="lead"></a><a id="work-section"></a><a id="history-rewriter-and-scribe"></a><a id="one-language-per-session"></a><a id="agents-column"></a>
+<a id="workspace-chat"></a><a id="ask-in-a-session"></a><a id="images-in-chat"></a><a id="roles"></a><a id="agent-header"></a><a id="one-page-per-agent"></a><a id="what-the-agent-received"></a><a id="transcript"></a><a id="agent-transcript"></a><a id="one-dock"></a><a id="agent-suggests"></a><a id="queue-or-send-now"></a><a id="message-and-document-fields"></a><a id="stop-and-continue"></a><a id="quiet-agents"></a><a id="turn-footer"></a><a id="tool-call-states"></a><a id="composer-plus-menu"></a><a id="attach-files"></a><a id="drift-warning"></a><a id="subagents-from-plan-parts"></a><a id="auto-agent"></a><a id="lead"></a><a id="work-section"></a><a id="history-rewriter-and-scribe"></a><a id="one-language-per-session"></a><a id="agents-column"></a>
 
 ## Agents
 
@@ -132,7 +132,7 @@ Talk to agents, watch what they do and steer them while they work. You can ask q
 - **Workspace chat**: Ask about the workspace without starting a session.
 - **Ask in a session**: Ask what is happening in a session without leaving it.
 - **Roles**: Give each agent the job it is good at.
-- **Agent transcript**: Follow one agent's work as one conversation you can write in.
+- **Transcript**: Follow one agent's work as one conversation you can write in.
 - **Agents column**: See every agent of a run beside its page.
 - **Lead**: A Lead plans a run, hands the work to helpers and asks you only for what your permission rows say.
 

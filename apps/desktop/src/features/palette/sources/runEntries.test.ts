@@ -19,6 +19,8 @@ const facts = (
   name: `Run ${id}`,
   state,
   isClosable: false,
+  hasArchiveEffects: false,
+  isOperatorStopped: false,
   openQuestionId: null,
   stoppedAgentId: null,
   readyAgentId: null,

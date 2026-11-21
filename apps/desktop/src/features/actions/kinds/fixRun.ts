@@ -5,8 +5,6 @@ import type { FixRunActionTarget, ObjectKindDefinition } from '../types';
 
 export type FixRunStop = {
   readonly label: string;
-  readonly title: string;
-  readonly description: string;
   readonly onStop: () => void;
 };
 
@@ -55,15 +53,7 @@ export const FIX_RUN_KIND: ObjectKindDefinition<FixRunActionTarget, FixRunFacts>
       icon: OctagonX,
       group: 'danger',
       when: ({ facts }) => facts.stop !== null,
-      confirm: ({ facts }) =>
-        facts.stop === null
-          ? null
-          : {
-              title: facts.stop.title,
-              description: facts.stop.description,
-              confirmLabel: facts.stop.label,
-              role: 'danger',
-            },
+      isUndoable: true,
       run: ({ facts }) => facts.stop?.onStop(),
     },
   ],

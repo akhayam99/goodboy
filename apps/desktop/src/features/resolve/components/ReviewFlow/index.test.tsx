@@ -642,7 +642,7 @@ describe('Review as one flow', () => {
     expect(within(comment()).queryByRole('textbox', { name: 'Your answer' })).toBeNull();
   });
 
-  it('leaves Stop and the transcript of a drafting comment to its row, behind a confirm', async () => {
+  it('leaves Stop and the transcript of a drafting comment to its row, and Stop asks nothing', async () => {
     await mount({ threadId: null });
     const working = within(list()).getByRole('region', { name: 'Working' });
     const first = firstOf({ items: within(working).getAllByRole('listitem') });
@@ -659,7 +659,8 @@ describe('Review as one flow', () => {
     line.getByText('Fixing');
     line.getByRole('button', { name: 'Open transcript' });
     fireEvent.click(line.getByRole('button', { name: 'Stop' }));
-    expect(await screen.findByText('Stop the fix for 4 comments?')).toBeDefined();
+    await settle();
+    expect(screen.queryByRole('dialog')).toBeNull();
   });
 
   it('opens the not started comment with Fix as its one primary, last at the right', async () => {

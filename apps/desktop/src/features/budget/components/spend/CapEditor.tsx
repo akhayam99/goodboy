@@ -1,16 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
-import {
-  Button,
-  ConfirmPopover,
-  FormActions,
-  formatError,
-  formatUsd,
-  ICON_SIZE,
-  Input,
-  SectionHeader,
-} from '@goodboy/ui';
-import { Trash2 } from '@goodboy/ui/icons';
+import { Button, FormActions, formatError, formatUsd, Input, SectionHeader } from '@goodboy/ui';
 import { parseCap } from '../../../../shared/lib/parse-cap';
+import { undoable } from '../../../../shared/utils/undoable';
 
 export type SaveLimitParams = {
   readonly capUsd: number;
@@ -69,8 +60,11 @@ export const CapEditor = ({
   const [capDraft, setCapDraft] = useState(textOf(currentCapUsd));
   const [thresholdDraft, setThresholdDraft] = useState(String(effectiveThresholdPct));
   const [isBusy, setIsBusy] = useState(false);
-  const [isRemoveArmed, setIsRemoveArmed] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const latestRef = useRef({ currentCapUsd, onSave });
+  useEffect(() => {
+    latestRef.current = { currentCapUsd, onSave };
+  }, [currentCapUsd, onSave]);
   useFollowedDraft({ current: currentCapUsd, setDraft: setCapDraft });
   useFollowedDraft({ current: effectiveThresholdPct, setDraft: setThresholdDraft });
 
@@ -101,15 +95,23 @@ export const CapEditor = ({
   };
 
   const remove = async () => {
+    if (currentCapUsd === null) {
+      return;
+    }
+    const previous = { capUsd: currentCapUsd, thresholdPct: effectiveThresholdPct };
     setIsBusy(true);
     try {
       await onRemove();
       setError(null);
+      undoable({
+        message: `Removed the ${formatUsd(previous.capUsd)} limit`,
+        isCurrent: () => latestRef.current.currentCapUsd === null,
+        undo: () => latestRef.current.onSave(previous),
+      });
     } catch (failure) {
       setError(formatError(failure));
     } finally {
       setIsBusy(false);
-      setIsRemoveArmed(false);
     }
   };
 
@@ -164,27 +166,15 @@ export const CapEditor = ({
           }
         >
           {currentCapUsd === null ? null : (
-            <ConfirmPopover
-              role="alert"
-              icon={<Trash2 size={ICON_SIZE.row} aria-hidden />}
-              title={`Remove the ${formatUsd(currentCapUsd)} limit?`}
-              confirmLabel="Remove"
-              isBusy={isBusy}
-              isOpen={isRemoveArmed}
-              onConfirm={remove}
-              onCancel={() => setIsRemoveArmed(false)}
-              trigger={() => (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  disabled={isBusy}
-                  className="text-muted-foreground"
-                  onClick={() => setIsRemoveArmed(true)}
-                >
-                  Remove limit
-                </Button>
-              )}
-            />
+            <Button
+              variant="ghost"
+              size="sm"
+              disabled={isBusy}
+              className="text-muted-foreground"
+              onClick={() => void remove()}
+            >
+              Remove limit
+            </Button>
           )}
           <Button variant="secondary" size="sm" disabled={!canSave} onClick={() => void save()}>
             Save limit

@@ -561,12 +561,12 @@ describe('NotificationCenter', () => {
       expect(state.markNotificationRead.mock.calls.map(([id]) => id).sort()).toEqual(['n1', 'n2']);
     });
 
-    it('offers Mark all read while something is unread and marks every entry on press', async () => {
+    it('offers Mark all as read while something is unread and marks every entry on press', async () => {
       state.notifications = unreadRows({ count: 11 });
       render(<NotificationCenter isCurrent={false} />);
       await openCenter();
 
-      fireEvent.click(screen.getByRole('button', { name: 'Mark all read' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Mark all as read' }));
 
       expect(state.markNotificationsRead).toHaveBeenCalledTimes(1);
     });
@@ -605,14 +605,14 @@ describe('NotificationCenter', () => {
       );
     });
 
-    it('shows no Mark all read when everything was read', async () => {
+    it('shows no Mark all as read when everything was read', async () => {
       state.notifications = [
         buildNotification({ id: 'n1', title: 'old', coalesceKey: 'old', read: true }),
       ];
       render(<NotificationCenter isCurrent={false} />);
       await openCenter();
 
-      expect(screen.queryByRole('button', { name: 'Mark all read' })).toBeNull();
+      expect(screen.queryByRole('button', { name: 'Mark all as read' })).toBeNull();
     });
   });
 

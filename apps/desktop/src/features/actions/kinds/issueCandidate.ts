@@ -1,6 +1,7 @@
-import { CircleCheck, Copy, Link, ListChecks, SquareArrowOutUpRight } from '@goodboy/ui/icons';
+import { CircleCheck, Copy, ListChecks, SquareArrowOutUpRight } from '@goodboy/ui/icons';
 import { openWebAction } from '../openWebAction';
 import type { IssueCandidateActionTarget, ObjectKindDefinition } from '../types';
+import { VERBS } from '../../../shared/utils/verbs';
 
 export type IssueCandidateFacts = {
   readonly identifier: string;
@@ -43,8 +44,7 @@ export const ISSUE_CANDIDATE_KIND: ObjectKindDefinition<
     },
     {
       id: 'issueCandidate.copyLink',
-      label: 'Copy link',
-      icon: Link,
+      ...VERBS.copyLink,
       group: 'copy',
       when: ({ facts }) => facts.url !== '',
       run: ({ facts, env }) => env.copyText({ text: facts.url }),

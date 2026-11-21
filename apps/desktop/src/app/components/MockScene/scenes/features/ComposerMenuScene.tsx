@@ -1,7 +1,8 @@
 import { BrandSlackScene } from '../brand/SlackScene';
+import { NAMES } from '../../../../../shared/utils/names';
 import { useSceneClicks } from '../audit/useSceneClicks';
 
-const LABELS: ReadonlyArray<string> = ['More actions'];
+const LABELS: ReadonlyArray<string> = [NAMES.addToMessage];
 
 export const FeaturesComposerMenuScene = () => {
   useSceneClicks({

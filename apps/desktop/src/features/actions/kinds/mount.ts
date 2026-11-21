@@ -1,7 +1,6 @@
 import { readOnlyOnline } from '../../../store/runtime/worktreeStatuses/onlyOnline';
 import {
   Copy,
-  FolderOpen,
   GitBranch,
   GitPullRequestCreate,
   History,
@@ -51,6 +50,7 @@ import { autoUnavailableReason } from '../../auto/autoUnavailableReason';
 import { selectProjectById } from '../../../store/slices/projects/selectProjectById';
 import { captureStartHint } from '../../../store/slices/startHints/captureStartHint';
 import { START_HINT_SCOPES } from '../../../store/slices/startHints/startHintScopes';
+import { VERBS } from '../../../shared/utils/verbs';
 
 type FactsOnly = { readonly facts: MountFacts };
 
@@ -111,8 +111,7 @@ const MOUNT_ACTIONS: ReadonlyArray<ActionDefinition<MountFacts>> = [
   },
   {
     id: 'mount.openDiff',
-    label: `Open ${NAMES.changes}`,
-    icon: CONCEPT_ICONS.diff,
+    ...VERBS.openInChanges,
     group: 'open',
     shortcut: 'lens.files',
     when: ({ facts }) => isOpen({ facts }) && (facts.ahead > 0 || facts.dirty > 0),
@@ -149,8 +148,7 @@ const MOUNT_ACTIONS: ReadonlyArray<ActionDefinition<MountFacts>> = [
   },
   {
     id: 'mount.openTerminal',
-    label: 'Open terminal',
-    icon: CONCEPT_ICONS.terminal,
+    ...VERBS.openInTerminal,
     group: 'open',
     shortcut: 'session.terminal',
     when: isOpen,
@@ -174,8 +172,7 @@ const MOUNT_ACTIONS: ReadonlyArray<ActionDefinition<MountFacts>> = [
   },
   {
     id: 'mount.openInTerminalApp',
-    label: NAMES.openInExternalTerminal,
-    icon: CONCEPT_ICONS.terminal,
+    ...VERBS.openInExternalTerminal,
     group: 'open',
     when: isOpen,
     run: async ({ facts, env }) => {
@@ -393,8 +390,7 @@ const MOUNT_ACTIONS: ReadonlyArray<ActionDefinition<MountFacts>> = [
   },
   {
     id: 'mount.copyPath',
-    label: 'Copy path',
-    icon: FolderOpen,
+    ...VERBS.copyPath,
     group: 'copy',
     when: ({ facts }) => (facts.worktreePath ?? facts.keptPath) !== null,
     run: ({ facts, env }) => env.copyText({ text: facts.worktreePath ?? facts.keptPath ?? '' }),

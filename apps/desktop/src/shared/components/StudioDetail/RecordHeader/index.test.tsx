@@ -75,7 +75,7 @@ describe('RecordHeader', () => {
     ).toBeDefined();
     expect(screen.getByText('!87')).toBeDefined();
     expect(screen.getByText('Open')).toBeDefined();
-    expect(screen.queryByRole('button', { name: 'Open in GitLab' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Open on GitLab' })).toBeNull();
     const identity = screen.getByText('!87').parentElement as HTMLElement;
     expect(within(identity).getByRole('button', { name: 'Start from HBL-412' })).toBeDefined();
     expect(within(identity).queryByRole('button', { name: 'Merge' })).toBeNull();
@@ -122,7 +122,7 @@ describe('RecordHeader', () => {
 
     expect(
       screen.getAllByRole('menuitem').map((item) => item.getAttribute('data-menu-label')),
-    ).toEqual(['Open in GitLab', 'Convert to draft', 'Unlink', 'Copy link', 'Close merge request']);
+    ).toEqual(['Open on GitLab', 'Convert to draft', 'Unlink', 'Copy link', 'Close merge request']);
   });
 
   it('asks before a destructive verb from the menu and runs it only on confirm', async () => {

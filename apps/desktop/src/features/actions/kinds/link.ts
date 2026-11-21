@@ -1,6 +1,7 @@
-import { Link, SquareArrowOutUpRight } from '@goodboy/ui/icons';
+import { SquareArrowOutUpRight } from '@goodboy/ui/icons';
 import { openWebAction } from '../openWebAction';
 import type { LinkActionTarget, ObjectKindDefinition } from '../types';
+import { VERBS } from '../../../shared/utils/verbs';
 
 export type LinkFacts = {
   readonly href: string;
@@ -20,8 +21,7 @@ export const LINK_KIND: ObjectKindDefinition<LinkActionTarget, LinkFacts> = {
     },
     {
       id: 'link.copy',
-      label: 'Copy link',
-      icon: Link,
+      ...VERBS.copyLink,
       group: 'copy',
       when: () => true,
       run: ({ facts, env }) => env.copyText({ text: facts.href }),

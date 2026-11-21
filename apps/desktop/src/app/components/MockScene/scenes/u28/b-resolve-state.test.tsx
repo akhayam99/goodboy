@@ -95,7 +95,7 @@ describe('resolve-state scenes', () => {
     expect(screen.queryByRole('toolbar', { name: 'Selected comments' })).toBeNull();
   });
 
-  it('ready: Open changes opens the files of the branch on the fix commit', async () => {
+  it('ready: Open in Changes opens the files of the branch on the fix commit', async () => {
     const navigate = vi.fn();
     show({ name: 'resolve-state-ready' });
     const comments = await list();
@@ -109,7 +109,7 @@ describe('resolve-state scenes', () => {
     }
     fireEvent.click(review);
     const panel = within(comments).getByRole('region', { name: 'Proposed fix' });
-    fireEvent.click(within(panel).getByRole('button', { name: 'Open changes of 90b1d57' }));
+    fireEvent.click(within(panel).getByRole('button', { name: 'Open in Changes of 90b1d57' }));
 
     expect(navigate).toHaveBeenCalledTimes(1);
     const text = JSON.stringify(navigate.mock.calls[0]?.[0]);

@@ -487,11 +487,11 @@ read top to bottom at the conversation measure:
   the tail then says Paused by you with no verb of its own, so Continue shows
   once.
 - **The run `⋯`** is the `workflowRun` registry minus the verbs the tail and
-  the header carry, in the order See, Steer, Settings, Copy, End: Open changes,
+  the header carry, in the order See, Steer, Settings, Copy, End: Open in Changes,
   **Skip step N** for the step in flight (and Pause or Continue while the
   header holds another primary), Step routing (opens the model per step panel,
-  `OrchestratedRouting`), Save as preset, Copy run summary, **Stop run** (asks
-  first), Archive run, Delete run.
+  `OrchestratedRouting`), Save as preset, Copy run summary, **Stop run** (acts at
+  once, **Continue** in the toast for the steps that stopped, or for the run when it stopped between steps; a partial stop says "Some steps stopped"), Archive run (acts at once with **Undo** in the toast, but asks first while a step runs or another run is chained after it, since Undo restores the run and not its steps or chain), Delete run.
 
 A plan the run is held for is offered once, as **Review plan** in the header,
 which opens the plan drawer (`openPlanDrawer`); a plan question or a step
@@ -764,9 +764,9 @@ what only that kind has. A step opens one way for every kind, as its page.
 - **The run `⋯`** is the `workflowRun` registry minus the verbs the tail and
   the header carry, five rows at most (`RunPageActions`): while a run lives
   **Skip step N**, Rename, Step routing, Stop run, Archive run; once it ended
-  Rename, Open changes, Save as preset, Archive run, Delete run. Everything else
+  Rename, Open in Changes, Save as preset, Archive run, Delete run. Everything else
   stays on the right click of the title, which takes focus, so Shift+F10 opens
-  it from the keyboard (Open changes, Save as preset, Copy run
+  it from the keyboard (Open in Changes, Save as preset, Copy run
   summary, Delete run on a live run). An ended run, also one whose steps are all done
   but a helper failed, never offers Stop run. Asks you (a `choices` item) is left out of
   the run pages' menus since its chip holds it.
@@ -950,25 +950,28 @@ asks before each step, the next step waits for your go.
 
 ### Closing a workflow
 
-**Stop run** ends a run that nobody else will end: an orchestrated run
-between decisions, a run stuck on a failed step, a run you have seen enough
-of. It sits as a word in the run header, next to **Pause run**, and in the
-menu of the run row in the activity feed. Goodboy asks you to confirm first. Steps that have
-not run are marked skipped, the step in flight stops and is marked skipped,
-and a failed step stays failed, because it did fail. Everything already written
-is kept. The close waits for the step's process to exit; if it does not, the
-run stays open and running, and a warning asks you to press **Stop run** again.
+**Stop run** holds a run that is still going: an orchestrated run between
+decisions, a run stuck on a failed step, a run you have seen enough of. It sits
+as a word in the run header, next to **Pause run**, and in the menu of the run
+row in the activity feed. It acts at once and asks nothing, since a stop can be
+taken back: the toast offers **Continue**, which starts the step again where it
+stopped. The step in flight stops, and a failed step stays failed, because it did
+fail. Everything already written is kept. The stop waits for the step's process
+to exit; if it does not, the run stays running, and a warning asks you to press
+**Stop run** again (`stopRunWithResume` in `features/workflows`).
 
-A closed run reads **Closed by you**, never complete: its node is the neutral
-check, its lane ends on its newest node with no dash to NOW, and it offers no
-Next action and no autorun. A run chained to start after it switches to a
-manual start, so closing never starts other work. The closure lands in the
-activity feed as its own row ("Closed Add rate limiting by you"). Adding a step
-opens the run again.
+A stopped run reads **Stopped**, and its run page offers **Continue**. A run
+that you closed through a route change reads **Closed by you**, never complete:
+its node is the neutral check, its lane ends on its newest node with no dash to
+NOW, and it offers no Next action and no autorun. A run chained to start after
+it switches to a manual start, so closing never starts other work. The closure
+lands in the activity feed as its own row ("Closed Add rate limiting by you").
+Adding a step opens the run again.
 
 Stop run is offered once the run has started and until it ends. A queued
 run has nothing to stop; archive it instead. **Archive run** and
-**Delete** sit in the run menu.
+**Delete** sit in the run menu. **Archive run** acts at once and the toast offers
+**Undo**, which restores the run.
 
 **Delete** removes the run and every agent it owns, for preset, custom and
 orchestrated runs alike: its step agents, the agents the orchestrator spawned,

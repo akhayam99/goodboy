@@ -94,7 +94,7 @@ describe('the u24 rebase recovery scenes', () => {
     await waitForSettledReads();
     fireEvent.click(screen.getByRole('button', { name: 'Details' }));
 
-    screen.getByRole('button', { name: 'Open terminal here' });
+    screen.getByRole('button', { name: 'Open in Terminal' });
     expect(screen.getByRole('dialog', { name: 'Push output' }).textContent).toContain(
       'seenEvents is assigned a value but never used',
     );

@@ -79,7 +79,7 @@ export const RebaseStoppedNotice = ({
             {NAMES.fixPushWithAgent}
           </Button>
           <Button size="sm" variant="ghost" onClick={onOpenTerminal}>
-            Open terminal
+            Open in Terminal
           </Button>
           <ConfirmPopover
             role="danger"

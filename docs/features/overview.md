@@ -127,7 +127,7 @@ See and undo what agents changed in a session without a branch.
 - Each restore first saves the text you have now, so **Undo restore** puts it back.
 - A restore over text that changed after the turn asks in place before it writes. It names the other agent when a later turn of one wrote the same file (**Scout wrote there after turn 3.**).
 - The Overview has a card that says where agents write and what is saved. It sits after the board.
-- Each writing turn in the chat ends in a card with **Open changes** and **Undo changes from this reply**.
+- Each writing turn in the chat ends in a card with **Open in Changes** and **Undo changes from this reply**.
 - Versions are kept until 30 days after the session ends. The cap per folder is 1 GB or the folder's own size, whichever is larger.
 - The page shows how much they use and what was left out: files over 15 MB, links that leave the folder, dependencies and build output.
 - Storage shows their size under **Saved versions**.

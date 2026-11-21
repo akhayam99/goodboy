@@ -198,9 +198,9 @@ const sessionBound = ({ hit }: Params): SearchHitTarget | null => {
         ? {
             kind: 'blocked',
             reason: 'This branch is no longer in the session, so there is no diff to show.',
-            label: 'Open changes',
+            label: 'Open in Changes',
           }
-        : { kind: 'diff', ...base, mountId: hit.mountId, label: 'Open changes' };
+        : { kind: 'diff', ...base, mountId: hit.mountId, label: 'Open in Changes' };
     case 'comment':
       return { kind: 'comment', ...base, commentId: hit.refId, label: 'Open comments' };
     case 'workflow':

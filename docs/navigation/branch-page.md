@@ -153,7 +153,7 @@ terminal, Abort rebase. The other states keep the strip (Stash and rebase, Resto
 with a note, Open providers, Open transcript). A failed push after
 a rebase offers `Fix with an agent` (the primary: an Implementer on that worktree briefed with the
 command and git output, `fixPushWithAgent`; it commits the fix and never pushes, Goodboy then
-pushes again with the same lease, `settlePushFix`), `Open terminal here` (the session terminal
+pushes again with the same lease, `settlePushFix`), `Open in Terminal` (the session terminal
 drawer at the worktree with the exact push typed at the prompt and not run, `openSessionTerminal`
 with `prefill`) and `Retry push`. While the agent works the same panel stays (`fixing-push` is a
 stop panel state) and holds the push fix line with Stop and Open transcript, and no Retry push.

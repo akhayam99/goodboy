@@ -38,6 +38,7 @@ import { isWorkflowRunComplete } from '../../workflows/isWorkflowRunComplete';
 import { isRunPaused } from '../../workflows/isRunPaused';
 import { STEP_ROUTING_REQUEST_EVENT, requestStepRouting } from '../../workflows/requestStepRouting';
 import { CLOSE_WORKFLOW_COPY } from '../../workflows/closeWorkflowCopy';
+import { stopRunWithResume } from '../../workflows/stopRunWithResume';
 import { resolveRootAgent } from '../../session/agent-kind';
 import { openQuestion } from '../../session/openQuestion';
 import type { ActionEnv, ObjectKindDefinition, WorkflowRunActionTarget } from '../types';
@@ -46,6 +47,7 @@ import { RENAME_REQUEST_EVENT, requestRename } from '../../../shared/utils/renam
 import { runObjectKey, runTitleAnchorKey } from '../runObjectKey';
 import { STEP_RENAME_ACTION } from './stepRenameAction';
 import { sessionById } from '../../../store/slices/sessions/sessionIndex';
+import { VERBS } from '../../../shared/utils/verbs';
 
 type WorkflowRunState = 'queued' | 'running' | 'paused' | 'failed' | 'done' | 'discarded';
 
@@ -55,8 +57,10 @@ export type WorkflowRunFacts = {
   readonly name: string;
   readonly state: WorkflowRunState;
   readonly isClosable: boolean;
+  readonly hasArchiveEffects: boolean;
   readonly openQuestionId: OpenQuestionId | null;
   readonly stoppedAgentId: AgentId | null;
+  readonly isOperatorStopped: boolean;
   readonly readyAgentId: AgentId | null;
   readonly readyStepName: string | null;
   readonly hasChanges: boolean;
@@ -227,8 +231,19 @@ export const WORKFLOW_RUN_KIND: ObjectKindDefinition<WorkflowRunActionTarget, Wo
       name,
       state: runState,
       isClosable: workflow !== null && isWorkflowRunClosable({ run, workflow, agents }),
+      hasArchiveEffects:
+        isRunning ||
+        isOrchestrating ||
+        session.workflowRuns.some(
+          (candidate) =>
+            candidate.chainAfterId === run.id &&
+            candidate.triggerMode === 'after_run' &&
+            candidate.discardedAt == null,
+        ),
       openQuestionId: questions[0]?.id ?? null,
       stoppedAgentId: stoppedAgent?.id ?? null,
+      isOperatorStopped:
+        run.orchestrationStop?.kind === 'operator' && run.executionMode === 'dynamic' && !isRunning,
       readyAgentId: readyAgent?.id ?? null,
       readyStepName: manualStep?.name ?? null,
       hasChanges: mounts.length > 0,
@@ -265,8 +280,7 @@ export const WORKFLOW_RUN_KIND: ObjectKindDefinition<WorkflowRunActionTarget, Wo
     },
     {
       id: 'workflowRun.diff',
-      label: 'Open changes',
-      icon: CONCEPT_ICONS.diff,
+      ...VERBS.openInChanges,
       group: 'open',
       when: ({ facts }) => facts.hasChanges,
       run: ({ facts, env }) =>
@@ -307,9 +321,11 @@ export const WORKFLOW_RUN_KIND: ObjectKindDefinition<WorkflowRunActionTarget, Wo
       label: NAMES.continue,
       icon: StepForward,
       group: 'act',
-      when: ({ facts }) => facts.stoppedAgentId !== null && isWorkflowRunLive({ facts }),
+      when: ({ facts }) =>
+        (facts.stoppedAgentId !== null || facts.isOperatorStopped) && isWorkflowRunLive({ facts }),
       run: async ({ facts, env }) => {
         if (facts.stoppedAgentId === null) {
+          await env.getState().retryWorkflowOrchestration(facts.sessionId, facts.run.id);
           return;
         }
         await env
@@ -498,15 +514,14 @@ export const WORKFLOW_RUN_KIND: ObjectKindDefinition<WorkflowRunActionTarget, Wo
       icon: Square,
       group: 'danger',
       when: ({ facts }) => facts.isClosable && isWorkflowRunLive({ facts }),
-      confirm: () => ({
-        title: CLOSE_WORKFLOW_COPY.title,
-        description: CLOSE_WORKFLOW_COPY.description,
-        confirmLabel: CLOSE_WORKFLOW_COPY.label,
-        role: 'alert',
-      }),
-      run: async ({ facts, env }) => {
-        await env.getState().closeWorkflowRun(facts.sessionId, facts.run.id);
-      },
+      isUndoable: true,
+      run: ({ facts, env }) =>
+        stopRunWithResume({
+          getState: env.getState,
+          sessionId: facts.sessionId,
+          runId: facts.run.id,
+          showToast: env.showToast,
+        }),
     },
     {
       id: 'workflowRun.discard',
@@ -514,14 +529,28 @@ export const WORKFLOW_RUN_KIND: ObjectKindDefinition<WorkflowRunActionTarget, Wo
       icon: CONCEPT_ICONS.archive,
       group: 'danger',
       when: ({ facts }) => facts.state !== 'discarded',
-      confirm: () => ({
-        title: 'Archive this run?',
-        description:
-          'Hides the run, and you can restore it. Agents already started stay in the session.',
-        confirmLabel: 'Archive',
-        role: 'alert',
-      }),
-      run: ({ facts, env }) => env.getState().discardWorkflow(facts.sessionId, facts.run.id),
+      isUndoable: true,
+      confirm: ({ facts }) =>
+        facts.hasArchiveEffects
+          ? {
+              title: 'Archive this run?',
+              description:
+                "Stops the steps still running and detaches the runs chained after it. Restore brings the run back but doesn't restart them.",
+              confirmLabel: 'Archive',
+              role: 'alert',
+            }
+          : null,
+      run: async ({ facts, env }) => {
+        await env.getState().discardWorkflow(facts.sessionId, facts.run.id);
+        if (facts.hasArchiveEffects) {
+          return;
+        }
+        env.getState().undoable({
+          showToast: env.showToast,
+          message: 'Run archived. Agents already started stay in the session.',
+          undo: () => env.getState().restoreWorkflow(facts.sessionId, facts.run.id),
+        });
+      },
     },
     {
       id: 'workflowRun.delete',

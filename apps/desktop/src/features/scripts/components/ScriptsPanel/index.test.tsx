@@ -916,7 +916,7 @@ describe('ScriptsPanel', () => {
     renderPanel();
 
     rowMenu(group('ledger-core · nw/settlement'), 'test');
-    fireEvent.click(screen.getByRole('menuitem', { name: 'Open in terminal' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Open in Terminal' }));
 
     expect(state.openDrawer).toHaveBeenCalledWith(expect.objectContaining({ kind: 'terminal' }));
   });

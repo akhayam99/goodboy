@@ -4,6 +4,7 @@ export type UndoOperation = {
   readonly id: string;
   readonly undo: () => Promise<boolean | number | void>;
   readonly conflictMessage: string;
+  readonly doneMessage?: string;
   readonly isCurrent?: () => boolean;
 };
 

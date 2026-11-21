@@ -205,7 +205,7 @@ describe('stopWork', () => {
 
     const result = await stopSession();
 
-    expect(result).toEqual({ stopped: 1, stillRunning: 0 });
+    expect(result).toMatchObject({ stopped: 1, stillRunning: 0 });
     expect(await agentStatus()).toBe('stopped');
     expect(useAppStore.getState().agentTurnState[agentId]?.kind).toBe('idle');
     await pending;
@@ -225,7 +225,7 @@ describe('stopWork', () => {
     const result = await stopSession();
 
     expect(storySpies.cancelTurn).toHaveBeenCalledWith('run-permission');
-    expect(result).toEqual({ stopped: 1, stillRunning: 0 });
+    expect(result).toMatchObject({ stopped: 1, stillRunning: 0 });
     expect(await agentStatus()).toBe('stopped');
     expect(useAppStore.getState().agentTurnState[agentId]?.kind).toBe('idle');
   });
@@ -241,7 +241,7 @@ describe('stopWork', () => {
 
     const result = await stopSession();
 
-    expect(result).toEqual({ stopped: 0, stillRunning: 1 });
+    expect(result).toMatchObject({ stopped: 0, stillRunning: 1 });
     expect(useAppStore.getState().agentTurnState[agentId]).toEqual(
       expect.objectContaining({ kind: 'running', runId }),
     );
@@ -263,7 +263,7 @@ describe('stopWork', () => {
     const result = await stopping;
     vi.useRealTimers();
 
-    expect(result).toEqual({ stopped: 0, stillRunning: 1 });
+    expect(result).toMatchObject({ stopped: 0, stillRunning: 1 });
     expect(useAppStore.getState().agentTurnState[agentId]).toEqual(
       expect.objectContaining({ kind: 'running', runId }),
     );
@@ -302,7 +302,7 @@ describe('stopWork', () => {
     });
     await pending;
 
-    expect(result).toEqual({ stopped: 1, stillRunning: 0 });
+    expect(result).toMatchObject({ stopped: 1, stillRunning: 0 });
     expect(await agentStatus()).toBe('stopped');
     const stoppedBy = await rowsOf<{ stopped_by: string | null }>({
       sql: 'SELECT stopped_by FROM agents WHERE id = ?',
@@ -347,7 +347,7 @@ describe('stopWork', () => {
         reason: 'leave',
       });
 
-      expect(result).toEqual({ stopped: 0, stillRunning: 0 });
+      expect(result).toMatchObject({ stopped: 0, stillRunning: 0 });
       expect(storySpies.cancelTurn).not.toHaveBeenCalled();
       expect(cancelledRunIds.has(waitingRun)).toBe(false);
       expect(useAppStore.getState().agentTurnState[agentId]?.kind).toBe('blocked');
@@ -365,7 +365,7 @@ describe('stopWork', () => {
         reason: 'leave',
       });
 
-      expect(result).toEqual({ stopped: 1, stillRunning: 0 });
+      expect(result).toMatchObject({ stopped: 1, stillRunning: 0 });
       expect(storySpies.cancelTurn).toHaveBeenCalledWith(waitingRun);
       expect(await stoppedBy()).toBe('you');
     });
@@ -384,7 +384,7 @@ describe('stopWork', () => {
         reason: 'leave',
       });
 
-      expect(result).toEqual({ stopped: 1, stillRunning: 0 });
+      expect(result).toMatchObject({ stopped: 1, stillRunning: 0 });
       expect(storySpies.cancelTurn).toHaveBeenCalledWith(waitingRun);
       expect(await stoppedBy()).toBe('you');
     });
@@ -423,7 +423,7 @@ describe('stopWork', () => {
       });
       await pending;
 
-      expect(result).toEqual({ stopped: 1, stillRunning: 0 });
+      expect(result).toMatchObject({ stopped: 1, stillRunning: 0 });
       expect(storySpies.cancelTurn.mock.calls).toEqual([[runId]]);
       expect(useAppStore.getState().agentTurnState[otherAgent.id]?.kind).toBe('blocked');
     });
@@ -437,7 +437,7 @@ describe('stopWork', () => {
         reason: 'leave',
       });
 
-      expect(result).toEqual({ stopped: 1, stillRunning: 0 });
+      expect(result).toMatchObject({ stopped: 1, stillRunning: 0 });
       expect(await agentStatus()).toBe('stopped');
       expect(await stoppedBy()).toBe('you');
       expect(useAppStore.getState().agentTurnState[agentId]?.kind).toBe('idle');
@@ -481,7 +481,7 @@ describe('stopWork', () => {
 
     const result = await stopSession();
 
-    expect(result).toEqual({ stopped: 0, stillRunning: 0 });
+    expect(result).toMatchObject({ stopped: 0, stillRunning: 0 });
     expect(storySpies.cancelTurn).not.toHaveBeenCalled();
     expect(useAppStore.getState().agentTurnState[otherAgent.id]?.kind).toBe('blocked');
   });

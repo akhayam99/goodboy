@@ -483,7 +483,7 @@ describe('every ⋯ menu and its right click list the same actions in the same o
       context: screen.getByRole('heading', { level: 1 }),
     });
     expect(fromContext).toEqual(fromOverflow);
-    expect(fromOverflow[0]).toBe('Open in GitLab');
+    expect(fromOverflow[0]).toBe('Open on GitLab');
   });
 
   it('commit row: the right click and Cmd+K list every action in the same order, the ⋯ a subset of five in that order', async () => {
@@ -717,7 +717,7 @@ const REGISTRY_TARGETS: ReadonlyArray<readonly [string, ObjectTarget, ReadonlyAr
         open: { label: 'Open session', run: vi.fn() },
       },
     },
-    ['Open', 'Mark read', 'Report this', 'Copy text', 'Delete'],
+    ['Open', 'Mark as read', 'Report this', 'Copy text', 'Delete'],
   ],
   [
     'provider',
