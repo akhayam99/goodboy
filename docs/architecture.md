@@ -245,7 +245,18 @@ cwd, startedAt }`. A turn, a chat, a planner or a summary joins it in
 - **Discovered scripts are quoted.** `project_scripts.rs` writes
   `npm run 'build all'` for a script name with a space, `&`, a quote or `$`
   (POSIX single quotes, a quote inside becomes `'\''`) and drops a name that
-  starts with `-`.
+  starts with `-`. Besides `package.json` and `composer.json`, it reads the
+  root of a worktree for Makefile targets (`make test`), justfile recipes
+  (`just lint`), Cargo commands and `[alias]` entries (`cargo build`), and
+  `pyproject.toml` entry points and tasks (`uv run serve`, `pdm run lint`,
+  `poe fmt`), in `project_scripts/tools.rs`. Entry points, pdm tasks and poe
+  tasks are three groups with their own source (`pyproject`, `pdm`, `poe`), so
+  a name two of them share keeps both commands and both histories. Pattern
+  rules, special targets, private recipes (the `private` attribute or a
+  leading `_`), recipes with a required parameter, names that start with `-`
+  and settings are left out; it parses the files by line and never runs them.
+  Each file is read through `util/scoped_path.rs::open_file_within`, so a
+  manifest or a parent directory that links outside the worktree is ignored.
 - **Side jobs** (planner, summary) are stopped when they go quiet. A job is
   quiet when it has written nothing to stdout or stderr and no process in its
   tree has used any CPU for 10 minutes (`SIDE_JOB_IDLE`, checked every 15
@@ -317,6 +328,19 @@ writes the snapshot, then writes only the bytes past the snapshot's end. When
 the snapshot call fails the bus tail stands in. The scripts slice does the
 same for every live run on boot (`registerScriptRunListeners` with
 `shouldReplay`); what a script's transcript shows stays capped at 64KB.
+
+A script run also leaves a row in `work_events` (see Who writes each table):
+`scripts.rs` writes it when the run starts, with the branch the mount was on
+at that moment in the payload, and stamps the end and the exit code before
+`script-exit` fires, so a read after the event sees the end. A run stopped
+through `workspace_script_cancel` is stamped 143, whatever the wait returned,
+so reloaded history reads it as `cancelled`.
+`listScriptLedger` reads the last run of each script per mount; no screen
+reads it yet, so the app does not load it. Given those rows,
+`buildSessionScripts` gives every group `available`, each saved and
+discovered script with its last run (`ok`, `error`, `cancelled` for an exit
+of 130, 137 or 143, `unfinished` for a run whose end never landed, as after a
+quit), pinned or not.
 
 Provider login and CLI update runs have no Rust ring. `invokeProviderLifecycleRun`
 starts `features/providers/lifecycleOutputBuffer.ts` before the run, which keeps
@@ -964,7 +988,9 @@ migrations, the schema tests and the query functions live there, and the
 frontend reaches SQLite through them. Rust writes a table only when the write
 has to happen without the webview or inside one Rust transaction: the backup
 export and import, a project move, the permission audit, integration
-credentials and the budget checks. The unit is the command or the transaction,
+credentials, the budget checks and the work ledger (a script run is born in a
+Rust process, so Rust writes its row once, whatever the number of windows). The
+unit is the command or the transaction,
 not the table. The atomic agent operations moved with the agents: the routing
 gate, the fan-out of a delegated batch and the status stamps are guarded
 statements in `packages/db/src/queries/agent-write.ts`, and a workflow save is
@@ -993,7 +1019,7 @@ query in the same commit:
 - Owned by Rust, read by Rust and TypeScript: `browser_tabs`, `browser_visits`, `budget_alerts`, `budget_rules`,
   `integration_bindings`, `integration_credentials`, `permission_audit_log`,
   `permission_audit_retry`, `permission_rules`, `project_relocations`,
-  `session_budgets`, `skills`, `step_library`.
+  `session_budgets`, `skills`, `step_library`, `work_events`.
 - Read for boot only: `schema_version`.
 
 The `ts` rows below have a ratchet:
@@ -1106,6 +1132,7 @@ The count only falls: remove a line when the write moves behind a command.
 | `turn_admissions`             | ts     | One row per agent between a turn's claim and its spawn (m242): the run, the app launch that claimed it (`turn_launch_id`), the claim time and the time its spawn was published. `queries/turn-admission.ts` reads and clears it; `turn_spawn` reads it and refuses a run whose row is gone. Rows go with the agent.                    |
 | `turn_events`                 | ts     |                                                                                                                                                                                                                                                                                                                                        |
 | `turn_file_sets`              | ts     | One row per writing turn and git mount, written when the turn ends (`recordTurnFileSets`).                                                                                                                                                                                                                                             |
+| `work_events`                 | rust   | `work_ledger.rs`. One row per run of work born in a Rust process; today each script run, started and then ended by `scripts.rs`. `run_id` is unique, so a second window never writes a run twice. `kind` has no CHECK list: `queries/work-events.ts` holds the kinds and drops one it does not know. Rows go with the session.         |
 | `workflows`                   | ts     | `saveWorkflow` and `removeWorkflow`. Exception: the backup import.                                                                                                                                                                                                                                                                     |
 | `workspace_profiles`          | ts     | Exception: the backup import.                                                                                                                                                                                                                                                                                                          |
 | `workspace_starred_issues`    | ts     |                                                                                                                                                                                                                                                                                                                                        |

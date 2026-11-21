@@ -43,6 +43,7 @@ const groupOf = ({ path, isReady = true }: { readonly path: string; readonly isR
     packageCount: 1,
     scripts: [API, WORKER, TEST],
     suggested: [],
+    available: [],
   }) satisfies SessionScriptGroup;
 
 type EntryParams = {

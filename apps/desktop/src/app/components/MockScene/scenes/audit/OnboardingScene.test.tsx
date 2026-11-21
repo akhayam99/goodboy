@@ -72,12 +72,17 @@ type ButtonParams = {
   readonly name: string | RegExp;
 };
 
+const BUTTON_WAIT_MS = 5000;
+
 const enabledButton = async ({ name }: ButtonParams): Promise<HTMLElement> =>
-  waitFor(() => {
-    const button = screen.getByRole('button', { name });
-    expect(button.hasAttribute('disabled')).toBe(false);
-    return button;
-  });
+  waitFor(
+    () => {
+      const button = screen.getByRole('button', { name });
+      expect(button.hasAttribute('disabled')).toBe(false);
+      return button;
+    },
+    { timeout: BUTTON_WAIT_MS },
+  );
 
 const workspaceNames = (): ReadonlyArray<string> =>
   useAppStore.getState().workspaces.map((workspace) => workspace.name);

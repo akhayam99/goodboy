@@ -1,3 +1,4 @@
+import type { ScriptLedgerEntry } from '@goodboy/db';
 import type {
   MountId,
   Project,
@@ -33,6 +34,21 @@ export type RunnableScript = {
   readonly savedId: ProjectScriptId | null;
 };
 
+export type ScriptLastOutcome = 'ok' | 'error' | 'cancelled' | 'unfinished';
+
+export type ScriptLastRun = {
+  readonly runId: string;
+  readonly startedAt: number;
+  readonly endedAt: number | null;
+  readonly exitCode: number | null;
+  readonly outcome: ScriptLastOutcome;
+  readonly runCount: number;
+};
+
+export type LedgerScript = RunnableScript & {
+  readonly lastRun: ScriptLastRun | null;
+};
+
 export type SessionScriptGroup = {
   readonly mountId: MountId;
   readonly projectId: ProjectId;
@@ -43,7 +59,10 @@ export type SessionScriptGroup = {
   readonly packageCount: number;
   readonly scripts: ReadonlyArray<RunnableScript>;
   readonly suggested: ReadonlyArray<RunnableScript>;
+  readonly available: ReadonlyArray<LedgerScript>;
 };
+
+const STOP_EXIT_CODES: ReadonlyArray<number> = [130, 137, 143];
 
 const SUGGESTED_CATEGORIES: ReadonlyArray<ScriptCategory> = [
   'dev',
@@ -69,12 +88,24 @@ const MANIFEST_CATEGORY_ORDER: ReadonlyArray<ScriptCategory> = [
   'other',
 ];
 
+const SOURCE_ORDER: ReadonlyArray<RunnableScriptSource> = [
+  'saved',
+  'package-json',
+  'make',
+  'just',
+  'cargo',
+  'pyproject',
+  'pdm',
+  'poe',
+  'composer',
+];
+
 const categoryRank = ({ category }: { readonly category: ScriptCategory }): number =>
   MANIFEST_CATEGORY_ORDER.indexOf(category);
 
 const compareManifest = (left: RunnableScript, right: RunnableScript): number => {
   if (left.source !== right.source) {
-    return left.source === 'composer' ? 1 : -1;
+    return SOURCE_ORDER.indexOf(left.source) - SOURCE_ORDER.indexOf(right.source);
   }
   if (left.relDir !== right.relDir) {
     return left.relDir === '' ? -1 : left.relDir.localeCompare(right.relDir);
@@ -121,13 +152,12 @@ const savedScriptsOf = ({ saved, projectId }: SavedParams): ReadonlyArray<Runnab
 type ManifestParams = {
   readonly groups: ReadonlyArray<ScriptGroup>;
   readonly worktreePath: string;
-  readonly pins: ReadonlyArray<string>;
 };
 
 const allManifestScriptsOf = ({
   groups,
   worktreePath,
-}: Omit<ManifestParams, 'pins'>): ReadonlyArray<RunnableScript> =>
+}: ManifestParams): ReadonlyArray<RunnableScript> =>
   groups
     .flatMap((group) =>
       group.scripts.map((script): RunnableScript => ({
@@ -151,15 +181,6 @@ const allManifestScriptsOf = ({
     )
     .sort(compareManifest);
 
-const manifestScriptsOf = ({
-  groups,
-  worktreePath,
-  pins,
-}: ManifestParams): ReadonlyArray<RunnableScript> =>
-  allManifestScriptsOf({ groups, worktreePath }).filter((script) =>
-    pins.includes(scriptPinId(script)),
-  );
-
 type SuggestedParams = {
   readonly scripts: ReadonlyArray<RunnableScript>;
 };
@@ -179,6 +200,48 @@ type Params = {
   readonly discovered: Readonly<Record<string, ReadonlyArray<ScriptGroup>>> | undefined;
   readonly pins: Readonly<Record<ProjectId, ReadonlyArray<string>>>;
   readonly runs?: Readonly<Record<string, ScriptRunRecord>> | undefined;
+  readonly ledger?: ReadonlyArray<ScriptLedgerEntry> | undefined;
+};
+
+type OutcomeParams = {
+  readonly entry: ScriptLedgerEntry;
+};
+
+const lastOutcomeOf = ({ entry }: OutcomeParams): ScriptLastOutcome => {
+  if (entry.endedAt === null || entry.exitCode === null) {
+    return 'unfinished';
+  }
+  if (entry.exitCode === 0) {
+    return 'ok';
+  }
+  return STOP_EXIT_CODES.includes(entry.exitCode) ? 'cancelled' : 'error';
+};
+
+type LastRunParams = {
+  readonly ledger: ReadonlyArray<ScriptLedgerEntry> | undefined;
+  readonly mountId: MountId;
+  readonly key: string;
+};
+
+const lastRunOf = ({ ledger, mountId, key }: LastRunParams): ScriptLastRun | null => {
+  const matches = (ledger ?? []).filter(
+    (entry) => entry.scriptId === key && (entry.mountId === null || entry.mountId === mountId),
+  );
+  const latest = matches.reduce<ScriptLedgerEntry | null>(
+    (best, entry) => (best === null || entry.startedAt > best.startedAt ? entry : best),
+    null,
+  );
+  if (latest === null) {
+    return null;
+  }
+  return {
+    runId: latest.runId,
+    startedAt: latest.startedAt,
+    endedAt: latest.endedAt,
+    exitCode: latest.exitCode,
+    outcome: lastOutcomeOf({ entry: latest }),
+    runCount: matches.reduce((total, entry) => total + entry.runCount, 0),
+  };
 };
 
 type KeptParams = {
@@ -210,18 +273,23 @@ export const buildSessionScripts = ({
   discovered,
   pins,
   runs,
+  ledger,
 }: Params): ReadonlyArray<SessionScriptGroup> =>
   mounts.map((mount) => {
     const isReady = mount.worktreePath !== '';
     const manifest = isReady ? (discovered?.[mount.worktreePath] ?? []) : [];
-    const pinned = manifestScriptsOf({
+    const everyManifest = allManifestScriptsOf({
       groups: manifest,
       worktreePath: mount.worktreePath,
-      pins: pins[mount.projectId] ?? [],
     });
-    const suggested = suggestedScriptsOf({
-      scripts: allManifestScriptsOf({ groups: manifest, worktreePath: mount.worktreePath }),
-    });
+    const projectPins = pins[mount.projectId] ?? [];
+    const pinned = everyManifest.filter((script) => projectPins.includes(scriptPinId(script)));
+    const savedScripts = savedScriptsOf({ saved, projectId: mount.projectId });
+    const suggested = suggestedScriptsOf({ scripts: everyManifest });
+    const available = [...savedScripts, ...everyManifest].map((script): LedgerScript => ({
+      ...script,
+      lastRun: lastRunOf({ ledger, mountId: mount.mountId, key: script.key }),
+    }));
     return {
       mountId: mount.mountId,
       projectId: mount.projectId,
@@ -230,10 +298,11 @@ export const buildSessionScripts = ({
       worktreePath: mount.worktreePath,
       isReady,
       packageCount: new Set(pinned.map((script) => `${script.source}:${script.relDir}`)).size,
-      scripts: [...savedScriptsOf({ saved, projectId: mount.projectId }), ...pinned],
+      scripts: [...savedScripts, ...pinned],
       suggested:
         pinned.length === 0
           ? suggested
           : keptSuggestedOf({ suggested, pinned, runs, mountId: mount.mountId }),
+      available,
     };
   });

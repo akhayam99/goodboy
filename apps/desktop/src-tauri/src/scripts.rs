@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 use std::io::{Read, Write};
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
 use std::thread;
 
@@ -45,6 +46,7 @@ struct ScriptSlot {
     run: PtySlot,
     metadata: LiveScriptRun,
     ring: SharedRing,
+    was_stopped: Arc<AtomicBool>,
 }
 
 #[derive(Serialize, Clone, Debug, PartialEq, Eq)]
@@ -286,6 +288,17 @@ fn spawn_script<R: Runtime>(request: ScriptSpawnRequest<R>) -> Result<(), Script
         child,
     })));
     let started_at = crate::util::now_millis_u64();
+    let branch = crate::work_ledger::saved_mount_branch(&request.app, request.mount_id.as_deref());
+    let ledger_start = crate::work_ledger::script_start(crate::work_ledger::ScriptStart {
+        run_id: &request.run_id,
+        script_id: &request.script_id,
+        name: &request.name,
+        session_id: &request.session_id,
+        mount_id: request.mount_id.as_deref(),
+        branch: branch.as_deref(),
+        cwd: &request.cwd,
+        started_at: i64::try_from(started_at).unwrap_or(i64::MAX),
+    });
     let metadata = LiveScriptRun {
         run_id: request.run_id.clone(),
         script_id: request.script_id,
@@ -297,6 +310,7 @@ fn spawn_script<R: Runtime>(request: ScriptSpawnRequest<R>) -> Result<(), Script
     };
 
     let ring = new_shared_ring();
+    let was_stopped = Arc::new(AtomicBool::new(false));
     let registered = register_run(
         &request.registry,
         &request.run_id,
@@ -304,6 +318,7 @@ fn spawn_script<R: Runtime>(request: ScriptSpawnRequest<R>) -> Result<(), Script
             run: Arc::clone(&slot),
             metadata,
             ring: Arc::clone(&ring),
+            was_stopped: Arc::clone(&was_stopped),
         },
     );
     if !registered {
@@ -313,6 +328,7 @@ fn spawn_script<R: Runtime>(request: ScriptSpawnRequest<R>) -> Result<(), Script
         return Err(ScriptError::Duplicate(request.run_id));
     }
     request.exited.forget(&request.run_id);
+    crate::work_ledger::save_start(&request.app, &ledger_start);
 
     let run_id = request.run_id;
     let app = request.app;
@@ -350,6 +366,12 @@ fn spawn_script<R: Runtime>(request: ScriptSpawnRequest<R>) -> Result<(), Script
         }
         exited.keep(&run_id, Arc::clone(&ring), exit_code);
         release_run(&registry, &run_id, &reader_slot);
+        crate::work_ledger::save_end(
+            &app,
+            &run_id,
+            crate::util::now_ms(),
+            crate::work_ledger::ledger_exit_code(exit_code, was_stopped.load(Ordering::SeqCst)),
+        );
         let _ = app.emit(
             "script-exit",
             ScriptExitPayload {
@@ -493,15 +515,23 @@ fn stop_run(mut run: PtyRun) -> usize {
     signalled
 }
 
+fn take_for_stop(
+    registry: &Mutex<HashMap<String, ScriptSlot>>,
+    run_id: &str,
+) -> Result<Option<PtySlot>, ScriptError> {
+    let mut map = registry.lock().map_err(|_| ScriptError::Poisoned)?;
+    Ok(map.remove(run_id).map(|slot| {
+        slot.was_stopped.store(true, Ordering::SeqCst);
+        slot.run
+    }))
+}
+
 #[tauri::command]
 pub async fn workspace_script_cancel(
     registry: State<'_, ScriptRegistry>,
     run_id: String,
 ) -> Result<(), ScriptError> {
-    let slot = {
-        let mut map = registry.0.lock().map_err(|_| ScriptError::Poisoned)?;
-        map.remove(&run_id).map(|slot| slot.run)
-    };
+    let slot = take_for_stop(&registry.0, &run_id)?;
     let Some(slot) = slot else {
         return Ok(());
     };
@@ -630,6 +660,7 @@ mod tests {
                 run: Arc::new(Mutex::new(None)),
                 metadata: metadata.clone(),
                 ring: new_shared_ring(),
+                was_stopped: Arc::new(AtomicBool::new(false)),
             },
         );
 
@@ -906,6 +937,64 @@ mod tests {
 
     #[cfg(unix)]
     #[test]
+    fn stopping_a_run_saves_the_stop_code_and_the_branch_it_started_on() {
+        use std::sync::atomic::AtomicU64;
+        use tauri::Manager;
+
+        let conn = crate::test_support::migrated_connection();
+        conn.execute_batch(
+            "INSERT INTO workspaces (id, name, slug, created_at, updated_at)
+               VALUES ('w1', 'Harborline', 'harborline', 1, 1);
+             INSERT INTO sessions (id, workspace_id, goal, state_kind, created_at, updated_at)
+               VALUES ('session-5', 'w1', 'Ship payments-api', 'idle', 1, 1);
+             INSERT INTO session_worktrees (id, session_id, worktree_path, branch, created_at)
+               VALUES ('mount-1', 'session-5', '/work/payments-api', 'nw/retry', 1);",
+        )
+        .expect("seed applies");
+        let dir = crate::proc::ledger::test_support::scratch_dir("script-stop");
+        let cwd = dir.to_string_lossy().into_owned();
+        let app = tauri::test::mock_app();
+        app.manage(Db(
+            Mutex::new(conn),
+            std::path::PathBuf::new(),
+            AtomicU64::new(0),
+        ));
+        let registry = ScriptRegistry::new();
+        let mut request = request_for(&app, &registry, "run-stop", &cwd, "sleep 30");
+        request.mount_id = Some("mount-1".to_string());
+        spawn_script(request).expect("spawn the script");
+        crate::proc::ledger::test_support::wait_for_row(&cwd);
+
+        let slot = take_for_stop(&registry.0, "run-stop")
+            .expect("registry readable")
+            .expect("run is live");
+        let run = lock_or_recover(&slot).take().expect("run is held");
+        stop_run(run);
+
+        let db = app.state::<Db>();
+        let deadline = std::time::Instant::now() + std::time::Duration::from_secs(10);
+        let saved = loop {
+            let row = lock_or_recover(&db.0)
+                .query_row(
+                    "SELECT exit_code, payload_json FROM work_events WHERE run_id = 'run-stop'",
+                    [],
+                    |row| Ok((row.get::<_, Option<i32>>(0)?, row.get::<_, String>(1)?)),
+                )
+                .expect("run row exists");
+            if row.0.is_some() || std::time::Instant::now() > deadline {
+                break row;
+            }
+            thread::sleep(std::time::Duration::from_millis(50));
+        };
+
+        assert_eq!(saved.0, Some(crate::work_ledger::STOPPED_EXIT_CODE));
+        let payload: serde_json::Value = serde_json::from_str(&saved.1).expect("payload parses");
+        assert_eq!(payload["branch"], serde_json::json!("nw/retry"));
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[cfg(unix)]
+    #[test]
     fn a_run_id_that_is_still_live_is_refused_and_the_first_run_keeps_its_entry() {
         let dir = crate::proc::ledger::test_support::scratch_dir("script-duplicate");
         let cwd = dir.to_string_lossy().into_owned();
@@ -942,6 +1031,7 @@ mod tests {
                 started_at: 1,
             },
             ring: new_shared_ring(),
+            was_stopped: Arc::new(AtomicBool::new(false)),
         };
 
         assert!(register_run(&registry.0, "run-a", slot("run-a")));
@@ -969,6 +1059,7 @@ mod tests {
                     started_at: 1,
                 },
                 ring: new_shared_ring(),
+                was_stopped: Arc::new(AtomicBool::new(false)),
             },
         );
 

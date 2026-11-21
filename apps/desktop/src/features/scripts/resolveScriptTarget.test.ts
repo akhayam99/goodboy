@@ -29,6 +29,7 @@ const group = ({ mountId, branch }: { readonly mountId: string; readonly branch:
     packageCount: 0,
     scripts: [SAVED],
     suggested: [],
+    available: [],
   }) satisfies SessionScriptGroup;
 
 const SETTLEMENT = group({ mountId: 'mount-a', branch: 'nw/settlement' });

@@ -1490,6 +1490,21 @@ CREATE TABLE session_dock_grids (
   updated_at INTEGER NOT NULL
 );
 
+CREATE TABLE work_events (
+  id TEXT PRIMARY KEY,
+  run_id TEXT NOT NULL UNIQUE,
+  session_id TEXT NOT NULL REFERENCES sessions(id) ON DELETE CASCADE,
+  mount_id TEXT,
+  agent_id TEXT,
+  kind TEXT NOT NULL,
+  started_at INTEGER NOT NULL,
+  ended_at INTEGER,
+  exit_code INTEGER,
+  payload_json TEXT NOT NULL DEFAULT '{}',
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL
+);
+
 CREATE INDEX idx_permission_audit_retry_created ON permission_audit_retry(created_at);
 
 CREATE INDEX idx_turn_events_agent_created ON turn_events(agent_id, created_at);
@@ -1915,6 +1930,10 @@ CREATE UNIQUE INDEX idx_auto_grants_attempt
 
 CREATE UNIQUE INDEX idx_auto_grants_text
   ON auto_grants(tree_id, subject, text_version) WHERE text_version IS NOT NULL;
+
+CREATE INDEX idx_work_events_mount ON work_events(mount_id, started_at);
+
+CREATE INDEX idx_work_events_session ON work_events(session_id, started_at);
 
 CREATE VIEW live_agents AS SELECT * FROM agents WHERE deleted_at IS NULL;
 
