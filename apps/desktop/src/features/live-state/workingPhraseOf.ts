@@ -1,3 +1,6 @@
+import { NAMES } from '../../shared/utils/names';
+import { commandWordsOf } from './commandWordsOf';
+
 export type LastTool = Readonly<{
   name: string;
   command: string | null;
@@ -7,6 +10,8 @@ export type LastTool = Readonly<{
 type Params = {
   readonly tool: LastTool | null;
   readonly project: string | null;
+  readonly hasToolCall?: boolean;
+  readonly canSeeTools?: boolean;
 };
 
 const SHELL_TOOLS: ReadonlySet<string> = new Set(['bash', 'shell', 'exec', 'command']);
@@ -21,23 +26,23 @@ type TextParams = {
 
 const basenameOf = ({ text }: TextParams): string => text.split('/').filter(Boolean).at(-1) ?? text;
 
-const programOf = ({ text }: TextParams): string | null => {
-  const word = text
-    .trim()
-    .split(/\s+/)
-    .find((token) => token !== '' && !token.includes('='));
-  return word === undefined ? null : basenameOf({ text: word });
-};
-
-export const workingPhraseOf = ({ tool, project }: Params): string => {
+export const workingPhraseOf = ({
+  tool,
+  project,
+  hasToolCall = true,
+  canSeeTools = true,
+}: Params): string => {
   if (tool === null) {
-    return 'Writing the answer';
+    if (!canSeeTools) {
+      return 'Working';
+    }
+    return hasToolCall ? 'Writing the answer' : NAMES.noToolCallYet;
   }
   const name = tool.name.toLowerCase();
   const where = project === null ? '' : ` in ${project}`;
   if (SHELL_TOOLS.has(name)) {
-    const program = tool.command === null ? null : programOf({ text: tool.command });
-    return program === null ? `Running a command${where}` : `Running ${program}${where}`;
+    const words = tool.command === null ? null : commandWordsOf({ text: tool.command });
+    return words === null ? `Running a command${where}` : `Running ${words}${where}`;
   }
   if (READ_TOOLS.has(name) && tool.path !== null) {
     return `Reading ${basenameOf({ text: tool.path })}`;
@@ -50,6 +55,9 @@ export const workingPhraseOf = ({ tool, project }: Params): string => {
   }
   if (WEB_TOOLS.has(name)) {
     return 'Searching the web';
+  }
+  if (name === 'tool') {
+    return 'Using a tool';
   }
   return `Using ${tool.name}`;
 };

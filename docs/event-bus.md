@@ -108,6 +108,7 @@ Rust sends these to the webview with `AppHandle::emit`. A rename in Rust compile
 | `worktree_writer_event`                                | `{ path, holder, reason }`                                                   | worktree_writer.rs      | session/resolve/worktreeWriterBridge.ts |
 | `terminal-output`, `terminal-exit`                     | output chunk and exit of a terminal                                          | terminal.rs             | shared/lib/createOutputStream.ts        |
 | `script-output`, `script-exit`                         | output chunk and exit of a script run                                        | scripts.rs              | shared/lib/createOutputStream.ts        |
+| `work-changed`                                         | `{ sessionId, mountId }`, at most one a second per session, to every window  | live_work.rs            | live-state/listenWorkChanged.ts         |
 | `provider-lifecycle-output`, `provider-lifecycle-exit` | output chunk and exit of an install, login or update                         | provider_lifecycle.rs   | shared/lib/createOutputStream.ts        |
 | `orphans-swept`                                        | `{ count }`                                                                  | lib.rs                  | monitoring/listenOrphansSwept.ts        |
 | `clone-progress`                                       | `{ requestId, phase, percent }` of a running clone                           | repo_clone.rs           | shared/lib/repoClone.ts                 |

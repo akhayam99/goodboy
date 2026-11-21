@@ -73,6 +73,7 @@ export const NAMES = {
   couldntLoadNotifications: "Couldn't load notifications",
   nothingIsRunning: 'Nothing is running',
   noQuestionsYet: 'No questions yet',
+  noToolCallYet: 'No tool call yet',
   inMergeQueue: 'In merge queue',
   noPullRequest: 'No pull request',
   reportThisCrash: 'Report this crash',

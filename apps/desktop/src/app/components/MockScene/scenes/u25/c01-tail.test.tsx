@@ -30,7 +30,7 @@ describe('c01 tail scenes', () => {
   it('puts the working phrase last with its clock from the turn start', () => {
     const Scene = U25_C01_TAIL_SCENES['c01-tail-working'];
     render(<Scene />);
-    screen.getByText('Running pnpm in payments-api');
+    screen.getByText('Running pnpm test in payments-api');
     screen.getByText(/^\d+[hms]( \d+[ms])?$/);
     screen.getByRole('button', { name: 'Stop' });
   });

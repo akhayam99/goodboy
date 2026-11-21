@@ -487,6 +487,14 @@ fn spawn_one<E: TurnEmitter>(
     )?;
     backlog.open(args.run_id);
     register(registry, args.run_id, &live);
+    let scope = args
+        .session_id
+        .map(|session_id| crate::live_work::WorkScope {
+            session_id: session_id.to_string(),
+            mount_id: args.mount_id.map(str::to_string),
+        });
+    crate::live_work::begin_run(args.run_id, args.binary);
+    crate::live_work::mark(scope.as_ref());
 
     let helper_root = crate::proc::provider_helpers::install_root(args.binary);
     let app_clone = app.clone();
@@ -502,6 +510,7 @@ fn spawn_one<E: TurnEmitter>(
             app: &app_clone,
             backlog: &backlog_clone,
             run_id: &run_id_owned,
+            scope: scope.as_ref(),
         };
         let ((), exited) = run_to_exit(&live, &registry_clone, &run_id_owned, None, || {
             forward_lines(&sink, &live, stdout, "agent")
@@ -521,6 +530,7 @@ fn spawn_one<E: TurnEmitter>(
             });
             backlog_clone.finish(&run_id_owned);
         }
+        crate::live_work::end_run(&run_id_owned);
         drop(lease_guards);
         drop(turn_process);
     });
@@ -612,6 +622,7 @@ pub async fn turn_spawn(app: AppHandle, args: SpawnArgs) -> Result<String, TurnE
 }
 
 fn spawn_turn(app: &AppHandle, args: SpawnArgs) -> Result<String, TurnError> {
+    crate::live_work::start_pulse(app);
     let state = app.state::<TurnRegistry>();
     let leases = app.state::<crate::worktree_writer::WriterLeases>();
     let binary = args.binary.as_deref().unwrap_or("claude");
@@ -685,16 +696,21 @@ pub async fn turn_list_live(state: State<'_, TurnRegistry>) -> Result<Vec<String
     Ok(lock_or_recover(&state.0).keys().cloned().collect())
 }
 
-#[tauri::command]
-pub async fn turn_quiet(state: State<'_, TurnRegistry>) -> Result<Vec<TurnQuiet>, TurnError> {
-    let turns: Vec<LiveTurn> = lock_or_recover(&state.0)
+pub(crate) fn running_turns(registry: &TurnRegistry) -> Vec<LiveTurn> {
+    lock_or_recover(&registry.0)
         .iter()
         .map(|(run_id, live)| LiveTurn {
             run_id: run_id.clone(),
             pid: live.pid,
             output_idle: live.activity.idle_for(),
         })
-        .collect();
+        .collect()
+}
+
+pub(crate) async fn measure_quiet(
+    registry: &TurnRegistry,
+    turns: &[LiveTurn],
+) -> Result<Vec<TurnQuiet>, TurnError> {
     if turns.is_empty() {
         return Ok(Vec::new());
     }
@@ -702,7 +718,13 @@ pub async fn turn_quiet(state: State<'_, TurnRegistry>) -> Result<Vec<TurnQuiet>
     let cpus = tauri::async_runtime::spawn_blocking(move || crate::proc::reap::trees_cpu(&pids))
         .await
         .map_err(|error| TurnError::Io(std::io::Error::other(error)))?;
-    Ok(state.3.measure(&turns, &cpus, std::time::Instant::now()))
+    Ok(registry.3.measure(turns, &cpus, std::time::Instant::now()))
+}
+
+#[tauri::command]
+pub async fn turn_quiet(state: State<'_, TurnRegistry>) -> Result<Vec<TurnQuiet>, TurnError> {
+    let turns = running_turns(&state);
+    measure_quiet(&state, &turns).await
 }
 
 #[tauri::command]
@@ -790,6 +812,7 @@ struct TurnSink<'a, E: TurnEmitter> {
     app: &'a E,
     backlog: &'a TurnBacklog,
     run_id: &'a str,
+    scope: Option<&'a crate::live_work::WorkScope>,
 }
 
 impl<E: TurnEmitter> EventSink for TurnSink<'_, E> {
@@ -797,7 +820,14 @@ impl<E: TurnEmitter> EventSink for TurnSink<'_, E> {
         if is_exiting() && !matches!(event, TurnEventPayload::Line { .. }) {
             return;
         }
+        let is_work_change = match &event {
+            TurnEventPayload::Line { line } => crate::live_work::track_line(self.run_id, line),
+            _ => true,
+        };
         let seq = self.backlog.record(self.run_id, event.clone());
+        if is_work_change {
+            crate::live_work::mark(self.scope);
+        }
         self.app.emit_turn(
             EVENT_NAME,
             TurnEventEnvelope {
