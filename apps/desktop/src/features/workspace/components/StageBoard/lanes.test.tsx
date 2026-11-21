@@ -424,7 +424,7 @@ describe('StageBoard header', () => {
     });
     mountBoard([building]);
 
-    expect(document.querySelector('[data-filter-dot]')).toBeNull();
+    expect(document.querySelector('[data-filter-button] [data-count-badge]')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Filter sessions' }));
     const dialog = screen.getByRole('dialog', { name: 'Filter sessions' });
     expect(within(dialog).queryByRole('group', { name: 'Repositories' })).toBeNull();

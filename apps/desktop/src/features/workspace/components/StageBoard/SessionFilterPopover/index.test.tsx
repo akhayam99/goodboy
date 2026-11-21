@@ -76,8 +76,10 @@ const goalsOnScreen = (): ReadonlyArray<string> =>
 
 const tickFolder = ({ dialog, name }: { readonly dialog: HTMLElement; readonly name: string }) =>
   fireEvent.click(
-    within(within(dialog).getByRole('group', { name: 'Project' })).getByRole('checkbox', { name }),
+    within(within(dialog).getByRole('group', { name: 'Projects' })).getByRole('checkbox', { name }),
   );
+
+const ACTIVE_COUNT = '[data-filter-button] [data-count-badge]';
 
 const prefs = () => useAppStore.getState().sessionViewPrefs[harborline.id];
 
@@ -92,7 +94,7 @@ describe('the Board filter', () => {
 
     expect(goalsOnScreen()).toEqual(ALL_GOALS);
     expect(within(dialog).queryByRole('button', { name: 'Reset' })).toBeNull();
-    expect(document.querySelector('[data-filter-dot="active"]')).toBeNull();
+    expect(document.querySelector(ACTIVE_COUNT)).toBeNull();
     expect(screen.queryByText(/hidden$/)).toBeNull();
   });
 
@@ -114,7 +116,8 @@ describe('the Board filter', () => {
 
     expect(selectedFolders()).toEqual([ledgerCore.id]);
     expect(goalsOnScreen()).toEqual(['Backfill ledger balances', 'Fix webhook retries']);
-    expect(document.querySelector('[data-filter-dot="active"]')).not.toBeNull();
+    expect(document.querySelector(ACTIVE_COUNT)?.textContent).toBe('1');
+    expect(screen.getByRole('button', { name: 'Filter sessions, 1 active' })).toBeDefined();
   });
 
   it('puts a ticked box back to unticked on a second click', () => {
@@ -142,6 +145,6 @@ describe('the Board filter', () => {
     expect(selectedFolders()).toEqual([]);
     expect(goalsOnScreen()).toEqual(ALL_GOALS);
     expect(within(dialog).queryByRole('button', { name: 'Reset' })).toBeNull();
-    expect(document.querySelector('[data-filter-dot="active"]')).toBeNull();
+    expect(document.querySelector(ACTIVE_COUNT)).toBeNull();
   });
 });

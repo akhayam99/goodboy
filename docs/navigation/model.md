@@ -11,12 +11,12 @@
   capability stays one step away.
 - **The Board frame.** The header is one 44px row, no band above it,
   with the pane title grade (`Sessions` alone, no total: each lane carries its
-  own count), then on the right: "N hidden · Clear" while a filter hides
-  sessions (`HiddenByFilters`), and **Filter sessions**
-  (`SessionFilterPopover`). The page is the Board only: there is no List view,
-  no switch and no stored page view, and the column is the list. A stored
-  `pageView` in an older prefs record is ignored. The filter icon carries one
-  primary 6px dot while a filter is on. The page filter holds Sort and Project;
+  own count), then the tool row under it: **Filter sessions**
+  (`SessionFilterPopover`, a `FilterButton`), then "N hidden · Clear" while a
+  filter hides sessions (`HiddenByFilters`). The page is the Board only: there
+  is no List view, no switch and no stored page view, and the column is the
+  list. A stored `pageView` in an older prefs record is ignored. The filter
+  button shows how many filters are on as a count. The page filter holds Sort and Projects;
   the column filter holds Sort, Project, Status and Show archived (Group stays
   in the column). Both are the one `SessionFilterPopover` over the one
   `SessionViewPrefs` record, so a choice made in one is the choice in the other,

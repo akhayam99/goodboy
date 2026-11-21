@@ -112,22 +112,24 @@ export const ArtifactList = ({
     <PaneShell
       page="artifacts"
       actions={
-        <>
-          {counts.all === 0 ? null : (
+        <ArtifactNewMenu
+          sessionId={sessionId}
+          isEmpty={counts.all === 0}
+          onImportWireframe={importer.pick}
+        />
+      }
+      toolbar={
+        counts.all === 0 ? null : (
+          <>
             <ArtifactFilterTabs value={filter} counts={counts} onChange={onFilterChange} />
-          )}
-          {branch === undefined || branch.branchCount < 2 ? null : (
-            <GroupBySwitch
-              value={branch.groupBy}
-              onChange={(next) => branch.onGroupByChange({ groupBy: next })}
-            />
-          )}
-          <ArtifactNewMenu
-            sessionId={sessionId}
-            isEmpty={counts.all === 0}
-            onImportWireframe={importer.pick}
-          />
-        </>
+            {branch === undefined || branch.branchCount < 2 ? null : (
+              <GroupBySwitch
+                value={branch.groupBy}
+                onChange={(next) => branch.onGroupByChange({ groupBy: next })}
+              />
+            )}
+          </>
+        )
       }
     >
       <div

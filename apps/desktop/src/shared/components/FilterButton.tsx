@@ -11,16 +11,23 @@ import {
 } from '@goodboy/ui';
 
 type Props = {
+  readonly label?: string;
   readonly popoverLabel: string;
   readonly activeCount: number;
   readonly facets: ReactNode;
   readonly popoverHeight?: number;
 };
 
-export const FilterButton = ({ popoverLabel, activeCount, facets, popoverHeight = 420 }: Props) => {
+export const FilterButton = ({
+  label: name = 'Filters',
+  popoverLabel,
+  activeCount,
+  facets,
+  popoverHeight = 420,
+}: Props) => {
   const dropdown = useDropdown({ width: 'w-80', expectedHeight: popoverHeight });
   const hasActive = activeCount > 0;
-  const label = hasActive ? `Filters, ${activeCount} active` : 'Filters';
+  const label = hasActive ? `${name}, ${activeCount} active` : name;
 
   return (
     <AnchoredPopover
@@ -29,7 +36,7 @@ export const FilterButton = ({ popoverLabel, activeCount, facets, popoverHeight 
       ariaLabel={popoverLabel}
       className="max-h-[70vh] py-1"
       trigger={
-        <Tooltip content="Filters" isSuppressed={dropdown.open}>
+        <Tooltip content={name} isSuppressed={dropdown.open}>
           <Button
             variant="secondary"
             size="sm"

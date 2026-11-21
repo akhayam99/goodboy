@@ -176,19 +176,15 @@ export const NotificationsStudio = ({ onClose }: Props) => {
                   scroll="body"
                   title="Notifications"
                   meta={headerMeta}
-                  actions={
-                    <NotificationsHeaderActions
-                      facts={bulkFacts}
-                      filter={
-                        fold.isCollapsed ? (
-                          <FilterButton
-                            popoverLabel="Notification filters"
-                            activeCount={activeCount}
-                            facets={facets}
-                          />
-                        ) : null
-                      }
-                    />
+                  actions={<NotificationsHeaderActions facts={bulkFacts} />}
+                  toolbar={
+                    fold.isCollapsed ? (
+                      <FilterButton
+                        popoverLabel="Notification filters"
+                        activeCount={activeCount}
+                        facets={facets}
+                      />
+                    ) : null
                   }
                 >
                   {isLoading && notifications.length === 0 && <NotificationsSkeleton />}

@@ -101,7 +101,7 @@ describe('the c11 Sessions scenes', () => {
   it('c11-sessions-repos-attention keeps repo state off the filter and the header', async () => {
     await mount('c11-sessions-repos-attention');
     expect(screen.queryByText('1 repo needs attention')).toBeNull();
-    expect(document.querySelector('[data-filter-dot]')).toBeNull();
+    expect(document.querySelector('[data-filter-button] [data-count-badge]')).toBeNull();
   });
 
   it('c11-sessions-empty offers New session under No sessions yet', async () => {
@@ -153,7 +153,7 @@ describe('every Sessions page capability is reachable from its home', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Filter sessions' }));
     await settle();
     const dialog = screen.getByRole('dialog', { name: 'Filter sessions' });
-    expect(within(dialog).getByRole('group', { name: 'Project' })).toBeDefined();
+    expect(within(dialog).getByRole('group', { name: 'Projects' })).toBeDefined();
     expect(within(dialog).getByRole('combobox', { name: 'Sort' })).toBeDefined();
     expect(within(dialog).queryByRole('group', { name: 'Repositories' })).toBeNull();
     expect(within(dialog).queryByRole('group', { name: 'Status' })).toBeNull();

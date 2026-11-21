@@ -172,14 +172,14 @@ const mountPage = async () => {
 describe('Monitoring keeps its state when you leave and come back', () => {
   it('keeps the search text', async () => {
     const first = await mountPage();
-    fireEvent.change(screen.getByRole('searchbox', { name: 'Filter ports' }), {
+    fireEvent.change(screen.getByRole('searchbox', { name: 'Search ports' }), {
       target: { value: '5005' },
     });
     first.unmount();
 
     await mountPage();
 
-    const field = screen.getByRole('searchbox', { name: 'Filter ports' });
+    const field = screen.getByRole('searchbox', { name: 'Search ports' });
     expect(field).toHaveProperty('value', '5005');
   });
 
