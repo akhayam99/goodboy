@@ -51,6 +51,7 @@ const controlsOf = ({ error }: ControlsParams): ActionControls => ({
   confirm: async () => undefined,
   cancel: () => undefined,
   retry: () => undefined,
+  retrySettled: () => Promise.resolve({ kind: 'skipped' as const }),
   dismissFailure: () => undefined,
   dismissOutcome: () => undefined,
 });

@@ -12,6 +12,7 @@ vi.mock('../../artifacts', () => ({ listArtifactRevisions }));
 
 import { useAppStore } from '../../../../store';
 import type { ReportErrorParams } from '../../../../store/slices/notifications/reportError';
+import { RestoreConflictError } from '../../../../store/slices/artifacts/RestoreConflictError';
 import { ArtifactRevisionsSection } from './ArtifactRevisionsSection';
 
 const SESSION_ID = 'session-1' as SessionId;
@@ -153,6 +154,23 @@ describe('ArtifactRevisionsSection', () => {
     expect(screen.queryByRole('alert')).toBeNull();
     expect(await reported?.retry?.()).toBe(true);
     expect(restoreSpy).toHaveBeenCalledTimes(2);
+  });
+
+  it('sends a restore conflict back to the newer version with no Retry', async () => {
+    listArtifactRevisions.mockResolvedValueOnce([
+      revision({ revision: 2, author: 'user' }),
+      revision({ revision: 1, author: 'agent' }),
+    ]);
+    restoreSpy.mockRejectedValueOnce(new RestoreConflictError());
+    render(
+      <ArtifactRevisionsSection sessionId={SESSION_ID} artifact={artifact} creatorName="Scout" />,
+    );
+    fireEvent.click(await waitFor(() => screen.getByTestId('artifact-revision-restore')));
+    await waitFor(() => expect(reportSpy).toHaveBeenCalledOnce());
+    const reported = reportSpy.mock.calls[0]?.[0];
+    expect(reported?.title).toBe("Couldn't restore version 1 of Session report");
+    expect(reported?.retry).toBeUndefined();
+    expect(restoreSpy).toHaveBeenCalledOnce();
   });
 
   it('surfaces a failed load in plain words with Retry, never the exception text', async () => {

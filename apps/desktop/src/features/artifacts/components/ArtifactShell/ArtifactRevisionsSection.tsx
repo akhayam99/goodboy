@@ -3,6 +3,7 @@ import { Button, SectionHeader, SkeletonRow } from '@goodboy/ui';
 import type { ArtifactRevision } from '@goodboy/db';
 import type { SessionArtifact, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
+import { RestoreConflictError } from '../../../../store/slices/artifacts/RestoreConflictError';
 import { NOTHING_CHANGED } from '../../../../store/slices/notifications/errorRecovery';
 import { formatDateTime } from '../../../../shared/utils/time/formatDateTime';
 import { listArtifactRevisions } from '../../artifacts';
@@ -68,7 +69,7 @@ export const ArtifactRevisionsSection = ({ sessionId, artifact, creatorName }: P
         error: cause,
         recovery: NOTHING_CHANGED,
         sessionId,
-        retry: () => restore({ revision }),
+        ...(cause instanceof RestoreConflictError ? {} : { retry: () => restore({ revision }) }),
       });
       return false;
     } finally {

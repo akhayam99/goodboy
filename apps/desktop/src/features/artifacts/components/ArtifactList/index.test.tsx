@@ -20,7 +20,9 @@ const { state, picker } = vi.hoisted(() => ({
 }));
 
 vi.mock('../../../../store', () => ({
-  useAppStore: <T,>(selector: (s: typeof state) => T) => selector(state),
+  useAppStore: Object.assign(<T,>(selector: (s: typeof state) => T) => selector(state), {
+    getState: () => state,
+  }),
 }));
 
 vi.mock('../../../wireframes/readWireframeFile', () => ({
@@ -199,6 +201,39 @@ describe('ArtifactList wireframe import', () => {
     });
     expect(screen.queryByRole('alert')).toBeNull();
     expect(state.importWireframe).not.toHaveBeenCalled();
+  });
+
+  it('hands Retry the same read and confirms only once it worked', async () => {
+    picker.isFailing = true;
+    renderList();
+    openImport();
+    await waitFor(() => expect(state.reportError).toHaveBeenCalledOnce());
+    const retry = async (): Promise<boolean> => {
+      const run: unknown = state.reportError.mock.calls.at(-1)?.[0]?.retry;
+      return typeof run === 'function' ? Boolean(await run()) : false;
+    };
+
+    expect(await retry()).toBe(false);
+    await waitFor(() => expect(state.reportError).toHaveBeenCalledTimes(2));
+    expect(state.reportError.mock.calls[1]?.[0]).toMatchObject({
+      title: "Couldn't read the wireframe file",
+    });
+
+    picker.isFailing = false;
+    picker.next = {
+      status: 'ready',
+      fileName: 'cascadia-onboarding.json',
+      title: 'Cascadia onboarding',
+      sourceText: '{"version":2}',
+      fidelity: 'low',
+      screenCount: 4,
+      device: 'phone',
+      version: 2,
+      adjustments: [],
+    };
+    expect(await retry()).toBe(true);
+    expect(state.reportError).toHaveBeenCalledTimes(2);
+    await screen.findByTestId('wireframe-import-preview');
   });
 
   it('refuses a file it cannot read and imports nothing', async () => {

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { Button, EmptyLine, EmptyState, ListGrid, PaneShell, Notice } from '@goodboy/ui';
 import type { ArtifactId, SessionId } from '@goodboy/types';
 import { WireframeImportNotice } from '../../../wireframes/components/WireframeImportNotice';
@@ -6,7 +6,6 @@ import { useWireframeImport } from '../../../wireframes/useWireframeImport';
 import { useFileDropTarget } from '../../../../shared/hooks/useFileDropTarget';
 import { useGroupArrival } from '../../../../shared/hooks/useGroupArrival';
 import { useAppStore } from '../../../../store';
-import { NOTHING_CHANGED } from '../../../../store/slices/notifications/errorRecovery';
 import { loadStateOf } from '../../../../shared/lib/loadStateOf';
 import type { ArtifactFilter } from '../../artifactCollection';
 import {
@@ -24,6 +23,7 @@ import { ArtifactStateGroup } from './ArtifactStateGroup';
 import { ARTIFACTS_GRID_COLUMNS } from './artifactsGridColumns';
 import { ArtifactNewMenu } from './ArtifactNewMenu';
 import { useArtifactParts } from './useArtifactParts';
+import { useImportReadFailure } from './useImportReadFailure';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -36,8 +36,6 @@ type Props = {
   readonly branch?: ArtifactBranchProps;
   readonly onImported: (artifactId: ArtifactId) => void;
 };
-
-const IMPORT_FAILED = "Couldn't read the wireframe file";
 
 const keepGrouping = (): void => undefined;
 
@@ -62,7 +60,6 @@ export const ArtifactList = ({
   const hasLoaded = useAppStore((state) => state.sessionArtifacts[sessionId] !== undefined);
   const error = useAppStore((state) => state.artifactLoadErrors?.[sessionId] ?? null);
   const loadSessionArtifacts = useAppStore((state) => state.loadSessionArtifacts);
-  const reportError = useAppStore((state) => state.reportError);
   const loadState = loadStateOf({ hasLoaded, isLoading: !hasLoaded, error, count: counts.all });
   const dropRef = useRef<HTMLDivElement>(null);
   const importWireframe = useAppStore((state) => state.importWireframe);
@@ -77,25 +74,13 @@ export const ArtifactList = ({
       onImported(artifact.id);
     },
   });
-  const { error: importError, pending: importPending, cancel: cancelImport } = importer;
-  useEffect(() => {
-    if (importPending !== null || importError === null) {
-      return;
-    }
-    void reportError({
-      title: IMPORT_FAILED,
-      error: importError,
-      recovery: NOTHING_CHANGED,
-      sessionId,
-    });
-    cancelImport();
-  }, [importPending, importError, cancelImport, reportError, sessionId]);
+  const importRead = useImportReadFailure({ importer, sessionId });
   const { isDragging } = useFileDropTarget({
     targetRef: dropRef,
     onDropPaths: ({ paths }) => {
       const json = paths.find((path) => path.toLowerCase().endsWith('.json')) ?? null;
       if (json !== null) {
-        importer.readPath(json);
+        importRead.readPath({ path: json });
       }
     },
   });
@@ -132,7 +117,7 @@ export const ArtifactList = ({
           <ArtifactNewMenu
             sessionId={sessionId}
             isEmpty={counts.all === 0}
-            onImportWireframe={importer.pick}
+            onImportWireframe={importRead.pick}
           />
         )
       }
@@ -188,7 +173,7 @@ export const ArtifactList = ({
             title="No artifacts yet"
             description="Plans, reports and wireframes this session wrote."
             action={
-              <ArtifactNewMenu sessionId={sessionId} isEmpty onImportWireframe={importer.pick} />
+              <ArtifactNewMenu sessionId={sessionId} isEmpty onImportWireframe={importRead.pick} />
             }
           />
         ) : rows.length === 0 ? (

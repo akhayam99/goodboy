@@ -60,7 +60,7 @@ const RowComponent = ({
   const model = useArtifactRowModel({ row, rowKey, sessionId });
   useArtifactRowFailure({
     failure: model.controls.failure,
-    retry: model.controls.retry,
+    retry: model.controls.retrySettled,
     dismissFailure: model.controls.dismissFailure,
     title: row.title,
     sessionId,

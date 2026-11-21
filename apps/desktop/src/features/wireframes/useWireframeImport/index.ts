@@ -13,8 +13,8 @@ export type WireframeImportHandle = Readonly<{
   pending: WireframeImport | null;
   isBusy: boolean;
   error: string | null;
-  pick: () => void;
-  readPath: (path: string) => void;
+  pick: () => Promise<boolean>;
+  readPath: (path: string) => Promise<boolean>;
   confirm: () => void;
   cancel: () => void;
 }>;
@@ -26,13 +26,13 @@ export const useWireframeImport = ({ commit }: Params): WireframeImportHandle =>
 
   const load = useCallback((read: () => Promise<WireframeImport | null>) => {
     setError(null);
-    read()
-      .then((next) => {
-        if (next !== null) {
-          setPending(next);
-        }
-      })
-      .catch((cause: unknown) => setError(formatError(cause)));
+    return read()
+      .then((next) => setPending((current) => next ?? current))
+      .then(() => true)
+      .catch((cause: unknown) => {
+        setError(formatError(cause));
+        return false;
+      });
   }, []);
 
   const confirm = useCallback(() => {

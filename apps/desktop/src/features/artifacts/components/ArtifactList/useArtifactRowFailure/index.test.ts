@@ -16,6 +16,7 @@ import {
   resetStoryStore,
   type StoryStore,
 } from '../../../../../store/storyHarness';
+import type { ActionSettled } from '../../../../actions/ActionSettled';
 import type { ReportErrorParams } from '../../../../../store/slices/notifications/reportError';
 
 const reportError = vi.fn(async (_params: ReportErrorParams) => undefined);
@@ -35,7 +36,7 @@ type FailureParams = {
 };
 
 const failureOf = ({ actionId }: FailureParams) => {
-  const retry = vi.fn();
+  const retry = vi.fn(async (): Promise<ActionSettled> => ({ kind: 'ok' }));
   const dismissFailure = vi.fn();
   return {
     failure: actionId === null ? null : { actionId, error: new Error('the plan moved') },
@@ -78,6 +79,35 @@ describe('useArtifactRowFailure', () => {
     expect(reported?.title).toBe("Couldn't restore Cascadia plan");
     expect(await reported?.retry?.()).toBe(true);
     expect(given.retry).toHaveBeenCalledOnce();
+  });
+
+  it('keeps Retry open and logs the new failure when the same action fails again', async () => {
+    const given = failureOf({ actionId: 'artifact.restore' });
+    given.retry.mockResolvedValueOnce({ kind: 'failed', error: new Error('still locked') });
+    const { unmount } = renderHook(() =>
+      useArtifactRowFailure({ ...given, title: 'Cascadia plan', sessionId: SESSION }),
+    );
+    unmount();
+
+    expect(await reportError.mock.calls[0]?.[0].retry?.()).toBe(false);
+
+    expect(reportError).toHaveBeenCalledTimes(2);
+    expect(reportError.mock.calls[1]?.[0]).toMatchObject({
+      title: "Couldn't restore Cascadia plan",
+      sessionId: SESSION,
+    });
+    expect(await reportError.mock.calls[1]?.[0].retry?.()).toBe(true);
+  });
+
+  it('does not resolve Retry when another run holds the action', async () => {
+    const given = failureOf({ actionId: 'artifact.restore' });
+    given.retry.mockResolvedValueOnce({ kind: 'skipped' });
+    renderHook(() =>
+      useArtifactRowFailure({ ...given, title: 'Cascadia plan', sessionId: SESSION }),
+    );
+
+    expect(await reportError.mock.calls[0]?.[0].retry?.()).toBe(false);
+    expect(reportError).toHaveBeenCalledOnce();
   });
 
   it('logs nothing while no action failed', () => {
