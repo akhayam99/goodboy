@@ -116,6 +116,14 @@ describe('useSessionScripts', () => {
       },
     });
     rerender({ shouldScan: true });
+    useAppStore.setState({
+      scriptRuns: {
+        [SESSION_ID]: {
+          lint: { status: 'ok', result: null, runId: 'run-1', startedAt: 1, output: 'clean' },
+        },
+      },
+    });
+    rerender({ shouldScan: true });
 
     expect(loadScriptLedger).toHaveBeenCalledTimes(2);
     expect(loadScriptLedger).toHaveBeenCalledWith({ sessionId: SESSION_ID });

@@ -33,12 +33,17 @@ export const useSessionScripts = ({
   const loadScriptLedger = useAppStore((state) => state.loadScriptLedger);
   const pins = useScriptPins({ projectIds: mounts.map((mount) => mount.projectId) });
 
+  const runMoves = Object.values(runs ?? {})
+    .map((record) => `${record.runId}:${record.status}`)
+    .sort()
+    .join('|');
+
   useEffect(() => {
     if (!shouldScan) {
       return;
     }
     void loadScriptLedger({ sessionId });
-  }, [loadScriptLedger, runs, sessionId, shouldScan]);
+  }, [loadScriptLedger, runMoves, sessionId, shouldScan]);
 
   useEffect(() => {
     if (!shouldScan) {
