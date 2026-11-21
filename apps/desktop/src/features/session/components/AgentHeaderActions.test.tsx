@@ -179,7 +179,7 @@ describe('AgentHeaderActions', () => {
       expect(labels).toContain('Rename');
       expect(labels).toContain('Delete agent');
       expect(labels).not.toContain('Copy name');
-      expect(labels).not.toContain('Show its changes');
+      expect(labels).not.toContain('Open in Changes');
       expect(labels).not.toContain('Change model');
       cleanup();
     }

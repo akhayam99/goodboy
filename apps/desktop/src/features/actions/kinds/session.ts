@@ -8,11 +8,8 @@ import {
   ArrowUp,
   Copy,
   GitBranch,
-  Link,
   Link2,
   ListChecks,
-  Mail,
-  MailOpen,
   OctagonX,
   Pencil,
   Pin,
@@ -39,8 +36,7 @@ import { liveAgentsOf } from '../../../store/runtime/live-work/liveAgentsOf';
 import { unreadTargetOf } from '../../../store/slices/agents/unreadTargetOf';
 import { sessionHasUnread } from '../../../store/slices/session-view/sessionHasUnread';
 import { openStartRun } from '../../session/startRun/openStartRun';
-import { stopAllMessageOf } from '../../session/stopAllMessageOf';
-import { stopAllRunningAgents } from '../../session/stopAllRunningAgents';
+import { stopAllWithResume } from '../../session/stopAllWithResume';
 import { refreshSession } from '../../session/refreshSession';
 import { openSessionSpendLimitEdit } from '../../budget/openSessionSpendLimitEdit';
 import { RENAME_REQUEST_EVENT, requestRename } from '../../../shared/utils/renameRequest';
@@ -59,7 +55,8 @@ import { NAMES } from '../../../shared/utils/names';
 import { dispatchAfterNavigation } from '../dispatchAfterNavigation';
 import { behindBranchesOf } from '../../history/behindBranchesOf';
 import { SESSION_EXTERNAL_OPEN_ACTIONS, withSessionSubmenus } from './sessionGoToActions';
-import { requestNounLabel } from '../../branch/requestNounLabel';
+import { copyRequestLinkLabelOf } from '../../branch/copyRequestLinkLabelOf';
+import { VERBS } from '../../../shared/utils/verbs';
 import { sessionPullRequestHostOf } from '../../../store/slices/review-source/sessionPullRequestOf';
 import { lifecyclePortsOf } from './lifecyclePortsOf';
 import { SESSION_BRANCH_ACTIONS } from './sessionBranchActions';
@@ -216,16 +213,14 @@ const SESSION_ACTIONS: ReadonlyArray<ActionDefinition<SessionFacts>> = [
   },
   {
     id: 'session.markUnread',
-    label: 'Mark as unread',
-    icon: Mail,
+    ...VERBS.markAsUnread,
     group: 'act',
     when: ({ facts }) => isUnarchived({ facts }) && facts.canMarkUnread && !facts.hasUnread,
     run: ({ facts, env }) => env.getState().markSessionUnread({ sessionId: facts.sessionId }),
   },
   {
     id: 'session.markRead',
-    label: 'Mark as read',
-    icon: MailOpen,
+    ...VERBS.markAsRead,
     group: 'act',
     when: ({ facts }) => isUnarchived({ facts }) && facts.hasUnread,
     run: ({ facts, env }) => env.getState().markAllAgentsSeen(facts.sessionId),
@@ -364,9 +359,8 @@ const SESSION_ACTIONS: ReadonlyArray<ActionDefinition<SessionFacts>> = [
   },
   {
     id: 'session.copyPr',
-    label: ({ facts }) =>
-      `${NAMES.copy} ${requestNounLabel({ host: facts.requestHost }).toLowerCase()} link`,
-    icon: Link,
+    label: ({ facts }) => copyRequestLinkLabelOf({ host: facts.requestHost }),
+    icon: VERBS.copyLink.icon,
     group: 'copy',
     when: ({ facts }) => facts.prUrl !== null,
     run: ({ facts, env }) => env.copyText({ text: facts.prUrl ?? '' }),
@@ -377,22 +371,13 @@ const SESSION_ACTIONS: ReadonlyArray<ActionDefinition<SessionFacts>> = [
     icon: OctagonX,
     group: 'danger',
     when: ({ facts }) => isUnarchived({ facts }) && facts.runningAgentCount > 0,
-    confirm: ({ facts }) => ({
-      title:
-        facts.runningAgentCount === 1
-          ? 'Stop the running agent?'
-          : `Stop ${facts.runningAgentCount} running agents?`,
-      description: 'Each one stops where it is. Its changes stay on the branch.',
-      confirmLabel: NAMES.stop,
-      role: 'alert',
-    }),
-    run: async ({ facts, env }) => {
-      const result = await stopAllRunningAgents({
+    isUndoable: true,
+    run: ({ facts, env }) =>
+      stopAllWithResume({
         getState: env.getState,
         sessionId: facts.sessionId,
-      });
-      env.showToast({ kind: 'info', message: stopAllMessageOf({ result }) });
-    },
+        showToast: env.showToast,
+      }),
   },
   {
     id: 'session.archive',

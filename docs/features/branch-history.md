@@ -92,7 +92,7 @@ If someone pushed after you applied, Goodboy lists their new commits and offers 
 - A branch shows one card at most, the newest. A rebase that finishes settles every older stop of the branch, so dismissing it shows nothing behind it.
 - **Force push** replaces the branch on origin only if nobody pushed since you last looked. A failed Push or Force push in the Branch header offers the same two actions.
 - If origin changed between your confirm and the push, the failure leads with **Check again**. It fetches and lists the commits only on origin, with author and subject. Then it asks again: **Force push anyway** drops them, **Rebase on their commits** keeps them. It offers no **Retry**, since that would reuse the old check.
-- There, **Fix with an agent** and **Open terminal here** read origin again first. Since nobody confirmed the new commits, they keep everything on origin: the agent rebases on it, and the terminal gets a rebase on origin, then a push. A failed start shows in the card, not in a toast.
+- There, **Fix with an agent** and **Open in Terminal** read origin again first. Since nobody confirmed the new commits, they keep everything on origin: the agent rebases on it, and the terminal gets a rebase on origin, then a push. A failed start shows in the card, not in a toast.
 - **Add a hint** under **Fix with an agent** and under **Rewrite with an agent** passes your words to the agent. A failed start keeps them.
 - While Push, Rebase, Merge or another Branch header action runs, its button shows the pending word (**Pushing…**) and ignores more clicks.
 - When it finishes, a line under the header says what happened (**Pushed 1 commit to origin.**). It stays until you dismiss it or start the next action.
@@ -135,14 +135,14 @@ On a conflict or a commit hook, the panel does three things.
 **The verbs of a stopped rebase**
 
 - The verbs are one set. The banner, the panel and the Next row run the same ones. A hint typed under **Resolve with the Lead** or **Fix with an agent** therefore applies from whichever place you press the verb.
-- A failed push keeps **Fix with an agent**, **Open terminal here** and **Retry push**.
+- A failed push keeps **Fix with an agent**, **Open in Terminal** and **Retry push**.
 - While that agent works, the same panel reads **Fixing** with its step and time, with **Stop** and **Open transcript**. **Retry push** waits until it ends.
 - It reads **Stopped: hook stopped the push** only when its error names `pre-push`. A remote `pre-receive hook declined` reads **Stopped: push failed**. The Local checks cell uses the same test.
-- A dirty tree, a moved branch, a blocked move, a result that differs and a failed rebase offer **Retry rebase** and **Open terminal**.
+- A dirty tree, a moved branch, a blocked move, a result that differs and a failed rebase offer **Retry rebase** and **Open in Terminal**.
 - A verb that fails keeps the panel with its error and **Retry**, on the branch it failed on.
 - The error is kept per branch. It names the branch when the session has more than one. Moving to another branch neither shows it nor locks that branch's verbs.
 - A rebase can be in progress in the worktree without a Goodboy stop. A terminal or an agent can start it.
-- Then the banner is one row, **Rebase in progress in the worktree**, with **Continue rebase**, **Open terminal** and **Abort rebase**. The header never yields to a banner that does not draw.
+- Then the banner is one row, **Rebase in progress in the worktree**, with **Continue rebase**, **Open in Terminal** and **Abort rebase**. The header never yields to a banner that does not draw.
 
 **While a stop is open**
 

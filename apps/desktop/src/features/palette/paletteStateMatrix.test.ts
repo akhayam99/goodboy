@@ -156,7 +156,7 @@ describe('palette verbs follow the session state', () => {
       'Open changes',
       'Open log',
       'Open in editor',
-      'Open ledger-core in terminal',
+      'Open in Terminal',
       'Open in external terminal',
       'Rename',
       'Ask about this session',
@@ -440,7 +440,7 @@ describe('the empty palette ranks the session verbs by state', () => {
     expect(labelsOf(screen, 'For this session')).toEqual([
       'Start a run',
       'Link work',
-      'Open ledger-core in terminal',
+      'Open in Terminal',
       'Open in editor',
       'Open changes',
       'Rename',
@@ -455,7 +455,7 @@ describe('the empty palette ranks the session verbs by state', () => {
       'Message Implementer',
       'Open comments',
       'Start a run',
-      'Open ledger-core in terminal',
+      'Open in Terminal',
     ]);
   });
 
@@ -466,7 +466,7 @@ describe('the empty palette ranks the session verbs by state', () => {
       'Stop Implementer',
       'Message Implementer',
       'Open changes',
-      'Open ledger-core in terminal',
+      'Open in Terminal',
       'Start a run',
     ]);
   });
@@ -476,7 +476,7 @@ describe('the empty palette ranks the session verbs by state', () => {
       'Open comments',
       'Open changes',
       'Open in editor',
-      'Open ledger-core in terminal',
+      'Open in Terminal',
     ]);
   });
 

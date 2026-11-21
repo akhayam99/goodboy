@@ -64,7 +64,7 @@ const verdictOf = (kind: ResolveVerdictKind, sha: string | null): ResolveVerdict
 });
 
 const OPEN = ['reviewComment.openInDiff menu Open in Changes'];
-const TRANSCRIPT = ['reviewComment.transcript menu Agent transcript'];
+const TRANSCRIPT = ['reviewComment.transcript menu Open transcript'];
 const GITHUB = ['reviewComment.openOnGithub menu Open'];
 const BITBUCKET: Partial<ReviewCommentFacts> = {
   provider: 'Bitbucket',

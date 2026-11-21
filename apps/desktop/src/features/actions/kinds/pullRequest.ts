@@ -3,7 +3,6 @@ import {
   GitBranch,
   GitPullRequestCreate,
   GitPullRequestDraft,
-  Link,
   PencilLine,
   RotateCcw,
   ScrollText,
@@ -44,6 +43,7 @@ import {
   mergeabilityNoteOf,
 } from '../../review/prMergeReadiness';
 import { FOLLOW_LABEL } from '../../../shared/lib/followToast';
+import { copyRequestLinkLabelOf } from '../../branch/copyRequestLinkLabelOf';
 import { hostIconOf } from '../../../shared/components/hostIconOf';
 import { isOverlayDrawerOpen } from '../../../shared/hooks/useFollowToast';
 import { isTargetShown } from '../../../shared/hooks/useFollowToast/isTargetShown';
@@ -66,6 +66,7 @@ import {
   type PullRequestFacts,
 } from './pullRequestFacts';
 import { writePullRequest } from './writePullRequest';
+import { VERBS } from '../../../shared/utils/verbs';
 
 type FactsOnly = { readonly facts: PullRequestFacts };
 
@@ -423,8 +424,8 @@ const PULL_REQUEST_ACTIONS: ReadonlyArray<ActionDefinition<PullRequestFacts>> = 
   },
   {
     id: 'pullRequest.copyLink',
-    label: 'Copy link',
-    icon: Link,
+    label: ({ facts }) => copyRequestLinkLabelOf({ host: facts.host }),
+    icon: VERBS.copyLink.icon,
     group: 'copy',
     when: hasPr,
     run: ({ facts, env }) => env.copyText({ text: facts.pr?.url ?? '' }),

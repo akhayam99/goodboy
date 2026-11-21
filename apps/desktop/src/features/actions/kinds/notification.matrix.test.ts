@@ -138,7 +138,7 @@ describe('notification kind matrix', () => {
   });
 });
 
-describe('notifications kind, Mark all read', () => {
+describe('notifications kind, Mark all as read', () => {
   const idsOf = ({ given }: { readonly given: NotificationsFacts }) =>
     matrixOf({ definitions: NOTIFICATIONS_KIND.actions, facts: given });
 

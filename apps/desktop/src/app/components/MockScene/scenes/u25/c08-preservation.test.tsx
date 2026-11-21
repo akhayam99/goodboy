@@ -223,7 +223,7 @@ describe('run rows stay reachable from the preset run level', () => {
     expect(tail().queryByRole('button', { name: 'Start run' })).toBeNull();
   });
 
-  it('Pause run is the one header button; Stop run with its confirm sits in the run menu', async () => {
+  it('Pause run is the one header button; Stop run sits in the run menu and asks nothing', async () => {
     await mount('c08-run-overview');
     const live = within(
       document.querySelector<HTMLElement>('[data-run-live-verbs]') ?? document.body,
@@ -236,7 +236,7 @@ describe('run rows stay reachable from the preset run level', () => {
       menu.getAllByRole('menuitem').map((item) => item.textContent?.replace(/…$/, '')),
     ).toEqual(menuOrder);
     await press(menu.getByRole('menuitem', { name: /^Stop run/ }));
-    expect(screen.getByText('Stop this run?')).toBeDefined();
+    expect(screen.queryByText('Stop this run?')).toBeNull();
   });
 
   it('Pause run in the header: a failed write keeps the run live, and pressing again pauses it', async () => {

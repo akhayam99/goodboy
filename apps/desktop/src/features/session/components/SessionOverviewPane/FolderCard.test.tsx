@@ -75,7 +75,7 @@ describe('FolderCard', () => {
     expect(await card.findByText('2 files over 2 replies')).toBeDefined();
     expect(card.getByText('Word, PDF, Pages, Keynote, Numbers and Excel files')).toBeDefined();
     expect(card.getByText(notes.rootPath)).toBeDefined();
-    expect(card.getByRole('button', { name: 'Open changes' })).toBeDefined();
+    expect(card.getByRole('button', { name: 'Open in Changes' })).toBeDefined();
   });
 
   it('shows git found in a documents folder where the user looks, and Keep as documents answers it', async () => {

@@ -1,8 +1,31 @@
 // @vitest-environment happy-dom
 
+vi.mock('@tauri-apps/api/core', async () =>
+  (await import('../../../../store/storyHarness')).tauriCoreModuleMock(),
+);
+vi.mock('@tauri-apps/api/event', async () =>
+  (await import('../../../../store/storyHarness')).tauriEventModuleMock(),
+);
+
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import {
+  STORE_IMPORT_TIMEOUT_MS,
+  importStore,
+  resetStoryStore,
+  type StoryStore,
+} from '../../../../store/storyHarness';
 import { CapEditor } from './CapEditor';
+
+let useAppStore: StoryStore;
+
+beforeAll(async () => {
+  useAppStore = await importStore();
+}, STORE_IMPORT_TIMEOUT_MS);
+
+beforeEach(async () => {
+  await resetStoryStore();
+});
 
 afterEach(cleanup);
 
@@ -162,16 +185,41 @@ describe('CapEditor, the limit', () => {
     expect(onSave).toHaveBeenLastCalledWith({ capUsd: 75, thresholdPct: 80 });
   });
 
-  it('asks before it removes a limit, then removes the one it names', async () => {
+  it('removes the limit at once and asks nothing', async () => {
     const onRemove = vi.fn(async () => undefined);
     renderEditor({ currentCapUsd: 50, currentThresholdPct: 80, onRemove });
 
     fireEvent.click(screen.getByRole('button', { name: 'Remove limit' }));
-    expect(onRemove).not.toHaveBeenCalled();
-    expect(screen.getByText('Remove the $50.00 limit?')).toBeDefined();
-    fireEvent.click(screen.getByRole('button', { name: 'Remove' }));
 
     await waitFor(() => expect(onRemove).toHaveBeenCalledOnce());
+    expect(screen.queryByRole('dialog')).toBeNull();
+  });
+
+  it('puts the same limit and warning back when the toast says Undo', async () => {
+    const onRemove = vi.fn(async () => undefined);
+    const onSave = vi.fn(async () => undefined);
+    renderEditor({ currentCapUsd: 50, currentThresholdPct: 75, onRemove, onSave });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Remove limit' }));
+
+    await waitFor(() => expect(useAppStore.getState().undoNotices).toHaveLength(1));
+    const toast = useAppStore.getState().undoNotices[0]?.toast;
+    expect(toast?.message).toBe('Removed the $50.00 limit');
+    expect(toast?.action?.label).toBe('Undo');
+    await toast?.action?.undo?.();
+    expect(onSave).toHaveBeenCalledWith({ capUsd: 50, thresholdPct: 75 });
+  });
+
+  it('offers no Undo when the removal failed', async () => {
+    const onRemove = vi.fn(async () => {
+      throw new Error('The database is locked');
+    });
+    renderEditor({ currentCapUsd: 50, currentThresholdPct: 80, onRemove });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Remove limit' }));
+
+    await screen.findByRole('alert');
+    expect(useAppStore.getState().undoNotices).toEqual([]);
   });
 
   it('shows a failed removal inline and keeps the limit it was editing', async () => {
@@ -181,7 +229,6 @@ describe('CapEditor, the limit', () => {
     renderEditor({ currentCapUsd: 50, currentThresholdPct: 80, onRemove });
 
     fireEvent.click(screen.getByRole('button', { name: 'Remove limit' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Remove' }));
 
     expect((await screen.findByRole('alert')).textContent).toContain('The database is locked');
     expect(limitInput().value).toBe('50');

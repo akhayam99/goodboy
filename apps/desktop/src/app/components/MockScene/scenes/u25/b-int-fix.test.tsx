@@ -63,7 +63,7 @@ describe('the u25 integration fix scenes', () => {
     const alert = await screen.findByRole('alert');
     expect(alert.textContent).toContain('seenEvents is assigned but never used');
     expect(within(alert).getByRole('button', { name: 'Fix with an agent' })).toBeDefined();
-    expect(within(alert).getByRole('button', { name: 'Open terminal here' })).toBeDefined();
+    expect(within(alert).getByRole('button', { name: 'Open in Terminal' })).toBeDefined();
     expect(within(alert).getByRole('button', { name: 'Retry' })).toBeDefined();
   });
 
@@ -72,7 +72,7 @@ describe('the u25 integration fix scenes', () => {
 
     const alert = await screen.findByRole('alert');
     expect(within(alert).getByRole('button', { name: 'Fix with an agent' })).toBeDefined();
-    expect(within(alert).getByRole('button', { name: 'Open terminal here' })).toBeDefined();
+    expect(within(alert).getByRole('button', { name: 'Open in Terminal' })).toBeDefined();
   });
 
   it('leads with Check again and no Retry after origin moved', async () => {

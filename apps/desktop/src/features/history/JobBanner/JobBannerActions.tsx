@@ -46,7 +46,7 @@ export const JobBannerActions = ({ controls, actions, isNoteOpen, onToggleNote }
       return (
         <>
           <Button size="sm" variant="ghost" onClick={controls.openTerminal}>
-            Open terminal
+            Open in Terminal
           </Button>
           <Button size="sm" variant="ghost" onClick={actions.copyStashCommand}>
             Copy the stash command
@@ -64,7 +64,7 @@ export const JobBannerActions = ({ controls, actions, isNoteOpen, onToggleNote }
             Restore stashed files
           </Button>
           <Button size="sm" variant="ghost" onClick={controls.openTerminal}>
-            Open terminal
+            Open in Terminal
           </Button>
           <ForgetSavedButton
             isBusy={pendingKeys.has('forget-saved')}

@@ -179,7 +179,7 @@ the rail's **Folder** card names the folder and what agents do there
 has a folder card under Branches (where agents write, what is saved before each turn,
 the changes so far from `turnChanges`, and the read only kinds of a Documents
 folder, `SessionOverviewPane/FolderCard.tsx`), and each writing turn in the
-chat ends in a card with Open changes and Undo changes from this reply
+chat ends in a card with Open in Changes and Undo changes from this reply
 (`features/chat/components/TurnChangesCard/`). The git verbs are not
 registered for a session without a branch: Comments (`session.review`) and
 Files (`session.diff`) leave the menus and Search or run, and **Changes**
@@ -1914,7 +1914,13 @@ session up again in Goodboy.
   target (`NAMES.openTranscript`, `NAMES.openAgent`, **Open on GitHub**, **Open
   pull request**). The retired labels fail the retired names guard. **Open
   full** alone is retired; **Open full page** (`NAMES.openFullPage`) stays,
-  since it names its target.
+  since it names its target. One gesture has one label and one icon in every
+  menu: the map is `VERBS` in `shared/utils/verbs.ts` (Open in Changes, Open in
+  Terminal, Open in external terminal, Open transcript, Copy path, Copy link,
+  Mark as read, Mark as unread, Mark all as read), and `menu-words.test.ts`
+  fails a menu that spells one differently. A host takes **on** (Open on
+  GitLab), a tab or an app takes **in**. The link of a request is named by
+  `copyRequestLinkLabelOf`, never by a literal.
 
   | Verb              | Means                       | Retires                                              |
   | ----------------- | --------------------------- | ---------------------------------------------------- |
@@ -1926,8 +1932,8 @@ session up again in Goodboy.
   | Continue          | Go on and keep the work     | Ask it to continue, Resume                           |
   | Skip step         | Pass over a step            | Skip and go on                                       |
   | Decline           | Refuse the Lead's next step | Discard request                                      |
-  | Mark as read      | Clear what is new           | Mark all seen                                        |
-  | Mark as unread    | Show it as new again        |                                                      |
+  | Mark as read      | Clear what is new           | Mark all seen, Mark read, Mark all read              |
+  | Mark as unread    | Show it as new again        | Mark unread                                          |
   | Fix with an agent | Give work to an agent       | Hand it to an agent                                  |
 
   **Stop step** stays: it stops the step and **Continue** resumes it, so it is
@@ -1935,6 +1941,11 @@ session up again in Goodboy.
   skipped: it sends a new turn, it does not resume the cut one. A reply is a
   reply on screen; turn stays in usage detail only.
 
+- A reversible act runs at once and says how to go back. **Stop** (one agent,
+  every running agent, a run, a fix run), **Archive run** and **Remove limit**
+  ask nothing: a stop leaves a toast with **Continue** (`offerResume`), the
+  other two a toast with **Undo**. Only a delete for good, a send to a host
+  and the loss of written text ask first.
 - **Task** means one thing: a work item that lives in another tool, such as a
   Linear or Jira issue, a GitHub issue or pull request, or a Sentry error. It
   is what the **Tasks** door lists and what a task link attaches to a

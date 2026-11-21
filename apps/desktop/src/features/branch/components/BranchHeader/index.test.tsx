@@ -712,7 +712,7 @@ describe('BranchHeader overflow', () => {
     }
     const labels = screen.queryAllByRole('menuitem').map((item) => item.textContent ?? '');
     expect(labels.some((label) => label.startsWith('Copy branch name'))).toBe(false);
-    expect(labels.some((label) => label.startsWith('Open terminal'))).toBe(false);
+    expect(labels.some((label) => label.startsWith('Open in Terminal'))).toBe(false);
     expect(labels.some((label) => /Edit commits|Restore a backup/.test(label))).toBe(false);
   });
 });
@@ -848,7 +848,7 @@ describe('BranchHeader push failure', () => {
     return { fixBranchPushWithAgent, prefillBranchPushTerminal };
   };
 
-  it('offers Fix with an agent and Open terminal here beside Retry when a plain push fails', async () => {
+  it('offers Fix with an agent and Open in Terminal beside Retry when a plain push fails', async () => {
     withRequest(open);
     status = upstreamAt({ ahead: 2, behind: 0 });
     const { fixBranchPushWithAgent, prefillBranchPushTerminal } = failPushWith({
@@ -874,7 +874,7 @@ describe('BranchHeader push failure', () => {
       onAccepted: expect.any(Function),
     });
 
-    fireEvent.click(within(alert).getByRole('button', { name: 'Open terminal here' }));
+    fireEvent.click(within(alert).getByRole('button', { name: 'Open in Terminal' }));
     await waitFor(() =>
       expect(prefillBranchPushTerminal).toHaveBeenCalledWith(
         expect.objectContaining({ sessionId: SESSION_ID, mountId: MOUNT_ID, isForce: false }),
@@ -923,7 +923,7 @@ describe('BranchHeader push failure', () => {
         expect.objectContaining({ isForce: true, message: 'stale info' }),
       ),
     );
-    fireEvent.click(within(alert).getByRole('button', { name: 'Open terminal here' }));
+    fireEvent.click(within(alert).getByRole('button', { name: 'Open in Terminal' }));
     await waitFor(() =>
       expect(prefillBranchPushTerminal).toHaveBeenCalledWith(
         expect.objectContaining({ isForce: true }),
@@ -953,7 +953,7 @@ describe('BranchHeader push failure', () => {
         expect.objectContaining({ isOriginMoved: true }),
       ),
     );
-    fireEvent.click(within(alert).getByRole('button', { name: 'Open terminal here' }));
+    fireEvent.click(within(alert).getByRole('button', { name: 'Open in Terminal' }));
     await waitFor(() =>
       expect(prefillBranchPushTerminal).toHaveBeenCalledWith(
         expect.objectContaining({ isOriginMoved: true }),
@@ -988,7 +988,7 @@ describe('BranchHeader push failure', () => {
     });
 
     await waitFor(() => expect(screen.queryByRole('alert')).toBeNull());
-    expect(screen.queryByRole('button', { name: 'Open terminal here' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Open in Terminal' })).toBeNull();
   });
 });
 

@@ -408,7 +408,7 @@ describe('accept in bulk', () => {
     expect(
       Array.from(ready.querySelectorAll('[data-item-work-word]')).map((word) => word.textContent),
     ).toEqual(Array(5).fill('Applied, not pushed'));
-    expect(within(ready).getAllByRole('button', { name: /^Open changes of / })).toHaveLength(5);
+    expect(within(ready).getAllByRole('button', { name: /^Open in Changes of / })).toHaveLength(5);
     expect(within(ready).queryByText('Accepted')).toBeNull();
     expect(within(ready).queryByRole('button', { name: /^Apply \d+ fixes$/ })).toBeNull();
     fireEvent.click(screen.getByRole('tab', { name: /^Resolved/ }));

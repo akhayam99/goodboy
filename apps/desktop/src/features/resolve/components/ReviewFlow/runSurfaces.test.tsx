@@ -120,27 +120,20 @@ describe('Fix run count', () => {
     expect(models.size).toBe(1);
   });
 
-  it('stops the run from the counter, behind a confirm that names the comments', async () => {
+  it('stops the run from the counter at once, with no confirm', async () => {
     const forceCloseResolver = vi.fn<StoreState['forceCloseResolver']>(async () => undefined);
     stub({ forceCloseResolver });
     await mount({ threadId: null });
 
     fireEvent.click(within(counter()).getByRole('button', { name: 'Stop fixing 4 comments' }));
-    expect(await screen.findByText('Stop the fix for 4 comments?')).toBeDefined();
-    expect(forceCloseResolver).not.toHaveBeenCalled();
-    const confirms = screen.getAllByRole('button', { name: 'Stop fixing 4 comments' });
-    const confirm = confirms.at(-1);
-    if (confirm === undefined) {
-      throw new Error('no confirm button');
-    }
-    fireEvent.click(confirm);
 
     await waitFor(() =>
       expect(forceCloseResolver).toHaveBeenCalledWith(SESSION.id, 'mock-resolve-agent-idempotency'),
     );
+    expect(screen.queryByRole('dialog')).toBeNull();
   });
 
-  it('stops a comment in work from its own row, behind a confirm that names the batch', async () => {
+  it('stops a comment in work from its own row at once, and the batch with it', async () => {
     const forceCloseResolver = vi.fn<StoreState['forceCloseResolver']>(async () => undefined);
     stub({ forceCloseResolver });
     await mount({ threadId: null });
@@ -149,10 +142,11 @@ describe('Fix run count', () => {
     const work = item?.querySelector<HTMLElement>('[data-row-work]') ?? null;
     expect(work).not.toBeNull();
     fireEvent.click(within(work ?? list()).getByRole('button', { name: 'Stop' }));
-    const confirm = await screen.findByRole('dialog', { name: 'Stop the fix for 4 comments?' });
-    fireEvent.click(within(confirm).getByRole('button', { name: 'Stop' }));
 
-    expect(forceCloseResolver).toHaveBeenCalledWith(SESSION.id, 'mock-resolve-agent-idempotency');
+    await waitFor(() =>
+      expect(forceCloseResolver).toHaveBeenCalledWith(SESSION.id, 'mock-resolve-agent-idempotency'),
+    );
+    expect(screen.queryByRole('dialog')).toBeNull();
   });
 });
 

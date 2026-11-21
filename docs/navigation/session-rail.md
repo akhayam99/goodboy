@@ -892,7 +892,7 @@ still running.` on Merge, reads in the meta line as well as in the tooltip) sits
   `Behind main by N` and `On origin` (`branchPriorityOf`). `Local only` and `Diverged from origin` read the branch's own
   remote copy (`branchPushStateOf`), never the base it was cut from. The Branch
   header reads the same word, so a stopped rebase never reads `On origin`
-  next to Open terminal and Abort rebase. A
+  next to Open in Terminal and Abort rebase. A
   branch whose pull request merged reads `Merged` even with no git ancestry
   (a squash merge), in the branch lists and in the Branch header alike
   (`isMountRequestMerged`). Changes opened without naming a branch lands on the active mount's Branch page Changes tab.

@@ -5,8 +5,7 @@ import { useToast } from '../../../../../../shared/components/Toast';
 import { NAMES } from '../../../../../../shared/utils/names';
 import { useAppStore } from '../../../../../../store';
 import { liveAgentsOf } from '../../../../../../store/runtime/live-work/liveAgentsOf';
-import { stopAllMessageOf } from '../../../../stopAllMessageOf';
-import { stopAllRunningAgents } from '../../../../stopAllRunningAgents';
+import { stopAllWithResume } from '../../../../stopAllWithResume';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -25,11 +24,7 @@ export const StopAllAction = ({ sessionId }: Props) => {
     }
     setIsStopping(true);
     try {
-      const result = await stopAllRunningAgents({
-        getState: useAppStore.getState,
-        sessionId,
-      });
-      showToast({ kind: 'info', message: stopAllMessageOf({ result }) });
+      await stopAllWithResume({ getState: useAppStore.getState, sessionId, showToast });
     } finally {
       setIsStopping(false);
     }

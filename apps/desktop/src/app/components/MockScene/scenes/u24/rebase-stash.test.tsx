@@ -63,7 +63,7 @@ describe.each([false, true])('rebase stash scenes with dark theme %s', (isDark) 
     show({ name: 'rebase-restore-conflict', isDark });
     await screen.findByText('Rebased on main, but 2 of your files conflict');
     screen.getByRole('button', { name: 'Copy the stash command' });
-    screen.getByRole('button', { name: 'Open terminal' });
+    screen.getByRole('button', { name: 'Open in Terminal' });
   });
   it('forgets conflicted files after one anchored confirm', async () => {
     show({ name: 'rebase-restore-conflict', isDark });

@@ -1,11 +1,14 @@
 import type { SessionId } from '@goodboy/types';
 import { Button, Tooltip } from '@goodboy/ui';
+import { useToast } from '../../../../shared/components/Toast';
 import { useAppStore } from '../../../../store';
 import { useAgentOutcome } from '../../../../shared/hooks/useAgentOutcome';
 import { ObjectActionVerb } from '../../../actions/ObjectActionVerb';
 import type { FixRunActionTarget } from '../../../actions/types';
 import { ITEM_WORK_WORDS } from '../../../live-state/itemWork/itemWorkWords';
 import { ItemWorkLine } from '../../../live-state/itemWork/ItemWorkLine';
+import { FIX_STOPPED_MESSAGE } from '../../fixStoppedMessage';
+import { stopFixWithResume } from '../../stopFixWithResume';
 import { checksSkippedLine, checksSkippedOf } from '../../checksSkipped';
 import { fixRunCountOf, type FixRun } from '../../fixRun';
 import type { LaneStatus } from '../../laneStatus';
@@ -17,14 +20,9 @@ type Props = {
   readonly lane: LaneStatus | null;
 };
 
-const FIX_RUN_COUNT_COPY = {
-  stopDescription: 'Comments it has not finished stay open and can be fixed again.',
-} as const;
-
 export const FixRunCount = ({ sessionId, run, lane }: Props) => {
   const openDrawer = useAppStore((s) => s.openDrawer);
-  const forceCloseResolver = useAppStore((s) => s.forceCloseResolver);
-  const stopResolveLane = useAppStore((s) => s.stopResolveLane);
+  const { showToast } = useToast();
   const outputSummary = useAppStore(
     (s) => s.sessionPhaseRuns[sessionId]?.find((agent) => agent.id === run.agentId)?.outputSummary,
   );
@@ -44,12 +42,15 @@ export const FixRunCount = ({ sessionId, run, lane }: Props) => {
     facts: {
       stop: {
         label: `Stop fixing ${comments}`,
-        title: `Stop the fix for ${comments}?`,
-        description: FIX_RUN_COUNT_COPY.stopDescription,
         onStop: () =>
-          lane === null
-            ? forceCloseResolver(sessionId, run.agentId)
-            : stopResolveLane({ sessionId, worktreePath: lane.worktreePath }),
+          stopFixWithResume({
+            getState: useAppStore.getState,
+            showToast,
+            sessionId,
+            agentId: run.agentId,
+            lane,
+            message: FIX_STOPPED_MESSAGE,
+          }),
       },
       transcriptNote: null,
       onOpenTranscript: null,

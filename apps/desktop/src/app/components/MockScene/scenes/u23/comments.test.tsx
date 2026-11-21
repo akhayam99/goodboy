@@ -225,7 +225,7 @@ describe('the u23 comments scenes', () => {
     expect(screen.queryByTestId('resolve-run-status')).toBeNull();
   });
 
-  it('stops a working comment only behind a confirm that names its batch, from its own row', async () => {
+  it('stops a working comment at once from its own row, and its batch with it', async () => {
     await renderScene({ name: 'comments-working' });
 
     await waitFor(() => expect(workLines()).not.toHaveLength(0));
@@ -239,8 +239,6 @@ describe('the u23 comments scenes', () => {
       }),
     ).toBeDefined();
     fireEvent.click(within(home).getByRole('button', { name: 'Stop' }));
-    expect(
-      await screen.findByRole('dialog', { name: 'Stop the fix for 4 comments?' }),
-    ).toBeDefined();
+    expect(screen.queryByRole('dialog')).toBeNull();
   });
 });

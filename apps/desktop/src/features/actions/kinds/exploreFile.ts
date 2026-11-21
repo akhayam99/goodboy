@@ -1,9 +1,10 @@
-import { Copy, SquareArrowOutUpRight, FolderOpen } from '@goodboy/ui/icons';
+import { SquareArrowOutUpRight, FolderOpen } from '@goodboy/ui/icons';
 import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
 import { openInConfiguredTerminal } from '../../../shared/lib/terminalApp';
 import { revealLabelOf } from '../../../shared/utils/revealLabelOf';
 import type { ExploreFileActionTarget, ObjectKindDefinition } from '../types';
 import { RUN_ROUTE_COPY } from '../../session/startRun/runRouteCopy';
+import { VERBS, openInEditorLabelOf } from '../../../shared/utils/verbs';
 
 export type ExploreFileFacts = {
   readonly name: string;
@@ -28,14 +29,15 @@ export const EXPLORE_FILE_KIND: ObjectKindDefinition<ExploreFileActionTarget, Ex
       group: 'open',
       slot: () => 'hover',
       description: ({ facts }) =>
-        facts.editorLabel === null ? 'Open with the default app' : `Open in ${facts.editorLabel}`,
+        facts.editorLabel === null
+          ? 'Open with the default app'
+          : openInEditorLabelOf({ editorLabel: facts.editorLabel }),
       when: ({ facts }) => facts.openLabel !== null && facts.onOpen !== null,
       run: ({ facts }) => facts.onOpen?.(),
     },
     {
       id: 'exploreFile.openInTerminalApp',
-      label: 'Open in terminal app',
-      icon: CONCEPT_ICONS.terminal,
+      ...VERBS.openInExternalTerminal,
       group: 'open',
       when: ({ facts }) => facts.isDir,
       run: ({ facts, env }) =>
@@ -62,8 +64,7 @@ export const EXPLORE_FILE_KIND: ObjectKindDefinition<ExploreFileActionTarget, Ex
     },
     {
       id: 'exploreFile.copyPath',
-      label: 'Copy path',
-      icon: Copy,
+      ...VERBS.copyPath,
       group: 'copy',
       when: () => true,
       run: ({ facts, env }) => env.copyText({ text: facts.absolutePath }),

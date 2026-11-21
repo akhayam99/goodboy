@@ -2,8 +2,8 @@ import { fixedInLine } from './commentOutcomeCopy';
 import type { RowFix } from './rowFix';
 
 export const ROW_FIX_COPY = {
-  seeDiff: 'Open changes',
-  seeDiffOf: 'Open changes of',
+  seeDiff: 'Open in Changes',
+  seeDiffOf: 'Open in Changes of',
   review: 'Review the fix',
 } as const;
 

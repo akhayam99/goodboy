@@ -10,6 +10,8 @@ type UndoableParams = {
   readonly undo: UndoOperation['undo'];
   readonly conflictMessage?: string;
   readonly actionHint?: string;
+  readonly actionLabel?: string;
+  readonly doneMessage?: string;
   readonly isCurrent?: () => boolean;
   readonly showToast?: ShowToast;
 };
@@ -41,6 +43,8 @@ export const createUndoSlice = ({ set, get }: SliceDeps) => {
       undo,
       conflictMessage,
       actionHint,
+      actionLabel = 'Undo',
+      doneMessage,
       isCurrent,
       showToast,
     }: UndoableParams): string => {
@@ -52,6 +56,7 @@ export const createUndoSlice = ({ set, get }: SliceDeps) => {
             undo,
             conflictMessage:
               conflictMessage ?? 'Nothing changed. This operation can no longer be undone.',
+            ...(doneMessage === undefined ? {} : { doneMessage }),
             ...(isCurrent === undefined ? {} : { isCurrent }),
           },
         ].slice(-50),
@@ -63,7 +68,7 @@ export const createUndoSlice = ({ set, get }: SliceDeps) => {
         message,
         ...(title === undefined ? {} : { title }),
         action: {
-          label: 'Undo',
+          label: actionLabel,
           ...(actionHint === undefined ? {} : { hint: actionHint }),
           onClick: () => void runUndo(),
           undo: runUndo,
@@ -110,7 +115,7 @@ export const createUndoSlice = ({ set, get }: SliceDeps) => {
           return false;
         }
         if (shouldAnnounce) {
-          announce({ toast: { kind: 'success', message: 'Undone.' } });
+          announce({ toast: { kind: 'success', message: operation.doneMessage ?? 'Undone.' } });
         }
         return true;
       } catch (error) {

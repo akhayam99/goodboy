@@ -29,6 +29,7 @@ import type { MountFacts } from './mountFacts';
 import { MOUNT_CLEAN_UP_ACTION } from './mountCleanUpAction';
 import { mountCleanUpWordsOf } from './mountCleanUpWordsOf';
 import { pushAction } from './pushAction';
+import { VERBS } from '../../../shared/utils/verbs';
 
 export type DiffFacts = MountFacts & {
   readonly patch: string;
@@ -63,8 +64,7 @@ const statusParams = ({ facts }: FactsOnly) => ({
 const DIFF_ACTIONS: ReadonlyArray<ActionDefinition<DiffFacts>> = [
   {
     id: 'diff.continueRebase',
-    label: 'Open terminal',
-    icon: CONCEPT_ICONS.terminal,
+    ...VERBS.openInTerminal,
     group: 'open',
     shortcut: 'session.terminal',
     when: ({ facts }) => facts.isRebasing,
@@ -77,8 +77,7 @@ const DIFF_ACTIONS: ReadonlyArray<ActionDefinition<DiffFacts>> = [
   },
   {
     id: 'diff.openTerminal',
-    label: 'Open terminal',
-    icon: CONCEPT_ICONS.terminal,
+    ...VERBS.openInTerminal,
     group: 'open',
     shortcut: 'session.terminal',
     when: ({ facts }) => !facts.isRebasing,

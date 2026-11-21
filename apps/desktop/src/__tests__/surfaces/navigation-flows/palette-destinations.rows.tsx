@@ -150,13 +150,13 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
     },
   },
   {
-    name: 'palette verb: Open a worktree in terminal',
-    covers: ['palette:Open a worktree in terminal'],
+    name: 'palette verb: Open in Terminal',
+    covers: ['palette:Open in Terminal'],
     seed: 'pr',
     door: 'palette',
     open: async () => {
-      await openPalette(/^Open a worktree in terminal/);
-      const [choice] = await screen.findAllByRole('option', { name: /in terminal/ });
+      await openPalette(/^Open in Terminal/);
+      const [choice] = await screen.findAllByRole('option', { name: /ledger-core/ });
       if (choice === undefined) {
         throw new Error('The palette offers no worktree to open');
       }

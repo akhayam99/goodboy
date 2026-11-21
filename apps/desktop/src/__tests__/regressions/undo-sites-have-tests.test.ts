@@ -13,7 +13,6 @@ const EXEMPT: ReadonlyArray<string> = [
   'features/suggestions/useSuggestionRunner/index.ts',
   'features/workflows/components/WorkflowStudio/SavedStepsList/index.tsx',
   'features/workflows/components/WorkflowsPanel/useWorkflowEditor/index.ts',
-  'features/workflows/deleteWorkflowWithUndo.ts',
   'store/slices/starred-issues/index.ts',
 ];
 

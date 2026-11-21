@@ -180,7 +180,7 @@ describe('PushFailureActions after origin moved', () => {
 
     screen.getByRole('button', { name: 'Check again' });
     screen.getByRole('button', { name: 'Fix with an agent' });
-    screen.getByRole('button', { name: 'Open terminal here' });
+    screen.getByRole('button', { name: 'Open in Terminal' });
   });
 
   it('lists what is new on origin with author and subject and asks again', async () => {
@@ -242,7 +242,7 @@ describe('PushFailureActions after origin moved', () => {
     render(movedActions());
 
     await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: 'Open terminal here' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Open in Terminal' }));
     });
 
     const prefills = Object.values(store.getState().terminalTabs)
@@ -273,7 +273,7 @@ describe('PushFailureActions', () => {
     render(actions());
 
     screen.getByRole('button', { name: 'Fix with an agent' });
-    screen.getByRole('button', { name: 'Open terminal here' });
+    screen.getByRole('button', { name: 'Open in Terminal' });
   });
 
   it('offers nothing while the fix agent works, after the failure line was left and came back', () => {
@@ -286,7 +286,7 @@ describe('PushFailureActions', () => {
 
     expect(screen.queryByRole('button', { name: 'Fix with an agent' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Retry' })).toBeNull();
-    expect(screen.queryByRole('button', { name: 'Open terminal here' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Open in Terminal' })).toBeNull();
   });
 
   it('offers Retry after the agent failed or you stopped it', () => {
@@ -303,7 +303,7 @@ describe('PushFailureActions', () => {
     const failed = render(actions());
 
     screen.getByRole('button', { name: 'Retry' });
-    screen.getByRole('button', { name: 'Open terminal here' });
+    screen.getByRole('button', { name: 'Open in Terminal' });
     expect(screen.queryByRole('button', { name: 'Fix with an agent' })).toBeNull();
     failed.unmount();
 

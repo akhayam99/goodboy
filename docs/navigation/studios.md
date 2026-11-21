@@ -137,7 +137,7 @@ the worktree (or reuses a running one there, never when it carries a`prefill`) a
 (`DrawerContent` `{ kind: 'terminal'; payload: { terminalId } }`, `TerminalDrawer`in`DrawerHost`, side sizing, resizable like the others). **Run in terminal** (the command tool card and a shell block in a message,
 `useRunInTerminal`) is that same path with a `prefill`from`typedCommandOf`: one line as typed,
 several lines as one bracketed paste, every control character dropped, no line end. It never
-presses Enter; the session must be live, so an archived session hides the verb. The mount row and diff `Open terminal`,
+presses Enter; the session must be live, so an archived session hides the verb. The mount row and diff `Open in Terminal`,
 the rebase banners (`openMountTerminal`), the session row menu, ⌘K `Open <repo · branch> in
   terminal`and`⌘⌥T` (`session.terminal`, toggles the dock on the active worktree) all go
 through it. The header holds the project name, the short worktree chip (it truncates before the
@@ -184,13 +184,13 @@ cut at the end, never in the middle; the group's`aria-label` keeps the full
   (`useSeenNotifications`, one timer per row, cleared when the row, the
   popover or the window visibility goes: a hidden document restarts every second
   when it is visible again), so a row beyond the eight shown stays unread, and the header's
-  ghost `Mark all read` (only while something is unread) is the explicit way to
+  ghost `Mark all as read` (only while something is unread) is the explicit way to
   clear the rest. Both lead with the severity glyph alone: unread is
   the title weight (500 in foreground), read rows recede, and no second leading
   dot. In the studio the time owns the third column and a fixed fourth column
   holds the hover controls (`NotificationRowActions`): the registry's hover
-  action (Mark read, one click) and the `⋯` menu of the `notification` kind
-  (Open, Mark read or unread, Report this, Copy text, Delete), also opened by
+  action (Mark as read, one click) and the `⋯` menu of the `notification` kind
+  (Open, Mark as read or unread, Report this, Copy text, Delete), also opened by
   right click. They show on hover and keyboard focus, never change the row's
   width, and the opened row keeps only the notification's own action (Retry) as
   a button under it. A failed write shows a "Couldn't finish that" toast and
@@ -204,7 +204,7 @@ cut at the end, never in the middle; the group's`aria-label` keeps the full
   no subtitle and the day groups no count. The title is
   Notifications whichever view is picked. Both surfaces default to this workspace: a row belongs to
   its own workspace, or its session's, and a row with neither is app-wide and
-  shows in every workspace. Mark all read and Delete all act on that same scope.
+  shows in every workspace. Mark all as read and Delete all act on that same scope.
   A scope switch keeps the shown list until the new one is read, then changes
   scope, list and counts in one write (`setNotificationScope`). A failed read keeps
   all three and logs "Couldn't load notifications" with Retry; of two quick
@@ -214,8 +214,8 @@ cut at the end, never in the middle; the group's`aria-label` keeps the full
   stays behind in Needs action. The bell's Unread view keeps its snapshot until
   the scope changes.
   The studio header draws them through `NotificationsHeaderActions`: the shared `FilterButton`
-  only while the rail is folded, then the ghost `Mark all read` (only while something is unread), then the `⋯` menu of the
-  `notifications` kind of the action registry (Mark all read, which names the scope, and Delete all). Delete all
+  only while the rail is folded, then the ghost `Mark all as read` (only while something is unread), then the `⋯` menu of the
+  `notifications` kind of the action registry (Mark all as read, which names the scope, and Delete all). Delete all
   opens a `ConfirmPopover` anchored to the `⋯`, aligned to its end edge, titled with the scope's count ("Delete 7 notifications?") and naming the
   workspace or "every workspace"; it never swaps the title row. The title row's meta reads the
   count and the unread count ("6 notifications · 4 unread"). A row's Delete acts
@@ -224,7 +224,7 @@ cut at the end, never in the middle; the group's`aria-label` keeps the full
   In the studio, rows are grouped by day (Today, Yesterday, This week, Older),
   J and K or the arrow keys move, Enter runs the row's action and E deletes. The
   cursor never marks a row read: a group is read when it opens (a click or
-  Enter) or from its own Mark read.
+  Enter) or from its own Mark as read.
   The rail rows (`packages/ui` `FacetRail`), the list keys
   (`shared/hooks/useListKeys`) and the day grouping (`shared/utils/groupByDay`)
   are shared primitives. Tasks uses the rows and the list keys but not the day

@@ -1117,7 +1117,7 @@ describe('ChatInput, composer flows', () => {
     render(<ChatInput session={makeSession()} />);
     const textarea = screen.getByRole('textbox') as HTMLTextAreaElement;
 
-    await user.click(screen.getByRole('button', { name: 'More actions' }));
+    await user.click(screen.getByRole('button', { name: 'Add to message' }));
     await user.click(screen.getByRole('menuitem', { name: /Start workflow/ }));
 
     expect(textarea.value).toBe('~');
@@ -1131,7 +1131,7 @@ describe('ChatInput, composer flows', () => {
     const input = container.querySelector('input[type="file"]') as HTMLInputElement;
     const click = vi.spyOn(input, 'click');
 
-    await user.click(screen.getByRole('button', { name: 'More actions' }));
+    await user.click(screen.getByRole('button', { name: 'Add to message' }));
     await user.click(screen.getByRole('menuitem', { name: /Attach files/ }));
 
     expect(click).toHaveBeenCalledOnce();

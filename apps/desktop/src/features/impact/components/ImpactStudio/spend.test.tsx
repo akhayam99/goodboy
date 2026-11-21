@@ -310,7 +310,7 @@ describe('Impact studio spend scopes', () => {
     });
   });
 
-  it('removes a provider limit via deleteBudgetRule after the popover confirm', () => {
+  it('removes a provider limit via deleteBudgetRule at once, with no confirm', () => {
     state.budgetRules = [
       {
         id: 'rule-1',
@@ -325,15 +325,6 @@ describe('Impact studio spend scopes', () => {
     renderStudio({ initialScope: { kind: 'provider', provider: 'anthropic' } });
 
     fireEvent.click(screen.getByRole('button', { name: 'Remove limit' }));
-    expect(state.deleteBudgetRule).not.toHaveBeenCalled();
-    fireEvent.click(
-      within(screen.getByRole('dialog', { name: /^Remove the .*10.* limit\?$/ })).getByRole(
-        'button',
-        {
-          name: /remove/i,
-        },
-      ),
-    );
     expect(state.deleteBudgetRule).toHaveBeenCalledWith('rule-1');
   });
 

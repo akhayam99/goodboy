@@ -85,8 +85,9 @@ never exists on one surface only.
   it with its reason as a tooltip), Rename, Pin session or Unpin session, Mark
   as read, Start a run, Link work, **Set limit…**, **Copy** (Title, Branch
   name, Worktree path and the pull request link, named by `requestNounLabel`),
-  then Stop all running agents, Archive and Delete, whose confirm still asks
-  first. `withSessionSubmenus` (`kinds/sessionGoToActions.ts`) tags the Open
+  then Stop all running agents (it acts at once, and its toast offers
+  **Continue**), Archive (it acts at once, **Undo** in the toast) and Delete,
+  whose confirm still asks first. `withSessionSubmenus` (`kinds/sessionGoToActions.ts`) tags the Open
   and Copy rows, and `toMenuEntries` folds a group of two rows or more into its
   submenu (one row stays flat with its full label). A child with choices, such
   as Worktree path with several worktrees, opens its chooser beside the
@@ -151,7 +152,7 @@ never exists on one surface only.
   changes; Message this agent (not on the agent's own page, where the composer is), Interrupt while a turn runs, Close or Reopen,
   Let the Lead take it from here on an old standalone agent of a standard role,
   Detach from the Lead on an agent that was moved, Change model (one submenu); copy the name; Delete agent. A
-  workflow run: Open run, Open changes; Answer, Start run, Continue, Restart
+  workflow run: Open run, Open in Changes; Answer, Start run, Continue, Restart
   step, Start the next step, Restore; Copy run summary; Stop run, Archive
   run and Delete run, each confirmed. An artifact: the viewer's verbs by kind and status,
   from the list row too, plus Delete on any stored artifact that is not already

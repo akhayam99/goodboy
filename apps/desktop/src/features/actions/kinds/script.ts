@@ -13,6 +13,7 @@ import {
 import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
 import { NAMES } from '../../../shared/utils/names';
 import type { ObjectKindDefinition, ScriptActionTarget } from '../types';
+import { VERBS } from '../../../shared/utils/verbs';
 
 type ScriptPinFacts = {
   readonly isPinned: boolean;
@@ -57,8 +58,7 @@ export const SCRIPT_KIND: ObjectKindDefinition<ScriptActionTarget, ScriptFacts> 
     },
     {
       id: 'script.openInTerminal',
-      label: 'Open in terminal',
-      icon: CONCEPT_ICONS.terminal,
+      ...VERBS.openInTerminal,
       group: 'open',
       when: ({ facts }) => facts.onOpenInTerminal !== undefined,
       run: ({ facts }) => facts.onOpenInTerminal?.(),

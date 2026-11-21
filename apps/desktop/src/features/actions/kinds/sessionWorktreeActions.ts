@@ -1,9 +1,9 @@
-import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
 import { NAMES } from '../../../shared/utils/names';
 import { lensPlace } from '../../../store/slices/navigation/canonicalLocation';
 import { openSessionTerminal } from '../../terminal/openSessionTerminal';
 import { ALL_CHOICES_ID, type ActionChoice, type ActionDefinition } from '../types';
 import type { SessionFacts } from './session';
+import { VERBS } from '../../../shared/utils/verbs';
 
 type SessionWorktree = {
   readonly id: string;
@@ -79,7 +79,7 @@ const worktreeTerminalChoices = ({ facts }: FactsParams): ReadonlyArray<ActionCh
     ? []
     : worktrees.map((worktree) => ({
         id: worktree.id,
-        label: `Open ${worktreeLabel({ worktree })} in terminal`,
+        label: worktreeLabel({ worktree }),
         isCurrent: false,
         detail: worktree.path,
         keywords: [
@@ -88,13 +88,6 @@ const worktreeTerminalChoices = ({ facts }: FactsParams): ReadonlyArray<ActionCh
           ...(worktree.branch === null ? [] : [worktree.branch]),
         ],
       }));
-};
-
-const worktreeTerminalLabel = ({ facts }: FactsParams): string => {
-  const [only] = worktreesOf({ facts });
-  return worktreesOf({ facts }).length === 1 && only !== undefined
-    ? `Open ${worktreeLabel({ worktree: only })} in terminal`
-    : 'Open a worktree in terminal';
 };
 
 const worktreeTextFor = ({ facts, choice }: TextParams): string | null => {
@@ -111,9 +104,8 @@ const worktreeTextFor = ({ facts, choice }: TextParams): string | null => {
 export const SESSION_WORKTREE_ACTIONS: ReadonlyArray<ActionDefinition<SessionFacts>> = [
   {
     id: 'session.openWorktreeTerminal',
-    label: worktreeTerminalLabel,
+    ...VERBS.openInTerminal,
     menuLabel: NAMES.terminal,
-    icon: CONCEPT_ICONS.terminal,
     group: 'open',
     when: ({ facts }) => !facts.isArchived && worktreesOf({ facts }).length > 0,
     choices: worktreeTerminalChoices,
@@ -132,8 +124,7 @@ export const SESSION_WORKTREE_ACTIONS: ReadonlyArray<ActionDefinition<SessionFac
   },
   {
     id: 'session.copyWorktreePath',
-    label: 'Copy worktree path',
-    icon: CONCEPT_ICONS.worktree,
+    ...VERBS.copyWorktreePath,
     group: 'copy',
     when: ({ facts }) => worktreesOf({ facts }).length > 0,
     choices: worktreeChoices,

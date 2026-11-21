@@ -96,7 +96,7 @@ describe('the u28 push and dependencies scenes', () => {
     screen.getByText('Failed');
     expect(screen.getAllByRole('button', { name: 'Retry' })).toHaveLength(1);
     screen.getByRole('button', { name: 'Open transcript' });
-    screen.getByRole('button', { name: 'Open terminal here' });
+    screen.getByRole('button', { name: 'Open in Terminal' });
   });
 
   it('says what stays on the branch after you stopped the fix', async () => {

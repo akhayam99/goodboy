@@ -1,5 +1,6 @@
-import { Copy, SquareArrowOutUpRight, FileText } from '@goodboy/ui/icons';
+import { SquareArrowOutUpRight, FileText } from '@goodboy/ui/icons';
 import type { DiffFileActionTarget, ObjectKindDefinition } from '../types';
+import { VERBS } from '../../../shared/utils/verbs';
 
 export type DiffFileFacts = {
   readonly path: string;
@@ -29,8 +30,7 @@ export const DIFF_FILE_KIND: ObjectKindDefinition<DiffFileActionTarget, DiffFile
     },
     {
       id: 'diffFile.copyPath',
-      label: 'Copy path',
-      icon: Copy,
+      ...VERBS.copyPath,
       group: 'copy',
       when: () => true,
       run: ({ facts, env }) => env.copyText({ text: facts.path }),

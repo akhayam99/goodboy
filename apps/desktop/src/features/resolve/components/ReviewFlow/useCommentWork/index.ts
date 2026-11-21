@@ -1,6 +1,9 @@
 import { useCallback, useMemo } from 'react';
 import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
+import { useToast } from '../../../../../shared/components/Toast';
+import { FIX_STOPPED_MESSAGE } from '../../../fixStoppedMessage';
+import { stopFixWithResume } from '../../../stopFixWithResume';
 import { commentWorkOf, type CommentWork } from '../../../commentWorkOf';
 import type { FixRun } from '../../../fixRun';
 import type { LaneStatus } from '../../../laneStatus';
@@ -20,8 +23,7 @@ type CommentWorkView = {
 };
 
 export const useCommentWork = ({ sessionId, entries, run, lane }: Params): CommentWorkView => {
-  const forceCloseResolver = useAppStore((s) => s.forceCloseResolver);
-  const stopResolveLane = useAppStore((s) => s.stopResolveLane);
+  const { showToast } = useToast();
   const works = useMemo(
     () =>
       commentWorkOf({
@@ -33,10 +35,15 @@ export const useCommentWork = ({ sessionId, entries, run, lane }: Params): Comme
   );
   const stopWork = useCallback(
     ({ agentId }: StopWorkParams): void =>
-      void (lane === null
-        ? forceCloseResolver(sessionId, agentId)
-        : stopResolveLane({ sessionId, worktreePath: lane.worktreePath })),
-    [forceCloseResolver, lane, sessionId, stopResolveLane],
+      void stopFixWithResume({
+        getState: useAppStore.getState,
+        showToast,
+        sessionId,
+        agentId,
+        lane,
+        message: FIX_STOPPED_MESSAGE,
+      }),
+    [lane, sessionId, showToast],
   );
   return { works, stopWork };
 };

@@ -470,7 +470,7 @@ turn already carries `GOODBOY_WORKSPACE_ID`, `GOODBOY_SESSION_ID`,
   `rebase-apply/` count, as git reads them. The Overview notices slot
   (`OverviewNotices`, one `MountNotices` per open mount) shows a
   `Rebase stopped` notice with `Fix with an agent` (a `Rebase on <base>`
-  agent on that mount finishes it), `Open terminal`, and `Abort rebase`
+  agent on that mount finishes it), `Open in Terminal`, and `Abort rebase`
   behind an inline confirm (`worktree_abort_rebase`, which refuses when no
   rebase is stopped).
 - **A worktree names its layers under its row.** The current branch row of the Projects tree in the

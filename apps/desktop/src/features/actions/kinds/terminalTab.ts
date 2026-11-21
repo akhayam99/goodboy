@@ -1,7 +1,7 @@
-import { Copy } from '@goodboy/ui/icons';
 import type { SessionId } from '@goodboy/types';
 import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
 import type { ObjectKindDefinition, TerminalTabActionTarget } from '../types';
+import { VERBS } from '../../../shared/utils/verbs';
 
 type TerminalSendOutputFacts = {
   readonly label: string;
@@ -40,8 +40,9 @@ export const TERMINAL_TAB_KIND: ObjectKindDefinition<TerminalTabActionTarget, Te
     },
     {
       id: 'terminalTab.copyPath',
-      label: ({ facts }) => (facts.isWorkspace ? 'Copy folder path' : 'Copy worktree path'),
-      icon: Copy,
+      label: ({ facts }) =>
+        facts.isWorkspace ? VERBS.copyFolderPath.label : VERBS.copyWorktreePath.label,
+      icon: VERBS.copyWorktreePath.icon,
       group: 'copy',
       when: ({ facts }) => facts.path !== null,
       run: async ({ facts, env }) => {

@@ -5,9 +5,7 @@ import {
   Cpu,
   SquareArrowOutUpRight,
   FileCode,
-  Link,
   MessageCircleQuestion,
-  OctagonX,
   PenLine,
   RefreshCw,
   Send,
@@ -19,6 +17,7 @@ import type { AgentId, ResolveVerdict, SessionId } from '@goodboy/types';
 import { reviewCommentLaneFactsOf } from './reviewCommentLaneFacts';
 import { reviewCommentRunFactsOf, type ReviewCommentRunFacts } from './reviewCommentRunFacts';
 import { REVIEW_COMMENT_RUN_ACTIONS } from './reviewCommentRunActions';
+import { REVIEW_COMMENT_STOP_ACTION } from './reviewCommentStopAction';
 import {
   UNDECIDED,
   hasOverlay,
@@ -50,6 +49,7 @@ import { requestReview, type ReviewComposeMode } from '../../review/reviewReques
 import type { AppStore } from '../../../store/store';
 import type { ActionEnv, ObjectKindDefinition, ReviewCommentActionTarget } from '../types';
 import { NAMES } from '../../../shared/utils/names';
+import { VERBS } from '../../../shared/utils/verbs';
 
 export type ReviewCommentFacts = {
   readonly sessionId: SessionId;
@@ -104,7 +104,7 @@ const editLabel = ({ state }: { readonly state: ReviewCommentState }): string =>
   if (state === 'outdated') {
     return 'Redraft with the new comment';
   }
-  return isRedraft({ state }) ? 'Redraft' : 'Edit';
+  return isRedraft({ state }) ? 'Redraft' : VERBS.editDraft.label;
 };
 
 type RunParams = {
@@ -231,8 +231,7 @@ export const REVIEW_COMMENT_KIND: ObjectKindDefinition<
     },
     {
       id: 'reviewComment.transcript',
-      label: ({ facts }) => (facts.state === 'failed' ? 'Open transcript' : 'Agent transcript'),
-      icon: CONCEPT_ICONS.agents,
+      ...VERBS.openTranscript,
       group: 'open',
       when: ({ facts }) => facts.agentId !== null,
       slot: () => 'menu',
@@ -448,7 +447,8 @@ export const REVIEW_COMMENT_KIND: ObjectKindDefinition<
         }
         return editLabel(facts);
       },
-      icon: RefreshCw,
+      icon: VERBS.editDraft.icon,
+      iconOf: ({ facts }) => (isRedraft(facts) ? RefreshCw : VERBS.editDraft.icon),
       group: 'act',
       shortcut: 'review.edit',
       when: ({ facts }) =>
@@ -599,18 +599,7 @@ export const REVIEW_COMMENT_KIND: ObjectKindDefinition<
       slot: () => 'secondary',
       run: undo,
     },
-    {
-      id: 'reviewComment.stop',
-      label: 'Stop drafting',
-      icon: OctagonX,
-      group: 'act',
-      when: ({ facts }) => facts.state === 'drafting' && facts.agentId !== null,
-      slot: () => 'menu',
-      run: ({ facts, env }) =>
-        facts.agentId === null
-          ? undefined
-          : env.getState().forceCloseResolver(facts.sessionId, facts.agentId),
-    },
+    REVIEW_COMMENT_STOP_ACTION,
     {
       id: 'reviewComment.resolveNoReply',
       label: ({ facts }) => (facts.isNote ? 'Close the comment' : NAMES.resolve),
@@ -633,8 +622,7 @@ export const REVIEW_COMMENT_KIND: ObjectKindDefinition<
     },
     {
       id: 'reviewComment.copyLink',
-      label: 'Copy link',
-      icon: Link,
+      ...VERBS.copyLink,
       group: 'copy',
       when: ({ facts }) => facts.url !== null,
       slot: () => 'menu',

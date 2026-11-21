@@ -135,7 +135,7 @@ export const RebaseStopPanel = ({ sessionId, worktreePath, controls, actions }: 
           },
           {
             key: 'open-terminal',
-            label: 'Open terminal',
+            label: 'Open in Terminal',
             variant: 'secondary',
             run: controls.openTerminal,
           },
@@ -229,7 +229,7 @@ export const RebaseStopPanel = ({ sessionId, worktreePath, controls, actions }: 
           { key: 'fix-push', label: 'Fix with an agent', variant: 'primary', run: actions.fixPush },
           {
             key: 'push-terminal',
-            label: 'Open terminal here',
+            label: 'Open in Terminal',
             variant: 'secondary',
             run: controls.openPushTerminal,
           },
@@ -259,7 +259,7 @@ export const RebaseStopPanel = ({ sessionId, worktreePath, controls, actions }: 
           },
           {
             key: 'open-terminal',
-            label: 'Open terminal',
+            label: 'Open in Terminal',
             variant: 'secondary',
             run: controls.openTerminal,
           },

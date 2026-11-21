@@ -1,8 +1,8 @@
-import { Bookmark, CircleHelp, Clock, Code, Copy, FolderOpen, Trash2 } from '@goodboy/ui/icons';
-import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
+import { Bookmark, CircleHelp, Clock, Code, FolderOpen, Trash2 } from '@goodboy/ui/icons';
 import { openInConfiguredTerminal } from '../../../shared/lib/terminalApp';
 import { revealLabelOf } from '../../../shared/utils/revealLabelOf';
 import type { ObjectKindDefinition, WorktreeActionTarget } from '../types';
+import { VERBS } from '../../../shared/utils/verbs';
 
 export const KEEP_DAYS = 30;
 
@@ -47,8 +47,7 @@ export const WORKTREE_KIND: ObjectKindDefinition<WorktreeActionTarget, WorktreeF
     },
     {
       id: 'worktree.terminalApp',
-      label: 'Open in terminal app',
-      icon: CONCEPT_ICONS.terminal,
+      ...VERBS.openInExternalTerminal,
       group: 'open',
       when: () => true,
       run: ({ facts, env }) =>
@@ -80,8 +79,7 @@ export const WORKTREE_KIND: ObjectKindDefinition<WorktreeActionTarget, WorktreeF
     },
     {
       id: 'worktree.copyPath',
-      label: 'Copy path',
-      icon: Copy,
+      ...VERBS.copyPath,
       group: 'copy',
       when: () => true,
       run: ({ facts, env }) => env.copyText({ text: facts.path }),

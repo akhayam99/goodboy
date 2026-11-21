@@ -56,7 +56,7 @@ describe('the u25 push fix scenes', () => {
     const panel = within(screen.getByRole('region', { name: 'Rebase' }));
     expect(panel.getByText('Rebased, but the push failed')).toBeDefined();
     expect(panel.getByRole('button', { name: 'Fix with an agent' })).toBeDefined();
-    expect(panel.getByRole('button', { name: 'Open terminal here' })).toBeDefined();
+    expect(panel.getByRole('button', { name: 'Open in Terminal' })).toBeDefined();
     expect(document.querySelector('[data-rebase-conflict]')).toBeNull();
   });
 

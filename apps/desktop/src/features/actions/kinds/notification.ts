@@ -1,5 +1,6 @@
-import { Bug, Check, Copy, SquareArrowOutUpRight, Trash2, Undo2 } from '@goodboy/ui/icons';
+import { Bug, Copy, SquareArrowOutUpRight, Trash2 } from '@goodboy/ui/icons';
 import type { NotificationSeverity } from '@goodboy/db';
+import { VERBS } from '../../../shared/utils/verbs';
 import { openReportSheet } from '../../bug-report/openReportSheet';
 import type { NotificationActionTarget, ObjectKindDefinition } from '../types';
 
@@ -43,8 +44,7 @@ export const NOTIFICATION_KIND: ObjectKindDefinition<NotificationActionTarget, N
       },
       {
         id: 'notification.markRead',
-        label: 'Mark read',
-        icon: Check,
+        ...VERBS.markAsRead,
         group: 'act',
         slot: () => 'hover',
         when: isUnread,
@@ -56,8 +56,7 @@ export const NOTIFICATION_KIND: ObjectKindDefinition<NotificationActionTarget, N
       },
       {
         id: 'notification.markUnread',
-        label: 'Mark unread',
-        icon: Undo2,
+        ...VERBS.markAsUnread,
         group: 'act',
         when: ({ facts }) => !isUnread({ facts }),
         run: async ({ facts, env }) => {

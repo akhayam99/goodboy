@@ -225,7 +225,7 @@ describe('the u23 frame scenes', () => {
     await screen.findByRole('list', { name: 'Commits' }, { timeout: 4_000 });
     expect(screen.queryByRole('button', { name: 'Backups' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Refresh' })).toBeNull();
-    expect(screen.queryByRole('button', { name: 'Open terminal here' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Open in Terminal' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'More history actions' })).toBeNull();
     expect(screen.queryByRole('group', { name: 'Legend' })).toBeNull();
   });

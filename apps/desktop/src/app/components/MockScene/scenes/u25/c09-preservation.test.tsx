@@ -157,7 +157,7 @@ describe('orchestrated rows stay reachable from the orchestrated document', () =
     expect(Object.keys(NEW_DRAWER_FORMS)).toEqual(['report', 'wireframe']);
   });
 
-  it('Run header: Pause run; overflow: Rename, Step routing, Skip step, Stop run confirmed, Archive, five rows at most', async () => {
+  it('Run header: Pause run; overflow: Rename, Step routing, Skip step, Stop run, Archive, five rows at most', async () => {
     await mount('c09-orch-running');
     act(() => {
       useAppStore.setState({ sessionProjectMounts: { [C09_SESSION_ID]: [mountOf({ index: 0 })] } });
@@ -175,7 +175,7 @@ describe('orchestrated rows stay reachable from the orchestrated document', () =
     expect(menu.getAllByRole('menuitem').length).toBeLessThanOrEqual(5);
     expect(live.queryByRole('button', { name: 'Stop run' })).toBeNull();
     await press(menu.getByRole('menuitem', { name: /^Stop run/ }));
-    expect(screen.getByText('Stop this run?')).toBeDefined();
+    expect(screen.queryByText('Stop this run?')).toBeNull();
   });
 
   it('Orchestrator state ladder: the running tail has no Stop step verb', async () => {

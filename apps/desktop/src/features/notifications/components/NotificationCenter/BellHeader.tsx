@@ -55,7 +55,7 @@ export const BellHeader = ({
           <div className="flex items-center gap-2">
             {unread > 0 && (
               <Button variant="ghost" size="sm" onClick={onMarkAllRead}>
-                Mark all read
+                Mark all as read
               </Button>
             )}
             <SegmentedTabs

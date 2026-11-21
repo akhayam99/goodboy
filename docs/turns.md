@@ -167,7 +167,7 @@ database.
 - The chat ends each writing turn of a plain folder in a card
   (`TurnChangesCard`, under the turn's usage row): "Changed 2 files in
   acme-notes · saved before this reply", the files with their line counts from
-  `textChangesOf`, **Open changes** (opens Changes on the turn's first file
+  `textChangesOf`, **Open in Changes** (opens Changes on the turn's first file
   through `sessionFileVersionSelectedPath`) and **Undo changes from this reply**, which asks
   in the card when a file changed since. A run in `folderCaptureFailures`
   shows "Changes from this reply couldn't be saved" with Retry
