@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ChevronRight, Search } from '@goodboy/ui/icons';
-import { cn, ICON_SIZE, ROW_INTERACTIVE, ScrollFade } from '@goodboy/ui';
+import { ChevronRight } from '@goodboy/ui/icons';
+import { cn, ICON_SIZE, ROW_INTERACTIVE, ScrollFade, SearchField } from '@goodboy/ui';
 import type { ChatId, ChatSummary, WorkspaceId } from '@goodboy/types';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { pluralize } from '../../../../shared/utils/pluralize';
@@ -287,17 +287,12 @@ export const ChatList = ({
       ref={rootRef}
       className="@container/chat-list relative flex min-h-0 flex-1 flex-col gap-2 px-2 pt-2"
     >
-      <label className="flex h-7 items-center gap-2 rounded-md border border-border-soft px-2 text-faint-foreground focus-within:border-border">
-        <Search size={ICON_SIZE.row} aria-hidden />
-        <input
-          type="text"
-          value={query}
-          onChange={(event) => setQuery(event.target.value)}
-          placeholder="Search chats"
-          aria-label="Search chats"
-          className="min-w-0 flex-1 bg-transparent text-meta text-foreground outline-none placeholder:text-faint-foreground"
-        />
-      </label>
+      <SearchField
+        value={query}
+        onChange={setQuery}
+        placeholder="Search chats"
+        ariaLabel="Search chats"
+      />
       <ScrollFade className="flex-1">
         <nav
           ref={listRef}

@@ -160,7 +160,7 @@ describe('DiffViewSelector', () => {
       />,
     );
     fireEvent.click(screen.getByRole('button', { expanded: false }));
-    const filter = screen.getByRole('textbox', { name: 'Filter commits' });
+    const filter = screen.getByRole('searchbox', { name: 'Search commits' });
     fireEvent.keyDown(filter, { key: 'ArrowDown' });
     fireEvent.keyDown(filter, { key: 'Enter' });
 
@@ -191,7 +191,7 @@ describe('DiffViewSelector', () => {
       <DiffViewSelector view={workingView} onChange={vi.fn()} commits={commits} status={null} />,
     );
     fireEvent.click(screen.getByRole('button', { expanded: false }));
-    const filter = screen.getByRole('textbox', { name: 'Filter commits' });
+    const filter = screen.getByRole('searchbox', { name: 'Search commits' });
     fireEvent.change(filter, { target: { value: 'zzz-no-such-commit' } });
 
     expect(screen.getByText('no commits match')).toBeDefined();
@@ -206,7 +206,7 @@ describe('DiffViewSelector', () => {
       <DiffViewSelector view={workingView} onChange={vi.fn()} commits={commits} status={null} />,
     );
     fireEvent.click(screen.getByRole('button', { expanded: false }));
-    const filter = screen.getByRole('textbox', { name: 'Filter commits' });
+    const filter = screen.getByRole('searchbox', { name: 'Search commits' });
     fireEvent.change(filter, { target: { value: 'origin change' } });
 
     expect(screen.getByText('on origin')).toBeDefined();

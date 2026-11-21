@@ -381,7 +381,7 @@ describe('archived chats in the studio band', () => {
     expect(within(trail).getByText('Archived')).toBeDefined();
     fireEvent.click(within(trail).getByRole('button', { name: 'Chat' }));
 
-    expect(screen.getByRole('textbox', { name: 'Search chats' })).toBeDefined();
+    expect(screen.getByRole('searchbox', { name: 'Search chats' })).toBeDefined();
     expect(screen.queryByRole('navigation', { name: 'Breadcrumb' })).toBeNull();
   });
 

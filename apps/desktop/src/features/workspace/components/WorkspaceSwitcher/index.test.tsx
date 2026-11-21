@@ -145,7 +145,7 @@ describe('WorkspaceSwitcher', () => {
       const onClose = vi.fn();
       render(<WorkspaceSwitcher onClose={onClose} />);
 
-      fireEvent.keyDown(screen.getByPlaceholderText('Find a workspace or folder'), {
+      fireEvent.keyDown(screen.getByPlaceholderText('Search workspaces'), {
         key: 'Enter',
         ...modifier,
       });
@@ -181,7 +181,7 @@ describe('WorkspaceSwitcher', () => {
   it('hides the numbers while a search narrows the list', () => {
     render(<WorkspaceSwitcher onClose={vi.fn()} />);
 
-    fireEvent.change(screen.getByPlaceholderText('Find a workspace or folder'), {
+    fireEvent.change(screen.getByPlaceholderText('Search workspaces'), {
       target: { value: 'bra' },
     });
 
@@ -194,7 +194,7 @@ describe('WorkspaceSwitcher', () => {
     const onClose = vi.fn();
     render(<WorkspaceSwitcher onClose={onClose} />);
 
-    fireEvent.keyDown(screen.getByPlaceholderText('Find a workspace or folder'), {
+    fireEvent.keyDown(screen.getByPlaceholderText('Search workspaces'), {
       key: 'Enter',
     });
 
@@ -241,7 +241,7 @@ describe('WorkspaceSwitcher', () => {
     expect(screen.getByText('bravo')).not.toBeNull();
     expect(screen.getByText('charlie')).not.toBeNull();
 
-    fireEvent.change(screen.getByPlaceholderText('Find a workspace or folder'), {
+    fireEvent.change(screen.getByPlaceholderText('Search workspaces'), {
       target: { value: 'brav' },
     });
 
@@ -262,7 +262,7 @@ describe('WorkspaceSwitcher', () => {
   it('says No other workspaces match when a search finds none', () => {
     render(<WorkspaceSwitcher onClose={vi.fn()} />);
 
-    fireEvent.change(screen.getByPlaceholderText('Find a workspace or folder'), {
+    fireEvent.change(screen.getByPlaceholderText('Search workspaces'), {
       target: { value: 'zzz' },
     });
 
@@ -383,6 +383,6 @@ describe('WorkspaceSwitcher', () => {
   it('renders panel content only, leaving anchoring to the popover primitive', () => {
     const { container } = render(<WorkspaceSwitcher onClose={vi.fn()} />);
     expect(container.querySelector('.fixed')).toBeNull();
-    expect(screen.getByPlaceholderText('Find a workspace or folder')).toBeDefined();
+    expect(screen.getByPlaceholderText('Search workspaces')).toBeDefined();
   });
 });

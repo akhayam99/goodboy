@@ -59,7 +59,7 @@ describe('ReviewerPicker', () => {
     renderPicker();
     openPanel();
     await waitFor(() => expect(screen.getByText('octocat')).toBeDefined());
-    fireEvent.change(screen.getByPlaceholderText('filter collaborators'), {
+    fireEvent.change(screen.getByPlaceholderText('Search reviewers'), {
       target: { value: 'hub' },
     });
     expect(screen.queryByText('octocat')).toBeNull();
@@ -72,7 +72,7 @@ describe('ReviewerPicker', () => {
     await waitFor(() => expect(screen.getByText('octocat')).toBeDefined());
     fireEvent.click(screen.getByText('octocat'));
     expect(onAdd).toHaveBeenCalledWith(['octocat']);
-    expect(screen.queryByPlaceholderText('filter collaborators')).toBeNull();
+    expect(screen.queryByPlaceholderText('Search reviewers')).toBeNull();
   });
 
   it('closes on Escape', async () => {
@@ -80,13 +80,13 @@ describe('ReviewerPicker', () => {
     openPanel();
     await waitFor(() => expect(screen.getByText('octocat')).toBeDefined());
     fireEvent.keyDown(document.body, { key: 'Escape' });
-    expect(screen.queryByPlaceholderText('filter collaborators')).toBeNull();
+    expect(screen.queryByPlaceholderText('Search reviewers')).toBeNull();
   });
 
   it('escapes clipping ancestors through a fixed body portal', async () => {
     renderPicker();
     openPanel();
-    const panel = await screen.findByPlaceholderText('filter collaborators');
+    const panel = await screen.findByPlaceholderText('Search reviewers');
     expect(panel.closest('[data-dropdown-portal]')?.parentElement).toBe(document.body);
   });
 
@@ -95,6 +95,6 @@ describe('ReviewerPicker', () => {
     openPanel();
     await waitFor(() => expect(screen.getByText('octocat')).toBeDefined());
     fireEvent.mouseDown(document.body);
-    expect(screen.queryByPlaceholderText('filter collaborators')).toBeNull();
+    expect(screen.queryByPlaceholderText('Search reviewers')).toBeNull();
   });
 });

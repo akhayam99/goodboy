@@ -485,8 +485,8 @@ returns to the diff (and folds a rail opened on a narrow pane). A keyboard butto
 `Next` in the diff toolbar carries the key hint in its tooltip and opens the full list.
 Under the head a filter field (`/` and `T` focus it, `Esc` clears it) matches a
 subsequence of the path, and one filter menu beside the field (`Filter and group files`,
-tinted while a scope is on) holds `Show: All | Unviewed N | Commented N`, which narrows it
-further, and `Group: Folders | Kind`, which regroups the tree under Source, Tests, Config and
+with a count of 1 in its corner while a scope is on) holds `Show: All | Unviewed N | Commented N`, which narrows it
+further, and `Group by: Folders | Kind`, which regroups the tree under Source, Tests, Config and
 Docs (each file then shows its folder beside the name). The filter narrows the
 diff as well as the tree, `Showing n of N` with `Clear` says so, and a filter
 that hides everything leaves `No files match` with `Clear` in both panes

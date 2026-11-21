@@ -125,8 +125,8 @@ export const NewTerminalMenu = ({ clusters, onNew, onOpenAt }: Props) => {
         >
           <div className="flex flex-col gap-1 p-2">
             <SearchField
-              ariaLabel="Filter terminal locations"
-              placeholder="Type to filter"
+              ariaLabel="Search locations"
+              placeholder="Search locations"
               value={query}
               onChange={setQuery}
               inputRef={filterRef}

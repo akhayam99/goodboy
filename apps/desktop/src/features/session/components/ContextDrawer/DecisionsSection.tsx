@@ -8,7 +8,7 @@ import { Undo2 } from '@goodboy/ui/icons';
 import {
   EmptyLine,
   ICON_SIZE,
-  Input,
+  SearchField,
   SegmentedTabs,
   SkeletonText,
   type SegmentedTabOption,
@@ -338,21 +338,20 @@ export const DecisionsSection = ({
           </div>
           {isClosedOpen ? (
             <div className="flex flex-col gap-2">
-              <div className="flex items-center gap-2 px-2">
+              <div className="flex flex-wrap items-center gap-2 px-2">
+                <SearchField
+                  ariaLabel="Search decisions"
+                  placeholder="Search decisions"
+                  value={closedQuery}
+                  onChange={setClosedQuery}
+                  className="min-w-40 flex-1"
+                />
                 <SegmentedTabs
-                  size="sm"
+                  size="xs"
                   ariaLabel="Show"
                   options={closedFilterOptions}
                   value={closedFilter}
                   onChange={setClosedFilter}
-                />
-                <Input
-                  type="search"
-                  aria-label="Search replaced and removed decisions"
-                  placeholder="Search"
-                  value={closedQuery}
-                  onChange={(event) => setClosedQuery(event.target.value)}
-                  className="h-7 flex-1"
                 />
               </div>
               <div className="flex flex-col gap-0.5">

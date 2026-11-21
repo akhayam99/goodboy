@@ -117,7 +117,7 @@ describe('the Board filter', () => {
     expect(selectedFolders()).toEqual([ledgerCore.id]);
     expect(goalsOnScreen()).toEqual(['Backfill ledger balances', 'Fix webhook retries']);
     expect(document.querySelector(ACTIVE_COUNT)?.textContent).toBe('1');
-    expect(screen.getByRole('button', { name: 'Filter sessions, 1 active' })).toBeDefined();
+    screen.getByRole('button', { name: 'Filter sessions, 1 active' });
   });
 
   it('puts a ticked box back to unticked on a second click', () => {

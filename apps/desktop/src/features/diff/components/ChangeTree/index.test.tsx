@@ -206,7 +206,7 @@ describe('ChangeTree', () => {
     renderTree();
 
     const first = screen.getByRole('navigation', { name: 'Changed files' }).querySelector('input');
-    expect(first?.getAttribute('aria-label')).toBe('Filter files');
+    expect(first?.getAttribute('aria-label')).toBe('Search files');
     expect(screen.queryByRole('button', { name: 'Next unviewed file' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Keyboard shortcuts' })).toBeNull();
   });
@@ -622,7 +622,7 @@ describe('ChangeTree', () => {
     const onQuery = vi.fn();
     renderTree({ filter: { ...NO_FILTER, query: 'csv', onQuery } });
 
-    const input = screen.getByRole('searchbox', { name: 'Filter files' });
+    const input = screen.getByRole('searchbox', { name: 'Search files' });
     fireEvent.change(input, { target: { value: 'csvx' } });
     fireEvent.focus(input);
     fireEvent.keyDown(input, { key: 'Escape', code: 'Escape' });

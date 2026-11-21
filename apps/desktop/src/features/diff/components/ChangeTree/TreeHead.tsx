@@ -65,8 +65,8 @@ export const TreeHead = ({
           onChange={onQuery}
           onFocus={() => setIsTyping(true)}
           onBlur={() => setIsTyping(false)}
-          placeholder="Filter files"
-          ariaLabel="Filter files"
+          placeholder="Search files"
+          ariaLabel="Search files"
           clearLabel="Clear filter"
           data-diff-filter=""
           className="min-w-0 flex-1"

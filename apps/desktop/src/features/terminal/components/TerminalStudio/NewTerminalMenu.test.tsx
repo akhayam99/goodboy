@@ -96,7 +96,7 @@ describe('the New terminal in picker opened by key', () => {
     render(<NewTerminalMenu clusters={CLUSTERS} onNew={vi.fn()} onOpenAt={onOpenAt} />);
 
     openByKey();
-    const filter = screen.getByRole('searchbox', { name: 'Filter terminal locations' });
+    const filter = screen.getByRole('searchbox', { name: 'Search locations' });
     expect(document.activeElement).toBe(filter);
     fireEvent.keyDown(filter, { key: 'Enter' });
 
@@ -109,7 +109,7 @@ describe('the New terminal in picker opened by key', () => {
     render(<NewTerminalMenu clusters={CLUSTERS} onNew={vi.fn()} onOpenAt={onOpenAt} />);
 
     openByKey();
-    const filter = screen.getByRole('searchbox', { name: 'Filter terminal locations' });
+    const filter = screen.getByRole('searchbox', { name: 'Search locations' });
     fireEvent.change(filter, { target: { value: 'ledger-core' } });
     expect(screen.queryByText('payments-api')).toBeNull();
     fireEvent.keyDown(filter, { key: 'Enter' });
@@ -122,7 +122,7 @@ describe('the New terminal in picker opened by key', () => {
     render(<NewTerminalMenu clusters={CLUSTERS} onNew={vi.fn()} onOpenAt={onOpenAt} />);
 
     openByKey();
-    const filter = screen.getByRole('searchbox', { name: 'Filter terminal locations' });
+    const filter = screen.getByRole('searchbox', { name: 'Search locations' });
     fireEvent.keyDown(filter, { key: 'ArrowDown' });
     expect(document.activeElement?.textContent).toBe('harborline');
     fireEvent.keyDown(screen.getByRole('menu', { name: 'New terminal in' }), { key: 'ArrowDown' });
@@ -143,7 +143,7 @@ describe('the New terminal in picker opened by key', () => {
     openByKey();
     fireEvent.keyDown(document, { key: 'Escape' });
 
-    expect(screen.queryByRole('searchbox', { name: 'Filter terminal locations' })).toBeNull();
+    expect(screen.queryByRole('searchbox', { name: 'Search locations' })).toBeNull();
     expect(onOpenAt).not.toHaveBeenCalled();
   });
 });

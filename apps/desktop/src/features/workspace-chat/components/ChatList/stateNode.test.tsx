@@ -272,7 +272,7 @@ describe('the chat row from the keyboard', () => {
 
   it('leaves Space alone outside a row opener', async () => {
     await renderList();
-    const search = screen.getByRole('textbox', { name: 'Search chats' });
+    const search = screen.getByRole('searchbox', { name: 'Search chats' });
 
     fireEvent.keyDown(search, { key: ' ', code: 'Space' });
 

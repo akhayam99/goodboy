@@ -842,7 +842,7 @@ describe('Branch page entries in the sidebar', () => {
       headerColumnElement().compareDocumentPosition(rail) & Node.DOCUMENT_POSITION_PRECEDING,
     ).toBe(Node.DOCUMENT_POSITION_PRECEDING);
     expect(rail.closest('[data-branch-lead]')).not.toBeNull();
-    within(rail).getByRole('searchbox', { name: 'Filter files' });
+    within(rail).getByRole('searchbox', { name: 'Search files' });
     screen.getByRole('button', { name: /^Next unviewed/ });
 
     for (const name of [/^Comments/, /^Commits/, /^Checks/]) {

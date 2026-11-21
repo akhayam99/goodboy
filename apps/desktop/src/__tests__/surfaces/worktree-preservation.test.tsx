@@ -189,7 +189,7 @@ describe('Branch page capabilities from the branch tree', () => {
 
     const rail = within(screen.getByRole('complementary', { name: 'Files' }));
     expect(rail.getByRole('navigation', { name: 'Changed files' })).toBeDefined();
-    expect(rail.getByRole('searchbox', { name: 'Filter files' })).toBeDefined();
+    expect(rail.getByRole('searchbox', { name: 'Search files' })).toBeDefined();
     expect(rail.getByRole('button', { name: 'Filter and group files' })).toBeDefined();
     expect(rail.queryByRole('button', { name: /^Next unviewed/ })).toBeNull();
     screen.getByRole('button', { name: /^Next unviewed/ });

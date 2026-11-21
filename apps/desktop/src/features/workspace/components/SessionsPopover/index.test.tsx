@@ -135,7 +135,7 @@ const titlesIn = ({ name }: GroupParams): ReadonlyArray<string> =>
     .map((option) => option.textContent ?? '');
 
 const search = (): HTMLElement =>
-  within(dialog()).getByRole('combobox', { name: 'Find a session' });
+  within(dialog()).getByRole('combobox', { name: 'Search sessions' });
 
 describe('the Sessions popover in the bar', () => {
   it('opens and closes with the Sessions key from anywhere', () => {

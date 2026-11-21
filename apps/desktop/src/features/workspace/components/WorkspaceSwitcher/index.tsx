@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Plus, Search } from '@goodboy/ui/icons';
-import { Button, Divider, EmptyState, ICON_SIZE, Kbd, PopoverPin } from '@goodboy/ui';
+import { Plus } from '@goodboy/ui/icons';
+import { Button, Divider, EmptyState, ICON_SIZE, Kbd, PopoverPin, SearchField } from '@goodboy/ui';
 import type { Workspace, WorkspaceId } from '@goodboy/types';
 import {
   useAppStore,
@@ -20,6 +20,8 @@ import { WorkspaceOpenConfirm } from './WorkspaceOpenConfirm';
 import { isSubmitChord } from '../../../../shared/keyboard/isSubmitChord';
 import { NAMES } from '../../../../shared/utils/names';
 import { openNewWorkspace } from '../../openNewWorkspace';
+
+const SEARCH_WORKSPACES = 'Search workspaces';
 
 type Props = {
   readonly onClose: () => void;
@@ -154,19 +156,17 @@ export const WorkspaceSwitcher = ({ onClose }: Props) => {
   return (
     <>
       <PopoverPin edge="start">
-        <div className="flex items-center gap-2 px-3 py-3">
-          <Search size={ICON_SIZE.control} aria-hidden className="text-faint-foreground" />
-          <input
-            ref={inputRef}
+        <div className="flex p-2">
+          <SearchField
+            inputRef={inputRef}
             autoFocus
             value={query}
-            onChange={(e) => setQuery(e.target.value)}
+            onChange={setQuery}
             onKeyDown={handleKeyDown}
-            placeholder="Find a workspace or folder"
-            aria-label="Find a workspace or folder"
-            className="flex-1 bg-transparent text-meta focus-visible:outline-none"
+            placeholder={SEARCH_WORKSPACES}
+            ariaLabel={SEARCH_WORKSPACES}
+            hint={<Kbd look="inline">{shortcutGlyphs('workspace.switcher')}</Kbd>}
           />
-          <Kbd look="inline">{shortcutGlyphs('workspace.switcher')}</Kbd>
         </div>
         <Divider />
       </PopoverPin>

@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ChevronDown, Search } from '@goodboy/ui/icons';
+import { ChevronDown } from '@goodboy/ui/icons';
 import {
   AnchoredPopover,
   Chip,
   cn,
   ICON_SIZE,
   PopoverPin,
+  SearchField,
   tintClasses,
   Tooltip,
   TruncatedText,
@@ -14,6 +15,7 @@ import {
 } from '@goodboy/ui';
 import type { BranchCommit, DiffView, WorktreeStatus } from '@goodboy/types';
 import { PickerSection } from '../../../../shared/components/RoutingPicker/PickerSection';
+import { NAMES } from '../../../../shared/utils/names';
 import { formatAdaptiveAge } from '../../../../shared/utils/time/formatAdaptiveAge';
 
 import { useNow } from '../../../../shared/hooks/useNow';
@@ -361,19 +363,17 @@ export const DiffViewSelector = ({
         </Tooltip>
       }
     >
-      <PopoverPin edge="start" className="flex items-center gap-2 px-3 py-2">
-        <Search size={ICON_SIZE.row} aria-hidden className="shrink-0 text-faint-foreground" />
-        <input
-          ref={searchRef}
+      <PopoverPin edge="start" className="flex p-2">
+        <SearchField
+          inputRef={searchRef}
           value={query}
-          onChange={(event) => {
-            setQuery(event.target.value);
+          onChange={(next) => {
+            setQuery(next);
             setFocusIndex(-1);
           }}
           onKeyDown={handleKeyDown}
-          placeholder="filter commits by sha or subject…"
-          className="w-full bg-transparent text-meta outline-none placeholder:text-faint-foreground"
-          aria-label="Filter commits"
+          placeholder={NAMES.searchCommits}
+          ariaLabel={NAMES.searchCommits}
         />
       </PopoverPin>
       <div className="flex flex-col gap-0.5 py-1" onKeyDown={handleKeyDown}>

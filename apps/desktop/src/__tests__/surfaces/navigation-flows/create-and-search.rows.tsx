@@ -202,7 +202,7 @@ export const CREATE_AND_SEARCH_ROWS: ReadonlyArray<Row> = [
       const drawer = await screen.findByRole('region', {
         name: kind === 'Report' ? 'Write a report' : 'Draw a wireframe',
       });
-      expect(within(drawer).getByTestId('artifact-brief')).toBeDefined();
+      await within(drawer).findByTestId('artifact-brief', {}, WAIT);
     },
   })),
   {

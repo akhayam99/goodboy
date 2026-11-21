@@ -1,12 +1,12 @@
 import { useEffect, useId, useRef, useState, type KeyboardEvent } from 'react';
-import { Plus, Search } from '@goodboy/ui/icons';
+import { Plus } from '@goodboy/ui/icons';
 import {
   AnchoredPopover,
   EmptyLine,
   ICON_SIZE,
-  Input,
   Kbd,
   PopoverPin,
+  SearchField,
   useDropdown,
 } from '@goodboy/ui';
 
@@ -144,27 +144,21 @@ export const AddStepMenu = ({ groups, disabled, onPick }: Props) => {
       }
     >
       <PopoverPin edge="start">
-        <label className="relative flex shrink-0 items-center p-2">
-          <span className="sr-only">Search steps</span>
-          <Search
-            size={ICON_SIZE.row}
-            aria-hidden
-            className="pointer-events-none absolute left-3.5 text-faint-foreground"
-          />
-          <Input
-            ref={inputRef}
+        <div className="flex shrink-0 p-2">
+          <SearchField
+            inputRef={inputRef}
             autoFocus
             value={query}
-            onChange={(event) => onQuery(event.target.value)}
+            onChange={onQuery}
             onKeyDown={onKeyDown}
             placeholder="Search steps"
+            ariaLabel="Search steps"
             role="combobox"
             aria-expanded
             aria-controls={listId}
             aria-activedescendant={activeId}
-            className="h-7 pl-7 text-meta"
           />
-        </label>
+        </div>
       </PopoverPin>
       <ul id={listId} role="listbox" aria-label="Steps" className="flex flex-col px-2 pb-2">
         <AddStepMenuOption

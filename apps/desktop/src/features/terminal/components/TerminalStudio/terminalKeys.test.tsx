@@ -168,7 +168,7 @@ describe('cmd+n on the Terminal page', () => {
     fireEvent.keyDown(document.body, { code: 'KeyN', metaKey: true });
     stop();
 
-    expect(screen.getByRole('searchbox', { name: 'Filter terminal locations' })).toBeDefined();
+    expect(screen.getByRole('searchbox', { name: 'Search locations' })).toBeDefined();
     expect(tabCount()).toBe(1);
     expect(newSession).not.toHaveBeenCalled();
   });
@@ -177,7 +177,7 @@ describe('cmd+n on the Terminal page', () => {
     mountPage();
 
     fireEvent.keyDown(document.body, { code: 'KeyN', metaKey: true });
-    fireEvent.keyDown(screen.getByRole('searchbox', { name: 'Filter terminal locations' }), {
+    fireEvent.keyDown(screen.getByRole('searchbox', { name: 'Search locations' }), {
       key: 'Enter',
     });
 
@@ -193,7 +193,7 @@ describe('cmd+n on the Terminal page', () => {
 
     fireEvent.keyDown(screen.getByTestId('terminal-panel'), { code: 'KeyT', metaKey: true });
 
-    expect(screen.queryByRole('searchbox', { name: 'Filter terminal locations' })).toBeNull();
+    expect(screen.queryByRole('searchbox', { name: 'Search locations' })).toBeNull();
     expect(tabCount()).toBe(2);
   });
 });

@@ -1,5 +1,6 @@
 import { ListFilter } from '@goodboy/ui/icons';
-import { AnchoredPopover, IconButton, useDropdown, type MenuEntry } from '@goodboy/ui';
+import { AnchoredPopover, CountBadge, IconButton, useDropdown, type MenuEntry } from '@goodboy/ui';
+import { NAMES } from '../../../../shared/utils/names';
 import type { TreeGroup } from '../../lib/changeTree';
 import { AppMenuList } from '../../../actions/AppMenuList';
 
@@ -51,7 +52,7 @@ export const FilterMenu = ({ show, onShow, unviewed, commented, group, onGroup }
     {
       kind: 'radio',
       key: 'group',
-      label: 'Group',
+      label: NAMES.groupBy,
       choices: GROUPS.map((value) => ({
         id: value,
         label: GROUP_LABEL[value],
@@ -70,15 +71,17 @@ export const FilterMenu = ({ show, onShow, unviewed, commented, group, onGroup }
     <AnchoredPopover
       dropdown={dropdown}
       trigger={
-        <IconButton
-          icon={ListFilter}
-          size="xs"
-          label="Filter and group files"
-          tone={show === 'all' ? 'neutral' : 'primary'}
-          aria-haspopup="menu"
-          aria-expanded={dropdown.open}
-          onClick={dropdown.toggle}
-        />
+        <span className="relative inline-flex">
+          <IconButton
+            icon={ListFilter}
+            size="xs"
+            label="Filter and group files"
+            aria-haspopup="menu"
+            aria-expanded={dropdown.open}
+            onClick={dropdown.toggle}
+          />
+          <CountBadge count={show === 'all' ? 0 : 1} placement="corner" isAnnounced={false} />
+        </span>
       }
     >
       <AppMenuList label="Filter and group files" entries={entries} onClose={dropdown.close} />
