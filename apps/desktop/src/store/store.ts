@@ -180,6 +180,10 @@ import { sessionsInitialState } from './slices/sessions/state';
 import { sessionEventsInitialState } from './slices/session-events/state';
 import { dormantSpendInitialState } from './slices/dormant-spend/state';
 import { hostReachabilityInitialState } from './slices/host-reachability/state';
+import { checksLogInitialState } from './slices/checks-log/state';
+import { createChecksLogSlice } from './slices/checks-log';
+import { turnFilesInitialState } from './slices/turn-files/state';
+import { createTurnFilesSlice } from './slices/turn-files';
 import { presenceInitialState } from './slices/presence/state';
 import { settingsInitialState } from './slices/settings/state';
 import { providersInitialState } from './slices/providers/state';
@@ -284,6 +288,8 @@ export type AppStore = AppState &
   ReturnType<typeof createBootSlice> &
   ReturnType<typeof createPresenceSlice> &
   ReturnType<typeof createHostReachabilitySlice> &
+  ReturnType<typeof createChecksLogSlice> &
+  ReturnType<typeof createTurnFilesSlice> &
   ReturnType<typeof createNotificationsSlice> &
   ReturnType<typeof createTaskArrivalsSlice> &
   ReturnType<typeof createNudgesSlice> &
@@ -374,6 +380,8 @@ const initialState: AppState = {
   ...dormantSpendInitialState,
   ...presenceInitialState,
   ...hostReachabilityInitialState,
+  ...checksLogInitialState,
+  ...turnFilesInitialState,
   ...sessionsInitialState,
   ...settingsInitialState,
   ...providersInitialState,
@@ -555,6 +563,8 @@ const appStoreApi = createStore<AppStore>((set, get) => ({
   ...createAskSlice({ set, get }),
   ...createPresenceSlice({ set, get }),
   ...createHostReachabilitySlice({ set, get }),
+  ...createChecksLogSlice({ set, get }),
+  ...createTurnFilesSlice({ set, get }),
   ...createTurnSlice({ set, get }),
   ...createWorktreesSlice({ set, get }),
   ...createBootSlice({ set, get }),

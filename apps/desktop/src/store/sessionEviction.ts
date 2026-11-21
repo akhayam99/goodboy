@@ -196,6 +196,7 @@ export const SESSION_EVICTION = [
   { key: 'browserDraftEnds', keyedBy: 'session', evictOn: 'archive' },
   { key: 'browserClosedTabs', keyedBy: 'session', evictOn: 'archive' },
   { key: 'browserVisits', keyedBy: 'session', evictOn: 'archive' },
+  { key: 'turnFiles', keyedBy: 'session', evictOn: 'archive' },
 ] as const satisfies ReadonlyArray<SessionEvictionRule>;
 
 export const NON_SESSION_STATE_KEYS = [
@@ -241,6 +242,7 @@ export const NON_SESSION_STATE_KEYS = [
   'windowPresence',
   'hostReachability',
   'hostAnsweredAt',
+  'checkLogs',
   'sessions',
   'archivedSessions',
   'currentSessionId',
