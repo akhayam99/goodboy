@@ -29,6 +29,11 @@ const GROUPS: ReadonlyArray<TreeGroup> = ['folders', 'kind'];
 
 export const FilterMenu = ({ show, onShow, unviewed, commented, group, onGroup }: Props) => {
   const dropdown = useDropdown({ width: 'min-w-50', expectedHeight: 240 });
+  const activeCount = show === 'all' ? 0 : 1;
+  const triggerLabel =
+    activeCount > 0
+      ? 'Filter and group files, ' + activeCount + ' active'
+      : 'Filter and group files';
   const countOf: Record<Show, number | null> = { all: null, unviewed, commented };
   const entries: ReadonlyArray<MenuEntry> = [
     {
@@ -75,12 +80,12 @@ export const FilterMenu = ({ show, onShow, unviewed, commented, group, onGroup }
           <IconButton
             icon={ListFilter}
             size="xs"
-            label="Filter and group files"
+            label={triggerLabel}
             aria-haspopup="menu"
             aria-expanded={dropdown.open}
             onClick={dropdown.toggle}
           />
-          <CountBadge count={show === 'all' ? 0 : 1} placement="corner" isAnnounced={false} />
+          <CountBadge count={activeCount} placement="corner" isAnnounced={false} />
         </span>
       }
     >

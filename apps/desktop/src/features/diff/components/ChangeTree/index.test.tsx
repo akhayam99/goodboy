@@ -128,7 +128,7 @@ describe('ChangeTree on a big change', () => {
 });
 
 const openFilterMenu = () => {
-  fireEvent.click(screen.getByRole('button', { name: 'Filter and group files' }));
+  fireEvent.click(screen.getByRole('button', { name: /^Filter and group files/ }));
   return within(screen.getByRole('menu', { name: 'Filter and group files' }));
 };
 
@@ -599,6 +599,16 @@ describe('ChangeTree', () => {
     fireEvent.click(screen.getByRole('menuitemradio', { name: /Kind/ }));
 
     expect(onGroup).toHaveBeenCalledWith('kind');
+  });
+
+  it('names the active filter on the trigger and leaves the corner badge unannounced', () => {
+    renderTree();
+    expect(screen.queryByRole('button', { name: /active$/ })).toBeNull();
+    cleanup();
+
+    renderTree({ filter: { ...NO_FILTER, commentedOnly: true } });
+    const trigger = screen.getByRole('button', { name: 'Filter and group files, 1 active' });
+    expect(trigger.parentElement?.querySelector('[role="img"]')).toBeNull();
   });
 
   it('reads the filter back from the two switches, unviewed first', () => {
