@@ -32,7 +32,7 @@ describe('livePhraseOf', () => {
     const lastItem = toolCall({ toolName: 'Bash', input: { command: 'pnpm test --filter api' } });
 
     expect(livePhraseOf({ lastItem, project: 'payments-api' })).toBe(
-      'Running pnpm in payments-api',
+      'Running pnpm test in payments-api',
     );
   });
 

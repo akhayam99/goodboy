@@ -29,7 +29,7 @@ describe('agentTurnLive', () => {
     });
     expect(facts).toEqual({
       state: 'working',
-      phrase: 'Running pnpm in payments-api',
+      phrase: 'Running pnpm test in payments-api',
       startedAt: STARTED,
       actions: [{ id: 'stop', label: 'Stop' }],
     });

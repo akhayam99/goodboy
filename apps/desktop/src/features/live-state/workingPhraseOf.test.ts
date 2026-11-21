@@ -8,12 +8,12 @@ describe('workingPhraseOf', () => {
     [
       tool({ name: 'Bash', command: '/usr/local/bin/pnpm install', path: null }),
       'payments-api',
-      'Running pnpm in payments-api',
+      'Running pnpm install in payments-api',
     ],
     [
       tool({ name: 'Bash', command: 'NODE_ENV=test vitest run', path: null }),
       null,
-      'Running vitest',
+      'Running vitest run',
     ],
     [
       tool({ name: 'Read', command: null, path: 'src/ledger/export.ts' }),
@@ -30,6 +30,21 @@ describe('workingPhraseOf', () => {
     [tool({ name: 'TodoWrite', command: null, path: null }), null, 'Using TodoWrite'],
   ])('%o in %s reads %s', (last, project, phrase) => {
     expect(workingPhraseOf({ tool: last, project })).toBe(phrase);
+  });
+
+  it('keeps up to two script words and skips setup steps in a chain', () => {
+    expect(
+      workingPhraseOf({
+        tool: tool({ name: 'Bash', command: 'cd app && pnpm test retry --watch', path: null }),
+        project: null,
+      }),
+    ).toBe('Running pnpm test retry');
+  });
+
+  it('says no tool call yet when the agent has not run a tool', () => {
+    expect(workingPhraseOf({ tool: null, project: 'payments-api', hasToolCall: false })).toBe(
+      'No tool call yet',
+    );
   });
 
   it('says the model writes when no tool ran yet, never the command text', () => {

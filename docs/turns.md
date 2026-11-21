@@ -969,6 +969,10 @@ setup has no adapter until its state exists. Hosts move onto the adapters one
 by one; until then today's thinking line and Auto waiting line stay. Scenes
 `c01-tail-*` show every state.
 
+### Live work read
+
+One Rust command, `live_work` (`src-tauri/src/live_work.rs`), answers what each live run of a session is doing: one row per run with the session, agent, mount, branch, quiet time and the last open tool, read from the turn registry, the quiet tracker and the process ledger. Claude, Cursor, Codex, Copilot and OpenCode frames carry the tool; Gemini sends none, so its row has no tool and `hasToolCall` is false. `readLiveWork` calls it, `workOf` turns the rows into `Work` (place and phrase), and `useWorkOf` keeps the latest read only, re-reads on the `work-changed` event (`{ sessionId, mountId }`, at most one a second per session, to every window) and polls every 5 seconds for the quiet time. `workingPhraseOf` keeps up to two script words of a shell command ("Running pnpm test retry") and says "No tool call yet" when no tool ran. `agent-turn` stays while it has readers.
+
 ## Turn events
 
 `TurnEvent` and `ProviderUsage` live in `@goodboy/types`, so the core parsers
