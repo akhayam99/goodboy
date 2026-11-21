@@ -20,6 +20,7 @@ import {
   questionGroupsOf,
   questionRowsOf,
 } from './questionsLensModel';
+import { NAMES } from '../../../../../shared/utils/names';
 
 type QuestionsPaneProps = {
   readonly session: Session;
@@ -94,7 +95,7 @@ export const QuestionsPane = ({ session }: QuestionsPaneProps) => {
         <EmptyState
           size="page"
           icon={CONCEPT_ICONS.questions}
-          title="No questions yet"
+          title={NAMES.noQuestionsYet}
           description="Agents bring you the choices they can't make."
         />
       </PaneShell>

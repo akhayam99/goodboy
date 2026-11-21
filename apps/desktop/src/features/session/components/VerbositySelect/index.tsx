@@ -1,6 +1,7 @@
 import type { VerbosityLevel } from '@goodboy/types';
 import { cn, SegmentedTabs, type SegmentedTabOption } from '@goodboy/ui';
 import { VERBOSITY_LABEL, VERBOSITY_LEVELS, VERBOSITY_DOT } from '../../../settings/verbosity';
+import { NAMES } from '../../../../shared/utils/names';
 
 type Props = {
   value: VerbosityLevel;
@@ -22,7 +23,7 @@ const DISABLED_OPTIONS: ReadonlyArray<SegmentedTabOption<VerbosityLevel>> = VERB
 
 export const VerbositySelect = ({ value, onChange, disabled }: Props) => (
   <SegmentedTabs
-    ariaLabel="Reply length"
+    ariaLabel={NAMES.replyLength}
     size="sm"
     value={value}
     options={disabled ? DISABLED_OPTIONS : VERBOSITY_OPTIONS}

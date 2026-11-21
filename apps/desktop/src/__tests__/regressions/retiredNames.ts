@@ -267,7 +267,7 @@ const SHARED: ReadonlyArray<RetiredName> = [
   {
     id: 'unlink-from-session',
     pattern: /\bUnlink from (?:this )?session\b/i,
-    use: NAMES.removeLinkFromSession,
+    use: NAMES.unlink,
   },
   { id: 'open-a-folder', pattern: /\bOpen a folder\b/, use: NAMES.newWorkspace },
   { id: 'start-a-new-project', pattern: /\bStart a new project\b/, use: NAMES.newWorkspace },

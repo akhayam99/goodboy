@@ -17,6 +17,7 @@ import { pickerRowCount } from '../../pickerRowCount';
 import type { PickerCluster } from '../../terminalPickerClusters';
 import { TERMINAL_PICKER_EVENTS } from '../../terminalPickerEvents';
 import type { TerminalTarget } from '../../terminalTargets';
+import { NAMES } from '../../../../shared/utils/names';
 
 type Props = {
   readonly clusters: ReadonlyArray<PickerCluster>;
@@ -125,8 +126,8 @@ export const NewTerminalMenu = ({ clusters, onNew, onOpenAt }: Props) => {
         >
           <div className="flex flex-col gap-1 p-2">
             <SearchField
-              ariaLabel="Search locations"
-              placeholder="Search locations"
+              ariaLabel={NAMES.searchLocations}
+              placeholder={NAMES.searchLocations}
               value={query}
               onChange={setQuery}
               inputRef={filterRef}

@@ -15,6 +15,7 @@ import { useToast } from '../../../../../shared/components/Toast';
 import { useWorkflowImport } from '../../WorkflowsPanel/useWorkflowImport';
 import { ImportGroupSection } from './ImportGroupSection';
 import { catalogCount, importedToast, selectionSummary } from './importCopy';
+import { NAMES } from '../../../../../shared/utils/names';
 
 export type ImportTriggerParams = {
   readonly isOpen: boolean;
@@ -107,8 +108,8 @@ export const ImportPopover = ({ workspaceId, takenNames, renderTrigger = importB
         <SearchField
           value={query}
           onChange={setQuery}
-          placeholder="Search workflows"
-          ariaLabel="Search workflows"
+          placeholder={NAMES.searchWorkflows}
+          ariaLabel={NAMES.searchWorkflows}
           className="min-w-0 flex-1"
         />
         {total > 0 ? (

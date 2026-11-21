@@ -2140,7 +2140,7 @@ session up again in Goodboy.
   re-reads a state, and **Run again** starts a run that succeeded once more.
 
   A task link says **Unlink** on its row, in the record menu and in the
-  confirmation (`NAMES.removeLinkFromSession`), **Unlinked** in the Undo
+  confirmation (`NAMES.unlink`), **Unlinked** in the Undo
   toast and **Re-link** on the Activity event. Remove link from this session
   and Remove link to session are its former names. **Remove link** stays for
   a link of a project in Settings, which is a row taken out of a list.

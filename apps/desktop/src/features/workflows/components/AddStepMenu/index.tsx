@@ -14,6 +14,7 @@ import { ROLE_LABEL, kindForRole } from '../../../session/agent-kind';
 import { AgentKindChip } from '../../../../shared/components/AgentKindChip';
 import { savedStepNote, type SavedStep, type SavedStepGroups } from '../../savedSteps';
 import { AddStepMenuOption } from './AddStepMenuOption';
+import { NAMES } from '../../../../shared/utils/names';
 
 type Props = {
   readonly groups: SavedStepGroups;
@@ -151,8 +152,8 @@ export const AddStepMenu = ({ groups, disabled, onPick }: Props) => {
             value={query}
             onChange={onQuery}
             onKeyDown={onKeyDown}
-            placeholder="Search steps"
-            ariaLabel="Search steps"
+            placeholder={NAMES.searchSteps}
+            ariaLabel={NAMES.searchSteps}
             role="combobox"
             aria-expanded
             aria-controls={listId}

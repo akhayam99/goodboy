@@ -10,7 +10,7 @@ import { NAMES } from '../../../../shared/utils/names';
 import { LogRows } from './LogRows';
 
 const MARK_SEEN_KEY = 'mark-all-seen';
-const SEARCH_ENTRIES = 'Search entries';
+const SEARCH_ENTRIES = NAMES.searchEntries;
 
 type Props = {
   readonly session: Session;

@@ -4,6 +4,7 @@ import { recentKeys, type FrecencyState } from './frecency';
 import { isDanger, rankSessionVerbs, type PaletteTier } from './paletteTiers';
 import { rankCandidates } from './rank';
 import type { PaletteEntry, PaletteKind } from './types';
+import { NAMES } from '../../shared/utils/names';
 
 export type CommandRow = {
   readonly item: PaletteEntry;
@@ -78,7 +79,7 @@ const EMPTY_SECTION_KINDS: ReadonlyArray<readonly [string, ReadonlySet<PaletteKi
   ['Go to', new Set<PaletteKind>(['goto'])],
   ['Create', new Set<PaletteKind>(['create'])],
   ['App', new Set<PaletteKind>(['action'])],
-  ['Help', new Set<PaletteKind>(['help'])],
+  [NAMES.help, new Set<PaletteKind>(['help'])],
 ];
 
 const NEXT_TITLE = 'Next';

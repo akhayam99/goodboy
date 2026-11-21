@@ -3,6 +3,7 @@ import type { SessionDiff } from '../../hooks/useSessionDiff';
 import { AllFilesEmpty } from './AllFilesEmpty';
 import { DiffEmptyState } from './DiffEmptyState';
 import { DiffLoadingBody } from './DiffLoadingBody';
+import { NAMES } from '../../../../shared/utils/names';
 
 type Props = {
   readonly diff: SessionDiff;
@@ -35,7 +36,7 @@ export const ChangesPlainBody = ({
         <EmptyLine
           action={
             <Button size="xs" variant="ghost" onClick={onClearFilters}>
-              Clear filter
+              {NAMES.clearFilter}
             </Button>
           }
         >

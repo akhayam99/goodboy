@@ -7,6 +7,7 @@ import {
 import type { AutoTreeView } from '../../../../store/slices/auto-view/state';
 import type { AgentQueuedTurn } from '../../../../store/slices/agentQueue/types';
 import { directRevealAtOf } from './directRevealAtOf';
+import { NAMES } from '../../../../shared/utils/names';
 
 export type QueuedRowStatus = 'queued' | 'sending' | 'waits' | 'notDelivered';
 
@@ -30,7 +31,7 @@ type Params = {
   readonly nowMs: number;
 };
 
-const AGENT_QUEUED_TEXT = 'Waits for this reply';
+const AGENT_QUEUED_TEXT = NAMES.waitsForThisReply;
 
 const AGENT_SENDING_TEXT = 'Sending now';
 

@@ -7,6 +7,7 @@ import {
   useProjectMountsForSessions,
 } from '../../../../store';
 import { starredProjectsFirst } from '../../../../shared/utils/starredProjectsFirst';
+import { NAMES } from '../../../../shared/utils/names';
 
 export type ProjectFilterOption = {
   readonly id: string;
@@ -55,7 +56,7 @@ export const useProjectFilterOptions = ({
     }
     return [
       ...projectOptions,
-      { id: NO_PROJECT_FILTER_ID, label: 'No project', count: noProjectCount, isStarred: false },
+      { id: NO_PROJECT_FILTER_ID, label: NAMES.noProject, count: noProjectCount, isStarred: false },
     ];
   }, [projects, sessionProjectMounts, sessions, workspaceId]);
 };

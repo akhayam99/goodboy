@@ -46,7 +46,7 @@ export const RAIL_TOOLS: ReadonlyArray<SessionTool> = [
   {
     pane: 'monitoring',
     icon: CONCEPT_ICONS.monitoring,
-    label: 'Monitor',
+    label: NAMES.monitor,
     fullLabel: NAMES.monitoring,
     isSessionOnly: false,
   },

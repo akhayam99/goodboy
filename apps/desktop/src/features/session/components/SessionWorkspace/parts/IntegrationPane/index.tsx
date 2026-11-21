@@ -90,14 +90,14 @@ export const IntegrationPane = ({ sessionId, workspaceId, provider }: Props) => 
       sessionVerbs: [
         {
           key: 'unlink-session',
-          label: NAMES.removeLinkFromSession,
+          label: NAMES.unlink,
           icon: Unlink,
           isBusy: isUnlinking,
           blockedReason: null,
           confirm: {
             title: `Unlink ${focusedTask.identifier}?`,
             description: `The issue stays in ${meta.label}. Link it again from Link work.`,
-            confirmLabel: NAMES.removeLinkFromSession,
+            confirmLabel: NAMES.unlink,
           },
           onRun: () => handleUnlink({ task: focusedTask }),
         },

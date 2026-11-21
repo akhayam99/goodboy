@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import { cn, SegmentedTabs } from '@goodboy/ui';
 import type { CommentStateCounts } from '../../../commentGroupsView';
 import type { ReviewEntryCounts } from '../useReviewEntries';
+import { NAMES } from '../../../../../shared/utils/names';
 
 export type CommentScope = 'branch' | 'notes' | 'comments';
 
@@ -63,7 +64,7 @@ export const ReviewScopeBar = ({
           onChange={onScope}
           options={[
             { value: 'branch', label: 'All', badge: countBadge({ count: counts.all }) },
-            { value: 'notes', label: 'Notes', badge: countBadge({ count: counts.notes }) },
+            { value: 'notes', label: NAMES.notes, badge: countBadge({ count: counts.notes }) },
             {
               value: 'comments',
               label: `On ${hostLabel}`,

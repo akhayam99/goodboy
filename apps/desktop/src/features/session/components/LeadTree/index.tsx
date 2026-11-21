@@ -7,6 +7,7 @@ import { LeadTreeNoteRow } from './LeadTreeNoteRow';
 import { LeadTreeRootRow } from './LeadTreeRootRow';
 import type { LeadTreeRoot } from './leadTreeRoot';
 import type { LeadTreeItem } from '../../../auto/tree/leadTreeItemsOf';
+import { NAMES } from '../../../../shared/utils/names';
 
 export type LeadTreeDensity = 'full' | 'compact';
 
@@ -116,7 +117,7 @@ export const LeadTree = ({
   return (
     <div
       role="tree"
-      aria-label="Agents"
+      aria-label={NAMES.agents}
       tabIndex={0}
       data-testid="lead-tree"
       data-density={density}

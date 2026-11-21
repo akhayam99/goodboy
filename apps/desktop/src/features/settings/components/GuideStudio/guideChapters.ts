@@ -404,7 +404,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Task links',
-        desc: `A Linked row in the rail opens its task. Its right click menu holds Move to, Remove from this branch and ${NAMES.removeLinkFromSession}, each with Undo; the Log keeps Re-link.`,
+        desc: `A Linked row in the rail opens its task. Its right click menu holds Move to, Remove from this branch and ${NAMES.unlink}, each with Undo; the Log keeps Re-link.`,
       },
       {
         term: 'Integration pages',

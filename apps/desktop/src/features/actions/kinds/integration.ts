@@ -1,5 +1,6 @@
 import { Inbox, RefreshCw, Unplug } from '@goodboy/ui/icons';
 import type { IntegrationActionTarget, ObjectKindDefinition } from '../types';
+import { NAMES } from '../../../shared/utils/names';
 
 export type IntegrationFacts = {
   readonly label: string;
@@ -34,7 +35,7 @@ export const INTEGRATION_KIND: ObjectKindDefinition<IntegrationActionTarget, Int
     },
     {
       id: 'integration.disconnect',
-      label: 'Disconnect',
+      label: NAMES.disconnect,
       icon: Unplug,
       group: 'danger',
       pendingLabel: () => 'Disconnecting',

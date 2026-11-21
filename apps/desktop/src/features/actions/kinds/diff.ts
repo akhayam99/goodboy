@@ -164,7 +164,7 @@ const DIFF_ACTIONS: ReadonlyArray<ActionDefinition<DiffFacts>> = [
   },
   {
     id: 'diff.rewriteHistory',
-    label: 'Edit commits',
+    label: NAMES.editCommits,
     icon: History,
     group: 'act',
     when: ({ facts }) => facts.ahead > 0 && facts.pr !== 'merged',
