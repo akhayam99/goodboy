@@ -8,7 +8,7 @@ type Props = {
 
 export const BoardProjectSection = ({ section }: Props) => {
   const tiles = section.rowIds.map((rowId) => <BoardTile key={rowId} rowId={rowId} />);
-  if (section.projectName === null) {
+  if (section.projectId === null || section.projectName === null) {
     return <>{tiles}</>;
   }
   return (
@@ -18,7 +18,11 @@ export const BoardProjectSection = ({ section }: Props) => {
       data-board-project={section.projectName}
       className="flex min-w-0 flex-col gap-1"
     >
-      <BoardProjectHead projectName={section.projectName} count={section.rowIds.length} />
+      <BoardProjectHead
+        projectId={section.projectId}
+        projectName={section.projectName}
+        count={section.rowIds.length}
+      />
       {tiles}
     </div>
   );

@@ -11,6 +11,8 @@ import { ObjectMenuProvider } from '../../../actions/components/ObjectMenuProvid
 import { WorkTimeProvider } from '../../../workTreeModel/WorkTimeProvider';
 import { SessionContextCards } from '../../../../app/components/SessionContextCards';
 import { CentralColumn } from '../SessionOverviewPane/CentralColumn';
+import { PROJECT_DETACH_EVENT, projectKeyOf } from '../../../actions/kinds/project';
+import { BoardProjectRemovals } from './BoardProjectRemovals';
 import {
   buildStoryAgent,
   buildStoryProject,
@@ -22,6 +24,7 @@ import {
   rowsOf,
   STORE_IMPORT_TIMEOUT_MS,
   storySpies,
+  storySqlite,
   stubStoryInvoke,
   type StoryStore,
 } from '../../../../store/storyHarness';
@@ -230,5 +233,85 @@ describe('the project block on the Overview', () => {
     expect(projectMounts()).toHaveLength(1);
     expect(await mountRows()).toEqual([{ worktree_path: WORKTREE.worktreePath }]);
     screen.getByRole('dialog', { name: QUESTION });
+  });
+});
+
+const FORK_ID = brandedId<ProjectId>({ value: 'project-ledger-core-fork' });
+const FORK_WORKTREE = {
+  worktreePath: '/tmp/ledger-core-fork/.goodboy/worktrees/ledger-export',
+  branchName: 'goodboy/ledger-export-fork',
+  slug: 'ledger-export-fork',
+  reused: false,
+};
+
+const showRemovals = () => {
+  render(
+    <ToastProvider>
+      <BoardProjectRemovals sessionId={sessionId} />
+    </ToastProvider>,
+  );
+};
+
+const requestDetach = ({ projectId }: { readonly projectId: ProjectId }) => {
+  act(() => {
+    window.dispatchEvent(
+      new CustomEvent(PROJECT_DETACH_EVENT, {
+        detail: { projectKey: projectKeyOf({ sessionId, projectId }) },
+      }),
+    );
+  });
+};
+
+describe('the board removal owner', () => {
+  it('answers a request with no project head on screen', async () => {
+    showRemovals();
+
+    requestDetach({ projectId: PROJECT_ID });
+
+    await screen.findByRole('dialog', { name: QUESTION });
+  });
+
+  it('answers a request for a project whose worktrees are all closed', async () => {
+    useAppStore.setState({
+      sessionProjectMounts: { ...useAppStore.getState().sessionProjectMounts, [sessionId]: [] },
+    });
+    showRemovals();
+
+    requestDetach({ projectId: PROJECT_ID });
+
+    await screen.findByRole('dialog', { name: QUESTION });
+  });
+
+  it('removes the worktrees of the project asked for when two projects share a name', async () => {
+    const fork = buildStoryProject({
+      id: FORK_ID,
+      workspaceId: WORKSPACE_ID,
+      name: 'ledger-core',
+      rootPath: '/tmp/ledger-core-fork',
+    });
+    await insertProject({ db: storySqlite(), project: fork });
+    useAppStore.setState({ projects: [project, fork] });
+    storySpies.createWorktree.mockResolvedValueOnce(FORK_WORKTREE);
+    await useAppStore.getState().ensureProjectMounted({
+      sessionId,
+      projectId: FORK_ID,
+      reason: 'Compare the forked ledger',
+    });
+    showRemovals();
+
+    requestDetach({ projectId: FORK_ID });
+    await confirmRemoval();
+
+    await vi.waitFor(() =>
+      expect(
+        (useAppStore.getState().sessionMounts[sessionId] ?? []).map((mount) => mount.projectId),
+      ).toEqual([PROJECT_ID]),
+    );
+    expect(storySpies.removeWorktreeChecked).toHaveBeenCalledWith(
+      expect.objectContaining({ worktreePath: FORK_WORKTREE.worktreePath }),
+    );
+    expect(storySpies.removeWorktreeChecked).not.toHaveBeenCalledWith(
+      expect.objectContaining({ worktreePath: WORKTREE.worktreePath }),
+    );
   });
 });

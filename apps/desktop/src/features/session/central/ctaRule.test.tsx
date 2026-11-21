@@ -88,6 +88,7 @@ type ButtonParams = {
 
 const isActionButton = ({ button }: ButtonParams): boolean =>
   button.closest('[data-search-field]') === null &&
+  button.closest('[data-board-project-head]') === null &&
   (button.hasAttribute('data-variant') || button.closest('[data-action-card]') !== null);
 
 const buttonsOf = ({ root }: RootParams): ReadonlyArray<HTMLElement> =>

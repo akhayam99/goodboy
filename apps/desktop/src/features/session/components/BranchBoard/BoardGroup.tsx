@@ -34,7 +34,7 @@ export const BoardGroup = ({ group, isFirstOpenGroup, onShowMore }: Props) => {
       </div>
       {isMultiProject
         ? projectSectionsOf({ rowIds: group.rowIds, rowById }).map((section) => (
-            <BoardProjectSection key={section.projectName ?? ''} section={section} />
+            <BoardProjectSection key={section.projectId ?? ''} section={section} />
           ))
         : group.rowIds.map((rowId) => <BoardTile key={rowId} rowId={rowId} />)}
       {group.hiddenCount > 0 ? (

@@ -1,37 +1,37 @@
-import { useMemo } from 'react';
-import { ICON_SIZE } from '@goodboy/ui';
+import { Unlink } from '@goodboy/ui/icons';
+import { ICON_SIZE, IconButton } from '@goodboy/ui';
+import type { ProjectId } from '@goodboy/types';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
+import { NAMES } from '../../../../shared/utils/names';
 import { useAppStore } from '../../../../store';
-import { projectById } from '../../../../store/slices/projects/projectIndex';
-import { MountActionsMenu } from '../SessionOverviewPane/ProjectMountRows/MountActionsMenu';
+import {
+  PROJECT_DETACH_EVENT,
+  projectKeyOf,
+  type ProjectDetachRequest,
+} from '../../../actions/kinds/project';
+import { sessionProjectIdsOf } from './sessionProjectIdsOf';
 import { useBoardContext } from './useBoardContext';
 
 type Props = {
+  readonly projectId: ProjectId;
   readonly projectName: string;
   readonly count: number | null;
 };
 
-export const BoardProjectHead = ({ projectName, count }: Props) => {
+export const BoardProjectHead = ({ projectId, projectName, count }: Props) => {
   const ProjectIcon = CONCEPT_ICONS.projectRepo;
-  const { session, rowById } = useBoardContext();
+  const { session } = useBoardContext();
   const sessionId = session.id;
-  const mountIds = useMemo(
-    () =>
-      new Set(
-        [...rowById.values()].flatMap((row) =>
-          row.projectName === projectName && row.mountId !== null ? [row.mountId] : [],
-        ),
-      ),
-    [projectName, rowById],
+  const hasMounts = useAppStore((state) =>
+    sessionProjectIdsOf({ state, sessionId }).includes(projectId),
   );
-  const projectId = useAppStore(
-    (state) =>
-      (state.sessionProjectMounts[sessionId] ?? []).find((mount) => mountIds.has(mount.mountId))
-        ?.projectId ?? null,
-  );
-  const project = useAppStore((state) =>
-    projectId === null ? null : (projectById(state.projects, projectId) ?? null),
-  );
+  const requestDetach = () => {
+    window.dispatchEvent(
+      new CustomEvent<ProjectDetachRequest>(PROJECT_DETACH_EVENT, {
+        detail: { projectKey: projectKeyOf({ sessionId, projectId }) },
+      }),
+    );
+  };
   return (
     <div data-board-project-head="" className="flex h-7 min-w-0 items-center gap-2 px-2">
       <ProjectIcon size={ICON_SIZE.row} aria-hidden className="shrink-0 text-faint-foreground" />
@@ -39,18 +39,21 @@ export const BoardProjectHead = ({ projectName, count }: Props) => {
       {count === null ? null : (
         <span className="shrink-0 text-meta tabular-nums text-faint-foreground">{count}</span>
       )}
-      {project === null ? null : (
+      {hasMounts ? (
         <>
           <span className="min-w-0 flex-1" />
-          <MountActionsMenu
-            sessionId={sessionId}
-            projectId={project.id}
-            workspaceId={project.workspaceId}
-            projectName={project.name}
-            worktreePath={project.rootPath}
+          <IconButton
+            size="xs"
+            variant="ghost"
+            icon={Unlink}
+            iconSize={ICON_SIZE.row}
+            label={`Remove ${projectName} from session`}
+            tooltip={NAMES.removeFromSession}
+            aria-haspopup="dialog"
+            onClick={requestDetach}
           />
         </>
-      )}
+      ) : null}
     </div>
   );
 };

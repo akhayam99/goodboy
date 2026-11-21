@@ -1,7 +1,14 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import { brandId } from '@goodboy/types';
-import type { IsoDateTime, MountId, Session, SessionId, WorkspaceId } from '@goodboy/types';
+import type {
+  IsoDateTime,
+  MountId,
+  ProjectId,
+  Session,
+  SessionId,
+  WorkspaceId,
+} from '@goodboy/types';
 import type { BranchFacts } from '../branches/branchFactsOf';
 import type { BoardAgent, BoardAsk, BoardLead } from './boardTypes';
 import { branchBoardOf, MERGED_FOLD_LIMIT } from './branchBoardOf';
@@ -42,6 +49,7 @@ const branchOf = (id: string, options: BranchOptions = {}): BranchFacts => {
   return {
     mountId: brandId<MountId>({ value: id }),
     mountPath,
+    projectId: brandId<ProjectId>({ value: 'project-ledger-core' }),
     projectName: 'ledger-core',
     branch: `feat/${id}`,
     baseBranch: 'main',

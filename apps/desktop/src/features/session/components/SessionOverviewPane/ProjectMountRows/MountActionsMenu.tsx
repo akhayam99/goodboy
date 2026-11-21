@@ -34,6 +34,7 @@ type Props = {
   readonly workspaceId: WorkspaceId | undefined;
   readonly projectName: string;
   readonly worktreePath: string;
+  readonly isTriggerShown?: boolean;
 };
 
 type DetachTarget = {
@@ -56,6 +57,7 @@ export const MountActionsMenu = ({
   workspaceId,
   projectName,
   worktreePath,
+  isTriggerShown = true,
 }: Props) => {
   const projectKey = projectKeyOf({ sessionId, projectId });
   const detachProject = useAppStore((state) => state.detachProject);
@@ -228,21 +230,23 @@ export const MountActionsMenu = ({
       onConfirm={({ disposition }) => void detach({ disposition })}
       onRecheck={assess}
       onCancel={cancelDetach}
-      trigger={() => (
-        <IconButton
-          size="xs"
-          variant="ghost"
-          icon={Unlink}
-          iconSize={ICON_SIZE.row}
-          label={`Remove ${projectName} from session`}
-          tooltip={NAMES.removeFromSession}
-          aria-haspopup="dialog"
-          onClick={() => {
-            setIsConfirming(true);
-            assess();
-          }}
-        />
-      )}
+      trigger={() =>
+        isTriggerShown ? (
+          <IconButton
+            size="xs"
+            variant="ghost"
+            icon={Unlink}
+            iconSize={ICON_SIZE.row}
+            label={`Remove ${projectName} from session`}
+            tooltip={NAMES.removeFromSession}
+            aria-haspopup="dialog"
+            onClick={() => {
+              setIsConfirming(true);
+              assess();
+            }}
+          />
+        ) : null
+      }
     />
   );
 };

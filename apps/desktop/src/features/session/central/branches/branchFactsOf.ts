@@ -1,4 +1,4 @@
-import type { MountId, PullRequestChecks, PullRequestStateKind } from '@goodboy/types';
+import type { MountId, ProjectId, PullRequestChecks, PullRequestStateKind } from '@goodboy/types';
 import type {
   MountRequestView,
   MountRowView,
@@ -37,6 +37,7 @@ type BranchSeriesFacts = Readonly<{
 export type BranchFacts = Readonly<{
   mountId: MountId;
   mountPath: string | null;
+  projectId: ProjectId;
   projectName: string;
   branch: string;
   baseBranch: string;
@@ -117,6 +118,7 @@ export const branchFactsOf = ({
     return {
       mountId: row.mountId,
       mountPath: row.worktreePath ?? row.lastWorktreePath,
+      projectId: row.projectId,
       projectName: row.projectName,
       branch: row.branch,
       baseBranch: row.baseBranch ?? 'main',

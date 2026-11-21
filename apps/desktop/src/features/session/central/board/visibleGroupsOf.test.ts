@@ -25,6 +25,7 @@ const rowOf = (
   ({
     id,
     mountId: id,
+    projectId: null,
     projectName: 'ledger-core',
     branch: `feat/${id}`,
     group,
