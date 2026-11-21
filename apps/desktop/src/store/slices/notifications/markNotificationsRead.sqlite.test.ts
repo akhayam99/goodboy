@@ -104,7 +104,7 @@ describe('Mark all as read on sqlite', () => {
     expect(await unreadCountSeenFrom({ workspaceId: NORTHWIND })).toBe(0);
   });
 
-  it('leaves the list alone when the scope changed while it was writing', async () => {
+  it('reloads the list you now look at when the scope changed while it was writing', async () => {
     useAppStore.setState({ notificationScope: 'workspace' });
     await useAppStore.getState().loadNotifications();
 
@@ -114,7 +114,25 @@ describe('Mark all as read on sqlite', () => {
 
     expect(await unreadIds()).toEqual(['n-northwind']);
     expect(useAppStore.getState().notificationScope).toBe('all');
-    expect(useAppStore.getState().notifications.some((notification) => !notification.read)).toBe(
+    const shown = useAppStore.getState().notifications;
+    expect(shown.map((notification) => [notification.id, notification.read])).toEqual(
+      expect.arrayContaining([
+        ['n-harborline', true],
+        ['n-northwind', false],
+      ]),
+    );
+  });
+
+  it('shows read rows after a switch to this workspace lands before the write finishes', async () => {
+    useAppStore.setState({ notificationScope: 'all' });
+    await useAppStore.getState().loadNotifications();
+
+    const pending = useAppStore.getState().markNotificationsRead();
+    await useAppStore.getState().loadNotifications({ scope: 'workspace' });
+    await pending;
+
+    expect(useAppStore.getState().notificationScope).toBe('workspace');
+    expect(useAppStore.getState().notifications.every((notification) => notification.read)).toBe(
       true,
     );
   });

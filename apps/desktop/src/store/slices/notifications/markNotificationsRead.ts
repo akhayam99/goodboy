@@ -9,10 +9,15 @@ export const markNotificationsRead = (set: SetFn, get: GetFn) => {
     const scope = get().notificationScope;
     const workspaceId = scopedWorkspaceId({ state: get() });
     await markAllNotificationsRead({ db: tauriDatabase, workspaceId });
-    if (get().notificationScope === scope && scopedWorkspaceId({ state: get() }) === workspaceId) {
+    const isSameScope =
+      get().notificationScope === scope && scopedWorkspaceId({ state: get() }) === workspaceId;
+    if (isSameScope) {
       set((state) => ({
         notifications: state.notifications.map((n) => (n.read ? n : { ...n, read: true })),
       }));
+    }
+    if (!isSameScope) {
+      await get().loadNotifications();
     }
     await refreshNotificationCounts({ set, get });
   };
