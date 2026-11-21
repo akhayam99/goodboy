@@ -105,10 +105,18 @@ const SEARCH_JUMPS: ReadonlyArray<{
   },
   {
     kind: 'report',
+    action: 'openDrawer',
     overrides: () => ({ kind: 'report', refId: 'report-1' }),
     lands: async (ctx) => {
-      await lens('plans')(ctx);
-      expect(useAppStore.getState().drawer).toBeNull();
+      await waitFor(
+        () =>
+          expect(useAppStore.getState().drawer).toMatchObject({
+            kind: 'artifact-document',
+            sessionId: ctx.sessionId,
+            payload: { artifactId: 'report-1', revision: null },
+          }),
+        WAIT,
+      );
     },
   },
   {
@@ -134,7 +142,7 @@ const SEARCH_JUMPS: ReadonlyArray<{
     overrides: () => ({ kind: 'question', refId: 'q-1' }),
     lands: lens('questions'),
   },
-  { kind: 'pr', overrides: () => ({ kind: 'pr' }), lands: branchTab('comments') },
+  { kind: 'pr', overrides: () => ({ kind: 'pr' }), lands: branchTab('pr') },
   {
     kind: 'comment',
     overrides: (ctx) => {

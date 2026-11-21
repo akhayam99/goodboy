@@ -60,7 +60,7 @@ describe('issues and Tasks rows reachable from the issue pane', () => {
     await mount({ name: 'c12-issue-pane' });
 
     expect(screen.getByRole('list', { name: 'Task items' })).toBeDefined();
-    const open = within(pane()).getByRole('button', { name: 'Open' });
+    const open = within(pane()).getByRole('button', { name: 'Open full page' });
     expect(open).toBeDefined();
   });
 
@@ -115,7 +115,7 @@ describe('issues and Tasks rows reachable from the issue pane', () => {
     await mount({ name: 'c12-issue-sentry' });
 
     expect(within(pane()).getAllByText(/PAYMENTS-API-7000/).length).toBeGreaterThan(0);
-    const open = within(pane()).getByRole('button', { name: 'Open' });
+    const open = within(pane()).getByRole('button', { name: 'Open full page' });
     expect(open).toBeDefined();
   });
 
