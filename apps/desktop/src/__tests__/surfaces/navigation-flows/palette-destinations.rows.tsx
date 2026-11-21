@@ -29,6 +29,20 @@ const openDiffHistory = async (): Promise<void> => {
   await click(await screen.findByRole('menuitem', { name: /^Edit commits/ }));
 };
 
+const keepLedgerMount = (): void => {
+  const state = useAppStore.getState();
+  const sessionId = state.currentSessionId;
+  if (sessionId === null) {
+    return;
+  }
+  const ledger = (state.sessionProjectMounts[sessionId] ?? []).filter((mount) =>
+    String(mount.mountId).endsWith('ledger-core'),
+  );
+  useAppStore.setState({
+    sessionProjectMounts: { ...state.sessionProjectMounts, [sessionId]: ledger },
+  });
+};
+
 const pressedKind = (name: string): Promise<void> =>
   waitFor(() => {
     expect(screen.getByRole('tab', { name }).getAttribute('aria-selected')).toBe('true');
@@ -187,6 +201,7 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
     open: async () => {
       pushed = vi.fn(async () => ({ ok: true }));
       useAppStore.setState({ pushBranch: pushed } as never);
+      keepLedgerMount();
       await openPalette(/^Push the branch/);
     },
     lands: () => waitFor(() => expect(pushed).toHaveBeenCalledTimes(1), WAIT),
@@ -215,6 +230,7 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
     open: async () => {
       spawned = vi.fn(async () => undefined);
       useAppStore.setState({ spawnAgent: spawned } as never);
+      keepLedgerMount();
       await openPalette(/^Review the changes/);
     },
     lands: () =>

@@ -49,6 +49,18 @@ const { storeState, spies, fixable } = vi.hoisted(() => {
   const markPrReady = vi.fn(async () => undefined);
   const mergePr = vi.fn(async () => undefined);
   const resolveMountCleanup = vi.fn(async () => undefined);
+  const removeMountWorktree = vi.fn(
+    async (_params: unknown): Promise<{ kind: string; reason: string | null }> => ({
+      kind: 'removed',
+      reason: null,
+    }),
+  );
+  const sendAgentMessage = vi.fn(
+    async (_params: unknown): Promise<{ isDelivered: boolean; failure: string | null }> => ({
+      isDelivered: true,
+      failure: null,
+    }),
+  );
   const mergeSeriesInOrder = vi.fn(async (_params: unknown) => ({ kind: 'gone' }));
   const moveTrackerItem = vi.fn(async (_params: unknown) => ({ kind: 'gone' }));
   const undoTrackerMove = vi.fn(async (_params: unknown) => undefined);
@@ -86,6 +98,8 @@ const { storeState, spies, fixable } = vi.hoisted(() => {
     markPrReady,
     mergePr,
     resolveMountCleanup,
+    removeMountWorktree,
+    sendAgentMessage,
     mergeSeriesInOrder,
     moveTrackerItem,
     undoTrackerMove,
@@ -118,6 +132,7 @@ const { storeState, spies, fixable } = vi.hoisted(() => {
       sessionPhaseRuns: phaseRuns,
       mountGithub: record<unknown>(),
       mountRequests: record<unknown>(),
+      mountCleanupProposals: record<ReadonlyArray<unknown>>(),
       projects: list<unknown>(),
       artifactComments: record<ReadonlyArray<unknown>>(),
       bulkArchiveTask,
@@ -971,49 +986,6 @@ describe('useSuggestionActions', () => {
     });
   });
 
-  it('removes every worktree of the row on Remove, and leaves Not now to the undoable dismiss', async () => {
-    const actions = actionsFor({
-      suggestion: {
-        ...suggestionBase,
-        id: 'close-worktree:group',
-        kind: 'close-worktree',
-        band: 3,
-        payload: {
-          worktrees: [
-            {
-              mountId: WEB_MOUNT_ID,
-              requestId: 'cleanup:merge_cleanup:mount-web:feature/web',
-              branch: 'feature/web',
-              prNumber: 612,
-            },
-            {
-              mountId: WEB_MOUNT_ID,
-              requestId: 'cleanup:merge_cleanup:mount-web:feature/api',
-              branch: 'feature/api',
-              prNumber: 418,
-            },
-          ],
-        },
-      },
-    });
-
-    expect(actions.primary?.label).toBe('Remove worktrees');
-    expect(actions.primary?.shortLabel).toBe('Remove');
-    expect(actions.primary?.requiresConfirm).toBe(true);
-    expect(actions.onDismiss).toBeNull();
-    await actions.primary?.run();
-    expect(spies.resolveMountCleanup).toHaveBeenNthCalledWith(1, {
-      sessionId: SESSION_ID,
-      requestId: 'cleanup:merge_cleanup:mount-web:feature/web',
-      decision: 'remove',
-    });
-    expect(spies.resolveMountCleanup).toHaveBeenNthCalledWith(2, {
-      sessionId: SESSION_ID,
-      requestId: 'cleanup:merge_cleanup:mount-web:feature/api',
-      decision: 'remove',
-    });
-  });
-
   it('attaches the recommended workflow with the session goal on Set up', () => {
     const actions = actionsFor({
       suggestion: {
@@ -1048,7 +1020,14 @@ const EVERY_KIND = everySuggestionKind({
 });
 
 describe('every suggestion kind', () => {
-  it.each(SUGGESTION_KINDS.filter((kind) => kind !== 'fix-checks'))(
+  const OWN_TESTS: ReadonlyArray<SuggestionKind> = [
+    'fix-checks',
+    'run-failing-test',
+    'next-script',
+    'unmount-folder',
+  ];
+
+  it.each(SUGGESTION_KINDS.filter((kind) => !OWN_TESTS.includes(kind)))(
     '%s runs as a promise with a failure title, so the row can show pending',
     async (kind) => {
       const actions = actionsFor({ suggestion: EVERY_KIND[kind] });

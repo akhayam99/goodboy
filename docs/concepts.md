@@ -658,7 +658,50 @@ whether you clicked it on the board or in the session overview.
   whose button opens the blocked agent. The approve-tool
   suggestion for that same agent stays out of Next steps; a permission the
   callout does not name (a second blocked agent) still shows there.
-- Eighteen suggestion kinds ship: the original six (answer open questions,
+- A suggestion is a **move**: `deriveNextSteps` takes one `signals` object
+  (`NextStepSignals`, `features/suggestions/nextStepSignals.ts`) and returns
+  `NextMove` values, so it runs for any session with no mounted view. A move
+  carries a **reason** in words (a move with none is dropped by `moveOf` and
+  never shows bare), its **evidence** (the log lines of a failed check, the files
+  of the last turn, the command, how long an agent is quiet, or **Open on** and
+  the host for a check outside GitHub Actions), its **place** (the tool that
+  acts and the mount it acts on), **completesWhen** (what ends it) and a
+  **group**: moves that unblock the task come first (an answer, **Fix checks**,
+  **Merge**, a stopped rebase, **Rerun**), then moves that carry on, then
+  upkeep (**Remove the worktree**, **Remove from session**, **Archive**). Upkeep shows one
+  move and only when nothing else is left (`keepOneUpkeep`).
+- A move built from a pull request read is never hidden for being old. It
+  carries `read`: `fresh` within eight minutes of the read (longer than one
+  poll round, so a read does not age just before the next), `stale` after, and
+  `unread` when the pull request was never read. A read that never happened
+  does not count as fresh (`isFresh`). A stale or unread move says **Checked
+  12m ago** with **Recheck**.
+- When a move ends, `nextSettleState` (`useSettledMoves`) leaves one quiet line
+  for two seconds ("integration-tests passed on rerun", only where a source says
+  so: the pull request read) and lets it go. A move put away with **Not now**
+  leaves no line.
+- Safety of a command a move writes: a discovered script with no text from
+  outside runs on the click; a command with text taken from a log (the failing
+  test) and a destructive script (`migrate`, `seed`, `deploy`, `clean`, `reset`,
+  `drop`, `push`) is written in the terminal prompt of the worktree and waits for
+  Enter (**Add to prompt**). A test name from a log is quoted (`shellQuote`).
+  Nothing runs without a click.
+- Twenty-six suggestion kinds ship. Five read the work itself and live in the
+  same engine: **Run the failing test** (`run-failing-test`: a GitHub Actions
+  check fails, its log names a test file and the project has a `test` script),
+  the next script after a turn (`next-script`: a changed migration, lockfile or
+  schema, `nextScriptRulesOf`), **Rerun** a check (`rerun-check`: the job log
+  says it timed out; it runs `gh run rerun <run> --failed`, the one rerun shape in
+  `gh-allowlist.json`), **Remove from session** for a folder no turn touched for seven days
+  (`unmount-folder`) and **Ask the Implementer what blocks it** (`ask-agent`:
+  quiet from 5 to 30 minutes, then Needs you takes it). Two are extended:
+  `mount-project` says an agent asked more than once (`asked 2 times`) and moves
+  up, and `close-worktree` also reads a merged pull request at once and a clean
+  worktree with nothing to push, no pull request and no change for seven days.
+  `rebase-project` also carries a stopped rebase (`Finish the rebase on …`, with
+  the conflicting files), above **Rerun**. The log of a failed check is read once
+  per check by the `checks-log` slice (`readCheckLog`). The older kinds follow.
+- The kinds that came before these five: the original six (answer open questions,
   continue a workflow's ready step (derived, then left to its Activity row
   by `isOfferedByActivity`), fix review conversations, rebase a
   project, run a ready plan, add a proposed project) plus twelve more that

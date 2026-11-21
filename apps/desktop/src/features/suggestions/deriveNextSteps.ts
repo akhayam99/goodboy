@@ -5,19 +5,15 @@ import type {
   PlanId,
   ProjectId,
   PullRequestState,
-  SessionId,
   StepId,
   WorkflowId,
   WorkflowRunId,
 } from '@goodboy/types';
-import {
-  pendingMountEvents,
-  type SuggestionMountEvent,
-} from '../../store/slices/project-mounts/materializationProposals';
+import { pendingMountEvents } from '../../store/slices/project-mounts/materializationProposals';
 import type { BranchPushState } from '../../shared/lib/branchPushState';
 import { continueAgentsTitleOf } from './continueAgentsTitleOf';
 import type { PendingAgentSignal } from './pendingAgentSignal';
-import { isFresh, applyDismissals, dedupeByTargetKey, sortNextSteps } from './nextStepGates';
+import { applyDismissals, dedupeByTargetKey, sortNextSteps } from './nextStepGates';
 import { PROVIDER_LABEL } from '../providers/providerLabel';
 import type { AgentKind } from '../session/agent-kind';
 import { fixChecksSuggestionOf } from './fixChecksSuggestionOf';
@@ -25,24 +21,30 @@ import { archiveSuggestionOf, type SettledBranches } from './archiveSuggestionOf
 import { cleanupSuggestionOf } from './cleanupSuggestionOf';
 import { trackerMoveSuggestionOf } from './trackerMoveSuggestionOf';
 import { seriesMergeSuggestionOf } from './seriesMergeSuggestionOf';
-import type { SeriesStrip } from '../../store/slices/pr-series/seriesStripsOf';
-import type { TrackerMove } from '../../store/slices/tracker-moves/types';
 import { openPrSuggestionOf } from './openPrSuggestionOf';
 import { readyAndMergeSuggestionsOf } from './readyAndMergeSuggestionsOf';
 import { isOfferedByActivity } from './isOfferedByActivity';
 import { isMountBusyOf } from './isMountBusyOf';
-import { mountLabelOf } from './mountLabelOf';
+import { pushSuggestionOf } from './pushSuggestionOf';
+import { rebaseSuggestionOf } from './rebaseSuggestionOf';
+import { keepOneUpkeep } from './keepOneUpkeep';
+import { moveOf } from './moveOf';
+import type { NextStepSignals } from './nextStepSignals';
+import { askAgentSuggestionsOf } from './askAgentSuggestionsOf';
+import { nextScriptSuggestionsOf } from './nextScriptSuggestionsOf';
+import { rerunCheckSuggestionsOf } from './rerunCheckSuggestionsOf';
+import { runFailingTestSuggestionsOf } from './runFailingTestSuggestionsOf';
+import { unmountFolderSuggestionsOf } from './unmountFolderSuggestionsOf';
+import { idleDaysOf } from './signals/idleDaysOf';
 import type {
   FixChecksProgress,
+  NextMove,
   OpenPrTarget,
-  RebaseSuggestionTarget,
   ScribeRequestState,
   SessionSuggestion,
-  SuggestionKind,
-  SuggestionQuestion,
 } from './types';
 
-type SuggestionWorkflowRun = {
+export type SuggestionWorkflowRun = {
   readonly id: WorkflowRunId;
   readonly title: string;
   readonly advanceState: { readonly kind: string; readonly stepId?: StepId };
@@ -74,13 +76,19 @@ export type SuggestionMount = {
   readonly pr: PullRequestState | null;
   readonly fetchedAt: string | null;
   readonly scribe?: ScribeRequestState | null;
+  readonly failedChecks?: ReadonlyArray<SuggestionFailedCheck>;
+};
+
+export type SuggestionFailedCheck = {
+  readonly name: string;
+  readonly detailsUrl: string | null;
 };
 
 export type SuggestionCheckChain = FixChecksProgress & {
   readonly mountId: MountId;
 };
 
-type SuggestionRecommendedWorkflow = {
+export type SuggestionRecommendedWorkflow = {
   readonly id: WorkflowId;
   readonly name: string;
 };
@@ -93,9 +101,12 @@ export type SuggestionCleanupProposal = {
   readonly prNumber: number | null;
   readonly sizeBytes: number | null;
   readonly isArchived: boolean;
+  readonly mergedAt?: string | null;
+  readonly idleDays?: number;
+  readonly reason?: 'merge_cleanup' | 'unmount';
 };
 
-type SuggestionPlan = {
+export type SuggestionPlan = {
   readonly id: PlanId;
   readonly title: string;
   readonly status: string;
@@ -109,7 +120,7 @@ export type SuggestionRebaseRequest = {
   readonly agentStatus: string | null;
 };
 
-type SuggestionProject = {
+export type SuggestionProject = {
   readonly id: string;
   readonly mountId: MountId;
   readonly projectId: ProjectId;
@@ -121,90 +132,11 @@ type SuggestionProject = {
   readonly isClean?: boolean | null;
   readonly changedCount?: number | null;
   readonly rebaseRequest?: SuggestionRebaseRequest | null;
+  readonly rebaseStop?: { readonly conflicts: number } | null;
 };
 
 type MountParams = {
   readonly mountId: MountId;
-};
-
-type ProjectParams = {
-  readonly project: SuggestionProject;
-};
-
-const dirtyCountOf = ({ project }: ProjectParams): number =>
-  project.isClean === false ? Math.max(project.changedCount ?? 1, 1) : 0;
-
-const isRebaseConsumed = ({ project }: ProjectParams): boolean => {
-  const request = project.rebaseRequest ?? null;
-  if (request == null || request.agentStatus === 'failed') {
-    return false;
-  }
-  if (request.baseBranch != null && request.baseBranch !== project.baseBranch) {
-    return false;
-  }
-  return request.behind === project.mainDistance;
-};
-
-type PushSuggestionParams = {
-  readonly mount: SuggestionMount;
-  readonly sessionId: SessionId;
-};
-
-type PushSuggestion = Extract<SessionSuggestion, { readonly kind: 'push-branch' }>;
-
-const commitsLabel = (count: number): string => `${count} ${count === 1 ? 'commit' : 'commits'}`;
-
-const pushSuggestionOf = ({ mount, sessionId }: PushSuggestionParams): PushSuggestion | null => {
-  const push = mount.push;
-  if (push === null) {
-    return null;
-  }
-  const base = {
-    id: `push-branch:${mount.mountId}`,
-    kind: 'push-branch' as const,
-    priority: 41,
-    band: 2 as const,
-    sessionId,
-    targetKey: `branch:${mount.mountId}`,
-  };
-  const target = {
-    mountId: mount.mountId,
-    projectId: mount.projectId,
-    projectName: mount.projectName,
-    branch: mount.branch,
-    worktreePath: mount.worktreePath,
-  };
-  if (push.kind === 'diverged') {
-    return {
-      ...base,
-      title: 'Branch diverged from origin',
-      detail: `${commitsLabel(push.ahead)} here, ${commitsLabel(push.behind)} on origin`,
-      fingerprint: `push-branch:${mount.mountId}:diverged:${push.ahead}:${push.behind}`,
-      payload: { ...target, state: 'diverged', ahead: push.ahead, behind: push.behind },
-    };
-  }
-  if (mount.isClean === false) {
-    return null;
-  }
-  if (push.kind === 'ahead') {
-    return {
-      ...base,
-      title: `Push ${commitsLabel(push.ahead)}`,
-      detail: `${mount.projectName} · ${mount.branch}`,
-      fingerprint: `push-branch:${mount.mountId}:${push.ahead}`,
-      payload: { ...target, state: 'ahead', ahead: push.ahead, behind: 0 },
-    };
-  }
-  if (push.kind === 'not-pushed' && push.commits !== null && push.commits > 0) {
-    return {
-      ...base,
-      title: 'Push the branch',
-      detail: `Not pushed yet · ${commitsLabel(push.commits)}`,
-      fingerprint: `push-branch:${mount.mountId}:new:${push.commits}`,
-      payload: { ...target, state: 'not-pushed', ahead: push.commits, behind: 0 },
-    };
-  }
-  return null;
 };
 
 const NO_SETTLED_BRANCHES: SettledBranches = { merged: 0, closed: 0 };
@@ -212,69 +144,56 @@ const NO_SETTLED_BRANCHES: SettledBranches = { merged: 0, closed: 0 };
 const LIVE_AGENT_STATUSES: ReadonlyArray<string> = ['running', 'pending', 'blocked'];
 
 type Params = {
-  readonly sessionId: SessionId;
-  readonly workflowRuns: ReadonlyArray<SuggestionWorkflowRun>;
-  readonly plans: ReadonlyArray<SuggestionPlan>;
-  readonly consumedPlanIds: ReadonlySet<PlanId>;
-  readonly openQuestionCount: number;
-  readonly firstOpenQuestion?: SuggestionQuestion | null;
-  readonly questionsRootAgentId?: AgentId | null;
-  readonly hasPullRequest: boolean;
-  readonly eligibleThreadCount: number;
-  readonly projects: ReadonlyArray<SuggestionProject>;
-  readonly mountEvents: ReadonlyArray<SuggestionMountEvent>;
-  readonly agents?: ReadonlyArray<SuggestionAgent>;
-  readonly mounts?: ReadonlyArray<SuggestionMount>;
-  readonly cleanupProposals?: ReadonlyArray<SuggestionCleanupProposal>;
-  readonly trackerMoves?: ReadonlyArray<TrackerMove>;
-  readonly seriesStrips?: ReadonlyArray<SeriesStrip>;
-  readonly settledBranches?: SettledBranches;
-  readonly checkChains?: ReadonlyArray<SuggestionCheckChain>;
-  readonly isActivityShown?: boolean;
-  readonly hasGoal?: boolean;
-  readonly hasEverAttachedWorkflow?: boolean;
-  readonly recommendedWorkflow?: SuggestionRecommendedWorkflow | null;
-  readonly now?: () => number;
-  readonly dismissedFingerprints?: ReadonlySet<string>;
-  readonly demotedKinds?: ReadonlySet<SuggestionKind>;
+  readonly signals: NextStepSignals;
 };
 
-export const deriveNextSteps = ({
-  sessionId,
-  workflowRuns,
-  plans,
-  consumedPlanIds,
-  openQuestionCount,
-  firstOpenQuestion = null,
-  questionsRootAgentId = null,
-  hasPullRequest,
-  eligibleThreadCount,
-  projects,
-  mountEvents,
-  agents = [],
-  mounts = [],
-  cleanupProposals = [],
-  trackerMoves = [],
-  seriesStrips = [],
-  settledBranches = NO_SETTLED_BRANCHES,
-  checkChains = [],
-  isActivityShown = true,
-  hasGoal = false,
-  hasEverAttachedWorkflow = workflowRuns.length > 0,
-  recommendedWorkflow = null,
-  now = () => Date.now(),
-  dismissedFingerprints,
-  demotedKinds,
-}: Params): ReadonlyArray<SessionSuggestion> => {
+export const deriveNextSteps = ({ signals }: Params): ReadonlyArray<NextMove> => {
+  const {
+    sessionId,
+    workflowRuns,
+    plans,
+    consumedPlanIds,
+    openQuestionCount,
+    firstOpenQuestion = null,
+    questionsRootAgentId = null,
+    eligibleThreadCount,
+    projects,
+    mountEvents,
+    agents = [],
+    mounts = [],
+    cleanupProposals = [],
+    trackerMoves = [],
+    seriesStrips = [],
+    settledBranches = NO_SETTLED_BRANCHES,
+    checkChains = [],
+    isActivityShown = true,
+    hasGoal = false,
+    hasEverAttachedWorkflow = workflowRuns.length > 0,
+    recommendedWorkflow = null,
+    now = () => Date.now(),
+    dismissedFingerprints,
+    demotedKinds,
+    checkLogs = [],
+    scripts = [],
+    turnFiles = [],
+    quietAgents = [],
+    scriptRuns = [],
+    mergedMounts = [],
+    idleMounts = [],
+  } = signals;
   const suggestions: SessionSuggestion[] = [];
   for (const event of pendingMountEvents({ mountEvents })) {
+    const askCount = mountEvents.filter(
+      (candidate) => candidate.kind === 'proposed' && candidate.projectId === event.projectId,
+    ).length;
+    const isRepeated = askCount >= 2;
     suggestions.push({
       id: `mount-project:${event.projectId}`,
       kind: 'mount-project',
-      priority: 5,
+      priority: isRepeated ? 4 : 5,
       band: 1,
       title: `Add ${event.projectName}`,
-      detail: event.reason,
+      detail: isRepeated ? `${event.reason} · asked ${askCount} times` : event.reason,
       sessionId,
       targetKey: `project:${event.projectId}`,
       fingerprint: `mount-project:${event.projectId}:${event.eventId}`,
@@ -284,6 +203,7 @@ export const deriveNextSteps = ({
         reason: event.reason,
         agentId: event.agentId,
         eventId: event.eventId,
+        ...(isRepeated && { askCount }),
       },
     });
   }
@@ -474,14 +394,10 @@ export const deriveNextSteps = ({
   }
   const progressOf = ({ mountId }: MountParams): FixChecksProgress | null =>
     checkChains.find((chain) => chain.mountId === mountId) ?? null;
+  suggestions.push(...rerunCheckSuggestionsOf({ sessionId, mounts, checkLogs }));
   for (const mount of mounts) {
     const pr = mount.pr;
-    if (
-      pr == null ||
-      pr.state === 'merged' ||
-      pr.state === 'closed' ||
-      !isFresh({ fetchedAt: mount.fetchedAt, now })
-    ) {
+    if (pr == null || pr.state === 'merged' || pr.state === 'closed') {
       continue;
     }
     const progress = progressOf({ mountId: mount.mountId });
@@ -506,10 +422,7 @@ export const deriveNextSteps = ({
   }
   const openPrTargets: OpenPrTarget[] = [];
   for (const mount of mounts) {
-    if (
-      !isFresh({ fetchedAt: mount.fetchedAt, now }) ||
-      isMountBusyOf({ agents, mountId: mount.mountId, mountCount: mounts.length })
-    ) {
+    if (isMountBusyOf({ agents, mountId: mount.mountId, mountCount: mounts.length })) {
       continue;
     }
     const pr = mount.pr;
@@ -552,10 +465,63 @@ export const deriveNextSteps = ({
   for (const move of trackerMoves) {
     suggestions.push(trackerMoveSuggestionOf({ sessionId, move }));
   }
-  const cleanup = cleanupSuggestionOf({ sessionId, proposals: cleanupProposals });
+  const proposedMountIds = new Set(cleanupProposals.map((proposal) => proposal.mountId));
+  const reachedCleanups: ReadonlyArray<SuggestionCleanupProposal> = [
+    ...mergedMounts
+      .filter((merged) => !merged.isProposed && !proposedMountIds.has(merged.mountId))
+      .map((merged) => ({
+        requestId: merged.requestId,
+        mountId: merged.mountId,
+        projectName: merged.projectName,
+        branch: merged.branch,
+        prNumber: merged.prNumber,
+        sizeBytes: null,
+        isArchived: false,
+        mergedAt: merged.mergedAt,
+        reason: 'merge_cleanup' as const,
+      })),
+    ...idleMounts.flatMap((idle): ReadonlyArray<SuggestionCleanupProposal> => {
+      const idleDays = idleDaysOf({ lastTouchedMs: idle.lastTouchedMs, now });
+      const isRemovable =
+        idle.isRepo &&
+        idle.isClean &&
+        !idle.hasUnpushedWork &&
+        !idle.hasOpenPr &&
+        !idle.isProposed &&
+        !proposedMountIds.has(idle.mountId) &&
+        !mergedMounts.some((merged) => merged.mountId === idle.mountId);
+      if (idleDays === null || !isRemovable) {
+        return [];
+      }
+      return [
+        {
+          requestId: idle.requestId,
+          mountId: idle.mountId,
+          projectName: idle.projectName,
+          branch: idle.branch,
+          prNumber: null,
+          sizeBytes: null,
+          isArchived: false,
+          idleDays,
+          reason: 'unmount' as const,
+        },
+      ];
+    }),
+  ];
+  const cleanup = cleanupSuggestionOf({
+    sessionId,
+    proposals: [...cleanupProposals, ...reachedCleanups],
+    now,
+  });
   if (cleanup !== null) {
     suggestions.push(cleanup);
   }
+  suggestions.push(
+    ...runFailingTestSuggestionsOf({ sessionId, mounts, checkLogs, scripts }),
+    ...nextScriptSuggestionsOf({ sessionId, mounts, turnFiles, scripts, scriptRuns }),
+    ...askAgentSuggestionsOf({ sessionId, quietAgents }),
+    ...unmountFolderSuggestionsOf({ sessionId, idleMounts, now }),
+  );
   const archive = archiveSuggestionOf({
     sessionId,
     settled: settledBranches,
@@ -567,61 +533,9 @@ export const deriveNextSteps = ({
   if (archive !== null) {
     suggestions.push(archive);
   }
-  const rebaseTargets: RebaseSuggestionTarget[] = [];
-  const rebaseTargetIds = new Set<string>();
-  for (const project of projects) {
-    if (project.mainDistance == null || project.mainDistance <= 0) {
-      continue;
-    }
-    if (isRebaseConsumed({ project })) {
-      continue;
-    }
-    if (rebaseTargetIds.has(project.id)) {
-      continue;
-    }
-    rebaseTargetIds.add(project.id);
-    rebaseTargets.push({
-      id: project.id,
-      mountId: project.mountId,
-      projectId: project.projectId,
-      projectName: project.projectName,
-      branch: project.branch,
-      worktreePath: project.worktreePath,
-      baseBranch: project.baseBranch,
-      behind: project.mainDistance,
-      dirtyCount: dirtyCountOf({ project }),
-    });
-  }
-  const shownRebaseTargets = [...rebaseTargets].sort(
-    (first, second) =>
-      second.behind - first.behind || first.projectName.localeCompare(second.projectName),
-  );
-  const firstRebaseTarget = shownRebaseTargets[0];
-  if (firstRebaseTarget != null) {
-    const projectCount = new Set(shownRebaseTargets.map((target) => target.projectId)).size;
-    const isSingleTarget = shownRebaseTargets.length === 1;
-    const isSingleProject = projectCount === 1;
-    const behindDetail = isSingleTarget
-      ? `${firstRebaseTarget.behind} behind`
-      : isSingleProject
-        ? `${shownRebaseTargets.length} branches behind`
-        : `${projectCount} folders behind`;
-    suggestions.push({
-      id: `rebase-project:${sessionId}`,
-      kind: 'rebase-project',
-      priority: 40,
-      band: 2,
-      title: isSingleTarget
-        ? `Rebase ${mountLabelOf({ mount: firstRebaseTarget, siblings: projects })} on ${firstRebaseTarget.baseBranch}`
-        : isSingleProject
-          ? `Rebase ${firstRebaseTarget.projectName}`
-          : `Rebase ${shownRebaseTargets.length} branches`,
-      detail: behindDetail,
-      sessionId,
-      targetKey: null,
-      fingerprint: `rebase-project:${sessionId}:${shownRebaseTargets.map((target) => `${target.id}:${target.behind}`).join(',')}`,
-      payload: { targets: shownRebaseTargets },
-    });
+  const rebase = rebaseSuggestionOf({ sessionId, projects });
+  if (rebase !== null) {
+    suggestions.push(rebase);
   }
   const deduped = dedupeByTargetKey({
     suggestions: isActivityShown
@@ -629,5 +543,9 @@ export const deriveNextSteps = ({
       : suggestions,
   });
   const kept = applyDismissals({ suggestions: deduped, dismissedFingerprints });
-  return sortNextSteps({ suggestions: kept, demotedKinds });
+  const moves = sortNextSteps({ suggestions: kept, demotedKinds }).flatMap((suggestion) => {
+    const move = moveOf({ suggestion, signals });
+    return move === null ? [] : [move];
+  });
+  return keepOneUpkeep({ moves });
 };

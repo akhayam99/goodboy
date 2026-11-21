@@ -38,6 +38,11 @@ const KIND_FACTS: Readonly<Record<ActionCardModel['kind'], KindFacts>> = {
   'move-tracker-item': { group: 'ship', rank: 4 },
   'close-worktree': { group: 'ship', rank: 5 },
   'archive-session': { group: 'ship', rank: 6 },
+  'ask-agent': { group: 'decide', rank: 13 },
+  'rerun-check': { group: 'fix', rank: 8 },
+  'run-failing-test': { group: 'fix', rank: 9 },
+  'next-script': { group: 'ship', rank: 7 },
+  'unmount-folder': { group: 'ship', rank: 8 },
 };
 
 const DIVERGED: KindFacts = { group: 'update', rank: 2 };

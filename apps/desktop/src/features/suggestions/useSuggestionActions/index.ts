@@ -37,6 +37,13 @@ import { fixChecksActions } from './fixChecksActions';
 import { mergeSeriesAction } from './mergeSeriesAction';
 import { planReadyAction } from './planReadyAction';
 import { moveTrackerAction } from './moveTrackerAction';
+import { askAgentAction } from './askAgentAction';
+import { openSessionTerminal } from '../../terminal/openSessionTerminal';
+import { typedCommandOf } from '../../terminal/typedCommandOf';
+import { closeWorktreeAction } from './closeWorktreeAction';
+import { commandAction } from './commandAction';
+import { rerunCheckAction } from './rerunCheckAction';
+import { unmountFolderAction } from './unmountFolderAction';
 
 const REVIEW_THE_CHANGES = 'Review the changes';
 
@@ -110,6 +117,10 @@ export const useSuggestionActions = ({
   const markPrReady = useAppStore((state) => state.markPrReady);
   const mergePr = useAppStore((state) => state.mergePr);
   const resolveMountCleanup = useAppStore((state) => state.resolveMountCleanup);
+  const removeMountWorktree = useAppStore((state) => state.removeMountWorktree);
+  const runDiscoveredScript = useAppStore((state) => state.runDiscoveredScript);
+  const unmountMount = useAppStore((state) => state.unmountMount);
+  const sendAgentMessage = useAppStore((state) => state.sendAgentMessage);
   const mergeSeriesInOrder = useAppStore((state) => state.mergeSeriesInOrder);
   const moveTrackerItem = useAppStore((state) => state.moveTrackerItem);
   const undoTrackerMove = useAppStore((state) => state.undoTrackerMove);
@@ -500,31 +511,78 @@ export const useSuggestionActions = ({
       };
     }
     if (suggestion.kind === 'close-worktree') {
-      const worktrees = suggestion.payload.worktrees;
-      const isMany = worktrees.length > 1;
       return {
-        primary: {
-          label: isMany ? NAMES.removeWorktrees : NAMES.removeWorktree,
-          shortLabel: 'Remove',
-          isDisabled: false,
-          requiresConfirm: true,
-          failureTitle: isMany ? "Couldn't remove the worktrees" : "Couldn't remove the worktree",
-          run: async () => {
-            for (const worktree of worktrees) {
-              await resolveMountCleanup({
-                sessionId,
-                requestId: worktree.requestId,
-                decision: 'remove',
-              });
-            }
-          },
-        },
+        primary: closeWorktreeAction({
+          sessionId,
+          worktrees: suggestion.payload.worktrees,
+          isProposed: ({ requestId }) =>
+            (useAppStore.getState().mountCleanupProposals[sessionId] ?? EMPTY_ARRAY).some(
+              (proposal) => proposal.requestId === requestId,
+            ),
+          resolveCleanup: resolveMountCleanup,
+          removeWorktree: removeMountWorktree,
+        }),
         onDismiss: null,
       };
     }
     if (suggestion.kind === 'archive-session') {
       return {
         primary: archiveSessionAction({ session, bulkArchiveTask, bulkUnarchiveTask, showToast }),
+        onDismiss: null,
+      };
+    }
+    if (suggestion.kind === 'rerun-check') {
+      const mount = mounts.find((candidate) => candidate.mountId === suggestion.payload.mountId);
+      return {
+        primary: rerunCheckAction({
+          payload: suggestion.payload,
+          workspaceId: session.workspaceId,
+          projectId: mount?.projectId ?? null,
+        }),
+        onDismiss: null,
+      };
+    }
+    if (suggestion.kind === 'run-failing-test' || suggestion.kind === 'next-script') {
+      const isTest = suggestion.kind === 'run-failing-test';
+      const name = isTest ? suggestion.payload.testName : suggestion.payload.scriptName;
+      return {
+        primary: commandAction({
+          sessionId,
+          mountId: suggestion.payload.mountId,
+          name,
+          command: suggestion.payload.command,
+          failureTitle: isTest ? "Couldn't open the terminal" : `Couldn't run ${name}`,
+          openTerminal: ({ cwd, prefill }) =>
+            openSessionTerminal({
+              state: useAppStore.getState(),
+              sessionId,
+              cwd,
+              prefill: typedCommandOf({ text: prefill }),
+            }),
+          runScript: runDiscoveredScript,
+        }),
+        onDismiss: null,
+      };
+    }
+    if (suggestion.kind === 'unmount-folder') {
+      return {
+        primary: unmountFolderAction({
+          sessionId,
+          mountId: suggestion.payload.mountId,
+          projectName: suggestion.payload.projectName,
+          unmountMount,
+        }),
+        onDismiss: null,
+      };
+    }
+    if (suggestion.kind === 'ask-agent') {
+      return {
+        primary: askAgentAction({
+          sessionId,
+          agentId: suggestion.payload.agentId,
+          agentLabel: suggestion.payload.agentLabel,
+          sendAgentMessage,
+        }),
         onDismiss: null,
       };
     }

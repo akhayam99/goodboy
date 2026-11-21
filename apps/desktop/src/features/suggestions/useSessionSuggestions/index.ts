@@ -2,9 +2,6 @@ import { useEffect, useMemo } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import type {
   Agent,
-  AgentId,
-  AgentStatus,
-  MountId,
   PlanId,
   Session,
   SessionEvent,
@@ -24,16 +21,15 @@ import {
   isWorkingTreeClean,
 } from '../../../shared/lib/gitStatus';
 import { branchPushStateOf } from '../../../shared/lib/branchPushState';
-import {
-  selectCheckChain,
-  type CheckChainState,
-} from '../../../store/slices/agents/selectCheckChain';
-import { checkOutcomeOf, type CheckOutcome } from '../../branch/checks/checkOutcomeOf';
-import { checkStepTargetOf } from '../../branch/checks/checkStepTargetOf';
-import {
-  useCheckFixCommitSync,
-  type CheckFixTarget,
-} from '../../../shared/hooks/useCheckFixCommitSync';
+import { useCheckChains } from '../hooks/useCheckChains';
+import { useCheckSignals } from '../hooks/useCheckSignals';
+import { useScriptSignals } from '../hooks/useScriptSignals';
+import { useTurnSignals } from '../hooks/useTurnSignals';
+import { idleMountsOf } from '../signals/idleMountsOf';
+import { nextScriptRulesOf } from '../signals/nextScriptRulesOf';
+import { mergedMountsOf } from '../signals/mergedMountsOf';
+import type { NextStepSignals, SignalQuietAgent } from '../nextStepSignals';
+import { deriveNextSteps } from '../deriveNextSteps';
 import { workflowHasOpenQuestions } from '../../context/openQuestionsGate';
 import { planOwnerOf } from '../../plans/planOwnerOf';
 import { isPlanHeldByAuto } from '../../auto/isPlanHeldByAuto';
@@ -44,9 +40,8 @@ import { useWorkflowAdvanceStates } from '../../workflows/useWorkflowAdvanceStat
 import { useWorktreeStatuses } from '../../session/hooks/useWorktreeStatuses';
 import { AGENT_KIND_META, classifyAgent } from '../../session/agent-kind';
 import {
-  deriveNextSteps,
   type SuggestionAgent,
-  type SuggestionCheckChain,
+  type SuggestionFailedCheck,
   type SuggestionRebaseRequest,
 } from '../deriveNextSteps';
 import { useReviewTally } from '../../resolve/useReviewTally';
@@ -55,7 +50,7 @@ import { pendingAgentSignal } from '../pendingAgentSignal';
 import { useNextStepOutcomes } from '../useNextStepOutcomes';
 import { shouldDemote } from '../nextStepGates';
 import { scribeRequestStateOf } from '../scribeRequestStateOf';
-import { SUGGESTION_KINDS, type SuggestionKind } from '../types';
+import { SUGGESTION_KINDS, type NextMove, type SuggestionKind } from '../types';
 import { projectById } from '../../../store/slices/projects/projectIndex';
 import { askingAutoRootOf } from '../../auto/askingAutoRootOf';
 import type { TrackerMove } from '../../../store/slices/tracker-moves/types';
@@ -79,6 +74,12 @@ const NO_SHOWN_QUESTIONS: ReadonlySet<string> = new Set();
 
 const NO_TRACKER_MOVES: ReadonlyArray<TrackerMove> = [];
 
+type ProjectNameParams = {
+  readonly mount: SessionProjectMount;
+};
+
+const NO_FAILED_CHECKS: ReadonlyArray<SuggestionFailedCheck> = [];
+
 type LatestRebaseRequestsParams = {
   readonly events: ReadonlyArray<SessionEvent>;
   readonly agents: ReadonlyArray<Agent>;
@@ -95,18 +96,6 @@ type RebaseTargetIdParams = {
 
 const NO_TARGETS: ReadonlyArray<{ readonly worktreePath: string; readonly baseBranch?: string }> =
   [];
-const NO_FIX_TARGETS: ReadonlyArray<CheckFixTarget> = [];
-
-type ChainRow = {
-  readonly mountId: MountId;
-  readonly checkName: string;
-  readonly chain: CheckChainState;
-  readonly commit: string | null;
-  readonly commitCount: number;
-  readonly outcome: CheckOutcome | null;
-  readonly fixAgentId: AgentId | null;
-  readonly fixStatus: AgentStatus | null;
-};
 
 const rebaseRequestKey = ({ mountId, projectId }: RebaseRequestKeyParams): string =>
   mountId == null ? `project:${projectId}` : `mount:${mountId}`;
@@ -135,7 +124,7 @@ const latestRebaseRequests = ({
   return requests;
 };
 
-export const useSessionSuggestionsFrom = ({
+export const useNextStepSignalsFrom = ({
   session,
   agents,
   withRebase = true,
@@ -143,7 +132,7 @@ export const useSessionSuggestionsFrom = ({
   attachedRuns,
   advanceByRunId,
   isActivityShown = true,
-}: FromParams) => {
+}: FromParams): NextStepSignals => {
   const sessionId = session.id;
   const storedAgents = useAppStore(
     (state) => state.sessionPhaseRuns[sessionId] ?? (EMPTY_ARRAY as ReadonlyArray<Agent>),
@@ -227,72 +216,7 @@ export const useSessionSuggestionsFrom = ({
         : { merged: mergedMountCount, closed: completedMountIds.length - mergedMountCount },
     [completedMountIds.length, mergedMountCount, rebaseMounts.length],
   );
-  const chainRowsJson = useAppStore((state) =>
-    JSON.stringify(
-      rebaseMounts.flatMap((mount): ReadonlyArray<ChainRow> => {
-        const { target, failing } = checkStepTargetOf({
-          state,
-          sessionId,
-          mountId: mount.mountId,
-          prNumber: state.mountGithub[mount.mountId]?.pr?.number ?? null,
-        });
-        if (target === null) {
-          return [];
-        }
-        const chain = selectCheckChain({ state, sessionId, url: target.url });
-        if (chain.state === 'none') {
-          return [];
-        }
-        const outcome =
-          chain.state === 'fixed-pushed'
-            ? checkOutcomeOf({
-                checks: failing?.allChecks ?? [],
-                name: target.name,
-                analyzedUrl: target.url,
-              })
-            : null;
-        return [
-          {
-            mountId: mount.mountId,
-            checkName: target.name ?? 'The check',
-            chain: chain.state,
-            commit: chain.commit,
-            commitCount: chain.commitCount,
-            outcome,
-            fixAgentId: chain.fix?.id ?? null,
-            fixStatus: chain.fix?.status ?? null,
-          },
-        ];
-      }),
-    ),
-  );
-  const chainRows = useMemo(
-    (): ReadonlyArray<ChainRow> => JSON.parse(chainRowsJson),
-    [chainRowsJson],
-  );
-  const checkChains = useMemo(
-    (): ReadonlyArray<SuggestionCheckChain> =>
-      chainRows.map(({ mountId, checkName, chain, commit, commitCount, outcome }) => ({
-        mountId,
-        checkName,
-        chain,
-        commit,
-        commitCount,
-        outcome,
-      })),
-    [chainRows],
-  );
-  const fixTargets = useMemo(
-    (): ReadonlyArray<CheckFixTarget> =>
-      chainRows.flatMap(({ mountId, fixAgentId, fixStatus }) =>
-        fixAgentId === null || fixStatus !== 'completed' ? [] : [{ mountId, fixAgentId }],
-      ),
-    [chainRows],
-  );
-  useCheckFixCommitSync({
-    sessionId,
-    targets: fixTargets.length === 0 ? NO_FIX_TARGETS : fixTargets,
-  });
+  const checkChains = useCheckChains({ sessionId, rebaseMounts });
   const projects = useAppStore(
     useShallow((state) =>
       state.projects.filter((project) => mounts.some((mount) => mount.projectId === project.id)),
@@ -337,7 +261,41 @@ export const useSessionSuggestionsFrom = ({
     return demoted;
   }, [outcomes]);
 
-  return useMemo(() => {
+  const checkSignals = useCheckSignals({ session, mounts: rebaseMounts });
+  const turnSignals = useTurnSignals({ sessionId, agents: effectiveAgents });
+  const wantedMountIds = useMemo(
+    () =>
+      rebaseMounts
+        .filter(
+          (mount) =>
+            (checkSignals.failedChecks[mount.mountId]?.length ?? 0) > 0 ||
+            turnSignals.turnFiles.some(
+              (entry) =>
+                entry.mountId === mount.mountId &&
+                nextScriptRulesOf({ paths: entry.paths }).length > 0,
+            ),
+        )
+        .map((mount) => mount.mountId),
+    [checkSignals.failedChecks, rebaseMounts, turnSignals.turnFiles],
+  );
+  const scriptSignals = useScriptSignals({ sessionId, mounts: rebaseMounts, wantedMountIds });
+  const mergedFacts = useAppStore(
+    useShallow((state) =>
+      completedMountIds.flatMap((mountId) =>
+        isMountRequestMerged({ state, mountId })
+          ? [
+              {
+                mountId,
+                prNumber: state.mountGithub[mountId]?.pr?.number ?? null,
+                mergedAt: state.mountGithub[mountId]?.pr?.mergedAt ?? null,
+              },
+            ]
+          : [],
+      ),
+    ),
+  );
+
+  return useMemo((): NextStepSignals => {
     const consumedPlanIds = new Set<PlanId>();
     for (let planIndex = 0; planIndex < plans.length; planIndex += 1) {
       const plan = plans[planIndex];
@@ -360,7 +318,10 @@ export const useSessionSuggestionsFrom = ({
       .filter((question) => question.status === 'open' && !shownQuestionIds.has(question.id))
       .sort((first, second) => first.createdAt.localeCompare(second.createdAt));
     const firstOffScreen = offScreenQuestions[0] ?? null;
-    return deriveNextSteps({
+    const proposedMountIds = new Set<string>(cleanupProposals.map((proposal) => proposal.mountId));
+    const projectNameOf = ({ mount }: ProjectNameParams): string =>
+      projectById(projects, mount.projectId)?.name ?? mount.mountName;
+    return {
       sessionId,
       workflowRuns: active.map(({ run, workflow }) => {
         const advance = advanceByRunId.get(run.id);
@@ -438,6 +399,13 @@ export const useSessionSuggestionsFrom = ({
               changedCount:
                 status == null ? null : changedCount({ workingTree: status.workingTree }),
               rebaseRequest: mountRequest ?? projectRequest ?? null,
+              rebaseStop:
+                status?.inProgress === 'rebase'
+                  ? {
+                      conflicts:
+                        status.workingTree.kind === 'known' ? status.workingTree.unmerged : 0,
+                    }
+                  : null,
             };
           })
         : [],
@@ -483,6 +451,7 @@ export const useSessionSuggestionsFrom = ({
               pr: githubState?.pr ?? null,
               fetchedAt: githubState?.fetchedAt ?? null,
               scribe: scribeRequestStateOf({ scribeWork, mountId: mount.mountId }),
+              failedChecks: checkSignals.failedChecks[mount.mountId] ?? NO_FAILED_CHECKS,
             };
           })
         : [],
@@ -505,8 +474,54 @@ export const useSessionSuggestionsFrom = ({
       recommendedWorkflow,
       dismissedFingerprints,
       demotedKinds,
-    });
+      checkLogs: checkSignals.checkLogs,
+      scripts: scriptSignals.scripts,
+      scriptRuns: scriptSignals.scriptRuns,
+      turnFiles: turnSignals.turnFiles,
+      quietAgents: effectiveAgents.flatMap((agent): ReadonlyArray<SignalQuietAgent> => {
+        const quietMs = turnSignals.quietByAgent[agent.id];
+        if (quietMs === undefined) {
+          return [];
+        }
+        const kind = classifyAgent({
+          agent: { kind: agent.kind, name: agent.name ?? agent.id },
+          override: agentKindOverride[agent.id] ?? null,
+        });
+        return [{ agentId: agent.id, label: AGENT_KIND_META[kind].noun, quietMs }];
+      }),
+      mergedMounts: mergedMountsOf({
+        mounts,
+        merged: mergedFacts,
+        proposedMountIds,
+        projectNameOf,
+      }),
+      idleMounts: withRebase
+        ? idleMountsOf({
+            mounts: rebaseMounts,
+            touches: turnSignals.touches,
+            proposedMountIds,
+            projectNameOf,
+            facts: rebaseMounts.map((mount) => {
+              const status = worktreeStatuses.get(mount.worktreePath) ?? null;
+              const pr = mountGithubByMountId[mount.mountId]?.pr ?? null;
+              return {
+                mountId: mount.mountId,
+                isRepo: projectById(projects, mount.projectId)?.kind === 'repo',
+                isClean:
+                  status == null ? null : isWorkingTreeClean({ workingTree: status.workingTree }),
+                push: status == null ? null : branchPushStateOf({ status }),
+                hasOpenPr: pr !== null && pr.state !== 'merged' && pr.state !== 'closed',
+              };
+            }),
+          })
+        : [],
+    };
   }, [
+    checkSignals,
+    scriptSignals,
+    turnSignals,
+    mergedFacts,
+    mounts,
     dismissedFingerprints,
     active,
     advanceByRunId,
@@ -542,6 +557,11 @@ export const useSessionSuggestionsFrom = ({
     withRebase,
     worktreeStatuses,
   ]);
+};
+
+export const useSessionSuggestionsFrom = ({ ...rest }: FromParams): ReadonlyArray<NextMove> => {
+  const signals = useNextStepSignalsFrom(rest);
+  return useMemo(() => deriveNextSteps({ signals }), [signals]);
 };
 
 export const useSessionSuggestions = ({ session, agents, ...rest }: Params) => {

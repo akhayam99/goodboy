@@ -40,7 +40,14 @@ export const SUGGESTION_KINDS = [
   'close-worktree',
   'archive-session',
   'continue-with-workflow',
+  'run-failing-test',
+  'next-script',
+  'rerun-check',
+  'unmount-folder',
+  'ask-agent',
 ] as const;
+
+export type NextScriptRule = 'migrations' | 'lockfile' | 'schema';
 
 export type SuggestionKind = (typeof SUGGESTION_KINDS)[number];
 
@@ -61,6 +68,76 @@ export type SuggestionQuestion = {
 
 export type NextStepBand = 0 | 1 | 2 | 3;
 
+export type MoveGroup = 'unblock' | 'advance' | 'upkeep';
+
+export type MoveTool =
+  | 'workflow'
+  | 'plans'
+  | 'questions'
+  | 'review'
+  | 'chat'
+  | 'agent'
+  | 'mounts'
+  | 'branch'
+  | 'checks'
+  | 'scripts'
+  | 'terminal'
+  | 'tracker'
+  | 'session';
+
+export type MovePlace = {
+  readonly tool: MoveTool;
+  readonly mountId: MountId | null;
+  readonly agentId: AgentId | null;
+};
+
+export type CompletesWhen =
+  | {
+      readonly kind: 'check-passes';
+      readonly mountId: MountId;
+      readonly checkName: string;
+    }
+  | {
+      readonly kind: 'script-succeeds';
+      readonly mountId: MountId | null;
+      readonly scriptName: string;
+    }
+  | { readonly kind: 'folder-mounted'; readonly projectId: ProjectId }
+  | { readonly kind: 'folder-unmounted'; readonly mountId: MountId }
+  | { readonly kind: 'worktree-removed'; readonly mountId: MountId }
+  | { readonly kind: 'agent-answers'; readonly agentId: AgentId }
+  | { readonly kind: 'pr-merged'; readonly mountId: MountId }
+  | { readonly kind: 'rebase-finished'; readonly mountId: MountId }
+  | { readonly kind: 'move-gone' };
+
+export type MoveEvidence =
+  | { readonly kind: 'log'; readonly label: string; readonly lines: ReadonlyArray<string> }
+  | { readonly kind: 'files'; readonly label: string; readonly paths: ReadonlyArray<string> }
+  | { readonly kind: 'quiet'; readonly label: string; readonly quietMs: number }
+  | { readonly kind: 'command'; readonly label: string; readonly command: string }
+  | { readonly kind: 'link'; readonly label: string; readonly url: string };
+
+export type MoveCommand = {
+  readonly text: string;
+  readonly cwd: string;
+  readonly mode: 'run' | 'type';
+  readonly scriptId: string | null;
+};
+
+export type MoveRead = {
+  readonly state: 'fresh' | 'stale' | 'unread';
+  readonly fetchedAt: string | null;
+};
+
+export type MoveFacts = {
+  readonly reason: string;
+  readonly evidence: ReadonlyArray<MoveEvidence>;
+  readonly place: MovePlace;
+  readonly completesWhen: CompletesWhen;
+  readonly group: MoveGroup;
+  readonly read: MoveRead | null;
+};
+
 type SuggestionBase = {
   readonly id: string;
   readonly priority: number;
@@ -77,6 +154,7 @@ type CleanupWorktree = {
   readonly requestId: string;
   readonly branch: string;
   readonly prNumber: number | null;
+  readonly reason?: 'merge_cleanup' | 'unmount';
 };
 
 export type RebaseSuggestionTarget = {
@@ -89,6 +167,7 @@ export type RebaseSuggestionTarget = {
   readonly baseBranch: string;
   readonly behind: number;
   readonly dirtyCount: number;
+  readonly conflictCount?: number;
 };
 
 export type OpenPrTarget = {
@@ -136,6 +215,7 @@ export type SessionSuggestion =
         readonly reason: string;
         readonly agentId: AgentId | null;
         readonly eventId: SessionEventId;
+        readonly askCount?: number;
       };
     })
   | (SuggestionBase & {
@@ -237,4 +317,52 @@ export type SessionSuggestion =
   | (SuggestionBase & {
       readonly kind: 'continue-with-workflow';
       readonly payload: { readonly workflowId: WorkflowId; readonly workflowName: string };
+    })
+  | (SuggestionBase & {
+      readonly kind: 'run-failing-test';
+      readonly payload: {
+        readonly mountId: MountId;
+        readonly prNumber: number;
+        readonly checkName: string;
+        readonly testName: string;
+        readonly command: MoveCommand;
+      };
+    })
+  | (SuggestionBase & {
+      readonly kind: 'next-script';
+      readonly payload: {
+        readonly mountId: MountId;
+        readonly scriptName: string;
+        readonly rule: NextScriptRule;
+        readonly command: MoveCommand;
+      };
+    })
+  | (SuggestionBase & {
+      readonly kind: 'rerun-check';
+      readonly payload: {
+        readonly mountId: MountId;
+        readonly prNumber: number;
+        readonly checkName: string;
+        readonly runId: string;
+        readonly cwd: string;
+      };
+    })
+  | (SuggestionBase & {
+      readonly kind: 'unmount-folder';
+      readonly payload: {
+        readonly mountId: MountId;
+        readonly projectId: ProjectId;
+        readonly projectName: string;
+        readonly idleDays: number;
+      };
+    })
+  | (SuggestionBase & {
+      readonly kind: 'ask-agent';
+      readonly payload: {
+        readonly agentId: AgentId;
+        readonly agentLabel: string;
+        readonly quietMs: number;
+      };
     });
+
+export type NextMove = SessionSuggestion & MoveFacts;

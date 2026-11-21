@@ -1,6 +1,6 @@
 import type { SessionSuggestion, SuggestionKind } from './types';
 
-const FIVE_MINUTES_MS = 5 * 60 * 1_000;
+const FRESH_READ_MS = 8 * 60 * 1_000;
 
 type IsFreshParams = {
   readonly fetchedAt: string | null;
@@ -8,9 +8,9 @@ type IsFreshParams = {
   readonly maxAgeMs?: number;
 };
 
-export const isFresh = ({ fetchedAt, now, maxAgeMs = FIVE_MINUTES_MS }: IsFreshParams): boolean => {
+export const isFresh = ({ fetchedAt, now, maxAgeMs = FRESH_READ_MS }: IsFreshParams): boolean => {
   if (fetchedAt === null) {
-    return true;
+    return false;
   }
   const age = now() - Date.parse(fetchedAt);
   return age <= maxAgeMs;

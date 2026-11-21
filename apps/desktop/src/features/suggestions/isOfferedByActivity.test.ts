@@ -96,18 +96,20 @@ const nextOf = ({
   const checkChains: ReadonlyArray<SuggestionCheckChain> =
     progress === null ? [] : [{ ...progress, mountId }];
   return deriveNextSteps({
-    sessionId,
-    workflowRuns: [],
-    plans: [],
-    consumedPlanIds: new Set(),
-    openQuestionCount: 0,
-    hasPullRequest: true,
-    eligibleThreadCount: 0,
-    projects: [],
-    mountEvents: [],
-    mounts: [mount],
-    checkChains,
-    agents: hasRunningAgent ? [...agents, RUNNING_ON_MOUNT] : agents,
+    signals: {
+      sessionId,
+      workflowRuns: [],
+      plans: [],
+      consumedPlanIds: new Set(),
+      openQuestionCount: 0,
+      hasPullRequest: true,
+      eligibleThreadCount: 0,
+      projects: [],
+      mountEvents: [],
+      mounts: [mount],
+      checkChains,
+      agents: hasRunningAgent ? [...agents, RUNNING_ON_MOUNT] : agents,
+    },
   });
 };
 

@@ -212,5 +212,62 @@ export const everySuggestionKind = ({
         workflowName: 'Plan and ship',
       },
     },
+    'run-failing-test': {
+      ...base,
+      id: 'run-failing-test:mount-web',
+      kind: 'run-failing-test',
+      payload: {
+        mountId: webMountId,
+        prNumber: 418,
+        checkName: 'integration-tests',
+        testName: 'src/ledger/rounding.test.ts',
+        command: {
+          text: 'pnpm test src/ledger/rounding.test.ts',
+          cwd: '/work/ledger-core',
+          mode: 'type',
+          scriptId: null,
+        },
+      },
+    },
+    'next-script': {
+      ...base,
+      id: 'next-script:mount-web:migrations',
+      kind: 'next-script',
+      payload: {
+        mountId: webMountId,
+        scriptName: 'db:migrate',
+        rule: 'migrations',
+        command: {
+          text: 'pnpm run db:migrate',
+          cwd: '/work/ledger-core',
+          mode: 'type',
+          scriptId: null,
+        },
+      },
+    },
+    'rerun-check': {
+      ...base,
+      id: 'rerun-check:mount-web',
+      kind: 'rerun-check',
+      payload: {
+        mountId: webMountId,
+        prNumber: 418,
+        checkName: 'integration-tests',
+        runId: '123456',
+        cwd: '/work/ledger-core',
+      },
+    },
+    'unmount-folder': {
+      ...base,
+      id: 'unmount-folder:mount-web',
+      kind: 'unmount-folder',
+      payload: { mountId: webMountId, projectId: webId, projectName: 'ledger-core', idleDays: 9 },
+    },
+    'ask-agent': {
+      ...base,
+      id: 'ask-agent:agent-1',
+      kind: 'ask-agent',
+      payload: { agentId, agentLabel: 'Implementer', quietMs: 420_000 },
+    },
   };
 };

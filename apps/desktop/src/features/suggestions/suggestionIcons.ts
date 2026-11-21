@@ -24,4 +24,9 @@ export const SUGGESTION_ICONS: Record<SuggestionKind, IconGlyph> = {
   'close-worktree': CONCEPT_ICONS.delete,
   'archive-session': CONCEPT_ICONS.archive,
   'continue-with-workflow': CONCEPT_ICONS.workflows,
+  'run-failing-test': CONCEPT_ICONS.terminal,
+  'next-script': CONCEPT_ICONS.scripts,
+  'rerun-check': CONCEPT_ICONS.retry,
+  'unmount-folder': CONCEPT_ICONS.delete,
+  'ask-agent': CONCEPT_ICONS.questions,
 };

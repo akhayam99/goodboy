@@ -27,17 +27,17 @@ const suggestion = (overrides: Partial<SessionSuggestion> = {}): SessionSuggesti
   }) as SessionSuggestion;
 
 describe('isFresh', () => {
-  it('treats unknown freshness (no fetchedAt) as fresh', () => {
-    expect(isFresh({ fetchedAt: null, now: () => Date.now() })).toBe(true);
+  it('treats a read that never happened as not fresh', () => {
+    expect(isFresh({ fetchedAt: null, now: () => Date.now() })).toBe(false);
   });
 
-  it('is fresh within the 5 minute default window', () => {
-    const now = Date.parse('2026-06-08T10:04:00.000Z');
+  it('is fresh within the default window, longer than one poll round', () => {
+    const now = Date.parse('2026-06-08T10:07:00.000Z');
     expect(isFresh({ fetchedAt: '2026-06-08T10:00:00.000Z', now: () => now })).toBe(true);
   });
 
   it('is stale past the default window', () => {
-    const now = Date.parse('2026-06-08T10:06:00.000Z');
+    const now = Date.parse('2026-06-08T10:09:00.000Z');
     expect(isFresh({ fetchedAt: '2026-06-08T10:00:00.000Z', now: () => now })).toBe(false);
   });
 });

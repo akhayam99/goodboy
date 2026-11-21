@@ -823,7 +823,6 @@
     "apps/desktop/src/features/storage/components/StoragePage/useWorktreeActionTarget.ts": 2,
     "apps/desktop/src/features/storage/components/StoragePage/WorktreeSection.tsx": 2,
     "apps/desktop/src/features/storage/groupStorageFolders.ts": 2,
-    "apps/desktop/src/features/suggestions/deriveNextSteps.ts": 1,
     "apps/desktop/src/features/suggestions/eligibleThreads.ts": 2,
     "apps/desktop/src/features/suggestions/nextStepGates.ts": 1,
     "apps/desktop/src/features/suggestions/nextStepOutcomes.ts": 5,

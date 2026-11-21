@@ -95,8 +95,15 @@ Know the moves that unblock the task, such as answering a question, fixing a fai
 - A question or an approval of your own is never put away this way.
 - **Analyze** starts the Debugger on a failing check. Its next moves (open the analysis, **Start fix**, **Push**) then sit on that run.
 - **Open a pull request** names the branch it opens. With several branches still without one, the row of the branch furthest ahead offers it.
-- Once a pull request merges, **Remove the payments-api worktree** is offered with the reason and its size (`#418 merged · 412 MB`).
+- Once a pull request merges, **Remove the payments-api worktree** is offered with the reason and its size (`#418 merged · 412 MB`), or with its age (`#418 merged 3d ago`) when Goodboy reads the merge before the cleanup is proposed.
 - When the last branch is merged or closed and a linked Linear or Jira item is not done, **Move HBL-412 to Done** is offered. The toast has **Undo**.
+- **Run the failing test** names the test a failed GitHub Actions check points at and writes the command in the terminal of that worktree. It waits for your Enter.
+- After a turn that changed a migration, a lockfile or a schema, the script that follows is offered with the file as its reason. **db:migrate** is written and waits for Enter. An install or a generate runs on the click.
+- **Rerun integration-tests** shows when the job log says the check timed out. It reruns only the failed jobs. A check outside GitHub Actions shows **Open on** and the host instead of a log.
+- **Ask the Implementer what blocks it** shows when an agent has been quiet for 5 minutes. After 30 minutes the question moves to Needs you.
+- A stopped rebase comes first, above **Rerun**, and says how many files conflict.
+- A folder no turn touched for 7 days offers **Remove from session**. A clean worktree with nothing to push, no pull request and no change for 7 days offers **Remove the ledger-core worktree**. Only one such move shows, and only when nothing else is left.
+- A move whose pull request read is old stays and says **Checked 12m ago** with **Recheck**. When a move is done, a quiet line such as "integration-tests passed on rerun" stays for 2 seconds.
 - **Archive this session** shows with the reason "All branches merged". It needs every branch merged or closed and nothing running, waiting or asking. The toast offers **Undo**.
 
 **A stopped rebase**
