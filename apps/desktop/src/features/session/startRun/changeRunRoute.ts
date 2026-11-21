@@ -13,6 +13,7 @@ import {
 } from '@goodboy/types';
 import { useAppStore } from '../../../store';
 import { sessionById } from '../../../store/slices/sessions/sessionIndex';
+import { OldRunLeftError } from './OldRunLeftError';
 import { presetSnapshotOf } from './presetSnapshotOf';
 import { leadRouteOf, olderPlanRouteOf, presetRouteOf } from './routeChoiceOf';
 import { runFindingsOf } from './runFindingsOf';
@@ -79,6 +80,35 @@ type PlanParams = {
   readonly shouldEndRun: boolean;
 };
 
+type EndParams = {
+  readonly sessionId: SessionId;
+  readonly runId: WorkflowRunId;
+  readonly step: 'discard' | 'close';
+};
+
+const endOldRun = async ({ sessionId, runId, step }: EndParams): Promise<void> => {
+  if (step === 'discard') {
+    await useAppStore.getState().discardWorkflow(sessionId, runId);
+    return;
+  }
+  const outcome = await useAppStore.getState().closeWorkflowRun(sessionId, runId);
+  if (outcome === 'failed') {
+    throw new Error(RUN_ROUTE_COPY.notEnded);
+  }
+};
+
+const endOldRunAfterStart = async ({ sessionId, runId, step }: EndParams): Promise<void> => {
+  try {
+    await endOldRun({ sessionId, runId, step });
+  } catch (failure) {
+    throw new OldRunLeftError({
+      message: RUN_ROUTE_COPY.notEnded,
+      failure,
+      endOldRun: () => endOldRun({ sessionId, runId, step }),
+    });
+  }
+};
+
 const changePlanRun = async ({
   sessionId,
   runId,
@@ -138,7 +168,7 @@ const changePlanRun = async ({
       result: next,
       guidance: run.rulesSnapshot?.standingGuidance ?? null,
     });
-    await useAppStore.getState().discardWorkflow(sessionId, runId);
+    await endOldRunAfterStart({ sessionId, runId, step: 'discard' });
     return 'restarted';
   }
   const isGoing = agents.some((agent) => agent.status === 'running' || agent.status === 'pending');
@@ -161,10 +191,7 @@ const changePlanRun = async ({
   if (!shouldEndRun) {
     return 'second-run';
   }
-  const outcome = await useAppStore.getState().closeWorkflowRun(sessionId, runId);
-  if (outcome === 'failed') {
-    throw new Error(RUN_ROUTE_COPY.notEnded);
-  }
+  await endOldRunAfterStart({ sessionId, runId, step: 'close' });
   return 'restarted';
 };
 

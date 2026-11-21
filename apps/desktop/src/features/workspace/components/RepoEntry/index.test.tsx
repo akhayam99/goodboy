@@ -461,7 +461,7 @@ describe('the repository detail inside the entry', () => {
     open();
     unfoldQuiet();
     fireEvent.click(screen.getByRole('button', { name: 'payments-api' }));
-    expect(screen.getByText('This folder has no git repository yet')).toBeDefined();
+    expect(await screen.findByText('This folder has no git repository yet')).toBeDefined();
     fireEvent.click(screen.getByRole('button', { name: 'Start a repository' }));
 
     await waitFor(() =>
@@ -482,14 +482,16 @@ describe('the repository detail inside the entry', () => {
     open();
     unfoldQuiet();
     fireEvent.click(screen.getByRole('button', { name: 'payments-api' }));
-    fireEvent.click(screen.getByRole('button', { name: /Fast-forward main to origin\/main/ }));
+    fireEvent.click(
+      await screen.findByRole('button', { name: /Fast-forward main to origin\/main/ }),
+    );
     await waitFor(() => expect(callsOf({ command: 'checkout_fast_forward' })).toHaveLength(1));
 
     fireEvent.click(screen.getByRole('button', { name: 'payments-api' }));
     expect(rowOf({ name: 'payments-api' })).toBeDefined();
   });
 
-  it('shows an editor launch failure as an alert', async () => {
+  it('logs an editor launch failure once and draws no red line', async () => {
     await mount({
       projects: [PAYMENTS],
       answers: {},
@@ -506,7 +508,8 @@ describe('the repository detail inside the entry', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Open in editor' }));
 
     await waitFor(() =>
-      expect(screen.getByRole('alert').textContent).toContain('editor unavailable'),
+      expect(useAppStore.getState().notifications[0]?.body).toContain('editor unavailable'),
     );
+    expect(screen.queryByRole('alert')).toBeNull();
   });
 });

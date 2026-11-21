@@ -28,6 +28,7 @@ import {
   type StoryStore,
 } from '../../../../store/storyHarness';
 import { mapNotificationAction } from './';
+import { registerActionRetry } from '../../../../store/slices/notifications/actionRetries';
 
 const SESSION_ID = brandId<SessionId>({ value: 'session-1' });
 const MOUNT_ID = brandId<MountId>({ value: 'mount-1' });
@@ -167,5 +168,84 @@ describe('recovery actions of a reported error', () => {
         clause: 'work-kept',
       },
     });
+  });
+
+  it('retry-action: runs the action again and clears the failure when it works', async () => {
+    const retry = vi.fn(async () => true);
+    const retryId = registerActionRetry({ retry });
+    const action: NotificationAction = { kind: 'retry-action', retryId };
+    const toastAction = mapNotificationAction(action, useAppStore.getState(), {
+      ...notificationOf(action),
+      coalesceKey: "error:ws-1:error:Couldn't delete 2 local branches",
+    });
+    expect(toastAction?.label).toBe('Retry');
+    toastAction?.onClick();
+    await vi.waitFor(() =>
+      expect(resolveNotificationsSpy).toHaveBeenCalledWith([
+        "error:ws-1:error:Couldn't delete 2 local branches",
+      ]),
+    );
+    expect(retry).toHaveBeenCalledTimes(1);
+  });
+
+  it('retry-action: a retry that fails again keeps the failure row', async () => {
+    const retry = vi.fn(async () => false);
+    const action: NotificationAction = {
+      kind: 'retry-action',
+      retryId: registerActionRetry({ retry }),
+    };
+    mapNotificationAction(action, useAppStore.getState(), {
+      ...notificationOf(action),
+      coalesceKey: 'error:ws-1:error:x',
+    })?.onClick();
+    await vi.waitFor(() => expect(retry).toHaveBeenCalledTimes(1));
+    expect(resolveNotificationsSpy).not.toHaveBeenCalled();
+  });
+
+  it('retry-action: the toast and the bell clicked together run the action once, and never again after it worked', async () => {
+    let finish: (isDone: boolean) => void = () => undefined;
+    const retry = vi.fn(
+      () =>
+        new Promise<boolean>((resolve) => {
+          finish = resolve;
+        }),
+    );
+    const action: NotificationAction = {
+      kind: 'retry-action',
+      retryId: registerActionRetry({ retry }),
+    };
+    const notification = { ...notificationOf(action), coalesceKey: 'error:ws-1:error:copy' };
+    const toast = mapNotificationAction(action, useAppStore.getState(), notification);
+    const bell = mapNotificationAction(action, useAppStore.getState(), notification);
+
+    toast?.onClick();
+    bell?.onClick();
+    expect(retry).toHaveBeenCalledTimes(1);
+    finish(true);
+    await vi.waitFor(() => expect(resolveNotificationsSpy).toHaveBeenCalled());
+
+    toast?.onClick();
+    expect(retry).toHaveBeenCalledTimes(1);
+    expect(mapNotificationAction(action, useAppStore.getState(), notification)).toBeUndefined();
+  });
+
+  it('retry-action: a retry that failed again stays offered and runs once more', async () => {
+    const retry = vi.fn(async () => false);
+    const action: NotificationAction = {
+      kind: 'retry-action',
+      retryId: registerActionRetry({ retry }),
+    };
+    const toast = mapNotificationAction(action, useAppStore.getState(), notificationOf(action));
+
+    toast?.onClick();
+    expect(retry).toHaveBeenCalledTimes(1);
+    await vi.waitFor(() => {
+      toast?.onClick();
+      expect(retry).toHaveBeenCalledTimes(2);
+    });
+  });
+
+  it('retry-action: offers no Retry once the action is gone, after a restart', () => {
+    expect(mapAction({ kind: 'retry-action', retryId: 'gone' })).toBeUndefined();
   });
 });

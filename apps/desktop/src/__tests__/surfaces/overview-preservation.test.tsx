@@ -148,15 +148,14 @@ describe('Overview capabilities from the session Overview', () => {
     expect(action.querySelector('svg')).not.toBeNull();
   });
 
-  it('turns a mount cleanup proposal into Remove worktree on the merged row and one button on the group', async () => {
+  it('turns a mount cleanup proposal into Delete local branch on the merged row and one button on the group', async () => {
     await mountScene({ name: 'c05-overview-merged-next' });
     const merged = present({
       value: document.querySelector<HTMLElement>('[data-board-group="merged"]'),
       what: 'the Merged group',
     });
 
-    within(merged).getByRole('button', { name: /^Remove 1 worktree/ });
-    within(merged).getByRole('button', { name: 'Remove worktree' });
+    expect(within(merged).getAllByRole('button', { name: /^Delete local branch/ })).toHaveLength(2);
   });
 
   it('keeps the branch drift decision in the notices slot', async () => {

@@ -9,6 +9,8 @@ export type RunAfterMergeCleanupParams = {
   readonly expectedBranch: string;
   readonly mergedHeadSha?: string | null;
   readonly isRequested?: boolean;
+  readonly isLocalOnly?: boolean;
+  readonly isRemovalRequired?: boolean;
 };
 
 export type CheckMergedThenParams = {

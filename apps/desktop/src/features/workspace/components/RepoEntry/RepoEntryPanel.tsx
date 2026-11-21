@@ -9,7 +9,7 @@ import { openFolder } from '../../../open/openFolder';
 import { revealInFileManager } from '../../../../shared/lib/reveal';
 import { formatAge } from '../../../../shared/utils/time/formatAge';
 import { pullBaseSummary } from '../../pullBase/pullBaseSummary';
-import { ProjectGitDetail } from '../ProjectGitPill/ProjectGitDetail';
+import { LazyProjectGitDetail } from '../ProjectGitPill/LazyProjectGitDetail';
 import { RepoEntryRow } from './RepoEntryRow';
 import { repoGroupsOf } from './repoGroupsOf';
 import { repoRowFactsOf, type RepoRowFacts } from './repoRowFactsOf';
@@ -121,7 +121,7 @@ export const RepoEntryPanel = ({ workspaceId, entries }: Props) => {
       isOpen={openProjectId === row.project.id}
       isChecking={isChecking}
       detail={
-        <ProjectGitDetail
+        <LazyProjectGitDetail
           project={row.project}
           status={openProjectId === row.project.id ? openStatus : null}
         />

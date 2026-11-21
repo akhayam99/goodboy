@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { Project } from '@goodboy/types';
 import { Button, formatError, ICON_SIZE } from '@goodboy/ui';
+import { CircleAlert } from '@goodboy/ui/icons';
 import { CONCEPT_ICONS } from '../../../../../shared/components/conceptIcons';
 import { formatBytes } from '../../../../../shared/utils/formatBytes';
 import { useAppStore } from '../../../../../store';
@@ -50,8 +51,8 @@ export const SavedVersionsLine = ({ folder }: Props) => {
   const StorageIcon = CONCEPT_ICONS.storage;
   if (status === 'failed') {
     return (
-      <div role="alert" className="flex min-w-0 items-center gap-2 text-meta text-danger">
-        <StorageIcon size={ICON_SIZE.row} aria-hidden className="shrink-0" />
+      <div role="alert" className="flex min-w-0 items-center gap-2 text-meta text-foreground">
+        <CircleAlert size={ICON_SIZE.row} aria-hidden className="shrink-0 text-danger" />
         <span className="min-w-0 flex-1 break-words">
           Saved versions couldn't start{reason === null ? '' : `: ${reason}`}
         </span>

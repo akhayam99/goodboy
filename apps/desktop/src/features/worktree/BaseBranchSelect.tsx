@@ -8,6 +8,7 @@ type Props = {
   readonly value: string | null;
   readonly placeholder?: string;
   readonly disabled?: boolean;
+  readonly errorId?: string;
   readonly onCommit: (next: string | null) => void | Promise<void>;
 };
 
@@ -27,6 +28,7 @@ export const BaseBranchSelect = ({
   value,
   placeholder = 'main',
   disabled = false,
+  errorId,
   onCommit,
 }: Props) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -91,6 +93,7 @@ export const BaseBranchSelect = ({
       searchPlaceholder="Search or enter a branch"
       placeholder={placeholder}
       disabled={disabled}
+      {...(errorId === undefined ? {} : { errorId })}
       value={value ?? AUTO_VALUE}
       options={[
         { value: AUTO_VALUE, label: 'Auto', description: autoDescription },

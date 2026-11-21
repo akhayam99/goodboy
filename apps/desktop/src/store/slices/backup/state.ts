@@ -7,7 +7,7 @@ import type {
 import { DEFAULT_EXPORT_GROUPS } from '@goodboy/types';
 
 type BackupExportPhase = 'idle' | 'previewing' | 'writing' | 'done' | 'error';
-type BackupImportPhase = 'idle' | 'choosing' | 'previewing' | 'applying' | 'done' | 'error';
+type BackupImportPhase = 'idle' | 'choosing' | 'previewing' | 'applying' | 'done';
 
 export type BackupState = {
   readonly backupExportGroups: ExportGroups;
@@ -24,7 +24,6 @@ export type BackupState = {
   readonly backupImportResolvedPaths: Readonly<Record<string, string>>;
   readonly hasBackupImportWildcardConsent: boolean;
   readonly backupImportPhase: BackupImportPhase;
-  readonly backupImportError: string | null;
   readonly backupImportResult: ConfigBundleImportResult | null;
 };
 
@@ -43,6 +42,5 @@ export const backupInitialState: BackupState = {
   backupImportResolvedPaths: {},
   hasBackupImportWildcardConsent: false,
   backupImportPhase: 'idle',
-  backupImportError: null,
   backupImportResult: null,
 };

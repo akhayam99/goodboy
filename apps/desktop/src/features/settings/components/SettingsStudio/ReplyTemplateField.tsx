@@ -1,5 +1,5 @@
 import { useId, type ReactNode } from 'react';
-import { Textarea, cn } from '@goodboy/ui';
+import { FieldError, Textarea, cn } from '@goodboy/ui';
 import { replyTemplateProblems } from '../../../resolve/renderReplyTemplate';
 import type { SettingSave } from '../../hooks/useSettingSave';
 import { useSettingRowAnchor } from '../../hooks/useSettingRowAnchor';
@@ -34,7 +34,21 @@ export const ReplyTemplateField = ({
 }: Props) => {
   const id = useId();
   const anchor = useSettingRowAnchor({ rowKey });
+  const problemId = useId();
+  const saveErrorId = useId();
   const problems = replyTemplateProblems({ template: draft });
+  const hasSaveError = save.error !== null;
+  const describedBy = [problems.length > 0 ? problemId : null, hasSaveError ? saveErrorId : null]
+    .filter((part) => part !== null)
+    .join(' ');
+  const problemText =
+    problems.length === 0
+      ? null
+      : problems.map((problem) => (
+          <span key={problem} className="block">
+            {problem}
+          </span>
+        ));
 
   return (
     <div
@@ -61,13 +75,11 @@ export const ReplyTemplateField = ({
         onChange={(event) => onDraftChange(event.target.value)}
         onBlur={(event) => onCommit({ caret: event.currentTarget.selectionStart })}
         className="text-code"
+        aria-invalid={describedBy === '' ? undefined : true}
+        aria-describedby={describedBy === '' ? undefined : describedBy}
       />
-      {problems.map((problem) => (
-        <p key={problem} className="text-meta text-danger">
-          {problem}
-        </p>
-      ))}
-      {save.error === null ? null : <SaveErrorHelp save={save} />}
+      <FieldError id={problemId} error={problemText} />
+      {hasSaveError ? <SaveErrorHelp id={saveErrorId} save={save} /> : null}
       {children}
     </div>
   );

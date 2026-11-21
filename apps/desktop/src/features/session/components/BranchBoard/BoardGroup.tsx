@@ -1,5 +1,4 @@
-import { CircleAlert } from '@goodboy/ui/icons';
-import { Button, ICON_SIZE } from '@goodboy/ui';
+import { Button } from '@goodboy/ui';
 import type { VisibleGroup } from '../../central/board/visibleGroupsOf';
 import { projectSectionsOf } from '../../central/board/projectSectionsOf';
 import { BoardMergeInOrder } from './BoardMergeInOrder';
@@ -15,7 +14,7 @@ type Props = {
 };
 
 export const BoardGroup = ({ group, isFirstOpenGroup, onShowMore }: Props) => {
-  const { removal, rowById, isMultiProject } = useBoardContext();
+  const { rowById, isMultiProject } = useBoardContext();
   const isMerged = group.id === 'merged';
   return (
     <div
@@ -33,22 +32,6 @@ export const BoardGroup = ({ group, isFirstOpenGroup, onShowMore }: Props) => {
         {isMerged ? <BoardRemoveButton mountIds={null} variant="secondary" /> : null}
         {isFirstOpenGroup ? <BoardMergeInOrder /> : null}
       </div>
-      {isMerged && removal.failures.length > 0 ? (
-        <ul className="flex min-w-0 flex-col gap-0.5 px-2">
-          {removal.failures.map((failure) => (
-            <li
-              key={failure.mountId}
-              role="alert"
-              className="flex min-w-0 items-center gap-2 text-meta text-danger"
-            >
-              <CircleAlert size={ICON_SIZE.control} aria-hidden className="shrink-0" />
-              <span className="min-w-0 truncate">
-                {failure.branch}: {failure.reason}
-              </span>
-            </li>
-          ))}
-        </ul>
-      ) : null}
       {isMultiProject
         ? projectSectionsOf({ rowIds: group.rowIds, rowById }).map((section) => (
             <BoardProjectSection key={section.projectName ?? ''} section={section} />

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
+import { useEffect, useId, useRef, useState, type KeyboardEvent } from 'react';
 import {
   BRANCH_PLACEHOLDERS,
   branchTemplateProblem,
@@ -6,7 +6,7 @@ import {
   NO_TASK_BRANCH_TEMPLATE,
 } from '@goodboy/core/slug';
 import type { WorkspaceId } from '@goodboy/types';
-import { Chip, Input } from '@goodboy/ui';
+import { Chip, FieldError, fieldErrorAriaOf, Input } from '@goodboy/ui';
 import { useAppStore } from '../../../../../store';
 import { selectWorkspaceResolvedSettings } from '../../../../../store/slices/overrides/selectResolvedSettings';
 import { BranchTemplateOption } from './BranchTemplateOption';
@@ -95,6 +95,9 @@ export const BranchTemplateField = ({ workspaceId }: Props) => {
   const picked: Choice = isCustomOpen ? 'custom' : choiceOf(template);
   const shown = picked === 'custom' ? draft : template;
   const problem = branchTemplateProblem({ template: shown });
+  const problemId = useId();
+  const problemText =
+    problem === null ? null : branchTemplateProblemCopy({ problem, template: shown });
   const previewGoal = goal ?? SAMPLE_GOAL;
   const previewTask = taskId ?? SAMPLE_TASK_ID;
   const preview = (forTemplate: string, withTask: boolean) =>
@@ -200,7 +203,7 @@ export const BranchTemplateField = ({ workspaceId }: Props) => {
             spellCheck={false}
             autoComplete="off"
             aria-label="Custom branch template"
-            aria-invalid={problem !== null}
+            {...fieldErrorAriaOf({ id: problemId, error: problemText })}
             className="font-mono text-code"
           />
           <div role="group" aria-label="Placeholders" className="flex flex-wrap items-center gap-2">
@@ -217,11 +220,7 @@ export const BranchTemplateField = ({ workspaceId }: Props) => {
               />
             ))}
           </div>
-          {problem === null ? null : (
-            <p role="alert" className="text-meta text-danger">
-              {branchTemplateProblemCopy({ problem, template: shown })}
-            </p>
-          )}
+          <FieldError id={problemId} error={problemText} />
         </div>
       ) : null}
       <BranchTemplatePreview

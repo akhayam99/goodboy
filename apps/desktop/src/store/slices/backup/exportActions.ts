@@ -6,6 +6,7 @@ import {
   configExportWrite,
 } from '../../../features/settings/config-export';
 import type { GetFn, SetFn } from '../../slice-types';
+import { NOTHING_CHANGED } from '../notifications/errorRecovery';
 
 export const setBackupExportGroup = (set: SetFn, get: GetFn) => {
   return ({
@@ -58,28 +59,50 @@ export const setBackupFindingIncluded = (set: SetFn, get: GetFn) => {
   };
 };
 
+type ExportRequest = {
+  readonly path: string;
+  readonly groups: ExportGroups;
+  readonly leaveOut: ReadonlyArray<string>;
+};
+
+type WriteToParams = {
+  readonly set: SetFn;
+  readonly get: GetFn;
+  readonly request: ExportRequest;
+};
+
+const writeBackupExportTo = async ({ set, get, request }: WriteToParams): Promise<boolean> => {
+  set({ backupExportPhase: 'writing', backupExportedPath: null });
+  try {
+    await configExportWrite(request);
+    set({ backupExportPhase: 'done', backupExportedPath: request.path });
+    return true;
+  } catch (error: unknown) {
+    set({ backupExportPhase: 'idle' });
+    void get().reportError({
+      title: "Couldn't export the backup",
+      error,
+      recovery: NOTHING_CHANGED,
+      retry: () => writeBackupExportTo({ set, get, request }),
+    });
+    return false;
+  }
+};
+
 export const writeBackupExport = (set: SetFn, get: GetFn) => {
   return async (): Promise<string | null> => {
+    const groups = get().backupExportGroups;
+    const leaveOut = get().backupExportLeaveOut;
     const path = await chooseExportFile();
     if (path === null) {
       return null;
     }
-    set({ backupExportPhase: 'writing', backupExportError: null });
-    try {
-      await configExportWrite({
-        path,
-        groups: get().backupExportGroups,
-        leaveOut: get().backupExportLeaveOut,
-      });
-      set({ backupExportPhase: 'done', backupExportedPath: path });
-      return path;
-    } catch (error: unknown) {
-      set({
-        backupExportPhase: 'error',
-        backupExportError: formatError(error),
-      });
-      return null;
-    }
+    const isWritten = await writeBackupExportTo({
+      set,
+      get,
+      request: { path, groups, leaveOut },
+    });
+    return isWritten ? path : null;
   };
 };
 

@@ -55,6 +55,8 @@ export const RUN_ROUTE_COPY = {
   liveReadOnly: 'Fixed while the run is going. Stop it to restart as something else.',
   stillGoing: 'This run is still going. Stop it before you restart it as something else.',
   notEnded: "The new run started, but this one didn't end. Stop it so only one keeps going.",
+  oldRunLeft: "Couldn't end the old run",
+  newRunKept: 'The new run started and keeps going.',
   inPlace: 'Changes this run before its first step.',
   withPreset: 'With the workflow',
   changeFailed: "Couldn't change the run",

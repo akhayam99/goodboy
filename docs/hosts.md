@@ -172,3 +172,5 @@ with origin; a diverged branch names both sides (`branchStartLineOf`). The
 request summary calls its total commits on this branch (the Commits tab).
 
 A disconnected linked record stays readable in the session with its provider link. Reconnect from Settings; the session does not embed a connection form (`FocusedTaskBody`).
+
+A Disconnect that fails leaves the connection row as it was and writes one log row, "Couldn't disconnect GitHub", that ends on "GitHub is still connected." and offers Retry (`IntegrationConnectedRow`). A Jira move that Jira refuses closes the menu and logs "Couldn't move ENG-142 to Ready for review" with Retry (`TransitionMenu`).

@@ -440,6 +440,57 @@ describe('store contract', () => {
       expect(row?.action).toBeNull();
     });
 
+    it('reportErrors folds the failures of one action into one row with one Retry', async () => {
+      const retry = vi.fn(async () => true);
+      await useAppStore.getState().reportErrors({
+        failures: [
+          { title: "Couldn't delete the local branch hl/fix-duplicate-credit", error: 'locked' },
+          { title: "Couldn't delete the local branch hl/ledger-export", error: 'busy' },
+        ],
+        groupTitleOf: ({ count }) => `Couldn't delete ${count} local branches`,
+        recovery: CHECK_STATE,
+        retry,
+        sessionId: SESSION_ID,
+      });
+      const rows = useAppStore.getState().notifications;
+      expect(rows).toHaveLength(1);
+      expect(rows[0]?.title).toBe("Couldn't delete 2 local branches");
+      expect(rows[0]?.body).toContain('hl/fix-duplicate-credit: locked');
+      expect(rows[0]?.body).toContain('hl/ledger-export: busy');
+      expect(rows[0]?.action?.kind).toBe('retry-action');
+      expect(storySpies.insertNotification).toHaveBeenCalledTimes(1);
+    });
+
+    it('reportError ends on the sentence that names what stayed, in place of the clause', async () => {
+      await useAppStore.getState().reportError({
+        title: "Couldn't disconnect GitHub",
+        error: new Error('keychain locked'),
+        recovery: NOTHING_CHANGED,
+        stays: 'GitHub is still connected.',
+      });
+      expect(useAppStore.getState().notifications[0]?.body).toBe(
+        'keychain locked\nGitHub is still connected.',
+      );
+    });
+
+    it('reportErrors keeps the title of a single failure and reports nothing for none', async () => {
+      await useAppStore.getState().reportErrors({
+        failures: [],
+        groupTitleOf: ({ count }) => `Couldn't delete ${count} local branches`,
+        recovery: CHECK_STATE,
+      });
+      expect(useAppStore.getState().notifications).toHaveLength(0);
+      await useAppStore.getState().reportErrors({
+        failures: [{ title: "Couldn't delete the local branch hl/ledger-export", error: 'busy' }],
+        groupTitleOf: ({ count }) => `Couldn't delete ${count} local branches`,
+        recovery: CHECK_STATE,
+      });
+      expect(useAppStore.getState().notifications[0]?.title).toBe(
+        "Couldn't delete the local branch hl/ledger-export",
+      );
+      expect(useAppStore.getState().notifications[0]?.action).toBeNull();
+    });
+
     it('reportError keeps the clause whole when the cause is cut at 600 characters', async () => {
       const store = useAppStore;
       await store.getState().reportError({

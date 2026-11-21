@@ -21,6 +21,8 @@ Move your setup to a new machine without carrying a flagged token: an export lea
 
 Move your setup to another Mac, or keep a copy. **Backup** exports in groups such as workspaces, workflows and saved scripts, and **Never included** lists what always stays behind, keys and sign-ins first. **Import** shows what it adds before writing and never deletes. The preview lists every allow rule and the first line of every script, and it carries the file's SHA-256. Import refuses a file that changed after the preview. A rule that allows anything needs its own checkbox, and imported scripts arrive disabled until you open one and save it. **Delete all data** sits alone at the end of the page, in a Danger zone that asks before it runs.
 
+A finished export says **Saved** with the file name and a button to show the file. A failed export or import goes to the log with **Retry**. A file that moved says so.
+
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/security-export-import-dark.webp">
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/security-export-import-light.webp" alt="Settings › App › Backup › Export: checkboxes for Workspaces, Projects, Folder paths (off), Your profile, Workflows you made, Workflows the orchestrator wrote (off), Saved scripts, Permission rules, Limits, Linked integrations and App preferences, a Never included box listing API keys and tokens, sign-ins, sessions, artifacts, worktree folders, usage history and notifications, and the Export button">

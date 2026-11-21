@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useId, useState } from 'react';
 import type { GoodboyIgnoreMode, Project } from '@goodboy/types';
-import { Button, formatError } from '@goodboy/ui';
+import { Button, FieldError, fieldErrorAriaOf, formatError } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
 import { GOODBOY_IGNORE_CHOICES } from '../../../workspace/components/goodboyIgnoreChoices';
 
@@ -39,6 +39,7 @@ export const GoodboyIgnoreField = ({ project }: Props) => {
   const [mode, setMode] = useState<ApplyMode>('this-mac');
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const errorId = useId();
 
   useEffect(() => {
     if (project.goodboyIgnoreCheckedAt === undefined) {
@@ -82,7 +83,12 @@ export const GoodboyIgnoreField = ({ project }: Props) => {
 
   return (
     <span className="flex flex-col items-end gap-2">
-      <div className="flex flex-col gap-1">
+      <div
+        role="radiogroup"
+        aria-label={`Ignore Goodboy files in ${project.name}`}
+        className="flex flex-col gap-1"
+        {...fieldErrorAriaOf({ id: errorId, error })}
+      >
         {GOODBOY_IGNORE_CHOICES.map((choice) => (
           <label key={choice.mode} className="flex items-center gap-1 text-meta">
             <input
@@ -103,11 +109,7 @@ export const GoodboyIgnoreField = ({ project }: Props) => {
           Save
         </Button>
       </span>
-      {error !== null && (
-        <span role="alert" className="text-meta text-danger">
-          {error}
-        </span>
-      )}
+      <FieldError id={errorId} error={error} />
     </span>
   );
 };

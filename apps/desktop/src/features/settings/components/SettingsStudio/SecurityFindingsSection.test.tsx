@@ -2,7 +2,8 @@
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
-import type { SecurityFindingId, WorkspaceId } from '@goodboy/types';
+import { brandId, type SecurityFindingId, type WorkspaceId } from '@goodboy/types';
+import type { ReportErrorParams } from '../../../../store/slices/notifications/reportError';
 
 const WORKSPACE_ID = 'ws-1' as WorkspaceId;
 
@@ -10,6 +11,7 @@ const h = vi.hoisted(() => ({
   loadSecurityFindings: vi.fn(async () => undefined),
   dismissSecurityFinding: vi.fn(async () => undefined),
   flagSecurityFindingAgain: vi.fn(async () => undefined),
+  reportError: vi.fn(async (_params: ReportErrorParams) => undefined),
 }));
 
 const storeStateRef = {
@@ -21,6 +23,7 @@ const storeStateRef = {
     loadSecurityFindings: h.loadSecurityFindings,
     dismissSecurityFinding: h.dismissSecurityFinding,
     flagSecurityFindingAgain: h.flagSecurityFindingAgain,
+    reportError: h.reportError,
   },
 };
 
@@ -128,6 +131,42 @@ describe('SecurityFindingsSection', () => {
         findingId: 'finding-1',
       }),
     );
+  });
+
+  it('logs a failed Not a secret with a Retry that dismisses the same finding', async () => {
+    h.dismissSecurityFinding.mockRejectedValueOnce(new Error('database is locked'));
+    storeStateRef.value = {
+      ...storeStateRef.value,
+      openSecurityFindings: {
+        [WORKSPACE_ID]: [
+          {
+            id: brandId<SecurityFindingId>({ value: 'finding-2' }),
+            workspaceId: WORKSPACE_ID,
+            subjectKind: 'permission-rule',
+            subjectId: 'rule-2',
+            secretKind: 'aws-access-key',
+            fingerprint: 'fp-3',
+            last4: 'bbbb',
+            firstSeenAt: new Date().toISOString(),
+          },
+        ],
+      },
+    };
+
+    render(<SecurityFindingsSection workspaceId={WORKSPACE_ID} />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Not a secret' }));
+    const dialog = await screen.findByRole('dialog', { name: 'Stop flagging this value?' });
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Not a secret' }));
+
+    await waitFor(() => expect(h.reportError).toHaveBeenCalledOnce());
+    const reported = h.reportError.mock.calls[0]?.[0];
+    expect(reported?.title).toBe("Couldn't stop flagging this value");
+    expect(screen.queryByText('database is locked')).toBeNull();
+    expect(await reported?.retry?.()).toBe(true);
+    expect(h.dismissSecurityFinding).toHaveBeenLastCalledWith({
+      workspaceId: WORKSPACE_ID,
+      findingId: 'finding-2',
+    });
   });
 
   it('flags a dismissed finding again from the collapsed group', () => {

@@ -17,6 +17,7 @@ import { mapOpenPlaceAction } from './mapOpenPlaceAction';
 import { openToolPane } from '../../../session/panes/openToolPane';
 import { sessionTitle } from '../../../../shared/utils/sessionTitle';
 import { markPointersActed } from '../../markPointersActed';
+import { mapRetryAction } from './mapRetryAction';
 
 export const pickFreshFailures = (
   notifications: ReadonlyArray<Notification>,
@@ -198,6 +199,9 @@ export const mapNotificationAction = (
         openToolPane({ sessionId, pane: lens });
       },
     };
+  }
+  if (action.kind === 'retry-action') {
+    return mapRetryAction({ action, store, notification });
   }
   if (
     action.kind === 'open-settings' ||

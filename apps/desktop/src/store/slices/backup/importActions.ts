@@ -1,4 +1,3 @@
-import { formatError } from '@goodboy/ui';
 import { open as openDialog } from '@tauri-apps/plugin-dialog';
 import { listProjectsForWorkspace, listWorkspaces } from '@goodboy/db';
 import {
@@ -10,30 +9,81 @@ import type { WildcardConsentParams } from '../../../features/backup/wildcardCon
 import { SETTING_EDITOR_BINARY } from '../../../features/settings/settings';
 import { tauriDatabase } from '../../../shared/lib/db';
 import type { GetFn, SetFn } from '../../slice-types';
+import { CHECK_STATE, NOTHING_CHANGED } from '../notifications/errorRecovery';
+import { importFailureTitleOf } from './importFailureTitleOf';
+
+type FileChangedParams = {
+  readonly error: unknown;
+};
+
+const isFileChanged = ({ error }: FileChangedParams): boolean =>
+  typeof error === 'object' && error !== null && 'kind' in error && error.kind === 'file_changed';
+
+const BACKUP_IMPORT_FAILURE_KEY = 'backup-import-failed';
+
+type PreviewRequest = {
+  readonly path: string;
+  readonly projectParent: string | null;
+};
+
+type PreviewParams = {
+  readonly set: SetFn;
+  readonly get: GetFn;
+  readonly request: PreviewRequest;
+};
+
+type SameParams = {
+  readonly get: GetFn;
+  readonly request: PreviewRequest;
+};
+
+const isSamePreview = ({ get, request }: SameParams): boolean =>
+  get().backupImportPath === request.path &&
+  get().backupImportProjectParent === request.projectParent;
+
+const previewBackupImport = async ({ set, get, request }: PreviewParams): Promise<boolean> => {
+  set({ backupImportPhase: 'previewing' });
+  try {
+    const preview = await configImportPreview(request);
+    if (get().backupImportPath !== request.path) {
+      return false;
+    }
+    set({
+      backupImportPreview: preview,
+      hasBackupImportWildcardConsent: false,
+      backupImportPhase: 'idle',
+    });
+    return true;
+  } catch (error: unknown) {
+    set({ backupImportPhase: 'idle' });
+    const title = importFailureTitleOf({ error, title: "Couldn't open the backup file" });
+    void get().reportError({
+      title,
+      error,
+      recovery: NOTHING_CHANGED,
+      coalesceKey: BACKUP_IMPORT_FAILURE_KEY,
+      ...(title === "Couldn't find the backup file"
+        ? {}
+        : { retry: () => retryPreview({ set, get, request }) }),
+    });
+    return false;
+  }
+};
+
+const retryPreview = async ({ set, get, request }: PreviewParams): Promise<boolean> =>
+  isSamePreview({ get, request }) && (await previewBackupImport({ set, get, request }));
 
 export const loadBackupImportPreview = (set: SetFn, get: GetFn) => {
-  return async (): Promise<void> => {
+  return async (): Promise<boolean> => {
     const path = get().backupImportPath;
     if (path === null) {
-      return;
+      return false;
     }
-    set({ backupImportPhase: 'previewing', backupImportError: null });
-    try {
-      const preview = await configImportPreview({
-        path,
-        projectParent: get().backupImportProjectParent,
-      });
-      set({
-        backupImportPreview: preview,
-        hasBackupImportWildcardConsent: false,
-        backupImportPhase: 'idle',
-      });
-    } catch (error: unknown) {
-      set({
-        backupImportPhase: 'error',
-        backupImportError: formatError(error),
-      });
-    }
+    return previewBackupImport({
+      set,
+      get,
+      request: { path, projectParent: get().backupImportProjectParent },
+    });
   };
 };
 
@@ -50,8 +100,10 @@ export const chooseBackupImportFile = (set: SetFn, get: GetFn) => {
       backupImportResolvedPaths: {},
       hasBackupImportWildcardConsent: false,
       backupImportResult: null,
-      backupImportError: null,
+      backupExportPhase: 'idle',
+      backupExportedPath: null,
     });
+    void get().resolveNotifications([BACKUP_IMPORT_FAILURE_KEY]);
     await loadBackupImportPreview(set, get)();
   };
 };
@@ -104,54 +156,107 @@ export const setBackupImportWildcardConsent = ({ set }: SetBackupImportWildcardC
   };
 };
 
-export const applyBackupImport = (set: SetFn, get: GetFn) => {
-  return async (): Promise<void> => {
-    const path = get().backupImportPath;
-    const preview = get().backupImportPreview;
-    if (path === null || preview === null) {
-      return;
-    }
-    set({ backupImportPhase: 'applying', backupImportError: null });
-    try {
-      const result = await configImportApply({
-        path,
-        workspaceTargets: get().backupImportWorkspaceTargets,
-        resolvedProjectPaths: get().backupImportResolvedPaths,
-        expectedSha256: preview.sha256,
-        hasWildcardConsent: get().hasBackupImportWildcardConsent,
+type ApplyRequest = PreviewRequest & {
+  readonly workspaceTargets: Readonly<Record<string, string>>;
+  readonly resolvedProjectPaths: Readonly<Record<string, string>>;
+  readonly expectedSha256: string;
+  readonly hasWildcardConsent: boolean;
+};
+
+type ApplyParams = {
+  readonly set: SetFn;
+  readonly get: GetFn;
+  readonly request: ApplyRequest;
+};
+
+const retryApply = async ({ set, get, request }: ApplyParams): Promise<boolean> =>
+  get().backupImportPath === request.path && (await applyImportRequest({ set, get, request }));
+
+const applyImportRequest = async ({ set, get, request }: ApplyParams): Promise<boolean> => {
+  set({ backupImportPhase: 'applying' });
+  try {
+    const result = await configImportApply({
+      path: request.path,
+      workspaceTargets: request.workspaceTargets,
+      resolvedProjectPaths: request.resolvedProjectPaths,
+      expectedSha256: request.expectedSha256,
+      hasWildcardConsent: request.hasWildcardConsent,
+    });
+    if (!result.ok) {
+      set({ backupImportPhase: 'idle' });
+      void get().reportError({
+        title: "Couldn't import the backup",
+        error: result.errors.map((failure) => failure.message).join('\n'),
+        recovery: NOTHING_CHANGED,
       });
-      set({ backupImportResult: result, backupImportPhase: result.ok ? 'done' : 'error' });
-      if (!result.ok) {
-        return;
-      }
-      const workspaces = await listWorkspaces({ db: tauriDatabase });
-      const projects = (
-        await Promise.all(
-          workspaces.map((workspace) =>
-            listProjectsForWorkspace({ db: tauriDatabase, workspaceId: workspace.id }),
-          ),
-        )
-      ).flat();
-      set({ workspaces, projects });
-      await Promise.all([
-        ...workspaces.map((workspace) =>
-          get()
-            .loadPhaseTemplates(workspace.id)
-            .catch(() => undefined),
+      return false;
+    }
+    set({ backupImportResult: result, backupImportPhase: 'done' });
+    const workspaces = await listWorkspaces({ db: tauriDatabase });
+    const projects = (
+      await Promise.all(
+        workspaces.map((workspace) =>
+          listProjectsForWorkspace({ db: tauriDatabase, workspaceId: workspace.id }),
         ),
+      )
+    ).flat();
+    set({ workspaces, projects });
+    await Promise.all([
+      ...workspaces.map((workspace) =>
         get()
-          .loadBudgetRules()
+          .loadPhaseTemplates(workspace.id)
           .catch(() => undefined),
-        get()
-          .loadSetting(SETTING_EDITOR_BINARY)
-          .catch(() => undefined),
-      ]);
-    } catch (error: unknown) {
-      set({
-        backupImportPhase: 'error',
-        backupImportError: formatError(error),
-      });
+      ),
+      get()
+        .loadBudgetRules()
+        .catch(() => undefined),
+      get()
+        .loadSetting(SETTING_EDITOR_BINARY)
+        .catch(() => undefined),
+    ]);
+    return true;
+  } catch (error: unknown) {
+    set({ backupImportPhase: 'idle' });
+    const title = importFailureTitleOf({ error, title: "Couldn't import the backup" });
+    const isMissing = title === "Couldn't find the backup file";
+    const preview = { path: request.path, projectParent: request.projectParent };
+    void get().reportError({
+      title,
+      error,
+      recovery: isMissing ? NOTHING_CHANGED : CHECK_STATE,
+      coalesceKey: BACKUP_IMPORT_FAILURE_KEY,
+      ...(isMissing
+        ? {}
+        : {
+            retry: isFileChanged({ error })
+              ? () => retryPreview({ set, get, request: preview })
+              : () => retryApply({ set, get, request }),
+          }),
+    });
+    return false;
+  }
+};
+
+export const applyBackupImport = (set: SetFn, get: GetFn) => {
+  return async (): Promise<boolean> => {
+    const state = get();
+    const path = state.backupImportPath;
+    const preview = state.backupImportPreview;
+    if (path === null || preview === null) {
+      return false;
     }
+    return applyImportRequest({
+      set,
+      get,
+      request: {
+        path,
+        projectParent: state.backupImportProjectParent,
+        workspaceTargets: state.backupImportWorkspaceTargets,
+        resolvedProjectPaths: state.backupImportResolvedPaths,
+        expectedSha256: preview.sha256,
+        hasWildcardConsent: state.hasBackupImportWildcardConsent,
+      },
+    });
   };
 };
 
@@ -165,7 +270,6 @@ export const resetBackupImport = (set: SetFn) => {
       backupImportResolvedPaths: {},
       hasBackupImportWildcardConsent: false,
       backupImportPhase: 'idle',
-      backupImportError: null,
       backupImportResult: null,
     });
   };

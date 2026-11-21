@@ -299,7 +299,7 @@ const mountOf = () => {
   return mount;
 };
 
-const REMOVE_NOTE = 'Remove 1 worktree';
+const REMOVE_NOTE = 'Delete local branch · 1.0 KB';
 
 const nextCardOf = (view: RenderResult): HTMLElement | null =>
   view.container.querySelector<HTMLElement>('[data-slot="branch-board-section"]');

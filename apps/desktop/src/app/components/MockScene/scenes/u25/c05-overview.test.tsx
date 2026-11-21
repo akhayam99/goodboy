@@ -110,7 +110,7 @@ describe('the c05 overview scenes', () => {
     expect(activity.querySelectorAll('[data-timeline-ordinal]').length).toBeGreaterThan(0);
   });
 
-  it('c05-overview-merged-next keeps the merged branch as a row and offers its worktree with the size', async () => {
+  it('c05-overview-merged-next keeps the merged branch as a row and offers its delete with the size', async () => {
     await mount('c05-overview-merged-next');
 
     const merged = present({
@@ -118,12 +118,12 @@ describe('the c05 overview scenes', () => {
       what: 'Merged group',
     });
     expect(merged.querySelector('[data-board-row] [data-board-chip]')).toBeNull();
-    const remove = within(merged).getByRole('button', { name: /^Remove 1 worktree/ });
+    const remove = within(merged).getByRole('button', { name: /^Delete local branch · / });
     expect(remove.textContent).toContain('412 MB');
     expect(screen.queryByRole('button', { name: 'Keep' })).toBeNull();
   });
 
-  it('c05-overview-merged-group lists both merged branches and one button for their worktrees', async () => {
+  it('c05-overview-merged-group lists both merged branches and one button for their local branches', async () => {
     await mount('c05-overview-merged-group');
 
     const merged = present({
@@ -131,7 +131,9 @@ describe('the c05 overview scenes', () => {
       what: 'Merged group',
     });
     expect(merged.querySelectorAll('[data-board-row]').length).toBeGreaterThanOrEqual(2);
-    expect(within(merged).getAllByRole('button', { name: /^Remove 2 worktrees/ })).toHaveLength(1);
+    expect(within(merged).getAllByRole('button', { name: /^Delete local branches/ })).toHaveLength(
+      1,
+    );
   });
 
   it('c05-overview-notices shows the closed worktree and the branch decision in the notices slot', async () => {

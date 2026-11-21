@@ -1,15 +1,23 @@
 import { useEffect } from 'react';
-import { Band, Button, FormActions, Notice } from '@goodboy/ui';
+import { Band, Button, ErrorStrip, FormActions, Notice } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
-import { useToast } from '../../../../shared/components/Toast';
+import { OPEN_FAILED } from '../../../../store/slices/notifications/errorRecovery';
+import { revealInFileManager } from '../../../../shared/lib/reveal';
+import { revealLabelOf } from '../../../../shared/utils/revealLabelOf';
 import { SettingRow } from '../../../settings/settingRow';
 import { ExportGroupsSection } from './ExportGroupsSection';
 import { NeverIncluded } from './NeverIncluded';
 import { LeftOutFindings } from './LeftOutFindings';
 import { ImportPreviewSection } from './ImportPreviewSection';
 
+type FileNameParams = {
+  readonly path: string;
+};
+
+const fileNameOf = ({ path }: FileNameParams): string => path.split(/[/\\]/).pop() ?? path;
+
 export const BackupPage = () => {
-  const { showToast } = useToast();
+  const reportError = useAppStore((state) => state.reportError);
   const groups = useAppStore((state) => state.backupExportGroups);
   const exportPreview = useAppStore((state) => state.backupExportPreview);
   const exportLeaveOut = useAppStore((state) => state.backupExportLeaveOut);
@@ -27,7 +35,6 @@ export const BackupPage = () => {
   const hasWildcardConsent = useAppStore((state) => state.hasBackupImportWildcardConsent);
   const setWildcardConsent = useAppStore((state) => state.setBackupImportWildcardConsent);
   const importPhase = useAppStore((state) => state.backupImportPhase);
-  const importError = useAppStore((state) => state.backupImportError);
   const importResult = useAppStore((state) => state.backupImportResult);
   const chooseImportFile = useAppStore((state) => state.chooseBackupImportFile);
   const chooseImportProjectParent = useAppStore((state) => state.chooseBackupImportProjectParent);
@@ -39,15 +46,10 @@ export const BackupPage = () => {
     void loadExportPreview();
   }, [loadExportPreview]);
 
-  const onExport = async () => {
-    const path = await writeExport();
-    if (path !== null) {
-      showToast({
-        kind: 'success',
-        message: path,
-        title: 'No keys, tokens or folder paths inside',
-      });
-    }
+  const revealExport = ({ path }: FileNameParams) => {
+    revealInFileManager({ path }).catch((error: unknown) => {
+      void reportError({ title: "Couldn't show the backup file", error, recovery: OPEN_FAILED });
+    });
   };
 
   const isExporting = exportPhase === 'writing';
@@ -82,17 +84,17 @@ export const BackupPage = () => {
             onChange={setFindingIncluded}
           />
         )}
-        {exportError !== null && (
-          <p role="alert" className="text-meta text-danger">
-            {exportError}
-          </p>
-        )}
+        <ErrorStrip
+          label="the backup preview"
+          error={exportError === null ? null : new Error(exportError)}
+          onRetry={() => void loadExportPreview()}
+        />
         <SettingRow
           label="Export backup"
           rowKey="backup-export"
-          help="Saves a backup file with the groups you ticked."
+          help="Saves a backup file. No keys, tokens or folder paths inside."
         >
-          <Button isBusy={isExporting} busyLabel="Exporting…" onClick={() => void onExport()}>
+          <Button isBusy={isExporting} busyLabel="Exporting…" onClick={() => void writeExport()}>
             Export
           </Button>
         </SettingRow>
@@ -100,7 +102,16 @@ export const BackupPage = () => {
           <Notice
             tone="success"
             placement="inline"
-            title={`Saved ${exportedPath.split('/').pop()}. No keys, tokens or folder paths inside.`}
+            title={`Saved ${fileNameOf({ path: exportedPath })}`}
+            actions={
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => revealExport({ path: exportedPath })}
+              >
+                {revealLabelOf()}
+              </Button>
+            }
           />
         )}
       </Band>
@@ -121,22 +132,6 @@ export const BackupPage = () => {
             Choose file
           </Button>
         </SettingRow>
-        {importError !== null && (
-          <p role="alert" className="text-meta text-danger">
-            {importError}
-          </p>
-        )}
-        {importResult !== null &&
-          !importResult.ok &&
-          importResult.errors.map((error) => (
-            <p
-              key={`${error.field}-${error.message}`}
-              role="alert"
-              className="text-meta text-danger"
-            >
-              {error.message}
-            </p>
-          ))}
         {importPath !== null && importPreview !== null && importResult === null && (
           <>
             <ImportPreviewSection

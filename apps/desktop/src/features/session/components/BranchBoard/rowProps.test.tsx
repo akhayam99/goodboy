@@ -59,7 +59,6 @@ const context: BoardContextValue = {
   openFor: () => null,
   removal: {
     targets: [],
-    failures: [],
     isBusy: false,
     sizeLabel: null,
     run: async () => undefined,

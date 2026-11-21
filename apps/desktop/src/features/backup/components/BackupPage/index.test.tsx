@@ -3,7 +3,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 
-const { state, toastMock } = vi.hoisted(() => ({
+const { state, revealMock } = vi.hoisted(() => ({
   state: {
     backupExportGroups: {
       workspaces: true,
@@ -32,7 +32,6 @@ const { state, toastMock } = vi.hoisted(() => ({
     backupImportPreview: null as unknown,
     backupImportWorkspaceTargets: {} as Record<string, string>,
     backupImportPhase: 'idle',
-    backupImportError: null as string | null,
     backupImportResult: null as unknown,
     hasBackupImportWildcardConsent: false,
     chooseBackupImportFile: vi.fn(async () => undefined),
@@ -41,18 +40,20 @@ const { state, toastMock } = vi.hoisted(() => ({
     setBackupImportWildcardConsent: vi.fn(),
     applyBackupImport: vi.fn(async () => undefined),
     resetBackupImport: vi.fn(),
+    reportError: vi.fn(async () => undefined),
   },
-  toastMock: vi.fn(),
+  revealMock: vi.fn(async (_params: { path: string }) => undefined),
 }));
 
 vi.mock('../../../../store', () => ({
   useAppStore: <T,>(selector: (s: typeof state) => T) => selector(state),
 }));
-vi.mock('../../../../shared/components/Toast', () => ({
-  useToast: () => ({ showToast: toastMock }),
+vi.mock('../../../../shared/lib/reveal', () => ({
+  revealInFileManager: (params: { path: string }) => revealMock(params),
 }));
 
 import { BackupPage } from './index';
+import { revealLabelOf } from '../../../../shared/utils/revealLabelOf';
 
 const importPreviewWith = (overrides: Record<string, unknown>) => ({
   sha256: 'sha-harborline',
@@ -82,7 +83,6 @@ beforeEach(() => {
   state.backupImportPreview = null;
   state.backupImportWorkspaceTargets = {};
   state.backupImportPhase = 'idle';
-  state.backupImportError = null;
   state.backupImportResult = null;
   state.hasBackupImportWildcardConsent = false;
 });
@@ -98,15 +98,38 @@ describe('BackupPage', () => {
     screen.getByText('API keys and tokens');
   });
 
-  it('exports and shows the outcome without keys or paths', async () => {
+  it('says what an export leaves out before the click', async () => {
     render(<BackupPage />);
 
+    screen.getByText(/No keys, tokens or folder paths inside/);
     fireEvent.click(screen.getByRole('button', { name: 'Export' }));
 
     await waitFor(() => expect(state.writeBackupExport).toHaveBeenCalledOnce());
-    expect(toastMock).toHaveBeenCalledWith(
-      expect.objectContaining({ title: 'No keys, tokens or folder paths inside' }),
+  });
+
+  it('shows one saved notice with the file name and a way to the file', async () => {
+    state.backupExportPhase = 'done';
+    state.backupExportedPath = '/Users/dev/Downloads/goodboy-setup-2026-11-20.json';
+
+    render(<BackupPage />);
+
+    screen.getByText('Saved goodboy-setup-2026-11-20.json');
+    fireEvent.click(screen.getByRole('button', { name: revealLabelOf() }));
+    await waitFor(() =>
+      expect(revealMock).toHaveBeenCalledWith({
+        path: '/Users/dev/Downloads/goodboy-setup-2026-11-20.json',
+      }),
     );
+  });
+
+  it('shows a failed preview as one strip with Retry', () => {
+    state.backupExportError = 'the database is locked';
+
+    render(<BackupPage />);
+
+    screen.getByText("Couldn't load the backup preview");
+    fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
+    expect(state.loadBackupExportPreview).toHaveBeenCalled();
   });
 
   it('shows left-out findings with an Include it action', () => {
@@ -249,17 +272,5 @@ describe('BackupPage', () => {
     render(<BackupPage />);
 
     expect(screen.getByRole('button', { name: 'Import now' })).toHaveProperty('disabled', false);
-  });
-
-  it('shows the reason when the import is refused', () => {
-    state.backupImportResult = {
-      ok: false,
-      errors: [{ field: 'permissionRules[0].decision', message: 'wildcard allow needs consent' }],
-      stats: {},
-    };
-
-    render(<BackupPage />);
-
-    screen.getByText('wildcard allow needs consent');
   });
 });

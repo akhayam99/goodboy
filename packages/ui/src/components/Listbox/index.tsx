@@ -38,6 +38,7 @@ type CommonProps<T extends ListboxValue> = {
   readonly ariaLabel?: string;
   readonly id?: string;
   readonly testId?: string;
+  readonly errorId?: string;
   readonly disabled?: boolean;
   readonly disabledReason?: string;
   readonly valueLabel?: ReactNode;
@@ -99,6 +100,7 @@ export const Listbox = <T extends ListboxValue>(props: ListboxProps<T>) => {
     ariaLabel,
     id,
     testId,
+    errorId,
     disabled = false,
     disabledReason,
     valueLabel,
@@ -192,11 +194,7 @@ export const Listbox = <T extends ListboxValue>(props: ListboxProps<T>) => {
       setQuery('');
       return;
     }
-    const firstSelected = selectedValues[0];
-    const current =
-      firstSelected === undefined
-        ? -1
-        : options.findIndex((option) => option.value === firstSelected);
+    const current = options.findIndex((option) => option.value === selectedValues[0]);
     setActiveIndex(current === -1 ? edgeIndex({ items: keyItems, isLast: false }) : current);
     if (isSearchable) {
       searchRef.current?.focus();
@@ -259,6 +257,7 @@ export const Listbox = <T extends ListboxValue>(props: ListboxProps<T>) => {
       isBlock={isBlock}
       id={id}
       testId={testId}
+      errorId={errorId}
       value={selectedValues.join(',')}
       ariaLabel={ariaLabel}
       listboxId={listboxId}

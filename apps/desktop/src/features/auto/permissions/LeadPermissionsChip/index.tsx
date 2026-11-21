@@ -1,12 +1,14 @@
 import {
   AnchoredPopover,
   Button,
+  ICON_SIZE,
   MENU_MAX_WIDTH,
   Tooltip,
   cn,
   useDropdown,
   type MenuEntry,
 } from '@goodboy/ui';
+import { CircleAlert } from '@goodboy/ui/icons';
 import { FactButton } from '../../../../shared/components/SettingChip/FactButton';
 import { FactDot } from '../../../../shared/components/SettingChip/FactDot';
 import { useIsSettingFact } from '../../../../shared/components/SettingChip/settingLookContext';
@@ -142,7 +144,8 @@ export const LeadPermissionsChip = ({ target }: Props) => {
         <AppMenuList label={LEAD_LEVEL_COPY.menu} entries={entries} onClose={dropdown.close} />
       </AnchoredPopover>
       {error === null ? null : (
-        <span role="alert" className="text-meta text-danger">
+        <span role="alert" className="inline-flex items-center gap-1 text-meta text-foreground">
+          <CircleAlert size={ICON_SIZE.control} aria-hidden className="shrink-0 text-danger" />
           {error}
         </span>
       )}

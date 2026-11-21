@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState, type KeyboardEvent } from 'react';
+import { useCallback, useId, useRef, useState, type KeyboardEvent } from 'react';
 import { useEscapeLayer } from '@goodboy/ui';
 import { useAppStore } from '../../../../../store';
 import { currentPlatform } from '../../../../../shared/platform';
@@ -28,6 +28,7 @@ type CommitParams = {
 export type ShortcutRecorder = {
   readonly recordingId: string | null;
   readonly message: string | null;
+  readonly messageId: string;
   readonly isSaving: boolean;
   readonly begin: (params: IdParams) => void;
   readonly cancel: () => void;
@@ -40,6 +41,7 @@ const UNSUPPORTED = "That key can't be used here. Press other keys, or Esc to ca
 export const useShortcutRecorder = ({ overrides }: Params): ShortcutRecorder => {
   const [recordingId, setRecordingId] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+  const messageId = useId();
   const [isSaving, setIsSaving] = useState(false);
   const isSavingRef = useRef(false);
   const overridesRef = useRef(overrides);
@@ -121,5 +123,5 @@ export const useShortcutRecorder = ({ overrides }: Params): ShortcutRecorder => 
     [recordingId, commit],
   );
 
-  return { recordingId, message, isSaving, begin, cancel, reset, onKeyDown };
+  return { recordingId, message, messageId, isSaving, begin, cancel, reset, onKeyDown };
 };

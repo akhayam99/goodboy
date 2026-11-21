@@ -5,6 +5,7 @@ import { cleanup, render, screen } from '@testing-library/react';
 import type { Agent, AgentId, OpenQuestion, SessionId } from '@goodboy/types';
 import type { SpawnedChild } from '../../../../shared/utils/spawnedChildren';
 import type { ContinueOutcome } from '../../startRun/continueWithRole';
+import type { ReportErrorParams } from '../../../../store/slices/notifications/reportError';
 
 const state = vi.hoisted(() => {
   const autoTreeViews: Record<string, ReadonlyArray<unknown>> = {};
@@ -16,6 +17,7 @@ const state = vi.hoisted(() => {
     autoTreeViews,
     openQuestions: [] as ReadonlyArray<OpenQuestion>,
     navigate: vi.fn(),
+    reportError: vi.fn(async (_params: ReportErrorParams) => undefined),
     loadAgentTranscript: vi.fn(async () => undefined),
     providers: [],
     sessions: [],
@@ -162,19 +164,21 @@ describe('AgentFollowUps continue the same run', () => {
     });
   });
 
-  it('keeps the cards and shows the error when Auto cannot take it, so a click retries', async () => {
+  it('keeps the cards and logs the error when Auto cannot take it, and its Retry hands it again', async () => {
     continueWithRole.mockRejectedValueOnce(new Error('Wait for the turn to end first.'));
     renderFollowUps();
 
     screen.getByText('Fix these review findings').click();
 
-    expect(await screen.findByRole('alert')).toHaveProperty(
-      'textContent',
-      'Wait for the turn to end first.',
-    );
+    await vi.waitFor(() => expect(state.reportError).toHaveBeenCalledOnce());
+    const reported = state.reportError.mock.calls[0]?.[0];
+    expect(reported?.title).toMatch(/^Couldn't start the /);
+    expect(screen.queryByRole('alert')).toBeNull();
     expect(state.navigate).not.toHaveBeenCalled();
-    screen.getByText('Fix these review findings').click();
-    await vi.waitFor(() => expect(continueWithRole).toHaveBeenCalledTimes(2));
+    screen.getByText('Fix these review findings');
+    expect(await reported?.retry?.()).toBe(true);
+    expect(continueWithRole).toHaveBeenCalledTimes(2);
+    expect(state.navigate).toHaveBeenCalledTimes(1);
   });
 });
 

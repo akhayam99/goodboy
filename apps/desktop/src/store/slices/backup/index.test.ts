@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AppStore } from '../../store';
 import type { GetFn, SetFn } from '../../slice-types';
 import { backupInitialState } from './state';
+import type { ReportErrorParams } from '../notifications/reportError';
 
 const h = vi.hoisted(() => ({
   chooseExportFile: vi.fn(async () => '/tmp/goodboy-setup.json'),
@@ -14,7 +15,17 @@ const h = vi.hoisted(() => ({
   dialogOpen: vi.fn(async (): Promise<string | null> => null),
   listWorkspaces: vi.fn(async () => []),
   listProjectsForWorkspace: vi.fn(async () => []),
+  reportError: vi.fn(async (_params: ReportErrorParams) => undefined),
+  resolveNotifications: vi.fn(async (_keys: ReadonlyArray<string>) => undefined),
 }));
+
+const reportedOf = (): ReportErrorParams => {
+  const params = h.reportError.mock.calls.at(-1)?.[0];
+  if (params === undefined) {
+    throw new Error('nothing was reported');
+  }
+  return params;
+};
 
 vi.mock('../../../features/settings/config-export', () => ({
   chooseExportFile: h.chooseExportFile,
@@ -54,6 +65,8 @@ const harness = () => {
     rescanSkills: vi.fn(async () => undefined),
     loadBudgetRules: vi.fn(async () => undefined),
     loadSetting: vi.fn(async () => undefined),
+    reportError: h.reportError,
+    resolveNotifications: h.resolveNotifications,
   } as unknown as AppStore;
   const set: SetFn = (update) => {
     const patch = typeof update === 'function' ? update(state) : update;
@@ -249,7 +262,7 @@ describe('backup import', () => {
     expect(store.state.hasBackupImportWildcardConsent).toBe(false);
   });
 
-  it('keeps the preview and shows the error when the file changed after the preview', async () => {
+  it('keeps the preview and logs the error when the file changed after the preview', async () => {
     const store = harness();
     await chooseBackupImportFile(store.set, store.get)();
     h.configImportApply.mockRejectedValueOnce({
@@ -259,11 +272,140 @@ describe('backup import', () => {
 
     await applyBackupImport(store.set, store.get)();
 
-    expect(store.state.backupImportPhase).toBe('error');
-    expect(store.state.backupImportError).toBe('the backup file changed after the preview');
+    expect(store.state.backupImportPhase).toBe('idle');
+    expect(reportedOf()).toMatchObject({ title: "Couldn't import the backup" });
     expect(store.state.backupImportResult).toBeNull();
     expect(store.state.backupImportPreview).not.toBeNull();
     expect(h.listWorkspaces).not.toHaveBeenCalled();
+  });
+
+  it('retries a changed file from a fresh preview, not with the old checksum', async () => {
+    const store = harness();
+    await chooseBackupImportFile(store.set, store.get)();
+    h.configImportApply.mockRejectedValueOnce({ kind: 'file_changed', message: 'changed' });
+    await applyBackupImport(store.set, store.get)();
+    h.configImportPreview.mockClear();
+
+    expect(await reportedOf().retry?.()).toBe(true);
+
+    expect(h.configImportPreview).toHaveBeenCalledTimes(1);
+    expect(h.configImportApply).toHaveBeenCalledTimes(1);
+  });
+
+  it('retries a failed apply with the same file and choices', async () => {
+    const store = harness();
+    await chooseBackupImportFile(store.set, store.get)();
+    setBackupImportWorkspaceTarget(store.set, store.get)({ bundleId: 'w-1', targetId: 'existing' });
+    h.configImportApply.mockRejectedValueOnce(new Error('database is locked'));
+    await applyBackupImport(store.set, store.get)();
+    expect(reportedOf().recovery).toEqual({ clause: 'check-state' });
+
+    expect(await reportedOf().retry?.()).toBe(true);
+
+    expect(h.configImportApply).toHaveBeenLastCalledWith(
+      expect.objectContaining({ workspaceTargets: { 'w-1': 'existing' } }),
+    );
+    expect(store.state.backupImportPhase).toBe('done');
+  });
+
+  it('never imports another file from the Retry of a failed one, and drops that row on a new pick', async () => {
+    const store = harness();
+    await chooseBackupImportFile(store.set, store.get)();
+    setBackupImportWorkspaceTarget(store.set, store.get)({ bundleId: 'w-1', targetId: 'existing' });
+    h.configImportApply.mockRejectedValueOnce(new Error('database is locked'));
+    await applyBackupImport(store.set, store.get)();
+    const retryOfFirst = reportedOf().retry;
+    expect(reportedOf().coalesceKey).toBe('backup-import-failed');
+
+    h.chooseImportFile.mockResolvedValueOnce('/tmp/northwind.json');
+    await chooseBackupImportFile(store.set, store.get)();
+    setBackupImportWorkspaceTarget(store.set, store.get)({ bundleId: 'w-1', targetId: 'other' });
+    expect(h.resolveNotifications).toHaveBeenLastCalledWith(['backup-import-failed']);
+    h.configImportApply.mockClear();
+
+    expect(await retryOfFirst?.()).toBe(false);
+
+    expect(h.configImportApply).not.toHaveBeenCalled();
+    expect(store.state.backupImportPath).toBe('/tmp/northwind.json');
+  });
+
+  it('retries a failed import with its own choices, not the ones picked since', async () => {
+    const store = harness();
+    await chooseBackupImportFile(store.set, store.get)();
+    setBackupImportWorkspaceTarget(store.set, store.get)({ bundleId: 'w-1', targetId: 'existing' });
+    setBackupImportWildcardConsent({ set: store.set })({ isAccepted: true });
+    h.configImportApply.mockRejectedValueOnce(new Error('database is locked'));
+    await applyBackupImport(store.set, store.get)();
+
+    setBackupImportWorkspaceTarget(store.set, store.get)({ bundleId: 'w-1', targetId: 'other' });
+    setBackupImportWildcardConsent({ set: store.set })({ isAccepted: false });
+    expect(await reportedOf().retry?.()).toBe(true);
+
+    expect(h.configImportApply).toHaveBeenLastCalledWith({
+      path: '/tmp/import.json',
+      workspaceTargets: { 'w-1': 'existing' },
+      resolvedProjectPaths: {},
+      expectedSha256: 'sha-harborline',
+      hasWildcardConsent: true,
+    });
+  });
+
+  it('never opens another file from the Retry of a failed preview', async () => {
+    const store = harness();
+    h.configImportPreview.mockRejectedValueOnce({ kind: 'io', message: 'the disk is busy' });
+    await chooseBackupImportFile(store.set, store.get)();
+    const retryOfFirst = reportedOf().retry;
+
+    h.chooseImportFile.mockResolvedValueOnce('/tmp/northwind.json');
+    await chooseBackupImportFile(store.set, store.get)();
+    h.configImportPreview.mockClear();
+
+    expect(await retryOfFirst?.()).toBe(false);
+    expect(h.configImportPreview).not.toHaveBeenCalled();
+  });
+
+  it('says the backup file is gone when it moved, with no Retry', async () => {
+    const store = harness();
+    h.configImportPreview.mockRejectedValueOnce({
+      kind: 'validation',
+      message: 'No such file or directory (os error 2)',
+    });
+
+    await chooseBackupImportFile(store.set, store.get)();
+
+    expect(reportedOf().title).toBe("Couldn't find the backup file");
+    expect(reportedOf().retry).toBeUndefined();
+    expect(store.state.backupImportPreview).toBeNull();
+  });
+
+  it('logs a refused import and keeps the preview to try again', async () => {
+    const store = harness();
+    await chooseBackupImportFile(store.set, store.get)();
+    h.configImportApply.mockResolvedValueOnce({
+      ok: false,
+      errors: [{ field: 'permissionRules[0].decision', message: 'wildcard allow needs consent' }],
+      stats: {},
+    });
+
+    await applyBackupImport(store.set, store.get)();
+
+    expect(reportedOf()).toMatchObject({
+      title: "Couldn't import the backup",
+      error: 'wildcard allow needs consent',
+    });
+    expect(store.state.backupImportResult).toBeNull();
+    expect(store.state.backupImportPreview).not.toBeNull();
+    expect(store.state.backupImportPhase).toBe('idle');
+  });
+
+  it('drops the saved notice of an export when an import starts', async () => {
+    const store = harness();
+    await writeBackupExport(store.set, store.get)();
+    expect(store.state.backupExportedPath).toBe('/tmp/goodboy-setup.json');
+
+    await chooseBackupImportFile(store.set, store.get)();
+
+    expect(store.state.backupExportedPath).toBeNull();
   });
 
   it('retries from a fresh preview after the file changed', async () => {
@@ -299,7 +441,7 @@ describe('backup error text', () => {
     expect(store.state.backupExportError).toBe('the backup folder is read only');
   });
 
-  it('shows the message of a structured export write rejection', async () => {
+  it('logs a failed export once, with a Retry that writes the same file', async () => {
     const store = harness();
     await loadBackupExportPreview(store.set, store.get)();
     h.configExportWrite.mockRejectedValueOnce(rejection);
@@ -307,10 +449,36 @@ describe('backup error text', () => {
     const path = await writeBackupExport(store.set, store.get)();
 
     expect(path).toBeNull();
-    expect(store.state.backupExportError).toBe('the backup folder is read only');
+    expect(store.state.backupExportError).toBeNull();
+    expect(store.state.backupExportPhase).toBe('idle');
+    expect(reportedOf()).toMatchObject({ title: "Couldn't export the backup", error: rejection });
+    expect(await reportedOf().retry?.()).toBe(true);
+    expect(h.chooseExportFile).toHaveBeenCalledTimes(1);
+    expect(h.configExportWrite).toHaveBeenLastCalledWith(
+      expect.objectContaining({ path: '/tmp/goodboy-setup.json' }),
+    );
+    expect(store.state.backupExportedPath).toBe('/tmp/goodboy-setup.json');
   });
 
-  it('shows the message of a structured import preview rejection', async () => {
+  it('retries a failed export with the groups and findings of the failed request', async () => {
+    const store = harness();
+    await loadBackupExportPreview(store.set, store.get)();
+    const groups = store.state.backupExportGroups;
+    h.configExportWrite.mockRejectedValueOnce(rejection);
+    await writeBackupExport(store.set, store.get)();
+
+    setBackupFindingIncluded(store.set, store.get)({ fingerprint: 'fp-1', included: true });
+    setBackupExportGroup(store.set, store.get)({ group: 'scripts', value: !groups.scripts });
+    expect(await reportedOf().retry?.()).toBe(true);
+
+    expect(h.configExportWrite).toHaveBeenLastCalledWith({
+      path: '/tmp/goodboy-setup.json',
+      groups,
+      leaveOut: ['fp-1'],
+    });
+  });
+
+  it('logs a structured import preview rejection with a Retry', async () => {
     const store = harness();
     await chooseBackupImportFile(store.set, store.get)();
     h.dialogOpen.mockResolvedValueOnce('/new/parent');
@@ -318,18 +486,22 @@ describe('backup error text', () => {
 
     await chooseBackupImportProjectParent(store.set, store.get)();
 
-    expect(store.state.backupImportPhase).toBe('error');
-    expect(store.state.backupImportError).toBe('the backup folder is read only');
+    expect(store.state.backupImportPhase).toBe('idle');
+    expect(reportedOf()).toMatchObject({
+      title: "Couldn't open the backup file",
+      error: rejection,
+    });
+    expect(reportedOf().retry).toBeDefined();
   });
 
-  it('shows the message of a structured import apply rejection', async () => {
+  it('logs a structured import apply rejection', async () => {
     const store = harness();
     await chooseBackupImportFile(store.set, store.get)();
     h.configImportApply.mockRejectedValueOnce(rejection);
 
     await applyBackupImport(store.set, store.get)();
 
-    expect(store.state.backupImportPhase).toBe('error');
-    expect(store.state.backupImportError).toBe('the backup folder is read only');
+    expect(store.state.backupImportPhase).toBe('idle');
+    expect(reportedOf()).toMatchObject({ title: "Couldn't import the backup", error: rejection });
   });
 });

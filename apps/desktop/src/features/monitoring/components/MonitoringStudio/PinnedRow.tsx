@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
-import { Input, useEscapeLayer } from '@goodboy/ui';
+import { useEffect, useId, useRef, useState, type KeyboardEvent } from 'react';
+import { FieldError, fieldErrorAriaOf, Input, useEscapeLayer } from '@goodboy/ui';
 import type { MonitorProcess, PortRow } from '@goodboy/core/monitoring';
 import { useAppStore } from '../../../../store';
 import { PIN_DESCRIPTION_MAX } from '../../../../store/slices/monitoring/pinDescription';
@@ -40,6 +40,7 @@ export const PinnedRow = ({ row, process, now, isNested }: Props) => {
   const [isEditing, setIsEditing] = useState(false);
   const [draft, setDraft] = useState('');
   const [errorText, setErrorText] = useState<string | null>(null);
+  const errorId = useId();
   const isFinishedRef = useRef(true);
   const isSavingRef = useRef(false);
   const label = portLabel({ row });
@@ -100,7 +101,7 @@ export const PinnedRow = ({ row, process, now, isNested }: Props) => {
       <Input
         autoFocus
         aria-label={`Description for :${row.port}`}
-        aria-invalid={errorText !== null}
+        {...fieldErrorAriaOf({ id: errorId, error: errorText })}
         placeholder="Description"
         maxLength={PIN_DESCRIPTION_MAX}
         value={draft}
@@ -108,11 +109,7 @@ export const PinnedRow = ({ row, process, now, isNested }: Props) => {
         onKeyDown={(event) => onKeyDown({ event })}
         onBlur={() => void save()}
       />
-      {errorText !== null ? (
-        <span role="alert" className="text-meta text-danger">
-          {errorText}
-        </span>
-      ) : null}
+      <FieldError id={errorId} error={errorText} />
     </div>
   ) : undefined;
 

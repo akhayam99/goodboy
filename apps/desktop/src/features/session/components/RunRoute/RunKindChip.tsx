@@ -134,11 +134,6 @@ export const RunKindChip = ({ workspaceId, target, route, changeCount, phase }: 
           onChoose={(params) => void choose(params)}
         />
       )}
-      {change.error === null ? null : (
-        <p role="alert" className="text-meta text-danger">
-          {`${RUN_ROUTE_COPY.changeFailed}: ${change.error}`}
-        </p>
-      )}
       <p data-run-kind-consequence="" className="text-meta text-faint-foreground">
         {RUN_KIND_CONSEQUENCE[phase]}
       </p>

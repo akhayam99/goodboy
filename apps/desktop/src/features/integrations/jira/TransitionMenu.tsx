@@ -3,10 +3,7 @@ import { ChevronDown } from '@goodboy/ui/icons';
 import {
   AnchoredPopover,
   cn,
-  Divider,
-  formatError,
   ICON_SIZE,
-  PopoverPin,
   tintClasses,
   Tooltip,
   type MenuEntry,
@@ -14,6 +11,8 @@ import {
   useDropdown,
 } from '@goodboy/ui';
 import type { WorkspaceId } from '@goodboy/types';
+import { useAppStore } from '../../../store';
+import { hostErrorRecoveryOf } from '../../../store/slices/notifications/hostErrorRecovery';
 import { useJiraTransitions } from './useJiraTransitions';
 
 import { AppMenuList } from '../../actions/AppMenuList';
@@ -28,6 +27,11 @@ type Props = {
   readonly workspaceId: WorkspaceId;
   readonly onTransition: (transitionId: string) => Promise<void>;
   readonly state: CurrentState;
+};
+
+type MoveParams = {
+  readonly transitionId: string;
+  readonly name: string;
 };
 
 type ReasonParams = {
@@ -69,7 +73,7 @@ const describeMove = ({ to, hasScreen }: DescribeParams): string | null => {
 export const TransitionMenu = ({ issueKey, workspaceId, onTransition, state }: Props) => {
   const { transitions, isLoading, error, reload } = useJiraTransitions({ issueKey, workspaceId });
   const [busyId, setBusyId] = useState<string | null>(null);
-  const [moveError, setMoveError] = useState<string | null>(null);
+  const reportError = useAppStore((state) => state.reportError);
   const reason = blockReason({ isLoading, error, count: transitions.length });
   const isBlocked = reason != null;
   const dropdown = useDropdown({
@@ -79,16 +83,23 @@ export const TransitionMenu = ({ issueKey, workspaceId, onTransition, state }: P
   });
   const { open: isOpen, close, toggle } = dropdown;
 
-  const move = async (transitionId: string) => {
+  const move = async ({ transitionId, name }: MoveParams): Promise<boolean> => {
     setBusyId(transitionId);
-    setMoveError(null);
     try {
       await onTransition(transitionId);
-      close();
       reload();
-    } catch (moveFailure: unknown) {
-      setMoveError(formatError(moveFailure));
+      return true;
+    } catch (error: unknown) {
+      void reportError({
+        title: `Couldn't move ${issueKey} to ${name}`,
+        error,
+        workspaceId,
+        recovery: hostErrorRecoveryOf({ error, tool: 'jira' }),
+        retry: () => move({ transitionId, name }),
+      });
+      return false;
     } finally {
+      close();
       setBusyId(null);
     }
   };
@@ -100,7 +111,7 @@ export const TransitionMenu = ({ issueKey, workspaceId, onTransition, state }: P
     description: describeMove({ to: transition.to?.name ?? null, hasScreen: transition.hasScreen }),
     isDisabled: busyId != null,
     shouldStayOpen: true,
-    onSelect: () => move(transition.id),
+    onSelect: () => void move({ transitionId: transition.id, name: transition.name }),
   }));
 
   return (
@@ -135,14 +146,6 @@ export const TransitionMenu = ({ issueKey, workspaceId, onTransition, state }: P
       }
     >
       <AppMenuList label="Move this issue" entries={entries} onClose={close} />
-      {moveError != null && (
-        <PopoverPin edge="end">
-          <Divider />
-          <p role="alert" className="px-2 py-1 text-meta text-danger">
-            {moveError}
-          </p>
-        </PopoverPin>
-      )}
     </AnchoredPopover>
   );
 };

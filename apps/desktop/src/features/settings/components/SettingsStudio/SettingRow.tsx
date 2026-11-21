@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { cloneElement, isValidElement, useId, type AriaAttributes, type ReactNode } from 'react';
 import { RotateCcw } from '@goodboy/ui/icons';
 import { FieldRow, IconButton } from '@goodboy/ui';
 import type { SettingSave } from '../../hooks/useSettingSave';
@@ -30,6 +30,7 @@ export const SettingRow = ({
   children,
 }: Props) => {
   const anchor = useSettingRowAnchor({ rowKey: rowKey ?? '' });
+  const errorId = useId();
   const canReset = isChanged && onReset !== undefined;
   const hasMarker = canReset || chip !== null;
   const marker = hasMarker ? (
@@ -48,17 +49,26 @@ export const SettingRow = ({
     </>
   ) : null;
   const hasError = save !== undefined && save.error !== null;
+  const control =
+    hasError && isValidElement<AriaAttributes>(children)
+      ? cloneElement(children, {
+          'aria-invalid': true,
+          'aria-describedby': [children.props['aria-describedby'], errorId]
+            .filter((part) => part !== undefined && part !== '')
+            .join(' '),
+        })
+      : children;
   return (
     <FieldRow
       ref={anchor.ref}
       anchor={rowKey}
       label={label}
-      help={hasError ? <SaveErrorHelp help={help} save={save} /> : help}
+      help={hasError ? <SaveErrorHelp id={errorId} help={help} save={save} /> : help}
       marker={marker}
       layout={layout}
       isHighlighted={anchor.isHighlighted}
     >
-      {children}
+      {control}
     </FieldRow>
   );
 };
