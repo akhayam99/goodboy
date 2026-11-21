@@ -19,7 +19,8 @@ type RowsParams = {
   readonly bottom: string;
 };
 
-const rowsOf = ({ top, bottom }: RowsParams): string => `${top} ${DRAWER_GUTTER}px ${bottom}`;
+const rowTemplateOf = ({ top, bottom }: RowsParams): string =>
+  `${top} ${DRAWER_GUTTER}px ${bottom}`;
 
 export const DockRowHandle = ({
   gridRef,
@@ -37,7 +38,7 @@ export const DockRowHandle = ({
   const max = Math.max(DOCK_ROW_MIN_PX, shared - DOCK_ROW_MIN_PX);
   const value = Math.round((shared * topWeight) / Math.max(1, topWeight + bottomWeight));
   const setRows = ({ top, bottom }: RowsParams): void => {
-    gridRef.current?.style.setProperty('grid-template-rows', rowsOf({ top, bottom }));
+    gridRef.current?.style.setProperty('grid-template-rows', rowTemplateOf({ top, bottom }));
   };
   return (
     <div

@@ -54,6 +54,8 @@ const META_INSET_WITH_ICON_PX = HEADER_INSET_PX + ICON_SIZE.control + 8;
 
 const FIELD_SELECTOR = 'textarea, input, [contenteditable="true"]';
 
+const CONTROL = 'button, a, input, select, textarea, [role="button"], [role="combobox"]';
+
 const TEXT_INPUT_TYPES = new Set(['text', 'search', 'email', 'url', 'tel', 'number', 'password']);
 
 const focusableTrigger = (): HTMLElement | null => {
@@ -141,7 +143,16 @@ export const DrawerFrame = ({
       {hasBackChip ? <DrawerBackChip chip={backChip} /> : null}
       <div
         data-dock-drag-source={dragSource === null ? undefined : ''}
-        onPointerDown={dragSource === null ? undefined : (event) => dragSource.onStart({ event })}
+        onPointerDown={
+          dragSource === null
+            ? undefined
+            : (event) => {
+                if (event.target instanceof Element && event.target.closest(CONTROL) !== null) {
+                  return;
+                }
+                dragSource.onStart({ event });
+              }
+        }
         className={cn(
           'flex min-w-0 flex-1 gap-2',
           hasToolbar ? 'items-start' : 'items-center',

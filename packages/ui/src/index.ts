@@ -10,8 +10,7 @@ export type { DockGridCell, DockGridMove, DockGridSpec, DockGridSplit } from './
 export { dockSplitKeyOf } from './dockSplitKeyOf';
 export { dockColumnsAfterMove } from './dockColumnsAfterMove';
 export type { DockMoveTarget } from './dockMoveTarget';
-export { dockShapeFits } from './dockShapeFits';
-export type { DockPane } from './dockLayout';
+export { dockFitProbe } from './dockFitProbe';
 export { turnedDockColumnsOf } from './turnedDockColumnsOf';
 export { ShellRailContext } from './shellRailContext';
 export { UnderHeadContext } from './underHeadContext';
@@ -58,7 +57,6 @@ export {
   DRAWER_EXIT_MS,
   DRAWER_EXIT_MAX_ELEMENTS,
   DRAWER_GUTTER,
-  DRAWER_TIERS,
   READER_DRAWER_DEFAULT,
   READER_DRAWER_MAX,
   READER_DRAWER_MIN,

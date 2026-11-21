@@ -3,7 +3,7 @@ import { saveSessionDockGrid } from '@goodboy/db';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { commitAfterConfirm } from '../../runtime/state-writes/commitAfterConfirm';
 import type { SliceDeps } from '../../slice-types';
-import { dockGridWrites } from './dockGridWrites';
+import { DOCK_GRID_MOVE_KEY, dockGridMoves, dockGridWrites } from './dockGridWrites';
 import { EMPTY_DRAWER_GRID, type DrawerGrid } from './state';
 import { storedDockGridOf } from './storedDockGrid';
 
@@ -22,6 +22,7 @@ export const committedDockGrid = async ({
   next,
   failureTitle,
 }: Params): Promise<boolean> => {
+  const claim = dockGridMoves.claim({ key: DOCK_GRID_MOVE_KEY });
   let isApplied = false;
   await commitAfterConfirm({
     get,
@@ -43,11 +44,7 @@ export const committedDockGrid = async ({
       });
     },
     commit: () => {
-      const state = get();
-      if (
-        state.currentSessionId !== sessionId ||
-        (state.drawerGrid ?? EMPTY_DRAWER_GRID) !== before
-      ) {
+      if (!claim.isCurrent() || (get().drawerGrid ?? EMPTY_DRAWER_GRID) !== before) {
         return;
       }
       set({ drawerGrid: next });

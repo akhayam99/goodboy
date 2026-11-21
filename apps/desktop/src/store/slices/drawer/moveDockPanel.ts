@@ -12,11 +12,7 @@ type MoveParams = {
 
 export const moveDockPanel = ({ set, get }: SliceDeps) => {
   return async ({ sessionId, kind, target }: MoveParams): Promise<boolean> => {
-    const state = get();
-    if (state.currentSessionId !== sessionId) {
-      return false;
-    }
-    const before = state.drawerGrid ?? EMPTY_DRAWER_GRID;
+    const before = get().drawerGrid ?? EMPTY_DRAWER_GRID;
     const byKind = new Map<string, OpenDrawer>(
       before.columns.flat().map((panel) => [panel.kind, panel]),
     );

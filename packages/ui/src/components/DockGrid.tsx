@@ -1,11 +1,11 @@
-import type { CSSProperties, ReactNode, RefObject } from 'react';
+import { useMemo, type CSSProperties, type ReactNode, type RefObject } from 'react';
 import { DockCellContext } from '../dockCellContext';
 import { cn } from '../cn';
 import type { DockGridColumnBox } from '../dockGridColumnBox';
 import { dockGridTracksOf } from '../dockGridTracksOf';
 import { DockPairTurnContext, type DockPairTurn } from '../dockPairTurnContext';
 import type { DockGridSpec } from '../dockGridSpec';
-import { DockDragContext } from '../dockDragContext';
+import { DockDragContext, type DockDragSource } from '../dockDragContext';
 import type { CanDropParams } from '../dockDropZonesOf';
 import { useDockDrag } from '../useDockDrag';
 import { DockDropZones } from './DockDropZones';
@@ -40,12 +40,27 @@ export const DockGrid = ({
   canDrop,
 }: Props) => {
   const tracks = dockGridTracksOf({ columns });
+  const keys = columns.map((column) => column.panes.map((pane) => pane.key));
+  const canMove = isFramed && spec.onMove !== undefined;
   const drag = useDockDrag({
     gridRef,
-    columns: columns.map((column) => column.panes.map((pane) => pane.key)),
+    columns: keys,
     canDrop,
-    onMove: isFramed ? (spec.onMove ?? null) : null,
+    onMove: canMove ? (spec.onMove ?? null) : null,
   });
+  const keyList = keys.flat().join('/');
+  const startDrag = drag.start;
+  const sources = useMemo(
+    () =>
+      new Map<string, DockDragSource>(
+        canMove
+          ? keyList
+              .split('/')
+              .map((key) => [key, { onStart: ({ event }) => startDrag({ key, event }) }])
+          : [],
+      ),
+    [canMove, keyList, startDrag],
+  );
   const style: CSSProperties = isFramed
     ? { gridTemplateColumns: tracks.columns, gridTemplateRows: tracks.rows }
     : { gridTemplateColumns: SINGLE_TRACK, gridTemplateRows: SINGLE_TRACK };
@@ -73,7 +88,7 @@ export const DockGrid = ({
               data-dock-pane={pane.key}
               data-dock-focus={pane.key}
               data-panel-focused={isFocused ? '' : undefined}
-              data-dock-lifted={drag.view?.key === pane.key ? '' : undefined}
+              data-dock-lifted={drag.liftedKey === pane.key ? '' : undefined}
               tabIndex={-1}
               onFocusCapture={() => spec.onFocus({ key: pane.key })}
               onPointerDownCapture={() => spec.onFocus({ key: pane.key })}
@@ -87,7 +102,7 @@ export const DockGrid = ({
                 isFramed && 'rounded-frame border bg-drawer',
                 isFramed && (isFocused ? 'border-focus-ring' : 'border-frame-edge'),
                 isFramed && isFloating && 'shadow-xl',
-                drag.view?.key === pane.key && 'opacity-50',
+                drag.liftedKey === pane.key && 'opacity-50',
               )}
             >
               <DockPairTurnContext.Provider
@@ -95,13 +110,7 @@ export const DockGrid = ({
                   turn === null ? null : { ...turn, onTurn: () => spec.onTurn({ key: pane.key }) }
                 }
               >
-                <DockDragContext.Provider
-                  value={
-                    isFramed && spec.onMove !== undefined
-                      ? { onStart: ({ event }) => drag.start({ key: pane.key, event }) }
-                      : null
-                  }
-                >
+                <DockDragContext.Provider value={sources.get(pane.key) ?? null}>
                   <DockCellContext.Provider value={pane.key}>{cell}</DockCellContext.Provider>
                 </DockDragContext.Provider>
               </DockPairTurnContext.Provider>
@@ -127,7 +136,7 @@ export const DockGrid = ({
           ...(rowHandle === null ? [] : [rowHandle]),
         ];
       })}
-      {drag.view === null ? null : <DockDropZones view={drag.view} />}
+      {drag.liftedKey === null ? null : <DockDropZones store={drag.store} />}
     </div>
   );
 };

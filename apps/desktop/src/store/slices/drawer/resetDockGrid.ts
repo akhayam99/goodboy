@@ -11,11 +11,7 @@ type ResetParams = {
 
 export const resetDockGrid = ({ set, get }: SliceDeps) => {
   return async ({ sessionId }: ResetParams): Promise<boolean> => {
-    const state = get();
-    if (state.currentSessionId !== sessionId) {
-      return false;
-    }
-    const before = state.drawerGrid ?? EMPTY_DRAWER_GRID;
+    const before = get().drawerGrid ?? EMPTY_DRAWER_GRID;
     const next = gridAtRest({ grid: before });
     if (storedDockGridOf({ grid: next }) === storedDockGridOf({ grid: before })) {
       return false;
@@ -33,8 +29,7 @@ export const resetDockGrid = ({ set, get }: SliceDeps) => {
     }
     get().undoable({
       message: 'Panel layout reset',
-      isCurrent: () =>
-        get().currentSessionId === sessionId && (get().drawerGrid ?? EMPTY_DRAWER_GRID) === next,
+      isCurrent: () => (get().drawerGrid ?? EMPTY_DRAWER_GRID) === next,
       undo: () =>
         committedDockGrid({
           set,

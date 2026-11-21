@@ -748,8 +748,10 @@ window has; they save nothing.
 
 A move and a reset write the row first and change the grid only after the
 write lands (`moveDockPanel`, `resetDockGrid`, through `committedDockGrid`
-and `commitAfterConfirm`). Each names the session it was made on and does
-nothing once the window left it, or when the panel already left the grid.
+and `commitAfterConfirm`). Each names the session it writes and holds a
+latest-only claim (`dockGridMoves`) that a newer move and a session switch
+(`watchSessionDockGrid`) cancel, so a move that lands late changes nothing;
+nor does one whose panel already left the grid.
 A failed write leaves the panels where they were and `reportError` says
 `Couldn't move the panel` or `Couldn't reset the panel layout`. A reset puts
 every tool back where it opens and drops the saved widths and heights; its
@@ -759,18 +761,21 @@ session, the grid changes and nothing is saved.
 
 With two panels or more, a panel's head title is a drag source
 (`DockDragContext` from `DockGrid` into `DrawerFrame`, `useDockDrag`). A press
-becomes a drag after 4px, so a click stays a click; Esc cancels and the
+becomes a drag after 4px, so a click stays a click, and a press on a control
+inside the head never starts one; Esc cancels through the escape stack and the
 pointer up drops. While it drags, `DockDropZones` draws the zones over every
 other panel (left, right, above, swap, below) and a strip on the page's edge
 (beside the page); a zone that would leave the page worse than now, by the
 solver with the real widths (`canDrop` from `useDockGrid`, `dockMoveFits`),
-reads `No room` and drops nothing. The drag sets `SPLIT_DRAG_ATTRIBUTE` to
+reads `No room` and drops nothing. The zones redraw from a small store at most
+once a frame (`dockDragStore`), so the panels themselves render only when the
+drag starts and ends. The drag sets `SPLIT_DRAG_ATTRIBUTE` to
 `move`, so the Browser page hides under its cover like under a handle drag,
 and a drop goes through `moveDockPanel`. From the keyboard, ⌘K lists
 `Move Terminal panel…` for each tool when two or more are open
 (`dockPanelEntries`); its step holds only the moves that never leave the page
-worse than now (`dockMovesOf` with `dockShapeFits`: no new float, no new
-fold, no detail newly over the page). `Reset panel layout` sits in ⌘K while
+worse than now (`dockMovesOf`, asking the mounted grid's `canDrop` through
+`dockFitProbe`: no new float, no new fold, no detail newly over the page). `Reset panel layout` sits in ⌘K while
 the layout differs from where the tools open (`gridAtRest`), and in View
 (`menu.resetPanels`).
 

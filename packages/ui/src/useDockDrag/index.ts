@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState, type RefObject } from 'react';
 import type { DockDragStart } from '../dockDragContext';
+import { createDockDragStore, type DockDragStore } from '../dockDragStore';
 import {
   dockDropZonesOf,
   type CanDropParams,
@@ -8,16 +9,8 @@ import {
 } from '../dockDropZonesOf';
 import type { DockGridMove } from '../dockGridSpec';
 import { dockZoneAt } from '../dockZoneAt';
+import { registerEscapeLayer } from '../escape';
 import { SPLIT_DRAG_ATTRIBUTE } from '../splitDragAttribute';
-
-export type DockDragView = {
-  readonly key: string;
-  readonly title: string;
-  readonly x: number;
-  readonly y: number;
-  readonly zones: ReadonlyArray<DockDropZone>;
-  readonly hoverId: string | null;
-};
 
 type Params = {
   readonly gridRef: RefObject<HTMLDivElement | null>;
@@ -44,34 +37,41 @@ type PointParams = {
   readonly y: number;
 };
 
-const DRAG_THRESHOLD_PX = 4;
-
-const DRAG_AXIS = 'move';
-
 type ElementParams = {
   readonly element: Element;
 };
 
-type KeyParams = {
-  readonly key: string;
+type DockDrag = {
+  readonly liftedKey: string | null;
+  readonly store: DockDragStore;
+  readonly start: (params: StartParams) => void;
 };
+
+const DRAG_THRESHOLD_PX = 4;
+
+const DRAG_AXIS = 'move';
 
 const rectOf = ({ element }: ElementParams): DockRect => {
   const box = element.getBoundingClientRect();
   return { x: box.left, y: box.top, width: box.width, height: box.height };
 };
 
-export const useDockDrag = ({ gridRef, columns, canDrop, onMove }: Params) => {
-  const [view, setView] = useState<DockDragView | null>(null);
+export const useDockDrag = ({ gridRef, columns, canDrop, onMove }: Params): DockDrag => {
+  const [store] = useState(createDockDragStore);
+  const [liftedKey, setLiftedKey] = useState<string | null>(null);
   const pressRef = useRef<Press | null>(null);
   const frameRef = useRef<number | null>(null);
   const latest = useRef({ columns, canDrop, onMove });
   latest.current = { columns, canDrop, onMove };
   const listeners = useRef<AbortController | null>(null);
 
+  const escapeRef = useRef<(() => void) | null>(null);
+
   const finish = useCallback(() => {
     listeners.current?.abort();
     listeners.current = null;
+    escapeRef.current?.();
+    escapeRef.current = null;
     pressRef.current = null;
     if (frameRef.current !== null) {
       cancelAnimationFrame(frameRef.current);
@@ -80,122 +80,108 @@ export const useDockDrag = ({ gridRef, columns, canDrop, onMove }: Params) => {
     document.body.removeAttribute(SPLIT_DRAG_ATTRIBUTE);
     document.body.style.cursor = '';
     document.body.style.userSelect = '';
-    setView(null);
-  }, []);
+    store.set({ view: null });
+    setLiftedKey(null);
+  }, [store]);
 
   useEffect(() => finish, [finish]);
 
-  const zonesFor = ({ key }: KeyParams): ReadonlyArray<DockDropZone> => {
-    const grid = gridRef.current;
-    if (grid === null) {
-      return [];
-    }
-    const panes = Array.from(grid.querySelectorAll<HTMLElement>('[data-dock-pane]')).map(
-      (element) => ({ key: element.dataset.dockPane ?? '', rect: rectOf({ element }) }),
-    );
-    const page = grid.closest('aside')?.parentElement?.querySelector('[data-drawer-main]') ?? null;
-    return dockDropZonesOf({
-      dragKey: key,
-      columns: latest.current.columns,
-      panes,
-      page: page === null ? null : rectOf({ element: page }),
-      canDrop: latest.current.canDrop,
-    });
-  };
-
-  const show = ({ x, y }: PointParams): void => {
-    const press = pressRef.current;
-    if (press === null) {
-      return;
-    }
-    const hover = dockZoneAt({ zones: press.zones, x, y });
-    setView({
-      key: press.key,
-      title: press.title,
-      x,
-      y,
-      zones: press.zones,
-      hoverId: hover?.id ?? null,
-    });
-  };
-
-  const start = ({ key, event }: StartParams): void => {
-    if (event.button !== 0 || latest.current.onMove === null) {
-      return;
-    }
-    const grid = gridRef.current;
-    const title =
-      grid
-        ?.querySelector(`[data-dock-pane="${CSS.escape(key)}"] section`)
-        ?.getAttribute('aria-label') ?? key;
-    pressRef.current = {
-      key,
-      startX: event.clientX,
-      startY: event.clientY,
-      isActive: false,
-      zones: [],
-      title,
-    };
-    listeners.current?.abort();
-    const controller = new AbortController();
-    listeners.current = controller;
-    window.addEventListener(
-      'pointermove',
-      (move) => {
+  const start = useCallback(
+    ({ key, event }: StartParams): void => {
+      if (event.button !== 0 || latest.current.onMove === null) {
+        return;
+      }
+      const grid = gridRef.current;
+      if (grid === null) {
+        return;
+      }
+      const zonesOf = (): ReadonlyArray<DockDropZone> => {
+        const panes = Array.from(grid.querySelectorAll<HTMLElement>('[data-dock-pane]')).map(
+          (element) => ({ key: element.dataset.dockPane ?? '', rect: rectOf({ element }) }),
+        );
+        const page =
+          grid.closest('aside')?.parentElement?.querySelector('[data-drawer-main]') ?? null;
+        return dockDropZonesOf({
+          dragKey: key,
+          columns: latest.current.columns,
+          panes,
+          page: page === null ? null : rectOf({ element: page }),
+          canDrop: latest.current.canDrop,
+        });
+      };
+      const show = ({ x, y }: PointParams): void => {
         const press = pressRef.current;
         if (press === null) {
           return;
         }
-        if (!press.isActive) {
-          const distance = Math.hypot(move.clientX - press.startX, move.clientY - press.startY);
-          if (distance < DRAG_THRESHOLD_PX) {
+        const hover = dockZoneAt({ zones: press.zones, x, y });
+        store.set({
+          view: { key, title: press.title, x, y, zones: press.zones, hoverId: hover?.id ?? null },
+        });
+      };
+      pressRef.current = {
+        key,
+        startX: event.clientX,
+        startY: event.clientY,
+        isActive: false,
+        zones: [],
+        title:
+          grid
+            .querySelector(`[data-dock-pane="${CSS.escape(key)}"] section`)
+            ?.getAttribute('aria-label') ?? key,
+      };
+      listeners.current?.abort();
+      const controller = new AbortController();
+      listeners.current = controller;
+      window.addEventListener(
+        'pointermove',
+        (move) => {
+          const press = pressRef.current;
+          if (press === null) {
             return;
           }
-          pressRef.current = { ...press, isActive: true, zones: zonesFor({ key: press.key }) };
-          document.body.setAttribute(SPLIT_DRAG_ATTRIBUTE, DRAG_AXIS);
-          document.body.style.cursor = 'grabbing';
-          document.body.style.userSelect = 'none';
-        }
-        const point = { x: move.clientX, y: move.clientY };
-        if (frameRef.current !== null) {
-          cancelAnimationFrame(frameRef.current);
-        }
-        frameRef.current = requestAnimationFrame(() => {
-          frameRef.current = null;
-          show(point);
-        });
-      },
-      { signal: controller.signal },
-    );
-    window.addEventListener(
-      'pointerup',
-      (up) => {
-        const press = pressRef.current;
-        const zone =
-          press === null || !press.isActive
-            ? null
-            : dockZoneAt({ zones: press.zones, x: up.clientX, y: up.clientY });
-        finish();
-        if (press !== null && zone !== null && zone.isValid) {
-          latest.current.onMove?.({ key: press.key, target: zone.target });
-        }
-      },
-      { signal: controller.signal },
-    );
-    window.addEventListener('pointercancel', finish, { signal: controller.signal });
-    window.addEventListener(
-      'keydown',
-      (event) => {
-        if (event.key !== 'Escape' || pressRef.current?.isActive !== true) {
-          return;
-        }
-        event.preventDefault();
-        event.stopPropagation();
-        finish();
-      },
-      { signal: controller.signal, capture: true },
-    );
-  };
+          if (!press.isActive) {
+            const distance = Math.hypot(move.clientX - press.startX, move.clientY - press.startY);
+            if (distance < DRAG_THRESHOLD_PX) {
+              return;
+            }
+            pressRef.current = { ...press, isActive: true, zones: zonesOf() };
+            document.body.setAttribute(SPLIT_DRAG_ATTRIBUTE, DRAG_AXIS);
+            document.body.style.cursor = 'grabbing';
+            document.body.style.userSelect = 'none';
+            escapeRef.current = registerEscapeLayer(finish);
+            setLiftedKey(key);
+          }
+          const point = { x: move.clientX, y: move.clientY };
+          if (frameRef.current !== null) {
+            cancelAnimationFrame(frameRef.current);
+          }
+          frameRef.current = requestAnimationFrame(() => {
+            frameRef.current = null;
+            show(point);
+          });
+        },
+        { signal: controller.signal },
+      );
+      window.addEventListener(
+        'pointerup',
+        (up) => {
+          const press = pressRef.current;
+          const zone =
+            press === null || !press.isActive
+              ? null
+              : dockZoneAt({ zones: press.zones, x: up.clientX, y: up.clientY });
+          finish();
+          if (zone !== null && zone.isValid) {
+            latest.current.onMove?.({ key, target: zone.target });
+          }
+        },
+        { signal: controller.signal },
+      );
+      window.addEventListener('pointercancel', finish, { signal: controller.signal });
+    },
+    [finish, gridRef, store],
+  );
 
-  return { view, start };
+  return { liftedKey, store, start };
 };

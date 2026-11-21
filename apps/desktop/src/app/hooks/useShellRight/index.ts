@@ -3,6 +3,7 @@ import type { DockGridSpec, DrawerPlacement, DrawerSizing } from '@goodboy/ui';
 import { DRAWER_KINDS } from '../../../store/slices/drawer/drawerKinds';
 import { panelFocusKeyOf } from '../../../store/slices/drawer/panelFocusKeyOf';
 import { shellPanelsOf } from '../../../store/slices/drawer/shellPanelsOf';
+import { EMPTY_DRAWER_GRID } from '../../../store/slices/drawer/state';
 import { focusShellPanel } from '../../../shared/shellFocus/focusShellPanel';
 import { turnShellPair } from '../../../shared/shellFocus/turnShellPair';
 import { resizeShellColumn } from '../../../shared/shellFocus/resizeShellColumn';
@@ -72,7 +73,7 @@ export const useShellRight = ({}: Params): ShellRight => {
         })),
       ),
       focus: panelFocusKeyOf({ panels }),
-      splits: drawerGrid.splits,
+      splits: (drawerGrid ?? EMPTY_DRAWER_GRID).splits,
       onFocus: focusShellPanel,
       onTurn: turnShellPair,
       onResize: resizeShellColumn,

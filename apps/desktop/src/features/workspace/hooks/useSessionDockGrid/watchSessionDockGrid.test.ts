@@ -371,19 +371,20 @@ describe('moving a panel and resetting the layout', () => {
     expect(state().drawerGrid).toBe(before);
   });
 
-  it('does nothing when the window is no longer on the session it named', async () => {
+  it('drops a move that lands after the window left the session it named', async () => {
     await openPair();
-    await goTo({ sessionId: S2 });
-    const before = state().drawerGrid;
+    const before = toolKinds();
 
-    const isMoved = await state().moveDockPanel({
+    const moving = state().moveDockPanel({
       sessionId: S1,
       kind: 'browser',
-      target: { at: 'page' },
+      target: { at: 'above', key: 'terminal' },
     });
+    state().navigate({ to: sessionPlace({ sessionId: S2 }) });
 
-    expect(isMoved).toBe(false);
-    expect(state().drawerGrid).toBe(before);
+    expect(await moving).toBe(false);
+    await settle();
+    expect(toolKinds()).toEqual(before);
   });
 
   it('keeps the panels where they were when the save fails, and says so', async () => {

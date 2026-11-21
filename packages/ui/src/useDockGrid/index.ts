@@ -1,4 +1,5 @@
-import { useCallback, useRef, type MutableRefObject, type RefObject } from 'react';
+import { useCallback, useEffect, useRef, type MutableRefObject, type RefObject } from 'react';
+import { dockFitProbe } from '../dockFitProbe';
 import { dockGridFrameOf, type DockGridFrame, type SolvedDockFrame } from '../dockGridFrameOf';
 import type { DockGridColumnBox } from '../dockGridColumnBox';
 import { dockGridSpanOf } from '../dockGridSpanOf';
@@ -167,6 +168,13 @@ export const useDockGrid = ({
     });
     return solved === null || next === null || dockMoveFits({ now: solved, next });
   };
+  const dropRef = useRef(canDrop);
+  dropRef.current = canDrop;
+  useEffect(
+    () =>
+      dockFitProbe.publish({ probe: ({ columns: keys }) => dropRef.current({ columns: keys }) }),
+    [],
+  );
   const boxes = frame.columns;
   const previewColumn = useCallback(
     ({ index, width, from }: ColumnPreviewParams) => {

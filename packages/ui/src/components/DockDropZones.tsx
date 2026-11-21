@@ -1,18 +1,23 @@
+import { useSyncExternalStore } from 'react';
 import { createPortal } from 'react-dom';
 import { cn } from '../cn';
-import type { DockDragView } from '../useDockDrag';
+import type { DockDragStore } from '../dockDragStore';
 
 type Props = {
-  readonly view: DockDragView;
+  readonly store: DockDragStore;
 };
 
 const NO_ROOM = 'No room';
 
 const GHOST_OFFSET_PX = 14;
 
-export const DockDropZones = ({ view }: Props) =>
-  createPortal(
-    <div data-dock-drop="" className="pointer-events-none fixed inset-0 z-50">
+export const DockDropZones = ({ store }: Props) => {
+  const view = useSyncExternalStore((listener) => store.subscribe({ listener }), store.get);
+  if (view === null) {
+    return null;
+  }
+  return createPortal(
+    <div data-dock-drop="" className="pointer-events-none fixed inset-0 z-drag">
       {view.zones.map((zone) => {
         const isHovered = view.hoverId === zone.id;
         return (
@@ -32,7 +37,7 @@ export const DockDropZones = ({ view }: Props) =>
               zone.isVertical && '[writing-mode:vertical-rl]',
               zone.isValid ? 'text-primary ring-1 ring-primary' : 'text-danger ring-1 ring-danger',
               isHovered && 'ring-2',
-              isHovered && (zone.isValid ? 'bg-primary-wash' : 'bg-danger-wash'),
+              isHovered && zone.isValid && 'bg-primary-wash',
             )}
           >
             {zone.isValid ? zone.label : NO_ROOM}
@@ -48,3 +53,4 @@ export const DockDropZones = ({ view }: Props) =>
     </div>,
     document.body,
   );
+};

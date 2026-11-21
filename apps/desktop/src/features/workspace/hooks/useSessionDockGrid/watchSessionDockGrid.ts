@@ -1,7 +1,9 @@
 import type { SessionId } from '@goodboy/types';
 import type { AppStore } from '../../../../store/store';
 import {
+  DOCK_GRID_MOVE_KEY,
   DOCK_GRID_RECALL_KEY,
+  dockGridMoves,
   dockGridRecalls,
 } from '../../../../store/slices/drawer/dockGridWrites';
 import { EMPTY_DRAWER_GRID, type DrawerGrid } from '../../../../store/slices/drawer/state';
@@ -87,6 +89,7 @@ export const watchSessionDockGrid = ({
   const unsubscribe = store.subscribe((state) => {
     const nextGrid = state.drawerGrid ?? EMPTY_DRAWER_GRID;
     if (state.currentSessionId !== owner) {
+      dockGridMoves.cancel({ key: DOCK_GRID_MOVE_KEY });
       flush();
       owner = state.currentSessionId;
       grid = nextGrid;

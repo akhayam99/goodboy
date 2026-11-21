@@ -14,23 +14,17 @@ const BROWSER: OpenDrawer = { kind: 'browser', sessionId: null, payload: null };
 
 const STACKED: DrawerGrid = { ...EMPTY_DRAWER_GRID, columns: [[BROWSER, TERMINAL]] };
 
-type TargetsParams = {
-  readonly windowWidth: number;
+type FitParams = {
+  readonly columns: ReadonlyArray<ReadonlyArray<string>>;
 };
 
-const fittingTargets = ({ windowWidth }: TargetsParams) =>
-  dockMovesOf({ grid: STACKED, kind: 'terminal', windowWidth, detail: null })
-    .filter((move) => move.isFitting)
-    .map((move) => move.target);
+const onlyOneColumn = ({ columns }: FitParams): boolean => columns.length === 1;
 
 describe('the moves a panel has', () => {
-  it('offers every distinct place once, and the stack it already has never', () => {
-    const targets = dockMovesOf({
-      grid: STACKED,
-      kind: 'terminal',
-      windowWidth: 1920,
-      detail: null,
-    }).map((move) => move.target);
+  it('offers every distinct place once, and never the place it already has', () => {
+    const targets = dockMovesOf({ grid: STACKED, kind: 'terminal', fits: () => true }).map(
+      (move) => move.target,
+    );
 
     expect(targets).toEqual([
       { at: 'swap', key: 'browser' },
@@ -39,17 +33,11 @@ describe('the moves a panel has', () => {
     ]);
   });
 
-  it('keeps the side by side moves on a wide window', () => {
-    expect(fittingTargets({ windowWidth: 1920 })).toContainEqual({
-      at: 'beside',
-      key: 'browser',
-      side: 'after',
-    });
-  });
+  it('marks the moves the dock says would not fit', () => {
+    const moves = dockMovesOf({ grid: STACKED, kind: 'terminal', fits: onlyOneColumn });
 
-  it('drops the side by side moves where the page would lose its room', () => {
-    [1280, 1440, 1600].forEach((windowWidth) => {
-      expect(fittingTargets({ windowWidth })).toEqual([{ at: 'swap', key: 'browser' }]);
-    });
+    expect(moves.filter((move) => move.isFitting).map((move) => move.target)).toEqual([
+      { at: 'swap', key: 'browser' },
+    ]);
   });
 });
