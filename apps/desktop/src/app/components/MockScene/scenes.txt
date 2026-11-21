@@ -1426,6 +1426,10 @@ u48-item-work-line-light
 u48-tool-rail-closed
 u48-tool-rail-detail-monitor
 u48-tool-rail-monitor
+u50-mount-fix-confirm-dark
+u50-mount-fix-confirm-light
+u50-mount-fix-dark
+u50-mount-fix-light
 update-card
 update-card-long-version
 update-card-narrow
