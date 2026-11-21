@@ -3,7 +3,7 @@ import { saveSessionDockGrid } from '@goodboy/db';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { commitAfterConfirm } from '../../runtime/state-writes/commitAfterConfirm';
 import type { SliceDeps } from '../../slice-types';
-import { DOCK_GRID_MOVE_KEY, dockGridMoves, dockGridWrites } from './dockGridWrites';
+import { DOCK_GRID_MOVE_KEY, dockGridMoves, dockGridOwner, dockGridWrites } from './dockGridWrites';
 import { EMPTY_DRAWER_GRID, type DrawerGrid } from './state';
 import { storedDockGridOf } from './storedDockGrid';
 
@@ -22,7 +22,13 @@ export const committedDockGrid = async ({
   next,
   failureTitle,
 }: Params): Promise<boolean> => {
+  if (sessionId !== dockGridOwner.read()) {
+    return false;
+  }
   const claim = dockGridMoves.claim({ key: DOCK_GRID_MOVE_KEY });
+  const savedAt = Date.now();
+  const isSourceCurrent = (): boolean =>
+    claim.isCurrent() && (get().drawerGrid ?? EMPTY_DRAWER_GRID) === before;
   let isApplied = false;
   await commitAfterConfirm({
     get,
@@ -30,21 +36,26 @@ export const committedDockGrid = async ({
     target: sessionId === null ? {} : { sessionId },
     step: async () => {
       if (sessionId === null) {
-        return;
+        return { isWritten: true };
       }
-      await dockGridWrites.run({
+      return dockGridWrites.run({
         key: sessionId,
-        task: () =>
-          saveSessionDockGrid({
+        task: async () => {
+          if (!isSourceCurrent()) {
+            return { isWritten: false };
+          }
+          await saveSessionDockGrid({
             db: tauriDatabase,
             sessionId,
             grid: storedDockGridOf({ grid: next }),
-            savedAt: Date.now(),
-          }),
+            savedAt,
+          });
+          return { isWritten: true };
+        },
       });
     },
-    commit: () => {
-      if (!claim.isCurrent() || (get().drawerGrid ?? EMPTY_DRAWER_GRID) !== before) {
+    commit: ({ isWritten }) => {
+      if (!isWritten || !isSourceCurrent()) {
         return;
       }
       set({ drawerGrid: next });

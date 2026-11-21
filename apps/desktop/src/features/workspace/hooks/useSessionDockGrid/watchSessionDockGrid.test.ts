@@ -387,6 +387,62 @@ describe('moving a panel and resetting the layout', () => {
     expect(toolKinds()).toEqual(before);
   });
 
+  it('rejects a move that names another session than the one on screen', async () => {
+    await openPair();
+    const before = state().drawerGrid;
+    db.rows.delete(S2);
+
+    const isMoved = await state().moveDockPanel({
+      sessionId: S2,
+      kind: 'browser',
+      target: { at: 'above', key: 'terminal' },
+    });
+    await settle();
+
+    expect(isMoved).toBe(false);
+    expect(state().drawerGrid).toBe(before);
+    expect(db.rows.has(S2)).toBe(false);
+  });
+
+  it('rejects Reset layout and its Undo once the window left the session', async () => {
+    await openPair();
+    await state().moveDockPanel({ sessionId: S1, kind: 'browser', target: { at: 'page' } });
+    await state().resetDockGrid({ sessionId: S1 });
+    await settle();
+    await goTo({ sessionId: S2 });
+    const before = state().drawerGrid;
+    const saved = db.rows.get(S1)?.grid;
+
+    expect(await state().undoLastOperation()).toBe(false);
+    await settle();
+
+    expect(state().drawerGrid).toBe(before);
+    expect(db.rows.get(S1)?.grid).toBe(saved);
+  });
+
+  it('skips the save of a queued move once a panel closed under it', async () => {
+    await openPair();
+    const terminal = state()
+      .drawerGrid.columns.flat()
+      .find((panel) => panel.kind === 'terminal');
+    if (terminal === undefined) {
+      throw new Error('terminal is in the grid');
+    }
+
+    const moving = state().moveDockPanel({
+      sessionId: S1,
+      kind: 'browser',
+      target: { at: 'above', key: 'terminal' },
+    });
+    state().closeDrawerEntry({ entry: terminal });
+
+    expect(await moving).toBe(false);
+    await settle();
+    expect(JSON.parse(db.rows.get(S1)?.grid ?? '{}').columns).toEqual([
+      [expect.objectContaining({ kind: 'browser' })],
+    ]);
+  });
+
   it('keeps the panels where they were when the save fails, and says so', async () => {
     await openPair();
     const before = state().drawerGrid;

@@ -9,13 +9,14 @@ const GRID_HEIGHT = 812;
 
 type RenderParams = {
   readonly topWeight?: number;
+  readonly height?: number;
 };
 
-const renderHandle = ({ topWeight = 580 }: RenderParams = {}) => {
+const renderHandle = ({ topWeight = 580, height = GRID_HEIGHT }: RenderParams = {}) => {
   const gridRef = createRef<HTMLDivElement>();
   const onSplit = vi.fn();
   const grid = document.createElement('div');
-  Object.defineProperty(grid, 'clientHeight', { value: GRID_HEIGHT });
+  Object.defineProperty(grid, 'clientHeight', { value: height });
   document.body.appendChild(grid);
   Object.assign(gridRef, { current: grid });
   render(
@@ -62,6 +63,14 @@ describe('the handle between two stacked panels', () => {
     fireEvent.keyDown(screen.getByRole('separator'), { key: 'ArrowDown', shiftKey: true });
 
     expect(onSplit).toHaveBeenCalledWith({ keys: ['browser', 'terminal'], share: 640 / 800 });
+  });
+
+  it('keeps its value inside the bounds when the window leaves less room', () => {
+    renderHandle({ topWeight: 800, height: 600 });
+    const handle = screen.getByRole('separator', { name: 'Resize panel height' });
+
+    expect(handle.getAttribute('aria-valuenow')).toBe('428');
+    expect(handle.getAttribute('aria-valuemax')).toBe('428');
   });
 
   it('goes back to the starting share on a double click', () => {

@@ -4,6 +4,7 @@ import {
   DOCK_GRID_MOVE_KEY,
   DOCK_GRID_RECALL_KEY,
   dockGridMoves,
+  dockGridOwner,
   dockGridRecalls,
 } from '../../../../store/slices/drawer/dockGridWrites';
 import { EMPTY_DRAWER_GRID, type DrawerGrid } from '../../../../store/slices/drawer/state';
@@ -43,6 +44,7 @@ export const watchSessionDockGrid = ({
   let timer: ReturnType<typeof setTimeout> | null = null;
   let owner = store.getState().currentSessionId;
   let grid = store.getState().drawerGrid ?? EMPTY_DRAWER_GRID;
+  dockGridOwner.take({ sessionId: owner });
 
   const flush = (): void => {
     if (timer !== null) {
@@ -92,6 +94,7 @@ export const watchSessionDockGrid = ({
       dockGridMoves.cancel({ key: DOCK_GRID_MOVE_KEY });
       flush();
       owner = state.currentSessionId;
+      dockGridOwner.take({ sessionId: owner });
       grid = nextGrid;
       if (owner === null) {
         dockGridRecalls.cancel({ key: DOCK_GRID_RECALL_KEY });
@@ -127,5 +130,6 @@ export const watchSessionDockGrid = ({
     window.removeEventListener('focus', rereadOnFocus);
     unsubscribe();
     flush();
+    dockGridOwner.take({ sessionId: null });
   };
 };

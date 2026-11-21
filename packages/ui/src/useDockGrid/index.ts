@@ -170,11 +170,14 @@ export const useDockGrid = ({
   };
   const dropRef = useRef(canDrop);
   dropRef.current = canDrop;
-  useEffect(
-    () =>
-      dockFitProbe.publish({ probe: ({ columns: keys }) => dropRef.current({ columns: keys }) }),
-    [],
-  );
+  useEffect(() => {
+    if (!isGrid) {
+      return undefined;
+    }
+    return dockFitProbe.publish({
+      probe: ({ columns: keys }) => dropRef.current({ columns: keys }),
+    });
+  }, [isGrid]);
   const boxes = frame.columns;
   const previewColumn = useCallback(
     ({ index, width, from }: ColumnPreviewParams) => {

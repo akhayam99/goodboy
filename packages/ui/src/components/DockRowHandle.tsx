@@ -36,7 +36,8 @@ export const DockRowHandle = ({
   }
   const shared = Math.max(0, height - DRAWER_GUTTER);
   const max = Math.max(DOCK_ROW_MIN_PX, shared - DOCK_ROW_MIN_PX);
-  const value = Math.round((shared * topWeight) / Math.max(1, topWeight + bottomWeight));
+  const preferred = Math.round((shared * topWeight) / Math.max(1, topWeight + bottomWeight));
+  const value = Math.min(max, Math.max(DOCK_ROW_MIN_PX, preferred));
   const setRows = ({ top, bottom }: RowsParams): void => {
     gridRef.current?.style.setProperty('grid-template-rows', rowTemplateOf({ top, bottom }));
   };

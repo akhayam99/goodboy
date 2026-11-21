@@ -81,7 +81,13 @@ const moveStepOf = ({ kind, sessionId }: StepParams): PaletteStep | null => {
       kind: 'action',
       group: 'action',
       icon: LayoutGrid,
-      run: () => void useAppStore.getState().moveDockPanel({ sessionId, kind, target }),
+      run: () => {
+        const key = JSON.stringify(target);
+        if (!fittingMovesOf({ kind }).some((move) => JSON.stringify(move.target) === key)) {
+          return;
+        }
+        void useAppStore.getState().moveDockPanel({ sessionId, kind, target });
+      },
     })),
   };
 };

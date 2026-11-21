@@ -48,6 +48,9 @@ export const DockGrid = ({
     canDrop,
     onMove: canMove ? (spec.onMove ?? null) : null,
   });
+  const storedStacks = new Set(
+    spec.columns.map((column) => column.map((cell) => cell.key).join('/')),
+  );
   const keyList = keys.flat().join('/');
   const startDrag = drag.start;
   const sources = useMemo(
@@ -119,7 +122,11 @@ export const DockGrid = ({
         });
         const [top, bottom] = column.panes;
         const rowHandle =
-          isFramed && spec.onSplit !== undefined && top !== undefined && bottom !== undefined ? (
+          isFramed &&
+          spec.onSplit !== undefined &&
+          top !== undefined &&
+          bottom !== undefined &&
+          storedStacks.has(`${top.key}/${bottom.key}`) ? (
             <DockRowHandle
               key={`row-${index}`}
               gridRef={gridRef}
