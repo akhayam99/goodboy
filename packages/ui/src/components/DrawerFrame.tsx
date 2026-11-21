@@ -1,5 +1,5 @@
 import { DrawerBackChipContext } from '../drawerBackChipContext';
-import { DockDragContext } from '../dockDragContext';
+import { DrawerTitleGrip } from './DrawerTitleGrip';
 import { useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 import type { IconGlyph } from '../icons';
 import { X } from '../icons';
@@ -54,8 +54,6 @@ const META_INSET_WITH_ICON_PX = HEADER_INSET_PX + ICON_SIZE.control + 8;
 
 const FIELD_SELECTOR = 'textarea, input, [contenteditable="true"]';
 
-const CONTROL = 'button, a, input, select, textarea, [role="button"], [role="combobox"]';
-
 const TEXT_INPUT_TYPES = new Set(['text', 'search', 'email', 'url', 'tel', 'number', 'password']);
 
 const focusableTrigger = (): HTMLElement | null => {
@@ -106,7 +104,6 @@ export const DrawerFrame = ({
   const dockRef = useRef<HTMLDivElement | null>(null);
   const hasToolbar = toolbar != null;
   const backChip = useContext(DrawerBackChipContext);
-  const dragSource = useContext(DockDragContext);
   const hasBackChip = backChip !== null && !isHeaderless;
 
   useEscapeLayer(() => {
@@ -141,24 +138,7 @@ export const DrawerFrame = ({
   const titleRow = (
     <>
       {hasBackChip ? <DrawerBackChip chip={backChip} /> : null}
-      <div
-        data-dock-drag-source={dragSource === null ? undefined : ''}
-        onPointerDown={
-          dragSource === null
-            ? undefined
-            : (event) => {
-                if (event.target instanceof Element && event.target.closest(CONTROL) !== null) {
-                  return;
-                }
-                dragSource.onStart({ event });
-              }
-        }
-        className={cn(
-          'flex min-w-0 flex-1 gap-2',
-          hasToolbar ? 'items-start' : 'items-center',
-          dragSource !== null && 'cursor-grab',
-        )}
-      >
+      <DrawerTitleGrip isTop={hasToolbar}>
         {Icon == null ? null : (
           <span className="flex h-5 shrink-0 items-center">
             <Icon
@@ -187,7 +167,7 @@ export const DrawerFrame = ({
             {count}
           </span>
         ) : null}
-      </div>
+      </DrawerTitleGrip>
       <div className={cn('flex shrink-0 items-center gap-1', hasToolbar && 'h-5')}>
         {action}
         {menu}

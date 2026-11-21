@@ -11,6 +11,8 @@ const NO_ROOM = 'No room';
 
 const GHOST_OFFSET_PX = 14;
 
+const GHOST_ROOM_PX = 200;
+
 export const DockDropZones = ({ store }: Props) => {
   const view = useSyncExternalStore((listener) => store.subscribe({ listener }), store.get);
   if (view === null) {
@@ -45,7 +47,14 @@ export const DockDropZones = ({ store }: Props) => {
         );
       })}
       <div
-        style={{ left: view.x + GHOST_OFFSET_PX, top: view.y + GHOST_OFFSET_PX }}
+        style={{
+          left: view.x + GHOST_OFFSET_PX,
+          top: view.y + GHOST_OFFSET_PX,
+          transform:
+            view.x > document.documentElement.clientWidth - GHOST_ROOM_PX
+              ? `translateX(calc(-100% - ${GHOST_OFFSET_PX * 2}px))`
+              : undefined,
+        }}
         className="absolute rounded-md bg-elevated px-3 py-1 text-body text-foreground shadow-lg"
       >
         {view.title}
