@@ -1,8 +1,9 @@
 import { useState, type ReactNode } from 'react';
 import { Plus } from '@goodboy/ui/icons';
-import { Button, ICON_SIZE } from '@goodboy/ui';
+import { Button, ICON_SIZE, SearchField } from '@goodboy/ui';
 import type { Project, WorkspaceId } from '@goodboy/types';
 import { useProjectLinking } from '../../hooks/useProjectLinking';
+import { NAMES } from '../../utils/names';
 
 import { LazyNewWorkspaceForm } from '../NewWorkspaceForm/LazyNewWorkspaceForm';
 import { ProjectGroups } from './ProjectGroups';
@@ -44,16 +45,6 @@ export const ProjectLinkList = ({
       <div className="flex min-w-0 items-center gap-2">
         {heading?.({ count: linking.linked.length })}
         <span className="flex-1" />
-        {linking.linked.length >= FILTER_VISIBLE_FROM ? (
-          <input
-            type="text"
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-            placeholder="Filter projects"
-            aria-label="Filter projects"
-            className="h-8 w-48 rounded-md border border-border-soft bg-background px-2 text-meta text-foreground outline-none placeholder:text-faint-foreground focus:border-border"
-          />
-        ) : null}
         <Button
           variant="ghost"
           size="sm"
@@ -62,9 +53,18 @@ export const ProjectLinkList = ({
           onClick={() => setIsAdding(true)}
         >
           <Plus size={ICON_SIZE.row} aria-hidden />
-          Add project
+          {NAMES.addProject}
         </Button>
       </div>
+      {linking.linked.length >= FILTER_VISIBLE_FROM ? (
+        <SearchField
+          value={query}
+          onChange={setQuery}
+          ariaLabel={NAMES.searchProjects}
+          placeholder={NAMES.searchProjects}
+          className="w-64 max-w-full"
+        />
+      ) : null}
       {hint !== undefined && <p className="text-meta text-faint-foreground">{hint}</p>}
       {isAdding ? (
         <div className="rounded-lg p-4 ring-1 ring-inset ring-border-soft">

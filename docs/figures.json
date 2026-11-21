@@ -113,7 +113,7 @@
   },
   "features/overview-activity": {
     "version": "0.40.1",
-    "recipe": "--scene 'u26-central-log&brand=1' --scroll 'input[placeholder^=\"Search the log\"]' --window 1280x900 --frozen-at 2026-11-05T16:00:00 --wait 8000"
+    "recipe": "--scene 'u26-central-log&brand=1' --scroll 'input[placeholder^=\"Search entries\"]' --window 1280x900 --frozen-at 2026-11-05T16:00:00 --wait 8000"
   },
   "features/overview-session": {
     "version": "0.40.1",

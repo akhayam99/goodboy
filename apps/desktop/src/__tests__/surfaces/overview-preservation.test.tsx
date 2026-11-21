@@ -343,7 +343,7 @@ describe('Overview capabilities from the session Overview', () => {
       what: 'the log section',
     });
     within(within(log).getByRole('region', { name: 'Log entries' })).getByRole('searchbox', {
-      name: 'Search the log',
+      name: 'Search entries',
     });
   });
 

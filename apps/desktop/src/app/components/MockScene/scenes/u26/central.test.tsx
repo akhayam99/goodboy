@@ -102,7 +102,7 @@ describe('the central column scenes', () => {
     await show({ name: 'u26-central-log-search-light' });
 
     screen.getByRole('region', { name: 'Log entries' });
-    screen.getByRole('searchbox', { name: 'Search the log' });
+    screen.getByRole('searchbox', { name: 'Search entries' });
   });
 
   it('draws the tiles and the board on the mid scene', async () => {

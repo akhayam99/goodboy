@@ -1,6 +1,6 @@
 import { useDeferredValue, useState } from 'react';
 import { CheckCheck } from '@goodboy/ui/icons';
-import { Button, ICON_SIZE, Input } from '@goodboy/ui';
+import { Button, ICON_SIZE, SearchField } from '@goodboy/ui';
 import type { Session, SessionId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import { agentHasUnread } from '../../../../store/slices/agents/agentHasUnread';
@@ -10,6 +10,7 @@ import { NAMES } from '../../../../shared/utils/names';
 import { LogRows } from './LogRows';
 
 const MARK_SEEN_KEY = 'mark-all-seen';
+const SEARCH_ENTRIES = 'Search entries';
 
 type Props = {
   readonly session: Session;
@@ -28,12 +29,12 @@ export const LogPane = ({ session }: Props) => {
   return (
     <section aria-label="Log entries" className="@container/activity flex flex-col gap-2">
       <div className="flex items-center gap-2">
-        <Input
-          type="search"
-          aria-label="Search the log"
-          placeholder="Search the log"
+        <SearchField
+          ariaLabel={SEARCH_ENTRIES}
+          placeholder={SEARCH_ENTRIES}
           value={query}
-          onChange={(event) => setQuery(event.target.value)}
+          onChange={setQuery}
+          className="min-w-0 flex-1"
         />
         {hasUnread ? (
           <Button
