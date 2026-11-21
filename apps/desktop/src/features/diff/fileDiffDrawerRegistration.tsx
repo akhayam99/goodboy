@@ -2,7 +2,11 @@ import { Suspense } from 'react';
 import { drawerKey } from '../../store/slices/drawer/drawerKey';
 import type { DrawerRegistration } from '../../store/slices/drawer/drawerRegistration';
 import { lazyNamed } from '../../shared/lib/lazyNamed';
-import { FileWholeDrawer } from './components/FileWholeDrawer';
+
+const FileWholeDrawer = lazyNamed({
+  load: () => import('./components/FileWholeDrawer'),
+  pick: ({ FileWholeDrawer }) => FileWholeDrawer,
+});
 
 const FileDiffDrawer = lazyNamed({
   load: () => import('./components/FileDiffDrawer'),
@@ -14,12 +18,13 @@ export const fileDiffDrawerRegistration: DrawerRegistration<'file-diff'> = {
   render: ({ drawer, closeDrawer }) => {
     if (drawer.payload.whole !== undefined && drawer.payload.source.kind === 'worktree') {
       return (
-        <FileWholeDrawer
-          key={drawerKey(drawer)}
-          worktreePath={drawer.payload.source.worktreePath}
-          whole={drawer.payload.whole}
-          onClose={closeDrawer}
-        />
+        <Suspense key={drawerKey(drawer)} fallback={null}>
+          <FileWholeDrawer
+            worktreePath={drawer.payload.source.worktreePath}
+            whole={drawer.payload.whole}
+            onClose={closeDrawer}
+          />
+        </Suspense>
       );
     }
     return (

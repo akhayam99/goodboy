@@ -16,7 +16,7 @@ import { NewDrawer } from '../../features/session/components/NewDrawer';
 import { LazyFixCommentsDrawer } from '../../features/resolve/components/LazyFixCommentsDrawer';
 import { ReviewCommentDrawerHost } from '../../features/resolve/components/ReviewCommentDrawer/ReviewCommentDrawerHost';
 import { LazyFixRunTranscriptDrawer } from './FixRunTranscriptDrawer/LazyFixRunTranscriptDrawer';
-import { ExploreFileChanges } from './ExploreFileChanges';
+import { LazyExploreFileChanges } from './LazyExploreFileChanges';
 import { ArtifactReadingDrawer } from './ArtifactReadingDrawer';
 import { readingArtifactOf } from './ArtifactReadingDrawer/readingArtifact';
 import { drawerKey } from '../../store/slices/drawer/drawerKey';
@@ -49,7 +49,11 @@ const renderDrawer = ({
           entry={drawer.payload.entry}
           line={drawer.payload.line}
           renderChanges={({ sessionDir, relPath, baseBranch }) => (
-            <ExploreFileChanges sessionDir={sessionDir} relPath={relPath} baseBranch={baseBranch} />
+            <LazyExploreFileChanges
+              sessionDir={sessionDir}
+              relPath={relPath}
+              baseBranch={baseBranch}
+            />
           )}
           onClose={closeDrawer}
         />
