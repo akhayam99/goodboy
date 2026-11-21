@@ -113,26 +113,29 @@ describe('the u23 list scenes', () => {
     expect(
       within(list)
         .queryAllByRole('button', { name: /^Delete / })
-        .filter((button) => button.closest('[data-testid="artifact-group-deleted"]') === null),
+        .filter((button) => {
+          const labelledBy = button.closest('ul[aria-labelledby]')?.getAttribute('aria-labelledby');
+          return (
+            labelledBy === undefined ||
+            document.getElementById(labelledBy ?? '')?.textContent !== 'Recently deleted'
+          );
+        }),
     ).toEqual([]);
-    const frames = within(list).getAllByTestId('artifact-row-frame');
+    const frames = within(list)
+      .getAllByRole('listitem')
+      .filter((item) => item.hasAttribute('data-row'));
+    expect(frames.length).toBeGreaterThan(0);
     for (const frame of frames) {
       const visible = within(frame)
         .queryAllByRole('button', { hidden: true })
         .filter((button) => button.closest('[data-row-secondary=""]') === null)
         .filter((button) => button.getAttribute('aria-expanded') === null)
-        .filter((button) => button.getAttribute('data-artifact-row') === null)
+        .filter((button) => button.getAttribute('data-row-key') === null)
         .filter((button) => !(button.getAttribute('aria-label') ?? '').startsWith('More for'));
       expect(visible.length).toBeLessThanOrEqual(1);
     }
-    const groups = list.querySelectorAll('section[data-testid^="artifact-group-"]');
-    expect(groups.length).toBeGreaterThan(0);
-    for (const group of groups) {
-      expect(group.querySelector('h2')).not.toBeNull();
-      if (group.getAttribute('data-testid') !== 'artifact-group-deleted') {
-        expect(group.querySelector(':scope > div > button[aria-expanded]')).toBeNull();
-      }
-    }
+    const headings = within(list).getAllByRole('heading', { level: 2 });
+    expect(headings.length).toBeGreaterThan(0);
     expect(within(list).queryByRole('heading', { name: /^Ran\b/ })).toBeNull();
   });
 

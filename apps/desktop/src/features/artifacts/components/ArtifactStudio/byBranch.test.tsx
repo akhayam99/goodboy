@@ -225,11 +225,33 @@ beforeEach(async () => {
 
 afterEach(cleanup);
 
-const branchSections = () => screen.getAllByTestId(/^artifact-branch-group-/);
+const STATE_GROUP_LABELS: ReadonlySet<string | null> = new Set([
+  'Needs you',
+  'Running',
+  'Ready',
+  'To read',
+  'Used',
+  'Recently deleted',
+]);
+
+const groupHeads = () => Array.from(document.querySelectorAll('[data-list-grid-group-label] h2'));
+
+const branchSections = () =>
+  groupHeads().filter((head) => !STATE_GROUP_LABELS.has(head.textContent));
+
+const stateGroups = () => groupHeads().filter((head) => STATE_GROUP_LABELS.has(head.textContent));
+
+const groupNamed = ({ name }: { readonly name: string }): HTMLElement => {
+  const group = screen.getByRole('heading', { level: 2, name }).closest('li');
+  if (group === null) {
+    throw new Error(`group ${name} missing`);
+  }
+  return group;
+};
 
 const rowKeys = () =>
-  Array.from(document.querySelectorAll('[data-artifact-row]')).map((row) =>
-    row.getAttribute('data-artifact-row'),
+  Array.from(document.querySelectorAll('[data-row-key]')).map((row) =>
+    row.getAttribute('data-row-key'),
   );
 
 describe('Artifacts by branch', () => {
@@ -284,8 +306,8 @@ describe('Artifacts by branch', () => {
 
     fireEvent.click(screen.getByRole('tab', { name: 'By state' }));
 
-    await waitFor(() => expect(screen.queryAllByTestId(/^artifact-branch-group-/)).toHaveLength(0));
-    expect(screen.getAllByTestId(/^artifact-group-/).length).toBeGreaterThan(0);
+    await waitFor(() => expect(branchSections()).toHaveLength(0));
+    expect(stateGroups().length).toBeGreaterThan(0);
   });
 
   it('sends artifacts of a detached mount to No branch', async () => {
@@ -298,7 +320,7 @@ describe('Artifacts by branch', () => {
     render(<ArtifactStudio sessionId={SESSION_ID} />);
 
     await screen.findByRole('heading', { name: 'No branch' });
-    within(screen.getByTestId('artifact-branch-group-none')).getByText('Credits explained');
+    within(groupNamed({ name: 'No branch' })).getByText('Credits explained');
   });
 
   it('reads as it does today with one work branch', async () => {
@@ -308,9 +330,9 @@ describe('Artifacts by branch', () => {
     });
     render(<ArtifactStudio sessionId={SESSION_ID} />);
 
-    await screen.findByTestId('artifact-group-read');
+    await screen.findByRole('heading', { level: 2, name: 'To read' });
     expect(screen.queryByRole('group', { name: 'Group by' })).toBeNull();
-    expect(screen.queryAllByTestId(/^artifact-branch-group-/)).toHaveLength(0);
+    expect(branchSections()).toHaveLength(0);
   });
 
   it('stops a replicated generation once, from the row that was pressed', async () => {
@@ -380,11 +402,9 @@ describe('Artifacts by branch', () => {
     );
 
     await waitFor(() =>
-      expect(document.activeElement?.getAttribute('data-artifact-row')).toBe(
-        `artifact:${SHARED.id}`,
-      ),
+      expect(document.activeElement?.getAttribute('data-row-key')).toBe(`artifact:${SHARED.id}`),
     );
-    expect(screen.queryAllByTestId(/^artifact-branch-group-/)).toHaveLength(0);
+    expect(branchSections()).toHaveLength(0);
     expect(useAppStore.getState().groupBySession[SESSION_ID]).toBe('state');
   });
 
@@ -414,7 +434,7 @@ describe('Artifacts by branch', () => {
     await act(async () => undefined);
     await act(async () => undefined);
 
-    expect(document.activeElement?.getAttribute('data-artifact-row') ?? null).toBeNull();
+    expect(document.activeElement?.getAttribute('data-row-key') ?? null).toBeNull();
   });
 
   it('restores a used row in its branch after opening it and going Back', async () => {
@@ -445,7 +465,7 @@ describe('Artifacts by branch', () => {
         scroll.mock.contexts.some(
           (node) =>
             node instanceof HTMLElement &&
-            node.getAttribute('data-artifact-row') === `mount:${DUP.id}/artifact:${USED.id}`,
+            node.getAttribute('data-row-key') === `mount:${DUP.id}/artifact:${USED.id}`,
         ),
       ).toBe(true),
     );
@@ -458,7 +478,7 @@ describe('Artifacts by branch', () => {
     render(<ArtifactStudio sessionId={SESSION_ID} />);
 
     await waitFor(() => expect(branchSections()).toHaveLength(3));
-    within(screen.getByTestId('artifact-branch-group-none')).getByText('Retries and credits');
+    within(groupNamed({ name: 'No branch' })).getByText('Retries and credits');
 
     provenance.mountIds.set(WRITER.id, [DUP.id, RETRY.id]);
     act(() =>
@@ -482,9 +502,9 @@ describe('Artifacts by branch', () => {
     });
     render(<ArtifactStudio sessionId={SESSION_ID} />);
 
-    await screen.findByTestId('artifact-group-read');
+    await screen.findByRole('heading', { level: 2, name: 'To read' });
     await act(async () => undefined);
     expect(screen.queryByRole('group', { name: 'Group by' })).toBeNull();
-    expect(screen.queryAllByTestId(/^artifact-branch-group-/)).toHaveLength(0);
+    expect(branchSections()).toHaveLength(0);
   });
 });

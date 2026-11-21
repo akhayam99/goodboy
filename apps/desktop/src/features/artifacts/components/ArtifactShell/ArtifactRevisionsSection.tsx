@@ -3,6 +3,7 @@ import { Button, SectionHeader, SkeletonRow } from '@goodboy/ui';
 import type { ArtifactRevision } from '@goodboy/db';
 import type { SessionArtifact, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
+import { NOTHING_CHANGED } from '../../../../store/slices/notifications/errorRecovery';
 import { formatDateTime } from '../../../../shared/utils/time/formatDateTime';
 import { listArtifactRevisions } from '../../artifacts';
 import { ArtifactLoadFailed } from '../ArtifactLoadFailed';
@@ -13,19 +14,14 @@ type Props = {
   readonly creatorName: string | null;
 };
 
+type RestoreParams = {
+  readonly revision: number;
+};
+
 type LoadState =
   | Readonly<{ kind: 'loading' }>
   | Readonly<{ kind: 'failed' }>
   | Readonly<{ kind: 'ready'; revisions: ReadonlyArray<ArtifactRevision> }>;
-
-const LOAD_FAILED = 'Revisions did not load.';
-
-type RestoreFailedParams = {
-  readonly revision: number;
-};
-
-const restoreFailedOf = ({ revision }: RestoreFailedParams): string =>
-  `Version ${revision} was not restored. Try again.`;
 
 const revisionAuthorLabel = ({
   revision,
@@ -38,9 +34,9 @@ const revisionAuthorLabel = ({
 export const ArtifactRevisionsSection = ({ sessionId, artifact, creatorName }: Props) => {
   const [state, setState] = useState<LoadState>({ kind: 'loading' });
   const [restoring, setRestoring] = useState<number | null>(null);
-  const [error, setError] = useState<string | null>(null);
   const [loadAttempt, setLoadAttempt] = useState(0);
   const restoreArtifactRevision = useAppStore((s) => s.restoreArtifactRevision);
+  const reportError = useAppStore((s) => s.reportError);
 
   useEffect(() => {
     let isCurrent = true;
@@ -61,12 +57,23 @@ export const ArtifactRevisionsSection = ({ sessionId, artifact, creatorName }: P
     };
   }, [artifact.id, artifact.revision, loadAttempt]);
 
-  const restore = (revision: number) => {
-    setError(null);
+  const restore = async ({ revision }: RestoreParams): Promise<boolean> => {
     setRestoring(revision);
-    restoreArtifactRevision({ sessionId, artifact, revision })
-      .catch(() => setError(restoreFailedOf({ revision })))
-      .finally(() => setRestoring(null));
+    try {
+      await restoreArtifactRevision({ sessionId, artifact, revision });
+      return true;
+    } catch (cause) {
+      void reportError({
+        title: `Couldn't restore version ${revision} of ${artifact.title}`,
+        error: cause,
+        recovery: NOTHING_CHANGED,
+        sessionId,
+        retry: () => restore({ revision }),
+      });
+      return false;
+    } finally {
+      setRestoring(null);
+    }
   };
 
   if (state.kind === 'ready' && state.revisions.length <= 1) {
@@ -79,7 +86,7 @@ export const ArtifactRevisionsSection = ({ sessionId, artifact, creatorName }: P
       {state.kind === 'loading' ? <SkeletonRow label="Loading revisions" /> : null}
       {state.kind === 'failed' ? (
         <ArtifactLoadFailed
-          sentence={LOAD_FAILED}
+          label="revisions"
           onRetry={() => setLoadAttempt((attempt) => attempt + 1)}
         />
       ) : null}
@@ -109,7 +116,7 @@ export const ArtifactRevisionsSection = ({ sessionId, artifact, creatorName }: P
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => restore(revision.revision)}
+                  onClick={() => void restore({ revision: revision.revision })}
                   isBusy={restoring === revision.revision}
                   data-testid="artifact-revision-restore"
                 >
@@ -120,11 +127,6 @@ export const ArtifactRevisionsSection = ({ sessionId, artifact, creatorName }: P
           ))}
         </ol>
       ) : null}
-      {error === null ? null : (
-        <span role="alert" className="text-meta text-danger">
-          {error}
-        </span>
-      )}
     </section>
   );
 };

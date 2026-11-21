@@ -1,39 +1,40 @@
-import type { MouseEvent, ReactNode } from 'react';
+import { memo, type MouseEvent, type ReactNode } from 'react';
 import { ChevronRight } from '@goodboy/ui/icons';
 import {
   Button,
   cn,
+  FactCard,
   ICON_SIZE,
   ListGridRow,
-  StatusDot,
+  StateDot,
+  Tooltip,
   TruncatedText,
   WorkNode,
 } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
-import type { ArtifactListRow as Row } from '../../artifactListRows';
-import { RelativeTime } from '../../../../shared/components/RelativeTime';
-import { countNoun } from '../../../../shared/utils/countNoun';
-import { ArtifactKindGlyph } from './ArtifactKindGlyph';
-import type { ArtifactOpenParams } from './artifactBranchProps';
-import { ArtifactRowActions } from './ArtifactRowActions';
-import { ArtifactRowConfirm } from './ArtifactRowConfirm';
-import { useArtifactRowModel } from './useArtifactRowModel';
+import type { ArtifactListRow as Row } from '../../../artifactListRows';
+import { RelativeTime } from '../../../../../shared/components/RelativeTime';
+import { countNoun } from '../../../../../shared/utils/countNoun';
+import { artifactDotOf } from '../../../artifactDotOf';
+import { artifactStateCardOf } from '../../../artifactStateCardOf';
+import { ArtifactKindGlyph } from '../ArtifactKindGlyph';
+import type { ArtifactOpenParams } from '../artifactBranchProps';
+import { ArtifactRowActions } from '../ArtifactRowActions';
+import { ArtifactRowConfirm } from '../ArtifactRowConfirm';
+import { useArtifactRowFailure } from '../useArtifactRowFailure';
+import { useArtifactRowModel } from '../useArtifactRowModel';
 
 type Props = {
   readonly row: Row;
   readonly rowKey: string;
-  readonly titleSuffix: ReactNode;
+  readonly titleSuffix?: ReactNode;
   readonly sessionId: SessionId;
   readonly isPartsOpen: boolean;
   readonly onTogglePartsOf: (rowId: string) => void;
   readonly onOpenRow: (params: ArtifactOpenParams) => void;
 };
 
-const SPAN_ROW = 'col-span-full grid grid-cols-subgrid';
-
-const SPAN_CELL = 'col-start-2 col-end-[-2] min-w-0';
-
-const CONFIRM_ANCHOR = 'absolute right-0 top-0 size-0';
+const CONFIRM_ANCHOR = 'absolute right-0 top-8 size-0';
 
 type TitleClickParams = {
   readonly event: MouseEvent<HTMLElement>;
@@ -47,7 +48,7 @@ const openFromTitle = ({ event, onOpen }: TitleClickParams): void => {
   onOpen();
 };
 
-export const ArtifactWorkRow = ({
+const RowComponent = ({
   row,
   rowKey,
   titleSuffix,
@@ -56,38 +57,52 @@ export const ArtifactWorkRow = ({
   onTogglePartsOf,
   onOpenRow,
 }: Props) => {
-  const model = useArtifactRowModel({ row, rowKey, sessionId, isStateShown: true });
+  const model = useArtifactRowModel({ row, rowKey, sessionId });
+  useArtifactRowFailure({
+    failure: model.controls.failure,
+    retry: model.controls.retry,
+    dismissFailure: model.controls.dismissFailure,
+    title: row.title,
+    sessionId,
+  });
   const { menu, controls, hasParts, state, at, atTitle } = model;
   const hasActions = model.restoreAction !== null || model.primary !== null;
   const open = () => onOpenRow({ row, rowKey });
   const title = (
     <span
       data-artifact-row-title=""
-      className="flex min-w-0 flex-1 cursor-pointer select-none items-center gap-2"
+      className="relative flex min-w-0 flex-1 cursor-pointer select-none items-center gap-2"
       onClick={(event) => openFromTitle({ event, onOpen: open })}
     >
+      {hasParts ? (
+        <Tooltip content="Parts">
+          <Button
+            variant="quiet"
+            size="xs"
+            aria-expanded={isPartsOpen}
+            aria-label={`${isPartsOpen ? 'Hide' : 'Show'} parts of ${row.title}`}
+            onClick={() => onTogglePartsOf(rowKey)}
+          >
+            <ChevronRight
+              size={ICON_SIZE.control}
+              aria-hidden
+              className={cn('motion-safe:transition-transform', isPartsOpen && 'rotate-90')}
+            />
+          </Button>
+        </Tooltip>
+      ) : null}
       <TruncatedText
         className={cn('min-w-0', row.isFaint ? 'text-faint-foreground' : 'text-foreground')}
       >
         {row.title}
       </TruncatedText>
       {hasParts ? (
-        <Button
-          variant="quiet"
-          size="xs"
-          aria-expanded={isPartsOpen}
-          aria-label={`${isPartsOpen ? 'Hide' : 'Show'} parts of ${row.title}`}
-          onClick={() => onTogglePartsOf(rowKey)}
-        >
+        <span className="shrink-0 text-meta text-faint-foreground">
           {countNoun({ count: row.partCount, one: 'part' })}
-          <ChevronRight
-            size={ICON_SIZE.control}
-            aria-hidden
-            className={cn('motion-safe:transition-transform', isPartsOpen && 'rotate-90')}
-          />
-        </Button>
+        </span>
       ) : null}
       {titleSuffix}
+      <ArtifactRowConfirm controls={controls} anchorClassName={CONFIRM_ANCHOR} />
     </span>
   );
   return (
@@ -104,7 +119,14 @@ export const ArtifactWorkRow = ({
         ]}
         cells={{
           byKey: {
-            state: state === null ? null : <StatusDot size="sm" tone={state.tone} />,
+            state:
+              state === null ? null : (
+                <StateDot
+                  state={artifactDotOf({ state })}
+                  label={state.label}
+                  isLive={artifactDotOf({ state }) === 'running'}
+                />
+              ),
             shape: (
               <ArtifactKindGlyph
                 kind={row.kind}
@@ -113,26 +135,23 @@ export const ArtifactWorkRow = ({
               />
             ),
             title: '',
-            word: state === null ? null : state.label,
+            word:
+              state === null ? null : (
+                <FactCard card={artifactStateCardOf({ state })}>
+                  <span
+                    data-testid="artifact-row-state"
+                    data-state={state.key}
+                    className="truncate"
+                  >
+                    {state.label}
+                  </span>
+                </FactCard>
+              ),
             age: at === null ? null : <RelativeTime iso={at} title={atTitle} />,
             verb: hasActions ? <span aria-hidden /> : null,
           },
         }}
       />
-      {controls.confirming === null ? null : (
-        <li className={SPAN_ROW}>
-          <div className={cn(SPAN_CELL, 'relative')}>
-            <ArtifactRowConfirm controls={controls} anchorClassName={CONFIRM_ANCHOR} />
-          </div>
-        </li>
-      )}
-      {controls.failure === null ? null : (
-        <li className={SPAN_ROW}>
-          <p role="alert" className={cn(SPAN_CELL, 'text-meta text-danger')}>
-            {controls.failure.message}
-          </p>
-        </li>
-      )}
       {hasParts && isPartsOpen
         ? row.parts.map((part) => (
             <ListGridRow
@@ -162,3 +181,5 @@ export const ArtifactWorkRow = ({
     </>
   );
 };
+
+export const ArtifactWorkRow = memo(RowComponent);

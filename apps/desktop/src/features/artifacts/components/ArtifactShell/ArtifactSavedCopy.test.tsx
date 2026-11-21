@@ -7,7 +7,6 @@ import { ArtifactSavedCopy } from './ArtifactSavedCopy';
 
 const savedCopy = (over: Partial<SavedCopy> = {}): SavedCopy => ({
   location: { path: '/home/user/.goodboy/workspaces/harborline/artifacts/report', exists: true },
-  error: null,
   reveal: vi.fn(),
   openInBrowser: vi.fn(),
   ...over,
@@ -34,10 +33,5 @@ describe('ArtifactSavedCopy', () => {
     expect(screen.getByTestId('artifact-saved-copy-path').textContent).toBe('Writing the file…');
     expect(screen.queryByTestId('artifact-saved-copy-open')).toBeNull();
     expect(screen.queryByTestId('artifact-saved-copy-reveal')).toBeNull();
-  });
-
-  it('surfaces an error alongside the path', () => {
-    render(<ArtifactSavedCopy savedCopy={savedCopy({ error: 'the disk is full' })} />);
-    expect(screen.getByRole('alert').textContent).toBe('the disk is full');
   });
 });

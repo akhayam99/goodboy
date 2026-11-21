@@ -9,7 +9,6 @@
   "apps/desktop/src/app/components/UndoToastBridge.tsx": 1,
   "apps/desktop/src/features/actions/components/ActionControls/ActionConfirmPanel.tsx": 1,
   "apps/desktop/src/features/artifacts/components/ArtifactCreationPane/ArtifactRoutingControl.tsx": 1,
-  "apps/desktop/src/features/artifacts/components/ArtifactList/ArtifactListRow.tsx": 1,
   "apps/desktop/src/features/artifacts/components/ArtifactList/ArtifactNewMenu.tsx": 1,
   "apps/desktop/src/features/artifacts/components/ArtifactShell/ArtifactRevisionsSection.tsx": 1,
   "apps/desktop/src/features/artifacts/components/ArtifactShell/ArtifactSavedCopy.tsx": 1,

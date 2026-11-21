@@ -9,7 +9,7 @@ type Props = {
 };
 
 export const ArtifactSavedCopy = ({ savedCopy }: Props) => {
-  const { location, error, reveal, openInBrowser } = savedCopy;
+  const { location, reveal, openInBrowser } = savedCopy;
   const saved = location !== null && location.exists ? location : null;
   return (
     <section aria-label="File" className="flex min-w-0 flex-col gap-2">
@@ -45,11 +45,6 @@ export const ArtifactSavedCopy = ({ savedCopy }: Props) => {
           </Button>
         ) : null}
       </div>
-      {error === null ? null : (
-        <span role="alert" className="text-meta text-danger">
-          {error}
-        </span>
-      )}
     </section>
   );
 };

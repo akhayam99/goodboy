@@ -160,7 +160,6 @@
   "apps/desktop/src/features/artifacts/components/ArtifactCreationPane/index.test.tsx": 1,
   "apps/desktop/src/features/artifacts/components/ArtifactDocumentDrawer/autoPlan.test.tsx": 6,
   "apps/desktop/src/features/artifacts/components/ArtifactDocumentDrawer/index.test.tsx": 10,
-  "apps/desktop/src/features/artifacts/components/ArtifactList/ArtifactListRow.test.tsx": 2,
   "apps/desktop/src/features/artifacts/components/ArtifactList/ArtifactNewMenu.test.tsx": 2,
   "apps/desktop/src/features/artifacts/components/ArtifactList/index.test.tsx": 6,
   "apps/desktop/src/features/artifacts/components/ArtifactShell/ArtifactSavedCopy.test.tsx": 1,

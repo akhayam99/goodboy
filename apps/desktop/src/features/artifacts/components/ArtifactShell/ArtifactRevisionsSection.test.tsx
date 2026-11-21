@@ -11,6 +11,7 @@ const { listArtifactRevisions } = vi.hoisted(() => ({
 vi.mock('../../artifacts', () => ({ listArtifactRevisions }));
 
 import { useAppStore } from '../../../../store';
+import type { ReportErrorParams } from '../../../../store/slices/notifications/reportError';
 import { ArtifactRevisionsSection } from './ArtifactRevisionsSection';
 
 const SESSION_ID = 'session-1' as SessionId;
@@ -51,12 +52,17 @@ const revision = (over: Partial<Record<string, unknown>>) => ({
 
 const restoreSpy = vi.fn(async (_params: unknown) => undefined);
 
+const reportSpy = vi.fn(async (_params: ReportErrorParams) => undefined);
+
 afterEach(cleanup);
 
 describe('ArtifactRevisionsSection', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    useAppStore.setState({ restoreArtifactRevision: restoreSpy } as never);
+    useAppStore.setState({
+      restoreArtifactRevision: restoreSpy,
+      reportError: reportSpy,
+    } as never);
   });
 
   it('shows nothing when the artifact has only ever had one revision', async () => {
@@ -129,7 +135,7 @@ describe('ArtifactRevisionsSection', () => {
     });
   });
 
-  it('surfaces a failure to restore instead of throwing', async () => {
+  it('logs a failed restore with Retry and draws no red line in the section', async () => {
     listArtifactRevisions.mockResolvedValueOnce([
       revision({ revision: 2, author: 'user' }),
       revision({ revision: 1, author: 'agent' }),
@@ -140,9 +146,13 @@ describe('ArtifactRevisionsSection', () => {
     );
     const restoreButton = await waitFor(() => screen.getByTestId('artifact-revision-restore'));
     fireEvent.click(restoreButton);
-    await waitFor(() => {
-      expect(screen.getByRole('alert').textContent).toBe('Version 1 was not restored. Try again.');
-    });
+    await waitFor(() => expect(reportSpy).toHaveBeenCalledOnce());
+    const reported = reportSpy.mock.calls[0]?.[0];
+    expect(reported?.title).toBe("Couldn't restore version 1 of Session report");
+    expect(reported?.sessionId).toBe(SESSION_ID);
+    expect(screen.queryByRole('alert')).toBeNull();
+    expect(await reported?.retry?.()).toBe(true);
+    expect(restoreSpy).toHaveBeenCalledTimes(2);
   });
 
   it('surfaces a failed load in plain words with Retry, never the exception text', async () => {
@@ -157,7 +167,7 @@ describe('ArtifactRevisionsSection', () => {
       <ArtifactRevisionsSection sessionId={SESSION_ID} artifact={artifact} creatorName="Scout" />,
     );
     const alert = await waitFor(() => screen.getByRole('alert'));
-    expect(alert.textContent).toContain('Revisions did not load.');
+    expect(alert.textContent).toContain("Couldn't load revisions");
     expect(alert.textContent).not.toContain('invoke');
     fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
     const rows = await waitFor(() => screen.getAllByTestId('artifact-revision-row'));

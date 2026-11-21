@@ -56,7 +56,7 @@ export const ArtifactPastVersion = ({ artifactId, revision, latest, onOpenCurren
       {state.kind === 'loading' ? <SkeletonRow label="Loading version" /> : null}
       {state.kind === 'failed' ? (
         <ArtifactLoadFailed
-          sentence={`Version ${revision} did not load.`}
+          label={`version ${revision}`}
           onRetry={() => setLoadAttempt((attempt) => attempt + 1)}
         />
       ) : null}

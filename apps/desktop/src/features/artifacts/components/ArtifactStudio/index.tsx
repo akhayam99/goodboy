@@ -155,7 +155,7 @@ export const ArtifactStudio = ({ sessionId }: Props) => {
   const rowReturn = useRowReturn({
     listKey: 'artifacts',
     rowIds,
-    rowAttribute: 'data-artifact-row',
+    rowAttribute: 'data-row-key',
   });
   const { remember } = rowReturn;
   const changeGroupBy = useCallback(

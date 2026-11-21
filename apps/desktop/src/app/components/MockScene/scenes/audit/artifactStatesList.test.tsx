@@ -22,24 +22,24 @@ const renderList = () =>
 describe('the artifact states list', () => {
   it('groups as Needs you, Running, Ready, To read, Used, then Recently deleted', async () => {
     const { container } = renderList();
-    await screen.findAllByTestId('artifact-row-frame');
+    await screen.findAllByTestId('artifact-row-state');
 
-    const groups = Array.from(container.querySelectorAll('[data-testid^="artifact-group-"]')).map(
-      (group) => group.getAttribute('data-testid'),
+    const groups = Array.from(container.querySelectorAll('[data-list-grid-group-label] h2')).map(
+      (heading) => heading.textContent,
     );
     expect(groups).toEqual([
-      'artifact-group-needs',
-      'artifact-group-running',
-      'artifact-group-ready',
-      'artifact-group-read',
-      'artifact-group-consumed',
-      'artifact-group-deleted',
+      'Needs you',
+      'Running',
+      'Ready',
+      'To read',
+      'Used',
+      'Recently deleted',
     ]);
   });
 
   it('reads Unread, never New, on a report nobody opened', async () => {
     renderList();
-    await screen.findAllByTestId('artifact-row-frame');
+    await screen.findAllByTestId('artifact-row-state');
 
     const states = screen.getAllByTestId('artifact-row-state').map((node) => node.textContent);
     expect(states).toContain('Unread');

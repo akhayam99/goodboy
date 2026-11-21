@@ -1,10 +1,5 @@
 {
-  "apps/desktop/src/features/artifacts/components/ArtifactList/ArtifactListRow.tsx": 1,
-  "apps/desktop/src/features/artifacts/components/ArtifactList/ArtifactWorkRow.tsx": 1,
-  "apps/desktop/src/features/artifacts/components/ArtifactList/index.tsx": 1,
   "apps/desktop/src/features/artifacts/components/ArtifactShell/ArtifactDocumentShell.tsx": 1,
-  "apps/desktop/src/features/artifacts/components/ArtifactShell/ArtifactRevisionsSection.tsx": 1,
-  "apps/desktop/src/features/artifacts/components/ArtifactShell/ArtifactSavedCopy.tsx": 1,
   "apps/desktop/src/features/artifacts/components/PlanEditor/index.tsx": 1,
   "apps/desktop/src/features/auto/adopt/AdoptedNotice.tsx": 1,
   "apps/desktop/src/features/auto/chat/AutoDockAsk.tsx": 1,

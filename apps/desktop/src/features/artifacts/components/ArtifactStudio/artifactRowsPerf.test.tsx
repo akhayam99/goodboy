@@ -96,12 +96,19 @@ beforeEach(async () => {
 
 afterEach(cleanup);
 
+const usedCount = () =>
+  screen
+    .getByRole('heading', { name: /^Used$/ })
+    .closest('li')
+    ?.querySelector('[data-list-grid-count]')?.textContent;
+
 describe('artifact list with 200 artifacts', () => {
   it('redraws at most two rows when one artifact changes state', async () => {
     render(<ArtifactStudio sessionId={SESSION_ID} />);
-    expect(await screen.findByRole('heading', { name: /^Used 100$/ })).toBeDefined();
+    expect(await screen.findByRole('heading', { name: /^Used$/ })).toBeDefined();
+    expect(usedCount()).toBe('100');
     await waitFor(() =>
-      expect(screen.getAllByTestId('artifact-row-frame')).toHaveLength(2 * PER_GROUP),
+      expect(document.querySelectorAll('[data-list-grid-row]')).toHaveLength(2 * PER_GROUP),
     );
 
     glyph.renders = 0;
@@ -121,8 +128,8 @@ describe('artifact list with 200 artifacts', () => {
       });
     });
 
-    await waitFor(() => expect(screen.getByRole('heading', { name: /^Used 101$/ })).toBeDefined());
+    await waitFor(() => expect(usedCount()).toBe('101'));
     expect(glyph.renders).toBeLessThanOrEqual(2);
-    expect(screen.getAllByTestId('artifact-row-frame')).toHaveLength(2 * PER_GROUP);
+    expect(document.querySelectorAll('[data-list-grid-row]')).toHaveLength(2 * PER_GROUP);
   });
 });

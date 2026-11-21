@@ -120,8 +120,10 @@ describe('the u31 lists scenes', () => {
     expect(states.length).toBeGreaterThan(0);
     for (const state of states) {
       expect(state.querySelectorAll('svg')).toHaveLength(0);
-      expect(state.firstElementChild?.getAttribute('aria-hidden')).toBe('true');
-      expect(state.children).toHaveLength(2);
+      const dot = state
+        .closest('[data-list-grid-row]')
+        ?.querySelector('[data-list-grid-cell="state"] [role="img"]');
+      expect(dot?.getAttribute('aria-label')).toBe(state.textContent);
     }
   });
 

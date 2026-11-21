@@ -114,7 +114,6 @@ export const ArtifactDocumentShell = ({ sessionId, subject, agents }: Props) => 
     openInBrowser: {
       run: savedCopy.openInBrowser,
       blockedReason: isCopyMissing ? COPY_NOT_READY : null,
-      description: savedCopy.error,
     },
     copySource: {
       run: exporter.copySource,

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
-import { formatError } from '@goodboy/ui';
 import type { SessionArtifact, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
+import { NOTHING_CHANGED } from '../../../../store/slices/notifications/errorRecovery';
 import { artifactFolderName } from '../../artifactFolderName';
 import {
   locateArtifactMirror,
@@ -18,7 +18,6 @@ type OpenParams = {
 
 export type ArtifactSavedCopy = Readonly<{
   location: ArtifactMirrorLocation | null;
-  error: string | null;
   reveal: () => void;
   openInBrowser: (params?: OpenParams) => void;
 }>;
@@ -35,7 +34,7 @@ export const useArtifactSavedCopy = ({ sessionId, artifact }: Params): ArtifactS
   });
   const folder = artifactFolderName({ artifact });
   const [location, setLocation] = useState<ArtifactMirrorLocation | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const reportError = useAppStore((s) => s.reportError);
 
   useEffect(() => {
     if (workspaceSlug === null) {
@@ -59,28 +58,57 @@ export const useArtifactSavedCopy = ({ sessionId, artifact }: Params): ArtifactS
     };
   }, [workspaceSlug, folder, artifact.updatedAt]);
 
-  const reveal = useCallback(() => {
+  const revealCopy = useCallback(async (): Promise<boolean> => {
     if (workspaceSlug === null) {
-      return;
+      return false;
     }
-    setError(null);
-    revealArtifactMirror({ workspaceSlug, folder }).catch((cause: unknown) =>
-      setError(formatError(cause)),
-    );
-  }, [workspaceSlug, folder]);
+    try {
+      await revealArtifactMirror({ workspaceSlug, folder });
+      return true;
+    } catch (cause) {
+      void reportError({
+        title: `Couldn't show ${artifact.title} in its folder`,
+        error: cause,
+        recovery: NOTHING_CHANGED,
+        sessionId,
+        retry: revealCopy,
+      });
+      return false;
+    }
+  }, [workspaceSlug, folder, artifact.title, sessionId, reportError]);
+
+  const openCopy = useCallback(
+    async ({ event }: OpenParams = {}): Promise<boolean> => {
+      if (workspaceSlug === null) {
+        return false;
+      }
+      try {
+        await openArtifactCopy({ artifact, workspaceSlug, event });
+        return true;
+      } catch (cause) {
+        void reportError({
+          title: `Couldn't open ${artifact.title} in the browser`,
+          error: cause,
+          recovery: NOTHING_CHANGED,
+          sessionId,
+          retry: () => openCopy({ event }),
+        });
+        return false;
+      }
+    },
+    [workspaceSlug, artifact, sessionId, reportError],
+  );
+
+  const reveal = useCallback(() => {
+    void revealCopy();
+  }, [revealCopy]);
 
   const openInBrowser = useCallback(
     ({ event }: OpenParams = {}) => {
-      if (workspaceSlug === null) {
-        return;
-      }
-      setError(null);
-      openArtifactCopy({ artifact, workspaceSlug, event }).catch((cause: unknown) =>
-        setError(formatError(cause)),
-      );
+      void openCopy({ event });
     },
-    [workspaceSlug, artifact],
+    [openCopy],
   );
 
-  return { location, error, reveal, openInBrowser };
+  return { location, reveal, openInBrowser };
 };

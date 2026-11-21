@@ -162,8 +162,24 @@ const rowsNamed = (id: ArtifactId) =>
     name: new RegExp(`^(Plan|Report|Wireframe) ${titleOf(id)}(,|$)`),
   });
 
-const isInDeleted = (node: HTMLElement): boolean =>
-  node.closest('[data-testid="artifact-group-deleted"]') !== null;
+type GroupOfParams = {
+  readonly node: HTMLElement;
+};
+
+const groupNameOf = ({ node }: GroupOfParams): string | null => {
+  const labelledBy = node.closest('ul[aria-labelledby]')?.getAttribute('aria-labelledby') ?? null;
+  return labelledBy === null ? null : (document.getElementById(labelledBy)?.textContent ?? null);
+};
+
+const isInDeleted = (node: HTMLElement): boolean => groupNameOf({ node }) === 'Recently deleted';
+
+const rowFrameOf = ({ node }: GroupOfParams): HTMLElement => {
+  const frame = node.closest('li');
+  if (frame === null) {
+    throw new Error('row frame missing');
+  }
+  return frame;
+};
 
 const rowOf = (id: ArtifactId) => rowsNamed(id).find((node) => !isInDeleted(node)) ?? null;
 
@@ -188,14 +204,20 @@ const deleteFromMenu = ({ id }: { readonly id: ArtifactId }) => {
 const groupHeading = (name: RegExp) => screen.getByRole('heading', { level: 2, name });
 
 const showTrash = () =>
-  within(screen.getByTestId('artifact-group-deleted')).getByRole('button', { name: 'Show' });
+  within(groupHeading(/^Recently deleted$/).closest('li') as HTMLElement).getByRole('button', {
+    name: 'Show',
+  });
 
 describe('artifact list rows', () => {
   it('groups by state under plain labels, a run plan under Used and in view', async () => {
     mountList();
     await waitFor(() => expect(rowOf(READY_PLAN)).not.toBeNull());
     expect(groupHeading(/^Ready$/)).toBeDefined();
-    expect(groupHeading(/^To read 2$/)).toBeDefined();
+    expect(
+      groupHeading(/^To read$/)
+        .closest('li')
+        ?.querySelector('[data-list-grid-count]')?.textContent,
+    ).toBe('2');
     expect(groupHeading(/^Used$/)).toBeDefined();
     expect(screen.queryByRole('heading', { name: /^Ran\b/ })).toBeNull();
     expect(screen.queryByRole('button', { name: /^Used\b/ })).toBeNull();
@@ -218,24 +240,30 @@ describe('artifact list rows', () => {
     mountList();
     await waitFor(() => expect(rowOf(READY_PLAN)).not.toBeNull());
     const row = present({ node: rowOf(READY_PLAN) });
-    expect(row.closest('[data-testid="artifact-group-consumed"]')).not.toBeNull();
-    expect(row.closest('[data-testid="artifact-group-ready"]')).toBeNull();
+    expect(groupNameOf({ node: row })).toBe('Used');
     expect(row.getAttribute('aria-label') ?? row.textContent).toContain('Approved');
   });
 
-  it('shows a state only where the group does not say it, with Unread on a fresh unopened wireframe', async () => {
+  it('gives every row its state as a dot and a word, with Unread on a fresh unopened wireframe', async () => {
     mountList();
     await waitFor(() => expect(rowOf(WIREFRAME)).not.toBeNull());
     const states = screen.getAllByTestId('artifact-row-state').map((node) => node.textContent);
-    expect(states).toEqual(expect.arrayContaining(['Unread', 'Ready to run']));
-    expect(states).not.toContain('Ready');
-    expect(states).not.toContain('Ran');
+    expect(states).toEqual(expect.arrayContaining(['Unread', 'Ready to run', 'Ran']));
+    const dots = screen
+      .getAllByRole('img')
+      .map((node) => node.getAttribute('aria-label'))
+      .filter((label) => label !== null);
+    expect(dots).toEqual(expect.arrayContaining(['Unread', 'Ready to run', 'Ran']));
+    const rowCount = screen.getAllByTestId('artifact-row-state').length;
+    expect(rowCount).toBe(
+      document.querySelectorAll('[data-list-grid-row] [data-list-grid-cell="state"]').length,
+    );
   });
 
   it('keeps each state on one line and draws no kind column', async () => {
     mountList();
     await waitFor(() => expect(rowOf(READY_PLAN)).not.toBeNull());
-    const frame = rowOf(READY_PLAN)?.closest('[data-testid="artifact-row-frame"]') as HTMLElement;
+    const frame = rowFrameOf({ node: present({ node: rowOf(READY_PLAN) }) });
     expect(within(frame).queryByTestId('artifact-row-progress')).toBeNull();
     expect(within(frame).queryByTestId('artifact-row-kind')).toBeNull();
     expect(within(frame).getByTestId('artifact-row-state').textContent).toBe('Ready to run');
@@ -251,10 +279,8 @@ describe('artifact list rows', () => {
     mountList();
     await waitFor(() => expect(rowOf(OLD_REPORT)).not.toBeNull());
     const stateOf = (id: ArtifactId) =>
-      rowOf(id)
-        ?.closest('[data-testid="artifact-row-frame"]')
-        ?.querySelector('[data-testid="artifact-row-state"]')?.textContent;
-    expect(stateOf(OLD_REPORT)).toBeUndefined();
+      rowOf(id)?.closest('li')?.querySelector('[data-testid="artifact-row-state"]')?.textContent;
+    expect(stateOf(OLD_REPORT)).toBe('Ready');
     expect(stateOf(WIREFRAME)).toBe('Unread');
   });
 
