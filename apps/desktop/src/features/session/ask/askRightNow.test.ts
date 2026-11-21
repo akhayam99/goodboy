@@ -54,10 +54,13 @@ describe('askRightNow', () => {
     expect(
       askSuggestions(input({ openQuestionsFrom: ['Planner'], failedAgents: ['Tester'] })),
     ).toEqual(['What needs me?', 'Why did Tester fail?', 'What changed since I last looked?']);
-    expect(askSuggestions(input({}))).toEqual([
+    expect(askSuggestions(input({ prNumber: 418 }))).toEqual([
       'What changed since I last looked?',
-      'What is happening right now?',
-      'What is left to do?',
+      'Is #418 ready to merge?',
     ]);
+  });
+
+  it('leaves the two questions the session answers for free to the Ask line', () => {
+    expect(askSuggestions(input({}))).toEqual(['What changed since I last looked?']);
   });
 });
