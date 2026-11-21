@@ -67,8 +67,15 @@ const captureTarget = ({ state, sessionId, lens }: TargetParams): SessionTarget 
   }
   if (lens === 'branch') {
     const mountPath = state.diffMountPath[sessionId] ?? null;
+    const mountId =
+      mountPath === null
+        ? null
+        : ((state.sessionProjectMounts?.[sessionId] ?? []).find(
+            (mount) => mount.worktreePath === mountPath,
+          )?.mountId ?? null);
     return {
       kind: 'branch',
+      ...(mountId === null ? {} : { mountId }),
       mountPath,
       tab: branchTabOf({ state, sessionId }),
       threadId: openThreadOf({ state, sessionId }),

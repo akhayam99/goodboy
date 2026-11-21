@@ -1,4 +1,11 @@
-import type { AgentId, ArtifactId, OpenQuestionId, SessionId, WorkspaceId } from '@goodboy/types';
+import type {
+  AgentId,
+  ArtifactId,
+  MountId,
+  OpenQuestionId,
+  SessionId,
+  WorkspaceId,
+} from '@goodboy/types';
 import type { DiffFocus, FocusedExternalTask, LensKind } from '../session-view/types';
 import type { OpenDrawer } from '../drawer/state';
 import type { StudioPlace } from './studio';
@@ -20,6 +27,7 @@ export type SessionTarget =
     }
   | {
       readonly kind: 'branch';
+      readonly mountId?: MountId | null;
       readonly mountPath: string | null;
       readonly tab: BranchTab;
       readonly threadId: string | null;
