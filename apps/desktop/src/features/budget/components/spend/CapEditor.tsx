@@ -61,6 +61,10 @@ export const CapEditor = ({
   const [thresholdDraft, setThresholdDraft] = useState(String(effectiveThresholdPct));
   const [isBusy, setIsBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const latestRef = useRef({ currentCapUsd, onSave });
+  useEffect(() => {
+    latestRef.current = { currentCapUsd, onSave };
+  }, [currentCapUsd, onSave]);
   useFollowedDraft({ current: currentCapUsd, setDraft: setCapDraft });
   useFollowedDraft({ current: effectiveThresholdPct, setDraft: setThresholdDraft });
 
@@ -101,7 +105,8 @@ export const CapEditor = ({
       setError(null);
       undoable({
         message: `Removed the ${formatUsd(previous.capUsd)} limit`,
-        undo: () => onSave(previous),
+        isCurrent: () => latestRef.current.currentCapUsd === null,
+        undo: () => latestRef.current.onSave(previous),
       });
     } catch (failure) {
       setError(formatError(failure));

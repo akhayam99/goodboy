@@ -1,7 +1,7 @@
 import type { StopAllResult } from './stopAllRunningAgents';
 
 type Params = {
-  readonly result: StopAllResult;
+  readonly result: Pick<StopAllResult, 'stopped' | 'stillRunning'>;
 };
 
 export const stopAllMessageOf = ({ result }: Params): string => {

@@ -324,6 +324,7 @@ export const installResolveActions = ({ store }: Params): void => {
   };
   const forceCloseResolver = (async (sessionId, agentId) => {
     stopFix({ store, sessionId, agentId });
+    return 'closed';
   }) satisfies AppStore['forceCloseResolver'];
   const stopResolveLane: AppStore['stopResolveLane'] = async ({ sessionId }) => {
     const running = (store.getState().sessionResolveAttempts[sessionId] ?? []).filter(
@@ -332,6 +333,7 @@ export const installResolveActions = ({ store }: Params): void => {
     for (const attempt of running) {
       stopFix({ store, sessionId, agentId: attempt.agentId });
     }
+    return running.map((attempt) => attempt.agentId);
   };
   const settleResolveSourceChange: AppStore['settleResolveSourceChange'] = async ({
     sessionId,

@@ -121,7 +121,7 @@ describe('Fix run count', () => {
   });
 
   it('stops the run from the counter at once, with no confirm', async () => {
-    const forceCloseResolver = vi.fn<StoreState['forceCloseResolver']>(async () => undefined);
+    const forceCloseResolver = vi.fn<StoreState['forceCloseResolver']>(async () => 'closed');
     stub({ forceCloseResolver });
     await mount({ threadId: null });
 
@@ -134,7 +134,7 @@ describe('Fix run count', () => {
   });
 
   it('stops a comment in work from its own row at once, and the batch with it', async () => {
-    const forceCloseResolver = vi.fn<StoreState['forceCloseResolver']>(async () => undefined);
+    const forceCloseResolver = vi.fn<StoreState['forceCloseResolver']>(async () => 'closed');
     stub({ forceCloseResolver });
     await mount({ threadId: null });
 

@@ -57,8 +57,10 @@ export type WorkflowRunFacts = {
   readonly name: string;
   readonly state: WorkflowRunState;
   readonly isClosable: boolean;
+  readonly hasArchiveEffects: boolean;
   readonly openQuestionId: OpenQuestionId | null;
   readonly stoppedAgentId: AgentId | null;
+  readonly isOperatorStopped: boolean;
   readonly readyAgentId: AgentId | null;
   readonly readyStepName: string | null;
   readonly hasChanges: boolean;
@@ -229,8 +231,19 @@ export const WORKFLOW_RUN_KIND: ObjectKindDefinition<WorkflowRunActionTarget, Wo
       name,
       state: runState,
       isClosable: workflow !== null && isWorkflowRunClosable({ run, workflow, agents }),
+      hasArchiveEffects:
+        isRunning ||
+        isOrchestrating ||
+        session.workflowRuns.some(
+          (candidate) =>
+            candidate.chainAfterId === run.id &&
+            candidate.triggerMode === 'after_run' &&
+            candidate.discardedAt == null,
+        ),
       openQuestionId: questions[0]?.id ?? null,
       stoppedAgentId: stoppedAgent?.id ?? null,
+      isOperatorStopped:
+        run.orchestrationStop?.kind === 'operator' && run.executionMode === 'dynamic' && !isRunning,
       readyAgentId: readyAgent?.id ?? null,
       readyStepName: manualStep?.name ?? null,
       hasChanges: mounts.length > 0,
@@ -308,9 +321,11 @@ export const WORKFLOW_RUN_KIND: ObjectKindDefinition<WorkflowRunActionTarget, Wo
       label: NAMES.continue,
       icon: StepForward,
       group: 'act',
-      when: ({ facts }) => facts.stoppedAgentId !== null && isWorkflowRunLive({ facts }),
+      when: ({ facts }) =>
+        (facts.stoppedAgentId !== null || facts.isOperatorStopped) && isWorkflowRunLive({ facts }),
       run: async ({ facts, env }) => {
         if (facts.stoppedAgentId === null) {
+          await env.getState().retryWorkflowOrchestration(facts.sessionId, facts.run.id);
           return;
         }
         await env
@@ -515,8 +530,21 @@ export const WORKFLOW_RUN_KIND: ObjectKindDefinition<WorkflowRunActionTarget, Wo
       group: 'danger',
       when: ({ facts }) => facts.state !== 'discarded',
       isUndoable: true,
+      confirm: ({ facts }) =>
+        facts.hasArchiveEffects
+          ? {
+              title: 'Archive this run?',
+              description:
+                "Stops the steps still running and detaches the runs chained after it. Restore brings the run back but doesn't restart them.",
+              confirmLabel: 'Archive',
+              role: 'alert',
+            }
+          : null,
       run: async ({ facts, env }) => {
         await env.getState().discardWorkflow(facts.sessionId, facts.run.id);
+        if (facts.hasArchiveEffects) {
+          return;
+        }
         env.getState().undoable({
           showToast: env.showToast,
           message: 'Run archived. Agents already started stay in the session.',

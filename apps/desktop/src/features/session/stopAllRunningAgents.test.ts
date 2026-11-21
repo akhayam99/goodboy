@@ -85,7 +85,7 @@ describe('stopAllRunningAgents', () => {
       agentId: idOf('agent-a'),
       reason: 'user',
     });
-    expect(result).toEqual({ stopped: 2, stillRunning: 0 });
+    expect(result).toMatchObject({ stopped: 2, stillRunning: 0 });
   });
 
   it('counts an agent whose process did not exit as still running', async () => {
@@ -101,7 +101,10 @@ describe('stopAllRunningAgents', () => {
 
     const result = await stopAllRunningAgents({ getState, sessionId: SESSION_ID });
 
-    expect(result).toEqual({ stopped: 4, stillRunning: 1 });
+    expect(result).toMatchObject({ stopped: 4, stillRunning: 1 });
+    expect(result.stoppedAgentIds).toEqual(
+      ['agent-a', 'agent-b', 'agent-c', 'agent-d'].map((id) => idOf(id)),
+    );
     expect(stopAllMessageOf({ result })).toBe('Stopped 4, 1 still running');
   });
 
@@ -113,7 +116,7 @@ describe('stopAllRunningAgents', () => {
 
     const result = await stopAllRunningAgents({ getState, sessionId: SESSION_ID });
 
-    expect(result).toEqual({ stopped: 1, stillRunning: 0 });
+    expect(result).toMatchObject({ stopped: 1, stillRunning: 0 });
   });
 
   it('keeps the other results and reports the one that failed to stop', async () => {
@@ -124,7 +127,8 @@ describe('stopAllRunningAgents', () => {
 
     const result = await stopAllRunningAgents({ getState, sessionId: SESSION_ID });
 
-    expect(result).toEqual({ stopped: 1, stillRunning: 1 });
+    expect(result).toMatchObject({ stopped: 1, stillRunning: 1 });
+    expect(result.stoppedAgentIds).toEqual([idOf('agent-a')]);
     expect(reportError).toHaveBeenCalledWith({
       recovery: { clause: 'check-state' },
       title: "Couldn't stop the agent",
@@ -152,7 +156,7 @@ describe('stopAllRunningAgents', () => {
     const result = await stopAllRunningAgents({ getState: () => waiting, sessionId: SESSION_ID });
 
     expect(cancel).toHaveBeenCalledTimes(2);
-    expect(result).toEqual({ stopped: 2, stillRunning: 0 });
+    expect(result).toMatchObject({ stopped: 2, stillRunning: 0 });
   });
 
   it('says what happened when nothing could be stopped, or everything was', () => {

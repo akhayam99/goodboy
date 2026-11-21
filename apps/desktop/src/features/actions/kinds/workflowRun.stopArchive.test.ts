@@ -25,7 +25,7 @@ import {
   stepAgent,
   workflowFixture,
 } from '../../../__tests__/helpers/actionFixtures';
-import { brandId, type AgentId } from '@goodboy/types';
+import { brandId, type AgentId, type WorkflowRunId } from '@goodboy/types';
 import type { ShowToastParams } from '../../../shared/components/Toast/toastContext';
 import { bindTarget, runObjectAction } from '../registry';
 import type { ActionEnv, ObjectTarget } from '../types';
@@ -114,6 +114,51 @@ describe('Stop run on the run page', () => {
 });
 
 describe('Archive run on the run page', () => {
+  const seedAgent = ({ status }: { readonly status: 'running' | 'completed' }) =>
+    seedActionState({
+      useAppStore,
+      seed: {
+        session: sessionFixture({ workflowRuns: [runFixture()] }),
+        workflows: [workflowFixture()],
+        agents: [stepAgent({ id: STEP, stepId: STEP_PLAN, status })],
+      },
+    });
+
+  beforeEach(() => {
+    seedAgent({ status: 'completed' });
+    useAppStore.setState({ currentSessionId: SESSION });
+  });
+
+  it('keeps the confirmation while a step is running, because Undo cannot restart it', () => {
+    seedAgent({ status: 'running' });
+    useAppStore.setState({ currentSessionId: SESSION });
+
+    expect(resolved('workflowRun.discard')?.confirm?.title).toBe('Archive this run?');
+  });
+
+  it('keeps the confirmation when a run is chained after it', () => {
+    seedActionState({
+      useAppStore,
+      seed: {
+        session: sessionFixture({
+          workflowRuns: [
+            runFixture(),
+            runFixture({
+              id: brandId<WorkflowRunId>({ value: 'run-chained-northwind' }),
+              chainAfterId: RUN,
+              triggerMode: 'after_run',
+            }),
+          ],
+        }),
+        workflows: [workflowFixture()],
+        agents: [stepAgent({ id: STEP, stepId: STEP_PLAN, status: 'completed' })],
+      },
+    });
+    useAppStore.setState({ currentSessionId: SESSION });
+
+    expect(resolved('workflowRun.discard')?.confirm?.title).toBe('Archive this run?');
+  });
+
   it('asks nothing and archives at once', async () => {
     const discardWorkflow = vi.fn(async () => undefined);
     useAppStore.setState({ discardWorkflow });

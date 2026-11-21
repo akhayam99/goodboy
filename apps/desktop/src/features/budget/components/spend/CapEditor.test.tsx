@@ -198,16 +198,75 @@ describe('CapEditor, the limit', () => {
   it('puts the same limit and warning back when the toast says Undo', async () => {
     const onRemove = vi.fn(async () => undefined);
     const onSave = vi.fn(async () => undefined);
-    renderEditor({ currentCapUsd: 50, currentThresholdPct: 75, onRemove, onSave });
+    const view = renderEditor({ currentCapUsd: 50, currentThresholdPct: 75, onRemove, onSave });
 
     fireEvent.click(screen.getByRole('button', { name: 'Remove limit' }));
-
     await waitFor(() => expect(useAppStore.getState().undoNotices).toHaveLength(1));
+    view.rerender(
+      <CapEditor
+        label="Monthly limit"
+        currentCapUsd={null}
+        currentThresholdPct={null}
+        onSave={onSave}
+        onRemove={onRemove}
+      />,
+    );
     const toast = useAppStore.getState().undoNotices[0]?.toast;
     expect(toast?.message).toBe('Removed the $50.00 limit');
     expect(toast?.action?.label).toBe('Undo');
     await toast?.action?.undo?.();
+
     expect(onSave).toHaveBeenCalledWith({ capUsd: 50, thresholdPct: 75 });
+  });
+
+  it('restores through the save of the moment, not the one from before the removal', async () => {
+    const onRemove = vi.fn(async () => undefined);
+    const staleSave = vi.fn(async () => undefined);
+    const freshSave = vi.fn(async () => undefined);
+    const view = renderEditor({
+      currentCapUsd: 50,
+      currentThresholdPct: 80,
+      onRemove,
+      onSave: staleSave,
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Remove limit' }));
+    await waitFor(() => expect(useAppStore.getState().undoNotices).toHaveLength(1));
+    view.rerender(
+      <CapEditor
+        label="Monthly limit"
+        currentCapUsd={null}
+        currentThresholdPct={null}
+        onSave={freshSave}
+        onRemove={onRemove}
+      />,
+    );
+    await useAppStore.getState().undoNotices[0]?.toast.action?.undo?.();
+
+    expect(staleSave).not.toHaveBeenCalled();
+    expect(freshSave).toHaveBeenCalledWith({ capUsd: 50, thresholdPct: 80 });
+  });
+
+  it('reports a conflict instead of restoring after a replacement limit was saved', async () => {
+    const onRemove = vi.fn(async () => undefined);
+    const onSave = vi.fn(async () => undefined);
+    const view = renderEditor({ currentCapUsd: 50, currentThresholdPct: 80, onRemove, onSave });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Remove limit' }));
+    await waitFor(() => expect(useAppStore.getState().undoNotices).toHaveLength(1));
+    view.rerender(
+      <CapEditor
+        label="Monthly limit"
+        currentCapUsd={70}
+        currentThresholdPct={80}
+        onSave={onSave}
+        onRemove={onRemove}
+      />,
+    );
+    const toast = useAppStore.getState().undoNotices[0]?.toast;
+    await toast?.action?.undo?.();
+
+    expect(onSave).not.toHaveBeenCalled();
   });
 
   it('offers no Undo when the removal failed', async () => {

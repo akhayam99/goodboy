@@ -120,6 +120,24 @@ export const RUN_STATES: ReadonlyArray<readonly [string, ActionSeed, ReadonlyArr
     ],
   ],
   [
+    'orchestrated and stopped by you with nothing running',
+    withRun({
+      run: {
+        executionMode: 'dynamic',
+        orchestrationStop: { kind: 'operator', message: 'You stopped this run.' },
+      },
+      agents: [stepAgent({ id: 'agent-plan', stepId: STEP_PLAN, status: 'completed' })],
+    }),
+    [
+      'workflowRun.open',
+      'workflowRun.diff',
+      'workflowRun.continue',
+      'workflowRun.rename',
+      'workflowRun.routing',
+      ...LIVE_RUN_TAIL,
+    ],
+  ],
+  [
     'paused before the next step',
     withRun({
       agents: [

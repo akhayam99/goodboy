@@ -21,13 +21,16 @@ export const stopFixWithResume = async ({
   lane,
   message,
 }: Params): Promise<void> => {
-  if (lane === null) {
-    await getState().forceCloseResolver(sessionId, agentId);
+  const stoppedIds: ReadonlyArray<AgentId> =
+    lane === null
+      ? (await getState().forceCloseResolver(sessionId, agentId)) === 'closed'
+        ? [agentId]
+        : []
+      : await getState().stopResolveLane({ sessionId, worktreePath: lane.worktreePath });
+  if (stoppedIds.length === 0) {
+    return;
   }
-  if (lane !== null) {
-    await getState().stopResolveLane({ sessionId, worktreePath: lane.worktreePath });
-  }
-  if (offerResume({ getState, sessionId, agentIds: [agentId], message, showToast }) === null) {
+  if (offerResume({ getState, sessionId, agentIds: stoppedIds, message, showToast }) === null) {
     showToast({ kind: 'info', message });
   }
 };

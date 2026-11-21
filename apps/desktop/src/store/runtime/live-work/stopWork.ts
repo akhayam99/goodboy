@@ -1,5 +1,5 @@
 import { CHECK_STATE } from '../../slices/notifications/errorRecovery';
-import type { ProviderRunId } from '@goodboy/types';
+import type { AgentId, ProviderRunId } from '@goodboy/types';
 import { cancelTurn } from '../../../features/chat/turn';
 import type { AppStore } from '../../store';
 import { cancelledRunIds } from '../../slices/sessions/sessionMutators';
@@ -11,6 +11,7 @@ import { stopPlanOf, type StopWorkScope } from './stopPlanOf';
 export type StopWorkResult = Readonly<{
   stopped: number;
   stillRunning: number;
+  stoppedAgentIds: ReadonlyArray<AgentId>;
 }>;
 
 export type StopWorkState = Pick<
@@ -69,6 +70,7 @@ export const stopWork = async ({ getState, scope, reason }: Params): Promise<Sto
     Promise.all(orphanRunIds.map((runId) => cancelOrphanRun({ runId }))),
   ]);
   let stopped = 0;
+  const stoppedAgentIds: AgentId[] = [];
   let stillRunning = orphanOutcomes.filter((isCancelled) => !isCancelled).length;
   for (const [index, outcome] of settled.entries()) {
     const target = targets[index];
@@ -90,6 +92,7 @@ export const stopWork = async ({ getState, scope, reason }: Params): Promise<Sto
     }
     if (target?.wasLive === true) {
       stopped += 1;
+      stoppedAgentIds.push(target.agent.id);
     }
   }
   const { decidingRuns } = stopPlanOf({ state: getState(), scope, keptRuns });
@@ -99,5 +102,5 @@ export const stopWork = async ({ getState, scope, reason }: Params): Promise<Sto
     ),
   );
   stillRunning += runOutcomes.filter((outcome) => outcome !== 'stopped').length;
-  return { stopped, stillRunning };
+  return { stopped, stillRunning, stoppedAgentIds };
 };

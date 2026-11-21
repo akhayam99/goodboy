@@ -210,7 +210,7 @@ export type ResolveActions = {
   readonly retryLaneRebuild: (params: RetryLaneParams) => Promise<void>;
   readonly stopResolveLane: (
     params: SessionParams & { readonly worktreePath: string },
-  ) => Promise<void>;
+  ) => Promise<ReadonlyArray<AgentId>>;
   readonly runResolveCheck: (params: CheckRunParams) => Promise<ResolveCheckPair>;
   readonly recoverUncapturedResolveWork: (
     params: SessionParams,
