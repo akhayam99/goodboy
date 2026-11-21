@@ -47,6 +47,7 @@ mod jira;
 mod last_crash;
 mod linear;
 mod live_child;
+mod live_work;
 mod local_image;
 mod logging;
 mod monitor;
@@ -523,6 +524,7 @@ pub fn run() {
             turn::turn_list_live,
             turn::turn_launch_id,
             turn::turn_quiet,
+            live_work::live_work,
             window_close::window_close_claim,
             window_heartbeat::window_heartbeat,
             turn::turn_delivery_lookup,

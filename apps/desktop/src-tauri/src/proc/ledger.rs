@@ -139,6 +139,13 @@ impl ProcessLedger {
         self.list_with(mounts, placement_of)
     }
 
+    pub(crate) fn by_pid(&self) -> HashMap<u32, LedgerEntry> {
+        self.snapshot()
+            .into_iter()
+            .map(|entry| (entry.pid, entry))
+            .collect()
+    }
+
     fn snapshot(&self) -> Vec<LedgerEntry> {
         let Ok(map) = self.0.lock() else {
             return Vec::new();

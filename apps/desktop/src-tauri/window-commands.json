@@ -260,6 +260,7 @@
     "linear_update_issue_assignee",
     "linear_update_issue_state",
     "linear_validate_connection",
+    "live_work",
     "load_tool_image",
     "local_image_read",
     "log_provider_standing",
