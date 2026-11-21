@@ -7,21 +7,12 @@ vi.mock('@tauri-apps/api/event', async () =>
   (await import('../../../../store/storyHarness')).tauriEventModuleMock(),
 );
 
-const runningCount = vi.hoisted(() => ({ value: 0 }));
-const mainWindow = vi.hoisted(() => ({ value: true }));
-const hydrate = vi.hoisted(() => ({ spy: vi.fn(async () => undefined) }));
-
-vi.mock('../../../../features/updater/hooks/useRunningAgentCount', () => ({
-  useRunningAgentCount: () => runningCount.value,
-}));
-vi.mock('../../../../features/workspace/useIsMainWindow', () => ({
-  useIsMainWindow: () => mainWindow.value,
-}));
-vi.mock('../../../../features/onboarding/onboardingSettings', () => ({
-  hydrateOnboardingFromDb: hydrate.spy,
-}));
+vi.mock('../../../../features/onboarding/onboardingSettings', async () =>
+  (await import('../../../../store/storyHarness')).onboardingStoreModuleMock(),
+);
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { TEST_NOW, nextAgentId, nextProviderRunId } from '@goodboy/types/testing';
 import { act, cleanup, renderHook } from '@testing-library/react';
 import {
   STORE_IMPORT_TIMEOUT_MS,
@@ -29,7 +20,22 @@ import {
   resetStoryStore,
   type StoryStore,
 } from '../../../../store/storyHarness';
+import { hydrateOnboardingFromDb } from '../../../../features/onboarding/onboardingSettings';
 import { useRailFootEffects } from '.';
+
+const setWindowLabel = ({ label }: { readonly label: string }) => {
+  Reflect.set(window, '__TAURI_INTERNALS__', { metadata: { currentWindow: { label } } });
+};
+
+type RunningParams = { readonly isRunning: boolean };
+
+const seedRunning = ({ isRunning }: RunningParams) => {
+  useAppStore.setState({
+    agentTurnState: isRunning
+      ? { [nextAgentId()]: { kind: 'running', runId: nextProviderRunId(), startedAt: TEST_NOW } }
+      : {},
+  });
+};
 
 let useAppStore: StoryStore;
 
@@ -38,13 +44,14 @@ beforeAll(async () => {
 }, STORE_IMPORT_TIMEOUT_MS);
 
 beforeEach(async () => {
-  runningCount.value = 0;
-  mainWindow.value = true;
   await resetStoryStore();
+  setWindowLabel({ label: 'main' });
+  vi.mocked(hydrateOnboardingFromDb).mockClear();
 });
 
 afterEach(() => {
   cleanup();
+  Reflect.deleteProperty(window, '__TAURI_INTERNALS__');
   vi.clearAllMocks();
 });
 
@@ -61,14 +68,15 @@ describe('useRailFootEffects', () => {
 
   it('applies a queued update once no agent runs, and only once', () => {
     const applyUpdate = vi.fn(async () => undefined);
-    runningCount.value = 2;
+    seedRunning({ isRunning: true });
     useAppStore.setState({ applyUpdate, updateQueuedUntilIdle: true });
     const { rerender } = renderHook(() => useRailFootEffects({}));
 
     expect(applyUpdate).not.toHaveBeenCalled();
 
-    runningCount.value = 0;
-    rerender();
+    act(() => {
+      seedRunning({ isRunning: false });
+    });
     rerender();
 
     expect(applyUpdate).toHaveBeenCalledOnce();
@@ -84,14 +92,14 @@ describe('useRailFootEffects', () => {
   });
 
   it('reloads the onboarding state when a secondary window takes focus', () => {
-    mainWindow.value = false;
+    setWindowLabel({ label: 'workspace-acme' });
     renderHook(() => useRailFootEffects({}));
 
     act(() => {
       window.dispatchEvent(new Event('focus'));
     });
 
-    expect(hydrate.spy).toHaveBeenCalledOnce();
+    expect(hydrateOnboardingFromDb).toHaveBeenCalledOnce();
   });
 
   it('does not reload the onboarding state from the main window', () => {
@@ -101,11 +109,11 @@ describe('useRailFootEffects', () => {
       window.dispatchEvent(new Event('focus'));
     });
 
-    expect(hydrate.spy).not.toHaveBeenCalled();
+    expect(hydrateOnboardingFromDb).not.toHaveBeenCalled();
   });
 
   it('stops listening for focus once it unmounts', () => {
-    mainWindow.value = false;
+    setWindowLabel({ label: 'workspace-acme' });
     const { unmount } = renderHook(() => useRailFootEffects({}));
 
     unmount();
@@ -113,6 +121,6 @@ describe('useRailFootEffects', () => {
       window.dispatchEvent(new Event('focus'));
     });
 
-    expect(hydrate.spy).not.toHaveBeenCalled();
+    expect(hydrateOnboardingFromDb).not.toHaveBeenCalled();
   });
 });
