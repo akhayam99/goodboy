@@ -1,4 +1,4 @@
-import type { SessionStageInfo } from '@goodboy/types';
+import type { ProjectId, SessionStageInfo } from '@goodboy/types';
 
 export type BoardAsk = Readonly<{
   id: string;
@@ -32,6 +32,7 @@ export type BoardGroupId = 'needs-you' | 'in-progress' | 'merged' | 'closed' | '
 export type BoardRow = Readonly<{
   id: string;
   mountId: string | null;
+  projectId: ProjectId | null;
   projectName: string | null;
   branch: string | null;
   group: BoardGroupId;

@@ -719,7 +719,7 @@
     "apps/desktop/src/features/session/components/SessionOverviewPane/ProjectMountRows/detachPlan.ts": 13,
     "apps/desktop/src/features/session/components/SessionOverviewPane/ProjectMountRows/foreignCommits.ts": 2,
     "apps/desktop/src/features/session/components/SessionOverviewPane/ProjectMountRows/mountActionFailure.ts": 1,
-    "apps/desktop/src/features/session/components/SessionOverviewPane/ProjectMountRows/MountActionsMenu.tsx": 4,
+    "apps/desktop/src/features/session/components/SessionOverviewPane/ProjectMountRows/MountActionsMenu.tsx": 2,
     "apps/desktop/src/features/session/components/SessionOverviewPane/ProjectMountRows/mountFailure.ts": 1,
     "apps/desktop/src/features/session/components/SessionOverviewPane/ProjectMountRows/MountProjectList.tsx": 1,
     "apps/desktop/src/features/session/components/SessionOverviewPane/ProjectMountRows/RebaseStoppedNotice.tsx": 1,

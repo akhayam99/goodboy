@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type {
   BranchIntegration,
@@ -78,6 +78,7 @@ vi.mock('../../../../../shared/components/Toast', () => ({
 
 vi.mock('../../../../worktree/worktree', () => ({ worktreeDetachAssessment }));
 
+import { PROJECT_DETACH_EVENT } from '../../../../actions/kinds/project';
 import { MountActionsMenu } from './MountActionsMenu';
 
 const typedString = <Value extends string>({ value }: { readonly value: string }): Value =>
@@ -129,6 +130,12 @@ const openConfirm = () => {
 };
 
 const isConfirmOpen = (): boolean => screen.queryByText('Remove api from the session?') !== null;
+
+const requestDetach = () => {
+  window.dispatchEvent(
+    new CustomEvent(PROJECT_DETACH_EVENT, { detail: { projectKey: 'session-1:project-1' } }),
+  );
+};
 
 afterEach(cleanup);
 beforeEach(() => {
@@ -603,6 +610,32 @@ describe('MountActionsMenu', () => {
     renderMenu();
 
     expect(screen.queryByRole('button', { name: TRIGGER })).toBeNull();
+  });
+
+  it('opens one question when two blocks of the same project hear the menu verb', () => {
+    renderMenu();
+    renderMenu();
+
+    act(() => {
+      requestDetach();
+    });
+
+    expect(screen.getAllByRole('dialog', { name: 'Remove api from the session?' })).toHaveLength(1);
+  });
+
+  it('leaves the menu verb to another block when it has no mount to detach', () => {
+    state.sessionMounts = { 'session-1': [] };
+    const heard = vi.fn();
+    renderMenu();
+    window.addEventListener(PROJECT_DETACH_EVENT, heard);
+
+    act(() => {
+      requestDetach();
+    });
+    window.removeEventListener(PROJECT_DETACH_EVENT, heard);
+
+    expect(heard).toHaveBeenCalledTimes(1);
+    expect(isConfirmOpen()).toBe(false);
   });
 
   it('warns about the run that still writes to the branch and offers Stop run first', async () => {

@@ -13,6 +13,7 @@ type RowParams = {
 const rowOf = ({ askIds = [], isMerged = false, isClosed = false }: RowParams): BoardRow => ({
   id: 'ledger',
   mountId: 'ledger',
+  projectId: null,
   projectName: 'ledger-core',
   branch: 'nw/ledger-rounding',
   group: isMerged ? 'merged' : isClosed ? 'closed' : 'in-progress',

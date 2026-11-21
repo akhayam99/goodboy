@@ -7,8 +7,9 @@ import type { ActionCardActions } from '../../central/next/useActionCardActions'
 import type { BoardGroupId } from '../../central/board/boardTypes';
 import { cardRowIdOf } from '../../central/board/cardRowIdOf';
 import { visibleGroupsOf } from '../../central/board/visibleGroupsOf';
-import { boardProjectNamesOf } from '../../central/board/boardProjectNamesOf';
+import { boardProjectsOf } from '../../central/board/boardProjectsOf';
 import { BoardProjectHead } from './BoardProjectHead';
+import { BoardProjectRemovals } from './BoardProjectRemovals';
 import { BoardContext, type BoardContextValue } from './BoardContext';
 import { BoardLooseCards } from './BoardLooseCards';
 import { LOOSE_ROW_ID } from './looseRowId';
@@ -65,8 +66,8 @@ export const BranchBoard = ({ session, entries, cards: allCards, actionsFor, ope
     return byRow;
   }, [cards, rowIds, rowIdByAskId]);
   const mergeCard = useMemo(() => cards.find((card) => card.kind === MERGE_KIND) ?? null, [cards]);
-  const projectNames = useMemo(() => boardProjectNamesOf({ rows: board.rows }), [board.rows]);
-  const soleProjectName = projectNames.length === 1 ? (projectNames[0] ?? null) : null;
+  const projects = useMemo(() => boardProjectsOf({ rows: board.rows }), [board.rows]);
+  const soleProject = projects.length === 1 ? (projects[0] ?? null) : null;
   const groups = visibleGroupsOf({ board, expandedGroupIds });
   const firstOpenGroup =
     groups.find((group) => group.id !== 'merged' && group.id !== 'closed')?.id ?? null;
@@ -84,10 +85,11 @@ export const BranchBoard = ({ session, entries, cards: allCards, actionsFor, ope
     actionsFor,
     openFor,
     removal,
-    isMultiProject: projectNames.length > 1,
+    isMultiProject: projects.length > 1,
   };
   return (
-    <div data-slot="branch-board-section" className="flex min-w-0 flex-col gap-4">
+    <div data-slot="branch-board-section" className="relative flex min-w-0 flex-col gap-4">
+      <BoardProjectRemovals sessionId={sessionId} />
       <BoardTiles kpis={kpis} />
       <BoardContext.Provider value={value}>
         <BoardLooseCards />
@@ -98,8 +100,12 @@ export const BranchBoard = ({ session, entries, cards: allCards, actionsFor, ope
             data-slot="branch-board"
             className="flex min-w-0 flex-col gap-4 rounded-lg bg-subtle p-3"
           >
-            {soleProjectName === null ? null : (
-              <BoardProjectHead projectName={soleProjectName} count={null} />
+            {soleProject === null ? null : (
+              <BoardProjectHead
+                projectId={soleProject.projectId}
+                projectName={soleProject.projectName}
+                count={null}
+              />
             )}
             {groups.map((group) => (
               <BoardGroup

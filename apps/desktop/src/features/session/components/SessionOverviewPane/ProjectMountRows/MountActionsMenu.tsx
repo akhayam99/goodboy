@@ -1,5 +1,5 @@
 import { CHECK_STATE } from '../../../../../store/slices/notifications/errorRecovery';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { Unlink } from '@goodboy/ui/icons';
 import { useShallow } from 'zustand/react/shallow';
 import { ICON_SIZE, IconButton } from '@goodboy/ui';
@@ -14,13 +14,10 @@ import {
 import type { DetachDisposition } from '../../../../../store/slices/project-mounts/detachProject';
 
 import { NAMES } from '../../../../../shared/utils/names';
-import {
-  PROJECT_DETACH_EVENT,
-  projectKeyOf,
-  type ProjectDetachRequest,
-} from '../../../../actions/kinds/project';
+import { projectKeyOf } from '../../../../actions/kinds/project';
 import { usePinnedRuns } from '../../../hooks/usePinnedRuns';
 import { DetachConfirm } from './DetachConfirm';
+import { useProjectDetachRequest } from './useProjectDetachRequest';
 import {
   REMOVAL_STAGE,
   buildDetachPlan,
@@ -37,6 +34,7 @@ type Props = {
   readonly workspaceId: WorkspaceId | undefined;
   readonly projectName: string;
   readonly worktreePath: string;
+  readonly isTriggerShown?: boolean;
 };
 
 type DetachTarget = {
@@ -46,12 +44,6 @@ type DetachTarget = {
   readonly baseBranch: string | null;
   readonly isOnDisk: boolean;
 };
-
-const isDetachRequest = (event: Event): event is CustomEvent<ProjectDetachRequest> =>
-  event instanceof CustomEvent &&
-  typeof event.detail === 'object' &&
-  event.detail !== null &&
-  'projectKey' in event.detail;
 
 const BLOCKER_CODES = [
   'agent-running',
@@ -65,6 +57,7 @@ export const MountActionsMenu = ({
   workspaceId,
   projectName,
   worktreePath,
+  isTriggerShown = true,
 }: Props) => {
   const projectKey = projectKeyOf({ sessionId, projectId });
   const detachProject = useAppStore((state) => state.detachProject);
@@ -168,20 +161,14 @@ export const MountActionsMenu = ({
     });
   };
 
-  const assessRef = useRef(assess);
-  assessRef.current = assess;
-
-  useEffect(() => {
-    const onRequest = (event: Event) => {
-      if (!isDetachRequest(event) || event.detail.projectKey !== projectKey) {
-        return;
-      }
+  useProjectDetachRequest({
+    projectKey,
+    canTake: detachTargets.length > 0,
+    onRequest: () => {
       setIsConfirming(true);
-      assessRef.current();
-    };
-    window.addEventListener(PROJECT_DETACH_EVENT, onRequest);
-    return () => window.removeEventListener(PROJECT_DETACH_EVENT, onRequest);
-  }, [projectKey]);
+      assess();
+    },
+  });
 
   const cancelDetach = () => {
     requestRef.current = requestRef.current + 1;
@@ -243,21 +230,23 @@ export const MountActionsMenu = ({
       onConfirm={({ disposition }) => void detach({ disposition })}
       onRecheck={assess}
       onCancel={cancelDetach}
-      trigger={() => (
-        <IconButton
-          size="xs"
-          variant="ghost"
-          icon={Unlink}
-          iconSize={ICON_SIZE.row}
-          label={`Remove ${projectName} from session`}
-          tooltip={NAMES.removeFromSession}
-          aria-haspopup="dialog"
-          onClick={() => {
-            setIsConfirming(true);
-            assess();
-          }}
-        />
-      )}
+      trigger={() =>
+        isTriggerShown ? (
+          <IconButton
+            size="xs"
+            variant="ghost"
+            icon={Unlink}
+            iconSize={ICON_SIZE.row}
+            label={`Remove ${projectName} from session`}
+            tooltip={NAMES.removeFromSession}
+            aria-haspopup="dialog"
+            onClick={() => {
+              setIsConfirming(true);
+              assess();
+            }}
+          />
+        ) : null
+      }
     />
   );
 };

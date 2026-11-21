@@ -147,6 +147,7 @@ const rowOf = ({
   return {
     id: branch?.mountId ?? NO_BRANCH_ROW_ID,
     mountId: branch?.mountId ?? null,
+    projectId: branch?.projectId ?? null,
     projectName: branch?.projectName ?? null,
     branch: branch?.branch ?? null,
     group: boardGroupIdOf({

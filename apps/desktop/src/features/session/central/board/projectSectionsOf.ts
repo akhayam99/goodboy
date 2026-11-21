@@ -1,6 +1,8 @@
+import type { ProjectId } from '@goodboy/types';
 import type { BoardRow } from './boardTypes';
 
 export type ProjectSection = Readonly<{
+  projectId: ProjectId | null;
   projectName: string | null;
   rowIds: ReadonlyArray<string>;
 }>;
@@ -11,10 +13,16 @@ type Params = {
 };
 
 export const projectSectionsOf = ({ rowIds, rowById }: Params): ReadonlyArray<ProjectSection> => {
-  const byName = new Map<string | null, Array<string>>();
+  const byId = new Map<ProjectId | null, ProjectSection>();
   for (const rowId of rowIds) {
-    const projectName = rowById.get(rowId)?.projectName ?? null;
-    byName.set(projectName, [...(byName.get(projectName) ?? []), rowId]);
+    const row = rowById.get(rowId);
+    const projectId = row?.projectId ?? null;
+    const section = byId.get(projectId);
+    byId.set(projectId, {
+      projectId,
+      projectName: section?.projectName ?? row?.projectName ?? null,
+      rowIds: [...(section?.rowIds ?? []), rowId],
+    });
   }
-  return [...byName].map(([projectName, ids]) => ({ projectName, rowIds: ids }));
+  return [...byId.values()];
 };

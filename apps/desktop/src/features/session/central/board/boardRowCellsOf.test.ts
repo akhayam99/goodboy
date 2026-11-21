@@ -1,7 +1,14 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import { brandId } from '@goodboy/types';
-import type { IsoDateTime, MountId, Session, SessionId, WorkspaceId } from '@goodboy/types';
+import type {
+  IsoDateTime,
+  MountId,
+  ProjectId,
+  Session,
+  SessionId,
+  WorkspaceId,
+} from '@goodboy/types';
 import type { BranchFacts } from '../branches/branchFactsOf';
 import { branchEntriesOf } from '../branches/branchStoryOf';
 import { boardRowCellsOf, type BoardRowCells } from './boardRowCellsOf';
@@ -34,6 +41,7 @@ type BranchParams = {
 const branchOf = ({ id, checks, state }: BranchParams): BranchFacts => ({
   mountId: brandId<MountId>({ value: id }),
   mountPath: `/wt/${id}`,
+  projectId: brandId<ProjectId>({ value: 'project-ledger-core' }),
   projectName: 'ledger-core',
   branch: `nw/${id}`,
   baseBranch: 'main',
