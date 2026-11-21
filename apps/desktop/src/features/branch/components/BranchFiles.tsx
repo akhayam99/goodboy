@@ -1,9 +1,8 @@
 import { useContext } from 'react';
-import { EmptyState, PageColumn } from '@goodboy/ui';
 import type { Session, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../store';
 import { selectActiveMountId } from '../../../store/slices/project-mounts/selectors';
-import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
+import { BranchNoProject } from './BranchNoProject';
 import { ChangesPage } from '../../diff/components/ChangesPage';
 import type { SessionDiff } from '../../diff/hooks/useSessionDiff';
 import { useBranchIdentity } from '../hooks/useBranchIdentity';
@@ -40,14 +39,12 @@ export const BranchFiles = ({
   const activeMountId = useAppStore((state) => selectActiveMountId({ state, sessionId }));
   if (worktreePath === null) {
     return (
-      <PageColumn width="column">
-        <EmptyState
-          size="page"
-          icon={CONCEPT_ICONS.diff}
-          title="No branch in this session"
-          description="Add a branch to see its files."
-        />
-      </PageColumn>
+      <BranchNoProject
+        sessionId={sessionId}
+        workspaceId={session.workspaceId}
+        size="page"
+        thing="files"
+      />
     );
   }
   if (mode === 'write_review' && hasPullRequest) {

@@ -489,7 +489,7 @@ with a count of 1 in its corner while a scope is on) holds `Show: All | Unviewed
 further, and `Group by: Folders | Kind`, which regroups the tree under Source, Tests, Config and
 Docs (each file then shows its folder beside the name). The filter narrows the
 diff as well as the tree, `Showing n of N` with `Clear` says so, and a filter
-that hides everything leaves `No files match` with `Clear` in both panes
+that hides everything leaves `No files match.` in both panes, with `Clear` on the tree and `Clear filter` on the page
 (`filterFiles` in `changeTree.ts`). Generated files (lockfiles, `dist`, `build`,
 `vendor`, minified and map files) sit in a closed `Generated` row at the bottom
 in both groupings and at the end of the diff. Viewed marks are stored per session, mount and view, so two repos in one session
@@ -725,8 +725,8 @@ a big folder stays open), and starts that way again when a different set of
 files arrives, not on a reload of the same files. The diff keeps its own
 progressive mounting; the patch parse stays on the main thread because a
 512-file patch parses and becomes a tree in about 2ms (`largeChange.test.ts`
-fails over 100ms, the point where a worker earns its cost). While the diff loads the rail shows skeleton rows and
-`Loading files…`. An empty scope drops the tree and the toolbar and shows one centred empty state on the page column
+fails over 100ms, the point where a worker earns its cost). While the diff loads the rail shows skeleton rows, named Loading files for
+screen readers, and no word on screen. An empty scope drops the tree and the toolbar and shows one centred empty state on the page column
 (`DiffEmptyState`): what is empty in plain words, the scope picker inline and,
 when the other scope has files, one button that switches to it (`Show branch vs
 main (6 files)`, `Show working tree (2 files)`; `alternate` on `useSessionDiff`

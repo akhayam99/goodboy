@@ -1,9 +1,9 @@
 import { useState } from 'react';
-import { Button, Notice, type NoticeTone } from '@goodboy/ui';
+import { ErrorStrip } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
 
 type Props = {
-  readonly tone: NoticeTone;
+  readonly tone: 'danger' | 'warning';
   readonly detail: string | null;
 };
 
@@ -21,17 +21,12 @@ export const ReadFailedNotice = ({ tone, detail }: Props) => {
   };
 
   return (
-    <Notice
+    <ErrorStrip
+      labels={['ports']}
       tone={tone}
-      placement="inline"
-      role="alert"
-      title="Couldn't read ports"
-      detail={detail}
-      actions={
-        <Button size="sm" variant="secondary" isBusy={isBusy} onClick={() => void retry()}>
-          Retry
-        </Button>
-      }
+      error={new Error(detail ?? '')}
+      isBusy={isBusy}
+      onRetry={() => void retry()}
     />
   );
 };

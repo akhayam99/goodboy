@@ -203,12 +203,12 @@ describe('the monitoring scenes', () => {
 
   it('shows a failed read with a Retry that reads again', async () => {
     renderScene('monitoring-failed');
-    await waitFor(() => expect(screen.getByText("Couldn't read ports")).toBeDefined());
+    await waitFor(() => expect(screen.getByText("Couldn't load ports")).toBeDefined());
 
     fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
     await settle();
 
-    expect(screen.getByText("Couldn't read ports")).toBeDefined();
+    expect(screen.getByText("Couldn't load ports")).toBeDefined();
   });
 
   it('shows skeleton rows before the first snapshot lands', async () => {

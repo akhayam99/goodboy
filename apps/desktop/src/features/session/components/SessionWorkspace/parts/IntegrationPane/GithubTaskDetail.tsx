@@ -37,7 +37,7 @@ export const GithubTaskDetail = ({ workspaceId, rootPath, task, issueNumber }: P
         meta={<span className="font-mono">{task?.identifier ?? `#${resolvedIssueNumber}`}</span>}
       >
         <RecordProperties facts={[]} />
-        <ErrorStrip label="the GitHub issue" error={new Error(error)} onRetry={refetch} />
+        <ErrorStrip labels={['the GitHub issue']} error={new Error(error)} onRetry={refetch} />
       </PaneShell>
     );
   }

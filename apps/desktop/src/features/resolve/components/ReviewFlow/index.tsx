@@ -8,9 +8,8 @@ import {
   type ReactNode,
 } from 'react';
 import { createPortal } from 'react-dom';
-import { TriangleAlert, MessageSquare } from '@goodboy/ui/icons';
+import { MessageSquare } from '@goodboy/ui/icons';
 import {
-  Button,
   EmptyState,
   ErrorStrip,
   Notice,
@@ -467,16 +466,10 @@ export const ReviewFlow = ({ session, mountId = null, push }: Props) => {
   const body = (): ReactNode => {
     if (isWholeError && refreshError !== null) {
       return (
-        <EmptyState
-          icon={TriangleAlert}
-          tone="danger"
-          title={`Couldn't read comments from ${provider ?? 'GitHub'}`}
-          description={refreshError}
-          action={
-            <Button size="sm" variant="secondary" onClick={retry}>
-              Retry
-            </Button>
-          }
+        <ErrorStrip
+          labels={[`comments from ${provider ?? 'GitHub'}`]}
+          error={new Error(refreshError)}
+          onRetry={retry}
         />
       );
     }
@@ -584,7 +577,7 @@ export const ReviewFlow = ({ session, mountId = null, push }: Props) => {
       <PageColumn width="column" className="flex min-h-0 min-w-0 flex-1 flex-col gap-4">
         {refreshError !== null && !isWholeError && (
           <ErrorStrip
-            label={resolveQueueRefreshLabel({ provider: provider ?? 'GitHub' })}
+            labels={[resolveQueueRefreshLabel({ provider: provider ?? 'GitHub' })]}
             error={new Error(refreshError)}
             onRetry={retry}
           />

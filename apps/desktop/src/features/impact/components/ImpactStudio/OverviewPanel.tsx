@@ -1,14 +1,6 @@
 import type { ImpactOverview, PullRequestOutcomes, ReviewOutcomes } from '@goodboy/db';
 import type { SessionId } from '@goodboy/types';
-import {
-  Button,
-  Notice,
-  formatError,
-  ErrorStrip,
-  SkeletonRow,
-  SectionHeader,
-  PaneShell,
-} from '@goodboy/ui';
+import { ErrorStrip, StatCardsSkeleton, SectionHeader, PaneShell } from '@goodboy/ui';
 import { loadStateOf } from '../../../../shared/lib/loadStateOf';
 import type { QueryResult } from '../../../../shared/types/queryResult';
 import type { ImpactTab } from '../../lib';
@@ -21,6 +13,7 @@ import { ShippedSessionRows } from './ShippedSessionRows';
 import type { PaneFrame } from '../../../../shared/types/paneFrame';
 import { NOT_LOADED_HINT, UNKNOWN_VALUE } from '../../../../shared/utils/unknownValue';
 import { valueOrUnknown } from '../../../../shared/utils/valueOrUnknown';
+import { failedReadsOf } from '../../../../shared/utils/failedReadsOf';
 
 type Props = {
   readonly frame: PaneFrame;
@@ -82,6 +75,21 @@ export const OverviewPanel = ({
           sessions: data.previousSessionCount,
           orchestrated: data.previousOrchestratedSessions,
         });
+  const failed = failedReadsOf({
+    reads: [
+      { label: 'impact metrics', error: overview.error },
+      { label: 'pull request outcomes', error: pullRequests.error },
+      { label: 'review outcomes', error: reviews.error },
+    ],
+  });
+  const retryFailed = () => {
+    if (overview.error !== null) {
+      onRetryOverview();
+    }
+    if (pullRequests.error !== null || reviews.error !== null) {
+      onRetryShipped();
+    }
+  };
   const shipped =
     prs === null || data === null
       ? []
@@ -89,34 +97,8 @@ export const OverviewPanel = ({
 
   return (
     <PaneShell scroll="body" page="impact" {...frame}>
-      {overview.error === null ? null : (
-        <Notice
-          tone="danger"
-          placement="inline"
-          role="alert"
-          title="Couldn't load impact metrics"
-          body={formatError(overview.error)}
-          detail={overview.error.message}
-          actions={
-            <Button size="sm" onClick={onRetryOverview}>
-              Retry
-            </Button>
-          }
-        />
-      )}
-      <ErrorStrip
-        label="pull request outcomes"
-        error={pullRequests.error}
-        onRetry={onRetryShipped}
-      />
-      <ErrorStrip label="review outcomes" error={reviews.error} onRetry={onRetryShipped} />
-      {loadState === 'loading' ? (
-        <div aria-busy="true" className="grid grid-cols-3 gap-4">
-          {[0, 1, 2].map((index) => (
-            <SkeletonRow key={index} label="Loading impact metrics" />
-          ))}
-        </div>
-      ) : null}
+      <ErrorStrip labels={failed.labels} error={failed.error} onRetry={retryFailed} />
+      {loadState === 'loading' ? <StatCardsSkeleton label="Loading impact metrics" /> : null}
       {loadState === 'empty' ? <OverviewEmpty onStartSession={onStartSession} /> : null}
       {data !== null && data.sessionCount > 0 ? (
         <>

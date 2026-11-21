@@ -349,16 +349,15 @@ describe('Checks tab when the access cannot read checks', () => {
 });
 
 describe('Checks tab when the read failed', () => {
-  it('says it could not read checks and offers Retry with the details', async () => {
+  it('says it could not read checks and offers Retry with the reason', async () => {
     github({
       detail: detail({ checksRead: 'failed', checksError: 'gh: something new went wrong' }),
     });
 
     await show();
 
-    expect(screen.getByRole('alert').textContent).toContain("Couldn't read checks");
+    expect(screen.getByRole('alert').textContent).toContain("Couldn't load checks");
     expect(screen.queryByText(/No checks have reported/)).toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: 'Details' }));
     expect(screen.getByText('gh: something new went wrong')).toBeDefined();
     refresh.mockClear();
     fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
@@ -370,8 +369,7 @@ describe('Checks tab when the read failed', () => {
 
     await show();
 
-    expect(screen.getByRole('alert').textContent).toContain("Couldn't read checks");
-    fireEvent.click(screen.getByRole('button', { name: 'Details' }));
+    expect(screen.getByRole('alert').textContent).toContain("Couldn't load checks");
     expect(screen.getByText('gh run failed: spawn')).toBeDefined();
   });
 });
@@ -471,8 +469,7 @@ describe('Checks tab on Bitbucket', () => {
 
     await show();
 
-    expect(screen.getByRole('alert').textContent).toContain("Couldn't read checks");
-    fireEvent.click(screen.getByRole('button', { name: 'Details' }));
+    expect(screen.getByRole('alert').textContent).toContain("Couldn't load checks");
     expect(screen.getByText('Bitbucket did not answer, check the connection')).toBeDefined();
     load.mockClear();
     fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
@@ -744,7 +741,7 @@ describe('Checks tab on a host that reads its own checks', () => {
 
     await show();
 
-    expect(screen.getByRole('alert').textContent).toContain("Couldn't read checks");
+    expect(screen.getByRole('alert').textContent).toContain("Couldn't load checks");
     load.mockClear();
     fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
     expect(load).toHaveBeenCalledWith({ sessionId: SESSION.id, force: true });
@@ -772,7 +769,7 @@ describe('Checks tab on a host that reads its own checks', () => {
 
     await show();
 
-    expect(screen.getByRole('alert').textContent).toContain("Couldn't read checks");
+    expect(screen.getByRole('alert').textContent).toContain("Couldn't load checks");
     load.mockClear();
     fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
     expect(load).toHaveBeenCalledWith({ sessionId: SESSION.id, force: true });

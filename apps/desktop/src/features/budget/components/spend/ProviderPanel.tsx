@@ -4,7 +4,7 @@ import {
   formatUsd,
   formatUsdPrecise,
   ICON_SIZE,
-  PanelLoading,
+  StatCardsSkeleton,
   PaneShell,
   StatCard,
   StudioWidget,
@@ -14,7 +14,7 @@ import type { BudgetRule, ProviderName, SessionId } from '@goodboy/types';
 import type { QueryResult } from '../../../../shared/types/queryResult';
 import type { PaneFrame } from '../../../../shared/types/paneFrame';
 import { formatDayMonth } from '../../../../shared/utils/time/formatDayMonth';
-
+import { failedReadsOf } from '../../../../shared/utils/failedReadsOf';
 import { ProviderIcon } from '../../../providers/components/ProviderIcon';
 import type { ProviderBudgetEntry } from '../../hooks/useWorkspaceSpend';
 import { spendFigures } from '../../spendFigures';
@@ -83,6 +83,20 @@ export const ProviderPanel = ({
     [budget, filtered],
   );
   const rangeText = rangeLabel.toLowerCase();
+  const failed = failedReadsOf({
+    reads: [
+      { label: 'limits', error: rulesResult.error },
+      { label: 'session telemetry', error: telemetryResult.error },
+    ],
+  });
+  const retryFailed = () => {
+    if (rulesResult.error !== null) {
+      onRetryRules();
+    }
+    if (telemetryResult.error !== null) {
+      onRetryTelemetry();
+    }
+  };
 
   return (
     <PaneShell scroll="body" {...frame}>
@@ -91,13 +105,8 @@ export const ProviderPanel = ({
         title={name}
         meta={`${formatUsd(figures.range.usd)} spent, ${rangeText}`}
       />
-      <ErrorStrip label="limits" error={rulesResult.error} onRetry={onRetryRules} />
-      <ErrorStrip
-        label="session telemetry"
-        error={telemetryResult.error}
-        onRetry={onRetryTelemetry}
-      />
-      {isLoading && <PanelLoading label="Loading budget data" />}
+      <ErrorStrip labels={failed.labels} error={failed.error} onRetry={retryFailed} />
+      {isLoading && <StatCardsSkeleton label="Loading budget data" />}
       {figures.limit !== null && figures.month !== null ? (
         <StudioWidget
           label={`${name} this month`}

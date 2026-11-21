@@ -22,7 +22,7 @@ export const LaneNotices = ({ sessionId, lane, mountId }: Props) => {
       {failures.map((failure) => (
         <ErrorStrip
           key={failure.worktreePath}
-          label={LANE_REBUILD_FAILED_LABEL}
+          labels={[LANE_REBUILD_FAILED_LABEL]}
           error={new Error(failure.message)}
           onRetry={() =>
             void retryLaneRebuild({

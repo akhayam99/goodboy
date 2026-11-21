@@ -195,7 +195,6 @@ const PAGE_EMPTY_FILES: ReadonlyArray<string> = [
   'features/terminal/components/TerminalStudio/TerminalDetail.tsx',
   'features/workspace/components/StageBoard/BoardEmpty/index.tsx',
   'features/workspace/components/StageBoard/BlockedBoard/index.tsx',
-  'features/session/components/SessionWorkspace/parts/SessionOverviewLoading.tsx',
 ];
 
 const PAGE_SKELETON_FILES: Readonly<Record<string, string>> = {

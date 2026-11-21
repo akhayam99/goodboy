@@ -129,6 +129,7 @@ export const ImportPopover = ({ workspaceId, takenNames, renderTrigger = importB
                 takenNames={takenNames}
                 disabled={importer.isImporting}
                 onToggle={importer.toggle}
+                onRetry={() => importer.retry({ workspaceId: group.workspaceId })}
               />
             ))}
           </div>

@@ -9,9 +9,7 @@ const ROOT = join(SRC, '..', '..', '..');
 const SOURCE = /\.(ts|tsx)$/;
 const TEST = /\.test\.(ts|tsx)$/;
 
-const BASELINE: ReadonlyArray<string> = [
-  'apps/desktop/src/features/resolve/components/ReviewFlow/index.tsx',
-];
+const BASELINE: ReadonlyArray<string> = [];
 
 const ERROR_AS_BODY = /<EmptyState\b[^>]*\bdescription=\{\s*[\w.?]*(?:[eE]rror|[mM]essage)\w*\s*\}/;
 

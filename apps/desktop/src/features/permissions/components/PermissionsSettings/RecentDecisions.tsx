@@ -2,7 +2,7 @@ import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { useShallow } from 'zustand/react/shallow';
 import { commandPrefix } from '@goodboy/core/permissions';
 import type { SessionId, WorkspaceId } from '@goodboy/types';
-import { EmptyState, STRIPED_LIST, cn, tintClasses } from '@goodboy/ui';
+import { EmptyState, ErrorStrip, STRIPED_LIST, cn, tintClasses } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
 import { sessionTitle } from '../../../../shared/utils/sessionTitle';
 import { formatAge } from '../../../../shared/utils/time/formatAge';
@@ -50,11 +50,11 @@ export const RecentDecisions = ({ workspaceId }: Props) => {
         .map((session) => sessionTitle({ session })),
     ),
   );
-  const { decisions, isLoading, error } = useRecentDecisions({ sessionIds });
+  const { decisions, isLoading, error, retry } = useRecentDecisions({ sessionIds });
   const titleOf = (id: SessionId): string => titles[sessionIds.indexOf(id)] ?? 'a closed session';
 
   if (error !== null) {
-    return <p className="text-meta text-danger">{`Couldn't read the decisions: ${error}`}</p>;
+    return <ErrorStrip labels={['recent decisions']} error={new Error(error)} onRetry={retry} />;
   }
   if (!isLoading && decisions.length === 0) {
     return (

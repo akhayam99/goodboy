@@ -10,7 +10,7 @@ describe('OverviewEmpty', () => {
   it('says what fills Impact in one line and never names a spend', () => {
     render(<OverviewEmpty onStartSession={vi.fn()} />);
 
-    expect(screen.getByRole('heading', { name: 'Nothing finished yet' })).toBeDefined();
+    expect(screen.getByRole('heading', { name: 'No finished sessions yet' })).toBeDefined();
     expect(
       screen.getByText('Each finished session shows what shipped, how long it took and its cost.'),
     ).toBeDefined();

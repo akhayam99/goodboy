@@ -232,7 +232,7 @@ describe('QuestionsPane', () => {
 
   it('shows the shared empty state only when nothing was ever asked', () => {
     setup({ open: [] });
-    screen.getByRole('heading', { level: 2, name: 'Nothing waits for you' });
+    screen.getByRole('heading', { level: 2, name: 'No questions yet' });
     screen.getByText("Agents bring you the choices they can't make.");
   });
 
@@ -256,7 +256,7 @@ describe('QuestionsPane', () => {
 
   it('folds Answered behind its count once nothing waits, and Show opens it', () => {
     setup({ open: [], answered: [ANSWERED_A1, ANSWERED_A2] });
-    expect(screen.queryByText('Nothing waits for you')).toBeNull();
+    expect(screen.queryByText('No questions yet')).toBeNull();
     expect(screen.getByRole('status').textContent).toBe('Nothing waits for you. 2 answered.');
     expect(screen.queryByTestId('questions-filter-all')).toBeNull();
     expect(screen.getAllByRole('heading', { level: 2 })[0]?.textContent).toBe('Answered');

@@ -85,7 +85,7 @@ export const BackupPage = () => {
           />
         )}
         <ErrorStrip
-          label="the backup preview"
+          labels={['the backup preview']}
           error={exportError === null ? null : new Error(exportError)}
           onRetry={() => void loadExportPreview()}
         />

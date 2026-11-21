@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState, type KeyboardEvent } from 'react';
-import { EmptyLine, ScrollFade, Skeleton } from '@goodboy/ui';
+import { EmptyLine, ErrorStrip, ScrollFade, SkeletonRows } from '@goodboy/ui';
 import type { FileDiff } from '@goodboy/types';
 import { WINDOW_MIN_ROWS, layoutRows, windowOf } from '../../../../shared/utils/windowRows';
 import type { ExploreEntry } from '../../../explore/explore';
@@ -150,13 +150,7 @@ export const AllFilesTree = ({
   const rootEntries = merged.entriesByPath[EXPLORE_ROOT_PATH];
   const rootError = listing.errorByPath[EXPLORE_ROOT_PATH] ?? null;
   if (rootEntries === undefined && rootError === null) {
-    return (
-      <div className="flex flex-col gap-2 px-3 py-2">
-        <Skeleton className="h-4 w-full rounded-sm" />
-        <Skeleton className="h-4 w-11/12 rounded-sm" />
-        <Skeleton className="h-4 w-10/12 rounded-sm" />
-      </div>
-    );
+    return <SkeletonRows label="Loading files" className="px-1 py-2" />;
   }
   return (
     <ScrollFade
@@ -166,9 +160,12 @@ export const AllFilesTree = ({
       isPageScroller={false}
     >
       {rootError === null ? null : (
-        <div className="flex flex-col items-start gap-2 px-3 py-2 text-meta">
-          <span className="text-danger">Couldn&apos;t read this folder</span>
-          <EmptyLine>{rootError}</EmptyLine>
+        <div className="px-3 py-2">
+          <ErrorStrip
+            labels={['this folder']}
+            error={new Error(rootError)}
+            onRetry={() => void load({ relPath: EXPLORE_ROOT_PATH })}
+          />
         </div>
       )}
       {isSearching && rows.length === 0 ? (

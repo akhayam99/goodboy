@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { formatError, SkeletonRow, tintClasses, type MenuEntry } from '@goodboy/ui';
+import { ErrorStrip, formatError, SkeletonRow, tintClasses, type MenuEntry } from '@goodboy/ui';
 import type { ProjectId, WorkspaceId } from '@goodboy/types';
 import { linearFetchTeamStates, type LinearWorkflowState } from './client';
 import { AppMenuList } from '../../actions/AppMenuList';
@@ -49,6 +49,7 @@ export const LinearStateMenu = ({
   onClose,
 }: Props) => {
   const [loaded, setLoaded] = useState<Loaded>({ kind: 'loading' });
+  const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
     let isCancelled = false;
@@ -66,16 +67,21 @@ export const LinearStateMenu = ({
     return () => {
       isCancelled = true;
     };
-  }, [workspaceId, issueId, projectId]);
+  }, [workspaceId, issueId, projectId, attempt]);
 
   if (loaded.kind === 'loading') {
     return <SkeletonRow label="Loading states" />;
   }
   if (loaded.kind === 'failed') {
     return (
-      <p role="alert" className="px-3 py-2 text-faint-foreground italic">
-        {`Couldn't load states: ${loaded.message}`}
-      </p>
+      <ErrorStrip
+        labels={['states']}
+        error={new Error(loaded.message)}
+        onRetry={() => {
+          setLoaded({ kind: 'loading' });
+          setAttempt((count) => count + 1);
+        }}
+      />
     );
   }
   return (

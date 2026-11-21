@@ -1,6 +1,6 @@
 import type { WorkflowRunHistoryRow } from '@goodboy/db';
 import type { Workflow } from '@goodboy/types';
-import { Button, DrawerFrame, EmptyLine, Notice, Skeleton } from '@goodboy/ui';
+import { Button, DrawerFrame, EmptyLine, ErrorStrip, SkeletonRows } from '@goodboy/ui';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import type { WorkflowRunHistoryLoad } from '../../../../store/slices/workflowStudio/types';
 import { workflowRunsOf } from '../../workflowRunsOf';
@@ -35,7 +35,6 @@ export const WorkflowHistoryPane = ({
     <DrawerFrame
       title={workflow.name}
       icon={CONCEPT_ICONS.workflows}
-      closeLabel="Close runs"
       action={
         <Button size="xs" variant="ghost" onClick={onOpenWorkflow}>
           Open workflow
@@ -44,25 +43,8 @@ export const WorkflowHistoryPane = ({
       onClose={onClose}
     >
       <div className="flex min-w-0 flex-col gap-3">
-        {isFailed ? (
-          <Notice
-            tone="danger"
-            placement="inline"
-            role="alert"
-            title="Couldn't load runs"
-            actions={
-              <Button size="xs" variant="secondary" onClick={onRetry}>
-                Retry
-              </Button>
-            }
-          />
-        ) : null}
-        {runs === null && !isFailed ? (
-          <div role="status" aria-label="Loading runs" className="flex flex-col gap-2">
-            <Skeleton className="h-8" />
-            <Skeleton className="h-8" />
-          </div>
-        ) : null}
+        {isFailed ? <ErrorStrip labels={['runs']} error={new Error('')} onRetry={onRetry} /> : null}
+        {runs === null && !isFailed ? <SkeletonRows label="Loading runs" count={2} /> : null}
         {runs !== null && runs.length === 0 ? (
           <EmptyLine
             action={

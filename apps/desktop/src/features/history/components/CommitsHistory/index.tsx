@@ -2,6 +2,7 @@ import { useRef, useState } from 'react';
 import { Button, Notice, EmptyState, ScrollFade, SkeletonRow } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
+import { useDayClock } from '../../../../shared/hooks/useDayClock';
 import { useElementWidth } from '../../../../shared/hooks/useElementWidth';
 import { loadStateOf } from '../../../../shared/lib/loadStateOf';
 import { HistoryActions } from './HistoryActions';
@@ -68,16 +69,11 @@ export const CommitsHistory = ({ sessionId, worktreePath, isReadOnly = false }: 
     revision: run?.updatedAt ?? 0,
   });
   const [editingSha, setEditingSha] = useState<string | null>(null);
-  const [nowMs] = useState(() => Date.now());
+  const nowMs = useDayClock();
   const { expanded, toggleExpanded } = useHistoryExpanded();
   const listRef = useRef<HTMLDivElement | null>(null);
   const stage = useElementWidth();
-  const { setHover, highlightedRows } = useHistoryFocus({
-    edits,
-    marks,
-    run,
-    isDone,
-  });
+  const { setHover, highlightedRows } = useHistoryFocus({ edits, marks, run, isDone });
   const editing = useHistoryEditing({
     sessionId,
     mountId,

@@ -428,6 +428,27 @@ describe('CommitsHistory', () => {
     expect(actions.changeLiveHistory).not.toHaveBeenCalled();
   });
 
+  it('relabels the day headers when the clock passes midnight with the history open', () => {
+    vi.useFakeTimers({ toFake: ['Date', 'setTimeout', 'clearTimeout'] });
+    vi.setSystemTime(new Date(2026, 8, 21, 23, 59, 30));
+    try {
+      setup();
+      expect(screen.getAllByText('Today').length).toBeGreaterThan(0);
+      expect(screen.queryAllByText('Sunday')).toHaveLength(0);
+
+      act(() => {
+        vi.advanceTimersByTime(31_000);
+      });
+
+      expect(screen.queryAllByText('Today')).toHaveLength(0);
+      expect(screen.getAllByText('Yesterday').length).toBeGreaterThan(0);
+      expect(screen.getAllByText('Sunday').length).toBeGreaterThan(0);
+    } finally {
+      vi.useFakeTimers({ toFake: ['Date'] });
+      vi.setSystemTime(new Date(2026, 8, 30, 12, 0, 0));
+    }
+  });
+
   it('names the chosen base branch in the graph', () => {
     h.chosenBase = 'develop';
     setup();

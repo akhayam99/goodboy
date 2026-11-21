@@ -489,7 +489,7 @@ describe('ScriptsPanel', () => {
 
     const relay = group('notify-relay · nw/retry-backoff');
     const alert = within(relay).getByRole('alert');
-    expect(within(alert).getByText("Couldn't read the scripts of notify-relay")).toBeDefined();
+    expect(within(alert).getByText("Couldn't load the scripts of notify-relay")).toBeDefined();
     expect(within(alert).getByText('package.json has a trailing comma.')).toBeDefined();
     fireEvent.click(within(alert).getByRole('button', { name: 'Retry' }));
 

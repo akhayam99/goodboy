@@ -2,8 +2,8 @@ import {
   ErrorStrip,
   formatUsd,
   ICON_SIZE,
-  PanelLoading,
   SectionHeader,
+  StatCardsSkeleton,
   StudioWidget,
 } from '@goodboy/ui';
 import type { BudgetAlert, ProviderName } from '@goodboy/types';
@@ -15,6 +15,7 @@ import { ProviderIcon } from '../../../providers/components/ProviderIcon';
 import { AlertBanner } from './AlertBanner';
 import { SpendBar } from './SpendBar';
 import { providerLabel } from '../../providerLabel';
+import { failedReadsOf } from '../../../../shared/utils/failedReadsOf';
 
 type Props = {
   readonly providers: ReadonlyArray<ProviderBudgetEntry>;
@@ -58,6 +59,25 @@ export const SpendSection = ({
   const totalSpend = providers.reduce((sum, entry) => sum + entry.spentUsd, 0);
   const hasAlerts = alerts.some((alert) => alert.dismissedAt === undefined);
 
+  const failed = failedReadsOf({
+    reads: [
+      { label: 'limits', error: rulesResult.error },
+      { label: 'budget alerts', error: alertsResult.error },
+      { label: 'session telemetry', error: telemetryResult.error },
+    ],
+  });
+  const retryFailed = () => {
+    if (rulesResult.error !== null) {
+      onRetryRules();
+    }
+    if (alertsResult.error !== null) {
+      onRetryAlerts();
+    }
+    if (telemetryResult.error !== null) {
+      onRetryTelemetry();
+    }
+  };
+
   return (
     <section className="flex flex-col gap-4">
       <SectionHeader
@@ -66,14 +86,10 @@ export const SpendSection = ({
         hint="Limits count the whole month, across workspaces."
         headingLevel={2}
       />
-      <ErrorStrip label="limits" error={rulesResult.error} onRetry={onRetryRules} />
-      <ErrorStrip label="budget alerts" error={alertsResult.error} onRetry={onRetryAlerts} />
-      <ErrorStrip
-        label="session telemetry"
-        error={telemetryResult.error}
-        onRetry={onRetryTelemetry}
-      />
-      {isLoading && providers.length === 0 ? <PanelLoading label="Loading budget data" /> : null}
+      <ErrorStrip labels={failed.labels} error={failed.error} onRetry={retryFailed} />
+      {isLoading && providers.length === 0 ? (
+        <StatCardsSkeleton label="Loading budget data" />
+      ) : null}
       {hasAlerts ? (
         <StudioWidget label="Alerts">
           <AlertBanner alerts={alerts} onDismiss={onDismissAlert} />

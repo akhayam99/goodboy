@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 
 type Props = {
-  readonly heading: string;
+  readonly heading: ReactNode;
   readonly children: ReactNode;
 };
 

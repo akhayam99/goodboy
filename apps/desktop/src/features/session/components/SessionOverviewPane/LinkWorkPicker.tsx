@@ -16,7 +16,7 @@ import { IntegrationGlyph } from '../../../../shared/components/IntegrationGlyph
 import type { LaunchExternalTask } from '../../../inbox/launchSpecFor';
 
 import { useNow } from '../../../../shared/hooks/useNow';
-import { formatSpan } from '../../../../shared/utils/time/formatSpan';
+import { formatAge } from '../../../../shared/utils/time/formatAge';
 import { LinkScopePreview } from './LinkScopePreview';
 import { LINKED_LABEL, relationFor, type LinkChoice } from './linkScope';
 import { starIdentityOfTask, starKey } from '../../../integrations/starred/starredIssueOf';
@@ -76,7 +76,7 @@ const rowMeta = ({ row, now }: { readonly row: LinkWorkRow; readonly now: number
     return LINKED_LABEL;
   }
   if (row.section === 'inbox') {
-    return formatSpan({ from: row.updatedAt, to: now });
+    return formatAge({ from: row.updatedAt, now });
   }
   if (row.section === 'paste') {
     return 'Link this URL';

@@ -157,7 +157,7 @@ export const SentryIssueDetail = ({
       ) : null}
       {summaryError != null && onRetrySummary !== undefined ? (
         <ErrorStrip
-          label="the Sentry issue details"
+          labels={['the Sentry issue details']}
           error={new Error(summaryError)}
           onRetry={onRetrySummary}
         />

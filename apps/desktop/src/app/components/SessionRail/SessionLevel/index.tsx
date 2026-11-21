@@ -24,7 +24,7 @@ export const SessionLevel = ({ session, isActive }: Props) => {
   return (
     <div data-session-level="" className={cn('flex min-w-0 flex-col', PANE_RHYTHM.block)}>
       <ErrorStrip
-        label="this session's agents"
+        labels={["this session's agents"]}
         error={agentsError === null ? null : new Error(agentsError)}
         onRetry={() => void openSessionAgents({ sessionId })}
       />

@@ -1,7 +1,7 @@
 import type { SessionId } from '@goodboy/types';
 import { OpenSessionButton } from '../../../../shared/components/OpenSessionButton';
-import { ErrorStrip, PaneShell } from '@goodboy/ui';
-import { PanelLoading } from '@goodboy/ui';
+import { ErrorStrip, PaneShell, StatCardsSkeleton } from '@goodboy/ui';
+import { failedReadsOf } from '../../../../shared/utils/failedReadsOf';
 import { CostGuideLink } from './CostGuideLink';
 import { SpendAnchorTitle } from './SpendAnchorTitle';
 import type { QueryResult } from '../../../../shared/types/queryResult';
@@ -38,6 +38,20 @@ export const SessionPanel = ({
   onRetryBudget,
   onOpenSession,
 }: Props) => {
+  const failed = failedReadsOf({
+    reads: [
+      { label: 'session telemetry', error: telemetryResult.error },
+      { label: 'session budget', error: budgetResult.error },
+    ],
+  });
+  const retryFailed = () => {
+    if (telemetryResult.error !== null) {
+      onRetryTelemetry();
+    }
+    if (budgetResult.error !== null) {
+      onRetryBudget();
+    }
+  };
   return (
     <PaneShell scroll="body" {...frame}>
       <SpendAnchorTitle
@@ -47,13 +61,8 @@ export const SessionPanel = ({
           <OpenSessionButton sessionId={sessionId} onOpened={onOpened} variant="secondary" />
         }
       />
-      <ErrorStrip
-        label="session telemetry"
-        error={telemetryResult.error}
-        onRetry={onRetryTelemetry}
-      />
-      <ErrorStrip label="session budget" error={budgetResult.error} onRetry={onRetryBudget} />
-      {isLoading && <PanelLoading label="Loading budget data" />}
+      <ErrorStrip labels={failed.labels} error={failed.error} onRetry={retryFailed} />
+      {isLoading && <StatCardsSkeleton label="Loading budget data" />}
       <SessionBudgetContent turns={turns} sessionId={sessionId} onOpenSession={onOpenSession} />
       <CostGuideLink />
     </PaneShell>

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Eyebrow, RefreshIconButton } from '@goodboy/ui';
+import { Eyebrow, RefreshIconButton, SkeletonRow } from '@goodboy/ui';
 import type { WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import type { GithubConnection } from '../useGithubConnection';
@@ -35,7 +35,7 @@ export const GithubAccountRows = ({ workspaceId, workspaceName, connection }: Pr
   };
 
   if (status === null) {
-    return <p className="text-meta text-muted-foreground">Checking the GitHub connection</p>;
+    return <SkeletonRow label="Checking the GitHub connection" />;
   }
 
   if (!status.available) {

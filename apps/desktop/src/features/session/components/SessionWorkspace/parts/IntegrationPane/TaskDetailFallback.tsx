@@ -29,7 +29,11 @@ export const TaskDetailFallback = ({ task, providerName, isLoading, error, onRet
     ) : null}
     <RecordProperties facts={[]} />
     {error !== null ? (
-      <ErrorStrip label={`the ${providerName} issue`} error={new Error(error)} onRetry={onRetry} />
+      <ErrorStrip
+        labels={[`the ${providerName} issue`]}
+        error={new Error(error)}
+        onRetry={onRetry}
+      />
     ) : null}
   </PaneShell>
 );

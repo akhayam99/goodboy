@@ -112,11 +112,13 @@ export const WorktreeRow = ({
         </div>
         <span className={cn(STORAGE_COLUMN.size, 'text-meta tabular-nums text-foreground')}>
           {folder.sizeBytes === null ? (
-            isMeasuring ? (
+            <span
+              role={isMeasuring ? 'status' : undefined}
+              aria-label={isMeasuring ? `Measuring ${title}` : undefined}
+              className="block"
+            >
               <Skeleton className="ml-auto h-3 w-10" />
-            ) : (
-              <span className="text-faint-foreground">Measuring…</span>
-            )
+            </span>
           ) : (
             formatBytes({ bytes: folder.sizeBytes })
           )}

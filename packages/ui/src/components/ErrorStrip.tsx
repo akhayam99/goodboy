@@ -1,14 +1,17 @@
 import { Button } from './Button';
 import { Notice } from './Notice';
+import { couldntLoadTitle } from '../couldntLoadTitle';
 import { splitErrorMessage } from '../splitErrorMessage';
 
 type Props = {
-  readonly label: string;
+  readonly labels: ReadonlyArray<string>;
   readonly error: Error | null;
-  readonly onRetry: () => void;
+  readonly onRetry?: () => void;
+  readonly tone?: 'danger' | 'warning';
+  readonly isBusy?: boolean;
 };
 
-export const ErrorStrip = ({ label, error, onRetry }: Props) => {
+export const ErrorStrip = ({ labels, error, onRetry, tone = 'danger', isBusy = false }: Props) => {
   if (error === null) {
     return null;
   }
@@ -17,16 +20,18 @@ export const ErrorStrip = ({ label, error, onRetry }: Props) => {
 
   return (
     <Notice
-      tone="danger"
-      placement="banner"
+      tone={tone}
+      placement="inline"
       role="alert"
-      title={`Couldn't load ${label}`}
+      title={couldntLoadTitle({ labels })}
       body={summary}
       detail={detail}
       actions={
-        <Button size="sm" variant="secondary" onClick={onRetry}>
-          Retry
-        </Button>
+        onRetry === undefined ? undefined : (
+          <Button size="sm" variant="secondary" isBusy={isBusy} onClick={onRetry}>
+            Retry
+          </Button>
+        )
       }
     />
   );

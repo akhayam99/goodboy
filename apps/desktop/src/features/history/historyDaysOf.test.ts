@@ -32,13 +32,7 @@ describe('historyDaysOf', () => {
       commit({ sha: 'd', date: new Date(2026, 9, 26, 15) }),
     ];
     const days = historyDaysOf({ commits, nowMs: NOW });
-    expect(days.map((day) => day.label)).toEqual([
-      'Today',
-      'Yesterday',
-      new Intl.DateTimeFormat('en', { weekday: 'short', day: 'numeric', month: 'short' }).format(
-        new Date(2026, 9, 26, 15),
-      ),
-    ]);
+    expect(days.map((day) => day.label)).toEqual(['Today', 'Yesterday', 'Monday']);
     expect(days.map((day) => day.commits.map((entry) => entry.sha))).toEqual([
       ['a', 'b'],
       ['c'],
@@ -67,16 +61,7 @@ describe('historyDaysOf', () => {
       ],
       nowMs: new Date(2026, 0, 1, 12).getTime(),
     });
-    expect(days.map((day) => day.label)).toEqual([
-      'Today',
-      'Yesterday',
-      new Intl.DateTimeFormat('en', {
-        weekday: 'short',
-        day: 'numeric',
-        month: 'short',
-        year: 'numeric',
-      }).format(previousYear),
-    ]);
+    expect(days.map((day) => day.label)).toEqual(['Today', 'Yesterday', 'Dec 31, 2024']);
   });
 
   it('uses calendar days when the clock changes for daylight saving', () => {

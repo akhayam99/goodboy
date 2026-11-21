@@ -1,5 +1,4 @@
-import { formatDate } from '../../../../shared/utils/time/formatDate';
-import { formatDayMonth } from '../../../../shared/utils/time/formatDayMonth';
+import { dayLabelOf } from '../../../../shared/utils/time/dayLabelOf';
 import type { ConversationRow } from '../../utils/conversationRows';
 import type { TranscriptItem } from '../../utils/transcript-items';
 
@@ -47,13 +46,10 @@ export const dayKey = (iso: string): string => {
   return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
 };
 
-export const formatDayLabel = (iso: string): string => {
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) {
-    return '';
-  }
-  if (d.getFullYear() === new Date().getFullYear()) {
-    return formatDayMonth({ at: iso });
-  }
-  return formatDate({ at: iso });
+type DayLabelParams = {
+  readonly iso: string;
+  readonly now: number;
 };
+
+export const formatDayLabel = ({ iso, now }: DayLabelParams): string =>
+  dayLabelOf({ at: iso, now });

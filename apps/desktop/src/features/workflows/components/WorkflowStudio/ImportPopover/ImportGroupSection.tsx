@@ -1,4 +1,4 @@
-import { Skeleton } from '@goodboy/ui';
+import { ErrorStrip, Skeleton } from '@goodboy/ui';
 import type { Workflow, WorkflowId } from '@goodboy/types';
 import type { ImportGroup } from '../../WorkflowsPanel/useWorkflowImport';
 import { ImportRow } from './ImportRow';
@@ -10,6 +10,7 @@ type Props = {
   readonly takenNames: ReadonlySet<string>;
   readonly disabled: boolean;
   readonly onToggle: (id: WorkflowId) => void;
+  readonly onRetry: () => void;
 };
 
 const SKELETON_ROWS = ['first', 'second'];
@@ -21,6 +22,7 @@ export const ImportGroupSection = ({
   takenNames,
   disabled,
   onToggle,
+  onRetry,
 }: Props) => {
   const detail =
     group.status === 'loading'
@@ -46,7 +48,11 @@ export const ImportGroupSection = ({
           ))}
         </ul>
       ) : group.status === 'failed' ? (
-        <p className="px-2 text-meta text-danger">{`Couldn't load workflows. ${group.error ?? ''}`}</p>
+        <ErrorStrip
+          labels={[`workflows from ${group.workspaceName}`]}
+          error={new Error(group.error ?? '')}
+          onRetry={onRetry}
+        />
       ) : (
         <ul className="flex flex-col">
           {workflows.map((workflow) => (

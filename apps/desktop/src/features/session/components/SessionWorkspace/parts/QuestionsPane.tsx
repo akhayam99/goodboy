@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import type { SessionMountView } from '@goodboy/types';
-import { EmptyState, PaneShell, Skeleton } from '@goodboy/ui';
+import { EmptyState, PaneShell, SkeletonRows } from '@goodboy/ui';
 import type { AgentId, MountId, Session, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
 import { selectOpenDrawer } from '../../../../../store/slices/drawer/selectOpenDrawer';
@@ -34,8 +34,6 @@ const NO_MOUNTS: ReadonlyArray<SessionMountView> = [];
 const NO_KIND_OVERRIDES: Readonly<Record<AgentId, AgentKind>> = {};
 
 const TITLE = 'Questions';
-
-const SKELETON_ROWS = 3;
 
 export const QuestionsPane = ({ session }: QuestionsPaneProps) => {
   const sessionId = session.id as SessionId;
@@ -85,14 +83,7 @@ export const QuestionsPane = ({ session }: QuestionsPaneProps) => {
   if (!isLoaded) {
     return (
       <PaneShell page="questions">
-        <div role="status" aria-label="Loading questions" className="flex flex-col">
-          {Array.from({ length: SKELETON_ROWS }).map((_, index) => (
-            <div key={index} className="flex h-8 items-center gap-3">
-              <Skeleton className="h-3 w-1/2 rounded-sm" />
-              <Skeleton className="h-3 w-1/6 rounded-sm" />
-            </div>
-          ))}
-        </div>
+        <SkeletonRows label="Loading questions" />
       </PaneShell>
     );
   }
@@ -103,7 +94,7 @@ export const QuestionsPane = ({ session }: QuestionsPaneProps) => {
         <EmptyState
           size="page"
           icon={CONCEPT_ICONS.questions}
-          title="Nothing waits for you"
+          title="No questions yet"
           description="Agents bring you the choices they can't make."
         />
       </PaneShell>

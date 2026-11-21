@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import { Button, EmptyState, formatError } from '@goodboy/ui';
+import { Button, ErrorStrip, formatError } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
-import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
+
+const STEPS_MISSING = 'The run is still in this session, but its steps are missing.';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -27,21 +28,16 @@ export const RunMetadataMissing = ({ sessionId, onBack }: Props) => {
   };
 
   return (
-    <EmptyState
-      size="section"
-      icon={CONCEPT_ICONS.workflows}
-      title="This run couldn't be read"
-      description={error ?? "The run is still in this session. Its steps didn't load."}
-      action={
-        <>
-          <Button size="sm" variant="secondary" disabled={isPending} onClick={() => void retry()}>
-            Retry
-          </Button>
-          <Button size="sm" variant="ghost" onClick={onBack}>
-            Back
-          </Button>
-        </>
-      }
-    />
+    <div className="flex min-w-0 flex-col items-start gap-2">
+      <ErrorStrip
+        labels={['this run']}
+        error={new Error(error ?? STEPS_MISSING)}
+        isBusy={isPending}
+        onRetry={() => void retry()}
+      />
+      <Button size="sm" variant="ghost" onClick={onBack}>
+        Back
+      </Button>
+    </div>
   );
 };

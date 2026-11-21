@@ -10,7 +10,7 @@ export const OverviewEmpty = ({ onStartSession }: Props) => (
   <EmptyState
     icon={CONCEPT_ICONS.impact}
     tone={CONCEPT_TONE.impact}
-    title="Nothing finished yet"
+    title="No finished sessions yet"
     description="Each finished session shows what shipped, how long it took and its cost."
     action={
       <Button variant="secondary" size="sm" onClick={onStartSession}>

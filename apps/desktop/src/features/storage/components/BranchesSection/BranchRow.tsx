@@ -1,6 +1,6 @@
 import { Chip, SelectionCheckbox, Tooltip, TruncatedText, cn } from '@goodboy/ui';
 import { sessionPlace, useAppStore } from '../../../../store';
-import { formatSpan } from '../../../../shared/utils/time/formatSpan';
+import { formatAge } from '../../../../shared/utils/time/formatAge';
 import { useNow } from '../../../../shared/hooks/useNow';
 import { ObjectActionVerb } from '../../../actions/ObjectActionVerb';
 import type { BranchActionTarget } from '../../../actions/types';
@@ -39,7 +39,7 @@ export const BranchRow = ({
   const age =
     branch.lastCommitAt === null
       ? ''
-      : formatSpan({ from: new Date(branch.lastCommitAt * 1000).toISOString(), to: now });
+      : formatAge({ from: new Date(branch.lastCommitAt * 1000).toISOString(), now });
   const status = verdict.detail === null ? verdict.label : `${verdict.label}\n${verdict.detail}`;
   const owner = entry.owner;
   const target: BranchActionTarget = {

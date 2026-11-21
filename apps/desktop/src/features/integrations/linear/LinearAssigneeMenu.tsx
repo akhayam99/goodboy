@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { UserRound, UserX } from '@goodboy/ui/icons';
-import { formatError, SkeletonRow, type MenuEntry } from '@goodboy/ui';
+import { ErrorStrip, formatError, SkeletonRow, type MenuEntry } from '@goodboy/ui';
 import type { ProjectId, WorkspaceId } from '@goodboy/types';
 import { linearFetchTeamMembers, type LinearTeamMember } from './client';
 import { AppMenuList } from '../../actions/AppMenuList';
@@ -53,6 +53,7 @@ export const LinearAssigneeMenu = ({
   onClose,
 }: Props) => {
   const [loaded, setLoaded] = useState<Loaded>({ kind: 'loading' });
+  const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
     let isCancelled = false;
@@ -70,16 +71,21 @@ export const LinearAssigneeMenu = ({
     return () => {
       isCancelled = true;
     };
-  }, [workspaceId, issueId, projectId]);
+  }, [workspaceId, issueId, projectId, attempt]);
 
   if (loaded.kind === 'loading') {
     return <SkeletonRow label="Loading people" />;
   }
   if (loaded.kind === 'failed') {
     return (
-      <p role="alert" className="px-3 py-2 text-faint-foreground italic">
-        {`Couldn't load people: ${loaded.message}`}
-      </p>
+      <ErrorStrip
+        labels={['people']}
+        error={new Error(loaded.message)}
+        onRetry={() => {
+          setLoaded({ kind: 'loading' });
+          setAttempt((count) => count + 1);
+        }}
+      />
     );
   }
   return (

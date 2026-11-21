@@ -120,7 +120,7 @@ describe('PresetRunPage when the run is there and its metadata is not', () => {
   it('says the run could not be read, not that it is gone', () => {
     render(<PresetRunPage session={session} focus={{ runId: RUN_ID, agentId: null }} />);
 
-    screen.getByText("This run couldn't be read");
+    screen.getByText("Couldn't load this run");
     expect(screen.queryByText('This run is no longer in this session')).toBeNull();
   });
 

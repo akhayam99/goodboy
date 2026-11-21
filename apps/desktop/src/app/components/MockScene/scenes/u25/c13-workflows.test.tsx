@@ -126,7 +126,7 @@ describe('c13 workflows scenes', () => {
   it('closes the pane from its close button and opens the editor from Open workflow', async () => {
     await renderScene('c13-workflows-history');
 
-    fireEvent.click(within(pane()).getByRole('button', { name: 'Close runs' }));
+    fireEvent.click(within(pane()).getByRole('button', { name: 'Close' }));
     await settle();
     expect(screen.queryByRole('region', { name: 'Fix flaky tests' })).toBeNull();
 

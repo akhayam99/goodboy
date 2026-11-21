@@ -4,6 +4,8 @@ import type {
   ChatMessageId,
   IntegrationCredentialId,
   IsoDateTime,
+  SessionEventId,
+  WorkflowId,
   WorkspaceId,
 } from '@goodboy/types';
 
@@ -57,6 +59,23 @@ export const chatMessageIdOf = ({ value }: Params): ChatMessageId => {
 export const isoDateTimeOf = ({ value }: Params): IsoDateTime => {
   if (!isIsoDateTime(value)) {
     throw new Error('empty date');
+  }
+  return value;
+};
+
+const isSessionEventId = (value: string): value is SessionEventId => value.length > 0;
+const isWorkflowId = (value: string): value is WorkflowId => value.length > 0;
+
+export const sessionEventIdOf = ({ value }: Params): SessionEventId => {
+  if (!isSessionEventId(value)) {
+    throw new Error('empty session event id');
+  }
+  return value;
+};
+
+export const workflowIdOf = ({ value }: Params): WorkflowId => {
+  if (!isWorkflowId(value)) {
+    throw new Error('empty workflow id');
   }
   return value;
 };

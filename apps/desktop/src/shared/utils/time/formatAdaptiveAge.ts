@@ -1,3 +1,4 @@
+import { dayLabelOf } from './dayLabelOf';
 import { formatAge } from './formatAge';
 import { formatDate } from './formatDate';
 import { formatDayMonth } from './formatDayMonth';
@@ -29,7 +30,7 @@ export const formatAdaptiveAge = ({ at, now }: Params): string => {
     return formatAge({ from: at, now });
   }
   if (dayGap === 1) {
-    return 'yesterday';
+    return dayLabelOf({ at, now, casing: 'inline' });
   }
   return date.getFullYear() === today.getFullYear() ? formatDayMonth({ at }) : formatDate({ at });
 };
