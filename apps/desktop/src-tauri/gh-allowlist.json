@@ -169,6 +169,12 @@
       ]
     },
     {
+      "id": "run-rerun-failed",
+      "verb": ["run", "rerun"],
+      "positional": ["{number}"],
+      "flags": [{ "name": "--failed", "slot": null, "isRequired": true }]
+    },
+    {
       "id": "repo-view",
       "verb": ["repo", "view"],
       "positional": ["{slug}?"],
