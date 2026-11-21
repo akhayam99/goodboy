@@ -112,6 +112,15 @@ Move through Goodboy, change a shortcut and stop an agent without leaving the ke
 - The header of that page says that a right click or **Shift+F10** on a list row opens its actions. These are the same words as the tooltip of a row's **⋯**.
 - The first time the pointer enters a list, every row shows its **⋯** until the pointer leaves, once.
 
+**Keys in a list**
+
+- **J** and **↓** go to the next row, **K** and **↑** to the one before, **Enter** opens the row in focus. This holds in Tasks, Notifications, Scripts, Chat, Runs, Artifacts, Workflows, Terminal and Monitoring. The Board takes **J** and **K** beside its arrows.
+- **/** goes to the search of a list that has one: Tasks, Scripts, Chat, Monitoring and the archived chats.
+- The key is read as a character, so **Shift+7** does it on an Italian or German keyboard.
+- In Chat, Runs, Artifacts, Workflows, Terminal and Monitoring, **J** starts on the first row when nothing has the focus.
+- In those lists the keys leave the page alone when the focus is on another part of it.
+- The letters type in a field and in a terminal, and wait while a dialog or a panel is open over the list. With two lists on screen, the first one takes the key.
+
 **Change a shortcut**
 
 - In **Settings › Keyboard shortcuts**, each row with a **Change** button can take another chord. Press **Change**, then the new keys. **Esc** cancels.
@@ -265,3 +274,4 @@ This part is for contributors and agents who change the feature.
 - Context entry: `togglePane` and `openContextDrawer` default to Goal; `withoutRemovedPages` restores former Context addresses beside Overview.
 
 - Places rail: `apps/desktop/src/App.tsx` supplies `AppShell.leftRail` without a fold control; `apps/desktop/src/app/components/ShellLeft/index.tsx` keeps it visible beside the page.
+- List keys: `useListKeys` follows a selected row (Tasks, Notifications, Scripts). `useRowFocusKeys` moves the focus between the rows of a list with no selected row (Chat, Runs, Artifacts, Workflows, Terminal, Monitoring). `useSearchKey` takes **/** alone for a field. The Board reads the same registry entries inside `useBoardArrowKeys`.

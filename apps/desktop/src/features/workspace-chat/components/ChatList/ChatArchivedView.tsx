@@ -1,9 +1,10 @@
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { Button, ScrollFade, SearchField, tintClasses } from '@goodboy/ui';
 import type { ChatId, ChatSummary } from '@goodboy/types';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { StudioTrail } from '../../../../shared/components/StudioShell/StudioTrail';
 import { markdownPreview } from '../../../../shared/utils/markdownPreview';
+import { useRowFocusKeys } from '../../../../shared/hooks/useRowFocusKeys';
 import { useNow } from '../../../../shared/hooks/useNow';
 import { formatSpan } from '../../../../shared/utils/time/formatSpan';
 import { ChatArchivedRow } from './ChatArchivedRow';
@@ -19,6 +20,8 @@ type Props = {
   readonly onRestore: (chatId: ChatId) => void;
   readonly onDelete: (removed: RemovedChats) => Promise<void>;
 };
+
+const ARCHIVED_ROW = '[data-chat-row]';
 
 const matches = ({ chat, needle }: { readonly chat: ChatSummary; readonly needle: string }) =>
   needle === '' ||
@@ -37,10 +40,14 @@ export const ChatArchivedView = ({
   const needle = query.trim().toLowerCase();
   const shown = useMemo(() => chats.filter((chat) => matches({ chat, needle })), [chats, needle]);
   const order = useMemo(() => shown.map((chat) => chat.id), [shown]);
+  const rootRef = useRef<HTMLDivElement | null>(null);
+  const searchRef = useRef<HTMLInputElement | null>(null);
+  const focusSearch = useCallback(() => searchRef.current?.focus(), []);
+  useRowFocusKeys({ containerRef: rootRef, rowSelector: ARCHIVED_ROW, onSearch: focusSearch });
   const deleteOne = (chatId: ChatId): Promise<void> => onDelete({ removedIds: [chatId], order });
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col gap-2 px-2 pt-2">
+    <div ref={rootRef} className="flex min-h-0 flex-1 flex-col gap-2 px-2 pt-2">
       <StudioTrail
         segments={[
           {
@@ -55,6 +62,7 @@ export const ChatArchivedView = ({
       />
       <h2 className="text-heading text-foreground">Archived</h2>
       <SearchField
+        inputRef={searchRef}
         value={query}
         onChange={setQuery}
         placeholder="Search archived chats"

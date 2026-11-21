@@ -1,8 +1,12 @@
+import { useRef } from 'react';
 import { ListGrid, RevealRegion, ScrollFade } from '@goodboy/ui';
+import { useRowFocusKeys } from '../../../../shared/hooks/useRowFocusKeys';
 import type { TerminalStudioModel } from '../../hooks/useTerminalStudioModel';
 import { NewTerminalMenu } from './NewTerminalMenu';
 import { TerminalGroupSection } from './TerminalGroupSection';
 import { TERMINAL_LIST_COLUMNS } from './terminalListColumns';
+
+const TERMINAL_ROW = '[data-list-grid-row]';
 
 type Props = {
   readonly model: TerminalStudioModel;
@@ -11,8 +15,10 @@ type Props = {
 
 export const TerminalRail = ({ model, portsByTerminal }: Props) => {
   const selectedKey = model.worktree?.key ?? null;
+  const railRef = useRef<HTMLDivElement | null>(null);
+  useRowFocusKeys({ containerRef: railRef, rowSelector: TERMINAL_ROW });
   return (
-    <div className="flex min-h-0 flex-1 flex-col px-2">
+    <div ref={railRef} className="flex min-h-0 flex-1 flex-col px-2">
       <RevealRegion
         header={
           <div data-grid-row="2" className="flex h-10 min-w-0 flex-col justify-center">

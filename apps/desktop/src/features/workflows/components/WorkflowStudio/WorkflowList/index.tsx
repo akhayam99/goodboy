@@ -1,8 +1,9 @@
-import { useMemo, useState, type ReactNode } from 'react';
+import { useMemo, useRef, useState, type ReactNode } from 'react';
 import { Plus, RotateCcw } from '@goodboy/ui/icons';
 import type { WorkflowRunHistoryRow } from '@goodboy/db';
 import { Button, ConfirmPopover, EmptyState, ICON_SIZE, ListGrid } from '@goodboy/ui';
 import type { Workflow } from '@goodboy/types';
+import { useRowFocusKeys } from '../../../../../shared/hooks/useRowFocusKeys';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../../shared/components/conceptIcons';
 import { NAMES } from '../../../../../shared/utils/names';
 import { WorkflowListMenu } from '../../../../actions/WorkflowListMenu';
@@ -34,6 +35,8 @@ type ImportParams = {
   readonly renderTrigger: ((params: ImportTriggerParams) => ReactNode) | null;
 };
 
+const WORKFLOW_ROW = '[data-list-grid-row]';
+
 const restoreDescription = (restorable: ReadonlyArray<RestorableBuiltin>): string => {
   const verb = restorable.length === 1 ? 'goes back to its' : 'go back to their';
   const names = new Intl.ListFormat('en', { type: 'conjunction' }).format(
@@ -56,6 +59,8 @@ export const WorkflowList = ({
   onRestore,
 }: Props) => {
   const [isConfirmingRestore, setIsConfirmingRestore] = useState(false);
+  const rootRef = useRef<HTMLDivElement | null>(null);
+  useRowFocusKeys({ containerRef: rootRef, rowSelector: WORKFLOW_ROW });
   const restorable = useMemo(
     () => restorableBuiltins({ workflows, removedIds: removedBuiltinIds }),
     [workflows, removedBuiltinIds],
@@ -63,7 +68,7 @@ export const WorkflowList = ({
   const hasRestorable = restorable.length > 0;
 
   return (
-    <div className="flex min-w-0 flex-col gap-4">
+    <div ref={rootRef} className="flex min-w-0 flex-col gap-4">
       <div className="flex min-w-0 items-center justify-end gap-2">
         <Button size="sm" onClick={onNew}>
           <Plus size={ICON_SIZE.row} aria-hidden />

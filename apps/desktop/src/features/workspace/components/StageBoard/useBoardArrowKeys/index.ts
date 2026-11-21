@@ -1,5 +1,7 @@
 import { useCallback, type KeyboardEvent } from 'react';
 import { brandId, type SessionId } from '@goodboy/types';
+import { eventMatches } from '../../../../../shared/keyboard/dispatcher';
+import { SHORTCUTS } from '../../../../../shared/keyboard/registry';
 import type { BoardSelection } from '../useBoardSelection';
 
 type Params = {
@@ -13,11 +15,31 @@ type MoveParams = {
   readonly isExtending: boolean;
 };
 
+type KeyParams = {
+  readonly event: KeyboardEvent<HTMLElement>;
+};
+
 type CardParams = {
   readonly card: Element | undefined;
 };
 
 const CARD = '[data-select-id]';
+
+const deltaOf = ({ event }: KeyParams): number => {
+  if (
+    event.key === 'ArrowDown' ||
+    eventMatches({ event: event.nativeEvent, entry: SHORTCUTS['list.next'] })
+  ) {
+    return 1;
+  }
+  if (
+    event.key === 'ArrowUp' ||
+    eventMatches({ event: event.nativeEvent, entry: SHORTCUTS['list.previous'] })
+  ) {
+    return -1;
+  }
+  return 0;
+};
 
 const cardIdOf = ({ card }: CardParams): SessionId | undefined => {
   const value = card?.getAttribute('data-select-id');
@@ -53,7 +75,8 @@ export const useBoardArrowKeys = ({ selection }: Params) => {
 
   return useCallback(
     (event: KeyboardEvent<HTMLElement>) => {
-      if (event.key !== 'ArrowDown' && event.key !== 'ArrowUp') {
+      const delta = deltaOf({ event });
+      if (delta === 0) {
         return;
       }
       const { target } = event;
@@ -69,7 +92,7 @@ export const useBoardArrowKeys = ({ selection }: Params) => {
       move({
         lane,
         from,
-        delta: event.key === 'ArrowDown' ? 1 : -1,
+        delta,
         isExtending: event.shiftKey,
       });
     },

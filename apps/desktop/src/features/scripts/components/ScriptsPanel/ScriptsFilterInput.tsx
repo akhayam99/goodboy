@@ -1,6 +1,6 @@
-import { useEffect, useRef } from 'react';
+import { useRef } from 'react';
 import { Kbd, SearchField } from '@goodboy/ui';
-import { isTypingTarget } from '../../../../shared/keyboard/isTypingTarget';
+import { useSearchKey } from '../../../../shared/hooks/useSearchKey';
 
 type Props = {
   readonly value: string;
@@ -10,20 +10,7 @@ type Props = {
 export const ScriptsFilterInput = ({ value, onChange }: Props) => {
   const inputRef = useRef<HTMLInputElement | null>(null);
 
-  useEffect(() => {
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key !== '/' || event.metaKey || event.ctrlKey || event.altKey) {
-        return;
-      }
-      if (event.defaultPrevented || isTypingTarget(event.target)) {
-        return;
-      }
-      event.preventDefault();
-      inputRef.current?.focus();
-    };
-    window.addEventListener('keydown', onKeyDown);
-    return () => window.removeEventListener('keydown', onKeyDown);
-  }, []);
+  useSearchKey({ onSearch: () => inputRef.current?.focus() });
 
   return (
     <SearchField

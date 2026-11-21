@@ -5,6 +5,7 @@ import type { ChatId, ChatSummary, WorkspaceId } from '@goodboy/types';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { pluralize } from '../../../../shared/utils/pluralize';
 import { useSelectionKeys } from '../../../../shared/hooks/useSelectionKeys';
+import { useRowFocusKeys } from '../../../../shared/hooks/useRowFocusKeys';
 import { useMultiSelect } from '../../../../shared/hooks/useMultiSelect';
 import { ObjectSelectionBar } from '../../../../shared/components/ObjectSelectionBar';
 import { useAppStore } from '../../../../store';
@@ -14,7 +15,7 @@ import { loadStateOf } from '../../../../shared/lib/loadStateOf';
 import { useShowToast } from '../../../../shared/components/Toast/useShowToast';
 import type { RemovedChats } from '../../nextChatAfter';
 import { offerArchiveUndo } from '../../offerArchiveUndo';
-import { chatGroupRowsOf } from './chatGroupRowsOf';
+import { chatGroupRowsOf, type ChatGroupRows } from './chatGroupRowsOf';
 import { chatOrderOf } from './chatOrderOf';
 import { ChatArchivedView } from './ChatArchivedView';
 import { ChatListGroup } from './ChatListGroup';
@@ -53,6 +54,15 @@ const PIN_FAILED = "Couldn't pin the chat";
 const UNPIN_FAILED = "Couldn't unpin the chat";
 
 const NO_CHATS: ReadonlyArray<ChatSummary> = [];
+
+const CHAT_ROW = '[data-select-id]';
+
+const CHAT_GROUPS = [
+  { key: 'pinned', title: 'Pinned' },
+  { key: 'today', title: 'Today' },
+  { key: 'week', title: 'This week' },
+  { key: 'idle', title: 'Idle' },
+] as const satisfies ReadonlyArray<{ readonly key: keyof ChatGroupRows; readonly title: string }>;
 
 const SELECTION_VERB_IDS = ['chats.archive', 'chats.delete'];
 
@@ -232,6 +242,14 @@ export const ChatList = ({
 
   const rootRef = useRef<HTMLDivElement | null>(null);
   const listRef = useRef<HTMLElement | null>(null);
+  const searchRef = useRef<HTMLInputElement | null>(null);
+  const focusSearch = useCallback(() => searchRef.current?.focus(), []);
+
+  useRowFocusKeys({
+    containerRef: rootRef,
+    rowSelector: CHAT_ROW,
+    onSearch: focusSearch,
+  });
 
   useSelectionKeys({
     containerRef: rootRef,
@@ -288,6 +306,7 @@ export const ChatList = ({
       className="@container/chat-list relative flex min-h-0 flex-1 flex-col gap-2 px-2 pt-2"
     >
       <SearchField
+        inputRef={searchRef}
         value={query}
         onChange={setQuery}
         placeholder="Search chats"
@@ -300,55 +319,25 @@ export const ChatList = ({
           data-selecting={selectedIds.length > 0}
           className="group/select-list flex flex-col gap-3 pb-3 pr-4"
         >
-          <ChatListGroup
-            title="Pinned"
-            rows={groups.pinned}
-            selectedId={selectedId}
-            checkedIds={checkedIds}
-            selection={rowSelection}
-            onSelect={select}
-            onPin={onPin}
-            onArchive={archiveOne}
-            onDelete={deleteOne}
-          />
-          <ChatListGroup
-            title="Today"
-            rows={groups.today}
-            selectedId={selectedId}
-            checkedIds={checkedIds}
-            selection={rowSelection}
-            onSelect={select}
-            onPin={onPin}
-            onArchive={archiveOne}
-            onDelete={deleteOne}
-          />
-          <ChatListGroup
-            title="This week"
-            rows={groups.week}
-            selectedId={selectedId}
-            checkedIds={checkedIds}
-            selection={rowSelection}
-            onSelect={select}
-            onPin={onPin}
-            onArchive={archiveOne}
-            onDelete={deleteOne}
-          />
-          <ChatListGroup
-            title="Idle"
-            rows={groups.idle}
-            selectedId={selectedId}
-            checkedIds={checkedIds}
-            selection={rowSelection}
-            onSelect={select}
-            onPin={onPin}
-            onArchive={archiveOne}
-            onDelete={deleteOne}
-            action={
-              needle === '' && groups.idle.length > 0
-                ? { label: 'Archive idle', onClick: () => void archiveIdle() }
-                : null
-            }
-          />
+          {CHAT_GROUPS.map(({ key, title }) => (
+            <ChatListGroup
+              key={key}
+              title={title}
+              rows={groups[key]}
+              selectedId={selectedId}
+              checkedIds={checkedIds}
+              selection={rowSelection}
+              onSelect={select}
+              onPin={onPin}
+              onArchive={archiveOne}
+              onDelete={deleteOne}
+              action={
+                key === 'idle' && needle === '' && groups.idle.length > 0
+                  ? { label: 'Archive idle', onClick: () => void archiveIdle() }
+                  : null
+              }
+            />
+          ))}
           <ChatListStatus
             loadState={loadState}
             error={error}

@@ -92,6 +92,20 @@ describe('the busy Mac', () => {
     expect(fold.getAttribute('aria-expanded')).toBe('true');
   });
 
+  it('walks the keys through a collapsed shared process like any other row', async () => {
+    await ready({ name: 'b-monitoring-busy' });
+    const rowSelector = '[data-port-row], [data-started-row], [data-shared-pid]';
+    const rows = [...document.querySelectorAll(rowSelector)];
+    const sharedAt = rows.findIndex((row) => row.hasAttribute('data-shared-pid'));
+    const toggle = rows[sharedAt]?.querySelector<HTMLElement>('button');
+
+    expect(sharedAt).toBeGreaterThan(0);
+    toggle?.focus();
+    fireEvent.keyDown(document.activeElement ?? document.body, { code: 'KeyJ', key: 'j' });
+
+    expect(rows[sharedAt + 1]?.contains(document.activeElement)).toBe(true);
+  });
+
   it('keeps a pinned port with its description in use', async () => {
     await ready({ name: 'b-monitoring-busy' });
     const pinned = layer({ name: 'Pinned' });

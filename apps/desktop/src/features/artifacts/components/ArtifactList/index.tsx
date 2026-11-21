@@ -3,6 +3,7 @@ import { Button, EmptyLine, EmptyState, ListGrid, PaneShell, Notice } from '@goo
 import type { ArtifactId, SessionId } from '@goodboy/types';
 import { WireframeImportNotice } from '../../../wireframes/components/WireframeImportNotice';
 import { useWireframeImport } from '../../../wireframes/useWireframeImport';
+import { useRowFocusKeys } from '../../../../shared/hooks/useRowFocusKeys';
 import { useFileDropTarget } from '../../../../shared/hooks/useFileDropTarget';
 import { useGroupArrival } from '../../../../shared/hooks/useGroupArrival';
 import { useAppStore } from '../../../../store';
@@ -37,6 +38,8 @@ type Props = {
   readonly onImported: (artifactId: ArtifactId) => void;
 };
 
+const ARTIFACT_ROW = '[data-list-grid-row]';
+
 const keepGrouping = (): void => undefined;
 
 const NO_MATCH_LINE: Record<ArtifactFilter, string> = {
@@ -62,6 +65,7 @@ export const ArtifactList = ({
   const loadSessionArtifacts = useAppStore((state) => state.loadSessionArtifacts);
   const loadState = loadStateOf({ hasLoaded, isLoading: !hasLoaded, error, count: counts.all });
   const dropRef = useRef<HTMLDivElement>(null);
+  useRowFocusKeys({ containerRef: dropRef, rowSelector: ARTIFACT_ROW });
   const importWireframe = useAppStore((state) => state.importWireframe);
   const importer = useWireframeImport({
     commit: async (ready) => {

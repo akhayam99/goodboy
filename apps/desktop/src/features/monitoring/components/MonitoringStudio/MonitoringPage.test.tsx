@@ -2,6 +2,7 @@
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import type { MonitorSnapshot } from '@goodboy/core/monitoring';
 import {
   STORE_IMPORT_TIMEOUT_MS,
@@ -12,6 +13,7 @@ import {
   type StoryStore,
 } from '../../../../store/storyHarness';
 import type { StopResult } from '../../../../store/slices/monitoring/types';
+import { NAMES } from '../../../../shared/utils/names';
 import { ObjectMenuProvider } from '../../../actions/components/ObjectMenuProvider';
 import { MonitoringPage } from './MonitoringPage';
 
@@ -169,6 +171,22 @@ describe('the quiet row', () => {
     ).toEqual(
       expect.arrayContaining(['Open in browser', 'Edit description', 'Stop', 'Force stop']),
     );
+  });
+});
+
+describe('the row keys', () => {
+  it('J puts the focus on the first row, Enter works its control, and the slash finds the search', async () => {
+    stub({ snapshot: NODE_SNAPSHOT });
+    const row = await readyRow();
+    const user = userEvent.setup();
+
+    await user.keyboard('j');
+    expect(row.contains(document.activeElement)).toBe(true);
+    await user.keyboard('{Enter}');
+    await screen.findByText('node server.js');
+    await user.keyboard('/');
+
+    expect(document.activeElement).toBe(screen.getByRole('searchbox', { name: NAMES.searchPorts }));
   });
 });
 

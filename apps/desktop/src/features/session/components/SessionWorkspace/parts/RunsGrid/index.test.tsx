@@ -14,6 +14,7 @@ vi.mock('../../../../../../shared/lib/db', async () =>
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import {
   brandId,
   type Agent,
@@ -100,6 +101,29 @@ const renderGrid = ({ runs }: GridParams) =>
   );
 
 describe('RunsGrid', () => {
+  it('walks the runs with J and K in the order on screen and opens the one in focus with Enter', async () => {
+    const agents = [
+      aNowAgent({ key: 'runner', name: 'Runner', status: 'running' }),
+      aNowAgent({ key: 'asker', name: 'Asker', status: 'running' }),
+    ];
+    renderGrid({ runs: runsOf({ agents, blockedIds: ['agent-asker'] }) });
+    const user = userEvent.setup();
+
+    await user.keyboard('j');
+    expect(document.activeElement).toBe(
+      screen.getByRole('button', { name: 'Open Asker, Agent, Needs permission' }),
+    );
+    await user.keyboard('j');
+    expect(document.activeElement).toBe(
+      screen.getByRole('button', { name: 'Open Runner, Agent, Running' }),
+    );
+    await user.keyboard('{Enter}');
+
+    await waitFor(() =>
+      expect(useAppStore.getState().selectedAgentId[NOW_SESSION]).toBe(agents[0]?.id),
+    );
+  });
+
   it('names what needs you in its own group and lists it first', () => {
     const agents = [
       aNowAgent({ key: 'runner', name: 'Runner', status: 'running' }),

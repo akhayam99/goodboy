@@ -42,7 +42,7 @@
   "apps/desktop/src/features/wireframes/components/WireframeViewer/WireframeViewerBody.tsx": 335,
   "apps/desktop/src/features/wireframes/flowLayout/buildFlowLayout.ts": 999,
   "apps/desktop/src/features/workflows/components/WorkflowStudio/WorkflowEditor/index.tsx": 258,
-  "apps/desktop/src/features/workspace-chat/components/ChatList/index.tsx": 362,
+  "apps/desktop/src/features/workspace-chat/components/ChatList/index.tsx": 348,
   "apps/desktop/src/features/workspace-chat/components/TurnIntoWorkPanel/index.tsx": 373,
   "apps/desktop/src/features/workspace/components/ProjectGitPill/ProjectGitDetail.tsx": 256,
   "apps/desktop/src/features/worktree/worktree.ts": 968,

@@ -674,7 +674,6 @@
     "apps/desktop/src/features/scripts/components/ProjectScriptsField/index.tsx": 2,
     "apps/desktop/src/features/scripts/components/ScriptRow/index.tsx": 1,
     "apps/desktop/src/features/scripts/components/ScriptsPanel/index.tsx": 7,
-    "apps/desktop/src/features/scripts/components/ScriptsPanel/ScriptsFilterInput.tsx": 1,
     "apps/desktop/src/features/scripts/components/ScriptsPanel/UnmountedScriptsNote.tsx": 1,
     "apps/desktop/src/features/scripts/components/ScriptsPanel/useScriptDraft/index.ts": 1,
     "apps/desktop/src/features/scripts/defaultClosedPackageKeys.ts": 1,
