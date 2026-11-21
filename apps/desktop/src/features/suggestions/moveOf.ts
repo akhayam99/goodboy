@@ -4,11 +4,11 @@ import type { NextStepSignals } from './nextStepSignals';
 import { isFresh } from './nextStepGates';
 import { actionsJobOf } from './signals/actionsJobOf';
 import { hostOf } from './signals/hostOf';
+import { moveGroupOf } from './moveGroupOf';
 import type {
   CompletesWhen,
   MoveEvidence,
   MoveFacts,
-  MoveGroup,
   MovePlace,
   MoveRead,
   NextMove,
@@ -97,7 +97,7 @@ const completesWhenOf = ({ suggestion }: SuggestionParams): CompletesWhen => {
       return {
         kind: 'check-passes',
         mountId: suggestion.payload.mountId,
-        checkName: suggestion.payload.progress?.checkName ?? 'checks',
+        checkName: suggestion.payload.progress?.checkName ?? null,
       };
     case 'rerun-check':
     case 'run-failing-test':
@@ -109,8 +109,9 @@ const completesWhenOf = ({ suggestion }: SuggestionParams): CompletesWhen => {
     case 'next-script':
       return {
         kind: 'script-succeeds',
-        mountId: suggestion.payload.mountId,
+        scriptId: suggestion.payload.scriptId,
         scriptName: suggestion.payload.scriptName,
+        sinceMs: suggestion.payload.turnAtMs,
       };
     case 'mount-project':
       return { kind: 'folder-mounted', projectId: suggestion.payload.projectId };
@@ -156,45 +157,6 @@ const completesWhenOf = ({ suggestion }: SuggestionParams): CompletesWhen => {
   }
 };
 
-const groupOf = ({ suggestion }: SuggestionParams): MoveGroup => {
-  switch (suggestion.kind) {
-    case 'close-worktree':
-    case 'unmount-folder':
-    case 'archive-session':
-      return 'upkeep';
-    case 'answer-questions':
-    case 'approve-tool':
-    case 'sign-in':
-    case 'resume-agents':
-    case 'retry-agent':
-    case 'mount-project':
-    case 'fix-checks':
-    case 'rerun-check':
-    case 'ask-agent':
-    case 'resolve-threads':
-    case 'merge-pr':
-    case 'workflow-next-step':
-      return 'unblock';
-    case 'rebase-project':
-      return suggestion.priority < 40 ? 'unblock' : 'advance';
-    case 'plan-ready':
-    case 'push-branch':
-    case 'open-pr':
-    case 'mark-ready':
-    case 'merge-series':
-    case 'check-changes':
-    case 'move-tracker-item':
-    case 'continue-with-workflow':
-    case 'run-failing-test':
-    case 'next-script':
-      return 'advance';
-    default: {
-      const exhaustive: never = suggestion;
-      return exhaustive;
-    }
-  }
-};
-
 type MountParams = {
   readonly suggestion: SessionSuggestion;
   readonly signals: NextStepSignals;
@@ -233,14 +195,17 @@ const readOf = ({ suggestion, signals }: MountParams): MoveRead | null => {
 type CheckEvidenceParams = {
   readonly signals: NextStepSignals;
   readonly mountId: MountId;
+  readonly detailsUrl: string | null;
 };
 
 const failedCheckEvidenceOf = ({
   signals,
   mountId,
+  detailsUrl,
 }: CheckEvidenceParams): ReadonlyArray<MoveEvidence> => {
   const failed = signals.mounts?.find((mount) => mount.mountId === mountId)?.failedChecks ?? [];
-  const first = failed[0];
+  const first =
+    detailsUrl === null ? failed[0] : failed.find((check) => check.detailsUrl === detailsUrl);
   if (first === undefined || first.detailsUrl === null) {
     return [];
   }
@@ -257,12 +222,27 @@ const failedCheckEvidenceOf = ({
 };
 
 const evidenceOf = ({ suggestion, signals }: MountParams): ReadonlyArray<MoveEvidence> => {
-  if (suggestion.kind === 'fix-checks' || suggestion.kind === 'rerun-check') {
-    return failedCheckEvidenceOf({ signals, mountId: suggestion.payload.mountId });
+  if (suggestion.kind === 'fix-checks') {
+    return failedCheckEvidenceOf({
+      signals,
+      mountId: suggestion.payload.mountId,
+      detailsUrl: null,
+    });
+  }
+  if (suggestion.kind === 'rerun-check') {
+    return failedCheckEvidenceOf({
+      signals,
+      mountId: suggestion.payload.mountId,
+      detailsUrl: suggestion.payload.detailsUrl,
+    });
   }
   if (suggestion.kind === 'run-failing-test') {
     return [
-      ...failedCheckEvidenceOf({ signals, mountId: suggestion.payload.mountId }),
+      ...failedCheckEvidenceOf({
+        signals,
+        mountId: suggestion.payload.mountId,
+        detailsUrl: suggestion.payload.detailsUrl,
+      }),
       { kind: 'command', label: 'Command', command: suggestion.payload.command.text },
     ];
   }
@@ -298,7 +278,7 @@ export const moveOf = ({ suggestion, signals }: Params): NextMove | null => {
     evidence: evidenceOf({ suggestion, signals }),
     place: movePlaceOf({ suggestion }),
     completesWhen: completesWhenOf({ suggestion }),
-    group: groupOf({ suggestion }),
+    group: moveGroupOf({ suggestion }),
     read: readOf({ suggestion, signals }),
   };
   return { ...suggestion, ...facts };

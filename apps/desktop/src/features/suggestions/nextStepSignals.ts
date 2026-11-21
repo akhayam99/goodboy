@@ -45,6 +45,7 @@ export type SignalQuietAgent = {
 };
 
 export type SignalScriptRun = {
+  readonly scriptId: string;
   readonly mountId: MountId | null;
   readonly name: string;
   readonly isOk: boolean;

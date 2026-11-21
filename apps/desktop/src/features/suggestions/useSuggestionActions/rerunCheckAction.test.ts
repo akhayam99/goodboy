@@ -14,6 +14,7 @@ const payload = {
   mountId: brandId<MountId>({ value: 'mount-ledger-core' }),
   prNumber: 418,
   checkName: 'integration-tests',
+  detailsUrl: 'https://github.com/acme/ledger-core/actions/runs/9001/job/42',
   runId: '9001',
   cwd: '/work/ledger-core',
 };

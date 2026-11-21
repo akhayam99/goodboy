@@ -14,6 +14,6 @@ export const scriptCommandOf = ({ scriptId, name, command, cwd }: Params): MoveC
     text: command,
     cwd,
     mode: isDestructive ? 'type' : 'run',
-    scriptId: isDestructive ? null : scriptId,
+    scriptId,
   };
 };

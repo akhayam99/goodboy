@@ -95,12 +95,13 @@ export type CompletesWhen =
   | {
       readonly kind: 'check-passes';
       readonly mountId: MountId;
-      readonly checkName: string;
+      readonly checkName: string | null;
     }
   | {
       readonly kind: 'script-succeeds';
-      readonly mountId: MountId | null;
+      readonly scriptId: string;
       readonly scriptName: string;
+      readonly sinceMs: number;
     }
   | { readonly kind: 'folder-mounted'; readonly projectId: ProjectId }
   | { readonly kind: 'folder-unmounted'; readonly mountId: MountId }
@@ -324,6 +325,7 @@ export type SessionSuggestion =
         readonly mountId: MountId;
         readonly prNumber: number;
         readonly checkName: string;
+        readonly detailsUrl: string;
         readonly testName: string;
         readonly command: MoveCommand;
       };
@@ -332,7 +334,9 @@ export type SessionSuggestion =
       readonly kind: 'next-script';
       readonly payload: {
         readonly mountId: MountId;
+        readonly scriptId: string;
         readonly scriptName: string;
+        readonly turnAtMs: number;
         readonly rule: NextScriptRule;
         readonly command: MoveCommand;
       };
@@ -343,6 +347,7 @@ export type SessionSuggestion =
         readonly mountId: MountId;
         readonly prNumber: number;
         readonly checkName: string;
+        readonly detailsUrl: string;
         readonly runId: string;
         readonly cwd: string;
       };

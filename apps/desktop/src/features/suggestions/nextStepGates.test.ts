@@ -111,6 +111,30 @@ describe('sortNextSteps', () => {
     });
     expect(sorted.map((s) => s.id)).toEqual(['rebase', 'plan']);
   });
+
+  it('puts every unblock before an advance, whatever the numeric priority', () => {
+    const suggestions = [
+      suggestion({ id: 'push', kind: 'push-branch', priority: 41 }),
+      suggestion({ id: 'merge', kind: 'merge-pr', priority: 44 }),
+      suggestion({ id: 'archive', kind: 'archive-session', priority: 10 }),
+    ];
+    expect(sortNextSteps({ suggestions }).map((s) => s.id)).toEqual(['merge', 'push', 'archive']);
+  });
+
+  it('keeps the priority order inside a group', () => {
+    const suggestions = [
+      suggestion({ id: 'merge', kind: 'merge-pr', priority: 44 }),
+      suggestion({ id: 'fix', kind: 'fix-checks', priority: 20 }),
+      suggestion({ id: 'open', kind: 'open-pr', priority: 42 }),
+      suggestion({ id: 'push', kind: 'push-branch', priority: 41 }),
+    ];
+    expect(sortNextSteps({ suggestions }).map((s) => s.id)).toEqual([
+      'fix',
+      'merge',
+      'push',
+      'open',
+    ]);
+  });
 });
 
 describe('shouldDemote', () => {

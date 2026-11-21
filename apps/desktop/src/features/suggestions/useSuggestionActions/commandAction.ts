@@ -8,6 +8,15 @@ type OpenParams = {
   readonly prefill: string;
 };
 
+type TrackParams = {
+  readonly sessionId: SessionId;
+  readonly terminalId: string;
+  readonly scriptId: string;
+  readonly name: string;
+  readonly command: string;
+  readonly mountId: MountId;
+};
+
 type RunParams = {
   readonly sessionId: SessionId;
   readonly scriptId: string;
@@ -23,7 +32,8 @@ type Params = {
   readonly name: string;
   readonly command: MoveCommand;
   readonly failureTitle: string;
-  readonly openTerminal: (params: OpenParams) => void;
+  readonly openTerminal: (params: OpenParams) => string;
+  readonly trackTyped: (params: TrackParams) => void;
   readonly runScript: (params: RunParams) => Promise<{ readonly exitCode: number }>;
 };
 
@@ -34,6 +44,7 @@ export const commandAction = ({
   command,
   failureTitle,
   openTerminal,
+  trackTyped,
   runScript,
 }: Params): SuggestionActions['primary'] => {
   if (command.mode === 'type') {
@@ -42,7 +53,17 @@ export const commandAction = ({
       isDisabled: false,
       failureTitle,
       run: async () => {
-        openTerminal({ cwd: command.cwd, prefill: command.text });
+        const terminalId = openTerminal({ cwd: command.cwd, prefill: command.text });
+        if (command.scriptId !== null) {
+          trackTyped({
+            sessionId,
+            terminalId,
+            scriptId: command.scriptId,
+            name,
+            command: command.text,
+            mountId,
+          });
+        }
       },
     };
   }

@@ -54,9 +54,9 @@ afterEach(() => {
 
 describe('useTurnSignals', () => {
   it('reads the turn files and the quiet time only after the page had its first moment', async () => {
-    const loadTurnFiles = vi.fn(async () => undefined);
+    const refreshTurnFiles = vi.fn(async () => true);
     useAppStore.setState({
-      loadTurnFiles,
+      refreshTurnFiles,
       agentTurnState: {
         [AGENT]: {
           kind: 'running',
@@ -69,13 +69,13 @@ describe('useTurnSignals', () => {
     const { result } = renderHook(() =>
       useTurnSignals({ sessionId: SESSION, agents: [anAgent({ id: AGENT, sessionId: SESSION })] }),
     );
-    expect(loadTurnFiles).not.toHaveBeenCalled();
+    expect(refreshTurnFiles).not.toHaveBeenCalled();
     expect(result.current.quietByAgent).toEqual({});
 
     await act(async () => {
       await vi.advanceTimersByTimeAsync(1_600);
     });
-    expect(loadTurnFiles).toHaveBeenCalledWith({ sessionId: SESSION });
+    expect(refreshTurnFiles).toHaveBeenCalledWith({ sessionId: SESSION });
     expect(result.current.quietByAgent).toEqual({ [AGENT]: 6 * 60_000 });
   });
 

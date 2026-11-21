@@ -14,6 +14,7 @@ import { isStoppedByRestart } from '../../../store/slices/turn/isStoppedByRestar
 import {
   isMountCompleted,
   isMountRequestMerged,
+  mountRequestOf,
 } from '../../../store/slices/project-mounts/mountRowModel';
 import {
   changedCount,
@@ -30,6 +31,7 @@ import { useScriptSignals } from '../hooks/useScriptSignals';
 import { useTurnSignals } from '../hooks/useTurnSignals';
 import { idleMountsOf } from '../signals/idleMountsOf';
 import { nextScriptRulesOf } from '../signals/nextScriptRulesOf';
+import { mergedAtOf } from '../signals/mergedAtOf';
 import { mergedMountsOf } from '../signals/mergedMountsOf';
 import type { NextStepSignals, SignalQuietAgent } from '../nextStepSignals';
 import { deriveNextSteps } from '../deriveNextSteps';
@@ -44,6 +46,7 @@ import { useWorktreeStatuses } from '../../session/hooks/useWorktreeStatuses';
 import { AGENT_KIND_META, classifyAgent } from '../../session/agent-kind';
 import {
   type SuggestionAgent,
+  type SuggestionCheckOutcome,
   type SuggestionFailedCheck,
   type SuggestionRebaseRequest,
 } from '../deriveNextSteps';
@@ -88,6 +91,8 @@ type ProjectNameParams = {
 };
 
 const NO_FAILED_CHECKS: ReadonlyArray<SuggestionFailedCheck> = [];
+
+const NO_CHECK_OUTCOMES: ReadonlyArray<SuggestionCheckOutcome> = [];
 
 type LatestRebaseRequestsParams = {
   readonly events: ReadonlyArray<SessionEvent>;
@@ -290,17 +295,18 @@ export const useNextStepSignalsFrom = ({
   const scriptSignals = useScriptSignals({ sessionId, mounts: rebaseMounts, wantedMountIds });
   const mergedFactsJson = useAppStore((state) =>
     JSON.stringify(
-      completedMountIds.flatMap((mountId) =>
-        isMountRequestMerged({ state, mountId })
+      completedMountIds.flatMap((mountId) => {
+        const request = mountRequestOf({ state, mountId });
+        return request !== null && request.state === 'merged'
           ? [
               {
                 mountId,
-                prNumber: state.mountGithub[mountId]?.pr?.number ?? null,
-                mergedAt: state.mountGithub[mountId]?.pr?.mergedAt ?? null,
+                prNumber: request.number,
+                mergedAt: mergedAtOf({ state, mountId, provider: request.provider }),
               },
             ]
-          : [],
-      ),
+          : [];
+      }),
     ),
   );
   const mergedFacts = useMemo(
@@ -465,6 +471,7 @@ export const useNextStepSignalsFrom = ({
               fetchedAt: githubState?.fetchedAt ?? null,
               scribe: scribeRequestStateOf({ scribeWork, mountId: mount.mountId }),
               failedChecks: checkSignals.failedChecks[mount.mountId] ?? NO_FAILED_CHECKS,
+              checks: checkSignals.checks[mount.mountId] ?? NO_CHECK_OUTCOMES,
             };
           })
         : [],

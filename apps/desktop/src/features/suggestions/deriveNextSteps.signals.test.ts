@@ -12,7 +12,7 @@ import {
 import { deriveNextSteps, type SuggestionMount } from './deriveNextSteps';
 import type { NextStepSignals, SignalCheckLog } from './nextStepSignals';
 import type { SuggestionMountEvent } from '../../store/slices/project-mounts/materializationProposals';
-import type { ScriptGroup } from '../scripts/scripts';
+import { discoveredScriptId, type ScriptGroup } from '../scripts/scripts';
 
 const SESSION = brandId<SessionId>({ value: 'session-harborline' });
 const LEDGER = brandId<ProjectId>({ value: 'project-ledger-core' });
@@ -166,6 +166,12 @@ describe('run-failing-test', () => {
 });
 
 describe('next-script', () => {
+  const migrateId = discoveredScriptId({
+    worktreePath: '/work/ledger-core',
+    source: 'package-json',
+    relDir: '',
+    name: 'db:migrate',
+  });
   const turn = (paths: ReadonlyArray<string>) => [
     { mountId: LEDGER_MOUNT, paths, recordedAtMs: NOW - 5 * MIN },
   ];
@@ -193,8 +199,9 @@ describe('next-script', () => {
     expect(move?.place.tool).toBe('terminal');
     expect(move?.completesWhen).toEqual({
       kind: 'script-succeeds',
-      mountId: LEDGER_MOUNT,
+      scriptId: migrateId,
       scriptName: 'db:migrate',
+      sinceMs: NOW - 5 * MIN,
     });
   });
 
@@ -228,13 +235,29 @@ describe('next-script', () => {
     expect(
       kindsOf({
         ...signals,
-        scriptRuns: [{ mountId: LEDGER_MOUNT, name: 'db:migrate', isOk: true, completedAt: NOW }],
+        scriptRuns: [
+          {
+            scriptId: migrateId,
+            mountId: LEDGER_MOUNT,
+            name: 'db:migrate',
+            isOk: true,
+            completedAt: NOW,
+          },
+        ],
       }),
     ).not.toContain('next-script');
     expect(
       kindsOf({
         ...signals,
-        scriptRuns: [{ mountId: LEDGER_MOUNT, name: 'db:migrate', isOk: false, completedAt: NOW }],
+        scriptRuns: [
+          {
+            scriptId: migrateId,
+            mountId: LEDGER_MOUNT,
+            name: 'db:migrate',
+            isOk: false,
+            completedAt: NOW,
+          },
+        ],
       }),
     ).toContain('next-script');
   });
@@ -519,5 +542,196 @@ describe('a session that is not on screen', () => {
     });
     expect(moves.map((move) => move.kind)).toEqual(['rerun-check']);
     expect(moves.every((move) => move.sessionId === other)).toBe(true);
+  });
+});
+
+describe('the check a move names', () => {
+  const second = 'https://github.com/acme/ledger-core/actions/runs/9001/job/43';
+  const twoChecks = [
+    { name: 'lint', detailsUrl: JOB },
+    { name: 'integration-tests', detailsUrl: second },
+  ];
+
+  it('shows the log and link of the failing check the move is about, not the first one', () => {
+    const logs = [
+      log({ detailsUrl: JOB, isTimeout: false, lines: ['lint: unused import'] }),
+      log({
+        detailsUrl: second,
+        isTimeout: true,
+        lines: ['integration-tests: timed out after 60s'],
+      }),
+    ];
+    const move = moveOfKind({
+      signals: {
+        ...BASE,
+        mounts: [mount({ failedChecks: twoChecks })],
+        checkLogs: logs,
+      },
+      kind: 'rerun-check',
+    });
+    expect(move?.evidence).toEqual([
+      { kind: 'log', label: 'Log', lines: ['integration-tests: timed out after 60s'] },
+    ]);
+  });
+
+  it('keeps the first failing check for the generic Fix checks move', () => {
+    const move = moveOfKind({
+      signals: {
+        ...BASE,
+        mounts: [mount({ failedChecks: twoChecks })],
+        checkLogs: [log({ detailsUrl: JOB, lines: ['lint: unused import'] })],
+      },
+      kind: 'fix-checks',
+    });
+    expect(move?.evidence).toEqual([{ kind: 'log', label: 'Log', lines: ['lint: unused import'] }]);
+  });
+
+  it('shows the link of the named check when it runs outside GitHub Actions', () => {
+    const external = 'https://ci.harborline.dev/builds/77';
+    const move = moveOfKind({
+      signals: {
+        ...BASE,
+        mounts: [
+          mount({
+            failedChecks: [
+              { name: 'lint', detailsUrl: JOB },
+              { name: 'integration-tests', detailsUrl: external },
+            ],
+          }),
+        ],
+        checkLogs: [log({ detailsUrl: JOB })],
+      },
+      kind: 'fix-checks',
+    });
+    expect(move?.evidence.map((item) => item.kind)).toEqual(['log']);
+  });
+});
+
+describe('scripts of a nested package', () => {
+  const apiGroup: ScriptGroup = {
+    source: 'package-json',
+    packageName: 'ledger-api',
+    relDir: 'packages/api',
+    manager: 'pnpm',
+    scripts: [
+      { name: 'db:migrate', command: 'pnpm run db:migrate', body: 'x' },
+      { name: 'test', command: 'pnpm test', body: 'vitest run' },
+    ],
+  };
+  const rootGroup: ScriptGroup = {
+    ...scriptGroup([]),
+    scripts: [
+      { name: 'db:migrate', command: 'pnpm run db:migrate', body: 'y' },
+      { name: 'test', command: 'pnpm test', body: 'vitest run' },
+    ],
+  };
+  const scripts = [
+    { mountId: LEDGER_MOUNT, worktreePath: '/work/ledger-core', groups: [rootGroup, apiGroup] },
+  ];
+
+  it('runs a migration from the package that owns the changed file, with that package as its identity', () => {
+    const move = moveOfKind({
+      signals: {
+        ...BASE,
+        mounts: [mount({ pr: null, failedChecks: [] })],
+        scripts,
+        turnFiles: [
+          {
+            mountId: LEDGER_MOUNT,
+            paths: ['packages/api/migrations/0042_add_ledger_index.sql'],
+            recordedAtMs: NOW - 5 * MIN,
+          },
+        ],
+      },
+      kind: 'next-script',
+    });
+    expect(move?.kind === 'next-script' ? move.payload.command.cwd : null).toBe(
+      '/work/ledger-core/packages/api',
+    );
+    expect(move?.kind === 'next-script' ? move.payload.scriptId : null).toBe(
+      discoveredScriptId({
+        worktreePath: '/work/ledger-core',
+        source: 'package-json',
+        relDir: 'packages/api',
+        name: 'db:migrate',
+      }),
+    );
+  });
+
+  it('gives two worktrees running the same script two different identities', () => {
+    const moves = ['/work/ledger-core', '/work/ledger-core-b'].map((worktreePath, index) => {
+      const mountId = index === 0 ? LEDGER_MOUNT : NOTIFY_MOUNT;
+      return moveOfKind({
+        signals: {
+          ...BASE,
+          mounts: [mount({ mountId, worktreePath, pr: null, failedChecks: [] })],
+          scripts: [{ mountId, worktreePath, groups: [rootGroup] }],
+          turnFiles: [
+            { mountId, paths: ['migrations/0042_add_ledger_index.sql'], recordedAtMs: NOW - MIN },
+          ],
+        },
+        kind: 'next-script',
+      });
+    });
+    const ids = moves.map((move) => (move?.kind === 'next-script' ? move.payload.scriptId : null));
+    expect(ids[0]).not.toBeNull();
+    expect(ids[0]).not.toBe(ids[1]);
+  });
+
+  it('offers nothing when the owning package has no such script, instead of running the root one', () => {
+    const noScript: ScriptGroup = { ...apiGroup, scripts: [] };
+    expect(
+      kindsOf({
+        ...BASE,
+        mounts: [mount({ pr: null, failedChecks: [] })],
+        scripts: [
+          {
+            mountId: LEDGER_MOUNT,
+            worktreePath: '/work/ledger-core',
+            groups: [rootGroup, noScript],
+          },
+        ],
+        turnFiles: [
+          {
+            mountId: LEDGER_MOUNT,
+            paths: ['packages/api/migrations/0042_add_ledger_index.sql'],
+            recordedAtMs: NOW - MIN,
+          },
+        ],
+      }),
+    ).not.toContain('next-script');
+  });
+
+  it('types the failing test from the package of the test file, with a path relative to it', () => {
+    const move = moveOfKind({
+      signals: {
+        ...BASE,
+        mounts: [mount()],
+        checkLogs: [log({ testFile: 'packages/api/src/ledger/rounding.test.ts' })],
+        scripts,
+      },
+      kind: 'run-failing-test',
+    });
+    expect(move?.kind === 'run-failing-test' ? move.payload.command : null).toEqual({
+      text: 'pnpm test src/ledger/rounding.test.ts',
+      cwd: '/work/ledger-core/packages/api',
+      mode: 'type',
+      scriptId: null,
+    });
+  });
+
+  it('falls back to the root test script for a test file outside every package', () => {
+    const move = moveOfKind({
+      signals: {
+        ...BASE,
+        mounts: [mount()],
+        checkLogs: [log({ testFile: 'e2e/ledger.test.ts' })],
+        scripts,
+      },
+      kind: 'run-failing-test',
+    });
+    expect(move?.kind === 'run-failing-test' ? move.payload.command.cwd : null).toBe(
+      '/work/ledger-core',
+    );
   });
 });

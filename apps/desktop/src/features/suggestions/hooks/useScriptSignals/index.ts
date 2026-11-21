@@ -39,11 +39,12 @@ export const useScriptSignals = ({ sessionId, mounts, wantedMountIds }: Params):
   );
   const scriptRuns = useMemo(
     () =>
-      Object.values(runs ?? {}).flatMap((run): ReadonlyArray<SignalScriptRun> =>
+      Object.entries(runs ?? {}).flatMap(([scriptId, run]): ReadonlyArray<SignalScriptRun> =>
         run.status === 'pending' || run.name === undefined
           ? []
           : [
               {
+                scriptId,
                 mountId: run.mountId ?? null,
                 name: run.name,
                 isOk: run.status === 'ok',

@@ -117,8 +117,8 @@ describe('deriveNextSteps', () => {
     expect(suggestions.map((suggestion) => suggestion.kind)).toEqual([
       'answer-questions',
       'mount-project',
-      'plan-ready',
       'resolve-threads',
+      'plan-ready',
       'rebase-project',
     ]);
     expect(suggestions[0]?.payload).toEqual({ count: 2, firstQuestion: null, rootAgentId: null });

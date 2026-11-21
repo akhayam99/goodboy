@@ -24,7 +24,7 @@ const FIRST_READ_DELAY_MS = 1_500;
 
 export const useTurnSignals = ({ sessionId, agents }: Params): TurnSignals => {
   const turnFiles = useAppStore((state) => state.turnFiles[sessionId] ?? NO_TURN_FILES);
-  const loadTurnFiles = useAppStore((state) => state.loadTurnFiles);
+  const refreshTurnFiles = useAppStore((state) => state.refreshTurnFiles);
   const runningIds = useAppStore(
     useShallow((state) =>
       agents.flatMap((agent) =>
@@ -45,13 +45,12 @@ export const useTurnSignals = ({ sessionId, agents }: Params): TurnSignals => {
     }),
   );
   const [quietByRun, setQuietByRun] = useState<ReadonlyMap<string, number>>(NO_QUIET);
-  const runningCount = runningIds.length;
-  const isLive = runningCount > 0;
+  const isLive = runningIds.length > 0;
 
   useEffect(() => {
-    const timer = setTimeout(() => void loadTurnFiles({ sessionId }), FIRST_READ_DELAY_MS);
+    const timer = setTimeout(() => void refreshTurnFiles({ sessionId }), FIRST_READ_DELAY_MS);
     return () => clearTimeout(timer);
-  }, [loadTurnFiles, runningCount, sessionId]);
+  }, [refreshTurnFiles, sessionId]);
 
   useEffect(() => {
     if (!isLive) {

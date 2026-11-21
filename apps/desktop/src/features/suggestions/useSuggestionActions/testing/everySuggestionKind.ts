@@ -220,6 +220,7 @@ export const everySuggestionKind = ({
         mountId: webMountId,
         prNumber: 418,
         checkName: 'integration-tests',
+        detailsUrl: 'https://github.com/acme/ledger-core/actions/runs/123456/job/42',
         testName: 'src/ledger/rounding.test.ts',
         command: {
           text: 'pnpm test src/ledger/rounding.test.ts',
@@ -235,13 +236,15 @@ export const everySuggestionKind = ({
       kind: 'next-script',
       payload: {
         mountId: webMountId,
+        scriptId: 'next-script:db:migrate',
         scriptName: 'db:migrate',
+        turnAtMs: 1_000,
         rule: 'migrations',
         command: {
           text: 'pnpm run db:migrate',
           cwd: '/work/ledger-core',
           mode: 'type',
-          scriptId: null,
+          scriptId: 'next-script:db:migrate',
         },
       },
     },
@@ -253,6 +256,7 @@ export const everySuggestionKind = ({
         mountId: webMountId,
         prNumber: 418,
         checkName: 'integration-tests',
+        detailsUrl: 'https://github.com/acme/ledger-core/actions/runs/123456/job/42',
         runId: '123456',
         cwd: '/work/ledger-core',
       },

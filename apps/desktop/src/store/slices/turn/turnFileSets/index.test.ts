@@ -46,6 +46,8 @@ const FOUND = {
 };
 
 const reportError = vi.fn(async () => undefined);
+const onRecorded = vi.fn();
+
 type RecordOptions = {
   readonly isShared?: boolean;
   readonly mounts?: ReadonlyArray<SessionProjectMount>;
@@ -59,6 +61,7 @@ const record = async ({ isShared = false, mounts = [mountOf({})] }: RecordOption
     projects: [PROJECT],
     begun: beginTurnFileSets({ mounts }),
     isShared: async () => isShared,
+    onRecorded,
   });
 
 beforeEach(() => {
@@ -87,6 +90,22 @@ describe('turn file sets', () => {
       }),
     });
     expect(reportError).not.toHaveBeenCalled();
+  });
+
+  it('tells the page once the files of the turn are stored, not before and not when nothing was', async () => {
+    insertTurnFileSet.mockImplementationOnce(async () => {
+      expect(onRecorded).not.toHaveBeenCalled();
+    });
+    await record();
+    expect(onRecorded).toHaveBeenCalledTimes(1);
+
+    onRecorded.mockClear();
+    insertTurnFileSet.mockRejectedValueOnce(new Error('database is locked'));
+    await record();
+    expect(onRecorded).not.toHaveBeenCalled();
+
+    await record({ isShared: true });
+    expect(onRecorded).not.toHaveBeenCalled();
   });
 
   it('records nothing for a turn another agent wrote beside, because the files could be theirs', async () => {

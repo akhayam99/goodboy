@@ -1,5 +1,6 @@
 import type { PrCheckRun, ProjectId, WorkspaceId } from '@goodboy/types';
 import { fetchFailedCheckLog } from '../../../features/branch/checks/fetchFailedCheckLog';
+import { RETRY_NONE_AFTER_MS } from './RETRY_NONE_AFTER_MS';
 import { parseCheckLog } from './parseCheckLog';
 import type { SliceDeps } from '../../slice-types';
 
@@ -9,8 +10,6 @@ type Params = {
   readonly workspaceId: WorkspaceId;
   readonly projectId: ProjectId;
 };
-
-const RETRY_NONE_AFTER_MS = 10 * 60 * 1_000;
 
 const EMPTY_PARSE = { testFile: null, testName: null, isTimeout: false, lines: [] };
 

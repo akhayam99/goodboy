@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { brandId, type AgentId, type MountId, type SessionId } from '@goodboy/types';
 import type { SessionSuggestion } from '../../../suggestions/types';
+import type { NeedsYouOwner } from '../../timeline/needsYou';
 import { actionCardsOf, type ActionCardModel, type AutoActionTarget } from './actionCardsOf';
 import { nextGroupsOf } from './nextGroupsOf';
 import { nextSeenKeyOf } from './nextSeenKeyOf';
@@ -226,5 +227,108 @@ describe('nextGroupsOf', () => {
     expect(shapeOf({ cards })).toEqual([
       ['ship', ['suggestion:push-branch:faq', 'suggestion:archive-session:session-harborline']],
     ]);
+  });
+  describe('a stopped rebase', () => {
+    const rerunOf = ({ page }: MountParams): SessionSuggestion => ({
+      id: `rerun-check:${page}`,
+      kind: 'rerun-check',
+      priority: 26,
+      band: 1,
+      title: 'Rerun integration-tests',
+      sessionId: SESSION_ID,
+      fingerprint: `rerun-check:${page}`,
+      targetKey: `pr:${mountOf({ page })}`,
+      payload: {
+        mountId: mountOf({ page }),
+        prNumber: 309,
+        checkName: 'integration-tests',
+        detailsUrl: 'https://github.com/acme/ledger-core/actions/runs/501/job/7',
+        runId: '501',
+        cwd: `/work/${page}`,
+      },
+    });
+    const stopOwnerOf = ({ page }: MountParams): NeedsYouOwner => ({
+      id: `stop-${page}`,
+      kind: 'rebase',
+      text: 'Rebase stopped',
+      where: 'harbor-portal',
+      at: '2026-10-18T10:30:00.000Z',
+      item: null,
+      question: null,
+      questionIds: [],
+      prNumber: null,
+      owed: null,
+      mountId: mountOf({ page }),
+    });
+    const stoppedSuggestionOf = ({ page }: MountParams): SessionSuggestion => ({
+      id: `rebase-project:${page}`,
+      kind: 'rebase-project',
+      priority: 9,
+      band: 1,
+      title: 'Finish the rebase on harbor-portal',
+      sessionId: SESSION_ID,
+      fingerprint: `rebase-project:${page}`,
+      targetKey: null,
+      payload: {
+        targets: [
+          {
+            id: `target-${page}`,
+            mountId: mountOf({ page }),
+            projectId: brandId({ value: 'project-harbor' }),
+            projectName: 'harbor-portal',
+            branch: `hl/feat-center-${page}-page`,
+            worktreePath: `/work/${page}`,
+            baseBranch: 'main',
+            behind: 0,
+            dirtyCount: 0,
+            conflictCount: 2,
+          },
+        ],
+      },
+    });
+
+    it('sits in Fix above Rerun when it comes from the stop owner', () => {
+      const cards = actionCardsOf({
+        owners: [stopOwnerOf({ page: 'home' })],
+        suggestions: [rerunOf({ page: 'billing' })],
+        autoTargets: [],
+      });
+
+      expect(shapeOf({ cards })).toEqual([
+        ['fix', ['owner:stop-home', 'suggestion:rerun-check:billing']],
+      ]);
+    });
+
+    it('sits in Fix above Rerun when it comes from the rebase suggestion', () => {
+      const cards = actionCardsOf({
+        owners: [],
+        suggestions: [rerunOf({ page: 'billing' }), stoppedSuggestionOf({ page: 'home' })],
+        autoTargets: [],
+      });
+
+      expect(shapeOf({ cards })).toEqual([
+        ['fix', ['suggestion:rebase-project:home', 'suggestion:rerun-check:billing']],
+      ]);
+    });
+
+    it('stays above Rerun even when the Rerun row unblocks more', () => {
+      const cards = actionCardsOf({
+        owners: [],
+        suggestions: [
+          rerunOf({ page: 'billing' }),
+          {
+            ...rerunOf({ page: 'team' }),
+            id: 'rerun-check:billing-2',
+            targetKey: `pr:${mountOf({ page: 'billing' })}`,
+          },
+          stoppedSuggestionOf({ page: 'home' }),
+        ],
+        autoTargets: [],
+      });
+
+      expect(nextGroupsOf({ cards, seen: [] })[0]?.rows[0]?.id).toBe(
+        'suggestion:rebase-project:home',
+      );
+    });
   });
 });

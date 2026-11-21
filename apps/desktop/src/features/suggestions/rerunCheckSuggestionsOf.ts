@@ -28,6 +28,7 @@ export const rerunCheckSuggestionsOf = ({
       const reading = checkLogs.find((candidate) => candidate.detailsUrl === check.detailsUrl);
       if (
         job === null ||
+        check.detailsUrl === null ||
         reading === undefined ||
         reading.status !== 'ready' ||
         !reading.isTimeout
@@ -49,6 +50,7 @@ export const rerunCheckSuggestionsOf = ({
             mountId: mount.mountId,
             prNumber: pr.number,
             checkName: check.name,
+            detailsUrl: check.detailsUrl,
             runId: job.runId,
             cwd: mount.worktreePath,
           },

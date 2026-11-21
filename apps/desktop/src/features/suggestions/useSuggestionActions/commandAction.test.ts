@@ -13,7 +13,8 @@ type Setup = {
 };
 
 const setup = ({ mode, exitCode = 0, scriptId = null }: Setup) => {
-  const openTerminal = vi.fn();
+  const openTerminal = vi.fn(() => 'terminal-1');
+  const trackTyped = vi.fn();
   const runScript = vi.fn(async (_params: unknown) => ({ exitCode }));
   const action = commandAction({
     sessionId,
@@ -22,9 +23,10 @@ const setup = ({ mode, exitCode = 0, scriptId = null }: Setup) => {
     command: { text: 'pnpm run db:generate', cwd: '/work/ledger-core', mode, scriptId },
     failureTitle: "Couldn't run db:generate",
     openTerminal,
+    trackTyped,
     runScript,
   });
-  return { action, openTerminal, runScript };
+  return { action, openTerminal, trackTyped, runScript };
 };
 
 describe('commandAction', () => {
@@ -37,6 +39,25 @@ describe('commandAction', () => {
       prefill: 'pnpm run db:generate',
     });
     expect(runScript).not.toHaveBeenCalled();
+  });
+
+  it('follows the typed command of a script so its exit can settle the move', async () => {
+    const { action, trackTyped } = setup({ mode: 'type', scriptId: 'script-db-migrate' });
+    await action?.run();
+    expect(trackTyped).toHaveBeenCalledWith({
+      sessionId,
+      terminalId: 'terminal-1',
+      scriptId: 'script-db-migrate',
+      name: 'db:generate',
+      command: 'pnpm run db:generate',
+      mountId,
+    });
+  });
+
+  it('follows nothing when the typed command is no script', async () => {
+    const { action, trackTyped } = setup({ mode: 'type' });
+    await action?.run();
+    expect(trackTyped).not.toHaveBeenCalled();
   });
 
   it('runs a safe script on the click, in its worktree and mount', async () => {

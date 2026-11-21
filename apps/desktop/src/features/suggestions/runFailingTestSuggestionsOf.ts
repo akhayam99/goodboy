@@ -1,8 +1,11 @@
 import type { SessionId } from '@goodboy/types';
 import type { SuggestionMount } from './deriveNextSteps';
 import type { SignalCheckLog, SignalScripts } from './nextStepSignals';
+import { discoveredScriptCwd } from '../scripts/scripts';
 import { actionsJobOf } from './signals/actionsJobOf';
 import { openPrOf } from './signals/openPrOf';
+import { owningGroupsOf } from './signals/owningGroupsOf';
+import { pathInGroupOf } from './signals/pathInGroupOf';
 import { testCommandOf } from './signals/testCommandOf';
 import type { SessionSuggestion } from './types';
 
@@ -27,11 +30,7 @@ export const runFailingTestSuggestionsOf = ({
       return [];
     }
     const scriptsOfMount = scripts.find((entry) => entry.mountId === mount.mountId);
-    const group = scriptsOfMount?.groups.find((candidate) =>
-      candidate.scripts.some((script) => script.name === 'test'),
-    );
-    const testScript = group?.scripts.find((script) => script.name === 'test');
-    if (group === undefined || testScript === undefined) {
+    if (scriptsOfMount === undefined) {
       return [];
     }
     for (const check of mount.failedChecks ?? []) {
@@ -41,10 +40,24 @@ export const runFailingTestSuggestionsOf = ({
         actionsJobOf({ detailsUrl: check.detailsUrl }) === null ||
         reading === undefined ||
         reading.status !== 'ready' ||
-        target === null
+        target === null ||
+        check.detailsUrl === null
       ) {
         continue;
       }
+      const owners =
+        reading.testFile === null
+          ? scriptsOfMount.groups
+          : owningGroupsOf({ groups: scriptsOfMount.groups, path: reading.testFile });
+      const group = owners.find((candidate) =>
+        candidate.scripts.some((script) => script.name === 'test'),
+      );
+      const testScript = group?.scripts.find((script) => script.name === 'test');
+      if (group === undefined || testScript === undefined) {
+        continue;
+      }
+      const commandTarget =
+        reading.testFile === null ? target : pathInGroupOf({ group, path: reading.testFile });
       return [
         {
           id: `run-failing-test:${mount.mountId}`,
@@ -60,12 +73,16 @@ export const runFailingTestSuggestionsOf = ({
             mountId: mount.mountId,
             prNumber: pr.number,
             checkName: check.name,
+            detailsUrl: check.detailsUrl,
             testName: target,
             command: testCommandOf({
               base: testScript.command,
               manager: group.manager,
-              target,
-              cwd: mount.worktreePath,
+              target: commandTarget,
+              cwd: discoveredScriptCwd({
+                worktreePath: mount.worktreePath,
+                relDir: group.relDir,
+              }),
             }),
           },
         },

@@ -1,7 +1,9 @@
 import type { MountId, SessionId } from '@goodboy/types';
 import type { SuggestionMount } from './deriveNextSteps';
 import type { SignalScriptRun, SignalScripts, SignalTurnFiles } from './nextStepSignals';
+import { discoveredScriptCwd, discoveredScriptId } from '../scripts/scripts';
 import { nextScriptRulesOf } from './signals/nextScriptRulesOf';
+import { owningGroupsOf } from './signals/owningGroupsOf';
 import { scriptCommandOf } from './signals/scriptCommandOf';
 import type { NextScriptRule, SessionSuggestion } from './types';
 
@@ -58,52 +60,59 @@ export const nextScriptSuggestionsOf = ({
       if (hit === undefined) {
         continue;
       }
-      const found = entry.groups
-        .flatMap((group) => group.scripts.map((script) => ({ group, script })))
-        .find(({ script }) => SCRIPT_NAMES[rule].includes(script.name));
-      const fallbackManager = entry.groups[0]?.manager ?? null;
-      const name =
-        found?.script.name ?? (rule === 'lockfile' && fallbackManager !== null ? 'install' : null);
-      const command =
-        found?.script.command ??
-        (rule === 'lockfile' && fallbackManager !== null ? `${fallbackManager} install` : null);
-      if (name === null || command === null) {
-        continue;
-      }
-      const isDone = scriptRuns.some(
-        (run) =>
-          run.mountId === mount.mountId &&
-          run.name === name &&
-          run.isOk &&
-          run.completedAt >= turn.recordedAtMs,
-      );
-      if (isDone) {
-        continue;
-      }
-      return [
-        {
-          id: `next-script:${mount.mountId}:${rule}`,
-          kind: 'next-script',
-          priority: 46,
-          band: 2,
-          title: rule === 'lockfile' ? 'Install dependencies' : `Run ${name}`,
-          detail: `${REASON[rule]} · ${hit.paths[0] ?? ''}`,
-          sessionId,
-          targetKey: `script:${mount.mountId}`,
-          fingerprint: `next-script:${mount.mountId}:${rule}:${turn.recordedAtMs}`,
-          payload: {
-            mountId: mount.mountId,
-            scriptName: name,
-            rule,
-            command: scriptCommandOf({
-              scriptId: `next-script:${name}`,
-              name,
-              command,
-              cwd: mount.worktreePath,
-            }),
+      for (const path of hit.paths) {
+        const [owner] = owningGroupsOf({ groups: entry.groups, path });
+        if (owner === undefined) {
+          continue;
+        }
+        const found = owner.scripts.find((script) => SCRIPT_NAMES[rule].includes(script.name));
+        const name = found?.name ?? (rule === 'lockfile' ? 'install' : null);
+        const command = found?.command ?? (rule === 'lockfile' ? `${owner.manager} install` : null);
+        if (name === null || command === null) {
+          continue;
+        }
+        const scriptId = discoveredScriptId({
+          worktreePath: mount.worktreePath,
+          source: owner.source,
+          relDir: owner.relDir,
+          name,
+        });
+        const isDone = scriptRuns.some(
+          (run) => run.scriptId === scriptId && run.isOk && run.completedAt >= turn.recordedAtMs,
+        );
+        if (isDone) {
+          continue;
+        }
+        return [
+          {
+            id: `next-script:${mount.mountId}:${rule}`,
+            kind: 'next-script',
+            priority: 46,
+            band: 2,
+            title: rule === 'lockfile' ? 'Install dependencies' : `Run ${name}`,
+            detail: `${REASON[rule]} · ${hit.paths[0] ?? ''}`,
+            sessionId,
+            targetKey: `script:${mount.mountId}`,
+            fingerprint: `next-script:${mount.mountId}:${rule}:${turn.recordedAtMs}`,
+            payload: {
+              mountId: mount.mountId,
+              scriptId,
+              scriptName: name,
+              turnAtMs: turn.recordedAtMs,
+              rule,
+              command: scriptCommandOf({
+                scriptId,
+                name,
+                command,
+                cwd: discoveredScriptCwd({
+                  worktreePath: mount.worktreePath,
+                  relDir: owner.relDir,
+                }),
+              }),
+            },
           },
-        },
-      ];
+        ];
+      }
     }
     return [];
   });

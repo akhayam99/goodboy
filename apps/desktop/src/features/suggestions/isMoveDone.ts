@@ -10,16 +10,22 @@ type Params = {
 export const isMoveDone = ({ completesWhen, signals }: Params): boolean => {
   const mounts = signals.mounts ?? [];
   switch (completesWhen.kind) {
-    case 'check-passes':
-      return (
-        mounts.find((mount) => mount.mountId === completesWhen.mountId)?.pr?.checks === 'success'
+    case 'check-passes': {
+      const mount = mounts.find((candidate) => candidate.mountId === completesWhen.mountId);
+      const { checkName } = completesWhen;
+      if (checkName === null) {
+        return mount?.pr?.checks === 'success';
+      }
+      return (mount?.checks ?? []).some(
+        (check) => check.name === checkName && check.conclusion === 'success',
       );
+    }
     case 'script-succeeds':
       return (signals.scriptRuns ?? []).some(
         (run) =>
           run.isOk &&
-          run.name === completesWhen.scriptName &&
-          (completesWhen.mountId === null || run.mountId === completesWhen.mountId),
+          run.scriptId === completesWhen.scriptId &&
+          run.completedAt >= completesWhen.sinceMs,
       );
     case 'folder-mounted':
       return new Set(signals.projects.map((project) => project.projectId)).has(

@@ -42,6 +42,7 @@ import { openSessionTerminal } from '../../terminal/openSessionTerminal';
 import { typedCommandOf } from '../../terminal/typedCommandOf';
 import { closeWorktreeAction } from './closeWorktreeAction';
 import { commandAction } from './commandAction';
+import { typedCommandTrackerOf } from './typedCommandTrackerOf';
 import { rerunCheckAction } from './rerunCheckAction';
 import { unmountFolderAction } from './unmountFolderAction';
 
@@ -119,6 +120,7 @@ export const useSuggestionActions = ({
   const resolveMountCleanup = useAppStore((state) => state.resolveMountCleanup);
   const removeMountWorktree = useAppStore((state) => state.removeMountWorktree);
   const runDiscoveredScript = useAppStore((state) => state.runDiscoveredScript);
+  const recordTerminalScriptRun = useAppStore((state) => state.recordTerminalScriptRun);
   const unmountMount = useAppStore((state) => state.unmountMount);
   const sendAgentMessage = useAppStore((state) => state.sendAgentMessage);
   const mergeSeriesInOrder = useAppStore((state) => state.mergeSeriesInOrder);
@@ -559,6 +561,7 @@ export const useSuggestionActions = ({
               cwd,
               prefill: typedCommandOf({ text: prefill }),
             }),
+          trackTyped: typedCommandTrackerOf({ record: recordTerminalScriptRun, reportError }),
           runScript: runDiscoveredScript,
         }),
         onDismiss: null,

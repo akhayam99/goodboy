@@ -100,10 +100,11 @@ Know the moves that unblock the task, such as answering a question, fixing a fai
 - When the last branch is merged or closed and a linked Linear or Jira item is not done, **Move HBL-412 to Done** is offered. The toast has **Undo**.
 - **Run the failing test** names the test a failed GitHub Actions check points at and writes the command in the terminal of that worktree. It waits for your Enter.
 - After a turn that changed a migration, a lockfile or a schema, the script that follows is offered with the file as its reason.
-- **db:migrate** is written in the terminal and waits for Enter. An install or a generate runs on the click.
-- **Rerun integration-tests** shows when the job log says the check timed out. It reruns only the failed jobs. A check outside GitHub Actions shows **Open on** and the host instead of a log.
+- **db:migrate** is written in the terminal and waits for Enter. When the command you typed exits with code 0 in that terminal, the move is done. An install or a generate runs on the click. A script runs in the package that owns the changed file, and its run is kept under that package and worktree, so two worktrees never share one.
+- **Rerun integration-tests** shows when the job log says the check timed out. It reruns only the failed jobs and shows the log of that check. It is done when that check passes, whatever the other checks do. A check outside GitHub Actions shows **Open on** and the host instead of a log. A rerun that is running keeps its place until the check ends.
 - **Ask the Implementer what blocks it** shows when an agent has been quiet for 5 minutes. After 30 minutes the question moves to Needs you.
-- A stopped rebase comes first, above **Rerun**, and says how many files conflict.
+- A stopped rebase sits in Fix, first, above **Rerun**, and says how many files conflict. A branch that is only behind stays in Update.
+- Moves that unblock come before moves that carry the task forward, and upkeep comes last.
 - A folder no turn touched for 7 days offers **Remove from session**. A clean worktree with nothing to push, no pull request and no change for 7 days offers **Remove the ledger-core worktree**. Only one such move shows, and only when nothing else is left.
 - A move whose pull request read is old stays and says **Checked 12m ago** with **Recheck**. When a move is done, a quiet line such as "integration-tests passed on rerun" stays for 2 seconds.
 - **Archive this session** shows with the reason "All branches merged". It needs every branch merged or closed and nothing running, waiting or asking. The toast offers **Undo**.
@@ -170,7 +171,7 @@ This part is for contributors and agents who change the feature.
 - Branch rows: `RANK_OF_STATE` in `branchStoryOf` orders the rows, `mergeSeriesInOrder` merges a series and `useMountRowMenu` opens the branch menu.
 - Tracker move suggestion: `trackerMoveSuggestionOf`.
 - Archive suggestion: `archiveSuggestionOf`.
-- Next rows: `nextGroupsOf` and `nextUnblockCountOf` order the moves a row offers.
+- Next rows: `nextGroupsOf` and `nextUnblockCountOf` order the moves a row offers, and `isStoppedRebaseOf` tells a stopped rebase from a branch that is only behind. `sortNextSteps` orders the moves by `moveGroupOf` first.
 - Next row copy: `planSentenceOf` writes the plan sentence and `rebaseStopRowOf` writes a stopped rebase.
 - Folded rows: `foldDivergedIntoStops` in `actionCardsOf` folds a diverged card into its stopped rebase, `historyStopDetailOf` and `foldedVerbOf` word the folded stops, and `MENU_MAX_WIDTH` caps that menu.
 - Open questions of one Auto run: `askingAutoRootOf` finds the run, from the `rootAgentId` of the answer-questions suggestion.

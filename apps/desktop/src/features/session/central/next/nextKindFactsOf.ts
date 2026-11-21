@@ -1,4 +1,5 @@
 import type { ActionCardModel } from './actionCardsOf';
+import { isStoppedRebaseOf } from './isStoppedRebaseOf';
 import type { NextGroupId } from './nextGroupIds';
 
 type KindFacts = Readonly<{
@@ -47,11 +48,16 @@ const KIND_FACTS: Readonly<Record<ActionCardModel['kind'], KindFacts>> = {
 
 const DIVERGED: KindFacts = { group: 'update', rank: 2 };
 
+const STOPPED_REBASE: KindFacts = { group: 'fix', rank: -1 };
+
 type Params = {
   readonly card: ActionCardModel;
 };
 
 export const nextKindFactsOf = ({ card }: Params): KindFacts => {
+  if (isStoppedRebaseOf({ card })) {
+    return STOPPED_REBASE;
+  }
   const { source } = card;
   if (
     source.kind === 'suggestion' &&

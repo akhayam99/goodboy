@@ -21,7 +21,9 @@ const move: NextMove = {
   fingerprint: 'next-script:mount-ledger-core:migrations:1',
   payload: {
     mountId: MOUNT,
+    scriptId: 'script-db-migrate',
     scriptName: 'db:migrate',
+    turnAtMs: 0,
     rule: 'migrations',
     command: {
       text: 'pnpm run db:migrate',
@@ -33,7 +35,12 @@ const move: NextMove = {
   reason: 'A migration changed in the last turn',
   evidence: [],
   place: { tool: 'terminal', mountId: MOUNT, agentId: null },
-  completesWhen: { kind: 'script-succeeds', mountId: MOUNT, scriptName: 'db:migrate' },
+  completesWhen: {
+    kind: 'script-succeeds',
+    scriptId: 'script-db-migrate',
+    scriptName: 'db:migrate',
+    sinceMs: 0,
+  },
   group: 'advance',
   read: null,
 };
@@ -49,7 +56,15 @@ const signals = (isDone: boolean): NextStepSignals => ({
   mountEvents: [],
   projects: [],
   scriptRuns: isDone
-    ? [{ mountId: MOUNT, name: 'db:migrate', isOk: true, completedAt: Date.now() }]
+    ? [
+        {
+          scriptId: 'script-db-migrate',
+          mountId: MOUNT,
+          name: 'db:migrate',
+          isOk: true,
+          completedAt: Date.now(),
+        },
+      ]
     : [],
 });
 

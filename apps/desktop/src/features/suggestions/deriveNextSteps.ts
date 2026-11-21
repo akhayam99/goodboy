@@ -3,6 +3,7 @@ import type {
   AgentSourceKind,
   MountId,
   PlanId,
+  PrCheckConclusion,
   ProjectId,
   PullRequestState,
   StepId,
@@ -77,11 +78,17 @@ export type SuggestionMount = {
   readonly fetchedAt: string | null;
   readonly scribe?: ScribeRequestState | null;
   readonly failedChecks?: ReadonlyArray<SuggestionFailedCheck>;
+  readonly checks?: ReadonlyArray<SuggestionCheckOutcome>;
 };
 
 export type SuggestionFailedCheck = {
   readonly name: string;
   readonly detailsUrl: string | null;
+};
+
+export type SuggestionCheckOutcome = {
+  readonly name: string;
+  readonly conclusion: PrCheckConclusion;
 };
 
 export type SuggestionCheckChain = FixChecksProgress & {

@@ -334,6 +334,7 @@ export const buildTurnSpawn = async ({ set, get, lease, ctx }: Params) => {
       runId,
       projects: get().projects,
       begun: turnFilesBefore,
+      onRecorded: () => void get().refreshTurnFiles({ sessionId }),
       isShared: () =>
         isTurnShared({ get, sessionId, agentId: activeAgentId, startedAt: turnSpanBase.startedAt }),
     });

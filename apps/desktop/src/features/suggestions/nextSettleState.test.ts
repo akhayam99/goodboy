@@ -1,7 +1,7 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import { brandId, type MountId, type SessionId } from '@goodboy/types';
-import { EMPTY_SETTLE, SETTLE_MS, nextSettleState } from './nextSettleState';
+import { EMPTY_SETTLE, HOLD_MS, SETTLE_MS, nextSettleState } from './nextSettleState';
 import type { NextStepSignals } from './nextStepSignals';
 import type { SuggestionMount } from './deriveNextSteps';
 import type { NextMove } from './types';
@@ -23,6 +23,7 @@ const rerun: NextMove = {
     mountId: MOUNT,
     prNumber: 418,
     checkName: 'integration-tests',
+    detailsUrl: 'https://github.com/acme/ledger-core/actions/runs/9001/job/42',
     runId: '9001',
     cwd: '/work/ledger-core',
   },
@@ -58,6 +59,7 @@ const mountWith = (checks: 'success' | 'failure'): SuggestionMount => ({
     updatedAt: '',
   },
   fetchedAt: null,
+  checks: [{ name: 'integration-tests', conclusion: checks }],
 });
 
 const signalsWith = (
@@ -106,7 +108,7 @@ describe('nextSettleState', () => {
 
   it('lets the row go once two seconds are over', () => {
     const settled = nextSettleState({
-      state: { seen: new Map([[rerun.id, rerun]]), rows: [] },
+      state: { ...EMPTY_SETTLE, seen: new Map([[rerun.id, rerun]]) },
       moves: [],
       signals: signalsWith('success'),
       now: T0,
@@ -122,7 +124,7 @@ describe('nextSettleState', () => {
 
   it('leaves no row when the move went away while its check still fails', () => {
     const next = nextSettleState({
-      state: { seen: new Map([[rerun.id, rerun]]), rows: [] },
+      state: { ...EMPTY_SETTLE, seen: new Map([[rerun.id, rerun]]) },
       moves: [],
       signals: signalsWith('failure'),
       now: T0,
@@ -132,7 +134,7 @@ describe('nextSettleState', () => {
 
   it('leaves no row for a move the user set aside with Not now', () => {
     const next = nextSettleState({
-      state: { seen: new Map([[rerun.id, rerun]]), rows: [] },
+      state: { ...EMPTY_SETTLE, seen: new Map([[rerun.id, rerun]]) },
       moves: [],
       signals: signalsWith('success', { dismissedFingerprints: new Set([rerun.fingerprint]) }),
       now: T0,
@@ -142,11 +144,132 @@ describe('nextSettleState', () => {
 
   it('leaves no row while the move is still there', () => {
     const next = nextSettleState({
-      state: { seen: new Map([[rerun.id, rerun]]), rows: [] },
+      state: { ...EMPTY_SETTLE, seen: new Map([[rerun.id, rerun]]) },
       moves: [rerun],
       signals: signalsWith('success'),
       now: T0,
     });
     expect(next.rows).toEqual([]);
+  });
+  it('keeps a move that left while its check runs again, and settles it on the later pass', () => {
+    const running = nextSettleState({
+      state: { ...EMPTY_SETTLE, seen: new Map([[rerun.id, rerun]]) },
+      moves: [],
+      signals: signalsWith('failure', {
+        mounts: [
+          {
+            ...mountWith('failure'),
+            checks: [{ name: 'integration-tests', conclusion: 'pending' }],
+          },
+        ],
+      }),
+      now: T0,
+    });
+    expect(running.rows).toEqual([]);
+    expect(running.seen.has(rerun.id)).toBe(true);
+    const passed = nextSettleState({
+      state: running,
+      moves: [],
+      signals: signalsWith('success'),
+      now: T0 + 60_000,
+    });
+    expect(passed.rows.map((row) => row.text)).toEqual(['integration-tests passed on rerun']);
+    expect(passed.seen.has(rerun.id)).toBe(false);
+  });
+
+  it('settles the rerun when its check passes while lint still fails', () => {
+    const next = nextSettleState({
+      state: { ...EMPTY_SETTLE, seen: new Map([[rerun.id, rerun]]) },
+      moves: [],
+      signals: signalsWith('failure', {
+        mounts: [
+          {
+            ...mountWith('failure'),
+            checks: [
+              { name: 'integration-tests', conclusion: 'success' },
+              { name: 'lint', conclusion: 'failure' },
+            ],
+          },
+        ],
+      }),
+      now: T0,
+    });
+    expect(next.rows.map((row) => row.text)).toEqual(['integration-tests passed on rerun']);
+  });
+
+  it('drops a kept move the user set aside', () => {
+    const running = nextSettleState({
+      state: { ...EMPTY_SETTLE, seen: new Map([[rerun.id, rerun]]) },
+      moves: [],
+      signals: signalsWith('failure', {
+        dismissedFingerprints: new Set([rerun.fingerprint]),
+      }),
+      now: T0,
+    });
+    expect(running.seen.has(rerun.id)).toBe(false);
+  });
+
+  it('drops a kept move when a newer move took its target', () => {
+    const fixChecks: NextMove = {
+      ...rerun,
+      id: 'fix-checks:mount-ledger-core',
+      kind: 'fix-checks',
+      fingerprint: 'fix-checks:mount-ledger-core:418',
+      payload: { mountId: MOUNT, projectName: 'ledger-core', prNumber: 418 },
+      completesWhen: { kind: 'check-passes', mountId: MOUNT, checkName: null },
+    };
+    const next = nextSettleState({
+      state: { ...EMPTY_SETTLE, seen: new Map([[rerun.id, rerun]]) },
+      moves: [fixChecks],
+      signals: signalsWith('failure'),
+      now: T0,
+    });
+    expect([...next.seen.keys()]).toEqual([fixChecks.id]);
+  });
+
+  it('stops keeping a move whose check never finished after thirty minutes', () => {
+    const first = nextSettleState({
+      state: { ...EMPTY_SETTLE, seen: new Map([[rerun.id, rerun]]) },
+      moves: [],
+      signals: signalsWith('failure'),
+      now: T0,
+    });
+    expect(first.seen.has(rerun.id)).toBe(true);
+    const later = nextSettleState({
+      state: first,
+      moves: [],
+      signals: signalsWith('failure'),
+      now: T0 + HOLD_MS + 1,
+    });
+    expect(later.seen.has(rerun.id)).toBe(false);
+  });
+
+  it('matches a whole-pull-request move on the aggregate result', () => {
+    const fixChecks: NextMove = {
+      ...rerun,
+      id: 'fix-checks:mount-ledger-core',
+      kind: 'fix-checks',
+      fingerprint: 'fix-checks:mount-ledger-core:418',
+      payload: { mountId: MOUNT, projectName: 'ledger-core', prNumber: 418 },
+      completesWhen: { kind: 'check-passes', mountId: MOUNT, checkName: null },
+    };
+    const lintStillFails = {
+      ...mountWith('failure'),
+      checks: [{ name: 'integration-tests', conclusion: 'success' as const }],
+    };
+    const stillFailing = nextSettleState({
+      state: { ...EMPTY_SETTLE, seen: new Map([[fixChecks.id, fixChecks]]) },
+      moves: [],
+      signals: signalsWith('failure', { mounts: [lintStillFails] }),
+      now: T0,
+    });
+    expect(stillFailing.rows).toEqual([]);
+    const passed = nextSettleState({
+      state: stillFailing,
+      moves: [],
+      signals: signalsWith('success'),
+      now: T0 + 1,
+    });
+    expect(passed.rows.map((row) => row.text)).toEqual(['Checks passed']);
   });
 });
