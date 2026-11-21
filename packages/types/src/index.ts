@@ -322,6 +322,7 @@ export type {
   AgentSourceKind,
   AgentStatus,
   AgentStoppedBy,
+  MountAgent,
   Step,
   StepDef,
   StepSize,
