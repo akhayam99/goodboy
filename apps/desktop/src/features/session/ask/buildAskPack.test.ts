@@ -2,6 +2,8 @@
 import { describe, expect, it } from 'vitest';
 import type { AgentId, ArtifactId, OpenQuestionId, WorkflowRunId } from '@goodboy/types';
 import { buildAskPack, type AskPackAgent, type AskPackInput } from './buildAskPack';
+import type { AskLiveInput } from './askLiveSection';
+import { ASK_LIVE_BUDGET_TOKENS } from './ASK_LIVE_BUDGET_TOKENS';
 
 const LIMITS = {
   settledAgents: 15,
@@ -22,9 +24,12 @@ const agent = (overrides: Partial<AskPackAgent>): AskPackAgent => ({
   ...overrides,
 });
 
+const NO_LIVE: AskLiveInput = { calls: [], checks: [], worktrees: [], scripts: [] };
+
 const input = (overrides: Partial<AskPackInput>): AskPackInput => ({
   title: 'Fix webhook retries',
   rightNow: ['Implementer is running · 12 min', '$3.42 in this session'],
+  live: NO_LIVE,
   goal: 'Retry a failed webhook delivery after a 429 without flooding the receiver.',
   decisions: '',
   summary: '',
@@ -168,6 +173,19 @@ describe('buildAskPack', () => {
     const pack = buildAskPack({
       title: leak('title'),
       rightNow: [leak('rightnow')],
+      live: {
+        calls: [{ agent: leak('liveagent'), calls: [`Bash ${leak('livecall')}`] }],
+        checks: [{ project: leak('checkproject'), name: leak('checkname'), outcome: 'failure' }],
+        worktrees: [leak('worktree')],
+        scripts: [
+          {
+            project: leak('scriptproject'),
+            name: leak('scriptname'),
+            outcome: 'failed',
+            output: `pnpm test\n${leak('scriptoutput')}`,
+          },
+        ],
+      },
       goal: leak('goal'),
       decisions: leak('decisions'),
       summary: leak('summary'),
@@ -245,5 +263,70 @@ describe('buildAskPack', () => {
       }),
     );
     expect(pack.text).not.toContain('ghp_abcdefghijklmnopqrstuvwxyz123456');
+  });
+
+  it('packs the live work of every running agent, the checks, the worktrees and the scripts', () => {
+    const pack = buildAskPack(
+      input({
+        live: {
+          calls: [
+            { agent: 'Implementer', calls: ['Read src/retry/state.ts', 'Bash pnpm test retry'] },
+          ],
+          checks: [{ project: 'payments-api', name: 'integration-tests', outcome: 'failure' }],
+          worktrees: ['notify-relay on hl/retry-state: 3 commits ahead of main, 2 changed files'],
+          scripts: [
+            { project: 'notify-relay', name: 'test', outcome: 'failed', output: '2 failed' },
+          ],
+        },
+      }),
+    );
+    expect(pack.text).toContain('## Live work');
+    expect(pack.text).toContain('  - Bash pnpm test retry');
+    expect(pack.text).toContain('- Check integration-tests in payments-api: failure');
+    expect(pack.text).toContain('- Worktree notify-relay on hl/retry-state');
+    expect(pack.text).toContain('- Script test in notify-relay: failed');
+    expect(pack.truncations).toEqual([]);
+  });
+
+  it('keeps the live work inside its token budget and says it was cut', () => {
+    const output = 'x'.repeat(1_000);
+    const scripts = Array.from({ length: 40 }, (_, index) => ({
+      project: 'notify-relay',
+      name: `script-${index}`,
+      outcome: 'failed',
+      output,
+    }));
+    const pack = buildAskPack(input({ live: { ...NO_LIVE, scripts } }));
+    const start = pack.text.indexOf('## Live work');
+    const end = pack.text.indexOf('\n## ', start + 1);
+    const section = pack.text.slice(start, end === -1 ? undefined : end);
+    expect(Math.ceil(section.length / 4)).toBeLessThanOrEqual(ASK_LIVE_BUDGET_TOKENS + 10);
+    expect(pack.truncations).toContain(`live work cut at ${ASK_LIVE_BUDGET_TOKENS} tokens`);
+  });
+
+  it('redacts a token printed in terminal or script output', () => {
+    const pack = buildAskPack(
+      input({
+        live: {
+          ...NO_LIVE,
+          calls: [
+            {
+              agent: 'Implementer',
+              calls: ['Bash export GITHUB_TOKEN=ghp_abcdefghijklmnopqrstuvwxyz123456'],
+            },
+          ],
+          scripts: [
+            {
+              project: 'payments-api',
+              name: 'deploy',
+              outcome: 'failed',
+              output: 'using key sk-ant-api03-abcdefghijklmnopqrstuvwxyz0123456789',
+            },
+          ],
+        },
+      }),
+    );
+    expect(pack.text).not.toContain('ghp_abcdefghijklmnopqrstuvwxyz123456');
+    expect(pack.text).not.toContain('sk-ant-api03-abcdefghijklmnopqrstuvwxyz0123456789');
   });
 });

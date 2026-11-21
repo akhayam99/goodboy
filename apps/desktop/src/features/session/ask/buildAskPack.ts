@@ -9,6 +9,8 @@ import { redactSecrets } from '../../../shared/utils/redactSecrets';
 import { clipToBoundary } from '../../reports/allocateReportContext';
 import { RESOLVE_WORD_LABEL, type ResolveWord } from '../../resolve/commentProjection';
 import type { AskDossierFile, AskHandle } from './askHandles';
+import { askLiveSection, type AskLiveInput } from './askLiveSection';
+import { ASK_LIVE_BUDGET_TOKENS } from './ASK_LIVE_BUDGET_TOKENS';
 
 const ASK_PACK_LIMITS = {
   total: 48_000,
@@ -83,6 +85,7 @@ type AskPackPullRequest = {
 export type AskPackInput = {
   readonly title: string;
   readonly rightNow: ReadonlyArray<string>;
+  readonly live: AskLiveInput;
   readonly goal: string;
   readonly decisions: string;
   readonly summary: string;
@@ -373,8 +376,13 @@ const prose = ({
 
 export const buildAskPack = (input: AskPackInput): AskPack => {
   const collector: Collector = { handles: [], files: [], truncations: [] };
+  const live = askLiveSection({ live: input.live });
+  if (live.isClipped) {
+    collector.truncations.push(`live work cut at ${ASK_LIVE_BUDGET_TOKENS} tokens`);
+  }
   const sections: ReadonlyArray<Section> = [
     { title: 'Right now', lines: input.rightNow.map((line) => `- ${line}`) },
+    { title: 'Live work', lines: live.lines },
     prose({
       title: 'Goal',
       text: input.goal,

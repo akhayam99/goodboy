@@ -1874,7 +1874,10 @@ stream reader) with a session scope: `ask_turn` in
   connected project. Both pass the same argument check as Chat
   (`assert_read_only`), and the Rust tests pin each provider's arguments.
 - **The pack.** `features/session/ask/buildAskPack.ts` is a pure builder over
-  what `collectAskPackInput` reads from the store: Right now, goal, agents,
+  what `collectAskPackInput` reads from the store: Right now, Live work
+  (`askLiveOf`: the last 10 tool calls of each running agent, every check with
+  its result, each worktree's state and each script run with the end of its
+  output, kept under `ASK_LIVE_BUDGET_TOKENS`, 4,000 tokens), goal, agents,
   open and the last 3 answered questions, runs (running plus the last 2
   finished), review comments by word with every Needs you and Couldn't fix
   item, branch and pull request, artifacts, the last 20 events that are not
