@@ -11,7 +11,7 @@ import { monitoringMetaOf } from './monitoringMetaOf';
 import { MonitoringSections } from './MonitoringSections';
 import { PinPortPopover } from './PinPortPopover';
 
-const MONITORING_ROW = '[data-port-row], [data-started-row]';
+const MONITORING_ROW = '[data-port-row], [data-started-row], [data-shared-pid]';
 
 export const MonitoringPage = () => {
   useMonitorPolling();

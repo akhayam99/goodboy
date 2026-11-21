@@ -50,10 +50,9 @@ export const handleRowFocusKey = ({ event, id, rows, onSearch }: Params): void =
   }
   const controls = [...container.querySelectorAll(rows.rowSelector)].flatMap((row) => {
     const control = controlOfRow({ row });
-    return control === null ? [] : [{ row, control }];
+    return control === null ? [] : [{ unit: row.closest('li') ?? row, control }];
   });
-  const current = isInside ? active.closest(rows.rowSelector) : null;
-  const index = controls.findIndex(({ row }) => row === current);
+  const index = isInside ? controls.map(({ unit }) => unit.contains(active)).lastIndexOf(true) : -1;
   if (index === -1 && event.key.startsWith('Arrow')) {
     return;
   }

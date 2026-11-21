@@ -92,6 +92,21 @@ describe('useRowFocusKeys', () => {
     expect(document.activeElement).toBe(button('Tasks d'));
   });
 
+  it('walks from a secondary control of a row, and leaves a nested row its own turn', () => {
+    mount(<List label="Tasks" />);
+    button('Tasks d more').focus();
+    pressKey({ code: 'KeyK' });
+    expect(document.activeElement).toBe(button('Tasks a'));
+
+    button('Tasks d more').focus();
+    pressKey({ code: 'ArrowUp' });
+    expect(document.activeElement).toBe(button('Tasks a'));
+
+    button('Tasks a').focus();
+    pressKey({ code: 'KeyJ' });
+    expect(document.activeElement).toBe(button('Tasks d'));
+  });
+
   it('starts on the first row from the toolbar of the list', () => {
     mount(<List label="Tasks" />);
     button('Tasks toolbar').focus();
@@ -141,6 +156,16 @@ describe('useRowFocusKeys', () => {
     cleanup();
     mount(<List label="Tasks" />);
     expect(pressKey({ code: 'Slash', target: document.body }).defaultPrevented).toBe(false);
+  });
+
+  it('leaves a character that shares the slash position alone', () => {
+    const onSearch = vi.fn();
+    mount(<List label="Tasks" onSearch={onSearch} />);
+
+    const german = pressKey({ code: 'Slash', key: '-', target: document.body });
+
+    expect(german.defaultPrevented).toBe(false);
+    expect(onSearch).not.toHaveBeenCalled();
   });
 
   it('does nothing while a drawer parks the list', () => {

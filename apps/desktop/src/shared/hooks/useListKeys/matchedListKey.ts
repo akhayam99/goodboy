@@ -26,8 +26,12 @@ type Params = {
 };
 
 export const matchedListKey = ({ event }: Params): ListKeyId | null =>
-  LIST_KEY_IDS.find(
-    (id) =>
-      eventMatches({ event, entry: SHORTCUTS[id] }) ||
-      CHARACTER_ALIASES[id]?.has(event.key) === true,
-  ) ?? null;
+  LIST_KEY_IDS.find((id) => {
+    if (CHARACTER_ALIASES[id]?.has(event.key) === true) {
+      return true;
+    }
+    if (!eventMatches({ event, entry: SHORTCUTS[id] })) {
+      return false;
+    }
+    return id !== 'list.search' || event.key === '/';
+  }) ?? null;
