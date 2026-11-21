@@ -12,7 +12,6 @@ import { useSessionRuns } from '../../../hooks/useSessionRuns';
 import { RunsGrid } from './RunsGrid';
 import { StartRun } from '../../StartRun/StartRun';
 import { startRunEventName } from '../../../startRun/startRunEventName';
-import { SessionPageIntro } from '../../SessionPageIntro';
 
 type Props = {
   readonly session: Session;
@@ -73,7 +72,7 @@ export const WorkflowsPane = ({ session }: Props) => {
   }
 
   return (
-    <PaneShell page="runs" subheader={<SessionPageIntro page="runs" />}>
+    <PaneShell page="runs">
       <div className={cn(PANE_RHYTHM.groups, 'min-w-0')}>
         <div hidden={!isFormShown}>
           <StartRun

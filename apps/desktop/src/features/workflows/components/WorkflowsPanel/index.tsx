@@ -4,6 +4,7 @@ import { DrawerColumn, PaneShell } from '@goodboy/ui';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import { sessionPlace } from '../../../../store/slices/navigation/place';
 import { useStudioDrawer } from '../../../../shared/hooks/useStudioDrawer';
+import { NAMES } from '../../../../shared/utils/names';
 import { useWorkflowRunHistory } from '../../hooks/useWorkflowRunHistory';
 import { WorkflowHistoryPane } from '../WorkflowHistoryPane';
 import { primaryProjectRoot } from '../../../workspace/primaryProjectRoot';
@@ -152,11 +153,7 @@ export const WorkflowsPanel = ({ workspaceId }: Props) => {
 
   const list =
     view === 'steps' ? (
-      <SavedStepsList
-        workspaceId={workspaceId}
-        connectedProviders={connectedProviders}
-        tabs={tabs}
-      />
+      <SavedStepsList workspaceId={workspaceId} connectedProviders={connectedProviders} />
     ) : (
       <WorkflowList
         workflows={presets}
@@ -165,7 +162,6 @@ export const WorkflowsPanel = ({ workspaceId }: Props) => {
         isRestoring={isRestoring}
         runs={history.load?.runs ?? null}
         isHistoryFailed={history.load?.status === 'failed'}
-        tabs={tabs}
         renderImport={({ renderTrigger }) => (
           <ImportPopover
             workspaceId={workspaceId}
@@ -182,7 +178,7 @@ export const WorkflowsPanel = ({ workspaceId }: Props) => {
 
   const main =
     editor.editing === null ? (
-      <PaneShell page="workflows" scroll="body" title="Workflows">
+      <PaneShell page="workflows" scroll="body" title={NAMES.workflows} tabs={tabs}>
         {list}
       </PaneShell>
     ) : (

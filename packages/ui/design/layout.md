@@ -111,9 +111,7 @@ crumb names the structure and the `h1` the object, and a report's document title
 `h2`.
 There is no description line and no divider under the header: the text that
 teaches goes in the empty state, and the `ScrollFade` edge marks the seam. A
-session tab has no intro line either. Runs still passes `SessionPageIntro` as
-its `subheader`; it is the last one and goes when the page heads move to the
-two rows below.
+session tab has no intro line either, Runs included.
 
 **Two rows at the head of a list page.** The title row holds the title (a word
 from `NAMES`), the meta on one line, at most one primary action and the `⋯`.

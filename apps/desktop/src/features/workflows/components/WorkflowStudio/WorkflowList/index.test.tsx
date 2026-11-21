@@ -90,7 +90,6 @@ const renderList = (
       workspaceName="Harborline"
       isRestoring={false}
       runs={runs}
-      tabs={<span>Workflows</span>}
       renderImport={({ renderTrigger }) =>
         renderTrigger?.({ isOpen: false, onToggle: vi.fn() }) ?? null
       }
@@ -192,7 +191,6 @@ describe('WorkflowList', () => {
         workspaceName="Harborline"
         isRestoring={false}
         runs={[]}
-        tabs={null}
         renderImport={({ renderTrigger }) =>
           renderTrigger?.({ isOpen: false, onToggle: vi.fn() }) ?? null
         }

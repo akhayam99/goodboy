@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react';
+import { useState } from 'react';
 import { Plus } from '@goodboy/ui/icons';
 import { Button, EmptyState, formatError, ICON_SIZE } from '@goodboy/ui';
 import { DEFAULT_SESSION_PROVIDER_PREFERENCE } from '@goodboy/core/providers';
@@ -30,12 +30,11 @@ import {
 type Props = {
   readonly workspaceId: WorkspaceId;
   readonly connectedProviders: ReadonlyArray<ProviderId>;
-  readonly tabs: ReactNode;
 };
 
 const errorText = (error: unknown): string => formatError(error);
 
-export const SavedStepsList = ({ workspaceId, connectedProviders, tabs }: Props) => {
+export const SavedStepsList = ({ workspaceId, connectedProviders }: Props) => {
   const groups = useSavedSteps({ workspaceId });
   const overrides = useAppStore((state) => state.workspaceOverrides?.[workspaceId] ?? null);
   const saveStepDef = useAppStore((state) => state.saveStepDef);
@@ -227,8 +226,7 @@ export const SavedStepsList = ({ workspaceId, connectedProviders, tabs }: Props)
 
   return (
     <div className="flex min-w-0 flex-col gap-4">
-      <div className="flex min-w-0 items-center gap-2">
-        <div className="flex min-w-0 flex-1 items-center">{tabs}</div>
+      <div className="flex min-w-0 items-center justify-end gap-2">
         <Button size="sm" onClick={() => toggle({ kind: 'new' })} disabled={isCreating}>
           <Plus size={ICON_SIZE.row} aria-hidden />
           New step

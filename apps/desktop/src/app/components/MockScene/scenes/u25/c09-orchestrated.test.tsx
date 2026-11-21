@@ -19,7 +19,6 @@ import {
   resetStoryStore,
 } from '../../../../../store/storyHarness';
 import { clearSceneInvoke } from '../../../../../test/sceneInvoke';
-import { SESSION_PAGE_INTRO } from '../../../../../features/session/sessionPageIntro';
 import { MOCK_SCENES } from '../..';
 import { U25_C09_ORCHESTRATED_SCENES } from './c09-orchestrated';
 
@@ -93,10 +92,10 @@ describe('the c09 orchestrated scenes', () => {
     expect(within(grid).getByText('Workflow · Orchestrated')).toBeDefined();
   });
 
-  it('c09-orchestrated-empty lands on Runs under its intro, with no orchestrated row', async () => {
+  it('c09-orchestrated-empty lands on Runs with no intro line and no orchestrated row', async () => {
     await mount('c09-orchestrated-empty');
 
-    expect(screen.getByText(SESSION_PAGE_INTRO.runs[0])).toBeDefined();
+    expect(document.querySelector('[data-slot="session-page-intro"]')).toBeNull();
     expect(screen.queryByText('Workflow · Orchestrated')).toBeNull();
   });
 
