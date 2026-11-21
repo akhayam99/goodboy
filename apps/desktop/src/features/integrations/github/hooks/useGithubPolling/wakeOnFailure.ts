@@ -40,13 +40,16 @@ export const wakeOnFailure = async ({ fact, agents, wakes, pending }: Params): P
     attachments: [],
     override: undefined,
   };
+  const isQueuedIn = (): boolean =>
+    (useAppStore.getState().agentQueue[agentId] ?? []).some((item) => item.id === turn.id);
+  const wasQueued = isQueuedIn();
   pending.add(key);
   try {
     const isSaved = await state.enqueueAgentMessage({ turn });
-    const isQueued = (useAppStore.getState().agentQueue[agentId] ?? []).some(
-      (item) => item.id === turn.id,
-    );
-    if (!isSaved && !isQueued) {
+    if (!isSaved && !wasQueued) {
+      if (isQueuedIn()) {
+        await state.removeQueuedMessage({ sessionId: fact.sessionId, agentId, itemId: turn.id });
+      }
       await state.reportError({
         recovery: CHECK_STATE,
         title: "Couldn't wake the Implementer on the failed checks",

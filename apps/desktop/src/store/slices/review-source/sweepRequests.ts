@@ -51,6 +51,9 @@ const sweepMatching = ({
     }
     for (const target of listSessionPrFetches({ state: get(), sessionId: session.id })) {
       const mountId = target.mount.id;
+      if (options.mountIds !== undefined && !options.mountIds.includes(mountId)) {
+        continue;
+      }
       const facts = mountFetchFactsOf({
         state: get(),
         workspaceId: session.workspaceId,

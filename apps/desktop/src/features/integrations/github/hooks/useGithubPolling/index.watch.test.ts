@@ -6,8 +6,19 @@ vi.mock('@tauri-apps/api/core', async () =>
 vi.mock('@tauri-apps/api/event', async () =>
   (await import('../../../../../store/storyHarness')).tauriEventModuleMock(),
 );
+const { replaceAgentQueuedMessages } = vi.hoisted(() => ({
+  replaceAgentQueuedMessages: vi.fn(
+    async (
+      _database: unknown,
+      _params: { readonly messages: ReadonlyArray<{ readonly id: string }> },
+    ) => undefined,
+  ),
+}));
+
 vi.mock('@goodboy/db', async () =>
-  (await import('../../../../../store/storyHarness')).dbModuleMock(),
+  (await import('../../../../../store/storyHarness')).dbModuleMock({
+    replaceAgentQueuedMessages,
+  }),
 );
 vi.mock('../../../../../shared/lib/db', async () =>
   (await import('../../../../../store/storyHarness')).dbLibModuleMock(),
@@ -82,10 +93,17 @@ const prOf = ({ checks, state = 'open' }: PrParams): PullRequestState => ({
 });
 
 const sweep = vi.fn(async (_options?: unknown) => undefined);
-type EnqueueAgentMessage = ReturnType<StoryStore['getState']>['enqueueAgentMessage'];
+type SendTurn = ReturnType<StoryStore['getState']>['sendTurn'];
 
-const enqueue = vi.fn<EnqueueAgentMessage>(async () => true);
-const drain = vi.fn(async (_params: unknown) => undefined);
+const sendTurn = vi.fn<SendTurn>(async (params) => {
+  params.onStarted?.();
+  return { blockedOverBudget: false };
+});
+
+const savedIds = (): ReadonlyArray<ReadonlyArray<string>> =>
+  replaceAgentQueuedMessages.mock.calls.map(([, params]) =>
+    params.messages.map((message) => message.id),
+  );
 const reportError = vi.fn(async (_params: unknown) => undefined);
 type PushBranch = ReturnType<StoryStore['getState']>['pushBranch'];
 
@@ -123,10 +141,10 @@ beforeEach(async () => {
   vi.useFakeTimers();
   await resetStoryStore();
   rerunNotes.reset();
-  for (const spy of [sweep, enqueue, drain, reportError, push]) {
+  for (const spy of [sweep, sendTurn, reportError, push, replaceAgentQueuedMessages]) {
     spy.mockClear();
   }
-  enqueue.mockResolvedValue(true);
+  replaceAgentQueuedMessages.mockResolvedValue(undefined);
   useAppStore.setState({
     sessions: [session],
     sessionBranches: { [session.id]: 'ak/payout-export' },
@@ -138,9 +156,10 @@ beforeEach(async () => {
         pr: prOf({ checks: 'success' }),
       },
     },
+    agentQueue: {},
+    agentTurnState: { [implementer.id]: { kind: 'idle', lastActivityAt: TEST_NOW } },
     sweepRequests: sweep,
-    enqueueAgentMessage: enqueue,
-    drainAgentQueue: drain,
+    sendTurn,
     reportError,
     pushBranch: push,
   });
@@ -171,12 +190,44 @@ describe('the adaptive PR watch', () => {
 
     await advance({ ms: WATCH.fastMs * 3 });
     expect(sweep).toHaveBeenCalledTimes(3);
-    expect(sweep).toHaveBeenCalledWith({ sessionId: session.id });
+    expect(sweep).toHaveBeenCalledWith({ sessionId: session.id, mountIds: [LEDGER_MOUNT] });
 
     setChecks({ checks: 'success' });
     sweep.mockClear();
     await advance({ ms: WATCH.slowMs - WATCH.fastMs * 3 - 1 });
     expect(sweep).not.toHaveBeenCalled();
+  });
+
+  it('asks only for the watched mounts, not for the other mounts of the session', async () => {
+    const otherMount = brandId<MountId>({ value: 'mount-notify-relay' });
+    useAppStore.setState({
+      sessionMounts: {
+        [session.id]: [
+          mountView,
+          { ...mountView, id: otherMount, mountName: 'notify-relay', parallelIndex: 1 },
+        ],
+      },
+    });
+    renderHook(() => useGithubPolling());
+    act(() => {
+      useAppStore.setState({
+        mountGithub: {
+          [LEDGER_MOUNT]: {
+            ...aMountGithub({ mountId: LEDGER_MOUNT }),
+            pr: prOf({ checks: 'pending' }),
+          },
+          [otherMount]: {
+            ...aMountGithub({ mountId: otherMount }),
+            pr: prOf({ checks: 'success' }),
+          },
+        },
+      });
+    });
+    sweep.mockClear();
+
+    await advance({ ms: WATCH.fastMs });
+
+    expect(sweep).toHaveBeenCalledWith({ sessionId: session.id, mountIds: [LEDGER_MOUNT] });
   });
 
   it('reads every twenty seconds for a short while after a rerun, then stops', async () => {
@@ -268,18 +319,19 @@ describe('the adaptive PR watch', () => {
 });
 
 describe('waking the Implementer on a failed check', () => {
-  it('queues one message for the Implementer and drains its queue when a watched check fails', async () => {
+  it('saves one message for the Implementer and delivers it when a watched check fails', async () => {
     renderHook(() => useGithubPolling());
     setChecks({ checks: 'pending' });
     setChecks({ checks: 'failure' });
     await advance({ ms: 0 });
 
-    expect(enqueue).toHaveBeenCalledTimes(1);
-    const turn = enqueue.mock.calls[0]?.[0].turn;
-    expect(turn?.agentId).toBe(implementer.id);
-    expect(turn?.content).toContain('#418');
-    expect(turn?.content).toContain("Don't push");
-    expect(drain).toHaveBeenCalledWith({ sessionId: session.id, agentId: implementer.id });
+    expect(savedIds()[0]).toHaveLength(1);
+    expect(sendTurn).toHaveBeenCalledTimes(1);
+    const sent = sendTurn.mock.calls[0]?.[0];
+    expect(sent?.agentId).toBe(implementer.id);
+    expect(sent?.content).toContain('#418');
+    expect(sent?.content).toContain("Don't push");
+    expect(useAppStore.getState().agentQueue[implementer.id] ?? []).toHaveLength(0);
   });
 
   it('never pushes, whatever the checks do', async () => {
@@ -291,7 +343,7 @@ describe('waking the Implementer on a failed check', () => {
     await advance({ ms: WATCH.slowMs });
 
     expect(push).not.toHaveBeenCalled();
-    expect(enqueue).toHaveBeenCalledTimes(1);
+    expect(sendTurn).toHaveBeenCalledTimes(1);
   });
 
   it('does not wake on a failure it did not watch begin', async () => {
@@ -299,7 +351,27 @@ describe('waking the Implementer on a failed check', () => {
     setChecks({ checks: 'failure' });
     await advance({ ms: 0 });
 
-    expect(enqueue).not.toHaveBeenCalled();
+    expect(sendTurn).not.toHaveBeenCalled();
+    expect(replaceAgentQueuedMessages).not.toHaveBeenCalled();
+  });
+
+  it('does not wake on a failed commit when the watch saw a different commit running', async () => {
+    renderHook(() => useGithubPolling());
+    setChecks({ checks: 'pending' });
+    act(() => {
+      useAppStore.setState({
+        mountGithub: {
+          [LEDGER_MOUNT]: {
+            ...aMountGithub({ mountId: LEDGER_MOUNT }),
+            pr: { ...prOf({ checks: 'failure' }), headSha: 'b72d0f4' },
+          },
+        },
+      });
+    });
+    await advance({ ms: 0 });
+
+    expect(sendTurn).not.toHaveBeenCalled();
+    expect(replaceAgentQueuedMessages).not.toHaveBeenCalled();
   });
 
   it('stops after the allowed number of wakes on one request', async () => {
@@ -310,7 +382,7 @@ describe('waking the Implementer on a failed check', () => {
       await advance({ ms: 0 });
     }
 
-    expect(enqueue).toHaveBeenCalledTimes(WATCH.maxWakes);
+    expect(sendTurn).toHaveBeenCalledTimes(WATCH.maxWakes);
   });
 
   it('wakes no one when no Implementer can take the message', async () => {
@@ -322,24 +394,25 @@ describe('waking the Implementer on a failed check', () => {
     setChecks({ checks: 'failure' });
     await advance({ ms: 0 });
 
-    expect(enqueue).not.toHaveBeenCalled();
+    expect(sendTurn).not.toHaveBeenCalled();
+    expect(replaceAgentQueuedMessages).not.toHaveBeenCalled();
   });
 
-  it('says so and does not count the wake when the message could not be saved, then tries again on the next failure', async () => {
-    enqueue.mockResolvedValueOnce(false);
+  it('says so, drops the unsaved message and does not count the wake when the save fails, then tries again on the next failure', async () => {
+    replaceAgentQueuedMessages.mockRejectedValueOnce(new Error('disk is full'));
     renderHook(() => useGithubPolling());
     setChecks({ checks: 'pending' });
     setChecks({ checks: 'failure' });
     await advance({ ms: 0 });
 
-    expect(reportError).toHaveBeenCalledTimes(1);
-    expect(drain).not.toHaveBeenCalled();
+    expect(reportError).toHaveBeenCalled();
+    expect(sendTurn).not.toHaveBeenCalled();
+    expect(useAppStore.getState().agentQueue[implementer.id] ?? []).toHaveLength(0);
 
     setChecks({ checks: 'pending' });
     setChecks({ checks: 'failure' });
     await advance({ ms: 0 });
 
-    expect(enqueue).toHaveBeenCalledTimes(2);
-    expect(drain).toHaveBeenCalledTimes(1);
+    expect(sendTurn).toHaveBeenCalledTimes(1);
   });
 });

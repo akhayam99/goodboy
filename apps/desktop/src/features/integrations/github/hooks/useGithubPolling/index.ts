@@ -14,6 +14,7 @@ import { rerunNotes } from '../../rerunNotes';
 import { wakeCandidatesOf } from './wakeCandidatesOf';
 import { wakeOnFailure } from './wakeOnFailure';
 import { watchSignatureOf } from './watchSignatureOf';
+import { watchedMountIdsOf } from './watchedMountIdsOf';
 import { watchedFactsOf } from './watchedFactsOf';
 import type { WatchFact } from './watchFacts';
 
@@ -136,7 +137,10 @@ export const useGithubPolling = (): void => {
       void (async () => {
         try {
           for (const sessionId of sessionIds) {
-            await sweepRequests({ sessionId });
+            await sweepRequests({
+              sessionId,
+              mountIds: watchedMountIdsOf({ facts: reading, sessionId }),
+            });
           }
           const mountIds = reading.map((fact) => fact.mountId);
           failedReads.current = readFailedOf({ state: useAppStore.getState(), mountIds })

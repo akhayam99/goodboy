@@ -12,6 +12,7 @@ export const failedChecksSince = ({ previous, next }: Params): ReadonlyArray<Wat
     return (
       before !== undefined &&
       before.prNumber === fact.prNumber &&
+      before.headSha === fact.headSha &&
       before.checks === 'pending' &&
       fact.checks === 'failure'
     );
