@@ -37,6 +37,6 @@ describe('BootSplash recovery controls', () => {
 
     expect(screen.queryByRole('alert')).toBeNull();
     expect(screen.queryByRole('button', { name: 'Retry' })).toBeNull();
-    expect(screen.queryByRole('button', { name: 'Report this' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Report this error' })).toBeNull();
   });
 });

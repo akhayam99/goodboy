@@ -51,7 +51,7 @@ export const BootErrorRecovery = ({
               ) : null}
               {isReporting ? null : (
                 <Button variant="ghost" size="sm" onClick={() => setIsReporting(true)}>
-                  Report this
+                  {NAMES.reportThisError}
                 </Button>
               )}
             </>
@@ -63,7 +63,7 @@ export const BootErrorRecovery = ({
       {isReporting ? (
         <div className="w-full max-w-140">
           <CrashReport
-            heading="Report this startup error"
+            heading={NAMES.reportThisError}
             initialLine={`Startup failed: ${category}`}
             errorPart={errorPart}
           />

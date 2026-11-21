@@ -717,7 +717,7 @@ const REGISTRY_TARGETS: ReadonlyArray<readonly [string, ObjectTarget, ReadonlyAr
         open: { label: 'Open session', run: vi.fn() },
       },
     },
-    ['Open', 'Mark as read', 'Report this', 'Copy text', 'Delete'],
+    ['Open', 'Mark as read', 'Report this error', 'Copy text', 'Delete'],
   ],
   [
     'provider',

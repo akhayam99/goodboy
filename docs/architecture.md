@@ -784,7 +784,7 @@ Finder` button opens `~/.goodboy/workspaces/<slug>/artifacts/` in the OS file ma
   drawer (`DrawerHost`, keyed by `drawerKey`) and each session page
   (`KeepAliveWorkSurface`). A throw inside one shows "This page could not be
   drawn" in that panel with Retry (remounts the panel), a leave action (Go to
-  the board, Close drawer or Close) and Report this (the inline crash report).
+  the board, Close drawer or Close) and Report this crash (the inline crash report).
   The rail, the top bar and every other session stay alive.
 - **The root `ErrorBoundary` in `main.tsx` is the last resort.** It only shows
   when the shell itself throws. Both use `ErrorBoundary` from `packages/ui`;

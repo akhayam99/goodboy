@@ -1,5 +1,6 @@
 import type { MountId, ResolveAttempt, ResolveThread } from '@goodboy/types';
 import { causeOfAttempt } from '../../../features/resolve/failureSentence';
+import { attentionWordsOf } from '../../../features/session/session-stage';
 import type { EmitNotificationParams } from '../notifications/emitNotification';
 
 export type ResolveAttention = {
@@ -121,7 +122,7 @@ const pushFailedNotices = ({
     notices.push({
       kind: 'error',
       severity: 'error',
-      title: 'Push failed',
+      title: attentionWordsOf({ reason: 'push-failed', counts: { pushFailedCount: count } }),
       body: 'Nothing was sent. Retry from the Comments tab.',
       sessionId,
       action: { kind: 'open-place', sessionId, reason: 'push-failed', mountId, subject: 'comment' },
@@ -144,8 +145,11 @@ export const resolveAttentionNotices = ({
         {
           kind: 'error',
           severity: 'warning',
-          title: 'A fix run needs you',
-          body: `${after.needsYou === 1 ? '1 comment waits' : `${after.needsYou} comments wait`} for your answer.`,
+          title: attentionWordsOf({
+            reason: 'fix-needs-you',
+            counts: { fixNeedsYouCount: after.needsYou },
+          }),
+          body: 'A fix run is waiting for your answer.',
           sessionId,
           action: {
             kind: 'open-place',
@@ -163,7 +167,10 @@ export const resolveAttentionNotices = ({
         {
           kind: 'error',
           severity: 'warning',
-          title: `A fix run failed on ${after.couldntFix === 1 ? 'a comment' : `${after.couldntFix} comments`}`,
+          title: attentionWordsOf({
+            reason: 'fix-couldnt-fix',
+            counts: { fixCouldntFixCount: after.couldntFix },
+          }),
           body: 'Retry it in the run or start over from the Comments tab.',
           sessionId,
           action: {
@@ -183,8 +190,11 @@ export const resolveAttentionNotices = ({
         {
           kind: 'error',
           severity: 'warning',
-          title: 'A fix run needs you',
-          body: `${after.notesNeedYou === 1 ? '1 note waits' : `${after.notesNeedYou} notes wait`} for your answer.`,
+          title: attentionWordsOf({
+            reason: 'fix-needs-you',
+            counts: { noteNeedsYouCount: after.notesNeedYou },
+          }),
+          body: 'A fix run is waiting for your answer.',
           sessionId,
           action: {
             kind: 'open-place',
@@ -202,7 +212,10 @@ export const resolveAttentionNotices = ({
         {
           kind: 'error',
           severity: 'warning',
-          title: `A fix run failed on ${after.notesCouldntFix === 1 ? 'a note' : `${after.notesCouldntFix} notes`}`,
+          title: attentionWordsOf({
+            reason: 'fix-couldnt-fix',
+            counts: { noteCouldntFixCount: after.notesCouldntFix },
+          }),
           body: 'Retry it in the run or start over from your notes.',
           sessionId,
           action: {

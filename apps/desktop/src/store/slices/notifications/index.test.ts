@@ -330,6 +330,21 @@ describe('store contract', () => {
       expect(storySpies.insertNotification).toHaveBeenCalledTimes(1);
     });
 
+    it('emitNotification with isOnce keeps one row when the title changed after an update', async () => {
+      const store = useAppStore;
+      const notice = {
+        kind: 'error',
+        severity: 'warning',
+        sessionId: SESSION_ID,
+        coalesceKey: `fix-run-needs-you:${SESSION_ID}`,
+        isOnce: true,
+      } as const;
+      await store.getState().emitNotification({ ...notice, title: 'A fix run needs you' });
+      await store.getState().emitNotification({ ...notice, title: '1 comment needs you' });
+      expect(store.getState().notifications.map((n) => n.title)).toEqual(['A fix run needs you']);
+      expect(storySpies.insertNotification).toHaveBeenCalledTimes(1);
+    });
+
     it('resolveNotifications drops every notice of the given keys, in memory and in SQL', async () => {
       const store = useAppStore;
       await store.getState().emitNotification({
