@@ -7,6 +7,7 @@ import {
   describeCrash,
 } from '../../../../../features/bug-report/crashReport';
 import { openReportSheet } from '../../../../../features/bug-report/openReportSheet';
+import { NAMES } from '../../../../../shared/utils/names';
 import { useAppStore } from '../../../../../store';
 import { CrashThrower } from './CrashThrower';
 import { sceneParam } from './sceneParams';
@@ -46,7 +47,7 @@ export const useReportSheetParam = (): void => {
 
 const renderCrashReport = ({ error, componentStack }: ErrorReportRequest) => (
   <CrashReport
-    heading="Report this crash"
+    heading={NAMES.reportThisCrash}
     initialLine={`Crash: ${crashKind({ error })}`}
     errorPart={crashPart({ message: error.message, stack: error.stack, componentStack })}
   />

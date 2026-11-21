@@ -12,6 +12,7 @@ import {
   resolveAttentionNotices,
   resolveAttentionOf,
 } from './resolveAttention';
+import { attentionWordsOf } from '../../../features/session/session-stage';
 
 const SESSION = brandId<SessionId>({ value: 'session-1' });
 
@@ -129,8 +130,8 @@ describe('resolveAttentionNotices', () => {
 
     expect(notices).toHaveLength(1);
     expect(notices[0]).toMatchObject({
-      title: 'A fix run needs you',
-      body: '1 comment waits for your answer.',
+      title: '1 comment needs you',
+      body: 'A fix run is waiting for your answer.',
       sessionId: SESSION,
       action: { kind: 'open-place', sessionId: SESSION, reason: 'fix-needs-you', mountId: null },
     });
@@ -144,13 +145,10 @@ describe('resolveAttentionNotices', () => {
     });
 
     expect(notices.map((notice) => notice.body)).toEqual([
-      '2 notes wait for your answer.',
+      'A fix run is waiting for your answer.',
       'Retry it in the run or start over from your notes.',
     ]);
-    expect(notices.map((notice) => notice.title)).toEqual([
-      'A fix run needs you',
-      'A fix run failed on a note',
-    ]);
+    expect(notices.map((notice) => notice.title)).toEqual(['2 notes need you', '1 note failed']);
   });
 
   it('tells you when comments could not be fixed, with the count', () => {
@@ -160,7 +158,7 @@ describe('resolveAttentionNotices', () => {
       sessionId: SESSION,
     });
 
-    expect(notices.map((notice) => notice.title)).toEqual(['A fix run failed on 3 comments']);
+    expect(notices.map((notice) => notice.title)).toEqual(['3 comments failed']);
   });
 
   it('tells you once, in red, when a push fails, and not again while it stays failed', () => {
@@ -173,7 +171,7 @@ describe('resolveAttentionNotices', () => {
     expect(notices).toHaveLength(1);
     expect(notices[0]).toMatchObject({
       severity: 'error',
-      title: 'Push failed',
+      title: "2 comments didn't go out",
       body: 'Nothing was sent. Retry from the Comments tab.',
       action: { kind: 'open-place', sessionId: SESSION, reason: 'push-failed', mountId: null },
       coalesceKey: `push-failed:${SESSION}`,
@@ -185,6 +183,28 @@ describe('resolveAttentionNotices', () => {
         sessionId: SESSION,
       }),
     ).toEqual([]);
+  });
+
+  it('reads each title from the words the system banner uses for the same event', () => {
+    const titleOf = (after: Partial<typeof NONE>) =>
+      resolveAttentionNotices({ before: NONE, after: { ...NONE, ...after }, sessionId: SESSION })[0]
+        ?.title;
+
+    expect(titleOf({ needsYou: 2 })).toBe(
+      attentionWordsOf({ reason: 'fix-needs-you', counts: { fixNeedsYouCount: 2 } }),
+    );
+    expect(titleOf({ notesNeedYou: 1 })).toBe(
+      attentionWordsOf({ reason: 'fix-needs-you', counts: { noteNeedsYouCount: 1 } }),
+    );
+    expect(titleOf({ couldntFix: 1 })).toBe(
+      attentionWordsOf({ reason: 'fix-couldnt-fix', counts: { fixCouldntFixCount: 1 } }),
+    );
+    expect(titleOf({ notesCouldntFix: 3 })).toBe(
+      attentionWordsOf({ reason: 'fix-couldnt-fix', counts: { noteCouldntFixCount: 3 } }),
+    );
+    expect(titleOf({ pushFailed: 1 })).toBe(
+      attentionWordsOf({ reason: 'push-failed', counts: { pushFailedCount: 1 } }),
+    );
   });
 
   it('says both when both rose and nothing when nothing rose', () => {

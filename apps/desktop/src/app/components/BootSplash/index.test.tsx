@@ -207,8 +207,8 @@ describe('BootSplash issue report', () => {
 
   const openSheet = async ({ error }: { readonly error: string }) => {
     render(<BootSplash phase="migrating" error={error} onRetry={vi.fn()} />);
-    fireEvent.click(screen.getByRole('button', { name: 'Report this' }));
-    const sheet = await screen.findByRole('dialog', { name: 'Report this startup error' });
+    fireEvent.click(screen.getByRole('button', { name: 'Report this error' }));
+    const sheet = await screen.findByRole('dialog', { name: 'Report this error' });
     await screen.findByRole('button', { name: /open on github/i });
     return sheet;
   };

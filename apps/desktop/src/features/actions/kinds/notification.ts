@@ -1,5 +1,6 @@
 import { Bug, Copy, SquareArrowOutUpRight, Trash2 } from '@goodboy/ui/icons';
 import type { NotificationSeverity } from '@goodboy/db';
+import { NAMES } from '../../../shared/utils/names';
 import { VERBS } from '../../../shared/utils/verbs';
 import { openReportSheet } from '../../bug-report/openReportSheet';
 import type { NotificationActionTarget, ObjectKindDefinition } from '../types';
@@ -69,7 +70,7 @@ export const NOTIFICATION_KIND: ObjectKindDefinition<NotificationActionTarget, N
       },
       {
         id: 'notification.report',
-        label: 'Report this',
+        label: NAMES.reportThisError,
         icon: Bug,
         group: 'act',
         when: canReport,

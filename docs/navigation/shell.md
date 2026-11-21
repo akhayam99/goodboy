@@ -801,7 +801,7 @@ lands there: ⌘I from anywhere, Report in the places rail foot
 palette (it also answers bug, issue, feedback, crash and broken),
 **Help > Report a Bug** in the macOS menu bar (`app_menu.rs` emits
 `goodboy://menu` with `report.open` to the focused window; `useMenuCommands`
-replays the shortcut), and Report this on a
+replays the shortcut), and Report this error on a
 warning or error notification, which attaches that notification. Opening the sheet reads the screen you are on
 before anything moves, so Settings stays open under it.
 
@@ -822,7 +822,7 @@ before anything moves, so Settings stays open under it.
 - **Crash and startup failure.** The crash screen shows the same sheet inline
   under the error, with the error and our stack frames attached and the line
   set to `Crash: <kind>`. The startup error screen opens it under the error
-  with Report this. Neither needs the store.
+  with Report this error. Neither needs the store. The three titles (Report this crash, Report this error, Report this freeze) have one source, `NAMES`, read by the sheet, the notification row, the crash screen and the startup screen.
 - **After a crash the app could not show.** An uncaught window error or a
   panic leaves `~/.goodboy/last-crash.json`. The next launch shows one
   persistent toast with when and where: Goodboy closed unexpectedly last time

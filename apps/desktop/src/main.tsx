@@ -10,6 +10,7 @@ import {
 import { App } from './App';
 import { installBackends } from './app/installBackends';
 import { ScrollerStyleProvider } from './shared/components/ScrollerStyleProvider';
+import { NAMES } from './shared/utils/names';
 import { MOCK_ENABLED } from './shared/lib/mockMode';
 import { schemaGate } from './shared/lib/schemaGate';
 import { bootstrapContrast } from './shared/lib/contrast';
@@ -49,7 +50,7 @@ if (MockEntry === null) {
 
 const renderCrashReport = ({ error, componentStack }: ErrorReportRequest) => (
   <CrashReport
-    heading="Report this crash"
+    heading={NAMES.reportThisCrash}
     initialLine={`Crash: ${crashKind({ error })}`}
     errorPart={crashPart({ message: error.message, stack: error.stack, componentStack })}
   />
