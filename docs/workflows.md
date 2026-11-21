@@ -491,7 +491,7 @@ read top to bottom at the conversation measure:
   **Skip step N** for the step in flight (and Pause or Continue while the
   header holds another primary), Step routing (opens the model per step panel,
   `OrchestratedRouting`), Save as preset, Copy run summary, **Stop run** (acts at
-  once, **Continue** in the toast), Archive run (acts at once, **Undo** in the toast), Delete run.
+  once, **Continue** in the toast for the steps that stopped, or for the run when it stopped between steps; a partial stop says "Some steps stopped"), Archive run (acts at once with **Undo** in the toast, but asks first while a step runs or another run is chained after it, since Undo restores the run and not its steps or chain), Delete run.
 
 A plan the run is held for is offered once, as **Review plan** in the header,
 which opens the plan drawer (`openPlanDrawer`); a plan question or a step
