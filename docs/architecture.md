@@ -249,9 +249,14 @@ cwd, startedAt }`. A turn, a chat, a planner or a summary joins it in
   root of a worktree for Makefile targets (`make test`), justfile recipes
   (`just lint`), Cargo commands and `[alias]` entries (`cargo build`), and
   `pyproject.toml` entry points and tasks (`uv run serve`, `pdm run lint`,
-  `poe fmt`), in `project_scripts/tools.rs`. Pattern rules, special targets,
-  private recipes and settings are left out; it parses the files by line and
-  never runs them.
+  `poe fmt`), in `project_scripts/tools.rs`. Entry points, pdm tasks and poe
+  tasks are three groups with their own source (`pyproject`, `pdm`, `poe`), so
+  a name two of them share keeps both commands and both histories. Pattern
+  rules, special targets, private recipes (the `private` attribute or a
+  leading `_`), recipes with a required parameter, names that start with `-`
+  and settings are left out; it parses the files by line and never runs them.
+  Each file is read through `util/scoped_path.rs::open_file_within`, so a
+  manifest or a parent directory that links outside the worktree is ignored.
 - **Side jobs** (planner, summary) are stopped when they go quiet. A job is
   quiet when it has written nothing to stdout or stderr and no process in its
   tree has used any CPU for 10 minutes (`SIDE_JOB_IDLE`, checked every 15
@@ -325,8 +330,11 @@ same for every live run on boot (`registerScriptRunListeners` with
 `shouldReplay`); what a script's transcript shows stays capped at 64KB.
 
 A script run also leaves a row in `work_events` (see Who writes each table):
-`scripts.rs` writes it when the run starts and stamps the end and the exit
-code before `script-exit` fires, so a read after the event sees the end.
+`scripts.rs` writes it when the run starts, with the branch the mount was on
+at that moment in the payload, and stamps the end and the exit code before
+`script-exit` fires, so a read after the event sees the end. A run stopped
+through `workspace_script_cancel` is stamped 143, whatever the wait returned,
+so reloaded history reads it as `cancelled`.
 `listScriptLedger` reads the last run of each script per mount; no screen
 reads it yet, so the app does not load it. Given those rows,
 `buildSessionScripts` gives every group `available`, each saved and

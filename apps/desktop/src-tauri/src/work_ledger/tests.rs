@@ -1,7 +1,10 @@
 use rusqlite::Connection;
 use serde_json::json;
 
-use super::{record_end, record_start, script_start, ScriptStart, WorkStart, SCRIPT};
+use super::{
+    ledger_exit_code, mount_branch, record_end, record_start, script_start, ScriptStart, WorkStart,
+    SCRIPT, STOPPED_EXIT_CODE,
+};
 use crate::test_support::{apply_migrated_schema, migrated_connection};
 
 const SEED: &str = "PRAGMA foreign_keys = ON;
@@ -23,6 +26,7 @@ fn start_of(run_id: &str, session_id: &str) -> WorkStart {
         name: "test:integration",
         session_id,
         mount_id: Some("mount-payments-api"),
+        branch: Some("nw/retry"),
         cwd: "/work/payments-api",
         started_at: 100,
     })
@@ -86,6 +90,7 @@ fn a_script_run_is_one_row_with_its_mount_and_its_end() {
         json!({
             "scriptId": "test:integration",
             "name": "test:integration",
+            "branch": "nw/retry",
             "cwd": "/work/payments-api",
         })
     );
@@ -162,4 +167,52 @@ fn a_ledger_row_goes_with_its_session() {
         .expect("session deleted");
 
     assert!(rows(&conn).is_empty());
+}
+
+#[test]
+fn a_mount_branch_is_read_at_the_time_of_the_start() {
+    let conn = seeded();
+    conn.execute_batch(
+        "INSERT INTO session_worktrees (id, session_id, worktree_path, branch, created_at)
+           VALUES ('mount-payments-api', 's1', '/work/payments-api', 'nw/retry', 1);",
+    )
+    .expect("mount seeded");
+
+    let branch = mount_branch(&conn, "mount-payments-api");
+    record_start(
+        &conn,
+        &script_start(ScriptStart {
+            run_id: "run-1",
+            script_id: "test:integration",
+            name: "test:integration",
+            session_id: "s1",
+            mount_id: Some("mount-payments-api"),
+            branch: branch.as_deref(),
+            cwd: "/work/payments-api",
+            started_at: 100,
+        }),
+    )
+    .expect("start saved");
+    conn.execute(
+        "UPDATE session_worktrees SET branch = 'nw/other' WHERE id = 'mount-payments-api'",
+        [],
+    )
+    .expect("mount moved");
+
+    let payload: serde_json::Value =
+        serde_json::from_str(&rows(&conn)[0].7).expect("payload parses");
+    assert_eq!(payload["branch"], json!("nw/retry"));
+    assert_eq!(
+        mount_branch(&conn, "mount-payments-api").as_deref(),
+        Some("nw/other")
+    );
+    assert_eq!(mount_branch(&conn, "gone"), None);
+}
+
+#[test]
+fn a_stopped_run_is_saved_with_the_stop_code_and_a_natural_exit_keeps_its_own() {
+    assert_eq!(ledger_exit_code(-1, true), STOPPED_EXIT_CODE);
+    assert_eq!(ledger_exit_code(0, true), STOPPED_EXIT_CODE);
+    assert_eq!(ledger_exit_code(-1, false), -1);
+    assert_eq!(ledger_exit_code(3, false), 3);
 }

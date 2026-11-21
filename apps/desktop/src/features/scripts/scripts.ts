@@ -22,7 +22,8 @@ export type ScriptRunRecord = {
   readonly completedAt?: number;
 };
 
-export type ScriptSource = 'package-json' | 'composer' | 'make' | 'just' | 'cargo' | 'pyproject';
+export type ScriptSource =
+  'package-json' | 'composer' | 'make' | 'just' | 'cargo' | 'pyproject' | 'pdm' | 'poe';
 
 type DiscoveredScript = {
   readonly name: string;

@@ -1,8 +1,12 @@
 use std::collections::BTreeSet;
-use std::fs;
+use std::io::Read;
 use std::path::Path;
 
-use super::{fallback_package_name, shell_word, DiscoveredScript, ScriptGroup, ScriptSource};
+use super::{
+    fallback_package_name, is_option_shaped, shell_word, DiscoveredScript, ScriptGroup,
+    ScriptSource,
+};
+use crate::util::scoped_path::open_file_within;
 
 const MAX_TOOL_SCRIPTS: usize = 100;
 const MAKEFILES: [&str; 3] = ["GNUmakefile", "makefile", "Makefile"];
@@ -10,10 +14,35 @@ const JUSTFILES: [&str; 3] = ["justfile", "Justfile", ".justfile"];
 const CARGO_COMMANDS: [&str; 5] = ["build", "check", "test", "clippy", "fmt"];
 const JUST_KEYWORDS: [&str; 7] = ["set", "alias", "export", "import", "mod", "unexport", "if"];
 
+fn read_within(root: &Path, relative: &str) -> Option<String> {
+    let mut file = open_file_within(root, Path::new(relative)).ok()?;
+    let mut content = String::new();
+    file.read_to_string(&mut content).ok()?;
+    Some(content)
+}
+
 fn read_first(root: &Path, names: &[&str]) -> Option<String> {
-    names
-        .iter()
-        .find_map(|name| fs::read_to_string(root.join(name)).ok())
+    names.iter().find_map(|name| read_within(root, name))
+}
+
+fn split_outside_quotes(text: &str, is_separator: fn(char) -> bool) -> Vec<&str> {
+    let mut parts = Vec::new();
+    let mut quote: Option<char> = None;
+    let mut start = 0;
+    for (index, character) in text.char_indices() {
+        match quote {
+            Some(open) if character == open => quote = None,
+            Some(_) => {}
+            None if matches!(character, '"' | '\'' | '`') => quote = Some(character),
+            None if is_separator(character) => {
+                parts.push(&text[start..index]);
+                start = index + character.len_utf8();
+            }
+            None => {}
+        }
+    }
+    parts.push(&text[start..]);
+    parts
 }
 
 fn is_target_char(character: char) -> bool {
@@ -50,7 +79,11 @@ fn make_targets(line: &str) -> Option<Vec<String>> {
     }
     let targets: Vec<String> = head
         .split_whitespace()
-        .filter(|target| !target.starts_with('.') && target.chars().all(is_target_char))
+        .filter(|target| {
+            !target.starts_with('.')
+                && !is_option_shaped(target)
+                && target.chars().all(is_target_char)
+        })
         .map(str::to_string)
         .collect();
     let is_rule = !head.trim().is_empty() && !head.contains('%') && !head.contains('$');
@@ -96,18 +129,46 @@ pub(super) fn make_scripts(content: &str) -> Vec<DiscoveredScript> {
     scripts
 }
 
+fn has_required_parameter(parameters: &str) -> bool {
+    split_outside_quotes(parameters, char::is_whitespace)
+        .into_iter()
+        .filter(|token| !token.is_empty())
+        .any(|token| {
+            let token = token.trim_start_matches('$');
+            !token.starts_with('*') && !token.contains('=')
+        })
+}
+
 fn just_recipe_name(line: &str) -> Option<String> {
     let line = line.strip_prefix('@').unwrap_or(line);
     let name: String = line.chars().take_while(|c| is_name_char(*c)).collect();
-    if name.is_empty() || JUST_KEYWORDS.contains(&name.as_str()) {
+    if name.is_empty() || is_option_shaped(&name) || JUST_KEYWORDS.contains(&name.as_str()) {
         return None;
     }
     let rest = &line[name.len()..];
-    let colon = rest.find(':')?;
+    let parameters = split_outside_quotes(rest, |character| character == ':')[0];
+    let colon = parameters.len();
+    if colon == rest.len() {
+        return None;
+    }
     let is_assignment = rest[colon..].starts_with(":=");
-    let parameters = &rest[..colon];
     let is_parameter_list = parameters.is_empty() || parameters.starts_with(char::is_whitespace);
-    (!is_assignment && is_parameter_list).then_some(name)
+    let is_runnable = !has_required_parameter(parameters);
+    (!is_assignment && is_parameter_list && is_runnable).then_some(name)
+}
+
+fn is_private_attribute_line(line: &str) -> bool {
+    let Some(inner) = line
+        .trim()
+        .strip_prefix('[')
+        .and_then(|rest| rest.rsplit_once(']'))
+        .map(|(inner, _)| inner)
+    else {
+        return false;
+    };
+    split_outside_quotes(inner, |character| character == ',')
+        .into_iter()
+        .any(|attribute| attribute.trim() == "private")
 }
 
 pub(super) fn just_scripts(content: &str) -> Vec<DiscoveredScript> {
@@ -143,7 +204,7 @@ pub(super) fn just_scripts(content: &str) -> Vec<DiscoveredScript> {
         }
         flush(&mut current, &mut recipe);
         if line.starts_with('[') {
-            is_private_next = is_private_next || line.contains("private");
+            is_private_next = is_private_next || is_private_attribute_line(line);
             continue;
         }
         let name = just_recipe_name(line);
@@ -188,7 +249,9 @@ fn inline_table_command(value: &str) -> Option<String> {
 fn toml_key(key: &str) -> Option<String> {
     let key = key.trim();
     let name = unquoted(key).unwrap_or_else(|| key.to_string());
-    Some(name).filter(|name| !name.is_empty() && name.chars().all(is_target_char))
+    Some(name).filter(|name| {
+        !name.is_empty() && !is_option_shaped(name) && name.chars().all(is_target_char)
+    })
 }
 
 pub(super) struct TomlEntry {
@@ -309,32 +372,49 @@ fn task_body(value: &str) -> Option<String> {
     toml_string(value).or_else(|| inline_table_command(value))
 }
 
-pub(super) fn pyproject_scripts(runner: &str, entries: &[TomlEntry]) -> Vec<DiscoveredScript> {
+pub(super) fn entry_point_scripts(runner: &str, entries: &[TomlEntry]) -> Vec<DiscoveredScript> {
     let mut scripts = Vec::new();
     let mut seen = BTreeSet::new();
     for entry in entries {
-        let script = match entry.section.as_str() {
-            "project.scripts" | "tool.poetry.scripts" => {
-                unquoted(&entry.value).map(|body| DiscoveredScript {
+        if !matches!(
+            entry.section.as_str(),
+            "project.scripts" | "tool.poetry.scripts"
+        ) {
+            continue;
+        }
+        if let Some(body) = unquoted(&entry.value) {
+            push_script(
+                &mut scripts,
+                &mut seen,
+                DiscoveredScript {
                     name: entry.key.clone(),
                     command: entry_point_command(runner, &entry.key),
                     body,
-                })
-            }
-            "tool.pdm.scripts" => task_body(&entry.value).map(|body| DiscoveredScript {
-                name: entry.key.clone(),
-                command: format!("pdm run {}", shell_word(&entry.key)),
-                body,
-            }),
-            "tool.poe.tasks" => task_body(&entry.value).map(|body| DiscoveredScript {
-                name: entry.key.clone(),
-                command: format!("poe {}", shell_word(&entry.key)),
-                body,
-            }),
-            _ => None,
-        };
-        if let Some(script) = script {
-            push_script(&mut scripts, &mut seen, script);
+                },
+            );
+        }
+    }
+    scripts
+}
+
+pub(super) fn task_scripts(
+    entries: &[TomlEntry],
+    section: &str,
+    command_prefix: &str,
+) -> Vec<DiscoveredScript> {
+    let mut scripts = Vec::new();
+    let mut seen = BTreeSet::new();
+    for entry in entries.iter().filter(|entry| entry.section == section) {
+        if let Some(body) = task_body(&entry.value) {
+            push_script(
+                &mut scripts,
+                &mut seen,
+                DiscoveredScript {
+                    name: entry.key.clone(),
+                    command: format!("{command_prefix} {}", shell_word(&entry.key)),
+                    body,
+                },
+            );
         }
     }
     scripts
@@ -377,7 +457,7 @@ pub(super) fn tool_groups(root: &Path) -> Vec<ScriptGroup> {
             just_scripts(&content),
         ));
     }
-    if let Ok(manifest) = fs::read_to_string(root.join("Cargo.toml")) {
+    if let Some(manifest) = read_within(root, "Cargo.toml") {
         let name = toml_name(&toml_entries(&manifest), &["package"]);
         groups.extend(group(
             ScriptSource::Cargo,
@@ -386,15 +466,27 @@ pub(super) fn tool_groups(root: &Path) -> Vec<ScriptGroup> {
             cargo_scripts(root, &manifest),
         ));
     }
-    if let Ok(manifest) = fs::read_to_string(root.join("pyproject.toml")) {
+    if let Some(manifest) = read_within(root, "pyproject.toml") {
         let entries = toml_entries(&manifest);
         let runner = python_runner(root);
-        let name = toml_name(&entries, &["project", "tool.poetry"]);
+        let name = toml_name(&entries, &["project", "tool.poetry"]).unwrap_or(folder_name);
         groups.extend(group(
             ScriptSource::Pyproject,
-            name.unwrap_or(folder_name),
+            name.clone(),
             runner,
-            pyproject_scripts(runner, &entries),
+            entry_point_scripts(runner, &entries),
+        ));
+        groups.extend(group(
+            ScriptSource::Pdm,
+            name.clone(),
+            "pdm",
+            task_scripts(&entries, "tool.pdm.scripts", "pdm run"),
+        ));
+        groups.extend(group(
+            ScriptSource::Poe,
+            name,
+            "poe",
+            task_scripts(&entries, "tool.poe.tasks", "poe"),
         ));
     }
     groups

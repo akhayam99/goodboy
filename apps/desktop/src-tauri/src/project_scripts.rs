@@ -20,6 +20,8 @@ pub enum ScriptSource {
     Just,
     Cargo,
     Pyproject,
+    Pdm,
+    Poe,
 }
 
 mod tools;

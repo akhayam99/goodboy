@@ -6,6 +6,7 @@ use crate::db::Db;
 use crate::util::{lock_or_recover, uuid_v4};
 
 pub(crate) const SCRIPT: &str = "script";
+pub(crate) const STOPPED_EXIT_CODE: i32 = 143;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub(crate) struct WorkStart {
@@ -25,6 +26,7 @@ pub(crate) struct ScriptStart<'a> {
     pub(crate) name: &'a str,
     pub(crate) session_id: &'a str,
     pub(crate) mount_id: Option<&'a str>,
+    pub(crate) branch: Option<&'a str>,
     pub(crate) cwd: &'a str,
     pub(crate) started_at: i64,
 }
@@ -40,9 +42,37 @@ pub(crate) fn script_start(start: ScriptStart<'_>) -> WorkStart {
         payload: json!({
             "scriptId": start.script_id,
             "name": start.name,
+            "branch": start.branch,
             "cwd": start.cwd,
         }),
     }
+}
+
+pub(crate) fn mount_branch(conn: &Connection, mount_id: &str) -> Option<String> {
+    conn.query_row(
+        "SELECT branch FROM session_worktrees WHERE id = ?1",
+        params![mount_id],
+        |row| row.get::<_, String>(0),
+    )
+    .ok()
+    .filter(|branch| !branch.is_empty())
+}
+
+pub(crate) fn ledger_exit_code(exit_code: i32, was_stopped: bool) -> i32 {
+    if was_stopped {
+        return STOPPED_EXIT_CODE;
+    }
+    exit_code
+}
+
+pub(crate) fn saved_mount_branch<R: Runtime>(
+    app: &AppHandle<R>,
+    mount_id: Option<&str>,
+) -> Option<String> {
+    let mount_id = mount_id?;
+    let db = app.try_state::<Db>()?;
+    let conn = lock_or_recover(&db.0);
+    mount_branch(&conn, mount_id)
 }
 
 pub(crate) fn record_start(conn: &Connection, start: &WorkStart) -> rusqlite::Result<usize> {

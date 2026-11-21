@@ -31,6 +31,12 @@ type EntryParams = {
   readonly overrides: Partial<ScriptLedgerEntry>;
 };
 
+type PythonGroupParams = {
+  readonly source: ScriptGroup['source'];
+  readonly manager: string;
+  readonly command: string;
+};
+
 type LedgerParams = {
   readonly ledger: ReadonlyArray<ScriptLedgerEntry>;
 };
@@ -425,6 +431,39 @@ describe('buildSessionScripts', () => {
       ['cargo', 'test', 'unfinished', 1],
       ['composer', 'test', null, 0],
     ]);
+  });
+
+  it('keeps a task name that two python tools share as two scripts with their own keys', () => {
+    const here = mount('m1', LEDGER, '/work/ledger');
+    const group = ({ source, manager, command }: PythonGroupParams): ScriptGroup => ({
+      source,
+      packageName: 'payments-api',
+      relDir: '',
+      manager,
+      scripts: [{ name: 'lint', command, body: 'ruff check .' }],
+    });
+
+    const [built] = buildSessionScripts({
+      mounts: [here],
+      projects: PROJECTS,
+      saved: [],
+      discovered: {
+        '/work/ledger': [
+          group({ source: 'pyproject', manager: 'uv', command: 'uv run lint' }),
+          group({ source: 'pdm', manager: 'pdm', command: 'pdm run lint' }),
+          group({ source: 'poe', manager: 'poe', command: 'poe lint' }),
+        ],
+      },
+      pins: {},
+    });
+
+    const available = built?.available ?? [];
+    expect(available.map((script) => [script.source, script.invocation])).toEqual([
+      ['pyproject', 'uv run lint'],
+      ['pdm', 'pdm run lint'],
+      ['poe', 'poe lint'],
+    ]);
+    expect(new Set(available.map((script) => script.key)).size).toBe(3);
   });
 
   it('reads a passed run and has no last run before any run', () => {

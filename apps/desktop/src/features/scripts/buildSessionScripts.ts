@@ -95,6 +95,8 @@ const SOURCE_ORDER: ReadonlyArray<RunnableScriptSource> = [
   'just',
   'cargo',
   'pyproject',
+  'pdm',
+  'poe',
   'composer',
 ];
 
