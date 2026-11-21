@@ -569,7 +569,7 @@ covered.
   with its percentage and its reset, the free Codex resets as a row when Codex
   is out, and the update age in the footnote. A click on any chip, or
   on a provider under `+N`, opens the Providers menu anchored under the strip
-  (`LimitsProvidersMenu` and its `ProvidersMenuPanel`): the policy list, Connect for each CLI provider that is missing, and
+  (`LimitsProvidersMenu` and its `ProvidersMenuPanel`, loaded on first open): the policy list, Connect for each CLI provider that is missing, and
   Manage providers. Usage stays in the chip tooltip and in Settings >
   Providers. Without a workspace a chip still opens that usage page.
   The strip is a toolbar: arrow keys move between chips. With no provider

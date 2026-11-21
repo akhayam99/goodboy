@@ -353,7 +353,7 @@ describe('LimitsStrip opening the Providers menu', () => {
     screen.getByRole('toolbar', { name: 'Provider usage' });
   });
 
-  it('opens the Providers menu under the strip from any chip, and never leaves for Settings', () => {
+  it('opens the Providers menu under the strip from any chip, and never leaves for Settings', async () => {
     setLimits(bothReporting());
     const listener = vi.fn();
     window.addEventListener('goodboy:open-settings', listener);
@@ -362,7 +362,7 @@ describe('LimitsStrip opening the Providers menu', () => {
     fireEvent.click(chipButtons()[0] as HTMLElement);
 
     const menu = screen.getByRole('dialog', { name: 'Providers' });
-    expect(within(menu).getByTestId('providers-panel').textContent).toBe('workspace-1');
+    expect((await within(menu).findByTestId('providers-panel')).textContent).toBe('workspace-1');
     expect(listener).not.toHaveBeenCalled();
     window.removeEventListener('goodboy:open-settings', listener);
   });

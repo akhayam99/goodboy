@@ -1,5 +1,6 @@
 import type { LimitsChip as LimitsChipModel } from '@goodboy/core/providers';
 import type { WorkspaceId } from '@goodboy/types';
+import { Suspense } from 'react';
 import {
   AnchoredPopover,
   cn,
@@ -14,12 +15,17 @@ import {
 } from '@goodboy/ui';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { useProvidersConnection } from '../../../hooks/useProvidersConnection';
-import { ProvidersMenuPanel } from '../../ProvidersMenu/ProvidersMenuPanel';
+import { lazyNamed } from '../../../../shared/lib/lazyNamed';
 import {
   PROVIDERS_PANEL_HEIGHT,
   PROVIDERS_PANEL_WIDTH,
 } from '../../ProvidersMenu/providersPanelSize';
 import { LimitsToolbar } from './LimitsToolbar';
+
+const ProvidersMenuPanel = lazyNamed({
+  load: () => import('../../ProvidersMenu/ProvidersMenuPanel'),
+  pick: ({ ProvidersMenuPanel }) => ProvidersMenuPanel,
+});
 
 type Props = {
   readonly workspaceId: WorkspaceId;
@@ -94,7 +100,9 @@ export const LimitsProvidersMenu = ({ workspaceId, chips, nowMs }: Props) => {
         )
       }
     >
-      <ProvidersMenuPanel workspaceId={workspaceId} onClose={dropdown.close} />
+      <Suspense fallback={null}>
+        <ProvidersMenuPanel workspaceId={workspaceId} onClose={dropdown.close} />
+      </Suspense>
     </AnchoredPopover>
   );
 };
