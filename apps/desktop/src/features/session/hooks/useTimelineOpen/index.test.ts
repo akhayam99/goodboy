@@ -13,6 +13,7 @@ import type {
 
 const state = vi.hoisted(() => ({
   currentSessionId: 'session-1',
+  appStudio: null,
   activeLens: { 'session-0': null } satisfies Record<string, string | null>,
   setActiveLens: vi.fn(),
   navigate: vi.fn(),

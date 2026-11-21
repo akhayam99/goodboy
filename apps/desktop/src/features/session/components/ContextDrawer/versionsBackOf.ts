@@ -12,4 +12,6 @@ type Params = {
 };
 
 export const versionsBackOf = ({ view, section, onBack }: Params): DrawerBack | undefined =>
-  view === 'versions' ? { label: `Back to ${CONTEXT_SECTION_LABEL[section]}`, onBack } : undefined;
+  view === 'versions'
+    ? { label: `Back to ${CONTEXT_SECTION_LABEL[section]}`, onBack, isSubview: true }
+    : undefined;

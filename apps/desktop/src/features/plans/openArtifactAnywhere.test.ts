@@ -126,4 +126,17 @@ describe('open an artifact from anywhere', () => {
     const state = useAppStore.getState();
     expect(selectSlotBack({ state })).toMatchObject({ payload: { artifactId: PLAN_FIXTURE_ID } });
   });
+
+  it('goes to the artifact page when a studio is open over the same session', () => {
+    useAppStore.setState({ appStudio: { kind: 'changelog' } });
+
+    const opening = openArtifactAnywhere({
+      sessionId: PLAN_FIXTURE_SESSION,
+      artifactId: PLAN_FIXTURE_ID,
+    });
+
+    expect(opening).toBe('page');
+    expect(useAppStore.getState().drawer).toBeNull();
+    expect(useAppStore.getState().appStudio).toBeNull();
+  });
 });

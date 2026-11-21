@@ -9,7 +9,6 @@ import type { AgentId, ProjectScript, SessionId, Workflow } from '@goodboy/types
 import {
   EMPTY_ARRAY,
   agentPlace,
-  sessionPlace,
   useAppStore,
   useCurrentSession,
   useCurrentWorkspace,
@@ -218,15 +217,7 @@ export const useCommandEntries = (): ReadonlyArray<PaletteEntry> => {
           sessionId,
           plans,
           artifacts,
-          open: ({ artifactId }) =>
-            navigate({
-              to: sessionPlace({
-                sessionId,
-                lens: 'plans',
-                target: { kind: 'artifact', artifactId },
-              }),
-            }),
-          openPlan: ({ artifactId }) => openArtifactAnywhere({ sessionId, artifactId }),
+          open: ({ artifactId }) => openArtifactAnywhere({ sessionId, artifactId }),
         }),
       );
       for (const destination of destinations) {

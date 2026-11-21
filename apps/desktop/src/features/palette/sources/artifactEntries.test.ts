@@ -34,15 +34,13 @@ const report: ReportArtifact = {
 const artifacts: ReadonlyArray<SessionArtifact> = [report];
 
 describe('artifact palette entries', () => {
-  it('opens a plan through the plan opener and a report through the page opener', () => {
+  it('opens a plan and a report through the same opener', () => {
     const open = vi.fn();
-    const openPlan = vi.fn();
     const entries = artifactEntries({
       sessionId: PLAN_FIXTURE_SESSION,
       plans: [aPlan()],
       artifacts,
       open,
-      openPlan,
     });
 
     const plan = entries.find((entry) => entry.tag === 'Plan');
@@ -50,12 +48,14 @@ describe('artifact palette entries', () => {
     plan?.run();
     other?.run();
 
-    expect(openPlan).toHaveBeenCalledTimes(1);
-    expect(openPlan).toHaveBeenCalledWith({
+    expect(open).toHaveBeenCalledTimes(2);
+    expect(open).toHaveBeenNthCalledWith(1, {
       sessionId: PLAN_FIXTURE_SESSION,
       artifactId: PLAN_FIXTURE_ID,
     });
-    expect(open).toHaveBeenCalledTimes(1);
-    expect(open).toHaveBeenCalledWith({ sessionId: PLAN_FIXTURE_SESSION, artifactId: REPORT_ID });
+    expect(open).toHaveBeenNthCalledWith(2, {
+      sessionId: PLAN_FIXTURE_SESSION,
+      artifactId: REPORT_ID,
+    });
   });
 });

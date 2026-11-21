@@ -94,4 +94,28 @@ describe('DrawerFrame head', () => {
     fireEvent.click(screen.getByRole('button', { name: /^Back to Plan/ }));
     expect(onBack).toHaveBeenCalledTimes(1);
   });
+
+  it('keeps a subview back row and lets Escape step back before the chip', () => {
+    const onBack = vi.fn();
+    const onClose = vi.fn();
+    render(
+      <DrawerBackChipContext.Provider
+        value={{ kind: 'Plan', title: 'Add tax to the checkout total', onBack: vi.fn() }}
+      >
+        <DrawerFrame
+          title="Ask"
+          back={{ label: 'Back to answer', onBack, isSubview: true }}
+          onClose={onClose}
+        >
+          body
+        </DrawerFrame>
+      </DrawerBackChipContext.Provider>,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Back to answer' }));
+    expect(onBack).toHaveBeenCalledTimes(1);
+    fireEvent.keyDown(window, { key: 'Escape', code: 'Escape' });
+    expect(onBack).toHaveBeenCalledTimes(2);
+    expect(onClose).not.toHaveBeenCalled();
+  });
 });

@@ -20,6 +20,7 @@ import { ICON_SIZE } from '../iconSize';
 export type DrawerBack = {
   readonly label: string;
   readonly onBack: () => void;
+  readonly isSubview?: boolean;
 };
 
 export type DrawerPage = {
@@ -103,7 +104,8 @@ export const DrawerFrame = ({
   const hasToolbar = toolbar != null;
   const backChip = useContext(DrawerBackChipContext);
   const hasBackChip = backChip !== null && !isHeaderless;
-  const stepBack = back === undefined || isHeaderless || hasBackChip ? undefined : back.onBack;
+  const isChipYielding = hasBackChip && back?.isSubview !== true;
+  const stepBack = back === undefined || isHeaderless || isChipYielding ? undefined : back.onBack;
 
   useEscapeLayer(() => {
     const active = document.activeElement;

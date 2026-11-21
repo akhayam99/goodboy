@@ -182,7 +182,7 @@ export const AskDrawerBody = ({ session, onClose }: Props) => {
       icon={CONCEPT_ICONS.ask}
       iconClassName="text-muted-foreground"
       {...(insideId !== null && {
-        back: { label: 'Back to answer', onBack: () => setInsideId(null) },
+        back: { label: 'Back to answer', onBack: () => setInsideId(null), isSubview: true },
       })}
       onClose={onClose}
       action={resetButton}

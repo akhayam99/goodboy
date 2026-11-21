@@ -11,7 +11,7 @@ export type ArtifactOpening = 'panel' | 'page';
 
 export const openArtifactAnywhere = ({ sessionId, artifactId }: Params): ArtifactOpening => {
   const state = useAppStore.getState();
-  const isCurrent = state.currentSessionId === sessionId;
+  const isCurrent = state.currentSessionId === sessionId && state.appStudio === null;
   const isOnArtifacts = isCurrent && state.activeLens[sessionId] === 'plans';
   if (isCurrent && !isOnArtifacts) {
     openPlanDrawer({ sessionId, planId: artifactId });

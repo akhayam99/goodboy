@@ -26,8 +26,12 @@ type QueryParams = {
 };
 
 const collectRanges = ({ query, scope }: QueryParams): ReadonlyArray<Range> => {
-  const panelRoots = scope === 'panel' ? [...document.querySelectorAll(PANEL_ROOTS)] : [];
-  const roots = panelRoots.length > 0 ? panelRoots : [...document.querySelectorAll(ROOTS)];
+  if (scope === 'panel') {
+    return [...document.querySelectorAll(PANEL_ROOTS)].flatMap((root) =>
+      findMatchRanges({ root, query }),
+    );
+  }
+  const roots = [...document.querySelectorAll(ROOTS)];
   const scopes = roots.length > 0 ? roots : [document.body];
   return scopes.flatMap((root) => findMatchRanges({ root, query }));
 };
