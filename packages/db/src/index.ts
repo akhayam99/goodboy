@@ -140,6 +140,15 @@ export {
 } from './queries/session';
 export { getSessionContextSeenAt, setSessionContextSeenAt } from './queries/session-context-seen';
 export { getSessionDockGrid, saveSessionDockGrid } from './queries/session-dock-grid';
+export {
+  WORK_EVENT_KINDS,
+  isWorkEventKind,
+  listScriptLedger,
+  listWorkEvents,
+  type ScriptLedgerEntry,
+  type WorkEvent,
+  type WorkEventKind,
+} from './queries/work-events';
 export * from './queries/session-context-item';
 export { listSessionDecisions, saveSessionDecisions } from './queries/session-decision';
 export {

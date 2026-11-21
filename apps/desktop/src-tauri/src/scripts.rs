@@ -286,6 +286,15 @@ fn spawn_script<R: Runtime>(request: ScriptSpawnRequest<R>) -> Result<(), Script
         child,
     })));
     let started_at = crate::util::now_millis_u64();
+    let ledger_start = crate::work_ledger::script_start(crate::work_ledger::ScriptStart {
+        run_id: &request.run_id,
+        script_id: &request.script_id,
+        name: &request.name,
+        session_id: &request.session_id,
+        mount_id: request.mount_id.as_deref(),
+        cwd: &request.cwd,
+        started_at: i64::try_from(started_at).unwrap_or(i64::MAX),
+    });
     let metadata = LiveScriptRun {
         run_id: request.run_id.clone(),
         script_id: request.script_id,
@@ -313,6 +322,7 @@ fn spawn_script<R: Runtime>(request: ScriptSpawnRequest<R>) -> Result<(), Script
         return Err(ScriptError::Duplicate(request.run_id));
     }
     request.exited.forget(&request.run_id);
+    crate::work_ledger::save_start(&request.app, &ledger_start);
 
     let run_id = request.run_id;
     let app = request.app;
@@ -350,6 +360,7 @@ fn spawn_script<R: Runtime>(request: ScriptSpawnRequest<R>) -> Result<(), Script
         }
         exited.keep(&run_id, Arc::clone(&ring), exit_code);
         release_run(&registry, &run_id, &reader_slot);
+        crate::work_ledger::save_end(&app, &run_id, crate::util::now_ms(), exit_code);
         let _ = app.emit(
             "script-exit",
             ScriptExitPayload {

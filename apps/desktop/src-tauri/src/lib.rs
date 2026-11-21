@@ -106,6 +106,7 @@ mod usage_probe;
 mod util;
 mod window_close;
 mod window_heartbeat;
+mod work_ledger;
 mod workflows;
 mod worktree;
 mod worktree_writer;

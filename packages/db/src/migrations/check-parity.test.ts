@@ -21,6 +21,7 @@ import { AUTO_GRANT_KINDS, AUTO_GRANT_STATES } from '../queries/auto-grants';
 import { AUTO_OUTBOX_KINDS, AUTO_OUTBOX_STATES } from '../queries/auto-outbox';
 import { AUTO_RESERVATION_OWNER_KINDS } from '../queries/auto-reservations';
 import { AUTO_PHASES, AUTO_STOP_STATES } from '../queries/auto-trees';
+import { WORK_EVENT_KINDS } from '../queries/work-events';
 import { makeMigratedTestDatabase } from '../test-helpers/test-db';
 
 type Values = ReadonlyArray<string>;
@@ -183,6 +184,13 @@ describe('CHECK lists against their constants', () => {
       unlinked,
       'A new string CHECK list needs a constant in CHECKED_CONSTANTS. Never add to UNLINKED_CHECKS; remove a line when its column gets a constant.',
     ).toEqual(sorted(UNLINKED_CHECKS));
+  });
+
+  it('leaves work_events.kind free of a CHECK list, so a new kind needs no table rebuild', async () => {
+    const checks = await readChecks();
+
+    expect(checks.has('work_events.kind')).toBe(false);
+    expect(WORK_EVENT_KINDS).toEqual(['script', 'command', 'check-rerun']);
   });
 
   it('fails when a constant gains a value the CHECK does not know', async () => {

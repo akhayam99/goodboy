@@ -964,7 +964,9 @@ migrations, the schema tests and the query functions live there, and the
 frontend reaches SQLite through them. Rust writes a table only when the write
 has to happen without the webview or inside one Rust transaction: the backup
 export and import, a project move, the permission audit, integration
-credentials and the budget checks. The unit is the command or the transaction,
+credentials, the budget checks and the work ledger (a script run is born in a
+Rust process, so Rust writes its row once, whatever the number of windows). The
+unit is the command or the transaction,
 not the table. The atomic agent operations moved with the agents: the routing
 gate, the fan-out of a delegated batch and the status stamps are guarded
 statements in `packages/db/src/queries/agent-write.ts`, and a workflow save is
@@ -993,7 +995,7 @@ query in the same commit:
 - Owned by Rust, read by Rust and TypeScript: `browser_tabs`, `browser_visits`, `budget_alerts`, `budget_rules`,
   `integration_bindings`, `integration_credentials`, `permission_audit_log`,
   `permission_audit_retry`, `permission_rules`, `project_relocations`,
-  `session_budgets`, `skills`, `step_library`.
+  `session_budgets`, `skills`, `step_library`, `work_events`.
 - Read for boot only: `schema_version`.
 
 The `ts` rows below have a ratchet:
@@ -1106,6 +1108,7 @@ The count only falls: remove a line when the write moves behind a command.
 | `turn_admissions`             | ts     | One row per agent between a turn's claim and its spawn (m242): the run, the app launch that claimed it (`turn_launch_id`), the claim time and the time its spawn was published. `queries/turn-admission.ts` reads and clears it; `turn_spawn` reads it and refuses a run whose row is gone. Rows go with the agent.                    |
 | `turn_events`                 | ts     |                                                                                                                                                                                                                                                                                                                                        |
 | `turn_file_sets`              | ts     | One row per writing turn and git mount, written when the turn ends (`recordTurnFileSets`).                                                                                                                                                                                                                                             |
+| `work_events`                 | rust   | `work_ledger.rs`. One row per run of work born in a Rust process; today each script run, started and then ended by `scripts.rs`. `run_id` is unique, so a second window never writes a run twice. `kind` has no CHECK list: `queries/work-events.ts` holds the kinds and drops one it does not know. Rows go with the session.         |
 | `workflows`                   | ts     | `saveWorkflow` and `removeWorkflow`. Exception: the backup import.                                                                                                                                                                                                                                                                     |
 | `workspace_profiles`          | ts     | Exception: the backup import.                                                                                                                                                                                                                                                                                                          |
 | `workspace_starred_issues`    | ts     |                                                                                                                                                                                                                                                                                                                                        |
