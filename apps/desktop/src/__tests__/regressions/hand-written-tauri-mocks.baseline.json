@@ -74,7 +74,6 @@
   "apps/desktop/src/app/components/BootSplash/recovery.test.tsx": 1,
   "apps/desktop/src/app/components/DrawerHost.test.tsx": 1,
   "apps/desktop/src/app/components/FixRunTranscriptDrawer/index.test.tsx": 1,
-  "apps/desktop/src/app/components/GoodboyChip/index.test.tsx": 1,
   "apps/desktop/src/app/components/MockScene/scenes.registry.test.tsx": 1,
   "apps/desktop/src/app/components/MockScene/scenes/audit/FrameScene.test.tsx": 1,
   "apps/desktop/src/app/components/MockScene/scenes/audit/OnboardingScene.test.tsx": 1,

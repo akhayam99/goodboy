@@ -71,10 +71,11 @@ describe('the brand lockup scenes', () => {
   it.each(NAMES)('%s draws the Goodboy mark alone at the foot of the places rail', async (name) => {
     await mount({ name });
 
-    const chips = Array.from(document.querySelectorAll('[data-brand-chip]'));
-    expect(chips).toHaveLength(1);
-    expect(chips[0]?.textContent).toBe('');
-    expect(chips[0]?.closest('[data-shell-rail]')).not.toBeNull();
+    const tiles = Array.from(document.querySelectorAll('[data-brand-tile]'));
+    expect(tiles).toHaveLength(1);
+    expect(tiles[0]?.textContent).toBe('');
+    expect(tiles[0]?.closest('[data-shell-rail]')).not.toBeNull();
+    expect(tiles[0]?.closest('[data-rail-signature]')).not.toBeNull();
     expect(screen.queryByRole('dialog', { name: 'Goodboy' })).toBeNull();
   });
 

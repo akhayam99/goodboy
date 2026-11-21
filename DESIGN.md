@@ -305,9 +305,12 @@ about its effect is a worse defect than one that reads badly.
   selected washes one step, draws idle marks and disabled text at the faint
   text color and the frame edge at 2:1. It overrides tokens only, in both
   themes; `more-contrast-tokens.test.ts` holds the floors for each.
-- **The brand mark in the chrome is a bare glyph in `foreground`**: light on
-  dark, dark on light, no tile. The black tile belongs to the dock icon, the
-  favicon and the site ([docs/brand.md](docs/brand.md)).
+- **The brand mark in the chrome is one passive signature**: a 24px `BrandTile`
+  at the foot of the places rail, below Report, on the rail axis. Black tile,
+  white dog, the same in both themes, with no ring, border, glow or gradient. It
+  is not a control: no hover, no focus, no tooltip, hidden from assistive tech.
+  The top bar and the sidebar draw no mark. Splash 84, Home 40, setup 24
+  ([docs/brand.md](docs/brand.md)).
 - Color comes from **semantic tokens**: `success`, `warning`, `danger`, `info`,
   `merged`, the elevation ramp, per-provider accents. A raw hex or `oklch` in a
   component is a bug. Raw colors are allowed in one place only, because it

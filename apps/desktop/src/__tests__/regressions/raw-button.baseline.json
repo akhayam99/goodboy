@@ -7,7 +7,6 @@
   "apps/desktop/src/app/components/AppTopBar/NowChip/index.tsx": 1,
   "apps/desktop/src/app/components/AppTopBar/NowChip/NeedsYouSessionRow.tsx": 1,
   "apps/desktop/src/app/components/AppTopBar/SpendButton.tsx": 1,
-  "apps/desktop/src/app/components/GoodboyChip/index.tsx": 1,
   "apps/desktop/src/features/artifacts/components/ArtifactList/ArtifactListGroup.tsx": 1,
   "apps/desktop/src/features/artifacts/components/ArtifactList/ArtifactListRow.tsx": 1,
   "apps/desktop/src/features/artifacts/components/ArtifactShell/ArtifactPlanRuns.tsx": 1,

@@ -56,7 +56,7 @@ When the database cannot be opened at all, the start screen offers **Retry** fir
 
 ### Updates
 
-Get updates in the background, then see what is new. When one is ready, the version pill in the Goodboy line opens a card with **Restart now** and **Later**, and a **What's new** link in its sentence. With agents running, **Restart when they finish** waits for them. The Updates band at the end of **Settings › This Mac › General** shows the installed version and **Check for updates**.
+Get updates in the background, then see what is new. When one is ready, the Update mark at the foot of the rail opens a card with **Restart now** and **Later**, and a **What's new** link in its sentence. With agents running, **Restart when they finish** waits for them. The Updates band at the end of **Settings › This Mac › General** shows the installed version and **Check for updates**.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/security-updates-dark.webp">
@@ -82,7 +82,7 @@ See a change instead of reading about it. Release notes can show **Before** and 
 
 ### Guide
 
-Learn how Goodboy works in short chapters, one per page with Previous and Next. Help holds two tabs, **Guide** and **What's new**, with one search over both. Results lead with title matches, show a line of context, and list three **What's new** versions with a button for the rest. Press Enter to land on the point you need, and the links at the end of a chapter open its screen. **Back to app** at the top left, or Esc, leaves Help. **Sponsor on GitHub** sits in its band. Open it from the Goodboy mark at the foot of the places rail, or from Search or run.
+Learn how Goodboy works in short chapters, one per page with Previous and Next. Help holds two tabs, **Guide** and **What's new**, with one search over both. Results lead with title matches, show a line of context, and list three **What's new** versions with a button for the rest. Press Enter to land on the point you need, and the links at the end of a chapter open its screen. **Back to app** at the top left, or Esc, leaves Help. **Sponsor on GitHub** sits in its band. Open it from Help in the menu bar, or from Search or run.
 
 **Also in this area**
 

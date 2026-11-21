@@ -230,7 +230,7 @@ theme=<light|dark> pr=<numbers> -->` (`area` required, the rest optional, no spa
 
 ## Align the in-app Guide
 
-The Guide (Help in the menu bar, the Goodboy line, Search or run) explains Goodboy chapter by
+The Guide (Help in the menu bar, Search or run) explains Goodboy chapter by
 chapter, in the order a task lives. Its text is in
 `apps/desktop/src/features/settings/components/GuideStudio/guideChapters.ts`.
 

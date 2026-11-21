@@ -76,12 +76,10 @@ describe('the rail foot scenes', () => {
     );
   });
 
-  it('keeps the logo at rest, under Settings and Report', async () => {
+  it('keeps the signature at rest, under Settings and Report', async () => {
     const container = mount({ id: 'rail-foot-rest' });
 
-    await waitFor(() =>
-      expect(container.querySelector('[data-goodboy-chip="rail"]')).not.toBeNull(),
-    );
+    await waitFor(() => expect(container.querySelector('[data-rail-signature]')).not.toBeNull());
     expect(container.querySelector('[data-shell-rail-item="update"]')).toBeNull();
     screen.getByRole('button', { name: 'Settings' });
     screen.getByRole('button', { name: 'Report a bug' });
@@ -94,11 +92,11 @@ describe('the rail foot scenes', () => {
     ['rail-foot-running', 'Update', 'Goodboy 0.40.1 is ready'],
     ['rail-foot-queued', 'Update', 'Restarts when 2 agents finish'],
     ['rail-foot-failed', 'Update', "Goodboy 0.40.1 didn't install"],
-  ])('%s shows the update mark with its word', async (id, word, name) => {
+  ])('%s shows the update mark with its word above the signature', async (id, word, name) => {
     const container = mount({ id });
 
     await screen.findByRole('button', { name });
     expect(wordOf(container)).toBe(word);
-    expect(container.querySelector('[data-goodboy-chip="rail"]')).toBeNull();
+    expect(container.querySelector('[data-rail-signature]')).not.toBeNull();
   });
 });

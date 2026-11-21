@@ -6,14 +6,15 @@ import { describe, expect, it } from 'vitest';
 
 const REPOSITORY_ROOT = join(__dirname, '..', '..', '..', '..', '..');
 const MASCOT_PNG = join(REPOSITORY_ROOT, 'packages', 'ui', 'src', 'assets', 'mascot.png');
-const CHROME_MARK = join(
+const RAIL_SIGNATURE = join(
   __dirname,
   '..',
   '..',
   'app',
   'components',
-  'GoodboyChip',
-  'BrandLockup.tsx',
+  'ShellLeft',
+  'RailSignature',
+  'index.tsx',
 );
 const BRAND_TILE = join(__dirname, '..', '..', 'shared', 'components', 'BrandTile.tsx');
 const DESKTOP_STYLES = join(__dirname, '..', '..', 'styles.css');
@@ -359,7 +360,7 @@ const buildPng = ({
 const fullScanlines = ({ width, height }: { width: number; height: number }): Buffer =>
   Buffer.alloc(height * (FILTER_BYTES_PER_ROW + width * RGBA_BYTES_PER_PIXEL));
 
-const CHROME_MARK_SOURCE = readFileSync(CHROME_MARK, 'utf8');
+const RAIL_SIGNATURE_SOURCE = readFileSync(RAIL_SIGNATURE, 'utf8');
 const LOGO_SOURCE = readFileSync(SITE_LOGO, 'utf8');
 const BRAND_TILE_SOURCE = readFileSync(BRAND_TILE, 'utf8');
 const FAVICON_SOURCE = readFileSync(FAVICON, 'utf8');
@@ -502,12 +503,13 @@ describe('brand mark is centered in its tile', () => {
     expect(margins.top).toBe(margins.bottom);
   });
 
-  it('draws the chrome mark in the brand chip foreground, centered by the box model', () => {
-    expect(CHROME_MARK_SOURCE).not.toContain('absolute');
-    expect(CHROME_MARK_SOURCE).not.toMatch(/MARK_(LEFT|TOP)/);
-    expect(CHROME_MARK_SOURCE).not.toContain('bg-brand');
-    expect(CHROME_MARK_SOURCE).not.toContain('text-white');
-    expect(CHROME_MARK_SOURCE).toMatch(/<DogMascot [^>]*className="text-foreground"/);
+  it('draws the rail signature as the brand tile at 24px, with no tile of its own', () => {
+    expect(RAIL_SIGNATURE_SOURCE).toContain('<BrandTile size={SIGNATURE_PX} />');
+    expect(RAIL_SIGNATURE_SOURCE).toMatch(/SIGNATURE_PX = 24;/);
+    expect(RAIL_SIGNATURE_SOURCE).not.toContain('DogMascot');
+    expect(RAIL_SIGNATURE_SOURCE).not.toContain('absolute');
+    expect(RAIL_SIGNATURE_SOURCE).not.toMatch(/MARK_(LEFT|TOP)/);
+    expect(RAIL_SIGNATURE_SOURCE).not.toMatch(/\bborder\b|border-|ring-|shadow|gradient|bg-/);
   });
 
   it('centers the site mark with the box model and the shared tile ratios', () => {

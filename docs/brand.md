@@ -44,22 +44,19 @@ never a new file.
 tile, then the word `Goodboy`. It has no tagline, no registered mark and no
 second line.
 
-In the app chrome the mark drops the tile. The Goodboy line at the foot of the column draws the bare glyph in
-`text-foreground`, so it is light on the dark theme and dark on the
-light theme, next to the same word. The mask file and its ratios do not
-change. This is the title bar convention of Linear, Cursor and Arc: a
-monochrome glyph in the chrome, the tile on the dock icon.
+In the working chrome the mark is the same black tile, small and still: the
+rail signature below. It is a signature, not a control, and it never turns into
+a bare glyph.
 
-The app shows the mark in three places: the Goodboy line (at the
-foot of the column and the mark on its rail), the
-boot splash (the same black tile, drawn by `BootBrand`), and the lockup on first
-run and Home. That lockup is the black tile with the white mark, then the word.
-The setup header and Home show it small. These use `BrandTile` (`shared/components/BrandTile.tsx`), with the shared
+The app shows the mark in four places: the rail signature (24px, at the foot of
+the places rail, under Report), the boot splash (84px, the same black tile,
+drawn by `BootBrand`), the launcher on Home (40px) and the setup header (24px).
+All of them use `BrandTile` (`shared/components/BrandTile.tsx`), with the shared
 ratios and `--color-brand`. Empty states inside a workspace and agent kinds still draw no dog. They use a
 concept tile (`ConceptTile`), the stage chips or the kind chip. A ratchet
-(`dog-mascot-only-marks-the-brand.test.ts`) keeps `DogMascot` to `BrandLockup`,
-`BootBrand` and `BrandTile`, and pins the importers of `BrandTile` to
-`WelcomeStep.tsx`, `WizardHeader.tsx` and `WorkspaceLauncher/index.tsx`.
+(`dog-mascot-only-marks-the-brand.test.ts`) keeps `DogMascot` to `BootBrand`
+and `BrandTile`, and pins the importers of `BrandTile` to `BootBrand.tsx`,
+`RailSignature/index.tsx`, `WizardHeader.tsx` and `WorkspaceLauncher/index.tsx`.
 
 The tile has one shape everywhere, and no other shape exists:
 
@@ -95,16 +92,19 @@ value on the site, in the favicon and in the app icon: `--brand-tile` in
 `website/src/styles/base.css` and `--color-brand` in `apps/desktop/src/styles.css`.
 The generator refuses to run when those two disagree.
 
-**The working chrome never paints the tile.** A fixed black tile on the top bar
-disappeared on the dark theme (1.09:1 against `bg-background`) and read as a
-dark block on the light theme. Neither is the brand. So the working chrome (top
-bar, sidebar, Goodboy line) shows the bare glyph in the theme foreground. Do
-not bring the tile back into it. The setup header and Home are not working
-chrome: they sit alone on the background, where the tile reads as the app icon.
-On the dark theme it stays black, with no border and no lighter variant, and it
-gets no glow either. On the site, the favicon and the dock the tile stands
-alone and does its job.
-`brand-mark-is-centered-in-its-tile.test.ts` checks both halves.
+**The rail signature is the one place the working chrome shows the tile.** It
+is a `BrandTile` at 24px, `#0b0b0d` with the white dog, at the foot of the places
+rail on the rail axis. It has no ring, plate, border, glow or gradient, it is
+never inverted and it is identical in the dark and the light theme. On the dark
+theme the black tile sits close to the charcoal rail (1.09:1) and the white dog
+carries the mark, on purpose: no lighter variant, no outline to rescue it. It is
+passive: not a button, no hover, no focus ring, no tooltip, `aria-hidden`. Help
+and What's new are not behind it; they live in the Help menu and in Search or
+run. The mark does not use the teal accent. The top bar and the sidebar draw no
+mark. The setup header and Home are not working chrome: they sit alone on the
+background, where the tile reads as the app icon, and they keep the same tile.
+On the site, the favicon and the dock the tile stands alone and does its job.
+`brand-mark-is-centered-in-its-tile.test.ts` checks the centring and the tile ratios.
 
 The background is white on the site and charcoal in the app, and both are
 correct. An asset made for one does not automatically work on the other. So a

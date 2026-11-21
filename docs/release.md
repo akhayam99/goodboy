@@ -155,7 +155,7 @@ and one hook gives every surface the same verbs (`useUpdateCard`, state from
 | Failed         | Goodboy 0.27.2 didn't install, with the reason | Later, **Retry** (downloads or installs again, without a new check)                                 |
 | Queued         | Restarts when 2 agents finish                  | Later, Cancel restart, **Restart now**                                                              |
 
-The update mark at the foot of the places rail (the logo turns into it while an
+The update mark at the foot of the places rail (it sits above the signature while an
 update waits; `UpdateRailMark`, state from `updateMarkOf`), and the version pill in
 the corner of Home (`WorkspaceLauncher`), open and close the card
 (`toggleUpdateCard`). The card opens to the right of the rail mark, inside the window

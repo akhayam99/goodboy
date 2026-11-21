@@ -8,17 +8,9 @@ const SCANNED_ROOTS = ['features', 'app', 'shared'];
 const RAIL_ROOT = join(SRC, 'app', 'components', 'ShellLeft');
 const SESSION_RAIL_ROOT = join(SRC, 'app', 'components', 'SessionRail');
 const SESSIONS_ROOT = join(SRC, 'features', 'workspace', 'components', 'SessionsPopover');
-const GOODBOY_CHIP_ROOT = join(SRC, 'app', 'components', 'GoodboyChip');
 const BELL_ROOT = join(SRC, 'features', 'notifications', 'components', 'NotificationCenter');
 const TOP_BAR_ROOT = join(SRC, 'app', 'components', 'AppTopBar');
-const SIGN_ROOTS = [
-  RAIL_ROOT,
-  SESSION_RAIL_ROOT,
-  SESSIONS_ROOT,
-  GOODBOY_CHIP_ROOT,
-  BELL_ROOT,
-  TOP_BAR_ROOT,
-];
+const SIGN_ROOTS = [RAIL_ROOT, SESSION_RAIL_ROOT, SESSIONS_ROOT, BELL_ROOT, TOP_BAR_ROOT];
 const SESSION_RAIL_PREFIX = 'app/components/SessionRail/';
 
 const SHOWN_ROWS: ReadonlySet<string> = new Set([
@@ -111,12 +103,11 @@ describe('one selected sign across the navigation surfaces', () => {
     ).toEqual([]);
   });
 
-  it('lights the logo for Help and the bell for Notifications, from the same place', () => {
+  it('lights the bell for Notifications and nothing in the rail for Help, from the same place', () => {
     const rail = signSources.find(({ path }) => path === 'app/components/ShellLeft/index.tsx');
     const topBar = signSources.find(({ path }) => path === 'app/components/AppTopBar/index.tsx');
-    const help = "isCurrent={place === 'help'}";
 
-    expect(rail?.source).toContain(help);
+    expect(rail?.source).not.toContain("'help'");
     expect(topBar?.source).toContain('useColumnPlace()');
     expect(topBar?.source).toContain("isCurrent={place === 'notifications'}");
   });

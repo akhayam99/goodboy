@@ -93,8 +93,8 @@
   holds no Impact icon), and the Usage chips open the Providers menu. It holds
   no control for another container. The bar never edits a record in place.
 - **The places rail holds every place and never changes level.** New comes first, then Board (the board, ⌘⇧H),
-  Tasks, Workflows, Chat, Connect and Impact, Impact quiet and last; Settings, the bug and the
-  Goodboy mark sit at the foot, the app's corner. It carries two marks only (`railMarkOf`):
+  Tasks, Workflows, Chat, Connect and Impact, Impact quiet and last; Settings and the bug sit at
+  the foot, with the Goodboy signature under them, the app's corner. It carries two marks only (`railMarkOf`):
   Board carries the number of sessions that need you as a warning count on its glyph, and Tasks
   a dot for new tasks; the reasons are in the accessible name. Board is named "Board, 2
   sessions need you: Checks failing, 1 question for you" (`doorSignalOf`). It reads `useNowSessions().attention`, which
@@ -211,8 +211,8 @@
 - **Navigation chrome is neutral at rest.** Selection shows as a muted fill,
   never an inversion. The app has no inverted navigation control. New session
   is the only emphasised column control. Doors, Board included, are neutral at
-  rest, and so is the column's Goodboy line, with one exception: a pending
-  update adds a version pill to the line until you act on it. An update is an
+  rest, and the rail signature is no control at all, with one exception: a pending
+  update adds an Update mark above the signature until you act on it. An update is an
   event, not a rest state.
 - **Settings match the scope they edit.** Application settings is a full-page
   studio. Workspace settings is a scoped pane. Changes save instantly: no
@@ -249,8 +249,8 @@
 - **One selected sign.** Every page lights exactly one control, with
   `bg-selected`, `cursor-default` and `aria-current="page"`, in the column and
   on the rail alike: the open studio's door; New session while the draft is
-  open; Board on the board; the Goodboy line for Help, either tab (`place`
-  `help`); the bell for Notifications. New workspace is a flow and lights
+  open; Board on the board; the bell for Notifications. Help, either tab (`place`
+  `help`), lights no rail control: the page's own band names it. New workspace is a flow and lights
   nothing. Every control reads it from one place (`columnPlaceOf`, through `selectColumnPlace` and
   `useColumnPlace`), so no page leaves two lit. Inside a session no door does:
   the open session's row is the column's sign and the current page row is the

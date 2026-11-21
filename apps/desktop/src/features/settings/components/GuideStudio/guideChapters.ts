@@ -252,7 +252,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
     points: [
       {
         term: 'Places rail',
-        desc: 'The workspace mark, New session, Board, Tasks, Workflows, Chat, Connections (Connect on the rail) and Impact. Settings, the bug icon and the Goodboy mark sit at the foot. An amber number on Board says sessions need you; Monitor on the right rail says when a pinned port is down.',
+        desc: 'The workspace mark, New session, Board, Tasks, Workflows, Chat, Connections (Connect on the rail) and Impact. Settings and the bug icon sit at the foot, with the Goodboy mark under them. An amber number on Board says sessions need you; Monitor on the right rail says when a pinned port is down.',
       },
       {
         term: 'Sessions',
@@ -715,7 +715,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
     points: [
       {
         term: 'Update ready',
-        desc: 'The version pill in the Goodboy line opens the update card: Update now downloads, then Restart now installs. With agents running, Restart when they finish waits for them. A failed update offers Retry.',
+        desc: 'The Update mark at the foot of the rail opens the update card: Update now downloads, then Restart now installs. With agents running, Restart when they finish waits for them. A failed update offers Retry.',
       },
       {
         term: 'Check for Updates',

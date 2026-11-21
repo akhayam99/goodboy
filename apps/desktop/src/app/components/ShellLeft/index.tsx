@@ -10,11 +10,15 @@ import { requestNewSession } from '../../../features/session/requestNewSession';
 import { WorkspaceIdentityRow } from '../../../features/workspace/components/WorkspaceIdentityRow';
 import { useColumnPlace } from '../../hooks/useColumnPlace';
 import type { ShellArrangement } from '../../shellArrangement';
-import { GoodboyChip } from '../GoodboyChip';
+import { UpdateArrivalCard } from '../../../features/updater/components/UpdateArrivalCard';
+import { useUpdateCardState } from '../../../features/updater/hooks/useUpdateCardState';
+import { UpdateRailMark } from '../../../features/updater/components/UpdateRailMark';
+import { RailSignature } from './RailSignature';
 import { ReportBugButton } from './ReportBugButton';
 import { COLUMN_DOORS, openColumnDoor, type ColumnActions } from './columnDoors';
 import { railMarkOf } from './railMarkOf';
 import { useDoorSignals } from './useDoorSignals';
+import { useRailFootEffects } from './useRailFootEffects';
 import type { ColumnPlace } from '../../../shared/navigation/columnPlace';
 import { railPlaceOf } from '../../../shared/navigation/railPlaceOf';
 
@@ -39,6 +43,8 @@ export const ShellLeft = ({ arrangement, workspaceId, actions, placeOverride }: 
   );
   const isDraftWaiting = hasDraft && place !== 'new';
   const signals = useDoorSignals({});
+  const { anchorRef } = useRailFootEffects({});
+  const hasUpdate = useUpdateCardState().state !== null;
   return (
     <ShellRail label="Places">
       {arrangement.columnScope === 'workspace' ? (
@@ -83,11 +89,17 @@ export const ShellLeft = ({ arrangement, workspaceId, actions, placeOverride }: 
         onSelect={actions.openSettings}
       />
       <ReportBugButton />
-      <GoodboyChip
-        isCurrent={place === 'help'}
+      <UpdateArrivalCard
+        anchorRef={anchorRef}
         onOpenChangelog={actions.openChangelog}
-        onOpenHelp={actions.openGuide}
+        isBesideAnchor
       />
+      {hasUpdate ? (
+        <div ref={anchorRef} className="flex w-full">
+          <UpdateRailMark />
+        </div>
+      ) : null}
+      <RailSignature />
     </ShellRail>
   );
 };
