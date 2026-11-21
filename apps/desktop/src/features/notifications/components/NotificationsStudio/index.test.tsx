@@ -428,14 +428,14 @@ describe('NotificationsStudio', () => {
     expect(screen.getByText('Summarizer failed')).toBeDefined();
   });
 
-  it('offers Open, Mark as read, Report this, Copy text and Delete from the row menu', () => {
+  it('offers Open, Mark as read, Report this error, Copy text and Delete from the row menu', () => {
     seedNotifications({ notifications: [buildNotification({ id: 'only' })] });
     renderStudio();
 
     openRowMenu({ title: 'Summarizer failed' });
 
     const names = screen.getAllByRole('menuitem').map((item) => item.textContent);
-    expect(names).toEqual(['Mark as read', 'Report this', 'Copy text', 'Delete']);
+    expect(names).toEqual(['Mark as read', 'Report this error', 'Copy text', 'Delete']);
   });
 
   it('offers Mark as unread instead of Mark as read on a read row', () => {

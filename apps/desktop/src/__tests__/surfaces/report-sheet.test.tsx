@@ -308,7 +308,7 @@ describe('report sheet on the real store', () => {
         },
       });
     });
-    const sheet = await screen.findByRole('dialog', { name: 'Report this' });
+    const sheet = await screen.findByRole('dialog', { name: 'Report this error' });
     await within(sheet).findByText('macOS 26.0 arm64');
 
     const sent = sentText(sheet);

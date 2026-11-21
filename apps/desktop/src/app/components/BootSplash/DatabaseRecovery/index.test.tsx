@@ -54,13 +54,13 @@ const openConfirm = () => {
 };
 
 describe('the screen for a database that did not open', () => {
-  it('offers Retry first, then Start with a new database, then Report this', () => {
+  it('offers Retry first, then Start with a new database, then Report this error', () => {
     renderScreen();
 
     const labels = within(screen.getByRole('alert'))
       .getAllByRole('button')
       .map((button) => button.textContent);
-    expect(labels).toEqual(['Retry', 'Start with a new database', 'Report this']);
+    expect(labels).toEqual(['Retry', 'Start with a new database', 'Report this error']);
     expect(screen.getByRole('button', { name: 'Retry' }).getAttribute('data-variant')).toBe(
       'primary',
     );

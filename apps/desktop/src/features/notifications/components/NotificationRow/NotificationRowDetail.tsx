@@ -5,6 +5,7 @@ import { cn, ICON_SIZE, Tooltip } from '@goodboy/ui';
 
 import { formatAge } from '../../../../shared/utils/time/formatAge';
 import { formatDateTime } from '../../../../shared/utils/time/formatDateTime';
+import { NAMES } from '../../../../shared/utils/names';
 import { openReportSheet } from '../../../bug-report/openReportSheet';
 import { RetryWithPicker } from './RetryWithPicker';
 import { useNow } from '../../../../shared/hooks/useNow';
@@ -85,7 +86,7 @@ export const NotificationRowDetail = ({ notifications }: Props) => {
               className={GHOST}
             >
               <Bug size={ICON_SIZE.row} aria-hidden />
-              Report this
+              {NAMES.reportThisError}
             </button>
           )}
         </div>

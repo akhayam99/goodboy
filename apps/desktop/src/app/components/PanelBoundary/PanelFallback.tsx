@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { TriangleAlert } from '@goodboy/ui/icons';
 import { Button, EmptyState, ScrollFade, type ErrorFallbackRequest } from '@goodboy/ui';
 import { CrashReport } from '../../../features/bug-report/components/CrashReport';
+import { NAMES } from '../../../shared/utils/names';
 import { crashKind, crashPart } from '../../../features/bug-report/crashReport';
 
 type Props = ErrorFallbackRequest & {
@@ -29,7 +30,7 @@ export const PanelFallback = ({ error, componentStack, reset, leaveLabel, onLeav
                 {leaveLabel}
               </Button>
               <Button variant="ghost" onClick={() => setIsReporting(true)} disabled={isReporting}>
-                Report this
+                {NAMES.reportThisCrash}
               </Button>
             </div>
           }
@@ -37,7 +38,7 @@ export const PanelFallback = ({ error, componentStack, reset, leaveLabel, onLeav
       </div>
       {isReporting ? (
         <CrashReport
-          heading="Report this crash"
+          heading={NAMES.reportThisCrash}
           initialLine={`Crash: ${crashKind({ error })}`}
           errorPart={crashPart({ message: error.message, stack: error.stack, componentStack })}
         />

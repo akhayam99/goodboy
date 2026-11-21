@@ -6,13 +6,14 @@ import type { GetFn, SetFn } from './types';
 
 export const markNotificationsRead = (set: SetFn, get: GetFn) => {
   return async () => {
-    await markAllNotificationsRead({
-      db: tauriDatabase,
-      workspaceId: scopedWorkspaceId({ state: get() }),
-    });
-    set((state) => ({
-      notifications: state.notifications.map((n) => (n.read ? n : { ...n, read: true })),
-    }));
+    const scope = get().notificationScope;
+    const workspaceId = scopedWorkspaceId({ state: get() });
+    await markAllNotificationsRead({ db: tauriDatabase, workspaceId });
+    if (get().notificationScope === scope && scopedWorkspaceId({ state: get() }) === workspaceId) {
+      set((state) => ({
+        notifications: state.notifications.map((n) => (n.read ? n : { ...n, read: true })),
+      }));
+    }
     await refreshNotificationCounts({ set, get });
   };
 };

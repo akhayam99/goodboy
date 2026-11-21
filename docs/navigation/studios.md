@@ -179,7 +179,7 @@ cut at the end, never in the middle; the group's`aria-label` keeps the full
 - **Notifications have one row and one scope.** `NotificationRow` draws a
   group in the popover (`compact`, one line, eight rows at most, Unread or
   All) and in the studio (`cozy`, opens in place with the body, the older
-  members and Report this). Opening the popover marks nothing: a row is read once
+  members and Report this error). Opening the popover marks nothing: a row is read once
   it has been on screen for one second with the popover open
   (`useSeenNotifications`, one timer per row, cleared when the row, the
   popover or the window visibility goes: a hidden document restarts every second
@@ -190,7 +190,7 @@ cut at the end, never in the middle; the group's`aria-label` keeps the full
   dot. In the studio the time owns the third column and a fixed fourth column
   holds the hover controls (`NotificationRowActions`): the registry's hover
   action (Mark as read, one click) and the `⋯` menu of the `notification` kind
-  (Open, Mark as read or unread, Report this, Copy text, Delete), also opened by
+  (Open, Mark as read or unread, Report this error, Copy text, Delete), also opened by
   right click. They show on hover and keyboard focus, never change the row's
   width, and the opened row keeps only the notification's own action (Retry) as
   a button under it. A failed write shows a "Couldn't finish that" toast and

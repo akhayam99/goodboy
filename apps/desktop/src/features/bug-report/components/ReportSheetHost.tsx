@@ -3,6 +3,7 @@ import { SHELL_GUTTER_PX, cn, useDropdownDirection } from '@goodboy/ui';
 import { useToast } from '../../../shared/components/Toast';
 import { openLink } from '../../open/openLink';
 import { useShortcut } from '../../../shared/keyboard/useShortcut';
+import { NAMES } from '../../../shared/utils/names';
 import { redactReport } from '../../../shared/utils/redactReport';
 import { useAppStore } from '../../../store';
 import type { AppState } from '../../../store/types';
@@ -57,16 +58,16 @@ const leadParts = ({ state, detail }: LeadPartsParams): ReadonlyArray<ReportPart
 };
 
 const CRASH_HEADING: Readonly<Record<LastCrashKind, string>> = {
-  panic: 'Report this crash',
-  error: 'Report this error',
-  freeze: 'Report this freeze',
+  panic: NAMES.reportThisCrash,
+  error: NAMES.reportThisError,
+  freeze: NAMES.reportThisFreeze,
 };
 
 const headingFor = ({ detail }: { readonly detail: OpenReportSheetDetail }): string => {
   if (detail.crash != null) {
     return CRASH_HEADING[detail.crash.kind];
   }
-  return detail.notice == null ? 'Report a bug' : 'Report this';
+  return detail.notice == null ? 'Report a bug' : NAMES.reportThisError;
 };
 
 const NO_PARTS: ReadonlyArray<ReportPart> = [];

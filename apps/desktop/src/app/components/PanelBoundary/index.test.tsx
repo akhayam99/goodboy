@@ -98,13 +98,13 @@ describe('PanelBoundary', () => {
     expect(onLeave).toHaveBeenCalledOnce();
   });
 
-  it('opens the crash report from Report this', () => {
+  it('opens the crash report from Report this crash', () => {
     render(<Host state={{ isBroken: true }} onLeave={() => undefined} />);
-    expect(screen.queryByText('Report this crash')).toBeNull();
+    expect(screen.getAllByText('Report this crash')).toHaveLength(1);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Report this' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Report this crash' }));
 
-    expect(screen.getByText('Report this crash')).toBeDefined();
+    expect(screen.getAllByText('Report this crash')).toHaveLength(2);
     expect(screen.getByText('rail alive')).toBeDefined();
   });
 });
