@@ -72,6 +72,7 @@ const TARGETS: ReadonlyArray<SessionTarget> = [
   { kind: 'question', questionId: QUESTION },
   ...BRANCH_TABS.map((tab): SessionTarget => ({
     kind: 'branch',
+    mountId: null,
     mountPath: WORKTREE,
     tab,
     threadId: null,

@@ -508,8 +508,9 @@ them. The navigation slice (`store/slices/navigation/`) owns both.
   click. Back and a reload never move the write destination, with or without a
   mount in the address: the page shows the mount the address names and a write
   confirm names its repository.
-  A Branch address also carries `mountId` when the mount is known (`branchPlace`
-  and `captureLocation` set it). `withKnownMount` resolves the id first, so a
+  A Branch address also carries `mountId`, null when no mount is known:
+  `captureLocation` sets it from the mount of the page it leaves, and
+  `branchPlace` leaves it null. `withKnownMount` resolves the id first, so a
   mount whose worktree moved keeps its address, and falls back to
   `mountPath` only for an address without an id. `trackOf` in `features/track/`
   reads one mount's github state, selected pull request, terminals and agents by

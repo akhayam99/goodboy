@@ -27,7 +27,7 @@ import {
   type StoryStore,
 } from '../../storyHarness';
 import { branchPlace, sessionPlace } from './place';
-import { EMPTY_FOCUS, type Location } from './types';
+import { EMPTY_FOCUS, type BranchTab, type Location } from './types';
 import { withKnownMount } from './withKnownMount';
 
 const WS = brandId<WorkspaceId>({ value: 'ws-harborline' });
@@ -81,6 +81,24 @@ const saved = ({ place }: SavedParams): Location => ({
   focus: EMPTY_FOCUS,
 });
 
+type LedgerPlaceParams = {
+  readonly tab: BranchTab;
+};
+
+const ledgerPlace = ({ tab }: LedgerPlaceParams): Location['place'] =>
+  sessionPlace({
+    sessionId: S1,
+    lens: 'branch',
+    target: {
+      kind: 'branch',
+      mountId: LEDGER_ID,
+      mountPath: LEDGER,
+      tab,
+      threadId: null,
+      focus: null,
+    },
+  });
+
 let useAppStore: StoryStore;
 
 beforeAll(async () => {
@@ -108,7 +126,7 @@ describe('a branch address names its mount by id', () => {
   it('resolves a moved folder by the mount id before the path', () => {
     useAppStore.setState({ sessionProjectMounts: mountsAt({ ledgerPath: MOVED }) });
     const location = saved({
-      place: branchPlace({ sessionId: S1, mountId: LEDGER_ID, mountPath: LEDGER, tab: 'files' }),
+      place: ledgerPlace({ tab: 'files' }),
     });
 
     const known = withKnownMount({ state: useAppStore.getState(), location });
@@ -148,16 +166,7 @@ describe('a branch address names its mount by id', () => {
   it('reopens a saved branch address on the moved folder after a reload', async () => {
     useAppStore.setState({ sessionProjectMounts: mountsAt({ ledgerPath: MOVED }) });
     const location: Location = JSON.parse(
-      JSON.stringify(
-        saved({
-          place: branchPlace({
-            sessionId: S1,
-            mountId: LEDGER_ID,
-            mountPath: LEDGER,
-            tab: 'commits',
-          }),
-        }),
-      ),
+      JSON.stringify(saved({ place: ledgerPlace({ tab: 'commits' }) })),
     );
 
     await useAppStore.getState().restoreLocation({ location });

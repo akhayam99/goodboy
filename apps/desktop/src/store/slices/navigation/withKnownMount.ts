@@ -15,8 +15,8 @@ type ByIdParams = {
 };
 
 const mountById = ({ mounts, target }: ByIdParams): SessionProjectMount | null => {
-  const mountId = target.kind === 'branch' ? (target.mountId ?? null) : null;
-  if (mountId === null) {
+  const mountId = target.kind === 'branch' ? target.mountId : null;
+  if (mountId == null) {
     return null;
   }
   return mounts.find((mount) => mount.mountId === mountId) ?? null;

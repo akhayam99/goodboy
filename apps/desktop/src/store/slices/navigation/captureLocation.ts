@@ -75,7 +75,7 @@ const captureTarget = ({ state, sessionId, lens }: TargetParams): SessionTarget 
           )?.mountId ?? null);
     return {
       kind: 'branch',
-      ...(mountId === null ? {} : { mountId }),
+      mountId,
       mountPath,
       tab: branchTabOf({ state, sessionId }),
       threadId: openThreadOf({ state, sessionId }),

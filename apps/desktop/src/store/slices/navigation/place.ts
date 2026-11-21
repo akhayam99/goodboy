@@ -1,4 +1,4 @@
-import type { AgentId, MountId, OpenQuestionId, SessionId } from '@goodboy/types';
+import type { AgentId, OpenQuestionId, SessionId } from '@goodboy/types';
 import type { DiffFocus, LensKind } from '../session-view/types';
 import { noteIdOfThread } from '../../../features/resolve/notes/noteThread';
 import type { OpenDrawer } from '../drawer/state';
@@ -34,7 +34,6 @@ export const sessionPlace = ({
 
 type BranchPlaceParams = {
   readonly sessionId: SessionId;
-  readonly mountId?: MountId | null;
   readonly mountPath?: string | null;
   readonly tab?: BranchTab;
   readonly threadId?: string | null;
@@ -43,7 +42,6 @@ type BranchPlaceParams = {
 
 export const branchPlace = ({
   sessionId,
-  mountId = null,
   mountPath = null,
   tab = 'comments',
   threadId = null,
@@ -52,14 +50,7 @@ export const branchPlace = ({
   sessionPlace({
     sessionId,
     lens: 'branch',
-    target: {
-      kind: 'branch',
-      ...(mountId === null ? {} : { mountId }),
-      mountPath,
-      tab,
-      threadId,
-      focus,
-    },
+    target: { kind: 'branch', mountId: null, mountPath, tab, threadId, focus },
   });
 
 type QuestionPlaceParams = {
@@ -80,7 +71,6 @@ type FixRunParams = {
   readonly sessionId: SessionId;
   readonly agentId: AgentId;
   readonly threadId?: string | null;
-  readonly mountId?: MountId | null;
   readonly mountPath?: string | null;
 };
 
@@ -93,12 +83,10 @@ export const fixRunTranscript = ({
   sessionId,
   agentId,
   threadId = null,
-  mountId = null,
   mountPath = null,
 }: FixRunParams): FixRunTranscript => ({
   to: branchPlace({
     sessionId,
-    mountId,
     mountPath,
     tab: threadId !== null && noteIdOfThread({ threadId }) !== null ? 'files' : 'comments',
     threadId,

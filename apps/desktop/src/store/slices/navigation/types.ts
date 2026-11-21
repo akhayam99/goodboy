@@ -27,7 +27,7 @@ export type SessionTarget =
     }
   | {
       readonly kind: 'branch';
-      readonly mountId?: MountId | null;
+      readonly mountId: MountId | null;
       readonly mountPath: string | null;
       readonly tab: BranchTab;
       readonly threadId: string | null;
