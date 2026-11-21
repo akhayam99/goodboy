@@ -315,14 +315,6 @@ const FOOT_DOORS: ReadonlyArray<FootDoor> = [
     },
     mark: /^Notifications/,
   },
-  {
-    name: 'the Goodboy line',
-    kind: 'guide',
-    open: async () => {
-      await clickButton(/^Goodboy/);
-    },
-    mark: /^Goodboy/,
-  },
 ];
 
 describe('the foot controls are doors that replace the open page', () => {
@@ -353,20 +345,20 @@ describe('the foot controls are doors that replace the open page', () => {
   );
 });
 
-describe('the Help tabs stack under the Goodboy row', () => {
+describe('the Help tabs stack under the palette door', () => {
   it('Guide then What is new then ⌘[ returns to Guide, and ⌘[ again lands under it', async () => {
     await boot({ seed: 'pr' });
     const startSession = useAppStore.getState().currentSessionId;
     const startIndex = stack()?.index ?? 0;
 
-    await clickButton(/^Goodboy/);
+    await openPalette(/^Guide/);
     expect(appStudioKind()).toBe('guide');
     const withOneStudio = stack()?.entries.length ?? 0;
 
     await click(await screen.findByRole('tab', { name: "What's new" }));
     expect(appStudioKind()).toBe('changelog');
     expect(stack()?.entries.length).toBe(withOneStudio + 1);
-    expect(currentMarks()).toEqual([expect.stringMatching(/^Goodboy/)]);
+    expect(currentMarks()).toEqual([]);
 
     await pressBack();
 

@@ -222,14 +222,41 @@ describe('the places rail', () => {
     expect(current()).toEqual(['board']);
   });
 
-  it('ends the rail with Settings, Report and the logo, in that order', () => {
+  it('ends the rail with Settings, Report and the signature, in that order', () => {
     mount({});
 
     const foot = Array.from(
-      rail().querySelectorAll('[data-shell-rail-item], [data-goodboy-chip]'),
-      (item) => item.getAttribute('data-shell-rail-item') ?? item.getAttribute('data-goodboy-chip'),
+      rail().querySelectorAll('[data-shell-rail-item], [data-rail-signature]'),
+      (item) => item.getAttribute('data-shell-rail-item') ?? 'signature',
     ).slice(-3);
-    expect(foot).toEqual(['settings', 'report', 'rail']);
+    expect(foot).toEqual(['settings', 'report', 'signature']);
+  });
+
+  it('draws the signature as a 24px passive tile: no control, no tab stop, no name, no tooltip', () => {
+    mount({});
+    const signature = rail().querySelector<HTMLElement>('[data-rail-signature]');
+    const tile = signature?.querySelector<HTMLElement>('[data-brand-tile]');
+
+    expect(signature?.getAttribute('aria-hidden')).toBe('true');
+    expect(tile?.style.width).toBe('24px');
+    expect(tile?.style.height).toBe('24px');
+    expect(signature?.querySelector('button, a, [tabindex], [role]')).toBeNull();
+    expect(signature?.textContent).toBe('');
+    expect(within(rail()).queryByRole('button', { name: /goodboy/i })).toBeNull();
+    expect(wordsOf()).not.toContain('Help');
+  });
+
+  it('opens nothing from the signature', () => {
+    const actions = mount({});
+
+    const signature = rail().querySelector('[data-rail-signature]');
+    expect(signature).not.toBeNull();
+    if (signature !== null) {
+      fireEvent.click(signature);
+    }
+
+    Object.values(actions).forEach((action) => expect(action).not.toHaveBeenCalled());
+    expect(screen.queryByRole('dialog')).toBeNull();
   });
 
   it('opens the report sheet from Report, which names its draft once one is saved', () => {
@@ -249,18 +276,31 @@ describe('the places rail', () => {
     within(rail()).getByRole('button', { name: 'Report a bug, draft saved' });
   });
 
-  it('replaces the logo with the update mark under Report while an update waits', () => {
+  it('puts the update mark above the signature while an update waits, and keeps the signature', () => {
     mount({});
     act(() => {
       useAppStore.setState({ updaterStatus: 'available', updateVersion: '0.40.1' });
     });
 
-    const foot = Array.from(rail().querySelectorAll('[data-shell-rail-item]'), (item) =>
-      item.getAttribute('data-shell-rail-item'),
-    ).slice(-3);
-    expect(foot).toEqual(['settings', 'report', 'update']);
-    expect(rail().querySelector('[data-goodboy-chip="rail"]')).toBeNull();
+    const foot = Array.from(
+      rail().querySelectorAll('[data-shell-rail-item], [data-rail-signature]'),
+      (item) => item.getAttribute('data-shell-rail-item') ?? 'signature',
+    ).slice(-4);
+    expect(foot).toEqual(['settings', 'report', 'update', 'signature']);
     expect(wordsOf().slice(-3)).toEqual(['Settings', 'Report', 'Update']);
+  });
+
+  it('takes the update mark away once the update is gone and leaves the signature', () => {
+    mount({});
+    act(() => {
+      useAppStore.setState({ updaterStatus: 'available', updateVersion: '0.40.1' });
+    });
+    act(() => {
+      useAppStore.setState({ updaterStatus: 'uptodate', updateVersion: null });
+    });
+
+    expect(rail().querySelector('[data-shell-rail-item="update"]')).toBeNull();
+    expect(rail().querySelector('[data-rail-signature]')).not.toBeNull();
   });
 
   it('shows only the foot outside a workspace', () => {
@@ -314,12 +354,9 @@ describe('the marks the places rail carries', () => {
     within(rail()).getByRole('button', { name: 'Tasks, 2 new' });
   });
 
-  it('lights the logo, and nothing else, while Help is open', () => {
+  it('lights no place while Help is open, the signature included', () => {
     mount({ placeOverride: 'help' });
 
-    expect(screen.getByRole('button', { name: 'Goodboy, help' }).getAttribute('aria-current')).toBe(
-      'page',
-    );
-    expect(rail().querySelectorAll('[aria-current="page"]')).toHaveLength(1);
+    expect(rail().querySelectorAll('[aria-current]')).toHaveLength(0);
   });
 });

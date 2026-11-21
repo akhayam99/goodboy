@@ -378,11 +378,11 @@ export const COLUMN_DOOR_ROWS: ReadonlyArray<Row> = [
     ),
   },
   {
-    name: "column: goodboy line, then the What's new tab",
+    name: "palette: Guide, then the What's new tab",
     covers: ['openChangelog', 'studio:changelog'],
-    door: 'visible',
+    door: 'palette',
     open: async () => {
-      await clickButton(/^Goodboy, help/);
+      await openPalette(/^Guide/);
       await click(await screen.findByRole('tab', { name: "What's new" }));
     },
     lands: both(
@@ -391,14 +391,14 @@ export const COLUMN_DOOR_ROWS: ReadonlyArray<Row> = [
     ),
   },
   {
-    name: 'column: goodboy line to the guide',
+    name: 'palette: the Guide opens from the palette, no mark in the rail opens it',
     covers: ['openGuide', 'studio:guide'],
-    door: 'visible',
-    open: () => clickButton(/^Goodboy, help/),
+    door: 'palette',
+    open: () => openPalette(/^Guide/),
     lands: () => studio('Guide'),
   },
   {
-    name: 'column: the bug icon beside the goodboy line opens the sheet',
+    name: 'column: Report in the rail foot opens the sheet',
     covers: ['column:report'],
     open: () => clickButton(/^Report a bug/),
     lands: () => visible('dialog', 'Report a bug'),

@@ -313,7 +313,7 @@ describe('AppTopBar', () => {
     expect(screen.getByText('1').className).not.toContain('hidden');
   });
 
-  it('closes the right zone with the bell, leaving report and setup to the Goodboy chip', () => {
+  it('closes the right zone with the bell, leaving report and setup to the rail foot', () => {
     const { container } = renderBar();
     const right = zones(container)[2];
     const bell = screen.getByTestId('notification-center');

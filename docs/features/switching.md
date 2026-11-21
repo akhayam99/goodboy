@@ -17,7 +17,7 @@ The list is a search field, then the sessions in groups: **Pinned** first, then 
 | Monitoring                                         | The right rail, as **Monitor**                                       |
 | The session list, Pinned and Done                  | Sessions in the top bar (**⌘B**) and the Board                       |
 | The workspace name                                 | The workspace mark at the top of the rail (**⌘O**, **⌘1** to **⌘9**) |
-| Settings, the bug icon, the Goodboy line           | The foot of the rail (**⌘,**, **⌘I**)                                |
+| Settings, the bug icon                             | The foot of the rail (**⌘,**, **⌘I**)                                |
 
 **⌘⇧[** and **⌘⇧]** still go to the previous and next session, in the order of the list. **Control+Tab** still flips through recent sessions without the list.
 

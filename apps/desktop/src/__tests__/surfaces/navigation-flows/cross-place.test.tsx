@@ -92,7 +92,7 @@ const lensOf = (): string | null => {
 const currentDoors = (): ReadonlyArray<string> =>
   Array.from(
     document.querySelectorAll(
-      '[data-shell-rail] [data-shell-rail-item][aria-current="page"], [data-goodboy-chip][aria-current="page"], [data-top-bar] [aria-current="page"]',
+      '[data-shell-rail] [data-shell-rail-item][aria-current="page"], [data-top-bar] [aria-current="page"]',
     ),
   ).map(
     (element) =>
@@ -561,15 +561,14 @@ describe('moving across every place keeps one frame', () => {
     expectHealthy();
   });
 
-  it('lights the Goodboy line for Help and never the open session under it', async () => {
+  it('lights no rail place for Help and never the open session under it', async () => {
     await boot({ seed: 'pr' });
     await openCrumb(/^Artifacts/);
 
-    await clickButton(/^Goodboy/);
+    await openPalette(/^Guide/);
     expect(studio()).toBe('guide');
     expectColumnBesideStudio();
-    expect(currentDoors()).toHaveLength(1);
-    expect(currentDoors()[0]).toMatch(/^Goodboy/);
+    expect(currentDoors()).toEqual([]);
 
     await escape();
     expect(studio()).toBeNull();

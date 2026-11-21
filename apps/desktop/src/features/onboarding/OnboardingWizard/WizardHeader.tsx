@@ -3,7 +3,7 @@ import { BrandTile } from '../../../shared/components/BrandTile';
 import { Stepper } from './Stepper';
 import type { WizardMode, WizardStepId } from './wizardSteps';
 
-const HEADER_TILE_PX = 22;
+const HEADER_TILE_PX = 24;
 
 type Props = {
   readonly mode: WizardMode;

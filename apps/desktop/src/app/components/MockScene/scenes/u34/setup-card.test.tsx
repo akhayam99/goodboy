@@ -47,7 +47,7 @@ it('u34-u27-foot-board keeps Settings, Report and the Goodboy mark at the foot o
 
   const rail = await screen.findByRole('navigation', { name: 'Places' });
   within(rail).getByRole('button', { name: 'Settings' });
-  within(rail).getByTestId('goodboy-chip');
+  expect(rail.querySelector('[data-rail-signature] [data-brand-tile]')).not.toBeNull();
   within(rail).getByRole('button', { name: 'Report a bug' });
   expect(rail.textContent).not.toContain('Setup');
 });

@@ -5,7 +5,6 @@
   "apps/desktop/src/app/components/AppTopBar/index.test.tsx": 6,
   "apps/desktop/src/app/components/AppTopBar/LimitsStrip/index.test.tsx": 5,
   "apps/desktop/src/app/components/AppTopBar/NowChip/index.test.tsx": 2,
-  "apps/desktop/src/app/components/GoodboyChip/index.test.tsx": 2,
   "apps/desktop/src/app/components/StudioFrame/index.test.tsx": 1,
   "apps/desktop/src/features/artifacts/components/ArtifactCreationPane/index.test.tsx": 1,
   "apps/desktop/src/features/artifacts/components/ArtifactStudio/ArtifactScoutList.test.tsx": 2,

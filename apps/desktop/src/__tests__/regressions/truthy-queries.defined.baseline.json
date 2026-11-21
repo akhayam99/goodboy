@@ -19,7 +19,6 @@
   "apps/desktop/src/app/components/ArtifactReadingDrawer/index.test.tsx": 2,
   "apps/desktop/src/app/components/BootSplash/index.test.tsx": 13,
   "apps/desktop/src/app/components/FixRunTranscriptDrawer/index.test.tsx": 2,
-  "apps/desktop/src/app/components/GoodboyChip/index.test.tsx": 1,
   "apps/desktop/src/app/components/MockScene/scenes/BranchLaneScene.test.tsx": 2,
   "apps/desktop/src/app/components/MockScene/scenes/FixRunMultiScene.test.tsx": 4,
   "apps/desktop/src/app/components/MockScene/scenes/FixRunQuestionScene.test.tsx": 4,

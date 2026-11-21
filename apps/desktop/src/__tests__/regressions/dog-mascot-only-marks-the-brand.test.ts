@@ -5,13 +5,11 @@ import { describe, expect, it } from 'vitest';
 
 const SRC = join(__dirname, '..', '..');
 const SKIP_SEGMENTS = new Set(['__tests__', 'node_modules']);
-const ALLOWED = new Set([
-  'app/components/GoodboyChip/BrandLockup.tsx',
-  'shared/components/BrandTile.tsx',
-]);
+const ALLOWED = new Set(['shared/components/BrandTile.tsx']);
 const BRAND_TILE_FILE = 'shared/components/BrandTile.tsx';
 const BRAND_TILE_IMPORTERS = new Set([
   'app/components/BootSplash/BootBrand.tsx',
+  'app/components/ShellLeft/RailSignature/index.tsx',
   'features/onboarding/OnboardingWizard/WizardHeader.tsx',
   'features/workspace/components/WorkspaceLauncher/index.tsx',
 ]);
@@ -39,7 +37,7 @@ const sourcePaths = (): ReadonlyArray<{ readonly path: string; readonly text: st
   }));
 
 describe('DogMascot', () => {
-  it('marks the brand only: the brand lockup and the brand tile', () => {
+  it('marks the brand only: the brand tile', () => {
     const users = sourcePaths()
       .filter(({ text }) => text.includes('DogMascot'))
       .map(({ path }) => path)
@@ -49,7 +47,7 @@ describe('DogMascot', () => {
     expect(users).toEqual([...ALLOWED].sort());
   });
 
-  it('lets only the boot splash, the setup header and the launcher draw the brand tile', () => {
+  it('lets only the boot splash, the rail signature, the setup header and the launcher draw the brand tile', () => {
     const importers = sourcePaths()
       .filter(
         ({ path, text }) =>

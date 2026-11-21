@@ -40,7 +40,7 @@ unit that changes the skeleton edits this section first.
 What holds today and is guarded:
 
 - **One selected sign.** A control lights from `isCurrent` and never from its
-  own state, in the places rail, the page tabs, the Goodboy mark and the bell; every one of them reads the one column place (`useColumnPlace`),
+  own state, in the places rail, the page tabs and the bell; every one of them reads the one column place (`useColumnPlace`),
   New session included; the page tabs read the session pages sign
   (`currentSignOf`). Every page except the New workspace flow names a place, so
   exactly one control is lit, and the open session is never lit under a page. `__tests__/navigation/oneDoor.test.ts`.
@@ -385,7 +385,7 @@ busy, a failed switch keeps the workspace you were in and says
 `Couldn't open {name}.` with **Retry** beside the mark), then
 New (⌘N, an outlined tile; a dot and `New session, draft in progress` while a
 draft waits), then Board (⌘⇧H), Tasks, Workflows, Chat, Connect and Impact,
-then at the foot Settings (⌘,), the bug and the Goodboy mark. Each item is an
+then at the foot Settings (⌘,), the bug and the Goodboy signature. Each item is an
 18px icon with one word under it. Connections reads Connect on the rail; the
 full name stays its accessible name and shows in its tooltip. Impact is last
 and quiet. The rail holds no tool: Terminal and Browser live on the right rail
@@ -644,30 +644,42 @@ only drop under zoom.
   (`theme-switch-is-one-paint`). No shortcut is bound to it.
 - The top bar never edits. Reporting a bug, the update
   and the version are about Goodboy itself, so they live at the foot of the
-  column: the Goodboy line. The setup checklist is a card on the Board.
+  places rail, above the signature. The setup checklist is a card on the Board.
 
 ## The rail foot
 
-The foot is the app's corner, the last three places of the places rail, from the
-top: Settings (⌘,), Report (⌘I) and the Goodboy logo. Each is a rail item with its
-word under the icon (`ShellRailItem`), and none goes to a page of the workspace.
-Report says "Report a bug, draft saved" in its name, with the draft dot, while a
-report is half written. Before a workspace exists the rail is only this foot.
+The foot is the app's corner, the last places of the places rail, from the top:
+Settings (⌘,), Report (⌘I), the Update mark while an update waits, and the
+signature. Settings, Report and Update are rail items with their word under the
+icon (`ShellRailItem`), and none goes to a page of the workspace. Report says
+"Report a bug, draft saved" in its name, with the draft dot, while a report is
+half written. Before a workspace exists the rail is only this foot.
 
-The logo (`app/components/GoodboyChip`, variant `rail`) is a door to Help: it opens
-the Guide, it is selected (`bg-selected`, `aria-current="page"`) while a Help tab is
-open, and a click on it then does nothing. The dog mark in its dark tile is the same
-in light and dark. The rail shows no version line: it is in the logo's tooltip, in Settings and in What's new.
+The signature (`app/components/ShellLeft/RailSignature/index.tsx`) is a 24px `BrandTile`
+on the rail axis, below the last item: tile `#0b0b0d`, white dog, radius 0.28 of the
+side, mark 0.76, with no ring, plate, border, glow or gradient, never inverted and
+the same in light and dark. It is passive, not a control: no button, no hover, no
+focus, no tooltip, `aria-hidden`. It is not a door to Help: the Guide and What's
+new open from Help in the menu bar and from Search or run, and no mark in the rail
+is lit while a Help tab is open. The rail shows no version line: it is in the Update
+card, in Settings and in What's new. At the 700px minimum window the foot fits with
+the Update mark above the signature.
 
-With an update the logo becomes the update mark
-(`features/updater/components/UpdateRailMark.tsx`): one place and one shape, so no
-dot, no pill and no version line beside it. It is a rail item with the word
-**Update**, in `primary` on `primary-subtle` (never `brand-accent`, which stays with
-the logo). `updateMarkOf` (`features/updater/updateMark.ts`) gives it by state:
+`useRailFootEffects` (`app/components/ShellLeft/useRailFootEffects`) keeps what the
+logo used to carry: the restart when idle (`useRestartWhenIdle`), the anchor the
+update card opens beside, and the onboarding re-read when a secondary window takes
+focus.
+
+With an update, the Update mark
+(`features/updater/components/UpdateRailMark.tsx`) is one more item above the
+signature, and never takes its place: one place and one shape, so no dot, no pill
+and no version line beside it. It is a rail item with the word
+**Update**, in `primary` on `primary-subtle`. `updateMarkOf`
+(`features/updater/updateMark.ts`) gives it by state:
 
 | State          | Mark                                                                     | Card                                         |
 | -------------- | ------------------------------------------------------------------------ | -------------------------------------------- |
-| None           | The logo                                                                 | None                                         |
+| None           | No mark, the signature alone                                             | None                                         |
 | Available      | Arrow, word Update                                                       | Later, Update now                            |
 | Downloading    | Arrow with a ring that fills, the word is the percent (`updateProgress`) | The bar fills, the button is busy            |
 | Ready          | Arrow, with a `primary-edge` ring                                        | Later, Restart now                           |
@@ -682,10 +694,8 @@ the update card (`toggleUpdateCard`). The card opens to the right of the rail,
 aligned with the foot, through `useDropdownDirection` (side `right`, align `end`),
 12px inside every window edge. The card, its copy, the automatic arrival and the
 snooze are unchanged (`UpdateArrivalCard`, `updateCardCopy`, `updateSnoozeGate`).
-Without the logo on screen, the new version is in the mark's tooltip and in Settings.
-The mark owns the card and the restart when idle (`useRestartWhenIdle`).
-
-`GoodboyChip` has one shape, the mark on the rail. The workspace launcher, which
+The new version is in the mark's tooltip and in Settings. The rail foot owns the
+card and the restart when idle (`useRailFootEffects`). The workspace launcher, which
 has no rail, shows the update as the `UpdatePill` pill.
 
 Pair an iPhone lives in Settings, iPhone (`goodboy:open-pair-device` lands on
@@ -694,7 +704,8 @@ lives in Settings, Shortcuts (⌘/). Neither is in the foot. Every studio keeps 
 door you can see: the flow table in
 `__tests__/surfaces/navigation-flows` gives each row that reaches a studio a
 `door` of `visible` or `palette`, and `studio-doors.test.ts` fails when a studio
-kind has no `visible` row. Three links open the Guide on a chapter and Back
+kind has no `visible` row, the Guide and What's new excepted: their door is
+`palette` (with Help in the menu bar). Three links open the Guide on a chapter and Back
 returns to the page you were on: the session hover card's "What do these marks
 mean?" (Legend), Impact's Spend tab "How cost is counted" (Tokens and cost) and
 the Storage worktree row's "What is a worktree?" (Words). They share
@@ -722,7 +733,7 @@ page's one other control is "Sponsor on GitHub", which leaves the app
 window on Home, at the end of the title row beside Close, with no strip of its
 own (`DetachedStudio`). The page's band holds `Back to app` with the Esc chip at the top
 left and there is no Close (`close: 'back'`, `StudioFrame/index.test.tsx` pins
-it). The Goodboy line opens it on the Guide and the palette rows open either
+it). Help in the menu bar and the palette open it on the Guide, and the palette rows open either
 tab. The What's new tab is a rail
 of releases grouped by minor, with an Older group below 0.4 (`ChangelogRail`),
 and a reader beside it. `CatchUpReader` (`page="whatsNew"`) opens first and sums
@@ -951,7 +962,7 @@ filter is the tool door, and Connect a tool lives in Connections.
   fresh install shows none, and dismissing it marks that version as read.
 - Opening any studio closes the others. A door that is current does nothing.
 - **Before any workspace exists, the places rail keeps its foot**: Settings,
-  the bug and the Goodboy mark. New session and the places belong to a
+  the bug and the Goodboy signature. New session and the places belong to a
   workspace and wait for one. Settings then opens its home with only the
   App and Providers groups, and Providers opens on an account instead
   of on the workspace defaults. Precedent: VS Code keeps its status bar and

@@ -594,14 +594,17 @@ the six places and Settings share one axis at either width.
 `places-rail.test.tsx` reads the order and the width in the `r4-column-dark`
 and `r4-column-light` scenes, and with an old folded choice.
 
-The foot of the rail is Settings, Report (with its word) and the logo. An update
-turns the logo into one more `ShellRailItem`: `tint="primary"` paints the tile
+The foot of the rail is Settings, Report (with its word) and the signature. The
+signature (`RailSignature`) is a 24px `BrandTile`: passive, `aria-hidden`, with no
+hover, focus or tooltip, and no ring, plate, border, glow or gradient. It is the
+same in both themes and never inverted. An update adds one more `ShellRailItem`
+above the signature and never replaces it: `tint="primary"` paints the tile
 `primary-subtle` with `primary` text and word (`danger` on `danger-subtle` when it
 failed), `isEdged` adds a `primary-edge` ring once the update is ready, and the
 `ring` mark draws the download as a fill around the tile with the percent as its
-word. The tile never reads `brand-accent`, which stays with the logo, and the card
-it opens goes to the right of the rail through `placeFloating`, 12px inside the
-window. `rail-foot-*` scenes show the rest state and the six update states.
+word. The card it opens goes to the right of the rail through `placeFloating`,
+12px inside the window. `useRailFootEffects` keeps the restart-when-idle and the
+onboarding re-read that used to ride on the logo. `rail-foot-*` scenes show the rest state and the six update states.
 
 A stat card holds its label to two lines (`line-clamp-2`), pins the figure to
 the bottom of the card with `mt-auto`, and puts the delta and the hint on their
@@ -1040,8 +1043,8 @@ the outline look, `ghost` and `quiet` the quiet look.
   `border-control`. The diff paints added and removed lines, line numbers and
   words with the opaque `diff-` steps (line, gutter, word, each a step darker in
   light and lighter in dark), and the selected line with `primary-subtle` and a
-  `primary-solid` rail. The brand chip sets `primary` to `brand-accent` inside
-  itself, so a later primary change leaves the logo alone.
+  `primary-solid` rail. `brand-accent` has no consumer in
+  the product today; the rail signature does not read it.
 
 ## Icon and tone vocabulary
 

@@ -13,6 +13,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { ALL_ROWS, STUDIO_KINDS } from './allRows';
 
 const STUDIO_TOKEN = /^studio:(\w+)$/;
+const PALETTE_DOOR_KINDS: ReadonlyArray<string> = ['guide', 'changelog'];
 
 describe('every studio has a door you can see', () => {
   it('lists the studio kinds of the navigation slice', () => {
@@ -34,22 +35,22 @@ describe('every studio has a door you can see', () => {
     const rows = ALL_ROWS;
     const withoutVisibleDoor = STUDIO_KINDS.filter(
       (kind) =>
+        !PALETTE_DOOR_KINDS.includes(kind) &&
         !rows.some((row) => row.door === 'visible' && row.covers.includes(`studio:${kind}`)),
     );
 
     expect(withoutVisibleDoor).toEqual([]);
   });
 
-  it('puts the Guide and the What is new tab behind the Goodboy line', () => {
+  it('leaves the Guide and the What is new tab to the palette, not to a mark in the rail', () => {
     const rows = ALL_ROWS;
-    const visibleRowsOf = (kind: string) =>
-      rows.filter((row) => row.door === 'visible' && row.covers.includes(`studio:${kind}`));
+    const rowsOf = (kind: string) => rows.filter((row) => row.covers.includes(`studio:${kind}`));
 
-    expect(visibleRowsOf('guide').map((row) => row.name)).toContain(
-      'column: goodboy line to the guide',
-    );
-    expect(visibleRowsOf('changelog').map((row) => row.name)).toContain(
-      "column: goodboy line, then the What's new tab",
-    );
+    PALETTE_DOOR_KINDS.forEach((kind) => {
+      expect(rowsOf(kind).length).toBeGreaterThan(0);
+      expect(rowsOf(kind).filter((row) => row.door === 'visible')).toEqual([]);
+      expect(rowsOf(kind).filter((row) => row.door === 'palette').length).toBeGreaterThan(0);
+    });
+    expect(rows.filter((row) => /goodboy line/i.test(row.name))).toEqual([]);
   });
 });
