@@ -169,9 +169,12 @@ describe('the u23 frame scenes', () => {
     const title = await screen.findByRole('heading', { level: 1, name: 'Impact' });
     const row = title.closest('[data-slot="pane-title-row"]') as HTMLElement;
     expect(within(row).queryByRole('tablist', { name: 'Impact window' })).toBeNull();
-    const header = title.closest('[data-slot="pane-header"]') as HTMLElement;
-    const tools = header.querySelector('[data-slot="pane-toolbar"]') as HTMLElement;
-    within(tools).getByRole('tablist', { name: 'Impact window' });
+    const header = title.closest('[data-slot="pane-header"]');
+    const tools = screen
+      .getByRole('tablist', { name: 'Impact window' })
+      .closest('[data-slot="pane-toolbar"]');
+    expect(tools).not.toBeNull();
+    expect(header?.contains(tools)).toBe(true);
     expect(container.querySelector('[data-studio-band]')).toBeNull();
   });
 
