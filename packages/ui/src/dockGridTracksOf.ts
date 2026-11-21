@@ -1,4 +1,5 @@
 import type { DockGridColumnBox } from './dockGridColumnBox';
+import { DOCK_ROW_MIN_PX } from './dockRowMin';
 import { DRAWER_GUTTER } from './drawerGeometry';
 
 type Params = {
@@ -12,6 +13,8 @@ type Tracks = {
 
 const GUTTER_TRACK = `${DRAWER_GUTTER}px`;
 
+const ROW_MIN = `${DOCK_ROW_MIN_PX}px`;
+
 export const dockGridTracksOf = ({ columns }: Params): Tracks => {
   const split = columns.find((column) => column.panes.length > 1);
   const [top, bottom] = split?.panes ?? [];
@@ -20,6 +23,6 @@ export const dockGridTracksOf = ({ columns }: Params): Tracks => {
     rows:
       top === undefined || bottom === undefined
         ? 'minmax(0,1fr)'
-        : `minmax(0,${top.weight}fr) ${GUTTER_TRACK} minmax(0,${bottom.weight}fr)`,
+        : `minmax(${ROW_MIN},${top.weight}fr) ${GUTTER_TRACK} minmax(${ROW_MIN},${bottom.weight}fr)`,
   };
 };

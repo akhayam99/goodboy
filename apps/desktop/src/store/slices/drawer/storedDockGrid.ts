@@ -6,6 +6,7 @@ import type {
   DrawerContent,
   DrawerFocus,
   DrawerGrid,
+  DrawerGridSplits,
   DrawerGridWidths,
   OpenDrawer,
   WorkspaceToolKind,
@@ -126,6 +127,31 @@ const widthsOf = ({ value }: ValueParams): DrawerGridWidths => {
   );
 };
 
+const isSplitKey = ({ value }: ValueParams): boolean => {
+  if (typeof value !== 'string') {
+    return false;
+  }
+  const kinds = value.split('/');
+  return kinds.length === 2 && kinds.every((kind) => toolKindOf({ value: kind }) !== null);
+};
+
+const splitsOf = ({ value }: ValueParams): DrawerGridSplits => {
+  if (!isRecord(value)) {
+    return {};
+  }
+  return Object.fromEntries(
+    Object.entries(value).flatMap(([key, share]) =>
+      isSplitKey({ value: key }) &&
+      typeof share === 'number' &&
+      Number.isFinite(share) &&
+      share > 0 &&
+      share < 1
+        ? [[key, share] as const]
+        : [],
+    ),
+  );
+};
+
 export const storedDockGridOf = ({ grid }: GridParams): string =>
   JSON.stringify({
     version: STORED_DOCK_GRID_VERSION,
@@ -133,6 +159,7 @@ export const storedDockGridOf = ({ grid }: GridParams): string =>
     used: grid.used,
     focus: grid.focus,
     widths: grid.widths,
+    ...(Object.keys(grid.splits).length === 0 ? {} : { splits: grid.splits }),
   });
 
 export const parseStoredDockGrid = ({ raw }: RawParams): DrawerGrid | null => {
@@ -155,5 +182,6 @@ export const parseStoredDockGrid = ({ raw }: RawParams): DrawerGrid | null => {
     used: usedOf({ value: value.used, kinds }),
     focus: storedFocusOf({ value: value.focus, kinds }),
     widths: widthsOf({ value: value.widths }),
+    splits: splitsOf({ value: value.splits }),
   };
 };

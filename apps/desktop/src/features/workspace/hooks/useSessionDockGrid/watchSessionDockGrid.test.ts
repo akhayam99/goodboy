@@ -82,6 +82,7 @@ const SAVED: DrawerGrid = {
   used: ['browser', 'terminal'],
   focus: { at: 'tool', kind: 'browser' },
   widths: { browser: 760 },
+  splits: {},
 };
 
 let store: StoryStore;
@@ -189,7 +190,13 @@ describe('the dock grid saved on the session', () => {
     saveRow({ sessionId: S1, grid: SAVED });
     saveRow({
       sessionId: S2,
-      grid: { columns: [[TERMINAL]], used: ['terminal'], focus: { at: 'page' }, widths: {} },
+      grid: {
+        columns: [[TERMINAL]],
+        used: ['terminal'],
+        focus: { at: 'page' },
+        widths: {},
+        splits: {},
+      },
     });
     watch();
 
@@ -209,6 +216,7 @@ describe('the dock grid saved on the session', () => {
         used: ['browser', 'monitoring'],
         focus: { at: 'tool', kind: 'monitoring' },
         widths: {},
+        splits: {},
       },
     });
     watch();
@@ -221,7 +229,13 @@ describe('the dock grid saved on the session', () => {
   it('brings Monitor back when the session opens again in the same run', async () => {
     saveRow({
       sessionId: S2,
-      grid: { columns: [[TERMINAL]], used: ['terminal'], focus: { at: 'page' }, widths: {} },
+      grid: {
+        columns: [[TERMINAL]],
+        used: ['terminal'],
+        focus: { at: 'page' },
+        widths: {},
+        splits: {},
+      },
     });
     watch();
     await goTo({ sessionId: S1 });
@@ -292,5 +306,204 @@ describe('the dock grid saved on the session', () => {
     await goTo({ sessionId: S1 });
 
     expect(toolKinds()).toEqual([['browser'], ['terminal']]);
+  });
+
+  it('reads the newer grid of another window when this window takes the focus', async () => {
+    watch();
+    await goTo({ sessionId: S1 });
+    state().openDrawer(TERMINAL);
+    await settle();
+
+    saveRow({ sessionId: S1, grid: SAVED, savedAt: Date.now() + 1000 });
+    window.dispatchEvent(new Event('focus'));
+    await settle();
+
+    expect(toolKinds()).toEqual([['browser'], ['terminal']]);
+    expect(toolKinds().flat()).toHaveLength(new Set(toolKinds().flat()).size);
+  });
+});
+
+describe('moving a panel and resetting the layout', () => {
+  const openPair = async () => {
+    watch();
+    await goTo({ sessionId: S1 });
+    state().openDrawer(TERMINAL);
+    state().openDrawer(BROWSER);
+    await settle();
+  };
+
+  it('moves a panel, saves the grid on the session and focuses the panel', async () => {
+    await openPair();
+
+    const isMoved = await state().moveDockPanel({
+      sessionId: S1,
+      kind: 'browser',
+      target: { at: 'above', key: 'terminal' },
+    });
+    await settle();
+
+    expect(isMoved).toBe(true);
+    expect(toolKinds()).toEqual([['browser', 'terminal']]);
+    expect(panelFocusKeyOf({ panels: shellPanelsOf({ state: state() }) })).toBe('browser');
+    expect(JSON.parse(db.rows.get(S1)?.grid ?? '{}')).toMatchObject({
+      columns: [[{ kind: 'browser' }, { kind: 'terminal' }]],
+    });
+  });
+
+  it('does nothing for a panel that already left the grid', async () => {
+    await openPair();
+    const terminal = state()
+      .drawerGrid.columns.flat()
+      .find((panel) => panel.kind === 'terminal');
+    if (terminal === undefined) {
+      throw new Error('terminal is in the grid');
+    }
+    state().closeDrawerEntry({ entry: terminal });
+    const before = state().drawerGrid;
+
+    const isMoved = await state().moveDockPanel({
+      sessionId: S1,
+      kind: 'terminal',
+      target: { at: 'above', key: 'browser' },
+    });
+
+    expect(isMoved).toBe(false);
+    expect(state().drawerGrid).toBe(before);
+  });
+
+  it('drops a move that lands after the window left the session it named', async () => {
+    await openPair();
+    const before = toolKinds();
+
+    const moving = state().moveDockPanel({
+      sessionId: S1,
+      kind: 'browser',
+      target: { at: 'above', key: 'terminal' },
+    });
+    state().navigate({ to: sessionPlace({ sessionId: S2 }) });
+
+    expect(await moving).toBe(false);
+    await settle();
+    expect(toolKinds()).toEqual(before);
+  });
+
+  it('rejects a move that names another session than the one on screen', async () => {
+    await openPair();
+    const before = state().drawerGrid;
+    db.rows.delete(S2);
+
+    const isMoved = await state().moveDockPanel({
+      sessionId: S2,
+      kind: 'browser',
+      target: { at: 'above', key: 'terminal' },
+    });
+    await settle();
+
+    expect(isMoved).toBe(false);
+    expect(state().drawerGrid).toBe(before);
+    expect(db.rows.has(S2)).toBe(false);
+  });
+
+  it('rejects Reset layout and its Undo once the window left the session', async () => {
+    await openPair();
+    await state().moveDockPanel({ sessionId: S1, kind: 'browser', target: { at: 'page' } });
+    await state().resetDockGrid({ sessionId: S1 });
+    await settle();
+    await goTo({ sessionId: S2 });
+    const before = state().drawerGrid;
+    const saved = db.rows.get(S1)?.grid;
+
+    expect(await state().undoLastOperation()).toBe(false);
+    await settle();
+
+    expect(state().drawerGrid).toBe(before);
+    expect(db.rows.get(S1)?.grid).toBe(saved);
+  });
+
+  it('skips the save of a queued move once a panel closed under it', async () => {
+    await openPair();
+    const terminal = state()
+      .drawerGrid.columns.flat()
+      .find((panel) => panel.kind === 'terminal');
+    if (terminal === undefined) {
+      throw new Error('terminal is in the grid');
+    }
+
+    const moving = state().moveDockPanel({
+      sessionId: S1,
+      kind: 'browser',
+      target: { at: 'above', key: 'terminal' },
+    });
+    state().closeDrawerEntry({ entry: terminal });
+
+    expect(await moving).toBe(false);
+    await settle();
+    expect(JSON.parse(db.rows.get(S1)?.grid ?? '{}').columns).toEqual([
+      [expect.objectContaining({ kind: 'browser' })],
+    ]);
+  });
+
+  it('keeps the panels where they were when the save fails, and says so', async () => {
+    await openPair();
+    const before = state().drawerGrid;
+    db.failSaves = true;
+
+    const isMoved = await state().moveDockPanel({
+      sessionId: S1,
+      kind: 'browser',
+      target: { at: 'page' },
+    });
+
+    expect(isMoved).toBe(false);
+    expect(state().drawerGrid).toBe(before);
+    expect(reportError).toHaveBeenCalledWith(
+      expect.objectContaining({ sessionId: S1, title: "Couldn't move the panel" }),
+    );
+  });
+
+  it('resets the layout and Undo brings back the panels and their sizes', async () => {
+    await openPair();
+    await state().moveDockPanel({
+      sessionId: S1,
+      kind: 'browser',
+      target: { at: 'above', key: 'terminal' },
+    });
+    state().resizeDockRow({ kinds: ['browser', 'terminal'], share: 0.3 });
+    await settle();
+    const arranged = state().drawerGrid;
+
+    const isReset = await state().resetDockGrid({ sessionId: S1 });
+    await settle();
+
+    expect(isReset).toBe(true);
+    expect(toolKinds()).toEqual([['terminal'], ['browser']]);
+    expect(state().drawerGrid.splits).toEqual({});
+    expect(state().undoNotices.at(-1)?.toast.message).toBe('Panel layout reset');
+
+    expect(await state().undoLastOperation()).toBe(true);
+    await settle();
+
+    expect(toolKinds()).toEqual([['browser', 'terminal']]);
+    expect(state().drawerGrid.splits).toEqual(arranged.splits);
+  });
+
+  it('undoes nothing once the panels changed after the reset', async () => {
+    await openPair();
+    await state().moveDockPanel({ sessionId: S1, kind: 'browser', target: { at: 'page' } });
+    await state().resetDockGrid({ sessionId: S1 });
+    state().openDrawer(MONITOR);
+    await settle();
+    const after = state().drawerGrid;
+
+    expect(await state().undoLastOperation()).toBe(false);
+    expect(state().drawerGrid).toBe(after);
+  });
+
+  it('resets nothing when the panels already sit where they open', async () => {
+    await openPair();
+    const before = state().drawerGrid;
+
+    expect(await state().resetDockGrid({ sessionId: S1 })).toBe(false);
+    expect(state().drawerGrid).toBe(before);
   });
 });

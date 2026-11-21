@@ -21,6 +21,7 @@ const GRID: DrawerGrid = {
   used: ['monitoring', 'browser', 'terminal'],
   focus: { at: 'tool', kind: 'terminal' },
   widths: { browser: 760, monitoring: 420 },
+  splits: { 'browser/terminal': 0.64 },
 };
 
 type RawParams = {
@@ -88,6 +89,38 @@ describe('the dock grid as the session stores it', () => {
       used: ['browser'],
       focus: { at: 'page' },
       widths: { terminal: 400 },
+      splits: {},
     });
+  });
+
+  it('writes the row heights under version 1, beside the fields an older build reads', () => {
+    const stored: unknown = JSON.parse(storedDockGridOf({ grid: GRID }));
+    const plain: unknown = JSON.parse(storedDockGridOf({ grid: { ...GRID, splits: {} } }));
+
+    expect(stored).toMatchObject({ version: 1, splits: { 'browser/terminal': 0.64 } });
+    expect(plain).not.toHaveProperty('splits');
+    expect({ ...Object(stored), splits: undefined }).toEqual({
+      ...Object(plain),
+      splits: undefined,
+    });
+  });
+
+  it('drops a row height it cannot read and keeps the rest', () => {
+    const parsed = parseStoredDockGrid({
+      raw: raw({
+        value: {
+          version: 1,
+          columns: [[{ kind: 'browser', sessionId: null, payload: null }]],
+          splits: {
+            'browser/terminal': 0.3,
+            'browser/ask': 0.4,
+            'terminal/monitoring': 1.2,
+            monitoring: 0.5,
+          },
+        },
+      }),
+    });
+
+    expect(parsed?.splits).toEqual({ 'browser/terminal': 0.3 });
   });
 });

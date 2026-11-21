@@ -58,6 +58,7 @@ import { selectIsAskOpen } from '../../../../store/slices/ask/selectIsAskOpen';
 import { artifactEntries } from '../../sources/artifactEntries';
 import { sessionEntries } from '../../sources/sessionEntries';
 import { markAllReadEntries } from '../../sources/markAllReadEntries';
+import { dockPanelEntries } from '../../sources/dockPanelEntries';
 import { workspaceEntries } from '../../sources/workspaceEntries';
 import { scriptPinEntries } from '../../sources/scriptPinEntries';
 import { useScriptPins } from '../../../scripts';
@@ -141,6 +142,8 @@ export const useCommandEntries = (): ReadonlyArray<PaletteEntry> => {
   const scriptPins = useScriptPins({ projectIds: workspaceProjects.map((project) => project.id) });
   const reportError = useAppStore((s) => s.reportError);
   const markSessionsRead = useAppStore((s) => s.markSessionsRead);
+  const dockGrid = useAppStore((s) => s.drawerGrid);
+  const dockSessionId = useAppStore((s) => s.currentSessionId);
   const unreadSessionIds = useUnreadSessionIds({ sessions });
   const { showToast } = useToast();
   const innerColumn = useCurrentInnerColumn();
@@ -199,6 +202,7 @@ export const useCommandEntries = (): ReadonlyArray<PaletteEntry> => {
     }
 
     out.push(...markAllReadEntries({ sessionIds: unreadSessionIds, markRead: markSessionsRead }));
+    out.push(...dockPanelEntries({ grid: dockGrid, sessionId: dockSessionId }));
 
     if (sessionId !== null) {
       out.push(
@@ -482,6 +486,8 @@ export const useCommandEntries = (): ReadonlyArray<PaletteEntry> => {
     openStudio,
     reportError,
     markSessionsRead,
+    dockGrid,
+    dockSessionId,
     unreadSessionIds,
     showToast,
     settingsGroups,

@@ -7,6 +7,7 @@ import { checkForUpdatesNow } from '../../../features/updater/checkForUpdatesNow
 import { openSessionTerminalHere } from '../../../features/terminal/openSessionTerminalHere';
 import { openWorkspaceTerminal } from '../../../features/terminal/openWorkspaceTerminal';
 import { toggleBrowserDock } from '../../../features/browser/toggleBrowserDock';
+import { NAMES } from '../../../shared/utils/names';
 
 type MenuAction = {
   readonly label: string;
@@ -53,6 +54,11 @@ const openNewTerminal = (): void => {
   void openWorkspaceTerminal({ workspaceId, isFresh: true });
 };
 
+const resetPanelLayout = (): void => {
+  const state = useAppStore.getState();
+  void state.resetDockGrid({ sessionId: state.currentSessionId });
+};
+
 export const MENU_ACTIONS = {
   'menu.checkForUpdates': { label: 'Check for updates', run: checkForUpdatesNow },
   'menu.newTerminal': { label: 'New terminal', run: openNewTerminal },
@@ -71,6 +77,7 @@ export const MENU_ACTIONS = {
     label: 'Show or hide Browser',
     run: inWorkspace({ run: () => toggleBrowserDock({ isToggle: true }) }),
   },
+  'menu.resetPanels': { label: NAMES.resetPanelLayout, run: resetPanelLayout },
   'menu.guide': destinationAction({ id: 'guide', isGuarded: false }),
   'menu.whatsNew': destinationAction({ id: 'whatsNew' }),
 } as const satisfies Readonly<Record<string, MenuAction>>;

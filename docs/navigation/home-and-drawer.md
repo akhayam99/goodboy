@@ -334,7 +334,13 @@ go through `dockLayoutOf` inside `DrawerColumn`: every pane is its own card,
 in the dock box on the window edge whether the grid pushes or lies over the
 page. Each column has its handle on its left edge. It takes the width the
 session saved for its lead tool (`drawerGrid.widths`), else the width its lead
-tier had before the update; rows keep the solver's share, 50/50 or 58/42 with Browser on top.
+tier had before the update. Two stacked panels start at the solver's share,
+50/50 or 58/42 with Browser on top, and a handle between them
+(`DockRowHandle`) moves the line: each panel keeps at least 160px, the arrows
+step it, a double click goes back to the start. The drag previews on the grid
+itself and writes once at the release (`resizeDockRow`, the share under the
+pair's kinds in `drawerGrid.splits`); a write for a pair no longer stacked
+that way changes nothing.
 With two panels or more on screen the focused one draws a `focus-ring` border.
 A click or a focus inside a panel or the page names it (`focusShellPanel`,
 which writes only when the key changes). F6 and ⇧F6 (`panel.focusNext`,
@@ -701,7 +707,9 @@ without a branch sits in `Unassigned comments` on the Session overview.
 ### The grid saved on the session
 
 Each session remembers its dock grid: the panels, the columns, the width of
-each tool's column and the focus. It lives in `session_dock_grids` (m244), one
+each tool's column, the height of two stacked panels and the focus. The
+heights sit in an optional `splits` field of version 1: a row without it
+reads, and an older build reads a row with it and leaves it out. It lives in `session_dock_grids` (m244), one
 row per session, deleted with it. The Board and the pages keep the grid the
 window has; they save nothing.
 
@@ -727,16 +735,49 @@ window has; they save nothing.
   keys any more: a detail keeps its width per kind, so a drag on Ask never
   changes where a Terminal starts.
 
-| Write or read   | What happens                                                                                                                                         |
-| --------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Target          | The session the change was made on, read when it happened.                                                                                           |
-| State change    | The live grid moves at once; the row changes only when the write lands.                                                                              |
-| Failed save     | The row keeps the grid before it, and `reportError` shows the error on the session. Opening the session again brings that grid back.                 |
-| Retry           | The next change writes the whole grid again.                                                                                                         |
-| Late read       | A row that answers after the window left the session, or after the user opened or closed a tool, is dropped (`dockGridRecalls`).                     |
-| Order           | The writes and the read of one session queue in call order (`dockGridWrites`).                                                                       |
-| Second window   | The last write wins: a write older than the row (`updated_at`) changes nothing. A window shows the other's grid the next time it enters the session. |
-| Deleted session | The row goes with the session; a write for it writes nothing.                                                                                        |
+| Write or read   | What happens                                                                                                                                                                                                             |
+| --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Target          | The session the change was made on, read when it happened.                                                                                                                                                               |
+| State change    | The live grid moves at once; the row changes only when the write lands.                                                                                                                                                  |
+| Failed save     | The row keeps the grid before it, and `reportError` shows the error on the session. Opening the session again brings that grid back.                                                                                     |
+| Retry           | The next change writes the whole grid again.                                                                                                                                                                             |
+| Late read       | A row that answers after the window left the session, or after the user opened or closed a tool, is dropped (`dockGridRecalls`).                                                                                         |
+| Order           | The writes and the read of one session queue in call order (`dockGridWrites`).                                                                                                                                           |
+| Second window   | The last write wins: a write older than the row (`updated_at`) changes nothing. A window that takes the focus writes its waiting change, then reads the row again, so it shows the newer grid and never one panel twice. |
+| Deleted session | The row goes with the session; a write for it writes nothing.                                                                                                                                                            |
+
+A move and a reset write the row first and change the grid only after the
+write lands (`moveDockPanel`, `resetDockGrid`, through `committedDockGrid`
+and `commitAfterConfirm`). Each names the session it writes and holds a
+latest-only claim (`dockGridMoves`) that a newer move and a session switch
+(`watchSessionDockGrid`) cancel, so a move that lands late changes nothing;
+nor does one whose panel already left the grid.
+A failed write leaves the panels where they were and `reportError` says
+`Couldn't move the panel` or `Couldn't reset the panel layout`. A reset puts
+every tool back where it opens and drops the saved widths and heights; its
+toast `Panel layout reset` has Undo, which writes the layout before it back
+and changes nothing once the panels moved again. On the Board, with no
+session, the grid changes and nothing is saved.
+
+With two panels or more, a panel's head title is a drag source
+(`DockDragContext` from `DockGrid` into `DrawerFrame`, `useDockDrag`). A press
+becomes a drag after 4px, so a click stays a click, and a press on a control
+inside the head never starts one; Esc cancels through the escape stack and the
+pointer up drops. While it drags, `DockDropZones` draws the zones over every
+other panel (left, right, above, swap, below) and a strip on the page's edge
+(beside the page); a zone that would leave the page worse than now, by the
+solver with the real widths (`canDrop` from `useDockGrid`, `dockMoveFits`),
+reads `No room` and drops nothing. The zones redraw from a small store at most
+once a frame (`dockDragStore`), so the panels themselves render only when the
+drag starts and ends. The drag sets `SPLIT_DRAG_ATTRIBUTE` to
+`move`, so the Browser page hides under its cover like under a handle drag,
+and a drop goes through `moveDockPanel`. From the keyboard, ⌘K lists
+`Move Terminal panel…` for each tool when two or more are open
+(`dockPanelEntries`); its step holds only the moves that never leave the page
+worse than now (`dockMovesOf`, asking the mounted grid's `canDrop` through
+`dockFitProbe`: no new float, no new fold, no detail newly over the page). `Reset panel layout` sits in ⌘K while
+the layout differs from where the tools open (`gridAtRest`), and in View
+(`menu.resetPanels`).
 
 `watchSessionDockGrid.test.ts`, `storedDockGrid.test.ts`,
 `session-dock-grid.test.ts` and `restore-previous-build.test.ts` cover each

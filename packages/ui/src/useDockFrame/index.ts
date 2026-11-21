@@ -51,6 +51,8 @@ const DOCK_GRID_KEY = 'dock-grid';
 
 const LONE_DOCK_KEY = 'dock';
 
+const NO_SPLITS: Readonly<Record<string, number>> = {};
+
 export const useDockFrame = ({
   dockGrid,
   hasDrawer,
@@ -84,6 +86,7 @@ export const useDockFrame = ({
   const isDetailShown = isDetailOpen && !isDetailParked;
   const grid = useDockGrid({
     columns,
+    splits: dockGrid?.splits ?? NO_SPLITS,
     cellCount: cells.length,
     onResize: isLone ? undefined : dockGrid?.onResize,
     columnWidth,

@@ -1,9 +1,13 @@
-import { useCallback, useRef, type MutableRefObject, type RefObject } from 'react';
+import { useCallback, useEffect, useRef, type MutableRefObject, type RefObject } from 'react';
+import { dockFitProbe } from '../dockFitProbe';
 import { dockGridFrameOf, type DockGridFrame, type SolvedDockFrame } from '../dockGridFrameOf';
 import type { DockGridColumnBox } from '../dockGridColumnBox';
 import { dockGridSpanOf } from '../dockGridSpanOf';
 import { dockGridTracksOf } from '../dockGridTracksOf';
 import { dockLeadSizingOf } from '../dockLeadSizingOf';
+import { dockSplitKeyOf } from '../dockSplitKeyOf';
+import type { CanDropParams } from '../dockDropZonesOf';
+import { dockMoveFits } from '../dockMoveFits';
 import type { DockPairTurn } from '../dockPairTurnContext';
 import { DOCK_FOCUS_DETAIL, type DockGridCell, type DockGridSpec } from '../dockGridSpec';
 import { DRAWER_TIERS, type DrawerPlacement, type DrawerSizing } from '../drawerGeometry';
@@ -28,7 +32,10 @@ export type DockSolveParams = {
   readonly railWidth: number;
   readonly canPush: boolean;
   readonly detail: SolvedPane | null;
-  readonly columns: ReadonlyArray<{ readonly panes: ReadonlyArray<SolvedPane> }>;
+  readonly columns: ReadonlyArray<{
+    readonly panes: ReadonlyArray<SolvedPane>;
+    readonly split?: number;
+  }>;
 };
 
 type DetailSpec = {
@@ -39,6 +46,7 @@ type DetailSpec = {
 
 type Params = {
   readonly columns: ReadonlyArray<ReadonlyArray<DockGridCell>>;
+  readonly splits: Readonly<Record<string, number>>;
   readonly cellCount: number;
   readonly onResize: DockGridSpec['onResize'];
   readonly columnWidth: number | null;
@@ -58,6 +66,7 @@ type DockGridLayout = {
   readonly isGrid: boolean;
   readonly gridRef: RefObject<HTMLDivElement | null>;
   readonly handles: ReadonlyArray<SplitHandleProps | null>;
+  readonly canDrop: (params: CanDropParams) => boolean;
   readonly turn: Omit<DockPairTurn, 'onTurn'> | null;
 };
 
@@ -98,6 +107,7 @@ const SIDE_TURN: Omit<DockPairTurn, 'onTurn'> = {
 
 export const useDockGrid = ({
   columns,
+  splits,
   cellCount,
   onResize,
   columnWidth,
@@ -133,6 +143,7 @@ export const useDockGrid = ({
               sizing: cell.sizing,
               savedWidth: savedWidthOf({ cell }),
             })),
+            split: splits[dockSplitKeyOf({ keys: column.map((cell) => cell.key) })],
           })),
         });
   const solved = solveColumns({ columns });
@@ -150,6 +161,23 @@ export const useDockGrid = ({
     turned !== null &&
     fitsAsDrawn({ solved }) &&
     fitsAsDrawn({ solved: solveColumns({ columns: turned }) });
+  const cellOf = new Map(columns.flat().map((cell) => [cell.key, cell] as const));
+  const canDrop = ({ columns: keys }: CanDropParams): boolean => {
+    const next = solveColumns({
+      columns: keys.map((column) => column.flatMap((key) => cellOf.get(key) ?? [])),
+    });
+    return solved === null || next === null || dockMoveFits({ now: solved, next });
+  };
+  const dropRef = useRef(canDrop);
+  dropRef.current = canDrop;
+  useEffect(() => {
+    if (!isGrid) {
+      return undefined;
+    }
+    return dockFitProbe.publish({
+      probe: ({ columns: keys }) => dropRef.current({ columns: keys }),
+    });
+  }, [isGrid]);
   const boxes = frame.columns;
   const previewColumn = useCallback(
     ({ index, width, from }: ColumnPreviewParams) => {
@@ -193,6 +221,7 @@ export const useDockGrid = ({
     isGrid,
     gridRef,
     handles,
+    canDrop,
     turn: canTurn ? (columns.length === 2 ? STACK_TURN : SIDE_TURN) : null,
   };
 };

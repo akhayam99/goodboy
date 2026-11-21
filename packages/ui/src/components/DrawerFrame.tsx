@@ -1,4 +1,5 @@
 import { DrawerBackChipContext } from '../drawerBackChipContext';
+import { DrawerTitleGrip } from './DrawerTitleGrip';
 import { useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 import type { IconGlyph } from '../icons';
 import { X } from '../icons';
@@ -137,7 +138,7 @@ export const DrawerFrame = ({
   const titleRow = (
     <>
       {hasBackChip ? <DrawerBackChip chip={backChip} /> : null}
-      <div className={cn('flex min-w-0 flex-1 gap-2', hasToolbar ? 'items-start' : 'items-center')}>
+      <DrawerTitleGrip isTop={hasToolbar}>
         {Icon == null ? null : (
           <span className="flex h-5 shrink-0 items-center">
             <Icon
@@ -166,7 +167,7 @@ export const DrawerFrame = ({
             {count}
           </span>
         ) : null}
-      </div>
+      </DrawerTitleGrip>
       <div className={cn('flex shrink-0 items-center gap-1', hasToolbar && 'h-5')}>
         {action}
         {menu}

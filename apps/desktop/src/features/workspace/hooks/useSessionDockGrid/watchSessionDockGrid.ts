@@ -1,7 +1,10 @@
 import type { SessionId } from '@goodboy/types';
 import type { AppStore } from '../../../../store/store';
 import {
+  DOCK_GRID_MOVE_KEY,
   DOCK_GRID_RECALL_KEY,
+  dockGridMoves,
+  dockGridOwner,
   dockGridRecalls,
 } from '../../../../store/slices/drawer/dockGridWrites';
 import { EMPTY_DRAWER_GRID, type DrawerGrid } from '../../../../store/slices/drawer/state';
@@ -41,6 +44,7 @@ export const watchSessionDockGrid = ({
   let timer: ReturnType<typeof setTimeout> | null = null;
   let owner = store.getState().currentSessionId;
   let grid = store.getState().drawerGrid ?? EMPTY_DRAWER_GRID;
+  dockGridOwner.take({ sessionId: owner });
 
   const flush = (): void => {
     if (timer !== null) {
@@ -87,8 +91,10 @@ export const watchSessionDockGrid = ({
   const unsubscribe = store.subscribe((state) => {
     const nextGrid = state.drawerGrid ?? EMPTY_DRAWER_GRID;
     if (state.currentSessionId !== owner) {
+      dockGridMoves.cancel({ key: DOCK_GRID_MOVE_KEY });
       flush();
       owner = state.currentSessionId;
+      dockGridOwner.take({ sessionId: owner });
       grid = nextGrid;
       if (owner === null) {
         dockGridRecalls.cancel({ key: DOCK_GRID_RECALL_KEY });
@@ -111,8 +117,19 @@ export const watchSessionDockGrid = ({
     timer = setTimeout(flush, delayMs);
   });
 
+  const rereadOnFocus = (): void => {
+    if (owner === null) {
+      return;
+    }
+    flush();
+    recall({ sessionId: owner });
+  };
+  window.addEventListener('focus', rereadOnFocus);
+
   return () => {
+    window.removeEventListener('focus', rereadOnFocus);
     unsubscribe();
     flush();
+    dockGridOwner.take({ sessionId: null });
   };
 };

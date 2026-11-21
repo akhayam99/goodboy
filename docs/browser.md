@@ -566,7 +566,8 @@ it; Esc inside the page goes to the page.
   hidden under an overlay the placeholder shows a cover (`BrowserCover`) on the
   subtle surface: favicon, title, host and the reason in one line
   (`coverReasonText.ts`, from `createOverlayWatch().coverOf`: menu, dialog,
-  tooltip, page or drag). While a `SplitHandle` drags, the body carries
+  tooltip, page or drag). While a `SplitHandle` or a panel head drags
+  (`useDockDrag`, value `move`), the body carries
   `SPLIT_DRAG_ATTRIBUTE` and every view in the window hides under a drag
   cover, so the page is placed once at the release instead of once per frame
   (`splitDragCover.test.ts`, a column and a row drag). The mark stays while the
